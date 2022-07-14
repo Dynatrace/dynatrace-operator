@@ -1,6 +1,7 @@
 package dataingest_mutation
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/src/config"
 	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/src/ingestendpoint"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
@@ -70,7 +71,7 @@ func (mutator *DataIngestPodMutator) ensureDataIngestSecret(request *dtwebhook.M
 	err := mutator.apiReader.Get(
 		request.Context,
 		client.ObjectKey{
-			Name:      dtingestendpoint.SecretEndpointName,
+			Name:      config.EnrichmentEndpointSecretName,
 			Namespace: request.Namespace.Name,
 		},
 		&endpointSecret)

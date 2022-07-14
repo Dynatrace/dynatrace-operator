@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/src/arch"
+	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/pkg/errors"
 )
 
@@ -16,9 +17,9 @@ type containerInfo struct {
 }
 
 type environment struct {
-	Mode         InstallMode `json:"mode"`
-	CanFail      bool        `json:"canFail"`
-	InstallerUrl string      `json:"installerUrl"`
+	Mode         config.InstallMode `json:"mode"`
+	CanFail      bool               `json:"canFail"`
+	InstallerUrl string             `json:"installerUrl"`
 
 	InstallerFlavor string          `json:"installerFlavor"`
 	InstallerTech   []string        `json:"installerTech"`
@@ -110,16 +111,16 @@ func (env *environment) setMutationTypeFields() {
 }
 
 func (env *environment) addMode() error {
-	mode, err := checkEnvVar(ModeEnv)
+	mode, err := checkEnvVar(config.AgentInstallModeEnv)
 	if err != nil {
 		return err
 	}
-	env.Mode = InstallMode(mode)
+	env.Mode = config.InstallMode(mode)
 	return nil
 }
 
 func (env *environment) addCanFail() error {
-	canFail, err := checkEnvVar(CanFailEnv)
+	canFail, err := checkEnvVar(config.InjectionCanFailEnv)
 	if err != nil {
 		return err
 	}
@@ -128,7 +129,7 @@ func (env *environment) addCanFail() error {
 }
 
 func (env *environment) addInstallerFlavor() {
-	flavor, _ := checkEnvVar(InstallerFlavorEnv)
+	flavor, _ := checkEnvVar(config.AgentInstallerFlavorEnv)
 	if flavor == "" {
 		env.InstallerFlavor = arch.Flavor
 	} else {
@@ -137,7 +138,7 @@ func (env *environment) addInstallerFlavor() {
 }
 
 func (env *environment) addInstallerTech() error {
-	technologies, err := checkEnvVar(InstallerTechEnv)
+	technologies, err := checkEnvVar(config.AgentInstallerTechEnv)
 	if err != nil {
 		return err
 	}
@@ -146,7 +147,7 @@ func (env *environment) addInstallerTech() error {
 }
 
 func (env *environment) addInstallPath() error {
-	installPath, err := checkEnvVar(InstallPathEnv)
+	installPath, err := checkEnvVar(config.AgentInstallPathEnv)
 	if err != nil {
 		return err
 	}
@@ -156,7 +157,7 @@ func (env *environment) addInstallPath() error {
 
 func (env *environment) addContainers() error {
 	containers := []containerInfo{}
-	containerCountStr, err := checkEnvVar(ContainerCountEnv)
+	containerCountStr, err := checkEnvVar(config.AgentContainerCountEnv)
 	if err != nil {
 		return err
 	}
@@ -165,8 +166,8 @@ func (env *environment) addContainers() error {
 		return err
 	}
 	for i := 1; i <= countCount; i++ {
-		nameEnv := fmt.Sprintf(ContainerNameEnvTemplate, i)
-		imageEnv := fmt.Sprintf(ContainerImageEnvTemplate, i)
+		nameEnv := fmt.Sprintf(config.AgentContainerNameEnvTemplate, i)
+		imageEnv := fmt.Sprintf(config.AgentContainerImageEnvTemplate, i)
 
 		containerName, err := checkEnvVar(nameEnv)
 		if err != nil {
@@ -186,7 +187,7 @@ func (env *environment) addContainers() error {
 }
 
 func (env *environment) addK8NodeName() error {
-	nodeName, err := checkEnvVar(K8NodeNameEnv)
+	nodeName, err := checkEnvVar(config.K8NodeNameEnv)
 	if err != nil {
 		return err
 	}
@@ -195,7 +196,7 @@ func (env *environment) addK8NodeName() error {
 }
 
 func (env *environment) addK8PodName() error {
-	podName, err := checkEnvVar(K8PodNameEnv)
+	podName, err := checkEnvVar(config.K8PodNameEnv)
 	if err != nil {
 		return err
 	}
@@ -204,7 +205,7 @@ func (env *environment) addK8PodName() error {
 }
 
 func (env *environment) addK8PodUID() error {
-	podUID, err := checkEnvVar(K8PodUIDEnv)
+	podUID, err := checkEnvVar(config.K8PodUIDEnv)
 	if err != nil {
 		return err
 	}
@@ -213,7 +214,7 @@ func (env *environment) addK8PodUID() error {
 }
 
 func (env *environment) addK8ClusterID() error {
-	clusterID, err := checkEnvVar(K8ClusterIDEnv)
+	clusterID, err := checkEnvVar(config.K8ClusterIDEnv)
 	if err != nil {
 		return err
 	}
@@ -222,7 +223,7 @@ func (env *environment) addK8ClusterID() error {
 }
 
 func (env *environment) addK8BasePodName() error {
-	basePodName, err := checkEnvVar(K8BasePodNameEnv)
+	basePodName, err := checkEnvVar(config.K8BasePodNameEnv)
 	if err != nil {
 		return err
 	}
@@ -231,7 +232,7 @@ func (env *environment) addK8BasePodName() error {
 }
 
 func (env *environment) addK8Namespace() error {
-	namespace, err := checkEnvVar(K8NamespaceEnv)
+	namespace, err := checkEnvVar(config.K8NamespaceEnv)
 	if err != nil {
 		return err
 	}
@@ -240,7 +241,7 @@ func (env *environment) addK8Namespace() error {
 }
 
 func (env *environment) addWorkloadKind() error {
-	workloadKind, err := checkEnvVar(WorkloadKindEnv)
+	workloadKind, err := checkEnvVar(config.EnrichmentWorkloadKindEnv)
 	if err != nil {
 		return err
 	}
@@ -249,7 +250,7 @@ func (env *environment) addWorkloadKind() error {
 }
 
 func (env *environment) addWorkloadName() error {
-	workloadName, err := checkEnvVar(WorkloadNameEnv)
+	workloadName, err := checkEnvVar(config.EnrichmentWorkloadNameEnv)
 	if err != nil {
 		return err
 	}
@@ -258,17 +259,17 @@ func (env *environment) addWorkloadName() error {
 }
 
 func (env *environment) addInstallerUrl() {
-	url, _ := checkEnvVar(InstallerUrlEnv)
+	url, _ := checkEnvVar(config.AgentInstallerUrlEnv)
 	env.InstallerUrl = url
 }
 
 func (env *environment) addOneAgentInjected() {
-	oneAgentInjected, _ := checkEnvVar(OneAgentInjectedEnv)
+	oneAgentInjected, _ := checkEnvVar(config.AgentInjectedEnv)
 	env.OneAgentInjected = oneAgentInjected == "true"
 }
 
 func (env *environment) addDataIngestInjected() {
-	dataIngestInjected, _ := checkEnvVar(DataIngestInjectedEnv)
+	dataIngestInjected, _ := checkEnvVar(config.EnrichmentInjectedEnv)
 	env.DataIngestInjected = dataIngestInjected == "true"
 }
 

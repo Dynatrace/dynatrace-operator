@@ -5,11 +5,10 @@ import (
 	"path/filepath"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/src/standalone"
-	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -17,7 +16,7 @@ func addPreloadEnv(container *corev1.Container, installPath string) {
 	container.Env = append(container.Env,
 		corev1.EnvVar{
 			Name:  preloadEnvVarName,
-			Value: filepath.Join(installPath, libAgentProcPath),
+			Value: filepath.Join(installPath, config.LibAgentProcPath),
 		})
 }
 
@@ -37,7 +36,7 @@ func addProxyEnv(container *corev1.Container) {
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: dtwebhook.SecretConfigName,
+						Name: config.AgentInitSecretName,
 					},
 					Key: dynatracev1beta1.ProxyKey,
 				},
@@ -47,12 +46,12 @@ func addProxyEnv(container *corev1.Container) {
 
 func addInstallerInitEnvs(initContainer *corev1.Container, installer installerInfo, volumeMode string) {
 	initContainer.Env = append(initContainer.Env,
-		corev1.EnvVar{Name: standalone.InstallerFlavorEnv, Value: installer.flavor},
-		corev1.EnvVar{Name: standalone.InstallerTechEnv, Value: installer.technologies},
-		corev1.EnvVar{Name: standalone.InstallPathEnv, Value: installer.installPath},
-		corev1.EnvVar{Name: standalone.InstallerUrlEnv, Value: installer.installerURL},
-		corev1.EnvVar{Name: standalone.ModeEnv, Value: volumeMode},
-		corev1.EnvVar{Name: standalone.OneAgentInjectedEnv, Value: "true"},
+		corev1.EnvVar{Name: config.AgentInstallerFlavorEnv, Value: installer.flavor},
+		corev1.EnvVar{Name: config.AgentInstallerTechEnv, Value: installer.technologies},
+		corev1.EnvVar{Name: config.AgentInstallPathEnv, Value: installer.installPath},
+		corev1.EnvVar{Name: config.AgentInstallerUrlEnv, Value: installer.installerURL},
+		corev1.EnvVar{Name: config.AgentInstallModeEnv, Value: volumeMode},
+		corev1.EnvVar{Name: config.AgentInjectedEnv, Value: "true"},
 	)
 }
 
@@ -64,11 +63,11 @@ func addContainerInfoInitEnv(initContainer *corev1.Container, containerIndex int
 }
 
 func getContainerNameEnv(containerIndex int) string {
-	return fmt.Sprintf(standalone.ContainerNameEnvTemplate, containerIndex)
+	return fmt.Sprintf(config.AgentContainerNameEnvTemplate, containerIndex)
 }
 
 func getContainerImageEnv(containerIndex int) string {
-	return fmt.Sprintf(standalone.ContainerImageEnvTemplate, containerIndex)
+	return fmt.Sprintf(config.AgentContainerImageEnvTemplate, containerIndex)
 }
 
 func addDeploymentMetadataEnv(container *corev1.Container, dynakube dynatracev1beta1.DynaKube, clusterID string) {
