@@ -1,4 +1,4 @@
-package kubeobjects
+package kubesystem
 
 import "os"
 
