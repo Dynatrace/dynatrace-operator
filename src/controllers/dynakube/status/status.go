@@ -32,12 +32,14 @@ func SetDynakubeStatus(instance *dynatracev1beta1.DynaKube, opts Options) error 
 		return errors.WithStack(err)
 	}
 
-	latestAgentVersionUnixDefault, err := dtc.GetLatestAgentVersion(dtclient.OsUnix, dtclient.InstallerTypeDefault)
+	latestAgentVersionUnixDefault, err := dtc.GetLatestAgentVersion(
+		dtclient.OsUnix, dtclient.InstallerTypeDefault)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	latestAgentVersionUnixPaas, err := dtc.GetLatestAgentVersion(dtclient.OsUnix, dtclient.InstallerTypePaaS)
+	latestAgentVersionUnixPaas, err := dtc.GetLatestAgentVersion(
+		dtclient.OsUnix, dtclient.InstallerTypePaaS)
 	if err != nil {
 		return errors.WithStack(err)
 	}
