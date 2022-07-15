@@ -20,7 +20,7 @@ const (
 	operatorManagerPort    = 8383
 
 	leaderElectionId           = "dynatrace-operator-lock"
-	leaderElectionResourceLock = "configmaps"
+	leaderElectionResourceLock = "configmapsleases"
 
 	livenessEndpointName = "/livez"
 	readyzEndpointName   = "readyz"
