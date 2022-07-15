@@ -3,6 +3,7 @@ package initgeneration
 import (
 	"context"
 	"encoding/json"
+	"strconv"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
@@ -261,7 +262,7 @@ func (g *InitGenerator) createSecretData(config *standalone.SecretConfig) (map[s
 		dynatracev1beta1.ProxyKey:        []byte(config.Proxy), // needed so that it can be mounted to the user's pod without directly reading the secret
 		"skipCertCheck":                  []byte(skipCertCheck),
 		"hasHost":                        []byte(hasHost),
-		"initialConnectRetry":            []byte(string(rune(config.InitialConnectRetry))),
+		"initialConnectRetry":            []byte(strconv.Itoa(config.InitialConnectRetry))))),
 	}
 
 	for key, val := range config.MonitoringNodes {
