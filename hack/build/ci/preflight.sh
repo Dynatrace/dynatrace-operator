@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -xe
+set -x
 
 readonly PREFLIGHT_VERSION="${1}"
 readonly IMAGE_TAG="${2}"
@@ -21,6 +21,16 @@ check_image() {
   grep "Preflight result: PASSED" "${PREFLIGHT_LOG}" || exit 1
 }
 
+submit_report() {
+   ./"${PREFLIGHT_EXECUTABLE}" check container "${IMAGE_TAG}" --submit --pyxis-api-token="${RHCC_APITOKEN}" --certification-project-id="${RHCC_PROJECT_ID}"
+}
 
 download_preflight
 check_image
+readonly passed=$?
+if [[ ${passed} -eq 0 ]]; then
+    submit_report
+fi
+
+exit ${passed}
+

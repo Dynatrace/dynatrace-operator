@@ -46,34 +46,10 @@ jobs:
       image-tag: ${{ needs.prepare.outputs.version }}
     uses: ./.github/workflows/build-dockerimage.yaml
 
-  push-quay:
-    name: Push to quay
-    needs: [prepare, build-amd64]
-    uses: ./.github/workflows/upload-dockerimage.yaml
-    with:
-      platform: amd64
-      labels: ${{ needs.prepare.outputs.labels }}
-      version: ${{ needs.prepare.outputs.version }}
-      registry: quay.io
-      repository: dynatrace/dynatrace-operator
-    secrets:
-      docker_repo_username: ${{ secrets.QUAY_USERNAME }}
-      docker_repo_password: ${{ secrets.QUAY_PASSWORD }}
-
-  preflight:
-    name: Validate image with RedHat's preflight tool
-    needs: [prepare, push-quay]
-    uses: ./.github/workflows/preflight.yaml
-    with:
-      platform: amd64
-      version: ${{ needs.prepare.outputs.version }}
-      registry: quay.io
-      repository: dynatrace/dynatrace-operator
-
   push:
     name: Push images
     environment: Release
-    needs: [prepare,build-arm64,build-amd64,preflight]
+    needs: [prepare,build-arm64,build-amd64]
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -106,6 +82,16 @@ jobs:
           repository: ${{matrix.repository}}
           secrets.docker_repo_username: ${{matrix.username}}
           secrets.docker_repo_password: ${{matrix.password}}
+
+  preflight:
+    name: Validate image with RedHat's preflight tool
+    needs: [prepare, push]
+    uses: ./.github/workflows/preflight.yaml
+    with:
+      platform: amd64
+      version: ${{ needs.prepare.outputs.version }}
+      registry: registry.connect.redhat.com
+      repository: dynatrace/dynatrace-operator
 
   manifest:
     name: Create manifests

@@ -14,7 +14,7 @@ readonly imageTarPath="/tmp/operator-${platform}.tar"
 
 docker load -i "${imageTarPath}"
 
-# $docker load -i /tmp/alipine.tar
+# $docker load -i /tmp/alpine.tar
 # Loaded image: alpine:latest
 #
 # we're interested in "alpine:latest", that's field=3
