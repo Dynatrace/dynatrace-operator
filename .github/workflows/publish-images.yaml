@@ -19,7 +19,7 @@ jobs:
     outputs:
       labels: ${{ steps.prep.outputs.docker_image_labels }}
       version: ${{ steps.prep.outputs.docker_image_tag }}
-      goargs: ${{ steps.prep.outputs.go_build_args }}
+      goargs: ${{ steps.prep.outputs.go_linker_args }}
       goversion: ${{ steps.prepenv.outputs.goversion }}
 
   # Workflow needs to build docker images again as separate workflows don't have access to others artifacts

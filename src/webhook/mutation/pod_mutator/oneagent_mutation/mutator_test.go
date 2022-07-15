@@ -40,6 +40,24 @@ func TestEnabled(t *testing.T) {
 
 		require.True(t, enabled)
 	})
+	t.Run("off by feature flag", func(t *testing.T) {
+		mutator := createTestPodMutator(nil)
+		request := createTestMutationRequest(nil, nil)
+		request.DynaKube.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureAutomaticInjection: "false"}
+
+		enabled := mutator.Enabled(request.BaseRequest)
+
+		require.False(t, enabled)
+	})
+	t.Run("on with feature flag", func(t *testing.T) {
+		mutator := createTestPodMutator(nil)
+		request := createTestMutationRequest(nil, nil)
+		request.DynaKube.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureAutomaticInjection: "true"}
+
+		enabled := mutator.Enabled(request.BaseRequest)
+
+		require.True(t, enabled)
+	})
 }
 
 func TestInjected(t *testing.T) {
@@ -107,7 +125,7 @@ func TestMutate(t *testing.T) {
 		assert.Equal(t, initialInitContainers, request.Pod.Spec.InitContainers)
 
 		assert.Len(t, request.InstallContainer.Env, 6+(initialContainersLen*2))
-		assert.Len(t, request.InstallContainer.VolumeMounts, 2)
+		assert.Len(t, request.InstallContainer.VolumeMounts, 3)
 	})
 	t.Run("everything turned on, should mutate the pod and init container in the request", func(t *testing.T) {
 		mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
@@ -131,7 +149,7 @@ func TestMutate(t *testing.T) {
 		assert.Equal(t, initialInitContainers, request.Pod.Spec.InitContainers)
 
 		assert.Len(t, request.InstallContainer.Env, 6+(initialContainersLen*2))
-		assert.Len(t, request.InstallContainer.VolumeMounts, 2)
+		assert.Len(t, request.InstallContainer.VolumeMounts, 3)
 	})
 }
 

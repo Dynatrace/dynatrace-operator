@@ -2,12 +2,11 @@ package pod_mutator
 
 import (
 	"context"
-	"fmt"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/mapper"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -23,9 +22,15 @@ func (webhook *podMutatorWebhook) createMutationRequestBase(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	dynakubeName, err := getDynakubeName(*namespace)
-	if err != nil {
+	dynakubeName, err := getDynakubeName(*namespace, webhook.deployedViaOLM)
+	if err != nil && !webhook.deployedViaOLM {
 		return nil, err
+	} else if err != nil {
+		// in case of olm deployment, all pods are sent to us
+		// but not all of them need to be mutated,
+		// therefore their namespace might not have a dynakube assigned
+		// in which case we don't need to do anything
+		return nil, nil
 	}
 	dynakube, err := webhook.getDynakube(ctx, dynakubeName)
 	if err != nil {
@@ -55,14 +60,10 @@ func getNamespaceFromRequest(ctx context.Context, apiReader client.Reader, req a
 	return &namespace, nil
 }
 
-func getDynakubeName(namespace corev1.Namespace) (string, error) {
+func getDynakubeName(namespace corev1.Namespace, deployedViaOLM bool) (string, error) {
 	dynakubeName, ok := namespace.Labels[mapper.InstanceLabel]
 	if !ok {
-		var err error
-		if !kubesystem.DeployedViaOLM() {
-			err = fmt.Errorf("no DynaKube instance set for namespace: %s", namespace.Name)
-		}
-		return dynakubeName, err
+		return "", errors.Errorf("no DynaKube instance set for namespace: %s", namespace.Name)
 	}
 	return dynakubeName, nil
 }

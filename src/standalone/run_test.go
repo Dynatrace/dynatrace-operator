@@ -24,13 +24,45 @@ var testProcessModuleConfig = dtclient.ProcessModuleConfig{
 }
 
 func TestNewRunner(t *testing.T) {
-	t.Run(`create runner`, func(t *testing.T) {
-		runner := creatTestRunner(t)
+	fs := prepTestFs(t)
+	t.Run(`create runner with oneagent and data-ingest injection`, func(t *testing.T) {
+		resetEnv := prepCombinedTestEnv(t)
+		runner, err := NewRunner(fs)
+		resetEnv()
+
+		require.NoError(t, err)
+		require.NotNil(t, runner)
 		assert.NotNil(t, runner.fs)
 		assert.NotNil(t, runner.env)
 		assert.NotNil(t, runner.dtclient)
 		assert.NotNil(t, runner.config)
 		assert.NotNil(t, runner.installer)
+		assert.Empty(t, runner.hostTenant)
+	})
+	t.Run(`create runner with only oneagent`, func(t *testing.T) {
+		resetEnv := prepOneAgentTestEnv(t)
+		runner, err := NewRunner(fs)
+		resetEnv()
+
+		require.NoError(t, err)
+		assert.NotNil(t, runner.fs)
+		assert.NotNil(t, runner.env)
+		assert.NotNil(t, runner.dtclient)
+		assert.NotNil(t, runner.config)
+		assert.NotNil(t, runner.installer)
+		assert.Empty(t, runner.hostTenant)
+	})
+	t.Run(`create runner with only data-ingest injection`, func(t *testing.T) {
+		resetEnv := prepDataIngestTestEnv(t)
+		runner, err := NewRunner(fs)
+		resetEnv()
+
+		require.NoError(t, err)
+		assert.NotNil(t, runner.fs)
+		assert.NotNil(t, runner.env)
+		assert.Nil(t, runner.dtclient)
+		assert.Nil(t, runner.config)
+		assert.Nil(t, runner.installer)
 		assert.Empty(t, runner.hostTenant)
 	})
 }
@@ -315,7 +347,7 @@ func TestWriteCurlOptions(t *testing.T) {
 
 func creatTestRunner(t *testing.T) *Runner {
 	fs := prepTestFs(t)
-	resetEnv := prepTestEnv(t)
+	resetEnv := prepCombinedTestEnv(t)
 
 	runner, err := NewRunner(fs)
 	resetEnv()

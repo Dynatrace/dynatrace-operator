@@ -153,6 +153,10 @@ func (dk *DynaKube) ActiveGateImage() string {
 	return resolveImagePath(newActiveGateImagePath(dk))
 }
 
+func (dk *DynaKube) CustomActiveGateImage() string {
+	return newActiveGateImagePath(dk).CustomImagePath()
+}
+
 // EecImage returns the Extension Controller image to be used with the dk DynaKube instance.
 func (dk *DynaKube) EecImage() string {
 	return resolveImagePath(newEecImagePath(dk))
@@ -183,7 +187,7 @@ func (dk *DynaKube) NeedAppInjection() bool {
 	return dk.CloudNativeFullstackMode() || dk.ApplicationMonitoringMode()
 }
 
-func (dk *DynaKube) Image() string {
+func (dk *DynaKube) CustomOneAgentImage() string {
 	if dk.ClassicFullStackMode() {
 		return dk.Spec.OneAgent.ClassicFullStack.Image
 	} else if dk.HostMonitoringMode() {
@@ -254,7 +258,7 @@ func (dynakube DynaKube) CodeModulesVersion() string {
 	}
 	if dynakube.CodeModulesImage() != "" {
 		codeModulesImage := dynakube.CodeModulesImage()
-		return strings.Split(codeModulesImage, ":")[1]
+		return getRawImageTag(codeModulesImage)
 	}
 	if dynakube.Version() != "" && !dynakube.CloudNativeFullstackMode() {
 		return dynakube.Version()
@@ -268,7 +272,7 @@ func (dk *DynaKube) NamespaceSelector() *metav1.LabelSelector {
 
 // ImmutableOneAgentImage returns the immutable OneAgent image to be used with the dk DynaKube instance.
 func (dk *DynaKube) ImmutableOneAgentImage() string {
-	oneAgentImage := dk.Image()
+	oneAgentImage := dk.CustomOneAgentImage()
 	if oneAgentImage != "" {
 		return oneAgentImage
 	}
@@ -386,4 +390,12 @@ func splitArg(arg string) (key, value string) {
 	key = split[0]
 	value = split[1]
 	return
+}
+
+func getRawImageTag(imageURI string) string {
+	if !strings.Contains(imageURI, ":") {
+		return "latest"
+	}
+	splitURI := strings.Split(imageURI, ":")
+	return splitURI[len(splitURI)-1]
 }

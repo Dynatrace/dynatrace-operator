@@ -22,7 +22,6 @@ import (
 
 const (
 	testVersion = "test"
-	testDigest  = "123iamDigest456"
 )
 
 func TestNewAgentUpdater(t *testing.T) {
@@ -64,7 +63,6 @@ func TestUpdateAgent(t *testing.T) {
 			Return(nil)
 
 		currentVersion, err := updater.updateAgent(
-			testVersion,
 			&processModuleCache)
 
 		require.NoError(t, err)
@@ -112,7 +110,6 @@ func TestUpdateAgent(t *testing.T) {
 		_ = updater.fs.MkdirAll(targetDir, 0755)
 
 		currentVersion, err := updater.updateAgent(
-			testVersion,
 			&processModuleCache)
 
 		require.NoError(t, err)
@@ -147,7 +144,6 @@ func TestUpdateAgent(t *testing.T) {
 			Return(false, fmt.Errorf("BOOM"))
 
 		currentVersion, err := updater.updateAgent(
-			testVersion,
 			&processModuleCache)
 
 		require.Error(t, err)
@@ -209,7 +205,6 @@ func TestUpdateAgent(t *testing.T) {
 			Return(nil)
 
 		currentVersion, err := updater.updateAgent(
-			testVersion,
 			&processModuleConfig)
 		require.NoError(t, err)
 		assert.Equal(t, tag, currentVersion)
@@ -274,7 +269,6 @@ func TestUpdateAgent(t *testing.T) {
 			Return(nil)
 
 		currentVersion, err := updater.updateAgent(
-			testVersion,
 			&processModuleConfig)
 		require.NoError(t, err)
 		assert.Equal(t, tag, currentVersion)
@@ -316,7 +310,6 @@ func testUpdateOneagent(t *testing.T, alreadyInstalled bool) {
 	}
 
 	currentVersion, err := updater.updateAgent(
-		"other",
 		&processModuleCache)
 
 	require.NoError(t, err)
@@ -329,7 +322,7 @@ func createTestAgentUrlUpdater(t *testing.T, dk *dynatracev1beta1.DynaKube) *age
 	fs := afero.NewMemMapFs()
 	rec := record.NewFakeRecorder(10)
 
-	updater, err := newAgentUrlUpdater(context.TODO(), fs, &mockedClient, path, rec, dk)
+	updater, err := newAgentUrlUpdater(context.TODO(), fs, &mockedClient, testVersion, path, rec, dk)
 	require.NoError(t, err)
 	updater.installer = &installer.InstallerMock{}
 
@@ -340,8 +333,9 @@ func createTestAgentImageUpdater(t *testing.T, dk *dynatracev1beta1.DynaKube, ob
 	path := metadata.PathResolver{RootDir: "test"}
 	fs := afero.NewMemMapFs()
 	rec := record.NewFakeRecorder(10)
+	db := metadata.FakeMemoryDB()
 
-	updater, err := newAgentImageUpdater(context.TODO(), fs, fake.NewClient(obj...), path, rec, dk, testDigest)
+	updater, err := newAgentImageUpdater(context.TODO(), fs, fake.NewClient(obj...), path, db, rec, dk)
 	require.NoError(t, err)
 	updater.installer = &installer.InstallerMock{}
 

@@ -6,9 +6,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 	cmdManager "github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/certificates"
+	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -19,9 +22,10 @@ type CommandBuilder struct {
 	configProvider           config.Provider
 	bootstrapManagerProvider cmdManager.Provider
 	operatorManagerProvider  cmdManager.Provider
-	isDeployedViaOlm         bool
 	namespace                string
+	podName                  string
 	signalHandler            context.Context
+	client                   client.Client
 }
 
 func NewOperatorCommandBuilder() CommandBuilder {
@@ -48,8 +52,8 @@ func (builder CommandBuilder) SetNamespace(namespace string) CommandBuilder {
 	return builder
 }
 
-func (builder CommandBuilder) SetIsDeployedViaOlm(isDeployedViaOlm bool) CommandBuilder {
-	builder.isDeployedViaOlm = isDeployedViaOlm
+func (builder CommandBuilder) SetPodName(podName string) CommandBuilder {
+	builder.podName = podName
 	return builder
 }
 
@@ -58,9 +62,14 @@ func (builder CommandBuilder) setSignalHandler(ctx context.Context) CommandBuild
 	return builder
 }
 
-func (builder CommandBuilder) getOperatorManagerProvider() cmdManager.Provider {
+func (builder CommandBuilder) setClient(client client.Client) CommandBuilder {
+	builder.client = client
+	return builder
+}
+
+func (builder CommandBuilder) getOperatorManagerProvider(isDeployedByOlm bool) cmdManager.Provider {
 	if builder.operatorManagerProvider == nil {
-		builder.operatorManagerProvider = NewOperatorManagerProvider(builder.isDeployedViaOlm)
+		builder.operatorManagerProvider = NewOperatorManagerProvider(isDeployedByOlm)
 	}
 
 	return builder.operatorManagerProvider
@@ -88,15 +97,31 @@ func (builder CommandBuilder) Build() *cobra.Command {
 	}
 }
 
+func (builder CommandBuilder) isDeployedViaOLM(kubeCfg *rest.Config) (bool, error) {
+	if builder.client == nil {
+		var err error
+		builder.client, err = client.New(kubeCfg, client.Options{})
+		if err != nil {
+			return false, err
+		}
+	}
+
+	return kubesystem.IsDeployedViaOlm(builder.client, builder.podName, builder.namespace)
+}
+
 func (builder CommandBuilder) buildRun() func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		kubeCfg, err := builder.configProvider.GetConfig()
-
 		if err != nil {
 			return err
 		}
 
-		if !builder.isDeployedViaOlm {
+		isDeployedViaOlm, err := builder.isDeployedViaOLM(kubeCfg)
+		if err != nil {
+			return err
+		}
+
+		if !isDeployedViaOlm {
 			var bootstrapManager ctrl.Manager
 			bootstrapManager, err = builder.getBootstrapManagerProvider().CreateManager(builder.namespace, kubeCfg)
 
@@ -111,7 +136,7 @@ func (builder CommandBuilder) buildRun() func(cmd *cobra.Command, args []string)
 			}
 		}
 
-		operatorManager, err := builder.getOperatorManagerProvider().CreateManager(builder.namespace, kubeCfg)
+		operatorManager, err := builder.getOperatorManagerProvider(isDeployedViaOlm).CreateManager(builder.namespace, kubeCfg)
 
 		if err != nil {
 			return err

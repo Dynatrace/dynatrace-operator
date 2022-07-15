@@ -108,7 +108,7 @@ jobs:
     outputs:
       labels: ${{ steps.prep.outputs.docker_image_labels }}
       version: ${{ steps.prep.outputs.docker_image_tag }}
-      goargs: ${{ steps.prep.outputs.go_build_args }}
+      golinkerargs: ${{ steps.prep.outputs.go_linker_args }}
       goversion: ${{ steps.prepenv.outputs.goversion }}
       registry: ${{ steps.prepenv.outputs.registry }}
       repository: ${{ steps.prepenv.outputs.repository }}
@@ -120,7 +120,7 @@ jobs:
     with:
       platform: amd64
       goversion: ${{ needs.prepare.outputs.goversion }}
-      goargs: ${{ needs.prepare.outputs.goargs }}
+      golinkerargs: ${{ needs.prepare.outputs.golinkerargs }}
       labels: ${{ needs.prepare.outputs.labels }}
       image-tag: ${{ needs.prepare.outputs.version }}
 
@@ -132,7 +132,7 @@ jobs:
     with:
       platform: arm64
       goversion: ${{ needs.prepare.outputs.goversion }}
-      goargs: ${{ needs.prepare.outputs.goargs }}
+      golinkerargs: ${{ needs.prepare.outputs.golinkerargs }}
       labels: ${{ needs.prepare.outputs.labels }}
       image-tag: ${{ needs.prepare.outputs.version }}
 

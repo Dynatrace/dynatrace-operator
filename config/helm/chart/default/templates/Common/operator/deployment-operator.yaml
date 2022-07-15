@@ -19,7 +19,10 @@ metadata:
   name: {{ .Release.Name }}
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "dynatrace-operator.operatorLabels" . | nindent 4 }}
+      {{- include "dynatrace-operator.operatorLabels" . | nindent 4 }}
+  {{- if .Values.operator.labels }}
+      {{- toYaml .Values.operator.labels | nindent 4 }}
+  {{- end }}
 spec:
   replicas: 1
   revisionHistoryLimit: 1
@@ -34,9 +37,15 @@ spec:
       {{- if (.Values.operator).apparmor}}
         container.apparmor.security.beta.kubernetes.io/{{ .Release.Name }}: runtime/default
       {{- end }}
+      {{- if .Values.operator.annotations }}
+        {{- toYaml .Values.operator.annotations | nindent 8 }}
+      {{- end }}
       labels:
         {{- include "dynatrace-operator.operatorLabels" . | nindent 8 }}
         {{- include "dynatrace-operator.operatorSelectorLabels" . | nindent 8 }}
+        {{- if .Values.operator.labels }}
+        {{- toYaml .Values.operator.labels | nindent 8 }}
+        {{- end }}
     spec:
       containers:
         - name: {{ .Release.Name }}
@@ -54,10 +63,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            {{- if eq (default false .Values.olm) true}}
-            - name: DEPLOYED_VIA_OLM
-              value: "true"
-            {{- end }}
           ports:
             - containerPort: 10080
               name: server-port

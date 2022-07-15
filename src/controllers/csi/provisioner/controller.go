@@ -160,13 +160,13 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Cont
 	var agentUpdater *agentUpdater
 	if dk.CodeModulesImage() != "" {
 		latestProcessModuleConfig = latestProcessModuleConfig.AddConnectionInfo(dk.ConnectionInfo())
-		agentUpdater, err = newAgentImageUpdater(ctx, provisioner.fs, provisioner.apiReader, provisioner.path, provisioner.recorder, dk, dynakubeMetadata.ImageDigest)
+		agentUpdater, err = newAgentImageUpdater(ctx, provisioner.fs, provisioner.apiReader, provisioner.path, provisioner.db, provisioner.recorder, dk)
 		if err != nil {
 			log.Error(err, "error when setting up the agent image updater")
 			return nil, false, err
 		}
 	} else {
-		agentUpdater, err = newAgentUrlUpdater(ctx, provisioner.fs, dtc, provisioner.path, provisioner.recorder, dk)
+		agentUpdater, err = newAgentUrlUpdater(ctx, provisioner.fs, dtc, dynakubeMetadata.LatestVersion, provisioner.path, provisioner.recorder, dk)
 		if err != nil {
 			log.Info("error when setting up the agent url updater", "error", err.Error())
 			return nil, false, err
@@ -179,7 +179,7 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Cont
 		log.Info("error when setting up the agent updater", "error", err.Error())
 		return nil, false, err
 	}
-	updatedVersion, err := agentUpdater.updateAgent(dynakubeMetadata.LatestVersion, latestProcessModuleConfigCache)
+	updatedVersion, err := agentUpdater.updateAgent(latestProcessModuleConfigCache)
 	if err != nil {
 		log.Info("error when updating agent", "error", err.Error())
 		// reporting error but not returning it to avoid immediate requeue and subsequently calling the API every few seconds

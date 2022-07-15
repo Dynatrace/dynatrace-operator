@@ -37,6 +37,7 @@ type podMutatorWebhook struct {
 	webhookNamespace string
 	clusterID        string
 	apmExists        bool
+	deployedViaOLM   bool
 
 	mutators []dtwebhook.PodMutator
 }
@@ -58,6 +59,10 @@ func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.
 	if err != nil {
 		return silentErrorResponse(mutationRequest.Pod, err)
 	}
+	if noMutationRequired(mutationRequest) {
+		return emptyPatch
+	}
+
 	podName := mutationRequest.Pod.GenerateName // at this point, the pod name is not yet set
 
 	webhook.setupEventRecorder(mutationRequest)
@@ -81,6 +86,10 @@ func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.
 	return createResponseForPod(mutationRequest.Pod, request)
 }
 
+func noMutationRequired(mutationRequest *dtwebhook.MutationRequest) bool {
+	return mutationRequest == nil
+}
+
 func (webhook *podMutatorWebhook) setupEventRecorder(mutationRequest *dtwebhook.MutationRequest) {
 	webhook.recorder.dynakube = &mutationRequest.DynaKube
 	webhook.recorder.pod = mutationRequest.Pod
@@ -96,7 +105,8 @@ func (webhook *podMutatorWebhook) isInjected(mutationRequest *dtwebhook.Mutation
 }
 
 func (webhook *podMutatorWebhook) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) error {
-	mutationRequest.InstallContainer = createInstallInitContainerBase(webhook.webhookImage, mutationRequest.Pod, mutationRequest.DynaKube)
+	mutationRequest.InstallContainer = createInstallInitContainerBase(webhook.webhookImage, webhook.clusterID, mutationRequest.Pod, mutationRequest.DynaKube)
+	isMutated := false
 	for _, mutator := range webhook.mutators {
 		if !mutator.Enabled(mutationRequest.BaseRequest) {
 			continue
@@ -104,8 +114,14 @@ func (webhook *podMutatorWebhook) handlePodMutation(mutationRequest *dtwebhook.M
 		if err := mutator.Mutate(mutationRequest); err != nil {
 			return err
 		}
+		isMutated = true
 	}
-	addToInitContainers(mutationRequest.Pod, mutationRequest.InstallContainer)
+	if !isMutated {
+		log.Info("no mutation is enabled")
+		return nil
+	}
+
+	addInitContainerToPod(mutationRequest.Pod, mutationRequest.InstallContainer)
 	webhook.recorder.sendPodInjectEvent()
 	setDynatraceInjectedAnnotation(mutationRequest)
 	return nil

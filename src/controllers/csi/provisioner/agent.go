@@ -31,6 +31,7 @@ func newAgentUrlUpdater(
 	ctx context.Context,
 	fs afero.Fs,
 	dtc dtclient.Client,
+	previousVersion string,
 	path metadata.PathResolver,
 	recorder record.EventRecorder,
 	dk *dynatracev1beta1.DynaKube) (*agentUpdater, error) {
@@ -38,7 +39,7 @@ func newAgentUrlUpdater(
 	tenantUUID := dk.ConnectionInfo().TenantUUID
 	targetVersion := dk.CodeModulesVersion()
 
-	agentInstaller := url.NewUrlInstaller(fs, dtc, getUrlProperties(targetVersion))
+	agentInstaller := url.NewUrlInstaller(fs, dtc, getUrlProperties(targetVersion, previousVersion))
 	eventRecorder := updaterEventRecorder{
 		recorder: recorder,
 		dynakube: dk,
@@ -59,14 +60,14 @@ func newAgentImageUpdater(
 	fs afero.Fs,
 	apiReader client.Reader,
 	path metadata.PathResolver,
+	db metadata.Access,
 	recorder record.EventRecorder,
-	dk *dynatracev1beta1.DynaKube,
-	digest string) (*agentUpdater, error) {
+	dk *dynatracev1beta1.DynaKube) (*agentUpdater, error) {
 
 	tenantUUID := dk.ConnectionInfo().TenantUUID
 	certPath := path.ImageCertPath(tenantUUID)
 
-	agentInstaller, err := setupImageInstaller(ctx, fs, path, apiReader, certPath, digest, dk)
+	agentInstaller, err := setupImageInstaller(ctx, fs, apiReader, path, db, certPath, dk)
 	if err != nil {
 		return nil, err
 	}
@@ -88,18 +89,19 @@ func newAgentImageUpdater(
 
 }
 
-func getUrlProperties(version string) *url.Properties {
+func getUrlProperties(targetVersion, previousVersion string) *url.Properties {
 	return &url.Properties{
-		Os:           dtclient.OsUnix,
-		Type:         dtclient.InstallerTypePaaS,
-		Arch:         arch.Arch,
-		Flavor:       arch.Flavor,
-		Technologies: []string{"all"},
-		Version:      version,
+		Os:              dtclient.OsUnix,
+		Type:            dtclient.InstallerTypePaaS,
+		Arch:            arch.Arch,
+		Flavor:          arch.Flavor,
+		Technologies:    []string{"all"},
+		PreviousVersion: previousVersion,
+		TargetVersion:   targetVersion,
 	}
 }
 
-func setupImageInstaller(ctx context.Context, fs afero.Fs, pathResolver metadata.PathResolver, apiReader client.Reader, certPath, digest string, dynakube *dynatracev1beta1.DynaKube) (installer.Installer, error) {
+func setupImageInstaller(ctx context.Context, fs afero.Fs, apiReader client.Reader, pathResolver metadata.PathResolver, db metadata.Access, certPath string, dynakube *dynatracev1beta1.DynaKube) (installer.Installer, error) {
 	dockerConfig := dockerconfig.NewDockerConfig(apiReader, *dynakube)
 	if dynakube.Spec.CustomPullSecret != "" {
 		err := dockerConfig.SetupAuths(ctx)
@@ -117,19 +119,18 @@ func setupImageInstaller(ctx context.Context, fs afero.Fs, pathResolver metadata
 
 	imageInstaller := image.NewImageInstaller(fs, &image.Properties{
 		ImageUri:     dynakube.CodeModulesImage(),
-		ImageDigest:  digest,
 		PathResolver: pathResolver,
+		Metadata:     db,
 		DockerConfig: *dockerConfig})
 	return imageInstaller, nil
 }
 
-func (updater *agentUpdater) updateAgent(installedVersion string, latestProcessModuleConfigCache *processModuleConfigCache) (string, error) {
+func (updater *agentUpdater) updateAgent(latestProcessModuleConfigCache *processModuleConfigCache) (string, error) {
 	defer updater.cleanCertsIfPresent()
 	var updatedVersion string
 
 	log.Info("updating agent",
 		"target version", updater.targetVersion,
-		"installed version", installedVersion,
 		"target directory", updater.targetDir,
 	)
 

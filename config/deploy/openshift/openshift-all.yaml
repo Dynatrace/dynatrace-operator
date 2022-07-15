@@ -149,7 +149,6 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.0
-  creationTimestamp: null
   name: dynakubes.dynatrace.com
 spec:
   conversion:
@@ -4151,9 +4150,17 @@ spec:
         - maxSkew: 1
           topologyKey: "topology.kubernetes.io/zone"
           whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/component: webhook
+              app.kubernetes.io/name: dynatrace-operator
         - maxSkew: 1
           topologyKey: "kubernetes.io/hostname"
           whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/component: webhook
+              app.kubernetes.io/name: dynatrace-operator
       volumes:
       - emptyDir: {}
         name: certs-dir
@@ -4305,7 +4312,7 @@ metadata:
 allowPrivilegedContainer: false
 fsGroup:
   type: RunAsAny
-priority: null
+priority: 1
 readOnlyRootFilesystem: false
 
 requiredDropCapabilities:
@@ -4331,6 +4338,73 @@ allowHostPID: false
 allowHostPorts: false
 allowedFlexVolumes: null
 defaultAddCapabilities: []
+---
+# Source: dynatrace-operator/templates/Openshift/oneagent/securitycontextconstraints-privileged.yaml
+# Copyright 2021 Dynatrace LLC
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  annotations:
+    kubernetes.io/description: "dynatrace-dynakube-oneagent-privileged allows access to all privileged and host features and the ability to run as any user, any group, any fsGroup, and with any SELinux context."
+  name: dynatrace-dynakube-oneagent-privileged
+  labels:
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/component: oneagent
+allowHostDirVolumePlugin: true
+allowHostIPC: false
+allowHostNetwork: true
+allowHostPID: true
+allowHostPorts: true
+allowPrivilegedContainer: true
+allowedCapabilities:
+  - CHOWN
+  - DAC_OVERRIDE
+  - DAC_READ_SEARCH
+  - FOWNER
+  - FSETID
+  - KILL
+  - NET_ADMIN
+  - NET_RAW
+  - SETFCAP
+  - SETGID
+  - SETUID
+  - SYS_ADMIN
+  - SYS_CHROOT
+  - SYS_PTRACE
+  - SYS_RESOURCE
+allowedFlexVolumes: null
+defaultAddCapabilities: []
+fsGroup:
+  type: RunAsAny
+priority: 1
+readOnlyRootFilesystem: false
+requiredDropCapabilities:
+  - ALL
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+seccompProfiles:
+  - "*"
+supplementalGroups:
+  type: RunAsAny
+users:
+  - system:serviceaccount:dynatrace:dynatrace-dynakube-oneagent-unprivileged
+volumes:
+  - "*"
 ---
 # Source: dynatrace-operator/templates/Openshift/oneagent/securitycontextconstraints-unprivileged.yaml
 # Copyright 2021 Dynatrace LLC
@@ -4382,7 +4456,7 @@ allowedFlexVolumes: null
 defaultAddCapabilities: []
 fsGroup:
   type: RunAsAny
-priority: null
+priority: 1
 readOnlyRootFilesystem: false
 requiredDropCapabilities:
   - ALL
@@ -4424,7 +4498,7 @@ metadata:
 allowPrivilegedContainer: false
 fsGroup:
   type: RunAsAny
-priority: null
+priority: 1
 readOnlyRootFilesystem: true
 requiredDropCapabilities:
   - ALL
@@ -4474,7 +4548,7 @@ metadata:
 allowPrivilegedContainer: false
 fsGroup:
   type: RunAsAny
-priority: null
+priority: 1
 readOnlyRootFilesystem: true
 requiredDropCapabilities:
   - ALL
@@ -5063,7 +5137,7 @@ allowedFlexVolumes: null
 defaultAddCapabilities: null
 fsGroup:
   type: RunAsAny
-priority: null
+priority: 1
 readOnlyRootFilesystem: false
 requiredDropCapabilities: null
 runAsUser:

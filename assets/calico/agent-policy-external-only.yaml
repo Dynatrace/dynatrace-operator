@@ -1,0 +1,31 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-agent-traffic
+spec:
+  podSelector:
+    matchLabels:
+      app: myapp
+  policyTypes:
+    - Egress
+  egress:
+  # Allow DNS lookup 
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+  # Allow external traffic for e.g. Cluster API requests
+  - to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+        except:
+        # blocks private ips, i.e. blocks Pod to Pod communication
+        - 10.0.0.0/8
+        - 192.168.0.0/16
+        - 172.16.0.0/12
+    ports: []

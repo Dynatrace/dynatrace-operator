@@ -30,7 +30,7 @@ func NewOneAgentPodMutator(image, clusterID, webhookNamespace string, client cli
 }
 
 func (mutator *OneAgentPodMutator) Enabled(request *dtwebhook.BaseRequest) bool {
-	return kubeobjects.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationOneAgentInject, true)
+	return kubeobjects.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationOneAgentInject, request.DynaKube.FeatureEnableAutomaticInjection())
 }
 
 func (mutator *OneAgentPodMutator) Injected(request *dtwebhook.BaseRequest) bool {
@@ -47,6 +47,7 @@ func (mutator *OneAgentPodMutator) Mutate(request *dtwebhook.MutationRequest) er
 	mutator.addVolumes(request.Pod, request.DynaKube)
 	mutator.configureInitContainer(request, installerInfo)
 	mutator.mutateUserContainers(request)
+	addInjectionConfigVolumeMount(request.InstallContainer)
 	setInjectedAnnotation(request.Pod)
 	return nil
 }
