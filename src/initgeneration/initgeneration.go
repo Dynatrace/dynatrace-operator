@@ -265,6 +265,8 @@ func (g *InitGenerator) createSecretData(config *standalone.SecretConfig) (map[s
 		"initialConnectRetry":            []byte(strconv.Itoa(config.InitialConnectRetry)),
 	}
 
+	config.MonitoringNodes["key"] = "val"
+
 	for key, val := range config.MonitoringNodes {
 		toReturn[key] = []byte(val)
 	}
