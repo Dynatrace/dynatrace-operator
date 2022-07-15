@@ -246,8 +246,20 @@ func (g *InitGenerator) createSecretData(config *standalone.SecretConfig) (map[s
 	if err != nil {
 		return nil, err
 	}
+	hasHost := "false"
+	if config.HasHost {
+		hasHost = "true"
+	}
+
+	skipCertCheck := "false"
+	if config.SkipCertCheck {
+		skipCertCheck = "true"
+	}
+
 	return map[string][]byte{
 		standalone.SecretConfigFieldName: jsonContent,
 		dynatracev1beta1.ProxyKey:        []byte(config.Proxy), // needed so that it can be mounted to the user's pod without directly reading the secret
+		"skipCertCheck":                  []byte(skipCertCheck),
+		"hasHost":                        []byte(hasHost),
 	}, nil
 }
