@@ -256,10 +256,17 @@ func (g *InitGenerator) createSecretData(config *standalone.SecretConfig) (map[s
 		skipCertCheck = "true"
 	}
 
-	return map[string][]byte{
+	toReturn := map[string][]byte{
 		standalone.SecretConfigFieldName: jsonContent,
 		dynatracev1beta1.ProxyKey:        []byte(config.Proxy), // needed so that it can be mounted to the user's pod without directly reading the secret
 		"skipCertCheck":                  []byte(skipCertCheck),
 		"hasHost":                        []byte(hasHost),
-	}, nil
+		"initialConnectRetry":            []byte(string(rune(config.InitialConnectRetry))),
+	}
+
+	for key, val := range config.MonitoringNodes {
+		toReturn[key] = []byte(val)
+	}
+
+	return toReturn, nil
 }
