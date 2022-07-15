@@ -180,7 +180,7 @@ func TestGenerateForNamespace(t *testing.T) {
 		var initSecret corev1.Secret
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: webhook.SecretConfigName, Namespace: testNamespace.Name}, &initSecret)
 		assert.NoError(t, err)
-		assert.Equal(t, 2, len(initSecret.Data))
+		assert.Equal(t, 4, len(initSecret.Data))
 		secretConfig, ok := initSecret.Data[standalone.SecretConfigFieldName]
 		assert.True(t, ok)
 		assert.NotNil(t, secretConfig)
@@ -205,7 +205,7 @@ func TestGenerateForNamespace(t *testing.T) {
 		var initSecret corev1.Secret
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: webhook.SecretConfigName, Namespace: testNamespace.Name}, &initSecret)
 		assert.NoError(t, err)
-		assert.Equal(t, 2, len(initSecret.Data))
+		assert.Equal(t, 4, len(initSecret.Data))
 		secretConfig, ok := initSecret.Data[standalone.SecretConfigFieldName]
 		assert.True(t, ok)
 		assert.NotNil(t, secretConfig)
@@ -234,7 +234,7 @@ func TestGenerateForDynakube(t *testing.T) {
 		var initSecret corev1.Secret
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: webhook.SecretConfigName, Namespace: testNamespace.Name}, &initSecret)
 		assert.NoError(t, err)
-		assert.Equal(t, 2, len(initSecret.Data))
+		assert.Equal(t, 4, len(initSecret.Data))
 		secretConfig, ok := initSecret.Data[standalone.SecretConfigFieldName]
 		assert.True(t, ok)
 		assert.NotNil(t, secretConfig)
@@ -260,7 +260,7 @@ func TestGenerateForDynakube(t *testing.T) {
 		var initSecret corev1.Secret
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: webhook.SecretConfigName, Namespace: testNamespace.Name}, &initSecret)
 		assert.NoError(t, err)
-		assert.Equal(t, 2, len(initSecret.Data))
+		assert.Equal(t, 4, len(initSecret.Data))
 		secretConfig, ok := initSecret.Data[standalone.SecretConfigFieldName]
 		assert.True(t, ok)
 		assert.NotNil(t, secretConfig)
@@ -292,7 +292,7 @@ func TestGenerateForDynakube(t *testing.T) {
 		var initSecret corev1.Secret
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: webhook.SecretConfigName, Namespace: testNamespace.Name}, &initSecret)
 		assert.NoError(t, err)
-		assert.Equal(t, 2, len(initSecret.Data))
+		assert.Equal(t, 4, len(initSecret.Data))
 		secretConfig, ok := initSecret.Data[standalone.SecretConfigFieldName]
 		assert.True(t, ok)
 		assert.NotNil(t, secretConfig)
@@ -303,7 +303,7 @@ func TestGenerateForDynakube(t *testing.T) {
 
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: webhook.SecretConfigName, Namespace: testOtherNamespace.Name}, &initSecret)
 		assert.NoError(t, err)
-		assert.Equal(t, 2, len(initSecret.Data))
+		assert.Equal(t, 4, len(initSecret.Data))
 		secretConfig, ok = initSecret.Data[standalone.SecretConfigFieldName]
 		assert.True(t, ok)
 		assert.NotNil(t, secretConfig)
