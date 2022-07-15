@@ -2,7 +2,6 @@ package initgeneration
 
 import (
 	"context"
-	"encoding/json"
 	"strconv"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -243,10 +242,6 @@ func (g *InitGenerator) initIMNodes() (nodeInfo, error) {
 }
 
 func (g *InitGenerator) createSecretData(config *standalone.SecretConfig) (map[string][]byte, error) {
-	jsonContent, err := json.Marshal(*config)
-	if err != nil {
-		return nil, err
-	}
 	hasHost := "false"
 	if config.HasHost {
 		hasHost = "true"
@@ -258,26 +253,25 @@ func (g *InitGenerator) createSecretData(config *standalone.SecretConfig) (map[s
 	}
 
 	secretData := map[string][]byte{
-		standalone.SecretConfigFieldName: jsonContent,
-		"apiUrl":                         []byte(config.ApiUrl),
-		"apiToken":                       []byte(config.ApiToken),
-		"paasToken":                      []byte(config.PaasToken),
-		dynatracev1beta1.ProxyKey:        []byte(config.Proxy), // needed so that it can be mounted to the user's pod without directly reading the secret
-		"networkZone":                    []byte(config.NetworkZone),
-		"trustedCAs":                     []byte(config.TrustedCAs),
-		"skipCertCheck":                  []byte(skipCertCheck),
-		"tenantUUID":                     []byte(config.TenantUUID),
-		"hasHost":                        []byte(hasHost),
-		"tlsCert":                        []byte(config.TlsCert),
-		"hostGroup":                      []byte(config.HostGroup),
-		"initialConnectRetry":            []byte(strconv.Itoa(config.InitialConnectRetry)),
-		"clusterID":                      []byte(config.ClusterID),
+		"apiUrl":                  []byte(config.ApiUrl),
+		"apiToken":                []byte(config.ApiToken),
+		"paasToken":               []byte(config.PaasToken),
+		dynatracev1beta1.ProxyKey: []byte(config.Proxy), // needed so that it can be mounted to the user's pod without directly reading the secret
+		"networkZone":             []byte(config.NetworkZone),
+		"trustedCAs":              []byte(config.TrustedCAs),
+		"skipCertCheck":           []byte(skipCertCheck),
+		"tenantUUID":              []byte(config.TenantUUID),
+		"hasHost":                 []byte(hasHost),
+		"tlsCert":                 []byte(config.TlsCert),
+		"hostGroup":               []byte(config.HostGroup),
+		"initialConnectRetry":     []byte(strconv.Itoa(config.InitialConnectRetry)),
+		"clusterID":               []byte(config.ClusterID),
 	}
 
 	monitoringNodesPrefix := "monitoringNodes."
-	config.MonitoringNodes["node1"] = "node1"
+	/*config.MonitoringNodes["node1"] = "node1"
 	config.MonitoringNodes["node2"] = "node2"
-	config.MonitoringNodes["node3"] = "node3"
+	config.MonitoringNodes["node3"] = "node3"*/
 
 	for key, val := range config.MonitoringNodes {
 		secretData[monitoringNodesPrefix+key] = []byte(val)
