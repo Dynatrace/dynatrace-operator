@@ -274,12 +274,13 @@ func (g *InitGenerator) createSecretData(config *standalone.SecretConfig) (map[s
 		"clusterID":                      []byte(config.ClusterID),
 	}
 
+	monitoringNodesPrefix := "monitoringNodes."
 	config.MonitoringNodes["node1"] = "node1"
 	config.MonitoringNodes["node2"] = "node2"
 	config.MonitoringNodes["node3"] = "node3"
 
 	for key, val := range config.MonitoringNodes {
-		secretData[key] = []byte(val)
+		secretData[monitoringNodesPrefix+key] = []byte(val)
 	}
 
 	return secretData, nil
