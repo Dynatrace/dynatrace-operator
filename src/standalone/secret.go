@@ -51,6 +51,7 @@ func newSecretConfigViaFs(fs afero.Fs) (*SecretConfig, error) {
 	if err != nil {
 		return nil, err
 	}
+	log.Info("file:", "file:", file)
 
 	rawJson, err := ioutil.ReadAll(file)
 	if err != nil {
@@ -63,6 +64,7 @@ func newSecretConfigViaFs(fs afero.Fs) (*SecretConfig, error) {
 	if err != nil {
 		return nil, err
 	}
+	log.Info("file content:", "rawJson:", rawJson)
 
 	log.Info("read secret from filesystem")
 	config.logContent()
