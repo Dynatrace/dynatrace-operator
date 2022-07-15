@@ -180,10 +180,7 @@ func TestGenerateForNamespace(t *testing.T) {
 		var initSecret corev1.Secret
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: webhook.SecretConfigName, Namespace: testNamespace.Name}, &initSecret)
 		assert.NoError(t, err)
-		assert.Equal(t, 17, len(initSecret.Data))
-		secretConfig, ok := initSecret.Data[standalone.SecretConfigFieldName]
-		assert.True(t, ok)
-		assert.NotNil(t, secretConfig)
+		assert.Equal(t, 16, len(initSecret.Data))
 		proxy, ok := initSecret.Data[dynatracev1beta1.ProxyKey]
 		assert.True(t, ok)
 		assert.NotNil(t, proxy)
@@ -205,10 +202,7 @@ func TestGenerateForNamespace(t *testing.T) {
 		var initSecret corev1.Secret
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: webhook.SecretConfigName, Namespace: testNamespace.Name}, &initSecret)
 		assert.NoError(t, err)
-		assert.Equal(t, 17, len(initSecret.Data))
-		secretConfig, ok := initSecret.Data[standalone.SecretConfigFieldName]
-		assert.True(t, ok)
-		assert.NotNil(t, secretConfig)
+		assert.Equal(t, 16, len(initSecret.Data))
 		proxy, ok := initSecret.Data[dynatracev1beta1.ProxyKey]
 		assert.True(t, ok)
 		assert.NotNil(t, proxy)
@@ -234,10 +228,7 @@ func TestGenerateForDynakube(t *testing.T) {
 		var initSecret corev1.Secret
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: webhook.SecretConfigName, Namespace: testNamespace.Name}, &initSecret)
 		assert.NoError(t, err)
-		assert.Equal(t, 17, len(initSecret.Data))
-		secretConfig, ok := initSecret.Data[standalone.SecretConfigFieldName]
-		assert.True(t, ok)
-		assert.NotNil(t, secretConfig)
+		assert.Equal(t, 16, len(initSecret.Data))
 		proxy, ok := initSecret.Data[dynatracev1beta1.ProxyKey]
 		assert.True(t, ok)
 		assert.NotNil(t, proxy)
@@ -260,10 +251,7 @@ func TestGenerateForDynakube(t *testing.T) {
 		var initSecret corev1.Secret
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: webhook.SecretConfigName, Namespace: testNamespace.Name}, &initSecret)
 		assert.NoError(t, err)
-		assert.Equal(t, 17, len(initSecret.Data))
-		secretConfig, ok := initSecret.Data[standalone.SecretConfigFieldName]
-		assert.True(t, ok)
-		assert.NotNil(t, secretConfig)
+		assert.Equal(t, 16, len(initSecret.Data))
 		proxy, ok := initSecret.Data[dynatracev1beta1.ProxyKey]
 		assert.True(t, ok)
 		assert.NotNil(t, proxy)
@@ -292,10 +280,7 @@ func TestGenerateForDynakube(t *testing.T) {
 		var initSecret corev1.Secret
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: webhook.SecretConfigName, Namespace: testNamespace.Name}, &initSecret)
 		assert.NoError(t, err)
-		assert.Equal(t, 17, len(initSecret.Data))
-		secretConfig, ok := initSecret.Data[standalone.SecretConfigFieldName]
-		assert.True(t, ok)
-		assert.NotNil(t, secretConfig)
+		assert.Equal(t, 16, len(initSecret.Data))
 		proxy, ok := initSecret.Data[dynatracev1beta1.ProxyKey]
 		assert.True(t, ok)
 		assert.NotNil(t, proxy)
@@ -303,10 +288,7 @@ func TestGenerateForDynakube(t *testing.T) {
 
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: webhook.SecretConfigName, Namespace: testOtherNamespace.Name}, &initSecret)
 		assert.NoError(t, err)
-		assert.Equal(t, 17, len(initSecret.Data))
-		secretConfig, ok = initSecret.Data[standalone.SecretConfigFieldName]
-		assert.True(t, ok)
-		assert.NotNil(t, secretConfig)
+		assert.Equal(t, 16, len(initSecret.Data))
 		proxy, ok = initSecret.Data[dynatracev1beta1.ProxyKey]
 		assert.True(t, ok)
 		assert.NotNil(t, proxy)
