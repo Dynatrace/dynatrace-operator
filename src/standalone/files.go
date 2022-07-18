@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/pkg/errors"
 )
 
@@ -88,7 +89,7 @@ func (runner *Runner) createJsonEnrichmentFile() error {
 		runner.env.WorkloadName,
 		runner.env.K8ClusterID,
 	)
-	jsonPath := filepath.Join(EnrichmentPath, fmt.Sprintf(enrichmentFilenameTemplate, "json"))
+	jsonPath := filepath.Join(config.EnrichmentMountPath, fmt.Sprintf(config.EnrichmentFilenameTemplate, "json"))
 
 	return errors.WithStack(runner.createConfFile(jsonPath, jsonContent))
 
@@ -103,14 +104,14 @@ func (runner *Runner) createPropsEnrichmentFile() error {
 		runner.env.WorkloadName,
 		runner.env.K8ClusterID,
 	)
-	propsPath := filepath.Join(EnrichmentPath, fmt.Sprintf(enrichmentFilenameTemplate, "properties"))
+	propsPath := filepath.Join(config.EnrichmentMountPath, fmt.Sprintf(config.EnrichmentFilenameTemplate, "properties"))
 
 	return errors.WithStack(runner.createConfFile(propsPath, propsContent))
 }
 
 func (runner *Runner) createCurlOptionsFile() error {
 	content := runner.getCurlOptionsContent()
-	path := filepath.Join(ShareDirMount, CurlOptionsFileName)
+	path := filepath.Join(config.AgentShareDirMount, config.AgentCurlOptionsFileName)
 
 	return errors.WithStack(runner.createConfFile(path, content))
 }

@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -74,9 +75,9 @@ func TestNewSecretConfigViaFs(t *testing.T) {
 
 func prepTestFs(t *testing.T) afero.Fs {
 	fs := afero.NewMemMapFs()
-	require.NoError(t, fs.MkdirAll(ConfigDirMount, 0770))
+	require.NoError(t, fs.MkdirAll(config.AgentConfigDirMount, 0770))
 
-	file, err := fs.OpenFile(filepath.Join(ConfigDirMount, SecretConfigFieldName), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0770)
+	file, err := fs.OpenFile(filepath.Join(config.AgentConfigDirMount, config.AgentInitSecretConfigField), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0770)
 	require.NoError(t, err)
 	require.NotNil(t, file)
 

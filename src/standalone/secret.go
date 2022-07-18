@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
+	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/spf13/afero"
 )
 
@@ -47,7 +48,7 @@ func (secret SecretConfig) logContent() {
 }
 
 func newSecretConfigViaFs(fs afero.Fs) (*SecretConfig, error) {
-	file, err := fs.Open(filepath.Join(ConfigDirMount, SecretConfigFieldName))
+	file, err := fs.Open(filepath.Join(config.AgentConfigDirMount, config.AgentInitSecretConfigField))
 	if err != nil {
 		return nil, err
 	}

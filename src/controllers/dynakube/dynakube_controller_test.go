@@ -13,10 +13,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
-	"github.com/Dynatrace/dynatrace-operator/src/mapper"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
+	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -785,7 +785,7 @@ func TestGetDynakube(t *testing.T) {
 		namespace := &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:   testNamespace,
-				Labels: map[string]string{mapper.InstanceLabel: testName},
+				Labels: map[string]string{dtwebhook.InjectionInstanceLabel: testName},
 			},
 		}
 		fakeClient := fake.NewClient(namespace)
@@ -801,7 +801,7 @@ func TestGetDynakube(t *testing.T) {
 
 		err = fakeClient.Get(ctx, client.ObjectKey{Name: testNamespace}, namespace)
 		require.NoError(t, err)
-		assert.NotContains(t, namespace.Labels, mapper.InstanceLabel)
+		assert.NotContains(t, namespace.Labels, dtwebhook.InjectionInstanceLabel)
 	})
 	t.Run("return unknown error", func(t *testing.T) {
 		controller := &DynakubeController{
