@@ -66,6 +66,7 @@ csidriver:
     cpu: 300m
     memory: 100Mi
 
+# TODO: Make better
 securityContextConstraints:
   enabled: true # Only applicable for Openshift
 
