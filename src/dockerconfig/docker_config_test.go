@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	testName  = "test-name"
+	testName  = "testName"
 	testKey   = "testKey"
 	testValue = "testValue"
 )
