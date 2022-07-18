@@ -88,7 +88,7 @@ func (mutator *OneAgentPodMutator) ensureInitSecret(request *dtwebhook.MutationR
 
 func containerIsInjected(container *corev1.Container) bool {
 	for _, e := range container.Env {
-		if e.Name == dynatraceMetadataEnvVarName {
+		if e.Name == dynatraceMetadataEnv {
 			return true
 		}
 	}

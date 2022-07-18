@@ -187,7 +187,7 @@ func (env *environment) addContainers() error {
 }
 
 func (env *environment) addK8NodeName() error {
-	nodeName, err := checkEnvVar(config.K8NodeNameEnv)
+	nodeName, err := checkEnvVar(config.K8sNodeNameEnv)
 	if err != nil {
 		return err
 	}
@@ -196,7 +196,7 @@ func (env *environment) addK8NodeName() error {
 }
 
 func (env *environment) addK8PodName() error {
-	podName, err := checkEnvVar(config.K8PodNameEnv)
+	podName, err := checkEnvVar(config.K8sPodNameEnv)
 	if err != nil {
 		return err
 	}
@@ -205,7 +205,7 @@ func (env *environment) addK8PodName() error {
 }
 
 func (env *environment) addK8PodUID() error {
-	podUID, err := checkEnvVar(config.K8PodUIDEnv)
+	podUID, err := checkEnvVar(config.K8sPodUIDEnv)
 	if err != nil {
 		return err
 	}
@@ -214,7 +214,7 @@ func (env *environment) addK8PodUID() error {
 }
 
 func (env *environment) addK8ClusterID() error {
-	clusterID, err := checkEnvVar(config.K8ClusterIDEnv)
+	clusterID, err := checkEnvVar(config.K8sClusterIDEnv)
 	if err != nil {
 		return err
 	}
@@ -223,7 +223,7 @@ func (env *environment) addK8ClusterID() error {
 }
 
 func (env *environment) addK8BasePodName() error {
-	basePodName, err := checkEnvVar(config.K8BasePodNameEnv)
+	basePodName, err := checkEnvVar(config.K8sBasePodNameEnv)
 	if err != nil {
 		return err
 	}
@@ -232,7 +232,7 @@ func (env *environment) addK8BasePodName() error {
 }
 
 func (env *environment) addK8Namespace() error {
-	namespace, err := checkEnvVar(config.K8NamespaceEnv)
+	namespace, err := checkEnvVar(config.K8sNamespaceEnv)
 	if err != nil {
 		return err
 	}

@@ -15,7 +15,7 @@ import (
 func addPreloadEnv(container *corev1.Container, installPath string) {
 	container.Env = append(container.Env,
 		corev1.EnvVar{
-			Name:  preloadEnvVarName,
+			Name:  preloadEnv,
 			Value: filepath.Join(installPath, config.LibAgentProcPath),
 		})
 }
@@ -23,7 +23,7 @@ func addPreloadEnv(container *corev1.Container, installPath string) {
 func addNetworkZoneEnv(container *corev1.Container, networkZone string) {
 	container.Env = append(container.Env,
 		corev1.EnvVar{
-			Name:  networkZoneEnvVarName,
+			Name:  networkZoneEnv,
 			Value: networkZone,
 		},
 	)
@@ -32,7 +32,7 @@ func addNetworkZoneEnv(container *corev1.Container, networkZone string) {
 func addProxyEnv(container *corev1.Container) {
 	container.Env = append(container.Env,
 		corev1.EnvVar{
-			Name: proxyEnvVarName,
+			Name: proxyEnv,
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{
@@ -71,7 +71,7 @@ func getContainerImageEnv(containerIndex int) string {
 }
 
 func addDeploymentMetadataEnv(container *corev1.Container, dynakube dynatracev1beta1.DynaKube, clusterID string) {
-	if kubeobjects.EnvVarIsIn(container.Env, dynatraceMetadataEnvVarName) {
+	if kubeobjects.EnvVarIsIn(container.Env, dynatraceMetadataEnv) {
 		return
 	}
 	var deploymentMetadata *deploymentmetadata.DeploymentMetadata
@@ -82,7 +82,7 @@ func addDeploymentMetadataEnv(container *corev1.Container, dynakube dynatracev1b
 	}
 	container.Env = append(container.Env,
 		corev1.EnvVar{
-			Name:  dynatraceMetadataEnvVarName,
+			Name:  dynatraceMetadataEnv,
 			Value: deploymentMetadata.AsString(),
 		})
 }

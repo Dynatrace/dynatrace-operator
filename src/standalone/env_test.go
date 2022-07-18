@@ -113,11 +113,11 @@ func prepOneAgentTestEnv(t *testing.T) func() {
 	envs := []string{
 		config.AgentInstallerFlavorEnv,
 		config.AgentInstallerTechEnv,
-		config.K8NodeNameEnv,
-		config.K8PodNameEnv,
-		config.K8PodUIDEnv,
-		config.K8BasePodNameEnv,
-		config.K8NamespaceEnv,
+		config.K8sNodeNameEnv,
+		config.K8sPodNameEnv,
+		config.K8sPodUIDEnv,
+		config.K8sBasePodNameEnv,
+		config.K8sNamespaceEnv,
 		config.AgentInstallPathEnv,
 	}
 	for i := 1; i <= 5; i++ {
@@ -154,7 +154,7 @@ func prepDataIngestTestEnv(t *testing.T) func() {
 	envs := []string{
 		config.EnrichmentWorkloadKindEnv,
 		config.EnrichmentWorkloadNameEnv,
-		config.K8ClusterIDEnv,
+		config.K8sClusterIDEnv,
 	}
 	for _, envvar := range envs {
 		err := os.Setenv(envvar, fmt.Sprintf("TEST_%s", envvar))
