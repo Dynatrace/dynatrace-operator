@@ -340,7 +340,7 @@ func TestWriteCurlOptions(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	exists, err := afero.Exists(filesystem, "mnt/share/curl_options.conf")
+	exists, err := afero.Exists(filesystem, "/mnt/share/curl_options.conf")
 
 	assert.NoError(t, err)
 	assert.True(t, exists)

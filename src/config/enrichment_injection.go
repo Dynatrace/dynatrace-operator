@@ -1,7 +1,5 @@
 package config
 
-import "path/filepath"
-
 const (
 	EnrichmentEndpointSecretName = "dynatrace-data-ingest-endpoint"
 	EnrichmentFilenameTemplate   = "dt_metadata.%s"
@@ -11,5 +9,5 @@ const (
 )
 
 var (
-	EnrichmentMountPath = filepath.Join("var", "lib", "dynatrace", "enrichment")
+	EnrichmentMountPath = "/var/lib/dynatrace/enrichment"
 )

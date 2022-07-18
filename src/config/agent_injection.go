@@ -1,7 +1,5 @@
 package config
 
-import "path/filepath"
-
 type InstallMode string
 
 const (
@@ -29,10 +27,9 @@ const (
 	AgentContainerImageEnvTemplate = "CONTAINER_%d_IMAGE"
 
 	AgentInjectedEnv = "ONEAGENT_INJECTED"
+
+	AgentBinDirMount    = "/mnt/bin"
+	AgentShareDirMount  = "/mnt/share"
+	AgentConfigDirMount = "/mnt/config"
 )
 
-var (
-	AgentBinDirMount    = filepath.Join("mnt", "bin")
-	AgentShareDirMount  = filepath.Join("mnt", "share")
-	AgentConfigDirMount = filepath.Join("mnt", "config")
-)
