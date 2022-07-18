@@ -24,26 +24,32 @@ jobs:
 
   # Workflow needs to build docker images again as separate workflows don't have access to others artifacts
   # https://github.com/actions/download-artifact/issues/3
-  build:
-    name: Build images
+  build-amd64:
+    name: Build image amd64
     needs: [prepare]
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        platform: [amd64, arm64]
-    steps:
-      - name: Build image for ${{matrix.platform}}
-        uses: ./.github/workflows/build-dockerimage.yaml
-        with:
-          platform: ${{matrix.platform}}
-          goversion: ${{ needs.prepare.outputs.goversion }}
-          goargs: ${{ needs.prepare.outputs.goargs }}
-          labels: ${{ needs.prepare.outputs.labels }}
-          image-tag: ${{ needs.prepare.outputs.version }}
+    with:
+      platform: amd64
+      goversion: ${{ needs.prepare.outputs.goversion }}
+      goargs: ${{ needs.prepare.outputs.goargs }}
+      labels: ${{ needs.prepare.outputs.labels }}
+      image-tag: ${{ needs.prepare.outputs.version }}
+    uses: ./.github/workflows/build-dockerimage.yaml
+
+  build-arm64:
+    name: Build image arm64
+    needs: [prepare]
+    with:
+      platform: arm64
+      goversion: ${{ needs.prepare.outputs.goversion }}
+      goargs: ${{ needs.prepare.outputs.goargs }}
+      labels: ${{ needs.prepare.outputs.labels }}
+      image-tag: ${{ needs.prepare.outputs.version }}
+    uses: ./.github/workflows/build-dockerimage.yaml
+
   push:
     name: Push images
     environment: Release
-    needs: [prepare,build]
+    needs: [prepare,build-arm64,build-amd64]
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -51,7 +57,7 @@ jobs:
         registry: [rhcc, gcr, dockerhub]
         include:
           - registry: rhcc
-            url: registry.connect.redhat.com
+            url: scan.connect.redhat.com
             repository: dynatrace/dynatrace-operator
             username: ${{ secrets.RHCC_USERNAME }}
             password: ${{ secrets.RHCC_PASSWORD }}
@@ -76,6 +82,16 @@ jobs:
           repository: ${{matrix.repository}}
           secrets.docker_repo_username: ${{matrix.username}}
           secrets.docker_repo_password: ${{matrix.password}}
+
+  preflight:
+    name: Validate image with RedHat's preflight tool
+    needs: [prepare, push]
+    uses: ./.github/workflows/preflight.yaml
+    with:
+      platform: amd64
+      version: ${{ needs.prepare.outputs.version }}
+      registry: scan.connect.redhat.com
+      repository: dynatrace/dynatrace-operator
 
   manifest:
     name: Create manifests
