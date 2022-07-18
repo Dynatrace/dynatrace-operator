@@ -17,9 +17,9 @@ type containerInfo struct {
 }
 
 type environment struct {
-	Mode         config.InstallMode `json:"mode"`
-	CanFail      bool               `json:"canFail"`
-	InstallerUrl string             `json:"installerUrl"`
+	Mode          config.InstallMode `json:"mode"`
+	FailurePolicy bool               `json:"failurePolicy"`
+	InstallerUrl  string             `json:"installerUrl"`
 
 	InstallerFlavor string          `json:"installerFlavor"`
 	InstallerTech   []string        `json:"installerTech"`
@@ -56,7 +56,7 @@ func newEnv() (*environment, error) {
 func (env *environment) setRequiredFields() error {
 	errs := []error{}
 	requiredFieldSetters := []func() error{
-		env.addCanFail,
+		env.addFailurePolicy,
 	}
 	if env.OneAgentInjected {
 		requiredFieldSetters = append(requiredFieldSetters, env.getOneAgentFieldSetters()...)
@@ -119,12 +119,12 @@ func (env *environment) addMode() error {
 	return nil
 }
 
-func (env *environment) addCanFail() error {
-	canFail, err := checkEnvVar(config.InjectionCanFailEnv)
+func (env *environment) addFailurePolicy() error {
+	failurePolicy, err := checkEnvVar(config.InjectionFailurePolicyEnv)
 	if err != nil {
 		return err
 	}
-	env.CanFail = canFail == "fail"
+	env.FailurePolicy = failurePolicy == "fail"
 	return nil
 }
 

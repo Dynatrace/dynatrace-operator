@@ -19,7 +19,7 @@ func createInstallInitContainerBase(webhookImage, clusterID string, pod *corev1.
 		Args:            []string{"init"},
 		Env: []corev1.EnvVar{
 			{Name: config.AgentContainerCountEnv, Value: strconv.Itoa(len(pod.Spec.Containers))},
-			{Name: config.InjectionCanFailEnv, Value: kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationFailurePolicy, "silent")},
+			{Name: config.InjectionFailurePolicyEnv, Value: kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationFailurePolicy, "silent")},
 			{Name: config.K8sPodNameEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("metadata.name")},
 			{Name: config.K8sPodUIDEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("metadata.uid")},
 			{Name: config.K8sBasePodNameEnv, Value: getBasePodName(pod)},

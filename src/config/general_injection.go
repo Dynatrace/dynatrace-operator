@@ -1,7 +1,7 @@
 package config
 
 const (
-	InjectionCanFailEnv = "FAILURE_POLICY"
+	InjectionFailurePolicyEnv = "FAILURE_POLICY"
 
 	K8sNodeNameEnv    = "K8S_NODE_NAME"
 	K8sPodNameEnv     = "K8S_PODNAME"

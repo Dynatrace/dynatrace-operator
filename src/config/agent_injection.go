@@ -32,4 +32,3 @@ const (
 	AgentShareDirMount  = "/mnt/share"
 	AgentConfigDirMount = "/mnt/config"
 )
-

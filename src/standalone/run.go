@@ -92,7 +92,7 @@ func (runner *Runner) Run() (resultedError error) {
 }
 
 func (runner *Runner) consumeErrorIfNecessary(resultedError *error) {
-	if !runner.env.CanFail && *resultedError != nil {
+	if !runner.env.FailurePolicy && *resultedError != nil {
 		log.Error(*resultedError, "This error has been masked to not fail the container.")
 		*resultedError = nil
 	}

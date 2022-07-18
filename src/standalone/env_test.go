@@ -21,7 +21,7 @@ func TestNewEnv(t *testing.T) {
 		require.NotNil(t, env)
 
 		assert.Equal(t, config.AgentCsiMode, env.Mode)
-		assert.True(t, env.CanFail)
+		assert.True(t, env.FailurePolicy)
 		assert.NotEmpty(t, env.InstallerFlavor)
 		assert.NotEmpty(t, env.InstallerTech)
 		assert.NotEmpty(t, env.InstallPath)
@@ -50,7 +50,7 @@ func TestNewEnv(t *testing.T) {
 		require.NotNil(t, env)
 
 		assert.Empty(t, env.Mode)
-		assert.True(t, env.CanFail)
+		assert.True(t, env.FailurePolicy)
 		assert.NotEmpty(t, env.InstallerFlavor) // set to what is defined in arch.Flavor
 		assert.Empty(t, env.InstallerTech)
 		assert.Empty(t, env.InstallPath)
@@ -79,7 +79,7 @@ func TestNewEnv(t *testing.T) {
 		require.NotNil(t, env)
 
 		assert.Equal(t, config.AgentCsiMode, env.Mode)
-		assert.True(t, env.CanFail)
+		assert.True(t, env.FailurePolicy)
 		assert.NotEmpty(t, env.InstallerFlavor)
 		assert.NotEmpty(t, env.InstallerTech)
 		assert.NotEmpty(t, env.InstallPath)
@@ -135,8 +135,8 @@ func prepOneAgentTestEnv(t *testing.T) func() {
 	require.NoError(t, err)
 
 	// Mode Env
-	envs = append(envs, config.InjectionCanFailEnv)
-	err = os.Setenv(config.InjectionCanFailEnv, "fail")
+	envs = append(envs, config.InjectionFailurePolicyEnv)
+	err = os.Setenv(config.InjectionFailurePolicyEnv, "fail")
 	require.NoError(t, err)
 	envs = append(envs, config.AgentInstallModeEnv)
 	err = os.Setenv(config.AgentInstallModeEnv, string(config.AgentCsiMode))
@@ -162,8 +162,8 @@ func prepDataIngestTestEnv(t *testing.T) func() {
 	}
 
 	// Mode Env
-	envs = append(envs, config.InjectionCanFailEnv)
-	err := os.Setenv(config.InjectionCanFailEnv, "fail")
+	envs = append(envs, config.InjectionFailurePolicyEnv)
+	err := os.Setenv(config.InjectionFailurePolicyEnv, "fail")
 	require.NoError(t, err)
 
 	// Bool envs

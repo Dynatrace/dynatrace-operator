@@ -71,19 +71,19 @@ func TestNewRunner(t *testing.T) {
 func TestConsumeErrorIfNecessary(t *testing.T) {
 	runner := createMockedRunner(t)
 	t.Run(`no error thrown`, func(t *testing.T) {
-		runner.env.CanFail = false
+		runner.env.FailurePolicy = false
 		err := runner.Run()
 		assert.Nil(t, err)
 	})
 	t.Run(`error thrown, but consume error`, func(t *testing.T) {
 		runner.env.K8NodeName = "" // create artificial error
-		runner.env.CanFail = false
+		runner.env.FailurePolicy = false
 		err := runner.Run()
 		assert.Nil(t, err)
 	})
 	t.Run(`error thrown, but don't consume error`, func(t *testing.T) {
 		runner.env.K8NodeName = "" // create artificial error
-		runner.env.CanFail = true
+		runner.env.FailurePolicy = true
 		err := runner.Run()
 		assert.NotNil(t, err)
 	})
