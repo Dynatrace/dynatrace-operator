@@ -4,7 +4,7 @@ on:
   workflow_run:
     workflows: [Golang-Check]
     types:
-      - requested
+      - completed
   schedule:
     - cron: '34 23 * * 0'
 
