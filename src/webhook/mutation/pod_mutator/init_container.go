@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/src/standalone"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -18,14 +18,14 @@ func createInstallInitContainerBase(webhookImage, clusterID string, pod *corev1.
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		Args:            []string{"init"},
 		Env: []corev1.EnvVar{
-			{Name: standalone.ContainerCountEnv, Value: strconv.Itoa(len(pod.Spec.Containers))},
-			{Name: standalone.CanFailEnv, Value: kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationFailurePolicy, "silent")},
-			{Name: standalone.K8PodNameEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("metadata.name")},
-			{Name: standalone.K8PodUIDEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("metadata.uid")},
-			{Name: standalone.K8BasePodNameEnv, Value: getBasePodName(pod)},
-			{Name: standalone.K8ClusterIDEnv, Value: clusterID},
-			{Name: standalone.K8NamespaceEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("metadata.namespace")},
-			{Name: standalone.K8NodeNameEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("spec.nodeName")},
+			{Name: config.AgentContainerCountEnv, Value: strconv.Itoa(len(pod.Spec.Containers))},
+			{Name: config.InjectionFailurePolicyEnv, Value: kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationFailurePolicy, "silent")},
+			{Name: config.K8sPodNameEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("metadata.name")},
+			{Name: config.K8sPodUIDEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("metadata.uid")},
+			{Name: config.K8sBasePodNameEnv, Value: getBasePodName(pod)},
+			{Name: config.K8sClusterIDEnv, Value: clusterID},
+			{Name: config.K8sNamespaceEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("metadata.namespace")},
+			{Name: config.K8sNodeNameEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("spec.nodeName")},
 		},
 		SecurityContext: copyUserContainerSecurityContext(pod),
 		Resources:       *dynakube.InitResources(),

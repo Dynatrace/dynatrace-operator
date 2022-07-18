@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/mapper"
 	"github.com/Dynatrace/dynatrace-operator/src/standalone"
-	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -56,7 +56,7 @@ func (g *InitGenerator) GenerateForNamespace(ctx context.Context, dk dynatracev1
 	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      webhook.SecretConfigName,
+			Name:      config.AgentInitSecretName,
 			Namespace: targetNs,
 			Labels:    coreLabels.BuildMatchLabels(),
 		},
@@ -92,7 +92,7 @@ func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1
 		secret := &corev1.Secret{
 			TypeMeta: metav1.TypeMeta{},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      webhook.SecretConfigName,
+				Name:      config.AgentInitSecretName,
 				Namespace: targetNs.Name,
 				Labels:    coreLabels.BuildMatchLabels(),
 			},
@@ -236,18 +236,18 @@ func (g *InitGenerator) initIMNodes() (nodeInfo, error) {
 	}
 	imNodes := map[string]string{}
 	for _, node := range nodeList.Items {
-		imNodes[node.Name] = standalone.NoHostTenant
+		imNodes[node.Name] = config.AgentNoHostTenant
 	}
 	return nodeInfo{nodeList.Items, imNodes}, nil
 }
 
-func (g *InitGenerator) createSecretData(config *standalone.SecretConfig) (map[string][]byte, error) {
-	jsonContent, err := json.Marshal(*config)
+func (g *InitGenerator) createSecretData(secretConfig *standalone.SecretConfig) (map[string][]byte, error) {
+	jsonContent, err := json.Marshal(*secretConfig)
 	if err != nil {
 		return nil, err
 	}
 	return map[string][]byte{
-		standalone.SecretConfigFieldName: jsonContent,
-		dynatracev1beta1.ProxyKey:        []byte(config.Proxy), // needed so that it can be mounted to the user's pod without directly reading the secret
+		config.AgentInitSecretConfigField: jsonContent,
+		dynatracev1beta1.ProxyKey:         []byte(secretConfig.Proxy), // needed so that it can be mounted to the user's pod without directly reading the secret
 	}, nil
 }

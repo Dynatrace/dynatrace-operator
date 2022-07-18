@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/standalone"
+	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -37,8 +37,8 @@ func TestAddCurlOptionsVolumeMount(t *testing.T) {
 
 		addCurlOptionsVolumeMount(container)
 		require.Len(t, container.VolumeMounts, 1)
-		assert.Equal(t, filepath.Join(oneAgentCustomKeysPath, standalone.CurlOptionsFileName), container.VolumeMounts[0].MountPath)
-		assert.Equal(t, standalone.CurlOptionsFileName, container.VolumeMounts[0].SubPath)
+		assert.Equal(t, filepath.Join(oneAgentCustomKeysPath, config.AgentCurlOptionsFileName), container.VolumeMounts[0].MountPath)
+		assert.Equal(t, config.AgentCurlOptionsFileName, container.VolumeMounts[0].SubPath)
 	})
 }
 

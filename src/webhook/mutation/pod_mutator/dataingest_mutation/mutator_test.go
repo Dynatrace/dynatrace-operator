@@ -5,8 +5,7 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/src/ingestendpoint"
-	"github.com/Dynatrace/dynatrace-operator/src/mapper"
+	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/stretchr/testify/assert"
@@ -252,7 +251,7 @@ func getTestPod(annotations map[string]string) *corev1.Pod {
 func getTestInitSecret() *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      dtingestendpoint.SecretEndpointName,
+			Name:      config.EnrichmentEndpointSecretName,
 			Namespace: testNamespaceName,
 		},
 	}
@@ -280,7 +279,7 @@ func getTestNamespace() *corev1.Namespace {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: testNamespaceName,
 			Labels: map[string]string{
-				mapper.InstanceLabel: testDynakubeName,
+				dtwebhook.InjectionInstanceLabel: testDynakubeName,
 			},
 		},
 	}
