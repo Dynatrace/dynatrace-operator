@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -67,7 +68,7 @@ func NewController(mgr manager.Manager) *NodesController {
 		apiReader:    mgr.GetAPIReader(),
 		scheme:       mgr.GetScheme(),
 		dtClientFunc: dynakube.BuildDynatraceClient,
-		runLocal:     os.Getenv("RUN_LOCAL") == "true",
+		runLocal:     kubesystem.IsRunLocally(),
 		podNamespace: os.Getenv("POD_NAMESPACE"),
 	}
 }
