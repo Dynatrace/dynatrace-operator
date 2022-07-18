@@ -69,6 +69,11 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 		return reconcileResult, nil
 	}
 
+	if !isSafeToGC(gc.db){
+		log.Info("dynakube metadata is in a unfinished state, checking later")
+		return reconcileResult, nil
+	}
+
 	gcInfo, err := collectGCInfo(ctx, gc.apiReader, *dynakube)
 	if err != nil {
 		return reconcileResult, err
@@ -132,17 +137,30 @@ func collectGCInfo(ctx context.Context, apiReader client.Reader, dynakube dynatr
 	}, nil
 }
 
+func isSafeToGC(access metadata.Access) bool {
+	dkMetadataList, err := access.GetAllDynakubes()
+	if err != nil {
+		log.Info("failed to get dynakube metadata from database, err: %s")
+		return false
+	}
+	for _, dkMetadata := range dkMetadataList {
+		if dkMetadata.LatestVersion == "" {
+			return false
+		}
+	}
+	return true
+}
+
 // getAllPinnedVersionsForTenantUUID returns all pinned versions for a given tenantUUID.
 // A pinned version is either:
 // - the image tag or digest set in the custom resource (this doesn't matter in context of the GC)
 // - the version set in the custom resource if applicationMonitoring is used
 func getAllPinnedVersionsForTenantUUID(ctx context.Context, apiReader client.Reader, tenantUUID, namespace string) (pinnedVersionSet, error) {
-	var dynakubeList dynatracev1beta1.DynaKubeList
-	if err := apiReader.List(ctx, &dynakubeList, client.InNamespace(namespace)); err != nil {
-		log.Info("failed to get all DynaKube objects")
-		return nil, errors.WithStack(err)
+	dynakubeList, err := getAllDynakubes(ctx, apiReader, namespace)
+	if err != nil {
+		return nil, err
 	}
-	pinnedImages := make(pinnedVersionSet)
+	pinnedVersions := make(pinnedVersionSet)
 	for _, dynakube := range dynakubeList.Items {
 		uuid, err := dynakube.TenantUUID()
 		if err != nil {
@@ -152,7 +170,19 @@ func getAllPinnedVersionsForTenantUUID(ctx context.Context, apiReader client.Rea
 		if uuid != tenantUUID {
 			continue
 		}
-		pinnedImages[dynakube.CodeModulesVersion()] = true
+		codeModuleVersion := dynakube.CodeModulesVersion()
+		if codeModuleVersion != "" {
+			pinnedVersions[codeModuleVersion] = true
+		}
 	}
-	return pinnedImages, nil
+	return pinnedVersions, nil
+}
+
+func getAllDynakubes(ctx context.Context, apiReader client.Reader, namespace string) (*dynatracev1beta1.DynaKubeList, error) {
+	var dynakubeList dynatracev1beta1.DynaKubeList
+	if err := apiReader.List(ctx, &dynakubeList, client.InNamespace(namespace)); err != nil {
+		log.Info("failed to get all DynaKube objects")
+		return nil, errors.WithStack(err)
+	}
+	return &dynakubeList, nil
 }
