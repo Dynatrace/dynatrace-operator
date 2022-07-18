@@ -1,0 +1,56 @@
+name: Golang-Check
+
+on:
+  push:
+    branches:
+      - master
+      - release-*
+    paths:
+      - 'src/**'
+  pull_request:
+    branches:
+      - "*"
+    paths:
+      - 'src/**'
+env:
+  GO_VERSION: "^1.18"
+  DOCKER_REGISTRY: "quay.io"
+  DOCKER_REPOSITORY: "dynatrace/dynatrace-operator"
+
+jobs:
+  go-test:
+    name: Run go unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Golang
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Download dependencies
+        id: depdownload
+        run: |
+          hack/build/ci/install-cgo-dependencies.sh
+          hack/build/ci/install-kubebuilder.sh
+      - name: Run Unit tests
+        id: unittest
+        run: |
+          hack/build/ci/run-unit-tests.sh
+
+  go-lint:
+    name: Run go linting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Download dependencies
+        id: depdownload
+        run: |
+          hack/build/ci/install-cgo-dependencies.sh
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
+        with:
+          version: v1.45.2
+          args: --build-tags integration,containers_image_storage_stub --timeout 300s
+
