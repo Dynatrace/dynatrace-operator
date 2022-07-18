@@ -69,7 +69,7 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 		return reconcileResult, nil
 	}
 
-	if !isSafeToGC(gc.db){
+	if !isSafeToGC(gc.db) {
 		log.Info("dynakube metadata is in a unfinished state, checking later")
 		return reconcileResult, nil
 	}

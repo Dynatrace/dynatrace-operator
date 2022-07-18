@@ -69,7 +69,7 @@ func TestCollectGCInfo(t *testing.T) {
 	t.Run(`multi pinned version`, func(t *testing.T) {
 		cloudNativeDynakube := dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "test1",
+				Name:      "test1",
 				Namespace: namespace,
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{
@@ -88,7 +88,7 @@ func TestCollectGCInfo(t *testing.T) {
 		}
 		appMonitoringDynakube := dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "test2",
+				Name:      "test2",
 				Namespace: namespace,
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{
@@ -119,32 +119,32 @@ func TestIsSafeToGC(t *testing.T) {
 	t.Run(`1 LatestVersion not set ==> not safe`, func(t *testing.T) {
 		db := metadata.FakeMemoryDB()
 		require.NoError(t, db.InsertDynakube(&metadata.Dynakube{
-			Name: "dk1",
-			TenantUUID: "t1",
+			Name:          "dk1",
+			TenantUUID:    "t1",
 			LatestVersion: "",
-			ImageDigest: "",
+			ImageDigest:   "",
 		}))
 		require.NoError(t, db.InsertDynakube(&metadata.Dynakube{
-			Name: "dk2",
-			TenantUUID: "t2",
+			Name:          "dk2",
+			TenantUUID:    "t2",
 			LatestVersion: "v2",
-			ImageDigest: "d2",
+			ImageDigest:   "d2",
 		}))
 		require.False(t, isSafeToGC(db))
 	})
 	t.Run(`all LatestVersion set ==> safe`, func(t *testing.T) {
 		db := metadata.FakeMemoryDB()
 		require.NoError(t, db.InsertDynakube(&metadata.Dynakube{
-			Name: "dk1",
-			TenantUUID: "t1",
+			Name:          "dk1",
+			TenantUUID:    "t1",
 			LatestVersion: "v1",
-			ImageDigest: "",
+			ImageDigest:   "",
 		}))
 		require.NoError(t, db.InsertDynakube(&metadata.Dynakube{
-			Name: "dk2",
-			TenantUUID: "t2",
+			Name:          "dk2",
+			TenantUUID:    "t2",
 			LatestVersion: "v2",
-			ImageDigest: "d2",
+			ImageDigest:   "d2",
 		}))
 		require.True(t, isSafeToGC(db))
 	})
