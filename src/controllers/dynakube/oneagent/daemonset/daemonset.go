@@ -222,7 +222,7 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 }
 
 func (dsInfo *builderInfo) resources() corev1.ResourceRequirements {
-	resources := dsInfo.hostInjectSpec.OneAgentResources
+	resources := dsInfo.oneAgentResource()
 	if resources.Requests == nil {
 		resources.Requests = corev1.ResourceList{}
 	}
@@ -231,6 +231,14 @@ func (dsInfo *builderInfo) resources() corev1.ResourceRequirements {
 		resources.Requests[corev1.ResourceCPU] = *resource.NewScaledQuantity(1, -1)
 	}
 	return resources
+}
+
+func (dsInfo *builderInfo) oneAgentResource() corev1.ResourceRequirements {
+	if dsInfo.hostInjectSpec == nil {
+		return corev1.ResourceRequirements{}
+	}
+
+	return dsInfo.hostInjectSpec.OneAgentResources
 }
 
 func (dsInfo *builderInfo) dnsPolicy() corev1.DNSPolicy {

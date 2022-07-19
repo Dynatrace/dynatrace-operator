@@ -342,3 +342,43 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		assert.Empty(t, securityContext.Capabilities)
 	})
 }
+
+func TestPodSpecServiceAccountName(t *testing.T) {
+	t.Run("service account name is unprivileged by default", func(t *testing.T) {
+		dynakube := &dynatracev1beta1.DynaKube{}
+		builder := builderInfo{
+			instance:       dynakube,
+			hostInjectSpec: dynakube.Spec.OneAgent.HostMonitoring,
+		}
+		podSpec := builder.podSpec()
+
+		assert.Equal(t, defaultUnprivilegedServiceAccountName, podSpec.ServiceAccountName)
+	})
+}
+
+func TestOneAgentResources(t *testing.T) {
+	t.Run("get empty resources if hostInjection spec is nil", func(t *testing.T) {
+		builder := builderInfo{}
+		resources := builder.oneAgentResource()
+
+		assert.Equal(t, corev1.ResourceRequirements{}, resources)
+	})
+	t.Run("get resources if hostInjection spec is set", func(t *testing.T) {
+		builder := builderInfo{
+			hostInjectSpec: &dynatracev1beta1.HostInjectSpec{
+				OneAgentResources: corev1.ResourceRequirements{
+					Requests: map[corev1.ResourceName]resource.Quantity{
+						corev1.ResourceCPU: *resource.NewScaledQuantity(2, 1),
+					},
+				},
+			},
+		}
+		resources := builder.oneAgentResource()
+
+		assert.Equal(t, corev1.ResourceRequirements{
+			Requests: map[corev1.ResourceName]resource.Quantity{
+				corev1.ResourceCPU: *resource.NewScaledQuantity(2, 1),
+			},
+		}, resources)
+	})
+}
