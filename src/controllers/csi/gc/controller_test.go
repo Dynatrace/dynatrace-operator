@@ -1,20 +1,17 @@
 package csigc
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestCollectGCInfo(t *testing.T) {
-	ctx := context.TODO()
 	tenantUUID := "testTenant"
 	apiUrl := fmt.Sprintf("https://%s.dev.dynatracelabs.com/api", tenantUUID)
 	namespace := "test-namespace"
@@ -33,9 +30,13 @@ func TestCollectGCInfo(t *testing.T) {
 				LatestAgentVersionUnixPaas: latestVersion,
 			},
 		}
-		client := fake.NewClient(&dynakube)
+		dkList := dynatracev1beta1.DynaKubeList{
+			Items: []dynatracev1beta1.DynaKube{
+				dynakube,
+			},
+		}
 
-		gcInfo, err := collectGCInfo(ctx, client, dynakube)
+		gcInfo, err := collectGCInfo(dynakube, &dkList)
 		require.NoError(t, err)
 		assert.Equal(t, tenantUUID, gcInfo.tenantUUID)
 		assert.Equal(t, latestVersion, gcInfo.latestAgentVersion)
@@ -60,9 +61,13 @@ func TestCollectGCInfo(t *testing.T) {
 				LatestAgentVersionUnixPaas: latestVersion,
 			},
 		}
-		client := fake.NewClient(&dynakube)
+		dkList := dynatracev1beta1.DynaKubeList{
+			Items: []dynatracev1beta1.DynaKube{
+				dynakube,
+			},
+		}
 
-		gcInfo, err := collectGCInfo(ctx, client, dynakube)
+		gcInfo, err := collectGCInfo(dynakube, &dkList)
 		require.NoError(t, err)
 		assert.Len(t, gcInfo.pinnedVersions, 1)
 	})
@@ -103,9 +108,14 @@ func TestCollectGCInfo(t *testing.T) {
 				LatestAgentVersionUnixPaas: latestVersion,
 			},
 		}
-		client := fake.NewClient(&cloudNativeDynakube, &appMonitoringDynakube)
+		dkList := dynatracev1beta1.DynaKubeList{
+			Items: []dynatracev1beta1.DynaKube{
+				cloudNativeDynakube,
+				appMonitoringDynakube,
+			},
+		}
 
-		gcInfo, err := collectGCInfo(ctx, client, cloudNativeDynakube)
+		gcInfo, err := collectGCInfo(cloudNativeDynakube, &dkList)
 		require.NoError(t, err)
 		assert.Len(t, gcInfo.pinnedVersions, 2)
 	})
@@ -113,7 +123,7 @@ func TestCollectGCInfo(t *testing.T) {
 
 func TestIsSafeToGC(t *testing.T) {
 	t.Run(`error db ==> not safe`, func(t *testing.T) {
-		isSafe := isSafeToGC(&metadata.FakeFailDB{})
+		isSafe := isSafeToGC(&metadata.FakeFailDB{}, nil)
 		require.False(t, isSafe)
 	})
 	t.Run(`1 LatestVersion not set ==> not safe`, func(t *testing.T) {
@@ -130,9 +140,9 @@ func TestIsSafeToGC(t *testing.T) {
 			LatestVersion: "v2",
 			ImageDigest:   "d2",
 		}))
-		require.False(t, isSafeToGC(db))
+		require.False(t, isSafeToGC(db, &dynatracev1beta1.DynaKubeList{}))
 	})
-	t.Run(`all LatestVersion set ==> safe`, func(t *testing.T) {
+	t.Run(`all LatestVersion set (no codemodules image) ==> safe`, func(t *testing.T) {
 		db := metadata.FakeMemoryDB()
 		require.NoError(t, db.InsertDynakube(&metadata.Dynakube{
 			Name:          "dk1",
@@ -146,6 +156,69 @@ func TestIsSafeToGC(t *testing.T) {
 			LatestVersion: "v2",
 			ImageDigest:   "d2",
 		}))
-		require.True(t, isSafeToGC(db))
+		require.True(t, isSafeToGC(db, &dynatracev1beta1.DynaKubeList{}))
+	})
+	t.Run(`LatestVersion doesn't match version in dynakube ==> not safe`, func(t *testing.T) {
+		db := metadata.FakeMemoryDB()
+		codeModulesImage := "test:tag"
+		cloudNativeDynakube := dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "test1",
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
+						AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{
+							CodeModulesImage: codeModulesImage,
+						},
+					},
+				},
+			},
+		}
+		require.NoError(t, db.InsertDynakube(&metadata.Dynakube{
+			Name:          cloudNativeDynakube.Name,
+			TenantUUID:    "t1",
+			LatestVersion: "v1",
+			ImageDigest:   "",
+		}))
+		require.NoError(t, db.InsertDynakube(&metadata.Dynakube{
+			Name:          "dk2",
+			TenantUUID:    "t2",
+			LatestVersion: "v2",
+			ImageDigest:   "d2",
+		}))
+		require.False(t, isSafeToGC(db, &dynatracev1beta1.DynaKubeList{Items: []dynatracev1beta1.DynaKube{cloudNativeDynakube}}))
+	})
+	t.Run(`LatestVersion matches version in dynakube ==> safe`, func(t *testing.T) {
+		db := metadata.FakeMemoryDB()
+		codeModulesTag := "tag"
+		codeModulesRegistry := "test"
+		cloudNativeDynakube := dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "test1",
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
+						AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{
+							CodeModulesImage: codeModulesRegistry + ":" + codeModulesTag,
+						},
+					},
+				},
+			},
+		}
+		require.NoError(t, db.InsertDynakube(&metadata.Dynakube{
+			Name:          cloudNativeDynakube.Name,
+			TenantUUID:    "t1",
+			LatestVersion: codeModulesTag,
+			ImageDigest:   "",
+		}))
+		require.NoError(t, db.InsertDynakube(&metadata.Dynakube{
+			Name:          "dk2",
+			TenantUUID:    "t2",
+			LatestVersion: "v2",
+			ImageDigest:   "d2",
+		}))
+		require.True(t, isSafeToGC(db, &dynatracev1beta1.DynaKubeList{Items: []dynatracev1beta1.DynaKube{cloudNativeDynakube}}))
 	})
 }
