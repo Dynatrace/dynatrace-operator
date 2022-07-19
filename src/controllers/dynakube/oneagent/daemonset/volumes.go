@@ -11,18 +11,18 @@ import (
 func prepareVolumeMounts(instance *dynatracev1beta1.DynaKube) []corev1.VolumeMount {
 	var volumeMounts []corev1.VolumeMount
 
-	if instance.NeedsReadOnlyOneAgents() {
+	if instance != nil && instance.NeedsReadOnlyOneAgents() {
 		volumeMounts = append(volumeMounts, getReadOnlyRootMount())
 		volumeMounts = append(volumeMounts, getCSIStorageMount())
 	} else {
 		volumeMounts = append(volumeMounts, getRootMount())
 	}
 
-	if instance.Spec.TrustedCAs != "" {
+	if instance != nil && instance.Spec.TrustedCAs != "" {
 		volumeMounts = append(volumeMounts, getClusterCaCertVolumeMount())
 	}
 
-	if instance.HasActiveGateCaCert() {
+	if instance != nil && instance.HasActiveGateCaCert() {
 		volumeMounts = append(volumeMounts, getActiveGateCaCertVolumeMount())
 	}
 	return volumeMounts

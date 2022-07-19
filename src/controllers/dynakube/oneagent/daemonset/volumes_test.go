@@ -117,6 +117,11 @@ func TestPrepareVolumes(t *testing.T) {
 }
 
 func TestPrepareVolumeMounts(t *testing.T) {
+	t.Run("has defaults if instance is nil", func(t *testing.T) {
+		volumeMounts := prepareVolumeMounts(nil)
+
+		assert.Contains(t, volumeMounts, getRootMount())
+	})
 	t.Run(`has root volume mount`, func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
