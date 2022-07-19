@@ -1,4 +1,4 @@
-package csi
+package csi_server
 
 import (
 	"path/filepath"
@@ -6,7 +6,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 	cmdManager "github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
-	csidriver "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver"
 	csigc "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/gc"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
 	csiprovisioner "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/provisioner"
@@ -17,7 +16,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-const use = "csi-driver"
+const use = "csi-provisioner"
 
 var (
 	nodeId       = ""
@@ -33,7 +32,7 @@ type CommandBuilder struct {
 	csiOptions      *dtcsi.CSIOptions
 }
 
-func NewCsiCommandBuilder() CommandBuilder {
+func NewCsiProvisionerCommandBuilder() CommandBuilder {
 	return CommandBuilder{}
 }
 
@@ -132,15 +131,10 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		err = metadata.CorrectMetadata(csiManager.GetClient(), access)
-		if err != nil {
-			return err
-		}
-
-		err = csidriver.NewServer(csiManager.GetClient(), builder.getCsiOptions(), access).SetupWithManager(csiManager)
-		if err != nil {
-			return err
-		}
+		//err = metadata.CorrectMetadata(csiManager.GetClient(), access)
+		//if err != nil {
+		//	return err
+		//}
 
 		err = csiprovisioner.NewOneAgentProvisioner(csiManager, builder.getCsiOptions(), access).SetupWithManager(csiManager)
 		if err != nil {
@@ -154,6 +148,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 
 		signalHandler := ctrl.SetupSignalHandler()
 		err = csiManager.Start(signalHandler)
+
 		return errors.WithStack(err)
 	}
 }

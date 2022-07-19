@@ -1,4 +1,4 @@
-package csi
+package csi_server
 
 import (
 	"io/fs"
@@ -13,7 +13,7 @@ import (
 
 func TestCsiCommandBuilder(t *testing.T) {
 	t.Run("build command", func(t *testing.T) {
-		builder := NewCsiCommandBuilder()
+		builder := NewCsiProvisionerCommandBuilder()
 		csiCommand := builder.Build()
 
 		assert.NotNil(t, csiCommand)
@@ -21,7 +21,7 @@ func TestCsiCommandBuilder(t *testing.T) {
 		assert.NotNil(t, csiCommand.RunE)
 	})
 	t.Run("set config provider", func(t *testing.T) {
-		builder := NewCsiCommandBuilder()
+		builder := NewCsiProvisionerCommandBuilder()
 
 		assert.NotNil(t, builder)
 
@@ -32,18 +32,18 @@ func TestCsiCommandBuilder(t *testing.T) {
 	})
 	t.Run("set manager provider", func(t *testing.T) {
 		expectedProvider := &cmdManager.MockProvider{}
-		builder := NewCsiCommandBuilder().setManagerProvider(expectedProvider)
+		builder := NewCsiProvisionerCommandBuilder().setManagerProvider(expectedProvider)
 
 		assert.Equal(t, expectedProvider, builder.managerProvider)
 	})
 	t.Run("set namespace", func(t *testing.T) {
-		builder := NewCsiCommandBuilder().SetNamespace("namespace")
+		builder := NewCsiProvisionerCommandBuilder().SetNamespace("namespace")
 
 		assert.Equal(t, "namespace", builder.namespace)
 	})
 	t.Run("set filesystem", func(t *testing.T) {
 		expectedFs := afero.NewMemMapFs()
-		builder := NewCsiCommandBuilder()
+		builder := NewCsiProvisionerCommandBuilder()
 
 		assert.Equal(t, afero.NewOsFs(), builder.getFilesystem())
 
@@ -57,7 +57,7 @@ func TestCsiCommandBuilder(t *testing.T) {
 			Endpoint: "test-endpoint",
 			RootDir:  dtcsi.DataPath,
 		}
-		builder := NewCsiCommandBuilder().
+		builder := NewCsiProvisionerCommandBuilder().
 			setCsiOptions(expectedOptions)
 
 		assert.Equal(t, expectedOptions, builder.getCsiOptions())

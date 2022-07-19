@@ -1,4 +1,4 @@
-package csi
+package csi_server
 
 import (
 	"testing"

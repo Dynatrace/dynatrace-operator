@@ -4661,12 +4661,12 @@ spec:
         # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.
         # - Needs access to the filesystem of pods on the node, and mount stuff to it,needs to read/write to it, needs root permissions to do so
         # - Needs access to a dedicated folder on the node to persist data, needs to read/write to it.
-      - name: driver
+      - name: server
         image:
             quay.io/dynatrace/dynatrace-operator:snapshot
         imagePullPolicy: Always
         args:
-        - csi-driver
+        - csi-server
         - --endpoint=unix://csi/csi.sock
         - --node-id=$(KUBE_NODE_NAME)
         - --health-probe-bind-address=:10080
@@ -4725,6 +4725,66 @@ spec:
           name: dynatrace-oneagent-data-dir
         - mountPath: /tmp
           name: tmp-dir
+      - name: provisioner
+        image:
+            quay.io/dynatrace/dynatrace-operator:snapshot
+        imagePullPolicy: Always
+        args:
+          - csi-provisioner
+          - --endpoint=unix://csi/csi.sock
+          - --node-id=$(KUBE_NODE_NAME)
+          - --health-probe-bind-address=:10081
+        env:
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+          - name: KUBE_NODE_NAME
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: spec.nodeName
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /livez
+            port: livez
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 1
+        ports:
+          - containerPort: 10081
+            name: livez
+            protocol: TCP
+        resources:
+          limits:
+            cpu: 300m
+            memory: 100Mi
+          requests:
+            cpu: 300m
+            memory: 100Mi
+        securityContext: # doesnt need to be root
+          runAsUser: 0
+          privileged: true # Needed for mountPropagation
+          allowPrivilegeEscalation: true # Needed for privileged
+          readOnlyRootFilesystem: true
+          runAsNonRoot: false
+          seccompProfile:
+            type: RuntimeDefault
+          seLinuxOptions:
+            level: s0
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+          - mountPath: /data
+            mountPropagation: Bidirectional
+            name: dynatrace-oneagent-data-dir
+          - mountPath: /tmp
+            name: tmp-dir
+
         # Used to make a gRPC request (GetPluginInfo()) to the driver to get driver name and driver contain
         # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.
         # Used for registering the driver with kubelet

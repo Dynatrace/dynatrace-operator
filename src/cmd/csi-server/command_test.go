@@ -1,4 +1,4 @@
-package csi
+package csi_server
 
 import (
 	"testing"
@@ -23,7 +23,7 @@ func TestCsiCommand(t *testing.T) {
 	managerProvider.On("CreateManager", mock.Anything, mock.Anything).Return(cmdMgr, nil)
 
 	memFs := afero.NewMemMapFs()
-	builder := NewCsiCommandBuilder().
+	builder := NewCsiServerCommandBuilder().
 		SetConfigProvider(configProvider).
 		setManagerProvider(managerProvider).
 		SetNamespace("test-namespace").
