@@ -6,11 +6,11 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/src/mapper"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/src/standalone"
-	"github.com/Dynatrace/dynatrace-operator/src/webhook"
+	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -168,7 +168,7 @@ func TestGenerateForNamespace(t *testing.T) {
 		testNamespace := corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:   testNamespaceName,
-				Labels: map[string]string{mapper.InstanceLabel: testDynakubeComplex.Name},
+				Labels: map[string]string{dtwebhook.InjectionInstanceLabel: testDynakubeComplex.Name},
 			},
 		}
 		clt := fake.NewClient(testDynakubeComplex, &testNamespace, testSecretDynakubeComplex, kubeNamespace, caConfigMap, testTlsSecretDynakubeComplex, testNode1, testNode2)
@@ -178,10 +178,10 @@ func TestGenerateForNamespace(t *testing.T) {
 		assert.NoError(t, err)
 
 		var initSecret corev1.Secret
-		err = clt.Get(context.TODO(), types.NamespacedName{Name: webhook.SecretConfigName, Namespace: testNamespace.Name}, &initSecret)
+		err = clt.Get(context.TODO(), types.NamespacedName{Name: config.AgentInitSecretName, Namespace: testNamespace.Name}, &initSecret)
 		assert.NoError(t, err)
 		assert.Equal(t, 2, len(initSecret.Data))
-		secretConfig, ok := initSecret.Data[standalone.SecretConfigFieldName]
+		secretConfig, ok := initSecret.Data[config.AgentInitSecretConfigField]
 		assert.True(t, ok)
 		assert.NotNil(t, secretConfig)
 		proxy, ok := initSecret.Data[dynatracev1beta1.ProxyKey]
@@ -193,7 +193,7 @@ func TestGenerateForNamespace(t *testing.T) {
 		testNamespace := corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:   testNamespaceName,
-				Labels: map[string]string{mapper.InstanceLabel: testDynakubeSimple.Name},
+				Labels: map[string]string{dtwebhook.InjectionInstanceLabel: testDynakubeSimple.Name},
 			},
 		}
 		clt := fake.NewClient(testDynakubeSimple, &testNamespace, testSecretDynakubeSimple, kubeNamespace, testNode1, testNode2)
@@ -203,10 +203,10 @@ func TestGenerateForNamespace(t *testing.T) {
 		assert.NoError(t, err)
 
 		var initSecret corev1.Secret
-		err = clt.Get(context.TODO(), types.NamespacedName{Name: webhook.SecretConfigName, Namespace: testNamespace.Name}, &initSecret)
+		err = clt.Get(context.TODO(), types.NamespacedName{Name: config.AgentInitSecretName, Namespace: testNamespace.Name}, &initSecret)
 		assert.NoError(t, err)
 		assert.Equal(t, 2, len(initSecret.Data))
-		secretConfig, ok := initSecret.Data[standalone.SecretConfigFieldName]
+		secretConfig, ok := initSecret.Data[config.AgentInitSecretConfigField]
 		assert.True(t, ok)
 		assert.NotNil(t, secretConfig)
 		proxy, ok := initSecret.Data[dynatracev1beta1.ProxyKey]
@@ -222,7 +222,7 @@ func TestGenerateForDynakube(t *testing.T) {
 		testNamespace := corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:   testNamespaceName,
-				Labels: map[string]string{mapper.InstanceLabel: testDynakubeComplex.Name},
+				Labels: map[string]string{dtwebhook.InjectionInstanceLabel: testDynakubeComplex.Name},
 			},
 		}
 		clt := fake.NewClient(&testNamespace, testSecretDynakubeComplex, kubeNamespace, caConfigMap, testTlsSecretDynakubeComplex, testNode1, testNode2)
@@ -232,10 +232,10 @@ func TestGenerateForDynakube(t *testing.T) {
 		assert.NoError(t, err)
 
 		var initSecret corev1.Secret
-		err = clt.Get(context.TODO(), types.NamespacedName{Name: webhook.SecretConfigName, Namespace: testNamespace.Name}, &initSecret)
+		err = clt.Get(context.TODO(), types.NamespacedName{Name: config.AgentInitSecretName, Namespace: testNamespace.Name}, &initSecret)
 		assert.NoError(t, err)
 		assert.Equal(t, 2, len(initSecret.Data))
-		secretConfig, ok := initSecret.Data[standalone.SecretConfigFieldName]
+		secretConfig, ok := initSecret.Data[config.AgentInitSecretConfigField]
 		assert.True(t, ok)
 		assert.NotNil(t, secretConfig)
 		proxy, ok := initSecret.Data[dynatracev1beta1.ProxyKey]
@@ -248,7 +248,7 @@ func TestGenerateForDynakube(t *testing.T) {
 		testNamespace := corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:   testNamespaceName,
-				Labels: map[string]string{mapper.InstanceLabel: testDynakubeSimple.Name},
+				Labels: map[string]string{dtwebhook.InjectionInstanceLabel: testDynakubeSimple.Name},
 			},
 		}
 		clt := fake.NewClient(&testNamespace, testSecretDynakubeSimple, kubeNamespace, testNode1, testNode2)
@@ -258,10 +258,10 @@ func TestGenerateForDynakube(t *testing.T) {
 		assert.NoError(t, err)
 
 		var initSecret corev1.Secret
-		err = clt.Get(context.TODO(), types.NamespacedName{Name: webhook.SecretConfigName, Namespace: testNamespace.Name}, &initSecret)
+		err = clt.Get(context.TODO(), types.NamespacedName{Name: config.AgentInitSecretName, Namespace: testNamespace.Name}, &initSecret)
 		assert.NoError(t, err)
 		assert.Equal(t, 2, len(initSecret.Data))
-		secretConfig, ok := initSecret.Data[standalone.SecretConfigFieldName]
+		secretConfig, ok := initSecret.Data[config.AgentInitSecretConfigField]
 		assert.True(t, ok)
 		assert.NotNil(t, secretConfig)
 		proxy, ok := initSecret.Data[dynatracev1beta1.ProxyKey]
@@ -274,13 +274,13 @@ func TestGenerateForDynakube(t *testing.T) {
 		testNamespace := corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:   testNamespaceName,
-				Labels: map[string]string{mapper.InstanceLabel: testDynakubeSimple.Name},
+				Labels: map[string]string{dtwebhook.InjectionInstanceLabel: testDynakubeSimple.Name},
 			},
 		}
 		testOtherNamespace := corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:   testOtherNamespaceName,
-				Labels: map[string]string{mapper.InstanceLabel: testDynakubeSimple.Name},
+				Labels: map[string]string{dtwebhook.InjectionInstanceLabel: testDynakubeSimple.Name},
 			},
 		}
 		clt := fake.NewClient(&testNamespace, &testOtherNamespace, testSecretDynakubeSimple, kubeNamespace, testNode1, testNode2)
@@ -290,10 +290,10 @@ func TestGenerateForDynakube(t *testing.T) {
 		assert.NoError(t, err)
 
 		var initSecret corev1.Secret
-		err = clt.Get(context.TODO(), types.NamespacedName{Name: webhook.SecretConfigName, Namespace: testNamespace.Name}, &initSecret)
+		err = clt.Get(context.TODO(), types.NamespacedName{Name: config.AgentInitSecretName, Namespace: testNamespace.Name}, &initSecret)
 		assert.NoError(t, err)
 		assert.Equal(t, 2, len(initSecret.Data))
-		secretConfig, ok := initSecret.Data[standalone.SecretConfigFieldName]
+		secretConfig, ok := initSecret.Data[config.AgentInitSecretConfigField]
 		assert.True(t, ok)
 		assert.NotNil(t, secretConfig)
 		proxy, ok := initSecret.Data[dynatracev1beta1.ProxyKey]
@@ -301,10 +301,10 @@ func TestGenerateForDynakube(t *testing.T) {
 		assert.NotNil(t, proxy)
 		assert.Empty(t, proxy)
 
-		err = clt.Get(context.TODO(), types.NamespacedName{Name: webhook.SecretConfigName, Namespace: testOtherNamespace.Name}, &initSecret)
+		err = clt.Get(context.TODO(), types.NamespacedName{Name: config.AgentInitSecretName, Namespace: testOtherNamespace.Name}, &initSecret)
 		assert.NoError(t, err)
 		assert.Equal(t, 2, len(initSecret.Data))
-		secretConfig, ok = initSecret.Data[standalone.SecretConfigFieldName]
+		secretConfig, ok = initSecret.Data[config.AgentInitSecretConfigField]
 		assert.True(t, ok)
 		assert.NotNil(t, secretConfig)
 		proxy, ok = initSecret.Data[dynatracev1beta1.ProxyKey]
@@ -341,8 +341,8 @@ func TestGetInfraMonitoringNodes(t *testing.T) {
 		imNodes, err := ig.getHostMonitoringNodes(testDynakubeWithSelector)
 		assert.NoError(t, err)
 		assert.Equal(t, 3, len(imNodes))
-		assert.Equal(t, standalone.NoHostTenant, imNodes[testNode1Name])
-		assert.Equal(t, standalone.NoHostTenant, imNodes[testNode2Name])
+		assert.Equal(t, config.AgentNoHostTenant, imNodes[testNode1Name])
+		assert.Equal(t, config.AgentNoHostTenant, imNodes[testNode2Name])
 	})
 }
 
@@ -385,7 +385,7 @@ func testForCorrectContent(t *testing.T, secret *corev1.Secret) {
 	testNamespace := corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   testNamespaceName,
-			Labels: map[string]string{mapper.InstanceLabel: testDynakubeComplex.Name},
+			Labels: map[string]string{dtwebhook.InjectionInstanceLabel: testDynakubeComplex.Name},
 		},
 	}
 	clt := fake.NewClient(&testNamespace, secret, caConfigMap, testTlsSecretDynakubeComplex)

@@ -24,6 +24,10 @@ func GetUID(clt client.Reader) (types.UID, error) {
 }
 
 func IsDeployedViaOlm(clt client.Reader, podName string, podNamespace string) (bool, error) {
+	if IsRunLocally() {
+		return false, nil
+	}
+
 	pod := &corev1.Pod{}
 	err := clt.Get(context.TODO(), types.NamespacedName{Name: podName, Namespace: podNamespace}, pod)
 	if err != nil {

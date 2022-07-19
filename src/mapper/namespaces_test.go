@@ -6,6 +6,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
+	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -59,7 +60,7 @@ func TestMapFromNamespace(t *testing.T) {
 
 	t.Run("Remove stale namespace entry", func(t *testing.T) {
 		labels := map[string]string{
-			InstanceLabel: dk.Name,
+			dtwebhook.InjectionInstanceLabel: dk.Name,
 		}
 		namespace := createNamespace("test-namespace", labels)
 		clt := fake.NewClient(dk)

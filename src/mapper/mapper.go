@@ -13,13 +13,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const (
-	InstanceLabel                = dtwebhook.LabelInstance
-	UpdatedViaDynakubeAnnotation = "dynatrace.com/updated-via-operator"
-	ErrorConflictingNamespace    = "namespace matches two or more DynaKubes which is unsupported. " +
-		"refine the labels on your namespace metadata or DynaKube/CodeModules specification"
-)
-
 type ConflictChecker struct {
 	alreadyUsed bool
 }
@@ -38,7 +31,7 @@ func (c *ConflictChecker) check(dk *dynatracev1beta1.DynaKube) error {
 func GetNamespacesForDynakube(ctx context.Context, clt client.Reader, dkName string) ([]corev1.Namespace, error) {
 	nsList := &corev1.NamespaceList{}
 	listOps := []client.ListOption{
-		client.MatchingLabels(map[string]string{InstanceLabel: dkName}),
+		client.MatchingLabels(map[string]string{dtwebhook.InjectionInstanceLabel: dkName}),
 	}
 	err := clt.List(ctx, nsList, listOps...)
 	if err != nil {
@@ -51,7 +44,7 @@ func addNamespaceInjectLabel(dkName string, ns *corev1.Namespace) {
 	if ns.Labels == nil {
 		ns.Labels = make(map[string]string)
 	}
-	ns.Labels[InstanceLabel] = dkName
+	ns.Labels[dtwebhook.InjectionInstanceLabel] = dkName
 }
 
 func setUpdatedViaDynakubeAnnotation(ns *corev1.Namespace) {
@@ -62,7 +55,7 @@ func setUpdatedViaDynakubeAnnotation(ns *corev1.Namespace) {
 }
 
 // match uses the namespace selector in the dynakube to check if it matches a given namespace
-// if the namspace selector is not set on the dynakube its an automatic match
+// if the namespace selector is not set on the dynakube its an automatic match
 func match(dk *dynatracev1beta1.DynaKube, namespace *corev1.Namespace) (bool, error) {
 	if dk.NamespaceSelector() == nil {
 		return true, nil
@@ -110,7 +103,7 @@ func updateLabels(matches bool, dynakube *dynatracev1beta1.DynaKube, namespace *
 		namespace.Labels = make(map[string]string)
 	}
 
-	associatedDynakubeName, instanceLabelFound := namespace.Labels[InstanceLabel]
+	associatedDynakubeName, instanceLabelFound := namespace.Labels[dtwebhook.InjectionInstanceLabel]
 
 	if matches && dynakube.NeedAppInjection() {
 		if !instanceLabelFound || associatedDynakubeName != dynakube.Name {
@@ -120,7 +113,7 @@ func updateLabels(matches bool, dynakube *dynatracev1beta1.DynaKube, namespace *
 		}
 	} else if instanceLabelFound && associatedDynakubeName == dynakube.Name {
 		updated = true
-		delete(namespace.Labels, InstanceLabel)
+		delete(namespace.Labels, dtwebhook.InjectionInstanceLabel)
 	}
 	return updated
 }
