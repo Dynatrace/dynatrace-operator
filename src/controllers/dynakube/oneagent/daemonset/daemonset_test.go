@@ -345,10 +345,15 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 
 func TestPodSpecServiceAccountName(t *testing.T) {
 	t.Run("service account name is unprivileged by default", func(t *testing.T) {
+		builder := builderInfo{}
+		podSpec := builder.podSpec()
+
+		assert.Equal(t, defaultUnprivilegedServiceAccountName, podSpec.ServiceAccountName)
+	})
+	t.Run("service account name is privileged if run as privileged", func(t *testing.T) {
 		dynakube := &dynatracev1beta1.DynaKube{}
 		builder := builderInfo{
-			instance:       dynakube,
-			hostInjectSpec: dynakube.Spec.OneAgent.HostMonitoring,
+			instance: dynakube,
 		}
 		podSpec := builder.podSpec()
 
@@ -389,5 +394,70 @@ func TestDNSPolicy(t *testing.T) {
 		dnsPolicy := builder.dnsPolicy()
 
 		assert.Equal(t, corev1.DNSClusterFirstWithHostNet, dnsPolicy)
+	})
+}
+
+func TestNodeSelector(t *testing.T) {
+	t.Run("returns empty map if hostInjectSpec is nil", func(t *testing.T) {
+		dsInfo := builderInfo{}
+		nodeSelector := dsInfo.nodeSelector()
+
+		assert.Equal(t, map[string]string{}, nodeSelector)
+	})
+	t.Run("returns nodeselector", func(t *testing.T) {
+		dsInfo := builderInfo{
+			hostInjectSpec: &dynatracev1beta1.HostInjectSpec{
+				NodeSelector: map[string]string{testKey: testValue},
+			},
+		}
+		nodeSelector := dsInfo.nodeSelector()
+
+		assert.Contains(t, nodeSelector, testKey)
+	})
+}
+
+func TestPriorityClass(t *testing.T) {
+	t.Run("returns empty string if hostInjectSpec is nil", func(t *testing.T) {
+		dsInfo := builderInfo{}
+		priorityClassName := dsInfo.priorityClassName()
+
+		assert.Equal(t, "", priorityClassName)
+	})
+	t.Run("returns nodeselector", func(t *testing.T) {
+		dsInfo := builderInfo{
+			hostInjectSpec: &dynatracev1beta1.HostInjectSpec{
+				PriorityClassName: testName,
+			},
+		}
+		priorityClassName := dsInfo.priorityClassName()
+
+		assert.Equal(t, testName, priorityClassName)
+	})
+}
+
+func TestTolerations(t *testing.T) {
+	t.Run("returns empty list if hostInjectSpec is nil", func(t *testing.T) {
+		dsInfo := builderInfo{}
+		tolerations := dsInfo.tolerations()
+
+		assert.Empty(t, tolerations)
+	})
+	t.Run("returns tolerations", func(t *testing.T) {
+		dsInfo := builderInfo{
+			hostInjectSpec: &dynatracev1beta1.HostInjectSpec{
+				Tolerations: []corev1.Toleration{
+					{
+						Key:   testKey,
+						Value: testValue,
+					},
+				},
+			},
+		}
+		tolerations := dsInfo.tolerations()
+
+		assert.Contains(t, tolerations, corev1.Toleration{
+			Key:   testKey,
+			Value: testValue,
+		})
 	})
 }

@@ -16,6 +16,7 @@ const (
 	annotationUnprivilegedValue = "unconfined"
 
 	defaultUnprivilegedServiceAccountName = "dynatrace-dynakube-oneagent-unprivileged"
+	defaultPrivilegedServiceAccountName   = "dynatrace-dynakube-oneagent-privileged"
 	// normal oneagent shutdown scenario with some extra time
 	defaultTerminationGracePeriod = int64(80)
 
@@ -210,15 +211,39 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 		HostNetwork:                   true,
 		HostPID:                       true,
 		HostIPC:                       false,
-		NodeSelector:                  dsInfo.hostInjectSpec.NodeSelector,
-		PriorityClassName:             dsInfo.hostInjectSpec.PriorityClassName,
+		NodeSelector:                  dsInfo.nodeSelector(),
+		PriorityClassName:             dsInfo.priorityClassName(),
 		ServiceAccountName:            defaultUnprivilegedServiceAccountName,
-		Tolerations:                   dsInfo.hostInjectSpec.Tolerations,
+		Tolerations:                   dsInfo.tolerations(),
 		DNSPolicy:                     dnsPolicy,
 		Volumes:                       volumes,
 		Affinity:                      affinity,
 		TerminationGracePeriodSeconds: address.Of(defaultTerminationGracePeriod),
 	}
+}
+
+func (dsInfo *builderInfo) tolerations() []corev1.Toleration {
+	if dsInfo.hostInjectSpec != nil {
+		return dsInfo.hostInjectSpec.Tolerations
+	}
+
+	return nil
+}
+
+func (dsInfo *builderInfo) priorityClassName() string {
+	if dsInfo.hostInjectSpec != nil {
+		return dsInfo.hostInjectSpec.PriorityClassName
+	}
+
+	return ""
+}
+
+func (dsInfo *builderInfo) nodeSelector() map[string]string {
+	if dsInfo.hostInjectSpec == nil {
+		return make(map[string]string, 0)
+	}
+
+	return dsInfo.hostInjectSpec.NodeSelector
 }
 
 func (dsInfo *builderInfo) resources() corev1.ResourceRequirements {
