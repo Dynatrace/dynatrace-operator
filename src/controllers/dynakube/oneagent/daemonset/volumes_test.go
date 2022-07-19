@@ -10,6 +10,11 @@ import (
 )
 
 func TestPrepareVolumes(t *testing.T) {
+	t.Run("has defaults if instance is nil", func(t *testing.T) {
+		volumes := prepareVolumes(nil)
+
+		assert.Contains(t, volumes, getRootVolume())
+	})
 	t.Run(`has root volume`, func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{

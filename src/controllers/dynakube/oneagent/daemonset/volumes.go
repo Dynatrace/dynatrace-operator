@@ -65,6 +65,10 @@ func getCSIStorageMount() corev1.VolumeMount {
 func prepareVolumes(instance *dynatracev1beta1.DynaKube) []corev1.Volume {
 	volumes := []corev1.Volume{getRootVolume()}
 
+	if instance == nil {
+		return volumes
+	}
+
 	if instance.NeedsReadOnlyOneAgents() {
 		volumes = append(volumes, getCSIStorageVolume(instance))
 	}
