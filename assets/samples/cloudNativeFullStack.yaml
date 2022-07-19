@@ -3,6 +3,9 @@ kind: DynaKube
 metadata:
   name: dynakube
   namespace: dynatrace
+  # Optional: necessary in case of a node using cgroup V2
+  # annotations:
+  #   feature.dynatrace.com/oneagent-privileged: "true"
 spec:
   # Dynatrace apiUrl including the `/api` path at the end.
   # For SaaS, set `YOUR_ENVIRONMENT_ID` to your environment ID.
@@ -61,6 +64,10 @@ spec:
       # Defaults to latest
       #
       # version:
+
+      # Optional: The URI of the image that contains the codemodules that will be injected into user applications.
+      # Code Modules Image Dockerfile sample: https://dt-url.net/operator-docker-samples
+      # codeModulesImage: ""
 
       # Optional: node selector to control on which nodes the OneAgent will be deployed.
       #
