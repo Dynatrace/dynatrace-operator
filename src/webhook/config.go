@@ -1,8 +1,8 @@
 package webhook
 
 const (
-	// LabelInstance can be set in a Namespace and indicates the corresponding DynaKube object assigned to it.
-	LabelInstance = "dynakube.internal.dynatrace.com/instance"
+	// InjectionInstanceLabel can be set in a Namespace and indicates the corresponding DynaKube object assigned to it.
+	InjectionInstanceLabel = "dynakube.internal.dynatrace.com/instance"
 
 	// AnnotationDynatraceInjected is set to "true" by the webhook to Pods to indicate that it has been injected.
 	AnnotationDynatraceInjected = "dynakube.dynatrace.com/injected"
@@ -39,9 +39,6 @@ const (
 
 	// DefaultInstallPath is the default directory to install the app-only OneAgent package.
 	DefaultInstallPath = "/opt/dynatrace/oneagent-paas"
-
-	// SecretConfigName is the name of the secret where the Operator replicates the config data.
-	SecretConfigName = "dynatrace-dynakube-config"
 
 	// SecretCertsName is the name of the secret where the webhook certificates are stored.
 	SecretCertsName = "dynatrace-webhook-certs"

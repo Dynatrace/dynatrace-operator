@@ -18,7 +18,7 @@ func TestAddPreloadEnv(t *testing.T) {
 		addPreloadEnv(container, installPath)
 
 		require.Len(t, container.Env, 1)
-		assert.Equal(t, container.Env[0].Name, preloadEnvVarName)
+		assert.Equal(t, container.Env[0].Name, preloadEnv)
 		assert.Contains(t, container.Env[0].Value, installPath)
 	})
 }
@@ -31,7 +31,7 @@ func TestAddNetworkZoneEnv(t *testing.T) {
 		addNetworkZoneEnv(container, networkZone)
 
 		require.Len(t, container.Env, 1)
-		assert.Equal(t, container.Env[0].Name, networkZoneEnvVarName)
+		assert.Equal(t, container.Env[0].Name, networkZoneEnv)
 		assert.Equal(t, container.Env[0].Value, networkZone)
 	})
 }
