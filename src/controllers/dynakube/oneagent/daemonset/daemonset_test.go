@@ -1,10 +1,13 @@
 package daemonset
 
 import (
+	"strings"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
+	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -13,7 +16,9 @@ import (
 )
 
 const (
-	testImage = "test-image"
+	testImageTag = "tag"
+	testImage    = "test-image:" + testImageTag
+	testVersion  = "test-version"
 )
 
 func TestUseImmutableImage(t *testing.T) {
@@ -52,6 +57,86 @@ func TestUseImmutableImage(t *testing.T) {
 		podSpecs := ds.Spec.Template.Spec
 		assert.NotNil(t, podSpecs)
 		assert.Equal(t, testImage, podSpecs.Containers[0].Image)
+	})
+}
+
+func TestLabels(t *testing.T) {
+	feature := strings.ReplaceAll(DeploymentTypeFullStack, "_", "")
+	t.Run(`if image is unset, use version`, func(t *testing.T) {
+		instance := dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: testURL,
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
+				},
+			},
+			Status: dynatracev1beta1.DynaKubeStatus{
+				OneAgent: dynatracev1beta1.OneAgentStatus{
+					VersionStatus: dynatracev1beta1.VersionStatus{
+						Version: testVersion,
+					},
+				},
+			},
+		}
+		expectedLabels := map[string]string{
+			kubeobjects.AppNameLabel:      kubeobjects.OneAgentComponentLabel,
+			kubeobjects.AppCreatedByLabel: instance.Name,
+			kubeobjects.AppComponentLabel: feature,
+			kubeobjects.AppVersionLabel:   testVersion,
+			kubeobjects.AppManagedByLabel: version.AppName,
+		}
+		expectedMatchLabels := map[string]string{
+			kubeobjects.AppNameLabel:      kubeobjects.OneAgentComponentLabel,
+			kubeobjects.AppCreatedByLabel: instance.Name,
+			kubeobjects.AppManagedByLabel: version.AppName,
+		}
+		dsInfo := NewClassicFullStack(&instance, testClusterID)
+		ds, err := dsInfo.BuildDaemonSet()
+		require.NoError(t, err)
+
+		podSpecs := ds.Spec.Template.Spec
+		assert.NotNil(t, podSpecs)
+		assert.Equal(t, instance.ImmutableOneAgentImage(), podSpecs.Containers[0].Image)
+		assert.Equal(t, expectedLabels, ds.Labels)
+		assert.Equal(t, expectedMatchLabels, ds.Spec.Selector.MatchLabels)
+		assert.Equal(t, expectedLabels, ds.Spec.Template.Labels)
+	})
+	t.Run(`if image is set, set basic version label`, func(t *testing.T) {
+		instance := dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: testURL,
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{
+						Image: testImage,
+					},
+				},
+			},
+		}
+
+		expectedLabels := map[string]string{
+			kubeobjects.AppNameLabel:      kubeobjects.OneAgentComponentLabel,
+			kubeobjects.AppCreatedByLabel: instance.Name,
+			kubeobjects.AppComponentLabel: feature,
+			kubeobjects.AppManagedByLabel: version.AppName,
+			kubeobjects.AppVersionLabel:   kubeobjects.CustomImageLabelValue,
+		}
+		expectedMatchLabels := map[string]string{
+			kubeobjects.AppNameLabel:      kubeobjects.OneAgentComponentLabel,
+			kubeobjects.AppCreatedByLabel: instance.Name,
+			kubeobjects.AppManagedByLabel: version.AppName,
+		}
+
+		dsInfo := NewClassicFullStack(&instance, testClusterID)
+		ds, err := dsInfo.BuildDaemonSet()
+		require.NoError(t, err)
+
+		podSpecs := ds.Spec.Template.Spec
+		assert.NotNil(t, podSpecs)
+		assert.Equal(t, testImage, podSpecs.Containers[0].Image)
+		assert.Equal(t, expectedLabels, ds.Labels)
+		assert.Equal(t, expectedMatchLabels, ds.Spec.Selector.MatchLabels)
+		assert.Equal(t, expectedLabels, ds.Spec.Template.Labels)
+
 	})
 }
 

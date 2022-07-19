@@ -5,10 +5,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-	OperatorName = "dynatrace-operator"
-)
-
 // DynaKubeSpec defines the desired state of DynaKube
 // +k8s:openapi-gen=true
 type DynaKubeSpec struct {

@@ -128,8 +128,13 @@ func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	instance := dsInfo.instance
 	podSpec := dsInfo.podSpec()
 
+	versionLabelValue := instance.Status.OneAgent.Version
+	if instance.CustomOneAgentImage() != "" {
+		versionLabelValue = kubeobjects.CustomImageLabelValue
+	}
+
 	appLabels := kubeobjects.NewAppLabels(kubeobjects.OneAgentComponentLabel, instance.Name,
-		dsInfo.deploymentType, instance.Status.OneAgent.Version)
+		dsInfo.deploymentType, versionLabelValue)
 	labels := kubeobjects.MergeLabels(
 		appLabels.BuildLabels(),
 		dsInfo.hostInjectSpec.Labels,

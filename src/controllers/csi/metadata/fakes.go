@@ -67,3 +67,7 @@ func (f *FakeFailDB) GetUsedVersions(tenantUUID string) (map[string]bool, error)
 func (f *FakeFailDB) GetAllUsedVersions() (map[string]bool, error) { return nil, sql.ErrTxDone }
 
 func (f *FakeFailDB) GetUsedImageDigests() (map[string]bool, error) { return nil, sql.ErrTxDone }
+
+func (f *FakeFailDB) IsImageDigestUsed(imageDigest string) (bool, error) {
+	return false, sql.ErrTxDone
+}

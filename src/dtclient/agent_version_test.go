@@ -312,6 +312,17 @@ func handleLatestAgentVersion(request *http.Request, writer http.ResponseWriter)
 	switch request.Method {
 	case "GET":
 		writer.WriteHeader(http.StatusOK)
+		out, _ := json.Marshal(map[string]string{"latestAgentVersion": "1.242.0.20220429-180918"})
+		_, _ = writer.Write(out)
+	default:
+		writeError(writer, http.StatusMethodNotAllowed)
+	}
+}
+
+func handleAvailableAgentVersions(request *http.Request, writer http.ResponseWriter) {
+	switch request.Method {
+	case "GET":
+		writer.WriteHeader(http.StatusOK)
 		out, _ := json.Marshal(
 			map[string][]string{
 				"availableVersions": {

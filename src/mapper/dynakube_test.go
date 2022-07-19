@@ -6,6 +6,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
+	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -31,8 +32,8 @@ func TestMapFromDynakube(t *testing.T) {
 	})
 	t.Run("Overwrite stale entry in labels", func(t *testing.T) {
 		nsLabels := map[string]string{
-			InstanceLabel: "old-dk",
-			"test":        "selector",
+			dtwebhook.InjectionInstanceLabel: "old-dk",
+			"test":                           "selector",
 		}
 		namespace := createNamespace("test-namespace", nsLabels)
 		clt := fake.NewClient(dk, namespace)
@@ -50,7 +51,7 @@ func TestMapFromDynakube(t *testing.T) {
 	t.Run("Remove stale dynakube entry for no longer matching ns", func(t *testing.T) {
 		movedDk := createTestDynakubeWithAppInject("moved-dk", labels, nil)
 		nsLabels := map[string]string{
-			InstanceLabel: movedDk.Name,
+			dtwebhook.InjectionInstanceLabel: movedDk.Name,
 		}
 		namespace := createNamespace("test-namespace", nsLabels)
 		clt := fake.NewClient(movedDk, namespace)
@@ -68,8 +69,8 @@ func TestMapFromDynakube(t *testing.T) {
 	t.Run("Throw error in case of conflicting Dynakubes", func(t *testing.T) {
 		conflictingDk := createTestDynakubeWithMultipleFeatures("conflicting-dk", labels, nil)
 		nsLabels := map[string]string{
-			InstanceLabel: dk.Name,
-			"test":        "selector",
+			dtwebhook.InjectionInstanceLabel: dk.Name,
+			"test":                           "selector",
 		}
 		namespace := createNamespace("test-namespace", nsLabels)
 		clt := fake.NewClient(dk, conflictingDk, namespace)
@@ -133,7 +134,7 @@ func TestMapFromDynakube(t *testing.T) {
 func TestUnmapFromDynaKube(t *testing.T) {
 	dk := createTestDynakubeWithAppInject("dk", nil, nil)
 	labels := map[string]string{
-		InstanceLabel: dk.Name,
+		dtwebhook.InjectionInstanceLabel: dk.Name,
 	}
 	namespace := createNamespace("ns1", labels)
 	namespace2 := createNamespace("ns2", labels)

@@ -4,43 +4,8 @@ import (
 	"io"
 
 	"github.com/Dynatrace/dynatrace-operator/src/arch"
-	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/pkg/errors"
 )
-
-// GetLatestAgentVersion gets the latest agent version for the given OS and installer type.
-func (dtc *dynatraceClient) GetLatestAgentVersion(os, installerType string) (string, error) {
-	var flavor string
-	// Default installer type has no "multidistro" flavor
-	// so the default flavor is always needed in that case
-	if installerType == InstallerTypeDefault {
-		flavor = arch.FlavorDefault
-	} else {
-		flavor = arch.Flavor
-	}
-	versions, err := dtc.GetAgentVersions(os, installerType, flavor, arch.Arch)
-	if err != nil {
-		return "", err
-	}
-	if len(versions) == 0 {
-		return "", errors.New("no agent versions found")
-	}
-
-	latestVersion, err := version.ExtractSemanticVersion(versions[0])
-	if err != nil {
-		return "", err
-	}
-	for _, rawVersion := range versions[1:] {
-		versionInfo, err := version.ExtractSemanticVersion(rawVersion)
-		if err != nil {
-			return "", err
-		}
-		if version.CompareSemanticVersions(versionInfo, latestVersion) > 0 {
-			latestVersion = versionInfo
-		}
-	}
-	return latestVersion.String(), nil
-}
 
 func (dtc *dynatraceClient) GetEntityIDForIP(ip string) (string, error) {
 	if len(ip) == 0 {
@@ -72,6 +37,31 @@ func (dtc *dynatraceClient) GetLatestAgent(os, installerType, flavor, arch strin
 	return err
 }
 
+// GetLatestAgentVersion gets the latest agent version for the given OS and installer type configured on the Tenant.
+func (dtc *dynatraceClient) GetLatestAgentVersion(os, installerType string) (string, error) {
+	response := struct {
+		LatestAgentVersion string `json:"latestAgentVersion"`
+	}{}
+
+	if len(os) == 0 || len(installerType) == 0 {
+		return "", errors.New("os or installerType is empty")
+	}
+
+	var flavor string
+	// Default installer type has no "multidistro" flavor
+	// so the default flavor is always needed in that case
+	if installerType == InstallerTypeDefault {
+		flavor = arch.FlavorDefault
+	} else {
+		flavor = arch.Flavor
+	}
+
+	url := dtc.getLatestAgentVersionUrl(os, installerType, flavor, arch.Arch)
+	err := dtc.makeRequestAndUnmarshal(url, dynatracePaaSToken, &response)
+	return response.LatestAgentVersion, errors.WithStack(err)
+}
+
+// GetAgentVersions gets available agent versions for the given OS and installer type.
 func (dtc *dynatraceClient) GetAgentVersions(os, installerType, flavor, arch string) ([]string, error) {
 	response := struct {
 		AvailableVersions []string `json:"availableVersions"`
