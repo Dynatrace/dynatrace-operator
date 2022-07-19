@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/installer"
 	"github.com/spf13/afero"
@@ -70,19 +71,19 @@ func TestNewRunner(t *testing.T) {
 func TestConsumeErrorIfNecessary(t *testing.T) {
 	runner := createMockedRunner(t)
 	t.Run(`no error thrown`, func(t *testing.T) {
-		runner.env.CanFail = false
+		runner.env.FailurePolicy = false
 		err := runner.Run()
 		assert.Nil(t, err)
 	})
 	t.Run(`error thrown, but consume error`, func(t *testing.T) {
 		runner.env.K8NodeName = "" // create artificial error
-		runner.env.CanFail = false
+		runner.env.FailurePolicy = false
 		err := runner.Run()
 		assert.Nil(t, err)
 	})
 	t.Run(`error thrown, but don't consume error`, func(t *testing.T) {
 		runner.env.K8NodeName = "" // create artificial error
-		runner.env.CanFail = true
+		runner.env.FailurePolicy = true
 		err := runner.Run()
 		assert.NotNil(t, err)
 	})
@@ -112,7 +113,7 @@ func TestSetHostTenant(t *testing.T) {
 		err := runner.setHostTenant()
 
 		require.NoError(t, err)
-		assert.Equal(t, NoHostTenant, runner.hostTenant)
+		assert.Equal(t, config.AgentNoHostTenant, runner.hostTenant)
 	})
 }
 
@@ -123,10 +124,10 @@ func TestInstallOneAgent(t *testing.T) {
 			On("GetProcessModuleConfig", uint(0)).
 			Return(&testProcessModuleConfig, nil)
 		runner.installer.(*installer.InstallerMock).
-			On("UpdateProcessModuleConfig", BinDirMount, &testProcessModuleConfig).
+			On("UpdateProcessModuleConfig", config.AgentBinDirMount, &testProcessModuleConfig).
 			Return(nil)
 		runner.installer.(*installer.InstallerMock).
-			On("InstallAgent", BinDirMount).
+			On("InstallAgent", config.AgentBinDirMount).
 			Return(true, nil)
 
 		err := runner.installOneAgent()
@@ -136,7 +137,7 @@ func TestInstallOneAgent(t *testing.T) {
 	t.Run(`sad install -> install fail`, func(t *testing.T) {
 		runner := createMockedRunner(t)
 		runner.installer.(*installer.InstallerMock).
-			On("InstallAgent", BinDirMount).
+			On("InstallAgent", config.AgentBinDirMount).
 			Return(false, fmt.Errorf("BOOM"))
 
 		err := runner.installOneAgent()
@@ -149,10 +150,10 @@ func TestInstallOneAgent(t *testing.T) {
 			On("GetProcessModuleConfig", uint(0)).
 			Return(&testProcessModuleConfig, nil)
 		runner.installer.(*installer.InstallerMock).
-			On("UpdateProcessModuleConfig", BinDirMount, &testProcessModuleConfig).
+			On("UpdateProcessModuleConfig", config.AgentBinDirMount, &testProcessModuleConfig).
 			Return(fmt.Errorf("BOOM"))
 		runner.installer.(*installer.InstallerMock).
-			On("InstallAgent", BinDirMount).
+			On("InstallAgent", config.AgentBinDirMount).
 			Return(true, nil)
 
 		err := runner.installOneAgent()
@@ -165,10 +166,10 @@ func TestInstallOneAgent(t *testing.T) {
 			On("GetProcessModuleConfig", uint(0)).
 			Return(&dtclient.ProcessModuleConfig{}, fmt.Errorf("BOOM"))
 		runner.installer.(*installer.InstallerMock).
-			On("UpdateProcessModuleConfig", BinDirMount, &testProcessModuleConfig).
+			On("UpdateProcessModuleConfig", config.AgentBinDirMount, &testProcessModuleConfig).
 			Return(nil)
 		runner.installer.(*installer.InstallerMock).
-			On("InstallAgent", BinDirMount).
+			On("InstallAgent", config.AgentBinDirMount).
 			Return(true, nil)
 
 		err := runner.installOneAgent()
@@ -185,12 +186,12 @@ func TestRun(t *testing.T) {
 		On("GetProcessModuleConfig", uint(0)).
 		Return(&testProcessModuleConfig, nil)
 	runner.installer.(*installer.InstallerMock).
-		On("UpdateProcessModuleConfig", BinDirMount, &testProcessModuleConfig).
+		On("UpdateProcessModuleConfig", config.AgentBinDirMount, &testProcessModuleConfig).
 		Return(nil)
 
 	t.Run(`no install, just config generation`, func(t *testing.T) {
 		runner.fs = afero.NewMemMapFs()
-		runner.env.Mode = CsiMode
+		runner.env.Mode = config.AgentCsiMode
 
 		err := runner.Run()
 
@@ -201,10 +202,10 @@ func TestRun(t *testing.T) {
 	})
 	t.Run(`install + config generation`, func(t *testing.T) {
 		runner.installer.(*installer.InstallerMock).
-			On("InstallAgent", BinDirMount).
+			On("InstallAgent", config.AgentBinDirMount).
 			Return(true, nil)
 		runner.fs = afero.NewMemMapFs()
-		runner.env.Mode = InstallerMode
+		runner.env.Mode = config.AgentInstallerMode
 
 		err := runner.Run()
 
@@ -272,8 +273,8 @@ func TestCreateContainerConfigurationFiles(t *testing.T) {
 			assertIfFileExists(t,
 				runner.fs,
 				filepath.Join(
-					ShareDirMount,
-					fmt.Sprintf(ContainerConfFilenameTemplate, container.Name)))
+					config.AgentShareDirMount,
+					fmt.Sprintf(config.AgentContainerConfFilenameTemplate, container.Name)))
 		}
 		// TODO: Check content ?
 	})
@@ -290,8 +291,8 @@ func TestSetLDPreload(t *testing.T) {
 		assertIfFileExists(t,
 			runner.fs,
 			filepath.Join(
-				ShareDirMount,
-				ldPreloadFilename))
+				config.AgentShareDirMount,
+				config.LdPreloadFilename))
 		// TODO: Check content ?
 	})
 }
@@ -323,7 +324,7 @@ func TestPropagateTLSCert(t *testing.T) {
 		require.NoError(t, err)
 		assertIfFileExists(t,
 			runner.fs,
-			filepath.Join(ShareDirMount, "custom.pem"))
+			filepath.Join(config.AgentShareDirMount, "custom.pem"))
 	})
 }
 
@@ -339,7 +340,7 @@ func TestWriteCurlOptions(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	exists, err := afero.Exists(filesystem, "mnt/share/curl_options.conf")
+	exists, err := afero.Exists(filesystem, "/mnt/share/curl_options.conf")
 
 	assert.NoError(t, err)
 	assert.True(t, exists)
@@ -369,17 +370,17 @@ func assertIfAgentFilesExists(t *testing.T, runner Runner) {
 		assertIfFileExists(t,
 			runner.fs,
 			filepath.Join(
-				ShareDirMount,
-				fmt.Sprintf(ContainerConfFilenameTemplate, container.Name)))
+				config.AgentShareDirMount,
+				fmt.Sprintf(config.AgentContainerConfFilenameTemplate, container.Name)))
 	}
 	// ld.so.preload
 	assertIfFileExists(t,
 		runner.fs,
-		filepath.Join(ShareDirMount, ldPreloadFilename))
+		filepath.Join(config.AgentShareDirMount, config.LdPreloadFilename))
 	// tls cert
 	assertIfFileExists(t,
 		runner.fs,
-		filepath.Join(ShareDirMount, "custom.pem"))
+		filepath.Join(config.AgentShareDirMount, "custom.pem"))
 
 }
 
@@ -387,13 +388,13 @@ func assertIfEnrichmentFilesExists(t *testing.T, runner Runner) {
 	assertIfFileExists(t,
 		runner.fs,
 		filepath.Join(
-			EnrichmentPath,
-			fmt.Sprintf(enrichmentFilenameTemplate, "json")))
+			config.EnrichmentMountPath,
+			fmt.Sprintf(config.EnrichmentFilenameTemplate, "json")))
 	assertIfFileExists(t,
 		runner.fs,
 		filepath.Join(
-			EnrichmentPath,
-			fmt.Sprintf(enrichmentFilenameTemplate, "properties")))
+			config.EnrichmentMountPath,
+			fmt.Sprintf(config.EnrichmentFilenameTemplate, "properties")))
 
 }
 
@@ -403,17 +404,17 @@ func assertIfAgentFilesNotExists(t *testing.T, runner Runner) {
 		assertIfFileNotExists(t,
 			runner.fs,
 			filepath.Join(
-				ShareDirMount,
-				fmt.Sprintf(ContainerConfFilenameTemplate, container.Name)))
+				config.AgentShareDirMount,
+				fmt.Sprintf(config.AgentContainerConfFilenameTemplate, container.Name)))
 	}
 	// ld.so.preload
 	assertIfFileNotExists(t,
 		runner.fs,
-		filepath.Join(ShareDirMount, ldPreloadFilename))
+		filepath.Join(config.AgentShareDirMount, config.LdPreloadFilename))
 	// tls cert
 	assertIfFileNotExists(t,
 		runner.fs,
-		filepath.Join(ShareDirMount, "custom.pem"))
+		filepath.Join(config.AgentShareDirMount, "custom.pem"))
 
 }
 
@@ -421,13 +422,13 @@ func assertIfEnrichmentFilesNotExists(t *testing.T, runner Runner) {
 	assertIfFileNotExists(t,
 		runner.fs,
 		filepath.Join(
-			EnrichmentPath,
-			fmt.Sprintf(enrichmentFilenameTemplate, "json")))
+			config.EnrichmentMountPath,
+			fmt.Sprintf(config.EnrichmentFilenameTemplate, "json")))
 	assertIfFileNotExists(t,
 		runner.fs,
 		filepath.Join(
-			EnrichmentPath,
-			fmt.Sprintf(enrichmentFilenameTemplate, "properties")))
+			config.EnrichmentMountPath,
+			fmt.Sprintf(config.EnrichmentFilenameTemplate, "properties")))
 
 }
 
