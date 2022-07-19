@@ -4,6 +4,7 @@ import (
 	"context"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -24,7 +25,7 @@ func NewDynakubeMapper(ctx context.Context, clt client.Client, apiReader client.
 
 // MapFromDynakube checks all the namespaces to all the dynakubes
 // updates the labels on the namespaces if necessary,
-// finds confliction dynakubes (2 dynakube with codeModules on the same namespace)
+// finds conflicting dynakubes (2 dynakube with codeModules on the same namespace)
 func (dm DynakubeMapper) MapFromDynakube() error {
 	modifiedNs, err := dm.MatchingNamespaces()
 	if err != nil {
@@ -54,10 +55,10 @@ func (dm DynakubeMapper) UnmapFromDynaKube() error {
 		return errors.WithMessagef(err, "failed to list namespaces for dynakube %s", dm.dk.Name)
 	}
 	for _, ns := range nsList {
-		delete(ns.Labels, InstanceLabel)
+		delete(ns.Labels, dtwebhook.InjectionInstanceLabel)
 		setUpdatedViaDynakubeAnnotation(&ns)
 		if err := dm.client.Update(dm.ctx, &ns); err != nil {
-			return errors.WithMessagef(err, "failed to remove label %s from namespace %s", InstanceLabel, ns.Name)
+			return errors.WithMessagef(err, "failed to remove label %s from namespace %s", dtwebhook.InjectionInstanceLabel, ns.Name)
 		}
 	}
 	return nil

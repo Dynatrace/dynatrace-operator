@@ -5,11 +5,10 @@ import (
 	"path/filepath"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/config"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes"
 	appvolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes/app"
-	"github.com/Dynatrace/dynatrace-operator/src/standalone"
-	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -23,7 +22,7 @@ func addOneAgentVolumeMounts(container *corev1.Container, installPath string) {
 		corev1.VolumeMount{
 			Name:      oneAgentShareVolumeName,
 			MountPath: preloadPath,
-			SubPath:   preloadSubPath,
+			SubPath:   config.LdPreloadFilename,
 		},
 		corev1.VolumeMount{
 			Name:      oneAgentBinVolumeName,
@@ -37,7 +36,7 @@ func addOneAgentVolumeMounts(container *corev1.Container, installPath string) {
 }
 
 func getContainerConfSubPath(containerName string) string {
-	return fmt.Sprintf(standalone.ContainerConfFilenameTemplate, containerName)
+	return fmt.Sprintf(config.AgentContainerConfFilenameTemplate, containerName)
 }
 
 func addCertVolumeMounts(container *corev1.Container) {
@@ -51,16 +50,16 @@ func addCertVolumeMounts(container *corev1.Container) {
 
 func addInitVolumeMounts(initContainer *corev1.Container) {
 	initContainer.VolumeMounts = append(initContainer.VolumeMounts,
-		corev1.VolumeMount{Name: oneAgentBinVolumeName, MountPath: standalone.BinDirMount},
-		corev1.VolumeMount{Name: oneAgentShareVolumeName, MountPath: standalone.ShareDirMount},
+		corev1.VolumeMount{Name: oneAgentBinVolumeName, MountPath: config.AgentBinDirMount},
+		corev1.VolumeMount{Name: oneAgentShareVolumeName, MountPath: config.AgentShareDirMount},
 	)
 }
 
 func addCurlOptionsVolumeMount(container *corev1.Container) {
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
 		Name:      oneAgentShareVolumeName,
-		MountPath: filepath.Join(oneAgentCustomKeysPath, standalone.CurlOptionsFileName),
-		SubPath:   standalone.CurlOptionsFileName,
+		MountPath: filepath.Join(oneAgentCustomKeysPath, config.AgentCurlOptionsFileName),
+		SubPath:   config.AgentCurlOptionsFileName,
 	})
 }
 
@@ -70,7 +69,7 @@ func addInjectionConfigVolume(pod *corev1.Pod) {
 			Name: injectionConfigVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: dtwebhook.SecretConfigName,
+					SecretName: config.AgentInitSecretName,
 				},
 			},
 		},
@@ -79,7 +78,7 @@ func addInjectionConfigVolume(pod *corev1.Pod) {
 
 func addInjectionConfigVolumeMount(container *corev1.Container) {
 	container.VolumeMounts = append(container.VolumeMounts,
-		corev1.VolumeMount{Name: injectionConfigVolumeName, MountPath: standalone.ConfigDirMount},
+		corev1.VolumeMount{Name: injectionConfigVolumeName, MountPath: config.AgentConfigDirMount},
 	)
 }
 

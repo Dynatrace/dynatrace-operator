@@ -4,7 +4,6 @@ import (
 	"context"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/mapper"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -61,7 +60,7 @@ func getNamespaceFromRequest(ctx context.Context, apiReader client.Reader, req a
 }
 
 func getDynakubeName(namespace corev1.Namespace, deployedViaOLM bool) (string, error) {
-	dynakubeName, ok := namespace.Labels[mapper.InstanceLabel]
+	dynakubeName, ok := namespace.Labels[dtwebhook.InjectionInstanceLabel]
 	if !ok {
 		return "", errors.Errorf("no DynaKube instance set for namespace: %s", namespace.Name)
 	}
