@@ -58,5 +58,5 @@ func (dsInfo *builderInfo) appendProxyArg(args []string) []string {
 }
 
 func (dsInfo *builderInfo) hasProxy() bool {
-	return dsInfo.instance.Spec.Proxy != nil && (dsInfo.instance.Spec.Proxy.ValueFrom != "" || dsInfo.instance.Spec.Proxy.Value != "")
+	return dsInfo.instance != nil && dsInfo.instance.Spec.Proxy != nil && (dsInfo.instance.Spec.Proxy.ValueFrom != "" || dsInfo.instance.Spec.Proxy.Value != "")
 }
