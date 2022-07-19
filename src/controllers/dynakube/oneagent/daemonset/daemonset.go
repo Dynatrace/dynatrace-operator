@@ -242,7 +242,7 @@ func (dsInfo *builderInfo) oneAgentResource() corev1.ResourceRequirements {
 }
 
 func (dsInfo *builderInfo) dnsPolicy() corev1.DNSPolicy {
-	if dsInfo.hostInjectSpec.DNSPolicy != "" {
+	if dsInfo.hostInjectSpec != nil && dsInfo.hostInjectSpec.DNSPolicy != "" {
 		return dsInfo.hostInjectSpec.DNSPolicy
 	}
 	return corev1.DNSClusterFirstWithHostNet

@@ -382,3 +382,12 @@ func TestOneAgentResources(t *testing.T) {
 		}, resources)
 	})
 }
+
+func TestDNSPolicy(t *testing.T) {
+	t.Run("returns default dns policy if hostInjection is nil", func(t *testing.T) {
+		builder := builderInfo{}
+		dnsPolicy := builder.dnsPolicy()
+
+		assert.Equal(t, corev1.DNSClusterFirstWithHostNet, dnsPolicy)
+	})
+}
