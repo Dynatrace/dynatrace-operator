@@ -37,8 +37,8 @@ const (
 
 var MetadataAccessPath = filepath.Join(DataPath, "csi.db")
 
-type CSIOptions struct {
-	NodeID   string
+type CsiOptions struct {
+	NodeId   string
 	Endpoint string
 	RootDir  string
 }

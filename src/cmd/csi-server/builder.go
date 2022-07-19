@@ -28,7 +28,7 @@ type CommandBuilder struct {
 	managerProvider cmdManager.Provider
 	namespace       string
 	filesystem      afero.Fs
-	csiOptions      *dtcsi.CSIOptions
+	csiOptions      *dtcsi.CsiOptions
 }
 
 func NewCsiServerCommandBuilder() CommandBuilder {
@@ -50,7 +50,7 @@ func (builder CommandBuilder) SetNamespace(namespace string) CommandBuilder {
 	return builder
 }
 
-func (builder CommandBuilder) setCsiOptions(csiOptions dtcsi.CSIOptions) CommandBuilder {
+func (builder CommandBuilder) setCsiOptions(csiOptions dtcsi.CsiOptions) CommandBuilder {
 	builder.csiOptions = &csiOptions
 	return builder
 }
@@ -60,10 +60,10 @@ func (builder CommandBuilder) setFilesystem(filesystem afero.Fs) CommandBuilder 
 	return builder
 }
 
-func (builder CommandBuilder) getCsiOptions() dtcsi.CSIOptions {
+func (builder CommandBuilder) getCsiOptions() dtcsi.CsiOptions {
 	if builder.csiOptions == nil {
-		builder.csiOptions = &dtcsi.CSIOptions{
-			NodeID:   nodeId,
+		builder.csiOptions = &dtcsi.CsiOptions{
+			NodeId:   nodeId,
 			Endpoint: endpoint,
 			RootDir:  dtcsi.DataPath,
 		}

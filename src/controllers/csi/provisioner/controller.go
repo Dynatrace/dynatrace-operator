@@ -48,7 +48,7 @@ const (
 type OneAgentProvisioner struct {
 	client       client.Client
 	apiReader    client.Reader
-	opts         dtcsi.CSIOptions
+	opts         dtcsi.CsiOptions
 	dtcBuildFunc dynakube.DynatraceClientFunc
 	fs           afero.Fs
 	recorder     record.EventRecorder
@@ -57,7 +57,7 @@ type OneAgentProvisioner struct {
 }
 
 // NewOneAgentProvisioner returns a new OneAgentProvisioner
-func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions, db metadata.Access) *OneAgentProvisioner {
+func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CsiOptions, db metadata.Access) *OneAgentProvisioner {
 	return &OneAgentProvisioner{
 		client:       mgr.GetClient(),
 		apiReader:    mgr.GetAPIReader(),

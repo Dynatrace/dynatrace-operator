@@ -43,7 +43,7 @@ import (
 
 type CSIDriverServer struct {
 	client  client.Client
-	opts    dtcsi.CSIOptions
+	opts    dtcsi.CsiOptions
 	fs      afero.Afero
 	mounter mount.Interface
 	db      metadata.Access
@@ -55,7 +55,7 @@ type CSIDriverServer struct {
 var _ csi.IdentityServer = &CSIDriverServer{}
 var _ csi.NodeServer = &CSIDriverServer{}
 
-func NewServer(client client.Client, opts dtcsi.CSIOptions, db metadata.Access) *CSIDriverServer {
+func NewServer(client client.Client, opts dtcsi.CsiOptions, db metadata.Access) *CSIDriverServer {
 	return &CSIDriverServer{
 		client:  client,
 		opts:    opts,
@@ -201,7 +201,7 @@ func (svr *CSIDriverServer) NodeUnstageVolume(context.Context, *csi.NodeUnstageV
 }
 
 func (svr *CSIDriverServer) NodeGetInfo(context.Context, *csi.NodeGetInfoRequest) (*csi.NodeGetInfoResponse, error) {
-	return &csi.NodeGetInfoResponse{NodeId: svr.opts.NodeID}, nil
+	return &csi.NodeGetInfoResponse{NodeId: svr.opts.NodeId}, nil
 }
 
 func (svr *CSIDriverServer) NodeGetCapabilities(context.Context, *csi.NodeGetCapabilitiesRequest) (*csi.NodeGetCapabilitiesResponse, error) {

@@ -19,9 +19,7 @@ import (
 const use = "csi-provisioner"
 
 var (
-	nodeId       = ""
 	probeAddress = ""
-	endpoint     = ""
 )
 
 type CommandBuilder struct {
@@ -29,7 +27,7 @@ type CommandBuilder struct {
 	managerProvider cmdManager.Provider
 	namespace       string
 	filesystem      afero.Fs
-	csiOptions      *dtcsi.CSIOptions
+	csiOptions      *dtcsi.CsiOptions
 }
 
 func NewCsiProvisionerCommandBuilder() CommandBuilder {
@@ -51,7 +49,7 @@ func (builder CommandBuilder) SetNamespace(namespace string) CommandBuilder {
 	return builder
 }
 
-func (builder CommandBuilder) setCsiOptions(csiOptions dtcsi.CSIOptions) CommandBuilder {
+func (builder CommandBuilder) setCsiOptions(csiOptions dtcsi.CsiOptions) CommandBuilder {
 	builder.csiOptions = &csiOptions
 	return builder
 }
@@ -61,12 +59,10 @@ func (builder CommandBuilder) setFilesystem(filesystem afero.Fs) CommandBuilder 
 	return builder
 }
 
-func (builder CommandBuilder) getCsiOptions() dtcsi.CSIOptions {
+func (builder CommandBuilder) getCsiOptions() dtcsi.CsiOptions {
 	if builder.csiOptions == nil {
-		builder.csiOptions = &dtcsi.CSIOptions{
-			NodeID:   nodeId,
-			Endpoint: endpoint,
-			RootDir:  dtcsi.DataPath,
+		builder.csiOptions = &dtcsi.CsiOptions{
+			RootDir: dtcsi.DataPath,
 		}
 	}
 
@@ -101,9 +97,7 @@ func (builder CommandBuilder) Build() *cobra.Command {
 }
 
 func addFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&nodeId, "node-id", "", "node id")
-	cmd.PersistentFlags().StringVar(&endpoint, "endpoint", "unix:///tmp/csi.sock", "CSI endpoint")
-	cmd.PersistentFlags().StringVar(&probeAddress, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
+	cmd.PersistentFlags().StringVar(&probeAddress, "health-probe-bind-address", "", "The address the probe endpoint binds to.")
 }
 
 func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
@@ -130,11 +124,6 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		if err != nil {
 			return err
 		}
-
-		//err = metadata.CorrectMetadata(csiManager.GetClient(), access)
-		//if err != nil {
-		//	return err
-		//}
 
 		err = csiprovisioner.NewOneAgentProvisioner(csiManager, builder.getCsiOptions(), access).SetupWithManager(csiManager)
 		if err != nil {

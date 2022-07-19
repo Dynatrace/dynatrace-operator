@@ -52,10 +52,8 @@ func TestCsiCommandBuilder(t *testing.T) {
 		assert.Equal(t, expectedFs, builder.getFilesystem())
 	})
 	t.Run("set csi options", func(t *testing.T) {
-		expectedOptions := dtcsi.CSIOptions{
-			NodeID:   "test-node-id",
-			Endpoint: "test-endpoint",
-			RootDir:  dtcsi.DataPath,
+		expectedOptions := dtcsi.CsiOptions{
+			RootDir: dtcsi.DataPath,
 		}
 		builder := NewCsiProvisionerCommandBuilder().
 			setCsiOptions(expectedOptions)

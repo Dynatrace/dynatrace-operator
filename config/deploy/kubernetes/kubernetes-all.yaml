@@ -4731,20 +4731,7 @@ spec:
         imagePullPolicy: Always
         args:
           - csi-provisioner
-          - --endpoint=unix://csi/csi.sock
-          - --node-id=$(KUBE_NODE_NAME)
           - --health-probe-bind-address=:10081
-        env:
-          - name: POD_NAMESPACE
-            valueFrom:
-              fieldRef:
-                apiVersion: v1
-                fieldPath: metadata.namespace
-          - name: KUBE_NODE_NAME
-            valueFrom:
-              fieldRef:
-                apiVersion: v1
-                fieldPath: spec.nodeName
         livenessProbe:
           failureThreshold: 3
           httpGet:

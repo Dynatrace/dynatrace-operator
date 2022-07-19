@@ -57,7 +57,6 @@ func (provider csiDriverManagerProvider) createOptions(namespace string) ctrl.Op
 		Namespace:              namespace,
 		Scheme:                 scheme.Scheme,
 		MetricsBindAddress:     metricsBindAddress,
-		Port:                   port,
 		HealthProbeBindAddress: provider.probeAddress,
 		LivenessEndpointName:   livenessEndpointName,
 	}
