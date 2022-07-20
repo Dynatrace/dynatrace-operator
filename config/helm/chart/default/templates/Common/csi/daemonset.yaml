@@ -166,7 +166,6 @@ spec:
             name: dynatrace-oneagent-data-dir
           - mountPath: /tmp
             name: tmp-dir
-
         # Used to make a gRPC request (GetPluginInfo()) to the driver to get driver name and driver contain
         # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.
         # Used for registering the driver with kubelet
