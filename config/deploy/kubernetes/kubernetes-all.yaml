@@ -4731,7 +4731,13 @@ spec:
         imagePullPolicy: Always
         args:
           - csi-provisioner
-          - --health-probe-bind-address=:10081
+          - --health-probe-bind-address=:10090
+        env:
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
         livenessProbe:
           failureThreshold: 3
           httpGet:
@@ -4743,7 +4749,7 @@ spec:
           successThreshold: 1
           timeoutSeconds: 1
         ports:
-          - containerPort: 10081
+          - containerPort: 10090
             name: livez
             protocol: TCP
         resources:
@@ -4753,7 +4759,7 @@ spec:
           requests:
             cpu: 300m
             memory: 100Mi
-        securityContext: # doesnt need to be root
+        securityContext:
           runAsUser: 0
           privileged: true # Needed for mountPropagation
           allowPrivilegeEscalation: true # Needed for privileged
