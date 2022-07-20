@@ -97,7 +97,7 @@ func (builder CommandBuilder) Build() *cobra.Command {
 }
 
 func addFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&probeAddress, "health-probe-bind-address", "", "The address the probe endpoint binds to.")
+	cmd.PersistentFlags().StringVar(&probeAddress, "health-probe-bind-address", ":10090", "The address the probe endpoint binds to.")
 }
 
 func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
