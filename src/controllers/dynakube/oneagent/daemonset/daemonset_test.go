@@ -376,28 +376,54 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 }
 
 func TestPodSpecServiceAccountName(t *testing.T) {
-	t.Run("service account name is unprivileged by default", func(t *testing.T) {
+	t.Run("service account name is unprivileged + readonly by default", func(t *testing.T) {
 		builder := builderInfo{}
 		podSpec := builder.podSpec()
 
-		assert.Equal(t, defaultUnprivilegedServiceAccountName, podSpec.ServiceAccountName)
+		assert.Equal(t, unprivilegedReadOnlyServiceAccountName, podSpec.ServiceAccountName)
 	})
-	t.Run("service account name is privileged if run as privileged", func(t *testing.T) {
-		dynakube := &dynatracev1beta1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					dynatracev1beta1.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
+	t.Run("unprivileged and not readonly is recognized", func(t *testing.T) {
+		builder := builderInfo{
+			instance: &dynatracev1beta1.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent: "false"},
 				},
 			},
 		}
+		podSpec := builder.podSpec()
+
+		assert.Equal(t, unprivilegedServiceAccountName, podSpec.ServiceAccountName)
+	})
+	t.Run("privileged and not readonly is recognized", func(t *testing.T) {
 		builder := builderInfo{
-			instance: dynakube,
+			instance: &dynatracev1beta1.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent:               "false",
+						dynatracev1beta1.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
+					},
+				},
+			},
 		}
 		podSpec := builder.podSpec()
 
-		assert.Equal(t, defaultPrivilegedServiceAccountName, podSpec.ServiceAccountName)
+		assert.Equal(t, privilegedServiceAccountName, podSpec.ServiceAccountName)
 	})
-	t.Run("service account name is privileged if run as unprivileged", func(t *testing.T) {
+	t.Run("privileged and readonly is recognized", func(t *testing.T) {
+		builder := builderInfo{
+			instance: &dynatracev1beta1.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						dynatracev1beta1.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
+					},
+				},
+			},
+		}
+		podSpec := builder.podSpec()
+
+		assert.Equal(t, privilegedReadOnlyServiceAccountName, podSpec.ServiceAccountName)
+	})
+	t.Run("service account name is unprivileged if run as unprivileged", func(t *testing.T) {
 		dynakube := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
@@ -410,7 +436,7 @@ func TestPodSpecServiceAccountName(t *testing.T) {
 		}
 		podSpec := builder.podSpec()
 
-		assert.Equal(t, defaultUnprivilegedServiceAccountName, podSpec.ServiceAccountName)
+		assert.Equal(t, unprivilegedReadOnlyServiceAccountName, podSpec.ServiceAccountName)
 	})
 }
 
