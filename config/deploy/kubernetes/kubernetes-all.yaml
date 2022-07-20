@@ -4697,11 +4697,11 @@ spec:
           protocol: TCP
         resources:
           limits:
-            cpu: 300m
-            memory: 100Mi
+            cpu: 100m
+            memory: 50Mi
           requests:
-            cpu: 300m
-            memory: 100Mi
+            cpu: 100m
+            memory: 50Mi
         securityContext:
           runAsUser: 0
           privileged: true # Needed for mountPropagation
@@ -4777,7 +4777,6 @@ spec:
             name: dynatrace-oneagent-data-dir
           - mountPath: /tmp
             name: tmp-dir
-
         # Used to make a gRPC request (GetPluginInfo()) to the driver to get driver name and driver contain
         # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.
         # Used for registering the driver with kubelet
