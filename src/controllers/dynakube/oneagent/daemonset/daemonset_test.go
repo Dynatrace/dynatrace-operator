@@ -380,7 +380,7 @@ func TestPodSpecServiceAccountName(t *testing.T) {
 		builder := builderInfo{}
 		podSpec := builder.podSpec()
 
-		assert.Equal(t, unprivilegedReadOnlyServiceAccountName, podSpec.ServiceAccountName)
+		assert.Equal(t, unprivilegedServiceAccountName, podSpec.ServiceAccountName)
 	})
 	t.Run("unprivileged and not readonly is recognized", func(t *testing.T) {
 		builder := builderInfo{
@@ -421,7 +421,7 @@ func TestPodSpecServiceAccountName(t *testing.T) {
 		}
 		podSpec := builder.podSpec()
 
-		assert.Equal(t, privilegedReadOnlyServiceAccountName, podSpec.ServiceAccountName)
+		assert.Equal(t, privilegedServiceAccountName, podSpec.ServiceAccountName)
 	})
 	t.Run("service account name is unprivileged if run as unprivileged", func(t *testing.T) {
 		dynakube := &dynatracev1beta1.DynaKube{
@@ -436,7 +436,7 @@ func TestPodSpecServiceAccountName(t *testing.T) {
 		}
 		podSpec := builder.podSpec()
 
-		assert.Equal(t, unprivilegedReadOnlyServiceAccountName, podSpec.ServiceAccountName)
+		assert.Equal(t, unprivilegedServiceAccountName, podSpec.ServiceAccountName)
 	})
 }
 

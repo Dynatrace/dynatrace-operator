@@ -15,10 +15,8 @@ const (
 	annotationUnprivileged      = "container.apparmor.security.beta.kubernetes.io/dynatrace-oneagent"
 	annotationUnprivilegedValue = "unconfined"
 
-	unprivilegedServiceAccountName         = "dynatrace-dynakube-oneagent"
-	unprivilegedReadOnlyServiceAccountName = "dynatrace-dynakube-oneagent-readonly"
-	privilegedServiceAccountName           = "dynatrace-dynakube-oneagent-privileged"
-	privilegedReadOnlyServiceAccountName   = "dynatrace-dynakube-oneagent-privileged-readonly"
+	unprivilegedServiceAccountName = "dynatrace-dynakube-oneagent-unprivileged"
+	privilegedServiceAccountName   = "dynatrace-dynakube-oneagent-privileged"
 
 	// normal oneagent shutdown scenario with some extra time
 	defaultTerminationGracePeriod = int64(80)
@@ -230,19 +228,19 @@ func (dsInfo *builderInfo) serviceAccountName() string {
 		return serviceAccountFromInstance(dsInfo.instance)
 	}
 
-	return unprivilegedReadOnlyServiceAccountName
+	return unprivilegedServiceAccountName
 }
 
 func serviceAccountFromInstance(instance *dynatracev1beta1.DynaKube) string {
 	if instance.IsOneAgentPrivileged() && instance.FeatureDisableReadOnlyOneAgent() {
 		return privilegedServiceAccountName
 	} else if instance.IsOneAgentPrivileged() {
-		return privilegedReadOnlyServiceAccountName
+		return privilegedServiceAccountName
 	} else if instance.FeatureDisableReadOnlyOneAgent() {
 		return unprivilegedServiceAccountName
 	}
 
-	return unprivilegedReadOnlyServiceAccountName
+	return unprivilegedServiceAccountName
 }
 
 func (dsInfo *builderInfo) immutableOneAgentImage() string {
