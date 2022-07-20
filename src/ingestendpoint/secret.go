@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/config"
 	agcapability "github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/reconciler/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
@@ -59,7 +60,7 @@ func (g *EndpointSecretGenerator) GenerateForNamespace(ctx context.Context, dkNa
 	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      SecretEndpointName,
+			Name:      config.EnrichmentEndpointSecretName,
 			Namespace: targetNs,
 			Labels:    coreLabels.BuildMatchLabels(),
 		},
@@ -94,7 +95,7 @@ func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *d
 		secret := &corev1.Secret{
 			TypeMeta: metav1.TypeMeta{},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      SecretEndpointName,
+				Name:      config.EnrichmentEndpointSecretName,
 				Namespace: targetNs.Name,
 				Labels:    coreLabels.BuildMatchLabels(),
 			},
@@ -120,7 +121,7 @@ func (g *EndpointSecretGenerator) RemoveEndpointSecrets(ctx context.Context, dk 
 	for _, targetNs := range nsList {
 		endpointSecret := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      SecretEndpointName,
+				Name:      config.EnrichmentEndpointSecretName,
 				Namespace: targetNs.GetName(),
 			},
 		}

@@ -1,8 +1,7 @@
 package dataingest_mutation
 
 import (
-	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/src/ingestendpoint"
-	"github.com/Dynatrace/dynatrace-operator/src/standalone"
+	"github.com/Dynatrace/dynatrace-operator/src/config"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -17,7 +16,7 @@ func addIngestEndpointVolume(pod *corev1.Pod) {
 			Name: ingestEndpointVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: dtingestendpoint.SecretEndpointName,
+					SecretName: config.EnrichmentEndpointSecretName,
 				},
 			},
 		},
@@ -53,7 +52,7 @@ func addWorkloadEnrichmentVolumeMount(container *corev1.Container) {
 	container.VolumeMounts = append(container.VolumeMounts,
 		corev1.VolumeMount{
 			Name:      workloadEnrichmentVolumeName,
-			MountPath: standalone.EnrichmentPath,
+			MountPath: config.EnrichmentMountPath,
 		},
 	)
 }

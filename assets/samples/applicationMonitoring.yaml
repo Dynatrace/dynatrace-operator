@@ -67,6 +67,11 @@ spec:
       #
       useCSIDriver: false
 
+      # Optional: The URI of the image that contains the codemodules that will be injected into user applications.
+      # Only available when `useCSIDriver` is set to `true`.
+      # Code Modules Image Dockerfile sample: https://dt-url.net/operator-docker-samples
+      # codeModulesImage: ""
+
       # initResources:
       #   requests:
       #     cpu: 100m

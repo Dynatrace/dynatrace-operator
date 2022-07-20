@@ -29,7 +29,6 @@ jobs:
     name: Upload docker image to Registry
     runs-on: ubuntu-latest
     env:
-      SOURCE_IMAGE_TAG: operator-${{ inputs.platform }}:${{ inputs.version }}
       TARGET_IMAGE_TAG: ${{ inputs.registry }}/${{ inputs.repository }}:${{ inputs.version }}-${{ inputs.platform }}
     steps:
       - name: Checkout
@@ -47,4 +46,4 @@ jobs:
           path: /tmp
       - name: Upload image to Registry
         run: |
-          hack/build/ci/upload-docker-image.sh "${{ inputs.platform }}" "${SOURCE_IMAGE_TAG}" "${TARGET_IMAGE_TAG}"
+          hack/build/ci/upload-docker-image.sh "${{ inputs.platform }}" "${TARGET_IMAGE_TAG}"

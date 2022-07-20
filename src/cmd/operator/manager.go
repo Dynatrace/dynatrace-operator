@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/nodes"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/pkg/errors"
+	_ "k8s.io/client-go/plugin/pkg/client/auth" // important for runnning operator locally
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -19,7 +20,7 @@ const (
 	operatorManagerPort    = 8383
 
 	leaderElectionId           = "dynatrace-operator-lock"
-	leaderElectionResourceLock = "configmaps"
+	leaderElectionResourceLock = "configmapsleases"
 
 	livenessEndpointName = "/livez"
 	readyzEndpointName   = "readyz"

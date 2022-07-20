@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/mapper"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
+	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -126,7 +126,7 @@ func TestInjection(t *testing.T) {
 		var updNs corev1.Namespace
 		assert.NoError(t, json.Unmarshal(updNsBytes, &updNs))
 
-		dkName, ok := updNs.Labels[mapper.InstanceLabel]
+		dkName, ok := updNs.Labels[dtwebhook.InjectionInstanceLabel]
 		assert.True(t, ok)
 		assert.Equal(t, dk.Name, dkName)
 	})
@@ -164,7 +164,7 @@ func TestInjection(t *testing.T) {
 		var updNs corev1.Namespace
 		assert.NoError(t, json.Unmarshal(updNsBytes, &updNs))
 
-		dkName, ok := updNs.Labels[mapper.InstanceLabel]
+		dkName, ok := updNs.Labels[dtwebhook.InjectionInstanceLabel]
 		assert.True(t, ok)
 		assert.Equal(t, dk.Name, dkName)
 		assert.Equal(t, 2, len(updNs.Labels))
@@ -175,8 +175,8 @@ func TestInjection(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-namespace",
 				Labels: map[string]string{
-					"inject":             "true",
-					mapper.InstanceLabel: "stale",
+					"inject":                         "true",
+					dtwebhook.InjectionInstanceLabel: "stale",
 				},
 			},
 		}
@@ -204,7 +204,7 @@ func TestInjection(t *testing.T) {
 		var updNs corev1.Namespace
 		assert.NoError(t, json.Unmarshal(updNsBytes, &updNs))
 
-		dkName, ok := updNs.Labels[mapper.InstanceLabel]
+		dkName, ok := updNs.Labels[dtwebhook.InjectionInstanceLabel]
 		assert.True(t, ok)
 		assert.Equal(t, dk.Name, dkName)
 		assert.Equal(t, 2, len(updNs.Labels))

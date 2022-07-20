@@ -7,7 +7,6 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
-	"github.com/Dynatrace/dynatrace-operator/src/mapper"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -81,7 +80,7 @@ func TestGetNamespaceFromRequest(t *testing.T) {
 func TestGetDynakubeName(t *testing.T) {
 	t.Run("should return the dynakube's name", func(t *testing.T) {
 		namespace := getTestNamespace()
-		dynakubeName, err := getDynakubeName(*namespace)
+		dynakubeName, err := getDynakubeName(*namespace, false)
 		require.NoError(t, err)
 		assert.Equal(t, testDynakubeName, dynakubeName)
 	})
@@ -155,7 +154,7 @@ func getTestNamespace() *corev1.Namespace {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: testNamespaceName,
 			Labels: map[string]string{
-				mapper.InstanceLabel: testDynakubeName,
+				dtwebhook.InjectionInstanceLabel: testDynakubeName,
 			},
 		},
 	}

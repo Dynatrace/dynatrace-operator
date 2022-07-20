@@ -52,9 +52,6 @@ func findRootOwnerOfPod(ctx context.Context, clt client.Client, pod *corev1.Pod,
 
 func findRootOwner(ctx context.Context, clt client.Client, partialObjectMetadata *metav1.PartialObjectMetadata) (workloadInfo, error) {
 	if len(partialObjectMetadata.ObjectMeta.OwnerReferences) == 0 {
-		if partialObjectMetadata.Kind == "Pod" {
-			partialObjectMetadata.Kind = ""
-		}
 		return *newWorkloadInfo(partialObjectMetadata), nil
 	}
 

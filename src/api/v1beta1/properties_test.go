@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -265,5 +266,32 @@ func TestCodeModulesVersion(t *testing.T) {
 		}
 		version := dk.CodeModulesVersion()
 		assert.Equal(t, testVersion, version)
+	})
+}
+
+func TestGetRawImageTag(t *testing.T) {
+	t.Run(`with tag`, func(t *testing.T) {
+		expectedTag := "test"
+		rawTag := getRawImageTag("example.test:" + expectedTag)
+		require.Equal(t, expectedTag, rawTag)
+	})
+	t.Run(`without tag`, func(t *testing.T) {
+		expectedTag := "latest"
+		rawTag := getRawImageTag("example.test")
+		require.Equal(t, expectedTag, rawTag)
+	})
+	t.Run(`local URI with port`, func(t *testing.T) {
+		expectedTag := "test"
+		// based on https://docs.docker.com/engine/reference/commandline/tag/#tag-an-image-for-a-private-repository
+		rawTag := getRawImageTag("myregistryhost:5000/fedora/httpd:" + expectedTag)
+		require.Equal(t, expectedTag, rawTag)
+	})
+	t.Run(`wrong URI => no panic`, func(t *testing.T) {
+		rawTag := getRawImageTag("example.test:")
+		require.Equal(t, "", rawTag)
+	})
+	t.Run(`very wrong URI => no panic`, func(t *testing.T) {
+		rawTag := getRawImageTag(":")
+		require.Equal(t, "", rawTag)
 	})
 }

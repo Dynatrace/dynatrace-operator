@@ -84,6 +84,25 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 	})
 }
 
+func TestFindRootOwner(t *testing.T) {
+	ctx := context.TODO()
+	clt := fake.NewClient()
+	metadata := metav1.PartialObjectMetadata{
+		TypeMeta: metav1.TypeMeta{
+			Kind: "Pod",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: testPodName,
+		},
+	}
+
+	workload, err := findRootOwner(ctx, clt, &metadata)
+
+	assert.NoError(t, err)
+	assert.Equal(t, "Pod", workload.kind)
+	assert.Equal(t, testPodName, workload.name)
+}
+
 func createTestWorkloadInfo() *workloadInfo {
 	return &workloadInfo{
 		kind: "test",

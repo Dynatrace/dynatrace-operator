@@ -6,6 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/certificates"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 	cmdManager "github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
+	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook/mutation/namespace_mutator"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook/mutation/pod_mutator"
@@ -29,10 +30,10 @@ var (
 )
 
 type CommandBuilder struct {
-	configProvider   config.Provider
-	managerProvider  cmdManager.Provider
-	namespace        string
-	isDeployedViaOlm bool
+	configProvider  config.Provider
+	managerProvider cmdManager.Provider
+	namespace       string
+	podName         string
 }
 
 func NewWebhookCommandBuilder() CommandBuilder {
@@ -62,8 +63,8 @@ func (builder CommandBuilder) SetNamespace(namespace string) CommandBuilder {
 	return builder
 }
 
-func (builder CommandBuilder) SetIsDeployedViaOlm(isDeployedViaOlm bool) CommandBuilder {
-	builder.isDeployedViaOlm = isDeployedViaOlm
+func (builder CommandBuilder) SetPodName(podName string) CommandBuilder {
+	builder.podName = podName
 	return builder
 }
 
@@ -86,7 +87,6 @@ func addFlags(cmd *cobra.Command) {
 
 func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-		// TODO: make the code below testable and test it, but in another ticket because otherwise adding the other commands will take a week
 		kubeConfig, err := builder.configProvider.GetConfig()
 		if err != nil {
 			return err
@@ -97,7 +97,12 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		if !builder.isDeployedViaOlm {
+		isDeployedViaOLM, err := kubesystem.IsDeployedViaOlm(webhookManager.GetAPIReader(), builder.podName, builder.namespace)
+		if err != nil {
+			return err
+		}
+
+		if !isDeployedViaOLM {
 			certificates.
 				NewCertificateWatcher(webhookManager, builder.namespace, webhook.SecretCertsName).
 				WaitForCertificates()

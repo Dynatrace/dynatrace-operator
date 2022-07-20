@@ -41,12 +41,17 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 
 	webhookPodImage, err := getWebhookContainerImage(apiReader, webhookPodName, webhookNamespace)
 	if err != nil {
-		return errors.WithStack(err)
+		return err
 	}
 
 	clusterID, err := getClusterID(apiReader)
 	if err != nil {
-		return errors.WithStack(err)
+		return err
+	}
+
+	deployedViaOLM, err := kubesystem.IsDeployedViaOlm(apiReader, webhookPodName, webhookNamespace)
+	if err != nil {
+		return err
 	}
 
 	mgr.GetWebhookServer().Register("/inject", &webhook.Admission{Handler: &podMutatorWebhook{
@@ -54,6 +59,7 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 		webhookNamespace: webhookNamespace,
 		webhookImage:     webhookPodImage,
 		apmExists:        apmExists,
+		deployedViaOLM:   deployedViaOLM,
 		clusterID:        clusterID,
 		recorder:         newPodMutatorEventRecorder(mgr.GetEventRecorderFor("Webhook Server")),
 		mutators: []dtwebhook.PodMutator{

@@ -37,6 +37,7 @@ type podMutatorWebhook struct {
 	webhookNamespace string
 	clusterID        string
 	apmExists        bool
+	deployedViaOLM   bool
 
 	mutators []dtwebhook.PodMutator
 }
@@ -58,6 +59,10 @@ func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.
 	if err != nil {
 		return silentErrorResponse(mutationRequest.Pod, err)
 	}
+	if noMutationRequired(mutationRequest) {
+		return emptyPatch
+	}
+
 	podName := mutationRequest.Pod.GenerateName // at this point, the pod name is not yet set
 
 	webhook.setupEventRecorder(mutationRequest)
@@ -79,6 +84,10 @@ func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.
 	log.Info("injection finished for pod", "podName", podName, "namespace", request.Namespace)
 
 	return createResponseForPod(mutationRequest.Pod, request)
+}
+
+func noMutationRequired(mutationRequest *dtwebhook.MutationRequest) bool {
+	return mutationRequest == nil
 }
 
 func (webhook *podMutatorWebhook) setupEventRecorder(mutationRequest *dtwebhook.MutationRequest) {

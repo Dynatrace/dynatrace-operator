@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/Dynatrace/dynatrace-operator/src/arch"
+	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/installer"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/url"
@@ -75,7 +76,7 @@ func (runner *Runner) Run() (resultedError error) {
 			return err
 		}
 
-		if runner.env.Mode == InstallerMode {
+		if runner.env.Mode == config.AgentInstallerMode {
 			if err := runner.installOneAgent(); err != nil {
 				return err
 			}
@@ -91,7 +92,7 @@ func (runner *Runner) Run() (resultedError error) {
 }
 
 func (runner *Runner) consumeErrorIfNecessary(resultedError *error) {
-	if !runner.env.CanFail && *resultedError != nil {
+	if !runner.env.FailurePolicy && *resultedError != nil {
 		log.Error(*resultedError, "This error has been masked to not fail the container.")
 		*resultedError = nil
 	}
@@ -99,7 +100,7 @@ func (runner *Runner) consumeErrorIfNecessary(resultedError *error) {
 
 func (runner *Runner) setHostTenant() error {
 	log.Info("setting host tenant")
-	runner.hostTenant = NoHostTenant
+	runner.hostTenant = config.AgentNoHostTenant
 	if runner.config.HasHost {
 		hostTenant, ok := runner.config.MonitoringNodes[runner.env.K8NodeName]
 		if !ok {
@@ -113,7 +114,7 @@ func (runner *Runner) setHostTenant() error {
 
 func (runner *Runner) installOneAgent() error {
 	log.Info("downloading OneAgent")
-	_, err := runner.installer.InstallAgent(BinDirMount)
+	_, err := runner.installer.InstallAgent(config.AgentBinDirMount)
 	if err != nil {
 		return err
 	}
@@ -121,7 +122,7 @@ func (runner *Runner) installOneAgent() error {
 	if err != nil {
 		return err
 	}
-	if err := runner.installer.UpdateProcessModuleConfig(BinDirMount, processModuleConfig); err != nil {
+	if err := runner.installer.UpdateProcessModuleConfig(config.AgentBinDirMount, processModuleConfig); err != nil {
 		return err
 	}
 	return nil
@@ -165,15 +166,15 @@ func (runner *Runner) configureInstallation() error {
 }
 
 func (runner *Runner) setLDPreload() error {
-	return runner.createConfFile(filepath.Join(ShareDirMount, ldPreloadFilename), fmt.Sprintf("%s/agent/lib64/liboneagentproc.so", runner.env.InstallPath))
+	return runner.createConfFile(filepath.Join(config.AgentShareDirMount, config.LdPreloadFilename), filepath.Join(runner.env.InstallPath, config.LibAgentProcPath))
 }
 
 func (runner *Runner) createContainerConfigurationFiles() error {
 	for _, container := range runner.env.Containers {
 		log.Info("creating conf file for container", "container", container)
-		confFilePath := filepath.Join(ShareDirMount, fmt.Sprintf(ContainerConfFilenameTemplate, container.Name))
+		confFilePath := filepath.Join(config.AgentShareDirMount, fmt.Sprintf(config.AgentContainerConfFilenameTemplate, container.Name))
 		content := runner.getBaseConfContent(container)
-		if runner.hostTenant != NoHostTenant {
+		if runner.hostTenant != config.AgentNoHostTenant {
 			if runner.config.TenantUUID == runner.hostTenant {
 				log.Info("adding k8s fields")
 				content += runner.getK8ConfContent()
@@ -199,5 +200,5 @@ func (runner *Runner) enrichMetadata() error {
 }
 
 func (runner *Runner) propagateTLSCert() error {
-	return runner.createConfFile(filepath.Join(ShareDirMount, "custom.pem"), runner.config.TlsCert)
+	return runner.createConfFile(filepath.Join(config.AgentShareDirMount, "custom.pem"), runner.config.TlsCert)
 }
