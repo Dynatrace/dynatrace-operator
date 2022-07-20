@@ -21,3 +21,6 @@ prerequisites/setup-pre-commit:
 	go install golang.org/x/tools/cmd/goimports@v0.1.10
 	cp ./.github/pre-commit ./.git/hooks/pre-commit
 	chmod +x ./.git/hooks/pre-commit
+
+prerequisites/helm:
+	helm plugin install https://github.com/quintush/helm-unittest --version 0.2.8
