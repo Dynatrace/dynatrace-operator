@@ -188,7 +188,7 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 		Containers: []corev1.Container{{
 			Args:            arguments,
 			Env:             environmentVariables,
-			Image:           dsInfo.instance.ImmutableOneAgentImage(),
+			Image:           dsInfo.immutableOneAgentImage(),
 			ImagePullPolicy: corev1.PullAlways,
 			Name:            podName,
 			ReadinessProbe: &corev1.Probe{
@@ -213,13 +213,28 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 		HostIPC:                       false,
 		NodeSelector:                  dsInfo.nodeSelector(),
 		PriorityClassName:             dsInfo.priorityClassName(),
-		ServiceAccountName:            defaultUnprivilegedServiceAccountName,
+		ServiceAccountName:            dsInfo.serviceAccountName(),
 		Tolerations:                   dsInfo.tolerations(),
 		DNSPolicy:                     dnsPolicy,
 		Volumes:                       volumes,
 		Affinity:                      affinity,
 		TerminationGracePeriodSeconds: address.Of(defaultTerminationGracePeriod),
 	}
+}
+
+func (dsInfo *builderInfo) serviceAccountName() string {
+	if dsInfo.instance != nil && dsInfo.instance.FeatureAgentRunPrivileged() {
+		return defaultPrivilegedServiceAccountName
+	}
+
+	return defaultUnprivilegedServiceAccountName
+}
+
+func (dsInfo *builderInfo) immutableOneAgentImage() string {
+	if dsInfo.instance == nil {
+		return ""
+	}
+	return dsInfo.instance.ImmutableOneAgentImage()
 }
 
 func (dsInfo *builderInfo) tolerations() []corev1.Toleration {
@@ -282,49 +297,51 @@ func (dsInfo *builderInfo) volumes() []corev1.Volume {
 }
 
 func (dsInfo *builderInfo) imagePullSecrets() []corev1.LocalObjectReference {
-	pullSecretName := dsInfo.instance.PullSecret()
-	pullSecrets := make([]corev1.LocalObjectReference, 0)
+	if dsInfo.instance == nil {
+		return []corev1.LocalObjectReference{}
+	}
 
-	pullSecrets = append(pullSecrets, corev1.LocalObjectReference{
-		Name: pullSecretName,
-	})
-	return pullSecrets
+	return []corev1.LocalObjectReference{{Name: dsInfo.instance.PullSecret()}}
 }
 
 func (dsInfo *builderInfo) securityContext() *corev1.SecurityContext {
 	var securityContext corev1.SecurityContext
-	if dsInfo.instance.NeedsReadOnlyOneAgents() {
+	if dsInfo.instance != nil && dsInfo.instance.NeedsReadOnlyOneAgents() {
 		securityContext.RunAsNonRoot = address.Of(true)
 		securityContext.RunAsUser = address.Of(int64(1000))
 		securityContext.RunAsGroup = address.Of(int64(1000))
 	}
 
-	if dsInfo.instance.IsOneAgentPrivileged() {
+	if dsInfo.instance != nil && dsInfo.instance.IsOneAgentPrivileged() {
 		securityContext.Privileged = address.Of(true)
 	} else {
-		securityContext.Capabilities = &corev1.Capabilities{
-			Drop: []corev1.Capability{
-				"ALL",
-			},
-			Add: []corev1.Capability{
-				"CHOWN",
-				"DAC_OVERRIDE",
-				"DAC_READ_SEARCH",
-				"FOWNER",
-				"FSETID",
-				"KILL",
-				"NET_ADMIN",
-				"NET_RAW",
-				"SETFCAP",
-				"SETGID",
-				"SETUID",
-				"SYS_ADMIN",
-				"SYS_CHROOT",
-				"SYS_PTRACE",
-				"SYS_RESOURCE",
-			},
-		}
+		securityContext.Capabilities = defaultSecurityContextCapabilities()
 	}
 
 	return &securityContext
+}
+
+func defaultSecurityContextCapabilities() *corev1.Capabilities {
+	return &corev1.Capabilities{
+		Drop: []corev1.Capability{
+			"ALL",
+		},
+		Add: []corev1.Capability{
+			"CHOWN",
+			"DAC_OVERRIDE",
+			"DAC_READ_SEARCH",
+			"FOWNER",
+			"FSETID",
+			"KILL",
+			"NET_ADMIN",
+			"NET_RAW",
+			"SETFCAP",
+			"SETGID",
+			"SETUID",
+			"SYS_ADMIN",
+			"SYS_CHROOT",
+			"SYS_PTRACE",
+			"SYS_RESOURCE",
+		},
+	}
 }
