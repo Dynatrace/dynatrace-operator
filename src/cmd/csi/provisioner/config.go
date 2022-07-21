@@ -1,4 +1,4 @@
-package csi_server
+package provisioner
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/src/logger"

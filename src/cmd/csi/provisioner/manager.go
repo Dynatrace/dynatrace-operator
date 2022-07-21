@@ -1,4 +1,4 @@
-package csi_server
+package provisioner
 
 import (
 	cmdManager "github.com/Dynatrace/dynatrace-operator/src/cmd/manager"

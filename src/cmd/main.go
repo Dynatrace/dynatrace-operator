@@ -18,8 +18,8 @@ import (
 	"os"
 
 	cmdConfig "github.com/Dynatrace/dynatrace-operator/src/cmd/config"
-	csi_provisioner "github.com/Dynatrace/dynatrace-operator/src/cmd/csi-provisioner"
-	csi_server "github.com/Dynatrace/dynatrace-operator/src/cmd/csi-server"
+	csiProvisioner "github.com/Dynatrace/dynatrace-operator/src/cmd/csi/provisioner"
+	csiServer "github.com/Dynatrace/dynatrace-operator/src/cmd/csi/server"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/operator"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/standalone"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/webhook"
@@ -61,14 +61,14 @@ func createOperatorCommandBuilder() operator.CommandBuilder {
 		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
 }
 
-func createCsiServerCommandBuilder() csi_server.CommandBuilder {
-	return csi_server.NewCsiServerCommandBuilder().
+func createCsiServerCommandBuilder() csiServer.CommandBuilder {
+	return csiServer.NewCsiServerCommandBuilder().
 		SetNamespace(os.Getenv(envPodNamespace)).
 		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
 }
 
-func createCsiProvisionerCommandBuilder() csi_provisioner.CommandBuilder {
-	return csi_provisioner.NewCsiProvisionerCommandBuilder().
+func createCsiProvisionerCommandBuilder() csiProvisioner.CommandBuilder {
+	return csiProvisioner.NewCsiProvisionerCommandBuilder().
 		SetNamespace(os.Getenv(envPodNamespace)).
 		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
 }

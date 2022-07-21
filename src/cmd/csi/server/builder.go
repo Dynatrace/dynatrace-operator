@@ -1,4 +1,4 @@
-package csi_server
+package server
 
 import (
 	"path/filepath"
@@ -6,9 +6,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 	cmdManager "github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
-	csigc "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/gc"
+	csidriver "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
-	csiprovisioner "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/provisioner"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
@@ -16,10 +15,12 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-const use = "csi-provisioner"
+const use = "csi-server"
 
 var (
+	nodeId       = ""
 	probeAddress = ""
+	endpoint     = ""
 )
 
 type CommandBuilder struct {
@@ -30,7 +31,7 @@ type CommandBuilder struct {
 	csiOptions      *dtcsi.CsiOptions
 }
 
-func NewCsiProvisionerCommandBuilder() CommandBuilder {
+func NewCsiServerCommandBuilder() CommandBuilder {
 	return CommandBuilder{}
 }
 
@@ -62,7 +63,9 @@ func (builder CommandBuilder) setFilesystem(filesystem afero.Fs) CommandBuilder 
 func (builder CommandBuilder) getCsiOptions() dtcsi.CsiOptions {
 	if builder.csiOptions == nil {
 		builder.csiOptions = &dtcsi.CsiOptions{
-			RootDir: dtcsi.DataPath,
+			NodeId:   nodeId,
+			Endpoint: endpoint,
+			RootDir:  dtcsi.DataPath,
 		}
 	}
 
@@ -97,7 +100,9 @@ func (builder CommandBuilder) Build() *cobra.Command {
 }
 
 func addFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&probeAddress, "health-probe-bind-address", ":10090", "The address the probe endpoint binds to.")
+	cmd.PersistentFlags().StringVar(&nodeId, "node-id", "", "node id")
+	cmd.PersistentFlags().StringVar(&endpoint, "endpoint", "unix:///tmp/csi.sock", "CSI endpoint")
+	cmd.PersistentFlags().StringVar(&probeAddress, "health-probe-bind-address", ":10080", "The address the probe endpoint binds to.")
 }
 
 func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
@@ -125,12 +130,12 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		err = csiprovisioner.NewOneAgentProvisioner(csiManager, builder.getCsiOptions(), access).SetupWithManager(csiManager)
+		err = metadata.CorrectMetadata(csiManager.GetClient(), access)
 		if err != nil {
 			return err
 		}
 
-		err = csigc.NewCSIGarbageCollector(csiManager.GetClient(), builder.getCsiOptions(), access).SetupWithManager(csiManager)
+		err = csidriver.NewServer(csiManager.GetClient(), builder.getCsiOptions(), access).SetupWithManager(csiManager)
 		if err != nil {
 			return err
 		}
