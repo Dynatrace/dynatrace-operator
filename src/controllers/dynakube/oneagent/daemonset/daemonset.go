@@ -224,20 +224,8 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 }
 
 func (dsInfo *builderInfo) serviceAccountName() string {
-	if dsInfo.instance != nil {
-		return serviceAccountFromInstance(dsInfo.instance)
-	}
-
-	return unprivilegedServiceAccountName
-}
-
-func serviceAccountFromInstance(instance *dynatracev1beta1.DynaKube) string {
-	if instance.IsOneAgentPrivileged() && instance.FeatureDisableReadOnlyOneAgent() {
+	if dsInfo.instance != nil && dsInfo.instance.IsOneAgentPrivileged() {
 		return privilegedServiceAccountName
-	} else if instance.IsOneAgentPrivileged() {
-		return privilegedServiceAccountName
-	} else if instance.FeatureDisableReadOnlyOneAgent() {
-		return unprivilegedServiceAccountName
 	}
 
 	return unprivilegedServiceAccountName
