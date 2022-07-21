@@ -331,10 +331,14 @@ properties:
   platform:
     type: string
     title: Platform
-    description: Platform to deploy on. This should always be set to "google" for GKE clusters
+    description: |
+      Platform to deploy on. 
+      This should be set to "google-marketplace" for GKE clusters or
+      "google-autopilot" for GKE Autopilot clusters
     default: google
     enum:
-      - "google"
+      - "google-marketplace"
+      - "google-autopilot"
 
 required:
 - name

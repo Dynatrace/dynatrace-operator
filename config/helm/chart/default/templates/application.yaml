@@ -1,5 +1,5 @@
 {{- include "dynatrace-operator.platformRequired" . }}
-{{- if eq .Values.platform "google"}}
+{{- if eq .Values.platform "google-marketplace"}}
 # Copyright 2020 Dynatrace LLC
 
 # Licensed under the Apache License, Version 2.0 (the "License");

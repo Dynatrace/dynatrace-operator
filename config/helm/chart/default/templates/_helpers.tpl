@@ -114,7 +114,7 @@ Check if default image is used
 {{- if .Values.image -}}
 	{{- printf "%s" .Values.image -}}
 {{- else -}}
-	{{- if eq .Values.platform "google" -}}
+	{{- if eq .Values.platform "google-marketplace" -}}
     	{{- printf "%s:%s" "gcr.io/dynatrace-marketplace-prod/dynatrace-operator" "{{ .Chart.AppVersion }}" }}
 	{{- else -}}
 		{{- printf "%s:v%s" "docker.io/dynatrace/dynatrace-operator" .Chart.AppVersion }}
