@@ -7,7 +7,7 @@ endif
 
 ## Installs 'kustomize' if it is missing
 prerequisites/kustomize:
-	hack/build/command.sh kustomize "sigs.k8s.io/kustomize/kustomize/v3@v3.5.4"
+	hack/build/command.sh kustomize "sigs.k8s.io/kustomize/kustomize/v4@latest"
 KUSTOMIZE=$(shell hack/build/command.sh kustomize)
 
 ## Install 'controller-gen' if it is missing
@@ -21,3 +21,6 @@ prerequisites/setup-pre-commit:
 	go install golang.org/x/tools/cmd/goimports@v0.1.10
 	cp ./.github/pre-commit ./.git/hooks/pre-commit
 	chmod +x ./.git/hooks/pre-commit
+
+prerequisites/helm:
+	helm plugin install https://github.com/quintush/helm-unittest --version 0.2.8
