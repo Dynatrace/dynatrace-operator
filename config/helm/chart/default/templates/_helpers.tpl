@@ -149,7 +149,7 @@ Check if we are generating only a part of the yamls
 Check if platform is set
 */}}
 {{- define "dynatrace-operator.platformSet" -}}
-{{- if or (eq .Values.platform "kubernetes") (eq .Values.platform "openshift") (eq .Values.platform "google") (eq .Values.platform "google-autopilot") -}}
+{{- if or (eq .Values.platform "kubernetes") (eq .Values.platform "openshift") (eq .Values.platform "google-marketplace") (eq .Values.platform "google-autopilot") -}}
     {{ default "set" }}
 {{- end -}}
 {{- end -}}
@@ -163,4 +163,9 @@ Exclude Kubernetes manifest not running on OLM
 {{- end -}}
 {{- end -}}
 
-
+{{/*
+Check if the platform is set
+*/}}
+{{- define "dynatrace-operator.platformRequired" -}}
+{{- $platformIsSet := printf "%s" (required "Platform needs to be set to kubernetes, openshift, google-marketplace, or google-autopilot" (include "dynatrace-operator.platformSet" .))}}
+{{- end -}}
