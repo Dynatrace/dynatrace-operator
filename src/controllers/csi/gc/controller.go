@@ -145,20 +145,28 @@ func collectGCInfo(dynakube dynatracev1beta1.DynaKube, dynakubeList *dynatracev1
 func isSafeToGC(access metadata.Access, dynakubeList *dynatracev1beta1.DynaKubeList) bool {
 	dkMetadataList, err := access.GetAllDynakubes()
 	if err != nil {
-		log.Info("failed to get dynakube metadata from database, err: %s")
+		log.Info("failed to get dynakube metadata from database", "err", err)
 		return false
 	}
 	filteredDynakubes := filterCodeModulesImageDynakubes(dynakubeList)
 	for _, dkMetadata := range dkMetadataList {
-		if dkMetadata.LatestVersion == "" {
+		if isInstalling(dkMetadata) {
 			return false
 		}
-		dynakube, ok := filteredDynakubes[dkMetadata.Name]
-		if ok && dynakube.CodeModulesVersion() != dkMetadata.LatestVersion {
+		if isUpgrading(dkMetadata, filteredDynakubes) {
 			return false
 		}
 	}
 	return true
+}
+
+func isInstalling(dkMetadata *metadata.Dynakube) bool {
+	return dkMetadata.LatestVersion == ""
+}
+
+func isUpgrading(dkMetadata *metadata.Dynakube, filteredDynakubes map[string]dynatracev1beta1.DynaKube) bool {
+	dynakube, ok := filteredDynakubes[dkMetadata.Name]
+	return ok && dynakube.CodeModulesVersion() != dkMetadata.LatestVersion
 }
 
 // getAllPinnedVersionsForTenantUUID returns all pinned versions for a given tenantUUID.
