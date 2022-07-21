@@ -8,4 +8,3 @@ fi
 # fetch dependencies
 go get -d ./...
 ls -la $HOME/go/pkg/mod
-cp -r $HOME/go/pkg/mod .
