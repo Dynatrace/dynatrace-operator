@@ -1,10 +1,11 @@
 package daemonset
 
 import (
+	"testing"
+
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
-	"testing"
 )
 
 func TestEnvironmentVariables(t *testing.T) {
