@@ -28,7 +28,7 @@ jobs:
       - name: Download dependencies
         id: helm-unittest-download
         run: |
-          hack/build/ci/install-helm-dependencies.sh
+          make prerequisites/helm
       - name: Run Unit tests
         id: helm-unittest
         run: |
@@ -63,11 +63,10 @@ jobs:
         id: depdownload
         run: |
           hack/build/ci/install-cgo-dependencies.sh
-          hack/build/ci/install-kubebuilder.sh
       - name: Run Unit tests
         id: unittest
         run: |
-          hack/build/ci/run-unit-tests.sh
+          make go/test-all
 
   linting:
     name: Run linting
@@ -109,6 +108,7 @@ jobs:
       labels: ${{ steps.prep.outputs.docker_image_labels }}
       version: ${{ steps.prep.outputs.docker_image_tag }}
       golinkerargs: ${{ steps.prep.outputs.go_linker_args }}
+      cgo_cflags: ${{ steps.prep.outputs.cgo_cflags }}
       goversion: ${{ steps.prepenv.outputs.goversion }}
       registry: ${{ steps.prepenv.outputs.registry }}
       repository: ${{ steps.prepenv.outputs.repository }}
@@ -121,6 +121,7 @@ jobs:
       platform: amd64
       goversion: ${{ needs.prepare.outputs.goversion }}
       golinkerargs: ${{ needs.prepare.outputs.golinkerargs }}
+      cgo_cflags: ${{ needs.prepare.outputs.cgo_cflags }}
       labels: ${{ needs.prepare.outputs.labels }}
       image-tag: ${{ needs.prepare.outputs.version }}
 
@@ -133,6 +134,7 @@ jobs:
       platform: arm64
       goversion: ${{ needs.prepare.outputs.goversion }}
       golinkerargs: ${{ needs.prepare.outputs.golinkerargs }}
+      cgo_cflags: ${{ needs.prepare.outputs.cgo_cflags }}
       labels: ${{ needs.prepare.outputs.labels }}
       image-tag: ${{ needs.prepare.outputs.version }}
 
