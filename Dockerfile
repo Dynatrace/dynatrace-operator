@@ -5,13 +5,14 @@ RUN apk update --no-cache && \
     rm -rf /var/cache/apk/*
 
 ARG GO_LINKER_ARGS
+ARG CGO_CFLAGS
 COPY . /app
 WORKDIR /app
 
 # move previously cached go modules to gopath
 RUN if [ -d ./mod ]; then mkdir -p ${GOPATH}/pkg && [ -d mod ] && mv ./mod ${GOPATH}/pkg; fi;
 
-RUN CGO_ENABLED=1 go build -ldflags="${GO_LINKER_ARGS}" -o ./build/_output/bin/dynatrace-operator ./src/cmd/
+RUN CGO_ENABLED=1 CGO_CFLAGS="${CGO_CFLAGS}" go build -ldflags="${GO_LINKER_ARGS}" -o ./build/_output/bin/dynatrace-operator ./src/cmd/
 
 FROM registry.access.redhat.com/ubi8-minimal:8.6 as dependency-src
 

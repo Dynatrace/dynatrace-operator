@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/mapper"
+	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/stretchr/testify/assert"
@@ -83,12 +83,12 @@ func TestGetVolumeMode(t *testing.T) {
 	t.Run("should return csi volume mode", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 
-		assert.Equal(t, provisionedVolumeMode, mutator.getVolumeMode(*getTestCSIDynakube()))
+		assert.Equal(t, string(config.AgentCsiMode), mutator.getVolumeMode(*getTestCSIDynakube()))
 	})
 	t.Run("should return empty volume mode", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 
-		assert.Equal(t, installerVolumeMode, mutator.getVolumeMode(*getTestDynakube()))
+		assert.Equal(t, string(config.AgentInstallerMode), mutator.getVolumeMode(*getTestDynakube()))
 	})
 }
 
@@ -224,7 +224,7 @@ func createTestPodMutator(objects []client.Object) *OneAgentPodMutator {
 func getTestInitSecret() *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      dtwebhook.SecretConfigName,
+			Name:      config.AgentInitSecretName,
 			Namespace: testNamespaceName,
 		},
 	}
@@ -336,7 +336,7 @@ func getTestNamespace() *corev1.Namespace {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: testNamespaceName,
 			Labels: map[string]string{
-				mapper.InstanceLabel: testDynakubeName,
+				dtwebhook.InjectionInstanceLabel: testDynakubeName,
 			},
 		},
 	}

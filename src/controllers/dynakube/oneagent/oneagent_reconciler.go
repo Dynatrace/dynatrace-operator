@@ -150,8 +150,12 @@ func (r *OneAgentReconciler) getDesiredDaemonSet(dkState *status.DynakubeState) 
 }
 
 func (r *OneAgentReconciler) getOneagentPods(ctx context.Context, instance *dynatracev1beta1.DynaKube, feature string) ([]corev1.Pod, []client.ListOption, error) {
+	agentVersion := instance.Status.OneAgent.Version
+	if instance.CustomOneAgentImage() != "" {
+		agentVersion = kubeobjects.CustomImageLabelValue
+	}
 	appLabels := kubeobjects.NewAppLabels(kubeobjects.OneAgentComponentLabel, instance.Name,
-		feature, instance.Status.OneAgent.Version)
+		feature, agentVersion)
 	podList := &corev1.PodList{}
 	listOps := []client.ListOption{
 		client.InNamespace((*instance).GetNamespace()),

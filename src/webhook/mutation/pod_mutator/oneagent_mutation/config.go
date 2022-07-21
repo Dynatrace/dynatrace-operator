@@ -9,24 +9,18 @@ var (
 )
 
 const (
-	preloadEnvVarName           = "LD_PRELOAD"
-	networkZoneEnvVarName       = "DT_NETWORK_ZONE"
-	proxyEnvVarName             = "DT_PROXY"
-	dynatraceMetadataEnvVarName = "DT_DEPLOYMENT_METADATA"
+	preloadEnv           = "LD_PRELOAD"
+	networkZoneEnv       = "DT_NETWORK_ZONE"
+	proxyEnv             = "DT_PROXY"
+	dynatraceMetadataEnv = "DT_DEPLOYMENT_METADATA"
 
-	oneAgentBinVolumeName   = "oneagent-bin"
-	oneAgentShareVolumeName = "oneagent-share"
-
+	oneAgentBinVolumeName     = "oneagent-bin"
+	oneAgentShareVolumeName   = "oneagent-share"
 	injectionConfigVolumeName = "injection-config"
-
-	provisionedVolumeMode = "provisioned"
-	installerVolumeMode   = "installer"
 
 	oneAgentCustomKeysPath = "/var/lib/dynatrace/oneagent/agent/customkeys"
 	customCertFileName     = "custom.pem"
 
 	preloadPath       = "/etc/ld.so.preload"
-	preloadSubPath    = "ld.so.preload"
 	containerConfPath = "/var/lib/dynatrace/oneagent/agent/config/container.conf"
-	libAgentProcPath  = "/agent/lib64/liboneagentproc.so"
 )

@@ -20,9 +20,10 @@ import (
 
 type Properties struct {
 	ImageUri     string
-	ImageDigest  string
 	DockerConfig dockerconfig.DockerConfig
 	PathResolver metadata.PathResolver
+	Metadata     metadata.Access
+	imageDigest  string
 }
 
 func NewImageInstaller(fs afero.Fs, props *Properties) *ImageInstaller {
@@ -38,7 +39,7 @@ type ImageInstaller struct {
 }
 
 func (installer ImageInstaller) ImageDigest() string {
-	return installer.props.ImageDigest
+	return installer.props.imageDigest
 }
 
 func (installer *ImageInstaller) InstallAgent(targetDir string) (bool, error) {
@@ -56,7 +57,7 @@ func (installer *ImageInstaller) InstallAgent(targetDir string) (bool, error) {
 		return false, errors.WithStack(err)
 	}
 
-	sharedDir := installer.props.PathResolver.AgentSharedBinaryDirForImage(installer.props.ImageDigest)
+	sharedDir := installer.props.PathResolver.AgentSharedBinaryDirForImage(installer.ImageDigest())
 	if err := symlink.CreateSymlinkForCurrentVersionIfNotExists(installer.fs, sharedDir); err != nil {
 		_ = installer.fs.RemoveAll(targetDir)
 		_ = installer.fs.RemoveAll(sharedDir)
@@ -67,7 +68,7 @@ func (installer *ImageInstaller) InstallAgent(targetDir string) (bool, error) {
 }
 
 func (installer ImageInstaller) UpdateProcessModuleConfig(targetDir string, processModuleConfig *dtypes.ProcessModuleConfig) error {
-	sourceDir := installer.props.PathResolver.AgentSharedBinaryDirForImage(installer.props.ImageDigest)
+	sourceDir := installer.props.PathResolver.AgentSharedBinaryDirForImage(installer.ImageDigest())
 	return processmoduleconfig.CreateAgentConfigDir(installer.fs, targetDir, sourceDir, processModuleConfig)
 }
 
@@ -93,9 +94,14 @@ func (installer *ImageInstaller) installAgentFromImage() error {
 	}
 
 	imageDigestEncoded := imageDigest.Encoded()
-	if installer.isAlreadyDownloaded(imageDigestEncoded) {
+	isDownloaded, err := installer.isAlreadyDownloaded(imageDigestEncoded)
+	if err != nil {
+		log.Info("error checking if the image exists locally", "digest", imageDigestEncoded)
+		return errors.WithStack(err)
+	}
+	if isDownloaded {
 		log.Info("image is already installed", "image", image, "digest", imageDigestEncoded)
-		installer.props.ImageDigest = imageDigestEncoded
+		installer.props.imageDigest = imageDigestEncoded
 		return nil
 	}
 
@@ -127,19 +133,24 @@ func (installer *ImageInstaller) installAgentFromImage() error {
 		log.Info("failed to extract agent binaries from image", "image", image, "imageCacheDir", imageCacheDir)
 		return errors.WithStack(err)
 	}
-	installer.props.ImageDigest = imageDigestEncoded
+	installer.props.imageDigest = imageDigestEncoded
 	return nil
 }
 
-func (installer ImageInstaller) isAlreadyDownloaded(imageDigestEncoded string) bool {
-	sharedDir := installer.props.PathResolver.AgentSharedBinaryDirForImage(installer.props.ImageDigest)
+func (installer ImageInstaller) isAlreadyDownloaded(imageDigestEncoded string) (bool, error) {
+	sharedDir := installer.props.PathResolver.AgentSharedBinaryDirForImage(imageDigestEncoded)
+
 	if _, err := installer.fs.Stat(sharedDir); os.IsNotExist(err) {
-		return false
+		return false, nil
+	} else if err != nil {
+		return false, errors.WithStack(err)
 	}
-	if installer.props.ImageDigest == imageDigestEncoded {
-		return true
+
+	isDigestUsed, err := installer.props.Metadata.IsImageDigestUsed(imageDigestEncoded)
+	if err != nil {
+		return false, err
 	}
-	return false
+	return isDigestUsed, nil
 }
 
 func getImageDigest(systemContext *types.SystemContext, imageReference *types.ImageReference) (digest.Digest, error) {
