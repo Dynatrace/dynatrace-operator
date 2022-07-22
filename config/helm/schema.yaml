@@ -333,12 +333,21 @@ properties:
     title: Platform
     description: |
       Platform to deploy on. 
-      This should be set to "google-marketplace" for GKE clusters or
+      This should be set to "google-standard" for GKE clusters or
       "google-autopilot" for GKE Autopilot clusters
     default: google
     enum:
-      - "google-marketplace"
+      - "google-standard"
       - "google-autopilot"
+
+  applyApplication:
+    type: boolean
+    title: Apply Application configuration
+    description: |
+      When deploying using the Google marketplace, the Application configuration has to be applied as well.
+    default: true
+    enum:
+      - true
 
 required:
 - name

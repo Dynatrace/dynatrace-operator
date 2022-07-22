@@ -16,9 +16,10 @@ tests:
       - hasDocuments:
           count: 0
 
-  - it: should exist if platform is set to google-marketplace
+  - it: should exist if platform is set to google-standard and applyApplication is true
     set:
-      platform: google-marketplace
+      platform: google-standard
+      applyApplication: true
     asserts:
       - hasDocuments:
           count: 1
@@ -26,6 +27,7 @@ tests:
   - it: should exist if platform is set to google-autopilot
     set:
       platform: google-autopilot
+      applyApplication: true
     asserts:
       - hasDocuments:
           count: 1

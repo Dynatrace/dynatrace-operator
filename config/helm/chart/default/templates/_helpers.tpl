@@ -114,7 +114,7 @@ Check if default image is used
 {{- if .Values.image -}}
 	{{- printf "%s" .Values.image -}}
 {{- else -}}
-	{{- if eq .Values.platform "google-marketplace" -}}
+	{{- if eq .Values.platform "google-standard" -}}
     	{{- printf "%s:%s" "gcr.io/dynatrace-marketplace-prod/dynatrace-operator" "{{ .Chart.AppVersion }}" }}
 	{{- else -}}
 		{{- printf "%s:v%s" "docker.io/dynatrace/dynatrace-operator" .Chart.AppVersion }}
@@ -149,7 +149,7 @@ Check if we are generating only a part of the yamls
 Check if platform is set
 */}}
 {{- define "dynatrace-operator.platformSet" -}}
-{{- if or (eq .Values.platform "kubernetes") (eq .Values.platform "openshift") (eq .Values.platform "google-marketplace") (eq .Values.platform "google-autopilot") -}}
+{{- if or (eq .Values.platform "kubernetes") (eq .Values.platform "openshift") (eq .Values.platform "google-standard") (eq .Values.platform "google-autopilot") -}}
     {{ default "set" }}
 {{- end -}}
 {{- end -}}
