@@ -295,3 +295,54 @@ func TestGetRawImageTag(t *testing.T) {
 		require.Equal(t, "", rawTag)
 	})
 }
+
+func TestIsOneAgentPrivileged(t *testing.T) {
+	t.Run("is false by default", func(t *testing.T) {
+		dynakube := DynaKube{}
+
+		assert.False(t, dynakube.IsOneAgentPrivileged())
+	})
+	t.Run("is true when annotation is set to true", func(t *testing.T) {
+		dynakube := DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					AnnotationFeatureRunOneAgentContainerPrivileged: "true",
+				},
+			},
+		}
+
+		assert.True(t, dynakube.IsOneAgentPrivileged())
+	})
+	t.Run("is false when annotation is set to false", func(t *testing.T) {
+		dynakube := DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					AnnotationFeatureRunOneAgentContainerPrivileged: "false",
+				},
+			},
+		}
+
+		assert.False(t, dynakube.IsOneAgentPrivileged())
+	})
+	t.Run("is true in classicFullStack mode", func(t *testing.T) {
+		dynakube := DynaKube{
+			Spec: DynaKubeSpec{
+				OneAgent: OneAgentSpec{ClassicFullStack: &HostInjectSpec{}},
+			},
+		}
+
+		assert.True(t, dynakube.IsOneAgentPrivileged())
+
+		dynakube.Annotations = map[string]string{
+			AnnotationFeatureRunOneAgentContainerPrivileged: "false",
+		}
+
+		assert.True(t, dynakube.IsOneAgentPrivileged())
+
+		dynakube.Annotations = map[string]string{
+			AnnotationFeatureRunOneAgentContainerPrivileged: "true",
+		}
+
+		assert.True(t, dynakube.IsOneAgentPrivileged())
+	})
+}
