@@ -45,6 +45,7 @@ func (fs *mkDirAllErrorFs) MkdirAll(_ string, _ os.FileMode) error {
 }
 
 func TestOneAgentProvisioner_Reconcile(t *testing.T) {
+	dynakubeName := "test-dk"
 	t.Run(`no dynakube instance`, func(t *testing.T) {
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(),
@@ -78,22 +79,29 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: dynakubeName,
+					},
 					Spec: dynatracev1beta1.DynaKubeSpec{
 						OneAgent: dynatracev1beta1.OneAgentSpec{},
 					},
 				},
 			),
+			db: metadata.FakeMemoryDB(),
 		}
-		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{})
+		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakubeName}})
 
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
-		assert.Equal(t, reconcile.Result{RequeueAfter: 30 * time.Minute}, result)
+		assert.Equal(t, reconcile.Result{RequeueAfter: longRequeueDuration}, result)
 	})
-	t.Run(`csi driver disabled`, func(t *testing.T) {
+	t.Run(`csi driver not enabled`, func(t *testing.T) {
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: dynakubeName,
+					},
 					Spec: dynatracev1beta1.DynaKubeSpec{
 						OneAgent: dynatracev1beta1.OneAgentSpec{
 							ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{
@@ -103,12 +111,44 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 					},
 				},
 			),
+			db: metadata.FakeMemoryDB(),
 		}
-		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{})
+		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakubeName}})
 
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
-		assert.Equal(t, reconcile.Result{RequeueAfter: 30 * time.Minute}, result)
+		assert.Equal(t, reconcile.Result{RequeueAfter: longRequeueDuration}, result)
+	})
+	t.Run(`csi driver disabled`, func(t *testing.T) {
+		db := metadata.FakeMemoryDB()
+		db.InsertDynakube(&metadata.Dynakube{Name: dynakubeName})
+		provisioner := &OneAgentProvisioner{
+			apiReader: fake.NewClient(
+				&dynatracev1beta1.DynaKube{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: dynakubeName,
+					},
+					Spec: dynatracev1beta1.DynaKubeSpec{
+						OneAgent: dynatracev1beta1.OneAgentSpec{
+							ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{
+								AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{},
+							},
+						},
+					},
+				},
+			),
+			db: db,
+		}
+		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakubeName}})
+
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.Equal(t, reconcile.Result{RequeueAfter: longRequeueDuration}, result)
+
+		dynakubeMetadatas, err := db.GetAllDynakubes()
+		require.NoError(t, err)
+		assert.Len(t, dynakubeMetadatas, 0)
+
 	})
 	t.Run(`no tokens`, func(t *testing.T) {
 		provisioner := &OneAgentProvisioner{
