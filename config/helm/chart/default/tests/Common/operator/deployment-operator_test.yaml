@@ -2,6 +2,34 @@ suite: test deployment for dynatrace operator
 templates:
   - Common/operator/deployment-operator.yaml
 tests:
+  - it: should exist if platform is set to kubernetes
+    set:
+      platform: kubernetes
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: should exist if platform is set to openshift
+    set:
+      platform: openshift
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: should exist if platform is set to google-marketplace
+    set:
+      platform: google-marketplace
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: should exist if platform is set to google-autopilot
+    set:
+      platform: google-autopilot
+    asserts:
+      - hasDocuments:
+          count: 1
+
   - it: should exist
     set:
       platform: kubernetes
