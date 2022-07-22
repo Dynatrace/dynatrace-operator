@@ -1,4 +1,4 @@
 {{- include "dynatrace-operator.platformRequired" . }}
 {{ if and .Values.installCRD (eq (include "dynatrace-operator.partial" .) "false") }}
-  {{ .Files.Get "generated/dynatrace-operator-crd.yaml" }}
+{{ .Files.Get "generated/dynatrace-operator-crd.yaml" }}
 {{- end -}}

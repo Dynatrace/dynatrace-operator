@@ -258,6 +258,8 @@ tests:
             serviceAccountName: dynatrace-webhook
 
   - it: should not have imagePullSecrets defined in spec (without highavailabilty mode)
+    set:
+      platform: kubernetes
     asserts:
       - isNull:
           path: spec.template.spec.imagePullSecrets
@@ -267,6 +269,7 @@ tests:
       olm: true
       image: image-name
       webhook.highAvailability: false
+      platform: kubernetes
     asserts:
       - isKind:
           of: Deployment
@@ -384,6 +387,7 @@ tests:
   - it: should have imagePullSecrets defined in spec
     set:
       customPullSecret: pull-secret
+      platform: kubernetes
     asserts:
       - equal:
           path: spec.template.spec.imagePullSecrets[0].name
@@ -391,6 +395,7 @@ tests:
 
   - it: should take custom labels
     set:
+      platform: kubernetes
       webhook.labels:
         testKey: testValue
     asserts:
@@ -402,6 +407,7 @@ tests:
 
   - it: should take custom annotations
     set:
+      platform: kubernetes
       webhook.annotations:
         testKey: testValue
     asserts:
@@ -413,6 +419,7 @@ tests:
 
   - it: should take custom labels in spec.template.metadata.labels path
     set:
+      platform: kubernetes
       webhook.labels:
         testKey: testValue
     asserts:
