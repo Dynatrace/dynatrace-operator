@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	exampleApiUrl = "https://ENVIRONMENTID.live.dynatrace.com/api"
+	ExampleApiUrl = "https://ENVIRONMENTID.live.dynatrace.com/api"
 	errorNoApiUrl = `The DynaKube's specification is missing the API URL or still has the example value set.
 	Make sure you correctly specify the URL in your custom resource.
 	`
@@ -21,7 +21,7 @@ const (
 func noApiUrl(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	apiUrl := dynakube.Spec.APIURL
 
-	if apiUrl == exampleApiUrl {
+	if apiUrl == ExampleApiUrl {
 		log.Info("api url is an example url", "apiUrl", apiUrl)
 		return errorNoApiUrl
 	}

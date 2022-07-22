@@ -42,31 +42,28 @@ type Auths struct {
 	Auths Endpoints `json:"auths"`
 }
 
-func checkImagePullable(apiReader client.Reader, troubleshootContext *TestData) error {
+func checkImagePullable(troubleshootCtx *troubleshootContext) error {
 	tslog.SetPrefix("[imagepull ] ")
 
 	dynakube := dynatracev1beta1.DynaKube{}
-	if err := apiReader.Get(context.TODO(), client.ObjectKey{Name: troubleshootContext.dynakubeName, Namespace: troubleshootContext.namespaceName}, &dynakube); err != nil {
-		tslog.WithErrorf(err, "Selected '%s:%s' Dynakube does not exist", troubleshootContext.namespaceName, troubleshootContext.dynakubeName)
+	if err := troubleshootCtx.apiReader.Get(context.TODO(), client.ObjectKey{Name: troubleshootCtx.dynakubeName, Namespace: troubleshootCtx.namespaceName}, &dynakube); err != nil {
+		tslog.WithErrorf(err, "Selected '%s:%s' Dynakube does not exist", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
 		return err
 	}
 
-	httpClient := &http.Client{
-		Transport: http.DefaultTransport.(*http.Transport).Clone(),
-	}
-	if err := addProxy(apiReader, troubleshootContext, httpClient); err != nil {
+	if err := addProxy(troubleshootCtx); err != nil {
 		return err
 	}
 
 	if dynakube.NeedsOneAgent() {
-		err := checkOneAgentImagePullable(httpClient, apiReader, troubleshootContext)
+		err := checkOneAgentImagePullable(troubleshootCtx)
 		if err != nil {
 			return err
 		}
 	}
 
 	if dynakube.NeedsActiveGate() {
-		err := checkActiveGateImagePullable(httpClient, apiReader, troubleshootContext)
+		err := checkActiveGateImagePullable(troubleshootCtx)
 		if err != nil {
 			return err
 		}
@@ -74,49 +71,49 @@ func checkImagePullable(apiReader client.Reader, troubleshootContext *TestData) 
 	return nil
 }
 
-func checkOneAgentImagePullable(httpClient *http.Client, apiReader client.Reader, troubleshootContext *TestData) error {
+func checkOneAgentImagePullable(troubleshootCtx *troubleshootContext) error {
 	tslog.NewTestf("checking if OneAgent image is pullable ...")
 
-	pullSecretName, err := getPullSecretName(apiReader, troubleshootContext.dynakubeName, troubleshootContext.namespaceName)
+	pullSecretName, err := getPullSecretName(troubleshootCtx.apiReader, troubleshootCtx.dynakubeName, troubleshootCtx.namespaceName)
 	if err != nil {
 		return err
 	}
 
-	pullSecret, err := getPullSecret(apiReader, pullSecretName, troubleshootContext.namespaceName)
+	pullSecret, err := getPullSecret(troubleshootCtx.apiReader, pullSecretName, troubleshootCtx.namespaceName)
 	if err != nil {
 		return err
 	}
 
-	dynakubeOneAgentImage, err := getOneAgentImageEndpoint(apiReader, troubleshootContext)
+	dynakubeOneAgentImage, err := getOneAgentImageEndpoint(troubleshootCtx)
 	if err != nil {
 		return err
 	}
 
-	if err = checkComponentImagePullable(httpClient, "OneAgent", pullSecret, dynakubeOneAgentImage); err != nil {
+	if err = checkComponentImagePullable(troubleshootCtx.httpClient, "OneAgent", pullSecret, dynakubeOneAgentImage); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func checkActiveGateImagePullable(httpClient *http.Client, apiReader client.Reader, troubleshootContext *TestData) error {
+func checkActiveGateImagePullable(troubleshootCtx *troubleshootContext) error {
 	tslog.NewTestf("checking if ActiveGate image is pullable ...")
 
-	pullSecretName, err := getPullSecretName(apiReader, troubleshootContext.dynakubeName, troubleshootContext.namespaceName)
+	pullSecretName, err := getPullSecretName(troubleshootCtx.apiReader, troubleshootCtx.dynakubeName, troubleshootCtx.namespaceName)
 	if err != nil {
 		return err
 	}
-	pullSecret, err := getPullSecret(apiReader, pullSecretName, troubleshootContext.namespaceName)
-	if err != nil {
-		return err
-	}
-
-	dynakubeActiveGateImage, err := getActiveGateImageEndpoint(apiReader, troubleshootContext)
+	pullSecret, err := getPullSecret(troubleshootCtx.apiReader, pullSecretName, troubleshootCtx.namespaceName)
 	if err != nil {
 		return err
 	}
 
-	if err = checkComponentImagePullable(httpClient, "ActiveGate", pullSecret, dynakubeActiveGateImage); err != nil {
+	dynakubeActiveGateImage, err := getActiveGateImageEndpoint(troubleshootCtx)
+	if err != nil {
+		return err
+	}
+
+	if err = checkComponentImagePullable(troubleshootCtx.httpClient, "ActiveGate", pullSecret, dynakubeActiveGateImage); err != nil {
 		return err
 	}
 
@@ -178,10 +175,10 @@ func checkComponentImagePullable(httpClient *http.Client, componentName string, 
 	return nil
 }
 
-func addProxy(apiReader client.Reader, troubleshootContext *TestData, httpClient *http.Client) error {
+func addProxy(troubleshootCtx *troubleshootContext) error {
 	dynakube := dynatracev1beta1.DynaKube{}
-	if err := apiReader.Get(context.TODO(), client.ObjectKey{Name: troubleshootContext.dynakubeName, Namespace: troubleshootContext.namespaceName}, &dynakube); err != nil {
-		tslog.WithErrorf(err, "selected '%s:%s' Dynakube does not exist", troubleshootContext.namespaceName, troubleshootContext.dynakubeName)
+	if err := troubleshootCtx.apiReader.Get(context.TODO(), client.ObjectKey{Name: troubleshootCtx.dynakubeName, Namespace: troubleshootCtx.namespaceName}, &dynakube); err != nil {
+		tslog.WithErrorf(err, "selected '%s:%s' Dynakube does not exist", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
 		return err
 	}
 
@@ -190,8 +187,8 @@ func addProxy(apiReader client.Reader, troubleshootContext *TestData, httpClient
 		proxyUrl = dynakube.Spec.Proxy.Value
 	} else if dynakube.Spec.Proxy.ValueFrom != "" {
 		proxySecret := corev1.Secret{}
-		if err := apiReader.Get(context.TODO(), client.ObjectKey{Name: dynakube.Spec.Proxy.ValueFrom, Namespace: troubleshootContext.namespaceName}, &proxySecret); err != nil {
-			tslog.WithErrorf(err, "'%s:%s' proxy secret is missing", dynakube.Spec.Proxy.ValueFrom, troubleshootContext.dynatraceApiSecretName)
+		if err := troubleshootCtx.apiReader.Get(context.TODO(), client.ObjectKey{Name: dynakube.Spec.Proxy.ValueFrom, Namespace: troubleshootCtx.namespaceName}, &proxySecret); err != nil {
+			tslog.WithErrorf(err, "'%s:%s' proxy secret is missing", dynakube.Spec.Proxy.ValueFrom, troubleshootCtx.dynatraceApiSecretName)
 			return err
 		}
 		var err error
@@ -208,7 +205,7 @@ func addProxy(apiReader client.Reader, troubleshootContext *TestData, httpClient
 			tslog.WithErrorf(err, "could not parse proxy URL!")
 			return err
 		}
-		t := httpClient.Transport.(*http.Transport)
+		t := troubleshootCtx.httpClient.Transport.(*http.Transport)
 		t.Proxy = http.ProxyURL(p)
 	}
 	return nil
@@ -275,15 +272,16 @@ func getPullSecret(apiReader client.Reader, pullSecretName string, namespaceName
 	return secretStr, nil
 }
 
-func getOneAgentImageEndpoint(apiReader client.Reader, troubleshootContext *TestData) (string, error) {
+func getOneAgentImageEndpoint(troubleshootCtx *troubleshootContext) (string, error) {
 	dynakube := dynatracev1beta1.DynaKube{}
-	if err := apiReader.Get(context.TODO(), client.ObjectKey{Name: troubleshootContext.dynakubeName, Namespace: troubleshootContext.namespaceName}, &dynakube); err != nil {
-		tslog.WithErrorf(err, "selected '%s:%s' Dynakube does not exist", troubleshootContext.namespaceName, troubleshootContext.dynakubeName)
+	if err := troubleshootCtx.apiReader.Get(context.TODO(), client.ObjectKey{Name: troubleshootCtx.dynakubeName, Namespace: troubleshootCtx.namespaceName}, &dynakube); err != nil {
+		tslog.WithErrorf(err, "selected '%s:%s' Dynakube does not exist", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
 		return "", err
 	}
 
 	customImage := ""
 	imageEndpoint := ""
+	version := ""
 
 	//sr = [https://acc27517.dev.dynatracelabs.com/api acc27517.dev.dynatracelabs.com/api]
 	//er = [acc27517.dev.dynatracelabs.com/api acc27517.dev.dynatracelabs.com]
@@ -298,26 +296,29 @@ func getOneAgentImageEndpoint(apiReader client.Reader, troubleshootContext *Test
 
 	if dynakube.ClassicFullStackMode() {
 		customImage = dynakube.Spec.OneAgent.ClassicFullStack.Image
+		version = dynakube.Spec.OneAgent.ClassicFullStack.Version
 	} else if dynakube.CloudNativeFullstackMode() {
 		customImage = dynakube.Spec.OneAgent.CloudNativeFullStack.Image
+		version = dynakube.Spec.OneAgent.CloudNativeFullStack.Version
 	} else if dynakube.HostMonitoringMode() {
 		customImage = dynakube.Spec.OneAgent.HostMonitoring.Image
+		version = dynakube.Spec.OneAgent.HostMonitoring.Version
 	}
 
 	if customImage != "" {
 		imageEndpoint = customImage
+	} else if version != "" {
+		imageEndpoint = imageEndpoint + ":" + version
 	}
-
-	// TODO Spec.<type>.Version ?!?
 
 	tslog.Infof("OneAgent image endpoint '%s'", imageEndpoint)
 	return imageEndpoint, nil
 }
 
-func getActiveGateImageEndpoint(apiReader client.Reader, troubleshootContext *TestData) (string, error) {
+func getActiveGateImageEndpoint(troubleshootCtx *troubleshootContext) (string, error) {
 	dynakube := dynatracev1beta1.DynaKube{}
-	if err := apiReader.Get(context.TODO(), client.ObjectKey{Name: troubleshootContext.dynakubeName, Namespace: troubleshootContext.namespaceName}, &dynakube); err != nil {
-		tslog.WithErrorf(err, "selected '%s:%s' Dynakube does not exist", troubleshootContext.namespaceName, troubleshootContext.dynakubeName)
+	if err := troubleshootCtx.apiReader.Get(context.TODO(), client.ObjectKey{Name: troubleshootCtx.dynakubeName, Namespace: troubleshootCtx.namespaceName}, &dynakube); err != nil {
+		tslog.WithErrorf(err, "selected '%s:%s' Dynakube does not exist", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
 		return "", errors.WithStack(err)
 	}
 
@@ -332,8 +333,6 @@ func getActiveGateImageEndpoint(apiReader client.Reader, troubleshootContext *Te
 	if dynakube.Spec.ActiveGate.Image != "" {
 		imageEndpoint = dynakube.Spec.ActiveGate.Image
 	}
-
-	// TODO Spec.<type>.Version ?!?
 
 	tslog.Infof("ActiveGate image endpoint '%s'", imageEndpoint)
 	return imageEndpoint, nil

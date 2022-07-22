@@ -1,10 +1,13 @@
 package troubleshoot
 
 import (
+	"net/http"
+
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/spf13/cobra"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 )
 
@@ -30,6 +33,10 @@ func NewTroubleshootCommandBuilder() CommandBuilder {
 func (builder CommandBuilder) SetConfigProvider(provider config.Provider) CommandBuilder {
 	builder.configProvider = provider
 	return builder
+}
+
+func (builder CommandBuilder) GetCluster(kubeConfig *rest.Config) (cluster.Cluster, error) {
+	return cluster.New(kubeConfig, clusterOptions)
 }
 
 func (builder CommandBuilder) Build() *cobra.Command {
@@ -64,23 +71,27 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		k8scluster, err := cluster.New(kubeConfig, clusterOptions)
+		k8scluster, err := builder.GetCluster(kubeConfig)
 		if err != nil {
 			return err
 		}
 
 		apiReader := k8scluster.GetAPIReader()
 
-		tests := []TestFunc{
+		tests := []troubleshootFunc{
 			checkNamespace,
 			checkDynakube,
 			checkDTClusterConnection,
 			checkImagePullable,
 		}
 
-		troubleshootContext := TestData{namespaceName: namespaceFlagValue, dynakubeName: dynakubeFlagValue}
+		httpClient := &http.Client{
+			Transport: http.DefaultTransport.(*http.Transport).Clone(),
+		}
+
+		troubleshootCtx := troubleshootContext{apiReader: apiReader, httpClient: httpClient, namespaceName: namespaceFlagValue, dynakubeName: dynakubeFlagValue}
 		for _, test := range tests {
-			if err := test(apiReader, &troubleshootContext); err != nil {
+			if err := test(&troubleshootCtx); err != nil {
 				return nil // error message would be printed twice
 			}
 		}

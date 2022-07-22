@@ -9,17 +9,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func checkDTClusterConnection(apiReader client.Reader, troubleshootContext *TestData) error {
+func checkDTClusterConnection(troubleshootCtx *troubleshootContext) error {
 	tslog.SetPrefix("[dtcluster ] ")
 	tslog.NewTestf("checking if tenant is accessible ...")
 
 	dk := dynatracev1beta1.DynaKube{}
-	if err := apiReader.Get(context.TODO(), client.ObjectKey{Name: troubleshootContext.dynakubeName, Namespace: troubleshootContext.namespaceName}, &dk); err != nil {
-		tslog.Errorf("Selected Dynakube does not exist '%s' (%s)", troubleshootContext.dynakubeName, err.Error())
+	if err := troubleshootCtx.apiReader.Get(context.TODO(), client.ObjectKey{Name: troubleshootCtx.dynakubeName, Namespace: troubleshootCtx.namespaceName}, &dk); err != nil {
+		tslog.Errorf("Selected Dynakube does not exist '%s' (%s)", troubleshootCtx.dynakubeName, err.Error())
 		return err
 	}
 
-	dynatraceClientProperties, err := dynakube.NewDynatraceClientProperties(context.TODO(), apiReader, dk)
+	dynatraceClientProperties, err := dynakube.NewDynatraceClientProperties(context.TODO(), troubleshootCtx.apiReader, dk)
 	if err != nil {
 		tslog.WithErrorf(err, "failed to configure DynatraceAPI client")
 		return err
@@ -27,7 +27,7 @@ func checkDTClusterConnection(apiReader client.Reader, troubleshootContext *Test
 
 	dtc, err := dynakube.BuildDynatraceClient(*dynatraceClientProperties)
 	if err != nil {
-		tslog.WithErrorf(err, "failed to configure DynatraceAPI client")
+		tslog.WithErrorf(err, "failed to build DynatraceAPI client")
 		return err
 	}
 

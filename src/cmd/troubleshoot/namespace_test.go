@@ -20,8 +20,6 @@ const (
 
 func TestTroubleshootNamespace(t *testing.T) {
 	t.Run("namespace exists in cluster", func(t *testing.T) {
-		troubleshootContext := TestData{namespaceName: testNamespace, dynakubeName: testDynakube}
-
 		clt := fake.NewClientBuilder().
 			WithScheme(scheme.Scheme).
 			WithObjects(&corev1.Namespace{
@@ -32,11 +30,10 @@ func TestTroubleshootNamespace(t *testing.T) {
 			}).
 			Build()
 
-		assert.NoErrorf(t, checkNamespace(clt, &troubleshootContext), "'%s' namespace not found", troubleshootContext.namespaceName)
+		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
+		assert.NoErrorf(t, checkNamespace(&troubleshootCtx), "'%s' namespace not found", troubleshootCtx.namespaceName)
 	})
 	t.Run("namespace does not exist in cluster", func(t *testing.T) {
-		troubleshootContext := TestData{namespaceName: testNamespace, dynakubeName: testDynakube}
-
 		clt := fake.NewClientBuilder().
 			WithScheme(scheme.Scheme).
 			WithObjects(&corev1.Namespace{
@@ -47,11 +44,10 @@ func TestTroubleshootNamespace(t *testing.T) {
 			}).
 			Build()
 
-		assert.Errorf(t, checkNamespace(clt, &troubleshootContext), "'%s' namespace found", troubleshootContext.namespaceName)
+		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
+		assert.Errorf(t, checkNamespace(&troubleshootCtx), "'%s' namespace found", troubleshootCtx.namespaceName)
 	})
 	t.Run("invalid namespace selected", func(t *testing.T) {
-		troubleshootContext := TestData{namespaceName: testOtherNamespace, dynakubeName: testDynakube}
-
 		clt := fake.NewClientBuilder().
 			WithScheme(scheme.Scheme).
 			WithObjects(&corev1.Namespace{
@@ -62,6 +58,7 @@ func TestTroubleshootNamespace(t *testing.T) {
 			}).
 			Build()
 
-		assert.Errorf(t, checkNamespace(clt, &troubleshootContext), "'%s' namespace found", troubleshootContext.namespaceName)
+		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testOtherNamespace, dynakubeName: testDynakube}
+		assert.Errorf(t, checkNamespace(&troubleshootCtx), "'%s' namespace found", troubleshootCtx.namespaceName)
 	})
 }
