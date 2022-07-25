@@ -18,7 +18,7 @@ tests:
 
   - it: should exist if platform is set to google-marketplace
     set:
-      platform: google-standard
+      platform: google-marketplace
     asserts:
       - hasDocuments:
           count: 1
