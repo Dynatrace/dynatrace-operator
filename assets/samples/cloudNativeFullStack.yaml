@@ -14,9 +14,14 @@ spec:
   apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
 
   # Optional: Name of the secret holding the credentials required to connect to the Dynatrace tenant
-  # If unset, name of custom resource is used
+  # If unset, the name of this custom resource is used
   #
   # tokens: ""
+
+  # Optional: Defines a custom pull secret in case you use a private registry when pulling images from the dynatrace environment
+  # The secret has to be of type 'kubernetes.io/dockerconfigjson' (see https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/)
+  #
+  # customPullSecret: "custom-pull-secret"
 
   # Optional: Disable certificate validation checks for installer download and API communication
   #
@@ -29,6 +34,9 @@ spec:
   #   valueFrom: name-of-my-proxy-secret
 
   # Optional: Adds custom RootCAs from a configmap
+  # The key to the data must be "certs"
+  # This property only affects certificates used to communicate with the Dynatrace API.
+  # The property is not applied to the ActiveGate
   #
   # trustedCAs: name-of-my-ca-configmap
 
@@ -37,49 +45,45 @@ spec:
   #
   # networkZone: name-of-my-network-zone
 
-  # Optional: Defines a custom pull secret in case you use a private registry when pulling images from the dynatrace environment
-  # The secret has to be of type 'kubernetes.io/dockerconfigjson' (see https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/)
-  #
-  # customPullSecret: "custom-pull-secret"
-
-  # Optional: when enabled, and if Istio is installed on the Kubernetes environment, then the
+  # Optional: If enabled, and if Istio is installed on the Kubernetes environment, the
   # Operator will create the corresponding VirtualService and ServiceEntry objects to allow access
-  # to the Dynatrace cluster from the agent or the activeGate. Disabled by default.
+  # to the Dynatrace cluster from agents or activeGates. Disabled by default.
   #
   # enableIstio: false
 
-  # the namespaces which we want to inject into; matchLabels: <map-of-labels-to-match>; matchExpression: <see example https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#resources-that-support-set-based-requirements >
-  # if not set we inject into every namespace
-  # namespaceSelector has no effect when used together with hostMonitoring or classicFullstack
+  # The namespaces which should be injected into
+  # If unset, all namespace will be injected into
+  # namespaceSelector has no effect on hostMonitoring or classicFullstack
+  # For examples regarding namespaceSelectors, see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#resources-that-support-set-based-requirements
   #
   # namespaceSelector:
   #   matchLabels:
-  #     test: test
+  #     app: my-app
+  #   matchExpressions:
+  #    - key: app
+  #      operator: In
+  #      values: [my-frontend, my-backend, my-database]}
 
+  # Configuration for OneAgent instances
+  #
   oneAgent:
-    # Enable cloud-native fullstack monitoring and change its settings
+    # Enables cloud-native fullstack monitoring and changes its settings
     # Cannot be used in conjunction with classic fullstack monitoring, application-only monitoring or host monitoring
+    #
     cloudNativeFullStack:
-      # Optional: If specified, indicates the OneAgent version to use
-      # Defaults to latest
-      #
-      # version:
-
-      # Optional: The URI of the image that contains the codemodules that will be injected into user applications.
-      # Code Modules Image Dockerfile sample: https://dt-url.net/operator-docker-samples
-      # codeModulesImage: ""
-
-      # Optional: node selector to control on which nodes the OneAgent will be deployed.
+      # Optional: Sets a node selector to control on which nodes the OneAgent will be deployed.
+      # For more information on node selectors, see https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes/
       #
       # nodeSelector: {}
 
-      # Optional: priority class to assign to the OneAgent Pods. By default no class is set.
-      # See more here: https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/
+      # Optional: Sets the priority class assigned to the OneAgent Pods. No class is set by default.
+      # For more information on priority classes, see https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/
       #
       # priorityClassName: priority-class
 
-      # Optional: tolerations to include with the OneAgent DaemonSet.
-      # See more here: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+      # Optional: Specifies tolerations to include with the OneAgent DaemonSet.
+      # For more information on tolerations, see https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+      #
       tolerations:
         - effect: NoSchedule
           key: node-role.kubernetes.io/master
@@ -88,8 +92,10 @@ spec:
           key: node-role.kubernetes.io/control-plane
           operator: Exists
 
-      # Optional: resource settings for OneAgent container. Consumption of the OneAgent heavily depends
-      # on the workload to monitor; please adjust values accordingly.
+      # Optional: Adds resource settings for OneAgent container
+      # Consumption of the OneAgent heavily depends on the workload to monitor
+      # The values should be adjusted according to the workload
+      # An example to start with is provided below
       #
       # oneAgentResources:
       #   requests:
@@ -99,32 +105,46 @@ spec:
       #     cpu: 300m
       #     memory: 1.5Gi
 
-      # Optional: disables automatic restarts of OneAgent pods in case a new version is available. True
-      # by default.
+      # Optional: Adds arguments to add to the OneAgent installer
+      # For a list of available options, see https://www.dynatrace.com/support/help/shortlink/linux-custom-installation
+      # For a list of the limitations for OneAgents in Docker, see https://www.dynatrace.com/support/help/shortlink/oneagent-docker#limitations
+      #
+      # args: []
+
+      # Optional: Adds additional environment variables to OneAgent pods
+      #
+      # env: []
+
+      # Optional: Disables automatic restarts of OneAgent pods in case a new version is available
+      # Defaults to "true"
       #
       # autoUpdate: true
 
-      # Optional: DNS Policy for OneAgent pods. Defaults to ClusterFirstWithHostNet.
-      # See more: https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy
+      # Optional: Sets the DNS Policy for OneAgent pods
+      # Defaults to "ClusterFirstWithHostNet"
+      # For more information on DNS policies, see https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy
       #
       # dnsPolicy: "ClusterFirstWithHostNet"
 
-      # Optional: labels are customer defined labels for OneAgent Pods to structure workloads as desired.
+      # Optional: Defines labels added to OneAgent pods
+      # Can be used to structure workloads
       #
       # labels:
       #   custom: label
 
-      # Optional: additional environment variables to add to the OneAgent Pods.
+      # Optional: Sets the URI for the image containing the OneAgent installer used by the DaemonSet
+      # Defaults to the latest OneAgent image on the tenant's registry
       #
-      # env: []
+      # image:
 
-      # Optional: arguments to add to the OneAgent installer.
-      # Available options: https://www.dynatrace.com/support/help/shortlink/linux-custom-installation
-      # Limitations: https://www.dynatrace.com/support/help/shortlink/oneagent-docker#limitations
+      # Optional: If specified, indicates the OneAgent version to use
+      # Defaults to "latest"
+      # This property expects the version to be in the semver format
+      # Example: {major.minor.release}, e.g., "1.200.0"
       #
-      # args: []
+      # version:
 
-      # Optional: define resources requests and limits for the initContainer
+      # Optional: Defines resources requests and limits for the initContainer
       # See more: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers
       #
       # initResources:
@@ -135,35 +155,54 @@ spec:
       #     cpu: 300m
       #     memory: 1.5Gi
 
+      # Optional: The URI of the image that contains the codemodules specific OneAgent that will be injected into pods and applications.
+      # For an example of a Dockerfile creating such an image, see https://dt-url.net/operator-docker-samples
+      #
+      # codeModulesImage: ""
+
   # Configuration for ActiveGate instances.
+  #
   activeGate:
-    # Enables listed ActiveGate capabilities
+    # Specifies which capabilities will be enabled on ActiveGate instances
+    # The following capabilities can be set:
+    # - routing
+    # - kubernetes-monitoring
+    # - metrics-ingest
+    # - dynatrace-api
+    #
     capabilities:
       - routing
       - kubernetes-monitoring
       - dynatrace-api
 
-    # Optional: to use a custom ActiveGate Docker image.
-    image: ""
-
-    # Amount of replicas of ActiveGate pods
+    # Optional: Sets how many ActiveGate pods are spawned by the StatefulSet
+    # Defaults to "1"
     #
     # replicas: 1
 
-    # Optional: tolerations to include with the ActiveGate StatefulSet.
-    # See more here: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+    # Optional: Sets the image used to deploy ActiveGate instances
+    # Defaults to the latest ActiveGate image on the tenant's registry
     #
-    # tolerations:
-    # - effect: NoSchedule
-    #   key: node-role.kubernetes.io/master
-    #   operator: Exists
+    # image: ""
 
-    # Optional: node selector to control on which nodes the ActiveGate will be deployed.
+    # Optional: Sets the activation group for ActiveGate instances
     #
-    # nodeSelector: {}
+    # group: ""
 
-    # Optional: resource settings for ActiveGate container. Consumption of the ActiveGate heavily depends
-    # on the workload to monitor; please adjust values accordingly.
+    # Optional: Defines a custom properties file providing either as a value or as a reference to a secret
+    # If a reference to a secret is used, the key to the data must be 'customProperties'
+    #
+    # customProperties:
+    #   value: |
+    #     [connectivity]
+    #     networkZone=
+    #   valueFrom: myCustomPropertiesConfigMap
+
+    # Optional: Specifies resource settings for ActiveGate instances
+    # Consumption of the ActiveGate heavily depends on the workload to monitor#
+    # The values should be adjusted according to the workload
+    # An example to start with is provided below
+    #
     resources:
       requests:
         cpu: 500m
@@ -172,38 +211,50 @@ spec:
         cpu: 1000m
         memory: 1.5Gi
 
-    # Optional: labels are customer defined labels for ActiveGate Pods to structure workloads as desired.
+    # Optional: Sets a node selector to control on which nodes the ActiveGate will be deployed.
+    # For more information on node selectors, see https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes/
+    #
+    # nodeSelector: {}
+
+    # Optional: Specifies tolerations to include with the ActiveGate StatefulSet.
+    # For more information on tolerations, see https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+    #
+    # tolerations:
+    # - effect: NoSchedule
+    #   key: node-role.kubernetes.io/master
+    #   operator: Exists
+
+    # Optional: Defines labels added to ActiveGate pods
+    # Can be used to structure workloads
     #
     # labels:
     #   custom: label
 
-    # Optional: additional environment variables to add to the ActiveGate Pods.
+    # Optional: Adds additional environment variables to ActiveGate pods
     #
     # env: []
 
-    # Optional: Set activation group for ActiveGate
+    # Optional: Adds TopologySpreadConstraints to the ActiveGate pods
+    # For more information on TopologySpreadConstraints, see https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
     #
-    # group: ""
+    # topologySpreadConstraints: []
 
-    # Optional: Add a custom properties file by providing it as a value or reference it from a secret
-    # If referenced from a secret, make sure the key is called 'customProperties'
-    #
-    # customProperties:
-    #   value: |
-    #     [connectivity]
-    #     networkZone=
-    #   valueFrom: myCustomPropertiesConfigMap
-
-    # Optional: the name of a secret containing ActiveGate TLS cert+key and password. If not set, self-signed certificate is used.
-    # server.p12: certificate+key pair in pkcs12 format
+    # Optional: Specifies the name of a secret containing a TLS certificate, a TLS key and the TLS key's password to be used by ActiveGate instances
+    # If unset, a self-signed certificate is used
+    # The secret is expected to have the following key-value pairs
+    # server.p12: TLS certificate and TLS key pair in pkcs12 format
+    # password: passphrase to decrypt the TLS certificate and TLS key pair
     #
     # tlsSecretName: "my-tls-secret"
 
-    # Optional: Sets DNS Policy for the ActiveGate pods
+    # Optional: Sets the DNS Policy for ActiveGate pods
+    # Defaults to "Default"
+    # For more information on DNS policies, see https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy
     #
     # dnsPolicy: "Default"
 
-    # Optional: priority class to assign to the ActiveGate Pods. By default no class is set.
-    # See more here: https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/
+    # Optional: Specifies the priority class to assign to the ActiveGate Pods
+    # No class is set by default
+    # For more information on priority classes, see https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/
     #
     # priorityClassName: priority-class
