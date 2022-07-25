@@ -333,12 +333,10 @@ properties:
     title: Platform
     description: |
       Platform to deploy on. 
-      This should be set to "google-marketplace" for GKE clusters or
-      "google-autopilot" for GKE Autopilot clusters
-    default: google
+      Must be set to "google-marketplace" for GKE clusters.
+    default: google-marketplace
     enum:
       - "google-marketplace"
-      - "google-autopilot"
 
 required:
 - name
