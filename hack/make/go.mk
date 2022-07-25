@@ -6,7 +6,7 @@ go/fmt:
 
 ## Runs go vet
 go/vet:
-	go vet ./...
+	go vet -copylocks=false ./...
 
 ## Lints the go code
 go/lint: go/fmt go/vet

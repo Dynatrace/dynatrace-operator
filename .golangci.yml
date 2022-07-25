@@ -7,6 +7,10 @@ linters-settings:
       # SA1019 Using a deprecated function, variable, constant or field
       # Disabled, because we still support deprecated feature flags, which would cause the linter to complain
       - "-SA1019"
+  govet:
+    disable:
+      # Disable checking for copied locks since it causes a lot of annoying false-positives
+      - copylocks
 
 linters:
   disable-all: true

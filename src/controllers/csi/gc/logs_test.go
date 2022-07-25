@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -127,6 +128,10 @@ func TestLogGarbageCollector_cleanUpSuccessful(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, logs)
 
+	logFile := logs.UnusedVolumeIDs[0]
+	err = gc.fs.Chtimes(filepath.Join(testLogPath, logFile.Name()), logFile.ModTime(), logs.UnusedVolumeIDs[0].ModTime().AddDate(0, 0, -15))
+	require.NoError(t, err)
+
 	older := isOlderThanTwoWeeks(logs.UnusedVolumeIDs[0].ModTime())
 	assert.True(t, older)
 
@@ -143,6 +148,11 @@ func TestLogGarbageCollector_removeLogsNecessary_filesGetDeleted(t *testing.T) {
 	logs, err := gc.getLogFileInfo(testTenantUUID)
 	assert.NoError(t, err)
 	assert.NotNil(t, logs)
+
+	for _, unusedVolumeID := range logs.UnusedVolumeIDs {
+		err = gc.fs.Chtimes(filepath.Join(testLogPath, unusedVolumeID.Name()), unusedVolumeID.ModTime(), logs.UnusedVolumeIDs[0].ModTime().AddDate(0, 0, -15))
+		require.NoError(t, err)
+	}
 
 	gc.removeLogsIfNecessary(logs, int64(0), int64(1), testTenantUUID)
 	newLogs, err := gc.getLogFileInfo(testTenantUUID)
