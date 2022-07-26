@@ -18,4 +18,3 @@ wget "https://github.com/quintush/helm-unittest/releases/download/v0.2.8/helm-un
 mkdir -p "${HELM_PLUGINS}/unittest"
 tar xzvf helm-unittest.tgz -C "${HELM_PLUGINS}/unittest"
 rm helm-unittest.tgz
-
