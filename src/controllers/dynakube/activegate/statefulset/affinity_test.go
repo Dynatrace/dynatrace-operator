@@ -1,7 +1,6 @@
 package statefulset
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -22,6 +21,6 @@ func TestAffinity(t *testing.T) {
 		nodeSelectorTerms := affinitySpec.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
 
 		assert.Equal(t, 1, len(nodeSelectorTerms))
-		assert.Contains(t, nodeSelectorTerms, kubeobjects.AffinityNodeRequirement())
+		assert.Contains(t, nodeSelectorTerms, kubernetesOsSelectorTerm())
 	})
 }

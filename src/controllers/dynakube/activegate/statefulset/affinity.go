@@ -20,7 +20,7 @@ func affinityWithoutArch() *corev1.Affinity {
 		NodeAffinity: &corev1.NodeAffinity{
 			RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
 				NodeSelectorTerms: []corev1.NodeSelectorTerm{
-					{},
+					kubernetesOsSelectorTerm(),
 				},
 			},
 		},
@@ -37,5 +37,11 @@ func affinityNodeSelectorTerms() []corev1.NodeSelectorTerm {
 func kubernetesArchOsSelectorTerm() corev1.NodeSelectorTerm {
 	return corev1.NodeSelectorTerm{
 		MatchExpressions: kubeobjects.AffinityNodeRequirement(),
+	}
+}
+
+func kubernetesOsSelectorTerm() corev1.NodeSelectorTerm {
+	return corev1.NodeSelectorTerm{
+		MatchExpressions: kubeobjects.AffinityNodeRequirementWithoutArch(),
 	}
 }
