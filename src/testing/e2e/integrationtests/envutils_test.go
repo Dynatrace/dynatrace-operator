@@ -43,7 +43,7 @@ func newTestEnvironment() (*ControllerTestEnvironment, error) {
 		CRDDirectoryPaths: []string{
 			filepath.Join("..", "..", "..", "..", "config", "crd", "bases"),
 			// ToDo: currently this is the only way to get the CRD - see https://github.com/kubernetes-sigs/controller-runtime/pull/1393
-			filepath.Join(build.Default.GOPATH, "pkg", "mod", "istio.io", "api@v0.0.0-20220110211529-694b7b802a22", "kubernetes"),
+			filepath.Join(build.Default.GOPATH, "pkg", "mod", "istio.io", "api@v0.0.0-20220721211444-f06fcca0ad6c", "kubernetes"),
 		},
 	}
 	kubernetesAPIServer := environment.ControlPlane.GetAPIServer()
