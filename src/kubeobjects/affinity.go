@@ -19,17 +19,29 @@ func AffinityNodeRequirementWithARM64() []corev1.NodeSelectorRequirement {
 	return affinityNodeRequirementsForArches(amd64, arm64)
 }
 
+func AffinityNodeRequirementWithoutArch() []corev1.NodeSelectorRequirement {
+	return []corev1.NodeSelectorRequirement{linuxRequirement()}
+}
+
 func affinityNodeRequirementsForArches(arches ...string) []corev1.NodeSelectorRequirement {
 	return []corev1.NodeSelectorRequirement{
-		{
-			Key:      kubernetesArch,
-			Operator: corev1.NodeSelectorOpIn,
-			Values:   arches,
-		},
-		{
-			Key:      kubernetesOS,
-			Operator: corev1.NodeSelectorOpIn,
-			Values:   []string{linux},
-		},
+		archRequirement(arches...),
+		linuxRequirement(),
+	}
+}
+
+func archRequirement(arches ...string) corev1.NodeSelectorRequirement {
+	return corev1.NodeSelectorRequirement{
+		Key:      kubernetesArch,
+		Operator: corev1.NodeSelectorOpIn,
+		Values:   arches,
+	}
+}
+
+func linuxRequirement() corev1.NodeSelectorRequirement {
+	return corev1.NodeSelectorRequirement{
+		Key:      kubernetesOS,
+		Operator: corev1.NodeSelectorOpIn,
+		Values:   []string{linux},
 	}
 }
