@@ -153,18 +153,122 @@ func TestReconcile_GetStatefulSet(t *testing.T) {
 }
 
 func TestReconcile_CreateStatefulSetIfNotExists(t *testing.T) {
-	r := createDefaultReconciler(t)
-	desiredSts, err := r.buildDesiredStatefulSet()
-	require.NoError(t, err)
-	require.NotNil(t, desiredSts)
+	t.Run("stateful set is created if it does not exists", func(t *testing.T) {
+		r := createDefaultReconciler(t)
+		desiredSts, err := r.buildDesiredStatefulSet()
+		require.NoError(t, err)
+		require.NotNil(t, desiredSts)
 
-	created, err := r.createStatefulSetIfNotExists(desiredSts)
-	assert.NoError(t, err)
-	assert.True(t, created)
+		created, err := r.createStatefulSetIfNotExists(desiredSts)
+		assert.NoError(t, err)
+		assert.True(t, created)
+	})
+	t.Run("stateful set is not created if it exists", func(t *testing.T) {
+		r := createDefaultReconciler(t)
+		desiredSts, err := r.buildDesiredStatefulSet()
+		require.NoError(t, err)
+		require.NotNil(t, desiredSts)
 
-	created, err = r.createStatefulSetIfNotExists(desiredSts)
-	assert.NoError(t, err)
-	assert.False(t, created)
+		created, err := r.createStatefulSetIfNotExists(desiredSts)
+		require.NoError(t, err)
+		require.True(t, created)
+
+		created, err = r.createStatefulSetIfNotExists(desiredSts)
+		assert.NoError(t, err)
+		assert.False(t, created)
+	})
+}
+
+type failingClient struct {
+	created int
+	client.Client
+}
+
+func (clt *failingClient) Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
+	if clt.created == 0 {
+		clt.created++
+		return errors.New("failing")
+	}
+
+	return clt.Client.Create(ctx, obj, opts...)
+}
+
+func TestCreateStatefulSet(t *testing.T) {
+	t.Run("creates stateful set", func(t *testing.T) {
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
+		r := &Reconciler{
+			Client: fakeClient,
+		}
+		desiredStatefulSet := appsv1.StatefulSet{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "apps/v1",
+				Kind:       "StatefulSet",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			}}
+
+		err := r.createStatefulSet(&desiredStatefulSet)
+
+		assert.NoError(t, err)
+
+		var createdStatefulSet appsv1.StatefulSet
+		err = r.Get(context.TODO(), client.ObjectKey{Namespace: testNamespace, Name: testName}, &createdStatefulSet)
+
+		assert.NoError(t, err)
+		assert.Equal(t, desiredStatefulSet, createdStatefulSet)
+	})
+	t.Run("changes affinities if it does not succeed at first", func(t *testing.T) {
+		fakeClient := &failingClient{
+			Client: fake.NewClientBuilder().WithScheme(scheme.Scheme).Build(),
+		}
+		r := &Reconciler{
+			Client: fakeClient,
+		}
+		desiredStatefulSet := appsv1.StatefulSet{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "apps/v1",
+				Kind:       "StatefulSet",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+			Spec: appsv1.StatefulSetSpec{
+				Template: corev1.PodTemplateSpec{
+					Spec: corev1.PodSpec{
+						Affinity: affinity(),
+					},
+				},
+			}}
+		expectedStatefulSet := appsv1.StatefulSet{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "apps/v1",
+				Kind:       "StatefulSet",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:            testName,
+				Namespace:       testNamespace,
+				ResourceVersion: "1",
+			},
+			Spec: appsv1.StatefulSetSpec{
+				Template: corev1.PodTemplateSpec{
+					Spec: corev1.PodSpec{
+						Affinity: affinityWithoutArch(),
+					},
+				},
+			}}
+		err := r.createStatefulSet(&desiredStatefulSet)
+
+		assert.NoError(t, err)
+
+		var createdStatefulSet appsv1.StatefulSet
+		err = r.Get(context.TODO(), client.ObjectKey{Namespace: testNamespace, Name: testName}, &createdStatefulSet)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedStatefulSet, createdStatefulSet)
+	})
 }
 
 func TestReconcile_UpdateStatefulSetIfOutdated(t *testing.T) {

@@ -145,9 +145,21 @@ func (r *Reconciler) createStatefulSetIfNotExists(desiredSts *appsv1.StatefulSet
 	_, err := r.getStatefulSet(desiredSts)
 	if err != nil && k8serrors.IsNotFound(errors.Cause(err)) {
 		log.Info("creating new stateful set for " + r.feature)
-		return true, r.Create(context.TODO(), desiredSts)
+		return true, r.createStatefulSet(desiredSts)
 	}
 	return false, err
+}
+
+func (r *Reconciler) createStatefulSet(desiredSts *appsv1.StatefulSet) error {
+	err := r.Create(context.TODO(), desiredSts)
+
+	if err != nil {
+		log.Info("failed rolling out ActiveGate, retrying with different affinities", "error", err.Error())
+		desiredSts.Spec.Template.Spec.Affinity = affinityWithoutArch()
+		return r.Create(context.TODO(), desiredSts)
+	}
+
+	return nil
 }
 
 func (r *Reconciler) updateStatefulSetIfOutdated(desiredSts *appsv1.StatefulSet) (bool, error) {
