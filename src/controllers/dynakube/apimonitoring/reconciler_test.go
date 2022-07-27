@@ -1,4 +1,4 @@
-package automaticapimonitoring
+package apimonitoring
 
 import (
 	"testing"
@@ -20,11 +20,11 @@ func TestNewDefaultReconiler(t *testing.T) {
 	createDefaultReconciler(t)
 }
 
-func createDefaultReconciler(t *testing.T) *AutomaticApiMonitoringReconciler {
+func createDefaultReconciler(t *testing.T) *ApiMonitoringReconciler {
 	return createReconciler(t, testUID, []dtclient.MonitoredEntity{}, dtclient.GetSettingsResponse{TotalCount: 0}, "")
 }
 
-func createReconciler(t *testing.T, uid string, monitoredEntities []dtclient.MonitoredEntity, getSettingsResponse dtclient.GetSettingsResponse, objectID string) *AutomaticApiMonitoringReconciler {
+func createReconciler(t *testing.T, uid string, monitoredEntities []dtclient.MonitoredEntity, getSettingsResponse dtclient.GetSettingsResponse, objectID string) *ApiMonitoringReconciler {
 	mockClient := &dtclient.MockDynatraceClient{}
 	mockClient.On("GetMonitoredEntitiesForKubeSystemUUID", mock.AnythingOfType("string")).
 		Return(monitoredEntities, nil)
@@ -40,7 +40,7 @@ func createReconciler(t *testing.T, uid string, monitoredEntities []dtclient.Mon
 	return r
 }
 
-func createReconcilerWithError(t *testing.T, monitoredEntitiesError error, getSettingsResponseError error, createSettingsResponseError error) *AutomaticApiMonitoringReconciler {
+func createReconcilerWithError(t *testing.T, monitoredEntitiesError error, getSettingsResponseError error, createSettingsResponseError error) *ApiMonitoringReconciler {
 	mockClient := &dtclient.MockDynatraceClient{}
 	mockClient.On("GetMonitoredEntitiesForKubeSystemUUID", mock.AnythingOfType("string")).
 		Return([]dtclient.MonitoredEntity{}, monitoredEntitiesError)
