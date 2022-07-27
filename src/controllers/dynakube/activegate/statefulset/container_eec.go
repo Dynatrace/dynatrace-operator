@@ -2,10 +2,10 @@ package statefulset
 
 import (
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"regexp"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	corev1 "k8s.io/api/core/v1"

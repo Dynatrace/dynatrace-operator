@@ -1,10 +1,10 @@
 package statefulset
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

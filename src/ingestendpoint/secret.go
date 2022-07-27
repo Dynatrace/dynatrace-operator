@@ -9,7 +9,6 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/config"
-	agcapability "github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/mapper"
@@ -213,11 +212,11 @@ func metricsIngestUrlForClusterActiveGate(dk *dynatracev1beta1.DynaKube) (string
 		return "", err
 	}
 
-	serviceName := capability.BuildServiceName(dk.Name, agcapability.MultiActiveGateName)
+	serviceName := capability.BuildServiceName(dk.Name, capability.MultiActiveGateName)
 	return fmt.Sprintf("https://%s.%s/e/%s/api/v2/metrics/ingest", serviceName, dk.Namespace, tenant), nil
 }
 
 func statsdIngestUrl(dk *dynatracev1beta1.DynaKube) (string, error) {
-	serviceName := capability.BuildServiceName(dk.Name, agcapability.MultiActiveGateName)
-	return fmt.Sprintf("%s.%s:%d", serviceName, dk.Namespace, agcapability.StatsdIngestPort), nil
+	serviceName := capability.BuildServiceName(dk.Name, capability.MultiActiveGateName)
+	return fmt.Sprintf("%s.%s:%d", serviceName, dk.Namespace, capability.StatsdIngestPort), nil
 }

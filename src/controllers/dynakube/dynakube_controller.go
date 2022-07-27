@@ -10,7 +10,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/src/agproxysecret"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/secrets"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/apimonitoring"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
@@ -346,11 +345,11 @@ func (controller *DynakubeController) reconcileActiveGateProxySecret(ctx context
 	return true
 }
 
-func generateActiveGateCapabilities(instance *dynatracev1beta1.DynaKube) []capability.Capability {
-	return []capability.Capability{
-		capability.NewKubeMonCapability(instance),
-		capability.NewRoutingCapability(instance),
-		capability.NewMultiCapability(instance),
+func generateActiveGateCapabilities(instance *dynatracev1beta1.DynaKube) []capability2.Capability {
+	return []capability2.Capability{
+		capability2.NewKubeMonCapability(instance),
+		capability2.NewRoutingCapability(instance),
+		capability2.NewMultiCapability(instance),
 	}
 }
 
@@ -368,7 +367,7 @@ func (controller *DynakubeController) reconcileActiveGateCapabilities(dynakubeSt
 		} else {
 			sts := appsv1.StatefulSet{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      capability.CalculateStatefulSetName(c, dynakubeState.Instance.Name),
+					Name:      capability2.CalculateStatefulSetName(c, dynakubeState.Instance.Name),
 					Namespace: dynakubeState.Instance.Namespace,
 				},
 			}
