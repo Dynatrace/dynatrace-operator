@@ -159,6 +159,22 @@ func TestAdd(t *testing.T) {
 			Value:   "",
 		})
 	})
+	t.Run("does not add same property multiple times", func(t *testing.T) {
+		processModuleConfig := &ProcessModuleConfig{}
+
+		for i := 0; i < 10; i++ {
+			processModuleConfig.Add(ProcessModuleProperty{
+				Section: testSection,
+				Key:     testKey,
+				Value:   testValue,
+			})
+
+			assert.Len(t, processModuleConfig.Properties, 1)
+			assert.Equal(t, testSection, processModuleConfig.Properties[0].Section)
+			assert.Equal(t, testKey, processModuleConfig.Properties[0].Key)
+			assert.Equal(t, testValue, processModuleConfig.Properties[0].Value)
+		}
+	})
 	t.Run("removes property", func(t *testing.T) {
 		processModuleConfig := &ProcessModuleConfig{}
 
