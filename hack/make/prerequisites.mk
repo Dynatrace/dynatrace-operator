@@ -23,4 +23,4 @@ prerequisites/setup-pre-commit:
 	chmod +x ./.git/hooks/pre-commit
 
 prerequisites/helm:
-	helm plugin install https://github.com/quintush/helm-unittest --version 0.2.8
+	hack/helm/install-unittest-plugin.sh

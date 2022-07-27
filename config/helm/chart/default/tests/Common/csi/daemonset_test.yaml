@@ -283,3 +283,24 @@ tests:
       - equal:
           path: spec.template.metadata.labels.testKey
           value: testValue
+
+  - it: should take resource limits from values file
+    set:
+      csidriver.enabled: true
+      csidriver.requests.cpu: 600m
+      csidriver.requests.memory: 200Mi
+      csidriver.limits.cpu: 900m
+      csidriver.limits.memory: 300Mi
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.cpu
+          value: 600m
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.memory
+          value: 200Mi
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.cpu
+          value: 900m
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.memory
+          value: 300Mi
