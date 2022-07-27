@@ -8,7 +8,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/customproperties"
-	rsfs "github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/reconciler/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/stretchr/testify/assert"
@@ -175,7 +175,7 @@ func TestReconcile(t *testing.T) {
 			statefulSet := assertStatefulSetExists(r)
 			found := 0
 			for _, vm := range statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts {
-				if vm.Name == rsfs.InternalProxySecretVolumeName {
+				if vm.Name == statefulset.InternalProxySecretVolumeName {
 					found = found + 1
 				}
 			}
@@ -188,7 +188,7 @@ func TestReconcile(t *testing.T) {
 			statefulSet := assertStatefulSetExists(r)
 			found := 0
 			for _, vm := range statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts {
-				if vm.Name == rsfs.InternalProxySecretVolumeName {
+				if vm.Name == statefulset.InternalProxySecretVolumeName {
 					found = found + 1
 				}
 			}
@@ -271,10 +271,10 @@ func TestReconcile(t *testing.T) {
 
 func TestSetReadinessProbePort(t *testing.T) {
 	r := createDefaultReconciler(t)
-	stsProps := rsfs.NewStatefulSetProperties(r.Instance, metricsCapability.Properties(), "", "", "", "", "",
+	stsProps := statefulset.NewStatefulSetProperties(r.Instance, metricsCapability.Properties(), "", "", "", "", "",
 		nil, nil, nil,
 	)
-	sts, err := rsfs.CreateStatefulSet(stsProps)
+	sts, err := statefulset.CreateStatefulSet(stsProps)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, sts)
@@ -290,7 +290,7 @@ func TestSetReadinessProbePort(t *testing.T) {
 
 func TestReconciler_calculateStatefulSetName(t *testing.T) {
 	type fields struct {
-		Reconciler *rsfs.Reconciler
+		Reconciler *statefulset.Reconciler
 		Capability *capability.RoutingCapability
 	}
 	tests := []struct {
@@ -301,7 +301,7 @@ func TestReconciler_calculateStatefulSetName(t *testing.T) {
 		{
 			name: "instance and module names are defined",
 			fields: fields{
-				Reconciler: &rsfs.Reconciler{
+				Reconciler: &statefulset.Reconciler{
 					Instance: &dynatracev1beta1.DynaKube{
 						ObjectMeta: metav1.ObjectMeta{
 							Name: "instanceName",
@@ -315,7 +315,7 @@ func TestReconciler_calculateStatefulSetName(t *testing.T) {
 		{
 			name: "empty instance name",
 			fields: fields{
-				Reconciler: &rsfs.Reconciler{
+				Reconciler: &statefulset.Reconciler{
 					Instance: &dynatracev1beta1.DynaKube{
 						ObjectMeta: metav1.ObjectMeta{
 							Name: "",
