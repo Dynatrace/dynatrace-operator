@@ -27,6 +27,8 @@ type ProcessModuleProperty struct {
 type ConfMap map[string]map[string]string
 
 func (pmc *ProcessModuleConfig) Add(newProperty ProcessModuleProperty) *ProcessModuleConfig {
+	pmc.fixBrokenCache()
+
 	for index, cachedProperty := range pmc.Properties {
 		if cachedProperty.Key == newProperty.Key {
 			if newProperty.Value == "" {
@@ -43,6 +45,27 @@ func (pmc *ProcessModuleConfig) Add(newProperty ProcessModuleProperty) *ProcessM
 	}
 
 	return pmc
+}
+
+// fixBrokenCache fixes a cache that might have been broken by previous versions
+// Older operator versions handled the cache wrong and multiplied properties on an update
+// instead of updating it.
+// The fixed algorithm in Add cannot handle this broken cache without this function
+// It adds every property first to a map using the property's key, to make them distinct
+// Then collects the now distinct properties and updates the cache
+func (pmc *ProcessModuleConfig) fixBrokenCache() {
+	properties := make([]ProcessModuleProperty, 0, len(pmc.Properties))
+	propertyMap := make(map[string]ProcessModuleProperty)
+
+	for _, property := range pmc.Properties {
+		propertyMap[property.Key] = property
+	}
+
+	for _, value := range propertyMap {
+		properties = append(properties, value)
+	}
+
+	pmc.Properties = properties
 }
 
 func (pmc *ProcessModuleConfig) addProperty(newProperty ProcessModuleProperty) {

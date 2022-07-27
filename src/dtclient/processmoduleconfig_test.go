@@ -241,4 +241,46 @@ func TestAdd(t *testing.T) {
 			Value:   "new-value",
 		})
 	})
+	t.Run("fixes broken cache", func(t *testing.T) {
+		processModuleConfig := &ProcessModuleConfig{}
+
+		for i := 0; i < 10; i++ {
+			section := fmt.Sprintf("%s-%d", testSection, i)
+			key := fmt.Sprintf("%s-%d", testKey, i)
+			value := fmt.Sprintf("%s-%d", testValue, i)
+
+			processModuleConfig.Add(ProcessModuleProperty{
+				Section: section,
+				Key:     key,
+				Value:   value,
+			})
+		}
+		for i := 0; i < 10; i++ {
+			processModuleConfig.Properties = append(processModuleConfig.Properties, ProcessModuleProperty{
+				Section: testSection,
+				Key:     testKey,
+				Value:   testValue,
+			})
+		}
+
+		require.Len(t, processModuleConfig.Properties, 20)
+
+		processModuleConfig.Add(ProcessModuleProperty{
+			Section: testSection,
+			Key:     testKey,
+			Value:   "new-value",
+		})
+
+		assert.Len(t, processModuleConfig.Properties, 11)
+		assert.Contains(t, processModuleConfig.Properties, ProcessModuleProperty{
+			Section: testSection,
+			Key:     testKey,
+			Value:   "new-value",
+		})
+		assert.NotContains(t, processModuleConfig.Properties, ProcessModuleProperty{
+			Section: testSection,
+			Key:     testKey,
+			Value:   testValue,
+		})
+	})
 }
