@@ -7,7 +7,6 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/internal/events"
 	sts "github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
@@ -54,7 +53,7 @@ func NewReconciler(capability capability.Capability, clt client.Client, apiReade
 	}
 }
 
-func setReadinessProbePort() events.StatefulSetEvent {
+func setReadinessProbePort() sts.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {
 		if activeGateContainer, err := getActiveGateContainer(sts); err == nil {
 			activeGateContainer.ReadinessProbe.HTTPGet.Port = intstr.FromString(capability.HttpsServicePortName)
@@ -79,7 +78,7 @@ func getActiveGateContainer(sts *appsv1.StatefulSet) (*corev1.Container, error) 
 	return getContainerByName(sts.Spec.Template.Spec.Containers, capability.ActiveGateContainerName)
 }
 
-func setCommunicationsPort(dk *dynatracev1beta1.DynaKube) events.StatefulSetEvent {
+func setCommunicationsPort(dk *dynatracev1beta1.DynaKube) sts.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {
 		activeGateContainer, err := getActiveGateContainer(sts)
 		if err == nil {
@@ -118,7 +117,7 @@ func (r *Reconciler) calculateStatefulSetName() string {
 	return capability.CalculateStatefulSetName(r.Capability, r.Instance.Name)
 }
 
-func addDNSEntryPoint(instance *dynatracev1beta1.DynaKube, moduleName string) events.StatefulSetEvent {
+func addDNSEntryPoint(instance *dynatracev1beta1.DynaKube, moduleName string) sts.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {
 		if activeGateContainer, err := getActiveGateContainer(sts); err == nil {
 			activeGateContainer.Env = append(activeGateContainer.Env,
