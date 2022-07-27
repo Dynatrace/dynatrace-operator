@@ -3,6 +3,7 @@ package dynakube
 import (
 	"context"
 	"fmt"
+	capability2 "github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"net/http"
 	"os"
 	"time"
@@ -10,7 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/agproxysecret"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
-	rcap "github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/reconciler/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/secrets"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/apimonitoring"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
@@ -359,7 +359,7 @@ func (controller *DynakubeController) reconcileActiveGateCapabilities(dynakubeSt
 
 	for _, c := range caps {
 		if c.Enabled() {
-			upd, err := rcap.NewReconciler(
+			upd, err := capability2.NewReconciler(
 				c, controller.client, controller.apiReader, controller.scheme, dynakubeState.Instance).Reconcile()
 			if dynakubeState.Error(err) {
 				return false
@@ -379,7 +379,7 @@ func (controller *DynakubeController) reconcileActiveGateCapabilities(dynakubeSt
 			if c.ShouldCreateService() {
 				svc := corev1.Service{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      rcap.BuildServiceName(dynakubeState.Instance.Name, c.ShortName()),
+						Name:      capability2.BuildServiceName(dynakubeState.Instance.Name, c.ShortName()),
 						Namespace: dynakubeState.Instance.Namespace,
 					},
 				}
