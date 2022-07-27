@@ -2,15 +2,14 @@ package statefulset
 
 import (
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/customproperties"
 	"hash/fnv"
 	"reflect"
 	"strconv"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/internal/events"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/secrets"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/pkg/errors"
@@ -32,7 +31,7 @@ type Reconciler struct {
 	capabilityName                   string
 	serviceAccountOwner              string
 	capability                       *dynatracev1beta1.CapabilityProperties
-	onAfterStatefulSetCreateListener []events.StatefulSetEvent
+	onAfterStatefulSetCreateListener []StatefulSetEvent
 	initContainersTemplates          []corev1.Container
 	containerVolumeMounts            []corev1.VolumeMount
 	volumes                          []corev1.Volume
@@ -55,14 +54,14 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 		capabilityName:                   capability.ArgName(),
 		serviceAccountOwner:              serviceAccountOwner,
 		capability:                       capability.Properties(),
-		onAfterStatefulSetCreateListener: []events.StatefulSetEvent{},
+		onAfterStatefulSetCreateListener: []StatefulSetEvent{},
 		initContainersTemplates:          capability.InitContainersTemplates(),
 		containerVolumeMounts:            capability.ContainerVolumeMounts(),
 		volumes:                          capability.Volumes(),
 	}
 }
 
-func (r *Reconciler) AddOnAfterStatefulSetCreateListener(event events.StatefulSetEvent) {
+func (r *Reconciler) AddOnAfterStatefulSetCreateListener(event StatefulSetEvent) {
 	r.onAfterStatefulSetCreateListener = append(r.onAfterStatefulSetCreateListener, event)
 }
 

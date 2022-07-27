@@ -1,4 +1,4 @@
-package capability
+package reconciler
 
 import (
 	"context"

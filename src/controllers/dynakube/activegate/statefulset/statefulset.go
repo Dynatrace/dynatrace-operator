@@ -2,13 +2,12 @@ package statefulset
 
 import (
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/customproperties"
 
 	"github.com/Dynatrace/dynatrace-operator/src/agproxysecret"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/internal/events"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/secrets"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
@@ -56,7 +55,7 @@ type statefulSetProperties struct {
 	feature                     string
 	capabilityName              string
 	serviceAccountOwner         string
-	OnAfterCreateListener       []events.StatefulSetEvent
+	OnAfterCreateListener       []StatefulSetEvent
 	initContainersTemplates     []corev1.Container
 	containerVolumeMounts       []corev1.VolumeMount
 	volumes                     []corev1.Volume
@@ -78,7 +77,7 @@ func NewStatefulSetProperties(instance *dynatracev1beta1.DynaKube, capabilityPro
 		feature:                     feature,
 		capabilityName:              capabilityName,
 		serviceAccountOwner:         serviceAccountOwner,
-		OnAfterCreateListener:       []events.StatefulSetEvent{},
+		OnAfterCreateListener:       []StatefulSetEvent{},
 		initContainersTemplates:     initContainers,
 		containerVolumeMounts:       containerVolumeMounts,
 		volumes:                     volumes,

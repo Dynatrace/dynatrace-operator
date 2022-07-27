@@ -1,4 +1,4 @@
-package capability
+package reconciler
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"reflect"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	sts "github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
@@ -26,10 +27,10 @@ const (
 
 type Reconciler struct {
 	*sts.Reconciler
-	Capability
+	capability.Capability
 }
 
-func NewReconciler(capability Capability, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme,
+func NewReconciler(capability capability.Capability, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme,
 	instance *dynatracev1beta1.DynaKube) *Reconciler {
 	baseReconciler := sts.NewReconciler(
 		clt, apiReader, scheme, instance, capability)
@@ -55,9 +56,9 @@ func NewReconciler(capability Capability, clt client.Client, apiReader client.Re
 func setReadinessProbePort() sts.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {
 		if activeGateContainer, err := getActiveGateContainer(sts); err == nil {
-			activeGateContainer.ReadinessProbe.HTTPGet.Port = intstr.FromString(HttpsServicePortName)
+			activeGateContainer.ReadinessProbe.HTTPGet.Port = intstr.FromString(capability.HttpsServicePortName)
 		} else {
-			log.Error(err, "Cannot find container in the StatefulSet", "container name", ActiveGateContainerName)
+			log.Error(err, "Cannot find container in the StatefulSet", "container name", capability.ActiveGateContainerName)
 		}
 	}
 }
@@ -74,7 +75,7 @@ func getContainerByName(containers []corev1.Container, containerName string) (*c
 }
 
 func getActiveGateContainer(sts *appsv1.StatefulSet) (*corev1.Container, error) {
-	return getContainerByName(sts.Spec.Template.Spec.Containers, ActiveGateContainerName)
+	return getContainerByName(sts.Spec.Template.Spec.Containers, capability.ActiveGateContainerName)
 }
 
 func setCommunicationsPort(dk *dynatracev1beta1.DynaKube) sts.StatefulSetEvent {
@@ -83,37 +84,37 @@ func setCommunicationsPort(dk *dynatracev1beta1.DynaKube) sts.StatefulSetEvent {
 		if err == nil {
 			activeGateContainer.Ports = []corev1.ContainerPort{
 				{
-					Name:          HttpsServicePortName,
+					Name:          capability.HttpsServicePortName,
 					ContainerPort: httpsContainerPort,
 				},
 				{
-					Name:          HttpServicePortName,
+					Name:          capability.HttpServicePortName,
 					ContainerPort: httpContainerPort,
 				},
 			}
 		} else {
-			log.Info("Cannot find container in the StatefulSet", "container name", ActiveGateContainerName)
+			log.Info("Cannot find container in the StatefulSet", "container name", capability.ActiveGateContainerName)
 		}
 
 		if dk.NeedsStatsd() {
-			statsdContainer, err := getContainerByName(sts.Spec.Template.Spec.Containers, StatsdContainerName)
+			statsdContainer, err := getContainerByName(sts.Spec.Template.Spec.Containers, capability.StatsdContainerName)
 			if err == nil {
 				statsdContainer.Ports = []corev1.ContainerPort{
 					{
-						Name:          StatsdIngestTargetPort,
-						ContainerPort: StatsdIngestPort,
+						Name:          capability.StatsdIngestTargetPort,
+						ContainerPort: capability.StatsdIngestPort,
 						Protocol:      corev1.ProtocolUDP,
 					},
 				}
 			} else {
-				log.Info("Cannot find container in the StatefulSet", "container name", StatsdContainerName)
+				log.Info("Cannot find container in the StatefulSet", "container name", capability.StatsdContainerName)
 			}
 		}
 	}
 }
 
 func (r *Reconciler) calculateStatefulSetName() string {
-	return CalculateStatefulSetName(r.Capability, r.Instance.Name)
+	return capability.CalculateStatefulSetName(r.Capability, r.Instance.Name)
 }
 
 func addDNSEntryPoint(instance *dynatracev1beta1.DynaKube, moduleName string) sts.StatefulSetEvent {
@@ -125,7 +126,7 @@ func addDNSEntryPoint(instance *dynatracev1beta1.DynaKube, moduleName string) st
 					Value: buildDNSEntryPoint(instance, moduleName),
 				})
 		} else {
-			log.Error(err, "Cannot find container in the StatefulSet", "container name", ActiveGateContainerName)
+			log.Error(err, "Cannot find container in the StatefulSet", "container name", capability.ActiveGateContainerName)
 		}
 	}
 }
@@ -136,7 +137,7 @@ func buildDNSEntryPoint(instance *dynatracev1beta1.DynaKube, moduleName string) 
 
 func (r *Reconciler) Reconcile() (update bool, err error) {
 	if r.ShouldCreateService() {
-		multiCapability := NewMultiCapability(r.Instance)
+		multiCapability := capability.NewMultiCapability(r.Instance)
 		update, err = r.createOrUpdateService(multiCapability.ServicePorts)
 		if update || err != nil {
 			return update, errors.WithStack(err)
@@ -154,7 +155,7 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 	return update, errors.WithStack(err)
 }
 
-func (r *Reconciler) createOrUpdateService(desiredServicePorts AgServicePorts) (bool, error) {
+func (r *Reconciler) createOrUpdateService(desiredServicePorts capability.AgServicePorts) (bool, error) {
 	desired := createService(r.Instance, r.ShortName(), desiredServicePorts)
 
 	installed := &corev1.Service{}

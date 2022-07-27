@@ -3,11 +3,12 @@ package dynakube
 import (
 	"context"
 	"fmt"
-	rcap "github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/agproxysecret"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	rcap "github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability/reconciler"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
@@ -406,7 +407,7 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 	routingSvc := &corev1.Service{}
 	err = controller.client.Get(context.TODO(), client.ObjectKey{
 		Namespace: testNamespace,
-		Name:      rcap.BuildServiceName(testName, routingCapability.ShortName()),
+		Name:      reconciler.BuildServiceName(testName, routingCapability.ShortName()),
 	}, routingSvc)
 	assert.NoError(t, err)
 	assert.NotNil(t, routingSvc)
@@ -430,7 +431,7 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 
 	err = controller.client.Get(context.TODO(), client.ObjectKey{
 		Namespace: testNamespace,
-		Name:      rcap.BuildServiceName(testName, routingCapability.ShortName()),
+		Name:      reconciler.BuildServiceName(testName, routingCapability.ShortName()),
 	}, routingSvc)
 	assert.Error(t, err)
 	assert.True(t, k8serrors.IsNotFound(err))
@@ -488,7 +489,7 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 	routingSvc := &corev1.Service{}
 	err = r.client.Get(context.TODO(), client.ObjectKey{
 		Namespace: testNamespace,
-		Name:      rcap.BuildServiceName(testName, multiCapability.ShortName()),
+		Name:      reconciler.BuildServiceName(testName, multiCapability.ShortName()),
 	}, routingSvc)
 	assert.NoError(t, err)
 	assert.NotNil(t, routingSvc)
@@ -512,7 +513,7 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 
 	err = r.client.Get(context.TODO(), client.ObjectKey{
 		Namespace: testNamespace,
-		Name:      rcap.BuildServiceName(testName, multiCapability.ShortName()),
+		Name:      reconciler.BuildServiceName(testName, multiCapability.ShortName()),
 	}, routingSvc)
 	assert.Error(t, err)
 	assert.True(t, k8serrors.IsNotFound(err))

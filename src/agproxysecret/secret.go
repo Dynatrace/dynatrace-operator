@@ -3,10 +3,10 @@ package agproxysecret
 import (
 	"context"
 	"fmt"
-	agcapability "github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"net/url"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	agcapability "github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"

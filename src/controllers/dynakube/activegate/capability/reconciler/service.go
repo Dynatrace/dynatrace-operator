@@ -1,32 +1,33 @@
-package capability
+package reconciler
 
 import (
 	"fmt"
 	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func createService(instance *dynatracev1beta1.DynaKube, feature string, servicePorts AgServicePorts) *corev1.Service {
+func createService(instance *dynatracev1beta1.DynaKube, feature string, servicePorts capability.AgServicePorts) *corev1.Service {
 	var ports []corev1.ServicePort
 
 	if servicePorts.Webserver {
 		ports = append(ports,
 			corev1.ServicePort{
-				Name:       HttpsServicePortName,
+				Name:       capability.HttpsServicePortName,
 				Protocol:   corev1.ProtocolTCP,
-				Port:       HttpsServicePort,
-				TargetPort: intstr.FromString(HttpsServicePortName),
+				Port:       capability.HttpsServicePort,
+				TargetPort: intstr.FromString(capability.HttpsServicePortName),
 			},
 			corev1.ServicePort{
-				Name:       HttpServicePortName,
+				Name:       capability.HttpServicePortName,
 				Protocol:   corev1.ProtocolTCP,
-				Port:       HttpServicePort,
-				TargetPort: intstr.FromString(HttpServicePortName),
+				Port:       capability.HttpServicePort,
+				TargetPort: intstr.FromString(capability.HttpServicePortName),
 			},
 		)
 	}
@@ -34,10 +35,10 @@ func createService(instance *dynatracev1beta1.DynaKube, feature string, serviceP
 	if servicePorts.Statsd {
 		ports = append(ports,
 			corev1.ServicePort{
-				Name:       StatsdIngestPortName,
+				Name:       capability.StatsdIngestPortName,
 				Protocol:   corev1.ProtocolUDP,
-				Port:       StatsdIngestPort,
-				TargetPort: intstr.FromString(StatsdIngestTargetPort),
+				Port:       capability.StatsdIngestPort,
+				TargetPort: intstr.FromString(capability.StatsdIngestTargetPort),
 			},
 		)
 	}

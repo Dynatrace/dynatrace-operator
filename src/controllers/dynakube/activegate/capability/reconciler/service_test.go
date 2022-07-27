@@ -1,9 +1,10 @@
-package capability
+package reconciler
 
 import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/stretchr/testify/assert"
@@ -31,27 +32,27 @@ func testCreateInstance() *dynatracev1beta1.DynaKube {
 
 func TestCreateService(t *testing.T) {
 	statsdPort := corev1.ServicePort{
-		Name:       StatsdIngestPortName,
+		Name:       capability.StatsdIngestPortName,
 		Protocol:   corev1.ProtocolUDP,
-		Port:       StatsdIngestPort,
-		TargetPort: intstr.FromString(StatsdIngestTargetPort),
+		Port:       capability.StatsdIngestPort,
+		TargetPort: intstr.FromString(capability.StatsdIngestTargetPort),
 	}
 	agHttpsPort := corev1.ServicePort{
-		Name:       HttpsServicePortName,
+		Name:       capability.HttpsServicePortName,
 		Protocol:   corev1.ProtocolTCP,
-		Port:       HttpsServicePort,
-		TargetPort: intstr.FromString(HttpsServicePortName),
+		Port:       capability.HttpsServicePort,
+		TargetPort: intstr.FromString(capability.HttpsServicePortName),
 	}
 	agHttpPort := corev1.ServicePort{
-		Name:       HttpServicePortName,
+		Name:       capability.HttpServicePortName,
 		Protocol:   corev1.ProtocolTCP,
-		Port:       HttpServicePort,
-		TargetPort: intstr.FromString(HttpServicePortName),
+		Port:       capability.HttpServicePort,
+		TargetPort: intstr.FromString(capability.HttpServicePortName),
 	}
 
 	t.Run("check service name, labels and selector", func(t *testing.T) {
 		instance := testCreateInstance()
-		service := createService(instance, testComponentFeature, AgServicePorts{
+		service := createService(instance, testComponentFeature, capability.AgServicePorts{
 			Webserver: true,
 		})
 
@@ -79,7 +80,7 @@ func TestCreateService(t *testing.T) {
 
 	t.Run("check AG service if metrics ingest enabled, but not StatsD", func(t *testing.T) {
 		instance := testCreateInstance()
-		desiredPorts := AgServicePorts{
+		desiredPorts := capability.AgServicePorts{
 			Webserver: true,
 		}
 		testSetCapability(instance, dynatracev1beta1.MetricsIngestCapability, true)
@@ -96,7 +97,7 @@ func TestCreateService(t *testing.T) {
 
 	t.Run("check AG service if metrics ingest and StatsD enabled", func(t *testing.T) {
 		instance := testCreateInstance()
-		desiredPorts := AgServicePorts{
+		desiredPorts := capability.AgServicePorts{
 			Webserver: true,
 			Statsd:    true,
 		}
@@ -113,7 +114,7 @@ func TestCreateService(t *testing.T) {
 
 	t.Run("check AG service if StatsD enabled, but not metrics ingest", func(t *testing.T) {
 		instance := testCreateInstance()
-		desiredPorts := AgServicePorts{
+		desiredPorts := capability.AgServicePorts{
 			Statsd: true,
 		}
 		testSetCapability(instance, dynatracev1beta1.MetricsIngestCapability, false)
@@ -130,7 +131,7 @@ func TestCreateService(t *testing.T) {
 
 	t.Run("check AG service if StatsD and metrics ingest are disabled", func(t *testing.T) {
 		instance := testCreateInstance()
-		desiredPorts := AgServicePorts{}
+		desiredPorts := capability.AgServicePorts{}
 		testSetCapability(instance, dynatracev1beta1.MetricsIngestCapability, false)
 		testSetCapability(instance, dynatracev1beta1.StatsdIngestCapability, false)
 		require.True(t, !instance.NeedsStatsd())
