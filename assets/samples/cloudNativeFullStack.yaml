@@ -95,7 +95,6 @@ spec:
       # Optional: Adds resource settings for OneAgent container
       # Consumption of the OneAgent heavily depends on the workload to monitor
       # The values should be adjusted according to the workload
-      # An example to start with is provided below
       #
       # oneAgentResources:
       #   requests:
@@ -115,7 +114,9 @@ spec:
       #
       # env: []
 
-      # Optional: Disables automatic restarts of OneAgent pods in case a new version is available
+      # Optional: Enables or disables automatic updates of OneAgent pods
+      # By default, if a new version is available, the OneAgent pods are restart to apply the update
+      # If set to "false", this behaviour is disabled
       # Defaults to "true"
       #
       # autoUpdate: true
@@ -139,7 +140,7 @@ spec:
 
       # Optional: If specified, indicates the OneAgent version to use
       # Defaults to "latest"
-      # This property expects the version to be in the semver format
+      # The version is expected to be provided in the semver format
       # Example: {major.minor.release}, e.g., "1.200.0"
       #
       # version:
@@ -201,7 +202,6 @@ spec:
     # Optional: Specifies resource settings for ActiveGate instances
     # Consumption of the ActiveGate heavily depends on the workload to monitor#
     # The values should be adjusted according to the workload
-    # An example to start with is provided below
     #
     resources:
       requests:
