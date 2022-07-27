@@ -1,6 +1,7 @@
 package dtclient
 
 import (
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -117,6 +118,111 @@ func TestAddHostGroup(t *testing.T) {
 	})
 }
 
-func TestAdd(t *testing.T) {
+const (
+	testSection = "test-section"
+	testKey     = "test-key"
+	testValue   = "test-value"
+)
 
+func TestAdd(t *testing.T) {
+	t.Run("adds properties", func(t *testing.T) {
+		processModuleConfig := &ProcessModuleConfig{}
+
+		for i := 0; i < 10; i++ {
+			section := fmt.Sprintf("%s-%d", testSection, i)
+			key := fmt.Sprintf("%s-%d", testKey, i)
+			value := fmt.Sprintf("%s-%d", testValue, i)
+
+			processModuleConfig.Add(ProcessModuleProperty{
+				Section: section,
+				Key:     key,
+				Value:   value,
+			})
+
+			assert.Len(t, processModuleConfig.Properties, i+1)
+			assert.Equal(t, section, processModuleConfig.Properties[i].Section)
+			assert.Equal(t, key, processModuleConfig.Properties[i].Key)
+			assert.Equal(t, value, processModuleConfig.Properties[i].Value)
+		}
+	})
+	t.Run("does not add empty values", func(t *testing.T) {
+		processModuleConfig := &ProcessModuleConfig{}
+		processModuleConfig.Add(ProcessModuleProperty{
+			Section: testSection,
+			Key:     testKey,
+			Value:   "",
+		})
+
+		assert.NotContains(t, processModuleConfig.Properties, ProcessModuleProperty{
+			Section: testSection,
+			Key:     testKey,
+			Value:   "",
+		})
+	})
+	t.Run("removes property", func(t *testing.T) {
+		processModuleConfig := &ProcessModuleConfig{}
+
+		for i := 0; i < 10; i++ {
+			section := fmt.Sprintf("%s-%d", testSection, i)
+			key := fmt.Sprintf("%s-%d", testKey, i)
+			value := fmt.Sprintf("%s-%d", testValue, i)
+
+			processModuleConfig.Add(ProcessModuleProperty{
+				Section: section,
+				Key:     key,
+				Value:   value,
+			})
+		}
+
+		processModuleConfig.Add(ProcessModuleProperty{
+			Section: "test-section-1",
+			Key:     "test-key-1",
+			Value:   "",
+		})
+
+		assert.Len(t, processModuleConfig.Properties, 9)
+		assert.NotContains(t, processModuleConfig.Properties, ProcessModuleProperty{
+			Section: "test-section-1",
+			Key:     "test-key-1",
+			Value:   "test-value-1",
+		})
+		assert.NotContains(t, processModuleConfig.Properties, ProcessModuleProperty{
+			Section: "test-section-1",
+			Key:     "test-key-1",
+			Value:   "",
+		})
+	})
+	t.Run("updates property", func(t *testing.T) {
+		processModuleConfig := &ProcessModuleConfig{}
+
+		for i := 0; i < 10; i++ {
+			section := fmt.Sprintf("%s-%d", testSection, i)
+			key := fmt.Sprintf("%s-%d", testKey, i)
+			value := fmt.Sprintf("%s-%d", testValue, i)
+
+			processModuleConfig.Add(ProcessModuleProperty{
+				Section: section,
+				Key:     key,
+				Value:   value,
+			})
+		}
+
+		processModuleConfig.Add(ProcessModuleProperty{
+			Section: "test-section-1",
+			Key:     "test-key-1",
+			Value:   "new-value",
+		})
+
+		assert.Len(t, processModuleConfig.Properties, 10)
+		assert.NotContains(t, processModuleConfig.Properties, ProcessModuleProperty{
+			Section: "test-section-1",
+			Key:     "test-key-1",
+			Value:   "test-value-1",
+		})
+		assert.Contains(t, processModuleConfig.Properties, ProcessModuleProperty{
+			Section: "test-section-1",
+			Key:     "test-key-1",
+			Value:   "new-value",
+		})
+	})
 }

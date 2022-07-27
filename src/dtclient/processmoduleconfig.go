@@ -27,22 +27,35 @@ type ProcessModuleProperty struct {
 type ConfMap map[string]map[string]string
 
 func (pmc *ProcessModuleConfig) Add(newProperty ProcessModuleProperty) *ProcessModuleConfig {
-	if newProperty.Value == "" {
-		return pmc
-	}
-
-	var updatedProperties []ProcessModuleProperty
-
-	for _, cachedProperty := range pmc.Properties {
-		if cachedProperty.Key != newProperty.Key {
-			updatedProperties = append(updatedProperties, cachedProperty)
+	for index, cachedProperty := range pmc.Properties {
+		if cachedProperty.Key == newProperty.Key {
+			if newProperty.Value == "" {
+				pmc.removeProperty(index)
+			} else {
+				pmc.updateProperty(index, newProperty)
+			}
+			return pmc
 		}
 	}
 
-	updatedProperties = append(updatedProperties, newProperty)
+	if newProperty.Value != "" {
+		pmc.addProperty(newProperty)
+	}
 
-	pmc.Properties = updatedProperties
 	return pmc
+}
+
+func (pmc *ProcessModuleConfig) addProperty(newProperty ProcessModuleProperty) {
+	pmc.Properties = append(pmc.Properties, newProperty)
+}
+
+func (pmc *ProcessModuleConfig) updateProperty(index int, newProperty ProcessModuleProperty) {
+	pmc.Properties[index].Section = newProperty.Section
+	pmc.Properties[index].Value = newProperty.Value
+}
+
+func (pmc *ProcessModuleConfig) removeProperty(index int) {
+	pmc.Properties = append(pmc.Properties[0:index], pmc.Properties[index+1:]...)
 }
 
 func (pmc *ProcessModuleConfig) AddConnectionInfo(connectionInfo ConnectionInfo) *ProcessModuleConfig {
