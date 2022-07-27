@@ -27,30 +27,21 @@ type ProcessModuleProperty struct {
 type ConfMap map[string]map[string]string
 
 func (pmc *ProcessModuleConfig) Add(newProperty ProcessModuleProperty) *ProcessModuleConfig {
-	if pmc == nil {
-		pmc = &ProcessModuleConfig{}
+	if newProperty.Value == "" {
+		return pmc
 	}
 
-	var newProps []ProcessModuleProperty
-	hasPropertyGroup := false
-	for _, currentProperty := range pmc.Properties {
-		if currentProperty.Key != newProperty.Key {
-			newProps = append(newProps, currentProperty)
-		} else {
-			hasPropertyGroup = true
-			if newProperty.Value == "" {
-				continue
-			} else if newProperty.Value == currentProperty.Value {
-				newProps = append(newProps, currentProperty)
-			} else {
-				newProps = append(pmc.Properties, currentProperty)
-			}
+	var updatedProperties []ProcessModuleProperty
+
+	for _, cachedProperty := range pmc.Properties {
+		if cachedProperty.Key != newProperty.Key {
+			updatedProperties = append(updatedProperties, cachedProperty)
 		}
 	}
-	if !hasPropertyGroup && newProperty.Value != "" {
-		newProps = append(pmc.Properties, newProperty)
-	}
-	pmc.Properties = newProps
+
+	updatedProperties = append(updatedProperties, newProperty)
+
+	pmc.Properties = updatedProperties
 	return pmc
 }
 

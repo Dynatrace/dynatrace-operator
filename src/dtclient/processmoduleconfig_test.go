@@ -116,3 +116,7 @@ func TestAddHostGroup(t *testing.T) {
 		assert.Len(t, pmc.Properties, 0)
 	})
 }
+
+func TestAdd(t *testing.T) {
+
+}
