@@ -3,11 +3,11 @@ package capability
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/customproperties"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"

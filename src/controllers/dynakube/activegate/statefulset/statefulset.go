@@ -2,11 +2,11 @@ package statefulset
 
 import (
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/customproperties"
 
 	"github.com/Dynatrace/dynatrace-operator/src/agproxysecret"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/internal/events"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/secrets"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"

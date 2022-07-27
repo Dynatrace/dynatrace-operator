@@ -2,13 +2,13 @@ package statefulset
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/customproperties"
 	"hash/fnv"
 	"reflect"
 	"strconv"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/internal/events"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/secrets"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
@@ -68,8 +68,7 @@ func (r *Reconciler) AddOnAfterStatefulSetCreateListener(event events.StatefulSe
 
 func (r *Reconciler) Reconcile() (update bool, err error) {
 	if r.capability.CustomProperties != nil {
-		err = customproperties.
-			NewReconciler(r, r.Instance, r.serviceAccountOwner, *r.capability.CustomProperties, r.scheme).
+		err = customproperties.NewReconciler(r, r.Instance, r.serviceAccountOwner, *r.capability.CustomProperties, r.scheme).
 			Reconcile()
 		if err != nil {
 			log.Error(err, "could not reconcile custom properties")
