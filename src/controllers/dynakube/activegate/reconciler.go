@@ -154,12 +154,29 @@ func (r *Reconciler) createStatefulSet(desiredSts *appsv1.StatefulSet) error {
 	err := r.Create(context.TODO(), desiredSts)
 
 	if err != nil {
-		log.Info("failed rolling out ActiveGate, retrying with different affinities", "error", err.Error())
-		desiredSts.Spec.Template.Spec.Affinity = affinityWithoutArch()
-		return r.Create(context.TODO(), desiredSts)
+		if !contains(r.onAfterStatefulSetCreateListener, changeAffinity) {
+			log.Info("failed rolling out ActiveGate, retrying with different affinities", "error", err.Error())
+			r.AddOnAfterStatefulSetCreateListener(func(sts *appsv1.StatefulSet) {
+				sts.Spec.Template.Spec.Affinity = affinityWithoutArch()
+			})
+		}
 	}
 
-	return nil
+	return errors.WithStack(err)
+}
+
+func contains[T any](slice []T, item T) bool {
+	for _, element := range slice {
+		if reflect.DeepEqual(element, item) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func changeAffinity(sts *appsv1.StatefulSet) {
+	sts.Spec.Template.Spec.Affinity = affinityWithoutArch()
 }
 
 func (r *Reconciler) updateStatefulSetIfOutdated(desiredSts *appsv1.StatefulSet) (bool, error) {

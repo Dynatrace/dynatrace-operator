@@ -221,10 +221,20 @@ func TestCreateStatefulSet(t *testing.T) {
 	})
 	t.Run("changes affinities if it does not succeed at first", func(t *testing.T) {
 		fakeClient := &failingClient{
-			Client: fake.NewClientBuilder().WithScheme(scheme.Scheme).Build(),
+			Client: fake.NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(&corev1.Namespace{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: kubesystem.Namespace,
+						UID:  testUID,
+					},
+				}).Build(),
 		}
 		r := &Reconciler{
-			Client: fakeClient,
+			Client:     fakeClient,
+			apiReader:  fakeClient,
+			capability: &dynatracev1beta1.CapabilityProperties{},
+			Instance:   &dynatracev1beta1.DynaKube{},
 		}
 		desiredStatefulSet := appsv1.StatefulSet{
 			TypeMeta: metav1.TypeMeta{
@@ -259,15 +269,14 @@ func TestCreateStatefulSet(t *testing.T) {
 					},
 				},
 			}}
+
 		err := r.createStatefulSet(&desiredStatefulSet)
+		assert.Error(t, err)
+		// After the first error, a listener is appended to change the affinity
 
+		newStatefulSet, err := r.buildDesiredStatefulSet()
 		assert.NoError(t, err)
-
-		var createdStatefulSet appsv1.StatefulSet
-		err = r.Get(context.TODO(), client.ObjectKey{Namespace: testNamespace, Name: testName}, &createdStatefulSet)
-
-		assert.NoError(t, err)
-		assert.Equal(t, expectedStatefulSet, createdStatefulSet)
+		assert.Equal(t, expectedStatefulSet, newStatefulSet)
 	})
 }
 
@@ -391,4 +400,29 @@ func TestReconcile_GetActiveGateAuthTokenHash(t *testing.T) {
 	hash, err = r.calculateActiveGateConfigurationHash()
 	assert.NoError(t, err)
 	assert.NotEmpty(t, hash)
+}
+
+func TestContains(t *testing.T) {
+	t.Run("contains finds primitive types", func(t *testing.T) {
+		array := []string{testKey, testName}
+
+		assert.True(t, contains(array, testKey))
+		assert.True(t, contains(array, testName))
+		assert.False(t, contains(array, testValue))
+	})
+	t.Run("contains finds complex types", func(t *testing.T) {
+		type testStruct struct {
+			property        string
+			complexProperty struct{ property string }
+		}
+		complexArray := []testStruct{
+			{property: testKey, complexProperty: struct{ property string }{property: testKey}},
+			{property: testName, complexProperty: struct{ property string }{property: testValue}},
+		}
+
+		assert.True(t, contains(complexArray, testStruct{property: testKey, complexProperty: struct{ property string }{property: testKey}}))
+		assert.True(t, contains(complexArray, testStruct{property: testName, complexProperty: struct{ property string }{property: testValue}}))
+		assert.False(t, contains(complexArray, testStruct{property: testValue, complexProperty: struct{ property string }{property: testValue}}))
+		assert.False(t, contains(complexArray, testStruct{}))
+	})
 }
