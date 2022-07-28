@@ -23,27 +23,36 @@ const (
 )
 
 func TestArguments(t *testing.T) {
-	instance := dynatracev1beta1.DynaKube{
-		Spec: dynatracev1beta1.DynaKubeSpec{
-			APIURL: testURL,
-			OneAgent: dynatracev1beta1.OneAgentSpec{
-				ClassicFullStack: &dynatracev1beta1.HostInjectSpec{
-					Args: []string{testValue},
+	t.Run("returns default arguments if hostInjection is nil", func(t *testing.T) {
+		builder := builderInfo{}
+		arguments := builder.arguments()
+		defaultArguments := builder.appendMetadataArgs(appendOperatorVersionArg([]string{}))
+
+		assert.Equal(t, defaultArguments, arguments)
+	})
+	t.Run("classic fullstack", func(t *testing.T) {
+		instance := dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: testURL,
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{
+						Args: []string{testValue},
+					},
 				},
 			},
-		},
-	}
-	dsInfo := ClassicFullStack{
-		builderInfo{
-			instance:       &instance,
-			hostInjectSpec: instance.Spec.OneAgent.ClassicFullStack,
-			clusterId:      testClusterID,
-		},
-	}
-	podSpecs := dsInfo.podSpec()
-	assert.NotNil(t, podSpecs)
-	assert.NotEmpty(t, podSpecs.Containers)
-	assert.Contains(t, podSpecs.Containers[0].Args, testValue)
+		}
+		dsInfo := ClassicFullStack{
+			builderInfo{
+				instance:       &instance,
+				hostInjectSpec: instance.Spec.OneAgent.ClassicFullStack,
+				clusterId:      testClusterID,
+			},
+		}
+		podSpecs := dsInfo.podSpec()
+		assert.NotNil(t, podSpecs)
+		assert.NotEmpty(t, podSpecs.Containers)
+		assert.Contains(t, podSpecs.Containers[0].Args, testValue)
+	})
 }
 
 func TestPodSpec_Arguments(t *testing.T) {

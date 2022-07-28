@@ -227,7 +227,39 @@ func TestResources(t *testing.T) {
 	})
 }
 
+func TestSecurityContextCapabilities(t *testing.T) {
+	securityContextCapabilities := defaultSecurityContextCapabilities()
+
+	assert.NotNil(t, securityContextCapabilities)
+
+	dropCapabilities := securityContextCapabilities.Drop
+	assert.Contains(t, dropCapabilities, corev1.Capability("ALL"))
+
+	addCapabilities := securityContextCapabilities.Add
+	assert.Contains(t, addCapabilities, corev1.Capability("CHOWN"))
+	assert.Contains(t, addCapabilities, corev1.Capability("DAC_OVERRIDE"))
+	assert.Contains(t, addCapabilities, corev1.Capability("DAC_READ_SEARCH"))
+	assert.Contains(t, addCapabilities, corev1.Capability("FOWNER"))
+	assert.Contains(t, addCapabilities, corev1.Capability("FSETID"))
+	assert.Contains(t, addCapabilities, corev1.Capability("KILL"))
+	assert.Contains(t, addCapabilities, corev1.Capability("NET_ADMIN"))
+	assert.Contains(t, addCapabilities, corev1.Capability("NET_RAW"))
+	assert.Contains(t, addCapabilities, corev1.Capability("SETFCAP"))
+	assert.Contains(t, addCapabilities, corev1.Capability("SETGID"))
+	assert.Contains(t, addCapabilities, corev1.Capability("SETUID"))
+	assert.Contains(t, addCapabilities, corev1.Capability("SYS_ADMIN"))
+	assert.Contains(t, addCapabilities, corev1.Capability("SYS_CHROOT"))
+	assert.Contains(t, addCapabilities, corev1.Capability("SYS_PTRACE"))
+	assert.Contains(t, addCapabilities, corev1.Capability("SYS_RESOURCE"))
+}
+
 func TestHostMonitoring_SecurityContext(t *testing.T) {
+	t.Run("returns default context if instance is nil", func(t *testing.T) {
+		dsInfo := builderInfo{}
+		securityContext := dsInfo.securityContext()
+
+		assert.Equal(t, defaultSecurityContextCapabilities(), securityContext.Capabilities)
+	})
 	t.Run(`User and group id set when read only mode is enabled`, func(t *testing.T) {
 		instance := dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
@@ -340,5 +372,228 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		assert.Nil(t, securityContext.RunAsNonRoot)
 		assert.Equal(t, address.Of(true), securityContext.Privileged)
 		assert.Empty(t, securityContext.Capabilities)
+	})
+}
+
+func TestPodSpecServiceAccountName(t *testing.T) {
+	t.Run("service account name is unprivileged + readonly by default", func(t *testing.T) {
+		builder := builderInfo{}
+		podSpec := builder.podSpec()
+
+		assert.Equal(t, unprivilegedServiceAccountName, podSpec.ServiceAccountName)
+	})
+	t.Run("unprivileged and not readonly is recognized", func(t *testing.T) {
+		builder := builderInfo{
+			instance: &dynatracev1beta1.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent: "false"},
+				},
+			},
+		}
+		podSpec := builder.podSpec()
+
+		assert.Equal(t, unprivilegedServiceAccountName, podSpec.ServiceAccountName)
+	})
+	t.Run("privileged and not readonly is recognized", func(t *testing.T) {
+		builder := builderInfo{
+			instance: &dynatracev1beta1.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent:               "false",
+						dynatracev1beta1.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
+					},
+				},
+			},
+		}
+		podSpec := builder.podSpec()
+
+		assert.Equal(t, privilegedServiceAccountName, podSpec.ServiceAccountName)
+	})
+	t.Run("privileged and readonly is recognized", func(t *testing.T) {
+		builder := builderInfo{
+			instance: &dynatracev1beta1.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						dynatracev1beta1.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
+					},
+				},
+			},
+		}
+		podSpec := builder.podSpec()
+
+		assert.Equal(t, privilegedServiceAccountName, podSpec.ServiceAccountName)
+	})
+	t.Run("service account name is unprivileged if run as unprivileged", func(t *testing.T) {
+		dynakube := &dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					dynatracev1beta1.AnnotationFeatureRunOneAgentContainerPrivileged: "false",
+				},
+			},
+		}
+		builder := builderInfo{
+			instance: dynakube,
+		}
+		podSpec := builder.podSpec()
+
+		assert.Equal(t, unprivilegedServiceAccountName, podSpec.ServiceAccountName)
+	})
+}
+
+func TestOneAgentResources(t *testing.T) {
+	t.Run("get empty resources if hostInjection spec is nil", func(t *testing.T) {
+		builder := builderInfo{}
+		resources := builder.oneAgentResource()
+
+		assert.Equal(t, corev1.ResourceRequirements{}, resources)
+	})
+	t.Run("get resources if hostInjection spec is set", func(t *testing.T) {
+		builder := builderInfo{
+			hostInjectSpec: &dynatracev1beta1.HostInjectSpec{
+				OneAgentResources: corev1.ResourceRequirements{
+					Requests: map[corev1.ResourceName]resource.Quantity{
+						corev1.ResourceCPU: *resource.NewScaledQuantity(2, 1),
+					},
+				},
+			},
+		}
+		resources := builder.oneAgentResource()
+
+		assert.Equal(t, corev1.ResourceRequirements{
+			Requests: map[corev1.ResourceName]resource.Quantity{
+				corev1.ResourceCPU: *resource.NewScaledQuantity(2, 1),
+			},
+		}, resources)
+	})
+}
+
+func TestDNSPolicy(t *testing.T) {
+	t.Run("returns default dns policy if hostInjection is nil", func(t *testing.T) {
+		builder := builderInfo{}
+		dnsPolicy := builder.dnsPolicy()
+
+		assert.Equal(t, corev1.DNSClusterFirstWithHostNet, dnsPolicy)
+	})
+}
+
+func TestNodeSelector(t *testing.T) {
+	t.Run("returns empty map if hostInjectSpec is nil", func(t *testing.T) {
+		dsInfo := builderInfo{}
+		nodeSelector := dsInfo.nodeSelector()
+
+		assert.Equal(t, map[string]string{}, nodeSelector)
+	})
+	t.Run("returns nodeselector", func(t *testing.T) {
+		dsInfo := builderInfo{
+			hostInjectSpec: &dynatracev1beta1.HostInjectSpec{
+				NodeSelector: map[string]string{testKey: testValue},
+			},
+		}
+		nodeSelector := dsInfo.nodeSelector()
+
+		assert.Contains(t, nodeSelector, testKey)
+	})
+}
+
+func TestPriorityClass(t *testing.T) {
+	t.Run("returns empty string if hostInjectSpec is nil", func(t *testing.T) {
+		dsInfo := builderInfo{}
+		priorityClassName := dsInfo.priorityClassName()
+
+		assert.Equal(t, "", priorityClassName)
+	})
+	t.Run("returns nodeselector", func(t *testing.T) {
+		dsInfo := builderInfo{
+			hostInjectSpec: &dynatracev1beta1.HostInjectSpec{
+				PriorityClassName: testName,
+			},
+		}
+		priorityClassName := dsInfo.priorityClassName()
+
+		assert.Equal(t, testName, priorityClassName)
+	})
+}
+
+func TestTolerations(t *testing.T) {
+	t.Run("returns empty list if hostInjectSpec is nil", func(t *testing.T) {
+		dsInfo := builderInfo{}
+		tolerations := dsInfo.tolerations()
+
+		assert.Empty(t, tolerations)
+	})
+	t.Run("returns tolerations", func(t *testing.T) {
+		dsInfo := builderInfo{
+			hostInjectSpec: &dynatracev1beta1.HostInjectSpec{
+				Tolerations: []corev1.Toleration{
+					{
+						Key:   testKey,
+						Value: testValue,
+					},
+				},
+			},
+		}
+		tolerations := dsInfo.tolerations()
+
+		assert.Contains(t, tolerations, corev1.Toleration{
+			Key:   testKey,
+			Value: testValue,
+		})
+	})
+}
+
+func TestImagePullSecrets(t *testing.T) {
+	t.Run("returns empty list if instance is null", func(t *testing.T) {
+		dsInfo := builderInfo{}
+		pullSecrets := dsInfo.imagePullSecrets()
+
+		assert.Empty(t, pullSecrets)
+	})
+	t.Run("returns default instance pull secret", func(t *testing.T) {
+		dsInfo := builderInfo{
+			instance: &dynatracev1beta1.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: testName,
+				},
+			},
+		}
+		pullSecrets := dsInfo.imagePullSecrets()
+
+		assert.Contains(t, pullSecrets, corev1.LocalObjectReference{
+			Name: testName + dynatracev1beta1.PullSecretSuffix,
+		})
+	})
+	t.Run("returns custom pull secret", func(t *testing.T) {
+		dsInfo := builderInfo{
+			instance: &dynatracev1beta1.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: testName,
+				},
+				Spec: dynatracev1beta1.DynaKubeSpec{
+					CustomPullSecret: testValue,
+				},
+			},
+		}
+		pullSecrets := dsInfo.imagePullSecrets()
+
+		assert.Contains(t, pullSecrets, corev1.LocalObjectReference{
+			Name: testValue,
+		})
+	})
+}
+
+func TestImmutableOneAgentImage(t *testing.T) {
+	t.Run("returns empty string if instance is nil", func(t *testing.T) {
+		dsInfo := builderInfo{}
+		image := dsInfo.immutableOneAgentImage()
+
+		assert.Empty(t, image)
+	})
+	t.Run("returns instance image", func(t *testing.T) {
+		dsInfo := builderInfo{
+			instance: &dynatracev1beta1.DynaKube{},
+		}
+		image := dsInfo.immutableOneAgentImage()
+
+		assert.Equal(t, dsInfo.instance.ImmutableOneAgentImage(), image)
 	})
 }
