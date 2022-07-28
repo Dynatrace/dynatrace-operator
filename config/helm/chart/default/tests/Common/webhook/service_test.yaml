@@ -20,6 +20,8 @@ templates:
   - Common/webhook/service.yaml
 tests:
   - it: should exist
+    set:
+      platform: kubernetes
     asserts:
       - isKind:
           of: Service

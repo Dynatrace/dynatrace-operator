@@ -3,12 +3,15 @@ templates:
   - Common/csi/clusterrole-csi.yaml
 tests:
   - it: should not exist by default
+    set:
+      platform: kubernetes
     asserts:
       - hasDocuments:
           count: 0
 
   - it: should be built correctly with CSI enabled
     set:
+      platform: kubernetes
       image: image-name
       csidriver.enabled: true
     asserts:
@@ -24,7 +27,8 @@ tests:
 
   - it: should have the correct rules
     set:
-      image: image-name
+      platform: kubernetes
+      image: image-nam
       csidriver.enabled: true
     asserts:
       - equal:

@@ -3,6 +3,8 @@ templates:
   - Common/webhook/mutatingwebhookconfiguration.yaml
 tests:
   - it: should exist
+    set:
+      platform: kubernetes
     asserts:
       - isKind:
           of: MutatingWebhookConfiguration

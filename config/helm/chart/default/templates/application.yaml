@@ -1,5 +1,5 @@
-{{- $platformIsSet := printf "%s" (required "Platform needs to be set to kubernetes, openshift, google" (include "dynatrace-operator.platformSet" .))}}
-{{- if eq .Values.platform "google"}}
+{{- include "dynatrace-operator.platformRequired" . }}
+{{- if eq .Values.platform "google-marketplace" }}
 # Copyright 2020 Dynatrace LLC
 
 # Licensed under the Apache License, Version 2.0 (the "License");
