@@ -2,6 +2,34 @@ suite: test deployment for dynatrace operator
 templates:
   - Common/operator/deployment-operator.yaml
 tests:
+  - it: should exist if platform is set to kubernetes
+    set:
+      platform: kubernetes
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: should exist if platform is set to openshift
+    set:
+      platform: openshift
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: should exist if platform is set to google-marketplace
+    set:
+      platform: google-marketplace
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: should exist if platform is set to google-autopilot
+    set:
+      platform: google-autopilot
+    asserts:
+      - hasDocuments:
+          count: 1
+
   - it: should exist
     set:
       platform: kubernetes
@@ -137,6 +165,8 @@ tests:
             test-key: test-value
 
   - it: should not have imagePullSecrets defined in spec
+    set:
+      platform: kubernetes
     asserts:
       - isNull:
           path: spec.template.spec.imagePullSecrets
@@ -308,6 +338,7 @@ tests:
 
   - it: should take custom labels
     set:
+      platform: kubernetes
       operator.labels:
         testKey: testValue
     asserts:
@@ -319,6 +350,7 @@ tests:
 
   - it: should take custom annotations
     set:
+      platform: kubernetes
       operator.annotations:
         testKey: testValue
     asserts:
@@ -329,6 +361,7 @@ tests:
 
   - it: should take custom labels in spec.template.metadata.labels path
     set:
+      platform: kubernetes
       operator.labels:
         testKey: testValue
     asserts:

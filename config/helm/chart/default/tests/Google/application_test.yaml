@@ -1,0 +1,31 @@
+suite: tests google application custom resource
+templates:
+  - application.yaml
+tests:
+  - it: should not exist if platform is set to kubernetes
+    set:
+      platform: kubernetes
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should not exist if platform is set to openshift
+    set:
+      platform: openshift
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should exist if platform is set to google-marketplace
+    set:
+      platform: google-marketplace
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: should not exist if platform is set to google-autopilot
+    set:
+      platform: google-autopilot
+    asserts:
+      - hasDocuments:
+          count: 0
