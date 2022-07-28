@@ -47,8 +47,9 @@ func SetDynakubeStatus(instance *dynatracev1beta1.DynaKube, opts Options) error 
 	communicationHostStatus := dynatracev1beta1.CommunicationHostStatus(communicationHost)
 
 	connectionInfoStatus := dynatracev1beta1.ConnectionInfoStatus{
-		CommunicationHosts: communicationHostsToStatus(connectionInfo.CommunicationHosts),
-		TenantUUID:         connectionInfo.TenantUUID,
+		CommunicationHosts:              communicationHostsToStatus(connectionInfo.CommunicationHosts),
+		TenantUUID:                      connectionInfo.TenantUUID,
+		FormattedCommunicationEndpoints: connectionInfo.FormattedCommunicationEndpoints,
 	}
 
 	instance.Status.KubeSystemUUID = string(uid)
