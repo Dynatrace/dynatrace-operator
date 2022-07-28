@@ -43,11 +43,11 @@ type Auths struct {
 }
 
 func checkImagePullable(troubleshootCtx *troubleshootContext) error {
-	tslog.SetPrefix("[imagepull ] ")
+	log = newTroubleshootLogger("[imagepull ] ")
 
 	dynakube := dynatracev1beta1.DynaKube{}
 	if err := troubleshootCtx.apiReader.Get(context.TODO(), client.ObjectKey{Name: troubleshootCtx.dynakubeName, Namespace: troubleshootCtx.namespaceName}, &dynakube); err != nil {
-		tslog.WithErrorf(err, "Selected '%s:%s' Dynakube does not exist", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
+		logWithErrorf(err, "Selected '%s:%s' Dynakube does not exist", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
 		return err
 	}
 
@@ -72,7 +72,7 @@ func checkImagePullable(troubleshootCtx *troubleshootContext) error {
 }
 
 func checkOneAgentImagePullable(troubleshootCtx *troubleshootContext) error {
-	tslog.NewTestf("checking if OneAgent image is pullable ...")
+	logNewTestf("checking if OneAgent image is pullable ...")
 
 	pullSecretName, err := getPullSecretName(troubleshootCtx.apiReader, troubleshootCtx.dynakubeName, troubleshootCtx.namespaceName)
 	if err != nil {
@@ -97,7 +97,7 @@ func checkOneAgentImagePullable(troubleshootCtx *troubleshootContext) error {
 }
 
 func checkActiveGateImagePullable(troubleshootCtx *troubleshootContext) error {
-	tslog.NewTestf("checking if ActiveGate image is pullable ...")
+	logNewTestf("checking if ActiveGate image is pullable ...")
 
 	pullSecretName, err := getPullSecretName(troubleshootCtx.apiReader, troubleshootCtx.dynakubeName, troubleshootCtx.namespaceName)
 	if err != nil {
@@ -126,7 +126,7 @@ func checkComponentImagePullable(httpClient *http.Client, componentName string, 
 	if err != nil {
 		return err
 	}
-	tslog.Infof("using '%s' on '%s' with version '%s' as %s image", componentImage, componentRegistry, componentVersion, componentName)
+	logInfof("using '%s' on '%s' with version '%s' as %s image", componentImage, componentRegistry, componentVersion, componentName)
 
 	imageWorks := false
 
@@ -135,31 +135,31 @@ func checkComponentImagePullable(httpClient *http.Client, componentName string, 
 	json.Unmarshal([]byte(pullSecret), &result)
 
 	for registry, endpoint := range result.Auths {
-		tslog.Infof("checking images for registry '%s'", registry)
+		logInfof("checking images for registry '%s'", registry)
 
 		apiToken := base64.StdEncoding.EncodeToString([]byte(endpoint.Username + ":" + endpoint.Password))
 
 		if statusCode, err := connectToDockerRegistry(httpClient, "HEAD", "https://"+registry+"/v2/", "Basic", apiToken); err != nil {
-			tslog.Errorf("registry '%s' unreachable", registry)
+			logErrorf("registry '%s' unreachable", registry)
 			continue
 		} else {
 			if statusCode != 200 {
-				tslog.Errorf("registry '%s' unreachable (%d)", registry, statusCode)
+				logErrorf("registry '%s' unreachable (%d)", registry, statusCode)
 				continue
 			} else {
-				tslog.Infof("registry '%s' is accessible", registry)
+				logInfof("registry '%s' is accessible", registry)
 			}
 		}
 
 		if statusCode, err := connectToDockerRegistry(httpClient, "HEAD", "https://"+registry+"/v2/"+componentImage+"/manifests/"+componentVersion, "Basic", apiToken); err != nil {
-			tslog.Errorf("registry '%s' unreachable", registry)
+			logErrorf("registry '%s' unreachable", registry)
 			continue
 		} else {
 			if statusCode != 200 {
-				tslog.Errorf("image '%s' with version '%s' not found on registry '%s'", componentImage, componentVersion, registry)
+				logErrorf("image '%s' with version '%s' not found on registry '%s'", componentImage, componentVersion, registry)
 				continue
 			} else {
-				tslog.Infof("image '%s' with version '%s' exists on registry '%s", componentImage, componentVersion, registry)
+				logInfof("image '%s' with version '%s' exists on registry '%s", componentImage, componentVersion, registry)
 			}
 		}
 
@@ -167,9 +167,9 @@ func checkComponentImagePullable(httpClient *http.Client, componentName string, 
 	}
 
 	if imageWorks {
-		tslog.Okf("%s image '%s' found", componentName, componentRegistry+"/"+componentImage)
+		logOkf("%s image '%s' found", componentName, componentRegistry+"/"+componentImage)
 	} else {
-		tslog.Errorf("%s image '%s' missing", componentName, componentRegistry+"/"+componentImage)
+		logErrorf("%s image '%s' missing", componentName, componentRegistry+"/"+componentImage)
 		return fmt.Errorf("%s image '%s' missing", componentName, componentRegistry+"/"+componentImage)
 	}
 	return nil
@@ -178,45 +178,43 @@ func checkComponentImagePullable(httpClient *http.Client, componentName string, 
 func addProxy(troubleshootCtx *troubleshootContext) error {
 	dynakube := dynatracev1beta1.DynaKube{}
 	if err := troubleshootCtx.apiReader.Get(context.TODO(), client.ObjectKey{Name: troubleshootCtx.dynakubeName, Namespace: troubleshootCtx.namespaceName}, &dynakube); err != nil {
-		tslog.WithErrorf(err, "selected '%s:%s' Dynakube does not exist", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
+		logWithErrorf(err, "selected '%s:%s' Dynakube does not exist", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
 		return err
 	}
 
 	proxyUrl := ""
-	if dynakube.Spec.Proxy.Value != "" {
-		proxyUrl = dynakube.Spec.Proxy.Value
-	} else if dynakube.Spec.Proxy.ValueFrom != "" {
-		proxySecret := corev1.Secret{}
-		if err := troubleshootCtx.apiReader.Get(context.TODO(), client.ObjectKey{Name: dynakube.Spec.Proxy.ValueFrom, Namespace: troubleshootCtx.namespaceName}, &proxySecret); err != nil {
-			tslog.WithErrorf(err, "'%s:%s' proxy secret is missing", dynakube.Spec.Proxy.ValueFrom, troubleshootCtx.dynatraceApiSecretName)
-			return err
-		}
-		var err error
-		proxyUrl, err = kubeobjects.ExtractToken(&proxySecret, dtclient.CustomProxySecretKey)
-		if err != nil {
-			tslog.WithErrorf(err, "failed to extract proxy secret field: %w", err)
-			return fmt.Errorf("failed to extract proxy secret field: %w", err)
+	if dynakube.Spec.Proxy != nil {
+		if dynakube.Spec.Proxy.Value != "" {
+			proxyUrl = dynakube.Spec.Proxy.Value
+		} else if dynakube.Spec.Proxy.ValueFrom != "" {
+			proxySecret := corev1.Secret{}
+			if err := troubleshootCtx.apiReader.Get(context.TODO(), client.ObjectKey{Name: dynakube.Spec.Proxy.ValueFrom, Namespace: troubleshootCtx.namespaceName}, &proxySecret); err != nil {
+				logWithErrorf(err, "'%s:%s' proxy secret is missing", dynakube.Spec.Proxy.ValueFrom, troubleshootCtx.dynatraceApiSecretName)
+				return err
+			}
+			var err error
+			proxyUrl, err = kubeobjects.ExtractToken(&proxySecret, dtclient.CustomProxySecretKey)
+			if err != nil {
+				logWithErrorf(err, "failed to extract proxy secret field")
+				return fmt.Errorf("failed to extract proxy secret field")
+			}
 		}
 	}
-
 	if proxyUrl != "" {
 		p, err := url.Parse(proxyUrl)
 		if err != nil {
-			tslog.WithErrorf(err, "could not parse proxy URL!")
+			logWithErrorf(err, "could not parse proxy URL!")
 			return err
 		}
 		t := troubleshootCtx.httpClient.Transport.(*http.Transport)
 		t.Proxy = http.ProxyURL(p)
+		logInfof("using  '%s' proxy to connect to the registry", p.Host)
 	}
+
 	return nil
 }
 
 func connectToDockerRegistry(httpClient *http.Client, httpMethod string, httpUrl string, authMethod string, authToken string) (int, error) {
-	t := httpClient.Transport.(*http.Transport)
-	if t.Proxy != nil {
-		tslog.Infof("using proxy to connect to the registry")
-	}
-
 	body := strings.NewReader("")
 
 	req, err := http.NewRequest(httpMethod, httpUrl, body)
@@ -243,7 +241,7 @@ func connectToDockerRegistry(httpClient *http.Client, httpMethod string, httpUrl
 func getPullSecretName(apiReader client.Reader, dynakubeName string, namespaceName string) (string, error) {
 	dynakube := dynatracev1beta1.DynaKube{}
 	if err := apiReader.Get(context.TODO(), client.ObjectKey{Name: dynakubeName, Namespace: namespaceName}, &dynakube); err != nil {
-		tslog.Errorf("selected Dynakube does not exist '%s'", dynakubeName)
+		logErrorf("selected Dynakube does not exist '%s'", dynakubeName)
 		return "", err
 	}
 
@@ -258,13 +256,13 @@ func getPullSecretName(apiReader client.Reader, dynakubeName string, namespaceNa
 func getPullSecret(apiReader client.Reader, pullSecretName string, namespaceName string) (string, error) {
 	secret := corev1.Secret{}
 	if err := apiReader.Get(context.TODO(), client.ObjectKey{Name: pullSecretName, Namespace: namespaceName}, &secret); err != nil {
-		tslog.Errorf("pull secret '%s' is missing (%s)", pullSecretName, err.Error())
+		logErrorf("pull secret '%s' is missing (%s)", pullSecretName, err.Error())
 		return "", err
 	}
 
 	secretBytes, ok := secret.Data[".dockerconfigjson"]
 	if !ok {
-		tslog.Errorf("token .dockerconfigjson does not exist in secret '%s'", pullSecretName)
+		logErrorf("token .dockerconfigjson does not exist in secret '%s'", pullSecretName)
 		return "", fmt.Errorf("token .dockerconfigjson does not exist in secret '%s'", pullSecretName)
 	}
 
@@ -275,7 +273,7 @@ func getPullSecret(apiReader client.Reader, pullSecretName string, namespaceName
 func getOneAgentImageEndpoint(troubleshootCtx *troubleshootContext) (string, error) {
 	dynakube := dynatracev1beta1.DynaKube{}
 	if err := troubleshootCtx.apiReader.Get(context.TODO(), client.ObjectKey{Name: troubleshootCtx.dynakubeName, Namespace: troubleshootCtx.namespaceName}, &dynakube); err != nil {
-		tslog.WithErrorf(err, "selected '%s:%s' Dynakube does not exist", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
+		logWithErrorf(err, "selected '%s:%s' Dynakube does not exist", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
 		return "", err
 	}
 
@@ -288,10 +286,8 @@ func getOneAgentImageEndpoint(troubleshootCtx *troubleshootContext) (string, err
 
 	//image = "${api_url#*//}"
 	sr := removeSchemaRegex.FindStringSubmatch(dynakube.Spec.APIURL)
-	//fmt.Printf("OA sr %v\n", sr)
 	//image = "${image%/*}/linux/oneagent"
 	er := removeApiEndpointRegex.FindStringSubmatch(sr[1])
-	//fmt.Printf("OA er %v\n", er)
 	imageEndpoint = er[1] + "/linux/oneagent"
 
 	if dynakube.ClassicFullStackMode() {
@@ -311,14 +307,14 @@ func getOneAgentImageEndpoint(troubleshootCtx *troubleshootContext) (string, err
 		imageEndpoint = imageEndpoint + ":" + version
 	}
 
-	tslog.Infof("OneAgent image endpoint '%s'", imageEndpoint)
+	logInfof("OneAgent image endpoint '%s'", imageEndpoint)
 	return imageEndpoint, nil
 }
 
 func getActiveGateImageEndpoint(troubleshootCtx *troubleshootContext) (string, error) {
 	dynakube := dynatracev1beta1.DynaKube{}
 	if err := troubleshootCtx.apiReader.Get(context.TODO(), client.ObjectKey{Name: troubleshootCtx.dynakubeName, Namespace: troubleshootCtx.namespaceName}, &dynakube); err != nil {
-		tslog.WithErrorf(err, "selected '%s:%s' Dynakube does not exist", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
+		logWithErrorf(err, "selected '%s:%s' Dynakube does not exist", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
 		return "", errors.WithStack(err)
 	}
 
@@ -334,7 +330,7 @@ func getActiveGateImageEndpoint(troubleshootCtx *troubleshootContext) (string, e
 		imageEndpoint = dynakube.Spec.ActiveGate.Image
 	}
 
-	tslog.Infof("ActiveGate image endpoint '%s'", imageEndpoint)
+	logInfof("ActiveGate image endpoint '%s'", imageEndpoint)
 	return imageEndpoint, nil
 }
 
@@ -362,13 +358,13 @@ func splitImageName(imageName string) (registry string, image string, version st
 	if len(fields) == 1 || len(fields) >= 2 && fields[1] == "" {
 		// no version set, default to latest
 		version = "latest"
-		tslog.Infof("using latest image version")
+		logInfof("using latest image version")
 	} else if len(fields) >= 2 {
 		image = fields[0]
 		version = fields[1]
-		tslog.Infof("using custom image version")
+		logInfof("using custom image version")
 	} else {
-		tslog.Errorf("invalid version of the image")
+		logErrorf("invalid version of the image")
 	}
 	return
 }

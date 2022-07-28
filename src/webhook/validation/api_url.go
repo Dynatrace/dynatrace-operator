@@ -18,7 +18,7 @@ const (
 	`
 )
 
-func noApiUrl(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func NoApiUrl(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	apiUrl := dynakube.Spec.APIURL
 
 	if apiUrl == ExampleApiUrl {
@@ -34,7 +34,7 @@ func noApiUrl(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string
 	return ""
 }
 
-func isInvalidApiUrl(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func IsInvalidApiUrl(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	apiUrl := dynakube.Spec.APIURL
 
 	if !strings.HasSuffix(apiUrl, "/api") {

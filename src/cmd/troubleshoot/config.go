@@ -19,5 +19,5 @@ type troubleshootContext struct {
 type troubleshootFunc func(troubleshootCtx *troubleshootContext) error
 
 var (
-	tslog = NewLogger("")
+	log = newTroubleshootLogger("[          ]")
 )

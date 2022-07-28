@@ -8,16 +8,16 @@ import (
 )
 
 func checkNamespace(troubleshootCtx *troubleshootContext) error {
-	tslog.SetPrefix("[namespace ] ")
+	log = newTroubleshootLogger("[namespace ] ")
 
-	tslog.NewTestf("checking if namespace '%s' exists ...", troubleshootCtx.namespaceName)
+	logNewTestf("checking if namespace '%s' exists ...", troubleshootCtx.namespaceName)
 
 	var namespace corev1.Namespace
 	if err := troubleshootCtx.apiReader.Get(context.TODO(), client.ObjectKey{Name: troubleshootCtx.namespaceName}, &namespace); err != nil {
-		tslog.WithErrorf(err, "missing namespace '%s'", troubleshootCtx.namespaceName)
+		logWithErrorf(err, "missing namespace '%s'", troubleshootCtx.namespaceName)
 		return err
 	}
 
-	tslog.Okf("using namespace '%s'", troubleshootCtx.namespaceName)
+	logOkf("using namespace '%s'", troubleshootCtx.namespaceName)
 	return nil
 }
