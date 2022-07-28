@@ -1,7 +1,8 @@
-package statefulset
+package activegate
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/statefulset"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -20,6 +21,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+)
+
+const (
+	testUID       = "test-uid"
+	testName      = "test-name"
+	testNamespace = "test-namespace"
+	testValue     = "test-value"
 )
 
 func TestNewReconiler(t *testing.T) {
@@ -115,7 +123,7 @@ func TestReconcile(t *testing.T) {
 
 		found := 0
 		for _, vm := range newStatefulSet.Spec.Template.Spec.Containers[0].VolumeMounts {
-			if vm.Name == InternalProxySecretVolumeName {
+			if vm.Name == statefulset.InternalProxySecretVolumeName {
 				found = found + 1
 			}
 		}

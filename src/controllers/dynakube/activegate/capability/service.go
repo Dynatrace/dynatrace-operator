@@ -1,33 +1,33 @@
-package reconciler
+package capability
 
 import (
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/statefulset"
 	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func createService(instance *dynatracev1beta1.DynaKube, feature string, servicePorts capability.AgServicePorts) *corev1.Service {
+func createService(instance *dynatracev1beta1.DynaKube, feature string, servicePorts AgServicePorts) *corev1.Service {
 	var ports []corev1.ServicePort
 
 	if servicePorts.Webserver {
 		ports = append(ports,
 			corev1.ServicePort{
-				Name:       capability.HttpsServicePortName,
+				Name:       HttpsServicePortName,
 				Protocol:   corev1.ProtocolTCP,
-				Port:       capability.HttpsServicePort,
-				TargetPort: intstr.FromString(capability.HttpsServicePortName),
+				Port:       HttpsServicePort,
+				TargetPort: intstr.FromString(HttpsServicePortName),
 			},
 			corev1.ServicePort{
-				Name:       capability.HttpServicePortName,
+				Name:       HttpServicePortName,
 				Protocol:   corev1.ProtocolTCP,
-				Port:       capability.HttpServicePort,
-				TargetPort: intstr.FromString(capability.HttpServicePortName),
+				Port:       HttpServicePort,
+				TargetPort: intstr.FromString(HttpServicePortName),
 			},
 		)
 	}
@@ -35,10 +35,10 @@ func createService(instance *dynatracev1beta1.DynaKube, feature string, serviceP
 	if servicePorts.Statsd {
 		ports = append(ports,
 			corev1.ServicePort{
-				Name:       capability.StatsdIngestPortName,
+				Name:       statefulset.StatsdIngestPortName,
 				Protocol:   corev1.ProtocolUDP,
-				Port:       capability.StatsdIngestPort,
-				TargetPort: intstr.FromString(capability.StatsdIngestTargetPort),
+				Port:       statefulset.StatsdIngestPort,
+				TargetPort: intstr.FromString(statefulset.StatsdIngestTargetPort),
 			},
 		)
 	}

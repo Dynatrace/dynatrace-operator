@@ -20,6 +20,30 @@ const (
 
 	InternalProxySecretPassword          = "password"
 	InternalProxySecretPasswordMountPath = InternalProxySecretMountPath + "/" + InternalProxySecretPassword
+
+	ContainerName           = "activegate"
+	GatewayConfigVolumeName = "ag-lib-gateway-config"
+	GatewayTempVolumeName   = "ag-lib-gateway-temp"
+	GatewayDataVolumeName   = "ag-lib-gateway-data"
+	GatewaySslVolumeName    = "ag-lib-gateway-ssl"
+	LogVolumeName           = "ag-log-gateway"
+	TmpVolumeName           = "ag-tmp-gateway"
+	GatewayConfigMountPoint = "/var/lib/dynatrace/gateway/config"
+	GatewayTempMountPoint   = "/var/lib/dynatrace/gateway/temp"
+	GatewayDataMountPoint   = "/var/lib/dynatrace/gateway/data"
+	GatewaySslMountPoint    = "/var/lib/dynatrace/gateway/ssl"
+	LogMountPoint           = "/var/log/dynatrace/gateway"
+	TmpMountPoint           = "/var/tmp/dynatrace/gateway"
+
+	ProxySecretSuffix = "internal-proxy"
+
+	EecContainerName       = ContainerName + "-eec"
+	StatsdContainerName    = ContainerName + "-statsd"
+	StatsdIngestPortName   = "statsd"
+	StatsdIngestPort       = 18125
+	StatsdIngestTargetPort = "statsd-port"
+
+	MultiActiveGateName = "activegate"
 )
 
 var (

@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/secrets"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
@@ -245,7 +244,7 @@ func TestStatefulSet_TemplateSpec(t *testing.T) {
 
 func TestStatefulSet_Container(t *testing.T) {
 	checkCoreProperties := func(activeGateContainer *corev1.Container, dynakube *dynatracev1beta1.DynaKube) {
-		assert.Equal(t, capability.ActiveGateContainerName, activeGateContainer.Name)
+		assert.Equal(t, ContainerName, activeGateContainer.Name)
 		assert.Equal(t, dynakube.ActiveGateImage(), activeGateContainer.Image)
 		assert.Empty(t, activeGateContainer.Resources)
 		assert.Equal(t, corev1.PullAlways, activeGateContainer.ImagePullPolicy)
@@ -783,17 +782,17 @@ func buildTestInstanceWithImage() *dynatracev1beta1.DynaKube {
 func buildActiveGateMountPoints(statsd bool, readOnly bool, tlsSecret bool) []string {
 	var mountPoints []string
 	if readOnly || statsd {
-		mountPoints = append(mountPoints, capability.ActiveGateGatewayConfigMountPoint)
+		mountPoints = append(mountPoints, GatewayConfigMountPoint)
 	}
 	if readOnly {
 		mountPoints = append(mountPoints,
-			capability.ActiveGateGatewayTempMountPoint,
-			capability.ActiveGateGatewayDataMountPoint,
-			capability.ActiveGateLogMountPoint,
-			capability.ActiveGateTmpMountPoint)
+			GatewayTempMountPoint,
+			GatewayDataMountPoint,
+			LogMountPoint,
+			TmpMountPoint)
 
 		if tlsSecret {
-			mountPoints = append(mountPoints, capability.ActiveGateGatewaySslMountPoint)
+			mountPoints = append(mountPoints, GatewaySslMountPoint)
 		}
 	}
 	return mountPoints

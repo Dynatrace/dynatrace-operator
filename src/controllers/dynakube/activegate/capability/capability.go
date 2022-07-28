@@ -1,6 +1,7 @@
 package capability
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/statefulset"
 	"path/filepath"
 	"strings"
 
@@ -9,7 +10,6 @@ import (
 )
 
 const (
-	MultiActiveGateName       = "activegate"
 	trustStoreVolume          = "truststore-volume"
 	k8scrt2jksPath            = "/opt/dynatrace/gateway/k8scrt2jks.sh"
 	activeGateCacertsPath     = "/opt/dynatrace/gateway/jre/lib/security/cacerts"
@@ -159,7 +159,7 @@ func (c *capabilityBase) setTlsConfig(agSpec *dynatracev1beta1.ActiveGateSpec) {
 func NewMultiCapability(dk *dynatracev1beta1.DynaKube) *MultiCapability {
 	mc := MultiCapability{
 		capabilityBase{
-			shortName: MultiActiveGateName,
+			shortName: statefulset.MultiActiveGateName,
 		},
 	}
 	if dk == nil || !dk.ActiveGateMode() {

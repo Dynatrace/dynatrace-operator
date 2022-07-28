@@ -3,14 +3,13 @@ package dynakube
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate"
 	"net/http"
 	"os"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/src/agproxysecret"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	capability2 "github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
-	reconciler2 "github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability/reconciler"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/secrets"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/apimonitoring"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
@@ -332,7 +331,7 @@ func (controller *DynakubeController) reconcileActiveGate(ctx context.Context, d
 }
 
 func (controller *DynakubeController) reconcileActiveGateProxySecret(ctx context.Context, dynakubeState *status.DynakubeState) bool {
-	gen := agproxysecret.NewActiveGateProxySecretGenerator(controller.client, controller.apiReader, dynakubeState.Instance.Namespace, log)
+	gen := capability.NewActiveGateProxySecretGenerator(controller.client, controller.apiReader, dynakubeState.Instance.Namespace, log)
 	if dynakubeState.Instance.NeedsActiveGateProxy() {
 		err := gen.GenerateForDynakube(ctx, dynakubeState.Instance)
 		if dynakubeState.Error(err) {
@@ -346,11 +345,11 @@ func (controller *DynakubeController) reconcileActiveGateProxySecret(ctx context
 	return true
 }
 
-func generateActiveGateCapabilities(instance *dynatracev1beta1.DynaKube) []capability2.Capability {
-	return []capability2.Capability{
-		capability2.NewKubeMonCapability(instance),
-		capability2.NewRoutingCapability(instance),
-		capability2.NewMultiCapability(instance),
+func generateActiveGateCapabilities(instance *dynatracev1beta1.DynaKube) []capability.Capability {
+	return []capability.Capability{
+		capability.NewKubeMonCapability(instance),
+		capability.NewRoutingCapability(instance),
+		capability.NewMultiCapability(instance),
 	}
 }
 
@@ -359,8 +358,8 @@ func (controller *DynakubeController) reconcileActiveGateCapabilities(dynakubeSt
 
 	for _, c := range caps {
 		if c.Enabled() {
-			upd, err := reconciler2.NewReconciler(
-				c, controller.client, controller.apiReader, controller.scheme, dynakubeState.Instance).Reconcile()
+			upd, err := capability.NewReconciler(
+				c, activegate.NewReconciler(controller.client, controller.apiReader, controller.scheme, dynakubeState.Instance, c), dynakubeState.Instance).Reconcile()
 			if dynakubeState.Error(err) {
 				return false
 			}
@@ -368,7 +367,7 @@ func (controller *DynakubeController) reconcileActiveGateCapabilities(dynakubeSt
 		} else {
 			sts := appsv1.StatefulSet{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      capability2.CalculateStatefulSetName(c, dynakubeState.Instance.Name),
+					Name:      capability.CalculateStatefulSetName(c, dynakubeState.Instance.Name),
 					Namespace: dynakubeState.Instance.Namespace,
 				},
 			}
@@ -379,7 +378,7 @@ func (controller *DynakubeController) reconcileActiveGateCapabilities(dynakubeSt
 			if c.ShouldCreateService() {
 				svc := corev1.Service{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      reconciler2.BuildServiceName(dynakubeState.Instance.Name, c.ShortName()),
+						Name:      capability.BuildServiceName(dynakubeState.Instance.Name, c.ShortName()),
 						Namespace: dynakubeState.Instance.Namespace,
 					},
 				}

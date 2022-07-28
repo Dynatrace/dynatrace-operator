@@ -1,7 +1,8 @@
-package statefulset
+package activegate
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/statefulset"
 	"hash/fnv"
 	"reflect"
 	"strconv"
@@ -31,7 +32,7 @@ type Reconciler struct {
 	capabilityName                   string
 	serviceAccountOwner              string
 	capability                       *dynatracev1beta1.CapabilityProperties
-	onAfterStatefulSetCreateListener []StatefulSetEvent
+	onAfterStatefulSetCreateListener []statefulset.StatefulSetEvent
 	initContainersTemplates          []corev1.Container
 	containerVolumeMounts            []corev1.VolumeMount
 	volumes                          []corev1.Volume
@@ -54,14 +55,14 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 		capabilityName:                   capability.ArgName(),
 		serviceAccountOwner:              serviceAccountOwner,
 		capability:                       capability.Properties(),
-		onAfterStatefulSetCreateListener: []StatefulSetEvent{},
+		onAfterStatefulSetCreateListener: []statefulset.StatefulSetEvent{},
 		initContainersTemplates:          capability.InitContainersTemplates(),
 		containerVolumeMounts:            capability.ContainerVolumeMounts(),
 		volumes:                          capability.Volumes(),
 	}
 }
 
-func (r *Reconciler) AddOnAfterStatefulSetCreateListener(event StatefulSetEvent) {
+func (r *Reconciler) AddOnAfterStatefulSetCreateListener(event statefulset.StatefulSetEvent) {
 	r.onAfterStatefulSetCreateListener = append(r.onAfterStatefulSetCreateListener, event)
 }
 
@@ -122,12 +123,12 @@ func (r *Reconciler) buildDesiredStatefulSet() (*appsv1.StatefulSet, error) {
 		return nil, errors.WithStack(err)
 	}
 
-	stsProperties := NewStatefulSetProperties(
+	stsProperties := statefulset.NewStatefulSetProperties(
 		r.Instance, r.capability, kubeUID, activeGateConfigurationHash, r.feature, r.capabilityName, r.serviceAccountOwner,
 		r.initContainersTemplates, r.containerVolumeMounts, r.volumes)
 	stsProperties.OnAfterCreateListener = r.onAfterStatefulSetCreateListener
 
-	desiredSts, err := CreateStatefulSet(stsProperties)
+	desiredSts, err := statefulset.CreateStatefulSet(stsProperties)
 	return desiredSts, errors.WithStack(err)
 }
 

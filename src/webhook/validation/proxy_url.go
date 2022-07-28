@@ -2,10 +2,10 @@ package validation
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"net/url"
 	"regexp"
 
-	"github.com/Dynatrace/dynatrace-operator/src/agproxysecret"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -35,7 +35,7 @@ func invalidActiveGateProxyUrl(dv *dynakubeValidator, dynakube *dynatracev1beta1
 			} else if err != nil {
 				return errors.Wrap(err, "error occurred while reading PROXY secret indicated in the Dynakube specification").Error()
 			}
-			proxyUrl, ok := proxySecret.Data[agproxysecret.ProxySecretKey]
+			proxyUrl, ok := proxySecret.Data[capability.ProxySecretKey]
 			if !ok {
 				return errorInvalidProxySecretFormat
 			}

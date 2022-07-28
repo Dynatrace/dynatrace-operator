@@ -2,10 +2,7 @@ package statefulset
 
 import (
 	"fmt"
-
-	"github.com/Dynatrace/dynatrace-operator/src/agproxysecret"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/secrets"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
@@ -25,7 +22,7 @@ const (
 	authTokenSecretVolumeName = "ag-authtoken-secret"
 
 	annotationActiveGateConfigurationHash = dynatracev1beta1.InternalFlagPrefix + "activegate-configuration-hash"
-	annotationActiveGateContainerAppArmor = "container.apparmor.security.beta.kubernetes.io/" + capability.ActiveGateContainerName
+	annotationActiveGateContainerAppArmor = "container.apparmor.security.beta.kubernetes.io/" + ContainerName
 
 	dtServer             = "DT_SERVER"
 	dtTenant             = "DT_TENANT"
@@ -199,7 +196,7 @@ func buildActiveGateContainer(stsProperties *statefulSetProperties) corev1.Conta
 	readOnlyFs := stsProperties.FeatureActiveGateReadOnlyFilesystem()
 
 	return corev1.Container{
-		Name:            capability.ActiveGateContainerName,
+		Name:            ContainerName,
 		Image:           stsProperties.DynaKube.ActiveGateImage(),
 		Resources:       stsProperties.CapabilityProperties.Resources,
 		ImagePullPolicy: corev1.PullAlways,
@@ -296,7 +293,7 @@ func buildActiveGateVolumes(stsProperties *statefulSetProperties) []corev1.Volum
 	var volumes []corev1.Volume
 	if stsProperties.FeatureActiveGateReadOnlyFilesystem() || stsProperties.NeedsStatsd() {
 		volumes = append(volumes, corev1.Volume{
-			Name: capability.ActiveGateGatewayConfigVolumeName,
+			Name: GatewayConfigVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
@@ -305,25 +302,25 @@ func buildActiveGateVolumes(stsProperties *statefulSetProperties) []corev1.Volum
 	if stsProperties.FeatureActiveGateReadOnlyFilesystem() {
 		volumes = append(volumes,
 			corev1.Volume{
-				Name: capability.ActiveGateGatewayTempVolumeName,
+				Name: GatewayTempVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 			},
 			corev1.Volume{
-				Name: capability.ActiveGateGatewayDataVolumeName,
+				Name: GatewayDataVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 			},
 			corev1.Volume{
-				Name: capability.ActiveGateLogVolumeName,
+				Name: LogVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 			},
 			corev1.Volume{
-				Name: capability.ActiveGateTmpVolumeName,
+				Name: TmpVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
@@ -333,7 +330,7 @@ func buildActiveGateVolumes(stsProperties *statefulSetProperties) []corev1.Volum
 		if stsProperties.HasActiveGateCaCert() {
 			volumes = append(volumes,
 				corev1.Volume{
-					Name: capability.ActiveGateGatewaySslVolumeName,
+					Name: GatewaySslVolumeName,
 					VolumeSource: corev1.VolumeSource{
 						EmptyDir: &corev1.EmptyDirVolumeSource{},
 					},
@@ -351,7 +348,7 @@ func buildProxyVolumes() []corev1.Volume {
 			Name: InternalProxySecretVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: agproxysecret.BuildProxySecretName(),
+					SecretName: BuildProxySecretName(),
 				},
 			},
 		},
@@ -419,39 +416,39 @@ func buildActiveGateVolumeMounts(stsProperties *statefulSetProperties) []corev1.
 	if stsProperties.FeatureActiveGateReadOnlyFilesystem() || stsProperties.NeedsStatsd() {
 		volumeMounts = append(volumeMounts, corev1.VolumeMount{
 			ReadOnly:  false,
-			Name:      capability.ActiveGateGatewayConfigVolumeName,
-			MountPath: capability.ActiveGateGatewayConfigMountPoint,
+			Name:      GatewayConfigVolumeName,
+			MountPath: GatewayConfigMountPoint,
 		})
 	}
 	if stsProperties.FeatureActiveGateReadOnlyFilesystem() {
 		volumeMounts = append(volumeMounts,
 			corev1.VolumeMount{
 				ReadOnly:  false,
-				Name:      capability.ActiveGateGatewayTempVolumeName,
-				MountPath: capability.ActiveGateGatewayTempMountPoint,
+				Name:      GatewayTempVolumeName,
+				MountPath: GatewayTempMountPoint,
 			},
 			corev1.VolumeMount{
 				ReadOnly:  false,
-				Name:      capability.ActiveGateGatewayDataVolumeName,
-				MountPath: capability.ActiveGateGatewayDataMountPoint,
+				Name:      GatewayDataVolumeName,
+				MountPath: GatewayDataMountPoint,
 			},
 			corev1.VolumeMount{
 				ReadOnly:  false,
-				Name:      capability.ActiveGateLogVolumeName,
-				MountPath: capability.ActiveGateLogMountPoint,
+				Name:      LogVolumeName,
+				MountPath: LogMountPoint,
 			},
 			corev1.VolumeMount{
 				ReadOnly:  false,
-				Name:      capability.ActiveGateTmpVolumeName,
-				MountPath: capability.ActiveGateTmpMountPoint,
+				Name:      TmpVolumeName,
+				MountPath: TmpMountPoint,
 			})
 
 		if stsProperties.HasActiveGateCaCert() {
 			volumeMounts = append(volumeMounts,
 				corev1.VolumeMount{
 					ReadOnly:  false,
-					Name:      capability.ActiveGateGatewaySslVolumeName,
-					MountPath: capability.ActiveGateGatewaySslMountPoint,
+					Name:      GatewaySslVolumeName,
+					MountPath: GatewaySslMountPoint,
 				},
 			)
 		}
@@ -552,4 +549,8 @@ func isCustomPropertiesNilOrEmpty(customProperties *dynatracev1beta1.DynaKubeVal
 	return customProperties == nil ||
 		(customProperties.Value == "" &&
 			customProperties.ValueFrom == "")
+}
+
+func BuildProxySecretName() string {
+	return "dynatrace" + "-" + MultiActiveGateName + "-" + ProxySecretSuffix
 }
