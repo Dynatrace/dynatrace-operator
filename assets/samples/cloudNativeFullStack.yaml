@@ -183,6 +183,7 @@ spec:
 
     # Optional: Sets the image used to deploy ActiveGate instances
     # Defaults to the latest ActiveGate image on the tenant's registry
+    # Example: "ENVIRONMENTID.live.dynatrace.com/linux/activegate:latest"
     #
     # image: ""
 
