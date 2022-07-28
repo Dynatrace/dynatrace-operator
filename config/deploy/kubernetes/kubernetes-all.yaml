@@ -59,6 +59,31 @@ metadata:
     app.kubernetes.io/version: "0.8.0"
     app.kubernetes.io/component: activegate
 ---
+# Source: dynatrace-operator/templates/Common/oneagent/serviceaccount-oneagent-privileged.yaml
+# Copyright 2021 Dynatrace LLC
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dynatrace-dynakube-oneagent-privileged
+  namespace: dynatrace
+  labels:
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.8.0"
+    app.kubernetes.io/component: oneagent
+automountServiceAccountToken: false
+---
 # Source: dynatrace-operator/templates/Common/oneagent/serviceaccount-oneagent-unprivileged.yaml
 # Copyright 2021 Dynatrace LLC
 
@@ -138,7 +163,6 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.0
-  creationTimestamp: null
   name: dynakubes.dynatrace.com
 spec:
   conversion:
@@ -3114,6 +3138,8 @@ spec:
                           type: string
                       type: object
                     type: array
+                  formattedCommunicationEndpoints:
+                    type: string
                   tenantUUID:
                     type: string
                 type: object
@@ -3946,7 +3972,6 @@ spec:
     type: RollingUpdate
   template:
     metadata:
-      annotations:
       labels:
         app.kubernetes.io/name: dynatrace-operator
         app.kubernetes.io/version: "0.8.0"
@@ -3959,7 +3984,7 @@ spec:
             - operator
           # Replace this with the built image name
           image:
-            quay.io/dynatrace/dynatrace-operator:snapshot-release-0-8
+            quay.io/dynatrace/dynatrace-operator:snapshot
           imagePullPolicy: Always
           env:
             - name: POD_NAMESPACE
@@ -4111,7 +4136,7 @@ spec:
             # OLM mounts the certificates here, so we reuse it for simplicity
             - --certs-dir=/tmp/k8s-webhook-server/serving-certs/
           image:
-            quay.io/dynatrace/dynatrace-operator:snapshot-release-0-8
+            quay.io/dynatrace/dynatrace-operator:snapshot
           imagePullPolicy: Always
           env:
             - name: POD_NAMESPACE
@@ -4534,7 +4559,7 @@ spec:
         # - Needs access to a dedicated folder on the node to persist data, needs to read/write to it.
       - name: driver
         image:
-            quay.io/dynatrace/dynatrace-operator:snapshot-release-0-8
+            quay.io/dynatrace/dynatrace-operator:snapshot
         imagePullPolicy: Always
         args:
         - csi-driver
@@ -4602,7 +4627,7 @@ spec:
         # - Needs access to the registration socket, needs to read/write to it, needs root permissions to do so.
       - name: registrar
         image:
-            quay.io/dynatrace/dynatrace-operator:snapshot-release-0-8
+            quay.io/dynatrace/dynatrace-operator:snapshot
         imagePullPolicy: Always
         args:
         - --csi-address=/csi/csi.sock
@@ -4647,7 +4672,7 @@ spec:
         # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.
       - name: liveness-probe
         image:
-            quay.io/dynatrace/dynatrace-operator:snapshot-release-0-8
+            quay.io/dynatrace/dynatrace-operator:snapshot
         imagePullPolicy: Always
         args:
         - --csi-address=/csi/csi.sock

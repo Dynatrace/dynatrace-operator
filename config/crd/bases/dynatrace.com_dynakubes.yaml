@@ -2969,6 +2969,8 @@ spec:
                           type: string
                       type: object
                     type: array
+                  formattedCommunicationEndpoints:
+                    type: string
                   tenantUUID:
                     type: string
                 type: object
