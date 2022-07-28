@@ -159,7 +159,13 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Cont
 
 	var agentUpdater *agentUpdater
 	if dk.CodeModulesImage() != "" {
-		latestProcessModuleConfig = latestProcessModuleConfig.AddConnectionInfo(dk.ConnectionInfo())
+		connectionInfo, err := dtc.GetConnectionInfo()
+		if err != nil {
+			log.Info("could not query connection info")
+			return nil, false, err
+		}
+
+		latestProcessModuleConfig = latestProcessModuleConfig.AddConnectionInfo(connectionInfo)
 		agentUpdater, err = newAgentImageUpdater(ctx, provisioner.fs, provisioner.apiReader, provisioner.path, provisioner.db, provisioner.recorder, dk)
 		if err != nil {
 			log.Error(err, "error when setting up the agent image updater")
