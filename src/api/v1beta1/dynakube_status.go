@@ -59,8 +59,9 @@ type DynaKubeStatus struct {
 }
 
 type ConnectionInfoStatus struct {
-	CommunicationHosts []CommunicationHostStatus `json:"communicationHosts,omitempty"`
-	TenantUUID         string                    `json:"tenantUUID,omitempty"`
+	CommunicationHosts              []CommunicationHostStatus `json:"communicationHosts,omitempty"`
+	TenantUUID                      string                    `json:"tenantUUID,omitempty"`
+	FormattedCommunicationEndpoints string                    `json:"formattedCommunicationEndpoints,omitempty"`
 }
 
 type CommunicationHostStatus struct {
