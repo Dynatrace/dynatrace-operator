@@ -18,7 +18,12 @@ const (
 )
 
 func (dsInfo *builderInfo) environmentVariables() []corev1.EnvVar {
-	environmentVariables := dsInfo.hostInjectSpec.Env
+	environmentVariables := make([]corev1.EnvVar, 0)
+
+	if dsInfo.hostInjectSpec != nil {
+		environmentVariables = dsInfo.hostInjectSpec.Env
+	}
+
 	envVarMap := envVarsToMap(environmentVariables)
 	envVarMap = setDefaultValueSource(envVarMap, dtNodeName, &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}})
 	envVarMap = setDefaultValue(envVarMap, dtClusterId, dsInfo.clusterId)
@@ -27,7 +32,7 @@ func (dsInfo *builderInfo) environmentVariables() []corev1.EnvVar {
 		envVarMap = dsInfo.setDefaultProxy(envVarMap)
 	}
 
-	if dsInfo.instance.NeedsReadOnlyOneAgents() {
+	if dsInfo.instance != nil && dsInfo.instance.NeedsReadOnlyOneAgents() {
 		envVarMap = setDefaultValue(envVarMap, oneagentReadOnlyMode, "true")
 	}
 
