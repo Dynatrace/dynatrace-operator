@@ -15,7 +15,9 @@ const (
 	annotationUnprivileged      = "container.apparmor.security.beta.kubernetes.io/dynatrace-oneagent"
 	annotationUnprivilegedValue = "unconfined"
 
-	defaultUnprivilegedServiceAccountName = "dynatrace-dynakube-oneagent-unprivileged"
+	unprivilegedServiceAccountName = "dynatrace-dynakube-oneagent-unprivileged"
+	privilegedServiceAccountName   = "dynatrace-dynakube-oneagent-privileged"
+
 	// normal oneagent shutdown scenario with some extra time
 	defaultTerminationGracePeriod = int64(80)
 
@@ -187,7 +189,7 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 		Containers: []corev1.Container{{
 			Args:            arguments,
 			Env:             environmentVariables,
-			Image:           dsInfo.instance.ImmutableOneAgentImage(),
+			Image:           dsInfo.immutableOneAgentImage(),
 			ImagePullPolicy: corev1.PullAlways,
 			Name:            podName,
 			ReadinessProbe: &corev1.Probe{
@@ -210,10 +212,10 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 		HostNetwork:                   true,
 		HostPID:                       true,
 		HostIPC:                       false,
-		NodeSelector:                  dsInfo.hostInjectSpec.NodeSelector,
-		PriorityClassName:             dsInfo.hostInjectSpec.PriorityClassName,
-		ServiceAccountName:            defaultUnprivilegedServiceAccountName,
-		Tolerations:                   dsInfo.hostInjectSpec.Tolerations,
+		NodeSelector:                  dsInfo.nodeSelector(),
+		PriorityClassName:             dsInfo.priorityClassName(),
+		ServiceAccountName:            dsInfo.serviceAccountName(),
+		Tolerations:                   dsInfo.tolerations(),
 		DNSPolicy:                     dnsPolicy,
 		Volumes:                       volumes,
 		Affinity:                      affinity,
@@ -221,8 +223,47 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 	}
 }
 
+func (dsInfo *builderInfo) serviceAccountName() string {
+	if dsInfo.instance != nil && dsInfo.instance.IsOneAgentPrivileged() {
+		return privilegedServiceAccountName
+	}
+
+	return unprivilegedServiceAccountName
+}
+
+func (dsInfo *builderInfo) immutableOneAgentImage() string {
+	if dsInfo.instance == nil {
+		return ""
+	}
+	return dsInfo.instance.ImmutableOneAgentImage()
+}
+
+func (dsInfo *builderInfo) tolerations() []corev1.Toleration {
+	if dsInfo.hostInjectSpec != nil {
+		return dsInfo.hostInjectSpec.Tolerations
+	}
+
+	return nil
+}
+
+func (dsInfo *builderInfo) priorityClassName() string {
+	if dsInfo.hostInjectSpec != nil {
+		return dsInfo.hostInjectSpec.PriorityClassName
+	}
+
+	return ""
+}
+
+func (dsInfo *builderInfo) nodeSelector() map[string]string {
+	if dsInfo.hostInjectSpec == nil {
+		return make(map[string]string, 0)
+	}
+
+	return dsInfo.hostInjectSpec.NodeSelector
+}
+
 func (dsInfo *builderInfo) resources() corev1.ResourceRequirements {
-	resources := dsInfo.hostInjectSpec.OneAgentResources
+	resources := dsInfo.oneAgentResource()
 	if resources.Requests == nil {
 		resources.Requests = corev1.ResourceList{}
 	}
@@ -233,8 +274,16 @@ func (dsInfo *builderInfo) resources() corev1.ResourceRequirements {
 	return resources
 }
 
+func (dsInfo *builderInfo) oneAgentResource() corev1.ResourceRequirements {
+	if dsInfo.hostInjectSpec == nil {
+		return corev1.ResourceRequirements{}
+	}
+
+	return dsInfo.hostInjectSpec.OneAgentResources
+}
+
 func (dsInfo *builderInfo) dnsPolicy() corev1.DNSPolicy {
-	if dsInfo.hostInjectSpec.DNSPolicy != "" {
+	if dsInfo.hostInjectSpec != nil && dsInfo.hostInjectSpec.DNSPolicy != "" {
 		return dsInfo.hostInjectSpec.DNSPolicy
 	}
 	return corev1.DNSClusterFirstWithHostNet
@@ -249,49 +298,51 @@ func (dsInfo *builderInfo) volumes() []corev1.Volume {
 }
 
 func (dsInfo *builderInfo) imagePullSecrets() []corev1.LocalObjectReference {
-	pullSecretName := dsInfo.instance.PullSecret()
-	pullSecrets := make([]corev1.LocalObjectReference, 0)
+	if dsInfo.instance == nil {
+		return []corev1.LocalObjectReference{}
+	}
 
-	pullSecrets = append(pullSecrets, corev1.LocalObjectReference{
-		Name: pullSecretName,
-	})
-	return pullSecrets
+	return []corev1.LocalObjectReference{{Name: dsInfo.instance.PullSecret()}}
 }
 
 func (dsInfo *builderInfo) securityContext() *corev1.SecurityContext {
 	var securityContext corev1.SecurityContext
-	if dsInfo.instance.NeedsReadOnlyOneAgents() {
+	if dsInfo.instance != nil && dsInfo.instance.NeedsReadOnlyOneAgents() {
 		securityContext.RunAsNonRoot = address.Of(true)
 		securityContext.RunAsUser = address.Of(int64(1000))
 		securityContext.RunAsGroup = address.Of(int64(1000))
 	}
 
-	if dsInfo.instance.IsOneAgentPrivileged() {
+	if dsInfo.instance != nil && dsInfo.instance.IsOneAgentPrivileged() {
 		securityContext.Privileged = address.Of(true)
 	} else {
-		securityContext.Capabilities = &corev1.Capabilities{
-			Drop: []corev1.Capability{
-				"ALL",
-			},
-			Add: []corev1.Capability{
-				"CHOWN",
-				"DAC_OVERRIDE",
-				"DAC_READ_SEARCH",
-				"FOWNER",
-				"FSETID",
-				"KILL",
-				"NET_ADMIN",
-				"NET_RAW",
-				"SETFCAP",
-				"SETGID",
-				"SETUID",
-				"SYS_ADMIN",
-				"SYS_CHROOT",
-				"SYS_PTRACE",
-				"SYS_RESOURCE",
-			},
-		}
+		securityContext.Capabilities = defaultSecurityContextCapabilities()
 	}
 
 	return &securityContext
+}
+
+func defaultSecurityContextCapabilities() *corev1.Capabilities {
+	return &corev1.Capabilities{
+		Drop: []corev1.Capability{
+			"ALL",
+		},
+		Add: []corev1.Capability{
+			"CHOWN",
+			"DAC_OVERRIDE",
+			"DAC_READ_SEARCH",
+			"FOWNER",
+			"FSETID",
+			"KILL",
+			"NET_ADMIN",
+			"NET_RAW",
+			"SETFCAP",
+			"SETGID",
+			"SETUID",
+			"SYS_ADMIN",
+			"SYS_CHROOT",
+			"SYS_PTRACE",
+			"SYS_RESOURCE",
+		},
+	}
 }

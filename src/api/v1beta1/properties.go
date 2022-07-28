@@ -115,7 +115,7 @@ func (dk *DynaKube) NeedsOneAgentProxy() bool {
 }
 
 func (dk *DynaKube) IsOneAgentPrivileged() bool {
-	return dk.FeatureAgentRunPrivileged()
+	return dk.FeatureAgentRunPrivileged() || dk.ClassicFullStackMode()
 }
 
 // ShouldAutoUpdateOneAgent returns true if the Operator should update OneAgent instances automatically.
@@ -319,8 +319,9 @@ func (dk *DynaKube) CommunicationHostForClient() dtclient.CommunicationHost {
 
 func (dk *DynaKube) ConnectionInfo() dtclient.ConnectionInfo {
 	return dtclient.ConnectionInfo{
-		CommunicationHosts: dk.CommunicationHosts(),
-		TenantUUID:         dk.Status.ConnectionInfo.TenantUUID,
+		CommunicationHosts:              dk.CommunicationHosts(),
+		TenantUUID:                      dk.Status.ConnectionInfo.TenantUUID,
+		FormattedCommunicationEndpoints: dk.Status.ConnectionInfo.FormattedCommunicationEndpoints,
 	}
 }
 

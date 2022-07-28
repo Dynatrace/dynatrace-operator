@@ -15,12 +15,27 @@ const (
 )
 
 func (dsInfo *builderInfo) arguments() []string {
-	metadata := deploymentmetadata.NewDeploymentMetadata(dsInfo.clusterId, dsInfo.deploymentType)
-	args := dsInfo.hostInjectSpec.Args
+
+	args := make([]string, 0)
+
+	args = dsInfo.appendHostInjectArgs(args)
 	args = dsInfo.appendProxyArg(args)
 	args = dsInfo.appendNetworkZoneArg(args)
 	args = appendOperatorVersionArg(args)
-	args = append(args, metadata.AsArgs()...)
+	args = dsInfo.appendMetadataArgs(args)
+	return args
+}
+
+func (dsInfo *builderInfo) appendMetadataArgs(args []string) []string {
+	metadata := deploymentmetadata.NewDeploymentMetadata(dsInfo.clusterId, dsInfo.deploymentType)
+	return append(args, metadata.AsArgs()...)
+}
+
+func (dsInfo *builderInfo) appendHostInjectArgs(args []string) []string {
+	if dsInfo.hostInjectSpec != nil {
+		return append(args, dsInfo.hostInjectSpec.Args...)
+	}
+
 	return args
 }
 
@@ -29,19 +44,19 @@ func appendOperatorVersionArg(args []string) []string {
 }
 
 func (dsInfo *builderInfo) appendNetworkZoneArg(args []string) []string {
-	if dsInfo.instance.Spec.NetworkZone != "" {
+	if dsInfo.instance != nil && dsInfo.instance.Spec.NetworkZone != "" {
 		return append(args, fmt.Sprintf("--set-network-zone=%s", dsInfo.instance.Spec.NetworkZone))
 	}
 	return args
 }
 
 func (dsInfo *builderInfo) appendProxyArg(args []string) []string {
-	if dsInfo.instance.NeedsOneAgentProxy() {
+	if dsInfo.instance != nil && dsInfo.instance.NeedsOneAgentProxy() {
 		return append(args, "--set-proxy=$(https_proxy)")
 	}
 	return args
 }
 
 func (dsInfo *builderInfo) hasProxy() bool {
-	return dsInfo.instance.Spec.Proxy != nil && (dsInfo.instance.Spec.Proxy.ValueFrom != "" || dsInfo.instance.Spec.Proxy.Value != "")
+	return dsInfo.instance != nil && dsInfo.instance.Spec.Proxy != nil && (dsInfo.instance.Spec.Proxy.ValueFrom != "" || dsInfo.instance.Spec.Proxy.Value != "")
 }
