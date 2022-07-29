@@ -212,7 +212,7 @@ func TestCustomPullSecret(t *testing.T) {
 			Build()
 
 		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
-		assert.NoErrorf(t, checkCustomPullSecret(&troubleshootCtx), "missing dynakube")
+		assert.NoErrorf(t, evaluateCustomPullSecret(&troubleshootCtx), "missing dynakube")
 		assert.Equal(t, "", troubleshootCtx.customPullSecretName)
 	})
 	t.Run("custom pull secret defined", func(t *testing.T) {
@@ -225,7 +225,7 @@ func TestCustomPullSecret(t *testing.T) {
 			Build()
 
 		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
-		assert.NoErrorf(t, checkCustomPullSecret(&troubleshootCtx), "missing dynakube")
+		assert.NoErrorf(t, evaluateCustomPullSecret(&troubleshootCtx), "missing dynakube")
 		assert.Equal(t, testSecretName, troubleshootCtx.customPullSecretName)
 	})
 	t.Run("custom pull secret exists", func(t *testing.T) {
@@ -292,7 +292,7 @@ func TestProxySecret(t *testing.T) {
 			Build()
 
 		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
-		assert.NoErrorf(t, checkProxySecret(&troubleshootCtx), "missing dynakube")
+		assert.NoErrorf(t, evaluateProxySecret(&troubleshootCtx), "missing dynakube")
 		assert.Equal(t, "", troubleshootCtx.proxySecretName)
 	})
 	t.Run("proxy secret defined", func(t *testing.T) {
@@ -305,7 +305,7 @@ func TestProxySecret(t *testing.T) {
 			Build()
 
 		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
-		assert.NoErrorf(t, checkProxySecret(&troubleshootCtx), "missing dynakube")
+		assert.NoErrorf(t, evaluateProxySecret(&troubleshootCtx), "missing dynakube")
 		assert.Equal(t, testSecretName, troubleshootCtx.proxySecretName)
 	})
 	t.Run("proxy secret exists", func(t *testing.T) {

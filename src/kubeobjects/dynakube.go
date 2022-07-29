@@ -10,17 +10,26 @@ import (
 )
 
 type DynakubeQuery struct {
-	clt       client.Client
-	namespace string
-	ctx       context.Context
+	clt        client.Client
+	kubeReader client.Reader
+	namespace  string
+	ctx        context.Context
 }
 
-func NewDynakubeQuery(clt client.Client, namespace string) DynakubeQuery {
+func NewDynakubeQuery(clt client.Client, kubeReader client.Reader, namespace string) DynakubeQuery {
 	return DynakubeQuery{
-		clt:       clt,
-		namespace: namespace,
-		ctx:       nil,
+		clt:        clt,
+		kubeReader: kubeReader,
+		namespace:  namespace,
+		ctx:        nil,
 	}
+}
+
+func (query DynakubeQuery) Get(objectKey client.ObjectKey) (dynatracev1beta1.DynaKube, error) {
+	var dynakube dynatracev1beta1.DynaKube
+	err := query.kubeReader.Get(query.ctx, objectKey, &dynakube)
+
+	return dynakube, errors.WithStack(err)
 }
 
 func (query DynakubeQuery) WithContext(ctx context.Context) DynakubeQuery {

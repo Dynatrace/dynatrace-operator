@@ -3,10 +3,10 @@ package troubleshoot
 import (
 	"context"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 func checkDTClusterConnection(troubleshootCtx *troubleshootContext) error {
@@ -14,9 +14,10 @@ func checkDTClusterConnection(troubleshootCtx *troubleshootContext) error {
 
 	logNewTestf("checking if tenant is accessible ...")
 
-	dk := dynatracev1beta1.DynaKube{}
-	if err := troubleshootCtx.apiReader.Get(context.TODO(), client.ObjectKey{Name: troubleshootCtx.dynakubeName, Namespace: troubleshootCtx.namespaceName}, &dk); err != nil {
-		logErrorf("Selected Dynakube does not exist '%s' (%s)", troubleshootCtx.dynakubeName, err.Error())
+	query := kubeobjects.NewDynakubeQuery(nil, troubleshootCtx.apiReader, troubleshootCtx.namespaceName).WithContext(context.TODO())
+	dk, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.dynakubeName})
+	if err != nil {
+		logWithErrorf(err, "selected '%s:%s' Dynakube does not exist", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
 		return err
 	}
 

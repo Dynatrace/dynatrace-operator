@@ -11,11 +11,10 @@ import (
 	"regexp"
 	"strings"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -45,9 +44,10 @@ type Auths struct {
 func checkImagePullable(troubleshootCtx *troubleshootContext) error {
 	log = newTroubleshootLogger("[imagepull ] ")
 
-	dynakube := dynatracev1beta1.DynaKube{}
-	if err := troubleshootCtx.apiReader.Get(context.TODO(), client.ObjectKey{Name: troubleshootCtx.dynakubeName, Namespace: troubleshootCtx.namespaceName}, &dynakube); err != nil {
-		logWithErrorf(err, "Selected '%s:%s' Dynakube does not exist", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
+	query := kubeobjects.NewDynakubeQuery(nil, troubleshootCtx.apiReader, troubleshootCtx.namespaceName).WithContext(context.TODO())
+	dynakube, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.dynakubeName})
+	if err != nil {
+		logWithErrorf(err, "selected '%s:%s' Dynakube does not exist", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
 		return err
 	}
 
@@ -176,8 +176,9 @@ func checkComponentImagePullable(httpClient *http.Client, componentName string, 
 }
 
 func addProxy(troubleshootCtx *troubleshootContext) error {
-	dynakube := dynatracev1beta1.DynaKube{}
-	if err := troubleshootCtx.apiReader.Get(context.TODO(), client.ObjectKey{Name: troubleshootCtx.dynakubeName, Namespace: troubleshootCtx.namespaceName}, &dynakube); err != nil {
+	query := kubeobjects.NewDynakubeQuery(nil, troubleshootCtx.apiReader, troubleshootCtx.namespaceName).WithContext(context.TODO())
+	dynakube, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.dynakubeName})
+	if err != nil {
 		logWithErrorf(err, "selected '%s:%s' Dynakube does not exist", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
 		return err
 	}
@@ -239,9 +240,10 @@ func connectToDockerRegistry(httpClient *http.Client, httpMethod string, httpUrl
 }
 
 func getPullSecretName(apiReader client.Reader, dynakubeName string, namespaceName string) (string, error) {
-	dynakube := dynatracev1beta1.DynaKube{}
-	if err := apiReader.Get(context.TODO(), client.ObjectKey{Name: dynakubeName, Namespace: namespaceName}, &dynakube); err != nil {
-		logErrorf("selected Dynakube does not exist '%s'", dynakubeName)
+	query := kubeobjects.NewDynakubeQuery(nil, apiReader, namespaceName).WithContext(context.TODO())
+	dynakube, err := query.Get(types.NamespacedName{Namespace: namespaceName, Name: dynakubeName})
+	if err != nil {
+		logWithErrorf(err, "selected '%s:%s' Dynakube does not exist", namespaceName, dynakubeName)
 		return "", err
 	}
 
@@ -254,9 +256,10 @@ func getPullSecretName(apiReader client.Reader, dynakubeName string, namespaceNa
 }
 
 func getPullSecret(apiReader client.Reader, pullSecretName string, namespaceName string) (string, error) {
-	secret := corev1.Secret{}
-	if err := apiReader.Get(context.TODO(), client.ObjectKey{Name: pullSecretName, Namespace: namespaceName}, &secret); err != nil {
-		logErrorf("pull secret '%s' is missing (%s)", pullSecretName, err.Error())
+	query := kubeobjects.NewSecretQuery(context.TODO(), nil, apiReader, log)
+	secret, err := query.Get(types.NamespacedName{Namespace: namespaceName, Name: pullSecretName})
+	if err != nil {
+		logWithErrorf(err, "'%s:%s' pull secret is missing", namespaceName, pullSecretName)
 		return "", err
 	}
 
@@ -271,8 +274,9 @@ func getPullSecret(apiReader client.Reader, pullSecretName string, namespaceName
 }
 
 func getOneAgentImageEndpoint(troubleshootCtx *troubleshootContext) (string, error) {
-	dynakube := dynatracev1beta1.DynaKube{}
-	if err := troubleshootCtx.apiReader.Get(context.TODO(), client.ObjectKey{Name: troubleshootCtx.dynakubeName, Namespace: troubleshootCtx.namespaceName}, &dynakube); err != nil {
+	query := kubeobjects.NewDynakubeQuery(nil, troubleshootCtx.apiReader, troubleshootCtx.namespaceName).WithContext(context.TODO())
+	dynakube, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.dynakubeName})
+	if err != nil {
 		logWithErrorf(err, "selected '%s:%s' Dynakube does not exist", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
 		return "", err
 	}
@@ -312,10 +316,11 @@ func getOneAgentImageEndpoint(troubleshootCtx *troubleshootContext) (string, err
 }
 
 func getActiveGateImageEndpoint(troubleshootCtx *troubleshootContext) (string, error) {
-	dynakube := dynatracev1beta1.DynaKube{}
-	if err := troubleshootCtx.apiReader.Get(context.TODO(), client.ObjectKey{Name: troubleshootCtx.dynakubeName, Namespace: troubleshootCtx.namespaceName}, &dynakube); err != nil {
+	query := kubeobjects.NewDynakubeQuery(nil, troubleshootCtx.apiReader, troubleshootCtx.namespaceName).WithContext(context.TODO())
+	dynakube, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.dynakubeName})
+	if err != nil {
 		logWithErrorf(err, "selected '%s:%s' Dynakube does not exist", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
-		return "", errors.WithStack(err)
+		return "", err
 	}
 
 	imageEndpoint := ""
