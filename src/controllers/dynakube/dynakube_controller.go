@@ -3,12 +3,12 @@ package dynakube
 import (
 	"context"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate"
 	"net/http"
 	"os"
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/secrets"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/apimonitoring"
@@ -358,7 +358,7 @@ func (controller *DynakubeController) reconcileActiveGateCapabilities(dynakubeSt
 
 	for _, c := range caps {
 		if c.Enabled() {
-			upd, err := capability.NewReconciler(
+			upd, err := capability.NewReconciler(controller.client,
 				c, activegate.NewReconciler(controller.client, controller.apiReader, controller.scheme, dynakubeState.Instance, c), dynakubeState.Instance).Reconcile()
 			if dynakubeState.Error(err) {
 				return false

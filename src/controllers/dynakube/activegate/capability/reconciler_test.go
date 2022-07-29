@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -63,15 +64,25 @@ func testSetCapability(instance *dynatracev1beta1.DynaKube, capability dynatrace
 type testBaseReconciler struct {
 	client.Client
 	activegateReconciler
+	mock.Mock
 }
 
 func (r *testBaseReconciler) AddOnAfterStatefulSetCreateListener(_ statefulset.StatefulSetEvent) {}
+
+func (r *testBaseReconciler) Reconcile() (update bool, err error) {
+	args := r.Called()
+	return args.Bool(0), args.Error(1)
+}
+
+func (r *testBaseReconciler) Get(ctx context.Context, key client.ObjectKey, obj client.Object) error {
+	return r.Client.Get(ctx, key, obj)
+}
 
 func TestNewReconiler(t *testing.T) {
 	createDefaultReconciler(t)
 }
 
-func createDefaultReconciler(t *testing.T) *Reconciler {
+func createDefaultReconciler(t *testing.T) (*Reconciler, *testBaseReconciler) {
 	clt := fake.NewClientBuilder().
 		WithScheme(scheme.Scheme).
 		WithObjects(&corev1.Namespace{
@@ -90,15 +101,16 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 			APIURL: "https://testing.dev.dynatracelabs.com/api",
 		},
 	}
-	r := NewReconciler(metricsCapability, &testBaseReconciler{
+	baseReconciler := &testBaseReconciler{
 		Client: clt,
-	}, instance)
+	}
+	r := NewReconciler(clt, metricsCapability, baseReconciler, instance)
 	require.NotNil(t, r)
 	require.NotNil(t, r.activegateReconciler)
 	require.NotNil(t, r.Instance)
 	require.NotEmpty(t, r.Instance.ObjectMeta.Name)
 
-	return r
+	return r, baseReconciler
 }
 
 func TestReconcile(t *testing.T) {
@@ -146,11 +158,23 @@ func TestReconcile(t *testing.T) {
 	}
 
 	t.Run(`reconcile custom properties`, func(t *testing.T) {
-		r := createDefaultReconciler(t)
+		r, baseReconciler := createDefaultReconciler(t)
 
 		metricsCapability.Properties().CustomProperties = &dynatracev1beta1.DynaKubeValueSource{
 			Value: testValue,
 		}
+
+		baseReconciler.On("Reconcile").Return(true, nil).Run(func(args mock.Arguments) {
+			err := r.Create(context.TODO(), &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      r.Instance.Name + "-" + metricsCapability.ShortName() + "-" + customproperties.Suffix,
+					Namespace: r.Instance.Namespace,
+				},
+				Data: map[string][]byte{customproperties.DataKey: []byte(testValue)},
+			})
+			require.NoError(t, err)
+		})
+
 		// Reconcile twice since service is created before the stateful set is
 		reconcileAndExpectUpdate(r, true)
 		reconcileAndExpectUpdate(r, true)
@@ -163,7 +187,27 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, testValue, string(customProperties.Data[customproperties.DataKey]))
 	})
 	t.Run(`create stateful set`, func(t *testing.T) {
-		r := createDefaultReconciler(t)
+		r, baseReconciler := createDefaultReconciler(t)
+
+		baseReconciler.On("Reconcile").Return(true, nil).Run(func(args mock.Arguments) {
+			err := r.Create(context.TODO(), &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      r.calculateStatefulSetName(),
+					Namespace: r.Instance.Namespace,
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Env: []corev1.EnvVar{{Name: dtDNSEntryPoint, Value: buildDNSEntryPoint(r.Instance, r.ShortName())}}}},
+						},
+					},
+				},
+			})
+			require.NoError(t, err)
+		})
+
 		// Reconcile twice since service is created before the stateful set is
 		reconcileAndExpectUpdate(r, true)
 		reconcileAndExpectUpdate(r, true)
@@ -175,7 +219,25 @@ func TestReconcile(t *testing.T) {
 		})
 	})
 	t.Run(`update stateful set`, func(t *testing.T) {
-		r := createDefaultReconciler(t)
+		r, baseReconciler := createDefaultReconciler(t)
+
+		call := baseReconciler.On("Reconcile").Return(true, nil).Run(func(args mock.Arguments) {
+			err := r.Create(context.TODO(), &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      r.calculateStatefulSetName(),
+					Namespace: r.Instance.Namespace,
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{{}},
+						},
+					},
+				},
+			})
+			require.NoError(t, err)
+		})
+
 		// Reconcile twice since service is created before the stateful set is
 		reconcileAndExpectUpdate(r, true)
 		reconcileAndExpectUpdate(r, true)
@@ -191,6 +253,31 @@ func TestReconcile(t *testing.T) {
 		}
 
 		r.Instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
+
+		call.Run(func(args mock.Arguments) {
+			err := r.Update(context.TODO(), &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      r.calculateStatefulSetName(),
+					Namespace: r.Instance.Namespace,
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{{
+								VolumeMounts: []corev1.VolumeMount{
+									{Name: statefulset.InternalProxySecretVolumeName},
+									{Name: statefulset.InternalProxySecretVolumeName},
+									{Name: statefulset.InternalProxySecretVolumeName},
+									{Name: statefulset.InternalProxySecretVolumeName},
+								},
+							}},
+						},
+					},
+				},
+			})
+			require.NoError(t, err)
+		})
+
 		reconcileAndExpectUpdate(r, true)
 		{
 			statefulSet := assertStatefulSetExists(r)
@@ -204,15 +291,31 @@ func TestReconcile(t *testing.T) {
 		}
 	})
 	t.Run(`create service`, func(t *testing.T) {
-		r := createDefaultReconciler(t)
+		r, baseReconciler := createDefaultReconciler(t)
+
+		call := baseReconciler.On("Reconcile").Return(true, nil)
+
 		reconcileAndExpectUpdate(r, true)
 		assertServiceExists(r)
+
+		call.Run(func(args mock.Arguments) {
+			err := r.Create(context.TODO(), &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      r.calculateStatefulSetName(),
+					Namespace: r.Instance.Namespace,
+				},
+			})
+			require.NoError(t, err)
+		})
 
 		reconcileAndExpectUpdate(r, true)
 		assertStatefulSetExists(r)
 	})
 	t.Run(`update service`, func(t *testing.T) {
-		r := createDefaultReconciler(t)
+		r, baseReconciler := createDefaultReconciler(t)
+
+		call := baseReconciler.On("Reconcile").Return(true, nil)
+
 		setMetricsIngestCapability(r, true)
 		reconcileAndExpectUpdate(r, true)
 		{
@@ -221,6 +324,23 @@ func TestReconcile(t *testing.T) {
 
 			assert.Error(t, r.Get(context.TODO(), client.ObjectKey{Name: r.calculateStatefulSetName(), Namespace: r.Instance.Namespace}, &appsv1.StatefulSet{}))
 		}
+
+		call.Run(func(args mock.Arguments) {
+			err := r.Create(context.TODO(), &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      r.calculateStatefulSetName(),
+					Namespace: r.Instance.Namespace,
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{{}},
+						},
+					},
+				},
+			})
+			require.NoError(t, err)
+		})
 
 		reconcileAndExpectUpdate(r, true)
 		{
@@ -233,8 +353,26 @@ func TestReconcile(t *testing.T) {
 			statefulSet := assertStatefulSetExists(r)
 			assert.Len(t, statefulSet.Spec.Template.Spec.Containers, 1)
 		}
+
+		call.Return(false, nil).Run(func(args mock.Arguments) {
+			err := r.Update(context.TODO(), &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      r.calculateStatefulSetName(),
+					Namespace: r.Instance.Namespace,
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{{}},
+						},
+					},
+				},
+			})
+			require.NoError(t, err)
+		})
 		reconcileAndExpectUpdate(r, false)
 
+		call.Return(true, nil)
 		setStatsdCapability(r, true)
 		reconcileAndExpectUpdate(r, true)
 		{
@@ -248,6 +386,23 @@ func TestReconcile(t *testing.T) {
 			assert.Len(t, statefulSet.Spec.Template.Spec.Containers, 1)
 		}
 
+		call.Run(func(args mock.Arguments) {
+			err := r.Update(context.TODO(), &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      r.calculateStatefulSetName(),
+					Namespace: r.Instance.Namespace,
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{{}, {}, {}},
+						},
+					},
+				},
+			})
+			require.NoError(t, err)
+		})
+
 		reconcileAndExpectUpdate(r, true)
 		{
 			service := assertServiceExists(r)
@@ -258,12 +413,33 @@ func TestReconcile(t *testing.T) {
 			statefulSet := assertStatefulSetExists(r)
 			assert.Len(t, statefulSet.Spec.Template.Spec.Containers, 3)
 		}
+		call.Return(false, nil)
 		reconcileAndExpectUpdate(r, false)
 		reconcileAndExpectUpdate(r, false)
 
 		setStatsdCapability(r, false)
+		call.Return(true, nil)
 		reconcileAndExpectUpdate(r, true)
 		reconcileAndExpectUpdate(r, true)
+		call.Return(false, nil)
+
+		call.Run(func(args mock.Arguments) {
+			err := r.Update(context.TODO(), &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      r.calculateStatefulSetName(),
+					Namespace: r.Instance.Namespace,
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{{}},
+						},
+					},
+				},
+			})
+			require.NoError(t, err)
+		})
+
 		reconcileAndExpectUpdate(r, false)
 		{
 			service := assertServiceExists(r)
@@ -278,7 +454,7 @@ func TestReconcile(t *testing.T) {
 }
 
 func TestSetReadinessProbePort(t *testing.T) {
-	r := createDefaultReconciler(t)
+	r, _ := createDefaultReconciler(t)
 	stsProps := statefulset.NewStatefulSetProperties(r.Instance, metricsCapability.Properties(), "", "", "", "", "",
 		nil, nil, nil,
 	)

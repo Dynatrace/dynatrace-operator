@@ -35,7 +35,7 @@ type Reconciler struct {
 	Instance *dynatracev1beta1.DynaKube
 }
 
-func NewReconciler(capability Capability, baseReconciler activegateReconciler, instance *dynatracev1beta1.DynaKube) *Reconciler {
+func NewReconciler(clt client.Client, capability Capability, baseReconciler activegateReconciler, instance *dynatracev1beta1.DynaKube) *Reconciler {
 	if capability.Config().SetDnsEntryPoint {
 		baseReconciler.AddOnAfterStatefulSetCreateListener(addDNSEntryPoint(instance, capability.ShortName()))
 	}
@@ -52,6 +52,7 @@ func NewReconciler(capability Capability, baseReconciler activegateReconciler, i
 		activegateReconciler: baseReconciler,
 		Capability:           capability,
 		Instance:             instance,
+		Client:               clt,
 	}
 }
 
