@@ -23,9 +23,9 @@ tests:
       - hasDocuments:
           count: 1
 
-  - it: should not exist if platform is set to google-autopilot
+  - it: should not exist if platform is set to gke-autopilot
     set:
-      platform: google-autopilot
+      platform: gke-autopilot
     asserts:
       - hasDocuments:
           count: 0

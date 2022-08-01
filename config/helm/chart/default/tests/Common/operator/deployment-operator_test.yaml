@@ -23,9 +23,9 @@ tests:
       - hasDocuments:
           count: 1
 
-  - it: should exist if platform is set to google-autopilot
+  - it: should exist if platform is set to gke-autopilot
     set:
-      platform: google-autopilot
+      platform: gke-autopilot
     asserts:
       - hasDocuments:
           count: 1
@@ -322,7 +322,7 @@ tests:
 
   - it: should have only OS node affinity on GKE Autopilot
     set:
-      platform: google-autopilot
+      platform: gke-autopilot
     asserts:
       - equal:
           path: spec.template.spec.affinity
