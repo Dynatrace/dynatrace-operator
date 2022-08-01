@@ -6,4 +6,4 @@ deploy/gke/deployer:
 ## Deploys the operator using a snapshot deployer image for an autopilot GKE cluster
 deploy/autopilot/deployer:
 	kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/application/master/deploy/kube-app-manager-aio.yaml
-	./hack/gcr/deploy.sh ":snapshot-${SNAPSHOT_SUFFIX}" "google-autopilot"
+	./hack/gcr/deploy.sh ":snapshot-${SNAPSHOT_SUFFIX}" "gke-autopilot"

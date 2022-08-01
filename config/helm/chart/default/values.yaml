@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# may be set to "kubernetes", "openshift", or "google-marketplace"
+# may be set to "kubernetes", "openshift", or "gke-autopilot"
 platform: "kubernetes"
 
 image: ""

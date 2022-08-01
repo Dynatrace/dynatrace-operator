@@ -9,7 +9,7 @@ manifests/kubernetes/csi:
 		--set olm="${OLM}" \
 		--set image="$(MASTER_IMAGE)" > "$(KUBERNETES_CSIDRIVER_YAML)"
 
-## Generates an Kubernetes manifest with a CRD
+## Generates a Kubernetes manifest with a CRD
 manifests/kubernetes/core: manifests/crd/helm prerequisites/kustomize
 	helm template dynatrace-operator config/helm/chart/default \
 			--namespace dynatrace \
@@ -19,11 +19,12 @@ manifests/kubernetes/core: manifests/crd/helm prerequisites/kustomize
 			--set olm="${OLM}" \
 			--set image="$(MASTER_IMAGE)" > "$(KUBERNETES_CORE_YAML)"
 
-manifests/kubernetes/autopilot: manifests/crd/helm prerequisites/kustomize
+## Generates a Kubernetes manifest with a CRD for gke-autopilot
+manifests/kubernetes/gke-autopilot: manifests/crd/helm prerequisites/kustomize
 	helm template dynatrace-operator config/helm/chart/default \
 			--namespace dynatrace \
 			--set installCRD=true \
-			--set platform="google-autopilot" \
+			--set platform="gke-autopilot" \
 			--set manifests=true \
 			--set olm="${OLM}" \
 			--set image="$(MASTER_IMAGE)" > "$(KUBERNETES_AUTOPILOT_YAML)"
