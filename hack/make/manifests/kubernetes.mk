@@ -30,7 +30,7 @@ manifests/kubernetes/gke-autopilot: manifests/crd/helm prerequisites/kustomize
 			--set image="$(MASTER_IMAGE)" > "$(KUBERNETES_AUTOPILOT_YAML)"
 
 ## Generates a manifest for Kubernetes including a CRD, a CSI driver deployment and a OLM version
-manifests/kubernetes: manifests/kubernetes/core manifests/kubernetes/csi manifests/kubernetes/autopilot
+manifests/kubernetes: manifests/kubernetes/core manifests/kubernetes/csi manifests/kubernetes/gke-autopilot
 	cp "$(KUBERNETES_CORE_YAML)" "$(KUBERNETES_OLM_YAML)"
 	cat "$(KUBERNETES_CORE_YAML)" "$(KUBERNETES_CSIDRIVER_YAML)" > "$(KUBERNETES_ALL_YAML)"
 
