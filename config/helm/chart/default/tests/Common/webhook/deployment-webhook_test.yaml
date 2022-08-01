@@ -370,7 +370,7 @@ tests:
 
   - it: should have only OS node affinity on GKE Autopilot
     set:
-      platform: google-autopilot
+      platform: gke-autopilot
     asserts:
       - equal:
           path: spec.template.spec.affinity
