@@ -30,8 +30,8 @@ func TestDynakubeQuery(t *testing.T) {
 
 func testProxyValue(t *testing.T) {
 	query := DynakubeQuery{
-		clt:       nil,
-		namespace: "",
+		kubeReader: nil,
+		namespace:  "",
 	}
 	proxy, err := query.Proxy(dynatracev1beta1.DynaKube{
 		Spec: dynatracev1beta1.DynaKubeSpec{
@@ -50,7 +50,7 @@ func testProxyValue(t *testing.T) {
 
 func testProxyValueFrom(t *testing.T) {
 	query := DynakubeQuery{
-		clt: fake.NewClient(&corev1.Secret{
+		kubeReader: fake.NewClient(&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{Name: testProxyName},
 			Data: map[string][]byte{
 				dynatracev1beta1.ProxyKey: []byte(testProxyData),
@@ -66,7 +66,7 @@ func testProxyValueFrom(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, testProxyData, proxy)
 
-	query.clt = fake.NewClient()
+	query.kubeReader = fake.NewClient()
 	proxy, err = query.Proxy(dynatracev1beta1.DynaKube{
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			Proxy: &dynatracev1beta1.DynaKubeProxy{ValueFrom: testProxyName},
@@ -79,7 +79,7 @@ func testProxyValueFrom(t *testing.T) {
 
 func testTrustedCAs(t *testing.T) {
 	query := DynakubeQuery{
-		clt: fake.NewClient(&corev1.ConfigMap{
+		kubeReader: fake.NewClient(&corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{Name: testConfigMapName},
 			Data: map[string]string{
 				dynatracev1beta1.TrustedCAKey: testConfigMapValue,
@@ -95,7 +95,7 @@ func testTrustedCAs(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, []byte(testConfigMapValue), trustedCAs)
 
-	query.clt = fake.NewClient()
+	query.kubeReader = fake.NewClient()
 	trustedCAs, err = query.TrustedCAs(dynatracev1beta1.DynaKube{
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			TrustedCAs: testConfigMapName,
@@ -115,7 +115,7 @@ func testTrustedCAs(t *testing.T) {
 
 func testTlsCert(t *testing.T) {
 	query := DynakubeQuery{
-		clt: fake.NewClient(&corev1.Secret{
+		kubeReader: fake.NewClient(&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{Name: testSecretName},
 			Data: map[string][]byte{
 				dynatracev1beta1.TlsCertKey: []byte(testSecretValue),
@@ -134,7 +134,7 @@ func testTlsCert(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, testSecretValue, tlsCert)
 
-	query.clt = fake.NewClient()
+	query.kubeReader = fake.NewClient()
 	tlsCert, err = query.TlsCert(dynatracev1beta1.DynaKube{
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			ActiveGate: dynatracev1beta1.ActiveGateSpec{

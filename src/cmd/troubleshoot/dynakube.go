@@ -58,7 +58,7 @@ func checkDynakubeCrdExists(troubleshootCtx *troubleshootContext) error {
 }
 
 func getSelectedDynakubeIfItExists(troubleshootCtx *troubleshootContext) error {
-	query := kubeobjects.NewDynakubeQuery(nil, troubleshootCtx.apiReader, troubleshootCtx.namespaceName).WithContext(context.TODO())
+	query := kubeobjects.NewDynakubeQuery(troubleshootCtx.apiReader, troubleshootCtx.namespaceName).WithContext(context.TODO())
 	if dynakube, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.dynakubeName}); err != nil {
 		return errorWithMessagef(err, "selected '%s:%s' Dynakube does not exist", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
 	} else {

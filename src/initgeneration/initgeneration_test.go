@@ -364,7 +364,7 @@ func testInitialConnectRetrySetCorrectly(t *testing.T) {
 	initGenerator := InitGenerator{
 		client:        clt,
 		namespace:     operatorNamespace,
-		dynakubeQuery: kubeobjects.NewDynakubeQuery(clt, nil, operatorNamespace),
+		dynakubeQuery: kubeobjects.NewDynakubeQuery(clt, operatorNamespace),
 	}
 	secretConfig, err := initGenerator.createSecretConfigForDynaKube(context.TODO(), dynakube, kubesystemUID, map[string]string{})
 

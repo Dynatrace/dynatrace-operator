@@ -38,7 +38,7 @@ func NewInitGenerator(client client.Client, apiReader client.Reader, namespace s
 		client:        client,
 		apiReader:     apiReader,
 		namespace:     namespace,
-		dynakubeQuery: kubeobjects.NewDynakubeQuery(client, nil, namespace),
+		dynakubeQuery: kubeobjects.NewDynakubeQuery(apiReader, namespace),
 	}
 }
 
