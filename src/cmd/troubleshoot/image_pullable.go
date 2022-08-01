@@ -1,7 +1,6 @@
 package troubleshoot
 
 import (
-	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -13,9 +12,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -44,25 +40,18 @@ type Auths struct {
 func checkImagePullable(troubleshootCtx *troubleshootContext) error {
 	log = newTroubleshootLogger("[imagepull ] ")
 
-	query := kubeobjects.NewDynakubeQuery(nil, troubleshootCtx.apiReader, troubleshootCtx.namespaceName).WithContext(context.TODO())
-	dynakube, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.dynakubeName})
-	if err != nil {
-		logWithErrorf(err, "selected '%s:%s' Dynakube does not exist", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
-		return err
-	}
-
 	if err := addProxy(troubleshootCtx); err != nil {
 		return err
 	}
 
-	if dynakube.NeedsOneAgent() {
+	if troubleshootCtx.dynakube.NeedsOneAgent() {
 		err := checkOneAgentImagePullable(troubleshootCtx)
 		if err != nil {
 			return err
 		}
 	}
 
-	if dynakube.NeedsActiveGate() {
+	if troubleshootCtx.dynakube.NeedsActiveGate() {
 		err := checkActiveGateImagePullable(troubleshootCtx)
 		if err != nil {
 			return err
@@ -74,17 +63,12 @@ func checkImagePullable(troubleshootCtx *troubleshootContext) error {
 func checkOneAgentImagePullable(troubleshootCtx *troubleshootContext) error {
 	logNewTestf("checking if OneAgent image is pullable ...")
 
-	pullSecretName, err := getPullSecretName(troubleshootCtx.apiReader, troubleshootCtx.dynakubeName, troubleshootCtx.namespaceName)
+	pullSecret, err := getPullSecretToken(troubleshootCtx)
 	if err != nil {
 		return err
 	}
 
-	pullSecret, err := getPullSecret(troubleshootCtx.apiReader, pullSecretName, troubleshootCtx.namespaceName)
-	if err != nil {
-		return err
-	}
-
-	dynakubeOneAgentImage, err := getOneAgentImageEndpoint(troubleshootCtx)
+	dynakubeOneAgentImage := getOneAgentImageEndpoint(troubleshootCtx)
 	if err != nil {
 		return err
 	}
@@ -99,16 +83,12 @@ func checkOneAgentImagePullable(troubleshootCtx *troubleshootContext) error {
 func checkActiveGateImagePullable(troubleshootCtx *troubleshootContext) error {
 	logNewTestf("checking if ActiveGate image is pullable ...")
 
-	pullSecretName, err := getPullSecretName(troubleshootCtx.apiReader, troubleshootCtx.dynakubeName, troubleshootCtx.namespaceName)
-	if err != nil {
-		return err
-	}
-	pullSecret, err := getPullSecret(troubleshootCtx.apiReader, pullSecretName, troubleshootCtx.namespaceName)
+	pullSecret, err := getPullSecretToken(troubleshootCtx)
 	if err != nil {
 		return err
 	}
 
-	dynakubeActiveGateImage, err := getActiveGateImageEndpoint(troubleshootCtx)
+	dynakubeActiveGateImage := getActiveGateImageEndpoint(troubleshootCtx)
 	if err != nil {
 		return err
 	}
@@ -176,25 +156,13 @@ func checkComponentImagePullable(httpClient *http.Client, componentName string, 
 }
 
 func addProxy(troubleshootCtx *troubleshootContext) error {
-	query := kubeobjects.NewDynakubeQuery(nil, troubleshootCtx.apiReader, troubleshootCtx.namespaceName).WithContext(context.TODO())
-	dynakube, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.dynakubeName})
-	if err != nil {
-		logWithErrorf(err, "selected '%s:%s' Dynakube does not exist", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
-		return err
-	}
-
 	proxyUrl := ""
-	if dynakube.Spec.Proxy != nil {
-		if dynakube.Spec.Proxy.Value != "" {
-			proxyUrl = dynakube.Spec.Proxy.Value
-		} else if dynakube.Spec.Proxy.ValueFrom != "" {
-			proxySecret := corev1.Secret{}
-			if err := troubleshootCtx.apiReader.Get(context.TODO(), client.ObjectKey{Name: dynakube.Spec.Proxy.ValueFrom, Namespace: troubleshootCtx.namespaceName}, &proxySecret); err != nil {
-				logWithErrorf(err, "'%s:%s' proxy secret is missing", dynakube.Spec.Proxy.ValueFrom, troubleshootCtx.dynatraceApiSecretName)
-				return err
-			}
+	if troubleshootCtx.dynakube.Spec.Proxy != nil {
+		if troubleshootCtx.dynakube.Spec.Proxy.Value != "" {
+			proxyUrl = troubleshootCtx.dynakube.Spec.Proxy.Value
+		} else if troubleshootCtx.dynakube.Spec.Proxy.ValueFrom != "" {
 			var err error
-			proxyUrl, err = kubeobjects.ExtractToken(&proxySecret, dtclient.CustomProxySecretKey)
+			proxyUrl, err = kubeobjects.ExtractToken(&troubleshootCtx.proxySecret, dtclient.CustomProxySecretKey)
 			if err != nil {
 				logWithErrorf(err, "failed to extract proxy secret field")
 				return fmt.Errorf("failed to extract proxy secret field")
@@ -239,70 +207,35 @@ func connectToDockerRegistry(httpClient *http.Client, httpMethod string, httpUrl
 	return resp.StatusCode, nil
 }
 
-func getPullSecretName(apiReader client.Reader, dynakubeName string, namespaceName string) (string, error) {
-	query := kubeobjects.NewDynakubeQuery(nil, apiReader, namespaceName).WithContext(context.TODO())
-	dynakube, err := query.Get(types.NamespacedName{Namespace: namespaceName, Name: dynakubeName})
-	if err != nil {
-		logWithErrorf(err, "selected '%s:%s' Dynakube does not exist", namespaceName, dynakubeName)
-		return "", err
-	}
-
-	pullSecretName := dynakubeName + pullSecretSuffix
-	if dynakube.Spec.CustomPullSecret != "" {
-		pullSecretName = dynakube.Spec.CustomPullSecret
-	}
-
-	return pullSecretName, nil
-}
-
-func getPullSecret(apiReader client.Reader, pullSecretName string, namespaceName string) (string, error) {
-	query := kubeobjects.NewSecretQuery(context.TODO(), nil, apiReader, log)
-	secret, err := query.Get(types.NamespacedName{Namespace: namespaceName, Name: pullSecretName})
-	if err != nil {
-		logWithErrorf(err, "'%s:%s' pull secret is missing", namespaceName, pullSecretName)
-		return "", err
-	}
-
-	secretBytes, ok := secret.Data[".dockerconfigjson"]
+func getPullSecretToken(troubleshootCtx *troubleshootContext) (string, error) {
+	secretBytes, ok := troubleshootCtx.pullSecret.Data[pullSecretFieldName]
 	if !ok {
-		logErrorf("token .dockerconfigjson does not exist in secret '%s'", pullSecretName)
-		return "", fmt.Errorf("token .dockerconfigjson does not exist in secret '%s'", pullSecretName)
+		logErrorf("token .dockerconfigjson does not exist in secret '%s'", troubleshootCtx.pullSecretName)
+		return "", fmt.Errorf("token .dockerconfigjson does not exist in secret '%s'", troubleshootCtx.pullSecretName)
 	}
 
 	secretStr := string(secretBytes)
 	return secretStr, nil
 }
 
-func getOneAgentImageEndpoint(troubleshootCtx *troubleshootContext) (string, error) {
-	query := kubeobjects.NewDynakubeQuery(nil, troubleshootCtx.apiReader, troubleshootCtx.namespaceName).WithContext(context.TODO())
-	dynakube, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.dynakubeName})
-	if err != nil {
-		logWithErrorf(err, "selected '%s:%s' Dynakube does not exist", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
-		return "", err
-	}
-
+func getOneAgentImageEndpoint(troubleshootCtx *troubleshootContext) string {
 	customImage := ""
 	imageEndpoint := ""
 	version := ""
 
-	//sr = [https://acc27517.dev.dynatracelabs.com/api acc27517.dev.dynatracelabs.com/api]
-	//er = [acc27517.dev.dynatracelabs.com/api acc27517.dev.dynatracelabs.com]
-
-	//image = "${api_url#*//}"
-	sr := removeSchemaRegex.FindStringSubmatch(dynakube.Spec.APIURL)
-	//image = "${image%/*}/linux/oneagent"
+	sr := removeSchemaRegex.FindStringSubmatch(troubleshootCtx.dynakube.Spec.APIURL)
 	er := removeApiEndpointRegex.FindStringSubmatch(sr[1])
 	imageEndpoint = er[1] + "/linux/oneagent"
 
-	if dynakube.ClassicFullStackMode() {
-		customImage = dynakube.Spec.OneAgent.ClassicFullStack.Image
-		version = dynakube.Spec.OneAgent.ClassicFullStack.Version
-	} else if dynakube.CloudNativeFullstackMode() {
-		customImage = dynakube.Spec.OneAgent.CloudNativeFullStack.Image
-		version = dynakube.Spec.OneAgent.CloudNativeFullStack.Version
-	} else if dynakube.HostMonitoringMode() {
-		customImage = dynakube.Spec.OneAgent.HostMonitoring.Image
-		version = dynakube.Spec.OneAgent.HostMonitoring.Version
+	if troubleshootCtx.dynakube.ClassicFullStackMode() {
+		customImage = troubleshootCtx.dynakube.Spec.OneAgent.ClassicFullStack.Image
+		version = troubleshootCtx.dynakube.Spec.OneAgent.ClassicFullStack.Version
+	} else if troubleshootCtx.dynakube.CloudNativeFullstackMode() {
+		customImage = troubleshootCtx.dynakube.Spec.OneAgent.CloudNativeFullStack.Image
+		version = troubleshootCtx.dynakube.Spec.OneAgent.CloudNativeFullStack.Version
+	} else if troubleshootCtx.dynakube.HostMonitoringMode() {
+		customImage = troubleshootCtx.dynakube.Spec.OneAgent.HostMonitoring.Image
+		version = troubleshootCtx.dynakube.Spec.OneAgent.HostMonitoring.Version
 	}
 
 	if customImage != "" {
@@ -312,31 +245,22 @@ func getOneAgentImageEndpoint(troubleshootCtx *troubleshootContext) (string, err
 	}
 
 	logInfof("OneAgent image endpoint '%s'", imageEndpoint)
-	return imageEndpoint, nil
+	return imageEndpoint
 }
 
-func getActiveGateImageEndpoint(troubleshootCtx *troubleshootContext) (string, error) {
-	query := kubeobjects.NewDynakubeQuery(nil, troubleshootCtx.apiReader, troubleshootCtx.namespaceName).WithContext(context.TODO())
-	dynakube, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.dynakubeName})
-	if err != nil {
-		logWithErrorf(err, "selected '%s:%s' Dynakube does not exist", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
-		return "", err
-	}
-
+func getActiveGateImageEndpoint(troubleshootCtx *troubleshootContext) string {
 	imageEndpoint := ""
 
-	//image = "${api_url#*//}"
-	sr := removeSchemaRegex.FindStringSubmatch(dynakube.Spec.APIURL)
-	//image = "${image%/*}/linux/activegate"
+	sr := removeSchemaRegex.FindStringSubmatch(troubleshootCtx.dynakube.Spec.APIURL)
 	er := removeApiEndpointRegex.FindStringSubmatch(sr[1])
 	imageEndpoint = er[1] + "/linux/activegate"
 
-	if dynakube.Spec.ActiveGate.Image != "" {
-		imageEndpoint = dynakube.Spec.ActiveGate.Image
+	if troubleshootCtx.dynakube.Spec.ActiveGate.Image != "" {
+		imageEndpoint = troubleshootCtx.dynakube.Spec.ActiveGate.Image
 	}
 
 	logInfof("ActiveGate image endpoint '%s'", imageEndpoint)
-	return imageEndpoint, nil
+	return imageEndpoint
 }
 
 func splitImageName(imageName string) (registry string, image string, version string, err error) {

@@ -25,8 +25,6 @@ const (
 )
 
 func TestDynakube(t *testing.T) {
-	// TODO checkDynakubeCrdExists test. How to mock apiReader.List
-
 	t.Run("dynakube exists", func(t *testing.T) {
 		clt := fake.NewClientBuilder().
 			WithScheme(scheme.Scheme).
@@ -37,7 +35,7 @@ func TestDynakube(t *testing.T) {
 			Build()
 
 		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
-		assert.NoErrorf(t, checkSelectedDynakubeExists(&troubleshootCtx), "no dynakube found")
+		assert.NoErrorf(t, getSelectedDynakubeIfItExists(&troubleshootCtx), "no dynakube found")
 	})
 	t.Run("dynakube does not exist", func(t *testing.T) {
 		clt := fake.NewClientBuilder().
@@ -49,7 +47,7 @@ func TestDynakube(t *testing.T) {
 			Build()
 
 		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testOtherDynakube}
-		assert.Errorf(t, checkSelectedDynakubeExists(&troubleshootCtx), "dynakube found")
+		assert.Errorf(t, getSelectedDynakubeIfItExists(&troubleshootCtx), "dynakube found")
 	})
 	t.Run("invalid namespace selected", func(t *testing.T) {
 		clt := fake.NewClientBuilder().
@@ -61,61 +59,30 @@ func TestDynakube(t *testing.T) {
 			Build()
 
 		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testOtherNamespace, dynakubeName: testDynakube}
-		assert.Errorf(t, checkSelectedDynakubeExists(&troubleshootCtx), "dynakube found")
+		assert.Errorf(t, getSelectedDynakubeIfItExists(&troubleshootCtx), "dynakube found")
 	})
 }
 
 func TestApiUrl(t *testing.T) {
 	t.Run("valid ApiUrl", func(t *testing.T) {
-		clt := fake.NewClientBuilder().
-			WithScheme(scheme.Scheme).
-			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).build(),
-				testBuildNamespace(testNamespace),
-			).
-			Build()
-
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
+		troubleshootCtx := troubleshootContext{namespaceName: testNamespace, dynakube: *testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).build()}
 		assert.NoErrorf(t, checkApiUrl(&troubleshootCtx), "invalid ApiUrl")
 	})
 	t.Run("invalid ApiUrl", func(t *testing.T) {
-		clt := fake.NewClientBuilder().
-			WithScheme(scheme.Scheme).
-			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testOtherApiUrl).build(),
-				testBuildNamespace(testNamespace),
-			).
-			Build()
 
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
+		troubleshootCtx := troubleshootContext{namespaceName: testNamespace, dynakube: *testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testOtherApiUrl).build()}
 		assert.Errorf(t, checkApiUrl(&troubleshootCtx), "valid ApiUrl")
 	})
 }
 
 func TestDynatraceSecret(t *testing.T) {
 	t.Run("default name of Dynatrace secret", func(t *testing.T) {
-		clt := fake.NewClientBuilder().
-			WithScheme(scheme.Scheme).
-			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).withTokens(testDynatraceSecret).build(),
-				testBuildNamespace(testNamespace),
-			).
-			Build()
-
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
+		troubleshootCtx := troubleshootContext{namespaceName: testNamespace, dynakube: *testNewDynakubeBuilder(testNamespace, testDynakube).withTokens(testDynatraceSecret).build()}
 		assert.NoErrorf(t, evaluateDynatraceApiSecretName(&troubleshootCtx), "missing dynakube")
 		assert.Equal(t, testDynakube, troubleshootCtx.dynatraceApiSecretName)
 	})
 	t.Run("custom name of Dynatrace secret", func(t *testing.T) {
-		clt := fake.NewClientBuilder().
-			WithScheme(scheme.Scheme).
-			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).withTokens(testOtherDynatraceSecret).build(),
-				testBuildNamespace(testNamespace),
-			).
-			Build()
-
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
+		troubleshootCtx := troubleshootContext{namespaceName: testNamespace, dynakube: *testNewDynakubeBuilder(testNamespace, testDynakube).withTokens(testOtherDynatraceSecret).build()}
 		assert.NoErrorf(t, evaluateDynatraceApiSecretName(&troubleshootCtx), "missing dynakube")
 		assert.Equal(t, testOtherDynatraceSecret, troubleshootCtx.dynatraceApiSecretName)
 	})
@@ -131,7 +98,7 @@ func TestDynatraceSecret(t *testing.T) {
 			Build()
 
 		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
-		assert.NoErrorf(t, checkSelectedDynakubeExists(&troubleshootCtx), "Dynatrace secret not found")
+		assert.NoErrorf(t, getSelectedDynakubeIfItExists(&troubleshootCtx), "Dynatrace secret not found")
 	})
 	t.Run("Dynatrace secret does not exist", func(t *testing.T) {
 		clt := fake.NewClientBuilder().
@@ -144,89 +111,29 @@ func TestDynatraceSecret(t *testing.T) {
 			Build()
 
 		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
-		assert.Errorf(t, checkIfDynatraceApiSecretWithTheGivenNameExists(&troubleshootCtx), "Dynatrace secret found")
+		assert.Errorf(t, getDynatraceApiSecretIfItExists(&troubleshootCtx), "Dynatrace secret found")
 	})
 
 	t.Run("Dynatrace secret has apiToken token", func(t *testing.T) {
-		clt := fake.NewClientBuilder().
-			WithScheme(scheme.Scheme).
-			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).withTokens(testDynatraceSecret).build(),
-				testBuildNamespace(testNamespace),
-				testNewSecretBuilder(testNamespace, testDynatraceSecret).dataAppend("apiToken", testApiToken).dataAppend("paasToken", testPaasToken).build(),
-			).
-			Build()
-
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube, dynatraceApiSecretName: testDynatraceSecret}
+		troubleshootCtx := troubleshootContext{namespaceName: testNamespace, dynatraceApiSecret: *testNewSecretBuilder(testNamespace, testDynatraceSecret).dataAppend("apiToken", testApiToken).dataAppend("paasToken", testPaasToken).build()}
 		assert.NoErrorf(t, checkIfDynatraceApiSecretHasApiToken(&troubleshootCtx), "Dynatrace secret does not have required tokens")
 	})
 	t.Run("Dynatrace secret - apiToken is missing", func(t *testing.T) {
-		clt := fake.NewClientBuilder().
-			WithScheme(scheme.Scheme).
-			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).withTokens(testDynatraceSecret).build(),
-				testBuildNamespace(testNamespace),
-				testNewSecretBuilder(testNamespace, testDynatraceSecret).dataAppend("paasToken", testPaasToken).build(),
-			).
-			Build()
-
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube, dynatraceApiSecretName: testDynatraceSecret}
+		troubleshootCtx := troubleshootContext{namespaceName: testNamespace, dynatraceApiSecret: *testNewSecretBuilder(testNamespace, testDynatraceSecret).dataAppend("paasToken", testPaasToken).build()}
 		assert.Errorf(t, checkIfDynatraceApiSecretHasApiToken(&troubleshootCtx), "Dynatrace secret does not have apiToken")
-	})
-	t.Run("Dynatrace secret has paasToken token", func(t *testing.T) {
-		clt := fake.NewClientBuilder().
-			WithScheme(scheme.Scheme).
-			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).withTokens(testDynatraceSecret).build(),
-				testBuildNamespace(testNamespace),
-				testNewSecretBuilder(testNamespace, testDynatraceSecret).dataAppend("apiToken", testApiToken).dataAppend("paasToken", testPaasToken).build(),
-			).
-			Build()
-
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube, dynatraceApiSecretName: testDynatraceSecret}
-		assert.NoErrorf(t, checkIfDynatraceApiSecretHasPaasToken(&troubleshootCtx), "Dynatrace secret does not have required tokens")
-	})
-	t.Run("Dynatrace secret - paasToken is missing", func(t *testing.T) {
-		clt := fake.NewClientBuilder().
-			WithScheme(scheme.Scheme).
-			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).withTokens(testDynatraceSecret).build(),
-				testBuildNamespace(testNamespace),
-				testNewSecretBuilder(testNamespace, testDynatraceSecret).dataAppend("apiToken", testApiToken).build(),
-			).
-			Build()
-
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube, dynatraceApiSecretName: testDynatraceSecret}
-		assert.Errorf(t, checkIfDynatraceApiSecretHasPaasToken(&troubleshootCtx), "Dynatrace secret does not have paasToken")
 	})
 }
 
-func TestCustomPullSecret(t *testing.T) {
+func TestPullSecret(t *testing.T) {
 	t.Run("no custom pull secret", func(t *testing.T) {
-		clt := fake.NewClientBuilder().
-			WithScheme(scheme.Scheme).
-			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).build(),
-				testBuildNamespace(testNamespace),
-			).
-			Build()
-
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
-		assert.NoErrorf(t, evaluateCustomPullSecret(&troubleshootCtx), "missing dynakube")
-		assert.Equal(t, "", troubleshootCtx.customPullSecretName)
+		troubleshootCtx := troubleshootContext{namespaceName: testNamespace, dynakubeName: testDynakube, dynakube: *testNewDynakubeBuilder(testNamespace, testDynakube).build()}
+		_ = evaluatePullSecret(&troubleshootCtx)
+		assert.Equal(t, testDynakube+pullSecretSuffix, troubleshootCtx.pullSecretName)
 	})
 	t.Run("custom pull secret defined", func(t *testing.T) {
-		clt := fake.NewClientBuilder().
-			WithScheme(scheme.Scheme).
-			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).withCustomPullSecret(testSecretName).build(),
-				testBuildNamespace(testNamespace),
-			).
-			Build()
-
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
-		assert.NoErrorf(t, evaluateCustomPullSecret(&troubleshootCtx), "missing dynakube")
-		assert.Equal(t, testSecretName, troubleshootCtx.customPullSecretName)
+		troubleshootCtx := troubleshootContext{namespaceName: testNamespace, dynakubeName: testDynakube, dynakube: *testNewDynakubeBuilder(testNamespace, testDynakube).withCustomPullSecret(testSecretName).build()}
+		_ = evaluatePullSecret(&troubleshootCtx)
+		assert.Equal(t, testSecretName, troubleshootCtx.pullSecretName)
 	})
 	t.Run("custom pull secret exists", func(t *testing.T) {
 		clt := fake.NewClientBuilder().
@@ -238,8 +145,8 @@ func TestCustomPullSecret(t *testing.T) {
 			).
 			Build()
 
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube, customPullSecretName: testSecretName}
-		assert.NoErrorf(t, checkIfCustomPullSecretWithTheGivenNameExists(&troubleshootCtx), "custom pull secret not found")
+		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, pullSecretName: testSecretName}
+		assert.NoErrorf(t, getPullSecretIfItExists(&troubleshootCtx), "custom pull secret not found")
 	})
 	t.Run("custom pull secret does not exist", func(t *testing.T) {
 		clt := fake.NewClientBuilder().
@@ -250,62 +157,28 @@ func TestCustomPullSecret(t *testing.T) {
 			).
 			Build()
 
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube, customPullSecretName: testSecretName}
-		assert.Errorf(t, checkIfCustomPullSecretWithTheGivenNameExists(&troubleshootCtx), "custom pull secret found")
+		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, pullSecretName: testSecretName}
+		assert.Errorf(t, getPullSecretIfItExists(&troubleshootCtx), "custom pull secret found")
 	})
 	t.Run("custom pull secret has required tokens", func(t *testing.T) {
-		clt := fake.NewClientBuilder().
-			WithScheme(scheme.Scheme).
-			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).withCustomPullSecret(testSecretName).build(),
-				testBuildNamespace(testNamespace),
-				testNewSecretBuilder(testNamespace, testSecretName).dataAppend(".dockerconfigjson", testCustomPullSecretToken).build(),
-			).
-			Build()
-
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube, customPullSecretName: testSecretName}
-		assert.NoErrorf(t, checkCustomPullSecretHasRequiredTokens(&troubleshootCtx), "custom pull secret does not have required tokens")
+		troubleshootCtx := troubleshootContext{namespaceName: testNamespace, pullSecretName: testSecretName, pullSecret: *testNewSecretBuilder(testNamespace, testSecretName).dataAppend(".dockerconfigjson", testCustomPullSecretToken).build()}
+		assert.NoErrorf(t, checkPullSecretHasRequiredTokens(&troubleshootCtx), "custom pull secret does not have required tokens")
 	})
 	t.Run("custom pull secret does not have required tokens", func(t *testing.T) {
-		clt := fake.NewClientBuilder().
-			WithScheme(scheme.Scheme).
-			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).withCustomPullSecret(testSecretName).build(),
-				testBuildNamespace(testNamespace),
-				testNewSecretBuilder(testNamespace, testSecretName).build(),
-			).
-			Build()
-
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube, customPullSecretName: testSecretName}
-		assert.Errorf(t, checkCustomPullSecretHasRequiredTokens(&troubleshootCtx), "custom pull secret has required tokens")
+		troubleshootCtx := troubleshootContext{namespaceName: testNamespace, pullSecretName: testSecretName, pullSecret: *testNewSecretBuilder(testNamespace, testSecretName).build()}
+		assert.Errorf(t, checkPullSecretHasRequiredTokens(&troubleshootCtx), "custom pull secret has required tokens")
 	})
 }
 
 func TestProxySecret(t *testing.T) {
 	t.Run("no proxy secret", func(t *testing.T) {
-		clt := fake.NewClientBuilder().
-			WithScheme(scheme.Scheme).
-			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).build(),
-				testBuildNamespace(testNamespace),
-			).
-			Build()
-
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
-		assert.NoErrorf(t, evaluateProxySecret(&troubleshootCtx), "missing dynakube")
+		troubleshootCtx := troubleshootContext{namespaceName: testNamespace, dynakube: *testNewDynakubeBuilder(testNamespace, testDynakube).build()}
+		_ = evaluateProxySecret(&troubleshootCtx)
 		assert.Equal(t, "", troubleshootCtx.proxySecretName)
 	})
 	t.Run("proxy secret defined", func(t *testing.T) {
-		clt := fake.NewClientBuilder().
-			WithScheme(scheme.Scheme).
-			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).withProxySecret(testSecretName).build(),
-				testBuildNamespace(testNamespace),
-			).
-			Build()
-
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
-		assert.NoErrorf(t, evaluateProxySecret(&troubleshootCtx), "missing dynakube")
+		troubleshootCtx := troubleshootContext{namespaceName: testNamespace, dynakube: *testNewDynakubeBuilder(testNamespace, testDynakube).withProxySecret(testSecretName).build()}
+		_ = evaluateProxySecret(&troubleshootCtx)
 		assert.Equal(t, testSecretName, troubleshootCtx.proxySecretName)
 	})
 	t.Run("proxy secret exists", func(t *testing.T) {
@@ -319,7 +192,7 @@ func TestProxySecret(t *testing.T) {
 			Build()
 
 		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube, proxySecretName: testSecretName}
-		assert.NoErrorf(t, checkIfProxySecretWithTheGivenNameExists(&troubleshootCtx), "proxy secret not found")
+		assert.NoErrorf(t, getProxySecretIfItExists(&troubleshootCtx), "proxy secret not found")
 	})
 	t.Run("proxy secret does not exist", func(t *testing.T) {
 		clt := fake.NewClientBuilder().
@@ -331,32 +204,14 @@ func TestProxySecret(t *testing.T) {
 			Build()
 
 		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube, proxySecretName: testSecretName}
-		assert.Errorf(t, checkIfProxySecretWithTheGivenNameExists(&troubleshootCtx), "proxy secret found")
+		assert.Errorf(t, getProxySecretIfItExists(&troubleshootCtx), "proxy secret found")
 	})
 	t.Run("proxy secret has required tokens", func(t *testing.T) {
-		clt := fake.NewClientBuilder().
-			WithScheme(scheme.Scheme).
-			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).withProxySecret(testSecretName).build(),
-				testBuildNamespace(testNamespace),
-				testNewSecretBuilder(testNamespace, testSecretName).dataAppend(dtclient.CustomProxySecretKey, testCustomPullSecretToken).build(),
-			).
-			Build()
-
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube, proxySecretName: testSecretName}
+		troubleshootCtx := troubleshootContext{namespaceName: testNamespace, proxySecretName: testSecretName, proxySecret: *testNewSecretBuilder(testNamespace, testSecretName).dataAppend(dtclient.CustomProxySecretKey, testCustomPullSecretToken).build()}
 		assert.NoErrorf(t, checkProxySecretHasRequiredTokens(&troubleshootCtx), "proxy secret does not have required tokens")
 	})
 	t.Run("proxy secret does not have required tokens", func(t *testing.T) {
-		clt := fake.NewClientBuilder().
-			WithScheme(scheme.Scheme).
-			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).withProxySecret(testSecretName).build(),
-				testBuildNamespace(testNamespace),
-				testNewSecretBuilder(testNamespace, testSecretName).build(),
-			).
-			Build()
-
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube, proxySecretName: testSecretName}
+		troubleshootCtx := troubleshootContext{namespaceName: testNamespace, proxySecretName: testSecretName, proxySecret: *testNewSecretBuilder(testNamespace, testSecretName).build()}
 		assert.Errorf(t, checkProxySecretHasRequiredTokens(&troubleshootCtx), "proxy secret has required tokens")
 	})
 }

@@ -92,7 +92,8 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		troubleshootCtx := troubleshootContext{apiReader: apiReader, httpClient: httpClient, namespaceName: namespaceFlagValue, dynakubeName: dynakubeFlagValue}
 		for _, test := range tests {
 			if err := test(&troubleshootCtx); err != nil {
-				return nil // error message would be printed twice
+				logErrorf(err.Error())
+				return nil
 			}
 		}
 		return nil

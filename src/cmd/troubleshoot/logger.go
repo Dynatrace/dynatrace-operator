@@ -39,7 +39,7 @@ func newTroubleshootLogger(testName string) logr.Logger {
 }
 
 //
-// Troubleshoot fmt-like log interface
+// Troubleshoot fmt-like log wrappers
 //
 
 func logNewTestf(format string, v ...interface{}) {
@@ -61,6 +61,11 @@ func logErrorf(format string, v ...interface{}) {
 func logWithErrorf(err error, format string, v ...interface{}) {
 	message := fmt.Sprintf(format, v...)
 	log.V(levelError).Info(fmt.Sprintf("%s {\"error\": %s}", message, err.Error()))
+}
+
+func errorWithMessagef(err error, format string, v ...interface{}) error {
+	message := fmt.Sprintf(format, v...)
+	return fmt.Errorf("%s {\"error\": %s}", message, err.Error())
 }
 
 //

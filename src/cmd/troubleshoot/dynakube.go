@@ -24,24 +24,23 @@ func checkDynakube(troubleshootCtx *troubleshootContext) error {
 
 	tests := []troubleshootFunc{
 		checkDynakubeCrdExists,
-		checkSelectedDynakubeExists,
+		getSelectedDynakubeIfItExists,
 		checkApiUrl,
 		evaluateDynatraceApiSecretName,
-		checkIfDynatraceApiSecretWithTheGivenNameExists,
+		getDynatraceApiSecretIfItExists,
 		checkIfDynatraceApiSecretHasApiToken,
-		checkIfDynatraceApiSecretHasPaasToken,
-		evaluateCustomPullSecret,
-		checkIfCustomPullSecretWithTheGivenNameExists,
-		checkCustomPullSecretHasRequiredTokens,
+		evaluatePullSecret,
+		getPullSecretIfItExists,
+		checkPullSecretHasRequiredTokens,
 		evaluateProxySecret,
-		checkIfProxySecretWithTheGivenNameExists,
+		getProxySecretIfItExists,
 		checkProxySecretHasRequiredTokens,
 	}
 
 	for _, test := range tests {
 		if err := test(troubleshootCtx); err != nil {
-			logErrorf("'%s:%s' Dynakube isn't valid", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
-			return err
+			logErrorf(err.Error())
+			return fmt.Errorf("'%s:%s' Dynakube isn't valid", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
 		}
 	}
 
@@ -52,18 +51,18 @@ func checkDynakube(troubleshootCtx *troubleshootContext) error {
 func checkDynakubeCrdExists(troubleshootCtx *troubleshootContext) error {
 	dynakubeList := &dynatracev1beta1.DynaKubeList{}
 	if err := troubleshootCtx.apiReader.List(context.TODO(), dynakubeList, &client.ListOptions{Namespace: troubleshootCtx.namespaceName}); err != nil {
-		logWithErrorf(err, "CRD for Dynakube missing")
-		return err
+		return errorWithMessagef(err, "CRD for Dynakube missing")
 	}
 	logInfof("CRD for Dynakube exists")
 	return nil
 }
 
-func checkSelectedDynakubeExists(troubleshootCtx *troubleshootContext) error {
+func getSelectedDynakubeIfItExists(troubleshootCtx *troubleshootContext) error {
 	query := kubeobjects.NewDynakubeQuery(nil, troubleshootCtx.apiReader, troubleshootCtx.namespaceName).WithContext(context.TODO())
-	if _, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.dynakubeName}); err != nil {
-		logWithErrorf(err, "selected '%s:%s' Dynakube does not exist", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
-		return err
+	if dynakube, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.dynakubeName}); err != nil {
+		return errorWithMessagef(err, "selected '%s:%s' Dynakube does not exist", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
+	} else {
+		troubleshootCtx.dynakube = dynakube
 	}
 	logInfof("using '%s:%s' Dynakube", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
 	return nil
@@ -72,20 +71,11 @@ func checkSelectedDynakubeExists(troubleshootCtx *troubleshootContext) error {
 func checkApiUrl(troubleshootCtx *troubleshootContext) error {
 	logInfof("checking if api url is valid")
 
-	query := kubeobjects.NewDynakubeQuery(nil, troubleshootCtx.apiReader, troubleshootCtx.namespaceName).WithContext(context.TODO())
-	dynakube, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.dynakubeName})
-	if err != nil {
-		logWithErrorf(err, "selected '%s:%s' Dynakube does not exist", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
-		return err
-	}
-
 	validation.SetLogger(log)
-	if validation.NoApiUrl(nil, &dynakube) != "" {
-		logErrorf("api url is invalid")
+	if validation.NoApiUrl(nil, &troubleshootCtx.dynakube) != "" {
 		return fmt.Errorf("api url is invalid")
 	}
-	if validation.IsInvalidApiUrl(nil, &dynakube) != "" {
-		logErrorf("api url is invalid")
+	if validation.IsInvalidApiUrl(nil, &troubleshootCtx.dynakube) != "" {
 		return fmt.Errorf("api url is invalid")
 	}
 
@@ -99,125 +89,67 @@ func evaluateDynatraceApiSecretName(troubleshootCtx *troubleshootContext) error 
 	// use dynakube name or tokens value if set
 	troubleshootCtx.dynatraceApiSecretName = troubleshootCtx.dynakubeName
 
-	query := kubeobjects.NewDynakubeQuery(nil, troubleshootCtx.apiReader, troubleshootCtx.namespaceName).WithContext(context.TODO())
-	dynakube, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.dynakubeName})
-	if err != nil {
-		logWithErrorf(err, "selected '%s:%s' Dynakube does not exist", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
-		return err
-	}
-
-	if dynakube.Spec.Tokens != "" {
-		troubleshootCtx.dynatraceApiSecretName = dynakube.Spec.Tokens
+	if troubleshootCtx.dynakube.Spec.Tokens != "" {
+		troubleshootCtx.dynatraceApiSecretName = troubleshootCtx.dynakube.Spec.Tokens
 	}
 	return nil
 }
 
-func checkIfDynatraceApiSecretWithTheGivenNameExists(troubleshootCtx *troubleshootContext) error {
+func getDynatraceApiSecretIfItExists(troubleshootCtx *troubleshootContext) error {
 	query := kubeobjects.NewSecretQuery(context.TODO(), nil, troubleshootCtx.apiReader, log)
-	if _, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.dynatraceApiSecretName}); err != nil {
-		logWithErrorf(err, "'%s:%s' secret is missing", troubleshootCtx.namespaceName, troubleshootCtx.dynatraceApiSecretName)
-		return err
+	if secret, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.dynatraceApiSecretName}); err != nil {
+		return errorWithMessagef(err, "'%s:%s' secret is missing", troubleshootCtx.namespaceName, troubleshootCtx.dynatraceApiSecretName)
+	} else {
+		troubleshootCtx.dynatraceApiSecret = secret
 	}
 	logInfof("'%s:%s' secret exists", troubleshootCtx.namespaceName, troubleshootCtx.dynatraceApiSecretName)
 	return nil
 }
 
 func checkIfDynatraceApiSecretHasApiToken(troubleshootCtx *troubleshootContext) error {
-	query := kubeobjects.NewSecretQuery(context.TODO(), nil, troubleshootCtx.apiReader, log)
-	secret, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.dynatraceApiSecretName})
-	if err != nil {
-		logWithErrorf(err, "'%s:%s' secret is missing", troubleshootCtx.namespaceName, troubleshootCtx.dynatraceApiSecretName)
-		return err
-	}
-
-	apiTokenByte, ok := secret.Data["apiToken"]
+	apiTokenByte, ok := troubleshootCtx.dynatraceApiSecret.Data["apiToken"]
 	if !ok {
-		logErrorf("token apiToken does not exist in '%s:%s' secret", troubleshootCtx.namespaceName, troubleshootCtx.dynatraceApiSecretName)
-		return fmt.Errorf("token apiToken does not exist in secret")
+		return fmt.Errorf("'apiToken' token does not exist in '%s:%s' secret", troubleshootCtx.namespaceName, troubleshootCtx.dynatraceApiSecretName)
 	}
 
 	apiToken := string(apiTokenByte)
 	if apiToken == "" {
-		return fmt.Errorf("token apiToken does not exist in secret")
+		return fmt.Errorf("'apiToken' token is empty  in '%s:%s' secret", troubleshootCtx.namespaceName, troubleshootCtx.dynatraceApiSecretName)
 	}
 
 	logInfof("secret token 'apiToken' exists")
 	return nil
 }
 
-func checkIfDynatraceApiSecretHasPaasToken(troubleshootCtx *troubleshootContext) error {
-	query := kubeobjects.NewSecretQuery(context.TODO(), nil, troubleshootCtx.apiReader, log)
-	secret, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.dynatraceApiSecretName})
-	if err != nil {
-		logWithErrorf(err, "'%s:%s' secret is missing", troubleshootCtx.namespaceName, troubleshootCtx.dynatraceApiSecretName)
-		return err
-	}
-
-	paasTokenByte, ok := secret.Data["paasToken"]
-	if !ok {
-		logErrorf("token paasToken does not exist in '%s:%s' secret", troubleshootCtx.namespaceName, troubleshootCtx.dynatraceApiSecretName)
-		return fmt.Errorf("token paasToken does not exist in secret")
-	}
-
-	paasToken := string(paasTokenByte)
-	if paasToken == "" {
-		logInfof("token paasToken does not exist in secret")
-	} else {
-		logInfof("secret token 'paasToken' exists")
-	}
-	return nil
-}
-
-func evaluateCustomPullSecret(troubleshootCtx *troubleshootContext) error {
-	query := kubeobjects.NewDynakubeQuery(nil, troubleshootCtx.apiReader, troubleshootCtx.namespaceName).WithContext(context.TODO())
-	dynakube, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.dynakubeName})
-	if err != nil {
-		logWithErrorf(err, "selected '%s:%s' Dynakube does not exist", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
-		return err
-	}
-
-	if dynakube.Spec.CustomPullSecret == "" {
+func evaluatePullSecret(troubleshootCtx *troubleshootContext) error {
+	if troubleshootCtx.dynakube.Spec.CustomPullSecret == "" {
+		troubleshootCtx.pullSecretName = troubleshootCtx.dynakubeName + pullSecretSuffix
 		logInfof("customPullSecret not used")
 		return nil
 	}
 
-	troubleshootCtx.customPullSecretName = dynakube.Spec.CustomPullSecret
-	logInfof("'%s:%s' custom pull secret is used", troubleshootCtx.namespaceName, troubleshootCtx.customPullSecretName)
+	troubleshootCtx.pullSecretName = troubleshootCtx.dynakube.Spec.CustomPullSecret
+	logInfof("'%s:%s' pull secret is used", troubleshootCtx.namespaceName, troubleshootCtx.pullSecretName)
 	return nil
 }
 
-func checkIfCustomPullSecretWithTheGivenNameExists(troubleshootCtx *troubleshootContext) error {
-	if troubleshootCtx.customPullSecretName == "" {
-		return nil
-	}
-
+func getPullSecretIfItExists(troubleshootCtx *troubleshootContext) error {
 	query := kubeobjects.NewSecretQuery(context.TODO(), nil, troubleshootCtx.apiReader, log)
-	_, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.customPullSecretName})
+	secret, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.pullSecretName})
 	if err != nil {
-		logWithErrorf(err, "'%s:%s' custom pull secret is missing", troubleshootCtx.namespaceName, troubleshootCtx.customPullSecretName)
-		return err
+		return errorWithMessagef(err, "'%s:%s' pull secret is missing", troubleshootCtx.namespaceName, troubleshootCtx.pullSecretName)
+	} else {
+		troubleshootCtx.pullSecret = secret
 	}
 
-	logInfof("custom pull secret '%s:%s' exists", troubleshootCtx.namespaceName, troubleshootCtx.customPullSecretName)
+	logInfof("pull secret '%s:%s' exists", troubleshootCtx.namespaceName, troubleshootCtx.pullSecretName)
 	return nil
 }
 
-func checkCustomPullSecretHasRequiredTokens(troubleshootCtx *troubleshootContext) error {
-	if troubleshootCtx.customPullSecretName == "" {
-		return nil
-	}
-
-	query := kubeobjects.NewSecretQuery(context.TODO(), nil, troubleshootCtx.apiReader, log)
-	secret, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.customPullSecretName})
-	if err != nil {
-		logWithErrorf(err, "'%s:%s' custom pull secret is missing", troubleshootCtx.namespaceName, troubleshootCtx.customPullSecretName)
-		return err
-	}
-
-	_, hasConfig := secret.Data[pullSecretFieldName]
+func checkPullSecretHasRequiredTokens(troubleshootCtx *troubleshootContext) error {
+	_, hasConfig := troubleshootCtx.pullSecret.Data[pullSecretFieldName]
 	if !hasConfig {
-		logErrorf("token '%s' does not exist in '%s:%s' secret", pullSecretFieldName, troubleshootCtx.namespaceName, troubleshootCtx.customPullSecretName)
-		return fmt.Errorf("token '%s' does not exist in '%s:%s' secret", pullSecretFieldName, troubleshootCtx.namespaceName, troubleshootCtx.customPullSecretName)
+		return fmt.Errorf("'%s' token does not exist in '%s:%s' secret", pullSecretFieldName, troubleshootCtx.namespaceName, troubleshootCtx.pullSecretName)
 	}
 
 	logInfof("secret token '%s' exists", pullSecretFieldName)
@@ -225,32 +157,26 @@ func checkCustomPullSecretHasRequiredTokens(troubleshootCtx *troubleshootContext
 }
 
 func evaluateProxySecret(troubleshootCtx *troubleshootContext) error {
-	query := kubeobjects.NewDynakubeQuery(nil, troubleshootCtx.apiReader, troubleshootCtx.namespaceName).WithContext(context.TODO())
-	dynakube, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.dynakubeName})
-	if err != nil {
-		logWithErrorf(err, "selected '%s:%s' Dynakube does not exist", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
-		return err
-	}
-
-	if dynakube.Spec.Proxy == nil || dynakube.Spec.Proxy.ValueFrom == "" {
+	if troubleshootCtx.dynakube.Spec.Proxy == nil || troubleshootCtx.dynakube.Spec.Proxy.ValueFrom == "" {
 		logInfof("proxy secret not used")
 		return nil
 	}
 
-	troubleshootCtx.proxySecretName = dynakube.Spec.Proxy.ValueFrom
+	troubleshootCtx.proxySecretName = troubleshootCtx.dynakube.Spec.Proxy.ValueFrom
 	logInfof("'%s:%s' proxy secret is used", troubleshootCtx.namespaceName, troubleshootCtx.proxySecretName)
 	return nil
 }
 
-func checkIfProxySecretWithTheGivenNameExists(troubleshootCtx *troubleshootContext) error {
+func getProxySecretIfItExists(troubleshootCtx *troubleshootContext) error {
 	if troubleshootCtx.proxySecretName == "" {
 		return nil
 	}
 
 	query := kubeobjects.NewSecretQuery(context.TODO(), nil, troubleshootCtx.apiReader, log)
-	if _, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.proxySecretName}); err != nil {
-		logWithErrorf(err, "'%s:%s' proxy secret is missing", troubleshootCtx.namespaceName, troubleshootCtx.proxySecretName)
-		return err
+	if secret, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.proxySecretName}); err != nil {
+		return errorWithMessagef(err, "'%s:%s' proxy secret is missing", troubleshootCtx.namespaceName, troubleshootCtx.proxySecretName)
+	} else {
+		troubleshootCtx.proxySecret = secret
 	}
 
 	logInfof("custom pull secret '%s:%s' exists", troubleshootCtx.namespaceName, troubleshootCtx.proxySecretName)
@@ -262,17 +188,9 @@ func checkProxySecretHasRequiredTokens(troubleshootCtx *troubleshootContext) err
 		return nil
 	}
 
-	query := kubeobjects.NewSecretQuery(context.TODO(), nil, troubleshootCtx.apiReader, log)
-	secret, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.proxySecretName})
-	if err != nil {
-		logWithErrorf(err, "'%s:%s' proxy secret is missing", troubleshootCtx.namespaceName, troubleshootCtx.proxySecretName)
-		return err
-	}
-
-	_, hasProxy := secret.Data[dtclient.CustomProxySecretKey]
+	_, hasProxy := troubleshootCtx.proxySecret.Data[dtclient.CustomProxySecretKey]
 	if !hasProxy {
-		logErrorf("token '%s' does not exist in '%s:%s' secret", dtclient.CustomProxySecretKey, troubleshootCtx.namespaceName, troubleshootCtx.proxySecretName)
-		return fmt.Errorf("token '%s' does not exist in '%s:%s' secret", dtclient.CustomProxySecretKey, troubleshootCtx.namespaceName, troubleshootCtx.proxySecretName)
+		return fmt.Errorf("'%s' token does not exist in '%s:%s' secret", dtclient.CustomProxySecretKey, troubleshootCtx.namespaceName, troubleshootCtx.proxySecretName)
 	}
 
 	logInfof("secret token '%s' exists", dtclient.CustomProxySecretKey)

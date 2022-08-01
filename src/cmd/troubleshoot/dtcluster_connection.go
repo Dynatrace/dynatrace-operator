@@ -2,11 +2,10 @@ package troubleshoot
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 func checkDTClusterConnection(troubleshootCtx *troubleshootContext) error {
@@ -14,31 +13,35 @@ func checkDTClusterConnection(troubleshootCtx *troubleshootContext) error {
 
 	logNewTestf("checking if tenant is accessible ...")
 
-	query := kubeobjects.NewDynakubeQuery(nil, troubleshootCtx.apiReader, troubleshootCtx.namespaceName).WithContext(context.TODO())
-	dk, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.dynakubeName})
-	if err != nil {
-		logWithErrorf(err, "selected '%s:%s' Dynakube does not exist", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
-		return err
+	tests := []troubleshootFunc{
+		checkConnection,
 	}
 
-	dynatraceClientProperties, err := dynakube.NewDynatraceClientProperties(context.TODO(), troubleshootCtx.apiReader, dk)
+	for _, test := range tests {
+		if err := test(troubleshootCtx); err != nil {
+			logErrorf(err.Error())
+			return fmt.Errorf("tenant isn't  accessible")
+		}
+	}
+
+	logOkf("tenant is accessible")
+	return nil
+}
+
+func checkConnection(troubleshootCtx *troubleshootContext) error {
+	dynatraceClientProperties, err := dynakube.NewDynatraceClientProperties(context.TODO(), troubleshootCtx.apiReader, troubleshootCtx.dynakube)
 	if err != nil {
-		logWithErrorf(err, "failed to configure DynatraceAPI client")
-		return err
+		return errorWithMessagef(err, "failed to configure DynatraceAPI client")
 	}
 
 	dtc, err := dynakube.BuildDynatraceClient(*dynatraceClientProperties)
 	if err != nil {
-		logWithErrorf(err, "failed to build DynatraceAPI client")
-		return err
+		return errorWithMessagef(err, "failed to build DynatraceAPI client")
 	}
 
 	_, err = dtc.GetLatestAgentVersion(dtclient.OsUnix, dtclient.InstallerTypeDefault)
 	if err != nil {
-		logWithErrorf(err, "failed to connect to DynatraceAPI")
-		return err
+		return errorWithMessagef(err, "failed to connect to DynatraceAPI")
 	}
-
-	logOkf("tenant is accessible")
 	return nil
 }

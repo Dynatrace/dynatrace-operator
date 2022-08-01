@@ -6,9 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/stretchr/testify/assert"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 const (
@@ -56,16 +54,14 @@ func TestOneAgentImagePullable(t *testing.T) {
 		authsBytes, err := json.Marshal(auths)
 		assert.NoErrorf(t, err, "fix it please")
 
-		clt := fake.NewClientBuilder().
-			WithScheme(scheme.Scheme).
-			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(dockerServer.URL+"/api").build(),
-				testBuildNamespace(testNamespace),
-				testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend(pullSecretFieldName, string(authsBytes)).build(),
-			).
-			Build()
-
-		troubleshootCtx := troubleshootContext{apiReader: clt, httpClient: dockerServer.Client(), namespaceName: testNamespace, dynakubeName: testDynakube}
+		troubleshootCtx := troubleshootContext{
+			httpClient:     dockerServer.Client(),
+			namespaceName:  testNamespace,
+			dynakubeName:   testDynakube,
+			dynakube:       *testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(dockerServer.URL + "/api").build(),
+			pullSecretName: testDynakube + pullSecretSuffix,
+			pullSecret:     *testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend(pullSecretFieldName, string(authsBytes)).build(),
+		}
 
 		err = checkOneAgentImagePullable(&troubleshootCtx)
 		assert.NoErrorf(t, err, "unexpected error")
@@ -98,16 +94,14 @@ func TestActiveGateImagePullable(t *testing.T) {
 		authsBytes, err := json.Marshal(auths)
 		assert.NoErrorf(t, err, "fix it please")
 
-		clt := fake.NewClientBuilder().
-			WithScheme(scheme.Scheme).
-			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(dockerServer.URL+"/api").build(),
-				testBuildNamespace(testNamespace),
-				testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend(pullSecretFieldName, string(authsBytes)).build(),
-			).
-			Build()
-
-		troubleshootCtx := troubleshootContext{apiReader: clt, httpClient: dockerServer.Client(), namespaceName: testNamespace, dynakubeName: testDynakube}
+		troubleshootCtx := troubleshootContext{
+			httpClient:     dockerServer.Client(),
+			namespaceName:  testNamespace,
+			dynakubeName:   testDynakube,
+			dynakube:       *testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(dockerServer.URL + "/api").build(),
+			pullSecretName: testDynakube + pullSecretSuffix,
+			pullSecret:     *testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend(pullSecretFieldName, string(authsBytes)).build(),
+		}
 
 		err = checkActiveGateImagePullable(&troubleshootCtx)
 		assert.NoErrorf(t, err, "unexpected error")
@@ -172,295 +166,182 @@ func testDockerServerHandler(method string, urls []string) http.HandlerFunc {
 }
 
 func TestImagePullablePullSecret(t *testing.T) {
-	t.Run("pull secret name", func(t *testing.T) {
-		clt := fake.NewClientBuilder().
-			WithScheme(scheme.Scheme).
-			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).build(),
-				testBuildNamespace(testNamespace),
-			).
-			Build()
-
-		secretName, err := getPullSecretName(clt, testDynakube, testNamespace)
-		assert.Equal(t, testDynakube+pullSecretSuffix, secretName, "invalid pull secret name")
+	t.Run("valid pull secret", func(t *testing.T) {
+		troubleshootCtx := troubleshootContext{
+			namespaceName:  testNamespace,
+			dynakubeName:   testDynakube,
+			pullSecretName: testDynakube + pullSecretSuffix,
+			pullSecret:     *testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend(pullSecretFieldName, pullSecretFieldValue).build(),
+		}
+		secret, err := getPullSecretToken(&troubleshootCtx)
 		assert.NoErrorf(t, err, "unexpected error")
-	})
-	t.Run("custom pull secret name", func(t *testing.T) {
-		clt := fake.NewClientBuilder().
-			WithScheme(scheme.Scheme).
-			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).withCustomPullSecret(testSecretName).build(),
-				testBuildNamespace(testNamespace),
-			).
-			Build()
-
-		secretName, err := getPullSecretName(clt, testDynakube, testNamespace)
-		assert.Equal(t, testSecretName, secretName, "invalid pull secret name")
-		assert.NoErrorf(t, err, "unexpected error")
-	})
-
-	t.Run("pull secret", func(t *testing.T) {
-		clt := fake.NewClientBuilder().
-			WithScheme(scheme.Scheme).
-			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).build(),
-				testBuildNamespace(testNamespace),
-				testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend(pullSecretFieldName, pullSecretFieldValue).build(),
-			).
-			Build()
-
-		secret, err := getPullSecret(clt, testDynakube+pullSecretSuffix, testNamespace)
 		assert.Equal(t, pullSecretFieldValue, secret, "invalid contents of pull secret")
-		assert.NoErrorf(t, err, "unexpected error")
+	})
+	t.Run("invalid pull secret", func(t *testing.T) {
+		troubleshootCtx := troubleshootContext{
+			namespaceName:  testNamespace,
+			dynakubeName:   testDynakube,
+			pullSecretName: testDynakube + pullSecretSuffix,
+			pullSecret:     *testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend("invalidToken", pullSecretFieldValue).build(),
+		}
+		secret, err := getPullSecretToken(&troubleshootCtx)
+		assert.Errorf(t, err, "expected error")
+		assert.NotEqual(t, pullSecretFieldValue, secret, "valid contents of pull secret")
+
 	})
 }
 
 func TestImagePullableActiveGateEndpoint(t *testing.T) {
 	t.Run("ActiveGate image", func(t *testing.T) {
-		clt := fake.NewClientBuilder().
-			WithScheme(scheme.Scheme).
-			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).build(),
-				testBuildNamespace(testNamespace),
-			).
-			Build()
-
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
-
-		endpoint, err := getActiveGateImageEndpoint(&troubleshootCtx)
+		troubleshootCtx := troubleshootContext{
+			namespaceName: testNamespace,
+			dynakubeName:  testDynakube,
+			dynakube:      *testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).build(),
+		}
+		endpoint := getActiveGateImageEndpoint(&troubleshootCtx)
 		assert.Equal(t, testValidImageNameWithoutVersion, endpoint, "invalid image")
-		assert.NoErrorf(t, err, "unexpected error")
 	})
 	t.Run("ActiveGate custom image with version", func(t *testing.T) {
-		clt := fake.NewClientBuilder().
-			WithScheme(scheme.Scheme).
-			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).withActiveGateImage(testValidCustomImageNameWithVersion).build(),
-				testBuildNamespace(testNamespace),
-			).
-			Build()
-
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
-
-		endpoint, err := getActiveGateImageEndpoint(&troubleshootCtx)
+		troubleshootCtx := troubleshootContext{
+			namespaceName: testNamespace,
+			dynakubeName:  testDynakube,
+			dynakube:      *testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).withActiveGateImage(testValidCustomImageNameWithVersion).build(),
+		}
+		endpoint := getActiveGateImageEndpoint(&troubleshootCtx)
 		assert.Equal(t, testValidCustomImageNameWithVersion, endpoint, "invalid image")
-		assert.NoErrorf(t, err, "unexpected error")
 	})
 	t.Run("ActiveGate custom image without version", func(t *testing.T) {
-		clt := fake.NewClientBuilder().
-			WithScheme(scheme.Scheme).
-			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).withActiveGateImage(testValidCustomImageNameWithoutVersion).build(),
-				testBuildNamespace(testNamespace),
-			).
-			Build()
-
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
-
-		endpoint, err := getActiveGateImageEndpoint(&troubleshootCtx)
+		troubleshootCtx := troubleshootContext{
+			namespaceName: testNamespace,
+			dynakubeName:  testDynakube,
+			dynakube:      *testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).withActiveGateImage(testValidCustomImageNameWithoutVersion).build(),
+		}
+		endpoint := getActiveGateImageEndpoint(&troubleshootCtx)
 		assert.Equal(t, testValidCustomImageNameWithoutVersion, endpoint, "invalid image")
-		assert.NoErrorf(t, err, "unexpected error")
 	})
 }
 
 func TestImagePullableOneAgentEndpoint(t *testing.T) {
 	t.Run("OneAgent image", func(t *testing.T) {
-		clt := fake.NewClientBuilder().
-			WithScheme(scheme.Scheme).
-			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).build(),
-				testBuildNamespace(testNamespace),
-			).
-			Build()
-
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
-
-		endpoint, err := getOneAgentImageEndpoint(&troubleshootCtx)
+		troubleshootCtx := troubleshootContext{
+			namespaceName: testNamespace,
+			dynakubeName:  testDynakube,
+			dynakube:      *testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).build(),
+		}
+		endpoint := getOneAgentImageEndpoint(&troubleshootCtx)
 		assert.Equal(t, testValidOneAgentImageNameWithoutVersion, endpoint, "invalid image")
-		assert.NoErrorf(t, err, "unexpected error")
 	})
 
 	t.Run("Classic Full Stack OneAgent custom image with version", func(t *testing.T) {
-		clt := fake.NewClientBuilder().
-			WithScheme(scheme.Scheme).
-			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).withClassicFullStackCustomImage(testValidOneAgentCustomImageNameWithVersion).build(),
-				testBuildNamespace(testNamespace),
-			).
-			Build()
-
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
-
-		endpoint, err := getOneAgentImageEndpoint(&troubleshootCtx)
+		troubleshootCtx := troubleshootContext{
+			namespaceName: testNamespace,
+			dynakubeName:  testDynakube,
+			dynakube:      *testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).withClassicFullStackCustomImage(testValidOneAgentCustomImageNameWithVersion).build(),
+		}
+		endpoint := getOneAgentImageEndpoint(&troubleshootCtx)
 		assert.Equal(t, testValidOneAgentCustomImageNameWithVersion, endpoint, "invalid image")
-		assert.NoErrorf(t, err, "unexpected error")
 	})
 	t.Run("Classic Full Stack OneAgent custom image without version", func(t *testing.T) {
-		clt := fake.NewClientBuilder().
-			WithScheme(scheme.Scheme).
-			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).withClassicFullStackCustomImage(testValidOneAgentCustomImageNameWithoutVersion).build(),
-				testBuildNamespace(testNamespace),
-			).
-			Build()
-
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
-
-		endpoint, err := getOneAgentImageEndpoint(&troubleshootCtx)
+		troubleshootCtx := troubleshootContext{
+			namespaceName: testNamespace,
+			dynakubeName:  testDynakube,
+			dynakube:      *testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).withClassicFullStackCustomImage(testValidOneAgentCustomImageNameWithoutVersion).build(),
+		}
+		endpoint := getOneAgentImageEndpoint(&troubleshootCtx)
 		assert.Equal(t, testValidOneAgentCustomImageNameWithoutVersion, endpoint, "invalid image")
-		assert.NoErrorf(t, err, "unexpected error")
 	})
 	t.Run("Classic Full Stack OneAgent regular image with version", func(t *testing.T) {
-		clt := fake.NewClientBuilder().
-			WithScheme(scheme.Scheme).
-			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).withClassicFullStackImageVersion(testVersion).build(),
-				testBuildNamespace(testNamespace),
-			).
-			Build()
-
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
-
-		endpoint, err := getOneAgentImageEndpoint(&troubleshootCtx)
+		troubleshootCtx := troubleshootContext{
+			namespaceName: testNamespace,
+			dynakubeName:  testDynakube,
+			dynakube:      *testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).withClassicFullStackImageVersion(testVersion).build(),
+		}
+		endpoint := getOneAgentImageEndpoint(&troubleshootCtx)
 		assert.Equal(t, testValidOneAgentImageNameWithVersion, endpoint, "invalid image")
-		assert.NoErrorf(t, err, "unexpected error")
 	})
 	t.Run("Classic Full Stack OneAgent custom image and Version", func(t *testing.T) {
-		clt := fake.NewClientBuilder().
-			WithScheme(scheme.Scheme).
-			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).withClassicFullStackCustomImage(testValidOneAgentCustomImageNameWithoutVersion).withClassicFullStackImageVersion(testVersion).build(),
-				testBuildNamespace(testNamespace),
-			).
-			Build()
-
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
-
-		endpoint, err := getOneAgentImageEndpoint(&troubleshootCtx)
+		troubleshootCtx := troubleshootContext{
+			namespaceName: testNamespace,
+			dynakubeName:  testDynakube,
+			dynakube:      *testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).withClassicFullStackCustomImage(testValidOneAgentCustomImageNameWithoutVersion).withClassicFullStackImageVersion(testVersion).build(),
+		}
+		endpoint := getOneAgentImageEndpoint(&troubleshootCtx)
 		assert.Equal(t, testValidOneAgentCustomImageNameWithoutVersion, endpoint, "invalid image")
-		assert.NoErrorf(t, err, "unexpected error")
 	})
 
 	t.Run("Cloud Native OneAgent custom image with version", func(t *testing.T) {
-		clt := fake.NewClientBuilder().
-			WithScheme(scheme.Scheme).
-			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).withCloudNativeFullStackCustomImage(testValidOneAgentCustomImageNameWithVersion).build(),
-				testBuildNamespace(testNamespace),
-			).
-			Build()
+		troubleshootCtx := troubleshootContext{
+			namespaceName: testNamespace,
+			dynakubeName:  testDynakube,
+			dynakube:      *testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).withCloudNativeFullStackCustomImage(testValidOneAgentCustomImageNameWithVersion).build(),
+		}
 
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
-
-		endpoint, err := getOneAgentImageEndpoint(&troubleshootCtx)
+		endpoint := getOneAgentImageEndpoint(&troubleshootCtx)
 		assert.Equal(t, testValidOneAgentCustomImageNameWithVersion, endpoint, "invalid image")
-		assert.NoErrorf(t, err, "unexpected error")
 	})
 	t.Run("Cloud Native OneAgent custom image without version", func(t *testing.T) {
-		clt := fake.NewClientBuilder().
-			WithScheme(scheme.Scheme).
-			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).withCloudNativeFullStackCustomImage(testValidOneAgentCustomImageNameWithoutVersion).build(),
-				testBuildNamespace(testNamespace),
-			).
-			Build()
-
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
-
-		endpoint, err := getOneAgentImageEndpoint(&troubleshootCtx)
+		troubleshootCtx := troubleshootContext{
+			namespaceName: testNamespace,
+			dynakubeName:  testDynakube,
+			dynakube:      *testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).withCloudNativeFullStackCustomImage(testValidOneAgentCustomImageNameWithoutVersion).build(),
+		}
+		endpoint := getOneAgentImageEndpoint(&troubleshootCtx)
 		assert.Equal(t, testValidOneAgentCustomImageNameWithoutVersion, endpoint, "invalid image")
-		assert.NoErrorf(t, err, "unexpected error")
 	})
 	t.Run("Cloud Native OneAgent regular image with version", func(t *testing.T) {
-		clt := fake.NewClientBuilder().
-			WithScheme(scheme.Scheme).
-			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).withCloudNativeFullStackImageVersion(testVersion).build(),
-				testBuildNamespace(testNamespace),
-			).
-			Build()
-
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
-
-		endpoint, err := getOneAgentImageEndpoint(&troubleshootCtx)
+		troubleshootCtx := troubleshootContext{
+			namespaceName: testNamespace,
+			dynakubeName:  testDynakube,
+			dynakube:      *testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).withCloudNativeFullStackImageVersion(testVersion).build(),
+		}
+		endpoint := getOneAgentImageEndpoint(&troubleshootCtx)
 		assert.Equal(t, testValidOneAgentImageNameWithVersion, endpoint, "invalid image")
-		assert.NoErrorf(t, err, "unexpected error")
 	})
 	t.Run("Classic Full Stack OneAgent custom image and Version", func(t *testing.T) {
-		clt := fake.NewClientBuilder().
-			WithScheme(scheme.Scheme).
-			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).withCloudNativeFullStackCustomImage(testValidOneAgentCustomImageNameWithoutVersion).withCloudNativeFullStackImageVersion(testVersion).build(),
-				testBuildNamespace(testNamespace),
-			).
-			Build()
-
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
-
-		endpoint, err := getOneAgentImageEndpoint(&troubleshootCtx)
+		troubleshootCtx := troubleshootContext{
+			namespaceName: testNamespace,
+			dynakubeName:  testDynakube,
+			dynakube:      *testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).withCloudNativeFullStackCustomImage(testValidOneAgentCustomImageNameWithoutVersion).withCloudNativeFullStackImageVersion(testVersion).build(),
+		}
+		endpoint := getOneAgentImageEndpoint(&troubleshootCtx)
 		assert.Equal(t, testValidOneAgentCustomImageNameWithoutVersion, endpoint, "invalid image")
-		assert.NoErrorf(t, err, "unexpected error")
 	})
 
 	t.Run("Host Monitoring OneAgent custom image with version", func(t *testing.T) {
-		clt := fake.NewClientBuilder().
-			WithScheme(scheme.Scheme).
-			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).withHostMonitoringCustomImage(testValidOneAgentImageNameWithVersion).build(),
-				testBuildNamespace(testNamespace),
-			).
-			Build()
-
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
-
-		endpoint, err := getOneAgentImageEndpoint(&troubleshootCtx)
+		troubleshootCtx := troubleshootContext{
+			namespaceName: testNamespace,
+			dynakubeName:  testDynakube,
+			dynakube:      *testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).withHostMonitoringCustomImage(testValidOneAgentImageNameWithVersion).build(),
+		}
+		endpoint := getOneAgentImageEndpoint(&troubleshootCtx)
 		assert.Equal(t, testValidOneAgentImageNameWithVersion, endpoint, "invalid image")
-		assert.NoErrorf(t, err, "unexpected error")
 	})
 	t.Run("Host Monitoring OneAgent custom image without version", func(t *testing.T) {
-		clt := fake.NewClientBuilder().
-			WithScheme(scheme.Scheme).
-			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).withHostMonitoringCustomImage(testValidOneAgentImageNameWithoutVersion).build(),
-				testBuildNamespace(testNamespace),
-			).
-			Build()
-
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
-
-		endpoint, err := getOneAgentImageEndpoint(&troubleshootCtx)
+		troubleshootCtx := troubleshootContext{
+			namespaceName: testNamespace,
+			dynakubeName:  testDynakube,
+			dynakube:      *testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).withHostMonitoringCustomImage(testValidOneAgentImageNameWithoutVersion).build(),
+		}
+		endpoint := getOneAgentImageEndpoint(&troubleshootCtx)
 		assert.Equal(t, testValidOneAgentImageNameWithoutVersion, endpoint, "invalid image")
-		assert.NoErrorf(t, err, "unexpected error")
 	})
 	t.Run("Host Monitoring OneAgent regular image with version", func(t *testing.T) {
-		clt := fake.NewClientBuilder().
-			WithScheme(scheme.Scheme).
-			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).withHostMonitoringImageVersion(testVersion).build(),
-				testBuildNamespace(testNamespace),
-			).
-			Build()
-
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
-
-		endpoint, err := getOneAgentImageEndpoint(&troubleshootCtx)
+		troubleshootCtx := troubleshootContext{
+			namespaceName: testNamespace,
+			dynakubeName:  testDynakube,
+			dynakube:      *testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).withHostMonitoringImageVersion(testVersion).build(),
+		}
+		endpoint := getOneAgentImageEndpoint(&troubleshootCtx)
 		assert.Equal(t, testValidOneAgentImageNameWithVersion, endpoint, "invalid image")
-		assert.NoErrorf(t, err, "unexpected error")
 	})
 	t.Run("HostMonitoring OneAgent custom image and Version", func(t *testing.T) {
-		clt := fake.NewClientBuilder().
-			WithScheme(scheme.Scheme).
-			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).withHostMonitoringCustomImage(testValidOneAgentCustomImageNameWithoutVersion).withHostMonitoringImageVersion(testVersion).build(),
-				testBuildNamespace(testNamespace),
-			).
-			Build()
-
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
-
-		endpoint, err := getOneAgentImageEndpoint(&troubleshootCtx)
+		troubleshootCtx := troubleshootContext{
+			namespaceName: testNamespace,
+			dynakubeName:  testDynakube,
+			dynakube:      *testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).withHostMonitoringCustomImage(testValidOneAgentCustomImageNameWithoutVersion).withHostMonitoringImageVersion(testVersion).build(),
+		}
+		endpoint := getOneAgentImageEndpoint(&troubleshootCtx)
 		assert.Equal(t, testValidOneAgentCustomImageNameWithoutVersion, endpoint, "invalid image")
-		assert.NoErrorf(t, err, "unexpected error")
 	})
 }
 
