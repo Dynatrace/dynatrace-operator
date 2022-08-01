@@ -43,3 +43,21 @@ jobs:
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
+
+  snyk-go-scan:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+    - name: Snyk Golang Check
+      uses: snyk/actions/golang@7a25034bb99f934b1e45b08d2025b07dde28aa48
+      continue-on-error: true # To make sure that SARIF upload gets called
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      with:
+        args: --sarif-file-output=snyk-go.sarif --severity-threshold=high
+    - name: Upload result to GitHub Code Scanning
+      uses: github/codeql-action/upload-sarif@96bc9c36c68e097cd033777efed25c248ffcf09a
+      with:
+          # Path to SARIF file relative to the root of the repository
+        sarif_file: snyk-go.sarif

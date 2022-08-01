@@ -50,3 +50,17 @@ jobs:
       - name: Upload image to Registry
         run: |
           hack/build/ci/upload-docker-image.sh "${{ inputs.platform }}" "${TARGET_IMAGE_TAG}"
+      - name: Snyk Container Image Check
+        uses: snyk/actions/docker@7a25034bb99f934b1e45b08d2025b07dde28aa48
+        # if: github.ref_protected == 'true'
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          image: ${{ env.TARGET_IMAGE_TAG }}
+          args: --severity-threshold=high --file=Dockerfile --sarif-file-output=image.sarif
+      - name: Upload result to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@96bc9c36c68e097cd033777efed25c248ffcf09a
+        # if: github.ref_protected == 'true'
+        with:
+            # Path to SARIF file relative to the root of the repository
+            sarif_file: image.sarif
