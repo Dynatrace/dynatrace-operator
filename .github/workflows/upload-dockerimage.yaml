@@ -23,6 +23,8 @@ on:
         required: true
       docker_repo_password:
         required: true
+      snyk_token:
+        required: true
 
 permissions:
   contents: read
@@ -54,7 +56,7 @@ jobs:
         uses: snyk/actions/docker@7a25034bb99f934b1e45b08d2025b07dde28aa48
         # if: github.ref_protected == 'true'
         env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+          SNYK_TOKEN: ${{ secrets.snyk_token }}
         with:
           image: ${{ env.TARGET_IMAGE_TAG }}
           args: --severity-threshold=high --file=Dockerfile --sarif-file-output=image.sarif

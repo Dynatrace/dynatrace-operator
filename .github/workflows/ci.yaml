@@ -155,6 +155,7 @@ jobs:
     secrets:
       docker_repo_username: ${{ secrets.QUAY_USERNAME }}
       docker_repo_password: ${{ secrets.QUAY_PASSWORD }}
+      snyk_token: ${{ secrets.SNYK_TOKEN }}
 
   upload-arm64:
     name: Upload arm64 image
@@ -172,6 +173,7 @@ jobs:
     secrets:
       docker_repo_username: ${{ secrets.QUAY_USERNAME }}
       docker_repo_password: ${{ secrets.QUAY_PASSWORD }}
+      snyk_token: ${{ secrets.SNYK_TOKEN }}
 
   create-manifest-for-combined-images:
     name: Combine images
