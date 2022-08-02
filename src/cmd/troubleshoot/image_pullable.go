@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 )
@@ -208,7 +209,7 @@ func connectToDockerRegistry(httpClient *http.Client, httpMethod string, httpUrl
 }
 
 func getPullSecretToken(troubleshootCtx *troubleshootContext) (string, error) {
-	secretBytes, ok := troubleshootCtx.pullSecret.Data[pullSecretFieldName]
+	secretBytes, ok := troubleshootCtx.pullSecret.Data[dtpullsecret.DockerConfigJson]
 	if !ok {
 		logErrorf("token .dockerconfigjson does not exist in secret '%s'", troubleshootCtx.pullSecretName)
 		return "", fmt.Errorf("token .dockerconfigjson does not exist in secret '%s'", troubleshootCtx.pullSecretName)

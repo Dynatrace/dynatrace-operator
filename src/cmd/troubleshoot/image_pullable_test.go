@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -60,7 +61,7 @@ func TestOneAgentImagePullable(t *testing.T) {
 			dynakubeName:   testDynakube,
 			dynakube:       *testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(dockerServer.URL + "/api").build(),
 			pullSecretName: testDynakube + pullSecretSuffix,
-			pullSecret:     *testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend(pullSecretFieldName, string(authsBytes)).build(),
+			pullSecret:     *testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend(dtpullsecret.DockerConfigJson, string(authsBytes)).build(),
 		}
 
 		err = checkOneAgentImagePullable(&troubleshootCtx)
@@ -100,7 +101,7 @@ func TestActiveGateImagePullable(t *testing.T) {
 			dynakubeName:   testDynakube,
 			dynakube:       *testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(dockerServer.URL + "/api").build(),
 			pullSecretName: testDynakube + pullSecretSuffix,
-			pullSecret:     *testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend(pullSecretFieldName, string(authsBytes)).build(),
+			pullSecret:     *testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend(dtpullsecret.DockerConfigJson, string(authsBytes)).build(),
 		}
 
 		err = checkActiveGateImagePullable(&troubleshootCtx)
@@ -171,7 +172,7 @@ func TestImagePullablePullSecret(t *testing.T) {
 			namespaceName:  testNamespace,
 			dynakubeName:   testDynakube,
 			pullSecretName: testDynakube + pullSecretSuffix,
-			pullSecret:     *testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend(pullSecretFieldName, pullSecretFieldValue).build(),
+			pullSecret:     *testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend(dtpullsecret.DockerConfigJson, pullSecretFieldValue).build(),
 		}
 		secret, err := getPullSecretToken(&troubleshootCtx)
 		assert.NoErrorf(t, err, "unexpected error")

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook/validation"
@@ -13,7 +14,6 @@ import (
 )
 
 const (
-	pullSecretFieldName  = ".dockerconfigjson"
 	pullSecretFieldValue = "top-secret"
 )
 
@@ -107,12 +107,11 @@ func getDynatraceApiSecretIfItExists(troubleshootCtx *troubleshootContext) error
 }
 
 func checkIfDynatraceApiSecretHasApiToken(troubleshootCtx *troubleshootContext) error {
-	apiTokenByte, ok := troubleshootCtx.dynatraceApiSecret.Data["apiToken"]
-	if !ok {
-		return fmt.Errorf("'apiToken' token does not exist in '%s:%s' secret", troubleshootCtx.namespaceName, troubleshootCtx.dynatraceApiSecretName)
+	apiToken, err := kubeobjects.ExtractToken(&troubleshootCtx.dynatraceApiSecret, dtclient.DynatraceApiToken)
+	if err != nil {
+		return errorWithMessagef(err, "invalid '%s:%s' secret", troubleshootCtx.namespaceName, troubleshootCtx.dynatraceApiSecretName)
 	}
 
-	apiToken := string(apiTokenByte)
 	if apiToken == "" {
 		return fmt.Errorf("'apiToken' token is empty  in '%s:%s' secret", troubleshootCtx.namespaceName, troubleshootCtx.dynatraceApiSecretName)
 	}
@@ -147,12 +146,11 @@ func getPullSecretIfItExists(troubleshootCtx *troubleshootContext) error {
 }
 
 func checkPullSecretHasRequiredTokens(troubleshootCtx *troubleshootContext) error {
-	_, hasConfig := troubleshootCtx.pullSecret.Data[pullSecretFieldName]
-	if !hasConfig {
-		return fmt.Errorf("'%s' token does not exist in '%s:%s' secret", pullSecretFieldName, troubleshootCtx.namespaceName, troubleshootCtx.pullSecretName)
+	if _, err := kubeobjects.ExtractToken(&troubleshootCtx.pullSecret, dtpullsecret.DockerConfigJson); err != nil {
+		return errorWithMessagef(err, "invalid '%s:%s' secret", troubleshootCtx.namespaceName, troubleshootCtx.pullSecretName)
 	}
 
-	logInfof("secret token '%s' exists", pullSecretFieldName)
+	logInfof("secret token '%s' exists", dtpullsecret.DockerConfigJson)
 	return nil
 }
 
@@ -188,9 +186,8 @@ func checkProxySecretHasRequiredTokens(troubleshootCtx *troubleshootContext) err
 		return nil
 	}
 
-	_, hasProxy := troubleshootCtx.proxySecret.Data[dtclient.CustomProxySecretKey]
-	if !hasProxy {
-		return fmt.Errorf("'%s' token does not exist in '%s:%s' secret", dtclient.CustomProxySecretKey, troubleshootCtx.namespaceName, troubleshootCtx.proxySecretName)
+	if _, err := kubeobjects.ExtractToken(&troubleshootCtx.proxySecret, dtclient.CustomProxySecretKey); err != nil {
+		return errorWithMessagef(err, "invalid '%s:%s' secret", troubleshootCtx.namespaceName, troubleshootCtx.proxySecretName)
 	}
 
 	logInfof("secret token '%s' exists", dtclient.CustomProxySecretKey)
