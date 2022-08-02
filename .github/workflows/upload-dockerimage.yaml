@@ -59,10 +59,10 @@ jobs:
           SNYK_TOKEN: ${{ secrets.snyk_token }}
         with:
           image: ${{ env.TARGET_IMAGE_TAG }}
-          args: --severity-threshold=high --file=Dockerfile --sarif-file-output=image.sarif
+          args: --severity-threshold=high --file=Dockerfile
       - name: Upload result to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@96bc9c36c68e097cd033777efed25c248ffcf09a
         # if: github.ref_protected == 'true'
         with:
             # Path to SARIF file relative to the root of the repository
-            sarif_file: image.sarif
+            sarif_file: snyk.sarif
