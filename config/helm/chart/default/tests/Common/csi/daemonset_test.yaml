@@ -41,7 +41,6 @@ tests:
       platform: kubernetes
       image: image-name
       csidriver.enabled: true
-      csidriver.priorityClassValue: "1000"
     asserts:
       - isKind:
           of: DaemonSet
@@ -67,7 +66,6 @@ tests:
       - equal:
           path: spec.template.spec
           value:
-            priority: 1000
             priorityClassName: dynatrace-high-priority
             tolerations:
                 - effect: NoSchedule
