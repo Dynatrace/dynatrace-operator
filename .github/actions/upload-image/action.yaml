@@ -1,0 +1,44 @@
+name: Upload Docker Image
+description: Uploads the operator docker image to a registry
+inputs:
+  platform:
+    description: The platform of the uploaded image
+    required: true
+  labels:
+    description: The labels for the uploaded image
+    required: true
+  version:
+    description: The version the image is for
+    required: true
+  registry:
+    description: The registry where the image is uploaded
+    required: true
+  repository:
+    description: The repository in the registry where the image is uploaded
+    required: true
+  docker-repo-username:
+    description: The username to access the registry/repository
+    required: true
+  docker-repo-password:
+    description: The password to access the registry/repository
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Login to Registry
+      uses: docker/login-action@v1
+      with:
+        registry: ${{ inputs.registry }}
+        username: ${{ inputs.docker-repo-username }}
+        password: ${{ inputs.docker-repo-password }}
+    - name: Download artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: operator-${{ inputs.platform }}
+        path: /tmp
+    - name: Upload image to Registry
+      shell: bash
+      run: |
+        hack/build/ci/upload-docker-image.sh "${{ inputs.platform }}" "${{ inputs.registry }}" "${{ inputs.repository }}" "${{ inputs.version }}"
