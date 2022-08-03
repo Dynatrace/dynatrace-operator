@@ -4793,4 +4793,4 @@ metadata:
   name: dynatrace-high-priority
 value: 1000000
 globalDefault: false
-description: "This priority class is used for Dynatrace Components with a higher priority"
+description: "This priority class is used for Dynatrace Components in order to make sure they are not evicted in favor of other pods"
