@@ -24,6 +24,9 @@ on:
       docker_repo_password:
         required: true
 
+permissions:
+  contents: read
+
 jobs:
   upload_job:
     name: Upload docker image to Registry
