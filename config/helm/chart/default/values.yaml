@@ -50,6 +50,7 @@ webhook:
 csidriver:
   enabled: false
   nodeSelector: {}
+  priorityClassValue: "1000000"
   tolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/master
