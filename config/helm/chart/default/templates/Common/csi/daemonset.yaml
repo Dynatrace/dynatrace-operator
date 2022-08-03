@@ -197,6 +197,7 @@ spec:
       securityContext: {}
       serviceAccountName: dynatrace-oneagent-csi-driver
       terminationGracePeriodSeconds: 30
+      priorityClassName: dynatrace-high-priority
       volumes:
       # This volume is where the registrar registers the plugin with kubelet
       - hostPath:
