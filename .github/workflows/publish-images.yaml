@@ -100,7 +100,7 @@ jobs:
       registry: gcr.io
       repository: dynatrace-marketplace-prod/dynatrace-operator
     secrets:
-      docker_repo_username: _json_key
+      docker_repo_username: ${{ secrets.GCR_USERNAME }}
       docker_repo_password: ${{ secrets.GCR_JSON_KEY }}
 
   push-gcr-arm:
@@ -114,7 +114,7 @@ jobs:
       registry: gcr.io
       repository: dynatrace-marketplace-prod/dynatrace-operator
     secrets:
-      docker_repo_username: _json_key
+      docker_repo_username: ${{ secrets.GCR_USERNAME }}
       docker_repo_password: ${{ secrets.GCR_JSON_KEY }}
 
   #  push-rhcc-amd:
@@ -168,7 +168,7 @@ jobs:
         uses: docker/login-action@v1
         with:
           registry: gcr.io
-          username: _json_key
+          username: ${{ secrets.GCR_USERNAME }}
           password: ${{ secrets.GCR_JSON_KEY }}
       - name: Create manifest for GCR
         env:
