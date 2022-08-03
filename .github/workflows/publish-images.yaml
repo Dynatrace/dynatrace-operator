@@ -154,6 +154,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Create manifests for ${{matrix.registry}}
+        if: ${{ matrix.registry-name != "rhcc"}}
         uses: ./.github/actions/create-manifests
         with:
           version: ${{ needs.prepare.outputs.version }}
