@@ -18,8 +18,8 @@ kind: DaemonSet
 metadata:
   labels:
       {{- include "dynatrace-operator.csiLabels" . | nindent 4 }}
-  {{- if .Values.csidriver.labels }}
-      {{- toYaml .Values.csidriver.labels | nindent 4 }}
+  {{- if .Values.csi.labels }}
+      {{- toYaml .Values.csi.labels | nindent 4 }}
   {{- end}}
   name: dynatrace-oneagent-csi-driver
   namespace: {{ .Release.Namespace }}
@@ -37,14 +37,14 @@ spec:
         container.apparmor.security.beta.kubernetes.io/registrar: runtime/default
         container.apparmor.security.beta.kubernetes.io/liveness-probe: runtime/default
         {{- end}}
-        {{- if .Values.csidriver.annotations }}
-        {{- toYaml .Values.csidriver.annotations | nindent 8 }}
+        {{- if .Values.csi.annotations }}
+        {{- toYaml .Values.csi.annotations | nindent 8 }}
         {{- end }}
       labels:
         {{- include "dynatrace-operator.csiLabels" . | nindent 8 }}
         {{- include "dynatrace-operator.csiSelectorLabels" . | nindent 8 }}
-        {{- if .Values.csidriver.labels }}
-        {{- toYaml .Values.csidriver.labels | nindent 8 }}
+        {{- if .Values.csi.labels }}
+        {{- toYaml .Values.csi.labels | nindent 8 }}
         {{- end }}
     spec:
       containers:
@@ -279,11 +279,11 @@ spec:
       imagePullSecrets:
         - name: {{ .Values.customPullSecret }}
       {{- end }}
-      {{- if .Values.csidriver.nodeSelector }}
-      nodeSelector: {{- toYaml .Values.csidriver.nodeSelector | nindent 8 }}
+      {{- if .Values.csi.nodeSelector }}
+      nodeSelector: {{- toYaml .Values.csi.nodeSelector | nindent 8 }}
       {{- end }}
-      {{- if .Values.csidriver.tolerations }}
-      tolerations: {{- toYaml .Values.csidriver.tolerations | nindent 8 }}
+      {{- if .Values.csi.tolerations }}
+      tolerations: {{- toYaml .Values.csi.tolerations | nindent 8 }}
       {{- end }}
   updateStrategy:
     rollingUpdate:

@@ -279,33 +279,33 @@ properties:
     description: Increases replicas and adds topology constraints for the Webhook.
     default: false
 
-  csidriver.enabled:
+  csi.enabled:
     type: boolean
     title: Enables CSI driver
     description: The CloudNativeFullStack as well as AppOnly mode need the CSI driver to function properly.
     default: false
-  csidriver.requests.cpu:
+  csi.requests.cpu:
     type: string
     title: CSI driver CPU request
     description: |
       The amount of CPU allocation the CSI driver requests from the cluster.
       It is recommended for the CPU requests to be the same as the CPU limits.
     default: 300m
-  csidriver.requests.memory:
+  csi.requests.memory:
     type: string
     title: CSI driver Memory request
     description: |
       The amount of memory allocation the CSI driver requests from the cluster.
       It is recommended for the memory requests to be the same as the memory limits.
     default: 100Mi
-  csidriver.limits.cpu:
+  csi.limits.cpu:
     type: string
     title: CSI driver CPU limit
     description: |
       The amount of CPU allocation to which the cluster may limit the CSI driver.
       It is recommended for the CPU limits to be the same as the CPU requests.
     default: 300m
-  csidriver.limits.memory:
+  csi.limits.memory:
     type: string
     title: CSI driver Memory limit
     description: |
@@ -332,7 +332,7 @@ properties:
     type: string
     title: Platform
     description: |
-      Platform to deploy on. 
+      Platform to deploy on.
       Must be set to "google-marketplace" for GKE clusters.
     default: google-marketplace
     enum:

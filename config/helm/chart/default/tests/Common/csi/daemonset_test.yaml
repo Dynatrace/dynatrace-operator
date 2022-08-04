@@ -12,7 +12,7 @@ tests:
   - it: should have tolerations by default
     set:
       platform: kubernetes
-      csidriver.enabled: true
+      csi.enabled: true
     asserts:
     - equal:
         path: spec.template.spec.tolerations
@@ -27,8 +27,8 @@ tests:
   - it: should have nodeSelectors if set
     set:
       platform: kubernetes
-      csidriver.enabled: true
-      csidriver.nodeSelector:
+      csi.enabled: true
+      csi.nodeSelector:
         test-key: test-value
     asserts:
     - equal:
@@ -40,7 +40,7 @@ tests:
     set:
       platform: kubernetes
       image: image-name
-      csidriver.enabled: true
+      csi.enabled: true
     asserts:
       - isKind:
           of: DaemonSet
@@ -59,7 +59,7 @@ tests:
     set:
       platform: kubernetes
       image: image-name
-      csidriver.enabled: true
+      csi.enabled: true
     asserts:
       - isNotEmpty:
           path: spec.template.metadata.labels
@@ -109,11 +109,11 @@ tests:
                     protocol: TCP
                 resources:
                   limits:
-                    cpu: 100m
-                    memory: 50Mi
+                    cpu: 150m
+                    memory: 100Mi
                   requests:
-                    cpu: 100m
-                    memory: 50Mi
+                    cpu: 150m
+                    memory: 100Mi
                 securityContext:
                   allowPrivilegeEscalation: true
                   privileged: true
@@ -290,7 +290,7 @@ tests:
     set:
       platform: kubernetes
       customPullSecret: pull-secret
-      csidriver.enabled: true
+      csi.enabled: true
     asserts:
       - equal:
           path: spec.template.spec.imagePullSecrets[0].name
@@ -299,8 +299,8 @@ tests:
   - it: should take custom labels
     set:
       platform: kubernetes
-      csidriver.enabled: true
-      csidriver.labels:
+      csi.enabled: true
+      csi.labels:
         testKey: testValue
     asserts:
       - isNotEmpty:
@@ -312,8 +312,8 @@ tests:
   - it: should take custom annotations
     set:
       platform: kubernetes
-      csidriver.enabled: true
-      csidriver.annotations:
+      csi.enabled: true
+      csi.annotations:
         testKey: testValue
     asserts:
       - equal:
@@ -325,8 +325,8 @@ tests:
   - it: should take custom labels in spec.template.metadata.labels path
     set:
       platform: kubernetes
-      csidriver.enabled: true
-      csidriver.labels:
+      csi.enabled: true
+      csi.labels:
         testKey: testValue
     asserts:
       - isNotEmpty:
@@ -337,21 +337,24 @@ tests:
 
   - it: should take resource limits from values file
     set:
-      csidriver.enabled: true
-      csidriver.requests.cpu: 600m
-      csidriver.requests.memory: 200Mi
-      csidriver.limits.cpu: 900m
-      csidriver.limits.memory: 300Mi
+      csi.enabled: true
+      csi.requests.cpu: 600m
+      csi.requests.memory: 200Mi
+      csi.limits.cpu: 900m
+      csi.limits.memory: 300Mi
     asserts:
       - equal:
-          path: spec.template.spec.containers[0].resources.requests.cpu
+          path: spec.template.spec.containers[1].name
+          value: provisioner
+      - equal:
+          path: spec.template.spec.containers[1].resources.requests.cpu
           value: 600m
       - equal:
-          path: spec.template.spec.containers[0].resources.requests.memory
+          path: spec.template.spec.containers[1].resources.requests.memory
           value: 200Mi
       - equal:
-          path: spec.template.spec.containers[0].resources.limits.cpu
+          path: spec.template.spec.containers[1].resources.limits.cpu
           value: 900m
       - equal:
-          path: spec.template.spec.containers[0].resources.limits.memory
+          path: spec.template.spec.containers[1].resources.limits.memory
           value: 300Mi
