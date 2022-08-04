@@ -81,7 +81,7 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           file: config/deploy/kubernetes/kubernetes-all.yaml
-          args: "--sarif-file-output=kubernetes-snyk.sarif"
+          args: --report --sarif-file-output="kubernetes-snyk.sarif"
       - name: Upload kubernetes result to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@96bc9c36c68e097cd033777efed25c248ffcf09a
         with:
@@ -93,7 +93,7 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           file: config/deploy/openshift/openshift-all.yaml
-          args: "--sarif-file-output=openshift-snyk.sarif"
+          args: --report --sarif-file-output="openshift-snyk.sarif"
       - name: Upload openshift result to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@96bc9c36c68e097cd033777efed25c248ffcf09a
         with:
