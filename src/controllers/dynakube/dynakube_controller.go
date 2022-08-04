@@ -238,8 +238,7 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 		return
 	}
 
-	err := controller.reconcileOneAgent(ctx, dkState, upd)
-	if err {
+	if err = controller.reconcileOneAgent(ctx, dkState); err != nil {
 		return
 	}
 
@@ -278,10 +277,9 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 	dkState.Update(upd, "dynakube phase changed")
 }
 
-func (controller *DynakubeController) reconcileOneAgent(ctx context.Context, dkState *status.DynakubeState, upd bool) error {
-	var err error
+func (controller *DynakubeController) reconcileOneAgent(ctx context.Context, dkState *status.DynakubeState) (err error) {
 	if dkState.Instance.HostMonitoringMode() {
-		upd, err = oneagent.NewOneAgentReconciler(
+		upd, err := oneagent.NewOneAgentReconciler(
 			controller.client, controller.apiReader, controller.scheme, dkState.Instance, daemonset.DeploymentTypeHostMonitoring,
 		).Reconcile(ctx, dkState)
 		if dkState.Error(err) {
@@ -289,7 +287,7 @@ func (controller *DynakubeController) reconcileOneAgent(ctx context.Context, dkS
 		}
 		dkState.Update(upd, "host monitoring reconciled")
 	} else if dkState.Instance.CloudNativeFullstackMode() {
-		upd, err = oneagent.NewOneAgentReconciler(
+		upd, err := oneagent.NewOneAgentReconciler(
 			controller.client, controller.apiReader, controller.scheme, dkState.Instance, daemonset.DeploymentTypeCloudNative,
 		).Reconcile(ctx, dkState)
 		if dkState.Error(err) {
@@ -297,7 +295,7 @@ func (controller *DynakubeController) reconcileOneAgent(ctx context.Context, dkS
 		}
 		dkState.Update(upd, "cloud native fullstack monitoring reconciled")
 	} else if dkState.Instance.ClassicFullStackMode() {
-		upd, err = oneagent.NewOneAgentReconciler(
+		upd, err := oneagent.NewOneAgentReconciler(
 			controller.client, controller.apiReader, controller.scheme, dkState.Instance, daemonset.DeploymentTypeFullStack,
 		).Reconcile(ctx, dkState)
 		if dkState.Error(err) {
@@ -332,7 +330,7 @@ func (controller *DynakubeController) ensureDeleted(obj client.Object) error {
 	return nil
 }
 
-func (controller *DynakubeController) reconcileActiveGate(ctx context.Context, dynakubeState *status.DynakubeState, dtc dtclient.Client) bool {
+func (controller *DynakubeController) reconcileActiveGate(ctx context.Context, dynakubeState *status.DynakubeState, dtc dtclient.Client) (success bool) {
 	if !controller.reconcileActiveGateProxySecret(ctx, dynakubeState) {
 		return false
 	}
@@ -362,43 +360,25 @@ func generateActiveGateCapabilities(instance *dynatracev1beta1.DynaKube) []capab
 	}
 }
 
-func (controller *DynakubeController) reconcileActiveGateCapabilities(dynakubeState *status.DynakubeState, dtc dtclient.Client) bool {
+func (controller *DynakubeController) reconcileActiveGateCapabilities(dynakubeState *status.DynakubeState, dtc dtclient.Client) (success bool) {
 	var caps = generateActiveGateCapabilities(dynakubeState.Instance)
-
-	for _, c := range caps {
-		if c.Enabled() {
-			upd, err := capability.NewReconciler(controller.client,
-				c, activegate.NewReconciler(controller.client, controller.apiReader, controller.scheme, dynakubeState.Instance, c), dynakubeState.Instance).Reconcile()
-			if dynakubeState.Error(err) {
+	for _, agCapability := range caps {
+		if agCapability.Enabled() {
+			if err := controller.createCapability(dynakubeState, agCapability); err != nil {
 				return false
 			}
-			dynakubeState.Update(upd, c.ShortName()+" reconciled")
 		} else {
-			sts := appsv1.StatefulSet{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      capability.CalculateStatefulSetName(c, dynakubeState.Instance.Name),
-					Namespace: dynakubeState.Instance.Namespace,
-				},
-			}
-			if err := controller.ensureDeleted(&sts); dynakubeState.Error(err) {
+			if err := controller.deleteCapability(dynakubeState, agCapability); err != nil {
 				return false
-			}
-
-			if c.ShouldCreateService() {
-				svc := corev1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      capability.BuildServiceName(dynakubeState.Instance.Name, c.ShortName()),
-						Namespace: dynakubeState.Instance.Namespace,
-					},
-				}
-				if err := controller.ensureDeleted(&svc); dynakubeState.Error(err) {
-					return false
-				}
 			}
 		}
 	}
 
-	//start automatic config creation
+	controller.startApiMonitoring(dynakubeState, dtc)
+	return true
+}
+
+func (controller *DynakubeController) startApiMonitoring(dynakubeState *status.DynakubeState, dtc dtclient.Client) {
 	if dynakubeState.Instance.Status.KubeSystemUUID != "" &&
 		dynakubeState.Instance.FeatureAutomaticKubernetesApiMonitoring() &&
 		dynakubeState.Instance.KubernetesMonitoringMode() {
@@ -414,8 +394,56 @@ func (controller *DynakubeController) reconcileActiveGateCapabilities(dynakubeSt
 			log.Error(err, "could not create setting")
 		}
 	}
+}
 
-	return true
+func (controller *DynakubeController) createCapability(dynakubeState *status.DynakubeState, agCapability capability.Capability) error {
+	upd, err := capability.NewReconciler(controller.client,
+		agCapability, activegate.NewReconciler(controller.client, controller.apiReader, controller.scheme, dynakubeState.Instance, agCapability), dynakubeState.Instance).Reconcile()
+	if dynakubeState.Error(err) {
+		return err
+	}
+	dynakubeState.Update(upd, agCapability.ShortName()+" reconciled")
+	return nil
+}
+
+func (controller *DynakubeController) deleteCapability(dynakubeState *status.DynakubeState, agCapability capability.Capability) error {
+	if err := deleteStatefulset(dynakubeState, agCapability, controller); err != nil {
+		return err
+	}
+
+	if err := deleteService(dynakubeState, agCapability, controller); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func deleteService(dynakubeState *status.DynakubeState, agCapability capability.Capability, controller *DynakubeController) error {
+	if agCapability.ShouldCreateService() {
+		svc := corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      capability.BuildServiceName(dynakubeState.Instance.Name, agCapability.ShortName()),
+				Namespace: dynakubeState.Instance.Namespace,
+			},
+		}
+		if err := controller.ensureDeleted(&svc); dynakubeState.Error(err) {
+			return err
+		}
+	}
+	return nil
+}
+
+func deleteStatefulset(dynakubeState *status.DynakubeState, agCapability capability.Capability, controller *DynakubeController) error {
+	sts := appsv1.StatefulSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      capability.CalculateStatefulSetName(agCapability, dynakubeState.Instance.Name),
+			Namespace: dynakubeState.Instance.Namespace,
+		},
+	}
+	if err := controller.ensureDeleted(&sts); dynakubeState.Error(err) {
+		return err
+	}
+	return nil
 }
 
 func (controller *DynakubeController) updateCR(ctx context.Context, instance *dynatracev1beta1.DynaKube) error {
