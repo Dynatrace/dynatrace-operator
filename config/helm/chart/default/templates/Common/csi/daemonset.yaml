@@ -87,11 +87,11 @@ spec:
           protocol: TCP
         resources:
           limits:
-            cpu: {{ default "100m" ((.Values.csi).limits).cpu }}
-            memory: {{ default "50Mi" ((.Values.csi).limits).memory }}
+            cpu: 150m
+            memory: 100Mi
           requests:
-            cpu: {{ default "100m" ((.Values.csi).requests).cpu }}
-            memory: {{ default "50Mi" ((.Values.csi).requests).memory }}
+            cpu: 150m
+            memory: 100Mi
         securityContext:
           runAsUser: 0
           privileged: true # Needed for mountPropagation
