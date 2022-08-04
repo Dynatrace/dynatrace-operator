@@ -47,7 +47,7 @@ webhook:
     memory: 128Mi
   highAvailability: true
 
-csi:
+csidriver:
   enabled: false
   nodeSelector: {}
   tolerations:

@@ -13,7 +13,7 @@ tests:
     set:
       platform: kubernetes
       image: image-name
-      csi.enabled: true
+      csidriver.enabled: true
     asserts:
       - isAPIVersion:
           of: rbac.authorization.k8s.io/v1

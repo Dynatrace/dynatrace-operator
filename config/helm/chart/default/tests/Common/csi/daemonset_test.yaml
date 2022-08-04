@@ -12,7 +12,7 @@ tests:
   - it: should have tolerations by default
     set:
       platform: kubernetes
-      csi.enabled: true
+      csidriver.enabled: true
     asserts:
     - equal:
         path: spec.template.spec.tolerations
@@ -27,8 +27,8 @@ tests:
   - it: should have nodeSelectors if set
     set:
       platform: kubernetes
-      csi.enabled: true
-      csi.nodeSelector:
+      csidriver.enabled: true
+      csidriver.nodeSelector:
         test-key: test-value
     asserts:
     - equal:
@@ -40,7 +40,7 @@ tests:
     set:
       platform: kubernetes
       image: image-name
-      csi.enabled: true
+      csidriver.enabled: true
     asserts:
       - isKind:
           of: DaemonSet
@@ -59,7 +59,7 @@ tests:
     set:
       platform: kubernetes
       image: image-name
-      csi.enabled: true
+      csidriver.enabled: true
     asserts:
       - isNotEmpty:
           path: spec.template.metadata.labels
@@ -290,7 +290,7 @@ tests:
     set:
       platform: kubernetes
       customPullSecret: pull-secret
-      csi.enabled: true
+      csidriver.enabled: true
     asserts:
       - equal:
           path: spec.template.spec.imagePullSecrets[0].name
@@ -299,8 +299,8 @@ tests:
   - it: should take custom labels
     set:
       platform: kubernetes
-      csi.enabled: true
-      csi.labels:
+      csidriver.enabled: true
+      csidriver.labels:
         testKey: testValue
     asserts:
       - isNotEmpty:
@@ -312,8 +312,8 @@ tests:
   - it: should take custom annotations
     set:
       platform: kubernetes
-      csi.enabled: true
-      csi.annotations:
+      csidriver.enabled: true
+      csidriver.annotations:
         testKey: testValue
     asserts:
       - equal:
@@ -325,8 +325,8 @@ tests:
   - it: should take custom labels in spec.template.metadata.labels path
     set:
       platform: kubernetes
-      csi.enabled: true
-      csi.labels:
+      csidriver.enabled: true
+      csidriver.labels:
         testKey: testValue
     asserts:
       - isNotEmpty:
@@ -337,11 +337,11 @@ tests:
 
   - it: should take resource limits from values file
     set:
-      csi.enabled: true
-      csi.requests.cpu: 600m
-      csi.requests.memory: 200Mi
-      csi.limits.cpu: 900m
-      csi.limits.memory: 300Mi
+      csidriver.enabled: true
+      csidriver.requests.cpu: 600m
+      csidriver.requests.memory: 200Mi
+      csidriver.limits.cpu: 900m
+      csidriver.limits.memory: 300Mi
     asserts:
       - equal:
           path: spec.template.spec.containers[1].name
