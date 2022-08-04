@@ -5,7 +5,6 @@ import (
 	"regexp"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	corev1 "k8s.io/api/core/v1"
@@ -45,7 +44,7 @@ func NewExtensionController(stsProperties *statefulSetProperties) *ExtensionCont
 
 func (eec *ExtensionController) BuildContainer() corev1.Container {
 	return corev1.Container{
-		Name:            capability.EecContainerName,
+		Name:            EecContainerName,
 		Image:           eec.image(),
 		ImagePullPolicy: corev1.PullAlways,
 		Env:             eec.buildEnvs(),
@@ -140,7 +139,7 @@ func (eec *ExtensionController) buildCommand() []string {
 
 func (eec *ExtensionController) buildVolumeMounts() []corev1.VolumeMount {
 	return []corev1.VolumeMount{
-		{Name: capability.ActiveGateGatewayConfigVolumeName, ReadOnly: true, MountPath: capability.ActiveGateGatewayConfigMountPoint},
+		{Name: GatewayConfigVolumeName, ReadOnly: true, MountPath: GatewayConfigMountPoint},
 		{Name: dataSourceStartupArguments, MountPath: dataSourceStartupArgsMountPoint},
 		{Name: dataSourceAuthToken, MountPath: dataSourceAuthTokenMountPoint},
 		{Name: dataSourceMetadata, MountPath: statsdMetadataMountPoint, ReadOnly: true},

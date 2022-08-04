@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -27,7 +26,7 @@ func TestStatsd_BuildContainerAndVolumes(t *testing.T) {
 		assertion.Empty(container.StartupProbe, "Expected there is no startup probe")
 
 		for _, port := range []int32{
-			capability.StatsdIngestPort, statsdProbesPort,
+			StatsdIngestPort, statsdProbesPort,
 		} {
 			assertion.Truef(kubeobjects.PortIsIn(container.Ports, port), "Expected that StatsD container defines port %d", port)
 		}

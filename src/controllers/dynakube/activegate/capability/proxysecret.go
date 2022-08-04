@@ -1,4 +1,4 @@
-package agproxysecret
+package capability
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"net/url"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	agcapability "github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -22,8 +22,7 @@ const (
 	proxyUsernameField = "username"
 	proxyPasswordField = "password"
 
-	ProxySecretKey              = "proxy"
-	activeGateProxySecretSuffix = "internal-proxy"
+	ProxySecretKey = "proxy"
 )
 
 // ActiveGateProxySecretGenerator manages the ActiveGate proxy secret generation for the dynatrace namespace.
@@ -53,7 +52,7 @@ func (agProxySecretGenerator *ActiveGateProxySecretGenerator) GenerateForDynakub
 	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      BuildProxySecretName(),
+			Name:      statefulset.BuildProxySecretName(),
 			Namespace: agProxySecretGenerator.namespace,
 			Labels:    coreLabels.BuildMatchLabels(),
 		},
@@ -66,7 +65,7 @@ func (agProxySecretGenerator *ActiveGateProxySecretGenerator) GenerateForDynakub
 }
 
 func (agProxySecretGenerator *ActiveGateProxySecretGenerator) EnsureDeleted(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
-	secretName := BuildProxySecretName()
+	secretName := statefulset.BuildProxySecretName()
 	secret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: secretName, Namespace: dynakube.Namespace}}
 	if err := agProxySecretGenerator.client.Delete(ctx, &secret); err != nil && !k8serrors.IsNotFound(err) {
 		return err
@@ -75,10 +74,6 @@ func (agProxySecretGenerator *ActiveGateProxySecretGenerator) EnsureDeleted(ctx 
 		agProxySecretGenerator.logger.Info("removed secret", "namespace", dynakube.Namespace, "secret", secretName)
 	}
 	return nil
-}
-
-func BuildProxySecretName() string {
-	return "dynatrace" + "-" + agcapability.MultiActiveGateName + "-" + activeGateProxySecretSuffix
 }
 
 func (agProxySecretGenerator *ActiveGateProxySecretGenerator) createProxyMap(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) (map[string][]byte, error) {

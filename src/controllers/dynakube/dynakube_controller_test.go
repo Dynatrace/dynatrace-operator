@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/src/agproxysecret"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
-	rcap "github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/reconciler/capability"
+	rcap "github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
@@ -141,8 +140,8 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 
 		var statefulSet appsv1.StatefulSet
 
-		kubeMonCapability := capability.NewKubeMonCapability(instance)
-		name := capability.CalculateStatefulSetName(kubeMonCapability, instance.Name)
+		kubeMonCapability := rcap.NewKubeMonCapability(instance)
+		name := rcap.CalculateStatefulSetName(kubeMonCapability, instance.Name)
 		err = controller.client.Get(context.TODO(), client.ObjectKey{Name: name, Namespace: testNamespace}, &statefulSet)
 
 		assert.NoError(t, err)
@@ -242,7 +241,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		assert.NotNil(t, result)
 
 		var proxySecret corev1.Secret
-		name := agproxysecret.BuildProxySecretName()
+		name := statefulset.BuildProxySecretName()
 		err = controller.client.Get(context.TODO(), client.ObjectKey{Name: name, Namespace: testNamespace}, &proxySecret)
 
 		assert.NoError(t, err)
@@ -272,7 +271,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		assert.NotNil(t, result)
 
 		var proxySecret corev1.Secret
-		name := agproxysecret.BuildProxySecretName()
+		name := statefulset.BuildProxySecretName()
 		err = controller.client.Get(context.TODO(), client.ObjectKey{Name: name, Namespace: testNamespace}, &proxySecret)
 
 		assert.Error(t, err)
@@ -393,8 +392,8 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 	_, err = controller.Reconcile(context.TODO(), request)
 	assert.NoError(t, err)
 
-	routingCapability := capability.NewRoutingCapability(instance)
-	stsName := capability.CalculateStatefulSetName(routingCapability, testName)
+	routingCapability := rcap.NewRoutingCapability(instance)
+	stsName := rcap.CalculateStatefulSetName(routingCapability, testName)
 
 	routingSts := &appsv1.StatefulSet{}
 	err = controller.client.Get(context.TODO(), client.ObjectKey{
@@ -475,8 +474,8 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 	_, err = r.Reconcile(context.TODO(), request)
 	assert.NoError(t, err)
 
-	multiCapability := capability.NewMultiCapability(instance)
-	stsName := capability.CalculateStatefulSetName(multiCapability, testName)
+	multiCapability := rcap.NewMultiCapability(instance)
+	stsName := rcap.CalculateStatefulSetName(multiCapability, testName)
 
 	routingSts := &appsv1.StatefulSet{}
 	err = r.client.Get(context.TODO(), client.ObjectKey{
