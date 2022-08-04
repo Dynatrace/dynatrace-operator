@@ -200,7 +200,7 @@ func TestReconcile(t *testing.T) {
 						Spec: corev1.PodSpec{
 							Containers: []corev1.Container{
 								{
-									Env: []corev1.EnvVar{{Name: dtDNSEntryPoint, Value: buildDNSEntryPoint(r.Instance, r.ShortName())}}}},
+									Env: []corev1.EnvVar{{Name: dtDnsEntryPoint, Value: buildDNSEntryPoint(r.Instance, r.ShortName())}}}},
 						},
 					},
 				},
@@ -214,7 +214,7 @@ func TestReconcile(t *testing.T) {
 
 		statefulSet := assertStatefulSetExists(r)
 		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{
-			Name:  dtDNSEntryPoint,
+			Name:  dtDnsEntryPoint,
 			Value: buildDNSEntryPoint(r.Instance, r.ShortName()),
 		})
 	})

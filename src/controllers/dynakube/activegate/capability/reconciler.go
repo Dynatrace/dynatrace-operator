@@ -20,7 +20,7 @@ import (
 const (
 	httpsContainerPort = 9999
 	httpContainerPort  = 9998
-	dtDNSEntryPoint    = "DT_DNS_ENTRY_POINT"
+	dtDnsEntryPoint    = "DT_DNS_ENTRY_POINT"
 )
 
 type activegateReconciler interface {
@@ -125,7 +125,7 @@ func addDNSEntryPoint(instance *dynatracev1beta1.DynaKube, moduleName string) st
 		if activeGateContainer, err := getActiveGateContainer(sts); err == nil {
 			activeGateContainer.Env = append(activeGateContainer.Env,
 				corev1.EnvVar{
-					Name:  dtDNSEntryPoint,
+					Name:  dtDnsEntryPoint,
 					Value: buildDNSEntryPoint(instance, moduleName),
 				})
 		} else {
