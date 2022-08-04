@@ -9,7 +9,7 @@ on:
     branches:
       - master
   schedule:
-    - cron: '34 23 * * 0'
+    - cron: "34 23 * * 0"
 
 permissions:
   contents: read
@@ -26,38 +26,71 @@ jobs:
       fail-fast: false
       matrix:
         language:
-          - 'go'
+          - "go"
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-    # Initializes the CodeQL tools for scanning.
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v2
-      with:
-        languages: ${{ matrix.language }}
+      # Initializes the CodeQL tools for scanning.
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: ${{ matrix.language }}
 
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v2
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v2
 
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
 
   snyk-go-scan:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
-    - name: Snyk Golang Check
-      uses: snyk/actions/golang@7a25034bb99f934b1e45b08d2025b07dde28aa48
-      continue-on-error: true # To make sure that SARIF upload gets called
-      env:
-        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      with:
-        args: --sarif-file-output=snyk-go.sarif --severity-threshold=high
-    - name: Upload result to GitHub Code Scanning
-      uses: github/codeql-action/upload-sarif@96bc9c36c68e097cd033777efed25c248ffcf09a
-      with:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Snyk Golang Check
+        uses: snyk/actions/golang@7a25034bb99f934b1e45b08d2025b07dde28aa48
+        continue-on-error: true # To make sure that SARIF upload gets called
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --sarif-file-output=snyk-go.sarif --severity-threshold=high
+      - name: Upload result to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@96bc9c36c68e097cd033777efed25c248ffcf09a
+        with:
           # Path to SARIF file relative to the root of the repository
-        sarif_file: snyk-go.sarif
+          sarif_file: snyk-go.sarif
+
+  snyk-helm-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Create deployment manifests
+        shell: bash
+        run: "make manifests"
+      - name: Snyk Kubernetes IaC Scan
+        uses: snyk/actions/iac@0.3.0
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          file: config/deploy/kubernetes/kubernetes-all.yaml
+          args: "--sarif-file-output=kubernetes-snyk.sarif"
+      - name: Upload kubernetes result to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@96bc9c36c68e097cd033777efed25c248ffcf09a
+        with:
+          sarif_file: kubernetes-snyk.sarif
+      - name: Snyk Openshift IaC Scan
+        uses: snyk/actions/iac@0.3.0
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          file: config/deploy/openshift/openshift-all.yaml
+          args: "--sarif-file-output=openshift-snyk.sarif"
+      - name: Upload openshift result to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@96bc9c36c68e097cd033777efed25c248ffcf09a
+        with:
+          sarif_file: openshift-snyk.sarif
