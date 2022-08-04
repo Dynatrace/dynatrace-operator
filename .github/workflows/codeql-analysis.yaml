@@ -73,28 +73,16 @@ jobs:
           go-version: "1.18"
       - name: Create deployment manifests
         shell: bash
-        run: "bash hack/build/ci/install-cgo-dependencies.sh && make manifests"
-      - name: Snyk Kubernetes IaC Scan
+        run: "bash hack/build/ci/install-cgo-dependencies.sh && make manifests/openshift"
+      - name: Snyk IaC Scan
         uses: snyk/actions/iac@0.3.0
         continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          file: config/deploy/kubernetes/kubernetes-all.yaml
-          args: --report --sarif-file-output="kubernetes-snyk.sarif"
-      - name: Upload kubernetes result to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@96bc9c36c68e097cd033777efed25c248ffcf09a
-        with:
-          sarif_file: kubernetes-snyk.sarif
-      - name: Snyk Openshift IaC Scan
-        uses: snyk/actions/iac@0.3.0
-        continue-on-error: true
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          file: config/deploy/openshift/openshift-all.yaml
-          args: --report --sarif-file-output="openshift-snyk.sarif"
+          file: config/deploy/openshift/openshift-all.yaml # openshift-all.yaml is a superset of the kubernetes-all.yaml, so to avoid duplicates we should only can the openshift yaml
+          args: --report
       - name: Upload openshift result to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@96bc9c36c68e097cd033777efed25c248ffcf09a
         with:
-          sarif_file: openshift-snyk.sarif
+          sarif_file: snyk.sarif
