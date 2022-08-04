@@ -115,7 +115,7 @@ func TestBinaryGarbageCollector_getUsedVersions(t *testing.T) {
 
 func NewMockGarbageCollector() *CSIGarbageCollector {
 	return &CSIGarbageCollector{
-		opts: dtcsi.CsiOptions{RootDir: testRootDir},
+		opts: dtcsi.CSIOptions{RootDir: testRootDir},
 		fs:   afero.NewMemMapFs(),
 		db:   metadata.FakeMemoryDB(),
 		path: metadata.PathResolver{RootDir: testRootDir},

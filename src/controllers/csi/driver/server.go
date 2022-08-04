@@ -43,7 +43,7 @@ import (
 
 type CSIDriverServer struct {
 	client  client.Client
-	opts    dtcsi.CsiOptions
+	opts    dtcsi.CSIOptions
 	fs      afero.Afero
 	mounter mount.Interface
 	db      metadata.Access
@@ -55,7 +55,7 @@ type CSIDriverServer struct {
 var _ csi.IdentityServer = &CSIDriverServer{}
 var _ csi.NodeServer = &CSIDriverServer{}
 
-func NewServer(client client.Client, opts dtcsi.CsiOptions, db metadata.Access) *CSIDriverServer {
+func NewServer(client client.Client, opts dtcsi.CSIOptions, db metadata.Access) *CSIDriverServer {
 	return &CSIDriverServer{
 		client:  client,
 		opts:    opts,

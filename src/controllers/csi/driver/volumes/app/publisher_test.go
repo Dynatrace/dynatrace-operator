@@ -209,7 +209,7 @@ func newPublisherForTesting(t *testing.T, mounter *mount.FakeMounter) AppVolumeP
 		},
 	}
 
-	csiOptions := dtcsi.CsiOptions{RootDir: "/"}
+	csiOptions := dtcsi.CSIOptions{RootDir: "/"}
 
 	tmpFs := afero.NewMemMapFs()
 

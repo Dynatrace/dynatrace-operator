@@ -52,7 +52,7 @@ func TestCsiCommandBuilder(t *testing.T) {
 		assert.Equal(t, expectedFs, builder.getFilesystem())
 	})
 	t.Run("set csi options", func(t *testing.T) {
-		expectedOptions := dtcsi.CsiOptions{
+		expectedOptions := dtcsi.CSIOptions{
 			RootDir: dtcsi.DataPath,
 		}
 		builder := NewCsiProvisionerCommandBuilder().

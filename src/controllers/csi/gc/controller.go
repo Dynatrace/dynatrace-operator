@@ -34,14 +34,14 @@ type garbageCollectionInfo struct {
 // CSIGarbageCollector removes unused and outdated agent versions
 type CSIGarbageCollector struct {
 	apiReader client.Reader
-	opts      dtcsi.CsiOptions
+	opts      dtcsi.CSIOptions
 	fs        afero.Fs
 	db        metadata.Access
 	path      metadata.PathResolver
 }
 
 // NewCSIGarbageCollector returns a new CSIGarbageCollector
-func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CsiOptions, db metadata.Access) *CSIGarbageCollector {
+func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db metadata.Access) *CSIGarbageCollector {
 	return &CSIGarbageCollector{
 		apiReader: apiReader,
 		opts:      opts,
