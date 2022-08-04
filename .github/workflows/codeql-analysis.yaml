@@ -70,7 +70,7 @@ jobs:
       - name: Set up Golang
         uses: actions/setup-go@v2
         with:
-          go-version: 1.18
+          go-version: "1.18"
       - name: Create deployment manifests
         shell: bash
         run: "bash hack/build/ci/install-cgo-dependencies.sh && make manifests"
