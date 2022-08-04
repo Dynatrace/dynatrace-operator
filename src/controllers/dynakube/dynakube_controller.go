@@ -238,32 +238,9 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 		return
 	}
 
-	if dkState.Instance.HostMonitoringMode() {
-		upd, err = oneagent.NewOneAgentReconciler(
-			controller.client, controller.apiReader, controller.scheme, dkState.Instance, daemonset.DeploymentTypeHostMonitoring,
-		).Reconcile(ctx, dkState)
-		if dkState.Error(err) {
-			return
-		}
-		dkState.Update(upd, "host monitoring reconciled")
-	} else if dkState.Instance.CloudNativeFullstackMode() {
-		upd, err = oneagent.NewOneAgentReconciler(
-			controller.client, controller.apiReader, controller.scheme, dkState.Instance, daemonset.DeploymentTypeCloudNative,
-		).Reconcile(ctx, dkState)
-		if dkState.Error(err) {
-			return
-		}
-		dkState.Update(upd, "cloud native fullstack monitoring reconciled")
-	} else if dkState.Instance.ClassicFullStackMode() {
-		upd, err = oneagent.NewOneAgentReconciler(
-			controller.client, controller.apiReader, controller.scheme, dkState.Instance, daemonset.DeploymentTypeFullStack,
-		).Reconcile(ctx, dkState)
-		if dkState.Error(err) {
-			return
-		}
-		dkState.Update(upd, "classic fullstack reconciled")
-	} else {
-		controller.removeOneAgentDaemonSet(dkState)
+	err := controller.reconcileOneAgent(ctx, dkState, upd)
+	if err {
+		return
 	}
 
 	endpointSecretGenerator := dtingestendpoint.NewEndpointSecretGenerator(controller.client, controller.apiReader, dkState.Instance.Namespace)
@@ -299,6 +276,38 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 
 	upd = controller.determineDynaKubePhase(dkState.Instance)
 	dkState.Update(upd, "dynakube phase changed")
+}
+
+func (controller *DynakubeController) reconcileOneAgent(ctx context.Context, dkState *status.DynakubeState, upd bool) error {
+	var err error
+	if dkState.Instance.HostMonitoringMode() {
+		upd, err = oneagent.NewOneAgentReconciler(
+			controller.client, controller.apiReader, controller.scheme, dkState.Instance, daemonset.DeploymentTypeHostMonitoring,
+		).Reconcile(ctx, dkState)
+		if dkState.Error(err) {
+			return nil
+		}
+		dkState.Update(upd, "host monitoring reconciled")
+	} else if dkState.Instance.CloudNativeFullstackMode() {
+		upd, err = oneagent.NewOneAgentReconciler(
+			controller.client, controller.apiReader, controller.scheme, dkState.Instance, daemonset.DeploymentTypeCloudNative,
+		).Reconcile(ctx, dkState)
+		if dkState.Error(err) {
+			return nil
+		}
+		dkState.Update(upd, "cloud native fullstack monitoring reconciled")
+	} else if dkState.Instance.ClassicFullStackMode() {
+		upd, err = oneagent.NewOneAgentReconciler(
+			controller.client, controller.apiReader, controller.scheme, dkState.Instance, daemonset.DeploymentTypeFullStack,
+		).Reconcile(ctx, dkState)
+		if dkState.Error(err) {
+			return nil
+		}
+		dkState.Update(upd, "classic fullstack reconciled")
+	} else {
+		controller.removeOneAgentDaemonSet(dkState)
+	}
+	return err
 }
 
 func updatePhaseIfChanged(instance *dynatracev1beta1.DynaKube, newPhase dynatracev1beta1.DynaKubePhaseType) bool {
