@@ -8,8 +8,8 @@ import (
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/coreReconciler"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/secrets"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/apimonitoring"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
@@ -398,7 +398,7 @@ func (controller *DynakubeController) startApiMonitoring(dynakubeState *status.D
 
 func (controller *DynakubeController) createCapability(dynakubeState *status.DynakubeState, agCapability capability.Capability) error {
 	upd, err := capability.NewReconciler(controller.client,
-		agCapability, activegate.NewReconciler(controller.client, controller.apiReader, controller.scheme, dynakubeState.Instance, agCapability), dynakubeState.Instance).Reconcile()
+		agCapability, coreReconciler.NewReconciler(controller.client, controller.apiReader, controller.scheme, dynakubeState.Instance, agCapability), dynakubeState.Instance).Reconcile()
 	if dynakubeState.Error(err) {
 		return err
 	}

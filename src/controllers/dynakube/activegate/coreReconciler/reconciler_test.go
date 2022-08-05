@@ -1,4 +1,4 @@
-package activegate
+package coreReconciler
 
 import (
 	"context"

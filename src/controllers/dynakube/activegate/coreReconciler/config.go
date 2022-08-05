@@ -1,4 +1,4 @@
-package activegate
+package coreReconciler
 
 import "github.com/Dynatrace/dynatrace-operator/src/logger"
 
