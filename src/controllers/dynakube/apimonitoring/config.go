@@ -1,4 +1,4 @@
-package automaticapimonitoring
+package apimonitoring
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/src/logger"

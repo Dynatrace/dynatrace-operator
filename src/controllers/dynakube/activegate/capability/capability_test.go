@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/statefulset"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -317,7 +318,7 @@ func TestNewMultiCapability(t *testing.T) {
 			want: &MultiCapability{
 				capabilityBase: capabilityBase{
 					enabled:   false,
-					shortName: MultiActiveGateName,
+					shortName: statefulset.MultiActiveGateName,
 					Configuration: Configuration{
 						ServicePorts: AgServicePorts{
 							Webserver: true,
@@ -342,7 +343,7 @@ func TestNewMultiCapability(t *testing.T) {
 			want: &MultiCapability{
 				capabilityBase: capabilityBase{
 					enabled:    true,
-					shortName:  MultiActiveGateName,
+					shortName:  statefulset.MultiActiveGateName,
 					argName:    dynatracev1beta1.RoutingCapability.ArgumentName,
 					properties: props,
 					Configuration: Configuration{
@@ -373,7 +374,7 @@ func TestNewMultiCapability(t *testing.T) {
 			want: &MultiCapability{
 				capabilityBase: capabilityBase{
 					enabled:    true,
-					shortName:  MultiActiveGateName,
+					shortName:  statefulset.MultiActiveGateName,
 					argName:    dynatracev1beta1.MetricsIngestCapability.ArgumentName,
 					properties: props,
 					Configuration: Configuration{
@@ -404,7 +405,7 @@ func TestNewMultiCapability(t *testing.T) {
 			want: &MultiCapability{
 				capabilityBase: capabilityBase{
 					enabled:    true,
-					shortName:  MultiActiveGateName,
+					shortName:  statefulset.MultiActiveGateName,
 					argName:    dynatracev1beta1.DynatraceApiCapability.ArgumentName,
 					properties: props,
 					Configuration: Configuration{
@@ -435,7 +436,7 @@ func TestNewMultiCapability(t *testing.T) {
 			want: &MultiCapability{
 				capabilityBase: capabilityBase{
 					enabled:    true,
-					shortName:  MultiActiveGateName,
+					shortName:  statefulset.MultiActiveGateName,
 					argName:    dynatracev1beta1.StatsdIngestCapability.ArgumentName,
 					properties: props,
 					Configuration: Configuration{
@@ -467,7 +468,7 @@ func TestNewMultiCapability(t *testing.T) {
 			want: &MultiCapability{
 				capabilityBase: capabilityBase{
 					enabled:    true,
-					shortName:  MultiActiveGateName,
+					shortName:  statefulset.MultiActiveGateName,
 					argName:    dynatracev1beta1.KubeMonCapability.ArgumentName,
 					properties: props,
 					Configuration: Configuration{
@@ -524,7 +525,7 @@ func TestNewMultiCapability(t *testing.T) {
 			want: &MultiCapability{
 				capabilityBase: capabilityBase{
 					enabled:   true,
-					shortName: MultiActiveGateName,
+					shortName: statefulset.MultiActiveGateName,
 					argName: strings.Join([]string{
 						dynatracev1beta1.KubeMonCapability.ArgumentName,
 						dynatracev1beta1.MetricsIngestCapability.ArgumentName,

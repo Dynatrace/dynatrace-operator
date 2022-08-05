@@ -1,4 +1,4 @@
-package automaticapimonitoring
+package apimonitoring
 
 import (
 	"fmt"
@@ -7,21 +7,21 @@ import (
 	"github.com/pkg/errors"
 )
 
-type AutomaticApiMonitoringReconciler struct {
+type ApiMonitoringReconciler struct {
 	dtc            dtclient.Client
 	clusterLabel   string
 	kubeSystemUUID string
 }
 
-func NewReconciler(dtc dtclient.Client, clusterLabel, kubeSystemUUID string) *AutomaticApiMonitoringReconciler {
-	return &AutomaticApiMonitoringReconciler{
+func NewReconciler(dtc dtclient.Client, clusterLabel, kubeSystemUUID string) *ApiMonitoringReconciler {
+	return &ApiMonitoringReconciler{
 		dtc,
 		clusterLabel,
 		kubeSystemUUID,
 	}
 }
 
-func (r *AutomaticApiMonitoringReconciler) Reconcile() error {
+func (r *ApiMonitoringReconciler) Reconcile() error {
 	objectID, err := r.ensureSettingExists()
 
 	if err != nil {
@@ -37,7 +37,7 @@ func (r *AutomaticApiMonitoringReconciler) Reconcile() error {
 	return nil
 }
 
-func (r *AutomaticApiMonitoringReconciler) ensureSettingExists() (string, error) {
+func (r *ApiMonitoringReconciler) ensureSettingExists() (string, error) {
 	if r.kubeSystemUUID == "" {
 		return "", errors.New("no kube-system namespace UUID given")
 	}

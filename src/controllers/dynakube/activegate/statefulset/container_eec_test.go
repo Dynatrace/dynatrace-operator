@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -39,7 +38,7 @@ func TestExtensionController_BuildContainerAndVolumes(t *testing.T) {
 		}
 
 		for _, mountPath := range []string{
-			capability.ActiveGateGatewayConfigMountPoint,
+			GatewayConfigMountPoint,
 			dataSourceStartupArgsMountPoint,
 			dataSourceAuthTokenMountPoint,
 			statsdMetadataMountPoint,
@@ -49,8 +48,8 @@ func TestExtensionController_BuildContainerAndVolumes(t *testing.T) {
 			assertion.Truef(kubeobjects.MountPathIsIn(container.VolumeMounts, mountPath), "Expected that EEC container defines mount point %s", mountPath)
 		}
 
-		assert.Truef(t, kubeobjects.MountPathIsReadOnlyOrReadWrite(container.VolumeMounts, capability.ActiveGateGatewayConfigMountPoint, kubeobjects.ReadOnlyMountPath),
-			"Expected that ActiveGate container mount point %s is mounted ReadOnly", capability.ActiveGateGatewayConfigMountPoint,
+		assert.Truef(t, kubeobjects.MountPathIsReadOnlyOrReadWrite(container.VolumeMounts, GatewayConfigMountPoint, kubeobjects.ReadOnlyMountPath),
+			"Expected that ActiveGate container mount point %s is mounted ReadOnly", GatewayConfigMountPoint,
 		)
 
 		for _, envVar := range []string{

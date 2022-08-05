@@ -7,12 +7,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/src/agproxysecret"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/reconciler/automaticapimonitoring"
-	rcap "github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/reconciler/capability"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/secrets"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/apimonitoring"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent"
@@ -332,7 +331,7 @@ func (controller *DynakubeController) reconcileActiveGate(ctx context.Context, d
 }
 
 func (controller *DynakubeController) reconcileActiveGateProxySecret(ctx context.Context, dynakubeState *status.DynakubeState) bool {
-	gen := agproxysecret.NewActiveGateProxySecretGenerator(controller.client, controller.apiReader, dynakubeState.Instance.Namespace, log)
+	gen := capability.NewActiveGateProxySecretGenerator(controller.client, controller.apiReader, dynakubeState.Instance.Namespace, log)
 	if dynakubeState.Instance.NeedsActiveGateProxy() {
 		err := gen.GenerateForDynakube(ctx, dynakubeState.Instance)
 		if dynakubeState.Error(err) {
@@ -359,8 +358,8 @@ func (controller *DynakubeController) reconcileActiveGateCapabilities(dynakubeSt
 
 	for _, c := range caps {
 		if c.Enabled() {
-			upd, err := rcap.NewReconciler(
-				c, controller.client, controller.apiReader, controller.scheme, dynakubeState.Instance).Reconcile()
+			upd, err := capability.NewReconciler(controller.client,
+				c, activegate.NewReconciler(controller.client, controller.apiReader, controller.scheme, dynakubeState.Instance, c), dynakubeState.Instance).Reconcile()
 			if dynakubeState.Error(err) {
 				return false
 			}
@@ -379,7 +378,7 @@ func (controller *DynakubeController) reconcileActiveGateCapabilities(dynakubeSt
 			if c.ShouldCreateService() {
 				svc := corev1.Service{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      rcap.BuildServiceName(dynakubeState.Instance.Name, c.ShortName()),
+						Name:      capability.BuildServiceName(dynakubeState.Instance.Name, c.ShortName()),
 						Namespace: dynakubeState.Instance.Namespace,
 					},
 				}
@@ -400,7 +399,7 @@ func (controller *DynakubeController) reconcileActiveGateCapabilities(dynakubeSt
 			clusterLabel = dynakubeState.Instance.Name
 		}
 
-		err := automaticapimonitoring.NewReconciler(dtc, clusterLabel, dynakubeState.Instance.Status.KubeSystemUUID).
+		err := apimonitoring.NewReconciler(dtc, clusterLabel, dynakubeState.Instance.Status.KubeSystemUUID).
 			Reconcile()
 		if err != nil {
 			log.Error(err, "could not create setting")

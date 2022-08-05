@@ -1,4 +1,4 @@
-package statefulset
+package activegate
 
 import (
 	"context"
@@ -7,10 +7,10 @@ import (
 	"strconv"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/customproperties"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/internal/events"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/secrets"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/pkg/errors"
@@ -32,7 +32,7 @@ type Reconciler struct {
 	capabilityName                   string
 	serviceAccountOwner              string
 	capability                       *dynatracev1beta1.CapabilityProperties
-	onAfterStatefulSetCreateListener []events.StatefulSetEvent
+	onAfterStatefulSetCreateListener []statefulset.StatefulSetEvent
 	initContainersTemplates          []corev1.Container
 	containerVolumeMounts            []corev1.VolumeMount
 	volumes                          []corev1.Volume
@@ -55,21 +55,20 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 		capabilityName:                   capability.ArgName(),
 		serviceAccountOwner:              serviceAccountOwner,
 		capability:                       capability.Properties(),
-		onAfterStatefulSetCreateListener: []events.StatefulSetEvent{},
+		onAfterStatefulSetCreateListener: []statefulset.StatefulSetEvent{},
 		initContainersTemplates:          capability.InitContainersTemplates(),
 		containerVolumeMounts:            capability.ContainerVolumeMounts(),
 		volumes:                          capability.Volumes(),
 	}
 }
 
-func (r *Reconciler) AddOnAfterStatefulSetCreateListener(event events.StatefulSetEvent) {
+func (r *Reconciler) AddOnAfterStatefulSetCreateListener(event statefulset.StatefulSetEvent) {
 	r.onAfterStatefulSetCreateListener = append(r.onAfterStatefulSetCreateListener, event)
 }
 
 func (r *Reconciler) Reconcile() (update bool, err error) {
 	if r.capability.CustomProperties != nil {
-		err = customproperties.
-			NewReconciler(r, r.Instance, r.serviceAccountOwner, *r.capability.CustomProperties, r.scheme).
+		err = customproperties.NewReconciler(r, r.Instance, r.serviceAccountOwner, *r.capability.CustomProperties, r.scheme).
 			Reconcile()
 		if err != nil {
 			log.Error(err, "could not reconcile custom properties")
@@ -124,12 +123,12 @@ func (r *Reconciler) buildDesiredStatefulSet() (*appsv1.StatefulSet, error) {
 		return nil, errors.WithStack(err)
 	}
 
-	stsProperties := NewStatefulSetProperties(
+	stsProperties := statefulset.NewStatefulSetProperties(
 		r.Instance, r.capability, kubeUID, activeGateConfigurationHash, r.feature, r.capabilityName, r.serviceAccountOwner,
 		r.initContainersTemplates, r.containerVolumeMounts, r.volumes)
 	stsProperties.OnAfterCreateListener = r.onAfterStatefulSetCreateListener
 
-	desiredSts, err := CreateStatefulSet(stsProperties)
+	desiredSts, err := statefulset.CreateStatefulSet(stsProperties)
 	return desiredSts, errors.WithStack(err)
 }
 

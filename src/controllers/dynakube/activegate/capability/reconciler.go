@@ -6,15 +6,12 @@ import (
 	"reflect"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/internal/events"
-	sts "github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/reconciler/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -26,16 +23,19 @@ const (
 	dtDNSEntryPoint    = "DT_DNS_ENTRY_POINT"
 )
 
-type Reconciler struct {
-	*sts.Reconciler
-	capability.Capability
+type activegateReconciler interface {
+	Reconcile() (update bool, err error)
+	AddOnAfterStatefulSetCreateListener(event statefulset.StatefulSetEvent)
 }
 
-func NewReconciler(capability capability.Capability, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme,
-	instance *dynatracev1beta1.DynaKube) *Reconciler {
-	baseReconciler := sts.NewReconciler(
-		clt, apiReader, scheme, instance, capability)
+type Reconciler struct {
+	client.Client
+	activegateReconciler
+	Capability
+	Instance *dynatracev1beta1.DynaKube
+}
 
+func NewReconciler(clt client.Client, capability Capability, baseReconciler activegateReconciler, instance *dynatracev1beta1.DynaKube) *Reconciler {
 	if capability.Config().SetDnsEntryPoint {
 		baseReconciler.AddOnAfterStatefulSetCreateListener(addDNSEntryPoint(instance, capability.ShortName()))
 	}
@@ -49,17 +49,19 @@ func NewReconciler(capability capability.Capability, clt client.Client, apiReade
 	}
 
 	return &Reconciler{
-		Reconciler: baseReconciler,
-		Capability: capability,
+		activegateReconciler: baseReconciler,
+		Capability:           capability,
+		Instance:             instance,
+		Client:               clt,
 	}
 }
 
-func setReadinessProbePort() events.StatefulSetEvent {
+func setReadinessProbePort() statefulset.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {
 		if activeGateContainer, err := getActiveGateContainer(sts); err == nil {
-			activeGateContainer.ReadinessProbe.HTTPGet.Port = intstr.FromString(capability.HttpsServicePortName)
+			activeGateContainer.ReadinessProbe.HTTPGet.Port = intstr.FromString(HttpsServicePortName)
 		} else {
-			log.Error(err, "Cannot find container in the StatefulSet", "container name", capability.ActiveGateContainerName)
+			log.Error(err, "Cannot find container in the StatefulSet", "container name", statefulset.ContainerName)
 		}
 	}
 }
@@ -76,49 +78,49 @@ func getContainerByName(containers []corev1.Container, containerName string) (*c
 }
 
 func getActiveGateContainer(sts *appsv1.StatefulSet) (*corev1.Container, error) {
-	return getContainerByName(sts.Spec.Template.Spec.Containers, capability.ActiveGateContainerName)
+	return getContainerByName(sts.Spec.Template.Spec.Containers, statefulset.ContainerName)
 }
 
-func setCommunicationsPort(dk *dynatracev1beta1.DynaKube) events.StatefulSetEvent {
+func setCommunicationsPort(dk *dynatracev1beta1.DynaKube) statefulset.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {
 		activeGateContainer, err := getActiveGateContainer(sts)
 		if err == nil {
 			activeGateContainer.Ports = []corev1.ContainerPort{
 				{
-					Name:          capability.HttpsServicePortName,
+					Name:          HttpsServicePortName,
 					ContainerPort: httpsContainerPort,
 				},
 				{
-					Name:          capability.HttpServicePortName,
+					Name:          HttpServicePortName,
 					ContainerPort: httpContainerPort,
 				},
 			}
 		} else {
-			log.Info("Cannot find container in the StatefulSet", "container name", capability.ActiveGateContainerName)
+			log.Info("Cannot find container in the StatefulSet", "container name", statefulset.ContainerName)
 		}
 
 		if dk.NeedsStatsd() {
-			statsdContainer, err := getContainerByName(sts.Spec.Template.Spec.Containers, capability.StatsdContainerName)
+			statsdContainer, err := getContainerByName(sts.Spec.Template.Spec.Containers, statefulset.StatsdContainerName)
 			if err == nil {
 				statsdContainer.Ports = []corev1.ContainerPort{
 					{
-						Name:          capability.StatsdIngestTargetPort,
-						ContainerPort: capability.StatsdIngestPort,
+						Name:          statefulset.StatsdIngestTargetPort,
+						ContainerPort: statefulset.StatsdIngestPort,
 						Protocol:      corev1.ProtocolUDP,
 					},
 				}
 			} else {
-				log.Info("Cannot find container in the StatefulSet", "container name", capability.StatsdContainerName)
+				log.Info("Cannot find container in the StatefulSet", "container name", statefulset.StatsdContainerName)
 			}
 		}
 	}
 }
 
 func (r *Reconciler) calculateStatefulSetName() string {
-	return capability.CalculateStatefulSetName(r.Capability, r.Instance.Name)
+	return CalculateStatefulSetName(r.Capability, r.Instance.Name)
 }
 
-func addDNSEntryPoint(instance *dynatracev1beta1.DynaKube, moduleName string) events.StatefulSetEvent {
+func addDNSEntryPoint(instance *dynatracev1beta1.DynaKube, moduleName string) statefulset.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {
 		if activeGateContainer, err := getActiveGateContainer(sts); err == nil {
 			activeGateContainer.Env = append(activeGateContainer.Env,
@@ -127,7 +129,7 @@ func addDNSEntryPoint(instance *dynatracev1beta1.DynaKube, moduleName string) ev
 					Value: buildDNSEntryPoint(instance, moduleName),
 				})
 		} else {
-			log.Error(err, "Cannot find container in the StatefulSet", "container name", capability.ActiveGateContainerName)
+			log.Error(err, "Cannot find container in the StatefulSet", "container name", statefulset.ContainerName)
 		}
 	}
 }
@@ -138,7 +140,7 @@ func buildDNSEntryPoint(instance *dynatracev1beta1.DynaKube, moduleName string) 
 
 func (r *Reconciler) Reconcile() (update bool, err error) {
 	if r.ShouldCreateService() {
-		multiCapability := capability.NewMultiCapability(r.Instance)
+		multiCapability := NewMultiCapability(r.Instance)
 		update, err = r.createOrUpdateService(multiCapability.ServicePorts)
 		if update || err != nil {
 			return update, errors.WithStack(err)
@@ -152,11 +154,11 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 		}
 	}
 
-	update, err = r.Reconciler.Reconcile()
+	update, err = r.activegateReconciler.Reconcile()
 	return update, errors.WithStack(err)
 }
 
-func (r *Reconciler) createOrUpdateService(desiredServicePorts capability.AgServicePorts) (bool, error) {
+func (r *Reconciler) createOrUpdateService(desiredServicePorts AgServicePorts) (bool, error) {
 	desired := createService(r.Instance, r.ShortName(), desiredServicePorts)
 
 	installed := &corev1.Service{}
