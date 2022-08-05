@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/common"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -22,9 +23,10 @@ const (
 )
 
 func SetupInvalidTestZip(t *testing.T, fs afero.Fs) afero.File {
-	zipFile := SetupTestArchive(t, fs, TestRawZip)
+	zipFile, err := afero.TempFile(fs, "", "")
+	require.NoError(t, err)
 
-	_, err := zipFile.Seek(8, io.SeekStart)
+	_, err = zipFile.Write([]byte("DIE"))
 	require.NoError(t, err)
 
 	return zipFile
@@ -47,6 +49,10 @@ func SetupTestArchive(t *testing.T, fs afero.Fs, rawZip string) afero.File {
 	require.NoError(t, err)
 
 	return zipFile
+}
+
+func createTestExtractor(fs afero.Fs) Extractor {
+	return NewOnAgentExtractor(fs, metadata.PathResolver{})
 }
 
 func testUnpackedArchive(t *testing.T, fs afero.Fs) {
