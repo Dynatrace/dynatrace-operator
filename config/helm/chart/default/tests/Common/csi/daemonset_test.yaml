@@ -66,6 +66,7 @@ tests:
       - equal:
           path: spec.template.spec
           value:
+            priorityClassName: dynatrace-high-priority
             tolerations:
                 - effect: NoSchedule
                   key: node-role.kubernetes.io/master
