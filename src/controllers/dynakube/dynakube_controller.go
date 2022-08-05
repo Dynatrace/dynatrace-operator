@@ -8,7 +8,6 @@ import (
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/commonReconciler"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/secrets"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/apimonitoring"
@@ -323,12 +322,8 @@ func (controller *DynakubeController) removeOneAgentDaemonSet(dkState *status.Dy
 	}
 }
 
-func (controller *DynakubeController) reconcileActiveGate(ctx context.Context, dynakubeState *status.DynakubeState, dtc dtclient.Client) (success bool) {
-	if !controller.reconcileActiveGateProxySecret(ctx, dynakubeState) {
-		return false
-	}
-
-	upd, err := commonReconciler.NewReconciler(controller.client, controller.apiReader, controller.scheme, dynakubeState.Instance).Reconcile()
+func (controller *DynakubeController) reconcileActiveGate(ctx context.Context, dynakubeState *status.DynakubeState, dtc dtclient.Client) (updated bool) {
+	upd, err := commonReconciler.NewReconciler(ctx, controller.client, controller.apiReader, controller.scheme, dynakubeState.Instance).Reconcile()
 	if dynakubeState.Error(err) {
 		return false
 	}
@@ -336,21 +331,6 @@ func (controller *DynakubeController) reconcileActiveGate(ctx context.Context, d
 
 	controller.startApiMonitoring(dynakubeState, dtc)
 	return upd
-}
-
-func (controller *DynakubeController) reconcileActiveGateProxySecret(ctx context.Context, dynakubeState *status.DynakubeState) bool {
-	gen := capability.NewActiveGateProxySecretGenerator(controller.client, controller.apiReader, dynakubeState.Instance.Namespace, log)
-	if dynakubeState.Instance.NeedsActiveGateProxy() {
-		err := gen.GenerateForDynakube(ctx, dynakubeState.Instance)
-		if dynakubeState.Error(err) {
-			return false
-		}
-	} else {
-		if err := gen.EnsureDeleted(ctx, dynakubeState.Instance); dynakubeState.Error(err) {
-			return false
-		}
-	}
-	return true
 }
 
 func (controller *DynakubeController) startApiMonitoring(dynakubeState *status.DynakubeState, dtc dtclient.Client) {

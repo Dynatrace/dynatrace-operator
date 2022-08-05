@@ -5,7 +5,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/coreReconciler"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/coreReconciler"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -15,16 +15,16 @@ import (
 )
 
 type Reconciler struct {
+	context context.Context
 	client.Client
 	Instance  *dynatracev1beta1.DynaKube
 	apiReader client.Reader
 	scheme    *runtime.Scheme
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme,
-	instance *dynatracev1beta1.DynaKube) *Reconciler {
-
+func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, instance *dynatracev1beta1.DynaKube) *Reconciler {
 	return &Reconciler{
+		context:   ctx,
 		Client:    clt,
 		apiReader: apiReader,
 		scheme:    scheme,
@@ -33,6 +33,10 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 }
 
 func (r *Reconciler) Reconcile() (update bool, err error) {
+	if err := r.reconcileActiveGateProxySecret(); err != nil {
+		return false, err
+	}
+
 	var caps = capability.GenerateActiveGateCapabilities(r.Instance)
 	for _, agCapability := range caps {
 		if agCapability.Enabled() {
@@ -44,12 +48,21 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 		}
 	}
 	return true, err
+}
 
+func (r *Reconciler) reconcileActiveGateProxySecret() (err error) {
+	gen := capability.NewActiveGateProxySecretGenerator(r.Client, r.apiReader, r.Instance.Namespace, log)
+	if r.Instance.NeedsActiveGateProxy() {
+		return gen.GenerateForDynakube(r.context, r.Instance)
+	} else {
+		return gen.EnsureDeleted(r.context, r.Instance)
+	}
 }
 
 func (r *Reconciler) createCapability(agCapability capability.Capability) (updated bool, err error) {
-	return capability.NewReconciler(r.Client,
-		agCapability, coreReconciler.NewReconciler(r.Client, r.apiReader, r.scheme, r.Instance, agCapability), r.Instance).Reconcile()
+	return capability.
+		NewReconciler(r.Client, agCapability, coreReconciler.NewReconciler(r.Client, r.apiReader, r.scheme, r.Instance, agCapability), r.Instance).
+		Reconcile()
 }
 
 func (r *Reconciler) deleteCapability(agCapability capability.Capability) error {
@@ -75,7 +88,7 @@ func (r *Reconciler) deleteService(agCapability capability.Capability) error {
 			Namespace: r.Instance.Namespace,
 		},
 	}
-	return kubeobjects.EnsureDeleted(context.TODO(), r.Client, &svc)
+	return kubeobjects.EnsureDeleted(r.context, r.Client, &svc)
 }
 
 func (r *Reconciler) deleteStatefulset(agCapability capability.Capability) error {
@@ -85,5 +98,5 @@ func (r *Reconciler) deleteStatefulset(agCapability capability.Capability) error
 			Namespace: r.Instance.Namespace,
 		},
 	}
-	return kubeobjects.EnsureDeleted(context.TODO(), r.Client, &sts)
+	return kubeobjects.EnsureDeleted(r.context, r.Client, &sts)
 }

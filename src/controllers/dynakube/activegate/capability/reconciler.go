@@ -29,6 +29,7 @@ type activegateReconciler interface {
 }
 
 type Reconciler struct {
+	context context.Context
 	client.Client
 	activegateReconciler
 	Capability
@@ -162,7 +163,7 @@ func (r *Reconciler) createOrUpdateService(desiredServicePorts AgServicePorts) (
 	desired := createService(r.Instance, r.ShortName(), desiredServicePorts)
 
 	installed := &corev1.Service{}
-	err := r.Get(context.TODO(), kubeobjects.Key(desired), installed)
+	err := r.Get(r.context, kubeobjects.Key(desired), installed)
 	if k8serrors.IsNotFound(err) && desiredServicePorts.HasPorts() {
 		log.Info("creating AG service", "module", r.ShortName())
 		if err = controllerutil.SetControllerReference(r.Instance, desired, r.Scheme()); err != nil {
