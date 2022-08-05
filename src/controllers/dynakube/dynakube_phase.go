@@ -58,7 +58,7 @@ func (controller *DynakubeController) numberOfMissingOneagentPods(dynakube *dyna
 }
 
 func (controller *DynakubeController) numberOfMissingActiveGatePods(dynakube *dynatracev1beta1.DynaKube) (int32, error) {
-	capabilities := generateActiveGateCapabilities(dynakube)
+	capabilities := capability.GenerateActiveGateCapabilities(dynakube)
 
 	sum := int32(0)
 	capabilityFound := false

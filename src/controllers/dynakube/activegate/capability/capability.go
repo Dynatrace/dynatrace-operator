@@ -340,3 +340,11 @@ func statsdIngestBase() *capabilityBase {
 	}
 	return &c
 }
+
+func GenerateActiveGateCapabilities(instance *dynatracev1beta1.DynaKube) []Capability {
+	return []Capability{
+		NewKubeMonCapability(instance),
+		NewRoutingCapability(instance),
+		NewMultiCapability(instance),
+	}
+}
