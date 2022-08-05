@@ -132,7 +132,7 @@ jobs:
           cgo-cflags: ${{ needs.prepare.outputs.cgo-cflags }}
           labels: ${{ needs.prepare.outputs.labels }}
           image-tag: ${{ needs.prepare.outputs.version }}
-      - name: upload-image
+      - name: Upload Image
         uses: ./.github/actions/upload-image
         with:
           platform: amd64
@@ -140,17 +140,17 @@ jobs:
           version: ${{ needs.prepare.outputs.version }}
           registry: ${{ needs.prepare.outputs.registry }}
           repository: ${{ needs.prepare.outputs.repository }}
-          docker-repo-username: ${{ secrets.QUAY_USERNAME }}
-          docker-repo-password: ${{ secrets.QUAY_PASSWORD }}
-      - name: create-manifests
+          repository-username: ${{ secrets.QUAY_USERNAME }}
+          repository-password: ${{ secrets.QUAY_PASSWORD }}
+      - name: Create Manifests
         uses: ./.github/actions/create-manifests
         with:
           version: ${{ needs.prepare.outputs.version }}
           registry: ${{ needs.prepare.outputs.registry }}
           repository: ${{ needs.prepare.outputs.repository }}
           combined: false
-          docker-repo-username: ${{ secrets.QUAY_USERNAME }}
-          docker-repo-password: ${{ secrets.QUAY_PASSWORD }}
+          repository-username: ${{ secrets.QUAY_USERNAME }}
+          repository-password: ${{ secrets.QUAY_PASSWORD }}
 
   build-arm64:
     name: Build arm64 docker image
@@ -169,7 +169,7 @@ jobs:
           cgo-cflags: ${{ needs.prepare.outputs.cgo-cflags }}
           labels: ${{ needs.prepare.outputs.labels }}
           image-tag: ${{ needs.prepare.outputs.version }}
-      - name: upload-image
+      - name: Upload Image
         uses: ./.github/actions/upload-image
         with:
           platform: arm64
@@ -177,8 +177,8 @@ jobs:
           version: ${{ needs.prepare.outputs.version }}
           registry: ${{ needs.prepare.outputs.registry }}
           repository: ${{ needs.prepare.outputs.repository }}
-          docker-repo-username: ${{ secrets.QUAY_USERNAME }}
-          docker-repo-password: ${{ secrets.QUAY_PASSWORD }}
+          repository-username: ${{ secrets.QUAY_USERNAME }}
+          repository-password: ${{ secrets.QUAY_PASSWORD }}
 
   create-manifest-for-combined-images:
     name: Combine images
@@ -192,12 +192,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: create-manifests
+      - name: Create Manifests
         uses: ./.github/actions/create-manifests
         with:
           version: ${{ needs.prepare.outputs.version }}
           registry: ${{ needs.prepare.outputs.registry }}
           repository: ${{ needs.prepare.outputs.repository }}
           combined: true
-          docker-repo-username: ${{ secrets.QUAY_USERNAME }}
-          docker-repo-password: ${{ secrets.QUAY_PASSWORD }}
+          repository-username: ${{ secrets.QUAY_USERNAME }}
+          repository-password: ${{ secrets.QUAY_PASSWORD }}

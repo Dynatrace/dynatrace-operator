@@ -62,7 +62,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: build-image
+      - name: Build Image
         uses: ./.github/actions/build-image
         with:
           platform: arm64
@@ -109,8 +109,8 @@ jobs:
           version: ${{ needs.prepare.outputs.version }}
           registry: ${{matrix.registry-url}}
           repository: ${{matrix.repository}}
-          docker-repo-username: ${{ secrets[matrix.username] }}
-          docker-repo-password: ${{ secrets[matrix.password] }}
+          repository-username: ${{ secrets[matrix.username] }}
+          repository-password: ${{ secrets[matrix.password] }}
       - name: Run preflight
         if: ${{ matrix.registry-name == "rhcc" && matrix.platform == "amd64" }}
         uses: ./.github/actions/preflight
@@ -124,8 +124,6 @@ jobs:
           rhcc-username: ${{ secrets[matrix.username] }}
           rhcc-password: ${{ secrets[matrix.password] }}
 
-
-
   manifest:
     name: Create Dockerhub manifests
     environment: Release
@@ -133,13 +131,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        registry: [rhcc, gcr, dockerhub]
+        registry: [gcr, dockerhub]
         include:
-          - registry: rhcc
-            url: registry.connect.redhat.com
-            repository: dynatrace/dynatrace-operator
-            username: RHCC_USERNAME
-            password: RHCC_PASSWORD
           - registry: gcr
             url: gcr.io
             repository: dynatrace-marketplace-prod/dynatrace-operator
@@ -154,12 +147,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Create manifests for ${{matrix.registry}}
-        if: ${{ matrix.registry-name != "rhcc"}}
         uses: ./.github/actions/create-manifests
         with:
           version: ${{ needs.prepare.outputs.version }}
           registry: ${{ matrix.url }}
           repository: ${{ matrix.repository }}
           combined: true
-          docker-repo-username: ${{ secrets[matrix.username] }}
-          docker-repo-password: ${{ secrets[matrix.password] }}
+          repository-username: ${{ secrets[matrix.username] }}
+          repository-password: ${{ secrets[matrix.password] }}

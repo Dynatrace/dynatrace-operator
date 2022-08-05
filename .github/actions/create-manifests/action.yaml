@@ -13,10 +13,10 @@ inputs:
   combined:
     description: Should it create a combined manifests for amd64 and arm64 builds
     required: true
-  docker-repo-username:
+  repository-username:
     description: The username to access the registry/repository
     required: true
-  docker-repo-password:
+  repository-password:
     description: The password to access the registry/repository
     required: true
 runs:
@@ -28,8 +28,8 @@ runs:
       uses: docker/login-action@v1
       with:
         registry: ${{ inputs.registry }}
-        username: ${{ inputs.docker-repo-username }}
-        password: ${{ inputs.docker-repo-password }}
+        username: ${{ inputs.repository-username }}
+        password: ${{ inputs.repository-password }}
     - name: Create manifest
       env:
         IMAGE_QUAY: ${{ inputs.registry }}/${{ inputs.repository }}
