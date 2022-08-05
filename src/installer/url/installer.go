@@ -3,9 +3,10 @@ package url
 import (
 	"os"
 
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/installer/common"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/symlink"
+	"github.com/Dynatrace/dynatrace-operator/src/installer/zip"
 	"github.com/Dynatrace/dynatrace-operator/src/processmoduleconfig"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
@@ -20,6 +21,8 @@ type Properties struct {
 	PreviousVersion string
 	Technologies    []string
 	Url             string // if this is set all settings before it will be ignored
+
+	PathResolver metadata.PathResolver
 }
 
 func (props *Properties) fillEmptyWithDefaults() {
@@ -29,16 +32,18 @@ func (props *Properties) fillEmptyWithDefaults() {
 }
 
 type UrlInstaller struct {
-	fs    afero.Fs
-	dtc   dtclient.Client
-	props *Properties
+	fs        afero.Fs
+	dtc       dtclient.Client
+	extractor zip.Extractor
+	props     *Properties
 }
 
 func NewUrlInstaller(fs afero.Fs, dtc dtclient.Client, props *Properties) *UrlInstaller {
 	return &UrlInstaller{
-		fs:    fs,
-		dtc:   dtc,
-		props: props,
+		fs:        fs,
+		dtc:       dtc,
+		extractor: zip.NewOnAgentExtractor(fs, props.PathResolver),
+		props:     props,
 	}
 }
 
@@ -49,11 +54,6 @@ func (installer UrlInstaller) InstallAgent(targetDir string) (bool, error) {
 	}
 	log.Info("installing agent", "target dir", targetDir)
 	installer.props.fillEmptyWithDefaults()
-	err := installer.fs.MkdirAll(targetDir, common.MkDirFileMode)
-	if err != nil {
-		log.Info("failed to create install target dir", "targetDir", targetDir)
-		return false, errors.WithStack(err)
-	}
 	if err := installer.installAgentFromUrl(targetDir); err != nil {
 		_ = installer.fs.RemoveAll(targetDir)
 		log.Info("failed to install agent", "targetDir", targetDir)
@@ -92,7 +92,7 @@ func (installer UrlInstaller) installAgentFromUrl(targetDir string) error {
 }
 
 func (installer UrlInstaller) isAlreadyDownloaded(targetDir string) bool {
-	if standaloneBinDir == targetDir || installer.props.PreviousVersion == "" {
+	if standaloneBinDir == targetDir {
 		return false
 	}
 	_, err := installer.fs.Stat(targetDir)
