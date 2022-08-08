@@ -31,7 +31,7 @@ spec:
   template:
     metadata:
       annotations:
-        kubectl.kubernetes.io/default-logs-container: driver
+        kubectl.kubernetes.io/default-logs-container: provisioner
         {{- if and (eq (default false .Values.apparmor) true) (ne .Values.platform "openshift") }}
         container.apparmor.security.beta.kubernetes.io/driver: runtime/default
         container.apparmor.security.beta.kubernetes.io/registrar: runtime/default

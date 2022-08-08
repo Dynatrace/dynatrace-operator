@@ -3243,6 +3243,8 @@ spec:
                           type: string
                       type: object
                     type: array
+                  formattedCommunicationEndpoints:
+                    type: string
                   tenantUUID:
                     type: string
                 type: object
@@ -4648,7 +4650,7 @@ spec:
   template:
     metadata:
       annotations:
-        kubectl.kubernetes.io/default-logs-container: driver
+        kubectl.kubernetes.io/default-logs-container: provisioner
       labels:
         app.kubernetes.io/name: dynatrace-operator
         app.kubernetes.io/version: "0.0.0-snapshot"
@@ -4697,11 +4699,11 @@ spec:
           protocol: TCP
         resources:
           limits:
-            cpu: 100m
-            memory: 50Mi
+            cpu: 150m
+            memory: 100Mi
           requests:
-            cpu: 100m
-            memory: 50Mi
+            cpu: 150m
+            memory: 100Mi
         securityContext:
           runAsUser: 0
           privileged: true # Needed for mountPropagation

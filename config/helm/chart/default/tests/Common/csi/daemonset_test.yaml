@@ -320,7 +320,7 @@ tests:
       - equal:
           path: spec.template.metadata.annotations
           value:
-            kubectl.kubernetes.io/default-logs-container: driver
+            kubectl.kubernetes.io/default-logs-container: provisioner
             testKey: testValue
 
   - it: should take custom labels in spec.template.metadata.labels path
