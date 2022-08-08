@@ -4650,7 +4650,7 @@ spec:
   template:
     metadata:
       annotations:
-        kubectl.kubernetes.io/default-logs-container: provisioner
+        kubectl.kubernetes.io/default-container: provisioner
       labels:
         app.kubernetes.io/name: dynatrace-operator
         app.kubernetes.io/version: "0.0.0-snapshot"
