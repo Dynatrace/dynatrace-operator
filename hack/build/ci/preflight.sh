@@ -22,7 +22,10 @@ check_image() {
 }
 
 submit_report() {
-   ./"${PREFLIGHT_EXECUTABLE}" check container "${IMAGE_TAG}" --submit --pyxis-api-token="${RHCC_APITOKEN}" --certification-project-id="${RHCC_PROJECT_ID}"
+  ./"${PREFLIGHT_EXECUTABLE}" check container "${IMAGE_TAG}" \
+    --pyxis-api-token="${RHCC_APITOKEN}" --certification-project-id="${RHCC_PROJECT_ID}" \
+    --docker-config="${HOME}/.docker/config.json" \
+    --submit
 }
 
 download_preflight
