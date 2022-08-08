@@ -15,7 +15,9 @@ download_preflight() {
 }
 
 check_image() {
-  ./"${PREFLIGHT_EXECUTABLE}" check container "${IMAGE_TAG}" 1> "${PREFLIGHT_REPORT_NAME}" 2> "${PREFLIGHT_LOG}"
+  ./"${PREFLIGHT_EXECUTABLE}" check container "${IMAGE_TAG}" \
+    --docker-config="${HOME}/.docker/config.json" \
+    1> "${PREFLIGHT_REPORT_NAME}" 2> "${PREFLIGHT_LOG}"
   echo "${PREFLIGHT_EXECUTABLE} returned ${?}"
   cat "${PREFLIGHT_LOG}"
   grep "Preflight result: PASSED" "${PREFLIGHT_LOG}" || exit 1
