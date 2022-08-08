@@ -80,7 +80,7 @@ jobs:
     strategy:
       matrix:
         platform: [amd64, arm64]
-        registry: [rhcc, gcr, dockerhub]
+        registry-name: [rhcc, gcr, dockerhub]
         include:
           - registry-name: rhcc
             registry-url: scan.connect.redhat.com
@@ -102,7 +102,7 @@ jobs:
         uses: actions/checkout@v2
       - name: Push ${{matrix.platform}} to ${{matrix.registry-name}}
         uses: ./.github/actions/upload-image
-        if: matrix.registry-name != 'rhcc' && matrix.platform != 'arm64'
+        if: matrix.registry-name != 'rhcc' || ( matrix.registry-name == 'rhcc' && matrix.platform == 'amd64' )
         with:
           platform: ${{matrix.platform}}
           labels: ${{ needs.prepare.outputs.labels }}
