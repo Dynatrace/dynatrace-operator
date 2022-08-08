@@ -117,7 +117,7 @@ jobs:
         with:
           version: ${{ needs.prepare.outputs.version }}
           registry: ${{matrix.registry-url}}
-          repository: ${{matrix.repository}}
+          repository: ${{ secrets[matrix.repository] }}
           report-name: "preflight.json"
           redhat-project-id: ${{ secrets.REDHAT_PROJECT_ID }}
           pyxis-api-token: ${{ secrets.PYXIS_API_TOKEN }}
