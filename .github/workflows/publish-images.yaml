@@ -102,7 +102,7 @@ jobs:
         uses: actions/checkout@v2
       - name: Push ${{matrix.platform}} to ${{matrix.registry-name}}
         uses: ./.github/actions/upload-image
-        if: ${{ matrix.registry-name != "rhcc" && matrix.platform != "arm64" }}
+        if: matrix.registry-name != 'rhcc' && matrix.platform != 'arm64'
         with:
           platform: ${{matrix.platform}}
           labels: ${{ needs.prepare.outputs.labels }}
@@ -112,7 +112,7 @@ jobs:
           repository-username: ${{ secrets[matrix.username] }}
           repository-password: ${{ secrets[matrix.password] }}
       - name: Run preflight
-        if: ${{ matrix.registry-name == "rhcc" && matrix.platform == "amd64" }}
+        if: matrix.registry-name == 'rhcc' && matrix.platform == 'amd64'
         uses: ./.github/actions/preflight
         with:
           version: ${{ needs.prepare.outputs.version }}
