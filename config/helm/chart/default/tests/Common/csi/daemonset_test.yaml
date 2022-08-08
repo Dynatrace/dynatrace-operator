@@ -75,14 +75,11 @@ tests:
                   key: node-role.kubernetes.io/control-plane
                   operator: Exists
             containers:
-              - name: driver
-                image: image-name
-                imagePullPolicy: Always
-                args:
-                  - csi-driver
-                  - --endpoint=unix://csi/csi.sock
-                  - --node-id=$(KUBE_NODE_NAME)
-                  - --health-probe-bind-address=:10080
+              - args:
+                  - csi-server
+                  - "--endpoint=unix://csi/csi.sock"
+                  - "--node-id=$(KUBE_NODE_NAME)"
+                  - "--health-probe-bind-address=:10080"
                 env:
                   - name: POD_NAMESPACE
                     valueFrom:
@@ -94,18 +91,77 @@ tests:
                       fieldRef:
                         apiVersion: v1
                         fieldPath: spec.nodeName
+                image: image-name
+                imagePullPolicy: Always
                 livenessProbe:
                   failureThreshold: 3
                   httpGet:
-                    path: /livez
+                    path: "/livez"
                     port: livez
                     scheme: HTTP
                   initialDelaySeconds: 5
                   periodSeconds: 5
                   successThreshold: 1
                   timeoutSeconds: 1
+                name: server
                 ports:
                   - containerPort: 10080
+                    name: livez
+                    protocol: TCP
+                resources:
+                  limits:
+                    cpu: 150m
+                    memory: 100Mi
+                  requests:
+                    cpu: 150m
+                    memory: 100Mi
+                securityContext:
+                  allowPrivilegeEscalation: true
+                  privileged: true
+                  readOnlyRootFilesystem: true
+                  runAsNonRoot: false
+                  runAsUser: 0
+                  seLinuxOptions:
+                    level: s0
+                  seccompProfile:
+                    type: RuntimeDefault
+                terminationMessagePath: "/dev/termination-log"
+                terminationMessagePolicy: File
+                volumeMounts:
+                  - mountPath: "/csi"
+                    name: plugin-dir
+                  - mountPath: "/var/lib/kubelet/pods"
+                    mountPropagation: Bidirectional
+                    name: mountpoint-dir
+                  - mountPath: "/data"
+                    mountPropagation: Bidirectional
+                    name: dynatrace-oneagent-data-dir
+                  - mountPath: "/tmp"
+                    name: tmp-dir
+              - args:
+                  - csi-provisioner
+                  - "--health-probe-bind-address=:10090"
+                env:
+                  - name: POD_NAMESPACE
+                    valueFrom:
+                      fieldRef:
+                        apiVersion: v1
+                        fieldPath: metadata.namespace
+                image: image-name
+                imagePullPolicy: Always
+                livenessProbe:
+                  failureThreshold: 3
+                  httpGet:
+                    path: "/livez"
+                    port: livez
+                    scheme: HTTP
+                  initialDelaySeconds: 5
+                  periodSeconds: 5
+                  successThreshold: 1
+                  timeoutSeconds: 1
+                name: provisioner
+                ports:
+                  - containerPort: 10090
                     name: livez
                     protocol: TCP
                 resources:
@@ -116,47 +172,42 @@ tests:
                     cpu: 300m
                     memory: 100Mi
                 securityContext:
-                  runAsUser: 0
-                  privileged: true
                   allowPrivilegeEscalation: true
+                  privileged: true
                   readOnlyRootFilesystem: true
                   runAsNonRoot: false
-                  seccompProfile:
-                    type: RuntimeDefault
+                  runAsUser: 0
                   seLinuxOptions:
                     level: s0
-                terminationMessagePath: /dev/termination-log
+                  seccompProfile:
+                    type: RuntimeDefault
+                terminationMessagePath: "/dev/termination-log"
                 terminationMessagePolicy: File
                 volumeMounts:
-                  - mountPath: /csi
-                    name: plugin-dir
-                  - mountPath: /var/lib/kubelet/pods
-                    mountPropagation: Bidirectional
-                    name: mountpoint-dir
-                  - mountPath: /data
+                  - mountPath: "/data"
                     mountPropagation: Bidirectional
                     name: dynatrace-oneagent-data-dir
-                  - mountPath: /tmp
+                  - mountPath: "/tmp"
                     name: tmp-dir
-              - name: registrar
-                image: image-name
-                imagePullPolicy: Always
-                args:
-                  - --csi-address=/csi/csi.sock
-                  - --kubelet-registration-path=/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/csi.sock
+              - args:
+                  - "--csi-address=/csi/csi.sock"
+                  - "--kubelet-registration-path=/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/csi.sock"
                 command:
                   - csi-node-driver-registrar
+                image: image-name
+                imagePullPolicy: Always
                 livenessProbe:
                   exec:
                     command:
                       - csi-node-driver-registrar
-                      - --kubelet-registration-path=/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/csi.sock
-                      - --mode=kubelet-registration-probe
+                      - "--kubelet-registration-path=/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/csi.sock"
+                      - "--mode=kubelet-registration-probe"
                   failureThreshold: 3
                   initialDelaySeconds: 30
                   periodSeconds: 10
                   successThreshold: 1
                   timeoutSeconds: 15
+                name: registrar
                 resources:
                   limits:
                     cpu: 100m
@@ -165,29 +216,29 @@ tests:
                     cpu: 10m
                     memory: 20Mi
                 securityContext:
-                  runAsUser: 0
                   privileged: false
                   readOnlyRootFilesystem: true
                   runAsNonRoot: false
+                  runAsUser: 0
                   seccompProfile:
                     type: RuntimeDefault
-                terminationMessagePath: /dev/termination-log
+                terminationMessagePath: "/dev/termination-log"
                 terminationMessagePolicy: File
                 volumeMounts:
-                  - mountPath: /csi
+                  - mountPath: "/csi"
                     name: plugin-dir
-                  - mountPath: /registration
+                  - mountPath: "/registration"
                     name: registration-dir
-                  - mountPath: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com
+                  - mountPath: "/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com"
                     name: lockfile-dir
-              - name: liveness-probe
-                image: image-name
-                imagePullPolicy: Always
-                args:
-                  - --csi-address=/csi/csi.sock
-                  - --health-port=9898
+              - args:
+                  - "--csi-address=/csi/csi.sock"
+                  - "--health-port=9898"
                 command:
                   - livenessprobe
+                image: image-name
+                imagePullPolicy: Always
+                name: liveness-probe
                 resources:
                   limits:
                     cpu: 100m
@@ -195,18 +246,18 @@ tests:
                   requests:
                     cpu: 10m
                     memory: 20Mi
-                terminationMessagePath: /dev/termination-log
-                terminationMessagePolicy: File
                 securityContext:
-                  runAsUser: 0
-                  privileged: false
                   allowPrivilegeEscalation: false
+                  privileged: false
                   readOnlyRootFilesystem: true
                   runAsNonRoot: false
+                  runAsUser: 0
                   seccompProfile:
                     type: RuntimeDefault
+                terminationMessagePath: "/dev/termination-log"
+                terminationMessagePolicy: File
                 volumeMounts:
-                  - mountPath: /csi
+                  - mountPath: "/csi"
                     name: plugin-dir
             dnsPolicy: ClusterFirst
             restartPolicy: Always
@@ -269,7 +320,7 @@ tests:
       - equal:
           path: spec.template.metadata.annotations
           value:
-            kubectl.kubernetes.io/default-logs-container: driver
+            kubectl.kubernetes.io/default-container: provisioner
             testKey: testValue
 
   - it: should take custom labels in spec.template.metadata.labels path
@@ -294,14 +345,17 @@ tests:
       csidriver.limits.memory: 300Mi
     asserts:
       - equal:
-          path: spec.template.spec.containers[0].resources.requests.cpu
+          path: spec.template.spec.containers[1].name
+          value: provisioner
+      - equal:
+          path: spec.template.spec.containers[1].resources.requests.cpu
           value: 600m
       - equal:
-          path: spec.template.spec.containers[0].resources.requests.memory
+          path: spec.template.spec.containers[1].resources.requests.memory
           value: 200Mi
       - equal:
-          path: spec.template.spec.containers[0].resources.limits.cpu
+          path: spec.template.spec.containers[1].resources.limits.cpu
           value: 900m
       - equal:
-          path: spec.template.spec.containers[0].resources.limits.memory
+          path: spec.template.spec.containers[1].resources.limits.memory
           value: 300Mi
