@@ -2,15 +2,23 @@
 
 set -x
 
-if [ -z "$2" ]
+if [ -z "$4" ]
 then
-  echo "Usage: $0 <platform> <targetImageTag>"
+  echo "Usage: $0 <platform> <registry> <repository> <version>"
   exit 1
 fi
 
 readonly platform=${1}
-readonly targetImageTag=${2}
+readonly registry=${2}
+readonly repository=${3}
+readonly version=${4}
 readonly imageTarPath="/tmp/operator-${platform}.tar"
+
+targetImageTag="${registry}/${repository}:${version}"
+if [ "${registry}" != "scan.connect.redhat.com" ]
+then
+  targetImageTag=${targetImageTag}-${platform}
+fi
 
 docker load -i "${imageTarPath}"
 
