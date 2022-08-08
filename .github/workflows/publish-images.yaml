@@ -87,13 +87,13 @@ jobs:
             repository: dynatrace/dynatrace-operator
             username: RHCC_USERNAME
             password: RHCC_PASSWORD
-          - registry: gcr
-            url: gcr.io
+          - registry-name: gcr
+            registry-url: gcr.io
             repository: dynatrace-marketplace-prod/dynatrace-operator
             username: GCR_USERNAME
             password: GCR_JSON_KEY
-          - registry: dockerhub
-            url: docker.io
+          - registry-name: dockerhub
+            registry-url: docker.io
             repository: dynatrace/dynatrace-operator
             username: DOCKERHUB_USERNAME
             password: DOCKERHUB_PASSWORD
