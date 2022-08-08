@@ -1,3 +1,6 @@
+//go:build integration
+// +build integration
+
 package integrationtests
 
 // This file includes utilities to start an environment with API Server, and a configured reconciler.
