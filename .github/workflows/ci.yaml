@@ -9,6 +9,9 @@ on:
     branches:
       - "*"
 
+permissions:
+  contents: read
+
 env:
   GO_VERSION: "^1.18"
   DOCKER_REGISTRY: "quay.io"
@@ -28,7 +31,7 @@ jobs:
       - name: Download dependencies
         id: helm-unittest-download
         run: |
-          hack/build/ci/install-helm-dependencies.sh
+          make prerequisites/helm
       - name: Run Unit tests
         id: helm-unittest
         run: |
@@ -63,11 +66,10 @@ jobs:
         id: depdownload
         run: |
           hack/build/ci/install-cgo-dependencies.sh
-          hack/build/ci/install-kubebuilder.sh
       - name: Run Unit tests
         id: unittest
         run: |
-          hack/build/ci/run-unit-tests.sh
+          make go/test-all
 
   linting:
     name: Run linting
@@ -108,69 +110,79 @@ jobs:
     outputs:
       labels: ${{ steps.prep.outputs.docker_image_labels }}
       version: ${{ steps.prep.outputs.docker_image_tag }}
-      golinkerargs: ${{ steps.prep.outputs.go_linker_args }}
-      goversion: ${{ steps.prepenv.outputs.goversion }}
+      go-linker-args: ${{ steps.prep.outputs.go_linker_args }}
+      cgo-cflags: ${{ steps.prep.outputs.cgo_cflags }}
+      go-version: ${{ steps.prepenv.outputs.goversion }}
       registry: ${{ steps.prepenv.outputs.registry }}
       repository: ${{ steps.prepenv.outputs.repository }}
 
   build-amd64:
     name: Build amd64 docker image
-    needs: [prepare]
-    uses: ./.github/workflows/build-dockerimage.yaml
-    with:
-      platform: amd64
-      goversion: ${{ needs.prepare.outputs.goversion }}
-      golinkerargs: ${{ needs.prepare.outputs.golinkerargs }}
-      labels: ${{ needs.prepare.outputs.labels }}
-      image-tag: ${{ needs.prepare.outputs.version }}
+    needs: [prepare, tests, linting]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Build image
+        uses: ./.github/actions/build-image
+        with:
+          platform: amd64
+          go-version: ${{ needs.prepare.outputs.go-version }}
+          go-linker-args: ${{ needs.prepare.outputs.go-linker-args }}
+          cgo-cflags: ${{ needs.prepare.outputs.cgo-cflags }}
+          labels: ${{ needs.prepare.outputs.labels }}
+          image-tag: ${{ needs.prepare.outputs.version }}
+      - name: Upload Image
+        uses: ./.github/actions/upload-image
+        with:
+          platform: amd64
+          labels: ${{ needs.prepare.outputs.labels }}
+          version: ${{ needs.prepare.outputs.version }}
+          registry: ${{ needs.prepare.outputs.registry }}
+          repository: ${{ needs.prepare.outputs.repository }}
+          repository-username: ${{ secrets.QUAY_USERNAME }}
+          repository-password: ${{ secrets.QUAY_PASSWORD }}
+      - name: Create Manifests
+        uses: ./.github/actions/create-manifests
+        with:
+          version: ${{ needs.prepare.outputs.version }}
+          registry: ${{ needs.prepare.outputs.registry }}
+          repository: ${{ needs.prepare.outputs.repository }}
+          combined: false
+          repository-username: ${{ secrets.QUAY_USERNAME }}
+          repository-password: ${{ secrets.QUAY_PASSWORD }}
 
   build-arm64:
     name: Build arm64 docker image
-    needs: [prepare]
-    uses: ./.github/workflows/build-dockerimage.yaml
+    needs: [prepare, tests, linting]
     if: ${{ contains(github.ref, 'refs/tags/v') || contains(github.ref, 'refs/heads/master') || contains(github.ref, 'refs/heads/release-') }}
-    with:
-      platform: arm64
-      goversion: ${{ needs.prepare.outputs.goversion }}
-      golinkerargs: ${{ needs.prepare.outputs.golinkerargs }}
-      labels: ${{ needs.prepare.outputs.labels }}
-      image-tag: ${{ needs.prepare.outputs.version }}
-
-  upload-amd64:
-    name: Upload amd64 image
-    needs: [tests,linting,prepare,build-amd64]
-    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork }}
-    uses: ./.github/workflows/upload-dockerimage.yaml
-    with:
-      platform: amd64
-      labels: ${{ needs.prepare.outputs.labels }}
-      version: ${{ needs.prepare.outputs.version }}
-      registry: ${{ needs.prepare.outputs.registry }}
-      repository: ${{ needs.prepare.outputs.repository }}
-    secrets:
-      docker_repo_username: ${{ secrets.QUAY_USERNAME }}
-      docker_repo_password: ${{ secrets.QUAY_PASSWORD }}
-
-  upload-arm64:
-    name: Upload arm64 image
-    needs: [tests,linting,prepare,build-arm64]
-    if: |
-      (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) &&
-      (contains(github.ref, 'refs/tags/v') || contains(github.ref, 'refs/heads/master') || contains(github.ref, 'refs/heads/release-'))
-    uses: ./.github/workflows/upload-dockerimage.yaml
-    with:
-      platform: arm64
-      labels: ${{ needs.prepare.outputs.labels }}
-      version: ${{ needs.prepare.outputs.version }}
-      registry: ${{ needs.prepare.outputs.registry }}
-      repository: ${{ needs.prepare.outputs.repository }}
-    secrets:
-      docker_repo_username: ${{ secrets.QUAY_USERNAME }}
-      docker_repo_password: ${{ secrets.QUAY_PASSWORD }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Build image
+        uses: ./.github/actions/build-image
+        with:
+          platform: arm64
+          go-version: ${{ needs.prepare.outputs.go-version }}
+          go-linker-args: ${{ needs.prepare.outputs.go-linker-args }}
+          cgo-cflags: ${{ needs.prepare.outputs.cgo-cflags }}
+          labels: ${{ needs.prepare.outputs.labels }}
+          image-tag: ${{ needs.prepare.outputs.version }}
+      - name: Upload Image
+        uses: ./.github/actions/upload-image
+        with:
+          platform: arm64
+          labels: ${{ needs.prepare.outputs.labels }}
+          version: ${{ needs.prepare.outputs.version }}
+          registry: ${{ needs.prepare.outputs.registry }}
+          repository: ${{ needs.prepare.outputs.repository }}
+          repository-username: ${{ secrets.QUAY_USERNAME }}
+          repository-password: ${{ secrets.QUAY_PASSWORD }}
 
   create-manifest-for-combined-images:
     name: Combine images
-    needs: [prepare,upload-amd64,upload-arm64]
+    needs: [prepare, build-arm64, build-amd64]
     runs-on: ubuntu-latest
     if: |
       (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) &&
@@ -180,34 +192,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Login to Quay
-        uses: docker/login-action@v1
+      - name: Create Manifests
+        uses: ./.github/actions/create-manifests
         with:
+          version: ${{ needs.prepare.outputs.version }}
           registry: ${{ needs.prepare.outputs.registry }}
-          username: ${{ secrets.QUAY_USERNAME }}
-          password: ${{ secrets.QUAY_PASSWORD }}
-      - name: Create manifest
-        run: |
-          hack/build/ci/create-manifest.sh "${IMAGE_QUAY}" "${{ needs.prepare.outputs.version }}" true
-
-  create-manifest-for-amd:
-    name: Create manifest
-    needs: [prepare,upload-amd64]
-    runs-on: ubuntu-latest
-    if: |
-      (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) &&
-      ! (contains(github.ref, 'refs/tags/v') || contains(github.ref, 'refs/heads/master') || contains(github.ref, 'refs/heads/release-'))
-    env:
-      IMAGE_QUAY: ${{ needs.prepare.outputs.registry }}/${{ needs.prepare.outputs.repository }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Login to Quay
-        uses: docker/login-action@v1
-        with:
-          registry: ${{ needs.prepare.outputs.registry }}
-          username: ${{ secrets.QUAY_USERNAME }}
-          password: ${{ secrets.QUAY_PASSWORD }}
-      - name: Create manifest
-        run: |
-          hack/build/ci/create-manifest.sh "${IMAGE_QUAY}" "${{ needs.prepare.outputs.version }}" false
+          repository: ${{ needs.prepare.outputs.repository }}
+          combined: true
+          repository-username: ${{ secrets.QUAY_USERNAME }}
+          repository-password: ${{ secrets.QUAY_PASSWORD }}

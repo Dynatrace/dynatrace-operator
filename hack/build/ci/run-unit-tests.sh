@@ -1,3 +1,0 @@
-#!/bin/bash
-
-go test -cover -tags integration,containers_image_storage_stub ./...
