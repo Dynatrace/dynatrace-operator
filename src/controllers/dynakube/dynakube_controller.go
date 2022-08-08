@@ -8,7 +8,7 @@ import (
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/commonReconciler"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/activegate"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/secrets"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/apimonitoring"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
@@ -323,7 +323,7 @@ func (controller *DynakubeController) removeOneAgentDaemonSet(dkState *status.Dy
 }
 
 func (controller *DynakubeController) reconcileActiveGate(ctx context.Context, dynakubeState *status.DynakubeState, dtc dtclient.Client) (updated bool) {
-	upd, err := commonReconciler.NewReconciler(ctx, controller.client, controller.apiReader, controller.scheme, dynakubeState.Instance).Reconcile()
+	upd, err := activegate.NewReconciler(ctx, controller.client, controller.apiReader, controller.scheme, dynakubeState.Instance).Reconcile()
 	if dynakubeState.Error(err) {
 		return false
 	}
