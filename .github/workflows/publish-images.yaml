@@ -84,17 +84,17 @@ jobs:
         include:
           - registry-name: rhcc
             registry-url: scan.connect.redhat.com
-            repository: dynatrace/dynatrace-operator
+            repository: RHCC_REPOSITORY
             username: RHCC_USERNAME
             password: RHCC_PASSWORD
           - registry-name: gcr
             registry-url: gcr.io
-            repository: dynatrace-marketplace-prod/dynatrace-operator
+            repository: GCR_REPOSITORY
             username: GCR_USERNAME
             password: GCR_JSON_KEY
           - registry-name: dockerhub
             registry-url: docker.io
-            repository: dynatrace/dynatrace-operator
+            repository: DOCKERHUB_REPOSITORY
             username: DOCKERHUB_USERNAME
             password: DOCKERHUB_PASSWORD
     steps:
@@ -104,11 +104,11 @@ jobs:
         uses: ./.github/actions/upload-image
         if: matrix.registry-name != 'rhcc' || ( matrix.registry-name == 'rhcc' && matrix.platform == 'amd64' )
         with:
-          platform: ${{matrix.platform}}
+          platform: ${{ matrix.platform }}
           labels: ${{ needs.prepare.outputs.labels }}
           version: ${{ needs.prepare.outputs.version }}
-          registry: ${{matrix.registry-url}}
-          repository: ${{matrix.repository}}
+          registry: ${{ matrix.registry-url }}
+          repository: ${{ secrets[matrix.repository] }}
           repository-username: ${{ secrets[matrix.username] }}
           repository-password: ${{ secrets[matrix.password] }}
       - name: Run preflight
@@ -135,12 +135,12 @@ jobs:
         include:
           - registry: gcr
             url: gcr.io
-            repository: dynatrace-marketplace-prod/dynatrace-operator
+            repository: GCR_REPOSITORY
             username: GCR_USERNAME
             password: GCR_JSON_KEY
           - registry: dockerhub
             url: docker.io
-            repository: dynatrace/dynatrace-operator
+            repository: DOCKERHUB_REPOSITORY
             username: DOCKERHUB_USERNAME
             password: DOCKERHUB_PASSWORD
     steps:
@@ -151,7 +151,7 @@ jobs:
         with:
           version: ${{ needs.prepare.outputs.version }}
           registry: ${{ matrix.url }}
-          repository: ${{ matrix.repository }}
+          repository: ${{ secrets[matrix.repository] }}
           combined: true
           repository-username: ${{ secrets[matrix.username] }}
           repository-password: ${{ secrets[matrix.password] }}
