@@ -20,6 +20,8 @@ RUN  microdnf install util-linux && microdnf clean all
 
 FROM registry.access.redhat.com/ubi8-micro:8.6
 
+RUN microdnf install delve
+
 # operator dependencies
 COPY --from=operator-build /etc/ssl/cert.pem /etc/ssl/cert.pem
 COPY --from=operator-build /app/build/_output/bin /usr/local/bin
