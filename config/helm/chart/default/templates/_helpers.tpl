@@ -35,6 +35,7 @@ Common labels
 */}}
 {{- define "dynatrace-operator.commonLabels" -}}
 {{ include "dynatrace-operator.futureSelectorLabels" . }}
+app.kubernetes.io/managed-by: Helm
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}

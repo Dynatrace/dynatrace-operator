@@ -23,6 +23,9 @@ metadata:
   {{- if .Values.operator.labels }}
       {{- toYaml .Values.operator.labels | nindent 4 }}
   {{- end }}
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
 spec:
   replicas: 1
   revisionHistoryLimit: 1

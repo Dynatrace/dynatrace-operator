@@ -19,6 +19,9 @@ metadata:
   name: dynatrace-dynakube-oneagent-privileged
   labels:
     {{- include "dynatrace-operator.oneagentLabels" . | nindent 4 }}
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace}}
 subjects:
   - kind: ServiceAccount
     name: "dynatrace-dynakube-oneagent-privileged"

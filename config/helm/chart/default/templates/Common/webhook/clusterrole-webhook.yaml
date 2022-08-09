@@ -19,6 +19,9 @@ metadata:
   name: dynatrace-webhook
   labels:
     {{- include "dynatrace-operator.webhookLabels" . | nindent 4 }}
+  annotations:
+    meta.helm.sh/release-name: {{ .Release.Name }}
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
 rules:
   - apiGroups:
       - ""
