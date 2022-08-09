@@ -1,4 +1,4 @@
-package csi
+package provisioner
 
 import (
 	"path/filepath"
@@ -6,7 +6,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 	cmdManager "github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
-	csidriver "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver"
 	csigc "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/gc"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
 	csiprovisioner "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/provisioner"
@@ -17,12 +16,10 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-const use = "csi-driver"
+const use = "csi-provisioner"
 
 var (
-	nodeId       = ""
 	probeAddress = ""
-	endpoint     = ""
 )
 
 type CommandBuilder struct {
@@ -33,7 +30,7 @@ type CommandBuilder struct {
 	csiOptions      *dtcsi.CSIOptions
 }
 
-func NewCsiCommandBuilder() CommandBuilder {
+func NewCsiProvisionerCommandBuilder() CommandBuilder {
 	return CommandBuilder{}
 }
 
@@ -65,9 +62,7 @@ func (builder CommandBuilder) setFilesystem(filesystem afero.Fs) CommandBuilder 
 func (builder CommandBuilder) getCsiOptions() dtcsi.CSIOptions {
 	if builder.csiOptions == nil {
 		builder.csiOptions = &dtcsi.CSIOptions{
-			NodeID:   nodeId,
-			Endpoint: endpoint,
-			RootDir:  dtcsi.DataPath,
+			RootDir: dtcsi.DataPath,
 		}
 	}
 
@@ -102,9 +97,7 @@ func (builder CommandBuilder) Build() *cobra.Command {
 }
 
 func addFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&nodeId, "node-id", "", "node id")
-	cmd.PersistentFlags().StringVar(&endpoint, "endpoint", "unix:///tmp/csi.sock", "CSI endpoint")
-	cmd.PersistentFlags().StringVar(&probeAddress, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
+	cmd.PersistentFlags().StringVar(&probeAddress, "health-probe-bind-address", ":10090", "The address the probe endpoint binds to.")
 }
 
 func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
@@ -126,18 +119,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		// TODO: make the code below testable and test it, but in another ticket because otherwise adding the other commands will take a week
 		access, err := metadata.NewAccess(dtcsi.MetadataAccessPath)
-		if err != nil {
-			return err
-		}
-
-		err = metadata.CorrectMetadata(csiManager.GetClient(), access)
-		if err != nil {
-			return err
-		}
-
-		err = csidriver.NewServer(csiManager.GetClient(), builder.getCsiOptions(), access).SetupWithManager(csiManager)
 		if err != nil {
 			return err
 		}
@@ -154,6 +136,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 
 		signalHandler := ctrl.SetupSignalHandler()
 		err = csiManager.Start(signalHandler)
+
 		return errors.WithStack(err)
 	}
 }

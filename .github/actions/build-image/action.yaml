@@ -1,35 +1,27 @@
-name: build-dockerimage
-
-on:
-  workflow_call:
-    inputs:
-      platform:
-        required: true
-        type: string
-      goversion:
-        required: true
-        type: string
-      golinkerargs:
-        required: true
-        type: string
-      cgo_cflags:
-        required: true
-        type: string
-      labels:
-        required: true
-        type: string
-      image-tag:
-        required: true
-        type: string
-
-permissions:
-  contents: read
-
-jobs:
-  build:
-    name: Build docker image
-    runs-on: ubuntu-latest
-    steps:
+name: Build Docker Image
+description: Builds the operator docker image
+inputs:
+  platform:
+    description: The platform for which the image will be built
+    required: true
+  go-version:
+    description: The go version used during the build
+    required: true
+  go-linker-args:
+    description: The linker args for the go compiler
+    required: true
+  cgo-cflags:
+    description: The cgo cflags for the go compiler
+    required: true
+  labels:
+    description: The labels for the built image
+    required: true
+  image-tag:
+    description: The tag of the built image
+    required: true
+runs:
+  using: "composite"
+  steps:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Set up QEMU
@@ -39,7 +31,7 @@ jobs:
       - name: Set up Golang
         uses: actions/setup-go@v2
         with:
-          go-version: ${{ inputs.goversion }}
+          go-version: ${{ inputs.go-version }}
       - name: Setup cache
         uses: actions/cache@v2
         with:
@@ -49,6 +41,7 @@ jobs:
             ./third_party_licenses
           key: ${{ runner.os }}-go-build-cache-${{ hashFiles('**/go.sum') }}
       - name: Prepare
+        shell: bash
         run: |
           hack/build/ci/download-go-build-deps.sh
       - name: Build target
@@ -56,8 +49,8 @@ jobs:
         with:
           builder: ${{ steps.buildx.outputs.name }}
           build-args: |
-            GO_LINKER_ARGS=${{ inputs.golinkerargs }}
-            CGO_CFLAGS=${{ inputs.cgo_cflags }}
+            GO_LINKER_ARGS=${{ inputs.go-linker-args }}
+            CGO_CFLAGS=${{ inputs.cgo-cflags }}
           context: .
           file: ./Dockerfile
           platforms: linux/${{ inputs.platform }}

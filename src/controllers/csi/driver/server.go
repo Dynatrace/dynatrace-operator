@@ -201,7 +201,7 @@ func (svr *CSIDriverServer) NodeUnstageVolume(context.Context, *csi.NodeUnstageV
 }
 
 func (svr *CSIDriverServer) NodeGetInfo(context.Context, *csi.NodeGetInfoRequest) (*csi.NodeGetInfoResponse, error) {
-	return &csi.NodeGetInfoResponse{NodeId: svr.opts.NodeID}, nil
+	return &csi.NodeGetInfoResponse{NodeId: svr.opts.NodeId}, nil
 }
 
 func (svr *CSIDriverServer) NodeGetCapabilities(context.Context, *csi.NodeGetCapabilitiesRequest) (*csi.NodeGetCapabilitiesResponse, error) {

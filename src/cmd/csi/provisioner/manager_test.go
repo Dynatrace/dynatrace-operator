@@ -1,4 +1,4 @@
-package csi
+package provisioner
 
 import (
 	"testing"
@@ -27,7 +27,6 @@ func TestCsiDriverManagerProvider(t *testing.T) {
 		assert.Equal(t, "namespace", options.Namespace)
 		assert.Equal(t, scheme.Scheme, options.Scheme)
 		assert.Equal(t, metricsBindAddress, options.MetricsBindAddress)
-		assert.Equal(t, port, options.Port)
 		assert.Equal(t, "", options.HealthProbeBindAddress)
 		assert.Equal(t, livenessEndpointName, options.LivenessEndpointName)
 	})

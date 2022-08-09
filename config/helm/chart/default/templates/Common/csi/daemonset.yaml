@@ -31,7 +31,7 @@ spec:
   template:
     metadata:
       annotations:
-        kubectl.kubernetes.io/default-logs-container: driver
+        kubectl.kubernetes.io/default-container: provisioner
         {{- if and (eq (default false .Values.apparmor) true) (ne .Values.platform "openshift") }}
         container.apparmor.security.beta.kubernetes.io/driver: runtime/default
         container.apparmor.security.beta.kubernetes.io/registrar: runtime/default
@@ -52,11 +52,11 @@ spec:
         # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.
         # - Needs access to the filesystem of pods on the node, and mount stuff to it,needs to read/write to it, needs root permissions to do so
         # - Needs access to a dedicated folder on the node to persist data, needs to read/write to it.
-      - name: driver
+      - name: server
         image: {{- include "dynatrace-operator.image" . | nindent 12 }}
         imagePullPolicy: Always
         args:
-        - csi-driver
+        - csi-server
         - --endpoint=unix://csi/csi.sock
         - --node-id=$(KUBE_NODE_NAME)
         - --health-probe-bind-address=:10080
@@ -87,11 +87,11 @@ spec:
           protocol: TCP
         resources:
           limits:
-            cpu: {{ default "300m" ((.Values.csidriver).limits).cpu }}
-            memory: {{ default "100Mi" ((.Values.csidriver).limits).memory }}
+            cpu: 150m
+            memory: 100Mi
           requests:
-            cpu: {{ default "300m" ((.Values.csidriver).requests).cpu }}
-            memory: {{ default "100Mi" ((.Values.csidriver).requests).memory }}
+            cpu: 150m
+            memory: 100Mi
         securityContext:
           runAsUser: 0
           privileged: true # Needed for mountPropagation
@@ -115,6 +115,57 @@ spec:
           name: dynatrace-oneagent-data-dir
         - mountPath: /tmp
           name: tmp-dir
+      - name: provisioner
+        image: {{- include "dynatrace-operator.image" . | nindent 12 }}
+        imagePullPolicy: Always
+        args:
+          - csi-provisioner
+          - --health-probe-bind-address=:10090
+        env:
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /livez
+            port: livez
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 1
+        ports:
+          - containerPort: 10090
+            name: livez
+            protocol: TCP
+        resources:
+          limits:
+            cpu: {{ default "300m" ((.Values.csidriver).limits).cpu }}
+            memory: {{ default "100Mi" ((.Values.csidriver).limits).memory }}
+          requests:
+            cpu: {{ default "300m" ((.Values.csidriver).requests).cpu }}
+            memory: {{ default "100Mi" ((.Values.csidriver).requests).memory }}
+        securityContext:
+          runAsUser: 0
+          privileged: true # Needed for mountPropagation
+          allowPrivilegeEscalation: true # Needed for privileged
+          readOnlyRootFilesystem: true
+          runAsNonRoot: false
+          seccompProfile:
+            type: RuntimeDefault
+          seLinuxOptions:
+            level: s0
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+          - mountPath: /data
+            mountPropagation: Bidirectional
+            name: dynatrace-oneagent-data-dir
+          - mountPath: /tmp
+            name: tmp-dir
         # Used to make a gRPC request (GetPluginInfo()) to the driver to get driver name and driver contain
         # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.
         # Used for registering the driver with kubelet
