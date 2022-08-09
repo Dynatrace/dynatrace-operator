@@ -150,7 +150,6 @@ func checkComponentImagePullable(httpClient *http.Client, componentName string, 
 	if imageWorks {
 		logOkf("%s image '%s' found", componentName, componentRegistry+"/"+componentImage)
 	} else {
-		logErrorf("%s image '%s' missing", componentName, componentRegistry+"/"+componentImage)
 		return fmt.Errorf("%s image '%s' missing", componentName, componentRegistry+"/"+componentImage)
 	}
 	return nil
@@ -165,16 +164,14 @@ func addProxy(troubleshootCtx *troubleshootContext) error {
 			var err error
 			proxyUrl, err = kubeobjects.ExtractToken(&troubleshootCtx.proxySecret, dtclient.CustomProxySecretKey)
 			if err != nil {
-				logWithErrorf(err, "failed to extract proxy secret field")
-				return fmt.Errorf("failed to extract proxy secret field")
+				return errorWithMessagef(err, "failed to extract proxy secret field")
 			}
 		}
 	}
 	if proxyUrl != "" {
 		p, err := url.Parse(proxyUrl)
 		if err != nil {
-			logWithErrorf(err, "could not parse proxy URL!")
-			return err
+			return errorWithMessagef(err, "could not parse proxy URL!")
 		}
 		t := troubleshootCtx.httpClient.Transport.(*http.Transport)
 		t.Proxy = http.ProxyURL(p)
@@ -211,7 +208,6 @@ func connectToDockerRegistry(httpClient *http.Client, httpMethod string, httpUrl
 func getPullSecretToken(troubleshootCtx *troubleshootContext) (string, error) {
 	secretBytes, ok := troubleshootCtx.pullSecret.Data[dtpullsecret.DockerConfigJson]
 	if !ok {
-		logErrorf("token .dockerconfigjson does not exist in secret '%s'", troubleshootCtx.pullSecretName)
 		return "", fmt.Errorf("token .dockerconfigjson does not exist in secret '%s'", troubleshootCtx.pullSecretName)
 	}
 
@@ -294,7 +290,7 @@ func splitImageName(imageName string) (registry string, image string, version st
 		version = fields[1]
 		logInfof("using custom image version")
 	} else {
-		logErrorf("invalid version of the image")
+		err = fmt.Errorf("invalid version of the image {\"image\": \"%s\"}", image)
 	}
 	return
 }

@@ -58,11 +58,6 @@ func logErrorf(format string, v ...interface{}) {
 	log.V(levelError).Info(fmt.Sprintf(format, v...))
 }
 
-func logWithErrorf(err error, format string, v ...interface{}) {
-	message := fmt.Sprintf(format, v...)
-	log.V(levelError).Info(fmt.Sprintf("%s {\"error\": %s}", message, err.Error()))
-}
-
 func errorWithMessagef(err error, format string, v ...interface{}) error {
 	message := fmt.Sprintf(format, v...)
 	return fmt.Errorf("%s {\"error\": %s}", message, err.Error())
