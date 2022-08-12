@@ -7,7 +7,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/nodes"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/pkg/errors"
-	_ "k8s.io/client-go/plugin/pkg/client/auth" // important for runnning operator locally
+
+	// important for runnning operator locally
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
