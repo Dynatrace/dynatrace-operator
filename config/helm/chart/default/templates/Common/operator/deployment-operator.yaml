@@ -104,7 +104,7 @@ spec:
             runAsUser: 1001
             runAsGroup: 1001
             capabilities:
-              drop: ["all"]
+              drop: ["ALL"]
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

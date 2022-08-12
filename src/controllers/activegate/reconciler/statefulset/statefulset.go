@@ -225,7 +225,7 @@ func buildActiveGateContainer(stsProperties *statefulSetProperties) corev1.Conta
 			RunAsNonRoot:             address.Of(true),
 			Capabilities: &corev1.Capabilities{
 				Drop: []corev1.Capability{
-					"all",
+					"ALL",
 				},
 			},
 			SeccompProfile: &corev1.SeccompProfile{
