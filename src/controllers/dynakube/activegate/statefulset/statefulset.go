@@ -147,7 +147,7 @@ func buildTemplateSpec(stsProperties *statefulSetProperties) corev1.PodSpec {
 		InitContainers:     buildInitContainers(stsProperties),
 		NodeSelector:       stsProperties.CapabilityProperties.NodeSelector,
 		ServiceAccountName: determineServiceAccountName(stsProperties),
-		Affinity:           affinity(),
+		Affinity:           Affinity(),
 		Tolerations:        stsProperties.Tolerations,
 		Volumes:            buildVolumes(stsProperties, extraContainerBuilders),
 		ImagePullSecrets: []corev1.LocalObjectReference{

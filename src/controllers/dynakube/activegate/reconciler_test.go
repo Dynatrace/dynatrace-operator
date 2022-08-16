@@ -24,6 +24,7 @@ import (
 )
 
 const (
+	testKey       = "test-key"
 	testUID       = "test-uid"
 	testName      = "test-name"
 	testNamespace = "test-namespace"
@@ -179,20 +180,6 @@ func TestReconcile_CreateStatefulSetIfNotExists(t *testing.T) {
 	})
 }
 
-type failingClient struct {
-	created int
-	client.Client
-}
-
-func (clt *failingClient) Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
-	if clt.created == 0 {
-		clt.created++
-		return errors.New("failing")
-	}
-
-	return clt.Client.Create(ctx, obj, opts...)
-}
-
 func TestCreateStatefulSet(t *testing.T) {
 	t.Run("creates stateful set", func(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
@@ -218,65 +205,6 @@ func TestCreateStatefulSet(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Equal(t, desiredStatefulSet, createdStatefulSet)
-	})
-	t.Run("changes affinities if it does not succeed at first", func(t *testing.T) {
-		fakeClient := &failingClient{
-			Client: fake.NewClientBuilder().
-				WithScheme(scheme.Scheme).
-				WithObjects(&corev1.Namespace{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: kubesystem.Namespace,
-						UID:  testUID,
-					},
-				}).Build(),
-		}
-		r := &Reconciler{
-			Client:     fakeClient,
-			apiReader:  fakeClient,
-			capability: &dynatracev1beta1.CapabilityProperties{},
-			Instance:   &dynatracev1beta1.DynaKube{},
-		}
-		desiredStatefulSet := appsv1.StatefulSet{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "apps/v1",
-				Kind:       "StatefulSet",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
-			Spec: appsv1.StatefulSetSpec{
-				Template: corev1.PodTemplateSpec{
-					Spec: corev1.PodSpec{
-						Affinity: affinity(),
-					},
-				},
-			}}
-		expectedStatefulSet := appsv1.StatefulSet{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "apps/v1",
-				Kind:       "StatefulSet",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:            testName,
-				Namespace:       testNamespace,
-				ResourceVersion: "1",
-			},
-			Spec: appsv1.StatefulSetSpec{
-				Template: corev1.PodTemplateSpec{
-					Spec: corev1.PodSpec{
-						Affinity: affinityWithoutArch(),
-					},
-				},
-			}}
-
-		err := r.createStatefulSet(&desiredStatefulSet)
-		assert.Error(t, err)
-		// After the first error, a listener is appended to change the affinity
-
-		newStatefulSet, err := r.buildDesiredStatefulSet()
-		assert.NoError(t, err)
-		assert.Equal(t, expectedStatefulSet, newStatefulSet)
 	})
 }
 

@@ -143,19 +143,28 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 		multiCapability := NewMultiCapability(r.Instance)
 		update, err = r.createOrUpdateService(multiCapability.ServicePorts)
 		if update || err != nil {
-			return update, errors.WithStack(err)
+			return update, err
 		}
 	}
 
 	if r.Config().CreateEecRuntimeConfig {
 		update, err = r.createOrUpdateEecConfigMap()
 		if update || err != nil {
-			return update, errors.WithStack(err)
+			return update, err
 		}
 	}
 
 	update, err = r.activegateReconciler.Reconcile()
-	return update, errors.WithStack(err)
+
+	if err != nil {
+		log.Info("failed rolling out ActiveGate, retrying with different affinities")
+		r.activegateReconciler.AddOnAfterStatefulSetCreateListener(func(sts *appsv1.StatefulSet) {
+			sts.Spec.Template.Spec.Affinity = statefulset.AffinityWithoutArch()
+		})
+		update, err = r.activegateReconciler.Reconcile()
+	}
+
+	return update, err
 }
 
 func (r *Reconciler) createOrUpdateService(desiredServicePorts AgServicePorts) (bool, error) {

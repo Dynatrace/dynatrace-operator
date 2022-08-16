@@ -3,6 +3,7 @@ package capability
 import (
 	"context"
 	"fmt"
+	"github.com/pkg/errors"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -65,9 +66,12 @@ type testBaseReconciler struct {
 	client.Client
 	activegateReconciler
 	mock.Mock
+	onAfterStatefulSetCreateListener []statefulset.StatefulSetEvent
 }
 
-func (r *testBaseReconciler) AddOnAfterStatefulSetCreateListener(_ statefulset.StatefulSetEvent) {}
+func (r *testBaseReconciler) AddOnAfterStatefulSetCreateListener(listener statefulset.StatefulSetEvent) {
+	r.onAfterStatefulSetCreateListener = append(r.onAfterStatefulSetCreateListener, listener)
+}
 
 func (r *testBaseReconciler) Reconcile() (update bool, err error) {
 	args := r.Called()
@@ -451,6 +455,64 @@ func TestReconcile(t *testing.T) {
 			assert.Len(t, statefulSet.Spec.Template.Spec.Containers, 1)
 		}
 	})
+	t.Run("changes affinities if it does not succeed at first", func(t *testing.T) {
+		fakeClient := &failingClient{
+			Client: fake.NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(&corev1.Namespace{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: kubesystem.Namespace,
+						UID:  testUID,
+					},
+				}).Build(),
+		}
+		baseReconciler := &testBaseReconciler{}
+		r := &Reconciler{
+			Client:               fakeClient,
+			activegateReconciler: baseReconciler,
+			Capability:           NewMultiCapability(&dynatracev1beta1.DynaKube{}),
+			Instance:             &dynatracev1beta1.DynaKube{},
+		}
+
+		// First reconciliation creates the service
+		updated, err := r.Reconcile()
+
+		assert.True(t, updated)
+		assert.NoError(t, err)
+
+		// Second reconciliation creates the stateful set
+		firstCallHappened := false
+		var call *mock.Call
+		call = baseReconciler.On("Reconcile").Run(func(args mock.Arguments) {
+			// Reconcile is called twice, first without the listener, then with the listener
+			// The first call must return an error so the listener is added.
+			// The second call must then succeed
+			if firstCallHappened {
+				call.Return(true, nil)
+			}
+
+			firstCallHappened = true
+		}).Return(false, errors.New("failing"))
+		updated, err = r.Reconcile()
+
+		assert.True(t, updated)
+		assert.NoError(t, err)
+		assert.Equal(t, 1, len(baseReconciler.onAfterStatefulSetCreateListener))
+	})
+}
+
+type failingClient struct {
+	created int
+	client.Client
+}
+
+func (clt *failingClient) Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
+	if clt.created == 0 && obj.GetName() == "-" && obj.GetObjectKind().GroupVersionKind().Kind == "StatefulSet" {
+		clt.created++
+		return errors.New("failing")
+	}
+
+	return clt.Client.Create(ctx, obj, opts...)
 }
 
 func TestSetReadinessProbePort(t *testing.T) {

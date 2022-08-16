@@ -71,13 +71,13 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 		err = customproperties.NewReconciler(r, r.Instance, r.serviceAccountOwner, *r.capability.CustomProperties, r.scheme).
 			Reconcile()
 		if err != nil {
-			log.Error(err, "could not reconcile custom properties")
+			log.Info("could not reconcile custom properties")
 			return false, errors.WithStack(err)
 		}
 	}
 
 	if update, err = r.manageStatefulSet(); err != nil {
-		log.Error(err, "could not reconcile stateful set")
+		log.Info("could not reconcile stateful set")
 		return false, errors.WithStack(err)
 	}
 
@@ -152,16 +152,6 @@ func (r *Reconciler) createStatefulSetIfNotExists(desiredSts *appsv1.StatefulSet
 
 func (r *Reconciler) createStatefulSet(desiredSts *appsv1.StatefulSet) error {
 	err := r.Create(context.TODO(), desiredSts)
-
-	if err != nil {
-		if !contains(r.onAfterStatefulSetCreateListener, changeAffinity) {
-			log.Info("failed rolling out ActiveGate, retrying with different affinities", "error", err.Error())
-			r.AddOnAfterStatefulSetCreateListener(func(sts *appsv1.StatefulSet) {
-				sts.Spec.Template.Spec.Affinity = affinityWithoutArch()
-			})
-		}
-	}
-
 	return errors.WithStack(err)
 }
 
@@ -173,10 +163,6 @@ func contains[T any](slice []T, item T) bool {
 	}
 
 	return false
-}
-
-func changeAffinity(sts *appsv1.StatefulSet) {
-	sts.Spec.Template.Spec.Affinity = affinityWithoutArch()
 }
 
 func (r *Reconciler) updateStatefulSetIfOutdated(desiredSts *appsv1.StatefulSet) (bool, error) {
@@ -194,7 +180,7 @@ func (r *Reconciler) updateStatefulSetIfOutdated(desiredSts *appsv1.StatefulSet)
 
 	log.Info("updating existing stateful set")
 	if err = r.Update(context.TODO(), desiredSts); err != nil {
-		return false, err
+		return false, errors.WithStack(err)
 	}
 	return true, err
 }
