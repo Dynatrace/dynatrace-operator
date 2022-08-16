@@ -30,7 +30,7 @@ type OneAgentSpec struct {
 
 type CloudNativeFullStackSpec struct {
 	HostInjectSpec   `json:",inline"`
-	AppInjectionSpec `json:",inlinee"`
+	AppInjectionSpec `json:",inline"`
 }
 
 type HostInjectSpec struct {
