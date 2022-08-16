@@ -1,4 +1,4 @@
-package coreReconciler
+package core
 
 import "github.com/Dynatrace/dynatrace-operator/src/logger"
 

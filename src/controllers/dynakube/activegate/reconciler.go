@@ -5,7 +5,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/coreReconciler"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/core"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -61,7 +61,7 @@ func (r *Reconciler) reconcileActiveGateProxySecret() (err error) {
 
 func (r *Reconciler) createCapability(agCapability capability.Capability) (updated bool, err error) {
 	return capability.
-		NewReconciler(r.Client, agCapability, coreReconciler.NewReconciler(r.Client, r.apiReader, r.scheme, r.Instance, agCapability), r.Instance).
+		NewReconciler(r.Client, agCapability, core.NewReconciler(r.Client, r.apiReader, r.scheme, r.Instance, agCapability), r.Instance).
 		Reconcile()
 }
 

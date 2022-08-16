@@ -1,4 +1,4 @@
-package coreReconciler
+package core
 
 import (
 	"context"
