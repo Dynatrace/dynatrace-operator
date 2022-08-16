@@ -122,7 +122,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		return reconcile.Result{}, errors.WithStack(err)
 	}
 	log.Info("csi directories exist", "path", provisioner.path.TenantDir(dynakubeMetadata.TenantUUID))
-	
+
 	latestProcessModuleConfigCache, requeue, err := provisioner.updateAgentInstallation(ctx, dtc, dynakubeMetadata, dk)
 	if requeue {
 		return reconcile.Result{RequeueAfter: defaultRequeueDuration}, err
