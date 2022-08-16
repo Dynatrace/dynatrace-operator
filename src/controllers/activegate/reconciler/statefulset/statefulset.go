@@ -107,7 +107,7 @@ func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSe
 			Selector:            &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: appLabels.BuildLabels(),
+					Labels: stsProperties.buildLabels(appLabels.BuildLabels()),
 					Annotations: map[string]string{
 						annotationActiveGateConfigurationHash: stsProperties.activeGateConfigurationHash,
 					},
@@ -131,6 +131,13 @@ func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSe
 
 	sts.ObjectMeta.Annotations[kubeobjects.AnnotationHash] = hash
 	return sts, nil
+}
+
+func (stsProperties *statefulSetProperties) buildLabels(appLabels map[string]string) map[string]string {
+	return kubeobjects.MergeLabels(
+		appLabels,
+		stsProperties.Labels,
+	)
 }
 
 func getContainerBuilders(stsProperties *statefulSetProperties) []kubeobjects.ContainerBuilder {
