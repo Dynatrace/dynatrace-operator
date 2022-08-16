@@ -3,6 +3,7 @@ package validation
 import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/logger"
+	"github.com/go-logr/logr"
 )
 
 var log = logger.NewDTLogger().WithName("validation-webhook")
@@ -10,8 +11,8 @@ var log = logger.NewDTLogger().WithName("validation-webhook")
 type validator func(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string
 
 var validators = []validator{
-	noApiUrl,
-	isInvalidApiUrl,
+	NoApiUrl,
+	IsInvalidApiUrl,
 	missingCSIDaemonSet,
 	conflictingActiveGateConfiguration,
 	invalidActiveGateCapabilities,
@@ -37,4 +38,8 @@ var warnings = []validator{
 	deprecatedFeatureFlagDisableReadOnlyAgent,
 	deprecatedFeatureFlagDisableWebhookReinvocationPolicy,
 	deprecatedFeatureFlagDisableMetadataEnrichment,
+}
+
+func SetLogger(logger logr.Logger) {
+	log = logger
 }

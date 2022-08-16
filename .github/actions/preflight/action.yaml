@@ -32,7 +32,7 @@ runs:
   steps:
   - name: Checkout
     uses: actions/checkout@v2
-  - name: Login to Registry to create docker-config.json
+  - name: Login to Registry
     uses: docker/login-action@v1
     with:
       registry: ${{ inputs.registry }}
@@ -43,7 +43,7 @@ runs:
     env:
       RHCC_APITOKEN: ${{ inputs.pyxis-api-token }}
       RHCC_PROJECT_ID: ${{ inputs.redhat-project-id }}
-      PREFLIGHT_VERSION: "1.3.0"
+      PREFLIGHT_VERSION: "1.3.4"
       IMAGE_URI: ${{ inputs.registry }}/${{ inputs.repository }}:${{ inputs.version }}
     run: |
       hack/build/ci/preflight.sh "${{ env.PREFLIGHT_VERSION }}" "${{ env.IMAGE_URI}}" "${{ inputs.report-name }}"

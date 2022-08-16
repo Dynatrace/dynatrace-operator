@@ -22,6 +22,7 @@ import (
 	csiServer "github.com/Dynatrace/dynatrace-operator/src/cmd/csi/server"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/operator"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/standalone"
+	"github.com/Dynatrace/dynatrace-operator/src/cmd/troubleshoot"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/webhook"
 	"github.com/Dynatrace/dynatrace-operator/src/logger"
 	"github.com/pkg/errors"
@@ -73,6 +74,11 @@ func createCsiProvisionerCommandBuilder() csiProvisioner.CommandBuilder {
 		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
 }
 
+func createTroubleshootCommandBuilder() troubleshoot.CommandBuilder {
+	return troubleshoot.NewTroubleshootCommandBuilder().
+		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
+}
+
 func rootCommand(_ *cobra.Command, _ []string) error {
 	return errors.New("operator binary must be called with one of the subcommands")
 }
@@ -87,6 +93,7 @@ func main() {
 		createCsiServerCommandBuilder().Build(),
 		createCsiProvisionerCommandBuilder().Build(),
 		standalone.NewStandaloneCommand(),
+		createTroubleshootCommandBuilder().Build(),
 	)
 
 	err := cmd.Execute()
