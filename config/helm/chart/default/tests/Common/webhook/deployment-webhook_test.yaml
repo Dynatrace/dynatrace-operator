@@ -123,7 +123,8 @@ tests:
                   runAsUser: 1001
                   runAsGroup: 1001
                   capabilities:
-                    drop: [ "ALL" ]
+                    drop:
+                      - ALL
             serviceAccountName: dynatrace-webhook
 
   - it: should have tolerations if set
@@ -254,7 +255,8 @@ tests:
                   runAsUser: 1001
                   runAsGroup: 1001
                   capabilities:
-                    drop: ["ALL"]
+                    drop:
+                      - ALL
             serviceAccountName: dynatrace-webhook
 
   - it: should not have imagePullSecrets defined in spec (without highavailabilty mode)
@@ -365,7 +367,8 @@ tests:
                   runAsUser: 1001
                   runAsGroup: 1001
                   capabilities:
-                    drop: ["ALL"]
+                    drop:
+                      - ALL
             serviceAccountName: dynatrace-webhook
 
   - it: should have only OS node affinity on GKE Autopilot

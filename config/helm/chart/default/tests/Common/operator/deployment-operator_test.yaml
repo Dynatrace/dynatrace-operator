@@ -117,7 +117,8 @@ tests:
                   runAsUser: 1001
                   runAsGroup: 1001
                   capabilities:
-                    drop: ["ALL"]
+                    drop:
+                      - ALL
             affinity:
               nodeAffinity:
                 requiredDuringSchedulingIgnoredDuringExecution:
@@ -258,7 +259,8 @@ tests:
                   runAsUser: 1001
                   runAsGroup: 1001
                   capabilities:
-                    drop: ["ALL"]
+                    drop:
+                      - ALL
             affinity:
               nodeAffinity:
                 requiredDuringSchedulingIgnoredDuringExecution:

@@ -131,7 +131,8 @@ spec:
             runAsUser: 1001
             runAsGroup: 1001
             capabilities:
-              drop: ["ALL"]
+              drop:
+                - ALL
       serviceAccountName: dynatrace-webhook
       {{- if (.Values.webhook).hostNetwork }}
       hostNetwork: true
