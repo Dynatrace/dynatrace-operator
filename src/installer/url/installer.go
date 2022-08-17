@@ -42,7 +42,7 @@ func NewUrlInstaller(fs afero.Fs, dtc dtclient.Client, props *Properties) *UrlIn
 	return &UrlInstaller{
 		fs:        fs,
 		dtc:       dtc,
-		extractor: zip.NewOnAgentExtractor(fs, props.PathResolver),
+		extractor: zip.NewOneAgentExtractor(fs, props.PathResolver),
 		props:     props,
 	}
 }

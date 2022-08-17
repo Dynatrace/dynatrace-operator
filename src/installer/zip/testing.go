@@ -52,7 +52,7 @@ func SetupTestArchive(t *testing.T, fs afero.Fs, rawZip string) afero.File {
 }
 
 func createTestExtractor(fs afero.Fs) Extractor {
-	return NewOnAgentExtractor(fs, metadata.PathResolver{})
+	return NewOneAgentExtractor(fs, metadata.PathResolver{})
 }
 
 func testUnpackedArchive(t *testing.T, fs afero.Fs) {

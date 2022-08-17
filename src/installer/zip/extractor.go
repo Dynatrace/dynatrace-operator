@@ -10,7 +10,7 @@ type Extractor interface {
 	ExtractGzip(sourceFilePath, targetDir string) error
 }
 
-func NewOnAgentExtractor(fs afero.Fs, pathResolver metadata.PathResolver) Extractor {
+func NewOneAgentExtractor(fs afero.Fs, pathResolver metadata.PathResolver) Extractor {
 	return &OneAgentExtractor{
 		fs:           fs,
 		pathResolver: pathResolver,

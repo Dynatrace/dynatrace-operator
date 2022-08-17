@@ -87,7 +87,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 		installer := &UrlInstaller{
 			fs:        fs,
 			dtc:       dtc,
-			extractor: zip.NewOnAgentExtractor(fs, metadata.PathResolver{}),
+			extractor: zip.NewOneAgentExtractor(fs, metadata.PathResolver{}),
 			props: &Properties{
 				Os:     dtclient.OsUnix,
 				Type:   dtclient.InstallerTypePaaS,
@@ -117,7 +117,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 		installer := &UrlInstaller{
 			fs:        fs,
 			dtc:       dtc,
-			extractor: zip.NewOnAgentExtractor(fs, metadata.PathResolver{}),
+			extractor: zip.NewOneAgentExtractor(fs, metadata.PathResolver{}),
 			props: &Properties{
 				Os:            dtclient.OsUnix,
 				Type:          dtclient.InstallerTypePaaS,
@@ -128,13 +128,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 
 		err := installer.installAgentFromUrl(testDir)
 		require.NoError(t, err)
-
 		// afero can't rename directories properly: https://github.com/spf13/afero/issues/141
-		// info, err := fs.Stat(filepath.Join(testDir, testFilename))
-		// require.NoError(t, err)
-		// assert.NotNil(t, info)
-		// assert.False(t, info.IsDir())
-		// assert.Equal(t, int64(25), info.Size())
 	})
 	t.Run(`downloading and unzipping latest agent`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
@@ -155,7 +149,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 		installer := &UrlInstaller{
 			fs:        fs,
 			dtc:       dtc,
-			extractor: zip.NewOnAgentExtractor(fs, metadata.PathResolver{}),
+			extractor: zip.NewOneAgentExtractor(fs, metadata.PathResolver{}),
 			props: &Properties{
 				Os:            dtclient.OsUnix,
 				Type:          dtclient.InstallerTypePaaS,
@@ -166,13 +160,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 
 		err := installer.installAgentFromUrl(testDir)
 		require.NoError(t, err)
-
 		// afero can't rename directories properly: https://github.com/spf13/afero/issues/141
-		// info, err := fs.Stat(filepath.Join(testDir, testFilename))
-		// require.NoError(t, err)
-		// assert.NotNil(t, info)
-		// assert.False(t, info.IsDir())
-		// assert.Equal(t, int64(25), info.Size())
 	})
 	t.Run(`downloading and unzipping agent via url`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
@@ -192,7 +180,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 		installer := &UrlInstaller{
 			fs:        fs,
 			dtc:       dtc,
-			extractor: zip.NewOnAgentExtractor(fs, metadata.PathResolver{}),
+			extractor: zip.NewOneAgentExtractor(fs, metadata.PathResolver{}),
 			props: &Properties{
 				Url: testUrl,
 			},
@@ -200,13 +188,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 
 		err := installer.installAgentFromUrl(testDir)
 		require.NoError(t, err)
-
 		// afero can't rename directories properly: https://github.com/spf13/afero/issues/141
-		// info, err := fs.Stat(filepath.Join(testDir, testFilename))
-		// require.NoError(t, err)
-		// assert.NotNil(t, info)
-		// assert.False(t, info.IsDir())
-		// assert.Equal(t, int64(25), info.Size())
 	})
 }
 

@@ -22,9 +22,6 @@ func TestExtractZip(t *testing.T) {
 		defer func() { _ = zipFile.Close() }()
 
 		// afero can't rename directories properly: https://github.com/spf13/afero/issues/141
-		// extractor := createTestExtractor(fs)
-		// err := extractor.ExtractZip(zipFile, TestZipDirName)
-		// require.NoError(t, err)
 
 		fileInfo, err := zipFile.Stat()
 		require.NoError(t, err)

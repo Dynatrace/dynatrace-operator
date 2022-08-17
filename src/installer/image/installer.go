@@ -30,7 +30,7 @@ type Properties struct {
 func NewImageInstaller(fs afero.Fs, props *Properties) *ImageInstaller {
 	return &ImageInstaller{
 		fs:        fs,
-		extractor: zip.NewOnAgentExtractor(fs, props.PathResolver),
+		extractor: zip.NewOneAgentExtractor(fs, props.PathResolver),
 		props:     props,
 	}
 }
