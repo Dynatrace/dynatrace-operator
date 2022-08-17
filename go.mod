@@ -1,6 +1,6 @@
 module github.com/Dynatrace/dynatrace-operator
 
-go 1.18
+go 1.19
 
 require (
 	github.com/container-storage-interface/spec v1.6.0
@@ -20,8 +20,8 @@ require (
 	go.uber.org/zap v1.22.0
 	golang.org/x/sys v0.0.0-20220721230656-c6bc011c0c49
 	google.golang.org/grpc v1.48.0
-	istio.io/api v0.0.0-20220721211444-f06fcca0ad6c
-	istio.io/client-go v1.14.2
+	istio.io/api v0.0.0-20220728184806-7837c4e62d82
+	istio.io/client-go v1.14.3
 	k8s.io/api v0.24.3
 	k8s.io/apiextensions-apiserver v0.24.3
 	k8s.io/apimachinery v0.24.3
