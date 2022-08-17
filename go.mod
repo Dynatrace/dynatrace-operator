@@ -17,7 +17,7 @@ require (
 	github.com/spf13/afero v1.9.2
 	github.com/spf13/cobra v1.5.0
 	github.com/stretchr/testify v1.8.0
-	go.uber.org/zap v1.21.0
+	go.uber.org/zap v1.22.0
 	golang.org/x/sys v0.0.0-20220721230656-c6bc011c0c49
 	google.golang.org/grpc v1.48.0
 	istio.io/api v0.0.0-20220721211444-f06fcca0ad6c
