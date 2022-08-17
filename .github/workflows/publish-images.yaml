@@ -20,21 +20,12 @@ jobs:
         id: prep
         run: |
           hack/build/ci/prepare-build-variables.sh
-      - name: Prepare build parameters
-        id: prepenv
-        run: |
-          # Set output parameters.
-          # Reason: global envs do not work in workflow calls
-          # More info: https://github.com/actions/runner/issues/480#issuecomment-1021278915
-          echo ::set-output name=goversion::${{ env.GO_VERSION }}
-          echo ::set-output name=registry::${{ env.DOCKER_REGISTRY }}
-          echo ::set-output name=repository::${{ env.DOCKER_REPOSITORY }}
     outputs:
       labels: ${{ steps.prep.outputs.docker_image_labels }}
       version: ${{ steps.prep.outputs.docker_image_tag }}
       go-linker-args: ${{ steps.prep.outputs.go_linker_args }}
       cgo-cflags: ${{ steps.prep.outputs.cgo_cflags }}
-      go-version: "1.18"
+      go-version: "1.19"
 
   # Workflow needs to build docker images again as separate workflows don't have access to others artifacts
   # https://github.com/actions/download-artifact/issues/3
@@ -80,21 +71,21 @@ jobs:
     strategy:
       matrix:
         platform: [amd64, arm64]
-        registry: [rhcc, gcr, dockerhub]
+        registry-name: [rhcc, gcr, dockerhub]
         include:
           - registry-name: rhcc
             registry-url: scan.connect.redhat.com
-            repository: dynatrace/dynatrace-operator
+            repository: RHCC_REPOSITORY
             username: RHCC_USERNAME
             password: RHCC_PASSWORD
-          - registry: gcr
-            url: gcr.io
-            repository: dynatrace-marketplace-prod/dynatrace-operator
+          - registry-name: gcr
+            registry-url: gcr.io
+            repository: GCR_REPOSITORY
             username: GCR_USERNAME
             password: GCR_JSON_KEY
-          - registry: dockerhub
-            url: docker.io
-            repository: dynatrace/dynatrace-operator
+          - registry-name: dockerhub
+            registry-url: docker.io
+            repository: DOCKERHUB_REPOSITORY
             username: DOCKERHUB_USERNAME
             password: DOCKERHUB_PASSWORD
     steps:
@@ -102,22 +93,22 @@ jobs:
         uses: actions/checkout@v2
       - name: Push ${{matrix.platform}} to ${{matrix.registry-name}}
         uses: ./.github/actions/upload-image
-        if: ${{ matrix.registry-name != "rhcc" && matrix.platform != "arm64" }}
+        if: matrix.registry-name != 'rhcc' || ( matrix.registry-name == 'rhcc' && matrix.platform == 'amd64' )
         with:
-          platform: ${{matrix.platform}}
+          platform: ${{ matrix.platform }}
           labels: ${{ needs.prepare.outputs.labels }}
           version: ${{ needs.prepare.outputs.version }}
-          registry: ${{matrix.registry-url}}
-          repository: ${{matrix.repository}}
+          registry: ${{ matrix.registry-url }}
+          repository: ${{ secrets[matrix.repository] }}
           repository-username: ${{ secrets[matrix.username] }}
           repository-password: ${{ secrets[matrix.password] }}
       - name: Run preflight
-        if: ${{ matrix.registry-name == "rhcc" && matrix.platform == "amd64" }}
+        if: matrix.registry-name == 'rhcc' && matrix.platform == 'amd64'
         uses: ./.github/actions/preflight
         with:
           version: ${{ needs.prepare.outputs.version }}
           registry: ${{matrix.registry-url}}
-          repository: ${{matrix.repository}}
+          repository: ${{ secrets[matrix.repository] }}
           report-name: "preflight.json"
           redhat-project-id: ${{ secrets.REDHAT_PROJECT_ID }}
           pyxis-api-token: ${{ secrets.PYXIS_API_TOKEN }}
@@ -125,9 +116,9 @@ jobs:
           rhcc-password: ${{ secrets[matrix.password] }}
 
   manifest:
-    name: Create Dockerhub manifests
+    name: Create manifests
     environment: Release
-    needs: [prepare, push-dockerhub-amd, push-dockerhub-arm]
+    needs: [prepare, push]
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -135,12 +126,12 @@ jobs:
         include:
           - registry: gcr
             url: gcr.io
-            repository: dynatrace-marketplace-prod/dynatrace-operator
+            repository: GCR_REPOSITORY
             username: GCR_USERNAME
             password: GCR_JSON_KEY
           - registry: dockerhub
             url: docker.io
-            repository: dynatrace/dynatrace-operator
+            repository: DOCKERHUB_REPOSITORY
             username: DOCKERHUB_USERNAME
             password: DOCKERHUB_PASSWORD
     steps:
@@ -151,7 +142,7 @@ jobs:
         with:
           version: ${{ needs.prepare.outputs.version }}
           registry: ${{ matrix.url }}
-          repository: ${{ matrix.repository }}
+          repository: ${{ secrets[matrix.repository] }}
           combined: true
           repository-username: ${{ secrets[matrix.username] }}
           repository-password: ${{ secrets[matrix.password] }}

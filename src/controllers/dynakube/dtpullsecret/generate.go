@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	dockerConfigJson = ".dockerconfigjson"
+	DockerConfigJson = ".dockerconfigjson"
 )
 
 type dockerAuthentication struct {
@@ -77,5 +77,5 @@ func pullSecretDataFromDockerConfig(dockerConf *dockerConfig) (map[string][]byte
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	return map[string][]byte{dockerConfigJson: dockerConfJson}, nil
+	return map[string][]byte{DockerConfigJson: dockerConfJson}, nil
 }
