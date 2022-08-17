@@ -8,11 +8,18 @@ import (
 	"go/build"
 	"os"
 	"path/filepath"
+	"strings"
+	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
+	"github.com/Dynatrace/dynatrace-operator/src/version"
+	"github.com/pkg/errors"
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -38,12 +45,77 @@ type ControllerTestEnvironment struct {
 	server *envtest.Environment
 }
 
+func TestFindIstio(t *testing.T) {
+	fs := afero.NewMemMapFs()
+	istioPath := filepath.Join(build.Default.GOPATH, "pkg", "mod", "istio.io")
+	err := fs.MkdirAll(istioPath, 0755)
+
+	require.NoError(t, err)
+
+	err = fs.MkdirAll(filepath.Join(istioPath, "api@v0.0.0-20220721211444-f06fcca0ad6c", "kubernetes"), 0755)
+	require.NoError(t, err)
+
+	err = fs.MkdirAll(filepath.Join(istioPath, "api@v0.0.0-20220110211529-694b7b802a22", "kubernetes"), 0755)
+	require.NoError(t, err)
+
+	err = fs.MkdirAll(filepath.Join(istioPath, "api@v0.0.0-20201125194658-3cee6a1d3ab4", "kubernetes"), 0755)
+	require.NoError(t, err)
+
+	err = fs.MkdirAll(filepath.Join(istioPath, "client-go@v1.12.1", "kubernetes"), 0755)
+	require.NoError(t, err)
+
+	latestDirectory, err := findLatestIstioDirectory(fs, istioPath)
+
+	assert.NoError(t, err)
+	assert.Equal(t, "api@v0.0.0-20220721211444-f06fcca0ad6c", latestDirectory)
+}
+
+func findLatestIstioDirectory(filesystem afero.Fs, istioPath string) (string, error) {
+	directories, err := afero.ReadDir(filesystem, istioPath)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	var latestDirectory string
+	var latestVersion version.SemanticVersion
+	var directoryVersion version.SemanticVersion
+
+	for _, directory := range directories {
+		if !directory.IsDir() || !strings.Contains(directory.Name(), "api") {
+			continue
+		}
+
+		trimmedVersion := strings.ReplaceAll(directory.Name(), "api@v", "")
+		trimmedVersion = trimmedVersion[:strings.LastIndex(trimmedVersion, "-")]
+		trimmedVersion = strings.ReplaceAll(trimmedVersion, "-", ".")
+		trimmedVersion = trimmedVersion + "-0"
+		directoryVersion, err = version.ExtractSemanticVersion(trimmedVersion)
+
+		if err != nil {
+			continue
+		}
+
+		if latestDirectory == "" || version.CompareSemanticVersions(latestVersion, directoryVersion) < 0 {
+			latestVersion = directoryVersion
+			latestDirectory = directory.Name()
+		}
+	}
+
+	return latestDirectory, nil
+}
+
 func newTestEnvironment() (*ControllerTestEnvironment, error) {
+	istioPath := filepath.Join(build.Default.GOPATH, "pkg", "mod", "istio.io")
+	latestIstioDirectory, err := findLatestIstioDirectory(afero.NewOsFs(), istioPath)
+
+	if err != nil {
+		return nil, err
+	}
+
 	environment := &envtest.Environment{
 		CRDDirectoryPaths: []string{
 			filepath.Join("..", "..", "..", "..", "config", "crd", "bases"),
-			// ToDo: currently this is the only way to get the CRD - see https://github.com/kubernetes-sigs/controller-runtime/pull/1393
-			filepath.Join(build.Default.GOPATH, "pkg", "mod", "istio.io", "api@v0.0.0-20220721211444-f06fcca0ad6c", "kubernetes"),
+			filepath.Join(istioPath, latestIstioDirectory, "kubernetes"),
 		},
 	}
 	kubernetesAPIServer := environment.ControlPlane.GetAPIServer()
