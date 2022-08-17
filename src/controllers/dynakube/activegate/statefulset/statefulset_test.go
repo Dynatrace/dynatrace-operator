@@ -259,7 +259,7 @@ func TestStatefulSet_Container(t *testing.T) {
 		assert.Equal(t, *activeGateContainer.SecurityContext.RunAsNonRoot, true)
 		assert.Equal(t, activeGateContainer.SecurityContext.SeccompProfile.Type, corev1.SeccompProfileTypeRuntimeDefault)
 		assert.Equal(t, len(activeGateContainer.SecurityContext.Capabilities.Drop), 1)
-		assert.Equal(t, activeGateContainer.SecurityContext.Capabilities.Drop[0], corev1.Capability("all"))
+		assert.Equal(t, activeGateContainer.SecurityContext.Capabilities.Drop[0], corev1.Capability("ALL"))
 	}
 
 	checkVolumes := func(activeGateContainer *corev1.Container, dynakube *dynatracev1beta1.DynaKube) {
