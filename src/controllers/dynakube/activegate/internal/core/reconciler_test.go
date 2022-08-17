@@ -61,7 +61,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 	require.NotNil(t, r)
 	require.NotNil(t, r.Client)
 	require.NotNil(t, r.scheme)
-	require.NotNil(t, r.Instance)
+	require.NotNil(t, r.Dynakube)
 
 	return r
 }
@@ -69,7 +69,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 func TestReconcile(t *testing.T) {
 	t.Run(`reconcile custom properties`, func(t *testing.T) {
 		r := createDefaultReconciler(t)
-		r.Instance.Spec.Routing.CustomProperties = &dynatracev1beta1.DynaKubeValueSource{
+		r.Dynakube.Spec.Routing.CustomProperties = &dynatracev1beta1.DynaKubeValueSource{
 			Value: testValue,
 		}
 		_, err := r.Reconcile()
@@ -77,7 +77,7 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 
 		var customProperties corev1.Secret
-		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Instance.Name + "-" + r.feature + "-" + customproperties.Suffix, Namespace: r.Instance.Namespace}, &customProperties)
+		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Dynakube.Name + "-" + r.feature + "-" + customproperties.Suffix, Namespace: r.Dynakube.Namespace}, &customProperties)
 		assert.NoError(t, err)
 		assert.NotNil(t, customProperties)
 		assert.Contains(t, customProperties.Data, customproperties.DataKey)
@@ -91,7 +91,7 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 
 		statefulSet := &appsv1.StatefulSet{}
-		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Instance.Name + "-" + r.feature, Namespace: r.Instance.Namespace}, statefulSet)
+		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Dynakube.Name + "-" + r.feature, Namespace: r.Dynakube.Namespace}, statefulSet)
 
 		assert.NotNil(t, statefulSet)
 		assert.NoError(t, err)
@@ -104,19 +104,19 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 
 		statefulSet := &appsv1.StatefulSet{}
-		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Instance.Name + "-" + r.feature, Namespace: r.Instance.Namespace}, statefulSet)
+		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Dynakube.Name + "-" + r.feature, Namespace: r.Dynakube.Namespace}, statefulSet)
 
 		assert.NotNil(t, statefulSet)
 		assert.NoError(t, err)
 
-		r.Instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
+		r.Dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
 		update, err = r.Reconcile()
 
 		assert.True(t, update)
 		assert.NoError(t, err)
 
 		newStatefulSet := &appsv1.StatefulSet{}
-		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Instance.Name + "-" + r.feature, Namespace: r.Instance.Namespace}, newStatefulSet)
+		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Dynakube.Name + "-" + r.feature, Namespace: r.Dynakube.Namespace}, newStatefulSet)
 
 		assert.NotNil(t, statefulSet)
 		assert.NoError(t, err)
@@ -144,7 +144,7 @@ func TestReconcile_GetStatefulSet(t *testing.T) {
 	desiredSts.Kind = "StatefulSet"
 	desiredSts.APIVersion = "apps/v1"
 	desiredSts.ResourceVersion = "1"
-	err = controllerutil.SetControllerReference(r.Instance, desiredSts, r.scheme)
+	err = controllerutil.SetControllerReference(r.Dynakube, desiredSts, r.scheme)
 	require.NoError(t, err)
 
 	sts, err := r.getStatefulSet(desiredSts)
@@ -186,7 +186,7 @@ func TestReconcile_UpdateStatefulSetIfOutdated(t *testing.T) {
 	assert.NoError(t, err)
 	assert.False(t, updated)
 
-	r.Instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
+	r.Dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
 	desiredSts, err = r.buildDesiredStatefulSet()
 	require.NoError(t, err)
 
@@ -214,7 +214,7 @@ func TestReconcile_DeleteStatefulSetIfOldLabelsAreUsed(t *testing.T) {
 	assert.NoError(t, err)
 	assert.False(t, deleted)
 
-	r.Instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
+	r.Dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
 	desiredSts, err = r.buildDesiredStatefulSet()
 	require.NoError(t, err)
 	correctLabels := desiredSts.Labels
@@ -234,12 +234,12 @@ func TestReconcile_GetCustomPropertyHash(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Empty(t, hash)
 
-	r.Instance.Spec.Routing.CustomProperties = &dynatracev1beta1.DynaKubeValueSource{Value: testValue}
+	r.Dynakube.Spec.Routing.CustomProperties = &dynatracev1beta1.DynaKubeValueSource{Value: testValue}
 	hash, err = r.calculateActiveGateConfigurationHash()
 	assert.NoError(t, err)
 	assert.NotEmpty(t, hash)
 
-	r.Instance.Spec.Routing.CustomProperties = &dynatracev1beta1.DynaKubeValueSource{ValueFrom: testName}
+	r.Dynakube.Spec.Routing.CustomProperties = &dynatracev1beta1.DynaKubeValueSource{ValueFrom: testName}
 	hash, err = r.calculateActiveGateConfigurationHash()
 	assert.Error(t, err)
 	assert.Empty(t, hash)
@@ -266,8 +266,8 @@ func TestReconcile_GetActiveGateAuthTokenHash(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Empty(t, hash)
 
-	r.Instance.Annotations = make(map[string]string)
-	r.Instance.Annotations[dynatracev1beta1.AnnotationFeatureEnableActiveGateAuthToken] = "true"
+	r.Dynakube.Annotations = make(map[string]string)
+	r.Dynakube.Annotations[dynatracev1beta1.AnnotationFeatureEnableActiveGateAuthToken] = "true"
 
 	hash, err = r.calculateActiveGateConfigurationHash()
 	assert.Error(t, err)
@@ -275,8 +275,8 @@ func TestReconcile_GetActiveGateAuthTokenHash(t *testing.T) {
 
 	err = r.Create(context.TODO(), &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      r.Instance.ActiveGateAuthTokenSecret(),
-			Namespace: r.Instance.Namespace,
+			Name:      r.Dynakube.ActiveGateAuthTokenSecret(),
+			Namespace: r.Dynakube.Namespace,
 		},
 		Data: map[string][]byte{
 			secrets.ActiveGateAuthTokenName: []byte(testValue),

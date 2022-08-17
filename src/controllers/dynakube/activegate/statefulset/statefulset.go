@@ -59,7 +59,7 @@ type statefulSetProperties struct {
 	volumes                     []corev1.Volume
 }
 
-func NewStatefulSetProperties(instance *dynatracev1beta1.DynaKube, capabilityProperties *dynatracev1beta1.CapabilityProperties, kubeSystemUID types.UID,
+func NewStatefulSetProperties(dynakube *dynatracev1beta1.DynaKube, capabilityProperties *dynatracev1beta1.CapabilityProperties, kubeSystemUID types.UID,
 	activeGateHash string, feature string, capabilityName string, serviceAccountOwner string,
 	initContainers []corev1.Container, containerVolumeMounts []corev1.VolumeMount, volumes []corev1.Volume) *statefulSetProperties {
 
@@ -68,7 +68,7 @@ func NewStatefulSetProperties(instance *dynatracev1beta1.DynaKube, capabilityPro
 	}
 
 	return &statefulSetProperties{
-		DynaKube:                    instance,
+		DynaKube:                    dynakube,
 		CapabilityProperties:        capabilityProperties,
 		activeGateConfigurationHash: activeGateHash,
 		kubeSystemUID:               kubeSystemUID,

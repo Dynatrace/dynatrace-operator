@@ -12,7 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func createService(instance *dynatracev1beta1.DynaKube, feature string, servicePorts AgServicePorts) *corev1.Service {
+func createService(dynakube *dynatracev1beta1.DynaKube, feature string, servicePorts AgServicePorts) *corev1.Service {
 	var ports []corev1.ServicePort
 
 	if servicePorts.Webserver {
@@ -43,33 +43,33 @@ func createService(instance *dynatracev1beta1.DynaKube, feature string, serviceP
 		)
 	}
 
-	coreLabels := kubeobjects.NewCoreLabels(instance.Name, kubeobjects.ActiveGateComponentLabel)
+	coreLabels := kubeobjects.NewCoreLabels(dynakube.Name, kubeobjects.ActiveGateComponentLabel)
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      BuildServiceName(instance.Name, feature),
-			Namespace: instance.Namespace,
+			Name:      BuildServiceName(dynakube.Name, feature),
+			Namespace: dynakube.Namespace,
 			Labels:    coreLabels.BuildLabels(),
 		},
 		Spec: corev1.ServiceSpec{
 			Type:     corev1.ServiceTypeClusterIP,
-			Selector: buildSelectorLabels(instance.Name),
+			Selector: buildSelectorLabels(dynakube.Name),
 			Ports:    ports,
 		},
 	}
 }
 
-func BuildServiceName(instanceName string, module string) string {
-	return instanceName + "-" + module
+func BuildServiceName(dynakubeName string, module string) string {
+	return dynakubeName + "-" + module
 }
 
 // buildServiceHostName converts the name returned by BuildServiceName
 // into the variable name which Kubernetes uses to reference the associated service.
 // For more information see: https://kubernetes.io/docs/concepts/services-networking/service/
-func buildServiceHostName(instanceName string, module string) string {
+func buildServiceHostName(dynakubeName string, module string) string {
 	serviceName :=
 		strings.ReplaceAll(
 			strings.ToUpper(
-				BuildServiceName(instanceName, module)),
+				BuildServiceName(dynakubeName, module)),
 			"-", "_")
 
 	return fmt.Sprintf("$(%s_SERVICE_HOST):$(%s_SERVICE_PORT)", serviceName, serviceName)

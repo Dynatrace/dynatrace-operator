@@ -100,8 +100,9 @@ func (c *capabilityBase) ShouldCreateService() bool {
 
 // Note:
 // Caller must set following fields:
-//   Image:
-//   Resources:
+//
+//	Image:
+//	Resources:
 func (c *capabilityBase) InitContainersTemplates() []corev1.Container {
 	return c.initContainersTemplates
 }
@@ -114,8 +115,8 @@ func (c *capabilityBase) Volumes() []corev1.Volume {
 	return c.volumes
 }
 
-func CalculateStatefulSetName(capability Capability, instanceName string) string {
-	return instanceName + "-" + capability.ShortName()
+func CalculateStatefulSetName(capability Capability, dynakubeName string) string {
+	return dynakubeName + "-" + capability.ShortName()
 }
 
 // Deprecated
@@ -341,10 +342,10 @@ func statsdIngestBase() *capabilityBase {
 	return &c
 }
 
-func GenerateActiveGateCapabilities(instance *dynatracev1beta1.DynaKube) []Capability {
+func GenerateActiveGateCapabilities(dynakube *dynatracev1beta1.DynaKube) []Capability {
 	return []Capability{
-		NewKubeMonCapability(instance),
-		NewRoutingCapability(instance),
-		NewMultiCapability(instance),
+		NewKubeMonCapability(dynakube),
+		NewRoutingCapability(dynakube),
+		NewMultiCapability(dynakube),
 	}
 }

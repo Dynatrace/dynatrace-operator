@@ -33,16 +33,16 @@ type Reconciler struct {
 	client.Client
 	activegateReconciler
 	Capability
-	Instance *dynatracev1beta1.DynaKube
+	Dynakube *dynatracev1beta1.DynaKube
 }
 
-func NewReconciler(clt client.Client, capability Capability, baseReconciler activegateReconciler, instance *dynatracev1beta1.DynaKube) *Reconciler {
+func NewReconciler(clt client.Client, capability Capability, baseReconciler activegateReconciler, dynakube *dynatracev1beta1.DynaKube) *Reconciler {
 	if capability.Config().SetDnsEntryPoint {
-		baseReconciler.AddOnAfterStatefulSetCreateListener(addDNSEntryPoint(instance, capability.ShortName()))
+		baseReconciler.AddOnAfterStatefulSetCreateListener(addDNSEntryPoint(dynakube, capability.ShortName()))
 	}
 
 	if capability.Config().SetCommunicationPort {
-		baseReconciler.AddOnAfterStatefulSetCreateListener(setCommunicationsPort(instance))
+		baseReconciler.AddOnAfterStatefulSetCreateListener(setCommunicationsPort(dynakube))
 	}
 
 	if capability.Config().SetReadinessPort {
@@ -52,7 +52,7 @@ func NewReconciler(clt client.Client, capability Capability, baseReconciler acti
 	return &Reconciler{
 		activegateReconciler: baseReconciler,
 		Capability:           capability,
-		Instance:             instance,
+		Dynakube:             dynakube,
 		Client:               clt,
 	}
 }
@@ -118,16 +118,16 @@ func setCommunicationsPort(dk *dynatracev1beta1.DynaKube) statefulset.StatefulSe
 }
 
 func (r *Reconciler) calculateStatefulSetName() string {
-	return CalculateStatefulSetName(r.Capability, r.Instance.Name)
+	return CalculateStatefulSetName(r.Capability, r.Dynakube.Name)
 }
 
-func addDNSEntryPoint(instance *dynatracev1beta1.DynaKube, moduleName string) statefulset.StatefulSetEvent {
+func addDNSEntryPoint(dynakube *dynatracev1beta1.DynaKube, moduleName string) statefulset.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {
 		if activeGateContainer, err := getActiveGateContainer(sts); err == nil {
 			activeGateContainer.Env = append(activeGateContainer.Env,
 				corev1.EnvVar{
 					Name:  dtDnsEntryPoint,
-					Value: buildDNSEntryPoint(instance, moduleName),
+					Value: buildDNSEntryPoint(dynakube, moduleName),
 				})
 		} else {
 			log.Error(err, "Cannot find container in the StatefulSet", "container name", statefulset.ContainerName)
@@ -135,13 +135,13 @@ func addDNSEntryPoint(instance *dynatracev1beta1.DynaKube, moduleName string) st
 	}
 }
 
-func buildDNSEntryPoint(instance *dynatracev1beta1.DynaKube, moduleName string) string {
-	return fmt.Sprintf("https://%s/communication", buildServiceHostName(instance.Name, moduleName))
+func buildDNSEntryPoint(dynakube *dynatracev1beta1.DynaKube, moduleName string) string {
+	return fmt.Sprintf("https://%s/communication", buildServiceHostName(dynakube.Name, moduleName))
 }
 
 func (r *Reconciler) Reconcile() (update bool, err error) {
 	if r.ShouldCreateService() {
-		multiCapability := NewMultiCapability(r.Instance)
+		multiCapability := NewMultiCapability(r.Dynakube)
 		update, err = r.createOrUpdateService(multiCapability.ServicePorts)
 		if update || err != nil {
 			return update, errors.WithStack(err)
@@ -160,13 +160,13 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 }
 
 func (r *Reconciler) createOrUpdateService(desiredServicePorts AgServicePorts) (bool, error) {
-	desired := createService(r.Instance, r.ShortName(), desiredServicePorts)
+	desired := createService(r.Dynakube, r.ShortName(), desiredServicePorts)
 
 	installed := &corev1.Service{}
 	err := r.Get(context.TODO(), kubeobjects.Key(desired), installed)
 	if k8serrors.IsNotFound(err) && desiredServicePorts.HasPorts() {
 		log.Info("creating AG service", "module", r.ShortName())
-		if err = controllerutil.SetControllerReference(r.Instance, desired, r.Scheme()); err != nil {
+		if err = controllerutil.SetControllerReference(r.Dynakube, desired, r.Scheme()); err != nil {
 			return false, errors.WithStack(err)
 		}
 

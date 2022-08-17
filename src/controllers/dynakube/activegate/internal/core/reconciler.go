@@ -25,7 +25,7 @@ import (
 
 type Reconciler struct {
 	client.Client
-	Instance                         *dynatracev1beta1.DynaKube
+	Dynakube                         *dynatracev1beta1.DynaKube
 	apiReader                        client.Reader
 	scheme                           *runtime.Scheme
 	feature                          string
@@ -39,7 +39,7 @@ type Reconciler struct {
 }
 
 func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme,
-	instance *dynatracev1beta1.DynaKube, capability capability.Capability) *Reconciler {
+	dynakube *dynatracev1beta1.DynaKube, capability capability.Capability) *Reconciler {
 
 	serviceAccountOwner := capability.Config().ServiceAccountOwner
 	if serviceAccountOwner == "" {
@@ -50,7 +50,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 		Client:                           clt,
 		apiReader:                        apiReader,
 		scheme:                           scheme,
-		Instance:                         instance,
+		Dynakube:                         dynakube,
 		feature:                          capability.ShortName(),
 		capabilityName:                   capability.ArgName(),
 		serviceAccountOwner:              serviceAccountOwner,
@@ -68,7 +68,7 @@ func (r *Reconciler) AddOnAfterStatefulSetCreateListener(event statefulset.State
 
 func (r *Reconciler) Reconcile() (update bool, err error) {
 	if r.capability.CustomProperties != nil {
-		err = customproperties.NewReconciler(r, r.Instance, r.serviceAccountOwner, *r.capability.CustomProperties, r.scheme).
+		err = customproperties.NewReconciler(r, r.Dynakube, r.serviceAccountOwner, *r.capability.CustomProperties, r.scheme).
 			Reconcile()
 		if err != nil {
 			log.Error(err, "could not reconcile custom properties")
@@ -90,7 +90,7 @@ func (r *Reconciler) manageStatefulSet() (bool, error) {
 		return false, errors.WithStack(err)
 	}
 
-	if err := controllerutil.SetControllerReference(r.Instance, desiredSts, r.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(r.Dynakube, desiredSts, r.scheme); err != nil {
 		return false, errors.WithStack(err)
 	}
 
@@ -124,7 +124,7 @@ func (r *Reconciler) buildDesiredStatefulSet() (*appsv1.StatefulSet, error) {
 	}
 
 	stsProperties := statefulset.NewStatefulSetProperties(
-		r.Instance, r.capability, kubeUID, activeGateConfigurationHash, r.feature, r.capabilityName, r.serviceAccountOwner,
+		r.Dynakube, r.capability, kubeUID, activeGateConfigurationHash, r.feature, r.capabilityName, r.serviceAccountOwner,
 		r.initContainersTemplates, r.containerVolumeMounts, r.volumes)
 	stsProperties.OnAfterCreateListener = r.onAfterStatefulSetCreateListener
 
@@ -237,7 +237,7 @@ func (r *Reconciler) getCustomPropertyValue() (string, error) {
 }
 
 func (r *Reconciler) getAuthTokenValue() (string, error) {
-	if !r.Instance.UseActiveGateAuthToken() {
+	if !r.Dynakube.UseActiveGateAuthToken() {
 		return "", nil
 	}
 
@@ -250,13 +250,13 @@ func (r *Reconciler) getAuthTokenValue() (string, error) {
 
 func (r *Reconciler) getDataFromCustomProperty(customProperties *dynatracev1beta1.DynaKubeValueSource) (string, error) {
 	if customProperties.ValueFrom != "" {
-		return kubeobjects.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.Instance.Namespace, Name: customProperties.ValueFrom}, customproperties.DataKey)
+		return kubeobjects.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.Dynakube.Namespace, Name: customProperties.ValueFrom}, customproperties.DataKey)
 	}
 	return customProperties.Value, nil
 }
 
 func (r *Reconciler) getDataFromAuthTokenSecret() (string, error) {
-	return kubeobjects.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.Instance.Namespace, Name: r.Instance.ActiveGateAuthTokenSecret()}, secrets.ActiveGateAuthTokenName)
+	return kubeobjects.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.Dynakube.Namespace, Name: r.Dynakube.ActiveGateAuthTokenSecret()}, secrets.ActiveGateAuthTokenName)
 }
 
 func needsCustomPropertyHash(customProperties *dynatracev1beta1.DynaKubeValueSource) bool {

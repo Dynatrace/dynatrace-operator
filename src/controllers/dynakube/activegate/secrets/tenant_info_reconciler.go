@@ -24,17 +24,17 @@ const (
 type TenantSecretReconciler struct {
 	client.Client
 	apiReader client.Reader
-	instance  *dynatracev1beta1.DynaKube
+	dynakube  *dynatracev1beta1.DynaKube
 	scheme    *runtime.Scheme
 	dtc       dtclient.Client
 }
 
-func NewTenantSecretReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, instance *dynatracev1beta1.DynaKube, dtc dtclient.Client) *TenantSecretReconciler {
+func NewTenantSecretReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) *TenantSecretReconciler {
 	return &TenantSecretReconciler{
 		Client:    clt,
 		apiReader: apiReader,
 		scheme:    scheme,
-		instance:  instance,
+		dynakube:  dynakube,
 		dtc:       dtc,
 	}
 }
@@ -80,7 +80,7 @@ func (r *TenantSecretReconciler) getActiveGateTenantInfo() (map[string][]byte, e
 func (r *TenantSecretReconciler) createSecretIfNotExists(agSecretData map[string][]byte) (*corev1.Secret, error) {
 	var config corev1.Secret
 	err := r.apiReader.Get(context.TODO(),
-		client.ObjectKey{Name: extendWithAGSecretSuffix(r.instance.Name), Namespace: r.instance.Namespace},
+		client.ObjectKey{Name: extendWithAGSecretSuffix(r.dynakube.Name), Namespace: r.dynakube.Namespace},
 		&config)
 	if k8serrors.IsNotFound(err) {
 		log.Info("creating ag secret")
@@ -97,15 +97,15 @@ func (r *TenantSecretReconciler) updateSecretIfOutdated(secret *corev1.Secret, d
 }
 
 func (r *TenantSecretReconciler) createSecret(secretData map[string][]byte) (*corev1.Secret, error) {
-	secret := kubeobjects.NewSecret(extendWithAGSecretSuffix(r.instance.Name), r.instance.Namespace, secretData)
+	secret := kubeobjects.NewSecret(extendWithAGSecretSuffix(r.dynakube.Name), r.dynakube.Namespace, secretData)
 
-	if err := controllerutil.SetControllerReference(r.instance, secret, r.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(r.dynakube, secret, r.scheme); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
 	err := r.Create(context.TODO(), secret)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create secret '%s': %w", extendWithAGSecretSuffix(r.instance.Name), err)
+		return nil, fmt.Errorf("failed to create secret '%s': %w", extendWithAGSecretSuffix(r.dynakube.Name), err)
 	}
 	return secret, nil
 }

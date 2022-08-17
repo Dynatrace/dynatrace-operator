@@ -111,8 +111,8 @@ func (eec *ExtensionController) BuildVolumes() []corev1.Volume {
 	return volumes
 }
 
-func BuildEecConfigMapName(instanceName string, module string) string {
-	return regexp.MustCompile(`[^\w\-]`).ReplaceAllString(instanceName+"-"+module+"-eec-config", "_")
+func BuildEecConfigMapName(dynakubeName string, module string) string {
+	return regexp.MustCompile(`[^\w\-]`).ReplaceAllString(dynakubeName+"-"+module+"-eec-config", "_")
 }
 
 func (eec *ExtensionController) image() string {

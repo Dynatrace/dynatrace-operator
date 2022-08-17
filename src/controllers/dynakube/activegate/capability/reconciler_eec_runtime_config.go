@@ -11,7 +11,7 @@ import (
 )
 
 func (r *Reconciler) createOrUpdateEecConfigMap() (bool, error) {
-	desired, err := CreateEecConfigMap(r.Instance, r.ShortName())
+	desired, err := CreateEecConfigMap(r.Dynakube, r.ShortName())
 	if err != nil {
 		return false, errors.WithStack(err)
 	}
@@ -20,7 +20,7 @@ func (r *Reconciler) createOrUpdateEecConfigMap() (bool, error) {
 	err = r.Get(context.TODO(), kubeobjects.Key(desired), installed)
 	if k8serrors.IsNotFound(err) {
 		log.Info("creating EEC config map", "module", r.ShortName())
-		if err = controllerutil.SetControllerReference(r.Instance, desired, r.Scheme()); err != nil {
+		if err = controllerutil.SetControllerReference(r.Dynakube, desired, r.Scheme()); err != nil {
 			return false, errors.WithStack(err)
 		}
 

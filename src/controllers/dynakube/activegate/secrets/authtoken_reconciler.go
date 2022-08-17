@@ -23,17 +23,17 @@ const (
 type AuthTokenReconciler struct {
 	client.Client
 	apiReader client.Reader
-	instance  *dynatracev1beta1.DynaKube
+	dynakube  *dynatracev1beta1.DynaKube
 	scheme    *runtime.Scheme
 	dtc       dtclient.Client
 }
 
-func NewAuthTokenReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, instance *dynatracev1beta1.DynaKube, dtc dtclient.Client) *AuthTokenReconciler {
+func NewAuthTokenReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) *AuthTokenReconciler {
 	return &AuthTokenReconciler{
 		Client:    clt,
 		apiReader: apiReader,
 		scheme:    scheme,
-		instance:  instance,
+		dynakube:  dynakube,
 		dtc:       dtc,
 	}
 }
@@ -50,7 +50,7 @@ func (r *AuthTokenReconciler) Reconcile() error {
 func (r *AuthTokenReconciler) reconcileAuthTokenSecret() (*corev1.Secret, error) {
 	var config corev1.Secret
 	err := r.apiReader.Get(context.TODO(),
-		client.ObjectKey{Name: r.instance.ActiveGateAuthTokenSecret(), Namespace: r.instance.Namespace},
+		client.ObjectKey{Name: r.dynakube.ActiveGateAuthTokenSecret(), Namespace: r.dynakube.Namespace},
 		&config)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
@@ -73,13 +73,13 @@ func (r *AuthTokenReconciler) reconcileAuthTokenSecret() (*corev1.Secret, error)
 func (r *AuthTokenReconciler) ensureAuthTokenSecret() (*corev1.Secret, error) {
 	agSecretData, err := r.getActiveGateAuthToken()
 	if err != nil {
-		return nil, errors.Errorf("failed to create secret '%s': %v", extendWithAGSecretSuffix(r.instance.Name), err)
+		return nil, errors.Errorf("failed to create secret '%s': %v", extendWithAGSecretSuffix(r.dynakube.Name), err)
 	}
 	return r.createSecret(agSecretData)
 }
 
 func (r *AuthTokenReconciler) getActiveGateAuthToken() (map[string][]byte, error) {
-	authTokenInfo, err := r.dtc.GetActiveGateAuthToken(r.instance.Name)
+	authTokenInfo, err := r.dtc.GetActiveGateAuthToken(r.dynakube.Name)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -89,14 +89,14 @@ func (r *AuthTokenReconciler) getActiveGateAuthToken() (map[string][]byte, error
 }
 
 func (r *AuthTokenReconciler) createSecret(secretData map[string][]byte) (*corev1.Secret, error) {
-	secret := kubeobjects.NewSecret(r.instance.ActiveGateAuthTokenSecret(), r.instance.Namespace, secretData)
-	if err := controllerutil.SetControllerReference(r.instance, secret, r.scheme); err != nil {
+	secret := kubeobjects.NewSecret(r.dynakube.ActiveGateAuthTokenSecret(), r.dynakube.Namespace, secretData)
+	if err := controllerutil.SetControllerReference(r.dynakube, secret, r.scheme); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
 	err := r.Create(context.TODO(), secret)
 	if err != nil {
-		return nil, errors.Errorf("failed to create secret '%s': %v", extendWithAGSecretSuffix(r.instance.Name), err)
+		return nil, errors.Errorf("failed to create secret '%s': %v", extendWithAGSecretSuffix(r.dynakube.Name), err)
 	}
 	return secret, nil
 }

@@ -17,18 +17,18 @@ import (
 type Reconciler struct {
 	context context.Context
 	client.Client
-	Instance  *dynatracev1beta1.DynaKube
+	Dynakube  *dynatracev1beta1.DynaKube
 	apiReader client.Reader
 	scheme    *runtime.Scheme
 }
 
-func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, instance *dynatracev1beta1.DynaKube) *Reconciler {
+func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube) *Reconciler {
 	return &Reconciler{
 		context:   ctx,
 		Client:    clt,
 		apiReader: apiReader,
 		scheme:    scheme,
-		Instance:  instance,
+		Dynakube:  dynakube,
 	}
 }
 
@@ -37,7 +37,7 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 		return false, err
 	}
 
-	var caps = capability.GenerateActiveGateCapabilities(r.Instance)
+	var caps = capability.GenerateActiveGateCapabilities(r.Dynakube)
 	for _, agCapability := range caps {
 		if agCapability.Enabled() {
 			return r.createCapability(agCapability)
@@ -51,17 +51,17 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 }
 
 func (r *Reconciler) reconcileActiveGateProxySecret() (err error) {
-	gen := capability.NewActiveGateProxySecretGenerator(r.Client, r.apiReader, r.Instance.Namespace, log)
-	if r.Instance.NeedsActiveGateProxy() {
-		return gen.GenerateForDynakube(r.context, r.Instance)
+	gen := capability.NewActiveGateProxySecretGenerator(r.Client, r.apiReader, r.Dynakube.Namespace, log)
+	if r.Dynakube.NeedsActiveGateProxy() {
+		return gen.GenerateForDynakube(r.context, r.Dynakube)
 	} else {
-		return gen.EnsureDeleted(r.context, r.Instance)
+		return gen.EnsureDeleted(r.context, r.Dynakube)
 	}
 }
 
 func (r *Reconciler) createCapability(agCapability capability.Capability) (updated bool, err error) {
 	return capability.
-		NewReconciler(r.Client, agCapability, core.NewReconciler(r.Client, r.apiReader, r.scheme, r.Instance, agCapability), r.Instance).
+		NewReconciler(r.Client, agCapability, core.NewReconciler(r.Client, r.apiReader, r.scheme, r.Dynakube, agCapability), r.Dynakube).
 		Reconcile()
 }
 
@@ -84,8 +84,8 @@ func (r *Reconciler) deleteService(agCapability capability.Capability) error {
 
 	svc := corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      capability.BuildServiceName(r.Instance.Name, agCapability.ShortName()),
-			Namespace: r.Instance.Namespace,
+			Name:      capability.BuildServiceName(r.Dynakube.Name, agCapability.ShortName()),
+			Namespace: r.Dynakube.Namespace,
 		},
 	}
 	return kubeobjects.EnsureDeleted(r.context, r.Client, &svc)
@@ -94,8 +94,8 @@ func (r *Reconciler) deleteService(agCapability capability.Capability) error {
 func (r *Reconciler) deleteStatefulset(agCapability capability.Capability) error {
 	sts := appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      capability.CalculateStatefulSetName(agCapability, r.Instance.Name),
-			Namespace: r.Instance.Namespace,
+			Name:      capability.CalculateStatefulSetName(agCapability, r.Dynakube.Name),
+			Namespace: r.Dynakube.Namespace,
 		},
 	}
 	return kubeobjects.EnsureDeleted(r.context, r.Client, &sts)
