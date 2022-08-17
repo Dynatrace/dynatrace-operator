@@ -85,6 +85,10 @@ func findLatestIstioDirectory(filesystem afero.Fs, istioPath string) (string, er
 			continue
 		}
 
+		// The 'version' package is made to work with the versioning of the OneAgent
+		// which is slightly different from the one used by the istio/api packages.
+		// The lines below adjust the istio/api version, so it's compatible with our existing
+		// semver implementation. For a better understanding, checkout the regex in the 'version' package.
 		trimmedVersion := strings.ReplaceAll(directory.Name(), "api@v", "")
 		trimmedVersion = trimmedVersion[:strings.LastIndex(trimmedVersion, "-")]
 		trimmedVersion = strings.ReplaceAll(trimmedVersion, "-", ".")
