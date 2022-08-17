@@ -16,7 +16,7 @@ func TestPathResolver(t *testing.T) {
 	fakeVolume := "csi-sdf3ijiji3jldisomeid"
 	agentRunDirForVolume := filepath.Join(fakeEnv, "run", fakeVolume)
 
-	assert.Equal(t, fakeEnv, pathResolver.EnvDir(tenantUUID))
+	assert.Equal(t, fakeEnv, pathResolver.TenantDir(tenantUUID))
 	assert.Equal(t, filepath.Join(fakeEnv, "bin"), pathResolver.AgentBinaryDir(tenantUUID))
 	assert.Equal(t, filepath.Join(fakeEnv, "bin", "v1"), pathResolver.AgentBinaryDirForVersion(tenantUUID, "v1"))
 	assert.Equal(t, filepath.Join(fakeEnv, "run"), pathResolver.AgentRunDir(tenantUUID))

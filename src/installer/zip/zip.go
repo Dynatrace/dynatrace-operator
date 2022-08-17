@@ -13,7 +13,9 @@ import (
 	"github.com/spf13/afero"
 )
 
-func ExtractZip(fs afero.Fs, sourceFile afero.File, targetDir string) error {
+func (extractor OneAgentExtractor) ExtractZip(sourceFile afero.File, targetDir string) error {
+	extractor.cleanTempZipDir()
+	fs := extractor.fs
 	if sourceFile == nil {
 		return fmt.Errorf("file is nil")
 	}
@@ -30,55 +32,60 @@ func ExtractZip(fs afero.Fs, sourceFile afero.File, targetDir string) error {
 		return errors.WithStack(err)
 	}
 
-	err = fs.MkdirAll(targetDir, common.MkDirFileMode)
+	err = extractFilesFromZip(fs, extractor.pathResolver.AgentTempUnzipDir(), reader)
 	if err != nil {
-		log.Info("failed to create target directory", "err", err)
-		return errors.WithStack(err)
+		log.Info("failed to extract files from zip", "err", err)
+		return err
 	}
-
-	for _, file := range reader.File {
-		if err := extractFileFromZip(fs, targetDir, file); err != nil {
-			return errors.WithStack(err)
-		}
-	}
-
-	return nil
+	return extractor.moveToTargetDir(targetDir)
 }
 
-func extractFileFromZip(fs afero.Fs, targetDir string, file *zip.File) error {
-	path := filepath.Join(targetDir, file.Name)
-
-	// Check for ZipSlip: https://snyk.io/research/zip-slip-vulnerability
-	if !strings.HasPrefix(path, filepath.Clean(targetDir)+string(os.PathSeparator)) {
-		return fmt.Errorf("illegal file path: %s", path)
-	}
-
-	mode := file.Mode()
-
-	if file.FileInfo().IsDir() {
-		return fs.MkdirAll(path, mode)
-	}
-
-	if isAgentConfFile(file.Name) {
-		mode = common.ReadWriteAllFileMode
-	}
-
-	if err := fs.MkdirAll(filepath.Dir(path), mode); err != nil {
+func extractFilesFromZip(fs afero.Fs, targetDir string, reader *zip.Reader) error {
+	if err := fs.MkdirAll(targetDir, common.MkDirFileMode); err != nil {
 		return errors.WithStack(err)
 	}
+	for _, file := range reader.File {
+		path := filepath.Join(targetDir, file.Name)
 
-	dstFile, err := fs.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, mode)
-	if err != nil {
-		return errors.WithStack(err)
+		// Check for ZipSlip: https://snyk.io/research/zip-slip-vulnerability
+		if !strings.HasPrefix(path, filepath.Clean(targetDir)+string(os.PathSeparator)) {
+			return fmt.Errorf("illegal file path: %s", path)
+		}
+
+		mode := file.Mode()
+
+		if file.FileInfo().IsDir() {
+			err := fs.MkdirAll(path, mode)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			continue
+		}
+
+		if isAgentConfFile(file.Name) {
+			mode = common.ReadWriteAllFileMode
+		}
+
+		if err := fs.MkdirAll(filepath.Dir(path), mode); err != nil {
+			return errors.WithStack(err)
+		}
+
+		dstFile, err := fs.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, mode)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		srcFile, err := file.Open()
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		_, err = io.Copy(dstFile, srcFile)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		dstFile.Close()
+		srcFile.Close()
 	}
-	defer dstFile.Close()
-
-	srcFile, err := file.Open()
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	defer srcFile.Close()
-
-	_, err = io.Copy(dstFile, srcFile)
-	return errors.WithStack(err)
+	return nil
 }

@@ -10,6 +10,7 @@ import (
 	dtypes "github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/common"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/symlink"
+	"github.com/Dynatrace/dynatrace-operator/src/installer/zip"
 	"github.com/Dynatrace/dynatrace-operator/src/processmoduleconfig"
 	"github.com/containers/image/v5/docker"
 	"github.com/containers/image/v5/types"
@@ -28,14 +29,16 @@ type Properties struct {
 
 func NewImageInstaller(fs afero.Fs, props *Properties) *ImageInstaller {
 	return &ImageInstaller{
-		fs:    fs,
-		props: props,
+		fs:        fs,
+		extractor: zip.NewOneAgentExtractor(fs, props.PathResolver),
+		props:     props,
 	}
 }
 
 type ImageInstaller struct {
-	fs    afero.Fs
-	props *Properties
+	fs        afero.Fs
+	extractor zip.Extractor
+	props     *Properties
 }
 
 func (installer ImageInstaller) ImageDigest() string {
@@ -44,12 +47,6 @@ func (installer ImageInstaller) ImageDigest() string {
 
 func (installer *ImageInstaller) InstallAgent(targetDir string) (bool, error) {
 	log.Info("installing agent from image")
-
-	err := installer.fs.MkdirAll(targetDir, common.MkDirFileMode)
-	if err != nil {
-		log.Info("failed to create install target dir", "err", err, "targetDir", targetDir)
-		return false, errors.WithStack(err)
-	}
 
 	if err := installer.installAgentFromImage(); err != nil {
 		_ = installer.fs.RemoveAll(targetDir)
@@ -94,22 +91,10 @@ func (installer *ImageInstaller) installAgentFromImage() error {
 	}
 
 	imageDigestEncoded := imageDigest.Encoded()
-	isDownloaded, err := installer.isAlreadyDownloaded(imageDigestEncoded)
-	if err != nil {
-		log.Info("error checking if the image exists locally", "digest", imageDigestEncoded)
-		return errors.WithStack(err)
-	}
-	if isDownloaded {
+	if installer.isAlreadyDownloaded(imageDigestEncoded) {
 		log.Info("image is already installed", "image", image, "digest", imageDigestEncoded)
 		installer.props.imageDigest = imageDigestEncoded
 		return nil
-	}
-
-	sharedDir := installer.props.PathResolver.AgentSharedBinaryDirForImage(imageDigestEncoded)
-	err = installer.fs.MkdirAll(sharedDir, common.MkDirFileMode)
-	if err != nil {
-		log.Info("failed to create share dir", "err", err, "sharedDir", sharedDir)
-		return errors.WithStack(err)
 	}
 
 	imageCacheDir := getCacheDirPath(imageDigestEncoded)
@@ -122,7 +107,7 @@ func (installer *ImageInstaller) installAgentFromImage() error {
 	err = installer.extractAgentBinariesFromImage(
 		imagePullInfo{
 			imageCacheDir:  imageCacheDir,
-			targetDir:      sharedDir,
+			targetDir:      installer.props.PathResolver.AgentSharedBinaryDirForImage(imageDigestEncoded),
 			sourceCtx:      sourceCtx,
 			destinationCtx: destinationCtx,
 			sourceRef:      sourceRef,
@@ -137,20 +122,10 @@ func (installer *ImageInstaller) installAgentFromImage() error {
 	return nil
 }
 
-func (installer ImageInstaller) isAlreadyDownloaded(imageDigestEncoded string) (bool, error) {
+func (installer ImageInstaller) isAlreadyDownloaded(imageDigestEncoded string) bool {
 	sharedDir := installer.props.PathResolver.AgentSharedBinaryDirForImage(imageDigestEncoded)
-
-	if _, err := installer.fs.Stat(sharedDir); os.IsNotExist(err) {
-		return false, nil
-	} else if err != nil {
-		return false, errors.WithStack(err)
-	}
-
-	isDigestUsed, err := installer.props.Metadata.IsImageDigestUsed(imageDigestEncoded)
-	if err != nil {
-		return false, err
-	}
-	return isDigestUsed, nil
+	_, err := installer.fs.Stat(sharedDir)
+	return !os.IsNotExist(err)
 }
 
 func getImageDigest(systemContext *types.SystemContext, imageReference *types.ImageReference) (digest.Digest, error) {

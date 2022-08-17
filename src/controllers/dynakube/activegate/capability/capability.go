@@ -100,8 +100,9 @@ func (c *capabilityBase) ShouldCreateService() bool {
 
 // Note:
 // Caller must set following fields:
-//   Image:
-//   Resources:
+//
+//	Image:
+//	Resources:
 func (c *capabilityBase) InitContainersTemplates() []corev1.Container {
 	return c.initContainersTemplates
 }
