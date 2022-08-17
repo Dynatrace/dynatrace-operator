@@ -10,10 +10,10 @@ import (
 
 func TestHasApiUrl(t *testing.T) {
 	instance := &dynatracev1beta1.DynaKube{}
-	assert.Equal(t, errorNoApiUrl, noApiUrl(nil, instance))
+	assert.Equal(t, errorNoApiUrl, NoApiUrl(nil, instance))
 
 	instance.Spec.APIURL = testApiUrl
-	assert.Empty(t, noApiUrl(nil, instance))
+	assert.Empty(t, NoApiUrl(nil, instance))
 
 	t.Run(`happy path`, func(t *testing.T) {
 		assertAllowedResponse(t, &dynatracev1beta1.DynaKube{
@@ -44,14 +44,14 @@ func TestHasApiUrl(t *testing.T) {
 	t.Run(`example API URL`, func(t *testing.T) {
 		assertDeniedResponse(t, []string{errorNoApiUrl}, &dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
-				APIURL: exampleApiUrl,
+				APIURL: ExampleApiUrl,
 			},
 		})
 	})
 	t.Run(`invalid API URL (without /api suffix)`, func(t *testing.T) {
 		assertDeniedResponse(t, []string{errorInvalidApiUrl}, &dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
-				APIURL: strings.TrimSuffix(exampleApiUrl, "/api"),
+				APIURL: strings.TrimSuffix(ExampleApiUrl, "/api"),
 			},
 		})
 	})

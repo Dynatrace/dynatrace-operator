@@ -75,7 +75,7 @@ func TestReconciler_GenerateData(t *testing.T) {
 	}
 
 	var actual dockerConfig
-	err = json.Unmarshal(data[dockerConfigJson], &actual)
+	err = json.Unmarshal(data[DockerConfigJson], &actual)
 
 	require.NoError(t, err)
 	assert.NotNil(t, actual)
