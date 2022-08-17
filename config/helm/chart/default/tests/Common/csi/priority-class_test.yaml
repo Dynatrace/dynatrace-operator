@@ -1,0 +1,35 @@
+suite: test priority class
+templates:
+  - Common/csi/priority-class.yaml
+tests:
+  - it: should exist if csi driver is enabled
+    set:
+      platform: kubernetes
+      csidriver.enabled: true
+    asserts:
+      - equal:
+          path: metadata.name
+          value: dynatrace-high-priority
+      - equal:
+          path: value
+          value: 1000000
+  - it: should have specified value
+    set:
+      platform: kubernetes
+      csidriver.priorityClassValue: "10"
+      csidriver.enabled: true
+    asserts:
+      - equal:
+          path: metadata.name
+          value: dynatrace-high-priority
+      - equal:
+          path: value
+          value: 10
+  - it: should not exists if csi driver is disabled
+    set:
+      platform: kubernetes
+      csidriver.priorityClassValue: "10"
+      csidriver.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
