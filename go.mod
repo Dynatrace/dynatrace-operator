@@ -1,6 +1,6 @@
 module github.com/Dynatrace/dynatrace-operator
 
-go 1.18
+go 1.19
 
 require (
 	github.com/container-storage-interface/spec v1.6.0
