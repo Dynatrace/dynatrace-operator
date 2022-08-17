@@ -26,15 +26,15 @@ runs:
   using: "composite"
   steps:
     - name: Checkout
-      uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b
+      uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3
     - name: Login to Registry
-      uses: docker/login-action@v1
+      uses:  docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b # v2
       with:
         registry: ${{ inputs.registry }}
         username: ${{ inputs.repository-username }}
         password: ${{ inputs.repository-password }}
     - name: Download artifact
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@fb598a63ae348fa914e94cd0ff38f362e927b741 # v3
       with:
         name: operator-${{ inputs.platform }}
         path: /tmp
