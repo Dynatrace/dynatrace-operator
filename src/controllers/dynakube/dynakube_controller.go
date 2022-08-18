@@ -9,7 +9,6 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/secrets"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/apimonitoring"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/istio"
@@ -211,24 +210,6 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 		return
 	}
 
-	if !dkState.Instance.FeatureDisableActivegateRawImage() && dkState.Instance.NeedsActiveGate() {
-		err = secrets.NewTenantSecretReconciler(controller.client, controller.apiReader, controller.scheme, dkState.Instance, dtc).
-			Reconcile()
-		if dkState.Error(err) {
-			log.Error(err, "could not reconcile Dynatrace ActiveGate Tenant secrets")
-			return
-		}
-	}
-
-	if dkState.Instance.UseActiveGateAuthToken() {
-		err = secrets.NewAuthTokenReconciler(controller.client, controller.apiReader, controller.scheme, dkState.Instance, dtc).
-			Reconcile()
-		if dkState.Error(err) {
-			log.Error(err, "could not reconcile Dynatrace ActiveGateAuthToken secrets")
-			return
-		}
-	}
-
 	upd, err = version.ReconcileVersions(ctx, dkState, controller.apiReader, controller.fs, version.GetImageVersion)
 	dkState.Update(upd, "Found updates")
 	dkState.Error(err)
@@ -323,7 +304,9 @@ func (controller *DynakubeController) removeOneAgentDaemonSet(dkState *status.Dy
 }
 
 func (controller *DynakubeController) reconcileActiveGate(ctx context.Context, dynakubeState *status.DynakubeState, dtc dtclient.Client) (updated bool) {
-	upd, err := activegate.NewReconciler(ctx, controller.client, controller.apiReader, controller.scheme, dynakubeState.Instance).Reconcile()
+	reconciler := activegate.NewReconciler(ctx, controller.client, controller.apiReader, controller.scheme, dynakubeState.Instance, dtc)
+
+	upd, err := reconciler.Reconcile()
 	if dynakubeState.Error(err) {
 		return false
 	}

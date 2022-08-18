@@ -28,6 +28,8 @@ type AuthTokenReconciler struct {
 	dtc       dtclient.Client
 }
 
+var _ kubeobjects.PseudoReconciler = (*AuthTokenReconciler)(nil)
+
 func NewAuthTokenReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) *AuthTokenReconciler {
 	return &AuthTokenReconciler{
 		Client:    clt,
@@ -38,20 +40,20 @@ func NewAuthTokenReconciler(clt client.Client, apiReader client.Reader, scheme *
 	}
 }
 
-func (r *AuthTokenReconciler) Reconcile() error {
-	_, err := r.reconcileAuthTokenSecret()
+func (r *AuthTokenReconciler) Reconcile() (update bool, err error) {
+	_, err = r.reconcileAuthTokenSecret()
 	if err != nil {
-		return errors.Errorf("failed to create activeGateAuthToken secret: %v", err)
+		return false, errors.Errorf("failed to create activeGateAuthToken secret: %v", err)
 	}
 
-	return nil
+	return true, nil
 }
 
 func (r *AuthTokenReconciler) reconcileAuthTokenSecret() (*corev1.Secret, error) {
-	var config corev1.Secret
+	var secret corev1.Secret
 	err := r.apiReader.Get(context.TODO(),
 		client.ObjectKey{Name: r.dynakube.ActiveGateAuthTokenSecret(), Namespace: r.dynakube.Namespace},
-		&config)
+		&secret)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			log.Info("creating activeGateAuthToken secret")
@@ -59,15 +61,15 @@ func (r *AuthTokenReconciler) reconcileAuthTokenSecret() (*corev1.Secret, error)
 		}
 		return nil, errors.WithStack(err)
 	}
-	if isSecretOutdated(&config) {
+	if isSecretOutdated(&secret) {
 		log.Info("activeGateAuthToken is outdated, creating new one")
-		if err := r.deleteSecret(&config); err != nil {
+		if err := r.deleteSecret(&secret); err != nil {
 			return nil, errors.WithStack(err)
 		}
 		return r.ensureAuthTokenSecret()
 	}
 
-	return &config, nil
+	return &secret, nil
 }
 
 func (r *AuthTokenReconciler) ensureAuthTokenSecret() (*corev1.Secret, error) {

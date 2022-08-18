@@ -6,8 +6,11 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/customproperties"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/secrets"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,22 +21,33 @@ import (
 type Reconciler struct {
 	context context.Context
 	client.Client
-	Dynakube  *dynatracev1beta1.DynaKube
-	apiReader client.Reader
-	scheme    *runtime.Scheme
+	Dynakube            *dynatracev1beta1.DynaKube
+	apiReader           client.Reader
+	scheme              *runtime.Scheme
+	authTokenReconciler kubeobjects.PseudoReconciler
 }
 
-func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube) *Reconciler {
+func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) *Reconciler {
+	authTokenReconciler := secrets.NewAuthTokenReconciler(clt, apiReader, scheme, dynakube, dtc)
+
 	return &Reconciler{
-		context:   ctx,
-		Client:    clt,
-		apiReader: apiReader,
-		scheme:    scheme,
-		Dynakube:  dynakube,
+		context:             ctx,
+		Client:              clt,
+		apiReader:           apiReader,
+		scheme:              scheme,
+		Dynakube:            dynakube,
+		authTokenReconciler: authTokenReconciler,
 	}
 }
 
 func (r *Reconciler) Reconcile() (update bool, err error) {
+	if r.Dynakube.UseActiveGateAuthToken() {
+		_, err := r.authTokenReconciler.Reconcile()
+		if err != nil {
+			return false, errors.WithMessage(err, "could not reconcile Dynatrace ActiveGateAuthToken secrets")
+		}
+	}
+
 	if err := r.reconcileActiveGateProxySecret(); err != nil {
 		return false, err
 	}

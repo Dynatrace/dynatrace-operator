@@ -36,7 +36,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Name:      testName,
 			}}
 		fakeClient := fake.NewClient()
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, instance)
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, instance, nil)
 		upd, err := r.Reconcile()
 		assert.NoError(t, err)
 		assert.True(t, upd)
@@ -52,7 +52,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 		}
 		fakeClient := fake.NewClient()
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, instance)
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, instance, nil)
 		upd, err := r.Reconcile()
 		assert.NoError(t, err)
 		assert.True(t, upd)
@@ -74,7 +74,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 		}
 		fakeClient := fake.NewClient(testKubeSystemNamespace)
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, instance)
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, instance, nil)
 		upd, err := r.Reconcile()
 		assert.NoError(t, err)
 		assert.True(t, upd)
