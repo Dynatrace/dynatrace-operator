@@ -4971,6 +4971,7 @@ spec:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-logs-container: driver
+        cluster-autoscaler.kubernetes.io/enable-ds-eviction: "false"
       labels:
         app.kubernetes.io/name: dynatrace-operator
         app.kubernetes.io/version: "0.8.0"
@@ -5165,6 +5166,9 @@ spec:
           operator: Exists
         - effect: NoSchedule
           key: node-role.kubernetes.io/control-plane
+          operator: Exists
+        - effect: NoSchedule
+          key: ToBeDeletedByClusterAutoscaler
           operator: Exists
   updateStrategy:
     rollingUpdate:
