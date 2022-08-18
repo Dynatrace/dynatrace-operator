@@ -117,8 +117,8 @@ const (
 // Returns an error if a token or the URL is empty.
 //
 // The API base URL is different for managed and SaaS environments:
-//  - SaaS: https://{environment-id}.live.dynatrace.com/api
-//  - Managed: https://{domain}/e/{environment-id}/api
+//   - SaaS: https://{environment-id}.live.dynatrace.com/api
+//   - Managed: https://{domain}/e/{environment-id}/api
 //
 // opts can be used to customize the created client, entries must not be nil.
 func NewClient(url, apiToken, paasToken string, opts ...Option) (Client, error) {

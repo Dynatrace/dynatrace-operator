@@ -31,9 +31,9 @@ runs:
   using: "composite"
   steps:
   - name: Checkout
-    uses: actions/checkout@v2
+    uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3
   - name: Login to Registry
-    uses: docker/login-action@v1
+    uses:  docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b # v2
     with:
       registry: ${{ inputs.registry }}
       username: ${{ inputs.rhcc-username }}
@@ -48,7 +48,7 @@ runs:
     run: |
       hack/build/ci/preflight.sh "${{ env.PREFLIGHT_VERSION }}" "${{ env.IMAGE_URI}}" "${{ inputs.report-name }}"
   - name: Upload report
-    uses: actions/upload-artifact@v3
+    uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # v3
     with:
       name: preflight-report
       path: ${{ inputs.report-name }}
