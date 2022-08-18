@@ -82,7 +82,7 @@ jobs:
         run: |
           hack/build/ci/install-cgo-dependencies.sh
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@5c56cd6c9dc07901af25baab6f2b0d9f3b7c3018 # v2
+        uses: golangci/golangci-lint-action@537aa1903e5d359d0b27dbc19ddd22c5087f3fbc # v2
         with:
           version: v1.45.2
           args: --build-tags integration,containers_image_storage_stub --timeout 300s
