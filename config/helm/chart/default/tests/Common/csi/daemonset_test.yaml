@@ -23,7 +23,9 @@ tests:
           - effect: NoSchedule
             key: node-role.kubernetes.io/control-plane
             operator: Exists
-
+          - effect: NoSchedule
+            key: ToBeDeletedByClusterAutoscaler
+            operator: Exists
   - it: should have nodeSelectors if set
     set:
       platform: kubernetes
@@ -73,6 +75,9 @@ tests:
                   operator: Exists
                 - effect: NoSchedule
                   key: node-role.kubernetes.io/control-plane
+                  operator: Exists
+                - effect: NoSchedule
+                  key: ToBeDeletedByClusterAutoscaler
                   operator: Exists
             containers:
               - name: driver
@@ -270,6 +275,7 @@ tests:
           path: spec.template.metadata.annotations
           value:
             kubectl.kubernetes.io/default-logs-container: driver
+            cluster-autoscaler.kubernetes.io/enable-ds-eviction: "false"
             testKey: testValue
 
   - it: should take custom labels in spec.template.metadata.labels path
