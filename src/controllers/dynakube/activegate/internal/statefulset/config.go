@@ -36,5 +36,5 @@ const (
 )
 
 var (
-	log = logger.NewDTLogger().WithName("dynakube-activegate-statefulset")
+	log = logger.NewDTLogger().WithName("dynakube-activegate-statefulsetreconciler")
 )

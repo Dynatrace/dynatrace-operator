@@ -25,12 +25,12 @@ const (
 type Reconciler struct {
 	client.Client
 	scheme                    *runtime.Scheme
-	customPropertiesSource    dynatracev1beta1.DynaKubeValueSource
+	customPropertiesSource    *dynatracev1beta1.DynaKubeValueSource
 	customPropertiesOwnerName string
 	instance                  *dynatracev1beta1.DynaKube
 }
 
-func NewReconciler(clt client.Client, instance *dynatracev1beta1.DynaKube, customPropertiesOwnerName string, customPropertiesSource dynatracev1beta1.DynaKubeValueSource, scheme *runtime.Scheme) *Reconciler {
+func NewReconciler(clt client.Client, instance *dynatracev1beta1.DynaKube, customPropertiesOwnerName string, scheme *runtime.Scheme, customPropertiesSource *dynatracev1beta1.DynaKubeValueSource) *Reconciler {
 	return &Reconciler{
 		Client:                    clt,
 		instance:                  instance,
@@ -41,6 +41,10 @@ func NewReconciler(clt client.Client, instance *dynatracev1beta1.DynaKube, custo
 }
 
 func (r *Reconciler) Reconcile() error {
+	if r.customPropertiesSource == nil {
+		return nil
+	}
+
 	if r.hasCustomPropertiesValueOnly() {
 		mustNotUpdate, err := r.createCustomPropertiesIfNotExists()
 		if err != nil {

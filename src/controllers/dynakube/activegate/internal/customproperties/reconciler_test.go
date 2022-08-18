@@ -22,12 +22,12 @@ const (
 )
 
 func TestReconciler_Reconcile(t *testing.T) {
-	t.Run(`Reconile works with minimal setup`, func(t *testing.T) {
-		r := NewReconciler(nil, nil, "", dynatracev1beta1.DynaKubeValueSource{}, nil)
+	t.Run(`Reconcile works with minimal setup`, func(t *testing.T) {
+		r := NewReconciler(nil, nil, "", nil, &dynatracev1beta1.DynaKubeValueSource{})
 		err := r.Reconcile()
 		assert.NoError(t, err)
 	})
-	t.Run(`Reconile creates custom properties secret`, func(t *testing.T) {
+	t.Run(`Reconcile creates custom properties secret`, func(t *testing.T) {
 		valueSource := dynatracev1beta1.DynaKubeValueSource{Value: testValue}
 		instance := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
@@ -35,7 +35,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Namespace: testNamespace,
 			}}
 		fakeClient := fake.NewClient(instance)
-		r := NewReconciler(fakeClient, instance, testOwner, valueSource, scheme.Scheme)
+		r := NewReconciler(fakeClient, instance, testOwner, scheme.Scheme, &valueSource)
 		err := r.Reconcile()
 
 		assert.NoError(t, err)
@@ -57,7 +57,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Namespace: testNamespace,
 			}}
 		fakeClient := fake.NewClient(instance)
-		r := NewReconciler(fakeClient, instance, testOwner, valueSource, scheme.Scheme)
+		r := NewReconciler(fakeClient, instance, testOwner, scheme.Scheme, &valueSource)
 		err := r.Reconcile()
 
 		assert.NoError(t, err)

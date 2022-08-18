@@ -278,7 +278,7 @@ spec:
         displayName: Namespace Selector
         path: namespaceSelector
         x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace
+        - urn:alm:descriptor:com.tectonic.ui:selector:workloadReconciler:v1:Namespace
       - description: Node selector to control the selection of nodes (optional)
         displayName: Node Selector
         path: oneAgent.classicFullStack.nodeSelector

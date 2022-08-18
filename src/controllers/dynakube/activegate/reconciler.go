@@ -5,7 +5,8 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/core"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/customproperties"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -60,9 +61,16 @@ func (r *Reconciler) reconcileActiveGateProxySecret() (err error) {
 }
 
 func (r *Reconciler) createCapability(agCapability capability.Capability) (updated bool, err error) {
-	return capability.
-		NewReconciler(r.Client, agCapability, core.NewReconciler(r.Client, r.apiReader, r.scheme, r.Dynakube, agCapability), r.Dynakube).
-		Reconcile()
+	saName := ""
+	reconciler := capability.NewReconciler(
+		r.Client,
+		agCapability,
+		r.Dynakube,
+		statefulset.NewReconciler(r.Client, r.apiReader, r.scheme, r.Dynakube, agCapability),
+		customproperties.NewReconciler(r.Client, r.Dynakube, saName, r.scheme, agCapability.Properties().CustomProperties),
+	)
+
+	return reconciler.Reconcile()
 }
 
 func (r *Reconciler) deleteCapability(agCapability capability.Capability) error {

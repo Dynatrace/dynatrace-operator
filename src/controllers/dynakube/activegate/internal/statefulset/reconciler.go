@@ -1,4 +1,4 @@
-package core
+package statefulset
 
 import (
 	"context"
@@ -8,9 +8,8 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/secrets"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/pkg/errors"
@@ -32,9 +31,7 @@ type Reconciler struct {
 	capability                       capability.Capability
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme,
-	dynakube *dynatracev1beta1.DynaKube, capability capability.Capability) *Reconciler {
-
+func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, capability capability.Capability) *Reconciler {
 	serviceAccountOwner := capability.Config().ServiceAccountOwner
 	if serviceAccountOwner == "" {
 		serviceAccountOwner = capability.ShortName()
@@ -56,15 +53,6 @@ func (r *Reconciler) AddOnAfterStatefulSetCreateListener(event kubeobjects.State
 }
 
 func (r *Reconciler) Reconcile() (update bool, err error) {
-	if r.capability.Properties().CustomProperties != nil {
-		err = customproperties.NewReconciler(r, r.Dynakube, r.serviceAccountOwner, *r.capability.Properties().CustomProperties, r.scheme).
-			Reconcile()
-		if err != nil {
-			log.Error(err, "could not reconcile custom properties")
-			return false, errors.WithStack(err)
-		}
-	}
-
 	if update, err = r.manageStatefulSet(); err != nil {
 		log.Error(err, "could not reconcile stateful set")
 		return false, errors.WithStack(err)
@@ -112,7 +100,7 @@ func (r *Reconciler) buildDesiredStatefulSet() (*appsv1.StatefulSet, error) {
 		return nil, errors.WithStack(err)
 	}
 
-	stsProperties := statefulset.NewStatefulSetProperties(
+	stsProperties := NewStatefulSetProperties(
 		r.Dynakube,
 		r.capability.Properties(),
 		kubeUID,
@@ -127,7 +115,7 @@ func (r *Reconciler) buildDesiredStatefulSet() (*appsv1.StatefulSet, error) {
 	)
 	stsProperties.OnAfterCreateListener = r.onAfterStatefulSetCreateListener
 
-	desiredSts, err := statefulset.CreateStatefulSet(stsProperties)
+	desiredSts, err := CreateStatefulSet(stsProperties)
 	return desiredSts, errors.WithStack(err)
 }
 

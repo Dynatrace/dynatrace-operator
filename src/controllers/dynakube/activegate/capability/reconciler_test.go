@@ -7,7 +7,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/customproperties"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
@@ -64,7 +64,7 @@ func testSetCapability(instance *dynatracev1beta1.DynaKube, capability dynatrace
 
 type testBaseReconciler struct {
 	client.Client
-	activegateReconciler
+	statefulsetReconciler
 	mock.Mock
 }
 
@@ -105,9 +105,9 @@ func createDefaultReconciler(t *testing.T) (*Reconciler, *testBaseReconciler) {
 	baseReconciler := &testBaseReconciler{
 		Client: clt,
 	}
-	r := NewReconciler(clt, metricsCapability, baseReconciler, instance)
+	r := NewReconciler(clt, metricsCapability, instance, baseReconciler, nil)
 	require.NotNil(t, r)
-	require.NotNil(t, r.activegateReconciler)
+	require.NotNil(t, r.statefulsetReconciler)
 	require.NotNil(t, r.Dynakube)
 	require.NotEmpty(t, r.Dynakube.ObjectMeta.Name)
 

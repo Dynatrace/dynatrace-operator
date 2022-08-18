@@ -7,6 +7,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -23,37 +24,37 @@ const (
 	dtDnsEntryPoint    = "DT_DNS_ENTRY_POINT"
 )
 
-type activegateReconciler interface {
-	Reconcile() (update bool, err error)
+type statefulsetReconciler interface {
+	kubeobjects.PseudoReconciler
 	AddOnAfterStatefulSetCreateListener(event kubeobjects.StatefulSetEvent)
 }
 
 type Reconciler struct {
 	context context.Context
 	client.Client
-	activegateReconciler
+	statefulsetReconciler
 	Capability
 	Dynakube *dynatracev1beta1.DynaKube
 }
 
-func NewReconciler(clt client.Client, capability Capability, baseReconciler activegateReconciler, dynakube *dynatracev1beta1.DynaKube) *Reconciler {
+func NewReconciler(clt client.Client, capability Capability, dynakube *dynatracev1beta1.DynaKube, statefulsetReconciler statefulsetReconciler, reconciler *customproperties.Reconciler) *Reconciler {
 	if capability.Config().SetDnsEntryPoint {
-		baseReconciler.AddOnAfterStatefulSetCreateListener(addDNSEntryPoint(dynakube, capability.ShortName()))
+		statefulsetReconciler.AddOnAfterStatefulSetCreateListener(addDNSEntryPoint(dynakube, capability.ShortName()))
 	}
 
 	if capability.Config().SetCommunicationPort {
-		baseReconciler.AddOnAfterStatefulSetCreateListener(setCommunicationsPort(dynakube))
+		statefulsetReconciler.AddOnAfterStatefulSetCreateListener(setCommunicationsPort(dynakube))
 	}
 
 	if capability.Config().SetReadinessPort {
-		baseReconciler.AddOnAfterStatefulSetCreateListener(setReadinessProbePort())
+		statefulsetReconciler.AddOnAfterStatefulSetCreateListener(setReadinessProbePort())
 	}
 
 	return &Reconciler{
-		activegateReconciler: baseReconciler,
-		Capability:           capability,
-		Dynakube:             dynakube,
-		Client:               clt,
+		statefulsetReconciler: statefulsetReconciler,
+		Capability:            capability,
+		Dynakube:              dynakube,
+		Client:                clt,
 	}
 }
 
@@ -155,7 +156,7 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 		}
 	}
 
-	update, err = r.activegateReconciler.Reconcile()
+	update, err = r.statefulsetReconciler.Reconcile()
 	return update, errors.WithStack(err)
 }
 

@@ -1,4 +1,4 @@
-package core
+package statefulset
 
 import (
 	"context"
@@ -6,9 +6,8 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/secrets"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/pkg/errors"
@@ -21,13 +20,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-)
-
-const (
-	testUID       = "test-uid"
-	testName      = "test-name"
-	testNamespace = "test-namespace"
-	testValue     = "test-value"
 )
 
 func TestNewReconiler(t *testing.T) {
@@ -67,22 +59,6 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 }
 
 func TestReconcile(t *testing.T) {
-	t.Run(`reconcile custom properties`, func(t *testing.T) {
-		r := createDefaultReconciler(t)
-		r.Dynakube.Spec.Routing.CustomProperties = &dynatracev1beta1.DynaKubeValueSource{
-			Value: testValue,
-		}
-		_, err := r.Reconcile()
-
-		assert.NoError(t, err)
-
-		var customProperties corev1.Secret
-		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Dynakube.Name + "-" + r.capability.ShortName() + "-" + customproperties.Suffix, Namespace: r.Dynakube.Namespace}, &customProperties)
-		assert.NoError(t, err)
-		assert.NotNil(t, customProperties)
-		assert.Contains(t, customProperties.Data, customproperties.DataKey)
-		assert.Equal(t, testValue, string(customProperties.Data[customproperties.DataKey]))
-	})
 	t.Run(`create stateful set`, func(t *testing.T) {
 		r := createDefaultReconciler(t)
 		update, err := r.Reconcile()
@@ -123,7 +99,7 @@ func TestReconcile(t *testing.T) {
 
 		found := 0
 		for _, vm := range newStatefulSet.Spec.Template.Spec.Containers[0].VolumeMounts {
-			if vm.Name == statefulset.InternalProxySecretVolumeName {
+			if vm.Name == InternalProxySecretVolumeName {
 				found = found + 1
 			}
 		}
