@@ -47,6 +47,14 @@ const (
 	ADD COLUMN ImageDigest VARCHAR NOT NULL DEFAULT '';
 	`
 
+	dynakubesAlterStatementMaxFailedMountAttempts = `
+	ALTER TABLE dynakubes
+	ADD COLUMN MaxFailedMountAttempts INT DEFAULT ` + defaultSqlMaxFailedMountAttempts + `;`
+
+	volumesAlterStatementMountAttempts = `
+	ALTER TABLE volumes
+	ADD COLUMN MountAttempts INT NOT NULL DEFAULT 0;`
+
 	// INSERT
 	insertDynakubeStatement = `
 	INSERT INTO dynakubes (Name, TenantUUID, LatestVersion, ImageDigest)
@@ -188,16 +196,33 @@ func (access *SqliteAccess) connect(driver, path string) error {
 }
 
 func (access *SqliteAccess) createTables() error {
-	if err := access.setupDynakubeTable(); err != nil {
+	err := access.setupDynakubeTable()
+	if err != nil {
 		return err
 	}
 
-	if _, err := access.conn.Exec(volumesCreateStatement); err != nil {
-		return errors.WithStack(errors.WithMessagef(err, "couldn't create the table %s", volumesTableName))
+	err = access.setupVolumeTable()
+	if err != nil {
+		return err
 	}
+
 	if _, err := access.conn.Exec(osAgentVolumesCreateStatement); err != nil {
 		return errors.WithStack(errors.WithMessagef(err, "couldn't create the table %s", osAgentVolumesTableName))
 	}
+	return nil
+}
+
+func (access *SqliteAccess) setupVolumeTable() error {
+	_, err := access.conn.Exec(volumesCreateStatement)
+	if err != nil {
+		return errors.WithMessagef(err, "couldn't create the table %s", volumesTableName)
+	}
+
+	err = access.executeAlterStatement(volumesAlterStatementMountAttempts)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -207,14 +232,29 @@ func (access *SqliteAccess) setupDynakubeTable() error {
 		return errors.WithStack(errors.WithMessagef(err, "couldn't create the table %s", dynakubesTableName))
 	}
 
-	if _, err := access.conn.Exec(dynakubesAlterStatementImageDigestColumn); err != nil {
+	err := access.executeAlterStatement(dynakubesAlterStatementImageDigestColumn)
+	if err != nil {
+		return err
+	}
+
+	err = access.executeAlterStatement(dynakubesAlterStatementMaxFailedMountAttempts)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (access *SqliteAccess) executeAlterStatement(statement string) error {
+	if _, err := access.conn.Exec(statement); err != nil {
 		sqliteError := err.(sqlite3.Error)
 		if sqliteError.Code != sqlite3.ErrError {
-			return errors.WithStack(errors.WithMessage(err, "couldn't add ingest column"))
+			return errors.WithMessage(err, "could not add ingest column")
 		}
 		// generic sql error, column already exists
 		log.Info("column ImageDigest already exists")
 	}
+
 	return nil
 }
 

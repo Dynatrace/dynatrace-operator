@@ -2,6 +2,7 @@ package metadata
 
 import (
 	"fmt"
+	"strconv"
 	"testing"
 	"time"
 
@@ -47,20 +48,91 @@ func TestConnect_badDriver(t *testing.T) {
 }
 
 func TestCreateTables(t *testing.T) {
-	db := emptyMemoryDB()
+	t.Run("volume table is created correctly", func(t *testing.T) {
+		db := emptyMemoryDB()
 
-	err := db.createTables()
-	require.NoError(t, err)
+		err := db.createTables()
+		require.NoError(t, err)
 
-	var podsTable string
-	row := db.conn.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name=?;", volumesTableName)
-	row.Scan(&podsTable)
-	assert.Equal(t, podsTable, volumesTableName)
+		var volumeTableName string
+		row := db.conn.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name=?;", volumesTableName)
+		err = row.Scan(&volumeTableName)
+		require.NoError(t, err)
+		assert.Equal(t, volumeTableName, volumesTableName)
 
-	var dkTable string
-	row = db.conn.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name=?;", dynakubesTableName)
-	row.Scan(&dkTable)
-	assert.Equal(t, dkTable, dynakubesTableName)
+		rows, err := db.conn.Query("PRAGMA table_info(" + volumesTableName + ")")
+		assert.NoError(t, err)
+		assert.NotNil(t, rows)
+
+		columns := []string{
+			"ID",
+			"PodName",
+			"Version",
+			"TenantUUID",
+			"MountAttempts",
+		}
+
+		for _, column := range columns {
+			assert.True(t, rows.Next())
+
+			var id, name, columnType, notNull, primaryKey string
+			var defaultValue = new(string)
+
+			err = rows.Scan(&id, &name, &columnType, &notNull, &defaultValue, &primaryKey)
+
+			assert.NoError(t, err)
+			assert.Equal(t, column, name)
+
+			if column == "MountAttempts" {
+				assert.Equal(t, "0", *defaultValue)
+				assert.Equal(t, "1", notNull)
+			}
+		}
+	})
+	t.Run("dynakube table is created correctly", func(t *testing.T) {
+		db := emptyMemoryDB()
+
+		err := db.createTables()
+		require.NoError(t, err)
+
+		var dkTable string
+		row := db.conn.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name=?;", dynakubesTableName)
+		err = row.Scan(&dkTable)
+		require.NoError(t, err)
+		assert.Equal(t, dkTable, dynakubesTableName)
+
+		rows, err := db.conn.Query("PRAGMA table_info(" + dynakubesTableName + ")")
+		assert.NoError(t, err)
+		assert.NotNil(t, rows)
+
+		columns := []string{
+			"Name",
+			"TenantUUID",
+			"LatestVersion",
+			"ImageDigest",
+			"MaxFailedMountAttempts",
+		}
+
+		for _, column := range columns {
+			assert.True(t, rows.Next())
+
+			var id, name, columnType, notNull, primaryKey string
+			var defaultValue = new(string)
+
+			err = rows.Scan(&id, &name, &columnType, &notNull, &defaultValue, &primaryKey)
+
+			assert.NoError(t, err)
+			assert.Equal(t, column, name)
+
+			if column == "MaxFailedMountAttempts" {
+				maxFailedMountAttempts, err := strconv.Atoi(*defaultValue)
+				assert.NoError(t, err)
+				assert.Equal(t, defaultSqlMaxFailedMountAttempts, *defaultValue)
+				assert.Equal(t, defaultMaxFailedMountAttempts, maxFailedMountAttempts)
+				assert.Equal(t, "0", notNull)
+			}
+		}
+	})
 }
 
 func TestInsertDynakube(t *testing.T) {

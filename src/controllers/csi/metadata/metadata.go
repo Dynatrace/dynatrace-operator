@@ -7,10 +7,11 @@ import (
 )
 
 const (
-	defaultMaxFailedMountAttempts = 3
+	defaultMaxFailedMountAttempts    = 3
+	defaultSqlMaxFailedMountAttempts = "3"
 )
 
-// Stores the necessary info from the Dynakube that is needed to be used during volume mount/unmount.
+// Dynakube stores the necessary info from the Dynakube that is needed to be used during volume mount/unmount.
 type Dynakube struct {
 	Name                   string `json:"name"`
 	TenantUUID             string `json:"tenantUUID"`
