@@ -6,8 +6,10 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/customproperties"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/testinghelpers"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
@@ -23,12 +25,13 @@ import (
 )
 
 const (
+	testName      = "test-name"
 	testValue     = "test-value"
 	testUID       = "test-uid"
 	testNamespace = "test-namespace"
 )
 
-var metricsCapability = NewRoutingCapability(
+var metricsCapability = capability.NewRoutingCapability(
 	&dynatracev1beta1.DynaKube{
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			Routing: dynatracev1beta1.RoutingSpec{
@@ -37,30 +40,6 @@ var metricsCapability = NewRoutingCapability(
 		},
 	},
 )
-
-type DtCapability = dynatracev1beta1.CapabilityDisplayName
-
-func testRemoveCapability(capabilities []DtCapability, removeMe DtCapability) []DtCapability {
-	for i, capability := range capabilities {
-		if capability == removeMe {
-			return append(capabilities[:i], capabilities[i+1:]...)
-		}
-	}
-	return capabilities
-}
-
-func testSetCapability(instance *dynatracev1beta1.DynaKube, capability dynatracev1beta1.ActiveGateCapability, wantEnabled bool) {
-	hasEnabled := instance.IsActiveGateMode(capability.DisplayName)
-	capabilities := &instance.Spec.ActiveGate.Capabilities
-
-	if wantEnabled && !hasEnabled {
-		*capabilities = append(*capabilities, capability.DisplayName)
-	}
-
-	if !wantEnabled && hasEnabled {
-		*capabilities = testRemoveCapability(*capabilities, capability.DisplayName)
-	}
-}
 
 type testBaseReconciler struct {
 	client.Client
@@ -105,7 +84,7 @@ func createDefaultReconciler(t *testing.T) (*Reconciler, *testBaseReconciler) {
 	baseReconciler := &testBaseReconciler{
 		Client: clt,
 	}
-	r := NewReconciler(clt, metricsCapability, instance, baseReconciler, nil)
+	r := NewReconciler(clt, metricsCapability, instance, baseReconciler)
 	require.NotNil(t, r)
 	require.NotNil(t, r.statefulsetReconciler)
 	require.NotNil(t, r.Dynakube)
@@ -123,7 +102,7 @@ func TestReconcile(t *testing.T) {
 	}
 	assertServiceExists := func(r *Reconciler) *corev1.Service {
 		svc := new(corev1.Service)
-		assert.NoError(t, r.Get(context.TODO(), client.ObjectKey{Name: BuildServiceName(r.Dynakube.Name, r.ShortName()), Namespace: r.Dynakube.Namespace}, svc))
+		assert.NoError(t, r.Get(context.TODO(), client.ObjectKey{Name: capability.BuildServiceName(r.Dynakube.Name, r.ShortName()), Namespace: r.Dynakube.Namespace}, svc))
 		assert.NotNil(t, svc)
 		return svc
 	}
@@ -133,23 +112,23 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, updateExpected, update)
 	}
 	setStatsdCapability := func(r *Reconciler, wantEnabled bool) {
-		testSetCapability(r.Dynakube, dynatracev1beta1.StatsdIngestCapability, wantEnabled)
+		testinghelpers.DoTestSetCapability(r.Dynakube, dynatracev1beta1.StatsdIngestCapability, wantEnabled)
 	}
 	setMetricsIngestCapability := func(r *Reconciler, wantEnabled bool) {
-		testSetCapability(r.Dynakube, dynatracev1beta1.MetricsIngestCapability, wantEnabled)
+		testinghelpers.DoTestSetCapability(r.Dynakube, dynatracev1beta1.MetricsIngestCapability, wantEnabled)
 	}
 
 	agIngestServicePort := corev1.ServicePort{
-		Name:       HttpsServicePortName,
+		Name:       consts.HttpsServicePortName,
 		Protocol:   corev1.ProtocolTCP,
-		Port:       HttpsServicePort,
-		TargetPort: intstr.FromString(HttpsServicePortName),
+		Port:       consts.HttpsServicePort,
+		TargetPort: intstr.FromString(consts.HttpsServicePortName),
 	}
 	agIngestHttpServicePort := corev1.ServicePort{
-		Name:       HttpServicePortName,
+		Name:       consts.HttpServicePortName,
 		Protocol:   corev1.ProtocolTCP,
-		Port:       HttpServicePort,
-		TargetPort: intstr.FromString(HttpServicePortName),
+		Port:       consts.HttpServicePort,
+		TargetPort: intstr.FromString(consts.HttpServicePortName),
 	}
 	statsdIngestServicePort := corev1.ServicePort{
 		Name:       consts.StatsdIngestPortName,
@@ -445,7 +424,7 @@ func TestReconcile(t *testing.T) {
 func TestReconciler_calculateStatefulSetName(t *testing.T) {
 	type fields struct {
 		Instance   *dynatracev1beta1.DynaKube
-		Capability *RoutingCapability
+		Capability *capability.RoutingCapability
 	}
 	tests := []struct {
 		name   string

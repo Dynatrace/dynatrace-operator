@@ -6,7 +6,8 @@ import (
 	"regexp"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
+
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -35,7 +36,7 @@ func invalidActiveGateProxyUrl(dv *dynakubeValidator, dynakube *dynatracev1beta1
 			} else if err != nil {
 				return errors.Wrap(err, "error occurred while reading PROXY secret indicated in the Dynakube specification").Error()
 			}
-			proxyUrl, ok := proxySecret.Data[capability.ProxySecretKey]
+			proxyUrl, ok := proxySecret.Data[consts.ProxySecretKey]
 			if !ok {
 				return errorInvalidProxySecretFormat
 			}

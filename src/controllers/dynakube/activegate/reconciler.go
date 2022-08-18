@@ -5,7 +5,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/customproperties"
+	capabilityInternal "github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/secrets"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
@@ -66,7 +66,7 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 }
 
 func (r *Reconciler) reconcileActiveGateProxySecret() (err error) {
-	gen := capability.NewActiveGateProxySecretGenerator(r.Client, r.apiReader, r.Dynakube.Namespace, log)
+	gen := capabilityInternal.NewActiveGateProxySecretGenerator(r.Client, r.apiReader, r.Dynakube.Namespace, log)
 	if r.Dynakube.NeedsActiveGateProxy() {
 		return gen.GenerateForDynakube(r.context, r.Dynakube)
 	} else {
@@ -75,14 +75,7 @@ func (r *Reconciler) reconcileActiveGateProxySecret() (err error) {
 }
 
 func (r *Reconciler) createCapability(agCapability capability.Capability) (updated bool, err error) {
-	saName := ""
-	reconciler := capability.NewReconciler(
-		r.Client,
-		agCapability,
-		r.Dynakube,
-		statefulset.NewReconciler(r.Client, r.apiReader, r.scheme, r.Dynakube, agCapability),
-		customproperties.NewReconciler(r.Client, r.Dynakube, saName, r.scheme, agCapability.Properties().CustomProperties),
-	)
+	reconciler := capabilityInternal.NewReconciler(r.Client, agCapability, r.Dynakube, statefulset.NewReconciler(r.Client, r.apiReader, r.scheme, r.Dynakube, agCapability))
 
 	return reconciler.Reconcile()
 }

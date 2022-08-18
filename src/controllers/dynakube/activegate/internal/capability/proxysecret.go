@@ -6,6 +6,8 @@ import (
 	"net/url"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -20,8 +22,6 @@ const (
 	proxyPortField     = "port"
 	proxyUsernameField = "username"
 	proxyPasswordField = "password"
-
-	ProxySecretKey = "proxy"
 )
 
 // ActiveGateProxySecretGenerator manages the ActiveGate proxy secret generation for the dynatrace namespace.
@@ -51,7 +51,7 @@ func (agProxySecretGenerator *ActiveGateProxySecretGenerator) GenerateForDynakub
 	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      BuildProxySecretName(),
+			Name:      capability.BuildProxySecretName(),
 			Namespace: agProxySecretGenerator.namespace,
 			Labels:    coreLabels.BuildMatchLabels(),
 		},
@@ -64,7 +64,7 @@ func (agProxySecretGenerator *ActiveGateProxySecretGenerator) GenerateForDynakub
 }
 
 func (agProxySecretGenerator *ActiveGateProxySecretGenerator) EnsureDeleted(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
-	secretName := BuildProxySecretName()
+	secretName := capability.BuildProxySecretName()
 	secret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: secretName, Namespace: dynakube.Namespace}}
 	if err := agProxySecretGenerator.client.Delete(ctx, &secret); err != nil && !k8serrors.IsNotFound(err) {
 		return err
@@ -117,7 +117,7 @@ func (agProxySecretGenerator *ActiveGateProxySecretGenerator) proxyUrlFromUserSe
 		return "", errors.WithMessage(err, fmt.Sprintf("failed to query %s secret", dynakube.Spec.Proxy.ValueFrom))
 	}
 
-	proxy, ok := proxySecret.Data[ProxySecretKey]
+	proxy, ok := proxySecret.Data[consts.ProxySecretKey]
 	if !ok {
 		return "", fmt.Errorf("invalid secret %s", dynakube.Spec.Proxy.ValueFrom)
 	}

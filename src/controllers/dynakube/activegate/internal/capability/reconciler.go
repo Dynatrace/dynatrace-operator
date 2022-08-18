@@ -6,8 +6,8 @@ import (
 	"reflect"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -33,11 +33,11 @@ type Reconciler struct {
 	context context.Context
 	client.Client
 	statefulsetReconciler
-	Capability
+	capability.Capability
 	Dynakube *dynatracev1beta1.DynaKube
 }
 
-func NewReconciler(clt client.Client, capability Capability, dynakube *dynatracev1beta1.DynaKube, statefulsetReconciler statefulsetReconciler, reconciler *customproperties.Reconciler) *Reconciler {
+func NewReconciler(clt client.Client, capability capability.Capability, dynakube *dynatracev1beta1.DynaKube, statefulsetReconciler statefulsetReconciler) *Reconciler {
 	if capability.Config().SetDnsEntryPoint {
 		statefulsetReconciler.AddOnAfterStatefulSetCreateListener(addDNSEntryPoint(dynakube, capability.ShortName()))
 	}
@@ -61,7 +61,7 @@ func NewReconciler(clt client.Client, capability Capability, dynakube *dynatrace
 func setReadinessProbePort() kubeobjects.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {
 		if activeGateContainer, err := getActiveGateContainer(sts); err == nil {
-			activeGateContainer.ReadinessProbe.HTTPGet.Port = intstr.FromString(HttpsServicePortName)
+			activeGateContainer.ReadinessProbe.HTTPGet.Port = intstr.FromString(consts.HttpsServicePortName)
 		} else {
 			log.Error(err, "Cannot find container in the StatefulSet", "container name", consts.ActiveGateContainerName)
 		}
@@ -89,11 +89,11 @@ func setCommunicationsPort(dk *dynatracev1beta1.DynaKube) kubeobjects.StatefulSe
 		if err == nil {
 			activeGateContainer.Ports = []corev1.ContainerPort{
 				{
-					Name:          HttpsServicePortName,
+					Name:          consts.HttpsServicePortName,
 					ContainerPort: httpsContainerPort,
 				},
 				{
-					Name:          HttpServicePortName,
+					Name:          consts.HttpServicePortName,
 					ContainerPort: httpContainerPort,
 				},
 			}
@@ -119,7 +119,7 @@ func setCommunicationsPort(dk *dynatracev1beta1.DynaKube) kubeobjects.StatefulSe
 }
 
 func (r *Reconciler) calculateStatefulSetName() string {
-	return CalculateStatefulSetName(r.Capability, r.Dynakube.Name)
+	return capability.CalculateStatefulSetName(r.Capability, r.Dynakube.Name)
 }
 
 func addDNSEntryPoint(dynakube *dynatracev1beta1.DynaKube, moduleName string) kubeobjects.StatefulSetEvent {
@@ -137,12 +137,13 @@ func addDNSEntryPoint(dynakube *dynatracev1beta1.DynaKube, moduleName string) ku
 }
 
 func buildDNSEntryPoint(dynakube *dynatracev1beta1.DynaKube, moduleName string) string {
-	return fmt.Sprintf("https://%s/communication", buildServiceHostName(dynakube.Name, moduleName))
+	return fmt.Sprintf("https://%s/communication", BuildServiceHostName(dynakube.Name, moduleName))
 }
 
 func (r *Reconciler) Reconcile() (update bool, err error) {
 	if r.ShouldCreateService() {
-		multiCapability := NewMultiCapability(r.Dynakube)
+		// TODO: MutliCapability shouldn't be used here - it may be as well one of deprecated Capabilities: Kubemon or Routing
+		multiCapability := capability.NewMultiCapability(r.Dynakube)
 		update, err = r.createOrUpdateService(multiCapability.ServicePorts)
 		if update || err != nil {
 			return update, errors.WithStack(err)
@@ -160,8 +161,8 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 	return update, errors.WithStack(err)
 }
 
-func (r *Reconciler) createOrUpdateService(desiredServicePorts AgServicePorts) (bool, error) {
-	desired := createService(r.Dynakube, r.ShortName(), desiredServicePorts)
+func (r *Reconciler) createOrUpdateService(desiredServicePorts capability.AgServicePorts) (bool, error) {
+	desired := CreateService(r.Dynakube, r.ShortName(), desiredServicePorts)
 
 	installed := &corev1.Service{}
 	err := r.Get(context.TODO(), kubeobjects.Key(desired), installed)

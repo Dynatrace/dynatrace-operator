@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -75,7 +76,7 @@ func CreateEecConfigMap(dynakube *dynatracev1beta1.DynaKube, feature string) (*c
 
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      BuildEecConfigMapName(dynakube.Name, feature),
+			Name:      capability.BuildEecConfigMapName(dynakube.Name, feature),
 			Namespace: dynakube.Namespace,
 		},
 		Data: map[string]string{

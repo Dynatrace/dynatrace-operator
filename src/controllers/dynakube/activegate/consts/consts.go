@@ -9,4 +9,9 @@ const (
 	StatsdIngestTargetPort  = "statsd-port"
 	StatsdIngestPortName    = "statsd"
 	ProxySecretSuffix       = "internal-proxy"
+	ProxySecretKey          = "proxy"
+	HttpsServicePortName    = "https"
+	HttpsServicePort        = 443
+	HttpServicePortName     = "http"
+	HttpServicePort         = 80
 )

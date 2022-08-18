@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	corev1 "k8s.io/api/core/v1"
@@ -12,22 +13,22 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func createService(dynakube *dynatracev1beta1.DynaKube, feature string, servicePorts AgServicePorts) *corev1.Service {
+func CreateService(dynakube *dynatracev1beta1.DynaKube, feature string, servicePorts capability.AgServicePorts) *corev1.Service {
 	var ports []corev1.ServicePort
 
 	if servicePorts.Webserver {
 		ports = append(ports,
 			corev1.ServicePort{
-				Name:       HttpsServicePortName,
+				Name:       consts.HttpsServicePortName,
 				Protocol:   corev1.ProtocolTCP,
-				Port:       HttpsServicePort,
-				TargetPort: intstr.FromString(HttpsServicePortName),
+				Port:       consts.HttpsServicePort,
+				TargetPort: intstr.FromString(consts.HttpsServicePortName),
 			},
 			corev1.ServicePort{
-				Name:       HttpServicePortName,
+				Name:       consts.HttpServicePortName,
 				Protocol:   corev1.ProtocolTCP,
-				Port:       HttpServicePort,
-				TargetPort: intstr.FromString(HttpServicePortName),
+				Port:       consts.HttpServicePort,
+				TargetPort: intstr.FromString(consts.HttpServicePortName),
 			},
 		)
 	}
@@ -46,7 +47,7 @@ func createService(dynakube *dynatracev1beta1.DynaKube, feature string, serviceP
 	coreLabels := kubeobjects.NewCoreLabels(dynakube.Name, kubeobjects.ActiveGateComponentLabel)
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      BuildServiceName(dynakube.Name, feature),
+			Name:      capability.BuildServiceName(dynakube.Name, feature),
 			Namespace: dynakube.Namespace,
 			Labels:    coreLabels.BuildLabels(),
 		},
@@ -58,18 +59,14 @@ func createService(dynakube *dynatracev1beta1.DynaKube, feature string, serviceP
 	}
 }
 
-func BuildServiceName(dynakubeName string, module string) string {
-	return dynakubeName + "-" + module
-}
-
-// buildServiceHostName converts the name returned by BuildServiceName
+// BuildServiceHostName converts the name returned by BuildServiceName
 // into the variable name which Kubernetes uses to reference the associated service.
 // For more information see: https://kubernetes.io/docs/concepts/services-networking/service/
-func buildServiceHostName(dynakubeName string, module string) string {
+func BuildServiceHostName(dynakubeName string, module string) string {
 	serviceName :=
 		strings.ReplaceAll(
 			strings.ToUpper(
-				BuildServiceName(dynakubeName, module)),
+				capability.BuildServiceName(dynakubeName, module)),
 			"-", "_")
 
 	return fmt.Sprintf("$(%s_SERVICE_HOST):$(%s_SERVICE_PORT)", serviceName, serviceName)

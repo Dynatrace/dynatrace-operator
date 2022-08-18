@@ -358,3 +358,7 @@ func BuildEecConfigMapName(dynakubeName string, module string) string {
 func BuildProxySecretName() string {
 	return "dynatrace" + "-" + consts.MultiActiveGateName + "-" + consts.ProxySecretSuffix
 }
+
+func BuildServiceName(dynakubeName string, module string) string {
+	return dynakubeName + "-" + module
+}
