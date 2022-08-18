@@ -4176,7 +4176,8 @@ spec:
             runAsUser: 1001
             runAsGroup: 1001
             capabilities:
-              drop: ["all"]
+              drop:
+                - ALL
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -4319,7 +4320,8 @@ spec:
             runAsUser: 1001
             runAsGroup: 1001
             capabilities:
-              drop: ["all"]
+              drop:
+                - ALL
       serviceAccountName: dynatrace-webhook
 ---
 # Source: dynatrace-operator/templates/Common/webhook/mutatingwebhookconfiguration.yaml
