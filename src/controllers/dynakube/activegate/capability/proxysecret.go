@@ -6,7 +6,6 @@ import (
 	"net/url"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -52,7 +51,7 @@ func (agProxySecretGenerator *ActiveGateProxySecretGenerator) GenerateForDynakub
 	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      statefulset.BuildProxySecretName(),
+			Name:      BuildProxySecretName(),
 			Namespace: agProxySecretGenerator.namespace,
 			Labels:    coreLabels.BuildMatchLabels(),
 		},
@@ -65,7 +64,7 @@ func (agProxySecretGenerator *ActiveGateProxySecretGenerator) GenerateForDynakub
 }
 
 func (agProxySecretGenerator *ActiveGateProxySecretGenerator) EnsureDeleted(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
-	secretName := statefulset.BuildProxySecretName()
+	secretName := BuildProxySecretName()
 	secret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: secretName, Namespace: dynakube.Namespace}}
 	if err := agProxySecretGenerator.client.Delete(ctx, &secret); err != nil && !k8serrors.IsNotFound(err) {
 		return err

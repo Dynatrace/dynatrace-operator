@@ -2,9 +2,10 @@ package statefulset
 
 import (
 	"fmt"
-	"regexp"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	corev1 "k8s.io/api/core/v1"
@@ -44,7 +45,7 @@ func NewExtensionController(stsProperties *statefulSetProperties) *ExtensionCont
 
 func (eec *ExtensionController) BuildContainer() corev1.Container {
 	return corev1.Container{
-		Name:            EecContainerName,
+		Name:            consts.EecContainerName,
 		Image:           eec.image(),
 		ImagePullPolicy: corev1.PullAlways,
 		Env:             eec.buildEnvs(),
@@ -97,7 +98,7 @@ func (eec *ExtensionController) BuildVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: BuildEecConfigMapName(eec.stsProperties.Name, eec.stsProperties.feature),
+						Name: capability.BuildEecConfigMapName(eec.stsProperties.Name, eec.stsProperties.feature),
 					},
 				},
 			},
@@ -109,10 +110,6 @@ func (eec *ExtensionController) BuildVolumes() []corev1.Volume {
 	}
 
 	return volumes
-}
-
-func BuildEecConfigMapName(dynakubeName string, module string) string {
-	return regexp.MustCompile(`[^\w\-]`).ReplaceAllString(dynakubeName+"-"+module+"-eec-config", "_")
 }
 
 func (eec *ExtensionController) image() string {

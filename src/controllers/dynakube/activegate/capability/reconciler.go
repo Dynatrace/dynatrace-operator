@@ -6,7 +6,7 @@ import (
 	"reflect"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -25,7 +25,7 @@ const (
 
 type activegateReconciler interface {
 	Reconcile() (update bool, err error)
-	AddOnAfterStatefulSetCreateListener(event statefulset.StatefulSetEvent)
+	AddOnAfterStatefulSetCreateListener(event kubeobjects.StatefulSetEvent)
 }
 
 type Reconciler struct {
@@ -57,12 +57,12 @@ func NewReconciler(clt client.Client, capability Capability, baseReconciler acti
 	}
 }
 
-func setReadinessProbePort() statefulset.StatefulSetEvent {
+func setReadinessProbePort() kubeobjects.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {
 		if activeGateContainer, err := getActiveGateContainer(sts); err == nil {
 			activeGateContainer.ReadinessProbe.HTTPGet.Port = intstr.FromString(HttpsServicePortName)
 		} else {
-			log.Error(err, "Cannot find container in the StatefulSet", "container name", statefulset.ContainerName)
+			log.Error(err, "Cannot find container in the StatefulSet", "container name", consts.ActiveGateContainerName)
 		}
 	}
 }
@@ -79,10 +79,10 @@ func getContainerByName(containers []corev1.Container, containerName string) (*c
 }
 
 func getActiveGateContainer(sts *appsv1.StatefulSet) (*corev1.Container, error) {
-	return getContainerByName(sts.Spec.Template.Spec.Containers, statefulset.ContainerName)
+	return getContainerByName(sts.Spec.Template.Spec.Containers, consts.ActiveGateContainerName)
 }
 
-func setCommunicationsPort(dk *dynatracev1beta1.DynaKube) statefulset.StatefulSetEvent {
+func setCommunicationsPort(dk *dynatracev1beta1.DynaKube) kubeobjects.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {
 		activeGateContainer, err := getActiveGateContainer(sts)
 		if err == nil {
@@ -97,21 +97,21 @@ func setCommunicationsPort(dk *dynatracev1beta1.DynaKube) statefulset.StatefulSe
 				},
 			}
 		} else {
-			log.Info("Cannot find container in the StatefulSet", "container name", statefulset.ContainerName)
+			log.Info("Cannot find container in the StatefulSet", "container name", consts.ActiveGateContainerName)
 		}
 
 		if dk.NeedsStatsd() {
-			statsdContainer, err := getContainerByName(sts.Spec.Template.Spec.Containers, statefulset.StatsdContainerName)
+			statsdContainer, err := getContainerByName(sts.Spec.Template.Spec.Containers, consts.StatsdContainerName)
 			if err == nil {
 				statsdContainer.Ports = []corev1.ContainerPort{
 					{
-						Name:          statefulset.StatsdIngestTargetPort,
-						ContainerPort: statefulset.StatsdIngestPort,
+						Name:          consts.StatsdIngestTargetPort,
+						ContainerPort: consts.StatsdIngestPort,
 						Protocol:      corev1.ProtocolUDP,
 					},
 				}
 			} else {
-				log.Info("Cannot find container in the StatefulSet", "container name", statefulset.StatsdContainerName)
+				log.Info("Cannot find container in the StatefulSet", "container name", consts.StatsdContainerName)
 			}
 		}
 	}
@@ -121,7 +121,7 @@ func (r *Reconciler) calculateStatefulSetName() string {
 	return CalculateStatefulSetName(r.Capability, r.Dynakube.Name)
 }
 
-func addDNSEntryPoint(dynakube *dynatracev1beta1.DynaKube, moduleName string) statefulset.StatefulSetEvent {
+func addDNSEntryPoint(dynakube *dynatracev1beta1.DynaKube, moduleName string) kubeobjects.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {
 		if activeGateContainer, err := getActiveGateContainer(sts); err == nil {
 			activeGateContainer.Env = append(activeGateContainer.Env,
@@ -130,7 +130,7 @@ func addDNSEntryPoint(dynakube *dynatracev1beta1.DynaKube, moduleName string) st
 					Value: buildDNSEntryPoint(dynakube, moduleName),
 				})
 		} else {
-			log.Error(err, "Cannot find container in the StatefulSet", "container name", statefulset.ContainerName)
+			log.Error(err, "Cannot find container in the StatefulSet", "container name", consts.ActiveGateContainerName)
 		}
 	}
 }

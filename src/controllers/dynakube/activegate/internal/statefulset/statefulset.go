@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/secrets"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
@@ -23,7 +25,7 @@ const (
 	authTokenSecretVolumeName = "ag-authtoken-secret"
 
 	annotationActiveGateConfigurationHash = dynatracev1beta1.InternalFlagPrefix + "activegate-configuration-hash"
-	annotationActiveGateContainerAppArmor = "container.apparmor.security.beta.kubernetes.io/" + ContainerName
+	annotationActiveGateContainerAppArmor = "container.apparmor.security.beta.kubernetes.io/" + consts.ActiveGateContainerName
 
 	dtServer             = "DT_SERVER"
 	dtTenant             = "DT_TENANT"
@@ -53,15 +55,13 @@ type statefulSetProperties struct {
 	feature                     string
 	capabilityName              string
 	serviceAccountOwner         string
-	OnAfterCreateListener       []StatefulSetEvent
+	OnAfterCreateListener       []kubeobjects.StatefulSetEvent
 	initContainersTemplates     []corev1.Container
 	containerVolumeMounts       []corev1.VolumeMount
 	volumes                     []corev1.Volume
 }
 
-func NewStatefulSetProperties(dynakube *dynatracev1beta1.DynaKube, capabilityProperties *dynatracev1beta1.CapabilityProperties, kubeSystemUID types.UID,
-	activeGateHash string, feature string, capabilityName string, serviceAccountOwner string,
-	initContainers []corev1.Container, containerVolumeMounts []corev1.VolumeMount, volumes []corev1.Volume) *statefulSetProperties {
+func NewStatefulSetProperties(dynakube *dynatracev1beta1.DynaKube, capabilityProperties *dynatracev1beta1.CapabilityProperties, kubeSystemUID types.UID, activeGateHash string, feature string, capabilityName string, serviceAccountOwner string, initContainers []corev1.Container, containerVolumeMounts []corev1.VolumeMount, volumes []corev1.Volume, capability capability.Capability) *statefulSetProperties {
 
 	if serviceAccountOwner == "" {
 		serviceAccountOwner = feature
@@ -75,7 +75,7 @@ func NewStatefulSetProperties(dynakube *dynatracev1beta1.DynaKube, capabilityPro
 		feature:                     feature,
 		capabilityName:              capabilityName,
 		serviceAccountOwner:         serviceAccountOwner,
-		OnAfterCreateListener:       []StatefulSetEvent{},
+		OnAfterCreateListener:       []kubeobjects.StatefulSetEvent{},
 		initContainersTemplates:     initContainers,
 		containerVolumeMounts:       containerVolumeMounts,
 		volumes:                     volumes,
@@ -197,7 +197,7 @@ func buildActiveGateContainer(stsProperties *statefulSetProperties) corev1.Conta
 	readOnlyFs := stsProperties.FeatureActiveGateReadOnlyFilesystem()
 
 	return corev1.Container{
-		Name:            ContainerName,
+		Name:            consts.ActiveGateContainerName,
 		Image:           stsProperties.DynaKube.ActiveGateImage(),
 		Resources:       stsProperties.CapabilityProperties.Resources,
 		ImagePullPolicy: corev1.PullAlways,
@@ -349,7 +349,7 @@ func buildProxyVolumes() []corev1.Volume {
 			Name: InternalProxySecretVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: BuildProxySecretName(),
+					SecretName: capability.BuildProxySecretName(),
 				},
 			},
 		},
@@ -550,8 +550,4 @@ func isCustomPropertiesNilOrEmpty(customProperties *dynatracev1beta1.DynaKubeVal
 	return customProperties == nil ||
 		(customProperties.Value == "" &&
 			customProperties.ValueFrom == "")
-}
-
-func BuildProxySecretName() string {
-	return "dynatrace" + "-" + MultiActiveGateName + "-" + ProxySecretSuffix
 }

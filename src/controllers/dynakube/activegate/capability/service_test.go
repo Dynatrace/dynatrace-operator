@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/stretchr/testify/assert"
@@ -32,10 +32,10 @@ func testCreateInstance() *dynatracev1beta1.DynaKube {
 
 func TestCreateService(t *testing.T) {
 	statsdPort := corev1.ServicePort{
-		Name:       statefulset.StatsdIngestPortName,
+		Name:       consts.StatsdIngestPortName,
 		Protocol:   corev1.ProtocolUDP,
-		Port:       statefulset.StatsdIngestPort,
-		TargetPort: intstr.FromString(statefulset.StatsdIngestTargetPort),
+		Port:       consts.StatsdIngestPort,
+		TargetPort: intstr.FromString(consts.StatsdIngestTargetPort),
 	}
 	agHttpsPort := corev1.ServicePort{
 		Name:       HttpsServicePortName,

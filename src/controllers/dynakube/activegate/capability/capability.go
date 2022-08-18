@@ -2,10 +2,11 @@ package capability
 
 import (
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -160,7 +161,7 @@ func (c *capabilityBase) setTlsConfig(agSpec *dynatracev1beta1.ActiveGateSpec) {
 func NewMultiCapability(dk *dynatracev1beta1.DynaKube) *MultiCapability {
 	mc := MultiCapability{
 		capabilityBase{
-			shortName: statefulset.MultiActiveGateName,
+			shortName: consts.MultiActiveGateName,
 		},
 	}
 	if dk == nil || !dk.ActiveGateMode() {
@@ -348,4 +349,12 @@ func GenerateActiveGateCapabilities(dynakube *dynatracev1beta1.DynaKube) []Capab
 		NewRoutingCapability(dynakube),
 		NewMultiCapability(dynakube),
 	}
+}
+
+func BuildEecConfigMapName(dynakubeName string, module string) string {
+	return regexp.MustCompile(`[^\w\-]`).ReplaceAllString(dynakubeName+"-"+module+"-eec-config", "_")
+}
+
+func BuildProxySecretName() string {
+	return "dynatrace" + "-" + consts.MultiActiveGateName + "-" + consts.ProxySecretSuffix
 }

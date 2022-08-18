@@ -7,7 +7,6 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	rcap "github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
@@ -241,7 +240,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		assert.NotNil(t, result)
 
 		var proxySecret corev1.Secret
-		name := statefulset.BuildProxySecretName()
+		name := rcap.BuildProxySecretName()
 		err = controller.client.Get(context.TODO(), client.ObjectKey{Name: name, Namespace: testNamespace}, &proxySecret)
 
 		assert.NoError(t, err)
@@ -271,7 +270,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		assert.NotNil(t, result)
 
 		var proxySecret corev1.Secret
-		name := statefulset.BuildProxySecretName()
+		name := rcap.BuildProxySecretName()
 		err = controller.client.Get(context.TODO(), client.ObjectKey{Name: name, Namespace: testNamespace}, &proxySecret)
 
 		assert.Error(t, err)

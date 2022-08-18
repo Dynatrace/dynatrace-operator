@@ -8,8 +8,8 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/secrets"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
@@ -28,7 +28,7 @@ type Reconciler struct {
 	apiReader                        client.Reader
 	scheme                           *runtime.Scheme
 	serviceAccountOwner              string
-	onAfterStatefulSetCreateListener []statefulset.StatefulSetEvent
+	onAfterStatefulSetCreateListener []kubeobjects.StatefulSetEvent
 	capability                       capability.Capability
 }
 
@@ -47,11 +47,11 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 		Dynakube:                         dynakube,
 		capability:                       capability,
 		serviceAccountOwner:              serviceAccountOwner,
-		onAfterStatefulSetCreateListener: []statefulset.StatefulSetEvent{},
+		onAfterStatefulSetCreateListener: []kubeobjects.StatefulSetEvent{},
 	}
 }
 
-func (r *Reconciler) AddOnAfterStatefulSetCreateListener(event statefulset.StatefulSetEvent) {
+func (r *Reconciler) AddOnAfterStatefulSetCreateListener(event kubeobjects.StatefulSetEvent) {
 	r.onAfterStatefulSetCreateListener = append(r.onAfterStatefulSetCreateListener, event)
 }
 
@@ -113,8 +113,18 @@ func (r *Reconciler) buildDesiredStatefulSet() (*appsv1.StatefulSet, error) {
 	}
 
 	stsProperties := statefulset.NewStatefulSetProperties(
-		r.Dynakube, r.capability.Properties(), kubeUID, activeGateConfigurationHash, r.capability.ShortName(), r.capability.ArgName(), r.serviceAccountOwner,
-		r.capability.InitContainersTemplates(), r.capability.ContainerVolumeMounts(), r.capability.Volumes())
+		r.Dynakube,
+		r.capability.Properties(),
+		kubeUID,
+		activeGateConfigurationHash,
+		r.capability.ShortName(),
+		r.capability.ArgName(),
+		r.serviceAccountOwner,
+		r.capability.InitContainersTemplates(),
+		r.capability.ContainerVolumeMounts(),
+		r.capability.Volumes(),
+		r.capability,
+	)
 	stsProperties.OnAfterCreateListener = r.onAfterStatefulSetCreateListener
 
 	desiredSts, err := statefulset.CreateStatefulSet(stsProperties)

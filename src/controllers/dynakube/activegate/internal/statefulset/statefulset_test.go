@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/secrets"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
@@ -33,7 +34,7 @@ const (
 )
 
 func TestNewStatefulSetBuilder(t *testing.T) {
-	stsBuilder := NewStatefulSetProperties(&dynatracev1beta1.DynaKube{}, &dynatracev1beta1.CapabilityProperties{}, testUID, testValue, "", "", "", nil, nil, nil)
+	stsBuilder := NewStatefulSetProperties(&dynatracev1beta1.DynaKube{}, &dynatracev1beta1.CapabilityProperties{}, testUID, testValue, "", "", "", nil, nil, nil, nil)
 	assert.NotNil(t, stsBuilder)
 	assert.NotNil(t, stsBuilder.DynaKube)
 	assert.NotNil(t, stsBuilder.CapabilityProperties)
@@ -46,7 +47,7 @@ func TestStatefulSetBuilder_Build(t *testing.T) {
 	t.Run(`build without image`, func(t *testing.T) {
 		instance := buildTestInstance()
 		capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
-		sts, err := CreateStatefulSet(NewStatefulSetProperties(instance, capabilityProperties, "", "", testComponentFeature, "", "", nil, nil, nil))
+		sts, err := CreateStatefulSet(NewStatefulSetProperties(instance, capabilityProperties, "", "", testComponentFeature, "", "", nil, nil, nil, nil))
 
 		expectedLabels := map[string]string{
 			kubeobjects.AppNameLabel:      kubeobjects.ActiveGateComponentLabel,
@@ -87,7 +88,7 @@ func TestStatefulSetBuilder_Build(t *testing.T) {
 	t.Run(`build while image set`, func(t *testing.T) {
 		instance := buildTestInstanceWithImage()
 		capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
-		sts, err := CreateStatefulSet(NewStatefulSetProperties(instance, capabilityProperties, "", "", testComponentFeature, "", "", nil, nil, nil))
+		sts, err := CreateStatefulSet(NewStatefulSetProperties(instance, capabilityProperties, "", "", testComponentFeature, "", "", nil, nil, nil, nil))
 
 		expectedLabels := map[string]string{
 			kubeobjects.AppNameLabel:      kubeobjects.ActiveGateComponentLabel,
@@ -128,7 +129,7 @@ func TestStatefulSetBuilder_Build(t *testing.T) {
 	t.Run(`template has annotations`, func(t *testing.T) {
 		instance := buildTestInstance()
 		capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
-		sts, _ := CreateStatefulSet(NewStatefulSetProperties(instance, capabilityProperties, "", testValue, "", "", "", nil, nil, nil))
+		sts, _ := CreateStatefulSet(NewStatefulSetProperties(instance, capabilityProperties, "", testValue, "", "", "", nil, nil, nil, nil))
 		assert.Equal(t, map[string]string{
 			annotationActiveGateConfigurationHash: testValue,
 		}, sts.Spec.Template.Annotations)
@@ -174,7 +175,7 @@ func TestStatefulSet_TemplateSpec(t *testing.T) {
 		capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
 
 		instance.Spec.ActiveGate.PriorityClassName = customPriorityClassName
-		templateSpec := buildTemplateSpec(NewStatefulSetProperties(instance, capabilityProperties, "", "", "test-feature", "", "", nil, nil, nil))
+		templateSpec := buildTemplateSpec(NewStatefulSetProperties(instance, capabilityProperties, "", "", "test-feature", "", "", nil, nil, nil, nil))
 		assert.Equal(t, customPriorityClassName, templateSpec.PriorityClassName)
 	})
 
@@ -182,7 +183,7 @@ func TestStatefulSet_TemplateSpec(t *testing.T) {
 		instance := buildTestInstance()
 		capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
 
-		templateSpec := buildTemplateSpec(NewStatefulSetProperties(instance, capabilityProperties, "", "", "test-feature", "", "", nil, nil, nil))
+		templateSpec := buildTemplateSpec(NewStatefulSetProperties(instance, capabilityProperties, "", "", "test-feature", "", "", nil, nil, nil, nil))
 		assert.Equal(t, "", templateSpec.PriorityClassName)
 	})
 
@@ -199,7 +200,7 @@ func TestStatefulSet_TemplateSpec(t *testing.T) {
 		expected := []corev1.TopologySpreadConstraint{tsc, tsc, tsc}
 
 		instance.Spec.ActiveGate.TopologySpreadConstraints = expected
-		templateSpec := buildTemplateSpec(NewStatefulSetProperties(instance, capabilityProperties, "", "", "test-feature", "", "", nil, nil, nil))
+		templateSpec := buildTemplateSpec(NewStatefulSetProperties(instance, capabilityProperties, "", "", "test-feature", "", "", nil, nil, nil, nil))
 		assert.Equal(t, len(expected), len(templateSpec.TopologySpreadConstraints))
 	})
 
@@ -207,15 +208,14 @@ func TestStatefulSet_TemplateSpec(t *testing.T) {
 		instance := buildTestInstance()
 		capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
 
-		templateSpec := buildTemplateSpec(NewStatefulSetProperties(instance, capabilityProperties, "", "", "test-feature", "", "", nil, nil, nil))
+		templateSpec := buildTemplateSpec(NewStatefulSetProperties(instance, capabilityProperties, "", "", "test-feature", "", "", nil, nil, nil, nil))
 		assert.Nil(t, templateSpec.TopologySpreadConstraints)
 	})
 
 	t.Run("DynaKube without StatsD", func(t *testing.T) {
 		instance := buildTestInstance()
 		capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
-		templateSpec := buildTemplateSpec(NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", "test-feature", "", "", nil, nil, nil))
+		templateSpec := buildTemplateSpec(NewStatefulSetProperties(instance, capabilityProperties, "", "", "test-feature", "", "", nil, nil, nil, nil))
 
 		checkCoreProperties(instance, &templateSpec)
 
@@ -232,8 +232,7 @@ func TestStatefulSet_TemplateSpec(t *testing.T) {
 		}
 
 		capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
-		templateSpec := buildTemplateSpec(NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", "test-feature", "", "", nil, nil, nil))
+		templateSpec := buildTemplateSpec(NewStatefulSetProperties(instance, capabilityProperties, "", "", "test-feature", "", "", nil, nil, nil, nil))
 
 		checkCoreProperties(instance, &templateSpec)
 
@@ -244,7 +243,7 @@ func TestStatefulSet_TemplateSpec(t *testing.T) {
 
 func TestStatefulSet_Container(t *testing.T) {
 	checkCoreProperties := func(activeGateContainer *corev1.Container, dynakube *dynatracev1beta1.DynaKube) {
-		assert.Equal(t, ContainerName, activeGateContainer.Name)
+		assert.Equal(t, consts.ActiveGateContainerName, activeGateContainer.Name)
 		assert.Equal(t, dynakube.ActiveGateImage(), activeGateContainer.Image)
 		assert.Empty(t, activeGateContainer.Resources)
 		assert.Equal(t, corev1.PullAlways, activeGateContainer.ImagePullPolicy)
@@ -302,8 +301,7 @@ func TestStatefulSet_Container(t *testing.T) {
 			instance.Spec.ActiveGate.TlsSecretName = "secret"
 		}
 		capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
-		stsProperties := NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", "", "", "", nil, nil, nil)
+		stsProperties := NewStatefulSetProperties(instance, capabilityProperties, "", "", "", "", "", nil, nil, nil, nil)
 		sts, err := CreateStatefulSet(stsProperties)
 		assert.Nil(t, err)
 		extraContainerBuilders := getContainerBuilders(stsProperties)
@@ -341,8 +339,7 @@ func TestStatefulSet_Container(t *testing.T) {
 		instance := buildTestInstance()
 		instance.Annotations[dynatracev1beta1.AnnotationFeatureActiveGateAppArmor] = "true"
 		capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
-		stsProperties := NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", "", "", "", nil, nil, nil)
+		stsProperties := NewStatefulSetProperties(instance, capabilityProperties, "", "", "", "", "", nil, nil, nil, nil)
 		sts, err := CreateStatefulSet(stsProperties)
 		assert.Nil(t, err)
 		extraContainerBuilders := getContainerBuilders(stsProperties)
@@ -359,10 +356,7 @@ func TestStatefulSet_Volumes(t *testing.T) {
 	capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
 
 	t.Run(`without custom properties`, func(t *testing.T) {
-		stsProperties := NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", "", "", "",
-			nil, nil, nil,
-		)
+		stsProperties := NewStatefulSetProperties(instance, capabilityProperties, "", "", "", "", "", nil, nil, nil, nil)
 		volumes := buildVolumes(stsProperties, getContainerBuilders(stsProperties))
 		assert.Falsef(t, kubeobjects.VolumeIsDefined(volumes, customproperties.VolumeName),
 			"Expected that volume %s is not defined if there are no custom properties", customproperties.VolumeName,
@@ -372,10 +366,7 @@ func TestStatefulSet_Volumes(t *testing.T) {
 		instanceRawImg := instance.DeepCopy()
 		instanceRawImg.Annotations[dynatracev1beta1.AnnotationFeatureActiveGateRawImage] = "true"
 
-		stsProperties := NewStatefulSetProperties(instanceRawImg, capabilityProperties,
-			"", "", "", "", "",
-			nil, nil, nil,
-		)
+		stsProperties := NewStatefulSetProperties(instanceRawImg, capabilityProperties, "", "", "", "", "", nil, nil, nil, nil)
 		volumes := buildVolumes(stsProperties, getContainerBuilders(stsProperties))
 
 		require.Equal(t, 1, len(volumes))
@@ -388,10 +379,7 @@ func TestStatefulSet_Volumes(t *testing.T) {
 		capabilityProperties.CustomProperties = &dynatracev1beta1.DynaKubeValueSource{
 			Value: testValue,
 		}
-		stsProperties := NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", testComponentFeature, "", "",
-			nil, nil, nil,
-		)
+		stsProperties := NewStatefulSetProperties(instance, capabilityProperties, "", "", testComponentFeature, "", "", nil, nil, nil, nil)
 		volumes := buildVolumes(stsProperties, getContainerBuilders(stsProperties))
 		expectedSecretName := instance.Name + "-router-" + customproperties.Suffix
 
@@ -413,10 +401,7 @@ func TestStatefulSet_Volumes(t *testing.T) {
 		capabilityProperties.CustomProperties = &dynatracev1beta1.DynaKubeValueSource{
 			ValueFrom: testKey,
 		}
-		stsProperties := NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", "", "", "",
-			nil, nil, nil,
-		)
+		stsProperties := NewStatefulSetProperties(instance, capabilityProperties, "", "", "", "", "", nil, nil, nil, nil)
 		volumes := buildVolumes(stsProperties, getContainerBuilders(stsProperties))
 		expectedSecretName := testKey
 
@@ -435,10 +420,7 @@ func TestStatefulSet_Volumes(t *testing.T) {
 		}, customPropertiesVolume.Secret.Items)
 	})
 	t.Run(`test activeGateAuthToken volumes`, func(t *testing.T) {
-		stsProperties := NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", "", "", "",
-			nil, nil, nil,
-		)
+		stsProperties := NewStatefulSetProperties(instance, capabilityProperties, "", "", "", "", "", nil, nil, nil, nil)
 
 		stsProperties.Annotations = map[string]string{}
 		stsProperties.Annotations[dynatracev1beta1.AnnotationFeatureEnableActiveGateAuthToken] = "true"
@@ -462,10 +444,7 @@ func TestStatefulSet_Env(t *testing.T) {
 		instanceRawImg := instance.DeepCopy()
 		instanceRawImg.Annotations[dynatracev1beta1.AnnotationFeatureActiveGateRawImage] = "false"
 
-		envVars := buildEnvs(NewStatefulSetProperties(instanceRawImg, capabilityProperties,
-			testUID, "", testComponentFeature, "MSGrouter", "",
-			nil, nil, nil,
-		))
+		envVars := buildEnvs(NewStatefulSetProperties(instanceRawImg, capabilityProperties, testUID, "", testComponentFeature, "MSGrouter", "", nil, nil, nil, nil))
 
 		expectedEnvVars := []corev1.EnvVar{
 			{Name: dtCapabilities, Value: "MSGrouter"},
@@ -479,10 +458,7 @@ func TestStatefulSet_Env(t *testing.T) {
 
 	})
 	t.Run(`without proxy`, func(t *testing.T) {
-		envVars := buildEnvs(NewStatefulSetProperties(instance, capabilityProperties,
-			testUID, "", testComponentFeature, "MSGrouter", "",
-			nil, nil, nil,
-		))
+		envVars := buildEnvs(NewStatefulSetProperties(instance, capabilityProperties, testUID, "", testComponentFeature, "MSGrouter", "", nil, nil, nil, nil))
 
 		expectedEnvVars := []corev1.EnvVar{
 			{
@@ -520,10 +496,7 @@ func TestStatefulSet_Env(t *testing.T) {
 		instance := buildTestInstance()
 		instance.Spec.NetworkZone = testName
 		capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
-		envVars := buildEnvs(NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", "", "", "",
-			nil, nil, nil,
-		))
+		envVars := buildEnvs(NewStatefulSetProperties(instance, capabilityProperties, "", "", "", "", "", nil, nil, nil, nil))
 
 		assert.NotEmpty(t, envVars)
 
@@ -536,10 +509,7 @@ func TestStatefulSet_Env(t *testing.T) {
 		instance := buildTestInstance()
 		instance.Spec.ActiveGate.Group = testValue
 		capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
-		envVars := buildEnvs(NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", "", "", "",
-			nil, nil, nil,
-		))
+		envVars := buildEnvs(NewStatefulSetProperties(instance, capabilityProperties, "", "", "", "", "", nil, nil, nil, nil))
 
 		assert.NotEmpty(t, envVars)
 
@@ -555,20 +525,14 @@ func TestStatefulSet_VolumeMounts(t *testing.T) {
 	capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
 
 	t.Run(`without custom properties`, func(t *testing.T) {
-		volumeMounts := buildVolumeMounts(NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", "", "", "",
-			nil, nil, nil,
-		))
+		volumeMounts := buildVolumeMounts(NewStatefulSetProperties(instance, capabilityProperties, "", "", "", "", "", nil, nil, nil, nil))
 		assert.Falsef(t, kubeobjects.MountPathIsIn(volumeMounts, customproperties.MountPath),
 			"Expected that there is no mount point %s if there are no custom properties", customproperties.MountPath,
 		)
 	})
 	t.Run(`with custom properties`, func(t *testing.T) {
 		capabilityProperties.CustomProperties = &dynatracev1beta1.DynaKubeValueSource{Value: testValue}
-		volumeMounts := buildVolumeMounts(NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", "", "", "",
-			nil, nil, nil,
-		))
+		volumeMounts := buildVolumeMounts(NewStatefulSetProperties(instance, capabilityProperties, "", "", "", "", "", nil, nil, nil, nil))
 
 		assert.NotEmpty(t, volumeMounts)
 		assert.Contains(t, volumeMounts, corev1.VolumeMount{
@@ -580,7 +544,7 @@ func TestStatefulSet_VolumeMounts(t *testing.T) {
 	})
 	t.Run(`with proxy from value`, func(t *testing.T) {
 		instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
-		volumeMounts := buildVolumeMounts(NewStatefulSetProperties(instance, capabilityProperties, "", "", "", "", "", nil, nil, nil))
+		volumeMounts := buildVolumeMounts(NewStatefulSetProperties(instance, capabilityProperties, "", "", "", "", "", nil, nil, nil, nil))
 
 		assert.Contains(t, volumeMounts, corev1.VolumeMount{
 			ReadOnly:  true,
@@ -612,7 +576,7 @@ func TestStatefulSet_VolumeMounts(t *testing.T) {
 	})
 	t.Run(`with proxy from value source`, func(t *testing.T) {
 		instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{ValueFrom: testName}
-		volumeMounts := buildVolumeMounts(NewStatefulSetProperties(instance, capabilityProperties, "", "", "", "", "", nil, nil, nil))
+		volumeMounts := buildVolumeMounts(NewStatefulSetProperties(instance, capabilityProperties, "", "", "", "", "", nil, nil, nil, nil))
 
 		assert.Contains(t, volumeMounts, corev1.VolumeMount{
 			ReadOnly:  true,
@@ -645,7 +609,7 @@ func TestStatefulSet_VolumeMounts(t *testing.T) {
 	t.Run(`with proxy from value source and feature flag to ignore proxy on activeGate enabled`, func(t *testing.T) {
 		instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{ValueFrom: testName}
 		instance.Annotations[dynatracev1beta1.AnnotationFeatureActiveGateIgnoreProxy] = "true"
-		volumeMounts := buildVolumeMounts(NewStatefulSetProperties(instance, capabilityProperties, "", "", "", "", "", nil, nil, nil))
+		volumeMounts := buildVolumeMounts(NewStatefulSetProperties(instance, capabilityProperties, "", "", "", "", "", nil, nil, nil, nil))
 
 		assert.NotContains(t, volumeMounts, corev1.VolumeMount{
 			ReadOnly:  true,
@@ -678,7 +642,7 @@ func TestStatefulSet_VolumeMounts(t *testing.T) {
 	t.Run(`with activeGateAuthToken`, func(t *testing.T) {
 		instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
 		instance.Annotations[dynatracev1beta1.AnnotationFeatureEnableActiveGateAuthToken] = "true"
-		volumeMounts := buildVolumeMounts(NewStatefulSetProperties(instance, capabilityProperties, "", "", "", "", "", nil, nil, nil))
+		volumeMounts := buildVolumeMounts(NewStatefulSetProperties(instance, capabilityProperties, "", "", "", "", "", nil, nil, nil, nil))
 
 		assert.Contains(t, volumeMounts, corev1.VolumeMount{
 			ReadOnly:  true,
@@ -716,10 +680,7 @@ func TestStatefulSet_Resources(t *testing.T) {
 		},
 	}
 
-	container := buildActiveGateContainer(NewStatefulSetProperties(instance, capabilityProperties,
-		"", "", "", "", "",
-		nil, nil, nil,
-	))
+	container := buildActiveGateContainer(NewStatefulSetProperties(instance, capabilityProperties, "", "", "", "", "", nil, nil, nil, nil))
 
 	assert.True(t, quantityCpuLimit.Equal(container.Resources.Limits[corev1.ResourceCPU]))
 	assert.True(t, quantityMemoryLimit.Equal(container.Resources.Limits[corev1.ResourceMemory]))
@@ -731,7 +692,7 @@ func TestStatefulSet_DNSPolicy(t *testing.T) {
 	instance := buildTestInstance()
 	capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
 
-	podSpec := buildTemplateSpec(NewStatefulSetProperties(instance, capabilityProperties, "", "", "", "", "", nil, nil, nil))
+	podSpec := buildTemplateSpec(NewStatefulSetProperties(instance, capabilityProperties, "", "", "", "", "", nil, nil, nil, nil))
 
 	assert.Equal(t, testDNSPolicy, podSpec.DNSPolicy)
 }

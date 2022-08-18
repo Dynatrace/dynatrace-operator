@@ -11,4 +11,4 @@ const (
 	HttpServicePort      = 80
 )
 
-var log = logger.NewDTLogger().WithName("activegate-capability")
+var log = logger.NewDTLogger().WithName("dynakube-activegate-capability")

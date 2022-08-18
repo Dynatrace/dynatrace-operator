@@ -21,7 +21,6 @@ const (
 	InternalProxySecretPassword          = "password"
 	InternalProxySecretPasswordMountPath = InternalProxySecretMountPath + "/" + InternalProxySecretPassword
 
-	ContainerName           = "activegate"
 	GatewayConfigVolumeName = "ag-lib-gateway-config"
 	GatewayTempVolumeName   = "ag-lib-gateway-temp"
 	GatewayDataVolumeName   = "ag-lib-gateway-data"
@@ -34,18 +33,8 @@ const (
 	GatewaySslMountPoint    = "/var/lib/dynatrace/gateway/ssl"
 	LogMountPoint           = "/var/log/dynatrace/gateway"
 	TmpMountPoint           = "/var/tmp/dynatrace/gateway"
-
-	ProxySecretSuffix = "internal-proxy"
-
-	EecContainerName       = ContainerName + "-eec"
-	StatsdContainerName    = ContainerName + "-statsd"
-	StatsdIngestPortName   = "statsd"
-	StatsdIngestPort       = 18125
-	StatsdIngestTargetPort = "statsd-port"
-
-	MultiActiveGateName = "activegate"
 )
 
 var (
-	log = logger.NewDTLogger().WithName("activegate-statefulset")
+	log = logger.NewDTLogger().WithName("dynakube-activegate-statefulset")
 )

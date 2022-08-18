@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,10 +35,10 @@ func createService(dynakube *dynatracev1beta1.DynaKube, feature string, serviceP
 	if servicePorts.Statsd {
 		ports = append(ports,
 			corev1.ServicePort{
-				Name:       statefulset.StatsdIngestPortName,
+				Name:       consts.StatsdIngestPortName,
 				Protocol:   corev1.ProtocolUDP,
-				Port:       statefulset.StatsdIngestPort,
-				TargetPort: intstr.FromString(statefulset.StatsdIngestTargetPort),
+				Port:       consts.StatsdIngestPort,
+				TargetPort: intstr.FromString(consts.StatsdIngestTargetPort),
 			},
 		)
 	}

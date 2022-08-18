@@ -6,8 +6,9 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/customproperties"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/stretchr/testify/assert"
@@ -67,7 +68,7 @@ type testBaseReconciler struct {
 	mock.Mock
 }
 
-func (r *testBaseReconciler) AddOnAfterStatefulSetCreateListener(_ statefulset.StatefulSetEvent) {}
+func (r *testBaseReconciler) AddOnAfterStatefulSetCreateListener(_ kubeobjects.StatefulSetEvent) {}
 
 func (r *testBaseReconciler) Reconcile() (update bool, err error) {
 	args := r.Called()
@@ -151,10 +152,10 @@ func TestReconcile(t *testing.T) {
 		TargetPort: intstr.FromString(HttpServicePortName),
 	}
 	statsdIngestServicePort := corev1.ServicePort{
-		Name:       statefulset.StatsdIngestPortName,
+		Name:       consts.StatsdIngestPortName,
 		Protocol:   corev1.ProtocolUDP,
-		Port:       statefulset.StatsdIngestPort,
-		TargetPort: intstr.FromString(statefulset.StatsdIngestTargetPort),
+		Port:       consts.StatsdIngestPort,
+		TargetPort: intstr.FromString(consts.StatsdIngestTargetPort),
 	}
 
 	t.Run(`reconcile custom properties`, func(t *testing.T) {
@@ -243,13 +244,7 @@ func TestReconcile(t *testing.T) {
 		reconcileAndExpectUpdate(r, true)
 		{
 			statefulSet := assertStatefulSetExists(r)
-			found := 0
-			for _, vm := range statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts {
-				if vm.Name == statefulset.InternalProxySecretVolumeName {
-					found = found + 1
-				}
-			}
-			assert.Equal(t, 0, found)
+			assert.Equal(t, 0, len(statefulSet.Spec.Template.Spec.Containers[0].Env))
 		}
 
 		r.Dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
@@ -264,11 +259,11 @@ func TestReconcile(t *testing.T) {
 					Template: corev1.PodTemplateSpec{
 						Spec: corev1.PodSpec{
 							Containers: []corev1.Container{{
-								VolumeMounts: []corev1.VolumeMount{
-									{Name: statefulset.InternalProxySecretVolumeName},
-									{Name: statefulset.InternalProxySecretVolumeName},
-									{Name: statefulset.InternalProxySecretVolumeName},
-									{Name: statefulset.InternalProxySecretVolumeName},
+								Env: []corev1.EnvVar{
+									{Name: "a", Value: "a"},
+									{Name: "b", Value: "b"},
+									{Name: "c", Value: "c"},
+									{Name: "d", Value: "d"},
 								},
 							}},
 						},
@@ -281,13 +276,7 @@ func TestReconcile(t *testing.T) {
 		reconcileAndExpectUpdate(r, true)
 		{
 			statefulSet := assertStatefulSetExists(r)
-			found := 0
-			for _, vm := range statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts {
-				if vm.Name == statefulset.InternalProxySecretVolumeName {
-					found = found + 1
-				}
-			}
-			assert.Equal(t, 4, found)
+			assert.Equal(t, 4, len(statefulSet.Spec.Template.Spec.Containers[0].Env))
 		}
 	})
 	t.Run(`create service`, func(t *testing.T) {
@@ -453,25 +442,6 @@ func TestReconcile(t *testing.T) {
 	})
 }
 
-func TestSetReadinessProbePort(t *testing.T) {
-	r, _ := createDefaultReconciler(t)
-	stsProps := statefulset.NewStatefulSetProperties(r.Dynakube, metricsCapability.Properties(), "", "", "", "", "",
-		nil, nil, nil,
-	)
-	sts, err := statefulset.CreateStatefulSet(stsProps)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, sts)
-
-	setReadinessProbePort()(sts)
-
-	assert.NotEmpty(t, sts.Spec.Template.Spec.Containers)
-	assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].ReadinessProbe)
-	assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].ReadinessProbe.HTTPGet)
-	assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].ReadinessProbe.HTTPGet.Port)
-	assert.Equal(t, HttpsServicePortName, sts.Spec.Template.Spec.Containers[0].ReadinessProbe.HTTPGet.Port.String())
-}
-
 func TestReconciler_calculateStatefulSetName(t *testing.T) {
 	type fields struct {
 		Instance   *dynatracev1beta1.DynaKube
@@ -543,20 +513,20 @@ func TestGetContainerByName(t *testing.T) {
 	t.Run("non-empty collection but cannot match name", func(t *testing.T) {
 		verify(t,
 			[]corev1.Container{
-				{Name: statefulset.ContainerName},
-				{Name: statefulset.StatsdContainerName},
+				{Name: consts.ActiveGateContainerName},
+				{Name: consts.StatsdContainerName},
 			},
-			statefulset.EecContainerName,
-			fmt.Sprintf(`Cannot find container "%s" in the provided slice (len 2)`, statefulset.EecContainerName),
+			consts.EecContainerName,
+			fmt.Sprintf(`Cannot find container "%s" in the provided slice (len 2)`, consts.EecContainerName),
 		)
 	})
 
 	t.Run("happy path", func(t *testing.T) {
 		verify(t,
 			[]corev1.Container{
-				{Name: statefulset.StatsdContainerName},
+				{Name: consts.StatsdContainerName},
 			},
-			statefulset.StatsdContainerName,
+			consts.StatsdContainerName,
 			"",
 		)
 	})
