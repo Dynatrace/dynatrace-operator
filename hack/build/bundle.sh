@@ -28,6 +28,7 @@ fi
 
 SDK_PARAMS=(
 --extra-service-accounts dynatrace-dynakube-oneagent-unprivileged
+--extra-service-accounts dynatrace-dynakube-oneagent-privileged
 --extra-service-accounts dynatrace-kubernetes-monitoring
 --extra-service-accounts dynatrace-activegate
 )

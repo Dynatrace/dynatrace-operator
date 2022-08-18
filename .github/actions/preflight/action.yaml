@@ -1,0 +1,54 @@
+name: Preflight
+description: Does the preflight check
+inputs:
+  version:
+    description: The version the image is for
+    required: true
+  registry:
+    description: The registry where the image is uploaded
+    required: true
+  repository:
+    description: The repository in the registry where the image is uploaded
+    required: true
+  report-name:
+    description: The name of the output report
+    required: true
+  redhat-project-id:
+    description: The id for the redhat project.
+    required: true
+  pyxis-api-token:
+    description: The pyxis api token
+    required: true
+  rhcc-username:
+    description: The username to access rhcc
+    required: true
+  rhcc-password:
+    description: The password to access rhcc
+    required: true
+
+
+runs:
+  using: "composite"
+  steps:
+  - name: Checkout
+    uses: actions/checkout@v2
+  - name: Login to Registry
+    uses: docker/login-action@v1
+    with:
+      registry: ${{ inputs.registry }}
+      username: ${{ inputs.rhcc-username }}
+      password: ${{ inputs.rhcc-password }}
+  - name: Run preflight on image
+    shell: bash
+    env:
+      RHCC_APITOKEN: ${{ inputs.pyxis-api-token }}
+      RHCC_PROJECT_ID: ${{ inputs.redhat-project-id }}
+      PREFLIGHT_VERSION: "1.3.4"
+      IMAGE_URI: ${{ inputs.registry }}/${{ inputs.repository }}:${{ inputs.version }}
+    run: |
+      hack/build/ci/preflight.sh "${{ env.PREFLIGHT_VERSION }}" "${{ env.IMAGE_URI}}" "${{ inputs.report-name }}"
+  - name: Upload report
+    uses: actions/upload-artifact@v3
+    with:
+      name: preflight-report
+      path: ${{ inputs.report-name }}
