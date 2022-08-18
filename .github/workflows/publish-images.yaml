@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3
       - name: Prepare build parameters
         id: prep
         run: |
@@ -25,7 +25,7 @@ jobs:
       version: ${{ steps.prep.outputs.docker_image_tag }}
       go-linker-args: ${{ steps.prep.outputs.go_linker_args }}
       cgo-cflags: ${{ steps.prep.outputs.cgo_cflags }}
-      go-version: "1.18"
+      go-version: "1.19"
 
   # Workflow needs to build docker images again as separate workflows don't have access to others artifacts
   # https://github.com/actions/download-artifact/issues/3
@@ -35,7 +35,7 @@ jobs:
     needs: [prepare]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3
       - name: build-image
         uses: ./.github/actions/build-image
         with:
@@ -52,7 +52,7 @@ jobs:
     needs: [prepare]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3
       - name: Build Image
         uses: ./.github/actions/build-image
         with:
@@ -90,7 +90,7 @@ jobs:
             password: DOCKERHUB_PASSWORD
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3
       - name: Push ${{matrix.platform}} to ${{matrix.registry-name}}
         uses: ./.github/actions/upload-image
         if: matrix.registry-name != 'rhcc' || ( matrix.registry-name == 'rhcc' && matrix.platform == 'amd64' )
@@ -136,7 +136,7 @@ jobs:
             password: DOCKERHUB_PASSWORD
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3
       - name: Create manifests for ${{matrix.registry}}
         uses: ./.github/actions/create-manifests
         with:

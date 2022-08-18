@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/Dynatrace/dynatrace-operator/src/installer/zip"
 	"github.com/containers/image/v5/copy"
 	"github.com/containers/image/v5/manifest"
 	"github.com/containers/image/v5/signature"
@@ -73,7 +72,7 @@ func (installer ImageInstaller) unpackOciImage(manifests []*manifest.OCI1, image
 			switch layer.MediaType {
 			case ocispec.MediaTypeImageLayerGzip:
 				sourcePath := filepath.Join(imageCacheDir, "blobs", layer.Digest.Algorithm().String(), layer.Digest.Hex())
-				if err := zip.ExtractGzip(installer.fs, sourcePath, targetDir); err != nil {
+				if err := installer.extractor.ExtractGzip(sourcePath, targetDir); err != nil {
 					return err
 				}
 			case ocispec.MediaTypeImageLayerZstd:

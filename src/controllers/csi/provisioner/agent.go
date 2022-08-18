@@ -39,7 +39,7 @@ func newAgentUrlUpdater(
 	tenantUUID := dk.ConnectionInfo().TenantUUID
 	targetVersion := dk.CodeModulesVersion()
 
-	agentInstaller := url.NewUrlInstaller(fs, dtc, getUrlProperties(targetVersion, previousVersion))
+	agentInstaller := url.NewUrlInstaller(fs, dtc, getUrlProperties(targetVersion, previousVersion, path))
 	eventRecorder := updaterEventRecorder{
 		recorder: recorder,
 		dynakube: dk,
@@ -89,7 +89,7 @@ func newAgentImageUpdater(
 
 }
 
-func getUrlProperties(targetVersion, previousVersion string) *url.Properties {
+func getUrlProperties(targetVersion, previousVersion string, pathResolver metadata.PathResolver) *url.Properties {
 	return &url.Properties{
 		Os:              dtclient.OsUnix,
 		Type:            dtclient.InstallerTypePaaS,
@@ -98,6 +98,7 @@ func getUrlProperties(targetVersion, previousVersion string) *url.Properties {
 		Technologies:    []string{"all"},
 		PreviousVersion: previousVersion,
 		TargetVersion:   targetVersion,
+		PathResolver:    pathResolver,
 	}
 }
 
