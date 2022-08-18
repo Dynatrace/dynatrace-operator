@@ -6,35 +6,63 @@ import (
 	"github.com/go-logr/logr"
 )
 
+const (
+	defaultMaxFailedMountAttempts = 3
+)
+
 // Stores the necessary info from the Dynakube that is needed to be used during volume mount/unmount.
 type Dynakube struct {
-	Name          string `json:"name"`
-	TenantUUID    string `json:"tenantUUID"`
-	LatestVersion string `json:"latestVersion"`
-	ImageDigest   string `json:"imageDigest"`
+	Name                   string `json:"name"`
+	TenantUUID             string `json:"tenantUUID"`
+	LatestVersion          string `json:"latestVersion"`
+	ImageDigest            string `json:"imageDigest"`
+	MaxFailedMountAttempts int    `json:"maxFailedMountAttempts"`
 }
 
 // NewDynakube returns a new metadata.Dynakube if all fields are set.
-func NewDynakube(dynakubeName, tenantUUID, latestVersion string, imageDigest string) *Dynakube {
+func NewDynakube(dynakubeName, tenantUUID, latestVersion, imageDigest string, maxFailedMountAttempts int) *Dynakube {
 	if tenantUUID == "" || dynakubeName == "" {
 		return nil
 	}
-	return &Dynakube{dynakubeName, tenantUUID, latestVersion, imageDigest}
+
+	if maxFailedMountAttempts < 0 {
+		maxFailedMountAttempts = defaultMaxFailedMountAttempts
+	}
+
+	return &Dynakube{
+		Name:                   dynakubeName,
+		TenantUUID:             tenantUUID,
+		LatestVersion:          latestVersion,
+		ImageDigest:            imageDigest,
+		MaxFailedMountAttempts: maxFailedMountAttempts,
+	}
 }
 
 type Volume struct {
-	VolumeID   string `json:"volumeID"`
-	PodName    string `json:"podName"`
-	Version    string `json:"version"`
-	TenantUUID string `json:"tenantUUID"`
+	VolumeID      string `json:"volumeID"`
+	PodName       string `json:"podName"`
+	Version       string `json:"version"`
+	TenantUUID    string `json:"tenantUUID"`
+	MountAttempts int    `json:"mountAttempts"`
 }
 
 // NewVolume returns a new Volume if all fields are set.
-func NewVolume(id, podUID, version, tenantUUID string) *Volume {
-	if id == "" || podUID == "" || version == "" || tenantUUID == "" {
+func NewVolume(id, podName, version, tenantUUID string, mountAttempts int) *Volume {
+	if id == "" || podName == "" || version == "" || tenantUUID == "" {
 		return nil
 	}
-	return &Volume{id, podUID, version, tenantUUID}
+
+	if mountAttempts < 0 {
+		mountAttempts = 0
+	}
+
+	return &Volume{
+		VolumeID:      id,
+		PodName:       podName,
+		Version:       version,
+		TenantUUID:    tenantUUID,
+		MountAttempts: mountAttempts,
+	}
 }
 
 type OsAgentVolume struct {

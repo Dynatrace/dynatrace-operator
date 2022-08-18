@@ -273,7 +273,7 @@ func (access *SqliteAccess) GetDynakube(dynakubeName string) (*Dynakube, error) 
 	if err != nil {
 		err = errors.WithMessagef(err, "couldn't get dynakube, name '%s'", dynakubeName)
 	}
-	return NewDynakube(dynakubeName, tenantUUID, latestVersion, imageDigest), err
+	return NewDynakube(dynakubeName, tenantUUID, latestVersion, imageDigest, 0), err
 }
 
 // InsertVolume inserts a new Volume
@@ -298,7 +298,7 @@ func (access *SqliteAccess) GetVolume(volumeID string) (*Volume, error) {
 	if err != nil {
 		err = errors.WithMessagef(err, "couldn't get volume field for volume id '%s'", volumeID)
 	}
-	return NewVolume(volumeID, podName, version, tenantUUID), err
+	return NewVolume(volumeID, podName, version, tenantUUID, 0), err
 }
 
 // DeleteVolume deletes a Volume by its ID
@@ -377,7 +377,7 @@ func (access *SqliteAccess) GetAllVolumes() ([]*Volume, error) {
 		if err != nil {
 			return nil, errors.WithStack(errors.WithMessage(err, "couldn't scan volume from database"))
 		}
-		volumes = append(volumes, NewVolume(id, podName, version, tenantUUID))
+		volumes = append(volumes, NewVolume(id, podName, version, tenantUUID, 0))
 	}
 	return volumes, nil
 }
@@ -399,7 +399,7 @@ func (access *SqliteAccess) GetAllDynakubes() ([]*Dynakube, error) {
 		if err != nil {
 			return nil, errors.WithStack(errors.WithMessage(err, "couldn't scan dynakube from database"))
 		}
-		dynakubes = append(dynakubes, NewDynakube(name, tenantUUID, version, imageDigest))
+		dynakubes = append(dynakubes, NewDynakube(name, tenantUUID, version, imageDigest, 0))
 	}
 	return dynakubes, nil
 }
