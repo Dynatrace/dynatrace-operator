@@ -15,7 +15,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -28,14 +27,9 @@ type Reconciler struct {
 	Dynakube                         *dynatracev1beta1.DynaKube
 	apiReader                        client.Reader
 	scheme                           *runtime.Scheme
-	feature                          string
-	capabilityName                   string
 	serviceAccountOwner              string
-	capability                       *dynatracev1beta1.CapabilityProperties
 	onAfterStatefulSetCreateListener []statefulset.StatefulSetEvent
-	initContainersTemplates          []corev1.Container
-	containerVolumeMounts            []corev1.VolumeMount
-	volumes                          []corev1.Volume
+	capability                       capability.Capability
 }
 
 func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme,
@@ -51,14 +45,9 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 		apiReader:                        apiReader,
 		scheme:                           scheme,
 		Dynakube:                         dynakube,
-		feature:                          capability.ShortName(),
-		capabilityName:                   capability.ArgName(),
+		capability:                       capability,
 		serviceAccountOwner:              serviceAccountOwner,
-		capability:                       capability.Properties(),
 		onAfterStatefulSetCreateListener: []statefulset.StatefulSetEvent{},
-		initContainersTemplates:          capability.InitContainersTemplates(),
-		containerVolumeMounts:            capability.ContainerVolumeMounts(),
-		volumes:                          capability.Volumes(),
 	}
 }
 
@@ -67,8 +56,8 @@ func (r *Reconciler) AddOnAfterStatefulSetCreateListener(event statefulset.State
 }
 
 func (r *Reconciler) Reconcile() (update bool, err error) {
-	if r.capability.CustomProperties != nil {
-		err = customproperties.NewReconciler(r, r.Dynakube, r.serviceAccountOwner, *r.capability.CustomProperties, r.scheme).
+	if r.capability.Properties().CustomProperties != nil {
+		err = customproperties.NewReconciler(r, r.Dynakube, r.serviceAccountOwner, *r.capability.Properties().CustomProperties, r.scheme).
 			Reconcile()
 		if err != nil {
 			log.Error(err, "could not reconcile custom properties")
@@ -124,8 +113,8 @@ func (r *Reconciler) buildDesiredStatefulSet() (*appsv1.StatefulSet, error) {
 	}
 
 	stsProperties := statefulset.NewStatefulSetProperties(
-		r.Dynakube, r.capability, kubeUID, activeGateConfigurationHash, r.feature, r.capabilityName, r.serviceAccountOwner,
-		r.initContainersTemplates, r.containerVolumeMounts, r.volumes)
+		r.Dynakube, r.capability.Properties(), kubeUID, activeGateConfigurationHash, r.capability.ShortName(), r.capability.ArgName(), r.serviceAccountOwner,
+		r.capability.InitContainersTemplates(), r.capability.ContainerVolumeMounts(), r.capability.Volumes())
 	stsProperties.OnAfterCreateListener = r.onAfterStatefulSetCreateListener
 
 	desiredSts, err := statefulset.CreateStatefulSet(stsProperties)
@@ -144,7 +133,7 @@ func (r *Reconciler) getStatefulSet(desiredSts *appsv1.StatefulSet) (*appsv1.Sta
 func (r *Reconciler) createStatefulSetIfNotExists(desiredSts *appsv1.StatefulSet) (bool, error) {
 	_, err := r.getStatefulSet(desiredSts)
 	if err != nil && k8serrors.IsNotFound(errors.Cause(err)) {
-		log.Info("creating new stateful set for " + r.feature)
+		log.Info("creating new stateful set for " + r.capability.ShortName())
 		return true, r.Create(context.TODO(), desiredSts)
 	}
 	return false, err
@@ -225,11 +214,11 @@ func (r *Reconciler) calculateActiveGateConfigurationHash() (string, error) {
 }
 
 func (r *Reconciler) getCustomPropertyValue() (string, error) {
-	if !needsCustomPropertyHash(r.capability.CustomProperties) {
+	if !needsCustomPropertyHash(r.capability.Properties().CustomProperties) {
 		return "", nil
 	}
 
-	customPropertyData, err := r.getDataFromCustomProperty(r.capability.CustomProperties)
+	customPropertyData, err := r.getDataFromCustomProperty(r.capability.Properties().CustomProperties)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
