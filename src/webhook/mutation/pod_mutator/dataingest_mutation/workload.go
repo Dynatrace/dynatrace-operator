@@ -45,8 +45,7 @@ func findRootOwnerOfPod(ctx context.Context, clt client.Client, pod *corev1.Pod,
 			Kind:       pod.Kind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:         pod.ObjectMeta.Name,
-			GenerateName: pod.ObjectMeta.GenerateName, // partial name, that is not enough to match workload
+			Name: pod.ObjectMeta.Name,
 			// pod.ObjectMeta.Namespace is empty yet
 			Namespace:       namespace,
 			OwnerReferences: pod.ObjectMeta.OwnerReferences,
@@ -61,7 +60,7 @@ func findRootOwnerOfPod(ctx context.Context, clt client.Client, pod *corev1.Pod,
 
 func findRootOwner(ctx context.Context, clt client.Client, partialObjectMetadata *metav1.PartialObjectMetadata) (workloadInfo, error) {
 	if len(partialObjectMetadata.ObjectMeta.OwnerReferences) == 0 {
-		if partialObjectMetadata.ObjectMeta.Name == "" && partialObjectMetadata.GenerateName != "" {
+		if partialObjectMetadata.ObjectMeta.Name == "" {
 			// pod is not created directly and does not have an owner reference set
 			return newUnknownWorkloadInfo(), nil
 		}

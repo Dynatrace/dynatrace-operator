@@ -115,9 +115,6 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 			TypeMeta: metav1.TypeMeta{
 				Kind: "Pod",
 			},
-			ObjectMeta: metav1.ObjectMeta{
-				GenerateName: resourceName,
-			},
 		}
 		client := fake.NewClient(&pod)
 		workloadInfo, err := findRootOwnerOfPod(ctx, client, &pod, namespaceName)
