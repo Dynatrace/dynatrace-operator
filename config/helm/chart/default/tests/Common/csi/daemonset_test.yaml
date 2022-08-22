@@ -23,6 +23,9 @@ tests:
           - effect: NoSchedule
             key: node-role.kubernetes.io/control-plane
             operator: Exists
+          - effect: NoSchedule
+            key: ToBeDeletedByClusterAutoscaler
+            operator: Exists
 
   - it: should have nodeSelectors if set
     set:
@@ -73,6 +76,9 @@ tests:
                   operator: Exists
                 - effect: NoSchedule
                   key: node-role.kubernetes.io/control-plane
+                  operator: Exists
+                - effect: NoSchedule
+                  key: ToBeDeletedByClusterAutoscaler
                   operator: Exists
             containers:
               - args:
@@ -320,6 +326,7 @@ tests:
       - equal:
           path: spec.template.metadata.annotations
           value:
+            cluster-autoscaler.kubernetes.io/enable-ds-eviction: "false"
             kubectl.kubernetes.io/default-container: provisioner
             testKey: testValue
 

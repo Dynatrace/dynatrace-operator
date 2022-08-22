@@ -62,7 +62,7 @@ spec:
   #   matchExpressions:
   #    - key: app
   #      operator: In
-  #      values: [my-frontend, my-backend, my-database]}
+  #      values: [my-frontend, my-backend, my-database]
 
   # Configuration for OneAgent instances
   #
