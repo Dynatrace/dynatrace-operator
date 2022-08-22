@@ -109,6 +109,22 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 		assert.Equal(t, "UNKNOWN", workloadInfo.name)
 		assert.Equal(t, "UNKNOWN", workloadInfo.kind)
 	})
+
+	t.Run("should be empty if owner is not set, but name is empty", func(t *testing.T) {
+		pod := corev1.Pod{
+			TypeMeta: metav1.TypeMeta{
+				Kind: "Pod",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: resourceName,
+			},
+		}
+		client := fake.NewClient(&pod)
+		workloadInfo, err := findRootOwnerOfPod(ctx, client, &pod, namespaceName)
+		require.NoError(t, err)
+		assert.Equal(t, "UNKNOWN", workloadInfo.name)
+		assert.Equal(t, "UNKNOWN", workloadInfo.kind)
+	})
 }
 
 func createTestWorkloadInfo() *workloadInfo {

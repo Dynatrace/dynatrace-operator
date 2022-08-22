@@ -23,6 +23,13 @@ func newWorkloadInfo(partialObjectMetadata *metav1.PartialObjectMetadata) worklo
 	}
 }
 
+func newUnknownWorkloadInfo() workloadInfo {
+	return workloadInfo{
+		name: config.UnknownWorkload,
+		kind: config.UnknownWorkload,
+	}
+}
+
 func (mutator *DataIngestPodMutator) retrieveWorkload(request *dtwebhook.MutationRequest) (*workloadInfo, error) {
 	workload, err := findRootOwnerOfPod(request.Context, mutator.metaClient, request.Pod, request.Namespace.Name)
 	if err != nil {
@@ -38,7 +45,8 @@ func findRootOwnerOfPod(ctx context.Context, clt client.Client, pod *corev1.Pod,
 			Kind:       pod.Kind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: pod.ObjectMeta.Name,
+			Name:         pod.ObjectMeta.Name,
+			GenerateName: pod.ObjectMeta.GenerateName, // partial name, that is not enough to match workload
 			// pod.ObjectMeta.Namespace is empty yet
 			Namespace:       namespace,
 			OwnerReferences: pod.ObjectMeta.OwnerReferences,
@@ -53,6 +61,10 @@ func findRootOwnerOfPod(ctx context.Context, clt client.Client, pod *corev1.Pod,
 
 func findRootOwner(ctx context.Context, clt client.Client, partialObjectMetadata *metav1.PartialObjectMetadata) (workloadInfo, error) {
 	if len(partialObjectMetadata.ObjectMeta.OwnerReferences) == 0 {
+		if partialObjectMetadata.ObjectMeta.Name == "" && partialObjectMetadata.GenerateName != "" {
+			// pod is not created directly and does not have an owner reference set
+			return newUnknownWorkloadInfo(), nil
+		}
 		return newWorkloadInfo(partialObjectMetadata), nil
 	}
 
@@ -60,10 +72,8 @@ func findRootOwner(ctx context.Context, clt client.Client, partialObjectMetadata
 	for _, owner := range objectMetadata.OwnerReferences {
 		if owner.Controller != nil && *owner.Controller {
 			if !isWellKnownWorkload(owner) {
-				return workloadInfo{
-					name: config.UnknownWorkload,
-					kind: config.UnknownWorkload,
-				}, nil
+				// pod is created by workload of kind that is not well known
+				return newUnknownWorkloadInfo(), nil
 			}
 
 			ownerObjectMetadata := &metav1.PartialObjectMetadata{
