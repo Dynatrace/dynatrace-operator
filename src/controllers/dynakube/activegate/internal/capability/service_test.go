@@ -6,7 +6,6 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/testinghelpers"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/stretchr/testify/assert"
@@ -84,8 +83,8 @@ func TestCreateService(t *testing.T) {
 		desiredPorts := capability.AgServicePorts{
 			Webserver: true,
 		}
-		testinghelpers.DoTestSetCapability(instance, dynatracev1beta1.MetricsIngestCapability, true)
-		testinghelpers.DoTestSetCapability(instance, dynatracev1beta1.StatsdIngestCapability, false)
+		kubeobjects.SwitchCapability(instance, dynatracev1beta1.MetricsIngestCapability, true)
+		kubeobjects.SwitchCapability(instance, dynatracev1beta1.StatsdIngestCapability, false)
 		require.True(t, !instance.NeedsStatsd())
 		require.True(t, desiredPorts.HasPorts())
 
@@ -102,8 +101,8 @@ func TestCreateService(t *testing.T) {
 			Webserver: true,
 			Statsd:    true,
 		}
-		testinghelpers.DoTestSetCapability(instance, dynatracev1beta1.MetricsIngestCapability, true)
-		testinghelpers.DoTestSetCapability(instance, dynatracev1beta1.StatsdIngestCapability, desiredPorts.Statsd)
+		kubeobjects.SwitchCapability(instance, dynatracev1beta1.MetricsIngestCapability, true)
+		kubeobjects.SwitchCapability(instance, dynatracev1beta1.StatsdIngestCapability, desiredPorts.Statsd)
 		require.True(t, instance.NeedsStatsd())
 		require.True(t, desiredPorts.HasPorts())
 
@@ -118,8 +117,8 @@ func TestCreateService(t *testing.T) {
 		desiredPorts := capability.AgServicePorts{
 			Statsd: true,
 		}
-		testinghelpers.DoTestSetCapability(instance, dynatracev1beta1.MetricsIngestCapability, false)
-		testinghelpers.DoTestSetCapability(instance, dynatracev1beta1.StatsdIngestCapability, true)
+		kubeobjects.SwitchCapability(instance, dynatracev1beta1.MetricsIngestCapability, false)
+		kubeobjects.SwitchCapability(instance, dynatracev1beta1.StatsdIngestCapability, true)
 		require.True(t, instance.NeedsStatsd())
 		require.True(t, desiredPorts.HasPorts())
 
@@ -133,8 +132,8 @@ func TestCreateService(t *testing.T) {
 	t.Run("check AG service if StatsD and metrics ingest are disabled", func(t *testing.T) {
 		instance := testCreateInstance()
 		desiredPorts := capability.AgServicePorts{}
-		testinghelpers.DoTestSetCapability(instance, dynatracev1beta1.MetricsIngestCapability, false)
-		testinghelpers.DoTestSetCapability(instance, dynatracev1beta1.StatsdIngestCapability, false)
+		kubeobjects.SwitchCapability(instance, dynatracev1beta1.MetricsIngestCapability, false)
+		kubeobjects.SwitchCapability(instance, dynatracev1beta1.StatsdIngestCapability, false)
 		require.True(t, !instance.NeedsStatsd())
 		require.False(t, desiredPorts.HasPorts())
 

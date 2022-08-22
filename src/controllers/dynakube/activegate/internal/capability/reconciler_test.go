@@ -9,7 +9,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/customproperties"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/testinghelpers"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
@@ -112,10 +111,10 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, updateExpected, update)
 	}
 	setStatsdCapability := func(r *Reconciler, wantEnabled bool) {
-		testinghelpers.DoTestSetCapability(r.Dynakube, dynatracev1beta1.StatsdIngestCapability, wantEnabled)
+		kubeobjects.SwitchCapability(r.Dynakube, dynatracev1beta1.StatsdIngestCapability, wantEnabled)
 	}
 	setMetricsIngestCapability := func(r *Reconciler, wantEnabled bool) {
-		testinghelpers.DoTestSetCapability(r.Dynakube, dynatracev1beta1.MetricsIngestCapability, wantEnabled)
+		kubeobjects.SwitchCapability(r.Dynakube, dynatracev1beta1.MetricsIngestCapability, wantEnabled)
 	}
 
 	agIngestServicePort := corev1.ServicePort{
