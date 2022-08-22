@@ -132,6 +132,41 @@ Check if we need the csi driver.
 	{{- end -}}
 {{- end -}}
 
+{{/*
+CSI plugin-dir path
+*/}}
+{{- define "dynatrace-operator.CSIPluginDir" -}}
+	{{ printf "%s/plugins/csi.oneagent.dynatrace.com/" (default "/var/lib/kubelet" .Values.csidriver.kubeletPath) }}
+{{- end -}}
+
+{{/*
+CSI socket path
+*/}}
+{{- define "dynatrace-operator.CSISocketPath" -}}
+	{{ printf "%s/csi.sock" (trimSuffix "/" (include "dynatrace-operator.CSIPluginDir" .)) }}
+{{- end -}}
+
+{{/*
+CSI data-dir path
+*/}}
+{{- define "dynatrace-operator.CSIDataDir" -}}
+	{{ printf "%s/data" (trimSuffix "/" (include "dynatrace-operator.CSIPluginDir" .)) }}
+{{- end -}}
+
+
+{{/*
+CSI mountpoint-dir path
+*/}}
+{{- define "dynatrace-operator.CSIMountPointDir" -}}
+	{{ printf "%s/pods/" (trimSuffix "/" (default "/var/lib/kubelet" .Values.csidriver.kubeletPath)) }}
+{{- end -}}
+
+{{/*
+CSI registration-dir path
+*/}}
+{{- define "dynatrace-operator.CSIRegistrationDir" -}}
+	{{ printf "%s/plugins_registry/" (trimSuffix "/" (default "/var/lib/kubelet" .Values.csidriver.kubeletPath)) }}
+{{- end -}}
 
 {{/*
 Check if we are generating only a part of the yamls

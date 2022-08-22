@@ -54,7 +54,7 @@ spec:
         # - Needs access to the filesystem of pods on the node, and mount stuff to it,needs to read/write to it, needs root permissions to do so
         # - Needs access to a dedicated folder on the node to persist data, needs to read/write to it.
       - name: server
-        image: {{- include "dynatrace-operator.image" . | nindent 12 }}
+        image: {{ include "dynatrace-operator.image" . }}
         imagePullPolicy: Always
         args:
         - csi-server
@@ -108,7 +108,7 @@ spec:
         volumeMounts:
         - mountPath: /csi
           name: plugin-dir
-        - mountPath: /var/lib/kubelet/pods
+        - mountPath: {{ include "dynatrace-operator.CSIMountPointDir" . }}
           mountPropagation: Bidirectional
           name: mountpoint-dir
         - mountPath: /data
@@ -117,7 +117,7 @@ spec:
         - mountPath: /tmp
           name: tmp-dir
       - name: provisioner
-        image: {{- include "dynatrace-operator.image" . | nindent 12 }}
+        image: {{ include "dynatrace-operator.image" . }}
         imagePullPolicy: Always
         args:
           - csi-provisioner
@@ -172,18 +172,21 @@ spec:
         # Used for registering the driver with kubelet
         # - Needs access to the registration socket, needs to read/write to it, needs root permissions to do so.
       - name: registrar
-        image: {{- include "dynatrace-operator.image" . | nindent 12 }}
+        image: {{ include "dynatrace-operator.image" . }}
         imagePullPolicy: Always
+        env:
+        - name: DRIVER_REG_SOCK_PATH
+          value: {{ include "dynatrace-operator.CSISocketPath" . }}
         args:
         - --csi-address=/csi/csi.sock
-        - --kubelet-registration-path=/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/csi.sock
+        - --kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)
         command:
         - csi-node-driver-registrar
         livenessProbe:
           exec:
             command:
               - csi-node-driver-registrar
-              - --kubelet-registration-path=/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/csi.sock
+              - --kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)
               - --mode=kubelet-registration-probe
           failureThreshold: 3
           initialDelaySeconds: 30
@@ -211,12 +214,12 @@ spec:
           name: plugin-dir
         - mountPath: /registration
           name: registration-dir
-        - mountPath: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com
+        - mountPath: {{ include "dynatrace-operator.CSIPluginDir" . }}
           name: lockfile-dir
         # Used to make a gRPC request (Probe()) to the driver to check if its running
         # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.
       - name: liveness-probe
-        image: {{- include "dynatrace-operator.image" . | nindent 12 }}
+        image: {{ include "dynatrace-operator.image" . }}
         imagePullPolicy: Always
         args:
         - --csi-address=/csi/csi.sock
@@ -252,25 +255,26 @@ spec:
       priorityClassName: dynatrace-high-priority
       volumes:
       # This volume is where the registrar registers the plugin with kubelet
-      - hostPath:
-          path: /var/lib/kubelet/plugins_registry/
+      - name: registration-dir
+        hostPath:
+          path: {{ include "dynatrace-operator.CSIRegistrationDir" . }}
           type: Directory
-        name: registration-dir
         # This volume is where the socket for kubelet->driver communication is done
       - name: plugin-dir
         hostPath:
-          path: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com
+          path: {{ include "dynatrace-operator.CSIPluginDir" . }}
           type: DirectoryOrCreate
         # This volume is where the driver mounts volumes
-      - hostPath:
-          path: /var/lib/kubelet/pods
+      - name: mountpoint-dir
+        hostPath:
+          path: {{ include "dynatrace-operator.CSIMountPointDir" . }}
           type: DirectoryOrCreate
-        name: mountpoint-dir
         # This volume is where the driver persists data on the node
-      - hostPath:
-          path: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/data
+      - name: dynatrace-oneagent-data-dir
+        hostPath:
+          path: {{ include "dynatrace-operator.CSIDataDir" . }}
           type: DirectoryOrCreate
-        name: dynatrace-oneagent-data-dir
+
         # Used by the registrar to create its lockfile
       - name: lockfile-dir
         emptyDir: {}
