@@ -25,8 +25,8 @@ func newWorkloadInfo(partialObjectMetadata *metav1.PartialObjectMetadata) worklo
 
 func newUnknownWorkloadInfo() workloadInfo {
 	return workloadInfo{
-		name: config.UnknownWorkload,
-		kind: config.UnknownWorkload,
+		name: config.EnrichmentUnknownWorkload,
+		kind: config.EnrichmentUnknownWorkload,
 	}
 }
 
