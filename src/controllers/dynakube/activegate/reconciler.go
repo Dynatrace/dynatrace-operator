@@ -26,13 +26,13 @@ type Reconciler struct {
 	scheme                       *runtime.Scheme
 	authTokenReconciler          kubeobjects.PseudoReconciler
 	newStatefulsetReconcilerFunc statefulset.NewReconcilerFunc
+	newCapabilityReconcilerFunc  capabilityInternal.NewReconcilerFunc
 }
 
 var _ kubeobjects.PseudoReconciler = (*Reconciler)(nil)
 
 func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) *Reconciler {
 	authTokenReconciler := secrets.NewReconciler(clt, apiReader, scheme, dynakube, dtc)
-	newStatefulsetReconcilerFunc := statefulset.NewReconciler
 
 	return &Reconciler{
 		context:                      ctx,
@@ -41,7 +41,8 @@ func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Read
 		scheme:                       scheme,
 		Dynakube:                     dynakube,
 		authTokenReconciler:          authTokenReconciler,
-		newStatefulsetReconcilerFunc: newStatefulsetReconcilerFunc,
+		newStatefulsetReconcilerFunc: statefulset.NewReconciler,
+		newCapabilityReconcilerFunc:  capabilityInternal.NewReconciler,
 	}
 }
 
@@ -81,9 +82,8 @@ func (r *Reconciler) reconcileActiveGateProxySecret() (err error) {
 
 func (r *Reconciler) createCapability(agCapability capability.Capability) (updated bool, err error) {
 	statefulsetReconciler := r.newStatefulsetReconcilerFunc(r.Client, r.apiReader, r.scheme, r.Dynakube, agCapability)
-
-	reconciler := capabilityInternal.NewReconciler(r.Client, agCapability, r.Dynakube, statefulsetReconciler)
-	return reconciler.Reconcile()
+	capabilityReconciler := r.newCapabilityReconcilerFunc(r.Client, agCapability, r.Dynakube, statefulsetReconciler)
+	return capabilityReconciler.Reconcile()
 }
 
 func (r *Reconciler) deleteCapability(agCapability capability.Capability) error {

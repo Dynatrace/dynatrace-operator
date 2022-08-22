@@ -60,6 +60,8 @@ func NewReconciler(clt client.Client, capability capability.Capability, dynakube
 	}
 }
 
+type NewReconcilerFunc = func(clt client.Client, capability capability.Capability, dynakube *dynatracev1beta1.DynaKube, statefulsetReconciler statefulsetReconciler) *Reconciler
+
 func setReadinessProbePort() kubeobjects.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {
 		if activeGateContainer, err := getActiveGateContainer(sts); err == nil {
