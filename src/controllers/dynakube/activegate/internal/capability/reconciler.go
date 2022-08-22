@@ -37,6 +37,8 @@ type Reconciler struct {
 	Dynakube *dynatracev1beta1.DynaKube
 }
 
+var _ statefulsetReconciler = (*Reconciler)(nil)
+
 func NewReconciler(clt client.Client, capability capability.Capability, dynakube *dynatracev1beta1.DynaKube, statefulsetReconciler statefulsetReconciler) *Reconciler {
 	if capability.Config().SetDnsEntryPoint {
 		statefulsetReconciler.AddOnAfterStatefulSetCreateListener(addDNSEntryPoint(dynakube, capability.ShortName()))

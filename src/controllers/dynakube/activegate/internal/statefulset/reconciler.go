@@ -31,6 +31,8 @@ type Reconciler struct {
 	capability                       capability.Capability
 }
 
+var _ kubeobjects.PseudoReconciler = (*Reconciler)(nil)
+
 func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, capability capability.Capability) *Reconciler {
 	serviceAccountOwner := capability.Config().ServiceAccountOwner
 	if serviceAccountOwner == "" {
