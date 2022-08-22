@@ -17,7 +17,7 @@ FROM registry.access.redhat.com/ubi8-minimal:8.6 as dependency-src
 
 RUN  microdnf install util-linux && microdnf clean all
 
-FROM registry.access.redhat.com/ubi8-micro:8.6
+FROM registry.access.redhat.com/ubi9-micro:9.0.0
 
 # operator dependencies
 COPY --from=operator-build /etc/ssl/cert.pem /etc/ssl/cert.pem
