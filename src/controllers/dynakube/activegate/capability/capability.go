@@ -120,12 +120,12 @@ func CalculateStatefulSetName(capability Capability, dynakubeName string) string
 	return dynakubeName + "-" + capability.ShortName()
 }
 
-// Deprecated
+// Deprecated: Use MultiCapability instead
 type KubeMonCapability struct {
 	capabilityBase
 }
 
-// Deprecated
+// Deprecated: Use MultiCapability instead
 type RoutingCapability struct {
 	capabilityBase
 }
