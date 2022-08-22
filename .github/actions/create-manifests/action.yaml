@@ -13,26 +13,12 @@ inputs:
   combined:
     description: Should it create a combined manifests for amd64 and arm64 builds
     required: true
-  repository-username:
-    description: The username to access the registry/repository
-    required: true
-  repository-password:
-    description: The password to access the registry/repository
-    required: true
 runs:
   using: "composite"
   steps:
-    - name: Checkout
-      uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3
-    - name: Login to Quay
-      uses:  docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b # v2
-      with:
-        registry: ${{ inputs.registry }}
-        username: ${{ inputs.repository-username }}
-        password: ${{ inputs.repository-password }}
     - name: Create manifest
       env:
-        IMAGE_QUAY: ${{ inputs.registry }}/${{ inputs.repository }}
+        IMAGE: ${{ inputs.registry }}/${{ inputs.repository }}
       shell: bash
       run: |
-        hack/build/ci/create-manifest.sh "${IMAGE_QUAY}" "${{ inputs.version }}" ${{ inputs.combined }}
+        hack/build/ci/create-manifest.sh "${IMAGE}" "${{ inputs.version }}" ${{ inputs.combined }}
