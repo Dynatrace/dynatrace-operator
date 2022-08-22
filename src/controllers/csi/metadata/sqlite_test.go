@@ -145,13 +145,15 @@ func TestInsertDynakube(t *testing.T) {
 
 	var uuid, lv, name string
 	var imageDigest string
+	var maxMountAttempts int
 	row := db.conn.QueryRow(fmt.Sprintf("SELECT * FROM %s WHERE TenantUUID = ?;", dynakubesTableName), testDynakube1.TenantUUID)
-	err = row.Scan(&name, &uuid, &lv, &imageDigest)
+	err = row.Scan(&name, &uuid, &lv, &imageDigest, &maxMountAttempts)
 	require.NoError(t, err)
 	assert.Equal(t, testDynakube1.TenantUUID, uuid)
 	assert.Equal(t, testDynakube1.LatestVersion, lv)
 	assert.Equal(t, testDynakube1.Name, name)
 	assert.Equal(t, testDynakube1.ImageDigest, imageDigest)
+	assert.Equal(t, testDynakube1.MaxFailedMountAttempts, maxMountAttempts)
 }
 
 func TestGetDynakube_Empty(t *testing.T) {
@@ -183,17 +185,22 @@ func TestUpdateDynakube(t *testing.T) {
 	copyDynakube := testDynakube1
 	copyDynakube.LatestVersion = "132.546"
 	copyDynakube.ImageDigest = ""
+	copyDynakube.MaxFailedMountAttempts = 10
 	err = db.UpdateDynakube(&copyDynakube)
 	require.NoError(t, err)
 
 	var uuid, lv, name string
 	var imageDigest string
-	row := db.conn.QueryRow(fmt.Sprintf("SELECT Name, TenantUUID, LatestVersion, ImageDigest FROM %s WHERE Name = ?;", dynakubesTableName), copyDynakube.Name)
-	err = row.Scan(&name, &uuid, &lv, &imageDigest)
+	var maxFailedMountAttempts int
+
+	row := db.conn.QueryRow(fmt.Sprintf("SELECT Name, TenantUUID, LatestVersion, ImageDigest, MaxFailedMountAttempts FROM %s WHERE Name = ?;", dynakubesTableName), copyDynakube.Name)
+	err = row.Scan(&name, &uuid, &lv, &imageDigest, &maxFailedMountAttempts)
+
 	require.NoError(t, err)
 	assert.Equal(t, copyDynakube.TenantUUID, uuid)
 	assert.Equal(t, copyDynakube.LatestVersion, lv)
 	assert.Equal(t, copyDynakube.Name, name)
+	assert.Equal(t, copyDynakube.MaxFailedMountAttempts, maxFailedMountAttempts)
 	assert.Empty(t, imageDigest)
 }
 
@@ -310,23 +317,29 @@ func TestInsertVolume(t *testing.T) {
 	var puid string
 	var ver string
 	var tuid string
-	err = row.Scan(&id, &puid, &ver, &tuid)
+	var mountAttempts int
+	err = row.Scan(&id, &puid, &ver, &tuid, &mountAttempts)
+
 	require.NoError(t, err)
-	assert.Equal(t, id, testVolume1.VolumeID)
-	assert.Equal(t, puid, testVolume1.PodName)
-	assert.Equal(t, ver, testVolume1.Version)
-	assert.Equal(t, tuid, testVolume1.TenantUUID)
+	assert.Equal(t, testVolume1.VolumeID, id)
+	assert.Equal(t, testVolume1.PodName, puid)
+	assert.Equal(t, testVolume1.Version, ver)
+	assert.Equal(t, testVolume1.TenantUUID, tuid)
+	assert.Equal(t, testVolume1.MountAttempts, mountAttempts)
+
 	newPodName := "something-else"
 	testVolume1.PodName = newPodName
 	err = db.InsertVolume(&testVolume1)
 	require.NoError(t, err)
 	row = db.conn.QueryRow(fmt.Sprintf("SELECT * FROM %s WHERE ID = ?;", volumesTableName), testVolume1.VolumeID)
-	err = row.Scan(&id, &puid, &ver, &tuid)
+	err = row.Scan(&id, &puid, &ver, &tuid, &mountAttempts)
+
 	require.NoError(t, err)
-	assert.Equal(t, id, testVolume1.VolumeID)
-	assert.Equal(t, puid, newPodName)
-	assert.Equal(t, ver, testVolume1.Version)
-	assert.Equal(t, tuid, testVolume1.TenantUUID)
+	assert.Equal(t, testVolume1.VolumeID, id)
+	assert.Equal(t, testVolume1.PodName, puid)
+	assert.Equal(t, testVolume1.Version, ver)
+	assert.Equal(t, testVolume1.TenantUUID, tuid)
+	assert.Equal(t, testVolume1.MountAttempts, mountAttempts)
 }
 
 func TestInsertOsAgentVolume(t *testing.T) {
@@ -437,6 +450,31 @@ func TestGetVolume(t *testing.T) {
 	volume, err := db.GetVolume(testVolume1.VolumeID)
 	require.NoError(t, err)
 	assert.Equal(t, testVolume1, *volume)
+}
+
+func TestUpdateVolume(t *testing.T) {
+	testVolume1 := createTestVolume(1)
+	db := FakeMemoryDB()
+	err := db.InsertVolume(&testVolume1)
+
+	require.NoError(t, err)
+
+	testVolume1.PodName = "different pod name"
+	testVolume1.Version = "new version"
+	testVolume1.TenantUUID = "asdf-1234"
+	testVolume1.MountAttempts = 10
+	err = db.InsertVolume(&testVolume1)
+
+	require.NoError(t, err)
+
+	insertedVolume, err := db.GetVolume(testVolume1.VolumeID)
+
+	assert.NoError(t, err)
+	assert.Equal(t, testVolume1.VolumeID, insertedVolume.VolumeID)
+	assert.Equal(t, testVolume1.PodName, insertedVolume.PodName)
+	assert.Equal(t, testVolume1.Version, insertedVolume.Version)
+	assert.Equal(t, testVolume1.TenantUUID, insertedVolume.TenantUUID)
+	assert.Equal(t, testVolume1.MountAttempts, insertedVolume.MountAttempts)
 }
 
 func TestGetUsedVersions(t *testing.T) {
