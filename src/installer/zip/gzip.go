@@ -14,7 +14,9 @@ import (
 	"github.com/spf13/afero"
 )
 
-func ExtractGzip(fs afero.Fs, sourceFilePath, targetDir string) error {
+func (extractor OneAgentExtractor) ExtractGzip(sourceFilePath, targetDir string) error {
+	extractor.cleanTempZipDir()
+	fs := extractor.fs
 	targetDir = filepath.Clean(targetDir)
 	log.Info("extracting tar gzip", "source", sourceFilePath, "destinationDir", targetDir)
 
@@ -30,9 +32,18 @@ func ExtractGzip(fs afero.Fs, sourceFilePath, targetDir string) error {
 	}
 	defer gzipReader.Close()
 
+	tmpUnzipDir := extractor.pathResolver.AgentTempUnzipDir()
 	tarReader := tar.NewReader(gzipReader)
+	err = extractFilesFromGzip(fs, tmpUnzipDir, tarReader)
+	if err != nil {
+		return err
+	}
+	return extractor.moveToTargetDir(targetDir)
+}
+
+func extractFilesFromGzip(fs afero.Fs, targetDir string, reader *tar.Reader) error {
 	for {
-		header, err := tarReader.Next()
+		header, err := reader.Next()
 		if err == io.EOF {
 			return nil
 		} else if err != nil {
@@ -60,7 +71,7 @@ func ExtractGzip(fs afero.Fs, sourceFilePath, targetDir string) error {
 				return errors.WithStack(err)
 			}
 		case tar.TypeReg:
-			if err := extractFile(fs, target, header, tarReader); err != nil {
+			if err := extractFile(fs, target, header, reader); err != nil {
 				return errors.WithStack(err)
 			}
 		default:
