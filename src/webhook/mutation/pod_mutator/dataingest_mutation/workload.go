@@ -3,6 +3,7 @@ package dataingest_mutation
 import (
 	"context"
 
+	"github.com/Dynatrace/dynatrace-operator/src/config"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -60,8 +61,8 @@ func findRootOwner(ctx context.Context, clt client.Client, partialObjectMetadata
 		if owner.Controller != nil && *owner.Controller {
 			if !isWellKnownWorkload(owner) {
 				return workloadInfo{
-					name: "",
-					kind: "",
+					name: config.UnknownWorkload,
+					kind: config.UnknownWorkload,
 				}, nil
 			}
 

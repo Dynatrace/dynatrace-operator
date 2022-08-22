@@ -6,6 +6,7 @@ const (
 	EnrichmentInjectedEnv        = "DATA_INGEST_INJECTED"
 	EnrichmentWorkloadKindEnv    = "DT_WORKLOAD_KIND"
 	EnrichmentWorkloadNameEnv    = "DT_WORKLOAD_NAME"
+	UnknownWorkload              = "UNKNOWN"
 )
 
 var (

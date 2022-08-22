@@ -245,7 +245,11 @@ func (env *environment) addWorkloadKind() error {
 	if err != nil {
 		return err
 	}
-	env.WorkloadKind = workloadKind
+	if workloadKind == config.UnknownWorkload {
+		env.WorkloadKind = ""
+	} else {
+		env.WorkloadKind = workloadKind
+	}
 	return nil
 }
 
@@ -254,7 +258,11 @@ func (env *environment) addWorkloadName() error {
 	if err != nil {
 		return err
 	}
-	env.WorkloadName = workloadName
+	if workloadName == config.UnknownWorkload {
+		env.WorkloadName = ""
+	} else {
+		env.WorkloadName = workloadName
+	}
 	return nil
 }
 
