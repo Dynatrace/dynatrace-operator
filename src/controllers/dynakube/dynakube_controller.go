@@ -308,6 +308,7 @@ func (controller *DynakubeController) reconcileActiveGate(ctx context.Context, d
 
 	upd, err := reconciler.Reconcile()
 	if dynakubeState.Error(err) {
+		log.Error(err, "Failed to reconcile ActiveGate")
 		return false
 	}
 	dynakubeState.Update(upd, "ActiveGate reconciled")
