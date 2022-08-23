@@ -8,8 +8,8 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/customproperties"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/secrets"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/pkg/errors"
@@ -247,7 +247,7 @@ func (r *Reconciler) getDataFromCustomProperty(customProperties *dynatracev1beta
 }
 
 func (r *Reconciler) getDataFromAuthTokenSecret() (string, error) {
-	return kubeobjects.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.Dynakube.Namespace, Name: r.Dynakube.ActiveGateAuthTokenSecret()}, secrets.ActiveGateAuthTokenName)
+	return kubeobjects.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.Dynakube.Namespace, Name: r.Dynakube.ActiveGateAuthTokenSecret()}, authtoken.ActiveGateAuthTokenName)
 }
 
 func needsCustomPropertyHash(customProperties *dynatracev1beta1.DynaKubeValueSource) bool {

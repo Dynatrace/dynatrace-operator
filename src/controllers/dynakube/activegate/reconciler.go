@@ -5,10 +5,11 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/authtoken"
 	capabilityInternal "github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/customproperties"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/secrets"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/tenantinfo"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
@@ -26,6 +27,7 @@ type Reconciler struct {
 	apiReader                         client.Reader
 	scheme                            *runtime.Scheme
 	authTokenReconciler               kubeobjects.PseudoReconciler
+	tenantInfoReconciler              kubeobjects.PseudoReconciler
 	newStatefulsetReconcilerFunc      statefulset.NewReconcilerFunc
 	newCapabilityReconcilerFunc       capabilityInternal.NewReconcilerFunc
 	newCustomPropertiesReconcilerFunc func(customPropertiesOwnerName string, customPropertiesSource *dynatracev1beta1.DynaKubeValueSource) kubeobjects.PseudoReconciler
@@ -34,7 +36,8 @@ type Reconciler struct {
 var _ kubeobjects.PseudoReconciler = (*Reconciler)(nil)
 
 func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) *Reconciler {
-	authTokenReconciler := secrets.NewReconciler(clt, apiReader, scheme, dynakube, dtc)
+	authTokenReconciler := authtoken.NewReconciler(clt, apiReader, scheme, dynakube, dtc)
+	tenantInfoReconciler := tenantinfo.NewReconciler(clt, apiReader, scheme, dynakube, dtc)
 	newCustomPropertiesReconcilerFunc := func(customPropertiesOwnerName string, customPropertiesSource *dynatracev1beta1.DynaKubeValueSource) kubeobjects.PseudoReconciler {
 		return customproperties.NewReconciler(clt, dynakube, customPropertiesOwnerName, scheme, customPropertiesSource)
 	}
@@ -49,10 +52,16 @@ func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Read
 		newCustomPropertiesReconcilerFunc: newCustomPropertiesReconcilerFunc,
 		newStatefulsetReconcilerFunc:      statefulset.NewReconciler,
 		newCapabilityReconcilerFunc:       capabilityInternal.NewReconciler,
+		tenantInfoReconciler:              tenantInfoReconciler,
 	}
 }
 
 func (r *Reconciler) Reconcile() (update bool, err error) {
+	update, err = r.tenantInfoReconciler.Reconcile()
+	if err != nil {
+		return false, err
+	}
+
 	if r.Dynakube.UseActiveGateAuthToken() {
 		_, err := r.authTokenReconciler.Reconcile()
 		if err != nil {
@@ -78,7 +87,7 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 }
 
 func (r *Reconciler) reconcileActiveGateProxySecret() (err error) {
-	gen := capabilityInternal.NewActiveGateProxySecretGenerator(r.Client, r.apiReader, r.Dynakube.Namespace, log)
+	gen := capabilityInternal.NewActiveGateProxySecretGenerator(r.Client, r.apiReader, r.Dynakube.Namespace, log) // TODO ?
 	if r.Dynakube.NeedsActiveGateProxy() {
 		return gen.GenerateForDynakube(r.context, r.Dynakube)
 	} else {

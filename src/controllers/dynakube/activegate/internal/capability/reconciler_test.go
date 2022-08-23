@@ -477,7 +477,7 @@ func TestReconciler_calculateStatefulSetName(t *testing.T) {
 				Capability: tt.fields.Capability,
 			}
 			if got := r.calculateStatefulSetName(); got != tt.want {
-				t.Errorf("Reconciler.calculateStatefulSetName() = %v, want %v", got, tt.want)
+				t.Errorf("PseudoReconciler.calculateStatefulSetName() = %v, want %v", got, tt.want)
 			}
 		})
 	}

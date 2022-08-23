@@ -6,8 +6,9 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/customproperties"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/secrets"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/tenantinfo"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
@@ -393,7 +394,7 @@ func buildVolumeMounts(stsProperties *statefulSetProperties) []corev1.VolumeMoun
 			Name:      tenantSecretVolumeName,
 			ReadOnly:  true,
 			MountPath: tenantTokenMountPoint,
-			SubPath:   secrets.TenantTokenName,
+			SubPath:   tenantinfo.TenantTokenName,
 		},
 		)
 	}
@@ -403,7 +404,7 @@ func buildVolumeMounts(stsProperties *statefulSetProperties) []corev1.VolumeMoun
 			Name:      authTokenSecretVolumeName,
 			ReadOnly:  true,
 			MountPath: authTokenMountPoint,
-			SubPath:   secrets.ActiveGateAuthTokenName,
+			SubPath:   authtoken.ActiveGateAuthTokenName,
 		})
 	}
 
@@ -522,7 +523,7 @@ func tenantUuidNameEnvVar(stsProperties *statefulSetProperties) corev1.EnvVar {
 				LocalObjectReference: corev1.LocalObjectReference{
 					Name: stsProperties.AGTenantSecret(),
 				},
-				Key: secrets.TenantUuidName,
+				Key: tenantinfo.TenantUuidName,
 			},
 		},
 	}
@@ -536,7 +537,7 @@ func communicationEndpointEnvVar(stsProperties *statefulSetProperties) corev1.En
 				LocalObjectReference: corev1.LocalObjectReference{
 					Name: stsProperties.AGTenantSecret(),
 				},
-				Key: secrets.CommunicationEndpointsName,
+				Key: tenantinfo.CommunicationEndpointsName,
 			},
 		},
 	}

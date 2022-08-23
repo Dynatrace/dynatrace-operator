@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
@@ -29,6 +30,9 @@ var testKubeSystemNamespace = &corev1.Namespace{
 }
 
 func TestReconciler_Reconcile(t *testing.T) {
+	dtc := &dtclient.MockDynatraceClient{}
+	dtc.On("GetActiveGateTenantInfo").Return(&dtclient.ActiveGateTenantInfo{}, nil)
+
 	t.Run(`Reconcile works with minimal setup`, func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
@@ -36,7 +40,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Name:      testName,
 			}}
 		fakeClient := fake.NewClient()
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, instance, nil)
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, instance, dtc)
 		upd, err := r.Reconcile()
 		assert.NoError(t, err)
 		assert.True(t, upd)
@@ -52,7 +56,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 		}
 		fakeClient := fake.NewClient()
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, instance, nil)
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, instance, dtc)
 		upd, err := r.Reconcile()
 		assert.NoError(t, err)
 		assert.True(t, upd)
@@ -74,7 +78,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 		}
 		fakeClient := fake.NewClient(testKubeSystemNamespace)
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, instance, nil)
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, instance, dtc)
 		upd, err := r.Reconcile()
 		assert.NoError(t, err)
 		assert.True(t, upd)

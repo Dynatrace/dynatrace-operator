@@ -5,8 +5,9 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/customproperties"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/secrets"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/tenantinfo"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
@@ -468,7 +469,7 @@ func TestStatefulSet_Env(t *testing.T) {
 						LocalObjectReference: corev1.LocalObjectReference{
 							Name: instance.Name + dynatracev1beta1.TenantSecretSuffix,
 						},
-						Key: secrets.CommunicationEndpointsName,
+						Key: tenantinfo.CommunicationEndpointsName,
 					},
 				},
 			},
@@ -479,7 +480,7 @@ func TestStatefulSet_Env(t *testing.T) {
 						LocalObjectReference: corev1.LocalObjectReference{
 							Name: instance.Name + dynatracev1beta1.TenantSecretSuffix,
 						},
-						Key: secrets.TenantUuidName,
+						Key: tenantinfo.TenantUuidName,
 					},
 				},
 			},
@@ -648,14 +649,14 @@ func TestStatefulSet_VolumeMounts(t *testing.T) {
 			ReadOnly:  true,
 			Name:      authTokenSecretVolumeName,
 			MountPath: authTokenMountPoint,
-			SubPath:   secrets.ActiveGateAuthTokenName,
+			SubPath:   authtoken.ActiveGateAuthTokenName,
 		})
 
 		assert.Contains(t, volumeMounts, corev1.VolumeMount{
 			ReadOnly:  true,
 			Name:      authTokenSecretVolumeName,
 			MountPath: authTokenMountPoint,
-			SubPath:   secrets.ActiveGateAuthTokenName,
+			SubPath:   authtoken.ActiveGateAuthTokenName,
 		})
 	})
 }

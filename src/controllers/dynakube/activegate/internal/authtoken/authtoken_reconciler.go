@@ -1,4 +1,4 @@
-package secrets
+package authtoken
 
 import (
 	"context"
@@ -112,4 +112,8 @@ func (r *Reconciler) deleteSecret(secret *corev1.Secret) error {
 
 func isSecretOutdated(secret *corev1.Secret) bool {
 	return secret.CreationTimestamp.Add(AuthTokenRotationInterval).Before(time.Now())
+}
+
+func extendWithAGSecretSuffix(name string) string {
+	return name + dynatracev1beta1.AuthTokenSecretSuffix
 }
