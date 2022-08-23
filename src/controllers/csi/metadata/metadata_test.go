@@ -1,14 +1,14 @@
 package metadata
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 const (
 	testName                   = "test-name"
 	testID                     = "test-id"
-	testUID                    = "test-uid"
 	testUUID                   = "test-uuid"
 	testVersion                = "test-version"
 	testDigest                 = "test-digest"
