@@ -29,7 +29,7 @@ type Reconciler struct {
 	dtc       dtclient.Client
 }
 
-var _ kubeobjects.PseudoReconciler = (*Reconciler)(nil)
+var _ kubeobjects.Reconciler = (*Reconciler)(nil)
 
 func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) *Reconciler {
 	return &Reconciler{

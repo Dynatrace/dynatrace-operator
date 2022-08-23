@@ -26,19 +26,19 @@ type Reconciler struct {
 	Dynakube                          *dynatracev1beta1.DynaKube
 	apiReader                         client.Reader
 	scheme                            *runtime.Scheme
-	authTokenReconciler               kubeobjects.PseudoReconciler
-	tenantInfoReconciler              kubeobjects.PseudoReconciler
+	authTokenReconciler               kubeobjects.Reconciler
+	tenantInfoReconciler              kubeobjects.Reconciler
 	newStatefulsetReconcilerFunc      statefulset.NewReconcilerFunc
 	newCapabilityReconcilerFunc       capabilityInternal.NewReconcilerFunc
-	newCustomPropertiesReconcilerFunc func(customPropertiesOwnerName string, customPropertiesSource *dynatracev1beta1.DynaKubeValueSource) kubeobjects.PseudoReconciler
+	newCustomPropertiesReconcilerFunc func(customPropertiesOwnerName string, customPropertiesSource *dynatracev1beta1.DynaKubeValueSource) kubeobjects.Reconciler
 }
 
-var _ kubeobjects.PseudoReconciler = (*Reconciler)(nil)
+var _ kubeobjects.Reconciler = (*Reconciler)(nil)
 
 func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) *Reconciler {
 	authTokenReconciler := authtoken.NewReconciler(clt, apiReader, scheme, dynakube, dtc)
 	tenantInfoReconciler := tenantinfo.NewReconciler(clt, apiReader, scheme, dynakube, dtc)
-	newCustomPropertiesReconcilerFunc := func(customPropertiesOwnerName string, customPropertiesSource *dynatracev1beta1.DynaKubeValueSource) kubeobjects.PseudoReconciler {
+	newCustomPropertiesReconcilerFunc := func(customPropertiesOwnerName string, customPropertiesSource *dynatracev1beta1.DynaKubeValueSource) kubeobjects.Reconciler {
 		return customproperties.NewReconciler(clt, dynakube, customPropertiesOwnerName, scheme, customPropertiesSource)
 	}
 
@@ -57,7 +57,7 @@ func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Read
 }
 
 func (r *Reconciler) Reconcile() (update bool, err error) {
-	update, err = r.tenantInfoReconciler.Reconcile()
+	_, err = r.tenantInfoReconciler.Reconcile()
 	if err != nil {
 		return false, err
 	}

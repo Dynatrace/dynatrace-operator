@@ -61,7 +61,7 @@ type PseudoReconcilerMock struct {
 	mock.Mock
 }
 
-var _ kubeobjects.PseudoReconciler = (*PseudoReconcilerMock)(nil)
+var _ kubeobjects.Reconciler = (*PseudoReconcilerMock)(nil)
 
 func (r *PseudoReconcilerMock) Reconcile() (update bool, err error) {
 	args := r.Called()
@@ -477,7 +477,7 @@ func TestReconciler_calculateStatefulSetName(t *testing.T) {
 				Capability: tt.fields.Capability,
 			}
 			if got := r.calculateStatefulSetName(); got != tt.want {
-				t.Errorf("PseudoReconciler.calculateStatefulSetName() = %v, want %v", got, tt.want)
+				t.Errorf("Reconciler.calculateStatefulSetName() = %v, want %v", got, tt.want)
 			}
 		})
 	}

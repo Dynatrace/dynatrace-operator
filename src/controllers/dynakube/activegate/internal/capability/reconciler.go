@@ -25,7 +25,7 @@ const (
 )
 
 type statefulsetReconciler interface {
-	kubeobjects.PseudoReconciler
+	kubeobjects.Reconciler
 	AddOnAfterStatefulSetCreateListener(event kubeobjects.StatefulSetEvent)
 }
 
@@ -33,13 +33,13 @@ type Reconciler struct {
 	client.Client
 	capability.Capability
 	statefulsetReconciler
-	customPropertiesReconciler kubeobjects.PseudoReconciler
+	customPropertiesReconciler kubeobjects.Reconciler
 	Dynakube                   *dynatracev1beta1.DynaKube
 }
 
 var _ statefulsetReconciler = (*Reconciler)(nil)
 
-func NewReconciler(clt client.Client, capability capability.Capability, dynakube *dynatracev1beta1.DynaKube, statefulsetReconciler statefulsetReconciler, customPropertiesReconciler kubeobjects.PseudoReconciler) *Reconciler {
+func NewReconciler(clt client.Client, capability capability.Capability, dynakube *dynatracev1beta1.DynaKube, statefulsetReconciler statefulsetReconciler, customPropertiesReconciler kubeobjects.Reconciler) *Reconciler {
 	if capability.Config().SetDnsEntryPoint {
 		statefulsetReconciler.AddOnAfterStatefulSetCreateListener(addDNSEntryPoint(dynakube, capability.ShortName()))
 	}
@@ -61,7 +61,7 @@ func NewReconciler(clt client.Client, capability capability.Capability, dynakube
 	}
 }
 
-type NewReconcilerFunc = func(clt client.Client, capability capability.Capability, dynakube *dynatracev1beta1.DynaKube, statefulsetReconciler statefulsetReconciler, customPropertiesReconciler kubeobjects.PseudoReconciler) *Reconciler
+type NewReconcilerFunc = func(clt client.Client, capability capability.Capability, dynakube *dynatracev1beta1.DynaKube, statefulsetReconciler statefulsetReconciler, customPropertiesReconciler kubeobjects.Reconciler) *Reconciler
 
 func setReadinessProbePort() kubeobjects.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {
