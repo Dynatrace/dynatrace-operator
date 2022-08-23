@@ -5,7 +5,7 @@ import (
 )
 
 var (
-	log              = logger.NewDTLogger().WithName("oneagent-url-installer")
+	log = logger.NewDTLogger().WithName("oneagent-url-installer")
 )
 
 const (
