@@ -5147,10 +5147,11 @@ spec:
           mountPropagation: Bidirectional
           name: mountpoint-dir
         - mountPath: /data
+          name: plugin-dir
+          subPath: data
           mountPropagation: Bidirectional
-          name: dynatrace-oneagent-data-dir
-        - mountPath: /tmp
-          name: tmp-dir
+        - name: tmp-dir
+          mountPath: /tmp
       - name: provisioner
         image: quay.io/dynatrace/dynatrace-operator:snapshot
         imagePullPolicy: Always
@@ -5198,10 +5199,12 @@ spec:
         terminationMessagePolicy: File
         volumeMounts:
           - mountPath: /data
+            name: plugin-dir
+            subPath: data
             mountPropagation: Bidirectional
-            name: dynatrace-oneagent-data-dir
           - mountPath: /tmp
             name: tmp-dir
+
         # Used to make a gRPC request (GetPluginInfo()) to the driver to get driver name and driver contain
         # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.
         # Used for registering the driver with kubelet
@@ -5304,12 +5307,6 @@ spec:
         hostPath:
           path: /var/lib/kubelet/pods/
           type: DirectoryOrCreate
-        # This volume is where the driver persists data on the node
-      - name: dynatrace-oneagent-data-dir
-        hostPath:
-          path: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/data/
-          type: DirectoryOrCreate
-
         # Used by the registrar to create its lockfile
       - name: lockfile-dir
         emptyDir: {}

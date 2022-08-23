@@ -141,7 +141,8 @@ tests:
                     name: mountpoint-dir
                   - mountPath: "/data"
                     mountPropagation: Bidirectional
-                    name: dynatrace-oneagent-data-dir
+                    name: plugin-dir
+                    subPath: data
                   - mountPath: "/tmp"
                     name: tmp-dir
               - args:
@@ -192,7 +193,8 @@ tests:
                 volumeMounts:
                   - mountPath: "/data"
                     mountPropagation: Bidirectional
-                    name: dynatrace-oneagent-data-dir
+                    name: plugin-dir
+                    subPath: data
                   - mountPath: "/tmp"
                     name: tmp-dir
               - args:
@@ -287,10 +289,6 @@ tests:
                   path: /var/lib/kubelet/pods/
                   type: DirectoryOrCreate
                 name: mountpoint-dir
-              - hostPath:
-                  path: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/data/
-                  type: DirectoryOrCreate
-                name: dynatrace-oneagent-data-dir
               - emptyDir: { }
                 name: lockfile-dir
               - emptyDir: { }
@@ -383,9 +381,6 @@ tests:
       - equal:
           path: spec.template.spec.volumes[2].hostPath.path
           value: "my/kubelet/pods/"
-      - equal:
-          path: spec.template.spec.volumes[3].hostPath.path
-          value: "my/kubelet/plugins/csi.oneagent.dynatrace.com/data/"
       - equal:
           path: spec.template.spec.containers[0].volumeMounts[1].mountPath
           value: "my/kubelet/pods/"
