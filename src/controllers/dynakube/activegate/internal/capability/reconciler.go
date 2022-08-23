@@ -30,16 +30,16 @@ type statefulsetReconciler interface {
 }
 
 type Reconciler struct {
-	context context.Context
 	client.Client
-	statefulsetReconciler
 	capability.Capability
-	Dynakube *dynatracev1beta1.DynaKube
+	statefulsetReconciler
+	customPropertiesReconciler kubeobjects.PseudoReconciler
+	Dynakube                   *dynatracev1beta1.DynaKube
 }
 
 var _ statefulsetReconciler = (*Reconciler)(nil)
 
-func NewReconciler(clt client.Client, capability capability.Capability, dynakube *dynatracev1beta1.DynaKube, statefulsetReconciler statefulsetReconciler) *Reconciler {
+func NewReconciler(clt client.Client, capability capability.Capability, dynakube *dynatracev1beta1.DynaKube, statefulsetReconciler statefulsetReconciler, customPropertiesReconciler kubeobjects.PseudoReconciler) *Reconciler {
 	if capability.Config().SetDnsEntryPoint {
 		statefulsetReconciler.AddOnAfterStatefulSetCreateListener(addDNSEntryPoint(dynakube, capability.ShortName()))
 	}
@@ -53,14 +53,15 @@ func NewReconciler(clt client.Client, capability capability.Capability, dynakube
 	}
 
 	return &Reconciler{
-		statefulsetReconciler: statefulsetReconciler,
-		Capability:            capability,
-		Dynakube:              dynakube,
-		Client:                clt,
+		statefulsetReconciler:      statefulsetReconciler,
+		customPropertiesReconciler: customPropertiesReconciler,
+		Capability:                 capability,
+		Dynakube:                   dynakube,
+		Client:                     clt,
 	}
 }
 
-type NewReconcilerFunc = func(clt client.Client, capability capability.Capability, dynakube *dynatracev1beta1.DynaKube, statefulsetReconciler statefulsetReconciler) *Reconciler
+type NewReconcilerFunc = func(clt client.Client, capability capability.Capability, dynakube *dynatracev1beta1.DynaKube, statefulsetReconciler statefulsetReconciler, customPropertiesReconciler kubeobjects.PseudoReconciler) *Reconciler
 
 func setReadinessProbePort() kubeobjects.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {
@@ -145,6 +146,11 @@ func buildDNSEntryPoint(dynakube *dynatracev1beta1.DynaKube, moduleName string) 
 }
 
 func (r *Reconciler) Reconcile() (update bool, err error) {
+	update, err = r.customPropertiesReconciler.Reconcile()
+	if update || err != nil {
+		return update, errors.WithStack(err)
+	}
+
 	if r.ShouldCreateService() {
 		// TODO: MutliCapability shouldn't be used here - it may be as well one of deprecated Capabilities: Kubemon or Routing
 		multiCapability := capability.NewMultiCapability(r.Dynakube)

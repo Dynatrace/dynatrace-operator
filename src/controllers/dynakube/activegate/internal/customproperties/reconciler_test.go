@@ -24,7 +24,7 @@ const (
 func TestReconciler_Reconcile(t *testing.T) {
 	t.Run(`Reconcile works with minimal setup`, func(t *testing.T) {
 		r := NewReconciler(nil, nil, "", nil, &dynatracev1beta1.DynaKubeValueSource{})
-		err := r.Reconcile()
+		_, err := r.Reconcile()
 		assert.NoError(t, err)
 	})
 	t.Run(`Reconcile creates custom properties secret`, func(t *testing.T) {
@@ -36,7 +36,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			}}
 		fakeClient := fake.NewClient(instance)
 		r := NewReconciler(fakeClient, instance, testOwner, scheme.Scheme, &valueSource)
-		err := r.Reconcile()
+		_, err := r.Reconcile()
 
 		assert.NoError(t, err)
 
@@ -58,7 +58,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			}}
 		fakeClient := fake.NewClient(instance)
 		r := NewReconciler(fakeClient, instance, testOwner, scheme.Scheme, &valueSource)
-		err := r.Reconcile()
+		_, err := r.Reconcile()
 
 		assert.NoError(t, err)
 
@@ -71,7 +71,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.Contains(t, customPropertiesSecret.Data, DataKey)
 		assert.Equal(t, customPropertiesSecret.Data[DataKey], []byte(testValue))
 
-		err = r.Reconcile()
+		_, err = r.Reconcile()
 
 		assert.NoError(t, err)
 
@@ -84,7 +84,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.Equal(t, customPropertiesSecret.Data[DataKey], []byte(testValue))
 
 		r.customPropertiesSource.Value = testKey
-		err = r.Reconcile()
+		_, err = r.Reconcile()
 
 		assert.NoError(t, err)
 

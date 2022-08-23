@@ -40,28 +40,28 @@ func NewReconciler(clt client.Client, instance *dynatracev1beta1.DynaKube, custo
 	}
 }
 
-func (r *Reconciler) Reconcile() error {
+func (r *Reconciler) Reconcile() (update bool, err error) {
 	if r.customPropertiesSource == nil {
-		return nil
+		return false, nil
 	}
 
 	if r.hasCustomPropertiesValueOnly() {
 		mustNotUpdate, err := r.createCustomPropertiesIfNotExists()
 		if err != nil {
 			log.Error(err, "could not create custom properties", "owner", r.customPropertiesOwnerName)
-			return errors.WithStack(err)
+			return false, errors.WithStack(err)
 		}
 
 		if !mustNotUpdate {
 			err = r.updateCustomPropertiesIfOutdated()
 			if err != nil {
 				log.Error(err, "could not update custom properties", "owner", r.customPropertiesOwnerName)
-				return errors.WithStack(err)
+				return false, errors.WithStack(err)
 			}
 		}
 	}
 
-	return nil
+	return true, nil
 }
 
 func (r *Reconciler) createCustomPropertiesIfNotExists() (bool, error) {

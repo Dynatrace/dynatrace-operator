@@ -57,6 +57,17 @@ func (r *testBaseReconciler) Get(ctx context.Context, key client.ObjectKey, obj 
 	return r.Client.Get(ctx, key, obj)
 }
 
+type PseudoReconcilerMock struct {
+	mock.Mock
+}
+
+var _ kubeobjects.PseudoReconciler = (*PseudoReconcilerMock)(nil)
+
+func (r *PseudoReconcilerMock) Reconcile() (update bool, err error) {
+	args := r.Called()
+	return args.Get(0).(bool), args.Error(1)
+}
+
 func TestNewReconiler(t *testing.T) {
 	createDefaultReconciler(t)
 }
@@ -83,7 +94,11 @@ func createDefaultReconciler(t *testing.T) (*Reconciler, *testBaseReconciler) {
 	baseReconciler := &testBaseReconciler{
 		Client: clt,
 	}
-	r := NewReconciler(clt, metricsCapability, instance, baseReconciler)
+
+	customPropertiesReconcilerMock := &PseudoReconcilerMock{}
+	customPropertiesReconcilerMock.On("Reconcile").Return(false, nil)
+
+	r := NewReconciler(clt, metricsCapability, instance, baseReconciler, customPropertiesReconcilerMock)
 	require.NotNil(t, r)
 	require.NotNil(t, r.statefulsetReconciler)
 	require.NotNil(t, r.Dynakube)
