@@ -1,4 +1,4 @@
-package capability
+package proxy
 
 import (
 	"context"
@@ -9,7 +9,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -24,25 +23,34 @@ const (
 	proxyPasswordField = "password"
 )
 
-// ActiveGateProxySecretGenerator manages the ActiveGate proxy secret generation for the dynatrace namespace.
-type ActiveGateProxySecretGenerator struct {
+// Reconciler manages the ActiveGate proxy secret generation for the dynatrace namespace.
+type Reconciler struct {
 	client    client.Client
 	apiReader client.Reader
-	logger    logr.Logger
-	namespace string
+	dynakube  *dynatracev1beta1.DynaKube
 }
 
-func NewActiveGateProxySecretGenerator(client client.Client, apiReader client.Reader, ns string, logger logr.Logger) *ActiveGateProxySecretGenerator {
-	return &ActiveGateProxySecretGenerator{
+func (r *Reconciler) Reconcile() (update bool, err error) {
+	if r.dynakube.NeedsActiveGateProxy() {
+		err = r.generateForDynakube(context.TODO(), r.dynakube)
+	} else {
+		err = r.ensureDeleted(context.TODO(), r.dynakube)
+	}
+	return true, err
+}
+
+var _ kubeobjects.Reconciler = (*Reconciler)(nil)
+
+func NewReconciler(client client.Client, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube) *Reconciler {
+	return &Reconciler{
 		client:    client,
 		apiReader: apiReader,
-		namespace: ns,
-		logger:    logger,
+		dynakube:  dynakube,
 	}
 }
 
-func (agProxySecretGenerator *ActiveGateProxySecretGenerator) GenerateForDynakube(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
-	data, err := agProxySecretGenerator.createProxyMap(ctx, dynakube)
+func (r *Reconciler) generateForDynakube(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
+	data, err := r.createProxyMap(ctx, dynakube)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -52,34 +60,34 @@ func (agProxySecretGenerator *ActiveGateProxySecretGenerator) GenerateForDynakub
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      capability.BuildProxySecretName(),
-			Namespace: agProxySecretGenerator.namespace,
+			Namespace: r.dynakube.Namespace,
 			Labels:    coreLabels.BuildMatchLabels(),
 		},
 		Data: data,
 		Type: corev1.SecretTypeOpaque,
 	}
-	secretQuery := kubeobjects.NewSecretQuery(ctx, agProxySecretGenerator.client, agProxySecretGenerator.apiReader, agProxySecretGenerator.logger)
+	secretQuery := kubeobjects.NewSecretQuery(ctx, r.client, r.apiReader, log)
 
 	return errors.WithStack(secretQuery.CreateOrUpdate(*secret))
 }
 
-func (agProxySecretGenerator *ActiveGateProxySecretGenerator) EnsureDeleted(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
+func (r *Reconciler) ensureDeleted(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
 	secretName := capability.BuildProxySecretName()
 	secret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: secretName, Namespace: dynakube.Namespace}}
-	if err := agProxySecretGenerator.client.Delete(ctx, &secret); err != nil && !k8serrors.IsNotFound(err) {
+	if err := r.client.Delete(ctx, &secret); err != nil && !k8serrors.IsNotFound(err) {
 		return err
 	} else if err == nil {
 		// If the secret is deleted the error is nil, otherwise err is notFound, then we should log nothing
-		agProxySecretGenerator.logger.Info("removed secret", "namespace", dynakube.Namespace, "secret", secretName)
+		log.Info("removed secret", "namespace", dynakube.Namespace, "secret", secretName)
 	}
 	return nil
 }
 
-func (agProxySecretGenerator *ActiveGateProxySecretGenerator) createProxyMap(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) (map[string][]byte, error) {
+func (r *Reconciler) createProxyMap(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) (map[string][]byte, error) {
 	var err error
 	proxyUrl := ""
 	if dynakube.Spec.Proxy != nil && dynakube.Spec.Proxy.ValueFrom != "" {
-		if proxyUrl, err = agProxySecretGenerator.proxyUrlFromUserSecret(ctx, dynakube); err != nil {
+		if proxyUrl, err = r.proxyUrlFromUserSecret(ctx, dynakube); err != nil {
 			return nil, err
 		}
 	} else if dynakube.Spec.Proxy != nil && len(dynakube.Spec.Proxy.Value) > 0 {
@@ -111,9 +119,9 @@ func proxyUrlFromSpec(dynakube *dynatracev1beta1.DynaKube) string {
 	return dynakube.Spec.Proxy.Value
 }
 
-func (agProxySecretGenerator *ActiveGateProxySecretGenerator) proxyUrlFromUserSecret(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) (string, error) {
+func (r *Reconciler) proxyUrlFromUserSecret(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) (string, error) {
 	var proxySecret corev1.Secret
-	if err := agProxySecretGenerator.client.Get(ctx, client.ObjectKey{Name: dynakube.Spec.Proxy.ValueFrom, Namespace: agProxySecretGenerator.namespace}, &proxySecret); err != nil {
+	if err := r.client.Get(ctx, client.ObjectKey{Name: dynakube.Spec.Proxy.ValueFrom, Namespace: r.dynakube.Namespace}, &proxySecret); err != nil {
 		return "", errors.WithMessage(err, fmt.Sprintf("failed to query %s secret", dynakube.Spec.Proxy.ValueFrom))
 	}
 

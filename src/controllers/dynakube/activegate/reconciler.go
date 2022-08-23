@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/authtoken"
 	capabilityInternal "github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/customproperties"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/proxy"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/tenantinfo"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
@@ -28,6 +29,7 @@ type Reconciler struct {
 	scheme                            *runtime.Scheme
 	authTokenReconciler               kubeobjects.Reconciler
 	tenantInfoReconciler              kubeobjects.Reconciler
+	proxyReconciler                   kubeobjects.Reconciler
 	newStatefulsetReconcilerFunc      statefulset.NewReconcilerFunc
 	newCapabilityReconcilerFunc       capabilityInternal.NewReconcilerFunc
 	newCustomPropertiesReconcilerFunc func(customPropertiesOwnerName string, customPropertiesSource *dynatracev1beta1.DynaKubeValueSource) kubeobjects.Reconciler
@@ -38,6 +40,7 @@ var _ kubeobjects.Reconciler = (*Reconciler)(nil)
 func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) *Reconciler {
 	authTokenReconciler := authtoken.NewReconciler(clt, apiReader, scheme, dynakube, dtc)
 	tenantInfoReconciler := tenantinfo.NewReconciler(clt, apiReader, scheme, dynakube, dtc)
+	proxyReconciler := proxy.NewReconciler(clt, apiReader, dynakube)
 	newCustomPropertiesReconcilerFunc := func(customPropertiesOwnerName string, customPropertiesSource *dynatracev1beta1.DynaKubeValueSource) kubeobjects.Reconciler {
 		return customproperties.NewReconciler(clt, dynakube, customPropertiesOwnerName, scheme, customPropertiesSource)
 	}
@@ -49,6 +52,7 @@ func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Read
 		scheme:                            scheme,
 		Dynakube:                          dynakube,
 		authTokenReconciler:               authTokenReconciler,
+		proxyReconciler:                   proxyReconciler,
 		newCustomPropertiesReconcilerFunc: newCustomPropertiesReconcilerFunc,
 		newStatefulsetReconcilerFunc:      statefulset.NewReconciler,
 		newCapabilityReconcilerFunc:       capabilityInternal.NewReconciler,
@@ -69,7 +73,7 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 		}
 	}
 
-	if err := r.reconcileActiveGateProxySecret(); err != nil {
+	if _, err := r.proxyReconciler.Reconcile(); err != nil {
 		return false, err
 	}
 
@@ -84,15 +88,6 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 		}
 	}
 	return true, err
-}
-
-func (r *Reconciler) reconcileActiveGateProxySecret() (err error) {
-	gen := capabilityInternal.NewActiveGateProxySecretGenerator(r.Client, r.apiReader, r.Dynakube.Namespace, log) // TODO ?
-	if r.Dynakube.NeedsActiveGateProxy() {
-		return gen.GenerateForDynakube(r.context, r.Dynakube)
-	} else {
-		return gen.EnsureDeleted(r.context, r.Dynakube)
-	}
 }
 
 func (r *Reconciler) createCapability(agCapability capability.Capability) (updated bool, err error) {
