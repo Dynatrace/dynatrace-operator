@@ -210,14 +210,16 @@ func (provisioner *OneAgentProvisioner) handleMetadata(dk *dynatracev1beta1.Dyna
 
 	// In case of a new dynakubeMetadata
 	var oldDynakubeMetadata metadata.Dynakube
-	if dynakubeMetadata == nil {
-		dynakubeMetadata = &metadata.Dynakube{}
-	} else {
+	if dynakubeMetadata != nil {
 		oldDynakubeMetadata = *dynakubeMetadata
 	}
 
-	dynakubeMetadata.Name = dk.Name
-	dynakubeMetadata.TenantUUID = dk.ConnectionInfo().TenantUUID
+	dynakubeMetadata = metadata.NewDynakube(
+		dk.Name,
+		dk.ConnectionInfo().TenantUUID,
+		oldDynakubeMetadata.LatestVersion,
+		oldDynakubeMetadata.ImageDigest,
+		dk.MaxFailedCsiMountAttempts())
 
 	return dynakubeMetadata, oldDynakubeMetadata, nil
 }
@@ -225,7 +227,10 @@ func (provisioner *OneAgentProvisioner) handleMetadata(dk *dynatracev1beta1.Dyna
 func (provisioner *OneAgentProvisioner) createOrUpdateDynakubeMetadata(oldDynakube metadata.Dynakube, dynakube *metadata.Dynakube) error {
 	if oldDynakube != *dynakube {
 		log.Info("dynakube has changed",
-			"name", dynakube.Name, "tenantUUID", dynakube.TenantUUID, "version", dynakube.LatestVersion)
+			"name", dynakube.Name,
+			"tenantUUID", dynakube.TenantUUID,
+			"version", dynakube.LatestVersion,
+			"max mount attempts", dynakube.MaxFailedMountAttempts)
 		if oldDynakube == (metadata.Dynakube{}) {
 			log.Info("adding dynakube to db", "tenantUUID", dynakube.TenantUUID, "version", dynakube.LatestVersion)
 			return provisioner.db.InsertDynakube(dynakube)

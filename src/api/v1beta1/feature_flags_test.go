@@ -172,21 +172,21 @@ func TestDeprecatedEnableAnnotations(t *testing.T) {
 
 func TestMaxMountAttempts(t *testing.T) {
 	dynakube := createDynakubeWithAnnotation(
-		AnnotationFeatureMaxMountAttempts, "5")
+		AnnotationFeatureMaxFailedCsiMountAttempts, "5")
 
-	assert.Equal(t, 5, *dynakube.FeatureMaxCsiMountAttempts())
+	assert.Equal(t, 5, *dynakube.FeatureMaxFailedCsiMountAttempts())
 
 	dynakube = createDynakubeWithAnnotation(
-		AnnotationFeatureMaxMountAttempts, "3")
+		AnnotationFeatureMaxFailedCsiMountAttempts, "3")
 
-	assert.Equal(t, 3, *dynakube.FeatureMaxCsiMountAttempts())
+	assert.Equal(t, 3, *dynakube.FeatureMaxFailedCsiMountAttempts())
 
 	dynakube = createDynakubeWithAnnotation()
 
-	assert.Nil(t, dynakube.FeatureMaxCsiMountAttempts())
+	assert.Nil(t, dynakube.FeatureMaxFailedCsiMountAttempts())
 
 	dynakube = createDynakubeWithAnnotation(
-		AnnotationFeatureMaxMountAttempts, "a")
+		AnnotationFeatureMaxFailedCsiMountAttempts, "a")
 
-	assert.Nil(t, dynakube.FeatureMaxCsiMountAttempts())
+	assert.Nil(t, dynakube.FeatureMaxFailedCsiMountAttempts())
 }

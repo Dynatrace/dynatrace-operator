@@ -400,3 +400,11 @@ func getRawImageTag(imageURI string) string {
 	splitURI := strings.Split(imageURI, ":")
 	return splitURI[len(splitURI)-1]
 }
+
+func (dk *DynaKube) MaxFailedCsiMountAttempts() int {
+	if dk.FeatureMaxFailedCsiMountAttempts() != nil {
+		return *dk.FeatureMaxFailedCsiMountAttempts()
+	}
+
+	return -1
+}

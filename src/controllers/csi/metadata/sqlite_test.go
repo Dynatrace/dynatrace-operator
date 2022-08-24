@@ -166,14 +166,31 @@ func TestGetDynakube_Empty(t *testing.T) {
 }
 
 func TestGetDynakube(t *testing.T) {
-	testDynakube1 := createTestDynakube(1)
-	db := FakeMemoryDB()
-	err := db.InsertDynakube(&testDynakube1)
-	require.NoError(t, err)
+	t.Run("get dynakube", func(t *testing.T) {
+		testDynakube1 := createTestDynakube(1)
+		db := FakeMemoryDB()
+		err := db.InsertDynakube(&testDynakube1)
+		require.NoError(t, err)
 
-	dynakube, err := db.GetDynakube(testDynakube1.Name)
-	require.NoError(t, err)
-	assert.Equal(t, testDynakube1, *dynakube)
+		dynakube, err := db.GetDynakube(testDynakube1.Name)
+		require.NoError(t, err)
+		assert.Equal(t, testDynakube1, *dynakube)
+	})
+	t.Run("get dynakube with maxFailedMountAttempts set to null", func(t *testing.T) {
+		db := FakeMemoryDB()
+
+		require.NoError(t, db.createTables())
+		require.NoError(t, db.executeStatement(insertDynakubeStatement, testName, testUUID, testVersion, testDigest, nil))
+
+		dynakube, err := db.GetDynakube(testName)
+		require.NoError(t, err)
+
+		assert.Equal(t, testName, dynakube.Name)
+		assert.Equal(t, testUUID, dynakube.TenantUUID)
+		assert.Equal(t, testVersion, dynakube.LatestVersion)
+		assert.Equal(t, testDigest, dynakube.ImageDigest)
+		assert.Equal(t, 3, dynakube.MaxFailedMountAttempts)
+	})
 }
 
 func TestUpdateDynakube(t *testing.T) {
@@ -222,18 +239,49 @@ func TestGetTenantsToDynakubes(t *testing.T) {
 }
 
 func TestGetAllDynakubes(t *testing.T) {
-	testDynakube1 := createTestDynakube(1)
-	testDynakube2 := createTestDynakube(2)
+	t.Run("get multiple dynakubes", func(t *testing.T) {
+		testDynakube1 := createTestDynakube(1)
+		testDynakube2 := createTestDynakube(2)
 
-	db := FakeMemoryDB()
-	err := db.InsertDynakube(&testDynakube1)
-	require.NoError(t, err)
-	err = db.InsertDynakube(&testDynakube2)
-	require.NoError(t, err)
+		db := FakeMemoryDB()
+		err := db.InsertDynakube(&testDynakube1)
+		require.NoError(t, err)
+		err = db.InsertDynakube(&testDynakube2)
+		require.NoError(t, err)
 
-	dynakubes, err := db.GetAllDynakubes()
-	require.NoError(t, err)
-	assert.Equal(t, 2, len(dynakubes))
+		dynakubes, err := db.GetAllDynakubes()
+		require.NoError(t, err)
+		assert.Equal(t, 2, len(dynakubes))
+	})
+	t.Run("get dynakubes with null values", func(t *testing.T) {
+		db := FakeMemoryDB()
+
+		require.NoError(t, db.createTables())
+		require.NoError(t, db.executeStatement(insertDynakubeStatement, testName+"-1", testUUID, testVersion, testDigest, nil))
+		require.NoError(t, db.executeStatement(insertDynakubeStatement, testName+"-2", testUUID, testVersion, testDigest, nil))
+		require.NoError(t, db.executeStatement(insertDynakubeStatement, testName+"-3", testUUID, testVersion, testDigest, 1))
+
+		dynakubes, err := db.GetAllDynakubes()
+		require.NoError(t, err)
+
+		assert.Equal(t, testName+"-1", dynakubes[0].Name)
+		assert.Equal(t, testUUID, dynakubes[0].TenantUUID)
+		assert.Equal(t, testVersion, dynakubes[0].LatestVersion)
+		assert.Equal(t, testDigest, dynakubes[0].ImageDigest)
+		assert.Equal(t, 3, dynakubes[0].MaxFailedMountAttempts)
+
+		assert.Equal(t, testName+"-2", dynakubes[1].Name)
+		assert.Equal(t, testUUID, dynakubes[1].TenantUUID)
+		assert.Equal(t, testVersion, dynakubes[1].LatestVersion)
+		assert.Equal(t, testDigest, dynakubes[1].ImageDigest)
+		assert.Equal(t, 3, dynakubes[1].MaxFailedMountAttempts)
+
+		assert.Equal(t, testName+"-3", dynakubes[2].Name)
+		assert.Equal(t, testUUID, dynakubes[2].TenantUUID)
+		assert.Equal(t, testVersion, dynakubes[2].LatestVersion)
+		assert.Equal(t, testDigest, dynakubes[2].ImageDigest)
+		assert.Equal(t, 1, dynakubes[2].MaxFailedMountAttempts)
+	})
 }
 
 func TestGetAllVolumes(t *testing.T) {
@@ -249,6 +297,8 @@ func TestGetAllVolumes(t *testing.T) {
 	volumes, err := db.GetAllVolumes()
 	require.NoError(t, err)
 	assert.Equal(t, 2, len(volumes))
+	assert.Equal(t, testVolume1, *volumes[0])
+	assert.Equal(t, testVolume2, *volumes[1])
 }
 
 func TestGetAllOsAgentVolumes(t *testing.T) {
