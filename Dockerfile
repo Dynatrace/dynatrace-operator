@@ -14,28 +14,11 @@ RUN if [ -d ./mod ]; then mkdir -p ${GOPATH}/pkg && [ -d mod ] && mv ./mod ${GOP
 
 RUN CGO_ENABLED=1 CGO_CFLAGS="${CGO_CFLAGS}" go build -ldflags="${GO_LINKER_ARGS}" -o ./build/_output/bin/dynatrace-operator ./src/cmd/
 
-FROM registry.access.redhat.com/ubi9-minimal:9.0.0 as dependency-src
+FROM registry.access.redhat.com/ubi8-minimal:8.6 as dependency-src
 
-# The os-release file is necessary because microdnf needs it to be in the install-root
-RUN mkdir -p /mnt/installfs/etc && cp /etc/os-release /mnt/installfs/etc/
-RUN microdnf install \
-    --installroot /mnt/installfs \
-    --nodocs -y \
-    --noplugins \
-    # The options below need to be set because otherwise microdnf fails with the following error message
-    # error: The "--installroot" argument must be used together with "--config", "--noplugins", "--setopt=cachedir=<path>", "--setopt=reposdir=<path>", "--setopt=varsdir=<path>" arguments.
-    --setopt=install_weak_deps=0 \
-    --setopt=reposdir=/etc/yum.repos.d \
-    --setopt=varsdir=/etc/dnf/vars \
-    --setopt=cachedir=/var/cache/yum\
-    --config=/etc/dnf/dnf.conf \
-     util-linux \
-     tar \
-     && microdnf clean all \
-     && rm -rf /mnt/installfs/var/cache/* \
-     && rm  /mnt/installfs/etc/os-release
+RUN  microdnf install util-linux && microdnf clean all
 
-FROM registry.access.redhat.com/ubi9-micro:9.0.0
+FROM registry.access.redhat.com/ubi8-micro:8.6
 
 # operator dependencies
 COPY --from=operator-build /etc/ssl/cert.pem /etc/ssl/cert.pem
@@ -54,8 +37,9 @@ COPY --from=operator-build /usr/lib/libgpgme.so.* /usr/lib/
 COPY --from=k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.5.1 /csi-node-driver-registrar /usr/local/bin
 COPY --from=k8s.gcr.io/sig-storage/livenessprobe:v2.7.0 /livenessprobe /usr/local/bin
 
-# depdenencies
-COPY --from=dependency-src /mnt/installfs/ /
+# csi depdenencies
+COPY --from=dependency-src /bin/mount /bin/umount /bin/
+COPY --from=dependency-src /lib64/libmount.so.1 /lib64/libblkid.so.1 /lib64/libuuid.so.1 /lib64/
 
 COPY ./third_party_licenses /usr/share/dynatrace-operator/third_party_licenses
 
