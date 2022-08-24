@@ -8,7 +8,7 @@ changelog:
         - bug
     - title: Core changes 🎉
       labels:
-        - workloadReconciler
+        - core
         - ci
         - security
     - title: Helm changes ⛑️

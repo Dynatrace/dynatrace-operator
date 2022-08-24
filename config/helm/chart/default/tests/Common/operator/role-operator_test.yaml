@@ -74,7 +74,7 @@ tests:
                 - update
 
             - apiGroups:
-                - ""  # "" indicates the workloadReconciler API group
+                - ""  # "" indicates the core API group
               resources:
                 - configmaps
               verbs:
@@ -85,7 +85,7 @@ tests:
                 - update
                 - delete
             - apiGroups:
-                - ""  # "" indicates the workloadReconciler API group
+                - ""  # "" indicates the core API group
               resources:
                 - pods
               verbs:
@@ -95,7 +95,7 @@ tests:
                 - delete
                 - create
             - apiGroups:
-                - ""  # "" indicates the workloadReconciler API group
+                - ""  # "" indicates the core API group
               resources:
                 - secrets
               verbs:
