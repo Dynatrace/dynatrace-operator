@@ -75,7 +75,7 @@ func (r *Reconciler) reconcileAuthTokenSecret() (*corev1.Secret, error) {
 func (r *Reconciler) ensureAuthTokenSecret() (*corev1.Secret, error) {
 	agSecretData, err := r.getActiveGateAuthToken()
 	if err != nil {
-		return nil, errors.Errorf("failed to create secret '%s': %v", extendWithAGSecretSuffix(r.dynakube.Name), err)
+		return nil, errors.Errorf("failed to create secret '%s': %v", r.dynakube.ActiveGateAuthTokenSecret(), err)
 	}
 	return r.createSecret(agSecretData)
 }
@@ -91,14 +91,15 @@ func (r *Reconciler) getActiveGateAuthToken() (map[string][]byte, error) {
 }
 
 func (r *Reconciler) createSecret(secretData map[string][]byte) (*corev1.Secret, error) {
-	secret := kubeobjects.NewSecret(r.dynakube.ActiveGateAuthTokenSecret(), r.dynakube.Namespace, secretData)
+	secretName := r.dynakube.ActiveGateAuthTokenSecret()
+	secret := kubeobjects.NewSecret(secretName, r.dynakube.Namespace, secretData)
 	if err := controllerutil.SetControllerReference(r.dynakube, secret, r.scheme); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
 	err := r.Create(context.TODO(), secret)
 	if err != nil {
-		return nil, errors.Errorf("failed to create secret '%s': %v", extendWithAGSecretSuffix(r.dynakube.Name), err)
+		return nil, errors.Errorf("failed to create secret '%s': %v", secretName, err)
 	}
 	return secret, nil
 }
@@ -112,8 +113,4 @@ func (r *Reconciler) deleteSecret(secret *corev1.Secret) error {
 
 func isSecretOutdated(secret *corev1.Secret) bool {
 	return secret.CreationTimestamp.Add(AuthTokenRotationInterval).Before(time.Now())
-}
-
-func extendWithAGSecretSuffix(name string) string {
-	return name + dynatracev1beta1.AuthTokenSecretSuffix
 }
