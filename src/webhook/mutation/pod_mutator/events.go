@@ -39,3 +39,10 @@ func (event *podMutatorEventRecorder) sendMissingDynaKubeEvent(namespaceName, dy
 		missingDynakubeEvent,
 		template, namespaceName, dynakubeName)
 }
+
+func (event *podMutatorEventRecorder) sendOneAgentAPMWarningEvent(webhookPod *corev1.Pod) {
+	event.recorder.Event(webhookPod,
+		corev1.EventTypeWarning,
+		IncompatibleCRDEvent,
+		"Unsupported OneAgentAPM still present in cluster, please remove to proceed")
+}

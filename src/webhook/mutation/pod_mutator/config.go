@@ -7,6 +7,7 @@ import (
 const (
 	injectEvent          = "Inject"
 	updatePodEvent       = "UpdatePod"
+	IncompatibleCRDEvent = "IncompatibleCRDPresent"
 	missingDynakubeEvent = "MissingDynakube"
 )
 
