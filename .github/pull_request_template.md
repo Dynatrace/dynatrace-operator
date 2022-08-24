@@ -14,5 +14,5 @@ Please include some guiding steps on how to test this change during a review.
 ## Checklist
 - [ ] Unit tests have been updated/added
 - [ ] PR is labeled accordingly
-- [ ] I have read and understood the [contribution guidelines](/CONTRIBUTING.md)
+- [ ] I have read and understood the [contribution guidelines](https://github.com/Dynatrace/dynatrace-operator/blob/master/CONTRIBUTING.md)
 

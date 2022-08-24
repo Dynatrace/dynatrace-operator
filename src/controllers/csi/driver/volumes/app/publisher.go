@@ -197,7 +197,7 @@ func (publisher *AppVolumePublisher) storeVolume(bindCfg *csivolumes.BindConfig,
 	if bindCfg.ImageDigest != "" {
 		version = bindCfg.ImageDigest
 	}
-	volume := metadata.NewVolume(volumeCfg.VolumeID, volumeCfg.PodName, version, bindCfg.TenantUUID)
+	volume := metadata.NewVolume(volumeCfg.VolumeID, volumeCfg.PodName, version, bindCfg.TenantUUID, 0)
 	log.Info("inserting volume info", "ID", volume.VolumeID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
 	return publisher.db.InsertVolume(volume)
 }
