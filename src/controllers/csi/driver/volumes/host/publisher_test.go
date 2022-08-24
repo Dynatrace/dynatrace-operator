@@ -148,12 +148,12 @@ func mockPublishedvolume(t *testing.T, publisher *HostVolumePublisher) {
 }
 
 func mockDynakube(t *testing.T, publisher *HostVolumePublisher) {
-	err := publisher.db.InsertDynakube(metadata.NewDynakube(testDynakubeName, testTenantUUID, "some-version", ""))
+	err := publisher.db.InsertDynakube(metadata.NewDynakube(testDynakubeName, testTenantUUID, "some-version", "", 0))
 	require.NoError(t, err)
 }
 
 func mockDynakubeWithoutVersion(t *testing.T, publisher *HostVolumePublisher) {
-	err := publisher.db.InsertDynakube(metadata.NewDynakube(testDynakubeName, testTenantUUID, "", ""))
+	err := publisher.db.InsertDynakube(metadata.NewDynakube(testDynakubeName, testTenantUUID, "", "", 0))
 	require.NoError(t, err)
 }
 
