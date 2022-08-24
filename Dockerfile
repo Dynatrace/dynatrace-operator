@@ -32,7 +32,8 @@ RUN microdnf install \
      util-linux \
      tar \
      && microdnf clean all \
-     && rm -rf /mnt/installfs/var/cache/*
+     && rm -rf /mnt/installfs/var/cache/* \
+     && rm  /mnt/installfs/etc/os-release
 
 FROM registry.access.redhat.com/ubi9-micro:9.0.0
 

@@ -250,10 +250,8 @@ func (access *SqliteAccess) executeAlterStatement(statement string) error {
 	if _, err := access.conn.Exec(statement); err != nil {
 		sqliteError := err.(sqlite3.Error)
 		if sqliteError.Code != sqlite3.ErrError {
-			return errors.WithMessage(err, "could not add ingest column")
+			return errors.WithStack(err)
 		}
-		// generic sql error, column already exists
-		log.Info("column ImageDigest already exists")
 	}
 
 	return nil
