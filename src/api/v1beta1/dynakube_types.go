@@ -118,7 +118,7 @@ type DynaKubeSpec struct {
 	// Optional: set a namespace selector to limit which namespaces are monitored
 	// By default, all namespaces will be monitored
 	// Has no effect during classicFullStack and hostMonitoring mode
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Namespace Selector",order=17,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:statefulsetreconciler:v1:Namespace"
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Namespace Selector",order=17,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace"
 	NamespaceSelector metav1.LabelSelector `json:"namespaceSelector,omitempty"`
 
 	// General configuration about OneAgent instances
