@@ -126,7 +126,7 @@ func (r *Reconciler) deleteService(agCapability capability.Capability) error {
 			Namespace: r.Dynakube.Namespace,
 		},
 	}
-	return kubeobjects.EnsureDeleted(r.context, r.Client, &svc)
+	return kubeobjects.Delete(r.context, r.Client, &svc)
 }
 
 func (r *Reconciler) deleteStatefulset(agCapability capability.Capability) error {
@@ -136,5 +136,5 @@ func (r *Reconciler) deleteStatefulset(agCapability capability.Capability) error
 			Namespace: r.Dynakube.Namespace,
 		},
 	}
-	return kubeobjects.EnsureDeleted(r.context, r.Client, &sts)
+	return kubeobjects.Delete(r.context, r.Client, &sts)
 }

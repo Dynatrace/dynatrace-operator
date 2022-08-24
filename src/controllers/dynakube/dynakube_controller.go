@@ -298,7 +298,7 @@ func updatePhaseIfChanged(instance *dynatracev1beta1.DynaKube, newPhase dynatrac
 
 func (controller *DynakubeController) removeOneAgentDaemonSet(dkState *status.DynakubeState) {
 	ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dkState.Instance.OneAgentDaemonsetName(), Namespace: dkState.Instance.Namespace}}
-	if err := kubeobjects.EnsureDeleted(context.TODO(), controller.client, &ds); dkState.Error(err) {
+	if err := kubeobjects.Delete(context.TODO(), controller.client, &ds); dkState.Error(err) {
 		return
 	}
 }
