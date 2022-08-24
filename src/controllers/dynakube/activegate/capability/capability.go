@@ -99,9 +99,6 @@ func (c *capabilityBase) ShouldCreateService() bool {
 	return c.ServicePorts.HasPorts()
 }
 
-// Note:
-// Caller must set following fields:
-//   Image:
 func (c *capabilityBase) InitContainersTemplates() []corev1.Container {
 	return c.initContainersTemplates
 }
