@@ -50,6 +50,7 @@ webhook:
 csidriver:
   enabled: false
   nodeSelector: {}
+  kubeletPath: "/var/lib/kubelet"
   priorityClassValue: "1000000"
   tolerations:
     - effect: NoSchedule

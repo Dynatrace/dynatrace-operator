@@ -2,7 +2,7 @@ package csiprovisioner
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"os"
 
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
@@ -63,7 +63,7 @@ func (provisioner *OneAgentProvisioner) readProcessModuleConfigCache(tenantUUID 
 		return nil, err
 	}
 
-	jsonBytes, err := ioutil.ReadAll(processModuleConfigCacheFile)
+	jsonBytes, err := io.ReadAll(processModuleConfigCacheFile)
 	if err != nil {
 		if err := processModuleConfigCacheFile.Close(); err != nil {
 			log.Error(errors.WithStack(err), "error closing file after trying to read it")
