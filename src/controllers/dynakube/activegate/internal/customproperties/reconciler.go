@@ -61,7 +61,7 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 		}
 	}
 
-	return true, nil
+	return false, nil
 }
 
 func (r *Reconciler) createCustomPropertiesIfNotExists() (bool, error) {

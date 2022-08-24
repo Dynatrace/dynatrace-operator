@@ -146,8 +146,8 @@ func buildDNSEntryPoint(dynakube *dynatracev1beta1.DynaKube, moduleName string) 
 }
 
 func (r *Reconciler) Reconcile() (update bool, err error) {
-	update, err = r.customPropertiesReconciler.Reconcile()
-	if update || err != nil {
+	_, err = r.customPropertiesReconciler.Reconcile()
+	if err != nil {
 		return update, errors.WithStack(err)
 	}
 
