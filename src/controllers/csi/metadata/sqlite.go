@@ -47,19 +47,28 @@ const (
 	ADD COLUMN ImageDigest VARCHAR NOT NULL DEFAULT '';
 	`
 
+	dynakubesAlterStatementMaxFailedMountAttempts = `
+	ALTER TABLE dynakubes
+	ADD COLUMN MaxFailedMountAttempts INT DEFAULT ` + defaultSqlMaxFailedMountAttempts + `;`
+
+	volumesAlterStatementMountAttempts = `
+	ALTER TABLE volumes
+	ADD COLUMN MountAttempts INT NOT NULL DEFAULT 0;`
+
 	// INSERT
 	insertDynakubeStatement = `
-	INSERT INTO dynakubes (Name, TenantUUID, LatestVersion, ImageDigest)
-	VALUES (?,?,?,?);
+	INSERT INTO dynakubes (Name, TenantUUID, LatestVersion, ImageDigest, MaxFailedMountAttempts)
+	VALUES (?,?,?,?, ?);
 	`
 
 	insertVolumeStatement = `
-	INSERT INTO volumes (ID, PodName, Version, TenantUUID)
-	VALUES (?,?,?,?)
+	INSERT INTO volumes (ID, PodName, Version, TenantUUID, MountAttempts)
+	VALUES (?,?,?,?,?)
 	ON CONFLICT(ID) DO UPDATE SET
 	  PodName=excluded.PodName,
 	  Version=excluded.Version,
-	  TenantUUID=excluded.TenantUUID;
+	  TenantUUID=excluded.TenantUUID,
+  	  MountAttempts=excluded.MountAttempts;
 	`
 
 	insertOsAgentVolumeStatement = `
@@ -70,7 +79,7 @@ const (
 	// UPDATE
 	updateDynakubeStatement = `
 	UPDATE dynakubes
-	SET LatestVersion = ?, TenantUUID = ?, ImageDigest = ?
+	SET LatestVersion = ?, TenantUUID = ?, ImageDigest = ?, MaxFailedMountAttempts = ?
 	WHERE Name = ?;
 	`
 
@@ -82,13 +91,13 @@ const (
 
 	// GET
 	getDynakubeStatement = `
-	SELECT TenantUUID, LatestVersion, ImageDigest
+	SELECT TenantUUID, LatestVersion, ImageDigest, MaxFailedMountAttempts
 	FROM dynakubes
 	WHERE Name = ?;
 	`
 
 	getVolumeStatement = `
-	SELECT PodName, Version, TenantUUID
+	SELECT PodName, Version, TenantUUID, MountAttempts
 	FROM volumes
 	WHERE ID = ?;
 	`
@@ -188,16 +197,33 @@ func (access *SqliteAccess) connect(driver, path string) error {
 }
 
 func (access *SqliteAccess) createTables() error {
-	if err := access.setupDynakubeTable(); err != nil {
+	err := access.setupDynakubeTable()
+	if err != nil {
 		return err
 	}
 
-	if _, err := access.conn.Exec(volumesCreateStatement); err != nil {
-		return errors.WithStack(errors.WithMessagef(err, "couldn't create the table %s", volumesTableName))
+	err = access.setupVolumeTable()
+	if err != nil {
+		return err
 	}
+
 	if _, err := access.conn.Exec(osAgentVolumesCreateStatement); err != nil {
 		return errors.WithStack(errors.WithMessagef(err, "couldn't create the table %s", osAgentVolumesTableName))
 	}
+	return nil
+}
+
+func (access *SqliteAccess) setupVolumeTable() error {
+	_, err := access.conn.Exec(volumesCreateStatement)
+	if err != nil {
+		return errors.WithMessagef(err, "couldn't create the table %s", volumesTableName)
+	}
+
+	err = access.executeAlterStatement(volumesAlterStatementMountAttempts)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -207,14 +233,27 @@ func (access *SqliteAccess) setupDynakubeTable() error {
 		return errors.WithStack(errors.WithMessagef(err, "couldn't create the table %s", dynakubesTableName))
 	}
 
-	if _, err := access.conn.Exec(dynakubesAlterStatementImageDigestColumn); err != nil {
+	err := access.executeAlterStatement(dynakubesAlterStatementImageDigestColumn)
+	if err != nil {
+		return err
+	}
+
+	err = access.executeAlterStatement(dynakubesAlterStatementMaxFailedMountAttempts)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (access *SqliteAccess) executeAlterStatement(statement string) error {
+	if _, err := access.conn.Exec(statement); err != nil {
 		sqliteError := err.(sqlite3.Error)
 		if sqliteError.Code != sqlite3.ErrError {
-			return errors.WithStack(errors.WithMessage(err, "couldn't add ingest column"))
+			return errors.WithStack(err)
 		}
-		// generic sql error, column already exists
-		log.Info("column ImageDigest already exists")
 	}
+
 	return nil
 }
 
@@ -231,7 +270,7 @@ func (access *SqliteAccess) Setup(path string) error {
 
 // InsertDynakube inserts a new Dynakube
 func (access *SqliteAccess) InsertDynakube(dynakube *Dynakube) error {
-	err := access.executeStatement(insertDynakubeStatement, dynakube.Name, dynakube.TenantUUID, dynakube.LatestVersion, dynakube.ImageDigest)
+	err := access.executeStatement(insertDynakubeStatement, dynakube.Name, dynakube.TenantUUID, dynakube.LatestVersion, dynakube.ImageDigest, dynakube.MaxFailedMountAttempts)
 	if err != nil {
 		err = errors.WithMessagef(err, "couldn't insert dynakube entry, tenantUUID '%s', latest version '%s', name '%s', image digest '%s'",
 			dynakube.TenantUUID,
@@ -244,7 +283,7 @@ func (access *SqliteAccess) InsertDynakube(dynakube *Dynakube) error {
 
 // UpdateDynakube updates an existing Dynakube by matching the name
 func (access *SqliteAccess) UpdateDynakube(dynakube *Dynakube) error {
-	err := access.executeStatement(updateDynakubeStatement, dynakube.LatestVersion, dynakube.TenantUUID, dynakube.ImageDigest, dynakube.Name)
+	err := access.executeStatement(updateDynakubeStatement, dynakube.LatestVersion, dynakube.TenantUUID, dynakube.ImageDigest, dynakube.MaxFailedMountAttempts, dynakube.Name)
 	if err != nil {
 		err = errors.WithMessagef(err, "couldn't update dynakube, tenantUUID '%s', latest version '%s', name '%s', image digest '%s'",
 			dynakube.TenantUUID,
@@ -269,16 +308,18 @@ func (access *SqliteAccess) GetDynakube(dynakubeName string) (*Dynakube, error) 
 	var tenantUUID string
 	var latestVersion string
 	var imageDigest string
-	err := access.querySimpleStatement(getDynakubeStatement, dynakubeName, &tenantUUID, &latestVersion, &imageDigest)
+	var maxFailedMountAttempts int
+
+	err := access.querySimpleStatement(getDynakubeStatement, dynakubeName, &tenantUUID, &latestVersion, &imageDigest, &maxFailedMountAttempts)
 	if err != nil {
 		err = errors.WithMessagef(err, "couldn't get dynakube, name '%s'", dynakubeName)
 	}
-	return NewDynakube(dynakubeName, tenantUUID, latestVersion, imageDigest), err
+	return NewDynakube(dynakubeName, tenantUUID, latestVersion, imageDigest, maxFailedMountAttempts), err
 }
 
 // InsertVolume inserts a new Volume
 func (access *SqliteAccess) InsertVolume(volume *Volume) error {
-	err := access.executeStatement(insertVolumeStatement, volume.VolumeID, volume.PodName, volume.Version, volume.TenantUUID)
+	err := access.executeStatement(insertVolumeStatement, volume.VolumeID, volume.PodName, volume.Version, volume.TenantUUID, volume.MountAttempts)
 	if err != nil {
 		err = errors.WithMessagef(err, "couldn't insert volume info, volume id '%s', pod '%s', version '%s', dynakube '%s'",
 			volume.VolumeID,
@@ -294,11 +335,14 @@ func (access *SqliteAccess) GetVolume(volumeID string) (*Volume, error) {
 	var podName string
 	var version string
 	var tenantUUID string
-	err := access.querySimpleStatement(getVolumeStatement, volumeID, &podName, &version, &tenantUUID)
+	var mountAttempts int
+
+	err := access.querySimpleStatement(getVolumeStatement, volumeID, &podName, &version, &tenantUUID, &mountAttempts)
 	if err != nil {
 		err = errors.WithMessagef(err, "couldn't get volume field for volume id '%s'", volumeID)
 	}
-	return NewVolume(volumeID, podName, version, tenantUUID), err
+
+	return NewVolume(volumeID, podName, version, tenantUUID, mountAttempts), err
 }
 
 // DeleteVolume deletes a Volume by its ID
@@ -377,7 +421,7 @@ func (access *SqliteAccess) GetAllVolumes() ([]*Volume, error) {
 		if err != nil {
 			return nil, errors.WithStack(errors.WithMessage(err, "couldn't scan volume from database"))
 		}
-		volumes = append(volumes, NewVolume(id, podName, version, tenantUUID))
+		volumes = append(volumes, NewVolume(id, podName, version, tenantUUID, 0))
 	}
 	return volumes, nil
 }
@@ -399,7 +443,7 @@ func (access *SqliteAccess) GetAllDynakubes() ([]*Dynakube, error) {
 		if err != nil {
 			return nil, errors.WithStack(errors.WithMessage(err, "couldn't scan dynakube from database"))
 		}
-		dynakubes = append(dynakubes, NewDynakube(name, tenantUUID, version, imageDigest))
+		dynakubes = append(dynakubes, NewDynakube(name, tenantUUID, version, imageDigest, 0))
 	}
 	return dynakubes, nil
 }
