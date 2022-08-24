@@ -44,5 +44,5 @@ func (event *podMutatorEventRecorder) sendOneAgentAPMWarningEvent(webhookPod *co
 	event.recorder.Event(webhookPod,
 		corev1.EventTypeWarning,
 		IncompatibleCRDEvent,
-		"Unsupported OneAgentAPM still present in cluster, please remove to proceed")
+		"Unsupported OneAgentAPM CRD still present in cluster, please remove to proceed")
 }
