@@ -41,7 +41,7 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 	}
 	if apmExists {
 		eventRecorder.sendOneAgentAPMWarningEvent(&webhookPod)
-		return errors.New("OneAgentAPM object detected - the dynatrace-webhook won't inject until the deprecated OneAgent Operator has been fully uninstalled")
+		return errors.New("OneAgentAPM object detected - the Dynatrace webhook will not inject until the deprecated OneAgent Operator has been fully uninstalled")
 	}
 
 	// the injected podMutator.client doesn't have permissions to Get(sth) from a different namespace
