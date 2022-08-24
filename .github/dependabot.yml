@@ -23,3 +23,15 @@ updates:
     include: "scope"
   labels:
   - "dependencies"
+
+- package-ecosystem: "github-actions"
+  directory: "/"
+  schedule:
+    interval: "weekly"
+    day: "friday"
+    time: "03:00"
+  commit-message:
+    prefix: "Actions"
+    include: "scope"
+  labels:
+    - "dependencies"
