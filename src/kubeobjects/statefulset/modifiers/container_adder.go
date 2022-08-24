@@ -14,7 +14,7 @@ var _ statefulset.Modifier = (*ContainerAdder)(nil)
 
 func (c ContainerAdder) Modify(sts *appsv1.StatefulSet) {
 	if sts.Spec.Template.Spec.Containers == nil {
-		sts.Spec.Template.Spec.Containers = make([]corev1.Container, 0, 0)
+		sts.Spec.Template.Spec.Containers = make([]corev1.Container, 0)
 	}
 	sts.Spec.Template.Spec.Containers = append(sts.Spec.Template.Spec.Containers, c.container)
 }
