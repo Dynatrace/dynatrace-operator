@@ -54,7 +54,7 @@ COPY --from=operator-build /usr/lib/libgpgme.so.* /usr/lib/
 COPY --from=k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.5.1 /csi-node-driver-registrar /usr/local/bin
 COPY --from=k8s.gcr.io/sig-storage/livenessprobe:v2.7.0 /livenessprobe /usr/local/bin
 
-# depdenencies
+# dependencies
 COPY --from=dependency-src /mnt/installfs/ /
 
 COPY ./third_party_licenses /usr/share/dynatrace-operator/third_party_licenses
