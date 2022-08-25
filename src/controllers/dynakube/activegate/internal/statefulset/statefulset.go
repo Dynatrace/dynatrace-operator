@@ -4,8 +4,11 @@ import (
 	"fmt"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/secrets"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/customproperties"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/authtoken"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/customproperties"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/tenantinfo"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
@@ -23,7 +26,7 @@ const (
 	authTokenSecretVolumeName = "ag-authtoken-secret"
 
 	annotationActiveGateConfigurationHash = dynatracev1beta1.InternalFlagPrefix + "activegate-configuration-hash"
-	annotationActiveGateContainerAppArmor = "container.apparmor.security.beta.kubernetes.io/" + ContainerName
+	annotationActiveGateContainerAppArmor = "container.apparmor.security.beta.kubernetes.io/" + consts.ActiveGateContainerName
 
 	dtServer             = "DT_SERVER"
 	dtTenant             = "DT_TENANT"
@@ -53,29 +56,27 @@ type statefulSetProperties struct {
 	feature                     string
 	capabilityName              string
 	serviceAccountOwner         string
-	OnAfterCreateListener       []StatefulSetEvent
+	OnAfterCreateListener       []kubeobjects.StatefulSetEvent
 	initContainersTemplates     []corev1.Container
 	containerVolumeMounts       []corev1.VolumeMount
 	volumes                     []corev1.Volume
 }
 
-func NewStatefulSetProperties(instance *dynatracev1beta1.DynaKube, capabilityProperties *dynatracev1beta1.CapabilityProperties, kubeSystemUID types.UID,
-	activeGateHash string, feature string, capabilityName string, serviceAccountOwner string,
-	initContainers []corev1.Container, containerVolumeMounts []corev1.VolumeMount, volumes []corev1.Volume) *statefulSetProperties {
+func NewStatefulSetProperties(dynakube *dynatracev1beta1.DynaKube, capabilityProperties *dynatracev1beta1.CapabilityProperties, kubeSystemUID types.UID, activeGateHash string, feature string, capabilityName string, serviceAccountOwner string, initContainers []corev1.Container, containerVolumeMounts []corev1.VolumeMount, volumes []corev1.Volume, capability capability.Capability) *statefulSetProperties {
 
 	if serviceAccountOwner == "" {
 		serviceAccountOwner = feature
 	}
 
 	return &statefulSetProperties{
-		DynaKube:                    instance,
+		DynaKube:                    dynakube,
 		CapabilityProperties:        capabilityProperties,
 		activeGateConfigurationHash: activeGateHash,
 		kubeSystemUID:               kubeSystemUID,
 		feature:                     feature,
 		capabilityName:              capabilityName,
 		serviceAccountOwner:         serviceAccountOwner,
-		OnAfterCreateListener:       []StatefulSetEvent{},
+		OnAfterCreateListener:       []kubeobjects.StatefulSetEvent{},
 		initContainersTemplates:     initContainers,
 		containerVolumeMounts:       containerVolumeMounts,
 		volumes:                     volumes,
@@ -104,7 +105,7 @@ func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSe
 			Selector:            &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: appLabels.BuildLabels(),
+					Labels: stsProperties.buildLabels(appLabels.BuildLabels()),
 					Annotations: map[string]string{
 						annotationActiveGateConfigurationHash: stsProperties.activeGateConfigurationHash,
 					},
@@ -128,6 +129,13 @@ func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSe
 
 	sts.ObjectMeta.Annotations[kubeobjects.AnnotationHash] = hash
 	return sts, nil
+}
+
+func (stsProperties *statefulSetProperties) buildLabels(appLabels map[string]string) map[string]string {
+	return kubeobjects.MergeLabels(
+		appLabels,
+		stsProperties.Labels,
+	)
 }
 
 func getContainerBuilders(stsProperties *statefulSetProperties) []kubeobjects.ContainerBuilder {
@@ -197,7 +205,7 @@ func buildActiveGateContainer(stsProperties *statefulSetProperties) corev1.Conta
 	readOnlyFs := stsProperties.FeatureActiveGateReadOnlyFilesystem()
 
 	return corev1.Container{
-		Name:            ContainerName,
+		Name:            consts.ActiveGateContainerName,
 		Image:           stsProperties.DynaKube.ActiveGateImage(),
 		Resources:       stsProperties.CapabilityProperties.Resources,
 		ImagePullPolicy: corev1.PullAlways,
@@ -349,7 +357,7 @@ func buildProxyVolumes() []corev1.Volume {
 			Name: InternalProxySecretVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: BuildProxySecretName(),
+					SecretName: capability.BuildProxySecretName(),
 				},
 			},
 		},
@@ -393,7 +401,7 @@ func buildVolumeMounts(stsProperties *statefulSetProperties) []corev1.VolumeMoun
 			Name:      tenantSecretVolumeName,
 			ReadOnly:  true,
 			MountPath: tenantTokenMountPoint,
-			SubPath:   secrets.TenantTokenName,
+			SubPath:   tenantinfo.TenantTokenName,
 		},
 		)
 	}
@@ -403,7 +411,7 @@ func buildVolumeMounts(stsProperties *statefulSetProperties) []corev1.VolumeMoun
 			Name:      authTokenSecretVolumeName,
 			ReadOnly:  true,
 			MountPath: authTokenMountPoint,
-			SubPath:   secrets.ActiveGateAuthTokenName,
+			SubPath:   authtoken.ActiveGateAuthTokenName,
 		})
 	}
 
@@ -522,7 +530,7 @@ func tenantUuidNameEnvVar(stsProperties *statefulSetProperties) corev1.EnvVar {
 				LocalObjectReference: corev1.LocalObjectReference{
 					Name: stsProperties.AGTenantSecret(),
 				},
-				Key: secrets.TenantUuidName,
+				Key: tenantinfo.TenantUuidName,
 			},
 		},
 	}
@@ -536,7 +544,7 @@ func communicationEndpointEnvVar(stsProperties *statefulSetProperties) corev1.En
 				LocalObjectReference: corev1.LocalObjectReference{
 					Name: stsProperties.AGTenantSecret(),
 				},
-				Key: secrets.CommunicationEndpointsName,
+				Key: tenantinfo.CommunicationEndpointsName,
 			},
 		},
 	}
@@ -550,8 +558,4 @@ func isCustomPropertiesNilOrEmpty(customProperties *dynatracev1beta1.DynaKubeVal
 	return customProperties == nil ||
 		(customProperties.Value == "" &&
 			customProperties.ValueFrom == "")
-}
-
-func BuildProxySecretName() string {
-	return "dynatrace" + "-" + MultiActiveGateName + "-" + ProxySecretSuffix
 }

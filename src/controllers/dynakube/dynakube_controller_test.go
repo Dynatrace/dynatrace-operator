@@ -6,8 +6,7 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	rcap "github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
@@ -140,8 +139,8 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 
 		var statefulSet appsv1.StatefulSet
 
-		kubeMonCapability := rcap.NewKubeMonCapability(instance)
-		name := rcap.CalculateStatefulSetName(kubeMonCapability, instance.Name)
+		kubeMonCapability := capability.NewKubeMonCapability(instance)
+		name := capability.CalculateStatefulSetName(kubeMonCapability, instance.Name)
 		err = controller.client.Get(context.TODO(), client.ObjectKey{Name: name, Namespace: testNamespace}, &statefulSet)
 
 		assert.NoError(t, err)
@@ -241,7 +240,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		assert.NotNil(t, result)
 
 		var proxySecret corev1.Secret
-		name := statefulset.BuildProxySecretName()
+		name := capability.BuildProxySecretName()
 		err = controller.client.Get(context.TODO(), client.ObjectKey{Name: name, Namespace: testNamespace}, &proxySecret)
 
 		assert.NoError(t, err)
@@ -271,7 +270,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		assert.NotNil(t, result)
 
 		var proxySecret corev1.Secret
-		name := statefulset.BuildProxySecretName()
+		name := capability.BuildProxySecretName()
 		err = controller.client.Get(context.TODO(), client.ObjectKey{Name: name, Namespace: testNamespace}, &proxySecret)
 
 		assert.Error(t, err)
@@ -392,8 +391,8 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 	_, err = controller.Reconcile(context.TODO(), request)
 	assert.NoError(t, err)
 
-	routingCapability := rcap.NewRoutingCapability(instance)
-	stsName := rcap.CalculateStatefulSetName(routingCapability, testName)
+	routingCapability := capability.NewRoutingCapability(instance)
+	stsName := capability.CalculateStatefulSetName(routingCapability, testName)
 
 	routingSts := &appsv1.StatefulSet{}
 	err = controller.client.Get(context.TODO(), client.ObjectKey{
@@ -406,7 +405,7 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 	routingSvc := &corev1.Service{}
 	err = controller.client.Get(context.TODO(), client.ObjectKey{
 		Namespace: testNamespace,
-		Name:      rcap.BuildServiceName(testName, routingCapability.ShortName()),
+		Name:      testName + "-" + routingCapability.ShortName(),
 	}, routingSvc)
 	assert.NoError(t, err)
 	assert.NotNil(t, routingSvc)
@@ -430,7 +429,7 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 
 	err = controller.client.Get(context.TODO(), client.ObjectKey{
 		Namespace: testNamespace,
-		Name:      rcap.BuildServiceName(testName, routingCapability.ShortName()),
+		Name:      testName + "-" + routingCapability.ShortName(),
 	}, routingSvc)
 	assert.Error(t, err)
 	assert.True(t, k8serrors.IsNotFound(err))
@@ -474,8 +473,8 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 	_, err = r.Reconcile(context.TODO(), request)
 	assert.NoError(t, err)
 
-	multiCapability := rcap.NewMultiCapability(instance)
-	stsName := rcap.CalculateStatefulSetName(multiCapability, testName)
+	multiCapability := capability.NewMultiCapability(instance)
+	stsName := capability.CalculateStatefulSetName(multiCapability, testName)
 
 	routingSts := &appsv1.StatefulSet{}
 	err = r.client.Get(context.TODO(), client.ObjectKey{
@@ -488,7 +487,7 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 	routingSvc := &corev1.Service{}
 	err = r.client.Get(context.TODO(), client.ObjectKey{
 		Namespace: testNamespace,
-		Name:      rcap.BuildServiceName(testName, multiCapability.ShortName()),
+		Name:      testName + "-" + multiCapability.ShortName(),
 	}, routingSvc)
 	assert.NoError(t, err)
 	assert.NotNil(t, routingSvc)
@@ -512,7 +511,7 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 
 	err = r.client.Get(context.TODO(), client.ObjectKey{
 		Namespace: testNamespace,
-		Name:      rcap.BuildServiceName(testName, multiCapability.ShortName()),
+		Name:      testName + "-" + multiCapability.ShortName(),
 	}, routingSvc)
 	assert.Error(t, err)
 	assert.True(t, k8serrors.IsNotFound(err))

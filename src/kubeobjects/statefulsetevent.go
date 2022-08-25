@@ -1,4 +1,4 @@
-package statefulset
+package kubeobjects
 
 import v1 "k8s.io/api/apps/v1"
 

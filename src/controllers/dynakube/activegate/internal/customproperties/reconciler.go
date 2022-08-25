@@ -25,12 +25,12 @@ const (
 type Reconciler struct {
 	client.Client
 	scheme                    *runtime.Scheme
-	customPropertiesSource    dynatracev1beta1.DynaKubeValueSource
+	customPropertiesSource    *dynatracev1beta1.DynaKubeValueSource
 	customPropertiesOwnerName string
 	instance                  *dynatracev1beta1.DynaKube
 }
 
-func NewReconciler(clt client.Client, instance *dynatracev1beta1.DynaKube, customPropertiesOwnerName string, customPropertiesSource dynatracev1beta1.DynaKubeValueSource, scheme *runtime.Scheme) *Reconciler {
+func NewReconciler(clt client.Client, instance *dynatracev1beta1.DynaKube, customPropertiesOwnerName string, scheme *runtime.Scheme, customPropertiesSource *dynatracev1beta1.DynaKubeValueSource) *Reconciler {
 	return &Reconciler{
 		Client:                    clt,
 		instance:                  instance,
@@ -40,24 +40,28 @@ func NewReconciler(clt client.Client, instance *dynatracev1beta1.DynaKube, custo
 	}
 }
 
-func (r *Reconciler) Reconcile() error {
+func (r *Reconciler) Reconcile() (update bool, err error) {
+	if r.customPropertiesSource == nil {
+		return false, nil
+	}
+
 	if r.hasCustomPropertiesValueOnly() {
 		mustNotUpdate, err := r.createCustomPropertiesIfNotExists()
 		if err != nil {
 			log.Error(err, "could not create custom properties", "owner", r.customPropertiesOwnerName)
-			return errors.WithStack(err)
+			return false, errors.WithStack(err)
 		}
 
 		if !mustNotUpdate {
 			err = r.updateCustomPropertiesIfOutdated()
 			if err != nil {
 				log.Error(err, "could not update custom properties", "owner", r.customPropertiesOwnerName)
-				return errors.WithStack(err)
+				return false, errors.WithStack(err)
 			}
 		}
 	}
 
-	return nil
+	return false, nil
 }
 
 func (r *Reconciler) createCustomPropertiesIfNotExists() (bool, error) {

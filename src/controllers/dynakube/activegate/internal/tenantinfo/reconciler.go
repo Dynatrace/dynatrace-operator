@@ -1,4 +1,4 @@
-package secrets
+package tenantinfo
 
 import (
 	"context"
@@ -21,35 +21,36 @@ const (
 	TenantUuidName             = "tenant-uuid"
 )
 
-type TenantSecretReconciler struct {
+type Reconciler struct {
 	client.Client
 	apiReader client.Reader
-	instance  *dynatracev1beta1.DynaKube
+	dynakube  *dynatracev1beta1.DynaKube
 	scheme    *runtime.Scheme
 	dtc       dtclient.Client
 }
 
-func NewTenantSecretReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, instance *dynatracev1beta1.DynaKube, dtc dtclient.Client) *TenantSecretReconciler {
-	return &TenantSecretReconciler{
+var _ kubeobjects.Reconciler = (*Reconciler)(nil)
+
+func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) *Reconciler {
+	return &Reconciler{
 		Client:    clt,
 		apiReader: apiReader,
 		scheme:    scheme,
-		instance:  instance,
+		dynakube:  dynakube,
 		dtc:       dtc,
 	}
 }
 
-func (r *TenantSecretReconciler) Reconcile() error {
-	err := r.reconcileSecret()
-	if err != nil {
+func (r *Reconciler) Reconcile() (update bool, err error) {
+	if err = r.reconcileSecret(); err != nil {
 		log.Error(err, "could not reconcile ActiveGate tenant secret")
-		return errors.WithStack(err)
+		return false, errors.WithStack(err)
 	}
 
-	return nil
+	return true, err
 }
 
-func (r *TenantSecretReconciler) reconcileSecret() error {
+func (r *Reconciler) reconcileSecret() error {
 	agSecretData, err := r.getActiveGateTenantInfo()
 	if err != nil {
 		return fmt.Errorf("failed to fetch ActiveGate tenant info: %w", err)
@@ -63,7 +64,7 @@ func (r *TenantSecretReconciler) reconcileSecret() error {
 	return r.updateSecretIfOutdated(agSecret, agSecretData)
 }
 
-func (r *TenantSecretReconciler) getActiveGateTenantInfo() (map[string][]byte, error) {
+func (r *Reconciler) getActiveGateTenantInfo() (map[string][]byte, error) {
 	tenantInfo, err := r.dtc.GetActiveGateTenantInfo()
 
 	if err != nil {
@@ -77,10 +78,10 @@ func (r *TenantSecretReconciler) getActiveGateTenantInfo() (map[string][]byte, e
 	}, nil
 }
 
-func (r *TenantSecretReconciler) createSecretIfNotExists(agSecretData map[string][]byte) (*corev1.Secret, error) {
+func (r *Reconciler) createSecretIfNotExists(agSecretData map[string][]byte) (*corev1.Secret, error) {
 	var config corev1.Secret
 	err := r.apiReader.Get(context.TODO(),
-		client.ObjectKey{Name: extendWithAGSecretSuffix(r.instance.Name), Namespace: r.instance.Namespace},
+		client.ObjectKey{Name: extendWithAGSecretSuffix(r.dynakube.Name), Namespace: r.dynakube.Namespace},
 		&config)
 	if k8serrors.IsNotFound(err) {
 		log.Info("creating ag secret")
@@ -89,28 +90,28 @@ func (r *TenantSecretReconciler) createSecretIfNotExists(agSecretData map[string
 	return &config, err
 }
 
-func (r *TenantSecretReconciler) updateSecretIfOutdated(secret *corev1.Secret, desiredSecret map[string][]byte) error {
+func (r *Reconciler) updateSecretIfOutdated(secret *corev1.Secret, desiredSecret map[string][]byte) error {
 	if !kubeobjects.IsSecretDataEqual(secret, desiredSecret) {
 		return r.updateSecret(secret, desiredSecret)
 	}
 	return nil
 }
 
-func (r *TenantSecretReconciler) createSecret(secretData map[string][]byte) (*corev1.Secret, error) {
-	secret := kubeobjects.NewSecret(extendWithAGSecretSuffix(r.instance.Name), r.instance.Namespace, secretData)
+func (r *Reconciler) createSecret(secretData map[string][]byte) (*corev1.Secret, error) {
+	secret := kubeobjects.NewSecret(extendWithAGSecretSuffix(r.dynakube.Name), r.dynakube.Namespace, secretData)
 
-	if err := controllerutil.SetControllerReference(r.instance, secret, r.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(r.dynakube, secret, r.scheme); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
 	err := r.Create(context.TODO(), secret)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create secret '%s': %w", extendWithAGSecretSuffix(r.instance.Name), err)
+		return nil, fmt.Errorf("failed to create secret '%s': %w", extendWithAGSecretSuffix(r.dynakube.Name), err)
 	}
 	return secret, nil
 }
 
-func (r *TenantSecretReconciler) updateSecret(agSecret *corev1.Secret, desiredAGSecretData map[string][]byte) error {
+func (r *Reconciler) updateSecret(agSecret *corev1.Secret, desiredAGSecretData map[string][]byte) error {
 	log.Info("updating secret", "name", agSecret.Name)
 	agSecret.Data = desiredAGSecretData
 	if err := r.Update(context.TODO(), agSecret); err != nil {

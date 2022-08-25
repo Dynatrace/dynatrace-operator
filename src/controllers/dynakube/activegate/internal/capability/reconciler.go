@@ -6,7 +6,8 @@ import (
 	"reflect"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -20,48 +21,54 @@ import (
 const (
 	httpsContainerPort = 9999
 	httpContainerPort  = 9998
-	dtDNSEntryPoint    = "DT_DNS_ENTRY_POINT"
+	dtDnsEntryPoint    = "DT_DNS_ENTRY_POINT"
 )
 
-type activegateReconciler interface {
-	Reconcile() (update bool, err error)
-	AddOnAfterStatefulSetCreateListener(event statefulset.StatefulSetEvent)
+type statefulsetReconciler interface {
+	kubeobjects.Reconciler
+	AddOnAfterStatefulSetCreateListener(event kubeobjects.StatefulSetEvent)
 }
 
 type Reconciler struct {
 	client.Client
-	activegateReconciler
-	Capability
-	Instance *dynatracev1beta1.DynaKube
+	capability.Capability
+	statefulsetReconciler
+	customPropertiesReconciler kubeobjects.Reconciler
+	Dynakube                   *dynatracev1beta1.DynaKube
 }
 
-func NewReconciler(clt client.Client, capability Capability, baseReconciler activegateReconciler, instance *dynatracev1beta1.DynaKube) *Reconciler {
+var _ statefulsetReconciler = (*Reconciler)(nil)
+
+func NewReconciler(clt client.Client, capability capability.Capability, dynakube *dynatracev1beta1.DynaKube, statefulsetReconciler statefulsetReconciler, customPropertiesReconciler kubeobjects.Reconciler) *Reconciler {
 	if capability.Config().SetDnsEntryPoint {
-		baseReconciler.AddOnAfterStatefulSetCreateListener(addDNSEntryPoint(instance, capability.ShortName()))
+		statefulsetReconciler.AddOnAfterStatefulSetCreateListener(addDNSEntryPoint(dynakube, capability.ShortName()))
 	}
 
 	if capability.Config().SetCommunicationPort {
-		baseReconciler.AddOnAfterStatefulSetCreateListener(setCommunicationsPort(instance))
+		statefulsetReconciler.AddOnAfterStatefulSetCreateListener(setCommunicationsPort(dynakube))
 	}
 
 	if capability.Config().SetReadinessPort {
-		baseReconciler.AddOnAfterStatefulSetCreateListener(setReadinessProbePort())
+		statefulsetReconciler.AddOnAfterStatefulSetCreateListener(setReadinessProbePort())
 	}
 
 	return &Reconciler{
-		activegateReconciler: baseReconciler,
-		Capability:           capability,
-		Instance:             instance,
-		Client:               clt,
+		statefulsetReconciler:      statefulsetReconciler,
+		customPropertiesReconciler: customPropertiesReconciler,
+		Capability:                 capability,
+		Dynakube:                   dynakube,
+		Client:                     clt,
 	}
 }
 
-func setReadinessProbePort() statefulset.StatefulSetEvent {
+type NewReconcilerFunc = func(clt client.Client, capability capability.Capability, dynakube *dynatracev1beta1.DynaKube, statefulsetReconciler statefulsetReconciler, customPropertiesReconciler kubeobjects.Reconciler) *Reconciler
+
+func setReadinessProbePort() kubeobjects.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {
 		if activeGateContainer, err := getActiveGateContainer(sts); err == nil {
-			activeGateContainer.ReadinessProbe.HTTPGet.Port = intstr.FromString(HttpsServicePortName)
+			activeGateContainer.ReadinessProbe.HTTPGet.Port = intstr.FromString(consts.HttpsServicePortName)
 		} else {
-			log.Error(err, "Cannot find container in the StatefulSet", "container name", statefulset.ContainerName)
+			log.Error(err, "Cannot find container in the StatefulSet", "container name", consts.ActiveGateContainerName)
 		}
 	}
 }
@@ -78,69 +85,75 @@ func getContainerByName(containers []corev1.Container, containerName string) (*c
 }
 
 func getActiveGateContainer(sts *appsv1.StatefulSet) (*corev1.Container, error) {
-	return getContainerByName(sts.Spec.Template.Spec.Containers, statefulset.ContainerName)
+	return getContainerByName(sts.Spec.Template.Spec.Containers, consts.ActiveGateContainerName)
 }
 
-func setCommunicationsPort(dk *dynatracev1beta1.DynaKube) statefulset.StatefulSetEvent {
+func setCommunicationsPort(dk *dynatracev1beta1.DynaKube) kubeobjects.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {
 		activeGateContainer, err := getActiveGateContainer(sts)
 		if err == nil {
 			activeGateContainer.Ports = []corev1.ContainerPort{
 				{
-					Name:          HttpsServicePortName,
+					Name:          consts.HttpsServicePortName,
 					ContainerPort: httpsContainerPort,
 				},
 				{
-					Name:          HttpServicePortName,
+					Name:          consts.HttpServicePortName,
 					ContainerPort: httpContainerPort,
 				},
 			}
 		} else {
-			log.Info("Cannot find container in the StatefulSet", "container name", statefulset.ContainerName)
+			log.Info("Cannot find container in the StatefulSet", "container name", consts.ActiveGateContainerName)
 		}
 
 		if dk.NeedsStatsd() {
-			statsdContainer, err := getContainerByName(sts.Spec.Template.Spec.Containers, statefulset.StatsdContainerName)
+			statsdContainer, err := getContainerByName(sts.Spec.Template.Spec.Containers, consts.StatsdContainerName)
 			if err == nil {
 				statsdContainer.Ports = []corev1.ContainerPort{
 					{
-						Name:          statefulset.StatsdIngestTargetPort,
-						ContainerPort: statefulset.StatsdIngestPort,
+						Name:          consts.StatsdIngestTargetPort,
+						ContainerPort: consts.StatsdIngestPort,
 						Protocol:      corev1.ProtocolUDP,
 					},
 				}
 			} else {
-				log.Info("Cannot find container in the StatefulSet", "container name", statefulset.StatsdContainerName)
+				log.Info("Cannot find container in the StatefulSet", "container name", consts.StatsdContainerName)
 			}
 		}
 	}
 }
 
 func (r *Reconciler) calculateStatefulSetName() string {
-	return CalculateStatefulSetName(r.Capability, r.Instance.Name)
+	return capability.CalculateStatefulSetName(r.Capability, r.Dynakube.Name)
 }
 
-func addDNSEntryPoint(instance *dynatracev1beta1.DynaKube, moduleName string) statefulset.StatefulSetEvent {
+func addDNSEntryPoint(dynakube *dynatracev1beta1.DynaKube, moduleName string) kubeobjects.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {
 		if activeGateContainer, err := getActiveGateContainer(sts); err == nil {
 			activeGateContainer.Env = append(activeGateContainer.Env,
 				corev1.EnvVar{
-					Name:  dtDNSEntryPoint,
-					Value: buildDNSEntryPoint(instance, moduleName),
+					Name:  dtDnsEntryPoint,
+					Value: buildDNSEntryPoint(dynakube, moduleName),
 				})
 		} else {
-			log.Error(err, "Cannot find container in the StatefulSet", "container name", statefulset.ContainerName)
+			log.Error(err, "Cannot find container in the StatefulSet", "container name", consts.ActiveGateContainerName)
 		}
 	}
 }
 
-func buildDNSEntryPoint(instance *dynatracev1beta1.DynaKube, moduleName string) string {
-	return fmt.Sprintf("https://%s/communication", buildServiceHostName(instance.Name, moduleName))
+func buildDNSEntryPoint(dynakube *dynatracev1beta1.DynaKube, moduleName string) string {
+	return fmt.Sprintf("https://%s/communication", BuildServiceHostName(dynakube.Name, moduleName))
 }
 
 func (r *Reconciler) Reconcile() (update bool, err error) {
+	_, err = r.customPropertiesReconciler.Reconcile()
+	if err != nil {
+		return update, errors.WithStack(err)
+	}
+
 	if r.ShouldCreateService() {
-		multiCapability := NewMultiCapability(r.Instance)
+		// TODO: MutliCapability shouldn't be used here - it may be as well one of deprecated Capabilities: Kubemon or Routing
+		multiCapability := capability.NewMultiCapability(r.Dynakube)
 		update, err = r.createOrUpdateService(multiCapability.ServicePorts)
 		if update || err != nil {
 			return update, errors.WithStack(err)
@@ -154,18 +167,18 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 		}
 	}
 
-	update, err = r.activegateReconciler.Reconcile()
+	update, err = r.statefulsetReconciler.Reconcile()
 	return update, errors.WithStack(err)
 }
 
-func (r *Reconciler) createOrUpdateService(desiredServicePorts AgServicePorts) (bool, error) {
-	desired := createService(r.Instance, r.ShortName(), desiredServicePorts)
+func (r *Reconciler) createOrUpdateService(desiredServicePorts capability.AgServicePorts) (bool, error) {
+	desired := CreateService(r.Dynakube, r.ShortName(), desiredServicePorts)
 
 	installed := &corev1.Service{}
 	err := r.Get(context.TODO(), kubeobjects.Key(desired), installed)
 	if k8serrors.IsNotFound(err) && desiredServicePorts.HasPorts() {
 		log.Info("creating AG service", "module", r.ShortName())
-		if err = controllerutil.SetControllerReference(r.Instance, desired, r.Scheme()); err != nil {
+		if err = controllerutil.SetControllerReference(r.Dynakube, desired, r.Scheme()); err != nil {
 			return false, errors.WithStack(err)
 		}
 
