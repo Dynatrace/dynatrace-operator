@@ -12,8 +12,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/kubernetes/objectmeta"
+	objectMetaModifiers "github.com/Dynatrace/dynatrace-operator/src/kubeobjects/kubernetes/objectmeta/modifiers"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/kubernetes/statefulset"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/kubernetes/statefulset/modifiers"
+	statefulsetModifiers "github.com/Dynatrace/dynatrace-operator/src/kubeobjects/kubernetes/statefulset/modifiers"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -86,6 +88,17 @@ func NewStatefulSetProperties(dynakube *dynatracev1beta1.DynaKube, capabilityPro
 }
 
 func CreateStatefulSet2(stsProperties *statefulSetProperties) (*appsv1.StatefulSet, error) {
+	stsBuilder := statefulset.Builder{}
+
+	stsBuilder.AddModifier(statefulsetModifiers.ObjectMetaSetter{
+		ObjectMeta: createObjectMeta(stsProperties),
+	})
+
+	sts := stsBuilder.Build()
+	return &sts, nil
+}
+
+func createObjectMeta(stsProperties *statefulSetProperties) metav1.ObjectMeta {
 	versionLabelValue := stsProperties.Status.ActiveGate.Version
 	if stsProperties.CustomActiveGateImage() != "" {
 		versionLabelValue = kubeobjects.CustomImageLabelValue
@@ -94,16 +107,13 @@ func CreateStatefulSet2(stsProperties *statefulSetProperties) (*appsv1.StatefulS
 	appLabels := kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, stsProperties.DynaKube.Name,
 		stsProperties.feature, versionLabelValue)
 
-	stsBuilder := statefulset.Builder{}
-
-	// ObjectMeta:
-	stsBuilder.AddModifier(modifiers.NameSetter{Name: stsProperties.Name + "-" + stsProperties.feature})
-	stsBuilder.AddModifier(modifiers.NamespaceSetter{Namespace: stsProperties.Namespace})
-	stsBuilder.AddModifier(modifiers.LabelsSetter{Labels: appLabels.BuildLabels()})
-	stsBuilder.AddModifier(modifiers.AnnotationsSetter{Annotations: map[string]string{}})
-
-	sts := stsBuilder.Build()
-	return &sts, nil
+	objectMetaBuilder := objectmeta.Builder{}
+	objectMetaBuilder.AddModifier(objectMetaModifiers.NameSetter{Name: stsProperties.Name + "-" + stsProperties.feature})
+	objectMetaBuilder.AddModifier(objectMetaModifiers.NamespaceSetter{Namespace: stsProperties.Namespace})
+	objectMetaBuilder.AddModifier(objectMetaModifiers.LabelsSetter{Labels: appLabels.BuildLabels()})
+	objectMetaBuilder.AddModifier(objectMetaModifiers.AnnotationsSetter{Annotations: map[string]string{}})
+	objectMeta := objectMetaBuilder.Build()
+	return objectMeta
 }
 
 func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSet, error) {

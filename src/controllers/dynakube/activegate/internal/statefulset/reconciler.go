@@ -119,7 +119,7 @@ func (r *Reconciler) buildDesiredStatefulSet() (*appsv1.StatefulSet, error) {
 	)
 	stsProperties.OnAfterCreateListener = r.onAfterStatefulSetCreateListener
 
-	desiredSts, err := CreateStatefulSet(stsProperties)
+	desiredSts, err := CreateStatefulSet2(stsProperties)
 	return desiredSts, errors.WithStack(err)
 }
 
