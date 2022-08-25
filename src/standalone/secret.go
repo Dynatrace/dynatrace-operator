@@ -63,6 +63,9 @@ func newSecretConfigViaFs(fs afero.Fs) (*SecretConfig, error) {
 	}
 
 	rawJson2, err := ioutil.ReadAll(file2)
+	if err != nil {
+		return nil, err
+	}
 
 	var config SecretConfig
 
