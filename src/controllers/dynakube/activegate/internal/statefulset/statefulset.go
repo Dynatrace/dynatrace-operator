@@ -100,10 +100,11 @@ func CreateStatefulSet2(stsProperties *statefulSetProperties) (*appsv1.StatefulS
 	}
 	stsBuilder.AddModifier(statefulsetModifiers.ObjectMetaSetter{ObjectMeta: stsMetadataBuilder.Build()})
 
-	stsBuilder.AddModifier(statefulsetModifiers.PodTemplateSpecSetter{PodTemplateSpec: createPodTemplateSpec(stsProperties, appLabels)})
-	stsBuilder.AddModifier(statefulsetModifiers.ReplicasSetter{Replicas: stsProperties.Replicas})
-	stsBuilder.AddModifier(statefulsetModifiers.PodManagementPolicySetter{PodManagementPolicy: appsv1.ParallelPodManagement})
-	stsBuilder.AddModifier(statefulsetModifiers.LabelSelectorSetter{LabelSelector: &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()}})
+	stsBuilder.
+		AddModifier(statefulsetModifiers.PodTemplateSpecSetter{PodTemplateSpec: createPodTemplateSpec(stsProperties, appLabels)}).
+		AddModifier(statefulsetModifiers.ReplicasSetter{Replicas: stsProperties.Replicas}).
+		AddModifier(statefulsetModifiers.PodManagementPolicySetter{PodManagementPolicy: appsv1.ParallelPodManagement}).
+		AddModifier(statefulsetModifiers.LabelSelectorSetter{LabelSelector: &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()}})
 
 	for _, onAfterCreateListener := range stsProperties.OnAfterCreateListener {
 		stsBuilder.AddModifier(statefulsetModifiers.GenericModifier{ModifierFunc: onAfterCreateListener})
@@ -129,19 +130,20 @@ func createPodTemplateSpec(stsProperties *statefulSetProperties, appLabels *kube
 	objectMetaBuilder.AddModifier(objectMetaModifiers.AnnotationsSetter{Annotations: map[string]string{
 		annotationActiveGateConfigurationHash: stsProperties.activeGateConfigurationHash,
 	}})
-	podTemplateSpecBuilder.AddModifier(podTemplateSpecModifiers.ObjectMetaSetter{ObjectMeta: objectMetaBuilder.Build()})
-
-	podTemplateSpecBuilder.AddModifier(podTemplateSpecModifiers.PodSpecSetter{PodSpec: buildTemplateSpec(stsProperties)})
+	podTemplateSpecBuilder.
+		AddModifier(podTemplateSpecModifiers.ObjectMetaSetter{ObjectMeta: objectMetaBuilder.Build()}).
+		AddModifier(podTemplateSpecModifiers.PodSpecSetter{PodSpec: buildTemplateSpec(stsProperties)})
 
 	return podTemplateSpecBuilder.Build()
 }
 
 func createObjectMetaBuilder(stsProperties *statefulSetProperties, appLabels *kubeobjects.AppLabels) objectmeta.Builder {
 	objectMetaBuilder := objectmeta.Builder{}
-	objectMetaBuilder.AddModifier(objectMetaModifiers.NameSetter{Name: stsProperties.Name + "-" + stsProperties.feature})
-	objectMetaBuilder.AddModifier(objectMetaModifiers.NamespaceSetter{Namespace: stsProperties.Namespace})
-	objectMetaBuilder.AddModifier(objectMetaModifiers.LabelsSetter{Labels: appLabels.BuildLabels()})
-	objectMetaBuilder.AddModifier(objectMetaModifiers.AnnotationsSetter{Annotations: map[string]string{}})
+	objectMetaBuilder.
+		AddModifier(objectMetaModifiers.NameSetter{Name: stsProperties.Name + "-" + stsProperties.feature}).
+		AddModifier(objectMetaModifiers.NamespaceSetter{Namespace: stsProperties.Namespace}).
+		AddModifier(objectMetaModifiers.LabelsSetter{Labels: appLabels.BuildLabels()}).
+		AddModifier(objectMetaModifiers.AnnotationsSetter{Annotations: map[string]string{}})
 	return objectMetaBuilder
 }
 

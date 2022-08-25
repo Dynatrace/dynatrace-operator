@@ -50,11 +50,11 @@ func TestStatefulsetBuilder(t *testing.T) {
 		modifierMock1.On("Modify", mock.Anything).Return()
 
 		b.AddModifier(modifierMock0, modifierMock0, modifierMock1)
+		actual := b.Build()
 
 		modifierMock0.AssertNumberOfCalls(t, "Modify", 2)
 		modifierMock1.AssertNumberOfCalls(t, "Modify", 1)
 
-		actual := b.Build()
 		expected := corev1.PodTemplateSpec{}
 		assert.Equal(t, expected, actual)
 	})
