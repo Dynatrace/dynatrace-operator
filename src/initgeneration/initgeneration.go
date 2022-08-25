@@ -248,6 +248,7 @@ func (g *InitGenerator) createSecretData(secretConfig *standalone.SecretConfig) 
 	}
 	return map[string][]byte{
 		config.AgentInitSecretConfigField: jsonContent,
+		"apiUrl":                          []byte(secretConfig.ApiUrl),
 		dynatracev1beta1.ProxyKey:         []byte(secretConfig.Proxy), // needed so that it can be mounted to the user's pod without directly reading the secret
 	}, nil
 }

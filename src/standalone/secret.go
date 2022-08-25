@@ -52,15 +52,26 @@ func newSecretConfigViaFs(fs afero.Fs) (*SecretConfig, error) {
 	if err != nil {
 		return nil, err
 	}
+	file2, err := fs.Open(filepath.Join("mnt/test", "apiUrl"))
+	if err != nil {
+		return nil, err
+	}
 
 	rawJson, err := ioutil.ReadAll(file)
 	if err != nil {
 		return nil, err
 	}
 
+	rawJson2, err := ioutil.ReadAll(file2)
+
 	var config SecretConfig
 
 	err = json.Unmarshal(rawJson, &config)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(rawJson2, &config)
 	if err != nil {
 		return nil, err
 	}
