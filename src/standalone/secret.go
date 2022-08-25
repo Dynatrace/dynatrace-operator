@@ -52,7 +52,7 @@ func newSecretConfigViaFs(fs afero.Fs) (*SecretConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-	file2, err := fs.Open(filepath.Join(config.AgentConfigDirMount, "apiUrl"))
+	file2, err := fs.Open(filepath.Join(config.AgentConfigDirMount, config.AgentInitSecretConfigField))
 	if err != nil {
 		return nil, err
 	}
