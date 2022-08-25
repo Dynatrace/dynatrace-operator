@@ -1,24 +1,36 @@
-package builder
+package statefulset
 
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/builder/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	appsv1 "k8s.io/api/apps/v1"
 )
+
+type ModifierMock struct {
+	mock.Mock
+}
+
+func NewModifierMock() *ModifierMock {
+	return &ModifierMock{}
+}
+
+func (m *ModifierMock) Modify(sts *appsv1.StatefulSet) {
+	m.Called(sts)
+}
 
 func TestStatefulsetBuilder(t *testing.T) {
 	t.Run("Simple, no modifiers", func(t *testing.T) {
-		b := Builder[mocks.DataMock]{}
+		b := Builder{}
 		actual := b.Build()
-		expected := mocks.DataMock{}
+		expected := appsv1.StatefulSet{}
 		assert.Equal(t, expected, actual)
 	})
 	t.Run("One modifier", func(t *testing.T) {
-		b := Builder[mocks.DataMock]{}
+		b := Builder{}
 
-		modifierMock := mocks.NewModifierMock[mocks.DataMock]()
+		modifierMock := NewModifierMock()
 		modifierMock.On("Modify", mock.Anything).Return()
 
 		b.AddModifier(modifierMock)
@@ -26,15 +38,15 @@ func TestStatefulsetBuilder(t *testing.T) {
 
 		modifierMock.AssertNumberOfCalls(t, "Modify", 1)
 
-		expected := mocks.DataMock{}
+		expected := appsv1.StatefulSet{}
 		assert.Equal(t, expected, actual)
 	})
 	t.Run("Two modifiers, one used twice", func(t *testing.T) {
-		b := Builder[mocks.DataMock]{}
+		b := Builder{}
 
-		modifierMock0 := mocks.NewModifierMock[mocks.DataMock]()
+		modifierMock0 := NewModifierMock()
 		modifierMock0.On("Modify", mock.Anything).Return()
-		modifierMock1 := mocks.NewModifierMock[mocks.DataMock]()
+		modifierMock1 := NewModifierMock()
 		modifierMock1.On("Modify", mock.Anything).Return()
 
 		b.AddModifier(modifierMock0, modifierMock0, modifierMock1)
@@ -43,7 +55,7 @@ func TestStatefulsetBuilder(t *testing.T) {
 		modifierMock1.AssertNumberOfCalls(t, "Modify", 1)
 
 		actual := b.Build()
-		expected := mocks.DataMock{}
+		expected := appsv1.StatefulSet{}
 		assert.Equal(t, expected, actual)
 	})
 }
