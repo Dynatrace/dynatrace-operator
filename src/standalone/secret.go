@@ -48,10 +48,10 @@ func (secret SecretConfig) logContent() {
 
 func newSecretConfigViaFs(fs afero.Fs) (*SecretConfig, error) {
 	file, err := fs.Open(filepath.Join(ConfigDirMount, SecretConfigFieldName))
+	file2, err := fs.Open(filepath.Join(filepath.Join("mnt", "test"), "apiUrl"))
 	if err != nil {
 		return nil, err
 	}
-	log.Info("file:", "file:", file)
 
 	rawJson, err := ioutil.ReadAll(file)
 	if err != nil {
@@ -64,7 +64,16 @@ func newSecretConfigViaFs(fs afero.Fs) (*SecretConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Info("file content:", "rawJson:", rawJson)
+
+	rawJson, err = ioutil.ReadAll(file2)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(rawJson, &config)
+	if err != nil {
+		return nil, err
+	}
 
 	log.Info("read secret from filesystem")
 	config.logContent()
