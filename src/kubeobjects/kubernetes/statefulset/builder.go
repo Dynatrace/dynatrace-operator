@@ -1,7 +1,7 @@
 package statefulset
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/kubernetes/statefulset/types"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/kubernetes/statefulset/internal/types"
 )
 
 type Modifier = types.Modifier
