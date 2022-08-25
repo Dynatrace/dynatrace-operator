@@ -105,18 +105,19 @@ func CreateStatefulSet2(stsProperties *statefulSetProperties) (*appsv1.StatefulS
 	stsBuilder.AddModifier(statefulsetModifiers.PodManagementPolicySetter{PodManagementPolicy: appsv1.ParallelPodManagement})
 	stsBuilder.AddModifier(statefulsetModifiers.LabelSelectorSetter{LabelSelector: &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()}})
 
-	sts := stsBuilder.Build()
-
 	for _, onAfterCreateListener := range stsProperties.OnAfterCreateListener {
-		onAfterCreateListener(&sts)
+		stsBuilder.AddModifier(statefulsetModifiers.GenericModifier{ModifierFunc: onAfterCreateListener})
 	}
 
-	hash, err := kubeobjects.GenerateHash(sts)
+	hash, err := kubeobjects.GenerateHash(stsBuilder.Build())
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	sts.ObjectMeta.Annotations[kubeobjects.AnnotationHash] = hash // post-build modification -> can be moved to `builder.Build()` as callback
+	stsBuilder.AddModifier(statefulsetModifiers.AnnotationsAdder{Annotations: map[string]string{
+		kubeobjects.AnnotationHash: hash,
+	}})
 
+	sts := stsBuilder.Build()
 	return &sts, nil
 }
 
