@@ -3,15 +3,15 @@ package modifiers
 import (
 	internalTypes "github.com/Dynatrace/dynatrace-operator/src/kubeobjects/kubernetes/statefulset/internal/types"
 	appsv1 "k8s.io/api/apps/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
-type LabelSelectorSetter struct {
-	LabelSelector *metav1.LabelSelector
+type PodTemplateSpecSetter struct {
+	PodTemplateSpec v1.PodTemplateSpec
 }
 
-var _ internalTypes.Modifier = (*LabelSelectorSetter)(nil)
+var _ internalTypes.Modifier = (*PodTemplateSpecSetter)(nil)
 
-func (s LabelSelectorSetter) Modify(sts *appsv1.StatefulSet) {
-	sts.Spec.Selector = s.LabelSelector
+func (s PodTemplateSpecSetter) Modify(sts *appsv1.StatefulSet) {
+	sts.Spec.Template = s.PodTemplateSpec
 }

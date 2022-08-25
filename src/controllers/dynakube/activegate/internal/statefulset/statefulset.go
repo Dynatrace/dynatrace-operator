@@ -98,8 +98,8 @@ func CreateStatefulSet2(stsProperties *statefulSetProperties) (*appsv1.StatefulS
 	if stsProperties.DynaKube.FeatureActiveGateAppArmor() {
 		stsMetadataBuilder.AddModifier(objectMetaModifiers.AnnotationsAdder{Annotations: map[string]string{annotationActiveGateContainerAppArmor: "runtime/default"}})
 	}
-
 	stsBuilder.AddModifier(statefulsetModifiers.ObjectMetaSetter{ObjectMeta: stsMetadataBuilder.Build()})
+
 	stsBuilder.AddModifier(statefulsetModifiers.PodTemplateSpecSetter{PodTemplateSpec: createPodTemplateSpec(stsProperties, appLabels)})
 	stsBuilder.AddModifier(statefulsetModifiers.ReplicasSetter{Replicas: stsProperties.Replicas})
 	stsBuilder.AddModifier(statefulsetModifiers.PodManagementPolicySetter{PodManagementPolicy: appsv1.ParallelPodManagement})
@@ -115,22 +115,24 @@ func CreateStatefulSet2(stsProperties *statefulSetProperties) (*appsv1.StatefulS
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-
-	sts.ObjectMeta.Annotations[kubeobjects.AnnotationHash] = hash // post-build modification
+	sts.ObjectMeta.Annotations[kubeobjects.AnnotationHash] = hash // post-build modification -> can be moved to `builder.Build()` as callback
 
 	return &sts, nil
 }
 
 func createPodTemplateSpec(stsProperties *statefulSetProperties, appLabels *kubeobjects.AppLabels) corev1.PodTemplateSpec {
 	podTemplateSpecBuilder := podtemplatespec.Builder{}
+
 	objectMetaBuilder := objectmeta.Builder{}
 	objectMetaBuilder.AddModifier(objectMetaModifiers.LabelsSetter{Labels: stsProperties.buildLabels(appLabels.BuildLabels())})
 	objectMetaBuilder.AddModifier(objectMetaModifiers.AnnotationsSetter{Annotations: map[string]string{
 		annotationActiveGateConfigurationHash: stsProperties.activeGateConfigurationHash,
 	}})
 	podTemplateSpecBuilder.AddModifier(podTemplateSpecModifiers.ObjectMetaSetter{ObjectMeta: objectMetaBuilder.Build()})
-	podTemplateSpec := podTemplateSpecBuilder.Build()
-	return podTemplateSpec
+
+	podTemplateSpecBuilder.AddModifier(podTemplateSpecModifiers.PodSpecSetter{PodSpec: buildTemplateSpec(stsProperties)})
+
+	return podTemplateSpecBuilder.Build()
 }
 
 func createObjectMetaBuilder(stsProperties *statefulSetProperties, appLabels *kubeobjects.AppLabels) objectmeta.Builder {

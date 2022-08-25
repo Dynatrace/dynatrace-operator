@@ -11,10 +11,10 @@ import (
 )
 
 func TestPodTemplateSpecSetter(t *testing.T) {
-	t.Run("Set podtemplatespec", func(t *testing.T) {
+	t.Run("Set PodTemplateSpec", func(t *testing.T) {
 		pts := corev1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "aaa",
+				Name: "asd",
 			},
 		}
 
