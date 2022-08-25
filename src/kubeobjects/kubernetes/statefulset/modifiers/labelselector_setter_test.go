@@ -4,24 +4,29 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/kubernetes/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/kubernetes/types"
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestObjectMetaSetter(t *testing.T) {
-	t.Run("Set obectmeta", func(t *testing.T) {
+func TestLabelSelectorSetter(t *testing.T) {
+	t.Run("Set labelselector", func(t *testing.T) {
 
-		om := v1.ObjectMeta{Name: "asd"}
+		labelSelector := &v1.LabelSelector{
+			MatchLabels: types.Labels{"a": "aa"},
+		}
 
 		b := statefulset.Builder{}
 		b.AddModifier(
-			ObjectMetaSetter{ObjectMeta: om},
+			LabelSelectorSetter{LabelSelector: labelSelector},
 		)
 
 		actual := b.Build()
 		expected := appsv1.StatefulSet{
-			ObjectMeta: om,
+			Spec: appsv1.StatefulSetSpec{
+				Selector: labelSelector,
+			},
 		}
 		assert.Equal(t, expected, actual)
 	})

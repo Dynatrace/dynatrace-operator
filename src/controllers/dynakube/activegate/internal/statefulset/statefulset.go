@@ -88,25 +88,23 @@ func NewStatefulSetProperties(dynakube *dynatracev1beta1.DynaKube, capabilityPro
 }
 
 func CreateStatefulSet2(stsProperties *statefulSetProperties) (*appsv1.StatefulSet, error) {
+	appLabels := createAppLabels(stsProperties)
+
 	stsBuilder := statefulset.Builder{}
 
 	stsBuilder.AddModifier(statefulsetModifiers.ObjectMetaSetter{
-		ObjectMeta: createObjectMeta(stsProperties),
+		ObjectMeta: createObjectMeta(stsProperties, appLabels),
 	})
+
+	stsBuilder.AddModifier(statefulsetModifiers.ReplicasSetter{Replicas: stsProperties.Replicas})
+	stsBuilder.AddModifier(statefulsetModifiers.PodManagementPolicySetter{PodManagementPolicy: appsv1.ParallelPodManagement})
+	stsBuilder.AddModifier(statefulsetModifiers.LabelSelectorSetter{LabelSelector: &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()}})
 
 	sts := stsBuilder.Build()
 	return &sts, nil
 }
 
-func createObjectMeta(stsProperties *statefulSetProperties) metav1.ObjectMeta {
-	versionLabelValue := stsProperties.Status.ActiveGate.Version
-	if stsProperties.CustomActiveGateImage() != "" {
-		versionLabelValue = kubeobjects.CustomImageLabelValue
-	}
-
-	appLabels := kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, stsProperties.DynaKube.Name,
-		stsProperties.feature, versionLabelValue)
-
+func createObjectMeta(stsProperties *statefulSetProperties, appLabels *kubeobjects.AppLabels) metav1.ObjectMeta {
 	objectMetaBuilder := objectmeta.Builder{}
 	objectMetaBuilder.AddModifier(objectMetaModifiers.NameSetter{Name: stsProperties.Name + "-" + stsProperties.feature})
 	objectMetaBuilder.AddModifier(objectMetaModifiers.NamespaceSetter{Namespace: stsProperties.Namespace})
@@ -114,6 +112,17 @@ func createObjectMeta(stsProperties *statefulSetProperties) metav1.ObjectMeta {
 	objectMetaBuilder.AddModifier(objectMetaModifiers.AnnotationsSetter{Annotations: map[string]string{}})
 	objectMeta := objectMetaBuilder.Build()
 	return objectMeta
+}
+
+func createAppLabels(stsProperties *statefulSetProperties) *kubeobjects.AppLabels {
+	versionLabelValue := stsProperties.Status.ActiveGate.Version
+	if stsProperties.CustomActiveGateImage() != "" {
+		versionLabelValue = kubeobjects.CustomImageLabelValue
+	}
+
+	appLabels := kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, stsProperties.DynaKube.Name,
+		stsProperties.feature, versionLabelValue)
+	return appLabels
 }
 
 func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSet, error) {
