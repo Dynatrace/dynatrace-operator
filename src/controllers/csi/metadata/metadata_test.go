@@ -42,7 +42,7 @@ func TestNewDynakube(t *testing.T) {
 		assert.Equal(t, testUUID, dynakube.TenantUUID)
 		assert.Equal(t, testVersion, dynakube.LatestVersion)
 		assert.Equal(t, testDigest, dynakube.ImageDigest)
-		assert.Equal(t, defaultMaxFailedMountAttempts, dynakube.MaxFailedMountAttempts)
+		assert.Equal(t, -1, dynakube.MaxFailedMountAttempts)
 	})
 }
 

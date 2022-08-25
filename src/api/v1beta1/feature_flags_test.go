@@ -174,19 +174,19 @@ func TestMaxMountAttempts(t *testing.T) {
 	dynakube := createDynakubeWithAnnotation(
 		AnnotationFeatureMaxFailedCsiMountAttempts, "5")
 
-	assert.Equal(t, 5, *dynakube.FeatureMaxFailedCsiMountAttempts())
+	assert.Equal(t, 5, dynakube.FeatureMaxFailedCsiMountAttempts())
 
 	dynakube = createDynakubeWithAnnotation(
 		AnnotationFeatureMaxFailedCsiMountAttempts, "3")
 
-	assert.Equal(t, 3, *dynakube.FeatureMaxFailedCsiMountAttempts())
+	assert.Equal(t, 3, dynakube.FeatureMaxFailedCsiMountAttempts())
 
 	dynakube = createDynakubeWithAnnotation()
 
-	assert.Nil(t, dynakube.FeatureMaxFailedCsiMountAttempts())
+	assert.Equal(t, defaultMaxFailedCsiMountAttempts, dynakube.FeatureMaxFailedCsiMountAttempts())
 
 	dynakube = createDynakubeWithAnnotation(
 		AnnotationFeatureMaxFailedCsiMountAttempts, "a")
 
-	assert.Nil(t, dynakube.FeatureMaxFailedCsiMountAttempts())
+	assert.Equal(t, 0, dynakube.FeatureMaxFailedCsiMountAttempts())
 }

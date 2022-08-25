@@ -346,16 +346,3 @@ func TestIsOneAgentPrivileged(t *testing.T) {
 		assert.True(t, dynakube.IsOneAgentPrivileged())
 	})
 }
-
-func TestMaxFailedCsiMountAttempts(t *testing.T) {
-	dynakube := createDynakubeWithAnnotation()
-	assert.Equal(t, dynakube.MaxFailedCsiMountAttempts(), -1)
-
-	dynakube = createDynakubeWithAnnotation(
-		AnnotationFeatureMaxFailedCsiMountAttempts, "a")
-	assert.Equal(t, dynakube.MaxFailedCsiMountAttempts(), -1)
-
-	dynakube = createDynakubeWithAnnotation(
-		AnnotationFeatureMaxFailedCsiMountAttempts, "5")
-	assert.Equal(t, dynakube.MaxFailedCsiMountAttempts(), 5)
-}

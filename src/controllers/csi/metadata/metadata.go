@@ -6,11 +6,6 @@ import (
 	"github.com/go-logr/logr"
 )
 
-const (
-	defaultMaxFailedMountAttempts    = 3
-	defaultSqlMaxFailedMountAttempts = "3"
-)
-
 // Dynakube stores the necessary info from the Dynakube that is needed to be used during volume mount/unmount.
 type Dynakube struct {
 	Name                   string `json:"name"`
@@ -24,10 +19,6 @@ type Dynakube struct {
 func NewDynakube(dynakubeName, tenantUUID, latestVersion, imageDigest string, maxFailedMountAttempts int) *Dynakube {
 	if tenantUUID == "" || dynakubeName == "" {
 		return nil
-	}
-
-	if maxFailedMountAttempts < 0 {
-		maxFailedMountAttempts = defaultMaxFailedMountAttempts
 	}
 
 	return &Dynakube{

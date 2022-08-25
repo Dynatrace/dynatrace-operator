@@ -219,7 +219,7 @@ func (provisioner *OneAgentProvisioner) handleMetadata(dk *dynatracev1beta1.Dyna
 		dk.ConnectionInfo().TenantUUID,
 		oldDynakubeMetadata.LatestVersion,
 		oldDynakubeMetadata.ImageDigest,
-		dk.MaxFailedCsiMountAttempts())
+		dk.FeatureMaxFailedCsiMountAttempts())
 
 	return dynakubeMetadata, oldDynakubeMetadata, nil
 }

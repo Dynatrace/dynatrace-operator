@@ -91,6 +91,10 @@ const (
 	AnnotationFeatureMaxFailedCsiMountAttempts = AnnotationFeaturePrefix + "max-csi-mount-attempts"
 )
 
+const (
+	defaultMaxFailedCsiMountAttempts = 3
+)
+
 var (
 	log = logger.NewDTLogger().WithName("dynakube-api")
 )
@@ -279,18 +283,18 @@ func (dk *DynaKube) getFeatureFlagRaw(annotation string) string {
 	return ""
 }
 
-func (dk *DynaKube) FeatureMaxFailedCsiMountAttempts() *int {
+func (dk *DynaKube) FeatureMaxFailedCsiMountAttempts() int {
 	maxCsiMountAttemptsValue := dk.getFeatureFlagRaw(AnnotationFeatureMaxFailedCsiMountAttempts)
 
 	if maxCsiMountAttemptsValue == "" {
-		return nil
+		return defaultMaxFailedCsiMountAttempts
 	}
 
 	maxCsiMountAttempts, err := strconv.Atoi(maxCsiMountAttemptsValue)
 
-	if err != nil {
-		return nil
+	if err != nil || maxCsiMountAttempts < 0 {
+		return 0
 	}
 
-	return &maxCsiMountAttempts
+	return maxCsiMountAttempts
 }

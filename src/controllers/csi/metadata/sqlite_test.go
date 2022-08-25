@@ -127,9 +127,9 @@ func TestCreateTables(t *testing.T) {
 			if column == "MaxFailedMountAttempts" {
 				maxFailedMountAttempts, err := strconv.Atoi(*defaultValue)
 				assert.NoError(t, err)
-				assert.Equal(t, defaultSqlMaxFailedMountAttempts, *defaultValue)
-				assert.Equal(t, defaultMaxFailedMountAttempts, maxFailedMountAttempts)
-				assert.Equal(t, "0", notNull)
+				assert.Equal(t, "0", *defaultValue)
+				assert.Equal(t, 0, maxFailedMountAttempts)
+				assert.Equal(t, "1", notNull)
 			}
 		}
 	})
@@ -175,21 +175,6 @@ func TestGetDynakube(t *testing.T) {
 		dynakube, err := db.GetDynakube(testDynakube1.Name)
 		require.NoError(t, err)
 		assert.Equal(t, testDynakube1, *dynakube)
-	})
-	t.Run("get dynakube with maxFailedMountAttempts set to null", func(t *testing.T) {
-		db := FakeMemoryDB()
-
-		require.NoError(t, db.createTables())
-		require.NoError(t, db.executeStatement(insertDynakubeStatement, testName, testUUID, testVersion, testDigest, nil))
-
-		dynakube, err := db.GetDynakube(testName)
-		require.NoError(t, err)
-
-		assert.Equal(t, testName, dynakube.Name)
-		assert.Equal(t, testUUID, dynakube.TenantUUID)
-		assert.Equal(t, testVersion, dynakube.LatestVersion)
-		assert.Equal(t, testDigest, dynakube.ImageDigest)
-		assert.Equal(t, 3, dynakube.MaxFailedMountAttempts)
 	})
 }
 
@@ -252,35 +237,6 @@ func TestGetAllDynakubes(t *testing.T) {
 		dynakubes, err := db.GetAllDynakubes()
 		require.NoError(t, err)
 		assert.Equal(t, 2, len(dynakubes))
-	})
-	t.Run("get dynakubes with null values", func(t *testing.T) {
-		db := FakeMemoryDB()
-
-		require.NoError(t, db.createTables())
-		require.NoError(t, db.executeStatement(insertDynakubeStatement, testName+"-1", testUUID, testVersion, testDigest, nil))
-		require.NoError(t, db.executeStatement(insertDynakubeStatement, testName+"-2", testUUID, testVersion, testDigest, nil))
-		require.NoError(t, db.executeStatement(insertDynakubeStatement, testName+"-3", testUUID, testVersion, testDigest, 1))
-
-		dynakubes, err := db.GetAllDynakubes()
-		require.NoError(t, err)
-
-		assert.Equal(t, testName+"-1", dynakubes[0].Name)
-		assert.Equal(t, testUUID, dynakubes[0].TenantUUID)
-		assert.Equal(t, testVersion, dynakubes[0].LatestVersion)
-		assert.Equal(t, testDigest, dynakubes[0].ImageDigest)
-		assert.Equal(t, 3, dynakubes[0].MaxFailedMountAttempts)
-
-		assert.Equal(t, testName+"-2", dynakubes[1].Name)
-		assert.Equal(t, testUUID, dynakubes[1].TenantUUID)
-		assert.Equal(t, testVersion, dynakubes[1].LatestVersion)
-		assert.Equal(t, testDigest, dynakubes[1].ImageDigest)
-		assert.Equal(t, 3, dynakubes[1].MaxFailedMountAttempts)
-
-		assert.Equal(t, testName+"-3", dynakubes[2].Name)
-		assert.Equal(t, testUUID, dynakubes[2].TenantUUID)
-		assert.Equal(t, testVersion, dynakubes[2].LatestVersion)
-		assert.Equal(t, testDigest, dynakubes[2].ImageDigest)
-		assert.Equal(t, 1, dynakubes[2].MaxFailedMountAttempts)
 	})
 }
 

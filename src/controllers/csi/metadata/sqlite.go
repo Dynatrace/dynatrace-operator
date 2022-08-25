@@ -50,7 +50,7 @@ const (
 
 	dynakubesAlterStatementMaxFailedMountAttempts = `
 	ALTER TABLE dynakubes
-	ADD COLUMN MaxFailedMountAttempts INT DEFAULT ` + defaultSqlMaxFailedMountAttempts + `;`
+	ADD COLUMN MaxFailedMountAttempts INT NOT NULL DEFAULT 0;`  // "Not null"-columns need a default value set
 
 	volumesAlterStatementMountAttempts = `
 	ALTER TABLE volumes
