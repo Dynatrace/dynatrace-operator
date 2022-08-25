@@ -136,12 +136,13 @@ tests:
                 volumeMounts:
                   - mountPath: "/csi"
                     name: plugin-dir
-                  - mountPath: "/var/lib/kubelet/pods"
+                  - mountPath: "/var/lib/kubelet/pods/"
                     mountPropagation: Bidirectional
                     name: mountpoint-dir
                   - mountPath: "/data"
                     mountPropagation: Bidirectional
-                    name: dynatrace-oneagent-data-dir
+                    name: plugin-dir
+                    subPath: data
                   - mountPath: "/tmp"
                     name: tmp-dir
               - args:
@@ -192,21 +193,25 @@ tests:
                 volumeMounts:
                   - mountPath: "/data"
                     mountPropagation: Bidirectional
-                    name: dynatrace-oneagent-data-dir
+                    name: plugin-dir
+                    subPath: data
                   - mountPath: "/tmp"
                     name: tmp-dir
               - args:
                   - "--csi-address=/csi/csi.sock"
-                  - "--kubelet-registration-path=/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/csi.sock"
+                  - "--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)"
                 command:
                   - csi-node-driver-registrar
+                env:
+                  - name: DRIVER_REG_SOCK_PATH
+                    value: "/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/csi.sock"
                 image: image-name
                 imagePullPolicy: Always
                 livenessProbe:
                   exec:
                     command:
                       - csi-node-driver-registrar
-                      - "--kubelet-registration-path=/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/csi.sock"
+                      - "--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)"
                       - "--mode=kubelet-registration-probe"
                   failureThreshold: 3
                   initialDelaySeconds: 30
@@ -235,7 +240,7 @@ tests:
                     name: plugin-dir
                   - mountPath: "/registration"
                     name: registration-dir
-                  - mountPath: "/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com"
+                  - mountPath: "/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/"
                     name: lockfile-dir
               - args:
                   - "--csi-address=/csi/csi.sock"
@@ -277,17 +282,13 @@ tests:
                   type: Directory
                 name: registration-dir
               - hostPath:
-                  path: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com
+                  path: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/
                   type: DirectoryOrCreate
                 name: plugin-dir
               - hostPath:
-                  path: /var/lib/kubelet/pods
+                  path: /var/lib/kubelet/pods/
                   type: DirectoryOrCreate
                 name: mountpoint-dir
-              - hostPath:
-                  path: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/data
-                  type: DirectoryOrCreate
-                name: dynatrace-oneagent-data-dir
               - emptyDir: { }
                 name: lockfile-dir
               - emptyDir: { }
@@ -366,3 +367,27 @@ tests:
       - equal:
           path: spec.template.spec.containers[1].resources.limits.memory
           value: 300Mi
+  - it: should take kubelet path from values file
+    set:
+      csidriver.enabled: true
+      csidriver.kubeletPath: "my/kubelet/"
+    asserts:
+      - equal:
+          path: spec.template.spec.volumes[0].hostPath.path
+          value: "my/kubelet/plugins_registry/"
+      - equal:
+          path: spec.template.spec.volumes[1].hostPath.path
+          value: "my/kubelet/plugins/csi.oneagent.dynatrace.com/"
+      - equal:
+          path: spec.template.spec.volumes[2].hostPath.path
+          value: "my/kubelet/pods/"
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[1].mountPath
+          value: "my/kubelet/pods/"
+      - equal:
+          path: spec.template.spec.containers[2].env[0].value
+          value: "my/kubelet/plugins/csi.oneagent.dynatrace.com/csi.sock"
+      - equal:
+          path: spec.template.spec.containers[2].volumeMounts[2].mountPath
+          value: "my/kubelet/plugins/csi.oneagent.dynatrace.com/"
+

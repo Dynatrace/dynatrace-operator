@@ -3,6 +3,7 @@ package url
 import (
 	"os"
 
+	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/symlink"
@@ -92,7 +93,7 @@ func (installer UrlInstaller) installAgentFromUrl(targetDir string) error {
 }
 
 func (installer UrlInstaller) isAlreadyDownloaded(targetDir string) bool {
-	if standaloneBinDir == targetDir {
+	if config.AgentBinDirMount == targetDir {
 		return false
 	}
 	_, err := installer.fs.Stat(targetDir)

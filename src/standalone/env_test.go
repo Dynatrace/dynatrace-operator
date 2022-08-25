@@ -41,7 +41,7 @@ func TestNewEnv(t *testing.T) {
 		assert.True(t, env.DataIngestInjected)
 	})
 	t.Run(`create new env for only data-ingest injection`, func(t *testing.T) {
-		resetEnv := prepDataIngestTestEnv(t)
+		resetEnv := prepDataIngestTestEnv(t, false)
 
 		env, err := newEnv()
 		resetEnv()
@@ -65,6 +65,22 @@ func TestNewEnv(t *testing.T) {
 		assert.NotEmpty(t, env.K8ClusterID)
 		assert.NotEmpty(t, env.WorkloadKind)
 		assert.NotEmpty(t, env.WorkloadName)
+
+		assert.False(t, env.OneAgentInjected)
+		assert.True(t, env.DataIngestInjected)
+	})
+	t.Run(`create new env for only data-ingest injection with unknown owner workload`, func(t *testing.T) {
+		resetEnv := prepDataIngestTestEnv(t, true)
+
+		env, err := newEnv()
+		resetEnv()
+
+		require.NoError(t, err)
+		require.NotNil(t, env)
+
+		assert.NotEmpty(t, env.K8ClusterID)
+		assert.Empty(t, env.WorkloadKind)
+		assert.Empty(t, env.WorkloadName)
 
 		assert.False(t, env.OneAgentInjected)
 		assert.True(t, env.DataIngestInjected)
@@ -101,7 +117,7 @@ func TestNewEnv(t *testing.T) {
 }
 
 func prepCombinedTestEnv(t *testing.T) func() {
-	resetDataIngestEnvs := prepDataIngestTestEnv(t)
+	resetDataIngestEnvs := prepDataIngestTestEnv(t, false)
 	resetOneAgentEnvs := prepOneAgentTestEnv(t)
 	return func() {
 		resetDataIngestEnvs()
@@ -150,15 +166,21 @@ func prepOneAgentTestEnv(t *testing.T) func() {
 	return resetTestEnv(envs)
 }
 
-func prepDataIngestTestEnv(t *testing.T) func() {
+func prepDataIngestTestEnv(t *testing.T, isUnknownWorkload bool) func() {
 	envs := []string{
 		config.EnrichmentWorkloadKindEnv,
 		config.EnrichmentWorkloadNameEnv,
 		config.K8sClusterIDEnv,
 	}
 	for _, envvar := range envs {
-		err := os.Setenv(envvar, fmt.Sprintf("TEST_%s", envvar))
-		require.NoError(t, err)
+		if isUnknownWorkload &&
+			(envvar == config.EnrichmentWorkloadKindEnv || envvar == config.EnrichmentWorkloadNameEnv) {
+			err := os.Setenv(envvar, "UNKNOWN")
+			require.NoError(t, err)
+		} else {
+			err := os.Setenv(envvar, fmt.Sprintf("TEST_%s", envvar))
+			require.NoError(t, err)
+		}
 	}
 
 	// Mode Env

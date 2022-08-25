@@ -54,7 +54,7 @@ func TestNewRunner(t *testing.T) {
 		assert.Empty(t, runner.hostTenant)
 	})
 	t.Run(`create runner with only data-ingest injection`, func(t *testing.T) {
-		resetEnv := prepDataIngestTestEnv(t)
+		resetEnv := prepDataIngestTestEnv(t, false)
 		runner, err := NewRunner(fs)
 		resetEnv()
 

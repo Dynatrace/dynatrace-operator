@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/arch"
+	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/zip"
@@ -204,7 +205,7 @@ func TestIsAlreadyDownloaded(t *testing.T) {
 	})
 	t.Run(`false if standalone`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
-		targetDir := standaloneBinDir
+		targetDir := config.AgentBinDirMount
 		installer := &UrlInstaller{
 			fs:    fs,
 			props: &Properties{},

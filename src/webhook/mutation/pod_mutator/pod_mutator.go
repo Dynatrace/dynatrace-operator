@@ -50,11 +50,6 @@ func (webhook *podMutatorWebhook) InjectDecoder(d *admission.Decoder) error {
 
 func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.Request) admission.Response {
 	emptyPatch := admission.Patched("")
-
-	if webhook.apmExists {
-		return emptyPatch
-	}
-
 	mutationRequest, err := webhook.createMutationRequestBase(ctx, request)
 	if err != nil {
 		return silentErrorResponse(mutationRequest.Pod, err)

@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/common"
 	"github.com/klauspost/compress/zip"
 	"github.com/pkg/errors"
@@ -32,12 +33,24 @@ func (extractor OneAgentExtractor) ExtractZip(sourceFile afero.File, targetDir s
 		return errors.WithStack(err)
 	}
 
-	err = extractFilesFromZip(fs, extractor.pathResolver.AgentTempUnzipDir(), reader)
+	extractDest := extractor.pathResolver.AgentTempUnzipDir()
+	if extractor.pathResolver.RootDir == config.AgentBinDirMount {
+		extractDest = targetDir
+	}
+
+	err = extractFilesFromZip(fs, extractDest, reader)
 	if err != nil {
 		log.Info("failed to extract files from zip", "err", err)
 		return err
 	}
-	return extractor.moveToTargetDir(targetDir)
+	if extractDest != targetDir {
+		err := extractor.moveToTargetDir(targetDir)
+		if err != nil {
+			log.Info("failed to move file to final destination", "err", err)
+			return err
+		}
+	}
+	return nil
 }
 
 func extractFilesFromZip(fs afero.Fs, targetDir string, reader *zip.Reader) error {

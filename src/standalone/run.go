@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/src/arch"
 	"github.com/Dynatrace/dynatrace-operator/src/config"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/installer"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/url"
@@ -29,16 +30,16 @@ func NewRunner(fs afero.Fs) (*Runner, error) {
 		return nil, err
 	}
 
-	var config *SecretConfig
+	var secretConfig *SecretConfig
 	var client dtclient.Client
 	var oneAgentInstaller *url.UrlInstaller
 	if env.OneAgentInjected {
-		config, err = newSecretConfigViaFs(fs)
+		secretConfig, err = newSecretConfigViaFs(fs)
 		if err != nil {
 			return nil, err
 		}
 
-		client, err = newDTClientBuilder(config).createClient()
+		client, err = newDTClientBuilder(secretConfig).createClient()
 		if err != nil {
 			return nil, err
 		}
@@ -54,6 +55,7 @@ func NewRunner(fs afero.Fs) (*Runner, error) {
 				Technologies:  env.InstallerTech,
 				TargetVersion: url.VersionLatest,
 				Url:           env.InstallerUrl,
+				PathResolver:  metadata.PathResolver{RootDir: config.AgentBinDirMount},
 			},
 		)
 	}
@@ -61,7 +63,7 @@ func NewRunner(fs afero.Fs) (*Runner, error) {
 	return &Runner{
 		fs:        fs,
 		env:       env,
-		config:    config,
+		config:    secretConfig,
 		dtclient:  client,
 		installer: oneAgentInstaller,
 	}, nil

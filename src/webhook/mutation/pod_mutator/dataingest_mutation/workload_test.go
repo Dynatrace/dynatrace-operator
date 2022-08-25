@@ -71,6 +71,9 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 
 	t.Run("should return Pod if owner references are empty", func(t *testing.T) {
 		pod := corev1.Pod{
+			TypeMeta: metav1.TypeMeta{
+				Kind: "Pod",
+			},
 			ObjectMeta: metav1.ObjectMeta{
 				OwnerReferences: []metav1.OwnerReference{},
 				Name:            resourceName,
@@ -80,27 +83,45 @@ func TestFindRootOwnerOfPod(t *testing.T) {
 		workloadInfo, err := findRootOwnerOfPod(ctx, client, &pod, namespaceName)
 		require.NoError(t, err)
 		assert.Equal(t, resourceName, workloadInfo.name)
-		assert.Equal(t, "", workloadInfo.kind)
+		assert.Equal(t, "Pod", workloadInfo.kind)
 	})
-}
 
-func TestFindRootOwner(t *testing.T) {
-	ctx := context.TODO()
-	clt := fake.NewClient()
-	metadata := metav1.PartialObjectMetadata{
-		TypeMeta: metav1.TypeMeta{
-			Kind: "Pod",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: testPodName,
-		},
-	}
+	t.Run("should be empty if owner is not well known", func(t *testing.T) {
+		pod := corev1.Pod{
+			TypeMeta: metav1.TypeMeta{
+				Kind: "Pod",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: "unknown",
+						Kind:       "unknown",
+						Name:       "test",
+						Controller: address.Of(true),
+					},
+				},
+				Name: resourceName,
+			},
+		}
+		client := fake.NewClient(&pod)
+		workloadInfo, err := findRootOwnerOfPod(ctx, client, &pod, namespaceName)
+		require.NoError(t, err)
+		assert.Equal(t, "UNKNOWN", workloadInfo.name)
+		assert.Equal(t, "UNKNOWN", workloadInfo.kind)
+	})
 
-	workload, err := findRootOwner(ctx, clt, &metadata)
-
-	assert.NoError(t, err)
-	assert.Equal(t, "Pod", workload.kind)
-	assert.Equal(t, testPodName, workload.name)
+	t.Run("should be empty if owner is not set, but name is empty", func(t *testing.T) {
+		pod := corev1.Pod{
+			TypeMeta: metav1.TypeMeta{
+				Kind: "Pod",
+			},
+		}
+		client := fake.NewClient(&pod)
+		workloadInfo, err := findRootOwnerOfPod(ctx, client, &pod, namespaceName)
+		require.NoError(t, err)
+		assert.Equal(t, "UNKNOWN", workloadInfo.name)
+		assert.Equal(t, "UNKNOWN", workloadInfo.kind)
+	})
 }
 
 func createTestWorkloadInfo() *workloadInfo {

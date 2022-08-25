@@ -3,6 +3,7 @@ package dataingest_mutation
 import (
 	"context"
 
+	"github.com/Dynatrace/dynatrace-operator/src/config"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -15,10 +16,17 @@ type workloadInfo struct {
 	kind string
 }
 
-func newWorkloadInfo(partialObjectMetadata *metav1.PartialObjectMetadata) *workloadInfo {
-	return &workloadInfo{
+func newWorkloadInfo(partialObjectMetadata *metav1.PartialObjectMetadata) workloadInfo {
+	return workloadInfo{
 		name: partialObjectMetadata.ObjectMeta.Name,
 		kind: partialObjectMetadata.Kind,
+	}
+}
+
+func newUnknownWorkloadInfo() workloadInfo {
+	return workloadInfo{
+		name: config.EnrichmentUnknownWorkload,
+		kind: config.EnrichmentUnknownWorkload,
 	}
 }
 
@@ -52,12 +60,21 @@ func findRootOwnerOfPod(ctx context.Context, clt client.Client, pod *corev1.Pod,
 
 func findRootOwner(ctx context.Context, clt client.Client, partialObjectMetadata *metav1.PartialObjectMetadata) (workloadInfo, error) {
 	if len(partialObjectMetadata.ObjectMeta.OwnerReferences) == 0 {
-		return *newWorkloadInfo(partialObjectMetadata), nil
+		if partialObjectMetadata.ObjectMeta.Name == "" {
+			// pod is not created directly and does not have an owner reference set
+			return newUnknownWorkloadInfo(), nil
+		}
+		return newWorkloadInfo(partialObjectMetadata), nil
 	}
 
 	objectMetadata := partialObjectMetadata.ObjectMeta
 	for _, owner := range objectMetadata.OwnerReferences {
-		if owner.Controller != nil && *owner.Controller && isWellKnownWorkload(owner) {
+		if owner.Controller != nil && *owner.Controller {
+			if !isWellKnownWorkload(owner) {
+				// pod is created by workload of kind that is not well known
+				return newUnknownWorkloadInfo(), nil
+			}
+
 			ownerObjectMetadata := &metav1.PartialObjectMetadata{
 				TypeMeta: metav1.TypeMeta{
 					APIVersion: owner.APIVersion,
@@ -72,13 +89,13 @@ func findRootOwner(ctx context.Context, clt client.Client, partialObjectMetadata
 					"name", owner.Name,
 					"namespace", objectMetadata.Namespace,
 				)
-				return *newWorkloadInfo(partialObjectMetadata), err
+				return newWorkloadInfo(partialObjectMetadata), err
 			}
 
 			return findRootOwner(ctx, clt, ownerObjectMetadata)
 		}
 	}
-	return *newWorkloadInfo(partialObjectMetadata), nil
+	return newWorkloadInfo(partialObjectMetadata), nil
 }
 
 func isWellKnownWorkload(ownerRef metav1.OwnerReference) bool {

@@ -84,7 +84,7 @@ func (r *OneAgentReconciler) Reconcile(ctx context.Context, rec *status.Dynakube
 		rec.Update(true, "updated last host request time stamp")
 
 		upd, err = r.reconcileInstanceStatuses(ctx, r.instance)
-		rec.Update(upd, "Instance statuses reconciled")
+		rec.Update(upd, "Dynakube statuses reconciled")
 		if rec.Error(err) {
 			return false, err
 		}

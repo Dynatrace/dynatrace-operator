@@ -9,8 +9,6 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/secrets"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/apimonitoring"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/istio"
@@ -21,11 +19,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/src/ingestendpoint"
 	"github.com/Dynatrace/dynatrace-operator/src/initgeneration"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/mapper"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -212,24 +210,6 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 		return
 	}
 
-	if !dkState.Instance.FeatureDisableActivegateRawImage() && dkState.Instance.NeedsActiveGate() {
-		err = secrets.NewTenantSecretReconciler(controller.client, controller.apiReader, controller.scheme, dkState.Instance, dtc).
-			Reconcile()
-		if dkState.Error(err) {
-			log.Error(err, "could not reconcile Dynatrace ActiveGate Tenant secrets")
-			return
-		}
-	}
-
-	if dkState.Instance.UseActiveGateAuthToken() {
-		err = secrets.NewAuthTokenReconciler(controller.client, controller.apiReader, controller.scheme, dkState.Instance, dtc).
-			Reconcile()
-		if dkState.Error(err) {
-			log.Error(err, "could not reconcile Dynatrace ActiveGateAuthToken secrets")
-			return
-		}
-	}
-
 	upd, err = version.ReconcileVersions(ctx, dkState, controller.apiReader, controller.fs, version.GetImageVersion)
 	dkState.Update(upd, "Found updates")
 	dkState.Error(err)
@@ -238,32 +218,8 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 		return
 	}
 
-	if dkState.Instance.HostMonitoringMode() {
-		upd, err = oneagent.NewOneAgentReconciler(
-			controller.client, controller.apiReader, controller.scheme, dkState.Instance, daemonset.DeploymentTypeHostMonitoring,
-		).Reconcile(ctx, dkState)
-		if dkState.Error(err) {
-			return
-		}
-		dkState.Update(upd, "host monitoring reconciled")
-	} else if dkState.Instance.CloudNativeFullstackMode() {
-		upd, err = oneagent.NewOneAgentReconciler(
-			controller.client, controller.apiReader, controller.scheme, dkState.Instance, daemonset.DeploymentTypeCloudNative,
-		).Reconcile(ctx, dkState)
-		if dkState.Error(err) {
-			return
-		}
-		dkState.Update(upd, "cloud native fullstack monitoring reconciled")
-	} else if dkState.Instance.ClassicFullStackMode() {
-		upd, err = oneagent.NewOneAgentReconciler(
-			controller.client, controller.apiReader, controller.scheme, dkState.Instance, daemonset.DeploymentTypeFullStack,
-		).Reconcile(ctx, dkState)
-		if dkState.Error(err) {
-			return
-		}
-		dkState.Update(upd, "classic fullstack reconciled")
-	} else {
-		controller.removeOneAgentDaemonSet(dkState)
+	if err = controller.reconcileOneAgent(ctx, dkState); err != nil {
+		return
 	}
 
 	endpointSecretGenerator := dtingestendpoint.NewEndpointSecretGenerator(controller.client, controller.apiReader, dkState.Instance.Namespace)
@@ -301,6 +257,37 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 	dkState.Update(upd, "dynakube phase changed")
 }
 
+func (controller *DynakubeController) reconcileOneAgent(ctx context.Context, dkState *status.DynakubeState) (err error) {
+	if dkState.Instance.HostMonitoringMode() {
+		upd, err := oneagent.NewOneAgentReconciler(
+			controller.client, controller.apiReader, controller.scheme, dkState.Instance, daemonset.DeploymentTypeHostMonitoring,
+		).Reconcile(ctx, dkState)
+		if dkState.Error(err) {
+			return nil
+		}
+		dkState.Update(upd, "host monitoring reconciled")
+	} else if dkState.Instance.CloudNativeFullstackMode() {
+		upd, err := oneagent.NewOneAgentReconciler(
+			controller.client, controller.apiReader, controller.scheme, dkState.Instance, daemonset.DeploymentTypeCloudNative,
+		).Reconcile(ctx, dkState)
+		if dkState.Error(err) {
+			return nil
+		}
+		dkState.Update(upd, "cloud native fullstack monitoring reconciled")
+	} else if dkState.Instance.ClassicFullStackMode() {
+		upd, err := oneagent.NewOneAgentReconciler(
+			controller.client, controller.apiReader, controller.scheme, dkState.Instance, daemonset.DeploymentTypeFullStack,
+		).Reconcile(ctx, dkState)
+		if dkState.Error(err) {
+			return nil
+		}
+		dkState.Update(upd, "classic fullstack reconciled")
+	} else {
+		controller.removeOneAgentDaemonSet(dkState)
+	}
+	return err
+}
+
 func updatePhaseIfChanged(instance *dynatracev1beta1.DynaKube, newPhase dynatracev1beta1.DynaKubePhaseType) bool {
 	if instance.Status.Phase == newPhase {
 		return false
@@ -311,85 +298,26 @@ func updatePhaseIfChanged(instance *dynatracev1beta1.DynaKube, newPhase dynatrac
 
 func (controller *DynakubeController) removeOneAgentDaemonSet(dkState *status.DynakubeState) {
 	ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dkState.Instance.OneAgentDaemonsetName(), Namespace: dkState.Instance.Namespace}}
-	if err := controller.ensureDeleted(&ds); dkState.Error(err) {
+	if err := kubeobjects.Delete(context.TODO(), controller.client, &ds); dkState.Error(err) {
 		return
 	}
 }
 
-func (controller *DynakubeController) ensureDeleted(obj client.Object) error {
-	if err := controller.client.Delete(context.TODO(), obj); err != nil && !k8serrors.IsNotFound(err) {
-		return err
-	}
-	return nil
-}
+func (controller *DynakubeController) reconcileActiveGate(ctx context.Context, dynakubeState *status.DynakubeState, dtc dtclient.Client) (updated bool) {
+	reconciler := activegate.NewReconciler(ctx, controller.client, controller.apiReader, controller.scheme, dynakubeState.Instance, dtc)
 
-func (controller *DynakubeController) reconcileActiveGate(ctx context.Context, dynakubeState *status.DynakubeState, dtc dtclient.Client) bool {
-	if !controller.reconcileActiveGateProxySecret(ctx, dynakubeState) {
+	upd, err := reconciler.Reconcile()
+	if dynakubeState.Error(err) {
+		log.Error(err, "Failed to reconcile ActiveGate")
 		return false
 	}
-	return controller.reconcileActiveGateCapabilities(dynakubeState, dtc)
+	dynakubeState.Update(upd, "ActiveGate reconciled")
+
+	controller.startApiMonitoring(dynakubeState, dtc)
+	return upd
 }
 
-func (controller *DynakubeController) reconcileActiveGateProxySecret(ctx context.Context, dynakubeState *status.DynakubeState) bool {
-	gen := capability.NewActiveGateProxySecretGenerator(controller.client, controller.apiReader, dynakubeState.Instance.Namespace, log)
-	if dynakubeState.Instance.NeedsActiveGateProxy() {
-		err := gen.GenerateForDynakube(ctx, dynakubeState.Instance)
-		if dynakubeState.Error(err) {
-			return false
-		}
-	} else {
-		if err := gen.EnsureDeleted(ctx, dynakubeState.Instance); dynakubeState.Error(err) {
-			return false
-		}
-	}
-	return true
-}
-
-func generateActiveGateCapabilities(instance *dynatracev1beta1.DynaKube) []capability.Capability {
-	return []capability.Capability{
-		capability.NewKubeMonCapability(instance),
-		capability.NewRoutingCapability(instance),
-		capability.NewMultiCapability(instance),
-	}
-}
-
-func (controller *DynakubeController) reconcileActiveGateCapabilities(dynakubeState *status.DynakubeState, dtc dtclient.Client) bool {
-	var caps = generateActiveGateCapabilities(dynakubeState.Instance)
-
-	for _, c := range caps {
-		if c.Enabled() {
-			upd, err := capability.NewReconciler(controller.client,
-				c, activegate.NewReconciler(controller.client, controller.apiReader, controller.scheme, dynakubeState.Instance, c), dynakubeState.Instance).Reconcile()
-			if dynakubeState.Error(err) {
-				return false
-			}
-			dynakubeState.Update(upd, c.ShortName()+" reconciled")
-		} else {
-			sts := appsv1.StatefulSet{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      capability.CalculateStatefulSetName(c, dynakubeState.Instance.Name),
-					Namespace: dynakubeState.Instance.Namespace,
-				},
-			}
-			if err := controller.ensureDeleted(&sts); dynakubeState.Error(err) {
-				return false
-			}
-
-			if c.ShouldCreateService() {
-				svc := corev1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      capability.BuildServiceName(dynakubeState.Instance.Name, c.ShortName()),
-						Namespace: dynakubeState.Instance.Namespace,
-					},
-				}
-				if err := controller.ensureDeleted(&svc); dynakubeState.Error(err) {
-					return false
-				}
-			}
-		}
-	}
-
-	//start automatic config creation
+func (controller *DynakubeController) startApiMonitoring(dynakubeState *status.DynakubeState, dtc dtclient.Client) {
 	if dynakubeState.Instance.Status.KubeSystemUUID != "" &&
 		dynakubeState.Instance.FeatureAutomaticKubernetesApiMonitoring() &&
 		dynakubeState.Instance.KubernetesMonitoringMode() {
@@ -405,8 +333,6 @@ func (controller *DynakubeController) reconcileActiveGateCapabilities(dynakubeSt
 			log.Error(err, "could not create setting")
 		}
 	}
-
-	return true
 }
 
 func (controller *DynakubeController) updateCR(ctx context.Context, instance *dynatracev1beta1.DynaKube) error {

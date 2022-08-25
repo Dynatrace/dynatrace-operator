@@ -122,7 +122,7 @@ func TestHandlePodReinvocation(t *testing.T) {
 		mutator1 := createAlreadyInjectedPodMutatorMock()
 		mutator2 := createAlreadyInjectedPodMutatorMock()
 		dynakube := getTestDynakube()
-		dynakube.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureDisableWebhookReinvocationPolicy: "true"}
+		dynakube.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureWebhookReinvocationPolicy: "false"}
 		podWebhook := createTestWebhook(t, []dtwebhook.PodMutator{mutator1, mutator2}, nil)
 		mutationRequest := createTestMutationRequest(dynakube)
 

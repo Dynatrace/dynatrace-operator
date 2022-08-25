@@ -34,10 +34,10 @@ func TestConstructors(t *testing.T) {
 		AppVersionLabel:   testAppVersion,
 	}
 
-	t.Run("verify matchLabels for core", func(t *testing.T) {
+	t.Run("verify matchLabels for statefulsetreconciler", func(t *testing.T) {
 		assert.Equal(t, expectedCoreMatchLabels, coreLabels.BuildMatchLabels())
 	})
-	t.Run("verify labels for core", func(t *testing.T) {
+	t.Run("verify labels for statefulsetreconciler", func(t *testing.T) {
 		assert.Equal(t, expectedCoreLabels, coreLabels.BuildLabels())
 	})
 
