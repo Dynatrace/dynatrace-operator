@@ -6,12 +6,17 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type AnnotationsSetter struct {
+type AnnotationsAdder struct {
 	Annotations internalTypes.Annotations
 }
 
-var _ types.Modifier = (*AnnotationsSetter)(nil)
+var _ types.Modifier = (*AnnotationsAdder)(nil)
 
-func (s AnnotationsSetter) Modify(om *v1.ObjectMeta) {
-	om.Annotations = s.Annotations
+func (s AnnotationsAdder) Modify(om *v1.ObjectMeta) {
+	if om.Annotations == nil {
+		om.Annotations = make(internalTypes.Annotations)
+	}
+	for k, v := range s.Annotations {
+		om.Annotations[k] = v
+	}
 }

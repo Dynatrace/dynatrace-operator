@@ -14,6 +14,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/kubernetes/objectmeta"
 	objectMetaModifiers "github.com/Dynatrace/dynatrace-operator/src/kubeobjects/kubernetes/objectmeta/modifiers"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/kubernetes/podtemplatespec"
+	podTemplateSpecModifiers "github.com/Dynatrace/dynatrace-operator/src/kubeobjects/kubernetes/podtemplatespec/modifiers"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/kubernetes/statefulset"
 	statefulsetModifiers "github.com/Dynatrace/dynatrace-operator/src/kubeobjects/kubernetes/statefulset/modifiers"
 	"github.com/pkg/errors"
@@ -92,26 +94,52 @@ func CreateStatefulSet2(stsProperties *statefulSetProperties) (*appsv1.StatefulS
 
 	stsBuilder := statefulset.Builder{}
 
-	stsBuilder.AddModifier(statefulsetModifiers.ObjectMetaSetter{
-		ObjectMeta: createObjectMeta(stsProperties, appLabels),
-	})
+	stsMetadataBuilder := createObjectMetaBuilder(stsProperties, appLabels)
+	if stsProperties.DynaKube.FeatureActiveGateAppArmor() {
+		stsMetadataBuilder.AddModifier(objectMetaModifiers.AnnotationsAdder{Annotations: map[string]string{annotationActiveGateContainerAppArmor: "runtime/default"}})
+	}
 
+	stsBuilder.AddModifier(statefulsetModifiers.ObjectMetaSetter{ObjectMeta: stsMetadataBuilder.Build()})
+	stsBuilder.AddModifier(statefulsetModifiers.PodTemplateSpecSetter{PodTemplateSpec: createPodTemplateSpec(stsProperties, appLabels)})
 	stsBuilder.AddModifier(statefulsetModifiers.ReplicasSetter{Replicas: stsProperties.Replicas})
 	stsBuilder.AddModifier(statefulsetModifiers.PodManagementPolicySetter{PodManagementPolicy: appsv1.ParallelPodManagement})
 	stsBuilder.AddModifier(statefulsetModifiers.LabelSelectorSetter{LabelSelector: &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()}})
 
 	sts := stsBuilder.Build()
+
+	for _, onAfterCreateListener := range stsProperties.OnAfterCreateListener {
+		onAfterCreateListener(&sts)
+	}
+
+	hash, err := kubeobjects.GenerateHash(sts)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	sts.ObjectMeta.Annotations[kubeobjects.AnnotationHash] = hash // post-build modification
+
 	return &sts, nil
 }
 
-func createObjectMeta(stsProperties *statefulSetProperties, appLabels *kubeobjects.AppLabels) metav1.ObjectMeta {
+func createPodTemplateSpec(stsProperties *statefulSetProperties, appLabels *kubeobjects.AppLabels) corev1.PodTemplateSpec {
+	podTemplateSpecBuilder := podtemplatespec.Builder{}
+	objectMetaBuilder := objectmeta.Builder{}
+	objectMetaBuilder.AddModifier(objectMetaModifiers.LabelsSetter{Labels: stsProperties.buildLabels(appLabels.BuildLabels())})
+	objectMetaBuilder.AddModifier(objectMetaModifiers.AnnotationsSetter{Annotations: map[string]string{
+		annotationActiveGateConfigurationHash: stsProperties.activeGateConfigurationHash,
+	}})
+	podTemplateSpecBuilder.AddModifier(podTemplateSpecModifiers.ObjectMetaSetter{ObjectMeta: objectMetaBuilder.Build()})
+	podTemplateSpec := podTemplateSpecBuilder.Build()
+	return podTemplateSpec
+}
+
+func createObjectMetaBuilder(stsProperties *statefulSetProperties, appLabels *kubeobjects.AppLabels) objectmeta.Builder {
 	objectMetaBuilder := objectmeta.Builder{}
 	objectMetaBuilder.AddModifier(objectMetaModifiers.NameSetter{Name: stsProperties.Name + "-" + stsProperties.feature})
 	objectMetaBuilder.AddModifier(objectMetaModifiers.NamespaceSetter{Namespace: stsProperties.Namespace})
 	objectMetaBuilder.AddModifier(objectMetaModifiers.LabelsSetter{Labels: appLabels.BuildLabels()})
 	objectMetaBuilder.AddModifier(objectMetaModifiers.AnnotationsSetter{Annotations: map[string]string{}})
-	objectMeta := objectMetaBuilder.Build()
-	return objectMeta
+	return objectMetaBuilder
 }
 
 func createAppLabels(stsProperties *statefulSetProperties) *kubeobjects.AppLabels {
