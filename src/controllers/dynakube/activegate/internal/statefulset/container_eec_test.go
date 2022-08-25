@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -13,10 +14,7 @@ import (
 func testBuildStsProperties() *statefulSetProperties {
 	instance := buildTestInstance()
 	capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
-	return NewStatefulSetProperties(instance, capabilityProperties,
-		"", "", "test-feature", "", "",
-		nil, nil, nil,
-	)
+	return NewStatefulSetProperties(instance, capabilityProperties, "", "", "test-feature", "", "", nil, nil, nil, nil)
 }
 
 func TestExtensionController_BuildContainerAndVolumes(t *testing.T) {
@@ -101,22 +99,22 @@ func TestExtensionController_BuildContainerAndVolumes(t *testing.T) {
 
 func TestBuildEecConfigMapName(t *testing.T) {
 	t.Run("happy case", func(t *testing.T) {
-		eecConfigMapName := BuildEecConfigMapName("dynakube", "activegate")
+		eecConfigMapName := capability.BuildEecConfigMapName("dynakube", "activegate")
 		assert.Equal(t, "dynakube-activegate-eec-config", eecConfigMapName)
 	})
 
 	t.Run("happy case, capitalized and with spaces", func(t *testing.T) {
-		eecConfigMapName := BuildEecConfigMapName("DynaKube", "Active Gate")
+		eecConfigMapName := capability.BuildEecConfigMapName("DynaKube", "Active Gate")
 		assert.Equal(t, "DynaKube-Active_Gate-eec-config", eecConfigMapName)
 	})
 
 	t.Run("empty module", func(t *testing.T) {
-		eecConfigMapName := BuildEecConfigMapName("DynaKube", "")
+		eecConfigMapName := capability.BuildEecConfigMapName("DynaKube", "")
 		assert.Equal(t, "DynaKube--eec-config", eecConfigMapName)
 	})
 
 	t.Run("whitespace-only module", func(t *testing.T) {
-		eecConfigMapName := BuildEecConfigMapName("DynaKube", " 		")
+		eecConfigMapName := capability.BuildEecConfigMapName("DynaKube", " 		")
 		assert.Equal(t, "DynaKube-___-eec-config", eecConfigMapName)
 	})
 }

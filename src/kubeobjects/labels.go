@@ -59,7 +59,7 @@ func NewAppLabels(appName, dynakubeName, feature, featureVersion string) *AppLab
 	}
 }
 
-// NewCoreLabels abstracts labels that are used for core functionality in the operator
+// NewCoreLabels abstracts labels that are used for statefulsetreconciler functionality in the operator
 // which are not specific to an application's version
 // Follows the recommended label pattern: https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels
 func NewCoreLabels(dynakubeName, component string) *CoreLabels {

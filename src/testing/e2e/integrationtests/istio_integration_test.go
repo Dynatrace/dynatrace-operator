@@ -50,7 +50,7 @@ func TestReconcileOneAgent_ReconcileIstio(t *testing.T) {
 	e.CommunicationHosts = e.CommunicationHosts[2:]
 	_, err = e.Reconciler.Reconcile(context.TODO(), req)
 	assert.NoError(t, err, "failed to reconcile")
-	assertIstioObjects(t, e.Client, 3, 3)
+	assertIstioObjects(t, e.Client, 4, 4)
 }
 
 func TestReconcileOneAgent_ReconcileIstioWithMultipleOneAgentObjects(t *testing.T) {
@@ -112,7 +112,7 @@ func TestReconcileOneAgent_ReconcileIstioWithMultipleOneAgentObjects(t *testing.
 	assert.NoError(t, err, "failed to reconcile")
 	_, err = e.Reconciler.Reconcile(context.TODO(), req2)
 	assert.NoError(t, err, "failed to reconcile")
-	assertIstioObjects(t, e.Client, 6, 6)
+	assertIstioObjects(t, e.Client, 8, 8)
 }
 
 // assertIstioObjects confirms that we have the expected number of ServiceEntry and VirtualService objects, set by ese and evs respectively.

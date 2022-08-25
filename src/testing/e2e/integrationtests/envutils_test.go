@@ -1,3 +1,6 @@
+//go:build integration
+// +build integration
+
 package integrationtests
 
 // This file includes utilities to start an environment with API Server, and a configured reconciler.
@@ -224,6 +227,7 @@ func mockDynatraceClientFunc(communicationHosts *[]string) dynakube.DynatraceCli
 		}, nil)
 		dtc.On("GetTokenScopes", "42").Return(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, nil)
 		dtc.On("GetTokenScopes", "43").Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport}, nil)
+		dtc.On("GetActiveGateTenantInfo").Return(&dtclient.ActiveGateTenantInfo{}, nil)
 
 		return dtc, nil
 	}
