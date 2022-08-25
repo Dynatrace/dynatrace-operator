@@ -228,20 +228,6 @@ func (access *SqliteAccess) setupVolumeTable() error {
 	return nil
 }
 
-func (access *SqliteAccess) setupVolumeTable() error {
-	_, err := access.conn.Exec(volumesCreateStatement)
-	if err != nil {
-		return errors.WithMessagef(err, "couldn't create the table %s", volumesTableName)
-	}
-
-	err = access.executeAlterStatement(volumesAlterStatementMountAttempts)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // setupDynakubeTable creates the dynakubes table if it doesn't exist and tries to add additional columns
 func (access *SqliteAccess) setupDynakubeTable() error {
 	if _, err := access.conn.Exec(dynakubesCreateStatement); err != nil {
