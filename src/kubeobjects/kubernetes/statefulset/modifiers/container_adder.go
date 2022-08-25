@@ -1,7 +1,7 @@
 package modifiers
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/kubernetes/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/kubernetes/statefulset/types"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -10,7 +10,7 @@ type ContainerAdder struct {
 	container corev1.Container
 }
 
-var _ statefulset.Modifier = (*ContainerAdder)(nil)
+var _ types.Modifier = (*ContainerAdder)(nil)
 
 func (c ContainerAdder) Modify(sts *appsv1.StatefulSet) {
 	if sts.Spec.Template.Spec.Containers == nil {

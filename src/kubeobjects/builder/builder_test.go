@@ -1,36 +1,39 @@
-package statefulset
+package builder
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	appsv1 "k8s.io/api/apps/v1"
 )
 
-type ModifierMock struct {
+type DataMock struct {
 	mock.Mock
 }
 
-func NewModifierMock() *ModifierMock {
-	return &ModifierMock{}
+type ModifierMock[T any] struct {
+	mock.Mock
 }
 
-func (m *ModifierMock) Modify(sts *appsv1.StatefulSet) {
-	m.Called(sts)
+func NewModifierMock[T any]() *ModifierMock[T] {
+	return &ModifierMock[T]{}
+}
+
+func (m *ModifierMock[T]) Modify(data *T) {
+	m.Called(data)
 }
 
 func TestStatefulsetBuilder(t *testing.T) {
 	t.Run("Simple, no modifiers", func(t *testing.T) {
-		b := Builder{}
+		b := Builder[DataMock]{}
 		actual := b.Build()
-		expected := appsv1.StatefulSet{}
+		expected := DataMock{}
 		assert.Equal(t, expected, actual)
 	})
 	t.Run("One modifier", func(t *testing.T) {
-		b := Builder{}
+		b := Builder[DataMock]{}
 
-		modifierMock := NewModifierMock()
+		modifierMock := NewModifierMock[DataMock]()
 		modifierMock.On("Modify", mock.Anything).Return()
 
 		b.AddModifier(modifierMock)
@@ -38,15 +41,15 @@ func TestStatefulsetBuilder(t *testing.T) {
 
 		modifierMock.AssertNumberOfCalls(t, "Modify", 1)
 
-		expected := appsv1.StatefulSet{}
+		expected := DataMock{}
 		assert.Equal(t, expected, actual)
 	})
 	t.Run("Two modifiers, one used twice", func(t *testing.T) {
-		b := Builder{}
+		b := Builder[DataMock]{}
 
-		modifierMock0 := NewModifierMock()
+		modifierMock0 := NewModifierMock[DataMock]()
 		modifierMock0.On("Modify", mock.Anything).Return()
-		modifierMock1 := NewModifierMock()
+		modifierMock1 := NewModifierMock[DataMock]()
 		modifierMock1.On("Modify", mock.Anything).Return()
 
 		b.AddModifier(modifierMock0, modifierMock0, modifierMock1)
@@ -55,7 +58,7 @@ func TestStatefulsetBuilder(t *testing.T) {
 		modifierMock1.AssertNumberOfCalls(t, "Modify", 1)
 
 		actual := b.Build()
-		expected := appsv1.StatefulSet{}
+		expected := DataMock{}
 		assert.Equal(t, expected, actual)
 	})
 }
