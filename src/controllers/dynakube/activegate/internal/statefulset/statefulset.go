@@ -89,15 +89,12 @@ func NewStatefulSetProperties(dynakube *dynatracev1beta1.DynaKube, capabilityPro
 	}
 }
 
-func CreateStatefulSet2(stsProperties *statefulSetProperties) (*appsv1.StatefulSet, error) {
+func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSet, error) {
 	appLabels := createAppLabels(stsProperties)
 
 	stsBuilder := statefulset.Builder{}
 
 	stsMetadataBuilder := createObjectMetaBuilder(stsProperties, appLabels)
-	if stsProperties.DynaKube.FeatureActiveGateAppArmor() {
-		stsMetadataBuilder.AddModifier(objectMetaModifiers.AnnotationsAdder{Annotations: map[string]string{annotationActiveGateContainerAppArmor: "runtime/default"}})
-	}
 	stsBuilder.AddModifier(statefulsetModifiers.ObjectMetaSetter{ObjectMeta: stsMetadataBuilder.Build()})
 
 	stsBuilder.
@@ -130,6 +127,10 @@ func createPodTemplateSpec(stsProperties *statefulSetProperties, appLabels *kube
 	objectMetaBuilder.AddModifier(objectMetaModifiers.AnnotationsSetter{Annotations: map[string]string{
 		annotationActiveGateConfigurationHash: stsProperties.activeGateConfigurationHash,
 	}})
+	if stsProperties.DynaKube.FeatureActiveGateAppArmor() {
+		objectMetaBuilder.AddModifier(objectMetaModifiers.AnnotationsAdder{Annotations: map[string]string{annotationActiveGateContainerAppArmor: "runtime/default"}})
+	}
+
 	podTemplateSpecBuilder.
 		AddModifier(podTemplateSpecModifiers.ObjectMetaSetter{ObjectMeta: objectMetaBuilder.Build()}).
 		AddModifier(podTemplateSpecModifiers.PodSpecSetter{PodSpec: buildTemplateSpec(stsProperties)})
@@ -156,54 +157,6 @@ func createAppLabels(stsProperties *statefulSetProperties) *kubeobjects.AppLabel
 	appLabels := kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, stsProperties.DynaKube.Name,
 		stsProperties.feature, versionLabelValue)
 	return appLabels
-}
-
-func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSet, error) {
-	versionLabelValue := stsProperties.Status.ActiveGate.Version
-	if stsProperties.CustomActiveGateImage() != "" {
-		versionLabelValue = kubeobjects.CustomImageLabelValue
-	}
-
-	appLabels := kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, stsProperties.DynaKube.Name,
-		stsProperties.feature, versionLabelValue)
-
-	sts := &appsv1.StatefulSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        stsProperties.Name + "-" + stsProperties.feature,
-			Namespace:   stsProperties.Namespace,
-			Labels:      appLabels.BuildLabels(),
-			Annotations: map[string]string{},
-		},
-		Spec: appsv1.StatefulSetSpec{
-			Replicas:            stsProperties.Replicas,
-			PodManagementPolicy: appsv1.ParallelPodManagement,
-			Selector:            &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: stsProperties.buildLabels(appLabels.BuildLabels()),
-					Annotations: map[string]string{
-						annotationActiveGateConfigurationHash: stsProperties.activeGateConfigurationHash,
-					},
-				},
-				Spec: buildTemplateSpec(stsProperties),
-			},
-		}}
-
-	if stsProperties.DynaKube.FeatureActiveGateAppArmor() {
-		sts.Spec.Template.ObjectMeta.Annotations[annotationActiveGateContainerAppArmor] = "runtime/default"
-	}
-
-	for _, onAfterCreateListener := range stsProperties.OnAfterCreateListener {
-		onAfterCreateListener(sts)
-	}
-
-	hash, err := kubeobjects.GenerateHash(sts)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	sts.ObjectMeta.Annotations[kubeobjects.AnnotationHash] = hash
-	return sts, nil
 }
 
 func (stsProperties *statefulSetProperties) buildLabels(appLabels map[string]string) map[string]string {
