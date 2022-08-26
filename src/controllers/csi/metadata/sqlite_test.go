@@ -127,8 +127,8 @@ func TestCreateTables(t *testing.T) {
 			if column == "MaxFailedMountAttempts" {
 				maxFailedMountAttempts, err := strconv.Atoi(*defaultValue)
 				assert.NoError(t, err)
-				assert.Equal(t, "0", *defaultValue)
-				assert.Equal(t, 0, maxFailedMountAttempts)
+				assert.Equal(t, "3", *defaultValue)
+				assert.Equal(t, 3, maxFailedMountAttempts)
 				assert.Equal(t, "1", notNull)
 			}
 		}
