@@ -8,6 +8,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/customproperties"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/agbuilder"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/agbuilder/modifiers"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/tenantinfo"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
@@ -84,6 +86,12 @@ func NewStatefulSetProperties(dynakube *dynatracev1beta1.DynaKube, capabilityPro
 }
 
 func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSet, error) {
+	// example usage:
+	//
+	agBuilder := agbuilder.Builder{}
+	agBuilder.AddModifier(modifiers.NoopModifier{Msg: "hello from createstatefulset"})
+	_ = agBuilder.Build()
+
 	versionLabelValue := stsProperties.Status.ActiveGate.Version
 	if stsProperties.CustomActiveGateImage() != "" {
 		versionLabelValue = kubeobjects.CustomImageLabelValue
