@@ -589,3 +589,33 @@ func setupTestZip(t *testing.T, fs afero.Fs) afero.File {
 
 	return zipFile
 }
+
+func TestHandleMetadata(t *testing.T) {
+	instance := &dynatracev1beta1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: dkName,
+		},
+		Status: dynatracev1beta1.DynaKubeStatus{
+			ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
+				TenantUUID: testTenantUUID,
+			},
+		},
+	}
+	provisioner := &OneAgentProvisioner{
+		db: metadata.FakeMemoryDB(),
+	}
+	dynakubeMetadata, oldMetadata, err := provisioner.handleMetadata(instance)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, dynakubeMetadata)
+	assert.NotNil(t, oldMetadata)
+	assert.Equal(t, 3, dynakubeMetadata.MaxFailedMountAttempts)
+
+	instance.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureMaxFailedCsiMountAttempts: "5"}
+	dynakubeMetadata, oldMetadata, err = provisioner.handleMetadata(instance)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, dynakubeMetadata)
+	assert.NotNil(t, oldMetadata)
+	assert.Equal(t, 5, dynakubeMetadata.MaxFailedMountAttempts)
+}

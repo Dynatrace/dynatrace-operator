@@ -49,7 +49,8 @@ const (
 
 	dynakubesAlterStatementMaxFailedMountAttempts = `
 	ALTER TABLE dynakubes
-	ADD COLUMN MaxFailedMountAttempts INT DEFAULT ` + defaultSqlMaxFailedMountAttempts + `;`
+	ADD COLUMN MaxFailedMountAttempts INT NOT NULL DEFAULT 3;`
+	// "Not null"-columns need a default value set
 
 	volumesAlterStatementMountAttempts = `
 	ALTER TABLE volumes
@@ -116,12 +117,12 @@ const (
 
 	// GET ALL
 	getAllDynakubesStatement = `
-		SELECT Name, TenantUUID, LatestVersion, ImageDigest
+		SELECT Name, TenantUUID, LatestVersion, ImageDigest, MaxFailedMountAttempts
 		FROM dynakubes;
 		`
 
 	getAllVolumesStatement = `
-		SELECT ID, PodName, Version, TenantUUID
+		SELECT ID, PodName, Version, TenantUUID, MountAttempts
 		FROM volumes;
 		`
 
@@ -314,6 +315,7 @@ func (access *SqliteAccess) GetDynakube(dynakubeName string) (*Dynakube, error) 
 	if err != nil {
 		err = errors.WithMessagef(err, "couldn't get dynakube, name '%s'", dynakubeName)
 	}
+
 	return NewDynakube(dynakubeName, tenantUUID, latestVersion, imageDigest, maxFailedMountAttempts), err
 }
 
@@ -417,11 +419,14 @@ func (access *SqliteAccess) GetAllVolumes() ([]*Volume, error) {
 		var podName string
 		var version string
 		var tenantUUID string
-		err := rows.Scan(&id, &podName, &version, &tenantUUID)
+		var mountAttempts int
+
+		err := rows.Scan(&id, &podName, &version, &tenantUUID, &mountAttempts)
 		if err != nil {
 			return nil, errors.WithStack(errors.WithMessage(err, "couldn't scan volume from database"))
 		}
-		volumes = append(volumes, NewVolume(id, podName, version, tenantUUID, 0))
+
+		volumes = append(volumes, NewVolume(id, podName, version, tenantUUID, mountAttempts))
 	}
 	return volumes, nil
 }
@@ -439,11 +444,14 @@ func (access *SqliteAccess) GetAllDynakubes() ([]*Dynakube, error) {
 		var version string
 		var tenantUUID string
 		var imageDigest string
-		err := rows.Scan(&name, &tenantUUID, &version, &imageDigest)
+		var maxFailedMountAttempts int
+
+		err := rows.Scan(&name, &tenantUUID, &version, &imageDigest, &maxFailedMountAttempts)
 		if err != nil {
 			return nil, errors.WithStack(errors.WithMessage(err, "couldn't scan dynakube from database"))
 		}
-		dynakubes = append(dynakubes, NewDynakube(name, tenantUUID, version, imageDigest, 0))
+
+		dynakubes = append(dynakubes, NewDynakube(name, tenantUUID, version, imageDigest, maxFailedMountAttempts))
 	}
 	return dynakubes, nil
 }

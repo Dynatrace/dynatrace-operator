@@ -87,6 +87,12 @@ const (
 	AnnotationFeatureIgnoreUnknownState = AnnotationFeaturePrefix + "ignore-unknown-state"
 	AnnotationFeatureIgnoredNamespaces  = AnnotationFeaturePrefix + "ignored-namespaces"
 	AnnotationFeatureAutomaticInjection = AnnotationFeaturePrefix + "automatic-injection"
+
+	AnnotationFeatureMaxFailedCsiMountAttempts = AnnotationFeaturePrefix + "max-csi-mount-attempts"
+)
+
+const (
+	defaultMaxFailedCsiMountAttempts = 3
 )
 
 var (
@@ -275,4 +281,20 @@ func (dk *DynaKube) getFeatureFlagRaw(annotation string) string {
 		return raw
 	}
 	return ""
+}
+
+func (dk *DynaKube) FeatureMaxFailedCsiMountAttempts() int {
+	maxCsiMountAttemptsValue := dk.getFeatureFlagRaw(AnnotationFeatureMaxFailedCsiMountAttempts)
+
+	if maxCsiMountAttemptsValue == "" {
+		return defaultMaxFailedCsiMountAttempts
+	}
+
+	maxCsiMountAttempts, err := strconv.Atoi(maxCsiMountAttemptsValue)
+
+	if err != nil || maxCsiMountAttempts < 0 {
+		return defaultMaxFailedCsiMountAttempts
+	}
+
+	return maxCsiMountAttempts
 }
