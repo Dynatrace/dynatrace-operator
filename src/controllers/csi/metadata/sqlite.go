@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/mattn/go-sqlite3"
 	"github.com/pkg/errors"
 )
@@ -309,18 +308,14 @@ func (access *SqliteAccess) GetDynakube(dynakubeName string) (*Dynakube, error) 
 	var tenantUUID string
 	var latestVersion string
 	var imageDigest string
-	var maxFailedMountAttempts *int
+	var maxFailedMountAttempts int
 
 	err := access.querySimpleStatement(getDynakubeStatement, dynakubeName, &tenantUUID, &latestVersion, &imageDigest, &maxFailedMountAttempts)
 	if err != nil {
 		err = errors.WithMessagef(err, "couldn't get dynakube, name '%s'", dynakubeName)
 	}
 
-	if maxFailedMountAttempts == nil {
-		maxFailedMountAttempts = address.Of(-1)
-	}
-
-	return NewDynakube(dynakubeName, tenantUUID, latestVersion, imageDigest, *maxFailedMountAttempts), err
+	return NewDynakube(dynakubeName, tenantUUID, latestVersion, imageDigest, maxFailedMountAttempts), err
 }
 
 // InsertVolume inserts a new Volume
@@ -448,18 +443,14 @@ func (access *SqliteAccess) GetAllDynakubes() ([]*Dynakube, error) {
 		var version string
 		var tenantUUID string
 		var imageDigest string
-		var maxFailedMountAttempts *int
+		var maxFailedMountAttempts int
 
 		err := rows.Scan(&name, &tenantUUID, &version, &imageDigest, &maxFailedMountAttempts)
 		if err != nil {
 			return nil, errors.WithStack(errors.WithMessage(err, "couldn't scan dynakube from database"))
 		}
 
-		if maxFailedMountAttempts == nil {
-			maxFailedMountAttempts = address.Of(-1)
-		}
-
-		dynakubes = append(dynakubes, NewDynakube(name, tenantUUID, version, imageDigest, *maxFailedMountAttempts))
+		dynakubes = append(dynakubes, NewDynakube(name, tenantUUID, version, imageDigest, maxFailedMountAttempts))
 	}
 	return dynakubes, nil
 }

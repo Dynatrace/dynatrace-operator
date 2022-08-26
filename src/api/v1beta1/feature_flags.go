@@ -293,7 +293,7 @@ func (dk *DynaKube) FeatureMaxFailedCsiMountAttempts() int {
 	maxCsiMountAttempts, err := strconv.Atoi(maxCsiMountAttemptsValue)
 
 	if err != nil || maxCsiMountAttempts < 0 {
-		return 0
+		return defaultMaxFailedCsiMountAttempts
 	}
 
 	return maxCsiMountAttempts
