@@ -35,15 +35,6 @@ func TestNewDynakube(t *testing.T) {
 
 		assert.Nil(t, dynakube)
 	})
-	t.Run("sets default value for mount attempts if less than 0", func(t *testing.T) {
-		dynakube := NewDynakube(testName, testUUID, testVersion, testDigest, -1)
-
-		assert.Equal(t, testName, dynakube.Name)
-		assert.Equal(t, testUUID, dynakube.TenantUUID)
-		assert.Equal(t, testVersion, dynakube.LatestVersion)
-		assert.Equal(t, testDigest, dynakube.ImageDigest)
-		assert.Equal(t, defaultMaxFailedMountAttempts, dynakube.MaxFailedMountAttempts)
-	})
 }
 
 func TestNewVolume(t *testing.T) {
