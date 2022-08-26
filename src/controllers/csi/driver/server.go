@@ -71,7 +71,7 @@ func (svr *CSIDriverServer) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (svr *CSIDriverServer) Start(ctx context.Context) error {
-	defer metadata.LogAccessOverview(log, svr.db)
+	defer metadata.LogAccessOverview(ctx, log, svr.db)
 	proto, addr, err := parseEndpoint(svr.opts.Endpoint)
 	if err != nil {
 		return fmt.Errorf("failed to parse endpoint '%s': %w", svr.opts.Endpoint, err)
@@ -169,7 +169,7 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(ctx context.Context, req *csi.No
 		return nil, err
 	}
 	for _, publisher := range svr.publishers {
-		canUnpublish, err := publisher.CanUnpublishVolume(volumeInfo)
+		canUnpublish, err := publisher.CanUnpublishVolume(ctx, volumeInfo)
 		if err != nil {
 			log.Error(err, "couldn't determine if volume can be unpublished", "publisher", publisher)
 		}

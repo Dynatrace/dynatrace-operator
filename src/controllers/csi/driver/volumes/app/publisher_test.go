@@ -170,9 +170,9 @@ func TestStoreAndLoadPodInfo(t *testing.T) {
 
 	volumeCfg := createTestVolumeConfig()
 
-	err := publisher.storeVolume(bindCfg, volumeCfg)
+	err := publisher.storeVolume(context.TODO(), bindCfg, volumeCfg)
 	require.NoError(t, err)
-	volume, err := publisher.loadVolume(volumeCfg.VolumeID)
+	volume, err := publisher.loadVolume(context.TODO(), volumeCfg.VolumeID)
 	require.NoError(t, err)
 	require.NotNil(t, volume)
 	assert.Equal(t, testVolumeId, volume.VolumeID)
@@ -185,7 +185,7 @@ func TestLoadPodInfo_Empty(t *testing.T) {
 	mounter := mount.NewFakeMounter([]mount.MountPoint{})
 	publisher := newPublisherForTesting(t, mounter)
 
-	volume, err := publisher.loadVolume(testVolumeId)
+	volume, err := publisher.loadVolume(context.TODO(), testVolumeId)
 	require.NoError(t, err)
 	require.Nil(t, volume)
 }
@@ -224,24 +224,24 @@ func newPublisherForTesting(t *testing.T, mounter *mount.FakeMounter) AppVolumeP
 
 func mockPublishedVolume(t *testing.T, publisher *AppVolumePublisher) {
 	mockUrlDynakubeMetadata(t, publisher)
-	err := publisher.db.InsertVolume(metadata.NewVolume(testVolumeId, testPodUID, testAgentVersion, testTenantUUID, 0))
+	err := publisher.db.InsertVolume(context.TODO(), metadata.NewVolume(testVolumeId, testPodUID, testAgentVersion, testTenantUUID, 0))
 	require.NoError(t, err)
 	agentsVersionsMetric.WithLabelValues(testAgentVersion).Inc()
 }
 
 func mockUrlDynakubeMetadata(t *testing.T, publisher *AppVolumePublisher) {
-	err := publisher.db.InsertDynakube(metadata.NewDynakube(testDynakubeName, testTenantUUID, testAgentVersion, "", 0))
+	err := publisher.db.InsertDynakube(context.TODO(), metadata.NewDynakube(testDynakubeName, testTenantUUID, testAgentVersion, "", 0))
 	require.NoError(t, err)
 }
 
 func mockImageDynakubeMetadata(t *testing.T, publisher *AppVolumePublisher) {
-	err := publisher.db.InsertDynakube(metadata.NewDynakube(testDynakubeName, testTenantUUID, testAgentVersion, testImageDigest, 0))
+	err := publisher.db.InsertDynakube(context.TODO(), metadata.NewDynakube(testDynakubeName, testTenantUUID, testAgentVersion, testImageDigest, 0))
 	require.NoError(t, err)
 }
 
 func assertReferencesForPublishedVolume(t *testing.T, publisher *AppVolumePublisher, mounter *mount.FakeMounter) {
 	assert.NotEmpty(t, mounter.MountPoints)
-	volume, err := publisher.loadVolume(testVolumeId)
+	volume, err := publisher.loadVolume(context.TODO(), testVolumeId)
 	require.NoError(t, err)
 	assert.Equal(t, volume.VolumeID, testVolumeId)
 	assert.Equal(t, volume.PodName, testPodUID)
@@ -251,7 +251,7 @@ func assertReferencesForPublishedVolume(t *testing.T, publisher *AppVolumePublis
 
 func assertReferencesForPublishedVolumeWithCodeModulesImage(t *testing.T, publisher *AppVolumePublisher, mounter *mount.FakeMounter) {
 	assert.NotEmpty(t, mounter.MountPoints)
-	volume, err := publisher.loadVolume(testVolumeId)
+	volume, err := publisher.loadVolume(context.TODO(), testVolumeId)
 	require.NoError(t, err)
 	assert.Equal(t, volume.VolumeID, testVolumeId)
 	assert.Equal(t, volume.PodName, testPodUID)
@@ -260,7 +260,7 @@ func assertReferencesForPublishedVolumeWithCodeModulesImage(t *testing.T, publis
 }
 
 func assertNoReferencesForUnpublishedVolume(t *testing.T, publisher *AppVolumePublisher) {
-	volume, err := publisher.loadVolume(testVolumeId)
+	volume, err := publisher.loadVolume(context.TODO(), testVolumeId)
 	require.NoError(t, err)
 	require.Nil(t, volume)
 }
