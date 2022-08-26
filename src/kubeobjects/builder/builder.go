@@ -6,16 +6,16 @@ import (
 
 type Builder[T any] struct {
 	modifiers []api.Modifier[T]
-	data      T
 }
 
 var _ api.Builder[any] = (*Builder[any])(nil)
 
-func (b *Builder[T]) Build() T {
+func (b Builder[T]) Build() T {
+	var data T
 	for _, m := range b.modifiers {
-		m.Modify(&b.data)
+		m.Modify(&data)
 	}
-	return b.data
+	return data
 }
 
 func (b *Builder[T]) AddModifier(modifiers ...api.Modifier[T]) api.Builder[T] {

@@ -93,9 +93,7 @@ func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSe
 	appLabels := createAppLabels(stsProperties)
 
 	stsBuilder := statefulset.Builder{}
-
-	stsMetadataBuilder := createObjectMetaBuilder(stsProperties, appLabels)
-	stsBuilder.AddModifier(statefulsetModifiers.ObjectMetaSetter{ObjectMeta: stsMetadataBuilder.Build()})
+	stsBuilder.AddModifier(statefulsetModifiers.ObjectMetaSetter{ObjectMeta: createObjectMetaBuilder(stsProperties, appLabels).Build()})
 
 	stsBuilder.
 		AddModifier(statefulsetModifiers.PodTemplateSpecSetter{PodTemplateSpec: createPodTemplateSpec(stsProperties, appLabels)}).
