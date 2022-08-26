@@ -1,4 +1,4 @@
-package test
+package environment
 
 import (
 	"os"
@@ -12,7 +12,7 @@ const (
 	useKind = "TEST_ENV_USE_KIND"
 )
 
-func getEnvironment() env.Environment {
+func Get() env.Environment {
 	if os.Getenv(useKind) == "true" {
 		environment := env.New()
 		environment.Setup(envfuncs.CreateKindCluster(envconf.RandomName("", 10)))
