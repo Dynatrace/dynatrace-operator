@@ -127,9 +127,9 @@ func TestCreateTables(t *testing.T) {
 			if column == "MaxFailedMountAttempts" {
 				maxFailedMountAttempts, err := strconv.Atoi(*defaultValue)
 				assert.NoError(t, err)
-				assert.Equal(t, defaultSqlMaxFailedMountAttempts, *defaultValue)
-				assert.Equal(t, defaultMaxFailedMountAttempts, maxFailedMountAttempts)
-				assert.Equal(t, "0", notNull)
+				assert.Equal(t, "3", *defaultValue)
+				assert.Equal(t, 3, maxFailedMountAttempts)
+				assert.Equal(t, "1", notNull)
 			}
 		}
 	})
@@ -166,14 +166,16 @@ func TestGetDynakube_Empty(t *testing.T) {
 }
 
 func TestGetDynakube(t *testing.T) {
-	testDynakube1 := createTestDynakube(1)
-	db := FakeMemoryDB()
-	err := db.InsertDynakube(&testDynakube1)
-	require.NoError(t, err)
+	t.Run("get dynakube", func(t *testing.T) {
+		testDynakube1 := createTestDynakube(1)
+		db := FakeMemoryDB()
+		err := db.InsertDynakube(&testDynakube1)
+		require.NoError(t, err)
 
-	dynakube, err := db.GetDynakube(testDynakube1.Name)
-	require.NoError(t, err)
-	assert.Equal(t, testDynakube1, *dynakube)
+		dynakube, err := db.GetDynakube(testDynakube1.Name)
+		require.NoError(t, err)
+		assert.Equal(t, testDynakube1, *dynakube)
+	})
 }
 
 func TestUpdateDynakube(t *testing.T) {
@@ -222,18 +224,20 @@ func TestGetTenantsToDynakubes(t *testing.T) {
 }
 
 func TestGetAllDynakubes(t *testing.T) {
-	testDynakube1 := createTestDynakube(1)
-	testDynakube2 := createTestDynakube(2)
+	t.Run("get multiple dynakubes", func(t *testing.T) {
+		testDynakube1 := createTestDynakube(1)
+		testDynakube2 := createTestDynakube(2)
 
-	db := FakeMemoryDB()
-	err := db.InsertDynakube(&testDynakube1)
-	require.NoError(t, err)
-	err = db.InsertDynakube(&testDynakube2)
-	require.NoError(t, err)
+		db := FakeMemoryDB()
+		err := db.InsertDynakube(&testDynakube1)
+		require.NoError(t, err)
+		err = db.InsertDynakube(&testDynakube2)
+		require.NoError(t, err)
 
-	dynakubes, err := db.GetAllDynakubes()
-	require.NoError(t, err)
-	assert.Equal(t, 2, len(dynakubes))
+		dynakubes, err := db.GetAllDynakubes()
+		require.NoError(t, err)
+		assert.Equal(t, 2, len(dynakubes))
+	})
 }
 
 func TestGetAllVolumes(t *testing.T) {
@@ -249,6 +253,8 @@ func TestGetAllVolumes(t *testing.T) {
 	volumes, err := db.GetAllVolumes()
 	require.NoError(t, err)
 	assert.Equal(t, 2, len(volumes))
+	assert.Equal(t, testVolume1, *volumes[0])
+	assert.Equal(t, testVolume2, *volumes[1])
 }
 
 func TestGetAllOsAgentVolumes(t *testing.T) {
