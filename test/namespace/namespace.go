@@ -6,6 +6,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/e2e-framework/klient/wait"
+	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
@@ -28,18 +30,26 @@ func Delete(name string) env.Func {
 		}
 
 		err = environmentConfig.Client().Resources().Delete(ctx, &namespace)
+
+		if err != nil {
+			return ctx, errors.WithStack(err)
+		}
+
+		r := environmentConfig.Client().Resources()
+		err = wait.For(conditions.New(r).ResourceDeleted(&namespace))
+
 		return ctx, errors.WithStack(err)
 	}
 }
 
 func Recreate(name string) env.Func {
-	return func(ctx context.Context, config *envconf.Config) (context.Context, error) {
-		ctx, err := Delete(name)(ctx, config)
+	return func(ctx context.Context, environmentConfig *envconf.Config) (context.Context, error) {
+		ctx, err := Delete(name)(ctx, environmentConfig)
 
 		if err != nil && !k8serrors.IsNotFound(errors.Cause(err)) {
 			return ctx, err
 		}
 
-		return Create(name)(ctx, config)
+		return Create(name)(ctx, environmentConfig)
 	}
 }

@@ -14,11 +14,14 @@ import (
 
 func InstallForKubernetes(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 	kubernetesManifest, err := os.Open("../config/deploy/kubernetes/kubernetes-all.yaml")
+	// For some reason 'Close()' is marked as an unresolved reference in IntelliJ
+	// It does work and compile as expected when run though
 	defer func() { require.NoError(t, kubernetesManifest.Close()) }()
 	require.NoError(t, err)
 
 	resources := environmentConfig.Client().Resources()
 	require.NoError(t, decoder.DecodeEach(ctx, kubernetesManifest, decoder.IgnoreErrorHandler(decoder.CreateHandler(resources), func(err error) bool {
+		// Ignore if the resource already exists
 		return k8serrors.IsAlreadyExists(err)
 	})))
 

@@ -1,4 +1,4 @@
-package daemonset
+package statefulset
 
 import (
 	"context"
@@ -16,14 +16,14 @@ import (
 func WaitFor(name string, namespace string) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resources := environmentConfig.Client().Resources()
-		err := wait.For(conditions.New(resources).ResourceMatch(&appsv1.DaemonSet{
+		err := wait.For(conditions.New(resources).ResourceMatch(&appsv1.StatefulSet{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name,
 				Namespace: namespace,
 			},
 		}, func(object k8s.Object) bool {
-			daemonset, isDaemonset := object.(*appsv1.DaemonSet)
-			return isDaemonset && daemonset.Status.DesiredNumberScheduled == daemonset.Status.NumberReady
+			statefulSet, isStatefulSet := object.(*appsv1.StatefulSet)
+			return isStatefulSet && statefulSet.Status.Replicas == statefulSet.Status.ReadyReplicas
 		}))
 
 		require.NoError(t, err)
