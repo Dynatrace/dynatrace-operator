@@ -50,7 +50,8 @@ func (installer *ImageInstaller) InstallAgent(targetDir string) (bool, error) {
 
 	err := installer.fs.MkdirAll(installer.props.PathResolver.AgentSharedBinaryDirBase(), common.MkDirFileMode)
 	if err != nil {
-		return false, err
+		log.Info("failed to create the base shared agent directory", "err", err)
+		return false, errors.WithStack(err)
 	}
 
 	if err := installer.installAgentFromImage(); err != nil {
