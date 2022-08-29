@@ -86,6 +86,18 @@ func TestPublishVolume(t *testing.T) {
 
 		assertReferencesForPublishedVolumeWithCodeModulesImage(t, &publisher, mounter)
 	})
+
+	t.Run(`too many mount attempts`, func(t *testing.T) {
+		mounter := mount.NewFakeMounter([]mount.MountPoint{})
+		publisher := newPublisherForTesting(t, mounter)
+		mockFailedPublishedVolume(t, &publisher)
+
+		response, err := publisher.PublishVolume(context.TODO(), createTestVolumeConfig())
+		require.NoError(t, err)
+		assert.NotNil(t, response)
+
+		require.Empty(t, mounter.MountPoints)
+	})
 }
 
 func TestUnpublishVolume(t *testing.T) {
@@ -129,6 +141,19 @@ func TestUnpublishVolume(t *testing.T) {
 		require.Nil(t, response)
 		require.NotEmpty(t, mounter.MountPoints)
 		assertNoReferencesForUnpublishedVolume(t, &publisher)
+	})
+
+	t.Run(`remove dummy volume created after too many failed attempts`, func(t *testing.T) {
+		resetMetrics()
+		mounter := mount.NewFakeMounter([]mount.MountPoint{})
+		publisher := newPublisherForTesting(t, mounter)
+		mockFailedPublishedVolume(t, &publisher)
+
+		response, err := publisher.UnpublishVolume(context.TODO(), createTestVolumeInfo())
+
+		require.NoError(t, err)
+		require.NotNil(t, response)
+		require.Empty(t, mounter.MountPoints)
 	})
 }
 
@@ -229,13 +254,19 @@ func mockPublishedVolume(t *testing.T, publisher *AppVolumePublisher) {
 	agentsVersionsMetric.WithLabelValues(testAgentVersion).Inc()
 }
 
+func mockFailedPublishedVolume(t *testing.T, publisher *AppVolumePublisher) {
+	mockUrlDynakubeMetadata(t, publisher)
+	err := publisher.db.InsertVolume(context.TODO(), metadata.NewVolume(testVolumeId, testPodUID, testAgentVersion, testTenantUUID, dynatracev1beta1.DefaultMaxFailedCsiMountAttempts+1))
+	require.NoError(t, err)
+}
+
 func mockUrlDynakubeMetadata(t *testing.T, publisher *AppVolumePublisher) {
 	err := publisher.db.InsertDynakube(context.TODO(), metadata.NewDynakube(testDynakubeName, testTenantUUID, testAgentVersion, "", 0))
 	require.NoError(t, err)
 }
 
 func mockImageDynakubeMetadata(t *testing.T, publisher *AppVolumePublisher) {
-	err := publisher.db.InsertDynakube(context.TODO(), metadata.NewDynakube(testDynakubeName, testTenantUUID, testAgentVersion, testImageDigest, 0))
+	err := publisher.db.InsertDynakube(context.TODO(), metadata.NewDynakube(testDynakubeName, testTenantUUID, testAgentVersion, testImageDigest, dynatracev1beta1.DefaultMaxFailedCsiMountAttempts))
 	require.NoError(t, err)
 }
 
