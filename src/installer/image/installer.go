@@ -48,9 +48,9 @@ func (installer ImageInstaller) ImageDigest() string {
 func (installer *ImageInstaller) InstallAgent(targetDir string) (bool, error) {
 	log.Info("installing agent from image")
 
-	err := installer.fs.Mkdir(installer.props.PathResolver.AgentSharedBinaryDirBase(), common.MkDirFileMode)
+	err := installer.fs.MkdirAll(installer.props.PathResolver.AgentSharedBinaryDirBase(), common.MkDirFileMode)
 	if err != nil {
-		return false, errors.WithStack(err)
+		return false, err
 	}
 
 	if err := installer.installAgentFromImage(); err != nil {
