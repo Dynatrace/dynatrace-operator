@@ -4,7 +4,6 @@ package test
 
 import (
 	"context"
-	"k8s.io/apimachinery/pkg/api/meta"
 	"os"
 	"path"
 	"testing"
@@ -26,6 +25,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/wait"
@@ -51,9 +51,9 @@ var testEnvironment env.Environment
 
 func TestMain(m *testing.M) {
 	testEnvironment = environment.Get()
-	testEnvironment.Setup(namespace.DeleteIfExists(sampleAppsNamespace))
 	testEnvironment.Setup(deleteDynakubeIfExists())
 	testEnvironment.Setup(oneagent.WaitForDaemonSetPodsDeletion())
+	testEnvironment.Setup(namespace.DeleteIfExists(sampleAppsNamespace))
 	testEnvironment.Setup(namespace.Recreate(dynatraceNamespace))
 
 	testEnvironment.Finish(deleteDynakubeIfExists())
