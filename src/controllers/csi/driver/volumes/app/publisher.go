@@ -53,8 +53,8 @@ type AppVolumePublisher struct {
 	path    metadata.PathResolver
 }
 
-func (publisher *AppVolumePublisher) PublishVolume(_ context.Context, volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
-	bindCfg, err := csivolumes.NewBindConfig(publisher.db, volumeCfg)
+func (publisher *AppVolumePublisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
+	bindCfg, err := csivolumes.NewBindConfig(ctx, publisher.db, volumeCfg)
 	if err != nil {
 		return nil, err
 	}
@@ -70,15 +70,15 @@ func (publisher *AppVolumePublisher) PublishVolume(_ context.Context, volumeCfg 
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to mount oneagent volume: %s", err))
 	}
 
-	if err := publisher.storeVolume(bindCfg, volumeCfg); err != nil {
+	if err := publisher.storeVolume(ctx, bindCfg, volumeCfg); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to store volume info: %s", err))
 	}
 	agentsVersionsMetric.WithLabelValues(bindCfg.Version).Inc()
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 
-func (publisher *AppVolumePublisher) UnpublishVolume(_ context.Context, volumeInfo *csivolumes.VolumeInfo) (*csi.NodeUnpublishVolumeResponse, error) {
-	volume, err := publisher.loadVolume(volumeInfo.VolumeID)
+func (publisher *AppVolumePublisher) UnpublishVolume(ctx context.Context, volumeInfo *csivolumes.VolumeInfo) (*csi.NodeUnpublishVolumeResponse, error) {
+	volume, err := publisher.loadVolume(ctx, volumeInfo.VolumeID)
 	if err != nil {
 		log.Info("failed to load volume info", "error", err.Error())
 	}
@@ -93,7 +93,7 @@ func (publisher *AppVolumePublisher) UnpublishVolume(_ context.Context, volumeIn
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to unmount oneagent volume: %s", err.Error()))
 	}
 
-	if err = publisher.db.DeleteVolume(volume.VolumeID); err != nil {
+	if err = publisher.db.DeleteVolume(ctx, volume.VolumeID); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	log.Info("deleted volume info", "ID", volume.VolumeID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
@@ -109,8 +109,8 @@ func (publisher *AppVolumePublisher) UnpublishVolume(_ context.Context, volumeIn
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
-func (publisher *AppVolumePublisher) CanUnpublishVolume(volumeInfo *csivolumes.VolumeInfo) (bool, error) {
-	volume, err := publisher.loadVolume(volumeInfo.VolumeID)
+func (publisher *AppVolumePublisher) CanUnpublishVolume(ctx context.Context, volumeInfo *csivolumes.VolumeInfo) (bool, error) {
+	volume, err := publisher.loadVolume(ctx, volumeInfo.VolumeID)
 	if err != nil {
 		return false, status.Error(codes.Internal, fmt.Sprintf("failed to get volume info from database: %s", err.Error()))
 	}
@@ -192,18 +192,18 @@ func (publisher *AppVolumePublisher) umountOneAgent(targetPath string, overlayFS
 	return nil
 }
 
-func (publisher *AppVolumePublisher) storeVolume(bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) error {
+func (publisher *AppVolumePublisher) storeVolume(ctx context.Context, bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) error {
 	version := bindCfg.Version
 	if bindCfg.ImageDigest != "" {
 		version = bindCfg.ImageDigest
 	}
 	volume := metadata.NewVolume(volumeCfg.VolumeID, volumeCfg.PodName, version, bindCfg.TenantUUID, 0)
 	log.Info("inserting volume info", "ID", volume.VolumeID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
-	return publisher.db.InsertVolume(volume)
+	return publisher.db.InsertVolume(ctx, volume)
 }
 
-func (publisher *AppVolumePublisher) loadVolume(volumeID string) (*metadata.Volume, error) {
-	volume, err := publisher.db.GetVolume(volumeID)
+func (publisher *AppVolumePublisher) loadVolume(ctx context.Context, volumeID string) (*metadata.Volume, error) {
+	volume, err := publisher.db.GetVolume(ctx, volumeID)
 	if err != nil {
 		return nil, err
 	}

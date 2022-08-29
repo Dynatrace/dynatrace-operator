@@ -11,20 +11,20 @@ import (
 
 // CorrectMetadata checks if the entries in the storage are actually valid
 // Removes not valid entries
-func CorrectMetadata(cl client.Client, access Access) error {
-	defer LogAccessOverview(log, access)
-	if err := correctVolumes(cl, access); err != nil {
+func CorrectMetadata(ctx context.Context, cl client.Client, access Access) error {
+	defer LogAccessOverview(ctx, log, access)
+	if err := correctVolumes(ctx, cl, access); err != nil {
 		return err
 	}
-	if err := correctDynakubes(cl, access); err != nil {
+	if err := correctDynakubes(ctx, cl, access); err != nil {
 		return err
 	}
 	return nil
 }
 
 // Removes volume entries if their pod is no longer exists
-func correctVolumes(cl client.Client, access Access) error {
-	podNames, err := access.GetPodNames()
+func correctVolumes(ctx context.Context, cl client.Client, access Access) error {
+	podNames, err := access.GetPodNames(ctx)
 	if err != nil {
 		return err
 	}
@@ -35,7 +35,7 @@ func correctVolumes(cl client.Client, access Access) error {
 			continue
 		}
 		volumeID := podNames[podName]
-		if err := access.DeleteVolume(volumeID); err != nil {
+		if err := access.DeleteVolume(ctx, volumeID); err != nil {
 			return err
 		}
 		pruned = append(pruned, volumeID+"|"+podName)
@@ -45,8 +45,8 @@ func correctVolumes(cl client.Client, access Access) error {
 }
 
 // Removes dynakube entries if their Dynakube instance no longer exists in the cluster
-func correctDynakubes(cl client.Client, access Access) error {
-	dynakubes, err := access.GetTenantsToDynakubes()
+func correctDynakubes(ctx context.Context, cl client.Client, access Access) error {
+	dynakubes, err := access.GetTenantsToDynakubes(ctx)
 	if err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func correctDynakubes(cl client.Client, access Access) error {
 		if err := cl.Get(context.TODO(), client.ObjectKey{Name: dynakubeName}, &dynakube); !k8serrors.IsNotFound(err) {
 			continue
 		}
-		if err := access.DeleteDynakube(dynakubeName); err != nil {
+		if err := access.DeleteDynakube(ctx, dynakubeName); err != nil {
 			return err
 		}
 		tenantUUID := dynakubes[dynakubeName]

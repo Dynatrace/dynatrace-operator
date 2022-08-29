@@ -1,6 +1,7 @@
 package csigc
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"testing"
@@ -30,7 +31,7 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 		resetMetrics()
 		gc := NewMockGarbageCollector()
 
-		gc.runBinaryGarbageCollection(pinnedVersionSet{}, testTenantUUID, testVersion1)
+		gc.runBinaryGarbageCollection(context.TODO(), pinnedVersionSet{}, testTenantUUID, testVersion1)
 
 		assert.Equal(t, float64(1), testutil.ToFloat64(gcRunsMetric))
 		assert.Equal(t, float64(0), testutil.ToFloat64(foldersRemovedMetric))
@@ -41,7 +42,7 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 		gc := NewMockGarbageCollector()
 		_ = gc.fs.MkdirAll(testBinaryDir, 0770)
 
-		gc.runBinaryGarbageCollection(pinnedVersionSet{}, testTenantUUID, testVersion1)
+		gc.runBinaryGarbageCollection(context.TODO(), pinnedVersionSet{}, testTenantUUID, testVersion1)
 
 		assert.Equal(t, float64(1), testutil.ToFloat64(gcRunsMetric))
 		assert.Equal(t, float64(0), testutil.ToFloat64(foldersRemovedMetric))
@@ -53,7 +54,7 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 		gc := NewMockGarbageCollector()
 		gc.mockUnusedVersions(testVersion1)
 
-		gc.runBinaryGarbageCollection(pinnedVersionSet{}, testTenantUUID, testVersion1)
+		gc.runBinaryGarbageCollection(context.TODO(), pinnedVersionSet{}, testTenantUUID, testVersion1)
 
 		assert.Equal(t, float64(1), testutil.ToFloat64(gcRunsMetric))
 		assert.Equal(t, float64(0), testutil.ToFloat64(foldersRemovedMetric))
@@ -66,7 +67,7 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 		gc := NewMockGarbageCollector()
 		gc.mockUnusedVersions(testVersion1, testVersion2, testVersion3)
 
-		gc.runBinaryGarbageCollection(pinnedVersionSet{}, testTenantUUID, testVersion2)
+		gc.runBinaryGarbageCollection(context.TODO(), pinnedVersionSet{}, testTenantUUID, testVersion2)
 
 		assert.Equal(t, float64(1), testutil.ToFloat64(gcRunsMetric))
 		assert.Equal(t, float64(2), testutil.ToFloat64(foldersRemovedMetric))
@@ -78,7 +79,7 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 		gc := NewMockGarbageCollector()
 		gc.mockUsedVersions(testVersion1, testVersion2, testVersion3)
 
-		gc.runBinaryGarbageCollection(pinnedVersionSet{}, testTenantUUID, testVersion3)
+		gc.runBinaryGarbageCollection(context.TODO(), pinnedVersionSet{}, testTenantUUID, testVersion3)
 
 		assert.Equal(t, float64(1), testutil.ToFloat64(gcRunsMetric))
 		assert.Equal(t, float64(0), testutil.ToFloat64(foldersRemovedMetric))
@@ -91,7 +92,7 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 		gc := NewMockGarbageCollector()
 		gc.mockUsedVersions(testVersion1, testVersion2)
 
-		gc.runBinaryGarbageCollection(pinnedVersionSet{testVersion2: true}, testTenantUUID, testVersion1)
+		gc.runBinaryGarbageCollection(context.TODO(), pinnedVersionSet{testVersion2: true}, testTenantUUID, testVersion1)
 
 		assert.Equal(t, float64(1), testutil.ToFloat64(gcRunsMetric))
 		assert.Equal(t, float64(0), testutil.ToFloat64(foldersRemovedMetric))
@@ -105,7 +106,7 @@ func TestBinaryGarbageCollector_getUsedVersions(t *testing.T) {
 	gc := NewMockGarbageCollector()
 	gc.mockUsedVersions(testVersion1, testVersion2, testVersion3)
 
-	usedVersions, err := gc.db.GetUsedVersions(testTenantUUID)
+	usedVersions, err := gc.db.GetUsedVersions(context.TODO(), testTenantUUID)
 	assert.NoError(t, err)
 
 	assert.NotNil(t, usedVersions)
@@ -132,7 +133,7 @@ func (gc *CSIGarbageCollector) mockUsedVersions(versions ...string) {
 	_ = gc.fs.Mkdir(testBinaryDir, 0770)
 	for i, version := range versions {
 		_, _ = gc.fs.Create(filepath.Join(testBinaryDir, version))
-		_ = gc.db.InsertVolume(metadata.NewVolume(fmt.Sprintf("pod%b", i), fmt.Sprintf("volume%b", i), version, testTenantUUID, 0))
+		_ = gc.db.InsertVolume(context.TODO(), metadata.NewVolume(fmt.Sprintf("pod%b", i), fmt.Sprintf("volume%b", i), version, testTenantUUID, 0))
 	}
 }
 
