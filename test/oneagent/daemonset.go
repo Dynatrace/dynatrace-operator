@@ -10,6 +10,6 @@ func WaitForDaemonset() features.Func {
 	return daemonset.WaitFor("dynakube-oneagent", "dynatrace")
 }
 
-func DeleteDaemonsetIfExists() env.Func {
-	return daemonset.DeleteIfExists("dynakube-oneagent", "dynatrace")
+func WaitForDaemonSetPodsDeletion() env.Func {
+	return daemonset.WaitForPodsDeletion("dynakube-oneagent", "dynatrace")
 }

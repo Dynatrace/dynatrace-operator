@@ -2,6 +2,7 @@ package environment
 
 import (
 	"os"
+
 	"sigs.k8s.io/e2e-framework/klient/conf"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
@@ -15,7 +16,8 @@ const (
 func Get() env.Environment {
 	if os.Getenv(useKind) == "true" {
 		environment := env.New()
-		environment.Setup(envfuncs.CreateKindCluster(envconf.RandomName("", 10)))
+		environment.Setup(envfuncs.CreateKindCluster(envconf.RandomName("operator-test", 10)))
+		return environment
 	}
 
 	kubeConfigPath := conf.ResolveKubeConfigFile()
