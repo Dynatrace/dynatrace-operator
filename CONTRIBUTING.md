@@ -73,29 +73,29 @@ Important characteristics:
 - Use this structure:
 ```go
 func TestMyFunction(t *testing.T) {
-    // Common setup, used for multiple cases
-    testString := "test"
+    	// Common setup, used for multiple cases
+    	testString := "test"
 
-    // Each test case of a function gets a t.Run
-    t.Run(`useful title`, func(t *testing.T) {
-        // Arrange/Setup
+    	// Each test case of a function gets a t.Run
+    	t.Run(`useful title`, func(t *testing.T) {
+        	// Arrange/Setup
 		testInt := 1
 
-        // Act
-        out, err := MyFunction(testString, testInt)
+        	// Act
+        	out, err := MyFunction(testString, testInt)
 
-        // Assert
+        	// Assert
 		require.Nil(t, err)
 		assert.Equal(t, out, testString)
 	})
-    t.Run(`other useful title`, func(t *testing.T) {
-        // Arrange
+    	t.Run(`other useful title`, func(t *testing.T) {
+        	// Arrange
 		testInt := 4
 
-        // Act
-        out, err := MyFunction(testString, testInt)
+        	// Act
+        	out, err := MyFunction(testString, testInt)
 
-        // Assert
+        	// Assert
 		require.Error(t, err)
 		assert.Empty(t, out)
 	})
