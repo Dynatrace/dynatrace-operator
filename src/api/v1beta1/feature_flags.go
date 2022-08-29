@@ -92,7 +92,7 @@ const (
 )
 
 const (
-	defaultMaxFailedCsiMountAttempts = 3
+	defaultMaxFailedCsiMountAttempts = 10
 )
 
 var (
