@@ -1,6 +1,7 @@
 package metadata
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"testing"
@@ -11,14 +12,14 @@ import (
 )
 
 func TestNewAccess(t *testing.T) {
-	db, err := NewAccess(":memory:")
+	db, err := NewAccess(context.TODO(), ":memory:")
 	require.NoError(t, err)
 	assert.NotNil(t, db.(*SqliteAccess).conn)
 }
 
 func TestSetup(t *testing.T) {
 	db := SqliteAccess{}
-	err := db.Setup(":memory:")
+	err := db.Setup(context.TODO(), ":memory:")
 
 	require.NoError(t, err)
 	assert.True(t, checkIfTablesExist(&db))
@@ -26,7 +27,7 @@ func TestSetup(t *testing.T) {
 
 func TestSetup_badPath(t *testing.T) {
 	db := SqliteAccess{}
-	err := db.Setup("/asd")
+	err := db.Setup(context.TODO(), "/asd")
 	require.Error(t, err)
 
 	assert.False(t, checkIfTablesExist(&db))
@@ -48,10 +49,11 @@ func TestConnect_badDriver(t *testing.T) {
 }
 
 func TestCreateTables(t *testing.T) {
+	ctx := context.TODO()
 	t.Run("volume table is created correctly", func(t *testing.T) {
 		db := emptyMemoryDB()
 
-		err := db.createTables()
+		err := db.createTables(ctx)
 		require.NoError(t, err)
 
 		var volumeTableName string
@@ -92,7 +94,7 @@ func TestCreateTables(t *testing.T) {
 	t.Run("dynakube table is created correctly", func(t *testing.T) {
 		db := emptyMemoryDB()
 
-		err := db.createTables()
+		err := db.createTables(ctx)
 		require.NoError(t, err)
 
 		var dkTable string
@@ -140,7 +142,7 @@ func TestInsertDynakube(t *testing.T) {
 
 	db := FakeMemoryDB()
 
-	err := db.InsertDynakube(&testDynakube1)
+	err := db.InsertDynakube(context.TODO(), &testDynakube1)
 	require.NoError(t, err)
 
 	var uuid, lv, name string
@@ -160,35 +162,37 @@ func TestGetDynakube_Empty(t *testing.T) {
 	testDynakube1 := createTestDynakube(1)
 	db := FakeMemoryDB()
 
-	gt, err := db.GetDynakube(testDynakube1.TenantUUID)
+	gt, err := db.GetDynakube(context.TODO(), testDynakube1.TenantUUID)
 	require.NoError(t, err)
 	assert.Nil(t, gt)
 }
 
 func TestGetDynakube(t *testing.T) {
+	ctx := context.TODO()
 	t.Run("get dynakube", func(t *testing.T) {
 		testDynakube1 := createTestDynakube(1)
 		db := FakeMemoryDB()
-		err := db.InsertDynakube(&testDynakube1)
+		err := db.InsertDynakube(ctx, &testDynakube1)
 		require.NoError(t, err)
 
-		dynakube, err := db.GetDynakube(testDynakube1.Name)
+		dynakube, err := db.GetDynakube(ctx, testDynakube1.Name)
 		require.NoError(t, err)
 		assert.Equal(t, testDynakube1, *dynakube)
 	})
 }
 
 func TestUpdateDynakube(t *testing.T) {
+	ctx := context.TODO()
 	testDynakube1 := createTestDynakube(1)
 	db := FakeMemoryDB()
-	err := db.InsertDynakube(&testDynakube1)
+	err := db.InsertDynakube(ctx, &testDynakube1)
 	require.NoError(t, err)
 
 	copyDynakube := testDynakube1
 	copyDynakube.LatestVersion = "132.546"
 	copyDynakube.ImageDigest = ""
 	copyDynakube.MaxFailedMountAttempts = 10
-	err = db.UpdateDynakube(&copyDynakube)
+	err = db.UpdateDynakube(ctx, &copyDynakube)
 	require.NoError(t, err)
 
 	var uuid, lv, name string
@@ -207,16 +211,17 @@ func TestUpdateDynakube(t *testing.T) {
 }
 
 func TestGetTenantsToDynakubes(t *testing.T) {
+	ctx := context.TODO()
 	testDynakube1 := createTestDynakube(1)
 	testDynakube2 := createTestDynakube(2)
 
 	db := FakeMemoryDB()
-	err := db.InsertDynakube(&testDynakube1)
+	err := db.InsertDynakube(ctx, &testDynakube1)
 	require.NoError(t, err)
-	err = db.InsertDynakube(&testDynakube2)
+	err = db.InsertDynakube(ctx, &testDynakube2)
 	require.NoError(t, err)
 
-	dynakubes, err := db.GetTenantsToDynakubes()
+	dynakubes, err := db.GetTenantsToDynakubes(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, 2, len(dynakubes))
 	assert.Equal(t, testDynakube1.TenantUUID, dynakubes[testDynakube1.Name])
@@ -224,33 +229,35 @@ func TestGetTenantsToDynakubes(t *testing.T) {
 }
 
 func TestGetAllDynakubes(t *testing.T) {
+	ctx := context.TODO()
 	t.Run("get multiple dynakubes", func(t *testing.T) {
 		testDynakube1 := createTestDynakube(1)
 		testDynakube2 := createTestDynakube(2)
 
 		db := FakeMemoryDB()
-		err := db.InsertDynakube(&testDynakube1)
+		err := db.InsertDynakube(ctx, &testDynakube1)
 		require.NoError(t, err)
-		err = db.InsertDynakube(&testDynakube2)
+		err = db.InsertDynakube(ctx, &testDynakube2)
 		require.NoError(t, err)
 
-		dynakubes, err := db.GetAllDynakubes()
+		dynakubes, err := db.GetAllDynakubes(ctx)
 		require.NoError(t, err)
 		assert.Equal(t, 2, len(dynakubes))
 	})
 }
 
 func TestGetAllVolumes(t *testing.T) {
+	ctx := context.TODO()
 	testVolume1 := createTestVolume(1)
 	testVolume2 := createTestVolume(2)
 
 	db := FakeMemoryDB()
-	err := db.InsertVolume(&testVolume1)
+	err := db.InsertVolume(ctx, &testVolume1)
 	require.NoError(t, err)
-	err = db.InsertVolume(&testVolume2)
+	err = db.InsertVolume(ctx, &testVolume2)
 	require.NoError(t, err)
 
-	volumes, err := db.GetAllVolumes()
+	volumes, err := db.GetAllVolumes(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, 2, len(volumes))
 	assert.Equal(t, testVolume1, *volumes[0])
@@ -258,6 +265,7 @@ func TestGetAllVolumes(t *testing.T) {
 }
 
 func TestGetAllOsAgentVolumes(t *testing.T) {
+	ctx := context.TODO()
 	testDynakube1 := createTestDynakube(1)
 	testDynakube2 := createTestDynakube(2)
 
@@ -275,48 +283,51 @@ func TestGetAllOsAgentVolumes(t *testing.T) {
 		LastModified: &now,
 	}
 	db := FakeMemoryDB()
-	err := db.InsertOsAgentVolume(&osVolume1)
+	err := db.InsertOsAgentVolume(ctx, &osVolume1)
 	require.NoError(t, err)
-	err = db.InsertOsAgentVolume(&osVolume2)
+	err = db.InsertOsAgentVolume(ctx, &osVolume2)
 	require.NoError(t, err)
 
-	osVolumes, err := db.GetAllOsAgentVolumes()
+	osVolumes, err := db.GetAllOsAgentVolumes(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, 2, len(osVolumes))
 }
 
 func TestDeleteDynakube(t *testing.T) {
+	ctx := context.TODO()
 	testDynakube1 := createTestDynakube(1)
 	testDynakube2 := createTestDynakube(2)
 
 	db := FakeMemoryDB()
-	err := db.InsertDynakube(&testDynakube1)
+	err := db.InsertDynakube(ctx, &testDynakube1)
 	require.NoError(t, err)
-	err = db.InsertDynakube(&testDynakube2)
+	err = db.InsertDynakube(ctx, &testDynakube2)
 	require.NoError(t, err)
 
-	err = db.DeleteDynakube(testDynakube1.Name)
+	err = db.DeleteDynakube(ctx, testDynakube1.Name)
 	require.NoError(t, err)
-	dynakubes, err := db.GetTenantsToDynakubes()
+	dynakubes, err := db.GetTenantsToDynakubes(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, len(dynakubes), 1)
 	assert.Equal(t, testDynakube2.TenantUUID, dynakubes[testDynakube2.Name])
 }
 
 func TestGetVolume_Empty(t *testing.T) {
+	ctx := context.TODO()
 	testVolume1 := createTestVolume(1)
 	db := FakeMemoryDB()
 
-	vo, err := db.GetVolume(testVolume1.PodName)
+	vo, err := db.GetVolume(ctx, testVolume1.PodName)
 	require.NoError(t, err)
 	assert.Nil(t, vo)
 }
 
 func TestInsertVolume(t *testing.T) {
+	ctx := context.TODO()
 	testVolume1 := createTestVolume(1)
 	db := FakeMemoryDB()
 
-	err := db.InsertVolume(&testVolume1)
+	err := db.InsertVolume(ctx, &testVolume1)
 	require.NoError(t, err)
 	row := db.conn.QueryRow(fmt.Sprintf("SELECT * FROM %s WHERE ID = ?;", volumesTableName), testVolume1.VolumeID)
 	var id string
@@ -335,7 +346,7 @@ func TestInsertVolume(t *testing.T) {
 
 	newPodName := "something-else"
 	testVolume1.PodName = newPodName
-	err = db.InsertVolume(&testVolume1)
+	err = db.InsertVolume(ctx, &testVolume1)
 	require.NoError(t, err)
 	row = db.conn.QueryRow(fmt.Sprintf("SELECT * FROM %s WHERE ID = ?;", volumesTableName), testVolume1.VolumeID)
 	err = row.Scan(&id, &puid, &ver, &tuid, &mountAttempts)
@@ -360,7 +371,7 @@ func TestInsertOsAgentVolume(t *testing.T) {
 		LastModified: &now,
 	}
 
-	err := db.InsertOsAgentVolume(&volume)
+	err := db.InsertOsAgentVolume(context.TODO(), &volume)
 	require.NoError(t, err)
 	row := db.conn.QueryRow(fmt.Sprintf("SELECT * FROM %s WHERE TenantUUID = ?;", osAgentVolumesTableName), volume.TenantUUID)
 	var volumeID string
@@ -376,6 +387,7 @@ func TestInsertOsAgentVolume(t *testing.T) {
 }
 
 func TestGetOsAgentVolumeViaVolumeID(t *testing.T) {
+	ctx := context.TODO()
 	testDynakube1 := createTestDynakube(1)
 	db := FakeMemoryDB()
 
@@ -387,9 +399,9 @@ func TestGetOsAgentVolumeViaVolumeID(t *testing.T) {
 		LastModified: &now,
 	}
 
-	err := db.InsertOsAgentVolume(&expected)
+	err := db.InsertOsAgentVolume(ctx, &expected)
 	require.NoError(t, err)
-	actual, err := db.GetOsAgentVolumeViaVolumeID(expected.VolumeID)
+	actual, err := db.GetOsAgentVolumeViaVolumeID(ctx, expected.VolumeID)
 	require.NoError(t, err)
 	assert.NoError(t, err)
 	assert.Equal(t, expected.VolumeID, actual.VolumeID)
@@ -399,6 +411,7 @@ func TestGetOsAgentVolumeViaVolumeID(t *testing.T) {
 }
 
 func TestGetOsAgentVolumeViaTennatUUID(t *testing.T) {
+	ctx := context.TODO()
 	testDynakube1 := createTestDynakube(1)
 	db := FakeMemoryDB()
 
@@ -410,9 +423,9 @@ func TestGetOsAgentVolumeViaTennatUUID(t *testing.T) {
 		LastModified: &now,
 	}
 
-	err := db.InsertOsAgentVolume(&expected)
+	err := db.InsertOsAgentVolume(ctx, &expected)
 	require.NoError(t, err)
-	actual, err := db.GetOsAgentVolumeViaTenantUUID(expected.TenantUUID)
+	actual, err := db.GetOsAgentVolumeViaTenantUUID(ctx, expected.TenantUUID)
 	require.NoError(t, err)
 	assert.Equal(t, expected.VolumeID, actual.VolumeID)
 	assert.Equal(t, expected.TenantUUID, actual.TenantUUID)
@@ -421,6 +434,7 @@ func TestGetOsAgentVolumeViaTennatUUID(t *testing.T) {
 }
 
 func TestUpdateOsAgentVolume(t *testing.T) {
+	ctx := context.TODO()
 	testDynakube1 := createTestDynakube(1)
 	db := FakeMemoryDB()
 
@@ -432,14 +446,14 @@ func TestUpdateOsAgentVolume(t *testing.T) {
 		LastModified: &now,
 	}
 
-	err := db.InsertOsAgentVolume(&old)
+	err := db.InsertOsAgentVolume(ctx, &old)
 	require.NoError(t, err)
 	new := old
 	new.Mounted = false
-	err = db.UpdateOsAgentVolume(&new)
+	err = db.UpdateOsAgentVolume(ctx, &new)
 	require.NoError(t, err)
 
-	actual, err := db.GetOsAgentVolumeViaVolumeID(old.VolumeID)
+	actual, err := db.GetOsAgentVolumeViaVolumeID(ctx, old.VolumeID)
 	require.NoError(t, err)
 	assert.Equal(t, old.VolumeID, actual.VolumeID)
 	assert.Equal(t, old.TenantUUID, actual.TenantUUID)
@@ -448,20 +462,22 @@ func TestUpdateOsAgentVolume(t *testing.T) {
 }
 
 func TestGetVolume(t *testing.T) {
+	ctx := context.TODO()
 	testVolume1 := createTestVolume(1)
 	db := FakeMemoryDB()
-	err := db.InsertVolume(&testVolume1)
+	err := db.InsertVolume(ctx, &testVolume1)
 	require.NoError(t, err)
 
-	volume, err := db.GetVolume(testVolume1.VolumeID)
+	volume, err := db.GetVolume(ctx, testVolume1.VolumeID)
 	require.NoError(t, err)
 	assert.Equal(t, testVolume1, *volume)
 }
 
 func TestUpdateVolume(t *testing.T) {
+	ctx := context.TODO()
 	testVolume1 := createTestVolume(1)
 	db := FakeMemoryDB()
-	err := db.InsertVolume(&testVolume1)
+	err := db.InsertVolume(ctx, &testVolume1)
 
 	require.NoError(t, err)
 
@@ -469,11 +485,11 @@ func TestUpdateVolume(t *testing.T) {
 	testVolume1.Version = "new version"
 	testVolume1.TenantUUID = "asdf-1234"
 	testVolume1.MountAttempts = 10
-	err = db.InsertVolume(&testVolume1)
+	err = db.InsertVolume(ctx, &testVolume1)
 
 	require.NoError(t, err)
 
-	insertedVolume, err := db.GetVolume(testVolume1.VolumeID)
+	insertedVolume, err := db.GetVolume(ctx, testVolume1.VolumeID)
 
 	assert.NoError(t, err)
 	assert.Equal(t, testVolume1.VolumeID, insertedVolume.VolumeID)
@@ -484,17 +500,18 @@ func TestUpdateVolume(t *testing.T) {
 }
 
 func TestGetUsedVersions(t *testing.T) {
+	ctx := context.TODO()
 	testVolume1 := createTestVolume(1)
 	db := FakeMemoryDB()
-	err := db.InsertVolume(&testVolume1)
+	err := db.InsertVolume(ctx, &testVolume1)
 	testVolume11 := testVolume1
 	testVolume11.VolumeID = "vol-11"
 	testVolume11.Version = "321"
 	require.NoError(t, err)
-	err = db.InsertVolume(&testVolume11)
+	err = db.InsertVolume(ctx, &testVolume11)
 	require.NoError(t, err)
 
-	versions, err := db.GetUsedVersions(testVolume1.TenantUUID)
+	versions, err := db.GetUsedVersions(ctx, testVolume1.TenantUUID)
 	require.NoError(t, err)
 	assert.Equal(t, len(versions), 2)
 	assert.True(t, versions[testVolume1.Version])
@@ -502,17 +519,18 @@ func TestGetUsedVersions(t *testing.T) {
 }
 
 func TestGetAllUsedVersions(t *testing.T) {
+	ctx := context.TODO()
 	db := FakeMemoryDB()
 	testVolume1 := createTestVolume(1)
-	err := db.InsertVolume(&testVolume1)
+	err := db.InsertVolume(ctx, &testVolume1)
 	testVolume11 := testVolume1
 	testVolume11.VolumeID = "vol-11"
 	testVolume11.Version = "321"
 	require.NoError(t, err)
-	err = db.InsertVolume(&testVolume11)
+	err = db.InsertVolume(ctx, &testVolume11)
 	require.NoError(t, err)
 
-	versions, err := db.GetAllUsedVersions()
+	versions, err := db.GetAllUsedVersions(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, len(versions), 2)
 	assert.True(t, versions[testVolume1.Version])
@@ -520,21 +538,22 @@ func TestGetAllUsedVersions(t *testing.T) {
 }
 
 func TestGetUsedImageDigests(t *testing.T) {
+	ctx := context.TODO()
 	db := FakeMemoryDB()
 	testDynakube1 := createTestDynakube(1)
-	err := db.InsertDynakube(&testDynakube1)
+	err := db.InsertDynakube(ctx, &testDynakube1)
 	require.NoError(t, err)
 
 	copyDynakube := testDynakube1
 	copyDynakube.Name = "copy"
-	err = db.InsertDynakube(&copyDynakube)
+	err = db.InsertDynakube(ctx, &copyDynakube)
 	require.NoError(t, err)
 
 	testDynakube2 := createTestDynakube(2)
-	err = db.InsertDynakube(&testDynakube2)
+	err = db.InsertDynakube(ctx, &testDynakube2)
 	require.NoError(t, err)
 
-	digests, err := db.GetUsedImageDigests()
+	digests, err := db.GetUsedImageDigests(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, 2, len(digests))
 	assert.True(t, digests[testDynakube1.ImageDigest])
@@ -543,32 +562,34 @@ func TestGetUsedImageDigests(t *testing.T) {
 }
 
 func TestIsImageDigestUsed(t *testing.T) {
+	ctx := context.TODO()
 	db := FakeMemoryDB()
 
-	isUsed, err := db.IsImageDigestUsed("test")
+	isUsed, err := db.IsImageDigestUsed(ctx, "test")
 	require.NoError(t, err)
 	require.False(t, isUsed)
 
 	testDynakube1 := createTestDynakube(1)
-	err = db.InsertDynakube(&testDynakube1)
+	err = db.InsertDynakube(ctx, &testDynakube1)
 	require.NoError(t, err)
 
-	isUsed, err = db.IsImageDigestUsed(testDynakube1.ImageDigest)
+	isUsed, err = db.IsImageDigestUsed(ctx, testDynakube1.ImageDigest)
 	require.NoError(t, err)
 	require.True(t, isUsed)
 }
 
 func TestGetPodNames(t *testing.T) {
+	ctx := context.TODO()
 	testVolume1 := createTestVolume(1)
 	testVolume2 := createTestVolume(2)
 
 	db := FakeMemoryDB()
-	err := db.InsertVolume(&testVolume1)
+	err := db.InsertVolume(ctx, &testVolume1)
 	require.NoError(t, err)
-	err = db.InsertVolume(&testVolume2)
+	err = db.InsertVolume(ctx, &testVolume2)
 	require.NoError(t, err)
 
-	podNames, err := db.GetPodNames()
+	podNames, err := db.GetPodNames(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, len(podNames), 2)
 	assert.Equal(t, testVolume1.VolumeID, podNames[testVolume1.PodName])
@@ -576,18 +597,19 @@ func TestGetPodNames(t *testing.T) {
 }
 
 func TestDeleteVolume(t *testing.T) {
+	ctx := context.TODO()
 	testVolume1 := createTestVolume(1)
 	testVolume2 := createTestVolume(2)
 
 	db := FakeMemoryDB()
-	err := db.InsertVolume(&testVolume1)
+	err := db.InsertVolume(ctx, &testVolume1)
 	require.NoError(t, err)
-	err = db.InsertVolume(&testVolume2)
+	err = db.InsertVolume(ctx, &testVolume2)
 	require.NoError(t, err)
 
-	err = db.DeleteVolume(testVolume2.VolumeID)
+	err = db.DeleteVolume(ctx, testVolume2.VolumeID)
 	require.NoError(t, err)
-	podNames, err := db.GetPodNames()
+	podNames, err := db.GetPodNames(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, len(podNames), 1)
 	assert.Equal(t, testVolume1.VolumeID, podNames[testVolume1.PodName])

@@ -1,6 +1,7 @@
 package metadata
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -110,7 +111,7 @@ func TestCheckStorageCorrectness_FreshDB(t *testing.T) {
 	// db without tables
 	db := emptyMemoryDB()
 
-	err := CorrectMetadata(nil, db)
+	err := CorrectMetadata(context.TODO(), nil, db)
 
 	assert.Error(t, err)
 }
@@ -119,30 +120,32 @@ func TestCheckStorageCorrectness_EmptyDB(t *testing.T) {
 	// db with tables but empty
 	db := FakeMemoryDB()
 
-	err := CorrectMetadata(nil, db)
+	err := CorrectMetadata(context.TODO(), nil, db)
 
 	assert.NoError(t, err)
 }
 
 func TestCheckStorageCorrectness_DoNothing(t *testing.T) {
+	ctx := context.TODO()
 	testVolume1 := createTestVolume(1)
 	testDynakube1 := createTestDynakube(1)
 	db := FakeMemoryDB()
-	db.InsertVolume(&testVolume1)
+	db.InsertVolume(ctx, &testVolume1)
 	client := fake.NewClient(
 		&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: testVolume1.PodName}},
 		&dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testDynakube1.Name}},
 	)
 
-	err := CorrectMetadata(client, db)
+	err := CorrectMetadata(ctx, client, db)
 
 	assert.NoError(t, err)
-	vol, err := db.GetVolume(testVolume1.VolumeID)
+	vol, err := db.GetVolume(ctx, testVolume1.VolumeID)
 	assert.NoError(t, err)
 	assert.Equal(t, &testVolume1, vol)
 }
 
 func TestCheckStorageCorrectness_PURGE(t *testing.T) {
+	ctx := context.TODO()
 	testVolume1 := createTestVolume(1)
 	testVolume2 := createTestVolume(2)
 	testVolume3 := createTestVolume(3)
@@ -152,45 +155,45 @@ func TestCheckStorageCorrectness_PURGE(t *testing.T) {
 	testDynakube3 := createTestDynakube(3)
 
 	db := FakeMemoryDB()
-	db.InsertVolume(&testVolume1)
-	db.InsertVolume(&testVolume2)
-	db.InsertVolume(&testVolume3)
-	db.InsertDynakube(&testDynakube1)
-	db.InsertDynakube(&testDynakube2)
-	db.InsertDynakube(&testDynakube3)
+	db.InsertVolume(ctx, &testVolume1)
+	db.InsertVolume(ctx, &testVolume2)
+	db.InsertVolume(ctx, &testVolume3)
+	db.InsertDynakube(ctx, &testDynakube1)
+	db.InsertDynakube(ctx, &testDynakube2)
+	db.InsertDynakube(ctx, &testDynakube3)
 	client := fake.NewClient(
 		&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: testVolume1.PodName}},
 		&dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testDynakube1.Name}},
 	)
 
-	err := CorrectMetadata(client, db)
+	err := CorrectMetadata(ctx, client, db)
 	require.NoError(t, err)
 
-	vol, err := db.GetVolume(testVolume1.VolumeID)
+	vol, err := db.GetVolume(ctx, testVolume1.VolumeID)
 	require.NoError(t, err)
 	assert.Equal(t, &testVolume1, vol)
 
-	ten, err := db.GetDynakube(testDynakube1.Name)
+	ten, err := db.GetDynakube(ctx, testDynakube1.Name)
 	require.NoError(t, err)
 	assert.Equal(t, &testDynakube1, ten)
 
 	// PURGED
-	vol, err = db.GetVolume(testVolume2.VolumeID)
+	vol, err = db.GetVolume(ctx, testVolume2.VolumeID)
 	require.NoError(t, err)
 	assert.Nil(t, vol)
 
 	// PURGED
-	vol, err = db.GetVolume(testVolume3.VolumeID)
+	vol, err = db.GetVolume(ctx, testVolume3.VolumeID)
 	require.NoError(t, err)
 	assert.Nil(t, vol)
 
 	// PURGED
-	ten, err = db.GetDynakube(testDynakube2.TenantUUID)
+	ten, err = db.GetDynakube(ctx, testDynakube2.TenantUUID)
 	require.NoError(t, err)
 	assert.Nil(t, ten)
 
 	// PURGED
-	ten, err = db.GetDynakube(testDynakube3.TenantUUID)
+	ten, err = db.GetDynakube(ctx, testDynakube3.TenantUUID)
 	require.NoError(t, err)
 	assert.Nil(t, ten)
 }

@@ -74,7 +74,7 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 		return reconcileResult, err
 	}
 
-	if !isSafeToGC(gc.db, dynakubeList) {
+	if !isSafeToGC(ctx, gc.db, dynakubeList) {
 		log.Info("dynakube metadata is in a unfinished state, checking later")
 		return reconcileResult, nil
 	}
@@ -88,13 +88,13 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 	}
 
 	log.Info("running binary garbage collection")
-	gc.runBinaryGarbageCollection(gcInfo.pinnedVersions, gcInfo.tenantUUID, gcInfo.latestAgentVersion)
+	gc.runBinaryGarbageCollection(ctx, gcInfo.pinnedVersions, gcInfo.tenantUUID, gcInfo.latestAgentVersion)
 
 	log.Info("running log garbage collection")
 	gc.runLogGarbageCollection(gcInfo.tenantUUID)
 
 	log.Info("running shared images garbage collection")
-	if err := gc.runSharedImagesGarbageCollection(); err != nil {
+	if err := gc.runSharedImagesGarbageCollection(ctx); err != nil {
 		log.Info("failed to garbage collect the shared images")
 		return reconcileResult, err
 	}
@@ -142,8 +142,8 @@ func collectGCInfo(dynakube dynatracev1beta1.DynaKube, dynakubeList *dynatracev1
 	}, nil
 }
 
-func isSafeToGC(access metadata.Access, dynakubeList *dynatracev1beta1.DynaKubeList) bool {
-	dkMetadataList, err := access.GetAllDynakubes()
+func isSafeToGC(ctx context.Context, access metadata.Access, dynakubeList *dynatracev1beta1.DynaKubeList) bool {
+	dkMetadataList, err := access.GetAllDynakubes(ctx)
 	if err != nil {
 		log.Info("failed to get dynakube metadata from database", "err", err)
 		return false

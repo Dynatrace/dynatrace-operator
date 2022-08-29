@@ -1,6 +1,7 @@
 package csigc
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -122,41 +123,42 @@ func TestCollectGCInfo(t *testing.T) {
 }
 
 func TestIsSafeToGC(t *testing.T) {
+	ctx := context.TODO()
 	t.Run(`error db ==> not safe`, func(t *testing.T) {
-		isSafe := isSafeToGC(&metadata.FakeFailDB{}, nil)
+		isSafe := isSafeToGC(ctx, &metadata.FakeFailDB{}, nil)
 		require.False(t, isSafe)
 	})
 	t.Run(`1 LatestVersion not set ==> not safe`, func(t *testing.T) {
 		db := metadata.FakeMemoryDB()
-		require.NoError(t, db.InsertDynakube(&metadata.Dynakube{
+		require.NoError(t, db.InsertDynakube(ctx, &metadata.Dynakube{
 			Name:          "dk1",
 			TenantUUID:    "t1",
 			LatestVersion: "",
 			ImageDigest:   "",
 		}))
-		require.NoError(t, db.InsertDynakube(&metadata.Dynakube{
+		require.NoError(t, db.InsertDynakube(ctx, &metadata.Dynakube{
 			Name:          "dk2",
 			TenantUUID:    "t2",
 			LatestVersion: "v2",
 			ImageDigest:   "d2",
 		}))
-		require.False(t, isSafeToGC(db, &dynatracev1beta1.DynaKubeList{}))
+		require.False(t, isSafeToGC(ctx, db, &dynatracev1beta1.DynaKubeList{}))
 	})
 	t.Run(`all LatestVersion set (no codemodules image) ==> safe`, func(t *testing.T) {
 		db := metadata.FakeMemoryDB()
-		require.NoError(t, db.InsertDynakube(&metadata.Dynakube{
+		require.NoError(t, db.InsertDynakube(ctx, &metadata.Dynakube{
 			Name:          "dk1",
 			TenantUUID:    "t1",
 			LatestVersion: "v1",
 			ImageDigest:   "",
 		}))
-		require.NoError(t, db.InsertDynakube(&metadata.Dynakube{
+		require.NoError(t, db.InsertDynakube(ctx, &metadata.Dynakube{
 			Name:          "dk2",
 			TenantUUID:    "t2",
 			LatestVersion: "v2",
 			ImageDigest:   "d2",
 		}))
-		require.True(t, isSafeToGC(db, &dynatracev1beta1.DynaKubeList{}))
+		require.True(t, isSafeToGC(ctx, db, &dynatracev1beta1.DynaKubeList{}))
 	})
 	t.Run(`LatestVersion doesn't match version in dynakube ==> not safe`, func(t *testing.T) {
 		db := metadata.FakeMemoryDB()
@@ -175,19 +177,19 @@ func TestIsSafeToGC(t *testing.T) {
 				},
 			},
 		}
-		require.NoError(t, db.InsertDynakube(&metadata.Dynakube{
+		require.NoError(t, db.InsertDynakube(ctx, &metadata.Dynakube{
 			Name:          cloudNativeDynakube.Name,
 			TenantUUID:    "t1",
 			LatestVersion: "v1",
 			ImageDigest:   "",
 		}))
-		require.NoError(t, db.InsertDynakube(&metadata.Dynakube{
+		require.NoError(t, db.InsertDynakube(ctx, &metadata.Dynakube{
 			Name:          "dk2",
 			TenantUUID:    "t2",
 			LatestVersion: "v2",
 			ImageDigest:   "d2",
 		}))
-		require.False(t, isSafeToGC(db, &dynatracev1beta1.DynaKubeList{Items: []dynatracev1beta1.DynaKube{cloudNativeDynakube}}))
+		require.False(t, isSafeToGC(ctx, db, &dynatracev1beta1.DynaKubeList{Items: []dynatracev1beta1.DynaKube{cloudNativeDynakube}}))
 	})
 	t.Run(`LatestVersion matches version in dynakube ==> safe`, func(t *testing.T) {
 		db := metadata.FakeMemoryDB()
@@ -207,18 +209,18 @@ func TestIsSafeToGC(t *testing.T) {
 				},
 			},
 		}
-		require.NoError(t, db.InsertDynakube(&metadata.Dynakube{
+		require.NoError(t, db.InsertDynakube(ctx, &metadata.Dynakube{
 			Name:          cloudNativeDynakube.Name,
 			TenantUUID:    "t1",
 			LatestVersion: codeModulesTag,
 			ImageDigest:   "",
 		}))
-		require.NoError(t, db.InsertDynakube(&metadata.Dynakube{
+		require.NoError(t, db.InsertDynakube(ctx, &metadata.Dynakube{
 			Name:          "dk2",
 			TenantUUID:    "t2",
 			LatestVersion: "v2",
 			ImageDigest:   "d2",
 		}))
-		require.True(t, isSafeToGC(db, &dynatracev1beta1.DynaKubeList{Items: []dynatracev1beta1.DynaKube{cloudNativeDynakube}}))
+		require.True(t, isSafeToGC(ctx, db, &dynatracev1beta1.DynaKubeList{Items: []dynatracev1beta1.DynaKube{cloudNativeDynakube}}))
 	})
 }
