@@ -104,7 +104,7 @@ func TestHasTooManyMountAttempts(t *testing.T) {
 	t.Run(`initial try`, func(t *testing.T) {
 		publisher := newPublisherForTesting(t, nil)
 		bindCfg := &csivolumes.BindConfig{
-			TenantUUID: testTenantUUID,
+			TenantUUID:       testTenantUUID,
 			MaxMountAttempts: dynatracev1beta1.DefaultMaxFailedCsiMountAttempts,
 		}
 		volumeCfg := createTestVolumeConfig()

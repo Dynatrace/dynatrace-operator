@@ -8,7 +8,6 @@ import (
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
