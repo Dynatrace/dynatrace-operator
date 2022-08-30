@@ -100,6 +100,39 @@ func TestPublishVolume(t *testing.T) {
 	})
 }
 
+func TestHasTooManyMountAttempts(t *testing.T) {
+	t.Run(`initial try`, func(t *testing.T) {
+		publisher := newPublisherForTesting(t, nil)
+		bindCfg := &csivolumes.BindConfig{
+			TenantUUID: testTenantUUID,
+			MaxMountAttempts: dynatracev1beta1.DefaultMaxFailedCsiMountAttempts,
+		}
+		volumeCfg := createTestVolumeConfig()
+
+		hasTooManyAttempts, err := publisher.hasTooManyMountAttempts(context.TODO(), bindCfg, volumeCfg)
+
+		require.NoError(t, err)
+		assert.False(t, hasTooManyAttempts)
+		volume, err := publisher.db.GetVolume(context.TODO(), volumeCfg.VolumeID)
+		require.NoError(t, err)
+		require.NotNil(t, volume)
+		assert.Equal(t, 1, volume.MountAttempts)
+
+	})
+	t.Run(`too many mount attempts`, func(t *testing.T) {
+		publisher := newPublisherForTesting(t, nil)
+		mockFailedPublishedVolume(t, &publisher)
+		bindCfg := &csivolumes.BindConfig{
+			MaxMountAttempts: dynatracev1beta1.DefaultMaxFailedCsiMountAttempts,
+		}
+
+		hasTooManyAttempts, err := publisher.hasTooManyMountAttempts(context.TODO(), bindCfg, createTestVolumeConfig())
+
+		require.NoError(t, err)
+		assert.True(t, hasTooManyAttempts)
+	})
+}
+
 func TestUnpublishVolume(t *testing.T) {
 	t.Run(`valid metadata`, func(t *testing.T) {
 		resetMetrics()
