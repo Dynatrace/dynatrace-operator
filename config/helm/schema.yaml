@@ -15,27 +15,27 @@
 x-google-marketplace:
   schemaVersion: v2
   applicationApiVersion: v1beta1
-  publishedVersion: 0.8.1
+  publishedVersion: 0.8.2
   publishedVersionMetadata:
     releaseNote: '<!-- Release notes generated using configuration in .github/release.yml
-      at v0.8.1 -->
+      at v0.8.2 -->
 
 
       ## What''s Changed
 
       ### Bugfixes
 
-      * Add extra service account to make bundle command by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/1042
+      * Readds the version log to the top of the logs by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/1104
 
-      * Fix custom activegate labels in Dynakube by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/1055
+      * Creates the shared image dir so `os.Rename` can work by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/1103
 
-      * Set empty workload kind/name on unknown owner by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/1074
+      ### Core changes
 
-      * Make extractor handle standalone usecase by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/1077
+      * Switch back to ubi8-micro by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/1108
 
 
 
-      **Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v0.8.0...v0.8.1'
+      **Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v0.8.1...v0.8.2'
     releaseTypes:
     - Feature
     recommended: true
