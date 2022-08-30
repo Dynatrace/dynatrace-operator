@@ -214,7 +214,8 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 	dkState.Update(upd, "Found updates")
 	dkState.Error(err)
 
-	if !controller.reconcileActiveGate(ctx, dkState, dtc) {
+	_ = controller.reconcileActiveGate(ctx, dkState, dtc)
+	if dkState.Err != nil {
 		return
 	}
 
