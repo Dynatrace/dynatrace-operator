@@ -1,6 +1,7 @@
 package csivolumes
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
@@ -14,9 +15,9 @@ type BindConfig struct {
 	ImageDigest string
 }
 
-func NewBindConfig(access metadata.Access, volumeCfg *VolumeConfig) (*BindConfig, error) {
+func NewBindConfig(ctx context.Context, access metadata.Access, volumeCfg *VolumeConfig) (*BindConfig, error) {
 
-	dynakube, err := access.GetDynakube(volumeCfg.DynakubeName)
+	dynakube, err := access.GetDynakube(ctx, volumeCfg.DynakubeName)
 	if err != nil {
 		return nil, status.Error(codes.Unavailable, fmt.Sprintf("failed to extract tenant for DynaKube %s: %s", volumeCfg.DynakubeName, err.Error()))
 	}

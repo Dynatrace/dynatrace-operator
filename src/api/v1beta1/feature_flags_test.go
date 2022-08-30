@@ -169,3 +169,29 @@ func TestDeprecatedEnableAnnotations(t *testing.T) {
 	dynakube = createDynakubeWithAnnotation()
 	assert.False(t, dynakube.FeatureActiveGateAuthToken())
 }
+
+func TestMaxMountAttempts(t *testing.T) {
+	dynakube := createDynakubeWithAnnotation(
+		AnnotationFeatureMaxFailedCsiMountAttempts, "5")
+
+	assert.Equal(t, 5, dynakube.FeatureMaxFailedCsiMountAttempts())
+
+	dynakube = createDynakubeWithAnnotation(
+		AnnotationFeatureMaxFailedCsiMountAttempts, "3")
+
+	assert.Equal(t, 3, dynakube.FeatureMaxFailedCsiMountAttempts())
+
+	dynakube = createDynakubeWithAnnotation()
+
+	assert.Equal(t, defaultMaxFailedCsiMountAttempts, dynakube.FeatureMaxFailedCsiMountAttempts())
+
+	dynakube = createDynakubeWithAnnotation(
+		AnnotationFeatureMaxFailedCsiMountAttempts, "a")
+
+	assert.Equal(t, defaultMaxFailedCsiMountAttempts, dynakube.FeatureMaxFailedCsiMountAttempts())
+
+	dynakube = createDynakubeWithAnnotation(
+		AnnotationFeatureMaxFailedCsiMountAttempts, "-5")
+
+	assert.Equal(t, defaultMaxFailedCsiMountAttempts, dynakube.FeatureMaxFailedCsiMountAttempts())
+}

@@ -1,6 +1,7 @@
 package csigc
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -21,6 +22,7 @@ var (
 )
 
 func TestRunSharedImagesGarbageCollection(t *testing.T) {
+	ctx := context.TODO()
 	t.Run("bad database", func(t *testing.T) {
 		fs := createTestSharedImageDir(t)
 		gc := CSIGarbageCollector{
@@ -28,14 +30,14 @@ func TestRunSharedImagesGarbageCollection(t *testing.T) {
 			db:   &metadata.FakeFailDB{},
 			path: testPathResolver,
 		}
-		err := gc.runSharedImagesGarbageCollection()
+		err := gc.runSharedImagesGarbageCollection(ctx)
 		require.Error(t, err)
 	})
 	t.Run("no error on empty fs", func(t *testing.T) {
 		gc := CSIGarbageCollector{
 			fs: afero.NewMemMapFs(),
 		}
-		err := gc.runSharedImagesGarbageCollection()
+		err := gc.runSharedImagesGarbageCollection(ctx)
 		require.NoError(t, err)
 	})
 	t.Run("deletes unused", func(t *testing.T) {
@@ -45,7 +47,7 @@ func TestRunSharedImagesGarbageCollection(t *testing.T) {
 			db:   metadata.FakeMemoryDB(),
 			path: testPathResolver,
 		}
-		err := gc.runSharedImagesGarbageCollection()
+		err := gc.runSharedImagesGarbageCollection(ctx)
 		require.NoError(t, err)
 		_, err = fs.Stat(gc.path.AgentSharedBinaryDirForImage(testImageDigest))
 		require.Error(t, err)
@@ -57,14 +59,14 @@ func TestRunSharedImagesGarbageCollection(t *testing.T) {
 			fs: fs,
 			db: metadata.FakeMemoryDB(),
 		}
-		gc.db.InsertDynakube(&metadata.Dynakube{
+		gc.db.InsertDynakube(ctx, &metadata.Dynakube{
 			Name:          "test",
 			TenantUUID:    "test",
 			LatestVersion: "test",
 			ImageDigest:   testImageDigest,
 		})
 
-		err := gc.runSharedImagesGarbageCollection()
+		err := gc.runSharedImagesGarbageCollection(ctx)
 		require.NoError(t, err)
 
 		_, err = fs.Stat(testPathResolver.AgentSharedBinaryDirForImage(testImageDigest))
@@ -76,14 +78,14 @@ func TestRunSharedImagesGarbageCollection(t *testing.T) {
 			fs: fs,
 			db: metadata.FakeMemoryDB(),
 		}
-		gc.db.InsertVolume(&metadata.Volume{
+		gc.db.InsertVolume(ctx, &metadata.Volume{
 			VolumeID:   "test",
 			TenantUUID: "test",
 			Version:    testImageDigest,
 			PodName:    "test",
 		})
 
-		err := gc.runSharedImagesGarbageCollection()
+		err := gc.runSharedImagesGarbageCollection(ctx)
 		require.NoError(t, err)
 
 		_, err = fs.Stat(testPathResolver.AgentSharedBinaryDirForImage(testImageDigest))
@@ -115,12 +117,13 @@ func TestGetSharedImageDirs(t *testing.T) {
 }
 
 func TestCollectUnusedImageDirs(t *testing.T) {
+	ctx := context.TODO()
 	t.Run("bad database", func(t *testing.T) {
 		gc := CSIGarbageCollector{
 			db:   &metadata.FakeFailDB{},
 			path: testPathResolver,
 		}
-		_, err := gc.collectUnusedImageDirs(nil)
+		_, err := gc.collectUnusedImageDirs(ctx, nil)
 		require.Error(t, err)
 	})
 	t.Run("no error on empty db", func(t *testing.T) {
@@ -128,7 +131,7 @@ func TestCollectUnusedImageDirs(t *testing.T) {
 			db:   metadata.FakeMemoryDB(),
 			path: testPathResolver,
 		}
-		dirs, err := gc.collectUnusedImageDirs(nil)
+		dirs, err := gc.collectUnusedImageDirs(ctx, nil)
 		require.NoError(t, err)
 		assert.Nil(t, dirs)
 	})
@@ -142,7 +145,7 @@ func TestCollectUnusedImageDirs(t *testing.T) {
 		fileInfo, err := fs.Stat(testDir)
 		require.NoError(t, err)
 
-		dirs, err := gc.collectUnusedImageDirs([]os.FileInfo{fileInfo})
+		dirs, err := gc.collectUnusedImageDirs(ctx, []os.FileInfo{fileInfo})
 		require.NoError(t, err)
 		assert.Len(t, dirs, 1)
 		assert.Equal(t, testDir, dirs[0])
@@ -152,7 +155,7 @@ func TestCollectUnusedImageDirs(t *testing.T) {
 			db:   metadata.FakeMemoryDB(),
 			path: testPathResolver,
 		}
-		gc.db.InsertDynakube(&metadata.Dynakube{
+		gc.db.InsertDynakube(ctx, &metadata.Dynakube{
 			Name:          "test",
 			TenantUUID:    "test",
 			LatestVersion: "test",
@@ -162,13 +165,14 @@ func TestCollectUnusedImageDirs(t *testing.T) {
 		fileInfo, err := fs.Stat(testPathResolver.AgentSharedBinaryDirForImage(testImageDigest))
 		require.NoError(t, err)
 
-		dirs, err := gc.collectUnusedImageDirs([]os.FileInfo{fileInfo})
+		dirs, err := gc.collectUnusedImageDirs(ctx, []os.FileInfo{fileInfo})
 		require.NoError(t, err)
 		assert.Len(t, dirs, 0)
 	})
 }
 
 func TestGetUsedImageDigests(t *testing.T) {
+	ctx := context.TODO()
 	t.Run("bad database", func(t *testing.T) {
 		fs := createTestSharedImageDir(t)
 		gc := CSIGarbageCollector{
@@ -176,14 +180,14 @@ func TestGetUsedImageDigests(t *testing.T) {
 			db:   &metadata.FakeFailDB{},
 			path: testPathResolver,
 		}
-		_, err := gc.getUsedImageDigests()
+		_, err := gc.getUsedImageDigests(ctx)
 		require.Error(t, err)
 	})
 	t.Run("no error on db", func(t *testing.T) {
 		gc := CSIGarbageCollector{
 			db: metadata.FakeMemoryDB(),
 		}
-		usedDigests, err := gc.getUsedImageDigests()
+		usedDigests, err := gc.getUsedImageDigests(ctx)
 		require.NoError(t, err)
 		assert.Empty(t, usedDigests)
 	})
@@ -193,14 +197,14 @@ func TestGetUsedImageDigests(t *testing.T) {
 			fs: fs,
 			db: metadata.FakeMemoryDB(),
 		}
-		gc.db.InsertDynakube(&metadata.Dynakube{
+		gc.db.InsertDynakube(ctx, &metadata.Dynakube{
 			Name:          "test",
 			TenantUUID:    "test",
 			LatestVersion: "test",
 			ImageDigest:   testImageDigest,
 		})
 
-		usedDigests, err := gc.getUsedImageDigests()
+		usedDigests, err := gc.getUsedImageDigests(ctx)
 		require.NoError(t, err)
 		assert.True(t, usedDigests[testImageDigest])
 	})
@@ -210,14 +214,14 @@ func TestGetUsedImageDigests(t *testing.T) {
 			fs: fs,
 			db: metadata.FakeMemoryDB(),
 		}
-		gc.db.InsertVolume(&metadata.Volume{
+		gc.db.InsertVolume(ctx, &metadata.Volume{
 			VolumeID:   "test",
 			TenantUUID: "test",
 			Version:    testImageDigest,
 			PodName:    "test",
 		})
 
-		usedDigests, err := gc.getUsedImageDigests()
+		usedDigests, err := gc.getUsedImageDigests(ctx)
 		require.NoError(t, err)
 		assert.True(t, usedDigests[testImageDigest])
 	})

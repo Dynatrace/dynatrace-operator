@@ -45,6 +45,7 @@ func (fs *mkDirAllErrorFs) MkdirAll(_ string, _ os.FileMode) error {
 }
 
 func TestOneAgentProvisioner_Reconcile(t *testing.T) {
+	ctx := context.TODO()
 	dynakubeName := "test-dk"
 	t.Run(`no dynakube instance`, func(t *testing.T) {
 		provisioner := &OneAgentProvisioner{
@@ -60,7 +61,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	t.Run(`dynakube deleted`, func(t *testing.T) {
 		db := metadata.FakeMemoryDB()
 		dynakube := metadata.Dynakube{TenantUUID: tenantUUID, LatestVersion: agentVersion, Name: dkName}
-		_ = db.InsertDynakube(&dynakube)
+		_ = db.InsertDynakube(ctx, &dynakube)
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(),
 			db:        db,
@@ -71,7 +72,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		assert.NotNil(t, result)
 		assert.Equal(t, reconcile.Result{}, result)
 
-		ten, err := db.GetDynakube(dynakube.TenantUUID)
+		ten, err := db.GetDynakube(ctx, dynakube.TenantUUID)
 		assert.NoError(t, err)
 		assert.Nil(t, ten)
 	})
@@ -121,7 +122,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	})
 	t.Run(`csi driver disabled`, func(t *testing.T) {
 		db := metadata.FakeMemoryDB()
-		db.InsertDynakube(&metadata.Dynakube{Name: dynakubeName})
+		db.InsertDynakube(ctx, &metadata.Dynakube{Name: dynakubeName})
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
@@ -145,7 +146,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		assert.NotNil(t, result)
 		assert.Equal(t, reconcile.Result{RequeueAfter: longRequeueDuration}, result)
 
-		dynakubeMetadatas, err := db.GetAllDynakubes()
+		dynakubeMetadatas, err := db.GetAllDynakubes(ctx)
 		require.NoError(t, err)
 		assert.Len(t, dynakubeMetadatas, 0)
 
@@ -399,7 +400,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	t.Run(`correct directories are created`, func(t *testing.T) {
 		memFs := afero.NewMemMapFs()
 		memDB := metadata.FakeMemoryDB()
-		err := memDB.InsertDynakube(metadata.NewDynakube(dkName, tenantUUID, agentVersion, "", 0))
+		err := memDB.InsertDynakube(ctx, metadata.NewDynakube(dkName, tenantUUID, agentVersion, "", 0))
 		require.NoError(t, err)
 
 		mockClient := &dtclient.MockDynatraceClient{}
@@ -521,9 +522,10 @@ func buildValidApplicationMonitoringSpec(_ *testing.T) *dynatracev1beta1.Applica
 }
 
 func TestProvisioner_CreateDynakube(t *testing.T) {
+	ctx := context.TODO()
 	db := metadata.FakeMemoryDB()
 	expectedOtherDynakube := metadata.NewDynakube(otherDkName, tenantUUID, "v1", "", 0)
-	db.InsertDynakube(expectedOtherDynakube)
+	db.InsertDynakube(ctx, expectedOtherDynakube)
 	provisioner := &OneAgentProvisioner{
 		db: db,
 	}
@@ -531,41 +533,42 @@ func TestProvisioner_CreateDynakube(t *testing.T) {
 	oldDynakube := metadata.Dynakube{}
 	newDynakube := metadata.NewDynakube(dkName, tenantUUID, "v1", "", 0)
 
-	err := provisioner.createOrUpdateDynakubeMetadata(oldDynakube, newDynakube)
+	err := provisioner.createOrUpdateDynakubeMetadata(ctx, oldDynakube, newDynakube)
 	require.NoError(t, err)
 
-	dynakube, err := db.GetDynakube(dkName)
+	dynakube, err := db.GetDynakube(ctx, dkName)
 	assert.NoError(t, err)
 	assert.NotNil(t, dynakube)
 	assert.Equal(t, *newDynakube, *dynakube)
 
-	otherDynakube, err := db.GetDynakube(otherDkName)
+	otherDynakube, err := db.GetDynakube(ctx, otherDkName)
 	assert.NoError(t, err)
 	assert.NotNil(t, dynakube)
 	assert.Equal(t, *expectedOtherDynakube, *otherDynakube)
 }
 
 func TestProvisioner_UpdateDynakube(t *testing.T) {
+	ctx := context.TODO()
 	db := metadata.FakeMemoryDB()
 	oldDynakube := metadata.NewDynakube(dkName, tenantUUID, "v1", "", 0)
-	db.InsertDynakube(oldDynakube)
+	db.InsertDynakube(ctx, oldDynakube)
 	expectedOtherDynakube := metadata.NewDynakube(otherDkName, tenantUUID, "v1", "", 0)
-	db.InsertDynakube(expectedOtherDynakube)
+	db.InsertDynakube(ctx, expectedOtherDynakube)
 
 	provisioner := &OneAgentProvisioner{
 		db: db,
 	}
 	newDynakube := metadata.NewDynakube(dkName, "new-uuid", "v2", "", 0)
 
-	err := provisioner.createOrUpdateDynakubeMetadata(*oldDynakube, newDynakube)
+	err := provisioner.createOrUpdateDynakubeMetadata(ctx, *oldDynakube, newDynakube)
 	require.NoError(t, err)
 
-	dynakube, err := db.GetDynakube(dkName)
+	dynakube, err := db.GetDynakube(ctx, dkName)
 	assert.NoError(t, err)
 	assert.NotNil(t, dynakube)
 	assert.Equal(t, *newDynakube, *dynakube)
 
-	otherDynakube, err := db.GetDynakube(otherDkName)
+	otherDynakube, err := db.GetDynakube(ctx, otherDkName)
 	assert.NoError(t, err)
 	assert.NotNil(t, dynakube)
 	assert.Equal(t, *expectedOtherDynakube, *otherDynakube)
@@ -588,4 +591,35 @@ func setupTestZip(t *testing.T, fs afero.Fs) afero.File {
 	require.NoError(t, err)
 
 	return zipFile
+}
+
+func TestHandleMetadata(t *testing.T) {
+	ctx := context.TODO()
+	instance := &dynatracev1beta1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: dkName,
+		},
+		Status: dynatracev1beta1.DynaKubeStatus{
+			ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
+				TenantUUID: testTenantUUID,
+			},
+		},
+	}
+	provisioner := &OneAgentProvisioner{
+		db: metadata.FakeMemoryDB(),
+	}
+	dynakubeMetadata, oldMetadata, err := provisioner.handleMetadata(ctx, instance)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, dynakubeMetadata)
+	assert.NotNil(t, oldMetadata)
+	assert.Equal(t, 3, dynakubeMetadata.MaxFailedMountAttempts)
+
+	instance.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureMaxFailedCsiMountAttempts: "5"}
+	dynakubeMetadata, oldMetadata, err = provisioner.handleMetadata(ctx, instance)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, dynakubeMetadata)
+	assert.NotNil(t, oldMetadata)
+	assert.Equal(t, 5, dynakubeMetadata.MaxFailedMountAttempts)
 }
