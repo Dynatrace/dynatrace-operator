@@ -1,7 +1,7 @@
 package oneagent
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/test/daemonset"
+	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/daemonset"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )

@@ -1,7 +1,7 @@
 package activegate
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/test/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/statefulset"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
