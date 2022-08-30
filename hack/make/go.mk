@@ -11,7 +11,7 @@ go/vet:
 ## Lints the go code
 go/lint: go/fmt go/vet
 	gci write .
-	golangci-lint run --build-tags integration,containers_image_storage_stub --timeout 300s
+	golangci-lint run --build-tags integration,containers_image_storage_stub,e2e --timeout 300s
 
 ## Runs go unit tests (without integration and containers_image_storage_stub) and writes the coverprofile to cover.out
 go/test: go/fmt
