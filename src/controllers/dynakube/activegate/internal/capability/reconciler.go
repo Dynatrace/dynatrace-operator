@@ -30,16 +30,14 @@ type statefulsetReconciler interface {
 }
 
 type Reconciler struct {
-	client.Client
+	client client.Client
 	capability.Capability
 	statefulsetReconciler
 	customPropertiesReconciler kubeobjects.Reconciler
 	Dynakube                   *dynatracev1beta1.DynaKube
 }
 
-var _ statefulsetReconciler = (*Reconciler)(nil)
-
-func NewReconciler(clt client.Client, capability capability.Capability, dynakube *dynatracev1beta1.DynaKube, statefulsetReconciler statefulsetReconciler, customPropertiesReconciler kubeobjects.Reconciler) *Reconciler {
+func NewReconciler(clt client.Client, capability capability.Capability, dynakube *dynatracev1beta1.DynaKube, statefulsetReconciler statefulsetReconciler, customPropertiesReconciler kubeobjects.Reconciler) kubeobjects.Reconciler {
 	if capability.Config().SetDnsEntryPoint {
 		statefulsetReconciler.AddOnAfterStatefulSetCreateListener(addDNSEntryPoint(dynakube, capability.ShortName()))
 	}
@@ -57,11 +55,11 @@ func NewReconciler(clt client.Client, capability capability.Capability, dynakube
 		customPropertiesReconciler: customPropertiesReconciler,
 		Capability:                 capability,
 		Dynakube:                   dynakube,
-		Client:                     clt,
+		client:                     clt,
 	}
 }
 
-type NewReconcilerFunc = func(clt client.Client, capability capability.Capability, dynakube *dynatracev1beta1.DynaKube, statefulsetReconciler statefulsetReconciler, customPropertiesReconciler kubeobjects.Reconciler) *Reconciler
+type NewReconcilerFunc = func(clt client.Client, capability capability.Capability, dynakube *dynatracev1beta1.DynaKube, statefulsetReconciler statefulsetReconciler, customPropertiesReconciler kubeobjects.Reconciler) kubeobjects.Reconciler
 
 func setReadinessProbePort() kubeobjects.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {
@@ -175,14 +173,14 @@ func (r *Reconciler) createOrUpdateService(desiredServicePorts capability.AgServ
 	desired := CreateService(r.Dynakube, r.ShortName(), desiredServicePorts)
 
 	installed := &corev1.Service{}
-	err := r.Get(context.TODO(), kubeobjects.Key(desired), installed)
+	err := r.client.Get(context.TODO(), kubeobjects.Key(desired), installed)
 	if k8serrors.IsNotFound(err) && desiredServicePorts.HasPorts() {
 		log.Info("creating AG service", "module", r.ShortName())
-		if err = controllerutil.SetControllerReference(r.Dynakube, desired, r.Scheme()); err != nil {
+		if err = controllerutil.SetControllerReference(r.Dynakube, desired, r.client.Scheme()); err != nil {
 			return false, errors.WithStack(err)
 		}
 
-		err = r.Create(context.TODO(), desired)
+		err = r.client.Create(context.TODO(), desired)
 		return true, errors.WithStack(err)
 	}
 
@@ -195,11 +193,11 @@ func (r *Reconciler) createOrUpdateService(desiredServicePorts capability.AgServ
 		desired.ObjectMeta.ResourceVersion = installed.ObjectMeta.ResourceVersion
 
 		if desiredServicePorts.HasPorts() {
-			if err := r.Update(context.TODO(), desired); err != nil {
+			if err := r.client.Update(context.TODO(), desired); err != nil {
 				return false, err
 			}
 		} else {
-			if err := r.Delete(context.TODO(), desired); err != nil {
+			if err := r.client.Delete(context.TODO(), desired); err != nil {
 				return false, err
 			}
 		}

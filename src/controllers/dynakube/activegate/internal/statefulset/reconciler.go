@@ -22,7 +22,7 @@ import (
 )
 
 type Reconciler struct {
-	client.Client
+	client                           client.Client
 	Dynakube                         *dynatracev1beta1.DynaKube
 	apiReader                        client.Reader
 	scheme                           *runtime.Scheme
@@ -40,7 +40,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 	}
 
 	return &Reconciler{
-		Client:                           clt,
+		client:                           clt,
 		apiReader:                        apiReader,
 		scheme:                           scheme,
 		Dynakube:                         dynakube,
@@ -125,7 +125,7 @@ func (r *Reconciler) buildDesiredStatefulSet() (*appsv1.StatefulSet, error) {
 
 func (r *Reconciler) getStatefulSet(desiredSts *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
 	var sts appsv1.StatefulSet
-	err := r.Get(context.TODO(), client.ObjectKey{Name: desiredSts.Name, Namespace: desiredSts.Namespace}, &sts)
+	err := r.client.Get(context.TODO(), client.ObjectKey{Name: desiredSts.Name, Namespace: desiredSts.Namespace}, &sts)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -136,7 +136,7 @@ func (r *Reconciler) createStatefulSetIfNotExists(desiredSts *appsv1.StatefulSet
 	_, err := r.getStatefulSet(desiredSts)
 	if err != nil && k8serrors.IsNotFound(errors.Cause(err)) {
 		log.Info("creating new stateful set for " + r.capability.ShortName())
-		return true, r.Create(context.TODO(), desiredSts)
+		return true, r.client.Create(context.TODO(), desiredSts)
 	}
 	return false, err
 }
@@ -155,7 +155,7 @@ func (r *Reconciler) updateStatefulSetIfOutdated(desiredSts *appsv1.StatefulSet)
 	}
 
 	log.Info("updating existing stateful set")
-	if err = r.Update(context.TODO(), desiredSts); err != nil {
+	if err = r.client.Update(context.TODO(), desiredSts); err != nil {
 		return false, err
 	}
 	return true, err
@@ -164,7 +164,7 @@ func (r *Reconciler) updateStatefulSetIfOutdated(desiredSts *appsv1.StatefulSet)
 func (r *Reconciler) recreateStatefulSet(currentSts, desiredSts *appsv1.StatefulSet) (bool, error) {
 	log.Info("immutable section changed on statefulset, deleting and recreating", "name", desiredSts.Name)
 
-	err := r.Delete(context.TODO(), currentSts)
+	err := r.client.Delete(context.TODO(), currentSts)
 	if err != nil {
 		return false, err
 	}
@@ -172,7 +172,7 @@ func (r *Reconciler) recreateStatefulSet(currentSts, desiredSts *appsv1.Stateful
 	log.Info("deleted statefulset")
 	log.Info("recreating statefulset", "name", desiredSts.Name)
 
-	return true, r.Create(context.TODO(), desiredSts)
+	return true, r.client.Create(context.TODO(), desiredSts)
 }
 
 func (r *Reconciler) deleteStatefulSetIfOldLabelsAreUsed(desiredSts *appsv1.StatefulSet) (bool, error) {
@@ -183,7 +183,7 @@ func (r *Reconciler) deleteStatefulSetIfOldLabelsAreUsed(desiredSts *appsv1.Stat
 
 	if !reflect.DeepEqual(currentSts.Labels, desiredSts.Labels) {
 		log.Info("deleting existing stateful set")
-		if err = r.Delete(context.TODO(), desiredSts); err != nil {
+		if err = r.client.Delete(context.TODO(), desiredSts); err != nil {
 			return false, err
 		}
 		return true, nil

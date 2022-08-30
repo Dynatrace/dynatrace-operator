@@ -40,7 +40,7 @@ func newTestReconciler(client client.Client) *Reconciler {
 	dtc := &dtclient.MockDynatraceClient{}
 	dtc.On("GetActiveGateAuthToken", mock.Anything).Return(testAgAuthTokenResponse, nil)
 
-	r := NewReconciler(client, client, scheme.Scheme, instance, dtc)
+	r := NewReconciler(client, client, scheme.Scheme, instance, dtc).(*Reconciler)
 	return r
 }
 

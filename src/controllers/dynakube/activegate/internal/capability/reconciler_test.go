@@ -98,7 +98,7 @@ func createDefaultReconciler(t *testing.T) (*Reconciler, *testBaseReconciler) {
 	customPropertiesReconcilerMock := &PseudoReconcilerMock{}
 	customPropertiesReconcilerMock.On("Reconcile").Return(false, nil)
 
-	r := NewReconciler(clt, metricsCapability, instance, baseReconciler, customPropertiesReconcilerMock)
+	r := NewReconciler(clt, metricsCapability, instance, baseReconciler, customPropertiesReconcilerMock).(*Reconciler)
 	require.NotNil(t, r)
 	require.NotNil(t, r.statefulsetReconciler)
 	require.NotNil(t, r.Dynakube)
@@ -110,13 +110,13 @@ func createDefaultReconciler(t *testing.T) (*Reconciler, *testBaseReconciler) {
 func TestReconcile(t *testing.T) {
 	assertStatefulSetExists := func(r *Reconciler) *appsv1.StatefulSet {
 		statefulSet := new(appsv1.StatefulSet)
-		assert.NoError(t, r.Get(context.TODO(), client.ObjectKey{Name: r.calculateStatefulSetName(), Namespace: r.Dynakube.Namespace}, statefulSet))
+		assert.NoError(t, r.client.Get(context.TODO(), client.ObjectKey{Name: r.calculateStatefulSetName(), Namespace: r.Dynakube.Namespace}, statefulSet))
 		assert.NotNil(t, statefulSet)
 		return statefulSet
 	}
 	assertServiceExists := func(r *Reconciler) *corev1.Service {
 		svc := new(corev1.Service)
-		assert.NoError(t, r.Get(context.TODO(), client.ObjectKey{Name: capability.BuildServiceName(r.Dynakube.Name, r.ShortName()), Namespace: r.Dynakube.Namespace}, svc))
+		assert.NoError(t, r.client.Get(context.TODO(), client.ObjectKey{Name: capability.BuildServiceName(r.Dynakube.Name, r.ShortName()), Namespace: r.Dynakube.Namespace}, svc))
 		assert.NotNil(t, svc)
 		return svc
 	}
@@ -159,7 +159,7 @@ func TestReconcile(t *testing.T) {
 		}
 
 		baseReconciler.On("Reconcile").Return(true, nil).Run(func(args mock.Arguments) {
-			err := r.Create(context.TODO(), &corev1.Secret{
+			err := r.client.Create(context.TODO(), &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      r.Dynakube.Name + "-" + metricsCapability.ShortName() + "-" + customproperties.Suffix,
 					Namespace: r.Dynakube.Namespace,
@@ -174,7 +174,7 @@ func TestReconcile(t *testing.T) {
 		reconcileAndExpectUpdate(r, true)
 
 		var customProperties corev1.Secret
-		err := r.Get(context.TODO(), client.ObjectKey{Name: r.Dynakube.Name + "-" + metricsCapability.ShortName() + "-" + customproperties.Suffix, Namespace: r.Dynakube.Namespace}, &customProperties)
+		err := r.client.Get(context.TODO(), client.ObjectKey{Name: r.Dynakube.Name + "-" + metricsCapability.ShortName() + "-" + customproperties.Suffix, Namespace: r.Dynakube.Namespace}, &customProperties)
 		assert.NoError(t, err)
 		assert.NotNil(t, customProperties)
 		assert.Contains(t, customProperties.Data, customproperties.DataKey)
@@ -184,7 +184,7 @@ func TestReconcile(t *testing.T) {
 		r, baseReconciler := createDefaultReconciler(t)
 
 		baseReconciler.On("Reconcile").Return(true, nil).Run(func(args mock.Arguments) {
-			err := r.Create(context.TODO(), &appsv1.StatefulSet{
+			err := r.client.Create(context.TODO(), &appsv1.StatefulSet{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      r.calculateStatefulSetName(),
 					Namespace: r.Dynakube.Namespace,
@@ -216,7 +216,7 @@ func TestReconcile(t *testing.T) {
 		r, baseReconciler := createDefaultReconciler(t)
 
 		call := baseReconciler.On("Reconcile").Return(true, nil).Run(func(args mock.Arguments) {
-			err := r.Create(context.TODO(), &appsv1.StatefulSet{
+			err := r.client.Create(context.TODO(), &appsv1.StatefulSet{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      r.calculateStatefulSetName(),
 					Namespace: r.Dynakube.Namespace,
@@ -243,7 +243,7 @@ func TestReconcile(t *testing.T) {
 		r.Dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
 
 		call.Run(func(args mock.Arguments) {
-			err := r.Update(context.TODO(), &appsv1.StatefulSet{
+			err := r.client.Update(context.TODO(), &appsv1.StatefulSet{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      r.calculateStatefulSetName(),
 					Namespace: r.Dynakube.Namespace,
@@ -281,7 +281,7 @@ func TestReconcile(t *testing.T) {
 		assertServiceExists(r)
 
 		call.Run(func(args mock.Arguments) {
-			err := r.Create(context.TODO(), &appsv1.StatefulSet{
+			err := r.client.Create(context.TODO(), &appsv1.StatefulSet{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      r.calculateStatefulSetName(),
 					Namespace: r.Dynakube.Namespace,
@@ -304,11 +304,11 @@ func TestReconcile(t *testing.T) {
 			service := assertServiceExists(r)
 			assert.Len(t, service.Spec.Ports, 2)
 
-			assert.Error(t, r.Get(context.TODO(), client.ObjectKey{Name: r.calculateStatefulSetName(), Namespace: r.Dynakube.Namespace}, &appsv1.StatefulSet{}))
+			assert.Error(t, r.client.Get(context.TODO(), client.ObjectKey{Name: r.calculateStatefulSetName(), Namespace: r.Dynakube.Namespace}, &appsv1.StatefulSet{}))
 		}
 
 		call.Run(func(args mock.Arguments) {
-			err := r.Create(context.TODO(), &appsv1.StatefulSet{
+			err := r.client.Create(context.TODO(), &appsv1.StatefulSet{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      r.calculateStatefulSetName(),
 					Namespace: r.Dynakube.Namespace,
@@ -337,7 +337,7 @@ func TestReconcile(t *testing.T) {
 		}
 
 		call.Return(false, nil).Run(func(args mock.Arguments) {
-			err := r.Update(context.TODO(), &appsv1.StatefulSet{
+			err := r.client.Update(context.TODO(), &appsv1.StatefulSet{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      r.calculateStatefulSetName(),
 					Namespace: r.Dynakube.Namespace,
@@ -369,7 +369,7 @@ func TestReconcile(t *testing.T) {
 		}
 
 		call.Run(func(args mock.Arguments) {
-			err := r.Update(context.TODO(), &appsv1.StatefulSet{
+			err := r.client.Update(context.TODO(), &appsv1.StatefulSet{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      r.calculateStatefulSetName(),
 					Namespace: r.Dynakube.Namespace,
@@ -406,7 +406,7 @@ func TestReconcile(t *testing.T) {
 		call.Return(false, nil)
 
 		call.Run(func(args mock.Arguments) {
-			err := r.Update(context.TODO(), &appsv1.StatefulSet{
+			err := r.client.Update(context.TODO(), &appsv1.StatefulSet{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      r.calculateStatefulSetName(),
 					Namespace: r.Dynakube.Namespace,

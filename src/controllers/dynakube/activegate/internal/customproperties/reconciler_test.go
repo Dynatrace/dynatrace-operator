@@ -35,7 +35,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Namespace: testNamespace,
 			}}
 		fakeClient := fake.NewClient(instance)
-		r := NewReconciler(fakeClient, instance, testOwner, scheme.Scheme, &valueSource)
+		r := NewReconciler(fakeClient, instance, testOwner, scheme.Scheme, &valueSource).(*Reconciler)
 		_, err := r.Reconcile()
 
 		assert.NoError(t, err)
@@ -57,7 +57,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Namespace: testNamespace,
 			}}
 		fakeClient := fake.NewClient(instance)
-		r := NewReconciler(fakeClient, instance, testOwner, scheme.Scheme, &valueSource)
+		r := NewReconciler(fakeClient, instance, testOwner, scheme.Scheme, &valueSource).(*Reconciler)
 		_, err := r.Reconcile()
 
 		assert.NoError(t, err)

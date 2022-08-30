@@ -51,7 +51,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 
 	r := NewReconciler(clt, clt, scheme.Scheme, instance, capability.NewRoutingCapability(instance))
 	require.NotNil(t, r)
-	require.NotNil(t, r.Client)
+	require.NotNil(t, r.client)
 	require.NotNil(t, r.scheme)
 	require.NotNil(t, r.Dynakube)
 
@@ -67,7 +67,7 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 
 		statefulSet := &appsv1.StatefulSet{}
-		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.Dynakube.Namespace}, statefulSet)
+		err = r.client.Get(context.TODO(), client.ObjectKey{Name: r.Dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.Dynakube.Namespace}, statefulSet)
 
 		assert.NotNil(t, statefulSet)
 		assert.NoError(t, err)
@@ -80,7 +80,7 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 
 		statefulSet := &appsv1.StatefulSet{}
-		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.Dynakube.Namespace}, statefulSet)
+		err = r.client.Get(context.TODO(), client.ObjectKey{Name: r.Dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.Dynakube.Namespace}, statefulSet)
 
 		assert.NotNil(t, statefulSet)
 		assert.NoError(t, err)
@@ -92,7 +92,7 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 
 		newStatefulSet := &appsv1.StatefulSet{}
-		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.Dynakube.Namespace}, newStatefulSet)
+		err = r.client.Get(context.TODO(), client.ObjectKey{Name: r.Dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.Dynakube.Namespace}, newStatefulSet)
 
 		assert.NotNil(t, statefulSet)
 		assert.NoError(t, err)
@@ -195,7 +195,7 @@ func TestReconcile_DeleteStatefulSetIfOldLabelsAreUsed(t *testing.T) {
 	require.NoError(t, err)
 	correctLabels := desiredSts.Labels
 	desiredSts.Labels = map[string]string{"activegate": "dynakube"}
-	err = r.Update(context.TODO(), desiredSts)
+	err = r.client.Update(context.TODO(), desiredSts)
 	assert.NoError(t, err)
 
 	desiredSts.Labels = correctLabels
@@ -220,7 +220,7 @@ func TestReconcile_GetCustomPropertyHash(t *testing.T) {
 	assert.Error(t, err)
 	assert.Empty(t, hash)
 
-	err = r.Create(context.TODO(), &corev1.Secret{
+	err = r.client.Create(context.TODO(), &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNamespace,
@@ -249,7 +249,7 @@ func TestReconcile_GetActiveGateAuthTokenHash(t *testing.T) {
 	assert.Error(t, err)
 	assert.Empty(t, hash)
 
-	err = r.Create(context.TODO(), &corev1.Secret{
+	err = r.client.Create(context.TODO(), &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      r.Dynakube.ActiveGateAuthTokenSecret(),
 			Namespace: r.Dynakube.Namespace,

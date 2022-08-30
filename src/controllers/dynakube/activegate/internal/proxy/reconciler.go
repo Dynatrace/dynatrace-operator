@@ -39,9 +39,7 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 	return true, err
 }
 
-var _ kubeobjects.Reconciler = (*Reconciler)(nil)
-
-func NewReconciler(client client.Client, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube) *Reconciler {
+func NewReconciler(client client.Client, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube) kubeobjects.Reconciler {
 	return &Reconciler{
 		client:    client,
 		apiReader: apiReader,
