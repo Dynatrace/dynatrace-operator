@@ -1,7 +1,7 @@
 package webhook
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/test/deployment"
+	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/deployment"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 

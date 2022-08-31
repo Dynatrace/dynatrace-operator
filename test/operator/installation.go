@@ -1,8 +1,8 @@
 package operator
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/test/deployment"
-	"github.com/Dynatrace/dynatrace-operator/test/manifests"
+	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/deployment"
+	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/manifests"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
