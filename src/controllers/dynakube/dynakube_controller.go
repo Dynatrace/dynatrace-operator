@@ -214,12 +214,13 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 	dkState.Update(upd, "Found updates")
 	dkState.Error(err)
 
-	_ = controller.reconcileActiveGate(ctx, dkState, dtc)
-	if dkState.Err != nil {
+	err = controller.reconcileActiveGate(ctx, dkState, dtc)
+	if dkState.Error(err) {
 		return
 	}
 
-	if err = controller.reconcileOneAgent(ctx, dkState); err != nil {
+	err = controller.reconcileOneAgent(ctx, dkState)
+	if err != nil {
 		return
 	}
 
@@ -304,18 +305,18 @@ func (controller *DynakubeController) removeOneAgentDaemonSet(dkState *status.Dy
 	}
 }
 
-func (controller *DynakubeController) reconcileActiveGate(ctx context.Context, dynakubeState *status.DynakubeState, dtc dtclient.Client) (updated bool) {
+func (controller *DynakubeController) reconcileActiveGate(ctx context.Context, dynakubeState *status.DynakubeState, dtc dtclient.Client) error {
 	reconciler := activegate.NewReconciler(ctx, controller.client, controller.apiReader, controller.scheme, dynakubeState.Instance, dtc)
-
 	upd, err := reconciler.Reconcile()
-	if dynakubeState.Error(err) {
-		log.Error(err, "Failed to reconcile ActiveGate")
-		return false
-	}
-	dynakubeState.Update(upd, "ActiveGate reconciled")
 
+	if err != nil {
+		return errors.WithMessage(err, "failed to reconcile ActiveGate")
+	}
+
+	dynakubeState.Update(upd, "ActiveGate reconciled")
 	controller.startApiMonitoring(dynakubeState, dtc)
-	return upd
+
+	return nil
 }
 
 func (controller *DynakubeController) startApiMonitoring(dynakubeState *status.DynakubeState, dtc dtclient.Client) {
