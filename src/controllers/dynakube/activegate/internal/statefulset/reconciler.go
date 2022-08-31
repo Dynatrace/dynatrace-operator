@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/customproperties"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/agbuilder"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/pkg/errors"
@@ -22,39 +23,26 @@ import (
 )
 
 type Reconciler struct {
-	client                           client.Client
-	Dynakube                         *dynatracev1beta1.DynaKube
-	apiReader                        client.Reader
-	scheme                           *runtime.Scheme
-	serviceAccountOwner              string
-	onAfterStatefulSetCreateListener []kubeobjects.StatefulSetEvent
-	capability                       capability.Capability
+	client     client.Client
+	dynakube   *dynatracev1beta1.DynaKube
+	apiReader  client.Reader
+	scheme     *runtime.Scheme
+	capability capability.Capability
+	modifiers  []agbuilder.Modifier
 }
 
-var _ kubeobjects.Reconciler = (*Reconciler)(nil)
-
-func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, capability capability.Capability) *Reconciler {
-	serviceAccountOwner := capability.Config().ServiceAccountOwner
-	if serviceAccountOwner == "" {
-		serviceAccountOwner = capability.ShortName()
-	}
-
+func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, capability capability.Capability) kubeobjects.Reconciler {
 	return &Reconciler{
-		client:                           clt,
-		apiReader:                        apiReader,
-		scheme:                           scheme,
-		Dynakube:                         dynakube,
-		capability:                       capability,
-		serviceAccountOwner:              serviceAccountOwner,
-		onAfterStatefulSetCreateListener: []kubeobjects.StatefulSetEvent{},
+		client:     clt,
+		apiReader:  apiReader,
+		scheme:     scheme,
+		dynakube:   dynakube,
+		capability: capability,
+		modifiers:  []agbuilder.Modifier{},
 	}
 }
 
-type NewReconcilerFunc = func(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, capability capability.Capability) *Reconciler
-
-func (r *Reconciler) AddOnAfterStatefulSetCreateListener(event kubeobjects.StatefulSetEvent) {
-	r.onAfterStatefulSetCreateListener = append(r.onAfterStatefulSetCreateListener, event)
-}
+type NewReconcilerFunc = func(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, capability capability.Capability) kubeobjects.Reconciler
 
 func (r *Reconciler) Reconcile() (update bool, err error) {
 	if update, err = r.manageStatefulSet(); err != nil {
@@ -71,7 +59,7 @@ func (r *Reconciler) manageStatefulSet() (bool, error) {
 		return false, errors.WithStack(err)
 	}
 
-	if err := controllerutil.SetControllerReference(r.Dynakube, desiredSts, r.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(r.dynakube, desiredSts, r.scheme); err != nil {
 		return false, errors.WithStack(err)
 	}
 
@@ -104,22 +92,9 @@ func (r *Reconciler) buildDesiredStatefulSet() (*appsv1.StatefulSet, error) {
 		return nil, errors.WithStack(err)
 	}
 
-	stsProperties := NewStatefulSetProperties(
-		r.Dynakube,
-		r.capability.Properties(),
-		kubeUID,
-		activeGateConfigurationHash,
-		r.capability.ShortName(),
-		r.capability.ArgName(),
-		r.serviceAccountOwner,
-		r.capability.InitContainersTemplates(),
-		r.capability.ContainerVolumeMounts(),
-		r.capability.Volumes(),
-		r.capability,
-	)
-	stsProperties.OnAfterCreateListener = r.onAfterStatefulSetCreateListener
+	statefulSetBuilder := NewStatefulSetBuilder(kubeUID, activeGateConfigurationHash, *r.dynakube, r.capability)
 
-	desiredSts, err := CreateStatefulSet(stsProperties)
+	desiredSts, err := statefulSetBuilder.CreateStatefulSet(r.modifiers)
 	return desiredSts, errors.WithStack(err)
 }
 
@@ -228,7 +203,7 @@ func (r *Reconciler) getCustomPropertyValue() (string, error) {
 }
 
 func (r *Reconciler) getAuthTokenValue() (string, error) {
-	if !r.Dynakube.UseActiveGateAuthToken() {
+	if !r.dynakube.UseActiveGateAuthToken() {
 		return "", nil
 	}
 
@@ -241,13 +216,13 @@ func (r *Reconciler) getAuthTokenValue() (string, error) {
 
 func (r *Reconciler) getDataFromCustomProperty(customProperties *dynatracev1beta1.DynaKubeValueSource) (string, error) {
 	if customProperties.ValueFrom != "" {
-		return kubeobjects.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.Dynakube.Namespace, Name: customProperties.ValueFrom}, customproperties.DataKey)
+		return kubeobjects.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.dynakube.Namespace, Name: customProperties.ValueFrom}, customproperties.DataKey)
 	}
 	return customProperties.Value, nil
 }
 
 func (r *Reconciler) getDataFromAuthTokenSecret() (string, error) {
-	return kubeobjects.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.Dynakube.Namespace, Name: r.Dynakube.ActiveGateAuthTokenSecret()}, authtoken.ActiveGateAuthTokenName)
+	return kubeobjects.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.dynakube.Namespace, Name: r.dynakube.ActiveGateAuthTokenSecret()}, authtoken.ActiveGateAuthTokenName)
 }
 
 func needsCustomPropertyHash(customProperties *dynatracev1beta1.DynaKubeValueSource) bool {

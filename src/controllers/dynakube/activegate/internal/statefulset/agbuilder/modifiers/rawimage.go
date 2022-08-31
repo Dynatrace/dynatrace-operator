@@ -1,0 +1,85 @@
+package modifiers
+
+import (
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
+	agbuilderTypes "github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/agbuilder/internal/types"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/tenantinfo"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+)
+
+func NewRawImageModifier(dynakube dynatracev1beta1.DynaKube) agbuilderTypes.Modifier {
+	return RawImageModifier{
+		dynakube: dynakube,
+	}
+}
+
+type RawImageModifier struct {
+	dynakube dynatracev1beta1.DynaKube
+}
+
+func (mod RawImageModifier) Modify(sts *appsv1.StatefulSet) {
+	if mod.dynakube.FeatureDisableActivegateRawImage() {
+		return
+	}
+	baseContainer := kubeobjects.FindContainerInPodSpec(&sts.Spec.Template.Spec, consts.ActiveGateContainerName)
+	sts.Spec.Template.Spec.Volumes = append(sts.Spec.Template.Spec.Volumes, mod.getVolumes()...)
+	baseContainer.VolumeMounts = append(baseContainer.VolumeMounts, mod.getVolumeMounts()...)
+	baseContainer.Env = append(baseContainer.Env,
+		mod.communicationEndpointEnvVar(),
+		mod.tenantUUIDNameEnvVar())
+}
+
+func (mod RawImageModifier) getVolumes() []corev1.Volume {
+	return []corev1.Volume{
+		{
+			Name: consts.TenantSecretVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: mod.dynakube.AGTenantSecret(),
+				},
+			},
+		},
+	}
+}
+
+func (mod RawImageModifier) getVolumeMounts() []corev1.VolumeMount {
+	return []corev1.VolumeMount{
+		{
+			Name:      consts.TenantSecretVolumeName,
+			ReadOnly:  true,
+			MountPath: consts.TenantTokenMountPoint,
+			SubPath:   tenantinfo.TenantTokenName,
+		},
+	}
+}
+
+func (mod RawImageModifier) tenantUUIDNameEnvVar() corev1.EnvVar {
+	return corev1.EnvVar{
+		Name: consts.EnvDtTenant,
+		ValueFrom: &corev1.EnvVarSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: mod.dynakube.AGTenantSecret(),
+				},
+				Key: tenantinfo.TenantUuidName,
+			},
+		},
+	}
+}
+
+func (mod RawImageModifier) communicationEndpointEnvVar() corev1.EnvVar {
+	return corev1.EnvVar{
+		Name: consts.EnvDtServer,
+		ValueFrom: &corev1.EnvVarSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: mod.dynakube.AGTenantSecret(),
+				},
+				Key: tenantinfo.CommunicationEndpointsName,
+			},
+		},
+	}
+}

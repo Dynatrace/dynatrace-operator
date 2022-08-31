@@ -5,20 +5,28 @@ import (
 )
 
 type Builder[T any] struct {
+	data      *T
 	modifiers []api.Modifier[T]
 }
 
 var _ api.Builder[any] = (*Builder[any])(nil)
 
 func (b Builder[T]) Build() T {
-	var data T
-	for _, m := range b.modifiers {
-		m.Modify(&data)
+	if b.data == nil {
+		var data T
+		b.data = &data
 	}
-	return data
+	for _, m := range b.modifiers {
+		m.Modify(b.data)
+	}
+	return *b.data
 }
 
 func (b *Builder[T]) AddModifier(modifiers ...api.Modifier[T]) api.Builder[T] {
 	b.modifiers = append(b.modifiers, modifiers...)
 	return b
+}
+
+func (b *Builder[T]) SetBase(data T) {
+	b.data = &data
 }
