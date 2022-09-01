@@ -1,17 +1,18 @@
-FROM golang:1.18-alpine AS operator-build
+FROM golang:1.19.0-alpine AS operator-build
 
 RUN apk update --no-cache && \
     apk add --no-cache gcc musl-dev btrfs-progs-dev lvm2-dev device-mapper-static gpgme-dev git && \
     rm -rf /var/cache/apk/*
 
 ARG GO_LINKER_ARGS
+ARG CGO_CFLAGS
 COPY . /app
 WORKDIR /app
 
 # move previously cached go modules to gopath
 RUN if [ -d ./mod ]; then mkdir -p ${GOPATH}/pkg && [ -d mod ] && mv ./mod ${GOPATH}/pkg; fi;
 
-RUN CGO_ENABLED=1 go build -ldflags="${GO_LINKER_ARGS}" -o ./build/_output/bin/dynatrace-operator ./src/cmd/
+RUN CGO_ENABLED=1 CGO_CFLAGS="${CGO_CFLAGS}" go build -ldflags="${GO_LINKER_ARGS}" -o ./build/_output/bin/dynatrace-operator ./src/cmd/
 
 FROM registry.access.redhat.com/ubi9-minimal:9.0.0 as dependency-src
 
