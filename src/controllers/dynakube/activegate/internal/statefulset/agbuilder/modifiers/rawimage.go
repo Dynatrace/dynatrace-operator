@@ -20,10 +20,11 @@ type RawImageModifier struct {
 	dynakube dynatracev1beta1.DynaKube
 }
 
+func (mod RawImageModifier) Enabled() bool {
+	return !mod.dynakube.FeatureDisableActivegateRawImage()
+}
+
 func (mod RawImageModifier) Modify(sts *appsv1.StatefulSet) {
-	if mod.dynakube.FeatureDisableActivegateRawImage() {
-		return
-	}
 	baseContainer := kubeobjects.FindContainerInPodSpec(&sts.Spec.Template.Spec, consts.ActiveGateContainerName)
 	sts.Spec.Template.Spec.Volumes = append(sts.Spec.Template.Spec.Volumes, mod.getVolumes()...)
 	baseContainer.VolumeMounts = append(baseContainer.VolumeMounts, mod.getVolumeMounts()...)

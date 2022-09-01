@@ -32,7 +32,24 @@ func NewStatefulSetBuilder(kubeUID types.UID, configHash string, dynakube dynatr
 
 func (builder statefulSetBuilder) CreateStatefulSet(modifiers []agbuilder.Modifier) (*appsv1.StatefulSet, error) {
 	activeGateBuilder := agbuilder.Builder{}
-	baseStatefulSet := appsv1.StatefulSet{
+	activeGateBuilder.SetBase(builder.getBase())
+	if len(modifiers) == 0 {
+		modifiers = agmodifiers.GetAllModifiers(builder.kubeUID, builder.configHash, builder.dynakube, builder.capability)
+	}
+	activeGateBuilder.AddModifier(modifiers...)
+	sts := activeGateBuilder.Build()
+
+	if err := setHash(&sts); err != nil {
+		return nil, err
+	}
+
+	return &sts, nil
+}
+
+// same as the first step of the BaseModifier
+// only an example that the BaseModifier could be here
+func (builder statefulSetBuilder) getBase() appsv1.StatefulSet {
+	return appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        builder.dynakube.Name + "-" + builder.capability.ShortName(),
 			Namespace:   builder.dynakube.Namespace,
@@ -49,20 +66,13 @@ func (builder statefulSetBuilder) CreateStatefulSet(modifiers []agbuilder.Modifi
 				},
 			},
 		}}
-	activeGateBuilder.SetBase(baseStatefulSet)
-	if len(modifiers) == 0 {
-		modifiers = agmodifiers.GetAllModifiers(builder.kubeUID, builder.dynakube, builder.capability)
-	}
-	for _, modifier := range modifiers {
-		activeGateBuilder.AddModifier(modifier)
-	}
-	sts := activeGateBuilder.Build()
+}
 
+func setHash(sts *appsv1.StatefulSet) error {
 	hash, err := kubeobjects.GenerateHash(sts)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return errors.WithStack(err)
 	}
 	sts.ObjectMeta.Annotations[kubeobjects.AnnotationHash] = hash
-
-	return &sts, nil
+	return nil
 }

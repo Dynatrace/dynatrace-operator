@@ -16,6 +16,11 @@ func NewModifierMock() *ModifierMock {
 	return &ModifierMock{}
 }
 
+func (m *ModifierMock) Enabled() bool {
+	args := m.Called()
+	return args.Bool(0)
+}
+
 func (m *ModifierMock) Modify(sts *appsv1.StatefulSet) {
 	m.Called(sts)
 }
@@ -32,6 +37,7 @@ func TestAgBuilder(t *testing.T) {
 
 		modifierMock := NewModifierMock()
 		modifierMock.On("Modify", mock.Anything).Return()
+		modifierMock.On("Enabled").Return(true)
 
 		b.AddModifier(modifierMock)
 		actual := b.Build()
@@ -41,12 +47,29 @@ func TestAgBuilder(t *testing.T) {
 		expected := appsv1.StatefulSet{}
 		assert.Equal(t, expected, actual)
 	})
+	t.Run("One modifier, not enabled", func(t *testing.T) {
+		b := Builder{}
+
+		modifierMock := NewModifierMock()
+		modifierMock.On("Modify", mock.Anything).Return()
+		modifierMock.On("Enabled").Return(false)
+
+		b.AddModifier(modifierMock)
+		actual := b.Build()
+
+		modifierMock.AssertNumberOfCalls(t, "Modify", 0)
+
+		expected := appsv1.StatefulSet{}
+		assert.Equal(t, expected, actual)
+	})
 	t.Run("Two modifiers, one used twice", func(t *testing.T) {
 		b := Builder{}
 
 		modifierMock0 := NewModifierMock()
+		modifierMock0.On("Enabled").Return(true)
 		modifierMock0.On("Modify", mock.Anything).Return()
 		modifierMock1 := NewModifierMock()
+		modifierMock1.On("Enabled").Return(true)
 		modifierMock1.On("Modify", mock.Anything).Return()
 
 		b.AddModifier(modifierMock0, modifierMock0, modifierMock1)

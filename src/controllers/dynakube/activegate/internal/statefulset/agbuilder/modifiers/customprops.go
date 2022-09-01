@@ -25,10 +25,11 @@ type CustomPropertiesModifier struct {
 	capability capability.Capability
 }
 
+func (mod CustomPropertiesModifier) Enabled() bool {
+	return mod.hasCustomProperties()
+}
+
 func (mod CustomPropertiesModifier) Modify(sts *appsv1.StatefulSet) {
-	if mod.isCustomPropertiesNilOrEmpty() {
-		return
-	}
 	baseContainer := kubeobjects.FindContainerInPodSpec(&sts.Spec.Template.Spec, consts.ActiveGateContainerName)
 	sts.Spec.Template.Spec.Volumes = append(sts.Spec.Template.Spec.Volumes, mod.getVolumes()...)
 	baseContainer.VolumeMounts = append(baseContainer.VolumeMounts, mod.getVolumeMounts()...)
@@ -61,11 +62,11 @@ func (mod CustomPropertiesModifier) getVolumeMounts() []corev1.VolumeMount {
 	}
 }
 
-func (mod CustomPropertiesModifier) isCustomPropertiesNilOrEmpty() bool {
+func (mod CustomPropertiesModifier) hasCustomProperties() bool {
 	customProperties := mod.capability.Properties().CustomProperties
-	return customProperties == nil ||
-		(customProperties.Value == "" &&
-			customProperties.ValueFrom == "")
+	return customProperties != nil &&
+		(customProperties.Value != "" ||
+			customProperties.ValueFrom != "")
 }
 
 func (mod CustomPropertiesModifier) determineCustomPropertiesSource() string {

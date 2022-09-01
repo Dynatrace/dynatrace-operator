@@ -17,7 +17,9 @@ func (b Builder[T]) Build() T {
 		b.data = &data
 	}
 	for _, m := range b.modifiers {
-		m.Modify(b.data)
+		if m.Enabled() {
+			m.Modify(b.data)
+		}
 	}
 	return *b.data
 }

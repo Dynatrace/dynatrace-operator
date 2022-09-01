@@ -44,11 +44,11 @@ func NewExtensionControllerModifier(dynakube dynatracev1beta1.DynaKube, capabili
 	}
 }
 
-func (eec *ExtensionControllerModifier) Modify(sts *appsv1.StatefulSet) {
-	if !eec.dynakube.NeedsStatsd() {
-		return
-	}
+func (eec *ExtensionControllerModifier) Enabled() bool {
+	return eec.dynakube.NeedsStatsd()
+}
 
+func (eec *ExtensionControllerModifier) Modify(sts *appsv1.StatefulSet) {
 	sts.Spec.Template.Spec.Containers = append(sts.Spec.Template.Spec.Containers, eec.buildContainer())
 	sts.Spec.Template.Spec.Volumes = append(sts.Spec.Template.Spec.Volumes, eec.getVolumes(sts.Spec.Template.Spec.Volumes)...)
 

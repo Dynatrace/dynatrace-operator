@@ -18,28 +18,58 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func NewBaseModifier(kubeUID types.UID, dynakube dynatracev1beta1.DynaKube, capability capability.Capability) agbuilderTypes.Modifier {
+func NewBaseModifier(kubeUID types.UID, configHash string, dynakube dynatracev1beta1.DynaKube, capability capability.Capability) agbuilderTypes.Modifier {
 	return BaseModifier{
 		kubeUID:    kubeUID,
+		configHash: configHash,
 		dynakube:   dynakube,
 		capability: capability,
 	}
 }
 
 // Sets the properties that are common for all Capabilities
-// <probably should be moved/merged into the statefulSetBuilder>
+// probably should be moved/merged into the statefulSetBuilder
 type BaseModifier struct {
 	kubeUID    types.UID
+	configHash string
 	dynakube   dynatracev1beta1.DynaKube
 	capability capability.Capability
 }
 
+func (mod BaseModifier) Enabled() bool {
+	return true
+}
+
 func (mod BaseModifier) Modify(sts *appsv1.StatefulSet) {
+	sts.ObjectMeta = mod.getBaseObjectMeta()
+	sts.Spec = mod.getBaseSpec()
 	mod.addLabels(sts)
 	mod.addTemplateSpec(sts)
 
 	if mod.dynakube.FeatureActiveGateAppArmor() { // maybe security modifier ?
 		sts.Spec.Template.ObjectMeta.Annotations[consts.AnnotationActiveGateContainerAppArmor] = "runtime/default"
+	}
+}
+
+func (mod BaseModifier) getBaseObjectMeta() metav1.ObjectMeta {
+	return metav1.ObjectMeta{
+		Name:        mod.dynakube.Name + "-" + mod.capability.ShortName(),
+		Namespace:   mod.dynakube.Namespace,
+		Annotations: map[string]string{},
+	}
+}
+
+func (mod BaseModifier) getBaseSpec() appsv1.StatefulSetSpec {
+	return appsv1.StatefulSetSpec{
+		Replicas:            mod.capability.Properties().Replicas,
+		PodManagementPolicy: appsv1.ParallelPodManagement,
+		Template: corev1.PodTemplateSpec{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					consts.AnnotationActiveGateConfigurationHash: mod.configHash,
+				},
+			},
+		},
 	}
 }
 
@@ -53,7 +83,6 @@ func (mod BaseModifier) addLabels(sts *appsv1.StatefulSet) {
 	sts.ObjectMeta.Labels = appLabels.BuildLabels()
 	sts.Spec.Selector = &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()}
 	sts.Spec.Template.ObjectMeta.Labels = kubeobjects.MergeLabels(mod.capability.Properties().Labels, appLabels.BuildLabels())
-
 }
 
 func (mod BaseModifier) addTemplateSpec(sts *appsv1.StatefulSet) {
@@ -139,19 +168,6 @@ func (mod BaseModifier) buildDNSEntryPoint() string {
 	return fmt.Sprintf("https://%s/communication", buildServiceHostName(mod.dynakube.Name, mod.capability.ShortName()))
 }
 
-// BuildServiceHostName converts the name returned by BuildServiceName
-// into the variable name which Kubernetes uses to reference the associated service.
-// For more information see: https://kubernetes.io/docs/concepts/services-networking/service/
-func buildServiceHostName(dynakubeName string, module string) string {
-	serviceName :=
-		strings.ReplaceAll(
-			strings.ToUpper(
-				capability.BuildServiceName(dynakubeName, module)),
-			"-", "_")
-
-	return fmt.Sprintf("$(%s_SERVICE_HOST):$(%s_SERVICE_PORT)", serviceName, serviceName)
-}
-
 func (mod BaseModifier) buildInitContainers() []corev1.Container {
 	initContainers := mod.capability.InitContainersTemplates()
 
@@ -185,6 +201,19 @@ func (mod BaseModifier) buildCommonEnvs() []corev1.EnvVar {
 
 func (mod BaseModifier) buildServiceAccountName() string {
 	return consts.ServiceAccountPrefix + mod.capability.Config().ServiceAccountOwner
+}
+
+// BuildServiceHostName converts the name returned by BuildServiceName
+// into the variable name which Kubernetes uses to reference the associated service.
+// For more information see: https://kubernetes.io/docs/concepts/services-networking/service/
+func buildServiceHostName(dynakubeName string, module string) string {
+	serviceName :=
+		strings.ReplaceAll(
+			strings.ToUpper(
+				capability.BuildServiceName(dynakubeName, module)),
+			"-", "_")
+
+	return fmt.Sprintf("$(%s_SERVICE_HOST):$(%s_SERVICE_PORT)", serviceName, serviceName)
 }
 
 func nodeAffinity() *corev1.Affinity {

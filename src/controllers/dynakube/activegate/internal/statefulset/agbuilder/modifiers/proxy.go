@@ -20,11 +20,11 @@ type ProxyModifier struct {
 	dynakube dynatracev1beta1.DynaKube
 }
 
-func (mod ProxyModifier) Modify(sts *appsv1.StatefulSet) {
-	if !mod.dynakube.NeedsActiveGateProxy() {
-		return
-	}
+func (mod ProxyModifier) Enabled() bool {
+	return mod.dynakube.NeedsActiveGateProxy()
+}
 
+func (mod ProxyModifier) Modify(sts *appsv1.StatefulSet) {
 	sts.Spec.Template.Spec.Volumes = append(sts.Spec.Template.Spec.Volumes, mod.getVolumes()...)
 	baseContainer := kubeobjects.FindContainerInPodSpec(&sts.Spec.Template.Spec, consts.ActiveGateContainerName)
 	baseContainer.VolumeMounts = append(baseContainer.VolumeMounts, mod.getVolumeMounts()...)

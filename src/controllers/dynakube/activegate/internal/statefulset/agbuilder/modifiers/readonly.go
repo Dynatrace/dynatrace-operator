@@ -20,10 +20,11 @@ type ReadOnlyModifier struct {
 	dynakube dynatracev1beta1.DynaKube
 }
 
+func (mod ReadOnlyModifier) Enabled() bool {
+	return mod.dynakube.FeatureActiveGateReadOnlyFilesystem()
+}
+
 func (mod ReadOnlyModifier) Modify(sts *appsv1.StatefulSet) {
-	if !mod.dynakube.FeatureActiveGateReadOnlyFilesystem() {
-		return
-	}
 	sts.Spec.Template.Spec.Volumes = append(sts.Spec.Template.Spec.Volumes, mod.getVolumes(sts.Spec.Template.Spec.Volumes)...)
 
 	baseContainer := kubeobjects.FindContainerInPodSpec(&sts.Spec.Template.Spec, consts.ActiveGateContainerName)

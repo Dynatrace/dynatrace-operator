@@ -20,11 +20,11 @@ type AuthTokenModifier struct {
 	dynakube dynatracev1beta1.DynaKube
 }
 
-func (mod AuthTokenModifier) Modify(sts *appsv1.StatefulSet) {
-	if !mod.dynakube.UseActiveGateAuthToken() {
-		return
-	}
+func (mod AuthTokenModifier) Enabled() bool {
+	return mod.dynakube.UseActiveGateAuthToken()
+}
 
+func (mod AuthTokenModifier) Modify(sts *appsv1.StatefulSet) {
 	baseContainer := kubeobjects.FindContainerInPodSpec(&sts.Spec.Template.Spec, consts.ActiveGateContainerName)
 	sts.Spec.Template.Spec.Volumes = append(sts.Spec.Template.Spec.Volumes, mod.getVolumes()...)
 	baseContainer.VolumeMounts = append(baseContainer.VolumeMounts, mod.getVolumeMounts()...)

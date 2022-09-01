@@ -46,11 +46,11 @@ func NewStatsdModifier(dynakube dynatracev1beta1.DynaKube, capability capability
 	}
 }
 
-func (statsd StatsdModifier) Modify(sts *appsv1.StatefulSet) {
-	if !statsd.dynakube.NeedsStatsd() {
-		return
-	}
+func (statsd StatsdModifier) Enabled() bool {
+	return statsd.dynakube.NeedsStatsd()
+}
 
+func (statsd StatsdModifier) Modify(sts *appsv1.StatefulSet) {
 	sts.Spec.Template.Spec.Containers = append(sts.Spec.Template.Spec.Containers, statsd.buildContainer())
 	sts.Spec.Template.Spec.Volumes = append(sts.Spec.Template.Spec.Volumes, statsd.getVolumes(sts.Spec.Template.Spec.Volumes)...)
 

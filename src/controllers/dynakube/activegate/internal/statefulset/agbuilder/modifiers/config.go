@@ -12,9 +12,9 @@ var (
 	log = logger.NewDTLogger().WithName("activegate-statefulset-builder")
 )
 
-func GetAllModifiers(kubeID types.UID, dynakube dynatracev1beta1.DynaKube, capability capability.Capability) []agbuilderTypes.Modifier {
+func GetAllModifiers(kubeID types.UID, configHash string, dynakube dynatracev1beta1.DynaKube, capability capability.Capability) []agbuilderTypes.Modifier {
 	return []agbuilderTypes.Modifier{
-		NewBaseModifier(kubeID, dynakube, capability),
+		NewBaseModifier(kubeID, configHash, dynakube, capability),
 		NewAuthTokenModifier(dynakube),
 		NewCertificatesModifier(dynakube),
 		NewCustomPropertiesModifier(dynakube, capability),

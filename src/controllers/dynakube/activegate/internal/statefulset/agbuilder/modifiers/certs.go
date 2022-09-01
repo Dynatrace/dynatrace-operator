@@ -19,11 +19,11 @@ type CertificatesModifier struct {
 	dynakube dynatracev1beta1.DynaKube
 }
 
-func (mod CertificatesModifier) Modify(sts *appsv1.StatefulSet) {
-	if !mod.dynakube.HasActiveGateCaCert() {
-		return
-	}
+func (mod CertificatesModifier) Enabled() bool {
+	return mod.dynakube.HasActiveGateCaCert()
+}
 
+func (mod CertificatesModifier) Modify(sts *appsv1.StatefulSet) {
 	baseContainer := kubeobjects.FindContainerInPodSpec(&sts.Spec.Template.Spec, consts.ActiveGateContainerName)
 	sts.Spec.Template.Spec.Volumes = append(sts.Spec.Template.Spec.Volumes, mod.getVolumes()...)
 	baseContainer.VolumeMounts = append(baseContainer.VolumeMounts, mod.getVolumeMounts()...)
