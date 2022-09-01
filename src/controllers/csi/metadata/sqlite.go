@@ -3,10 +3,19 @@ package metadata
 import (
 	"context"
 	"database/sql"
+	"strconv"
 	"time"
 
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/mattn/go-sqlite3"
 	"github.com/pkg/errors"
+)
+
+var (
+	dynakubesAlterStatementMaxFailedMountAttempts = `
+	ALTER TABLE dynakubes
+	ADD COLUMN MaxFailedMountAttempts INT NOT NULL DEFAULT ` + strconv.FormatInt(dynatracev1beta1.DefaultMaxFailedCsiMountAttempts, 10) + ";"
+	// "Not null"-columns need a default value set
 )
 
 const (
@@ -47,11 +56,6 @@ const (
 	ALTER TABLE dynakubes
 	ADD COLUMN ImageDigest VARCHAR NOT NULL DEFAULT '';
 	`
-
-	dynakubesAlterStatementMaxFailedMountAttempts = `
-	ALTER TABLE dynakubes
-	ADD COLUMN MaxFailedMountAttempts INT NOT NULL DEFAULT 10;`
-	// "Not null"-columns need a default value set
 
 	volumesAlterStatementMountAttempts = `
 	ALTER TABLE volumes

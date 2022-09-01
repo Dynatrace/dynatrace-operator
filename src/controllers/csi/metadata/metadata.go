@@ -39,7 +39,7 @@ type Volume struct {
 	MountAttempts int    `json:"mountAttempts"`
 }
 
-// NewVolume returns a new Volume if all fields are set.
+// NewVolume returns a new Volume if all fields (except version) are set.
 func NewVolume(id, podName, version, tenantUUID string, mountAttempts int) *Volume {
 	if id == "" || podName == "" || tenantUUID == "" {
 		return nil
