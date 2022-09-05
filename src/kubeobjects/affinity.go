@@ -1,7 +1,6 @@
 package kubeobjects
 
 import (
-	// "github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -31,17 +30,6 @@ func TolerationMatchingNodeAffinity() []corev1.Toleration {
 
 func AffinityNodeRequirementWithARM64() []corev1.NodeSelectorRequirement {
 	return affinityNodeRequirementsForArches(amd64, arm64)
-}
-
-func TolerationMatchingNodeAffinityWithARM64() []corev1.Toleration {
-	return append(TolerationMatchingNodeAffinity(),
-		corev1.Toleration{
-			Key:      kubernetesArch,
-			Operator: corev1.TolerationOpEqual,
-			Value:    arm64,
-			Effect:   corev1.TaintEffectNoSchedule,
-		},
-	)
 }
 
 func affinityNodeRequirementsForArches(arches ...string) []corev1.NodeSelectorRequirement {

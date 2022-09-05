@@ -11,7 +11,7 @@ import (
 
 func GetPod(ctx context.Context, clt client.Reader, name, namespace string) (*corev1.Pod, error) {
 	pod := &corev1.Pod{}
-	err := clt.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: namespace}, pod)
+	err := clt.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, pod)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
