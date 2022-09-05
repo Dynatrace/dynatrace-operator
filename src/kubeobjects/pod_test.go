@@ -17,7 +17,7 @@ func TestGetPod(t *testing.T) {
 	fakeClient := fake.NewClient(
 		&corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: testPodName,
+				Name:      testPodName,
 				Namespace: testNamespace,
 			},
 		},

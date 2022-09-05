@@ -103,7 +103,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		if err != nil {
 			return err
 		}
-		isDeployedViaOLM  := kubesystem.IsDeployedViaOlm(*webhookPod)
+		isDeployedViaOLM := kubesystem.IsDeployedViaOlm(*webhookPod)
 
 		if !isDeployedViaOLM {
 			certificates.

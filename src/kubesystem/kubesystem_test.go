@@ -48,4 +48,3 @@ func TestIsDeployedViaOLM(t *testing.T) {
 	deployed := IsDeployedViaOlm(pod)
 	assert.True(t, deployed)
 }
-

@@ -1,8 +1,6 @@
 package kubeobjects
 
 import (
-	// "os"
-
 	// "github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	corev1 "k8s.io/api/core/v1"
 )
