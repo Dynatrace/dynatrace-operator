@@ -54,14 +54,14 @@ func GetImageVersion(imageName string, dockerConfig *dockerconfig.DockerConfig) 
 		return ImageVersion{}, err
 	}
 
-	image, err := image.FromUnparsedImage(context.TODO(), systemContext, image.UnparsedInstance(imageSource, nil))
+	sourceImage, err := image.FromUnparsedImage(context.TODO(), systemContext, image.UnparsedInstance(imageSource, nil))
 	if err != nil {
 		return ImageVersion{}, err
-	} else if image == nil {
+	} else if sourceImage == nil {
 		return ImageVersion{}, fmt.Errorf("could not find image: '%s'", transportImageName)
 	}
 
-	inspectedImage, err := image.Inspect(context.TODO())
+	inspectedImage, err := sourceImage.Inspect(context.TODO())
 	if err != nil {
 		return ImageVersion{}, err
 	} else if inspectedImage == nil {
