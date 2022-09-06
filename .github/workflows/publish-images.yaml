@@ -23,7 +23,6 @@ jobs:
     outputs:
       labels: ${{ steps.prep.outputs.docker_image_labels }}
       version: ${{ steps.prep.outputs.docker_image_tag }}
-      go-linker-args: ${{ steps.prep.outputs.go_linker_args }}
 
   build:
     name: Build images
@@ -39,7 +38,6 @@ jobs:
         uses: ./.github/actions/build-image
         with:
           platform: ${{ matrix.platform }}
-          go-linker-args: ${{ needs.prepare.outputs.go-linker-args }}
           labels: ${{ needs.prepare.outputs.labels }}
           image-tag: ${{ needs.prepare.outputs.version }}
 
