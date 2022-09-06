@@ -4,9 +4,6 @@ inputs:
   platform:
     description: The platform for which the image will be built
     required: true
-  go-version:
-    description: The go version used during the build
-    required: true
   go-linker-args:
     description: The linker args for the go compiler
     required: true
@@ -26,7 +23,7 @@ runs:
     - name: Set up Golang
       uses: actions/setup-go@268d8c0ca0432bb2cf416faae41297df9d262d7f # v3.3.0
       with:
-        go-version: ${{ inputs.go-version }}
+        go-version-file: "${{ github.workspace }}/go.mod"
     - name: Setup cache
       uses: actions/cache@a7c34adf76222e77931dedbf4a45b2e4648ced19 # v3
       with:
