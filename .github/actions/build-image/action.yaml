@@ -10,9 +10,6 @@ inputs:
   go-linker-args:
     description: The linker args for the go compiler
     required: true
-  cgo-cflags:
-    description: The cgo cflags for the go compiler
-    required: true
   labels:
     description: The labels for the built image
     required: true
@@ -48,7 +45,6 @@ runs:
         builder: ${{ steps.buildx.outputs.name }}
         build-args: |
           GO_LINKER_ARGS=${{ inputs.go-linker-args }}
-          CGO_CFLAGS=${{ inputs.cgo-cflags }}
         context: .
         file: ./Dockerfile
         platforms: linux/${{ inputs.platform }}
