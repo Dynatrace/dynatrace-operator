@@ -26,6 +26,12 @@ tests:
           - effect: NoSchedule
             key: ToBeDeletedByClusterAutoscaler
             operator: Exists
+          - effect: NoSchedule
+            key: kubernetes.io/arch
+            value: arm64
+          - effect: NoSchedule
+            key: kubernetes.io/arch
+            value: amd64
 
   - it: should have nodeSelectors if set
     set:
@@ -80,6 +86,12 @@ tests:
                 - effect: NoSchedule
                   key: ToBeDeletedByClusterAutoscaler
                   operator: Exists
+                - effect: NoSchedule
+                  key: kubernetes.io/arch
+                  value: arm64
+                - effect: NoSchedule
+                  key: kubernetes.io/arch
+                  value: amd64
             containers:
               - args:
                   - csi-server

@@ -30,7 +30,7 @@ tests:
       - hasDocuments:
           count: 1
 
-  - it: should exist
+  - it: should exist on kubernetes
     set:
       platform: kubernetes
       image: image-name
@@ -137,8 +137,13 @@ tests:
               - emptyDir: { }
                 name: tmp-cert-dir
             serviceAccountName: RELEASE-NAME
-      - isNull:
-          path: spec.template.spec.tolerations
+            tolerations:
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: arm64
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: amd64
       - isNull:
           path: spec.template.spec.nodeSelector
 
@@ -172,7 +177,7 @@ tests:
       - isNull:
           path: spec.template.spec.imagePullSecrets
 
-  - it: should exist
+  - it: should exist on openshift
     set:
       platform: openshift
       image: image-name
@@ -279,8 +284,13 @@ tests:
               - emptyDir: { }
                 name: tmp-cert-dir
             serviceAccountName: RELEASE-NAME
-      - isNull:
-          path: spec.template.spec.tolerations
+            tolerations:
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: arm64
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: amd64
       - isNull:
           path: spec.template.spec.nodeSelector
 

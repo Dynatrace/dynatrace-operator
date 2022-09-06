@@ -77,6 +77,13 @@ tests:
                           operator: In
                           values:
                             - linux
+            tolerations:
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: arm64
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: amd64
             containers:
               - name: webhook
                 args:
@@ -209,6 +216,13 @@ tests:
                           operator: In
                           values:
                             - linux
+            tolerations:
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: arm64
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: amd64
             containers:
               - name: webhook
                 args:
@@ -321,6 +335,13 @@ tests:
                           operator: In
                           values:
                             - linux
+            tolerations:
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: arm64
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: amd64
             containers:
               - name: webhook
                 args:

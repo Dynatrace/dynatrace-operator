@@ -21,7 +21,13 @@ installCRD: false
 
 operator:
   nodeSelector: {}
-  tolerations: []
+  tolerations:
+    - key: kubernetes.io/arch
+      value: arm64
+      effect: NoSchedule
+    - key: kubernetes.io/arch
+      value: amd64
+      effect: NoSchedule
   labels: []
   annotations: []
   apparmor: false
@@ -35,7 +41,13 @@ operator:
 webhook:
   hostNetwork: false
   nodeSelector: {}
-  tolerations: []
+  tolerations:
+    - key: kubernetes.io/arch
+      value: arm64
+      effect: NoSchedule
+    - key: kubernetes.io/arch
+      value: amd64
+      effect: NoSchedule
   labels: []
   annotations: []
   apparmor: false
@@ -62,6 +74,12 @@ csidriver:
     - effect: NoSchedule
       key: ToBeDeletedByClusterAutoscaler
       operator: Exists
+    - key: kubernetes.io/arch
+      value: arm64
+      effect: NoSchedule
+    - key: kubernetes.io/arch
+      value: amd64
+      effect: NoSchedule
   labels: []
   annotations: []
   requests:
