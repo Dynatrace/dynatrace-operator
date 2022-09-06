@@ -123,7 +123,7 @@ jobs:
             username: GCR_USERNAME
             password: GCR_JSON_KEY
           - registry: dockerhub
-            url: quay.io
+            url: docker.io
             repository: DOCKERHUB_REPOSITORY
             username: DOCKERHUB_USERNAME
             password: DOCKERHUB_PASSWORD
