@@ -1343,7 +1343,7 @@ func buildResultPod(_ *testing.T, oneAgentFf FeatureFlag, dataIngestFf FeatureFl
 
 		pod.Spec.InitContainers[0].Env = append(pod.Spec.InitContainers[0].Env,
 			corev1.EnvVar{Name: dataIngestInjectedEnvVarName, Value: "true"},
-			corev1.EnvVar{Name: workloadKindEnvVarName, Value: ""},
+			corev1.EnvVar{Name: workloadKindEnvVarName, Value: "Pod"},
 			corev1.EnvVar{Name: workloadNameEnvVarName, Value: "test-pod-12345"},
 		)
 

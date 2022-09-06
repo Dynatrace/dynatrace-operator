@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/config"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes"
 	appvolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes/app"
@@ -135,16 +136,21 @@ func findRootOwnerOfPod(ctx context.Context, clt client.Client, pod *corev1.Pod,
 
 func findRootOwner(ctx context.Context, clt client.Client, o *metav1.PartialObjectMetadata) (string, string, error) {
 	if len(o.ObjectMeta.OwnerReferences) == 0 {
-		kind := o.Kind
-		if kind == "Pod" {
-			kind = ""
+		if o.ObjectMeta.Name == "" {
+			// pod is not created directly and does not have an owner reference set
+			return config.EnrichmentUnknownWorkload, config.EnrichmentUnknownWorkload, nil
 		}
-		return o.ObjectMeta.Name, kind, nil
+		return o.ObjectMeta.Name, o.Kind, nil
 	}
 
 	om := o.ObjectMeta
 	for _, owner := range om.OwnerReferences {
-		if owner.Controller != nil && *owner.Controller && isWellKnownWorkload(owner) {
+		if owner.Controller != nil && *owner.Controller {
+			if !isWellKnownWorkload(owner) {
+				// pod is created by workload of kind that is not well known
+				return config.EnrichmentUnknownWorkload, config.EnrichmentUnknownWorkload, nil
+			}
+
 			obj := &metav1.PartialObjectMetadata{
 				TypeMeta: metav1.TypeMeta{
 					APIVersion: owner.APIVersion,

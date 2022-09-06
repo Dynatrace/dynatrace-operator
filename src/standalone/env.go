@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/src/arch"
+	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/pkg/errors"
 )
 
@@ -233,7 +234,11 @@ func (env *environment) addWorkloadKind() error {
 	if err != nil {
 		return err
 	}
-	env.WorkloadKind = workloadKind
+	if workloadKind == config.EnrichmentUnknownWorkload {
+		env.WorkloadKind = ""
+	} else {
+		env.WorkloadKind = workloadKind
+	}
 	return nil
 }
 
@@ -242,7 +247,11 @@ func (env *environment) addWorkloadName() error {
 	if err != nil {
 		return err
 	}
-	env.WorkloadName = workloadName
+	if workloadName == config.EnrichmentUnknownWorkload {
+		env.WorkloadName = ""
+	} else {
+		env.WorkloadName = workloadName
+	}
 	return nil
 }
 
