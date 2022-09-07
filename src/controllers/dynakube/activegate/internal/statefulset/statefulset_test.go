@@ -26,6 +26,7 @@ const (
 	testImage                = "test-image:" + testImageTag
 	testNamespace            = "test-namespace"
 	testKey                  = "test-key"
+	testToken                = "test-token"
 	testValue                = "test-value"
 	testUID                  = "test-uid"
 	routingStatefulSetSuffix = "-router"
@@ -365,7 +366,7 @@ func TestStatefulSet_Volumes(t *testing.T) {
 	})
 	t.Run(`with FeatureDisableActivegateRawImage=false`, func(t *testing.T) {
 		instanceRawImg := instance.DeepCopy()
-		instanceRawImg.Annotations[dynatracev1beta1.AnnotationFeatureActiveGateRawImage] = "true"
+		instanceRawImg.Annotations[dynatracev1beta1.AnnotationFeatureActiveGateRawImage] = "false"
 
 		stsProperties := NewStatefulSetProperties(instanceRawImg, capabilityProperties, "", "", "", "", "", nil, nil, nil, nil)
 		volumes := buildVolumes(stsProperties, getContainerBuilders(stsProperties))
@@ -384,7 +385,7 @@ func TestStatefulSet_Volumes(t *testing.T) {
 		volumes := buildVolumes(stsProperties, getContainerBuilders(stsProperties))
 		expectedSecretName := instance.Name + "-router-" + customproperties.Suffix
 
-		require.Equal(t, 2, len(volumes))
+		require.Equal(t, 3, len(volumes))
 
 		_, err := kubeobjects.GetVolumeByName(volumes, tenantSecretVolumeName)
 		assert.NoError(t, err)
@@ -406,7 +407,7 @@ func TestStatefulSet_Volumes(t *testing.T) {
 		volumes := buildVolumes(stsProperties, getContainerBuilders(stsProperties))
 		expectedSecretName := testKey
 
-		require.Equal(t, 2, len(volumes))
+		require.Equal(t, 3, len(volumes))
 
 		_, err := kubeobjects.GetVolumeByName(volumes, tenantSecretVolumeName)
 		assert.NoError(t, err)
@@ -424,7 +425,7 @@ func TestStatefulSet_Volumes(t *testing.T) {
 		stsProperties := NewStatefulSetProperties(instance, capabilityProperties, "", "", "", "", "", nil, nil, nil, nil)
 
 		stsProperties.Annotations = map[string]string{}
-		stsProperties.Annotations[dynatracev1beta1.AnnotationFeatureEnableActiveGateAuthToken] = "true"
+		stsProperties.Annotations[dynatracev1beta1.AnnotationFeatureActiveGateAuthToken] = "true"
 
 		volumes := buildVolumes(stsProperties, getContainerBuilders(stsProperties))
 
@@ -640,9 +641,8 @@ func TestStatefulSet_VolumeMounts(t *testing.T) {
 			SubPath:   InternalProxySecretPassword,
 		})
 	})
-	t.Run(`with activeGateAuthToken`, func(t *testing.T) {
+	t.Run(`with activeGateAuthToken (which is now enabled by default)`, func(t *testing.T) {
 		instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
-		instance.Annotations[dynatracev1beta1.AnnotationFeatureEnableActiveGateAuthToken] = "true"
 		volumeMounts := buildVolumeMounts(NewStatefulSetProperties(instance, capabilityProperties, "", "", "", "", "", nil, nil, nil, nil))
 
 		assert.Contains(t, volumeMounts, corev1.VolumeMount{
