@@ -21,6 +21,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -344,5 +345,95 @@ func TestIsOneAgentPrivileged(t *testing.T) {
 		}
 
 		assert.True(t, dynakube.IsOneAgentPrivileged())
+	})
+}
+
+func TestGetOneAgentEnvironment(t *testing.T) {
+
+	t.Run("get environment from classicFullstack", func(t *testing.T) {
+		dk := DynaKube{
+			Spec: DynaKubeSpec{
+				OneAgent: OneAgentSpec{
+					ClassicFullStack: &HostInjectSpec{
+						Env: []corev1.EnvVar{
+							{
+								Name:  "classicFullstack",
+								Value: "true",
+							},
+						},
+					},
+				},
+			},
+		}
+		env := dk.GetOneAgentEnvironment()
+
+		require.Len(t, env, 1)
+		assert.Equal(t, "classicFullstack", env[0].Name)
+	})
+
+	t.Run("get environment from hostMonitoring", func(t *testing.T) {
+		dk := DynaKube{
+			Spec: DynaKubeSpec{
+				OneAgent: OneAgentSpec{
+					HostMonitoring: &HostInjectSpec{
+						Env: []corev1.EnvVar{
+							{
+								Name:  "hostMonitoring",
+								Value: "true",
+							},
+						},
+					},
+				},
+			},
+		}
+		env := dk.GetOneAgentEnvironment()
+
+		require.Len(t, env, 1)
+		assert.Equal(t, "hostMonitoring", env[0].Name)
+	})
+
+	t.Run("get environment from cloudNative", func(t *testing.T) {
+		dk := DynaKube{
+			Spec: DynaKubeSpec{
+				OneAgent: OneAgentSpec{
+					CloudNativeFullStack: &CloudNativeFullStackSpec{
+						HostInjectSpec: HostInjectSpec{
+							Env: []corev1.EnvVar{
+								{
+									Name:  "cloudNative",
+									Value: "true",
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		env := dk.GetOneAgentEnvironment()
+
+		require.Len(t, env, 1)
+		assert.Equal(t, "cloudNative", env[0].Name)
+	})
+
+	t.Run("get environment from applicationMonitoring", func(t *testing.T) {
+		dk := DynaKube{
+			Spec: DynaKubeSpec{
+				OneAgent: OneAgentSpec{
+					ApplicationMonitoring: &ApplicationMonitoringSpec{},
+				},
+			},
+		}
+		env := dk.GetOneAgentEnvironment()
+
+		require.NotNil(t, env)
+		assert.Len(t, env, 0)
+	})
+
+	t.Run("get environment from unconfigured dynakube", func(t *testing.T) {
+		dk := DynaKube{}
+		env := dk.GetOneAgentEnvironment()
+
+		require.NotNil(t, env)
+		assert.Len(t, env, 0)
 	})
 }
