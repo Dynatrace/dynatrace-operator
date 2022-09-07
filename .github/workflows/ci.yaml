@@ -136,7 +136,7 @@ jobs:
         if: matrix.platform != 'arm64' || github.ref_protected == 'true'
         uses: ./.github/actions/build-image
         with:
-          platform: amd64
+          platform: ${{ matrix.platform }}
           labels: ${{ needs.prepare.outputs.labels }}
           image-tag: ${{ needs.prepare.outputs.version }}
 
