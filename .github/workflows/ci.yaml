@@ -177,7 +177,7 @@ jobs:
     needs: [prepare, push]
     runs-on: ubuntu-latest
     env:
-      COMBINED: ${{ matrix.platform != 'arm64' || github.ref_protected == 'true' }}
+      COMBINED: ${{ github.ref_protected == 'true' }}
     steps:
       - name: Checkout
         uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3
@@ -193,4 +193,4 @@ jobs:
           version: ${{ needs.prepare.outputs.version }}
           registry: ${{ needs.prepare.outputs.registry }}
           repository: ${{ needs.prepare.outputs.repository }}
-          combined: ${ COMBINED }
+          combined: ${{ env.COMBINED }}
