@@ -177,7 +177,6 @@ jobs:
     needs: [prepare, push]
     runs-on: ubuntu-latest
     env:
-      IMAGE_QUAY: ${{ needs.prepare.outputs.registry }}/${{ needs.prepare.outputs.repository }}
       COMBINED: ${{ matrix.platform != 'arm64' || github.ref_protected == 'true' }}
     steps:
       - name: Checkout
@@ -194,4 +193,4 @@ jobs:
           version: ${{ needs.prepare.outputs.version }}
           registry: ${{ needs.prepare.outputs.registry }}
           repository: ${{ needs.prepare.outputs.repository }}
-          combined: ${{ COMBINED }}
+          combined: ${ COMBINED }
