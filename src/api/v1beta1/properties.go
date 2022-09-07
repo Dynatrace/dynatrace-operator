@@ -400,3 +400,15 @@ func getRawImageTag(imageURI string) string {
 	splitURI := strings.Split(imageURI, ":")
 	return splitURI[len(splitURI)-1]
 }
+
+func (dk *DynaKube) GetOneAgentEnvironment() []corev1.EnvVar {
+	switch {
+	case dk.CloudNativeFullstackMode():
+		return dk.Spec.OneAgent.CloudNativeFullStack.Env
+	case dk.ClassicFullStackMode():
+		return dk.Spec.OneAgent.ClassicFullStack.Env
+	case dk.HostMonitoringMode():
+		return dk.Spec.OneAgent.HostMonitoring.Env
+	}
+	return []corev1.EnvVar{}
+}
