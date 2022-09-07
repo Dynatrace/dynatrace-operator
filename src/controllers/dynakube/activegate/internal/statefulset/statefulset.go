@@ -171,7 +171,7 @@ func buildTemplateSpec(stsProperties *statefulSetProperties) corev1.PodSpec {
 }
 
 func buildTolerations(stsProperties *statefulSetProperties) []corev1.Toleration {
-	return append(stsProperties.Tolerations, kubeobjects.TolerationMatchingNodeAffinity()...)
+	return append(stsProperties.Tolerations, kubeobjects.TolerationForAmd()...)
 }
 
 func buildDNSPolicy(stsProperties *statefulSetProperties) corev1.DNSPolicy {

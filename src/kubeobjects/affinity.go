@@ -17,7 +17,7 @@ func AffinityNodeRequirement() []corev1.NodeSelectorRequirement {
 	return affinityNodeRequirementsForArches(amd64)
 }
 
-func TolerationMatchingNodeAffinity() []corev1.Toleration {
+func TolerationForAmd() []corev1.Toleration {
 	return []corev1.Toleration{
 		{
 			Key:      kubernetesArch,
