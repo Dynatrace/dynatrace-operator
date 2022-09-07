@@ -119,10 +119,13 @@ jobs:
       registry: ${{ steps.prepenv.outputs.registry }}
       repository: ${{ steps.prepenv.outputs.repository }}
 
-  build-amd64:
-    name: Build amd64 docker image
-    needs: [prepare, tests, linting]
+  build:
+    name: Build images
     runs-on: ubuntu-latest
+    needs: [prepare]
+    strategy:
+      matrix:
+        platform: [amd64, arm64]
     steps:
       - name: Checkout
         uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3
@@ -133,67 +136,49 @@ jobs:
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
       - name: Build image
+        if: matrix.platform != 'arm64' || github.ref_protected == 'true'
         uses: ./.github/actions/build-image
         with:
-          platform: amd64
+          platform: ${{ matrix.platform }}
           go-version: ${{ needs.prepare.outputs.go-version }}
           go-linker-args: ${{ needs.prepare.outputs.go-linker-args }}
           cgo-cflags: ${{ needs.prepare.outputs.cgo-cflags }}
           labels: ${{ needs.prepare.outputs.labels }}
           image-tag: ${{ needs.prepare.outputs.version }}
-      - name: Upload Image
-        uses: ./.github/actions/upload-image
-        with:
-          platform: amd64
-          labels: ${{ needs.prepare.outputs.labels }}
-          version: ${{ needs.prepare.outputs.version }}
-          registry: ${{ needs.prepare.outputs.registry }}
-          repository: ${{ needs.prepare.outputs.repository }}
-      - name: Create Manifests
-        uses: ./.github/actions/create-manifests
-        with:
-          version: ${{ needs.prepare.outputs.version }}
-          registry: ${{ needs.prepare.outputs.registry }}
-          repository: ${{ needs.prepare.outputs.repository }}
-          combined: false
 
-  build-arm64:
-    name: Build arm64 docker image
-    needs: [prepare, tests, linting]
-    if: ${{ contains(github.ref, 'refs/tags/v') || contains(github.ref, 'refs/heads/master') || contains(github.ref, 'refs/heads/release-') }}
+  push:
+    name: Push images
     runs-on: ubuntu-latest
+    needs: [prepare, build]
+    strategy:
+      matrix:
+        platform: [amd64, arm64]
     steps:
       - name: Checkout
         uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3
-      - name: build-image
-        uses: ./.github/actions/build-image
+      - name: Login to Registry
+        uses: docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b # v2
         with:
-          platform: arm64
-          go-version: ${{ needs.prepare.outputs.go-version }}
-          go-linker-args: ${{ needs.prepare.outputs.go-linker-args }}
-          cgo-cflags: ${{ needs.prepare.outputs.cgo-cflags }}
-          labels: ${{ needs.prepare.outputs.labels }}
-          image-tag: ${{ needs.prepare.outputs.version }}
+          registry: quay.io
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
       - name: Upload Image
+        if: matrix.platform != 'arm64' || github.ref_protected == 'true'
         uses: ./.github/actions/upload-image
         with:
-          platform: arm64
+          platform: ${{ matrix.platform }}
           labels: ${{ needs.prepare.outputs.labels }}
           version: ${{ needs.prepare.outputs.version }}
           registry: ${{ needs.prepare.outputs.registry }}
           repository: ${{ needs.prepare.outputs.repository }}
-          repository-username: ${{ secrets.QUAY_USERNAME }}
-          repository-password: ${{ secrets.QUAY_PASSWORD }}
 
-  create-manifest-for-combined-images:
-    name: Combine images
-    needs: [prepare, build-arm64, build-amd64]
+  manifest:
+    name: Create manifest
+    needs: [prepare, push]
     runs-on: ubuntu-latest
-    if: |
-      (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) &&
-      (contains(github.ref, 'refs/tags/v') || contains(github.ref, 'refs/heads/master') || contains(github.ref, 'refs/heads/release-'))
     env:
       IMAGE_QUAY: ${{ needs.prepare.outputs.registry }}/${{ needs.prepare.outputs.repository }}
+      COMBINED: ${{ matrix.platform != 'arm64' || github.ref_protected == 'true' }}
     steps:
       - name: Checkout
         uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3
@@ -209,4 +194,4 @@ jobs:
           version: ${{ needs.prepare.outputs.version }}
           registry: ${{ needs.prepare.outputs.registry }}
           repository: ${{ needs.prepare.outputs.repository }}
-          combined: true
+          combined: ${{ COMBINED }}
