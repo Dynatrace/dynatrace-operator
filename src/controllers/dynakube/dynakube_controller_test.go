@@ -296,6 +296,46 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		assert.Error(t, err)
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
+	t.Run(`reconciles phase change correctly`, func(t *testing.T) {
+		mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
+			dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeEntitiesRead, dtclient.TokenScopeSettingsRead, dtclient.TokenScopeSettingsWrite})
+		instance := &dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+				Annotations: map[string]string{
+					dynatracev1beta1.AnnotationFeatureAutomaticK8sApiMonitoring: "true",
+				},
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				ActiveGate: dynatracev1beta1.ActiveGateSpec{
+					Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+						dynatracev1beta1.KubeMonCapability.DisplayName,
+					},
+				},
+			}}
+		controller := createFakeClientAndReconciler(mockClient, instance, testPaasToken, testAPIToken)
+		// Remove existing StatefulSet created by createFakeClientAndReconciler
+		require.NoError(t, controller.client.Delete(context.TODO(), &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: testName + "-activegate", Namespace: testNamespace}}))
+
+		result, err := controller.Reconcile(context.TODO(), reconcile.Request{
+			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
+		})
+
+		mockClient.AssertCalled(t, "CreateOrUpdateKubernetesSetting",
+			testName,
+			testUID,
+			mock.AnythingOfType("string"))
+
+		assert.NoError(t, err)
+		assert.Equal(t, false, result.Requeue)
+
+		var activeGateStatefulSet appsv1.StatefulSet
+		assert.NoError(t,
+			controller.client.Get(context.TODO(), client.ObjectKey{Name: testName + "-activegate", Namespace: testNamespace}, &activeGateStatefulSet))
+		assert.NoError(t, controller.client.Get(context.TODO(), client.ObjectKey{Name: testName, Namespace: testNamespace}, instance))
+		assert.Equal(t, dynatracev1beta1.Running, instance.Status.Phase)
+	})
 }
 
 func TestReconcileOnlyOneTokenProvided_Reconcile(t *testing.T) {

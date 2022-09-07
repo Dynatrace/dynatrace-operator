@@ -1,6 +1,7 @@
 package csivolumes
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
@@ -9,14 +10,15 @@ import (
 )
 
 type BindConfig struct {
-	TenantUUID  string
-	Version     string
-	ImageDigest string
+	TenantUUID       string
+	Version          string
+	ImageDigest      string
+	MaxMountAttempts int
 }
 
-func NewBindConfig(access metadata.Access, volumeCfg *VolumeConfig) (*BindConfig, error) {
+func NewBindConfig(ctx context.Context, access metadata.Access, volumeCfg *VolumeConfig) (*BindConfig, error) {
 
-	dynakube, err := access.GetDynakube(volumeCfg.DynakubeName)
+	dynakube, err := access.GetDynakube(ctx, volumeCfg.DynakubeName)
 	if err != nil {
 		return nil, status.Error(codes.Unavailable, fmt.Sprintf("failed to extract tenant for DynaKube %s: %s", volumeCfg.DynakubeName, err.Error()))
 	}
@@ -24,8 +26,9 @@ func NewBindConfig(access metadata.Access, volumeCfg *VolumeConfig) (*BindConfig
 		return nil, status.Error(codes.Unavailable, fmt.Sprintf("dynakube (%s) is missing from metadata database", volumeCfg.DynakubeName))
 	}
 	return &BindConfig{
-		TenantUUID:  dynakube.TenantUUID,
-		Version:     dynakube.LatestVersion,
-		ImageDigest: dynakube.ImageDigest,
+		TenantUUID:       dynakube.TenantUUID,
+		Version:          dynakube.LatestVersion,
+		ImageDigest:      dynakube.ImageDigest,
+		MaxMountAttempts: dynakube.MaxFailedMountAttempts,
 	}, nil
 }
