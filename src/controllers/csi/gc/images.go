@@ -1,13 +1,14 @@
 package csigc
 
 import (
+	"context"
 	"os"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 )
 
-func (gc *CSIGarbageCollector) runSharedImagesGarbageCollection() error {
+func (gc *CSIGarbageCollector) runSharedImagesGarbageCollection(ctx context.Context) error {
 	imageDirs, err := gc.getSharedImageDirs()
 	if err != nil {
 		return err
@@ -17,7 +18,7 @@ func (gc *CSIGarbageCollector) runSharedImagesGarbageCollection() error {
 		return nil
 	}
 
-	imagesToDelete, err := gc.collectUnusedImageDirs(imageDirs)
+	imagesToDelete, err := gc.collectUnusedImageDirs(ctx, imageDirs)
 	if err != nil {
 		return err
 	}
@@ -41,9 +42,9 @@ func (gc *CSIGarbageCollector) getSharedImageDirs() ([]os.FileInfo, error) {
 	return imageDirs, nil
 }
 
-func (gc *CSIGarbageCollector) collectUnusedImageDirs(imageDirs []os.FileInfo) ([]string, error) {
+func (gc *CSIGarbageCollector) collectUnusedImageDirs(ctx context.Context, imageDirs []os.FileInfo) ([]string, error) {
 	var toDelete []string
-	usedImageDigests, err := gc.getUsedImageDigests()
+	usedImageDigests, err := gc.getUsedImageDigests(ctx)
 	if err != nil {
 		log.Info("failed to get the used image digests")
 		return nil, err
@@ -60,8 +61,8 @@ func (gc *CSIGarbageCollector) collectUnusedImageDirs(imageDirs []os.FileInfo) (
 	return toDelete, nil
 }
 
-func (gc *CSIGarbageCollector) getUsedImageDigests() (map[string]bool, error) {
-	usedImageDigests, err := gc.db.GetUsedImageDigests()
+func (gc *CSIGarbageCollector) getUsedImageDigests(ctx context.Context) (map[string]bool, error) {
+	usedImageDigests, err := gc.db.GetUsedImageDigests(ctx)
 	if err != nil {
 		log.Info("failed to get the used image digests")
 		return nil, err
@@ -70,7 +71,7 @@ func (gc *CSIGarbageCollector) getUsedImageDigests() (map[string]bool, error) {
 	// If a shared image was used during mount, the version of a Volume is the imageDigest.
 	// A Volume can still reference versions that are not imageDigests.
 	// However, this shouldn't cause issues as those versions don't matter in this context.
-	usedVersions, err := gc.db.GetAllUsedVersions()
+	usedVersions, err := gc.db.GetAllUsedVersions(ctx)
 	if err != nil {
 		log.Info("failed to get all used versions")
 		return nil, err

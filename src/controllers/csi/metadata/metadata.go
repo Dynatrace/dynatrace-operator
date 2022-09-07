@@ -1,6 +1,7 @@
 package metadata
 
 import (
+	"context"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -38,9 +39,9 @@ type Volume struct {
 	MountAttempts int    `json:"mountAttempts"`
 }
 
-// NewVolume returns a new Volume if all fields are set.
+// NewVolume returns a new Volume if all fields (except version) are set.
 func NewVolume(id, podName, version, tenantUUID string, mountAttempts int) *Volume {
-	if id == "" || podName == "" || version == "" || tenantUUID == "" {
+	if id == "" || podName == "" || tenantUUID == "" {
 		return nil
 	}
 
@@ -73,30 +74,30 @@ func NewOsAgentVolume(volumeID, tenantUUID string, mounted bool, timeStamp *time
 }
 
 type Access interface {
-	Setup(path string) error
+	Setup(ctx context.Context, path string) error
 
-	InsertDynakube(dynakube *Dynakube) error
-	UpdateDynakube(dynakube *Dynakube) error
-	DeleteDynakube(dynakubeName string) error
-	GetDynakube(dynakubeName string) (*Dynakube, error)
-	GetTenantsToDynakubes() (map[string]string, error)
-	GetAllDynakubes() ([]*Dynakube, error)
+	InsertDynakube(ctx context.Context, dynakube *Dynakube) error
+	UpdateDynakube(ctx context.Context, dynakube *Dynakube) error
+	DeleteDynakube(ctx context.Context, dynakubeName string) error
+	GetDynakube(ctx context.Context, dynakubeName string) (*Dynakube, error)
+	GetTenantsToDynakubes(ctx context.Context) (map[string]string, error)
+	GetAllDynakubes(ctx context.Context) ([]*Dynakube, error)
 
-	InsertOsAgentVolume(volume *OsAgentVolume) error
-	GetOsAgentVolumeViaVolumeID(volumeID string) (*OsAgentVolume, error)
-	GetOsAgentVolumeViaTenantUUID(volumeID string) (*OsAgentVolume, error)
-	UpdateOsAgentVolume(volume *OsAgentVolume) error
-	GetAllOsAgentVolumes() ([]*OsAgentVolume, error)
+	InsertOsAgentVolume(ctx context.Context, volume *OsAgentVolume) error
+	GetOsAgentVolumeViaVolumeID(ctx context.Context, volumeID string) (*OsAgentVolume, error)
+	GetOsAgentVolumeViaTenantUUID(ctx context.Context, volumeID string) (*OsAgentVolume, error)
+	UpdateOsAgentVolume(ctx context.Context, volume *OsAgentVolume) error
+	GetAllOsAgentVolumes(ctx context.Context) ([]*OsAgentVolume, error)
 
-	InsertVolume(volume *Volume) error
-	DeleteVolume(volumeID string) error
-	GetVolume(volumeID string) (*Volume, error)
-	GetAllVolumes() ([]*Volume, error)
-	GetPodNames() (map[string]string, error)
-	GetUsedVersions(tenantUUID string) (map[string]bool, error)
-	GetAllUsedVersions() (map[string]bool, error)
-	GetUsedImageDigests() (map[string]bool, error)
-	IsImageDigestUsed(imageDigest string) (bool, error)
+	InsertVolume(ctx context.Context, volume *Volume) error
+	DeleteVolume(ctx context.Context, volumeID string) error
+	GetVolume(ctx context.Context, volumeID string) (*Volume, error)
+	GetAllVolumes(ctx context.Context) ([]*Volume, error)
+	GetPodNames(ctx context.Context) (map[string]string, error)
+	GetUsedVersions(ctx context.Context, tenantUUID string) (map[string]bool, error)
+	GetAllUsedVersions(ctx context.Context) (map[string]bool, error)
+	GetUsedImageDigests(ctx context.Context) (map[string]bool, error)
+	IsImageDigestUsed(ctx context.Context, imageDigest string) (bool, error)
 }
 
 type AccessOverview struct {
@@ -105,16 +106,16 @@ type AccessOverview struct {
 	OsAgentVolumes []*OsAgentVolume `json:"osAgentVolumes"`
 }
 
-func NewAccessOverview(access Access) (*AccessOverview, error) {
-	volumes, err := access.GetAllVolumes()
+func NewAccessOverview(ctx context.Context, access Access) (*AccessOverview, error) {
+	volumes, err := access.GetAllVolumes(ctx)
 	if err != nil {
 		return nil, err
 	}
-	dynakubes, err := access.GetAllDynakubes()
+	dynakubes, err := access.GetAllDynakubes(ctx)
 	if err != nil {
 		return nil, err
 	}
-	osVolumes, err := access.GetAllOsAgentVolumes()
+	osVolumes, err := access.GetAllOsAgentVolumes(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -125,8 +126,8 @@ func NewAccessOverview(access Access) (*AccessOverview, error) {
 	}, nil
 }
 
-func LogAccessOverview(log logr.Logger, access Access) {
-	overview, err := NewAccessOverview(access)
+func LogAccessOverview(ctx context.Context, log logr.Logger, access Access) {
+	overview, err := NewAccessOverview(ctx, access)
 	if err != nil {
 		log.Error(err, "Failed to get an overview of the stored csi metadata")
 	}

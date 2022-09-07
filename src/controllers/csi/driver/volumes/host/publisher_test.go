@@ -82,7 +82,7 @@ func TestUnpublishVolume(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Nil(t, response)
 		assert.NotEmpty(t, mounter.MountPoints)
-		volume, err := publisher.db.GetOsAgentVolumeViaVolumeID(testVolumeId)
+		volume, err := publisher.db.GetOsAgentVolumeViaVolumeID(context.TODO(), testVolumeId)
 		assert.NoError(t, err)
 		assert.Nil(t, volume)
 	})
@@ -143,23 +143,23 @@ func newPublisherForTesting(t *testing.T, mounter *mount.FakeMounter) HostVolume
 func mockPublishedvolume(t *testing.T, publisher *HostVolumePublisher) {
 	mockDynakube(t, publisher)
 	now := time.Now()
-	err := publisher.db.InsertOsAgentVolume(metadata.NewOsAgentVolume(testVolumeId, testTenantUUID, true, &now))
+	err := publisher.db.InsertOsAgentVolume(context.TODO(), metadata.NewOsAgentVolume(testVolumeId, testTenantUUID, true, &now))
 	require.NoError(t, err)
 }
 
 func mockDynakube(t *testing.T, publisher *HostVolumePublisher) {
-	err := publisher.db.InsertDynakube(metadata.NewDynakube(testDynakubeName, testTenantUUID, "some-version", "", 0))
+	err := publisher.db.InsertDynakube(context.TODO(), metadata.NewDynakube(testDynakubeName, testTenantUUID, "some-version", "", 0))
 	require.NoError(t, err)
 }
 
 func mockDynakubeWithoutVersion(t *testing.T, publisher *HostVolumePublisher) {
-	err := publisher.db.InsertDynakube(metadata.NewDynakube(testDynakubeName, testTenantUUID, "", "", 0))
+	err := publisher.db.InsertDynakube(context.TODO(), metadata.NewDynakube(testDynakubeName, testTenantUUID, "", "", 0))
 	require.NoError(t, err)
 }
 
 func assertReferencesForPublishedVolume(t *testing.T, publisher *HostVolumePublisher, mounter *mount.FakeMounter) {
 	assert.NotEmpty(t, mounter.MountPoints)
-	volume, err := publisher.db.GetOsAgentVolumeViaVolumeID(testVolumeId)
+	volume, err := publisher.db.GetOsAgentVolumeViaVolumeID(context.TODO(), testVolumeId)
 	assert.NoError(t, err)
 	assert.Equal(t, volume.VolumeID, testVolumeId)
 	assert.Equal(t, volume.TenantUUID, testTenantUUID)
@@ -167,7 +167,7 @@ func assertReferencesForPublishedVolume(t *testing.T, publisher *HostVolumePubli
 }
 
 func assertReferencesForUnpublishedVolume(t *testing.T, publisher *HostVolumePublisher) {
-	volume, err := publisher.db.GetOsAgentVolumeViaVolumeID(testVolumeId)
+	volume, err := publisher.db.GetOsAgentVolumeViaVolumeID(context.TODO(), testVolumeId)
 	assert.NoError(t, err)
 	assert.NotNil(t, volume)
 	assert.False(t, volume.Mounted)

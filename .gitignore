@@ -104,3 +104,5 @@ kuttl/activegate/logs/
 /bin/manager
 /dynatrace-operator.iml
 /csi.db
+
+test/testdata/secrets/*

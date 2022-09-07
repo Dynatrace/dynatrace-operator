@@ -90,7 +90,7 @@ const (
 )
 
 const (
-	defaultMaxFailedCsiMountAttempts = 3
+	DefaultMaxFailedCsiMountAttempts = 10
 )
 
 var (
@@ -284,13 +284,13 @@ func (dk *DynaKube) FeatureMaxFailedCsiMountAttempts() int {
 	maxCsiMountAttemptsValue := dk.getFeatureFlagRaw(AnnotationFeatureMaxFailedCsiMountAttempts)
 
 	if maxCsiMountAttemptsValue == "" {
-		return defaultMaxFailedCsiMountAttempts
+		return DefaultMaxFailedCsiMountAttempts
 	}
 
 	maxCsiMountAttempts, err := strconv.Atoi(maxCsiMountAttemptsValue)
 
 	if err != nil || maxCsiMountAttempts < 0 {
-		return defaultMaxFailedCsiMountAttempts
+		return DefaultMaxFailedCsiMountAttempts
 	}
 
 	return maxCsiMountAttempts

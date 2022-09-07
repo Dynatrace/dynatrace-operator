@@ -119,7 +119,8 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		access, err := metadata.NewAccess(dtcsi.MetadataAccessPath)
+		signalHandler := ctrl.SetupSignalHandler()
+		access, err := metadata.NewAccess(signalHandler, dtcsi.MetadataAccessPath)
 		if err != nil {
 			return err
 		}
@@ -134,9 +135,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		signalHandler := ctrl.SetupSignalHandler()
 		err = csiManager.Start(signalHandler)
-
 		return errors.WithStack(err)
 	}
 }
