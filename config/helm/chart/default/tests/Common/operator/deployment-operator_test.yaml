@@ -148,18 +148,28 @@ tests:
           path: spec.template.spec.nodeSelector
 
 
-  - it: should have tolerations if set
+  - it: should have tolerations if set in kubernetes
     set:
       platform: kubernetes
       operator.tolerations:
-        test-key: test-value
+        - effect: NoSchedule
+          key: a-special-taint
+          value: a-special-value
     asserts:
       - equal:
           path: spec.template.spec.tolerations
           value:
-            test-key: test-value
+            - effect: NoSchedule
+              key: a-special-taint
+              value: a-special-value
+            - effect: NoSchedule
+              key: kubernetes.io/arch
+              value: arm64
+            - effect: NoSchedule
+              key: kubernetes.io/arch
+              value: amd64
 
-  - it: should have nodeSelectors if set
+  - it: should have nodeSelectors if set in kubernetes
     set:
       platform: kubernetes
       operator.nodeSelector:
@@ -294,18 +304,28 @@ tests:
       - isNull:
           path: spec.template.spec.nodeSelector
 
-  - it: should have tolerations if set
+  - it: should have tolerations if set in openshift
     set:
       platform: openshift
       operator.tolerations:
-        test-key: test-value
+        - effect: NoSchedule
+          key: a-special-taint
+          value: a-special-value
     asserts:
       - equal:
           path: spec.template.spec.tolerations
           value:
-            test-key: test-value
+            - effect: NoSchedule
+              key: a-special-taint
+              value: a-special-value
+            - effect: NoSchedule
+              key: kubernetes.io/arch
+              value: arm64
+            - effect: NoSchedule
+              key: kubernetes.io/arch
+              value: amd64
 
-  - it: should have nodeSelectors if set
+  - it: should have nodeSelectors if set in openshift
     set:
       platform: openshift
       operator.nodeSelector:
