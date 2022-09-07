@@ -126,7 +126,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3
-      - name: build-image
+      - name: Login to Registry
+        uses: docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b # v2
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
+      - name: Build image
         uses: ./.github/actions/build-image
         with:
           platform: amd64
@@ -143,8 +149,6 @@ jobs:
           version: ${{ needs.prepare.outputs.version }}
           registry: ${{ needs.prepare.outputs.registry }}
           repository: ${{ needs.prepare.outputs.repository }}
-          repository-username: ${{ secrets.QUAY_USERNAME }}
-          repository-password: ${{ secrets.QUAY_PASSWORD }}
       - name: Create Manifests
         uses: ./.github/actions/create-manifests
         with:
@@ -152,8 +156,6 @@ jobs:
           registry: ${{ needs.prepare.outputs.registry }}
           repository: ${{ needs.prepare.outputs.repository }}
           combined: false
-          repository-username: ${{ secrets.QUAY_USERNAME }}
-          repository-password: ${{ secrets.QUAY_PASSWORD }}
 
   build-arm64:
     name: Build arm64 docker image
@@ -195,6 +197,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3
+      - name: Login to Registry
+        uses: docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b # v2
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
       - name: Create Manifests
         uses: ./.github/actions/create-manifests
         with:
@@ -202,5 +210,3 @@ jobs:
           registry: ${{ needs.prepare.outputs.registry }}
           repository: ${{ needs.prepare.outputs.repository }}
           combined: true
-          repository-username: ${{ secrets.QUAY_USERNAME }}
-          repository-password: ${{ secrets.QUAY_PASSWORD }}
