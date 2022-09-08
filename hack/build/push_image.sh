@@ -8,13 +8,11 @@ fi
 
 commit=$(git rev-parse HEAD)
 go_linker_args=$(hack/build/create_go_linker_args.sh "${TAG}" "${commit}")
-cgo_cflags=$(hack/build/create_cgo_cflags.sh)
 base_image="dynatrace-operator"
 out_image="${IMG:-quay.io/dynatrace/dynatrace-operator}:${TAG}"
 
 if [[ "${LOCALBUILD}" ]]; then
   export CGO_ENABLED=1
-  export CGO_CFLAGS="${cgo_cflags}"
   export GOOS=linux
   export GOARCH=amd64
 
@@ -31,7 +29,6 @@ else
   mkdir -p third_party_licenses
   docker build . -f ./Dockerfile -t "${base_image}" \
     --build-arg "GO_LINKER_ARGS=${go_linker_args}" \
-    --build-arg "CGO_CFLAGS=${cgo_cflags}" \
     --label "quay.expires-after=14d" \
     --no-cache
   rm -rf third_party_licenses
