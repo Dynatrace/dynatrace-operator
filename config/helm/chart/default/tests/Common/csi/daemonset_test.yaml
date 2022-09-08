@@ -24,14 +24,14 @@ tests:
             key: node-role.kubernetes.io/control-plane
             operator: Exists
           - effect: NoSchedule
-            key: ToBeDeletedByClusterAutoscaler
-            operator: Exists
-          - effect: NoSchedule
             key: kubernetes.io/arch
             value: arm64
           - effect: NoSchedule
             key: kubernetes.io/arch
             value: amd64
+          - effect: NoSchedule
+            key: ToBeDeletedByClusterAutoscaler
+            operator: Exists
 
   - it: should have nodeSelectors if set
     set:
@@ -84,14 +84,14 @@ tests:
                   key: node-role.kubernetes.io/control-plane
                   operator: Exists
                 - effect: NoSchedule
-                  key: ToBeDeletedByClusterAutoscaler
-                  operator: Exists
-                - effect: NoSchedule
                   key: kubernetes.io/arch
                   value: arm64
                 - effect: NoSchedule
                   key: kubernetes.io/arch
                   value: amd64
+                - effect: NoSchedule
+                  key: ToBeDeletedByClusterAutoscaler
+                  operator: Exists
             containers:
               - args:
                   - csi-server

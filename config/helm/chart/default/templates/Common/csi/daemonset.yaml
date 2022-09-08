@@ -295,6 +295,9 @@ spec:
         - key: kubernetes.io/arch
           value: amd64
           effect: NoSchedule
+        - key: ToBeDeletedByClusterAutoscaler
+          operator: Exists
+          effect: NoSchedule
   updateStrategy:
     rollingUpdate:
       maxUnavailable: 1
