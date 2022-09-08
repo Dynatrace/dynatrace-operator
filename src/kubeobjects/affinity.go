@@ -1,6 +1,8 @@
 package kubeobjects
 
-import corev1 "k8s.io/api/core/v1"
+import (
+	corev1 "k8s.io/api/core/v1"
+)
 
 const (
 	kubernetesArch = "kubernetes.io/arch"
@@ -13,6 +15,17 @@ const (
 
 func AffinityNodeRequirement() []corev1.NodeSelectorRequirement {
 	return affinityNodeRequirementsForArches(amd64)
+}
+
+func TolerationForAmd() []corev1.Toleration {
+	return []corev1.Toleration{
+		{
+			Key:      kubernetesArch,
+			Operator: corev1.TolerationOpEqual,
+			Value:    amd64,
+			Effect:   corev1.TaintEffectNoSchedule,
+		},
+	}
 }
 
 func AffinityNodeRequirementWithARM64() []corev1.NodeSelectorRequirement {

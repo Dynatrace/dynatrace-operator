@@ -6,6 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 	cmdManager "github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/certificates"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -97,16 +98,15 @@ func (builder CommandBuilder) Build() *cobra.Command {
 	}
 }
 
-func (builder CommandBuilder) isDeployedViaOLM(kubeCfg *rest.Config) (bool, error) {
+func (builder CommandBuilder) setClientFromConfig(kubeCfg *rest.Config) (CommandBuilder, error) {
 	if builder.client == nil {
-		var err error
-		builder.client, err = client.New(kubeCfg, client.Options{})
+		client, err := client.New(kubeCfg, client.Options{})
 		if err != nil {
-			return false, err
+			return builder, err
 		}
+		builder = builder.setClient(client)
 	}
-
-	return kubesystem.IsDeployedViaOlm(builder.client, builder.podName, builder.namespace)
+	return builder, nil
 }
 
 func (builder CommandBuilder) buildRun() func(cmd *cobra.Command, args []string) error {
@@ -115,12 +115,17 @@ func (builder CommandBuilder) buildRun() func(cmd *cobra.Command, args []string)
 		if err != nil {
 			return err
 		}
-
-		isDeployedViaOlm, err := builder.isDeployedViaOLM(kubeCfg)
+		builder, err = builder.setClientFromConfig(kubeCfg)
 		if err != nil {
 			return err
 		}
 
+		operatorPod, err := kubeobjects.GetPod(context.TODO(), builder.client, builder.podName, builder.namespace)
+		if err != nil {
+			return err
+		}
+
+		isDeployedViaOlm := kubesystem.IsDeployedViaOlm(*operatorPod)
 		if !isDeployedViaOlm {
 			var bootstrapManager ctrl.Manager
 			bootstrapManager, err = builder.getBootstrapManagerProvider().CreateManager(builder.namespace, kubeCfg)
