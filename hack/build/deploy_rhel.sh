@@ -18,24 +18,27 @@ out_image="${IMG:-quay.io/dynatrace/dynatrace-operator}:${TAG}"
 
 args="${go_build_args[@]}"
 if [[ "${LOCALBUILD}" ]]; then
+  export CGO_ENABLED=1
   export GOOS=linux
   export GOARCH=${GOARCH:-amd64}
 
-  # directory required by docker copy command
-  mkdir -p third_party_licenses
-  docker build . -f ./Dockerfile -t "${base_image}" \
-    --build-arg "GO_LINKER_ARGS=${args}" \
-    --build-arg "TAGS_ARG=exclude_graphdriver_btrfs" \
-    --label "quay.expires-after=14d" \
-    --no-cache
-  rm -rf third_party_licenses
+  go build -ldflags "$args" -tags exclude_graphdriver_btrfs -o ./build/_output/bin/dynatrace-operator ./src/cmd/operator/
+
+  if [[ "$?" != 0 ]]; then
+	  echo "ERROR: go build exited abnormally. Aborting..."
+	  exit 10
+  fi
+
+  go get github.com/google/go-licenses
+  go-licenses save ./... --save_path third_party_licenses --force
+
+  docker build . -f ./Dockerfile-localbuild -t "${base_image}" --label "quay.expires-after=14d" --no-cache
+
+  rm -rf ./third_party_licenses
 else
   # directory required by docker copy command
   mkdir -p third_party_licenses
-  docker build . -f ./Dockerfile -t "${base_image}" \
-    --build-arg "GO_LINKER_ARGS=${args}" \
-    --label "quay.expires-after=14d" \
-    --no-cache
+  docker build . -f ./Dockerfile -t "${base_image}" --build-arg "GO_BUILD_ARGS=$args" --label "quay.expires-after=14d" --no-cache
   rm -rf third_party_licenses
 fi
 

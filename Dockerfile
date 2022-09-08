@@ -5,16 +5,13 @@ RUN apk update --no-cache && \
     rm -rf /var/cache/apk/*
 
 ARG GO_LINKER_ARGS
-ARG CGO_CFLAGS
-ARG TAGS_ARG="_undefined_"
 COPY . /app
 WORKDIR /app
 
 # move previously cached go modules to gopath
 RUN if [ -d ./mod ]; then mkdir -p ${GOPATH}/pkg && [ -d mod ] && mv ./mod ${GOPATH}/pkg; fi;
 
-RUN if [ "${TAGS_ARG}" != "_undefined_" ]; then CGO_ENABLED=1 go build -ldflags="${GO_LINKER_ARGS}" -tags "${TAGS_ARG}" -o ./build/_output/bin/dynatrace-operator ./src/cmd/ ; fi
-RUN if [ "${TAGS_ARG}" = "_undefined_" ]; then CGO_ENABLED=1 CGO_CFLAGS="-O2 -Wno-return-local-addr" go build -ldflags="${GO_LINKER_ARGS}" -o ./build/_output/bin/dynatrace-operator ./src/cmd/ ; fi
+RUN CGO_ENABLED=1 CGO_CFLAGS="-O2 -Wno-return-local-addr" go build -ldflags="${GO_LINKER_ARGS}" -o ./build/_output/bin/dynatrace-operator ./src/cmd/
 
 FROM registry.access.redhat.com/ubi9-minimal:9.0.0 as dependency-src
 
