@@ -4182,7 +4182,6 @@ spec:
     type: RollingUpdate
   template:
     metadata:
-      annotations:
       labels:
         app.kubernetes.io/name: dynatrace-operator
         app.kubernetes.io/version: "0.0.0-snapshot"
@@ -4264,6 +4263,13 @@ spec:
         - emptyDir: { }
           name: tmp-cert-dir
       serviceAccountName: dynatrace-operator
+      tolerations:
+        - key: kubernetes.io/arch
+          value: arm64
+          effect: NoSchedule
+        - key: kubernetes.io/arch
+          value: amd64
+          effect: NoSchedule
 ---
 # Source: dynatrace-operator/templates/Common/webhook/deployment-webhook.yaml
 # Copyright 2021 Dynatrace LLC
@@ -4390,6 +4396,13 @@ spec:
               drop:
                 - ALL
       serviceAccountName: dynatrace-webhook
+      tolerations:
+        - key: kubernetes.io/arch
+          value: arm64
+          effect: NoSchedule
+        - key: kubernetes.io/arch
+          value: amd64
+          effect: NoSchedule
 ---
 # Source: dynatrace-operator/templates/Common/webhook/mutatingwebhookconfiguration.yaml
 # Copyright 2021 Dynatrace LLC
@@ -5004,6 +5017,12 @@ spec:
         - effect: NoSchedule
           key: ToBeDeletedByClusterAutoscaler
           operator: Exists
+        - key: kubernetes.io/arch
+          value: arm64
+          effect: NoSchedule
+        - key: kubernetes.io/arch
+          value: amd64
+          effect: NoSchedule
   updateStrategy:
     rollingUpdate:
       maxUnavailable: 1
