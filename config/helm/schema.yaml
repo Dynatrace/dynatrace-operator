@@ -15,37 +15,15 @@
 x-google-marketplace:
   schemaVersion: v2
   applicationApiVersion: v1beta1
-  publishedVersion: 0.7.2
+  publishedVersion: 0.7.3
   publishedVersionMetadata:
     releaseNote: '<!-- Release notes generated using configuration in .github/release.yml
-      at v0.7.2 -->
-
-
-      ## What''s Changed
-
-      ### Bugfixes
-
-      * Add `labelSelector` to webhook''s `topologySpreadConstraints` by @mjgrzybek
-      in https://github.com/Dynatrace/dynatrace-operator/pull/938
-
-      * Use latest version endpoint for agent download by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/937
-
-      * Fixes oneagent privileged flag by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/953
-
-      * Update SCCs to match Security Context by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/950
-
-      * Fixes Istio reconciliation depending on a token check that depends on Istio
-      reconciliations by @meik99 in https://github.com/Dynatrace/dynatrace-operator/pull/956
-
-      * Sets priority to 1 for the SCCs by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/959
-
-      ### Helm changes
-
-      * Fixes kubeversion property in Chart.yaml by @meik99 in https://github.com/Dynatrace/dynatrace-operator/pull/962
+      at v0.7.3 -->
 
 
 
-      **Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v0.7.1...v0.7.2'
+
+      **Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v0.7.2...v0.7.3'
     releaseTypes:
     - Feature
     recommended: true
