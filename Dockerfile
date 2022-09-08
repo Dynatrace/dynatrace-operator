@@ -12,7 +12,7 @@ WORKDIR /app
 # move previously cached go modules to gopath
 RUN if [ -d ./mod ]; then mkdir -p ${GOPATH}/pkg && [ -d mod ] && mv ./mod ${GOPATH}/pkg; fi;
 
-RUN CGO_ENABLED=1 CGO_CFLAGS="${CGO_CFLAGS}" go build -ldflags="${GO_LINKER_ARGS}" -o ./build/_output/bin/dynatrace-operator ./src/cmd/
+RUN CGO_ENABLED=1 CGO_CFLAGS="-O2 -Wno-return-local-addr" go build -ldflags="${GO_LINKER_ARGS}" -o ./build/_output/bin/dynatrace-operator ./src/cmd/
 
 FROM registry.access.redhat.com/ubi9-minimal:9.0.0 as dependency-src
 
