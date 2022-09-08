@@ -6,6 +6,8 @@ import (
 	"github.com/go-logr/logr"
 )
 
+const oneagentEnableVolumeStorageEnvVarName = "ONEAGENT_ENABLE_VOLUME_STORAGE"
+
 var log = logger.NewDTLogger().WithName("validation-webhook")
 
 type validator func(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string
@@ -24,6 +26,7 @@ var validators = []validator{
 	conflictingReadOnlyFilesystemAndMultipleOsAgentsOnNode,
 	noResourcesAvailable,
 	imageFieldSetWithoutCSIFlag,
+	conflictingOneAgentVolumeStorageSettings,
 }
 
 var warnings = []validator{
@@ -37,6 +40,7 @@ var warnings = []validator{
 	deprecatedFeatureFlagDisableReadOnlyAgent,
 	deprecatedFeatureFlagDisableWebhookReinvocationPolicy,
 	deprecatedFeatureFlagDisableMetadataEnrichment,
+	ineffectiveReadOnlyHostFsFeatureFlag,
 }
 
 func SetLogger(logger logr.Logger) {

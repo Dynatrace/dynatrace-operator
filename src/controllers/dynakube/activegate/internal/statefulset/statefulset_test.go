@@ -153,7 +153,7 @@ func TestStatefulSet_TemplateSpec(t *testing.T) {
 		assert.Contains(t, templateSpec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms,
 			corev1.NodeSelectorTerm{MatchExpressions: kubeobjects.AffinityNodeRequirement()})
 
-		assert.Equal(t, capabilityProperties.Tolerations, templateSpec.Tolerations)
+		assert.Equal(t, append(capabilityProperties.Tolerations, kubeobjects.TolerationForAmd()...), templateSpec.Tolerations)
 
 		assert.NotEmpty(t, templateSpec.ImagePullSecrets)
 		assert.Contains(t, templateSpec.ImagePullSecrets, corev1.LocalObjectReference{Name: instance.Name + dtpullsecret.PullSecretSuffix})

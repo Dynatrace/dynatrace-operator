@@ -77,6 +77,13 @@ tests:
                           operator: In
                           values:
                             - linux
+            tolerations:
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: arm64
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: amd64
             containers:
               - name: webhook
                 args:
@@ -131,12 +138,22 @@ tests:
     set:
       platform: kubernetes
       webhook.tolerations:
-        test-key: test-value
+        - effect: NoSchedule
+          key: a-special-taint
+          value: a-special-value
     asserts:
     - equal:
         path: spec.template.spec.tolerations
         value:
-          test-key: test-value
+          - effect: NoSchedule
+            key: a-special-taint
+            value: a-special-value
+          - effect: NoSchedule
+            key: kubernetes.io/arch
+            value: arm64
+          - effect: NoSchedule
+            key: kubernetes.io/arch
+            value: amd64
 
   - it: should have nodeSelectors if set
     set:
@@ -209,6 +226,13 @@ tests:
                           operator: In
                           values:
                             - linux
+            tolerations:
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: arm64
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: amd64
             containers:
               - name: webhook
                 args:
@@ -321,6 +345,13 @@ tests:
                           operator: In
                           values:
                             - linux
+            tolerations:
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: arm64
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: amd64
             containers:
               - name: webhook
                 args:
