@@ -132,7 +132,7 @@ func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSe
 }
 
 func (stsProperties *statefulSetProperties) buildLabels(appLabels map[string]string) map[string]string {
-	return kubeobjects.MergeLabels(
+	return kubeobjects.MergeMap(
 		appLabels,
 		stsProperties.Labels,
 	)

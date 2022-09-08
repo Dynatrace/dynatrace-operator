@@ -70,6 +70,10 @@ type HostInjectSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="DNS Policy",order=24,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	DNSPolicy corev1.DNSPolicy `json:"dnsPolicy,omitempty"`
 
+	// Optional: Adds additional annotations to the OneAgent pods
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Annotations",order=27,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
+	Annotations map[string]string `json:"annotations,omitempty"`
+
 	// Optional: Adds additional labels for the OneAgent pods
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Labels",order=26,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	Labels map[string]string `json:"labels,omitempty"`

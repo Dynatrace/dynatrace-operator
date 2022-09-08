@@ -137,7 +137,7 @@ func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 
 	appLabels := kubeobjects.NewAppLabels(kubeobjects.OneAgentComponentLabel, instance.Name,
 		dsInfo.deploymentType, versionLabelValue)
-	labels := kubeobjects.MergeLabels(
+	labels := kubeobjects.MergeMap(
 		appLabels.BuildLabels(),
 		dsInfo.hostInjectSpec.Labels,
 	)
@@ -145,6 +145,8 @@ func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	annotations := map[string]string{
 		annotationUnprivileged: annotationUnprivilegedValue,
 	}
+
+	annotations = kubeobjects.MergeMap(annotations, dsInfo.hostInjectSpec.Annotations)
 
 	result := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
