@@ -11,11 +11,6 @@ go_linker_args=$(hack/build/create_go_linker_args.sh "${TAG}" "${commit}")
 base_image="dynatrace-operator"
 out_image="${IMG:-quay.io/dynatrace/dynatrace-operator}:${TAG}"
 
-if [[ "${LOCALBUILD}" ]]; then
-  export GOOS=linux
-  export GOARCH=${GOARCH:-amd64}
-fi
-
 # directory required by docker copy command
 mkdir -p third_party_licenses
 docker build . -f ./Dockerfile -t "${base_image}" \
