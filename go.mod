@@ -20,8 +20,8 @@ require (
 	go.uber.org/zap v1.23.0
 	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f
 	google.golang.org/grpc v1.49.0
-	istio.io/api v0.0.0-20220728184806-7837c4e62d82
-	istio.io/client-go v1.14.3
+	istio.io/api v0.0.0-20220826132550-04f2b20dc284
+	istio.io/client-go v1.15.0
 	k8s.io/api v0.25.0
 	k8s.io/apiextensions-apiserver v0.25.0
 	k8s.io/apimachinery v0.25.0
