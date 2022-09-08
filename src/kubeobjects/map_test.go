@@ -57,3 +57,17 @@ func TestGetFieldBool(t *testing.T) {
 		})
 	}
 }
+
+func TestMergeMap(t *testing.T) {
+	initialMap := map[string]string{
+		testKey1: testValue1,
+	}
+	expectedMap := map[string]string{
+		testKey1: testValue1,
+		testKey2: testValue2,
+	}
+
+	assert.Equal(t, expectedMap, MergeMap(initialMap, map[string]string{
+		testKey2: testValue2,
+	}))
+}

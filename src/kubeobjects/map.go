@@ -38,3 +38,14 @@ func ConfigMapDataEqual(map1, map2 *corev1.ConfigMap) bool {
 	return reflect.DeepEqual(map1.Data, map2.Data) &&
 		reflect.DeepEqual(map1.BinaryData, map2.BinaryData)
 }
+
+func MergeMap(maps ...map[string]string) map[string]string {
+	res := map[string]string{}
+	for _, m := range maps {
+		for k, v := range m {
+			res[k] = v
+		}
+	}
+
+	return res
+}
