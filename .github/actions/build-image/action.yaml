@@ -4,15 +4,6 @@ inputs:
   platform:
     description: The platform for which the image will be built
     required: true
-  go-version:
-    description: The go version used during the build
-    required: true
-  go-linker-args:
-    description: The linker args for the go compiler
-    required: true
-  cgo-cflags:
-    description: The cgo cflags for the go compiler
-    required: true
   labels:
     description: The labels for the built image
     required: true
@@ -29,7 +20,12 @@ runs:
     - name: Set up Golang
       uses: actions/setup-go@268d8c0ca0432bb2cf416faae41297df9d262d7f # v3.3.0
       with:
-        go-version: ${{ inputs.go-version }}
+        go-version-file: "${{ github.workspace }}/go.mod"
+    - name: Prepare build parameters
+      id: prep
+      shell: bash
+      run: |
+        hack/build/ci/prepare-build-variables.sh
     - name: Setup cache
       uses: actions/cache@a7c34adf76222e77931dedbf4a45b2e4648ced19 # v3
       with:
@@ -38,7 +34,7 @@ runs:
           ~/.cache/go-build
           ./third_party_licenses
         key: ${{ runner.os }}-go-build-cache-${{ hashFiles('**/go.sum') }}
-    - name: Prepare
+    - name: Download go build dependencies
       shell: bash
       run: |
         hack/build/ci/download-go-build-deps.sh
@@ -47,8 +43,7 @@ runs:
       with:
         builder: ${{ steps.buildx.outputs.name }}
         build-args: |
-          GO_LINKER_ARGS=${{ inputs.go-linker-args }}
-          CGO_CFLAGS=${{ inputs.cgo-cflags }}
+          GO_LINKER_ARGS=${{ steps.prep.outputs.go_linker_args }}
         context: .
         file: ./Dockerfile
         platforms: linux/${{ inputs.platform }}

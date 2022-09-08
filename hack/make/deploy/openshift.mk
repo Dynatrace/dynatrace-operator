@@ -1,5 +1,10 @@
 ## Deploy the operator in the OpenShift cluster configured in ~/.kube/config
-deploy/openshift: manifests/openshift prerequisites/kustomize
+deploy/openshift: manifests/crd/helm
 	oc get project dynatrace || oc adm new-project --node-selector="" dynatrace
-	cd $(MANIFESTS_DIR)/openshift && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=$(BRANCH_IMAGE)
-	$(KUSTOMIZE) build $(MANIFESTS_DIR)/openshift | oc apply -f -
+	helm template dynatrace-operator config/helm/chart/default \
+			--namespace dynatrace \
+			--set installCRD=true \
+			--set platform="openshift" \
+			--set csidriver.enabled=true \
+			--set manifests=true \
+			--set image="$(BRANCH_IMAGE)" | oc apply -f -
