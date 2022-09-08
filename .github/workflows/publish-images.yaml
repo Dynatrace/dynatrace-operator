@@ -7,9 +7,9 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
-
   prepare:
     name: Prepare properties
     runs-on: ubuntu-latest
@@ -23,97 +23,84 @@ jobs:
     outputs:
       labels: ${{ steps.prep.outputs.docker_image_labels }}
       version: ${{ steps.prep.outputs.docker_image_tag }}
-      go-linker-args: ${{ steps.prep.outputs.go_linker_args }}
-      cgo-cflags: ${{ steps.prep.outputs.cgo_cflags }}
-      go-version: "1.19"
 
-  # Workflow needs to build docker images again as separate workflows don't have access to others artifacts
-  # https://github.com/actions/download-artifact/issues/3
-  build-amd64:
-    name: Build image amd64
+  build:
+    name: Build images
     runs-on: ubuntu-latest
     needs: [prepare]
+    strategy:
+      matrix:
+        platform: [amd64, arm64]
     steps:
       - name: Checkout
         uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3
-      - name: build-image
+      - name: Build image
         uses: ./.github/actions/build-image
         with:
-          platform: amd64
-          go-version: ${{ needs.prepare.outputs.go-version }}
-          go-linker-args: ${{ needs.prepare.outputs.go-linker-args }}
-          cgo-cflags: ${{ needs.prepare.outputs.cgo-cflags }}
-          labels: ${{ needs.prepare.outputs.labels }}
-          image-tag: ${{ needs.prepare.outputs.version }}
-
-  build-arm64:
-    name: Build image arm64
-    runs-on: ubuntu-latest
-    needs: [prepare]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3
-      - name: Build Image
-        uses: ./.github/actions/build-image
-        with:
-          platform: arm64
-          go-version: ${{ needs.prepare.outputs.go-version }}
-          go-linker-args: ${{ needs.prepare.outputs.go-linker-args }}
-          cgo-cflags: ${{ needs.prepare.outputs.cgo-cflags }}
+          platform: ${{ matrix.platform }}
           labels: ${{ needs.prepare.outputs.labels }}
           image-tag: ${{ needs.prepare.outputs.version }}
 
   push:
     name: Push images
     environment: Release
-    needs: [prepare, build-arm64, build-amd64]
+    needs: [prepare, build]
     runs-on: ubuntu-latest
     strategy:
       matrix:
         platform: [amd64, arm64]
-        registry-name: [rhcc, gcr, dockerhub]
+        registry: [gcr, dockerhub]
         include:
-          - registry-name: rhcc
-            registry-url: scan.connect.redhat.com
-            repository: RHCC_REPOSITORY
-            username: RHCC_USERNAME
-            password: RHCC_PASSWORD
-          - registry-name: gcr
-            registry-url: gcr.io
-            repository: GCR_REPOSITORY
-            username: GCR_USERNAME
-            password: GCR_JSON_KEY
-          - registry-name: dockerhub
-            registry-url: docker.io
-            repository: DOCKERHUB_REPOSITORY
-            username: DOCKERHUB_USERNAME
-            password: DOCKERHUB_PASSWORD
+        - registry: rhcc
+          url: scan.connect.redhat.com
+          repository: RHCC_REPOSITORY
+          username: RHCC_USERNAME
+          password: RHCC_PASSWORD
+        - registry: gcr
+          url: gcr.io
+          repository: GCR_REPOSITORY
+          username: GCR_USERNAME
+          password: GCR_JSON_KEY
+        - registry: dockerhub
+          url: docker.io
+          repository: DOCKERHUB_REPOSITORY
+          username: DOCKERHUB_USERNAME
+          password: DOCKERHUB_PASSWORD
     steps:
       - name: Checkout
         uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3
-      - name: Push ${{matrix.platform}} to ${{matrix.registry-name}}
+      - name: Login to Registry
+        uses: docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b # v2
+        with:
+          registry: ${{ matrix.url }}
+          username: ${{ secrets[matrix.username] }}
+          password: ${{ secrets[matrix.password] }}
+      - name: Push ${{matrix.platform}} to ${{matrix.registry}}
         uses: ./.github/actions/upload-image
-        if: matrix.registry-name != 'rhcc' || ( matrix.registry-name == 'rhcc' && matrix.platform == 'amd64' )
+        if: matrix.registry != 'rhcc' || ( matrix.registry == 'rhcc' && matrix.platform == 'amd64' )
         with:
           platform: ${{ matrix.platform }}
           labels: ${{ needs.prepare.outputs.labels }}
           version: ${{ needs.prepare.outputs.version }}
-          registry: ${{ matrix.registry-url }}
+          registry: ${{ matrix.url }}
           repository: ${{ secrets[matrix.repository] }}
-          repository-username: ${{ secrets[matrix.username] }}
-          repository-password: ${{ secrets[matrix.password] }}
       - name: Run preflight
-        if: matrix.registry-name == 'rhcc' && matrix.platform == 'amd64'
+        if: matrix.registry == 'rhcc' && matrix.platform == 'amd64'
         uses: ./.github/actions/preflight
         with:
-          version: ${{ needs.prepare.outputs.version }}
-          registry: ${{matrix.registry-url}}
-          repository: ${{ secrets[matrix.repository] }}
-          report-name: "preflight.json"
-          redhat-project-id: ${{ secrets.REDHAT_PROJECT_ID }}
-          pyxis-api-token: ${{ secrets.PYXIS_API_TOKEN }}
-          rhcc-username: ${{ secrets[matrix.username] }}
-          rhcc-password: ${{ secrets[matrix.password] }}
+         version: ${{ needs.prepare.outputs.version }}
+         registry: ${{ matrix.url }}
+         repository: ${{ secrets[matrix.repository] }}
+         report-name: "preflight.json"
+         redhat-project-id: ${{ secrets.REDHAT_PROJECT_ID }}
+         pyxis-api-token: ${{ secrets.PYXIS_API_TOKEN }}
+      - name: Sign image for ${{matrix.registry}}
+        if: matrix.registry != 'rhcc'
+        uses: ./.github/actions/sign-image
+        with:
+          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}-${{ matrix.platform }}
+          signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          signing-password: ${{ secrets.COSIGN_PASSWORD }}
 
   manifest:
     name: Create manifests
@@ -137,6 +124,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3
+      - name: Login to Registry
+        uses:  docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b # v2
+        with:
+          registry: ${{ matrix.url }}
+          username: ${{ secrets[matrix.username] }}
+          password: ${{ secrets[matrix.password] }}
       - name: Create manifests for ${{matrix.registry}}
         uses: ./.github/actions/create-manifests
         with:
@@ -144,5 +137,9 @@ jobs:
           registry: ${{ matrix.url }}
           repository: ${{ secrets[matrix.repository] }}
           combined: true
-          repository-username: ${{ secrets[matrix.username] }}
-          repository-password: ${{ secrets[matrix.password] }}
+      - name: Sign manifests for ${{matrix.registry}}
+        uses: ./.github/actions/sign-image
+        with:
+          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}
+          signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          signing-password: ${{ secrets.COSIGN_PASSWORD }}

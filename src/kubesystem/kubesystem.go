@@ -3,7 +3,6 @@ package kubesystem
 import (
 	"context"
 
-	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -23,16 +22,7 @@ func GetUID(clt client.Reader) (types.UID, error) {
 	return kubeSystemNamespace.UID, nil
 }
 
-func IsDeployedViaOlm(clt client.Reader, podName string, podNamespace string) (bool, error) {
-	if IsRunLocally() {
-		return false, nil
-	}
-
-	pod := &corev1.Pod{}
-	err := clt.Get(context.TODO(), types.NamespacedName{Name: podName, Namespace: podNamespace}, pod)
-	if err != nil {
-		return false, errors.WithStack(err)
-	}
+func IsDeployedViaOlm(pod corev1.Pod) bool {
 	_, isDeployedViaOlm := pod.Annotations[olmSpecificAnnotation]
-	return isDeployedViaOlm, nil
+	return isDeployedViaOlm
 }

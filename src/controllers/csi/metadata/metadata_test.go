@@ -47,16 +47,12 @@ func TestNewVolume(t *testing.T) {
 		assert.Equal(t, testUUID, volume.TenantUUID)
 		assert.Equal(t, testMountAttempts, volume.MountAttempts)
 	})
-	t.Run("returns nil if id, name, version or uuid is unset", func(t *testing.T) {
+	t.Run("returns nil if id, name, or uuid is unset", func(t *testing.T) {
 		volume := NewVolume("", testName, testVersion, testUUID, testMountAttempts)
 
 		assert.Nil(t, volume)
 
 		volume = NewVolume(testID, "", testVersion, testUUID, testMountAttempts)
-
-		assert.Nil(t, volume)
-
-		volume = NewVolume(testID, testName, "", testUUID, testMountAttempts)
 
 		assert.Nil(t, volume)
 

@@ -27,12 +27,9 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 	kubeClient := mgr.GetClient()
 	apiReader := mgr.GetAPIReader()
 
-	var webhookPod corev1.Pod
-	if err := apiReader.Get(context.TODO(), client.ObjectKey{
-		Name:      webhookPodName,
-		Namespace: webhookNamespace,
-	}, &webhookPod); err != nil {
-		return errors.WithStack(err)
+	webhookPod, err := kubeobjects.GetPod(context.TODO(), apiReader, webhookPodName, webhookNamespace)
+	if err != nil {
+		return err
 	}
 
 	apmExists, err := kubeobjects.CheckIfOneAgentAPMExists(kubeConfig)
@@ -40,7 +37,7 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 		return errors.WithStack(err)
 	}
 	if apmExists {
-		eventRecorder.sendOneAgentAPMWarningEvent(&webhookPod)
+		eventRecorder.sendOneAgentAPMWarningEvent(webhookPod)
 		return errors.New("OneAgentAPM object detected - the Dynatrace webhook will not inject until the deprecated OneAgent Operator has been fully uninstalled")
 	}
 
@@ -50,7 +47,7 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 		return errors.WithStack(err)
 	}
 
-	webhookPodImage, err := getWebhookContainerImage(webhookPod)
+	webhookPodImage, err := getWebhookContainerImage(*webhookPod)
 	if err != nil {
 		return err
 	}
@@ -60,16 +57,11 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 		return err
 	}
 
-	deployedViaOLM, err := kubesystem.IsDeployedViaOlm(apiReader, webhookPodName, webhookNamespace)
-	if err != nil {
-		return err
-	}
-
 	mgr.GetWebhookServer().Register("/inject", &webhook.Admission{Handler: &podMutatorWebhook{
 		apiReader:        apiReader,
 		webhookNamespace: webhookNamespace,
 		webhookImage:     webhookPodImage,
-		deployedViaOLM:   deployedViaOLM,
+		deployedViaOLM:   kubesystem.IsDeployedViaOlm(*webhookPod),
 		clusterID:        clusterID,
 		recorder:         eventRecorder,
 		mutators: []dtwebhook.PodMutator{

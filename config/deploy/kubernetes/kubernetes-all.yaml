@@ -990,8 +990,8 @@ spec:
                   description: "Condition contains details for one aspect of the current
                     state of this API Resource. --- This struct is intended for direct
                     use as an array at the field path .status.conditions.  For example,
-                    type FooStatus struct{ // Represents the observations of a foo's
-                    current state. // Known .status.conditions.type are: \"Available\",
+                    \n type FooStatus struct{ // Represents the observations of a
+                    foo's current state. // Known .status.conditions.type are: \"Available\",
                     \"Progressing\", and \"Degraded\" // +patchMergeKey=type // +patchStrategy=merge
                     // +listType=map // +listMapKey=type Conditions []metav1.Condition
                     `json:\"conditions,omitempty\" patchStrategy:\"merge\" patchMergeKey:\"type\"
@@ -1453,6 +1453,19 @@ spec:
                                 contains only "value". The requirements are ANDed.
                               type: object
                           type: object
+                        matchLabelKeys:
+                          description: MatchLabelKeys is a set of pod label keys to
+                            select the pods over which spreading will be calculated.
+                            The keys are used to lookup values from the incoming pod
+                            labels, those key-value labels are ANDed with labelSelector
+                            to select the group of existing pods over which spreading
+                            will be calculated for the incoming pod. Keys that don't
+                            exist in the incoming pod labels will be ignored. A null
+                            or empty list means only match against labelSelector.
+                          items:
+                            type: string
+                          type: array
+                          x-kubernetes-list-type: atomic
                         maxSkew:
                           description: 'MaxSkew describes the degree to which pods
                             may be unevenly distributed. When `whenUnsatisfiable=DoNotSchedule`,
@@ -1495,11 +1508,33 @@ spec:
                             as 0. In this situation, new pod with the same labelSelector
                             cannot be scheduled, because computed skew will be 3(3
                             - 0) if new Pod is scheduled to any of the three zones,
-                            it will violate MaxSkew. \n This is an alpha field and
-                            requires enabling MinDomainsInPodTopologySpread feature
-                            gate."
+                            it will violate MaxSkew. \n This is a beta field and requires
+                            the MinDomainsInPodTopologySpread feature gate to be enabled
+                            (enabled by default)."
                           format: int32
                           type: integer
+                        nodeAffinityPolicy:
+                          description: "NodeAffinityPolicy indicates how we will treat
+                            Pod's nodeAffinity/nodeSelector when calculating pod topology
+                            spread skew. Options are: - Honor: only nodes matching
+                            nodeAffinity/nodeSelector are included in the calculations.
+                            - Ignore: nodeAffinity/nodeSelector are ignored. All nodes
+                            are included in the calculations. \n If this value is
+                            nil, the behavior is equivalent to the Honor policy. This
+                            is a alpha-level feature enabled by the NodeInclusionPolicyInPodTopologySpread
+                            feature flag."
+                          type: string
+                        nodeTaintsPolicy:
+                          description: "NodeTaintsPolicy indicates how we will treat
+                            node taints when calculating pod topology spread skew.
+                            Options are: - Honor: nodes without taints, along with
+                            tainted nodes for which the incoming pod has a toleration,
+                            are included. - Ignore: node taints are ignored. All nodes
+                            are included. \n If this value is nil, the behavior is
+                            equivalent to the Ignore policy. This is a alpha-level
+                            feature enabled by the NodeInclusionPolicyInPodTopologySpread
+                            feature flag."
+                          type: string
                         topologyKey:
                           description: TopologyKey is the key of node labels. Nodes
                             that have a label with this key and identical values are
@@ -1507,11 +1542,11 @@ spec:
                             <key, value> as a "bucket", and try to put balanced number
                             of pods into each bucket. We define a domain as a particular
                             instance of a topology. Also, we define an eligible domain
-                            as a domain whose nodes match the node selector. e.g.
-                            If TopologyKey is "kubernetes.io/hostname", each Node
-                            is a domain of that topology. And, if TopologyKey is "topology.kubernetes.io/zone",
-                            each zone is a domain of that topology. It's a required
-                            field.
+                            as a domain whose nodes meet the requirements of nodeAffinityPolicy
+                            and nodeTaintsPolicy. e.g. If TopologyKey is "kubernetes.io/hostname",
+                            each Node is a domain of that topology. And, if TopologyKey
+                            is "topology.kubernetes.io/zone", each zone is a domain
+                            of that topology. It's a required field.
                           type: string
                         whenUnsatisfiable:
                           description: 'WhenUnsatisfiable indicates how to deal with
@@ -1824,6 +1859,19 @@ spec:
                                 contains only "value". The requirements are ANDed.
                               type: object
                           type: object
+                        matchLabelKeys:
+                          description: MatchLabelKeys is a set of pod label keys to
+                            select the pods over which spreading will be calculated.
+                            The keys are used to lookup values from the incoming pod
+                            labels, those key-value labels are ANDed with labelSelector
+                            to select the group of existing pods over which spreading
+                            will be calculated for the incoming pod. Keys that don't
+                            exist in the incoming pod labels will be ignored. A null
+                            or empty list means only match against labelSelector.
+                          items:
+                            type: string
+                          type: array
+                          x-kubernetes-list-type: atomic
                         maxSkew:
                           description: 'MaxSkew describes the degree to which pods
                             may be unevenly distributed. When `whenUnsatisfiable=DoNotSchedule`,
@@ -1866,11 +1914,33 @@ spec:
                             as 0. In this situation, new pod with the same labelSelector
                             cannot be scheduled, because computed skew will be 3(3
                             - 0) if new Pod is scheduled to any of the three zones,
-                            it will violate MaxSkew. \n This is an alpha field and
-                            requires enabling MinDomainsInPodTopologySpread feature
-                            gate."
+                            it will violate MaxSkew. \n This is a beta field and requires
+                            the MinDomainsInPodTopologySpread feature gate to be enabled
+                            (enabled by default)."
                           format: int32
                           type: integer
+                        nodeAffinityPolicy:
+                          description: "NodeAffinityPolicy indicates how we will treat
+                            Pod's nodeAffinity/nodeSelector when calculating pod topology
+                            spread skew. Options are: - Honor: only nodes matching
+                            nodeAffinity/nodeSelector are included in the calculations.
+                            - Ignore: nodeAffinity/nodeSelector are ignored. All nodes
+                            are included in the calculations. \n If this value is
+                            nil, the behavior is equivalent to the Honor policy. This
+                            is a alpha-level feature enabled by the NodeInclusionPolicyInPodTopologySpread
+                            feature flag."
+                          type: string
+                        nodeTaintsPolicy:
+                          description: "NodeTaintsPolicy indicates how we will treat
+                            node taints when calculating pod topology spread skew.
+                            Options are: - Honor: nodes without taints, along with
+                            tainted nodes for which the incoming pod has a toleration,
+                            are included. - Ignore: node taints are ignored. All nodes
+                            are included. \n If this value is nil, the behavior is
+                            equivalent to the Ignore policy. This is a alpha-level
+                            feature enabled by the NodeInclusionPolicyInPodTopologySpread
+                            feature flag."
+                          type: string
                         topologyKey:
                           description: TopologyKey is the key of node labels. Nodes
                             that have a label with this key and identical values are
@@ -1878,11 +1948,11 @@ spec:
                             <key, value> as a "bucket", and try to put balanced number
                             of pods into each bucket. We define a domain as a particular
                             instance of a topology. Also, we define an eligible domain
-                            as a domain whose nodes match the node selector. e.g.
-                            If TopologyKey is "kubernetes.io/hostname", each Node
-                            is a domain of that topology. And, if TopologyKey is "topology.kubernetes.io/zone",
-                            each zone is a domain of that topology. It's a required
-                            field.
+                            as a domain whose nodes meet the requirements of nodeAffinityPolicy
+                            and nodeTaintsPolicy. e.g. If TopologyKey is "kubernetes.io/hostname",
+                            each Node is a domain of that topology. And, if TopologyKey
+                            is "topology.kubernetes.io/zone", each zone is a domain
+                            of that topology. It's a required field.
                           type: string
                         whenUnsatisfiable:
                           description: 'WhenUnsatisfiable indicates how to deal with
@@ -3027,6 +3097,19 @@ spec:
                                 contains only "value". The requirements are ANDed.
                               type: object
                           type: object
+                        matchLabelKeys:
+                          description: MatchLabelKeys is a set of pod label keys to
+                            select the pods over which spreading will be calculated.
+                            The keys are used to lookup values from the incoming pod
+                            labels, those key-value labels are ANDed with labelSelector
+                            to select the group of existing pods over which spreading
+                            will be calculated for the incoming pod. Keys that don't
+                            exist in the incoming pod labels will be ignored. A null
+                            or empty list means only match against labelSelector.
+                          items:
+                            type: string
+                          type: array
+                          x-kubernetes-list-type: atomic
                         maxSkew:
                           description: 'MaxSkew describes the degree to which pods
                             may be unevenly distributed. When `whenUnsatisfiable=DoNotSchedule`,
@@ -3069,11 +3152,33 @@ spec:
                             as 0. In this situation, new pod with the same labelSelector
                             cannot be scheduled, because computed skew will be 3(3
                             - 0) if new Pod is scheduled to any of the three zones,
-                            it will violate MaxSkew. \n This is an alpha field and
-                            requires enabling MinDomainsInPodTopologySpread feature
-                            gate."
+                            it will violate MaxSkew. \n This is a beta field and requires
+                            the MinDomainsInPodTopologySpread feature gate to be enabled
+                            (enabled by default)."
                           format: int32
                           type: integer
+                        nodeAffinityPolicy:
+                          description: "NodeAffinityPolicy indicates how we will treat
+                            Pod's nodeAffinity/nodeSelector when calculating pod topology
+                            spread skew. Options are: - Honor: only nodes matching
+                            nodeAffinity/nodeSelector are included in the calculations.
+                            - Ignore: nodeAffinity/nodeSelector are ignored. All nodes
+                            are included in the calculations. \n If this value is
+                            nil, the behavior is equivalent to the Honor policy. This
+                            is a alpha-level feature enabled by the NodeInclusionPolicyInPodTopologySpread
+                            feature flag."
+                          type: string
+                        nodeTaintsPolicy:
+                          description: "NodeTaintsPolicy indicates how we will treat
+                            node taints when calculating pod topology spread skew.
+                            Options are: - Honor: nodes without taints, along with
+                            tainted nodes for which the incoming pod has a toleration,
+                            are included. - Ignore: node taints are ignored. All nodes
+                            are included. \n If this value is nil, the behavior is
+                            equivalent to the Ignore policy. This is a alpha-level
+                            feature enabled by the NodeInclusionPolicyInPodTopologySpread
+                            feature flag."
+                          type: string
                         topologyKey:
                           description: TopologyKey is the key of node labels. Nodes
                             that have a label with this key and identical values are
@@ -3081,11 +3186,11 @@ spec:
                             <key, value> as a "bucket", and try to put balanced number
                             of pods into each bucket. We define a domain as a particular
                             instance of a topology. Also, we define an eligible domain
-                            as a domain whose nodes match the node selector. e.g.
-                            If TopologyKey is "kubernetes.io/hostname", each Node
-                            is a domain of that topology. And, if TopologyKey is "topology.kubernetes.io/zone",
-                            each zone is a domain of that topology. It's a required
-                            field.
+                            as a domain whose nodes meet the requirements of nodeAffinityPolicy
+                            and nodeTaintsPolicy. e.g. If TopologyKey is "kubernetes.io/hostname",
+                            each Node is a domain of that topology. And, if TopologyKey
+                            is "topology.kubernetes.io/zone", each zone is a domain
+                            of that topology. It's a required field.
                           type: string
                         whenUnsatisfiable:
                           description: 'WhenUnsatisfiable indicates how to deal with
@@ -3164,8 +3269,8 @@ spec:
                   description: "Condition contains details for one aspect of the current
                     state of this API Resource. --- This struct is intended for direct
                     use as an array at the field path .status.conditions.  For example,
-                    type FooStatus struct{ // Represents the observations of a foo's
-                    current state. // Known .status.conditions.type are: \"Available\",
+                    \n type FooStatus struct{ // Represents the observations of a
+                    foo's current state. // Known .status.conditions.type are: \"Available\",
                     \"Progressing\", and \"Degraded\" // +patchMergeKey=type // +patchStrategy=merge
                     // +listType=map // +listMapKey=type Conditions []metav1.Condition
                     `json:\"conditions,omitempty\" patchStrategy:\"merge\" patchMergeKey:\"type\"
@@ -4077,7 +4182,6 @@ spec:
     type: RollingUpdate
   template:
     metadata:
-      annotations:
       labels:
         app.kubernetes.io/name: dynatrace-operator
         app.kubernetes.io/version: "0.0.0-snapshot"
@@ -4159,6 +4263,13 @@ spec:
         - emptyDir: { }
           name: tmp-cert-dir
       serviceAccountName: dynatrace-operator
+      tolerations:
+        - key: kubernetes.io/arch
+          value: arm64
+          effect: NoSchedule
+        - key: kubernetes.io/arch
+          value: amd64
+          effect: NoSchedule
 ---
 # Source: dynatrace-operator/templates/Common/webhook/deployment-webhook.yaml
 # Copyright 2021 Dynatrace LLC
@@ -4285,6 +4396,13 @@ spec:
               drop:
                 - ALL
       serviceAccountName: dynatrace-webhook
+      tolerations:
+        - key: kubernetes.io/arch
+          value: arm64
+          effect: NoSchedule
+        - key: kubernetes.io/arch
+          value: amd64
+          effect: NoSchedule
 ---
 # Source: dynatrace-operator/templates/Common/webhook/mutatingwebhookconfiguration.yaml
 # Copyright 2021 Dynatrace LLC
@@ -4899,6 +5017,12 @@ spec:
         - effect: NoSchedule
           key: ToBeDeletedByClusterAutoscaler
           operator: Exists
+        - key: kubernetes.io/arch
+          value: arm64
+          effect: NoSchedule
+        - key: kubernetes.io/arch
+          value: amd64
+          effect: NoSchedule
   updateStrategy:
     rollingUpdate:
       maxUnavailable: 1
