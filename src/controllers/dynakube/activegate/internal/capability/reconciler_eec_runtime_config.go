@@ -11,20 +11,20 @@ import (
 )
 
 func (r *Reconciler) createOrUpdateEecConfigMap() (bool, error) {
-	desired, err := CreateEecConfigMap(r.Dynakube, r.ShortName())
+	desired, err := CreateEecConfigMap(r.dynakube, r.capability.ShortName())
 	if err != nil {
 		return false, errors.WithStack(err)
 	}
 
 	installed := &corev1.ConfigMap{}
-	err = r.Get(context.TODO(), kubeobjects.Key(desired), installed)
+	err = r.client.Get(context.TODO(), kubeobjects.Key(desired), installed)
 	if k8serrors.IsNotFound(err) {
-		log.Info("creating EEC config map", "module", r.ShortName())
-		if err = controllerutil.SetControllerReference(r.Dynakube, desired, r.Scheme()); err != nil {
+		log.Info("creating EEC config map", "module", r.capability.ShortName())
+		if err = controllerutil.SetControllerReference(r.dynakube, desired, r.client.Scheme()); err != nil {
 			return false, errors.WithStack(err)
 		}
 
-		err = r.Create(context.TODO(), desired)
+		err = r.client.Create(context.TODO(), desired)
 		return true, errors.WithStack(err)
 	}
 
@@ -32,7 +32,7 @@ func (r *Reconciler) createOrUpdateEecConfigMap() (bool, error) {
 		if !kubeobjects.ConfigMapDataEqual(installed, desired) {
 			desired.ObjectMeta.ResourceVersion = installed.ObjectMeta.ResourceVersion
 
-			if err = r.Update(context.TODO(), desired); err != nil {
+			if err = r.client.Update(context.TODO(), desired); err != nil {
 				return false, err
 			}
 			return true, nil
