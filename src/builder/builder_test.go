@@ -20,11 +20,25 @@ func TestStatefulsetBuilder(t *testing.T) {
 
 		modifierMock := mocks.NewModifierMock[mocks.DataMock]()
 		modifierMock.On("Modify", mock.Anything).Return()
+		modifierMock.On("Enabled").Return(true)
 
-		b.AddModifier(modifierMock)
-		actual := b.Build()
+		actual := b.AddModifier(modifierMock).Build()
 
 		modifierMock.AssertNumberOfCalls(t, "Modify", 1)
+
+		expected := mocks.DataMock{}
+		assert.Equal(t, expected, actual)
+	})
+	t.Run("One modifier, not enabled", func(t *testing.T) {
+		b := Builder[mocks.DataMock]{}
+
+		modifierMock := mocks.NewModifierMock[mocks.DataMock]()
+		modifierMock.On("Modify", mock.Anything).Return()
+		modifierMock.On("Enabled").Return(false)
+
+		actual := b.AddModifier(modifierMock).Build()
+
+		modifierMock.AssertNumberOfCalls(t, "Modify", 0)
 
 		expected := mocks.DataMock{}
 		assert.Equal(t, expected, actual)
@@ -34,11 +48,12 @@ func TestStatefulsetBuilder(t *testing.T) {
 
 		modifierMock0 := mocks.NewModifierMock[mocks.DataMock]()
 		modifierMock0.On("Modify", mock.Anything).Return()
+		modifierMock0.On("Enabled").Return(true)
 		modifierMock1 := mocks.NewModifierMock[mocks.DataMock]()
 		modifierMock1.On("Modify", mock.Anything).Return()
+		modifierMock1.On("Enabled").Return(true)
 
-		b.AddModifier(modifierMock0, modifierMock0, modifierMock1)
-		actual := b.Build()
+		actual := b.AddModifier(modifierMock0, modifierMock0, modifierMock1).Build()
 
 		modifierMock0.AssertNumberOfCalls(t, "Modify", 2)
 		modifierMock1.AssertNumberOfCalls(t, "Modify", 1)
@@ -51,11 +66,12 @@ func TestStatefulsetBuilder(t *testing.T) {
 
 		modifierMock0 := mocks.NewModifierMock[mocks.DataMock]()
 		modifierMock0.On("Modify", mock.Anything).Return()
+		modifierMock0.On("Enabled").Return(true)
 		modifierMock1 := mocks.NewModifierMock[mocks.DataMock]()
 		modifierMock1.On("Modify", mock.Anything).Return()
+		modifierMock1.On("Enabled").Return(true)
 
-		b.AddModifier(modifierMock0, modifierMock0).AddModifier(modifierMock1)
-		actual := b.Build()
+		actual := b.AddModifier(modifierMock0, modifierMock0).AddModifier(modifierMock1).Build()
 
 		modifierMock0.AssertNumberOfCalls(t, "Modify", 2)
 		modifierMock1.AssertNumberOfCalls(t, "Modify", 1)
