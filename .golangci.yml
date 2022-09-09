@@ -15,21 +15,18 @@ linters-settings:
 linters:
   disable-all: true
   enable:
-  - deadcode
   - gci
   - goimports
   - gosimple
   - govet
   - ineffassign
   - staticcheck
-  - structcheck
   - typecheck
   - unused
-  - varcheck
   - misspell
 
 service:
-  golangci-lint-version: 1.48.x # use the fixed version to not introduce new linters unexpectedly
+  golangci-lint-version: 1.49.x # use the fixed version to not introduce new linters unexpectedly
 
 issues:
   exclude-rules:
