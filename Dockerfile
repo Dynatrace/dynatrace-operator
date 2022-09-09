@@ -5,7 +5,6 @@ RUN apk update --no-cache && \
     rm -rf /var/cache/apk/*
 
 ARG GO_LINKER_ARGS
-ARG CGO_CFLAGS
 COPY . /app
 WORKDIR /app
 
