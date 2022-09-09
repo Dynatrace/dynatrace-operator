@@ -132,7 +132,7 @@ func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSe
 }
 
 func (stsProperties *statefulSetProperties) buildLabels(appLabels map[string]string) map[string]string {
-	return kubeobjects.MergeLabels(
+	return kubeobjects.MergeMap(
 		appLabels,
 		stsProperties.Labels,
 	)
@@ -156,7 +156,7 @@ func buildTemplateSpec(stsProperties *statefulSetProperties) corev1.PodSpec {
 		NodeSelector:       stsProperties.CapabilityProperties.NodeSelector,
 		ServiceAccountName: determineServiceAccountName(stsProperties),
 		Affinity:           affinity(),
-		Tolerations:        stsProperties.Tolerations,
+		Tolerations:        buildTolerations(stsProperties),
 		Volumes:            buildVolumes(stsProperties, extraContainerBuilders),
 		ImagePullSecrets: []corev1.LocalObjectReference{
 			{Name: stsProperties.PullSecret()},
@@ -168,6 +168,10 @@ func buildTemplateSpec(stsProperties *statefulSetProperties) corev1.PodSpec {
 		podSpec.DNSPolicy = dnsPolicy
 	}
 	return podSpec
+}
+
+func buildTolerations(stsProperties *statefulSetProperties) []corev1.Toleration {
+	return append(stsProperties.Tolerations, kubeobjects.TolerationForAmd()...)
 }
 
 func buildDNSPolicy(stsProperties *statefulSetProperties) corev1.DNSPolicy {

@@ -1,17 +1,18 @@
 package csigc
 
 import (
+	"context"
 	"os"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 )
 
-func (gc *CSIGarbageCollector) runBinaryGarbageCollection(pinnedVersions pinnedVersionSet, tenantUUID string, latestVersion string) {
+func (gc *CSIGarbageCollector) runBinaryGarbageCollection(ctx context.Context, pinnedVersions pinnedVersionSet, tenantUUID string, latestVersion string) {
 	fs := &afero.Afero{Fs: gc.fs}
 	gcRunsMetric.Inc()
 
-	usedVersions, err := gc.db.GetUsedVersions(tenantUUID)
+	usedVersions, err := gc.db.GetUsedVersions(ctx, tenantUUID)
 	if err != nil {
 		log.Info("failed to get used versions", "error", err)
 		return

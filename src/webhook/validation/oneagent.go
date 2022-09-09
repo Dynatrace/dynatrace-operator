@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"k8s.io/apimachinery/pkg/labels"
 )
 
@@ -16,6 +17,9 @@ const (
 	errorNodeSelectorConflict = `The DynaKube's specification tries to specify a nodeSelector conflicts with an another Dynakube's nodeSelector, which is not supported.
 The conflicting Dynakube: %s
 `
+	errorVolumeStorageReadOnlyModeConflict = `The DynaKube's specification specifies a read-only host file system and OneAgent has volume storage enabled.`
+
+	warningIneffectiveFeatureFlag = `Feature flag %s has no effect in classic full stack mode.`
 )
 
 func conflictingOneAgentConfiguration(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
@@ -89,4 +93,35 @@ func hasConflictingMatchLabels(labelMap, otherLabelMap map[string]string) bool {
 	labelSelectorLabels := labels.Set(labelMap)
 	otherLabelSelectorLabels := labels.Set(otherLabelMap)
 	return labelSelector.Matches(otherLabelSelectorLabels) || otherLabelSelector.Matches(labelSelectorLabels)
+}
+
+func hasOneAgentVolumeStorageEnabled(dynakube *dynatracev1beta1.DynaKube) (isEnabled bool, isSet bool) {
+	envVar := kubeobjects.FindEnvVar(dynakube.GetOneAgentEnvironment(), oneagentEnableVolumeStorageEnvVarName)
+	isSet = envVar != nil
+	isEnabled = isSet && envVar.Value == "true"
+	return
+}
+
+func conflictingOneAgentVolumeStorageSettings(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+	volumeStorageEnabled, volumeStorageSet := hasOneAgentVolumeStorageEnabled(dynakube)
+	if dynakube.NeedsReadOnlyOneAgents() && volumeStorageSet && !volumeStorageEnabled {
+		return errorVolumeStorageReadOnlyModeConflict
+	}
+	return ""
+}
+
+func ineffectiveReadOnlyHostFsFeatureFlag(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+	if dynakube.ClassicFullStackMode() {
+		if _, hasOneAgentReadOnlyFeatureFlag := dynakube.Annotations[dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent]; hasOneAgentReadOnlyFeatureFlag {
+			return readonlyHostFsFlagWarning(dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent)
+		}
+		if _, hasOneAgentReadOnlyFeatureFlag := dynakube.Annotations[dynatracev1beta1.AnnotationFeatureDisableReadOnlyOneAgent]; hasOneAgentReadOnlyFeatureFlag {
+			return readonlyHostFsFlagWarning(dynatracev1beta1.AnnotationFeatureDisableReadOnlyOneAgent)
+		}
+	}
+	return ""
+}
+
+func readonlyHostFsFlagWarning(featureFlag string) string {
+	return fmt.Sprintf(warningIneffectiveFeatureFlag, featureFlag)
 }
