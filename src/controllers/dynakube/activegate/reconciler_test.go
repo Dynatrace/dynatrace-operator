@@ -32,6 +32,7 @@ var testKubeSystemNamespace = &corev1.Namespace{
 func TestReconciler_Reconcile(t *testing.T) {
 	dtc := &dtclient.MockDynatraceClient{}
 	dtc.On("GetActiveGateTenantInfo").Return(&dtclient.ActiveGateTenantInfo{}, nil)
+	dtc.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
 
 	t.Run(`Reconcile works with minimal setup`, func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
