@@ -3718,6 +3718,12 @@ rules:
   - apiGroups:
       - ""
     resources:
+      - pods/log
+    verbs:
+      - get
+  - apiGroups:
+      - ""
+    resources:
       - namespaces
     verbs:
       - get
