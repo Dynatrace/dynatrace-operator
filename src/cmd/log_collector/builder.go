@@ -1,24 +1,23 @@
-package troubleshoot
+package log_collector
 
 import (
-	"net/http"
+	"context"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/spf13/cobra"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 )
 
 const (
-	use               = "troubleshoot"
-	dynakubeFlagName  = "dynakube"
+	use               = "collectlogs"
 	namespaceFlagName = "namespace"
 )
 
 var (
-	dynakubeFlagValue  string
 	namespaceFlagValue string
 )
 
@@ -26,7 +25,7 @@ type CommandBuilder struct {
 	configProvider config.Provider
 }
 
-func NewTroubleshootCommandBuilder() CommandBuilder {
+func NewLogCollectorCommandBuilder() CommandBuilder {
 	return CommandBuilder{}
 }
 
@@ -51,7 +50,6 @@ func (builder CommandBuilder) Build() *cobra.Command {
 }
 
 func addFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&dynakubeFlagValue, dynakubeFlagName, "dynakube", "Specify a different Dynakube name.")
 	cmd.PersistentFlags().StringVar(&namespaceFlagValue, namespaceFlagName, "dynatrace", "Specify a different Namespace.")
 }
 
@@ -71,36 +69,16 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		k8scluster, err := builder.GetCluster(kubeConfig)
+		clientSet, err := kubernetes.NewForConfig(kubeConfig)
 		if err != nil {
 			return err
 		}
 
-		apiReader := k8scluster.GetAPIReader()
-
-		tests := []troubleshootFunc{
-			checkNamespace,
-			checkDynakube,
-			checkDTClusterConnection,
-			checkImagePullable,
-		}
-
-		httpClient := &http.Client{
-			Transport: http.DefaultTransport.(*http.Transport).Clone(),
-		}
-
-		troubleshootCtx := troubleshootContext{
-			apiReader:     apiReader,
-			httpClient:    httpClient,
+		collectLogs(&logCollectorContext{
+			ctx:           context.TODO(),
+			clientSet:     clientSet,
 			namespaceName: namespaceFlagValue,
-			dynakubeName:  dynakubeFlagValue,
-		}
-		for _, test := range tests {
-			if err := test(&troubleshootCtx); err != nil {
-				logErrorf(err.Error())
-				return nil
-			}
-		}
+		})
 		return nil
 	}
 }
