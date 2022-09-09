@@ -641,7 +641,7 @@ func TestStatefulSet_VolumeMounts(t *testing.T) {
 			SubPath:   InternalProxySecretPassword,
 		})
 	})
-	t.Run(`with activeGateAuthToken (which is now enabled by default)`, func(t *testing.T) {
+	t.Run(`with activeGateAuthToken (which is enabled by default)`, func(t *testing.T) {
 		instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
 		volumeMounts := buildVolumeMounts(NewStatefulSetProperties(instance, capabilityProperties, "", "", "", "", "", nil, nil, nil, nil))
 
