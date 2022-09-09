@@ -15,28 +15,15 @@ linters-settings:
 linters:
   disable-all: true
   enable:
-  - deadcode
   - gci
   - goimports
   - gosimple
   - govet
   - ineffassign
   - staticcheck
-  - structcheck
   - typecheck
   - unused
-  - varcheck
   - misspell
 
 service:
-  golangci-lint-version: 1.48.x # use the fixed version to not introduce new linters unexpectedly
-
-issues:
-  exclude-rules:
-    # These are needed because it thinks that FromUnparsedImage can't return nil, however if you go JUST 2 levels down, then you will find several cases when it can be nil
-    - path: src/controllers/dynakube/version/version_image.go
-      linters:
-       - staticcheck
-    - linters:
-        - staticcheck
-      text: "github.com/containers/image/v5/image.FromUnparsedImage never returns a nil interface value"
+  golangci-lint-version: 1.49.x # use the fixed version to not introduce new linters unexpectedly
