@@ -112,12 +112,14 @@ spec:
   #
   activeGate:
     # Specifies which capabilities will be enabled on ActiveGate instances
+    #
     capabilities:
       - routing
       - dynatrace-api
 
     # Optional: Sets how many ActiveGate pods are spawned by the StatefulSet
     # Defaults to "1"
+    #
     replicas: 2
 
     # Optional: Specifies resource settings for ActiveGate instances
