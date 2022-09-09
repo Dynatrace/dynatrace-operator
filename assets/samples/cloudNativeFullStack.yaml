@@ -201,7 +201,7 @@ spec:
     #   valueFrom: myCustomPropertiesConfigMap
 
     # Optional: Specifies resource settings for ActiveGate instances
-    # Consumption of the ActiveGate heavily depends on the workload to monitor#
+    # Consumption of the ActiveGate heavily depends on the workload to monitor
     # The values should be adjusted according to the workload
     #
     resources:
