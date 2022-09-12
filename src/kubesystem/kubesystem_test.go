@@ -31,31 +31,20 @@ func TestGetUID(t *testing.T) {
 	assert.Equal(t, testUID, uid)
 }
 
-func TestDeployedViaOLM(t *testing.T) {
+func TestIsDeployedViaOLM(t *testing.T) {
 	testPodName := "test-pod"
 	testNamespaceName := "test-namespace"
 
-	fakeClient := fake.NewClientBuilder().
-		WithScheme(scheme.Scheme).
-		WithObjects(
-			&v1.Namespace{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: Namespace,
-				},
+	pod := v1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testPodName,
+			Namespace: testNamespaceName,
+			Annotations: map[string]string{
+				"olm.operatorNamespace": "operators",
 			},
-			&v1.Pod{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      testPodName,
-					Namespace: testNamespaceName,
-					Annotations: map[string]string{
-						"olm.operatorNamespace": "operators",
-					},
-				},
-			},
-		).Build()
+		},
+	}
 
-	deployed, err := IsDeployedViaOlm(fakeClient, testPodName, testNamespaceName)
-
-	assert.NoError(t, err)
+	deployed := IsDeployedViaOlm(pod)
 	assert.True(t, deployed)
 }

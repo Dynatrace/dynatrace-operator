@@ -10,9 +10,10 @@ import (
 )
 
 type BindConfig struct {
-	TenantUUID  string
-	Version     string
-	ImageDigest string
+	TenantUUID       string
+	Version          string
+	ImageDigest      string
+	MaxMountAttempts int
 }
 
 func NewBindConfig(ctx context.Context, access metadata.Access, volumeCfg *VolumeConfig) (*BindConfig, error) {
@@ -25,8 +26,9 @@ func NewBindConfig(ctx context.Context, access metadata.Access, volumeCfg *Volum
 		return nil, status.Error(codes.Unavailable, fmt.Sprintf("dynakube (%s) is missing from metadata database", volumeCfg.DynakubeName))
 	}
 	return &BindConfig{
-		TenantUUID:  dynakube.TenantUUID,
-		Version:     dynakube.LatestVersion,
-		ImageDigest: dynakube.ImageDigest,
+		TenantUUID:       dynakube.TenantUUID,
+		Version:          dynakube.LatestVersion,
+		ImageDigest:      dynakube.ImageDigest,
+		MaxMountAttempts: dynakube.MaxFailedMountAttempts,
 	}, nil
 }

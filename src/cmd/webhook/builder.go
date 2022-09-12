@@ -1,11 +1,14 @@
 package webhook
 
 import (
+	"context"
+
 	"github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/certificates"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 	cmdManager "github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook/mutation/namespace_mutator"
@@ -96,11 +99,11 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		if err != nil {
 			return err
 		}
-
-		isDeployedViaOLM, err := kubesystem.IsDeployedViaOlm(webhookManager.GetAPIReader(), builder.podName, builder.namespace)
+		webhookPod, err := kubeobjects.GetPod(context.TODO(), webhookManager.GetAPIReader(), builder.podName, builder.namespace)
 		if err != nil {
 			return err
 		}
+		isDeployedViaOLM := kubesystem.IsDeployedViaOlm(*webhookPod)
 
 		if !isDeployedViaOLM {
 			certificates.

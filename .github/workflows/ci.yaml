@@ -23,11 +23,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3.0.2
       - name: Set up Helm
-        uses: azure/setup-helm@b5b231a831f96336bbfeccc1329990f0005c5bb1 # v3
-        with:
-          version: v3.7.1
+        uses: azure/setup-helm@b5b231a831f96336bbfeccc1329990f0005c5bb1 # v3.3
       - name: Download dependencies
         id: helm-unittest-download
         run: |
@@ -42,11 +40,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3.0.2
       - name: Set up Helm
-        uses: azure/setup-helm@b5b231a831f96336bbfeccc1329990f0005c5bb1 # v3
-        with:
-          version: v3.8.2
+        uses: azure/setup-helm@b5b231a831f96336bbfeccc1329990f0005c5bb1 # v3.3
       - name: Run Linting
         id: helm-linting
         run: |
@@ -57,11 +53,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3.0.2
       - name: Setup Golang
-        uses: actions/setup-go@84cbf8094393cdc5fe1fe1671ff2647332956b1a # v3
+        uses: actions/setup-go@268d8c0ca0432bb2cf416faae41297df9d262d7f # v3.3.0
         with:
-          go-version: ${{ env.GO_VERSION }}
+          go-version-file: "${{ github.workspace }}/go.mod"
       - name: Download dependencies
         id: depdownload
         run: |
@@ -75,19 +71,19 @@ jobs:
     name: Run linting
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-go@84cbf8094393cdc5fe1fe1671ff2647332956b1a # v3
-        with:
-          go-version: ${{ env.GO_VERSION }}
       - name: Checkout
-        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3.0.2
+      - uses: actions/setup-go@268d8c0ca0432bb2cf416faae41297df9d262d7f # v3.3.0
+        with:
+          go-version-file: "${{ github.workspace }}/go.mod"
       - name: Download dependencies
         id: depdownload
         run: |
           hack/build/ci/install-cgo-dependencies.sh
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@537aa1903e5d359d0b27dbc19ddd22c5087f3fbc # v3
+        uses: golangci/golangci-lint-action@537aa1903e5d359d0b27dbc19ddd22c5087f3fbc # v3.2.0
         with:
-          version: v1.48
+          version: v1.49
           args: --build-tags integration,containers_image_storage_stub --timeout 300s
 
   prepare:
@@ -95,7 +91,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3.0.2
       - name: Prepare build parameters
         id: prep
         run: |
@@ -113,94 +109,78 @@ jobs:
     outputs:
       labels: ${{ steps.prep.outputs.docker_image_labels }}
       version: ${{ steps.prep.outputs.docker_image_tag }}
-      go-linker-args: ${{ steps.prep.outputs.go_linker_args }}
-      cgo-cflags: ${{ steps.prep.outputs.cgo_cflags }}
-      go-version: ${{ steps.prepenv.outputs.goversion }}
       registry: ${{ steps.prepenv.outputs.registry }}
       repository: ${{ steps.prepenv.outputs.repository }}
 
-  build-amd64:
-    name: Build amd64 docker image
-    needs: [prepare, tests, linting]
+  build:
+    name: Build images
     runs-on: ubuntu-latest
+    needs: [prepare, tests, linting]
+    strategy:
+      matrix:
+        platform: [amd64, arm64]
     steps:
       - name: Checkout
-        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3
-      - name: build-image
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3.0.2
+      - name: Login to Registry
+        uses: docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b # v2.0.0
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
+      - name: Build image
+        if: matrix.platform != 'arm64' || github.ref_protected
         uses: ./.github/actions/build-image
         with:
-          platform: amd64
-          go-version: ${{ needs.prepare.outputs.go-version }}
-          go-linker-args: ${{ needs.prepare.outputs.go-linker-args }}
-          cgo-cflags: ${{ needs.prepare.outputs.cgo-cflags }}
+          platform: ${{ matrix.platform }}
           labels: ${{ needs.prepare.outputs.labels }}
           image-tag: ${{ needs.prepare.outputs.version }}
-      - name: Upload Image
-        uses: ./.github/actions/upload-image
-        with:
-          platform: amd64
-          labels: ${{ needs.prepare.outputs.labels }}
-          version: ${{ needs.prepare.outputs.version }}
-          registry: ${{ needs.prepare.outputs.registry }}
-          repository: ${{ needs.prepare.outputs.repository }}
-          repository-username: ${{ secrets.QUAY_USERNAME }}
-          repository-password: ${{ secrets.QUAY_PASSWORD }}
-      - name: Create Manifests
-        uses: ./.github/actions/create-manifests
-        with:
-          version: ${{ needs.prepare.outputs.version }}
-          registry: ${{ needs.prepare.outputs.registry }}
-          repository: ${{ needs.prepare.outputs.repository }}
-          combined: false
-          repository-username: ${{ secrets.QUAY_USERNAME }}
-          repository-password: ${{ secrets.QUAY_PASSWORD }}
 
-  build-arm64:
-    name: Build arm64 docker image
-    needs: [prepare, tests, linting]
-    if: ${{ contains(github.ref, 'refs/tags/v') || contains(github.ref, 'refs/heads/master') || contains(github.ref, 'refs/heads/release-') }}
+  push:
+    name: Push images
     runs-on: ubuntu-latest
+    needs: [prepare, build]
+    strategy:
+      matrix:
+        platform: [amd64, arm64]
     steps:
       - name: Checkout
-        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3
-      - name: build-image
-        uses: ./.github/actions/build-image
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3.0.2
+      - name: Login to Registry
+        uses: docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b # v2.0.0
         with:
-          platform: arm64
-          go-version: ${{ needs.prepare.outputs.go-version }}
-          go-linker-args: ${{ needs.prepare.outputs.go-linker-args }}
-          cgo-cflags: ${{ needs.prepare.outputs.cgo-cflags }}
-          labels: ${{ needs.prepare.outputs.labels }}
-          image-tag: ${{ needs.prepare.outputs.version }}
+          registry: quay.io
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
       - name: Upload Image
+        if: matrix.platform != 'arm64' || github.ref_protected
         uses: ./.github/actions/upload-image
         with:
-          platform: arm64
+          platform: ${{ matrix.platform }}
           labels: ${{ needs.prepare.outputs.labels }}
           version: ${{ needs.prepare.outputs.version }}
           registry: ${{ needs.prepare.outputs.registry }}
           repository: ${{ needs.prepare.outputs.repository }}
-          repository-username: ${{ secrets.QUAY_USERNAME }}
-          repository-password: ${{ secrets.QUAY_PASSWORD }}
 
-  create-manifest-for-combined-images:
-    name: Combine images
-    needs: [prepare, build-arm64, build-amd64]
+  manifest:
+    name: Create manifest
+    needs: [prepare, push]
     runs-on: ubuntu-latest
-    if: |
-      (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) &&
-      (contains(github.ref, 'refs/tags/v') || contains(github.ref, 'refs/heads/master') || contains(github.ref, 'refs/heads/release-'))
     env:
-      IMAGE_QUAY: ${{ needs.prepare.outputs.registry }}/${{ needs.prepare.outputs.repository }}
+      COMBINED: ${{ github.ref_protected }}
     steps:
       - name: Checkout
-        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3.0.2
+      - name: Login to Registry
+        uses: docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b # v2.0.0
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
       - name: Create Manifests
         uses: ./.github/actions/create-manifests
         with:
           version: ${{ needs.prepare.outputs.version }}
           registry: ${{ needs.prepare.outputs.registry }}
           repository: ${{ needs.prepare.outputs.repository }}
-          combined: true
-          repository-username: ${{ secrets.QUAY_USERNAME }}
-          repository-password: ${{ secrets.QUAY_PASSWORD }}
+          combined: ${{ env.COMBINED }}
