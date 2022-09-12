@@ -44,7 +44,6 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 	}
 
 	if r.capability.ShouldCreateService() {
-		// TODO: MutliCapability shouldn't be used here - it may be as well one of deprecated Capabilities: Kubemon or Routing
 		multiCapability := capability.NewMultiCapability(r.dynakube)
 		update, err = r.createOrUpdateService(multiCapability.ServicePorts)
 		if update || err != nil {
