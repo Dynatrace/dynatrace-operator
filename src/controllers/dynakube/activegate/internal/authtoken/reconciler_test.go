@@ -76,6 +76,7 @@ func TestReconcile(t *testing.T) {
 		update, err := r.Reconcile()
 
 		var authToken corev1.Secret
+
 		r.Client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.ActiveGateAuthTokenSecret(), Namespace: testNamespace}, &authToken)
 
 		assert.NotEqual(t, authToken.Data[ActiveGateAuthTokenName], []byte(testToken))

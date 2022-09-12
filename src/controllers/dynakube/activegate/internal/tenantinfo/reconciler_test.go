@@ -49,8 +49,8 @@ func newTestReconciler(client client.Client) *Reconciler {
 }
 
 func TestReconcile(t *testing.T) {
-	r := newTestReconciler(fake.NewClientBuilder().Build())
 	t.Run(`reconcile tenant info for first time`, func(t *testing.T) {
+		r := newTestReconciler(fake.NewClientBuilder().Build())
 		update, err := r.Reconcile()
 
 		var tenantInfoSecret corev1.Secret
@@ -64,7 +64,10 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run(`reconcile tenant info changed`, func(t *testing.T) {
+		r := newTestReconciler(fake.NewClientBuilder().Build())
 		update, err := r.Reconcile()
+		assert.True(t, update)
+		assert.NoError(t, err)
 
 		var newTenantToken = "dt.someOtherToken"
 		tenantInfoResponse.UUID = newTenantToken
@@ -82,6 +85,7 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run(`reconcile tenant info returns error`, func(t *testing.T) {
+		r := newTestReconciler(fake.NewClientBuilder().Build())
 		var dtClient = &dtclient.MockDynatraceClient{}
 		dtClient.On("GetActiveGateTenantInfo", mock.Anything).Return(&dtclient.ActiveGateTenantInfo{}, errors.New("error"))
 		r.dtc = dtClient
