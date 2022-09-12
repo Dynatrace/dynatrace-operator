@@ -9,18 +9,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func setReadOnlyUsage(dynakube *dynatracev1beta1.DynaKube, isUsed bool) {
-	dynakube.Annotations[dynatracev1beta1.AnnotationFeatureActiveGateReadOnlyFilesystem] = strconv.FormatBool(isUsed)
+func setRawImageUsage(dynakube *dynatracev1beta1.DynaKube, isUsed bool) {
+	dynakube.Annotations[dynatracev1beta1.AnnotationFeatureActiveGateRawImage] = strconv.FormatBool(isUsed)
 }
 
-func TestReadOnlyEnabled(t *testing.T) {
-
+func TestRawImageEnabled(t *testing.T) {
 	t.Run("true", func(t *testing.T) {
 		dynakube := getBaseDynakube()
 		enableKubeMonCapability(&dynakube)
-		setReadOnlyUsage(&dynakube, true)
+		setRawImageUsage(&dynakube, true)
 
-		mod := NewReadOnlyModifier(dynakube)
+		mod := NewRawImageModifier(dynakube)
 
 		assert.True(t, mod.Enabled())
 	})
@@ -28,28 +27,27 @@ func TestReadOnlyEnabled(t *testing.T) {
 	t.Run("false", func(t *testing.T) {
 		dynakube := getBaseDynakube()
 		enableKubeMonCapability(&dynakube)
-		setReadOnlyUsage(&dynakube, false)
+		setRawImageUsage(&dynakube, false)
 
-		mod := NewReadOnlyModifier(dynakube)
+		mod := NewRawImageModifier(dynakube)
 
 		assert.False(t, mod.Enabled())
 	})
 }
 
-func TestReadOnlyModify(t *testing.T) {
+func TestRawImageModify(t *testing.T) {
 	t.Run("successfully modified", func(t *testing.T) {
 		dynakube := getBaseDynakube()
 		enableKubeMonCapability(&dynakube)
-		setReadOnlyUsage(&dynakube, true)
-		mod := NewReadOnlyModifier(dynakube)
+		setRawImageUsage(&dynakube, true)
+		mod := NewRawImageModifier(dynakube)
 		builder := createBuilderForTesting()
-		expectedVolumes := mod.getVolumes()
-		expectedVolumeMounts := mod.getVolumeMounts()
 
 		sts := builder.AddModifier(mod).Build()
 
 		require.NotEmpty(t, sts)
-		isSubset(t, expectedVolumes, sts.Spec.Template.Spec.Volumes)
-		isSubset(t, expectedVolumeMounts, sts.Spec.Template.Spec.Containers[0].VolumeMounts)
+		isSubset(t, mod.getVolumes(), sts.Spec.Template.Spec.Volumes)
+		isSubset(t, mod.getVolumeMounts(), sts.Spec.Template.Spec.Containers[0].VolumeMounts)
+		isSubset(t, mod.getEnvs(), sts.Spec.Template.Spec.Containers[0].Env)
 	})
 }

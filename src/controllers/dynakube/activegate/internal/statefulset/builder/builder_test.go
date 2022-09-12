@@ -1,4 +1,4 @@
-package agbuilder
+package builder
 
 import (
 	"testing"
@@ -25,7 +25,7 @@ func (m *ModifierMock) Modify(sts *appsv1.StatefulSet) {
 	m.Called(sts)
 }
 
-func TestAgBuilder(t *testing.T) {
+func TestBuilder(t *testing.T) {
 	t.Run("Simple, no modifiers", func(t *testing.T) {
 		b := Builder{}
 		actual := b.Build()

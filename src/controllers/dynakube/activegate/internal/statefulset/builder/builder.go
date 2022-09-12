@@ -1,4 +1,4 @@
-package agbuilder
+package builder
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/src/builder"

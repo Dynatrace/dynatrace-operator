@@ -4,7 +4,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/authtoken"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/agbuilder"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -12,7 +12,7 @@ import (
 
 var _ volumeModifier = AuthTokenModifier{}
 var _ volumeMountModifier = AuthTokenModifier{}
-var _ agbuilder.Modifier = AuthTokenModifier{}
+var _ builder.Modifier = AuthTokenModifier{}
 
 func NewAuthTokenModifier(dynakube dynatracev1beta1.DynaKube) AuthTokenModifier {
 	return AuthTokenModifier{

@@ -7,8 +7,8 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/agbuilder"
-	agmodifiers "github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/agbuilder/modifiers"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder/modifiers"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
@@ -36,12 +36,12 @@ func NewStatefulSetBuilder(kubeUID types.UID, configHash string, dynakube dynatr
 	}
 }
 
-func (builder StatefulSetBuilder) CreateStatefulSet(modifiers []agbuilder.Modifier) (*appsv1.StatefulSet, error) {
-	activeGateBuilder := agbuilder.NewBuilder(builder.getBase())
-	if len(modifiers) == 0 {
-		modifiers = agmodifiers.GetAllModifiers(builder.dynakube, builder.capability)
+func (statefulSetBuilder StatefulSetBuilder) CreateStatefulSet(mods []builder.Modifier) (*appsv1.StatefulSet, error) {
+	activeGateBuilder := builder.NewBuilder(statefulSetBuilder.getBase())
+	if len(mods) == 0 {
+		mods = modifiers.GenerateAllModifiers(statefulSetBuilder.dynakube, statefulSetBuilder.capability)
 	}
-	sts := activeGateBuilder.AddModifier(modifiers...).Build()
+	sts := activeGateBuilder.AddModifier(mods...).Build()
 
 	if err := setHash(&sts); err != nil {
 		return nil, err
@@ -50,68 +50,68 @@ func (builder StatefulSetBuilder) CreateStatefulSet(modifiers []agbuilder.Modifi
 	return &sts, nil
 }
 
-func (builder StatefulSetBuilder) getBase() appsv1.StatefulSet {
+func (statefulSetBuilder StatefulSetBuilder) getBase() appsv1.StatefulSet {
 	var sts appsv1.StatefulSet
-	sts.ObjectMeta = builder.getBaseObjectMeta()
-	sts.Spec = builder.getBaseSpec()
-	builder.addLabels(&sts)
-	builder.addTemplateSpec(&sts)
+	sts.ObjectMeta = statefulSetBuilder.getBaseObjectMeta()
+	sts.Spec = statefulSetBuilder.getBaseSpec()
+	statefulSetBuilder.addLabels(&sts)
+	statefulSetBuilder.addTemplateSpec(&sts)
 
-	if builder.dynakube.FeatureActiveGateAppArmor() {
+	if statefulSetBuilder.dynakube.FeatureActiveGateAppArmor() {
 		sts.Spec.Template.ObjectMeta.Annotations[consts.AnnotationActiveGateContainerAppArmor] = "runtime/default"
 	}
 	return sts
 }
 
-func (builder StatefulSetBuilder) getBaseObjectMeta() metav1.ObjectMeta {
+func (statefulSetBuilder StatefulSetBuilder) getBaseObjectMeta() metav1.ObjectMeta {
 	return metav1.ObjectMeta{
-		Name:        builder.dynakube.Name + "-" + builder.capability.ShortName(),
-		Namespace:   builder.dynakube.Namespace,
+		Name:        statefulSetBuilder.dynakube.Name + "-" + statefulSetBuilder.capability.ShortName(),
+		Namespace:   statefulSetBuilder.dynakube.Namespace,
 		Annotations: map[string]string{},
 	}
 }
 
-func (builder StatefulSetBuilder) getBaseSpec() appsv1.StatefulSetSpec {
+func (statefulSetBuilder StatefulSetBuilder) getBaseSpec() appsv1.StatefulSetSpec {
 	return appsv1.StatefulSetSpec{
-		Replicas:            builder.capability.Properties().Replicas,
+		Replicas:            statefulSetBuilder.capability.Properties().Replicas,
 		PodManagementPolicy: appsv1.ParallelPodManagement,
 		Template: corev1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					consts.AnnotationActiveGateConfigurationHash: builder.configHash,
+					consts.AnnotationActiveGateConfigurationHash: statefulSetBuilder.configHash,
 				},
 			},
 		},
 	}
 }
 
-func (builder StatefulSetBuilder) addLabels(sts *appsv1.StatefulSet) {
-	versionLabelValue := builder.dynakube.Status.ActiveGate.Version
-	if builder.dynakube.CustomActiveGateImage() != "" {
+func (statefulSetBuilder StatefulSetBuilder) addLabels(sts *appsv1.StatefulSet) {
+	versionLabelValue := statefulSetBuilder.dynakube.Status.ActiveGate.Version
+	if statefulSetBuilder.dynakube.CustomActiveGateImage() != "" {
 		versionLabelValue = kubeobjects.CustomImageLabelValue
 	}
-	appLabels := kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, builder.dynakube.Name, builder.capability.ShortName(), versionLabelValue)
+	appLabels := kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, statefulSetBuilder.dynakube.Name, statefulSetBuilder.capability.ShortName(), versionLabelValue)
 
 	sts.ObjectMeta.Labels = appLabels.BuildLabels()
 	sts.Spec.Selector = &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()}
-	sts.Spec.Template.ObjectMeta.Labels = kubeobjects.MergeMap(builder.capability.Properties().Labels, appLabels.BuildLabels())
+	sts.Spec.Template.ObjectMeta.Labels = kubeobjects.MergeMap(statefulSetBuilder.capability.Properties().Labels, appLabels.BuildLabels())
 }
 
-func (builder StatefulSetBuilder) addTemplateSpec(sts *appsv1.StatefulSet) {
+func (statefulSetBuilder StatefulSetBuilder) addTemplateSpec(sts *appsv1.StatefulSet) {
 	podSpec := corev1.PodSpec{
-		Containers:         builder.buildBaseContainer(),
-		InitContainers:     builder.buildInitContainers(),
-		NodeSelector:       builder.capability.Properties().NodeSelector,
-		ServiceAccountName: builder.buildServiceAccountName(),
+		Containers:         statefulSetBuilder.buildBaseContainer(),
+		InitContainers:     statefulSetBuilder.buildInitContainers(),
+		NodeSelector:       statefulSetBuilder.capability.Properties().NodeSelector,
+		ServiceAccountName: statefulSetBuilder.buildServiceAccountName(),
 		Affinity:           nodeAffinity(),
-		Tolerations:        buildTolerations(builder.capability),
-		Volumes:            builder.capability.Volumes(),
+		Tolerations:        buildTolerations(statefulSetBuilder.capability),
+		Volumes:            statefulSetBuilder.capability.Volumes(),
 		ImagePullSecrets: []corev1.LocalObjectReference{
-			{Name: builder.dynakube.PullSecret()},
+			{Name: statefulSetBuilder.dynakube.PullSecret()},
 		},
-		PriorityClassName:         builder.dynakube.Spec.ActiveGate.PriorityClassName,
-		DNSPolicy:                 builder.dynakube.Spec.ActiveGate.DNSPolicy,
-		TopologySpreadConstraints: builder.capability.Properties().TopologySpreadConstraints,
+		PriorityClassName:         statefulSetBuilder.dynakube.Spec.ActiveGate.PriorityClassName,
+		DNSPolicy:                 statefulSetBuilder.dynakube.Spec.ActiveGate.DNSPolicy,
+		TopologySpreadConstraints: statefulSetBuilder.capability.Properties().TopologySpreadConstraints,
 	}
 	sts.Spec.Template.Spec = podSpec
 }
@@ -121,13 +121,13 @@ func buildTolerations(capability capability.Capability) []corev1.Toleration {
 	return tolerations
 }
 
-func (builder StatefulSetBuilder) buildBaseContainer() []corev1.Container {
+func (statefulSetBuilder StatefulSetBuilder) buildBaseContainer() []corev1.Container {
 	container := corev1.Container{
 		Name:            consts.ActiveGateContainerName,
-		Image:           builder.dynakube.ActiveGateImage(),
-		Resources:       builder.capability.Properties().Resources,
-		Env:             builder.buildCommonEnvs(),
-		VolumeMounts:    builder.capability.ContainerVolumeMounts(),
+		Image:           statefulSetBuilder.dynakube.ActiveGateImage(),
+		Resources:       statefulSetBuilder.capability.Properties().Resources,
+		Env:             statefulSetBuilder.buildCommonEnvs(),
+		VolumeMounts:    statefulSetBuilder.capability.ContainerVolumeMounts(),
 		ImagePullPolicy: corev1.PullAlways,
 		ReadinessProbe: &corev1.Probe{
 			ProbeHandler: corev1.ProbeHandler{
@@ -155,10 +155,10 @@ func (builder StatefulSetBuilder) buildBaseContainer() []corev1.Container {
 			},
 		},
 	}
-	if builder.capability.Config().SetReadinessPort {
+	if statefulSetBuilder.capability.Config().SetReadinessPort {
 		container.ReadinessProbe.HTTPGet.Port = intstr.FromString(consts.HttpsServicePortName)
 	}
-	if builder.capability.Config().SetCommunicationPort {
+	if statefulSetBuilder.capability.Config().SetCommunicationPort {
 		container.Ports = []corev1.ContainerPort{
 			{
 				Name:          consts.HttpsServicePortName,
@@ -170,57 +170,57 @@ func (builder StatefulSetBuilder) buildBaseContainer() []corev1.Container {
 			},
 		}
 	}
-	if builder.capability.Config().SetDnsEntryPoint {
+	if statefulSetBuilder.capability.Config().SetDnsEntryPoint {
 		container.Env = append(container.Env,
 			corev1.EnvVar{
 				Name:  consts.EnvDtDnsEntryPoint,
-				Value: builder.buildDNSEntryPoint(),
+				Value: statefulSetBuilder.buildDNSEntryPoint(),
 			})
 	}
 
 	return []corev1.Container{container}
 }
 
-func (builder StatefulSetBuilder) buildDNSEntryPoint() string {
-	return fmt.Sprintf("https://%s/communication", buildServiceHostName(builder.dynakube.Name, builder.capability.ShortName()))
+func (statefulSetBuilder StatefulSetBuilder) buildDNSEntryPoint() string {
+	return fmt.Sprintf("https://%s/communication", buildServiceHostName(statefulSetBuilder.dynakube.Name, statefulSetBuilder.capability.ShortName()))
 }
 
-func (builder StatefulSetBuilder) buildInitContainers() []corev1.Container {
-	initContainers := builder.capability.InitContainersTemplates()
+func (statefulSetBuilder StatefulSetBuilder) buildInitContainers() []corev1.Container {
+	initContainers := statefulSetBuilder.capability.InitContainersTemplates()
 
 	for i := range initContainers {
-		initContainers[i].Image = builder.dynakube.ActiveGateImage()
-		initContainers[i].Resources = builder.capability.Properties().Resources
+		initContainers[i].Image = statefulSetBuilder.dynakube.ActiveGateImage()
+		initContainers[i].Resources = statefulSetBuilder.capability.Properties().Resources
 	}
 
 	return initContainers
 }
 
-func (builder StatefulSetBuilder) buildCommonEnvs() []corev1.EnvVar {
-	deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(string(builder.kubeUID), consts.DeploymentTypeActiveGate)
+func (statefulSetBuilder StatefulSetBuilder) buildCommonEnvs() []corev1.EnvVar {
+	deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(string(statefulSetBuilder.kubeUID), consts.DeploymentTypeActiveGate)
 
 	envs := []corev1.EnvVar{
-		{Name: consts.EnvDtCapabilities, Value: builder.capability.ArgName()},
-		{Name: consts.EnvDtIdSeedNamespace, Value: builder.dynakube.Namespace},
-		{Name: consts.EnvDtIdSeedClusterId, Value: string(builder.kubeUID)},
+		{Name: consts.EnvDtCapabilities, Value: statefulSetBuilder.capability.ArgName()},
+		{Name: consts.EnvDtIdSeedNamespace, Value: statefulSetBuilder.dynakube.Namespace},
+		{Name: consts.EnvDtIdSeedClusterId, Value: string(statefulSetBuilder.kubeUID)},
 		{Name: consts.EnvDtDeploymentMetadata, Value: deploymentMetadata.AsString()},
 	}
-	envs = append(envs, builder.capability.Properties().Env...)
+	envs = append(envs, statefulSetBuilder.capability.Properties().Env...)
 
-	if builder.capability.Properties().Group != "" {
-		envs = append(envs, corev1.EnvVar{Name: consts.EnvDtGroup, Value: builder.capability.Properties().Group})
+	if statefulSetBuilder.capability.Properties().Group != "" {
+		envs = append(envs, corev1.EnvVar{Name: consts.EnvDtGroup, Value: statefulSetBuilder.capability.Properties().Group})
 	}
-	if builder.dynakube.Spec.NetworkZone != "" {
-		envs = append(envs, corev1.EnvVar{Name: consts.EnvDtNetworkZone, Value: builder.dynakube.Spec.NetworkZone})
+	if statefulSetBuilder.dynakube.Spec.NetworkZone != "" {
+		envs = append(envs, corev1.EnvVar{Name: consts.EnvDtNetworkZone, Value: statefulSetBuilder.dynakube.Spec.NetworkZone})
 	}
 	return envs
 }
 
-func (builder StatefulSetBuilder) buildServiceAccountName() string {
-	return consts.ServiceAccountPrefix + builder.capability.Config().ServiceAccountOwner
+func (statefulSetBuilder StatefulSetBuilder) buildServiceAccountName() string {
+	return consts.ServiceAccountPrefix + statefulSetBuilder.capability.Config().ServiceAccountOwner
 }
 
-// BuildServiceHostName converts the name returned by BuildServiceName
+// buildServiceHostName converts the name returned by BuildServiceName
 // into the variable name which Kubernetes uses to reference the associated service.
 // For more information see: https://kubernetes.io/docs/concepts/services-networking/service/
 func buildServiceHostName(dynakubeName string, module string) string {

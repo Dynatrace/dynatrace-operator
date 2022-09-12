@@ -3,7 +3,7 @@ package modifiers
 import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/agbuilder"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/src/logger"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -24,8 +24,8 @@ var (
 	log = logger.NewDTLogger().WithName("activegate-statefulset-builder")
 )
 
-func GetAllModifiers(dynakube dynatracev1beta1.DynaKube, capability capability.Capability) []agbuilder.Modifier {
-	return []agbuilder.Modifier{
+func GenerateAllModifiers(dynakube dynatracev1beta1.DynaKube, capability capability.Capability) []builder.Modifier {
+	return []builder.Modifier{
 		NewAuthTokenModifier(dynakube),
 		NewCertificatesModifier(dynakube),
 		NewCustomPropertiesModifier(dynakube, capability),

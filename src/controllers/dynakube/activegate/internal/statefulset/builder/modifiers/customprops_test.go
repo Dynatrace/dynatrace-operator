@@ -22,7 +22,6 @@ func setCustomPropertyUsage(capability capability.Capability, isUsed bool) {
 }
 
 func TestCustomPropertyEnabled(t *testing.T) {
-
 	t.Run("true", func(t *testing.T) {
 		dynakube := getBaseDynakube()
 		enableKubeMonCapability(&dynakube)

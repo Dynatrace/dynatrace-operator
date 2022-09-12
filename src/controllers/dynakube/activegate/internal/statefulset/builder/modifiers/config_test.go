@@ -6,7 +6,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/agbuilder"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -19,7 +19,7 @@ const (
 	testNamespaceName = "testNs"
 )
 
-func createBuilderForTesting() agbuilder.Builder {
+func createBuilderForTesting() builder.Builder {
 	base := appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "testing",
@@ -40,7 +40,7 @@ func createBuilderForTesting() agbuilder.Builder {
 			},
 		},
 	}
-	builder := agbuilder.NewBuilder(base)
+	builder := builder.NewBuilder(base)
 	return builder
 }
 
@@ -80,7 +80,7 @@ func TestNoConflict(t *testing.T) {
 		enableKubeMonCapability(&dynakube)
 		multiCapability := capability.NewMultiCapability(&dynakube)
 		enableAll(&dynakube, multiCapability)
-		mods := GetAllModifiers(dynakube, multiCapability)
+		mods := GenerateAllModifiers(dynakube, multiCapability)
 		builder := createBuilderForTesting()
 
 		sts := builder.AddModifier(mods...).Build()

@@ -1,7 +1,6 @@
 package modifiers
 
 import (
-	"strconv"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -9,18 +8,24 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func setAutTokenUsage(dynakube *dynatracev1beta1.DynaKube, isUsed bool) {
-	dynakube.Annotations[dynatracev1beta1.AnnotationFeatureActiveGateAuthToken] = strconv.FormatBool(isUsed)
+const testProxyName = "test-proxy"
+
+func setProxyUsage(dynakube *dynatracev1beta1.DynaKube, isUsed bool) {
+	dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{}
+	if isUsed {
+		dynakube.Spec.Proxy.ValueFrom = testProxyName
+	} else {
+		dynakube.Spec.Proxy.ValueFrom = ""
+	}
 }
 
-func TestAuthTokenEnabled(t *testing.T) {
-
+func TestProxyEnabled(t *testing.T) {
 	t.Run("true", func(t *testing.T) {
 		dynakube := getBaseDynakube()
 		enableKubeMonCapability(&dynakube)
-		setAutTokenUsage(&dynakube, true)
+		setProxyUsage(&dynakube, true)
 
-		mod := NewAuthTokenModifier(dynakube)
+		mod := NewProxyModifier(dynakube)
 
 		assert.True(t, mod.Enabled())
 	})
@@ -28,20 +33,20 @@ func TestAuthTokenEnabled(t *testing.T) {
 	t.Run("false", func(t *testing.T) {
 		dynakube := getBaseDynakube()
 		enableKubeMonCapability(&dynakube)
-		setAutTokenUsage(&dynakube, false)
+		setProxyUsage(&dynakube, false)
 
-		mod := NewAuthTokenModifier(dynakube)
+		mod := NewProxyModifier(dynakube)
 
 		assert.False(t, mod.Enabled())
 	})
 }
 
-func TestAuthTokenModify(t *testing.T) {
+func TestProxyModify(t *testing.T) {
 	t.Run("successfully modified", func(t *testing.T) {
 		dynakube := getBaseDynakube()
 		enableKubeMonCapability(&dynakube)
-		setAutTokenUsage(&dynakube, true)
-		mod := NewAuthTokenModifier(dynakube)
+		setProxyUsage(&dynakube, true)
+		mod := NewProxyModifier(dynakube)
 		builder := createBuilderForTesting()
 
 		sts := builder.AddModifier(mod).Build()

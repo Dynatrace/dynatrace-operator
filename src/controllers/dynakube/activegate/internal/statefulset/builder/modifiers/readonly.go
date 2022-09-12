@@ -3,7 +3,7 @@ package modifiers
 import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/agbuilder"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	appsv1 "k8s.io/api/apps/v1"
@@ -12,7 +12,7 @@ import (
 
 var _ volumeModifier = ReadOnlyModifier{}
 var _ volumeMountModifier = ReadOnlyModifier{}
-var _ agbuilder.Modifier = ReadOnlyModifier{}
+var _ builder.Modifier = ReadOnlyModifier{}
 
 func NewReadOnlyModifier(dynakube dynatracev1beta1.DynaKube) ReadOnlyModifier {
 	return ReadOnlyModifier{

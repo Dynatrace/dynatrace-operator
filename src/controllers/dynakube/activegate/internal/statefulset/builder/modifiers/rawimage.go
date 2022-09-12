@@ -3,7 +3,7 @@ package modifiers
 import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/agbuilder"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/tenantinfo"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	appsv1 "k8s.io/api/apps/v1"
@@ -13,7 +13,7 @@ import (
 var _ envModifier = RawImageModifier{}
 var _ volumeModifier = RawImageModifier{}
 var _ volumeMountModifier = RawImageModifier{}
-var _ agbuilder.Modifier = RawImageModifier{}
+var _ builder.Modifier = RawImageModifier{}
 
 func NewRawImageModifier(dynakube dynatracev1beta1.DynaKube) RawImageModifier {
 	return RawImageModifier{

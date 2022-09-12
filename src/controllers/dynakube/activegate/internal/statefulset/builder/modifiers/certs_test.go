@@ -19,7 +19,6 @@ func setCertUsage(dynakube *dynatracev1beta1.DynaKube, isUsed bool) {
 }
 
 func TestCertEnabled(t *testing.T) {
-
 	t.Run("true", func(t *testing.T) {
 		dynakube := getBaseDynakube()
 		enableKubeMonCapability(&dynakube)

@@ -10,7 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/customproperties"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/agbuilder"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/pkg/errors"
@@ -30,7 +30,7 @@ type Reconciler struct {
 	apiReader  client.Reader
 	scheme     *runtime.Scheme
 	capability capability.Capability
-	modifiers  []agbuilder.Modifier
+	modifiers  []builder.Modifier
 }
 
 func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, capability capability.Capability) *Reconciler {
@@ -40,7 +40,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 		scheme:     scheme,
 		dynakube:   dynakube,
 		capability: capability,
-		modifiers:  []agbuilder.Modifier{},
+		modifiers:  []builder.Modifier{},
 	}
 }
 

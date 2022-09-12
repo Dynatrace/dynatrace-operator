@@ -3,7 +3,7 @@ package modifiers
 import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/agbuilder"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -11,7 +11,7 @@ import (
 
 var _ volumeModifier = CertificatesModifier{}
 var _ volumeMountModifier = CertificatesModifier{}
-var _ agbuilder.Modifier = CertificatesModifier{}
+var _ builder.Modifier = CertificatesModifier{}
 
 func NewCertificatesModifier(dynakube dynatracev1beta1.DynaKube) CertificatesModifier {
 	return CertificatesModifier{

@@ -7,7 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/customproperties"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/agbuilder"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -15,7 +15,7 @@ import (
 
 var _ volumeModifier = CustomPropertiesModifier{}
 var _ volumeMountModifier = CustomPropertiesModifier{}
-var _ agbuilder.Modifier = CustomPropertiesModifier{}
+var _ builder.Modifier = CustomPropertiesModifier{}
 
 func NewCustomPropertiesModifier(dynakube dynatracev1beta1.DynaKube, capability capability.Capability) CustomPropertiesModifier {
 	return CustomPropertiesModifier{

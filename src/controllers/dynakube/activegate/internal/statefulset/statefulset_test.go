@@ -357,3 +357,17 @@ func TestBuildCommonEnvs(t *testing.T) {
 		assert.Equal(t, dynakube.Spec.NetworkZone, zoneEnv.Value)
 	})
 }
+
+func TestBuildServiceNameForDNSEntryPoint(t *testing.T) {
+	actual := buildServiceHostName(testName, "test-component-feature")
+	assert.NotEmpty(t, actual)
+
+	expected := "$(TEST_NAME_TEST_COMPONENT_FEATURE_SERVICE_HOST):$(TEST_NAME_TEST_COMPONENT_FEATURE_SERVICE_PORT)"
+	assert.Equal(t, expected, actual)
+
+	testStringName := "this---test_string"
+	testStringFeature := "SHOULD--_--PaRsEcORrEcTlY"
+	expected = "$(THIS___TEST_STRING_SHOULD_____PARSECORRECTLY_SERVICE_HOST):$(THIS___TEST_STRING_SHOULD_____PARSECORRECTLY_SERVICE_PORT)"
+	actual = buildServiceHostName(testStringName, testStringFeature)
+	assert.Equal(t, expected, actual)
+}
