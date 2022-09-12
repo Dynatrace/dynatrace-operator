@@ -3,6 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.0
+  creationTimestamp: null
   name: dynakubes.dynatrace.com
 spec:
   conversion:
@@ -1928,6 +1929,12 @@ spec:
                       fullstack monitoring, application monitoring or host monitoring'
                     nullable: true
                     properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: 'Optional: Adds additional annotations to the
+                          OneAgent pods'
+                        type: object
                       args:
                         description: 'Optional: Arguments to the OneAgent installer'
                         items:
@@ -2161,6 +2168,12 @@ spec:
                       fullstack monitoring, application monitoring or host monitoring'
                     nullable: true
                     properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: 'Optional: Adds additional annotations to the
+                          OneAgent pods'
+                        type: object
                       args:
                         description: 'Optional: Arguments to the OneAgent installer'
                         items:
@@ -2426,6 +2439,12 @@ spec:
                       monitoring, classic fullstack monitoring or application monitoring'
                     nullable: true
                     properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: 'Optional: Adds additional annotations to the
+                          OneAgent pods'
+                        type: object
                       args:
                         description: 'Optional: Arguments to the OneAgent installer'
                         items:
