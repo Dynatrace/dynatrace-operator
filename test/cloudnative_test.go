@@ -5,7 +5,6 @@ package test
 import (
 	"bytes"
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/pod"
 	"io"
 	"os"
 	"path"
@@ -17,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/environment"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/namespace"
+	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/secrets"
