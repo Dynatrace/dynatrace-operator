@@ -60,10 +60,10 @@ func TestMain(m *testing.M) {
 	testEnvironment.Setup(namespace.DeleteIfExists(sampleAppsNamespace))
 	testEnvironment.Setup(namespace.Recreate(dynatraceNamespace))
 
-	//testEnvironment.Finish(deleteDynakubeIfExists())
-	//testEnvironment.Finish(oneagent.WaitForDaemonSetPodsDeletion())
-	//testEnvironment.Finish(namespace.Delete(sampleAppsNamespace))
-	//testEnvironment.Finish(namespace.Delete(dynatraceNamespace))
+	testEnvironment.Finish(deleteDynakubeIfExists())
+	testEnvironment.Finish(oneagent.WaitForDaemonSetPodsDeletion())
+	testEnvironment.Finish(namespace.Delete(sampleAppsNamespace))
+	testEnvironment.Finish(namespace.Delete(dynatraceNamespace))
 
 	testEnvironment.Run(m)
 }
