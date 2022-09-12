@@ -94,7 +94,6 @@ func TestReconcile(t *testing.T) {
 				Data: map[string][]byte{ActiveGateAuthTokenName: []byte(testToken)},
 			}).
 			Build()
-
 		r := newTestReconciler(clt)
 
 		update, err := r.Reconcile()
