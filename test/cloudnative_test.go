@@ -5,6 +5,7 @@ package test
 import (
 	"bytes"
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/pod"
 	"io"
 	"os"
 	"path"
@@ -59,10 +60,10 @@ func TestMain(m *testing.M) {
 	testEnvironment.Setup(namespace.DeleteIfExists(sampleAppsNamespace))
 	testEnvironment.Setup(namespace.Recreate(dynatraceNamespace))
 
-	testEnvironment.Finish(deleteDynakubeIfExists())
-	testEnvironment.Finish(oneagent.WaitForDaemonSetPodsDeletion())
-	testEnvironment.Finish(namespace.Delete(sampleAppsNamespace))
-	testEnvironment.Finish(namespace.Delete(dynatraceNamespace))
+	//testEnvironment.Finish(deleteDynakubeIfExists())
+	//testEnvironment.Finish(oneagent.WaitForDaemonSetPodsDeletion())
+	//testEnvironment.Finish(namespace.Delete(sampleAppsNamespace))
+	//testEnvironment.Finish(namespace.Delete(dynatraceNamespace))
 
 	testEnvironment.Run(m)
 }
@@ -95,12 +96,12 @@ func install(t *testing.T) features.Feature {
 	defaultInstallation.Assess("dynakube phase changes to 'Running'", waitForDynakubePhase())
 	defaultInstallation.Assess("restart sample apps", restartSampleApps)
 	defaultInstallation.Assess("sample apps have working init containers", checkInitContainers)
-	defaultInstallation.Assess("oneagents can connect", oneAgentsCanConnect())
+	defaultInstallation.Assess("osAgent can connect", osAgentsCanConnect())
 
 	return defaultInstallation.Feature()
 }
 
-func oneAgentsCanConnect() features.Func {
+func osAgentsCanConnect() features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resource := environmentConfig.Client().Resources()
 		clientset, err := kubernetes.NewForConfig(resource.GetConfig())
@@ -128,21 +129,35 @@ func checkInitContainers(ctx context.Context, t *testing.T, environmentConfig *e
 
 	require.NoError(t, err)
 
-	for _, pod := range pods.Items {
-		require.NotNil(t, pod)
-		require.NotNil(t, pod.Spec)
-		require.NotEmpty(t, pod.Spec.InitContainers)
+	for _, podItem := range pods.Items {
+		require.NotNil(t, podItem)
+		require.NotNil(t, podItem.Spec)
+		require.NotEmpty(t, podItem.Spec.InitContainers)
 
-		oneAgentInstallContainer := pod.Spec.InitContainers[0]
+		oneAgentInstallContainer := podItem.Spec.InitContainers[0]
 
 		assert.Equal(t, oneAgentInstallContainerName, oneAgentInstallContainer.Name)
 
-		logStream, err := clientset.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &corev1.PodLogOptions{
+		logStream, err := clientset.CoreV1().Pods(podItem.Namespace).GetLogs(podItem.Name, &corev1.PodLogOptions{
 			Container: oneAgentInstallContainerName,
 		}).Stream(ctx)
 
 		require.NoError(t, err)
 		assertLogContains(t, logStream, "standalone agent init completed")
+
+		executionQuery := pod.NewExecutionQuery(podItem,
+			"cat /opt/dynatrace/oneagent-paas/log/nginx/ruxitagent_nginx_myapp-__bootstrap_1.0.log",
+			sampleAppsName)
+		executionResult, err := executionQuery.Execute(clientset, environmentConfig.Client().RESTConfig())
+
+		require.NoError(t, err)
+
+		stdOut := executionResult.StdOut.String()
+		stdErr := executionResult.StdErr.String()
+
+		assert.NotEmpty(t, stdOut)
+		assert.Empty(t, stdErr)
+		assert.Contains(t, stdOut, "info    [native] Communicating via https://")
 	}
 
 	return ctx
@@ -164,8 +179,8 @@ func restartSampleApps(ctx context.Context, t *testing.T, config *envconf.Config
 
 	require.NoError(t, resources.WithNamespace(sampleAppsNamespace).List(ctx, &pods))
 
-	for _, pod := range pods.Items {
-		require.NoError(t, resources.Delete(ctx, &pod))
+	for _, podItem := range pods.Items {
+		require.NoError(t, resources.Delete(ctx, &podItem))
 	}
 
 	require.NoError(t, resources.Get(ctx, sampleAppsName, sampleAppsNamespace, &sampleDeployment))
