@@ -824,7 +824,7 @@ type errorClient struct {
 	client.Client
 }
 
-func (clt errorClient) Get(_ context.Context, _ client.ObjectKey, _ client.Object) error {
+func (clt errorClient) Get(_ context.Context, _ client.ObjectKey, _ client.Object, _ ...client.GetOption) error {
 	return errors.New("fake error")
 }
 
