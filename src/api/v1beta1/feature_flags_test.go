@@ -143,31 +143,13 @@ func TestDeprecatedEnableAnnotations(t *testing.T) {
 
 	assert.True(t, dynakube.FeatureActiveGateAuthToken())
 
-	// Old annotation works
-	dynakube = createDynakubeWithAnnotation(AnnotationFeatureEnableActiveGateAuthToken, "false")
+	dynakube = createDynakubeWithAnnotation(AnnotationFeatureActiveGateAuthToken, "false")
 
 	assert.False(t, dynakube.FeatureActiveGateAuthToken())
 
-	dynakube = createDynakubeWithAnnotation(AnnotationFeatureEnableActiveGateAuthToken, "true")
-
-	assert.True(t, dynakube.FeatureActiveGateAuthToken())
-
-	// New annotation takes precedent
-	dynakube = createDynakubeWithAnnotation(
-		AnnotationFeatureActiveGateAuthToken, "true",
-		AnnotationFeatureEnableActiveGateAuthToken, "false")
-
-	assert.True(t, dynakube.FeatureActiveGateAuthToken())
-
-	dynakube = createDynakubeWithAnnotation(
-		AnnotationFeatureActiveGateAuthToken, "false",
-		AnnotationFeatureEnableActiveGateAuthToken, "true")
-
-	assert.False(t, dynakube.FeatureActiveGateAuthToken())
-
-	// Default is false
+	// Default is true
 	dynakube = createDynakubeWithAnnotation()
-	assert.False(t, dynakube.FeatureActiveGateAuthToken())
+	assert.True(t, dynakube.FeatureActiveGateAuthToken())
 }
 
 func TestMaxMountAttempts(t *testing.T) {
@@ -183,15 +165,15 @@ func TestMaxMountAttempts(t *testing.T) {
 
 	dynakube = createDynakubeWithAnnotation()
 
-	assert.Equal(t, defaultMaxFailedCsiMountAttempts, dynakube.FeatureMaxFailedCsiMountAttempts())
+	assert.Equal(t, DefaultMaxFailedCsiMountAttempts, dynakube.FeatureMaxFailedCsiMountAttempts())
 
 	dynakube = createDynakubeWithAnnotation(
 		AnnotationFeatureMaxFailedCsiMountAttempts, "a")
 
-	assert.Equal(t, defaultMaxFailedCsiMountAttempts, dynakube.FeatureMaxFailedCsiMountAttempts())
+	assert.Equal(t, DefaultMaxFailedCsiMountAttempts, dynakube.FeatureMaxFailedCsiMountAttempts())
 
 	dynakube = createDynakubeWithAnnotation(
 		AnnotationFeatureMaxFailedCsiMountAttempts, "-5")
 
-	assert.Equal(t, defaultMaxFailedCsiMountAttempts, dynakube.FeatureMaxFailedCsiMountAttempts())
+	assert.Equal(t, DefaultMaxFailedCsiMountAttempts, dynakube.FeatureMaxFailedCsiMountAttempts())
 }

@@ -59,6 +59,16 @@ func (publisher *AppVolumePublisher) PublishVolume(ctx context.Context, volumeCf
 		return nil, err
 	}
 
+	hasTooManyAttempts, err := publisher.hasTooManyMountAttempts(ctx, bindCfg, volumeCfg)
+	if err != nil {
+		return nil, err
+	}
+
+	if hasTooManyAttempts {
+		log.Info("reached max mount attempts for pod, attaching dummy volume, monitoring disabled", "pod", volumeCfg.PodName)
+		return &csi.NodePublishVolumeResponse{}, nil
+	}
+
 	if bindCfg.Version == "" {
 		return nil, status.Error(
 			codes.Unavailable,
@@ -86,6 +96,11 @@ func (publisher *AppVolumePublisher) UnpublishVolume(ctx context.Context, volume
 		return nil, nil
 	}
 	log.Info("loaded volume info", "id", volume.VolumeID, "pod name", volume.PodName, "version", volume.Version, "dynakube", volume.TenantUUID)
+
+	if volume.MountAttempts > 0 {
+		log.Info("requester has a dummy volume, no node-level unmount is needed")
+		return &csi.NodeUnpublishVolumeResponse{}, publisher.db.DeleteVolume(ctx, volume.VolumeID)
+	}
 
 	overlayFSPath := publisher.path.AgentRunDirForVolume(volume.TenantUUID, volumeInfo.VolumeID)
 
@@ -192,12 +207,23 @@ func (publisher *AppVolumePublisher) umountOneAgent(targetPath string, overlayFS
 	return nil
 }
 
-func (publisher *AppVolumePublisher) storeVolume(ctx context.Context, bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) error {
-	version := bindCfg.Version
-	if bindCfg.ImageDigest != "" {
-		version = bindCfg.ImageDigest
+func (publisher *AppVolumePublisher) hasTooManyMountAttempts(ctx context.Context, bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) (bool, error) {
+	volume, err := publisher.loadVolume(ctx, volumeCfg.VolumeID)
+	if err != nil {
+		return false, err
 	}
-	volume := metadata.NewVolume(volumeCfg.VolumeID, volumeCfg.PodName, version, bindCfg.TenantUUID, 0)
+	if volume == nil {
+		volume = createNewVolume(bindCfg, volumeCfg)
+	}
+	if volume.MountAttempts > bindCfg.MaxMountAttempts {
+		return true, nil
+	}
+	volume.MountAttempts += 1
+	return false, publisher.db.InsertVolume(ctx, volume)
+}
+
+func (publisher *AppVolumePublisher) storeVolume(ctx context.Context, bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) error {
+	volume := createNewVolume(bindCfg, volumeCfg)
 	log.Info("inserting volume info", "ID", volume.VolumeID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
 	return publisher.db.InsertVolume(ctx, volume)
 }
@@ -208,4 +234,12 @@ func (publisher *AppVolumePublisher) loadVolume(ctx context.Context, volumeID st
 		return nil, err
 	}
 	return volume, nil
+}
+
+func createNewVolume(bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) *metadata.Volume {
+	version := bindCfg.Version
+	if bindCfg.ImageDigest != "" {
+		version = bindCfg.ImageDigest
+	}
+	return metadata.NewVolume(volumeCfg.VolumeID, volumeCfg.PodName, version, bindCfg.TenantUUID, 0)
 }

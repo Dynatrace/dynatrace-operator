@@ -36,8 +36,6 @@ const (
 	AnnotationFeatureDisableActiveGateUpdates = AnnotationFeaturePrefix + "disable-activegate-updates"
 	// Deprecated: AnnotationFeatureDisableActiveGateRawImage use AnnotationFeatureActiveGateRawImage instead
 	AnnotationFeatureDisableActiveGateRawImage = AnnotationFeaturePrefix + "disable-activegate-raw-image"
-	// Deprecated: AnnotationFeatureEnableActiveGateAuthToken use AnnotationFeatureActiveGateAuthToken instead
-	AnnotationFeatureEnableActiveGateAuthToken = AnnotationFeaturePrefix + "enable-activegate-authtoken"
 
 	AnnotationFeatureActiveGateUpdates   = AnnotationFeaturePrefix + "activegate-updates"
 	AnnotationFeatureActiveGateRawImage  = AnnotationFeaturePrefix + "activegate-raw-image"
@@ -92,7 +90,7 @@ const (
 )
 
 const (
-	defaultMaxFailedCsiMountAttempts = 3
+	DefaultMaxFailedCsiMountAttempts = 10
 )
 
 var (
@@ -247,8 +245,7 @@ func (dk *DynaKube) FeatureActiveGateIgnoreProxy() bool {
 
 // FeatureActiveGateAuthToken is a feature flag to enable authToken usage in the activeGate
 func (dk *DynaKube) FeatureActiveGateAuthToken() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateAuthToken) == "true" ||
-		dk.getFeatureFlagRaw(AnnotationFeatureEnableActiveGateAuthToken) == "true" && dk.getFeatureFlagRaw(AnnotationFeatureActiveGateAuthToken) == ""
+	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateAuthToken) != "false"
 }
 
 // FeatureAgentInitialConnectRetry is a feature flag to configure startup delay of standalone agents
@@ -287,13 +284,13 @@ func (dk *DynaKube) FeatureMaxFailedCsiMountAttempts() int {
 	maxCsiMountAttemptsValue := dk.getFeatureFlagRaw(AnnotationFeatureMaxFailedCsiMountAttempts)
 
 	if maxCsiMountAttemptsValue == "" {
-		return defaultMaxFailedCsiMountAttempts
+		return DefaultMaxFailedCsiMountAttempts
 	}
 
 	maxCsiMountAttempts, err := strconv.Atoi(maxCsiMountAttemptsValue)
 
 	if err != nil || maxCsiMountAttempts < 0 {
-		return defaultMaxFailedCsiMountAttempts
+		return DefaultMaxFailedCsiMountAttempts
 	}
 
 	return maxCsiMountAttempts
