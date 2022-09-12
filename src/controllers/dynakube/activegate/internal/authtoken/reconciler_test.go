@@ -1,6 +1,7 @@
 package authtoken
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -18,6 +19,8 @@ import (
 const (
 	testDynakubeName = "test-dynakube"
 	testNamespace    = "test-namespace"
+	secretName       = testDynakubeName + dynatracev1beta1.AuthTokenSecretSuffix
+	testToken        = "dt.testtoken.test"
 )
 
 var (
@@ -48,6 +51,11 @@ func TestReconcile(t *testing.T) {
 	t.Run(`reconcile auth token for first time`, func(t *testing.T) {
 		r := newTestReconciler(fake.NewClientBuilder().Build())
 		update, err := r.Reconcile()
+
+		var authToken corev1.Secret
+		r.Client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.ActiveGateAuthTokenSecret(), Namespace: testNamespace}, &authToken)
+
+		assert.NotEmpty(t, authToken.Data[ActiveGateAuthTokenName])
 		assert.True(t, update)
 		assert.NoError(t, err)
 	})
@@ -56,15 +64,45 @@ func TestReconcile(t *testing.T) {
 			WithScheme(scheme.Scheme).
 			WithObjects(&corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:              testDynakubeName + dynatracev1beta1.AuthTokenSecretSuffix,
+					Name:              secretName,
 					Namespace:         testNamespace,
 					CreationTimestamp: metav1.Time{Time: time.Now().Add(-AuthTokenRotationInterval).Add(-5 * time.Second)},
 				},
+				Data: map[string][]byte{ActiveGateAuthTokenName: []byte(testToken)},
 			}).
 			Build()
 
 		r := newTestReconciler(clt)
 		update, err := r.Reconcile()
+
+		var authToken corev1.Secret
+		r.Client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.ActiveGateAuthTokenSecret(), Namespace: testNamespace}, &authToken)
+
+		assert.NotEqual(t, authToken.Data[ActiveGateAuthTokenName], []byte(testToken))
+		assert.True(t, update)
+		assert.NoError(t, err)
+	})
+	t.Run(`reconcile valid auth token`, func(t *testing.T) {
+		clt := fake.NewClientBuilder().
+			WithScheme(scheme.Scheme).
+			WithObjects(&corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:              secretName,
+					Namespace:         testNamespace,
+					CreationTimestamp: metav1.Time{Time: time.Now().Add(-AuthTokenRotationInterval).Add(1 * time.Minute)},
+				},
+				Data: map[string][]byte{ActiveGateAuthTokenName: []byte(testToken)},
+			}).
+			Build()
+
+		r := newTestReconciler(clt)
+
+		update, err := r.Reconcile()
+
+		var authToken corev1.Secret
+		r.Client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.ActiveGateAuthTokenSecret(), Namespace: testNamespace}, &authToken)
+
+		assert.Equal(t, authToken.Data[ActiveGateAuthTokenName], []byte(testToken))
 		assert.True(t, update)
 		assert.NoError(t, err)
 	})

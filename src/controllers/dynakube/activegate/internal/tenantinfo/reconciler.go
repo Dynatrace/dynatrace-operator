@@ -43,7 +43,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 
 func (r *Reconciler) Reconcile() (update bool, err error) {
 	if err = r.reconcileSecret(); err != nil {
-		log.Error(err, "could not reconcile ActiveGate tenant secret")
+		log.Info("could not reconcile ActiveGate tenant secret")
 		return false, errors.WithStack(err)
 	}
 
