@@ -77,12 +77,6 @@ func TestDeprecatedAnnotationWarnings(t *testing.T) {
 			dynatracev1beta1.AnnotationFeatureDisableActiveGateRawImage,
 			deprecatedFeatureFlagDisableActiveGateRawImage)
 	})
-	t.Run(dynatracev1beta1.AnnotationFeatureActiveGateAuthToken, func(t *testing.T) {
-		testDeprecatedAnnotation(t,
-			dynatracev1beta1.AnnotationFeatureActiveGateAuthToken,
-			dynatracev1beta1.AnnotationFeatureEnableActiveGateAuthToken,
-			deprecatedFeatureFlagEnableActiveGateAuthToken)
-	})
 	t.Run(dynatracev1beta1.AnnotationFeatureHostsRequests, func(t *testing.T) {
 		testDeprecatedAnnotation(t,
 			dynatracev1beta1.AnnotationFeatureHostsRequests,

@@ -14,9 +14,9 @@ runs:
   using: "composite"
   steps:
     - name: Set up QEMU
-      uses: docker/setup-qemu-action@8b122486cedac8393e77aa9734c3528886e4a1a8 # v2
+      uses: docker/setup-qemu-action@8b122486cedac8393e77aa9734c3528886e4a1a8 # v2.0.0
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@dc7b9719a96d48369863986a06765841d7ea23f6 # v2
+      uses: docker/setup-buildx-action@dc7b9719a96d48369863986a06765841d7ea23f6 # v2.0.0
     - name: Set up Golang
       uses: actions/setup-go@268d8c0ca0432bb2cf416faae41297df9d262d7f # v3.3.0
       with:
@@ -27,7 +27,7 @@ runs:
       run: |
         hack/build/ci/prepare-build-variables.sh
     - name: Setup cache
-      uses: actions/cache@a7c34adf76222e77931dedbf4a45b2e4648ced19 # v3
+      uses: actions/cache@fd5de65bc895cf536527842281bea11763fefd77 # v3.0.8
       with:
         path: |
           ~/go/pkg/mod
@@ -39,7 +39,7 @@ runs:
       run: |
         hack/build/ci/download-go-build-deps.sh
     - name: Build target
-      uses: docker/build-push-action@c84f38281176d4c9cdb1626ffafcd6b3911b5d94 # v3
+      uses: docker/build-push-action@c84f38281176d4c9cdb1626ffafcd6b3911b5d94 # v3.1.1
       with:
         builder: ${{ steps.buildx.outputs.name }}
         build-args: |
@@ -52,7 +52,7 @@ runs:
         labels: ${{ inputs.labels }}
         outputs: type=docker,dest=/tmp/operator-${{ inputs.platform }}.tar
     - name: Upload artifact
-      uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # v3
+      uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # v3.1.0
       with:
         name: operator-${{ inputs.platform }}
         path: /tmp/operator-${{ inputs.platform }}.tar

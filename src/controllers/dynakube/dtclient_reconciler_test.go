@@ -85,8 +85,8 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 		dtcMock.On("GetTokenScopes", "84").Return(
 			dtclient.TokenScopes{dtclient.TokenScopeDataExport,
 				dtclient.TokenScopeInstallerDownload,
+				dtclient.TokenScopeActiveGateTokenCreate,
 			}, nil)
-
 		rec := &DynatraceClientReconciler{
 			Client:              c,
 			DynatraceClientFunc: StaticDynatraceClient(dtcMock),
@@ -168,7 +168,9 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 		c := fake.NewClient(NewSecret(dynaKube, namespace, map[string]string{dtclient.DynatraceApiToken: "84"}))
 
 		dtcMock := &dtclient.MockDynatraceClient{}
-		dtcMock.On("GetTokenScopes", "84").Return(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, nil)
+		dtcMock.On("GetTokenScopes", "84").Return(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload,
+			dtclient.TokenScopeActiveGateTokenCreate,
+		}, nil)
 
 		rec := &DynatraceClientReconciler{
 			Client:              c,
@@ -193,7 +195,7 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 
 		dtcMock := &dtclient.MockDynatraceClient{}
 		dtcMock.On("GetTokenScopes", "42").Return(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, nil)
-		dtcMock.On("GetTokenScopes", "84").Return(dtclient.TokenScopes{}, nil)
+		dtcMock.On("GetTokenScopes", "84").Return(dtclient.TokenScopes{dtclient.TokenScopeActiveGateTokenCreate}, nil)
 
 		rec := &DynatraceClientReconciler{
 			Client:              c,
@@ -216,7 +218,9 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 
 		dtcMock := &dtclient.MockDynatraceClient{}
 		dtcMock.On("GetTokenScopes", "42").Return(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, nil)
-		dtcMock.On("GetTokenScopes", "84").Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport}, nil)
+		dtcMock.On("GetTokenScopes", "84").Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport,
+			dtclient.TokenScopeActiveGateTokenCreate,
+		}, nil)
 
 		rec := &DynatraceClientReconciler{
 			Client:              c,
@@ -250,6 +254,7 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 		dtcMock.On("GetTokenScopes", "84").Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport,
 			dtclient.TokenScopeSettingsRead,
 			dtclient.TokenScopeSettingsWrite,
+			dtclient.TokenScopeActiveGateTokenCreate,
 		}, nil)
 
 		rec := &DynatraceClientReconciler{
@@ -281,6 +286,7 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 		dtcMock := &dtclient.MockDynatraceClient{}
 		dtcMock.On("GetTokenScopes", "84").Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport,
 			dtclient.TokenScopeInstallerDownload,
+			dtclient.TokenScopeActiveGateTokenCreate,
 		}, nil)
 		dtcMock.On("GetTokenScopes", "69").Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport}, nil)
 

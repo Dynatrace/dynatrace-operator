@@ -597,3 +597,139 @@ func TestImmutableOneAgentImage(t *testing.T) {
 		assert.Equal(t, dsInfo.instance.ImmutableOneAgentImage(), image)
 	})
 }
+
+func TestAnnotations(t *testing.T) {
+	t.Run("cloud native has apparmor annotation by default", func(t *testing.T) {
+		dynakube := dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
+						HostInjectSpec: dynatracev1beta1.HostInjectSpec{},
+					},
+				},
+			},
+		}
+		expectedAnnotations := map[string]string{
+			annotationUnprivileged: annotationUnprivilegedValue,
+		}
+
+		builder := NewCloudNativeFullStack(&dynakube, testClusterID)
+		daemonset, err := builder.BuildDaemonSet()
+
+		assert.NoError(t, err)
+		assert.NotNil(t, daemonset)
+		assert.Equal(t, expectedAnnotations, daemonset.Spec.Template.Annotations)
+	})
+	t.Run("host monitoring has apparmor annotation by default", func(t *testing.T) {
+		dynakube := dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
+				},
+			},
+		}
+		expectedAnnotations := map[string]string{
+			annotationUnprivileged: annotationUnprivilegedValue,
+		}
+
+		builder := NewHostMonitoring(&dynakube, testClusterID)
+		daemonset, err := builder.BuildDaemonSet()
+
+		assert.NoError(t, err)
+		assert.NotNil(t, daemonset)
+		assert.Equal(t, expectedAnnotations, daemonset.Spec.Template.Annotations)
+	})
+	t.Run("classic fullstack has apparmor annotation by default", func(t *testing.T) {
+		dynakube := dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
+				},
+			},
+		}
+		expectedAnnotations := map[string]string{
+			annotationUnprivileged: annotationUnprivilegedValue,
+		}
+
+		builder := NewClassicFullStack(&dynakube, testClusterID)
+		daemonset, err := builder.BuildDaemonSet()
+
+		assert.NoError(t, err)
+		assert.NotNil(t, daemonset)
+		assert.Equal(t, expectedAnnotations, daemonset.Spec.Template.Annotations)
+	})
+	t.Run("annotations are added with cloud native", func(t *testing.T) {
+		dynakube := dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
+						HostInjectSpec: dynatracev1beta1.HostInjectSpec{
+							Annotations: map[string]string{
+								testKey: testName,
+							},
+						},
+					},
+				},
+			},
+		}
+		expectedAnnotations := map[string]string{
+			annotationUnprivileged: annotationUnprivilegedValue,
+			testKey:                testName,
+		}
+
+		builder := NewCloudNativeFullStack(&dynakube, testClusterID)
+		daemonset, err := builder.BuildDaemonSet()
+
+		assert.NoError(t, err)
+		assert.NotNil(t, daemonset)
+		assert.Equal(t, expectedAnnotations, daemonset.Spec.Template.Annotations)
+	})
+	t.Run("annotations are added with host monitoring", func(t *testing.T) {
+		dynakube := dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					HostMonitoring: &dynatracev1beta1.HostInjectSpec{
+						Annotations: map[string]string{
+							testKey: testName,
+						},
+					},
+				},
+			},
+		}
+		expectedAnnotations := map[string]string{
+			annotationUnprivileged: annotationUnprivilegedValue,
+			testKey:                testName,
+		}
+
+		builder := NewHostMonitoring(&dynakube, testClusterID)
+		daemonset, err := builder.BuildDaemonSet()
+
+		assert.NoError(t, err)
+		assert.NotNil(t, daemonset)
+		assert.Equal(t, expectedAnnotations, daemonset.Spec.Template.Annotations)
+	})
+	t.Run("annotations are added with classic fullstack", func(t *testing.T) {
+		dynakube := dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{
+						Annotations: map[string]string{
+							testKey: testName,
+						},
+					},
+				},
+			},
+		}
+		expectedAnnotations := map[string]string{
+			annotationUnprivileged: annotationUnprivilegedValue,
+			testKey:                testName,
+		}
+
+		builder := NewClassicFullStack(&dynakube, testClusterID)
+		daemonset, err := builder.BuildDaemonSet()
+
+		assert.NoError(t, err)
+		assert.NotNil(t, daemonset)
+		assert.Equal(t, expectedAnnotations, daemonset.Spec.Template.Annotations)
+	})
+}
