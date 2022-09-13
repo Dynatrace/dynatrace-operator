@@ -30,7 +30,7 @@ var (
 	}
 )
 
-func newTestReconciler(client client.Client) *Reconciler {
+func newTestReconcilerWithInstance(client client.Client) *Reconciler {
 	instance := &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
@@ -49,11 +49,11 @@ func newTestReconciler(client client.Client) *Reconciler {
 
 func TestReconcile(t *testing.T) {
 	t.Run(`reconcile auth token for first time`, func(t *testing.T) {
-		r := newTestReconciler(fake.NewClientBuilder().Build())
+		r := newTestReconcilerWithInstance(fake.NewClientBuilder().Build())
 		update, err := r.Reconcile()
 
 		var authToken corev1.Secret
-		r.Client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.ActiveGateAuthTokenSecret(), Namespace: testNamespace}, &authToken)
+		_ = r.Client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.ActiveGateAuthTokenSecret(), Namespace: testNamespace}, &authToken)
 
 		assert.NotEmpty(t, authToken.Data[ActiveGateAuthTokenName])
 		assert.True(t, update)
@@ -72,12 +72,12 @@ func TestReconcile(t *testing.T) {
 			}).
 			Build()
 
-		r := newTestReconciler(clt)
+		r := newTestReconcilerWithInstance(clt)
 		update, err := r.Reconcile()
 
 		var authToken corev1.Secret
 
-		r.Client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.ActiveGateAuthTokenSecret(), Namespace: testNamespace}, &authToken)
+		_ = r.Client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.ActiveGateAuthTokenSecret(), Namespace: testNamespace}, &authToken)
 
 		assert.NotEqual(t, authToken.Data[ActiveGateAuthTokenName], []byte(testToken))
 		assert.True(t, update)
@@ -95,12 +95,12 @@ func TestReconcile(t *testing.T) {
 				Data: map[string][]byte{ActiveGateAuthTokenName: []byte(testToken)},
 			}).
 			Build()
-		r := newTestReconciler(clt)
+		r := newTestReconcilerWithInstance(clt)
 
 		update, err := r.Reconcile()
 
 		var authToken corev1.Secret
-		r.Client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.ActiveGateAuthTokenSecret(), Namespace: testNamespace}, &authToken)
+		_ = r.Client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.ActiveGateAuthTokenSecret(), Namespace: testNamespace}, &authToken)
 
 		assert.Equal(t, authToken.Data[ActiveGateAuthTokenName], []byte(testToken))
 		assert.True(t, update)

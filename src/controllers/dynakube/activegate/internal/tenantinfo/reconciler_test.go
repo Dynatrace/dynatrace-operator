@@ -31,7 +31,7 @@ var (
 	}
 )
 
-func newTestReconciler(client client.Client) *Reconciler {
+func newTestReconcilerWithInstance(client client.Client) *Reconciler {
 	instance := &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
@@ -50,11 +50,11 @@ func newTestReconciler(client client.Client) *Reconciler {
 
 func TestReconcile(t *testing.T) {
 	t.Run(`reconcile tenant info for first time`, func(t *testing.T) {
-		r := newTestReconciler(fake.NewClientBuilder().Build())
+		r := newTestReconcilerWithInstance(fake.NewClientBuilder().Build())
 		update, err := r.Reconcile()
 
 		var tenantInfoSecret corev1.Secret
-		r.Client.Get(context.TODO(), client.ObjectKey{Name: extendWithAGSecretSuffix(r.dynakube.Name), Namespace: testNamespace}, &tenantInfoSecret)
+		_ = r.Client.Get(context.TODO(), client.ObjectKey{Name: extendWithAGSecretSuffix(r.dynakube.Name), Namespace: testNamespace}, &tenantInfoSecret)
 
 		assert.Equal(t, []byte(tenantInfoResponse.UUID), tenantInfoSecret.Data[TenantUuidName])
 		assert.Equal(t, []byte(tenantInfoResponse.Token), tenantInfoSecret.Data[TenantTokenName])
@@ -64,7 +64,7 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run(`reconcile tenant info changed`, func(t *testing.T) {
-		r := newTestReconciler(fake.NewClientBuilder().Build())
+		r := newTestReconcilerWithInstance(fake.NewClientBuilder().Build())
 		update, err := r.Reconcile()
 		assert.True(t, update)
 		assert.NoError(t, err)
@@ -75,7 +75,7 @@ func TestReconcile(t *testing.T) {
 		update, err = r.Reconcile()
 
 		var tenantInfoSecret corev1.Secret
-		r.Client.Get(context.TODO(), client.ObjectKey{Name: extendWithAGSecretSuffix(r.dynakube.Name), Namespace: testNamespace}, &tenantInfoSecret)
+		_ = r.Client.Get(context.TODO(), client.ObjectKey{Name: extendWithAGSecretSuffix(r.dynakube.Name), Namespace: testNamespace}, &tenantInfoSecret)
 
 		assert.Equal(t, []byte(tenantInfoResponse.UUID), tenantInfoSecret.Data[TenantUuidName])
 		assert.Equal(t, []byte(tenantInfoResponse.Token), tenantInfoSecret.Data[TenantTokenName])
@@ -85,7 +85,7 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run(`reconcile tenant info returns error`, func(t *testing.T) {
-		r := newTestReconciler(fake.NewClientBuilder().Build())
+		r := newTestReconcilerWithInstance(fake.NewClientBuilder().Build())
 		var dtClient = &dtclient.MockDynatraceClient{}
 		dtClient.On("GetActiveGateTenantInfo", mock.Anything).Return(&dtclient.ActiveGateTenantInfo{}, errors.New("error"))
 		r.dtc = dtClient
