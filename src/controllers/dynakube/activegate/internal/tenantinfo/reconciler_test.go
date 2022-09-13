@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -53,6 +54,8 @@ func TestReconcile(t *testing.T) {
 		r := newTestReconcilerWithInstance(fake.NewClientBuilder().Build())
 		update, err := r.Reconcile()
 
+		require.NoError(t, err)
+
 		var tenantInfoSecret corev1.Secret
 		_ = r.Client.Get(context.TODO(), client.ObjectKey{Name: extendWithAGSecretSuffix(r.dynakube.Name), Namespace: testNamespace}, &tenantInfoSecret)
 
@@ -60,20 +63,21 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, []byte(tenantInfoResponse.Token), tenantInfoSecret.Data[TenantTokenName])
 		assert.Equal(t, []byte(tenantInfoResponse.Endpoints), tenantInfoSecret.Data[CommunicationEndpointsName])
 		assert.True(t, update)
-		assert.NoError(t, err)
 	})
 
 	t.Run(`reconcile tenant info changed`, func(t *testing.T) {
 		r := newTestReconcilerWithInstance(fake.NewClientBuilder().Build())
 		update, err := r.Reconcile()
+		require.NoError(t, err)
 		assert.True(t, update)
-		assert.NoError(t, err)
 
 		var newTenantToken = "dt.someOtherToken"
 		tenantInfoResponse.UUID = newTenantToken
 
 		update, err = r.Reconcile()
 
+		require.NoError(t, err)
+
 		var tenantInfoSecret corev1.Secret
 		_ = r.Client.Get(context.TODO(), client.ObjectKey{Name: extendWithAGSecretSuffix(r.dynakube.Name), Namespace: testNamespace}, &tenantInfoSecret)
 
@@ -81,7 +85,6 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, []byte(tenantInfoResponse.Token), tenantInfoSecret.Data[TenantTokenName])
 		assert.Equal(t, []byte(tenantInfoResponse.Endpoints), tenantInfoSecret.Data[CommunicationEndpointsName])
 		assert.True(t, update)
-		assert.NoError(t, err)
 	})
 
 	t.Run(`reconcile tenant info returns error`, func(t *testing.T) {
@@ -91,7 +94,7 @@ func TestReconcile(t *testing.T) {
 		r.dtc = dtClient
 		update, err := r.Reconcile()
 
+		require.Error(t, err)
 		assert.False(t, update)
-		assert.Error(t, err)
 	})
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,11 +47,12 @@ func TestReconcileWithoutProxy(t *testing.T) {
 		r := newTestReconcilerWithInstance(fake.NewClientBuilder().Build())
 		update, err := r.Reconcile()
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		var proxySecret corev1.Secret
 		err = r.client.Get(context.TODO(), client.ObjectKey{Name: capability.BuildProxySecretName(), Namespace: testNamespace}, &proxySecret)
 
+		require.Error(t, err)
 		assert.Empty(t, proxySecret)
 		assert.True(t, update)
 		assert.True(t, k8serrors.IsNotFound(err))
@@ -65,11 +67,12 @@ func TestReconcileWithoutProxy(t *testing.T) {
 		r := newTestReconcilerWithInstance(testClient)
 		update, err := r.Reconcile()
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		var proxySecret corev1.Secret
 		err = r.client.Get(context.TODO(), client.ObjectKey{Name: capability.BuildProxySecretName(), Namespace: testNamespace}, &proxySecret)
 
+		require.Error(t, err)
 		assert.Empty(t, proxySecret)
 		assert.True(t, update)
 		assert.True(t, k8serrors.IsNotFound(err))
@@ -82,6 +85,7 @@ func TestReconcileProxyValue(t *testing.T) {
 		r := newTestReconcilerWithInstance(fake.NewClientBuilder().Build())
 		r.dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: proxyValue}
 		update, err := r.Reconcile()
+		require.NoError(t, err)
 
 		var proxySecret corev1.Secret
 		_ = r.client.Get(context.TODO(), client.ObjectKey{Name: capability.BuildProxySecretName(), Namespace: testNamespace}, &proxySecret)
@@ -91,12 +95,12 @@ func TestReconcileProxyValue(t *testing.T) {
 		assert.Equal(t, []byte(proxyHost), proxySecret.Data[proxyHostField])
 		assert.Equal(t, []byte(proxyUsername), proxySecret.Data[proxyUsernameField])
 		assert.True(t, update)
-		assert.NoError(t, err)
 	})
 	t.Run(`reconcile empty proxy Value`, func(t *testing.T) {
 		r := newTestReconcilerWithInstance(fake.NewClientBuilder().Build())
 		r.dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: ""}
 		update, err := r.Reconcile()
+		require.NoError(t, err)
 
 		var proxySecret corev1.Secret
 		_ = r.client.Get(context.TODO(), client.ObjectKey{Name: capability.BuildProxySecretName(), Namespace: testNamespace}, &proxySecret)
@@ -106,7 +110,6 @@ func TestReconcileProxyValue(t *testing.T) {
 		assert.Equal(t, []byte(nil), proxySecret.Data[proxyHostField])
 		assert.Equal(t, []byte(nil), proxySecret.Data[proxyUsernameField])
 		assert.True(t, update)
-		assert.NoError(t, err)
 	})
 }
 
@@ -118,6 +121,7 @@ func TestReconcileProxyValueFrom(t *testing.T) {
 	t.Run(`reconcile proxy ValueFrom`, func(t *testing.T) {
 		r.dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{ValueFrom: customProxySecret}
 		update, err := r.Reconcile()
+		require.NoError(t, err)
 
 		var proxySecret corev1.Secret
 		_ = r.client.Get(context.TODO(), client.ObjectKey{Name: capability.BuildProxySecretName(), Namespace: testNamespace}, &proxySecret)
@@ -127,11 +131,12 @@ func TestReconcileProxyValueFrom(t *testing.T) {
 		assert.Equal(t, []byte(proxyHost), proxySecret.Data[proxyHostField])
 		assert.Equal(t, []byte(proxyUsername), proxySecret.Data[proxyUsernameField])
 		assert.True(t, update)
-		assert.NoError(t, err)
 	})
 	t.Run(`Change of Proxy ValueFrom to Value`, func(t *testing.T) {
 		r.dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{ValueFrom: customProxySecret}
 		update, err := r.Reconcile()
+		require.NoError(t, err)
+
 		var proxySecret corev1.Secret
 		r.client.Get(context.TODO(), client.ObjectKey{Name: capability.BuildProxySecretName(), Namespace: testNamespace}, &proxySecret)
 
@@ -140,15 +145,14 @@ func TestReconcileProxyValueFrom(t *testing.T) {
 		assert.Equal(t, []byte(proxyHost), proxySecret.Data[proxyHostField])
 		assert.Equal(t, []byte(proxyUsername), proxySecret.Data[proxyUsernameField])
 		assert.True(t, update)
-		assert.NoError(t, err)
 
 		r.dynakube.Spec.Proxy.ValueFrom = ""
 		r.dynakube.Spec.Proxy.Value = buildProxyUrl(proxyDifferentUsername, proxyPassword, proxyHost, proxyPort)
 		update, err = r.Reconcile()
+		require.NoError(t, err)
 
 		_ = r.client.Get(context.TODO(), client.ObjectKey{Name: capability.BuildProxySecretName(), Namespace: testNamespace}, &proxySecret)
 
-		assert.NoError(t, err)
 		assert.Equal(t, []byte(proxyPassword), proxySecret.Data[proxyPasswordField])
 		assert.Equal(t, []byte(proxyPort), proxySecret.Data[proxyPortField])
 		assert.Equal(t, []byte(proxyHost), proxySecret.Data[proxyHostField])
@@ -159,8 +163,8 @@ func TestReconcileProxyValueFrom(t *testing.T) {
 		r.dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{ValueFrom: "secret"}
 		update, err := r.Reconcile()
 
+		require.Error(t, err)
 		assert.True(t, update)
-		assert.Error(t, err)
 	})
 }
 
