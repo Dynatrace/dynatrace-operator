@@ -1,6 +1,5 @@
 package builder
 
-
 type Builder[T any] interface {
 	Build() T
 	AddModifier(...Modifier[T]) Builder[T]
@@ -10,7 +9,6 @@ type Modifier[T any] interface {
 	Enabled() bool
 	Modify(*T)
 }
-
 
 type GenericBuilder[T any] struct {
 	data      *T
