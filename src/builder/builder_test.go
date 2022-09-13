@@ -10,13 +10,13 @@ import (
 
 func TestStatefulsetBuilder(t *testing.T) {
 	t.Run("Simple, no modifiers", func(t *testing.T) {
-		b := Builder[mocks.DataMock]{}
+		b := GenericBuilder[mocks.DataMock]{}
 		actual := b.Build()
 		expected := mocks.DataMock{}
 		assert.Equal(t, expected, actual)
 	})
 	t.Run("One modifier", func(t *testing.T) {
-		b := Builder[mocks.DataMock]{}
+		b := GenericBuilder[mocks.DataMock]{}
 
 		modifierMock := mocks.NewModifierMock[mocks.DataMock]()
 		modifierMock.On("Modify", mock.Anything).Return()
@@ -30,7 +30,7 @@ func TestStatefulsetBuilder(t *testing.T) {
 		assert.Equal(t, expected, actual)
 	})
 	t.Run("One modifier, not enabled", func(t *testing.T) {
-		b := Builder[mocks.DataMock]{}
+		b := GenericBuilder[mocks.DataMock]{}
 
 		modifierMock := mocks.NewModifierMock[mocks.DataMock]()
 		modifierMock.On("Modify", mock.Anything).Return()
@@ -44,7 +44,7 @@ func TestStatefulsetBuilder(t *testing.T) {
 		assert.Equal(t, expected, actual)
 	})
 	t.Run("Two modifiers, one used twice", func(t *testing.T) {
-		b := Builder[mocks.DataMock]{}
+		b := GenericBuilder[mocks.DataMock]{}
 
 		modifierMock0 := mocks.NewModifierMock[mocks.DataMock]()
 		modifierMock0.On("Modify", mock.Anything).Return()
@@ -62,7 +62,7 @@ func TestStatefulsetBuilder(t *testing.T) {
 		assert.Equal(t, expected, actual)
 	})
 	t.Run("Chain of modifiers", func(t *testing.T) {
-		b := Builder[mocks.DataMock]{}
+		b := GenericBuilder[mocks.DataMock]{}
 
 		modifierMock0 := mocks.NewModifierMock[mocks.DataMock]()
 		modifierMock0.On("Modify", mock.Anything).Return()
