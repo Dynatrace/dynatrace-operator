@@ -20,12 +20,18 @@ type envModifier interface {
 	getEnvs() []corev1.EnvVar
 }
 
+type initContainerModifier interface {
+	getInitContainers() []corev1.Container
+}
+
 var (
 	log = logger.NewDTLogger().WithName("activegate-statefulset-builder")
 )
 
 func GenerateAllModifiers(dynakube dynatracev1beta1.DynaKube, capability capability.Capability) []builder.Modifier {
 	return []builder.Modifier{
+		NewKubernetesMonitoringModifier(dynakube, capability),
+		NewServicePortModifier(dynakube, capability),
 		NewAuthTokenModifier(dynakube),
 		NewCertificatesModifier(dynakube),
 		NewCustomPropertiesModifier(dynakube, capability),

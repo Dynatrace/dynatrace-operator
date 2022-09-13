@@ -10,10 +10,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func CreateService(dynakube *dynatracev1beta1.DynaKube, feature string, servicePorts capability.AgServicePorts) *corev1.Service {
+func CreateService(dynakube *dynatracev1beta1.DynaKube, feature string) *corev1.Service {
 	var ports []corev1.ServicePort
 
-	if servicePorts.Webserver {
+	if dynakube.NeedsActiveGateServicePorts() {
 		ports = append(ports,
 			corev1.ServicePort{
 				Name:       consts.HttpsServicePortName,
@@ -30,7 +30,7 @@ func CreateService(dynakube *dynatracev1beta1.DynaKube, feature string, serviceP
 		)
 	}
 
-	if servicePorts.Statsd {
+	if dynakube.IsStatsdCapabilityEnabled() {
 		ports = append(ports,
 			corev1.ServicePort{
 				Name:       consts.StatsdIngestPortName,

@@ -72,7 +72,7 @@ func (imagePath *statsdImagePath) apiUrl() string {
 }
 
 func (imagePath *statsdImagePath) CustomImagePath() string {
-	if imagePath.dynaKube.NeedsStatsd() {
+	if imagePath.dynaKube.IsStatsdCapabilityEnabled() {
 		return imagePath.dynaKube.FeatureCustomStatsdImage()
 	}
 	return ""
@@ -95,7 +95,7 @@ func (imagePath *eecImagePath) apiUrl() string {
 }
 
 func (imagePath *eecImagePath) CustomImagePath() string {
-	if imagePath.dynaKube.NeedsStatsd() {
+	if imagePath.dynaKube.IsStatsdCapabilityEnabled() {
 		return imagePath.dynaKube.FeatureCustomEecImage()
 	}
 	return ""

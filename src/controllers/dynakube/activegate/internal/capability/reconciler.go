@@ -43,15 +43,14 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 		return update, errors.WithStack(err)
 	}
 
-	if r.capability.ShouldCreateService() {
-		multiCapability := capability.NewMultiCapability(r.dynakube)
-		update, err = r.createOrUpdateService(multiCapability.ServicePorts)
+	if r.dynakube.NeedsActiveGateServicePorts() {
+		update, err = r.createOrUpdateService()
 		if update || err != nil {
 			return update, errors.WithStack(err)
 		}
 	}
 
-	if r.capability.Config().CreateEecRuntimeConfig {
+	if r.dynakube.IsStatsdCapabilityEnabled() {
 		update, err = r.createOrUpdateEecConfigMap()
 		if update || err != nil {
 			return update, errors.WithStack(err)
@@ -62,12 +61,12 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 	return update, errors.WithStack(err)
 }
 
-func (r *Reconciler) createOrUpdateService(desiredServicePorts capability.AgServicePorts) (bool, error) {
-	desired := CreateService(r.dynakube, r.capability.ShortName(), desiredServicePorts)
+func (r *Reconciler) createOrUpdateService() (bool, error) {
+	desired := CreateService(r.dynakube, r.capability.ShortName())
 
 	installed := &corev1.Service{}
 	err := r.client.Get(context.TODO(), kubeobjects.Key(desired), installed)
-	if k8serrors.IsNotFound(err) && desiredServicePorts.HasPorts() {
+	if k8serrors.IsNotFound(err) {
 		log.Info("creating AG service", "module", r.capability.ShortName())
 		if err = controllerutil.SetControllerReference(r.dynakube, desired, r.client.Scheme()); err != nil {
 			return false, errors.WithStack(err)
@@ -84,15 +83,8 @@ func (r *Reconciler) createOrUpdateService(desiredServicePorts capability.AgServ
 	if r.portsAreOutdated(installed, desired) || r.labelsAreOutdated(installed, desired) {
 		desired.Spec.ClusterIP = installed.Spec.ClusterIP
 		desired.ObjectMeta.ResourceVersion = installed.ObjectMeta.ResourceVersion
-
-		if desiredServicePorts.HasPorts() {
-			if err := r.client.Update(context.TODO(), desired); err != nil {
-				return false, err
-			}
-		} else {
-			if err := r.client.Delete(context.TODO(), desired); err != nil {
-				return false, err
-			}
+		if err := r.client.Update(context.TODO(), desired); err != nil {
+			return false, err
 		}
 		return true, nil
 	}

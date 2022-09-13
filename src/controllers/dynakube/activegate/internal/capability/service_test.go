@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
@@ -54,9 +53,7 @@ func TestCreateService(t *testing.T) {
 
 	t.Run("check service name, labels and selector", func(t *testing.T) {
 		instance := testCreateInstance()
-		service := CreateService(instance, testComponentFeature, capability.AgServicePorts{
-			Webserver: true,
-		})
+		service := CreateService(instance, testComponentFeature)
 
 		assert.NotNil(t, service)
 		assert.Equal(t, instance.Name+"-"+testComponentFeature, service.Name)
@@ -82,15 +79,11 @@ func TestCreateService(t *testing.T) {
 
 	t.Run("check AG service if metrics ingest enabled, but not StatsD", func(t *testing.T) {
 		instance := testCreateInstance()
-		desiredPorts := capability.AgServicePorts{
-			Webserver: true,
-		}
 		kubeobjects.SwitchCapability(instance, dynatracev1beta1.MetricsIngestCapability, true)
 		kubeobjects.SwitchCapability(instance, dynatracev1beta1.StatsdIngestCapability, false)
-		require.True(t, !instance.NeedsStatsd())
-		require.True(t, desiredPorts.HasPorts())
+		require.True(t, !instance.IsStatsdCapabilityEnabled())
 
-		service := CreateService(instance, testComponentFeature, desiredPorts)
+		service := CreateService(instance, testComponentFeature)
 		ports := service.Spec.Ports
 
 		assert.Contains(t, ports, agHttpsPort, agHttpPort)
@@ -99,16 +92,11 @@ func TestCreateService(t *testing.T) {
 
 	t.Run("check AG service if metrics ingest and StatsD enabled", func(t *testing.T) {
 		instance := testCreateInstance()
-		desiredPorts := capability.AgServicePorts{
-			Webserver: true,
-			Statsd:    true,
-		}
 		kubeobjects.SwitchCapability(instance, dynatracev1beta1.MetricsIngestCapability, true)
-		kubeobjects.SwitchCapability(instance, dynatracev1beta1.StatsdIngestCapability, desiredPorts.Statsd)
-		require.True(t, instance.NeedsStatsd())
-		require.True(t, desiredPorts.HasPorts())
+		kubeobjects.SwitchCapability(instance, dynatracev1beta1.StatsdIngestCapability, true)
+		require.True(t, instance.IsStatsdCapabilityEnabled())
 
-		service := CreateService(instance, testComponentFeature, desiredPorts)
+		service := CreateService(instance, testComponentFeature)
 		ports := service.Spec.Ports
 
 		assert.Contains(t, ports, agHttpsPort, agHttpPort, statsdPort)
@@ -116,15 +104,11 @@ func TestCreateService(t *testing.T) {
 
 	t.Run("check AG service if StatsD enabled, but not metrics ingest", func(t *testing.T) {
 		instance := testCreateInstance()
-		desiredPorts := capability.AgServicePorts{
-			Statsd: true,
-		}
 		kubeobjects.SwitchCapability(instance, dynatracev1beta1.MetricsIngestCapability, false)
 		kubeobjects.SwitchCapability(instance, dynatracev1beta1.StatsdIngestCapability, true)
-		require.True(t, instance.NeedsStatsd())
-		require.True(t, desiredPorts.HasPorts())
+		require.True(t, instance.IsStatsdCapabilityEnabled())
 
-		service := CreateService(instance, testComponentFeature, desiredPorts)
+		service := CreateService(instance, testComponentFeature)
 		ports := service.Spec.Ports
 
 		assert.NotContains(t, ports, agHttpsPort, agHttpPort)
@@ -133,13 +117,11 @@ func TestCreateService(t *testing.T) {
 
 	t.Run("check AG service if StatsD and metrics ingest are disabled", func(t *testing.T) {
 		instance := testCreateInstance()
-		desiredPorts := capability.AgServicePorts{}
 		kubeobjects.SwitchCapability(instance, dynatracev1beta1.MetricsIngestCapability, false)
 		kubeobjects.SwitchCapability(instance, dynatracev1beta1.StatsdIngestCapability, false)
-		require.True(t, !instance.NeedsStatsd())
-		require.False(t, desiredPorts.HasPorts())
+		require.True(t, !instance.IsStatsdCapabilityEnabled())
 
-		service := CreateService(instance, testComponentFeature, desiredPorts)
+		service := CreateService(instance, testComponentFeature)
 		ports := service.Spec.Ports
 
 		assert.NotContains(t, ports, agHttpsPort, agHttpPort, statsdPort)

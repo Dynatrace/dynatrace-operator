@@ -1,9 +1,6 @@
 package statefulset
 
 import (
-	"fmt"
-	"strings"
-
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
@@ -100,12 +97,10 @@ func (statefulSetBuilder StatefulSetBuilder) addLabels(sts *appsv1.StatefulSet) 
 func (statefulSetBuilder StatefulSetBuilder) addTemplateSpec(sts *appsv1.StatefulSet) {
 	podSpec := corev1.PodSpec{
 		Containers:         statefulSetBuilder.buildBaseContainer(),
-		InitContainers:     statefulSetBuilder.buildInitContainers(),
 		NodeSelector:       statefulSetBuilder.capability.Properties().NodeSelector,
-		ServiceAccountName: statefulSetBuilder.buildServiceAccountName(),
+		ServiceAccountName: statefulSetBuilder.dynakube.ActiveGateServiceAccountName(),
 		Affinity:           nodeAffinity(),
 		Tolerations:        buildTolerations(statefulSetBuilder.capability),
-		Volumes:            statefulSetBuilder.capability.Volumes(),
 		ImagePullSecrets: []corev1.LocalObjectReference{
 			{Name: statefulSetBuilder.dynakube.PullSecret()},
 		},
@@ -127,7 +122,6 @@ func (statefulSetBuilder StatefulSetBuilder) buildBaseContainer() []corev1.Conta
 		Image:           statefulSetBuilder.dynakube.ActiveGateImage(),
 		Resources:       statefulSetBuilder.capability.Properties().Resources,
 		Env:             statefulSetBuilder.buildCommonEnvs(),
-		VolumeMounts:    statefulSetBuilder.capability.ContainerVolumeMounts(),
 		ImagePullPolicy: corev1.PullAlways,
 		ReadinessProbe: &corev1.Probe{
 			ProbeHandler: corev1.ProbeHandler{
@@ -155,45 +149,8 @@ func (statefulSetBuilder StatefulSetBuilder) buildBaseContainer() []corev1.Conta
 			},
 		},
 	}
-	if statefulSetBuilder.capability.Config().SetReadinessPort {
-		container.ReadinessProbe.HTTPGet.Port = intstr.FromString(consts.HttpsServicePortName)
-	}
-	if statefulSetBuilder.capability.Config().SetCommunicationPort {
-		container.Ports = []corev1.ContainerPort{
-			{
-				Name:          consts.HttpsServicePortName,
-				ContainerPort: consts.HttpsContainerPort,
-			},
-			{
-				Name:          consts.HttpServicePortName,
-				ContainerPort: consts.HttpContainerPort,
-			},
-		}
-	}
-	if statefulSetBuilder.capability.Config().SetDnsEntryPoint {
-		container.Env = append(container.Env,
-			corev1.EnvVar{
-				Name:  consts.EnvDtDnsEntryPoint,
-				Value: statefulSetBuilder.buildDNSEntryPoint(),
-			})
-	}
 
 	return []corev1.Container{container}
-}
-
-func (statefulSetBuilder StatefulSetBuilder) buildDNSEntryPoint() string {
-	return fmt.Sprintf("https://%s/communication", buildServiceHostName(statefulSetBuilder.dynakube.Name, statefulSetBuilder.capability.ShortName()))
-}
-
-func (statefulSetBuilder StatefulSetBuilder) buildInitContainers() []corev1.Container {
-	initContainers := statefulSetBuilder.capability.InitContainersTemplates()
-
-	for i := range initContainers {
-		initContainers[i].Image = statefulSetBuilder.dynakube.ActiveGateImage()
-		initContainers[i].Resources = statefulSetBuilder.capability.Properties().Resources
-	}
-
-	return initContainers
 }
 
 func (statefulSetBuilder StatefulSetBuilder) buildCommonEnvs() []corev1.EnvVar {
@@ -214,23 +171,6 @@ func (statefulSetBuilder StatefulSetBuilder) buildCommonEnvs() []corev1.EnvVar {
 		envs = append(envs, corev1.EnvVar{Name: consts.EnvDtNetworkZone, Value: statefulSetBuilder.dynakube.Spec.NetworkZone})
 	}
 	return envs
-}
-
-func (statefulSetBuilder StatefulSetBuilder) buildServiceAccountName() string {
-	return consts.ServiceAccountPrefix + statefulSetBuilder.capability.Config().ServiceAccountOwner
-}
-
-// buildServiceHostName converts the name returned by BuildServiceName
-// into the variable name which Kubernetes uses to reference the associated service.
-// For more information see: https://kubernetes.io/docs/concepts/services-networking/service/
-func buildServiceHostName(dynakubeName string, module string) string {
-	serviceName :=
-		strings.ReplaceAll(
-			strings.ToUpper(
-				capability.BuildServiceName(dynakubeName, module)),
-			"-", "_")
-
-	return fmt.Sprintf("$(%s_SERVICE_HOST):$(%s_SERVICE_PORT)", serviceName, serviceName)
 }
 
 func nodeAffinity() *corev1.Affinity {

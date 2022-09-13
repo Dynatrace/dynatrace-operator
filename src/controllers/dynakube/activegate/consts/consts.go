@@ -19,7 +19,6 @@ const (
 	HttpsContainerPort      = 9999
 	HttpContainerPort       = 9998
 
-	ServiceAccountPrefix     = "dynatrace-"
 	DeploymentTypeActiveGate = "active_gate"
 
 	TenantSecretVolumeName    = "ag-tenant-secret"

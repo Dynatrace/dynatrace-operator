@@ -24,7 +24,7 @@ import (
 type Reconciler struct {
 	context                           context.Context
 	client                            client.Client
-	Dynakube                          *dynatracev1beta1.DynaKube
+	dynakube                          *dynatracev1beta1.DynaKube
 	apiReader                         client.Reader
 	scheme                            *runtime.Scheme
 	authTokenReconciler               kubeobjects.Reconciler
@@ -50,7 +50,7 @@ func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Read
 		client:                            clt,
 		apiReader:                         apiReader,
 		scheme:                            scheme,
-		Dynakube:                          dynakube,
+		dynakube:                          dynakube,
 		authTokenReconciler:               authTokenReconciler,
 		proxyReconciler:                   proxyReconciler,
 		newCustomPropertiesReconcilerFunc: newCustomPropertiesReconcilerFunc,
@@ -66,7 +66,7 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 		return false, err
 	}
 
-	if r.Dynakube.UseActiveGateAuthToken() {
+	if r.dynakube.UseActiveGateAuthToken() {
 		_, err := r.authTokenReconciler.Reconcile()
 		if err != nil {
 			return false, errors.WithMessage(err, "could not reconcile Dynatrace ActiveGateAuthToken secrets")
@@ -77,7 +77,7 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 		return false, err
 	}
 
-	var caps = capability.GenerateActiveGateCapabilities(r.Dynakube)
+	var caps = capability.GenerateActiveGateCapabilities(r.dynakube)
 	for _, agCapability := range caps {
 		if agCapability.Enabled() {
 			return r.createCapability(agCapability)
@@ -91,15 +91,10 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 }
 
 func (r *Reconciler) createCapability(agCapability capability.Capability) (updated bool, err error) {
-	serviceAccountOwner := agCapability.Config().ServiceAccountOwner
-	if serviceAccountOwner == "" {
-		serviceAccountOwner = agCapability.ShortName()
-	}
+	customPropertiesReconciler := r.newCustomPropertiesReconcilerFunc(r.dynakube.ActiveGateServiceAccountOwner(), agCapability.Properties().CustomProperties)
+	statefulsetReconciler := r.newStatefulsetReconcilerFunc(r.client, r.apiReader, r.scheme, r.dynakube, agCapability)
 
-	customPropertiesReconciler := r.newCustomPropertiesReconcilerFunc(serviceAccountOwner, agCapability.Properties().CustomProperties)
-	statefulsetReconciler := r.newStatefulsetReconcilerFunc(r.client, r.apiReader, r.scheme, r.Dynakube, agCapability)
-
-	capabilityReconciler := r.newCapabilityReconcilerFunc(r.client, agCapability, r.Dynakube, statefulsetReconciler, customPropertiesReconciler)
+	capabilityReconciler := r.newCapabilityReconcilerFunc(r.client, agCapability, r.dynakube, statefulsetReconciler, customPropertiesReconciler)
 	return capabilityReconciler.Reconcile()
 }
 
@@ -116,14 +111,14 @@ func (r *Reconciler) deleteCapability(agCapability capability.Capability) error 
 }
 
 func (r *Reconciler) deleteService(agCapability capability.Capability) error {
-	if !agCapability.ShouldCreateService() {
+	if r.dynakube.NeedsActiveGateServicePorts() {
 		return nil
 	}
 
 	svc := corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      capability.BuildServiceName(r.Dynakube.Name, agCapability.ShortName()),
-			Namespace: r.Dynakube.Namespace,
+			Name:      capability.BuildServiceName(r.dynakube.Name, agCapability.ShortName()),
+			Namespace: r.dynakube.Namespace,
 		},
 	}
 	return kubeobjects.Delete(r.context, r.client, &svc)
@@ -132,8 +127,8 @@ func (r *Reconciler) deleteService(agCapability capability.Capability) error {
 func (r *Reconciler) deleteStatefulset(agCapability capability.Capability) error {
 	sts := appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      capability.CalculateStatefulSetName(agCapability, r.Dynakube.Name),
-			Namespace: r.Dynakube.Namespace,
+			Name:      capability.CalculateStatefulSetName(agCapability, r.dynakube.Name),
+			Namespace: r.dynakube.Namespace,
 		},
 	}
 	return kubeobjects.Delete(r.context, r.client, &sts)

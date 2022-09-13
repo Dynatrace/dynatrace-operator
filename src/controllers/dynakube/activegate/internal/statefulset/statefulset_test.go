@@ -12,7 +12,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 const (
@@ -159,10 +158,7 @@ func TestAddTemplateSpec(t *testing.T) {
 
 		builder.addTemplateSpec(&sts)
 		spec := sts.Spec.Template.Spec
-
-		assert.NotEmpty(t, spec.InitContainers)
-		assert.Contains(t, spec.ServiceAccountName, multiCapability.ServiceAccountOwner)
-		assert.NotEmpty(t, spec.Volumes)
+		assert.Contains(t, spec.ServiceAccountName, dynakube.ActiveGateServiceAccountName())
 	})
 
 	t.Run("set node selector", func(t *testing.T) {
@@ -262,22 +258,6 @@ func TestBuildBaseContainer(t *testing.T) {
 		assert.NotNil(t, container.ReadinessProbe)
 		assert.NotNil(t, container.SecurityContext)
 	})
-	t.Run("adds capability specific stuff", func(t *testing.T) {
-		dynakube := getTestDynakube()
-		dynakube.Spec.ActiveGate.Capabilities = append(dynakube.Spec.ActiveGate.Capabilities, dynatracev1beta1.KubeMonCapability.DisplayName)
-		multiCapability := capability.NewMultiCapability(&dynakube)
-		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dynakube, multiCapability)
-
-		containers := builder.buildBaseContainer()
-
-		require.Len(t, containers, 1)
-		container := containers[0]
-		assert.NotEmpty(t, container.VolumeMounts)
-		assert.Equal(t, intstr.FromString(consts.HttpsServicePortName), container.ReadinessProbe.HTTPGet.Port)
-		assert.NotEmpty(t, container.Ports)
-		assert.Len(t, container.Ports, 2)
-		assert.NotNil(t, kubeobjects.FindEnvVar(container.Env, consts.EnvDtDnsEntryPoint))
-	})
 }
 
 func TestBuildCommonEnvs(t *testing.T) {
@@ -356,18 +336,4 @@ func TestBuildCommonEnvs(t *testing.T) {
 		require.NotNil(t, zoneEnv)
 		assert.Equal(t, dynakube.Spec.NetworkZone, zoneEnv.Value)
 	})
-}
-
-func TestBuildServiceNameForDNSEntryPoint(t *testing.T) {
-	actual := buildServiceHostName(testName, "test-component-feature")
-	assert.NotEmpty(t, actual)
-
-	expected := "$(TEST_NAME_TEST_COMPONENT_FEATURE_SERVICE_HOST):$(TEST_NAME_TEST_COMPONENT_FEATURE_SERVICE_PORT)"
-	assert.Equal(t, expected, actual)
-
-	testStringName := "this---test_string"
-	testStringFeature := "SHOULD--_--PaRsEcORrEcTlY"
-	expected = "$(THIS___TEST_STRING_SHOULD_____PARSECORRECTLY_SERVICE_HOST):$(THIS___TEST_STRING_SHOULD_____PARSECORRECTLY_SERVICE_PORT)"
-	actual = buildServiceHostName(testStringName, testStringFeature)
-	assert.Equal(t, expected, actual)
 }

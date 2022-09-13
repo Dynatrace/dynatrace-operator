@@ -34,6 +34,11 @@ func createBuilderForTesting() builder.Builder {
 						{
 							Name:            consts.ActiveGateContainerName,
 							SecurityContext: &corev1.SecurityContext{},
+							ReadinessProbe: &corev1.Probe{
+								ProbeHandler: corev1.ProbeHandler{
+									HTTPGet: &corev1.HTTPGetAction{},
+								},
+							},
 						},
 					},
 				},
@@ -65,13 +70,15 @@ func isSubset[T any](t *testing.T, subset, superset []T) {
 	}
 }
 
-func enableAll(dynakube *dynatracev1beta1.DynaKube, capability capability.Capability) {
+func enableAllModifiers(dynakube *dynatracev1beta1.DynaKube, capability capability.Capability) {
 	setAutTokenUsage(dynakube, true)
 	setCertUsage(dynakube, true)
 	setCustomPropertyUsage(capability, true)
 	setProxyUsage(dynakube, true)
 	setRawImageUsage(dynakube, true)
 	setReadOnlyUsage(dynakube, true)
+	setKubernetesMonitoringUsage(dynakube, true)
+	setServicePortUsage(dynakube, true)
 }
 
 func TestNoConflict(t *testing.T) {
@@ -79,7 +86,7 @@ func TestNoConflict(t *testing.T) {
 		dynakube := getBaseDynakube()
 		enableKubeMonCapability(&dynakube)
 		multiCapability := capability.NewMultiCapability(&dynakube)
-		enableAll(&dynakube, multiCapability)
+		enableAllModifiers(&dynakube, multiCapability)
 		mods := GenerateAllModifiers(dynakube, multiCapability)
 		builder := createBuilderForTesting()
 
@@ -98,6 +105,10 @@ func TestNoConflict(t *testing.T) {
 			envMod, ok := mod.(envModifier)
 			if ok {
 				isSubset(t, envMod.getEnvs(), sts.Spec.Template.Spec.Containers[0].Env)
+			}
+			initMod, ok := mod.(initContainerModifier)
+			if ok {
+				isSubset(t, initMod.getInitContainers(), sts.Spec.Template.Spec.InitContainers)
 			}
 		}
 	})
