@@ -34,6 +34,7 @@ func createInstallInitContainerBase(webhookImage, clusterID string, pod *corev1.
 
 func copyUserContainerSecurityContext(pod *corev1.Pod) *corev1.SecurityContext {
 	var securityContext *corev1.SecurityContext
+	limitSecurityContext(securityContext)
 	if len(pod.Spec.Containers) == 0 {
 		return securityContext
 	}
@@ -41,6 +42,12 @@ func copyUserContainerSecurityContext(pod *corev1.Pod) *corev1.SecurityContext {
 		securityContext = pod.Spec.Containers[0].SecurityContext.DeepCopy()
 	}
 	return securityContext
+}
+
+func limitSecurityContext(ctx *corev1.SecurityContext) {
+	ctx.RunAsUser = address.Of(int64(1234)) // test
+	ctx.AllowPrivilegeEscalation = address.Of(false)
+	ctx.ReadOnlyRootFilesystem = address.Of(false)
 }
 
 func getBasePodName(pod *corev1.Pod) string {
