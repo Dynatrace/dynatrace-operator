@@ -23,6 +23,8 @@ const (
 	proxyPasswordField = "password"
 )
 
+var _ kubeobjects.Reconciler = &Reconciler{}
+
 // Reconciler manages the ActiveGate proxy secret generation for the dynatrace namespace.
 type Reconciler struct {
 	client    client.Client
@@ -39,7 +41,7 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 	return true, err
 }
 
-func NewReconciler(client client.Client, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube) kubeobjects.Reconciler {
+func NewReconciler(client client.Client, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube) *Reconciler {
 	return &Reconciler{
 		client:    client,
 		apiReader: apiReader,
