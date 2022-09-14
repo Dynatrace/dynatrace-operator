@@ -11,9 +11,14 @@ spec:
   apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
 
   # Optional: Name of the secret holding the credentials required to connect to the Dynatrace tenant
-  # If unset, name of custom resource is used
+  # If unset, the name of this custom resource is used
   #
   # tokens: ""
+
+  # Optional: Defines a custom pull secret in case you use a private registry when pulling images from the dynatrace environment
+  # The secret has to be of type 'kubernetes.io/dockerconfigjson' (see https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/)
+  #
+  # customPullSecret: "custom-pull-secret"
 
   # Optional: Disable certificate validation checks for installer download and API communication
   #
@@ -26,6 +31,9 @@ spec:
   #   valueFrom: name-of-my-proxy-secret
 
   # Optional: Adds custom RootCAs from a configmap
+  # The key to the data must be "certs"
+  # This property only affects certificates used to communicate with the Dynatrace API.
+  # The property is not applied to the ActiveGate
   #
   # trustedCAs: name-of-my-ca-configmap
 
@@ -34,31 +42,36 @@ spec:
   #
   # networkZone: name-of-my-network-zone
 
-  # Optional: Defines a custom pull secret in case you use a private registry when pulling images from the dynatrace environment
-  # The secret has to be of type 'kubernetes.io/dockerconfigjson' (see https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/)
-  #
-  # customPullSecret: "custom-pull-secret"
-
-  # Optional: when enabled, and if Istio is installed on the Kubernetes environment, then the
+  # Optional: If enabled, and if Istio is installed on the Kubernetes environment, the
   # Operator will create the corresponding VirtualService and ServiceEntry objects to allow access
-  # to the Dynatrace cluster from the agent or the activeGate. Disabled by default.
+  # to the Dynatrace cluster from agents or activeGates. Disabled by default.
   #
   # enableIstio: false
 
-  # the namespaces which we want to inject into; matchLabels: <map-of-labels-to-match>; matchExpression: <see example https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#resources-that-support-set-based-requirements >
-  # if not set we inject into every namespace
-  # namespaceSelector has no effect when used together with hostMonitoring or classicFullstack
+  # The namespaces which should be injected into
+  # If unset, all namespace will be injected into
+  # namespaceSelector has no effect on hostMonitoring or classicFullstack
+  # For examples regarding namespaceSelectors, see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#resources-that-support-set-based-requirements
   #
   # namespaceSelector:
   #   matchLabels:
-  #     test: test
+  #     app: my-app
+  #   matchExpressions:
+  #    - key: app
+  #      operator: In
+  #      values: [my-frontend, my-backend, my-database]
 
+  # Configuration for OneAgent instances
+  #
   oneAgent:
-    # enable application-only monitoring and change its settings
+    # Enables application-only monitoring and changes its settings
     # Cannot be used in conjunction with cloud-native fullstack monitoring, classic fullstack monitoring or host monitoring
+    #
     applicationMonitoring:
       # Optional: If specified, indicates the OneAgent version to use
-      # Defaults to latest
+      # Defaults to "latest"
+      # The version is expected to be provided in the semver format
+      # Example: {major.minor.release}, e.g., "1.200.0"
       #
       # version:
 
@@ -67,11 +80,14 @@ spec:
       #
       useCSIDriver: false
 
-      # Optional: The URI of the image that contains the codemodules that will be injected into user applications.
-      # Only available when `useCSIDriver` is set to `true`.
-      # Code Modules Image Dockerfile sample: https://dt-url.net/operator-docker-samples
+      # Optional: The URI of the image that contains the codemodules specific OneAgent that will be injected into pods and applications.
+      # For an example of a Dockerfile creating such an image, see https://dt-url.net/operator-docker-samples
+      #
       # codeModulesImage: ""
 
+      # Optional: Defines resources requests and limits for the initContainer
+      # See more: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers
+      #
       # initResources:
       #   requests:
       #     cpu: 100m
@@ -81,34 +97,48 @@ spec:
       #     memory: 1.5Gi
 
   # Configuration for ActiveGate instances.
+  #
   activeGate:
-    # Enables listed ActiveGate capabilities
+    # Specifies which capabilities will be enabled on ActiveGate instances
+    # The following capabilities can be set:
+    # - routing
+    # - kubernetes-monitoring
+    # - metrics-ingest
+    # - dynatrace-api
+    #
     capabilities:
       - routing
       - kubernetes-monitoring
       - dynatrace-api
 
-    # Optional: to use a custom ActiveGate Docker image.
+    # Optional: Sets the image used to deploy ActiveGate instances
+    # Defaults to the latest ActiveGate image on the tenant's registry
+    # Example: "ENVIRONMENTID.live.dynatrace.com/linux/activegate:latest"
+    #
     image: ""
 
-    # Amount of replicas of ActiveGate pods
+    # Optional: Sets how many ActiveGate pods are spawned by the StatefulSet
+    # Defaults to "1"
     #
     # replicas: 1
 
-    # Optional: tolerations to include with the ActiveGate StatefulSet.
-    # See more here: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+    # Optional: Specifies tolerations to include with the ActiveGate StatefulSet.
+    # For more information on tolerations, see https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
     #
     # tolerations:
     # - effect: NoSchedule
     #   key: node-role.kubernetes.io/master
     #   operator: Exists
 
-    # Optional: node selector to control on which nodes the ActiveGate will be deployed.
+    # Optional: Sets a node selector to control on which nodes the ActiveGate will be deployed.
+    # For more information on node selectors, see https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes/
     #
     # nodeSelector: {}
 
-    # Optional: resource settings for ActiveGate container. Consumption of the ActiveGate heavily depends
-    # on the workload to monitor; please adjust values accordingly.
+    # Optional: Specifies resource settings for ActiveGate instances
+    # Consumption of the ActiveGate heavily depends on the workload to monitor
+    # The values should be adjusted according to the workload
+    #
     resources:
       requests:
         cpu: 500m
@@ -117,21 +147,22 @@ spec:
         cpu: 1000m
         memory: 1.5Gi
 
-    # Optional: labels are customer defined labels for ActiveGate Pods to structure workloads as desired.
+    # Optional: Defines labels added to ActiveGate pods
+    # Can be used to structure workloads
     #
     # labels:
     #   custom: label
 
-    # Optional: additional environment variables to add to the ActiveGate Pods.
+    # Optional: Adds additional environment variables to ActiveGate pods
     #
     # env: []
 
-    # Optional: Set activation group for ActiveGate
+    # Optional: Sets the activation group for ActiveGate instances
     #
     # group: ""
 
-    # Optional: Add a custom properties file by providing it as a value or reference it from a secret
-    # If referenced from a secret, make sure the key is called 'customProperties'
+    # Optional: Defines a custom properties file providing either as a value or as a reference to a secret
+    # If a reference to a secret is used, the key to the data must be 'customProperties'
     #
     # customProperties:
     #   value: |
@@ -139,11 +170,16 @@ spec:
     #     networkZone=
     #   valueFrom: myCustomPropertiesConfigMap
 
-    # Optional: the name of a secret containing ActiveGate TLS cert+key and password. If not set, self-signed certificate is used.
-    # server.p12: certificate+key pair in pkcs12 format
+    # Optional: Specifies the name of a secret containing a TLS certificate, a TLS key and the TLS key's password to be used by ActiveGate instances
+    # If unset, a self-signed certificate is used
+    # The secret is expected to have the following key-value pairs
+    # server.p12: TLS certificate and TLS key pair in pkcs12 format
+    # password: passphrase to decrypt the TLS certificate and TLS key pair
     #
     # tlsSecretName: "my-tls-secret"
 
-    # Optional: Sets DNS Policy for the ActiveGate pods
+    # Optional: Sets the DNS Policy for ActiveGate pods
+    # Defaults to "Default"
+    # For more information on DNS policies, see https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy
     #
     # dnsPolicy: "Default"

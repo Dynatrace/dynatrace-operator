@@ -36,8 +36,6 @@ const (
 	AnnotationFeatureDisableActiveGateUpdates = AnnotationFeaturePrefix + "disable-activegate-updates"
 	// Deprecated: AnnotationFeatureDisableActiveGateRawImage use AnnotationFeatureActiveGateRawImage instead
 	AnnotationFeatureDisableActiveGateRawImage = AnnotationFeaturePrefix + "disable-activegate-raw-image"
-	// Deprecated: AnnotationFeatureEnableActiveGateAuthToken use AnnotationFeatureActiveGateAuthToken instead
-	AnnotationFeatureEnableActiveGateAuthToken = AnnotationFeaturePrefix + "enable-activegate-authtoken"
 
 	AnnotationFeatureActiveGateUpdates   = AnnotationFeaturePrefix + "activegate-updates"
 	AnnotationFeatureActiveGateRawImage  = AnnotationFeaturePrefix + "activegate-raw-image"
@@ -247,8 +245,7 @@ func (dk *DynaKube) FeatureActiveGateIgnoreProxy() bool {
 
 // FeatureActiveGateAuthToken is a feature flag to enable authToken usage in the activeGate
 func (dk *DynaKube) FeatureActiveGateAuthToken() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateAuthToken) == "true" ||
-		dk.getFeatureFlagRaw(AnnotationFeatureEnableActiveGateAuthToken) == "true" && dk.getFeatureFlagRaw(AnnotationFeatureActiveGateAuthToken) == ""
+	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateAuthToken) != "false"
 }
 
 // FeatureAgentInitialConnectRetry is a feature flag to configure startup delay of standalone agents

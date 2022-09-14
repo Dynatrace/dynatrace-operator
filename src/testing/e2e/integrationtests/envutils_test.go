@@ -188,6 +188,8 @@ func (e *ControllerTestEnvironment) AddOneAgent(n string, s *dynatracev1beta1.Dy
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      n,
 			Namespace: DefaultTestNamespace,
+			// Set to false in order to make the integration tests run as before
+			Annotations: map[string]string{dynatracev1beta1.AnnotationFeatureActiveGateAuthToken: "false"},
 		},
 		Spec: *s,
 	}

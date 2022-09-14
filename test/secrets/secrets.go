@@ -15,8 +15,9 @@ import (
 )
 
 type Secrets struct {
-	ApiUrl   string `yaml:"apiUrl"`
-	ApiToken string `yaml:"apiToken"`
+	TenantUid string `yaml:"tenantUid"`
+	ApiUrl    string `yaml:"apiUrl"`
+	ApiToken  string `yaml:"apiToken"`
 }
 
 func NewFromConfig(fs afero.Fs, path string) (Secrets, error) {

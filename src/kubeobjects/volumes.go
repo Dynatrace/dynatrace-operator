@@ -15,3 +15,12 @@ func GetVolumeByName(volumes []corev1.Volume, volumeName string) (*corev1.Volume
 		volumeName, len(volumes),
 	)
 }
+
+func IsVolumeMountPresent(volumeMounts []corev1.VolumeMount, neededMount corev1.VolumeMount) bool {
+	for _, volumeMount := range volumeMounts {
+		if volumeMount == neededMount {
+			return true
+		}
+	}
+	return false
+}

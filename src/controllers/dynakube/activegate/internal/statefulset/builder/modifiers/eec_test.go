@@ -1,30 +1,25 @@
-package statefulset
+package modifiers
 
 import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-func testBuildStsProperties() *statefulSetProperties {
-	instance := buildTestInstance()
-	capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
-	return NewStatefulSetProperties(instance, capabilityProperties, "", "", "test-feature", "", "", nil, nil, nil, nil)
-}
-
 func TestExtensionController_BuildContainerAndVolumes(t *testing.T) {
 	assertion := assert.New(t)
 	requirement := require.New(t)
 
 	t.Run("happy path", func(t *testing.T) {
-		stsProperties := testBuildStsProperties()
-		eec := NewExtensionController(stsProperties)
-		container := eec.BuildContainer()
+		dynakube := getBaseDynakube()
+		eec := NewExtensionControllerModifier(dynakube, capability.NewMultiCapability(&dynakube))
+		container := eec.buildContainer()
 
 		assertion.NotEmpty(container.ReadinessProbe, "Expected readiness probe is defined")
 		assertion.Equal("/readyz", container.ReadinessProbe.HTTPGet.Path, "Expected there is a readiness probe at /readyz")
@@ -36,7 +31,7 @@ func TestExtensionController_BuildContainerAndVolumes(t *testing.T) {
 		}
 
 		for _, mountPath := range []string{
-			GatewayConfigMountPoint,
+			consts.GatewayConfigMountPoint,
 			dataSourceStartupArgsMountPoint,
 			dataSourceAuthTokenMountPoint,
 			statsdMetadataMountPoint,
@@ -46,8 +41,8 @@ func TestExtensionController_BuildContainerAndVolumes(t *testing.T) {
 			assertion.Truef(kubeobjects.MountPathIsIn(container.VolumeMounts, mountPath), "Expected that EEC container defines mount point %s", mountPath)
 		}
 
-		assert.Truef(t, kubeobjects.MountPathIsReadOnlyOrReadWrite(container.VolumeMounts, GatewayConfigMountPoint, kubeobjects.ReadOnlyMountPath),
-			"Expected that ActiveGate container mount point %s is mounted ReadOnly", GatewayConfigMountPoint,
+		assert.Truef(t, kubeobjects.MountPathIsReadOnlyOrReadWrite(container.VolumeMounts, consts.GatewayConfigMountPoint, kubeobjects.ReadOnlyMountPath),
+			"Expected that ActiveGate container mount point %s is mounted ReadOnly", consts.GatewayConfigMountPoint,
 		)
 
 		for _, envVar := range []string{
@@ -58,8 +53,9 @@ func TestExtensionController_BuildContainerAndVolumes(t *testing.T) {
 	})
 
 	t.Run("hardened container security context", func(t *testing.T) {
-		stsProperties := testBuildStsProperties()
-		container := NewExtensionController(stsProperties).BuildContainer()
+		dynakube := getBaseDynakube()
+		eec := NewExtensionControllerModifier(dynakube, capability.NewMultiCapability(&dynakube))
+		container := eec.buildContainer()
 
 		requirement.NotNil(container.SecurityContext)
 		securityContext := container.SecurityContext
@@ -69,25 +65,11 @@ func TestExtensionController_BuildContainerAndVolumes(t *testing.T) {
 		assertion.False(*securityContext.ReadOnlyRootFilesystem)
 	})
 
-	t.Run("volumes vs volume mounts", func(t *testing.T) {
-		stsProperties := testBuildStsProperties()
-		stsProperties.Spec.ActiveGate.Capabilities = append(stsProperties.Spec.ActiveGate.Capabilities, dynatracev1beta1.StatsdIngestCapability.DisplayName)
-		eec := NewExtensionController(stsProperties)
-		statsd := NewStatsd(stsProperties)
-		volumes := buildVolumes(stsProperties, []kubeobjects.ContainerBuilder{eec, statsd})
-
-		container := eec.BuildContainer()
-		for _, volumeMount := range container.VolumeMounts {
-			assertion.Truef(kubeobjects.VolumeIsDefined(volumes, volumeMount.Name), "Expected that volume mount %s has a predefined pod volume", volumeMount.Name)
-		}
-	})
-
 	t.Run("resource requirements from feature flags", func(t *testing.T) {
-		stsProperties := testBuildStsProperties()
-		stsProperties.ObjectMeta.Annotations[dynatracev1beta1.AnnotationFeaturePrefix+"activegate-eec-resources-limits-cpu"] = "200m"
-		eec := NewExtensionController(stsProperties)
-
-		container := eec.BuildContainer()
+		dynakube := getBaseDynakube()
+		dynakube.ObjectMeta.Annotations[dynatracev1beta1.AnnotationFeaturePrefix+"activegate-eec-resources-limits-cpu"] = "200m"
+		eec := NewExtensionControllerModifier(dynakube, capability.NewMultiCapability(&dynakube))
+		container := eec.buildContainer()
 
 		require.Empty(t, container.Resources.Requests)
 		require.NotEmpty(t, container.Resources.Limits)
