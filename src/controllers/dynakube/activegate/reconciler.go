@@ -22,8 +22,8 @@ import (
 )
 
 type Reconciler struct {
-	context context.Context
-	client.Client
+	context                           context.Context
+	client                            client.Client
 	Dynakube                          *dynatracev1beta1.DynaKube
 	apiReader                         client.Reader
 	scheme                            *runtime.Scheme
@@ -37,7 +37,7 @@ type Reconciler struct {
 
 var _ kubeobjects.Reconciler = (*Reconciler)(nil)
 
-func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) *Reconciler {
+func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) kubeobjects.Reconciler {
 	authTokenReconciler := authtoken.NewReconciler(clt, apiReader, scheme, dynakube, dtc)
 	tenantInfoReconciler := tenantinfo.NewReconciler(clt, apiReader, scheme, dynakube, dtc)
 	proxyReconciler := proxy.NewReconciler(clt, apiReader, dynakube)
@@ -47,7 +47,7 @@ func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Read
 
 	return &Reconciler{
 		context:                           ctx,
-		Client:                            clt,
+		client:                            clt,
 		apiReader:                         apiReader,
 		scheme:                            scheme,
 		Dynakube:                          dynakube,
@@ -97,9 +97,9 @@ func (r *Reconciler) createCapability(agCapability capability.Capability) (updat
 	}
 
 	customPropertiesReconciler := r.newCustomPropertiesReconcilerFunc(serviceAccountOwner, agCapability.Properties().CustomProperties)
-	statefulsetReconciler := r.newStatefulsetReconcilerFunc(r.Client, r.apiReader, r.scheme, r.Dynakube, agCapability)
+	statefulsetReconciler := r.newStatefulsetReconcilerFunc(r.client, r.apiReader, r.scheme, r.Dynakube, agCapability)
 
-	capabilityReconciler := r.newCapabilityReconcilerFunc(r.Client, agCapability, r.Dynakube, statefulsetReconciler, customPropertiesReconciler)
+	capabilityReconciler := r.newCapabilityReconcilerFunc(r.client, agCapability, r.Dynakube, statefulsetReconciler, customPropertiesReconciler)
 	return capabilityReconciler.Reconcile()
 }
 
@@ -126,7 +126,7 @@ func (r *Reconciler) deleteService(agCapability capability.Capability) error {
 			Namespace: r.Dynakube.Namespace,
 		},
 	}
-	return kubeobjects.Delete(r.context, r.Client, &svc)
+	return kubeobjects.Delete(r.context, r.client, &svc)
 }
 
 func (r *Reconciler) deleteStatefulset(agCapability capability.Capability) error {
@@ -136,5 +136,5 @@ func (r *Reconciler) deleteStatefulset(agCapability capability.Capability) error
 			Namespace: r.Dynakube.Namespace,
 		},
 	}
-	return kubeobjects.Delete(r.context, r.Client, &sts)
+	return kubeobjects.Delete(r.context, r.client, &sts)
 }

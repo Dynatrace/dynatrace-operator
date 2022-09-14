@@ -22,18 +22,18 @@ const (
 )
 
 type Reconciler struct {
-	client.Client
+	client    client.Client
 	apiReader client.Reader
 	dynakube  *dynatracev1beta1.DynaKube
 	scheme    *runtime.Scheme
 	dtc       dtclient.Client
 }
 
-var _ kubeobjects.Reconciler = (*Reconciler)(nil)
+var _ kubeobjects.Reconciler = &Reconciler{}
 
 func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) *Reconciler {
 	return &Reconciler{
-		Client:    clt,
+		client:    clt,
 		apiReader: apiReader,
 		scheme:    scheme,
 		dynakube:  dynakube,
@@ -43,7 +43,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 
 func (r *Reconciler) Reconcile() (update bool, err error) {
 	if err = r.reconcileSecret(); err != nil {
-		log.Error(err, "could not reconcile ActiveGate tenant secret")
+		log.Info("could not reconcile ActiveGate tenant secret")
 		return false, errors.WithStack(err)
 	}
 
@@ -104,7 +104,7 @@ func (r *Reconciler) createSecret(secretData map[string][]byte) (*corev1.Secret,
 		return nil, errors.WithStack(err)
 	}
 
-	err := r.Create(context.TODO(), secret)
+	err := r.client.Create(context.TODO(), secret)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create secret '%s': %w", extendWithAGSecretSuffix(r.dynakube.Name), err)
 	}
@@ -114,7 +114,7 @@ func (r *Reconciler) createSecret(secretData map[string][]byte) (*corev1.Secret,
 func (r *Reconciler) updateSecret(agSecret *corev1.Secret, desiredAGSecretData map[string][]byte) error {
 	log.Info("updating secret", "name", agSecret.Name)
 	agSecret.Data = desiredAGSecretData
-	if err := r.Update(context.TODO(), agSecret); err != nil {
+	if err := r.client.Update(context.TODO(), agSecret); err != nil {
 		return fmt.Errorf("failed to update secret %s: %w", agSecret.Name, err)
 	}
 	return nil

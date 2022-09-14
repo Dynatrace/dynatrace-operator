@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3.0.2
       - name: Prepare build parameters
         id: prep
         run: |
@@ -33,7 +33,7 @@ jobs:
         platform: [amd64, arm64]
     steps:
       - name: Checkout
-        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3.0.2
       - name: Build image
         uses: ./.github/actions/build-image
         with:
@@ -68,9 +68,9 @@ jobs:
           password: DOCKERHUB_PASSWORD
     steps:
       - name: Checkout
-        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3.0.2
       - name: Login to Registry
-        uses: docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b # v2
+        uses: docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b # v2.0.0
         with:
           registry: ${{ matrix.url }}
           username: ${{ secrets[matrix.username] }}
@@ -123,9 +123,9 @@ jobs:
             password: DOCKERHUB_PASSWORD
     steps:
       - name: Checkout
-        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3.0.2
       - name: Login to Registry
-        uses:  docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b # v2
+        uses: docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b # v2.0.0
         with:
           registry: ${{ matrix.url }}
           username: ${{ secrets[matrix.username] }}

@@ -34,15 +34,6 @@ func VolumeIsDefined(volumes []corev1.Volume, volumeNameToCheck string) bool {
 	return false
 }
 
-func VolumeMountIsDefined(volumeMounts []corev1.VolumeMount, volumeMountNameToCheck string) bool {
-	for _, vol := range volumeMounts {
-		if vol.Name == volumeMountNameToCheck {
-			return true
-		}
-	}
-	return false
-}
-
 func PortIsIn(ports []corev1.ContainerPort, portToCheck int32) bool {
 	for _, port := range ports {
 		if port.ContainerPort == portToCheck {

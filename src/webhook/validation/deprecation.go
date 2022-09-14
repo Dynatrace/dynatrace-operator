@@ -31,10 +31,6 @@ func deprecatedFeatureFlagDisableActiveGateRawImage(_ *dynakubeValidator, dynaku
 	return warnIfDeprecatedIsUsed(dynakube, dynatracev1beta1.AnnotationFeatureActiveGateRawImage, dynatracev1beta1.AnnotationFeatureDisableActiveGateRawImage)
 }
 
-func deprecatedFeatureFlagEnableActiveGateAuthToken(_ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
-	return warnIfDeprecatedIsUsed(dynakube, dynatracev1beta1.AnnotationFeatureActiveGateAuthToken, dynatracev1beta1.AnnotationFeatureEnableActiveGateAuthToken)
-}
-
 func deprecatedFeatureFlagDisableHostsRequests(_ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	return warnIfDeprecatedIsUsed(dynakube, dynatracev1beta1.AnnotationFeatureHostsRequests, dynatracev1beta1.AnnotationFeatureDisableHostsRequests)
 }
