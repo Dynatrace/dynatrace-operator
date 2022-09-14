@@ -28,7 +28,7 @@ type ExecutionQuery struct {
 	container string
 }
 
-func NewExecutionQuery(pod v1.Pod, command string, container string) ExecutionQuery {
+func NewExecutionQuery(pod v1.Pod, container string, command string) ExecutionQuery {
 	return ExecutionQuery{
 		pod:       pod,
 		command:   command,
