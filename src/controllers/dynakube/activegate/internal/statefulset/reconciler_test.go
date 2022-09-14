@@ -22,7 +22,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func TestNewReconiler(t *testing.T) {
+const (
+	testName      = "test-name"
+	testNamespace = "test-namespace"
+	testValue     = "test-value"
+	testUID       = "test-uid"
+	testToken     = "test-token"
+)
+
+func TestNewReconciler(t *testing.T) {
 	createDefaultReconciler(t)
 }
 
@@ -57,11 +65,11 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 	capability.NewRoutingCapability(instance)
 
 	r := NewReconciler(clt, clt, scheme.Scheme, instance, capability.NewRoutingCapability(instance))
-	r.Dynakube.Annotations = map[string]string{}
+	r.dynakube.Annotations = map[string]string{}
 	require.NotNil(t, r)
-	require.NotNil(t, r.Client)
+	require.NotNil(t, r.client)
 	require.NotNil(t, r.scheme)
-	require.NotNil(t, r.Dynakube)
+	require.NotNil(t, r.dynakube)
 
 	return r
 }
@@ -75,7 +83,7 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 
 		statefulSet := &appsv1.StatefulSet{}
-		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.Dynakube.Namespace}, statefulSet)
+		err = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, statefulSet)
 
 		assert.NotNil(t, statefulSet)
 		assert.NoError(t, err)
@@ -88,19 +96,19 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 
 		statefulSet := &appsv1.StatefulSet{}
-		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.Dynakube.Namespace}, statefulSet)
+		err = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, statefulSet)
 
 		assert.NotNil(t, statefulSet)
 		assert.NoError(t, err)
 
-		r.Dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
+		r.dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
 		update, err = r.Reconcile()
 
 		assert.True(t, update)
 		assert.NoError(t, err)
 
 		newStatefulSet := &appsv1.StatefulSet{}
-		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.Dynakube.Namespace}, newStatefulSet)
+		err = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, newStatefulSet)
 
 		assert.NotNil(t, statefulSet)
 		assert.NoError(t, err)
@@ -128,7 +136,7 @@ func TestReconcile_GetStatefulSet(t *testing.T) {
 	desiredSts.Kind = "StatefulSet"
 	desiredSts.APIVersion = "apps/v1"
 	desiredSts.ResourceVersion = "1"
-	err = controllerutil.SetControllerReference(r.Dynakube, desiredSts, r.scheme)
+	err = controllerutil.SetControllerReference(r.dynakube, desiredSts, r.scheme)
 	require.NoError(t, err)
 
 	sts, err := r.getStatefulSet(desiredSts)
@@ -170,7 +178,7 @@ func TestReconcile_UpdateStatefulSetIfOutdated(t *testing.T) {
 	assert.NoError(t, err)
 	assert.False(t, updated)
 
-	r.Dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
+	r.dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
 	desiredSts, err = r.buildDesiredStatefulSet()
 	require.NoError(t, err)
 
@@ -198,12 +206,12 @@ func TestReconcile_DeleteStatefulSetIfOldLabelsAreUsed(t *testing.T) {
 	assert.NoError(t, err)
 	assert.False(t, deleted)
 
-	r.Dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
+	r.dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
 	desiredSts, err = r.buildDesiredStatefulSet()
 	require.NoError(t, err)
 	correctLabels := desiredSts.Labels
 	desiredSts.Labels = map[string]string{"activegate": "dynakube"}
-	err = r.Update(context.TODO(), desiredSts)
+	err = r.client.Update(context.TODO(), desiredSts)
 	assert.NoError(t, err)
 
 	desiredSts.Labels = correctLabels
@@ -218,18 +226,18 @@ func TestReconcile_GetCustomPropertyHash(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, hash)
 
-	r.Dynakube.Spec.Routing.CustomProperties = &dynatracev1beta1.DynaKubeValueSource{Value: testValue}
+	r.dynakube.Spec.Routing.CustomProperties = &dynatracev1beta1.DynaKubeValueSource{Value: testValue}
 	hash, err = r.calculateActiveGateConfigurationHash()
 	assert.NoError(t, err)
 	assert.NotEmpty(t, hash)
 
-	r.Dynakube.Spec.Routing.CustomProperties = &dynatracev1beta1.DynaKubeValueSource{ValueFrom: testName}
+	r.dynakube.Spec.Routing.CustomProperties = &dynatracev1beta1.DynaKubeValueSource{ValueFrom: testName}
 	hash, err = r.calculateActiveGateConfigurationHash()
-	r.Dynakube.Annotations[dynatracev1beta1.AnnotationFeatureActiveGateAuthToken] = "false"
+	r.dynakube.Annotations[dynatracev1beta1.AnnotationFeatureActiveGateAuthToken] = "false"
 	assert.Error(t, err)
 	assert.Empty(t, hash)
 
-	err = r.Create(context.TODO(), &corev1.Secret{
+	err = r.client.Create(context.TODO(), &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNamespace,
@@ -251,14 +259,10 @@ func TestReconcile_GetActiveGateAuthTokenHash(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, hash)
 
-	hash, err = r.calculateActiveGateConfigurationHash()
-	assert.NoError(t, err)
-	assert.NotEmpty(t, hash)
-
-	err = r.Create(context.TODO(), &corev1.Secret{
+	err = r.client.Create(context.TODO(), &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      r.Dynakube.ActiveGateAuthTokenSecret(),
-			Namespace: r.Dynakube.Namespace,
+			Name:      r.dynakube.ActiveGateAuthTokenSecret(),
+			Namespace: r.dynakube.Namespace,
 		},
 		Data: map[string][]byte{
 			authtoken.ActiveGateAuthTokenName: []byte(testValue),
@@ -267,7 +271,7 @@ func TestReconcile_GetActiveGateAuthTokenHash(t *testing.T) {
 	require.Error(t, err)
 
 	r = createDefaultReconciler(t)
-	r.Dynakube.Annotations[dynatracev1beta1.AnnotationFeatureActiveGateAuthToken] = "false"
+	r.dynakube.Annotations[dynatracev1beta1.AnnotationFeatureActiveGateAuthToken] = "false"
 	hash, err = r.calculateActiveGateConfigurationHash()
 	assert.NoError(t, err)
 	assert.Empty(t, hash)
