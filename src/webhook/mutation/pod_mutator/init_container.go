@@ -42,7 +42,9 @@ func copyUserContainerSecurityContext(pod *corev1.Pod, dynakube *dynatracev1beta
 		securityContext = pod.Spec.Containers[0].SecurityContext.DeepCopy()
 	}
 
-	limitSecurityContext(securityContext, dynakube)
+	if securityContext != nil {
+		limitSecurityContext(securityContext, dynakube)
+	}
 
 	return securityContext
 }
