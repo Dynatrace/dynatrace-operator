@@ -1,49 +1,78 @@
 package log_collector
 
 import (
+	"archive/tar"
 	"bytes"
+	"compress/gzip"
 	"fmt"
 	"io"
+	"io/fs"
+	"os"
+	"strings"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const namespace = "dynatrace"
+const tarFileName = "/tmp/dynatrace-operator/operator-logs-%s.tgz"
+
+func createTarball() (*tar.Writer, func(), error) {
+	tarballFilePath := fmt.Sprintf(tarFileName, time.Now().Format(time.RFC3339))
+	tarballFilePath = strings.Replace(tarballFilePath, ":", "_", -1)
+
+	tarball, err := os.Create(tarballFilePath)
+	if err != nil {
+		return nil, nil, fmt.Errorf("could not create tarball file '%s', got error '%w'", tarballFilePath, err)
+	}
+	gzipWriter := gzip.NewWriter(tarball)
+	tarWriter := tar.NewWriter(gzipWriter)
+
+	logInfof("Created log tarball %s", tarballFilePath)
+	return tarWriter, func() {
+		tarWriter.Close()
+		gzipWriter.Close()
+		tarball.Close()
+	}, nil
+}
 
 func collectLogs(ctx *logCollectorContext) error {
+
+	tarball, closer, err := createTarball()
+	if err != nil {
+		return err
+	}
+	defer closer()
 
 	listOptions := metav1.ListOptions{
 		TypeMeta: metav1.TypeMeta{
 			Kind: "pod",
 		},
 	}
-	podList, err := ctx.clientSet.CoreV1().Pods(namespace).List(ctx.ctx, listOptions)
+	podList, err := ctx.clientSet.CoreV1().Pods(ctx.namespaceName).List(ctx.ctx, listOptions)
 	if err != nil {
 		return err
 	}
 
 	for _, pod := range podList.Items {
 		podGetOptions := metav1.GetOptions{}
-		pod, err := ctx.clientSet.CoreV1().Pods(namespace).Get(ctx.ctx, pod.Name, podGetOptions)
+		pod, err := ctx.clientSet.CoreV1().Pods(ctx.namespaceName).Get(ctx.ctx, pod.Name, podGetOptions)
 		if err != nil {
 			return err
 		}
-		getPodLogs(ctx, pod)
+		getPodLogs(ctx, tarball, pod)
 	}
-
 	return nil
 }
 
-func getPodLogs(ctx *logCollectorContext, pod *corev1.Pod) {
+func getPodLogs(ctx *logCollectorContext, tarball *tar.Writer, pod *corev1.Pod) {
 
 	for _, container := range pod.Spec.Containers {
-		fmt.Printf("\nPod: %s/%s\n", pod.Name, container.Name)
-		getContainerLogs(ctx, pod, container)
+		getContainerLogs(ctx, tarball, pod, container)
 	}
 }
 
-func getContainerLogs(ctx *logCollectorContext, pod *corev1.Pod, container corev1.Container) {
+func getContainerLogs(ctx *logCollectorContext, tarball *tar.Writer, pod *corev1.Pod, container corev1.Container) {
 	podLogOpts := corev1.PodLogOptions{
 		Container: container.Name,
 	}
@@ -51,17 +80,43 @@ func getContainerLogs(ctx *logCollectorContext, pod *corev1.Pod, container corev
 
 	podLogs, err := req.Stream(ctx.ctx)
 	if err != nil {
-		fmt.Printf("error in opening stream: %v\n", err)
+		logErrorf("error in opening stream: %v", err)
 		return
 	}
 	defer podLogs.Close()
 
-	buf := new(bytes.Buffer)
-	_, err = io.Copy(buf, podLogs)
+	fileName := fmt.Sprintf("%s_%s.log", pod.Name, container.Name)
+
+	err = addFileToTarWriter(fileName, tarball, podLogs)
+
 	if err != nil {
-		fmt.Printf("error in copy information from podLogs to buf: %v\n", err)
+		logErrorf("error writing to tarball: %v", err)
 		return
 	}
 
-	fmt.Printf("%s\n", buf.String())
+	logInfof("Successfully collected logs %s", fileName)
+}
+
+func addFileToTarWriter(fileName string, tarWriter *tar.Writer, logFile io.ReadCloser) error {
+
+	logBuffer := &bytes.Buffer{}
+	io.Copy(logBuffer, logFile)
+
+	header := &tar.Header{
+		Name: fileName,
+		Size: int64(logBuffer.Len()),
+		Mode: int64(fs.ModePerm),
+	}
+
+	err := tarWriter.WriteHeader(header)
+	if err != nil {
+		return fmt.Errorf("could not write header for file '%s', got error '%w'", fileName, err)
+	}
+
+	_, err = io.Copy(tarWriter, logBuffer)
+	if err != nil {
+		return fmt.Errorf("could not copy the file '%s' data to the tarball, got error '%w'", fileName, err)
+	}
+
+	return nil
 }

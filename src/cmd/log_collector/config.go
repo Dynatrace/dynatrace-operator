@@ -11,3 +11,7 @@ type logCollectorContext struct {
 	clientSet     *kubernetes.Clientset
 	namespaceName string // the default namespace ("dynatrace") or provided in the command line
 }
+
+var (
+	log = newLogCollectorLogger("[log collector]")
+)
