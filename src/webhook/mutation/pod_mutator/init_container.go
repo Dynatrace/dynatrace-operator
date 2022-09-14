@@ -7,6 +7,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -27,12 +28,12 @@ func createInstallInitContainerBase(webhookImage, clusterID string, pod *corev1.
 			{Name: config.K8sNamespaceEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("metadata.namespace")},
 			{Name: config.K8sNodeNameEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("spec.nodeName")},
 		},
-		SecurityContext: copyUserContainerSecurityContext(pod),
+		SecurityContext: copyUserContainerSecurityContext(pod, &dynakube),
 		Resources:       *dynakube.InitResources(),
 	}
 }
 
-func copyUserContainerSecurityContext(pod *corev1.Pod) *corev1.SecurityContext {
+func copyUserContainerSecurityContext(pod *corev1.Pod, dynakube *dynatracev1beta1.DynaKube) *corev1.SecurityContext {
 	var securityContext *corev1.SecurityContext
 	if len(pod.Spec.Containers) == 0 {
 		return securityContext
@@ -40,7 +41,26 @@ func copyUserContainerSecurityContext(pod *corev1.Pod) *corev1.SecurityContext {
 	if pod.Spec.Containers[0].SecurityContext != nil {
 		securityContext = pod.Spec.Containers[0].SecurityContext.DeepCopy()
 	}
+
+	limitSecurityContext(securityContext, *dynakube)
+
 	return securityContext
+}
+
+func limitSecurityContext(ctx *corev1.SecurityContext, dynakube dynatracev1beta1.DynaKube) {
+	if dynakube.NeedsReadOnlyOneAgents() {
+		ctx.RunAsNonRoot = address.Of(true)
+		ctx.RunAsUser = address.Of(int64(1000))
+		ctx.RunAsGroup = address.Of(int64(1000))
+	}
+	ctx.ReadOnlyRootFilesystem = address.Of(true)
+	ctx.AllowPrivilegeEscalation = address.Of(false)
+	ctx.Privileged = address.Of(false)
+	ctx.Capabilities = &corev1.Capabilities{
+		Drop: []corev1.Capability{
+			"ALL",
+		},
+	}
 }
 
 func getBasePodName(pod *corev1.Pod) string {
