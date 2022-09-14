@@ -75,6 +75,7 @@ func getPodLogs(ctx *logCollectorContext, tarball *tar.Writer, pod *corev1.Pod) 
 func getContainerLogs(ctx *logCollectorContext, tarball *tar.Writer, pod *corev1.Pod, container corev1.Container) {
 	podLogOpts := corev1.PodLogOptions{
 		Container: container.Name,
+		Follow:    false,
 	}
 	req := ctx.clientSet.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &podLogOpts)
 
