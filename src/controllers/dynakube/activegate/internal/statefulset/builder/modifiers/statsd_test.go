@@ -1,9 +1,10 @@
-package statefulset
+package modifiers
 
 import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/stretchr/testify/assert"
@@ -16,9 +17,9 @@ func TestStatsd_BuildContainerAndVolumes(t *testing.T) {
 	requirement := require.New(t)
 
 	t.Run("happy path", func(t *testing.T) {
-		stsProperties := testBuildStsProperties()
-		statsd := NewStatsd(stsProperties)
-		container := statsd.BuildContainer()
+		dynakube := getBaseDynakube()
+		statsd := NewStatsdModifier(dynakube, capability.NewMultiCapability(&dynakube))
+		container := statsd.buildContainer()
 
 		assertion.NotEmpty(container.ReadinessProbe, "Expected readiness probe is defined")
 		assertion.Equal("/readyz", container.ReadinessProbe.HTTPGet.Path, "Expected there is a readiness probe at /readyz")
@@ -49,8 +50,9 @@ func TestStatsd_BuildContainerAndVolumes(t *testing.T) {
 	})
 
 	t.Run("hardened container security context", func(t *testing.T) {
-		stsProperties := testBuildStsProperties()
-		container := NewStatsd(stsProperties).BuildContainer()
+		dynakube := getBaseDynakube()
+		statsd := NewStatsdModifier(dynakube, capability.NewMultiCapability(&dynakube))
+		container := statsd.buildContainer()
 
 		requirement.NotNil(container.SecurityContext)
 		securityContext := container.SecurityContext
@@ -63,25 +65,12 @@ func TestStatsd_BuildContainerAndVolumes(t *testing.T) {
 		assertion.Equal(kubeobjects.UnprivilegedUser, *securityContext.RunAsUser)
 		assertion.Equal(kubeobjects.UnprivilegedGroup, *securityContext.RunAsGroup)
 	})
-
-	t.Run("volumes vs volume mounts", func(t *testing.T) {
-		stsProperties := testBuildStsProperties()
-		eec := NewExtensionController(stsProperties)
-		statsd := NewStatsd(stsProperties)
-		volumes := buildVolumes(stsProperties, []kubeobjects.ContainerBuilder{eec, statsd})
-
-		container := statsd.BuildContainer()
-		for _, volumeMount := range container.VolumeMounts {
-			assertion.Truef(kubeobjects.VolumeIsDefined(volumes, volumeMount.Name), "Expected that volume mount %s has a predefined pod volume", volumeMount.Name)
-		}
-	})
-
 	t.Run("resource requirements from feature flags", func(t *testing.T) {
-		stsProperties := testBuildStsProperties()
-		stsProperties.ObjectMeta.Annotations[dynatracev1beta1.AnnotationFeaturePrefix+"activegate-statsd-resources-requests-memory"] = "500M"
-		statsd := NewStatsd(stsProperties)
+		dynakube := getBaseDynakube()
+		dynakube.ObjectMeta.Annotations[dynatracev1beta1.AnnotationFeaturePrefix+"activegate-statsd-resources-requests-memory"] = "500M"
+		statsd := NewStatsdModifier(dynakube, capability.NewMultiCapability(&dynakube))
 
-		container := statsd.BuildContainer()
+		container := statsd.buildContainer()
 
 		require.NotEmpty(t, container.Resources.Requests)
 		require.Empty(t, container.Resources.Limits)

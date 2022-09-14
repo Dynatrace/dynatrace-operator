@@ -10,6 +10,11 @@ func NewModifierMock[T any]() *ModifierMock[T] {
 	return &ModifierMock[T]{}
 }
 
+func (m *ModifierMock[T]) Enabled() bool {
+	args := m.Called()
+	return args.Bool(0)
+}
+
 func (m *ModifierMock[T]) Modify(data *T) {
 	m.Called(data)
 }

@@ -1,9 +1,6 @@
 package capability
 
 import (
-	"fmt"
-	"strings"
-
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
@@ -57,19 +54,6 @@ func CreateService(dynakube *dynatracev1beta1.DynaKube, feature string, serviceP
 			Ports:    ports,
 		},
 	}
-}
-
-// BuildServiceHostName converts the name returned by BuildServiceName
-// into the variable name which Kubernetes uses to reference the associated service.
-// For more information see: https://kubernetes.io/docs/concepts/services-networking/service/
-func BuildServiceHostName(dynakubeName string, module string) string {
-	serviceName :=
-		strings.ReplaceAll(
-			strings.ToUpper(
-				capability.BuildServiceName(dynakubeName, module)),
-			"-", "_")
-
-	return fmt.Sprintf("$(%s_SERVICE_HOST):$(%s_SERVICE_PORT)", serviceName, serviceName)
 }
 
 func buildSelectorLabels(dynakubeName string) map[string]string {

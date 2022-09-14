@@ -17,6 +17,8 @@ import (
 
 const (
 	testComponentFeature = "test-component-feature"
+	testNamespace        = "test-namespace"
+	testName             = "test-name"
 )
 
 func testCreateInstance() *dynatracev1beta1.DynaKube {
@@ -142,18 +144,4 @@ func TestCreateService(t *testing.T) {
 
 		assert.NotContains(t, ports, agHttpsPort, agHttpPort, statsdPort)
 	})
-}
-
-func TestBuildServiceNameForDNSEntryPoint(t *testing.T) {
-	actual := BuildServiceHostName(testName, testComponentFeature)
-	assert.NotEmpty(t, actual)
-
-	expected := "$(TEST_NAME_TEST_COMPONENT_FEATURE_SERVICE_HOST):$(TEST_NAME_TEST_COMPONENT_FEATURE_SERVICE_PORT)"
-	assert.Equal(t, expected, actual)
-
-	testStringName := "this---test_string"
-	testStringFeature := "SHOULD--_--PaRsEcORrEcTlY"
-	expected = "$(THIS___TEST_STRING_SHOULD_____PARSECORRECTLY_SERVICE_HOST):$(THIS___TEST_STRING_SHOULD_____PARSECORRECTLY_SERVICE_PORT)"
-	actual = BuildServiceHostName(testStringName, testStringFeature)
-	assert.Equal(t, expected, actual)
 }

@@ -55,7 +55,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		var authToken corev1.Secret
-		_ = r.Client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.ActiveGateAuthTokenSecret(), Namespace: testNamespace}, &authToken)
+		_ = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.ActiveGateAuthTokenSecret(), Namespace: testNamespace}, &authToken)
 
 		assert.NotEmpty(t, authToken.Data[ActiveGateAuthTokenName])
 		assert.True(t, update)
@@ -78,7 +78,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		var authToken corev1.Secret
-		_ = r.Client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.ActiveGateAuthTokenSecret(), Namespace: testNamespace}, &authToken)
+		_ = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.ActiveGateAuthTokenSecret(), Namespace: testNamespace}, &authToken)
 
 		assert.NotEqual(t, authToken.Data[ActiveGateAuthTokenName], []byte(testToken))
 		assert.True(t, update)
@@ -101,7 +101,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		var authToken corev1.Secret
-		_ = r.Client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.ActiveGateAuthTokenSecret(), Namespace: testNamespace}, &authToken)
+		_ = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.ActiveGateAuthTokenSecret(), Namespace: testNamespace}, &authToken)
 
 		assert.Equal(t, authToken.Data[ActiveGateAuthTokenName], []byte(testToken))
 		assert.True(t, update)
