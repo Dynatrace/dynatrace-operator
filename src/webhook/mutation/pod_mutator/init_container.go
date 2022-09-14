@@ -42,13 +42,13 @@ func copyUserContainerSecurityContext(pod *corev1.Pod, dynakube *dynatracev1beta
 		securityContext = pod.Spec.Containers[0].SecurityContext.DeepCopy()
 	}
 
-	limitSecurityContext(securityContext, *dynakube)
+	limitSecurityContext(securityContext, dynakube)
 
 	return securityContext
 }
 
-func limitSecurityContext(ctx *corev1.SecurityContext, dynakube dynatracev1beta1.DynaKube) {
-	if dynakube.NeedsReadOnlyOneAgents() {
+func limitSecurityContext(ctx *corev1.SecurityContext, dynakube *dynatracev1beta1.DynaKube) {
+	if dynakube != nil && dynakube.NeedsReadOnlyOneAgents() {
 		ctx.RunAsNonRoot = address.Of(true)
 		ctx.RunAsUser = address.Of(int64(1000))
 		ctx.RunAsGroup = address.Of(int64(1000))
