@@ -2088,6 +2088,12 @@ spec:
                       fullstack monitoring, application monitoring or host monitoring'
                     nullable: true
                     properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: 'Optional: Adds additional annotations to the
+                          OneAgent pods'
+                        type: object
                       args:
                         description: 'Optional: Arguments to the OneAgent installer'
                         items:
@@ -2321,6 +2327,12 @@ spec:
                       fullstack monitoring, application monitoring or host monitoring'
                     nullable: true
                     properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: 'Optional: Adds additional annotations to the
+                          OneAgent pods'
+                        type: object
                       args:
                         description: 'Optional: Arguments to the OneAgent installer'
                         items:
@@ -2586,6 +2598,12 @@ spec:
                       monitoring, classic fullstack monitoring or application monitoring'
                     nullable: true
                     properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: 'Optional: Adds additional annotations to the
+                          OneAgent pods'
+                        type: object
                       args:
                         description: 'Optional: Arguments to the OneAgent installer'
                         items:
@@ -5014,14 +5032,14 @@ spec:
         - effect: NoSchedule
           key: node-role.kubernetes.io/control-plane
           operator: Exists
-        - effect: NoSchedule
-          key: ToBeDeletedByClusterAutoscaler
-          operator: Exists
         - key: kubernetes.io/arch
           value: arm64
           effect: NoSchedule
         - key: kubernetes.io/arch
           value: amd64
+          effect: NoSchedule
+        - key: ToBeDeletedByClusterAutoscaler
+          operator: Exists
           effect: NoSchedule
   updateStrategy:
     rollingUpdate:
