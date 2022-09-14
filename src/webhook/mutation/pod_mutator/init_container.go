@@ -53,7 +53,6 @@ func limitSecurityContext(ctx *corev1.SecurityContext, dynakube dynatracev1beta1
 		ctx.RunAsUser = address.Of(int64(1000))
 		ctx.RunAsGroup = address.Of(int64(1000))
 	}
-	ctx.ReadOnlyRootFilesystem = address.Of(true)
 	ctx.AllowPrivilegeEscalation = address.Of(false)
 	ctx.Privileged = address.Of(false)
 	ctx.Capabilities = &corev1.Capabilities{

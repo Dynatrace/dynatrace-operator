@@ -90,7 +90,6 @@ func TestHandlePodMutation(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, mutationRequest.InstallContainer)
 		assert.Len(t, mutationRequest.Pod.Spec.InitContainers, 2)
-		assert.True(t, *mutationRequest.Pod.Spec.InitContainers[1].SecurityContext.ReadOnlyRootFilesystem)
 		assert.False(t, *mutationRequest.Pod.Spec.InitContainers[1].SecurityContext.Privileged)
 		assert.False(t, *mutationRequest.Pod.Spec.InitContainers[1].SecurityContext.AllowPrivilegeEscalation)
 		assert.Equal(t, mutationRequest.Pod.Spec.InitContainers[1].Resources, testResourceRequirements)
