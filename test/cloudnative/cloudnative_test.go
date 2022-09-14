@@ -38,17 +38,17 @@ func TestMain(m *testing.M) {
 	testEnvironment.BeforeEachTest(oneagent.WaitForDaemonSetPodsDeletion())
 	testEnvironment.BeforeEachTest(namespace.DeleteIfExists(sampleAppsNamespace))
 	testEnvironment.BeforeEachTest(namespace.Recreate(dynatraceNamespace))
-	//
-	//testEnvironment.AfterEachTest(deleteDynakubeIfExists())
-	//testEnvironment.AfterEachTest(oneagent.WaitForDaemonSetPodsDeletion())
-	//testEnvironment.AfterEachTest(namespace.Delete(sampleAppsNamespace))
-	//testEnvironment.AfterEachTest(namespace.Delete(dynatraceNamespace))
+
+	testEnvironment.AfterEachTest(deleteDynakubeIfExists())
+	testEnvironment.AfterEachTest(oneagent.WaitForDaemonSetPodsDeletion())
+	testEnvironment.AfterEachTest(namespace.Delete(sampleAppsNamespace))
+	testEnvironment.AfterEachTest(namespace.Delete(dynatraceNamespace))
 
 	testEnvironment.Run(m)
 }
 
 func TestCloudNative(t *testing.T) {
-	//testEnvironment.Test(t, install(t))
+	testEnvironment.Test(t, install(t))
 	testEnvironment.Test(t, codeModules(t))
 }
 
