@@ -49,7 +49,7 @@ func NewStatsdModifier(dynakube dynatracev1beta1.DynaKube, capability capability
 }
 
 func (statsd StatsdModifier) Enabled() bool {
-	return statsd.dynakube.IsStatsdCapabilityEnabled()
+	return statsd.dynakube.IsStatsdActiveGateEnabled()
 }
 
 func (statsd StatsdModifier) Modify(sts *appsv1.StatefulSet) {

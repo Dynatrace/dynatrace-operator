@@ -30,7 +30,7 @@ func CreateService(dynakube *dynatracev1beta1.DynaKube, feature string) *corev1.
 		)
 	}
 
-	if dynakube.IsStatsdCapabilityEnabled() {
+	if dynakube.IsStatsdActiveGateEnabled() {
 		ports = append(ports,
 			corev1.ServicePort{
 				Name:       consts.StatsdIngestPortName,

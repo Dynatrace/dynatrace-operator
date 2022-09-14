@@ -50,7 +50,7 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 		}
 	}
 
-	if r.dynakube.IsStatsdCapabilityEnabled() {
+	if r.dynakube.IsStatsdActiveGateEnabled() {
 		update, err = r.createOrUpdateEecConfigMap()
 		if update || err != nil {
 			return update, errors.WithStack(err)

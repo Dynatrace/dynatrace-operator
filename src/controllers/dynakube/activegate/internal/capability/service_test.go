@@ -81,7 +81,7 @@ func TestCreateService(t *testing.T) {
 		instance := testCreateInstance()
 		kubeobjects.SwitchCapability(instance, dynatracev1beta1.MetricsIngestCapability, true)
 		kubeobjects.SwitchCapability(instance, dynatracev1beta1.StatsdIngestCapability, false)
-		require.True(t, !instance.IsStatsdCapabilityEnabled())
+		require.True(t, !instance.IsStatsdActiveGateEnabled())
 
 		service := CreateService(instance, testComponentFeature)
 		ports := service.Spec.Ports
@@ -94,7 +94,7 @@ func TestCreateService(t *testing.T) {
 		instance := testCreateInstance()
 		kubeobjects.SwitchCapability(instance, dynatracev1beta1.MetricsIngestCapability, true)
 		kubeobjects.SwitchCapability(instance, dynatracev1beta1.StatsdIngestCapability, true)
-		require.True(t, instance.IsStatsdCapabilityEnabled())
+		require.True(t, instance.IsStatsdActiveGateEnabled())
 
 		service := CreateService(instance, testComponentFeature)
 		ports := service.Spec.Ports
@@ -106,7 +106,7 @@ func TestCreateService(t *testing.T) {
 		instance := testCreateInstance()
 		kubeobjects.SwitchCapability(instance, dynatracev1beta1.MetricsIngestCapability, false)
 		kubeobjects.SwitchCapability(instance, dynatracev1beta1.StatsdIngestCapability, true)
-		require.True(t, instance.IsStatsdCapabilityEnabled())
+		require.True(t, instance.IsStatsdActiveGateEnabled())
 
 		service := CreateService(instance, testComponentFeature)
 		ports := service.Spec.Ports
@@ -119,7 +119,7 @@ func TestCreateService(t *testing.T) {
 		instance := testCreateInstance()
 		kubeobjects.SwitchCapability(instance, dynatracev1beta1.MetricsIngestCapability, false)
 		kubeobjects.SwitchCapability(instance, dynatracev1beta1.StatsdIngestCapability, false)
-		require.True(t, !instance.IsStatsdCapabilityEnabled())
+		require.True(t, !instance.IsStatsdActiveGateEnabled())
 
 		service := CreateService(instance, testComponentFeature)
 		ports := service.Spec.Ports

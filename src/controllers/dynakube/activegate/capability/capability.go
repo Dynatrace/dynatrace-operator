@@ -119,16 +119,16 @@ func NewRoutingCapability(dk *dynatracev1beta1.DynaKube) *RoutingCapability {
 
 func kubeMonBase() *capabilityBase {
 	c := capabilityBase{
-		shortName: dynatracev1beta1.MetricsIngestCapability.ShortName,
-		argName:   dynatracev1beta1.MetricsIngestCapability.ArgumentName,
+		shortName: dynatracev1beta1.KubeMonCapability.ShortName,
+		argName:   dynatracev1beta1.KubeMonCapability.ArgumentName,
 	}
 	return &c
 }
 
 func routingBase() *capabilityBase {
 	c := capabilityBase{
-		shortName: dynatracev1beta1.MetricsIngestCapability.ShortName,
-		argName:   dynatracev1beta1.MetricsIngestCapability.ArgumentName,
+		shortName: dynatracev1beta1.RoutingCapability.ShortName,
+		argName:   dynatracev1beta1.RoutingCapability.ArgumentName,
 	}
 	return &c
 }
