@@ -6,6 +6,7 @@ metadata:
     capabilities: Deep Insights
     categories: Monitoring,Logging & Tracing
     containerImage: registry.connect.redhat.com/dynatrace/dynatrace-operator
+    operatorframework.io/suggested-namespace: dynatrace
     repository: https://github.com/Dynatrace/dynatrace-operator
     support: Dynatrace
   name: dynatrace-operator.v0.0.0
@@ -437,6 +438,24 @@ spec:
       - description: 'Optional: Adds additional labels for the OneAgent pods'
         displayName: Labels
         path: oneAgent.hostMonitoring.labels
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: 'Optional: Adds additional annotations to the OneAgent pods'
+        displayName: Annotations
+        path: oneAgent.classicFullStack.annotations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: 'Optional: Adds additional annotations to the OneAgent pods'
+        displayName: Annotations
+        path: oneAgent.cloudNativeFullStack.annotations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: 'Optional: Adds additional annotations to the OneAgent pods'
+        displayName: Annotations
+        path: oneAgent.hostMonitoring.annotations
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:text
