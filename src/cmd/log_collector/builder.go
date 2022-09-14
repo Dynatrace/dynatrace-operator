@@ -15,10 +15,12 @@ import (
 const (
 	use               = "collectlogs"
 	namespaceFlagName = "namespace"
+	streamFlagName    = "stream"
 )
 
 var (
 	namespaceFlagValue string
+	streamFlagValue    bool
 )
 
 type CommandBuilder struct {
@@ -51,6 +53,7 @@ func (builder CommandBuilder) Build() *cobra.Command {
 
 func addFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&namespaceFlagValue, namespaceFlagName, "dynatrace", "Specify a different Namespace.")
+	cmd.PersistentFlags().BoolVar(&streamFlagValue, streamFlagName, false, "Stream logs.")
 }
 
 func clusterOptions(opts *cluster.Options) {
@@ -74,11 +77,21 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		collectLogs(&logCollectorContext{
-			ctx:           context.TODO(),
-			clientSet:     clientSet,
-			namespaceName: namespaceFlagValue,
-		})
+		if streamFlagValue {
+			streamLogs(&logCollectorContext{
+				ctx:           context.TODO(),
+				clientSet:     clientSet,
+				namespaceName: namespaceFlagValue,
+				stream:        streamFlagValue,
+			})
+		} else {
+			collectLogs(&logCollectorContext{
+				ctx:           context.TODO(),
+				clientSet:     clientSet,
+				namespaceName: namespaceFlagValue,
+				stream:        streamFlagValue,
+			})
+		}
 		return nil
 	}
 }
