@@ -38,17 +38,17 @@ func TestMain(m *testing.M) {
 	testEnvironment.BeforeEachTest(oneagent.WaitForDaemonSetPodsDeletion())
 	testEnvironment.BeforeEachTest(namespace.DeleteIfExists(sampleAppsNamespace))
 	testEnvironment.BeforeEachTest(namespace.Recreate(dynatraceNamespace))
-
-	testEnvironment.AfterEachTest(deleteDynakubeIfExists())
-	testEnvironment.AfterEachTest(oneagent.WaitForDaemonSetPodsDeletion())
-	testEnvironment.AfterEachTest(namespace.Delete(sampleAppsNamespace))
-	testEnvironment.AfterEachTest(namespace.Delete(dynatraceNamespace))
+	//
+	//testEnvironment.AfterEachTest(deleteDynakubeIfExists())
+	//testEnvironment.AfterEachTest(oneagent.WaitForDaemonSetPodsDeletion())
+	//testEnvironment.AfterEachTest(namespace.Delete(sampleAppsNamespace))
+	//testEnvironment.AfterEachTest(namespace.Delete(dynatraceNamespace))
 
 	testEnvironment.Run(m)
 }
 
 func TestCloudNative(t *testing.T) {
-	testEnvironment.Test(t, install(t))
+	//testEnvironment.Test(t, install(t))
 	testEnvironment.Test(t, codeModules(t))
 }
 
@@ -133,7 +133,7 @@ func checkInitContainers(ctx context.Context, t *testing.T, environmentConfig *e
 		assertLogContains(t, logStream, "standalone agent init completed")
 
 		executionQuery := pod.NewExecutionQuery(podItem, sampleAppsName, "cat /opt/dynatrace/oneagent-paas/log/nginx/ruxitagent_nginx_myapp-__bootstrap_1.0.log")
-		executionResult, err := executionQuery.Execute(clientset, environmentConfig.Client().RESTConfig())
+		executionResult, err := executionQuery.Execute(environmentConfig.Client().RESTConfig())
 
 		require.NoError(t, err)
 

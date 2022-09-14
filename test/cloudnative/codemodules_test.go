@@ -5,8 +5,13 @@ package cloudnative
 import (
 	"context"
 	"encoding/json"
+	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
+	"github.com/Dynatrace/dynatrace-operator/src/webhook"
+	"github.com/Dynatrace/dynatrace-operator/src/webhook/mutation/pod_mutator/oneagent_mutation"
+	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/deployment"
 	"os"
 	"path"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
 	"strings"
 	"testing"
@@ -22,7 +27,6 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
@@ -67,6 +71,7 @@ func codeModules(t *testing.T) features.Feature {
 	codeModulesInjection.Assess("csi driver did not crash", csiDriverIsAvailable)
 	codeModulesInjection.Assess("codemodules have been downloaded", imageHasBeenDownloaded)
 	codeModulesInjection.Assess("storage size has not increased", diskUsageDoesNotIncrease(secretConfigs[1]))
+	codeModulesInjection.Assess("volumes are mounted correctly", volumesAreMountedCorrectly())
 
 	return codeModulesInjection.Feature()
 }
@@ -95,25 +100,21 @@ func csiDriverIsAvailable(ctx context.Context, t *testing.T, envConfig *envconf.
 }
 
 func imageHasBeenDownloaded(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-	client := environmentConfig.Client()
-	resource := client.Resources()
-	restConfig := client.RESTConfig()
-	clientset, err := kubernetes.NewForConfig(resource.GetConfig())
+	resource := environmentConfig.Client().Resources()
+	restConfig := environmentConfig.Client().RESTConfig()
 
-	require.NoError(t, err)
-
-	err = csi.ForEachPod(ctx, resource, func(podItem corev1.Pod) {
+	err := csi.ForEachPod(ctx, resource, func(podItem corev1.Pod) {
 		var result *pod.ExecutionResult
-		result, err = pod.
+		result, err := pod.
 			NewExecutionQuery(podItem, "provisioner", bash.ListDirectory(dataPath)).
-			Execute(clientset, restConfig)
+			Execute(restConfig)
 
 		require.NoError(t, err)
 		assert.Contains(t, result.StdOut.String(), "codemodules")
 
 		result, err = pod.
 			NewExecutionQuery(podItem, "provisioner", bash.ReadFile(getManifestPath())).
-			Execute(clientset, restConfig)
+			Execute(restConfig)
 
 		require.NoError(t, err)
 
@@ -131,22 +132,16 @@ func imageHasBeenDownloaded(ctx context.Context, t *testing.T, environmentConfig
 
 func diskUsageDoesNotIncrease(secretConfig secrets.Secret) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		client := environmentConfig.Client()
-		resource := client.Resources()
-		restConfig := client.RESTConfig()
-		clientset, err := kubernetes.NewForConfig(resource.GetConfig())
-
-		require.NoError(t, err)
-
+		resource := environmentConfig.Client().Resources()
+		restConfig := environmentConfig.Client().RESTConfig()
 		storageMap := make(map[string]int)
-
-		err = csi.ForEachPod(ctx, resource, func(podItem corev1.Pod) {
+		err := csi.ForEachPod(ctx, resource, func(podItem corev1.Pod) {
 			var result *pod.ExecutionResult
-			result, err = pod.
+			result, err := pod.
 				NewExecutionQuery(podItem, "provisioner", bash.Pipe(
 					bash.DiskUsageWithTotal(dataPath),
 					bash.FilterLastLineOnly())).
-				Execute(clientset, restConfig)
+				Execute(restConfig)
 
 			require.NoError(t, err)
 
@@ -175,7 +170,7 @@ func diskUsageDoesNotIncrease(secretConfig secrets.Secret) features.Func {
 				NewExecutionQuery(podItem, "provisioner", bash.Pipe(
 					bash.DiskUsageWithTotal(dataPath),
 					bash.FilterLastLineOnly())).
-				Execute(clientset, restConfig)
+				Execute(restConfig)
 
 			require.NoError(t, err)
 
@@ -187,6 +182,76 @@ func diskUsageDoesNotIncrease(secretConfig secrets.Secret) features.Func {
 
 		return ctx
 	}
+}
+
+func volumesAreMountedCorrectly() features.Func {
+	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+		resource := environmentConfig.Client().Resources()
+		err := deployment.NewQuery(ctx, resource, client.ObjectKey{
+			Name:      sampleAppsName,
+			Namespace: sampleAppsNamespace,
+		}).ForEachPod(func(podItem corev1.Pod) {
+			volumes := podItem.Spec.Volumes
+			volumeMounts := podItem.Spec.Containers[0].VolumeMounts
+
+			assert.True(t, isVolumeAttached(t, volumes, oneagent_mutation.OneAgentBinVolumeName))
+			assert.True(t, isVolumeMounted(t, volumeMounts, oneagent_mutation.OneAgentBinVolumeName))
+
+			executionResult, err := pod.
+				NewExecutionQuery(podItem, sampleAppsName, bash.ListDirectory(webhook.DefaultInstallPath)).
+				Execute(environmentConfig.Client().RESTConfig())
+
+			require.NoError(t, err)
+			assert.NotEmpty(t, executionResult.StdOut.String())
+
+			executionResult, err = pod.
+				NewExecutionQuery(podItem, sampleAppsName, bash.Pipe(
+					bash.DiskUsageWithTotal(webhook.DefaultInstallPath),
+					bash.FilterLastLineOnly())).
+				Execute(environmentConfig.Client().RESTConfig())
+
+			require.NoError(t, err)
+			assert.NotEmpty(t, executionResult.StdOut.String())
+
+			diskUsage, err := strconv.Atoi(strings.Split(executionResult.StdOut.String(), "\t")[0])
+
+			require.NoError(t, err)
+			assert.Greater(t, diskUsage, 0)
+		})
+
+		require.NoError(t, err)
+		return ctx
+	}
+}
+
+func isVolumeMounted(t *testing.T, volumeMounts []corev1.VolumeMount, volumeMountName string) bool {
+	result := false
+	for _, volumeMount := range volumeMounts {
+		if volumeMount.Name == volumeMountName {
+			result = true
+
+			assert.Equal(t, webhook.DefaultInstallPath, volumeMount.MountPath)
+			assert.False(t, volumeMount.ReadOnly)
+		}
+	}
+	return result
+}
+
+func isVolumeAttached(t *testing.T, volumes []corev1.Volume, volumeName string) bool {
+	result := false
+	for _, volume := range volumes {
+		if volume.Name == volumeName {
+			result = true
+
+			assert.NotNil(t, volume.CSI)
+			assert.Equal(t, dtcsi.DriverName, volume.CSI.Driver)
+
+			if volume.CSI.ReadOnly != nil {
+				assert.False(t, *volume.CSI.ReadOnly)
+			}
+		}
+	}
+	return result
 }
 
 func getSecondTenantSecret(apiToken string) corev1.Secret {
