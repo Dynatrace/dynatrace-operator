@@ -177,7 +177,8 @@ func diskUsageDoesNotIncrease(secretConfig secrets.Secret) features.Func {
 			diskUsage, err := strconv.Atoi(strings.Split(result.StdOut.String(), "\t")[0])
 
 			require.NoError(t, err)
-			assert.Equal(t, storageMap[podItem.Name], diskUsage)
+			// Dividing it by 1000 so the sizes do not need to be exactly the same down to the byte
+			assert.Equal(t, storageMap[podItem.Name]/1000, diskUsage/1000)
 		})
 
 		return ctx

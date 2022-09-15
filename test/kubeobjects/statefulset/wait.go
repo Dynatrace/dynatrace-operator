@@ -3,6 +3,7 @@ package statefulset
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -25,7 +26,8 @@ func WaitFor(name string, namespace string) features.Func {
 		}, func(object k8s.Object) bool {
 			statefulSet, isStatefulSet := object.(*appsv1.StatefulSet)
 			return isStatefulSet && statefulSet.Status.Replicas == statefulSet.Status.ReadyReplicas
-		}))
+		}), wait.WithTimeout(10*time.Minute))
+		// Default of 5 minutes can be a bit too short for the ActiveGate to startup
 
 		require.NoError(t, err)
 		return ctx
