@@ -1,11 +1,11 @@
 package pod_mutator
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 )
 
 func TestCreateInstallInitContainerBaseWithDefaultUserAndGroup(t *testing.T) {
