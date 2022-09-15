@@ -52,10 +52,11 @@ func securityContextForInitContainer(pod *corev1.Pod, dynakube *dynatracev1beta1
 
 func limitSecurityContext(ctx *corev1.SecurityContext, dynakube *dynatracev1beta1.DynaKube) {
 	if dynakube != nil && dynakube.NeedsReadOnlyOneAgents() {
-		ctx.RunAsNonRoot = address.Of(true)
 		ctx.RunAsUser = address.Of(int64(1000))
 		ctx.RunAsGroup = address.Of(int64(1000))
 	}
+	ctx.RunAsNonRoot = address.Of(true)
+	ctx.ReadOnlyRootFilesystem = address.Of(true)
 	ctx.AllowPrivilegeEscalation = address.Of(false)
 	ctx.Privileged = address.Of(false)
 	ctx.Capabilities = &corev1.Capabilities{

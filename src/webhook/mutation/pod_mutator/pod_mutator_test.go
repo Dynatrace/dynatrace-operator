@@ -92,6 +92,8 @@ func TestHandlePodMutation(t *testing.T) {
 		assert.Len(t, mutationRequest.Pod.Spec.InitContainers, 2)
 		assert.False(t, *mutationRequest.Pod.Spec.InitContainers[1].SecurityContext.Privileged)
 		assert.False(t, *mutationRequest.Pod.Spec.InitContainers[1].SecurityContext.AllowPrivilegeEscalation)
+		assert.True(t, *mutationRequest.Pod.Spec.InitContainers[1].SecurityContext.ReadOnlyRootFilesystem)
+		assert.True(t, *mutationRequest.Pod.Spec.InitContainers[1].SecurityContext.RunAsNonRoot)
 		assert.Equal(t, mutationRequest.Pod.Spec.InitContainers[1].Resources, testResourceRequirements)
 		assert.Equal(t, "true", mutationRequest.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected])
 		mutator1.(*dtwebhook.PodMutatorMock).AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
