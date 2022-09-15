@@ -322,7 +322,7 @@ func (controller *DynakubeController) reconcileActiveGate(ctx context.Context, d
 func (controller *DynakubeController) startApiMonitoring(dynakubeState *status.DynakubeState, dtc dtclient.Client) {
 	if dynakubeState.Instance.Status.KubeSystemUUID != "" &&
 		dynakubeState.Instance.FeatureAutomaticKubernetesApiMonitoring() &&
-		dynakubeState.Instance.KubernetesMonitoringMode() {
+		dynakubeState.Instance.IsKubernetesMonitoringActiveGateEnabled() {
 
 		clusterLabel := dynakubeState.Instance.FeatureAutomaticKubernetesApiMonitoringClusterName()
 		if clusterLabel == "" {

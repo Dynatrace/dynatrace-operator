@@ -1,6 +1,8 @@
 package modifiers
 
 import (
+	"path/filepath"
+
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder"
@@ -12,6 +14,11 @@ import (
 var _ volumeModifier = CertificatesModifier{}
 var _ volumeMountModifier = CertificatesModifier{}
 var _ builder.Modifier = CertificatesModifier{}
+
+const (
+	jettyCerts     = "server-certs"
+	secretsRootDir = "/var/lib/dynatrace/secrets/"
+)
 
 func NewCertificatesModifier(dynakube dynatracev1beta1.DynaKube) CertificatesModifier {
 	return CertificatesModifier{
@@ -41,6 +48,14 @@ func (mod CertificatesModifier) getVolumes() []corev1.Volume {
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 		},
+		{
+			Name: jettyCerts,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: mod.dynakube.Spec.ActiveGate.TlsSecretName,
+				},
+			},
+		},
 	}
 }
 
@@ -50,6 +65,11 @@ func (mod CertificatesModifier) getVolumeMounts() []corev1.VolumeMount {
 			ReadOnly:  false,
 			Name:      consts.GatewaySslVolumeName,
 			MountPath: consts.GatewaySslMountPoint,
+		},
+		{
+			ReadOnly:  true,
+			Name:      jettyCerts,
+			MountPath: filepath.Join(secretsRootDir, "tls"),
 		},
 	}
 }
