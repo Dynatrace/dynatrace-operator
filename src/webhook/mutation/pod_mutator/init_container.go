@@ -34,31 +34,32 @@ func createInstallInitContainerBase(webhookImage, clusterID string, pod *corev1.
 }
 
 func securityContextForInitContainer(pod *corev1.Pod) *corev1.SecurityContext {
-	var securityContext = new(corev1.SecurityContext)
+	var securityContext = &corev1.SecurityContext{
+		RunAsNonRoot:             address.Of(true),
+		ReadOnlyRootFilesystem:   address.Of(true),
+		AllowPrivilegeEscalation: address.Of(false),
+		Privileged:               address.Of(false),
+		Capabilities: &corev1.Capabilities{
+			Drop: []corev1.Capability{
+				"ALL",
+			},
+		},
+		SeccompProfile: &corev1.SeccompProfile{
+			Type: corev1.SeccompProfileTypeRuntimeDefault,
+		},
+	}
 
-	if pod.Spec.Containers[0].SecurityContext != nil {
-		securityContext.RunAsGroup = pod.Spec.Containers[0].SecurityContext.RunAsGroup
-		securityContext.RunAsUser = pod.Spec.Containers[0].SecurityContext.RunAsUser
+	var podSecurityContext = pod.Spec.Containers[0].SecurityContext
+
+	if podSecurityContext != nil && podSecurityContext.RunAsUser != nil && podSecurityContext.RunAsGroup != nil {
+		securityContext.RunAsGroup = podSecurityContext.RunAsGroup
+		securityContext.RunAsUser = podSecurityContext.RunAsUser
 	} else {
 		securityContext.RunAsGroup = address.Of(int64(1001))
 		securityContext.RunAsUser = address.Of(int64(1001))
 	}
 
-	limitSecurityContext(securityContext)
-
 	return securityContext
-}
-
-func limitSecurityContext(ctx *corev1.SecurityContext) {
-	ctx.RunAsNonRoot = address.Of(true)
-	ctx.ReadOnlyRootFilesystem = address.Of(true)
-	ctx.AllowPrivilegeEscalation = address.Of(false)
-	ctx.Privileged = address.Of(false)
-	ctx.Capabilities = &corev1.Capabilities{
-		Drop: []corev1.Capability{
-			"ALL",
-		},
-	}
 }
 
 func getBasePodName(pod *corev1.Pod) string {
