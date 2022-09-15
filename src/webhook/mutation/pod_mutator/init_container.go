@@ -28,18 +28,21 @@ func createInstallInitContainerBase(webhookImage, clusterID string, pod *corev1.
 			{Name: config.K8sNamespaceEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("metadata.namespace")},
 			{Name: config.K8sNodeNameEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("spec.nodeName")},
 		},
-		SecurityContext: copyUserContainerSecurityContext(pod, &dynakube),
+		SecurityContext: securityContextForInitContainer(pod, &dynakube),
 		Resources:       *dynakube.InitResources(),
 	}
 }
 
-func copyUserContainerSecurityContext(pod *corev1.Pod, dynakube *dynatracev1beta1.DynaKube) *corev1.SecurityContext {
+func securityContextForInitContainer(pod *corev1.Pod, dynakube *dynatracev1beta1.DynaKube) *corev1.SecurityContext {
 	var securityContext *corev1.SecurityContext
 	if len(pod.Spec.Containers) == 0 {
 		return securityContext
 	}
+
+	securityContext = new(corev1.SecurityContext)
 	if pod.Spec.Containers[0].SecurityContext != nil {
-		securityContext = pod.Spec.Containers[0].SecurityContext.DeepCopy()
+		securityContext.RunAsGroup = pod.Spec.Containers[0].SecurityContext.RunAsGroup
+		securityContext.RunAsUser = pod.Spec.Containers[0].SecurityContext.RunAsUser
 	}
 
 	if securityContext != nil {
