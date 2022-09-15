@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCreateInstallInitContainerBase(t *testing.T) {
+func TestCreateInstallInitContainerBaseWithDefaultUserAndGroup(t *testing.T) {
 	t.Run("should create the init container with default user and group", func(t *testing.T) {
 		dynakube := getTestDynakube()
 		pod := getTestPod()
@@ -27,7 +27,7 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 	})
 }
 
-func TestCreateInstallInitContainerBaseReadOnlyDisabled(t *testing.T) {
+func TestCreateInstallInitContainerBaseWithSetUserAndGroup(t *testing.T) {
 	t.Run("should create the init container with set user and group", func(t *testing.T) {
 		dynakube := getTestDynakube()
 		pod := getTestPod()
