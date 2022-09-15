@@ -34,15 +34,14 @@ func createInstallInitContainerBase(webhookImage, clusterID string, pod *corev1.
 }
 
 func securityContextForInitContainer(pod *corev1.Pod) *corev1.SecurityContext {
-	var securityContext *corev1.SecurityContext
+	var securityContext = new(corev1.SecurityContext)
 
-	securityContext = new(corev1.SecurityContext)
 	if pod.Spec.Containers[0].SecurityContext != nil {
 		securityContext.RunAsGroup = pod.Spec.Containers[0].SecurityContext.RunAsGroup
 		securityContext.RunAsUser = pod.Spec.Containers[0].SecurityContext.RunAsUser
 	} else {
-		securityContext.RunAsUser = address.Of(int64(1001))
 		securityContext.RunAsGroup = address.Of(int64(1001))
+		securityContext.RunAsUser = address.Of(int64(1001))
 	}
 
 	limitSecurityContext(securityContext)

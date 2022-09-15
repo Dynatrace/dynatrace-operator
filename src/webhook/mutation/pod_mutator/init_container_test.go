@@ -10,7 +10,8 @@ import (
 func TestCreateInstallInitContainerBaseWithDefaultUserAndGroup(t *testing.T) {
 	t.Run("should create the init container with default user and group", func(t *testing.T) {
 		dynakube := getTestDynakube()
-		pod := getTestPodWithNoSecurityContext()
+		pod := getTestPod()
+		pod.Spec.Containers[0].SecurityContext = nil
 		webhookImage := "test-image"
 		clusterID := "id"
 		initContainer := createInstallInitContainerBase(webhookImage, clusterID, pod, *dynakube)
