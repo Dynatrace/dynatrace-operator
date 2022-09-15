@@ -25,6 +25,8 @@ var testSecurityContext = &corev1.SecurityContext{
 	RunAsGroup: address.Of(testUser),
 }
 
+var emptySecurityContext = &corev1.SecurityContext{}
+
 func TestCreateMutationRequestBase(t *testing.T) {
 	t.Run("should create a mutation request", func(t *testing.T) {
 		dynakube := getTestDynakube()

@@ -28,33 +28,29 @@ func createInstallInitContainerBase(webhookImage, clusterID string, pod *corev1.
 			{Name: config.K8sNamespaceEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("metadata.namespace")},
 			{Name: config.K8sNodeNameEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("spec.nodeName")},
 		},
-		SecurityContext: securityContextForInitContainer(pod, &dynakube),
+		SecurityContext: securityContextForInitContainer(pod),
 		Resources:       *dynakube.InitResources(),
 	}
 }
 
-func securityContextForInitContainer(pod *corev1.Pod, dynakube *dynatracev1beta1.DynaKube) *corev1.SecurityContext {
+func securityContextForInitContainer(pod *corev1.Pod) *corev1.SecurityContext {
 	var securityContext *corev1.SecurityContext
-	if len(pod.Spec.Containers) == 0 {
-		return securityContext
-	}
 
 	securityContext = new(corev1.SecurityContext)
 	if pod.Spec.Containers[0].SecurityContext != nil {
 		securityContext.RunAsGroup = pod.Spec.Containers[0].SecurityContext.RunAsGroup
 		securityContext.RunAsUser = pod.Spec.Containers[0].SecurityContext.RunAsUser
+	} else {
+		securityContext.RunAsUser = address.Of(int64(1001))
+		securityContext.RunAsGroup = address.Of(int64(1001))
 	}
 
-	limitSecurityContext(securityContext, dynakube)
+	limitSecurityContext(securityContext)
 
 	return securityContext
 }
 
-func limitSecurityContext(ctx *corev1.SecurityContext, dynakube *dynatracev1beta1.DynaKube) {
-	if dynakube != nil && dynakube.NeedsReadOnlyOneAgents() {
-		ctx.RunAsUser = address.Of(int64(1000))
-		ctx.RunAsGroup = address.Of(int64(1000))
-	}
+func limitSecurityContext(ctx *corev1.SecurityContext) {
 	ctx.RunAsNonRoot = address.Of(true)
 	ctx.ReadOnlyRootFilesystem = address.Of(true)
 	ctx.AllowPrivilegeEscalation = address.Of(false)
