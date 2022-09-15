@@ -45,9 +45,7 @@ func securityContextForInitContainer(pod *corev1.Pod, dynakube *dynatracev1beta1
 		securityContext.RunAsUser = pod.Spec.Containers[0].SecurityContext.RunAsUser
 	}
 
-	if securityContext != nil {
-		limitSecurityContext(securityContext, dynakube)
-	}
+	limitSecurityContext(securityContext, dynakube)
 
 	return securityContext
 }
