@@ -2,6 +2,7 @@ package namespace
 
 import (
 	"context"
+	"testing"
 
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -21,8 +22,8 @@ func Create(name string) env.Func {
 	}
 }
 
-func Delete(name string) env.Func {
-	return func(ctx context.Context, environmentConfig *envconf.Config) (context.Context, error) {
+func Delete(name string) func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
+	return func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
 		var namespace corev1.Namespace
 		err := environmentConfig.Client().Resources().Get(ctx, name, "", &namespace)
 
@@ -43,8 +44,8 @@ func Delete(name string) env.Func {
 	}
 }
 
-func DeleteIfExists(name string) env.Func {
-	return func(ctx context.Context, environmentConfig *envconf.Config) (context.Context, error) {
+func DeleteIfExists(name string) func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
+	return func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
 		namespace := corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: name,
@@ -67,9 +68,9 @@ func DeleteIfExists(name string) env.Func {
 	}
 }
 
-func Recreate(name string) env.Func {
-	return func(ctx context.Context, environmentConfig *envconf.Config) (context.Context, error) {
-		ctx, err := Delete(name)(ctx, environmentConfig)
+func Recreate(name string) func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
+	return func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
+		ctx, err := Delete(name)(ctx, environmentConfig, t)
 
 		if err != nil && !k8serrors.IsNotFound(errors.Cause(err)) {
 			return ctx, err

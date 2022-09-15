@@ -7,7 +7,7 @@ import (
 )
 
 func InstallForKubernetes() features.Func {
-	return manifests.InstallFromFile("../config/deploy/kubernetes/kubernetes-all.yaml")
+	return manifests.InstallFromFile("../../config/deploy/kubernetes/kubernetes-all.yaml")
 }
 
 func WaitForDeployment() features.Func {
