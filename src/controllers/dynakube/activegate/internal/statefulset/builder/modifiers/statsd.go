@@ -49,7 +49,7 @@ func NewStatsdModifier(dynakube dynatracev1beta1.DynaKube, capability capability
 }
 
 func (statsd StatsdModifier) Enabled() bool {
-	return statsd.dynakube.NeedsStatsd()
+	return statsd.dynakube.IsStatsdActiveGateEnabled()
 }
 
 func (statsd StatsdModifier) Modify(sts *appsv1.StatefulSet) {
@@ -128,7 +128,7 @@ func (statsd StatsdModifier) buildContainer() corev1.Container {
 		SecurityContext: statsd.buildSecurityContext(),
 		Resources:       statsd.buildResourceRequirements(),
 	}
-	if statsd.capability.Config().SetCommunicationPort {
+	if statsd.dynakube.NeedsActiveGateServicePorts() {
 		container.Ports = []corev1.ContainerPort{
 			{
 				Name:          consts.StatsdIngestTargetPort,

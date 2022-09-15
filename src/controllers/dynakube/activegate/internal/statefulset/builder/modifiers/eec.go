@@ -48,7 +48,7 @@ func NewExtensionControllerModifier(dynakube dynatracev1beta1.DynaKube, capabili
 }
 
 func (eec ExtensionControllerModifier) Enabled() bool {
-	return eec.dynakube.NeedsStatsd()
+	return eec.dynakube.IsStatsdActiveGateEnabled()
 }
 
 func (eec ExtensionControllerModifier) Modify(sts *appsv1.StatefulSet) {
