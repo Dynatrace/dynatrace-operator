@@ -361,7 +361,7 @@ func tenantUUID(apiUrl string) (string, error) {
 
 	}
 
-	return "", fmt.Errorf("problem getting tenant id from API URL '%s'", apiUrl)
+	return "", errors.Errorf("problem getting tenant id from API URL '%s'", apiUrl)
 }
 
 func (dk *DynaKube) HostGroup() string {
