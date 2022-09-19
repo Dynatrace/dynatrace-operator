@@ -28,11 +28,10 @@ operator:
   requests:
     cpu: 50m
     memory: 64Mi
-    ephemeralStorage: 10Mi
+    ephemeral-storage: 60Mi
   limits:
     cpu: 100m
     memory: 128Mi
-    ephemeralStorage: 60Mi
 
 webhook:
   hostNetwork: false
@@ -44,11 +43,11 @@ webhook:
   requests:
     cpu: 300m
     memory: 128Mi
-    ephemeralStorage: 10Mi
+    ephemeral-storage: 60Mi
   limits:
     cpu: 300m
     memory: 128Mi
-    ephemeralStorage: 60Mi
+    ephemeral-storage: 60Mi
   highAvailability: true
 
 csidriver:

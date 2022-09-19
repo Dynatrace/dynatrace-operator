@@ -111,13 +111,9 @@ spec:
               containerPort: 8443
           resources:
             requests:
-              cpu: {{ default "300m" ((.Values.webhook).requests).cpu }}
-              memory: {{ default "128Mi" ((.Values.webhook).requests).memory }}
-              ephemeral-storage: {{ default "10Mi" ((.Values.webhook).requests).ephemeralStorage }}
+              {{- toYaml (.Values.webhook).requests | nindent 14 }}
             limits:
-              cpu: {{ default "300m" ((.Values.webhook).limits).cpu }}
-              memory: {{ default "128Mi" ((.Values.webhook).limits).memory }}
-              ephemeral-storage: {{ default "60Mi" ((.Values.webhook).limits).ephemeralStorage }}
+              {{- toYaml (.Values.webhook).limits | nindent 14 }}
           volumeMounts:
             - name: certs-dir
               mountPath: /tmp/k8s-webhook-server/serving-certs/
