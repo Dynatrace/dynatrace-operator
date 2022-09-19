@@ -209,7 +209,7 @@ func (provisioner *OneAgentProvisioner) handleMetadata(ctx context.Context, dk *
 		oldDynakubeMetadata = *dynakubeMetadata
 	}
 
-	tenantUUID, err:= dk.TenantUUID()
+	tenantUUID, err := dk.TenantUUID()
 	if err != nil {
 		return nil, metadata.Dynakube{}, err
 	}

@@ -28,7 +28,7 @@ import (
 )
 
 const (
-	testAPIURL = "http://test-uid/api"
+	testAPIURL   = "http://test-uid/api"
 	tenantUUID   = "test-uid"
 	dkName       = "dynakube-test"
 	otherDkName  = "other-dk"
