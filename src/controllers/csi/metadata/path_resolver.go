@@ -58,6 +58,10 @@ func (pr PathResolver) AgentConfigDir(tenantUUID string) string {
 	return filepath.Join(pr.TenantDir(tenantUUID), dtcsi.SharedAgentConfigDir)
 }
 
+func (pr PathResolver) AgentConfigDirForDynakube(dynakubeName string) string {
+	return filepath.Join(pr.RootDir, dynakubeName)
+}
+
 func (pr PathResolver) InnerAgentBinaryDirForSymlinkForVersion(tenantUUID string, version string) string {
 	return filepath.Join(pr.AgentBinaryDirForVersion(tenantUUID, version), "agent", "bin", "current")
 }
