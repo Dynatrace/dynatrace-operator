@@ -91,11 +91,6 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		return reconcile.Result{RequeueAfter: longRequeueDuration}, provisioner.db.DeleteDynakube(ctx, request.Name)
 	}
 
-	if dk.ConnectionInfo().TenantUUID == "" {
-		log.Info("DynaKube instance has not been reconciled yet and some values usually cached are missing, retrying in a few seconds")
-		return reconcile.Result{RequeueAfter: shortRequeueDuration}, nil
-	}
-
 	// creates a dt client and checks tokens exist for the given dynakube
 	dtc, err := buildDtc(provisioner, ctx, dk)
 	if err != nil {
@@ -214,9 +209,14 @@ func (provisioner *OneAgentProvisioner) handleMetadata(ctx context.Context, dk *
 		oldDynakubeMetadata = *dynakubeMetadata
 	}
 
+	tenantUUID, err := dk.TenantUUID()
+	if err != nil {
+		return nil, metadata.Dynakube{}, err
+	}
+
 	dynakubeMetadata = metadata.NewDynakube(
 		dk.Name,
-		dk.ConnectionInfo().TenantUUID,
+		tenantUUID,
 		oldDynakubeMetadata.LatestVersion,
 		oldDynakubeMetadata.ImageDigest,
 		dk.FeatureMaxFailedCsiMountAttempts())
