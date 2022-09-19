@@ -28,10 +28,11 @@ import (
 )
 
 const (
+	testAPIURL = "http://test-uid/api"
+	tenantUUID   = "test-uid"
 	dkName       = "dynakube-test"
 	otherDkName  = "other-dk"
 	errorMsg     = "test-error"
-	tenantUUID   = "test-uid"
 	agentVersion = "12345"
 	testZip      = `UEsDBAoAAAAAAKh0p1JsLSFnGQAAABkAAAAIABwAdGVzdC50eHRVVAkAA3w0lWATB55gdXgLAAEE6AMAAAToAwAAeW91IGZvdW5kIHRoZSBlYXN0ZXIgZWdnClBLAwQKAAAAAADAOa5SAAAAAAAAAAAAAAAABQAcAHRlc3QvVVQJAAMXB55gHQeeYHV4CwABBOgDAAAE6AMAAFBLAwQKAAAAAACodKdSbC0hZxkAAAAZAAAADQAcAHRlc3QvdGVzdC50eHRVVAkAA3w0lWATB55gdXgLAAEE6AMAAAToAwAAeW91IGZvdW5kIHRoZSBlYXN0ZXIgZWdnClBLAwQKAAAAAADCOa5SAAAAAAAAAAAAAAAACgAcAHRlc3QvdGVzdC9VVAkAAxwHnmAgB55gdXgLAAEE6AMAAAToAwAAUEsDBAoAAAAAAKh0p1JsLSFnGQAAABkAAAASABwAdGVzdC90ZXN0L3Rlc3QudHh0VVQJAAN8NJVgHAeeYHV4CwABBOgDAAAE6AMAAHlvdSBmb3VuZCB0aGUgZWFzdGVyIGVnZwpQSwMECgAAAAAA2zquUgAAAAAAAAAAAAAAAAYAHABhZ2VudC9VVAkAAy4JnmAxCZ5gdXgLAAEE6AMAAAToAwAAUEsDBAoAAAAAAOI6rlIAAAAAAAAAAAAAAAALABwAYWdlbnQvY29uZi9VVAkAAzgJnmA+CZ5gdXgLAAEE6AMAAAToAwAAUEsDBAoAAAAAAKh0p1JsLSFnGQAAABkAAAATABwAYWdlbnQvY29uZi90ZXN0LnR4dFVUCQADfDSVYDgJnmB1eAsAAQToAwAABOgDAAB5b3UgZm91bmQgdGhlIGVhc3RlciBlZ2cKUEsBAh4DCgAAAAAAqHSnUmwtIWcZAAAAGQAAAAgAGAAAAAAAAQAAAKSBAAAAAHRlc3QudHh0VVQFAAN8NJVgdXgLAAEE6AMAAAToAwAAUEsBAh4DCgAAAAAAwDmuUgAAAAAAAAAAAAAAAAUAGAAAAAAAAAAQAO1BWwAAAHRlc3QvVVQFAAMXB55gdXgLAAEE6AMAAAToAwAAUEsBAh4DCgAAAAAAqHSnUmwtIWcZAAAAGQAAAA0AGAAAAAAAAQAAAKSBmgAAAHRlc3QvdGVzdC50eHRVVAUAA3w0lWB1eAsAAQToAwAABOgDAABQSwECHgMKAAAAAADCOa5SAAAAAAAAAAAAAAAACgAYAAAAAAAAABAA7UH6AAAAdGVzdC90ZXN0L1VUBQADHAeeYHV4CwABBOgDAAAE6AMAAFBLAQIeAwoAAAAAAKh0p1JsLSFnGQAAABkAAAASABgAAAAAAAEAAACkgT4BAAB0ZXN0L3Rlc3QvdGVzdC50eHRVVAUAA3w0lWB1eAsAAQToAwAABOgDAABQSwECHgMKAAAAAADbOq5SAAAAAAAAAAAAAAAABgAYAAAAAAAAABAA7UGjAQAAYWdlbnQvVVQFAAMuCZ5gdXgLAAEE6AMAAAToAwAAUEsBAh4DCgAAAAAA4jquUgAAAAAAAAAAAAAAAAsAGAAAAAAAAAAQAO1B4wEAAGFnZW50L2NvbmYvVVQFAAM4CZ5gdXgLAAEE6AMAAAToAwAAUEsBAh4DCgAAAAAAqHSnUmwtIWcZAAAAGQAAABMAGAAAAAAAAQAAAKSBKAIAAGFnZW50L2NvbmYvdGVzdC50eHRVVAUAA3w0lWB1eAsAAQToAwAABOgDAABQSwUGAAAAAAgACACKAgAAjgIAAAAA`
 )
@@ -159,13 +160,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 						Name: dkName,
 					},
 					Spec: dynatracev1beta1.DynaKubeSpec{
+						APIURL: testAPIURL,
 						OneAgent: dynatracev1beta1.OneAgentSpec{
 							ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
-						},
-					},
-					Status: dynatracev1beta1.DynaKubeStatus{
-						ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
-							TenantUUID: tenantUUID,
 						},
 					},
 				},
@@ -185,13 +182,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 						Name: dkName,
 					},
 					Spec: dynatracev1beta1.DynaKubeSpec{
+						APIURL: testAPIURL,
 						OneAgent: dynatracev1beta1.OneAgentSpec{
 							ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
-						},
-					},
-					Status: dynatracev1beta1.DynaKubeStatus{
-						ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
-							TenantUUID: tenantUUID,
 						},
 					},
 				},
@@ -211,38 +204,6 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		assert.NotNil(t, result)
 		assert.Equal(t, reconcile.Result{}, result)
 	})
-	t.Run(`error when querying dynatrace client for connection info`, func(t *testing.T) {
-		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{}, fmt.Errorf(errorMsg))
-
-		provisioner := &OneAgentProvisioner{
-			apiReader: fake.NewClient(
-				&dynatracev1beta1.DynaKube{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: dkName,
-					},
-					Spec: dynatracev1beta1.DynaKubeSpec{
-						OneAgent: dynatracev1beta1.OneAgentSpec{
-							ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
-						},
-					},
-				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: dkName,
-					},
-				},
-			),
-			dtcBuildFunc: func(dynakube.DynatraceClientProperties) (dtclient.Client, error) {
-				return mockClient, nil
-			},
-		}
-		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
-
-		assert.NoError(t, err)
-		assert.NotNil(t, result)
-		assert.Equal(t, reconcile.Result{RequeueAfter: 15 * time.Second}, result)
-	})
 	t.Run(`error creating directories`, func(t *testing.T) {
 		errorfs := &mkDirAllErrorFs{
 			Fs: afero.NewMemMapFs(),
@@ -258,13 +219,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 						Name: dkName,
 					},
 					Spec: dynatracev1beta1.DynaKubeSpec{
+						APIURL: testAPIURL,
 						OneAgent: dynatracev1beta1.OneAgentSpec{
 							ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
-						},
-					},
-					Status: dynatracev1beta1.DynaKubeStatus{
-						ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
-							TenantUUID: tenantUUID,
 						},
 					},
 				},
@@ -314,13 +271,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 						Name: dkName,
 					},
 					Spec: dynatracev1beta1.DynaKubeSpec{
+						APIURL: testAPIURL,
 						OneAgent: dynatracev1beta1.OneAgentSpec{
 							ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
-						},
-					},
-					Status: dynatracev1beta1.DynaKubeStatus{
-						ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
-							TenantUUID: tenantUUID,
 						},
 					},
 				},
@@ -368,13 +321,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 						Name: dkName,
 					},
 					Spec: dynatracev1beta1.DynaKubeSpec{
+						APIURL: testAPIURL,
 						OneAgent: dynatracev1beta1.OneAgentSpec{
 							ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
-						},
-					},
-					Status: dynatracev1beta1.DynaKubeStatus{
-						ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
-							TenantUUID: tenantUUID,
 						},
 					},
 				},
@@ -431,15 +380,10 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 						Name: dkName,
 					},
 					Spec: dynatracev1beta1.DynaKubeSpec{
+						APIURL: testAPIURL,
 						OneAgent: dynatracev1beta1.OneAgentSpec{
 							ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
 						},
-					},
-					Status: dynatracev1beta1.DynaKubeStatus{
-						ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
-							TenantUUID: tenantUUID,
-						},
-						LatestAgentVersionUnixPaas: agentVersion,
 					},
 				},
 				&v1.Secret{
@@ -599,10 +543,8 @@ func TestHandleMetadata(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: dkName,
 		},
-		Status: dynatracev1beta1.DynaKubeStatus{
-			ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
-				TenantUUID: testTenantUUID,
-			},
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			APIURL: testAPIURL,
 		},
 	}
 	provisioner := &OneAgentProvisioner{
