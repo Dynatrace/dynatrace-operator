@@ -76,13 +76,14 @@ func (installer UrlInstaller) UpdateProcessModuleConfig(targetDir string, proces
 
 func (installer UrlInstaller) installAgentFromUrl(targetDir string) error {
 	fs := installer.fs
-	var tmpFile afero.File
-	var err error
+	path := ""
 	if installer.isInitContainerMode() {
-		tmpFile, err = afero.TempFile(fs, targetDir, "download")
+		path = targetDir
 	} else {
-		tmpFile, err = afero.TempFile(fs, filepath.Dir(targetDir), "download")
+		path = filepath.Dir(targetDir)
 	}
+
+	tmpFile, err := afero.TempFile(fs, filepath.Dir(path), "download")
 
 	if err != nil {
 		log.Info("failed to create temp file download", "err", err)
