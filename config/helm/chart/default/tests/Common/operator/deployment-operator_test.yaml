@@ -85,7 +85,6 @@ tests:
                   requests:
                     cpu: 50m
                     memory: 64Mi
-                    ephemeral-storage: 60Mi
                   limits:
                     cpu: 100m
                     memory: 128Mi
@@ -241,7 +240,6 @@ tests:
                   requests:
                     cpu: 50m
                     memory: 64Mi
-                    ephemeral-storage: 60Mi
                   limits:
                     cpu: 100m
                     memory: 128Mi

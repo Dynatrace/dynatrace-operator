@@ -4228,7 +4228,6 @@ spec:
           resources:
             requests:
               cpu: 50m
-              ephemeral-storage: 60Mi
               memory: 64Mi
             limits:
               cpu: 100m
@@ -4391,11 +4390,9 @@ spec:
           resources:
             requests:
               cpu: 300m
-              ephemeral-storage: 60Mi
               memory: 128Mi
             limits:
               cpu: 300m
-              ephemeral-storage: 60Mi
               memory: 128Mi
           volumeMounts:
             - name: certs-dir
