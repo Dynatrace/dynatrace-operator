@@ -15,25 +15,42 @@ import (
 )
 
 type Secrets struct {
+	Tenants []Secret `yaml:"tenants"`
+}
+
+type Secret struct {
 	TenantUid string `yaml:"tenantUid"`
 	ApiUrl    string `yaml:"apiUrl"`
 	ApiToken  string `yaml:"apiToken"`
 }
 
-func NewFromConfig(fs afero.Fs, path string) (Secrets, error) {
+func ManyFromConfig(fs afero.Fs, path string) ([]Secret, error) {
 	secretConfigFile, err := afero.ReadFile(fs, path)
 
 	if err != nil {
-		return Secrets{}, errors.WithStack(err)
+		return []Secret{}, errors.WithStack(err)
 	}
 
 	var result Secrets
 	err = yaml.Unmarshal(secretConfigFile, &result)
 
+	return result.Tenants, errors.WithStack(err)
+}
+
+func NewFromConfig(fs afero.Fs, path string) (Secret, error) {
+	secretConfigFile, err := afero.ReadFile(fs, path)
+
+	if err != nil {
+		return Secret{}, errors.WithStack(err)
+	}
+
+	var result Secret
+	err = yaml.Unmarshal(secretConfigFile, &result)
+
 	return result, errors.WithStack(err)
 }
 
-func ApplyDefault(secretConfig Secrets) features.Func {
+func ApplyDefault(secretConfig Secret) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		defaultSecret := v1.Secret{
 			ObjectMeta: metav1.ObjectMeta{

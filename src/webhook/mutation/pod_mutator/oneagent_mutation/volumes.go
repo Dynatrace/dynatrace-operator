@@ -25,7 +25,7 @@ func addOneAgentVolumeMounts(container *corev1.Container, installPath string) {
 			SubPath:   config.LdPreloadFilename,
 		},
 		corev1.VolumeMount{
-			Name:      oneAgentBinVolumeName,
+			Name:      OneAgentBinVolumeName,
 			MountPath: installPath,
 		},
 		corev1.VolumeMount{
@@ -50,7 +50,7 @@ func addCertVolumeMounts(container *corev1.Container) {
 
 func addInitVolumeMounts(initContainer *corev1.Container) {
 	initContainer.VolumeMounts = append(initContainer.VolumeMounts,
-		corev1.VolumeMount{Name: oneAgentBinVolumeName, MountPath: config.AgentBinDirMount},
+		corev1.VolumeMount{Name: OneAgentBinVolumeName, MountPath: config.AgentBinDirMount},
 		corev1.VolumeMount{Name: oneAgentShareVolumeName, MountPath: config.AgentShareDirMount},
 	)
 }
@@ -85,7 +85,7 @@ func addInjectionConfigVolumeMount(container *corev1.Container) {
 func addOneAgentVolumes(pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) {
 	pod.Spec.Volumes = append(pod.Spec.Volumes,
 		corev1.Volume{
-			Name:         oneAgentBinVolumeName,
+			Name:         OneAgentBinVolumeName,
 			VolumeSource: getInstallerVolumeSource(dynakube),
 		},
 		corev1.Volume{

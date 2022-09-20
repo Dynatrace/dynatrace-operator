@@ -28,7 +28,7 @@ type ExecutionQuery struct {
 	container string
 }
 
-func NewExecutionQuery(pod v1.Pod, command string, container string) ExecutionQuery {
+func NewExecutionQuery(pod v1.Pod, container string, command string) ExecutionQuery {
 	return ExecutionQuery{
 		pod:       pod,
 		command:   command,
@@ -36,7 +36,12 @@ func NewExecutionQuery(pod v1.Pod, command string, container string) ExecutionQu
 	}
 }
 
-func (query ExecutionQuery) Execute(client kubernetes.Interface, restConfig *rest.Config) (*ExecutionResult, error) {
+func (query ExecutionQuery) Execute(restConfig *rest.Config) (*ExecutionResult, error) {
+	client, err := kubernetes.NewForConfig(restConfig)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
 	req := query.buildRequest(client)
 	executor, err := remotecommand.NewSPDYExecutor(restConfig, http.MethodPost, req.URL())
 

@@ -75,7 +75,7 @@ func (mod CustomPropertiesModifier) hasCustomProperties() bool {
 
 func (mod CustomPropertiesModifier) determineCustomPropertiesSource() string {
 	if mod.capability.Properties().CustomProperties.ValueFrom == "" {
-		return fmt.Sprintf("%s-%s-%s", mod.dynakube.Name, mod.capability.Config().ServiceAccountOwner, customproperties.Suffix)
+		return fmt.Sprintf("%s-%s-%s", mod.dynakube.Name, mod.dynakube.ActiveGateServiceAccountOwner(), customproperties.Suffix)
 	}
 	return mod.capability.Properties().CustomProperties.ValueFrom
 }

@@ -90,11 +90,41 @@ func (dk *DynaKube) IsActiveGateMode(mode CapabilityDisplayName) bool {
 	return false
 }
 
-func (dk *DynaKube) KubernetesMonitoringMode() bool {
+func (dk *DynaKube) ActiveGateServiceAccountOwner() string {
+	if dk.IsKubernetesMonitoringActiveGateEnabled() {
+		return string(KubeMonCapability.DeepCopy().DisplayName)
+	} else {
+		return "activegate"
+	}
+}
+
+func (dk *DynaKube) ActiveGateServiceAccountName() string {
+	return "dynatrace-" + dk.ActiveGateServiceAccountOwner()
+}
+
+func (dk *DynaKube) IsKubernetesMonitoringActiveGateEnabled() bool {
 	return dk.IsActiveGateMode(KubeMonCapability.DisplayName) || dk.Spec.KubernetesMonitoring.Enabled
 }
 
-func (dk *DynaKube) NeedsStatsd() bool {
+func (dk *DynaKube) IsRoutingActiveGateEnabled() bool {
+	return dk.IsActiveGateMode(RoutingCapability.DisplayName) || dk.Spec.Routing.Enabled
+}
+
+func (dk *DynaKube) IsApiActiveGateEnabled() bool {
+	return dk.IsActiveGateMode(DynatraceApiCapability.DisplayName)
+}
+
+func (dk *DynaKube) IsMetricsIngestActiveGateEnabled() bool {
+	return dk.IsActiveGateMode(MetricsIngestCapability.DisplayName)
+}
+
+func (dk *DynaKube) NeedsActiveGateServicePorts() bool {
+	return dk.IsRoutingActiveGateEnabled() ||
+		dk.IsApiActiveGateEnabled() ||
+		dk.IsMetricsIngestActiveGateEnabled()
+}
+
+func (dk *DynaKube) IsStatsdActiveGateEnabled() bool {
 	return dk.IsActiveGateMode(StatsdIngestCapability.DisplayName)
 }
 

@@ -134,7 +134,7 @@ func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dyn
 		tokens[dtclient.DynatraceApiToken].Scopes = append(tokens[dtclient.DynatraceApiToken].Scopes, dtclient.TokenScopeDataExport)
 	}
 
-	if instance.KubernetesMonitoringMode() &&
+	if instance.IsKubernetesMonitoringActiveGateEnabled() &&
 		instance.FeatureAutomaticKubernetesApiMonitoring() {
 		tokens[dtclient.DynatraceApiToken].Scopes = append(tokens[dtclient.DynatraceApiToken].Scopes,
 			dtclient.TokenScopeEntitiesRead,

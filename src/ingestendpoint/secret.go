@@ -150,7 +150,7 @@ func (g *EndpointSecretGenerator) prepare(ctx context.Context, dk *dynatracev1be
 		}
 	}
 
-	if dk.NeedsStatsd() {
+	if dk.IsStatsdActiveGateEnabled() {
 		if _, err := endpointPropertiesBuilder.WriteString(fmt.Sprintf("%s=%s\n", StatsdUrlSecretField, fields[StatsdUrlSecretField])); err != nil {
 			return nil, errors.WithStack(err)
 		}
@@ -182,7 +182,7 @@ func (g *EndpointSecretGenerator) PrepareFields(ctx context.Context, dk *dynatra
 		}
 	}
 
-	if dk.NeedsStatsd() {
+	if dk.IsStatsdActiveGateEnabled() {
 		if statsdUrl, err := statsdIngestUrl(dk); err != nil {
 			return nil, err
 		} else {

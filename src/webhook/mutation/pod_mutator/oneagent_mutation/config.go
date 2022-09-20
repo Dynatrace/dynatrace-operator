@@ -14,7 +14,7 @@ const (
 	proxyEnv             = "DT_PROXY"
 	dynatraceMetadataEnv = "DT_DEPLOYMENT_METADATA"
 
-	oneAgentBinVolumeName     = "oneagent-bin"
+	OneAgentBinVolumeName     = "oneagent-bin"
 	oneAgentShareVolumeName   = "oneagent-share"
 	injectionConfigVolumeName = "injection-config"
 

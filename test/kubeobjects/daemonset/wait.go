@@ -13,7 +13,6 @@ import (
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
-	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -36,8 +35,8 @@ func WaitFor(name string, namespace string) features.Func {
 	}
 }
 
-func WaitForPodsDeletion(ownerName string, namespace string) env.Func {
-	return func(ctx context.Context, environmentConfig *envconf.Config) (context.Context, error) {
+func WaitForPodsDeletion(ownerName string, namespace string) func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
+	return func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
 		var pods corev1.PodList
 		resources := environmentConfig.Client().Resources()
 		err := resources.WithNamespace(namespace).List(ctx, &pods)
