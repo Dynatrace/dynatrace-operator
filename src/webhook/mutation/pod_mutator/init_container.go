@@ -49,11 +49,15 @@ func securityContextForInitContainer(pod *corev1.Pod) *corev1.SecurityContext {
 		},
 	}
 
-	var podSecurityContext = pod.Spec.Containers[0].SecurityContext
+	var containerSecurityContext = pod.Spec.Containers[0].SecurityContext
+	var podSecurityContext = pod.Spec.SecurityContext
 
-	if podSecurityContext != nil && podSecurityContext.RunAsUser != nil && podSecurityContext.RunAsGroup != nil {
-		securityContext.RunAsGroup = podSecurityContext.RunAsGroup
-		securityContext.RunAsUser = podSecurityContext.RunAsUser
+	if containerSecurityContext != nil && containerSecurityContext.RunAsUser != nil && containerSecurityContext.RunAsGroup != nil {
+		securityContext.RunAsGroup = containerSecurityContext.RunAsGroup
+		securityContext.RunAsUser = containerSecurityContext.RunAsUser
+	} else if podSecurityContext != nil && podSecurityContext.RunAsUser != nil && podSecurityContext.RunAsGroup != nil {
+		securityContext.RunAsGroup = containerSecurityContext.RunAsGroup
+		securityContext.RunAsUser = containerSecurityContext.RunAsUser
 	} else {
 		securityContext.RunAsGroup = address.Of(int64(1001))
 		securityContext.RunAsUser = address.Of(int64(1001))
