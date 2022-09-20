@@ -83,7 +83,7 @@ func (installer UrlInstaller) installAgentFromUrl(targetDir string) error {
 		path = filepath.Dir(targetDir)
 	}
 
-	tmpFile, err := afero.TempFile(fs, filepath.Dir(path), "download")
+	tmpFile, err := afero.TempFile(fs, path, "download")
 
 	if err != nil {
 		log.Info("failed to create temp file download", "err", err)
