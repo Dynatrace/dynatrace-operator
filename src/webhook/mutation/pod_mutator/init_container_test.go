@@ -1,9 +1,9 @@
 package pod_mutator
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
