@@ -1,6 +1,7 @@
 package pod_mutator
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -49,8 +50,8 @@ func TestCreateInstallInitContainerBaseWithSetUserAndGroup(t *testing.T) {
 	})
 }
 
-func TestCreateInstallInitContainerBaseWithSecurityContextSetWithoutUserAndGroup(t *testing.T) {
-	t.Run("should create the init container with set sec ctx but without user and group", func(t *testing.T) {
+func TestCreateInstallInitContainerBaseWithContainerSecurityContextSetWithoutUserAndGroup(t *testing.T) {
+	t.Run("should create the init container with set container sec ctx but without user and group", func(t *testing.T) {
 		dynakube := getTestDynakube()
 		pod := getTestPod()
 		pod.Spec.Containers[0].SecurityContext.RunAsUser = nil
@@ -68,5 +69,29 @@ func TestCreateInstallInitContainerBaseWithSecurityContextSetWithoutUserAndGroup
 		assert.Equal(t, initContainer.SecurityContext.SeccompProfile.Type, corev1.SeccompProfileTypeRuntimeDefault)
 		assert.Equal(t, *initContainer.SecurityContext.RunAsUser, int64(1001))
 		assert.Equal(t, *initContainer.SecurityContext.RunAsGroup, int64(1001))
+	})
+}
+
+func TestCreateInstallInitContainerBaseWithPodSecurityContextSetWithUserAndGroup(t *testing.T) {
+	t.Run("should create the init container with set pod sec ctx with user and group", func(t *testing.T) {
+		dynakube := getTestDynakube()
+		pod := getTestPod()
+		pod.Spec.Containers[0].SecurityContext = nil
+		pod.Spec.SecurityContext = new(corev1.PodSecurityContext)
+		pod.Spec.SecurityContext.RunAsUser = address.Of(int64(1234))
+		pod.Spec.SecurityContext.RunAsGroup = address.Of(int64(1234))
+		webhookImage := "test-image"
+		clusterID := "id"
+		initContainer := createInstallInitContainerBase(webhookImage, clusterID, pod, *dynakube)
+		require.NotNil(t, initContainer)
+		assert.Equal(t, initContainer.Image, webhookImage)
+		assert.Equal(t, initContainer.Resources, testResourceRequirements)
+		assert.False(t, *initContainer.SecurityContext.AllowPrivilegeEscalation)
+		assert.False(t, *initContainer.SecurityContext.Privileged)
+		assert.True(t, *initContainer.SecurityContext.ReadOnlyRootFilesystem)
+		assert.True(t, *initContainer.SecurityContext.RunAsNonRoot)
+		assert.Equal(t, initContainer.SecurityContext.SeccompProfile.Type, corev1.SeccompProfileTypeRuntimeDefault)
+		assert.Equal(t, *initContainer.SecurityContext.RunAsUser, int64(1234))
+		assert.Equal(t, *initContainer.SecurityContext.RunAsGroup, int64(1234))
 	})
 }
