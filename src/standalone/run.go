@@ -2,6 +2,8 @@ package standalone
 
 import (
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/installer/common"
+	"github.com/Dynatrace/dynatrace-operator/src/processmoduleconfig"
 	"path/filepath"
 
 	"github.com/Dynatrace/dynatrace-operator/src/arch"
@@ -157,6 +159,15 @@ func (runner *Runner) configureInstallation() error {
 				return errors.WithStack(err)
 			}
 		}
+
+		if runner.config.HostGroup != "" {
+			log.Info("setting host group")
+			err := runner.setHostGroup()
+
+			if err != nil {
+				return err
+			}
+		}
 	}
 	if runner.env.DataIngestInjected {
 		log.Info("creating enrichment files")
@@ -203,4 +214,13 @@ func (runner *Runner) enrichMetadata() error {
 
 func (runner *Runner) propagateTLSCert() error {
 	return runner.createConfFile(filepath.Join(config.AgentShareDirMount, "custom.pem"), runner.config.TlsCert)
+}
+
+func (runner *Runner) setHostGroup() error {
+	configPath := filepath.Join(config.AgentBinDirMount, common.AgentConfDirPath, common.RuxitConfFileName)
+	return processmoduleconfig.Update(runner.fs, configPath, configPath, map[string]map[string]string{
+		"general": {
+			"hostGroup": runner.env.HostGroup,
+		},
+	})
 }

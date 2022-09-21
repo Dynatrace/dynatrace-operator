@@ -2,6 +2,7 @@ package pod_mutator
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/webhook/mutation/hostgroup"
 	"net/http"
 
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
@@ -78,6 +79,7 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 				apiReader,
 				metaClient,
 			),
+			hostgroup.NewMutator(),
 		},
 	}})
 	log.Info("registered /inject endpoint")

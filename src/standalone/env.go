@@ -2,6 +2,7 @@ package standalone
 
 import (
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/webhook/mutation/hostgroup"
 	"os"
 	"strconv"
 	"strings"
@@ -38,6 +39,8 @@ type environment struct {
 
 	OneAgentInjected   bool `json:"oneAgentInjected"`
 	DataIngestInjected bool `json:"dataIngestInjected"`
+
+	HostGroup string `json:"hostGroup"`
 }
 
 func newEnv() (*environment, error) {
@@ -103,6 +106,7 @@ func (env *environment) getDataIngestFieldSetters() []func() error {
 func (env *environment) setOptionalFields() {
 	env.addInstallerUrl()
 	env.addInstallerFlavor()
+	env.addHostGroup()
 }
 
 func (env *environment) setMutationTypeFields() {
@@ -279,6 +283,11 @@ func (env *environment) addOneAgentInjected() {
 func (env *environment) addDataIngestInjected() {
 	dataIngestInjected, _ := checkEnvVar(config.EnrichmentInjectedEnv)
 	env.DataIngestInjected = dataIngestInjected == "true"
+}
+
+func (env *environment) addHostGroup() {
+	hostGroup, _ := checkEnvVar(hostgroup.EnvVarNameHostGroup)
+	env.HostGroup = hostGroup
 }
 
 func checkEnvVar(envvar string) (string, error) {
