@@ -11,15 +11,16 @@ import (
 )
 
 var (
-	ruxitAgentProcPath       = filepath.Join("agent", "conf", "ruxitagentproc.conf")
-	sourceRuxitAgentProcPath = filepath.Join("agent", "conf", "_ruxitagentproc.conf")
+	originalAgentProcPath  = filepath.Join("agent", "conf", "ruxitagentproc.conf")
+	copyRuxitAgentProcPath = filepath.Join("ruxitagentproc.conf")
 )
 
-func UpdateProcessModuleConfigInPlace(fs afero.Fs, targetDir string, processModuleConfig *dtclient.ProcessModuleConfig) error {
+func UpdateProcessModuleConfigInPlace(fs afero.Fs, agentInstallDir string, configDir string, processModuleConfig *dtclient.ProcessModuleConfig) error {
 	if processModuleConfig != nil {
-		log.Info("updating ruxitagentproc.conf", "targetDir", targetDir)
-		usedProcessModuleConfigPath := filepath.Join(targetDir, ruxitAgentProcPath)
-		sourceProcessModuleConfigPath := filepath.Join(targetDir, sourceRuxitAgentProcPath)
+		log.Info("updating ruxitagentproc.conf", "config dir", configDir, "agent dir", agentInstallDir)
+		usedProcessModuleConfigPath := filepath.Join(configDir, copyRuxitAgentProcPath)
+		sourceProcessModuleConfigPath := filepath.Join(agentInstallDir, originalAgentProcPath)
+		log.Info("updating ruxitagentproc.conf", "usedProcessModuleConfigPath", usedProcessModuleConfigPath, "sourceProcessModuleConfigPath", sourceProcessModuleConfigPath)
 		if err := checkProcessModuleConfigCopy(fs, sourceProcessModuleConfigPath, usedProcessModuleConfigPath); err != nil {
 			return err
 		}
@@ -32,8 +33,8 @@ func UpdateProcessModuleConfigInPlace(fs afero.Fs, targetDir string, processModu
 func CreateAgentConfigDir(fs afero.Fs, targetDir, sourceDir string, processModuleConfig *dtclient.ProcessModuleConfig) error {
 	if processModuleConfig != nil {
 		log.Info("updating ruxitagentproc.conf", "targetDir", targetDir, "sourceDir", sourceDir)
-		sourceProcessModuleConfigPath := filepath.Join(sourceDir, ruxitAgentProcPath)
-		destinationProcessModuleConfigPath := filepath.Join(targetDir, ruxitAgentProcPath)
+		sourceProcessModuleConfigPath := filepath.Join(sourceDir, originalAgentProcPath)
+		destinationProcessModuleConfigPath := filepath.Join(targetDir, copyRuxitAgentProcPath)
 		err := fs.MkdirAll(filepath.Dir(destinationProcessModuleConfigPath), 0755)
 		if err != nil {
 			log.Info("failed to create directory for destination process module config", "path", filepath.Dir(destinationProcessModuleConfigPath))
@@ -50,7 +51,7 @@ func CreateAgentConfigDir(fs afero.Fs, targetDir, sourceDir string, processModul
 // so it`s easier to update
 func checkProcessModuleConfigCopy(fs afero.Fs, sourcePath, destPath string) error {
 	if _, err := fs.Open(sourcePath); os.IsNotExist(err) {
-		log.Info("saving original ruxitagentproc.conf to _ruxitagentproc.conf")
+		log.Info("saving original ruxitagentproc.conf", "source path", sourcePath, "destination path", destPath)
 		fileInfo, err := fs.Stat(destPath)
 		if err != nil {
 			return err

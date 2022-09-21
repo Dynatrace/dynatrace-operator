@@ -26,6 +26,18 @@ func (pr PathResolver) ImageCertPath(tenantUUID string) string {
 	return filepath.Join(pr.TenantDir(tenantUUID), "ca.crt")
 }
 
+func (pr PathResolver) DynakubeDir(dynakubeName string) string {
+	return filepath.Join(pr.RootDir, dynakubeName)
+}
+
+func (pr PathResolver) DynakubeConfigDir(dynakubeName string) string {
+	return filepath.Join(pr.DynakubeDir(dynakubeName), "agent", "conf")
+}
+
+func (pr PathResolver) AgentConfigDirForDynakube(dynakubeName string) string {
+	return filepath.Join(pr.DynakubeConfigDir(dynakubeName), "ruxitagentproc.conf")
+}
+
 func (pr PathResolver) AgentProcessModuleConfigForVersion(tenantUUID string, version string) string {
 	return filepath.Join(pr.AgentBinaryDirForVersion(tenantUUID, version), "agent", "conf", "ruxitagentproc.conf")
 }
@@ -34,8 +46,8 @@ func (pr PathResolver) SourceAgentProcessModuleConfigForVersion(tenantUUID strin
 	return filepath.Join(pr.AgentBinaryDirForVersion(tenantUUID, version), "agent", "conf", "_ruxitagentproc.conf")
 }
 
-func (pr PathResolver) AgentRuxitProcResponseCache(tenantUUID string) string {
-	return filepath.Join(pr.TenantDir(tenantUUID), "revision.json")
+func (pr PathResolver) AgentRuxitProcResponseCache(dynakubeName string) string {
+	return filepath.Join(pr.DynakubeDir(dynakubeName), "revision.json")
 }
 
 func (pr PathResolver) AgentBinaryDirForVersion(tenantUUID string, version string) string {
@@ -56,10 +68,6 @@ func (pr PathResolver) AgentSharedBinaryDirForImage(digest string) string {
 
 func (pr PathResolver) AgentConfigDir(tenantUUID string) string {
 	return filepath.Join(pr.TenantDir(tenantUUID), dtcsi.SharedAgentConfigDir)
-}
-
-func (pr PathResolver) AgentConfigDirForDynakube(dynakubeName string) string {
-	return filepath.Join(pr.RootDir, dynakubeName)
 }
 
 func (pr PathResolver) InnerAgentBinaryDirForSymlinkForVersion(tenantUUID string, version string) string {

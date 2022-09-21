@@ -80,12 +80,14 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	log.Info("reconciling DynaKube", "namespace", request.Namespace, "dynakube", request.Name)
 
 	dk, err := provisioner.getDynaKube(ctx, request.NamespacedName)
+
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			return reconcile.Result{}, provisioner.db.DeleteDynakube(ctx, request.Name)
 		}
 		return reconcile.Result{}, err
 	}
+
 	if !dk.NeedsCSIDriver() {
 		log.Info("CSI driver not needed")
 		return reconcile.Result{RequeueAfter: longRequeueDuration}, provisioner.db.DeleteDynakube(ctx, request.Name)
@@ -137,7 +139,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		return reconcile.Result{}, err
 	}
 
-	err = provisioner.writeProcessModuleConfigCache(dynakubeMetadata.TenantUUID, latestProcessModuleConfigCache)
+	err = provisioner.writeProcessModuleConfigCache(dynakubeMetadata.Name, latestProcessModuleConfigCache)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -150,7 +152,7 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Cont
 	requeue bool,
 	err error,
 ) {
-	latestProcessModuleConfig, _, err := provisioner.getProcessModuleConfig(dtc, dynakubeMetadata.TenantUUID)
+	latestProcessModuleConfig, _, err := provisioner.getProcessModuleConfig(dtc, dynakubeMetadata.Name)
 	if err != nil {
 		log.Error(err, "error when getting the latest ruxitagentproc.conf")
 		return nil, false, err
@@ -275,7 +277,7 @@ func (provisioner *OneAgentProvisioner) createCSIDirectories(dynakubeMetadata *m
 		return fmt.Errorf("failed to create directory %s: %w", agentBinaryDir, err)
 	}
 
-	agentConfigDir := provisioner.path.AgentConfigDirForDynakube(dynakubeMetadata.Name)
+	agentConfigDir := provisioner.path.DynakubeConfigDir(dynakubeMetadata.Name)
 	err := provisioner.fs.MkdirAll(agentConfigDir, 0755)
 
 	if err != nil {

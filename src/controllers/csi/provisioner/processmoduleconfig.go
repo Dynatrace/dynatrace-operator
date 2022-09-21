@@ -31,9 +31,9 @@ func newProcessModuleConfigCache(pmc *dtclient.ProcessModuleConfig) *processModu
 
 // getProcessModuleConfig gets the latest `RuxitProcResponse`, it can come from the tenant if we don't have the latest revision saved locally,
 // otherwise we use the locally cached response
-func (provisioner *OneAgentProvisioner) getProcessModuleConfig(dtc dtclient.Client, tenantUUID string) (*dtclient.ProcessModuleConfig, string, error) {
+func (provisioner *OneAgentProvisioner) getProcessModuleConfig(dtc dtclient.Client, dynakubeName string) (*dtclient.ProcessModuleConfig, string, error) {
 	var storedHash string
-	storedProcessModuleConfig, err := provisioner.readProcessModuleConfigCache(tenantUUID)
+	storedProcessModuleConfig, err := provisioner.readProcessModuleConfigCache(dynakubeName)
 	if os.IsNotExist(err) {
 		latestProcessModuleConfig, err := dtc.GetProcessModuleConfig(0)
 		if err != nil {
@@ -54,11 +54,11 @@ func (provisioner *OneAgentProvisioner) getProcessModuleConfig(dtc dtclient.Clie
 	return storedProcessModuleConfig.ProcessModuleConfig, storedHash, nil
 }
 
-func (provisioner *OneAgentProvisioner) readProcessModuleConfigCache(tenantUUID string) (*processModuleConfigCache, error) {
-	processModuleConfigCacheFile, err := provisioner.fs.Open(provisioner.path.AgentRuxitProcResponseCache(tenantUUID))
+func (provisioner *OneAgentProvisioner) readProcessModuleConfigCache(dynakubeName string) (*processModuleConfigCache, error) {
+	processModuleConfigCacheFile, err := provisioner.fs.Open(provisioner.path.AgentRuxitProcResponseCache(dynakubeName))
 	if err != nil {
 		if !os.IsNotExist(err) {
-			provisioner.removeProcessModuleConfigCache(tenantUUID)
+			provisioner.removeProcessModuleConfigCache(dynakubeName)
 		}
 		return nil, err
 	}
@@ -68,28 +68,28 @@ func (provisioner *OneAgentProvisioner) readProcessModuleConfigCache(tenantUUID 
 		if err := processModuleConfigCacheFile.Close(); err != nil {
 			log.Error(errors.WithStack(err), "error closing file after trying to read it")
 		}
-		provisioner.removeProcessModuleConfigCache(tenantUUID)
+		provisioner.removeProcessModuleConfigCache(dynakubeName)
 		return nil, errors.Wrapf(err, "error reading processModuleConfigCache")
 	}
 
 	if err := processModuleConfigCacheFile.Close(); err != nil {
-		provisioner.removeProcessModuleConfigCache(tenantUUID)
+		provisioner.removeProcessModuleConfigCache(dynakubeName)
 		return nil, errors.Wrapf(err, "error closing file after reading processModuleConfigCache")
 	}
 
 	var processModuleConfig processModuleConfigCache
 	if err := json.Unmarshal(jsonBytes, &processModuleConfig); err != nil {
-		provisioner.removeProcessModuleConfigCache(tenantUUID)
+		provisioner.removeProcessModuleConfigCache(dynakubeName)
 		return nil, errors.Wrapf(err, "error when unmarshalling processModuleConfigCache")
 	}
 
 	return &processModuleConfig, nil
 }
 
-func (provisioner *OneAgentProvisioner) writeProcessModuleConfigCache(tenantUUID string, processModuleConfig *processModuleConfigCache) error {
-	processModuleConfigCacheFile, err := provisioner.fs.OpenFile(provisioner.path.AgentRuxitProcResponseCache(tenantUUID), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+func (provisioner *OneAgentProvisioner) writeProcessModuleConfigCache(dynakubeName string, processModuleConfig *processModuleConfigCache) error {
+	processModuleConfigCacheFile, err := provisioner.fs.OpenFile(provisioner.path.AgentRuxitProcResponseCache(dynakubeName), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
-		provisioner.removeProcessModuleConfigCache(tenantUUID)
+		provisioner.removeProcessModuleConfigCache(dynakubeName)
 		return errors.Wrapf(err, "error opening processModuleConfigCache, when writing")
 	}
 
@@ -98,24 +98,24 @@ func (provisioner *OneAgentProvisioner) writeProcessModuleConfigCache(tenantUUID
 		if err := processModuleConfigCacheFile.Close(); err != nil {
 			log.Error(errors.WithStack(err), "error closing file after trying to unmarshal")
 		}
-		provisioner.removeProcessModuleConfigCache(tenantUUID)
+		provisioner.removeProcessModuleConfigCache(dynakubeName)
 		return errors.Wrapf(err, "error when marshaling processModuleConfigCache")
 	}
 
 	if _, err := processModuleConfigCacheFile.Write(jsonBytes); err != nil {
-		provisioner.removeProcessModuleConfigCache(tenantUUID)
+		provisioner.removeProcessModuleConfigCache(dynakubeName)
 		return errors.Wrapf(err, "error writing processModuleConfigCache")
 	}
 
 	if err := processModuleConfigCacheFile.Close(); err != nil {
-		provisioner.removeProcessModuleConfigCache(tenantUUID)
+		provisioner.removeProcessModuleConfigCache(dynakubeName)
 		return errors.Wrapf(err, "error closing file after writing processModuleConfigCache")
 	}
 	return nil
 }
 
-func (provisioner *OneAgentProvisioner) removeProcessModuleConfigCache(tenantUUID string) {
-	err := provisioner.fs.Remove(provisioner.path.AgentRuxitProcResponseCache(tenantUUID))
+func (provisioner *OneAgentProvisioner) removeProcessModuleConfigCache(dynakubeName string) {
+	err := provisioner.fs.Remove(provisioner.path.AgentRuxitProcResponseCache(dynakubeName))
 	if err != nil {
 		log.Error(errors.WithStack(err), "error removing processModuleConfigCache")
 	}

@@ -21,6 +21,7 @@ type agentUpdater struct {
 	fs            afero.Fs
 	path          metadata.PathResolver
 	targetDir     string
+	configDir     string
 	targetVersion string
 	tenantUUID    string
 	installer     installer.Installer
@@ -48,6 +49,7 @@ func newAgentUrlUpdater(
 		fs:            fs,
 		path:          path,
 		targetDir:     path.AgentBinaryDirForVersion(tenantUUID, targetVersion),
+		configDir:     path.DynakubeConfigDir(dk.Name),
 		targetVersion: targetVersion,
 		tenantUUID:    tenantUUID,
 		installer:     agentInstaller,
@@ -76,11 +78,11 @@ func newAgentImageUpdater(
 		recorder: recorder,
 		dynakube: dk,
 	}
-
 	return &agentUpdater{
 		fs:            fs,
 		path:          path,
 		targetDir:     path.AgentConfigDir(tenantUUID),
+		configDir:     path.AgentConfigDirForDynakube(dk.Name),
 		targetVersion: dk.CodeModulesVersion(),
 		tenantUUID:    tenantUUID,
 		installer:     agentInstaller,
@@ -141,8 +143,8 @@ func (updater *agentUpdater) updateAgent(latestProcessModuleConfigCache *process
 	}
 	updatedVersion = updater.targetVersion
 
-	log.Info("updating ruxitagentproc.conf on latest installed version")
-	if err := updater.installer.UpdateProcessModuleConfig(updater.targetDir, latestProcessModuleConfigCache.ProcessModuleConfig); err != nil {
+	log.Info("updating ruxitagentproc.conf on latest installed version", "config dir", updater.configDir, "target dir", updater.targetDir)
+	if err := updater.installer.UpdateProcessModuleConfig(updater.configDir, updater.targetDir, latestProcessModuleConfigCache.ProcessModuleConfig); err != nil {
 		return "", err
 	}
 	return updatedVersion, nil

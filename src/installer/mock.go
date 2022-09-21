@@ -16,7 +16,7 @@ func (mock *InstallerMock) InstallAgent(targetDir string) (bool, error) {
 	return args.Bool(0), args.Error(1)
 }
 
-func (mock *InstallerMock) UpdateProcessModuleConfig(targetDir string, processModuleConfig *dtclient.ProcessModuleConfig) error {
-	args := mock.Called(targetDir, processModuleConfig)
+func (mock *InstallerMock) UpdateProcessModuleConfig(configDir string, agentInstallerDir string, processModuleConfig *dtclient.ProcessModuleConfig) error {
+	args := mock.Called(configDir, agentInstallerDir, processModuleConfig)
 	return args.Error(0)
 }

@@ -145,14 +145,16 @@ func (publisher *AppVolumePublisher) fireVolumeUnpublishedMetric(volume metadata
 	}
 }
 
-func (publisher *AppVolumePublisher) buildLowerDir(bindCfg *csivolumes.BindConfig) string {
+func (publisher *AppVolumePublisher) buildLowerDir(bindCfg *csivolumes.BindConfig, dynakubeName string) string {
 	var directories []string
 	if bindCfg.ImageDigest == "" {
 		directories = []string{
+			publisher.path.DynakubeDir(dynakubeName),
 			publisher.path.AgentBinaryDirForVersion(bindCfg.TenantUUID, bindCfg.Version),
 		}
 	} else {
 		directories = []string{
+			publisher.path.DynakubeDir(dynakubeName),
 			publisher.path.AgentConfigDir(bindCfg.TenantUUID),
 			publisher.path.AgentSharedBinaryDirForImage(bindCfg.ImageDigest),
 		}
@@ -172,7 +174,7 @@ func (publisher *AppVolumePublisher) mountOneAgent(bindCfg *csivolumes.BindConfi
 	_ = publisher.fs.MkdirAll(workDir, os.ModePerm)
 
 	overlayOptions := []string{
-		"lowerdir=" + publisher.buildLowerDir(bindCfg),
+		"lowerdir=" + publisher.buildLowerDir(bindCfg, volumeCfg.DynakubeName),
 		"upperdir=" + upperDir,
 		"workdir=" + workDir,
 	}

@@ -6,5 +6,5 @@ import (
 
 type Installer interface {
 	InstallAgent(targetDir string) (bool, error)
-	UpdateProcessModuleConfig(targetDir string, processModuleConfig *dtclient.ProcessModuleConfig) error
+	UpdateProcessModuleConfig(configDir string, agentInstallDir string, processModuleConfig *dtclient.ProcessModuleConfig) error
 }

@@ -70,9 +70,9 @@ func (installer *ImageInstaller) InstallAgent(targetDir string) (bool, error) {
 	return true, nil
 }
 
-func (installer ImageInstaller) UpdateProcessModuleConfig(targetDir string, processModuleConfig *dtypes.ProcessModuleConfig) error {
+func (installer ImageInstaller) UpdateProcessModuleConfig(configDir string, _ string, processModuleConfig *dtypes.ProcessModuleConfig) error {
 	sourceDir := installer.props.PathResolver.AgentSharedBinaryDirForImage(installer.ImageDigest())
-	return processmoduleconfig.CreateAgentConfigDir(installer.fs, targetDir, sourceDir, processModuleConfig)
+	return processmoduleconfig.CreateAgentConfigDir(installer.fs, configDir, sourceDir, processModuleConfig)
 }
 
 func (installer *ImageInstaller) installAgentFromImage() error {

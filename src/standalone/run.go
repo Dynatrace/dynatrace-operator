@@ -124,7 +124,7 @@ func (runner *Runner) installOneAgent() error {
 	if err != nil {
 		return err
 	}
-	if err := runner.installer.UpdateProcessModuleConfig(config.AgentBinDirMount, processModuleConfig); err != nil {
+	if err := runner.installer.UpdateProcessModuleConfig(config.AgentBinDirMount, config.AgentBinDirMount, processModuleConfig); err != nil {
 		return err
 	}
 	return nil

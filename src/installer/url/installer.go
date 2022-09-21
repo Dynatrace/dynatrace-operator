@@ -69,8 +69,8 @@ func (installer UrlInstaller) InstallAgent(targetDir string) (bool, error) {
 	return true, nil
 }
 
-func (installer UrlInstaller) UpdateProcessModuleConfig(targetDir string, processModuleConfig *dtclient.ProcessModuleConfig) error {
-	return processmoduleconfig.UpdateProcessModuleConfigInPlace(installer.fs, targetDir, processModuleConfig)
+func (installer UrlInstaller) UpdateProcessModuleConfig(configDir string, agentInstallDir string, processModuleConfig *dtclient.ProcessModuleConfig) error {
+	return processmoduleconfig.UpdateProcessModuleConfigInPlace(installer.fs, agentInstallDir, configDir, processModuleConfig)
 }
 
 func (installer UrlInstaller) installAgentFromUrl(targetDir string) error {
