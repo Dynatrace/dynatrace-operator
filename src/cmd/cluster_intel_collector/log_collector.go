@@ -9,54 +9,54 @@ import (
 
 const tarFileName = "%s/operator-cic-%s.tgz"
 
-func collectLogs(ctx *intelCollectorContext, tarball *intelTarball) error {
-	podList, err := getPodList(ctx)
+func collectLogs(cicCtx *intelCollectorContext, tarball *intelTarball) error {
+	podList, err := getPodList(cicCtx)
 	if err != nil {
 		return err
 	}
 
 	for _, pod := range podList.Items {
 		podGetOptions := metav1.GetOptions{}
-		pod, err := ctx.clientSet.CoreV1().Pods(ctx.namespaceName).Get(ctx.ctx, pod.Name, podGetOptions)
+		pod, err := cicCtx.clientSet.CoreV1().Pods(cicCtx.namespaceName).Get(cicCtx.ctx, pod.Name, podGetOptions)
 		if err != nil {
 			return err
 		}
-		getPodLogs(ctx, tarball, pod)
+		getPodLogs(cicCtx, tarball, pod)
 	}
 	return nil
 }
 
-func getPodList(ctx *intelCollectorContext) (*corev1.PodList, error) {
+func getPodList(cicCtx *intelCollectorContext) (*corev1.PodList, error) {
 	listOptions := metav1.ListOptions{
 		TypeMeta: metav1.TypeMeta{
 			Kind: "pod",
 		},
 	}
 
-	podList, err := ctx.clientSet.CoreV1().Pods(ctx.namespaceName).List(ctx.ctx, listOptions)
+	podList, err := cicCtx.clientSet.CoreV1().Pods(cicCtx.namespaceName).List(cicCtx.ctx, listOptions)
 	if err != nil {
 		return nil, err
 	}
 	return podList, nil
 }
 
-func getPodLogs(ctx *intelCollectorContext, tarball *intelTarball, pod *corev1.Pod) {
+func getPodLogs(cicCtx *intelCollectorContext, tarball *intelTarball, pod *corev1.Pod) {
 	for _, container := range pod.Spec.Containers {
 		podLogOpts := corev1.PodLogOptions{
 			Container: container.Name,
 			Follow:    false,
 		}
-		getContainerLogs(ctx, tarball, pod, container, podLogOpts)
+		getContainerLogs(cicCtx, tarball, pod, container, podLogOpts)
 
 		podLogOpts.Previous = true
-		getContainerLogs(ctx, tarball, pod, container, podLogOpts)
+		getContainerLogs(cicCtx, tarball, pod, container, podLogOpts)
 	}
 }
 
-func getContainerLogs(ctx *intelCollectorContext, tarball *intelTarball, pod *corev1.Pod, container corev1.Container, logOptions corev1.PodLogOptions) {
-	req := ctx.clientSet.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &logOptions)
+func getContainerLogs(cicCtx *intelCollectorContext, tarball *intelTarball, pod *corev1.Pod, container corev1.Container, logOptions corev1.PodLogOptions) {
+	req := cicCtx.clientSet.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &logOptions)
 
-	podLogs, err := req.Stream(ctx.ctx)
+	podLogs, err := req.Stream(cicCtx.ctx)
 
 	switch {
 	case logOptions.Previous && err != nil:

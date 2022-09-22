@@ -14,9 +14,9 @@ var (
 
 type intelCollectorContext struct {
 	ctx           context.Context
-	clientSet     *kubernetes.Clientset // used to get access to logs
-	apiReader     client.Reader         // used for manifest collection
-	namespaceName string                // the default namespace ("dynatrace") or provided in the command line
+	clientSet     kubernetes.Interface // used to get access to logs
+	apiReader     client.Reader        // used for manifest collection
+	namespaceName string               // the default namespace ("dynatrace") or provided in the command line
 	toStdout      bool
 	targetDir     string
 }
@@ -26,7 +26,7 @@ type manifestSpec struct {
 	listOptions []client.ListOption
 }
 
-func getManifestList(ctx *intelCollectorContext) []manifestSpec {
+func getRelevantManifests(ctx *intelCollectorContext) []manifestSpec {
 	return []manifestSpec{
 		{
 			gvk: schema.GroupVersionKind{
