@@ -31,10 +31,8 @@ rules:
       - resourcequotas
       - pods/proxy
       - nodes/proxy
-      - services
-      {{- if default false (.Values.additionalPermissions).pvcMonitoring}}
       - nodes/metrics
-      {{- end }}
+      - services
     verbs:
       - list
       - watch
