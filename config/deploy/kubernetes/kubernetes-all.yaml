@@ -163,7 +163,6 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.0
-  creationTimestamp: null
   name: dynakubes.dynatrace.com
 spec:
   conversion:
@@ -3515,6 +3514,7 @@ rules:
       - resourcequotas
       - pods/proxy
       - nodes/proxy
+      - nodes/metrics
       - services
     verbs:
       - list
