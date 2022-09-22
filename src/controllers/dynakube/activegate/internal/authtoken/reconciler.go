@@ -17,7 +17,10 @@ import (
 
 const (
 	ActiveGateAuthTokenName   = "auth-token"
-	AuthTokenRotationInterval = time.Hour * 24 * 29
+	AuthTokenRotationInterval = time.Hour*24*30 - AuthTokenBuffer
+
+	// Buffer to avoid warnings in the UI
+	AuthTokenBuffer = time.Hour * 24 * 1
 )
 
 var _ kubeobjects.Reconciler = &Reconciler{}
