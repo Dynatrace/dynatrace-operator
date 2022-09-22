@@ -70,6 +70,7 @@ func TestUpdateNamespace(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, updated)
 		assert.Equal(t, 2, len(namespace.Labels))
+		assert.Equal(t, dk.Name, namespace.Labels[dtwebhook.InjectionInstanceLabel])
 	})
 	t.Run("Remove stale dynakube entry for no longer matching ns", func(t *testing.T) {
 		labels := map[string]string{"test": "selector"}
@@ -135,6 +136,7 @@ func TestUpdateNamespace(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, updated)
 		assert.Equal(t, 2, len(namespace.Labels))
+		assert.Equal(t, notIgnoreDk.Name, namespace.Labels[dtwebhook.InjectionInstanceLabel])
 	})
 	t.Run("Double dynakube, 1. doesn't, 2. ignores openshift namespaces", func(t *testing.T) {
 		labels := map[string]string{"test": "selector"}
@@ -151,5 +153,6 @@ func TestUpdateNamespace(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, updated)
 		assert.Equal(t, 2, len(namespace.Labels))
+		assert.Equal(t, notIgnoreDk.Name, namespace.Labels[dtwebhook.InjectionInstanceLabel])
 	})
 }
