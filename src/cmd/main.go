@@ -26,7 +26,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/troubleshoot"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/webhook"
 	"github.com/Dynatrace/dynatrace-operator/src/logger"
-	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -82,7 +81,7 @@ func createTroubleshootCommandBuilder() troubleshoot.CommandBuilder {
 }
 
 func createLogCollectorCommandBuilder() cluster_intel_collector.CommandBuilder {
-	return cluster_intel_collector.NewLogCollectorCommandBuilder().
+	return cluster_intel_collector.NewCicCommandBuilder().
 		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
 }
 
@@ -91,7 +90,6 @@ func rootCommand(_ *cobra.Command, _ []string) error {
 }
 
 func main() {
-	version.LogVersion()
 	ctrl.SetLogger(log)
 	cmd := newRootCommand()
 

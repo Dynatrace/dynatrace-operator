@@ -8,6 +8,6 @@ import (
 )
 
 func BenchmarkLogCollector(b *testing.B) {
-	logCollectorCmd := NewLogCollectorCommandBuilder().SetConfigProvider(cmdConfig.NewKubeConfigProvider()).Build()
+	logCollectorCmd := NewCicCommandBuilder().SetConfigProvider(cmdConfig.NewKubeConfigProvider()).Build()
 	logCollectorCmd.Execute()
 }
