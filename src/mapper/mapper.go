@@ -78,7 +78,7 @@ func updateNamespace(namespace *corev1.Namespace, deployedDynakubes *dynatracev1
 	for i := range deployedDynakubes.Items {
 		dynakube := &deployedDynakubes.Items[i]
 		if isIgnoredNamespace(dynakube, namespace.Name) {
-			return false, nil
+			continue
 		}
 		matches, err := match(dynakube, namespace)
 
