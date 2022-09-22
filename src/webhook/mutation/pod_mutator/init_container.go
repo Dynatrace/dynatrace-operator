@@ -7,6 +7,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -27,20 +28,50 @@ func createInstallInitContainerBase(webhookImage, clusterID string, pod *corev1.
 			{Name: config.K8sNamespaceEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("metadata.namespace")},
 			{Name: config.K8sNodeNameEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("spec.nodeName")},
 		},
-		SecurityContext: copyUserContainerSecurityContext(pod),
+		SecurityContext: securityContextForInitContainer(pod),
 		Resources:       *dynakube.InitResources(),
 	}
 }
 
-func copyUserContainerSecurityContext(pod *corev1.Pod) *corev1.SecurityContext {
-	var securityContext *corev1.SecurityContext
-	if len(pod.Spec.Containers) == 0 {
-		return securityContext
+func securityContextForInitContainer(pod *corev1.Pod) *corev1.SecurityContext {
+	securityContext := &corev1.SecurityContext{
+		RunAsNonRoot:             address.Of(true),
+		ReadOnlyRootFilesystem:   address.Of(true),
+		AllowPrivilegeEscalation: address.Of(false),
+		Privileged:               address.Of(false),
+		Capabilities: &corev1.Capabilities{
+			Drop: []corev1.Capability{
+				"ALL",
+			},
+		},
+		SeccompProfile: &corev1.SeccompProfile{
+			Type: corev1.SeccompProfileTypeRuntimeDefault,
+		},
 	}
-	if pod.Spec.Containers[0].SecurityContext != nil {
-		securityContext = pod.Spec.Containers[0].SecurityContext.DeepCopy()
+
+	containerSecurityContext := pod.Spec.Containers[0].SecurityContext
+	podSecurityContext := pod.Spec.SecurityContext
+
+	if hasContainerUserAndGroupSet(containerSecurityContext) {
+		securityContext.RunAsGroup = containerSecurityContext.RunAsGroup
+		securityContext.RunAsUser = containerSecurityContext.RunAsUser
+	} else if hasPodUserAndGroupSet(podSecurityContext) {
+		securityContext.RunAsGroup = podSecurityContext.RunAsGroup
+		securityContext.RunAsUser = podSecurityContext.RunAsUser
+	} else {
+		securityContext.RunAsGroup = address.Of(int64(1001))
+		securityContext.RunAsUser = address.Of(int64(1001))
 	}
+
 	return securityContext
+}
+
+func hasContainerUserAndGroupSet(ctx *corev1.SecurityContext) bool {
+	return ctx != nil && ctx.RunAsUser != nil && ctx.RunAsGroup != nil
+}
+
+func hasPodUserAndGroupSet(ctx *corev1.PodSecurityContext) bool {
+	return ctx != nil && ctx.RunAsUser != nil && ctx.RunAsGroup != nil
 }
 
 func getBasePodName(pod *corev1.Pod) string {
