@@ -70,6 +70,3 @@ csidriver:
 
 securityContextConstraints:
   enabled: true # Only applicable for Openshift
-
-additionalPermissions:
-  pvcMonitoring: false
