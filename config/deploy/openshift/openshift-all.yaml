@@ -3528,6 +3528,7 @@ rules:
       - resourcequotas
       - pods/proxy
       - nodes/proxy
+      - nodes/metrics
       - services
     verbs:
       - list
