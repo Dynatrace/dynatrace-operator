@@ -112,11 +112,9 @@ tests:
                   requests:
                     cpu: 300m
                     memory: 128Mi
-                    ephemeral-storage: 10Mi
                   limits:
                     cpu: 300m
                     memory: 128Mi
-                    ephemeral-storage: 10Mi
                 volumeMounts:
                   - name: certs-dir
                     mountPath: /tmp/k8s-webhook-server/serving-certs/
@@ -261,11 +259,9 @@ tests:
                   requests:
                     cpu: 300m
                     memory: 128Mi
-                    ephemeral-storage: 10Mi
                   limits:
                     cpu: 300m
                     memory: 128Mi
-                    ephemeral-storage: 10Mi
                 volumeMounts:
                   - name: certs-dir
                     mountPath: /tmp/k8s-webhook-server/serving-certs/
@@ -380,11 +376,9 @@ tests:
                   requests:
                     cpu: 300m
                     memory: 128Mi
-                    ephemeral-storage: 10Mi
                   limits:
                     cpu: 300m
                     memory: 128Mi
-                    ephemeral-storage: 10Mi
                 volumeMounts:
                   - name: certs-dir
                     mountPath: /tmp/k8s-webhook-server/serving-certs/
@@ -462,3 +456,18 @@ tests:
       - equal:
           path: spec.template.metadata.labels.testKey
           value: testValue
+
+  - it: should set ephemeral-storage request/limits
+    set:
+      platform: kubernetes
+      webhook.requests:
+        ephemeral-storage: 320
+      webhook.limits:
+        ephemeral-storage: 420
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.ephemeral-storage
+          value: 420
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.ephemeral-storage
+          value: 320
