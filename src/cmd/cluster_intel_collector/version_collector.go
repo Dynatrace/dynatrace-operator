@@ -10,7 +10,7 @@ import (
 
 const versionFileName = "operator-version.txt"
 
-func collectOperatorVersion(ctx *intelCollectorContext, tarball *intelTarball) error {
+func collectOperatorVersion(_ *intelCollectorContext, tarball *intelTarball) error {
 
 	versionString := fmt.Sprintf("version: %s\ngitCommit: %s\nbuildDate: %s\ngoVersion %s\nplatform %s/%s\n",
 		version.Version,

@@ -47,6 +47,7 @@ func (builder CommandBuilder) GetCluster(kubeConfig *rest.Config) (cluster.Clust
 func (builder CommandBuilder) Build() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:  use,
+		Long: "Pack logs and manifests useful for troubleshooting into single tarball",
 		RunE: builder.buildRun(),
 	}
 	addFlags(cmd)
