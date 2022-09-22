@@ -2,6 +2,8 @@ package cluster_intel_collector
 
 import (
 	"context"
+	"fmt"
+	"os"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
@@ -15,14 +17,12 @@ import (
 const (
 	use               = "cic"
 	namespaceFlagName = "namespace"
-	streamFlagName    = "stream"
 	stdoutFlagName    = "stdout"
 	targetDirFlagName = "out"
 )
 
 var (
 	namespaceFlagValue string
-	streamFlagValue    bool
 	stdoutFlagValue    bool
 	targetDirFlagValue string
 )
@@ -31,7 +31,7 @@ type CommandBuilder struct {
 	configProvider config.Provider
 }
 
-func NewLogCollectorCommandBuilder() CommandBuilder {
+func NewCicCommandBuilder() CommandBuilder {
 	return CommandBuilder{}
 }
 
@@ -55,7 +55,6 @@ func (builder CommandBuilder) Build() *cobra.Command {
 
 func addFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&namespaceFlagValue, namespaceFlagName, "dynatrace", "Specify a different Namespace.")
-	cmd.PersistentFlags().BoolVar(&streamFlagValue, streamFlagName, false, "Stream logs.")
 	cmd.PersistentFlags().BoolVar(&stdoutFlagValue, stdoutFlagName, false, "Write tarball to stdout.")
 	cmd.PersistentFlags().StringVar(&targetDirFlagValue, targetDirFlagName, "/tmp/dynatrace-operator", "Target location for tarball.")
 }
@@ -87,24 +86,40 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		}
 		apiReader := k8scluster.GetAPIReader()
 
-		intelCollectorContext := intelCollectorContext{
+		ctx := intelCollectorContext{
 			ctx:           context.TODO(),
 			clientSet:     clientSet,
 			apiReader:     apiReader,
 			namespaceName: namespaceFlagValue,
-			stream:        streamFlagValue,
 			toStdout:      stdoutFlagValue,
 			targetDir:     targetDirFlagValue,
 		}
 
-		tarball, err := newTarball(&intelCollectorContext)
+		tarball, err := newTarball(&ctx)
 		if err != nil {
 			return err
 		}
 		defer tarball.close()
 
-		collectLogs(&intelCollectorContext, tarball)
-		collectManifests(&intelCollectorContext, tarball)
+		collectors := []func(*intelCollectorContext, *intelTarball) error{
+			collectOperatorVersion,
+			collectLogs,
+			collectManifests,
+		}
+
+		for _, c := range collectors {
+			if err := c(&ctx, tarball); err != nil {
+				logErrorf("failed collector: %v", err)
+			}
+		}
+
+		if !ctx.toStdout {
+			fmt.Printf("kubectl -n %s cp %s:%s .%s\n",
+				os.Getenv("POD_NAMESPACE"),
+				os.Getenv("POD_NAME"),
+				tarball.tarFile.Name(),
+				tarball.tarFile.Name())
+		}
 		return nil
 	}
 }

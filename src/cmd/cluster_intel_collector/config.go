@@ -17,7 +17,6 @@ type intelCollectorContext struct {
 	clientSet     *kubernetes.Clientset // used to get access to logs
 	apiReader     client.Reader         // used for manifest collection
 	namespaceName string                // the default namespace ("dynatrace") or provided in the command line
-	stream        bool
 	toStdout      bool
 	targetDir     string
 }

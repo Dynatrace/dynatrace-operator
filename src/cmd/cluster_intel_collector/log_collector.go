@@ -57,7 +57,13 @@ func getContainerLogs(ctx *intelCollectorContext, tarball *intelTarball, pod *co
 	req := ctx.clientSet.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &logOptions)
 
 	podLogs, err := req.Stream(ctx.ctx)
-	if err != nil {
+
+	switch {
+	case logOptions.Previous && err != nil:
+		// Soften error message for previous pods a bit, so users don't get nervous. Previous pods often just didn't exist.
+		logInfof("logs for previous pod not found: %v", err)
+		return
+	case err != nil:
 		logErrorf("error in opening stream: %v", err)
 		return
 	}
