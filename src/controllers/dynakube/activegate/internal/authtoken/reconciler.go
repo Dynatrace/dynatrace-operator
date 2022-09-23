@@ -16,8 +16,11 @@ import (
 )
 
 const (
-	ActiveGateAuthTokenName   = "auth-token"
-	AuthTokenRotationInterval = time.Hour * 24 * 30
+	ActiveGateAuthTokenName = "auth-token"
+
+	// Buffer to avoid warnings in the UI
+	AuthTokenBuffer           = time.Hour * 24
+	AuthTokenRotationInterval = time.Hour*24*30 - AuthTokenBuffer
 )
 
 type Reconciler struct {
