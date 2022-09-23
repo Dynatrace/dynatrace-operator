@@ -2,6 +2,7 @@ package url
 
 import (
 	"os"
+	"path/filepath"
 
 	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
@@ -75,7 +76,14 @@ func (installer UrlInstaller) UpdateProcessModuleConfig(targetDir string, proces
 
 func (installer UrlInstaller) installAgentFromUrl(targetDir string) error {
 	fs := installer.fs
-	tmpFile, err := afero.TempFile(fs, "", "download")
+	path := ""
+	if installer.isInitContainerMode() {
+		path = targetDir
+	} else {
+		path = filepath.Dir(targetDir)
+	}
+
+	tmpFile, err := afero.TempFile(fs, path, "download")
 	if err != nil {
 		log.Info("failed to create temp file download", "err", err)
 		return errors.WithStack(err)
@@ -98,4 +106,11 @@ func (installer UrlInstaller) isAlreadyDownloaded(targetDir string) bool {
 	}
 	_, err := installer.fs.Stat(targetDir)
 	return !os.IsNotExist(err)
+}
+
+func (installer UrlInstaller) isInitContainerMode() bool {
+	if installer.props != nil {
+		return installer.props.PathResolver.RootDir == config.AgentBinDirMount
+	}
+	return false
 }
