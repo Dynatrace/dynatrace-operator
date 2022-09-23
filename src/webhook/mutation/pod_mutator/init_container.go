@@ -71,11 +71,10 @@ func copySecurityContextUserAndGroup(securityContext *corev1.SecurityContext, po
 		securityContext.RunAsGroup = containerSecurityContext.RunAsGroup
 	}
 
-	if notRoot(securityContext) {
+	if isNonRoot(securityContext) {
 		securityContext.RunAsNonRoot = address.Of(true)
 	}
 }
-
 
 func hasPodUserSet(ctx *corev1.PodSecurityContext) bool {
 	return ctx != nil && ctx.RunAsUser != nil
@@ -93,12 +92,11 @@ func hasContainerGroupSet(ctx *corev1.SecurityContext) bool {
 	return ctx != nil && ctx.RunAsGroup != nil
 }
 
-func notRoot(ctx *corev1.SecurityContext) bool {
+func isNonRoot(ctx *corev1.SecurityContext) bool {
 	return ctx != nil &&
-	 (ctx.RunAsUser != nil && *ctx.RunAsUser != rootUser) &&
-	 (ctx.RunAsGroup != nil && *ctx.RunAsGroup != rootUser)
+		(ctx.RunAsUser != nil && *ctx.RunAsUser != rootUser) &&
+		(ctx.RunAsGroup != nil && *ctx.RunAsGroup != rootUser)
 }
-
 
 func getBasePodName(pod *corev1.Pod) string {
 	basePodName := pod.GenerateName

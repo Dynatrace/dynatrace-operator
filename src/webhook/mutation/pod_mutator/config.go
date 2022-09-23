@@ -10,9 +10,9 @@ const (
 	IncompatibleCRDEvent = "IncompatibleCRDPresent"
 	missingDynakubeEvent = "MissingDynakube"
 
-	defaultUser int64 = 1001
+	defaultUser  int64 = 1001
 	defaultGroup int64 = 1001
-	rootUser int64 = 0
+	rootUser     int64 = 0
 )
 
 var (
