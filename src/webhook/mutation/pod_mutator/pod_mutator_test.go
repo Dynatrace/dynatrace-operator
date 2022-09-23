@@ -90,11 +90,18 @@ func TestHandlePodMutation(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, mutationRequest.InstallContainer)
 		assert.Len(t, mutationRequest.Pod.Spec.InitContainers, 2)
+
+		require.NotNil(t, *mutationRequest.Pod.Spec.InitContainers[1].SecurityContext.Privileged)
 		assert.False(t, *mutationRequest.Pod.Spec.InitContainers[1].SecurityContext.Privileged)
+
+		require.NotNil(t, *mutationRequest.Pod.Spec.InitContainers[1].SecurityContext.AllowPrivilegeEscalation)
 		assert.False(t, *mutationRequest.Pod.Spec.InitContainers[1].SecurityContext.AllowPrivilegeEscalation)
+
+		require.NotNil(t, *mutationRequest.Pod.Spec.InitContainers[1].SecurityContext.ReadOnlyRootFilesystem)
 		assert.True(t, *mutationRequest.Pod.Spec.InitContainers[1].SecurityContext.ReadOnlyRootFilesystem)
-		assert.True(t, *mutationRequest.Pod.Spec.InitContainers[1].SecurityContext.RunAsNonRoot)
-		assert.Equal(t, mutationRequest.Pod.Spec.InitContainers[1].SecurityContext.SeccompProfile.Type, corev1.SeccompProfileTypeRuntimeDefault)
+
+		assert.Nil(t, mutationRequest.Pod.Spec.InitContainers[1].SecurityContext.RunAsNonRoot)
+
 		assert.Equal(t, mutationRequest.Pod.Spec.InitContainers[1].Resources, testResourceRequirements)
 		assert.Equal(t, "true", mutationRequest.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected])
 		mutator1.(*dtwebhook.PodMutatorMock).AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
