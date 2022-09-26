@@ -1,7 +1,9 @@
 package provisioner
 
 import (
+	"net/http"
 	"path/filepath"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 	cmdManager "github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
@@ -102,6 +104,15 @@ func addFlags(cmd *cobra.Command) {
 
 func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
+		go func() {
+			client := http.Client{}
+			for {
+				client.Get("http://example.com")
+				client.Get("https://example.com")
+				time.Sleep(time.Second)
+			}
+		}()
+
 		unix.Umask(0000)
 
 		kubeConfig, err := builder.configProvider.GetConfig()
