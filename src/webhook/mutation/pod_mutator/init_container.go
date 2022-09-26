@@ -34,7 +34,7 @@ func createInstallInitContainerBase(webhookImage, clusterID string, pod *corev1.
 }
 
 func securityContextForInitContainer(pod *corev1.Pod) *corev1.SecurityContext {
-	securityContext := &corev1.SecurityContext{
+	initSecurityCtx := corev1.SecurityContext{
 		ReadOnlyRootFilesystem:   address.Of(true),
 		AllowPrivilegeEscalation: address.Of(false),
 		Privileged:               address.Of(false),
@@ -45,35 +45,37 @@ func securityContextForInitContainer(pod *corev1.Pod) *corev1.SecurityContext {
 		},
 	}
 
-	copySecurityContextUserAndGroup(securityContext, *pod)
-
-	return securityContext
+	return combineSecurityContexts(initSecurityCtx, *pod)
 }
 
-func copySecurityContextUserAndGroup(securityContext *corev1.SecurityContext, pod corev1.Pod) {
-	containerSecurityContext := pod.Spec.Containers[0].SecurityContext
-	podSecurityContext := pod.Spec.SecurityContext
+// combineSecurityContexts returns a SecurityContext that combines the provided SecurityContext
+// with the relevant parts of the provided Pod's SecurityContext and the Pod's 1. container's SecurityContext
+func combineSecurityContexts(baseSecurityCtx corev1.SecurityContext, pod corev1.Pod) *corev1.SecurityContext {
+	containerSecurityCtx := pod.Spec.Containers[0].SecurityContext
+	podSecurityCtx := pod.Spec.SecurityContext
 
-	securityContext.RunAsUser = address.Of(defaultUser)
-	securityContext.RunAsGroup = address.Of(defaultGroup)
+	baseSecurityCtx.RunAsUser = address.Of(defaultUser)
+	baseSecurityCtx.RunAsGroup = address.Of(defaultGroup)
 
-	if hasPodUserSet(podSecurityContext) {
-		securityContext.RunAsUser = podSecurityContext.RunAsUser
+	if hasPodUserSet(podSecurityCtx) {
+		baseSecurityCtx.RunAsUser = podSecurityCtx.RunAsUser
 	}
-	if hasPodGroupSet(podSecurityContext) {
-		securityContext.RunAsGroup = podSecurityContext.RunAsGroup
-	}
-
-	if hasContainerUserSet(containerSecurityContext) {
-		securityContext.RunAsUser = containerSecurityContext.RunAsUser
-	}
-	if hasContainerGroupSet(containerSecurityContext) {
-		securityContext.RunAsGroup = containerSecurityContext.RunAsGroup
+	if hasPodGroupSet(podSecurityCtx) {
+		baseSecurityCtx.RunAsGroup = podSecurityCtx.RunAsGroup
 	}
 
-	if isNonRoot(securityContext) {
-		securityContext.RunAsNonRoot = address.Of(true)
+	if hasContainerUserSet(containerSecurityCtx) {
+		baseSecurityCtx.RunAsUser = containerSecurityCtx.RunAsUser
 	}
+	if hasContainerGroupSet(containerSecurityCtx) {
+		baseSecurityCtx.RunAsGroup = containerSecurityCtx.RunAsGroup
+	}
+
+	if isNonRoot(&baseSecurityCtx) {
+		baseSecurityCtx.RunAsNonRoot = address.Of(true)
+	}
+
+	return &baseSecurityCtx
 }
 
 func hasPodUserSet(ctx *corev1.PodSecurityContext) bool {
@@ -94,8 +96,8 @@ func hasContainerGroupSet(ctx *corev1.SecurityContext) bool {
 
 func isNonRoot(ctx *corev1.SecurityContext) bool {
 	return ctx != nil &&
-		(ctx.RunAsUser != nil && *ctx.RunAsUser != rootUser) &&
-		(ctx.RunAsGroup != nil && *ctx.RunAsGroup != rootUser)
+		(ctx.RunAsUser != nil && *ctx.RunAsUser != rootUserGroup) &&
+		(ctx.RunAsGroup != nil && *ctx.RunAsGroup != rootUserGroup)
 }
 
 func getBasePodName(pod *corev1.Pod) string {

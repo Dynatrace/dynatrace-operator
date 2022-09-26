@@ -97,7 +97,7 @@ func TestHandlePodMutation(t *testing.T) {
 		require.NotNil(t, *mutationRequest.Pod.Spec.InitContainers[1].SecurityContext.AllowPrivilegeEscalation)
 		assert.False(t, *mutationRequest.Pod.Spec.InitContainers[1].SecurityContext.AllowPrivilegeEscalation)
 
-		require.NotNil(t, *mutationRequest.Pod.Spec.InitContainers[1].SecurityContext.ReadOnlyRootFilesystem)
+		require.NotNil(t, mutationRequest.Pod.Spec.InitContainers[1].SecurityContext.ReadOnlyRootFilesystem)
 		assert.True(t, *mutationRequest.Pod.Spec.InitContainers[1].SecurityContext.ReadOnlyRootFilesystem)
 
 		assert.Nil(t, mutationRequest.Pod.Spec.InitContainers[1].SecurityContext.RunAsNonRoot)
