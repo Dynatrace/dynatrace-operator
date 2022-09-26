@@ -91,16 +91,19 @@ func TestHandlePodMutation(t *testing.T) {
 		assert.NotNil(t, mutationRequest.InstallContainer)
 		assert.Len(t, mutationRequest.Pod.Spec.InitContainers, 2)
 
-		require.NotNil(t, *mutationRequest.Pod.Spec.InitContainers[1].SecurityContext.Privileged)
-		assert.False(t, *mutationRequest.Pod.Spec.InitContainers[1].SecurityContext.Privileged)
+		initSecurityContext := mutationRequest.Pod.Spec.InitContainers[1].SecurityContext
+		require.NotNil(t, initSecurityContext)
 
-		require.NotNil(t, *mutationRequest.Pod.Spec.InitContainers[1].SecurityContext.AllowPrivilegeEscalation)
-		assert.False(t, *mutationRequest.Pod.Spec.InitContainers[1].SecurityContext.AllowPrivilegeEscalation)
+		require.NotNil(t, initSecurityContext.Privileged)
+		assert.False(t, *initSecurityContext.Privileged)
 
-		require.NotNil(t, mutationRequest.Pod.Spec.InitContainers[1].SecurityContext.ReadOnlyRootFilesystem)
-		assert.True(t, *mutationRequest.Pod.Spec.InitContainers[1].SecurityContext.ReadOnlyRootFilesystem)
+		require.NotNil(t, initSecurityContext.AllowPrivilegeEscalation)
+		assert.False(t, *initSecurityContext.AllowPrivilegeEscalation)
 
-		assert.Nil(t, mutationRequest.Pod.Spec.InitContainers[1].SecurityContext.RunAsNonRoot)
+		require.NotNil(t, initSecurityContext.ReadOnlyRootFilesystem)
+		assert.True(t, *initSecurityContext.ReadOnlyRootFilesystem)
+
+		assert.Nil(t, initSecurityContext.RunAsNonRoot)
 
 		assert.Equal(t, mutationRequest.Pod.Spec.InitContainers[1].Resources, testResourceRequirements)
 		assert.Equal(t, "true", mutationRequest.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected])

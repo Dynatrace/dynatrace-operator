@@ -49,7 +49,7 @@ func securityContextForInitContainer(pod *corev1.Pod) *corev1.SecurityContext {
 }
 
 // combineSecurityContexts returns a SecurityContext that combines the provided SecurityContext
-// with the relevant parts of the provided Pod's SecurityContext and the Pod's 1. container's SecurityContext
+// with the user/group of the provided Pod's SecurityContext and the 1. container's SecurityContext
 func combineSecurityContexts(baseSecurityCtx corev1.SecurityContext, pod corev1.Pod) *corev1.SecurityContext {
 	containerSecurityCtx := pod.Spec.Containers[0].SecurityContext
 	podSecurityCtx := pod.Spec.SecurityContext
