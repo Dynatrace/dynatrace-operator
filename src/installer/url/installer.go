@@ -84,7 +84,6 @@ func (installer UrlInstaller) installAgentFromUrl(targetDir string) error {
 	}
 
 	tmpFile, err := afero.TempFile(fs, path, "download")
-
 	if err != nil {
 		log.Info("failed to create temp file download", "err", err)
 		return errors.WithStack(err)
@@ -101,17 +100,17 @@ func (installer UrlInstaller) installAgentFromUrl(targetDir string) error {
 	return installer.unpackOneAgentZip(targetDir, tmpFile)
 }
 
-func (installer UrlInstaller) isInitContainerMode() bool {
-	if installer.props != nil {
-		return installer.props.PathResolver.RootDir == config.AgentBinDirMount
-	}
-	return false
-}
-
 func (installer UrlInstaller) isAlreadyDownloaded(targetDir string) bool {
 	if config.AgentBinDirMount == targetDir {
 		return false
 	}
 	_, err := installer.fs.Stat(targetDir)
 	return !os.IsNotExist(err)
+}
+
+func (installer UrlInstaller) isInitContainerMode() bool {
+	if installer.props != nil {
+		return installer.props.PathResolver.RootDir == config.AgentBinDirMount
+	}
+	return false
 }
