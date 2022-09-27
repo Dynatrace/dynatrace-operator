@@ -15,4 +15,5 @@ const (
 var (
 	log                 = logger.NewDTLogger().WithName("nodes-controller")
 	unschedulableTaints = []string{"ToBeDeletedByClusterAutoscaler"}
+	store               *logStore
 )

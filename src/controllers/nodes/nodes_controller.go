@@ -48,6 +48,7 @@ func (controller *NodesController) SetupWithManager(mgr ctrl.Manager) error {
 		WithEventFilter(nodeDeletionPredicate(controller)).
 		Complete(controller)
 }
+
 func nodeDeletionPredicate(controller *NodesController) predicate.Predicate {
 	return predicate.Funcs{
 		DeleteFunc: func(deleteEvent event.DeleteEvent) bool {
@@ -63,6 +64,7 @@ func nodeDeletionPredicate(controller *NodesController) predicate.Predicate {
 
 // NewReconciler returns a new ReconcileDynaKube
 func NewController(mgr manager.Manager) *NodesController {
+	store = newLogStore(mgr.GetAPIReader(), mgr.GetClient())
 	return &NodesController{
 		client:       mgr.GetClient(),
 		apiReader:    mgr.GetAPIReader(),
@@ -75,13 +77,21 @@ func NewController(mgr manager.Manager) *NodesController {
 
 func (controller *NodesController) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	nodeName := request.NamespacedName.Name
+	err := store.createIfNotExist(ctx)
+	if err != nil {
+		log.Info(err.Error())
+	}
+
 	dynakube, err := controller.determineDynakubeForNode(nodeName)
 	if err != nil {
+		_ = store.info(ctx, "could not determine dynakube for node '%s': %v", nodeName, err)
 		return reconcile.Result{}, err
 	}
 
+	_ = store.info(ctx, "found dynakube '%s' for node '%s'", dynakube.Name, nodeName)
 	nodeCache, err := controller.getCache(ctx)
 	if err != nil {
+		_ = store.info(ctx, "could not get cache: %v", err)
 		return reconcile.Result{}, err
 	}
 
@@ -89,8 +99,11 @@ func (controller *NodesController) Reconcile(ctx context.Context, request reconc
 	if err := controller.apiReader.Get(ctx, client.ObjectKey{Name: nodeName}, &node); err != nil {
 		if k8serrors.IsNotFound(err) {
 			log.Info("node was not found in cluster", "node", nodeName)
+			_ = store.info(ctx, "node '%s' was not found in cluster", nodeName)
 			return reconcile.Result{}, nil
 		}
+
+		_ = store.info(ctx, "could not get node '%s': %v", nodeName, err)
 		return reconcile.Result{}, err
 	}
 
@@ -104,15 +117,18 @@ func (controller *NodesController) Reconcile(ctx context.Context, request reconc
 		}
 
 		if cached, err := nodeCache.Get(nodeName); err == nil {
+			_ = store.info(ctx, "node '%s' is cached", nodeName)
 			cacheEntry.LastMarkedForTermination = cached.LastMarkedForTermination
 		}
 
 		if err := nodeCache.Set(nodeName, cacheEntry); err != nil {
+			_ = store.info(ctx, "could not set cache for node '%s', cache entry: '%+v'", nodeName, cacheEntry)
 			return reconcile.Result{}, err
 		}
 
 		//Handle unschedulable Nodes, if they have a OneAgent instance
 		if controller.isUnschedulable(&node) {
+			_ = store.info(ctx, "node '%s' is unschedulable", nodeName)
 			cachedNodeData := CachedNodeInfo{
 				cachedNode: cacheEntry,
 				nodeCache:  nodeCache,
@@ -120,6 +136,7 @@ func (controller *NodesController) Reconcile(ctx context.Context, request reconc
 			}
 
 			if err := controller.markForTermination(dynakube, cachedNodeData); err != nil {
+				_ = store.info(ctx, "could not send mark for temrination event for node '%s': %v", nodeName, err)
 				return reconcile.Result{}, err
 			}
 		}
@@ -127,10 +144,14 @@ func (controller *NodesController) Reconcile(ctx context.Context, request reconc
 
 	// check node cache for outdated nodes and remove them, to keep cache clean
 	if nodeCache.IsCacheOutdated() {
+		_ = store.info(ctx, "cache for node '%s' is outdated", nodeName)
 		if err := controller.handleOutdatedCache(ctx, nodeCache); err != nil {
+			_ = store.info(ctx, "could not handle outdated cache for node '%s': %v", nodeName, err)
 			return reconcile.Result{}, err
 		}
+
 		nodeCache.UpdateTimestamp()
+		_ = store.info(ctx, "cache for node '%s' was handled: %+v", nodeName, nodeCache)
 	}
 	return reconcile.Result{}, controller.updateCache(ctx, nodeCache)
 }
@@ -209,15 +230,20 @@ func (controller *NodesController) getCache(ctx context.Context) (*Cache, error)
 }
 
 func (controller *NodesController) updateCache(ctx context.Context, nodeCache *Cache) error {
+	_ = store.info(ctx, "updateCache: %+v", nodeCache)
 	if !nodeCache.Changed() {
+		_ = store.info(ctx, "cache did not change", nodeCache)
 		return nil
 	}
 
 	if nodeCache.Create {
+		_ = store.info(ctx, "creating cache", nodeCache)
 		return controller.client.Create(context.TODO(), nodeCache.Obj)
 	}
 
+	_ = store.info(ctx, "updating cache", nodeCache)
 	if err := controller.client.Update(ctx, nodeCache.Obj); err != nil {
+		_ = store.info(ctx, "could not update cache: %v", err)
 		return err
 	}
 	return nil
@@ -306,16 +332,19 @@ func (controller *NodesController) sendMarkedForTermination(dynakubeInstance *dy
 
 func (controller *NodesController) markForTermination(dynakube *dynatracev1beta1.DynaKube, cachedNodeData CachedNodeInfo) error {
 	if !controller.isMarkableForTermination(&cachedNodeData.cachedNode) {
+		_ = store.info(context.TODO(), "node '%s' is not schedulable\n%+v", cachedNodeData.nodeName, cachedNodeData)
 		return nil
 	}
 
 	if err := cachedNodeData.nodeCache.updateLastMarkedForTerminationTimestamp(cachedNodeData.cachedNode, cachedNodeData.nodeName); err != nil {
+		_ = store.info(context.TODO(), "could not set cache for node '%s', cache entry: '%+v'", cachedNodeData.nodeName, cachedNodeData)
 		return err
 	}
 
 	log.Info("sending mark for termination event to dynatrace server", "dynakube", dynakube.Name, "ip", cachedNodeData.cachedNode.IPAddress,
 		"node", cachedNodeData.nodeName)
 
+	_ = store.info(context.TODO(), "sending mark for termination event to dynatrace server for node '%s'", cachedNodeData.nodeName)
 	return controller.sendMarkedForTermination(dynakube, cachedNodeData.cachedNode)
 }
 
