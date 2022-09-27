@@ -51,6 +51,7 @@ func (statefulSetBuilder StatefulSetBuilder) getBase() appsv1.StatefulSet {
 	var sts appsv1.StatefulSet
 	sts.ObjectMeta = statefulSetBuilder.getBaseObjectMeta()
 	sts.Spec = statefulSetBuilder.getBaseSpec()
+	sts.Spec.Template.ObjectMeta.Annotations = kubeobjects.MergeMap(sts.Spec.Template.ObjectMeta.Annotations, statefulSetBuilder.dynakube.Spec.ActiveGate.Annotations)
 	statefulSetBuilder.addLabels(&sts)
 	statefulSetBuilder.addTemplateSpec(&sts)
 
