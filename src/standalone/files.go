@@ -31,12 +31,14 @@ tenant %s
 isCloudNativeFullStack true
 `
 
-	jsonEnrichmentContentFormatString = `"k8s.pod.uid": "%s",
-"k8s.pod.name": "%s",
-"k8s.namespace.name": "%s",
-"dt.kubernetes.workload.kind": "%s",
-"dt.kubernetes.workload.name": "%s",
-"dt.kubernetes.cluster.id": "%s"
+	jsonEnrichmentContentFormatString = `{
+  "k8s.pod.uid": "%s",
+  "k8s.pod.name": "%s",
+  "k8s.namespace.name": "%s",
+  "dt.kubernetes.workload.kind": "%s",
+  "dt.kubernetes.workload.name": "%s",
+  "dt.kubernetes.cluster.id": "%s"
+}
 `
 
 	propsEnrichmentContentFormatString = `k8s.pod.uid=%s
