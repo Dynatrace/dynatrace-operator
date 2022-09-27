@@ -1,29 +1,36 @@
-package cluster_intel_collector
+package support_archive
 
 import (
 	"bytes"
 	"fmt"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func collectManifests(cicCtx *intelCollectorContext, tarBall *intelTarball) error {
-	for _, manifest := range getRelevantManifests(cicCtx) {
-		objectList, err := readManifestList(cicCtx, manifest)
+type objectQuery struct {
+	groupVersionKind schema.GroupVersionKind
+	listOptions      []client.ListOption
+}
+
+func collectManifests(cicCtx *supportArchiveContext, tarBall *tarball) error {
+	for _, manifest := range getObjectsQuery(cicCtx) {
+		objectList, err := readObjectsList(cicCtx, manifest)
 		if err != nil {
-			logErrorf("could not get manifest for %s: %v", manifest.gvk.Kind, err)
+			logErrorf("could not get manifest for %s: %v", manifest.groupVersionKind.Kind, err)
 			continue
 		}
 		for _, object := range objectList.Items {
-			marshallManifest(cicCtx, tarBall, object)
+			marshallObjects(cicCtx, tarBall, object)
 		}
 	}
 	return nil
 }
 
-func readManifestList(cicCtx *intelCollectorContext, manifest manifestSpec) (*unstructured.UnstructuredList, error) {
+func readObjectsList(cicCtx *supportArchiveContext, manifest objectQuery) (*unstructured.UnstructuredList, error) {
 	objectList := &unstructured.UnstructuredList{}
-	objectList.SetGroupVersionKind(manifest.gvk)
+	objectList.SetGroupVersionKind(manifest.groupVersionKind)
 
 	err := cicCtx.apiReader.List(cicCtx.ctx, objectList, manifest.listOptions...)
 	if err != nil {
@@ -32,7 +39,7 @@ func readManifestList(cicCtx *intelCollectorContext, manifest manifestSpec) (*un
 	return objectList, nil
 }
 
-func marshallManifest(cicCtx *intelCollectorContext, tarBall *intelTarball, object unstructured.Unstructured) {
+func marshallObjects(cicCtx *supportArchiveContext, tarBall *tarball, object unstructured.Unstructured) {
 	if document, err := object.MarshalJSON(); err == nil {
 		fileName := createFileName(object.GetKind(), object)
 

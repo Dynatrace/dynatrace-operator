@@ -1,42 +1,21 @@
-package cluster_intel_collector
+package support_archive
 
 import (
-	"context"
-
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var (
-	log = newLogCollectorLogger("[log collector]")
-)
-
-type intelCollectorContext struct {
-	ctx           context.Context
-	clientSet     kubernetes.Interface // used to get access to logs
-	apiReader     client.Reader        // used for manifest collection
-	namespaceName string               // the default namespace ("dynatrace") or provided in the command line
-	toStdout      bool
-	targetDir     string
-}
-
-type manifestSpec struct {
-	gvk         schema.GroupVersionKind
-	listOptions []client.ListOption
-}
-
-func getRelevantManifests(ctx *intelCollectorContext) []manifestSpec {
-	return []manifestSpec{
+func getObjectsQuery(ctx *supportArchiveContext) []objectQuery {
+	return []objectQuery{
 		{
-			gvk: schema.GroupVersionKind{
+			groupVersionKind: schema.GroupVersionKind{
 				Group:   "",
 				Version: "v1",
 				Kind:    "NamespaceList",
 			},
 		},
 		{
-			gvk: schema.GroupVersionKind{
+			groupVersionKind: schema.GroupVersionKind{
 				Group:   "apps",
 				Version: "v1",
 				Kind:    "DeploymentList",
@@ -46,7 +25,7 @@ func getRelevantManifests(ctx *intelCollectorContext) []manifestSpec {
 			},
 		},
 		{
-			gvk: schema.GroupVersionKind{
+			groupVersionKind: schema.GroupVersionKind{
 				Group:   "apps",
 				Version: "v1",
 				Kind:    "StatefulSetList",
@@ -56,7 +35,7 @@ func getRelevantManifests(ctx *intelCollectorContext) []manifestSpec {
 			},
 		},
 		{
-			gvk: schema.GroupVersionKind{
+			groupVersionKind: schema.GroupVersionKind{
 				Group:   "apps",
 				Version: "v1",
 				Kind:    "DaemonSetList",
@@ -66,21 +45,24 @@ func getRelevantManifests(ctx *intelCollectorContext) []manifestSpec {
 			},
 		},
 		{
-			gvk: schema.GroupVersionKind{
+			groupVersionKind: schema.GroupVersionKind{
 				Group:   "dynatrace.com",
 				Version: "v1beta1",
 				Kind:    "DynaKubeList",
 			},
+			listOptions: []client.ListOption{
+				client.InNamespace(ctx.namespaceName),
+			},
 		},
 		{
-			gvk: schema.GroupVersionKind{
+			groupVersionKind: schema.GroupVersionKind{
 				Group:   "networking.istio.io",
 				Version: "v1alpha3",
 				Kind:    "VirtualServiceList",
 			},
 		},
 		{
-			gvk: schema.GroupVersionKind{
+			groupVersionKind: schema.GroupVersionKind{
 				Group:   "networking.istio.io",
 				Version: "v1alpha3",
 				Kind:    "ServiceEntryList",

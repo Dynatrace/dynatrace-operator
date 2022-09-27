@@ -1,4 +1,4 @@
-package cluster_intel_collector
+package support_archive
 
 import (
 	"archive/tar"
@@ -12,11 +12,11 @@ import (
 
 func TestVersionCollector(t *testing.T) {
 	tarBuffer := bytes.Buffer{}
-	tarball := intelTarball{
+	tarball := tarball{
 		tarWriter: tar.NewWriter(&tarBuffer),
 	}
 
-	ctx := intelCollectorContext{
+	ctx := supportArchiveContext{
 		ctx:           context.TODO(),
 		clientSet:     nil,
 		apiReader:     nil,

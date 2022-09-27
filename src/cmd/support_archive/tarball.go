@@ -1,4 +1,4 @@
-package cluster_intel_collector
+package support_archive
 
 import (
 	"archive/tar"
@@ -12,15 +12,17 @@ import (
 	"time"
 )
 
-type intelTarball struct {
+const tarFileName = "%s/operator-support-archive-%s.tgz"
+
+type tarball struct {
 	tarWriter  *tar.Writer
 	gzipWriter *gzip.Writer
 	tarFile    *os.File
 }
 
-func newTarball(ctx *intelCollectorContext) (*intelTarball, error) {
+func newTarball(ctx *supportArchiveContext) (*tarball, error) {
 	var err error
-	tarball := intelTarball{}
+	tarball := tarball{}
 	if tarball.tarFile, err = selectAndCreateTargetFile(ctx); err != nil {
 		return nil, err
 	}
@@ -29,13 +31,13 @@ func newTarball(ctx *intelCollectorContext) (*intelTarball, error) {
 	return &tarball, nil
 }
 
-func (t *intelTarball) close() {
+func (t *tarball) close() {
 	t.tarWriter.Close()
 	t.gzipWriter.Close()
 	t.tarFile.Close()
 }
 
-func (t *intelTarball) addFile(fileName string, file io.Reader) error {
+func (t *tarball) addFile(fileName string, file io.Reader) error {
 	buffer := &bytes.Buffer{}
 	io.Copy(buffer, file)
 
@@ -57,7 +59,7 @@ func (t *intelTarball) addFile(fileName string, file io.Reader) error {
 	return nil
 }
 
-func selectAndCreateTargetFile(ctx *intelCollectorContext) (*os.File, error) {
+func selectAndCreateTargetFile(ctx *supportArchiveContext) (*os.File, error) {
 	if ctx.toStdout {
 		return os.Stdout, nil
 	} else {
@@ -69,7 +71,7 @@ func selectAndCreateTargetFile(ctx *intelCollectorContext) (*os.File, error) {
 	}
 }
 
-func createTarFile(ctx *intelCollectorContext) (*os.File, error) {
+func createTarFile(ctx *supportArchiveContext) (*os.File, error) {
 	tarballFilePath := fmt.Sprintf(tarFileName, ctx.targetDir, time.Now().Format(time.RFC3339))
 	tarballFilePath = strings.Replace(tarballFilePath, ":", "_", -1)
 

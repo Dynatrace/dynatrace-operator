@@ -1,4 +1,4 @@
-package cluster_intel_collector
+package support_archive
 
 import (
 	"archive/tar"
@@ -78,7 +78,7 @@ func TestManifestCollector(t *testing.T) {
 			},
 		).Build()
 
-	ctx := intelCollectorContext{
+	ctx := supportArchiveContext{
 		ctx:           context.TODO(),
 		clientSet:     nil,
 		apiReader:     clt,
@@ -88,7 +88,7 @@ func TestManifestCollector(t *testing.T) {
 	}
 
 	tarBuffer := bytes.Buffer{}
-	tarball := intelTarball{
+	tarball := tarball{
 		tarWriter: tar.NewWriter(&tarBuffer),
 	}
 
@@ -122,7 +122,7 @@ func TestManifestCollectorNoManifestsAvailable(t *testing.T) {
 		WithScheme(scheme.Scheme).
 		Build()
 
-	ctx := intelCollectorContext{
+	ctx := supportArchiveContext{
 		ctx:           context.TODO(),
 		clientSet:     nil,
 		apiReader:     clt,
@@ -132,7 +132,7 @@ func TestManifestCollectorNoManifestsAvailable(t *testing.T) {
 	}
 
 	tarBuffer := bytes.Buffer{}
-	tarball := intelTarball{
+	tarball := tarball{
 		tarWriter: tar.NewWriter(&tarBuffer),
 	}
 
