@@ -1,4 +1,4 @@
-package cluster_intel_collector
+package support_archive
 
 import (
 	"archive/tar"
@@ -82,7 +82,7 @@ func TestLogCollector(t *testing.T) {
 			},
 		})
 
-	ctx := intelCollectorContext{
+	ctx := supportArchiveContext{
 		ctx:           context.TODO(),
 		clientSet:     fakeClientSet,
 		apiReader:     nil,
@@ -92,7 +92,7 @@ func TestLogCollector(t *testing.T) {
 	}
 
 	tarBuffer := bytes.Buffer{}
-	tarball := intelTarball{
+	tarball := tarball{
 		tarWriter: tar.NewWriter(&tarBuffer),
 	}
 
@@ -101,35 +101,35 @@ func TestLogCollector(t *testing.T) {
 
 	tarReader := tar.NewReader(&tarBuffer)
 
-	hdr, err := tarReader.Next()
+	tarHeader, err := tarReader.Next()
 	require.NoError(t, err)
-	assert.Equal(t, "pod1_container1.log", hdr.Name)
+	assert.Equal(t, "pod1_container1.log", tarHeader.Name)
 
-	hdr, err = tarReader.Next()
+	tarHeader, err = tarReader.Next()
 	require.NoError(t, err)
-	assert.Equal(t, "pod1_container1_previous.log", hdr.Name)
+	assert.Equal(t, "pod1_container1_previous.log", tarHeader.Name)
 
-	hdr, err = tarReader.Next()
+	tarHeader, err = tarReader.Next()
 	require.NoError(t, err)
-	assert.Equal(t, "pod1_container2.log", hdr.Name)
+	assert.Equal(t, "pod1_container2.log", tarHeader.Name)
 
-	hdr, err = tarReader.Next()
+	tarHeader, err = tarReader.Next()
 	require.NoError(t, err)
-	assert.Equal(t, "pod1_container2_previous.log", hdr.Name)
+	assert.Equal(t, "pod1_container2_previous.log", tarHeader.Name)
 
-	hdr, err = tarReader.Next()
+	tarHeader, err = tarReader.Next()
 	require.NoError(t, err)
-	assert.Equal(t, "pod2_container1.log", hdr.Name)
+	assert.Equal(t, "pod2_container1.log", tarHeader.Name)
 
-	hdr, err = tarReader.Next()
+	tarHeader, err = tarReader.Next()
 	require.NoError(t, err)
-	assert.Equal(t, "pod2_container1_previous.log", hdr.Name)
+	assert.Equal(t, "pod2_container1_previous.log", tarHeader.Name)
 
-	hdr, err = tarReader.Next()
+	tarHeader, err = tarReader.Next()
 	require.NoError(t, err)
-	assert.Equal(t, "pod2_container2.log", hdr.Name)
+	assert.Equal(t, "pod2_container2.log", tarHeader.Name)
 
-	hdr, err = tarReader.Next()
+	tarHeader, err = tarReader.Next()
 	require.NoError(t, err)
-	assert.Equal(t, "pod2_container2_previous.log", hdr.Name)
+	assert.Equal(t, "pod2_container2_previous.log", tarHeader.Name)
 }

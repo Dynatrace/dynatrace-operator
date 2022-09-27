@@ -17,12 +17,12 @@ package main
 import (
 	"os"
 
-	"github.com/Dynatrace/dynatrace-operator/src/cmd/cluster_intel_collector"
 	cmdConfig "github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 	csiProvisioner "github.com/Dynatrace/dynatrace-operator/src/cmd/csi/provisioner"
 	csiServer "github.com/Dynatrace/dynatrace-operator/src/cmd/csi/server"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/operator"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/standalone"
+	"github.com/Dynatrace/dynatrace-operator/src/cmd/support_archive"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/troubleshoot"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/webhook"
 	"github.com/Dynatrace/dynatrace-operator/src/logger"
@@ -80,8 +80,8 @@ func createTroubleshootCommandBuilder() troubleshoot.CommandBuilder {
 		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
 }
 
-func createLogCollectorCommandBuilder() cluster_intel_collector.CommandBuilder {
-	return cluster_intel_collector.NewCicCommandBuilder().
+func createLogCollectorCommandBuilder() support_archive.CommandBuilder {
+	return support_archive.NewCommandBuilder().
 		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
 }
 

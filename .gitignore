@@ -15,6 +15,7 @@ tramp
 # Org-mode
 .org-id-locations
 *_archive
+!/src/cmd/support_archive/
 # flymake-mode
 *_flymake.*
 # eshell files

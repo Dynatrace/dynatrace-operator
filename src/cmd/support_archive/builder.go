@@ -1,4 +1,4 @@
-package cluster_intel_collector
+package support_archive
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -15,7 +16,7 @@ import (
 )
 
 const (
-	use               = "cic"
+	use               = "support-archive"
 	namespaceFlagName = "namespace"
 	stdoutFlagName    = "stdout"
 	targetDirFlagName = "out"
@@ -29,9 +30,10 @@ var (
 
 type CommandBuilder struct {
 	configProvider config.Provider
+	cluster        cluster.Cluster
 }
 
-func NewCicCommandBuilder() CommandBuilder {
+func NewCommandBuilder() CommandBuilder {
 	return CommandBuilder{}
 }
 
@@ -41,7 +43,14 @@ func (builder CommandBuilder) SetConfigProvider(provider config.Provider) Comman
 }
 
 func (builder CommandBuilder) GetCluster(kubeConfig *rest.Config) (cluster.Cluster, error) {
-	return cluster.New(kubeConfig, clusterOptions)
+	if builder.cluster == nil {
+		k8sCluster, err := cluster.New(kubeConfig, clusterOptions)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		builder.cluster = k8sCluster
+	}
+	return builder.cluster, nil
 }
 
 func (builder CommandBuilder) Build() *cobra.Command {
@@ -87,7 +96,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		}
 		apiReader := k8scluster.GetAPIReader()
 
-		ctx := intelCollectorContext{
+		ctx := supportArchiveContext{
 			ctx:           context.TODO(),
 			clientSet:     clientSet,
 			apiReader:     apiReader,
@@ -96,20 +105,20 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			targetDir:     targetDirFlagValue,
 		}
 
-		tarball, err := newTarball(&ctx)
+		supportArchiveTarball, err := newTarball(&ctx)
 		if err != nil {
 			return err
 		}
-		defer tarball.close()
+		defer supportArchiveTarball.close()
 
-		collectors := []func(*intelCollectorContext, *intelTarball) error{
+		collectors := []func(*supportArchiveContext, *tarball) error{
 			collectOperatorVersion,
 			collectLogs,
 			collectManifests,
 		}
 
 		for _, c := range collectors {
-			if err := c(&ctx, tarball); err != nil {
+			if err := c(&ctx, supportArchiveTarball); err != nil {
 				logErrorf("failed collector: %v", err)
 			}
 		}
@@ -118,8 +127,8 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			fmt.Printf("kubectl -n %s cp %s:%s .%s\n",
 				os.Getenv("POD_NAMESPACE"),
 				os.Getenv("POD_NAME"),
-				tarball.tarFile.Name(),
-				tarball.tarFile.Name())
+				supportArchiveTarball.tarFile.Name(),
+				supportArchiveTarball.tarFile.Name())
 		}
 		return nil
 	}

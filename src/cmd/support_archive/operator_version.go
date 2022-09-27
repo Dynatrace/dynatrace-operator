@@ -1,4 +1,4 @@
-package cluster_intel_collector
+package support_archive
 
 import (
 	"fmt"
@@ -10,16 +10,13 @@ import (
 
 const versionFileName = "operator-version.txt"
 
-func collectOperatorVersion(_ *intelCollectorContext, tarball *intelTarball) error {
-
+func collectOperatorVersion(_ *supportArchiveContext, tarball *tarball) error {
 	versionString := fmt.Sprintf("version: %s\ngitCommit: %s\nbuildDate: %s\ngoVersion %s\nplatform %s/%s\n",
 		version.Version,
 		version.Commit,
 		version.BuildDate,
 		runtime.Version(),
 		runtime.GOOS, runtime.GOARCH)
-
 	tarball.addFile(versionFileName, strings.NewReader(versionString))
-
 	return nil
 }

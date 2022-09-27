@@ -1,4 +1,4 @@
-package cluster_intel_collector
+package support_archive
 
 import (
 	"fmt"
@@ -7,9 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const tarFileName = "%s/operator-cic-%s.tgz"
-
-func collectLogs(cicCtx *intelCollectorContext, tarball *intelTarball) error {
+func collectLogs(cicCtx *supportArchiveContext, tarball *tarball) error {
 	podList, err := getPodList(cicCtx)
 	if err != nil {
 		return err
@@ -26,7 +24,7 @@ func collectLogs(cicCtx *intelCollectorContext, tarball *intelTarball) error {
 	return nil
 }
 
-func getPodList(cicCtx *intelCollectorContext) (*corev1.PodList, error) {
+func getPodList(cicCtx *supportArchiveContext) (*corev1.PodList, error) {
 	listOptions := metav1.ListOptions{
 		TypeMeta: metav1.TypeMeta{
 			Kind: "pod",
@@ -40,7 +38,7 @@ func getPodList(cicCtx *intelCollectorContext) (*corev1.PodList, error) {
 	return podList, nil
 }
 
-func getPodLogs(cicCtx *intelCollectorContext, tarball *intelTarball, pod *corev1.Pod) {
+func getPodLogs(cicCtx *supportArchiveContext, tarball *tarball, pod *corev1.Pod) {
 	for _, container := range pod.Spec.Containers {
 		podLogOpts := corev1.PodLogOptions{
 			Container: container.Name,
@@ -53,7 +51,7 @@ func getPodLogs(cicCtx *intelCollectorContext, tarball *intelTarball, pod *corev
 	}
 }
 
-func getContainerLogs(cicCtx *intelCollectorContext, tarball *intelTarball, pod *corev1.Pod, container corev1.Container, logOptions corev1.PodLogOptions) {
+func getContainerLogs(cicCtx *supportArchiveContext, tarball *tarball, pod *corev1.Pod, container corev1.Container, logOptions corev1.PodLogOptions) {
 	req := cicCtx.clientSet.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &logOptions)
 
 	podLogs, err := req.Stream(cicCtx.ctx)

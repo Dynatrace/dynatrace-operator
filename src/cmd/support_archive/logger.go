@@ -1,4 +1,4 @@
-package cluster_intel_collector
+package support_archive
 
 import (
 	"fmt"
@@ -24,7 +24,8 @@ type logCollectorLogger struct {
 	logger logr.Logger
 }
 
-func newLogCollectorLogger(testName string) logr.Logger {
+func newLogCollectorLogger(collectorName string) logr.Logger {
+
 	config := zap.NewProductionEncoderConfig()
 	config.TimeKey = ""
 	config.LevelKey = ""
@@ -34,14 +35,10 @@ func newLogCollectorLogger(testName string) logr.Logger {
 	return logr.New(
 		logCollectorLogger{
 			// using stderr because we use stdout to deliver the tarball
-			logger: ctrlzap.New(ctrlzap.WriteTo(os.Stderr), ctrlzap.Encoder(zapcore.NewConsoleEncoder(config))).WithName(testName),
+			logger: ctrlzap.New(ctrlzap.WriteTo(os.Stderr), ctrlzap.Encoder(zapcore.NewConsoleEncoder(config))).WithName(collectorName),
 		},
 	)
 }
-
-//
-// LogCollector fmt-like log wrappers
-//
 
 func logInfof(format string, v ...interface{}) {
 	log.Info(fmt.Sprintf(format, v...))
@@ -50,10 +47,6 @@ func logInfof(format string, v ...interface{}) {
 func logErrorf(format string, v ...interface{}) {
 	log.V(levelError).Info(fmt.Sprintf(format, v...))
 }
-
-//
-// implementation of LogSink interface
-//
 
 func (dtl logCollectorLogger) Init(info logr.RuntimeInfo) {}
 
