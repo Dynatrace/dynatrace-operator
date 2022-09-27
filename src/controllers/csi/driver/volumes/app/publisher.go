@@ -97,7 +97,7 @@ func (publisher *AppVolumePublisher) UnpublishVolume(ctx context.Context, volume
 	}
 	log.Info("loaded volume info", "id", volume.VolumeID, "pod name", volume.PodName, "version", volume.Version, "dynakube", volume.TenantUUID)
 
-	if volume.MountAttempts > 0 {
+	if volume.Version == "" {
 		log.Info("requester has a dummy volume, no node-level unmount is needed")
 		return &csi.NodeUnpublishVolumeResponse{}, publisher.db.DeleteVolume(ctx, volume.VolumeID)
 	}
