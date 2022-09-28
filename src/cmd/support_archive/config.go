@@ -1,5 +1,5 @@
 package support_archive
 
 var (
-	log = newLogCollectorLogger("[cic]")
+	log = newLogCollectorLogger("[support-archive]")
 )
