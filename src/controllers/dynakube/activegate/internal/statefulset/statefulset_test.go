@@ -66,6 +66,32 @@ func TestGetBaseObjectMeta(t *testing.T) {
 		assert.Contains(t, objectMeta.Name, multiCapability.ShortName())
 		assert.NotNil(t, objectMeta.Annotations)
 	})
+	t.Run("default annotations", func(t *testing.T) {
+		multiCapability := capability.NewMultiCapability(&dynakube)
+		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dynakube, multiCapability)
+		sts, _ := builder.CreateStatefulSet(nil)
+		expectedTemplateAnnotations := map[string]string{
+			consts.AnnotationActiveGateConfigurationHash: testConfigHash,
+		}
+
+		require.NotEmpty(t, sts.Spec.Template.Labels)
+		assert.Equal(t, expectedTemplateAnnotations, sts.Spec.Template.Annotations)
+	})
+	t.Run("add annotations", func(t *testing.T) {
+		dynakube.Spec.ActiveGate.Annotations = map[string]string{
+			"test": "test",
+		}
+		multiCapability := capability.NewMultiCapability(&dynakube)
+		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dynakube, multiCapability)
+		sts, _ := builder.CreateStatefulSet(nil)
+		expectedTemplateAnnotations := map[string]string{
+			consts.AnnotationActiveGateConfigurationHash: testConfigHash,
+			"test": "test",
+		}
+
+		require.NotEmpty(t, sts.Spec.Template.Labels)
+		assert.Equal(t, expectedTemplateAnnotations, sts.Spec.Template.Annotations)
+	})
 }
 
 func TestGetBaseSpec(t *testing.T) {
@@ -335,35 +361,5 @@ func TestBuildCommonEnvs(t *testing.T) {
 		zoneEnv := kubeobjects.FindEnvVar(envs, consts.EnvDtNetworkZone)
 		require.NotNil(t, zoneEnv)
 		assert.Equal(t, dynakube.Spec.NetworkZone, zoneEnv.Value)
-	})
-}
-func TestAnnotations(t *testing.T) {
-	t.Run("default annotations", func(t *testing.T) {
-		dynakube := getTestDynakube()
-		multiCapability := capability.NewMultiCapability(&dynakube)
-		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dynakube, multiCapability)
-		sts, _ := builder.CreateStatefulSet(nil)
-		expectedTemplateAnnotations := map[string]string{
-			consts.AnnotationActiveGateConfigurationHash: testConfigHash,
-		}
-
-		require.NotEmpty(t, sts.Spec.Template.Labels)
-		assert.Equal(t, expectedTemplateAnnotations, sts.Spec.Template.Annotations)
-	})
-	t.Run("add annotations", func(t *testing.T) {
-		dynakube := getTestDynakube()
-		dynakube.Spec.ActiveGate.Annotations = map[string]string{
-			"test": "test",
-		}
-		multiCapability := capability.NewMultiCapability(&dynakube)
-		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dynakube, multiCapability)
-		sts, _ := builder.CreateStatefulSet(nil)
-		expectedTemplateAnnotations := map[string]string{
-			consts.AnnotationActiveGateConfigurationHash: testConfigHash,
-			"test": "test",
-		}
-
-		require.NotEmpty(t, sts.Spec.Template.Labels)
-		assert.Equal(t, expectedTemplateAnnotations, sts.Spec.Template.Annotations)
 	})
 }
