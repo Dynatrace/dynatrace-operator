@@ -39,7 +39,7 @@ jobs:
         languages: ${{ matrix.language }}
 
     - name: Autobuild
-      uses: github/codeql-action/autobuild@86f3159a697a097a813ad9bfa0002412d97690a4 # v2.1.23
+      uses: github/codeql-action/autobuild@86f3159a697a097a813ad9bfa0002412d97690a4 # v2.1.25
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@86f3159a697a097a813ad9bfa0002412d97690a4 # v2.1.23
