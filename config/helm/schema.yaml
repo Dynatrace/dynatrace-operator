@@ -284,34 +284,118 @@ properties:
     title: Enables CSI driver
     description: The CloudNativeFullStack as well as AppOnly mode need the CSI driver to function properly.
     default: false
-  csidriver.requests.cpu:
+  csidriver.provisioner.resources.requests.cpu:
     type: string
-    title: CSI driver CPU request
+    title: CSI driver CPU request - provisioner
     description: |
       The amount of CPU allocation the CSI driver requests from the cluster.
       It is recommended for the CPU requests to be the same as the CPU limits.
     default: 300m
-  csidriver.requests.memory:
+  csidriver.provisioner.resources.requests.memory:
     type: string
-    title: CSI driver Memory request
+    title: CSI driver Memory request - provisioner
     description: |
       The amount of memory allocation the CSI driver requests from the cluster.
       It is recommended for the memory requests to be the same as the memory limits.
     default: 100Mi
-  csidriver.limits.cpu:
+  csidriver.provisioner.resources.limits.cpu:
     type: string
-    title: CSI driver CPU limit
+    title: CSI driver CPU limit - provisioner
     description: |
       The amount of CPU allocation to which the cluster may limit the CSI driver.
       It is recommended for the CPU limits to be the same as the CPU requests.
     default: 300m
-  csidriver.limits.memory:
+  csidriver.provisioner.resources.limits.memory:
     type: string
-    title: CSI driver Memory limit
+    title: CSI driver Memory limit - provisioner
     description: |
       The amount of memory allocation to which the cluster may limit the CSI driver.
       It is recommended for the memory limits to be the same as the memory requests.
     default: 100Mi
+  csidriver.server.resources.requests.cpu:
+    type: string
+    title: CSI driver CPU request - server
+    description: |
+      The amount of CPU allocation the CSI driver requests from the cluster.
+      It is recommended for the CPU requests to be the same as the CPU limits.
+    default: 50m
+  csidriver.server.resources.requests.memory:
+    type: string
+    title: CSI driver Memory request - server
+    description: |
+      The amount of memory allocation the CSI driver requests from the cluster.
+      It is recommended for the memory requests to be the same as the memory limits.
+    default: 100Mi
+  csidriver.server.resources.limits.cpu:
+    type: string
+    title: CSI driver CPU limit - server
+    description: |
+      The amount of CPU allocation to which the cluster may limit the CSI driver.
+      It is recommended for the CPU limits to be the same as the CPU requests.
+    default: 50m
+  csidriver.server.resources.limits.memory:
+    type: string
+    title: CSI driver Memory limit - server
+    description: |
+      The amount of memory allocation to which the cluster may limit the CSI driver.
+      It is recommended for the memory limits to be the same as the memory requests.
+    default: 100Mi
+  csidriver.registrar.resources.requests.cpu:
+    type: string
+    title: CSI driver CPU request - registrar
+    description: |
+      The amount of CPU allocation the CSI driver requests from the cluster.
+      It is recommended for the CPU requests to be the same as the CPU limits.
+    default: 20m
+  csidriver.registrar.resources.requests.memory:
+    type: string
+    title: CSI driver Memory request - registrar
+    description: |
+      The amount of memory allocation the CSI driver requests from the cluster.
+      It is recommended for the memory requests to be the same as the memory limits.
+    default: 30Mi
+  csidriver.registrar.resources.limits.cpu:
+    type: string
+    title: CSI driver CPU limit - registrar
+    description: |
+      The amount of CPU allocation to which the cluster may limit the CSI driver.
+      It is recommended for the CPU limits to be the same as the CPU requests.
+    default: 20m
+  csidriver.registrar.resources.limits.memory:
+    type: string
+    title: CSI driver Memory limit - registrar
+    description: |
+      The amount of memory allocation to which the cluster may limit the CSI driver.
+      It is recommended for the memory limits to be the same as the memory requests.
+    default: 30Mi
+  csidriver.livenessprobe.resources.requests.cpu:
+    type: string
+    title: CSI driver CPU request - livenessprobe
+    description: |
+      The amount of CPU allocation the CSI driver requests from the cluster.
+      It is recommended for the CPU requests to be the same as the CPU limits.
+    default: 20m
+  csidriver.livenessprobe.resources.requests.memory:
+    type: string
+    title: CSI driver Memory request - livenessprobe
+    description: |
+      The amount of memory allocation the CSI driver requests from the cluster.
+      It is recommended for the memory requests to be the same as the memory limits.
+    default: 30Mi
+  csidriver.livenessprobe.resources.limits.cpu:
+    type: string
+    title: CSI driver CPU limit - livenessprobe
+    description: |
+      The amount of CPU allocation to which the cluster may limit the CSI driver.
+      It is recommended for the CPU limits to be the same as the CPU requests.
+    default: 20m
+  csidriver.livenessprobe.resources.limits.memory:
+    type: string
+    title: CSI driver Memory limit - livenessprobe
+    description: |
+      The amount of memory allocation to which the cluster may limit the CSI driver.
+      It is recommended for the memory limits to be the same as the memory requests.
+    default: 30Mi
 
   activeGate.readOnlyFs:
     type: boolean
@@ -332,7 +416,7 @@ properties:
     type: string
     title: Platform
     description: |
-      Platform to deploy on. 
+      Platform to deploy on.
       Must be set to "google-marketplace" for GKE clusters.
     default: google-marketplace
     enum:
