@@ -8,11 +8,13 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
 	testImage                                      = "linux/activegate"
 	testOneAgentImage                              = "linux/oneagent"
+	testOneAgentCodeModulesImage                   = "customDir/customCodeModules"
 	testCustomImage                                = "ag"
 	testCustomOneAgentImage                        = "oa"
 	testInvalidImage                               = "/beos/activegate"
@@ -26,6 +28,7 @@ const (
 	testValidOneAgentImageNameWithoutVersion       = testRegistry + "/" + testOneAgentImage
 	testValidOneAgentCustomImageNameWithVersion    = testCustomRegistry + "/" + testCustomOneAgentImage + ":" + testVersion
 	testValidOneAgentCustomImageNameWithoutVersion = testCustomRegistry + "/" + testCustomOneAgentImage
+	testValidOneAgentCodeModulesImageName          = testCustomRegistry + "/" + testOneAgentCodeModulesImage
 	testInvalidImageName                           = testRegistry + testInvalidImage + ":" + testVersion
 )
 
@@ -66,6 +69,97 @@ func TestOneAgentImagePullable(t *testing.T) {
 
 		err = checkOneAgentImagePullable(&troubleshootCtx)
 		assert.NoErrorf(t, err, "unexpected error")
+	})
+}
+
+func TestOneAgentCodeModulesImagePullable(t *testing.T) {
+	dockerServer := httptest.NewTLSServer(
+		testDockerServerHandler(
+			"HEAD",
+			[]string{
+				"/",
+				"/" + testOneAgentCodeModulesImage + ":" + testVersion,
+			}))
+	defer dockerServer.Close()
+
+	server := removeSchemaRegex.FindStringSubmatch(dockerServer.URL)[1]
+
+	auths := Auths{
+		Auths: Endpoints{
+			server: Credentials{
+				Username: "ac",
+				Password: "dt",
+				Auth:     "ZW",
+			},
+		},
+	}
+
+	authsBytes, err := json.Marshal(auths)
+	require.NoErrorf(t, err, "credentials could not be marshaled, test code needs some love")
+
+	troubleshootCtx := troubleshootContext{
+		httpClient:     dockerServer.Client(),
+		namespaceName:  testNamespace,
+		dynakubeName:   testDynakube,
+		pullSecretName: testDynakube + pullSecretSuffix,
+		pullSecret:     *testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend(dtpullsecret.DockerConfigJson, string(authsBytes)).build(),
+	}
+
+	t.Run("OneAgent code modules image", func(t *testing.T) {
+		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+			withApiUrl(dockerServer.URL + "/api").
+			withCloudNativeCodeModulesImage(server + "/" + testOneAgentCodeModulesImage + ":" + testVersion).
+			build()
+
+		err = checkOneAgentCodeModulesImagePullable(&troubleshootCtx)
+		assert.NoErrorf(t, err, "unexpected error")
+	})
+
+	t.Run("OneAgent code modules with non-existing image", func(t *testing.T) {
+		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+			withApiUrl(dockerServer.URL + "/api").
+			withCloudNativeCodeModulesImage(server + "/non-existing-image").
+			build()
+
+		err = checkOneAgentCodeModulesImagePullable(&troubleshootCtx)
+		assert.Errorf(t, err, "expected an error")
+		assert.Contains(t, err.Error(), "missing")
+	})
+
+	t.Run("OneAgent code modules unknown server", func(t *testing.T) {
+		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+			withApiUrl(dockerServer.URL + "/api").
+			withCloudNativeCodeModulesImage("myunknownserver.com/myrepo/mymissingcodemodules").
+			build()
+
+		err = checkOneAgentCodeModulesImagePullable(&troubleshootCtx)
+		assert.Errorf(t, err, "expected an error")
+		assert.Contains(t, err.Error(), "no credentials")
+	})
+
+	t.Run("OneAgent code modules unreachable server", func(t *testing.T) {
+		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+			withApiUrl(dockerServer.URL + "/api").
+			withCloudNativeCodeModulesImage("myfailingserver.com/myrepo/mymissingcodemodules").
+			build()
+
+		newAuths := auths
+		newAuths.Auths["myfailingserver.com"] = Credentials{
+			Username: "foobar",
+			Password: "foobar",
+			Auth:     "ZW",
+		}
+
+		newAuthsBytes, err := json.Marshal(newAuths)
+		require.NoErrorf(t, err, "credentials could not be marshaled, test code needs some love")
+
+		troubleshootCtx.pullSecret = *testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).
+			dataAppend(dtpullsecret.DockerConfigJson, string(newAuthsBytes)).
+			build()
+
+		err = checkOneAgentCodeModulesImagePullable(&troubleshootCtx)
+		assert.Errorf(t, err, "expected an error")
+		assert.Contains(t, err.Error(), "unreachable")
 	})
 }
 
@@ -346,26 +440,32 @@ func TestImagePullableOneAgentEndpoint(t *testing.T) {
 	})
 }
 
-func TestImagePullableSplitImage(t *testing.T) {
-	t.Run("valid image name with version", func(t *testing.T) {
-		registry, image, version, err := splitImageName(testValidImageNameWithVersion)
-		assert.Equal(t, testRegistry, registry, "invalid registry")
-		assert.Equal(t, testImage, image, "invalid image")
-		assert.Equal(t, testVersion, version, "invalid version")
-		assert.NoErrorf(t, err, "error unexpected")
+func TestImagePullableOneAgentCodeModulesEndpoint(t *testing.T) {
+	t.Run("CloudNative codeModules image", func(t *testing.T) {
+		troubleshootCtx := troubleshootContext{
+			namespaceName: testNamespace,
+			dynakubeName:  testDynakube,
+			dynakube:      *testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).withCloudNativeCodeModulesImage(testValidOneAgentCodeModulesImageName).build(),
+		}
+		endpoint := getOneAgentCodeModulesImageEndpoint(&troubleshootCtx)
+		assert.Equal(t, testValidOneAgentCodeModulesImageName, endpoint, "invalid image")
 	})
-	t.Run("valid image name without version", func(t *testing.T) {
-		registry, image, version, err := splitImageName(testValidImageNameWithoutVersion)
-		assert.Equal(t, testRegistry, registry, "invalid registry")
-		assert.Equal(t, testImage, image, "invalid image")
-		assert.Equal(t, "latest", version, "invalid version")
-		assert.NoErrorf(t, err, "error unexpected")
+	t.Run("ApplicationMonitoring codeModules image", func(t *testing.T) {
+		troubleshootCtx := troubleshootContext{
+			namespaceName: testNamespace,
+			dynakubeName:  testDynakube,
+			dynakube:      *testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).withApplicationMonitoringCodeModulesImage(testValidOneAgentCodeModulesImageName).build(),
+		}
+		endpoint := getOneAgentCodeModulesImageEndpoint(&troubleshootCtx)
+		assert.Equal(t, testValidOneAgentCodeModulesImageName, endpoint, "invalid image")
 	})
-	t.Run("invalid image name", func(t *testing.T) {
-		registry, image, version, err := splitImageName(testInvalidImageName)
-		assert.NotEqual(t, testRegistry, registry, "valid registry")
-		assert.NotEqual(t, testInvalidImage, image, "valid image")
-		assert.NotEqual(t, testVersion, version, "valid version")
-		assert.Errorf(t, err, "error not raised")
+	t.Run("No codeModules image", func(t *testing.T) {
+		troubleshootCtx := troubleshootContext{
+			namespaceName: testNamespace,
+			dynakubeName:  testDynakube,
+			dynakube:      *testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).build(),
+		}
+		endpoint := getOneAgentCodeModulesImageEndpoint(&troubleshootCtx)
+		assert.Equal(t, "", endpoint, "expected empty image")
 	})
 }

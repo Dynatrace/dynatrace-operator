@@ -293,6 +293,34 @@ func (builder *testDynaKubeBuilder) withHostMonitoringCustomImage(image string) 
 	return builder
 }
 
+func (builder *testDynaKubeBuilder) withCloudNativeCodeModulesImage(image string) *testDynaKubeBuilder {
+	if builder.dynakube.Spec.OneAgent.CloudNativeFullStack != nil {
+		builder.dynakube.Spec.OneAgent.CloudNativeFullStack.CodeModulesImage = image
+	} else {
+		builder.dynakube.Spec.OneAgent.CloudNativeFullStack = &dynatracev1beta1.CloudNativeFullStackSpec{
+			AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{
+				InitResources:    corev1.ResourceRequirements{},
+				CodeModulesImage: image,
+			},
+		}
+	}
+	return builder
+}
+
+func (builder *testDynaKubeBuilder) withApplicationMonitoringCodeModulesImage(image string) *testDynaKubeBuilder {
+	if builder.dynakube.Spec.OneAgent.ApplicationMonitoring != nil {
+		builder.dynakube.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage = image
+	} else {
+		builder.dynakube.Spec.OneAgent.ApplicationMonitoring = &dynatracev1beta1.ApplicationMonitoringSpec{
+			AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{
+				InitResources:    corev1.ResourceRequirements{},
+				CodeModulesImage: image,
+			},
+		}
+	}
+	return builder
+}
+
 func (builder *testDynaKubeBuilder) withClassicFullStackImageVersion(version string) *testDynaKubeBuilder {
 	if builder.dynakube.Spec.OneAgent.ClassicFullStack != nil {
 		builder.dynakube.Spec.OneAgent.ClassicFullStack.Version = version
