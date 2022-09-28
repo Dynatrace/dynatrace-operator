@@ -10,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -34,7 +33,6 @@ type garbageCollectionInfo struct {
 // CSIGarbageCollector removes unused and outdated agent versions
 type CSIGarbageCollector struct {
 	apiReader client.Reader
-	opts      dtcsi.CSIOptions
 	fs        afero.Fs
 	db        metadata.Access
 	path      metadata.PathResolver
@@ -44,17 +42,10 @@ type CSIGarbageCollector struct {
 func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db metadata.Access) *CSIGarbageCollector {
 	return &CSIGarbageCollector{
 		apiReader: apiReader,
-		opts:      opts,
 		fs:        afero.NewOsFs(),
 		db:        db,
 		path:      metadata.PathResolver{RootDir: opts.RootDir},
 	}
-}
-
-func (gc *CSIGarbageCollector) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&dynatracev1beta1.DynaKube{}).
-		Complete(gc)
 }
 
 func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

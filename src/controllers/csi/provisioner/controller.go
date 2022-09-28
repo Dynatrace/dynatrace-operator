@@ -19,6 +19,7 @@ package csiprovisioner
 import (
 	"context"
 	"fmt"
+	csigc "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/gc"
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -54,6 +55,8 @@ type OneAgentProvisioner struct {
 	recorder     record.EventRecorder
 	db           metadata.Access
 	path         metadata.PathResolver
+
+	gc *csigc.CSIGarbageCollector
 }
 
 // NewOneAgentProvisioner returns a new OneAgentProvisioner
@@ -67,6 +70,7 @@ func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions, db metad
 		recorder:     mgr.GetEventRecorderFor("OneAgentProvisioner"),
 		db:           db,
 		path:         metadata.PathResolver{RootDir: opts.RootDir},
+		gc:           csigc.NewCSIGarbageCollector(mgr.GetAPIReader(), db),
 	}
 }
 
@@ -77,6 +81,8 @@ func (provisioner *OneAgentProvisioner) SetupWithManager(mgr ctrl.Manager) error
 }
 
 func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	defer provisioner.gc.Reconcile(ctx, request)
+
 	log.Info("reconciling DynaKube", "namespace", request.Namespace, "dynakube", request.Name)
 
 	dk, err := provisioner.getDynaKube(ctx, request.NamespacedName)
