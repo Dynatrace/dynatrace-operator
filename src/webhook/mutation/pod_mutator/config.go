@@ -9,6 +9,10 @@ const (
 	updatePodEvent       = "UpdatePod"
 	IncompatibleCRDEvent = "IncompatibleCRDPresent"
 	missingDynakubeEvent = "MissingDynakube"
+
+	defaultUser   int64 = 1001
+	defaultGroup  int64 = 1001
+	rootUserGroup int64 = 0
 )
 
 var (
