@@ -61,12 +61,38 @@ csidriver:
       operator: Exists
   labels: []
   annotations: []
-  requests:
-    cpu: 300m
-    memory: 100Mi
-  limits:
-    cpu: 300m
-    memory: 100Mi
+  server:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 100Mi
+      limits:
+        cpu: 50m
+        memory: 100Mi
+  provisioner:
+    resources:
+      requests:
+        cpu: 300m
+        memory: 100Mi
+      limits:
+        cpu: 300m
+        memory: 100Mi
+  registrar:
+    resources:
+      requests:
+        cpu: 20m
+        memory: 30Mi
+      limits:
+        cpu: 20m
+        memory: 30Mi
+  livenessprobe:
+    resources:
+      requests:
+        cpu: 20m
+        memory: 30Mi
+      limits:
+        cpu: 20m
+        memory: 30Mi
 
 securityContextConstraints:
   enabled: true # Only applicable for Openshift
