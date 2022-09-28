@@ -5256,10 +5256,10 @@ spec:
           protocol: TCP
         resources:
           limits:
-            cpu: 150m
+            cpu: 50m
             memory: 100Mi
           requests:
-            cpu: 150m
+            cpu: 50m
             memory: 100Mi
         securityContext:
           runAsUser: 0
@@ -5365,12 +5365,12 @@ spec:
           successThreshold: 1
           timeoutSeconds: 15
         resources:
-            limits:
-              cpu: 100m
-              memory: 100Mi
-            requests:
-              cpu: 10m
-              memory: 20Mi
+          limits:
+            cpu: 20m
+            memory: 30Mi
+          requests:
+            cpu: 20m
+            memory: 30Mi
         securityContext:
           runAsUser: 0
           privileged: false
@@ -5399,11 +5399,11 @@ spec:
         - livenessprobe
         resources:
           limits:
-            cpu: 100m
-            memory: 100Mi
+            cpu: 20m
+            memory: 30Mi
           requests:
-            cpu: 10m
-            memory: 20Mi
+            cpu: 20m
+            memory: 30Mi
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         securityContext:
