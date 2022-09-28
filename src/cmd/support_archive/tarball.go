@@ -32,9 +32,15 @@ func newTarball(ctx *supportArchiveContext) (*tarball, error) {
 }
 
 func (t *tarball) close() {
-	t.tarWriter.Close()
-	t.gzipWriter.Close()
-	t.tarFile.Close()
+	if t.tarWriter != nil {
+		t.tarWriter.Close()
+	}
+	if t.gzipWriter != nil {
+		t.gzipWriter.Close()
+	}
+	if t.tarFile != nil {
+		t.tarFile.Close()
+	}
 }
 
 func (t *tarball) addFile(fileName string, file io.Reader) error {
