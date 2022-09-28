@@ -128,10 +128,10 @@ tests:
                     protocol: TCP
                 resources:
                   limits:
-                    cpu: 150m
+                    cpu: 50m
                     memory: 100Mi
                   requests:
-                    cpu: 150m
+                    cpu: 50m
                     memory: 100Mi
                 securityContext:
                   allowPrivilegeEscalation: true
@@ -233,11 +233,11 @@ tests:
                 name: registrar
                 resources:
                   limits:
-                    cpu: 100m
-                    memory: 100Mi
+                    cpu: 20m
+                    memory: 30Mi
                   requests:
-                    cpu: 10m
-                    memory: 20Mi
+                    cpu: 20m
+                    memory: 30Mi
                 securityContext:
                   privileged: false
                   readOnlyRootFilesystem: true
@@ -264,11 +264,11 @@ tests:
                 name: liveness-probe
                 resources:
                   limits:
-                    cpu: 100m
-                    memory: 100Mi
+                    cpu: 20m
+                    memory: 30Mi
                   requests:
-                    cpu: 10m
-                    memory: 20Mi
+                    cpu: 20m
+                    memory: 30Mi
                 securityContext:
                   allowPrivilegeEscalation: false
                   privileged: false
@@ -356,13 +356,13 @@ tests:
           path: spec.template.metadata.labels.testKey
           value: testValue
 
-  - it: should take resource limits from values file
+  - it: should take resource limits from values file for provisioner
     set:
       csidriver.enabled: true
-      csidriver.requests.cpu: 600m
-      csidriver.requests.memory: 200Mi
-      csidriver.limits.cpu: 900m
-      csidriver.limits.memory: 300Mi
+      csidriver.provisioner.resources.requests.cpu: 600m
+      csidriver.provisioner.resources.requests.memory: 200Mi
+      csidriver.provisioner.resources.limits.cpu: 900m
+      csidriver.provisioner.resources.limits.memory: 300Mi
     asserts:
       - equal:
           path: spec.template.spec.containers[1].name
@@ -378,6 +378,75 @@ tests:
           value: 900m
       - equal:
           path: spec.template.spec.containers[1].resources.limits.memory
+          value: 300Mi
+  - it: should take resource limits from values file for server
+    set:
+      csidriver.enabled: true
+      csidriver.server.resources.requests.cpu: 600m
+      csidriver.server.resources.requests.memory: 200Mi
+      csidriver.server.resources.limits.cpu: 900m
+      csidriver.server.resources.limits.memory: 300Mi
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: server
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.cpu
+          value: 600m
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.memory
+          value: 200Mi
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.cpu
+          value: 900m
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.memory
+          value: 300Mi
+  - it: should take resource limits from values file for registrar
+    set:
+      csidriver.enabled: true
+      csidriver.registrar.resources.requests.cpu: 600m
+      csidriver.registrar.resources.requests.memory: 200Mi
+      csidriver.registrar.resources.limits.cpu: 900m
+      csidriver.registrar.resources.limits.memory: 300Mi
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[2].name
+          value: registrar
+      - equal:
+          path: spec.template.spec.containers[2].resources.requests.cpu
+          value: 600m
+      - equal:
+          path: spec.template.spec.containers[2].resources.requests.memory
+          value: 200Mi
+      - equal:
+          path: spec.template.spec.containers[2].resources.limits.cpu
+          value: 900m
+      - equal:
+          path: spec.template.spec.containers[2].resources.limits.memory
+          value: 300Mi
+  - it: should take resource limits from values file for livenessprobe
+    set:
+      csidriver.enabled: true
+      csidriver.livenessprobe.resources.requests.cpu: 600m
+      csidriver.livenessprobe.resources.requests.memory: 200Mi
+      csidriver.livenessprobe.resources.limits.cpu: 900m
+      csidriver.livenessprobe.resources.limits.memory: 300Mi
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[3].name
+          value: liveness-probe
+      - equal:
+          path: spec.template.spec.containers[3].resources.requests.cpu
+          value: 600m
+      - equal:
+          path: spec.template.spec.containers[3].resources.requests.memory
+          value: 200Mi
+      - equal:
+          path: spec.template.spec.containers[3].resources.limits.cpu
+          value: 900m
+      - equal:
+          path: spec.template.spec.containers[3].resources.limits.memory
           value: 300Mi
   - it: should take kubelet path from values file
     set:
