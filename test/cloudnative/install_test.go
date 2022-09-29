@@ -3,6 +3,8 @@
 package cloudnative
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/test/setup"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -20,12 +22,12 @@ func install(t *testing.T) features.Feature {
 
 	defaultInstallation := features.New("default installation")
 
-	installAndDeploy(defaultInstallation, secretConfig, "../testdata/cloudnative/sample-deployment.yaml")
-	assessDeployment(defaultInstallation)
+	setup.InstallAndDeploy(defaultInstallation, secretConfig, "../testdata/cloudnative/sample-deployment.yaml")
+	setup.AssessDeployment(defaultInstallation)
 
-	defaultInstallation.Assess("dynakube applied", applyDynakube(secretConfig.ApiUrl, &v1beta1.CloudNativeFullStackSpec{}))
+	defaultInstallation.Assess("dynakube applied", dynakube.ApplyCloudNative(secretConfig.ApiUrl, &v1beta1.CloudNativeFullStackSpec{}))
 
-	assessDynakubeStartup(defaultInstallation)
+	setup.AssessDynakubeStartup(defaultInstallation)
 	assessOneAgentsAreRunning(defaultInstallation)
 
 	return defaultInstallation.Feature()

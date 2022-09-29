@@ -1,6 +1,6 @@
 //go:build e2e
 
-package cloudnative
+package dynakube
 
 import (
 	"context"
@@ -20,44 +20,51 @@ import (
 )
 
 const (
-	dynakubeName       = "dynakube"
-	dynatraceNamespace = "dynatrace"
+	Name      = "dynakube"
+	Namespace = "dynatrace"
 )
 
-func dynakube() dynatracev1beta1.DynaKube {
+func New() dynatracev1beta1.DynaKube {
 	return dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      dynakubeName,
-			Namespace: dynatraceNamespace,
+			Name:      Name,
+			Namespace: Namespace,
 		},
 	}
 }
 
-func applyDynakube(apiUrl string, cloudNativeFullStackSpec *dynatracev1beta1.CloudNativeFullStackSpec) features.Func {
+func newWithActiveGate(apiUrl string) dynatracev1beta1.DynaKube {
+	instance := New()
+	instance.Spec = dynatracev1beta1.DynaKubeSpec{
+		APIURL: apiUrl,
+		NamespaceSelector: metav1.LabelSelector{
+			MatchLabels: map[string]string{
+				"inject": "dynakube",
+			},
+		},
+		ActiveGate: dynatracev1beta1.ActiveGateSpec{
+			Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+				dynatracev1beta1.KubeMonCapability.DisplayName,
+				dynatracev1beta1.DynatraceApiCapability.DisplayName,
+				dynatracev1beta1.RoutingCapability.DisplayName,
+				dynatracev1beta1.MetricsIngestCapability.DisplayName,
+				dynatracev1beta1.StatsdIngestCapability.DisplayName,
+			},
+		},
+	}
+
+	return instance
+}
+
+func ApplyClassicFullStack(apiUrl string, classicFullStackSpec *dynatracev1beta1.HostInjectSpec) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		require.NoError(t, dynatracev1beta1.AddToScheme(environmentConfig.Client().Resources().GetScheme()))
 
-		instance := dynakube()
-		instance.Spec = dynatracev1beta1.DynaKubeSpec{
-			APIURL: apiUrl,
-			NamespaceSelector: metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"inject": "dynakube",
-				},
-			},
-			OneAgent: dynatracev1beta1.OneAgentSpec{
-				CloudNativeFullStack: cloudNativeFullStackSpec,
-			},
-			ActiveGate: dynatracev1beta1.ActiveGateSpec{
-				Capabilities: []dynatracev1beta1.CapabilityDisplayName{
-					dynatracev1beta1.KubeMonCapability.DisplayName,
-					dynatracev1beta1.DynatraceApiCapability.DisplayName,
-					dynatracev1beta1.RoutingCapability.DisplayName,
-					dynatracev1beta1.MetricsIngestCapability.DisplayName,
-					dynatracev1beta1.StatsdIngestCapability.DisplayName,
-				},
-			},
+		instance := newWithActiveGate(apiUrl)
+		instance.Annotations = map[string]string{
+			dynatracev1beta1.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
 		}
+		instance.Spec.OneAgent.ClassicFullStack = classicFullStackSpec
 
 		require.NoError(t, environmentConfig.Client().Resources().Create(ctx, &instance))
 
@@ -65,9 +72,22 @@ func applyDynakube(apiUrl string, cloudNativeFullStackSpec *dynatracev1beta1.Clo
 	}
 }
 
-func deleteDynakubeIfExists() func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
+func ApplyCloudNative(apiUrl string, cloudNativeFullStackSpec *dynatracev1beta1.CloudNativeFullStackSpec) features.Func {
+	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+		require.NoError(t, dynatracev1beta1.AddToScheme(environmentConfig.Client().Resources().GetScheme()))
+
+		instance := newWithActiveGate(apiUrl)
+		instance.Spec.OneAgent.CloudNativeFullStack = cloudNativeFullStackSpec
+
+		require.NoError(t, environmentConfig.Client().Resources().Create(ctx, &instance))
+
+		return ctx
+	}
+}
+
+func DeleteIfExists() func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
 	return func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
-		instance := dynakube()
+		instance := New()
 		resources := environmentConfig.Client().Resources()
 
 		err := dynatracev1beta1.AddToScheme(resources.GetScheme())
@@ -94,9 +114,9 @@ func deleteDynakubeIfExists() func(ctx context.Context, environmentConfig *envco
 	}
 }
 
-func waitForDynakubePhase() features.Func {
+func WaitForDynakubePhase() features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		instance := dynakube()
+		instance := New()
 		resources := environmentConfig.Client().Resources()
 
 		require.NoError(t, wait.For(conditions.New(resources).ResourceMatch(&instance, func(object k8s.Object) bool {

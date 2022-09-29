@@ -5,6 +5,8 @@ package cloudnative
 import (
 	"context"
 	"encoding/json"
+	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/test/setup"
 	"os"
 	"path"
 	"strconv"
@@ -59,13 +61,13 @@ func codeModules(t *testing.T) features.Feature {
 
 	codeModulesInjection := features.New("codemodules injection")
 
-	installAndDeploy(codeModulesInjection, secretConfigs[0], "../testdata/cloudnative/codemodules-deployment.yaml")
+	setup.InstallAndDeploy(codeModulesInjection, secretConfigs[0], "../testdata/cloudnative/codemodules-deployment.yaml")
 
-	assessDeployment(codeModulesInjection)
+	setup.AssessDeployment(codeModulesInjection)
 
-	codeModulesInjection.Assess("install dynakube", applyDynakube(secretConfigs[0].ApiUrl, codeModulesSpec()))
+	codeModulesInjection.Assess("install dynakube", dynakube.ApplyCloudNative(secretConfigs[0].ApiUrl, codeModulesSpec()))
 
-	assessDynakubeStartup(codeModulesInjection)
+	setup.AssessDynakubeStartup(codeModulesInjection)
 	assessOneAgentsAreRunning(codeModulesInjection)
 
 	codeModulesInjection.Assess("csi driver did not crash", csiDriverIsAvailable)
@@ -259,7 +261,7 @@ func getSecondTenantSecret(apiToken string) corev1.Secret {
 	return corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "dynakube-2",
-			Namespace: dynatraceNamespace,
+			Namespace: dynakube.Namespace,
 		},
 		Data: map[string][]byte{
 			"apiToken": []byte(apiToken),
@@ -271,7 +273,7 @@ func getSecondTenantDynakube(apiUrl string) v1beta1.DynaKube {
 	dynakube := v1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "dynakube-2",
-			Namespace: dynatraceNamespace,
+			Namespace: dynakube.Namespace,
 		},
 		Spec: v1beta1.DynaKubeSpec{
 			APIURL: apiUrl,
