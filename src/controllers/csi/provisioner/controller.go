@@ -80,8 +80,19 @@ func (provisioner *OneAgentProvisioner) SetupWithManager(mgr ctrl.Manager) error
 		Complete(provisioner)
 }
 
-func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	defer provisioner.gc.Reconcile(ctx, request, reconcile.Result{})
+func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.Request) (result reconcile.Result, err error) {
+	defer func() {
+		// if Provisioning succeeded, execute Garbage Collector
+		if err != nil {
+			gcResult, gcErr := provisioner.gc.Reconcile(ctx, request, reconcile.Result{})
+
+			// if Garbage Collector failed, set return values to these returned by GC Reconciler
+			if err != nil {
+				result = gcResult
+				err = gcErr
+			}
+		}
+	}()
 
 	log.Info("reconciling DynaKube", "namespace", request.Namespace, "dynakube", request.Name)
 
