@@ -46,48 +46,56 @@ func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db m
 	}
 }
 
-func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.Request, reconcileResultIfError reconcile.Result) (reconcile.Result, error) {
+func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.Request, defaultReconcileResult reconcile.Result) (reconcile.Result, error) {
 	log.Info("running OneAgent garbage collection", "namespace", request.Namespace, "name", request.Name)
 
 	dynakube, err := getDynakubeFromRequest(ctx, gc.apiReader, request)
 	if err != nil {
-		return reconcileResultIfError, err
+		return defaultReconcileResult, err
 	}
 	if dynakube == nil {
-		return reconcileResultIfError, nil
+		return defaultReconcileResult, nil
 	}
 
 	dynakubeList, err := getAllDynakubes(ctx, gc.apiReader, dynakube.Namespace)
 	if err != nil {
-		return reconcileResultIfError, err
+		return defaultReconcileResult, err
 	}
 
 	if !isSafeToGC(ctx, gc.db, dynakubeList) {
 		log.Info("dynakube metadata is in a unfinished state, checking later")
-		return reconcileResultIfError, nil
+		return defaultReconcileResult, nil
 	}
 
 	gcInfo, err := collectGCInfo(*dynakube, dynakubeList)
-	if err != nil {
-		return reconcileResultIfError, err
+	if err != nil || gcInfo == nil {
+		return defaultReconcileResult, nil
 	}
-	if gcInfo == nil {
-		return reconcileResultIfError, nil
+	if err := ctx.Err(); err != nil {
+		return defaultReconcileResult, err
 	}
 
 	log.Info("running binary garbage collection")
 	gc.runBinaryGarbageCollection(ctx, gcInfo.pinnedVersions, gcInfo.tenantUUID, gcInfo.latestAgentVersion)
 
+	if err := ctx.Err(); err != nil {
+		return defaultReconcileResult, err
+	}
+
 	log.Info("running log garbage collection")
-	gc.runLogGarbageCollection(gcInfo.tenantUUID)
+	gc.runLogGarbageCollection(ctx, gcInfo.tenantUUID)
+
+	if err := ctx.Err(); err != nil {
+		return defaultReconcileResult, err
+	}
 
 	log.Info("running shared images garbage collection")
 	if err := gc.runSharedImagesGarbageCollection(ctx); err != nil {
 		log.Info("failed to garbage collect the shared images")
-		return reconcileResultIfError, err
+		return defaultReconcileResult, err
 	}
 
-	return reconcileResultIfError, nil
+	return defaultReconcileResult, nil
 }
 
 func getDynakubeFromRequest(ctx context.Context, apiReader client.Reader, request reconcile.Request) (*dynatracev1beta1.DynaKube, error) {
