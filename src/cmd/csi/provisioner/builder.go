@@ -129,11 +129,6 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		//err = csigc.NewCSIGarbageCollector(csiManager.GetClient(), builder.getCsiOptions(), access).SetupWithManager(csiManager)
-		//if err != nil {
-		//	return err
-		//}
-
 		err = csiManager.Start(signalHandler)
 		return errors.WithStack(err)
 	}

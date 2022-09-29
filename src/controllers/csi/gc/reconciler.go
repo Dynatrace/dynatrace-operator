@@ -2,6 +2,7 @@ package csigc
 
 import (
 	"context"
+
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"

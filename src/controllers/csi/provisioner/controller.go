@@ -19,11 +19,11 @@ package csiprovisioner
 import (
 	"context"
 	"fmt"
-	csigc "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/gc"
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
+	csigc "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/gc"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"

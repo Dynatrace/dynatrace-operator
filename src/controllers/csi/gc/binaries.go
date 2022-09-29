@@ -27,8 +27,6 @@ func (gc *CSIGarbageCollector) runBinaryGarbageCollection(ctx context.Context, p
 	log.Info("got all stored versions", "tenantUUID", tenantUUID, "len(storedVersions)", len(storedVersions))
 
 	for _, version := range storedVersions {
-		log.Info(">> shouldDelete", "version", version, "isNotLatestVersion(version, latestVersion)", isNotLatestVersion(version, latestVersion),
-			"shouldDeleteVersion(version, usedVersions)", shouldDeleteVersion(version, usedVersions), "pinnedVersions.isNotPinned(version)", pinnedVersions.isNotPinned(version))
 		shouldDelete := isNotLatestVersion(version, latestVersion) &&
 			shouldDeleteVersion(version, usedVersions) && pinnedVersions.isNotPinned(version)
 
