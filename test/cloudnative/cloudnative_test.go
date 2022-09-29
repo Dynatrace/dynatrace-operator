@@ -6,6 +6,7 @@ import (
 	"context"
 	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/log"
+	"github.com/Dynatrace/dynatrace-operator/test/sampleapps"
 	"os"
 	"path"
 	"testing"
@@ -31,12 +32,12 @@ func TestMain(m *testing.M) {
 	testEnvironment = environment.Get()
 	testEnvironment.BeforeEachTest(dynakube.DeleteIfExists())
 	testEnvironment.BeforeEachTest(oneagent.WaitForDaemonSetPodsDeletion())
-	testEnvironment.BeforeEachTest(namespace.DeleteIfExists(sampleAppsNamespace))
+	testEnvironment.BeforeEachTest(namespace.DeleteIfExists(sampleapps.Namespace))
 	testEnvironment.BeforeEachTest(namespace.Recreate(dynakube.Namespace))
 
 	testEnvironment.AfterEachTest(dynakube.DeleteIfExists())
 	testEnvironment.AfterEachTest(oneagent.WaitForDaemonSetPodsDeletion())
-	testEnvironment.AfterEachTest(namespace.Delete(sampleAppsNamespace))
+	testEnvironment.AfterEachTest(namespace.Delete(sampleapps.Namespace))
 	testEnvironment.AfterEachTest(namespace.Delete(dynakube.Namespace))
 
 	testEnvironment.Run(m)
@@ -48,7 +49,7 @@ func TestCloudNative(t *testing.T) {
 }
 
 func assessOneAgentsAreRunning(builder *features.FeatureBuilder) {
-	builder.Assess("restart sample apps", restartSampleApps)
+	builder.Assess("restart sample apps", sampleapps.Restart)
 	builder.Assess("sample apps have working init containers", checkInitContainers)
 	builder.Assess("osAgent can connect", oneagent.OSAgentCanConnect())
 }
@@ -66,11 +67,8 @@ func getSecretConfig(t *testing.T) secrets.Secret {
 }
 
 func checkInitContainers(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-	var pods corev1.PodList
 	resources := environmentConfig.Client().Resources()
-
-	require.NoError(t, resources.WithNamespace(sampleAppsNamespace).List(ctx, &pods))
-
+	pods := sampleapps.Get(t, ctx, resources)
 	clientset, err := kubernetes.NewForConfig(resources.GetConfig())
 
 	require.NoError(t, err)
@@ -91,7 +89,7 @@ func checkInitContainers(ctx context.Context, t *testing.T, environmentConfig *e
 		require.NoError(t, err)
 		log.AssertLogContains(t, logStream, "standalone agent init completed")
 
-		executionQuery := pod.NewExecutionQuery(podItem, sampleAppsName, "cat /opt/dynatrace/oneagent-paas/log/nginx/ruxitagent_nginx_myapp-__bootstrap_1.0.log")
+		executionQuery := pod.NewExecutionQuery(podItem, sampleapps.Name, "cat /opt/dynatrace/oneagent-paas/log/nginx/ruxitagent_nginx_myapp-__bootstrap_1.0.log")
 		executionResult, err := executionQuery.Execute(environmentConfig.Client().RESTConfig())
 
 		require.NoError(t, err)

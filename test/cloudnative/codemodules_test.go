@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/test/sampleapps"
 	"github.com/Dynatrace/dynatrace-operator/test/setup"
 	"os"
 	"path"
@@ -191,8 +192,8 @@ func volumesAreMountedCorrectly() features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resource := environmentConfig.Client().Resources()
 		err := deployment.NewQuery(ctx, resource, client.ObjectKey{
-			Name:      sampleAppsName,
-			Namespace: sampleAppsNamespace,
+			Name:      sampleapps.Name,
+			Namespace: sampleapps.Namespace,
 		}).ForEachPod(func(podItem corev1.Pod) {
 			volumes := podItem.Spec.Volumes
 			volumeMounts := podItem.Spec.Containers[0].VolumeMounts
@@ -201,14 +202,14 @@ func volumesAreMountedCorrectly() features.Func {
 			assert.True(t, isVolumeMounted(t, volumeMounts, oneagent_mutation.OneAgentBinVolumeName))
 
 			executionResult, err := pod.
-				NewExecutionQuery(podItem, sampleAppsName, bash.ListDirectory(webhook.DefaultInstallPath)).
+				NewExecutionQuery(podItem, sampleapps.Name, bash.ListDirectory(webhook.DefaultInstallPath)).
 				Execute(environmentConfig.Client().RESTConfig())
 
 			require.NoError(t, err)
 			assert.NotEmpty(t, executionResult.StdOut.String())
 
 			executionResult, err = pod.
-				NewExecutionQuery(podItem, sampleAppsName, bash.Pipe(
+				NewExecutionQuery(podItem, sampleapps.Name, bash.Pipe(
 					bash.DiskUsageWithTotal(webhook.DefaultInstallPath),
 					bash.FilterLastLineOnly())).
 				Execute(environmentConfig.Client().RESTConfig())

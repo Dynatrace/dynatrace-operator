@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/environment"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/test/sampleapps"
 	"github.com/Dynatrace/dynatrace-operator/test/secrets"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
@@ -17,12 +18,6 @@ import (
 )
 
 const (
-	sampleAppsName      = "myapp"
-	sampleAppsNamespace = "test-namespace-1"
-
-	dynakubeName       = "dynakube"
-	dynatraceNamespace = "dynatrace"
-
 	installSecretsPath = "../testdata/secrets/classic-fullstack-install.yaml"
 )
 
@@ -32,13 +27,13 @@ func TestMain(m *testing.M) {
 	testEnvironment = environment.Get()
 	testEnvironment.BeforeEachTest(dynakube.DeleteIfExists())
 	testEnvironment.BeforeEachTest(oneagent.WaitForDaemonSetPodsDeletion())
-	testEnvironment.BeforeEachTest(namespace.DeleteIfExists(sampleAppsNamespace))
-	testEnvironment.BeforeEachTest(namespace.Recreate(dynatraceNamespace))
+	testEnvironment.BeforeEachTest(namespace.DeleteIfExists(sampleapps.Namespace))
+	testEnvironment.BeforeEachTest(namespace.Recreate(dynakube.Namespace))
 
-	//testEnvironment.AfterEachTest(dynakube.DeleteIfExists())
-	//testEnvironment.AfterEachTest(oneagent.WaitForDaemonSetPodsDeletion())
-	//testEnvironment.AfterEachTest(namespace.Delete(sampleAppsNamespace))
-	//testEnvironment.AfterEachTest(namespace.Delete(dynatraceNamespace))
+	testEnvironment.AfterEachTest(dynakube.DeleteIfExists())
+	testEnvironment.AfterEachTest(oneagent.WaitForDaemonSetPodsDeletion())
+	testEnvironment.AfterEachTest(namespace.Delete(sampleapps.Namespace))
+	testEnvironment.AfterEachTest(namespace.Delete(dynakube.Namespace))
 
 	testEnvironment.Run(m)
 }
