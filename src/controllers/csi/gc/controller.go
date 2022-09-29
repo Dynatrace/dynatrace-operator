@@ -2,8 +2,6 @@ package csigc
 
 import (
 	"context"
-	"time"
-
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
@@ -48,34 +46,33 @@ func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db m
 	}
 }
 
-func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.Request, reconcileResultIfError reconcile.Result) (reconcile.Result, error) {
 	log.Info("running OneAgent garbage collection", "namespace", request.Namespace, "name", request.Name)
-	reconcileResult := reconcile.Result{RequeueAfter: 60 * time.Minute}
 
 	dynakube, err := getDynakubeFromRequest(ctx, gc.apiReader, request)
 	if err != nil {
-		return reconcileResult, err
+		return reconcileResultIfError, err
 	}
 	if dynakube == nil {
-		return reconcileResult, nil
+		return reconcileResultIfError, nil
 	}
 
 	dynakubeList, err := getAllDynakubes(ctx, gc.apiReader, dynakube.Namespace)
 	if err != nil {
-		return reconcileResult, err
+		return reconcileResultIfError, err
 	}
 
 	if !isSafeToGC(ctx, gc.db, dynakubeList) {
 		log.Info("dynakube metadata is in a unfinished state, checking later")
-		return reconcileResult, nil
+		return reconcileResultIfError, nil
 	}
 
 	gcInfo, err := collectGCInfo(*dynakube, dynakubeList)
 	if err != nil {
-		return reconcileResult, err
+		return reconcileResultIfError, err
 	}
 	if gcInfo == nil {
-		return reconcileResult, nil
+		return reconcileResultIfError, nil
 	}
 
 	log.Info("running binary garbage collection")
@@ -87,10 +84,10 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 	log.Info("running shared images garbage collection")
 	if err := gc.runSharedImagesGarbageCollection(ctx); err != nil {
 		log.Info("failed to garbage collect the shared images")
-		return reconcileResult, err
+		return reconcileResultIfError, err
 	}
 
-	return reconcileResult, nil
+	return reconcileResultIfError, nil
 }
 
 func getDynakubeFromRequest(ctx context.Context, apiReader client.Reader, request reconcile.Request) (*dynatracev1beta1.DynaKube, error) {

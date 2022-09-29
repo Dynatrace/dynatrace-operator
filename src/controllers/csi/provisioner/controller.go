@@ -70,7 +70,7 @@ func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions, db metad
 		recorder:     mgr.GetEventRecorderFor("OneAgentProvisioner"),
 		db:           db,
 		path:         metadata.PathResolver{RootDir: opts.RootDir},
-		gc:           csigc.NewCSIGarbageCollector(mgr.GetAPIReader(), db),
+		gc:           csigc.NewCSIGarbageCollector(mgr.GetAPIReader(), opts, db),
 	}
 }
 
@@ -81,7 +81,7 @@ func (provisioner *OneAgentProvisioner) SetupWithManager(mgr ctrl.Manager) error
 }
 
 func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	defer provisioner.gc.Reconcile(ctx, request)
+	defer provisioner.gc.Reconcile(ctx, request, reconcile.Result{})
 
 	log.Info("reconciling DynaKube", "namespace", request.Namespace, "dynakube", request.Name)
 
