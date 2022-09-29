@@ -23,6 +23,16 @@ func (dsInfo *builderInfo) arguments() []string {
 	args = dsInfo.appendNetworkZoneArg(args)
 	args = appendOperatorVersionArg(args)
 	args = dsInfo.appendMetadataArgs(args)
+	args = dsInfo.appendImmutableImageArgs(args)
+
+	return args
+}
+
+func (dsInfo *builderInfo) appendImmutableImageArgs(args []string) []string {
+	if dsInfo.instance.FeatureOneAgentUseImmutableImage() {
+		args = append(args, fmt.Sprintf("--set-tenant=%s", dsInfo.instance.Status.ConnectionInfo.TenantUUID))
+		args = append(args, fmt.Sprintf("--set-server={%s}", dsInfo.instance.Status.ConnectionInfo.FormattedCommunicationEndpoints))
+	}
 	return args
 }
 

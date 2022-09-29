@@ -29,10 +29,11 @@ import (
 
 const (
 	// PullSecretSuffix is the suffix appended to the DynaKube name to n.
-	PullSecretSuffix      = "-pull-secret"
-	TenantSecretSuffix    = "-activegate-tenant-secret"
-	AuthTokenSecretSuffix = "-activegate-authtoken-secret"
-	PodNameOsAgent        = "oneagent"
+	PullSecretSuffix             = "-pull-secret"
+	ActiveGateTenantSecretSuffix = "-activegate-tenant-secret"
+	OneAgentTenantSecretSuffix   = "-oneagent-tenant-secret"
+	AuthTokenSecretSuffix        = "-activegate-authtoken-secret"
+	PodNameOsAgent               = "oneagent"
 
 	TrustedCAKey = "certs"
 	ProxyKey     = "proxy"
@@ -162,7 +163,12 @@ func (dk *DynaKube) ShouldAutoUpdateOneAgent() bool {
 
 // AGTenantSecret returns the name of the secret containing tenant UUID, token and communication endpoints for ActiveGate
 func (dk *DynaKube) AGTenantSecret() string {
-	return dk.Name + TenantSecretSuffix
+	return dk.Name + ActiveGateTenantSecretSuffix
+}
+
+// OATenantSecret returns the name of the secret containing tenant UUID, token and communication endpoints for OneAgent
+func (dk *DynaKube) OATenantSecret() string {
+	return dk.Name + OneAgentTenantSecretSuffix
 }
 
 // ActiveGateAuthTokenSecret returns the name of the secret containing the ActiveGateAuthToken, which is mounted to the AGs

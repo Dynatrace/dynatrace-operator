@@ -121,5 +121,5 @@ func (r *Reconciler) updateSecret(agSecret *corev1.Secret, desiredAGSecretData m
 }
 
 func extendWithAGSecretSuffix(name string) string {
-	return name + dynatracev1beta1.TenantSecretSuffix
+	return name + dynatracev1beta1.ActiveGateTenantSecretSuffix
 }

@@ -25,6 +25,11 @@ func prepareVolumeMounts(instance *dynatracev1beta1.DynaKube) []corev1.VolumeMou
 	if instance != nil && instance.HasActiveGateCaCert() {
 		volumeMounts = append(volumeMounts, getActiveGateCaCertVolumeMount())
 	}
+
+	if instance != nil && instance.FeatureOneAgentUseImmutableImage() {
+		volumeMounts = append(volumeMounts, getOneAgentSecretVolumeMount())
+	}
+
 	return volumeMounts
 }
 
@@ -39,6 +44,13 @@ func getActiveGateCaCertVolumeMount() corev1.VolumeMount {
 	return corev1.VolumeMount{
 		Name:      activeGateCaCertVolumeName,
 		MountPath: activeGateCaCertVolumeMountPath,
+	}
+}
+
+func getOneAgentSecretVolumeMount() corev1.VolumeMount {
+	return corev1.VolumeMount{
+		Name:      oneAgentSecretVolumeName,
+		MountPath: oneAgentSecretMountPath,
 	}
 }
 
@@ -79,6 +91,10 @@ func prepareVolumes(instance *dynatracev1beta1.DynaKube) []corev1.Volume {
 
 	if instance.HasActiveGateCaCert() {
 		volumes = append(volumes, getActiveGateCaCertVolume(instance))
+	}
+
+	if instance.FeatureOneAgentUseImmutableImage() {
+		volumes = append(volumes, getOneAgentSecretVolume(instance))
 	}
 
 	return volumes
@@ -130,6 +146,17 @@ func getActiveGateCaCertVolume(instance *dynatracev1beta1.DynaKube) corev1.Volum
 						Path: "custom.pem",
 					},
 				},
+			},
+		},
+	}
+}
+
+func getOneAgentSecretVolume(instance *dynatracev1beta1.DynaKube) corev1.Volume {
+	return corev1.Volume{
+		Name: oneAgentSecretVolumeName,
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: oneAgentSecretName,
 			},
 		},
 	}

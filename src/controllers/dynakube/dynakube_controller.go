@@ -7,6 +7,8 @@ import (
 	"os"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
+
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/apimonitoring"
@@ -193,6 +195,8 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 		return
 	}
 
+	// todo create connection info secret here
+
 	err = status.SetDynakubeStatus(dkState.Instance, status.Options{
 		Dtc:       dtc,
 		ApiClient: controller.apiReader,
@@ -217,6 +221,32 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 	err = controller.reconcileActiveGate(ctx, dkState, dtc)
 	if dkState.Error(err) {
 		return
+	}
+
+	// todo move into own function and name secret after dynakube
+	if dkState.Instance.FeatureOneAgentUseImmutableImage() {
+		// connection info
+		connectionInfo, err := dtc.GetConnectionInfo()
+		if err != nil {
+			log.Error(err, "failed to get connection info")
+			return
+		}
+
+		// create secret with 'tenant_token' field
+		secret := corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "dynatrace-oneagent",
+				Namespace: dkState.Instance.Namespace,
+			},
+			Data: map[string][]byte{
+				"tenant-token": []byte(connectionInfo.TenantToken),
+			},
+		}
+
+		secretquery := kubeobjects.NewSecretQuery(ctx, controller.client, controller.apiReader, log)
+		if err := secretquery.CreateOrUpdate(secret); err != nil {
+			log.Error(err, "could not create or update secret for tenant token")
+		}
 	}
 
 	err = controller.reconcileOneAgent(ctx, dkState)
