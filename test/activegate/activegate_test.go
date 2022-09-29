@@ -12,7 +12,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/test/csi"
 	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/environment"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/namespace"
@@ -20,6 +19,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/logs"
 	"github.com/Dynatrace/dynatrace-operator/test/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/operator"
+	"github.com/Dynatrace/dynatrace-operator/test/proxy"
 	"github.com/Dynatrace/dynatrace-operator/test/secrets"
 	"github.com/Dynatrace/dynatrace-operator/test/webhook"
 	"github.com/stretchr/testify/assert"
@@ -32,9 +32,6 @@ import (
 )
 
 const (
-	proxyNamespace  = "proxy"
-	proxyDeployment = "squid"
-
 	agNamespace = "dynatrace"
 	agPodName   = "dynakube-activegate-0"
 
@@ -58,25 +55,25 @@ var (
 
 	agMounts = map[string][]string{
 		agContainerName: {
-			"/dev/root /var/lib/dynatrace/gateway/config",
-			"tmpfs /var/lib/dynatrace/secrets/tokens/tenant-token",
-			"tmpfs /var/lib/dynatrace/secrets/tokens/auth-token",
-			"/dev/root /var/lib/dynatrace/remotepluginmodule/log/extensions/eec",
-			"/dev/root /var/lib/dynatrace/remotepluginmodule/log/extensions/statsd",
-			"/dev/root /opt/dynatrace/gateway/jre/lib/security/cacerts",
+			" /var/lib/dynatrace/gateway/config ",
+			" /var/lib/dynatrace/secrets/tokens/tenant-token ",
+			" /var/lib/dynatrace/secrets/tokens/auth-token ",
+			" /var/lib/dynatrace/remotepluginmodule/log/extensions/eec ",
+			" /var/lib/dynatrace/remotepluginmodule/log/extensions/statsd ",
+			" /opt/dynatrace/gateway/jre/lib/security/cacerts ",
 		},
 
 		agEecContainerName: {
-			"/dev/root /var/lib/dynatrace/gateway/config",
-			"/dev/root /var/lib/dynatrace/remotepluginmodule/log/extensions",
-			"/dev/root /opt/dynatrace/remotepluginmodule/agent/datasources/statsd",
-			"/dev/root /var/lib/dynatrace/remotepluginmodule/log/extensions/datasources-statsd",
-			"/dev/root /var/lib/dynatrace/remotepluginmodule/agent/conf/runtime",
-			"/dev/root /var/lib/dynatrace/remotepluginmodule/agent/runtime/datasources",
+			" /var/lib/dynatrace/gateway/config ",
+			" /var/lib/dynatrace/remotepluginmodule/log/extensions ",
+			" /opt/dynatrace/remotepluginmodule/agent/datasources/statsd ",
+			" /var/lib/dynatrace/remotepluginmodule/log/extensions/datasources-statsd ",
+			" /var/lib/dynatrace/remotepluginmodule/agent/conf/runtime ",
+			" /var/lib/dynatrace/remotepluginmodule/agent/runtime/datasources ",
 		},
 		agStatsdContainerName: {
-			"/dev/root /var/lib/dynatrace/remotepluginmodule/agent/runtime/datasources",
-			"/dev/root /var/lib/dynatrace/remotepluginmodule/log/extensions/datasources-statsd",
+			" /var/lib/dynatrace/remotepluginmodule/agent/runtime/datasources ",
+			" /var/lib/dynatrace/remotepluginmodule/log/extensions/datasources-statsd ",
 		},
 	}
 )
@@ -88,32 +85,25 @@ func TestMain(m *testing.M) {
 	testEnvironment.BeforeEachTest(dynakube.DeleteDynakubeIfExists())
 	testEnvironment.BeforeEachTest(oneagent.WaitForDaemonSetPodsDeletion())
 	testEnvironment.BeforeEachTest(namespace.Recreate(dynakube.DynatraceNamespace))
-	testEnvironment.AfterEachTest(namespace.DeleteIfExists(proxyNamespace))
+	testEnvironment.BeforeEachTest(proxy.DeleteProxyIfExists())
 
 	testEnvironment.AfterEachTest(dynakube.DeleteDynakubeIfExists())
 	testEnvironment.AfterEachTest(oneagent.WaitForDaemonSetPodsDeletion())
 	testEnvironment.AfterEachTest(namespace.Delete(dynakube.DynatraceNamespace))
-	testEnvironment.AfterEachTest(namespace.DeleteIfExists(proxyNamespace))
+	testEnvironment.AfterEachTest(proxy.DeleteProxyIfExists())
 
 	testEnvironment.Run(m)
 }
 
 func TestActiveGate(t *testing.T) {
-	feature := install(t, nil)
-	assessActiveGate(feature)
-	testEnvironment.Test(t, feature.Feature())
+	testEnvironment.Test(t, install(t, nil))
 }
 
 func TestActiveGateProxy(t *testing.T) {
-	feature := install(t, &v1beta1.DynaKubeProxy{
-		Value: "http://squid.proxy:3128",
-	})
-	installProxy(feature)
-	assessActiveGate(feature)
-	testEnvironment.Test(t, feature.Feature())
+	testEnvironment.Test(t, install(t, proxy.ProxySpec))
 }
 
-func install(t *testing.T, proxy *v1beta1.DynaKubeProxy) *features.FeatureBuilder {
+func install(t *testing.T, proxySpec *v1beta1.DynaKubeProxy) features.Feature {
 	secretConfig := dynakube.GetSecretConfig(t)
 
 	defaultInstallation := features.New("capabilities")
@@ -121,30 +111,22 @@ func install(t *testing.T, proxy *v1beta1.DynaKubeProxy) *features.FeatureBuilde
 	installAndDeploy(defaultInstallation, secretConfig)
 	assessDeployment(defaultInstallation)
 
-	defaultInstallation.Assess("dynakube applied", dynakube.ApplyDynakube(secretConfig.ApiUrl, &v1beta1.CloudNativeFullStackSpec{}, proxy))
+	proxy.InstallProxy(defaultInstallation, proxySpec)
 
-	assessProxyStartup(defaultInstallation, proxy)
+	defaultInstallation.Assess("dynakube applied", dynakube.ApplyDynakube(secretConfig.ApiUrl, &v1beta1.CloudNativeFullStackSpec{}, proxySpec))
 
 	assessDynakubeStartup(defaultInstallation)
 
 	assessOneAgentsAreRunning(defaultInstallation)
 
-	return defaultInstallation
+	assessActiveGate(defaultInstallation)
+
+	return defaultInstallation.Feature()
 }
 
 func installAndDeploy(builder *features.FeatureBuilder, secretConfig secrets.Secret) {
 	builder.Setup(secrets.ApplyDefault(secretConfig))
 	builder.Setup(operator.InstallForKubernetes())
-}
-
-func installProxy(builder *features.FeatureBuilder) {
-	builder.Setup(manifests.InstallFromFile("../testdata/activegate/proxy.yaml"))
-}
-
-func assessProxyStartup(builder *features.FeatureBuilder, proxy *v1beta1.DynaKubeProxy) {
-	if proxy != nil {
-		builder.Assess("proxy started", deployment.WaitFor(proxyDeployment, proxyNamespace))
-	}
 }
 
 func assessDeployment(builder *features.FeatureBuilder) {

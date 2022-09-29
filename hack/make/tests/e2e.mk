@@ -4,7 +4,7 @@ test/e2e:
 
 ## Runs ActiveGate e2e test only
 test/e2e/activegate:
-	go test -v -tags e2e -count=1 ./test/activegate
+	go test -v -tags e2e -timeout 20m -count=1 ./test/activegate
 
 ## Runs CloudNative e2e test only
 test/e2e/cloudnative:
