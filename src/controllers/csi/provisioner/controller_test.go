@@ -37,6 +37,15 @@ const (
 	testZip      = `UEsDBAoAAAAAAKh0p1JsLSFnGQAAABkAAAAIABwAdGVzdC50eHRVVAkAA3w0lWATB55gdXgLAAEE6AMAAAToAwAAeW91IGZvdW5kIHRoZSBlYXN0ZXIgZWdnClBLAwQKAAAAAADAOa5SAAAAAAAAAAAAAAAABQAcAHRlc3QvVVQJAAMXB55gHQeeYHV4CwABBOgDAAAE6AMAAFBLAwQKAAAAAACodKdSbC0hZxkAAAAZAAAADQAcAHRlc3QvdGVzdC50eHRVVAkAA3w0lWATB55gdXgLAAEE6AMAAAToAwAAeW91IGZvdW5kIHRoZSBlYXN0ZXIgZWdnClBLAwQKAAAAAADCOa5SAAAAAAAAAAAAAAAACgAcAHRlc3QvdGVzdC9VVAkAAxwHnmAgB55gdXgLAAEE6AMAAAToAwAAUEsDBAoAAAAAAKh0p1JsLSFnGQAAABkAAAASABwAdGVzdC90ZXN0L3Rlc3QudHh0VVQJAAN8NJVgHAeeYHV4CwABBOgDAAAE6AMAAHlvdSBmb3VuZCB0aGUgZWFzdGVyIGVnZwpQSwMECgAAAAAA2zquUgAAAAAAAAAAAAAAAAYAHABhZ2VudC9VVAkAAy4JnmAxCZ5gdXgLAAEE6AMAAAToAwAAUEsDBAoAAAAAAOI6rlIAAAAAAAAAAAAAAAALABwAYWdlbnQvY29uZi9VVAkAAzgJnmA+CZ5gdXgLAAEE6AMAAAToAwAAUEsDBAoAAAAAAKh0p1JsLSFnGQAAABkAAAATABwAYWdlbnQvY29uZi90ZXN0LnR4dFVUCQADfDSVYDgJnmB1eAsAAQToAwAABOgDAAB5b3UgZm91bmQgdGhlIGVhc3RlciBlZ2cKUEsBAh4DCgAAAAAAqHSnUmwtIWcZAAAAGQAAAAgAGAAAAAAAAQAAAKSBAAAAAHRlc3QudHh0VVQFAAN8NJVgdXgLAAEE6AMAAAToAwAAUEsBAh4DCgAAAAAAwDmuUgAAAAAAAAAAAAAAAAUAGAAAAAAAAAAQAO1BWwAAAHRlc3QvVVQFAAMXB55gdXgLAAEE6AMAAAToAwAAUEsBAh4DCgAAAAAAqHSnUmwtIWcZAAAAGQAAAA0AGAAAAAAAAQAAAKSBmgAAAHRlc3QvdGVzdC50eHRVVAUAA3w0lWB1eAsAAQToAwAABOgDAABQSwECHgMKAAAAAADCOa5SAAAAAAAAAAAAAAAACgAYAAAAAAAAABAA7UH6AAAAdGVzdC90ZXN0L1VUBQADHAeeYHV4CwABBOgDAAAE6AMAAFBLAQIeAwoAAAAAAKh0p1JsLSFnGQAAABkAAAASABgAAAAAAAEAAACkgT4BAAB0ZXN0L3Rlc3QvdGVzdC50eHRVVAUAA3w0lWB1eAsAAQToAwAABOgDAABQSwECHgMKAAAAAADbOq5SAAAAAAAAAAAAAAAABgAYAAAAAAAAABAA7UGjAQAAYWdlbnQvVVQFAAMuCZ5gdXgLAAEE6AMAAAToAwAAUEsBAh4DCgAAAAAA4jquUgAAAAAAAAAAAAAAAAsAGAAAAAAAAAAQAO1B4wEAAGFnZW50L2NvbmYvVVQFAAM4CZ5gdXgLAAEE6AMAAAToAwAAUEsBAh4DCgAAAAAAqHSnUmwtIWcZAAAAGQAAABMAGAAAAAAAAQAAAKSBKAIAAGFnZW50L2NvbmYvdGVzdC50eHRVVAUAA3w0lWB1eAsAAQToAwAABOgDAABQSwUGAAAAAAgACACKAgAAjgIAAAAA`
 )
 
+type CSIGarbageCollectorMock struct {
+	mock.Mock
+}
+
+func (m *CSIGarbageCollectorMock) Reconcile(context.Context, reconcile.Request, reconcile.Result) (reconcile.Result, error) {
+	args := m.Called()
+	return args.Get(0).(reconcile.Result), args.Error(1)
+}
+
 type mkDirAllErrorFs struct {
 	afero.Fs
 }
@@ -48,24 +57,32 @@ func (fs *mkDirAllErrorFs) MkdirAll(_ string, _ os.FileMode) error {
 func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	ctx := context.TODO()
 	dynakubeName := "test-dk"
+
 	t.Run(`no dynakube instance`, func(t *testing.T) {
+		gc := &CSIGarbageCollectorMock{}
+		gc.On("Reconcile").Return(reconcile.Result{}, nil)
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(),
 			db:        metadata.FakeMemoryDB(),
+			gc:        gc,
 		}
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{})
 
+		gc.AssertNumberOfCalls(t, "Reconcile", 1)
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
 		assert.Equal(t, reconcile.Result{}, result)
 	})
 	t.Run(`dynakube deleted`, func(t *testing.T) {
+		gc := &CSIGarbageCollectorMock{}
+		gc.On("Reconcile").Return(reconcile.Result{}, nil)
 		db := metadata.FakeMemoryDB()
 		dynakube := metadata.Dynakube{TenantUUID: tenantUUID, LatestVersion: agentVersion, Name: dkName}
 		_ = db.InsertDynakube(ctx, &dynakube)
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(),
 			db:        db,
+			gc:        gc,
 		}
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakube.Name}})
 
@@ -78,6 +95,8 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		assert.Nil(t, ten)
 	})
 	t.Run(`application monitoring disabled`, func(t *testing.T) {
+		gc := &CSIGarbageCollectorMock{}
+		gc.On("Reconcile").Return(reconcile.Result{}, nil)
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
@@ -90,14 +109,18 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 				},
 			),
 			db: metadata.FakeMemoryDB(),
+			gc: gc,
 		}
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakubeName}})
 
+		gc.AssertNumberOfCalls(t, "Reconcile", 1)
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
 		assert.Equal(t, reconcile.Result{RequeueAfter: longRequeueDuration}, result)
 	})
 	t.Run(`csi driver not enabled`, func(t *testing.T) {
+		gc := &CSIGarbageCollectorMock{}
+		gc.On("Reconcile").Return(reconcile.Result{}, nil)
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
@@ -114,14 +137,18 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 				},
 			),
 			db: metadata.FakeMemoryDB(),
+			gc: gc,
 		}
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakubeName}})
 
+		gc.AssertNumberOfCalls(t, "Reconcile", 1)
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
 		assert.Equal(t, reconcile.Result{RequeueAfter: longRequeueDuration}, result)
 	})
 	t.Run(`csi driver disabled`, func(t *testing.T) {
+		gc := &CSIGarbageCollectorMock{}
+		gc.On("Reconcile").Return(reconcile.Result{}, nil)
 		db := metadata.FakeMemoryDB()
 		db.InsertDynakube(ctx, &metadata.Dynakube{Name: dynakubeName})
 		provisioner := &OneAgentProvisioner{
@@ -140,9 +167,11 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 				},
 			),
 			db: db,
+			gc: gc,
 		}
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakubeName}})
 
+		gc.AssertNumberOfCalls(t, "Reconcile", 1)
 		require.NoError(t, err)
 		assert.NotNil(t, result)
 		assert.Equal(t, reconcile.Result{RequeueAfter: longRequeueDuration}, result)
@@ -153,6 +182,8 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 
 	})
 	t.Run(`no tokens`, func(t *testing.T) {
+		gc := &CSIGarbageCollectorMock{}
+		gc.On("Reconcile").Return(reconcile.Result{}, nil)
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
@@ -167,14 +198,18 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 					},
 				},
 			),
+			gc: gc,
 		}
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
+		gc.AssertNumberOfCalls(t, "Reconcile", 0)
 		assert.EqualError(t, err, `failed to query tokens: secrets "`+dkName+`" not found`)
 		assert.NotNil(t, result)
 		assert.Equal(t, reconcile.Result{}, result)
 	})
 	t.Run(`error when creating dynatrace client`, func(t *testing.T) {
+		gc := &CSIGarbageCollectorMock{}
+		gc.On("Reconcile").Return(reconcile.Result{}, nil)
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
@@ -197,14 +232,18 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			dtcBuildFunc: func(dynakube.DynatraceClientProperties) (dtclient.Client, error) {
 				return nil, fmt.Errorf(errorMsg)
 			},
+			gc: gc,
 		}
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
+		gc.AssertNumberOfCalls(t, "Reconcile", 0)
 		assert.EqualError(t, err, "failed to create Dynatrace client: "+errorMsg)
 		assert.NotNil(t, result)
 		assert.Equal(t, reconcile.Result{}, result)
 	})
 	t.Run(`error creating directories`, func(t *testing.T) {
+		gc := &CSIGarbageCollectorMock{}
+		gc.On("Reconcile").Return(reconcile.Result{}, nil)
 		errorfs := &mkDirAllErrorFs{
 			Fs: afero.NewMemMapFs(),
 		}
@@ -236,9 +275,11 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			},
 			fs: errorfs,
 			db: metadata.FakeMemoryDB(),
+			gc: gc,
 		}
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
+		gc.AssertNumberOfCalls(t, "Reconcile", 0)
 		assert.EqualError(t, err, "failed to create directory "+filepath.Join(tenantUUID)+": "+errorMsg)
 		assert.NotNil(t, result)
 		assert.Equal(t, reconcile.Result{}, result)
@@ -247,6 +288,8 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		log.Info("")
 	})
 	t.Run(`error getting latest agent version`, func(t *testing.T) {
+		gc := &CSIGarbageCollectorMock{}
+		gc.On("Reconcile").Return(reconcile.Result{}, nil)
 		memFs := afero.NewMemMapFs()
 		mockClient := &dtclient.MockDynatraceClient{}
 		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
@@ -289,6 +332,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			fs:       memFs,
 			db:       metadata.FakeMemoryDB(),
 			recorder: &record.FakeRecorder{},
+			gc:       gc,
 		}
 
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
@@ -306,6 +350,8 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		assert.True(t, exists)
 	})
 	t.Run(`error getting dynakube from db`, func(t *testing.T) {
+		gc := &CSIGarbageCollectorMock{}
+		gc.On("Reconcile").Return(reconcile.Result{}, nil)
 		memFs := afero.NewMemMapFs()
 		mockClient := &dtclient.MockDynatraceClient{}
 		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
@@ -338,15 +384,18 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			},
 			fs: memFs,
 			db: &metadata.FakeFailDB{},
+			gc: gc,
 		}
 
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
+		gc.AssertNumberOfCalls(t, "Reconcile", 0)
 		assert.Error(t, err)
 		assert.Empty(t, result)
-
 	})
 	t.Run(`correct directories are created`, func(t *testing.T) {
+		gc := &CSIGarbageCollectorMock{}
+		gc.On("Reconcile").Return(reconcile.Result{}, nil)
 		memFs := afero.NewMemMapFs()
 		memDB := metadata.FakeMemoryDB()
 		err := memDB.InsertDynakube(ctx, metadata.NewDynakube(dkName, tenantUUID, agentVersion, "", 0))
@@ -398,6 +447,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			fs:       memFs,
 			db:       memDB,
 			recorder: &record.FakeRecorder{},
+			gc:       gc,
 		}
 
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})

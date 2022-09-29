@@ -36,8 +36,14 @@ type CSIGarbageCollector struct {
 	path      metadata.PathResolver
 }
 
+type ICsiGarbageCollector interface {
+	Reconcile(context.Context, reconcile.Request, reconcile.Result) (reconcile.Result, error)
+}
+
+var _ ICsiGarbageCollector = (*CSIGarbageCollector)(nil)
+
 // NewCSIGarbageCollector returns a new CSIGarbageCollector
-func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db metadata.Access) *CSIGarbageCollector {
+func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db metadata.Access) ICsiGarbageCollector {
 	return &CSIGarbageCollector{
 		apiReader: apiReader,
 		fs:        afero.NewOsFs(),

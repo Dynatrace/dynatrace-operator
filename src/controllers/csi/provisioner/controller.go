@@ -56,7 +56,7 @@ type OneAgentProvisioner struct {
 	db           metadata.Access
 	path         metadata.PathResolver
 
-	gc *csigc.CSIGarbageCollector
+	gc csigc.ICsiGarbageCollector
 }
 
 // NewOneAgentProvisioner returns a new OneAgentProvisioner
@@ -83,7 +83,7 @@ func (provisioner *OneAgentProvisioner) SetupWithManager(mgr ctrl.Manager) error
 func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.Request) (result reconcile.Result, err error) {
 	defer func() {
 		// if Provisioning succeeded, execute Garbage Collector
-		if err != nil {
+		if err == nil {
 			gcResult, gcErr := provisioner.gc.Reconcile(ctx, request, reconcile.Result{})
 
 			// if Garbage Collector failed, set return values to these returned by GC Reconciler
