@@ -164,10 +164,10 @@ func checkIfAgHasContainers(ctx context.Context, t *testing.T, environmentConfig
 	require.NotEmpty(t, pod.Spec.InitContainers)
 	require.NotEmpty(t, pod.Spec.Containers)
 
-	isInitContainerUnknown(t, pod.Spec.InitContainers)
-	isInitContainerMissing(t, pod.Spec.InitContainers)
-	isContainerUnknown(t, pod.Spec.Containers)
-	isContainerMissing(t, pod.Spec.Containers)
+	assertInitContainerUnknown(t, pod.Spec.InitContainers)
+	assertInitContainerMissing(t, pod.Spec.InitContainers)
+	assertContainerUnknown(t, pod.Spec.Containers)
+	assertContainerMissing(t, pod.Spec.Containers)
 
 	return ctx
 }
@@ -186,7 +186,7 @@ func checkActiveModules(ctx context.Context, t *testing.T, environmentConfig *en
 	}).Stream(ctx)
 	require.NoError(t, err)
 
-	isModuleNotActive(t, logStream)
+	assertModuleNotActive(t, logStream)
 
 	return ctx
 }
@@ -198,7 +198,7 @@ func checkMountPoints(ctx context.Context, t *testing.T, environmentConfig *envc
 	require.NoError(t, resources.WithNamespace("dynatrace").Get(ctx, agPodName, agNamespace, &pod))
 
 	for name, mountPoints := range agMounts {
-		isMountPointMissing(t, environmentConfig, pod, name, mountPoints)
+		assertMountPointMissing(t, environmentConfig, pod, name, mountPoints)
 	}
 
 	return ctx
@@ -220,7 +220,7 @@ func checkService(ctx context.Context, t *testing.T, environmentConfig *envconf.
 	return ctx
 }
 
-func isMountPointMissing(t *testing.T, environmentConfig *envconf.Config, podItem corev1.Pod, containerName string, mountPoints []string) {
+func assertMountPointMissing(t *testing.T, environmentConfig *envconf.Config, podItem corev1.Pod, containerName string, mountPoints []string) {
 	executionQuery := pod.NewExecutionQuery(podItem, containerName, "cat /proc/mounts")
 	executionResult, err := executionQuery.Execute(environmentConfig.Client().RESTConfig())
 	require.NoError(t, err)
@@ -235,7 +235,7 @@ func isMountPointMissing(t *testing.T, environmentConfig *envconf.Config, podIte
 	}
 }
 
-func isInitContainerUnknown(t *testing.T, podInitContainers []corev1.Container) {
+func assertInitContainerUnknown(t *testing.T, podInitContainers []corev1.Container) {
 	containers := initMap(&agInitContainers)
 
 	for _, container := range podInitContainers {
@@ -244,7 +244,7 @@ func isInitContainerUnknown(t *testing.T, podInitContainers []corev1.Container) 
 	}
 }
 
-func isInitContainerMissing(t *testing.T, podInitContainers []corev1.Container) {
+func assertInitContainerMissing(t *testing.T, podInitContainers []corev1.Container) {
 	containers := initMap(&agInitContainers)
 
 	markExistingContainers(&containers, podInitContainers)
@@ -254,7 +254,7 @@ func isInitContainerMissing(t *testing.T, podInitContainers []corev1.Container) 
 	}
 }
 
-func isContainerUnknown(t *testing.T, podContainers []corev1.Container) {
+func assertContainerUnknown(t *testing.T, podContainers []corev1.Container) {
 	containers := initMap(&agContainers)
 
 	for _, container := range podContainers {
@@ -263,7 +263,7 @@ func isContainerUnknown(t *testing.T, podContainers []corev1.Container) {
 	}
 }
 
-func isContainerMissing(t *testing.T, podContainers []corev1.Container) {
+func assertContainerMissing(t *testing.T, podContainers []corev1.Container) {
 	containers := initMap(&agContainers)
 
 	markExistingContainers(&containers, podContainers)
@@ -273,7 +273,7 @@ func isContainerMissing(t *testing.T, podContainers []corev1.Container) {
 	}
 }
 
-func isModuleNotActive(t *testing.T, logStream io.ReadCloser) {
+func assertModuleNotActive(t *testing.T, logStream io.ReadCloser) {
 	var expectedModules = []string{
 		"kubernetes_monitoring",
 		"extension_controller",
