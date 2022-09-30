@@ -42,7 +42,7 @@ type CSIGarbageCollectorMock struct {
 	mock.Mock
 }
 
-func (m *CSIGarbageCollectorMock) Reconcile(context.Context, reconcile.Request, reconcile.Result) (reconcile.Result, error) {
+func (m *CSIGarbageCollectorMock) Reconcile(context.Context, reconcile.Request) (reconcile.Result, error) {
 	args := m.Called()
 	return args.Get(0).(reconcile.Result), args.Error(1)
 }
@@ -114,7 +114,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		}
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakubeName}})
 
-		gc.AssertNumberOfCalls(t, "Reconcile", 1)
+		gc.AssertNumberOfCalls(t, "Reconcile", 0)
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
 		assert.Equal(t, reconcile.Result{RequeueAfter: longRequeueDuration}, result)
@@ -142,7 +142,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		}
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakubeName}})
 
-		gc.AssertNumberOfCalls(t, "Reconcile", 1)
+		gc.AssertNumberOfCalls(t, "Reconcile", 0)
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
 		assert.Equal(t, reconcile.Result{RequeueAfter: longRequeueDuration}, result)
@@ -172,7 +172,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		}
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakubeName}})
 
-		gc.AssertNumberOfCalls(t, "Reconcile", 1)
+		gc.AssertNumberOfCalls(t, "Reconcile", 0)
 		require.NoError(t, err)
 		assert.NotNil(t, result)
 		assert.Equal(t, reconcile.Result{RequeueAfter: longRequeueDuration}, result)
@@ -203,7 +203,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		}
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
-		gc.AssertNumberOfCalls(t, "Reconcile", 1)
+		gc.AssertNumberOfCalls(t, "Reconcile", 0)
 		assert.EqualError(t, err, `failed to query tokens: secrets "`+dkName+`" not found`)
 		assert.NotNil(t, result)
 		assert.Equal(t, reconcile.Result{}, result)
@@ -237,12 +237,12 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		}
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
-		gc.AssertNumberOfCalls(t, "Reconcile", 1)
+		gc.AssertNumberOfCalls(t, "Reconcile", 0)
 		assert.EqualError(t, err, "failed to create Dynatrace client: "+errorMsg)
 		assert.NotNil(t, result)
 		assert.Equal(t, reconcile.Result{}, result)
 	})
-	t.Run(`error creating directories, also GC failed`, func(t *testing.T) {
+	t.Run(`error creating directories`, func(t *testing.T) {
 		gc := &CSIGarbageCollectorMock{}
 		gcError := errors.New("Custom GC error")
 		gc.On("Reconcile").Return(reconcile.Result{}, gcError)
@@ -281,8 +281,8 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		}
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
-		gc.AssertNumberOfCalls(t, "Reconcile", 1)
-		assert.EqualError(t, err, "errors: Provisioner(failed to create directory "+filepath.Join(tenantUUID)+": "+errorMsg+"), GC(Custom GC error)")
+		gc.AssertNumberOfCalls(t, "Reconcile", 0)
+		assert.EqualError(t, err, "failed to create directory "+filepath.Join(tenantUUID)+": "+errorMsg)
 		assert.NotNil(t, result)
 		assert.Equal(t, reconcile.Result{}, result)
 
@@ -391,7 +391,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
-		gc.AssertNumberOfCalls(t, "Reconcile", 1)
+		gc.AssertNumberOfCalls(t, "Reconcile", 0)
 		assert.Error(t, err)
 		assert.Empty(t, result)
 	})

@@ -55,7 +55,7 @@ type OneAgentProvisioner struct {
 	db           metadata.Access
 	path         metadata.PathResolver
 
-	gc csigc.CSIGarbageCollector
+	gc reconcile.Reconciler
 }
 
 // NewOneAgentProvisioner returns a new OneAgentProvisioner
@@ -79,19 +79,27 @@ func (provisioner *OneAgentProvisioner) SetupWithManager(mgr ctrl.Manager) error
 		Complete(provisioner)
 }
 
-func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.Request) (result reconcile.Result, err error) {
-	defer func() {
-		gcResult, gcErr := provisioner.gc.Reconcile(ctx, request, reconcile.Result{})
-		if gcErr != nil {
-			result = gcResult
-
-			// meh, can't Unwrap errors, but Reconciler interface doesn't allow to return []error
-			err = fmt.Errorf("errors: Provisioner(%s), GC(%s)", err.Error(), gcErr.Error())
-		}
-	}()
-
+func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log.Info("reconciling DynaKube", "namespace", request.Namespace, "dynakube", request.Name)
 
+	result, err := provisioner.provision(ctx, request)
+	if err != nil || !result.IsZero() {
+		return result, err
+	}
+
+	result, err = provisioner.collectGarbage(ctx, request)
+	if err != nil || !result.IsZero() {
+		return result, err
+	}
+
+	return reconcile.Result{}, nil
+}
+
+func (provisioner *OneAgentProvisioner) collectGarbage(ctx context.Context, request reconcile.Request) (result reconcile.Result, err error) {
+	return provisioner.gc.Reconcile(ctx, request)
+}
+
+func (provisioner *OneAgentProvisioner) provision(ctx context.Context, request reconcile.Request) (result reconcile.Result, err error) {
 	dk, err := provisioner.getDynaKube(ctx, request.NamespacedName)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {

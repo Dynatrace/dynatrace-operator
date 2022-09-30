@@ -37,14 +37,10 @@ type CSIGarbageCollectorImpl struct {
 	path      metadata.PathResolver
 }
 
-type CSIGarbageCollector interface {
-	Reconcile(context.Context, reconcile.Request, reconcile.Result) (reconcile.Result, error)
-}
-
-var _ CSIGarbageCollector = (*CSIGarbageCollectorImpl)(nil)
+var _ reconcile.Reconciler = (*CSIGarbageCollectorImpl)(nil)
 
 // NewCSIGarbageCollector returns a new CSIGarbageCollectorImpl
-func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db metadata.Access) CSIGarbageCollector {
+func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db metadata.Access) *CSIGarbageCollectorImpl {
 	return &CSIGarbageCollectorImpl{
 		apiReader: apiReader,
 		fs:        afero.NewOsFs(),
@@ -53,8 +49,9 @@ func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db m
 	}
 }
 
-func (gc *CSIGarbageCollectorImpl) Reconcile(ctx context.Context, request reconcile.Request, defaultReconcileResult reconcile.Result) (reconcile.Result, error) {
+func (gc *CSIGarbageCollectorImpl) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log.Info("running OneAgent garbage collection", "namespace", request.Namespace, "name", request.Name)
+	defaultReconcileResult := reconcile.Result{}
 
 	dynakube, err := getDynakubeFromRequest(ctx, gc.apiReader, request)
 	if err != nil {
