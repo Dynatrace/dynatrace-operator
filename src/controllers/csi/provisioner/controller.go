@@ -42,7 +42,6 @@ import (
 const (
 	defaultRequeueDuration = 5 * time.Minute
 	longRequeueDuration    = 30 * time.Minute
-	shortRequeueDuration   = 15 * time.Second
 )
 
 // OneAgentProvisioner reconciles a DynaKube object
@@ -82,15 +81,12 @@ func (provisioner *OneAgentProvisioner) SetupWithManager(mgr ctrl.Manager) error
 
 func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.Request) (result reconcile.Result, err error) {
 	defer func() {
-		// if Provisioning succeeded, execute Garbage Collector
-		if err == nil {
-			gcResult, gcErr := provisioner.gc.Reconcile(ctx, request, reconcile.Result{})
+		gcResult, gcErr := provisioner.gc.Reconcile(ctx, request, reconcile.Result{})
+		if gcErr != nil {
+			result = gcResult
 
-			// if Garbage Collector failed, set return values to these returned by GC Reconciler
-			if err != nil {
-				result = gcResult
-				err = gcErr
-			}
+			// meh, can't Unwrap errors, but Reconciler interface doesn't allow to return []error
+			err = fmt.Errorf("errors: Provisioner(%s), GC(%s)", err.Error(), gcErr.Error())
 		}
 	}()
 
