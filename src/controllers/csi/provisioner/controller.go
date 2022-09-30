@@ -55,7 +55,7 @@ type OneAgentProvisioner struct {
 	db           metadata.Access
 	path         metadata.PathResolver
 
-	gc csigc.ICsiGarbageCollector
+	gc csigc.CSIGarbageCollector
 }
 
 // NewOneAgentProvisioner returns a new OneAgentProvisioner

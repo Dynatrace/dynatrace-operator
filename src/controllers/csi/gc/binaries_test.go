@@ -113,21 +113,21 @@ func TestBinaryGarbageCollector_getUsedVersions(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func NewMockGarbageCollector() *CSIGarbageCollector {
-	return &CSIGarbageCollector{
+func NewMockGarbageCollector() *CSIGarbageCollectorImpl {
+	return &CSIGarbageCollectorImpl{
 		fs:   afero.NewMemMapFs(),
 		db:   metadata.FakeMemoryDB(),
 		path: metadata.PathResolver{RootDir: testRootDir},
 	}
 }
 
-func (gc *CSIGarbageCollector) mockUnusedVersions(versions ...string) {
+func (gc *CSIGarbageCollectorImpl) mockUnusedVersions(versions ...string) {
 	_ = gc.fs.Mkdir(testBinaryDir, 0770)
 	for _, version := range versions {
 		_, _ = gc.fs.Create(filepath.Join(testBinaryDir, version))
 	}
 }
-func (gc *CSIGarbageCollector) mockUsedVersions(versions ...string) {
+func (gc *CSIGarbageCollectorImpl) mockUsedVersions(versions ...string) {
 	_ = gc.fs.Mkdir(testBinaryDir, 0770)
 	for i, version := range versions {
 		_, _ = gc.fs.Create(filepath.Join(testBinaryDir, version))
@@ -135,7 +135,7 @@ func (gc *CSIGarbageCollector) mockUsedVersions(versions ...string) {
 	}
 }
 
-func (gc *CSIGarbageCollector) assertVersionNotExists(t *testing.T, versions ...string) {
+func (gc *CSIGarbageCollectorImpl) assertVersionNotExists(t *testing.T, versions ...string) {
 	for _, version := range versions {
 		exists, err := afero.Exists(gc.fs, filepath.Join(testBinaryDir, version))
 		assert.False(t, exists)
@@ -143,7 +143,7 @@ func (gc *CSIGarbageCollector) assertVersionNotExists(t *testing.T, versions ...
 	}
 }
 
-func (gc *CSIGarbageCollector) assertVersionExists(t *testing.T, versions ...string) {
+func (gc *CSIGarbageCollectorImpl) assertVersionExists(t *testing.T, versions ...string) {
 	for _, version := range versions {
 		exists, err := afero.Exists(gc.fs, filepath.Join(testBinaryDir, version))
 		assert.True(t, exists)

@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/afero"
 )
 
-func (gc *CSIGarbageCollector) runBinaryGarbageCollection(ctx context.Context, pinnedVersions pinnedVersionSet, tenantUUID string, latestVersion string) {
+func (gc *CSIGarbageCollectorImpl) runBinaryGarbageCollection(ctx context.Context, pinnedVersions pinnedVersionSet, tenantUUID string, latestVersion string) {
 	fs := &afero.Afero{Fs: gc.fs}
 	gcRunsMetric.Inc()
 
@@ -39,7 +39,7 @@ func (gc *CSIGarbageCollector) runBinaryGarbageCollection(ctx context.Context, p
 	}
 }
 
-func (gc *CSIGarbageCollector) getStoredVersions(fs *afero.Afero, tenantUUID string) ([]string, error) {
+func (gc *CSIGarbageCollectorImpl) getStoredVersions(fs *afero.Afero, tenantUUID string) ([]string, error) {
 	var versions []string
 	bins, err := fs.ReadDir(gc.path.AgentBinaryDir(tenantUUID))
 	if os.IsNotExist(err) {

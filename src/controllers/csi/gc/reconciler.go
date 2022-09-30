@@ -29,23 +29,23 @@ type garbageCollectionInfo struct {
 	pinnedVersions     pinnedVersionSet
 }
 
-// CSIGarbageCollector removes unused and outdated agent versions
-type CSIGarbageCollector struct {
+// CSIGarbageCollectorImpl removes unused and outdated agent versions
+type CSIGarbageCollectorImpl struct {
 	apiReader client.Reader
 	fs        afero.Fs
 	db        metadata.Access
 	path      metadata.PathResolver
 }
 
-type ICsiGarbageCollector interface {
+type CSIGarbageCollector interface {
 	Reconcile(context.Context, reconcile.Request, reconcile.Result) (reconcile.Result, error)
 }
 
-var _ ICsiGarbageCollector = (*CSIGarbageCollector)(nil)
+var _ CSIGarbageCollector = (*CSIGarbageCollectorImpl)(nil)
 
-// NewCSIGarbageCollector returns a new CSIGarbageCollector
-func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db metadata.Access) ICsiGarbageCollector {
-	return &CSIGarbageCollector{
+// NewCSIGarbageCollector returns a new CSIGarbageCollectorImpl
+func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db metadata.Access) CSIGarbageCollector {
+	return &CSIGarbageCollectorImpl{
 		apiReader: apiReader,
 		fs:        afero.NewOsFs(),
 		db:        db,
@@ -53,7 +53,7 @@ func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db m
 	}
 }
 
-func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.Request, defaultReconcileResult reconcile.Result) (reconcile.Result, error) {
+func (gc *CSIGarbageCollectorImpl) Reconcile(ctx context.Context, request reconcile.Request, defaultReconcileResult reconcile.Result) (reconcile.Result, error) {
 	log.Info("running OneAgent garbage collection", "namespace", request.Namespace, "name", request.Name)
 
 	dynakube, err := getDynakubeFromRequest(ctx, gc.apiReader, request)

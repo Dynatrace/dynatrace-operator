@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/afero"
 )
 
-func (gc *CSIGarbageCollector) runSharedImagesGarbageCollection(ctx context.Context) error {
+func (gc *CSIGarbageCollectorImpl) runSharedImagesGarbageCollection(ctx context.Context) error {
 	imageDirs, err := gc.getSharedImageDirs()
 	if err != nil {
 		return err
@@ -30,7 +30,7 @@ func (gc *CSIGarbageCollector) runSharedImagesGarbageCollection(ctx context.Cont
 	return deleteImageDirs(gc.fs, imagesToDelete)
 }
 
-func (gc *CSIGarbageCollector) getSharedImageDirs() ([]os.FileInfo, error) {
+func (gc *CSIGarbageCollectorImpl) getSharedImageDirs() ([]os.FileInfo, error) {
 	imageDirs, err := afero.Afero{Fs: gc.fs}.ReadDir(gc.path.AgentSharedBinaryDirBase())
 	if os.IsNotExist(err) {
 		return nil, nil
@@ -42,7 +42,7 @@ func (gc *CSIGarbageCollector) getSharedImageDirs() ([]os.FileInfo, error) {
 	return imageDirs, nil
 }
 
-func (gc *CSIGarbageCollector) collectUnusedImageDirs(ctx context.Context, imageDirs []os.FileInfo) ([]string, error) {
+func (gc *CSIGarbageCollectorImpl) collectUnusedImageDirs(ctx context.Context, imageDirs []os.FileInfo) ([]string, error) {
 	var toDelete []string
 	usedImageDigests, err := gc.getUsedImageDigests(ctx)
 	if err != nil {
@@ -61,7 +61,7 @@ func (gc *CSIGarbageCollector) collectUnusedImageDirs(ctx context.Context, image
 	return toDelete, nil
 }
 
-func (gc *CSIGarbageCollector) getUsedImageDigests(ctx context.Context) (map[string]bool, error) {
+func (gc *CSIGarbageCollectorImpl) getUsedImageDigests(ctx context.Context) (map[string]bool, error) {
 	usedImageDigests, err := gc.db.GetUsedImageDigests(ctx)
 	if err != nil {
 		log.Info("failed to get the used image digests")

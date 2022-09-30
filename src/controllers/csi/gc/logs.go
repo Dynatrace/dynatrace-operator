@@ -20,7 +20,7 @@ type logFileInfo struct {
 	OverallSize     int64
 }
 
-func (gc *CSIGarbageCollector) runLogGarbageCollection(ctx context.Context, tenantUUID string) {
+func (gc *CSIGarbageCollectorImpl) runLogGarbageCollection(ctx context.Context, tenantUUID string) {
 	logs, err := gc.getLogFileInfo(tenantUUID)
 	if err != nil {
 		log.Info("failed to get log file information")
@@ -30,14 +30,14 @@ func (gc *CSIGarbageCollector) runLogGarbageCollection(ctx context.Context, tena
 	gc.removeLogsIfNecessary(logs, maxLogFolderSizeBytes, maxNumberOfLogFiles, tenantUUID)
 }
 
-func (gc *CSIGarbageCollector) removeLogsIfNecessary(logs *logFileInfo, maxSize int64, maxFile int64, tenantUUID string) {
+func (gc *CSIGarbageCollectorImpl) removeLogsIfNecessary(logs *logFileInfo, maxSize int64, maxFile int64, tenantUUID string) {
 	shouldDelete := logs.NumberOfFiles > 0 && (logs.OverallSize > maxSize || logs.NumberOfFiles > maxFile)
 	if shouldDelete {
 		gc.tryRemoveLogFolders(logs.UnusedVolumeIDs, tenantUUID)
 	}
 }
 
-func (gc *CSIGarbageCollector) getLogFileInfo(tenantUUID string) (*logFileInfo, error) {
+func (gc *CSIGarbageCollectorImpl) getLogFileInfo(tenantUUID string) (*logFileInfo, error) {
 	unusedVolumeIDs, err := gc.getUnusedVolumeIDs(tenantUUID)
 	if err != nil {
 		return nil, err
@@ -65,7 +65,7 @@ func (gc *CSIGarbageCollector) getLogFileInfo(tenantUUID string) (*logFileInfo, 
 	}, nil
 }
 
-func (gc *CSIGarbageCollector) getUnusedVolumeIDs(tenantUUID string) ([]os.FileInfo, error) {
+func (gc *CSIGarbageCollectorImpl) getUnusedVolumeIDs(tenantUUID string) ([]os.FileInfo, error) {
 	var unusedVolumeIDs []os.FileInfo
 
 	volumeIDs, err := afero.ReadDir(gc.fs, gc.path.AgentRunDir(tenantUUID))
@@ -87,7 +87,7 @@ func (gc *CSIGarbageCollector) getUnusedVolumeIDs(tenantUUID string) ([]os.FileI
 	return unusedVolumeIDs, nil
 }
 
-func (gc *CSIGarbageCollector) tryRemoveLogFolders(unusedVolumeIDs []os.FileInfo, tenantUUID string) {
+func (gc *CSIGarbageCollectorImpl) tryRemoveLogFolders(unusedVolumeIDs []os.FileInfo, tenantUUID string) {
 	for _, unusedVolumeID := range unusedVolumeIDs {
 		if isOlderThanTwoWeeks(unusedVolumeID.ModTime()) {
 			if err := gc.fs.RemoveAll(gc.path.AgentRunDirForVolume(tenantUUID, unusedVolumeID.Name())); err != nil {

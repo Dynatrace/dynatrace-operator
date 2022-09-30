@@ -195,19 +195,19 @@ func TestLogGarbageCollector_removeLogsNecessary_FileSizeTooSmall(t *testing.T) 
 	assert.Equal(t, newLogs.NumberOfFiles, int64(10))
 }
 
-func (gc *CSIGarbageCollector) mockMountedVolumeIDPath(volumeIDs ...string) {
+func (gc *CSIGarbageCollectorImpl) mockMountedVolumeIDPath(volumeIDs ...string) {
 	for _, volumeID := range volumeIDs {
 		_ = gc.fs.MkdirAll(filepath.Join(testLogPath, volumeID, "mapped", "something"), os.ModePerm)
 	}
 }
 
-func (gc *CSIGarbageCollector) mockUnmountedVolumeIDPath(volumeIDs ...string) {
+func (gc *CSIGarbageCollectorImpl) mockUnmountedVolumeIDPath(volumeIDs ...string) {
 	for _, volumeID := range volumeIDs {
 		_ = gc.fs.MkdirAll(filepath.Join(testLogPath, volumeID, "mapped"), os.ModePerm)
 	}
 }
 
-func (gc *CSIGarbageCollector) mockLogsInPodFolders(nrOfLogFiles int, volumeIDs ...string) {
+func (gc *CSIGarbageCollectorImpl) mockLogsInPodFolders(nrOfLogFiles int, volumeIDs ...string) {
 	for _, volumeID := range volumeIDs {
 		technologyLogPath := filepath.Join(testLogPath, volumeID, "var", "log", testTechnology)
 		_ = gc.fs.Mkdir(filepath.Join(technologyLogPath), 0770)
