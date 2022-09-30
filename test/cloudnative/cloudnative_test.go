@@ -4,17 +4,17 @@ package cloudnative
 
 import (
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/test/log"
-	"github.com/Dynatrace/dynatrace-operator/test/sampleapps"
 	"os"
 	"path"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/environment"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/pod"
+	"github.com/Dynatrace/dynatrace-operator/test/log"
 	"github.com/Dynatrace/dynatrace-operator/test/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/test/sampleapps"
 	"github.com/Dynatrace/dynatrace-operator/test/secrets"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"

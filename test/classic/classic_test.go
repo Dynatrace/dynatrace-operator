@@ -3,6 +3,10 @@
 package classic
 
 import (
+	"os"
+	"path"
+	"testing"
+
 	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/environment"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/namespace"
@@ -11,10 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/secrets"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
-	"os"
-	"path"
 	"sigs.k8s.io/e2e-framework/pkg/env"
-	"testing"
 )
 
 const (

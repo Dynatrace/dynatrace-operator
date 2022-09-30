@@ -3,11 +3,11 @@
 package cloudnative
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/test/setup"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/test/setup"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 

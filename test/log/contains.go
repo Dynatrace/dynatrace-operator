@@ -2,10 +2,11 @@ package log
 
 import (
 	"bytes"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"io"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func AssertLogContains(t *testing.T, logStream io.ReadCloser, contains string) {
