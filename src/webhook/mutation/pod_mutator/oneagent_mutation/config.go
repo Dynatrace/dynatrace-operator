@@ -9,7 +9,7 @@ var (
 
 	envToBuildFieldPathMap = map[string]string{
 		"DT_RELEASE_VERSION": "metadata.labels['app.kubernetes.io/version']",
-		"DT_RELEASE_PRODUCT": "metadata.labels['app.kubernetes.io/part-of`]",
+		"DT_RELEASE_PRODUCT": "metadata.labels['app.kubernetes.io/part-of']",
 	}
 )
 
