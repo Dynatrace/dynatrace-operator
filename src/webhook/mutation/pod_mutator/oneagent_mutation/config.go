@@ -6,6 +6,11 @@ import (
 
 var (
 	log = logger.NewDTLogger().WithName("mutation-webhook.pod.oneagent")
+
+	envToBuildFieldPathMap = map[string]string{
+		"DT_RELEASE_VERSION": "metadata.labels['app.kubernetes.io/version']",
+		"DT_RELEASE_PRODUCT": "metadata.labels['app.kubernetes.io/part-of`]",
+	}
 )
 
 const (

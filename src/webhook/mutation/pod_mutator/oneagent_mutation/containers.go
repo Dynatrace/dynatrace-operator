@@ -68,6 +68,10 @@ func (mutator *OneAgentPodMutator) addOneAgentToContainer(pod *corev1.Pod, conta
 	if dynakube.Spec.NetworkZone != "" {
 		addNetworkZoneEnv(container, dynakube.Spec.NetworkZone)
 	}
+
+	if dynakube.FeatureLabelVersionDetection() {
+		addBuildEnvs(container)
+	}
 }
 
 func findOneAgentInstallContainer(initContainers []corev1.Container) *corev1.Container {
