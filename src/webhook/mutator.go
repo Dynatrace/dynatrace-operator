@@ -28,6 +28,7 @@ type PodMutator interface {
 type BaseRequest struct {
 	Pod      *corev1.Pod
 	DynaKube dynatracev1beta1.DynaKube
+	Namespace        corev1.Namespace
 }
 
 // MutationRequest contains all the information needed to mutate a pod
@@ -36,7 +37,6 @@ type BaseRequest struct {
 type MutationRequest struct {
 	*BaseRequest
 	Context          context.Context
-	Namespace        corev1.Namespace
 	InstallContainer *corev1.Container
 }
 
@@ -47,25 +47,25 @@ type ReinvocationRequest struct {
 	*BaseRequest
 }
 
-func newBaseRequest(pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) *BaseRequest {
+func newBaseRequest(pod *corev1.Pod, namespace corev1.Namespace, dynakube dynatracev1beta1.DynaKube) *BaseRequest {
 	return &BaseRequest{
 		Pod:      pod,
 		DynaKube: dynakube,
+		Namespace: namespace,
 	}
 }
 
 func NewMutationRequest(ctx context.Context, namespace corev1.Namespace, installContainer *corev1.Container, pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) *MutationRequest {
 	return &MutationRequest{
-		BaseRequest:      newBaseRequest(pod, dynakube),
+		BaseRequest:      newBaseRequest(pod, namespace, dynakube),
 		Context:          ctx,
-		Namespace:        namespace,
 		InstallContainer: installContainer,
 	}
 }
 
-func NewReinvocationRequest(ctx context.Context, namespace corev1.Namespace, installContainer *corev1.Container, pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) *ReinvocationRequest {
+func NewReinvocationRequest(ctx context.Context, namespace corev1.Namespace, pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) *ReinvocationRequest {
 	return &ReinvocationRequest{
-		BaseRequest: newBaseRequest(pod, dynakube),
+		BaseRequest: newBaseRequest(pod, namespace, dynakube),
 	}
 }
 

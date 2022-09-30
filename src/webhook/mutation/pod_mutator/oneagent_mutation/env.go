@@ -29,8 +29,8 @@ func addNetworkZoneEnv(container *corev1.Container, networkZone string) {
 	)
 }
 
-func addBuildEnvs(container *corev1.Container) {
-	for envName, fieldPath := range envToBuildFieldPathMap {
+func addVersionEnvs(container *corev1.Container, labelMapping VersionLabelMapping) {
+	for envName, fieldPath := range labelMapping {
 		if kubeobjects.EnvVarIsIn(container.Env, envName) {
 			continue
 		}
