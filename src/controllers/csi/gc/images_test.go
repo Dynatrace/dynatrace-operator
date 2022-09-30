@@ -25,7 +25,7 @@ func TestRunSharedImagesGarbageCollection(t *testing.T) {
 	ctx := context.TODO()
 	t.Run("bad database", func(t *testing.T) {
 		fs := createTestSharedImageDir(t)
-		gc := CSIGarbageCollectorImpl{
+		gc := CSIGarbageCollector{
 			fs:   fs,
 			db:   &metadata.FakeFailDB{},
 			path: testPathResolver,
@@ -34,7 +34,7 @@ func TestRunSharedImagesGarbageCollection(t *testing.T) {
 		require.Error(t, err)
 	})
 	t.Run("no error on empty fs", func(t *testing.T) {
-		gc := CSIGarbageCollectorImpl{
+		gc := CSIGarbageCollector{
 			fs: afero.NewMemMapFs(),
 		}
 		err := gc.runSharedImagesGarbageCollection(ctx)
@@ -42,7 +42,7 @@ func TestRunSharedImagesGarbageCollection(t *testing.T) {
 	})
 	t.Run("deletes unused", func(t *testing.T) {
 		fs := createTestSharedImageDir(t)
-		gc := CSIGarbageCollectorImpl{
+		gc := CSIGarbageCollector{
 			fs:   fs,
 			db:   metadata.FakeMemoryDB(),
 			path: testPathResolver,
@@ -55,7 +55,7 @@ func TestRunSharedImagesGarbageCollection(t *testing.T) {
 	})
 	t.Run("deletes nothing, because of dynakube metadata present", func(t *testing.T) {
 		fs := createTestSharedImageDir(t)
-		gc := CSIGarbageCollectorImpl{
+		gc := CSIGarbageCollector{
 			fs: fs,
 			db: metadata.FakeMemoryDB(),
 		}
@@ -74,7 +74,7 @@ func TestRunSharedImagesGarbageCollection(t *testing.T) {
 	})
 	t.Run("deletes nothing, because of volume metadata present", func(t *testing.T) {
 		fs := createTestSharedImageDir(t)
-		gc := CSIGarbageCollectorImpl{
+		gc := CSIGarbageCollector{
 			fs: fs,
 			db: metadata.FakeMemoryDB(),
 		}
@@ -96,7 +96,7 @@ func TestRunSharedImagesGarbageCollection(t *testing.T) {
 func TestGetSharedImageDirs(t *testing.T) {
 	t.Run("no error on empty fs", func(t *testing.T) {
 		fs := afero.NewMemMapFs()
-		gc := CSIGarbageCollectorImpl{
+		gc := CSIGarbageCollector{
 			fs:   fs,
 			path: testPathResolver,
 		}
@@ -106,7 +106,7 @@ func TestGetSharedImageDirs(t *testing.T) {
 	})
 	t.Run("get image cache dirs", func(t *testing.T) {
 		fs := createTestSharedImageDir(t)
-		gc := CSIGarbageCollectorImpl{
+		gc := CSIGarbageCollector{
 			fs:   fs,
 			path: testPathResolver,
 		}
@@ -119,7 +119,7 @@ func TestGetSharedImageDirs(t *testing.T) {
 func TestCollectUnusedImageDirs(t *testing.T) {
 	ctx := context.TODO()
 	t.Run("bad database", func(t *testing.T) {
-		gc := CSIGarbageCollectorImpl{
+		gc := CSIGarbageCollector{
 			db:   &metadata.FakeFailDB{},
 			path: testPathResolver,
 		}
@@ -127,7 +127,7 @@ func TestCollectUnusedImageDirs(t *testing.T) {
 		require.Error(t, err)
 	})
 	t.Run("no error on empty db", func(t *testing.T) {
-		gc := CSIGarbageCollectorImpl{
+		gc := CSIGarbageCollector{
 			db:   metadata.FakeMemoryDB(),
 			path: testPathResolver,
 		}
@@ -136,7 +136,7 @@ func TestCollectUnusedImageDirs(t *testing.T) {
 		assert.Nil(t, dirs)
 	})
 	t.Run("get unused", func(t *testing.T) {
-		gc := CSIGarbageCollectorImpl{
+		gc := CSIGarbageCollector{
 			db:   metadata.FakeMemoryDB(),
 			path: testPathResolver,
 		}
@@ -151,7 +151,7 @@ func TestCollectUnusedImageDirs(t *testing.T) {
 		assert.Equal(t, testDir, dirs[0])
 	})
 	t.Run("gets nothing", func(t *testing.T) {
-		gc := CSIGarbageCollectorImpl{
+		gc := CSIGarbageCollector{
 			db:   metadata.FakeMemoryDB(),
 			path: testPathResolver,
 		}
@@ -175,7 +175,7 @@ func TestGetUsedImageDigests(t *testing.T) {
 	ctx := context.TODO()
 	t.Run("bad database", func(t *testing.T) {
 		fs := createTestSharedImageDir(t)
-		gc := CSIGarbageCollectorImpl{
+		gc := CSIGarbageCollector{
 			fs:   fs,
 			db:   &metadata.FakeFailDB{},
 			path: testPathResolver,
@@ -184,7 +184,7 @@ func TestGetUsedImageDigests(t *testing.T) {
 		require.Error(t, err)
 	})
 	t.Run("no error on db", func(t *testing.T) {
-		gc := CSIGarbageCollectorImpl{
+		gc := CSIGarbageCollector{
 			db: metadata.FakeMemoryDB(),
 		}
 		usedDigests, err := gc.getUsedImageDigests(ctx)
@@ -193,7 +193,7 @@ func TestGetUsedImageDigests(t *testing.T) {
 	})
 	t.Run("finds used digest, because of dynakube metadata present", func(t *testing.T) {
 		fs := createTestSharedImageDir(t)
-		gc := CSIGarbageCollectorImpl{
+		gc := CSIGarbageCollector{
 			fs: fs,
 			db: metadata.FakeMemoryDB(),
 		}
@@ -210,7 +210,7 @@ func TestGetUsedImageDigests(t *testing.T) {
 	})
 	t.Run("finds used digest,, because of volume metadata present", func(t *testing.T) {
 		fs := createTestSharedImageDir(t)
-		gc := CSIGarbageCollectorImpl{
+		gc := CSIGarbageCollector{
 			fs: fs,
 			db: metadata.FakeMemoryDB(),
 		}

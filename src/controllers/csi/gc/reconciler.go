@@ -29,19 +29,19 @@ type garbageCollectionInfo struct {
 	pinnedVersions     pinnedVersionSet
 }
 
-// CSIGarbageCollectorImpl removes unused and outdated agent versions
-type CSIGarbageCollectorImpl struct {
+// CSIGarbageCollector removes unused and outdated agent versions
+type CSIGarbageCollector struct {
 	apiReader client.Reader
 	fs        afero.Fs
 	db        metadata.Access
 	path      metadata.PathResolver
 }
 
-var _ reconcile.Reconciler = (*CSIGarbageCollectorImpl)(nil)
+var _ reconcile.Reconciler = (*CSIGarbageCollector)(nil)
 
-// NewCSIGarbageCollector returns a new CSIGarbageCollectorImpl
-func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db metadata.Access) *CSIGarbageCollectorImpl {
-	return &CSIGarbageCollectorImpl{
+// NewCSIGarbageCollector returns a new CSIGarbageCollector
+func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db metadata.Access) *CSIGarbageCollector {
+	return &CSIGarbageCollector{
 		apiReader: apiReader,
 		fs:        afero.NewOsFs(),
 		db:        db,
@@ -49,7 +49,7 @@ func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db m
 	}
 }
 
-func (gc *CSIGarbageCollectorImpl) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log.Info("running OneAgent garbage collection", "namespace", request.Namespace, "name", request.Name)
 	defaultReconcileResult := reconcile.Result{}
 
