@@ -116,7 +116,7 @@ func TestAddVersionEnv(t *testing.T) {
 	})
 
 	t.Run("not overwrite present envs", func(t *testing.T) {
-		testVersion := "4.20"
+		testVersion := "1.2.3"
 		testProduct := "testy"
 		container := &corev1.Container{
 			Env: []corev1.EnvVar{
@@ -133,7 +133,7 @@ func TestAddVersionEnv(t *testing.T) {
 	})
 
 	t.Run("partial addition", func(t *testing.T) {
-		testVersion := "4.20"
+		testVersion := "1.2.3"
 		container := &corev1.Container{
 			Env: []corev1.EnvVar{
 				{Name: releaseVersionEnv, Value: testVersion},
