@@ -71,7 +71,7 @@ func TestMutateUserContainers(t *testing.T) {
 		assert.Equal(t, request.Pod.Spec.Containers[0].Image, request.InstallContainer.Env[1].Value)
 
 		assert.Len(t, request.Pod.Spec.Containers[0].VolumeMounts, initialContainerVolumeMountsLen+5)
-		assert.Len(t, request.Pod.Spec.Containers[0].Env, initialNumberOfContainerEnvsLen+4)
+		assert.Len(t, request.Pod.Spec.Containers[0].Env, initialNumberOfContainerEnvsLen+6)
 	})
 }
 
@@ -128,8 +128,8 @@ func TestReinvokeUserContainers(t *testing.T) {
 		assert.Equal(t, request.Pod.Spec.Containers[1].Image, installContainer.Env[3].Value)
 
 		assert.Len(t, request.Pod.Spec.Containers[0].VolumeMounts, initialContainerVolumeMountsLen+5)
-		assert.Len(t, request.Pod.Spec.Containers[0].Env, initialNumberOfContainerEnvsLen+4)
+		assert.Len(t, request.Pod.Spec.Containers[0].Env, initialNumberOfContainerEnvsLen+6)
 		assert.Len(t, request.Pod.Spec.Containers[1].VolumeMounts, 5)
-		assert.Len(t, request.Pod.Spec.Containers[1].Env, 4)
+		assert.Len(t, request.Pod.Spec.Containers[1].Env, 6)
 	})
 }

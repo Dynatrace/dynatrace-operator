@@ -6,8 +6,8 @@ import (
 
 var (
 	defaultVersionLabelMapping = VersionLabelMapping{
-		"DT_RELEASE_VERSION": "metadata.labels['app.kubernetes.io/version']",
-		"DT_RELEASE_PRODUCT": "metadata.labels['app.kubernetes.io/part-of']",
+		releaseVersionEnv: "metadata.labels['app.kubernetes.io/version']",
+		releaseProductEnv: "metadata.labels['app.kubernetes.io/part-of']",
 	}
 )
 
