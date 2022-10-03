@@ -28,6 +28,11 @@ images/push:
 images/push/tagged: export TAG=snapshot${SNAPSHOT_SUFFIX}
 images/push/tagged: images/push
 
+## Builds and pushes an Operator image with a snapshot tag and profiling enabled
+images/push/tagged: export TAG=snapshot${SNAPSHOT_SUFFIX}
+images/push/tagged: export DOCKERFILE=./profile.Dockerfile
+images/push/tagged: images/push
+
 ## Builds and pushes the deployer image for the Google marketplace to the development environment on GCR
 images/gcr/deployer:
 	./hack/gcr/deployer-image.sh ":snapshot${SNAPSHOT_SUFFIX}"

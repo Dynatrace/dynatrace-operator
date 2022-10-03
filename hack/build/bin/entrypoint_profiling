@@ -1,0 +1,9 @@
+#!/bin/sh -e
+
+exec ${OPERATOR} \
+       -test.run="^TestRunMain$" \
+       -test.coverprofile=/tmp/profile/cover-$HOSTNAME-`date +%s%N`.out \
+       -test.cpuprofile=/tmp/profile/cpu-$HOSTNAME-`date +%s%N`.pb.gz \
+       -test.memprofile=/tmp/profile/mem-$HOSTNAME-`date +%s%N`.pb.gz \
+       -test.blockprofile=/tmp/profile/block-$HOSTNAME-`date +%s%N`.pb.gz \
+       "$@"

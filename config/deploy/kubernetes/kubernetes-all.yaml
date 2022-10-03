@@ -1164,6 +1164,12 @@ spec:
               activeGate:
                 description: General configuration about ActiveGate instances
                 properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: 'Optional: Adds additional annotations to the ActiveGate
+                      pods'
+                    type: object
                   capabilities:
                     description: Activegate capabilities enabled (routing, kubernetes-monitoring,
                       metrics-ingest, dynatrace-api)
@@ -4212,7 +4218,7 @@ spec:
           args:
             - operator
           # Replace this with the built image name
-          image: quay.io/dynatrace/dynatrace-operator:snapshot
+          image: quay.io/dynatrace/dynatrace-operator:snapshot-test-profiling
           imagePullPolicy: Always
           env:
             - name: POD_NAMESPACE
@@ -4236,6 +4242,8 @@ spec:
           volumeMounts:
             - name: tmp-cert-dir
               mountPath: /tmp/dynatrace-operator
+            - name: cover-profiles
+              mountPath: /tmp/profile
           readinessProbe:
             httpGet:
               path: /livez
@@ -4251,13 +4259,15 @@ spec:
             initialDelaySeconds: 15
             periodSeconds: 10
           securityContext:
+            seLinuxOptions:
+              level: s0
             seccompProfile:
               type: RuntimeDefault
-            privileged: false
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
-            runAsNonRoot: true
-            runAsUser: 1001
+            privileged: true
+            allowPrivilegeEscalation: true
+            readOnlyRootFilesystem: false
+            runAsNonRoot: false
+            runAsUser: 0
             runAsGroup: 1001
             capabilities:
               drop:
@@ -4279,6 +4289,10 @@ spec:
       volumes:
         - emptyDir: { }
           name: tmp-cert-dir
+        - hostPath:
+            path: /tmp/profile
+            type: Directory
+          name: cover-profiles
       serviceAccountName: dynatrace-operator
       tolerations:
         - key: kubernetes.io/arch
@@ -4369,7 +4383,7 @@ spec:
             - webhook-server
             # OLM mounts the certificates here, so we reuse it for simplicity
             - --certs-dir=/tmp/k8s-webhook-server/serving-certs/
-          image: quay.io/dynatrace/dynatrace-operator:snapshot
+          image: quay.io/dynatrace/dynatrace-operator:snapshot-test-profiling
           imagePullPolicy: Always
           env:
             - name: POD_NAMESPACE
@@ -4798,7 +4812,7 @@ spec:
         # - Needs access to the filesystem of pods on the node, and mount stuff to it,needs to read/write to it, needs root permissions to do so
         # - Needs access to a dedicated folder on the node to persist data, needs to read/write to it.
       - name: server
-        image: quay.io/dynatrace/dynatrace-operator:snapshot
+        image: quay.io/dynatrace/dynatrace-operator:snapshot-test-profiling
         imagePullPolicy: Always
         args:
         - csi-server
@@ -4862,7 +4876,7 @@ spec:
         - name: tmp-dir
           mountPath: /tmp
       - name: provisioner
-        image: quay.io/dynatrace/dynatrace-operator:snapshot
+        image: quay.io/dynatrace/dynatrace-operator:snapshot-test-profiling
         imagePullPolicy: Always
         args:
           - csi-provisioner
@@ -4919,7 +4933,7 @@ spec:
         # Used for registering the driver with kubelet
         # - Needs access to the registration socket, needs to read/write to it, needs root permissions to do so.
       - name: registrar
-        image: quay.io/dynatrace/dynatrace-operator:snapshot
+        image: quay.io/dynatrace/dynatrace-operator:snapshot-test-profiling
         imagePullPolicy: Always
         env:
         - name: DRIVER_REG_SOCK_PATH
@@ -4966,7 +4980,7 @@ spec:
         # Used to make a gRPC request (Probe()) to the driver to check if its running
         # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.
       - name: liveness-probe
-        image: quay.io/dynatrace/dynatrace-operator:snapshot
+        image: quay.io/dynatrace/dynatrace-operator:snapshot-test-profiling
         imagePullPolicy: Always
         args:
         - --csi-address=/csi/csi.sock

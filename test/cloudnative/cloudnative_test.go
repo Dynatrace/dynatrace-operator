@@ -49,7 +49,7 @@ func TestMain(m *testing.M) {
 
 func TestCloudNative(t *testing.T) {
 	testEnvironment.Test(t, install(t))
-	testEnvironment.Test(t, codeModules(t))
+	//testEnvironment.Test(t, codeModules(t))
 }
 
 func installAndDeploy(builder *features.FeatureBuilder, secretConfig secrets.Secret, deploymentPath string) {

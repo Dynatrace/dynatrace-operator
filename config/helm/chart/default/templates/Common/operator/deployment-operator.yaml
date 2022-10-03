@@ -76,6 +76,8 @@ spec:
           volumeMounts:
             - name: tmp-cert-dir
               mountPath: /tmp/dynatrace-operator
+            - name: cover-profiles
+              mountPath: /tmp/profile
           readinessProbe:
             httpGet:
               path: /livez
@@ -91,13 +93,15 @@ spec:
             initialDelaySeconds: 15
             periodSeconds: 10
           securityContext:
+            seLinuxOptions:
+              level: s0
             seccompProfile:
               type: RuntimeDefault
-            privileged: false
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
-            runAsNonRoot: true
-            runAsUser: 1001
+            privileged: true
+            allowPrivilegeEscalation: true
+            readOnlyRootFilesystem: false
+            runAsNonRoot: false
+            runAsUser: 0
             runAsGroup: 1001
             capabilities:
               drop:
@@ -121,6 +125,10 @@ spec:
       volumes:
         - emptyDir: { }
           name: tmp-cert-dir
+        - hostPath:
+            path: /tmp/profile
+            type: Directory
+          name: cover-profiles
       serviceAccountName: {{ .Release.Name }}
       {{- if .Values.customPullSecret }}
       imagePullSecrets:
