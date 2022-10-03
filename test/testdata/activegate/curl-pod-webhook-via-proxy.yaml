@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: curl-proxy
+  namespace: dynatrace
+spec:
+  containers:
+    - args:
+      - https://dynatrace-webhook.dynatrace.svc.cluster.local/livez
+      - -k
+      - -x
+      - http://squid.proxy:3128
+      - -o
+      - /dev/null
+      - -v
+      - --max-time
+      - "5"
+      - --retry
+      - "6"
+      - --retry-max-time
+      - "30"
+      command:
+      - curl
+      name: curl-proxy
+      image: curlimages/curl
+      resources:
+        limits:
+          memory: "128Mi"
+          cpu: "500m"
+  restartPolicy: "Never"
