@@ -22,7 +22,7 @@ const (
 	Namespace = "dynatrace"
 )
 
-func New() dynatracev1beta1.DynaKube {
+func NewDynakube() dynatracev1beta1.DynaKube {
 	return dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      Name,
@@ -32,7 +32,7 @@ func New() dynatracev1beta1.DynaKube {
 }
 
 func newWithActiveGate(apiUrl string) dynatracev1beta1.DynaKube {
-	instance := New()
+	instance := NewDynakube()
 	instance.Spec = dynatracev1beta1.DynaKubeSpec{
 		APIURL: apiUrl,
 		NamespaceSelector: metav1.LabelSelector{
@@ -85,7 +85,7 @@ func ApplyCloudNative(apiUrl string, cloudNativeFullStackSpec *dynatracev1beta1.
 
 func DeleteIfExists() func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
 	return func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
-		instance := New()
+		instance := NewDynakube()
 		resources := environmentConfig.Client().Resources()
 
 		err := dynatracev1beta1.AddToScheme(resources.GetScheme())
@@ -114,7 +114,7 @@ func DeleteIfExists() func(ctx context.Context, environmentConfig *envconf.Confi
 
 func WaitForDynakubePhase() features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		instance := New()
+		instance := NewDynakube()
 		resources := environmentConfig.Client().Resources()
 
 		require.NoError(t, wait.For(conditions.New(resources).ResourceMatch(&instance, func(object k8s.Object) bool {
