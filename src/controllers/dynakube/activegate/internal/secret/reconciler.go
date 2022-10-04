@@ -3,7 +3,6 @@ package secret
 import (
 	"context"
 
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -12,7 +11,6 @@ import (
 type Reconciler struct {
 	client    client.Client
 	apiReader client.Reader
-	dtc       dtclient.Client
 	secret    *corev1.Secret
 }
 

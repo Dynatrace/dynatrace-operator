@@ -60,9 +60,36 @@ func TestUseImmutableImage(t *testing.T) {
 	})
 }
 
+func TestImmutableImageFeatureFlag(t *testing.T) {
+	t.Run(`if immutable image feature flag is enabled, add tenantInfo as arguments and provide secret volume`, func(t *testing.T) {
+		instance := dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					dynatracev1beta1.AnnotationFeatureOneAgentUseImmutableImage: "true",
+				},
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: testURL,
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
+				},
+			},
+		}
+		dsInfo := NewCloudNativeFullStack(&instance, testClusterID)
+		ds, err := dsInfo.BuildDaemonSet()
+		require.NoError(t, err)
+
+		podSpecs := ds.Spec.Template.Spec
+		assert.NotNil(t, podSpecs)
+		assert.Contains(t, podSpecs.Containers[0].Args, "----set-server=feature-flags=immutable-image")
+		assert.Contains(t, podSpecs.Containers[0].Args, "--set-host-property=tenant-id="+testClusterID)
+	})
+}
+
 func TestLabels(t *testing.T) {
 	feature := strings.ReplaceAll(DeploymentTypeFullStack, "_", "")
-	t.Run(`if image is unset, use version`, func(t *testing.T) {
+	t.Run(`
+	}if image is unset, use version`, func(t *testing.T) {
 		instance := dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testURL,

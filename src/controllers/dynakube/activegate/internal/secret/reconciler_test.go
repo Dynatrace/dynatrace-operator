@@ -4,12 +4,7 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,83 +13,58 @@ import (
 )
 
 const (
-	testDynakubeName = "test-dynakube"
-	testNamespace    = "test-namespace"
+	testNamespace         = "test-namespace"
+	testSecretName        = "test-secret"
+	testSecretKey         = "test-key"
+	testSecretValueFirst  = "test-secret-value"
+	testSecretValueSecond = "test-secret-value-second"
 )
 
-var (
-	tenantInfoResponse = &dtclient.ActiveGateTenantInfo{
-		TenantInfo: dtclient.TenantInfo{
-			UUID:  "testUUID",
-			Token: "dt.some.valuegoeshere",
-		},
-		Endpoints: "someEndpoints",
-	}
-)
+func newTestReconcilerWithInstance(client client.Client, value string) *Reconciler {
+	secret := createTestSecret(value)
 
-func newTestReconcilerWithInstance(client client.Client) *Reconciler {
-	instance := &dynatracev1beta1.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: testNamespace,
-			Name:      testDynakubeName,
-		},
-		Spec: dynatracev1beta1.DynaKubeSpec{
-			APIURL: "https://testing.dev.dynatracelabs.com/api",
-		},
-	}
-	dtc := &dtclient.MockDynatraceClient{}
-	dtc.On("GetActiveGateTenantInfo", mock.Anything).Return(tenantInfoResponse, nil)
-
-	r := NewReconciler(client, client, scheme.Scheme, instance, dtc)
+	r := NewReconciler(client, client, &secret)
 	return r
 }
 
+func createTestSecret(value string) corev1.Secret {
+	return corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testSecretName,
+			Namespace: testNamespace,
+		},
+		Data: map[string][]byte{
+			testSecretKey: []byte(value),
+		},
+	}
+}
+
 func TestReconcile(t *testing.T) {
-	t.Run(`reconcile tenant info for first time`, func(t *testing.T) {
-		r := newTestReconcilerWithInstance(fake.NewClientBuilder().Build())
-		update, err := r.Reconcile()
+	t.Run(`reconcile secret first time`, func(t *testing.T) {
+		r := newTestReconcilerWithInstance(fake.NewClientBuilder().Build(), testSecretValueFirst)
+		_, err := r.Reconcile()
 
 		require.NoError(t, err)
 
-		var tenantInfoSecret corev1.Secret
-		_ = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.AGTenantSecret(), Namespace: testNamespace}, &tenantInfoSecret)
+		var secret corev1.Secret
+		err = r.client.Get(context.TODO(), client.ObjectKey{Name: testSecretName, Namespace: testNamespace}, &secret)
 
-		assert.Equal(t, []byte(tenantInfoResponse.UUID), tenantInfoSecret.Data[TenantUuidName])
-		assert.Equal(t, []byte(tenantInfoResponse.Token), tenantInfoSecret.Data[TenantTokenName])
-		assert.Equal(t, []byte(tenantInfoResponse.Endpoints), tenantInfoSecret.Data[CommunicationEndpointsName])
-		assert.True(t, update)
+		require.NoError(t, err)
+		assert.Equal(t, []byte(testSecretValueFirst), secret.Data[testSecretKey])
 	})
+	t.Run(`reconcile secret changed`, func(t *testing.T) {
+		secret := createTestSecret(testSecretValueFirst)
+		clt := fake.NewClientBuilder().WithObjects(&secret).Build()
 
-	t.Run(`reconcile tenant info changed`, func(t *testing.T) {
-		r := newTestReconcilerWithInstance(fake.NewClientBuilder().Build())
-		update, err := r.Reconcile()
-		require.NoError(t, err)
-		assert.True(t, update)
-
-		var newTenantToken = "dt.someOtherToken"
-		tenantInfoResponse.UUID = newTenantToken
-
-		update, err = r.Reconcile()
+		r := newTestReconcilerWithInstance(clt, testSecretValueSecond)
+		_, err := r.Reconcile()
 
 		require.NoError(t, err)
 
-		var tenantInfoSecret corev1.Secret
-		_ = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.AGTenantSecret(), Namespace: testNamespace}, &tenantInfoSecret)
+		var secretUpdated corev1.Secret
+		err = r.client.Get(context.TODO(), client.ObjectKey{Name: testSecretName, Namespace: testNamespace}, &secretUpdated)
 
-		assert.Equal(t, []byte(tenantInfoResponse.UUID), tenantInfoSecret.Data[TenantUuidName])
-		assert.Equal(t, []byte(tenantInfoResponse.Token), tenantInfoSecret.Data[TenantTokenName])
-		assert.Equal(t, []byte(tenantInfoResponse.Endpoints), tenantInfoSecret.Data[CommunicationEndpointsName])
-		assert.True(t, update)
-	})
-
-	t.Run(`reconcile tenant info returns error`, func(t *testing.T) {
-		r := newTestReconcilerWithInstance(fake.NewClientBuilder().Build())
-		var dtClient = &dtclient.MockDynatraceClient{}
-		dtClient.On("GetActiveGateTenantInfo", mock.Anything).Return(&dtclient.ActiveGateTenantInfo{}, errors.New("error"))
-		r.dtc = dtClient
-		update, err := r.Reconcile()
-
-		require.Error(t, err)
-		assert.False(t, update)
+		require.NoError(t, err)
+		assert.Equal(t, []byte(testSecretValueSecond), secretUpdated.Data[testSecretKey])
 	})
 }

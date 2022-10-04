@@ -1,6 +1,7 @@
 package daemonset
 
 import (
+	"fmt"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -20,6 +21,9 @@ const (
 	testClusterID = "test-cluster-id"
 	testURL       = "https://testing.dev.dynatracelabs.com/api"
 	testName      = "test-name"
+
+	testFormattedCommunicationHosts = "test-communication-hosts"
+	testTenantUUID                  = "test-tenant-uuid"
 )
 
 func TestArguments(t *testing.T) {
@@ -70,6 +74,10 @@ func TestPodSpec_Arguments(t *testing.T) {
 					Version: testContainerImageVersion,
 				},
 			},
+			ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
+				TenantUUID:                      testTenantUUID,
+				FormattedCommunicationEndpoints: testFormattedCommunicationHosts,
+			},
 		},
 	}
 	metadata := deploymentmetadata.NewDeploymentMetadata(testClusterID, DeploymentTypeFullStack)
@@ -113,6 +121,12 @@ func TestPodSpec_Arguments(t *testing.T) {
 		instance.Annotations[dynatracev1beta1.AnnotationFeatureOneAgentIgnoreProxy] = "true"
 		podSpecs = dsInfo.podSpec()
 		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
+	})
+	t.Run(`feature flag immutable image is enabled`, func(t *testing.T) {
+		instance.Annotations[dynatracev1beta1.AnnotationFeatureOneAgentUseImmutableImage] = "true"
+		podSpecs = dsInfo.podSpec()
+		assert.Contains(t, podSpecs.Containers[0].Args, "--set-tenant="+testTenantUUID)
+		assert.Contains(t, podSpecs.Containers[0].Args, fmt.Sprintf("--set-server={%s}", testFormattedCommunicationHosts))
 	})
 	t.Run(`has network zone arg`, func(t *testing.T) {
 		instance.Spec.NetworkZone = testValue

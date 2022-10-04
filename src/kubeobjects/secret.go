@@ -57,8 +57,7 @@ func (query SecretQuery) CreateOrUpdate(secret corev1.Secret) error {
 	}
 
 	if !AreSecretsEqual(secret, currentSecret) {
-		query.log.Info("updating secret", "name", secret.Name, "namespace", secret.Namespace)
-		return errors.WithStack(query.Update(currentSecret))
+		return errors.WithStack(query.Update(secret))
 	} else {
 		query.log.Info("secret unchanged", "name", secret.Name, "namespace", secret.Namespace)
 	}
