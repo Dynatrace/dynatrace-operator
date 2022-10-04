@@ -76,6 +76,8 @@ spec:
           volumeMounts:
             - name: tmp-cert-dir
               mountPath: /tmp/dynatrace-operator
+            - name: profiling
+              mountPath: /tmp/profiles
           readinessProbe:
             httpGet:
               path: /livez
@@ -121,6 +123,8 @@ spec:
       volumes:
         - emptyDir: { }
           name: tmp-cert-dir
+        - emptyDir: { }
+          name: profiling
       serviceAccountName: {{ .Release.Name }}
       {{- if .Values.customPullSecret }}
       imagePullSecrets:

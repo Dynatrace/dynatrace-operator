@@ -995,6 +995,12 @@ spec:
               activeGate:
                 description: General configuration about ActiveGate instances
                 properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: 'Optional: Adds additional annotations to the ActiveGate
+                      pods'
+                    type: object
                   capabilities:
                     description: Activegate capabilities enabled (routing, kubernetes-monitoring,
                       metrics-ingest, dynatrace-api)

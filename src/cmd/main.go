@@ -15,8 +15,6 @@ limitations under the License.
 package main
 
 import (
-	"os"
-
 	cmdConfig "github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 	csiProvisioner "github.com/Dynatrace/dynatrace-operator/src/cmd/csi/provisioner"
 	csiServer "github.com/Dynatrace/dynatrace-operator/src/cmd/csi/server"
@@ -28,6 +26,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"os"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 

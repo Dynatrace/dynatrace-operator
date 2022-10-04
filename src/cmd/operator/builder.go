@@ -2,7 +2,6 @@ package operator
 
 import (
 	"context"
-
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 	cmdManager "github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/certificates"
@@ -10,9 +9,19 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"io"
+	v1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
+	"log"
+	"os"
+	"os/signal"
+	"runtime/pprof"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"syscall"
+	"time"
 )
 
 const (
@@ -115,29 +124,45 @@ func (builder CommandBuilder) buildRun() func(cmd *cobra.Command, args []string)
 		if err != nil {
 			return err
 		}
+
 		builder, err = builder.setClientFromConfig(kubeCfg)
 		if err != nil {
 			return err
 		}
 
-		operatorPod, err := kubeobjects.GetPod(context.TODO(), builder.client, builder.podName, builder.namespace)
+		cpuProfile, err := os.CreateTemp("/tmp", "cpu.pb")
 		if err != nil {
-			return err
+			log.Println("could not create file for temporary cpu profile file", "err", errors.WithStack(err))
+		} else {
+			defer cpuProfile.Close()
+
+			err = pprof.StartCPUProfile(cpuProfile)
+			if err != nil {
+				log.Println("could no start cpu profiling", "err", errors.WithStack(err))
+			}
 		}
 
-		isDeployedViaOlm := kubesystem.IsDeployedViaOlm(*operatorPod)
-		if !isDeployedViaOlm {
-			var bootstrapManager ctrl.Manager
-			bootstrapManager, err = builder.getBootstrapManagerProvider().CreateManager(builder.namespace, kubeCfg)
-
+		isDeployedViaOlm := false
+		if os.Getenv("RUN_LOCAL") != "true" {
+			operatorPod, err := kubeobjects.GetPod(context.TODO(), builder.client, builder.podName, builder.namespace)
 			if err != nil {
 				return err
 			}
 
-			err = runBootstrapper(bootstrapManager, builder.namespace)
+			isDeployedViaOlm := kubesystem.IsDeployedViaOlm(*operatorPod)
+			if !isDeployedViaOlm {
+				var bootstrapManager ctrl.Manager
+				bootstrapManager, err = builder.getBootstrapManagerProvider().CreateManager(builder.namespace, kubeCfg)
 
-			if err != nil {
-				return err
+				if err != nil {
+					return err
+				}
+
+				err = runBootstrapper(bootstrapManager, builder.namespace)
+
+				if err != nil {
+					return err
+				}
 			}
 		}
 
@@ -147,10 +172,53 @@ func (builder CommandBuilder) buildRun() func(cmd *cobra.Command, args []string)
 			return err
 		}
 
+		ctx, cancel := context.WithCancel(context.Background())
+
+		c := make(chan os.Signal, 2)
+		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+		go func() {
+			<-c
+			cancel()
+			time.Sleep(1 * time.Minute)
+			<-c
+			time.Sleep(1 * time.Minute)
+			os.Exit(1)
+		}()
+
+		builder.setSignalHandler(ctx)
 		err = operatorManager.Start(builder.getSignalHandler())
 
+		_ = stopProfiling(context.TODO(), cpuProfile, builder)
 		return errors.WithStack(err)
 	}
+}
+
+func stopProfiling(ctx context.Context, cpuProfile *os.File, builder CommandBuilder) error {
+	pprof.StopCPUProfile()
+	profile, err := io.ReadAll(cpuProfile)
+	if err != nil {
+		println(err.Error())
+	}
+
+	profileMap := v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "operator-profile",
+			Namespace: "dynatrace",
+		},
+		BinaryData: map[string][]byte{
+			"cpu": profile,
+		},
+	}
+
+	err = builder.client.Create(ctx, &profileMap)
+	if k8serrors.IsAlreadyExists(err) {
+		err = builder.client.Update(ctx, &profileMap)
+	}
+
+	if err != nil {
+		println(err.Error())
+	}
+	return err
 }
 
 func runBootstrapper(bootstrapManager ctrl.Manager, namespace string) error {
