@@ -14,11 +14,7 @@ spec:
       - /dev/null
       - -v
       - --max-time
-      - "5"
-      - --retry
-      - "6"
-      - --retry-max-time
-      - "30"
+      - "4"
       command:
       - curl
       name: curl-proxy
@@ -27,4 +23,20 @@ spec:
         limits:
           memory: "128Mi"
           cpu: "500m"
-  restartPolicy: "Never"
+      livenessProbe:
+        exec:
+          command:
+            - curl
+            - https://dynatrace-webhook.dynatrace.svc.cluster.local/livez
+            - -k
+            - -x
+            - http://squid.proxy:3128
+            - -o
+            - /dev/null
+            - -v
+            - --max-time
+            - "4"
+        initialDelaySeconds: 5
+        periodSeconds: 5
+        failureThreshold: 1
+  restartPolicy: "OnFailure"

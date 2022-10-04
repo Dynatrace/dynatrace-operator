@@ -3,6 +3,7 @@ package proxy
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
@@ -14,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -34,8 +36,8 @@ func InstallProxy(builder *features.FeatureBuilder, proxySpec *v1beta1.DynaKubeP
 		builder.Assess("proxy started", deployment.WaitFor(proxyDeployment, proxyNamespace))
 
 		builder.Assess("query webhook via proxy", manifests.InstallFromFile("../testdata/activegate/curl-pod-webhook-via-proxy.yaml"))
-		builder.Assess("query is completed", pod.WaitFor(curlPodProxy, dynakube.DynatraceNamespace))
-		builder.Assess("proxy is running", checkProxyService)
+		builder.Assess("query is completed", waitForCurlProxyPod(curlPodProxy, dynakube.DynatraceNamespace))
+		builder.Assess("proxy is running", checkProxyService())
 	}
 }
 
@@ -45,18 +47,27 @@ func DeleteProxyIfExists() func(ctx context.Context, environmentConfig *envconf.
 	}
 }
 
-func checkProxyService(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-	resources := environmentConfig.Client().Resources()
+func checkProxyService() features.Func {
+	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+		resources := environmentConfig.Client().Resources()
 
-	clientset, err := kubernetes.NewForConfig(resources.GetConfig())
-	require.NoError(t, err)
+		clientset, err := kubernetes.NewForConfig(resources.GetConfig())
+		require.NoError(t, err)
 
-	logStream, err := clientset.CoreV1().Pods(dynakube.DynatraceNamespace).GetLogs(curlPodProxy, &corev1.PodLogOptions{
-		Container: curlPodProxy,
-	}).Stream(ctx)
-	require.NoError(t, err)
+		logStream, err := clientset.CoreV1().Pods(dynakube.DynatraceNamespace).GetLogs(curlPodProxy, &corev1.PodLogOptions{
+			Container: curlPodProxy,
+		}).Stream(ctx)
+		require.NoError(t, err)
 
-	logs.AssertLogContains(t, logStream, "CONNECT dynatrace-webhook.dynatrace.svc.cluster.local")
+		logs.AssertLogContains(t, logStream, "CONNECT dynatrace-webhook.dynatrace.svc.cluster.local")
 
-	return ctx
+		return ctx
+	}
+}
+
+func waitForCurlProxyPod(name string, namespace string) features.Func {
+	return pod.WaitForCondition(name, namespace, func(object k8s.Object) bool {
+		pod, isPod := object.(*corev1.Pod)
+		return isPod && pod.Status.Phase == corev1.PodSucceeded
+	}, 30*time.Second)
 }
