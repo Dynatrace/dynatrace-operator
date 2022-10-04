@@ -195,6 +195,11 @@ func (builder CommandBuilder) buildRun() func(cmd *cobra.Command, args []string)
 
 func stopProfiling(ctx context.Context, cpuProfile *os.File, builder CommandBuilder) error {
 	pprof.StopCPUProfile()
+	_, err := cpuProfile.Seek(0, 0)
+	if err != nil {
+		println(err.Error())
+	}
+
 	profile, err := io.ReadAll(cpuProfile)
 	if err != nil {
 		println(err.Error())
