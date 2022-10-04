@@ -28,7 +28,9 @@ const (
 
 func TestArguments(t *testing.T) {
 	t.Run("returns default arguments if hostInjection is nil", func(t *testing.T) {
-		builder := builderInfo{}
+		builder := builderInfo{
+			instance: &dynatracev1beta1.DynaKube{},
+		}
 		arguments := builder.arguments()
 		defaultArguments := builder.appendMetadataArgs(appendOperatorVersionArg([]string{}))
 
