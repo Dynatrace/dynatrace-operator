@@ -88,8 +88,7 @@ func TestImmutableImageFeatureFlag(t *testing.T) {
 
 func TestLabels(t *testing.T) {
 	feature := strings.ReplaceAll(DeploymentTypeFullStack, "_", "")
-	t.Run(`
-	}if image is unset, use version`, func(t *testing.T) {
+	t.Run(`if image is unset, use version`, func(t *testing.T) {
 		instance := dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testURL,
