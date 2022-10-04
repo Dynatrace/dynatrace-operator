@@ -166,7 +166,7 @@ func (dk *DynaKube) AGTenantSecret() string {
 	return dk.Name + ActiveGateTenantSecretSuffix
 }
 
-// OATenantSecret returns the name of the secret containing tenant UUID, token and communication endpoints for OneAgent
+// OATenantSecret returns the name of the secret containing token for OneAgent
 func (dk *DynaKube) OATenantSecret() string {
 	return dk.Name + OneAgentTenantSecretSuffix
 }

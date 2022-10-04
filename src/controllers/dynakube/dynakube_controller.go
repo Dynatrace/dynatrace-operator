@@ -7,8 +7,6 @@ import (
 	"os"
 	"time"
 
-	corev1 "k8s.io/api/core/v1"
-
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/apimonitoring"
@@ -195,8 +193,6 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 		return
 	}
 
-	// todo create connection info secret here
-
 	err = status.SetDynakubeStatus(dkState.Instance, status.Options{
 		Dtc:       dtc,
 		ApiClient: controller.apiReader,
@@ -223,33 +219,7 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 		return
 	}
 
-	// todo move into own function and name secret after dynakube
-	if dkState.Instance.FeatureOneAgentUseImmutableImage() {
-		// connection info
-		connectionInfo, err := dtc.GetConnectionInfo()
-		if err != nil {
-			log.Error(err, "failed to get connection info")
-			return
-		}
-
-		// create secret with 'tenant_token' field
-		secret := corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "dynatrace-oneagent",
-				Namespace: dkState.Instance.Namespace,
-			},
-			Data: map[string][]byte{
-				"tenant-token": []byte(connectionInfo.TenantToken),
-			},
-		}
-
-		secretquery := kubeobjects.NewSecretQuery(ctx, controller.client, controller.apiReader, log)
-		if err := secretquery.CreateOrUpdate(secret); err != nil {
-			log.Error(err, "could not create or update secret for tenant token")
-		}
-	}
-
-	err = controller.reconcileOneAgent(ctx, dkState)
+	err = controller.reconcileOneAgent(ctx, dkState, dtc)
 	if err != nil {
 		return
 	}
@@ -290,10 +260,10 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 	dkState.Update(upd, "dynakube phase changed")
 }
 
-func (controller *DynakubeController) reconcileOneAgent(ctx context.Context, dkState *status.DynakubeState) (err error) {
+func (controller *DynakubeController) reconcileOneAgent(ctx context.Context, dkState *status.DynakubeState, dtc dtclient.Client) (err error) {
 	if dkState.Instance.HostMonitoringMode() {
 		upd, err := oneagent.NewOneAgentReconciler(
-			controller.client, controller.apiReader, controller.scheme, dkState.Instance, daemonset.DeploymentTypeHostMonitoring,
+			controller.client, controller.apiReader, dtc, controller.scheme, dkState.Instance, daemonset.DeploymentTypeHostMonitoring,
 		).Reconcile(ctx, dkState)
 		if dkState.Error(err) {
 			return nil
@@ -301,7 +271,7 @@ func (controller *DynakubeController) reconcileOneAgent(ctx context.Context, dkS
 		dkState.Update(upd, "host monitoring reconciled")
 	} else if dkState.Instance.CloudNativeFullstackMode() {
 		upd, err := oneagent.NewOneAgentReconciler(
-			controller.client, controller.apiReader, controller.scheme, dkState.Instance, daemonset.DeploymentTypeCloudNative,
+			controller.client, controller.apiReader, dtc, controller.scheme, dkState.Instance, daemonset.DeploymentTypeCloudNative,
 		).Reconcile(ctx, dkState)
 		if dkState.Error(err) {
 			return nil
@@ -309,7 +279,7 @@ func (controller *DynakubeController) reconcileOneAgent(ctx context.Context, dkS
 		dkState.Update(upd, "cloud native fullstack monitoring reconciled")
 	} else if dkState.Instance.ClassicFullStackMode() {
 		upd, err := oneagent.NewOneAgentReconciler(
-			controller.client, controller.apiReader, controller.scheme, dkState.Instance, daemonset.DeploymentTypeFullStack,
+			controller.client, controller.apiReader, dtc, controller.scheme, dkState.Instance, daemonset.DeploymentTypeFullStack,
 		).Reconcile(ctx, dkState)
 		if dkState.Error(err) {
 			return nil
@@ -337,7 +307,11 @@ func (controller *DynakubeController) removeOneAgentDaemonSet(dkState *status.Dy
 }
 
 func (controller *DynakubeController) reconcileActiveGate(ctx context.Context, dynakubeState *status.DynakubeState, dtc dtclient.Client) error {
-	reconciler := activegate.NewReconciler(ctx, controller.client, controller.apiReader, controller.scheme, dynakubeState.Instance, dtc)
+	reconciler, err := activegate.NewReconciler(ctx, controller.client, controller.apiReader, controller.scheme, dynakubeState.Instance, dtc)
+	if err != nil {
+		return errors.WithMessage(err, "failed to create activegate reconciler")
+	}
+
 	upd, err := reconciler.Reconcile()
 
 	if err != nil {

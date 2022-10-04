@@ -1,4 +1,4 @@
-package tenantinfo
+package secret
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/src/logger"

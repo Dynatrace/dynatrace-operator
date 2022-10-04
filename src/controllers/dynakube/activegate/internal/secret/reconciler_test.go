@@ -1,4 +1,4 @@
-package tenantinfo
+package secret
 
 import (
 	"context"
@@ -57,7 +57,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		var tenantInfoSecret corev1.Secret
-		_ = r.client.Get(context.TODO(), client.ObjectKey{Name: extendWithAGSecretSuffix(r.dynakube.Name), Namespace: testNamespace}, &tenantInfoSecret)
+		_ = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.AGTenantSecret(), Namespace: testNamespace}, &tenantInfoSecret)
 
 		assert.Equal(t, []byte(tenantInfoResponse.UUID), tenantInfoSecret.Data[TenantUuidName])
 		assert.Equal(t, []byte(tenantInfoResponse.Token), tenantInfoSecret.Data[TenantTokenName])
@@ -79,7 +79,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		var tenantInfoSecret corev1.Secret
-		_ = r.client.Get(context.TODO(), client.ObjectKey{Name: extendWithAGSecretSuffix(r.dynakube.Name), Namespace: testNamespace}, &tenantInfoSecret)
+		_ = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.AGTenantSecret(), Namespace: testNamespace}, &tenantInfoSecret)
 
 		assert.Equal(t, []byte(tenantInfoResponse.UUID), tenantInfoSecret.Data[TenantUuidName])
 		assert.Equal(t, []byte(tenantInfoResponse.Token), tenantInfoSecret.Data[TenantTokenName])

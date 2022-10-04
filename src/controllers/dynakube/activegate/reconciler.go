@@ -9,8 +9,8 @@ import (
 	capabilityInternal "github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/proxy"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/secret"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/tenantinfo"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
@@ -37,9 +37,14 @@ type Reconciler struct {
 
 var _ kubeobjects.Reconciler = (*Reconciler)(nil)
 
-func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) kubeobjects.Reconciler {
+func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) (kubeobjects.Reconciler, error) {
+	tenantInfoSecret, err := createTenantInfoSecret(dtc, dynakube.AGTenantSecret(), dynakube.Namespace)
+	if err != nil {
+		return nil, err
+	}
+
 	authTokenReconciler := authtoken.NewReconciler(clt, apiReader, scheme, dynakube, dtc)
-	tenantInfoReconciler := tenantinfo.NewReconciler(clt, apiReader, scheme, dynakube, dtc)
+	tenantInfoReconciler := secret.NewReconciler(clt, apiReader, tenantInfoSecret)
 	proxyReconciler := proxy.NewReconciler(clt, apiReader, dynakube)
 	newCustomPropertiesReconcilerFunc := func(customPropertiesOwnerName string, customPropertiesSource *dynatracev1beta1.DynaKubeValueSource) kubeobjects.Reconciler {
 		return customproperties.NewReconciler(clt, dynakube, customPropertiesOwnerName, scheme, customPropertiesSource)
@@ -57,7 +62,22 @@ func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Read
 		newStatefulsetReconcilerFunc:      statefulset.NewReconciler,
 		newCapabilityReconcilerFunc:       capabilityInternal.NewReconciler,
 		tenantInfoReconciler:              tenantInfoReconciler,
+	}, nil
+}
+
+func createTenantInfoSecret(dtc dtclient.Client, secretName string, namespace string) (*corev1.Secret, error) {
+	tenantInfo, err := dtc.GetActiveGateTenantInfo()
+	if err != nil {
+		return nil, errors.WithStack(err)
 	}
+
+	data := map[string][]byte{
+		secret.TenantUuidName:             []byte(tenantInfo.UUID),
+		secret.TenantTokenName:            []byte(tenantInfo.Token),
+		secret.CommunicationEndpointsName: []byte(tenantInfo.Endpoints),
+	}
+
+	return kubeobjects.NewSecret(secretName, namespace, data), nil
 }
 
 func (r *Reconciler) Reconcile() (update bool, err error) {

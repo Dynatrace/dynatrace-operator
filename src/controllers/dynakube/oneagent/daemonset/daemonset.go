@@ -38,7 +38,6 @@ const (
 	inframonHostIdSource = "--set-host-id-source=k8s-node-name"
 	classicHostIdSource  = "--set-host-id-source=auto"
 
-	oneAgentSecretName       = "dynatrace-oneagent"
 	oneAgentSecretVolumeName = "secrets"
 	oneAgentSecretMountPath  = "/var/lib/dynatrace/secrets/tokens"
 )
