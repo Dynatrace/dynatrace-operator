@@ -82,24 +82,6 @@ func (provisioner *OneAgentProvisioner) SetupWithManager(mgr ctrl.Manager) error
 func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log.Info("reconciling DynaKube", "namespace", request.Namespace, "dynakube", request.Name)
 
-	result, err := provisioner.provision(ctx, request)
-	if err != nil || !result.IsZero() {
-		return result, err
-	}
-
-	result, err = provisioner.collectGarbage(ctx, request)
-	if err != nil || !result.IsZero() {
-		return result, err
-	}
-
-	return reconcile.Result{}, nil
-}
-
-func (provisioner *OneAgentProvisioner) collectGarbage(ctx context.Context, request reconcile.Request) (result reconcile.Result, err error) {
-	return provisioner.gc.Reconcile(ctx, request)
-}
-
-func (provisioner *OneAgentProvisioner) provision(ctx context.Context, request reconcile.Request) (result reconcile.Result, err error) {
 	dk, err := provisioner.getDynaKube(ctx, request.NamespacedName)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
@@ -112,15 +94,34 @@ func (provisioner *OneAgentProvisioner) provision(ctx context.Context, request r
 		return reconcile.Result{RequeueAfter: longRequeueDuration}, provisioner.db.DeleteDynakube(ctx, request.Name)
 	}
 
-	// creates a dt client and checks tokens exist for the given dynakube
-	dtc, err := buildDtc(provisioner, ctx, dk)
+	err = provisioner.provision(ctx, dk)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	dynakubeMetadata, oldDynakubeMetadata, err := provisioner.handleMetadata(ctx, dk)
+	err = provisioner.collectGarbage(ctx, request)
 	if err != nil {
 		return reconcile.Result{}, err
+	}
+
+	return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
+}
+
+func (provisioner *OneAgentProvisioner) collectGarbage(ctx context.Context, request reconcile.Request) error {
+	_, err := provisioner.gc.Reconcile(ctx, request)
+	return err
+}
+
+func (provisioner *OneAgentProvisioner) provision(ctx context.Context, dk *dynatracev1beta1.DynaKube) error {
+	// creates a dt client and checks tokens exist for the given dynakube
+	dtc, err := buildDtc(provisioner, ctx, dk)
+	if err != nil {
+		return err
+	}
+
+	dynakubeMetadata, oldDynakubeMetadata, err := provisioner.handleMetadata(ctx, dk)
+	if err != nil {
+		return err
 	}
 
 	log.Info("checking dynakube", "tenantUUID", dynakubeMetadata.TenantUUID, "version", dynakubeMetadata.LatestVersion)
@@ -129,36 +130,33 @@ func (provisioner *OneAgentProvisioner) provision(ctx context.Context, request r
 	// so the host oneagent-storages can be mounted before the standalone agent binaries are ready to be mounted
 	err = provisioner.createOrUpdateDynakubeMetadata(ctx, oldDynakubeMetadata, dynakubeMetadata)
 	if err != nil {
-		return reconcile.Result{}, err
+		return err
 	}
 	oldDynakubeMetadata = *dynakubeMetadata
 
 	if err = provisioner.createCSIDirectories(dynakubeMetadata.TenantUUID); err != nil {
 		log.Error(err, "error when creating csi directories", "path", provisioner.path.TenantDir(dynakubeMetadata.TenantUUID))
-		return reconcile.Result{}, errors.WithStack(err)
+		return errors.WithStack(err)
 	}
 	log.Info("csi directories exist", "path", provisioner.path.TenantDir(dynakubeMetadata.TenantUUID))
 
 	latestProcessModuleConfigCache, requeue, err := provisioner.updateAgentInstallation(ctx, dtc, dynakubeMetadata, dk)
-	if requeue {
-		return reconcile.Result{RequeueAfter: defaultRequeueDuration}, err
-	}
-	if err != nil {
-		return reconcile.Result{}, err
+	if requeue || err != nil {
+		return err
 	}
 
 	// Set/Update the `LatestVersion` field in the database entry
 	err = provisioner.createOrUpdateDynakubeMetadata(ctx, oldDynakubeMetadata, dynakubeMetadata)
 	if err != nil {
-		return reconcile.Result{}, err
+		return err
 	}
 
 	err = provisioner.writeProcessModuleConfigCache(dynakubeMetadata.TenantUUID, latestProcessModuleConfigCache)
 	if err != nil {
-		return reconcile.Result{}, err
+		return err
 	}
 
-	return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
+	return nil
 }
 
 func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Context, dtc dtclient.Client, dynakubeMetadata *metadata.Dynakube, dk *dynatracev1beta1.DynaKube) (

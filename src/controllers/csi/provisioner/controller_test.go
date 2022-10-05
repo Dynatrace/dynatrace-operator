@@ -69,7 +69,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		}
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{})
 
-		gc.AssertNumberOfCalls(t, "Reconcile", 1)
+		gc.AssertNumberOfCalls(t, "Reconcile", 0)
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
 		assert.Equal(t, reconcile.Result{}, result)
