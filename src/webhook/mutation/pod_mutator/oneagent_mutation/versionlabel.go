@@ -14,16 +14,15 @@ var (
 type VersionLabelMapping map[string]string
 
 func newVersionLabelMapping(namespace corev1.Namespace) VersionLabelMapping {
-	// TODO
 	return mergeMappingWithDefault(getMappingFromNamespace(namespace))
 }
 
 func getMappingFromNamespace(namespace corev1.Namespace) VersionLabelMapping {
-	// TODO
+	// TODO: Implementation => Parse Namespace annotations into correct format
 	return VersionLabelMapping{}
 }
 
 func mergeMappingWithDefault(labelMapping VersionLabelMapping) VersionLabelMapping {
-	// TODO
+	// TODO: Implementation => Combine the maps
 	return defaultVersionLabelMapping
 }
