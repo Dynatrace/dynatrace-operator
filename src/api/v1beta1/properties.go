@@ -161,13 +161,13 @@ func (dk *DynaKube) ShouldAutoUpdateOneAgent() bool {
 	return false
 }
 
-// AGTenantSecret returns the name of the secret containing tenant UUID, token and communication endpoints for ActiveGate
-func (dk *DynaKube) AGTenantSecret() string {
+// ActivegateTenantSecret returns the name of the secret containing tenant UUID, token and communication endpoints for ActiveGate
+func (dk *DynaKube) ActivegateTenantSecret() string {
 	return dk.Name + ActiveGateTenantSecretSuffix
 }
 
-// OATenantSecret returns the name of the secret containing token for OneAgent
-func (dk *DynaKube) OATenantSecret() string {
+// OneagentTenantSecret returns the name of the secret containing token for OneAgent
+func (dk *DynaKube) OneagentTenantSecret() string {
 	return dk.Name + OneAgentTenantSecretSuffix
 }
 

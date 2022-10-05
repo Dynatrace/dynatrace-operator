@@ -3,6 +3,7 @@ package dynakube
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/tenantinfo"
 	"net/http"
 	"os"
 	"time"
@@ -213,6 +214,12 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 	upd, err = version.ReconcileVersions(ctx, dkState, controller.apiReader, controller.fs, version.GetImageVersion)
 	dkState.Update(upd, "Found updates")
 	dkState.Error(err)
+
+	upd, err = tenantinfo.NewReconciler(ctx, controller.client, controller.apiReader, dkState.Instance, dtc).Reconcile()
+	dkState.Update(upd, "Tenant info secrets updated")
+	if err != nil {
+		return
+	}
 
 	err = controller.reconcileActiveGate(ctx, dkState, dtc)
 	if dkState.Error(err) {

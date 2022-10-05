@@ -156,7 +156,7 @@ func getOneAgentSecretVolume(instance *dynatracev1beta1.DynaKube) corev1.Volume 
 		Name: oneAgentSecretVolumeName,
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
-				SecretName: instance.OATenantSecret(),
+				SecretName: instance.OneagentTenantSecret(),
 			},
 		},
 	}

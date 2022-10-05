@@ -3,8 +3,8 @@ package modifiers
 import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/secret"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/tenantinfo"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -42,7 +42,7 @@ func (mod RawImageModifier) getVolumes() []corev1.Volume {
 			Name: consts.TenantSecretVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: mod.dynakube.AGTenantSecret(),
+					SecretName: mod.dynakube.ActivegateTenantSecret(),
 				},
 			},
 		},
@@ -55,7 +55,7 @@ func (mod RawImageModifier) getVolumeMounts() []corev1.VolumeMount {
 			Name:      consts.TenantSecretVolumeName,
 			ReadOnly:  true,
 			MountPath: consts.TenantTokenMountPoint,
-			SubPath:   secret.TenantTokenName,
+			SubPath:   tenantinfo.TenantTokenName,
 		},
 	}
 }
@@ -70,9 +70,9 @@ func (mod RawImageModifier) tenantUUIDNameEnvVar() corev1.EnvVar {
 		ValueFrom: &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: mod.dynakube.AGTenantSecret(),
+					Name: mod.dynakube.ActivegateTenantSecret(),
 				},
-				Key: secret.TenantUuidName,
+				Key: tenantinfo.TenantUuidName,
 			},
 		},
 	}
@@ -84,9 +84,9 @@ func (mod RawImageModifier) communicationEndpointEnvVar() corev1.EnvVar {
 		ValueFrom: &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: mod.dynakube.AGTenantSecret(),
+					Name: mod.dynakube.ActivegateTenantSecret(),
 				},
-				Key: secret.CommunicationEndpointsName,
+				Key: tenantinfo.CommunicationEndpointsName,
 			},
 		},
 	}

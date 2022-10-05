@@ -14,7 +14,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
-	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -67,12 +66,6 @@ type OneAgentReconciler struct {
 func (r *OneAgentReconciler) Reconcile(ctx context.Context, rec *status.DynakubeState) (bool, error) {
 	log.Info("reconciling OneAgent")
 
-	if r.instance.FeatureOneAgentUseImmutableImage() {
-		if err := r.createTenantInfoSecret(); err != nil {
-			return false, err
-		}
-	}
-
 	upd, err := r.reconcileRollout(rec)
 	if err != nil {
 		return false, err
@@ -102,33 +95,6 @@ func (r *OneAgentReconciler) Reconcile(ctx context.Context, rec *status.Dynakube
 	}
 
 	return upd, nil
-}
-
-func (r *OneAgentReconciler) createTenantInfoSecret() error {
-	// connection info
-	connectionInfo, err := r.dtc.GetConnectionInfo()
-	if err != nil {
-		log.Error(err, "failed to get connection info")
-		return errors.WithStack(err)
-	}
-
-	// create secret with 'tenant_token' field
-	secret := corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      r.instance.OATenantSecret(),
-			Namespace: r.instance.Namespace,
-		},
-		Data: map[string][]byte{
-			"tenant-token": []byte(connectionInfo.TenantToken),
-		},
-	}
-
-	secretquery := kubeobjects.NewSecretQuery(context.TODO(), r.client, r.apiReader, log)
-	if err := secretquery.CreateOrUpdate(secret); err != nil {
-		log.Error(err, "could not create or update secret for tenant token")
-		return err
-	}
-	return nil
 }
 
 func (r *OneAgentReconciler) reconcileRollout(dkState *status.DynakubeState) (bool, error) {
