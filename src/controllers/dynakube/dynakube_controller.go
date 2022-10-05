@@ -237,6 +237,7 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 
 		err = endpointSecretGenerator.GenerateForDynakube(ctx, dkState.Instance)
 		if dkState.Error(err) {
+			log.Error(err, "failed to generate data-ingest secret for dynakube")
 			return
 		}
 

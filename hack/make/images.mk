@@ -2,8 +2,8 @@ MASTER_IMAGE ?= quay.io/dynatrace/dynatrace-operator:snapshot
 
 # Default bundle image tag
 BUNDLE_IMG ?= controller-bundle:$(VERSION)
-SNAPSHOT_SUFFIX = $(shell git branch --show-current | sed "s/[^a-zA-Z0-9_-]/-/g")
-BRANCH_IMAGE ?= quay.io/dynatrace/dynatrace-operator:snapshot-${SNAPSHOT_SUFFIX}
+SNAPSHOT_SUFFIX = -$(shell git branch --show-current | sed "s/[^a-zA-Z0-9_-]/-/g")
+BRANCH_IMAGE ?= quay.io/dynatrace/dynatrace-operator:snapshot${SNAPSHOT_SUFFIX}
 OLM_IMAGE ?= registry.connect.redhat.com/dynatrace/dynatrace-operator:v${VERSION}
 
 # Image URL to use all building/pushing image targets
@@ -25,9 +25,9 @@ images/push:
 	./hack/build/push_image.sh
 
 ## Builds and pushes an Operator image with a snapshot tag
-images/push/tagged: export TAG=snapshot-${SNAPSHOT_SUFFIX}
+images/push/tagged: export TAG=snapshot${SNAPSHOT_SUFFIX}
 images/push/tagged: images/push
 
 ## Builds and pushes the deployer image for the Google marketplace to the development environment on GCR
 images/gcr/deployer:
-	./hack/gcr/deployer-image.sh ":snapshot-${SNAPSHOT_SUFFIX}"
+	./hack/gcr/deployer-image.sh ":snapshot${SNAPSHOT_SUFFIX}"
