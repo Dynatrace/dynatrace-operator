@@ -18,6 +18,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/webhook/mutation/pod_mutator/oneagent_mutation"
 	"github.com/Dynatrace/dynatrace-operator/test/bash"
 	"github.com/Dynatrace/dynatrace-operator/test/csi"
+	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/secrets"
@@ -63,7 +64,7 @@ func codeModules(t *testing.T) features.Feature {
 
 	assessDeployment(codeModulesInjection)
 
-	codeModulesInjection.Assess("install dynakube", applyDynakube(secretConfigs[0].ApiUrl, codeModulesSpec()))
+	codeModulesInjection.Assess("install dynakube", dynakube.ApplyDynakube(secretConfigs[0].ApiUrl, codeModulesSpec(), nil))
 
 	assessDynakubeStartup(codeModulesInjection)
 	assessOneAgentsAreRunning(codeModulesInjection)
@@ -259,7 +260,7 @@ func getSecondTenantSecret(apiToken string) corev1.Secret {
 	return corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "dynakube-2",
-			Namespace: dynatraceNamespace,
+			Namespace: dynakube.DynatraceNamespace,
 		},
 		Data: map[string][]byte{
 			"apiToken": []byte(apiToken),
@@ -271,7 +272,7 @@ func getSecondTenantDynakube(apiUrl string) v1beta1.DynaKube {
 	dynakube := v1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "dynakube-2",
-			Namespace: dynatraceNamespace,
+			Namespace: dynakube.DynatraceNamespace,
 		},
 		Spec: v1beta1.DynaKubeSpec{
 			APIURL: apiUrl,
