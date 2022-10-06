@@ -6,7 +6,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -32,31 +31,26 @@ func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Read
 
 func (r *Reconciler) Reconcile() (update bool, err error) {
 	if !r.dynakube.FeatureDisableActivegateRawImage() {
-		tenantInfo, err := r.dtc.GetActiveGateConnectionInfo()
+		activeGateConnectionInfo, err := r.dtc.GetActiveGateConnectionInfo()
 		if err != nil {
-			log.Info("failed to get activegate tenant info")
+			log.Info("failed to get activegate connection info")
 			return false, errors.WithStack(err)
 		}
 
-		data := buildTenantInfoSecret(tenantInfo.TenantToken, tenantInfo.TenantUUID, tenantInfo.Endpoints)
-		secret := kubeobjects.NewSecret(r.dynakube.ActivegateTenantSecret(), r.dynakube.Namespace, data)
-		err = r.createOrUpdateSecret(secret)
+		err = r.createOrUpdateSecret(r.dynakube.ActivegateTenantSecret(), activeGateConnectionInfo.ConnectionInfo)
 		if err != nil {
 			return false, err
 		}
 	}
 
 	if r.dynakube.FeatureOneAgentUseImmutableImage() {
-		connectionInfo, err := r.dtc.GetOneAgentConnectionInfo()
+		oneAgentConnectionInfo, err := r.dtc.GetOneAgentConnectionInfo()
 		if err != nil {
 			log.Info("failed to get oneagent connection info")
 			return false, errors.WithStack(err)
 		}
 
-		data := buildTenantInfoSecret(
-			connectionInfo.TenantToken, connectionInfo.TenantUUID, connectionInfo.Endpoints)
-		secret := kubeobjects.NewSecret(r.dynakube.OneagentTenantSecret(), r.dynakube.Namespace, data)
-		err = r.createOrUpdateSecret(secret)
+		err = r.createOrUpdateSecret(r.dynakube.OneagentTenantSecret(), oneAgentConnectionInfo.ConnectionInfo)
 		if err != nil {
 			return false, err
 		}
@@ -65,26 +59,29 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 	return false, nil
 }
 
-func buildTenantInfoSecret(token, uuid, endpoints string) map[string][]byte {
-	// todo: interface for connectioninfo/tenantinfo
-	data := map[string][]byte{
-		TenantTokenName: []byte(token),
-	}
-	if uuid != "" {
-		data[TenantUuidName] = []byte(uuid)
-	}
-	if endpoints != "" {
-		data[CommunicationEndpointsName] = []byte(endpoints)
-	}
+func (r *Reconciler) createOrUpdateSecret(secretName string, connectionInfo dtclient.ConnectionInfo) error {
+	data := buildConnectionInfoSecret(connectionInfo)
+	secret := kubeobjects.NewSecret(secretName, r.dynakube.Namespace, data)
 
-	return data
-}
-
-func (r *Reconciler) createOrUpdateSecret(secret *corev1.Secret) error {
 	query := kubeobjects.NewSecretQuery(r.context, r.client, r.apiReader, log)
 	if err := query.CreateOrUpdate(*secret); err != nil {
-		log.Info("could not create or update secret for tenant info", "name", secret.Name)
+		log.Info("could not create or update secret for connection info", "name", secret.Name)
 		return err
 	}
 	return nil
+}
+
+func buildConnectionInfoSecret(connectionInfo dtclient.ConnectionInfo) map[string][]byte {
+	data := map[string][]byte{
+		TenantTokenName: []byte(connectionInfo.TenantToken),
+	}
+
+	if connectionInfo.TenantUUID != "" {
+		data[TenantUuidName] = []byte(connectionInfo.TenantUUID)
+	}
+	if connectionInfo.Endpoints != "" {
+		data[CommunicationEndpointsName] = []byte(connectionInfo.Endpoints)
+	}
+
+	return data
 }

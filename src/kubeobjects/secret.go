@@ -50,7 +50,7 @@ func (query SecretQuery) CreateOrUpdate(secret corev1.Secret) error {
 	currentSecret, err := query.Get(types.NamespacedName{Name: secret.Name, Namespace: secret.Namespace})
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			query.log.Info("secret not found, creating", "name", secret.Name, "namespace", secret.Namespace)
+			query.log.Info("creating secret", "name", secret.Name, "namespace", secret.Namespace)
 			return errors.WithStack(query.Create(secret))
 		}
 		return errors.WithStack(err)
