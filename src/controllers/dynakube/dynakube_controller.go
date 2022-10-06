@@ -314,13 +314,9 @@ func (controller *DynakubeController) removeOneAgentDaemonSet(dkState *status.Dy
 }
 
 func (controller *DynakubeController) reconcileActiveGate(ctx context.Context, dynakubeState *status.DynakubeState, dtc dtclient.Client) error {
-	reconciler, err := activegate.NewReconciler(ctx, controller.client, controller.apiReader, controller.scheme, dynakubeState.Instance, dtc)
-	if err != nil {
-		return errors.WithMessage(err, "failed to create activegate reconciler")
-	}
+	reconciler := activegate.NewReconciler(ctx, controller.client, controller.apiReader, controller.scheme, dynakubeState.Instance, dtc)
 
 	upd, err := reconciler.Reconcile()
-
 	if err != nil {
 		return errors.WithMessage(err, "failed to reconcile ActiveGate")
 	}
