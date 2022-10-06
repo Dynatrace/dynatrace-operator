@@ -18,7 +18,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
@@ -70,9 +69,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{})
 
 		gc.AssertNumberOfCalls(t, "Reconcile", 0)
-		assert.NoError(t, err)
-		assert.NotNil(t, result)
-		assert.Equal(t, reconcile.Result{}, result)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.Equal(t, reconcile.Result{}, result)
 	})
 	t.Run(`dynakube deleted`, func(t *testing.T) {
 		gc := &CSIGarbageCollectorMock{}
@@ -87,13 +86,13 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		}
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakube.Name}})
 
-		assert.NoError(t, err)
-		assert.NotNil(t, result)
-		assert.Equal(t, reconcile.Result{}, result)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.Equal(t, reconcile.Result{}, result)
 
 		ten, err := db.GetDynakube(ctx, dynakube.TenantUUID)
-		assert.NoError(t, err)
-		assert.Nil(t, ten)
+		require.NoError(t, err)
+		require.Nil(t, ten)
 	})
 	t.Run(`application monitoring disabled`, func(t *testing.T) {
 		gc := &CSIGarbageCollectorMock{}
@@ -115,9 +114,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakubeName}})
 
 		gc.AssertNumberOfCalls(t, "Reconcile", 0)
-		assert.NoError(t, err)
-		assert.NotNil(t, result)
-		assert.Equal(t, reconcile.Result{RequeueAfter: longRequeueDuration}, result)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.Equal(t, reconcile.Result{RequeueAfter: longRequeueDuration}, result)
 	})
 	t.Run(`csi driver not enabled`, func(t *testing.T) {
 		gc := &CSIGarbageCollectorMock{}
@@ -143,9 +142,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakubeName}})
 
 		gc.AssertNumberOfCalls(t, "Reconcile", 0)
-		assert.NoError(t, err)
-		assert.NotNil(t, result)
-		assert.Equal(t, reconcile.Result{RequeueAfter: longRequeueDuration}, result)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.Equal(t, reconcile.Result{RequeueAfter: longRequeueDuration}, result)
 	})
 	t.Run(`csi driver disabled`, func(t *testing.T) {
 		gc := &CSIGarbageCollectorMock{}
@@ -174,12 +173,12 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 
 		gc.AssertNumberOfCalls(t, "Reconcile", 0)
 		require.NoError(t, err)
-		assert.NotNil(t, result)
-		assert.Equal(t, reconcile.Result{RequeueAfter: longRequeueDuration}, result)
+		require.NotNil(t, result)
+		require.Equal(t, reconcile.Result{RequeueAfter: longRequeueDuration}, result)
 
 		dynakubeMetadatas, err := db.GetAllDynakubes(ctx)
 		require.NoError(t, err)
-		assert.Len(t, dynakubeMetadatas, 0)
+		require.Len(t, dynakubeMetadatas, 0)
 
 	})
 	t.Run(`no tokens`, func(t *testing.T) {
@@ -204,9 +203,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
 		gc.AssertNumberOfCalls(t, "Reconcile", 0)
-		assert.EqualError(t, err, `failed to query tokens: secrets "`+dkName+`" not found`)
-		assert.NotNil(t, result)
-		assert.Equal(t, reconcile.Result{}, result)
+		require.EqualError(t, err, `failed to query tokens: secrets "`+dkName+`" not found`)
+		require.NotNil(t, result)
+		require.Equal(t, reconcile.Result{}, result)
 	})
 	t.Run(`error when creating dynatrace client`, func(t *testing.T) {
 		gc := &CSIGarbageCollectorMock{}
@@ -238,9 +237,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
 		gc.AssertNumberOfCalls(t, "Reconcile", 0)
-		assert.EqualError(t, err, "failed to create Dynatrace client: "+errorMsg)
-		assert.NotNil(t, result)
-		assert.Equal(t, reconcile.Result{}, result)
+		require.EqualError(t, err, "failed to create Dynatrace client: "+errorMsg)
+		require.NotNil(t, result)
+		require.Equal(t, reconcile.Result{}, result)
 	})
 	t.Run(`error creating directories`, func(t *testing.T) {
 		gc := &CSIGarbageCollectorMock{}
@@ -282,9 +281,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
 		gc.AssertNumberOfCalls(t, "Reconcile", 0)
-		assert.EqualError(t, err, "failed to create directory "+filepath.Join(tenantUUID)+": "+errorMsg)
-		assert.NotNil(t, result)
-		assert.Equal(t, reconcile.Result{}, result)
+		require.EqualError(t, err, "failed to create directory "+filepath.Join(tenantUUID)+": "+errorMsg)
+		require.NotNil(t, result)
+		require.Equal(t, reconcile.Result{}, result)
 
 		// Logging newline so go test can parse the output correctly
 		log.Info("")
@@ -343,13 +342,13 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		// making sure one is printed here
 		log.Info("")
 
-		assert.NoError(t, err)
-		assert.NotEmpty(t, result)
+		require.NoError(t, err)
+		require.NotEmpty(t, result)
 
 		exists, err := afero.Exists(memFs, tenantUUID)
 
-		assert.NoError(t, err)
-		assert.True(t, exists)
+		require.NoError(t, err)
+		require.True(t, exists)
 	})
 	t.Run(`error getting dynakube from db`, func(t *testing.T) {
 		gc := &CSIGarbageCollectorMock{}
@@ -392,8 +391,8 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
 		gc.AssertNumberOfCalls(t, "Reconcile", 0)
-		assert.Error(t, err)
-		assert.Empty(t, result)
+		require.Error(t, err)
+		require.Empty(t, result)
 	})
 	t.Run(`correct directories are created`, func(t *testing.T) {
 		gc := &CSIGarbageCollectorMock{}
@@ -454,19 +453,19 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
-		assert.NoError(t, err)
-		assert.NotNil(t, result)
-		assert.Equal(t, reconcile.Result{RequeueAfter: 5 * time.Minute}, result)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.Equal(t, reconcile.Result{RequeueAfter: 5 * time.Minute}, result)
 
 		exists, err := afero.Exists(memFs, tenantUUID)
 
-		assert.NoError(t, err)
-		assert.True(t, exists)
+		require.NoError(t, err)
+		require.True(t, exists)
 
 		fileInfo, err := memFs.Stat(tenantUUID)
 
-		assert.NoError(t, err)
-		assert.True(t, fileInfo.IsDir())
+		require.NoError(t, err)
+		require.True(t, fileInfo.IsDir())
 	})
 }
 
@@ -476,7 +475,7 @@ func TestHasCodeModulesWithCSIVolumeEnabled(t *testing.T) {
 
 		isEnabled := dk.NeedsCSIDriver()
 
-		assert.False(t, isEnabled)
+		require.False(t, isEnabled)
 	})
 
 	t.Run(`application monitoring enabled`, func(t *testing.T) {
@@ -490,7 +489,7 @@ func TestHasCodeModulesWithCSIVolumeEnabled(t *testing.T) {
 
 		isEnabled := dk.NeedsCSIDriver()
 
-		assert.True(t, isEnabled)
+		require.True(t, isEnabled)
 	})
 
 	t.Run(`application monitoring enabled without csi driver`, func(t *testing.T) {
@@ -506,7 +505,7 @@ func TestHasCodeModulesWithCSIVolumeEnabled(t *testing.T) {
 
 		isEnabled := dk.NeedsCSIDriver()
 
-		assert.False(t, isEnabled)
+		require.False(t, isEnabled)
 	})
 }
 
@@ -533,14 +532,14 @@ func TestProvisioner_CreateDynakube(t *testing.T) {
 	require.NoError(t, err)
 
 	dynakube, err := db.GetDynakube(ctx, dkName)
-	assert.NoError(t, err)
-	assert.NotNil(t, dynakube)
-	assert.Equal(t, *newDynakube, *dynakube)
+	require.NoError(t, err)
+	require.NotNil(t, dynakube)
+	require.Equal(t, *newDynakube, *dynakube)
 
 	otherDynakube, err := db.GetDynakube(ctx, otherDkName)
-	assert.NoError(t, err)
-	assert.NotNil(t, dynakube)
-	assert.Equal(t, *expectedOtherDynakube, *otherDynakube)
+	require.NoError(t, err)
+	require.NotNil(t, dynakube)
+	require.Equal(t, *expectedOtherDynakube, *otherDynakube)
 }
 
 func TestProvisioner_UpdateDynakube(t *testing.T) {
@@ -560,14 +559,14 @@ func TestProvisioner_UpdateDynakube(t *testing.T) {
 	require.NoError(t, err)
 
 	dynakube, err := db.GetDynakube(ctx, dkName)
-	assert.NoError(t, err)
-	assert.NotNil(t, dynakube)
-	assert.Equal(t, *newDynakube, *dynakube)
+	require.NoError(t, err)
+	require.NotNil(t, dynakube)
+	require.Equal(t, *newDynakube, *dynakube)
 
 	otherDynakube, err := db.GetDynakube(ctx, otherDkName)
-	assert.NoError(t, err)
-	assert.NotNil(t, dynakube)
-	assert.Equal(t, *expectedOtherDynakube, *otherDynakube)
+	require.NoError(t, err)
+	require.NotNil(t, dynakube)
+	require.Equal(t, *expectedOtherDynakube, *otherDynakube)
 }
 
 func setupTestZip(t *testing.T, fs afero.Fs) afero.File {
@@ -604,16 +603,16 @@ func TestHandleMetadata(t *testing.T) {
 	}
 	dynakubeMetadata, oldMetadata, err := provisioner.handleMetadata(ctx, instance)
 
-	assert.NoError(t, err)
-	assert.NotNil(t, dynakubeMetadata)
-	assert.NotNil(t, oldMetadata)
-	assert.Equal(t, dynatracev1beta1.DefaultMaxFailedCsiMountAttempts, dynakubeMetadata.MaxFailedMountAttempts)
+	require.NoError(t, err)
+	require.NotNil(t, dynakubeMetadata)
+	require.NotNil(t, oldMetadata)
+	require.Equal(t, dynatracev1beta1.DefaultMaxFailedCsiMountAttempts, dynakubeMetadata.MaxFailedMountAttempts)
 
 	instance.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureMaxFailedCsiMountAttempts: "5"}
 	dynakubeMetadata, oldMetadata, err = provisioner.handleMetadata(ctx, instance)
 
-	assert.NoError(t, err)
-	assert.NotNil(t, dynakubeMetadata)
-	assert.NotNil(t, oldMetadata)
-	assert.Equal(t, 5, dynakubeMetadata.MaxFailedMountAttempts)
+	require.NoError(t, err)
+	require.NotNil(t, dynakubeMetadata)
+	require.NotNil(t, oldMetadata)
+	require.Equal(t, 5, dynakubeMetadata.MaxFailedMountAttempts)
 }
