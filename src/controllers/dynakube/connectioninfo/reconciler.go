@@ -31,6 +31,7 @@ func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Read
 }
 
 func (r *Reconciler) Reconcile() (update bool, err error) {
+	updated := false
 	if !r.dynakube.FeatureDisableActivegateRawImage() {
 		activeGateConnectionInfo, err := r.dtc.GetActiveGateConnectionInfo()
 		if err != nil {
@@ -38,11 +39,11 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 			return false, errors.WithStack(err)
 		}
 
-		upd, err := r.createOrUpdateSecret(r.dynakube.ActivegateTenantSecret(), activeGateConnectionInfo.ConnectionInfo)
+		activeGateUpdated, err := r.createOrUpdateSecret(r.dynakube.ActivegateTenantSecret(), activeGateConnectionInfo.ConnectionInfo)
 		if err != nil {
 			return false, err
 		}
-		return upd, nil
+		updated = updated || activeGateUpdated
 	}
 
 	if r.dynakube.FeatureOneAgentImmutableImage() {
@@ -52,14 +53,14 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 			return false, errors.WithStack(err)
 		}
 
-		upd, err := r.createOrUpdateSecret(r.dynakube.OneagentTenantSecret(), oneAgentConnectionInfo.ConnectionInfo)
+		oneAgentUpdated, err := r.createOrUpdateSecret(r.dynakube.OneagentTenantSecret(), oneAgentConnectionInfo.ConnectionInfo)
 		if err != nil {
 			return false, err
 		}
-		return upd, nil
+		updated = updated || oneAgentUpdated
 	}
 
-	return false, nil
+	return updated, nil
 }
 
 func (r *Reconciler) createOrUpdateSecret(secretName string, connectionInfo dtclient.ConnectionInfo) (bool, error) {
