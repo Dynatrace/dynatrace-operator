@@ -353,11 +353,13 @@ func (dk *DynaKube) CommunicationHostForClient() dtclient.CommunicationHost {
 	return dtclient.CommunicationHost(dk.Status.CommunicationHostForClient)
 }
 
-func (dk *DynaKube) ConnectionInfo() dtclient.ConnectionInfo {
-	return dtclient.ConnectionInfo{
-		CommunicationHosts:              dk.CommunicationHosts(),
-		TenantUUID:                      dk.Status.ConnectionInfo.TenantUUID,
-		FormattedCommunicationEndpoints: dk.Status.ConnectionInfo.FormattedCommunicationEndpoints,
+func (dk *DynaKube) ConnectionInfo() dtclient.OneAgentConnectionInfo {
+	return dtclient.OneAgentConnectionInfo{
+		CommunicationHosts: dk.CommunicationHosts(),
+		ConnectionInfo: dtclient.ConnectionInfo{
+			TenantUUID: dk.Status.ConnectionInfo.TenantUUID,
+			Endpoints:  dk.Status.ConnectionInfo.FormattedCommunicationEndpoints,
+		},
 	}
 }
 

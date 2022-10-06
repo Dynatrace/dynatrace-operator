@@ -28,15 +28,15 @@ func TestReconcile_ActivegateSecret(t *testing.T) {
 			Name:      testName,
 		}}
 
-	tenantInfoResponse := &dtclient.ActiveGateTenantInfo{
-		TenantInfo: dtclient.TenantInfo{
-			UUID:  testTenantUuid,
-			Token: testTenantToken,
+	tenantInfoResponse := &dtclient.ActiveGateConnectionInfo{
+		ConnectionInfo: dtclient.ConnectionInfo{
+			TenantUUID:  testTenantUuid,
+			TenantToken: testTenantToken,
+			Endpoints:   testTenantEndpoints,
 		},
-		Endpoints: testTenantEndpoints,
 	}
 	dtc := &dtclient.MockDynatraceClient{}
-	dtc.On("GetActiveGateTenantInfo").Return(tenantInfoResponse, nil)
+	dtc.On("GetActiveGateConnectionInfo").Return(tenantInfoResponse, nil)
 
 	fakeClientBuilder := fake.NewClientBuilder()
 
@@ -91,13 +91,15 @@ func TestReconcile_OneagentSecret(t *testing.T) {
 			},
 		}}
 
-	connectionInfo := dtclient.ConnectionInfo{
-		TenantToken:                     testTenantToken,
-		TenantUUID:                      testTenantUuid,
-		FormattedCommunicationEndpoints: testTenantEndpoints,
+	connectionInfo := dtclient.OneAgentConnectionInfo{
+		ConnectionInfo: dtclient.ConnectionInfo{
+			TenantUUID:  testTenantUuid,
+			TenantToken: testTenantToken,
+			Endpoints:   testTenantEndpoints,
+		},
 	}
 	dtc := &dtclient.MockDynatraceClient{}
-	dtc.On("GetConnectionInfo").Return(connectionInfo, nil)
+	dtc.On("GetOneAgentConnectionInfo").Return(connectionInfo, nil)
 
 	fakeClientBuilder := fake.NewClientBuilder()
 

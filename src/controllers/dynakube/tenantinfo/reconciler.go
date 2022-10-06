@@ -32,13 +32,13 @@ func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Read
 
 func (r *Reconciler) Reconcile() (update bool, err error) {
 	if !r.dynakube.FeatureDisableActivegateRawImage() {
-		tenantInfo, err := r.dtc.GetActiveGateTenantInfo()
+		tenantInfo, err := r.dtc.GetActiveGateConnectionInfo()
 		if err != nil {
 			log.Info("failed to get activegate tenant info")
 			return false, errors.WithStack(err)
 		}
 
-		data := buildTenantInfoSecret(tenantInfo.Token, tenantInfo.UUID, tenantInfo.Endpoints)
+		data := buildTenantInfoSecret(tenantInfo.TenantToken, tenantInfo.TenantUUID, tenantInfo.Endpoints)
 		secret := kubeobjects.NewSecret(r.dynakube.ActivegateTenantSecret(), r.dynakube.Namespace, data)
 		err = r.createOrUpdateSecret(secret)
 		if err != nil {
@@ -47,14 +47,14 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 	}
 
 	if r.dynakube.FeatureOneAgentUseImmutableImage() {
-		connectionInfo, err := r.dtc.GetConnectionInfo()
+		connectionInfo, err := r.dtc.GetOneAgentConnectionInfo()
 		if err != nil {
 			log.Info("failed to get oneagent connection info")
 			return false, errors.WithStack(err)
 		}
 
 		data := buildTenantInfoSecret(
-			connectionInfo.TenantToken, connectionInfo.TenantUUID, connectionInfo.FormattedCommunicationEndpoints)
+			connectionInfo.TenantToken, connectionInfo.TenantUUID, connectionInfo.Endpoints)
 		secret := kubeobjects.NewSecret(r.dynakube.OneagentTenantSecret(), r.dynakube.Namespace, data)
 		err = r.createOrUpdateSecret(secret)
 		if err != nil {
