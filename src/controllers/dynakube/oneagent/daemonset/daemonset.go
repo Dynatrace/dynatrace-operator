@@ -39,7 +39,6 @@ const (
 	classicHostIdSource  = "--set-host-id-source=auto"
 
 	oneAgentSecretVolumeName = "secrets"
-	oneAgentSecretMountPath  = "/var/lib/dynatrace/secrets/tokens"
 )
 
 type HostMonitoring struct {
