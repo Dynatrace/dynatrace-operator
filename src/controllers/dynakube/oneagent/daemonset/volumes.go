@@ -26,7 +26,7 @@ func prepareVolumeMounts(instance *dynatracev1beta1.DynaKube) []corev1.VolumeMou
 		volumeMounts = append(volumeMounts, getActiveGateCaCertVolumeMount())
 	}
 
-	if instance != nil && instance.FeatureOneAgentUseImmutableImage() {
+	if instance != nil && instance.FeatureOneAgentImmutableImage() {
 		volumeMounts = append(volumeMounts, getOneAgentSecretVolumeMount())
 	}
 
@@ -93,7 +93,7 @@ func prepareVolumes(instance *dynatracev1beta1.DynaKube) []corev1.Volume {
 		volumes = append(volumes, getActiveGateCaCertVolume(instance))
 	}
 
-	if instance.FeatureOneAgentUseImmutableImage() {
+	if instance.FeatureOneAgentImmutableImage() {
 		volumes = append(volumes, getOneAgentSecretVolume(instance))
 	}
 

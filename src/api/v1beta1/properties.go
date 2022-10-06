@@ -166,7 +166,7 @@ func (dk *DynaKube) ActivegateTenantSecret() string {
 	return dk.Name + ActiveGateTenantSecretSuffix
 }
 
-// OneagentTenantSecret returns the name of the secret containing token for OneAgent
+// OneagentTenantSecret returns the name of the secret containing the token for the OneAgent
 func (dk *DynaKube) OneagentTenantSecret() string {
 	return dk.Name + OneAgentTenantSecretSuffix
 }
@@ -306,7 +306,7 @@ func (dk *DynaKube) NamespaceSelector() *metav1.LabelSelector {
 	return &dk.Spec.NamespaceSelector
 }
 
-// ImmutableOneAgentImage returns the immutable OneAgent image to be used with the dk DynaKube instance.
+// ImmutableOneAgentImage returns the immutable OneAgent image to be used with the DynaKube instance.
 func (dk *DynaKube) ImmutableOneAgentImage() string {
 	oneAgentImage := dk.CustomOneAgentImage()
 	if oneAgentImage != "" {

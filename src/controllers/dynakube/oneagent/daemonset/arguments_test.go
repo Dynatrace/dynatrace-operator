@@ -125,7 +125,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
 	})
 	t.Run(`feature flag immutable image is enabled`, func(t *testing.T) {
-		instance.Annotations[dynatracev1beta1.AnnotationFeatureOneAgentUseImmutableImage] = "true"
+		instance.Annotations[dynatracev1beta1.AnnotationFeatureOneAgentImmutableImage] = "true"
 		podSpecs = dsInfo.podSpec()
 		assert.Contains(t, podSpecs.Containers[0].Args, "--set-tenant="+testTenantUUID)
 		assert.Contains(t, podSpecs.Containers[0].Args, fmt.Sprintf("--set-server={%s}", testFormattedCommunicationHosts))

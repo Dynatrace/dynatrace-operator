@@ -33,7 +33,7 @@ func TestPrepareVolumes(t *testing.T) {
 			ObjectMeta: corev1.ObjectMeta{
 				Name: testName,
 				Annotations: map[string]string{
-					dynatracev1beta1.AnnotationFeatureOneAgentUseImmutableImage: "true",
+					dynatracev1beta1.AnnotationFeatureOneAgentImmutableImage: "true",
 				},
 			},
 		}

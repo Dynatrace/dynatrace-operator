@@ -216,7 +216,7 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 	dkState.Error(err)
 
 	upd, err = connectioninfo.NewReconciler(ctx, controller.client, controller.apiReader, dkState.Instance, dtc).Reconcile()
-	dkState.Update(upd, "Tenant info secrets updated")
+	dkState.Update(upd, "connection info secrets updated")
 	if err != nil {
 		return
 	}

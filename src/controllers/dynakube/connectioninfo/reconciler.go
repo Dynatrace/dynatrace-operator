@@ -38,38 +38,41 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 			return false, errors.WithStack(err)
 		}
 
-		err = r.createOrUpdateSecret(r.dynakube.ActivegateTenantSecret(), activeGateConnectionInfo.ConnectionInfo)
+		upd, err := r.createOrUpdateSecret(r.dynakube.ActivegateTenantSecret(), activeGateConnectionInfo.ConnectionInfo)
 		if err != nil {
 			return false, err
 		}
+		return upd, nil
 	}
 
-	if r.dynakube.FeatureOneAgentUseImmutableImage() {
+	if r.dynakube.FeatureOneAgentImmutableImage() {
 		oneAgentConnectionInfo, err := r.dtc.GetOneAgentConnectionInfo()
 		if err != nil {
 			log.Info("failed to get oneagent connection info")
 			return false, errors.WithStack(err)
 		}
 
-		err = r.createOrUpdateSecret(r.dynakube.OneagentTenantSecret(), oneAgentConnectionInfo.ConnectionInfo)
+		upd, err := r.createOrUpdateSecret(r.dynakube.OneagentTenantSecret(), oneAgentConnectionInfo.ConnectionInfo)
 		if err != nil {
 			return false, err
 		}
+		return upd, nil
 	}
 
 	return false, nil
 }
 
-func (r *Reconciler) createOrUpdateSecret(secretName string, connectionInfo dtclient.ConnectionInfo) error {
+func (r *Reconciler) createOrUpdateSecret(secretName string, connectionInfo dtclient.ConnectionInfo) (bool, error) {
 	data := buildConnectionInfoSecret(connectionInfo)
 	secret := kubeobjects.NewSecret(secretName, r.dynakube.Namespace, data)
 
 	query := kubeobjects.NewSecretQuery(r.context, r.client, r.apiReader, log)
-	if err := query.CreateOrUpdate(*secret); err != nil {
+	upd, err := query.CreateOrUpdate(*secret)
+	if err != nil {
 		log.Info("could not create or update secret for connection info", "name", secret.Name)
-		return err
+		return false, err
 	}
-	return nil
+	return upd, nil
 }
 
 func buildConnectionInfoSecret(connectionInfo dtclient.ConnectionInfo) map[string][]byte {
