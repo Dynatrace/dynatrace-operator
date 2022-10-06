@@ -281,7 +281,7 @@ func (dk *DynaKube) getFeatureFlagRaw(annotation string) string {
 	return ""
 }
 
-// FeatureOneAgentImmutableImage is a feature flag to tretd the OneAgent image as immutable
+// FeatureOneAgentImmutableImage is a feature flag to treat the OneAgent image as immutable
 func (dk *DynaKube) FeatureOneAgentImmutableImage() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureOneAgentImmutableImage) == "true"
 }

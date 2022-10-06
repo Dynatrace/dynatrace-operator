@@ -39,13 +39,12 @@ func TestReconcile_ActivegateSecret(t *testing.T) {
 	dtc := &dtclient.MockDynatraceClient{}
 	dtc.On("GetActiveGateConnectionInfo").Return(tenantInfoResponse, nil)
 
-	fakeClientBuilder := fake.NewClientBuilder()
-
 	t.Run(`create activegate secret`, func(t *testing.T) {
-		fakeClient := fakeClientBuilder.Build()
+		fakeClient := fake.NewClientBuilder().Build()
 		r := NewReconciler(context.TODO(), fakeClient, fakeClient, dynakube, dtc)
-		_, err := r.Reconcile()
+		upd, err := r.Reconcile()
 		require.NoError(t, err)
+		assert.True(t, upd)
 
 		var actualSecret corev1.Secret
 		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: dynakube.ActivegateTenantSecret(), Namespace: testNamespace}, &actualSecret)
@@ -55,7 +54,7 @@ func TestReconcile_ActivegateSecret(t *testing.T) {
 		assert.Equal(t, []byte(testTenantEndpoints), actualSecret.Data[CommunicationEndpointsName])
 	})
 	t.Run(`update activegate secret`, func(t *testing.T) {
-		fakeClient := fakeClientBuilder.WithObjects(
+		fakeClient := fake.NewClientBuilder().WithObjects(
 			&corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      dynakube.ActivegateTenantSecret(),
@@ -69,8 +68,9 @@ func TestReconcile_ActivegateSecret(t *testing.T) {
 			},
 		).Build()
 		r := NewReconciler(context.TODO(), fakeClient, fakeClient, dynakube, dtc)
-		_, err := r.Reconcile()
+		upd, err := r.Reconcile()
 		require.NoError(t, err)
+		assert.True(t, upd)
 
 		var actualSecret corev1.Secret
 		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: dynakube.ActivegateTenantSecret(), Namespace: testNamespace}, &actualSecret)
@@ -78,6 +78,26 @@ func TestReconcile_ActivegateSecret(t *testing.T) {
 		assert.Equal(t, []byte(testTenantToken), actualSecret.Data[TenantTokenName])
 		assert.Equal(t, []byte(testTenantUuid), actualSecret.Data[TenantUuidName])
 		assert.Equal(t, []byte(testTenantEndpoints), actualSecret.Data[CommunicationEndpointsName])
+	})
+	t.Run(`up to date activegate secret`, func(t *testing.T) {
+		fakeClient := fake.NewClientBuilder().WithObjects(
+			&corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      dynakube.ActivegateTenantSecret(),
+					Namespace: testNamespace,
+				},
+				Data: map[string][]byte{
+					TenantTokenName:            []byte(testTenantToken),
+					TenantUuidName:             []byte(testTenantUuid),
+					CommunicationEndpointsName: []byte(testTenantEndpoints),
+				},
+			},
+		).Build()
+
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, dynakube, dtc)
+		upd, err := r.Reconcile()
+		require.NoError(t, err)
+		assert.False(t, upd)
 	})
 }
 
@@ -102,14 +122,13 @@ func TestReconcile_OneagentSecret(t *testing.T) {
 	dtc := &dtclient.MockDynatraceClient{}
 	dtc.On("GetOneAgentConnectionInfo").Return(connectionInfo, nil)
 
-	fakeClientBuilder := fake.NewClientBuilder()
-
 	t.Run(`create oneagent secret`, func(t *testing.T) {
-		fakeClient := fakeClientBuilder.Build()
+		fakeClient := fake.NewClientBuilder().Build()
 
 		r := NewReconciler(context.TODO(), fakeClient, fakeClient, dynakube, dtc)
-		_, err := r.Reconcile()
+		upd, err := r.Reconcile()
 		require.NoError(t, err)
+		assert.True(t, upd)
 
 		var actualSecret corev1.Secret
 		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: dynakube.OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
@@ -119,7 +138,7 @@ func TestReconcile_OneagentSecret(t *testing.T) {
 		assert.Equal(t, []byte(testTenantEndpoints), actualSecret.Data[CommunicationEndpointsName])
 	})
 	t.Run(`update oneagent secret`, func(t *testing.T) {
-		fakeClient := fakeClientBuilder.WithObjects(
+		fakeClient := fake.NewClientBuilder().WithObjects(
 			&corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      dynakube.OneagentTenantSecret(),
@@ -134,8 +153,9 @@ func TestReconcile_OneagentSecret(t *testing.T) {
 		).Build()
 
 		r := NewReconciler(context.TODO(), fakeClient, fakeClient, dynakube, dtc)
-		_, err := r.Reconcile()
+		upd, err := r.Reconcile()
 		require.NoError(t, err)
+		assert.True(t, upd)
 
 		var actualSecret corev1.Secret
 		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: dynakube.OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
@@ -143,5 +163,25 @@ func TestReconcile_OneagentSecret(t *testing.T) {
 		assert.Equal(t, []byte(testTenantToken), actualSecret.Data[TenantTokenName])
 		assert.Equal(t, []byte(testTenantUuid), actualSecret.Data[TenantUuidName])
 		assert.Equal(t, []byte(testTenantEndpoints), actualSecret.Data[CommunicationEndpointsName])
+	})
+	t.Run(`up to date oneagent secret`, func(t *testing.T) {
+		fakeClient := fake.NewClientBuilder().WithObjects(
+			&corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      dynakube.OneagentTenantSecret(),
+					Namespace: testNamespace,
+				},
+				Data: map[string][]byte{
+					TenantTokenName:            []byte(testTenantToken),
+					TenantUuidName:             []byte(testTenantUuid),
+					CommunicationEndpointsName: []byte(testTenantEndpoints),
+				},
+			},
+		).Build()
+
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, dynakube, dtc)
+		upd, err := r.Reconcile()
+		require.NoError(t, err)
+		assert.False(t, upd)
 	})
 }
