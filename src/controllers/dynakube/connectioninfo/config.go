@@ -1,4 +1,4 @@
-package tenantinfo
+package connectioninfo
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/src/logger"
@@ -11,5 +11,5 @@ const (
 )
 
 var (
-	log = logger.NewDTLogger().WithName("dynakube.tenantinfo")
+	log = logger.NewDTLogger().WithName("dynakube.connectioninfo")
 )

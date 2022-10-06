@@ -214,7 +214,9 @@ func mockDynatraceClientFunc(communicationHosts *[]string) dynakube.DynatraceCli
 		}
 
 		connInfo := dtclient.OneAgentConnectionInfo{
-			TenantUUID:         "asdf",
+			ConnectionInfo: dtclient.ConnectionInfo{
+				TenantUUID: "asdf",
+			},
 			CommunicationHosts: commHosts,
 		}
 

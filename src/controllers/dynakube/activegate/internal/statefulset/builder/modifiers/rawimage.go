@@ -4,7 +4,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/tenantinfo"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -55,7 +55,7 @@ func (mod RawImageModifier) getVolumeMounts() []corev1.VolumeMount {
 			Name:      consts.TenantSecretVolumeName,
 			ReadOnly:  true,
 			MountPath: consts.TenantTokenMountPoint,
-			SubPath:   tenantinfo.TenantTokenName,
+			SubPath:   connectioninfo.TenantTokenName,
 		},
 	}
 }
@@ -72,7 +72,7 @@ func (mod RawImageModifier) tenantUUIDNameEnvVar() corev1.EnvVar {
 				LocalObjectReference: corev1.LocalObjectReference{
 					Name: mod.dynakube.ActivegateTenantSecret(),
 				},
-				Key: tenantinfo.TenantUuidName,
+				Key: connectioninfo.TenantUuidName,
 			},
 		},
 	}
@@ -86,7 +86,7 @@ func (mod RawImageModifier) communicationEndpointEnvVar() corev1.EnvVar {
 				LocalObjectReference: corev1.LocalObjectReference{
 					Name: mod.dynakube.ActivegateTenantSecret(),
 				},
-				Key: tenantinfo.CommunicationEndpointsName,
+				Key: connectioninfo.CommunicationEndpointsName,
 			},
 		},
 	}

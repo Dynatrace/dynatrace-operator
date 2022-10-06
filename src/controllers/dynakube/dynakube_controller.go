@@ -3,7 +3,6 @@ package dynakube
 import (
 	"context"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/tenantinfo"
 	"net/http"
 	"os"
 	"time"
@@ -11,6 +10,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/apimonitoring"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent"
@@ -215,7 +215,7 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 	dkState.Update(upd, "Found updates")
 	dkState.Error(err)
 
-	upd, err = tenantinfo.NewReconciler(ctx, controller.client, controller.apiReader, dkState.Instance, dtc).Reconcile()
+	upd, err = connectioninfo.NewReconciler(ctx, controller.client, controller.apiReader, dkState.Instance, dtc).Reconcile()
 	dkState.Update(upd, "Tenant info secrets updated")
 	if err != nil {
 		return

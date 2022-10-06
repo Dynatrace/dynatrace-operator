@@ -2,6 +2,7 @@ package dtclient
 
 import (
 	"encoding/json"
+
 	"github.com/pkg/errors"
 )
 
