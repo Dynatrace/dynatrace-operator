@@ -43,5 +43,5 @@ func TestCsiCommand(t *testing.T) {
 	assert.NoError(t, err)
 
 	// logging new line so go test can parse output correctly
-	logger.NewDTLogger().Info("")
+	logger.Factory.GetLogger("")
 }

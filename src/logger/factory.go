@@ -5,7 +5,7 @@ import "github.com/go-logr/logr"
 var Factory factory
 
 func init() {
-	Factory = factory{logger: NewDTLogger()}
+	Factory = factory{logger: newLogger()}
 }
 
 type factory struct {

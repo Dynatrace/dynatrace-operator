@@ -129,7 +129,7 @@ func ExtractToken(secret *corev1.Secret, key string) (string, error) {
 }
 
 func GetDataFromSecretName(apiReader client.Reader, namespacedName types.NamespacedName, dataKey string) (string, error) {
-	query := NewSecretQuery(context.TODO(), nil, apiReader, logger.NewDTLogger())
+	query := NewSecretQuery(context.TODO(), nil, apiReader, logger.Factory.GetLogger(""))
 	secret, err := query.Get(namespacedName)
 	if err != nil {
 		return "", errors.WithStack(err)
