@@ -349,10 +349,6 @@ func (dk *DynaKube) Tokens() string {
 	return dk.Name
 }
 
-func (dk *DynaKube) CommunicationHostForClient() dtclient.CommunicationHost {
-	return dtclient.CommunicationHost(dk.Status.CommunicationHostForClient)
-}
-
 func (dk *DynaKube) ConnectionInfo() dtclient.OneAgentConnectionInfo {
 	return dtclient.OneAgentConnectionInfo{
 		CommunicationHosts: dk.CommunicationHosts(),

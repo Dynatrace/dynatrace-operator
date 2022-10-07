@@ -11,7 +11,6 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/status"
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	appsv1 "k8s.io/api/apps/v1"
@@ -33,14 +32,12 @@ const (
 func NewOneAgentReconciler(
 	client client.Client,
 	apiReader client.Reader,
-	dtc dtclient.Client,
 	scheme *runtime.Scheme,
 	instance *dynatracev1beta1.DynaKube,
 	feature string) *OneAgentReconciler {
 	return &OneAgentReconciler{
 		client:    client,
 		apiReader: apiReader,
-		dtc:       dtc,
 		scheme:    scheme,
 		instance:  instance,
 		feature:   feature,
@@ -52,7 +49,6 @@ type OneAgentReconciler struct {
 	// that reads objects from the cache and writes to the apiserver
 	client    client.Client
 	apiReader client.Reader
-	dtc       dtclient.Client
 	scheme    *runtime.Scheme
 	instance  *dynatracev1beta1.DynaKube
 	feature   string

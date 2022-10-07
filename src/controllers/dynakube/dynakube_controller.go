@@ -270,7 +270,7 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 func (controller *DynakubeController) reconcileOneAgent(ctx context.Context, dkState *status.DynakubeState, dtc dtclient.Client) (err error) {
 	if dkState.Instance.HostMonitoringMode() {
 		upd, err := oneagent.NewOneAgentReconciler(
-			controller.client, controller.apiReader, dtc, controller.scheme, dkState.Instance, daemonset.DeploymentTypeHostMonitoring,
+			controller.client, controller.apiReader, controller.scheme, dkState.Instance, daemonset.DeploymentTypeHostMonitoring,
 		).Reconcile(ctx, dkState)
 		if dkState.Error(err) {
 			return nil
@@ -278,7 +278,7 @@ func (controller *DynakubeController) reconcileOneAgent(ctx context.Context, dkS
 		dkState.Update(upd, "host monitoring reconciled")
 	} else if dkState.Instance.CloudNativeFullstackMode() {
 		upd, err := oneagent.NewOneAgentReconciler(
-			controller.client, controller.apiReader, dtc, controller.scheme, dkState.Instance, daemonset.DeploymentTypeCloudNative,
+			controller.client, controller.apiReader, controller.scheme, dkState.Instance, daemonset.DeploymentTypeCloudNative,
 		).Reconcile(ctx, dkState)
 		if dkState.Error(err) {
 			return nil
@@ -286,7 +286,7 @@ func (controller *DynakubeController) reconcileOneAgent(ctx context.Context, dkS
 		dkState.Update(upd, "cloud native fullstack monitoring reconciled")
 	} else if dkState.Instance.ClassicFullStackMode() {
 		upd, err := oneagent.NewOneAgentReconciler(
-			controller.client, controller.apiReader, dtc, controller.scheme, dkState.Instance, daemonset.DeploymentTypeFullStack,
+			controller.client, controller.apiReader, controller.scheme, dkState.Instance, daemonset.DeploymentTypeFullStack,
 		).Reconcile(ctx, dkState)
 		if dkState.Error(err) {
 			return nil
