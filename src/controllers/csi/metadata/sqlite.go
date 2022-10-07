@@ -499,9 +499,7 @@ func (access *SqliteAccess) GetUsedVersions(ctx context.Context, tenantUUID stri
 		if err != nil {
 			return nil, errors.WithStack(errors.WithMessagef(err, "couldn't scan used version info for tenant uuid '%s'", tenantUUID))
 		}
-		if _, ok := versions[version]; !ok {
-			versions[version] = true
-		}
+		versions[version] = true
 	}
 	return versions, nil
 }

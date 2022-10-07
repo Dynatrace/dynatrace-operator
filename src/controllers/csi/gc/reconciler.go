@@ -2,7 +2,6 @@ package csigc
 
 import (
 	"context"
-	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
@@ -10,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -34,72 +32,74 @@ type garbageCollectionInfo struct {
 // CSIGarbageCollector removes unused and outdated agent versions
 type CSIGarbageCollector struct {
 	apiReader client.Reader
-	opts      dtcsi.CSIOptions
 	fs        afero.Fs
 	db        metadata.Access
 	path      metadata.PathResolver
 }
 
+var _ reconcile.Reconciler = (*CSIGarbageCollector)(nil)
+
 // NewCSIGarbageCollector returns a new CSIGarbageCollector
 func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db metadata.Access) *CSIGarbageCollector {
 	return &CSIGarbageCollector{
 		apiReader: apiReader,
-		opts:      opts,
 		fs:        afero.NewOsFs(),
 		db:        db,
 		path:      metadata.PathResolver{RootDir: opts.RootDir},
 	}
 }
 
-func (gc *CSIGarbageCollector) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&dynatracev1beta1.DynaKube{}).
-		Complete(gc)
-}
-
 func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log.Info("running OneAgent garbage collection", "namespace", request.Namespace, "name", request.Name)
-	reconcileResult := reconcile.Result{RequeueAfter: 60 * time.Minute}
+	defaultReconcileResult := reconcile.Result{}
 
 	dynakube, err := getDynakubeFromRequest(ctx, gc.apiReader, request)
 	if err != nil {
-		return reconcileResult, err
+		return defaultReconcileResult, err
 	}
 	if dynakube == nil {
-		return reconcileResult, nil
+		return defaultReconcileResult, nil
 	}
 
 	dynakubeList, err := getAllDynakubes(ctx, gc.apiReader, dynakube.Namespace)
 	if err != nil {
-		return reconcileResult, err
+		return defaultReconcileResult, err
 	}
 
 	if !isSafeToGC(ctx, gc.db, dynakubeList) {
 		log.Info("dynakube metadata is in a unfinished state, checking later")
-		return reconcileResult, nil
+		return defaultReconcileResult, nil
 	}
 
 	gcInfo, err := collectGCInfo(*dynakube, dynakubeList)
-	if err != nil {
-		return reconcileResult, err
+	if err != nil || gcInfo == nil {
+		return defaultReconcileResult, nil
 	}
-	if gcInfo == nil {
-		return reconcileResult, nil
+	if err := ctx.Err(); err != nil {
+		return defaultReconcileResult, err
 	}
 
 	log.Info("running binary garbage collection")
 	gc.runBinaryGarbageCollection(ctx, gcInfo.pinnedVersions, gcInfo.tenantUUID, gcInfo.latestAgentVersion)
 
+	if err := ctx.Err(); err != nil {
+		return defaultReconcileResult, err
+	}
+
 	log.Info("running log garbage collection")
-	gc.runLogGarbageCollection(gcInfo.tenantUUID)
+	gc.runLogGarbageCollection(ctx, gcInfo.tenantUUID)
+
+	if err := ctx.Err(); err != nil {
+		return defaultReconcileResult, err
+	}
 
 	log.Info("running shared images garbage collection")
 	if err := gc.runSharedImagesGarbageCollection(ctx); err != nil {
 		log.Info("failed to garbage collect the shared images")
-		return reconcileResult, err
+		return defaultReconcileResult, err
 	}
 
-	return reconcileResult, nil
+	return defaultReconcileResult, nil
 }
 
 func getDynakubeFromRequest(ctx context.Context, apiReader client.Reader, request reconcile.Request) (*dynatracev1beta1.DynaKube, error) {
