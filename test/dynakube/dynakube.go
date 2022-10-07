@@ -83,6 +83,39 @@ func ApplyCloudNative(apiUrl string, cloudNativeFullStackSpec *dynatracev1beta1.
 	}
 }
 
+func ApplyDynakube(apiUrl string, cloudNativeFullStackSpec *dynatracev1beta1.CloudNativeFullStackSpec, proxy *dynatracev1beta1.DynaKubeProxy) features.Func {
+	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+		require.NoError(t, dynatracev1beta1.AddToScheme(environmentConfig.Client().Resources().GetScheme()))
+
+		instance := NewDynakube()
+		instance.Spec = dynatracev1beta1.DynaKubeSpec{
+			APIURL: apiUrl,
+			NamespaceSelector: metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"inject": "dynakube",
+				},
+			},
+			Proxy: proxy,
+			OneAgent: dynatracev1beta1.OneAgentSpec{
+				CloudNativeFullStack: cloudNativeFullStackSpec,
+			},
+			ActiveGate: dynatracev1beta1.ActiveGateSpec{
+				Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+					dynatracev1beta1.KubeMonCapability.DisplayName,
+					dynatracev1beta1.DynatraceApiCapability.DisplayName,
+					dynatracev1beta1.RoutingCapability.DisplayName,
+					dynatracev1beta1.MetricsIngestCapability.DisplayName,
+					dynatracev1beta1.StatsdIngestCapability.DisplayName,
+				},
+			},
+		}
+
+		require.NoError(t, environmentConfig.Client().Resources().Create(ctx, &instance))
+
+		return ctx
+	}
+}
+
 func DeleteIfExists() func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
 	return func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
 		instance := NewDynakube()
