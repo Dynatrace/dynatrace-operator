@@ -108,7 +108,7 @@ func testCreateOrUpdateSecret(t *testing.T) {
 	fakeClient := fake.NewClient()
 	secretQuery := NewSecretQuery(context.TODO(), fakeClient, fakeClient, log)
 
-	_, err := secretQuery.CreateOrUpdate(secret)
+	err := secretQuery.CreateOrUpdate(secret)
 	assert.NoError(t, err)
 
 	var createdSecret corev1.Secret
@@ -127,7 +127,7 @@ func testCreateOrUpdateSecret(t *testing.T) {
 	}
 	secretQuery.kubeClient = fakeClient
 
-	_, err = secretQuery.CreateOrUpdate(secret)
+	err = secretQuery.CreateOrUpdate(secret)
 
 	assert.NoError(t, err)
 
@@ -154,7 +154,7 @@ func testIdenticalSecretIsNotUpdated(t *testing.T) {
 	secret := createTestSecret(labels, data)
 	secretQuery := NewSecretQuery(context.TODO(), fakeClient, fakeClient, log)
 
-	_, err := secretQuery.CreateOrUpdate(*secret)
+	err := secretQuery.CreateOrUpdate(*secret)
 	assert.NoError(t, err)
 }
 
@@ -174,7 +174,7 @@ func testUpdateSecretWhenDataChanged(t *testing.T) {
 	secret := createTestSecret(labels, data)
 	secretQuery := NewSecretQuery(context.TODO(), fakeClient, fakeClient, log)
 
-	_, err := secretQuery.CreateOrUpdate(*secret)
+	err := secretQuery.CreateOrUpdate(*secret)
 	assert.NoError(t, err)
 
 	var updatedSecret corev1.Secret
@@ -200,7 +200,7 @@ func testUpdateSecretWhenLabelsChanged(t *testing.T) {
 	secret := createTestSecret(labels, data)
 	secretQuery := NewSecretQuery(context.TODO(), fakeClient, fakeClient, log)
 
-	_, err := secretQuery.CreateOrUpdate(*secret)
+	err := secretQuery.CreateOrUpdate(*secret)
 	assert.NoError(t, err)
 
 	var updatedSecret corev1.Secret
@@ -225,7 +225,7 @@ func testCreateSecretInTargetNamespace(t *testing.T) {
 	secret := createTestSecret(labels, data)
 	secretQuery := NewSecretQuery(context.TODO(), fakeClient, fakeClient, log)
 
-	_, err := secretQuery.CreateOrUpdate(*secret)
+	err := secretQuery.CreateOrUpdate(*secret)
 
 	assert.NoError(t, err)
 

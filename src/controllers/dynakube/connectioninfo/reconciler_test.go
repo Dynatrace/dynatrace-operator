@@ -42,9 +42,8 @@ func TestReconcile_ActivegateSecret(t *testing.T) {
 	t.Run(`create activegate secret`, func(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().Build()
 		r := NewReconciler(context.TODO(), fakeClient, fakeClient, dynakube, dtc)
-		upd, err := r.Reconcile()
+		_, err := r.Reconcile()
 		require.NoError(t, err)
-		assert.True(t, upd)
 
 		var actualSecret corev1.Secret
 		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: dynakube.ActivegateTenantSecret(), Namespace: testNamespace}, &actualSecret)
@@ -68,9 +67,8 @@ func TestReconcile_ActivegateSecret(t *testing.T) {
 			},
 		).Build()
 		r := NewReconciler(context.TODO(), fakeClient, fakeClient, dynakube, dtc)
-		upd, err := r.Reconcile()
+		_, err := r.Reconcile()
 		require.NoError(t, err)
-		assert.True(t, upd)
 
 		var actualSecret corev1.Secret
 		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: dynakube.ActivegateTenantSecret(), Namespace: testNamespace}, &actualSecret)
@@ -126,9 +124,8 @@ func TestReconcile_OneagentSecret(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().Build()
 
 		r := NewReconciler(context.TODO(), fakeClient, fakeClient, dynakube, dtc)
-		upd, err := r.Reconcile()
+		_, err := r.Reconcile()
 		require.NoError(t, err)
-		assert.True(t, upd)
 
 		var actualSecret corev1.Secret
 		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: dynakube.OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
@@ -153,9 +150,8 @@ func TestReconcile_OneagentSecret(t *testing.T) {
 		).Build()
 
 		r := NewReconciler(context.TODO(), fakeClient, fakeClient, dynakube, dtc)
-		upd, err := r.Reconcile()
+		_, err := r.Reconcile()
 		require.NoError(t, err)
-		assert.True(t, upd)
 
 		var actualSecret corev1.Secret
 		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: dynakube.OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)

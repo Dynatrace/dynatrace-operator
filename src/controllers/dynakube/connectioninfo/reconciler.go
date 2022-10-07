@@ -31,7 +31,6 @@ func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Read
 }
 
 func (r *Reconciler) Reconcile() (update bool, err error) {
-	updated := false
 	if !r.dynakube.FeatureDisableActivegateRawImage() {
 		activeGateConnectionInfo, err := r.dtc.GetActiveGateConnectionInfo()
 		if err != nil {
@@ -39,11 +38,10 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 			return false, errors.WithStack(err)
 		}
 
-		activeGateUpdated, err := r.createOrUpdateSecret(r.dynakube.ActivegateTenantSecret(), activeGateConnectionInfo.ConnectionInfo)
+		err = r.createOrUpdateSecret(r.dynakube.ActivegateTenantSecret(), activeGateConnectionInfo.ConnectionInfo)
 		if err != nil {
 			return false, err
 		}
-		updated = updated || activeGateUpdated
 	}
 
 	if r.dynakube.FeatureOneAgentImmutableImage() {
@@ -53,27 +51,26 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 			return false, errors.WithStack(err)
 		}
 
-		oneAgentUpdated, err := r.createOrUpdateSecret(r.dynakube.OneagentTenantSecret(), oneAgentConnectionInfo.ConnectionInfo)
+		err = r.createOrUpdateSecret(r.dynakube.OneagentTenantSecret(), oneAgentConnectionInfo.ConnectionInfo)
 		if err != nil {
 			return false, err
 		}
-		updated = updated || oneAgentUpdated
 	}
 
-	return updated, nil
+	return false, nil
 }
 
-func (r *Reconciler) createOrUpdateSecret(secretName string, connectionInfo dtclient.ConnectionInfo) (bool, error) {
+func (r *Reconciler) createOrUpdateSecret(secretName string, connectionInfo dtclient.ConnectionInfo) error {
 	data := buildConnectionInfoSecret(connectionInfo)
 	secret := kubeobjects.NewSecret(secretName, r.dynakube.Namespace, data)
 
 	query := kubeobjects.NewSecretQuery(r.context, r.client, r.apiReader, log)
-	upd, err := query.CreateOrUpdate(*secret)
+	err := query.CreateOrUpdate(*secret)
 	if err != nil {
 		log.Info("could not create or update secret for connection info", "name", secret.Name)
-		return false, err
+		return err
 	}
-	return upd, nil
+	return nil
 }
 
 func buildConnectionInfoSecret(connectionInfo dtclient.ConnectionInfo) map[string][]byte {

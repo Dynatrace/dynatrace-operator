@@ -68,7 +68,7 @@ func (r *Reconciler) generateForDynakube(ctx context.Context, dynakube *dynatrac
 	}
 	secretQuery := kubeobjects.NewSecretQuery(ctx, r.client, r.apiReader, log)
 
-	_, err = secretQuery.CreateOrUpdate(*secret)
+	err = secretQuery.CreateOrUpdate(*secret)
 	return errors.WithStack(err)
 }
 

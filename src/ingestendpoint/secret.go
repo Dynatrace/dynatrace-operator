@@ -69,7 +69,7 @@ func (g *EndpointSecretGenerator) GenerateForNamespace(ctx context.Context, dkNa
 	}
 	secretQuery := kubeobjects.NewSecretQuery(ctx, g.client, g.apiReader, log)
 
-	_, err = secretQuery.CreateOrUpdate(*secret)
+	err = secretQuery.CreateOrUpdate(*secret)
 	return errors.WithStack(err)
 }
 
@@ -104,7 +104,7 @@ func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *d
 			Type: corev1.SecretTypeOpaque,
 		}
 
-		_, err = secretQuery.CreateOrUpdate(*secret)
+		err = secretQuery.CreateOrUpdate(*secret)
 		if err != nil {
 			return errors.WithStack(err)
 		}

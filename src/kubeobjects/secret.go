@@ -46,29 +46,29 @@ func (query SecretQuery) Update(secret corev1.Secret) error {
 	return errors.WithStack(query.kubeClient.Update(query.ctx, &secret))
 }
 
-func (query SecretQuery) CreateOrUpdate(secret corev1.Secret) (bool, error) {
+func (query SecretQuery) CreateOrUpdate(secret corev1.Secret) error {
 	currentSecret, err := query.Get(types.NamespacedName{Name: secret.Name, Namespace: secret.Namespace})
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			err = query.Create(secret)
 			if err != nil {
-				return false, errors.WithStack(err)
+				return errors.WithStack(err)
 			}
-			return true, nil
+			return nil
 		}
-		return false, errors.WithStack(err)
+		return errors.WithStack(err)
 	}
 
 	if AreSecretsEqual(secret, currentSecret) {
 		query.log.Info("secret unchanged", "name", secret.Name, "namespace", secret.Namespace)
-		return false, nil
+		return nil
 	}
 
 	err = query.Update(secret)
 	if err != nil {
-		return false, errors.WithStack(err)
+		return errors.WithStack(err)
 	}
-	return true, nil
+	return nil
 }
 
 func AreSecretsEqual(secret corev1.Secret, other corev1.Secret) bool {
