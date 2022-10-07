@@ -33,7 +33,7 @@ func (mgr *TestManager) GetScheme() *runtime.Scheme {
 }
 
 func (mgr *TestManager) GetLogger() logr.Logger {
-	logger.Factory.GetLogger("")
+	return logger.Factory.GetLogger("")
 }
 
 func (mgr *TestManager) SetFields(interface{}) error {
