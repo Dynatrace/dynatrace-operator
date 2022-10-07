@@ -5,7 +5,7 @@ import (
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes"
 	hostvolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes/host"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -50,8 +50,8 @@ func getActiveGateCaCertVolumeMount() corev1.VolumeMount {
 
 func getOneAgentSecretVolumeMount() corev1.VolumeMount {
 	return corev1.VolumeMount{
-		Name:      oneAgentSecretVolumeName,
-		MountPath: consts.TenantTokenMountPoint,
+		Name:      connectioninfo.TenantSecretVolumeName,
+		MountPath: connectioninfo.TenantTokenMountPoint,
 	}
 }
 
@@ -154,7 +154,7 @@ func getActiveGateCaCertVolume(instance *dynatracev1beta1.DynaKube) corev1.Volum
 
 func getOneAgentSecretVolume(instance *dynatracev1beta1.DynaKube) corev1.Volume {
 	return corev1.Volume{
-		Name: oneAgentSecretVolumeName,
+		Name: connectioninfo.TenantSecretVolumeName,
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
 				SecretName: instance.OneagentTenantSecret(),

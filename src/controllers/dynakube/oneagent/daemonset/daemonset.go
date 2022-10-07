@@ -37,8 +37,6 @@ const (
 
 	inframonHostIdSource = "--set-host-id-source=k8s-node-name"
 	classicHostIdSource  = "--set-host-id-source=auto"
-
-	oneAgentSecretVolumeName = "secrets"
 )
 
 type HostMonitoring struct {

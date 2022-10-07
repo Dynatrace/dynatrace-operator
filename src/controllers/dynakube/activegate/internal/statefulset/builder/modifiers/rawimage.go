@@ -39,7 +39,7 @@ func (mod RawImageModifier) Modify(sts *appsv1.StatefulSet) {
 func (mod RawImageModifier) getVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
-			Name: consts.TenantSecretVolumeName,
+			Name: connectioninfo.TenantSecretVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: mod.dynakube.ActivegateTenantSecret(),
@@ -52,9 +52,9 @@ func (mod RawImageModifier) getVolumes() []corev1.Volume {
 func (mod RawImageModifier) getVolumeMounts() []corev1.VolumeMount {
 	return []corev1.VolumeMount{
 		{
-			Name:      consts.TenantSecretVolumeName,
+			Name:      connectioninfo.TenantSecretVolumeName,
 			ReadOnly:  true,
-			MountPath: consts.TenantTokenMountPoint,
+			MountPath: connectioninfo.TenantTokenMountPoint,
 			SubPath:   connectioninfo.TenantTokenName,
 		},
 	}
