@@ -31,8 +31,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, "", testPaasToken)
 
 		mockDTC.
-			On("GetConnectionInfo").
-			Return(dtclient.ConnectionInfo{}, nil)
+			On("GetOneAgentConnectionInfo").
+			Return(dtclient.OneAgentConnectionInfo{}, nil)
 
 		err := r.Reconcile()
 

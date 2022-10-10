@@ -27,7 +27,7 @@ func SetDynakubeStatus(instance *dynatracev1beta1.DynaKube, opts Options) error 
 		return errors.WithStack(err)
 	}
 
-	connectionInfo, err := dtc.GetConnectionInfo()
+	connectionInfo, err := dtc.GetOneAgentConnectionInfo()
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -49,7 +49,7 @@ func SetDynakubeStatus(instance *dynatracev1beta1.DynaKube, opts Options) error 
 	connectionInfoStatus := dynatracev1beta1.ConnectionInfoStatus{
 		CommunicationHosts:              communicationHostsToStatus(connectionInfo.CommunicationHosts),
 		TenantUUID:                      connectionInfo.TenantUUID,
-		FormattedCommunicationEndpoints: connectionInfo.FormattedCommunicationEndpoints,
+		FormattedCommunicationEndpoints: connectionInfo.Endpoints,
 	}
 
 	instance.Status.KubeSystemUUID = string(uid)

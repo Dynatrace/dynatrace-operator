@@ -44,7 +44,7 @@ type Client interface {
 	// download a specific agent version
 	GetAgentVersions(os, installerType, flavor, arch string) ([]string, error)
 
-	GetConnectionInfo() (ConnectionInfo, error)
+	GetOneAgentConnectionInfo() (OneAgentConnectionInfo, error)
 
 	GetProcessModuleConfig(prevRevision uint) (*ProcessModuleConfig, error)
 
@@ -62,11 +62,8 @@ type Client interface {
 	// GetTokenScopes returns the list of scopes assigned to a token if successful.
 	GetTokenScopes(token string) (TokenScopes, error)
 
-	// GetAgentTenantInfo returns AgentTenantInfo for OneAgents that holds UUID, Tenant Token and Endpoints
-	GetAgentTenantInfo() (*AgentTenantInfo, error)
-
-	// GetActiveGateTenantInfo returns AgentTenantInfo for ActiveGate that holds UUID, Tenant Token and Endpoints
-	GetActiveGateTenantInfo() (*ActiveGateTenantInfo, error)
+	// GetActiveGateConnectionInfo returns AgentTenantInfo for ActiveGate that holds UUID, Tenant Token and Endpoints
+	GetActiveGateConnectionInfo() (*ActiveGateConnectionInfo, error)
 
 	// CreateOrUpdateKubernetesSetting returns the object id of the created k8s settings if successful, or an api error otherwise
 	CreateOrUpdateKubernetesSetting(name, kubeSystemUUID, scope string) (string, error)

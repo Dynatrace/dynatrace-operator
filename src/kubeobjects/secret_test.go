@@ -109,7 +109,6 @@ func testCreateOrUpdateSecret(t *testing.T) {
 	secretQuery := NewSecretQuery(context.TODO(), fakeClient, fakeClient, log)
 
 	err := secretQuery.CreateOrUpdate(secret)
-
 	assert.NoError(t, err)
 
 	var createdSecret corev1.Secret

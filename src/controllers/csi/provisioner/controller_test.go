@@ -249,8 +249,10 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			Fs: afero.NewMemMapFs(),
 		}
 		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
-			TenantUUID: tenantUUID,
+		mockClient.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{
+			ConnectionInfo: dtclient.ConnectionInfo{
+				TenantUUID: tenantUUID,
+			},
 		}, nil)
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
@@ -293,8 +295,10 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		gc.On("Reconcile").Return(reconcile.Result{}, nil)
 		memFs := afero.NewMemMapFs()
 		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
-			TenantUUID: tenantUUID,
+		mockClient.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{
+			ConnectionInfo: dtclient.ConnectionInfo{
+				TenantUUID: tenantUUID,
+			},
 		}, nil)
 		mockClient.On("GetAgent",
 			mock.AnythingOfType("string"),
@@ -355,8 +359,10 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		gc.On("Reconcile").Return(reconcile.Result{}, nil)
 		memFs := afero.NewMemMapFs()
 		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
-			TenantUUID: tenantUUID,
+		mockClient.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{
+			ConnectionInfo: dtclient.ConnectionInfo{
+				TenantUUID: tenantUUID,
+			},
 		}, nil)
 		mockClient.On("GetLatestAgentVersion",
 			mock.AnythingOfType("string"),
@@ -403,8 +409,10 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
-			TenantUUID: tenantUUID,
+		mockClient.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{
+			ConnectionInfo: dtclient.ConnectionInfo{
+				TenantUUID: tenantUUID,
+			},
 		}, nil)
 		mockClient.On("GetLatestAgentVersion",
 			mock.AnythingOfType("string"),

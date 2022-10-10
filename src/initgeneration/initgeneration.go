@@ -65,7 +65,8 @@ func (g *InitGenerator) GenerateForNamespace(ctx context.Context, dk dynatracev1
 	}
 	secretQuery := kubeobjects.NewSecretQuery(ctx, g.client, g.apiReader, log)
 
-	return errors.WithStack(secretQuery.CreateOrUpdate(*secret))
+	err = secretQuery.CreateOrUpdate(*secret)
+	return errors.WithStack(err)
 }
 
 // GenerateForDynakube creates/updates the init secret for EVERY namespace for the given dynakube.
@@ -101,7 +102,6 @@ func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1
 		}
 
 		err = secretQuery.CreateOrUpdate(*secret)
-
 		if err != nil {
 			return errors.WithStack(err)
 		}

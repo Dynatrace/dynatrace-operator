@@ -1,6 +1,9 @@
 package consts
 
-import dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+import (
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
+)
 
 const (
 	MultiActiveGateName     = "activegate"
@@ -21,11 +24,8 @@ const (
 
 	DeploymentTypeActiveGate = "active_gate"
 
-	TenantSecretVolumeName    = "ag-tenant-secret"
 	AuthTokenSecretVolumeName = "ag-authtoken-secret"
-	TokenBasePath             = "/var/lib/dynatrace/secrets/tokens"
-	TenantTokenMountPoint     = TokenBasePath + "/tenant-token"
-	AuthTokenMountPoint       = TokenBasePath + "/auth-token"
+	AuthTokenMountPoint       = connectioninfo.TokenBasePath + "/auth-token"
 
 	EnvDtServer             = "DT_SERVER"
 	EnvDtTenant             = "DT_TENANT"

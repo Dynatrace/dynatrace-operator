@@ -10,6 +10,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/apimonitoring"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent"
@@ -214,12 +215,18 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 	dkState.Update(upd, "Found updates")
 	dkState.Error(err)
 
+	upd, err = connectioninfo.NewReconciler(ctx, controller.client, controller.apiReader, dkState.Instance, dtc).Reconcile()
+	dkState.Update(upd, "connection info secrets updated")
+	if err != nil {
+		return
+	}
+
 	err = controller.reconcileActiveGate(ctx, dkState, dtc)
 	if dkState.Error(err) {
 		return
 	}
 
-	err = controller.reconcileOneAgent(ctx, dkState)
+	err = controller.reconcileOneAgent(ctx, dkState, dtc)
 	if err != nil {
 		return
 	}
@@ -260,7 +267,7 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 	dkState.Update(upd, "dynakube phase changed")
 }
 
-func (controller *DynakubeController) reconcileOneAgent(ctx context.Context, dkState *status.DynakubeState) (err error) {
+func (controller *DynakubeController) reconcileOneAgent(ctx context.Context, dkState *status.DynakubeState, dtc dtclient.Client) (err error) {
 	if dkState.Instance.HostMonitoringMode() {
 		upd, err := oneagent.NewOneAgentReconciler(
 			controller.client, controller.apiReader, controller.scheme, dkState.Instance, daemonset.DeploymentTypeHostMonitoring,
@@ -308,8 +315,8 @@ func (controller *DynakubeController) removeOneAgentDaemonSet(dkState *status.Dy
 
 func (controller *DynakubeController) reconcileActiveGate(ctx context.Context, dynakubeState *status.DynakubeState, dtc dtclient.Client) error {
 	reconciler := activegate.NewReconciler(ctx, controller.client, controller.apiReader, controller.scheme, dynakubeState.Instance, dtc)
-	upd, err := reconciler.Reconcile()
 
+	upd, err := reconciler.Reconcile()
 	if err != nil {
 		return errors.WithMessage(err, "failed to reconcile ActiveGate")
 	}
