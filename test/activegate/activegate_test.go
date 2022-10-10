@@ -5,7 +5,6 @@ package activegate
 import (
 	"bytes"
 	"context"
-	"github.com/spf13/afero"
 	"io"
 	"os"
 	"path"
@@ -25,6 +24,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/proxy"
 	"github.com/Dynatrace/dynatrace-operator/test/secrets"
 	"github.com/Dynatrace/dynatrace-operator/test/webhook"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
