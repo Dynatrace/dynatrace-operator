@@ -1,6 +1,7 @@
 package csigc
 
 import (
+	"context"
 	"os"
 	"time"
 
@@ -19,7 +20,7 @@ type logFileInfo struct {
 	OverallSize     int64
 }
 
-func (gc *CSIGarbageCollector) runLogGarbageCollection(tenantUUID string) {
+func (gc *CSIGarbageCollector) runLogGarbageCollection(ctx context.Context, tenantUUID string) {
 	logs, err := gc.getLogFileInfo(tenantUUID)
 	if err != nil {
 		log.Info("failed to get log file information")
