@@ -36,7 +36,7 @@ func InstallProxy(builder *features.FeatureBuilder, proxySpec *v1beta1.DynaKubeP
 		builder.Assess("proxy started", deployment.WaitFor(proxyDeployment, proxyNamespace))
 
 		builder.Assess("query webhook via proxy", manifests.InstallFromFile("../testdata/activegate/curl-pod-webhook-via-proxy.yaml"))
-		builder.Assess("query is completed", waitForCurlProxyPod(curlPodProxy, dynakube.DynatraceNamespace))
+		builder.Assess("query is completed", waitForCurlProxyPod(curlPodProxy, dynakube.Namespace))
 		builder.Assess("proxy is running", checkProxyService())
 	}
 }
@@ -54,7 +54,7 @@ func checkProxyService() features.Func {
 		clientset, err := kubernetes.NewForConfig(resources.GetConfig())
 		require.NoError(t, err)
 
-		logStream, err := clientset.CoreV1().Pods(dynakube.DynatraceNamespace).GetLogs(curlPodProxy, &corev1.PodLogOptions{
+		logStream, err := clientset.CoreV1().Pods(dynakube.Namespace).GetLogs(curlPodProxy, &corev1.PodLogOptions{
 			Container: curlPodProxy,
 		}).Stream(ctx)
 		require.NoError(t, err)
