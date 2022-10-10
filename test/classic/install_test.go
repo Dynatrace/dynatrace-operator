@@ -10,8 +10,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/test/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/sampleapps"
 	"github.com/Dynatrace/dynatrace-operator/test/setup"
+	"github.com/Dynatrace/dynatrace-operator/test/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
@@ -24,8 +26,9 @@ func install(t *testing.T) features.Feature {
 	secretConfig := getSecretConfig(t)
 
 	setup.InstallAndDeploy(installClassicFullStack, secretConfig, "../testdata/classic-fullstack/sample-deployment.yaml")
-	setup.AssessDeployment(installClassicFullStack)
 
+	installClassicFullStack.Assess("operator started", operator.WaitForDeployment())
+	installClassicFullStack.Assess("webhook started", webhook.WaitForDeployment())
 	installClassicFullStack.Assess("install dynakube", dynakube.ApplyClassicFullStack(secretConfig.ApiUrl, &dynatracev1beta1.HostInjectSpec{
 		Env: []v1.EnvVar{
 			{
