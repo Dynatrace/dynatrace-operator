@@ -17,7 +17,6 @@ package main
 import (
 	"os"
 
-	"cloud.google.com/go/profiler"
 	cmdConfig "github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 	csiProvisioner "github.com/Dynatrace/dynatrace-operator/src/cmd/csi/provisioner"
 	csiServer "github.com/Dynatrace/dynatrace-operator/src/cmd/csi/server"
@@ -37,11 +36,8 @@ var (
 )
 
 const (
-	envPodNamespace        = "POD_NAMESPACE"
-	envPodName             = "POD_NAME"
-	gcpCloudProfileEnabled = "GCP_CLOUD_PROFILER_ENABLED"
-	gcpProvileService      = "GCP_PROFILE_SERVICE"
-	gcpProfileDebugLogging = "GCP_PROFILE_DEBUG_LOGGING"
+	envPodNamespace = "POD_NAMESPACE"
+	envPodName      = "POD_NAME"
 )
 
 func newRootCommand() *cobra.Command {
@@ -89,12 +85,6 @@ func rootCommand(_ *cobra.Command, _ []string) error {
 }
 
 func main() {
-	err := enableGcpProfilingIfNeeded()
-	if err != nil {
-		log.Info(err.Error())
-		os.Exit(1)
-	}
-
 	version.LogVersion()
 	ctrl.SetLogger(log)
 	cmd := newRootCommand()
@@ -108,21 +98,9 @@ func main() {
 		createTroubleshootCommandBuilder().Build(),
 	)
 
-	err = cmd.Execute()
+	err := cmd.Execute()
 	if err != nil {
 		log.Info(err.Error())
 		os.Exit(1)
 	}
-}
-
-func enableGcpProfilingIfNeeded() error {
-	if os.Getenv(gcpCloudProfileEnabled) != "true" {
-		return nil
-	}
-
-	profilerCfg := profiler.Config{
-		Service:      os.Getenv(gcpProvileService),
-		DebugLogging: os.Getenv(gcpProfileDebugLogging) == "true",
-	}
-	return profiler.Start(profilerCfg)
 }
