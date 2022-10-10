@@ -70,7 +70,7 @@ func (mutator *OneAgentPodMutator) addOneAgentToContainer(request *dtwebhook.Rei
 	}
 
 	if dynakube.FeatureLabelVersionDetection() {
-		addVersionEnvs(container, newVersionLabelMapping(request.Namespace))
+		addVersionDetectionEnvs(container, newVersionLabelMapping(request.Namespace))
 	}
 }
 

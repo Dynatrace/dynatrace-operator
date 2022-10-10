@@ -49,7 +49,7 @@ func TestMutateUserContainers(t *testing.T) {
 		initialNumberOfContainerEnvsLen := len(request.Pod.Spec.Containers[0].Env)
 		initialContainerVolumeMountsLen := len(request.Pod.Spec.Containers[0].VolumeMounts)
 
-		//1 deployment-metadata + 1 preload
+		// 1 deployment-metadata + 1 preload
 		expectedAdditionalEnvCount := 2
 
 		// 3 oneagent mounts(preload,bin,conf)
@@ -70,7 +70,7 @@ func TestMutateUserContainers(t *testing.T) {
 		initialNumberOfContainerEnvsLen := len(request.Pod.Spec.Containers[0].Env)
 		initialContainerVolumeMountsLen := len(request.Pod.Spec.Containers[0].VolumeMounts)
 
-		// 1 proxy + 1 deployment-metadata + 1 network-zone + 1 preload + 2 version
+		// 1 proxy + 1 deployment-metadata + 1 network-zone + 1 preload + 2 version-detection
 		expectedAdditionalEnvCount := 6
 
 		// 3 oneagent mounts(preload,bin,conf) + 1 cert mount + 1 curl-options
@@ -98,7 +98,7 @@ func TestReinvokeUserContainers(t *testing.T) {
 		})
 		installContainer := &request.Pod.Spec.InitContainers[1]
 
-		//1 deployment-metadata + 1 preload
+		// 1 deployment-metadata + 1 preload
 		expectedAdditionalEnvCount := 2
 
 		// 3 oneagent(preload,bin,conf) mounts
@@ -132,7 +132,7 @@ func TestReinvokeUserContainers(t *testing.T) {
 		})
 		installContainer := &request.Pod.Spec.InitContainers[1]
 
-		// 1 proxy + 1 deployment-metadata + 1 network-zone + 1 preload + 2 version
+		// 1 proxy + 1 deployment-metadata + 1 network-zone + 1 preload + 2 version-detection
 		expectedAdditionalEnvCount := 6
 
 		// 3 oneagent mounts(preload,bin,conf) + 1 cert mount + 1 curl-options

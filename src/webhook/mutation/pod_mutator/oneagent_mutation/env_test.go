@@ -103,11 +103,11 @@ func TestAddDeploymentMetadataEnv(t *testing.T) {
 	})
 }
 
-func TestAddVersionEnv(t *testing.T) {
+func TestAddVersionDetectionEnvs(t *testing.T) {
 	t.Run("adds defaults", func(t *testing.T) {
 		container := &corev1.Container{}
 
-		addVersionEnvs(container, defaultVersionLabelMapping)
+		addVersionDetectionEnvs(container, defaultVersionLabelMapping)
 
 		require.Len(t, container.Env, len(defaultVersionLabelMapping))
 		for _, envvar := range container.Env {
@@ -125,7 +125,7 @@ func TestAddVersionEnv(t *testing.T) {
 			},
 		}
 
-		addVersionEnvs(container, defaultVersionLabelMapping)
+		addVersionDetectionEnvs(container, defaultVersionLabelMapping)
 
 		require.Len(t, container.Env, 2)
 		assert.Equal(t, testVersion, container.Env[0].Value)
@@ -140,7 +140,7 @@ func TestAddVersionEnv(t *testing.T) {
 			},
 		}
 
-		addVersionEnvs(container, defaultVersionLabelMapping)
+		addVersionDetectionEnvs(container, defaultVersionLabelMapping)
 
 		require.Len(t, container.Env, 2)
 		assert.Equal(t, testVersion, container.Env[0].Value)
