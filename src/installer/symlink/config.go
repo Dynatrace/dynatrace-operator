@@ -11,5 +11,5 @@ const (
 )
 
 var (
-	log = logger.NewDTLogger().WithName("oneagent-installer-symlink")
+	log = logger.Factory.GetLogger("oneagent-installer-symlink")
 )

@@ -10,5 +10,5 @@ type Modifier = builder.Modifier[Data]
 type Builder = builder.GenericBuilder[Data]
 
 func NewBuilder(data Data) Builder {
-	return builder.NewBuilder(data)
+	return builder.NewBuilderWithInitialData(data)
 }

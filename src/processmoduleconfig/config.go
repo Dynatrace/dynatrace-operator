@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	log = logger.NewDTLogger().WithName("processmoduleconfig")
+	log = logger.Factory.GetLogger("processmoduleconfig")
 )

@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	log                  = logger.NewDTLogger().WithName("csi-driver.app")
+	log                  = logger.Factory.GetLogger("csi-driver.app")
 	agentsVersionsMetric = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "dynatrace",
 		Subsystem: "csi_driver",

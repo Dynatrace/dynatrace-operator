@@ -20,5 +20,5 @@ const (
 
 var (
 	CacheDir = filepath.Join(dtcsi.DataPath, "cache")
-	log      = logger.NewDTLogger().WithName("oneagent-image-installer")
+	log      = logger.Factory.GetLogger("oneagent-image-installer")
 )

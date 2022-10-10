@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	log = logger.NewDTLogger().WithName("csi-metadata")
+	log = logger.Factory.GetLogger("csi-metadata")
 )

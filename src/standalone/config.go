@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	log = logger.NewDTLogger().WithName("standalone-init")
+	log = logger.Factory.GetLogger("standalone-init")
 )

@@ -36,5 +36,5 @@ const (
 )
 
 var (
-	log = logger.NewDTLogger().WithName("activegate-statefulset-reconciler")
+	log = logger.Factory.GetLogger("activegate-statefulset-reconciler")
 )
