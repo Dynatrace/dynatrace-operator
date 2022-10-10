@@ -13,7 +13,6 @@ permissions:
   contents: read
 
 env:
-  GO_VERSION: "^1.19"
   DOCKER_REGISTRY: "quay.io"
   DOCKER_REPOSITORY: "dynatrace/dynatrace-operator"
 
@@ -103,7 +102,6 @@ jobs:
           # Reason: global envs do not work in workflow calls
           # More info: https://github.com/actions/runner/issues/480#issuecomment-1021278915
 
-          echo ::set-output name=goversion::${{ env.GO_VERSION }}
           echo ::set-output name=registry::${{ env.DOCKER_REGISTRY }}
           echo ::set-output name=repository::${{ env.DOCKER_REPOSITORY }}
     outputs:
