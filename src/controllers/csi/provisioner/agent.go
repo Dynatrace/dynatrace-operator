@@ -36,7 +36,10 @@ func newAgentUrlUpdater(
 	recorder record.EventRecorder,
 	dk *dynatracev1beta1.DynaKube) (*agentUpdater, error) {
 
-	tenantUUID := dk.ConnectionInfo().TenantUUID
+	tenantUUID, err := dk.TenantUUID()
+	if err != nil {
+		return nil, err
+	}
 	targetVersion := dk.CodeModulesVersion()
 
 	agentInstaller := url.NewUrlInstaller(fs, dtc, getUrlProperties(targetVersion, previousVersion, path))
@@ -64,7 +67,10 @@ func newAgentImageUpdater(
 	recorder record.EventRecorder,
 	dk *dynatracev1beta1.DynaKube) (*agentUpdater, error) {
 
-	tenantUUID := dk.ConnectionInfo().TenantUUID
+	tenantUUID, err := dk.TenantUUID()
+	if err != nil {
+		return nil, err
+	}
 	certPath := path.ImageCertPath(tenantUUID)
 
 	agentInstaller, err := setupImageInstaller(ctx, fs, apiReader, path, db, certPath, dk)
