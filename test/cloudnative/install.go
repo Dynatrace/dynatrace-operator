@@ -7,24 +7,27 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/test/setup"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
 const (
 	oneAgentInstallContainerName = "install-oneagent"
+
+	installSecretsPath = "../testdata/secrets/cloudnative-install.yaml"
 )
 
 func install(t *testing.T) features.Feature {
-	secretConfig := dynakube.GetSecretConfig(t)
+	secretConfig := getSecretConfig(t)
 
 	defaultInstallation := features.New("default installation")
 
-	installAndDeploy(defaultInstallation, secretConfig, "../testdata/cloudnative/sample-deployment.yaml")
-	assessDeployment(defaultInstallation)
+	setup.InstallAndDeploy(defaultInstallation, secretConfig, "../testdata/cloudnative/sample-deployment.yaml")
+	setup.AssessDeployment(defaultInstallation)
 
-	defaultInstallation.Assess("dynakube applied", dynakube.ApplyDynakube(secretConfig.ApiUrl, &v1beta1.CloudNativeFullStackSpec{}, nil))
+	defaultInstallation.Assess("dynakube applied", dynakube.ApplyCloudNative(secretConfig.ApiUrl, &v1beta1.CloudNativeFullStackSpec{}))
 
-	assessDynakubeStartup(defaultInstallation)
+	setup.AssessDynakubeStartup(defaultInstallation)
 	assessOneAgentsAreRunning(defaultInstallation)
 
 	return defaultInstallation.Feature()

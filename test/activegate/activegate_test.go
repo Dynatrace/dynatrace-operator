@@ -6,6 +6,8 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"os"
+	"path"
 	"strings"
 	"testing"
 
@@ -22,6 +24,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/proxy"
 	"github.com/Dynatrace/dynatrace-operator/test/secrets"
 	"github.com/Dynatrace/dynatrace-operator/test/webhook"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -82,14 +85,14 @@ var testEnvironment env.Environment
 
 func TestMain(m *testing.M) {
 	testEnvironment = environment.Get()
-	testEnvironment.BeforeEachTest(dynakube.DeleteDynakubeIfExists())
+	testEnvironment.BeforeEachTest(dynakube.DeleteIfExists())
 	testEnvironment.BeforeEachTest(oneagent.WaitForDaemonSetPodsDeletion())
-	testEnvironment.BeforeEachTest(namespace.Recreate(dynakube.DynatraceNamespace))
+	testEnvironment.BeforeEachTest(namespace.Recreate(dynakube.Namespace))
 	testEnvironment.BeforeEachTest(proxy.DeleteProxyIfExists())
 
-	testEnvironment.AfterEachTest(dynakube.DeleteDynakubeIfExists())
+	testEnvironment.AfterEachTest(dynakube.DeleteIfExists())
 	testEnvironment.AfterEachTest(oneagent.WaitForDaemonSetPodsDeletion())
-	testEnvironment.AfterEachTest(namespace.Delete(dynakube.DynatraceNamespace))
+	testEnvironment.AfterEachTest(namespace.Delete(dynakube.Namespace))
 	testEnvironment.AfterEachTest(proxy.DeleteProxyIfExists())
 
 	testEnvironment.Run(m)
@@ -104,7 +107,13 @@ func TestActiveGateProxy(t *testing.T) {
 }
 
 func install(t *testing.T, proxySpec *v1beta1.DynaKubeProxy) features.Feature {
-	secretConfig := dynakube.GetSecretConfig(t)
+	currentWorkingDirectory, err := os.Getwd()
+	require.NoError(t, err)
+
+	secretPath := path.Join(currentWorkingDirectory, "../testdata/secrets/activegate-install.yaml")
+	secretConfig, err := secrets.NewFromConfig(afero.NewOsFs(), secretPath)
+
+	require.NoError(t, err)
 
 	defaultInstallation := features.New("capabilities")
 
@@ -142,7 +151,7 @@ func assessDynakubeStartup(builder *features.FeatureBuilder) {
 }
 
 func assessOneAgentsAreRunning(builder *features.FeatureBuilder) {
-	builder.Assess("osAgent can connect", oneagent.OsAgentsCanConnect())
+	builder.Assess("osAgent can connect", oneagent.OSAgentCanConnect())
 }
 
 func assessActiveGate(builder *features.FeatureBuilder) {
@@ -150,7 +159,7 @@ func assessActiveGate(builder *features.FeatureBuilder) {
 	builder.Assess("ActiveGate modules are active", checkActiveModules)
 	builder.Assess("ActiveGate containers have mount points", checkMountPoints)
 	builder.Assess("ActiveGate query via AG service", manifests.InstallFromFile("../testdata/activegate/curl-pod.yaml"))
-	builder.Assess("ActiveGate query is completed", pod.WaitFor(curlPod, dynakube.DynatraceNamespace))
+	builder.Assess("ActiveGate query is completed", pod.WaitFor(curlPod, dynakube.Namespace))
 	builder.Assess("ActiveGate service is running", checkService)
 }
 
@@ -158,7 +167,7 @@ func checkIfAgHasContainers(ctx context.Context, t *testing.T, environmentConfig
 	resources := environmentConfig.Client().Resources()
 
 	var pod corev1.Pod
-	require.NoError(t, resources.WithNamespace(dynakube.DynatraceNamespace).Get(ctx, agPodName, agNamespace, &pod))
+	require.NoError(t, resources.WithNamespace(dynakube.Namespace).Get(ctx, agPodName, agNamespace, &pod))
 
 	require.NotNil(t, pod.Spec)
 	require.NotEmpty(t, pod.Spec.InitContainers)
@@ -210,7 +219,7 @@ func checkService(ctx context.Context, t *testing.T, environmentConfig *envconf.
 	clientset, err := kubernetes.NewForConfig(resources.GetConfig())
 	require.NoError(t, err)
 
-	logStream, err := clientset.CoreV1().Pods(dynakube.DynatraceNamespace).GetLogs(curlPod, &corev1.PodLogOptions{
+	logStream, err := clientset.CoreV1().Pods(dynakube.Namespace).GetLogs(curlPod, &corev1.PodLogOptions{
 		Container: curlPod,
 	}).Stream(ctx)
 	require.NoError(t, err)

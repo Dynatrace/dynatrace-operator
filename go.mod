@@ -10,7 +10,7 @@ require (
 	github.com/klauspost/compress v1.15.11
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/opencontainers/go-digest v1.0.0
-	github.com/opencontainers/image-spec v1.1.0-rc1
+	github.com/opencontainers/image-spec v1.1.0-rc2
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.13.0
 	github.com/prometheus/client_model v0.2.0
@@ -19,7 +19,7 @@ require (
 	github.com/stretchr/testify v1.8.0
 	go.uber.org/zap v1.23.0
 	golang.org/x/sys v0.0.0-20220919091848-fb04ddd9f9c8
-	google.golang.org/grpc v1.49.0
+	google.golang.org/grpc v1.50.0
 	istio.io/api v0.0.0-20220907134937-b47284812feb
 	istio.io/client-go v1.15.1
 	k8s.io/api v0.25.2

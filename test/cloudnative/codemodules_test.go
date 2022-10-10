@@ -21,7 +21,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/pod"
+	"github.com/Dynatrace/dynatrace-operator/test/sampleapps"
 	"github.com/Dynatrace/dynatrace-operator/test/secrets"
+	"github.com/Dynatrace/dynatrace-operator/test/setup"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -60,13 +62,13 @@ func codeModules(t *testing.T) features.Feature {
 
 	codeModulesInjection := features.New("codemodules injection")
 
-	installAndDeploy(codeModulesInjection, secretConfigs[0], "../testdata/cloudnative/codemodules-deployment.yaml")
+	setup.InstallAndDeploy(codeModulesInjection, secretConfigs[0], "../testdata/cloudnative/codemodules-deployment.yaml")
 
-	assessDeployment(codeModulesInjection)
+	setup.AssessDeployment(codeModulesInjection)
 
-	codeModulesInjection.Assess("install dynakube", dynakube.ApplyDynakube(secretConfigs[0].ApiUrl, codeModulesSpec(), nil))
+	codeModulesInjection.Assess("install dynakube", dynakube.ApplyCloudNative(secretConfigs[0].ApiUrl, codeModulesSpec()))
 
-	assessDynakubeStartup(codeModulesInjection)
+	setup.AssessDynakubeStartup(codeModulesInjection)
 	assessOneAgentsAreRunning(codeModulesInjection)
 
 	codeModulesInjection.Assess("csi driver did not crash", csiDriverIsAvailable)
@@ -190,8 +192,8 @@ func volumesAreMountedCorrectly() features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resource := environmentConfig.Client().Resources()
 		err := deployment.NewQuery(ctx, resource, client.ObjectKey{
-			Name:      sampleAppsName,
-			Namespace: sampleAppsNamespace,
+			Name:      sampleapps.Name,
+			Namespace: sampleapps.Namespace,
 		}).ForEachPod(func(podItem corev1.Pod) {
 			volumes := podItem.Spec.Volumes
 			volumeMounts := podItem.Spec.Containers[0].VolumeMounts
@@ -200,14 +202,14 @@ func volumesAreMountedCorrectly() features.Func {
 			assert.True(t, isVolumeMounted(t, volumeMounts, oneagent_mutation.OneAgentBinVolumeName))
 
 			executionResult, err := pod.
-				NewExecutionQuery(podItem, sampleAppsName, bash.ListDirectory(webhook.DefaultInstallPath)).
+				NewExecutionQuery(podItem, sampleapps.Name, bash.ListDirectory(webhook.DefaultInstallPath)).
 				Execute(environmentConfig.Client().RESTConfig())
 
 			require.NoError(t, err)
 			assert.NotEmpty(t, executionResult.StdOut.String())
 
 			executionResult, err = pod.
-				NewExecutionQuery(podItem, sampleAppsName, bash.Pipe(
+				NewExecutionQuery(podItem, sampleapps.Name, bash.Pipe(
 					bash.DiskUsageWithTotal(webhook.DefaultInstallPath),
 					bash.FilterLastLineOnly())).
 				Execute(environmentConfig.Client().RESTConfig())
@@ -260,7 +262,7 @@ func getSecondTenantSecret(apiToken string) corev1.Secret {
 	return corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "dynakube-2",
-			Namespace: dynakube.DynatraceNamespace,
+			Namespace: dynakube.Namespace,
 		},
 		Data: map[string][]byte{
 			"apiToken": []byte(apiToken),
@@ -272,7 +274,7 @@ func getSecondTenantDynakube(apiUrl string) v1beta1.DynaKube {
 	dynakube := v1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "dynakube-2",
-			Namespace: dynakube.DynatraceNamespace,
+			Namespace: dynakube.Namespace,
 		},
 		Spec: v1beta1.DynaKubeSpec{
 			APIURL: apiUrl,
