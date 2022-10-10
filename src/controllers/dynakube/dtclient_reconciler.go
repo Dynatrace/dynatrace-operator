@@ -142,7 +142,7 @@ func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dyn
 			dtclient.TokenScopeSettingsWrite)
 	}
 
-	if instance.FeatureActiveGateAuthToken() {
+	if instance.UseActiveGateAuthToken() {
 		tokens[dtclient.DynatraceApiToken].Scopes = append(tokens[dtclient.DynatraceApiToken].Scopes,
 			dtclient.TokenScopeActiveGateTokenCreate)
 	}
