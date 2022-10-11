@@ -6,4 +6,4 @@ import (
 
 const Mode = "host"
 
-var log = logger.Factory.GetLogger("csi-driver.host")
+var log = logger.Factory.GetLogger("csi-host")

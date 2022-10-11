@@ -36,5 +36,5 @@ const (
 )
 
 var (
-	log = logger.Factory.GetLogger("activegate-statefulset-reconciler")
+	log = logger.Factory.GetLogger("activegate-statefulset")
 )

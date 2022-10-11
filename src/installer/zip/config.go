@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	log = logger.Factory.GetLogger("oneagent-installer-zip")
+	log = logger.Factory.GetLogger("oneagent-zip")
 )
 
 // Checks if a file is under /agent/conf
