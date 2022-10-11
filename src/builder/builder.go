@@ -35,15 +35,7 @@ func (b *GenericBuilder[T]) AddModifier(modifiers ...Modifier[T]) Builder[T] {
 	return b
 }
 
-func NewBuilderWithInitialData[T any](data T) GenericBuilder[T] {
-	return GenericBuilder[T]{
-		data:      &data,
-		modifiers: []Modifier[T]{},
-	}
-}
-
-func NewBuilder[T any]() GenericBuilder[T] {
-	var data T
+func NewBuilder[T any](data T) GenericBuilder[T] {
 	return GenericBuilder[T]{
 		data:      &data,
 		modifiers: []Modifier[T]{},
