@@ -6,7 +6,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 	cmdManager "github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
-	"github.com/Dynatrace/dynatrace-operator/src/logger"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -41,7 +40,4 @@ func TestCsiCommand(t *testing.T) {
 	exists, err := afero.Exists(memFs, dtcsi.DataPath)
 	assert.True(t, exists)
 	assert.NoError(t, err)
-
-	// logging new line so go test can parse output correctly
-	logger.Factory.GetLogger("")
 }
