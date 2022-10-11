@@ -13,11 +13,11 @@ const (
 
 func getTestInstallerInfo() installerInfo {
 	return installerInfo{
-		flavor:        testFlavor,
-		technologies:  testTechnologies,
-		installPath:   testInstallPath,
-		installerURL:  testInstallerURL,
-		version:       testVersion,
+		flavor:       testFlavor,
+		technologies: testTechnologies,
+		installPath:  testInstallPath,
+		installerURL: testInstallerURL,
+		version:      testVersion,
 	}
 }
 

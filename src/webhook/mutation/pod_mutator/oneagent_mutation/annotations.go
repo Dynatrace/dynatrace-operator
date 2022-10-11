@@ -10,11 +10,11 @@ import (
 )
 
 type installerInfo struct {
-	flavor        string
-	technologies  string
-	installPath   string
-	installerURL  string
-	version       string
+	flavor       string
+	technologies string
+	installPath  string
+	installerURL string
+	version      string
 }
 
 func setInjectedAnnotation(pod *corev1.Pod) {
@@ -26,10 +26,10 @@ func setInjectedAnnotation(pod *corev1.Pod) {
 
 func getInstallerInfo(pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) installerInfo {
 	return installerInfo{
-		flavor:        kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationFlavor, ""),
-		technologies:  url.QueryEscape(kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationTechnologies, "all")),
-		installPath:   kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath),
-		installerURL:  kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInstallerUrl, ""),
-		version:       dynakube.Version(),
+		flavor:       kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationFlavor, ""),
+		technologies: url.QueryEscape(kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationTechnologies, "all")),
+		installPath:  kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath),
+		installerURL: kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInstallerUrl, ""),
+		version:      dynakube.Version(),
 	}
 }
