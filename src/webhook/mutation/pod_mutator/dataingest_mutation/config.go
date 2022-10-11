@@ -11,5 +11,5 @@ const (
 )
 
 var (
-	log = logger.Factory.GetLogger("mutation-webhook-pod-dataingest")
+	log = logger.Factory.GetLogger("mutation-dataingest")
 )

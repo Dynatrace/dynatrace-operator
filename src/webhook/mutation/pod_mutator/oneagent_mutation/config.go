@@ -5,7 +5,7 @@ import (
 )
 
 var (
-	log = logger.Factory.GetLogger("mutation-webhook-pod-oneagent")
+	log = logger.Factory.GetLogger("mutation-oneagent")
 )
 
 const (
