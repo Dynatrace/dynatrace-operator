@@ -71,6 +71,7 @@ const (
 	AnnotationFeatureOneAgentIgnoreProxy            = AnnotationFeaturePrefix + "oneagent-ignore-proxy"
 	AnnotationFeatureOneAgentInitialConnectRetry    = AnnotationFeaturePrefix + "oneagent-initial-connect-retry-ms"
 	AnnotationFeatureRunOneAgentContainerPrivileged = AnnotationFeaturePrefix + "oneagent-privileged"
+	AnnotationFeatureOneAgentImmutableImage         = AnnotationFeaturePrefix + "oneagent-immutable-image"
 
 	// injection (webhook)
 
@@ -285,6 +286,11 @@ func (dk *DynaKube) getFeatureFlagRaw(annotation string) string {
 		return raw
 	}
 	return ""
+}
+
+// FeatureOneAgentImmutableImage is a feature flag to treat the OneAgent image as immutable
+func (dk *DynaKube) FeatureOneAgentImmutableImage() bool {
+	return dk.getFeatureFlagRaw(AnnotationFeatureOneAgentImmutableImage) == "true"
 }
 
 func (dk *DynaKube) FeatureMaxFailedCsiMountAttempts() int {

@@ -69,7 +69,8 @@ func (g *EndpointSecretGenerator) GenerateForNamespace(ctx context.Context, dkNa
 	}
 	secretQuery := kubeobjects.NewSecretQuery(ctx, g.client, g.apiReader, log)
 
-	return errors.WithStack(secretQuery.CreateOrUpdate(*secret))
+	err = secretQuery.CreateOrUpdate(*secret)
+	return errors.WithStack(err)
 }
 
 // GenerateForDynakube creates/updates the data-ingest-endpoint secret for EVERY namespace for the given dynakube.

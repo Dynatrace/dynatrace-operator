@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/test/logs"
+	"github.com/Dynatrace/dynatrace-operator/test/log"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
@@ -12,7 +12,7 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func OsAgentsCanConnect() features.Func {
+func OSAgentCanConnect() features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resource := environmentConfig.Client().Resources()
 		clientset, err := kubernetes.NewForConfig(resource.GetConfig())
@@ -23,7 +23,7 @@ func OsAgentsCanConnect() features.Func {
 
 			require.NoError(t, err)
 
-			logs.AssertLogContains(t, logStream, "[oneagentos] [PingReceiver] Ping received: Healthy(0)")
+			log.AssertLogContains(t, logStream, "[oneagentos] [PingReceiver] Ping received: Healthy(0)")
 		}))
 
 		return ctx

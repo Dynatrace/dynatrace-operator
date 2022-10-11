@@ -81,7 +81,7 @@ func (pmc *ProcessModuleConfig) removeProperty(index int) {
 	pmc.Properties = append(pmc.Properties[0:index], pmc.Properties[index+1:]...)
 }
 
-func (pmc *ProcessModuleConfig) AddConnectionInfo(connectionInfo ConnectionInfo) *ProcessModuleConfig {
+func (pmc *ProcessModuleConfig) AddConnectionInfo(connectionInfo OneAgentConnectionInfo) *ProcessModuleConfig {
 	tenant := ProcessModuleProperty{
 		Section: generalSectionName,
 		Key:     "tenant",
@@ -99,7 +99,7 @@ func (pmc *ProcessModuleConfig) AddConnectionInfo(connectionInfo ConnectionInfo)
 	endpoints := ProcessModuleProperty{
 		Section: generalSectionName,
 		Key:     "serverAddress",
-		Value:   "{" + connectionInfo.FormattedCommunicationEndpoints + "}",
+		Value:   "{" + connectionInfo.Endpoints + "}",
 	}
 	pmc.Add(endpoints)
 

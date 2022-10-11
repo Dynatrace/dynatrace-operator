@@ -10,7 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/proxy"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/tenantinfo"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
@@ -28,7 +27,6 @@ type Reconciler struct {
 	apiReader                         client.Reader
 	scheme                            *runtime.Scheme
 	authTokenReconciler               kubeobjects.Reconciler
-	tenantInfoReconciler              kubeobjects.Reconciler
 	proxyReconciler                   kubeobjects.Reconciler
 	newStatefulsetReconcilerFunc      statefulset.NewReconcilerFunc
 	newCapabilityReconcilerFunc       capabilityInternal.NewReconcilerFunc
@@ -39,7 +37,6 @@ var _ kubeobjects.Reconciler = (*Reconciler)(nil)
 
 func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) kubeobjects.Reconciler {
 	authTokenReconciler := authtoken.NewReconciler(clt, apiReader, scheme, dynakube, dtc)
-	tenantInfoReconciler := tenantinfo.NewReconciler(clt, apiReader, scheme, dynakube, dtc)
 	proxyReconciler := proxy.NewReconciler(clt, apiReader, dynakube)
 	newCustomPropertiesReconcilerFunc := func(customPropertiesOwnerName string, customPropertiesSource *dynatracev1beta1.DynaKubeValueSource) kubeobjects.Reconciler {
 		return customproperties.NewReconciler(clt, dynakube, customPropertiesOwnerName, scheme, customPropertiesSource)
@@ -56,16 +53,10 @@ func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Read
 		newCustomPropertiesReconcilerFunc: newCustomPropertiesReconcilerFunc,
 		newStatefulsetReconcilerFunc:      statefulset.NewReconciler,
 		newCapabilityReconcilerFunc:       capabilityInternal.NewReconciler,
-		tenantInfoReconciler:              tenantInfoReconciler,
 	}
 }
 
 func (r *Reconciler) Reconcile() (update bool, err error) {
-	_, err = r.tenantInfoReconciler.Reconcile()
-	if err != nil {
-		return false, err
-	}
-
 	if r.dynakube.UseActiveGateAuthToken() {
 		_, err := r.authTokenReconciler.Reconcile()
 		if err != nil {

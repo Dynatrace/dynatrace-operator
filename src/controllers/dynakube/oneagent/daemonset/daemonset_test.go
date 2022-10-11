@@ -377,7 +377,9 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 
 func TestPodSpecServiceAccountName(t *testing.T) {
 	t.Run("service account name is unprivileged + readonly by default", func(t *testing.T) {
-		builder := builderInfo{}
+		builder := builderInfo{
+			instance: &dynatracev1beta1.DynaKube{},
+		}
 		podSpec := builder.podSpec()
 
 		assert.Equal(t, unprivilegedServiceAccountName, podSpec.ServiceAccountName)

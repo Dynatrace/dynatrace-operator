@@ -213,15 +213,17 @@ func mockDynatraceClientFunc(communicationHosts *[]string) dynakube.DynatraceCli
 			commHosts[i] = dtclient.CommunicationHost{Protocol: "https", Host: c, Port: 443}
 		}
 
-		connInfo := dtclient.ConnectionInfo{
-			TenantUUID:         "asdf",
+		connInfo := dtclient.OneAgentConnectionInfo{
+			ConnectionInfo: dtclient.ConnectionInfo{
+				TenantUUID: "asdf",
+			},
 			CommunicationHosts: commHosts,
 		}
 
 		dtc := new(dtclient.MockDynatraceClient)
 		dtc.On("GetLatestAgentVersion", "unix", "default").Return("17", nil)
 		dtc.On("GetLatestAgentVersion", "unix", "paas").Return("18", nil)
-		dtc.On("GetConnectionInfo").Return(connInfo, nil)
+		dtc.On("GetOneAgentConnectionInfo").Return(connInfo, nil)
 		dtc.On("GetCommunicationHostForClient").Return(dtclient.CommunicationHost{
 			Protocol: "https",
 			Host:     DefaultTestAPIURL,
@@ -229,7 +231,7 @@ func mockDynatraceClientFunc(communicationHosts *[]string) dynakube.DynatraceCli
 		}, nil)
 		dtc.On("GetTokenScopes", "42").Return(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, nil)
 		dtc.On("GetTokenScopes", "43").Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport}, nil)
-		dtc.On("GetActiveGateTenantInfo").Return(&dtclient.ActiveGateTenantInfo{}, nil)
+		dtc.On("GetActiveGateConnectionInfo").Return(&dtclient.ActiveGateConnectionInfo{}, nil)
 
 		return dtc, nil
 	}
