@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	log = logger.Factory.GetLogger("dynakube-controller")
+	log = logger.Factory.GetLogger("dynakube")
 )

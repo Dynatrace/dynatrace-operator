@@ -2,11 +2,7 @@ package logger
 
 import "github.com/go-logr/logr"
 
-var Factory factory
-
-func init() {
-	Factory = factory{logger: newLogger()}
-}
+var Factory factory = factory{logger: newLogger()}
 
 type factory struct {
 	logger logr.Logger

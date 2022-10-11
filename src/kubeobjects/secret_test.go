@@ -15,7 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var log = logger.Factory.GetLogger("")
+var log = logger.Factory.GetLogger("test-secret")
 
 func TestSecretQuery(t *testing.T) {
 	t.Run(`Get secret`, testGetSecret)
