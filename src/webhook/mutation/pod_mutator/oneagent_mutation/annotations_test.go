@@ -1,11 +1,14 @@
 package oneagent_mutation
 
+import "reflect"
+
 const (
 	testFlavor        = "testFlavor"
 	testTechnologies  = "testTech"
 	testInstallPath   = "testInstallPath"
 	testInstallerURL  = "testInstallerUrl"
 	testFailurePolicy = "testFailurePolicy"
+	testVersion       = "testVersion"
 )
 
 func getTestInstallerInfo() installerInfo {
@@ -14,6 +17,10 @@ func getTestInstallerInfo() installerInfo {
 		technologies:  testTechnologies,
 		installPath:   testInstallPath,
 		installerURL:  testInstallerURL,
-		failurePolicy: testFailurePolicy,
+		version:       testVersion,
 	}
+}
+
+func getInstallerInfoFieldCount() int {
+	return reflect.TypeOf(installerInfo{}).NumField()
 }

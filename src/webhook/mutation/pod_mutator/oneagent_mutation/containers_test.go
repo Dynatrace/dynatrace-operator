@@ -12,6 +12,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+var expectedBaseInitContainerEnvCount = getInstallerInfoFieldCount()+2 // volumeMode + oneagent injected
+
 func TestConfigureInitContainer(t *testing.T) {
 	t.Run("add envs and volume mounts (no-csi)", func(t *testing.T) {
 		mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
@@ -20,7 +22,7 @@ func TestConfigureInitContainer(t *testing.T) {
 
 		mutator.configureInitContainer(request, installerInfo)
 
-		require.Len(t, request.InstallContainer.Env, 6)
+		require.Len(t, request.InstallContainer.Env, expectedBaseInitContainerEnvCount)
 		assert.Len(t, request.InstallContainer.VolumeMounts, 2)
 		envvar := kubeobjects.FindEnvVar(request.InstallContainer.Env, config.AgentInstallModeEnv)
 		require.NotNil(t, envvar)
@@ -34,7 +36,7 @@ func TestConfigureInitContainer(t *testing.T) {
 
 		mutator.configureInitContainer(request, installerInfo)
 
-		require.Len(t, request.InstallContainer.Env, 6)
+		require.Len(t, request.InstallContainer.Env, expectedBaseInitContainerEnvCount)
 		assert.Len(t, request.InstallContainer.VolumeMounts, 2)
 		envvar := kubeobjects.FindEnvVar(request.InstallContainer.Env, config.AgentInstallModeEnv)
 		require.NotNil(t, envvar)

@@ -53,6 +53,7 @@ func TestNewEnv(t *testing.T) {
 		assert.True(t, env.FailurePolicy)
 		assert.NotEmpty(t, env.InstallerFlavor) // set to what is defined in arch.Flavor
 		assert.Empty(t, env.InstallerTech)
+		assert.NotEmpty(t, env.InstallVersion)
 		assert.Empty(t, env.InstallPath)
 		assert.Empty(t, env.Containers)
 
@@ -98,6 +99,7 @@ func TestNewEnv(t *testing.T) {
 		assert.True(t, env.FailurePolicy)
 		assert.NotEmpty(t, env.InstallerFlavor)
 		assert.NotEmpty(t, env.InstallerTech)
+		assert.NotEmpty(t, env.InstallVersion)
 		assert.NotEmpty(t, env.InstallPath)
 		assert.Len(t, env.Containers, 5)
 
@@ -129,6 +131,7 @@ func prepOneAgentTestEnv(t *testing.T) func() {
 	envs := []string{
 		config.AgentInstallerFlavorEnv,
 		config.AgentInstallerTechEnv,
+		config.AgentInstallerVersionEnv,
 		config.K8sNodeNameEnv,
 		config.K8sPodNameEnv,
 		config.K8sPodUIDEnv,
