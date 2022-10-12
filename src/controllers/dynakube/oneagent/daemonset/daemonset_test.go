@@ -1,7 +1,6 @@
 package daemonset
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"strings"
 	"testing"
 
@@ -9,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
+	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
