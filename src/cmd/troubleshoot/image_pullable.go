@@ -38,6 +38,7 @@ func checkImagePullable(troubleshootCtx *troubleshootContext) error {
 	}
 
 	if troubleshootCtx.dynakube.NeedsOneAgent() {
+
 		err := checkOneAgentImagePullable(troubleshootCtx)
 		if err != nil {
 			return err
@@ -68,7 +69,8 @@ func checkOneAgentImagePullable(troubleshootCtx *troubleshootContext) error {
 
 	dynakubeOneAgentImage := getOneAgentImageEndpoint(troubleshootCtx)
 
-	if err = checkComponentImagePullable(troubleshootCtx.httpClient, "OneAgent", pullSecret, dynakubeOneAgentImage); err != nil {
+	err = checkComponentImagePullable(troubleshootCtx.httpClient, "OneAgent", pullSecret, dynakubeOneAgentImage)
+	if err != nil {
 		return err
 	}
 
@@ -83,8 +85,10 @@ func checkOneAgentCodeModulesImagePullable(troubleshootCtx *troubleshootContext)
 		return err
 	}
 
-	if dynakubeOneAgentCodeModulesImage := getOneAgentCodeModulesImageEndpoint(troubleshootCtx); dynakubeOneAgentCodeModulesImage != "" {
-		if err := checkCustomModuleImagePullable(troubleshootCtx.httpClient, "OneAgentCodeModules", pullSecret, dynakubeOneAgentCodeModulesImage); err != nil {
+	dynakubeOneAgentCodeModulesImage := getOneAgentCodeModulesImageEndpoint(troubleshootCtx)
+	if dynakubeOneAgentCodeModulesImage != "" {
+		err = checkCustomModuleImagePullable(troubleshootCtx.httpClient, "OneAgentCodeModules", pullSecret, dynakubeOneAgentCodeModulesImage)
+		if err != nil {
 			return err
 		}
 	}
@@ -108,12 +112,13 @@ func checkActiveGateImagePullable(troubleshootCtx *troubleshootContext) error {
 }
 
 func checkComponentImagePullable(httpClient *http.Client, componentName string, pullSecret string, componentImage string) error {
-	// split image path into registry and image name
-	componentRegistry, componentImage, componentVersion, err := splitImageName(componentImage)
+	// split image path into registry and image nam
+	componentImageInfo, err := splitImageName(componentImage)
+	//	componentRegistry, componentImage, componentVersion, err := splitImageName(componentImage)
 	if err != nil {
 		return err
 	}
-	logInfof("using '%s' on '%s' with version '%s' as %s image", componentImage, componentRegistry, componentVersion, componentName)
+	logInfof("using '%s' on '%s' with version '%s' as %s image", componentImageInfo.image, componentImageInfo.registry, componentImageInfo.version, componentName)
 
 	imageWorks := false
 
@@ -134,57 +139,55 @@ func checkComponentImagePullable(httpClient *http.Client, componentName string, 
 			continue
 		}
 
-		if err := imageAvailable(httpClient, "https://"+registry+"/v2/"+componentImage+"/manifests/"+componentVersion, apiToken); err != nil {
-			logErrorf("cannot pull image '%s' with version '%s' from registry '%s': %v", componentImage, componentVersion, registry, err)
+		if err := imageAvailable(httpClient, "https://"+registry+"/v2/"+componentImageInfo.image+"/manifests/"+componentImageInfo.version, apiToken); err != nil {
+			logErrorf("cannot pull image '%s' with version '%s' from registry '%s': %v", componentImageInfo.image, componentImageInfo.version, registry, err)
 			continue
 		} else {
-			logInfof("image '%s' with version '%s' exists on registry '%s", componentImage, componentVersion, registry)
+			logInfof("image '%s' with version '%s' exists on registry '%s", componentImageInfo.image, componentImageInfo.version, registry)
 		}
 
 		imageWorks = true
 	}
 
 	if imageWorks {
-		logOkf("%s image '%s' found", componentName, componentRegistry+"/"+componentImage)
+		logOkf("%s image '%s' found", componentName, componentImageInfo.registry+"/"+componentImageInfo.image)
 	} else {
-		return fmt.Errorf("%s image '%s' missing", componentName, componentRegistry+"/"+componentImage)
+		return fmt.Errorf("%s image '%s' missing", componentName, componentImageInfo.registry+"/"+componentImageInfo.image)
 	}
 	return nil
 }
 
-func checkCustomModuleImagePullable(httpClient *http.Client, componentName string, pullSecret string, componentImage string) error {
+func checkCustomModuleImagePullable(httpClient *http.Client, componentName string, pullSecret string, codeModulesImage string) error {
 	// parse docker config
 	var result Auths
 	if err := json.Unmarshal([]byte(pullSecret), &result); err != nil {
 		return fmt.Errorf("invalid pull secret, could not unmarshal to JSON: %w", err)
 	}
 
-	componentRegistry, componentImagePath, err := splitCustomImageName(componentImage)
+	codeModulesImageInfo, err := splitCustomImageName(codeModulesImage)
 	if err != nil {
 		return fmt.Errorf("invalid image URL: %w", err)
 	}
+	logInfof("using '%s' on '%s' as OneAgentCodeModules image", codeModulesImage, codeModulesImageInfo.registry)
 
-	logInfof("using '%s' on '%s' as %s image", componentImage, componentRegistry, componentName)
-
-	endpoint, ok := result.Auths[componentRegistry]
+	endpoint, ok := result.Auths[codeModulesImageInfo.registry]
 	if !ok {
-		return fmt.Errorf("no credentials for registry %s available", componentRegistry)
+		return fmt.Errorf("no credentials for registry %s available", codeModulesImageInfo.registry)
 	}
-
-	logInfof("checking images for registry '%s'", componentRegistry)
+	logInfof("checking images for registry '%s'", codeModulesImageInfo.registry)
 
 	apiToken := base64.StdEncoding.EncodeToString([]byte(endpoint.Username + ":" + endpoint.Password))
-	if err := registryAvailable(httpClient, componentRegistry, apiToken); err != nil {
+	if err := registryAvailable(httpClient, codeModulesImageInfo.registry, apiToken); err != nil {
 		return err
 	}
 
-	logInfof("registry %s is accessible", componentRegistry)
+	logInfof("registry %s is accessible", codeModulesImageInfo.registry)
 
-	if err := imageAvailable(httpClient, "https://"+componentRegistry+"/"+componentImagePath, apiToken); err != nil {
-		return fmt.Errorf("image is missing, cannot pull image '%s' from registry '%s': %w", componentImage, componentRegistry, err)
+	if err := imageAvailable(httpClient, "https://"+codeModulesImageInfo.registry+"/"+codeModulesImageInfo.image, apiToken); err != nil {
+		return fmt.Errorf("image is missing, cannot pull image '%s' from registry '%s': %w", codeModulesImage, codeModulesImageInfo.registry, err)
 	}
 
-	logOkf("%s image '%s' exists on registry '%s", componentName, componentImagePath, componentRegistry)
+	logOkf("OneAgentCodeModules image '%s' exists on registry '%s", codeModulesImageInfo.image, codeModulesImageInfo.registry)
 	return nil
 }
 

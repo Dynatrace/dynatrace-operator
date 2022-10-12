@@ -258,6 +258,15 @@ func (builder *testDynaKubeBuilder) withActiveGateImage(image string) *testDynaK
 	return builder
 }
 
+func (builder *testDynaKubeBuilder) withActiveGateCapability(capability dynatracev1beta1.CapabilityDisplayName) *testDynaKubeBuilder {
+	if builder.dynakube.Spec.ActiveGate.Capabilities == nil {
+		builder.dynakube.Spec.ActiveGate.Capabilities = make([]dynatracev1beta1.CapabilityDisplayName, 0)
+	}
+
+	builder.dynakube.Spec.ActiveGate.Capabilities = append(builder.dynakube.Spec.ActiveGate.Capabilities, capability)
+	return builder
+}
+
 func (builder *testDynaKubeBuilder) withClassicFullStackCustomImage(image string) *testDynaKubeBuilder {
 	if builder.dynakube.Spec.OneAgent.ClassicFullStack != nil {
 		builder.dynakube.Spec.OneAgent.ClassicFullStack.Image = image
@@ -351,6 +360,20 @@ func (builder *testDynaKubeBuilder) withHostMonitoringImageVersion(version strin
 	} else {
 		builder.dynakube.Spec.OneAgent.HostMonitoring = &dynatracev1beta1.HostInjectSpec{
 			Version: version,
+		}
+	}
+	return builder
+}
+
+func (builder *testDynaKubeBuilder) withApplicationMonitoringUseCSIDriver(useCSIDriver bool) *testDynaKubeBuilder {
+	if builder.dynakube.Spec.OneAgent.ApplicationMonitoring != nil {
+		builder.dynakube.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver = &useCSIDriver
+	} else {
+		builder.dynakube.Spec.OneAgent.ApplicationMonitoring = &dynatracev1beta1.ApplicationMonitoringSpec{
+			AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{
+				InitResources: corev1.ResourceRequirements{},
+			},
+			UseCSIDriver: &useCSIDriver,
 		}
 	}
 	return builder

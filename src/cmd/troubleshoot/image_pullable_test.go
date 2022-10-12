@@ -300,7 +300,11 @@ func TestImagePullableActiveGateEndpoint(t *testing.T) {
 		troubleshootCtx := troubleshootContext{
 			namespaceName: testNamespace,
 			dynakubeName:  testDynakube,
-			dynakube:      *testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).withActiveGateImage(testValidCustomImageNameWithVersion).build(),
+			dynakube: *testNewDynakubeBuilder(testNamespace, testDynakube).
+				withApiUrl(testApiUrl).
+				withActiveGateImage(testValidCustomImageNameWithVersion).
+				withActiveGateCapability("routing").
+				build(),
 		}
 		endpoint := getActiveGateImageEndpoint(&troubleshootCtx)
 		assert.Equal(t, testValidCustomImageNameWithVersion, endpoint, "invalid image")
@@ -309,7 +313,11 @@ func TestImagePullableActiveGateEndpoint(t *testing.T) {
 		troubleshootCtx := troubleshootContext{
 			namespaceName: testNamespace,
 			dynakubeName:  testDynakube,
-			dynakube:      *testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).withActiveGateImage(testValidCustomImageNameWithoutVersion).build(),
+			dynakube: *testNewDynakubeBuilder(testNamespace, testDynakube).
+				withApiUrl(testApiUrl).
+				withActiveGateImage(testValidCustomImageNameWithoutVersion).
+				withActiveGateCapability("routing").
+				build(),
 		}
 		endpoint := getActiveGateImageEndpoint(&troubleshootCtx)
 		assert.Equal(t, testValidCustomImageNameWithoutVersion, endpoint, "invalid image")
@@ -454,7 +462,11 @@ func TestImagePullableOneAgentCodeModulesEndpoint(t *testing.T) {
 		troubleshootCtx := troubleshootContext{
 			namespaceName: testNamespace,
 			dynakubeName:  testDynakube,
-			dynakube:      *testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).withApplicationMonitoringCodeModulesImage(testValidOneAgentCodeModulesImageName).build(),
+			dynakube: *testNewDynakubeBuilder(testNamespace, testDynakube).
+				withApiUrl(testApiUrl).
+				withApplicationMonitoringCodeModulesImage(testValidOneAgentCodeModulesImageName).
+				withApplicationMonitoringUseCSIDriver(true).
+				build(),
 		}
 		endpoint := getOneAgentCodeModulesImageEndpoint(&troubleshootCtx)
 		assert.Equal(t, testValidOneAgentCodeModulesImageName, endpoint, "invalid image")
