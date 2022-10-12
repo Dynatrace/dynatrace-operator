@@ -2,6 +2,7 @@ package troubleshoot
 
 import (
 	"net/http"
+	"os"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
@@ -52,7 +53,16 @@ func (builder CommandBuilder) Build() *cobra.Command {
 
 func addFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&dynakubeFlagValue, dynakubeFlagName, "dynakube", "Specify a different Dynakube name.")
-	cmd.PersistentFlags().StringVar(&namespaceFlagValue, namespaceFlagName, "dynatrace", "Specify a different Namespace.")
+	cmd.PersistentFlags().StringVar(&namespaceFlagValue, namespaceFlagName, defaultNamespace(), "Specify a different Namespace.")
+}
+
+func defaultNamespace() string {
+	namespace := os.Getenv("POD_NAMESPACE")
+
+	if namespace == "" {
+		return "dynatrace"
+	}
+	return namespace
 }
 
 func clusterOptions(opts *cluster.Options) {
