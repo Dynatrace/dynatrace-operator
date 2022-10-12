@@ -124,7 +124,7 @@ func TestMutate(t *testing.T) {
 		assert.Len(t, request.Pod.Annotations, initialAnnotationsLen+1)
 		assert.Equal(t, initialInitContainers, request.Pod.Spec.InitContainers)
 
-		assert.Len(t, request.InstallContainer.Env, 6+(initialContainersLen*2))
+		assert.Len(t, request.InstallContainer.Env, expectedBaseInitContainerEnvCount+(initialContainersLen*2))
 		assert.Len(t, request.InstallContainer.VolumeMounts, 3)
 	})
 	t.Run("everything turned on, should mutate the pod and init container in the request", func(t *testing.T) {
@@ -148,7 +148,7 @@ func TestMutate(t *testing.T) {
 		assert.Len(t, request.Pod.Annotations, initialAnnotationsLen+1)
 		assert.Equal(t, initialInitContainers, request.Pod.Spec.InitContainers)
 
-		assert.Len(t, request.InstallContainer.Env, 6+(initialContainersLen*2))
+		assert.Len(t, request.InstallContainer.Env, expectedBaseInitContainerEnvCount+(initialContainersLen*2))
 		assert.Len(t, request.InstallContainer.VolumeMounts, 3)
 	})
 }
