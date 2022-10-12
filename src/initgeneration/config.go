@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	log = logger.NewDTLogger().WithName("initgeneration")
+	log = logger.Factory.GetLogger("initgeneration")
 )

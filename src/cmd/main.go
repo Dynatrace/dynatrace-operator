@@ -32,7 +32,7 @@ import (
 )
 
 var (
-	log = logger.NewDTLogger().WithName("main")
+	log = logger.Factory.GetLogger("main")
 )
 
 const (
