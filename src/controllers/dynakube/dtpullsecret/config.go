@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	log = logger.NewDTLogger().WithName("dynakube-pullsecret")
+	log = logger.Factory.GetLogger("dynakube-pullsecret")
 )

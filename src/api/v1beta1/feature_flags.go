@@ -97,7 +97,7 @@ const (
 )
 
 var (
-	log = logger.NewDTLogger().WithName("dynakube-api")
+	log = logger.Factory.GetLogger("dynakube-api")
 )
 
 func (dk *DynaKube) getDisableFlagWithDeprecatedAnnotation(annotation string, deprecatedAnnotation string) bool {

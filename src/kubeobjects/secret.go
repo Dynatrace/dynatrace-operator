@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/logger"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -128,8 +127,8 @@ func ExtractToken(secret *corev1.Secret, key string) (string, error) {
 	return strings.TrimSpace(string(value)), nil
 }
 
-func GetDataFromSecretName(apiReader client.Reader, namespacedName types.NamespacedName, dataKey string) (string, error) {
-	query := NewSecretQuery(context.TODO(), nil, apiReader, logger.NewDTLogger())
+func GetDataFromSecretName(apiReader client.Reader, namespacedName types.NamespacedName, dataKey string, log logr.Logger) (string, error) {
+	query := NewSecretQuery(context.TODO(), nil, apiReader, log)
 	secret, err := query.Get(namespacedName)
 	if err != nil {
 		return "", errors.WithStack(err)

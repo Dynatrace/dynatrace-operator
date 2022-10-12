@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	log = logger.NewDTLogger().WithName("automatic-api-monitoring")
+	log = logger.Factory.GetLogger("automatic-api-monitoring")
 )
