@@ -185,9 +185,8 @@ func (dk *DynaKube) FeatureDisableMetadataEnrichment() bool {
 
 // FeatureAutomaticInjection controls OneAgent is injected to pods in selected namespaces automatically ("automatic-injection=true" or flag not set)
 // or if pods need to be opted-in one by one ("automatic-injection=false")
-func (dk *DynaKube) FeatureEnableAutomaticInjection() bool {
-	autoInjectionFlag := dk.getFeatureFlagRaw(AnnotationFeatureAutomaticInjection)
-	return autoInjectionFlag == "true" || len(autoInjectionFlag) == 0
+func (dk *DynaKube) FeatureAutomaticInjection() bool {
+	return dk.getFeatureFlagRaw(AnnotationFeatureAutomaticInjection) != "false"
 }
 
 // FeatureUseActiveGateImageForStatsd is a feature flag that makes the operator use ActiveGate image when initializing Extension Controller and Statsd containers
