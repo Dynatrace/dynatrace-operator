@@ -1,6 +1,7 @@
 package daemonset
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"strings"
 	"testing"
 
@@ -612,7 +613,8 @@ func TestAnnotations(t *testing.T) {
 			},
 		}
 		expectedAnnotations := map[string]string{
-			annotationUnprivileged: annotationUnprivilegedValue,
+			webhook.AnnotationOneAgentInject: "false",
+			annotationUnprivileged:           annotationUnprivilegedValue,
 		}
 
 		builder := NewCloudNativeFullStack(&dynakube, testClusterID)
@@ -631,7 +633,8 @@ func TestAnnotations(t *testing.T) {
 			},
 		}
 		expectedAnnotations := map[string]string{
-			annotationUnprivileged: annotationUnprivilegedValue,
+			webhook.AnnotationOneAgentInject: "false",
+			annotationUnprivileged:           annotationUnprivilegedValue,
 		}
 
 		builder := NewHostMonitoring(&dynakube, testClusterID)
@@ -650,7 +653,8 @@ func TestAnnotations(t *testing.T) {
 			},
 		}
 		expectedAnnotations := map[string]string{
-			annotationUnprivileged: annotationUnprivilegedValue,
+			webhook.AnnotationOneAgentInject: "false",
+			annotationUnprivileged:           annotationUnprivilegedValue,
 		}
 
 		builder := NewClassicFullStack(&dynakube, testClusterID)
@@ -675,8 +679,9 @@ func TestAnnotations(t *testing.T) {
 			},
 		}
 		expectedAnnotations := map[string]string{
-			annotationUnprivileged: annotationUnprivilegedValue,
-			testKey:                testName,
+			webhook.AnnotationOneAgentInject: "false",
+			annotationUnprivileged:           annotationUnprivilegedValue,
+			testKey:                          testName,
 		}
 
 		builder := NewCloudNativeFullStack(&dynakube, testClusterID)
@@ -699,8 +704,9 @@ func TestAnnotations(t *testing.T) {
 			},
 		}
 		expectedAnnotations := map[string]string{
-			annotationUnprivileged: annotationUnprivilegedValue,
-			testKey:                testName,
+			webhook.AnnotationOneAgentInject: "false",
+			annotationUnprivileged:           annotationUnprivilegedValue,
+			testKey:                          testName,
 		}
 
 		builder := NewHostMonitoring(&dynakube, testClusterID)
@@ -723,8 +729,9 @@ func TestAnnotations(t *testing.T) {
 			},
 		}
 		expectedAnnotations := map[string]string{
-			annotationUnprivileged: annotationUnprivilegedValue,
-			testKey:                testName,
+			webhook.AnnotationOneAgentInject: "false",
+			annotationUnprivileged:           annotationUnprivilegedValue,
+			testKey:                          testName,
 		}
 
 		builder := NewClassicFullStack(&dynakube, testClusterID)

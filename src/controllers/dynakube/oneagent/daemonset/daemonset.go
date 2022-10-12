@@ -4,6 +4,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
+	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -143,7 +144,8 @@ func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	)
 	maxUnavailable := intstr.FromInt(instance.FeatureOneAgentMaxUnavailable())
 	annotations := map[string]string{
-		annotationUnprivileged: annotationUnprivilegedValue,
+		annotationUnprivileged:           annotationUnprivilegedValue,
+		webhook.AnnotationOneAgentInject: "false",
 	}
 
 	annotations = kubeobjects.MergeMap(annotations, dsInfo.hostInjectSpec.Annotations)

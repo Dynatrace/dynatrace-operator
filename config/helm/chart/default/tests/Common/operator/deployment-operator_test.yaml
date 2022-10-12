@@ -385,6 +385,7 @@ tests:
       - equal:
           path: spec.template.metadata.annotations
           value:
+            dynatrace.com/inject: "false"
             testKey: testValue
 
   - it: should take custom labels in spec.template.metadata.labels path
