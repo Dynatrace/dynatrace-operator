@@ -29,6 +29,24 @@ func addNetworkZoneEnv(container *corev1.Container, networkZone string) {
 	)
 }
 
+func addVersionDetectionEnvs(container *corev1.Container, labelMapping VersionLabelMapping) {
+	for envName, fieldPath := range labelMapping {
+		if kubeobjects.EnvVarIsIn(container.Env, envName) {
+			continue
+		}
+		container.Env = append(container.Env,
+			corev1.EnvVar{
+				Name: envName,
+				ValueFrom: &corev1.EnvVarSource{
+					FieldRef: &corev1.ObjectFieldSelector{
+						FieldPath: fieldPath,
+					},
+				},
+			},
+		)
+	}
+}
+
 func addProxyEnv(container *corev1.Container) {
 	container.Env = append(container.Env,
 		corev1.EnvVar{

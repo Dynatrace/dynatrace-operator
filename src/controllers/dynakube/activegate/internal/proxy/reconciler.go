@@ -68,7 +68,8 @@ func (r *Reconciler) generateForDynakube(ctx context.Context, dynakube *dynatrac
 	}
 	secretQuery := kubeobjects.NewSecretQuery(ctx, r.client, r.apiReader, log)
 
-	return errors.WithStack(secretQuery.CreateOrUpdate(*secret))
+	err = secretQuery.CreateOrUpdate(*secret)
+	return errors.WithStack(err)
 }
 
 func (r *Reconciler) ensureDeleted(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {

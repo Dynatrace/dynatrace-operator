@@ -89,8 +89,8 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		}
 		return reconcile.Result{}, err
 	}
-	if !dk.NeedsCSIDriver() {
-		log.Info("CSI driver not needed")
+	if !dk.NeedsCSIDriver() || !dk.NeedAppInjection() {
+		log.Info("CSI driver provisioner not needed")
 		return reconcile.Result{RequeueAfter: longRequeueDuration}, provisioner.db.DeleteDynakube(ctx, request.Name)
 	}
 
@@ -173,7 +173,7 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Cont
 
 	var agentUpdater *agentUpdater
 	if dk.CodeModulesImage() != "" {
-		connectionInfo, err := dtc.GetConnectionInfo()
+		connectionInfo, err := dtc.GetOneAgentConnectionInfo()
 		if err != nil {
 			log.Info("could not query connection info")
 			return nil, false, err

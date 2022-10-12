@@ -601,7 +601,7 @@ func createDTMockClient(paasTokenScopes, apiTokenScopes dtclient.TokenScopes) *d
 		Host:     testHost,
 		Port:     testPort,
 	}, nil)
-	mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
+	mockClient.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{
 		CommunicationHosts: []dtclient.CommunicationHost{
 			{
 				Protocol: testProtocol,
@@ -614,11 +614,18 @@ func createDTMockClient(paasTokenScopes, apiTokenScopes dtclient.TokenScopes) *d
 				Port:     testAnotherPort,
 			},
 		},
-		TenantUUID: testUUID,
+		ConnectionInfo: dtclient.ConnectionInfo{
+			TenantUUID: testUUID,
+		},
 	}, nil)
 	mockClient.On("GetTokenScopes", testPaasToken).Return(paasTokenScopes, nil)
 	mockClient.On("GetTokenScopes", testAPIToken).Return(apiTokenScopes, nil)
-	mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{TenantUUID: "abc123456"}, nil)
+	mockClient.On("GetOneAgentConnectionInfo").Return(
+		dtclient.OneAgentConnectionInfo{
+			ConnectionInfo: dtclient.ConnectionInfo{
+				TenantUUID: "abc123456",
+			},
+		}, nil)
 	mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(testVersion, nil)
 	mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypePaaS).Return(testVersion, nil)
 	mockClient.On("GetMonitoredEntitiesForKubeSystemUUID", mock.AnythingOfType("string")).
@@ -627,8 +634,7 @@ func createDTMockClient(paasTokenScopes, apiTokenScopes dtclient.TokenScopes) *d
 		Return(dtclient.GetSettingsResponse{}, nil)
 	mockClient.On("CreateOrUpdateKubernetesSetting", testName, testUID, mock.AnythingOfType("string")).
 		Return(testObjectID, nil)
-	mockClient.On("GetAgentTenantInfo").Return(&dtclient.AgentTenantInfo{}, nil)
-	mockClient.On("GetActiveGateTenantInfo").Return(&dtclient.ActiveGateTenantInfo{}, nil)
+	mockClient.On("GetActiveGateConnectionInfo").Return(&dtclient.ActiveGateConnectionInfo{}, nil)
 
 	return mockClient
 }

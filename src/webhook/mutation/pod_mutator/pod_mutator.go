@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -54,7 +55,7 @@ func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.
 	if err != nil {
 		return silentErrorResponse(mutationRequest.Pod, err)
 	}
-	if noMutationRequired(mutationRequest) {
+	if !mutationRequired(mutationRequest) {
 		return emptyPatch
 	}
 
@@ -81,8 +82,11 @@ func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.
 	return createResponseForPod(mutationRequest.Pod, request)
 }
 
-func noMutationRequired(mutationRequest *dtwebhook.MutationRequest) bool {
-	return mutationRequest == nil
+func mutationRequired(mutationRequest *dtwebhook.MutationRequest) bool {
+	if mutationRequest == nil {
+		return false
+	}
+	return kubeobjects.GetFieldBool(mutationRequest.Pod.Annotations, dtwebhook.AnnotationDynatraceInject, true)
 }
 
 func (webhook *podMutatorWebhook) setupEventRecorder(mutationRequest *dtwebhook.MutationRequest) {

@@ -47,15 +47,28 @@ func (query SecretQuery) Update(secret corev1.Secret) error {
 }
 
 func (query SecretQuery) CreateOrUpdate(secret corev1.Secret) error {
-	err := query.Create(secret)
-
-	if !k8serrors.IsAlreadyExists(err) {
+	currentSecret, err := query.Get(types.NamespacedName{Name: secret.Name, Namespace: secret.Namespace})
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			err = query.Create(secret)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			return nil
+		}
 		return errors.WithStack(err)
 	}
 
-	query.log.Info("secret already exists", "name", secret.Name, "namespace", secret.Namespace)
+	if AreSecretsEqual(secret, currentSecret) {
+		query.log.Info("secret unchanged", "name", secret.Name, "namespace", secret.Namespace)
+		return nil
+	}
 
-	return errors.WithStack(query.Update(secret))
+	err = query.Update(secret)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
 }
 
 func AreSecretsEqual(secret corev1.Secret, other corev1.Secret) bool {

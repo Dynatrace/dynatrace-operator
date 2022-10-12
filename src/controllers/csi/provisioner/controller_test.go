@@ -179,7 +179,38 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		dynakubeMetadatas, err := db.GetAllDynakubes(ctx)
 		require.NoError(t, err)
 		require.Len(t, dynakubeMetadatas, 0)
+	})
+	t.Run(`host monitoring used`, func(t *testing.T) {
+		gc := &CSIGarbageCollectorMock{}
+		gc.On("Reconcile").Return(reconcile.Result{}, nil)
+		db := metadata.FakeMemoryDB()
+		db.InsertDynakube(ctx, &metadata.Dynakube{Name: dynakubeName})
+		provisioner := &OneAgentProvisioner{
+			apiReader: fake.NewClient(
+				&dynatracev1beta1.DynaKube{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: dynakubeName,
+					},
+					Spec: dynatracev1beta1.DynaKubeSpec{
+						OneAgent: dynatracev1beta1.OneAgentSpec{
+							HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
+						},
+					},
+				},
+			),
+			db: db,
+			gc: gc,
+		}
+		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakubeName}})
 
+		gc.AssertNumberOfCalls(t, "Reconcile", 0)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.Equal(t, reconcile.Result{RequeueAfter: longRequeueDuration}, result)
+
+		dynakubeMetadatas, err := db.GetAllDynakubes(ctx)
+		require.NoError(t, err)
+		require.Len(t, dynakubeMetadatas, 0)
 	})
 	t.Run(`no tokens`, func(t *testing.T) {
 		gc := &CSIGarbageCollectorMock{}
@@ -249,8 +280,10 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			Fs: afero.NewMemMapFs(),
 		}
 		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
-			TenantUUID: tenantUUID,
+		mockClient.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{
+			ConnectionInfo: dtclient.ConnectionInfo{
+				TenantUUID: tenantUUID,
+			},
 		}, nil)
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
@@ -293,8 +326,10 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		gc.On("Reconcile").Return(reconcile.Result{}, nil)
 		memFs := afero.NewMemMapFs()
 		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
-			TenantUUID: tenantUUID,
+		mockClient.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{
+			ConnectionInfo: dtclient.ConnectionInfo{
+				TenantUUID: tenantUUID,
+			},
 		}, nil)
 		mockClient.On("GetAgent",
 			mock.AnythingOfType("string"),
@@ -355,8 +390,10 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		gc.On("Reconcile").Return(reconcile.Result{}, nil)
 		memFs := afero.NewMemMapFs()
 		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
-			TenantUUID: tenantUUID,
+		mockClient.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{
+			ConnectionInfo: dtclient.ConnectionInfo{
+				TenantUUID: tenantUUID,
+			},
 		}, nil)
 		mockClient.On("GetLatestAgentVersion",
 			mock.AnythingOfType("string"),
@@ -403,8 +440,10 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
-			TenantUUID: tenantUUID,
+		mockClient.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{
+			ConnectionInfo: dtclient.ConnectionInfo{
+				TenantUUID: tenantUUID,
+			},
 		}, nil)
 		mockClient.On("GetLatestAgentVersion",
 			mock.AnythingOfType("string"),

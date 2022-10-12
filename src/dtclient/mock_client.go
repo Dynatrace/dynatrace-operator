@@ -11,14 +11,9 @@ type MockDynatraceClient struct {
 	mock.Mock
 }
 
-func (o *MockDynatraceClient) GetAgentTenantInfo() (*AgentTenantInfo, error) {
+func (o *MockDynatraceClient) GetActiveGateConnectionInfo() (*ActiveGateConnectionInfo, error) {
 	args := o.Called()
-	return args.Get(0).(*AgentTenantInfo), args.Error(1)
-}
-
-func (o *MockDynatraceClient) GetActiveGateTenantInfo() (*ActiveGateTenantInfo, error) {
-	args := o.Called()
-	return args.Get(0).(*ActiveGateTenantInfo), args.Error(1)
+	return args.Get(0).(*ActiveGateConnectionInfo), args.Error(1)
 }
 
 func (o *MockDynatraceClient) GetLatestAgentVersion(os, installerType string) (string, error) {
@@ -46,9 +41,9 @@ func (o *MockDynatraceClient) GetAgentVersions(os, installerType, flavor, arch s
 	return args.Get(0).([]string), args.Error(1)
 }
 
-func (o *MockDynatraceClient) GetConnectionInfo() (ConnectionInfo, error) {
+func (o *MockDynatraceClient) GetOneAgentConnectionInfo() (OneAgentConnectionInfo, error) {
 	args := o.Called()
-	return args.Get(0).(ConnectionInfo), args.Error(1)
+	return args.Get(0).(OneAgentConnectionInfo), args.Error(1)
 }
 
 func (o *MockDynatraceClient) GetCommunicationHostForClient() (CommunicationHost, error) {
