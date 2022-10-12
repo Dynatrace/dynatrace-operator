@@ -40,3 +40,9 @@ go/build/manager/amd64: export GOOS=linux
 go/build/manager/amd64: export GOARCH=amd64
 go/build/manager/amd64: manifests/crd7generate go/fmt go/vet
 	go build -o bin/manager-amd64 ./src/cmd/operator/
+
+## Builds the Operators binary specifically for PPC^$LE and writes it to bin/manager
+go/build/manager/ppc64le: export GOOS=linux
+go/build/manager/ppc64le: export GOARCH=ppc64le
+go/build/manager/ppc64le: manifests/crd7generate go/fmt go/vet
+	go build -o bin/manager-ppc64le ./src/cmd/operator/

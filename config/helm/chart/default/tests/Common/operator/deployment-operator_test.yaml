@@ -127,6 +127,7 @@ tests:
                           values:
                             - amd64
                             - arm64
+                            - ppc64le
                         - key: kubernetes.io/os
                           operator: In
                           values:
@@ -142,6 +143,9 @@ tests:
               - effect: NoSchedule
                 key: kubernetes.io/arch
                 value: amd64
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: ppc64le
       - isNull:
           path: spec.template.spec.nodeSelector
 
@@ -166,6 +170,9 @@ tests:
             - effect: NoSchedule
               key: kubernetes.io/arch
               value: amd64
+            - effect: NoSchedule
+              key: kubernetes.io/arch
+              value: ppc64le
 
   - it: should have nodeSelectors if set in kubernetes
     set:
@@ -282,6 +289,7 @@ tests:
                           values:
                             - amd64
                             - arm64
+                            - ppc64le
                         - key: kubernetes.io/os
                           operator: In
                           values:
@@ -297,6 +305,9 @@ tests:
               - effect: NoSchedule
                 key: kubernetes.io/arch
                 value: amd64
+              - effect: NoSchedule
+                key: kubernetes.io/arch
+                value: ppc64le
       - isNull:
           path: spec.template.spec.nodeSelector
 
@@ -320,6 +331,9 @@ tests:
             - effect: NoSchedule
               key: kubernetes.io/arch
               value: amd64
+            - effect: NoSchedule
+              key: kubernetes.io/arch
+              value: ppc64le
 
   - it: should have nodeSelectors if set in openshift
     set:

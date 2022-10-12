@@ -4414,6 +4414,7 @@ spec:
                     values:
                       - amd64
                       - arm64
+                      - ppc64le
                   - key: kubernetes.io/os
                     operator: In
                     values:
@@ -4428,6 +4429,9 @@ spec:
           effect: NoSchedule
         - key: kubernetes.io/arch
           value: amd64
+          effect: NoSchedule
+        - key: kubernetes.io/arch
+          value: ppc64le
           effect: NoSchedule
 ---
 # Source: dynatrace-operator/templates/Common/webhook/deployment-webhook.yaml
@@ -4501,6 +4505,7 @@ spec:
                     values:
                       - amd64
                       - arm64
+                      - ppc64le
                   - key: kubernetes.io/os
                     operator: In
                     values:
@@ -4559,6 +4564,9 @@ spec:
           effect: NoSchedule
         - key: kubernetes.io/arch
           value: amd64
+          effect: NoSchedule
+        - key: kubernetes.io/arch
+          value: ppc64le
           effect: NoSchedule
 ---
 # Source: dynatrace-operator/templates/Common/webhook/mutatingwebhookconfiguration.yaml
@@ -5458,6 +5466,9 @@ spec:
           effect: NoSchedule
         - key: kubernetes.io/arch
           value: amd64
+          effect: NoSchedule
+        - key: kubernetes.io/arch
+          value: ppc64le
           effect: NoSchedule
         - key: ToBeDeletedByClusterAutoscaler
           operator: Exists

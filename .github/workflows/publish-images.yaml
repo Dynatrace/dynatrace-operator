@@ -30,7 +30,7 @@ jobs:
     needs: [prepare]
     strategy:
       matrix:
-        platform: [amd64, arm64]
+        platform: [amd64, arm64, ppc64le]
     steps:
       - name: Checkout
         uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
@@ -48,7 +48,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        platform: [amd64, arm64]
+        platform: [amd64, arm64, ppc64le]
         registry: [gcr, dockerhub, rhcc]
         include:
         - registry: rhcc
