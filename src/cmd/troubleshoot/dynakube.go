@@ -40,12 +40,19 @@ func checkDynakube(troubleshootCtx *troubleshootContext) error {
 	for _, test := range tests {
 		if err := test(troubleshootCtx); err != nil {
 			logErrorf(err.Error())
-			return fmt.Errorf("'%s:%s' Dynakube isn't valid", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
+			return fmt.Errorf("'%s:%s' Dynakube isn't valid. %s",
+				troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName, dynakubeNotValidMessage())
 		}
 	}
 
 	logOkf("'%s:%s' Dynakube is valid", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
 	return nil
+}
+
+func dynakubeNotValidMessage() string {
+	return fmt.Sprintf(
+		"Target namespace and dynakube can be changed by providing '--%s <namespace>' or '--%s <dynakube>' parameters.",
+		namespaceFlagName, dynakubeFlagName)
 }
 
 func checkDynakubeCrdExists(troubleshootCtx *troubleshootContext) error {
@@ -59,11 +66,16 @@ func checkDynakubeCrdExists(troubleshootCtx *troubleshootContext) error {
 
 func getSelectedDynakubeIfItExists(troubleshootCtx *troubleshootContext) error {
 	query := kubeobjects.NewDynakubeQuery(troubleshootCtx.apiReader, troubleshootCtx.namespaceName).WithContext(context.TODO())
-	if dynakube, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.dynakubeName}); err != nil {
-		return errorWithMessagef(err, "selected '%s:%s' Dynakube does not exist", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
+	dynakube, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.dynakubeName})
+
+	if err != nil {
+		return errorWithMessagef(err,
+			"selected '%s:%s' Dynakube does not exist",
+			troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
 	} else {
 		troubleshootCtx.dynakube = dynakube
 	}
+
 	logInfof("using '%s:%s' Dynakube", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
 	return nil
 }
