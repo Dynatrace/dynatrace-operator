@@ -144,8 +144,8 @@ func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	)
 	maxUnavailable := intstr.FromInt(instance.FeatureOneAgentMaxUnavailable())
 	annotations := map[string]string{
-		annotationUnprivileged:           annotationUnprivilegedValue,
-		webhook.AnnotationOneAgentInject: "false",
+		annotationUnprivileged:            annotationUnprivilegedValue,
+		webhook.AnnotationDynatraceInject: "false",
 	}
 
 	annotations = kubeobjects.MergeMap(annotations, dsInfo.hostInjectSpec.Annotations)
