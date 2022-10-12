@@ -13,6 +13,8 @@ const (
 	networkZoneEnv       = "DT_NETWORK_ZONE"
 	proxyEnv             = "DT_PROXY"
 	dynatraceMetadataEnv = "DT_DEPLOYMENT_METADATA"
+	releaseVersionEnv    = "DT_RELEASE_VERSION"
+	releaseProductEnv    = "DT_RELEASE_PRODUCT"
 
 	OneAgentBinVolumeName     = "oneagent-bin"
 	oneAgentShareVolumeName   = "oneagent-share"

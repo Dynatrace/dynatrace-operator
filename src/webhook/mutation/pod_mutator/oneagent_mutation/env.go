@@ -29,6 +29,24 @@ func addNetworkZoneEnv(container *corev1.Container, networkZone string) {
 	)
 }
 
+func addVersionDetectionEnvs(container *corev1.Container, labelMapping VersionLabelMapping) {
+	for envName, fieldPath := range labelMapping {
+		if kubeobjects.EnvVarIsIn(container.Env, envName) {
+			continue
+		}
+		container.Env = append(container.Env,
+			corev1.EnvVar{
+				Name: envName,
+				ValueFrom: &corev1.EnvVarSource{
+					FieldRef: &corev1.ObjectFieldSelector{
+						FieldPath: fieldPath,
+					},
+				},
+			},
+		)
+	}
+}
+
 func addProxyEnv(container *corev1.Container) {
 	container.Env = append(container.Env,
 		corev1.EnvVar{
@@ -50,6 +68,7 @@ func addInstallerInitEnvs(initContainer *corev1.Container, installer installerIn
 		corev1.EnvVar{Name: config.AgentInstallerTechEnv, Value: installer.technologies},
 		corev1.EnvVar{Name: config.AgentInstallPathEnv, Value: installer.installPath},
 		corev1.EnvVar{Name: config.AgentInstallerUrlEnv, Value: installer.installerURL},
+		corev1.EnvVar{Name: config.AgentInstallerVersionEnv, Value: installer.version},
 		corev1.EnvVar{Name: config.AgentInstallModeEnv, Value: volumeMode},
 		corev1.EnvVar{Name: config.AgentInjectedEnv, Value: "true"},
 	)
