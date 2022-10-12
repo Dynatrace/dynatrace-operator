@@ -71,6 +71,7 @@ const (
 	AnnotationFeatureOneAgentIgnoreProxy            = AnnotationFeaturePrefix + "oneagent-ignore-proxy"
 	AnnotationFeatureOneAgentInitialConnectRetry    = AnnotationFeaturePrefix + "oneagent-initial-connect-retry-ms"
 	AnnotationFeatureRunOneAgentContainerPrivileged = AnnotationFeaturePrefix + "oneagent-privileged"
+	AnnotationFeatureOneAgentImmutableImage         = AnnotationFeaturePrefix + "oneagent-immutable-image"
 
 	// injection (webhook)
 
@@ -82,10 +83,12 @@ const (
 	AnnotationFeatureWebhookReinvocationPolicy = AnnotationFeaturePrefix + "webhook-reinvocation-policy"
 	AnnotationFeatureMetadataEnrichment        = AnnotationFeaturePrefix + "metadata-enrichment"
 
-	AnnotationFeatureIgnoreUnknownState = AnnotationFeaturePrefix + "ignore-unknown-state"
-	AnnotationFeatureIgnoredNamespaces  = AnnotationFeaturePrefix + "ignored-namespaces"
-	AnnotationFeatureAutomaticInjection = AnnotationFeaturePrefix + "automatic-injection"
+	AnnotationFeatureIgnoreUnknownState    = AnnotationFeaturePrefix + "ignore-unknown-state"
+	AnnotationFeatureIgnoredNamespaces     = AnnotationFeaturePrefix + "ignored-namespaces"
+	AnnotationFeatureAutomaticInjection    = AnnotationFeaturePrefix + "automatic-injection"
+	AnnotationFeatureLabelVersionDetection = AnnotationFeaturePrefix + "label-version-detection"
 
+	// CSI
 	AnnotationFeatureMaxFailedCsiMountAttempts = AnnotationFeaturePrefix + "max-csi-mount-attempts"
 )
 
@@ -247,6 +250,11 @@ func (dk *DynaKube) FeatureActiveGateAuthToken() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateAuthToken) != "false"
 }
 
+// FeatureLabelVersionDetection is a feature flag to enable injecting additional environment variables based on user labels
+func (dk *DynaKube) FeatureLabelVersionDetection() bool {
+	return dk.getFeatureFlagRaw(AnnotationFeatureLabelVersionDetection) == "true"
+}
+
 // FeatureAgentInitialConnectRetry is a feature flag to configure startup delay of standalone agents
 func (dk *DynaKube) FeatureAgentInitialConnectRetry() int {
 	raw := dk.getFeatureFlagRaw(AnnotationFeatureOneAgentInitialConnectRetry)
@@ -277,6 +285,11 @@ func (dk *DynaKube) getFeatureFlagRaw(annotation string) string {
 		return raw
 	}
 	return ""
+}
+
+// FeatureOneAgentImmutableImage is a feature flag to treat the OneAgent image as immutable
+func (dk *DynaKube) FeatureOneAgentImmutableImage() bool {
+	return dk.getFeatureFlagRaw(AnnotationFeatureOneAgentImmutableImage) == "true"
 }
 
 func (dk *DynaKube) FeatureMaxFailedCsiMountAttempts() int {
