@@ -18,6 +18,7 @@ require (
 	github.com/spf13/cobra v1.5.0
 	github.com/stretchr/testify v1.8.0
 	go.uber.org/zap v1.23.0
+	golang.org/x/exp v0.0.0-20221011201855-a3968a42eed6
 	golang.org/x/sys v0.0.0-20220919091848-fb04ddd9f9c8
 	google.golang.org/grpc v1.50.0
 	istio.io/api v0.0.0-20220907134937-b47284812feb
