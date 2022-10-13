@@ -71,7 +71,7 @@ func (svr *CSIDriverServer) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (svr *CSIDriverServer) Start(ctx context.Context) error {
-	defer metadata.LogAccessOverview(ctx, log, svr.db)
+	defer metadata.LogAccessOverview(ctx, svr.db)
 	proto, addr, err := parseEndpoint(svr.opts.Endpoint)
 	if err != nil {
 		return fmt.Errorf("failed to parse endpoint '%s': %w", svr.opts.Endpoint, err)

@@ -4,4 +4,4 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/logger"
 )
 
-var log = logger.NewDTLogger().WithName("dynakube-activegate-proxy")
+var log = logger.Factory.GetLogger("dynakube-activegate-proxy")
