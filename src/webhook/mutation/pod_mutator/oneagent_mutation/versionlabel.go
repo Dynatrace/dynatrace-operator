@@ -26,7 +26,7 @@ func newVersionLabelMapping(namespace corev1.Namespace) VersionLabelMapping {
 }
 
 func getMappingFromNamespace(namespace corev1.Namespace) VersionLabelMapping {
-	mappingKey2versionLabelKey := map[string]string{
+	annotationLabelMap := map[string]string{
 		versionMappingAnnotationName: releaseVersionEnv,
 		productMappingAnnotationName: releaseProductEnv,
 		stageMappingAnnotationName:   releaseStageEnv,
@@ -34,7 +34,7 @@ func getMappingFromNamespace(namespace corev1.Namespace) VersionLabelMapping {
 	}
 
 	versionLabelMapping := VersionLabelMapping{}
-	for mappingKey, versionLabelKey := range mappingKey2versionLabelKey {
+	for mappingKey, versionLabelKey := range annotationLabelMap {
 		if fieldRef, ok := namespace.Annotations[mappingKey]; ok {
 			versionLabelMapping[versionLabelKey] = fieldRef
 		}

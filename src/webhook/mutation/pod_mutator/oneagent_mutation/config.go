@@ -9,10 +9,11 @@ var (
 )
 
 const (
-	preloadEnv             = "LD_PRELOAD"
-	networkZoneEnv         = "DT_NETWORK_ZONE"
-	proxyEnv               = "DT_PROXY"
-	dynatraceMetadataEnv   = "DT_DEPLOYMENT_METADATA"
+	preloadEnv           = "LD_PRELOAD"
+	networkZoneEnv       = "DT_NETWORK_ZONE"
+	proxyEnv             = "DT_PROXY"
+	dynatraceMetadataEnv = "DT_DEPLOYMENT_METADATA"
+
 	releaseVersionEnv      = "DT_RELEASE_VERSION"
 	releaseProductEnv      = "DT_RELEASE_PRODUCT"
 	releaseStageEnv        = "DT_RELEASE_STAGE"
