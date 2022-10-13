@@ -339,6 +339,7 @@ tests:
       - equal:
           path: spec.template.metadata.annotations
           value:
+            dynatrace.com/inject: "false"
             cluster-autoscaler.kubernetes.io/enable-ds-eviction: "false"
             kubectl.kubernetes.io/default-container: provisioner
             testKey: testValue

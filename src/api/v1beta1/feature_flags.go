@@ -18,7 +18,6 @@ package v1beta1
 
 import (
 	"encoding/json"
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -160,7 +159,6 @@ func (dk *DynaKube) FeatureIgnoredNamespaces() []string {
 
 func (dk *DynaKube) getDefaultIgnoredNamespaces() []string {
 	defaultIgnoredNamespaces := []string{
-		fmt.Sprintf("^%s$", dk.Namespace),
 		"^kube-.*",
 		"^openshift(-.*)?",
 	}
