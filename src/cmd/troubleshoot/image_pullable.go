@@ -129,10 +129,10 @@ func checkComponentImagePullable(httpClient *http.Client, componentName string, 
 		return nil
 	}
 
-	for registry, endpoint := range result.Auths {
+	for registry, credentials := range result.Auths {
 		logInfof("checking images for registry '%s'", registry)
 
-		apiToken := base64.StdEncoding.EncodeToString([]byte(endpoint.Username + ":" + endpoint.Password))
+		apiToken := base64.StdEncoding.EncodeToString([]byte(credentials.Username + ":" + credentials.Password))
 
 		if err := registryAvailable(httpClient, registry+"/v2/", apiToken); err != nil {
 			logErrorf("%v", err)
@@ -170,13 +170,13 @@ func checkCustomModuleImagePullable(httpClient *http.Client, componentName strin
 	}
 	logInfof("using '%s' on '%s' as OneAgentCodeModules image", codeModulesImage, codeModulesImageInfo.registry)
 
-	endpoint, ok := result.Auths[codeModulesImageInfo.registry]
-	if !ok {
+	credentials, hasCredentials := result.Auths[codeModulesImageInfo.registry]
+	if !hasCredentials {
 		return fmt.Errorf("no credentials for registry %s available", codeModulesImageInfo.registry)
 	}
 	logInfof("checking images for registry '%s'", codeModulesImageInfo.registry)
 
-	apiToken := base64.StdEncoding.EncodeToString([]byte(endpoint.Username + ":" + endpoint.Password))
+	apiToken := base64.StdEncoding.EncodeToString([]byte(credentials.Username + ":" + credentials.Password))
 	if err := registryAvailable(httpClient, codeModulesImageInfo.registry, apiToken); err != nil {
 		return err
 	}

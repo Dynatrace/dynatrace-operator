@@ -19,10 +19,12 @@ type imageInfo struct {
 	version  string
 }
 
+// Split image path in into its components.
+// Some image path examples that work with this function:
+//
+//	aaa00000.dynatrace.com/linux/oneagent
+//	aaa00000.dynatrace.com/linux/activegate:1.123
 func splitImageName(imageName string) (imageInfo, error) {
-	// some image path examples that work with this function
-	//   aaa00000.dynatrace.com/linux/oneagent
-	//   aaa00000.dynatrace.com/linux/activegate:1.123
 
 	imgInfo := imageInfo{}
 
@@ -30,35 +32,45 @@ func splitImageName(imageName string) (imageInfo, error) {
 	if len(registryMatches) < 2 {
 		return imageInfo{}, fmt.Errorf("invalid image - registry not found (%s)", imageName)
 	}
-	imgInfo.registry = registryRegex.FindStringSubmatch(imageName)[1]
+	imgInfo.registry = registryMatches[1]
 
 	imageMatches := imageRegex.FindStringSubmatch(imageName)
 	if len(imageMatches) < 2 {
 		return imageInfo{}, fmt.Errorf("invalid image - endpoint not found (%s)", imageName)
 	}
-	imgInfo.image = imageRegex.FindStringSubmatch(imageName)[1]
+	imgInfo.image = imageMatches[1]
 
 	imgInfo.version = ""
 
 	// check if image has version set
-	fields := strings.Split(imgInfo.image, ":")
-	if len(fields) == 1 || len(fields) >= 2 && fields[1] == "" {
-		// no version set, default to latest
-		imgInfo.version = "latest"
-		logInfof("using latest image version")
-	} else if len(fields) >= 2 {
-		imgInfo.image = fields[0]
-		imgInfo.version = fields[1]
-		logInfof("using custom image version: %s", imgInfo.version)
-	} else {
-		return imageInfo{}, fmt.Errorf("invalid version of the image {\"image\": \"%s\"}", imgInfo.image)
+	var err error
+	imgInfo.image, imgInfo.version, err = parseImageVersion(imgInfo.image)
+	if err != nil {
+		return imageInfo{}, err
 	}
 	return imgInfo, nil
+}
+
+func parseImageVersion(image string) (string, string, error) {
+	fields := strings.Split(image, ":")
+
+	if len(fields) == 1 || len(fields) >= 2 && fields[1] == "" {
+		logInfof("using latest image version")
+		return fields[0], "latest", nil
+	}
+
+	if len(fields) >= 2 {
+		logInfof("using custom image version: %s", fields[1])
+		return fields[0], fields[1], nil
+	}
+
+	return "", "", fmt.Errorf("invalid version of the image {\"image\": \"%s\"}", image)
 }
 
 func splitCustomImageName(imageURL string) (imageInfo, error) {
 	imgInfo := imageInfo{}
 
+	// extract registry (greedy until first '/') and image name
 	customImageRegistryRegex := regexp.MustCompile(`^(.*?)/(.*)$`)
 
 	registryMatches := customImageRegistryRegex.FindStringSubmatch(imageURL)
@@ -74,15 +86,16 @@ func splitCustomImageName(imageURL string) (imageInfo, error) {
 	if len(imgInfo.image) == 0 {
 		return imageInfo{}, fmt.Errorf("invalid image path (%s) - image path not found", imageURL)
 	}
+
 	return imgInfo, nil
 }
 
 func getOneAgentImageEndpoint(troubleshootCtx *troubleshootContext) string {
 	imageEndpoint := ""
 
-	sr := removeSchemaRegex.FindStringSubmatch(troubleshootCtx.dynakube.Spec.APIURL)
-	er := removeApiEndpointRegex.FindStringSubmatch(sr[1])
-	imageEndpoint = er[1] + "/linux/oneagent"
+	apiEndpoint := removeSchemaRegex.FindStringSubmatch(troubleshootCtx.dynakube.Spec.APIURL)
+	registry := removeApiEndpointRegex.FindStringSubmatch(apiEndpoint[1])
+	imageEndpoint = registry[1] + "/linux/oneagent"
 
 	customImage := troubleshootCtx.dynakube.CustomOneAgentImage()
 	version := troubleshootCtx.dynakube.Version()
@@ -111,9 +124,9 @@ func getOneAgentCodeModulesImageEndpoint(troubleshootCtx *troubleshootContext) s
 func getActiveGateImageEndpoint(troubleshootCtx *troubleshootContext) string {
 	imageEndpoint := ""
 
-	sr := removeSchemaRegex.FindStringSubmatch(troubleshootCtx.dynakube.Spec.APIURL)
-	er := removeApiEndpointRegex.FindStringSubmatch(sr[1])
-	imageEndpoint = er[1] + "/linux/activegate"
+	apiEndpoint := removeSchemaRegex.FindStringSubmatch(troubleshootCtx.dynakube.Spec.APIURL)
+	registry := removeApiEndpointRegex.FindStringSubmatch(apiEndpoint[1])
+	imageEndpoint = registry[1] + "/linux/activegate"
 
 	customActiveGateImage := troubleshootCtx.dynakube.CustomActiveGateImage()
 	if customActiveGateImage != "" {
