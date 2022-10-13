@@ -117,10 +117,12 @@ func TestReinvokeUserContainers(t *testing.T) {
 		assert.Equal(t, request.Pod.Spec.Containers[0].Image, installContainer.Env[1].Value)
 		assert.Equal(t, request.Pod.Spec.Containers[1].Name, installContainer.Env[2].Value)
 		assert.Equal(t, request.Pod.Spec.Containers[1].Image, installContainer.Env[3].Value)
+		assert.Equal(t, request.Pod.Spec.Containers[2].Name, installContainer.Env[4].Value)
+		assert.Equal(t, request.Pod.Spec.Containers[2].Image, installContainer.Env[5].Value)
 		assert.Len(t, request.Pod.Spec.Containers[0].VolumeMounts, initialContainerVolumeMountsLen+expectedAdditionalVolumeCount)
 		assert.Len(t, request.Pod.Spec.Containers[0].Env, initialNumberOfContainerEnvsLen+expectedAdditionalEnvCount)
-		assert.Len(t, request.Pod.Spec.Containers[1].VolumeMounts, expectedAdditionalVolumeCount)
-		assert.Len(t, request.Pod.Spec.Containers[1].Env, expectedAdditionalEnvCount)
+		assert.Len(t, request.Pod.Spec.Containers[2].VolumeMounts, expectedAdditionalVolumeCount)
+		assert.Len(t, request.Pod.Spec.Containers[2].Env, expectedAdditionalEnvCount)
 	})
 
 	t.Run("add envs and volume mounts (complex dynakube)", func(t *testing.T) {
@@ -151,11 +153,13 @@ func TestReinvokeUserContainers(t *testing.T) {
 		assert.Equal(t, request.Pod.Spec.Containers[0].Image, installContainer.Env[1].Value)
 		assert.Equal(t, request.Pod.Spec.Containers[1].Name, installContainer.Env[2].Value)
 		assert.Equal(t, request.Pod.Spec.Containers[1].Image, installContainer.Env[3].Value)
+		assert.Equal(t, request.Pod.Spec.Containers[2].Name, installContainer.Env[4].Value)
+		assert.Equal(t, request.Pod.Spec.Containers[2].Image, installContainer.Env[5].Value)
 
 		assert.Len(t, request.Pod.Spec.Containers[0].VolumeMounts, initialContainerVolumeMountsLen+expectedAdditionalVolumeCount)
 		assert.Len(t, request.Pod.Spec.Containers[0].Env, initialNumberOfContainerEnvsLen+expectedAdditionalEnvCount)
-		assert.Len(t, request.Pod.Spec.Containers[1].VolumeMounts, expectedAdditionalVolumeCount)
-		assert.Len(t, request.Pod.Spec.Containers[1].Env, expectedAdditionalEnvCount)
+		assert.Len(t, request.Pod.Spec.Containers[2].VolumeMounts, expectedAdditionalVolumeCount)
+		assert.Len(t, request.Pod.Spec.Containers[2].Env, expectedAdditionalEnvCount)
 	})
 }
 

@@ -304,8 +304,18 @@ func getTestPod(annotations map[string]string) *corev1.Pod {
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{
-					Name:  "container",
+					Name:  "main-container",
 					Image: "alpine",
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "volume",
+							MountPath: "/volume",
+						},
+					},
+				},
+				{
+					Name:  "sidecar-container",
+					Image: "nginx",
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      "volume",
@@ -317,7 +327,7 @@ func getTestPod(annotations map[string]string) *corev1.Pod {
 			InitContainers: []corev1.Container{
 				{
 					Name:  "init-container",
-					Image: "alpine",
+					Image: "curlimages/curl",
 				},
 			},
 			Volumes: []corev1.Volume{
