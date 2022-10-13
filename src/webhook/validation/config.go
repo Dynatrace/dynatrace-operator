@@ -8,7 +8,7 @@ import (
 
 const oneagentEnableVolumeStorageEnvVarName = "ONEAGENT_ENABLE_VOLUME_STORAGE"
 
-var log = logger.NewDTLogger().WithName("validation-webhook")
+var log = logger.Factory.GetLogger("validation")
 
 type validator func(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string
 

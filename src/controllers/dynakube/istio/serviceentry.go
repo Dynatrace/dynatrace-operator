@@ -9,7 +9,6 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/go-logr/logr"
 	istio "istio.io/api/networking/v1alpha3"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	istioclientset "istio.io/client-go/pkg/clientset/versioned"
@@ -70,8 +69,7 @@ func buildServiceEntryIP(name, namespace, host string, port uint32) *istiov1alph
 	}
 }
 
-func handleIstioConfigurationForServiceEntry(istioConfig *istioConfiguration, log logr.Logger) (bool, error) {
-
+func handleIstioConfigurationForServiceEntry(istioConfig *istioConfiguration) (bool, error) {
 	probe, err := kubeobjects.KubernetesObjectProbe(ServiceEntryGVK, istioConfig.instance.GetNamespace(), istioConfig.name, istioConfig.reconciler.config)
 	if probe == kubeobjects.ProbeObjectFound {
 		return false, nil

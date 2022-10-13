@@ -16,10 +16,11 @@ const (
 	AgentInstallerMode InstallMode = "installer"
 	AgentCsiMode       InstallMode = "provisioned"
 
-	AgentInstallModeEnv     = "MODE"
-	AgentInstallerUrlEnv    = "INSTALLER_URL"
-	AgentInstallerFlavorEnv = "FLAVOR"
-	AgentInstallerTechEnv   = "TECHNOLOGIES"
+	AgentInstallModeEnv      = "MODE"
+	AgentInstallerUrlEnv     = "INSTALLER_URL"
+	AgentInstallerFlavorEnv  = "FLAVOR"
+	AgentInstallerTechEnv    = "TECHNOLOGIES"
+	AgentInstallerVersionEnv = "VERSION"
 
 	AgentInstallPathEnv            = "INSTALLPATH"
 	AgentContainerCountEnv         = "CONTAINERS_COUNT"
