@@ -70,7 +70,7 @@ func parseImageVersion(image string) (string, string, error) {
 func splitCustomImageName(imageURL string) (imageInfo, error) {
 	imgInfo := imageInfo{}
 
-	// extract registry (greedy until first '/') and image name
+	// extract registry (not-greedy until first '/') and image name
 	customImageRegistryRegex := regexp.MustCompile(`^(.*?)/(.*)$`)
 
 	registryMatches := customImageRegistryRegex.FindStringSubmatch(imageURL)
