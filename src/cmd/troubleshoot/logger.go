@@ -38,10 +38,6 @@ func newTroubleshootLogger(testName string) logr.Logger {
 	)
 }
 
-//
-// Troubleshoot fmt-like log wrappers
-//
-
 func logNewTestf(format string, v ...interface{}) {
 	log.V(levelNewTest).Info(fmt.Sprintf(format, v...))
 }
@@ -62,10 +58,6 @@ func errorWithMessagef(err error, format string, v ...interface{}) error {
 	message := fmt.Sprintf(format, v...)
 	return fmt.Errorf("%s {\"error\": %s}", message, err.Error())
 }
-
-//
-// implementation of LogSink interface
-//
 
 func (dtl troubleshootLogger) Init(info logr.RuntimeInfo) {}
 
