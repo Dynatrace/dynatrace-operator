@@ -14,9 +14,9 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
 
-func Create(name string) env.Func {
+func Create(name string, labels map[string]string) env.Func {
 	return func(ctx context.Context, environmentConfig *envconf.Config) (context.Context, error) {
-		namespace := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: name}}
+		namespace := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: name, Labels: labels}}
 		err := environmentConfig.Client().Resources().Create(ctx, namespace)
 		return ctx, errors.WithStack(err)
 	}
@@ -68,7 +68,7 @@ func DeleteIfExists(name string) func(ctx context.Context, environmentConfig *en
 	}
 }
 
-func Recreate(name string) func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
+func Recreate(name string, labels map[string]string) func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
 	return func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
 		ctx, err := Delete(name)(ctx, environmentConfig, t)
 
@@ -76,6 +76,6 @@ func Recreate(name string) func(ctx context.Context, environmentConfig *envconf.
 			return ctx, err
 		}
 
-		return Create(name)(ctx, environmentConfig)
+		return Create(name, labels)(ctx, environmentConfig)
 	}
 }
