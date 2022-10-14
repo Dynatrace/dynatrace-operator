@@ -34,9 +34,9 @@ func getMappingFromNamespace(namespace corev1.Namespace) VersionLabelMapping {
 	}
 
 	versionLabelMapping := VersionLabelMapping{}
-	for mappingKey, versionLabelKey := range annotationLabelMap {
-		if fieldRef, ok := namespace.Annotations[mappingKey]; ok {
-			versionLabelMapping[versionLabelKey] = fieldRef
+	for annotationKey, labelKey := range annotationLabelMap {
+		if fieldRef, ok := namespace.Annotations[annotationKey]; ok {
+			versionLabelMapping[labelKey] = fieldRef
 		}
 	}
 
