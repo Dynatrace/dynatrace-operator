@@ -153,6 +153,25 @@ func TestReconcile(t *testing.T) {
 		assert.NotNil(t, result)
 	})
 
+	t.Run(`update crd successfully with up-to-date secret`, func(t *testing.T) {
+		fakeClient := fake.NewClient(crd)
+		cs := newCertificateSecret()
+		_ = cs.setSecretFromReader(context.TODO(), fakeClient, testNamespace)
+		_ = cs.validateCertificates(testNamespace)
+		_ = cs.createOrUpdateIfNecessary(context.TODO(), fakeClient)
+
+		controller, request := prepareController(fakeClient)
+		result, err := controller.Reconcile(context.TODO(), request)
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+
+		expectedBundle, err := cs.loadCombinedBundle()
+		require.NoError(t, err)
+		actualCrd := &apiv1.CustomResourceDefinition{}
+		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: crdName}, actualCrd)
+		assert.Equal(t, expectedBundle, actualCrd.Spec.Conversion.Webhook.ClientConfig.CABundle)
+	})
+
 	// Generation must not be skipped because webhook startup routine listens for the secret
 	// See cmd/operator/manager.go and cmd/operator/watcher.go
 	t.Run(`do not skip certificates generation if no configuration exists`, func(t *testing.T) {
