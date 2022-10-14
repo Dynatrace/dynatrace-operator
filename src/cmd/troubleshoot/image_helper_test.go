@@ -29,6 +29,20 @@ func TestImagePullableSplitImage(t *testing.T) {
 		assert.NotEqual(t, testInvalidImage, imgInfo.image, "valid image")
 		assert.NotEqual(t, testVersion, imgInfo.version, "valid version")
 	})
+	t.Run("valid custom image name without version", func(t *testing.T) {
+		imgInfo, err := splitImageName("quay.io/dynatrace/my-custom-image")
+		require.NoError(t, err)
+		assert.Equal(t, "quay.io", imgInfo.registry, "invalid registry")
+		assert.Equal(t, "dynatrace/my-custom-image", imgInfo.image, "invalid image")
+		assert.Equal(t, "latest", imgInfo.version, "invalid version")
+	})
+	t.Run("valid custom image name", func(t *testing.T) {
+		imgInfo, err := splitImageName("quay.io/dynatrace/my-custom-image:1.2.3.4")
+		require.NoError(t, err)
+		assert.Equal(t, "quay.io", imgInfo.registry, "invalid registry")
+		assert.Equal(t, "dynatrace/my-custom-image", imgInfo.image, "invalid image")
+		assert.Equal(t, "1.2.3.4", imgInfo.version, "invalid version")
+	})
 }
 
 func TestSplitCustomImage(t *testing.T) {
