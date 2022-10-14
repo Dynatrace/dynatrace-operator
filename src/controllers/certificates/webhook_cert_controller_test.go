@@ -169,6 +169,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		actualCrd := &apiv1.CustomResourceDefinition{}
 		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: crdName}, actualCrd)
+		require.NoError(t, err)
 		assert.Equal(t, expectedBundle, actualCrd.Spec.Conversion.Webhook.ClientConfig.CABundle)
 	})
 
