@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3.0.2
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
       - name: Prepare build parameters
         id: prep
         run: |
@@ -33,7 +33,7 @@ jobs:
         platform: [amd64, arm64]
     steps:
       - name: Checkout
-        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3.0.2
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
       - name: Build image
         uses: ./.github/actions/build-image
         with:
@@ -49,7 +49,7 @@ jobs:
     strategy:
       matrix:
         platform: [amd64, arm64]
-        registry: [gcr, dockerhub]
+        registry: [gcr, dockerhub, rhcc]
         include:
         - registry: rhcc
           url: scan.connect.redhat.com
@@ -68,7 +68,7 @@ jobs:
           password: DOCKERHUB_PASSWORD
     steps:
       - name: Checkout
-        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3.0.2
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
       - name: Login to Registry
         uses: docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b # v2.0.0
         with:
@@ -77,7 +77,7 @@ jobs:
           password: ${{ secrets[matrix.password] }}
       - name: Push ${{matrix.platform}} to ${{matrix.registry}}
         uses: ./.github/actions/upload-image
-        if: matrix.registry != 'rhcc' || ( matrix.registry == 'rhcc' && matrix.platform == 'amd64' )
+        if: matrix.platform == 'amd64' || matrix.registry != 'rhcc'
         with:
           platform: ${{ matrix.platform }}
           labels: ${{ needs.prepare.outputs.labels }}
@@ -123,7 +123,7 @@ jobs:
             password: DOCKERHUB_PASSWORD
     steps:
       - name: Checkout
-        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3.0.2
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
       - name: Login to Registry
         uses: docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b # v2.0.0
         with:

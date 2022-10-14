@@ -53,13 +53,14 @@ func TestAddInstallerInitEnvs(t *testing.T) {
 		testVolumeMode := "testMode"
 		installerInfo := getTestInstallerInfo()
 		addInstallerInitEnvs(container, installerInfo, testVolumeMode)
-		require.Len(t, container.Env, 6)
+		require.Len(t, container.Env, expectedBaseInitContainerEnvCount)
 		assert.Equal(t, installerInfo.flavor, container.Env[0].Value)
 		assert.Equal(t, installerInfo.technologies, container.Env[1].Value)
 		assert.Equal(t, installerInfo.installPath, container.Env[2].Value)
 		assert.Equal(t, installerInfo.installerURL, container.Env[3].Value)
-		assert.Equal(t, testVolumeMode, container.Env[4].Value)
-		assert.Equal(t, "true", container.Env[5].Value)
+		assert.Equal(t, installerInfo.version, container.Env[4].Value)
+		assert.Equal(t, testVolumeMode, container.Env[5].Value)
+		assert.Equal(t, "true", container.Env[6].Value)
 	})
 }
 
@@ -100,5 +101,50 @@ func TestAddDeploymentMetadataEnv(t *testing.T) {
 		require.Len(t, container.Env, 1)
 		assert.Contains(t, container.Env[0].Value, testClusterID)
 		assert.Contains(t, container.Env[0].Value, daemonset.DeploymentTypeApplicationMonitoring)
+	})
+}
+
+func TestAddVersionDetectionEnvs(t *testing.T) {
+	t.Run("adds defaults", func(t *testing.T) {
+		container := &corev1.Container{}
+
+		addVersionDetectionEnvs(container, defaultVersionLabelMapping)
+
+		require.Len(t, container.Env, len(defaultVersionLabelMapping))
+		for _, envvar := range container.Env {
+			assert.Equal(t, defaultVersionLabelMapping[envvar.Name], envvar.ValueFrom.FieldRef.FieldPath)
+		}
+	})
+
+	t.Run("not overwrite present envs", func(t *testing.T) {
+		testVersion := "1.2.3"
+		testProduct := "testy"
+		container := &corev1.Container{
+			Env: []corev1.EnvVar{
+				{Name: releaseVersionEnv, Value: testVersion},
+				{Name: releaseProductEnv, Value: testProduct},
+			},
+		}
+
+		addVersionDetectionEnvs(container, defaultVersionLabelMapping)
+
+		require.Len(t, container.Env, 2)
+		assert.Equal(t, testVersion, container.Env[0].Value)
+		assert.Equal(t, testProduct, container.Env[1].Value)
+	})
+
+	t.Run("partial addition", func(t *testing.T) {
+		testVersion := "1.2.3"
+		container := &corev1.Container{
+			Env: []corev1.EnvVar{
+				{Name: releaseVersionEnv, Value: testVersion},
+			},
+		}
+
+		addVersionDetectionEnvs(container, defaultVersionLabelMapping)
+
+		require.Len(t, container.Env, 2)
+		assert.Equal(t, testVersion, container.Env[0].Value)
+		assert.Equal(t, defaultVersionLabelMapping[releaseProductEnv], container.Env[1].ValueFrom.FieldRef.FieldPath)
 	})
 }

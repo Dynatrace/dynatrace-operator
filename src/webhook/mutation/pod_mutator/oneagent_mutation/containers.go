@@ -1,7 +1,6 @@
 package oneagent_mutation
 
 import (
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	corev1 "k8s.io/api/core/v1"
@@ -16,7 +15,7 @@ func (mutator *OneAgentPodMutator) mutateUserContainers(request *dtwebhook.Mutat
 	for i := range request.Pod.Spec.Containers {
 		container := &request.Pod.Spec.Containers[i]
 		addContainerInfoInitEnv(request.InstallContainer, i+1, container.Name, container.Image)
-		mutator.addOneAgentToContainer(request.Pod, container, request.DynaKube)
+		mutator.addOneAgentToContainer(request.ToReinvocationRequest(), container)
 	}
 }
 
@@ -40,15 +39,16 @@ func (mutator *OneAgentPodMutator) reinvokeUserContainers(request *dtwebhook.Rei
 	for i := range newContainers {
 		currentContainer := newContainers[i]
 		addContainerInfoInitEnv(initContainer, oldContainersLen+i+1, currentContainer.Name, currentContainer.Image)
-		mutator.addOneAgentToContainer(request.Pod, currentContainer, request.DynaKube)
+		mutator.addOneAgentToContainer(request, currentContainer)
 	}
 	return len(newContainers) > 0
 }
 
-func (mutator *OneAgentPodMutator) addOneAgentToContainer(pod *corev1.Pod, container *corev1.Container, dynakube dynatracev1beta1.DynaKube) {
+func (mutator *OneAgentPodMutator) addOneAgentToContainer(request *dtwebhook.ReinvocationRequest, container *corev1.Container) {
 	log.Info("adding OneAgent to container", "name", container.Name)
-	installPath := kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
+	installPath := kubeobjects.GetField(request.Pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
 
+	dynakube := request.DynaKube
 	addOneAgentVolumeMounts(container, installPath)
 	addDeploymentMetadataEnv(container, dynakube, mutator.clusterID)
 	addPreloadEnv(container, installPath)
@@ -67,6 +67,10 @@ func (mutator *OneAgentPodMutator) addOneAgentToContainer(pod *corev1.Pod, conta
 
 	if dynakube.Spec.NetworkZone != "" {
 		addNetworkZoneEnv(container, dynakube.Spec.NetworkZone)
+	}
+
+	if dynakube.FeatureLabelVersionDetection() {
+		addVersionDetectionEnvs(container, newVersionLabelMapping(request.Namespace))
 	}
 }
 

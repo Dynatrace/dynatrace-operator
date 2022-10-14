@@ -46,11 +46,6 @@ func TestUpdateAgent(t *testing.T) {
 					},
 				},
 			},
-			Status: dynatracev1beta1.DynaKubeStatus{
-				ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
-					TenantUUID: tenantUUID,
-				},
-			},
 		}
 		updater := createTestAgentUrlUpdater(t, &dk)
 		processModuleCache := createTestProcessModuleConfigCache("1")
@@ -93,9 +88,6 @@ func TestUpdateAgent(t *testing.T) {
 			},
 			Status: dynatracev1beta1.DynaKubeStatus{
 				LatestAgentVersionUnixPaas: testVersion,
-				ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
-					TenantUUID: tenantUUID,
-				},
 			},
 		}
 		updater := createTestAgentUrlUpdater(t, &dk)
@@ -180,11 +172,6 @@ func TestUpdateAgent(t *testing.T) {
 					},
 				},
 			},
-			Status: dynatracev1beta1.DynaKubeStatus{
-				ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
-					TenantUUID: tenantUUID,
-				},
-			},
 		}
 		mockedPullSecret := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
@@ -222,6 +209,7 @@ func TestUpdateAgent(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL:           "https://" + testTenantUUID + ".dynatrace.com",
 				CustomPullSecret: pullSecretName,
 				TrustedCAs:       trustedCAName,
 				OneAgent: dynatracev1beta1.OneAgentSpec{
@@ -230,11 +218,6 @@ func TestUpdateAgent(t *testing.T) {
 							CodeModulesImage: image + ":" + tag,
 						},
 					},
-				},
-			},
-			Status: dynatracev1beta1.DynaKubeStatus{
-				ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
-					TenantUUID: tenantUUID,
 				},
 			},
 		}
@@ -287,9 +270,6 @@ func testUpdateOneagent(t *testing.T, alreadyInstalled bool) {
 		},
 		Status: dynatracev1beta1.DynaKubeStatus{
 			LatestAgentVersionUnixPaas: testVersion,
-			ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
-				TenantUUID: tenantUUID,
-			},
 		},
 	}
 	updater := createTestAgentUrlUpdater(t, &dk)

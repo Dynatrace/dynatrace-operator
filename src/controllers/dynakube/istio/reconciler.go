@@ -161,11 +161,11 @@ func (reconciler *IstioReconciler) reconcileIstioCreateConfigurations(instance *
 			role:       role,
 		}
 
-		createdServiceEntry, err := handleIstioConfigurationForServiceEntry(istioConfig, log)
+		createdServiceEntry, err := handleIstioConfigurationForServiceEntry(istioConfig)
 		if err != nil {
 			return false, err
 		}
-		createdVirtualService, err := handleIstioConfigurationForVirtualService(istioConfig, log)
+		createdVirtualService, err := handleIstioConfigurationForVirtualService(istioConfig)
 		if err != nil {
 			return false, err
 		}

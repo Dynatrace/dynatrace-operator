@@ -15,7 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var log = logger.NewDTLogger()
+var log = logger.Factory.GetLogger("test-secret")
 
 func TestSecretQuery(t *testing.T) {
 	t.Run(`Get secret`, testGetSecret)
@@ -109,7 +109,6 @@ func testCreateOrUpdateSecret(t *testing.T) {
 	secretQuery := NewSecretQuery(context.TODO(), fakeClient, fakeClient, log)
 
 	err := secretQuery.CreateOrUpdate(secret)
-
 	assert.NoError(t, err)
 
 	var createdSecret corev1.Secret
@@ -335,13 +334,13 @@ func TestGetDataFromSecretName(t *testing.T) {
 			},
 		})
 
-		value, err := GetDataFromSecretName(client, types.NamespacedName{Name: testSecretName, Namespace: testNamespace}, testKey1)
+		value, err := GetDataFromSecretName(client, types.NamespacedName{Name: testSecretName, Namespace: testNamespace}, testKey1, log)
 
 		assert.NoError(t, err)
 		assert.Equal(t, value, testValue1)
 	})
 	t.Run(`ExtractToken handles missing key`, func(t *testing.T) {
-		value, err := GetDataFromSecretName(fake.NewClient(), types.NamespacedName{Name: testSecretName, Namespace: testNamespace}, testKey1)
+		value, err := GetDataFromSecretName(fake.NewClient(), types.NamespacedName{Name: testSecretName, Namespace: testNamespace}, testKey1, log)
 		assert.Error(t, err)
 		assert.Empty(t, value)
 	})

@@ -96,7 +96,6 @@ config/deploy/kubernetes/dynatrace-operator-crd.yaml
 
 kubeconfig
 kind-logs-*
-kuttl/activegate/logs/
 /testbin/bin/etcd
 /testbin/bin/kube-apiserver
 /testbin/bin/kubectl

@@ -29,10 +29,11 @@ import (
 
 const (
 	// PullSecretSuffix is the suffix appended to the DynaKube name to n.
-	PullSecretSuffix      = "-pull-secret"
-	TenantSecretSuffix    = "-activegate-tenant-secret"
-	AuthTokenSecretSuffix = "-activegate-authtoken-secret"
-	PodNameOsAgent        = "oneagent"
+	PullSecretSuffix             = "-pull-secret"
+	ActiveGateTenantSecretSuffix = "-activegate-tenant-secret"
+	OneAgentTenantSecretSuffix   = "-oneagent-tenant-secret"
+	AuthTokenSecretSuffix        = "-activegate-authtoken-secret"
+	PodNameOsAgent               = "oneagent"
 
 	TrustedCAKey = "certs"
 	ProxyKey     = "proxy"
@@ -160,9 +161,14 @@ func (dk *DynaKube) ShouldAutoUpdateOneAgent() bool {
 	return false
 }
 
-// AGTenantSecret returns the name of the secret containing tenant UUID, token and communication endpoints for ActiveGate
-func (dk *DynaKube) AGTenantSecret() string {
-	return dk.Name + TenantSecretSuffix
+// ActivegateTenantSecret returns the name of the secret containing tenant UUID, token and communication endpoints for ActiveGate
+func (dk *DynaKube) ActivegateTenantSecret() string {
+	return dk.Name + ActiveGateTenantSecretSuffix
+}
+
+// OneagentTenantSecret returns the name of the secret containing the token for the OneAgent
+func (dk *DynaKube) OneagentTenantSecret() string {
+	return dk.Name + OneAgentTenantSecretSuffix
 }
 
 // ActiveGateAuthTokenSecret returns the name of the secret containing the ActiveGateAuthToken, which is mounted to the AGs
@@ -300,7 +306,7 @@ func (dk *DynaKube) NamespaceSelector() *metav1.LabelSelector {
 	return &dk.Spec.NamespaceSelector
 }
 
-// ImmutableOneAgentImage returns the immutable OneAgent image to be used with the dk DynaKube instance.
+// ImmutableOneAgentImage returns the immutable OneAgent image to be used with the DynaKube instance.
 func (dk *DynaKube) ImmutableOneAgentImage() string {
 	oneAgentImage := dk.CustomOneAgentImage()
 	if oneAgentImage != "" {
@@ -343,15 +349,13 @@ func (dk *DynaKube) Tokens() string {
 	return dk.Name
 }
 
-func (dk *DynaKube) CommunicationHostForClient() dtclient.CommunicationHost {
-	return dtclient.CommunicationHost(dk.Status.CommunicationHostForClient)
-}
-
-func (dk *DynaKube) ConnectionInfo() dtclient.ConnectionInfo {
-	return dtclient.ConnectionInfo{
-		CommunicationHosts:              dk.CommunicationHosts(),
-		TenantUUID:                      dk.Status.ConnectionInfo.TenantUUID,
-		FormattedCommunicationEndpoints: dk.Status.ConnectionInfo.FormattedCommunicationEndpoints,
+func (dk *DynaKube) ConnectionInfo() dtclient.OneAgentConnectionInfo {
+	return dtclient.OneAgentConnectionInfo{
+		CommunicationHosts: dk.CommunicationHosts(),
+		ConnectionInfo: dtclient.ConnectionInfo{
+			TenantUUID: dk.Status.ConnectionInfo.TenantUUID,
+			Endpoints:  dk.Status.ConnectionInfo.FormattedCommunicationEndpoints,
+		},
 	}
 }
 

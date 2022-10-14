@@ -43,7 +43,10 @@ func NewRunner(fs afero.Fs) (*Runner, error) {
 		if err != nil {
 			return nil, err
 		}
-
+		targetVersion := url.VersionLatest
+		if env.InstallVersion != "" {
+			targetVersion = env.InstallVersion
+		}
 		oneAgentInstaller = url.NewUrlInstaller(
 			fs,
 			client,
@@ -53,7 +56,7 @@ func NewRunner(fs afero.Fs) (*Runner, error) {
 				Flavor:        env.InstallerFlavor,
 				Arch:          arch.Arch,
 				Technologies:  env.InstallerTech,
-				TargetVersion: url.VersionLatest,
+				TargetVersion: targetVersion,
 				Url:           env.InstallerUrl,
 				PathResolver:  metadata.PathResolver{RootDir: config.AgentBinDirMount},
 			},

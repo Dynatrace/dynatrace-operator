@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/logger"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -47,15 +46,28 @@ func (query SecretQuery) Update(secret corev1.Secret) error {
 }
 
 func (query SecretQuery) CreateOrUpdate(secret corev1.Secret) error {
-	err := query.Create(secret)
-
-	if !k8serrors.IsAlreadyExists(err) {
+	currentSecret, err := query.Get(types.NamespacedName{Name: secret.Name, Namespace: secret.Namespace})
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			err = query.Create(secret)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			return nil
+		}
 		return errors.WithStack(err)
 	}
 
-	query.log.Info("secret already exists", "name", secret.Name, "namespace", secret.Namespace)
+	if AreSecretsEqual(secret, currentSecret) {
+		query.log.Info("secret unchanged", "name", secret.Name, "namespace", secret.Namespace)
+		return nil
+	}
 
-	return errors.WithStack(query.Update(secret))
+	err = query.Update(secret)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
 }
 
 func AreSecretsEqual(secret corev1.Secret, other corev1.Secret) bool {
@@ -115,8 +127,8 @@ func ExtractToken(secret *corev1.Secret, key string) (string, error) {
 	return strings.TrimSpace(string(value)), nil
 }
 
-func GetDataFromSecretName(apiReader client.Reader, namespacedName types.NamespacedName, dataKey string) (string, error) {
-	query := NewSecretQuery(context.TODO(), nil, apiReader, logger.NewDTLogger())
+func GetDataFromSecretName(apiReader client.Reader, namespacedName types.NamespacedName, dataKey string, log logr.Logger) (string, error) {
+	query := NewSecretQuery(context.TODO(), nil, apiReader, log)
 	secret, err := query.Get(namespacedName)
 	if err != nil {
 		return "", errors.WithStack(err)

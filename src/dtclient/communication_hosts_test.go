@@ -34,9 +34,9 @@ const mixedCommunicationEndpointsResponse = `{
 func TestReadCommunicationHosts(t *testing.T) {
 	dc := &dynatraceClient{}
 
-	readFromString := func(json string) (ConnectionInfo, error) {
+	readFromString := func(json string) (OneAgentConnectionInfo, error) {
 		response := []byte(json)
-		return dc.readResponseForConnectionInfo(response)
+		return dc.readResponseForOneAgentConnectionInfo(response)
 	}
 
 	{
@@ -133,7 +133,7 @@ func TestParseEndpoints(t *testing.T) {
 }
 
 func testCommunicationHostsGetCommunicationHosts(t *testing.T, dynatraceClient Client) {
-	res, err := dynatraceClient.GetConnectionInfo()
+	res, err := dynatraceClient.GetOneAgentConnectionInfo()
 
 	assert.NoError(t, err)
 	assert.ObjectsAreEqualValues(res.CommunicationHosts, []CommunicationHost{

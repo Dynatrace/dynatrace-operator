@@ -3,23 +3,19 @@
 package cloudnative
 
 import (
-	"bytes"
 	"context"
-	"io"
 	"os"
 	"path"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/test/activegate"
-	"github.com/Dynatrace/dynatrace-operator/test/csi"
+	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/environment"
-	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/pod"
+	"github.com/Dynatrace/dynatrace-operator/test/log"
 	"github.com/Dynatrace/dynatrace-operator/test/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/test/operator"
+	"github.com/Dynatrace/dynatrace-operator/test/sampleapps"
 	"github.com/Dynatrace/dynatrace-operator/test/secrets"
-	"github.com/Dynatrace/dynatrace-operator/test/webhook"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -34,15 +30,15 @@ var testEnvironment env.Environment
 
 func TestMain(m *testing.M) {
 	testEnvironment = environment.Get()
-	testEnvironment.BeforeEachTest(deleteDynakubeIfExists())
+	testEnvironment.BeforeEachTest(dynakube.DeleteIfExists())
 	testEnvironment.BeforeEachTest(oneagent.WaitForDaemonSetPodsDeletion())
-	testEnvironment.BeforeEachTest(namespace.DeleteIfExists(sampleAppsNamespace))
-	testEnvironment.BeforeEachTest(namespace.Recreate(dynatraceNamespace))
+	testEnvironment.BeforeEachTest(namespace.DeleteIfExists(sampleapps.Namespace))
+	testEnvironment.BeforeEachTest(namespace.Recreate(dynakube.Namespace))
 
-	testEnvironment.AfterEachTest(deleteDynakubeIfExists())
+	testEnvironment.AfterEachTest(dynakube.DeleteIfExists())
 	testEnvironment.AfterEachTest(oneagent.WaitForDaemonSetPodsDeletion())
-	testEnvironment.AfterEachTest(namespace.Delete(sampleAppsNamespace))
-	testEnvironment.AfterEachTest(namespace.Delete(dynatraceNamespace))
+	testEnvironment.AfterEachTest(namespace.Delete(sampleapps.Namespace))
+	testEnvironment.AfterEachTest(namespace.Delete(dynakube.Namespace))
 
 	testEnvironment.Run(m)
 }
@@ -52,28 +48,10 @@ func TestCloudNative(t *testing.T) {
 	testEnvironment.Test(t, codeModules(t))
 }
 
-func installAndDeploy(builder *features.FeatureBuilder, secretConfig secrets.Secret, deploymentPath string) {
-	builder.Setup(secrets.ApplyDefault(secretConfig))
-	builder.Setup(operator.InstallForKubernetes())
-	builder.Setup(manifests.InstallFromFile(deploymentPath))
-}
-
-func assessDeployment(builder *features.FeatureBuilder) {
-	builder.Assess("operator started", operator.WaitForDeployment())
-	builder.Assess("webhook started", webhook.WaitForDeployment())
-	builder.Assess("csi driver started", csi.WaitForDaemonset())
-}
-
-func assessDynakubeStartup(builder *features.FeatureBuilder) {
-	builder.Assess("activegate started", activegate.WaitForStatefulSet())
-	builder.Assess("oneagent started", oneagent.WaitForDaemonset())
-	builder.Assess("dynakube phase changes to 'Running'", waitForDynakubePhase())
-}
-
 func assessOneAgentsAreRunning(builder *features.FeatureBuilder) {
-	builder.Assess("restart sample apps", restartSampleApps)
+	builder.Assess("restart sample apps", sampleapps.Restart)
 	builder.Assess("sample apps have working init containers", checkInitContainers)
-	builder.Assess("osAgent can connect", osAgentsCanConnect())
+	builder.Assess("osAgent can connect", oneagent.OSAgentCanConnect())
 }
 
 func getSecretConfig(t *testing.T) secrets.Secret {
@@ -88,30 +66,9 @@ func getSecretConfig(t *testing.T) secrets.Secret {
 	return secretConfig
 }
 
-func osAgentsCanConnect() features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resource := environmentConfig.Client().Resources()
-		clientset, err := kubernetes.NewForConfig(resource.GetConfig())
-
-		require.NoError(t, err)
-		require.NoError(t, oneagent.ForEachPod(ctx, resource, func(pod corev1.Pod) {
-			logStream, err := clientset.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &corev1.PodLogOptions{}).Stream(ctx)
-
-			require.NoError(t, err)
-
-			assertLogContains(t, logStream, "[oneagentos] [PingReceiver] Ping received: Healthy(0)")
-		}))
-
-		return ctx
-	}
-}
-
 func checkInitContainers(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-	var pods corev1.PodList
 	resources := environmentConfig.Client().Resources()
-
-	require.NoError(t, resources.WithNamespace(sampleAppsNamespace).List(ctx, &pods))
-
+	pods := sampleapps.Get(t, ctx, resources)
 	clientset, err := kubernetes.NewForConfig(resources.GetConfig())
 
 	require.NoError(t, err)
@@ -130,9 +87,9 @@ func checkInitContainers(ctx context.Context, t *testing.T, environmentConfig *e
 		}).Stream(ctx)
 
 		require.NoError(t, err)
-		assertLogContains(t, logStream, "standalone agent init completed")
+		log.AssertLogContains(t, logStream, "standalone agent init completed")
 
-		executionQuery := pod.NewExecutionQuery(podItem, sampleAppsName, "cat /opt/dynatrace/oneagent-paas/log/nginx/ruxitagent_nginx_myapp-__bootstrap_1.0.log")
+		executionQuery := pod.NewExecutionQuery(podItem, sampleapps.Name, "cat /opt/dynatrace/oneagent-paas/log/nginx/ruxitagent_nginx_myapp-__bootstrap_1.0.log")
 		executionResult, err := executionQuery.Execute(environmentConfig.Client().RESTConfig())
 
 		require.NoError(t, err)
@@ -146,13 +103,4 @@ func checkInitContainers(ctx context.Context, t *testing.T, environmentConfig *e
 	}
 
 	return ctx
-}
-
-func assertLogContains(t *testing.T, logStream io.ReadCloser, contains string) {
-	buffer := new(bytes.Buffer)
-	copied, err := io.Copy(buffer, logStream)
-
-	require.NoError(t, err)
-	require.Equal(t, int64(buffer.Len()), copied)
-	assert.Contains(t, buffer.String(), contains)
 }

@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	log = logger.NewDTLogger().WithName("docker-config")
+	log = logger.Factory.GetLogger("docker-config")
 )

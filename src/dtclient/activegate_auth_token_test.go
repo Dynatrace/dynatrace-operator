@@ -16,7 +16,7 @@ var activeGateAuthTokenResponse = &ActiveGateAuthTokenInfo{
 
 func TestGetActiveGateAuthTokenInfo(t *testing.T) {
 	t.Run("GetActiveGateAuthToken works", func(t *testing.T) {
-		dynatraceServer, dynatraceClient := createTestDynatraceClient(t, tenantServerHandler(activeGateAuthTokenUrl, activeGateAuthTokenResponse), "")
+		dynatraceServer, dynatraceClient := createTestDynatraceClient(t, connectionInfoServerHandler(activeGateAuthTokenUrl, activeGateAuthTokenResponse), "")
 		defer dynatraceServer.Close()
 
 		agAuthTokenInfo, err := dynatraceClient.GetActiveGateAuthToken(dynakubeName)

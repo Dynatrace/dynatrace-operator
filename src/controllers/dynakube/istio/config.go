@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	log = logger.NewDTLogger().WithName("dynakube-istio")
+	log = logger.Factory.GetLogger("dynakube-istio")
 )

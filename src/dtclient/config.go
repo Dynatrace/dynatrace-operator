@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	log = logger.NewDTLogger().WithName("dtclient")
+	log = logger.Factory.GetLogger("dtclient")
 )

@@ -11,5 +11,5 @@ const (
 )
 
 var (
-	log = logger.NewDTLogger().WithName("namespace-mapper")
+	log = logger.Factory.GetLogger("namespace-mapper")
 )
