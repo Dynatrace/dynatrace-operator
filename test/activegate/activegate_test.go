@@ -135,7 +135,7 @@ func install(t *testing.T, proxySpec *v1beta1.DynaKubeProxy) features.Feature {
 
 func installAndDeploy(builder *features.FeatureBuilder, secretConfig secrets.Secret) {
 	builder.Setup(secrets.ApplyDefault(secretConfig))
-	builder.Setup(operator.InstallForKubernetes())
+	builder.Setup(operator.InstallAllForKubernetes())
 }
 
 func assessDeployment(builder *features.FeatureBuilder) {

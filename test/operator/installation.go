@@ -6,8 +6,12 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func InstallForKubernetes() features.Func {
+func InstallAllForKubernetes() features.Func {
 	return manifests.InstallFromFile("../../config/deploy/kubernetes/kubernetes-all.yaml")
+}
+
+func InstallForKubernetes() features.Func {
+	return manifests.InstallFromFile("../../config/deploy/kubernetes/kubernetes.yaml")
 }
 
 func WaitForDeployment() features.Func {
