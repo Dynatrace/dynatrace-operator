@@ -71,7 +71,7 @@ func (svr *CSIDriverServer) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (svr *CSIDriverServer) Start(ctx context.Context) error {
-	defer metadata.LogAccessOverview(ctx, log, svr.db)
+	defer metadata.LogAccessOverview(log, svr.db)
 	proto, addr, err := parseEndpoint(svr.opts.Endpoint)
 	if err != nil {
 		return fmt.Errorf("failed to parse endpoint '%s': %w", svr.opts.Endpoint, err)
@@ -119,9 +119,9 @@ func (svr *CSIDriverServer) Start(ctx context.Context) error {
 
 	log.Info("listening for connections on address", "address", listener.Addr())
 
-	_ = server.Serve(listener)
-
-	return nil
+	err = server.Serve(listener)
+	server.GracefulStop()
+	return err
 }
 
 func (svr *CSIDriverServer) GetPluginInfo(context.Context, *csi.GetPluginInfoRequest) (*csi.GetPluginInfoResponse, error) {
