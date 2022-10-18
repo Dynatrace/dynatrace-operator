@@ -162,7 +162,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.9.0
+    controller-gen.kubebuilder.io/version: v0.10.0
   name: dynakubes.dynatrace.com
 spec:
   conversion:
@@ -291,6 +291,7 @@ spec:
                               required:
                               - key
                               type: object
+                              x-kubernetes-map-type: atomic
                             fieldRef:
                               description: 'Selects a field of the pod: supports metadata.name,
                                 metadata.namespace, `metadata.labels[''<KEY>'']`,
@@ -309,6 +310,7 @@ spec:
                               required:
                               - fieldPath
                               type: object
+                              x-kubernetes-map-type: atomic
                             resourceFieldRef:
                               description: 'Selects a resource of the container: only
                                 resources limits and requests (limits.cpu, limits.memory,
@@ -333,6 +335,7 @@ spec:
                               required:
                               - resource
                               type: object
+                              x-kubernetes-map-type: atomic
                             secretKeyRef:
                               description: Selects a key of a secret in the pod's
                                 namespace
@@ -353,6 +356,7 @@ spec:
                               required:
                               - key
                               type: object
+                              x-kubernetes-map-type: atomic
                           type: object
                       required:
                       - name
@@ -534,6 +538,7 @@ spec:
                               required:
                               - key
                               type: object
+                              x-kubernetes-map-type: atomic
                             fieldRef:
                               description: 'Selects a field of the pod: supports metadata.name,
                                 metadata.namespace, `metadata.labels[''<KEY>'']`,
@@ -552,6 +557,7 @@ spec:
                               required:
                               - fieldPath
                               type: object
+                              x-kubernetes-map-type: atomic
                             resourceFieldRef:
                               description: 'Selects a resource of the container: only
                                 resources limits and requests (limits.cpu, limits.memory,
@@ -576,6 +582,7 @@ spec:
                               required:
                               - resource
                               type: object
+                              x-kubernetes-map-type: atomic
                             secretKeyRef:
                               description: Selects a key of a secret in the pod's
                                 namespace
@@ -596,6 +603,7 @@ spec:
                               required:
                               - key
                               type: object
+                              x-kubernetes-map-type: atomic
                           type: object
                       required:
                       - name
@@ -790,6 +798,7 @@ spec:
                               required:
                               - key
                               type: object
+                              x-kubernetes-map-type: atomic
                             fieldRef:
                               description: 'Selects a field of the pod: supports metadata.name,
                                 metadata.namespace, `metadata.labels[''<KEY>'']`,
@@ -808,6 +817,7 @@ spec:
                               required:
                               - fieldPath
                               type: object
+                              x-kubernetes-map-type: atomic
                             resourceFieldRef:
                               description: 'Selects a resource of the container: only
                                 resources limits and requests (limits.cpu, limits.memory,
@@ -832,6 +842,7 @@ spec:
                               required:
                               - resource
                               type: object
+                              x-kubernetes-map-type: atomic
                             secretKeyRef:
                               description: Selects a key of a secret in the pod's
                                 namespace
@@ -852,6 +863,7 @@ spec:
                               required:
                               - key
                               type: object
+                              x-kubernetes-map-type: atomic
                           type: object
                       required:
                       - name
@@ -1227,6 +1239,7 @@ spec:
                               required:
                               - key
                               type: object
+                              x-kubernetes-map-type: atomic
                             fieldRef:
                               description: 'Selects a field of the pod: supports metadata.name,
                                 metadata.namespace, `metadata.labels[''<KEY>'']`,
@@ -1245,6 +1258,7 @@ spec:
                               required:
                               - fieldPath
                               type: object
+                              x-kubernetes-map-type: atomic
                             resourceFieldRef:
                               description: 'Selects a resource of the container: only
                                 resources limits and requests (limits.cpu, limits.memory,
@@ -1269,6 +1283,7 @@ spec:
                               required:
                               - resource
                               type: object
+                              x-kubernetes-map-type: atomic
                             secretKeyRef:
                               description: Selects a key of a secret in the pod's
                                 namespace
@@ -1289,6 +1304,7 @@ spec:
                               required:
                               - key
                               type: object
+                              x-kubernetes-map-type: atomic
                           type: object
                       required:
                       - name
@@ -1453,6 +1469,7 @@ spec:
                                 contains only "value". The requirements are ANDed.
                               type: object
                           type: object
+                          x-kubernetes-map-type: atomic
                         matchLabelKeys:
                           description: MatchLabelKeys is a set of pod label keys to
                             select the pods over which spreading will be calculated.
@@ -1645,6 +1662,7 @@ spec:
                               required:
                               - key
                               type: object
+                              x-kubernetes-map-type: atomic
                             fieldRef:
                               description: 'Selects a field of the pod: supports metadata.name,
                                 metadata.namespace, `metadata.labels[''<KEY>'']`,
@@ -1663,6 +1681,7 @@ spec:
                               required:
                               - fieldPath
                               type: object
+                              x-kubernetes-map-type: atomic
                             resourceFieldRef:
                               description: 'Selects a resource of the container: only
                                 resources limits and requests (limits.cpu, limits.memory,
@@ -1687,6 +1706,7 @@ spec:
                               required:
                               - resource
                               type: object
+                              x-kubernetes-map-type: atomic
                             secretKeyRef:
                               description: Selects a key of a secret in the pod's
                                 namespace
@@ -1707,6 +1727,7 @@ spec:
                               required:
                               - key
                               type: object
+                              x-kubernetes-map-type: atomic
                           type: object
                       required:
                       - name
@@ -1859,6 +1880,7 @@ spec:
                                 contains only "value". The requirements are ANDed.
                               type: object
                           type: object
+                          x-kubernetes-map-type: atomic
                         matchLabelKeys:
                           description: MatchLabelKeys is a set of pod label keys to
                             select the pods over which spreading will be calculated.
@@ -2026,6 +2048,7 @@ spec:
                       are ANDed.
                     type: object
                 type: object
+                x-kubernetes-map-type: atomic
               networkZone:
                 description: 'Optional: Sets Network Zone for OneAgent and ActiveGate
                   pods'
@@ -2153,6 +2176,7 @@ spec:
                                   required:
                                   - key
                                   type: object
+                                  x-kubernetes-map-type: atomic
                                 fieldRef:
                                   description: 'Selects a field of the pod: supports
                                     metadata.name, metadata.namespace, `metadata.labels[''<KEY>'']`,
@@ -2171,6 +2195,7 @@ spec:
                                   required:
                                   - fieldPath
                                   type: object
+                                  x-kubernetes-map-type: atomic
                                 resourceFieldRef:
                                   description: 'Selects a resource of the container:
                                     only resources limits and requests (limits.cpu,
@@ -2196,6 +2221,7 @@ spec:
                                   required:
                                   - resource
                                   type: object
+                                  x-kubernetes-map-type: atomic
                                 secretKeyRef:
                                   description: Selects a key of a secret in the pod's
                                     namespace
@@ -2217,6 +2243,7 @@ spec:
                                   required:
                                   - key
                                   type: object
+                                  x-kubernetes-map-type: atomic
                               type: object
                           required:
                           - name
@@ -2396,6 +2423,7 @@ spec:
                                   required:
                                   - key
                                   type: object
+                                  x-kubernetes-map-type: atomic
                                 fieldRef:
                                   description: 'Selects a field of the pod: supports
                                     metadata.name, metadata.namespace, `metadata.labels[''<KEY>'']`,
@@ -2414,6 +2442,7 @@ spec:
                                   required:
                                   - fieldPath
                                   type: object
+                                  x-kubernetes-map-type: atomic
                                 resourceFieldRef:
                                   description: 'Selects a resource of the container:
                                     only resources limits and requests (limits.cpu,
@@ -2439,6 +2468,7 @@ spec:
                                   required:
                                   - resource
                                   type: object
+                                  x-kubernetes-map-type: atomic
                                 secretKeyRef:
                                   description: Selects a key of a secret in the pod's
                                     namespace
@@ -2460,6 +2490,7 @@ spec:
                                   required:
                                   - key
                                   type: object
+                                  x-kubernetes-map-type: atomic
                               type: object
                           required:
                           - name
@@ -2663,6 +2694,7 @@ spec:
                                   required:
                                   - key
                                   type: object
+                                  x-kubernetes-map-type: atomic
                                 fieldRef:
                                   description: 'Selects a field of the pod: supports
                                     metadata.name, metadata.namespace, `metadata.labels[''<KEY>'']`,
@@ -2681,6 +2713,7 @@ spec:
                                   required:
                                   - fieldPath
                                   type: object
+                                  x-kubernetes-map-type: atomic
                                 resourceFieldRef:
                                   description: 'Selects a resource of the container:
                                     only resources limits and requests (limits.cpu,
@@ -2706,6 +2739,7 @@ spec:
                                   required:
                                   - resource
                                   type: object
+                                  x-kubernetes-map-type: atomic
                                 secretKeyRef:
                                   description: Selects a key of a secret in the pod's
                                     namespace
@@ -2727,6 +2761,7 @@ spec:
                                   required:
                                   - key
                                   type: object
+                                  x-kubernetes-map-type: atomic
                               type: object
                           required:
                           - name
@@ -2901,6 +2936,7 @@ spec:
                               required:
                               - key
                               type: object
+                              x-kubernetes-map-type: atomic
                             fieldRef:
                               description: 'Selects a field of the pod: supports metadata.name,
                                 metadata.namespace, `metadata.labels[''<KEY>'']`,
@@ -2919,6 +2955,7 @@ spec:
                               required:
                               - fieldPath
                               type: object
+                              x-kubernetes-map-type: atomic
                             resourceFieldRef:
                               description: 'Selects a resource of the container: only
                                 resources limits and requests (limits.cpu, limits.memory,
@@ -2943,6 +2980,7 @@ spec:
                               required:
                               - resource
                               type: object
+                              x-kubernetes-map-type: atomic
                             secretKeyRef:
                               description: Selects a key of a secret in the pod's
                                 namespace
@@ -2963,6 +3001,7 @@ spec:
                               required:
                               - key
                               type: object
+                              x-kubernetes-map-type: atomic
                           type: object
                       required:
                       - name
@@ -3115,6 +3154,7 @@ spec:
                                 contains only "value". The requirements are ANDed.
                               type: object
                           type: object
+                          x-kubernetes-map-type: atomic
                         matchLabelKeys:
                           description: MatchLabelKeys is a set of pod label keys to
                             select the pods over which spreading will be calculated.
@@ -4212,7 +4252,7 @@ spec:
           args:
             - operator
           # Replace this with the built image name
-          image: quay.io/dynatrace/dynatrace-operator:snapshot-release-0-9
+          image: quay.io/dynatrace/dynatrace-operator:snapshot
           imagePullPolicy: Always
           env:
             - name: POD_NAMESPACE
@@ -4369,7 +4409,7 @@ spec:
             - webhook-server
             # OLM mounts the certificates here, so we reuse it for simplicity
             - --certs-dir=/tmp/k8s-webhook-server/serving-certs/
-          image: quay.io/dynatrace/dynatrace-operator:snapshot-release-0-9
+          image: quay.io/dynatrace/dynatrace-operator:snapshot
           imagePullPolicy: Always
           env:
             - name: POD_NAMESPACE
@@ -4798,7 +4838,7 @@ spec:
         # - Needs access to the filesystem of pods on the node, and mount stuff to it,needs to read/write to it, needs root permissions to do so
         # - Needs access to a dedicated folder on the node to persist data, needs to read/write to it.
       - name: server
-        image: quay.io/dynatrace/dynatrace-operator:snapshot-release-0-9
+        image: quay.io/dynatrace/dynatrace-operator:snapshot
         imagePullPolicy: Always
         args:
         - csi-server
@@ -4856,13 +4896,12 @@ spec:
           mountPropagation: Bidirectional
           name: mountpoint-dir
         - mountPath: /data
-          name: plugin-dir
-          subPath: data
+          name: data-dir
           mountPropagation: Bidirectional
         - name: tmp-dir
           mountPath: /tmp
       - name: provisioner
-        image: quay.io/dynatrace/dynatrace-operator:snapshot-release-0-9
+        image: quay.io/dynatrace/dynatrace-operator:snapshot
         imagePullPolicy: Always
         args:
           - csi-provisioner
@@ -4908,8 +4947,7 @@ spec:
         terminationMessagePolicy: File
         volumeMounts:
           - mountPath: /data
-            name: plugin-dir
-            subPath: data
+            name: data-dir
             mountPropagation: Bidirectional
           - mountPath: /tmp
             name: tmp-dir
@@ -4919,7 +4957,7 @@ spec:
         # Used for registering the driver with kubelet
         # - Needs access to the registration socket, needs to read/write to it, needs root permissions to do so.
       - name: registrar
-        image: quay.io/dynatrace/dynatrace-operator:snapshot-release-0-9
+        image: quay.io/dynatrace/dynatrace-operator:snapshot
         imagePullPolicy: Always
         env:
         - name: DRIVER_REG_SOCK_PATH
@@ -4966,7 +5004,7 @@ spec:
         # Used to make a gRPC request (Probe()) to the driver to check if its running
         # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.
       - name: liveness-probe
-        image: quay.io/dynatrace/dynatrace-operator:snapshot-release-0-9
+        image: quay.io/dynatrace/dynatrace-operator:snapshot
         imagePullPolicy: Always
         args:
         - --csi-address=/csi/csi.sock
@@ -5010,6 +5048,10 @@ spec:
       - name: plugin-dir
         hostPath:
           path: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/
+          type: DirectoryOrCreate
+      - name: data-dir
+        hostPath:
+          path: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/data
           type: DirectoryOrCreate
         # This volume is where the driver mounts volumes
       - name: mountpoint-dir
