@@ -264,7 +264,7 @@ func (dk *DynaKube) FeatureAgentInitialConnectRetry() int {
 	return val
 }
 
-func (dk *DynaKube) FeatureAgentRunPrivileged() bool {
+func (dk *DynaKube) FeatureOneAgentPrivileged() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureRunOneAgentContainerPrivileged) == "true"
 }
 
