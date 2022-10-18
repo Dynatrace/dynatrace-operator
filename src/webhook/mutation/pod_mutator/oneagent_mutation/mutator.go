@@ -44,7 +44,7 @@ func (mutator *OneAgentPodMutator) Mutate(request *dtwebhook.MutationRequest) er
 		return errors.WithStack(err)
 	}
 
-	installerInfo := getInstallerInfo(request.Pod)
+	installerInfo := getInstallerInfo(request.Pod, request.DynaKube)
 	mutator.addVolumes(request.Pod, request.DynaKube)
 	mutator.configureInitContainer(request, installerInfo)
 	mutator.mutateUserContainers(request)
