@@ -1,6 +1,8 @@
 package troubleshoot
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -9,12 +11,13 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 )
 
 const (
 	testImage                                      = "linux/activegate"
 	testOneAgentImage                              = "linux/oneagent"
-	testOneAgentCodeModulesImage                   = "customDir/customCodeModules"
+	testOneAgentCodeModulesImage                   = "custom_dir/customcodemodules"
 	testCustomImage                                = "ag"
 	testCustomOneAgentImage                        = "oa"
 	testInvalidImage                               = "/beos/activegate"
@@ -32,59 +35,8 @@ const (
 	testInvalidImageName                           = testRegistry + testInvalidImage + ":" + testVersion
 )
 
-func TestOneAgentImagePullable(t *testing.T) {
-	t.Run("OneAgent image", func(t *testing.T) {
-		dockerServer := httptest.NewTLSServer(
-			testDockerServerHandler(
-				"HEAD",
-				[]string{
-					"/v2/",
-					"/v2/" + testOneAgentImage + "/manifests/" + "latest",
-				}))
-		defer dockerServer.Close()
-
-		server := removeSchemaRegex.FindStringSubmatch(dockerServer.URL)[1]
-
-		auths := Auths{
-			Auths: Endpoints{
-				server: Credentials{
-					Username: "ac",
-					Password: "dt",
-					Auth:     "ZW",
-				},
-			},
-		}
-
-		authsBytes, err := json.Marshal(auths)
-		assert.NoErrorf(t, err, "fix it please")
-
-		troubleshootCtx := troubleshootContext{
-			httpClient:     dockerServer.Client(),
-			namespaceName:  testNamespace,
-			dynakubeName:   testDynakube,
-			dynakube:       *testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(dockerServer.URL + "/api").build(),
-			pullSecretName: testDynakube + pullSecretSuffix,
-			pullSecret:     *testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend(dtpullsecret.DockerConfigJson, string(authsBytes)).build(),
-		}
-
-		err = checkOneAgentImagePullable(&troubleshootCtx)
-		assert.NoErrorf(t, err, "unexpected error")
-	})
-}
-
-func TestOneAgentCodeModulesImagePullable(t *testing.T) {
-	dockerServer := httptest.NewTLSServer(
-		testDockerServerHandler(
-			"HEAD",
-			[]string{
-				"/",
-				"/" + testOneAgentCodeModulesImage + ":" + testVersion,
-			}))
-	defer dockerServer.Close()
-
-	server := removeSchemaRegex.FindStringSubmatch(dockerServer.URL)[1]
-
-	auths := Auths{
+func defaultAuths(server string) Auths {
+	return Auths{
 		Auths: Endpoints{
 			server: Credentials{
 				Username: "ac",
@@ -93,16 +45,92 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 			},
 		},
 	}
+}
 
+func setupDockerMocker(handleUrls []string) (*httptest.Server, *corev1.Secret, string, error) {
+	dockerServer := httptest.NewTLSServer(testDockerServerHandler("GET", handleUrls))
+
+	server := removeSchemaRegex.FindStringSubmatch(dockerServer.URL)[1]
+
+	secret, err := createSecret(defaultAuths(server))
+	if err != nil {
+		dockerServer.Close()
+		return nil, nil, "", err
+	}
+
+	return dockerServer, secret, server, nil
+}
+
+func createSecret(auths Auths) (*corev1.Secret, error) {
 	authsBytes, err := json.Marshal(auths)
-	require.NoErrorf(t, err, "credentials could not be marshaled, test code needs some love")
+	if err != nil {
+		return nil, err
+	}
+	return testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).
+		dataAppend(dtpullsecret.DockerConfigJson, string(authsBytes)).
+		build(), nil
+}
+
+func runWithTestLogger(function func()) string {
+	logBuffer := bytes.Buffer{}
+	logger := newTroubleshootLoggerToWriter("imagepullable_test", &logBuffer)
+
+	oldLog := log
+	log = logger
+	function()
+	log = oldLog
+	return logBuffer.String()
+}
+
+func TestOneAgentImagePullable(t *testing.T) {
+	t.Run("OneAgent image", func(t *testing.T) {
+
+		dockerServer, secret, _, err := setupDockerMocker(
+			[]string{
+				"/v2/",
+				"/v2/" + testOneAgentImage + "/manifests/" + "latest",
+			})
+		require.NoError(t, err)
+		defer dockerServer.Close()
+
+		troubleshootCtx := troubleshootContext{
+			httpClient:    dockerServer.Client(),
+			namespaceName: testNamespace,
+			dynakubeName:  testDynakube,
+			dynakube: *testNewDynakubeBuilder(testNamespace, testDynakube).
+				withApiUrl(dockerServer.URL + "/api").
+				withCloudNativeFullStack().
+				build(),
+			pullSecretName: testDynakube + pullSecretSuffix,
+			pullSecret:     *secret,
+			ctx:            context.TODO(),
+		}
+
+		logOutput := runWithTestLogger(func() {
+			verifyImageIsAvailable("OneAgent", getOneAgentImageEndpoint(&troubleshootCtx), &troubleshootCtx)
+		})
+		assert.NotContains(t, logOutput, "failed")
+		assert.Contains(t, logOutput, "can be successfully pulled")
+	})
+}
+
+func TestOneAgentCodeModulesImagePullable(t *testing.T) {
+
+	dockerServer, secret, server, err := setupDockerMocker(
+		[]string{
+			"/v2/",
+			"/v2/" + testOneAgentCodeModulesImage + "/manifests/" + testVersion,
+		})
+	require.NoError(t, err)
+	defer dockerServer.Close()
 
 	troubleshootCtx := troubleshootContext{
 		httpClient:     dockerServer.Client(),
 		namespaceName:  testNamespace,
 		dynakubeName:   testDynakube,
 		pullSecretName: testDynakube + pullSecretSuffix,
-		pullSecret:     *testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend(dtpullsecret.DockerConfigJson, string(authsBytes)).build(),
+		pullSecret:     *secret,
+		ctx:            context.TODO(),
 	}
 
 	t.Run("OneAgent code modules image", func(t *testing.T) {
@@ -111,8 +139,11 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 			withCloudNativeCodeModulesImage(server + "/" + testOneAgentCodeModulesImage + ":" + testVersion).
 			build()
 
-		err = checkOneAgentCodeModulesImagePullable(&troubleshootCtx)
-		assert.NoErrorf(t, err, "unexpected error")
+		logOutput := runWithTestLogger(func() {
+			verifyImageIsAvailable("OneAgentCodeModules", getOneAgentCodeModulesImageEndpoint(&troubleshootCtx), &troubleshootCtx)
+		})
+		assert.NotContains(t, logOutput, "failed")
+		assert.Contains(t, logOutput, "can be successfully pulled")
 	})
 
 	t.Run("OneAgent code modules with non-existing image", func(t *testing.T) {
@@ -121,73 +152,37 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 			withCloudNativeCodeModulesImage(server + "/non-existing-image").
 			build()
 
-		err = checkOneAgentCodeModulesImagePullable(&troubleshootCtx)
-		assert.Errorf(t, err, "expected an error")
-		assert.Contains(t, err.Error(), "missing")
-	})
-
-	t.Run("OneAgent code modules unknown server", func(t *testing.T) {
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
-			withApiUrl(dockerServer.URL + "/api").
-			withCloudNativeCodeModulesImage("myunknownserver.com/myrepo/mymissingcodemodules").
-			build()
-
-		err = checkOneAgentCodeModulesImagePullable(&troubleshootCtx)
-		assert.Errorf(t, err, "expected an error")
-		assert.Contains(t, err.Error(), "no credentials")
+		logOutput := runWithTestLogger(func() {
+			verifyImageIsAvailable("OneAgentCodeModules", getOneAgentCodeModulesImageEndpoint(&troubleshootCtx), &troubleshootCtx)
+		})
+		assert.Contains(t, logOutput, "failed")
+		assert.NotContains(t, logOutput, "can be successfully pulled")
 	})
 
 	t.Run("OneAgent code modules unreachable server", func(t *testing.T) {
 		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
-			withCloudNativeCodeModulesImage("myfailingserver.com/myrepo/mymissingcodemodules").
+			withCloudNativeCodeModulesImage("myunknownserver.com/myrepo/mymissingcodemodules").
 			build()
 
-		newAuths := auths
-		newAuths.Auths["myfailingserver.com"] = Credentials{
-			Username: "foobar",
-			Password: "foobar",
-			Auth:     "ZW",
-		}
-
-		newAuthsBytes, err := json.Marshal(newAuths)
-		require.NoErrorf(t, err, "credentials could not be marshaled, test code needs some love")
-
-		troubleshootCtx.pullSecret = *testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).
-			dataAppend(dtpullsecret.DockerConfigJson, string(newAuthsBytes)).
-			build()
-
-		err = checkOneAgentCodeModulesImagePullable(&troubleshootCtx)
-		assert.Errorf(t, err, "expected an error")
-		assert.Contains(t, err.Error(), "unreachable")
+		logOutput := runWithTestLogger(func() {
+			verifyImageIsAvailable("OneAgentCodeModules", getOneAgentCodeModulesImageEndpoint(&troubleshootCtx), &troubleshootCtx)
+		})
+		assert.Contains(t, logOutput, "failed")
+		assert.Contains(t, logOutput, "no such host")
+		assert.NotContains(t, logOutput, "can be successfully pulled")
 	})
 }
 
 func TestActiveGateImagePullable(t *testing.T) {
 	t.Run("ActiveGate image", func(t *testing.T) {
-		dockerServer := httptest.NewTLSServer(
-			testDockerServerHandler(
-				"HEAD",
-				[]string{
-					"/v2/",
-					"/v2/" + testImage + "/manifests/" + "latest",
-				}))
+		dockerServer, secret, _, err := setupDockerMocker(
+			[]string{
+				"/v2/",
+				"/v2/" + testImage + "/manifests/" + "latest",
+			})
+		require.NoError(t, err)
 		defer dockerServer.Close()
-
-		server := removeSchemaRegex.FindStringSubmatch(dockerServer.URL)[1]
-
-		auths := Auths{
-			Auths: Endpoints{
-				server: Credentials{
-					Username: "ac",
-					Password: "dt",
-					Auth:     "ZW",
-				},
-			},
-		}
-
-		authsBytes, err := json.Marshal(auths)
-		assert.NoErrorf(t, err, "fix it please")
 
 		troubleshootCtx := troubleshootContext{
 			httpClient:     dockerServer.Client(),
@@ -195,56 +190,15 @@ func TestActiveGateImagePullable(t *testing.T) {
 			dynakubeName:   testDynakube,
 			dynakube:       *testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(dockerServer.URL + "/api").build(),
 			pullSecretName: testDynakube + pullSecretSuffix,
-			pullSecret:     *testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend(dtpullsecret.DockerConfigJson, string(authsBytes)).build(),
+			pullSecret:     *secret,
+			ctx:            context.TODO(),
 		}
 
-		err = checkActiveGateImagePullable(&troubleshootCtx)
-		assert.NoErrorf(t, err, "unexpected error")
-	})
-}
-
-func TestImagePullableDockerClient(t *testing.T) {
-	t.Run("connect to docker registry", func(t *testing.T) {
-		dockerServer := httptest.NewTLSServer(
-			testDockerServerHandler(
-				"HEAD",
-				[]string{
-					"/v2/",
-				}))
-		defer dockerServer.Close()
-
-		statusCode, err := connectToDockerRegistry(dockerServer.Client(), "HEAD", dockerServer.URL+"/v2/", "Basic", "basic")
-		assert.Equal(t, http.StatusOK, statusCode, "connection not established")
-		assert.NoErrorf(t, err, "unexpected error")
-	})
-
-	t.Run("component image", func(t *testing.T) {
-		dockerServer := httptest.NewTLSServer(
-			testDockerServerHandler(
-				"HEAD",
-				[]string{
-					"/v2/",
-					"/v2/" + testImage + "/manifests/" + testVersion,
-				}))
-		defer dockerServer.Close()
-
-		server := removeSchemaRegex.FindStringSubmatch(dockerServer.URL)[1]
-
-		auths := Auths{
-			Auths: Endpoints{
-				server: Credentials{
-					Username: "ac",
-					Password: "dt",
-					Auth:     "ZW",
-				},
-			},
-		}
-
-		authsBytes, err := json.Marshal(auths)
-		assert.NoErrorf(t, err, "fix it please")
-
-		err = checkComponentImagePullable(dockerServer.Client(), "ActiveGate", string(authsBytes), server+"/"+testImage+":"+testVersion)
-		assert.NoErrorf(t, err, "unexpected error")
+		logOutput := runWithTestLogger(func() {
+			verifyImageIsAvailable("ActiveGate", getActiveGateImageEndpoint(&troubleshootCtx), &troubleshootCtx)
+		})
+		assert.NotContains(t, logOutput, "failed")
+		assert.Contains(t, logOutput, "can be successfully pulled")
 	})
 }
 
@@ -269,9 +223,10 @@ func TestImagePullablePullSecret(t *testing.T) {
 			pullSecret:     *testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend(dtpullsecret.DockerConfigJson, pullSecretFieldValue).build(),
 		}
 		secret, err := getPullSecretToken(&troubleshootCtx)
-		assert.NoErrorf(t, err, "unexpected error")
+		require.NoErrorf(t, err, "unexpected error")
 		assert.Equal(t, pullSecretFieldValue, secret, "invalid contents of pull secret")
 	})
+
 	t.Run("invalid pull secret", func(t *testing.T) {
 		troubleshootCtx := troubleshootContext{
 			namespaceName:  testNamespace,
@@ -280,9 +235,8 @@ func TestImagePullablePullSecret(t *testing.T) {
 			pullSecret:     *testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend("invalidToken", pullSecretFieldValue).build(),
 		}
 		secret, err := getPullSecretToken(&troubleshootCtx)
-		assert.Errorf(t, err, "expected error")
+		require.Errorf(t, err, "expected error")
 		assert.NotEqual(t, pullSecretFieldValue, secret, "valid contents of pull secret")
-
 	})
 }
 

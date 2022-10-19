@@ -50,6 +50,16 @@ func (config *DockerConfig) SetupAuths(ctx context.Context) error {
 	return nil
 }
 
+func (config *DockerConfig) SetupAuthsFromSecret(secret *corev1.Secret) error {
+	dockerAuths, err := parseDockerAuthsFromSecret(secret)
+	if err != nil {
+		log.Info("failed to parse secret content", "dynakube", config.Dynakube.Name)
+		return err
+	}
+	config.Auths = dockerAuths
+	return nil
+}
+
 func (config *DockerConfig) SaveCustomCAs(
 	ctx context.Context,
 	fs afero.Afero,

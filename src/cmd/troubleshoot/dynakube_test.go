@@ -267,6 +267,15 @@ func (builder *testDynaKubeBuilder) withActiveGateCapability(capability dynatrac
 	return builder
 }
 
+func (builder *testDynaKubeBuilder) withCloudNativeFullStack() *testDynaKubeBuilder {
+	if builder.dynakube.Spec.OneAgent.CloudNativeFullStack == nil {
+		builder.dynakube.Spec.OneAgent.CloudNativeFullStack = &dynatracev1beta1.CloudNativeFullStackSpec{
+			HostInjectSpec: dynatracev1beta1.HostInjectSpec{},
+		}
+	}
+	return builder
+}
+
 func (builder *testDynaKubeBuilder) withClassicFullStackCustomImage(image string) *testDynaKubeBuilder {
 	if builder.dynakube.Spec.OneAgent.ClassicFullStack != nil {
 		builder.dynakube.Spec.OneAgent.ClassicFullStack.Image = image

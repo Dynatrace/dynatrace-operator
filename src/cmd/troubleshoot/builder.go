@@ -1,6 +1,7 @@
 package troubleshoot
 
 import (
+	"context"
 	"net/http"
 	"os"
 
@@ -92,14 +93,21 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			checkNamespace,
 			checkDynakube,
 			checkDTClusterConnection,
-			checkImagePullable,
+			verifyAllImagesAvailable,
 		}
 
 		httpClient := &http.Client{
 			Transport: http.DefaultTransport.(*http.Transport).Clone(),
 		}
 
-		troubleshootCtx := troubleshootContext{apiReader: apiReader, httpClient: httpClient, namespaceName: namespaceFlagValue, dynakubeName: dynakubeFlagValue}
+		troubleshootCtx := troubleshootContext{
+			ctx:           context.TODO(),
+			apiReader:     apiReader,
+			httpClient:    httpClient,
+			namespaceName: namespaceFlagValue,
+			dynakubeName:  dynakubeFlagValue,
+		}
+
 		for _, test := range tests {
 			if err := test(&troubleshootCtx); err != nil {
 				logErrorf(err.Error())

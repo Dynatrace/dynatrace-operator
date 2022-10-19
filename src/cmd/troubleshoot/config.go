@@ -1,6 +1,7 @@
 package troubleshoot
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -9,6 +10,7 @@ import (
 )
 
 type troubleshootContext struct {
+	ctx                    context.Context
 	apiReader              client.Reader
 	httpClient             *http.Client
 	namespaceName          string // the default namespace ("dynatrace") or provided in the command line

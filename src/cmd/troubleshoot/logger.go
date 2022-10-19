@@ -2,6 +2,7 @@ package troubleshoot
 
 import (
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/go-logr/logr"
@@ -25,6 +26,10 @@ type troubleshootLogger struct {
 }
 
 func newTroubleshootLogger(testName string) logr.Logger {
+	return newTroubleshootLoggerToWriter(testName, os.Stdout)
+}
+
+func newTroubleshootLoggerToWriter(testName string, out io.Writer) logr.Logger {
 	config := zap.NewProductionEncoderConfig()
 	config.TimeKey = ""
 	config.LevelKey = ""
@@ -33,7 +38,7 @@ func newTroubleshootLogger(testName string) logr.Logger {
 
 	return logr.New(
 		troubleshootLogger{
-			logger: ctrlzap.New(ctrlzap.WriteTo(os.Stdout), ctrlzap.Encoder(zapcore.NewConsoleEncoder(config))).WithName(testName),
+			logger: ctrlzap.New(ctrlzap.WriteTo(out), ctrlzap.Encoder(zapcore.NewConsoleEncoder(config))).WithName(testName),
 		},
 	)
 }
