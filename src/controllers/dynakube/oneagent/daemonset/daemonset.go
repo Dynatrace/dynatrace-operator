@@ -228,7 +228,7 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 }
 
 func (dsInfo *builderInfo) serviceAccountName() string {
-	if dsInfo.instance != nil && dsInfo.instance.IsOneAgentPrivileged() {
+	if dsInfo.instance != nil && dsInfo.instance.NeedsOneAgentPrivileged() {
 		return privilegedServiceAccountName
 	}
 
@@ -317,7 +317,7 @@ func (dsInfo *builderInfo) securityContext() *corev1.SecurityContext {
 		securityContext.RunAsGroup = address.Of(int64(1000))
 	}
 
-	if dsInfo.instance != nil && dsInfo.instance.IsOneAgentPrivileged() {
+	if dsInfo.instance != nil && dsInfo.instance.NeedsOneAgentPrivileged() {
 		securityContext.Privileged = address.Of(true)
 	} else {
 		securityContext.Capabilities = defaultSecurityContextCapabilities()
