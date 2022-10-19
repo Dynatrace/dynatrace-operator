@@ -28,6 +28,14 @@ CSI plugin-dir path
 	{{ printf "%s/plugins/csi.oneagent.dynatrace.com/" (trimSuffix "/" (default "/var/lib/kubelet" .Values.csidriver.kubeletPath)) }}
 {{- end -}}
 
+
+{{/*
+CSI data-dir path
+*/}}
+{{- define "dynatrace-operator.CSIDataDir" -}}
+	{{ printf "%s/data" (trimSuffix "/" (include "dynatrace-operator.CSIPluginDir" .)) }}
+{{- end -}}
+
 {{/*
 CSI socket path
 */}}
