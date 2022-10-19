@@ -26,12 +26,12 @@ var testEnvironment env.Environment
 
 func TestMain(m *testing.M) {
 	testEnvironment = environment.Get()
-	testEnvironment.BeforeEachTest(dynakube.DeleteIfExists())
+	testEnvironment.BeforeEachTest(dynakube.DeleteIfExists(dynakube.NewBuilder().WithDefaultObjectMeta().Build()))
 	testEnvironment.BeforeEachTest(oneagent.WaitForDaemonSetPodsDeletion())
 	testEnvironment.BeforeEachTest(namespace.DeleteIfExists(sampleapps.Namespace))
 	testEnvironment.BeforeEachTest(namespace.Recreate(dynakube.Namespace))
 
-	testEnvironment.AfterEachTest(dynakube.DeleteIfExists())
+	testEnvironment.AfterEachTest(dynakube.DeleteIfExists(dynakube.NewBuilder().WithDefaultObjectMeta().Build()))
 	testEnvironment.AfterEachTest(oneagent.WaitForDaemonSetPodsDeletion())
 	testEnvironment.AfterEachTest(namespace.Delete(sampleapps.Namespace))
 	testEnvironment.AfterEachTest(namespace.Delete(dynakube.Namespace))

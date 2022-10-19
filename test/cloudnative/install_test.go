@@ -25,7 +25,13 @@ func install(t *testing.T) features.Feature {
 	setup.InstallAndDeploy(defaultInstallation, secretConfig, "../testdata/cloudnative/sample-deployment.yaml")
 	setup.AssessDeployment(defaultInstallation)
 
-	defaultInstallation.Assess("dynakube applied", dynakube.ApplyCloudNative(secretConfig.ApiUrl, &v1beta1.CloudNativeFullStackSpec{}))
+	defaultInstallation.Assess("dynakube applied", dynakube.Apply(
+		dynakube.NewBuilder().
+			WithDefaultObjectMeta().
+			WithActiveGate().
+			ApiUrl(secretConfig.ApiUrl).
+			CloudNative(&v1beta1.CloudNativeFullStackSpec{}).
+			Build()))
 
 	setup.AssessDynakubeStartup(defaultInstallation)
 	assessOneAgentsAreRunning(defaultInstallation)

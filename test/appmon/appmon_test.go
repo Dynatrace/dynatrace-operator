@@ -5,8 +5,10 @@ package appmon
 import (
 	"context"
 	"encoding/json"
+	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/environment"
@@ -44,11 +46,11 @@ type metadata struct {
 
 func TestMain(m *testing.M) {
 	testEnvironment = environment.Get()
-	testEnvironment.BeforeEachTest(dynakube.DeleteIfExists())
+	testEnvironment.BeforeEachTest(dynakube.DeleteIfExists(dynakube.NewBuilder().WithDefaultObjectMeta().Build()))
 	testEnvironment.BeforeEachTest(namespace.Recreate(dynakube.Namespace))
 	testEnvironment.BeforeEachTest(namespace.Recreate(sampleapps.Namespace))
 
-	testEnvironment.AfterEachTest(dynakube.DeleteIfExists())
+	testEnvironment.AfterEachTest(dynakube.DeleteIfExists(dynakube.NewBuilder().WithDefaultObjectMeta().Build()))
 	testEnvironment.AfterEachTest(namespace.Delete(sampleapps.Namespace))
 	testEnvironment.AfterEachTest(namespace.Delete(dynakube.Namespace))
 
@@ -62,6 +64,12 @@ func TestApplicationMonitoring(t *testing.T) {
 func dataIngest(t *testing.T) features.Feature {
 	dataIngestFeature := features.New("data-ingest")
 	tenantSecret, err := secrets.NewFromConfig(afero.NewOsFs(), installSecretPath)
+	dataIngestDynakube := dynakube.NewBuilder().
+		WithDefaultObjectMeta().
+		ApiUrl(tenantSecret.ApiUrl).
+		ApplicationMonitoring(&v1beta1.ApplicationMonitoringSpec{
+			UseCSIDriver: address.Of(false),
+		}).Build()
 
 	require.NoError(t, err)
 
@@ -69,8 +77,8 @@ func dataIngest(t *testing.T) features.Feature {
 	dataIngestFeature.Setup(operator.WaitForDeployment())
 	dataIngestFeature.Setup(webhook.WaitForDeployment())
 	dataIngestFeature.Setup(secrets.ApplyDefault(tenantSecret))
-	dataIngestFeature.Setup(applyDynakube(tenantSecret.ApiUrl))
-	dataIngestFeature.Setup(dynakube.WaitForDynakubePhase())
+	dataIngestFeature.Setup(dynakube.Apply(dataIngestDynakube))
+	dataIngestFeature.Setup(dynakube.WaitForDynakubePhase(dataIngestDynakube))
 	dataIngestFeature.Setup(manifests.InstallFromFile(sampleApps))
 	dataIngestFeature.Setup(deployment.WaitFor("test-deployment", sampleapps.Namespace))
 	dataIngestFeature.Setup(pod.WaitFor("test-pod", sampleapps.Namespace))

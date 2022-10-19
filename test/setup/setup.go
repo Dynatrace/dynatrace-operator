@@ -25,7 +25,7 @@ func AssessDeployment(builder *features.FeatureBuilder) {
 }
 
 func AssessDynakubeStartup(builder *features.FeatureBuilder) {
-	builder.Assess("activegate started", activegate.WaitForStatefulSet())
 	builder.Assess("oneagent started", oneagent.WaitForDaemonset())
-	builder.Assess("dynakube phase changes to 'Running'", dynakube.WaitForDynakubePhase())
+	builder.Assess("activegate started", activegate.WaitForStatefulSet())
+	builder.Assess("dynakube phase changes to 'Running'", dynakube.WaitForDynakubePhase(dynakube.NewBuilder().WithDefaultObjectMeta().Build()))
 }

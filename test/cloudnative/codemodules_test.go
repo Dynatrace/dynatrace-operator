@@ -66,7 +66,14 @@ func codeModules(t *testing.T) features.Feature {
 
 	setup.AssessDeployment(codeModulesInjection)
 
-	codeModulesInjection.Assess("install dynakube", dynakube.ApplyCloudNative(secretConfigs[0].ApiUrl, codeModulesSpec()))
+	codeModulesInjection.Assess("install dynakube", dynakube.Apply(
+		dynakube.NewBuilder().
+			WithDefaultObjectMeta().
+			WithActiveGate().
+			ApiUrl(secretConfigs[0].ApiUrl).
+			CloudNative(codeModulesSpec()).
+			Build()),
+	)
 
 	setup.AssessDynakubeStartup(codeModulesInjection)
 	assessOneAgentsAreRunning(codeModulesInjection)

@@ -85,12 +85,13 @@ var testEnvironment env.Environment
 
 func TestMain(m *testing.M) {
 	testEnvironment = environment.Get()
-	testEnvironment.BeforeEachTest(dynakube.DeleteIfExists())
+
+	testEnvironment.BeforeEachTest(dynakube.DeleteIfExists(dynakube.NewBuilder().WithDefaultObjectMeta().Build()))
 	testEnvironment.BeforeEachTest(oneagent.WaitForDaemonSetPodsDeletion())
 	testEnvironment.BeforeEachTest(namespace.Recreate(dynakube.Namespace))
 	testEnvironment.BeforeEachTest(proxy.DeleteProxyIfExists())
 
-	testEnvironment.AfterEachTest(dynakube.DeleteIfExists())
+	testEnvironment.AfterEachTest(dynakube.DeleteIfExists(dynakube.NewBuilder().WithDefaultObjectMeta().Build()))
 	testEnvironment.AfterEachTest(oneagent.WaitForDaemonSetPodsDeletion())
 	testEnvironment.AfterEachTest(namespace.Delete(dynakube.Namespace))
 	testEnvironment.AfterEachTest(proxy.DeleteProxyIfExists())
@@ -122,12 +123,19 @@ func install(t *testing.T, proxySpec *v1beta1.DynaKubeProxy) features.Feature {
 
 	proxy.InstallProxy(defaultInstallation, proxySpec)
 
-	defaultInstallation.Assess("dynakube applied", dynakube.ApplyDynakube(secretConfig.ApiUrl, &v1beta1.CloudNativeFullStackSpec{}, proxySpec))
+	defaultInstallation.Assess("dynakube applied", dynakube.Apply(
+		dynakube.NewBuilder().
+			WithDefaultObjectMeta().
+			WithActiveGate().
+			WithDynakubeNamespaceSelector().
+			ApiUrl(secretConfig.ApiUrl).
+			CloudNative(&v1beta1.CloudNativeFullStackSpec{}).
+			Proxy(proxySpec).
+			Build()),
+	)
 
 	assessDynakubeStartup(defaultInstallation)
-
 	assessOneAgentsAreRunning(defaultInstallation)
-
 	assessActiveGate(defaultInstallation)
 
 	return defaultInstallation.Feature()
@@ -147,7 +155,8 @@ func assessDeployment(builder *features.FeatureBuilder) {
 func assessDynakubeStartup(builder *features.FeatureBuilder) {
 	builder.Assess("activegate started", WaitForStatefulSet())
 	builder.Assess("oneagent started", oneagent.WaitForDaemonset())
-	builder.Assess("dynakube phase changes to 'Running'", dynakube.WaitForDynakubePhase())
+	builder.Assess("dynakube phase changes to 'Running'", dynakube.WaitForDynakubePhase(
+		dynakube.NewBuilder().WithDefaultObjectMeta().Build()))
 }
 
 func assessOneAgentsAreRunning(builder *features.FeatureBuilder) {
