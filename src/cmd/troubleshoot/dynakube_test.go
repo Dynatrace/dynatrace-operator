@@ -253,11 +253,6 @@ func (builder *testDynaKubeBuilder) withProxySecret(secretName string) *testDyna
 	return builder
 }
 
-func (builder *testDynaKubeBuilder) withActiveGateImage(image string) *testDynaKubeBuilder {
-	builder.dynakube.Spec.ActiveGate.Image = image
-	return builder
-}
-
 func (builder *testDynaKubeBuilder) withActiveGateCapability(capability dynatracev1beta1.CapabilityDisplayName) *testDynaKubeBuilder {
 	if builder.dynakube.Spec.ActiveGate.Capabilities == nil {
 		builder.dynakube.Spec.ActiveGate.Capabilities = make([]dynatracev1beta1.CapabilityDisplayName, 0)
@@ -267,11 +262,30 @@ func (builder *testDynaKubeBuilder) withActiveGateCapability(capability dynatrac
 	return builder
 }
 
+func (builder *testDynaKubeBuilder) withActiveGateCustomImage(image string) *testDynaKubeBuilder {
+	builder.dynakube.Spec.ActiveGate.Image = image
+	return builder
+}
+
 func (builder *testDynaKubeBuilder) withCloudNativeFullStack() *testDynaKubeBuilder {
 	if builder.dynakube.Spec.OneAgent.CloudNativeFullStack == nil {
 		builder.dynakube.Spec.OneAgent.CloudNativeFullStack = &dynatracev1beta1.CloudNativeFullStackSpec{
 			HostInjectSpec: dynatracev1beta1.HostInjectSpec{},
 		}
+	}
+	return builder
+}
+
+func (builder *testDynaKubeBuilder) withClassicFullStack() *testDynaKubeBuilder {
+	if builder.dynakube.Spec.OneAgent.ClassicFullStack == nil {
+		builder.dynakube.Spec.OneAgent.ClassicFullStack = &dynatracev1beta1.HostInjectSpec{}
+	}
+	return builder
+}
+
+func (builder *testDynaKubeBuilder) withHostMonitoring() *testDynaKubeBuilder {
+	if builder.dynakube.Spec.OneAgent.HostMonitoring == nil {
+		builder.dynakube.Spec.OneAgent.HostMonitoring = &dynatracev1beta1.HostInjectSpec{}
 	}
 	return builder
 }
@@ -326,14 +340,18 @@ func (builder *testDynaKubeBuilder) withCloudNativeCodeModulesImage(image string
 }
 
 func (builder *testDynaKubeBuilder) withApplicationMonitoringCodeModulesImage(image string) *testDynaKubeBuilder {
+	useCSIDriver := true
 	if builder.dynakube.Spec.OneAgent.ApplicationMonitoring != nil {
 		builder.dynakube.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage = image
+		builder.dynakube.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver = &useCSIDriver
+
 	} else {
 		builder.dynakube.Spec.OneAgent.ApplicationMonitoring = &dynatracev1beta1.ApplicationMonitoringSpec{
 			AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{
 				InitResources:    corev1.ResourceRequirements{},
 				CodeModulesImage: image,
 			},
+			UseCSIDriver: &useCSIDriver,
 		}
 	}
 	return builder
@@ -369,20 +387,6 @@ func (builder *testDynaKubeBuilder) withHostMonitoringImageVersion(version strin
 	} else {
 		builder.dynakube.Spec.OneAgent.HostMonitoring = &dynatracev1beta1.HostInjectSpec{
 			Version: version,
-		}
-	}
-	return builder
-}
-
-func (builder *testDynaKubeBuilder) withApplicationMonitoringUseCSIDriver(useCSIDriver bool) *testDynaKubeBuilder {
-	if builder.dynakube.Spec.OneAgent.ApplicationMonitoring != nil {
-		builder.dynakube.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver = &useCSIDriver
-	} else {
-		builder.dynakube.Spec.OneAgent.ApplicationMonitoring = &dynatracev1beta1.ApplicationMonitoringSpec{
-			AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{
-				InitResources: corev1.ResourceRequirements{},
-			},
-			UseCSIDriver: &useCSIDriver,
 		}
 	}
 	return builder
