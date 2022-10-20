@@ -18,6 +18,18 @@ const (
 	Namespace = "test-namespace-1"
 )
 
+func Install(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
+	var sampleDeployment appsv1.Deployment
+	resource := config.Client().Resources()
+
+	require.NoError(t, resource.Get(ctx, Name, Namespace, &sampleDeployment))
+	require.NoError(t, wait.For(
+		conditions.New(resource).DeploymentConditionMatch(
+			&sampleDeployment, appsv1.DeploymentAvailable, corev1.ConditionTrue)))
+
+	return ctx
+}
+
 func Restart(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
 	var sampleDeployment appsv1.Deployment
 	var pods corev1.PodList

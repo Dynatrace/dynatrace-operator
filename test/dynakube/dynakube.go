@@ -83,6 +83,20 @@ func ApplyCloudNative(apiUrl string, cloudNativeFullStackSpec *dynatracev1beta1.
 	}
 }
 
+func ApplyCloudNativeWithFeatureFlag(apiUrl string, cloudNativeFullStackSpec *dynatracev1beta1.CloudNativeFullStackSpec, featureFlag map[string]string) features.Func {
+	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+		require.NoError(t, dynatracev1beta1.AddToScheme(environmentConfig.Client().Resources().GetScheme()))
+
+		instance := newWithActiveGate(apiUrl)
+		instance.Annotations = featureFlag
+		instance.Spec.OneAgent.CloudNativeFullStack = cloudNativeFullStackSpec
+
+		require.NoError(t, environmentConfig.Client().Resources().Create(ctx, &instance))
+
+		return ctx
+	}
+}
+
 func ApplyDynakube(apiUrl string, cloudNativeFullStackSpec *dynatracev1beta1.CloudNativeFullStackSpec, proxy *dynatracev1beta1.DynaKubeProxy) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		require.NoError(t, dynatracev1beta1.AddToScheme(environmentConfig.Client().Resources().GetScheme()))
