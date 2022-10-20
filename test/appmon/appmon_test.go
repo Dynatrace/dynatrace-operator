@@ -33,9 +33,8 @@ import (
 )
 
 const (
-	installSecretPath = "../testdata/secrets/application-monitoring-install.yaml"
-	sampleApps        = "../testdata/application-monitoring/sample-apps.yaml"
-	metadataFile      = "/var/lib/dynatrace/enrichment/dt_metadata.json"
+	sampleApps   = "../testdata/application-monitoring/sample-apps.yaml"
+	metadataFile = "/var/lib/dynatrace/enrichment/dt_metadata.json"
 )
 
 var testEnvironment env.Environment
@@ -47,9 +46,9 @@ type metadata struct {
 
 func TestMain(m *testing.M) {
 	testEnvironment = environment.Get()
+	testEnvironment.BeforeEachTest(namespace.Recreate(sampleapps.Namespace))
 	testEnvironment.BeforeEachTest(dynakube.DeleteIfExists(dynakube.NewBuilder().WithDefaultObjectMeta().Build()))
 	testEnvironment.BeforeEachTest(namespace.Recreate(dynakube.Namespace))
-	testEnvironment.BeforeEachTest(namespace.Recreate(sampleapps.Namespace))
 
 	testEnvironment.AfterEachTest(dynakube.DeleteIfExists(dynakube.NewBuilder().WithDefaultObjectMeta().Build()))
 	testEnvironment.AfterEachTest(namespace.Delete(sampleapps.Namespace))
@@ -64,7 +63,7 @@ func TestApplicationMonitoring(t *testing.T) {
 
 func dataIngest(t *testing.T) features.Feature {
 	dataIngestFeature := features.New("data-ingest")
-	tenantSecret, err := secrets.NewFromConfig(afero.NewOsFs(), installSecretPath)
+	tenantSecret, err := secrets.DefaultSingleTenant(afero.NewOsFs())
 	dataIngestDynakube := dynakube.NewBuilder().
 		WithDefaultObjectMeta().
 		ApiUrl(tenantSecret.ApiUrl).

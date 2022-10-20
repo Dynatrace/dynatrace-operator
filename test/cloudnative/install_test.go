@@ -13,8 +13,6 @@ import (
 
 const (
 	oneAgentInstallContainerName = "install-oneagent"
-
-	installSecretsPath = "../testdata/secrets/cloudnative-install.yaml"
 )
 
 func install(t *testing.T) features.Feature {
@@ -28,7 +26,6 @@ func install(t *testing.T) features.Feature {
 	defaultInstallation.Assess("dynakube applied", dynakube.Apply(
 		dynakube.NewBuilder().
 			WithDefaultObjectMeta().
-			WithActiveGate().
 			ApiUrl(secretConfig.ApiUrl).
 			CloudNative(&v1beta1.CloudNativeFullStackSpec{}).
 			Build()))

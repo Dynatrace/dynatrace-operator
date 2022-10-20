@@ -4,8 +4,6 @@ package cloudnative
 
 import (
 	"context"
-	"os"
-	"path"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
@@ -30,14 +28,14 @@ var testEnvironment env.Environment
 
 func TestMain(m *testing.M) {
 	testEnvironment = environment.Get()
+	testEnvironment.BeforeEachTest(namespace.DeleteIfExists(sampleapps.Namespace))
 	testEnvironment.BeforeEachTest(dynakube.DeleteIfExists(dynakube.NewBuilder().WithDefaultObjectMeta().Build()))
 	testEnvironment.BeforeEachTest(oneagent.WaitForDaemonSetPodsDeletion())
-	testEnvironment.BeforeEachTest(namespace.DeleteIfExists(sampleapps.Namespace))
 	testEnvironment.BeforeEachTest(namespace.Recreate(dynakube.Namespace))
 
+	testEnvironment.AfterEachTest(namespace.Delete(sampleapps.Namespace))
 	testEnvironment.AfterEachTest(dynakube.DeleteIfExists(dynakube.NewBuilder().WithDefaultObjectMeta().Build()))
 	testEnvironment.AfterEachTest(oneagent.WaitForDaemonSetPodsDeletion())
-	testEnvironment.AfterEachTest(namespace.Delete(sampleapps.Namespace))
 	testEnvironment.AfterEachTest(namespace.Delete(dynakube.Namespace))
 
 	testEnvironment.Run(m)
@@ -55,11 +53,7 @@ func assessOneAgentsAreRunning(builder *features.FeatureBuilder) {
 }
 
 func getSecretConfig(t *testing.T) secrets.Secret {
-	currentWorkingDirectory, err := os.Getwd()
-	require.NoError(t, err)
-
-	secretPath := path.Join(currentWorkingDirectory, installSecretsPath)
-	secretConfig, err := secrets.NewFromConfig(afero.NewOsFs(), secretPath)
+	secretConfig, err := secrets.DefaultSingleTenant(afero.NewOsFs())
 
 	require.NoError(t, err)
 

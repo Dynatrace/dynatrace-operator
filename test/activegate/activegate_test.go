@@ -6,8 +6,6 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"os"
-	"path"
 	"strings"
 	"testing"
 
@@ -108,11 +106,7 @@ func TestActiveGateProxy(t *testing.T) {
 }
 
 func install(t *testing.T, proxySpec *v1beta1.DynaKubeProxy) features.Feature {
-	currentWorkingDirectory, err := os.Getwd()
-	require.NoError(t, err)
-
-	secretPath := path.Join(currentWorkingDirectory, "../testdata/secrets/activegate-install.yaml")
-	secretConfig, err := secrets.NewFromConfig(afero.NewOsFs(), secretPath)
+	secretConfig, err := secrets.DefaultSingleTenant(afero.NewOsFs())
 
 	require.NoError(t, err)
 
@@ -153,7 +147,6 @@ func assessDeployment(builder *features.FeatureBuilder) {
 }
 
 func assessDynakubeStartup(builder *features.FeatureBuilder) {
-	builder.Assess("activegate started", WaitForStatefulSet())
 	builder.Assess("oneagent started", oneagent.WaitForDaemonset())
 	builder.Assess("dynakube phase changes to 'Running'", dynakube.WaitForDynakubePhase(
 		dynakube.NewBuilder().WithDefaultObjectMeta().Build()))
@@ -164,6 +157,7 @@ func assessOneAgentsAreRunning(builder *features.FeatureBuilder) {
 }
 
 func assessActiveGate(builder *features.FeatureBuilder) {
+	builder.Assess("ActiveGate started", WaitForStatefulSet())
 	builder.Assess("ActiveGate has required containers", checkIfAgHasContainers)
 	builder.Assess("ActiveGate modules are active", checkActiveModules)
 	builder.Assess("ActiveGate containers have mount points", checkMountPoints)
@@ -175,17 +169,17 @@ func assessActiveGate(builder *features.FeatureBuilder) {
 func checkIfAgHasContainers(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 	resources := environmentConfig.Client().Resources()
 
-	var pod corev1.Pod
-	require.NoError(t, resources.WithNamespace(dynakube.Namespace).Get(ctx, agPodName, agNamespace, &pod))
+	var activeGatePod corev1.Pod
+	require.NoError(t, resources.WithNamespace(dynakube.Namespace).Get(ctx, agPodName, agNamespace, &activeGatePod))
 
-	require.NotNil(t, pod.Spec)
-	require.NotEmpty(t, pod.Spec.InitContainers)
-	require.NotEmpty(t, pod.Spec.Containers)
+	require.NotNil(t, activeGatePod.Spec)
+	require.NotEmpty(t, activeGatePod.Spec.InitContainers)
+	require.NotEmpty(t, activeGatePod.Spec.Containers)
 
-	assertInitContainerUnknown(t, pod.Spec.InitContainers)
-	assertInitContainerMissing(t, pod.Spec.InitContainers)
-	assertContainerUnknown(t, pod.Spec.Containers)
-	assertContainerMissing(t, pod.Spec.Containers)
+	assertInitContainerUnknown(t, activeGatePod.Spec.InitContainers)
+	assertInitContainerMissing(t, activeGatePod.Spec.InitContainers)
+	assertContainerUnknown(t, activeGatePod.Spec.Containers)
+	assertContainerMissing(t, activeGatePod.Spec.Containers)
 
 	return ctx
 }
@@ -193,8 +187,8 @@ func checkIfAgHasContainers(ctx context.Context, t *testing.T, environmentConfig
 func checkActiveModules(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 	resources := environmentConfig.Client().Resources()
 
-	var pod corev1.Pod
-	require.NoError(t, resources.WithNamespace("dynatrace").Get(ctx, agPodName, agNamespace, &pod))
+	var activeGatePod corev1.Pod
+	require.NoError(t, resources.WithNamespace("dynatrace").Get(ctx, agPodName, agNamespace, &activeGatePod))
 
 	clientset, err := kubernetes.NewForConfig(resources.GetConfig())
 	require.NoError(t, err)
@@ -212,11 +206,11 @@ func checkActiveModules(ctx context.Context, t *testing.T, environmentConfig *en
 func checkMountPoints(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 	resources := environmentConfig.Client().Resources()
 
-	var pod corev1.Pod
-	require.NoError(t, resources.WithNamespace("dynatrace").Get(ctx, agPodName, agNamespace, &pod))
+	var activeGatePod corev1.Pod
+	require.NoError(t, resources.WithNamespace("dynatrace").Get(ctx, agPodName, agNamespace, &activeGatePod))
 
 	for name, mountPoints := range agMounts {
-		assertMountPointMissing(t, environmentConfig, pod, name, mountPoints)
+		assertMountPointMissing(t, environmentConfig, activeGatePod, name, mountPoints)
 	}
 
 	return ctx
