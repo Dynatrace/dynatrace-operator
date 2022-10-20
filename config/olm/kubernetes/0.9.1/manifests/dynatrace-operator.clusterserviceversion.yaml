@@ -28,8 +28,8 @@ metadata:
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: https://github.com/Dynatrace/dynatrace-operator
     support: Dynatrace
-    createdAt: '2022-10-19T13:36:55.664737'
-    olm.skipsRange: <=v0.9.0
+    createdAt: '2022-10-20T12:16:38.318985'
+    olm.skipsRange: <=v0.9.1
   name: dynatrace-operator.v0.9.1
   namespace: placeholder
 spec:
