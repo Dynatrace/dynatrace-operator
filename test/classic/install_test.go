@@ -29,14 +29,20 @@ func install(t *testing.T) features.Feature {
 
 	installClassicFullStack.Assess("operator started", operator.WaitForDeployment())
 	installClassicFullStack.Assess("webhook started", webhook.WaitForDeployment())
-	installClassicFullStack.Assess("install dynakube", dynakube.ApplyClassicFullStack(secretConfig.ApiUrl, &dynatracev1beta1.HostInjectSpec{
-		Env: []v1.EnvVar{
-			{
-				Name:  "ONEAGENT_ENABLE_VOLUME_STORAGE",
-				Value: "true",
-			},
-		},
-	}))
+	installClassicFullStack.Assess("install dynakube", dynakube.Apply(
+		dynakube.NewBuilder().
+			WithDefaultObjectMeta().
+			ApiUrl(secretConfig.ApiUrl).
+			ClassicFullstack(&dynatracev1beta1.HostInjectSpec{
+				Env: []v1.EnvVar{
+					{
+						Name:  "ONEAGENT_ENABLE_VOLUME_STORAGE",
+						Value: "true",
+					},
+				},
+			}).
+			Build()),
+	)
 
 	setup.AssessDynakubeStartup(installClassicFullStack)
 

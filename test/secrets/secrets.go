@@ -14,6 +14,11 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
+const (
+	defaultSingleTenant = "../testdata/secrets/single-tenant.yaml"
+	defaultMultiTenant  = "../testdata/secrets/multi-tenant.yaml"
+)
+
 type Secrets struct {
 	Tenants []Secret `yaml:"tenants"`
 }
@@ -48,6 +53,14 @@ func NewFromConfig(fs afero.Fs, path string) (Secret, error) {
 	err = yaml.Unmarshal(secretConfigFile, &result)
 
 	return result, errors.WithStack(err)
+}
+
+func DefaultSingleTenant(fs afero.Fs) (Secret, error) {
+	return NewFromConfig(fs, defaultSingleTenant)
+}
+
+func DefaultMultiTenant(fs afero.Fs) ([]Secret, error) {
+	return ManyFromConfig(fs, defaultMultiTenant)
 }
 
 func ApplyDefault(secretConfig Secret) features.Func {

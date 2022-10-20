@@ -1,7 +1,6 @@
 package setup
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/test/activegate"
 	"github.com/Dynatrace/dynatrace-operator/test/csi"
 	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/manifests"
@@ -14,7 +13,7 @@ import (
 
 func InstallAndDeploy(builder *features.FeatureBuilder, secretConfig secrets.Secret, deploymentPath string) {
 	builder.Setup(secrets.ApplyDefault(secretConfig))
-	builder.Setup(operator.InstallForKubernetes())
+	builder.Setup(operator.InstallAllForKubernetes())
 	builder.Setup(manifests.InstallFromFile(deploymentPath))
 }
 
@@ -25,7 +24,6 @@ func AssessDeployment(builder *features.FeatureBuilder) {
 }
 
 func AssessDynakubeStartup(builder *features.FeatureBuilder) {
-	builder.Assess("activegate started", activegate.WaitForStatefulSet())
 	builder.Assess("oneagent started", oneagent.WaitForDaemonset())
-	builder.Assess("dynakube phase changes to 'Running'", dynakube.WaitForDynakubePhase())
+	builder.Assess("dynakube phase changes to 'Running'", dynakube.WaitForDynakubePhase(dynakube.NewBuilder().WithDefaultObjectMeta().Build()))
 }
