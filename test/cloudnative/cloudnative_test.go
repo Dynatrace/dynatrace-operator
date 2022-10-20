@@ -46,6 +46,8 @@ func TestMain(m *testing.M) {
 func TestCloudNative(t *testing.T) {
 	testEnvironment.Test(t, install(t))
 	testEnvironment.Test(t, codeModules(t))
+	testEnvironment.Test(t, networkProblems(t, csiNetworkPolicy))
+	testEnvironment.Test(t, networkProblems(t, clusterNetworkPolicy))
 }
 
 func assessOneAgentsAreRunning(builder *features.FeatureBuilder) {
