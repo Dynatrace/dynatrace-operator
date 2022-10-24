@@ -123,7 +123,7 @@ func (r *Reconciler) updateStatefulSetIfOutdated(desiredSts *appsv1.StatefulSet)
 	if err != nil {
 		return false, err
 	}
-	if !kubeobjects.HasChanged(currentSts, desiredSts) {
+	if !kubeobjects.HashAnnotationChanged(currentSts, desiredSts) {
 		return false, nil
 	}
 
