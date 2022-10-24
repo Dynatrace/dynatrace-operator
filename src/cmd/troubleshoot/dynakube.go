@@ -164,6 +164,11 @@ func evaluateProxySecret(troubleshootCtx *troubleshootContext) error {
 		logInfof("'%s:%s' proxy secret is configured to be used", troubleshootCtx.namespaceName, troubleshootCtx.proxySecretName)
 	} else if troubleshootCtx.dynakube.Spec.Proxy.Value != "" {
 		logInfof("proxy value is embedded in dynakube")
+		err := troubleshootCtx.SetTransportProxy(troubleshootCtx.dynakube.Spec.Proxy.Value)
+
+		if err != nil {
+			return errorWithMessagef(err, "error parsing proxy value")
+		}
 	}
 
 	return nil
@@ -192,7 +197,7 @@ func checkProxySecretHasRequiredTokens(troubleshootCtx *troubleshootContext) err
 		return nil
 	}
 
-	_, err := kubeobjects.ExtractToken(&troubleshootCtx.proxySecret, dtclient.CustomProxySecretKey)
+	proxyUrl, err := kubeobjects.ExtractToken(&troubleshootCtx.proxySecret, dtclient.CustomProxySecretKey)
 
 	if err != nil {
 		return errorWithMessagef(err, "invalid '%s:%s' secret, missing key '%s'",
@@ -200,5 +205,11 @@ func checkProxySecretHasRequiredTokens(troubleshootCtx *troubleshootContext) err
 	}
 
 	logInfof("secret token '%s' exists", dtclient.CustomProxySecretKey)
+	err = troubleshootCtx.SetTransportProxy(proxyUrl)
+
+	if err != nil {
+		return errorWithMessagef(err, "error parsing proxy value")
+	}
+
 	return nil
 }

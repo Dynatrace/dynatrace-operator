@@ -19,13 +19,13 @@ type imageInfo struct {
 	version  string
 }
 
-// Split image path in into its components.
+// splitImageName splits an image path and returns an imageInfo instance
+// containing the referenced registry, image and version.
 // Some image path examples that work with this function:
 //
-//	aaa00000.dynatrace.com/linux/oneagent
-//	aaa00000.dynatrace.com/linux/activegate:1.123
+// * aaa00000.dynatrace.com/linux/oneagent
+// * aaa00000.dynatrace.com/linux/activegate:1.123
 func splitImageName(imageName string) (imageInfo, error) {
-
 	imgInfo := imageInfo{}
 
 	registryMatches := registryRegex.FindStringSubmatch(imageName)

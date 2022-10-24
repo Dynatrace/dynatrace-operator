@@ -6,12 +6,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 )
 
 const (
@@ -33,12 +30,7 @@ type Auths struct {
 func checkImagePullable(troubleshootCtx *troubleshootContext) error {
 	log = newTroubleshootLogger("[imagepull ] ")
 
-	if err := addProxy(troubleshootCtx); err != nil {
-		return err
-	}
-
 	if troubleshootCtx.dynakube.NeedsOneAgent() {
-
 		err := checkOneAgentImagePullable(troubleshootCtx)
 		if err != nil {
 			return err
@@ -112,14 +104,13 @@ func checkActiveGateImagePullable(troubleshootCtx *troubleshootContext) error {
 }
 
 func checkComponentImagePullable(httpClient *http.Client, componentName string, pullSecret string, componentImage string) error {
-	// split image path into registry and image nam
 	componentImageInfo, err := splitImageName(componentImage)
-	//	componentRegistry, componentImage, componentVersion, err := splitImageName(componentImage)
+
 	if err != nil {
 		return err
 	}
-	logInfof("using '%s' on '%s' with version '%s' as %s image", componentImageInfo.image, componentImageInfo.registry, componentImageInfo.version, componentName)
 
+	logInfof("using '%s' on '%s' with version '%s' as %s image", componentImageInfo.image, componentImageInfo.registry, componentImageInfo.version, componentName)
 	imageWorks := false
 
 	// parse docker config
@@ -157,7 +148,7 @@ func checkComponentImagePullable(httpClient *http.Client, componentName string, 
 	return nil
 }
 
-func checkCustomModuleImagePullable(httpClient *http.Client, componentName string, pullSecret string, codeModulesImage string) error {
+func checkCustomModuleImagePullable(httpClient *http.Client, _ string, pullSecret string, codeModulesImage string) error {
 	// parse docker config
 	var result Auths
 	if err := json.Unmarshal([]byte(pullSecret), &result); err != nil {
@@ -213,32 +204,6 @@ func registryAvailable(httpClient *http.Client, registry string, apiToken string
 	return nil
 }
 
-func addProxy(troubleshootCtx *troubleshootContext) error {
-	proxyUrl := ""
-	if troubleshootCtx.dynakube.Spec.Proxy != nil {
-		if troubleshootCtx.dynakube.Spec.Proxy.Value != "" {
-			proxyUrl = troubleshootCtx.dynakube.Spec.Proxy.Value
-		} else if troubleshootCtx.dynakube.Spec.Proxy.ValueFrom != "" {
-			var err error
-			proxyUrl, err = kubeobjects.ExtractToken(&troubleshootCtx.proxySecret, dtclient.CustomProxySecretKey)
-			if err != nil {
-				return errorWithMessagef(err, "failed to extract proxy secret field")
-			}
-		}
-	}
-	if proxyUrl != "" {
-		p, err := url.Parse(proxyUrl)
-		if err != nil {
-			return errorWithMessagef(err, "could not parse proxy URL!")
-		}
-		t := troubleshootCtx.httpClient.Transport.(*http.Transport)
-		t.Proxy = http.ProxyURL(p)
-		logInfof("using  '%s' proxy to connect to the registry", p.Host)
-	}
-
-	return nil
-}
-
 func connectToDockerRegistry(httpClient *http.Client, httpMethod string, httpUrl string, authMethod string, authToken string) (int, error) {
 	body := strings.NewReader("")
 
@@ -254,7 +219,7 @@ func connectToDockerRegistry(httpClient *http.Client, httpMethod string, httpUrl
 	if err != nil {
 		return 0, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	_, err = io.ReadAll(resp.Body)
 	if err != nil {
