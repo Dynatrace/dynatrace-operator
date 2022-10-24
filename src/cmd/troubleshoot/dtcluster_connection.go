@@ -18,7 +18,9 @@ func checkDTClusterConnection(troubleshootCtx *troubleshootContext) error {
 	}
 
 	for _, test := range tests {
-		if err := test(troubleshootCtx); err != nil {
+		err := test(troubleshootCtx)
+
+		if err != nil {
 			logErrorf(err.Error())
 			return fmt.Errorf("tenant isn't  accessible")
 		}

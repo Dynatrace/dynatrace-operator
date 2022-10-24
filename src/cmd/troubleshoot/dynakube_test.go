@@ -1,6 +1,9 @@
 package troubleshoot
 
 import (
+	"context"
+	"github.com/pkg/errors"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -23,6 +26,28 @@ const (
 	testSecretName            = "customSecret"
 	testCustomPullSecretToken = "secretTokenValue"
 )
+
+type errorClient struct {
+	client.Client
+}
+
+func (errorClt *errorClient) List(_ context.Context, _ client.ObjectList, _ ...client.ListOption) error {
+	return errors.New("fake error")
+}
+
+func TestDynakubeCRD(t *testing.T) {
+	t.Run("crd does not exist", func(t *testing.T) {
+		clt := fake.NewClientBuilder().Build()
+		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
+
+		assert.ErrorContains(t, checkDynakubeCrdExists(&troubleshootCtx), "CRD for Dynakube missing")
+	})
+	t.Run("unrelated error", func(t *testing.T) {
+		troubleshootCtx := troubleshootContext{apiReader: &errorClient{}, namespaceName: testNamespace, dynakubeName: testDynakube}
+
+		assert.ErrorContains(t, checkDynakubeCrdExists(&troubleshootCtx), "could not list Dynakube")
+	})
+}
 
 func TestDynakube(t *testing.T) {
 	t.Run("dynakube exists", func(t *testing.T) {
@@ -76,17 +101,6 @@ func TestApiUrl(t *testing.T) {
 }
 
 func TestDynatraceSecret(t *testing.T) {
-	t.Run("default name of Dynatrace secret", func(t *testing.T) {
-		troubleshootCtx := troubleshootContext{namespaceName: testNamespace, dynakube: *testNewDynakubeBuilder(testNamespace, testDynakube).withTokens(testDynatraceSecret).build()}
-		assert.NoErrorf(t, evaluateDynatraceApiSecretName(&troubleshootCtx), "missing dynakube")
-		assert.Equal(t, testDynakube, troubleshootCtx.dynatraceApiSecretName)
-	})
-	t.Run("custom name of Dynatrace secret", func(t *testing.T) {
-		troubleshootCtx := troubleshootContext{namespaceName: testNamespace, dynakube: *testNewDynakubeBuilder(testNamespace, testDynakube).withTokens(testOtherDynatraceSecret).build()}
-		assert.NoErrorf(t, evaluateDynatraceApiSecretName(&troubleshootCtx), "missing dynakube")
-		assert.Equal(t, testOtherDynatraceSecret, troubleshootCtx.dynatraceApiSecretName)
-	})
-
 	t.Run("Dynatrace secret exists", func(t *testing.T) {
 		clt := fake.NewClientBuilder().
 			WithScheme(scheme.Scheme).
@@ -125,16 +139,6 @@ func TestDynatraceSecret(t *testing.T) {
 }
 
 func TestPullSecret(t *testing.T) {
-	t.Run("no custom pull secret", func(t *testing.T) {
-		troubleshootCtx := troubleshootContext{namespaceName: testNamespace, dynakubeName: testDynakube, dynakube: *testNewDynakubeBuilder(testNamespace, testDynakube).build()}
-		_ = evaluatePullSecret(&troubleshootCtx)
-		assert.Equal(t, testDynakube+pullSecretSuffix, troubleshootCtx.pullSecretName)
-	})
-	t.Run("custom pull secret defined", func(t *testing.T) {
-		troubleshootCtx := troubleshootContext{namespaceName: testNamespace, dynakubeName: testDynakube, dynakube: *testNewDynakubeBuilder(testNamespace, testDynakube).withCustomPullSecret(testSecretName).build()}
-		_ = evaluatePullSecret(&troubleshootCtx)
-		assert.Equal(t, testSecretName, troubleshootCtx.pullSecretName)
-	})
 	t.Run("custom pull secret exists", func(t *testing.T) {
 		clt := fake.NewClientBuilder().
 			WithScheme(scheme.Scheme).

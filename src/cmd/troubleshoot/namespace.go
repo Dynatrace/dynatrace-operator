@@ -13,7 +13,9 @@ func checkNamespace(troubleshootCtx *troubleshootContext) error {
 	logNewTestf("checking if namespace '%s' exists ...", troubleshootCtx.namespaceName)
 
 	var namespace corev1.Namespace
-	if err := troubleshootCtx.apiReader.Get(context.TODO(), client.ObjectKey{Name: troubleshootCtx.namespaceName}, &namespace); err != nil {
+	err := troubleshootCtx.apiReader.Get(context.TODO(), client.ObjectKey{Name: troubleshootCtx.namespaceName}, &namespace)
+
+	if err != nil {
 		return errorWithMessagef(err, "missing namespace '%s'", troubleshootCtx.namespaceName)
 	}
 

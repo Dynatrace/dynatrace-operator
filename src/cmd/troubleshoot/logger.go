@@ -59,7 +59,7 @@ func errorWithMessagef(err error, format string, v ...interface{}) error {
 	return fmt.Errorf("%s {\"error\": %s}", message, err.Error())
 }
 
-func (dtl troubleshootLogger) Init(info logr.RuntimeInfo) {}
+func (dtl troubleshootLogger) Init(_ logr.RuntimeInfo) {}
 
 func (dtl troubleshootLogger) Info(level int, msg string, keysAndValues ...interface{}) {
 	switch level {
@@ -75,12 +75,11 @@ func (dtl troubleshootLogger) Info(level int, msg string, keysAndValues ...inter
 	}
 }
 
-func (dtl troubleshootLogger) Enabled(level int) bool {
+func (dtl troubleshootLogger) Enabled(_ int) bool {
 	return dtl.logger.Enabled()
 }
 
 func (dtl troubleshootLogger) Error(err error, msg string, keysAndValues ...interface{}) {
-	// prints stack trace
 	dtl.logger.Error(err, prefixError+msg, keysAndValues...)
 }
 
