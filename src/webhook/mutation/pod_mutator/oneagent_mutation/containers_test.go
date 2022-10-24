@@ -8,7 +8,6 @@ import (
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/slices"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -259,7 +258,7 @@ func doTestMappings(t *testing.T, podAnnotations map[string]string, namespaceAnn
 	mutator.mutateUserContainers(request)
 
 	assertContainsMappings(t, expectedMappings, request)
-	assertDoesntContainMappings(t, unexpectedMappingsKeys, request)
+	assertNotContainsMappings(t, unexpectedMappingsKeys, request)
 }
 
 func assertContainsMappings(t *testing.T, expectedMappings map[string]string, request *dtwebhook.MutationRequest) {
@@ -276,11 +275,8 @@ func assertContainsMappings(t *testing.T, expectedMappings map[string]string, re
 	}
 }
 
-func assertDoesntContainMappings(t *testing.T, unexpectedMappingKeys []string, request *dtwebhook.MutationRequest) {
-	for _, key := range unexpectedMappingKeys {
-		idx := slices.IndexFunc(request.Pod.Spec.Containers[0].Env, func(envvar corev1.EnvVar) bool {
-			return envvar.Name == key
-		})
-		assert.Negative(t, idx, key+" found in container's envvars")
+func assertNotContainsMappings(t *testing.T, unexpectedMappingKeys []string, request *dtwebhook.MutationRequest) {
+	for _, env := range request.Pod.Spec.Containers[0].Env {
+		assert.NotContains(t, unexpectedMappingKeys, env.Name)
 	}
 }
