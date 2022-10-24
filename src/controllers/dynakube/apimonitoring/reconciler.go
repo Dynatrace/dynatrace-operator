@@ -1,8 +1,6 @@
 package apimonitoring
 
 import (
-	"fmt"
-
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/pkg/errors"
 )
@@ -45,13 +43,13 @@ func (r *ApiMonitoringReconciler) ensureSettingExists() (string, error) {
 	// check if ME with UID exists
 	var monitoredEntities, err = r.dtc.GetMonitoredEntitiesForKubeSystemUUID(r.kubeSystemUUID)
 	if err != nil {
-		return "", fmt.Errorf("error while loading MEs: %s", err.Error())
+		return "", errors.WithMessage(err, "error while loading MEs")
 	}
 
 	// check if Setting for ME exists
 	settings, err := r.dtc.GetSettingsForMonitoredEntities(monitoredEntities)
 	if err != nil {
-		return "", fmt.Errorf("error trying to check if setting exists %s", err.Error())
+		return "", errors.WithMessage(err, "error trying to check if setting exists")
 	}
 
 	if settings.TotalCount > 0 {
@@ -61,9 +59,8 @@ func (r *ApiMonitoringReconciler) ensureSettingExists() (string, error) {
 	// determine newest ME (can be empty string), and create or update a settings object accordingly
 	meID := determineNewestMonitoredEntity(monitoredEntities)
 	objectID, err := r.dtc.CreateOrUpdateKubernetesSetting(r.clusterLabel, r.kubeSystemUUID, meID)
-
 	if err != nil {
-		return "", err
+		return "", errors.WithMessage(err, "error creating MEs")
 	}
 
 	return objectID, nil

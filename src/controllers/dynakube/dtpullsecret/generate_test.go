@@ -53,7 +53,7 @@ func TestReconciler_GenerateData(t *testing.T) {
 		},
 	}
 	r := &Reconciler{
-		instance:  instance,
+		dynakube:  instance,
 		paasToken: testPaasToken,
 	}
 

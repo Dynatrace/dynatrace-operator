@@ -18,8 +18,6 @@ type Reconciler struct {
 	dynakube  *dynatracev1beta1.DynaKube
 }
 
-var _ kubeobjects.Reconciler = &Reconciler{}
-
 func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) *Reconciler {
 	return &Reconciler{
 		context:   ctx,
@@ -30,17 +28,17 @@ func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Read
 	}
 }
 
-func (r *Reconciler) Reconcile() (update bool, err error) {
+func (r *Reconciler) Reconcile() (err error) {
 	if !r.dynakube.FeatureDisableActivegateRawImage() {
 		activeGateConnectionInfo, err := r.dtc.GetActiveGateConnectionInfo()
 		if err != nil {
 			log.Info("failed to get activegate connection info")
-			return false, errors.WithStack(err)
+			return errors.WithStack(err)
 		}
 
 		err = r.createOrUpdateSecret(r.dynakube.ActivegateTenantSecret(), activeGateConnectionInfo.ConnectionInfo)
 		if err != nil {
-			return false, err
+			return err
 		}
 	}
 
@@ -48,16 +46,16 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 		oneAgentConnectionInfo, err := r.dtc.GetOneAgentConnectionInfo()
 		if err != nil {
 			log.Info("failed to get oneagent connection info")
-			return false, errors.WithStack(err)
+			return errors.WithStack(err)
 		}
 
 		err = r.createOrUpdateSecret(r.dynakube.OneagentTenantSecret(), oneAgentConnectionInfo.ConnectionInfo)
 		if err != nil {
-			return false, err
+			return err
 		}
 	}
 
-	return false, nil
+	return nil
 }
 
 func (r *Reconciler) createOrUpdateSecret(secretName string, connectionInfo dtclient.ConnectionInfo) error {
