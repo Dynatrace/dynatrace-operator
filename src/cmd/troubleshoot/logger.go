@@ -13,8 +13,8 @@ import (
 const (
 	prefixInfo    = "    "
 	prefixNewTest = "--- "
-	prefixOk      = " \u221A  "
-	prefixError   = " \u00D7  "
+	prefixOk      = " \u2713  " // ✓
+	prefixError   = " \u00D7  " // ×
 	levelNewTest  = 1
 	levelOk       = 2
 	levelError    = 3

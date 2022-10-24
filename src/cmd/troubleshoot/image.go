@@ -1,7 +1,6 @@
 package troubleshoot
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -54,14 +53,14 @@ func checkImagePullable(troubleshootCtx *troubleshootContext) error {
 func checkOneAgentImagePullable(troubleshootCtx *troubleshootContext) error {
 	logNewTestf("checking if OneAgent image is pullable ...")
 
-	pullSecret, err := getPullSecretToken(troubleshootCtx)
+	pullSecret, err := getPullSecret(troubleshootCtx)
 	if err != nil {
 		return err
 	}
 
 	dynakubeOneAgentImage := getOneAgentImageEndpoint(troubleshootCtx)
-
 	err = checkComponentImagePullable(troubleshootCtx.httpClient, "OneAgent", pullSecret, dynakubeOneAgentImage)
+
 	if err != nil {
 		return err
 	}
@@ -72,14 +71,16 @@ func checkOneAgentImagePullable(troubleshootCtx *troubleshootContext) error {
 func checkOneAgentCodeModulesImagePullable(troubleshootCtx *troubleshootContext) error {
 	logNewTestf("checking if OneAgent codeModules image is pullable ...")
 
-	pullSecret, err := getPullSecretToken(troubleshootCtx)
+	pullSecret, err := getPullSecret(troubleshootCtx)
 	if err != nil {
 		return err
 	}
 
 	dynakubeOneAgentCodeModulesImage := getOneAgentCodeModulesImageEndpoint(troubleshootCtx)
+
 	if dynakubeOneAgentCodeModulesImage != "" {
 		err = checkCustomModuleImagePullable(troubleshootCtx.httpClient, "OneAgentCodeModules", pullSecret, dynakubeOneAgentCodeModulesImage)
+
 		if err != nil {
 			return err
 		}
@@ -90,14 +91,15 @@ func checkOneAgentCodeModulesImagePullable(troubleshootCtx *troubleshootContext)
 func checkActiveGateImagePullable(troubleshootCtx *troubleshootContext) error {
 	logNewTestf("checking if ActiveGate image is pullable ...")
 
-	pullSecret, err := getPullSecretToken(troubleshootCtx)
+	pullSecret, err := getPullSecret(troubleshootCtx)
 	if err != nil {
 		return err
 	}
 
 	dynakubeActiveGateImage := getActiveGateImageEndpoint(troubleshootCtx)
+	err = checkComponentImagePullable(troubleshootCtx.httpClient, "ActiveGate", pullSecret, dynakubeActiveGateImage)
 
-	if err = checkComponentImagePullable(troubleshootCtx.httpClient, "ActiveGate", pullSecret, dynakubeActiveGateImage); err != nil {
+	if err != nil {
 		return err
 	}
 	return nil
@@ -115,7 +117,9 @@ func checkComponentImagePullable(httpClient *http.Client, componentName string, 
 
 	// parse docker config
 	var result Auths
-	if err := json.Unmarshal([]byte(pullSecret), &result); err != nil {
+	err = json.Unmarshal([]byte(pullSecret), &result)
+
+	if err != nil {
 		logErrorf("invalid pull secret, could not unmarshal to JSON: %v", err)
 		return nil
 	}
@@ -123,21 +127,23 @@ func checkComponentImagePullable(httpClient *http.Client, componentName string, 
 	for registry, credentials := range result.Auths {
 		logInfof("checking images for registry '%s'", registry)
 
-		apiToken := base64.StdEncoding.EncodeToString([]byte(credentials.Username + ":" + credentials.Password))
+		err = registryAvailable(httpClient, registry+"/v2/", credentials.Auth)
 
-		if err := registryAvailable(httpClient, registry+"/v2/", apiToken); err != nil {
+		if err != nil {
 			logErrorf("%v", err)
 			continue
 		}
 
-		if err := imageAvailable(httpClient, "https://"+registry+"/v2/"+componentImageInfo.image+"/manifests/"+componentImageInfo.version, apiToken); err != nil {
-			logErrorf("cannot pull image '%s' with version '%s' from registry '%s': %v", componentImageInfo.image, componentImageInfo.version, registry, err)
-			continue
-		} else {
-			logInfof("image '%s' with version '%s' exists on registry '%s", componentImageInfo.image, componentImageInfo.version, registry)
-		}
+		err = imageAvailable(httpClient, manifestUrl(registry, componentImageInfo), credentials.Auth)
 
-		imageWorks = true
+		if err != nil {
+			logErrorf("cannot pull image '%s' with version '%s' from registry '%s': %v",
+				componentImageInfo.image, componentImageInfo.version, registry, err)
+		} else {
+			logInfof("image '%s' with version '%s' exists on registry '%s",
+				componentImageInfo.image, componentImageInfo.version, registry)
+			imageWorks = true
+		}
 	}
 
 	if imageWorks {
@@ -145,13 +151,15 @@ func checkComponentImagePullable(httpClient *http.Client, componentName string, 
 	} else {
 		return fmt.Errorf("%s image '%s' missing", componentName, componentImageInfo.registry+"/"+componentImageInfo.image)
 	}
+
 	return nil
 }
 
 func checkCustomModuleImagePullable(httpClient *http.Client, _ string, pullSecret string, codeModulesImage string) error {
-	// parse docker config
 	var result Auths
-	if err := json.Unmarshal([]byte(pullSecret), &result); err != nil {
+	err := json.Unmarshal([]byte(pullSecret), &result)
+
+	if err != nil {
 		return fmt.Errorf("invalid pull secret, could not unmarshal to JSON: %w", err)
 	}
 
@@ -159,22 +167,25 @@ func checkCustomModuleImagePullable(httpClient *http.Client, _ string, pullSecre
 	if err != nil {
 		return fmt.Errorf("invalid image URL: %w", err)
 	}
+
 	logInfof("using '%s' on '%s' as OneAgentCodeModules image", codeModulesImage, codeModulesImageInfo.registry)
 
 	credentials, hasCredentials := result.Auths[codeModulesImageInfo.registry]
 	if !hasCredentials {
 		return fmt.Errorf("no credentials for registry %s available", codeModulesImageInfo.registry)
 	}
+
 	logInfof("checking images for registry '%s'", codeModulesImageInfo.registry)
 
-	apiToken := base64.StdEncoding.EncodeToString([]byte(credentials.Username + ":" + credentials.Password))
-	if err := registryAvailable(httpClient, codeModulesImageInfo.registry, apiToken); err != nil {
+	err = registryAvailable(httpClient, codeModulesImageInfo.registry, credentials.Auth)
+	if err != nil {
 		return err
 	}
 
 	logInfof("registry %s is accessible", codeModulesImageInfo.registry)
 
-	if err := imageAvailable(httpClient, "https://"+codeModulesImageInfo.registry+"/"+codeModulesImageInfo.image, apiToken); err != nil {
+	err = imageAvailable(httpClient, codeModulesImageInfo.imageUrl(), credentials.Auth)
+	if err != nil {
 		return fmt.Errorf("image is missing, cannot pull image '%s' from registry '%s': %w", codeModulesImage, codeModulesImageInfo.registry, err)
 	}
 
@@ -183,34 +194,37 @@ func checkCustomModuleImagePullable(httpClient *http.Client, _ string, pullSecre
 }
 
 func imageAvailable(httpClient *http.Client, imageUrl string, apiToken string) error {
-	if statusCode, err := connectToDockerRegistry(httpClient, "HEAD", imageUrl, "Basic", apiToken); err != nil {
+	statusCode, err := connectToDockerRegistry(httpClient, "HEAD", imageUrl, "Basic", apiToken)
+
+	if err != nil {
 		return fmt.Errorf("registry unreachable: %w", err)
-	} else {
-		if statusCode != http.StatusOK {
-			return fmt.Errorf("image not found (status code = %d)", statusCode)
-		}
+	} else if statusCode != http.StatusOK {
+		return fmt.Errorf("image not found (status code = %d)", statusCode)
 	}
+
 	return nil
 }
 
 func registryAvailable(httpClient *http.Client, registry string, apiToken string) error {
-	if statusCode, err := connectToDockerRegistry(httpClient, "HEAD", "https://"+registry, "Basic", apiToken); err != nil {
+	statusCode, err := connectToDockerRegistry(httpClient, "HEAD", registryUrl(registry), "Basic", apiToken)
+
+	if err != nil {
 		return fmt.Errorf("registry '%s' unreachable: %v", registry, err)
-	} else {
-		if statusCode != http.StatusOK {
-			return fmt.Errorf("registry '%s' unreachable (%d)", registry, statusCode)
-		}
+	} else if statusCode != http.StatusOK {
+		return fmt.Errorf("registry '%s' unreachable (%d)", registry, statusCode)
 	}
+
 	return nil
 }
 
 func connectToDockerRegistry(httpClient *http.Client, httpMethod string, httpUrl string, authMethod string, authToken string) (int, error) {
 	body := strings.NewReader("")
-
 	req, err := http.NewRequest(httpMethod, httpUrl, body)
+
 	if err != nil {
 		return 0, err
 	}
+
 	if authMethod != "" && authToken != "" {
 		req.Header.Set("Authorization", authMethod+" "+authToken)
 	}
@@ -219,21 +233,31 @@ func connectToDockerRegistry(httpClient *http.Client, httpMethod string, httpUrl
 	if err != nil {
 		return 0, err
 	}
+
 	defer func() { _ = resp.Body.Close() }()
 
 	_, err = io.ReadAll(resp.Body)
 	if err != nil {
 		return 0, err
 	}
+
 	return resp.StatusCode, nil
 }
 
-func getPullSecretToken(troubleshootCtx *troubleshootContext) (string, error) {
-	secretBytes, ok := troubleshootCtx.pullSecret.Data[dtpullsecret.DockerConfigJson]
-	if !ok {
+func getPullSecret(troubleshootCtx *troubleshootContext) (string, error) {
+	secretBytes, hasPullSecret := troubleshootCtx.pullSecret.Data[dtpullsecret.DockerConfigJson]
+	if !hasPullSecret {
 		return "", fmt.Errorf("token .dockerconfigjson does not exist in secret '%s'", troubleshootCtx.pullSecretName)
 	}
 
-	secretStr := string(secretBytes)
-	return secretStr, nil
+	return string(secretBytes), nil
+}
+
+func manifestUrl(registry string, componentImageInfo imageInfo) string {
+	return fmt.Sprintf("%s/v2/%s/manifests/%s",
+		registryUrl(registry), componentImageInfo.image, componentImageInfo.version)
+}
+
+func registryUrl(registry string) string {
+	return fmt.Sprintf("https://%s", registry)
 }

@@ -19,6 +19,10 @@ type imageInfo struct {
 	version  string
 }
 
+func (codeModulesImageInfo imageInfo) imageUrl() string {
+	return fmt.Sprintf("https://%s/%s", codeModulesImageInfo.registry, codeModulesImageInfo.image)
+}
+
 // splitImageName splits an image path and returns an imageInfo instance
 // containing the referenced registry, image and version.
 // Some image path examples that work with this function:
@@ -55,12 +59,10 @@ func parseImageVersion(image string) (string, string, error) {
 	fields := strings.Split(image, ":")
 
 	if len(fields) == 1 || len(fields) >= 2 && fields[1] == "" {
-		logInfof("using latest image version")
 		return fields[0], "latest", nil
 	}
 
 	if len(fields) >= 2 {
-		logInfof("using custom image version: %s", fields[1])
 		return fields[0], fields[1], nil
 	}
 
@@ -88,51 +90,4 @@ func splitCustomImageName(imageURL string) (imageInfo, error) {
 	}
 
 	return imgInfo, nil
-}
-
-func getOneAgentImageEndpoint(troubleshootCtx *troubleshootContext) string {
-	imageEndpoint := ""
-
-	apiEndpoint := removeSchemaRegex.FindStringSubmatch(troubleshootCtx.dynakube.Spec.APIURL)
-	registry := removeApiEndpointRegex.FindStringSubmatch(apiEndpoint[1])
-	imageEndpoint = registry[1] + "/linux/oneagent"
-
-	customImage := troubleshootCtx.dynakube.CustomOneAgentImage()
-	version := troubleshootCtx.dynakube.Version()
-
-	if customImage != "" {
-		imageEndpoint = customImage
-	} else if version != "" {
-		imageEndpoint = imageEndpoint + ":" + version
-	}
-
-	logInfof("OneAgent image endpoint '%s'", imageEndpoint)
-	return imageEndpoint
-}
-
-func getOneAgentCodeModulesImageEndpoint(troubleshootCtx *troubleshootContext) string {
-	imageEndpoint := troubleshootCtx.dynakube.CodeModulesImage()
-
-	if imageEndpoint != "" {
-		logInfof("OneAgent codeModules image endpoint '%s'", imageEndpoint)
-	} else {
-		logInfof("OneAgent codeModules image endpoint is not used.")
-	}
-	return imageEndpoint
-}
-
-func getActiveGateImageEndpoint(troubleshootCtx *troubleshootContext) string {
-	imageEndpoint := ""
-
-	apiEndpoint := removeSchemaRegex.FindStringSubmatch(troubleshootCtx.dynakube.Spec.APIURL)
-	registry := removeApiEndpointRegex.FindStringSubmatch(apiEndpoint[1])
-	imageEndpoint = registry[1] + "/linux/activegate"
-
-	customActiveGateImage := troubleshootCtx.dynakube.CustomActiveGateImage()
-	if customActiveGateImage != "" {
-		imageEndpoint = customActiveGateImage
-	}
-
-	logInfof("ActiveGate image endpoint '%s'", imageEndpoint)
-	return imageEndpoint
 }

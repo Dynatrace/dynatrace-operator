@@ -268,7 +268,7 @@ func TestImagePullablePullSecret(t *testing.T) {
 			pullSecretName: testDynakube + pullSecretSuffix,
 			pullSecret:     *testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend(dtpullsecret.DockerConfigJson, pullSecretFieldValue).build(),
 		}
-		secret, err := getPullSecretToken(&troubleshootCtx)
+		secret, err := getPullSecret(&troubleshootCtx)
 		assert.NoErrorf(t, err, "unexpected error")
 		assert.Equal(t, pullSecretFieldValue, secret, "invalid contents of pull secret")
 	})
@@ -279,7 +279,7 @@ func TestImagePullablePullSecret(t *testing.T) {
 			pullSecretName: testDynakube + pullSecretSuffix,
 			pullSecret:     *testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend("invalidToken", pullSecretFieldValue).build(),
 		}
-		secret, err := getPullSecretToken(&troubleshootCtx)
+		secret, err := getPullSecret(&troubleshootCtx)
 		assert.Errorf(t, err, "expected error")
 		assert.NotEqual(t, pullSecretFieldValue, secret, "valid contents of pull secret")
 
