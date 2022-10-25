@@ -99,7 +99,10 @@ jobs:
         uses: docker/metadata-action@57396166ad8aefe6098280995947635806a0e6ea # v4.1.1
         with:
           images: dynatrace-operator
-          labels: ${{ steps.prep.outputs.docker_image_labels }}
+          labels: |
+            ${{ steps.prep.outputs.docker_image_labels }}
+            vcs-ref=${{ github.sha }}
+            build-date={{ date }}
       - name: Prepare build parameters
         id: prepenv
         run: |
