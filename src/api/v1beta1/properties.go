@@ -133,16 +133,16 @@ func (dk *DynaKube) HasActiveGateCaCert() bool {
 	return dk.ActiveGateMode() && dk.Spec.ActiveGate.TlsSecretName != ""
 }
 
-func (dk *DynaKube) hasProxy() bool {
+func (dk *DynaKube) HasProxy() bool {
 	return dk.Spec.Proxy != nil && (dk.Spec.Proxy.Value != "" || dk.Spec.Proxy.ValueFrom != "")
 }
 
 func (dk *DynaKube) NeedsActiveGateProxy() bool {
-	return !dk.FeatureActiveGateIgnoreProxy() && dk.hasProxy()
+	return !dk.FeatureActiveGateIgnoreProxy() && dk.HasProxy()
 }
 
 func (dk *DynaKube) NeedsOneAgentProxy() bool {
-	return !dk.FeatureOneAgentIgnoreProxy() && dk.hasProxy()
+	return !dk.FeatureOneAgentIgnoreProxy() && dk.HasProxy()
 }
 
 func (dk *DynaKube) NeedsOneAgentPrivileged() bool {
@@ -287,19 +287,19 @@ func (dk *DynaKube) Version() string {
 	return ""
 }
 
-// The dynakube.Version is not take into account when using cloudNative to avoid confusion
-func (dynakube DynaKube) CodeModulesVersion() string {
-	if !dynakube.CloudNativeFullstackMode() && !dynakube.ApplicationMonitoringMode() {
+// CodeModulesVersion does not take dynakube.Version into account when using cloudNative to avoid confusion
+func (dk *DynaKube) CodeModulesVersion() string {
+	if !dk.CloudNativeFullstackMode() && !dk.ApplicationMonitoringMode() {
 		return ""
 	}
-	if dynakube.CodeModulesImage() != "" {
-		codeModulesImage := dynakube.CodeModulesImage()
+	if dk.CodeModulesImage() != "" {
+		codeModulesImage := dk.CodeModulesImage()
 		return getRawImageTag(codeModulesImage)
 	}
-	if dynakube.Version() != "" && !dynakube.CloudNativeFullstackMode() {
-		return dynakube.Version()
+	if dk.Version() != "" && !dk.CloudNativeFullstackMode() {
+		return dk.Version()
 	}
-	return dynakube.Status.LatestAgentVersionUnixPaas
+	return dk.Status.LatestAgentVersionUnixPaas
 }
 
 func (dk *DynaKube) NamespaceSelector() *metav1.LabelSelector {

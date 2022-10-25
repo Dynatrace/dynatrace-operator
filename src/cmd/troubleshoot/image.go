@@ -3,9 +3,7 @@ package troubleshoot
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
-	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
 )
@@ -115,7 +113,6 @@ func checkComponentImagePullable(httpClient *http.Client, componentName string, 
 	logInfof("using '%s' on '%s' with version '%s' as %s image", componentImageInfo.image, componentImageInfo.registry, componentImageInfo.version, componentName)
 	imageWorks := false
 
-	// parse docker config
 	var result Auths
 	err = json.Unmarshal([]byte(pullSecret), &result)
 
@@ -137,18 +134,23 @@ func checkComponentImagePullable(httpClient *http.Client, componentName string, 
 		err = imageAvailable(httpClient, manifestUrl(registry, componentImageInfo), credentials.Auth)
 
 		if err != nil {
-			logErrorf("cannot pull image '%s' with version '%s' from registry '%s': %v",
+			// Only print as a warning since other credentials might still work
+			// At this point it is uncertain if there is an error with the credentials
+			logWarningf("cannot pull image '%s' with version '%s' from registry '%s': %v",
 				componentImageInfo.image, componentImageInfo.version, registry, err)
 		} else {
 			logInfof("image '%s' with version '%s' exists on registry '%s",
 				componentImageInfo.image, componentImageInfo.version, registry)
 			imageWorks = true
+			break
 		}
 	}
 
 	if imageWorks {
 		logOkf("%s image '%s' found", componentName, componentImageInfo.registry+"/"+componentImageInfo.image)
 	} else {
+		// The image could not be pulled with any of the credentials
+		// Return as an error
 		return fmt.Errorf("%s image '%s' missing", componentName, componentImageInfo.registry+"/"+componentImageInfo.image)
 	}
 
@@ -194,7 +196,7 @@ func checkCustomModuleImagePullable(httpClient *http.Client, _ string, pullSecre
 }
 
 func imageAvailable(httpClient *http.Client, imageUrl string, apiToken string) error {
-	statusCode, err := connectToDockerRegistry(httpClient, "HEAD", imageUrl, "Basic", apiToken)
+	statusCode, err := connectToDockerRegistry(httpClient, imageUrl, apiToken)
 
 	if err != nil {
 		return fmt.Errorf("registry unreachable: %w", err)
@@ -206,27 +208,28 @@ func imageAvailable(httpClient *http.Client, imageUrl string, apiToken string) e
 }
 
 func registryAvailable(httpClient *http.Client, registry string, apiToken string) error {
-	statusCode, err := connectToDockerRegistry(httpClient, "HEAD", registryUrl(registry), "Basic", apiToken)
+	statusCode, err := connectToDockerRegistry(httpClient, registryUrl(registry), apiToken)
 
 	if err != nil {
 		return fmt.Errorf("registry '%s' unreachable: %v", registry, err)
 	} else if statusCode != http.StatusOK {
-		return fmt.Errorf("registry '%s' unreachable (%d)", registry, statusCode)
+		// Don't fail immediately since connection works.
+		// Maybe registry is not correctly implemented.
+		logWarningf("registry '%s' is reachable but returned an unexpected error code (%d)", registry, statusCode)
 	}
 
 	return nil
 }
 
-func connectToDockerRegistry(httpClient *http.Client, httpMethod string, httpUrl string, authMethod string, authToken string) (int, error) {
-	body := strings.NewReader("")
-	req, err := http.NewRequest(httpMethod, httpUrl, body)
+func connectToDockerRegistry(httpClient *http.Client, httpUrl string, authToken string) (int, error) {
+	req, err := http.NewRequest("HEAD", httpUrl, nil)
 
 	if err != nil {
 		return 0, err
 	}
 
-	if authMethod != "" && authToken != "" {
-		req.Header.Set("Authorization", authMethod+" "+authToken)
+	if authToken != "" {
+		req.Header.Set("Authorization", "Basic"+" "+authToken)
 	}
 
 	resp, err := httpClient.Do(req)
@@ -234,12 +237,9 @@ func connectToDockerRegistry(httpClient *http.Client, httpMethod string, httpUrl
 		return 0, err
 	}
 
-	defer func() { _ = resp.Body.Close() }()
-
-	_, err = io.ReadAll(resp.Body)
-	if err != nil {
-		return 0, err
-	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	return resp.StatusCode, nil
 }
@@ -247,7 +247,8 @@ func connectToDockerRegistry(httpClient *http.Client, httpMethod string, httpUrl
 func getPullSecret(troubleshootCtx *troubleshootContext) (string, error) {
 	secretBytes, hasPullSecret := troubleshootCtx.pullSecret.Data[dtpullsecret.DockerConfigJson]
 	if !hasPullSecret {
-		return "", fmt.Errorf("token .dockerconfigjson does not exist in secret '%s'", troubleshootCtx.pullSecretName)
+		return "", fmt.Errorf("token .dockerconfigjson does not exist in secret '%s:%s'",
+			troubleshootCtx.pullSecret.Namespace, troubleshootCtx.pullSecret.Name)
 	}
 
 	return string(secretBytes), nil
