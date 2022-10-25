@@ -63,12 +63,6 @@ func NewMutationRequest(ctx context.Context, namespace corev1.Namespace, install
 	}
 }
 
-func NewReinvocationRequest(ctx context.Context, namespace corev1.Namespace, pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) *ReinvocationRequest {
-	return &ReinvocationRequest{
-		BaseRequest: newBaseRequest(pod, namespace, dynakube),
-	}
-}
-
 func (request *MutationRequest) ToReinvocationRequest() *ReinvocationRequest {
 	return &ReinvocationRequest{
 		BaseRequest: request.BaseRequest,
