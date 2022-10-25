@@ -12,7 +12,7 @@ import (
 // CorrectMetadata checks if the entries in the storage are actually valid
 // Removes not valid entries
 func CorrectMetadata(ctx context.Context, cl client.Client, access Access) error {
-	defer LogAccessOverview(ctx, access)
+	defer LogAccessOverview(access)
 	if err := correctVolumes(ctx, cl, access); err != nil {
 		return err
 	}

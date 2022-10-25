@@ -104,7 +104,8 @@ type AccessOverview struct {
 	OsAgentVolumes []*OsAgentVolume `json:"osAgentVolumes"`
 }
 
-func NewAccessOverview(ctx context.Context, access Access) (*AccessOverview, error) {
+func NewAccessOverview(access Access) (*AccessOverview, error) {
+	ctx := context.Background()
 	volumes, err := access.GetAllVolumes(ctx)
 	if err != nil {
 		return nil, err
@@ -124,8 +125,8 @@ func NewAccessOverview(ctx context.Context, access Access) (*AccessOverview, err
 	}, nil
 }
 
-func LogAccessOverview(ctx context.Context, access Access) {
-	overview, err := NewAccessOverview(ctx, access)
+func LogAccessOverview(access Access) {
+	overview, err := NewAccessOverview(access)
 	if err != nil {
 		log.Error(err, "Failed to get an overview of the stored csi metadata")
 	}

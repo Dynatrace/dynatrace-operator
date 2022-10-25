@@ -5,8 +5,6 @@ package cloudnative
 import (
 	"context"
 	"encoding/json"
-	"os"
-	"path"
 	"strconv"
 	"strings"
 	"testing"
@@ -42,8 +40,6 @@ const (
 	codeModulesImage       = "quay.io/dynatrace/codemodules:" + codeModulesVersion
 	codeModulesImageDigest = "7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
 
-	codeModulesSecretsPath = "../testdata/secrets/cloudnative-codemodules.yaml"
-
 	dataPath = "/data/"
 )
 
@@ -52,11 +48,7 @@ type manifest struct {
 }
 
 func codeModules(t *testing.T) features.Feature {
-	currentWorkingDirectory, err := os.Getwd()
-	require.NoError(t, err)
-
-	secretPath := path.Join(currentWorkingDirectory, codeModulesSecretsPath)
-	secretConfigs, err := secrets.ManyFromConfig(afero.NewOsFs(), secretPath)
+	secretConfigs, err := secrets.DefaultMultiTenant(afero.NewOsFs())
 
 	require.NoError(t, err)
 
@@ -66,7 +58,13 @@ func codeModules(t *testing.T) features.Feature {
 
 	setup.AssessDeployment(codeModulesInjection)
 
-	codeModulesInjection.Assess("install dynakube", dynakube.ApplyCloudNative(secretConfigs[0].ApiUrl, codeModulesSpec()))
+	codeModulesInjection.Assess("install dynakube", dynakube.Apply(
+		dynakube.NewBuilder().
+			WithDefaultObjectMeta().
+			ApiUrl(secretConfigs[0].ApiUrl).
+			CloudNative(codeModulesSpec()).
+			Build()),
+	)
 
 	setup.AssessDynakubeStartup(codeModulesInjection)
 	assessOneAgentsAreRunning(codeModulesInjection)
@@ -163,8 +161,8 @@ func diskUsageDoesNotIncrease(secretConfig secrets.Secret) features.Func {
 		require.NoError(t, resource.Create(ctx, &secondTenant))
 
 		require.NoError(t, wait.For(conditions.New(resource).ResourceMatch(&secondTenant, func(object k8s.Object) bool {
-			dynakube, isDynakube := object.(*v1beta1.DynaKube)
-			return isDynakube && dynakube.Status.Phase == v1beta1.Running
+			dynakubeInstance, isDynakube := object.(*v1beta1.DynaKube)
+			return isDynakube && dynakubeInstance.Status.Phase == v1beta1.Running
 		})))
 
 		err = csi.ForEachPod(ctx, resource, func(podItem corev1.Pod) {
@@ -271,7 +269,7 @@ func getSecondTenantSecret(apiToken string) corev1.Secret {
 }
 
 func getSecondTenantDynakube(apiUrl string) v1beta1.DynaKube {
-	dynakube := v1beta1.DynaKube{
+	dynakubeInstance := v1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "dynakube-2",
 			Namespace: dynakube.Namespace,
@@ -288,13 +286,13 @@ func getSecondTenantDynakube(apiUrl string) v1beta1.DynaKube {
 			},
 		},
 	}
-	dynakube.Spec.NamespaceSelector = metav1.LabelSelector{
+	dynakubeInstance.Spec.NamespaceSelector = metav1.LabelSelector{
 		MatchLabels: map[string]string{
 			"test-key": "test-value",
 		},
 	}
 
-	return dynakube
+	return dynakubeInstance
 }
 
 func getManifestPath() string {

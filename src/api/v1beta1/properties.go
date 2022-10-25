@@ -145,8 +145,8 @@ func (dk *DynaKube) NeedsOneAgentProxy() bool {
 	return !dk.FeatureOneAgentIgnoreProxy() && dk.hasProxy()
 }
 
-func (dk *DynaKube) IsOneAgentPrivileged() bool {
-	return dk.FeatureAgentRunPrivileged() || dk.ClassicFullStackMode()
+func (dk *DynaKube) NeedsOneAgentPrivileged() bool {
+	return dk.FeatureOneAgentPrivileged()
 }
 
 // ShouldAutoUpdateOneAgent returns true if the Operator should update OneAgent instances automatically.

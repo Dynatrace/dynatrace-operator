@@ -22,117 +22,114 @@ const (
 	Namespace = "dynatrace"
 )
 
-func NewDynakube() dynatracev1beta1.DynaKube {
-	return dynatracev1beta1.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      Name,
-			Namespace: Namespace,
+type Builder struct {
+	dynakube dynatracev1beta1.DynaKube
+}
+
+func NewBuilder() Builder {
+	return Builder{
+		dynakube: dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{},
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{},
 		},
 	}
 }
 
-func newWithActiveGate(apiUrl string) dynatracev1beta1.DynaKube {
-	instance := NewDynakube()
-	instance.Spec = dynatracev1beta1.DynaKubeSpec{
-		APIURL: apiUrl,
-		NamespaceSelector: metav1.LabelSelector{
-			MatchLabels: map[string]string{
-				"inject": "dynakube",
-			},
+func (dynakubeBuilder Builder) Name(name string) Builder {
+	dynakubeBuilder.dynakube.Name = name
+	return dynakubeBuilder
+}
+
+func (dynakubeBuilder Builder) Namespace(namespace string) Builder {
+	dynakubeBuilder.dynakube.Namespace = namespace
+	return dynakubeBuilder
+}
+
+func (dynakubeBuilder Builder) WithDefaultObjectMeta() Builder {
+	dynakubeBuilder.dynakube.ObjectMeta = metav1.ObjectMeta{
+		Name:        Name,
+		Namespace:   Namespace,
+		Annotations: map[string]string{},
+	}
+
+	return dynakubeBuilder
+}
+
+func (dynakubeBuilder Builder) ApiUrl(apiUrl string) Builder {
+	dynakubeBuilder.dynakube.Spec.APIURL = apiUrl
+	return dynakubeBuilder
+}
+
+func (dynakubeBuilder Builder) WithActiveGate() Builder {
+	dynakubeBuilder.dynakube.Spec.ActiveGate = dynatracev1beta1.ActiveGateSpec{
+		Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+			dynatracev1beta1.KubeMonCapability.DisplayName,
+			dynatracev1beta1.DynatraceApiCapability.DisplayName,
+			dynatracev1beta1.RoutingCapability.DisplayName,
+			dynatracev1beta1.MetricsIngestCapability.DisplayName,
+			dynatracev1beta1.StatsdIngestCapability.DisplayName,
 		},
-		ActiveGate: dynatracev1beta1.ActiveGateSpec{
-			Capabilities: []dynatracev1beta1.CapabilityDisplayName{
-				dynatracev1beta1.KubeMonCapability.DisplayName,
-				dynatracev1beta1.DynatraceApiCapability.DisplayName,
-				dynatracev1beta1.RoutingCapability.DisplayName,
-				dynatracev1beta1.MetricsIngestCapability.DisplayName,
-				dynatracev1beta1.StatsdIngestCapability.DisplayName,
-			},
+	}
+	return dynakubeBuilder
+}
+
+func (dynakubeBuilder Builder) NamespaceSelector(selector metav1.LabelSelector) Builder {
+	dynakubeBuilder.dynakube.Spec.NamespaceSelector = selector
+	return dynakubeBuilder
+}
+
+func (dynakubeBuilder Builder) WithDynakubeNamespaceSelector() Builder {
+	return dynakubeBuilder.NamespaceSelector(metav1.LabelSelector{
+		MatchLabels: map[string]string{
+			"inject": "dynakube",
 		},
-	}
-
-	return instance
+	})
 }
 
-func ApplyClassicFullStack(apiUrl string, classicFullStackSpec *dynatracev1beta1.HostInjectSpec) features.Func {
+func (dynakubeBuilder Builder) Proxy(proxy *dynatracev1beta1.DynaKubeProxy) Builder {
+	dynakubeBuilder.dynakube.Spec.Proxy = proxy
+	return dynakubeBuilder
+}
+
+func (dynakubeBuilder Builder) Privileged() Builder {
+	dynakubeBuilder.dynakube.Annotations[dynatracev1beta1.AnnotationFeatureRunOneAgentContainerPrivileged] = "true"
+	return dynakubeBuilder
+}
+
+
+func (dynakubeBuilder Builder) ClassicFullstack(classicFullStackSpec *dynatracev1beta1.HostInjectSpec) Builder {
+	dynakubeBuilder.dynakube.Spec.OneAgent.ClassicFullStack = classicFullStackSpec
+	return dynakubeBuilder
+}
+
+
+func (dynakubeBuilder Builder) CloudNative(cloudNativeFullStackSpec *dynatracev1beta1.CloudNativeFullStackSpec) Builder {
+	dynakubeBuilder.dynakube.Spec.OneAgent.CloudNativeFullStack = cloudNativeFullStackSpec
+	return dynakubeBuilder
+}
+
+func (dynakubeBuilder Builder) ApplicationMonitoring(applicationMonitoringSpec *dynatracev1beta1.ApplicationMonitoringSpec) Builder {
+	dynakubeBuilder.dynakube.Spec.OneAgent.ApplicationMonitoring = applicationMonitoringSpec
+	return dynakubeBuilder
+}
+
+func (dynakubeBuilder Builder) Build() dynatracev1beta1.DynaKube {
+	return dynakubeBuilder.dynakube
+}
+
+func Apply(dynakube dynatracev1beta1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		require.NoError(t, dynatracev1beta1.AddToScheme(environmentConfig.Client().Resources().GetScheme()))
-
-		instance := newWithActiveGate(apiUrl)
-		instance.Annotations = map[string]string{
-			dynatracev1beta1.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
-		}
-		instance.Spec.OneAgent.ClassicFullStack = classicFullStackSpec
-
-		require.NoError(t, environmentConfig.Client().Resources().Create(ctx, &instance))
+		require.NoError(t, environmentConfig.Client().Resources().Create(ctx, &dynakube))
 
 		return ctx
 	}
 }
 
-func ApplyCloudNative(apiUrl string, cloudNativeFullStackSpec *dynatracev1beta1.CloudNativeFullStackSpec) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		require.NoError(t, dynatracev1beta1.AddToScheme(environmentConfig.Client().Resources().GetScheme()))
-
-		instance := newWithActiveGate(apiUrl)
-		instance.Spec.OneAgent.CloudNativeFullStack = cloudNativeFullStackSpec
-
-		require.NoError(t, environmentConfig.Client().Resources().Create(ctx, &instance))
-
-		return ctx
-	}
-}
-
-func ApplyCloudNativeWithFeatureFlag(apiUrl string, cloudNativeFullStackSpec *dynatracev1beta1.CloudNativeFullStackSpec, featureFlag map[string]string) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		require.NoError(t, dynatracev1beta1.AddToScheme(environmentConfig.Client().Resources().GetScheme()))
-
-		instance := newWithActiveGate(apiUrl)
-		instance.Annotations = featureFlag
-		instance.Spec.OneAgent.CloudNativeFullStack = cloudNativeFullStackSpec
-
-		require.NoError(t, environmentConfig.Client().Resources().Create(ctx, &instance))
-
-		return ctx
-	}
-}
-
-func ApplyDynakube(apiUrl string, cloudNativeFullStackSpec *dynatracev1beta1.CloudNativeFullStackSpec, proxy *dynatracev1beta1.DynaKubeProxy) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		require.NoError(t, dynatracev1beta1.AddToScheme(environmentConfig.Client().Resources().GetScheme()))
-
-		instance := NewDynakube()
-		instance.Spec = dynatracev1beta1.DynaKubeSpec{
-			APIURL: apiUrl,
-			NamespaceSelector: metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"inject": "dynakube",
-				},
-			},
-			Proxy: proxy,
-			OneAgent: dynatracev1beta1.OneAgentSpec{
-				CloudNativeFullStack: cloudNativeFullStackSpec,
-			},
-			ActiveGate: dynatracev1beta1.ActiveGateSpec{
-				Capabilities: []dynatracev1beta1.CapabilityDisplayName{
-					dynatracev1beta1.KubeMonCapability.DisplayName,
-					dynatracev1beta1.DynatraceApiCapability.DisplayName,
-					dynatracev1beta1.RoutingCapability.DisplayName,
-					dynatracev1beta1.MetricsIngestCapability.DisplayName,
-					dynatracev1beta1.StatsdIngestCapability.DisplayName,
-				},
-			},
-		}
-
-		require.NoError(t, environmentConfig.Client().Resources().Create(ctx, &instance))
-
-		return ctx
-	}
-}
-
-func DeleteIfExists() func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
+func DeleteIfExists(dynakube dynatracev1beta1.DynaKube) func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
 	return func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
-		instance := NewDynakube()
 		resources := environmentConfig.Client().Resources()
 
 		err := dynatracev1beta1.AddToScheme(resources.GetScheme())
@@ -141,7 +138,7 @@ func DeleteIfExists() func(ctx context.Context, environmentConfig *envconf.Confi
 			return ctx, errors.WithStack(err)
 		}
 
-		err = resources.Delete(ctx, &instance)
+		err = resources.Delete(ctx, &dynakube)
 		_, isNoKindMatchErr := err.(*meta.NoKindMatchError)
 
 		if err != nil {
@@ -153,18 +150,17 @@ func DeleteIfExists() func(ctx context.Context, environmentConfig *envconf.Confi
 			return ctx, errors.WithStack(err)
 		}
 
-		err = wait.For(conditions.New(resources).ResourceDeleted(&instance))
+		err = wait.For(conditions.New(resources).ResourceDeleted(&dynakube))
 
 		return ctx, err
 	}
 }
 
-func WaitForDynakubePhase() features.Func {
+func WaitForDynakubePhase(dynakube dynatracev1beta1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		instance := NewDynakube()
 		resources := environmentConfig.Client().Resources()
 
-		require.NoError(t, wait.For(conditions.New(resources).ResourceMatch(&instance, func(object k8s.Object) bool {
+		require.NoError(t, wait.For(conditions.New(resources).ResourceMatch(&dynakube, func(object k8s.Object) bool {
 			dynakube, isDynakube := object.(*dynatracev1beta1.DynaKube)
 			return isDynakube && dynakube.Status.Phase == dynatracev1beta1.Running
 		})))
