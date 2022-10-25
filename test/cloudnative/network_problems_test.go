@@ -15,8 +15,6 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
-	"os"
-	"path"
 	"testing"
 	"time"
 
@@ -25,7 +23,6 @@ import (
 )
 
 const (
-	sampleAppContainerName     = "myapp"
 	sampleAppDirPath           = "opt/dynatrace/oneagent-paas"
 	errorMessage               = "ERROR: ld.so: object '/opt/dynatrace/oneagent-paas/agent/lib64/liboneagentproc.so' from LD_PRELOAD cannot be preloaded"
 	sleepMinuteAmount          = 5
@@ -37,11 +34,7 @@ const (
 )
 
 func networkProblems(t *testing.T, policyPath string) features.Feature {
-	currentWorkingDirectory, err := os.Getwd()
-	require.NoError(t, err)
-
-	secretPath := path.Join(currentWorkingDirectory, codeModulesSecretsPath)
-	secretConfigs, err := secrets.ManyFromConfig(afero.NewOsFs(), secretPath)
+	secretConfigs, err := secrets.DefaultMultiTenant(afero.NewOsFs())
 
 	require.NoError(t, err)
 
@@ -53,11 +46,18 @@ func networkProblems(t *testing.T, policyPath string) features.Feature {
 	createNetworkProblems.Assess("apply network policy", manifests.InstallFromFile(policyPath))
 
 	createNetworkProblems.Setup(secrets.ApplyDefault(secretConfigs[0]))
-	createNetworkProblems.Setup(operator.InstallForKubernetes())
+	createNetworkProblems.Setup(operator.InstallAllForKubernetes())
 
 	setup.AssessDeployment(createNetworkProblems)
 
-	createNetworkProblems.Assess("install dynakube", dynakube.ApplyCloudNativeWithFeatureFlag(secretConfigs[0].ApiUrl, codeModulesSpec(), featureFlag))
+	createNetworkProblems.Assess("install dynakube", dynakube.Apply(
+		dynakube.NewBuilder().
+			WithDefaultObjectMeta().
+			FeatureFlag(featureFlag).
+			ApiUrl(secretConfigs[0].ApiUrl).
+			CloudNative(codeModulesSpec()).
+			Build()),
+	)
 
 	createNetworkProblems.Assess("install deployment", manifests.InstallFromFile("../testdata/cloudnative/codemodules-deployment.yaml"))
 
@@ -80,7 +80,7 @@ func checkForDummyVolume(ctx context.Context, t *testing.T, environmentConfig *e
 
 		var result *pod.ExecutionResult
 		result, err := pod.
-			NewExecutionQuery(podItem, sampleAppContainerName,
+			NewExecutionQuery(podItem, sampleapps.Name,
 				bash.ListDirectory(sampleAppDirPath)).
 			Execute(restConfig)
 

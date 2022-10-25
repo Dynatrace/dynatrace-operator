@@ -62,6 +62,11 @@ func (dynakubeBuilder Builder) ApiUrl(apiUrl string) Builder {
 	return dynakubeBuilder
 }
 
+func (dynakubeBuilder Builder) FeatureFlag(featureFlag map[string]string) Builder {
+	dynakubeBuilder.dynakube.Annotations = featureFlag
+	return dynakubeBuilder
+}
+
 func (dynakubeBuilder Builder) WithActiveGate() Builder {
 	dynakubeBuilder.dynakube.Spec.ActiveGate = dynatracev1beta1.ActiveGateSpec{
 		Capabilities: []dynatracev1beta1.CapabilityDisplayName{
@@ -98,12 +103,10 @@ func (dynakubeBuilder Builder) Privileged() Builder {
 	return dynakubeBuilder
 }
 
-
 func (dynakubeBuilder Builder) ClassicFullstack(classicFullStackSpec *dynatracev1beta1.HostInjectSpec) Builder {
 	dynakubeBuilder.dynakube.Spec.OneAgent.ClassicFullStack = classicFullStackSpec
 	return dynakubeBuilder
 }
-
 
 func (dynakubeBuilder Builder) CloudNative(cloudNativeFullStackSpec *dynatracev1beta1.CloudNativeFullStackSpec) Builder {
 	dynakubeBuilder.dynakube.Spec.OneAgent.CloudNativeFullStack = cloudNativeFullStackSpec
