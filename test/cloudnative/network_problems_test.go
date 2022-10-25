@@ -36,13 +36,12 @@ const (
 )
 
 func networkProblems(t *testing.T, policyPath string) features.Feature {
-	secretConfigs, err := secrets.DefaultMultiTenant(afero.NewOsFs())
-
-	require.NoError(t, err)
-
 	featureFlag := map[string]string{
 		featureMaxCSIMountAttempts: mountAttempts,
 	}
+	secretConfigs, err := secrets.DefaultMultiTenant(afero.NewOsFs())
+
+	require.NoError(t, err)
 
 	createNetworkProblems := features.New("creating network problems")
 	createNetworkProblems.Setup(secrets.ApplyDefault(secretConfigs[0]))
