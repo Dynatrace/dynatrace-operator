@@ -94,7 +94,6 @@ func checkForDummyVolume(ctx context.Context, t *testing.T, environmentConfig *e
 
 func checkPodsAfterSleep(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 	resources := environmentConfig.Client().Resources()
-
 	samplePods := sampleapps.Get(t, ctx, resources)
 
 	for _, podItem := range samplePods.Items {
