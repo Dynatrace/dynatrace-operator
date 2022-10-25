@@ -25,10 +25,10 @@ import (
 )
 
 const (
-	sampleAppDirPath           = "opt/dynatrace/oneagent-paas"
-	errorMessage               = "ERROR: ld.so: object '/opt/dynatrace/oneagent-paas/agent/lib64/liboneagentproc.so' from LD_PRELOAD cannot be preloaded"
-	sleepMinuteAmount          = 5
-	threshold                  = int32(3)
+	agentMountPath           = "opt/dynatrace/oneagent-paas"
+	ldPreloadError               = "ERROR: ld.so: object '/opt/dynatrace/oneagent-paas/agent/lib64/liboneagentproc.so' from LD_PRELOAD cannot be preloaded"
+	podRestartTimeout          = 5 * time.Minute
+	restartCountThreshold                  = int32(3)
 	featureMaxCSIMountAttempts = "feature.dynatrace.com/max-csi-mount-attempts"
 	mountAttempts              = "5"
 	csiNetworkPolicy           = "../testdata/network/csi-denial.yaml"
