@@ -97,6 +97,7 @@ jobs:
           hack/build/ci/prepare-build-variables.sh
       - name: Docker metadata
         uses: docker/metadata-action@57396166ad8aefe6098280995947635806a0e6ea # v4.1.1
+        id: meta
         with:
           images: dynatrace-operator
           labels: |
