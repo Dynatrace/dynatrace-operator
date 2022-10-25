@@ -31,6 +31,7 @@ spec:
   template:
     metadata:
       annotations:
+        dynatrace.com/inject: "false"
         kubectl.kubernetes.io/default-container: provisioner
         cluster-autoscaler.kubernetes.io/enable-ds-eviction: "false"
         {{- if and (eq (default false .Values.apparmor) true) (ne .Values.platform "openshift") }}
@@ -109,8 +110,7 @@ spec:
           mountPropagation: Bidirectional
           name: mountpoint-dir
         - mountPath: /data
-          name: plugin-dir
-          subPath: data
+          name: data-dir
           mountPropagation: Bidirectional
         - name: tmp-dir
           mountPath: /tmp
@@ -158,8 +158,7 @@ spec:
         terminationMessagePolicy: File
         volumeMounts:
           - mountPath: /data
-            name: plugin-dir
-            subPath: data
+            name: data-dir
             mountPropagation: Bidirectional
           - mountPath: /tmp
             name: tmp-dir
@@ -254,6 +253,10 @@ spec:
       - name: plugin-dir
         hostPath:
           path: {{ include "dynatrace-operator.CSIPluginDir" . }}
+          type: DirectoryOrCreate
+      - name: data-dir
+        hostPath:
+          path: {{ include "dynatrace-operator.CSIDataDir" . }}
           type: DirectoryOrCreate
         # This volume is where the driver mounts volumes
       - name: mountpoint-dir

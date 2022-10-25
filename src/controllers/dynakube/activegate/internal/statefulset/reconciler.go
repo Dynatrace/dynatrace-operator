@@ -218,13 +218,13 @@ func (r *Reconciler) getAuthTokenValue() (string, error) {
 
 func (r *Reconciler) getDataFromCustomProperty(customProperties *dynatracev1beta1.DynaKubeValueSource) (string, error) {
 	if customProperties.ValueFrom != "" {
-		return kubeobjects.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.dynakube.Namespace, Name: customProperties.ValueFrom}, customproperties.DataKey)
+		return kubeobjects.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.dynakube.Namespace, Name: customProperties.ValueFrom}, customproperties.DataKey, log)
 	}
 	return customProperties.Value, nil
 }
 
 func (r *Reconciler) getDataFromAuthTokenSecret() (string, error) {
-	return kubeobjects.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.dynakube.Namespace, Name: r.dynakube.ActiveGateAuthTokenSecret()}, authtoken.ActiveGateAuthTokenName)
+	return kubeobjects.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.dynakube.Namespace, Name: r.dynakube.ActiveGateAuthTokenSecret()}, authtoken.ActiveGateAuthTokenName, log)
 }
 
 func needsCustomPropertyHash(customProperties *dynatracev1beta1.DynaKubeValueSource) bool {

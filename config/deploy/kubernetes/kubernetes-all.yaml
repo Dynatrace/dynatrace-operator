@@ -4902,8 +4902,7 @@ spec:
           mountPropagation: Bidirectional
           name: mountpoint-dir
         - mountPath: /data
-          name: plugin-dir
-          subPath: data
+          name: data-dir
           mountPropagation: Bidirectional
         - name: tmp-dir
           mountPath: /tmp
@@ -4954,8 +4953,7 @@ spec:
         terminationMessagePolicy: File
         volumeMounts:
           - mountPath: /data
-            name: plugin-dir
-            subPath: data
+            name: data-dir
             mountPropagation: Bidirectional
           - mountPath: /tmp
             name: tmp-dir
@@ -5056,6 +5054,10 @@ spec:
       - name: plugin-dir
         hostPath:
           path: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/
+          type: DirectoryOrCreate
+      - name: data-dir
+        hostPath:
+          path: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/data
           type: DirectoryOrCreate
         # This volume is where the driver mounts volumes
       - name: mountpoint-dir

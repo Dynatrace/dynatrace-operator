@@ -15,8 +15,6 @@ import (
 func InstallFromFile(path string) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		kubernetesManifest, err := os.Open(path)
-		// For some reason 'Close()' is marked as an unresolved reference in IntelliJ
-		// It does work and compile as expected when run though
 		defer func() { require.NoError(t, kubernetesManifest.Close()) }()
 		require.NoError(t, err)
 

@@ -55,7 +55,7 @@ Important characteristics:
     - Example: in webhook/mutation `var nsLog = log.WithName("namespace")` (the name of this logger is `mutation-webhook.namespace`)
 - Use the logger defined in the `dynatrace-operator/src/logger` and always give it a name.
   - The name of the logger (given via `.WithName("...")`) should use `-` to divide longer names.
-  - Example: `var log = logger.NewDTLogger().WithName("mutation-webhook")`
+  - Example: `var log = logger.Factory.GetLogger("mutation-webhook")`
 
 #### Don'ts
 - Don't use `fmt.Sprintf` for creating log messages, the values you wish to replace via `Sprintf` should be provided to the logger as key-value pairs.

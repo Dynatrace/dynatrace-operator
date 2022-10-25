@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"regexp"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
@@ -17,13 +16,6 @@ import (
 
 const (
 	pullSecretSuffix = "-pull-secret"
-)
-
-var (
-	removeSchemaRegex      = regexp.MustCompile("^.*//(.*)$")
-	removeApiEndpointRegex = regexp.MustCompile("^(.*)/[^/]*$")
-	registryRegex          = regexp.MustCompile(`^(.*)/linux.*$`)
-	imageRegex             = regexp.MustCompile(`^.*/(linux.*)$`)
 )
 
 type Credentials struct {
@@ -46,7 +38,13 @@ func checkImagePullable(troubleshootCtx *troubleshootContext) error {
 	}
 
 	if troubleshootCtx.dynakube.NeedsOneAgent() {
+
 		err := checkOneAgentImagePullable(troubleshootCtx)
+		if err != nil {
+			return err
+		}
+
+		err = checkOneAgentCodeModulesImagePullable(troubleshootCtx)
 		if err != nil {
 			return err
 		}
@@ -70,14 +68,30 @@ func checkOneAgentImagePullable(troubleshootCtx *troubleshootContext) error {
 	}
 
 	dynakubeOneAgentImage := getOneAgentImageEndpoint(troubleshootCtx)
+
+	err = checkComponentImagePullable(troubleshootCtx.httpClient, "OneAgent", pullSecret, dynakubeOneAgentImage)
 	if err != nil {
 		return err
 	}
 
-	if err = checkComponentImagePullable(troubleshootCtx.httpClient, "OneAgent", pullSecret, dynakubeOneAgentImage); err != nil {
+	return nil
+}
+
+func checkOneAgentCodeModulesImagePullable(troubleshootCtx *troubleshootContext) error {
+	logNewTestf("checking if OneAgent codeModules image is pullable ...")
+
+	pullSecret, err := getPullSecretToken(troubleshootCtx)
+	if err != nil {
 		return err
 	}
 
+	dynakubeOneAgentCodeModulesImage := getOneAgentCodeModulesImageEndpoint(troubleshootCtx)
+	if dynakubeOneAgentCodeModulesImage != "" {
+		err = checkCustomModuleImagePullable(troubleshootCtx.httpClient, "OneAgentCodeModules", pullSecret, dynakubeOneAgentCodeModulesImage)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -90,67 +104,111 @@ func checkActiveGateImagePullable(troubleshootCtx *troubleshootContext) error {
 	}
 
 	dynakubeActiveGateImage := getActiveGateImageEndpoint(troubleshootCtx)
-	if err != nil {
-		return err
-	}
 
 	if err = checkComponentImagePullable(troubleshootCtx.httpClient, "ActiveGate", pullSecret, dynakubeActiveGateImage); err != nil {
 		return err
 	}
-
 	return nil
 }
 
 func checkComponentImagePullable(httpClient *http.Client, componentName string, pullSecret string, componentImage string) error {
-	// split activegate image into registry and image name
-	componentRegistry, componentImage, componentVersion, err := splitImageName(componentImage)
+	// split image path into registry and image nam
+	componentImageInfo, err := splitImageName(componentImage)
+	//	componentRegistry, componentImage, componentVersion, err := splitImageName(componentImage)
 	if err != nil {
 		return err
 	}
-	logInfof("using '%s' on '%s' with version '%s' as %s image", componentImage, componentRegistry, componentVersion, componentName)
+	logInfof("using '%s' on '%s' with version '%s' as %s image", componentImageInfo.image, componentImageInfo.registry, componentImageInfo.version, componentName)
 
 	imageWorks := false
 
 	// parse docker config
 	var result Auths
-	json.Unmarshal([]byte(pullSecret), &result)
+	if err := json.Unmarshal([]byte(pullSecret), &result); err != nil {
+		logErrorf("invalid pull secret, could not unmarshal to JSON: %v", err)
+		return nil
+	}
 
-	for registry, endpoint := range result.Auths {
+	for registry, credentials := range result.Auths {
 		logInfof("checking images for registry '%s'", registry)
 
-		apiToken := base64.StdEncoding.EncodeToString([]byte(endpoint.Username + ":" + endpoint.Password))
+		apiToken := base64.StdEncoding.EncodeToString([]byte(credentials.Username + ":" + credentials.Password))
 
-		if statusCode, err := connectToDockerRegistry(httpClient, "HEAD", "https://"+registry+"/v2/", "Basic", apiToken); err != nil {
-			logErrorf("registry '%s' unreachable", registry)
+		if err := registryAvailable(httpClient, registry+"/v2/", apiToken); err != nil {
+			logErrorf("%v", err)
 			continue
-		} else {
-			if statusCode != 200 {
-				logErrorf("registry '%s' unreachable (%d)", registry, statusCode)
-				continue
-			} else {
-				logInfof("registry '%s' is accessible", registry)
-			}
 		}
 
-		if statusCode, err := connectToDockerRegistry(httpClient, "HEAD", "https://"+registry+"/v2/"+componentImage+"/manifests/"+componentVersion, "Basic", apiToken); err != nil {
-			logErrorf("registry '%s' unreachable", registry)
+		if err := imageAvailable(httpClient, "https://"+registry+"/v2/"+componentImageInfo.image+"/manifests/"+componentImageInfo.version, apiToken); err != nil {
+			logErrorf("cannot pull image '%s' with version '%s' from registry '%s': %v", componentImageInfo.image, componentImageInfo.version, registry, err)
 			continue
 		} else {
-			if statusCode != 200 {
-				logErrorf("image '%s' with version '%s' not found on registry '%s'", componentImage, componentVersion, registry)
-				continue
-			} else {
-				logInfof("image '%s' with version '%s' exists on registry '%s", componentImage, componentVersion, registry)
-			}
+			logInfof("image '%s' with version '%s' exists on registry '%s", componentImageInfo.image, componentImageInfo.version, registry)
 		}
 
 		imageWorks = true
 	}
 
 	if imageWorks {
-		logOkf("%s image '%s' found", componentName, componentRegistry+"/"+componentImage)
+		logOkf("%s image '%s' found", componentName, componentImageInfo.registry+"/"+componentImageInfo.image)
 	} else {
-		return fmt.Errorf("%s image '%s' missing", componentName, componentRegistry+"/"+componentImage)
+		return fmt.Errorf("%s image '%s' missing", componentName, componentImageInfo.registry+"/"+componentImageInfo.image)
+	}
+	return nil
+}
+
+func checkCustomModuleImagePullable(httpClient *http.Client, componentName string, pullSecret string, codeModulesImage string) error {
+	// parse docker config
+	var result Auths
+	if err := json.Unmarshal([]byte(pullSecret), &result); err != nil {
+		return fmt.Errorf("invalid pull secret, could not unmarshal to JSON: %w", err)
+	}
+
+	codeModulesImageInfo, err := splitCustomImageName(codeModulesImage)
+	if err != nil {
+		return fmt.Errorf("invalid image URL: %w", err)
+	}
+	logInfof("using '%s' on '%s' as OneAgentCodeModules image", codeModulesImage, codeModulesImageInfo.registry)
+
+	credentials, hasCredentials := result.Auths[codeModulesImageInfo.registry]
+	if !hasCredentials {
+		return fmt.Errorf("no credentials for registry %s available", codeModulesImageInfo.registry)
+	}
+	logInfof("checking images for registry '%s'", codeModulesImageInfo.registry)
+
+	apiToken := base64.StdEncoding.EncodeToString([]byte(credentials.Username + ":" + credentials.Password))
+	if err := registryAvailable(httpClient, codeModulesImageInfo.registry, apiToken); err != nil {
+		return err
+	}
+
+	logInfof("registry %s is accessible", codeModulesImageInfo.registry)
+
+	if err := imageAvailable(httpClient, "https://"+codeModulesImageInfo.registry+"/"+codeModulesImageInfo.image, apiToken); err != nil {
+		return fmt.Errorf("image is missing, cannot pull image '%s' from registry '%s': %w", codeModulesImage, codeModulesImageInfo.registry, err)
+	}
+
+	logOkf("OneAgentCodeModules image '%s' exists on registry '%s", codeModulesImageInfo.image, codeModulesImageInfo.registry)
+	return nil
+}
+
+func imageAvailable(httpClient *http.Client, imageUrl string, apiToken string) error {
+	if statusCode, err := connectToDockerRegistry(httpClient, "HEAD", imageUrl, "Basic", apiToken); err != nil {
+		return fmt.Errorf("registry unreachable: %w", err)
+	} else {
+		if statusCode != http.StatusOK {
+			return fmt.Errorf("image not found (status code = %d)", statusCode)
+		}
+	}
+	return nil
+}
+
+func registryAvailable(httpClient *http.Client, registry string, apiToken string) error {
+	if statusCode, err := connectToDockerRegistry(httpClient, "HEAD", "https://"+registry, "Basic", apiToken); err != nil {
+		return fmt.Errorf("registry '%s' unreachable: %v", registry, err)
+	} else {
+		if statusCode != http.StatusOK {
+			return fmt.Errorf("registry '%s' unreachable (%d)", registry, statusCode)
+		}
 	}
 	return nil
 }
@@ -213,84 +271,4 @@ func getPullSecretToken(troubleshootCtx *troubleshootContext) (string, error) {
 
 	secretStr := string(secretBytes)
 	return secretStr, nil
-}
-
-func getOneAgentImageEndpoint(troubleshootCtx *troubleshootContext) string {
-	customImage := ""
-	imageEndpoint := ""
-	version := ""
-
-	sr := removeSchemaRegex.FindStringSubmatch(troubleshootCtx.dynakube.Spec.APIURL)
-	er := removeApiEndpointRegex.FindStringSubmatch(sr[1])
-	imageEndpoint = er[1] + "/linux/oneagent"
-
-	if troubleshootCtx.dynakube.ClassicFullStackMode() {
-		customImage = troubleshootCtx.dynakube.Spec.OneAgent.ClassicFullStack.Image
-		version = troubleshootCtx.dynakube.Spec.OneAgent.ClassicFullStack.Version
-	} else if troubleshootCtx.dynakube.CloudNativeFullstackMode() {
-		customImage = troubleshootCtx.dynakube.Spec.OneAgent.CloudNativeFullStack.Image
-		version = troubleshootCtx.dynakube.Spec.OneAgent.CloudNativeFullStack.Version
-	} else if troubleshootCtx.dynakube.HostMonitoringMode() {
-		customImage = troubleshootCtx.dynakube.Spec.OneAgent.HostMonitoring.Image
-		version = troubleshootCtx.dynakube.Spec.OneAgent.HostMonitoring.Version
-	}
-
-	if customImage != "" {
-		imageEndpoint = customImage
-	} else if version != "" {
-		imageEndpoint = imageEndpoint + ":" + version
-	}
-
-	logInfof("OneAgent image endpoint '%s'", imageEndpoint)
-	return imageEndpoint
-}
-
-func getActiveGateImageEndpoint(troubleshootCtx *troubleshootContext) string {
-	imageEndpoint := ""
-
-	sr := removeSchemaRegex.FindStringSubmatch(troubleshootCtx.dynakube.Spec.APIURL)
-	er := removeApiEndpointRegex.FindStringSubmatch(sr[1])
-	imageEndpoint = er[1] + "/linux/activegate"
-
-	if troubleshootCtx.dynakube.Spec.ActiveGate.Image != "" {
-		imageEndpoint = troubleshootCtx.dynakube.Spec.ActiveGate.Image
-	}
-
-	logInfof("ActiveGate image endpoint '%s'", imageEndpoint)
-	return imageEndpoint
-}
-
-func splitImageName(imageName string) (registry string, image string, version string, err error) {
-	err = nil
-
-	registryMatches := registryRegex.FindStringSubmatch(imageName)
-	if len(registryMatches) < 2 {
-		err = fmt.Errorf("invalid image - registry not found (%s)", imageName)
-		return
-	}
-	registry = registryRegex.FindStringSubmatch(imageName)[1]
-
-	imageMatches := imageRegex.FindStringSubmatch(imageName)
-	if len(imageMatches) < 2 {
-		err = fmt.Errorf("invalid image - endpoint not found (%s)", imageName)
-		return
-	}
-	image = imageRegex.FindStringSubmatch(imageName)[1]
-
-	version = ""
-
-	// check if image has version set
-	fields := strings.Split(image, ":")
-	if len(fields) == 1 || len(fields) >= 2 && fields[1] == "" {
-		// no version set, default to latest
-		version = "latest"
-		logInfof("using latest image version")
-	} else if len(fields) >= 2 {
-		image = fields[0]
-		version = fields[1]
-		logInfof("using custom image version")
-	} else {
-		err = fmt.Errorf("invalid version of the image {\"image\": \"%s\"}", image)
-	}
-	return
 }

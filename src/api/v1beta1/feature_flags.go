@@ -97,7 +97,7 @@ const (
 )
 
 var (
-	log = logger.NewDTLogger().WithName("dynakube-api")
+	log = logger.Factory.GetLogger("dynakube-api")
 )
 
 func (dk *DynaKube) getDisableFlagWithDeprecatedAnnotation(annotation string, deprecatedAnnotation string) bool {
@@ -185,9 +185,8 @@ func (dk *DynaKube) FeatureDisableMetadataEnrichment() bool {
 
 // FeatureAutomaticInjection controls OneAgent is injected to pods in selected namespaces automatically ("automatic-injection=true" or flag not set)
 // or if pods need to be opted-in one by one ("automatic-injection=false")
-func (dk *DynaKube) FeatureEnableAutomaticInjection() bool {
-	autoInjectionFlag := dk.getFeatureFlagRaw(AnnotationFeatureAutomaticInjection)
-	return autoInjectionFlag == "true" || len(autoInjectionFlag) == 0
+func (dk *DynaKube) FeatureAutomaticInjection() bool {
+	return dk.getFeatureFlagRaw(AnnotationFeatureAutomaticInjection) != "false"
 }
 
 // FeatureUseActiveGateImageForStatsd is a feature flag that makes the operator use ActiveGate image when initializing Extension Controller and Statsd containers
@@ -272,7 +271,7 @@ func (dk *DynaKube) FeatureAgentInitialConnectRetry() int {
 	return val
 }
 
-func (dk *DynaKube) FeatureAgentRunPrivileged() bool {
+func (dk *DynaKube) FeatureOneAgentPrivileged() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureRunOneAgentContainerPrivileged) == "true"
 }
 

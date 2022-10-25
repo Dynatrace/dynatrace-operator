@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	log = logger.NewDTLogger().WithName("webhook-certificates")
+	log = logger.Factory.GetLogger("webhook-certificates")
 )

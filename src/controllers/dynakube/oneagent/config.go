@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	log = logger.NewDTLogger().WithName("dynakube-oneagent")
+	log = logger.Factory.GetLogger("dynakube-oneagent")
 )

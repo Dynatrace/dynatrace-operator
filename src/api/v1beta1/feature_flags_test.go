@@ -1,9 +1,11 @@
 package v1beta1
 
 import (
+	"regexp"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -176,4 +178,28 @@ func TestMaxMountAttempts(t *testing.T) {
 		AnnotationFeatureMaxFailedCsiMountAttempts, "-5")
 
 	assert.Equal(t, DefaultMaxFailedCsiMountAttempts, dynakube.FeatureMaxFailedCsiMountAttempts())
+}
+
+func TestDynaKube_FeatureIgnoredNamespaces(t *testing.T) {
+	dynakube := DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: testNamespace,
+		},
+	}
+	ignoredNamespaces := dynakube.getDefaultIgnoredNamespaces()
+	dynakubeNamespaceMatches := false
+
+	for _, namespace := range ignoredNamespaces {
+		regex, err := regexp.Compile(namespace)
+
+		require.NoError(t, err)
+
+		match := regex.MatchString(dynakube.Namespace)
+
+		if match {
+			dynakubeNamespaceMatches = true
+		}
+	}
+
+	assert.True(t, dynakubeNamespaceMatches)
 }

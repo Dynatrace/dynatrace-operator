@@ -59,7 +59,7 @@ func extractFilesFromGzip(fs afero.Fs, targetDir string, reader *tar.Reader) err
 
 		switch header.Typeflag {
 		case tar.TypeDir:
-			if err := fs.MkdirAll(target, common.MkDirFileMode); err != nil {
+			if err := fs.MkdirAll(target, header.FileInfo().Mode()); err != nil {
 				return errors.WithStack(err)
 			}
 		case tar.TypeLink:
@@ -108,11 +108,11 @@ func extractSymlink(fs afero.Fs, targetDir, target string, header *tar.Header) e
 }
 
 func extractFile(fs afero.Fs, target string, header *tar.Header, tarReader *tar.Reader) error {
-	mode := header.Mode
+	mode := header.FileInfo().Mode()
 	if isAgentConfFile(header.Name) {
 		mode = common.ReadWriteAllFileMode
 	}
-	destinationFile, err := fs.OpenFile(target, os.O_CREATE|os.O_RDWR|os.O_TRUNC, os.FileMode(mode))
+	destinationFile, err := fs.OpenFile(target, os.O_CREATE|os.O_RDWR|os.O_TRUNC, mode)
 	defer (func() { _ = destinationFile.Close() })()
 	if err != nil {
 		return errors.WithStack(err)

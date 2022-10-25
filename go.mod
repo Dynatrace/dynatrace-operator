@@ -15,18 +15,18 @@ require (
 	github.com/prometheus/client_golang v1.13.0
 	github.com/prometheus/client_model v0.2.0
 	github.com/spf13/afero v1.9.2
-	github.com/spf13/cobra v1.5.0
+	github.com/spf13/cobra v1.6.0
 	github.com/stretchr/testify v1.8.0
 	go.uber.org/zap v1.23.0
 	golang.org/x/exp v0.0.0-20221011201855-a3968a42eed6
 	golang.org/x/sys v0.0.0-20220919091848-fb04ddd9f9c8
-	google.golang.org/grpc v1.50.0
-	istio.io/api v0.0.0-20220907134937-b47284812feb
-	istio.io/client-go v1.15.1
-	k8s.io/api v0.25.2
-	k8s.io/apiextensions-apiserver v0.25.2
-	k8s.io/apimachinery v0.25.2
-	k8s.io/client-go v0.25.2
+	google.golang.org/grpc v1.50.1
+	istio.io/api v0.0.0-20221005164339-97dc20dc0ff3
+	istio.io/client-go v1.15.2
+	k8s.io/api v0.25.3
+	k8s.io/apiextensions-apiserver v0.25.3
+	k8s.io/apimachinery v0.25.3
+	k8s.io/client-go v0.25.3
 	k8s.io/utils v0.0.0-20220728103510-ee6ede2d64ed
 	sigs.k8s.io/controller-runtime v0.13.0
 	sigs.k8s.io/e2e-framework v0.0.7
@@ -81,7 +81,7 @@ require (
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
-	github.com/inconshreveable/mousetrap v1.0.0 // indirect
+	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
@@ -140,7 +140,7 @@ require (
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/component-base v0.25.2 // indirect
+	k8s.io/component-base v0.25.3 // indirect
 	k8s.io/klog/v2 v2.70.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20220803162953-67bda5d908f1 // indirect
 	sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 // indirect
