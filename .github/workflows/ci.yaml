@@ -102,7 +102,7 @@ jobs:
           labels: |
             ${{ steps.prep.outputs.docker_image_labels }}
             vcs-ref=${{ github.sha }}
-            build-date={{ date }}
+            build-date={{date}}
       - name: Prepare build parameters
         id: prepenv
         run: |
