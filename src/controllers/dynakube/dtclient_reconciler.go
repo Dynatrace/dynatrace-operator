@@ -174,6 +174,10 @@ func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dyn
 		r.CheckToken(dtc, *token)
 	}
 
+	if !r.ValidTokens {
+		return nil, errors.New("tokens are not valid")
+	}
+
 	return dtc, nil
 }
 
