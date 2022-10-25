@@ -46,7 +46,7 @@ func networkProblems(t *testing.T, policyPath string) features.Feature {
 	createNetworkProblems := features.New("creating network problems")
 	createNetworkProblems.Setup(secrets.ApplyDefault(secretConfigs[0]))
 	createNetworkProblems.Setup(operator.InstallAllForKubernetes())
-	
+
 	setup.AssessDeployment(createNetworkProblems)
 
 	createNetworkProblems.Assess("apply network policy", manifests.InstallFromFile(policyPath))
