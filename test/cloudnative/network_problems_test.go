@@ -45,13 +45,12 @@ func networkProblems(t *testing.T, policyPath string) features.Feature {
 	}
 
 	createNetworkProblems := features.New("creating network problems")
-	createNetworkProblems.Assess("apply network policy", manifests.InstallFromFile(policyPath))
-
 	createNetworkProblems.Setup(secrets.ApplyDefault(secretConfigs[0]))
 	createNetworkProblems.Setup(operator.InstallAllForKubernetes())
-
+	
 	setup.AssessDeployment(createNetworkProblems)
 
+	createNetworkProblems.Assess("apply network policy", manifests.InstallFromFile(policyPath))
 	createNetworkProblems.Assess("install dynakube", dynakube.Apply(
 		dynakube.NewBuilder().
 			WithDefaultObjectMeta().
@@ -60,9 +59,7 @@ func networkProblems(t *testing.T, policyPath string) features.Feature {
 			CloudNative(codeModulesSpec()).
 			Build()),
 	)
-
 	createNetworkProblems.Assess("install deployment", manifests.InstallFromFile("../testdata/cloudnative/codemodules-deployment.yaml"))
-
 	createNetworkProblems.Assess("start sample apps and injection", sampleapps.Install)
 	createNetworkProblems.Assess("check for dummy volume", checkForDummyVolume)
 	createNetworkProblems.Assess("check pods after sleep", checkPodsAfterSleep)
