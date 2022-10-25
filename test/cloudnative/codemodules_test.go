@@ -56,7 +56,7 @@ func codeModules(t *testing.T) features.Feature {
 
 	setup.InstallAndDeploy(codeModulesInjection, secretConfigs[0], "../testdata/cloudnative/codemodules-deployment.yaml")
 
-	setup.AssessDeployment(codeModulesInjection)
+	setup.AssessOperatorDeployment(codeModulesInjection)
 
 	codeModulesInjection.Assess("install dynakube", dynakube.Apply(
 		dynakube.NewBuilder().

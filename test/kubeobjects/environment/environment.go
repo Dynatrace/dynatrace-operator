@@ -21,6 +21,6 @@ func Get() env.Environment {
 	}
 
 	kubeConfigPath := conf.ResolveKubeConfigFile()
-	kubeConfig := envconf.NewWithKubeConfig(kubeConfigPath)
-	return env.NewWithConfig(kubeConfig)
+	envConfig := envconf.NewWithKubeConfig(kubeConfigPath)
+	return env.NewWithConfig(envConfig)
 }

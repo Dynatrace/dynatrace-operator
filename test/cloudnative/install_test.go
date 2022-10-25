@@ -21,7 +21,7 @@ func install(t *testing.T) features.Feature {
 	defaultInstallation := features.New("default installation")
 
 	setup.InstallAndDeploy(defaultInstallation, secretConfig, "../testdata/cloudnative/sample-deployment.yaml")
-	setup.AssessDeployment(defaultInstallation)
+	setup.AssessOperatorDeployment(defaultInstallation)
 
 	defaultInstallation.Assess("dynakube applied", dynakube.Apply(
 		dynakube.NewBuilder().

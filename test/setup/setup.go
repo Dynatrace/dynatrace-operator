@@ -12,12 +12,20 @@ import (
 )
 
 func InstallAndDeploy(builder *features.FeatureBuilder, secretConfig secrets.Secret, deploymentPath string) {
+	InstallOperator(builder, secretConfig)
+	DeployApplication(builder, deploymentPath)
+}
+
+func InstallOperator(builder *features.FeatureBuilder, secretConfig secrets.Secret) {
 	builder.Setup(secrets.ApplyDefault(secretConfig))
 	builder.Setup(operator.InstallAllForKubernetes())
+}
+
+func DeployApplication(builder *features.FeatureBuilder, deploymentPath string) {
 	builder.Setup(manifests.InstallFromFile(deploymentPath))
 }
 
-func AssessDeployment(builder *features.FeatureBuilder) {
+func AssessOperatorDeployment(builder *features.FeatureBuilder) {
 	builder.Assess("operator started", operator.WaitForDeployment())
 	builder.Assess("webhook started", webhook.WaitForDeployment())
 	builder.Assess("csi driver started", csi.WaitForDaemonset())

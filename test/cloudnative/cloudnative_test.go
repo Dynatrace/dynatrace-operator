@@ -19,6 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
@@ -54,9 +55,7 @@ func assessOneAgentsAreRunning(builder *features.FeatureBuilder) {
 
 func getSecretConfig(t *testing.T) secrets.Secret {
 	secretConfig, err := secrets.DefaultSingleTenant(afero.NewOsFs())
-
 	require.NoError(t, err)
-
 	return secretConfig
 }
 
