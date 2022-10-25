@@ -214,14 +214,21 @@ func TestProxySecret(t *testing.T) {
 			proxySecret:   proxySecret,
 			httpClient:    &http.Client{},
 		}
-		assert.NoErrorf(t, checkProxySecretHasRequiredTokens(&troubleshootCtx), "proxy secret does not have required tokens")
+		assert.NoErrorf(t, setProxySecretIfItExists(&troubleshootCtx), "proxy secret does not have required tokens")
 	})
 	t.Run("proxy secret does not have required tokens", func(t *testing.T) {
+		secret := *testNewSecretBuilder(testNamespace, testSecretName).build()
+		dynakube := *testNewDynakubeBuilder(testNamespace, testDynakube).withProxySecret(testSecretName).build()
+		clt := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
+			&dynakube,
+			&secret).
+			Build()
 		troubleshootCtx := troubleshootContext{
 			namespaceName: testNamespace,
-			proxySecret:   *testNewSecretBuilder(testNamespace, testSecretName).build(),
-			dynakube:      *testNewDynakubeBuilder(testNamespace, testDynakube).withProxySecret(testSecretName).build()}
-		assert.Errorf(t, checkProxySecretHasRequiredTokens(&troubleshootCtx), "proxy secret has required tokens")
+			proxySecret:   secret,
+			dynakube:      dynakube,
+			apiReader:     clt}
+		assert.Errorf(t, setProxySecretIfItExists(&troubleshootCtx), "proxy secret has required tokens")
 	})
 }
 
