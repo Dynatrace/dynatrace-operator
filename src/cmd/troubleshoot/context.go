@@ -31,6 +31,10 @@ func (troubleshootCtx *troubleshootContext) SetTransportProxy(proxy string) erro
 			return errorWithMessagef(err, "could not parse proxy URL!")
 		}
 
+		if troubleshootCtx.httpClient.Transport == nil {
+			troubleshootCtx.httpClient.Transport = http.DefaultTransport
+		}
+
 		troubleshootCtx.httpClient.Transport.(*http.Transport).Proxy = http.ProxyURL(proxyUrl)
 		logInfof("using  '%s' proxy to connect to the registry", proxyUrl.Host)
 	}

@@ -3,6 +3,7 @@ package troubleshoot
 import (
 	"context"
 	"github.com/pkg/errors"
+	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
 
@@ -140,16 +141,17 @@ func TestDynatraceSecret(t *testing.T) {
 
 func TestPullSecret(t *testing.T) {
 	t.Run("custom pull secret exists", func(t *testing.T) {
+		dynakube := testNewDynakubeBuilder(testNamespace, testDynakube).withCustomPullSecret(testSecretName).build()
 		clt := fake.NewClientBuilder().
 			WithScheme(scheme.Scheme).
 			WithObjects(
-				testNewDynakubeBuilder(testNamespace, testDynakube).withCustomPullSecret(testSecretName).build(),
+				dynakube,
 				testBuildNamespace(testNamespace),
 				testNewSecretBuilder(testNamespace, testSecretName).build(),
 			).
 			Build()
 
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, pullSecretName: testSecretName}
+		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakube: *dynakube}
 		assert.NoErrorf(t, getPullSecretIfItExists(&troubleshootCtx), "custom pull secret not found")
 	})
 	t.Run("custom pull secret does not exist", func(t *testing.T) {
@@ -211,7 +213,15 @@ func TestProxySecret(t *testing.T) {
 		assert.Errorf(t, getProxySecretIfItExists(&troubleshootCtx), "proxy secret found")
 	})
 	t.Run("proxy secret has required tokens", func(t *testing.T) {
-		troubleshootCtx := troubleshootContext{namespaceName: testNamespace, proxySecretName: testSecretName, proxySecret: *testNewSecretBuilder(testNamespace, testSecretName).dataAppend(dtclient.CustomProxySecretKey, testCustomPullSecretToken).build()}
+		proxySecret := *testNewSecretBuilder(testNamespace, testSecretName).
+			dataAppend(dtclient.CustomProxySecretKey, testCustomPullSecretToken).
+			build()
+		troubleshootCtx := troubleshootContext{
+			namespaceName:   testNamespace,
+			proxySecretName: testSecretName,
+			proxySecret:     proxySecret,
+			httpClient:      &http.Client{},
+		}
 		assert.NoErrorf(t, checkProxySecretHasRequiredTokens(&troubleshootCtx), "proxy secret does not have required tokens")
 	})
 	t.Run("proxy secret does not have required tokens", func(t *testing.T) {

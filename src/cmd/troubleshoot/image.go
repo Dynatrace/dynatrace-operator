@@ -184,7 +184,7 @@ func checkCustomModuleImagePullable(httpClient *http.Client, _ string, pullSecre
 
 	logInfof("registry %s is accessible", codeModulesImageInfo.registry)
 
-	err = imageAvailable(httpClient, codeModulesImageInfo.imageUrl(), credentials.Auth)
+	err = imageAvailable(httpClient, codemodulesImageUrl(codeModulesImageInfo), credentials.Auth)
 	if err != nil {
 		return fmt.Errorf("image is missing, cannot pull image '%s' from registry '%s': %w", codeModulesImage, codeModulesImageInfo.registry, err)
 	}
@@ -260,4 +260,8 @@ func manifestUrl(registry string, componentImageInfo imageInfo) string {
 
 func registryUrl(registry string) string {
 	return fmt.Sprintf("https://%s", registry)
+}
+
+func codemodulesImageUrl(info imageInfo) string {
+	return fmt.Sprintf("https://%s/%s", info.registry, info.image)
 }
