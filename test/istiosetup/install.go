@@ -103,14 +103,14 @@ func checkVirtualServiceForApiUrl(ctx context.Context, t *testing.T, environment
 	apiHost := apiUrlCommunicationHost(t)
 	serviceName := istio.BuildNameForEndpoint(dynakube.Name, apiHost.Protocol, apiHost.Host, apiHost.Port)
 
-	vs, err := istioClient(t, environmentConfig.Client().RESTConfig()).NetworkingV1alpha3().VirtualServices(dynakube.Namespace).Get(ctx, serviceName, v1.GetOptions{})
+	virtualService, err := istioClient(t, environmentConfig.Client().RESTConfig()).NetworkingV1alpha3().VirtualServices(dynakube.Namespace).Get(ctx, serviceName, v1.GetOptions{})
 	require.Nil(t, err, "istio: faild to get '%s' virtual service object", serviceName)
 
-	require.NotEmpty(t, vs.ObjectMeta.OwnerReferences)
-	assert.Equal(t, dynakube.Name, vs.ObjectMeta.OwnerReferences[0].Name)
+	require.NotEmpty(t, virtualService.ObjectMeta.OwnerReferences)
+	assert.Equal(t, dynakube.Name, virtualService.ObjectMeta.OwnerReferences[0].Name)
 
-	require.NotEmpty(t, vs.Spec.Hosts)
-	assert.Equal(t, apiHost.Host, vs.Spec.Hosts[0])
+	require.NotEmpty(t, virtualService.Spec.Hosts)
+	assert.Equal(t, apiHost.Host, virtualService.Spec.Hosts[0])
 
 	return ctx
 }
@@ -119,14 +119,14 @@ func checkServiceEntryForApiUrl(ctx context.Context, t *testing.T, environmentCo
 	apiHost := apiUrlCommunicationHost(t)
 	serviceName := istio.BuildNameForEndpoint(dynakube.Name, apiHost.Protocol, apiHost.Host, apiHost.Port)
 
-	vs, err := istioClient(t, environmentConfig.Client().RESTConfig()).NetworkingV1alpha3().ServiceEntries(dynakube.Namespace).Get(ctx, serviceName, v1.GetOptions{})
+	serviceEntry, err := istioClient(t, environmentConfig.Client().RESTConfig()).NetworkingV1alpha3().ServiceEntries(dynakube.Namespace).Get(ctx, serviceName, v1.GetOptions{})
 	require.Nil(t, err, "istio: failed to get '%s' service entry object", serviceName)
 
-	require.NotEmpty(t, vs.ObjectMeta.OwnerReferences)
-	assert.Equal(t, dynakube.Name, vs.ObjectMeta.OwnerReferences[0].Name)
+	require.NotEmpty(t, serviceEntry.ObjectMeta.OwnerReferences)
+	assert.Equal(t, dynakube.Name, serviceEntry.ObjectMeta.OwnerReferences[0].Name)
 
-	require.NotEmpty(t, vs.Spec.Hosts)
-	assert.Equal(t, apiHost.Host, vs.Spec.Hosts[0])
+	require.NotEmpty(t, serviceEntry.Spec.Hosts)
+	assert.Equal(t, apiHost.Host, serviceEntry.Spec.Hosts[0])
 
 	return ctx
 }

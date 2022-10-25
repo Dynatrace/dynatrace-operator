@@ -20,7 +20,7 @@ func TestMain(m *testing.M) {
 	testEnvironment.BeforeEachTest(namespace.DeleteIfExists(sampleapps.Namespace))
 	testEnvironment.BeforeEachTest(dynakube.DeleteIfExists(dynakube.NewBuilder().WithDefaultObjectMeta().Build()))
 	testEnvironment.BeforeEachTest(oneagent.WaitForDaemonSetPodsDeletion())
-	testEnvironment.BeforeEachTest(namespace.Recreate(dynakube.Namespace, nil))
+	testEnvironment.BeforeEachTest(namespace.Recreate(namespace.NewBuilder(dynakube.Namespace).Build()))
 
 	testEnvironment.AfterEachTest(namespace.Delete(sampleapps.Namespace))
 	testEnvironment.AfterEachTest(dynakube.DeleteIfExists(dynakube.NewBuilder().WithDefaultObjectMeta().Build()))

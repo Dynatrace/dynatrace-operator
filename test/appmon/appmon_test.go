@@ -46,9 +46,9 @@ type metadata struct {
 
 func TestMain(m *testing.M) {
 	testEnvironment = environment.Get()
-	testEnvironment.BeforeEachTest(namespace.Recreate(sampleapps.Namespace, nil))
+	testEnvironment.BeforeEachTest(namespace.Recreate(namespace.NewBuilder(sampleapps.Namespace).Build()))
 	testEnvironment.BeforeEachTest(dynakube.DeleteIfExists(dynakube.NewBuilder().WithDefaultObjectMeta().Build()))
-	testEnvironment.BeforeEachTest(namespace.Recreate(dynakube.Namespace, nil))
+	testEnvironment.BeforeEachTest(namespace.Recreate(namespace.NewBuilder(dynakube.Namespace).Build()))
 
 	testEnvironment.AfterEachTest(dynakube.DeleteIfExists(dynakube.NewBuilder().WithDefaultObjectMeta().Build()))
 	testEnvironment.AfterEachTest(namespace.Delete(sampleapps.Namespace))

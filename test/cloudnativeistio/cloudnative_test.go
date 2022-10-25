@@ -21,11 +21,10 @@ func TestMain(m *testing.M) {
 	testEnvironment = environment.Get()
 	testEnvironment.BeforeEachTest(istiosetup.AssertIstioNamespace())
 	testEnvironment.BeforeEachTest(istiosetup.AssertIstiodDeployment())
-
 	testEnvironment.BeforeEachTest(namespace.DeleteIfExists(sampleapps.Namespace))
 	testEnvironment.BeforeEachTest(dynakube.DeleteIfExists(dynakube.NewBuilder().WithDefaultObjectMeta().Build()))
 	testEnvironment.BeforeEachTest(oneagent.WaitForDaemonSetPodsDeletion())
-	testEnvironment.BeforeEachTest(namespace.Recreate(dynakube.Namespace, istiosetup.IstioLabel))
+	testEnvironment.BeforeEachTest(namespace.Recreate(namespace.NewBuilder(dynakube.Namespace).WithLabels(istiosetup.IstioLabel).Build()))
 
 	testEnvironment.AfterEachTest(namespace.DeleteIfExists(sampleapps.Namespace))
 	testEnvironment.AfterEachTest(dynakube.DeleteIfExists(dynakube.NewBuilder().WithDefaultObjectMeta().Build()))
