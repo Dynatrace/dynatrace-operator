@@ -62,11 +62,6 @@ func (dynakubeBuilder Builder) ApiUrl(apiUrl string) Builder {
 	return dynakubeBuilder
 }
 
-func (dynakubeBuilder Builder) FeatureFlag(featureFlag map[string]string) Builder {
-	dynakubeBuilder.dynakube.Annotations = featureFlag
-	return dynakubeBuilder
-}
-
 func (dynakubeBuilder Builder) WithActiveGate() Builder {
 	dynakubeBuilder.dynakube.Spec.ActiveGate = dynatracev1beta1.ActiveGateSpec{
 		Capabilities: []dynatracev1beta1.CapabilityDisplayName{
