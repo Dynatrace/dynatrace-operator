@@ -3,6 +3,7 @@ package sampleapps
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -14,8 +15,9 @@ import (
 )
 
 const (
-	Name      = "myapp"
-	Namespace = "test-namespace-1"
+	Name           = "myapp"
+	Namespace      = "test-namespace-1"
+	AdaptedTimeOut = time.Minute * 10
 )
 
 func Install(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
@@ -25,7 +27,7 @@ func Install(ctx context.Context, t *testing.T, config *envconf.Config) context.
 	require.NoError(t, resource.Get(ctx, Name, Namespace, &sampleDeployment))
 	require.NoError(t, wait.For(
 		conditions.New(resource).DeploymentConditionMatch(
-			&sampleDeployment, appsv1.DeploymentAvailable, corev1.ConditionTrue)))
+			&sampleDeployment, appsv1.DeploymentAvailable, corev1.ConditionTrue), wait.WithTimeout(AdaptedTimeOut)))
 
 	return ctx
 }

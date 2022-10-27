@@ -25,40 +25,35 @@ import (
 )
 
 const (
-	agentMountPath           = "opt/dynatrace/oneagent-paas"
-	ldPreloadError               = "ERROR: ld.so: object '/opt/dynatrace/oneagent-paas/agent/lib64/liboneagentproc.so' from LD_PRELOAD cannot be preloaded"
-	podRestartTimeout          = 5 * time.Minute
-	restartCountThreshold                  = int32(3)
-	featureMaxCSIMountAttempts = "feature.dynatrace.com/max-csi-mount-attempts"
-	mountAttempts              = "5"
-	csiNetworkPolicy           = "../testdata/network/csi-denial.yaml"
-	clusterNetworkPolicy       = "../testdata/network/dynatrace-denial.yaml"
+	agentMountPath        = "/opt/dynatrace/oneagent-paas"
+	deploymentPath        = "../testdata/cloudnative/codemodules-deployment.yaml"
+	ldPreloadError        = "ERROR: ld.so: object '/opt/dynatrace/oneagent-paas/agent/lib64/liboneagentproc.so' from LD_PRELOAD cannot be preloaded"
+	podRestartTimeout     = 5 * time.Minute
+	restartCountThreshold = int32(3)
+	csiNetworkPolicy      = "../testdata/network/csi-denial.yaml"
+	clusterNetworkPolicy  = "../testdata/network/dynatrace-denial.yaml"
 )
 
 func networkProblems(t *testing.T, policyPath string) features.Feature {
-	featureFlag := map[string]string{
-		featureMaxCSIMountAttempts: mountAttempts,
-	}
 	secretConfigs, err := secrets.DefaultMultiTenant(afero.NewOsFs())
 
 	require.NoError(t, err)
 
 	createNetworkProblems := features.New("creating network problems")
+	createNetworkProblems.Setup(manifests.InstallFromFile(policyPath))
 	createNetworkProblems.Setup(secrets.ApplyDefault(secretConfigs[0]))
 	createNetworkProblems.Setup(operator.InstallAllForKubernetes())
 
 	setup.AssessDeployment(createNetworkProblems)
 
-	createNetworkProblems.Assess("apply network policy", manifests.InstallFromFile(policyPath))
 	createNetworkProblems.Assess("install dynakube", dynakube.Apply(
 		dynakube.NewBuilder().
 			WithDefaultObjectMeta().
-			FeatureFlag(featureFlag).
 			ApiUrl(secretConfigs[0].ApiUrl).
 			CloudNative(codeModulesSpec()).
 			Build()),
 	)
-	createNetworkProblems.Assess("install deployment", manifests.InstallFromFile("../testdata/cloudnative/codemodules-deployment.yaml"))
+	createNetworkProblems.Assess("install deployment", manifests.InstallFromFile(deploymentPath))
 	createNetworkProblems.Assess("start sample apps and injection", sampleapps.Install)
 	createNetworkProblems.Assess("check for dummy volume", checkForDummyVolume)
 	createNetworkProblems.Assess("check pods after sleep", checkPodsAfterSleep)
@@ -79,11 +74,11 @@ func checkForDummyVolume(ctx context.Context, t *testing.T, environmentConfig *e
 		var result *pod.ExecutionResult
 		result, err := pod.
 			NewExecutionQuery(podItem, sampleapps.Name,
-				bash.ListDirectory(sampleAppDirPath)).
+				bash.ListDirectory(agentMountPath)).
 			Execute(restConfig)
 
 		require.NoError(t, err)
-		assert.Contains(t, result.StdOut.String(), errorMessage)
+		assert.Contains(t, result.StdOut.String(), ldPreloadError)
 	}
 	return ctx
 }
@@ -100,7 +95,7 @@ func checkPodsAfterSleep(ctx context.Context, t *testing.T, environmentConfig *e
 		assert.Equal(t, podItem.Status.Phase, corev1.PodPhase("Running"))
 	}
 
-	time.Sleep(time.Minute * sleepMinuteAmount)
+	time.Sleep(podRestartTimeout)
 
 	samplePods = sampleapps.Get(t, ctx, resources)
 	for _, podItem := range samplePods.Items {
@@ -111,7 +106,7 @@ func checkPodsAfterSleep(ctx context.Context, t *testing.T, environmentConfig *e
 		assert.Equal(t, podItem.Status.Phase, corev1.PodPhase("Running"))
 
 		for _, containerStatus := range podItem.Status.ContainerStatuses {
-			assert.Less(t, containerStatus.RestartCount, threshold)
+			assert.Less(t, containerStatus.RestartCount, restartCountThreshold)
 		}
 	}
 
