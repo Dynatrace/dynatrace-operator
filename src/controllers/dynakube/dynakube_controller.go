@@ -175,7 +175,6 @@ func (controller *DynakubeController) reconcileIstio(dynakube *dynatracev1beta1.
 }
 
 func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
-
 	dtcReconciler := NewDynatraceClientReconciler(controller.client, controller.dtcBuildFunc)
 	dtc, err := dtcReconciler.Reconcile(ctx, dynakube)
 	if err != nil {
@@ -283,38 +282,28 @@ func (controller *DynakubeController) removeAppInjection(ctx context.Context, dy
 	return nil
 }
 
-func (controller *DynakubeController) reconcileOneAgent(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) (err error) {
-	if dynakube.HostMonitoringMode() {
-		err = oneagent.NewOneAgentReconciler(
-			controller.client, controller.apiReader, controller.scheme, daemonset.DeploymentTypeHostMonitoring,
-		).Reconcile(ctx, dynakube)
-		if err != nil {
-			return err
-		}
-		log.Info("reconciled host monitoring")
-	} else if dynakube.CloudNativeFullstackMode() {
-		err = oneagent.NewOneAgentReconciler(
-			controller.client, controller.apiReader, controller.scheme, daemonset.DeploymentTypeCloudNative,
-		).Reconcile(ctx, dynakube)
-		if err != nil {
-			return err
-		}
-		log.Info("reconciled cloud native fullstack")
-	} else if dynakube.ClassicFullStackMode() {
-		err = oneagent.NewOneAgentReconciler(
-			controller.client, controller.apiReader, controller.scheme, daemonset.DeploymentTypeFullStack,
-		).Reconcile(ctx, dynakube)
-		if err != nil {
-			return err
-		}
-		log.Info("reconciled classic fullstack")
-	} else {
-		err = controller.removeOneAgentDaemonSet(ctx, dynakube)
-		if err != nil {
-			return err
-		}
+func (controller *DynakubeController) reconcileOneAgent(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
+	deploymentType := getDeploymentType(dynakube)
+
+	if deploymentType == "" {
+		return controller.removeOneAgentDaemonSet(ctx, dynakube)
 	}
-	return err
+
+	return oneagent.NewOneAgentReconciler(
+		controller.client, controller.apiReader, controller.scheme, deploymentType,
+	).Reconcile(ctx, dynakube)
+}
+
+func getDeploymentType(dynakube *dynatracev1beta1.DynaKube) string {
+	if dynakube.HostMonitoringMode() {
+		return daemonset.DeploymentTypeHostMonitoring
+	} else if dynakube.CloudNativeFullstackMode() {
+		return daemonset.DeploymentTypeCloudNative
+	} else if dynakube.ClassicFullStackMode() {
+		return daemonset.DeploymentTypeFullStack
+	}
+
+	return ""
 }
 
 func (controller *DynakubeController) removeOneAgentDaemonSet(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
