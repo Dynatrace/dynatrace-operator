@@ -2,14 +2,7 @@ package token
 
 import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-)
-
-// Constants are re-imported to avoid import cycle
-// Todo: move constants to config package
-const (
-	DynatracePaasToken       = "paasToken"
-	DynatraceApiToken        = "apiToken"
-	DynatraceDataIngestToken = "dataIngestToken"
+	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 )
 
 type Token struct {
@@ -17,30 +10,51 @@ type Token struct {
 	RequiredScopes []string
 }
 
-type Tokens map[string]Token
+func (token Token) setApiTokenScopes(dynakube dynatracev1beta1.DynaKube, hasPaasToken bool) Token {
+	token.RequiredScopes = make([]string, 0)
 
-func (tokens Tokens) ApiToken() Token {
-	return tokens.getToken(DynatraceApiToken)
-}
+	if !hasPaasToken {
+		token.RequiredScopes = append(token.RequiredScopes, dtclient.TokenScopeInstallerDownload)
+	}
 
-func (tokens Tokens) PaasToken() Token {
-	return tokens.getToken(DynatracePaasToken)
-}
+	if !dynakube.FeatureDisableHostsRequests() {
+		token.RequiredScopes = append(token.RequiredScopes, dtclient.TokenScopeDataExport)
+	}
 
-func (tokens Tokens) DataIngestToken() Token {
-	return tokens.getToken(DynatraceDataIngestToken)
-}
+	if dynakube.IsKubernetesMonitoringActiveGateEnabled() &&
+		dynakube.FeatureAutomaticKubernetesApiMonitoring() {
+		token.RequiredScopes = append(token.RequiredScopes,
+			dtclient.TokenScopeEntitiesRead,
+			dtclient.TokenScopeSettingsRead,
+			dtclient.TokenScopeSettingsWrite)
+	}
 
-func (tokens Tokens) getToken(tokenName string) Token {
-	token, hasToken := tokens[tokenName]
-
-	if !hasToken {
-		return Token{}
+	if dynakube.UseActiveGateAuthToken() {
+		token.RequiredScopes = append(token.RequiredScopes,
+			dtclient.TokenScopeActiveGateTokenCreate)
 	}
 
 	return token
 }
 
-func (tokens Tokens) setScopes(dynakube dynatracev1beta1.DynaKube) Tokens {
+func (token Token) setPaasTokenScopes() Token {
+	token.RequiredScopes = []string{dtclient.TokenScopeInstallerDownload}
+	return token
+}
 
+func (token Token) setDataIngestScopes() Token {
+	token.RequiredScopes = []string{dtclient.TokenScopeMetricsIngest}
+	return token
+}
+
+func (token Token) getMissingScopes(scopes dtclient.TokenScopes) []string {
+	missingScopes := make([]string, 0)
+
+	for _, requiredScope := range token.RequiredScopes {
+		if !scopes.Contains(requiredScope) {
+			missingScopes = append(missingScopes, requiredScope)
+		}
+	}
+
+	return missingScopes
 }
