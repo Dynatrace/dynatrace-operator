@@ -2,9 +2,8 @@ package dynakube
 
 import (
 	"context"
-	"fmt"
-
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
@@ -13,12 +12,14 @@ import (
 )
 
 type options struct {
+	ctx  context.Context
 	Opts []dtclient.Option
 }
 
 type DynatraceClientProperties struct {
+	ctx                 context.Context
 	ApiReader           client.Reader
-	Secret              *corev1.Secret
+	Tokens              token.Tokens
 	Proxy               *DynatraceClientProxy
 	ApiUrl              string
 	Namespace           string
@@ -33,42 +34,32 @@ type DynatraceClientProxy struct {
 	ValueFrom string
 }
 
-func NewDynatraceClientProperties(ctx context.Context, apiReader client.Reader, dk dynatracev1beta1.DynaKube) (*DynatraceClientProperties, error) {
-	var tokens corev1.Secret
-	var err error
-	if err = apiReader.Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: dk.Namespace}, &tokens); err != nil {
-		err = fmt.Errorf("failed to query tokens: %w", err)
-	}
+func NewDynatraceClientProperties(ctx context.Context, apiReader client.Reader, dynakube dynatracev1beta1.DynaKube, tokens token.Tokens) *DynatraceClientProperties {
 	return &DynatraceClientProperties{
+		ctx:                 ctx,
 		ApiReader:           apiReader,
-		Secret:              &tokens,
-		ApiUrl:              dk.Spec.APIURL,
-		Namespace:           dk.Namespace,
-		Proxy:               (*DynatraceClientProxy)(dk.Spec.Proxy),
-		NetworkZone:         dk.Spec.NetworkZone,
-		TrustedCerts:        dk.Spec.TrustedCAs,
-		SkipCertCheck:       dk.Spec.SkipCertCheck,
-		DisableHostRequests: dk.FeatureDisableHostsRequests(),
-	}, err
+		Tokens:              tokens,
+		ApiUrl:              dynakube.Spec.APIURL,
+		Namespace:           dynakube.Namespace,
+		Proxy:               (*DynatraceClientProxy)(dynakube.Spec.Proxy),
+		NetworkZone:         dynakube.Spec.NetworkZone,
+		TrustedCerts:        dynakube.Spec.TrustedCAs,
+		SkipCertCheck:       dynakube.Spec.SkipCertCheck,
+		DisableHostRequests: dynakube.FeatureDisableHostsRequests(),
+	}
 }
 
 // BuildDynatraceClient creates a new Dynatrace client using the settings configured on the given instance.
 func BuildDynatraceClient(properties DynatraceClientProperties) (dtclient.Client, error) {
 	namespace := properties.Namespace
-	secret := properties.Secret
 	apiReader := properties.ApiReader
 
-	tokens, err := kubeobjects.NewTokens(secret)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	opts := newOptions()
+	opts := newOptions(properties.ctx)
 	opts.appendCertCheck(properties.SkipCertCheck)
 	opts.appendNetworkZone(properties.NetworkZone)
 	opts.appendDisableHostsRequests(properties.DisableHostRequests)
 
-	err = opts.appendProxySettings(apiReader, properties.Proxy, namespace)
+	err := opts.appendProxySettings(apiReader, properties.Proxy, namespace)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -78,12 +69,13 @@ func BuildDynatraceClient(properties DynatraceClientProperties) (dtclient.Client
 		return nil, errors.WithStack(err)
 	}
 
-	return dtclient.NewClient(properties.ApiUrl, tokens.ApiToken, tokens.PaasToken, opts.Opts...)
+	return dtclient.NewClient(properties.ApiUrl, properties.Tokens.ApiToken().Value, properties.Tokens.PaasToken().Value, opts.Opts...)
 }
 
-func newOptions() *options {
+func newOptions(ctx context.Context) *options {
 	return &options{
 		Opts: []dtclient.Option{},
+		ctx:  ctx,
 	}
 }
 
@@ -112,7 +104,7 @@ func (opts *options) appendProxySettings(apiReader client.Reader, proxyEntry *Dy
 	if p := proxyEntry; p != nil {
 		if p.ValueFrom != "" {
 			proxySecret := &corev1.Secret{}
-			err := apiReader.Get(context.TODO(), client.ObjectKey{Name: p.ValueFrom, Namespace: namespace}, proxySecret)
+			err := apiReader.Get(opts.ctx, client.ObjectKey{Name: p.ValueFrom, Namespace: namespace}, proxySecret)
 			if err != nil {
 				return errors.WithMessage(err, "failed to get proxy secret")
 			}
@@ -132,7 +124,7 @@ func (opts *options) appendProxySettings(apiReader client.Reader, proxyEntry *Dy
 func (opts *options) appendTrustedCerts(apiReader client.Reader, trustedCerts string, namespace string) error {
 	if trustedCerts != "" {
 		certs := &corev1.ConfigMap{}
-		if err := apiReader.Get(context.TODO(), client.ObjectKey{Namespace: namespace, Name: trustedCerts}, certs); err != nil {
+		if err := apiReader.Get(opts.ctx, client.ObjectKey{Namespace: namespace, Name: trustedCerts}, certs); err != nil {
 			return errors.WithMessage(err, "failed to get certificate configmap")
 		}
 		if certs.Data[dtclient.CustomCertificatesConfigMapKey] == "" {
