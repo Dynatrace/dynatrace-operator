@@ -3,7 +3,6 @@ package token
 import (
 	"context"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
@@ -11,15 +10,17 @@ import (
 )
 
 type Reader struct {
-	apiReader client.Reader
-	dynakube  *dynatracev1beta1.DynaKube
-	dtclient  dtclient.Client
+	apiReader            client.Reader
+	dynakube             *dynatracev1beta1.DynaKube
+	dtclient             dtclient.Client
+	buildDynatraceClient func(context.Context, Tokens)
 }
 
-func NewReader(apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube) Reader {
+func NewReader(apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube, buildDynatraceClient func(context.Context, Tokens)) Reader {
 	return Reader{
-		apiReader: apiReader,
-		dynakube:  dynakube,
+		apiReader:            apiReader,
+		dynakube:             dynakube,
+		buildDynatraceClient: buildDynatraceClient,
 	}
 }
 
@@ -55,21 +56,21 @@ func (reader Reader) verifyApiTokenExists(tokens Tokens) error {
 	return nil
 }
 
-func (reader Reader) createDynatraceClient(ctx context.Context, tokens Tokens) error {
-	if reader.dtclient != nil {
-		// When unit testing the reader, the dtclient should be set by the unit test
-		// If so, do not recreate an actual dtclient
-		return nil
-	}
-
-	properties := dynakube.NewDynatraceClientProperties(ctx, reader.apiReader, *reader.dynakube, tokens)
-	dtc, err := dynakube.BuildDynatraceClient(*properties)
-
-	if err != nil {
-		return err
-	}
-
-	reader.dtclient = dtc
-
-	return nil
-}
+//func (reader Reader) createDynatraceClient(ctx context.Context, tokens Tokens) error {
+//	if reader.dtclient != nil {
+//		// When unit testing the reader, the dtclient should be set by the unit test
+//		// If so, do not recreate an actual dtclient
+//		return nil
+//	}
+//
+//	properties := dynakube.NewDynatraceClientProperties(ctx, reader.apiReader, *reader.dynakube, tokens)
+//	dtc, err := dynakube.BuildDynatraceClient(*properties)
+//
+//	if err != nil {
+//		return err
+//	}
+//
+//	reader.dtclient = dtc
+//
+//	return nil
+//}
