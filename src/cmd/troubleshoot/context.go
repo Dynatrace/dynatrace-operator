@@ -1,6 +1,7 @@
 package troubleshoot
 
 import (
+	"context"
 	"net/http"
 	"net/url"
 
@@ -10,6 +11,7 @@ import (
 )
 
 type troubleshootContext struct {
+	context            context.Context
 	apiReader          client.Reader
 	httpClient         *http.Client
 	namespaceName      string // the default namespace ("dynatrace") or provided in the command line
@@ -34,7 +36,7 @@ func (troubleshootCtx *troubleshootContext) SetTransportProxy(proxy string) erro
 		}
 
 		troubleshootCtx.httpClient.Transport.(*http.Transport).Proxy = http.ProxyURL(proxyUrl)
-		logInfof("using  '%s' proxy to connect to the registry", proxyUrl.Host)
+		logInfof("using '%s' proxy to connect to the registry", proxyUrl.Host)
 	}
 
 	return nil

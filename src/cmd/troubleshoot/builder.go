@@ -1,6 +1,7 @@
 package troubleshoot
 
 import (
+	"context"
 	"net/http"
 	"os"
 
@@ -94,6 +95,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			checkImagePullable,
 		}
 		troubleshootCtx := troubleshootContext{
+			context:       context.Background(),
 			apiReader:     apiReader,
 			httpClient:    &http.Client{},
 			namespaceName: namespaceFlagValue,

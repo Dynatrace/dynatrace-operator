@@ -40,6 +40,10 @@ const (
 	TlsCertKey   = "server.crt"
 )
 
+func (dk *DynaKube) ApiUrl() string {
+	return dk.Spec.APIURL
+}
+
 // NeedsActiveGate returns true when a feature requires ActiveGate instances.
 func (dk *DynaKube) NeedsActiveGate() bool {
 	return dk.DeprecatedActiveGateMode() || dk.ActiveGateMode()

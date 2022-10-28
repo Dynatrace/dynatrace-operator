@@ -1,7 +1,6 @@
 package troubleshoot
 
 import (
-	"context"
 	"fmt"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -57,7 +56,7 @@ func dynakubeNotValidMessage() string {
 
 func checkDynakubeCrdExists(troubleshootCtx *troubleshootContext) error {
 	dynakubeList := &dynatracev1beta1.DynaKubeList{}
-	err := troubleshootCtx.apiReader.List(context.TODO(), dynakubeList, &client.ListOptions{Namespace: troubleshootCtx.namespaceName})
+	err := troubleshootCtx.apiReader.List(troubleshootCtx.context, dynakubeList, &client.ListOptions{Namespace: troubleshootCtx.namespaceName})
 
 	if runtime.IsNotRegisteredError(err) {
 		return errorWithMessagef(err, "CRD for Dynakube missing")
@@ -70,7 +69,7 @@ func checkDynakubeCrdExists(troubleshootCtx *troubleshootContext) error {
 }
 
 func getSelectedDynakubeIfItExists(troubleshootCtx *troubleshootContext) error {
-	query := kubeobjects.NewDynakubeQuery(troubleshootCtx.apiReader, troubleshootCtx.namespaceName).WithContext(context.TODO())
+	query := kubeobjects.NewDynakubeQuery(troubleshootCtx.apiReader, troubleshootCtx.namespaceName).WithContext(troubleshootCtx.context)
 	dynakube, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.dynakubeName})
 
 	if k8serrors.IsNotFound(err) {
@@ -104,7 +103,7 @@ func checkApiUrl(troubleshootCtx *troubleshootContext) error {
 }
 
 func getDynatraceApiSecretIfItExists(troubleshootCtx *troubleshootContext) error {
-	query := kubeobjects.NewSecretQuery(context.TODO(), nil, troubleshootCtx.apiReader, log)
+	query := kubeobjects.NewSecretQuery(troubleshootCtx.context, nil, troubleshootCtx.apiReader, log)
 	secret, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.dynakube.Tokens()})
 
 	if err != nil {
@@ -132,7 +131,7 @@ func checkIfDynatraceApiSecretHasApiToken(troubleshootCtx *troubleshootContext) 
 }
 
 func getPullSecretIfItExists(troubleshootCtx *troubleshootContext) error {
-	query := kubeobjects.NewSecretQuery(context.TODO(), nil, troubleshootCtx.apiReader, log)
+	query := kubeobjects.NewSecretQuery(troubleshootCtx.context, nil, troubleshootCtx.apiReader, log)
 	secret, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.dynakube.PullSecret()})
 
 	if err != nil {
@@ -178,7 +177,7 @@ func setProxyFromValue(troubleshootCtx *troubleshootContext) error {
 }
 
 func setProxyFromSecret(troubleshootCtx *troubleshootContext) error {
-	query := kubeobjects.NewSecretQuery(context.TODO(), nil, troubleshootCtx.apiReader, log)
+	query := kubeobjects.NewSecretQuery(troubleshootCtx.context, nil, troubleshootCtx.apiReader, log)
 	secret, err := query.Get(types.NamespacedName{
 		Namespace: troubleshootCtx.namespaceName,
 		Name:      troubleshootCtx.dynakube.Spec.Proxy.ValueFrom})

@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -111,7 +112,6 @@ func checkComponentImagePullable(httpClient *http.Client, componentName string, 
 	}
 
 	logInfof("using '%s' on '%s' with version '%s' as %s image", componentImageInfo.image, componentImageInfo.registry, componentImageInfo.version, componentName)
-	imageWorks := false
 
 	var result Auths
 	err = json.Unmarshal([]byte(pullSecret), &result)
@@ -139,19 +139,10 @@ func checkComponentImagePullable(httpClient *http.Client, componentName string, 
 			logWarningf("cannot pull image '%s' with version '%s' from registry '%s': %v",
 				componentImageInfo.image, componentImageInfo.version, registry, err)
 		} else {
-			logInfof("image '%s' with version '%s' exists on registry '%s",
+			logOkf("image '%s' with version '%s' exists on registry '%s",
 				componentImageInfo.image, componentImageInfo.version, registry)
-			imageWorks = true
 			break
 		}
-	}
-
-	if imageWorks {
-		logOkf("%s image '%s' found", componentName, componentImageInfo.registry+"/"+componentImageInfo.image)
-	} else {
-		// The image could not be pulled with any of the credentials
-		// Return as an error
-		return fmt.Errorf("%s image '%s' missing", componentName, componentImageInfo.registry+"/"+componentImageInfo.image)
 	}
 
 	return nil
@@ -211,7 +202,7 @@ func registryAvailable(httpClient *http.Client, registry string, apiToken string
 	statusCode, err := connectToDockerRegistry(httpClient, registryUrl(registry), apiToken)
 
 	if err != nil {
-		return fmt.Errorf("registry '%s' unreachable: %v", registry, err)
+		return errors.Wrapf(err, "registry '%s' unreachable", registry)
 	} else if statusCode != http.StatusOK {
 		// Don't fail immediately since connection works.
 		// Maybe registry is not correctly implemented.

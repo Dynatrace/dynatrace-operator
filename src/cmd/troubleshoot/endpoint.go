@@ -3,7 +3,7 @@ package troubleshoot
 func getOneAgentImageEndpoint(troubleshootCtx *troubleshootContext) string {
 	imageEndpoint := ""
 
-	apiEndpoint := removeSchemaRegex.FindStringSubmatch(troubleshootCtx.dynakube.Spec.APIURL)
+	apiEndpoint := removeSchemaRegex.FindStringSubmatch(troubleshootCtx.dynakube.ApiUrl())
 	registry := removeApiEndpointRegex.FindStringSubmatch(apiEndpoint[1])
 	imageEndpoint = registry[1] + "/linux/oneagent"
 
@@ -34,7 +34,7 @@ func getOneAgentCodeModulesImageEndpoint(troubleshootCtx *troubleshootContext) s
 func getActiveGateImageEndpoint(troubleshootCtx *troubleshootContext) string {
 	imageEndpoint := ""
 
-	apiEndpoint := removeSchemaRegex.FindStringSubmatch(troubleshootCtx.dynakube.Spec.APIURL)
+	apiEndpoint := removeSchemaRegex.FindStringSubmatch(troubleshootCtx.dynakube.ApiUrl())
 	registry := removeApiEndpointRegex.FindStringSubmatch(apiEndpoint[1])
 	imageEndpoint = registry[1] + "/linux/activegate"
 
