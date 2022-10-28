@@ -17,7 +17,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/bash"
 	"github.com/Dynatrace/dynatrace-operator/test/csi"
 	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/test/istiosetup"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/deployment"
+	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/sampleapps"
 	"github.com/Dynatrace/dynatrace-operator/test/secrets"
@@ -47,27 +49,38 @@ type manifest struct {
 	Version string `json:"version,omitempty"`
 }
 
-func codeModules(t *testing.T) features.Feature {
+func CodeModules(t *testing.T, istioEnabled bool) features.Feature {
 	secretConfigs, err := secrets.DefaultMultiTenant(afero.NewOsFs())
 
 	require.NoError(t, err)
 
 	codeModulesInjection := features.New("codemodules injection")
 
+	if istioEnabled {
+		codeModulesInjection.Setup(manifests.InstallFromFile("../testdata/cloudnativeistio/test-namespace.yaml"))
+	} else {
+		codeModulesInjection.Setup(manifests.InstallFromFile("../testdata/cloudnative/test-namespace.yaml"))
+	}
 	setup.InstallAndDeploy(codeModulesInjection, secretConfigs[0], "../testdata/cloudnative/codemodules-deployment.yaml")
 
 	setup.AssessDeployment(codeModulesInjection)
 
-	codeModulesInjection.Assess("install dynakube", dynakube.Apply(
-		dynakube.NewBuilder().
-			WithDefaultObjectMeta().
-			ApiUrl(secretConfigs[0].ApiUrl).
-			CloudNative(codeModulesSpec()).
-			Build()),
-	)
+	dynakubeBuilder := dynakube.NewBuilder().
+		WithDefaultObjectMeta().
+		ApiUrl(secretConfigs[0].ApiUrl).
+		CloudNative(codeModulesSpec())
+	if istioEnabled {
+		dynakubeBuilder = dynakubeBuilder.WithIstio()
+	}
+
+	codeModulesInjection.Assess("install dynakube", dynakube.Apply(dynakubeBuilder.Build()))
 
 	setup.AssessDynakubeStartup(codeModulesInjection)
 	assessOneAgentsAreRunning(codeModulesInjection)
+
+	if istioEnabled {
+		istiosetup.AssessIstio(codeModulesInjection)
+	}
 
 	codeModulesInjection.Assess("csi driver did not crash", csiDriverIsAvailable)
 	codeModulesInjection.Assess("codemodules have been downloaded", imageHasBeenDownloaded)

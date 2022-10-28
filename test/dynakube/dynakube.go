@@ -93,6 +93,11 @@ func (dynakubeBuilder Builder) Proxy(proxy *dynatracev1beta1.DynaKubeProxy) Buil
 	return dynakubeBuilder
 }
 
+func (dynakubeBuilder Builder) WithIstio() Builder {
+	dynakubeBuilder.dynakube.Spec.EnableIstio = true
+	return dynakubeBuilder
+}
+
 func (dynakubeBuilder Builder) Privileged() Builder {
 	dynakubeBuilder.dynakube.Annotations[dynatracev1beta1.AnnotationFeatureRunOneAgentContainerPrivileged] = "true"
 	return dynakubeBuilder
