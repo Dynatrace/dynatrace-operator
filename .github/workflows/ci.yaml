@@ -99,7 +99,11 @@ jobs:
         uses: docker/metadata-action@57396166ad8aefe6098280995947635806a0e6ea # v4.1.1
         id: meta
         with:
-          images: dynatrace-operator
+          images: |
+            dynatrace/dynatrace-operator
+            quay.io/dynatrace/dynatrace-operator
+            registry.connect.redhat.com/dynatrace/dynatrace-operator
+            gcr.io/dynatrace-marketplace-prod/dynatrace-operator
           labels: |
             ${{ steps.prep.outputs.docker_image_labels }}
             vcs-ref=${{ github.sha }}
