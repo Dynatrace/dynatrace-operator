@@ -108,7 +108,6 @@ jobs:
           labels: |
             ${{ steps.prep.outputs.docker_image_labels }}
             vcs-ref=${{ github.sha }}
-            org.opencontainers.image.version=${{ steps.prep.outputs.docker_image_tag }}
       - name: Prepare build parameters
         id: prepenv
         run: |
