@@ -49,7 +49,13 @@ LABEL name="Dynatrace Operator" \
       release="1" \
       url="https://www.dynatrace.com" \
       summary="Dynatrace is an all-in-one, zero-config monitoring platform designed by and for cloud natives. It is powered by artificial intelligence that identifies performance problems and pinpoints their root causes in seconds." \
-      description="ActiveGate works as a proxy between Dynatrace OneAgent and Dynatrace Cluster"
+      description="ActiveGate works as a proxy between Dynatrace OneAgent and Dynatrace Cluster" \
+      io.k8s.description="Dynatrace Operator image." \
+      io.k8s.display-name="Dynatrace Operator" \
+      io.openshift.tags="dynatrace-operator" \
+      vcs-url="https://github.com/Dynatrace/dynatrace-operator.git" \
+      vcs-type="git" \
+      changelog-url="https://github.com/Dynatrace/dynatrace-operator/releases"
 
 ENV OPERATOR=dynatrace-operator \
     USER_UID=1001 \
