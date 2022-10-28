@@ -141,11 +141,13 @@ func checkComponentImagePullable(httpClient *http.Client, componentName string, 
 		} else {
 			logOkf("image '%s' with version '%s' exists on registry '%s",
 				componentImageInfo.image, componentImageInfo.version, registry)
-			break
+			return nil
 		}
 	}
 
-	return nil
+	// The image could not be pulled with any of the credentials
+	// Return as an error
+	return fmt.Errorf("%s image '%s' missing", componentName, componentImageInfo.registry+"/"+componentImageInfo.image)
 }
 
 func checkCustomModuleImagePullable(httpClient *http.Client, _ string, pullSecret string, codeModulesImage string) error {
