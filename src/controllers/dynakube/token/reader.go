@@ -24,9 +24,25 @@ func NewReader(apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube, bui
 	}
 }
 
-func (reader Reader) readTokens(ctx context.Context) (map[string]Token, error) {
+func (reader Reader) ReadTokens(ctx context.Context) (Tokens, error) {
+	tokens, err := reader.readTokens(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = reader.verifyApiTokenExists(tokens)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return tokens, nil
+}
+
+func (reader Reader) readTokens(ctx context.Context) (Tokens, error) {
 	var tokenSecret v1.Secret
-	result := make(map[string]Token)
+	result := make(Tokens)
 
 	err := reader.apiReader.Get(ctx, client.ObjectKey{
 		Name:      reader.dynakube.Tokens(),
