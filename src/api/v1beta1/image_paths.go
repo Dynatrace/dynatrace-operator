@@ -105,6 +105,29 @@ func (imagePath *eecImagePath) DefaultImagePath() string {
 	return "linux/dynatrace-eec:latest"
 }
 
+var _ imagePathResolver = (*syntheticImagePath)(nil)
+
+type syntheticImagePath genericImagePath
+
+func newSyntheticImagePath(kube *DynaKube) *syntheticImagePath {
+	return (*syntheticImagePath)(newGenericImagePath(kube))
+}
+
+func (path *syntheticImagePath) apiUrl() string {
+	return (*genericImagePath)(path).apiUrl()
+}
+
+func (path *syntheticImagePath) CustomImagePath() string {
+	if path.dynaKube.IsSyntheticActiveGateEnabled() {
+		return path.dynaKube.FeatureCustomSyntheticImage()
+	}
+	return ""
+}
+
+func (path *syntheticImagePath) DefaultImagePath() string {
+	return "linux/dynatrace-synthetic:latest"
+}
+
 func resolveImagePath(resolver imagePathResolver) string {
 	customImage := resolver.CustomImagePath()
 	if len(customImage) > 0 {

@@ -1,11 +1,13 @@
 package statefulset
 
 import (
+	"encoding/json"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder/modifiers"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -361,5 +363,48 @@ func TestBuildCommonEnvs(t *testing.T) {
 		zoneEnv := kubeobjects.FindEnvVar(envs, consts.EnvDtNetworkZone)
 		require.NotNil(t, zoneEnv)
 		assert.Equal(t, dynakube.Spec.NetworkZone, zoneEnv.Value)
+	})
+
+	t.Run("syn-capability", func(t *testing.T) {
+		dynakube := getTestDynakube()
+		dynakube.Spec.ActiveGate.Capabilities = []dynatracev1beta1.CapabilityDisplayName{
+			dynatracev1beta1.SyntheticCapability.DisplayName,
+		}
+		builder := NewStatefulSetBuilder(
+			testKubeUID,
+			testConfigHash,
+			dynakube,
+			capability.NewMultiCapability(&dynakube))
+
+		assert.Equal(
+			t,
+			dynatracev1beta1.SyntheticCapability.ArgumentName,
+			kubeobjects.FindEnvVar(builder.buildCommonEnvs(), consts.EnvDtCapabilities).
+				Value)
+
+		sts, _ := builder.CreateStatefulSet(
+			modifiers.GenerateAllModifiers(
+				dynakube,
+				capability.NewMultiCapability(&dynakube)))
+		jsonized, _ := json.Marshal(sts)
+		t.Logf("manifest: %s", jsonized)
+
+		volumes := []string{
+			modifiers.ChromiumCacheMountName,
+			modifiers.TmpStorageMountName,
+		}
+		for _, v := range volumes {
+			assert.True(
+				t,
+				kubeobjects.VolumeIsDefined(sts.Spec.Template.Spec.Volumes, v),
+				"declared volume: %s",
+				v)
+		}
+
+		assert.True(
+			t,
+			kubeobjects.VolumeClaimIsDefined(sts.Spec.VolumeClaimTemplates, modifiers.PersistentStorageMountName),
+			"declared volume claim: %s",
+			modifiers.PersistentStorageMountName)
 	})
 }

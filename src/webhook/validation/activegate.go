@@ -19,6 +19,10 @@ Make sure you correctly specify the ActiveGate capabilities in your custom resou
 Make sure you don't duplicate an Activegate capability in your custom resource.
 `
 	warningMissingActiveGateMemoryLimit = `ActiveGate specification missing memory limits. Can cause excess memory usage.`
+
+	errorJoinedSyntheticActiveGateCapability = `The DynaKube's specification requires illegally the synthetic capability along with %v.
+Make sure such a capability is the single one.
+`
 )
 
 func conflictingActiveGateConfiguration(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
@@ -68,4 +72,29 @@ func missingActiveGateMemoryLimit(dv *dynakubeValidator, dynakube *dynatracev1be
 
 func memoryLimitSet(resources corev1.ResourceRequirements) bool {
 	return resources.Limits != nil && resources.Limits.Memory() != nil
+}
+
+func exclusiveSyntheticCapability(dv *dynakubeValidator, dk *dynatracev1beta1.DynaKube) string {
+	if dk.IsSyntheticActiveGateEnabled() &&
+		len(dk.Spec.ActiveGate.Capabilities) > 1 {
+		log.Info(
+			"requested dynakube has the synthetic active gate capability accompanied with others",
+			"name", dk.Name,
+			"namespace", dk.Namespace)
+		return fmt.Sprintf(errorJoinedSyntheticActiveGateCapability, syntheticlessCapabilities(dk))
+	}
+	return ""
+}
+
+func syntheticlessCapabilities(dk *dynatracev1beta1.DynaKube) string {
+	collected := []byte{'['}
+	for _, c := range dk.Spec.ActiveGate.Capabilities {
+		if c != dynatracev1beta1.SyntheticCapability.DisplayName {
+			if len(collected) > 1 {
+				collected = append(collected, ' ')
+			}
+			collected = append(collected, string(c)...)
+		}
+	}
+	return string(append(collected, ']'))
 }

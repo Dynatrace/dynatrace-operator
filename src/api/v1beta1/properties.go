@@ -129,6 +129,10 @@ func (dk *DynaKube) IsStatsdActiveGateEnabled() bool {
 	return dk.IsActiveGateMode(StatsdIngestCapability.DisplayName)
 }
 
+func (dk *DynaKube) IsSyntheticActiveGateEnabled() bool {
+	return dk.IsActiveGateMode(SyntheticCapability.DisplayName)
+}
+
 func (dk *DynaKube) HasActiveGateCaCert() bool {
 	return dk.ActiveGateMode() && dk.Spec.ActiveGate.TlsSecretName != ""
 }
@@ -201,6 +205,10 @@ func (dk *DynaKube) EecImage() string {
 // StatsdImage returns the StatsD data source image to be used with the dk DynaKube instance.
 func (dk *DynaKube) StatsdImage() string {
 	return resolveImagePath(newStatsdImagePath(dk))
+}
+
+func (dk *DynaKube) SyntheticImage() string {
+	return resolveImagePath(newSyntheticImagePath(dk))
 }
 
 func (dk *DynaKube) NeedsReadOnlyOneAgents() bool {

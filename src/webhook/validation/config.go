@@ -27,6 +27,7 @@ var validators = []validator{
 	noResourcesAvailable,
 	imageFieldSetWithoutCSIFlag,
 	conflictingOneAgentVolumeStorageSettings,
+	exclusiveSyntheticCapability,
 }
 
 var warnings = []validator{
@@ -41,6 +42,7 @@ var warnings = []validator{
 	deprecatedFeatureFlagDisableWebhookReinvocationPolicy,
 	deprecatedFeatureFlagDisableMetadataEnrichment,
 	ineffectiveReadOnlyHostFsFeatureFlag,
+	syntheticPreviewWarning,
 }
 
 func SetLogger(logger logr.Logger) {

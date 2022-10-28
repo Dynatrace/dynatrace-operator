@@ -94,21 +94,23 @@ func TestNoConflict(t *testing.T) {
 
 		require.NotEmpty(t, sts)
 		for _, mod := range mods {
-			volumesMod, ok := mod.(volumeModifier)
-			if ok {
-				isSubset(t, volumesMod.getVolumes(), sts.Spec.Template.Spec.Volumes)
-			}
-			mountMod, ok := mod.(volumeMountModifier)
-			if ok {
-				isSubset(t, mountMod.getVolumeMounts(), sts.Spec.Template.Spec.Containers[0].VolumeMounts)
-			}
-			envMod, ok := mod.(envModifier)
-			if ok {
-				isSubset(t, envMod.getEnvs(), sts.Spec.Template.Spec.Containers[0].Env)
-			}
-			initMod, ok := mod.(initContainerModifier)
-			if ok {
-				isSubset(t, initMod.getInitContainers(), sts.Spec.Template.Spec.InitContainers)
+			if mod.Enabled() {
+				volumesMod, ok := mod.(volumeModifier)
+				if ok {
+					isSubset(t, volumesMod.getVolumes(), sts.Spec.Template.Spec.Volumes)
+				}
+				mountMod, ok := mod.(volumeMountModifier)
+				if ok {
+					isSubset(t, mountMod.getVolumeMounts(), sts.Spec.Template.Spec.Containers[0].VolumeMounts)
+				}
+				envMod, ok := mod.(envModifier)
+				if ok {
+					isSubset(t, envMod.getEnvs(), sts.Spec.Template.Spec.Containers[0].Env)
+				}
+				initMod, ok := mod.(initContainerModifier)
+				if ok {
+					isSubset(t, initMod.getInitContainers(), sts.Spec.Template.Spec.InitContainers)
+				}
 			}
 		}
 	})

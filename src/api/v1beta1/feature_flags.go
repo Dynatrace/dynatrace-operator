@@ -52,6 +52,7 @@ const (
 	AnnotationFeatureUseActiveGateImageForStatsd = AnnotationFeaturePrefix + "use-activegate-image-for-statsd"
 	AnnotationFeatureCustomEecImage              = AnnotationFeaturePrefix + "custom-eec-image"
 	AnnotationFeatureCustomStatsdImage           = AnnotationFeaturePrefix + "custom-statsd-image"
+	AnnotationFeatureCustomSyntheticImage        = AnnotationFeaturePrefix + "custom-synthetic-image"
 
 	// dtClient
 
@@ -203,6 +204,10 @@ func (dk *DynaKube) FeatureCustomEecImage() string {
 // FeatureCustomStatsdImage is a feature flag to specify custom StatsD Docker image path
 func (dk *DynaKube) FeatureCustomStatsdImage() string {
 	return dk.getFeatureFlagRaw(AnnotationFeatureCustomStatsdImage)
+}
+
+func (dk *DynaKube) FeatureCustomSyntheticImage() string {
+	return dk.getFeatureFlagRaw(AnnotationFeatureCustomSyntheticImage)
 }
 
 // FeatureDisableReadOnlyOneAgent is a feature flag to specify if the operator needs to deploy the oneagents in a readonly mode,

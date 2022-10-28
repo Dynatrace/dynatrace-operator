@@ -149,3 +149,71 @@ func TestMissingActiveGateMemoryLimit(t *testing.T) {
 			})
 	})
 }
+
+func TestExclusiveSyntheticCapability(t *testing.T) {
+	capabilities := []dynatracev1beta1.CapabilityDisplayName{
+		dynatracev1beta1.MetricsIngestCapability.DisplayName,
+		dynatracev1beta1.KubeMonCapability.DisplayName,
+	}
+
+	t.Run(`synthetic and another capability`, func(t *testing.T) {
+		assertDeniedResponse(t,
+			[]string{fmt.Sprintf(errorJoinedSyntheticActiveGateCapability, capabilities[:1])},
+			&dynatracev1beta1.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynatracev1beta1.DynaKubeSpec{
+					APIURL: testApiUrl,
+					ActiveGate: dynatracev1beta1.ActiveGateSpec{
+						Capabilities: append(
+							append(
+								capabilities[:0:0],
+								capabilities[:1]...),
+							dynatracev1beta1.SyntheticCapability.DisplayName),
+					},
+				},
+			})
+	})
+
+	t.Run(`synthetic surrounded with other capabilities`, func(t *testing.T) {
+		assertDeniedResponse(t,
+			[]string{fmt.Sprintf(errorJoinedSyntheticActiveGateCapability, capabilities)},
+			&dynatracev1beta1.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynatracev1beta1.DynaKubeSpec{
+					APIURL: testApiUrl,
+					ActiveGate: dynatracev1beta1.ActiveGateSpec{
+						Capabilities: append(
+							append(
+								append(
+									capabilities[:0:0],
+									capabilities[:1]...),
+								dynatracev1beta1.SyntheticCapability.DisplayName),
+							capabilities[1:]...),
+					},
+				},
+			})
+	})
+
+	t.Run(
+		`synthetic ahead of other capabilities`,
+		func(t *testing.T) {
+			assertDeniedResponse(
+				t,
+				[]string{
+					fmt.Sprintf(errorJoinedSyntheticActiveGateCapability, capabilities),
+				},
+				&dynatracev1beta1.DynaKube{
+					ObjectMeta: defaultDynakubeObjectMeta,
+					Spec: dynatracev1beta1.DynaKubeSpec{
+						APIURL: testApiUrl,
+						ActiveGate: dynatracev1beta1.ActiveGateSpec{
+							Capabilities: append(
+								append(
+									capabilities[:0:0],
+									dynatracev1beta1.SyntheticCapability.DisplayName),
+								capabilities...),
+						},
+					},
+				})
+		})
+}
