@@ -49,7 +49,7 @@ func (tokens Tokens) setScopes(dynakube dynatracev1beta1.DynaKube) Tokens {
 	return tokens
 }
 
-func (tokens Tokens) verifyScopes(dtc dtclient.Client) error {
+func (tokens Tokens) VerifyScopes(dtc dtclient.Client) error {
 	for tokenType, token := range tokens {
 		if len(token.RequiredScopes) == 0 {
 			continue
@@ -65,6 +65,16 @@ func (tokens Tokens) verifyScopes(dtc dtclient.Client) error {
 
 		if len(missingScopes) > 0 {
 			return errors.New(fmt.Sprintf("token '%s' is missing the following scopes: [ %s ]", tokenType, strings.Join(missingScopes, ", ")))
+		}
+	}
+
+	return nil
+}
+
+func (tokens Tokens) VerifyValues() error {
+	for tokenType, token := range tokens {
+		if strings.TrimSpace(token.Value) != token.Value {
+			return errors.Errorf("value of token '%s' contains whitespaces at the beginning or end of the value", tokenType)
 		}
 	}
 

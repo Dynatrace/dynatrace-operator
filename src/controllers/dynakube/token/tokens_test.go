@@ -14,6 +14,7 @@ func TestTokens(t *testing.T) {
 	t.Run("set paas token scopes", testPaasTokenScopes)
 	t.Run("set data ingest token scopes", testDataIngestTokenScopes)
 	t.Run("verify token scopes", testVerifyTokenScopes)
+	t.Run("verify token values", testVerifyTokenValues)
 }
 
 func testSetApiTokenScopes(t *testing.T) {
@@ -139,12 +140,24 @@ func testVerifyTokenScopes(t *testing.T) {
 		Return(dtclient.TokenScopes{}, errors.New("test api-error"))
 
 	fakeDynatraceClient.AssertNotCalled(t, "GetTokenScopes", "empty-scopes")
-	assert.NoError(t, validTokens.verifyScopes(fakeDynatraceClient))
+	assert.NoError(t, validTokens.VerifyScopes(fakeDynatraceClient))
 	assert.EqualError(t,
-		invalidTokens.verifyScopes(fakeDynatraceClient),
+		invalidTokens.VerifyScopes(fakeDynatraceClient),
 		"token 'invalid-scopes' is missing the following scopes: [ b, d ]")
 	assert.EqualError(t,
-		apiError.verifyScopes(fakeDynatraceClient),
+		apiError.VerifyScopes(fakeDynatraceClient),
 		"test api-error")
 
+}
+
+func testVerifyTokenValues(t *testing.T) {
+	validTokens := Tokens{
+		"valid-value": Token{Value: "valid-value"},
+	}
+	invalidTokens := Tokens{
+		"whitespaces": Token{Value: " whitespaces "},
+	}
+
+	assert.NoError(t, validTokens.VerifyValues())
+	assert.EqualError(t, invalidTokens.VerifyValues(), "value of token 'whitespaces' contains whitespaces at the beginning or end of the value")
 }

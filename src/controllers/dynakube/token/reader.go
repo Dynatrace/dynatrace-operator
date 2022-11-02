@@ -10,17 +10,14 @@ import (
 )
 
 type Reader struct {
-	apiReader            client.Reader
-	dynakube             *dynatracev1beta1.DynaKube
-	dtclient             dtclient.Client
-	buildDynatraceClient func(context.Context, Tokens)
+	apiReader client.Reader
+	dynakube  *dynatracev1beta1.DynaKube
 }
 
-func NewReader(apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube, buildDynatraceClient func(context.Context, Tokens)) Reader {
+func NewReader(apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube) Reader {
 	return Reader{
-		apiReader:            apiReader,
-		dynakube:             dynakube,
-		buildDynatraceClient: buildDynatraceClient,
+		apiReader: apiReader,
+		dynakube:  dynakube,
 	}
 }
 
