@@ -205,7 +205,7 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dyn
 		return err
 	}
 
-	err = version.ReconcileVersions(ctx, *dynakube, controller.apiReader, controller.fs, version.GetImageVersion)
+	err = version.ReconcileVersions(ctx, dynakube, controller.apiReader, controller.fs, version.GetImageVersion, *kubeobjects.NewTimeProvider())
 	if err != nil {
 		log.Info("could not reconcile component versions")
 		return err

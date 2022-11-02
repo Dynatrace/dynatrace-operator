@@ -20,7 +20,7 @@ func NewReconciler(dtc dtclient.Client, clusterLabel, kubeSystemUUID string) *Ap
 }
 
 func (r *ApiMonitoringReconciler) Reconcile() error {
-	objectID, err := r.ensureSettingExists()
+	objectID, err := r.createObjectIdIfNotExists()
 
 	if err != nil {
 		return err
@@ -35,7 +35,7 @@ func (r *ApiMonitoringReconciler) Reconcile() error {
 	return nil
 }
 
-func (r *ApiMonitoringReconciler) ensureSettingExists() (string, error) {
+func (r *ApiMonitoringReconciler) createObjectIdIfNotExists() (string, error) {
 	if r.kubeSystemUUID == "" {
 		return "", errors.New("no kube-system namespace UUID given")
 	}
