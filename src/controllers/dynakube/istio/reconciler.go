@@ -119,7 +119,7 @@ func (reconciler *IstioReconciler) reconcileIstioRemoveConfigurations(instance *
 
 	seenComHosts := map[string]bool{}
 	for _, comHost := range comHosts {
-		seenComHosts[buildNameForEndpoint(instance.GetName(), comHost.Protocol, comHost.Host, comHost.Port)] = true
+		seenComHosts[BuildNameForEndpoint(instance.GetName(), comHost.Protocol, comHost.Host, comHost.Port)] = true
 	}
 
 	istioConfig := &istioConfiguration{
@@ -151,7 +151,7 @@ func (reconciler *IstioReconciler) reconcileIstioCreateConfigurations(instance *
 
 	configurationUpdated := false
 	for _, commHost := range communicationHosts {
-		name := buildNameForEndpoint(instance.GetName(), commHost.Protocol, commHost.Host, commHost.Port)
+		name := BuildNameForEndpoint(instance.GetName(), commHost.Protocol, commHost.Host, commHost.Port)
 
 		istioConfig := &istioConfiguration{
 			instance:   instance,
