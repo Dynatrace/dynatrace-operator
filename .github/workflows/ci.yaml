@@ -100,11 +100,6 @@ jobs:
         id: meta
         with:
           tags: ${{ steps.prep.outputs.docker_image_tag }}
-          images: |
-            dynatrace/dynatrace-operator
-            quay.io/dynatrace/dynatrace-operator
-            registry.connect.redhat.com/dynatrace/dynatrace-operator
-            gcr.io/dynatrace-marketplace-prod/dynatrace-operator
           labels: |
             ${{ steps.prep.outputs.docker_image_labels }}
             vcs-ref=${{ github.sha }}
