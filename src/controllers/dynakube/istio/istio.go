@@ -29,7 +29,7 @@ var (
 )
 
 // BuildNameForEndpoint returns a name to be used as a base to identify Istio objects.
-func buildNameForEndpoint(name string, protocol string, host string, port uint32) string {
+func BuildNameForEndpoint(name string, protocol string, host string, port uint32) string {
 	sum := sha256.Sum256([]byte(fmt.Sprintf("%s-%s-%s-%d", name, protocol, host, port)))
 	return hex.EncodeToString(sum[:])
 }
