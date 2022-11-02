@@ -9,6 +9,10 @@ test/e2e/activegate:
 test/e2e/cloudnative:
 	go test -v -tags e2e -count=1 -failfast ./test/cloudnative
 
+## Runs CloudNative istio e2e test only
+test/e2e/cloudnative/istio:
+	go test -v -tags e2e -count=1 -failfast ./test/cloudnativeistio
+
 ## Runs Application Monitoring e2e test only
 test/e2e/applicationmonitoring:
 	go test -v -tags e2e -count=1 -failfast ./test/appmon
