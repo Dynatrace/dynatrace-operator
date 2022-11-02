@@ -76,25 +76,29 @@ func ReconcileVersions(
 	upd = true // updateImageVersion() always updates the status
 
 	if needsActiveGateUpdate {
-		if err := updateImageVersion(dkState, dk.ActiveGateImage(), &dk.Status.ActiveGate.VersionStatus, dockerConfig, verProvider, true); err != nil {
+		err = updateImageVersion(dkState, dk.ActiveGateImage(), &dk.Status.ActiveGate.VersionStatus, dockerConfig, verProvider, true)
+		if err != nil {
 			log.Error(err, "failed to update ActiveGate image version")
 		}
 	}
 
 	if needsEecUpdate {
-		if err := updateImageVersion(dkState, dk.EecImage(), &dk.Status.ExtensionController.VersionStatus, dockerConfig, verProvider, true); err != nil {
+		err = updateImageVersion(dkState, dk.EecImage(), &dk.Status.ExtensionController.VersionStatus, dockerConfig, verProvider, true)
+		if err != nil {
 			log.Error(err, "Failed to update Extension Controller image version")
 		}
 	}
 
 	if needsStatsdUpdate {
-		if err := updateImageVersion(dkState, dk.StatsdImage(), &dk.Status.Statsd.VersionStatus, dockerConfig, verProvider, true); err != nil {
+		err = updateImageVersion(dkState, dk.StatsdImage(), &dk.Status.Statsd.VersionStatus, dockerConfig, verProvider, true)
+		if err != nil {
 			log.Error(err, "Failed to update StatsD image version")
 		}
 	}
 
 	if needsOneAgentUpdate {
-		if err := updateImageVersion(dkState, dk.ImmutableOneAgentImage(), &dk.Status.OneAgent.VersionStatus, dockerConfig, verProvider, false); err != nil {
+		err = updateImageVersion(dkState, dk.ImmutableOneAgentImage(), &dk.Status.OneAgent.VersionStatus, dockerConfig, verProvider, false)
+		if err != nil {
 			log.Error(err, "failed to update OneAgent image version")
 		}
 	}

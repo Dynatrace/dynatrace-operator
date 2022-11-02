@@ -173,7 +173,9 @@ func checkCustomModuleImagePullable(httpClient *http.Client, _ string, pullSecre
 
 	credentials, hasCredentials := result.Auths[codeModulesImageInfo.Registry]
 	if !hasCredentials {
-		return fmt.Errorf("no credentials for registry %s available", codeModulesImageInfo.Registry)
+		credentials = Credentials{}
+		// not returning an error because registry might be accessible without credentials
+		logWarningf("no credentials for registry %s available", codeModulesImageInfo.Registry)
 	}
 
 	logInfof("checking images for registry '%s'", codeModulesImageInfo.Registry)
