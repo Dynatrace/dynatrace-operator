@@ -26,13 +26,19 @@ func GenerateHash(ds interface{}) (string, error) {
 	return strconv.FormatUint(uint64(hasher.Sum32()), 10), nil
 }
 
-func IsDifferent(a, b interface{}) bool {
-	hashA, _ := GenerateHash(a)
-	hashB, _ := GenerateHash(b)
-	return hashA != hashB
+func IsDifferent(a, b interface{}) (bool, error) {
+	hashA, err := GenerateHash(a)
+	if err != nil {
+		return false, err
+	}
+	hashB, err := GenerateHash(b)
+	if err != nil {
+		return false, err
+	}
+	return hashA != hashB, nil
 }
 
-func HashAnnotationChanged(a, b metav1.Object) bool {
+func IsHashAnnotationDifferent(a, b metav1.Object) bool {
 	return getHash(a) != getHash(b)
 }
 

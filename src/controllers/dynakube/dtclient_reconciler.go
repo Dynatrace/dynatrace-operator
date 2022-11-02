@@ -33,7 +33,7 @@ type tokenConfig struct {
 	Scopes     []string
 	// Pointer pointer is needed so when the tokenConfig.Timestamp gets updated then the field in the status also gets updated that was used the create the tokenConfig struct,
 	// this is horrible and pls remove it in a future refactor
-	Timestamp  **metav1.Time
+	Timestamp **metav1.Time
 }
 
 func NewDynatraceClientReconciler(client client.Client, dtClientFunc DynatraceClientFunc) *DynatraceClientReconciler {

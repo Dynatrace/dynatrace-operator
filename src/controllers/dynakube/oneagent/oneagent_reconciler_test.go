@@ -269,7 +269,7 @@ func TestMigrationForDaemonSetWithoutAnnotation(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, ds2.Annotations[kubeobjects.AnnotationHash])
 
-	assert.True(t, kubeobjects.HashAnnotationChanged(ds1, ds2))
+	assert.True(t, kubeobjects.IsHashAnnotationDifferent(ds1, ds2))
 }
 
 func TestHasSpecChanged(t *testing.T) {
@@ -305,7 +305,7 @@ func TestHasSpecChanged(t *testing.T) {
 			assert.NotEmpty(t, ds1.Annotations[kubeobjects.AnnotationHash])
 			assert.NotEmpty(t, ds2.Annotations[kubeobjects.AnnotationHash])
 
-			assert.Equal(t, exp, kubeobjects.HashAnnotationChanged(ds1, ds2))
+			assert.Equal(t, exp, kubeobjects.IsHashAnnotationDifferent(ds1, ds2))
 		})
 	}
 

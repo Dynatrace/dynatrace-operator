@@ -60,7 +60,7 @@ func (r *ApiMonitoringReconciler) ensureSettingExists() (string, error) {
 	meID := determineNewestMonitoredEntity(monitoredEntities)
 	objectID, err := r.dtc.CreateOrUpdateKubernetesSetting(r.clusterLabel, r.kubeSystemUUID, meID)
 	if err != nil {
-		return "", errors.WithMessage(err, "error creating MEs")
+		return "", errors.WithMessage(err, "error creating dynatrace settings object")
 	}
 
 	return objectID, nil
