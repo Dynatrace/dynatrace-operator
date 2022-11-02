@@ -1,11 +1,7 @@
 package troubleshoot
 
 func getOneAgentImageEndpoint(troubleshootCtx *troubleshootContext) string {
-	imageEndpoint := ""
-
-	apiEndpoint := removeSchemaRegex.FindStringSubmatch(troubleshootCtx.dynakube.ApiUrl())
-	registry := removeApiEndpointRegex.FindStringSubmatch(apiEndpoint[1])
-	imageEndpoint = registry[1] + "/linux/oneagent"
+	imageEndpoint := troubleshootCtx.dynakube.ApiUrlHost() + "/linux/oneagent"
 
 	customImage := troubleshootCtx.dynakube.CustomOneAgentImage()
 	version := troubleshootCtx.dynakube.Version()
@@ -32,11 +28,7 @@ func getOneAgentCodeModulesImageEndpoint(troubleshootCtx *troubleshootContext) s
 }
 
 func getActiveGateImageEndpoint(troubleshootCtx *troubleshootContext) string {
-	imageEndpoint := ""
-
-	apiEndpoint := removeSchemaRegex.FindStringSubmatch(troubleshootCtx.dynakube.ApiUrl())
-	registry := removeApiEndpointRegex.FindStringSubmatch(apiEndpoint[1])
-	imageEndpoint = registry[1] + "/linux/activegate"
+	imageEndpoint := troubleshootCtx.dynakube.ApiUrlHost() + "/linux/activegate"
 
 	customActiveGateImage := troubleshootCtx.dynakube.CustomActiveGateImage()
 	if customActiveGateImage != "" {

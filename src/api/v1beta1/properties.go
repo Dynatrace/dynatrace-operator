@@ -35,13 +35,31 @@ const (
 	AuthTokenSecretSuffix        = "-activegate-authtoken-secret"
 	PodNameOsAgent               = "oneagent"
 
+	defaultActiveGateImage = "/linux/activegate:latest"
+	defaultStatsDImage     = "/linux/dynatrace-datasource-statsd:latest"
+	defaultEecImage        = "/linux/dynatrace-eec:latest"
+
 	TrustedCAKey = "certs"
 	ProxyKey     = "proxy"
 	TlsCertKey   = "server.crt"
 )
 
+// ApiUrl is a getter for dk.Spec.APIURL
 func (dk *DynaKube) ApiUrl() string {
 	return dk.Spec.APIURL
+}
+
+// ApiUrlHost returns the host of dk.Spec.APIURL
+// E.g. if the APIURL is set to "https://my-tenant.dynatrace.com/api", it returns "my-tenant.dynatrace.com"
+// If the URL cannot be parsed, it returns an empty string
+func (dk *DynaKube) ApiUrlHost() string {
+	parsedUrl, err := url.Parse(dk.ApiUrl())
+
+	if err != nil {
+		return ""
+	}
+
+	return parsedUrl.Host
 }
 
 // NeedsActiveGate returns true when a feature requires ActiveGate instances.
@@ -190,21 +208,65 @@ func (dk *DynaKube) PullSecret() string {
 
 // ActiveGateImage returns the ActiveGate image to be used with the dk DynaKube instance.
 func (dk *DynaKube) ActiveGateImage() string {
-	return resolveImagePath(newActiveGateImagePath(dk))
+	if dk.CustomActiveGateImage() != "" {
+		return dk.CustomActiveGateImage()
+	}
+
+	apiUrlHost := dk.ApiUrlHost()
+
+	if apiUrlHost == "" {
+		return ""
+	}
+
+	return apiUrlHost + defaultActiveGateImage
+}
+
+func (dk *DynaKube) deprecatedActiveGateImage() string {
+	if dk.Spec.KubernetesMonitoring.Image != "" {
+		return dk.Spec.KubernetesMonitoring.Image
+	} else if dk.Spec.Routing.Image != "" {
+		return dk.Spec.Routing.Image
+	}
+
+	return ""
 }
 
 func (dk *DynaKube) CustomActiveGateImage() string {
-	return newActiveGateImagePath(dk).CustomImagePath()
+	if dk.DeprecatedActiveGateMode() {
+		return dk.deprecatedActiveGateImage()
+	}
+
+	return dk.Spec.ActiveGate.Image
 }
 
 // EecImage returns the Extension Controller image to be used with the dk DynaKube instance.
 func (dk *DynaKube) EecImage() string {
-	return resolveImagePath(newEecImagePath(dk))
+	if dk.FeatureCustomEecImage() != "" {
+		return dk.FeatureCustomEecImage()
+	}
+
+	apiUrlHost := dk.ApiUrlHost()
+
+	if apiUrlHost == "" {
+		return ""
+	}
+
+	return apiUrlHost + defaultEecImage
 }
 
 // StatsdImage returns the StatsD data source image to be used with the dk DynaKube instance.
 func (dk *DynaKube) StatsdImage() string {
-	return resolveImagePath(newStatsdImagePath(dk))
+	if dk.FeatureCustomStatsdImage() != "" {
+		return dk.FeatureCustomStatsdImage()
+	}
+
+	apiUrlHost := dk.ApiUrlHost()
+
+	if apiUrlHost == "" {
+		return ""
+	}
+
+	return apiUrlHost + defaultStatsDImage
 }
 
 func (dk *DynaKube) NeedsReadOnlyOneAgents() bool {
@@ -327,8 +389,13 @@ func (dk *DynaKube) ImmutableOneAgentImage() string {
 		tag = truncatedVersion
 	}
 
-	registry := buildImageRegistry(dk.Spec.APIURL)
-	return fmt.Sprintf("%s/linux/oneagent:%s", registry, tag)
+	apiUrlHost := dk.ApiUrlHost()
+
+	if apiUrlHost == "" {
+		return ""
+	}
+
+	return fmt.Sprintf("%s/linux/oneagent:%s", apiUrlHost, tag)
 }
 
 func truncateBuildDate(version string) string {

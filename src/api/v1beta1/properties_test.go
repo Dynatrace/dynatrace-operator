@@ -37,12 +37,14 @@ func TestActiveGateImage(t *testing.T) {
 		dk := DynaKube{Spec: DynaKubeSpec{APIURL: testAPIURL}}
 		assert.Equal(t, "test-endpoint/linux/activegate:latest", dk.ActiveGateImage())
 	})
-	//
-	//t.Run(`ActiveGateImage with custom image`, func(t *testing.T) {
-	//	customImg := "registry/my/activegate:latest"
-	//	dk := DynaKube{Spec: DynaKubeSpec{ActiveGate: ActiveGateSpec{Image: customImg}}}
-	//	assert.Equal(t, customImg, dk.ActiveGateImage())
-	//})
+
+	t.Run(`ActiveGateImage with custom image`, func(t *testing.T) {
+		customImg := "registry/my/activegate:latest"
+		dk := DynaKube{Spec: DynaKubeSpec{ActiveGate: ActiveGateSpec{CapabilityProperties: CapabilityProperties{
+			Image: customImg,
+		}}}}
+		assert.Equal(t, customImg, dk.ActiveGateImage())
+	})
 }
 
 func TestDynaKube_UseCSIDriver(t *testing.T) {

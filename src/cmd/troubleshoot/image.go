@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
+	"github.com/Dynatrace/dynatrace-operator/src/image"
 	"github.com/pkg/errors"
 )
 
@@ -105,13 +106,17 @@ func checkActiveGateImagePullable(troubleshootCtx *troubleshootContext) error {
 }
 
 func checkComponentImagePullable(httpClient *http.Client, componentName string, pullSecret string, componentImage string) error {
-	componentImageInfo, err := splitImageName(componentImage)
+	componentImageInfo, err := image.ComponentsFromUri(componentImage)
 
 	if err != nil {
 		return err
 	}
 
-	logInfof("using '%s' on '%s' with version '%s' as %s image", componentImageInfo.image, componentImageInfo.registry, componentImageInfo.version, componentName)
+	if err != nil {
+		return err
+	}
+
+	logInfof("using '%s' on '%s' with version '%s' as %s image", componentImageInfo.Image, componentImageInfo.Registry, componentImageInfo.Version, componentName)
 
 	var result Auths
 	err = json.Unmarshal([]byte(pullSecret), &result)
@@ -137,17 +142,17 @@ func checkComponentImagePullable(httpClient *http.Client, componentName string, 
 			// Only print as a warning since other credentials might still work
 			// At this point it is uncertain if there is an error with the credentials
 			logWarningf("cannot pull image '%s' with version '%s' from registry '%s': %v",
-				componentImageInfo.image, componentImageInfo.version, registry, err)
+				componentImageInfo.Image, componentImageInfo.Version, registry, err)
 		} else {
 			logOkf("image '%s' with version '%s' exists on registry '%s",
-				componentImageInfo.image, componentImageInfo.version, registry)
+				componentImageInfo.Image, componentImageInfo.Version, registry)
 			return nil
 		}
 	}
 
 	// The image could not be pulled with any of the credentials
 	// Return as an error
-	return fmt.Errorf("%s image '%s' missing", componentName, componentImageInfo.registry+"/"+componentImageInfo.image)
+	return fmt.Errorf("%s image '%s' missing", componentName, componentImageInfo.Registry+"/"+componentImageInfo.Image)
 }
 
 func checkCustomModuleImagePullable(httpClient *http.Client, _ string, pullSecret string, codeModulesImage string) error {
@@ -158,33 +163,34 @@ func checkCustomModuleImagePullable(httpClient *http.Client, _ string, pullSecre
 		return fmt.Errorf("invalid pull secret, could not unmarshal to JSON: %w", err)
 	}
 
-	codeModulesImageInfo, err := splitCustomImageName(codeModulesImage)
-	if err != nil {
-		return fmt.Errorf("invalid image URL: %w", err)
-	}
+	codeModulesImageInfo, err := image.ComponentsFromUri(codeModulesImage)
 
-	logInfof("using '%s' on '%s' as OneAgentCodeModules image", codeModulesImage, codeModulesImageInfo.registry)
-
-	credentials, hasCredentials := result.Auths[codeModulesImageInfo.registry]
-	if !hasCredentials {
-		return fmt.Errorf("no credentials for registry %s available", codeModulesImageInfo.registry)
-	}
-
-	logInfof("checking images for registry '%s'", codeModulesImageInfo.registry)
-
-	err = registryAvailable(httpClient, codeModulesImageInfo.registry, credentials.Auth)
 	if err != nil {
 		return err
 	}
 
-	logInfof("registry %s is accessible", codeModulesImageInfo.registry)
+	logInfof("using '%s' on '%s' as OneAgentCodeModules image", codeModulesImage, codeModulesImageInfo.Registry)
+
+	credentials, hasCredentials := result.Auths[codeModulesImageInfo.Registry]
+	if !hasCredentials {
+		return fmt.Errorf("no credentials for registry %s available", codeModulesImageInfo.Registry)
+	}
+
+	logInfof("checking images for registry '%s'", codeModulesImageInfo.Registry)
+
+	err = registryAvailable(httpClient, codeModulesImageInfo.Registry, credentials.Auth)
+	if err != nil {
+		return err
+	}
+
+	logInfof("registry %s is accessible", codeModulesImageInfo.Registry)
 
 	err = imageAvailable(httpClient, codemodulesImageUrl(codeModulesImageInfo), credentials.Auth)
 	if err != nil {
-		return fmt.Errorf("image is missing, cannot pull image '%s' from registry '%s': %w", codeModulesImage, codeModulesImageInfo.registry, err)
+		return fmt.Errorf("image is missing, cannot pull image '%s' from registry '%s': %w", codeModulesImage, codeModulesImageInfo.Registry, err)
 	}
 
-	logOkf("OneAgentCodeModules image '%s' exists on registry '%s", codeModulesImageInfo.image, codeModulesImageInfo.registry)
+	logOkf("OneAgentCodeModules image '%s' exists on registry '%s", codeModulesImageInfo.Image, codeModulesImageInfo.Registry)
 	return nil
 }
 
@@ -247,15 +253,15 @@ func getPullSecret(troubleshootCtx *troubleshootContext) (string, error) {
 	return string(secretBytes), nil
 }
 
-func manifestUrl(registry string, componentImageInfo imageInfo) string {
+func manifestUrl(registry string, componentImageInfo image.Components) string {
 	return fmt.Sprintf("%s/v2/%s/manifests/%s",
-		registryUrl(registry), componentImageInfo.image, componentImageInfo.version)
+		registryUrl(registry), componentImageInfo.Image, componentImageInfo.Version)
 }
 
 func registryUrl(registry string) string {
 	return fmt.Sprintf("https://%s", registry)
 }
 
-func codemodulesImageUrl(info imageInfo) string {
-	return fmt.Sprintf("https://%s/%s", info.registry, info.image)
+func codemodulesImageUrl(info image.Components) string {
+	return fmt.Sprintf("https://%s/%s%s", info.Registry, info.Image, info.VersionUrlPostfix())
 }

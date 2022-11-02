@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
@@ -14,10 +15,10 @@ import (
 const (
 	testImage                                      = "linux/activegate"
 	testOneAgentImage                              = "linux/oneagent"
-	testOneAgentCodeModulesImage                   = "customDir/customCodeModules"
+	testOneAgentCodeModulesImage                   = "customdir/customcodemodules"
 	testCustomImage                                = "ag"
 	testCustomOneAgentImage                        = "oa"
-	testInvalidImage                               = "/beos/activegate"
+	testInvalidImage                               = "/beos/^activegate!@invalid"
 	testVersion                                    = "1.248"
 	testCustomRegistry                             = "testing.domain.com"
 	testValidImageNameWithVersion                  = testRegistry + "/" + testImage + ":" + testVersion
@@ -43,8 +44,11 @@ func TestOneAgentImagePullable(t *testing.T) {
 				}))
 		defer dockerServer.Close()
 
-		server := removeSchemaRegex.FindStringSubmatch(dockerServer.URL)[1]
+		dockerServerUrl, err := url.Parse(dockerServer.URL)
 
+		require.NoError(t, err)
+
+		server := dockerServerUrl.Host
 		auths := Auths{
 			Auths: Endpoints{
 				server: Credentials{
@@ -81,8 +85,11 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 			}))
 	defer dockerServer.Close()
 
-	server := removeSchemaRegex.FindStringSubmatch(dockerServer.URL)[1]
+	dockerServerUrl, err := url.Parse(dockerServer.URL)
 
+	require.NoError(t, err)
+
+	server := dockerServerUrl.Host
 	auths := Auths{
 		Auths: Endpoints{
 			server: Credentials{
@@ -172,8 +179,11 @@ func TestActiveGateImagePullable(t *testing.T) {
 				}))
 		defer dockerServer.Close()
 
-		server := removeSchemaRegex.FindStringSubmatch(dockerServer.URL)[1]
+		dockerServerUrl, err := url.Parse(dockerServer.URL)
 
+		require.NoError(t, err)
+
+		server := dockerServerUrl.Host
 		auths := Auths{
 			Auths: Endpoints{
 				server: Credentials{
@@ -225,8 +235,11 @@ func TestImagePullableDockerClient(t *testing.T) {
 				}))
 		defer dockerServer.Close()
 
-		server := removeSchemaRegex.FindStringSubmatch(dockerServer.URL)[1]
+		dockerServerUrl, err := url.Parse(dockerServer.URL)
 
+		require.NoError(t, err)
+
+		server := dockerServerUrl.Host
 		auths := Auths{
 			Auths: Endpoints{
 				server: Credentials{
