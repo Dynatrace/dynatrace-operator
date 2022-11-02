@@ -139,7 +139,7 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 
 		err = checkOneAgentCodeModulesImagePullable(&troubleshootCtx)
 		assert.Errorf(t, err, "expected an error")
-		assert.Contains(t, err.Error(), "no credentials")
+		assert.Contains(t, err.Error(), "registry 'myunknownserver.com' unreachable")
 	})
 
 	t.Run("OneAgent code modules unreachable server", func(t *testing.T) {
