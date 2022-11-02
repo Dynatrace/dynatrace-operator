@@ -99,6 +99,7 @@ jobs:
         uses: docker/metadata-action@57396166ad8aefe6098280995947635806a0e6ea # v4.1.1
         id: meta
         with:
+          images: dynatrace/dynatrace-operator
           tags: ${{ steps.prep.outputs.docker_image_tag }}
           labels: |
             ${{ steps.prep.outputs.docker_image_labels }}
