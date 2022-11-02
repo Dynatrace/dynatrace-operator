@@ -83,7 +83,7 @@ func (r *OneAgentReconciler) Reconcile(ctx context.Context, dynakube *dynatracev
 		if err != nil {
 			return err
 		}
-		log.Info("OneAgent instance statuses reconciled")
+		log.Info("oneagent instance statuses reconciled")
 	}
 
 	return nil

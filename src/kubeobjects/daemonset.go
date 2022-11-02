@@ -19,7 +19,7 @@ func CreateOrUpdateDaemonSet(kubernetesClient client.Client, logger logr.Logger,
 		return false, err
 	}
 
-	if !HashAnnotationChanged(currentDaemonSet, desiredDaemonSet) {
+	if !IsHashAnnotationDifferent(currentDaemonSet, desiredDaemonSet) {
 		return false, nil
 	}
 

@@ -6,7 +6,6 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -33,7 +32,7 @@ func (r *Reconciler) Reconcile() (err error) {
 		activeGateConnectionInfo, err := r.dtc.GetActiveGateConnectionInfo()
 		if err != nil {
 			log.Info("failed to get activegate connection info")
-			return errors.WithStack(err)
+			return err
 		}
 
 		err = r.createOrUpdateSecret(r.dynakube.ActivegateTenantSecret(), activeGateConnectionInfo.ConnectionInfo)
@@ -46,7 +45,7 @@ func (r *Reconciler) Reconcile() (err error) {
 		oneAgentConnectionInfo, err := r.dtc.GetOneAgentConnectionInfo()
 		if err != nil {
 			log.Info("failed to get oneagent connection info")
-			return errors.WithStack(err)
+			return err
 		}
 
 		err = r.createOrUpdateSecret(r.dynakube.OneagentTenantSecret(), oneAgentConnectionInfo.ConnectionInfo)

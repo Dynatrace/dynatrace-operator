@@ -26,7 +26,7 @@ type Reconciler struct {
 	apiToken, paasToken string
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, instance *dynatracev1beta1.DynaKube, apiToken, paasToken string) *Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, apiToken, paasToken string) *Reconciler {
 	if paasToken == "" {
 		paasToken = apiToken
 	}
@@ -34,7 +34,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 		client:    clt,
 		apiReader: apiReader,
 		scheme:    scheme,
-		dynakube:  instance,
+		dynakube:  dynakube,
 		apiToken:  apiToken,
 		paasToken: paasToken,
 	}
@@ -60,7 +60,7 @@ func (r *Reconciler) reconcilePullSecret() error {
 
 	pullSecret, err := r.createPullSecretIfNotExists(pullSecretData)
 	if err != nil {
-		return errors.WithMessage(err, "failed to create or update secret: %w")
+		return errors.WithMessage(err, "failed to create or update secret")
 	}
 
 	return r.updatePullSecretIfOutdated(pullSecret, pullSecretData)
@@ -110,11 +110,11 @@ func isPullSecretEqual(currentSecret *corev1.Secret, desired map[string][]byte) 
 	return reflect.DeepEqual(desired, currentSecret.Data)
 }
 
-func BuildPullSecret(instance *dynatracev1beta1.DynaKube, pullSecretData map[string][]byte) *corev1.Secret {
+func BuildPullSecret(dynakube *dynatracev1beta1.DynaKube, pullSecretData map[string][]byte) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      extendWithPullSecretSuffix(instance.Name),
-			Namespace: instance.Namespace,
+			Name:      extendWithPullSecretSuffix(dynakube.Name),
+			Namespace: dynakube.Namespace,
 		},
 		Type: corev1.SecretTypeDockerConfigJson,
 		Data: pullSecretData,
