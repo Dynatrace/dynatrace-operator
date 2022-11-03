@@ -1,11 +1,9 @@
 package troubleshoot
 
 import (
-	"context"
-	"fmt"
-
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/pkg/errors"
 )
 
 func checkDTClusterConnection(troubleshootCtx *troubleshootContext) error {
@@ -18,9 +16,11 @@ func checkDTClusterConnection(troubleshootCtx *troubleshootContext) error {
 	}
 
 	for _, test := range tests {
-		if err := test(troubleshootCtx); err != nil {
+		err := test(troubleshootCtx)
+
+		if err != nil {
 			logErrorf(err.Error())
-			return fmt.Errorf("tenant isn't  accessible")
+			return errors.New("tenant isn't  accessible")
 		}
 	}
 
@@ -29,7 +29,7 @@ func checkDTClusterConnection(troubleshootCtx *troubleshootContext) error {
 }
 
 func checkConnection(troubleshootCtx *troubleshootContext) error {
-	dynatraceClientProperties, err := dynakube.NewDynatraceClientProperties(context.TODO(), troubleshootCtx.apiReader, troubleshootCtx.dynakube)
+	dynatraceClientProperties, err := dynakube.NewDynatraceClientProperties(troubleshootCtx.context, troubleshootCtx.apiReader, troubleshootCtx.dynakube)
 	if err != nil {
 		return errorWithMessagef(err, "failed to configure DynatraceAPI client")
 	}

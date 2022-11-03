@@ -1,5 +1,5 @@
 ## Runs e2e tests
-test/e2e: test/e2e/cloudnative test/e2e/applicationmonitoring test/e2e/activegate
+test/e2e: manifests/branch test/e2e/cloudnative test/e2e/applicationmonitoring test/e2e/activegate
 
 ## Runs ActiveGate e2e test only
 test/e2e/activegate:
