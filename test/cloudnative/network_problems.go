@@ -26,21 +26,22 @@ import (
 
 const (
 	agentMountPath        = "/opt/dynatrace/oneagent-paas"
+	sampleNSPath          = "../testdata/cloudnative/test-namespace.yaml"
 	deploymentPath        = "../testdata/cloudnative/codemodules-deployment.yaml"
 	ldPreloadError        = "ERROR: ld.so: object '/opt/dynatrace/oneagent-paas/agent/lib64/liboneagentproc.so' from LD_PRELOAD cannot be preloaded"
 	podRestartTimeout     = 5 * time.Minute
 	restartCountThreshold = int32(3)
 	csiNetworkPolicy      = "../testdata/network/csi-denial.yaml"
-	clusterNetworkPolicy  = "../testdata/network/dynatrace-denial.yaml"
 )
 
-func networkProblems(t *testing.T, policyPath string) features.Feature {
+func NetworkProblems(t *testing.T) features.Feature {
 	secretConfigs, err := secrets.DefaultMultiTenant(afero.NewOsFs())
 
 	require.NoError(t, err)
 
 	createNetworkProblems := features.New("creating network problems")
-	createNetworkProblems.Setup(manifests.InstallFromFile(policyPath))
+	createNetworkProblems.Setup(manifests.InstallFromFile(csiNetworkPolicy))
+	createNetworkProblems.Setup(manifests.InstallFromFile(sampleNSPath))
 	createNetworkProblems.Setup(secrets.ApplyDefault(secretConfigs[0]))
 	createNetworkProblems.Setup(operator.InstallAllForKubernetes())
 
@@ -53,6 +54,7 @@ func networkProblems(t *testing.T, policyPath string) features.Feature {
 			CloudNative(codeModulesSpec()).
 			Build()),
 	)
+	createNetworkProblems.Assess("dynakube phase changes to 'Running'", dynakube.WaitForDynakubePhase(dynakube.NewBuilder().WithDefaultObjectMeta().Build()))
 	createNetworkProblems.Assess("install deployment", manifests.InstallFromFile(deploymentPath))
 	createNetworkProblems.Assess("start sample apps and injection", sampleapps.Install)
 	createNetworkProblems.Assess("check for dummy volume", checkForDummyVolume)
