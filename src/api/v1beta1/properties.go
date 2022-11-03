@@ -372,8 +372,8 @@ func (dk *DynaKube) NamespaceSelector() *metav1.LabelSelector {
 	return &dk.Spec.NamespaceSelector
 }
 
-// ImmutableOneAgentImage returns the immutable OneAgent image to be used with the DynaKube instance.
-func (dk *DynaKube) ImmutableOneAgentImage() string {
+// OneAgentImage returns the immutable OneAgent image to be used with the DynaKube instance.
+func (dk *DynaKube) OneAgentImage() string {
 	oneAgentImage := dk.CustomOneAgentImage()
 	if oneAgentImage != "" {
 		return oneAgentImage

@@ -97,7 +97,7 @@ func ReconcileVersions(
 	}
 
 	if needsOneAgentUpdate {
-		err = updateImageVersion(dkState, dk.ImmutableOneAgentImage(), &dk.Status.OneAgent.VersionStatus, dockerConfig, verProvider, false)
+		err = updateImageVersion(dkState, dk.OneAgentImage(), &dk.Status.OneAgent.VersionStatus, dockerConfig, verProvider, false)
 		if err != nil {
 			log.Error(err, "failed to update OneAgent image version")
 		}
