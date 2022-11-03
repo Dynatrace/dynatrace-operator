@@ -1,10 +1,9 @@
 package troubleshoot
 
 import (
-	"fmt"
-
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/pkg/errors"
 )
 
 func checkDTClusterConnection(troubleshootCtx *troubleshootContext) error {
@@ -21,7 +20,7 @@ func checkDTClusterConnection(troubleshootCtx *troubleshootContext) error {
 
 		if err != nil {
 			logErrorf(err.Error())
-			return fmt.Errorf("tenant isn't  accessible")
+			return errors.New("tenant isn't  accessible")
 		}
 	}
 

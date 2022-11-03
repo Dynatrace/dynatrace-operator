@@ -102,6 +102,7 @@ func checkActiveGateImagePullable(troubleshootCtx *troubleshootContext) error {
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -152,7 +153,7 @@ func checkComponentImagePullable(httpClient *http.Client, componentName string, 
 
 	// The image could not be pulled with any of the credentials
 	// Return as an error
-	return fmt.Errorf("%s image '%s' missing", componentName, componentImageInfo.Registry+"/"+componentImageInfo.Image)
+	return errors.New(fmt.Sprintf("%s image '%s' missing", componentName, componentImageInfo.Registry+"/"+componentImageInfo.Image))
 }
 
 func checkCustomModuleImagePullable(httpClient *http.Client, _ string, pullSecret string, codeModulesImage string) error {
@@ -160,7 +161,7 @@ func checkCustomModuleImagePullable(httpClient *http.Client, _ string, pullSecre
 	err := json.Unmarshal([]byte(pullSecret), &result)
 
 	if err != nil {
-		return fmt.Errorf("invalid pull secret, could not unmarshal to JSON: %w", err)
+		return errors.Wrapf(err, "invalid pull secret, could not unmarshal to JSON")
 	}
 
 	codeModulesImageInfo, err := image.ComponentsFromUri(codeModulesImage)
@@ -189,7 +190,7 @@ func checkCustomModuleImagePullable(httpClient *http.Client, _ string, pullSecre
 
 	err = imageAvailable(httpClient, codemodulesImageUrl(codeModulesImageInfo), credentials.Auth)
 	if err != nil {
-		return fmt.Errorf("image is missing, cannot pull image '%s' from registry '%s': %w", codeModulesImage, codeModulesImageInfo.Registry, err)
+		return errors.Wrapf(err, "image is missing, cannot pull image '%s' from registry '%s'", codeModulesImage, codeModulesImageInfo.Registry)
 	}
 
 	logOkf("OneAgentCodeModules image '%s' exists on registry '%s", codeModulesImageInfo.Image, codeModulesImageInfo.Registry)
@@ -248,8 +249,8 @@ func connectToDockerRegistry(httpClient *http.Client, httpUrl string, authToken 
 func getPullSecret(troubleshootCtx *troubleshootContext) (string, error) {
 	secretBytes, hasPullSecret := troubleshootCtx.pullSecret.Data[dtpullsecret.DockerConfigJson]
 	if !hasPullSecret {
-		return "", fmt.Errorf("token .dockerconfigjson does not exist in secret '%s:%s'",
-			troubleshootCtx.pullSecret.Namespace, troubleshootCtx.pullSecret.Name)
+		return "", errors.New(fmt.Sprintf("token .dockerconfigjson does not exist in secret '%s:%s'",
+			troubleshootCtx.pullSecret.Namespace, troubleshootCtx.pullSecret.Name))
 	}
 
 	return string(secretBytes), nil

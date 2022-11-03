@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook/validation"
+	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -39,7 +40,7 @@ func checkDynakube(troubleshootCtx *troubleshootContext) error {
 
 		if err != nil {
 			logErrorf(err.Error())
-			return fmt.Errorf("'%s:%s' Dynakube isn't valid. %s",
+			return errors.Wrapf(err, "'%s:%s' Dynakube isn't valid. %s",
 				troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName, dynakubeNotValidMessage())
 		}
 	}
@@ -92,10 +93,10 @@ func checkApiUrl(troubleshootCtx *troubleshootContext) error {
 
 	validation.SetLogger(log)
 	if validation.NoApiUrl(nil, &troubleshootCtx.dynakube) != "" {
-		return fmt.Errorf("api url is invalid")
+		return errors.New("api url is invalid")
 	}
 	if validation.IsInvalidApiUrl(nil, &troubleshootCtx.dynakube) != "" {
-		return fmt.Errorf("api url is invalid")
+		return errors.New("api url is invalid")
 	}
 
 	logInfof("api url is valid")
@@ -123,7 +124,7 @@ func checkIfDynatraceApiSecretHasApiToken(troubleshootCtx *troubleshootContext) 
 	}
 
 	if apiToken == "" {
-		return fmt.Errorf("'apiToken' token is empty  in '%s:%s' secret", troubleshootCtx.namespaceName, troubleshootCtx.dynakube.Tokens())
+		return errors.New(fmt.Sprintf("'apiToken' token is empty  in '%s:%s' secret", troubleshootCtx.namespaceName, troubleshootCtx.dynakube.Tokens()))
 	}
 
 	logInfof("secret token 'apiToken' exists")

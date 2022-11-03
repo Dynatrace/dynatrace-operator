@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	ctrlzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -68,7 +69,7 @@ func logErrorf(format string, v ...interface{}) {
 
 func errorWithMessagef(err error, format string, v ...interface{}) error {
 	message := fmt.Sprintf(format, v...)
-	return fmt.Errorf("%s {\"error\": %s}", message, err.Error())
+	return errors.Wrapf(err, "%s {\"error\": %s}", message, err.Error())
 }
 
 func (dtl troubleshootLogger) Init(_ logr.RuntimeInfo) {}
