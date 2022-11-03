@@ -1,6 +1,6 @@
 //go:build e2e
 
-package buildlabels
+package appmon
 
 import (
 	"context"
@@ -94,7 +94,7 @@ var (
 	}
 )
 
-func install(t *testing.T) features.Feature {
+func installOperator(t *testing.T) features.Feature {
 	secretConfig := getSecretConfig(t)
 
 	defaultInstallation := features.New("default installation")
@@ -132,7 +132,7 @@ func installDynakube(t *testing.T, name string, annotations map[string]string) f
 
 func installSampleApplications() features.Feature {
 	defaultInstallation := features.New("sample applications installation")
-	defaultInstallation.Assess("sample applications applied", manifests.InstallFromFile("../testdata/buildlabels/sample-deployment.yaml"))
+	defaultInstallation.Assess("sample applications applied", manifests.InstallFromFile("../testdata/application-monitoring/buildlabels-sample-apps.yaml"))
 	for _, namespaceName := range namespaceNames {
 		defaultInstallation.Assess(namespaceName+" is ready", deployment.WaitFor(sampleapps.Name, namespaceName))
 	}
@@ -157,7 +157,7 @@ func getSecretConfig(t *testing.T) secrets.Secret {
 	return secretConfig
 }
 
-func assertBuildLabels(namespaceName string, expectedVariables map[string]buildLabel) func(context.Context, *testing.T, *envconf.Config) context.Context {
+func assertBuildLabels(namespaceName string, expectedBuildLabels map[string]buildLabel) func(context.Context, *testing.T, *envconf.Config) context.Context {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resources := environmentConfig.Client().Resources()
 		pods := pod.List(t, ctx, resources, namespaceName)
@@ -169,16 +169,16 @@ func assertBuildLabels(namespaceName string, expectedVariables map[string]buildL
 			appContainer := podItem.Spec.Containers[0]
 			assert.Equal(t, sampleapps.Name, appContainer.Name, "%s namespace", namespaceName)
 
-			assertReferences(t, &podItem, expectedVariables)
+			assertReferences(t, &podItem, expectedBuildLabels)
 
-			assertValues(t, environmentConfig.Client().RESTConfig(), podItem, expectedVariables)
+			assertValues(t, environmentConfig.Client().RESTConfig(), podItem, expectedBuildLabels)
 		}
 
 		return ctx
 	}
 }
 
-func assertReferences(t *testing.T, pod *corev1.Pod, expectedVariables map[string]buildLabel) {
+func assertReferences(t *testing.T, pod *corev1.Pod, expectedBuildLabels map[string]buildLabel) {
 	require.NotNil(t, pod)
 	require.NotNil(t, pod.Spec)
 
@@ -187,30 +187,30 @@ func assertReferences(t *testing.T, pod *corev1.Pod, expectedVariables map[strin
 
 	variablesFound := map[string]bool{}
 
-	for _, ev := range appContainer.Env {
-		if value, ok := expectedVariables[ev.Name]; ok {
+	for _, containerEnvVar := range appContainer.Env {
+		if value, hasLabel := expectedBuildLabels[containerEnvVar.Name]; hasLabel {
 			if value.reference != "" {
-				require.NotNil(t, ev.ValueFrom, "%s:%s pod - %s variable has empty ValueFrom property", pod.Namespace, pod.Name, ev.Name)
-				require.NotNil(t, ev.ValueFrom.FieldRef, "%s:%s pod - %s variable has empty FieldRef property", pod.Namespace, pod.Name, ev.Name)
-				assert.Equal(t, value.reference, ev.ValueFrom.FieldRef.FieldPath, "%s:%s pod - %s variable has invalid value reference", pod.Namespace, pod.Name, ev.Name)
-				variablesFound[ev.Name] = true
+				require.NotNil(t, containerEnvVar.ValueFrom, "%s:%s pod - %s variable has empty ValueFrom property", pod.Namespace, pod.Name, containerEnvVar.Name)
+				require.NotNil(t, containerEnvVar.ValueFrom.FieldRef, "%s:%s pod - %s variable has empty FieldRef property", pod.Namespace, pod.Name, containerEnvVar.Name)
+				assert.Equal(t, value.reference, containerEnvVar.ValueFrom.FieldRef.FieldPath, "%s:%s pod - %s variable has invalid value reference", pod.Namespace, pod.Name, containerEnvVar.Name)
+				variablesFound[containerEnvVar.Name] = true
 			}
 		}
 	}
 
-	for name, value := range expectedVariables {
-		_, ok := variablesFound[name]
+	for name, value := range expectedBuildLabels {
+		_, hasLabel := variablesFound[name]
 		if value.reference == "" {
-			assert.False(t, ok, "%s:%s pod - %s variable found", pod.Namespace, pod.Name, name)
+			assert.False(t, hasLabel, "%s:%s pod - %s variable found", pod.Namespace, pod.Name, name)
 		} else {
-			assert.True(t, ok, "%s:%s pod - %s variable not found", pod.Namespace, pod.Name, name)
+			assert.True(t, hasLabel, "%s:%s pod - %s variable not found", pod.Namespace, pod.Name, name)
 		}
 	}
 }
 
-func assertValues(t *testing.T, restConfig *rest.Config, podItem corev1.Pod, expectedVariables map[string]buildLabel) {
+func assertValues(t *testing.T, restConfig *rest.Config, podItem corev1.Pod, expectedBuildLabels map[string]buildLabel) {
 	for _, variableName := range []string{dtReleaseVersion, dtReleaseProduct, dtReleaseStage, dtReleaseBuildVersion} {
-		assertValue(t, restConfig, podItem, variableName, expectedVariables[variableName].value)
+		assertValue(t, restConfig, podItem, variableName, expectedBuildLabels[variableName].value)
 	}
 }
 
