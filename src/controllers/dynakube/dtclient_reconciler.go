@@ -52,17 +52,7 @@ func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, dynaKube *dyn
 		dynatraceClientFunc = BuildDynatraceClient
 	}
 
-	dynatraceClient, err := dynatraceClientFunc(DynatraceClientProperties{
-		ApiReader:           r.Client,
-		Tokens:              tokens,
-		Proxy:               convertProxy(dynaKube.Spec.Proxy),
-		ApiUrl:              dynaKube.Spec.APIURL,
-		Namespace:           r.ns,
-		NetworkZone:         dynaKube.Spec.NetworkZone,
-		TrustedCerts:        dynaKube.Spec.TrustedCAs,
-		SkipCertCheck:       dynaKube.Spec.SkipCertCheck,
-		DisableHostRequests: dynaKube.FeatureDisableHostsRequests(),
-	})
+	dynatraceClient, err := dynatraceClientFunc(NewDynatraceClientProperties(ctx, r.Client, *dynaKube, tokens))
 
 	if err != nil {
 		// r.setConditionDtcError(err)
@@ -88,6 +78,10 @@ func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, dynaKube *dyn
 	return dynatraceClient, nil
 }
 
+func (r *DynatraceClientReconciler) setConditionTokenSecretMissing(err error) {
+
+}
+
 func (r *DynatraceClientReconciler) removePaaSTokenCondition() {
 	if meta.FindStatusCondition(r.status.Conditions, dynatracev1beta1.PaaSTokenConditionType) != nil {
 		meta.RemoveStatusCondition(&r.status.Conditions, dynatracev1beta1.PaaSTokenConditionType)
@@ -109,14 +103,4 @@ func (r *DynatraceClientReconciler) setAndLogCondition(conditions *[]metav1.Cond
 
 	condition.LastTransitionTime = r.Now
 	meta.SetStatusCondition(conditions, condition)
-}
-
-func convertProxy(proxy *dynatracev1beta1.DynaKubeProxy) *DynatraceClientProxy {
-	if proxy == nil {
-		return nil
-	}
-	return &DynatraceClientProxy{
-		Value:     proxy.Value,
-		ValueFrom: proxy.ValueFrom,
-	}
 }

@@ -34,18 +34,28 @@ type DynatraceClientProxy struct {
 	ValueFrom string
 }
 
-func NewDynatraceClientProperties(ctx context.Context, apiReader client.Reader, dynakube dynatracev1beta1.DynaKube, tokens token.Tokens) *DynatraceClientProperties {
-	return &DynatraceClientProperties{
+func NewDynatraceClientProperties(ctx context.Context, apiReader client.Reader, dynakube dynatracev1beta1.DynaKube, tokens token.Tokens) DynatraceClientProperties {
+	return DynatraceClientProperties{
 		ctx:                 ctx,
 		ApiReader:           apiReader,
 		Tokens:              tokens,
 		ApiUrl:              dynakube.Spec.APIURL,
 		Namespace:           dynakube.Namespace,
-		Proxy:               (*DynatraceClientProxy)(dynakube.Spec.Proxy),
+		Proxy:               convertProxy(dynakube.Spec.Proxy),
 		NetworkZone:         dynakube.Spec.NetworkZone,
 		TrustedCerts:        dynakube.Spec.TrustedCAs,
 		SkipCertCheck:       dynakube.Spec.SkipCertCheck,
 		DisableHostRequests: dynakube.FeatureDisableHostsRequests(),
+	}
+}
+
+func convertProxy(proxy *dynatracev1beta1.DynaKubeProxy) *DynatraceClientProxy {
+	if proxy == nil {
+		return nil
+	}
+	return &DynatraceClientProxy{
+		Value:     proxy.Value,
+		ValueFrom: proxy.ValueFrom,
 	}
 }
 
