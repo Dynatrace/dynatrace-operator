@@ -1,8 +1,7 @@
-FROM golang:1.19.2-alpine AS operator-build
+FROM golang:1.19.2 AS operator-build
 
-RUN apk update --no-cache && \
-    apk add --no-cache gcc musl-dev btrfs-progs-dev lvm2-dev device-mapper-static gpgme-dev git && \
-    rm -rf /var/cache/apk/*
+RUN apt-get update && \
+    apt-get install -y pkg-config libgpgme-dev libbtrfs-dev libdevmapper-dev
 
 ARG GO_LINKER_ARGS
 COPY . /app
@@ -11,7 +10,8 @@ WORKDIR /app
 # move previously cached go modules to gopath
 RUN if [ -d ./mod ]; then mkdir -p ${GOPATH}/pkg && [ -d mod ] && mv ./mod ${GOPATH}/pkg; fi;
 
-RUN CGO_ENABLED=1 CGO_CFLAGS="-O2 -Wno-return-local-addr" go build -ldflags="${GO_LINKER_ARGS}" -o ./build/_output/bin/dynatrace-operator ./src/cmd/
+RUN CGO_ENABLED=1 CGO_CFLAGS="-O2 -Wno-return-local-addr" \
+    go build -ldflags="${GO_LINKER_ARGS}" -o ./build/_output/bin/dynatrace-operator ./src/cmd/
 
 FROM registry.access.redhat.com/ubi9-minimal:9.0.0 as dependency-src
 
@@ -20,17 +20,19 @@ RUN  microdnf install util-linux tar --nodocs -y && microdnf clean all
 FROM registry.access.redhat.com/ubi9-micro:9.0.0
 
 # operator dependencies
-COPY --from=operator-build /etc/ssl/cert.pem /etc/ssl/cert.pem
+COPY --from=dependency-src /etc/ssl/cert.pem /etc/ssl/cert.pem
 COPY --from=operator-build /app/build/_output/bin /usr/local/bin
 
-COPY --from=operator-build /lib/libc.musl-*.so.* /lib/
-COPY --from=operator-build /lib/ld-musl-*.so.* /lib/
+COPY --from=operator-build /usr/lib/*/libdevmapper.so.* /usr/lib/
+COPY --from=operator-build /lib/*/libdevmapper.so.* /lib/
 
-COPY --from=operator-build /lib/libdevmapper.so.* /lib/
+COPY --from=operator-build /usr/lib/*/libassuan.so.* /usr/lib/
+COPY --from=operator-build /lib/*/libgpg-error.so.* /lib/
+COPY --from=operator-build /usr/lib/*/libudev.so.* /usr/lib/
+COPY --from=operator-build /usr/lib/*/libgpg-error.so.* /usr/lib/
+COPY --from=operator-build /usr/lib/*/libgpgme.so.* /usr/lib/
 
-COPY --from=operator-build /usr/lib/libassuan.so.* /usr/lib/
-COPY --from=operator-build /usr/lib/libgpg-error.so.* /usr/lib/
-COPY --from=operator-build /usr/lib/libgpgme.so.* /usr/lib/
+RUN chmod 777 /usr/lib/* && ldconfig
 
 # csi binaries
 COPY --from=k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.5.1 /csi-node-driver-registrar /usr/local/bin
@@ -64,7 +66,7 @@ ENV OPERATOR=dynatrace-operator \
 COPY LICENSE /licenses/
 COPY hack/build/bin /usr/local/bin
 
-RUN  /usr/local/bin/user_setup
+RUN /usr/local/bin/user_setup
 
 ENTRYPOINT ["/usr/local/bin/entrypoint"]
 
