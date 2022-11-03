@@ -150,7 +150,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		gc := &CSIGarbageCollectorMock{}
 		gc.On("Reconcile").Return(reconcile.Result{}, nil)
 		db := metadata.FakeMemoryDB()
-		db.InsertDynakube(ctx, &metadata.Dynakube{Name: dynakubeName})
+		_ = db.InsertDynakube(ctx, &metadata.Dynakube{Name: dynakubeName})
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
@@ -184,7 +184,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		gc := &CSIGarbageCollectorMock{}
 		gc.On("Reconcile").Return(reconcile.Result{}, nil)
 		db := metadata.FakeMemoryDB()
-		db.InsertDynakube(ctx, &metadata.Dynakube{Name: dynakubeName})
+		_ = db.InsertDynakube(ctx, &metadata.Dynakube{Name: dynakubeName})
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
@@ -234,7 +234,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
 		gc.AssertNumberOfCalls(t, "Reconcile", 0)
-		require.EqualError(t, err, `failed to query tokens: secrets "`+dkName+`" not found`)
+		require.EqualError(t, err, `secrets "`+dkName+`" not found`)
 		require.NotNil(t, result)
 		require.Equal(t, reconcile.Result{}, result)
 	})
@@ -257,6 +257,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 				&v1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dkName,
+					},
+					Data: map[string][]byte{
+						dtclient.DynatraceApiToken: []byte("test-value"),
 					},
 				},
 			),
@@ -559,7 +562,7 @@ func TestProvisioner_CreateDynakube(t *testing.T) {
 	ctx := context.TODO()
 	db := metadata.FakeMemoryDB()
 	expectedOtherDynakube := metadata.NewDynakube(otherDkName, tenantUUID, "v1", "", 0)
-	db.InsertDynakube(ctx, expectedOtherDynakube)
+	_ = db.InsertDynakube(ctx, expectedOtherDynakube)
 	provisioner := &OneAgentProvisioner{
 		db: db,
 	}
@@ -585,9 +588,9 @@ func TestProvisioner_UpdateDynakube(t *testing.T) {
 	ctx := context.TODO()
 	db := metadata.FakeMemoryDB()
 	oldDynakube := metadata.NewDynakube(dkName, tenantUUID, "v1", "", 0)
-	db.InsertDynakube(ctx, oldDynakube)
+	_ = db.InsertDynakube(ctx, oldDynakube)
 	expectedOtherDynakube := metadata.NewDynakube(otherDkName, tenantUUID, "v1", "", 0)
-	db.InsertDynakube(ctx, expectedOtherDynakube)
+	_ = db.InsertDynakube(ctx, expectedOtherDynakube)
 
 	provisioner := &OneAgentProvisioner{
 		db: db,

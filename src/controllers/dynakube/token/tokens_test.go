@@ -22,7 +22,7 @@ func testSetApiTokenScopes(t *testing.T) {
 		tokens := Tokens{
 			dtclient.DynatraceApiToken: {},
 		}
-		tokens = tokens.setScopes(dynatracev1beta1.DynaKube{})
+		tokens = tokens.SetScopes(dynatracev1beta1.DynaKube{})
 
 		assert.Equal(t,
 			[]string{
@@ -35,7 +35,7 @@ func testSetApiTokenScopes(t *testing.T) {
 		tokens := Tokens{
 			dtclient.DynatraceApiToken: {},
 		}
-		tokens = tokens.setScopes(dynatracev1beta1.DynaKube{
+		tokens = tokens.SetScopes(dynatracev1beta1.DynaKube{
 			ObjectMeta: v1.ObjectMeta{
 				Annotations: map[string]string{
 					dynatracev1beta1.AnnotationFeatureHostsRequests: "false",
@@ -51,7 +51,7 @@ func testSetApiTokenScopes(t *testing.T) {
 		tokens := Tokens{
 			dtclient.DynatraceApiToken: {},
 		}
-		tokens = tokens.setScopes(dynatracev1beta1.DynaKube{
+		tokens = tokens.SetScopes(dynatracev1beta1.DynaKube{
 			ObjectMeta: v1.ObjectMeta{
 				Annotations: map[string]string{
 					dynatracev1beta1.AnnotationFeatureAutomaticK8sApiMonitoring: "true",
@@ -83,7 +83,7 @@ func testPaasTokenScopes(t *testing.T) {
 	tokens := Tokens{
 		dtclient.DynatracePaasToken: {},
 	}
-	tokens = tokens.setScopes(dynatracev1beta1.DynaKube{})
+	tokens = tokens.SetScopes(dynatracev1beta1.DynaKube{})
 
 	assert.Equal(t,
 		[]string{dtclient.TokenScopeInstallerDownload},
@@ -94,7 +94,7 @@ func testDataIngestTokenScopes(t *testing.T) {
 	tokens := Tokens{
 		dtclient.DynatraceDataIngestToken: {},
 	}
-	tokens = tokens.setScopes(dynatracev1beta1.DynaKube{})
+	tokens = tokens.SetScopes(dynatracev1beta1.DynaKube{})
 
 	assert.Equal(t,
 		[]string{dtclient.TokenScopeMetricsIngest},
@@ -143,10 +143,10 @@ func testVerifyTokenScopes(t *testing.T) {
 	assert.NoError(t, validTokens.VerifyScopes(fakeDynatraceClient))
 	assert.EqualError(t,
 		invalidTokens.VerifyScopes(fakeDynatraceClient),
-		"token 'invalid-scopes' is missing the following scopes: [ b, d ]")
+		"[ \ntoken 'invalid-scopes' is missing the following scopes: [ b, d ]\n ]")
 	assert.EqualError(t,
 		apiError.VerifyScopes(fakeDynatraceClient),
-		"test api-error")
+		"[ \ntest api-error\n ]")
 
 }
 
@@ -159,5 +159,5 @@ func testVerifyTokenValues(t *testing.T) {
 	}
 
 	assert.NoError(t, validTokens.VerifyValues())
-	assert.EqualError(t, invalidTokens.VerifyValues(), "value of token 'whitespaces' contains whitespaces at the beginning or end of the value")
+	assert.EqualError(t, invalidTokens.VerifyValues(), "[ \nvalue of token 'whitespaces' contains whitespaces at the beginning or end of the value\n ]")
 }

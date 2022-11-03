@@ -32,7 +32,7 @@ func (tokens Tokens) getToken(tokenName string) Token {
 	return token
 }
 
-func (tokens Tokens) setScopes(dynakube dynatracev1beta1.DynaKube) Tokens {
+func (tokens Tokens) SetScopes(dynakube dynatracev1beta1.DynaKube) Tokens {
 	_, hasPaasToken := tokens[dtclient.DynatracePaasToken]
 
 	for tokenType, token := range tokens {
@@ -50,6 +50,8 @@ func (tokens Tokens) setScopes(dynakube dynatracev1beta1.DynaKube) Tokens {
 }
 
 func (tokens Tokens) VerifyScopes(dtc dtclient.Client) error {
+	scopeErrors := make([]error, 0)
+
 	for tokenType, token := range tokens {
 		if len(token.RequiredScopes) == 0 {
 			continue
@@ -58,25 +60,52 @@ func (tokens Tokens) VerifyScopes(dtc dtclient.Client) error {
 		scopes, err := dtc.GetTokenScopes(token.Value)
 
 		if err != nil {
-			return err
+			scopeErrors = append(scopeErrors, err)
+			continue
 		}
 
 		missingScopes := token.getMissingScopes(scopes)
 
 		if len(missingScopes) > 0 {
-			return errors.New(fmt.Sprintf("token '%s' is missing the following scopes: [ %s ]", tokenType, strings.Join(missingScopes, ", ")))
+			scopeErrors = append(scopeErrors,
+				errors.New(fmt.Sprintf("token '%s' is missing the following scopes: [ %s ]", tokenType, strings.Join(missingScopes, ", "))))
 		}
+	}
+
+	if len(scopeErrors) > 0 {
+		return concatErrors(scopeErrors)
 	}
 
 	return nil
 }
 
 func (tokens Tokens) VerifyValues() error {
+	valueErrors := make([]error, 0)
+
 	for tokenType, token := range tokens {
 		if strings.TrimSpace(token.Value) != token.Value {
-			return errors.Errorf("value of token '%s' contains whitespaces at the beginning or end of the value", tokenType)
+			valueErrors = append(valueErrors,
+				errors.Errorf("value of token '%s' contains whitespaces at the beginning or end of the value", tokenType))
 		}
 	}
 
+	if len(valueErrors) > 0 {
+		return concatErrors(valueErrors)
+	}
+
 	return nil
+}
+
+func concatErrors(errs []error) error {
+	concatenatedError := ""
+
+	for index, err := range errs {
+		concatenatedError += err.Error()
+
+		if index < len(errs)-1 {
+			concatenatedError += "\n\t"
+		}
+	}
+
+	return errors.New(concatenatedError)
 }

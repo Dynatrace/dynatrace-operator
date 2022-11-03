@@ -2,6 +2,7 @@ package operator
 
 import (
 	"context"
+	"os"
 
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 	cmdManager "github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
@@ -120,24 +121,28 @@ func (builder CommandBuilder) buildRun() func(cmd *cobra.Command, args []string)
 			return err
 		}
 
-		operatorPod, err := kubeobjects.GetPod(context.TODO(), builder.client, builder.podName, builder.namespace)
-		if err != nil {
-			return err
-		}
+		isDeployedViaOlm := false
 
-		isDeployedViaOlm := kubesystem.IsDeployedViaOlm(*operatorPod)
-		if !isDeployedViaOlm {
-			var bootstrapManager ctrl.Manager
-			bootstrapManager, err = builder.getBootstrapManagerProvider().CreateManager(builder.namespace, kubeCfg)
-
+		if os.Getenv("RUN_LOCAL") != "true" {
+			operatorPod, err := kubeobjects.GetPod(context.TODO(), builder.client, builder.podName, builder.namespace)
 			if err != nil {
 				return err
 			}
 
-			err = runBootstrapper(bootstrapManager, builder.namespace)
+			isDeployedViaOlm = kubesystem.IsDeployedViaOlm(*operatorPod)
+			if !isDeployedViaOlm {
+				var bootstrapManager ctrl.Manager
+				bootstrapManager, err = builder.getBootstrapManagerProvider().CreateManager(builder.namespace, kubeCfg)
 
-			if err != nil {
-				return err
+				if err != nil {
+					return err
+				}
+
+				err = runBootstrapper(bootstrapManager, builder.namespace)
+
+				if err != nil {
+					return err
+				}
 			}
 		}
 

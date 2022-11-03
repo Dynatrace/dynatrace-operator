@@ -1,14 +1,13 @@
 package dynakube
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -22,23 +21,17 @@ const (
 
 func TestBuildDynatraceClient(t *testing.T) {
 	t.Run(`BuildDynatraceClient works with minimal setup`, func(t *testing.T) {
-		secret := corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
-			Data: map[string][]byte{
-				dtclient.DynatraceApiToken:  []byte(testValue),
-				dtclient.DynatracePaasToken: []byte(testValueAlternative),
-			}}
 		instance := &dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testEndpoint,
 			}}
-		fakeClient := fake.NewClient(instance, &secret)
+		fakeClient := fake.NewClient(instance)
 		dtf := DynatraceClientProperties{
 			ApiReader: fakeClient,
-			Secret:    &secret,
+			Tokens: map[string]token.Token{
+				dtclient.DynatraceApiToken:  {Value: testValue},
+				dtclient.DynatracePaasToken: {Value: testValueAlternative},
+			},
 			ApiUrl:    instance.Spec.APIURL,
 			Namespace: testNamespace,
 		}
@@ -53,22 +46,18 @@ func TestBuildDynatraceClient(t *testing.T) {
 		assert.Error(t, err)
 	})
 	t.Run(`BuildDynatraceClient handles invalid token secret`, func(t *testing.T) {
-		secret := corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
-			Data: map[string][]byte{
-				//Simulate missing values
-			}}
 		instance := &dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testEndpoint,
 			}}
-		fakeClient := fake.NewClient(instance, &secret)
+		fakeClient := fake.NewClient(instance)
 		dtf := DynatraceClientProperties{
 			ApiReader: fakeClient,
-			Secret:    &secret,
+			Tokens: map[string]token.Token{
+				//Simulate missing values
+				dtclient.DynatraceApiToken:  {Value: ""},
+				dtclient.DynatracePaasToken: {Value: ""},
+			},
 			ApiUrl:    instance.Spec.APIURL,
 			Namespace: testNamespace,
 		}
@@ -86,25 +75,19 @@ func TestBuildDynatraceClient(t *testing.T) {
 		assert.Error(t, err)
 	})
 	t.Run(`BuildDynatraceClient handles missing proxy secret`, func(t *testing.T) {
-		secret := corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
-			Data: map[string][]byte{
-				dtclient.DynatraceApiToken:  []byte(testValue),
-				dtclient.DynatracePaasToken: []byte(testValueAlternative),
-			}}
 		instance := &dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testEndpoint,
 				Proxy: &dynatracev1beta1.DynaKubeProxy{
 					ValueFrom: testKey,
 				}}}
-		fakeClient := fake.NewClient(instance, &secret)
+		fakeClient := fake.NewClient(instance)
 		dtf := DynatraceClientProperties{
 			ApiReader: fakeClient,
-			Secret:    &secret,
+			Tokens: map[string]token.Token{
+				dtclient.DynatraceApiToken:  {Value: testValue},
+				dtclient.DynatracePaasToken: {Value: testValueAlternative},
+			},
 			ApiUrl:    instance.Spec.APIURL,
 			Namespace: testNamespace,
 			Proxy:     (*DynatraceClientProxy)(instance.Spec.Proxy),
@@ -115,25 +98,19 @@ func TestBuildDynatraceClient(t *testing.T) {
 		assert.Nil(t, dtc)
 	})
 	t.Run(`BuildDynatraceClient handles missing trusted certificate config map`, func(t *testing.T) {
-		secret := corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
-			Data: map[string][]byte{
-				dtclient.DynatraceApiToken:  []byte(testValue),
-				dtclient.DynatracePaasToken: []byte(testValueAlternative),
-			}}
 		instance := &dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL:     testEndpoint,
 				TrustedCAs: testKey,
 			}}
 
-		fakeClient := fake.NewClient(instance, &secret)
+		fakeClient := fake.NewClient(instance)
 		dtf := DynatraceClientProperties{
-			ApiReader:    fakeClient,
-			Secret:       &secret,
+			ApiReader: fakeClient,
+			Tokens: map[string]token.Token{
+				dtclient.DynatraceApiToken:  {Value: testValue},
+				dtclient.DynatracePaasToken: {Value: testValueAlternative},
+			},
 			ApiUrl:       instance.Spec.APIURL,
 			Namespace:    testNamespace,
 			TrustedCerts: instance.Spec.TrustedCAs,

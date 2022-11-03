@@ -16,8 +16,6 @@ const (
 
 	// DataIngestTokenConditionType identifies the DataIngest Token validity condition
 	DataIngestTokenConditionType string = "DataIngestToken"
-
-	OperatorName = "dynatrace-operator"
 )
 
 // Possible reasons for ApiToken and PaaSToken conditions
@@ -25,8 +23,8 @@ const (
 	// ReasonTokenReady is set when a token has passed verifications
 	ReasonTokenReady string = "TokenReady"
 
-	// ReasonTokenSecretNotFound is set when the referenced secret can't be found
-	ReasonTokenSecretNotFound string = "TokenSecretNotFound"
+	// ReasonTokenSecretInvalid is set when the referenced secret contains invalid values
+	ReasonTokenSecretInvalid string = "TokenSecretInvalid"
 
 	// ReasonTokenMissing is set when the field is missing on the secret
 	ReasonTokenMissing string = "TokenMissing"
@@ -39,6 +37,9 @@ const (
 
 	// ReasonTokenError is set when an unknown error has been found when verifying the token
 	ReasonTokenError string = "TokenError"
+
+	// ReasonDynatraceClientError is set when the creation of the dynatrace API client failed during token verification
+	ReasonDynatraceClientError = "DynatraceClientError"
 )
 
 type DynaKubeProxy struct {

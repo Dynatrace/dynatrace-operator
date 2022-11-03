@@ -2,6 +2,7 @@ package nodes
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"os"
 	"time"
 
@@ -48,6 +49,7 @@ func (controller *NodesController) SetupWithManager(mgr ctrl.Manager) error {
 		WithEventFilter(nodeDeletionPredicate(controller)).
 		Complete(controller)
 }
+
 func nodeDeletionPredicate(controller *NodesController) predicate.Predicate {
 	return predicate.Funcs{
 		DeleteFunc: func(deleteEvent event.DeleteEvent) bool {
@@ -61,7 +63,6 @@ func nodeDeletionPredicate(controller *NodesController) predicate.Predicate {
 	}
 }
 
-// NewReconciler returns a new ReconcileDynaKube
 func NewController(mgr manager.Manager) *NodesController {
 	return &NodesController{
 		client:       mgr.GetClient(),
@@ -273,17 +274,24 @@ func (controller *NodesController) isNodeDeletable(cachedNode CacheEntry) bool {
 }
 
 func (controller *NodesController) sendMarkedForTermination(dynakubeInstance *dynatracev1beta1.DynaKube, cachedNode CacheEntry) error {
-	dtp, err := dynakube.NewDynatraceClientProperties(context.TODO(), controller.client, *dynakubeInstance)
-	if err != nil {
-		log.Error(err, err.Error())
-	}
+	tokenReader := token.NewReader(controller.apiReader, dynakubeInstance)
+	tokens, err := tokenReader.ReadTokens(context.TODO())
 
-	dtc, err := controller.dtClientFunc(*dtp)
 	if err != nil {
 		return err
 	}
 
-	entityID, err := dtc.GetEntityIDForIP(cachedNode.IPAddress)
+	dynatraceClientProperties := dynakube.NewDynatraceClientProperties(context.TODO(), controller.client, *dynakubeInstance, tokens)
+	if err != nil {
+		log.Error(err, err.Error())
+	}
+
+	dynatraceClient, err := controller.dtClientFunc(dynatraceClientProperties)
+	if err != nil {
+		return err
+	}
+
+	entityID, err := dynatraceClient.GetEntityIDForIP(cachedNode.IPAddress)
 	if err != nil {
 		log.Info("failed to send mark for termination event",
 			"reason", "failed to determine entity id", "dynakube", dynakubeInstance.Name, "nodeIP", cachedNode.IPAddress, "cause", err)
@@ -292,7 +300,7 @@ func (controller *NodesController) sendMarkedForTermination(dynakubeInstance *dy
 	}
 
 	ts := uint64(cachedNode.LastSeen.Add(-10*time.Minute).UnixNano()) / uint64(time.Millisecond)
-	return dtc.SendEvent(&dtclient.EventData{
+	return dynatraceClient.SendEvent(&dtclient.EventData{
 		EventType:     dtclient.MarkedForTerminationEvent,
 		Source:        "Dynatrace Operator",
 		Description:   "Kubernetes node cordoned. Node might be drained or terminated.",

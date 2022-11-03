@@ -68,22 +68,3 @@ func (reader Reader) verifyApiTokenExists(tokens Tokens) error {
 
 	return nil
 }
-
-//func (reader Reader) createDynatraceClient(ctx context.Context, tokens Tokens) error {
-//	if reader.dtclient != nil {
-//		// When unit testing the reader, the dtclient should be set by the unit test
-//		// If so, do not recreate an actual dtclient
-//		return nil
-//	}
-//
-//	properties := dynakube.NewDynatraceClientProperties(ctx, reader.apiReader, *reader.dynakube, tokens)
-//	dtc, err := dynakube.BuildDynatraceClient(*properties)
-//
-//	if err != nil {
-//		return err
-//	}
-//
-//	reader.dtclient = dtc
-//
-//	return nil
-//}

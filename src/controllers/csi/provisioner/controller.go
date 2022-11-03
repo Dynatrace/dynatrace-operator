@@ -19,6 +19,7 @@ package csiprovisioner
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -264,16 +265,24 @@ func (provisioner *OneAgentProvisioner) createOrUpdateDynakubeMetadata(ctx conte
 }
 
 func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk *dynatracev1beta1.DynaKube) (dtclient.Client, error) {
-	dtp, err := dynakube.NewDynatraceClientProperties(ctx, provisioner.apiReader, *dk)
+	tokenReader := token.NewReader(provisioner.apiReader, dk)
+	tokens, err := tokenReader.ReadTokens(ctx)
+
 	if err != nil {
 		return nil, err
 	}
-	dtc, err := provisioner.dtcBuildFunc(*dtp)
+
+	dynatraceClientProperties := dynakube.NewDynatraceClientProperties(ctx, provisioner.apiReader, *dk, tokens)
+	if err != nil {
+		return nil, err
+	}
+
+	dynatraceClient, err := provisioner.dtcBuildFunc(dynatraceClientProperties)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Dynatrace client: %w", err)
 	}
 
-	return dtc, nil
+	return dynatraceClient, nil
 }
 
 func (provisioner *OneAgentProvisioner) getDynaKube(ctx context.Context, name types.NamespacedName) (*dynatracev1beta1.DynaKube, error) {

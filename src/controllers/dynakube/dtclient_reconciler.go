@@ -15,13 +15,9 @@ import (
 )
 
 type DynatraceClientReconciler struct {
-	Client                               client.Client
-	DynatraceClientFunc                  DynatraceClientFunc
-	Now                                  metav1.Time
-	ApiToken, PaasToken, DataIngestToken string
-	ValidTokens                          bool
-	dkName, ns, secretKey                string
-	status                               *dynatracev1beta1.DynaKubeStatus
+	Client              client.Client
+	DynatraceClientFunc DynatraceClientFunc
+	Tokens              token.Tokens
 }
 
 func NewDynatraceClientReconciler(client client.Client, dtClientFunc DynatraceClientFunc) *DynatraceClientReconciler {
@@ -31,19 +27,19 @@ func NewDynatraceClientReconciler(client client.Client, dtClientFunc DynatraceCl
 	}
 }
 
-func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, dynaKube *dynatracev1beta1.DynaKube) (dtclient.Client, error) {
-	tokenReader := token.NewReader(r.Client, dynaKube)
+func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) (dtclient.Client, error) {
+	tokenReader := token.NewReader(r.Client, dynakube)
 	tokens, err := tokenReader.ReadTokens(ctx)
 
 	if err != nil {
-		// r.setConditionTokenSecretMissing(err)
+		r.setConditionTokenSecretMissing(dynakube, err)
 		return nil, err
 	}
 
 	err = tokens.VerifyValues()
 
 	if err != nil {
-		// r.setConditionTokensHaveInvalidValues(err)
+		r.setConditionTokensHaveInvalidValues(dynakube, err)
 		return nil, err
 	}
 
@@ -52,33 +48,40 @@ func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, dynaKube *dyn
 		dynatraceClientFunc = BuildDynatraceClient
 	}
 
-	dynatraceClient, err := dynatraceClientFunc(NewDynatraceClientProperties(ctx, r.Client, *dynaKube, tokens))
+	dynatraceClient, err := dynatraceClientFunc(NewDynatraceClientProperties(ctx, r.Client, *dynakube, tokens))
 
 	if err != nil {
-		// r.setConditionDtcError(err)
+		r.setConditionDtcError(dynakube, err)
 		return nil, err
 	}
 
-	if time.Now().Before(dynaKube.Status.LastAPITokenProbeTimestamp.Add(5 * time.Minute)) {
-		oldCondition := meta.FindStatusCondition(r.status.Conditions, dynatracev1beta1.APITokenConditionType)
+	if dynakube.Status.LastAPITokenProbeTimestamp == nil {
+		dynakube.Status.LastAPITokenProbeTimestamp = &metav1.Time{}
+	}
+
+	if time.Now().Before(dynakube.Status.LastAPITokenProbeTimestamp.Add(5 * time.Second)) {
+		oldCondition := meta.FindStatusCondition(dynakube.Status.Conditions, dynatracev1beta1.TokenConditionType)
 		if oldCondition.Reason != dynatracev1beta1.ReasonTokenReady {
 			return nil, errors.New("tokens are not valid")
 		}
 	} else {
+		tokens = tokens.SetScopes(*dynakube)
 		err = tokens.VerifyScopes(dynatraceClient)
 
 		if err != nil {
-			// r.setConditionTokenIsMissingScopes(err)
+			r.setConditionTokenIsMissingScopes(dynakube, err)
 			return nil, err
 		}
 	}
 
-	dynaKube.Status.LastAPITokenProbeTimestamp = address.Of(metav1.Now())
+	r.Tokens = tokens
+	r.setConditionTokenReady(dynakube)
+	dynakube.Status.LastAPITokenProbeTimestamp = address.Of(metav1.Now())
 
 	return dynatraceClient, nil
 }
 
-func (r *DynatraceClientReconciler) setConditionTokenSecretMissing(dynakube dynatracev1beta1.DynaKube, err error) {
+func (r *DynatraceClientReconciler) setConditionTokenSecretMissing(dynakube *dynatracev1beta1.DynaKube, err error) {
 	missingTokenCondition := metav1.Condition{
 		Type:    dynatracev1beta1.TokenConditionType,
 		Status:  metav1.ConditionFalse,
@@ -86,32 +89,85 @@ func (r *DynatraceClientReconciler) setConditionTokenSecretMissing(dynakube dyna
 		Message: err.Error(),
 	}
 
-	r.setAndLogCondition(&dynakube.Status.Conditions, missingTokenCondition)
+	r.setAndLogCondition(dynakube, missingTokenCondition)
 }
 
-func (r *DynatraceClientReconciler) setAndLogCondition(conditions *[]metav1.Condition, newCondition metav1.Condition) {
-	statusCondition := meta.FindStatusCondition(*conditions, newCondition.Type)
+func (r *DynatraceClientReconciler) setConditionTokensHaveInvalidValues(dynakube *dynatracev1beta1.DynaKube, err error) {
+	invalidValueCondition := metav1.Condition{
+		Type:    dynatracev1beta1.TokenConditionType,
+		Status:  metav1.ConditionFalse,
+		Reason:  dynatracev1beta1.ReasonTokenSecretInvalid,
+		Message: err.Error(),
+	}
+
+	r.setAndLogCondition(dynakube, invalidValueCondition)
+}
+
+func (r *DynatraceClientReconciler) setConditionDtcError(dynakube *dynatracev1beta1.DynaKube, err error) {
+	dynatraceClientErrorCondition := metav1.Condition{
+		Type:    dynatracev1beta1.TokenConditionType,
+		Status:  metav1.ConditionFalse,
+		Reason:  dynatracev1beta1.ReasonDynatraceClientError,
+		Message: err.Error(),
+	}
+
+	r.setAndLogCondition(dynakube, dynatraceClientErrorCondition)
+}
+
+func (r *DynatraceClientReconciler) setConditionTokenIsMissingScopes(dynakube *dynatracev1beta1.DynaKube, err error) {
+	missingScopeCondition := metav1.Condition{
+		Type:    dynatracev1beta1.TokenConditionType,
+		Status:  metav1.ConditionFalse,
+		Reason:  dynatracev1beta1.ReasonTokenScopeMissing,
+		Message: err.Error(),
+	}
+
+	r.setAndLogCondition(dynakube, missingScopeCondition)
+}
+
+func (r *DynatraceClientReconciler) setConditionTokenReady(dynakube *dynatracev1beta1.DynaKube) {
+	tokenValidCondition := metav1.Condition{
+		Type:    dynatracev1beta1.TokenConditionType,
+		Status:  metav1.ConditionTrue,
+		Reason:  dynatracev1beta1.ReasonTokenReady,
+		Message: "tokens have been successfully validated",
+	}
+
+	r.setAndLogCondition(dynakube, tokenValidCondition)
+}
+
+func (r *DynatraceClientReconciler) setAndLogCondition(dynakube *dynatracev1beta1.DynaKube, newCondition metav1.Condition) {
+	r.removeOldConditionTypes(dynakube)
+	statusCondition := meta.FindStatusCondition(dynakube.Status.Conditions, newCondition.Type)
 
 	if newCondition.Reason != dynatracev1beta1.ReasonTokenReady {
-		r.ValidTokens = false
-		log.Info("problem with token detected", "dynakube", r.dkName, "token", newCondition.Type,
-			"msg", newCondition.Message)
+		log.Info("problem with token detected", "dynakube", dynakube.Name, "token", newCondition.Type,
+			"message", newCondition.Message)
 	}
 
 	if areStatusesEqual(statusCondition, newCondition) {
 		return
 	}
 
-	newCondition.LastTransitionTime = r.Now
-	meta.SetStatusCondition(conditions, newCondition)
+	newCondition.LastTransitionTime = metav1.Now()
+	meta.SetStatusCondition(&dynakube.Status.Conditions, newCondition)
 }
 
 func areStatusesEqual(statusCondition *metav1.Condition, newCondition metav1.Condition) bool {
-	return statusCondition != nil && statusCondition.Reason == newCondition.Reason && statusCondition.Message == newCondition.Message && statusCondition.Status == newCondition.Status
+	return statusCondition != nil &&
+		statusCondition.Reason == newCondition.Reason &&
+		statusCondition.Message == newCondition.Message &&
+		statusCondition.Status == newCondition.Status
 }
 
-func (r *DynatraceClientReconciler) removePaaSTokenCondition() {
-	if meta.FindStatusCondition(r.status.Conditions, dynatracev1beta1.PaaSTokenConditionType) != nil {
-		meta.RemoveStatusCondition(&r.status.Conditions, dynatracev1beta1.PaaSTokenConditionType)
+func (r *DynatraceClientReconciler) removeOldConditionTypes(dynakube *dynatracev1beta1.DynaKube) {
+	if meta.FindStatusCondition(dynakube.Status.Conditions, dynatracev1beta1.PaaSTokenConditionType) != nil {
+		meta.RemoveStatusCondition(&dynakube.Status.Conditions, dynatracev1beta1.PaaSTokenConditionType)
+	}
+	if meta.FindStatusCondition(dynakube.Status.Conditions, dynatracev1beta1.APITokenConditionType) != nil {
+		meta.RemoveStatusCondition(&dynakube.Status.Conditions, dynatracev1beta1.APITokenConditionType)
+	}
+	if meta.FindStatusCondition(dynakube.Status.Conditions, dynatracev1beta1.DataIngestTokenConditionType) != nil {
+		meta.RemoveStatusCondition(&dynakube.Status.Conditions, dynatracev1beta1.DataIngestTokenConditionType)
 	}
 }

@@ -178,6 +178,7 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dyn
 	dtcReconciler := NewDynatraceClientReconciler(controller.client, controller.dtcBuildFunc)
 	dtc, err := dtcReconciler.Reconcile(ctx, dynakube)
 	if err != nil {
+		_ = controller.updateDynakubeStatus(ctx, dynakube)
 		log.Info("failed to create dynatrace client")
 		return err
 	}
@@ -192,7 +193,8 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dyn
 	}
 
 	err = dtpullsecret.
-		NewReconciler(controller.client, controller.apiReader, controller.scheme, dynakube, dtcReconciler.ApiToken, dtcReconciler.PaasToken).
+		NewReconciler(controller.client, controller.apiReader, controller.scheme, dynakube,
+			dtcReconciler.Tokens.ApiToken().Value, dtcReconciler.Tokens.PaasToken().Value).
 		Reconcile()
 	if err != nil {
 		log.Info("could not reconcile Dynatrace pull secret")
