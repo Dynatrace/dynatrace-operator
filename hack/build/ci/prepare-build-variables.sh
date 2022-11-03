@@ -18,6 +18,8 @@ createDockerImageLabels() {
   if [[ "${GITHUB_REF_TYPE}" != "tag" ]] && [[ ! "${GITHUB_REF_NAME}" =~ ^release-* ]]; then
     echo "quay.expires-after=10d"
   fi
+
+  echo "build-date=$(date --iso-8601)"
 }
 
 setBuildRelatedVariables() {
