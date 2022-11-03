@@ -78,29 +78,40 @@ func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, dynaKube *dyn
 	return dynatraceClient, nil
 }
 
-func (r *DynatraceClientReconciler) setConditionTokenSecretMissing(err error) {
+func (r *DynatraceClientReconciler) setConditionTokenSecretMissing(dynakube dynatracev1beta1.DynaKube, err error) {
+	missingTokenCondition := metav1.Condition{
+		Type:    dynatracev1beta1.TokenConditionType,
+		Status:  metav1.ConditionFalse,
+		Reason:  dynatracev1beta1.ReasonTokenMissing,
+		Message: err.Error(),
+	}
 
+	r.setAndLogCondition(&dynakube.Status.Conditions, missingTokenCondition)
+}
+
+func (r *DynatraceClientReconciler) setAndLogCondition(conditions *[]metav1.Condition, newCondition metav1.Condition) {
+	statusCondition := meta.FindStatusCondition(*conditions, newCondition.Type)
+
+	if newCondition.Reason != dynatracev1beta1.ReasonTokenReady {
+		r.ValidTokens = false
+		log.Info("problem with token detected", "dynakube", r.dkName, "token", newCondition.Type,
+			"msg", newCondition.Message)
+	}
+
+	if areStatusesEqual(statusCondition, newCondition) {
+		return
+	}
+
+	newCondition.LastTransitionTime = r.Now
+	meta.SetStatusCondition(conditions, newCondition)
+}
+
+func areStatusesEqual(statusCondition *metav1.Condition, newCondition metav1.Condition) bool {
+	return statusCondition != nil && statusCondition.Reason == newCondition.Reason && statusCondition.Message == newCondition.Message && statusCondition.Status == newCondition.Status
 }
 
 func (r *DynatraceClientReconciler) removePaaSTokenCondition() {
 	if meta.FindStatusCondition(r.status.Conditions, dynatracev1beta1.PaaSTokenConditionType) != nil {
 		meta.RemoveStatusCondition(&r.status.Conditions, dynatracev1beta1.PaaSTokenConditionType)
 	}
-}
-
-func (r *DynatraceClientReconciler) setAndLogCondition(conditions *[]metav1.Condition, condition metav1.Condition) {
-	c := meta.FindStatusCondition(*conditions, condition.Type)
-
-	if condition.Reason != dynatracev1beta1.ReasonTokenReady {
-		r.ValidTokens = false
-		log.Info("problem with token detected", "dynakube", r.dkName, "token", condition.Type,
-			"msg", condition.Message)
-	}
-
-	if c != nil && c.Reason == condition.Reason && c.Message == condition.Message && c.Status == condition.Status {
-		return
-	}
-
-	condition.LastTransitionTime = r.Now
-	meta.SetStatusCondition(conditions, condition)
 }

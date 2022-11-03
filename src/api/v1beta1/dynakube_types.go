@@ -5,6 +5,9 @@ import (
 )
 
 const (
+	// TokenConditionType identifies the token validity condition
+	TokenConditionType string = "Tokens"
+
 	// APITokenConditionType identifies the API Token validity condition
 	APITokenConditionType string = "APIToken"
 
