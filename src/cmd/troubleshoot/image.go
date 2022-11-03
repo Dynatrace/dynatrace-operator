@@ -200,9 +200,9 @@ func imageAvailable(httpClient *http.Client, imageUrl string, apiToken string) e
 	statusCode, err := connectToDockerRegistry(httpClient, imageUrl, apiToken)
 
 	if err != nil {
-		return fmt.Errorf("registry unreachable: %w", err)
+		return errors.Wrapf(err, "registry unreachable")
 	} else if statusCode != http.StatusOK {
-		return fmt.Errorf("image not found (status code = %d)", statusCode)
+		return errors.New(fmt.Sprintf("image not found (status code = %d)", statusCode))
 	}
 
 	return nil
