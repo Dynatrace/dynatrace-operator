@@ -79,18 +79,16 @@ func checkLogs(ctx context.Context, t *testing.T, environmentConfig *envconf.Con
 		Name:      "dynatrace-operator",
 		Namespace: "dynatrace",
 	}).ForEachPod(func(podItem v1.Pod) {
-		logStream, err := clientset.CoreV1().Pods(podItem.Namespace).GetLogs(podItem.Name, &v1.PodLogOptions{
-			Container: "dynatrace-operator",
-		}).Stream(ctx)
+		logStream, err := clientset.CoreV1().Pods(podItem.Namespace).GetLogs(podItem.Name, &v1.PodLogOptions{}).Stream(ctx)
 		require.NoError(t, err)
 		logs.AssertLogContains(t, logStream, timeoutError)
 
-		logStream, err = clientset.CoreV1().Pods(podItem.Namespace).GetLogs(podItem.Name, &v1.PodLogOptions{
-			Container: "dynatrace-operator",
-		}).Stream(ctx)
+		logStream, err = clientset.CoreV1().Pods(podItem.Namespace).GetLogs(podItem.Name, &v1.PodLogOptions{}).Stream(ctx)
 		require.NoError(t, err)
 		logs.AssertLogContains(t, logStream, secretUnchanged)
 	})
+
+	require.NoError(t, err)
 
 	err = deployment.NewQuery(ctx, resources, client.ObjectKey{
 		Name:      "myapp",
@@ -102,6 +100,8 @@ func checkLogs(ctx context.Context, t *testing.T, environmentConfig *envconf.Con
 		require.NoError(t, err)
 		logs.AssertLogContains(t, logStream, proxy.ProxySpec.Value)
 	})
+
+	require.NoError(t, err)
 	return ctx
 }
 
