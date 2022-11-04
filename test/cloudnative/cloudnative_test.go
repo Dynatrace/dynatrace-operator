@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/environment"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/test/proxy"
 	"github.com/Dynatrace/dynatrace-operator/test/sampleapps"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 )
@@ -34,4 +35,5 @@ func TestCloudNative(t *testing.T) {
 	testEnvironment.Test(t, Install(t, false))
 	testEnvironment.Test(t, CodeModules(t, false))
 	testEnvironment.Test(t, NetworkProblems(t))
+	testEnvironment.Test(t, WithProxy(t, proxy.ProxySpec))
 }
