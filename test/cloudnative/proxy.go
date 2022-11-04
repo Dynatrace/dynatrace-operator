@@ -31,7 +31,7 @@ const (
 	dynatraceNetworkPolicy = "../testdata/network/dynatrace-denial.yaml"
 	timeoutError           = "dial tcp 54.88.45.104:443: i/o timeout"
 	secretUnchanged        = "secret unchanged"
-	sampleMSNetworkPolicy  = "../testdata/network/sample-ns-denial.yaml"
+	sampleNSNetworkPolicy  = "../testdata/network/sample-ns-denial.yaml"
 	sampleNS               = "../testdata/cloudnative/test-namespace.yaml"
 	DtProxy                = "DT_PROXY"
 	agentPath              = "/opt/dynatrace/oneagent-paas"
@@ -45,7 +45,7 @@ func WithProxy(t *testing.T, proxySpec *v1beta1.DynaKubeProxy) features.Feature 
 	cloudNativeWithProxy := features.New("cloudNative with proxy")
 	cloudNativeWithProxy.Setup(manifests.InstallFromFile(sampleNS))
 	cloudNativeWithProxy.Setup(manifests.InstallFromFile(dynatraceNetworkPolicy))
-	cloudNativeWithProxy.Setup(manifests.InstallFromFile(sampleMSNetworkPolicy))
+	cloudNativeWithProxy.Setup(manifests.InstallFromFile(sampleNSNetworkPolicy))
 
 	setup.InstallAndDeploy(cloudNativeWithProxy, secretConfig, "../testdata/cloudnative/sample-deployment.yaml")
 	setup.AssessDeployment(cloudNativeWithProxy)
