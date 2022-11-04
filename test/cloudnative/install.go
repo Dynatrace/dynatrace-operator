@@ -77,7 +77,7 @@ func getSecretConfig(t *testing.T) secrets.Secret {
 
 func checkInitContainers(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 	resources := environmentConfig.Client().Resources()
-	pods := sampleapps.Get(t, ctx, resources)
+	pods := pod.List(t, ctx, resources, sampleapps.Namespace)
 	clientset, err := kubernetes.NewForConfig(resources.GetConfig())
 
 	require.NoError(t, err)
