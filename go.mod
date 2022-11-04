@@ -12,7 +12,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0-rc2
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.13.0
+	github.com/prometheus/client_golang v1.13.1
 	github.com/prometheus/client_model v0.3.0
 	github.com/spf13/afero v1.9.2
 	github.com/spf13/cobra v1.6.1
@@ -21,8 +21,8 @@ require (
 	golang.org/x/exp v0.0.0-20221011201855-a3968a42eed6
 	golang.org/x/sys v0.0.0-20220919091848-fb04ddd9f9c8
 	google.golang.org/grpc v1.50.1
-	istio.io/api v0.0.0-20221005164339-97dc20dc0ff3
-	istio.io/client-go v1.15.2
+	istio.io/api v0.0.0-20221013011440-bc935762d2b9
+	istio.io/client-go v1.15.3
 	k8s.io/api v0.25.3
 	k8s.io/apiextensions-apiserver v0.25.3
 	k8s.io/apimachinery v0.25.3
