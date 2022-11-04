@@ -57,6 +57,13 @@ func (dynakubeBuilder Builder) WithDefaultObjectMeta() Builder {
 	return dynakubeBuilder
 }
 
+func (dynakubeBuilder Builder) WithAnnotations(annotations map[string]string) Builder {
+	for key, value := range annotations {
+		dynakubeBuilder.dynakube.ObjectMeta.Annotations[key] = value
+	}
+	return dynakubeBuilder
+}
+
 func (dynakubeBuilder Builder) ApiUrl(apiUrl string) Builder {
 	dynakubeBuilder.dynakube.Spec.APIURL = apiUrl
 	return dynakubeBuilder
@@ -72,6 +79,11 @@ func (dynakubeBuilder Builder) WithActiveGate() Builder {
 			dynatracev1beta1.StatsdIngestCapability.DisplayName,
 		},
 	}
+	return dynakubeBuilder
+}
+
+func (dynakubeBuilder Builder) Tokens(secretName string) Builder {
+	dynakubeBuilder.dynakube.Spec.Tokens = secretName
 	return dynakubeBuilder
 }
 

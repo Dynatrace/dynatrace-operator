@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/sampleapps"
 	"github.com/Dynatrace/dynatrace-operator/test/secrets"
 	"github.com/pkg/errors"
@@ -57,7 +58,7 @@ func AssessIstio(builder *features.FeatureBuilder) {
 
 func checkSampleAppIstioInitContainers(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 	resources := environmentConfig.Client().Resources()
-	pods := sampleapps.Get(t, ctx, resources)
+	pods := pod.List(t, ctx, resources, sampleapps.Namespace)
 
 	assertIstioInitContainer(t, pods)
 	return ctx
