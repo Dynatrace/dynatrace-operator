@@ -80,8 +80,8 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 		testDockerServerHandler(
 			"HEAD",
 			[]string{
-				"/",
-				"/" + testOneAgentCodeModulesImage + ":" + testVersion,
+				"/v2/",
+				"/v2/" + testOneAgentCodeModulesImage + "/manifests/" + testVersion,
 			}))
 	defer dockerServer.Close()
 
