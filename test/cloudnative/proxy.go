@@ -64,7 +64,7 @@ func WithProxy(t *testing.T, proxySpec *v1beta1.DynaKubeProxy) features.Feature 
 
 	cloudNativeWithProxy.Assess("restart sample apps", sampleapps.Restart)
 	cloudNativeWithProxy.Assess("check existing init container and env vars", checkSampleInitContainer)
-	cloudNativeWithProxy.Assess("check operator logs", checkLogs)
+	cloudNativeWithProxy.Assess("check logs", checkLogs)
 
 	return cloudNativeWithProxy.Feature()
 }
