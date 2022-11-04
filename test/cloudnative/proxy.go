@@ -106,9 +106,9 @@ func checkLogs(ctx context.Context, t *testing.T, environmentConfig *envconf.Con
 }
 
 func checkSampleInitContainer(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-	resoruces := environmentConfig.Client().Resources()
+	resources := environmentConfig.Client().Resources()
 	restConfig := environmentConfig.Client().RESTConfig()
-	pods := sampleapps.Get(t, ctx, resoruces)
+	pods := sampleapps.Get(t, ctx, resources)
 
 	for _, podItem := range pods.Items {
 		require.NotNil(t, podItem)
