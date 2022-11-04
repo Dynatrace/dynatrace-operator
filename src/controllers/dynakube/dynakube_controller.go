@@ -129,9 +129,10 @@ func (controller *DynakubeController) Reconcile(ctx context.Context, request rec
 		log.Error(err, "failed to generate hash for the status section")
 	}
 	if isStatusDifferent {
+		log.Info("status changed, updating DynaKube")
 		requeueAfter = changesUpdateInterval
 		if errClient := controller.updateDynakubeStatus(ctx, dynakube); errClient != nil {
-			return reconcile.Result{}, errors.WithMessagef(errClient, "failed to update CR after failure, original error: %s", err)
+			return reconcile.Result{}, errors.WithMessagef(errClient, "failed to update DynaKube after failure, original error: %s", err)
 		}
 	}
 
@@ -167,7 +168,7 @@ func (controller *DynakubeController) reconcileIstio(dynakube *dynatracev1beta1.
 		updated, err = istio.NewIstioReconciler(controller.config, controller.scheme).ReconcileIstio(dynakube)
 		if err != nil {
 			// If there are errors log them, but move on.
-			log.Info("Istio: failed to reconcile objects", "error", err)
+			log.Info("istio: failed to reconcile objects", "error", err)
 		}
 	}
 
@@ -264,6 +265,7 @@ func (controller *DynakubeController) setupAppInjection(ctx context.Context, dyn
 	if dynakube.ApplicationMonitoringMode() {
 		dynakube.Status.SetPhase(dynatracev1beta1.Running)
 	}
+	log.Info("app injection reconciled")
 	return nil
 }
 
