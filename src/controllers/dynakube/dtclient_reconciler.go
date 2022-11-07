@@ -73,7 +73,7 @@ func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dyn
 		})
 		r.removePaaSTokenCondition()
 
-		return nil, nil
+		return nil, errors.New(message)
 	} else if err != nil {
 		message := fmt.Sprintf("Secret '%s' couldn't be read", r.secretKey)
 		r.setAndLogCondition(&r.status.Conditions, metav1.Condition{
@@ -86,16 +86,16 @@ func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dyn
 	}
 
 	if r.ApiToken == "" {
-		msg := fmt.Sprintf("Token %s on secret %s missing", dtclient.DynatraceApiToken, r.secretKey)
+		message := fmt.Sprintf("Token %s on secret %s is missing", dtclient.DynatraceApiToken, r.secretKey)
 		r.setAndLogCondition(&r.status.Conditions, metav1.Condition{
 			Type:    dynatracev1beta1.APITokenConditionType,
 			Status:  metav1.ConditionFalse,
 			Reason:  dynatracev1beta1.ReasonTokenMissing,
-			Message: msg,
+			Message: message,
 		})
 		r.removePaaSTokenCondition()
 
-		return nil, nil
+		return nil, errors.New(message)
 	}
 
 	dtc, err := dtf(DynatraceClientProperties{
