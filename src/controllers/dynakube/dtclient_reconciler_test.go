@@ -42,7 +42,7 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 		dtc, err := rec.Reconcile(context.TODO(), deepCopy)
 		assert.Nil(t, dtc)
 		assert.False(t, rec.ValidTokens)
-		assert.Nil(t, err)
+		assert.Error(t, err)
 
 		cond := meta.FindStatusCondition(deepCopy.Status.Conditions, dynatracev1beta1.PaaSTokenConditionType)
 		assert.Nil(t, cond)
@@ -65,13 +65,13 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 
 		dtc, err := rec.Reconcile(context.TODO(), dk)
 		assert.Nil(t, dtc)
-		assert.NoError(t, err)
+		assert.Error(t, err)
 		assert.False(t, rec.ValidTokens)
 
 		cond := meta.FindStatusCondition(dk.Status.Conditions, dynatracev1beta1.PaaSTokenConditionType)
 		assert.Nil(t, cond)
 		AssertCondition(t, dk, dynatracev1beta1.APITokenConditionType, false, dynatracev1beta1.ReasonTokenMissing,
-			"Token apiToken on secret dynatrace:dynakube missing")
+			"Token apiToken on secret dynatrace:dynakube is missing")
 
 		mock.AssertExpectationsForObjects(t, dtcMock)
 	})
