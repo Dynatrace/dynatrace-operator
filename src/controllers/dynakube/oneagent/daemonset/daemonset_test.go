@@ -38,7 +38,7 @@ func TestUseImmutableImage(t *testing.T) {
 
 		podSpecs := ds.Spec.Template.Spec
 		assert.NotNil(t, podSpecs)
-		assert.Equal(t, instance.ImmutableOneAgentImage(), podSpecs.Containers[0].Image)
+		assert.Equal(t, instance.OneAgentImage(), podSpecs.Containers[0].Image)
 	})
 	t.Run(`if image is set, set image is used`, func(t *testing.T) {
 		instance := dynatracev1beta1.DynaKube{
@@ -97,7 +97,7 @@ func TestLabels(t *testing.T) {
 
 		podSpecs := ds.Spec.Template.Spec
 		assert.NotNil(t, podSpecs)
-		assert.Equal(t, instance.ImmutableOneAgentImage(), podSpecs.Containers[0].Image)
+		assert.Equal(t, instance.OneAgentImage(), podSpecs.Containers[0].Image)
 		assert.Equal(t, expectedLabels, ds.Labels)
 		assert.Equal(t, expectedMatchLabels, ds.Spec.Selector.MatchLabels)
 		assert.Equal(t, expectedLabels, ds.Spec.Template.Labels)
@@ -597,7 +597,7 @@ func TestImmutableOneAgentImage(t *testing.T) {
 		}
 		image := dsInfo.immutableOneAgentImage()
 
-		assert.Equal(t, dsInfo.instance.ImmutableOneAgentImage(), image)
+		assert.Equal(t, dsInfo.instance.OneAgentImage(), image)
 	})
 }
 

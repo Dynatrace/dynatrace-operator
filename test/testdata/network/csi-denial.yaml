@@ -1,0 +1,16 @@
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: "csi-driver-deny-egress-to-world"
+  namespace: dynatrace
+spec:
+  endpointSelector:
+    matchLabels:
+      internal.oneagent.dynatrace.com/app: csi-driver
+      internal.oneagent.dynatrace.com/component: csi-driver
+  egress:
+    - toEntities:
+        - "cluster"
+  ingress:
+    - fromEntities:
+        - "cluster"

@@ -24,7 +24,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
       - name: Set up Helm
-        uses: azure/setup-helm@b5b231a831f96336bbfeccc1329990f0005c5bb1 # v3.3
+        uses: azure/setup-helm@f382f75448129b3be48f8121b9857be18d815a82 # v3.4
       - name: Download dependencies
         id: helm-unittest-download
         run: |
@@ -41,7 +41,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
       - name: Set up Helm
-        uses: azure/setup-helm@b5b231a831f96336bbfeccc1329990f0005c5bb1 # v3.3
+        uses: azure/setup-helm@f382f75448129b3be48f8121b9857be18d815a82 # v3.4
       - name: Run Linting
         id: helm-linting
         run: |
@@ -80,7 +80,7 @@ jobs:
         run: |
           hack/build/ci/install-cgo-dependencies.sh
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@537aa1903e5d359d0b27dbc19ddd22c5087f3fbc # v3.2.0
+        uses: golangci/golangci-lint-action@07db5389c99593f11ad7b44463c2d4233066a9b1 # v3.3.0
         with:
           version: v1.49
           args: --build-tags containers_image_storage_stub,e2e --timeout 300s
@@ -95,6 +95,15 @@ jobs:
         id: prep
         run: |
           hack/build/ci/prepare-build-variables.sh
+      - name: Docker metadata
+        uses: docker/metadata-action@57396166ad8aefe6098280995947635806a0e6ea # v4.1.1
+        id: meta
+        with:
+          images: dynatrace/dynatrace-operator
+          tags: ${{ steps.prep.outputs.docker_image_tag }}
+          labels: |
+            ${{ steps.prep.outputs.docker_image_labels }}
+            vcs-ref=${{ github.sha }}
       - name: Prepare build parameters
         id: prepenv
         run: |
@@ -105,7 +114,7 @@ jobs:
           echo ::set-output name=registry::${{ env.DOCKER_REGISTRY }}
           echo ::set-output name=repository::${{ env.DOCKER_REPOSITORY }}
     outputs:
-      labels: ${{ steps.prep.outputs.docker_image_labels }}
+      labels: ${{ steps.meta.outputs.labels }}
       version: ${{ steps.prep.outputs.docker_image_tag }}
       registry: ${{ steps.prepenv.outputs.registry }}
       repository: ${{ steps.prepenv.outputs.repository }}

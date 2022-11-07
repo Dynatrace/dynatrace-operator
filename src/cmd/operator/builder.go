@@ -101,11 +101,11 @@ func (builder CommandBuilder) Build() *cobra.Command {
 
 func (builder CommandBuilder) setClientFromConfig(kubeCfg *rest.Config) (CommandBuilder, error) {
 	if builder.client == nil {
-		client, err := client.New(kubeCfg, client.Options{})
+		clt, err := client.New(kubeCfg, client.Options{})
 		if err != nil {
 			return builder, err
 		}
-		builder = builder.setClient(client)
+		return builder.setClient(clt), nil
 	}
 	return builder, nil
 }
@@ -116,6 +116,7 @@ func (builder CommandBuilder) buildRun() func(cmd *cobra.Command, args []string)
 		if err != nil {
 			return err
 		}
+
 		builder, err = builder.setClientFromConfig(kubeCfg)
 		if err != nil {
 			return err

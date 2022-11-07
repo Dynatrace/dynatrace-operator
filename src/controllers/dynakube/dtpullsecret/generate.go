@@ -42,7 +42,6 @@ func (r *Reconciler) GenerateData(tokens token.Tokens) (map[string][]byte, error
 
 	connectionInfo := r.dynakube.ConnectionInfo()
 	registry, err := getImageRegistryFromAPIURL(r.dynakube.Spec.APIURL)
-
 	if err != nil {
 		return nil, err
 	}
