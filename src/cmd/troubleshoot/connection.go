@@ -1,8 +1,10 @@
 package troubleshoot
 
 import (
+	"context"
+
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/pkg/errors"
 )
@@ -37,7 +39,7 @@ func checkConnection(troubleshootCtx *troubleshootContext) error {
 		return err
 	}
 
-	dynatraceClientProperties := dtclient2.NewProperties(troubleshootCtx.context, troubleshootCtx.apiReader, troubleshootCtx.dynakube, tokens)
+	dynatraceClientProperties := dynatraceclient.NewProperties(troubleshootCtx.context, troubleshootCtx.apiReader, troubleshootCtx.dynakube, tokens)
 	if err != nil {
 		return errorWithMessagef(err, "failed to configure DynatraceAPI client")
 	}

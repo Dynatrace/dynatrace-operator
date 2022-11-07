@@ -318,14 +318,6 @@ func getDeploymentType(dynakube *dynatracev1beta1.DynaKube) string {
 	return ""
 }
 
-func updatePhaseIfChanged(instance *dynatracev1beta1.DynaKube, newPhase dynatracev1beta1.DynaKubePhaseType) bool {
-	if instance.Status.Phase == newPhase {
-		return false
-	}
-	instance.Status.Phase = newPhase
-	return true
-}
-
 func (controller *DynakubeController) removeOneAgentDaemonSet(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
 	oneAgentDaemonSet := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dynakube.OneAgentDaemonsetName(), Namespace: dynakube.Namespace}}
 	return kubeobjects.Delete(ctx, controller.client, &oneAgentDaemonSet)
