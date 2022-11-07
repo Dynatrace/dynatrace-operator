@@ -2,13 +2,13 @@ package dynatraceclient
 
 import (
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
-	"github.com/pkg/errors"
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
+	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -56,7 +56,7 @@ func (r *Factory) Create(ctx context.Context, dynakube *dynatracev1beta1.DynaKub
 		dynakube.Status.LastAPITokenProbeTimestamp = &metav1.Time{}
 	}
 
-	tokens, err = r.checkTokenScopes(dynakube, tokens, dynatraceClient)
+	_, err = r.checkTokenScopes(dynakube, tokens, dynatraceClient)
 	if err != nil {
 		return nil, err
 	}

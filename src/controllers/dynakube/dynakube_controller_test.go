@@ -3,12 +3,12 @@ package dynakube
 import (
 	"context"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
-	"k8s.io/apimachinery/pkg/api/meta"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
@@ -24,6 +24,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -914,6 +915,54 @@ func TestReconcileIstio(t *testing.T) {
 	assert.False(t, updated)
 
 	// Testing what happens if the flag is enabled is implemented as an e2e test
+}
+
+func TestTokenConditions(t *testing.T) {
+	t.Run("token condition error is set if token are invalid", func(t *testing.T) {
+		fakeClient := fake.NewClient()
+		dynakube := &dynatracev1beta1.DynaKube{}
+		controller := &DynakubeController{
+			client:    fakeClient,
+			apiReader: fakeClient,
+		}
+
+		err := controller.reconcileDynaKube(context.TODO(), dynakube)
+
+		assert.Error(t, err)
+		assertCondition(t, dynakube, dynatracev1beta1.TokenConditionType, metav1.ConditionFalse, dynatracev1beta1.ReasonTokenError, "secrets \"\" not found")
+	})
+	t.Run("token condition is set if token are valid", func(t *testing.T) {
+		dynakube := &dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+		}
+		fakeClient := fake.NewClient(&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+			Data: map[string][]byte{
+				dtclient.DynatraceApiToken: []byte(testAPIToken),
+			},
+		})
+		mockClient := &dtclient.MockDynatraceClient{}
+		controller := &DynakubeController{
+			client:       fakeClient,
+			apiReader:    fakeClient,
+			dtcBuildFunc: dynatraceclient.StaticDynatraceClient(mockClient),
+		}
+		requiredScopes := token.Tokens{
+			dtclient.DynatraceApiToken: {Value: testAPIToken},
+		}.SetScopesForDynakube(*dynakube).ApiToken().RequiredScopes
+
+		mockClient.On("GetTokenScopes", testAPIToken).Return(dtclient.TokenScopes(requiredScopes), nil)
+
+		_ = controller.reconcileDynaKube(context.TODO(), dynakube)
+
+		assertCondition(t, dynakube, dynatracev1beta1.TokenConditionType, metav1.ConditionTrue, dynatracev1beta1.ReasonTokenReady, "")
+	})
 }
 
 func assertCondition(t *testing.T, dk *dynatracev1beta1.DynaKube, expectedConditionType string, expectedConditionStatus metav1.ConditionStatus, expectedReason string, expectedMessage string) {

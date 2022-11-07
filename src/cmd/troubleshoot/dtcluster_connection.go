@@ -3,9 +3,9 @@ package troubleshoot
 import (
 	"context"
 	"fmt"
+
 	dtclient2 "github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
-
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 )
 
