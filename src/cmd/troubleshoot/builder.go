@@ -7,6 +7,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/rest"
@@ -53,7 +54,7 @@ func (builder CommandBuilder) Build() *cobra.Command {
 }
 
 func addFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&dynakubeFlagValue, dynakubeFlagName, "dynakube", "Specify a different Dynakube name.")
+	cmd.PersistentFlags().StringVar(&dynakubeFlagValue, dynakubeFlagName, "", "Specify a different Dynakube name.")
 	cmd.PersistentFlags().StringVar(&namespaceFlagValue, namespaceFlagName, defaultNamespace(), "Specify a different Namespace.")
 }
 
@@ -88,27 +89,84 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		}
 
 		apiReader := k8scluster.GetAPIReader()
-		tests := []troubleshootFunc{
+		dynakubeUnrelatedTests := []troubleshootFunc{
 			checkNamespace,
-			checkDynakube,
-			checkDTClusterConnection,
-			checkImagePullable,
 		}
+
 		troubleshootCtx := troubleshootContext{
 			context:       context.Background(),
 			apiReader:     apiReader,
 			httpClient:    &http.Client{},
 			namespaceName: namespaceFlagValue,
-			dynakubeName:  dynakubeFlagValue,
 		}
-
-		for _, test := range tests {
+		for _, test := range dynakubeUnrelatedTests {
 			err = test(&troubleshootCtx)
 			if err != nil {
 				logErrorf(err.Error())
 				return nil
 			}
 		}
+
+		perDynakubeTests := []troubleshootFunc{
+			checkDynakube,
+			checkDTClusterConnection,
+			checkImagePullable,
+		}
+
+		dynakubes, err := getDynakubes(&troubleshootCtx)
+		if err != nil {
+			return nil
+		}
+
+		for _, dynakube := range dynakubes {
+			troubleshootCtx = troubleshootContext{
+				context:       context.Background(),
+				apiReader:     apiReader,
+				httpClient:    &http.Client{},
+				namespaceName: namespaceFlagValue,
+				dynakube:      dynakube,
+				dynakubeName:  dynakube.Name,
+			}
+
+			for _, test := range perDynakubeTests {
+				err = test(&troubleshootCtx)
+				if err != nil {
+					logErrorf(err.Error())
+					return nil
+				}
+			}
+		}
 		return nil
 	}
+}
+
+func getDynakubes(troubleshootCtx *troubleshootContext) ([]dynatracev1beta1.DynaKube, error) {
+	var err error
+	var dynakubes []dynatracev1beta1.DynaKube
+	if dynakubeFlagValue == "" {
+		logInfof("No Dynakube specified. Checking all Dynakubes in namespace '%s'", namespaceFlagValue)
+		dynakubes, err = getAllDynakubesInNamespace(troubleshootCtx)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		dynakube := dynatracev1beta1.DynaKube{}
+		dynakube.Name = dynakubeFlagValue
+		dynakubes = append(dynakubes, dynakube)
+	}
+	return dynakubes, nil
+}
+
+func getAllDynakubesInNamespace(troubleshootContext *troubleshootContext) ([]dynatracev1beta1.DynaKube, error) {
+	query := kubeobjects.NewDynakubeQuery(troubleshootContext.apiReader, troubleshootContext.namespaceName).WithContext(troubleshootContext.context)
+	dynakubes, err := query.List()
+	if err != nil {
+		logErrorf("failed to list Dynakubes: %v", err)
+		return nil, err
+	}
+	if len(dynakubes.Items) == 0 {
+		logErrorf("no Dynakubes found in namespace %s", namespaceFlagValue)
+		return nil, err
+	}
+	return dynakubes.Items, nil
 }

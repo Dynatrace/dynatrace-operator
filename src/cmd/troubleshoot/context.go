@@ -14,8 +14,8 @@ type troubleshootContext struct {
 	context            context.Context
 	apiReader          client.Reader
 	httpClient         *http.Client
-	namespaceName      string // the default namespace ("dynatrace") or provided in the command line
-	dynakubeName       string // the default name of dynakube ("dynakube") or provided in the command line
+	namespaceName      string // the default namespace ("dynatrace") or value provided in the command line
+	dynakubeName       string // all dynakubes in namespaceName or value provided in the command line
 	dynakube           v1beta1.DynaKube
 	dynatraceApiSecret corev1.Secret
 	pullSecret         corev1.Secret
