@@ -19,6 +19,7 @@ package csiprovisioner
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"time"
 
@@ -26,7 +27,6 @@ import (
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
 	csigc "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/gc"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/image"
 	"github.com/pkg/errors"
@@ -50,7 +50,7 @@ type OneAgentProvisioner struct {
 	client       client.Client
 	apiReader    client.Reader
 	opts         dtcsi.CSIOptions
-	dtcBuildFunc dynakube.DynatraceClientFunc
+	dtcBuildFunc dynatraceclient.BuildFunc
 	fs           afero.Fs
 	recorder     record.EventRecorder
 	db           metadata.Access
@@ -65,7 +65,7 @@ func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions, db metad
 		client:       mgr.GetClient(),
 		apiReader:    mgr.GetAPIReader(),
 		opts:         opts,
-		dtcBuildFunc: dynakube.BuildDynatraceClient,
+		dtcBuildFunc: dynatraceclient.BuildDynatraceClient,
 		fs:           afero.NewOsFs(),
 		recorder:     mgr.GetEventRecorderFor("OneAgentProvisioner"),
 		db:           db,
@@ -272,7 +272,7 @@ func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk *dynatra
 		return nil, err
 	}
 
-	dynatraceClientProperties := dynakube.NewDynatraceClientProperties(ctx, provisioner.apiReader, *dk, tokens)
+	dynatraceClientProperties := dynatraceclient.NewProperties(ctx, provisioner.apiReader, *dk, tokens)
 	if err != nil {
 		return nil, err
 	}

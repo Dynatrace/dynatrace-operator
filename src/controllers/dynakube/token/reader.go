@@ -2,6 +2,7 @@ package token
 
 import (
 	"context"
+	"fmt"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/pkg/errors"
@@ -63,7 +64,7 @@ func (reader Reader) verifyApiTokenExists(tokens Tokens) error {
 	apiToken, hasApiToken := tokens[dtclient.DynatraceApiToken]
 
 	if !hasApiToken || len(apiToken.Value) == 0 {
-		return errors.New("the API token is missing from the token secret")
+		return errors.New(fmt.Sprintf("the API token is missing from the token secret '%s:%s'", reader.dynakube.Namespace, reader.dynakube.Tokens()))
 	}
 
 	return nil

@@ -32,7 +32,7 @@ func (tokens Tokens) getToken(tokenName string) Token {
 	return token
 }
 
-func (tokens Tokens) SetScopes(dynakube dynatracev1beta1.DynaKube) Tokens {
+func (tokens Tokens) SetScopesForDynakube(dynakube dynatracev1beta1.DynaKube) Tokens {
 	_, hasPaasToken := tokens[dtclient.DynatracePaasToken]
 
 	for tokenType, token := range tokens {

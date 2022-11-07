@@ -36,7 +36,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 	dtc := &dtclient.MockDynatraceClient{}
 	dtc.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
 
-	t.Run(`Reconcile works with minimal setup`, func(t *testing.T) {
+	t.Run(`Create works with minimal setup`, func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
@@ -48,7 +48,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 		assert.True(t, upd)
 	})
-	t.Run(`Reconcile AG proxy secret`, func(t *testing.T) {
+	t.Run(`Create AG proxy secret`, func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
@@ -68,7 +68,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err = fakeClient.Get(context.TODO(), types.NamespacedName{Name: "dynatrace-activegate-internal-proxy", Namespace: testNamespace}, &proxySecret)
 		assert.NoError(t, err)
 	})
-	t.Run(`Reconcile AG capability (creation and deletion)`, func(t *testing.T) {
+	t.Run(`Create AG capability (creation and deletion)`, func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,

@@ -1,9 +1,12 @@
 package dtpullsecret
 
 import (
+	"context"
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
+	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -53,11 +56,13 @@ func TestReconciler_GenerateData(t *testing.T) {
 		},
 	}
 	r := &Reconciler{
-		dynakube:  dynakube,
-		paasToken: testPaasToken,
+		dynakube: dynakube,
+		ctx:      context.TODO(),
 	}
 
-	data, err := r.GenerateData()
+	data, err := r.GenerateData(token.Tokens{
+		dtclient.DynatracePaasToken: token.Token{Value: testPaasToken},
+	})
 
 	assert.NoError(t, err)
 	assert.NotNil(t, data)

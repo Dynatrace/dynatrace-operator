@@ -1,4 +1,4 @@
-package dynakube
+package dynatraceclient
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
@@ -11,7 +11,6 @@ import (
 )
 
 const (
-	testName             = "test-name"
 	testNamespace        = "test-namespace"
 	testEndpoint         = "https://test-endpoint.com"
 	testValue            = "test-value"
@@ -26,7 +25,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 				APIURL: testEndpoint,
 			}}
 		fakeClient := fake.NewClient(instance)
-		dtf := DynatraceClientProperties{
+		dtf := Properties{
 			ApiReader: fakeClient,
 			Tokens: map[string]token.Token{
 				dtclient.DynatraceApiToken:  {Value: testValue},
@@ -41,7 +40,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 		assert.NotNil(t, dtc)
 	})
 	t.Run(`BuildDynatraceClient handles nil instance`, func(t *testing.T) {
-		dtc, err := BuildDynatraceClient(DynatraceClientProperties{})
+		dtc, err := BuildDynatraceClient(Properties{})
 		assert.Nil(t, dtc)
 		assert.Error(t, err)
 	})
@@ -51,7 +50,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 				APIURL: testEndpoint,
 			}}
 		fakeClient := fake.NewClient(instance)
-		dtf := DynatraceClientProperties{
+		dtf := Properties{
 			ApiReader: fakeClient,
 			Tokens: map[string]token.Token{
 				//Simulate missing values
@@ -65,7 +64,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 		assert.Nil(t, dtc)
 		assert.Error(t, err)
 
-		dtf = DynatraceClientProperties{
+		dtf = Properties{
 			ApiReader: fakeClient,
 			ApiUrl:    instance.Spec.APIURL,
 			Namespace: testNamespace,
@@ -82,7 +81,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 					ValueFrom: testKey,
 				}}}
 		fakeClient := fake.NewClient(instance)
-		dtf := DynatraceClientProperties{
+		dtf := Properties{
 			ApiReader: fakeClient,
 			Tokens: map[string]token.Token{
 				dtclient.DynatraceApiToken:  {Value: testValue},
@@ -90,7 +89,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 			},
 			ApiUrl:    instance.Spec.APIURL,
 			Namespace: testNamespace,
-			Proxy:     (*DynatraceClientProxy)(instance.Spec.Proxy),
+			Proxy:     (*proxy)(instance.Spec.Proxy),
 		}
 		dtc, err := BuildDynatraceClient(dtf)
 
@@ -105,7 +104,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 			}}
 
 		fakeClient := fake.NewClient(instance)
-		dtf := DynatraceClientProperties{
+		dtf := Properties{
 			ApiReader: fakeClient,
 			Tokens: map[string]token.Token{
 				dtclient.DynatraceApiToken:  {Value: testValue},

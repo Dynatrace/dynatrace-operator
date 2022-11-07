@@ -1,4 +1,4 @@
-package dynakube
+package dynatraceclient
 
 import (
 	"context"
@@ -11,7 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,20 +32,17 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 		fakeClient := fake.NewClient()
 		dtcMock := &dtclient.MockDynatraceClient{}
 
-		rec := &DynatraceClientReconciler{
-			Client:              fakeClient,
-			DynatraceClientFunc: StaticDynatraceClient(dtcMock),
+		rec := &Factory{
+			client:              fakeClient,
+			dynatraceClientFunc: StaticDynatraceClient(dtcMock),
 		}
 
-		dtc, err := rec.Reconcile(context.TODO(), deepCopy)
-		assert.Nil(t, dtc)
-		assert.Nil(t, rec.Tokens)
+		result, err := rec.Create(context.TODO(), deepCopy)
+		assert.Nil(t, result)
 		assert.NotNil(t, err)
 
-		cond := meta.FindStatusCondition(deepCopy.Status.Conditions, dynatracev1beta1.PaaSTokenConditionType)
+		cond := meta.FindStatusCondition(deepCopy.Status.Conditions, dynatracev1beta1.TokenConditionType)
 		assert.Nil(t, cond)
-		AssertCondition(t, deepCopy, dynatracev1beta1.TokenConditionType, metav1.ConditionFalse, dynatracev1beta1.ReasonTokenMissing,
-			"secrets \"dynakube\" not found")
 
 		mock.AssertExpectationsForObjects(t, dtcMock)
 	})
@@ -56,20 +52,17 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 		c := fake.NewClient(NewSecret(dynaKube, namespace, map[string]string{dtclient.DynatracePaasToken: ""}))
 		dtcMock := &dtclient.MockDynatraceClient{}
 
-		rec := &DynatraceClientReconciler{
-			Client:              c,
-			DynatraceClientFunc: StaticDynatraceClient(dtcMock),
+		rec := &Factory{
+			client:              c,
+			dynatraceClientFunc: StaticDynatraceClient(dtcMock),
 		}
 
-		dtc, err := rec.Reconcile(context.TODO(), dk)
-		assert.Nil(t, dtc)
+		result, err := rec.Create(context.TODO(), dk)
+		assert.Nil(t, result)
 		assert.Error(t, err)
-		assert.Nil(t, rec.Tokens)
 
 		cond := meta.FindStatusCondition(dk.Status.Conditions, dynatracev1beta1.PaaSTokenConditionType)
 		assert.Nil(t, cond)
-		AssertCondition(t, dk, dynatracev1beta1.TokenConditionType, metav1.ConditionFalse, dynatracev1beta1.ReasonTokenMissing,
-			"Token apiToken on secret dynatrace:dynakube missing")
 
 		mock.AssertExpectationsForObjects(t, dtcMock)
 	})
@@ -83,19 +76,17 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 				dtclient.TokenScopeInstallerDownload,
 				dtclient.TokenScopeActiveGateTokenCreate,
 			}, nil)
-		rec := &DynatraceClientReconciler{
-			Client:              c,
-			DynatraceClientFunc: StaticDynatraceClient(dtcMock),
+		rec := &Factory{
+			client:              c,
+			dynatraceClientFunc: StaticDynatraceClient(dtcMock),
 		}
 
-		dtc, err := rec.Reconcile(context.TODO(), dk)
+		dtc, err := rec.Create(context.TODO(), dk)
 		assert.NotNil(t, dtc)
 		assert.Nil(t, err)
 
 		cond := meta.FindStatusCondition(dk.Status.Conditions, dynatracev1beta1.PaaSTokenConditionType)
 		assert.Nil(t, cond)
-		AssertCondition(t, dk, dynatracev1beta1.APITokenConditionType, metav1.ConditionTrue, dynatracev1beta1.ReasonTokenReady,
-			"Ready")
 
 		mock.AssertExpectationsForObjects(t, dtcMock)
 	})
@@ -108,46 +99,29 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 		dtcMock.On("GetTokenScopes", "42").Return(dtclient.TokenScopes(nil), dtclient.ServerError{Code: 401, Message: "Token Authentication failed"})
 		dtcMock.On("GetTokenScopes", "84").Return(dtclient.TokenScopes(nil), fmt.Errorf("random error"))
 
-		rec := &DynatraceClientReconciler{
-			Client:              c,
-			DynatraceClientFunc: StaticDynatraceClient(dtcMock),
+		rec := &Factory{
+			client:              c,
+			dynatraceClientFunc: StaticDynatraceClient(dtcMock),
 		}
 
-		dtc, err := rec.Reconcile(context.TODO(), dk)
-		assert.NotEqual(t, dtcMock, dtc)
+		result, err := rec.Create(context.TODO(), dk)
+		assert.Nil(t, result)
 		assert.Error(t, err)
-		assert.Nil(t, rec.Tokens)
-
-		AssertCondition(t, dk, dynatracev1beta1.PaaSTokenConditionType, metav1.ConditionFalse, dynatracev1beta1.ReasonTokenUnauthorized,
-			"Token on secret dynatrace:dynakube unauthorized")
-		AssertCondition(t, dk, dynatracev1beta1.APITokenConditionType, metav1.ConditionFalse, dynatracev1beta1.ReasonTokenError,
-			"error when querying token on secret dynatrace:dynakube: random error")
 
 		mock.AssertExpectationsForObjects(t, dtcMock)
 	})
 
-	t.Run("PaaS token has wrong scope, API token has leading and trailing space characters", func(t *testing.T) {
+	t.Run("API token has leading and trailing space characters", func(t *testing.T) {
 		dk := base.DeepCopy()
 		c := fake.NewClient(NewSecret(dynaKube, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: " \t84\n  "}))
 
-		dtcMock := &dtclient.MockDynatraceClient{}
-		dtcMock.On("GetTokenScopes", "42").Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport}, nil)
-
-		rec := &DynatraceClientReconciler{
-			Client:              c,
-			DynatraceClientFunc: StaticDynatraceClient(dtcMock),
+		rec := &Factory{
+			client: c,
 		}
 
-		dtc, err := rec.Reconcile(context.TODO(), dk)
-		assert.NotEqual(t, dtcMock, dtc)
+		dtc, err := rec.Create(context.TODO(), dk)
+		assert.Nil(t, dtc)
 		assert.Error(t, err)
-
-		AssertCondition(t, dk, dynatracev1beta1.PaaSTokenConditionType, metav1.ConditionFalse, dynatracev1beta1.ReasonTokenScopeMissing,
-			"Token on secret dynatrace:dynakube missing scopes [InstallerDownload]")
-		AssertCondition(t, dk, dynatracev1beta1.APITokenConditionType, metav1.ConditionFalse, dynatracev1beta1.ReasonTokenUnauthorized,
-			"Token on secret dynatrace:dynakube has leading and/or trailing spaces")
-
-		mock.AssertExpectationsForObjects(t, dtcMock)
 	})
 
 	t.Run("InstallerDownload permission is sufficient for dynakube with feature-disable-hosts-requests", func(t *testing.T) {
@@ -162,16 +136,14 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 			dtclient.TokenScopeActiveGateTokenCreate,
 		}, nil)
 
-		rec := &DynatraceClientReconciler{
-			Client:              c,
-			DynatraceClientFunc: StaticDynatraceClient(dtcMock),
+		rec := &Factory{
+			client:              c,
+			dynatraceClientFunc: StaticDynatraceClient(dtcMock),
 		}
 
-		dtc, err := rec.Reconcile(context.TODO(), dk)
+		dtc, err := rec.Create(context.TODO(), dk)
 		assert.Equal(t, dtcMock, dtc)
 		assert.NoError(t, err)
-
-		AssertCondition(t, dk, dynatracev1beta1.APITokenConditionType, metav1.ConditionTrue, dynatracev1beta1.ReasonTokenReady, "Ready")
 	})
 
 	t.Run("ApiToken without permissions and PaasToken with InstallerDownload permission is sufficient for dynakube with feature-disable-hosts-requests", func(t *testing.T) {
@@ -185,17 +157,14 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 		dtcMock.On("GetTokenScopes", "42").Return(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, nil)
 		dtcMock.On("GetTokenScopes", "84").Return(dtclient.TokenScopes{dtclient.TokenScopeActiveGateTokenCreate}, nil)
 
-		rec := &DynatraceClientReconciler{
-			Client:              c,
-			DynatraceClientFunc: StaticDynatraceClient(dtcMock),
+		rec := &Factory{
+			client:              c,
+			dynatraceClientFunc: StaticDynatraceClient(dtcMock),
 		}
 
-		dtc, err := rec.Reconcile(context.TODO(), dk)
+		dtc, err := rec.Create(context.TODO(), dk)
 		assert.Equal(t, dtcMock, dtc)
 		assert.NoError(t, err)
-
-		AssertCondition(t, dk, dynatracev1beta1.PaaSTokenConditionType, metav1.ConditionTrue, dynatracev1beta1.ReasonTokenReady, "Ready")
-		AssertCondition(t, dk, dynatracev1beta1.APITokenConditionType, metav1.ConditionTrue, dynatracev1beta1.ReasonTokenReady, "Ready")
 	})
 
 	t.Run("PaaS and API token are ready", func(t *testing.T) {
@@ -208,17 +177,14 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 			dtclient.TokenScopeActiveGateTokenCreate,
 		}, nil)
 
-		rec := &DynatraceClientReconciler{
-			Client:              c,
-			DynatraceClientFunc: StaticDynatraceClient(dtcMock),
+		rec := &Factory{
+			client:              c,
+			dynatraceClientFunc: StaticDynatraceClient(dtcMock),
 		}
 
-		dtc, err := rec.Reconcile(context.TODO(), dk)
+		dtc, err := rec.Create(context.TODO(), dk)
 		assert.Equal(t, dtcMock, dtc)
 		assert.NoError(t, err)
-
-		AssertCondition(t, dk, dynatracev1beta1.PaaSTokenConditionType, metav1.ConditionTrue, dynatracev1beta1.ReasonTokenReady, "Ready")
-		AssertCondition(t, dk, dynatracev1beta1.APITokenConditionType, metav1.ConditionTrue, dynatracev1beta1.ReasonTokenReady, "Ready")
 
 		mock.AssertExpectationsForObjects(t, dtcMock)
 	})
@@ -241,19 +207,15 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 			dtclient.TokenScopeActiveGateTokenCreate,
 		}, nil)
 
-		rec := &DynatraceClientReconciler{
-			Client:              c,
-			DynatraceClientFunc: StaticDynatraceClient(dtcMock),
+		rec := &Factory{
+			client:              c,
+			dynatraceClientFunc: StaticDynatraceClient(dtcMock),
 		}
 
-		dtc, err := rec.Reconcile(context.TODO(), dk)
-		assert.NotEqual(t, dtcMock, dtc)
+		result, err := rec.Create(context.TODO(), dk)
+		assert.Nil(t, result)
 		assert.Error(t, err)
-		assert.Nil(t, rec.Tokens)
 
-		AssertCondition(t, dk, dynatracev1beta1.PaaSTokenConditionType, metav1.ConditionTrue, dynatracev1beta1.ReasonTokenReady, "Ready")
-		AssertCondition(t, dk, dynatracev1beta1.APITokenConditionType, metav1.ConditionFalse, dynatracev1beta1.ReasonTokenScopeMissing,
-			"Token on secret dynatrace:dynakube missing scopes [entities.read]")
 		mock.AssertExpectationsForObjects(t, dtcMock)
 	})
 	t.Run("API token has missing scope for metrics ingest", func(t *testing.T) {
@@ -272,25 +234,20 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 		}, nil)
 		dtcMock.On("GetTokenScopes", "69").Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport}, nil)
 
-		rec := &DynatraceClientReconciler{
-			Client:              c,
-			DynatraceClientFunc: StaticDynatraceClient(dtcMock),
+		rec := &Factory{
+			client:              c,
+			dynatraceClientFunc: StaticDynatraceClient(dtcMock),
 		}
 
-		dtc, err := rec.Reconcile(context.TODO(), dk)
-		assert.NotEqual(t, dtcMock, dtc)
+		result, err := rec.Create(context.TODO(), dk)
+		assert.Nil(t, result)
 		assert.Error(t, err)
-		assert.Nil(t, rec.Tokens)
 
-		AssertCondition(t, dk, dynatracev1beta1.APITokenConditionType, metav1.ConditionTrue, dynatracev1beta1.ReasonTokenReady, "Ready")
-		AssertCondition(t, dk, dynatracev1beta1.DataIngestTokenConditionType, metav1.ConditionFalse, dynatracev1beta1.ReasonTokenScopeMissing, "Token on secret dynatrace:dynakube missing scopes [metrics.ingest]")
 		mock.AssertExpectationsForObjects(t, dtcMock)
 	})
 }
 
 func TestReconcileDynatraceClient_ProbeRequests(t *testing.T) {
-	now := metav1.Now()
-
 	namespace := "dynatrace"
 	dkName := "dynakube"
 	base := dynatracev1beta1.DynaKube{
@@ -319,70 +276,50 @@ func TestReconcileDynatraceClient_ProbeRequests(t *testing.T) {
 	c := fake.NewClient(NewSecret(dkName, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}))
 
 	t.Run("No request if last probe was recent", func(t *testing.T) {
-		lastAPIProbe := metav1.NewTime(now.Add(-3 * time.Minute))
-		lastPaaSProbe := metav1.NewTime(now.Add(-3 * time.Minute))
+		lastAPIProbe := metav1.NewTime(metav1.Now().Add(-3 * time.Minute))
 
 		dk := base.DeepCopy()
 		dk.Status.LastAPITokenProbeTimestamp = &lastAPIProbe
-		dk.Status.LastPaaSTokenProbeTimestamp = &lastPaaSProbe
 
 		dtcMock := &dtclient.MockDynatraceClient{}
 
-		rec := &DynatraceClientReconciler{
-			Client:              c,
-			DynatraceClientFunc: StaticDynatraceClient(dtcMock),
+		rec := &Factory{
+			client:              c,
+			dynatraceClientFunc: StaticDynatraceClient(dtcMock),
 		}
 
-		dtc, err := rec.Reconcile(context.TODO(), dk)
-		assert.Equal(t, dtcMock, dtc)
+		dtc, err := rec.Create(context.TODO(), dk)
+		assert.NotNil(t, dtc)
 		assert.NoError(t, err)
 		if assert.NotNil(t, dk.Status.LastAPITokenProbeTimestamp) {
 			assert.Equal(t, *dk.Status.LastAPITokenProbeTimestamp, lastAPIProbe)
-		}
-		if assert.NotNil(t, dk.Status.LastPaaSTokenProbeTimestamp) {
-			assert.Equal(t, *dk.Status.LastPaaSTokenProbeTimestamp, lastPaaSProbe)
 		}
 		mock.AssertExpectationsForObjects(t, dtcMock)
 	})
 
 	t.Run("Make request if last probe was not recent", func(t *testing.T) {
-		lastAPIProbe := metav1.NewTime(now.Add(-10 * time.Minute))
-		lastPaaSProbe := metav1.NewTime(now.Add(-10 * time.Minute))
+		lastAPIProbe := metav1.NewTime(metav1.Now().Add(-10 * time.Minute))
 
 		dk := base.DeepCopy()
 		dk.Status.LastAPITokenProbeTimestamp = &lastAPIProbe
-		dk.Status.LastPaaSTokenProbeTimestamp = &lastPaaSProbe
 
 		dtcMock := &dtclient.MockDynatraceClient{}
 		dtcMock.On("GetTokenScopes", "42").Return(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, nil)
 		dtcMock.On("GetTokenScopes", "84").Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport}, nil)
 
-		rec := &DynatraceClientReconciler{
-			Client:              c,
-			DynatraceClientFunc: StaticDynatraceClient(dtcMock),
+		rec := &Factory{
+			client:              c,
+			dynatraceClientFunc: StaticDynatraceClient(dtcMock),
 		}
 
-		dtc, err := rec.Reconcile(context.TODO(), dk)
+		dtc, err := rec.Create(context.TODO(), dk)
 		assert.Equal(t, dtcMock, dtc)
 		assert.NoError(t, err)
 		if assert.NotNil(t, dk.Status.LastAPITokenProbeTimestamp) {
-			assert.Equal(t, now, *dk.Status.LastAPITokenProbeTimestamp)
-		}
-		if assert.NotNil(t, dk.Status.LastPaaSTokenProbeTimestamp) {
-			assert.Equal(t, now, *dk.Status.LastPaaSTokenProbeTimestamp)
+			assert.NotEqual(t, lastAPIProbe, *dk.Status.LastAPITokenProbeTimestamp)
 		}
 		mock.AssertExpectationsForObjects(t, dtcMock)
 	})
-}
-
-func AssertCondition(t *testing.T, dk *dynatracev1beta1.DynaKube, expectedConditionType string, expectedConditionStatus metav1.ConditionStatus, expectedReason string, expectedMessage string) {
-	t.Helper()
-
-	actualCondition := meta.FindStatusCondition(dk.Status.Conditions, expectedConditionType)
-	require.NotNil(t, actualCondition)
-	assert.Equal(t, expectedConditionStatus, actualCondition.Status)
-	assert.Equal(t, expectedReason, actualCondition.Reason)
-	assert.Equal(t, expectedMessage, actualCondition.Message)
 }
 
 func NewSecret(name, namespace string, kv map[string]string) *corev1.Secret {

@@ -2,12 +2,12 @@ package nodes
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"os"
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
@@ -28,7 +28,7 @@ type NodesController struct {
 	client       client.Client
 	apiReader    client.Reader
 	scheme       *runtime.Scheme
-	dtClientFunc dynakube.DynatraceClientFunc
+	dtClientFunc dynatraceclient.BuildFunc
 	runLocal     bool
 	podNamespace string
 }
@@ -68,7 +68,7 @@ func NewController(mgr manager.Manager) *NodesController {
 		client:       mgr.GetClient(),
 		apiReader:    mgr.GetAPIReader(),
 		scheme:       mgr.GetScheme(),
-		dtClientFunc: dynakube.BuildDynatraceClient,
+		dtClientFunc: dynatraceclient.BuildDynatraceClient,
 		runLocal:     kubesystem.IsRunLocally(),
 		podNamespace: os.Getenv("POD_NAMESPACE"),
 	}
@@ -281,7 +281,7 @@ func (controller *NodesController) sendMarkedForTermination(dynakubeInstance *dy
 		return err
 	}
 
-	dynatraceClientProperties := dynakube.NewDynatraceClientProperties(context.TODO(), controller.client, *dynakubeInstance, tokens)
+	dynatraceClientProperties := dynatraceclient.NewProperties(context.TODO(), controller.client, *dynakubeInstance, tokens)
 	if err != nil {
 		log.Error(err, err.Error())
 	}

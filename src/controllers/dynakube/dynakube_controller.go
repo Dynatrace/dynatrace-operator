@@ -2,6 +2,7 @@ package dynakube
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
 	"net/http"
 	"os"
 	"time"
@@ -46,10 +47,10 @@ func Add(mgr manager.Manager, _ string) error {
 
 // NewController returns a new ReconcileDynaKube
 func NewController(mgr manager.Manager) *DynakubeController {
-	return NewDynaKubeController(mgr.GetClient(), mgr.GetAPIReader(), mgr.GetScheme(), BuildDynatraceClient, mgr.GetConfig())
+	return NewDynaKubeController(mgr.GetClient(), mgr.GetAPIReader(), mgr.GetScheme(), dynatraceclient.BuildDynatraceClient, mgr.GetConfig())
 }
 
-func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtcBuildFunc DynatraceClientFunc, config *rest.Config) *DynakubeController {
+func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtcBuildFunc dynatraceclient.BuildFunc, config *rest.Config) *DynakubeController {
 	return &DynakubeController{
 		client:            kubeClient,
 		apiReader:         apiReader,
@@ -77,12 +78,10 @@ type DynakubeController struct {
 	apiReader         client.Reader
 	scheme            *runtime.Scheme
 	fs                afero.Afero
-	dtcBuildFunc      DynatraceClientFunc
+	dtcBuildFunc      dynatraceclient.BuildFunc
 	config            *rest.Config
 	operatorNamespace string
 }
-
-type DynatraceClientFunc func(properties DynatraceClientProperties) (dtclient.Client, error)
 
 // Reconcile reads that state of the cluster for a DynaKube object and makes changes based on the state read
 // and what is in the DynaKube.Spec
@@ -175,13 +174,22 @@ func (controller *DynakubeController) reconcileIstio(dynakube *dynatracev1beta1.
 }
 
 func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
-	dtcReconciler := NewDynatraceClientReconciler(controller.client, controller.dtcBuildFunc)
-	dtc, err := dtcReconciler.Reconcile(ctx, dynakube)
+	dtcFactory := dynatraceclient.NewFactory(controller.client, controller.dtcBuildFunc)
+	dtc, err := dtcFactory.Create(ctx, dynakube)
+
 	if err != nil {
-		_ = controller.updateDynakubeStatus(ctx, dynakube)
+		controller.setConditionTokenError(dynakube, err)
+		setStatusError := controller.updateDynakubeStatus(ctx, dynakube)
+
+		if setStatusError != nil {
+			log.Info("could not set dynakube status", "error", err.Error())
+		}
+
 		log.Info("failed to create dynatrace client")
 		return err
 	}
+
+	controller.setConditionTokenReady(dynakube)
 
 	err = status.SetDynakubeStatus(dynakube, status.Options{
 		DtClient:  dtc,
@@ -193,8 +201,7 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dyn
 	}
 
 	err = dtpullsecret.
-		NewReconciler(controller.client, controller.apiReader, controller.scheme, dynakube,
-			dtcReconciler.Tokens.ApiToken().Value, dtcReconciler.Tokens.PaasToken().Value).
+		NewReconciler(ctx, controller.client, controller.apiReader, controller.scheme, dynakube).
 		Reconcile()
 	if err != nil {
 		log.Info("could not reconcile Dynatrace pull secret")

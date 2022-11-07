@@ -72,7 +72,10 @@ func testReadTokens(t *testing.T) {
 
 func testVerifyTokens(t *testing.T) {
 	t.Run("error if api token is missing", func(t *testing.T) {
-		reader := NewReader(nil, nil)
+		reader := NewReader(nil, &dynatracev1beta1.DynaKube{ObjectMeta: v1.ObjectMeta{
+			Name:      dynakubeName,
+			Namespace: dynatraceNamespace,
+		}})
 
 		err := reader.verifyApiTokenExists(map[string]Token{
 			testIrrelevantTokenKey: {
@@ -80,7 +83,7 @@ func testVerifyTokens(t *testing.T) {
 			},
 		})
 
-		assert.EqualError(t, err, "the API token is missing from the token secret")
+		assert.EqualError(t, err, "the API token is missing from the token secret 'dynatrace:dynakube'")
 	})
 	t.Run("no error if api token exists", func(t *testing.T) {
 		reader := NewReader(nil, nil)

@@ -1,6 +1,7 @@
 package provisioner
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/src/logger"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
@@ -40,4 +41,7 @@ func TestCsiCommand(t *testing.T) {
 	exists, err := afero.Exists(memFs, dtcsi.DataPath)
 	assert.True(t, exists)
 	assert.NoError(t, err)
+
+	// Logging a newline because otherwise `go test` doesn't recognise the result
+	logger.Factory.GetLogger("csi command").Info("")
 }

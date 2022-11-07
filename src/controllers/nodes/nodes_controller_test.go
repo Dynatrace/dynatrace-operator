@@ -2,11 +2,11 @@ package nodes
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
 	"testing"
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
@@ -20,7 +20,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-const testNamespace = "dynatrace"
+const (
+	testNamespace = "dynatrace"
+	testApiToken  = "test-api-token"
+)
 
 var testCacheKey = client.ObjectKey{Name: cacheName, Namespace: testNamespace}
 
@@ -159,7 +162,7 @@ func createDefaultReconciler(fakeClient client.Client, dtClient *dtclient.MockDy
 		client:       fakeClient,
 		apiReader:    fakeClient,
 		scheme:       scheme.Scheme,
-		dtClientFunc: dynakube.StaticDynatraceClient(dtClient),
+		dtClientFunc: dynatraceclient.StaticDynatraceClient(dtClient),
 		podNamespace: testNamespace,
 		runLocal:     true,
 	}
@@ -176,7 +179,9 @@ func createDTMockClient(ip, host string) *dtclient.MockDynatraceClient {
 
 func reconcileAllNodes(t *testing.T, ctrl *NodesController, fakeClient client.Client) {
 	var nodeList corev1.NodeList
-	fakeClient.List(context.TODO(), &nodeList)
+	err := fakeClient.List(context.TODO(), &nodeList)
+
+	require.NoError(t, err)
 
 	for _, clusterNode := range nodeList.Items {
 		result, err := ctrl.Reconcile(context.TODO(), createReconcileRequest(clusterNode.Name))
@@ -209,6 +214,18 @@ func createDefaultFakeClient() client.Client {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "oneagent1",
 				Namespace: testNamespace,
+			},
+			Data: map[string][]byte{
+				dtclient.DynatraceApiToken: []byte(testApiToken),
+			},
+		},
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "oneagent2",
+				Namespace: testNamespace,
+			},
+			Data: map[string][]byte{
+				dtclient.DynatraceApiToken: []byte(testApiToken),
 			},
 		})
 }

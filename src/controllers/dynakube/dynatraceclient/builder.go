@@ -1,4 +1,4 @@
-package dynakube
+package dynatraceclient
 
 import (
 	"context"
@@ -16,11 +16,11 @@ type options struct {
 	Opts []dtclient.Option
 }
 
-type DynatraceClientProperties struct {
+type Properties struct {
 	ctx                 context.Context
 	ApiReader           client.Reader
 	Tokens              token.Tokens
-	Proxy               *DynatraceClientProxy
+	Proxy               *proxy
 	ApiUrl              string
 	Namespace           string
 	NetworkZone         string
@@ -29,13 +29,13 @@ type DynatraceClientProperties struct {
 	DisableHostRequests bool
 }
 
-type DynatraceClientProxy struct {
+type proxy struct {
 	Value     string
 	ValueFrom string
 }
 
-func NewDynatraceClientProperties(ctx context.Context, apiReader client.Reader, dynakube dynatracev1beta1.DynaKube, tokens token.Tokens) DynatraceClientProperties {
-	return DynatraceClientProperties{
+func NewProperties(ctx context.Context, apiReader client.Reader, dynakube dynatracev1beta1.DynaKube, tokens token.Tokens) Properties {
+	return Properties{
 		ctx:                 ctx,
 		ApiReader:           apiReader,
 		Tokens:              tokens,
@@ -49,18 +49,18 @@ func NewDynatraceClientProperties(ctx context.Context, apiReader client.Reader, 
 	}
 }
 
-func convertProxy(proxy *dynatracev1beta1.DynaKubeProxy) *DynatraceClientProxy {
-	if proxy == nil {
+func convertProxy(dynakubeProxy *dynatracev1beta1.DynaKubeProxy) *proxy {
+	if dynakubeProxy == nil {
 		return nil
 	}
-	return &DynatraceClientProxy{
-		Value:     proxy.Value,
-		ValueFrom: proxy.ValueFrom,
+	return &proxy{
+		Value:     dynakubeProxy.Value,
+		ValueFrom: dynakubeProxy.ValueFrom,
 	}
 }
 
 // BuildDynatraceClient creates a new Dynatrace client using the settings configured on the given instance.
-func BuildDynatraceClient(properties DynatraceClientProperties) (dtclient.Client, error) {
+func BuildDynatraceClient(properties Properties) (dtclient.Client, error) {
 	namespace := properties.Namespace
 	apiReader := properties.ApiReader
 
@@ -89,9 +89,9 @@ func newOptions(ctx context.Context) *options {
 	}
 }
 
-// StaticDynatraceClient creates a DynatraceClientFunc always returning c.
-func StaticDynatraceClient(c dtclient.Client) DynatraceClientFunc {
-	return func(properties DynatraceClientProperties) (dtclient.Client, error) {
+// StaticDynatraceClient creates a dynatraceClientFunc always returning c.
+func StaticDynatraceClient(c dtclient.Client) BuildFunc {
+	return func(properties Properties) (dtclient.Client, error) {
 		return c, nil
 	}
 }
@@ -110,7 +110,7 @@ func (opts *options) appendDisableHostsRequests(disableHostsRequests bool) {
 	opts.Opts = append(opts.Opts, dtclient.DisableHostsRequests(disableHostsRequests))
 }
 
-func (opts *options) appendProxySettings(apiReader client.Reader, proxyEntry *DynatraceClientProxy, namespace string) error {
+func (opts *options) appendProxySettings(apiReader client.Reader, proxyEntry *proxy, namespace string) error {
 	if p := proxyEntry; p != nil {
 		if p.ValueFrom != "" {
 			proxySecret := &corev1.Secret{}
