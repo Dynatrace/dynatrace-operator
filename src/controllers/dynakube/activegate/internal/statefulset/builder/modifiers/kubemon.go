@@ -59,14 +59,7 @@ func (mod KubernetesMonitoringModifier) getInitContainers() []corev1.Container {
 			MountPath: activeGateSslPath,
 		},
 	}
-
-	if readOnlyRootFs {
-		volumeMounts = append(volumeMounts, corev1.VolumeMount{
-			ReadOnly:  false,
-			Name:      certLoaderWorkDirVolume,
-			MountPath: k8scrt2jksWorkingDir,
-		})
-	}
+	volumeMounts = append(volumeMounts, mod.getReadOnlyInitVolumeMounts()...)
 
 	return []corev1.Container{
 		{
@@ -86,7 +79,6 @@ func (mod KubernetesMonitoringModifier) getInitContainers() []corev1.Container {
 }
 
 func (mod KubernetesMonitoringModifier) getVolumes() []corev1.Volume {
-	readOnlyRootFs := mod.dynakube.FeatureActiveGateReadOnlyFilesystem()
 	volumes := []corev1.Volume{
 		{
 			Name: trustStoreVolume,
@@ -95,13 +87,20 @@ func (mod KubernetesMonitoringModifier) getVolumes() []corev1.Volume {
 			},
 		},
 	}
+	return append(volumes, mod.getReadOnlyInitVolumes()...)
+}
+
+func (mod KubernetesMonitoringModifier) getReadOnlyInitVolumes() []corev1.Volume {
+	readOnlyRootFs := mod.dynakube.FeatureActiveGateReadOnlyFilesystem()
 	if readOnlyRootFs {
-		volumes = append(volumes, corev1.Volume{
-			Name:         certLoaderWorkDirVolume,
-			VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
-		})
+		return []corev1.Volume{
+			{
+				Name:         certLoaderWorkDirVolume,
+				VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
+			},
+		}
 	}
-	return volumes
+	return []corev1.Volume{}
 
 }
 
@@ -114,4 +113,18 @@ func (mod KubernetesMonitoringModifier) getVolumeMounts() []corev1.VolumeMount {
 			SubPath:   k8sCertificateFile,
 		},
 	}
+}
+
+func (mod KubernetesMonitoringModifier) getReadOnlyInitVolumeMounts() []corev1.VolumeMount {
+	readOnlyRootFs := mod.dynakube.FeatureActiveGateReadOnlyFilesystem()
+	if readOnlyRootFs {
+		return []corev1.VolumeMount{
+			{
+				ReadOnly:  false,
+				Name:      certLoaderWorkDirVolume,
+				MountPath: k8scrt2jksWorkingDir,
+			},
+		}
+	}
+	return []corev1.VolumeMount{}
 }
