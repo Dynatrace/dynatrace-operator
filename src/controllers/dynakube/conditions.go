@@ -32,7 +32,9 @@ func (controller *DynakubeController) setAndLogCondition(dynakube *dynatracev1be
 	statusCondition := meta.FindStatusCondition(dynakube.Status.Conditions, newCondition.Type)
 
 	if newCondition.Reason != dynatracev1beta1.ReasonTokenReady {
-		log.Info("problem with token detected", "dynakube", dynakube.Name, "token", newCondition.Type,
+		log.Info("problem with token detected",
+			"dynakube", dynakube.Name, "namespace", dynakube.Namespace,
+			"token", newCondition.Type,
 			"message", newCondition.Message)
 	}
 

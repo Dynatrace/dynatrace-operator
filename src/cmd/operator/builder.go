@@ -124,7 +124,7 @@ func (builder CommandBuilder) buildRun() func(cmd *cobra.Command, args []string)
 
 		isDeployedViaOlm := false
 
-		if os.Getenv("RUN_LOCAL") != "true" {
+		if !isInDebugMode() {
 			operatorPod, err := kubeobjects.GetPod(context.TODO(), builder.client, builder.podName, builder.namespace)
 			if err != nil {
 				return err
@@ -157,6 +157,10 @@ func (builder CommandBuilder) buildRun() func(cmd *cobra.Command, args []string)
 
 		return errors.WithStack(err)
 	}
+}
+
+func isInDebugMode() bool {
+	return os.Getenv("RUN_LOCAL") == "true"
 }
 
 func runBootstrapper(bootstrapManager ctrl.Manager, namespace string) error {

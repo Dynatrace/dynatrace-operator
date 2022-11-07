@@ -80,7 +80,14 @@ func BuildDynatraceClient(properties Properties) (dtclient.Client, error) {
 		return nil, errors.WithStack(err)
 	}
 
-	return dtclient.NewClient(properties.ApiUrl, properties.Tokens.ApiToken().Value, properties.Tokens.PaasToken().Value, opts.Opts...)
+	apiToken := properties.Tokens.ApiToken().Value
+	paasToken := properties.Tokens.PaasToken().Value
+
+	if paasToken == "" {
+		paasToken = apiToken
+	}
+
+	return dtclient.NewClient(properties.ApiUrl, apiToken, paasToken, opts.Opts...)
 }
 
 func newOptions(ctx context.Context) *options {

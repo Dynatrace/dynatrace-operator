@@ -75,6 +75,7 @@ func (r *Factory) buildDynatraceClient(dynatraceClientProperties Properties) (dt
 
 func (r *Factory) checkTokenScopes(dynakube *dynatracev1beta1.DynaKube, tokens token.Tokens, dynatraceClient dtclient.Client) (token.Tokens, error) {
 	if isLastApiCallTooRecent(dynakube) {
+		log.Info("returning a cached result because tokens are only validated once every five minutes to avoid rate limiting")
 		err := lastErrorFromCondition(dynakube)
 
 		if err != nil {
