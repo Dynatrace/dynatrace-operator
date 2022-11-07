@@ -7,11 +7,12 @@ import (
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/status"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -29,92 +30,92 @@ type VersionProviderCallback func(string, *dockerconfig.DockerConfig) (ImageVers
 // ReconcileVersions updates the version and hash for the images used by the rec.Dynakube DynaKube instance.
 func ReconcileVersions(
 	ctx context.Context,
-	dkState *status.DynakubeState,
+	dynakube *dynatracev1beta1.DynaKube,
 	apiReader client.Reader,
 	fs afero.Afero,
-	verProvider VersionProviderCallback,
-) (bool, error) {
-	upd := false
-	dk := dkState.Instance
+	versionProvider VersionProviderCallback,
+	timeProvider kubeobjects.TimeProvider,
+) error {
+	needsOneAgentUpdate := dynakube.NeedsOneAgent() &&
+		timeProvider.IsOutdated(dynakube.Status.OneAgent.LastUpdateProbeTimestamp, ProbeThreshold) &&
+		dynakube.ShouldAutoUpdateOneAgent()
 
-	needsOneAgentUpdate := dk.NeedsOneAgent() &&
-		dkState.IsOutdated(dk.Status.OneAgent.LastUpdateProbeTimestamp, ProbeThreshold) &&
-		dk.ShouldAutoUpdateOneAgent()
+	needsActiveGateUpdate := dynakube.NeedsActiveGate() &&
+		!dynakube.FeatureDisableActiveGateUpdates() &&
+		timeProvider.IsOutdated(dynakube.Status.ActiveGate.LastUpdateProbeTimestamp, ProbeThreshold)
 
-	needsActiveGateUpdate := dk.NeedsActiveGate() &&
-		!dk.FeatureDisableActiveGateUpdates() &&
-		dkState.IsOutdated(dk.Status.ActiveGate.LastUpdateProbeTimestamp, ProbeThreshold)
+	needsEecUpdate := dynakube.IsStatsdActiveGateEnabled() &&
+		!dynakube.FeatureDisableActiveGateUpdates() &&
+		timeProvider.IsOutdated(dynakube.Status.ExtensionController.LastUpdateProbeTimestamp, ProbeThreshold)
 
-	needsEecUpdate := dk.IsStatsdActiveGateEnabled() &&
-		!dk.FeatureDisableActiveGateUpdates() &&
-		dkState.IsOutdated(dk.Status.ExtensionController.LastUpdateProbeTimestamp, ProbeThreshold)
-
-	needsStatsdUpdate := dk.IsStatsdActiveGateEnabled() &&
-		!dk.FeatureDisableActiveGateUpdates() &&
-		dkState.IsOutdated(dk.Status.Statsd.LastUpdateProbeTimestamp, ProbeThreshold)
+	needsStatsdUpdate := dynakube.IsStatsdActiveGateEnabled() &&
+		!dynakube.FeatureDisableActiveGateUpdates() &&
+		timeProvider.IsOutdated(dynakube.Status.Statsd.LastUpdateProbeTimestamp, ProbeThreshold)
 
 	if !(needsActiveGateUpdate || needsOneAgentUpdate || needsEecUpdate || needsStatsdUpdate) {
-		return false, nil
+		return nil
 	}
 
 	caCertPath := path.Join(TmpCAPath, TmpCAName)
-	dockerConfig := dockerconfig.NewDockerConfig(apiReader, *dkState.Instance)
+	dockerConfig := dockerconfig.NewDockerConfig(apiReader, *dynakube)
 	err := dockerConfig.SetupAuths(ctx)
 	if err != nil {
-		return false, err
+		log.Info("failed to set up auths for image version checks")
+		return err
 	}
-	if dk.Spec.TrustedCAs != "" {
+	if dynakube.Spec.TrustedCAs != "" {
 		_ = os.MkdirAll(TmpCAPath, 0755)
 		err := dockerConfig.SaveCustomCAs(ctx, fs, caCertPath)
 		if err != nil {
-			return false, err
+			log.Info("failed to save CAs locally for image version checks")
+			return err
 		}
 		defer func() {
 			_ = os.Remove(TmpCAPath)
 		}()
 	}
-	upd = true // updateImageVersion() always updates the status
 
+	now := timeProvider.Now()
 	if needsActiveGateUpdate {
-		err = updateImageVersion(dkState, dk.ActiveGateImage(), &dk.Status.ActiveGate.VersionStatus, dockerConfig, verProvider, true)
+		err := updateImageVersion(*now, dynakube.ActiveGateImage(), &dynakube.Status.ActiveGate.VersionStatus, dockerConfig, versionProvider, true)
 		if err != nil {
 			log.Error(err, "failed to update ActiveGate image version")
 		}
 	}
 
 	if needsEecUpdate {
-		err = updateImageVersion(dkState, dk.EecImage(), &dk.Status.ExtensionController.VersionStatus, dockerConfig, verProvider, true)
+		err := updateImageVersion(*now, dynakube.EecImage(), &dynakube.Status.ExtensionController.VersionStatus, dockerConfig, versionProvider, true)
 		if err != nil {
 			log.Error(err, "Failed to update Extension Controller image version")
 		}
 	}
 
 	if needsStatsdUpdate {
-		err = updateImageVersion(dkState, dk.StatsdImage(), &dk.Status.Statsd.VersionStatus, dockerConfig, verProvider, true)
+		err := updateImageVersion(*now, dynakube.StatsdImage(), &dynakube.Status.Statsd.VersionStatus, dockerConfig, versionProvider, true)
 		if err != nil {
 			log.Error(err, "Failed to update StatsD image version")
 		}
 	}
 
 	if needsOneAgentUpdate {
-		err = updateImageVersion(dkState, dk.OneAgentImage(), &dk.Status.OneAgent.VersionStatus, dockerConfig, verProvider, false)
+		err := updateImageVersion(*now, dynakube.OneAgentImage(), &dynakube.Status.OneAgent.VersionStatus, dockerConfig, versionProvider, false)
 		if err != nil {
 			log.Error(err, "failed to update OneAgent image version")
 		}
 	}
 
-	return upd, nil
+	return nil
 }
 
 func updateImageVersion(
-	dkState *status.DynakubeState,
+	now metav1.Time,
 	img string,
 	target *dynatracev1beta1.VersionStatus,
 	dockerCfg *dockerconfig.DockerConfig,
 	verProvider VersionProviderCallback,
 	allowDowngrades bool,
 ) error {
-	target.LastUpdateProbeTimestamp = dkState.Now.DeepCopy()
+	target.LastUpdateProbeTimestamp = &now
 
 	ver, err := verProvider(img, dockerCfg)
 	if err != nil {

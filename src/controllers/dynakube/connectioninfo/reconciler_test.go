@@ -42,7 +42,7 @@ func TestReconcile_ActivegateSecret(t *testing.T) {
 	t.Run(`create activegate secret`, func(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().Build()
 		r := NewReconciler(context.TODO(), fakeClient, fakeClient, dynakube, dtc)
-		_, err := r.Reconcile()
+		err := r.Reconcile()
 		require.NoError(t, err)
 
 		var actualSecret corev1.Secret
@@ -67,7 +67,7 @@ func TestReconcile_ActivegateSecret(t *testing.T) {
 			},
 		).Build()
 		r := NewReconciler(context.TODO(), fakeClient, fakeClient, dynakube, dtc)
-		_, err := r.Reconcile()
+		err := r.Reconcile()
 		require.NoError(t, err)
 
 		var actualSecret corev1.Secret
@@ -93,9 +93,8 @@ func TestReconcile_ActivegateSecret(t *testing.T) {
 		).Build()
 
 		r := NewReconciler(context.TODO(), fakeClient, fakeClient, dynakube, dtc)
-		upd, err := r.Reconcile()
+		err := r.Reconcile()
 		require.NoError(t, err)
-		assert.False(t, upd)
 	})
 }
 
@@ -124,7 +123,7 @@ func TestReconcile_OneagentSecret(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().Build()
 
 		r := NewReconciler(context.TODO(), fakeClient, fakeClient, dynakube, dtc)
-		_, err := r.Reconcile()
+		err := r.Reconcile()
 		require.NoError(t, err)
 
 		var actualSecret corev1.Secret
@@ -150,7 +149,7 @@ func TestReconcile_OneagentSecret(t *testing.T) {
 		).Build()
 
 		r := NewReconciler(context.TODO(), fakeClient, fakeClient, dynakube, dtc)
-		_, err := r.Reconcile()
+		err := r.Reconcile()
 		require.NoError(t, err)
 
 		var actualSecret corev1.Secret
@@ -176,8 +175,7 @@ func TestReconcile_OneagentSecret(t *testing.T) {
 		).Build()
 
 		r := NewReconciler(context.TODO(), fakeClient, fakeClient, dynakube, dtc)
-		upd, err := r.Reconcile()
+		err := r.Reconcile()
 		require.NoError(t, err)
-		assert.False(t, upd)
 	})
 }
