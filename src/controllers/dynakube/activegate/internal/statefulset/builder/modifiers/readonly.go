@@ -43,7 +43,7 @@ func (mod ReadOnlyModifier) Modify(sts *appsv1.StatefulSet) {
 func (mod ReadOnlyModifier) getVolumes() []corev1.Volume {
 	volumes := []corev1.Volume{
 		{
-			Name: consts.GatewayTempVolumeName,
+			Name: consts.GatewayLibTempVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
@@ -55,13 +55,13 @@ func (mod ReadOnlyModifier) getVolumes() []corev1.Volume {
 			},
 		},
 		{
-			Name: consts.LogVolumeName,
+			Name: consts.GatewayLogVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 		},
 		{
-			Name: consts.TmpVolumeName,
+			Name: consts.GatewayTmpVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
@@ -85,8 +85,8 @@ func (mod ReadOnlyModifier) getVolumeMounts() []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{
 		{
 			ReadOnly:  false,
-			Name:      consts.GatewayTempVolumeName,
-			MountPath: consts.GatewayTempMountPoint,
+			Name:      consts.GatewayLibTempVolumeName,
+			MountPath: consts.GatewayLibTempMountPoint,
 		},
 		{
 			ReadOnly:  false,
@@ -95,13 +95,13 @@ func (mod ReadOnlyModifier) getVolumeMounts() []corev1.VolumeMount {
 		},
 		{
 			ReadOnly:  false,
-			Name:      consts.LogVolumeName,
-			MountPath: consts.LogMountPoint,
+			Name:      consts.GatewayLogVolumeName,
+			MountPath: consts.GatewayLogMountPoint,
 		},
 		{
 			ReadOnly:  false,
-			Name:      consts.TmpVolumeName,
-			MountPath: consts.TmpMountPoint,
+			Name:      consts.GatewayTmpVolumeName,
+			MountPath: consts.GatewayTmpMountPoint,
 		}}
 
 	neededMount := corev1.VolumeMount{
