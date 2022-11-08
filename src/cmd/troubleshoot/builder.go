@@ -151,7 +151,7 @@ func getDynakubes(troubleshootCtx troubleshootContext) ([]dynatracev1beta1.DynaK
 	var err error
 	var dynakubes []dynatracev1beta1.DynaKube
 	if troubleshootCtx.dynakubeName == "" {
-		logInfof("no Dynakube specified - checking all Dynakubes in namespace '%s'", namespaceFlagValue)
+		logNewDynakubef("no Dynakube specified - checking all Dynakubes in namespace '%s'", namespaceFlagValue)
 		dynakubes, err = getAllDynakubesInNamespace(troubleshootCtx)
 		if err != nil {
 			return nil, err
