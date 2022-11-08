@@ -4,44 +4,48 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
-	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Options struct {
-	Dtc       dtclient.Client
-	ApiClient client.Reader
+	DtClient  dtclient.Client
+	ApiReader client.Reader
 }
 
-func SetDynakubeStatus(instance *dynatracev1beta1.DynaKube, opts Options) error {
-	clt := opts.ApiClient
-	dtc := opts.Dtc
+func SetDynakubeStatus(dynakube *dynatracev1beta1.DynaKube, opts Options) error {
+	apiReader := opts.ApiReader
+	dtClient := opts.DtClient
 
-	uid, err := kubesystem.GetUID(clt)
+	uid, err := kubesystem.GetUID(apiReader)
 	if err != nil {
-		return errors.WithStack(err)
+		log.Info("could not get cluster ID")
+		return err
 	}
 
-	communicationHost, err := dtc.GetCommunicationHostForClient()
+	communicationHost, err := dtClient.GetCommunicationHostForClient()
 	if err != nil {
-		return errors.WithStack(err)
+		log.Info("could not get communication hosts")
+		return err
 	}
 
-	connectionInfo, err := dtc.GetOneAgentConnectionInfo()
+	connectionInfo, err := dtClient.GetOneAgentConnectionInfo()
 	if err != nil {
-		return errors.WithStack(err)
+		log.Info("could not get connection info")
+		return err
 	}
 
-	latestAgentVersionUnixDefault, err := dtc.GetLatestAgentVersion(
+	latestAgentVersionUnixDefault, err := dtClient.GetLatestAgentVersion(
 		dtclient.OsUnix, dtclient.InstallerTypeDefault)
 	if err != nil {
-		return errors.WithStack(err)
+		log.Info("could not get agent default unix version")
+		return err
 	}
 
-	latestAgentVersionUnixPaas, err := dtc.GetLatestAgentVersion(
+	latestAgentVersionUnixPaas, err := dtClient.GetLatestAgentVersion(
 		dtclient.OsUnix, dtclient.InstallerTypePaaS)
 	if err != nil {
-		return errors.WithStack(err)
+		log.Info("could not get agent paas unix version")
+		return err
 	}
 
 	communicationHostStatus := dynatracev1beta1.CommunicationHostStatus(communicationHost)
@@ -52,11 +56,12 @@ func SetDynakubeStatus(instance *dynatracev1beta1.DynaKube, opts Options) error 
 		FormattedCommunicationEndpoints: connectionInfo.Endpoints,
 	}
 
-	instance.Status.KubeSystemUUID = string(uid)
-	instance.Status.CommunicationHostForClient = communicationHostStatus
-	instance.Status.ConnectionInfo = connectionInfoStatus
-	instance.Status.LatestAgentVersionUnixDefault = latestAgentVersionUnixDefault
-	instance.Status.LatestAgentVersionUnixPaas = latestAgentVersionUnixPaas
+	dynakube.Status.KubeSystemUUID = string(uid)
+	dynakube.Status.CommunicationHostForClient = communicationHostStatus
+	dynakube.Status.ConnectionInfo = connectionInfoStatus
+	dynakube.Status.LatestAgentVersionUnixDefault = latestAgentVersionUnixDefault
+	dynakube.Status.LatestAgentVersionUnixPaas = latestAgentVersionUnixPaas
+	dynakube.Status.Tokens = dynakube.Tokens()
 
 	return nil
 }

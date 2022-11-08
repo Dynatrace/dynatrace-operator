@@ -114,12 +114,12 @@ func (opts *options) appendProxySettings(apiReader client.Reader, proxyEntry *Dy
 			proxySecret := &corev1.Secret{}
 			err := apiReader.Get(context.TODO(), client.ObjectKey{Name: p.ValueFrom, Namespace: namespace}, proxySecret)
 			if err != nil {
-				return fmt.Errorf("failed to get proxy secret: %w", err)
+				return errors.WithMessage(err, "failed to get proxy secret")
 			}
 
 			proxyURL, err := kubeobjects.ExtractToken(proxySecret, dtclient.CustomProxySecretKey)
 			if err != nil {
-				return fmt.Errorf("failed to extract proxy secret field: %w", err)
+				return errors.WithMessage(err, "failed to extract proxy secret field")
 			}
 			opts.Opts = append(opts.Opts, dtclient.Proxy(proxyURL))
 		} else if p.Value != "" {
@@ -133,10 +133,10 @@ func (opts *options) appendTrustedCerts(apiReader client.Reader, trustedCerts st
 	if trustedCerts != "" {
 		certs := &corev1.ConfigMap{}
 		if err := apiReader.Get(context.TODO(), client.ObjectKey{Namespace: namespace, Name: trustedCerts}, certs); err != nil {
-			return fmt.Errorf("failed to get certificate configmap: %w", err)
+			return errors.WithMessage(err, "failed to get certificate configmap")
 		}
 		if certs.Data[dtclient.CustomCertificatesConfigMapKey] == "" {
-			return fmt.Errorf("failed to extract certificate configmap field: missing field certs")
+			return errors.New("failed to extract certificate configmap field: missing field certs")
 		}
 		opts.Opts = append(opts.Opts, dtclient.Certs([]byte(certs.Data[dtclient.CustomCertificatesConfigMapKey])))
 	}

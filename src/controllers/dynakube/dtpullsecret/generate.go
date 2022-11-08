@@ -37,17 +37,17 @@ func newDockerConfigWithAuth(username string, password string, registry string, 
 }
 
 func (r *Reconciler) GenerateData() (map[string][]byte, error) {
-	connectionInfo := r.instance.ConnectionInfo()
-	registry, err := getImageRegistryFromAPIURL(r.instance.Spec.APIURL)
+	connectionInfo := r.dynakube.ConnectionInfo()
+	registry, err := getImageRegistryFromAPIURL(r.dynakube.Spec.APIURL)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, err
 	}
 
 	if r.paasToken == "" {
 		if r.apiToken != "" {
 			r.paasToken = r.apiToken
 		} else {
-			return nil, fmt.Errorf("token secret does not contain a paas or api token, cannot generate docker config")
+			return nil, errors.New("token secret does not contain a paas or api token, cannot generate docker config")
 		}
 	}
 
@@ -67,7 +67,7 @@ func (r *Reconciler) buildAuthString(connectionInfo dtclient.OneAgentConnectionI
 func getImageRegistryFromAPIURL(apiURL string) (string, error) {
 	u, err := url.Parse(apiURL)
 	if err != nil {
-		return "", err
+		return "", errors.WithStack(err)
 	}
 	return u.Host, nil
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/containers/image/v5/manifest"
 	"github.com/containers/image/v5/transports/alltransports"
 	"github.com/containers/image/v5/types"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -33,37 +34,37 @@ func GetImageVersion(imageName string, dockerConfig *dockerconfig.DockerConfig) 
 
 	imageReference, err := alltransports.ParseImageName(transportImageName)
 	if err != nil {
-		return ImageVersion{}, err
+		return ImageVersion{}, errors.WithStack(err)
 	}
 
 	systemContext := dockerconfig.MakeSystemContext(imageReference.DockerReference(), dockerConfig)
 
 	imageSource, err := imageReference.NewImageSource(context.TODO(), systemContext)
 	if err != nil {
-		return ImageVersion{}, err
+		return ImageVersion{}, errors.WithStack(err)
 	}
 	defer closeImageSource(imageSource)
 
 	imageManifest, _, err := imageSource.GetManifest(context.TODO(), nil)
 	if err != nil {
-		return ImageVersion{}, err
+		return ImageVersion{}, errors.WithStack(err)
 	}
 
 	digest, err := manifest.Digest(imageManifest)
 	if err != nil {
-		return ImageVersion{}, err
+		return ImageVersion{}, errors.WithStack(err)
 	}
 
 	sourceImage, err := image.FromUnparsedImage(context.TODO(), systemContext, image.UnparsedInstance(imageSource, nil))
 	if err != nil {
-		return ImageVersion{}, err
+		return ImageVersion{}, errors.WithStack(err)
 	}
 
 	inspectedImage, err := sourceImage.Inspect(context.TODO())
 	if err != nil {
-		return ImageVersion{}, err
+		return ImageVersion{}, errors.WithStack(err)
 	} else if inspectedImage == nil {
-		return ImageVersion{}, fmt.Errorf("could not inspect image: '%s'", transportImageName)
+		return ImageVersion{}, errors.Errorf("could not inspect image: '%s'", transportImageName)
 	}
 
 	return ImageVersion{

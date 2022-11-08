@@ -39,11 +39,10 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 			Now:                 metav1.Now(),
 		}
 
-		dtc, ucr, err := rec.Reconcile(context.TODO(), deepCopy)
+		dtc, err := rec.Reconcile(context.TODO(), deepCopy)
 		assert.Nil(t, dtc)
-		assert.True(t, ucr)
 		assert.False(t, rec.ValidTokens)
-		assert.Nil(t, err)
+		assert.Error(t, err)
 
 		cond := meta.FindStatusCondition(deepCopy.Status.Conditions, dynatracev1beta1.PaaSTokenConditionType)
 		assert.Nil(t, cond)
@@ -64,16 +63,15 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 			Now:                 metav1.Now(),
 		}
 
-		dtc, ucr, err := rec.Reconcile(context.TODO(), dk)
+		dtc, err := rec.Reconcile(context.TODO(), dk)
 		assert.Nil(t, dtc)
-		assert.True(t, ucr)
-		assert.NoError(t, err)
+		assert.Error(t, err)
 		assert.False(t, rec.ValidTokens)
 
 		cond := meta.FindStatusCondition(dk.Status.Conditions, dynatracev1beta1.PaaSTokenConditionType)
 		assert.Nil(t, cond)
 		AssertCondition(t, dk, dynatracev1beta1.APITokenConditionType, false, dynatracev1beta1.ReasonTokenMissing,
-			"Token apiToken on secret dynatrace:dynakube missing")
+			"Token apiToken on secret dynatrace:dynakube is missing")
 
 		mock.AssertExpectationsForObjects(t, dtcMock)
 	})
@@ -93,9 +91,8 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 			Now:                 metav1.Now(),
 		}
 
-		dtc, ucr, err := rec.Reconcile(context.TODO(), dk)
+		dtc, err := rec.Reconcile(context.TODO(), dk)
 		assert.NotNil(t, dtc)
-		assert.True(t, ucr)
 		assert.Nil(t, err)
 
 		cond := meta.FindStatusCondition(dk.Status.Conditions, dynatracev1beta1.PaaSTokenConditionType)
@@ -120,10 +117,9 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 			Now:                 metav1.Now(),
 		}
 
-		dtc, ucr, err := rec.Reconcile(context.TODO(), dk)
-		assert.Equal(t, dtcMock, dtc)
-		assert.True(t, ucr)
-		assert.NoError(t, err)
+		dtc, err := rec.Reconcile(context.TODO(), dk)
+		assert.NotEqual(t, dtcMock, dtc)
+		assert.Error(t, err)
 		assert.False(t, rec.ValidTokens)
 
 		AssertCondition(t, dk, dynatracev1beta1.PaaSTokenConditionType, false, dynatracev1beta1.ReasonTokenUnauthorized,
@@ -147,10 +143,9 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 			Now:                 metav1.Now(),
 		}
 
-		dtc, ucr, err := rec.Reconcile(context.TODO(), dk)
-		assert.Equal(t, dtcMock, dtc)
-		assert.True(t, ucr)
-		assert.NoError(t, err)
+		dtc, err := rec.Reconcile(context.TODO(), dk)
+		assert.NotEqual(t, dtcMock, dtc)
+		assert.Error(t, err)
 
 		AssertCondition(t, dk, dynatracev1beta1.PaaSTokenConditionType, false, dynatracev1beta1.ReasonTokenScopeMissing,
 			"Token on secret dynatrace:dynakube missing scopes [InstallerDownload]")
@@ -178,9 +173,8 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 			Now:                 metav1.Now(),
 		}
 
-		dtc, ucr, err := rec.Reconcile(context.TODO(), dk)
+		dtc, err := rec.Reconcile(context.TODO(), dk)
 		assert.Equal(t, dtcMock, dtc)
-		assert.True(t, ucr)
 		assert.NoError(t, err)
 
 		AssertCondition(t, dk, dynatracev1beta1.APITokenConditionType, true, dynatracev1beta1.ReasonTokenReady, "Ready")
@@ -203,9 +197,8 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 			Now:                 metav1.Now(),
 		}
 
-		dtc, ucr, err := rec.Reconcile(context.TODO(), dk)
+		dtc, err := rec.Reconcile(context.TODO(), dk)
 		assert.Equal(t, dtcMock, dtc)
-		assert.True(t, ucr)
 		assert.NoError(t, err)
 
 		AssertCondition(t, dk, dynatracev1beta1.PaaSTokenConditionType, true, dynatracev1beta1.ReasonTokenReady, "Ready")
@@ -228,9 +221,8 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 			Now:                 metav1.Now(),
 		}
 
-		dtc, ucr, err := rec.Reconcile(context.TODO(), dk)
+		dtc, err := rec.Reconcile(context.TODO(), dk)
 		assert.Equal(t, dtcMock, dtc)
-		assert.True(t, ucr)
 		assert.NoError(t, err)
 
 		AssertCondition(t, dk, dynatracev1beta1.PaaSTokenConditionType, true, dynatracev1beta1.ReasonTokenReady, "Ready")
@@ -263,10 +255,9 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 			Now:                 metav1.Now(),
 		}
 
-		dtc, ucr, err := rec.Reconcile(context.TODO(), dk)
-		assert.Equal(t, dtcMock, dtc)
-		assert.True(t, ucr)
-		assert.NoError(t, err)
+		dtc, err := rec.Reconcile(context.TODO(), dk)
+		assert.NotEqual(t, dtcMock, dtc)
+		assert.Error(t, err)
 		assert.False(t, rec.ValidTokens)
 
 		AssertCondition(t, dk, dynatracev1beta1.PaaSTokenConditionType, true, dynatracev1beta1.ReasonTokenReady, "Ready")
@@ -296,10 +287,9 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 			Now:                 metav1.Now(),
 		}
 
-		dtc, ucr, err := rec.Reconcile(context.TODO(), dk)
-		assert.Equal(t, dtcMock, dtc)
-		assert.True(t, ucr)
-		assert.NoError(t, err)
+		dtc, err := rec.Reconcile(context.TODO(), dk)
+		assert.NotEqual(t, dtcMock, dtc)
+		assert.Error(t, err)
 		assert.False(t, rec.ValidTokens)
 
 		AssertCondition(t, dk, dynatracev1beta1.APITokenConditionType, true, dynatracev1beta1.ReasonTokenReady, "Ready")
@@ -354,9 +344,8 @@ func TestReconcileDynatraceClient_ProbeRequests(t *testing.T) {
 			Now:                 now,
 		}
 
-		dtc, ucr, err := rec.Reconcile(context.TODO(), dk)
+		dtc, err := rec.Reconcile(context.TODO(), dk)
 		assert.Equal(t, dtcMock, dtc)
-		assert.False(t, ucr)
 		assert.NoError(t, err)
 		if assert.NotNil(t, dk.Status.LastAPITokenProbeTimestamp) {
 			assert.Equal(t, *dk.Status.LastAPITokenProbeTimestamp, lastAPIProbe)
@@ -385,15 +374,14 @@ func TestReconcileDynatraceClient_ProbeRequests(t *testing.T) {
 			Now:                 now,
 		}
 
-		dtc, ucr, err := rec.Reconcile(context.TODO(), dk)
+		dtc, err := rec.Reconcile(context.TODO(), dk)
 		assert.Equal(t, dtcMock, dtc)
-		assert.True(t, ucr)
 		assert.NoError(t, err)
 		if assert.NotNil(t, dk.Status.LastAPITokenProbeTimestamp) {
-			assert.Equal(t, *dk.Status.LastAPITokenProbeTimestamp, now)
+			assert.Equal(t, now, *dk.Status.LastAPITokenProbeTimestamp)
 		}
 		if assert.NotNil(t, dk.Status.LastPaaSTokenProbeTimestamp) {
-			assert.Equal(t, *dk.Status.LastPaaSTokenProbeTimestamp, now)
+			assert.Equal(t, now, *dk.Status.LastPaaSTokenProbeTimestamp)
 		}
 		mock.AssertExpectationsForObjects(t, dtcMock)
 	})

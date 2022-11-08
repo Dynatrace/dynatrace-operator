@@ -35,7 +35,7 @@ func TestGetImageRegistryFromAPIURL(t *testing.T) {
 }
 
 func TestReconciler_GenerateData(t *testing.T) {
-	instance := &dynatracev1beta1.DynaKube{
+	dynakube := &dynatracev1beta1.DynaKube{
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			APIURL: testApiUrl,
 		},
@@ -53,7 +53,7 @@ func TestReconciler_GenerateData(t *testing.T) {
 		},
 	}
 	r := &Reconciler{
-		instance:  instance,
+		dynakube:  dynakube,
 		paasToken: testPaasToken,
 	}
 
