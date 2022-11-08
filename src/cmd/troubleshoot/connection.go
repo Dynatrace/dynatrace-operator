@@ -7,7 +7,7 @@ import (
 )
 
 func checkDTClusterConnection(troubleshootCtx *troubleshootContext) error {
-	log = newTroubleshootLogger("[dtcluster ] ")
+	log = newTroubleshootLogger("[dtcluster ] ", true)
 
 	logNewTestf("checking if tenant is accessible ...")
 

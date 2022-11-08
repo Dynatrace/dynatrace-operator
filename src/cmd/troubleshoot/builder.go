@@ -106,6 +106,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 				return nil
 			}
 		}
+		resetLog()
 
 		perDynakubeTests := []troubleshootFunc{
 			checkDynakube,
@@ -127,7 +128,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 				dynakube:      dynakube,
 				dynakubeName:  dynakube.Name,
 			}
-
+			logNewDynakubef(troubleshootCtx.dynakubeName)
 			for _, test := range perDynakubeTests {
 				err = test(&troubleshootCtx)
 				if err != nil {
@@ -135,6 +136,8 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 					return nil
 				}
 			}
+			resetLog()
+			logOkf("'%s' - all checks passed", troubleshootCtx.dynakubeName)
 		}
 		return nil
 	}
@@ -144,7 +147,7 @@ func getDynakubes(troubleshootCtx *troubleshootContext) ([]dynatracev1beta1.Dyna
 	var err error
 	var dynakubes []dynatracev1beta1.DynaKube
 	if dynakubeFlagValue == "" {
-		logInfof("No Dynakube specified. Checking all Dynakubes in namespace '%s'", namespaceFlagValue)
+		logInfof("no Dynakube specified - checking all Dynakubes in namespace '%s'", namespaceFlagValue)
 		dynakubes, err = getAllDynakubesInNamespace(troubleshootCtx)
 		if err != nil {
 			return nil, err

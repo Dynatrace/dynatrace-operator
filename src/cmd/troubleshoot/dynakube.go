@@ -20,7 +20,7 @@ const (
 )
 
 func checkDynakube(troubleshootCtx *troubleshootContext) error {
-	log = newTroubleshootLogger("[dynakube  ] ")
+	log = newTroubleshootLogger("[dynakube  ] ", true)
 
 	logNewTestf("checking if '%s:%s' Dynakube is configured correctly", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
 

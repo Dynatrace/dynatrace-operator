@@ -23,17 +23,19 @@ const (
 	colorYellow = "\033[33m"
 	colorReset  = "\033[0m"
 
-	levelNewTest = 1
-	levelSuccess = 2
-	levelWarning = 3
-	levelError   = 4
+	levelNewTest     = 1
+	levelSuccess     = 2
+	levelWarning     = 3
+	levelError       = 4
+	levelNewDynakube = 5
 )
 
 type troubleshootLogger struct {
-	logger logr.Logger
+	logger  logr.Logger
+	subTest bool
 }
 
-func newTroubleshootLogger(testName string) logr.Logger {
+func newTroubleshootLogger(testName string, subTest bool) logr.Logger {
 	config := zap.NewProductionEncoderConfig()
 	config.TimeKey = ""
 	config.LevelKey = ""
@@ -42,13 +44,18 @@ func newTroubleshootLogger(testName string) logr.Logger {
 
 	return logr.New(
 		troubleshootLogger{
-			logger: ctrlzap.New(ctrlzap.WriteTo(os.Stdout), ctrlzap.Encoder(zapcore.NewConsoleEncoder(config))).WithName(testName),
+			logger:  ctrlzap.New(ctrlzap.WriteTo(os.Stdout), ctrlzap.Encoder(zapcore.NewConsoleEncoder(config))).WithName(testName),
+			subTest: subTest,
 		},
 	)
 }
 
 func logNewTestf(format string, v ...interface{}) {
 	log.V(levelNewTest).Info(fmt.Sprintf(format, v...))
+}
+
+func logNewDynakubef(format string, v ...interface{}) {
+	log.V(levelNewDynakube).Info(fmt.Sprintf(format, v...))
 }
 
 func logInfof(format string, v ...interface{}) {
@@ -75,20 +82,30 @@ func errorWithMessagef(err error, format string, v ...interface{}) error {
 func (dtl troubleshootLogger) Init(_ logr.RuntimeInfo) {}
 
 func (dtl troubleshootLogger) Info(level int, message string, keysAndValues ...interface{}) {
+	var msg string
+
 	switch level {
 	case levelNewTest:
-		dtl.logger.Info(prefixNewTest+message, keysAndValues...)
+		msg = prefixNewTest + message
 	case levelSuccess:
-		dtl.logger.Info(withSuccessPrefix(message), keysAndValues...)
+		msg = withSuccessPrefix(message)
 	case levelWarning:
-		dtl.logger.Info(withWarningPrefix(message), keysAndValues...)
+		msg = withWarningPrefix(message)
 	case levelError:
 		// Info is used for errors to suppress printing a stacktrace
 		// Printing a stacktrace would confuse people in thinking the troubleshooter crashed
-		dtl.logger.Info(withErrorPrefix(message), keysAndValues...)
+		msg = withErrorPrefix(message)
+	case levelNewDynakube:
+		msg = message
 	default:
-		dtl.logger.Info(prefixInfo+message, keysAndValues...)
+		msg = prefixInfo + message
 	}
+
+	if dtl.subTest {
+		msg = " |" + msg
+	}
+
+	dtl.logger.Info(msg, keysAndValues...)
 }
 
 func withSuccessPrefix(message string) string {

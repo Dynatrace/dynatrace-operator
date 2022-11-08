@@ -27,7 +27,7 @@ type Auths struct {
 }
 
 func checkImagePullable(troubleshootCtx *troubleshootContext) error {
-	log = newTroubleshootLogger("[imagepull ] ")
+	log = newTroubleshootLogger("[imagepull ] ", true)
 
 	if troubleshootCtx.dynakube.NeedsOneAgent() {
 		err := checkOneAgentImagePullable(troubleshootCtx)
