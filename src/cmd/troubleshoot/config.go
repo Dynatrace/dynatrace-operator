@@ -9,5 +9,5 @@ func init() {
 }
 
 func resetLog() {
-	log = newTroubleshootLogger("[          ]", false)
+	log = newTroubleshootLogger("", false)
 }

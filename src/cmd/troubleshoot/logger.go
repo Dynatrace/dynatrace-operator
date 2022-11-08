@@ -42,6 +42,8 @@ func newTroubleshootLogger(testName string, subTest bool) logr.Logger {
 	config.NameKey = "name"
 	config.EncodeTime = zapcore.ISO8601TimeEncoder
 
+	testName = fmt.Sprintf("[%-10s] ", testName)
+
 	return logr.New(
 		troubleshootLogger{
 			logger:  ctrlzap.New(ctrlzap.WriteTo(os.Stdout), ctrlzap.Encoder(zapcore.NewConsoleEncoder(config))).WithName(testName),
