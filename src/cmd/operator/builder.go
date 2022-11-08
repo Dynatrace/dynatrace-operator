@@ -122,48 +122,69 @@ func (builder CommandBuilder) buildRun() func(cmd *cobra.Command, args []string)
 			return err
 		}
 
-		isDeployedViaOlm := false
-
-		if !isInDebugMode() {
-			operatorPod, err := kubeobjects.GetPod(context.TODO(), builder.client, builder.podName, builder.namespace)
-			if err != nil {
-				return err
-			}
-
-			isDeployedViaOlm = kubesystem.IsDeployedViaOlm(*operatorPod)
-			if !isDeployedViaOlm {
-				var bootstrapManager ctrl.Manager
-				bootstrapManager, err = builder.getBootstrapManagerProvider().CreateManager(builder.namespace, kubeCfg)
-
-				if err != nil {
-					return err
-				}
-
-				err = runBootstrapper(bootstrapManager, builder.namespace)
-
-				if err != nil {
-					return err
-				}
-			}
+		if isInDebugMode() {
+			log.Info("running locally in debug mode")
+			return builder.runLocally(kubeCfg)
 		}
 
-		operatorManager, err := builder.getOperatorManagerProvider(isDeployedViaOlm).CreateManager(builder.namespace, kubeCfg)
+		return builder.runInPod(kubeCfg)
+	}
+}
+
+func (builder CommandBuilder) runInPod(kubeCfg *rest.Config) error {
+	operatorPod, err := kubeobjects.GetPod(context.TODO(), builder.client, builder.podName, builder.namespace)
+	if err != nil {
+		return err
+	}
+
+	isDeployedViaOlm := kubesystem.IsDeployedViaOlm(*operatorPod)
+	if !isDeployedViaOlm {
+		err = builder.runBootstrapper(kubeCfg)
 
 		if err != nil {
 			return err
 		}
-
-		err = operatorManager.Start(builder.getSignalHandler())
-
-		return errors.WithStack(err)
 	}
+
+	return builder.runOperatorManager(kubeCfg, isDeployedViaOlm)
+}
+
+func (builder CommandBuilder) runLocally(kubeCfg *rest.Config) error {
+	err := builder.runBootstrapper(kubeCfg)
+	if err != nil {
+		return err
+	}
+
+	return builder.runOperatorManager(kubeCfg, false)
 }
 
 func isInDebugMode() bool {
 	return os.Getenv("RUN_LOCAL") == "true"
 }
 
-func runBootstrapper(bootstrapManager ctrl.Manager, namespace string) error {
+func (builder CommandBuilder) runBootstrapper(kubeCfg *rest.Config) error {
+	bootstrapManager, err := builder.getBootstrapManagerProvider().CreateManager(builder.namespace, kubeCfg)
+
+	if err != nil {
+		return err
+	}
+
+	return startBootstrapperManager(bootstrapManager, builder.namespace)
+}
+
+func (builder CommandBuilder) runOperatorManager(kubeCfg *rest.Config, isDeployedViaOlm bool) error {
+	operatorManager, err := builder.getOperatorManagerProvider(isDeployedViaOlm).CreateManager(builder.namespace, kubeCfg)
+
+	if err != nil {
+		return err
+	}
+
+	err = operatorManager.Start(builder.getSignalHandler())
+
+	return errors.WithStack(err)
+}
+
+func startBootstrapperManager(bootstrapManager ctrl.Manager, namespace string) error {
 	ctx, cancelFn := context.WithCancel(context.TODO())
 	err := certificates.AddBootstrap(bootstrapManager, namespace, cancelFn)
 

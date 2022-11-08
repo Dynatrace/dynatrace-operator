@@ -57,7 +57,7 @@ func TestReconciler_GenerateData(t *testing.T) {
 	}
 	r := &Reconciler{
 		dynakube: dynakube,
-		ctx:      context.TODO(),
+		ctx:      context.Background(),
 	}
 
 	data, err := r.GenerateData(token.Tokens{

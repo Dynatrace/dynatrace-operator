@@ -41,13 +41,11 @@ func (r *Factory) Create(ctx context.Context, dynakube *dynatracev1beta1.DynaKub
 	}
 
 	err = tokens.VerifyValues()
-
 	if err != nil {
 		return nil, err
 	}
 
 	dynatraceClient, err := r.buildDynatraceClient(NewProperties(ctx, r.client, *dynakube, tokens))
-
 	if err != nil {
 		return nil, err
 	}

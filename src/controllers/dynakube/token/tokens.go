@@ -25,9 +25,8 @@ func (tokens Tokens) DataIngestToken() Token {
 
 func (tokens Tokens) getToken(tokenName string) Token {
 	token, hasToken := tokens[tokenName]
-
 	if !hasToken {
-		return Token{}
+		token = Token{}
 	}
 
 	return token
