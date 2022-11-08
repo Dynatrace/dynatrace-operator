@@ -210,7 +210,7 @@ func imageAvailable(httpClient *http.Client, imageUrl string, apiToken string) e
 }
 
 func registryAvailable(httpClient *http.Client, registry string, apiToken string) error {
-	statusCode, err := connectToDockerRegistry(httpClient, registryUrl(registry)+"/v2/", apiToken)
+	statusCode, err := connectToDockerRegistry(httpClient, registryUrl(registry), apiToken)
 
 	if err != nil {
 		return errors.Wrapf(err, "registry '%s' unreachable", registry)
@@ -257,10 +257,10 @@ func getPullSecret(troubleshootCtx *troubleshootContext) (string, error) {
 }
 
 func manifestUrl(registry string, componentImageInfo image.Components) string {
-	return fmt.Sprintf("%s/v2/%s/manifests/%s",
+	return fmt.Sprintf("%s%s/manifests/%s",
 		registryUrl(registry), componentImageInfo.Image, componentImageInfo.Version)
 }
 
 func registryUrl(registry string) string {
-	return fmt.Sprintf("https://%s", registry)
+	return fmt.Sprintf("https://%s/v2/", registry)
 }
