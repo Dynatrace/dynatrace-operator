@@ -2,6 +2,7 @@ package troubleshoot
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 
@@ -116,7 +117,8 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			checkImagePullable,
 		}
 
-		dynakubes, err := getDynakubes(&troubleshootCtx)
+		troubleshootCtx.dynakubeName = dynakubeFlagValue
+		dynakubes, err := getDynakubes(troubleshootCtx)
 		if err != nil {
 			return nil
 		}
@@ -145,10 +147,10 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 	}
 }
 
-func getDynakubes(troubleshootCtx *troubleshootContext) ([]dynatracev1beta1.DynaKube, error) {
+func getDynakubes(troubleshootCtx troubleshootContext) ([]dynatracev1beta1.DynaKube, error) {
 	var err error
 	var dynakubes []dynatracev1beta1.DynaKube
-	if dynakubeFlagValue == "" {
+	if troubleshootCtx.dynakubeName == "" {
 		logInfof("no Dynakube specified - checking all Dynakubes in namespace '%s'", namespaceFlagValue)
 		dynakubes, err = getAllDynakubesInNamespace(troubleshootCtx)
 		if err != nil {
@@ -156,13 +158,13 @@ func getDynakubes(troubleshootCtx *troubleshootContext) ([]dynatracev1beta1.Dyna
 		}
 	} else {
 		dynakube := dynatracev1beta1.DynaKube{}
-		dynakube.Name = dynakubeFlagValue
+		dynakube.Name = troubleshootCtx.dynakubeName
 		dynakubes = append(dynakubes, dynakube)
 	}
 	return dynakubes, nil
 }
 
-func getAllDynakubesInNamespace(troubleshootContext *troubleshootContext) ([]dynatracev1beta1.DynaKube, error) {
+func getAllDynakubesInNamespace(troubleshootContext troubleshootContext) ([]dynatracev1beta1.DynaKube, error) {
 	query := kubeobjects.NewDynakubeQuery(troubleshootContext.apiReader, troubleshootContext.namespaceName).WithContext(troubleshootContext.context)
 	dynakubes, err := query.List()
 	if err != nil {
@@ -170,7 +172,8 @@ func getAllDynakubesInNamespace(troubleshootContext *troubleshootContext) ([]dyn
 		return nil, err
 	}
 	if len(dynakubes.Items) == 0 {
-		logErrorf("no Dynakubes found in namespace %s", namespaceFlagValue)
+		err = fmt.Errorf("no Dynakubes found in namespace '%s'", troubleshootContext.namespaceName)
+		logErrorf(err.Error())
 		return nil, err
 	}
 	return dynakubes.Items, nil
