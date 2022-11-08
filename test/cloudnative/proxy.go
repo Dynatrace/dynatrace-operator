@@ -123,9 +123,7 @@ func checkSampleInitContainer(ctx context.Context, t *testing.T, environmentConf
 					if env.Name == DtProxy {
 						require.NotNil(t, env.Value)
 					}
-					break
 				}
-				break
 			}
 		}
 
