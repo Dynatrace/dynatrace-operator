@@ -15,9 +15,11 @@ import (
 )
 
 const (
-	use               = "troubleshoot"
-	dynakubeFlagName  = "dynakube"
-	namespaceFlagName = "namespace"
+	use                    = "troubleshoot"
+	dynakubeFlagName       = "dynakube"
+	dynakubeFlagShorthand  = "d"
+	namespaceFlagName      = "namespace"
+	namespaceFlagShorthand = "n"
 )
 
 var (
@@ -54,8 +56,8 @@ func (builder CommandBuilder) Build() *cobra.Command {
 }
 
 func addFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&dynakubeFlagValue, dynakubeFlagName, "", "Specify a different Dynakube name.")
-	cmd.PersistentFlags().StringVar(&namespaceFlagValue, namespaceFlagName, defaultNamespace(), "Specify a different Namespace.")
+	cmd.PersistentFlags().StringVarP(&dynakubeFlagValue, dynakubeFlagName, dynakubeFlagShorthand, "", "Specify a different Dynakube name.")
+	cmd.PersistentFlags().StringVarP(&namespaceFlagValue, namespaceFlagName, namespaceFlagShorthand, defaultNamespace(), "Specify a different Namespace.")
 }
 
 func defaultNamespace() string {
