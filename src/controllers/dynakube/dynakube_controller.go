@@ -325,7 +325,7 @@ func (controller *DynakubeController) removeOneAgentDaemonSet(ctx context.Contex
 
 func (controller *DynakubeController) reconcileActiveGate(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) error {
 	reconciler := activegate.NewReconciler(ctx, controller.client, controller.apiReader, controller.scheme, dynakube, dtc)
-	_, err := reconciler.Reconcile()
+	err := reconciler.Reconcile()
 
 	if err != nil {
 		return errors.WithMessage(err, "failed to reconcile ActiveGate")
