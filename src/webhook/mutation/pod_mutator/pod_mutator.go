@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/Dynatrace/dynatrace-operator/src/graceful"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	corev1 "k8s.io/api/core/v1"
@@ -15,16 +16,15 @@ import (
 )
 
 // AddPodMutationWebhookToManager adds the Webhook server to the Manager
-func AddPodMutationWebhookToManager(mgr manager.Manager, ns string) error {
+func AddPodMutationWebhookToManager(mgr manager.Manager, ns string, shutdownManager *graceful.ShutdownManager) error {
 	podName := os.Getenv("POD_NAME")
 	if podName == "" {
 		log.Info("no Pod name set for webhook container")
 	}
 
-	if err := registerInjectEndpoint(mgr, ns, podName); err != nil {
+	if err := registerInjectEndpoint(mgr, ns, podName, shutdownManager); err != nil {
 		return err
 	}
-	registerLivezEndpoint(mgr)
 	return nil
 }
 
@@ -40,6 +40,8 @@ type podMutatorWebhook struct {
 	apmExists        bool
 	deployedViaOLM   bool
 
+	shutdownManager *graceful.ShutdownManager
+
 	mutators []dtwebhook.PodMutator
 }
 
@@ -50,6 +52,9 @@ func (webhook *podMutatorWebhook) InjectDecoder(d *admission.Decoder) error {
 }
 
 func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.Request) admission.Response {
+	webhook.shutdownManager.IncCurrentlyRunning()
+	defer webhook.shutdownManager.DecCurrentlyRunning()
+
 	emptyPatch := admission.Patched("")
 	mutationRequest, err := webhook.createMutationRequestBase(ctx, request)
 	if err != nil {

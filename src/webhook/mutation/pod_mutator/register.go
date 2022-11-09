@@ -2,8 +2,8 @@ package pod_mutator
 
 import (
 	"context"
-	"net/http"
 
+	"github.com/Dynatrace/dynatrace-operator/src/graceful"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
@@ -17,7 +17,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
-func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhookPodName string) error {
+func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhookPodName string, shutdownManager *graceful.ShutdownManager) error {
 	// Don't use mgr.GetClient() on this function, or other cache-dependent functions from the manager. The cache may
 	// not be ready at this point, and queries for Kubernetes objects may fail. mgr.GetAPIReader() doesn't depend on the
 	// cache and is safe to use.
@@ -63,6 +63,7 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 		webhookImage:     webhookPodImage,
 		deployedViaOLM:   kubesystem.IsDeployedViaOlm(*webhookPod),
 		clusterID:        clusterID,
+		shutdownManager:  shutdownManager,
 		recorder:         eventRecorder,
 		mutators: []dtwebhook.PodMutator{
 			oneagent_mutation.NewOneAgentPodMutator(
@@ -82,13 +83,6 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 	}})
 	log.Info("registered /inject endpoint")
 	return nil
-}
-
-func registerLivezEndpoint(mgr manager.Manager) {
-	mgr.GetWebhookServer().Register("/livez", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	}))
-	log.Info("registered /livez endpoint")
 }
 
 func getWebhookContainerImage(webhookPod corev1.Pod) (string, error) {

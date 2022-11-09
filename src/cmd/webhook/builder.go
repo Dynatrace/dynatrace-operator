@@ -2,12 +2,14 @@ package webhook
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/certificates"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 	cmdManager "github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
+	"github.com/Dynatrace/dynatrace-operator/src/graceful"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
@@ -16,7 +18,7 @@ import (
 	validationhook "github.com/Dynatrace/dynatrace-operator/src/webhook/validation"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 const (
@@ -111,12 +113,15 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 				WaitForCertificates()
 		}
 
-		err = namespace_mutator.AddNamespaceMutationWebhookToManager(webhookManager, builder.namespace)
+		shutdownManager := graceful.NewShutdownManager()
+		shutdownManager.Start()
+
+		err = namespace_mutator.AddNamespaceMutationWebhookToManager(webhookManager, builder.namespace, shutdownManager)
 		if err != nil {
 			return err
 		}
 
-		err = pod_mutator.AddPodMutationWebhookToManager(webhookManager, builder.namespace)
+		err = pod_mutator.AddPodMutationWebhookToManager(webhookManager, builder.namespace, shutdownManager)
 		if err != nil {
 			return err
 		}
@@ -136,9 +141,20 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		signalHandler := ctrl.SetupSignalHandler()
-		err = webhookManager.Start(signalHandler)
+		go func() {
+			livezManager, _ := NewLivezManagerProvider().CreateManager(builder.namespace, kubeConfig)
+			registerLivezEndpoint(livezManager)
+			livezManager.Start(shutdownManager.GetLivezContext())
+		}()
+
+		err = webhookManager.Start(shutdownManager.GetServerContext())
 
 		return errors.WithStack(err)
 	}
+}
+
+func registerLivezEndpoint(mgr manager.Manager) {
+	mgr.GetWebhookServer().Register("/livez", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
 }

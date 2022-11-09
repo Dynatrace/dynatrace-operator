@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/Dynatrace/dynatrace-operator/src/graceful"
 	"github.com/Dynatrace/dynatrace-operator/src/mapper"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/pkg/errors"
@@ -16,9 +17,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-func AddNamespaceMutationWebhookToManager(manager ctrl.Manager, ns string) error {
+func AddNamespaceMutationWebhookToManager(manager ctrl.Manager, ns string, shutdownManager *graceful.ShutdownManager) error {
 	manager.GetWebhookServer().Register("/label-ns", &webhook.Admission{
-		Handler: newNamespaceMutator(ns, manager.GetAPIReader()),
+		Handler: newNamespaceMutator(ns, shutdownManager, manager.GetAPIReader()),
 	})
 	return nil
 }
@@ -28,6 +29,8 @@ type namespaceMutator struct {
 	client    client.Client
 	apiReader client.Reader
 	namespace string
+
+	shutdownManager *graceful.ShutdownManager
 }
 
 // InjectClient implements the inject.Client interface which allows the manager to inject a kubernetes client into this handler
@@ -43,6 +46,8 @@ func (nm *namespaceMutator) InjectClient(clt client.Client) error {
 //  2. if the namespace was updated by the operator => don't do the mapping: we detect this using an annotation, we do this because the operator also does the mapping
 //     but from the dynakube's side (during dynakube reconcile) and we don't want to repeat ourselves. So we just remove the annotation.
 func (nm *namespaceMutator) Handle(ctx context.Context, request admission.Request) admission.Response {
+	nm.shutdownManager.IncCurrentlyRunning()
+	defer nm.shutdownManager.DecCurrentlyRunning()
 	if nm.namespace == request.Namespace {
 		return admission.Patched("")
 	}
@@ -85,10 +90,11 @@ func decodeRequestToNamespace(request admission.Request, namespace *corev1.Names
 	return nil
 }
 
-func newNamespaceMutator(ns string, apiReader client.Reader) admission.Handler {
+func newNamespaceMutator(ns string, shutdownManager *graceful.ShutdownManager, apiReader client.Reader) admission.Handler {
 	return &namespaceMutator{
-		apiReader: apiReader,
-		namespace: ns,
+		apiReader:       apiReader,
+		namespace:       ns,
+		shutdownManager: shutdownManager,
 	}
 }
 

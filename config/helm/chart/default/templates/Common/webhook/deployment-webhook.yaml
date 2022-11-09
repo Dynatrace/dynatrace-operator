@@ -105,11 +105,13 @@ spec:
           readinessProbe:
             httpGet:
               path: /livez
-              port: server-port
+              port: livez-port
               scheme: HTTPS
           ports:
             - name: server-port
               containerPort: 8443
+            - name: livez-port
+              containerPort: 8453
           resources:
             requests:
               {{- toYaml (.Values.webhook).requests | nindent 14 }}

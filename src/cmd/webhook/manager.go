@@ -1,6 +1,8 @@
 package webhook
 
 import (
+	"time"
+
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/rest"
@@ -37,11 +39,13 @@ func (provider WebhookProvider) CreateManager(namespace string, config *rest.Con
 }
 
 func (provider WebhookProvider) createOptions(namespace string) ctrl.Options {
+	gracefulShutdownTimeout := 20 * time.Second
 	return ctrl.Options{
-		Namespace:          namespace,
-		Scheme:             scheme.Scheme,
-		MetricsBindAddress: metricsBindAddress,
-		Port:               port,
+		Namespace:               namespace,
+		Scheme:                  scheme.Scheme,
+		MetricsBindAddress:      metricsBindAddress,
+		Port:                    port,
+		GracefulShutdownTimeout: &gracefulShutdownTimeout,
 	}
 }
 
@@ -52,4 +56,27 @@ func (provider WebhookProvider) setupWebhookServer(mgr manager.Manager) manager.
 	webhookServer.CertName = provider.certificateFileName
 
 	return mgr
+}
+
+type LivezProvider struct{}
+
+func NewLivezManagerProvider() LivezProvider {
+	return LivezProvider{}
+}
+
+func (provider LivezProvider) CreateManager(namespace string, config *rest.Config) (manager.Manager, error) {
+	mgr, err := ctrl.NewManager(config, provider.createOptions(namespace))
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return mgr, nil
+}
+
+func (provider LivezProvider) createOptions(namespace string) ctrl.Options {
+	return ctrl.Options{
+		Namespace: namespace,
+		Scheme:    scheme.Scheme,
+		Port:      8453,
+	}
 }
