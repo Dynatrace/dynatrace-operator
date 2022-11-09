@@ -3,9 +3,9 @@ package customproperties
 import (
 	"context"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"

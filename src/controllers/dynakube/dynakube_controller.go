@@ -2,7 +2,6 @@ package dynakube
 
 import (
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"net/http"
 	"os"
 	"time"
