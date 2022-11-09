@@ -25,11 +25,10 @@ type Builder interface {
 }
 
 type builder struct {
-	ctx                        context.Context
-	apiReader                  client.Reader
-	dynakube                   dynatracev1beta1.DynaKube
-	tokens                     token.Tokens
-	lastApiTokenProbeTimestamp *metav1.Time
+	ctx       context.Context
+	apiReader client.Reader
+	dynakube  dynatracev1beta1.DynaKube
+	tokens    token.Tokens
 }
 
 func NewBuilder(apiReader client.Reader) Builder {
