@@ -5,6 +5,9 @@ import (
 )
 
 const (
+	// TokenConditionType identifies the token validity condition
+	TokenConditionType string = "Tokens"
+
 	// APITokenConditionType identifies the API Token validity condition
 	APITokenConditionType string = "APIToken"
 
@@ -13,26 +16,12 @@ const (
 
 	// DataIngestTokenConditionType identifies the DataIngest Token validity condition
 	DataIngestTokenConditionType string = "DataIngestToken"
-
-	OperatorName = "dynatrace-operator"
 )
 
 // Possible reasons for ApiToken and PaaSToken conditions
 const (
 	// ReasonTokenReady is set when a token has passed verifications
 	ReasonTokenReady string = "TokenReady"
-
-	// ReasonTokenSecretNotFound is set when the referenced secret can't be found
-	ReasonTokenSecretNotFound string = "TokenSecretNotFound"
-
-	// ReasonTokenMissing is set when the field is missing on the secret
-	ReasonTokenMissing string = "TokenMissing"
-
-	// ReasonTokenUnauthorized is set when a token is unauthorized to query the Dynatrace API
-	ReasonTokenUnauthorized string = "TokenUnauthorized"
-
-	// ReasonTokenScopeMissing is set when the token is missing the required scope for the Dynatrace API
-	ReasonTokenScopeMissing string = "TokenScopeMissing"
 
 	// ReasonTokenError is set when an unknown error has been found when verifying the token
 	ReasonTokenError string = "TokenError"
