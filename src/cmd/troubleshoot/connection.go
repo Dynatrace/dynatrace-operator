@@ -9,22 +9,18 @@ import (
 	"github.com/pkg/errors"
 )
 
-func checkDTClusterConnection(troubleshootCtx *troubleshootContext) error {
+func checkDtClusterConnection(troubleshootCtx *troubleshootContext) error {
 	log = newTroubleshootLogger("[dtcluster ] ")
 
 	logNewTestf("checking if tenant is accessible ...")
 
-	tests := []troubleshootFunc{
+	checks := []troubleshootFunc{
 		checkConnection,
 	}
 
-	for _, test := range tests {
-		err := test(troubleshootCtx)
-
-		if err != nil {
-			logErrorf(err.Error())
-			return errors.New("tenant isn't  accessible")
-		}
+	err := runChecks(troubleshootCtx, checks)
+	if err != nil {
+		return errors.Wrap(err, "tenant isn't  accessible")
 	}
 
 	logOkf("tenant is accessible")

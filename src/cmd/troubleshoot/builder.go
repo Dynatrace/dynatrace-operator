@@ -88,13 +88,13 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		}
 
 		apiReader := k8scluster.GetAPIReader()
-		tests := []troubleshootFunc{
+		checks := []troubleshootFunc{
 			checkNamespace,
 			checkDynakube,
-			checkDTClusterConnection,
+			checkDtClusterConnection,
 			checkImagePullable,
 		}
-		troubleshootCtx := troubleshootContext{
+		troubleshootCtx := &troubleshootContext{
 			context:       context.Background(),
 			apiReader:     apiReader,
 			httpClient:    &http.Client{},
@@ -102,13 +102,6 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			dynakubeName:  dynakubeFlagValue,
 		}
 
-		for _, test := range tests {
-			err = test(&troubleshootCtx)
-			if err != nil {
-				logErrorf(err.Error())
-				return nil
-			}
-		}
-		return nil
+		return runChecks(troubleshootCtx, checks)
 	}
 }
