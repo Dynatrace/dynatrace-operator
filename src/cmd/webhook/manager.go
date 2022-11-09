@@ -1,6 +1,8 @@
 package webhook
 
 import (
+	"time"
+
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/rest"
@@ -37,11 +39,13 @@ func (provider WebhookProvider) CreateManager(namespace string, config *rest.Con
 }
 
 func (provider WebhookProvider) createOptions(namespace string) ctrl.Options {
+	gracefulShutDownPeriod := time.Duration(20 * time.Second)
 	return ctrl.Options{
-		Namespace:          namespace,
-		Scheme:             scheme.Scheme,
-		MetricsBindAddress: metricsBindAddress,
-		Port:               port,
+		Namespace:               namespace,
+		Scheme:                  scheme.Scheme,
+		MetricsBindAddress:      metricsBindAddress,
+		Port:                    port,
+		GracefulShutdownTimeout: &gracefulShutDownPeriod,
 	}
 }
 
