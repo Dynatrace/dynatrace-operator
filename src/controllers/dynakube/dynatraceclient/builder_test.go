@@ -1,7 +1,6 @@
 package dynatraceclient
 
 import (
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -9,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
