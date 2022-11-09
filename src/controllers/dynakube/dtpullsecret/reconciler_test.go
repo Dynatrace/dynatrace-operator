@@ -2,6 +2,7 @@ package dtpullsecret
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -27,16 +28,10 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Namespace: testNamespace,
 				Name:      testName,
 			}}
-		fakeClient := fake.NewClient(&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
-			Data: map[string][]byte{
-				dtclient.DynatraceApiToken: []byte("api-token"),
-			},
+		fakeClient := fake.NewClient()
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, token.Tokens{
+			dtclient.DynatraceApiToken: token.Token{Value: testValue},
 		})
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube)
 
 		mockDTC.
 			On("GetOneAgentConnectionInfo").
@@ -66,7 +61,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				CustomPullSecret: testValue,
 			}}
-		r := NewReconciler(context.TODO(), nil, nil, nil, dynakube)
+		r := NewReconciler(context.TODO(), nil, nil, nil, dynakube, nil)
 		err := r.Reconcile()
 
 		assert.NoError(t, err)
@@ -87,16 +82,10 @@ func TestReconciler_Reconcile(t *testing.T) {
 				},
 			},
 		}
-		fakeClient := fake.NewClient(&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
-			Data: map[string][]byte{
-				dtclient.DynatraceApiToken: []byte(testValue),
-			},
+		fakeClient := fake.NewClient()
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, token.Tokens{
+			dtclient.DynatraceApiToken: token.Token{Value: testValue},
 		})
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube)
 
 		err := r.Reconcile()
 
@@ -130,16 +119,10 @@ func TestReconciler_Reconcile(t *testing.T) {
 				},
 			},
 		}
-		fakeClient := fake.NewClient(&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
-			Data: map[string][]byte{
-				dtclient.DynatraceApiToken: []byte(testValue),
-			},
+		fakeClient := fake.NewClient()
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, token.Tokens{
+			dtclient.DynatraceApiToken: token.Token{Value: testValue},
 		})
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube)
 
 		err := r.Reconcile()
 

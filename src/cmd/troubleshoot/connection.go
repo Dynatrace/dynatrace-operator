@@ -39,12 +39,12 @@ func checkConnection(troubleshootCtx *troubleshootContext) error {
 		return err
 	}
 
-	dynatraceClientProperties := dynatraceclient.NewProperties(troubleshootCtx.context, troubleshootCtx.apiReader, troubleshootCtx.dynakube, tokens)
-	if err != nil {
-		return errorWithMessagef(err, "failed to configure DynatraceAPI client")
-	}
+	dtc, err := dynatraceclient.NewBuilder(troubleshootCtx.apiReader).
+		SetContext(troubleshootCtx.context).
+		SetDynakube(troubleshootCtx.dynakube).
+		SetTokens(tokens).
+		Build()
 
-	dtc, err := dynatraceclient.BuildDynatraceClient(dynatraceClientProperties)
 	if err != nil {
 		return errorWithMessagef(err, "failed to build DynatraceAPI client")
 	}

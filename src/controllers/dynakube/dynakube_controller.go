@@ -2,6 +2,7 @@ package dynakube
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"net/http"
 	"os"
 	"time"
@@ -47,18 +48,18 @@ func Add(mgr manager.Manager, _ string) error {
 
 // NewController returns a new ReconcileDynaKube
 func NewController(mgr manager.Manager) *DynakubeController {
-	return NewDynaKubeController(mgr.GetClient(), mgr.GetAPIReader(), mgr.GetScheme(), dynatraceclient.BuildDynatraceClient, mgr.GetConfig())
+	return NewDynaKubeController(mgr.GetClient(), mgr.GetAPIReader(), mgr.GetScheme(), mgr.GetConfig())
 }
 
-func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtcBuildFunc dynatraceclient.BuildFunc, config *rest.Config) *DynakubeController {
+func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, scheme *runtime.Scheme, config *rest.Config) *DynakubeController {
 	return &DynakubeController{
-		client:            kubeClient,
-		apiReader:         apiReader,
-		scheme:            scheme,
-		fs:                afero.Afero{Fs: afero.NewOsFs()},
-		dtcBuildFunc:      dtcBuildFunc,
-		config:            config,
-		operatorNamespace: os.Getenv("POD_NAMESPACE"),
+		client:                 kubeClient,
+		apiReader:              apiReader,
+		scheme:                 scheme,
+		fs:                     afero.Afero{Fs: afero.NewOsFs()},
+		dynatraceClientBuilder: dynatraceclient.NewBuilder(apiReader),
+		config:                 config,
+		operatorNamespace:      os.Getenv("POD_NAMESPACE"),
 	}
 }
 
@@ -74,13 +75,13 @@ func (controller *DynakubeController) SetupWithManager(mgr ctrl.Manager) error {
 type DynakubeController struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the api-server
-	client            client.Client
-	apiReader         client.Reader
-	scheme            *runtime.Scheme
-	fs                afero.Afero
-	dtcBuildFunc      dynatraceclient.BuildFunc
-	config            *rest.Config
-	operatorNamespace string
+	client                 client.Client
+	apiReader              client.Reader
+	scheme                 *runtime.Scheme
+	fs                     afero.Afero
+	dynatraceClientBuilder dynatraceclient.Builder
+	config                 *rest.Config
+	operatorNamespace      string
 }
 
 // Reconcile reads that state of the cluster for a DynaKube object and makes changes based on the state read
@@ -100,7 +101,7 @@ func (controller *DynakubeController) Reconcile(ctx context.Context, request rec
 		return reconcile.Result{}, nil
 	}
 
-	oldStatus := dynakube.Status
+	oldStatus := *dynakube.Status.DeepCopy()
 	updated := controller.reconcileIstio(dynakube)
 	if updated {
 		log.Info("istio: objects updated")
@@ -175,25 +176,28 @@ func (controller *DynakubeController) reconcileIstio(dynakube *dynatracev1beta1.
 }
 
 func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
-	dtcFactory := dynatraceclient.NewFactory(controller.client, controller.dtcBuildFunc)
-	dtc, err := dtcFactory.Create(ctx, dynakube)
+	tokenReader := token.NewReader(controller.apiReader, dynakube)
+	tokens, err := tokenReader.ReadTokens(ctx)
 
 	if err != nil {
 		controller.setConditionTokenError(dynakube, err)
-		setStatusError := controller.updateDynakubeStatus(ctx, dynakube)
+		return err
+	}
 
-		if setStatusError != nil {
-			log.Info("could not set dynakube status", "error", err.Error())
-		}
+	dynatraceClientBuilder := controller.dynatraceClientBuilder.
+		SetContext(ctx).
+		SetDynakube(*dynakube).
+		SetTokens(tokens)
+	dynatraceClient, err := dynatraceClientBuilder.BuildWithTokenVerification(&dynakube.Status)
 
-		log.Info("failed to create dynatrace client")
+	if err != nil {
+		controller.setConditionTokenError(dynakube, err)
 		return err
 	}
 
 	controller.setConditionTokenReady(dynakube)
-
 	err = status.SetDynakubeStatus(dynakube, status.Options{
-		DtClient:  dtc,
+		DtClient:  dynatraceClient,
 		ApiReader: controller.apiReader,
 	})
 	if err != nil {
@@ -202,14 +206,14 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dyn
 	}
 
 	err = dtpullsecret.
-		NewReconciler(ctx, controller.client, controller.apiReader, controller.scheme, dynakube).
+		NewReconciler(ctx, controller.client, controller.apiReader, controller.scheme, dynakube, tokens).
 		Reconcile()
 	if err != nil {
 		log.Info("could not reconcile Dynatrace pull secret")
 		return err
 	}
 
-	err = connectioninfo.NewReconciler(ctx, controller.client, controller.apiReader, dynakube, dtc).Reconcile()
+	err = connectioninfo.NewReconciler(ctx, controller.client, controller.apiReader, dynakube, dynatraceClient).Reconcile()
 	if err != nil {
 		return err
 	}
@@ -220,7 +224,7 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dyn
 		return err
 	}
 
-	err = controller.reconcileActiveGate(ctx, dynakube, dtc)
+	err = controller.reconcileActiveGate(ctx, dynakube, dynatraceClient)
 	if err != nil {
 		log.Info("could not reconcile ActiveGate")
 		return err

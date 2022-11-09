@@ -25,15 +25,17 @@ type Reconciler struct {
 	apiReader client.Reader
 	dynakube  *dynatracev1beta1.DynaKube
 	scheme    *runtime.Scheme
+	tokens    token.Tokens
 }
 
-func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube) *Reconciler {
+func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, tokens token.Tokens) *Reconciler {
 	return &Reconciler{
 		ctx:       ctx,
 		client:    clt,
 		apiReader: apiReader,
 		scheme:    scheme,
 		dynakube:  dynakube,
+		tokens:    tokens,
 	}
 }
 
@@ -50,14 +52,7 @@ func (r *Reconciler) Reconcile() error {
 }
 
 func (r *Reconciler) reconcilePullSecret() error {
-	tokenReader := token.NewReader(r.apiReader, r.dynakube)
-	tokens, err := tokenReader.ReadTokens(r.ctx)
-
-	if err != nil {
-		return err
-	}
-
-	pullSecretData, err := r.GenerateData(tokens)
+	pullSecretData, err := r.GenerateData()
 	if err != nil {
 		return errors.WithMessage(err, "could not generate pull secret data")
 	}

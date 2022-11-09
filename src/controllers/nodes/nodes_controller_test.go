@@ -2,6 +2,7 @@ package nodes
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"testing"
 	"time"
 
@@ -157,12 +158,42 @@ func createReconcileRequest(nodeName string) reconcile.Request {
 	}
 }
 
+type mockDynatraceClientBuilder struct {
+	dynatraceClient dtclient.Client
+}
+
+func (builder mockDynatraceClientBuilder) SetContext(context.Context) dynatraceclient.Builder {
+	return builder
+}
+
+func (builder mockDynatraceClientBuilder) SetDynakube(dynatracev1beta1.DynaKube) dynatraceclient.Builder {
+	return builder
+}
+
+func (builder mockDynatraceClientBuilder) SetTokens(token.Tokens) dynatraceclient.Builder {
+	return builder
+}
+
+func (builder mockDynatraceClientBuilder) LastApiProbeTimestamp() *metav1.Time {
+	return nil
+}
+
+func (builder mockDynatraceClientBuilder) Build() (dtclient.Client, error) {
+	return builder.dynatraceClient, nil
+}
+
+func (builder mockDynatraceClientBuilder) BuildWithTokenVerification(*dynatracev1beta1.DynaKubeStatus) (dtclient.Client, error) {
+	return builder.dynatraceClient, nil
+}
+
 func createDefaultReconciler(fakeClient client.Client, dtClient *dtclient.MockDynatraceClient) *NodesController {
 	return &NodesController{
-		client:       fakeClient,
-		apiReader:    fakeClient,
-		scheme:       scheme.Scheme,
-		dtClientFunc: dynatraceclient.StaticDynatraceClient(dtClient),
+		client:    fakeClient,
+		apiReader: fakeClient,
+		scheme:    scheme.Scheme,
+		dynatraceClientBuilder: &mockDynatraceClientBuilder{
+			dynatraceClient: dtClient,
+		},
 		podNamespace: testNamespace,
 		runLocal:     true,
 	}

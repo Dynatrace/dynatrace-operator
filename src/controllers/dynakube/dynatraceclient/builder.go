@@ -2,153 +2,157 @@ package dynatraceclient
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type options struct {
-	ctx  context.Context
-	Opts []dtclient.Option
+const apiTokenProbeDelay = 5 * time.Minute
+
+type Builder interface {
+	SetContext(ctx context.Context) Builder
+	SetDynakube(dynakube dynatracev1beta1.DynaKube) Builder
+	SetTokens(tokens token.Tokens) Builder
+	Build() (dtclient.Client, error)
+	BuildWithTokenVerification(dynaKubeStatus *dynatracev1beta1.DynaKubeStatus) (dtclient.Client, error)
 }
 
-type Properties struct {
-	ctx                 context.Context
-	ApiReader           client.Reader
-	Tokens              token.Tokens
-	Proxy               *proxy
-	ApiUrl              string
-	Namespace           string
-	NetworkZone         string
-	TrustedCerts        string
-	SkipCertCheck       bool
-	DisableHostRequests bool
+type builder struct {
+	ctx                        context.Context
+	apiReader                  client.Reader
+	dynakube                   dynatracev1beta1.DynaKube
+	tokens                     token.Tokens
+	lastApiTokenProbeTimestamp *metav1.Time
 }
 
-type proxy struct {
-	Value     string
-	ValueFrom string
-}
-
-func NewProperties(ctx context.Context, apiReader client.Reader, dynakube dynatracev1beta1.DynaKube, tokens token.Tokens) Properties {
-	return Properties{
-		ctx:                 ctx,
-		ApiReader:           apiReader,
-		Tokens:              tokens,
-		ApiUrl:              dynakube.Spec.APIURL,
-		Namespace:           dynakube.Namespace,
-		Proxy:               convertProxy(dynakube.Spec.Proxy),
-		NetworkZone:         dynakube.Spec.NetworkZone,
-		TrustedCerts:        dynakube.Spec.TrustedCAs,
-		SkipCertCheck:       dynakube.Spec.SkipCertCheck,
-		DisableHostRequests: dynakube.FeatureDisableHostsRequests(),
+func NewBuilder(apiReader client.Reader) Builder {
+	return builder{
+		apiReader: apiReader,
 	}
 }
 
-func convertProxy(dynakubeProxy *dynatracev1beta1.DynaKubeProxy) *proxy {
-	if dynakubeProxy == nil {
-		return nil
-	}
-	return &proxy{
-		Value:     dynakubeProxy.Value,
-		ValueFrom: dynakubeProxy.ValueFrom,
-	}
+func (dynatraceClientBuilder builder) SetContext(ctx context.Context) Builder {
+	dynatraceClientBuilder.ctx = ctx
+	return dynatraceClientBuilder
 }
 
-// BuildDynatraceClient creates a new Dynatrace client using the settings configured on the given instance.
-func BuildDynatraceClient(properties Properties) (dtclient.Client, error) {
-	namespace := properties.Namespace
-	apiReader := properties.ApiReader
+func (dynatraceClientBuilder builder) SetDynakube(dynakube dynatracev1beta1.DynaKube) Builder {
+	dynatraceClientBuilder.dynakube = dynakube
+	return dynatraceClientBuilder
+}
 
-	opts := newOptions(properties.ctx)
-	opts.appendCertCheck(properties.SkipCertCheck)
-	opts.appendNetworkZone(properties.NetworkZone)
-	opts.appendDisableHostsRequests(properties.DisableHostRequests)
+func (dynatraceClientBuilder builder) SetTokens(tokens token.Tokens) Builder {
+	dynatraceClientBuilder.tokens = tokens
+	return dynatraceClientBuilder
+}
 
-	err := opts.appendProxySettings(apiReader, properties.Proxy, namespace)
+func (dynatraceClientBuilder builder) context() context.Context {
+	if dynatraceClientBuilder.ctx == nil {
+		dynatraceClientBuilder.ctx = context.Background()
+	}
+
+	return dynatraceClientBuilder.ctx
+}
+
+func (dynatraceClientBuilder builder) getTokens() token.Tokens {
+	if dynatraceClientBuilder.tokens == nil {
+		dynatraceClientBuilder.tokens = token.Tokens{}
+	}
+
+	return dynatraceClientBuilder.tokens
+}
+
+// Build creates a new Dynatrace client using the settings configured on the given instance.
+func (dynatraceClientBuilder builder) Build() (dtclient.Client, error) {
+	namespace := dynatraceClientBuilder.dynakube.Namespace
+	apiReader := dynatraceClientBuilder.apiReader
+
+	opts := newOptions(dynatraceClientBuilder.context())
+	opts.appendCertCheck(dynatraceClientBuilder.dynakube.Spec.SkipCertCheck)
+	opts.appendNetworkZone(dynatraceClientBuilder.dynakube.Spec.NetworkZone)
+	opts.appendDisableHostsRequests(dynatraceClientBuilder.dynakube.FeatureDisableHostsRequests())
+
+	err := opts.appendProxySettings(apiReader, dynatraceClientBuilder.dynakube.Spec.Proxy, namespace)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	err = opts.appendTrustedCerts(apiReader, properties.TrustedCerts, namespace)
+	err = opts.appendTrustedCerts(apiReader, dynatraceClientBuilder.dynakube.Spec.TrustedCAs, namespace)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	apiToken := properties.Tokens.ApiToken().Value
-	paasToken := properties.Tokens.PaasToken().Value
+	apiToken := dynatraceClientBuilder.getTokens().ApiToken().Value
+	paasToken := dynatraceClientBuilder.getTokens().PaasToken().Value
 
 	if paasToken == "" {
 		paasToken = apiToken
 	}
 
-	return dtclient.NewClient(properties.ApiUrl, apiToken, paasToken, opts.Opts...)
+	return dtclient.NewClient(dynatraceClientBuilder.dynakube.Spec.APIURL, apiToken, paasToken, opts.Opts...)
 }
 
-func newOptions(ctx context.Context) *options {
-	return &options{
-		Opts: []dtclient.Option{},
-		ctx:  ctx,
+func (dynatraceClientBuilder builder) BuildWithTokenVerification(dynaKubeStatus *dynatracev1beta1.DynaKubeStatus) (dtclient.Client, error) {
+	dynatraceClient, err := dynatraceClientBuilder.Build()
+	if err != nil {
+		return nil, err
 	}
-}
 
-// StaticDynatraceClient creates a dynatraceClientFunc always returning c.
-func StaticDynatraceClient(c dtclient.Client) BuildFunc {
-	return func(properties Properties) (dtclient.Client, error) {
-		return c, nil
+	err = dynatraceClientBuilder.getTokens().VerifyValues()
+	if err != nil {
+		return nil, err
 	}
-}
 
-func (opts *options) appendNetworkZone(networkZone string) {
-	if networkZone != "" {
-		opts.Opts = append(opts.Opts, dtclient.NetworkZone(networkZone))
+	dynatraceClientBuilder.tokens = dynatraceClientBuilder.getTokens().SetScopesForDynakube(dynatraceClientBuilder.dynakube)
+	err = dynatraceClientBuilder.verifyTokenScopes(dynatraceClient, dynaKubeStatus)
+
+	if err != nil {
+		return nil, err
 	}
+
+	return dynatraceClient, nil
 }
 
-func (opts *options) appendCertCheck(skipCertCheck bool) {
-	opts.Opts = append(opts.Opts, dtclient.SkipCertificateValidation(skipCertCheck))
-}
+func (dynatraceClientBuilder builder) verifyTokenScopes(dynatraceClient dtclient.Client, dynaKubeStatus *dynatracev1beta1.DynaKubeStatus) error {
+	if dynaKubeStatus.LastAPITokenProbeTimestamp == nil {
+		dynaKubeStatus.LastAPITokenProbeTimestamp = &metav1.Time{}
+	}
 
-func (opts *options) appendDisableHostsRequests(disableHostsRequests bool) {
-	opts.Opts = append(opts.Opts, dtclient.DisableHostsRequests(disableHostsRequests))
-}
+	if isLastApiCallTooRecent(dynaKubeStatus) {
+		log.Info("returning a cached result because tokens are only validated once every five minutes to avoid rate limiting")
+		err := lastErrorFromCondition(dynaKubeStatus)
 
-func (opts *options) appendProxySettings(apiReader client.Reader, proxyEntry *proxy, namespace string) error {
-	if p := proxyEntry; p != nil {
-		if p.ValueFrom != "" {
-			proxySecret := &corev1.Secret{}
-			err := apiReader.Get(opts.ctx, client.ObjectKey{Name: p.ValueFrom, Namespace: namespace}, proxySecret)
-			if err != nil {
-				return errors.WithMessage(err, "failed to get proxy secret")
-			}
+		if err != nil {
+			return err
+		}
+	} else {
+		dynaKubeStatus.LastAPITokenProbeTimestamp = address.Of(metav1.Now())
+		err := dynatraceClientBuilder.tokens.VerifyScopes(dynatraceClient)
 
-			proxyURL, err := kubeobjects.ExtractToken(proxySecret, dtclient.CustomProxySecretKey)
-			if err != nil {
-				return errors.WithMessage(err, "failed to extract proxy secret field")
-			}
-			opts.Opts = append(opts.Opts, dtclient.Proxy(proxyURL))
-		} else if p.Value != "" {
-			opts.Opts = append(opts.Opts, dtclient.Proxy(p.Value))
+		if err != nil {
+			return err
 		}
 	}
+
 	return nil
 }
 
-func (opts *options) appendTrustedCerts(apiReader client.Reader, trustedCerts string, namespace string) error {
-	if trustedCerts != "" {
-		certs := &corev1.ConfigMap{}
-		if err := apiReader.Get(opts.ctx, client.ObjectKey{Namespace: namespace, Name: trustedCerts}, certs); err != nil {
-			return errors.WithMessage(err, "failed to get certificate configmap")
-		}
-		if certs.Data[dtclient.CustomCertificatesConfigMapKey] == "" {
-			return errors.New("failed to extract certificate configmap field: missing field certs")
-		}
-		opts.Opts = append(opts.Opts, dtclient.Certs([]byte(certs.Data[dtclient.CustomCertificatesConfigMapKey])))
+func lastErrorFromCondition(dynaKubeStatus *dynatracev1beta1.DynaKubeStatus) error {
+	oldCondition := meta.FindStatusCondition(dynaKubeStatus.Conditions, dynatracev1beta1.TokenConditionType)
+	if oldCondition != nil && oldCondition.Reason != dynatracev1beta1.ReasonTokenReady {
+		return errors.New(oldCondition.Message)
 	}
+
 	return nil
+}
+
+func isLastApiCallTooRecent(dynaKubeStatus *dynatracev1beta1.DynaKubeStatus) bool {
+	return time.Now().Before(dynaKubeStatus.LastAPITokenProbeTimestamp.Add(apiTokenProbeDelay))
 }
