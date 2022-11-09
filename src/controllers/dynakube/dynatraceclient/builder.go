@@ -2,15 +2,15 @@ package dynatraceclient
 
 import (
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
-	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -25,11 +25,10 @@ type Builder interface {
 }
 
 type builder struct {
-	ctx                        context.Context
-	apiReader                  client.Reader
-	dynakube                   dynatracev1beta1.DynaKube
-	tokens                     token.Tokens
-	lastApiTokenProbeTimestamp *metav1.Time
+	ctx       context.Context
+	apiReader client.Reader
+	dynakube  dynatracev1beta1.DynaKube
+	tokens    token.Tokens
 }
 
 func NewBuilder(apiReader client.Reader) Builder {
