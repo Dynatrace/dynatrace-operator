@@ -25,12 +25,12 @@ import (
 )
 
 type NodesController struct {
-	client       client.Client
-	apiReader    client.Reader
-	scheme       *runtime.Scheme
-	dtClientFunc dynatraceclient.BuildFunc
-	runLocal     bool
-	podNamespace string
+	client                 client.Client
+	apiReader              client.Reader
+	scheme                 *runtime.Scheme
+	dynatraceClientBuilder dynatraceclient.Builder
+	runLocal               bool
+	podNamespace           string
 }
 
 type CachedNodeInfo struct {
@@ -65,12 +65,12 @@ func nodeDeletionPredicate(controller *NodesController) predicate.Predicate {
 
 func NewController(mgr manager.Manager) *NodesController {
 	return &NodesController{
-		client:       mgr.GetClient(),
-		apiReader:    mgr.GetAPIReader(),
-		scheme:       mgr.GetScheme(),
-		dtClientFunc: dynatraceclient.BuildDynatraceClient,
-		runLocal:     kubesystem.IsRunLocally(),
-		podNamespace: os.Getenv("POD_NAMESPACE"),
+		client:                 mgr.GetClient(),
+		apiReader:              mgr.GetAPIReader(),
+		scheme:                 mgr.GetScheme(),
+		dynatraceClientBuilder: dynatraceclient.NewBuilder(mgr.GetAPIReader()),
+		runLocal:               kubesystem.IsRunLocally(),
+		podNamespace:           os.Getenv("POD_NAMESPACE"),
 	}
 }
 
@@ -281,12 +281,10 @@ func (controller *NodesController) sendMarkedForTermination(dynakubeInstance *dy
 		return err
 	}
 
-	dynatraceClientProperties := dynatraceclient.NewProperties(context.TODO(), controller.client, *dynakubeInstance, tokens)
-	if err != nil {
-		log.Error(err, err.Error())
-	}
-
-	dynatraceClient, err := controller.dtClientFunc(dynatraceClientProperties)
+	dynatraceClient, err := controller.dynatraceClientBuilder.
+		SetDynakube(*dynakubeInstance).
+		SetTokens(tokens).
+		Build()
 	if err != nil {
 		return err
 	}

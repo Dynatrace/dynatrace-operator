@@ -56,13 +56,14 @@ func TestReconciler_GenerateData(t *testing.T) {
 		},
 	}
 	r := &Reconciler{
-		dynakube: dynakube,
 		ctx:      context.Background(),
+		dynakube: dynakube,
+		tokens: token.Tokens{
+			dtclient.DynatracePaasToken: token.Token{Value: testPaasToken},
+		},
 	}
 
-	data, err := r.GenerateData(token.Tokens{
-		dtclient.DynatracePaasToken: token.Token{Value: testPaasToken},
-	})
+	data, err := r.GenerateData()
 
 	assert.NoError(t, err)
 	assert.NotNil(t, data)

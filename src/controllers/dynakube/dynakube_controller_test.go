@@ -418,13 +418,14 @@ func TestRemoveOneAgentDaemonset(t *testing.T) {
 				},
 			},
 		)
+		mockDtcBuilder := &dynatraceclient.StubBuilder{
+			DynatraceClient: mockClient,
+		}
 		controller := &DynakubeController{
-			client:    fakeClient,
-			apiReader: fakeClient,
-			scheme:    scheme.Scheme,
-			dtcBuildFunc: func(dynatraceclient.Properties) (dtclient.Client, error) {
-				return mockClient, nil
-			},
+			client:                 fakeClient,
+			apiReader:              fakeClient,
+			scheme:                 scheme.Scheme,
+			dynatraceClientBuilder: mockDtcBuilder,
 		}
 
 		result, err := controller.Reconcile(context.TODO(), reconcile.Request{
@@ -436,7 +437,7 @@ func TestRemoveOneAgentDaemonset(t *testing.T) {
 
 		var daemonSet appsv1.DaemonSet
 
-		err = controller.client.Get(context.TODO(), client.ObjectKey{Name: (instance.OneAgentDaemonsetName()), Namespace: testNamespace}, &daemonSet)
+		err = controller.client.Get(context.TODO(), client.ObjectKey{Name: instance.OneAgentDaemonsetName(), Namespace: testNamespace}, &daemonSet)
 
 		assert.Error(t, err)
 	})
@@ -668,14 +669,14 @@ func createFakeClientAndReconciler(mockClient dtclient.Client, instance *dynatra
 		},
 		generateStatefulSetForTesting(testName, testNamespace, "activegate", testUID),
 	)
-
+	mockDtcBuilder := &dynatraceclient.StubBuilder{
+		DynatraceClient: mockClient,
+	}
 	controller := &DynakubeController{
-		client:    fakeClient,
-		apiReader: fakeClient,
-		scheme:    scheme.Scheme,
-		dtcBuildFunc: func(dynatraceclient.Properties) (dtclient.Client, error) {
-			return mockClient, nil
-		},
+		client:                 fakeClient,
+		apiReader:              fakeClient,
+		scheme:                 scheme.Scheme,
+		dynatraceClientBuilder: mockDtcBuilder,
 	}
 
 	return controller
@@ -948,10 +949,13 @@ func TestTokenConditions(t *testing.T) {
 			},
 		})
 		mockClient := &dtclient.MockDynatraceClient{}
+		mockDtcBuilder := &dynatraceclient.StubBuilder{
+			DynatraceClient: mockClient,
+		}
 		controller := &DynakubeController{
-			client:       fakeClient,
-			apiReader:    fakeClient,
-			dtcBuildFunc: dynatraceclient.StaticDynatraceClient(mockClient),
+			client:                 fakeClient,
+			apiReader:              fakeClient,
+			dynatraceClientBuilder: mockDtcBuilder,
 		}
 		requiredScopes := token.Tokens{
 			dtclient.DynatraceApiToken: {Value: testAPIToken},

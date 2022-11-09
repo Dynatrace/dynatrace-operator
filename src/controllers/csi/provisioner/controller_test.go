@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
 	"io"
 	"os"
 	"path/filepath"
@@ -13,7 +14,6 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/arch"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
-	dtclient2 "github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/pkg/errors"
@@ -241,6 +241,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	t.Run(`error when creating dynatrace client`, func(t *testing.T) {
 		gc := &CSIGarbageCollectorMock{}
 		gc.On("Create").Return(reconcile.Result{}, nil)
+		mockDtcBuilder := &dynatraceclient.StubBuilder{
+			Err: fmt.Errorf(errorMsg),
+		}
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
@@ -263,10 +266,8 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 					},
 				},
 			),
-			dtcBuildFunc: func(dtclient2.Properties) (dtclient.Client, error) {
-				return nil, fmt.Errorf(errorMsg)
-			},
-			gc: gc,
+			dynatraceClientBuilder: mockDtcBuilder,
+			gc:                     gc,
 		}
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
@@ -288,6 +289,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 				TenantUUID: tenantUUID,
 			},
 		}, nil)
+		mockDtcBuilder := &dynatraceclient.StubBuilder{
+			DynatraceClient: mockClient,
+		}
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
@@ -310,12 +314,10 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 					},
 				},
 			),
-			dtcBuildFunc: func(dtclient2.Properties) (dtclient.Client, error) {
-				return mockClient, nil
-			},
-			fs: errorfs,
-			db: metadata.FakeMemoryDB(),
-			gc: gc,
+			dynatraceClientBuilder: mockDtcBuilder,
+			fs:                     errorfs,
+			db:                     metadata.FakeMemoryDB(),
+			gc:                     gc,
 		}
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
@@ -349,6 +351,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			On("GetAgentVersions", dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.Flavor, mock.AnythingOfType("string")).
 			Return(make([]string, 0), fmt.Errorf(errorMsg))
 		mockClient.On("GetProcessModuleConfig", mock.AnythingOfType("uint")).Return(&testProcessModuleConfig, nil)
+		mockDtcBuilder := &dynatraceclient.StubBuilder{
+			DynatraceClient: mockClient,
+		}
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
@@ -371,13 +376,11 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 					},
 				},
 			),
-			dtcBuildFunc: func(dtclient2.Properties) (dtclient.Client, error) {
-				return mockClient, nil
-			},
-			fs:       memFs,
-			db:       metadata.FakeMemoryDB(),
-			recorder: &record.FakeRecorder{},
-			gc:       gc,
+			dynatraceClientBuilder: mockDtcBuilder,
+			fs:                     memFs,
+			db:                     metadata.FakeMemoryDB(),
+			recorder:               &record.FakeRecorder{},
+			gc:                     gc,
 		}
 
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
@@ -407,6 +410,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		mockClient.On("GetLatestAgentVersion",
 			mock.AnythingOfType("string"),
 			mock.AnythingOfType("string")).Return(agentVersion, nil)
+		mockDtcBuilder := &dynatraceclient.StubBuilder{
+			DynatraceClient: mockClient,
+		}
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
@@ -426,12 +432,10 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 					},
 				},
 			),
-			dtcBuildFunc: func(dtclient2.Properties) (dtclient.Client, error) {
-				return mockClient, nil
-			},
-			fs: memFs,
-			db: &metadata.FakeFailDB{},
-			gc: gc,
+			dynatraceClientBuilder: mockDtcBuilder,
+			fs:                     memFs,
+			db:                     &metadata.FakeFailDB{},
+			gc:                     gc,
 		}
 
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
@@ -471,6 +475,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			}).
 			Return(nil)
 		mockClient.On("GetProcessModuleConfig", mock.AnythingOfType("uint")).Return(&testProcessModuleConfig, nil)
+		mockDtcBuilder := &dynatraceclient.StubBuilder{
+			DynatraceClient: mockClient,
+		}
 		r := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
@@ -493,13 +500,11 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 					},
 				},
 			),
-			dtcBuildFunc: func(dtclient2.Properties) (dtclient.Client, error) {
-				return mockClient, nil
-			},
-			fs:       memFs,
-			db:       memDB,
-			recorder: &record.FakeRecorder{},
-			gc:       gc,
+			dynatraceClientBuilder: mockDtcBuilder,
+			fs:                     memFs,
+			db:                     memDB,
+			recorder:               &record.FakeRecorder{},
+			gc:                     gc,
 		}
 
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})

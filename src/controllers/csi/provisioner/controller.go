@@ -47,30 +47,29 @@ const (
 
 // OneAgentProvisioner reconciles a DynaKube object
 type OneAgentProvisioner struct {
-	client       client.Client
-	apiReader    client.Reader
-	opts         dtcsi.CSIOptions
-	dtcBuildFunc dynatraceclient.BuildFunc
-	fs           afero.Fs
-	recorder     record.EventRecorder
-	db           metadata.Access
-	path         metadata.PathResolver
-
-	gc reconcile.Reconciler
+	client                 client.Client
+	apiReader              client.Reader
+	dynatraceClientBuilder dynatraceclient.Builder
+	opts                   dtcsi.CSIOptions
+	fs                     afero.Fs
+	recorder               record.EventRecorder
+	db                     metadata.Access
+	path                   metadata.PathResolver
+	gc                     reconcile.Reconciler
 }
 
 // NewOneAgentProvisioner returns a new OneAgentProvisioner
 func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions, db metadata.Access) *OneAgentProvisioner {
 	return &OneAgentProvisioner{
-		client:       mgr.GetClient(),
-		apiReader:    mgr.GetAPIReader(),
-		opts:         opts,
-		dtcBuildFunc: dynatraceclient.BuildDynatraceClient,
-		fs:           afero.NewOsFs(),
-		recorder:     mgr.GetEventRecorderFor("OneAgentProvisioner"),
-		db:           db,
-		path:         metadata.PathResolver{RootDir: opts.RootDir},
-		gc:           csigc.NewCSIGarbageCollector(mgr.GetAPIReader(), opts, db),
+		client:                 mgr.GetClient(),
+		apiReader:              mgr.GetAPIReader(),
+		opts:                   opts,
+		dynatraceClientBuilder: dynatraceclient.NewBuilder(mgr.GetAPIReader()),
+		fs:                     afero.NewOsFs(),
+		recorder:               mgr.GetEventRecorderFor("OneAgentProvisioner"),
+		db:                     db,
+		path:                   metadata.PathResolver{RootDir: opts.RootDir},
+		gc:                     csigc.NewCSIGarbageCollector(mgr.GetAPIReader(), opts, db),
 	}
 }
 
@@ -272,12 +271,12 @@ func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk *dynatra
 		return nil, err
 	}
 
-	dynatraceClientProperties := dynatraceclient.NewProperties(ctx, provisioner.apiReader, *dk, tokens)
-	if err != nil {
-		return nil, err
-	}
+	dynatraceClient, err := provisioner.dynatraceClientBuilder.
+		SetContext(ctx).
+		SetDynakube(*dk).
+		SetTokens(tokens).
+		Build()
 
-	dynatraceClient, err := provisioner.dtcBuildFunc(dynatraceClientProperties)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Dynatrace client: %w", err)
 	}
