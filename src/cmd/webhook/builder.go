@@ -2,6 +2,10 @@ package webhook
 
 import (
 	"context"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -16,7 +20,6 @@ import (
 	validationhook "github.com/Dynatrace/dynatrace-operator/src/webhook/validation"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 const (
@@ -136,9 +139,30 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		signalHandler := ctrl.SetupSignalHandler()
+		signalHandler := setupSignalHandler()
 		err = webhookManager.Start(signalHandler)
 
 		return errors.WithStack(err)
 	}
+}
+
+var shutdownSignals = []os.Signal{os.Interrupt, syscall.SIGTERM}
+
+func setupSignalHandler() context.Context {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	shutdownChannel := make(chan os.Signal, 2)
+	signal.Notify(shutdownChannel, shutdownSignals...)
+
+	go func() {
+		<-shutdownChannel
+		go func() {
+			time.Sleep(20 * time.Second)
+			cancel()
+		}()
+		<-shutdownChannel
+		os.Exit(1)
+	}()
+
+	return ctx
 }
