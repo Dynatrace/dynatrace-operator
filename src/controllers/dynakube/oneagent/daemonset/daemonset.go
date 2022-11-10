@@ -38,6 +38,8 @@ const (
 
 	inframonHostIdSource = "--set-host-id-source=k8s-node-name"
 	classicHostIdSource  = "--set-host-id-source=auto"
+
+	inframonInfraOnly = "--set-infra-only=true"
 )
 
 type HostMonitoring struct {
@@ -102,6 +104,7 @@ func (dsInfo *HostMonitoring) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 
 	if len(result.Spec.Template.Spec.Containers) > 0 {
 		appendHostIdArgument(result, inframonHostIdSource)
+		appendHostIdArgument(result, inframonInfraOnly)
 		dsInfo.appendInfraMonEnvVars(result)
 	}
 
