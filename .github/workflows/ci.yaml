@@ -25,6 +25,8 @@ jobs:
         uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
       - name: Set up Helm
         uses: azure/setup-helm@f382f75448129b3be48f8121b9857be18d815a82 # v3.4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Download dependencies
         id: helm-unittest-download
         run: |
@@ -42,6 +44,8 @@ jobs:
         uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
       - name: Set up Helm
         uses: azure/setup-helm@f382f75448129b3be48f8121b9857be18d815a82 # v3.4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Run Linting
         id: helm-linting
         run: |
@@ -111,8 +115,8 @@ jobs:
           # Reason: global envs do not work in workflow calls
           # More info: https://github.com/actions/runner/issues/480#issuecomment-1021278915
 
-          echo ::set-output name=registry::${{ env.DOCKER_REGISTRY }}
-          echo ::set-output name=repository::${{ env.DOCKER_REPOSITORY }}
+          echo "registry=${{ env.DOCKER_REGISTRY }}" >> "$GITHUB_OUTPUT"
+          echo "repository=${{ env.DOCKER_REPOSITORY }}" >> "$GITHUB_OUTPUT"
     outputs:
       labels: ${{ steps.meta.outputs.labels }}
       version: ${{ steps.prep.outputs.docker_image_tag }}
