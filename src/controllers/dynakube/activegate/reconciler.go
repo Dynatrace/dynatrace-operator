@@ -4,6 +4,7 @@ import (
 	"context"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/authtoken"
 	capabilityInternal "github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/capability"
@@ -26,19 +27,19 @@ type Reconciler struct {
 	dynakube                          *dynatracev1beta1.DynaKube
 	apiReader                         client.Reader
 	scheme                            *runtime.Scheme
-	authTokenReconciler               kubeobjects.Reconciler
-	proxyReconciler                   kubeobjects.Reconciler
+	authTokenReconciler               controllers.Reconciler
+	proxyReconciler                   controllers.Reconciler
 	newStatefulsetReconcilerFunc      statefulset.NewReconcilerFunc
 	newCapabilityReconcilerFunc       capabilityInternal.NewReconcilerFunc
-	newCustomPropertiesReconcilerFunc func(customPropertiesOwnerName string, customPropertiesSource *dynatracev1beta1.DynaKubeValueSource) kubeobjects.Reconciler
+	newCustomPropertiesReconcilerFunc func(customPropertiesOwnerName string, customPropertiesSource *dynatracev1beta1.DynaKubeValueSource) controllers.Reconciler
 }
 
-var _ kubeobjects.Reconciler = (*Reconciler)(nil)
+var _ controllers.Reconciler = (*Reconciler)(nil)
 
-func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) kubeobjects.Reconciler {
+func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) controllers.Reconciler {
 	authTokenReconciler := authtoken.NewReconciler(clt, apiReader, scheme, dynakube, dtc)
 	proxyReconciler := proxy.NewReconciler(clt, apiReader, dynakube)
-	newCustomPropertiesReconcilerFunc := func(customPropertiesOwnerName string, customPropertiesSource *dynatracev1beta1.DynaKubeValueSource) kubeobjects.Reconciler {
+	newCustomPropertiesReconcilerFunc := func(customPropertiesOwnerName string, customPropertiesSource *dynatracev1beta1.DynaKubeValueSource) controllers.Reconciler {
 		return customproperties.NewReconciler(clt, dynakube, customPropertiesOwnerName, scheme, customPropertiesSource)
 	}
 
@@ -56,16 +57,17 @@ func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Read
 	}
 }
 
-func (r *Reconciler) Reconcile() (update bool, err error) {
+func (r *Reconciler) Reconcile() error {
 	if r.dynakube.UseActiveGateAuthToken() {
-		_, err := r.authTokenReconciler.Reconcile()
+		err := r.authTokenReconciler.Reconcile()
 		if err != nil {
-			return false, errors.WithMessage(err, "could not reconcile Dynatrace ActiveGateAuthToken secrets")
+			return errors.WithMessage(err, "could not reconcile Dynatrace ActiveGateAuthToken secrets")
 		}
 	}
 
-	if _, err := r.proxyReconciler.Reconcile(); err != nil {
-		return false, err
+	err := r.proxyReconciler.Reconcile()
+	if err != nil {
+		return err
 	}
 
 	var caps = capability.GenerateActiveGateCapabilities(r.dynakube)
@@ -73,15 +75,17 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 		if agCapability.Enabled() {
 			return r.createCapability(agCapability)
 		} else {
-			if err := r.deleteCapability(agCapability); err != nil {
-				return false, err
+			err = r.deleteCapability(agCapability)
+			if err != nil {
+				return err
 			}
 		}
 	}
-	return true, err
+
+	return err
 }
 
-func (r *Reconciler) createCapability(agCapability capability.Capability) (updated bool, err error) {
+func (r *Reconciler) createCapability(agCapability capability.Capability) error {
 	customPropertiesReconciler := r.newCustomPropertiesReconcilerFunc(r.dynakube.ActiveGateServiceAccountOwner(), agCapability.Properties().CustomProperties)
 	statefulsetReconciler := r.newStatefulsetReconcilerFunc(r.client, r.apiReader, r.scheme, r.dynakube, agCapability)
 
