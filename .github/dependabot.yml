@@ -36,6 +36,10 @@ updates:
   labels:
     - "dependencies"
 
+# Running through subdirectories is not yet possible with dependabot
+# An open issue can be found here: https://github.com/dependabot/dependabot-core/issues/5137
+# If this issue has been closed, the items below must be edited accordingly
+# Issue is still open as of 2022-11-10, check again after 2023-03-01
 - package-ecosystem: "github-actions"
   directory: "/.github/actions/build-image"
   schedule:
