@@ -25,8 +25,9 @@ type troubleshootContext struct {
 type troubleshootFunc func(troubleshootCtx *troubleshootContext) error
 
 type Check struct {
-	Do   troubleshootFunc
-	Name string
+	Do            troubleshootFunc
+	Name          string
+	Prerequisites []string
 }
 
 func (troubleshootCtx *troubleshootContext) SetTransportProxy(proxy string) error {

@@ -95,10 +95,25 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		apiReader := k8scluster.GetAPIReader()
 
 		checks := []Check{
-			{Do: checkNamespace, Name: namespaceCheckName},
-			{Do: checkDynakube, Name: dynakubeCheckName},
-			{Do: checkDtClusterConnection, Name: dtClusterConnectionCheckName},
-			{Do: checkImagePullable, Name: imagePullableCheckName},
+			{
+				Do:   checkNamespace,
+				Name: namespaceCheckName,
+			},
+			{
+				Do:            checkDynakube,
+				Name:          dynakubeCheckName,
+				Prerequisites: []string{namespaceCheckName},
+			},
+			{
+				Do:            checkDtClusterConnection,
+				Name:          dtClusterConnectionCheckName,
+				Prerequisites: []string{namespaceCheckName, dynakubeCheckName},
+			},
+			{
+				Do:            checkImagePullable,
+				Name:          imagePullableCheckName,
+				Prerequisites: []string{namespaceCheckName, dynakubeCheckName},
+			},
 		}
 
 		troubleshootCtx := &troubleshootContext{

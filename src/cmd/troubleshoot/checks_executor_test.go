@@ -8,72 +8,89 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var checkError = errors.New("check function failed")
+var (
+	checkError = errors.New("check function failed")
 
-func newCheck(shouldSucceed bool, isCardinal bool) Check {
-	return Check{
-		Do: func(troubleshootCtx *troubleshootContext) error {
-			if shouldSucceed {
-				return nil
-			}
+	tsContext = &troubleshootContext{}
 
-			if isCardinal {
-				return errors.Wrap(tserrors.CardinalProblemError, checkError.Error())
-			}
+	passingBasicCheck = Check{
+		Do: func(*troubleshootContext) error {
+			return nil
+		},
+		Name: "passingBasicCheck",
+	}
+
+	failingBasicCheck = Check{
+		Do: func(*troubleshootContext) error {
 			return checkError
 		},
-		Name: "check",
+		Name: "failingBasicCheck",
 	}
-}
+
+	passingCheckDependendOnPassingCheck = Check{
+		Do: func(*troubleshootContext) error {
+			return nil
+		},
+		Name:          "passingCheckDependendOnPassingCheck",
+		Prerequisites: []string{"passingBasicCheck"},
+	}
+
+	failingCheckDependendOnPassingCheck = Check{
+		Do: func(*troubleshootContext) error {
+			return checkError
+		},
+		Name:          "failingCheckDependendOnPassingCheck",
+		Prerequisites: []string{"passingBasicCheck"},
+	}
+
+	failingCheckDependendOnFailingCheck = Check{
+		Do: func(*troubleshootContext) error {
+			return checkError
+		},
+		Name:          "failingCheckDependendOnFailingCheck",
+		Prerequisites: []string{"failingBasicCheck"},
+	}
+)
 
 func Test_runChecks(t *testing.T) {
-	context := &troubleshootContext{}
-
-	nonCardinalPassingCheck := newCheck(true, false)
-	cardinalPassingCheck := newCheck(true, true)
-	nonCardinalFailingCheck := newCheck(false, false)
-	cardinalFailingCheck := newCheck(false, true)
-
 	t.Run("no checks", func(t *testing.T) {
 		checks := []Check{}
-		err := runChecks(context, checks)
+		err := runChecks(tsContext, checks)
 		require.NoError(t, err)
 	})
 	t.Run("a few passing checks", func(t *testing.T) {
 		checks := []Check{
-			cardinalPassingCheck,
-			nonCardinalPassingCheck,
+			passingBasicCheck,
+			passingCheckDependendOnPassingCheck,
 		}
-		err := runChecks(context, checks)
+		err := runChecks(tsContext, checks)
 		require.NoError(t, err)
 	})
-	t.Run("a few passing, one failing checks", func(t *testing.T) {
+	t.Run("passing and failing checks", func(t *testing.T) {
 		checks := []Check{
-			cardinalPassingCheck,
-			nonCardinalPassingCheck,
-			nonCardinalFailingCheck,
-		}
-		err := runChecks(context, checks)
-		require.Error(t, err)
-		require.Contains(t, err.(tserrors.AggregatedError).Errs, checkError)
-		require.NotContains(t, err.(tserrors.AggregatedError).Errs, tserrors.CardinalProblemError)
-	})
-	t.Run("stop on failing cardinal check", func(t *testing.T) {
-		checks := []Check{
-			cardinalPassingCheck,
-			nonCardinalFailingCheck,
-			cardinalFailingCheck, // checks execution should stop on this check
-			nonCardinalPassingCheck,
-			nonCardinalFailingCheck,
+			passingBasicCheck,
+			passingCheckDependendOnPassingCheck,
+			failingCheckDependendOnPassingCheck,
+			failingBasicCheck,
+			failingCheckDependendOnFailingCheck, // should be skipped and error should not be reported
 		}
 
-		err := runChecks(context, checks)
+		err := runChecks(tsContext, checks)
 		require.Error(t, err)
 
 		aggregatedError := err.(tserrors.AggregatedError)
 
 		require.Len(t, aggregatedError.Errs, 2)
 		require.ErrorIs(t, aggregatedError.Errs[0], checkError)
-		require.ErrorIs(t, aggregatedError.Errs[1], tserrors.CardinalProblemError)
+		require.ErrorIs(t, aggregatedError.Errs[1], checkError)
+	})
+	t.Run("check should not be run if prerequisite check failed", func(t *testing.T) {
+		checks := []Check{
+			failingBasicCheck,
+			failingCheckDependendOnFailingCheck, // should be skipped and error should not be reported
+		}
+
+		err := runChecks(tsContext, checks)
+		require.Error(t, err)
 	})
 }
