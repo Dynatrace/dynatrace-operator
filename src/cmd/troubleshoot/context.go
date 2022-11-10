@@ -6,6 +6,7 @@ import (
 	"net/url"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -34,7 +35,7 @@ func (troubleshootCtx *troubleshootContext) SetTransportProxy(proxy string) erro
 	if proxy != "" {
 		proxyUrl, err := url.Parse(proxy)
 		if err != nil {
-			return errorWithMessagef(err, "could not parse proxy URL!")
+			return errors.Wrap(err, "could not parse proxy URL!")
 		}
 
 		if troubleshootCtx.httpClient.Transport == nil {

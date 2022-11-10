@@ -47,12 +47,12 @@ func checkConnection(troubleshootCtx *troubleshootContext) error {
 		Build()
 
 	if err != nil {
-		return errorWithMessagef(err, "failed to build DynatraceAPI client")
+		return errors.Wrap(err, "failed to build DynatraceAPI client")
 	}
 
 	_, err = dtc.GetLatestAgentVersion(dtclient.OsUnix, dtclient.InstallerTypeDefault)
 	if err != nil {
-		return errorWithMessagef(err, "failed to connect to DynatraceAPI")
+		return errors.Wrap(err, "failed to connect to DynatraceAPI")
 	}
 	return nil
 }

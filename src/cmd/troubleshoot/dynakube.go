@@ -98,9 +98,9 @@ func checkDynakubeCrdExists(troubleshootCtx *troubleshootContext) error {
 
 	if err != nil {
 		if runtime.IsNotRegisteredError(err) {
-			err = errorWithMessagef(err, "CRD for Dynakube missing")
+			err = errors.Wrap(err, "CRD for Dynakube missing")
 		} else {
-			err = errorWithMessagef(err, "could not list Dynakube")
+			err = errors.Wrap(err, "could not list Dynakube")
 		}
 		return err
 	}
@@ -115,11 +115,11 @@ func getSelectedDynakube(troubleshootCtx *troubleshootContext) error {
 
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			err = errorWithMessagef(err,
+			err = errors.Wrapf(err,
 				"selected '%s:%s' Dynakube does not exist",
 				troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
 		} else {
-			err = errorWithMessagef(err, "could not get Dynakube '%s:%s'",
+			err = errors.Wrapf(err, "could not get Dynakube '%s:%s'",
 				troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
 		}
 		return err
@@ -151,7 +151,7 @@ func getDynatraceApiSecret(troubleshootCtx *troubleshootContext) error {
 	secret, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.dynakube.Tokens()})
 
 	if err != nil {
-		return errorWithMessagef(err, "'%s:%s' secret is missing", troubleshootCtx.namespaceName, troubleshootCtx.dynakube.Tokens())
+		return errors.Wrapf(err, "'%s:%s' secret is missing", troubleshootCtx.namespaceName, troubleshootCtx.dynakube.Tokens())
 	} else {
 		troubleshootCtx.dynatraceApiSecret = secret
 	}
@@ -163,7 +163,7 @@ func getDynatraceApiSecret(troubleshootCtx *troubleshootContext) error {
 func checkIfDynatraceApiSecretHasApiToken(troubleshootCtx *troubleshootContext) error {
 	apiToken, err := kubeobjects.ExtractToken(&troubleshootCtx.dynatraceApiSecret, dtclient.DynatraceApiToken)
 	if err != nil {
-		return errorWithMessagef(err, "invalid '%s:%s' secret", troubleshootCtx.namespaceName, troubleshootCtx.dynakube.Tokens())
+		return errors.Wrapf(err, "invalid '%s:%s' secret", troubleshootCtx.namespaceName, troubleshootCtx.dynakube.Tokens())
 	}
 
 	if apiToken == "" {
@@ -179,7 +179,7 @@ func checkPullSecretExists(troubleshootCtx *troubleshootContext) error {
 	secret, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.dynakube.PullSecret()})
 
 	if err != nil {
-		return errorWithMessagef(err, "'%s:%s' pull secret is missing", troubleshootCtx.namespaceName, troubleshootCtx.dynakube.PullSecret())
+		return errors.Wrapf(err, "'%s:%s' pull secret is missing", troubleshootCtx.namespaceName, troubleshootCtx.dynakube.PullSecret())
 	} else {
 		troubleshootCtx.pullSecret = secret
 	}
@@ -190,7 +190,7 @@ func checkPullSecretExists(troubleshootCtx *troubleshootContext) error {
 
 func checkPullSecretHasRequiredTokens(troubleshootCtx *troubleshootContext) error {
 	if _, err := kubeobjects.ExtractToken(&troubleshootCtx.pullSecret, dtpullsecret.DockerConfigJson); err != nil {
-		return errorWithMessagef(err, "invalid '%s:%s' secret", troubleshootCtx.namespaceName, troubleshootCtx.dynakube.PullSecret())
+		return errors.Wrapf(err, "invalid '%s:%s' secret", troubleshootCtx.namespaceName, troubleshootCtx.dynakube.PullSecret())
 	}
 
 	logInfof("secret token '%s' exists", dtpullsecret.DockerConfigJson)
@@ -214,7 +214,7 @@ func setProxyFromValue(troubleshootCtx *troubleshootContext) error {
 	err := troubleshootCtx.SetTransportProxy(troubleshootCtx.dynakube.Spec.Proxy.Value)
 
 	if err != nil {
-		return errorWithMessagef(err, "error parsing proxy value")
+		return errors.Wrap(err, "error parsing proxy value")
 	}
 
 	return nil
@@ -227,7 +227,7 @@ func setProxyFromSecret(troubleshootCtx *troubleshootContext) error {
 		Name:      troubleshootCtx.dynakube.Spec.Proxy.ValueFrom})
 
 	if err != nil {
-		return errorWithMessagef(err, "'%s:%s' proxy secret is missing",
+		return errors.Wrapf(err, "'%s:%s' proxy secret is missing",
 			troubleshootCtx.namespaceName, troubleshootCtx.dynakube.Spec.Proxy.ValueFrom)
 	}
 
@@ -236,7 +236,7 @@ func setProxyFromSecret(troubleshootCtx *troubleshootContext) error {
 
 	proxyUrl, err := kubeobjects.ExtractToken(&secret, dtclient.CustomProxySecretKey)
 	if err != nil {
-		return errorWithMessagef(err, "invalid '%s:%s' secret, missing key '%s'",
+		return errors.Wrapf(err, "invalid '%s:%s' secret, missing key '%s'",
 			troubleshootCtx.namespaceName, troubleshootCtx.proxySecret.Name, dtclient.CustomProxySecretKey)
 	}
 
@@ -244,7 +244,7 @@ func setProxyFromSecret(troubleshootCtx *troubleshootContext) error {
 
 	err = troubleshootCtx.SetTransportProxy(proxyUrl)
 	if err != nil {
-		return errorWithMessagef(err, "error parsing proxy secret value")
+		return errors.Wrap(err, "error parsing proxy secret value")
 	}
 
 	return nil
