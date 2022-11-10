@@ -14,8 +14,8 @@ func checkDtClusterConnection(troubleshootCtx *troubleshootContext) error {
 
 	logNewTestf("checking if tenant is accessible ...")
 
-	checks := []troubleshootFunc{
-		checkConnection,
+	checks := []Check{
+		{Do: checkConnection, Name: "checkConnection"},
 	}
 
 	err := runChecks(troubleshootCtx, checks)

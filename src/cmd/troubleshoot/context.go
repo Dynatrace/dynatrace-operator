@@ -24,6 +24,11 @@ type troubleshootContext struct {
 
 type troubleshootFunc func(troubleshootCtx *troubleshootContext) error
 
+type Check struct {
+	Do   troubleshootFunc
+	Name string
+}
+
 func (troubleshootCtx *troubleshootContext) SetTransportProxy(proxy string) error {
 	if proxy != "" {
 		proxyUrl, err := url.Parse(proxy)

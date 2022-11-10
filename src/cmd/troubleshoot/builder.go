@@ -88,12 +88,14 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		}
 
 		apiReader := k8scluster.GetAPIReader()
-		checks := []troubleshootFunc{
-			checkNamespace,
-			checkDynakube,
-			checkDtClusterConnection,
-			checkImagePullable,
+
+		checks := []Check{
+			{Do: checkNamespace, Name: "checkNamespace"},
+			{Do: checkDynakube, Name: "checkDynakube"},
+			{Do: checkDtClusterConnection, Name: "checkDtClusterConnection"},
+			{Do: checkImagePullable, Name: "checkImagePullable"},
 		}
+
 		troubleshootCtx := &troubleshootContext{
 			context:       context.Background(),
 			apiReader:     apiReader,

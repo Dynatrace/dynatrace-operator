@@ -5,10 +5,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-func runChecks(troubleshootCtx *troubleshootContext, checks []troubleshootFunc) error {
+func runChecks(troubleshootCtx *troubleshootContext, checks []Check) error {
 	errs := tserrors.NewAggregatedError()
 	for _, check := range checks {
-		if err := check(troubleshootCtx); err != nil {
+		if err := check.Do(troubleshootCtx); err != nil {
 			logErrorf(err.Error())
 			errs.Add(err)
 			if errors.Is(err, tserrors.CardinalProblemError) {

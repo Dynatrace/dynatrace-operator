@@ -10,34 +10,37 @@ import (
 
 var checkError = errors.New("check function failed")
 
-func createCheckFunction(shouldSucceed bool, isCardinal bool) troubleshootFunc {
-	return func(troubleshootCtx *troubleshootContext) error {
-		if shouldSucceed {
-			return nil
-		}
+func newCheck(shouldSucceed bool, isCardinal bool) Check {
+	return Check{
+		Do: func(troubleshootCtx *troubleshootContext) error {
+			if shouldSucceed {
+				return nil
+			}
 
-		if isCardinal {
-			return errors.Wrap(tserrors.CardinalProblemError, checkError.Error())
-		}
-		return checkError
+			if isCardinal {
+				return errors.Wrap(tserrors.CardinalProblemError, checkError.Error())
+			}
+			return checkError
+		},
+		Name: "check",
 	}
 }
 
 func Test_runChecks(t *testing.T) {
 	context := &troubleshootContext{}
 
-	nonCardinalPassingCheck := createCheckFunction(true, false)
-	cardinalPassingCheck := createCheckFunction(true, true)
-	nonCardinalFailingCheck := createCheckFunction(false, false)
-	cardinalFailingCheck := createCheckFunction(false, true)
+	nonCardinalPassingCheck := newCheck(true, false)
+	cardinalPassingCheck := newCheck(true, true)
+	nonCardinalFailingCheck := newCheck(false, false)
+	cardinalFailingCheck := newCheck(false, true)
 
 	t.Run("no checks", func(t *testing.T) {
-		checks := []troubleshootFunc{}
+		checks := []Check{}
 		err := runChecks(context, checks)
 		require.NoError(t, err)
 	})
 	t.Run("a few passing checks", func(t *testing.T) {
-		checks := []troubleshootFunc{
+		checks := []Check{
 			cardinalPassingCheck,
 			nonCardinalPassingCheck,
 		}
@@ -45,7 +48,7 @@ func Test_runChecks(t *testing.T) {
 		require.NoError(t, err)
 	})
 	t.Run("a few passing, one failing checks", func(t *testing.T) {
-		checks := []troubleshootFunc{
+		checks := []Check{
 			cardinalPassingCheck,
 			nonCardinalPassingCheck,
 			nonCardinalFailingCheck,
@@ -56,7 +59,7 @@ func Test_runChecks(t *testing.T) {
 		require.NotContains(t, err.(tserrors.AggregatedError).Errs, tserrors.CardinalProblemError)
 	})
 	t.Run("stop on failing cardinal check", func(t *testing.T) {
-		checks := []troubleshootFunc{
+		checks := []Check{
 			cardinalPassingCheck,
 			nonCardinalFailingCheck,
 			cardinalFailingCheck, // checks execution should stop on this check

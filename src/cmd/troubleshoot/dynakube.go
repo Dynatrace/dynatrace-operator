@@ -25,15 +25,15 @@ func checkDynakube(troubleshootCtx *troubleshootContext) error {
 
 	logNewTestf("checking if '%s:%s' Dynakube is configured correctly", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
 
-	checks := []troubleshootFunc{
-		checkDynakubeCrdExists,
-		getSelectedDynakubeIfItExists,
-		checkApiUrl,
-		getDynatraceApiSecretIfItExists,
-		checkIfDynatraceApiSecretHasApiToken,
-		getPullSecretIfItExists,
-		checkPullSecretHasRequiredTokens,
-		setProxySecretIfItExists,
+	checks := []Check{
+		{Do: checkDynakubeCrdExists, Name: "checkDynakubeCrdExists"},
+		{Do: getSelectedDynakubeIfItExists, Name: "getSelectedDynakubeIfItExists"},
+		{Do: checkApiUrl, Name: "checkApiUrl"},
+		{Do: getDynatraceApiSecretIfItExists, Name: "getDynatraceApiSecretIfItExists"},
+		{Do: checkIfDynatraceApiSecretHasApiToken, Name: "checkIfDynatraceApiSecretHasApiToken"},
+		{Do: getPullSecretIfItExists, Name: "getPullSecretIfItExists"},
+		{Do: checkPullSecretHasRequiredTokens, Name: "checkPullSecretHasRequiredTokens"},
+		{Do: setProxySecretIfItExists, Name: "setProxySecretIfItExists"},
 	}
 
 	err := runChecks(troubleshootCtx, checks)
