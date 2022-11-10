@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/container-storage-interface/spec v1.7.0
-	github.com/containers/image/v5 v5.23.0
+	github.com/containers/image/v5 v5.23.1
 	github.com/evanphx/json-patch v5.6.0+incompatible
 	github.com/go-logr/logr v1.2.3
 	github.com/klauspost/compress v1.15.12
