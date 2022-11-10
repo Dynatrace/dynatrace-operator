@@ -124,6 +124,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			dynakubeName:  dynakubeFlagValue,
 		}
 
-		return runChecks(troubleshootCtx, checks)
+		_ = runChecks(troubleshootCtx, checks) // to avoid polluting pretty logs
+		return nil
 	}
 }
