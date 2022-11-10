@@ -111,8 +111,8 @@ jobs:
           # Reason: global envs do not work in workflow calls
           # More info: https://github.com/actions/runner/issues/480#issuecomment-1021278915
 
-          echo ::set-output name=registry::${{ env.DOCKER_REGISTRY }}
-          echo ::set-output name=repository::${{ env.DOCKER_REPOSITORY }}
+          echo "registry=${{ env.DOCKER_REGISTRY }}" >> "$GITHUB_OUTPUT"
+          echo "repository=${{ env.DOCKER_REPOSITORY }}" >> "$GITHUB_OUTPUT"
     outputs:
       labels: ${{ steps.meta.outputs.labels }}
       version: ${{ steps.prep.outputs.docker_image_tag }}
