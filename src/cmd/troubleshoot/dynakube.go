@@ -18,7 +18,17 @@ import (
 
 const (
 	pullSecretFieldValue = "top-secret"
+
+	dynakubeCrdExistsCheckName               = "checkDynakubeCrdExists"
+	getSelectedDynakubeIfItExistsCheckName   = "getSelectedDynakubeIfItExists"
+	apiUrlCheckName                          = "checkApiUrl"
+	getDynatraceApiSecretIfItExistsCheckName = "getDynatraceApiSecretIfItExists"
+	dynatraceApiSecretHasApiTokenCheckName   = "checkIfDynatraceApiSecretHasApiToken"
+	getPullSecretIfItExistsCheckName         = "getPullSecretIfItExists"
+	pullSecretHasRequiredTokensCheckName     = "checkPullSecretHasRequiredTokens"
 )
+
+const setProxySecretIfItExistsCheckName = "setProxySecretIfItExists"
 
 func checkDynakube(troubleshootCtx *troubleshootContext) error {
 	log = newTroubleshootLogger("[dynakube  ] ")
@@ -26,14 +36,14 @@ func checkDynakube(troubleshootCtx *troubleshootContext) error {
 	logNewTestf("checking if '%s:%s' Dynakube is configured correctly", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
 
 	checks := []Check{
-		{Do: checkDynakubeCrdExists, Name: "checkDynakubeCrdExists"},
-		{Do: getSelectedDynakubeIfItExists, Name: "getSelectedDynakubeIfItExists"},
-		{Do: checkApiUrl, Name: "checkApiUrl"},
-		{Do: getDynatraceApiSecretIfItExists, Name: "getDynatraceApiSecretIfItExists"},
-		{Do: checkIfDynatraceApiSecretHasApiToken, Name: "checkIfDynatraceApiSecretHasApiToken"},
-		{Do: getPullSecretIfItExists, Name: "getPullSecretIfItExists"},
-		{Do: checkPullSecretHasRequiredTokens, Name: "checkPullSecretHasRequiredTokens"},
-		{Do: setProxySecretIfItExists, Name: "setProxySecretIfItExists"},
+		{Do: checkDynakubeCrdExists, Name: dynakubeCrdExistsCheckName},
+		{Do: getSelectedDynakubeIfItExists, Name: getSelectedDynakubeIfItExistsCheckName},
+		{Do: checkApiUrl, Name: apiUrlCheckName},
+		{Do: getDynatraceApiSecretIfItExists, Name: getDynatraceApiSecretIfItExistsCheckName},
+		{Do: checkIfDynatraceApiSecretHasApiToken, Name: dynatraceApiSecretHasApiTokenCheckName},
+		{Do: getPullSecretIfItExists, Name: getPullSecretIfItExistsCheckName},
+		{Do: checkPullSecretHasRequiredTokens, Name: pullSecretHasRequiredTokensCheckName},
+		{Do: setProxySecretIfItExists, Name: setProxySecretIfItExistsCheckName},
 	}
 
 	err := runChecks(troubleshootCtx, checks)

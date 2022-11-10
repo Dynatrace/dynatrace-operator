@@ -17,6 +17,11 @@ const (
 	use               = "troubleshoot"
 	dynakubeFlagName  = "dynakube"
 	namespaceFlagName = "namespace"
+
+	namespaceCheckName           = "checkNamespace"
+	dynakubeCheckName            = "checkDynakube"
+	dtClusterConnectionCheckName = "checkDtClusterConnection"
+	imagePullableCheckName       = "checkImagePullable"
 )
 
 var (
@@ -90,10 +95,10 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		apiReader := k8scluster.GetAPIReader()
 
 		checks := []Check{
-			{Do: checkNamespace, Name: "checkNamespace"},
-			{Do: checkDynakube, Name: "checkDynakube"},
-			{Do: checkDtClusterConnection, Name: "checkDtClusterConnection"},
-			{Do: checkImagePullable, Name: "checkImagePullable"},
+			{Do: checkNamespace, Name: namespaceCheckName},
+			{Do: checkDynakube, Name: dynakubeCheckName},
+			{Do: checkDtClusterConnection, Name: dtClusterConnectionCheckName},
+			{Do: checkImagePullable, Name: imagePullableCheckName},
 		}
 
 		troubleshootCtx := &troubleshootContext{
