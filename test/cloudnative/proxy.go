@@ -7,35 +7,38 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/test/bash"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/deployment"
+	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/manifests"
-	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/pod"
-	"github.com/Dynatrace/dynatrace-operator/test/logs"
+	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/namespace"
+	"github.com/Dynatrace/dynatrace-operator/test/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/test/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/proxy"
 	"github.com/Dynatrace/dynatrace-operator/test/sampleapps"
 	"github.com/Dynatrace/dynatrace-operator/test/secrets"
 	"github.com/Dynatrace/dynatrace-operator/test/setup"
 	"github.com/spf13/afero"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
 const (
-	dynatraceNetworkPolicy = "../testdata/network/dynatrace-denial.yaml"
-	timeoutError           = "dial tcp 54.88.45.104:443: i/o timeout"
-	secretUnchanged        = "secret unchanged"
-	sampleNSNetworkPolicy  = "../testdata/network/sample-ns-denial.yaml"
-	sampleNS               = "../testdata/cloudnative/test-namespace.yaml"
-	DtProxy                = "DT_PROXY"
-	agentPath              = "/opt/dynatrace/oneagent-paas"
+	dynatraceNetworkPolicy       = "../testdata/network/dynatrace-denial.yaml"
+	httpsProxy                   = "https_proxy"
+	sampleNamespaceNetworkPolicy = "../testdata/network/sample-ns-denial.yaml"
+	sampleNamespace              = "test-namespace-1"
+	DtProxy                      = "DT_PROXY"
+	agentPath                    = "/opt/dynatrace/oneagent-paas"
+	sampleAppDeployment          = "../testdata/cloudnative/sample-deployment.yaml"
 )
+
+var injectionLabel = map[string]string{
+	"inject": "dynakube",
+}
 
 func WithProxy(t *testing.T, proxySpec *v1beta1.DynaKubeProxy) features.Feature {
 	secretConfig, err := secrets.DefaultSingleTenant(afero.NewOsFs())
@@ -43,11 +46,13 @@ func WithProxy(t *testing.T, proxySpec *v1beta1.DynaKubeProxy) features.Feature 
 	require.NoError(t, err)
 
 	cloudNativeWithProxy := features.New("cloudNative with proxy")
-	cloudNativeWithProxy.Setup(manifests.InstallFromFile(sampleNS))
-	cloudNativeWithProxy.Setup(manifests.InstallFromFile(dynatraceNetworkPolicy))
-	cloudNativeWithProxy.Setup(manifests.InstallFromFile(sampleNSNetworkPolicy))
-
-	setup.InstallAndDeploy(cloudNativeWithProxy, secretConfig, "../testdata/cloudnative/sample-deployment.yaml")
+	cloudNativeWithProxy.Setup(namespace.Create(
+		namespace.NewBuilder(sampleNamespace).
+			WithLabels(injectionLabel).
+			Build()),
+	)
+	cloudNativeWithProxy.Setup(secrets.ApplyDefault(secretConfig))
+	cloudNativeWithProxy.Setup(operator.InstallAllForKubernetes())
 	setup.AssessDeployment(cloudNativeWithProxy)
 
 	proxy.InstallProxy(cloudNativeWithProxy, proxySpec)
@@ -55,6 +60,7 @@ func WithProxy(t *testing.T, proxySpec *v1beta1.DynaKubeProxy) features.Feature 
 	cloudNativeWithProxy.Assess("install dynakube", dynakube.Apply(
 		dynakube.NewBuilder().
 			WithDefaultObjectMeta().
+			WithDynakubeNamespaceSelector().
 			ApiUrl(secretConfig.ApiUrl).
 			CloudNative(&v1beta1.CloudNativeFullStackSpec{}).
 			Proxy(proxySpec).
@@ -62,52 +68,45 @@ func WithProxy(t *testing.T, proxySpec *v1beta1.DynaKubeProxy) features.Feature 
 	)
 	setup.AssessDynakubeStartup(cloudNativeWithProxy)
 
-	cloudNativeWithProxy.Assess("restart sample apps", sampleapps.Restart)
-	cloudNativeWithProxy.Assess("check existing init container and env vars", checkSampleInitContainer)
-	cloudNativeWithProxy.Assess("check logs", checkLogs)
+	cloudNativeWithProxy.Assess("osAgent can connect", oneagent.OSAgentCanConnect())
+	cloudNativeWithProxy.Assess("cut off dynatrace namespace", manifests.InstallFromFile(dynatraceNetworkPolicy))
+	cloudNativeWithProxy.Assess("cut off sample namespace", manifests.InstallFromFile(sampleNamespaceNetworkPolicy))
+	cloudNativeWithProxy.Assess("check env variables of oneagent pods", checkOneAgentEnvVars)
+	cloudNativeWithProxy.Assess("install deployment", manifests.InstallFromFile(sampleAppDeployment))
+	cloudNativeWithProxy.Assess("check existing init container and env var", checkSampleInitContainerEnvVar)
 
 	return cloudNativeWithProxy.Feature()
 }
 
-func checkLogs(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+func checkOneAgentEnvVars(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 	resources := environmentConfig.Client().Resources()
-	clientset, err := kubernetes.NewForConfig(resources.GetConfig())
 
-	require.NoError(t, err)
-
-	err = deployment.NewQuery(ctx, resources, client.ObjectKey{
-		Name:      "dynatrace-operator",
+	err := daemonset.NewQuery(ctx, resources, client.ObjectKey{
+		Name:      "dynakube-oneagent",
 		Namespace: "dynatrace",
 	}).ForEachPod(func(podItem v1.Pod) {
-		logStream, err := clientset.CoreV1().Pods(podItem.Namespace).GetLogs(podItem.Name, &v1.PodLogOptions{}).Stream(ctx)
-		require.NoError(t, err)
-		logs.AssertLogContains(t, logStream, timeoutError)
+		require.NotNil(t, podItem)
+		require.NotNil(t, podItem.Spec)
 
-		logStream, err = clientset.CoreV1().Pods(podItem.Namespace).GetLogs(podItem.Name, &v1.PodLogOptions{}).Stream(ctx)
-		require.NoError(t, err)
-		logs.AssertLogContains(t, logStream, secretUnchanged)
-	})
-
-	require.NoError(t, err)
-
-	err = deployment.NewQuery(ctx, resources, client.ObjectKey{
-		Name:      "myapp",
-		Namespace: "test-namespace-1",
-	}).ForEachPod(func(podItem v1.Pod) {
-		logStream, err := clientset.CoreV1().Pods(podItem.Namespace).GetLogs(podItem.Name, &v1.PodLogOptions{
-			Container: "install-oneagent",
-		}).Stream(ctx)
-		require.NoError(t, err)
-		logs.AssertLogContains(t, logStream, proxy.ProxySpec.Value)
+		for _, container := range podItem.Spec.Containers {
+			if container.Name == "dynatrace-oneagent" {
+				require.NotNil(t, container.Env)
+				require.True(t, kubeobjects.EnvVarIsIn(container.Env, httpsProxy))
+				for _, env := range container.Env {
+					if env.Name == httpsProxy {
+						require.NotNil(t, env.Value)
+					}
+				}
+			}
+		}
 	})
 
 	require.NoError(t, err)
 	return ctx
 }
 
-func checkSampleInitContainer(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+func checkSampleInitContainerEnvVar(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 	resources := environmentConfig.Client().Resources()
-	restConfig := environmentConfig.Client().RESTConfig()
 	pods := sampleapps.Get(t, ctx, resources)
 
 	for _, podItem := range pods.Items {
@@ -116,9 +115,9 @@ func checkSampleInitContainer(ctx context.Context, t *testing.T, environmentConf
 		require.NotNil(t, podItem.Spec.InitContainers)
 
 		for _, container := range podItem.Spec.Containers {
-			if container.Name == "myapp" {
+			if container.Name == sampleapps.Name {
 				require.NotNil(t, container.Env)
-				require.True(t, containsDtProxyEnvVar(container.Env, DtProxy))
+				require.True(t, kubeobjects.EnvVarIsIn(container.Env, DtProxy))
 				for _, env := range container.Env {
 					if env.Name == DtProxy {
 						require.NotNil(t, env.Value)
@@ -126,26 +125,6 @@ func checkSampleInitContainer(ctx context.Context, t *testing.T, environmentConf
 				}
 			}
 		}
-
-		var result *pod.ExecutionResult
-		result, err := pod.
-			NewExecutionQuery(podItem, sampleapps.Name,
-				bash.ListDirectory(agentPath)).
-			Execute(restConfig)
-
-		require.NoError(t, err)
-		assert.Contains(t, result.StdOut.String(), "agent")
-		assert.Empty(t, result.StdErr.String())
 	}
 	return ctx
-}
-
-func containsDtProxyEnvVar(envs []v1.EnvVar, dtproxy string) bool {
-	for _, env := range envs {
-		if env.Name == dtproxy {
-			return true
-		}
-	}
-
-	return false
 }
