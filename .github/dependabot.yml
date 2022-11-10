@@ -35,3 +35,63 @@ updates:
     include: "scope"
   labels:
     - "dependencies"
+
+- package-ecosystem: "github-actions"
+  directory: "/.github/actions/build-image"
+  schedule:
+    interval: "weekly"
+    day: "friday"
+    time: "03:00"
+  commit-message:
+    prefix: "Actions"
+    include: "scope"
+  labels:
+    - "dependencies"
+
+- package-ecosystem: "github-actions"
+  directory: "/.github/actions/create-manifests"
+  schedule:
+    interval: "weekly"
+    day: "friday"
+    time: "03:00"
+  commit-message:
+    prefix: "Actions"
+    include: "scope"
+  labels:
+    - "dependencies"
+
+- package-ecosystem: "github-actions"
+  directory: "/.github/actions/preflight"
+  schedule:
+    interval: "weekly"
+    day: "friday"
+    time: "03:00"
+  commit-message:
+    prefix: "Actions"
+    include: "scope"
+  labels:
+    - "dependencies"
+
+- package-ecosystem: "github-actions"
+  directory: "/.github/actions/sign-image"
+  schedule:
+    interval: "weekly"
+    day: "friday"
+    time: "03:00"
+  commit-message:
+    prefix: "Actions"
+    include: "scope"
+  labels:
+    - "dependencies"
+
+- package-ecosystem: "github-actions"
+  directory: "/.github/actions/upload-image"
+  schedule:
+    interval: "weekly"
+    day: "friday"
+    time: "03:00"
+  commit-message:
+    prefix: "Actions"
+    include: "scope"
+  labels:
+    - "dependencies"
