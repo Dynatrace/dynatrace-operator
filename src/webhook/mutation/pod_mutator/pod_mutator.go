@@ -49,7 +49,8 @@ func (webhook *podMutatorWebhook) InjectDecoder(d *admission.Decoder) error {
 	return nil
 }
 
-func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.Request) admission.Response {
+func (webhook *podMutatorWebhook) Handle(_ context.Context, request admission.Request) admission.Response {
+	ctx := context.Background()
 	emptyPatch := admission.Patched("")
 	mutationRequest, err := webhook.createMutationRequestBase(ctx, request)
 	if err != nil {

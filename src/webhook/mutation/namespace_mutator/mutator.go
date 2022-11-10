@@ -42,7 +42,8 @@ func (nm *namespaceMutator) InjectClient(clt client.Client) error {
 //     we would tag our own namespace which would cause the podInjector webhook to inject into our pods which can cause issues. (infra-monitoring pod injected into == bad)
 //  2. if the namespace was updated by the operator => don't do the mapping: we detect this using an annotation, we do this because the operator also does the mapping
 //     but from the dynakube's side (during dynakube reconcile) and we don't want to repeat ourselves. So we just remove the annotation.
-func (nm *namespaceMutator) Handle(ctx context.Context, request admission.Request) admission.Response {
+func (nm *namespaceMutator) Handle(_ context.Context, request admission.Request) admission.Response {
+	ctx := context.Background()
 	if nm.namespace == request.Namespace {
 		return admission.Patched("")
 	}
