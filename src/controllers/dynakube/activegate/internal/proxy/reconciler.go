@@ -6,6 +6,7 @@ import (
 	"net/url"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
@@ -23,7 +24,7 @@ const (
 	proxyPasswordField = "password"
 )
 
-var _ kubeobjects.Reconciler = &Reconciler{}
+var _ controllers.Reconciler = &Reconciler{}
 
 // Reconciler manages the ActiveGate proxy secret generation for the dynatrace namespace.
 type Reconciler struct {
@@ -32,13 +33,12 @@ type Reconciler struct {
 	dynakube  *dynatracev1beta1.DynaKube
 }
 
-func (r *Reconciler) Reconcile() (update bool, err error) {
+func (r *Reconciler) Reconcile() error {
 	if r.dynakube.NeedsActiveGateProxy() {
-		err = r.generateForDynakube(context.TODO(), r.dynakube)
-	} else {
-		err = r.ensureDeleted(context.TODO(), r.dynakube)
+		return r.generateForDynakube(context.TODO(), r.dynakube)
 	}
-	return true, err
+
+	return r.ensureDeleted(context.TODO(), r.dynakube)
 }
 
 func NewReconciler(client client.Client, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube) *Reconciler {

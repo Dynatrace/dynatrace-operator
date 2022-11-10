@@ -51,14 +51,13 @@ func newTestReconcilerWithInstance(client client.Client) *Reconciler {
 func TestReconcile(t *testing.T) {
 	t.Run(`reconcile auth token for first time`, func(t *testing.T) {
 		r := newTestReconcilerWithInstance(fake.NewClientBuilder().Build())
-		update, err := r.Reconcile()
+		err := r.Reconcile()
 		require.NoError(t, err)
 
 		var authToken corev1.Secret
 		_ = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.ActiveGateAuthTokenSecret(), Namespace: testNamespace}, &authToken)
 
 		assert.NotEmpty(t, authToken.Data[ActiveGateAuthTokenName])
-		assert.True(t, update)
 	})
 	t.Run(`reconcile outdated auth token`, func(t *testing.T) {
 		clt := fake.NewClientBuilder().
@@ -74,14 +73,13 @@ func TestReconcile(t *testing.T) {
 			Build()
 
 		r := newTestReconcilerWithInstance(clt)
-		update, err := r.Reconcile()
+		err := r.Reconcile()
 		require.NoError(t, err)
 
 		var authToken corev1.Secret
 		_ = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.ActiveGateAuthTokenSecret(), Namespace: testNamespace}, &authToken)
 
 		assert.NotEqual(t, authToken.Data[ActiveGateAuthTokenName], []byte(testToken))
-		assert.True(t, update)
 	})
 	t.Run(`reconcile valid auth token`, func(t *testing.T) {
 		clt := fake.NewClientBuilder().
@@ -97,13 +95,12 @@ func TestReconcile(t *testing.T) {
 			Build()
 		r := newTestReconcilerWithInstance(clt)
 
-		update, err := r.Reconcile()
+		err := r.Reconcile()
 		require.NoError(t, err)
 
 		var authToken corev1.Secret
 		_ = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.ActiveGateAuthTokenSecret(), Namespace: testNamespace}, &authToken)
 
 		assert.Equal(t, authToken.Data[ActiveGateAuthTokenName], []byte(testToken))
-		assert.True(t, update)
 	})
 }

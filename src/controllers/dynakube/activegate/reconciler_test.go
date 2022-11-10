@@ -44,9 +44,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 			}}
 		fakeClient := fake.NewClient()
 		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, instance, dtc)
-		upd, err := r.Reconcile()
+		err := r.Reconcile()
 		require.NoError(t, err)
-		assert.True(t, upd)
 	})
 	t.Run(`Create AG proxy secret`, func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
@@ -60,9 +59,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 		}
 		fakeClient := fake.NewClient()
 		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, instance, dtc)
-		upd, err := r.Reconcile()
+		err := r.Reconcile()
 		require.NoError(t, err)
-		assert.True(t, upd)
 
 		var proxySecret corev1.Secret
 		err = fakeClient.Get(context.TODO(), types.NamespacedName{Name: "dynatrace-activegate-internal-proxy", Namespace: testNamespace}, &proxySecret)
@@ -82,9 +80,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 		}
 		fakeClient := fake.NewClient(testKubeSystemNamespace)
 		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, instance, dtc)
-		upd, err := r.Reconcile()
+		err := r.Reconcile()
 		require.NoError(t, err)
-		assert.True(t, upd)
 
 		var service corev1.Service
 		err = fakeClient.Get(context.TODO(), types.NamespacedName{Name: testServiceName, Namespace: testNamespace}, &service)
@@ -92,9 +89,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		// remove AG from spec
 		instance.Spec.ActiveGate = dynatracev1beta1.ActiveGateSpec{}
-		upd, err = r.Reconcile()
+		err = r.Reconcile()
 		require.NoError(t, err)
-		assert.True(t, upd)
 		err = fakeClient.Get(context.TODO(), types.NamespacedName{Name: testServiceName, Namespace: testNamespace}, &service)
 		assert.True(t, errors.IsNotFound(err))
 	})

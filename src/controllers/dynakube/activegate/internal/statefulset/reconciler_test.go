@@ -77,9 +77,8 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 func TestReconcile(t *testing.T) {
 	t.Run(`create stateful set`, func(t *testing.T) {
 		r := createDefaultReconciler(t)
-		update, err := r.Reconcile()
+		err := r.Reconcile()
 
-		assert.True(t, update)
 		assert.NoError(t, err)
 
 		statefulSet := &appsv1.StatefulSet{}
@@ -90,9 +89,8 @@ func TestReconcile(t *testing.T) {
 	})
 	t.Run(`update stateful set`, func(t *testing.T) {
 		r := createDefaultReconciler(t)
-		update, err := r.Reconcile()
+		err := r.Reconcile()
 
-		assert.True(t, update)
 		assert.NoError(t, err)
 
 		statefulSet := &appsv1.StatefulSet{}
@@ -102,9 +100,8 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 
 		r.dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
-		update, err = r.Reconcile()
+		err = r.Reconcile()
 
-		assert.True(t, update)
 		assert.NoError(t, err)
 
 		newStatefulSet := &appsv1.StatefulSet{}
@@ -125,8 +122,7 @@ func TestReconcile(t *testing.T) {
 
 func TestReconcile_GetStatefulSet(t *testing.T) {
 	r := createDefaultReconciler(t)
-	update, err := r.Reconcile()
-	assert.True(t, update)
+	err := r.Reconcile()
 	assert.NoError(t, err)
 
 	desiredSts, err := r.buildDesiredStatefulSet()

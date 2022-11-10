@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/customproperties"
@@ -22,7 +23,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-var _ kubeobjects.Reconciler = &Reconciler{}
+var _ controllers.Reconciler = &Reconciler{}
 
 type Reconciler struct {
 	client     client.Client
@@ -46,41 +47,42 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 
 type NewReconcilerFunc = func(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, capability capability.Capability) *Reconciler
 
-func (r *Reconciler) Reconcile() (update bool, err error) {
-	if update, err = r.manageStatefulSet(); err != nil {
+func (r *Reconciler) Reconcile() error {
+	err := r.manageStatefulSet()
+	if err != nil {
 		log.Error(err, "could not reconcile stateful set")
-		return false, errors.WithStack(err)
+		return errors.WithStack(err)
 	}
 
-	return update, nil
+	return nil
 }
 
-func (r *Reconciler) manageStatefulSet() (bool, error) {
+func (r *Reconciler) manageStatefulSet() error {
 	desiredSts, err := r.buildDesiredStatefulSet()
 	if err != nil {
-		return false, errors.WithStack(err)
+		return errors.WithStack(err)
 	}
 
 	if err := controllerutil.SetControllerReference(r.dynakube, desiredSts, r.scheme); err != nil {
-		return false, errors.WithStack(err)
+		return errors.WithStack(err)
 	}
 
 	created, err := r.createStatefulSetIfNotExists(desiredSts)
 	if created || err != nil {
-		return created, errors.WithStack(err)
+		return errors.WithStack(err)
 	}
 
 	deleted, err := r.deleteStatefulSetIfOldLabelsAreUsed(desiredSts)
 	if deleted || err != nil {
-		return deleted, errors.WithStack(err)
+		return errors.WithStack(err)
 	}
 
 	updated, err := r.updateStatefulSetIfOutdated(desiredSts)
 	if updated || err != nil {
-		return updated, errors.WithStack(err)
+		return errors.WithStack(err)
 	}
 
-	return false, nil
+	return nil
 }
 
 func (r *Reconciler) buildDesiredStatefulSet() (*appsv1.StatefulSet, error) {
