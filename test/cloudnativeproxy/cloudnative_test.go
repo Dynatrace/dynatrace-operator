@@ -1,6 +1,6 @@
 //go:build e2e
 
-package cloudnative
+package cloudnativeproxy
 
 import (
 	"testing"
@@ -34,7 +34,5 @@ func TestMain(m *testing.M) {
 }
 
 func TestCloudNative(t *testing.T) {
-	testEnvironment.Test(t, Install(t, false))
-	testEnvironment.Test(t, CodeModules(t, false))
-	testEnvironment.Test(t, NetworkProblems(t))
+	testEnvironment.Test(t, WithProxy(t, proxy.ProxySpec))
 }
