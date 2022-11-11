@@ -29,7 +29,7 @@ spec:
   # Optional: Set custom proxy settings either directly or from a secret with the field 'proxy'
   #
   # proxy:
-  #   value: https://my-proxy-url.com
+  #   value: http://my-proxy-url.com
   #   valueFrom: name-of-my-proxy-secret
 
   # Optional: Adds custom RootCAs from a configmap
