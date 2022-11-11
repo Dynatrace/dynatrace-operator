@@ -33,6 +33,6 @@ func TestMain(m *testing.M) {
 	testEnvironment.Run(m)
 }
 
-func TestCloudNative(t *testing.T) {
+func TestCloudNativeWithProxy(t *testing.T) {
 	testEnvironment.Test(t, WithProxy(t, proxy.ProxySpec))
 }
