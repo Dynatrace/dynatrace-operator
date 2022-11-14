@@ -31,11 +31,14 @@ const (
 )
 
 type troubleshootLogger struct {
-	logger  logr.Logger
-	subTest bool
+	logger logr.Logger
 }
 
-func newTroubleshootLogger(testName string, subTest bool) logr.Logger {
+type subTestLogger struct {
+	troubleshootLogger
+}
+
+func newRawTroubleshootLogger(testName string) troubleshootLogger {
 	config := zap.NewProductionEncoderConfig()
 	config.TimeKey = ""
 	config.LevelKey = ""
@@ -44,12 +47,19 @@ func newTroubleshootLogger(testName string, subTest bool) logr.Logger {
 
 	testName = fmt.Sprintf("[%-10s] ", testName)
 
-	return logr.New(
-		troubleshootLogger{
-			logger:  ctrlzap.New(ctrlzap.WriteTo(os.Stdout), ctrlzap.Encoder(zapcore.NewConsoleEncoder(config))).WithName(testName),
-			subTest: subTest,
-		},
-	)
+	return troubleshootLogger{
+		logger: ctrlzap.New(ctrlzap.WriteTo(os.Stdout), ctrlzap.Encoder(zapcore.NewConsoleEncoder(config))).WithName(testName),
+	}
+}
+
+func newTroubleshootLogger(testName string) logr.Logger {
+	return logr.New(newRawTroubleshootLogger(testName))
+}
+
+func newSubTestLogger(testName string) logr.Logger {
+	return logr.New(subTestLogger{
+		troubleshootLogger: newRawTroubleshootLogger(testName),
+	})
 }
 
 func logNewTestf(format string, v ...interface{}) {
@@ -83,31 +93,34 @@ func errorWithMessagef(err error, format string, v ...interface{}) error {
 
 func (dtl troubleshootLogger) Init(_ logr.RuntimeInfo) {}
 
-func (dtl troubleshootLogger) Info(level int, message string, keysAndValues ...interface{}) {
-	var msg string
+func (dtl subTestLogger) Info(level int, message string, keysAndValues ...interface{}) {
+	message = addPrefixes(level, message)
+	message = " |" + message
+	dtl.logger.Info(message, keysAndValues...)
+}
 
+func (dtl troubleshootLogger) Info(level int, message string, keysAndValues ...interface{}) {
+	message = addPrefixes(level, message)
+	dtl.logger.Info(message, keysAndValues...)
+}
+
+func addPrefixes(level int, message string) string {
 	switch level {
 	case levelNewTest:
-		msg = prefixNewTest + message
+		return prefixNewTest + message
 	case levelSuccess:
-		msg = withSuccessPrefix(message)
+		return withSuccessPrefix(message)
 	case levelWarning:
-		msg = withWarningPrefix(message)
+		return withWarningPrefix(message)
 	case levelError:
 		// Info is used for errors to suppress printing a stacktrace
 		// Printing a stacktrace would confuse people in thinking the troubleshooter crashed
-		msg = withErrorPrefix(message)
+		return withErrorPrefix(message)
 	case levelNewDynakube:
-		msg = message
+		return message
 	default:
-		msg = prefixInfo + message
+		return prefixInfo + message
 	}
-
-	if dtl.subTest {
-		msg = " |" + msg
-	}
-
-	dtl.logger.Info(msg, keysAndValues...)
 }
 
 func withSuccessPrefix(message string) string {
