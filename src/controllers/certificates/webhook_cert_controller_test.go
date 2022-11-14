@@ -30,12 +30,12 @@ const (
 )
 
 func TestReconcileCertificate_Create(t *testing.T) {
-	clt := prepareFakeClient(false, false)
+	clt := prepareFakeClient(false, true, false)
 	controller, request := prepareController(clt)
 
 	res, err := controller.Reconcile(context.TODO(), request)
-	require.NoError(t, err)
-	assert.NotNil(t, res)
+	require.Error(t, err)
+	assert.Nil(t, res)
 	assert.Equal(t, SuccessDuration, res.RequeueAfter)
 
 	secret := &corev1.Secret{}
@@ -56,8 +56,17 @@ func TestReconcileCertificate_Create(t *testing.T) {
 	verifyCertificates(t, controller, secret, clt, false)
 }
 
+func TestReconcileCertificate_Create_NoCRD(t *testing.T) {
+	clt := prepareFakeClient(false, false, false)
+	controller, request := prepareController(clt)
+
+	res, err := controller.Reconcile(context.TODO(), request)
+	require.Error(t, err)
+	assert.Nil(t, res)
+}
+
 func TestReconcileCertificate_Update(t *testing.T) {
-	clt := prepareFakeClient(true, false)
+	clt := prepareFakeClient(true, true, false)
 	controller, request := prepareController(clt)
 
 	res, err := controller.Reconcile(context.TODO(), request)
@@ -84,7 +93,7 @@ func TestReconcileCertificate_Update(t *testing.T) {
 }
 
 func TestReconcileCertificate_ExistingSecretWithValidCertificate(t *testing.T) {
-	clt := prepareFakeClient(true, true)
+	clt := prepareFakeClient(true, true, true)
 	controller, request := prepareController(clt)
 
 	res, err := controller.Reconcile(context.TODO(), request)
@@ -189,7 +198,7 @@ func TestReconcile(t *testing.T) {
 	})
 }
 
-func prepareFakeClient(withSecret bool, generateValidSecret bool) client.Client {
+func prepareFakeClient(withSecret, withCRD, generateValidSecret bool) client.Client {
 	objs := []client.Object{
 		&admissionregistrationv1.MutatingWebhookConfiguration{
 			ObjectMeta: metav1.ObjectMeta{
@@ -214,20 +223,8 @@ func prepareFakeClient(withSecret bool, generateValidSecret bool) client.Client 
 				},
 			},
 		},
-		&apiv1.CustomResourceDefinition{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: crdName,
-			},
-			Spec: apiv1.CustomResourceDefinitionSpec{
-				Conversion: &apiv1.CustomResourceConversion{
-					Strategy: strategyWebhook,
-					Webhook: &apiv1.WebhookConversion{
-						ClientConfig: &apiv1.WebhookClientConfig{},
-					},
-				},
-			},
-		},
 	}
+
 	if withSecret {
 		certData := createInvalidTestCertData(nil)
 		if generateValidSecret {
@@ -236,6 +233,24 @@ func prepareFakeClient(withSecret bool, generateValidSecret bool) client.Client 
 
 		objs = append(objs,
 			createTestSecret(nil, certData),
+		)
+	}
+
+	if withCRD {
+		objs = append(objs,
+			&apiv1.CustomResourceDefinition{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: crdName,
+				},
+				Spec: apiv1.CustomResourceDefinitionSpec{
+					Conversion: &apiv1.CustomResourceConversion{
+						Strategy: strategyWebhook,
+						Webhook: &apiv1.WebhookConversion{
+							ClientConfig: &apiv1.WebhookClientConfig{},
+						},
+					},
+				},
+			},
 		)
 	}
 
