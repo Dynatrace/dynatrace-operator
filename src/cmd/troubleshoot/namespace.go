@@ -9,7 +9,7 @@ import (
 func checkNamespace(troubleshootCtx *troubleshootContext) error {
 	log = newTroubleshootLogger("[namespace ] ")
 
-	logNewTestf("checking if namespace '%s' exists ...", troubleshootCtx.namespaceName)
+	logNewCheckf("checking if namespace '%s' exists ...", troubleshootCtx.namespaceName)
 
 	var namespace corev1.Namespace
 	err := troubleshootCtx.apiReader.Get(troubleshootCtx.context, client.ObjectKey{Name: troubleshootCtx.namespaceName}, &namespace)
