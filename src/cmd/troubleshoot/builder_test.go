@@ -20,15 +20,10 @@ func TestTroubleshootCommandBuilder(t *testing.T) {
 	})
 
 	t.Run("getAllDynakubesInNamespace", func(t *testing.T) {
-		dynakube := dynatracev1beta1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testDynakube,
-				Namespace: "dynatrace",
-			},
-		}
+		dynakube := buildTestDynakube()
 		clt := fake.NewClient(&dynakube)
 
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
+		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace}
 
 		dynakubes, err := getAllDynakubesInNamespace(troubleshootCtx)
 		assert.NoError(t, err)
@@ -37,11 +32,21 @@ func TestTroubleshootCommandBuilder(t *testing.T) {
 	})
 
 	t.Run("getDynakube - only check one dynakube if set", func(t *testing.T) {
-		troubleshootCtx := troubleshootContext{dynakubeName: testDynakube}
+		dynakube := buildTestDynakube()
+		troubleshootCtx := troubleshootContext{dynakube: dynakube}
 
 		dynakubes, err := getDynakubes(troubleshootCtx)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(dynakubes))
 		assert.Equal(t, testDynakube, dynakubes[0].Name)
 	})
+}
+
+func buildTestDynakube() dynatracev1beta1.DynaKube {
+	return dynatracev1beta1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testDynakube,
+			Namespace: testNamespace,
+		},
+	}
 }

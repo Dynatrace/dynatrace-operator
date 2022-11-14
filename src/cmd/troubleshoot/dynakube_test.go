@@ -39,12 +39,12 @@ func (errorClt *errorClient) List(_ context.Context, _ client.ObjectList, _ ...c
 func TestDynakubeCRD(t *testing.T) {
 	t.Run("crd does not exist", func(t *testing.T) {
 		clt := fake.NewClientBuilder().Build()
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
+		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace}
 
 		assert.ErrorContains(t, checkDynakubeCrdExists(&troubleshootCtx), "CRD for Dynakube missing")
 	})
 	t.Run("unrelated error", func(t *testing.T) {
-		troubleshootCtx := troubleshootContext{apiReader: &errorClient{}, namespaceName: testNamespace, dynakubeName: testDynakube}
+		troubleshootCtx := troubleshootContext{apiReader: &errorClient{}, namespaceName: testNamespace}
 
 		assert.ErrorContains(t, checkDynakubeCrdExists(&troubleshootCtx), "could not list Dynakube")
 	})
@@ -60,7 +60,7 @@ func TestDynakube(t *testing.T) {
 			).
 			Build()
 
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
+		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace}
 		assert.NoErrorf(t, getSelectedDynakubeIfItExists(&troubleshootCtx), "no dynakube found")
 	})
 	t.Run("dynakube does not exist", func(t *testing.T) {
@@ -72,7 +72,7 @@ func TestDynakube(t *testing.T) {
 			).
 			Build()
 
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testOtherDynakube}
+		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace}
 		assert.Errorf(t, getSelectedDynakubeIfItExists(&troubleshootCtx), "dynakube found")
 	})
 	t.Run("invalid namespace selected", func(t *testing.T) {
@@ -84,7 +84,7 @@ func TestDynakube(t *testing.T) {
 			).
 			Build()
 
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testOtherNamespace, dynakubeName: testDynakube}
+		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testOtherNamespace}
 		assert.Errorf(t, getSelectedDynakubeIfItExists(&troubleshootCtx), "dynakube found")
 	})
 }
@@ -112,7 +112,7 @@ func TestDynatraceSecret(t *testing.T) {
 			).
 			Build()
 
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
+		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace}
 		assert.NoErrorf(t, getSelectedDynakubeIfItExists(&troubleshootCtx), "Dynatrace secret not found")
 	})
 	t.Run("Dynatrace secret does not exist", func(t *testing.T) {
@@ -125,7 +125,7 @@ func TestDynatraceSecret(t *testing.T) {
 			).
 			Build()
 
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
+		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace}
 		assert.Errorf(t, getDynatraceApiSecretIfItExists(&troubleshootCtx), "Dynatrace secret found")
 	})
 
@@ -187,7 +187,7 @@ func TestProxySecret(t *testing.T) {
 			).
 			Build()
 
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
+		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace}
 		assert.NoErrorf(t, setProxySecretIfItExists(&troubleshootCtx), "proxy secret not found")
 	})
 	t.Run("proxy secret does not exist", func(t *testing.T) {
@@ -201,7 +201,7 @@ func TestProxySecret(t *testing.T) {
 			Build()
 
 		troubleshootCtx := troubleshootContext{
-			apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube, dynakube: *dynakube,
+			apiReader: clt, namespaceName: testNamespace, dynakube: *dynakube,
 		}
 		assert.Errorf(t, setProxySecretIfItExists(&troubleshootCtx), "proxy secret found")
 	})

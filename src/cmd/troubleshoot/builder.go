@@ -111,13 +111,12 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		}
 		resetLog()
 
-		perDynakubeTests := []troubleshootFunc{
+		dynakubeTests := []troubleshootFunc{
 			checkDynakube,
 			checkDTClusterConnection,
 			checkImagePullable,
 		}
 
-		troubleshootCtx.dynakubeName = dynakubeFlagValue
 		dynakubes, err := getDynakubes(troubleshootCtx)
 		if err != nil {
 			return nil
@@ -130,10 +129,9 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 				httpClient:    &http.Client{},
 				namespaceName: namespaceFlagValue,
 				dynakube:      dynakube,
-				dynakubeName:  dynakube.Name,
 			}
-			logNewDynakubef(troubleshootCtx.dynakubeName)
-			for _, test := range perDynakubeTests {
+			logNewDynakubef(dynakube.Name)
+			for _, test := range dynakubeTests {
 				err = test(&troubleshootCtx)
 				if err != nil {
 					logErrorf(err.Error())
@@ -141,7 +139,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 				}
 			}
 			resetLog()
-			logOkf("'%s' - all checks passed", troubleshootCtx.dynakubeName)
+			logOkf("'%s' - all checks passed", dynakube.Name)
 		}
 		return nil
 	}
@@ -150,7 +148,9 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 func getDynakubes(troubleshootCtx troubleshootContext) ([]dynatracev1beta1.DynaKube, error) {
 	var err error
 	var dynakubes []dynatracev1beta1.DynaKube
-	if troubleshootCtx.dynakubeName == "" {
+	dynakubeName := dynakubeFlagValue
+
+	if dynakubeName == "" {
 		logNewDynakubef("no Dynakube specified - checking all Dynakubes in namespace '%s'", namespaceFlagValue)
 		dynakubes, err = getAllDynakubesInNamespace(troubleshootCtx)
 		if err != nil {
@@ -158,7 +158,7 @@ func getDynakubes(troubleshootCtx troubleshootContext) ([]dynatracev1beta1.DynaK
 		}
 	} else {
 		dynakube := dynatracev1beta1.DynaKube{}
-		dynakube.Name = troubleshootCtx.dynakubeName
+		dynakube.Name = dynakubeName
 		dynakubes = append(dynakubes, dynakube)
 	}
 	return dynakubes, nil
