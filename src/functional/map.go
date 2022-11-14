@@ -1,9 +1,10 @@
 package functional
 
-func Map[In any, Out any](arr []In, fn func(it In) Out) []Out {
-	var newArray = []Out{}
+func Map[In any, Out any](arr []In, transformFn func(it In) Out) []Out {
+	var ret = []Out{}
 	for _, it := range arr {
-		newArray = append(newArray, fn(it))
+		ret = append(ret, transformFn(it))
 	}
-	return newArray
+
+	return ret
 }

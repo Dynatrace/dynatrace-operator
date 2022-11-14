@@ -17,6 +17,15 @@ import (
 
 const (
 	pullSecretFieldValue = "top-secret"
+
+	dynakubeCrdExistsCheckName             = "checkDynakubeCrdExists"
+	getSelectedDynakubeCheckName           = "getSelectedDynakube"
+	apiUrlCheckName                        = "apiUrl"
+	apiSecretCheckName                     = "apiSecret"
+	dynatraceApiSecretHasApiTokenCheckName = "dynatraceApiSecretHasApiToken"
+	pullSecretExistsCheckName              = "pullSecretExists"
+	pullSecretHasRequiredTokensCheckName   = "pullSecretHasRequiredTokens"
+	proxySecretCheckName                   = "proxySecret"
 )
 
 func checkDynakube(troubleshootCtx *troubleshootContext) error {
@@ -36,40 +45,48 @@ func checkDynakube(troubleshootCtx *troubleshootContext) error {
 
 func getDynakubeChecks() []*Check {
 	dynakubeCrdExistsCheck := &Check{
-		Do: checkDynakubeCrdExists,
+		Name: dynakubeCrdExistsCheckName,
+		Do:   checkDynakubeCrdExists,
 	}
 
 	selectedDynakubeCheck := &Check{
+		Name:          getSelectedDynakubeCheckName,
 		Do:            getSelectedDynakube,
 		Prerequisites: []*Check{dynakubeCrdExistsCheck},
 	}
 
 	apiUrlCheck := &Check{
+		Name:          apiUrlCheckName,
 		Do:            checkApiUrl,
 		Prerequisites: []*Check{dynakubeCrdExistsCheck},
 	}
 
 	apiSecretCheck := &Check{
+		Name:          apiSecretCheckName,
 		Do:            getDynatraceApiSecret,
 		Prerequisites: []*Check{selectedDynakubeCheck},
 	}
 
 	ifDynatraceApiSecretHasApiTokenCheck := &Check{
+		Name:          dynatraceApiSecretHasApiTokenCheckName,
 		Do:            checkIfDynatraceApiSecretHasApiToken,
 		Prerequisites: []*Check{apiSecretCheck},
 	}
 
 	pullSecretExistsCheck := &Check{
+		Name:          pullSecretExistsCheckName,
 		Do:            checkPullSecretExists,
 		Prerequisites: []*Check{selectedDynakubeCheck},
 	}
 
 	pullSecretHasRequiredTokensCheck := &Check{
+		Name:          pullSecretHasRequiredTokensCheckName,
 		Do:            checkPullSecretHasRequiredTokens,
 		Prerequisites: []*Check{pullSecretExistsCheck},
 	}
 
 	proxySecretIfItExistsCheck := &Check{
+		Name:          proxySecretCheckName,
 		Do:            setProxySecretIfItExists,
 		Prerequisites: []*Check{selectedDynakubeCheck},
 	}

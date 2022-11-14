@@ -1,7 +1,10 @@
 package troubleshoot
 
 import (
+	"strings"
+
 	tserrors "github.com/Dynatrace/dynatrace-operator/src/cmd/troubleshoot/errors"
+	"github.com/Dynatrace/dynatrace-operator/src/functional"
 )
 
 type Result int
@@ -17,6 +20,7 @@ type troubleshootFunc func(troubleshootCtx *troubleshootContext) error
 type Check struct {
 	Do            troubleshootFunc
 	Prerequisites []*Check
+	Name          string
 }
 
 var results = map[*Check]Result{}
@@ -25,6 +29,8 @@ func runChecks(troubleshootCtx *troubleshootContext, checks []*Check) error {
 	errs := tserrors.NewAggregatedError()
 	for _, check := range checks {
 		if shouldSkip(check) {
+			prereqs := strings.Join(functional.Map(check.Prerequisites, func(c *Check) string { return c.Name }), ",")
+			logWarningf("Skipped '%s' check because prerequisites aren't met: [%s]", check.Name, prereqs)
 			results[check] = SKIPPED
 			continue
 		}

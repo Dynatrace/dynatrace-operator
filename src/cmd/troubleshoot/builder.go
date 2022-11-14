@@ -17,6 +17,11 @@ const (
 	use               = "troubleshoot"
 	dynakubeFlagName  = "dynakube"
 	namespaceFlagName = "namespace"
+
+	namespaceCheckName           = "namespace"
+	dynakubeCheckName            = "dynakube"
+	dtClusterConnectionCheckName = "DynatraceClusterConnection"
+	imagePullableCheckName       = "imagePullable"
 )
 
 var (
@@ -104,17 +109,21 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 
 func getChecks() []*Check {
 	namespaceCheck := &Check{
-		Do: checkNamespace,
+		Name: namespaceCheckName,
+		Do:   checkNamespace,
 	}
 	dynakubeCheck := &Check{
+		Name:          dynakubeCheckName,
 		Do:            checkDynakube,
 		Prerequisites: []*Check{namespaceCheck},
 	}
 	dtClusterConnectionCheck := &Check{
+		Name:          dtClusterConnectionCheckName,
 		Do:            checkDtClusterConnection,
 		Prerequisites: []*Check{namespaceCheck, dynakubeCheck},
 	}
 	imagePullableCheck := &Check{
+		Name:          imagePullableCheckName,
 		Do:            checkImagePullable,
 		Prerequisites: []*Check{namespaceCheck, dynakubeCheck},
 	}

@@ -14,18 +14,21 @@ var (
 	tsContext = &troubleshootContext{}
 
 	passingBasicCheck = &Check{
+		Name: "passingBasicCheck",
 		Do: func(*troubleshootContext) error {
 			return nil
 		},
 	}
 
 	failingBasicCheck = &Check{
+		Name: "failingBasicCheck",
 		Do: func(*troubleshootContext) error {
 			return checkError
 		},
 	}
 
 	passingCheckDependendOnPassingCheck = &Check{
+		Name: "passingCheckDependendOnPassingCheck",
 		Do: func(*troubleshootContext) error {
 			return nil
 		},
@@ -33,6 +36,7 @@ var (
 	}
 
 	failingCheckDependendOnPassingCheck = &Check{
+		Name: "failingCheckDependendOnPassingCheck",
 		Do: func(*troubleshootContext) error {
 			return checkError
 		},
@@ -40,6 +44,7 @@ var (
 	}
 
 	failingCheckDependendOnFailingCheck = &Check{
+		Name: "failingCheckDependendOnFailingCheck",
 		Do: func(*troubleshootContext) error {
 			return checkError
 		},
