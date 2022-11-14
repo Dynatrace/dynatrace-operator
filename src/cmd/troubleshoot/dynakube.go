@@ -17,66 +17,14 @@ import (
 
 const (
 	pullSecretFieldValue = "top-secret"
-
-	dynakubeCrdExistsCheckName             = "checkDynakubeCrdExists"
-	getSelectedDynakubeCheckName           = "getSelectedDynakube"
-	apiUrlCheckName                        = "checkApiUrl"
-	getDynatraceApiSecretCheckName         = "getDynatraceApiSecret"
-	dynatraceApiSecretHasApiTokenCheckName = "checkIfDynatraceApiSecretHasApiToken"
-	pullSecretExistsCheckName              = "checkPullSecretExists"
-	pullSecretHasRequiredTokensCheckName   = "checkPullSecretHasRequiredTokens"
 )
-
-const setProxySecretIfItExistsCheckName = "setProxySecretIfItExists"
 
 func checkDynakube(troubleshootCtx *troubleshootContext) error {
 	log = newTroubleshootLogger("[dynakube  ] ")
 
 	logNewTestf("checking if '%s:%s' Dynakube is configured correctly", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
 
-	checks := []Check{
-		{
-			Do:   checkDynakubeCrdExists,
-			Name: dynakubeCrdExistsCheckName,
-		},
-		{
-			Do:            getSelectedDynakube,
-			Name:          getSelectedDynakubeCheckName,
-			Prerequisites: []string{dynakubeCrdExistsCheckName},
-		},
-		{
-			Do:            checkApiUrl,
-			Name:          apiUrlCheckName,
-			Prerequisites: []string{getSelectedDynakubeCheckName},
-		},
-		{
-			Do:            getDynatraceApiSecret,
-			Name:          getDynatraceApiSecretCheckName,
-			Prerequisites: []string{getSelectedDynakubeCheckName},
-		},
-		{
-			Do:            checkIfDynatraceApiSecretHasApiToken,
-			Name:          dynatraceApiSecretHasApiTokenCheckName,
-			Prerequisites: []string{getDynatraceApiSecretCheckName},
-		},
-		{
-			Do:            checkPullSecretExists,
-			Name:          pullSecretExistsCheckName,
-			Prerequisites: []string{getSelectedDynakubeCheckName},
-		},
-		{
-			Do:            checkPullSecretHasRequiredTokens,
-			Name:          pullSecretHasRequiredTokensCheckName,
-			Prerequisites: []string{pullSecretExistsCheckName},
-		},
-		{
-			Do:            setProxySecretIfItExists,
-			Name:          setProxySecretIfItExistsCheckName,
-			Prerequisites: []string{getSelectedDynakubeCheckName},
-		},
-	}
-
-	err := runChecks(troubleshootCtx, checks)
+	err := runChecks(troubleshootCtx, getDynakubeChecks())
 	if err != nil {
 		return errors.Wrapf(err, "'%s:%s' Dynakube isn't valid. %s",
 			troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName, dynakubeNotValidMessage())
@@ -84,6 +32,49 @@ func checkDynakube(troubleshootCtx *troubleshootContext) error {
 
 	logOkf("'%s:%s' Dynakube is valid", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
 	return nil
+}
+
+func getDynakubeChecks() []*Check {
+	dynakubeCrdExistsCheck := &Check{
+		Do: checkDynakubeCrdExists,
+	}
+
+	selectedDynakubeCheck := &Check{
+		Do:            getSelectedDynakube,
+		Prerequisites: []*Check{dynakubeCrdExistsCheck},
+	}
+
+	apiUrlCheck := &Check{
+		Do:            checkApiUrl,
+		Prerequisites: []*Check{dynakubeCrdExistsCheck},
+	}
+
+	apiSecretCheck := &Check{
+		Do:            getDynatraceApiSecret,
+		Prerequisites: []*Check{selectedDynakubeCheck},
+	}
+
+	ifDynatraceApiSecretHasApiTokenCheck := &Check{
+		Do:            checkIfDynatraceApiSecretHasApiToken,
+		Prerequisites: []*Check{apiSecretCheck},
+	}
+
+	pullSecretExistsCheck := &Check{
+		Do:            checkPullSecretExists,
+		Prerequisites: []*Check{selectedDynakubeCheck},
+	}
+
+	pullSecretHasRequiredTokensCheck := &Check{
+		Do:            checkPullSecretHasRequiredTokens,
+		Prerequisites: []*Check{pullSecretExistsCheck},
+	}
+
+	proxySecretIfItExistsCheck := &Check{
+		Do:            setProxySecretIfItExists,
+		Prerequisites: []*Check{selectedDynakubeCheck},
+	}
+
+	return []*Check{dynakubeCrdExistsCheck, selectedDynakubeCheck, apiUrlCheck, apiSecretCheck, ifDynatraceApiSecretHasApiTokenCheck, pullSecretExistsCheck, pullSecretHasRequiredTokensCheck, proxySecretIfItExistsCheck}
 }
 
 func dynakubeNotValidMessage() string {

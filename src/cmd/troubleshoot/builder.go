@@ -17,11 +17,6 @@ const (
 	use               = "troubleshoot"
 	dynakubeFlagName  = "dynakube"
 	namespaceFlagName = "namespace"
-
-	namespaceCheckName           = "checkNamespace"
-	dynakubeCheckName            = "checkDynakube"
-	dtClusterConnectionCheckName = "checkDtClusterConnection"
-	imagePullableCheckName       = "checkImagePullable"
 )
 
 var (
@@ -94,28 +89,6 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 
 		apiReader := k8scluster.GetAPIReader()
 
-		checks := []Check{
-			{
-				Do:   checkNamespace,
-				Name: namespaceCheckName,
-			},
-			{
-				Do:            checkDynakube,
-				Name:          dynakubeCheckName,
-				Prerequisites: []string{namespaceCheckName},
-			},
-			{
-				Do:            checkDtClusterConnection,
-				Name:          dtClusterConnectionCheckName,
-				Prerequisites: []string{namespaceCheckName, dynakubeCheckName},
-			},
-			{
-				Do:            checkImagePullable,
-				Name:          imagePullableCheckName,
-				Prerequisites: []string{namespaceCheckName, dynakubeCheckName},
-			},
-		}
-
 		troubleshootCtx := &troubleshootContext{
 			context:       context.Background(),
 			apiReader:     apiReader,
@@ -124,7 +97,27 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			dynakubeName:  dynakubeFlagValue,
 		}
 
-		_ = runChecks(troubleshootCtx, checks) // to avoid polluting pretty logs
+		_ = runChecks(troubleshootCtx, getChecks()) // to avoid polluting pretty logs
 		return nil
 	}
+}
+
+func getChecks() []*Check {
+	namespaceCheck := &Check{
+		Do: checkNamespace,
+	}
+	dynakubeCheck := &Check{
+		Do:            checkDynakube,
+		Prerequisites: []*Check{namespaceCheck},
+	}
+	dtClusterConnectionCheck := &Check{
+		Do:            checkDtClusterConnection,
+		Prerequisites: []*Check{namespaceCheck, dynakubeCheck},
+	}
+	imagePullableCheck := &Check{
+		Do:            checkImagePullable,
+		Prerequisites: []*Check{namespaceCheck, dynakubeCheck},
+	}
+
+	return []*Check{namespaceCheck, dynakubeCheck, dtClusterConnectionCheck, imagePullableCheck}
 }

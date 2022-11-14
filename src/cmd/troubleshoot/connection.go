@@ -9,19 +9,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-const connectionCheckName = "checkConnection"
-
 func checkDtClusterConnection(troubleshootCtx *troubleshootContext) error {
 	log = newTroubleshootLogger("[dtcluster ] ")
 
 	logNewTestf("checking if tenant is accessible ...")
 
-	checks := []Check{
-		{
-			Do:   checkConnection,
-			Name: connectionCheckName,
-		},
-	}
+	checks := getConnectionChecks()
 
 	err := runChecks(troubleshootCtx, checks)
 	if err != nil {
@@ -30,6 +23,10 @@ func checkDtClusterConnection(troubleshootCtx *troubleshootContext) error {
 
 	logOkf("tenant is accessible")
 	return nil
+}
+
+func getConnectionChecks() []*Check {
+	return []*Check{{Do: checkConnection}}
 }
 
 func checkConnection(troubleshootCtx *troubleshootContext) error {

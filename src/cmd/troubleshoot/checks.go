@@ -12,22 +12,29 @@ const (
 	SKIPPED
 )
 
-var results = map[string]Result{}
+type troubleshootFunc func(troubleshootCtx *troubleshootContext) error
 
-func runChecks(troubleshootCtx *troubleshootContext, checks []Check) error {
+type Check struct {
+	Do            troubleshootFunc
+	Prerequisites []*Check
+}
+
+var results = map[*Check]Result{}
+
+func runChecks(troubleshootCtx *troubleshootContext, checks []*Check) error {
 	errs := tserrors.NewAggregatedError()
 	for _, check := range checks {
 		if shouldSkip(check) {
-			results[check.Name] = SKIPPED
+			results[check] = SKIPPED
 			continue
 		}
 
 		if err := check.Do(troubleshootCtx); err != nil {
 			logErrorf(err.Error())
 			errs.Add(err)
-			results[check.Name] = FAILED
+			results[check] = FAILED
 		} else {
-			results[check.Name] = PASSED
+			results[check] = PASSED
 		}
 	}
 
@@ -38,7 +45,7 @@ func runChecks(troubleshootCtx *troubleshootContext, checks []Check) error {
 	return errs
 }
 
-func shouldSkip(check Check) bool {
+func shouldSkip(check *Check) bool {
 	for _, p := range check.Prerequisites {
 		if results[p] != PASSED {
 			return true

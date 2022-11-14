@@ -13,53 +13,48 @@ var (
 
 	tsContext = &troubleshootContext{}
 
-	passingBasicCheck = Check{
+	passingBasicCheck = &Check{
 		Do: func(*troubleshootContext) error {
 			return nil
 		},
-		Name: "passingBasicCheck",
 	}
 
-	failingBasicCheck = Check{
+	failingBasicCheck = &Check{
 		Do: func(*troubleshootContext) error {
 			return checkError
 		},
-		Name: "failingBasicCheck",
 	}
 
-	passingCheckDependendOnPassingCheck = Check{
+	passingCheckDependendOnPassingCheck = &Check{
 		Do: func(*troubleshootContext) error {
 			return nil
 		},
-		Name:          "passingCheckDependendOnPassingCheck",
-		Prerequisites: []string{"passingBasicCheck"},
+		Prerequisites: []*Check{passingBasicCheck},
 	}
 
-	failingCheckDependendOnPassingCheck = Check{
+	failingCheckDependendOnPassingCheck = &Check{
 		Do: func(*troubleshootContext) error {
 			return checkError
 		},
-		Name:          "failingCheckDependendOnPassingCheck",
-		Prerequisites: []string{"passingBasicCheck"},
+		Prerequisites: []*Check{passingBasicCheck},
 	}
 
-	failingCheckDependendOnFailingCheck = Check{
+	failingCheckDependendOnFailingCheck = &Check{
 		Do: func(*troubleshootContext) error {
 			return checkError
 		},
-		Name:          "failingCheckDependendOnFailingCheck",
-		Prerequisites: []string{"failingBasicCheck"},
+		Prerequisites: []*Check{failingBasicCheck},
 	}
 )
 
 func Test_runChecks(t *testing.T) {
 	t.Run("no checks", func(t *testing.T) {
-		checks := []Check{}
+		checks := []*Check{}
 		err := runChecks(tsContext, checks)
 		require.NoError(t, err)
 	})
 	t.Run("a few passing checks", func(t *testing.T) {
-		checks := []Check{
+		checks := []*Check{
 			passingBasicCheck,
 			passingCheckDependendOnPassingCheck,
 		}
@@ -67,7 +62,7 @@ func Test_runChecks(t *testing.T) {
 		require.NoError(t, err)
 	})
 	t.Run("passing and failing checks", func(t *testing.T) {
-		checks := []Check{
+		checks := []*Check{
 			passingBasicCheck,
 			passingCheckDependendOnPassingCheck,
 			failingCheckDependendOnPassingCheck,
@@ -85,7 +80,7 @@ func Test_runChecks(t *testing.T) {
 		require.ErrorIs(t, aggregatedError.Errs[1], checkError)
 	})
 	t.Run("check should not be run if prerequisite check failed", func(t *testing.T) {
-		checks := []Check{
+		checks := []*Check{
 			failingBasicCheck,
 			failingCheckDependendOnFailingCheck, // should be skipped and error should not be reported
 		}
