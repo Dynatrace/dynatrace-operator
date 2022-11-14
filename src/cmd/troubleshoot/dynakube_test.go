@@ -51,6 +51,8 @@ func TestDynakubeCRD(t *testing.T) {
 }
 
 func TestDynakube(t *testing.T) {
+	resetLog()
+
 	t.Run("dynakube exists", func(t *testing.T) {
 		clt := fake.NewClientBuilder().
 			WithScheme(scheme.Scheme).
@@ -60,7 +62,11 @@ func TestDynakube(t *testing.T) {
 			).
 			Build()
 
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace}
+		troubleshootCtx := troubleshootContext{
+			apiReader:     clt,
+			namespaceName: testNamespace,
+			dynakube:      *testNewDynakubeBuilder(testNamespace, testDynakube).build(),
+		}
 		assert.NoErrorf(t, getSelectedDynakubeIfItExists(&troubleshootCtx), "no dynakube found")
 	})
 	t.Run("dynakube does not exist", func(t *testing.T) {
@@ -72,7 +78,11 @@ func TestDynakube(t *testing.T) {
 			).
 			Build()
 
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace}
+		troubleshootCtx := troubleshootContext{
+			apiReader:     clt,
+			namespaceName: testNamespace,
+			dynakube:      *testNewDynakubeBuilder(testNamespace, "doesnotexist").build(),
+		}
 		assert.Errorf(t, getSelectedDynakubeIfItExists(&troubleshootCtx), "dynakube found")
 	})
 	t.Run("invalid namespace selected", func(t *testing.T) {
@@ -112,7 +122,11 @@ func TestDynatraceSecret(t *testing.T) {
 			).
 			Build()
 
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace}
+		troubleshootCtx := troubleshootContext{
+			apiReader:     clt,
+			namespaceName: testNamespace,
+			dynakube:      *testNewDynakubeBuilder(testNamespace, testDynakube).build(),
+		}
 		assert.NoErrorf(t, getSelectedDynakubeIfItExists(&troubleshootCtx), "Dynatrace secret not found")
 	})
 	t.Run("Dynatrace secret does not exist", func(t *testing.T) {

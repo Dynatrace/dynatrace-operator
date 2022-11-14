@@ -65,7 +65,6 @@ func TestOneAgentImagePullable(t *testing.T) {
 		troubleshootCtx := troubleshootContext{
 			httpClient:    dockerServer.Client(),
 			namespaceName: testNamespace,
-			dynakubeName:  testDynakube,
 			dynakube:      *testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(dockerServer.URL + "/api").build(),
 			pullSecret:    *testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend(dtpullsecret.DockerConfigJson, string(authsBytes)).build(),
 		}
@@ -106,7 +105,6 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 	troubleshootCtx := troubleshootContext{
 		httpClient:    dockerServer.Client(),
 		namespaceName: testNamespace,
-		dynakubeName:  testDynakube,
 		pullSecret:    *testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend(dtpullsecret.DockerConfigJson, string(authsBytes)).build(),
 	}
 
@@ -200,7 +198,6 @@ func TestActiveGateImagePullable(t *testing.T) {
 		troubleshootCtx := troubleshootContext{
 			httpClient:    dockerServer.Client(),
 			namespaceName: testNamespace,
-			dynakubeName:  testDynakube,
 			dynakube:      *testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(dockerServer.URL + "/api").build(),
 			pullSecret:    *testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend(dtpullsecret.DockerConfigJson, string(authsBytes)).build(),
 		}
@@ -274,7 +271,6 @@ func TestImagePullablePullSecret(t *testing.T) {
 	t.Run("valid pull secret", func(t *testing.T) {
 		troubleshootCtx := troubleshootContext{
 			namespaceName: testNamespace,
-			dynakubeName:  testDynakube,
 			pullSecret:    *testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend(dtpullsecret.DockerConfigJson, pullSecretFieldValue).build(),
 		}
 		secret, err := getPullSecret(&troubleshootCtx)
@@ -284,7 +280,6 @@ func TestImagePullablePullSecret(t *testing.T) {
 	t.Run("invalid pull secret", func(t *testing.T) {
 		troubleshootCtx := troubleshootContext{
 			namespaceName: testNamespace,
-			dynakubeName:  testDynakube,
 			pullSecret:    *testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend("invalidToken", pullSecretFieldValue).build(),
 		}
 		secret, err := getPullSecret(&troubleshootCtx)

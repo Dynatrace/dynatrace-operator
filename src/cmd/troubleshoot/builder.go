@@ -117,7 +117,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			checkImagePullable,
 		}
 
-		dynakubes, err := getDynakubes(troubleshootCtx)
+		dynakubes, err := getDynakubes(troubleshootCtx, dynakubeFlagValue)
 		if err != nil {
 			return nil
 		}
@@ -130,7 +130,9 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 				namespaceName: namespaceFlagValue,
 				dynakube:      dynakube,
 			}
+
 			logNewDynakubef(dynakube.Name)
+
 			for _, test := range dynakubeTests {
 				err = test(&troubleshootCtx)
 				if err != nil {
@@ -138,6 +140,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 					return nil
 				}
 			}
+
 			resetLog()
 			logOkf("'%s' - all checks passed", dynakube.Name)
 		}
@@ -145,13 +148,12 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 	}
 }
 
-func getDynakubes(troubleshootCtx troubleshootContext) ([]dynatracev1beta1.DynaKube, error) {
+func getDynakubes(troubleshootCtx troubleshootContext, dynakubeName string) ([]dynatracev1beta1.DynaKube, error) {
 	var err error
 	var dynakubes []dynatracev1beta1.DynaKube
-	dynakubeName := dynakubeFlagValue
 
 	if dynakubeName == "" {
-		logNewDynakubef("no Dynakube specified - checking all Dynakubes in namespace '%s'", namespaceFlagValue)
+		logNewDynakubef("no Dynakube specified - checking all Dynakubes in namespace '%s'", troubleshootCtx.namespaceName)
 		dynakubes, err = getAllDynakubesInNamespace(troubleshootCtx)
 		if err != nil {
 			return nil, err
@@ -161,20 +163,24 @@ func getDynakubes(troubleshootCtx troubleshootContext) ([]dynatracev1beta1.DynaK
 		dynakube.Name = dynakubeName
 		dynakubes = append(dynakubes, dynakube)
 	}
+
 	return dynakubes, nil
 }
 
 func getAllDynakubesInNamespace(troubleshootContext troubleshootContext) ([]dynatracev1beta1.DynaKube, error) {
 	query := kubeobjects.NewDynakubeQuery(troubleshootContext.apiReader, troubleshootContext.namespaceName).WithContext(troubleshootContext.context)
 	dynakubes, err := query.List()
+
 	if err != nil {
 		logErrorf("failed to list Dynakubes: %v", err)
 		return nil, err
 	}
+
 	if len(dynakubes.Items) == 0 {
 		err = fmt.Errorf("no Dynakubes found in namespace '%s'", troubleshootContext.namespaceName)
 		logErrorf(err.Error())
 		return nil, err
 	}
+
 	return dynakubes.Items, nil
 }
