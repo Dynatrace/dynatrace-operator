@@ -52,6 +52,7 @@ csidriver:
   nodeSelector: {}
   kubeletPath: "/var/lib/kubelet"
   priorityClassValue: "1000000"
+  maxUnmountedVolumeAge: "" # if not set, default is 336h
   tolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/master
