@@ -34,8 +34,8 @@ func TestReconcileCertificate_Create(t *testing.T) {
 	controller, request := prepareController(clt)
 
 	res, err := controller.Reconcile(context.TODO(), request)
-	require.Error(t, err)
-	assert.Nil(t, res)
+	require.NoError(t, err)
+	assert.NotNil(t, res)
 	assert.Equal(t, SuccessDuration, res.RequeueAfter)
 
 	secret := &corev1.Secret{}
@@ -61,8 +61,8 @@ func TestReconcileCertificate_Create_NoCRD(t *testing.T) {
 	controller, request := prepareController(clt)
 
 	res, err := controller.Reconcile(context.TODO(), request)
-	require.Error(t, err)
-	assert.Nil(t, res)
+	assert.Error(t, err)
+	assert.Equal(t, res, reconcile.Result{})
 }
 
 func TestReconcileCertificate_Update(t *testing.T) {
