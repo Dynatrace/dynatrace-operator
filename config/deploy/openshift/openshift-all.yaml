@@ -32,7 +32,7 @@ metadata:
   namespace: dynatrace
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/version: "0.10.0"
     app.kubernetes.io/component: activegate
 ---
 # Source: dynatrace-operator/templates/Common/kubernetes-monitoring/serviceaccount-kubernetes-monitoring.yaml
@@ -56,7 +56,7 @@ metadata:
   namespace: dynatrace
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/version: "0.10.0"
     app.kubernetes.io/component: activegate
 ---
 # Source: dynatrace-operator/templates/Common/oneagent/serviceaccount-oneagent-privileged.yaml
@@ -80,7 +80,7 @@ metadata:
   namespace: dynatrace
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/version: "0.10.0"
     app.kubernetes.io/component: oneagent
 automountServiceAccountToken: false
 imagePullSecrets:
@@ -108,7 +108,7 @@ metadata:
   namespace: dynatrace
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/version: "0.10.0"
     app.kubernetes.io/component: oneagent
 automountServiceAccountToken: false
 imagePullSecrets:
@@ -136,7 +136,7 @@ metadata:
   namespace: dynatrace
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/version: "0.10.0"
     app.kubernetes.io/component: operator
 
 
@@ -165,7 +165,7 @@ metadata:
   namespace: dynatrace
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/version: "0.10.0"
     app.kubernetes.io/component: webhook
 imagePullSecrets:
 - name: redhat-connect
@@ -176,7 +176,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.10.0
+    controller-gen.kubebuilder.io/version: v0.9.0
+  creationTimestamp: null
   name: dynakubes.dynatrace.com
 spec:
   conversion:
@@ -305,7 +306,6 @@ spec:
                               required:
                               - key
                               type: object
-                              x-kubernetes-map-type: atomic
                             fieldRef:
                               description: 'Selects a field of the pod: supports metadata.name,
                                 metadata.namespace, `metadata.labels[''<KEY>'']`,
@@ -324,7 +324,6 @@ spec:
                               required:
                               - fieldPath
                               type: object
-                              x-kubernetes-map-type: atomic
                             resourceFieldRef:
                               description: 'Selects a resource of the container: only
                                 resources limits and requests (limits.cpu, limits.memory,
@@ -349,7 +348,6 @@ spec:
                               required:
                               - resource
                               type: object
-                              x-kubernetes-map-type: atomic
                             secretKeyRef:
                               description: Selects a key of a secret in the pod's
                                 namespace
@@ -370,7 +368,6 @@ spec:
                               required:
                               - key
                               type: object
-                              x-kubernetes-map-type: atomic
                           type: object
                       required:
                       - name
@@ -552,7 +549,6 @@ spec:
                               required:
                               - key
                               type: object
-                              x-kubernetes-map-type: atomic
                             fieldRef:
                               description: 'Selects a field of the pod: supports metadata.name,
                                 metadata.namespace, `metadata.labels[''<KEY>'']`,
@@ -571,7 +567,6 @@ spec:
                               required:
                               - fieldPath
                               type: object
-                              x-kubernetes-map-type: atomic
                             resourceFieldRef:
                               description: 'Selects a resource of the container: only
                                 resources limits and requests (limits.cpu, limits.memory,
@@ -596,7 +591,6 @@ spec:
                               required:
                               - resource
                               type: object
-                              x-kubernetes-map-type: atomic
                             secretKeyRef:
                               description: Selects a key of a secret in the pod's
                                 namespace
@@ -617,7 +611,6 @@ spec:
                               required:
                               - key
                               type: object
-                              x-kubernetes-map-type: atomic
                           type: object
                       required:
                       - name
@@ -812,7 +805,6 @@ spec:
                               required:
                               - key
                               type: object
-                              x-kubernetes-map-type: atomic
                             fieldRef:
                               description: 'Selects a field of the pod: supports metadata.name,
                                 metadata.namespace, `metadata.labels[''<KEY>'']`,
@@ -831,7 +823,6 @@ spec:
                               required:
                               - fieldPath
                               type: object
-                              x-kubernetes-map-type: atomic
                             resourceFieldRef:
                               description: 'Selects a resource of the container: only
                                 resources limits and requests (limits.cpu, limits.memory,
@@ -856,7 +847,6 @@ spec:
                               required:
                               - resource
                               type: object
-                              x-kubernetes-map-type: atomic
                             secretKeyRef:
                               description: Selects a key of a secret in the pod's
                                 namespace
@@ -877,7 +867,6 @@ spec:
                               required:
                               - key
                               type: object
-                              x-kubernetes-map-type: atomic
                           type: object
                       required:
                       - name
@@ -1259,7 +1248,6 @@ spec:
                               required:
                               - key
                               type: object
-                              x-kubernetes-map-type: atomic
                             fieldRef:
                               description: 'Selects a field of the pod: supports metadata.name,
                                 metadata.namespace, `metadata.labels[''<KEY>'']`,
@@ -1278,7 +1266,6 @@ spec:
                               required:
                               - fieldPath
                               type: object
-                              x-kubernetes-map-type: atomic
                             resourceFieldRef:
                               description: 'Selects a resource of the container: only
                                 resources limits and requests (limits.cpu, limits.memory,
@@ -1303,7 +1290,6 @@ spec:
                               required:
                               - resource
                               type: object
-                              x-kubernetes-map-type: atomic
                             secretKeyRef:
                               description: Selects a key of a secret in the pod's
                                 namespace
@@ -1324,7 +1310,6 @@ spec:
                               required:
                               - key
                               type: object
-                              x-kubernetes-map-type: atomic
                           type: object
                       required:
                       - name
@@ -1489,7 +1474,6 @@ spec:
                                 contains only "value". The requirements are ANDed.
                               type: object
                           type: object
-                          x-kubernetes-map-type: atomic
                         matchLabelKeys:
                           description: MatchLabelKeys is a set of pod label keys to
                             select the pods over which spreading will be calculated.
@@ -1682,7 +1666,6 @@ spec:
                               required:
                               - key
                               type: object
-                              x-kubernetes-map-type: atomic
                             fieldRef:
                               description: 'Selects a field of the pod: supports metadata.name,
                                 metadata.namespace, `metadata.labels[''<KEY>'']`,
@@ -1701,7 +1684,6 @@ spec:
                               required:
                               - fieldPath
                               type: object
-                              x-kubernetes-map-type: atomic
                             resourceFieldRef:
                               description: 'Selects a resource of the container: only
                                 resources limits and requests (limits.cpu, limits.memory,
@@ -1726,7 +1708,6 @@ spec:
                               required:
                               - resource
                               type: object
-                              x-kubernetes-map-type: atomic
                             secretKeyRef:
                               description: Selects a key of a secret in the pod's
                                 namespace
@@ -1747,7 +1728,6 @@ spec:
                               required:
                               - key
                               type: object
-                              x-kubernetes-map-type: atomic
                           type: object
                       required:
                       - name
@@ -1900,7 +1880,6 @@ spec:
                                 contains only "value". The requirements are ANDed.
                               type: object
                           type: object
-                          x-kubernetes-map-type: atomic
                         matchLabelKeys:
                           description: MatchLabelKeys is a set of pod label keys to
                             select the pods over which spreading will be calculated.
@@ -2068,7 +2047,6 @@ spec:
                       are ANDed.
                     type: object
                 type: object
-                x-kubernetes-map-type: atomic
               networkZone:
                 description: 'Optional: Sets Network Zone for OneAgent and ActiveGate
                   pods'
@@ -2196,7 +2174,6 @@ spec:
                                   required:
                                   - key
                                   type: object
-                                  x-kubernetes-map-type: atomic
                                 fieldRef:
                                   description: 'Selects a field of the pod: supports
                                     metadata.name, metadata.namespace, `metadata.labels[''<KEY>'']`,
@@ -2215,7 +2192,6 @@ spec:
                                   required:
                                   - fieldPath
                                   type: object
-                                  x-kubernetes-map-type: atomic
                                 resourceFieldRef:
                                   description: 'Selects a resource of the container:
                                     only resources limits and requests (limits.cpu,
@@ -2241,7 +2217,6 @@ spec:
                                   required:
                                   - resource
                                   type: object
-                                  x-kubernetes-map-type: atomic
                                 secretKeyRef:
                                   description: Selects a key of a secret in the pod's
                                     namespace
@@ -2263,7 +2238,6 @@ spec:
                                   required:
                                   - key
                                   type: object
-                                  x-kubernetes-map-type: atomic
                               type: object
                           required:
                           - name
@@ -2443,7 +2417,6 @@ spec:
                                   required:
                                   - key
                                   type: object
-                                  x-kubernetes-map-type: atomic
                                 fieldRef:
                                   description: 'Selects a field of the pod: supports
                                     metadata.name, metadata.namespace, `metadata.labels[''<KEY>'']`,
@@ -2462,7 +2435,6 @@ spec:
                                   required:
                                   - fieldPath
                                   type: object
-                                  x-kubernetes-map-type: atomic
                                 resourceFieldRef:
                                   description: 'Selects a resource of the container:
                                     only resources limits and requests (limits.cpu,
@@ -2488,7 +2460,6 @@ spec:
                                   required:
                                   - resource
                                   type: object
-                                  x-kubernetes-map-type: atomic
                                 secretKeyRef:
                                   description: Selects a key of a secret in the pod's
                                     namespace
@@ -2510,7 +2481,6 @@ spec:
                                   required:
                                   - key
                                   type: object
-                                  x-kubernetes-map-type: atomic
                               type: object
                           required:
                           - name
@@ -2714,7 +2684,6 @@ spec:
                                   required:
                                   - key
                                   type: object
-                                  x-kubernetes-map-type: atomic
                                 fieldRef:
                                   description: 'Selects a field of the pod: supports
                                     metadata.name, metadata.namespace, `metadata.labels[''<KEY>'']`,
@@ -2733,7 +2702,6 @@ spec:
                                   required:
                                   - fieldPath
                                   type: object
-                                  x-kubernetes-map-type: atomic
                                 resourceFieldRef:
                                   description: 'Selects a resource of the container:
                                     only resources limits and requests (limits.cpu,
@@ -2759,7 +2727,6 @@ spec:
                                   required:
                                   - resource
                                   type: object
-                                  x-kubernetes-map-type: atomic
                                 secretKeyRef:
                                   description: Selects a key of a secret in the pod's
                                     namespace
@@ -2781,7 +2748,6 @@ spec:
                                   required:
                                   - key
                                   type: object
-                                  x-kubernetes-map-type: atomic
                               type: object
                           required:
                           - name
@@ -2956,7 +2922,6 @@ spec:
                               required:
                               - key
                               type: object
-                              x-kubernetes-map-type: atomic
                             fieldRef:
                               description: 'Selects a field of the pod: supports metadata.name,
                                 metadata.namespace, `metadata.labels[''<KEY>'']`,
@@ -2975,7 +2940,6 @@ spec:
                               required:
                               - fieldPath
                               type: object
-                              x-kubernetes-map-type: atomic
                             resourceFieldRef:
                               description: 'Selects a resource of the container: only
                                 resources limits and requests (limits.cpu, limits.memory,
@@ -3000,7 +2964,6 @@ spec:
                               required:
                               - resource
                               type: object
-                              x-kubernetes-map-type: atomic
                             secretKeyRef:
                               description: Selects a key of a secret in the pod's
                                 namespace
@@ -3021,7 +2984,6 @@ spec:
                               required:
                               - key
                               type: object
-                              x-kubernetes-map-type: atomic
                           type: object
                       required:
                       - name
@@ -3174,7 +3136,6 @@ spec:
                                 contains only "value". The requirements are ANDed.
                               type: object
                           type: object
-                          x-kubernetes-map-type: atomic
                         matchLabelKeys:
                           description: MatchLabelKeys is a set of pod label keys to
                             select the pods over which spreading will be calculated.
@@ -3460,13 +3421,14 @@ spec:
                 format: date-time
                 type: string
               lastDataIngestTokenProbeTimestamp:
-                description: LastDataIngestTokenProbeTimestamp tracks when the last
-                  request for the DataIngest token validity was sent
+                description: Deprecated, use LastAPITokenProbeTimestamp instead LastDataIngestTokenProbeTimestamp
+                  tracks when the last request for the DataIngest token validity was
+                  sent
                 format: date-time
                 type: string
               lastPaaSTokenProbeTimestamp:
-                description: LastPaaSTokenProbeTimestamp tracks when the last request
-                  for the PaaS token validity was sent
+                description: Deprecated, use LastAPITokenProbeTimestamp instead LastPaaSTokenProbeTimestamp
+                  tracks when the last request for the PaaS token validity was sent
                 format: date-time
                 type: string
               latestAgentVersionUnixDefault:
@@ -3560,7 +3522,7 @@ metadata:
   name: dynatrace-kubernetes-monitoring
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/version: "0.10.0"
     app.kubernetes.io/component: activegate
 rules:
   - apiGroups:
@@ -3644,7 +3606,7 @@ metadata:
   name: dynatrace-dynakube-oneagent-privileged
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/version: "0.10.0"
     app.kubernetes.io/component: oneagent
 rules:
   - apiGroups:
@@ -3677,7 +3639,7 @@ metadata:
   name: dynatrace-dynakube-oneagent-unprivileged
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/version: "0.10.0"
     app.kubernetes.io/component: oneagent
 rules:
   - apiGroups:
@@ -3710,7 +3672,7 @@ metadata:
   name: dynatrace-operator
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/version: "0.10.0"
     app.kubernetes.io/component: operator
 rules:
   - apiGroups:
@@ -3803,7 +3765,7 @@ metadata:
   name: dynatrace-webhook
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/version: "0.10.0"
     app.kubernetes.io/component: webhook
 rules:
   - apiGroups:
@@ -3890,7 +3852,7 @@ metadata:
   name: dynatrace-kubernetes-monitoring
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/version: "0.10.0"
     app.kubernetes.io/component: activegate
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -3921,7 +3883,7 @@ metadata:
   name: dynatrace-dynakube-oneagent-privileged
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/version: "0.10.0"
     app.kubernetes.io/component: oneagent
 subjects:
   - kind: ServiceAccount
@@ -3952,7 +3914,7 @@ metadata:
   name: dynatrace-dynakube-oneagent-unprivileged
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/version: "0.10.0"
     app.kubernetes.io/component: oneagent
 subjects:
   - kind: ServiceAccount
@@ -3983,7 +3945,7 @@ metadata:
   name: dynatrace-operator
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/version: "0.10.0"
     app.kubernetes.io/component: operator
 subjects:
   - kind: ServiceAccount
@@ -4014,7 +3976,7 @@ metadata:
   name: dynatrace-webhook
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/version: "0.10.0"
     app.kubernetes.io/component: webhook
 subjects:
   - kind: ServiceAccount
@@ -4046,7 +4008,7 @@ metadata:
   namespace: dynatrace
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/version: "0.10.0"
     app.kubernetes.io/component: operator
 rules:
   - apiGroups:
@@ -4206,7 +4168,7 @@ metadata:
   namespace: dynatrace
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/version: "0.10.0"
     app.kubernetes.io/component: webhook
 rules:
   - apiGroups:
@@ -4281,7 +4243,7 @@ metadata:
   namespace: dynatrace
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/version: "0.10.0"
     app.kubernetes.io/component: operator
 subjects:
   - kind: ServiceAccount
@@ -4312,7 +4274,7 @@ metadata:
   namespace: dynatrace
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/version: "0.10.0"
     app.kubernetes.io/component: webhook
 subjects:
   - kind: ServiceAccount
@@ -4344,12 +4306,12 @@ metadata:
   namespace: dynatrace
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/version: "0.10.0"
     app.kubernetes.io/component: webhook
 spec:
   selector:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/version: "0.10.0"
     app.kubernetes.io/component: webhook
   ports:
     - port: 443
@@ -4377,7 +4339,7 @@ metadata:
   namespace: dynatrace
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/version: "0.10.0"
     app.kubernetes.io/component: operator
 spec:
   replicas: 1
@@ -4389,9 +4351,11 @@ spec:
     type: RollingUpdate
   template:
     metadata:
+      annotations:
+        dynatrace.com/inject: "false"
       labels:
         app.kubernetes.io/name: dynatrace-operator
-        app.kubernetes.io/version: "0.0.0-snapshot"
+        app.kubernetes.io/version: "0.10.0"
         app.kubernetes.io/component: operator
         name: dynatrace-operator
     spec:
@@ -4400,7 +4364,7 @@ spec:
           args:
             - operator
           # Replace this with the built image name
-          image: quay.io/dynatrace/dynatrace-operator:snapshot
+          image: quay.io/dynatrace/dynatrace-operator:snapshot-release-0-10
           imagePullPolicy: Always
           env:
             - name: POD_NAMESPACE
@@ -4497,7 +4461,7 @@ metadata:
   namespace: dynatrace
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/version: "0.10.0"
     app.kubernetes.io/component: webhook
 spec:
   replicas: 2
@@ -4511,10 +4475,11 @@ spec:
   template:
     metadata:
       annotations:
+        dynatrace.com/inject: "false"
         kubectl.kubernetes.io/default-container: webhook
       labels:
         app.kubernetes.io/name: dynatrace-operator
-        app.kubernetes.io/version: "0.0.0-snapshot"
+        app.kubernetes.io/version: "0.10.0"
         app.kubernetes.io/component: webhook
         internal.dynatrace.com/component: webhook
         internal.dynatrace.com/app: webhook
@@ -4557,7 +4522,7 @@ spec:
             - webhook-server
             # OLM mounts the certificates here, so we reuse it for simplicity
             - --certs-dir=/tmp/k8s-webhook-server/serving-certs/
-          image: quay.io/dynatrace/dynatrace-operator:snapshot
+          image: quay.io/dynatrace/dynatrace-operator:snapshot-release-0-10
           imagePullPolicy: Always
           env:
             - name: POD_NAMESPACE
@@ -4627,7 +4592,7 @@ metadata:
   name: dynatrace-webhook
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/version: "0.10.0"
     app.kubernetes.io/component: webhook
 webhooks:
   - name: webhook.pod.dynatrace.com
@@ -4739,7 +4704,7 @@ metadata:
   name: dynatrace-dynakube-oneagent-privileged
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/version: "0.10.0"
     app.kubernetes.io/component: oneagent
 allowHostDirVolumePlugin: true
 allowHostIPC: false
@@ -4806,7 +4771,7 @@ metadata:
   name: dynatrace-dynakube-oneagent-unprivileged
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/version: "0.10.0"
     app.kubernetes.io/component: oneagent
 allowHostDirVolumePlugin: true
 allowHostIPC: false
@@ -4871,7 +4836,7 @@ metadata:
   name: dynatrace-operator
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/version: "0.10.0"
     app.kubernetes.io/component: operator
 allowPrivilegedContainer: false
 fsGroup:
@@ -4921,7 +4886,7 @@ metadata:
   name: dynatrace-webhook
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/version: "0.10.0"
     app.kubernetes.io/component: operator
 allowPrivilegedContainer: false
 fsGroup:
@@ -4971,7 +4936,7 @@ metadata:
   name: dynatrace-webhook
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/version: "0.10.0"
     app.kubernetes.io/component: webhook
 webhooks:
   - admissionReviewVersions:
@@ -5018,7 +4983,7 @@ metadata:
   namespace: dynatrace
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/version: "0.10.0"
     app.kubernetes.io/component: csi-driver
 ---
 # Source: dynatrace-operator/templates/Common/csi/clusterrole-csi.yaml
@@ -5041,7 +5006,7 @@ metadata:
   name: dynatrace-oneagent-csi-driver
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/version: "0.10.0"
     app.kubernetes.io/component: csi-driver
 rules:
   - apiGroups:
@@ -5107,7 +5072,7 @@ metadata:
   name: dynatrace-oneagent-csi-driver
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/version: "0.10.0"
     app.kubernetes.io/component: csi-driver
 subjects:
   - kind: ServiceAccount
@@ -5139,7 +5104,7 @@ metadata:
   namespace: dynatrace
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/version: "0.10.0"
     app.kubernetes.io/component: csi-driver
 rules:
   - apiGroups:
@@ -5210,7 +5175,7 @@ metadata:
   namespace: dynatrace
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/version: "0.10.0"
     app.kubernetes.io/component: csi-driver
 subjects:
   - kind: ServiceAccount
@@ -5240,7 +5205,7 @@ kind: DaemonSet
 metadata:
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/version: "0.10.0"
     app.kubernetes.io/component: csi-driver
   name: dynatrace-oneagent-csi-driver
   namespace: dynatrace
@@ -5253,11 +5218,12 @@ spec:
   template:
     metadata:
       annotations:
+        dynatrace.com/inject: "false"
         kubectl.kubernetes.io/default-container: provisioner
         cluster-autoscaler.kubernetes.io/enable-ds-eviction: "false"
       labels:
         app.kubernetes.io/name: dynatrace-operator
-        app.kubernetes.io/version: "0.0.0-snapshot"
+        app.kubernetes.io/version: "0.10.0"
         app.kubernetes.io/component: csi-driver
         internal.oneagent.dynatrace.com/app: csi-driver
         internal.oneagent.dynatrace.com/component: csi-driver
@@ -5268,7 +5234,7 @@ spec:
         # - Needs access to the filesystem of pods on the node, and mount stuff to it,needs to read/write to it, needs root permissions to do so
         # - Needs access to a dedicated folder on the node to persist data, needs to read/write to it.
       - name: server
-        image: quay.io/dynatrace/dynatrace-operator:snapshot
+        image: quay.io/dynatrace/dynatrace-operator:snapshot-release-0-10
         imagePullPolicy: Always
         args:
         - csi-server
@@ -5331,7 +5297,7 @@ spec:
         - name: tmp-dir
           mountPath: /tmp
       - name: provisioner
-        image: quay.io/dynatrace/dynatrace-operator:snapshot
+        image: quay.io/dynatrace/dynatrace-operator:snapshot-release-0-10
         imagePullPolicy: Always
         args:
           - csi-provisioner
@@ -5387,7 +5353,7 @@ spec:
         # Used for registering the driver with kubelet
         # - Needs access to the registration socket, needs to read/write to it, needs root permissions to do so.
       - name: registrar
-        image: quay.io/dynatrace/dynatrace-operator:snapshot
+        image: quay.io/dynatrace/dynatrace-operator:snapshot-release-0-10
         imagePullPolicy: Always
         env:
         - name: DRIVER_REG_SOCK_PATH
@@ -5434,7 +5400,7 @@ spec:
         # Used to make a gRPC request (Probe()) to the driver to check if its running
         # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.
       - name: liveness-probe
-        image: quay.io/dynatrace/dynatrace-operator:snapshot
+        image: quay.io/dynatrace/dynatrace-operator:snapshot-release-0-10
         imagePullPolicy: Always
         args:
         - --csi-address=/csi/csi.sock
@@ -5535,7 +5501,7 @@ metadata:
   name: csi.oneagent.dynatrace.com
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/version: "0.10.0"
     app.kubernetes.io/component: csi-driver
 spec:
   attachRequired: false
@@ -5585,7 +5551,7 @@ metadata:
   name: dynatrace-oneagent-csi-driver
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/version: "0.10.0"
     app.kubernetes.io/component: csi-driver
 allowHostDirVolumePlugin: true
 allowHostIPC: true
