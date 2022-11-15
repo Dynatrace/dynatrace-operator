@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -101,7 +100,6 @@ func Recreate(namespace corev1.Namespace) func(ctx context.Context, environmentC
 
 func Create(namespace corev1.Namespace) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		require.NoError(t, dynatracev1beta1.AddToScheme(environmentConfig.Client().Resources().GetScheme()))
 		require.NoError(t, environmentConfig.Client().Resources().Create(ctx, &namespace))
 
 		return ctx
