@@ -11,7 +11,7 @@ import (
 
 const (
 	defaultMaxUnmountedCsiVolumeAge = 14 * 24 * time.Hour
-	MaxUnmountedCsiVolumeAgeEnv     = "MAX_UNMOUNTED_VOLUME_AGE"
+	maxUnmountedCsiVolumeAgeEnv     = "MAX_UNMOUNTED_VOLUME_AGE"
 )
 
 func (gc *CSIGarbageCollector) runUnmountedVolumeGarbageCollection(ctx context.Context, tenantUUID string) {
@@ -20,6 +20,7 @@ func (gc *CSIGarbageCollector) runUnmountedVolumeGarbageCollection(ctx context.C
 		log.Info("failed to get unmounted volume information")
 		return
 	}
+
 	gc.removeUnmountedVolumesIfNecessary(unmountedVolumes, tenantUUID)
 }
 
@@ -32,12 +33,12 @@ func (gc *CSIGarbageCollector) getUnmountedVolumes(tenantUUID string) ([]os.File
 	}
 
 	for _, volumeID := range volumeIDs {
-		unused, err := afero.IsEmpty(gc.fs, gc.path.OverlayMappedDir(tenantUUID, volumeID.Name()))
+		isUnused, err := afero.IsEmpty(gc.fs, gc.path.OverlayMappedDir(tenantUUID, volumeID.Name()))
 		if err != nil {
 			return nil, err
 		}
 
-		if unused {
+		if isUnused {
 			unusedVolumeIDs = append(unusedVolumeIDs, volumeID)
 		}
 	}
@@ -48,7 +49,8 @@ func (gc *CSIGarbageCollector) getUnmountedVolumes(tenantUUID string) ([]os.File
 func (gc *CSIGarbageCollector) removeUnmountedVolumesIfNecessary(unusedVolumeIDs []os.FileInfo, tenantUUID string) {
 	for _, unusedVolumeID := range unusedVolumeIDs {
 		if gc.isUnmountedVolumeTooOld(unusedVolumeID.ModTime()) {
-			if err := gc.fs.RemoveAll(gc.path.AgentRunDirForVolume(tenantUUID, unusedVolumeID.Name())); err != nil {
+			err := gc.fs.RemoveAll(gc.path.AgentRunDirForVolume(tenantUUID, unusedVolumeID.Name()))
+			if err != nil {
 				log.Info("failed to remove logs for pod", "podUID", unusedVolumeID.Name(), "error", err)
 			}
 		}
@@ -60,14 +62,14 @@ func (gc *CSIGarbageCollector) isUnmountedVolumeTooOld(t time.Time) bool {
 }
 
 func determineMaxUnmountedVolumeAge() time.Duration {
-	maxAgeEnv := os.Getenv(MaxUnmountedCsiVolumeAgeEnv)
+	maxAgeEnv := os.Getenv(maxUnmountedCsiVolumeAgeEnv)
 	if maxAgeEnv == "" {
 		return defaultMaxUnmountedCsiVolumeAge
 	}
 
 	maxAge, err := strconv.Atoi(maxAgeEnv)
 	if err != nil {
-		log.Error(err, "failed to parse MaxUnmountedCsiVolumeAge from", "env", MaxUnmountedCsiVolumeAgeEnv, "value", maxAgeEnv)
+		log.Error(err, "failed to parse MaxUnmountedCsiVolumeAge from", "env", maxUnmountedCsiVolumeAgeEnv, "value", maxAgeEnv)
 		return defaultMaxUnmountedCsiVolumeAge
 	}
 	if maxAge < 0 {

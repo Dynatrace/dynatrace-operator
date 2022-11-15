@@ -135,8 +135,8 @@ func TestRemoveUnmountedVolumesIfNecessary(t *testing.T) {
 func TestDetermineMaxUnmountedVolumeAge(t *testing.T) {
 
 	t.Run("no env set ==> use default", func(t *testing.T) {
-		os.Setenv(MaxUnmountedCsiVolumeAgeEnv, "")
-		defer os.Unsetenv(MaxUnmountedCsiVolumeAgeEnv)
+		os.Setenv(maxUnmountedCsiVolumeAgeEnv, "")
+		defer os.Unsetenv(maxUnmountedCsiVolumeAgeEnv)
 
 		maxVolumeAge := determineMaxUnmountedVolumeAge()
 
@@ -144,17 +144,17 @@ func TestDetermineMaxUnmountedVolumeAge(t *testing.T) {
 	})
 
 	t.Run("use (short) duration from env", func(t *testing.T) {
-		os.Setenv(MaxUnmountedCsiVolumeAgeEnv, "1")
-		defer os.Unsetenv(MaxUnmountedCsiVolumeAgeEnv)
+		os.Setenv(maxUnmountedCsiVolumeAgeEnv, "1")
+		defer os.Unsetenv(maxUnmountedCsiVolumeAgeEnv)
 
 		maxVolumeAge := determineMaxUnmountedVolumeAge()
 
-		assert.Equal(t, time.Hour * 24, maxVolumeAge)
+		assert.Equal(t, time.Hour*24, maxVolumeAge)
 	})
 
 	t.Run("negative duration in env => use 0", func(t *testing.T) {
-		os.Setenv(MaxUnmountedCsiVolumeAgeEnv, "-1")
-		defer os.Unsetenv(MaxUnmountedCsiVolumeAgeEnv)
+		os.Setenv(maxUnmountedCsiVolumeAgeEnv, "-1")
+		defer os.Unsetenv(maxUnmountedCsiVolumeAgeEnv)
 
 		maxVolumeAge := determineMaxUnmountedVolumeAge()
 
