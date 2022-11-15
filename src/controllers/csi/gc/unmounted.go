@@ -3,6 +3,7 @@ package csigc
 import (
 	"context"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/spf13/afero"
@@ -64,7 +65,7 @@ func determineMaxUnmountedVolumeAge() time.Duration {
 		return defaultMaxUnmountedCsiVolumeAge
 	}
 
-	maxAge, err := time.ParseDuration(maxAgeEnv)
+	maxAge, err := strconv.Atoi(maxAgeEnv)
 	if err != nil {
 		log.Error(err, "failed to parse MaxUnmountedCsiVolumeAge from", "env", MaxUnmountedCsiVolumeAgeEnv, "value", maxAgeEnv)
 		return defaultMaxUnmountedCsiVolumeAge
@@ -72,5 +73,5 @@ func determineMaxUnmountedVolumeAge() time.Duration {
 	if maxAge < 0 {
 		return 0
 	}
-	return maxAge
+	return 24 * time.Duration(maxAge) * time.Hour
 }
