@@ -23,15 +23,34 @@ type Check struct {
 	Name          string
 }
 
-var results = map[*Check]Result{}
+type ChecksResults struct {
+	check2Result map[*Check]Result
+}
 
-func runChecks(troubleshootCtx *troubleshootContext, checks []*Check) error {
+func NewChecksResults() ChecksResults {
+	return ChecksResults{check2Result: map[*Check]Result{}}
+}
+
+func (cr ChecksResults) set(check *Check, result Result) {
+	cr.check2Result[check] = result
+}
+
+func (cr ChecksResults) shouldSkip(check *Check) bool {
+	for _, p := range check.Prerequisites {
+		if cr.check2Result[p] != PASSED {
+			return true
+		}
+	}
+	return false
+}
+
+func runChecks(results ChecksResults, troubleshootCtx *troubleshootContext, checks []*Check) error {
 	errs := tserrors.NewAggregatedError()
 	for _, check := range checks {
-		if shouldSkip(check) {
+		if results.shouldSkip(check) {
 			prereqs := strings.Join(functional.Map(check.Prerequisites, func(c *Check) string { return c.Name }), ",")
 			logWarningf("Skipped '%s' check because prerequisites aren't met: [%s]", check.Name, prereqs)
-			results[check] = SKIPPED
+			results.set(check, SKIPPED)
 			continue
 		}
 
@@ -39,9 +58,9 @@ func runChecks(troubleshootCtx *troubleshootContext, checks []*Check) error {
 		if err != nil {
 			logErrorf(err.Error())
 			errs.Add(err)
-			results[check] = FAILED
+			results.set(check, FAILED)
 		} else {
-			results[check] = PASSED
+			results.set(check, PASSED)
 		}
 	}
 
@@ -50,13 +69,4 @@ func runChecks(troubleshootCtx *troubleshootContext, checks []*Check) error {
 	}
 
 	return errs
-}
-
-func shouldSkip(check *Check) bool {
-	for _, p := range check.Prerequisites {
-		if results[p] != PASSED {
-			return true
-		}
-	}
-	return false
 }

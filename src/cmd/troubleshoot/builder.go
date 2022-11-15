@@ -102,31 +102,37 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			dynakubeName:  dynakubeFlagValue,
 		}
 
+		results := ChecksResults{}
+
 		// TODO: failed Check shouldn't be an `error` because it's not execution problem but environment problem
-		_ = runChecks(troubleshootCtx, getChecks()) // ignore error to avoid polluting pretty logs
+		_ = runChecks(results, troubleshootCtx, getChecks(results)) // ignore error to avoid polluting pretty logs
 		return nil
 	}
 }
 
-func getChecks() []*Check {
+func getChecks(results ChecksResults) []*Check {
 	namespaceCheck := &Check{
 		Name: namespaceCheckName,
 		Do:   checkNamespace,
 	}
 	dynakubeCheck := &Check{
-		Name:          dynakubeCheckName,
-		Do:            checkDynakube,
+		Name: dynakubeCheckName,
+		Do: func(troubleshootCtx *troubleshootContext) error {
+			return checkDynakube(results, troubleshootCtx)
+		},
 		Prerequisites: []*Check{namespaceCheck},
 	}
 	dtClusterConnectionCheck := &Check{
-		Name:          dtClusterConnectionCheckName,
-		Do:            checkDtClusterConnection,
+		Name: dtClusterConnectionCheckName,
+		Do: func(troubleshootCtx *troubleshootContext) error {
+			return checkDtClusterConnection(results, troubleshootCtx)
+		},
 		Prerequisites: []*Check{namespaceCheck, dynakubeCheck},
 	}
 	imagePullableCheck := &Check{
-		Name:          imagePullableCheckName,
-		Do:            checkImagePullable,
-		Prerequisites: []*Check{namespaceCheck, dynakubeCheck},
+		checkImagePullable,
+		[]*Check{namespaceCheck, dynakubeCheck},
+		imagePullableCheckName,
 	}
 
 	return []*Check{namespaceCheck, dynakubeCheck, dtClusterConnectionCheck, imagePullableCheck}

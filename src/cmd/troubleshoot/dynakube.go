@@ -28,12 +28,12 @@ const (
 	proxySecretCheckName                   = "proxySecret"
 )
 
-func checkDynakube(troubleshootCtx *troubleshootContext) error {
+func checkDynakube(results ChecksResults, troubleshootCtx *troubleshootContext) error {
 	log = newTroubleshootLogger("[dynakube  ] ")
 
 	logNewCheckf("checking if '%s:%s' Dynakube is configured correctly", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
 
-	err := runChecks(troubleshootCtx, getDynakubeChecks())
+	err := runChecks(results, troubleshootCtx, getDynakubeChecks())
 	if err != nil {
 		return errors.Wrapf(err, "'%s:%s' Dynakube isn't valid. %s",
 			troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName, dynakubeNotValidMessage())

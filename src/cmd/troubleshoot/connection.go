@@ -9,14 +9,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-func checkDtClusterConnection(troubleshootCtx *troubleshootContext) error {
+func checkDtClusterConnection(results ChecksResults, troubleshootCtx *troubleshootContext) error {
 	log = newTroubleshootLogger("[dtcluster ] ")
 
 	logNewCheckf("checking if tenant is accessible ...")
 
 	checks := getConnectionChecks()
 
-	err := runChecks(troubleshootCtx, checks)
+	err := runChecks(results, troubleshootCtx, checks)
 	if err != nil {
 		return errors.Wrap(err, "tenant isn't  accessible")
 	}
