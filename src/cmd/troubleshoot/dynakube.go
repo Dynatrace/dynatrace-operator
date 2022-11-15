@@ -105,16 +105,20 @@ func checkDynakubeCrdExists(troubleshootCtx *troubleshootContext) error {
 	err := troubleshootCtx.apiReader.List(troubleshootCtx.context, dynakubeList, &client.ListOptions{Namespace: troubleshootCtx.namespaceName})
 
 	if err != nil {
-		if runtime.IsNotRegisteredError(err) {
-			err = errors.Wrap(err, "CRD for Dynakube missing")
-		} else {
-			err = errors.Wrap(err, "could not list Dynakube")
-		}
-		return err
+		return determineDynakubeError(err)
 	}
 
 	logInfof("CRD for Dynakube exists")
 	return nil
+}
+
+func determineDynakubeError(err error) error {
+	if runtime.IsNotRegisteredError(err) {
+		err = errors.Wrap(err, "CRD for Dynakube missing")
+	} else {
+		err = errors.Wrap(err, "could not list Dynakube")
+	}
+	return err
 }
 
 func getSelectedDynakube(troubleshootCtx *troubleshootContext) error {
@@ -122,21 +126,25 @@ func getSelectedDynakube(troubleshootCtx *troubleshootContext) error {
 	dynakube, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.dynakubeName})
 
 	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			err = errors.Wrapf(err,
-				"selected '%s:%s' Dynakube does not exist",
-				troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
-		} else {
-			err = errors.Wrapf(err, "could not get Dynakube '%s:%s'",
-				troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
-		}
-		return err
+		return determineSelectedDynakubeError(troubleshootCtx, err)
 	}
 
 	troubleshootCtx.dynakube = dynakube
 
 	logInfof("using '%s:%s' Dynakube", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
 	return nil
+}
+
+func determineSelectedDynakubeError(troubleshootCtx *troubleshootContext, err error) error {
+	if k8serrors.IsNotFound(err) {
+		err = errors.Wrapf(err,
+			"selected '%s:%s' Dynakube does not exist",
+			troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
+	} else {
+		err = errors.Wrapf(err, "could not get Dynakube '%s:%s'",
+			troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
+	}
+	return err
 }
 
 func checkApiUrl(troubleshootCtx *troubleshootContext) error {

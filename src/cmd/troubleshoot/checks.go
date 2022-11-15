@@ -35,7 +35,8 @@ func runChecks(troubleshootCtx *troubleshootContext, checks []*Check) error {
 			continue
 		}
 
-		if err := check.Do(troubleshootCtx); err != nil {
+		err := check.Do(troubleshootCtx)
+		if err != nil {
 			logErrorf(err.Error())
 			errs.Add(err)
 			results[check] = FAILED
