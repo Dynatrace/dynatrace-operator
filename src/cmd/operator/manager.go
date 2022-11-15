@@ -41,6 +41,10 @@ func (provider bootstrapManagerProvider) CreateManager(namespace string, config 
 		LivenessEndpointName:   livenessEndpointName,
 	})
 
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
 	err = addHealthzCheck(controlManager)
 	if err != nil {
 		return nil, err

@@ -29,7 +29,6 @@ const (
 	strategyWebhook = "webhook"
 )
 
-// withSecret, withCRD, generateValidSecre
 func TestReconcileCertificate_Create(t *testing.T) {
 	clt := newFakeClientBuilder().WithCRD().Build()
 
@@ -293,7 +292,33 @@ type fakeClientBuilder struct {
 }
 
 func newFakeClientBuilder() *fakeClientBuilder {
-	return &fakeClientBuilder{}
+	objs := []client.Object{
+		&admissionregistrationv1.MutatingWebhookConfiguration{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: webhook.DeploymentName,
+			},
+			Webhooks: []admissionregistrationv1.MutatingWebhook{
+				{
+					ClientConfig: admissionregistrationv1.WebhookClientConfig{},
+				},
+				{
+					ClientConfig: admissionregistrationv1.WebhookClientConfig{},
+				},
+			},
+		},
+		&admissionregistrationv1.ValidatingWebhookConfiguration{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: webhook.DeploymentName,
+			},
+			Webhooks: []admissionregistrationv1.ValidatingWebhook{
+				{
+					ClientConfig: admissionregistrationv1.WebhookClientConfig{},
+				},
+			},
+		},
+	}
+
+	return &fakeClientBuilder{objs: objs}
 }
 
 func (builder *fakeClientBuilder) WithSecret(generateValidCertificate bool) *fakeClientBuilder {
