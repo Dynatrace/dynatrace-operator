@@ -45,14 +45,14 @@ func (provider bootstrapManagerProvider) CreateManager(namespace string, config 
 		return nil, errors.WithStack(err)
 	}
 
-	err = addHealthzCheck(controlManager)
+	err = controlManager.AddHealthzCheck(livezEndpointName, healthz.Ping)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
-	err = addReadyzCheck(controlManager)
+	err = controlManager.AddReadyzCheck(readyzEndpointName, healthz.Ping)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	return controlManager, errors.WithStack(err)
@@ -75,14 +75,14 @@ func (provider operatorManagerProvider) CreateManager(namespace string, cfg *res
 		return nil, errors.WithStack(err)
 	}
 
-	err = addHealthzCheck(mgr)
+	err = mgr.AddHealthzCheck(livezEndpointName, healthz.Ping)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
-	err = addReadyzCheck(mgr)
+	err = mgr.AddReadyzCheck(readyzEndpointName, healthz.Ping)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	err = dynakube.Add(mgr, namespace)
@@ -123,24 +123,4 @@ func (provider operatorManagerProvider) createOptions(namespace string) ctrl.Opt
 		HealthProbeBindAddress:     healthProbeBindAddress,
 		LivenessEndpointName:       livenessEndpointName,
 	}
-}
-
-func addHealthzCheck(mgr manager.Manager) error {
-	err := mgr.AddHealthzCheck(livezEndpointName, healthz.Ping)
-
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
-}
-
-func addReadyzCheck(mgr manager.Manager) error {
-	err := mgr.AddReadyzCheck(readyzEndpointName, healthz.Ping)
-
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
 }

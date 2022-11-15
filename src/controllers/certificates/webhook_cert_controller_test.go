@@ -67,7 +67,7 @@ func TestReconcileCertificate_Create_NoCRD(t *testing.T) {
 }
 
 func TestReconcileCertificate_Update(t *testing.T) {
-	clt := newFakeClientBuilder().WithSecret(false).WithCRD().Build()
+	clt := newFakeClientBuilder().WithInvalidCertificateSecret().WithCRD().Build()
 	controller, request := prepareController(clt)
 
 	res, err := controller.Reconcile(context.TODO(), request)
@@ -94,7 +94,7 @@ func TestReconcileCertificate_Update(t *testing.T) {
 }
 
 func TestReconcileCertificate_ExistingSecretWithValidCertificate(t *testing.T) {
-	clt := newFakeClientBuilder().WithSecret(true).WithCRD().Build()
+	clt := newFakeClientBuilder().WithValidCertificateSecret().WithCRD().Build()
 	controller, request := prepareController(clt)
 
 	res, err := controller.Reconcile(context.TODO(), request)
@@ -321,15 +321,19 @@ func newFakeClientBuilder() *fakeClientBuilder {
 	return &fakeClientBuilder{objs: objs}
 }
 
-func (builder *fakeClientBuilder) WithSecret(generateValidCertificate bool) *fakeClientBuilder {
-	certData := createInvalidTestCertData(nil)
-	if generateValidCertificate {
-		certData = createValidTestCertData(nil)
-	}
-
+func (builder *fakeClientBuilder) WithValidCertificateSecret() *fakeClientBuilder {
 	builder.objs = append(builder.objs,
-		createTestSecret(nil, certData),
+		createTestSecret(nil, createValidTestCertData(nil)),
 	)
+
+	return builder
+}
+
+func (builder *fakeClientBuilder) WithInvalidCertificateSecret() *fakeClientBuilder {
+	builder.objs = append(builder.objs,
+		createTestSecret(nil, createInvalidTestCertData(nil)),
+	)
+
 	return builder
 }
 
