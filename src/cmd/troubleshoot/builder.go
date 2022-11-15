@@ -102,7 +102,8 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			dynakubeName:  dynakubeFlagValue,
 		}
 
-		_ = runChecks(troubleshootCtx, getChecks()) // to avoid polluting pretty logs
+		// TODO: failed Check shouldn't be an `error` because it's not execution problem but environment problem
+		_ = runChecks(troubleshootCtx, getChecks()) // ignore error to avoid polluting pretty logs
 		return nil
 	}
 }
