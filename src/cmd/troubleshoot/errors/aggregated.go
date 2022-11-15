@@ -18,8 +18,11 @@ func NewAggregatedError() AggregatedError {
 
 func (e AggregatedError) Error() string {
 	sb := strings.Builder{}
-	for _, err := range e.Errs {
-		sb.WriteString(err.Error() + "\n")
+	for i, err := range e.Errs {
+		sb.WriteString(err.Error())
+		if i < len(e.Errs)-1 {
+			sb.WriteString("\n")
+		}
 	}
 	return sb.String()
 }
