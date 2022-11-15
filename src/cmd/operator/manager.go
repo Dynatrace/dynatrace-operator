@@ -35,9 +35,22 @@ func NewBootstrapManagerProvider() cmdManager.Provider {
 
 func (provider bootstrapManagerProvider) CreateManager(namespace string, config *rest.Config) (manager.Manager, error) {
 	controlManager, err := ctrl.NewManager(config, ctrl.Options{
-		Scheme:    scheme.Scheme,
-		Namespace: namespace,
+		Scheme:                 scheme.Scheme,
+		Namespace:              namespace,
+		HealthProbeBindAddress: healthProbeBindAddress,
+		LivenessEndpointName:   livenessEndpointName,
 	})
+
+	err = addHealthzCheck(controlManager)
+	if err != nil {
+		return nil, err
+	}
+
+	err = addReadyzCheck(controlManager)
+	if err != nil {
+		return nil, err
+	}
+
 	return controlManager, errors.WithStack(err)
 }
 
@@ -58,12 +71,12 @@ func (provider operatorManagerProvider) CreateManager(namespace string, cfg *res
 		return nil, errors.WithStack(err)
 	}
 
-	err = provider.addHealthzCheck(mgr)
+	err = addHealthzCheck(mgr)
 	if err != nil {
 		return nil, err
 	}
 
-	err = provider.addReadyzCheck(mgr)
+	err = addReadyzCheck(mgr)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +121,7 @@ func (provider operatorManagerProvider) createOptions(namespace string) ctrl.Opt
 	}
 }
 
-func (provider operatorManagerProvider) addHealthzCheck(mgr manager.Manager) error {
+func addHealthzCheck(mgr manager.Manager) error {
 	err := mgr.AddHealthzCheck(livezEndpointName, healthz.Ping)
 
 	if err != nil {
@@ -118,7 +131,7 @@ func (provider operatorManagerProvider) addHealthzCheck(mgr manager.Manager) err
 	return nil
 }
 
-func (provider operatorManagerProvider) addReadyzCheck(mgr manager.Manager) error {
+func addReadyzCheck(mgr manager.Manager) error {
 	err := mgr.AddReadyzCheck(readyzEndpointName, healthz.Ping)
 
 	if err != nil {
