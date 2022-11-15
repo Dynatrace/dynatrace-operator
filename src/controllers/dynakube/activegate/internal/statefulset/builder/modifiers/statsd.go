@@ -128,15 +128,7 @@ func (statsd StatsdModifier) buildContainer() corev1.Container {
 		SecurityContext: statsd.buildSecurityContext(),
 		Resources:       statsd.buildResourceRequirements(),
 	}
-	if statsd.dynakube.NeedsActiveGateServicePorts() {
-		container.Ports = []corev1.ContainerPort{
-			{
-				Name:          consts.StatsdIngestTargetPort,
-				ContainerPort: consts.StatsdIngestPort,
-				Protocol:      corev1.ProtocolUDP,
-			},
-		}
-	}
+
 	return container
 }
 
@@ -177,6 +169,11 @@ func (statsd StatsdModifier) buildPorts() []corev1.ContainerPort {
 	return []corev1.ContainerPort{
 		{Name: consts.StatsdIngestTargetPort, ContainerPort: consts.StatsdIngestPort},
 		{Name: statsdProbesPortName, ContainerPort: statsdProbesPort},
+		{
+			Name:          consts.StatsdIngestTargetPort,
+			ContainerPort: consts.StatsdIngestPort,
+			Protocol:      corev1.ProtocolUDP,
+		},
 	}
 }
 

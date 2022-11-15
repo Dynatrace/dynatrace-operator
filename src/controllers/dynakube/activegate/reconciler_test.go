@@ -74,7 +74,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				ActiveGate: dynatracev1beta1.ActiveGateSpec{
-					Capabilities: []dynatracev1beta1.CapabilityDisplayName{dynatracev1beta1.RoutingCapability.DisplayName},
+					Capabilities: []dynatracev1beta1.CapabilityDisplayName{dynatracev1beta1.StatsdIngestCapability.DisplayName},
 				},
 			},
 		}
@@ -83,7 +83,16 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err := r.Reconcile()
 		require.NoError(t, err)
 
+		// assert that service is created if statsd is enabled
 		var service corev1.Service
+		err = fakeClient.Get(context.TODO(), types.NamespacedName{Name: testServiceName, Namespace: testNamespace}, &service)
+		require.NoError(t, err)
+
+		// assert that service is created if other capabilities are enabled
+		instance.Spec.ActiveGate.Capabilities = []dynatracev1beta1.CapabilityDisplayName{dynatracev1beta1.RoutingCapability.DisplayName}
+
+		err = r.Reconcile()
+		require.NoError(t, err)
 		err = fakeClient.Get(context.TODO(), types.NamespacedName{Name: testServiceName, Namespace: testNamespace}, &service)
 		require.NoError(t, err)
 
@@ -94,4 +103,5 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err = fakeClient.Get(context.TODO(), types.NamespacedName{Name: testServiceName, Namespace: testNamespace}, &service)
 		assert.True(t, errors.IsNotFound(err))
 	})
+
 }
