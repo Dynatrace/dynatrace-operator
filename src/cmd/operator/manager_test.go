@@ -33,46 +33,44 @@ func TestOperatorManagerProvider(t *testing.T) {
 		assert.Equal(t, livenessEndpointName, options.LivenessEndpointName)
 	})
 	t.Run("adds healthz check endpoint", func(t *testing.T) {
-		const addHealthzCheck = "AddHealthzCheck"
+		const addHealthzCheckMethodName = "AddHealthzCheck"
 
-		operatorMgrProvider := operatorManagerProvider{}
 		mockMgr := &cmdManager.MockManager{}
-		mockMgr.On(addHealthzCheck, livezEndpointName, mock.AnythingOfType("healthz.Checker")).Return(nil)
+		mockMgr.On(addHealthzCheckMethodName, livezEndpointName, mock.AnythingOfType("healthz.Checker")).Return(nil)
 
-		err := operatorMgrProvider.addHealthzCheck(mockMgr)
+		err := addHealthzCheck(mockMgr)
 
 		assert.NoError(t, err)
-		mockMgr.AssertCalled(t, addHealthzCheck, livezEndpointName, mock.AnythingOfType("healthz.Checker"))
+		mockMgr.AssertCalled(t, addHealthzCheckMethodName, livezEndpointName, mock.AnythingOfType("healthz.Checker"))
 
 		expectedError := errors.New("healthz error")
 		mockMgr = &cmdManager.MockManager{}
-		mockMgr.On(addHealthzCheck, mock.Anything, mock.Anything).Return(expectedError)
+		mockMgr.On(addHealthzCheckMethodName, mock.Anything, mock.Anything).Return(expectedError)
 
-		err = operatorMgrProvider.addHealthzCheck(mockMgr)
+		err = addHealthzCheck(mockMgr)
 
 		assert.EqualError(t, err, expectedError.Error())
-		mockMgr.AssertCalled(t, addHealthzCheck, mock.Anything, mock.Anything)
+		mockMgr.AssertCalled(t, addHealthzCheckMethodName, mock.Anything, mock.Anything)
 	})
 	t.Run("adds readyz check endpoint", func(t *testing.T) {
-		const addReadyzCheck = "AddReadyzCheck"
+		const addReadyzCheckMethodName = "AddReadyzCheck"
 
-		operatorMgrProvider := operatorManagerProvider{}
 		mockMgr := &cmdManager.MockManager{}
-		mockMgr.On(addReadyzCheck, readyzEndpointName, mock.AnythingOfType("healthz.Checker")).Return(nil)
+		mockMgr.On(addReadyzCheckMethodName, readyzEndpointName, mock.AnythingOfType("healthz.Checker")).Return(nil)
 
-		err := operatorMgrProvider.addReadyzCheck(mockMgr)
+		err := addReadyzCheck(mockMgr)
 
 		assert.NoError(t, err)
-		mockMgr.AssertCalled(t, addReadyzCheck, readyzEndpointName, mock.AnythingOfType("healthz.Checker"))
+		mockMgr.AssertCalled(t, addReadyzCheckMethodName, readyzEndpointName, mock.AnythingOfType("healthz.Checker"))
 
 		expectedError := errors.New("readyz error")
 		mockMgr = &cmdManager.MockManager{}
-		mockMgr.On(addReadyzCheck, mock.Anything, mock.Anything).Return(expectedError)
+		mockMgr.On(addReadyzCheckMethodName, mock.Anything, mock.Anything).Return(expectedError)
 
-		err = operatorMgrProvider.addReadyzCheck(mockMgr)
+		err = addReadyzCheck(mockMgr)
 
 		assert.EqualError(t, err, expectedError.Error())
-		mockMgr.AssertCalled(t, addReadyzCheck, mock.Anything, mock.Anything)
+		mockMgr.AssertCalled(t, addReadyzCheckMethodName, mock.Anything, mock.Anything)
 	})
 }
 
