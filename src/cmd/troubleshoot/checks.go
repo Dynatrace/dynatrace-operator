@@ -10,7 +10,7 @@ import (
 type Result int
 
 const (
-	PASSED = iota + 1
+	PASSED Result = iota + 1
 	FAILED
 	SKIPPED
 )
@@ -36,7 +36,9 @@ func (cr ChecksResults) set(check *Check, result Result) {
 }
 
 func (cr ChecksResults) failedPrerequisites(check *Check) []*Check {
-	isFailed := func(c *Check) bool { return cr.check2Result[c] == FAILED }
+	isFailed := func(c *Check) bool {
+		return cr.check2Result[c] == FAILED
+	}
 	return functional.Filter(check.Prerequisites, isFailed)
 }
 
@@ -72,7 +74,10 @@ func shouldSkip(results ChecksResults, check *Check) bool {
 		return false
 	}
 
-	prereqsNames := strings.Join(functional.Map(failedPrerequisites, func(c *Check) string { return c.Name }), ",")
+	getCheckName := func(c *Check) string {
+		return c.Name
+	}
+	prereqsNames := strings.Join(functional.Map(failedPrerequisites, getCheckName), ",")
 	logWarningf("Skipped '%s' check because prerequisites aren't met: [%s]", check.Name, prereqsNames)
 	results.set(check, SKIPPED)
 
