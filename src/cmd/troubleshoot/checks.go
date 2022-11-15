@@ -36,13 +36,8 @@ func (cr ChecksResults) set(check *Check, result Result) {
 }
 
 func (cr ChecksResults) failedPrerequisites(check *Check) []*Check {
-	ret := []*Check{}
-	for _, prerequisiteCheck := range check.Prerequisites {
-		if cr.check2Result[prerequisiteCheck] == FAILED {
-			ret = append(ret, prerequisiteCheck)
-		}
-	}
-	return ret
+	isFailed := func(c *Check) bool { return cr.check2Result[c] == FAILED }
+	return functional.Filter(check.Prerequisites, isFailed)
 }
 
 func runChecks(results ChecksResults, troubleshootCtx *troubleshootContext, checks []*Check) error {
