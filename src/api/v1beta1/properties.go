@@ -147,6 +147,10 @@ func (dk *DynaKube) NeedsActiveGateServicePorts() bool {
 		dk.IsMetricsIngestActiveGateEnabled()
 }
 
+func (dk *DynaKube) NeedsActiveGateService() bool {
+	return dk.NeedsActiveGateServicePorts() || dk.IsStatsdActiveGateEnabled()
+}
+
 func (dk *DynaKube) IsStatsdActiveGateEnabled() bool {
 	return dk.IsActiveGateMode(StatsdIngestCapability.DisplayName)
 }
