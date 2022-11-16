@@ -103,5 +103,4 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err = fakeClient.Get(context.TODO(), types.NamespacedName{Name: testServiceName, Namespace: testNamespace}, &service)
 		assert.True(t, errors.IsNotFound(err))
 	})
-
 }
