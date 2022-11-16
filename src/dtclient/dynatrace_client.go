@@ -49,7 +49,7 @@ const (
 func (dtc *dynatraceClient) makeRequest(url string, tokenType tokenType) (*http.Response, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("error initializing http request: %s", err.Error())
+		return nil, errors.WithMessage(err, "error initializing http request")
 	}
 
 	var authHeader string
@@ -57,12 +57,12 @@ func (dtc *dynatraceClient) makeRequest(url string, tokenType tokenType) (*http.
 	switch tokenType {
 	case dynatraceApiToken:
 		if dtc.apiToken == "" {
-			return nil, fmt.Errorf("not able to set token since api token is empty for request: %s", url)
+			return nil, errors.Errorf("not able to set token since api token is empty for request: %s", url)
 		}
 		authHeader = fmt.Sprintf("Api-Token %s", dtc.apiToken)
 	case dynatracePaaSToken:
 		if dtc.paasToken == "" {
-			return nil, fmt.Errorf("not able to set token since paas token is empty for request: %s", url)
+			return nil, errors.Errorf("not able to set token since paas token is empty for request: %s", url)
 		}
 		authHeader = fmt.Sprintf("Api-Token %s", dtc.paasToken)
 	case installerUrlToken:
@@ -79,7 +79,7 @@ func (dtc *dynatraceClient) makeRequest(url string, tokenType tokenType) (*http.
 func createBaseRequest(url, method, apiToken string, body io.Reader) (*http.Request, error) {
 	req, err := http.NewRequest(method, url, body)
 	if err != nil {
-		return nil, fmt.Errorf("error initializing http request: %s", err.Error())
+		return nil, errors.WithMessage(err, "error initializing http request")
 	}
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Authorization", fmt.Sprintf("Api-Token %s", apiToken))
@@ -94,7 +94,7 @@ func createBaseRequest(url, method, apiToken string, body io.Reader) (*http.Requ
 func (dtc *dynatraceClient) getServerResponseData(response *http.Response) ([]byte, error) {
 	responseData, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return nil, fmt.Errorf("error reading response: %w", err)
+		return nil, errors.WithMessage(err, "error reading response")
 	}
 
 	if response.StatusCode != http.StatusOK &&
@@ -133,7 +133,7 @@ func (dtc *dynatraceClient) makeRequestForBinary(url string, token tokenType, wr
 		if err != nil {
 			return "", err
 		}
-		return "", fmt.Errorf("dynatrace server error %d: %s", errorResponse.ErrorMessage.Code, errorResponse.ErrorMessage.Message)
+		return "", errors.Errorf("dynatrace server error %d: %s", errorResponse.ErrorMessage.Code, errorResponse.ErrorMessage.Message)
 	}
 
 	hash := md5.New()
@@ -144,7 +144,7 @@ func (dtc *dynatraceClient) makeRequestForBinary(url string, token tokenType, wr
 func (dtc *dynatraceClient) handleErrorResponseFromAPI(response []byte, statusCode int) error {
 	se := serverErrorResponse{}
 	if err := json.Unmarshal(response, &se); err != nil {
-		return fmt.Errorf("response error: %d, can't unmarshal json response: %w", statusCode, err)
+		return errors.WithMessagef(err, "response error, can't unmarshal json response %d", statusCode)
 	}
 
 	return se.ErrorMessage
@@ -154,7 +154,7 @@ func (dtc *dynatraceClient) getHostInfoForIP(ip string) (*hostInfo, error) {
 	if len(dtc.hostCache) == 0 {
 		err := dtc.buildHostCache()
 		if err != nil {
-			return nil, fmt.Errorf("error building hostcache from dynatrace cluster: %w", err)
+			return nil, errors.WithMessage(err, "error building host-cache from dynatrace cluster")
 		}
 	}
 

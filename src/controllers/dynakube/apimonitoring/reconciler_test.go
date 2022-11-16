@@ -80,7 +80,7 @@ func TestReconcile(t *testing.T) {
 		r := createReconciler(t, testUID, []dtclient.MonitoredEntity{}, dtclient.GetSettingsResponse{}, testObjectID)
 
 		// act
-		actual, err := r.ensureSettingExists()
+		actual, err := r.createObjectIdIfNotExists()
 
 		// assert
 		assert.NoError(t, err)
@@ -93,7 +93,7 @@ func TestReconcile(t *testing.T) {
 		r := createReconciler(t, testUID, entities, dtclient.GetSettingsResponse{}, testObjectID)
 
 		// act
-		actual, err := r.ensureSettingExists()
+		actual, err := r.createObjectIdIfNotExists()
 
 		// assert
 		assert.NoError(t, err)
@@ -106,7 +106,7 @@ func TestReconcile(t *testing.T) {
 		r := createReconciler(t, testUID, entities, dtclient.GetSettingsResponse{TotalCount: 1}, testObjectID)
 
 		// act
-		actual, err := r.ensureSettingExists()
+		actual, err := r.createObjectIdIfNotExists()
 
 		// assert
 		assert.NoError(t, err)
@@ -120,7 +120,7 @@ func TestReconcileErrors(t *testing.T) {
 		r := createReconciler(t, "", []dtclient.MonitoredEntity{}, dtclient.GetSettingsResponse{}, testObjectID)
 
 		// act
-		actual, err := r.ensureSettingExists()
+		actual, err := r.createObjectIdIfNotExists()
 
 		// assert
 		assert.Error(t, err)
@@ -132,7 +132,7 @@ func TestReconcileErrors(t *testing.T) {
 		r := createReconcilerWithError(t, errors.New("could not get monitored entities"), nil, nil)
 
 		// act
-		actual, err := r.ensureSettingExists()
+		actual, err := r.createObjectIdIfNotExists()
 
 		// assert
 		assert.Error(t, err)
@@ -144,7 +144,7 @@ func TestReconcileErrors(t *testing.T) {
 		r := createReconcilerWithError(t, nil, errors.New("could not get settings for monitored entities"), nil)
 
 		// act
-		actual, err := r.ensureSettingExists()
+		actual, err := r.createObjectIdIfNotExists()
 
 		// assert
 		assert.Error(t, err)
@@ -156,7 +156,7 @@ func TestReconcileErrors(t *testing.T) {
 		r := createReconcilerWithError(t, nil, nil, errors.New("could not create monitored entity"))
 
 		// act
-		actual, err := r.ensureSettingExists()
+		actual, err := r.createObjectIdIfNotExists()
 
 		// assert
 		assert.Error(t, err)

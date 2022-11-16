@@ -1,7 +1,10 @@
 package troubleshoot
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube"
+	"context"
+
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/pkg/errors"
 )
@@ -29,12 +32,19 @@ func checkDTClusterConnection(troubleshootCtx *troubleshootContext) error {
 }
 
 func checkConnection(troubleshootCtx *troubleshootContext) error {
-	dynatraceClientProperties, err := dynakube.NewDynatraceClientProperties(troubleshootCtx.context, troubleshootCtx.apiReader, troubleshootCtx.dynakube)
+	tokenReader := token.NewReader(troubleshootCtx.apiReader, &troubleshootCtx.dynakube)
+	tokens, err := tokenReader.ReadTokens(context.TODO())
+
 	if err != nil {
-		return errorWithMessagef(err, "failed to configure DynatraceAPI client")
+		return err
 	}
 
-	dtc, err := dynakube.BuildDynatraceClient(*dynatraceClientProperties)
+	dtc, err := dynatraceclient.NewBuilder(troubleshootCtx.apiReader).
+		SetContext(troubleshootCtx.context).
+		SetDynakube(troubleshootCtx.dynakube).
+		SetTokens(tokens).
+		Build()
+
 	if err != nil {
 		return errorWithMessagef(err, "failed to build DynatraceAPI client")
 	}

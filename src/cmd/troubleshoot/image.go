@@ -130,7 +130,7 @@ func checkComponentImagePullable(httpClient *http.Client, componentName string, 
 	for registry, credentials := range result.Auths {
 		logInfof("checking images for registry '%s'", registry)
 
-		err = registryAvailable(httpClient, registry+"/v2/", credentials.Auth)
+		err = registryAvailable(httpClient, registry, credentials.Auth)
 
 		if err != nil {
 			logErrorf("%v", err)
@@ -188,7 +188,7 @@ func checkCustomModuleImagePullable(httpClient *http.Client, _ string, pullSecre
 
 	logInfof("registry %s is accessible", codeModulesImageInfo.Registry)
 
-	err = imageAvailable(httpClient, codemodulesImageUrl(codeModulesImageInfo), credentials.Auth)
+	err = imageAvailable(httpClient, manifestUrl(codeModulesImageInfo.Registry, codeModulesImageInfo), credentials.Auth)
 	if err != nil {
 		return errors.Wrapf(err, "image is missing, cannot pull image '%s' from registry '%s'", codeModulesImage, codeModulesImageInfo.Registry)
 	}
@@ -257,14 +257,10 @@ func getPullSecret(troubleshootCtx *troubleshootContext) (string, error) {
 }
 
 func manifestUrl(registry string, componentImageInfo image.Components) string {
-	return fmt.Sprintf("%s/v2/%s/manifests/%s",
+	return fmt.Sprintf("%s%s/manifests/%s",
 		registryUrl(registry), componentImageInfo.Image, componentImageInfo.Version)
 }
 
 func registryUrl(registry string) string {
-	return fmt.Sprintf("https://%s", registry)
-}
-
-func codemodulesImageUrl(info image.Components) string {
-	return fmt.Sprintf("https://%s/%s%s", info.Registry, info.Image, info.VersionUrlPostfix())
+	return fmt.Sprintf("https://%s/v2/", registry)
 }

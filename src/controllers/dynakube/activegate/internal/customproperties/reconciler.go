@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -23,7 +23,7 @@ const (
 	MountPath  = "/var/lib/dynatrace/gateway/config_template/custom.properties"
 )
 
-var _ kubeobjects.Reconciler = &Reconciler{}
+var _ controllers.Reconciler = &Reconciler{}
 
 type Reconciler struct {
 	client                    client.Client
@@ -43,28 +43,28 @@ func NewReconciler(clt client.Client, instance *dynatracev1beta1.DynaKube, custo
 	}
 }
 
-func (r *Reconciler) Reconcile() (update bool, err error) {
+func (r *Reconciler) Reconcile() error {
 	if r.customPropertiesSource == nil {
-		return false, nil
+		return nil
 	}
 
 	if r.hasCustomPropertiesValueOnly() {
 		mustNotUpdate, err := r.createCustomPropertiesIfNotExists()
 		if err != nil {
 			log.Error(err, "could not create custom properties", "owner", r.customPropertiesOwnerName)
-			return false, errors.WithStack(err)
+			return errors.WithStack(err)
 		}
 
 		if !mustNotUpdate {
 			err = r.updateCustomPropertiesIfOutdated()
 			if err != nil {
 				log.Error(err, "could not update custom properties", "owner", r.customPropertiesOwnerName)
-				return false, errors.WithStack(err)
+				return errors.WithStack(err)
 			}
 		}
 	}
 
-	return false, nil
+	return nil
 }
 
 func (r *Reconciler) createCustomPropertiesIfNotExists() (bool, error) {

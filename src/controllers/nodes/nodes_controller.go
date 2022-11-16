@@ -6,7 +6,8 @@ import (
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
@@ -24,12 +25,12 @@ import (
 )
 
 type NodesController struct {
-	client       client.Client
-	apiReader    client.Reader
-	scheme       *runtime.Scheme
-	dtClientFunc dynakube.DynatraceClientFunc
-	runLocal     bool
-	podNamespace string
+	client                 client.Client
+	apiReader              client.Reader
+	scheme                 *runtime.Scheme
+	dynatraceClientBuilder dynatraceclient.Builder
+	runLocal               bool
+	podNamespace           string
 }
 
 type CachedNodeInfo struct {
@@ -48,6 +49,7 @@ func (controller *NodesController) SetupWithManager(mgr ctrl.Manager) error {
 		WithEventFilter(nodeDeletionPredicate(controller)).
 		Complete(controller)
 }
+
 func nodeDeletionPredicate(controller *NodesController) predicate.Predicate {
 	return predicate.Funcs{
 		DeleteFunc: func(deleteEvent event.DeleteEvent) bool {
@@ -61,15 +63,14 @@ func nodeDeletionPredicate(controller *NodesController) predicate.Predicate {
 	}
 }
 
-// NewReconciler returns a new ReconcileDynaKube
 func NewController(mgr manager.Manager) *NodesController {
 	return &NodesController{
-		client:       mgr.GetClient(),
-		apiReader:    mgr.GetAPIReader(),
-		scheme:       mgr.GetScheme(),
-		dtClientFunc: dynakube.BuildDynatraceClient,
-		runLocal:     kubesystem.IsRunLocally(),
-		podNamespace: os.Getenv("POD_NAMESPACE"),
+		client:                 mgr.GetClient(),
+		apiReader:              mgr.GetAPIReader(),
+		scheme:                 mgr.GetScheme(),
+		dynatraceClientBuilder: dynatraceclient.NewBuilder(mgr.GetAPIReader()),
+		runLocal:               kubesystem.IsRunLocally(),
+		podNamespace:           os.Getenv("POD_NAMESPACE"),
 	}
 }
 
@@ -273,17 +274,22 @@ func (controller *NodesController) isNodeDeletable(cachedNode CacheEntry) bool {
 }
 
 func (controller *NodesController) sendMarkedForTermination(dynakubeInstance *dynatracev1beta1.DynaKube, cachedNode CacheEntry) error {
-	dtp, err := dynakube.NewDynatraceClientProperties(context.TODO(), controller.client, *dynakubeInstance)
-	if err != nil {
-		log.Error(err, err.Error())
-	}
+	tokenReader := token.NewReader(controller.apiReader, dynakubeInstance)
+	tokens, err := tokenReader.ReadTokens(context.TODO())
 
-	dtc, err := controller.dtClientFunc(*dtp)
 	if err != nil {
 		return err
 	}
 
-	entityID, err := dtc.GetEntityIDForIP(cachedNode.IPAddress)
+	dynatraceClient, err := controller.dynatraceClientBuilder.
+		SetDynakube(*dynakubeInstance).
+		SetTokens(tokens).
+		Build()
+	if err != nil {
+		return err
+	}
+
+	entityID, err := dynatraceClient.GetEntityIDForIP(cachedNode.IPAddress)
 	if err != nil {
 		log.Info("failed to send mark for termination event",
 			"reason", "failed to determine entity id", "dynakube", dynakubeInstance.Name, "nodeIP", cachedNode.IPAddress, "cause", err)
@@ -292,7 +298,7 @@ func (controller *NodesController) sendMarkedForTermination(dynakubeInstance *dy
 	}
 
 	ts := uint64(cachedNode.LastSeen.Add(-10*time.Minute).UnixNano()) / uint64(time.Millisecond)
-	return dtc.SendEvent(&dtclient.EventData{
+	return dynatraceClient.SendEvent(&dtclient.EventData{
 		EventType:     dtclient.MarkedForTerminationEvent,
 		Source:        "Dynatrace Operator",
 		Description:   "Kubernetes node cordoned. Node might be drained or terminated.",
