@@ -129,9 +129,9 @@ func getChecks(results ChecksResults) []*Check {
 		Prerequisites: []*Check{namespaceCheck, dynakubeCheck},
 	}
 	imagePullableCheck := &Check{
-		checkImagePullable,
-		[]*Check{namespaceCheck, dynakubeCheck},
-		imagePullableCheckName,
+		Do:            checkImagePullable,
+		Prerequisites: []*Check{namespaceCheck, dynakubeCheck},
+		Name:          imagePullableCheckName,
 	}
 
 	return []*Check{namespaceCheck, dynakubeCheck, dtClusterConnectionCheck, imagePullableCheck}

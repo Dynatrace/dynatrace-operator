@@ -31,13 +31,13 @@ func NewChecksResults() ChecksResults {
 	return ChecksResults{check2Result: map[*Check]Result{}}
 }
 
-func (cr ChecksResults) set(check *Check, result Result) {
-	cr.check2Result[check] = result
+func (checkResults ChecksResults) set(check *Check, result Result) {
+	checkResults.check2Result[check] = result
 }
 
-func (cr ChecksResults) failedPrerequisites(check *Check) []*Check {
-	isFailed := func(c *Check) bool {
-		return cr.check2Result[c] == FAILED
+func (checkResults ChecksResults) failedPrerequisites(check *Check) []*Check {
+	isFailed := func(check *Check) bool {
+		return checkResults.check2Result[check] == FAILED
 	}
 	return functional.Filter(check.Prerequisites, isFailed)
 }
@@ -75,11 +75,11 @@ func shouldSkip(results ChecksResults, check *Check) bool {
 		return false
 	}
 
-	getCheckName := func(c *Check) string {
-		return c.Name
+	getCheckName := func(check *Check) string {
+		return check.Name
 	}
-	prereqsNames := strings.Join(functional.Map(failedPrerequisites, getCheckName), ",")
-	logWarningf("Skipped '%s' check because prerequisites aren't met: [%s]", check.Name, prereqsNames)
+	prerequisitesNames := strings.Join(functional.Map(failedPrerequisites, getCheckName), ",")
+	logWarningf("Skipped '%s' check because prerequisites aren't met: [%s]", check.Name, prerequisitesNames)
 
 	return true
 }
