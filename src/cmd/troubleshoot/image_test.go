@@ -101,7 +101,7 @@ func TestOneAgentImagePullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+			verifyImageIsAvailable(&troubleshootCtx, oneAgent, false)
 		})
 		assert.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
@@ -113,7 +113,7 @@ func TestOneAgentImagePullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+			verifyImageIsAvailable(&troubleshootCtx, oneAgent, false)
 		})
 		require.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
@@ -125,7 +125,7 @@ func TestOneAgentImagePullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+			verifyImageIsAvailable(&troubleshootCtx, oneAgent, false)
 		})
 		require.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
@@ -137,7 +137,7 @@ func TestOneAgentImagePullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+			verifyImageIsAvailable(&troubleshootCtx, oneAgent, false)
 		})
 		require.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
@@ -149,7 +149,7 @@ func TestOneAgentImagePullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+			verifyImageIsAvailable(&troubleshootCtx, oneAgent, false)
 		})
 		require.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
@@ -161,7 +161,7 @@ func TestOneAgentImagePullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+			verifyImageIsAvailable(&troubleshootCtx, oneAgent, false)
 		})
 		require.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
@@ -193,7 +193,7 @@ func TestOneAgentCustomImagePullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+			verifyImageIsAvailable(&troubleshootCtx, oneAgent, false)
 		})
 		require.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
@@ -205,7 +205,7 @@ func TestOneAgentCustomImagePullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+			verifyImageIsAvailable(&troubleshootCtx, oneAgent, false)
 		})
 		require.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
@@ -217,7 +217,7 @@ func TestOneAgentCustomImagePullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+			verifyImageIsAvailable(&troubleshootCtx, oneAgent, false)
 		})
 		require.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
@@ -229,7 +229,7 @@ func TestOneAgentCustomImagePullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+			verifyImageIsAvailable(&troubleshootCtx, oneAgent, false)
 		})
 		require.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
@@ -241,7 +241,7 @@ func TestOneAgentCustomImagePullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+			verifyImageIsAvailable(&troubleshootCtx, oneAgent, false)
 		})
 		require.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
@@ -253,7 +253,7 @@ func TestOneAgentCustomImagePullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+			verifyImageIsAvailable(&troubleshootCtx, oneAgent, false)
 		})
 		require.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
@@ -265,7 +265,7 @@ func TestOneAgentCustomImagePullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+			verifyImageIsAvailable(&troubleshootCtx, oneAgent, false)
 		})
 		require.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
@@ -277,7 +277,7 @@ func TestOneAgentCustomImagePullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+			verifyImageIsAvailable(&troubleshootCtx, oneAgent, false)
 		})
 		require.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
@@ -289,7 +289,7 @@ func TestOneAgentCustomImagePullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+			verifyImageIsAvailable(&troubleshootCtx, oneAgent, false)
 		})
 		require.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
@@ -319,7 +319,7 @@ func TestOneAgentImageNotPullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+			verifyImageIsAvailable(&troubleshootCtx, oneAgent, false)
 		})
 		require.Contains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "reading manifest")
@@ -332,7 +332,7 @@ func TestOneAgentImageNotPullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+			verifyImageIsAvailable(&troubleshootCtx, oneAgent, false)
 		})
 		require.Contains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "reading manifest")
@@ -345,7 +345,7 @@ func TestOneAgentImageNotPullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+			verifyImageIsAvailable(&troubleshootCtx, oneAgent, false)
 		})
 		require.Contains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "reading manifest")
@@ -358,7 +358,7 @@ func TestOneAgentImageNotPullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+			verifyImageIsAvailable(&troubleshootCtx, oneAgent, false)
 		})
 		require.Contains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "reading manifest")
@@ -371,7 +371,7 @@ func TestOneAgentImageNotPullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+			verifyImageIsAvailable(&troubleshootCtx, oneAgent, false)
 		})
 		require.Contains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "reading manifest")
@@ -384,7 +384,7 @@ func TestOneAgentImageNotPullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+			verifyImageIsAvailable(&troubleshootCtx, oneAgent, false)
 
 		})
 		require.Contains(t, logOutput, "failed")
@@ -398,7 +398,7 @@ func TestOneAgentImageNotPullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
+			verifyImageIsAvailable(&troubleshootCtx, oneAgent, false)
 
 		})
 		require.Contains(t, logOutput, "failed")
@@ -432,7 +432,7 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
+			verifyImageIsAvailable(&troubleshootCtx, codeModules, true)
 
 		})
 		assert.NotContains(t, logOutput, "failed")
@@ -445,7 +445,7 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
+			verifyImageIsAvailable(&troubleshootCtx, codeModules, true)
 
 		})
 		require.NotContains(t, logOutput, "failed")
@@ -458,7 +458,7 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
+			verifyImageIsAvailable(&troubleshootCtx, codeModules, true)
 
 		})
 		require.NotContains(t, logOutput, "failed")
@@ -471,7 +471,7 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
+			verifyImageIsAvailable(&troubleshootCtx, codeModules, true)
 
 		})
 		require.NotContains(t, logOutput, "failed")
@@ -484,7 +484,7 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
+			verifyImageIsAvailable(&troubleshootCtx, codeModules, true)
 
 		})
 		require.NotContains(t, logOutput, "failed")
@@ -497,7 +497,7 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
+			verifyImageIsAvailable(&troubleshootCtx, codeModules, true)
 
 		})
 		require.NotContains(t, logOutput, "failed")
@@ -510,7 +510,7 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
+			verifyImageIsAvailable(&troubleshootCtx, codeModules, true)
 
 		})
 		require.NotContains(t, logOutput, "failed")
@@ -523,7 +523,7 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
+			verifyImageIsAvailable(&troubleshootCtx, codeModules, true)
 
 		})
 		assert.Contains(t, logOutput, "failed")
@@ -536,7 +536,7 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
+			verifyImageIsAvailable(&troubleshootCtx, codeModules, true)
 
 		})
 		assert.Contains(t, logOutput, "failed")
@@ -571,7 +571,7 @@ func TestActiveGateImagePullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentActiveGate, false)
+			verifyImageIsAvailable(&troubleshootCtx, activeGate, false)
 
 		})
 		assert.NotContains(t, logOutput, "failed")
@@ -584,7 +584,7 @@ func TestActiveGateImagePullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentActiveGate, false)
+			verifyImageIsAvailable(&troubleshootCtx, activeGate, false)
 
 		})
 		assert.NotContains(t, logOutput, "failed")
@@ -597,7 +597,7 @@ func TestActiveGateImagePullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentActiveGate, false)
+			verifyImageIsAvailable(&troubleshootCtx, activeGate, false)
 
 		})
 		assert.NotContains(t, logOutput, "failed")
@@ -610,7 +610,7 @@ func TestActiveGateImagePullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentActiveGate, false)
+			verifyImageIsAvailable(&troubleshootCtx, activeGate, false)
 
 		})
 		assert.NotContains(t, logOutput, "failed")
@@ -640,7 +640,7 @@ func TestActiveGateImageNotPullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentActiveGate, false)
+			verifyImageIsAvailable(&troubleshootCtx, activeGate, false)
 
 		})
 		require.Contains(t, logOutput, "failed")
@@ -655,7 +655,7 @@ func TestActiveGateImageNotPullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentActiveGate, false)
+			verifyImageIsAvailable(&troubleshootCtx, activeGate, false)
 
 		})
 		require.Contains(t, logOutput, "failed")
@@ -670,7 +670,7 @@ func TestActiveGateImageNotPullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(t.Name(), func() {
-			verifyImageIsAvailable(&troubleshootCtx, componentActiveGate, false)
+			verifyImageIsAvailable(&troubleshootCtx, activeGate, false)
 
 		})
 		require.Contains(t, logOutput, "failed")

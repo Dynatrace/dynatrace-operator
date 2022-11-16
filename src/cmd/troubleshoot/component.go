@@ -5,10 +5,10 @@ import "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 type component string
 
 const (
-	componentOneAgent    = "OneAgent"
-	componentCodeModules = "OneAgentCodeModules"
-	componentActiveGate  = "ActiveGate"
-	customImagePostfix   = " (custom image)"
+	oneAgent           component = "OneAgent"
+	codeModules        component = "OneAgentCodeModules"
+	activeGate         component = "ActiveGate"
+	customImagePostfix component = " (custom image)"
 )
 
 func (c component) String() string {
@@ -17,7 +17,7 @@ func (c component) String() string {
 
 func (c component) Name(isCustomImage bool) string {
 	if isCustomImage {
-		return c.String() + customImagePostfix
+		return c.String() + customImagePostfix.String()
 	}
 	return c.String()
 }
@@ -28,11 +28,11 @@ func (c component) getImage(dynakube *v1beta1.DynaKube) (string, bool) {
 	}
 
 	switch c {
-	case "OneAgent":
+	case oneAgent:
 		return dynakube.OneAgentImage(), dynakube.CustomOneAgentImage() != ""
-	case "OneAgentCodeModules":
+	case codeModules:
 		return dynakube.CodeModulesImage(), false
-	case "ActiveGate":
+	case activeGate:
 		return dynakube.ActiveGateImage(), dynakube.ActiveGateImage() != ""
 	}
 	return "", false

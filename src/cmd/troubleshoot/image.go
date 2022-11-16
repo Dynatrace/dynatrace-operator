@@ -29,11 +29,11 @@ func verifyAllImagesAvailable(troubleshootCtx *troubleshootContext) error {
 	log = newTroubleshootLogger("[imagepull ] ")
 
 	if troubleshootCtx.dynakube.NeedsOneAgent() {
-		verifyImageIsAvailable(troubleshootCtx, componentOneAgent, false)
-		verifyImageIsAvailable(troubleshootCtx, componentCodeModules, true)
+		verifyImageIsAvailable(troubleshootCtx, oneAgent, false)
+		verifyImageIsAvailable(troubleshootCtx, codeModules, true)
 	}
 	if troubleshootCtx.dynakube.NeedsActiveGate() {
-		verifyImageIsAvailable(troubleshootCtx, componentActiveGate, false)
+		verifyImageIsAvailable(troubleshootCtx, activeGate, false)
 	}
 	return nil
 }
