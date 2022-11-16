@@ -2,10 +2,10 @@ package troubleshoot
 
 import (
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	ctrlzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -23,10 +23,10 @@ const (
 	colorYellow = "\033[33m"
 	colorReset  = "\033[0m"
 
-	levelNewTest = 1
-	levelSuccess = 2
-	levelWarning = 3
-	levelError   = 4
+	levelNewCheck = 1
+	levelSuccess  = 2
+	levelWarning  = 3
+	levelError    = 4
 )
 
 type troubleshootLogger struct {
@@ -34,6 +34,10 @@ type troubleshootLogger struct {
 }
 
 func newTroubleshootLogger(testName string) logr.Logger {
+	return newTroubleshootLoggerToWriter(testName, os.Stdout)
+}
+
+func newTroubleshootLoggerToWriter(testName string, out io.Writer) logr.Logger {
 	config := zap.NewProductionEncoderConfig()
 	config.TimeKey = ""
 	config.LevelKey = ""
@@ -42,13 +46,13 @@ func newTroubleshootLogger(testName string) logr.Logger {
 
 	return logr.New(
 		troubleshootLogger{
-			logger: ctrlzap.New(ctrlzap.WriteTo(os.Stdout), ctrlzap.Encoder(zapcore.NewConsoleEncoder(config))).WithName(testName),
+			logger: ctrlzap.New(ctrlzap.WriteTo(out), ctrlzap.Encoder(zapcore.NewConsoleEncoder(config))).WithName(testName),
 		},
 	)
 }
 
-func logNewTestf(format string, v ...interface{}) {
-	log.V(levelNewTest).Info(fmt.Sprintf(format, v...))
+func logNewCheckf(format string, v ...interface{}) {
+	log.V(levelNewCheck).Info(fmt.Sprintf(format, v...))
 }
 
 func logInfof(format string, v ...interface{}) {
@@ -67,16 +71,11 @@ func logErrorf(format string, v ...interface{}) {
 	log.V(levelError).Info(fmt.Sprintf(format, v...))
 }
 
-func errorWithMessagef(err error, format string, v ...interface{}) error {
-	message := fmt.Sprintf(format, v...)
-	return errors.Wrapf(err, "%s {\"error\": %s}", message, err.Error())
-}
-
 func (dtl troubleshootLogger) Init(_ logr.RuntimeInfo) {}
 
 func (dtl troubleshootLogger) Info(level int, message string, keysAndValues ...interface{}) {
 	switch level {
-	case levelNewTest:
+	case levelNewCheck:
 		dtl.logger.Info(prefixNewTest+message, keysAndValues...)
 	case levelSuccess:
 		dtl.logger.Info(withSuccessPrefix(message), keysAndValues...)

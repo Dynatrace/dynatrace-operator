@@ -7,6 +7,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -61,7 +62,7 @@ func TestDynakube(t *testing.T) {
 			Build()
 
 		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
-		assert.NoErrorf(t, getSelectedDynakubeIfItExists(&troubleshootCtx), "no dynakube found")
+		assert.NoErrorf(t, getSelectedDynakube(&troubleshootCtx), "no dynakube found")
 	})
 	t.Run("dynakube does not exist", func(t *testing.T) {
 		clt := fake.NewClientBuilder().
@@ -73,7 +74,7 @@ func TestDynakube(t *testing.T) {
 			Build()
 
 		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testOtherDynakube}
-		assert.Errorf(t, getSelectedDynakubeIfItExists(&troubleshootCtx), "dynakube found")
+		assert.Errorf(t, getSelectedDynakube(&troubleshootCtx), "dynakube found")
 	})
 	t.Run("invalid namespace selected", func(t *testing.T) {
 		clt := fake.NewClientBuilder().
@@ -85,7 +86,7 @@ func TestDynakube(t *testing.T) {
 			Build()
 
 		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testOtherNamespace, dynakubeName: testDynakube}
-		assert.Errorf(t, getSelectedDynakubeIfItExists(&troubleshootCtx), "dynakube found")
+		assert.Errorf(t, getSelectedDynakube(&troubleshootCtx), "dynakube found")
 	})
 }
 
@@ -113,7 +114,7 @@ func TestDynatraceSecret(t *testing.T) {
 			Build()
 
 		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
-		assert.NoErrorf(t, getSelectedDynakubeIfItExists(&troubleshootCtx), "Dynatrace secret not found")
+		assert.NoErrorf(t, getSelectedDynakube(&troubleshootCtx), "Dynatrace secret not found")
 	})
 	t.Run("Dynatrace secret does not exist", func(t *testing.T) {
 		clt := fake.NewClientBuilder().
@@ -126,7 +127,7 @@ func TestDynatraceSecret(t *testing.T) {
 			Build()
 
 		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
-		assert.Errorf(t, getDynatraceApiSecretIfItExists(&troubleshootCtx), "Dynatrace secret found")
+		assert.Errorf(t, getDynatraceApiSecret(&troubleshootCtx), "Dynatrace secret found")
 	})
 
 	t.Run("Dynatrace secret has apiToken token", func(t *testing.T) {
@@ -152,7 +153,7 @@ func TestPullSecret(t *testing.T) {
 			Build()
 
 		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakube: *dynakube}
-		assert.NoErrorf(t, getPullSecretIfItExists(&troubleshootCtx), "custom pull secret not found")
+		assert.NoErrorf(t, checkPullSecretExists(&troubleshootCtx), "custom pull secret not found")
 	})
 	t.Run("custom pull secret does not exist", func(t *testing.T) {
 		clt := fake.NewClientBuilder().
@@ -164,7 +165,7 @@ func TestPullSecret(t *testing.T) {
 			Build()
 
 		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace}
-		assert.Errorf(t, getPullSecretIfItExists(&troubleshootCtx), "custom pull secret found")
+		assert.Errorf(t, checkPullSecretExists(&troubleshootCtx), "custom pull secret found")
 	})
 	t.Run("custom pull secret has required tokens", func(t *testing.T) {
 		troubleshootCtx := troubleshootContext{namespaceName: testNamespace, pullSecret: *testNewSecretBuilder(testNamespace, testSecretName).dataAppend(".dockerconfigjson", testCustomPullSecretToken).build()}
@@ -188,7 +189,7 @@ func TestProxySecret(t *testing.T) {
 			Build()
 
 		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
-		assert.NoErrorf(t, setProxySecretIfItExists(&troubleshootCtx), "proxy secret not found")
+		assert.NoErrorf(t, applyProxySettings(&troubleshootCtx), "proxy secret not found")
 	})
 	t.Run("proxy secret does not exist", func(t *testing.T) {
 		dynakube := testNewDynakubeBuilder(testNamespace, testDynakube).withProxySecret(testSecretName).build()
@@ -203,7 +204,7 @@ func TestProxySecret(t *testing.T) {
 		troubleshootCtx := troubleshootContext{
 			apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube, dynakube: *dynakube,
 		}
-		assert.Errorf(t, setProxySecretIfItExists(&troubleshootCtx), "proxy secret found")
+		assert.Errorf(t, applyProxySettings(&troubleshootCtx), "proxy secret found, should not exist")
 	})
 	t.Run("proxy secret has required tokens", func(t *testing.T) {
 		proxySecret := *testNewSecretBuilder(testNamespace, testSecretName).
@@ -211,10 +212,10 @@ func TestProxySecret(t *testing.T) {
 			build()
 		troubleshootCtx := troubleshootContext{
 			namespaceName: testNamespace,
-			proxySecret:   proxySecret,
+			proxySecret:   &proxySecret,
 			httpClient:    &http.Client{},
 		}
-		assert.NoErrorf(t, setProxySecretIfItExists(&troubleshootCtx), "proxy secret does not have required tokens")
+		assert.NoErrorf(t, applyProxySettings(&troubleshootCtx), "proxy secret does not have required tokens")
 	})
 	t.Run("proxy secret does not have required tokens", func(t *testing.T) {
 		secret := *testNewSecretBuilder(testNamespace, testSecretName).build()
@@ -225,10 +226,10 @@ func TestProxySecret(t *testing.T) {
 			Build()
 		troubleshootCtx := troubleshootContext{
 			namespaceName: testNamespace,
-			proxySecret:   secret,
+			proxySecret:   &secret,
 			dynakube:      dynakube,
 			apiReader:     clt}
-		assert.Errorf(t, setProxySecretIfItExists(&troubleshootCtx), "proxy secret has required tokens")
+		assert.Errorf(t, applyProxySettings(&troubleshootCtx), "proxy secret has required tokens")
 	})
 }
 
@@ -262,15 +263,17 @@ func (builder *testDynaKubeBuilder) withCustomPullSecret(secretName string) *tes
 	return builder
 }
 
-func (builder *testDynaKubeBuilder) withProxySecret(secretName string) *testDynaKubeBuilder {
+func (builder *testDynaKubeBuilder) withProxy(proxyURL string) *testDynaKubeBuilder {
 	builder.dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{
-		ValueFrom: secretName,
+		Value: proxyURL,
 	}
 	return builder
 }
 
-func (builder *testDynaKubeBuilder) withActiveGateImage(image string) *testDynaKubeBuilder {
-	builder.dynakube.Spec.ActiveGate.Image = image
+func (builder *testDynaKubeBuilder) withProxySecret(secretName string) *testDynaKubeBuilder {
+	builder.dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{
+		ValueFrom: secretName,
+	}
 	return builder
 }
 
@@ -280,6 +283,28 @@ func (builder *testDynaKubeBuilder) withActiveGateCapability(capability dynatrac
 	}
 
 	builder.dynakube.Spec.ActiveGate.Capabilities = append(builder.dynakube.Spec.ActiveGate.Capabilities, capability)
+	return builder
+}
+
+func (builder *testDynaKubeBuilder) withActiveGateCustomImage(image string) *testDynaKubeBuilder {
+	builder.dynakube.Spec.ActiveGate.Image = image
+	return builder
+}
+
+func (builder *testDynaKubeBuilder) withCloudNativeFullStack() *testDynaKubeBuilder {
+	builder.dynakube.Spec.OneAgent.CloudNativeFullStack = &dynatracev1beta1.CloudNativeFullStackSpec{
+		HostInjectSpec: dynatracev1beta1.HostInjectSpec{},
+	}
+	return builder
+}
+
+func (builder *testDynaKubeBuilder) withClassicFullStack() *testDynaKubeBuilder {
+	builder.dynakube.Spec.OneAgent.ClassicFullStack = &dynatracev1beta1.HostInjectSpec{}
+	return builder
+}
+
+func (builder *testDynaKubeBuilder) withHostMonitoring() *testDynaKubeBuilder {
+	builder.dynakube.Spec.OneAgent.HostMonitoring = &dynatracev1beta1.HostInjectSpec{}
 	return builder
 }
 
@@ -335,12 +360,14 @@ func (builder *testDynaKubeBuilder) withCloudNativeCodeModulesImage(image string
 func (builder *testDynaKubeBuilder) withApplicationMonitoringCodeModulesImage(image string) *testDynaKubeBuilder {
 	if builder.dynakube.Spec.OneAgent.ApplicationMonitoring != nil {
 		builder.dynakube.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage = image
+		builder.dynakube.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver = address.Of(true)
 	} else {
 		builder.dynakube.Spec.OneAgent.ApplicationMonitoring = &dynatracev1beta1.ApplicationMonitoringSpec{
 			AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{
 				InitResources:    corev1.ResourceRequirements{},
 				CodeModulesImage: image,
 			},
+			UseCSIDriver: address.Of(true),
 		}
 	}
 	return builder
@@ -376,20 +403,6 @@ func (builder *testDynaKubeBuilder) withHostMonitoringImageVersion(version strin
 	} else {
 		builder.dynakube.Spec.OneAgent.HostMonitoring = &dynatracev1beta1.HostInjectSpec{
 			Version: version,
-		}
-	}
-	return builder
-}
-
-func (builder *testDynaKubeBuilder) withApplicationMonitoringUseCSIDriver(useCSIDriver bool) *testDynaKubeBuilder {
-	if builder.dynakube.Spec.OneAgent.ApplicationMonitoring != nil {
-		builder.dynakube.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver = &useCSIDriver
-	} else {
-		builder.dynakube.Spec.OneAgent.ApplicationMonitoring = &dynatracev1beta1.ApplicationMonitoringSpec{
-			AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{
-				InitResources: corev1.ResourceRequirements{},
-			},
-			UseCSIDriver: &useCSIDriver,
 		}
 	}
 	return builder
