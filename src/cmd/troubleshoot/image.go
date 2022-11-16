@@ -51,7 +51,7 @@ func checkImagePullable(troubleshootCtx *troubleshootContext) error {
 }
 
 func checkOneAgentImagePullable(troubleshootCtx *troubleshootContext) error {
-	logNewTestf("checking if OneAgent image is pullable ...")
+	logNewCheckf("checking if OneAgent image is pullable ...")
 
 	pullSecret, err := getPullSecret(troubleshootCtx)
 	if err != nil {
@@ -69,7 +69,7 @@ func checkOneAgentImagePullable(troubleshootCtx *troubleshootContext) error {
 }
 
 func checkOneAgentCodeModulesImagePullable(troubleshootCtx *troubleshootContext) error {
-	logNewTestf("checking if OneAgent codeModules image is pullable ...")
+	logNewCheckf("checking if OneAgent codeModules image is pullable ...")
 
 	pullSecret, err := getPullSecret(troubleshootCtx)
 	if err != nil {
@@ -89,7 +89,7 @@ func checkOneAgentCodeModulesImagePullable(troubleshootCtx *troubleshootContext)
 }
 
 func checkActiveGateImagePullable(troubleshootCtx *troubleshootContext) error {
-	logNewTestf("checking if ActiveGate image is pullable ...")
+	logNewCheckf("checking if ActiveGate image is pullable ...")
 
 	pullSecret, err := getPullSecret(troubleshootCtx)
 	if err != nil {
