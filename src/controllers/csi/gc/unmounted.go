@@ -61,15 +61,13 @@ func (gc *CSIGarbageCollector) isUnmountedVolumeTooOld(t time.Time) bool {
 	return gc.maxUnmountedVolumeAge == 0 || time.Since(t) > gc.maxUnmountedVolumeAge
 }
 
-func determineMaxUnmountedVolumeAge() time.Duration {
-	maxAgeEnv := os.Getenv(maxUnmountedCsiVolumeAgeEnv)
-	if maxAgeEnv == "" {
+func determineMaxUnmountedVolumeAge(maxAgeEnvValue string) time.Duration {
+	if maxAgeEnvValue == "" {
 		return defaultMaxUnmountedCsiVolumeAge
 	}
-
-	maxAge, err := strconv.Atoi(maxAgeEnv)
+	maxAge, err := strconv.Atoi(maxAgeEnvValue)
 	if err != nil {
-		log.Error(err, "failed to parse MaxUnmountedCsiVolumeAge from", "env", maxUnmountedCsiVolumeAgeEnv, "value", maxAgeEnv)
+		log.Error(err, "failed to parse MaxUnmountedCsiVolumeAge from", "env", maxUnmountedCsiVolumeAgeEnv, "value", maxAgeEnvValue)
 		return defaultMaxUnmountedCsiVolumeAge
 	}
 	if maxAge < 0 {

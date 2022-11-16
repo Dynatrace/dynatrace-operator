@@ -2,6 +2,7 @@ package csigc
 
 import (
 	"context"
+	"os"
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -49,7 +50,7 @@ func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db m
 		fs:                    afero.NewOsFs(),
 		db:                    db,
 		path:                  metadata.PathResolver{RootDir: opts.RootDir},
-		maxUnmountedVolumeAge: determineMaxUnmountedVolumeAge(),
+		maxUnmountedVolumeAge: determineMaxUnmountedVolumeAge(os.Getenv(maxUnmountedCsiVolumeAgeEnv)),
 	}
 }
 
