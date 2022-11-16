@@ -87,7 +87,7 @@ func getDynakubeChecks() []*Check {
 
 	proxySecretIfItExistsCheck := &Check{
 		Name:          proxySecretCheckName,
-		Do:            setProxySecretIfItExists,
+		Do:            applyProxySettings,
 		Prerequisites: []*Check{selectedDynakubeCheck},
 	}
 
@@ -210,58 +210,5 @@ func checkPullSecretHasRequiredTokens(troubleshootCtx *troubleshootContext) erro
 	}
 
 	logInfof("secret token '%s' exists", dtpullsecret.DockerConfigJson)
-	return nil
-}
-
-func setProxySecretIfItExists(troubleshootCtx *troubleshootContext) error {
-	if !troubleshootCtx.dynakube.HasProxy() {
-		logInfof("no proxy is configured")
-		return nil
-	} else if troubleshootCtx.dynakube.Spec.Proxy.Value != "" {
-		logInfof("proxy value is embedded in the dynakube")
-		return setProxyFromValue(troubleshootCtx)
-	}
-
-	logInfof("'%s:%s' proxy secret is configured to be used", troubleshootCtx.namespaceName, troubleshootCtx.dynakube.Spec.Proxy.ValueFrom)
-	return setProxyFromSecret(troubleshootCtx)
-}
-
-func setProxyFromValue(troubleshootCtx *troubleshootContext) error {
-	err := troubleshootCtx.SetTransportProxy(troubleshootCtx.dynakube.Spec.Proxy.Value)
-
-	if err != nil {
-		return errors.Wrap(err, "error parsing proxy value")
-	}
-
-	return nil
-}
-
-func setProxyFromSecret(troubleshootCtx *troubleshootContext) error {
-	query := kubeobjects.NewSecretQuery(troubleshootCtx.context, nil, troubleshootCtx.apiReader, log)
-	secret, err := query.Get(types.NamespacedName{
-		Namespace: troubleshootCtx.namespaceName,
-		Name:      troubleshootCtx.dynakube.Spec.Proxy.ValueFrom})
-
-	if err != nil {
-		return errors.Wrapf(err, "'%s:%s' proxy secret is missing",
-			troubleshootCtx.namespaceName, troubleshootCtx.dynakube.Spec.Proxy.ValueFrom)
-	}
-
-	logInfof("proxy secret '%s:%s' exists",
-		troubleshootCtx.namespaceName, troubleshootCtx.dynakube.Spec.Proxy.ValueFrom)
-
-	proxyUrl, err := kubeobjects.ExtractToken(&secret, dtclient.CustomProxySecretKey)
-	if err != nil {
-		return errors.Wrapf(err, "invalid '%s:%s' secret, missing key '%s'",
-			troubleshootCtx.namespaceName, troubleshootCtx.proxySecret.Name, dtclient.CustomProxySecretKey)
-	}
-
-	logInfof("secret key '%s' exists", dtclient.CustomProxySecretKey)
-
-	err = troubleshootCtx.SetTransportProxy(proxyUrl)
-	if err != nil {
-		return errors.Wrap(err, "error parsing proxy secret value")
-	}
-
 	return nil
 }
