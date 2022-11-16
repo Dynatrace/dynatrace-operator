@@ -47,6 +47,7 @@ func runChecks(results ChecksResults, troubleshootCtx *troubleshootContext, chec
 
 	for _, check := range checks {
 		if shouldSkip(results, check) {
+			results.set(check, SKIPPED)
 			continue
 		}
 
@@ -79,7 +80,6 @@ func shouldSkip(results ChecksResults, check *Check) bool {
 	}
 	prereqsNames := strings.Join(functional.Map(failedPrerequisites, getCheckName), ",")
 	logWarningf("Skipped '%s' check because prerequisites aren't met: [%s]", check.Name, prereqsNames)
-	results.set(check, SKIPPED)
 
 	return true
 }
