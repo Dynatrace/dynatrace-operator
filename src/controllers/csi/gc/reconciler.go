@@ -2,6 +2,8 @@ package csigc
 
 import (
 	"context"
+	"os"
+	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
@@ -35,6 +37,8 @@ type CSIGarbageCollector struct {
 	fs        afero.Fs
 	db        metadata.Access
 	path      metadata.PathResolver
+
+	maxUnmountedVolumeAge time.Duration
 }
 
 var _ reconcile.Reconciler = (*CSIGarbageCollector)(nil)
@@ -42,10 +46,11 @@ var _ reconcile.Reconciler = (*CSIGarbageCollector)(nil)
 // NewCSIGarbageCollector returns a new CSIGarbageCollector
 func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db metadata.Access) *CSIGarbageCollector {
 	return &CSIGarbageCollector{
-		apiReader: apiReader,
-		fs:        afero.NewOsFs(),
-		db:        db,
-		path:      metadata.PathResolver{RootDir: opts.RootDir},
+		apiReader:             apiReader,
+		fs:                    afero.NewOsFs(),
+		db:                    db,
+		path:                  metadata.PathResolver{RootDir: opts.RootDir},
+		maxUnmountedVolumeAge: determineMaxUnmountedVolumeAge(os.Getenv(maxUnmountedCsiVolumeAgeEnv)),
 	}
 }
 
@@ -87,7 +92,7 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 	}
 
 	log.Info("running log garbage collection")
-	gc.runLogGarbageCollection(ctx, gcInfo.tenantUUID)
+	gc.runUnmountedVolumeGarbageCollection(ctx, gcInfo.tenantUUID)
 
 	if err := ctx.Err(); err != nil {
 		return defaultReconcileResult, err
