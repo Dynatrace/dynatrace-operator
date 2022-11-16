@@ -1,10 +1,10 @@
 package functional
 
-func Filter[T any](arr []T, filterFn func(val T) bool) []T {
+func Filter[T any](arr []T, predicate func(val T) bool) []T {
 	ret := make([]T, 0)
 
 	for _, val := range arr {
-		if filterFn(val) {
+		if predicate(val) {
 			ret = append(ret, val)
 		}
 	}
