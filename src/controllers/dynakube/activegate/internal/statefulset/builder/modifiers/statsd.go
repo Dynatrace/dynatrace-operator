@@ -61,7 +61,7 @@ func (statsd StatsdModifier) Modify(sts *appsv1.StatefulSet) {
 
 }
 
-func (statsd *StatsdModifier) getActiveGateVolumeMounts(presentMounts []corev1.VolumeMount) []corev1.VolumeMount {
+func (statsd StatsdModifier) getActiveGateVolumeMounts(presentMounts []corev1.VolumeMount) []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{{Name: dataSourceStatsdLogs, MountPath: extensionsLogsDir + "/statsd", ReadOnly: true}}
 	neededMount := corev1.VolumeMount{
 		ReadOnly:  false,
@@ -167,13 +167,8 @@ func (statsd StatsdModifier) buildCommand() []string {
 
 func (statsd StatsdModifier) buildPorts() []corev1.ContainerPort {
 	return []corev1.ContainerPort{
-		{Name: consts.StatsdIngestTargetPort, ContainerPort: consts.StatsdIngestPort},
+		{Name: consts.StatsdIngestTargetPort, ContainerPort: consts.StatsdIngestPort, Protocol: corev1.ProtocolUDP},
 		{Name: statsdProbesPortName, ContainerPort: statsdProbesPort},
-		{
-			Name:          consts.StatsdIngestTargetPort,
-			ContainerPort: consts.StatsdIngestPort,
-			Protocol:      corev1.ProtocolUDP,
-		},
 	}
 }
 
