@@ -22,6 +22,7 @@ const (
 	dynakubeCheckName            = "dynakube"
 	dtClusterConnectionCheckName = "DynatraceClusterConnection"
 	imagePullableCheckName       = "imagePullable"
+	proxySettingsCheckName       = "proxySettings"
 )
 
 var (
@@ -129,10 +130,14 @@ func getChecks(results ChecksResults) []*Check {
 		Prerequisites: []*Check{namespaceCheck, dynakubeCheck},
 	}
 	imagePullableCheck := &Check{
-		Do:            checkImagePullable,
-		Prerequisites: []*Check{namespaceCheck, dynakubeCheck},
 		Name:          imagePullableCheckName,
+		Do:            verifyAllImagesAvailable,
+		Prerequisites: []*Check{namespaceCheck, dynakubeCheck},
 	}
-
-	return []*Check{namespaceCheck, dynakubeCheck, dtClusterConnectionCheck, imagePullableCheck}
+	proxySettingsCheck := &Check{
+		Name:          proxySettingsCheckName,
+		Do:            checkProxySettings,
+		Prerequisites: []*Check{namespaceCheck, dynakubeCheck},
+	}
+	return []*Check{namespaceCheck, dynakubeCheck, dtClusterConnectionCheck, imagePullableCheck, proxySettingsCheck}
 }
