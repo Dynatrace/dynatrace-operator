@@ -17,6 +17,11 @@ const (
 	use               = "troubleshoot"
 	dynakubeFlagName  = "dynakube"
 	namespaceFlagName = "namespace"
+
+	namespaceCheckName           = "namespace"
+	dynakubeCheckName            = "dynakube"
+	dtClusterConnectionCheckName = "DynatraceClusterConnection"
+	imagePullableCheckName       = "imagePullable"
 )
 
 var (
@@ -88,13 +93,8 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		}
 
 		apiReader := k8scluster.GetAPIReader()
-		tests := []troubleshootFunc{
-			checkNamespace,
-			checkDynakube,
-			checkDTClusterConnection,
-			checkImagePullable,
-		}
-		troubleshootCtx := troubleshootContext{
+
+		troubleshootCtx := &troubleshootContext{
 			context:       context.Background(),
 			apiReader:     apiReader,
 			httpClient:    &http.Client{},
@@ -102,13 +102,37 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			dynakubeName:  dynakubeFlagValue,
 		}
 
-		for _, test := range tests {
-			err = test(&troubleshootCtx)
-			if err != nil {
-				logErrorf(err.Error())
-				return nil
-			}
-		}
+		results := NewChecksResults()
+
+		_ = runChecks(results, troubleshootCtx, getChecks(results)) // ignore error to avoid polluting pretty logs
 		return nil
 	}
+}
+
+func getChecks(results ChecksResults) []*Check {
+	namespaceCheck := &Check{
+		Name: namespaceCheckName,
+		Do:   checkNamespace,
+	}
+	dynakubeCheck := &Check{
+		Name: dynakubeCheckName,
+		Do: func(troubleshootCtx *troubleshootContext) error {
+			return checkDynakube(results, troubleshootCtx)
+		},
+		Prerequisites: []*Check{namespaceCheck},
+	}
+	dtClusterConnectionCheck := &Check{
+		Name: dtClusterConnectionCheckName,
+		Do: func(troubleshootCtx *troubleshootContext) error {
+			return checkDtClusterConnection(results, troubleshootCtx)
+		},
+		Prerequisites: []*Check{namespaceCheck, dynakubeCheck},
+	}
+	imagePullableCheck := &Check{
+		Do:            checkImagePullable,
+		Prerequisites: []*Check{namespaceCheck, dynakubeCheck},
+		Name:          imagePullableCheckName,
+	}
+
+	return []*Check{namespaceCheck, dynakubeCheck, dtClusterConnectionCheck, imagePullableCheck}
 }
