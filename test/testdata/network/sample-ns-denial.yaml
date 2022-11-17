@@ -1,0 +1,13 @@
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: "sample-ns-deny-egress-to-world"
+  namespace: test-namespace-1
+spec:
+  endpointSelector: {}
+  egress:
+    - toEntities:
+        - "cluster"
+  ingress:
+    - fromEntities:
+        - "cluster"

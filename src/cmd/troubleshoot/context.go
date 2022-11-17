@@ -20,7 +20,7 @@ type troubleshootContext struct {
 	dynakube           v1beta1.DynaKube
 	dynatraceApiSecret corev1.Secret
 	pullSecret         corev1.Secret
-	proxySecret        corev1.Secret
+	proxySecret        *corev1.Secret
 }
 
 func (troubleshootCtx *troubleshootContext) SetTransportProxy(proxy string) error {
