@@ -2,8 +2,8 @@ package statefulset
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/maps"
 	"hash/fnv"
-	"reflect"
 	"strconv"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -160,8 +160,8 @@ func (r *Reconciler) deleteStatefulSetIfOldLabelsAreUsed(desiredSts *appsv1.Stat
 		return false, err
 	}
 
-	if !reflect.DeepEqual(currentSts.Labels, desiredSts.Labels) {
-		log.Info("deleting existing stateful set")
+	if isUsingOldLabels(currentSts) {
+		log.Info("deleting existing stateful set because of old labels being used")
 		if err = r.client.Delete(context.TODO(), desiredSts); err != nil {
 			return false, err
 		}
@@ -169,6 +169,23 @@ func (r *Reconciler) deleteStatefulSetIfOldLabelsAreUsed(desiredSts *appsv1.Stat
 	}
 
 	return false, nil
+}
+
+func isUsingOldLabels(currentStatefulSet *appsv1.StatefulSet) bool {
+	oldLabelKeys := []string{
+		"dynatrace.com/component",
+		"operator.dynatrace.com/instance",
+		"operator.dynatrace.com/feature",
+		"activegate",
+	}
+
+	for _, label := range oldLabelKeys {
+		if maps.ContainsKey(currentStatefulSet.Labels, label) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (r *Reconciler) calculateActiveGateConfigurationHash() (string, error) {
