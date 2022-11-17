@@ -1,8 +1,9 @@
 package maps
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestContainsKey(t *testing.T) {

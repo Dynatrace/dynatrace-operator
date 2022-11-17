@@ -2,7 +2,6 @@ package statefulset
 
 import (
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/src/maps"
 	"hash/fnv"
 	"strconv"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
+	"github.com/Dynatrace/dynatrace-operator/src/maps"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
