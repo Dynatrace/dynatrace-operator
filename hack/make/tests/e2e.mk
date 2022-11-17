@@ -13,6 +13,10 @@ test/e2e/cloudnative:
 test/e2e/cloudnative/istio:
 	go test -v -tags e2e -count=1 -failfast ./test/cloudnativeistio
 
+## Runs CloudNative proxy e2e test only
+test/e2e/cloudnative/proxy:
+	go test -v -tags e2e -count=1 -failfast ./test/cloudnative/proxy
+
 ## Runs Application Monitoring e2e test only
 test/e2e/applicationmonitoring:
 	go test -v -tags e2e -count=1 -failfast ./test/appmon
