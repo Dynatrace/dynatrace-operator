@@ -106,7 +106,7 @@ func (r *Reconciler) deleteCapability(agCapability capability.Capability) error 
 }
 
 func (r *Reconciler) deleteService(agCapability capability.Capability) error {
-	if r.dynakube.NeedsActiveGateServicePorts() || r.dynakube.IsStatsdActiveGateEnabled() {
+	if r.dynakube.NeedsActiveGateService() {
 		return nil
 	}
 
