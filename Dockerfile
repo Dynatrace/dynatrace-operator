@@ -13,11 +13,11 @@ RUN if [ -d ./mod ]; then mkdir -p ${GOPATH}/pkg && [ -d mod ] && mv ./mod ${GOP
 
 RUN CGO_ENABLED=1 CGO_CFLAGS="-O2 -Wno-return-local-addr" go build -ldflags="${GO_LINKER_ARGS}" -o ./build/_output/bin/dynatrace-operator ./src/cmd/
 
-FROM registry.access.redhat.com/ubi9-minimal:9.0.0 as dependency-src
+FROM registry.access.redhat.com/ubi9-minimal:9.1.0 as dependency-src
 
 RUN  microdnf install util-linux tar --nodocs -y && microdnf clean all
 
-FROM registry.access.redhat.com/ubi9-micro:9.0.0
+FROM registry.access.redhat.com/ubi9-micro:9.1.0
 
 # operator dependencies
 COPY --from=operator-build /etc/ssl/cert.pem /etc/ssl/cert.pem
