@@ -26,7 +26,6 @@ type Reconciler struct {
 }
 
 func NewReconciler(clt client.Client, capability capability.Capability, dynakube *dynatracev1beta1.DynaKube, statefulsetReconciler controllers.Reconciler, customPropertiesReconciler controllers.Reconciler) *Reconciler {
-
 	return &Reconciler{
 		statefulsetReconciler:      statefulsetReconciler,
 		customPropertiesReconciler: customPropertiesReconciler,
@@ -44,7 +43,7 @@ func (r *Reconciler) Reconcile() error {
 		return errors.WithStack(err)
 	}
 
-	if r.dynakube.NeedsActiveGateServicePorts() {
+	if r.dynakube.NeedsActiveGateService() {
 		err = r.createOrUpdateService()
 		if err != nil {
 			return errors.WithStack(err)
