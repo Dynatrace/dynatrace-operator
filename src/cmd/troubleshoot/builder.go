@@ -8,6 +8,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
+	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
@@ -78,6 +79,8 @@ func clusterOptions(opts *cluster.Options) {
 
 func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
+		version.LogVersion()
+
 		kubeConfig, err := builder.configProvider.GetConfig()
 		if err != nil {
 			return err

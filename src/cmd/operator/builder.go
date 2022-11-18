@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/certificates"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
+	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/rest"
@@ -112,6 +113,8 @@ func (builder CommandBuilder) setClientFromConfig(kubeCfg *rest.Config) (Command
 
 func (builder CommandBuilder) buildRun() func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
+		version.LogVersion()
+
 		kubeCfg, err := builder.configProvider.GetConfig()
 		if err != nil {
 			return err
