@@ -190,7 +190,7 @@ func TestReconcile_DeleteStatefulSetIfOldLabelsAreUsed(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, desiredSts)
 
-		deleted, err := r.deleteStatefulSetIfOldLabelsAreUsed(desiredSts)
+		deleted, err := r.deleteStatefulSetIfSelectorChanged(desiredSts)
 		assert.Error(t, err)
 		assert.False(t, deleted)
 		assert.True(t, k8serrors.IsNotFound(errors.Cause(err)))
@@ -199,20 +199,21 @@ func TestReconcile_DeleteStatefulSetIfOldLabelsAreUsed(t *testing.T) {
 		require.True(t, created)
 		require.NoError(t, err)
 
-		deleted, err = r.deleteStatefulSetIfOldLabelsAreUsed(desiredSts)
+		deleted, err = r.deleteStatefulSetIfSelectorChanged(desiredSts)
 		assert.NoError(t, err)
 		assert.False(t, deleted)
 
 		r.dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
 		desiredSts, err = r.buildDesiredStatefulSet()
 		require.NoError(t, err)
-		correctLabels := desiredSts.Labels
-		desiredSts.Labels = map[string]string{"activegate": "dynakube"}
+
+		correctLabels := desiredSts.Spec.Selector.MatchLabels
+		desiredSts.Spec.Selector.MatchLabels = map[string]string{"activegate": "dynakube"}
 		err = r.client.Update(context.TODO(), desiredSts)
 		assert.NoError(t, err)
 
-		desiredSts.Labels = correctLabels
-		deleted, err = r.deleteStatefulSetIfOldLabelsAreUsed(desiredSts)
+		desiredSts.Spec.Selector.MatchLabels = correctLabels
+		deleted, err = r.deleteStatefulSetIfSelectorChanged(desiredSts)
 		assert.NoError(t, err)
 		assert.True(t, deleted)
 	})
@@ -237,7 +238,7 @@ func TestReconcile_DeleteStatefulSetIfOldLabelsAreUsed(t *testing.T) {
 
 		require.NoError(t, err)
 
-		deleted, err := r.deleteStatefulSetIfOldLabelsAreUsed(desiredStatefulset)
+		deleted, err := r.deleteStatefulSetIfSelectorChanged(desiredStatefulset)
 
 		assert.NoError(t, err)
 		assert.False(t, deleted)
@@ -328,7 +329,7 @@ func TestManageStatefulSet(t *testing.T) {
 		assert.NotNil(t, actualStatefulSet)
 		assert.Contains(t, actualStatefulSet.Labels, testName)
 	})
-	t.Run("delete statefulset if old labels are used", func(t *testing.T) {
+	t.Run("delete statefulset if selector differs", func(t *testing.T) {
 		r := createDefaultReconciler(t)
 		desiredStatefulSet, err := r.buildDesiredStatefulSet()
 
@@ -341,7 +342,7 @@ func TestManageStatefulSet(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, actualStatefulSet)
 
-		actualStatefulSet.Labels["activegate"] = testValue
+		actualStatefulSet.Spec.Selector.MatchLabels["activegate"] = testValue
 		err = r.client.Update(context.TODO(), actualStatefulSet)
 
 		require.NoError(t, err)
