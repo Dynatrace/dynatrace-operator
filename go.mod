@@ -14,11 +14,12 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.14.0
 	github.com/prometheus/client_model v0.3.0
-	github.com/spf13/afero v1.9.2
+	github.com/spf13/afero v1.9.3
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.1
 	go.uber.org/zap v1.23.0
 	golang.org/x/exp v0.0.0-20221011201855-a3968a42eed6
+	golang.org/x/net v0.0.0-20220909164309-bea034e7d591
 	golang.org/x/sys v0.0.0-20220919091848-fb04ddd9f9c8
 	google.golang.org/grpc v1.50.1
 	istio.io/api v0.0.0-20221013011440-bc935762d2b9
@@ -126,7 +127,6 @@ require (
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
 	golang.org/x/crypto v0.0.0-20220919173607-35f4265a4bc0 // indirect
-	golang.org/x/net v0.0.0-20220909164309-bea034e7d591 // indirect
 	golang.org/x/oauth2 v0.0.0-20220822191816-0ebed06d0094 // indirect
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4 // indirect
 	golang.org/x/term v0.0.0-20220526004731-065cf7ba2467 // indirect
