@@ -118,7 +118,7 @@ func checkInitContainers(ctx context.Context, t *testing.T, environmentConfig *e
 
 		assert.NotEmpty(t, stdOut)
 		assert.Empty(t, stdErr)
-		assert.Contains(t, stdOut, "info    [native] Communicating via https://")
+		assert.Contains(t, stdOut, "[native] Dynatrace Bootstrap Agent")
 	}
 
 	return ctx
