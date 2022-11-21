@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	platformEnv = "PLATFORM"
+	platformEnv       = "PLATFORM"
 	openshiftPlatform = "openshift"
 )
 
