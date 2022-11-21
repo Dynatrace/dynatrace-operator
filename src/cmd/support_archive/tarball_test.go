@@ -19,7 +19,8 @@ func TestAddFile(t *testing.T) {
 	defer os.RemoveAll(tmpDir)
 
 	ctx := supportArchiveContext{
-		ctx: context.TODO(),
+		ctx:              context.TODO(),
+		tarballTargetDir: tmpDir,
 	}
 
 	tarball, err := newTarball(&ctx)

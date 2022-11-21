@@ -79,7 +79,13 @@ func selectAndCreateTargetFile(ctx *supportArchiveContext) (*os.File, error) {
 }
 
 func createTarFile(ctx *supportArchiveContext) (*os.File, error) {
-	tarballFilePath := fmt.Sprintf(tarFileName, defaultTargetDir, time.Now().Format(time.RFC3339))
+	var tarballFilePath string
+	if ctx.tarballTargetDir == "" {
+		tarballFilePath = fmt.Sprintf(tarFileName, defaultTargetDir, time.Now().Format(time.RFC3339))
+	} else {
+		tarballFilePath = fmt.Sprintf(tarFileName, ctx.tarballTargetDir, time.Now().Format(time.RFC3339))
+	}
+
 	tarballFilePath = strings.Replace(tarballFilePath, ":", "_", -1)
 
 	tarFile, err := os.Create(tarballFilePath)
