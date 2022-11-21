@@ -31,7 +31,6 @@ const (
 
 func TestReconcileCertificate_Create(t *testing.T) {
 	clt := newFakeClientBuilder().WithCRD().Build()
-
 	controller, request := prepareController(clt)
 
 	res, err := controller.Reconcile(context.TODO(), request)

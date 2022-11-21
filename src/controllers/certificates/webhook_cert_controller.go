@@ -78,7 +78,7 @@ func (controller *WebhookCertificateController) Reconcile(ctx context.Context, r
 
 	crd, err := controller.getCRDConfiguration()
 	if err != nil {
-		log.Info("could not find CRD configuration", "namespace", request.Namespace)
+		log.Info("could not find CRD configuration")
 		return reconcile.Result{}, errors.WithStack(err)
 	}
 
