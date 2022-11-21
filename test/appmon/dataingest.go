@@ -51,13 +51,13 @@ func dataIngest(t *testing.T) features.Feature {
 
 	require.NoError(t, err)
 
-	dataIngestFeature.Setup(operator.InstallDynatrace(false))
+	dataIngestFeature.Setup(operator.InstallOperatorFromSource(false))
 	dataIngestFeature.Setup(operator.WaitForDeployment())
 	dataIngestFeature.Setup(webhook.WaitForDeployment())
 	dataIngestFeature.Setup(secrets.ApplyDefault(tenantSecret))
 	dataIngestFeature.Setup(dynakube.Apply(dataIngestDynakube))
 	dataIngestFeature.Setup(dynakube.WaitForDynakubePhase(dataIngestDynakube))
-	dataIngestFeature.Setup(manifests.InstallFromFile(sampleApps))
+	dataIngestFeature.Setup(manifests.InstallFromLocalFile(sampleApps))
 	dataIngestFeature.Setup(deployment.WaitFor("test-deployment", sampleapps.Namespace))
 	dataIngestFeature.Setup(pod.WaitFor("test-pod", sampleapps.Namespace))
 

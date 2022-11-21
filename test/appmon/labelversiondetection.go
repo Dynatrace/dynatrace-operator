@@ -100,7 +100,7 @@ func installOperator(t *testing.T) features.Feature {
 	defaultInstallation := features.New("default installation")
 
 	defaultInstallation.Setup(secrets.ApplyDefault(secretConfig))
-	defaultInstallation.Setup(operator.InstallDynatrace(false))
+	defaultInstallation.Setup(operator.InstallOperatorFromSource(false))
 	defaultInstallation.Assess("operator started", operator.WaitForDeployment())
 	defaultInstallation.Assess("webhook started", webhook.WaitForDeployment())
 
@@ -132,7 +132,7 @@ func installDynakube(t *testing.T, name string, annotations map[string]string) f
 
 func installSampleApplications() features.Feature {
 	defaultInstallation := features.New("sample applications installation")
-	defaultInstallation.Assess("sample applications applied", manifests.InstallFromFile("../testdata/application-monitoring/buildlabels-sample-apps.yaml"))
+	defaultInstallation.Assess("sample applications applied", manifests.InstallFromLocalFile("../testdata/application-monitoring/buildlabels-sample-apps.yaml"))
 	for _, namespaceName := range namespaceNames {
 		defaultInstallation.Assess(namespaceName+" is ready", deployment.WaitFor(sampleapps.Name, namespaceName))
 	}

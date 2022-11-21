@@ -2,6 +2,7 @@ package operator
 
 import (
 	"os"
+	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/manifests"
@@ -52,13 +53,24 @@ const (
 	manifestsWithoutCsi = "../../config/deploy/kubernetes/kubernetes.yaml"
 )
 
-func InstallDynatrace(withCsi bool) features.Func {
+func InstallOperatorFromSource(withCsi bool) features.Func {
 	actualManifestPath := manifestsWithoutCsi
 	if withCsi {
 		actualManifestPath = manifestsWithCsi
 	}
 
-	return manifests.InstallFromFile(actualManifestPath)
+	return manifests.InstallFromLocalFile(actualManifestPath)
+}
+
+func InstallOperatorFromGithub(releaseTag string, withCsi bool) features.Func {
+	manifestsUrl := fmt.Sprintf("https://github.com/Dynatrace/dynatrace-operator/releases/download/%s/", releaseTag)
+	if withCsi {
+		manifestsUrl += "/kubernetes.yaml"
+	} else {
+		manifestsUrl += "/kubernetes-all.yaml"
+	}
+
+	return manifests.InstallFromUrl(manifestsUrl)
 }
 
 func WaitForDeployment() features.Func {

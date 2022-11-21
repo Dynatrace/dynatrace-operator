@@ -17,10 +17,12 @@ func Upgrade(t *testing.T) features.Feature {
 
 	defaultInstallation := features.New("default installation")
 
-	defaultInstallation.Setup(manifests.InstallFromFile("../testdata/cloudnative/test-namespace.yaml"))
+	defaultInstallation.Setup(manifests.InstallFromLocalFile("../testdata/cloudnative/test-namespace.yaml"))
 
-	setup.InstallAndDeploy(defaultInstallation, secretConfig, "../testdata/cloudnative/sample-deployment.yaml")
-	setup.AssessDeployment(defaultInstallation)
+	setup.InstallDynatraceFromGithub(defaultInstallation, &secretConfig, "v0.9.1")
+	setup.AssessOperatorDeployment(defaultInstallation)
+
+	setup.DeploySampleApps(defaultInstallation, "../testdata/cloudnative/sample-deployment.yaml")
 
 	dynakubeBuilder := dynakube.NewBuilder().
 		WithDefaultObjectMeta().
@@ -30,6 +32,11 @@ func Upgrade(t *testing.T) features.Feature {
 	defaultInstallation.Assess("dynakube applied", dynakube.Apply(dynakubeBuilder.Build()))
 
 	setup.AssessDynakubeStartup(defaultInstallation)
+	assessOneAgentsAreRunning(defaultInstallation)
+
+	// update to snapshot
+	setup.InstallDynatraceFromSource(defaultInstallation, nil)
+	setup.AssessOperatorDeployment(defaultInstallation)
 	assessOneAgentsAreRunning(defaultInstallation)
 
 	return defaultInstallation.Feature()

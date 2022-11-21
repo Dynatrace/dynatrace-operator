@@ -31,12 +31,14 @@ func Install(t *testing.T, istioEnabled bool) features.Feature {
 	defaultInstallation := features.New("default installation")
 
 	if istioEnabled {
-		defaultInstallation.Setup(manifests.InstallFromFile("../testdata/cloudnativeistio/test-namespace.yaml"))
+		defaultInstallation.Setup(manifests.InstallFromLocalFile("../testdata/cloudnativeistio/test-namespace.yaml"))
 	} else {
-		defaultInstallation.Setup(manifests.InstallFromFile("../testdata/cloudnative/test-namespace.yaml"))
+		defaultInstallation.Setup(manifests.InstallFromLocalFile("../testdata/cloudnative/test-namespace.yaml"))
 	}
-	setup.InstallAndDeploy(defaultInstallation, secretConfig, "../testdata/cloudnative/sample-deployment.yaml")
-	setup.AssessDeployment(defaultInstallation)
+	setup.InstallDynatraceFromSource(defaultInstallation, &secretConfig)
+	setup.AssessOperatorDeployment(defaultInstallation)
+
+	setup.DeploySampleApps(defaultInstallation, "../testdata/cloudnative/sample-deployment.yaml")
 
 	dynakubeBuilder := dynakube.NewBuilder().
 		WithDefaultObjectMeta().

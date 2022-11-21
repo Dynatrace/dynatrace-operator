@@ -1,8 +1,12 @@
 package manifests
 
 import (
+	"bytes"
 	"context"
+	"io"
+	"net/http"
 	"os"
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -12,14 +16,48 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func InstallFromFile(path string) features.Func {
+func httpGetResponseReader(url string) (io.Reader, error) {
+	response, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		panic("Response status code was not 200(StatusOK): " + strconv.Itoa(response.StatusCode))
+	}
+
+	manifestBytes, err := io.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return bytes.NewReader(manifestBytes), nil
+}
+
+func InstallFromUrl(yamlUrl string) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		kubernetesManifest, err := os.Open(path)
-		defer func() { require.NoError(t, kubernetesManifest.Close()) }()
+		manifestReader, err := httpGetResponseReader(yamlUrl)
+		require.NoError(t, err, "could not fetch release yaml")
+
+		resources := environmentConfig.Client().Resources()
+		require.NoError(t, decoder.DecodeEach(ctx, manifestReader, decoder.IgnoreErrorHandler(decoder.CreateHandler(resources), func(err error) bool {
+			// Ignore if the resource already exists
+			return k8serrors.IsAlreadyExists(err)
+		})))
+
+		return ctx
+	}
+}
+
+func InstallFromLocalFile(path string) features.Func {
+	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+		manifest, err := os.Open(path)
+		defer func() { require.NoError(t, manifest.Close()) }()
 		require.NoError(t, err)
 
 		resources := environmentConfig.Client().Resources()
-		require.NoError(t, decoder.DecodeEach(ctx, kubernetesManifest, decoder.IgnoreErrorHandler(decoder.CreateHandler(resources), func(err error) bool {
+		require.NoError(t, decoder.DecodeEach(ctx, manifest, decoder.IgnoreErrorHandler(decoder.CreateHandler(resources), func(err error) bool {
 			// Ignore if the resource already exists
 			return k8serrors.IsAlreadyExists(err)
 		})))
