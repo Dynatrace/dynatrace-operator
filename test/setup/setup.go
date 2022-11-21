@@ -13,7 +13,7 @@ import (
 
 func InstallAndDeploy(builder *features.FeatureBuilder, secretConfig secrets.Secret, deploymentPath string) {
 	builder.Setup(secrets.ApplyDefault(secretConfig))
-	builder.Setup(operator.InstallAll())
+	builder.Setup(operator.InstallDynatrace(true))
 	builder.Setup(manifests.InstallFromFile(deploymentPath))
 }
 

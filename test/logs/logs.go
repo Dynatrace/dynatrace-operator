@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func AssertLogContains(t *testing.T, logStream io.ReadCloser, contains string) {
+func AssertContains(t *testing.T, logStream io.ReadCloser, contains string) {
 	buffer := new(bytes.Buffer)
 	copied, err := io.Copy(buffer, logStream)
 

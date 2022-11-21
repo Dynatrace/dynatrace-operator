@@ -25,10 +25,6 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-const (
-	oneAgentInstallContainerName = "install-oneagent"
-)
-
 func Install(t *testing.T, istioEnabled bool) features.Feature {
 	secretConfig := getSecretConfig(t)
 
@@ -108,7 +104,7 @@ func checkInitContainers(ctx context.Context, t *testing.T, environmentConfig *e
 		}).Stream(ctx)
 
 		require.NoError(t, err)
-		logs.AssertLogContains(t, logStream, "standalone agent init completed")
+		logs.AssertContains(t, logStream, "standalone agent init completed")
 
 		executionQuery := pod.NewExecutionQuery(podItem, sampleapps.Name, "cat /opt/dynatrace/oneagent-paas/log/nginx/ruxitagent_nginx_myapp-__bootstrap_1.0.log")
 		executionResult, err := executionQuery.Execute(environmentConfig.Client().RESTConfig())

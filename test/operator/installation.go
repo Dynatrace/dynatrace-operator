@@ -47,6 +47,20 @@ func InstallForOpenshift() features.Func {
 	return manifests.InstallFromFile("../../config/deploy/openshift/openshift.yaml")
 }
 
+const (
+	manifestsWithCsi    = "../../config/deploy/kubernetes/kubernetes-all.yaml"
+	manifestsWithoutCsi = "../../config/deploy/kubernetes/kubernetes.yaml"
+)
+
+func InstallDynatrace(withCsi bool) features.Func {
+	actualManifestPath := manifestsWithoutCsi
+	if withCsi {
+		actualManifestPath = manifestsWithCsi
+	}
+
+	return manifests.InstallFromFile(actualManifestPath)
+}
+
 func WaitForDeployment() features.Func {
 	return deployment.WaitFor("dynatrace-operator", "dynatrace")
 }
