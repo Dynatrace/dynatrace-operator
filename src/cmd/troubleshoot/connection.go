@@ -9,26 +9,24 @@ import (
 	"github.com/pkg/errors"
 )
 
-func checkDTClusterConnection(troubleshootCtx *troubleshootContext) error {
+func checkDtClusterConnection(results ChecksResults, troubleshootCtx *troubleshootContext) error {
 	log = newTroubleshootLogger("[dtcluster ] ")
 
-	logNewTestf("checking if tenant is accessible ...")
+	logNewCheckf("checking if tenant is accessible ...")
 
-	tests := []troubleshootFunc{
-		checkConnection,
-	}
+	checks := getConnectionChecks()
 
-	for _, test := range tests {
-		err := test(troubleshootCtx)
-
-		if err != nil {
-			logErrorf(err.Error())
-			return errors.New("tenant isn't  accessible")
-		}
+	err := runChecks(results, troubleshootCtx, checks)
+	if err != nil {
+		return errors.Wrap(err, "tenant isn't  accessible")
 	}
 
 	logOkf("tenant is accessible")
 	return nil
+}
+
+func getConnectionChecks() []*Check {
+	return []*Check{{Do: checkConnection}}
 }
 
 func checkConnection(troubleshootCtx *troubleshootContext) error {
@@ -46,12 +44,12 @@ func checkConnection(troubleshootCtx *troubleshootContext) error {
 		Build()
 
 	if err != nil {
-		return errorWithMessagef(err, "failed to build DynatraceAPI client")
+		return errors.Wrap(err, "failed to build DynatraceAPI client")
 	}
 
 	_, err = dtc.GetLatestAgentVersion(dtclient.OsUnix, dtclient.InstallerTypeDefault)
 	if err != nil {
-		return errorWithMessagef(err, "failed to connect to DynatraceAPI")
+		return errors.Wrap(err, "failed to connect to DynatraceAPI")
 	}
 	return nil
 }
