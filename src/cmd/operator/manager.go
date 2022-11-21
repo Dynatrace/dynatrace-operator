@@ -27,14 +27,16 @@ const (
 	livezEndpointName    = "livez"
 )
 
-type bootstrapManagerProvider struct{}
+type bootstrapManagerProvider struct {
+	managerBuilder
+}
 
 func NewBootstrapManagerProvider() cmdManager.Provider {
 	return bootstrapManagerProvider{}
 }
 
 func (provider bootstrapManagerProvider) CreateManager(namespace string, config *rest.Config) (manager.Manager, error) {
-	controlManager, err := ctrl.NewManager(config, ctrl.Options{
+	controlManager, err := provider.getManager(config, ctrl.Options{
 		Scheme:                 scheme.Scheme,
 		Namespace:              namespace,
 		HealthProbeBindAddress: healthProbeBindAddress,
@@ -59,6 +61,7 @@ func (provider bootstrapManagerProvider) CreateManager(namespace string, config 
 }
 
 type operatorManagerProvider struct {
+	managerBuilder
 	deployedViaOlm bool
 }
 
@@ -69,7 +72,7 @@ func NewOperatorManagerProvider(deployedViaOlm bool) cmdManager.Provider {
 }
 
 func (provider operatorManagerProvider) CreateManager(namespace string, cfg *rest.Config) (manager.Manager, error) {
-	mgr, err := ctrl.NewManager(cfg, provider.createOptions(namespace))
+	mgr, err := provider.getManager(cfg, provider.createOptions(namespace))
 
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -123,4 +126,22 @@ func (provider operatorManagerProvider) createOptions(namespace string) ctrl.Opt
 		HealthProbeBindAddress:     healthProbeBindAddress,
 		LivenessEndpointName:       livenessEndpointName,
 	}
+}
+
+// managerBuilder is used for testing the createManager functions in the providers
+type managerBuilder struct {
+	mgr manager.Manager
+}
+
+func (builder *managerBuilder) getManager(config *rest.Config, options manager.Options) (manager.Manager, error) {
+	var err error
+	if builder.mgr == nil {
+		builder.mgr, err = ctrl.NewManager(config, options)
+	}
+
+	return builder.mgr, err
+}
+
+func (builder *managerBuilder) setManager(mgr manager.Manager) {
+	builder.mgr = mgr
 }
