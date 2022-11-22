@@ -30,6 +30,13 @@ func (query DynakubeQuery) Get(objectKey client.ObjectKey) (dynatracev1beta1.Dyn
 	return dynakube, errors.WithStack(err)
 }
 
+func (query DynakubeQuery) List() (dynatracev1beta1.DynaKubeList, error) {
+	var dynakubes dynatracev1beta1.DynaKubeList
+	err := query.kubeReader.List(query.context(), &dynakubes, client.InNamespace(query.namespace))
+
+	return dynakubes, errors.WithStack(err)
+}
+
 func (query DynakubeQuery) WithContext(ctx context.Context) DynakubeQuery {
 	query.ctx = ctx
 

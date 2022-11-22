@@ -31,6 +31,16 @@ func NewChecksResults() ChecksResults {
 	return ChecksResults{check2Result: map[*Check]Result{}}
 }
 
+func (checkResults ChecksResults) resetResults(keepChecks []*Check) map[*Check]Result {
+	keptResults := map[*Check]Result{}
+
+	for _, check := range keepChecks {
+		keptResults[check] = checkResults.check2Result[check]
+	}
+
+	return keptResults
+}
+
 func (checkResults ChecksResults) set(check *Check, result Result) {
 	checkResults.check2Result[check] = result
 }
@@ -40,6 +50,15 @@ func (checkResults ChecksResults) failedPrerequisites(check *Check) []*Check {
 		return checkResults.check2Result[check] == FAILED
 	}
 	return functional.Filter(check.Prerequisites, isFailed)
+}
+
+func (checkResults ChecksResults) hasErrors() bool {
+	for _, result := range checkResults.check2Result {
+		if result == FAILED {
+			return true
+		}
+	}
+	return false
 }
 
 func runChecks(results ChecksResults, troubleshootCtx *troubleshootContext, checks []*Check) error {
