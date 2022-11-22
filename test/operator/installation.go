@@ -2,6 +2,8 @@ package operator
 
 import (
 	"os"
+	"net/url"
+	"path"
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/deployment"
@@ -49,28 +51,33 @@ func InstallForOpenshift() features.Func {
 }
 
 const (
-	manifestsWithCsi    = "../../config/deploy/kubernetes/kubernetes-all.yaml"
-	manifestsWithoutCsi = "../../config/deploy/kubernetes/kubernetes.yaml"
+	localManifestsDir = "../../config/deploy/kubernetes/"
+	csiManifest       = "kubernetes-csi.yaml"
+	operatorManifest  = "kubernetes.yaml"
 )
 
 func InstallOperatorFromSource(withCsi bool) features.Func {
-	actualManifestPath := manifestsWithoutCsi
+	paths := []string{path.Join(localManifestsDir, operatorManifest)}
+
 	if withCsi {
-		actualManifestPath = manifestsWithCsi
+		paths = append(paths, path.Join(localManifestsDir, csiManifest))
 	}
 
-	return manifests.InstallFromLocalFile(actualManifestPath)
+	return manifests.InstallFromLocalFiles(paths)
 }
 
 func InstallOperatorFromGithub(releaseTag string, withCsi bool) features.Func {
-	manifestsUrl := fmt.Sprintf("https://github.com/Dynatrace/dynatrace-operator/releases/download/%s/", releaseTag)
+	const dynatraceOperatorGithubDownloadUrl = "https://github.com/Dynatrace/dynatrace-operator/releases/download/"
+
+	operatorManifestsUrl, _ := url.JoinPath(dynatraceOperatorGithubDownloadUrl, releaseTag, operatorManifest)
+	csiManifestsUrl, _ := url.JoinPath(dynatraceOperatorGithubDownloadUrl, releaseTag, csiManifest)
+
+	manifestsUrls := []string{operatorManifestsUrl}
 	if withCsi {
-		manifestsUrl += "/kubernetes.yaml"
-	} else {
-		manifestsUrl += "/kubernetes-all.yaml"
+		manifestsUrls = append(manifestsUrls, csiManifestsUrl)
 	}
 
-	return manifests.InstallFromUrl(manifestsUrl)
+	return manifests.InstallFromUrls(manifestsUrls)
 }
 
 func WaitForDeployment() features.Func {

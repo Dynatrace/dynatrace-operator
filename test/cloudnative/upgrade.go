@@ -13,13 +13,23 @@ import (
 )
 
 func Upgrade(t *testing.T) features.Feature {
-	secretConfig := getSecretConfig(t)
-
 	defaultInstallation := features.New("default installation")
 
+	installReleasedOperatorAndDeploySampleApps(t, defaultInstallation, "v0.9.1")
+
+	// update to snapshot
+	setup.InstallDynatraceFromSource(defaultInstallation, nil)
+	setup.AssessOperatorDeployment(defaultInstallation)
+	assessOneAgentsAreRunning(defaultInstallation)
+
+	return defaultInstallation.Feature()
+}
+
+func installReleasedOperatorAndDeploySampleApps(t *testing.T, defaultInstallation *features.FeatureBuilder, releaseTag string) {
 	defaultInstallation.Setup(manifests.InstallFromLocalFile("../testdata/cloudnative/test-namespace.yaml"))
 
-	setup.InstallDynatraceFromGithub(defaultInstallation, &secretConfig, "v0.9.1")
+	secretConfig := getSecretConfig(t)
+	setup.InstallDynatraceFromGithub(defaultInstallation, &secretConfig, releaseTag)
 	setup.AssessOperatorDeployment(defaultInstallation)
 
 	setup.DeploySampleApps(defaultInstallation, "../testdata/cloudnative/sample-deployment.yaml")
@@ -33,11 +43,4 @@ func Upgrade(t *testing.T) features.Feature {
 
 	setup.AssessDynakubeStartup(defaultInstallation)
 	assessOneAgentsAreRunning(defaultInstallation)
-
-	// update to snapshot
-	setup.InstallDynatraceFromSource(defaultInstallation, nil)
-	setup.AssessOperatorDeployment(defaultInstallation)
-	assessOneAgentsAreRunning(defaultInstallation)
-
-	return defaultInstallation.Feature()
 }

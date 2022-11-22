@@ -35,33 +35,51 @@ func httpGetResponseReader(url string) (io.Reader, error) {
 	return bytes.NewReader(manifestBytes), nil
 }
 
-func InstallFromUrl(yamlUrl string) features.Func {
+func InstallFromUrls(yamlUrls []string) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		manifestReader, err := httpGetResponseReader(yamlUrl)
-		require.NoError(t, err, "could not fetch release yaml")
+		for _, yamlUrl := range yamlUrls {
+			installFromSingleUrl(t, ctx, environmentConfig, yamlUrl)
+		}
 
-		resources := environmentConfig.Client().Resources()
-		require.NoError(t, decoder.DecodeEach(ctx, manifestReader, decoder.IgnoreErrorHandler(decoder.CreateHandler(resources), func(err error) bool {
-			// Ignore if the resource already exists
-			return k8serrors.IsAlreadyExists(err)
-		})))
+		return ctx
+	}
+}
 
+func installFromSingleUrl(t *testing.T, ctx context.Context, environmentConfig *envconf.Config, yamlUrl string) {
+	manifestReader, err := httpGetResponseReader(yamlUrl)
+	require.NoError(t, err, "could not fetch release yaml")
+
+	resources := environmentConfig.Client().Resources()
+	require.NoError(t, decoder.DecodeEach(ctx, manifestReader, decoder.IgnoreErrorHandler(decoder.CreateHandler(resources), func(err error) bool {
+		// Ignore if the resource already exists
+		return k8serrors.IsAlreadyExists(err)
+	})))
+}
+
+func InstallFromLocalFiles(paths []string) features.Func {
+	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+		for _, path := range paths {
+			installFromSingleFile(t, ctx, environmentConfig, path)
+		}
 		return ctx
 	}
 }
 
 func InstallFromLocalFile(path string) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		manifest, err := os.Open(path)
-		defer func() { require.NoError(t, manifest.Close()) }()
-		require.NoError(t, err)
-
-		resources := environmentConfig.Client().Resources()
-		require.NoError(t, decoder.DecodeEach(ctx, manifest, decoder.IgnoreErrorHandler(decoder.CreateHandler(resources), func(err error) bool {
-			// Ignore if the resource already exists
-			return k8serrors.IsAlreadyExists(err)
-		})))
-
+		installFromSingleFile(t, ctx, environmentConfig, path)
 		return ctx
 	}
+}
+
+func installFromSingleFile(t *testing.T, ctx context.Context, environmentConfig *envconf.Config, path string) {
+	manifest, err := os.Open(path)
+	defer func() { require.NoError(t, manifest.Close()) }()
+	require.NoError(t, err)
+
+	resources := environmentConfig.Client().Resources()
+	require.NoError(t, decoder.DecodeEach(ctx, manifest, decoder.IgnoreErrorHandler(decoder.CreateHandler(resources), func(err error) bool {
+		// Ignore if the resource already exists
+		return k8serrors.IsAlreadyExists(err)
+	})))
 }
