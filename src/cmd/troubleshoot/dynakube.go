@@ -3,22 +3,18 @@ package troubleshoot
 import (
 	"fmt"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook/validation"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
 	pullSecretFieldValue = "top-secret"
 
-	dynakubeCrdExistsCheckName             = "checkDynakubeCrdExists"
 	getSelectedDynakubeCheckName           = "getSelectedDynakube"
 	apiUrlCheckName                        = "apiUrl"
 	apiSecretCheckName                     = "apiSecret"
@@ -29,36 +25,29 @@ const (
 )
 
 func checkDynakube(results ChecksResults, troubleshootCtx *troubleshootContext) error {
-	log = newTroubleshootLogger("[dynakube  ] ")
+	log = newSubTestLogger("dynakube")
 
-	logNewCheckf("checking if '%s:%s' Dynakube is configured correctly", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
+	logNewCheckf("checking if '%s:%s' Dynakube is configured correctly", troubleshootCtx.namespaceName, troubleshootCtx.dynakube.Name)
 
 	err := runChecks(results, troubleshootCtx, getDynakubeChecks())
 	if err != nil {
 		return errors.Wrapf(err, "'%s:%s' Dynakube isn't valid. %s",
-			troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName, dynakubeNotValidMessage())
+			troubleshootCtx.namespaceName, troubleshootCtx.dynakube.Name, dynakubeNotValidMessage())
 	}
 
-	logOkf("'%s:%s' Dynakube is valid", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
+	logOkf("'%s:%s' Dynakube is valid", troubleshootCtx.namespaceName, troubleshootCtx.dynakube.Name)
 	return nil
 }
 
 func getDynakubeChecks() []*Check {
-	dynakubeCrdExistsCheck := &Check{
-		Name: dynakubeCrdExistsCheckName,
-		Do:   checkDynakubeCrdExists,
-	}
-
 	selectedDynakubeCheck := &Check{
-		Name:          getSelectedDynakubeCheckName,
-		Do:            getSelectedDynakube,
-		Prerequisites: []*Check{dynakubeCrdExistsCheck},
+		Name: getSelectedDynakubeCheckName,
+		Do:   getSelectedDynakube,
 	}
 
 	apiUrlCheck := &Check{
-		Name:          apiUrlCheckName,
-		Do:            checkApiUrl,
-		Prerequisites: []*Check{dynakubeCrdExistsCheck},
+		Name: apiUrlCheckName,
+		Do:   checkApiUrl,
 	}
 
 	apiSecretCheck := &Check{
@@ -91,7 +80,7 @@ func getDynakubeChecks() []*Check {
 		Prerequisites: []*Check{selectedDynakubeCheck},
 	}
 
-	return []*Check{dynakubeCrdExistsCheck, selectedDynakubeCheck, apiUrlCheck, apiSecretCheck, ifDynatraceApiSecretHasApiTokenCheck, pullSecretExistsCheck, pullSecretHasRequiredTokensCheck, proxySecretIfItExistsCheck}
+	return []*Check{selectedDynakubeCheck, apiUrlCheck, apiSecretCheck, ifDynatraceApiSecretHasApiTokenCheck, pullSecretExistsCheck, pullSecretHasRequiredTokensCheck, proxySecretIfItExistsCheck}
 }
 
 func dynakubeNotValidMessage() string {
@@ -100,30 +89,9 @@ func dynakubeNotValidMessage() string {
 		namespaceFlagName, dynakubeFlagName)
 }
 
-func checkDynakubeCrdExists(troubleshootCtx *troubleshootContext) error {
-	dynakubeList := &dynatracev1beta1.DynaKubeList{}
-	err := troubleshootCtx.apiReader.List(troubleshootCtx.context, dynakubeList, &client.ListOptions{Namespace: troubleshootCtx.namespaceName})
-
-	if err != nil {
-		return determineDynakubeError(err)
-	}
-
-	logInfof("CRD for Dynakube exists")
-	return nil
-}
-
-func determineDynakubeError(err error) error {
-	if runtime.IsNotRegisteredError(err) {
-		err = errors.Wrap(err, "CRD for Dynakube missing")
-	} else {
-		err = errors.Wrap(err, "could not list Dynakube")
-	}
-	return err
-}
-
 func getSelectedDynakube(troubleshootCtx *troubleshootContext) error {
 	query := kubeobjects.NewDynakubeQuery(troubleshootCtx.apiReader, troubleshootCtx.namespaceName).WithContext(troubleshootCtx.context)
-	dynakube, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.dynakubeName})
+	dynakube, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.dynakube.Name})
 
 	if err != nil {
 		return determineSelectedDynakubeError(troubleshootCtx, err)
@@ -131,7 +99,7 @@ func getSelectedDynakube(troubleshootCtx *troubleshootContext) error {
 
 	troubleshootCtx.dynakube = dynakube
 
-	logInfof("using '%s:%s' Dynakube", troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
+	logInfof("using '%s:%s' Dynakube", troubleshootCtx.namespaceName, troubleshootCtx.dynakube.Name)
 	return nil
 }
 
@@ -139,10 +107,10 @@ func determineSelectedDynakubeError(troubleshootCtx *troubleshootContext, err er
 	if k8serrors.IsNotFound(err) {
 		err = errors.Wrapf(err,
 			"selected '%s:%s' Dynakube does not exist",
-			troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
+			troubleshootCtx.namespaceName, troubleshootCtx.dynakube.Name)
 	} else {
 		err = errors.Wrapf(err, "could not get Dynakube '%s:%s'",
-			troubleshootCtx.namespaceName, troubleshootCtx.dynakubeName)
+			troubleshootCtx.namespaceName, troubleshootCtx.dynakube.Name)
 	}
 	return err
 }

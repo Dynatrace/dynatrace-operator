@@ -24,22 +24,31 @@ type Check struct {
 }
 
 type ChecksResults struct {
-	check2Result map[*Check]Result
+	checkResultMap map[*Check]Result
 }
 
 func NewChecksResults() ChecksResults {
-	return ChecksResults{check2Result: map[*Check]Result{}}
+	return ChecksResults{checkResultMap: map[*Check]Result{}}
 }
 
 func (checkResults ChecksResults) set(check *Check, result Result) {
-	checkResults.check2Result[check] = result
+	checkResults.checkResultMap[check] = result
 }
 
 func (checkResults ChecksResults) failedPrerequisites(check *Check) []*Check {
 	isFailed := func(check *Check) bool {
-		return checkResults.check2Result[check] == FAILED
+		return checkResults.checkResultMap[check] == FAILED
 	}
 	return functional.Filter(check.Prerequisites, isFailed)
+}
+
+func (checkResults ChecksResults) hasErrors() bool {
+	for _, result := range checkResults.checkResultMap {
+		if result == FAILED {
+			return true
+		}
+	}
+	return false
 }
 
 func runChecks(results ChecksResults, troubleshootCtx *troubleshootContext, checks []*Check) error {

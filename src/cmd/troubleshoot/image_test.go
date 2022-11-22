@@ -89,7 +89,6 @@ func TestOneAgentImagePullable(t *testing.T) {
 	troubleshootCtx := troubleshootContext{
 		context:       context.TODO(),
 		namespaceName: testNamespace,
-		dynakubeName:  testDynakube,
 		pullSecret:    *secret,
 		httpClient:    dockerServer.Client(),
 	}
@@ -181,7 +180,6 @@ func TestOneAgentCustomImagePullable(t *testing.T) {
 	troubleshootCtx := troubleshootContext{
 		httpClient:    dockerServer.Client(),
 		namespaceName: testNamespace,
-		dynakubeName:  testDynakube,
 		context:       context.TODO(),
 		pullSecret:    *secret,
 	}
@@ -307,7 +305,6 @@ func TestOneAgentImageNotPullable(t *testing.T) {
 	troubleshootCtx := troubleshootContext{
 		context:       context.TODO(),
 		namespaceName: testNamespace,
-		dynakubeName:  testDynakube,
 		pullSecret:    *secret,
 		httpClient:    dockerServer.Client(),
 	}
@@ -421,7 +418,6 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 		context:       context.TODO(),
 		httpClient:    dockerServer.Client(),
 		namespaceName: testNamespace,
-		dynakubeName:  testDynakube,
 		pullSecret:    *secret,
 	}
 
@@ -561,7 +557,6 @@ func TestActiveGateImagePullable(t *testing.T) {
 		context:       context.TODO(),
 		httpClient:    dockerServer.Client(),
 		namespaceName: testNamespace,
-		dynakubeName:  testDynakube,
 		pullSecret:    *secret,
 	}
 
@@ -630,7 +625,6 @@ func TestActiveGateImageNotPullable(t *testing.T) {
 		context:       context.TODO(),
 		httpClient:    dockerServer.Client(),
 		namespaceName: testNamespace,
-		dynakubeName:  testDynakube,
 		pullSecret:    *secret,
 	}
 
@@ -695,7 +689,6 @@ func TestImagePullablePullSecret(t *testing.T) {
 	t.Run("valid pull secret", func(t *testing.T) {
 		troubleshootcontext := troubleshootContext{
 			namespaceName: testNamespace,
-			dynakubeName:  testDynakube,
 			pullSecret:    *testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend(dtpullsecret.DockerConfigJson, pullSecretFieldValue).build(),
 		}
 		secret, err := getPullSecretToken(&troubleshootcontext)
@@ -706,7 +699,6 @@ func TestImagePullablePullSecret(t *testing.T) {
 	t.Run("invalid pull secret", func(t *testing.T) {
 		troubleshootcontext := troubleshootContext{
 			namespaceName: testNamespace,
-			dynakubeName:  testDynakube,
 			pullSecret:    *testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend("invalidToken", pullSecretFieldValue).build(),
 		}
 		secret, err := getPullSecretToken(&troubleshootcontext)

@@ -26,7 +26,7 @@ type Auths struct {
 }
 
 func verifyAllImagesAvailable(troubleshootCtx *troubleshootContext) error {
-	log = newTroubleshootLogger("[imagepull ] ")
+	log = newSubTestLogger("imagepull")
 
 	if troubleshootCtx.dynakube.NeedsOneAgent() {
 		verifyImageIsAvailable(troubleshootCtx, componentOneAgent, false)
