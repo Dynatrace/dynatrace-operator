@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/e2e-framework/klient/decoder"
@@ -24,7 +25,7 @@ func httpGetResponseReader(url string) (io.Reader, error) {
 	defer response.Body.Close()
 
 	if response.StatusCode != http.StatusOK {
-		panic("Response status code was not 200(StatusOK): " + strconv.Itoa(response.StatusCode))
+		return nil, errors.New("Response status code was not 200(StatusOK): " + strconv.Itoa(response.StatusCode))
 	}
 
 	manifestBytes, err := io.ReadAll(response.Body)
