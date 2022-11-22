@@ -20,6 +20,8 @@ func Upgrade(t *testing.T) features.Feature {
 	// update to snapshot
 	setup.InstallDynatraceFromSource(defaultInstallation, nil)
 	setup.AssessOperatorDeployment(defaultInstallation)
+
+	assessSampleAppsRestartHalf(defaultInstallation)
 	assessOneAgentsAreRunning(defaultInstallation)
 
 	return defaultInstallation.Feature()
@@ -42,5 +44,6 @@ func installReleasedOperatorAndDeploySampleApps(t *testing.T, defaultInstallatio
 	defaultInstallation.Assess("dynakube applied", dynakube.Apply(dynakubeBuilder.Build()))
 
 	setup.AssessDynakubeStartup(defaultInstallation)
+	assessSampleAppsRestart(defaultInstallation)
 	assessOneAgentsAreRunning(defaultInstallation)
 }

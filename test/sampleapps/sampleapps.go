@@ -32,6 +32,28 @@ func Install(ctx context.Context, t *testing.T, config *envconf.Config) context.
 	return ctx
 }
 
+func RestartHalf(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
+	var sampleDeployment appsv1.Deployment
+	var pods corev1.PodList
+	resource := config.Client().Resources()
+
+	require.NoError(t, resource.WithNamespace(Namespace).List(ctx, &pods))
+
+	for i, podItem := range pods.Items {
+		if i%2 == 1 {
+			continue // skip odd-indexed pods
+		}
+		require.NoError(t, resource.Delete(ctx, &podItem))
+	}
+
+	require.NoError(t, resource.Get(ctx, Name, Namespace, &sampleDeployment))
+	require.NoError(t, wait.For(
+		conditions.New(resource).DeploymentConditionMatch(
+			&sampleDeployment, appsv1.DeploymentAvailable, corev1.ConditionTrue)))
+
+	return ctx
+}
+
 func Restart(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
 	var sampleDeployment appsv1.Deployment
 	var pods corev1.PodList

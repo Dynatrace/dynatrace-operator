@@ -50,6 +50,8 @@ func Install(t *testing.T, istioEnabled bool) features.Feature {
 	defaultInstallation.Assess("dynakube applied", dynakube.Apply(dynakubeBuilder.Build()))
 
 	setup.AssessDynakubeStartup(defaultInstallation)
+
+	assessSampleAppsRestart(defaultInstallation)
 	assessOneAgentsAreRunning(defaultInstallation)
 
 	if istioEnabled {
@@ -59,8 +61,15 @@ func Install(t *testing.T, istioEnabled bool) features.Feature {
 	return defaultInstallation.Feature()
 }
 
-func assessOneAgentsAreRunning(builder *features.FeatureBuilder) {
+func assessSampleAppsRestart(builder *features.FeatureBuilder) {
 	builder.Assess("restart sample apps", sampleapps.Restart)
+}
+
+func assessSampleAppsRestartHalf(builder *features.FeatureBuilder) {
+	builder.Assess("restart half of sample apps", sampleapps.RestartHalf)
+}
+
+func assessOneAgentsAreRunning(builder *features.FeatureBuilder) {
 	builder.Assess("sample apps have working init containers", checkInitContainers)
 	builder.Assess("osAgent can connect", oneagent.OSAgentCanConnect())
 }

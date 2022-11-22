@@ -77,6 +77,7 @@ func CodeModules(t *testing.T, istioEnabled bool) features.Feature {
 	codeModulesInjection.Assess("install dynakube", dynakube.Apply(dynakubeBuilder.Build()))
 
 	setup.AssessDynakubeStartup(codeModulesInjection)
+	assessSampleAppsRestart(codeModulesInjection)
 	assessOneAgentsAreRunning(codeModulesInjection)
 
 	if istioEnabled {
