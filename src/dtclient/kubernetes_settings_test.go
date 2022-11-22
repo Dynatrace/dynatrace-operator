@@ -292,53 +292,43 @@ func mockHandleEntitiesRequest(request *http.Request, writer http.ResponseWriter
 }
 
 func mockHandleSettingsRequest(request *http.Request, writer http.ResponseWriter, totalCount int, objectId string) {
-	if request.Method == http.MethodGet {
+	switch {
+	case request.Method == http.MethodGet:
 		if request.Form.Get("schemaIds") != "builtin:cloud.kubernetes" || request.Form.Get("scopes") == "" {
 			writer.WriteHeader(http.StatusBadRequest)
 			return
 		}
-
 		settingsGetResponse, err := json.Marshal(GetSettingsResponse{TotalCount: totalCount})
-
 		if err != nil {
 			return
 		}
-
 		writer.WriteHeader(http.StatusOK)
 		writer.Write(settingsGetResponse)
-	} else if request.Method == http.MethodPost {
+	case request.Method == http.MethodPost:
 		if request.Body == nil {
 			writer.WriteHeader(http.StatusBadRequest)
 			return
 		}
-
 		body, err := ioutil.ReadAll(request.Body)
-
 		if err != nil {
 			return
 		}
-
 		var parsedBody []postKubernetesSettingsBody
 		err = json.Unmarshal(body, &parsedBody)
-
 		if err != nil {
 			return
 		}
-
 		var settingsPostResponse []postSettingsResponse
 		settingsPostResponse = append(settingsPostResponse, postSettingsResponse{
 			ObjectId: objectId,
 		})
-
 		settingsPostResponseBytes, err := json.Marshal(settingsPostResponse)
-
 		if err != nil {
 			return
 		}
-
 		writer.WriteHeader(http.StatusOK)
 		writer.Write(settingsPostResponseBytes)
-	} else {
+	default:
 		writeError(writer, http.StatusMethodNotAllowed)
 	}
 

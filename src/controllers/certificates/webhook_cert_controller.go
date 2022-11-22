@@ -154,7 +154,7 @@ func (controller *WebhookCertificateController) getMutatingWebhookConfiguration(
 		return nil, err
 	}
 
-	if len(mutatingWebhook.Webhooks) <= 0 {
+	if len(mutatingWebhook.Webhooks) == 0 {
 		return nil, errors.New("mutating webhook configuration has no registered webhooks")
 	}
 	return &mutatingWebhook, nil
@@ -170,7 +170,7 @@ func (controller *WebhookCertificateController) getValidatingWebhookConfiguratio
 		return nil, err
 	}
 
-	if len(mutatingWebhook.Webhooks) <= 0 {
+	if len(mutatingWebhook.Webhooks) == 0 {
 		return nil, errors.New("validating webhook configuration has no registered webhooks")
 	}
 	return &mutatingWebhook, nil

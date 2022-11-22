@@ -84,19 +84,19 @@ type Client interface {
 // Known OS values.
 const (
 	OsUnix = "unix"
-	//Commented for linter, left for further reference
-	//OsWindows = "windows"
-	//OsAix     = "aix"
-	//OsSolaris = "solaris"
+	// Commented for linter, left for further reference
+	// OsWindows = "windows"
+	// OsAix     = "aix"
+	// OsSolaris = "solaris"
 )
 
 // Known installer types.
 const (
 	InstallerTypeDefault = "default"
-	//Commented for linter, left for further reference
-	//InstallerTypeUnattended = "default-unattended"
+	// Commented for linter, left for further reference
+	// InstallerTypeUnattended = "default-unattended"
 	InstallerTypePaaS = "paas"
-	//InstallerTypePaasSh     = "paas-sh"
+	// InstallerTypePaasSh     = "paas-sh"
 )
 
 // Known token scopes

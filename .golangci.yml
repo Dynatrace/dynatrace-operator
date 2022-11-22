@@ -32,6 +32,7 @@ linters:
   - dogsled
   - errorlint
   - goconst
+  - gocritic
 
 service:
   golangci-lint-version: 1.49.x # use the fixed version to not introduce new linters unexpectedly

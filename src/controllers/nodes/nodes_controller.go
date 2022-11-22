@@ -113,7 +113,7 @@ func (controller *NodesController) Reconcile(ctx context.Context, request reconc
 			return reconcile.Result{}, err
 		}
 
-		//Handle unschedulable Nodes, if they have a OneAgent instance
+		// Handle unschedulable Nodes, if they have a OneAgent instance
 		if controller.isUnschedulable(&node) {
 			cachedNodeData := CachedNodeInfo{
 				cachedNode: cacheEntry,

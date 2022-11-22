@@ -118,7 +118,9 @@ func (statefulSetBuilder StatefulSetBuilder) addTemplateSpec(sts *appsv1.Statefu
 }
 
 func buildTolerations(capability capability.Capability) []corev1.Toleration {
-	tolerations := append(capability.Properties().Tolerations, kubeobjects.TolerationForAmd()...)
+	tolerations := make([]corev1.Toleration, len(capability.Properties().Tolerations))
+	copy(tolerations, capability.Properties().Tolerations)
+	tolerations = append(tolerations, kubeobjects.TolerationForAmd()...)
 	return tolerations
 }
 

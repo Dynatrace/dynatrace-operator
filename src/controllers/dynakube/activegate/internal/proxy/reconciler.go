@@ -87,13 +87,15 @@ func (r *Reconciler) ensureDeleted(ctx context.Context, dynakube *dynatracev1bet
 func (r *Reconciler) createProxyMap(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) (map[string][]byte, error) {
 	var err error
 	proxyUrl := ""
-	if dynakube.Spec.Proxy != nil && dynakube.Spec.Proxy.ValueFrom != "" {
+
+	switch {
+	case dynakube.Spec.Proxy != nil && dynakube.Spec.Proxy.ValueFrom != "":
 		if proxyUrl, err = r.proxyUrlFromUserSecret(ctx, dynakube); err != nil {
 			return nil, err
 		}
-	} else if dynakube.Spec.Proxy != nil && len(dynakube.Spec.Proxy.Value) > 0 {
+	case dynakube.Spec.Proxy != nil && len(dynakube.Spec.Proxy.Value) > 0:
 		proxyUrl = proxyUrlFromSpec(dynakube)
-	} else {
+	default:
 		// the parsed-proxy secret is expected to exist and the entrypoint.sh script handles empty values properly
 		return map[string][]byte{
 			proxyHostField:     []byte(""),

@@ -19,10 +19,7 @@ func InstallFromFile(path string) features.Func {
 		require.NoError(t, err)
 
 		resources := environmentConfig.Client().Resources()
-		require.NoError(t, decoder.DecodeEach(ctx, kubernetesManifest, decoder.IgnoreErrorHandler(decoder.CreateHandler(resources), func(err error) bool {
-			// Ignore if the resource already exists
-			return k8serrors.IsAlreadyExists(err)
-		})))
+		require.NoError(t, decoder.DecodeEach(ctx, kubernetesManifest, decoder.IgnoreErrorHandler(decoder.CreateHandler(resources), k8serrors.IsAlreadyExists)))
 
 		return ctx
 	}

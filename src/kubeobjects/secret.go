@@ -92,7 +92,7 @@ func NewTokens(secret *corev1.Secret) (*Tokens, error) {
 		return nil, errors.WithStack(err)
 	}
 
-	//Errors would have been caught by verifySecret
+	// Errors would have been caught by verifySecret
 	apiToken, _ = ExtractToken(secret, dtclient.DynatraceApiToken)
 	paasToken, err = ExtractToken(secret, dtclient.DynatracePaasToken)
 	if err != nil {

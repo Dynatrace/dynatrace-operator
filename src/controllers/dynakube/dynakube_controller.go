@@ -311,11 +311,12 @@ func (controller *DynakubeController) reconcileOneAgent(ctx context.Context, dyn
 }
 
 func getDeploymentType(dynakube *dynatracev1beta1.DynaKube) string {
-	if dynakube.HostMonitoringMode() {
+	switch {
+	case dynakube.HostMonitoringMode():
 		return daemonset.DeploymentTypeHostMonitoring
-	} else if dynakube.CloudNativeFullstackMode() {
+	case dynakube.CloudNativeFullstackMode():
 		return daemonset.DeploymentTypeCloudNative
-	} else if dynakube.ClassicFullStackMode() {
+	case dynakube.ClassicFullStackMode():
 		return daemonset.DeploymentTypeFullStack
 	}
 

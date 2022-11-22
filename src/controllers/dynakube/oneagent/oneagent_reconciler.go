@@ -161,11 +161,12 @@ func (r *OneAgentReconciler) newDaemonSetForCR(dynakube *dynatracev1beta1.DynaKu
 	var ds *appsv1.DaemonSet
 	var err error
 
-	if r.feature == daemonset.DeploymentTypeFullStack {
+	switch {
+	case r.feature == daemonset.DeploymentTypeFullStack:
 		ds, err = daemonset.NewClassicFullStack(dynakube, clusterID).BuildDaemonSet()
-	} else if r.feature == daemonset.DeploymentTypeHostMonitoring {
+	case r.feature == daemonset.DeploymentTypeHostMonitoring:
 		ds, err = daemonset.NewHostMonitoring(dynakube, clusterID).BuildDaemonSet()
-	} else if r.feature == daemonset.DeploymentTypeCloudNative {
+	case r.feature == daemonset.DeploymentTypeCloudNative:
 		ds, err = daemonset.NewCloudNativeFullStack(dynakube, clusterID).BuildDaemonSet()
 	}
 	if err != nil {
@@ -189,7 +190,7 @@ func (r *OneAgentReconciler) reconcileInstanceStatuses(ctx context.Context, dyna
 
 	instanceStatuses, err := getInstanceStatuses(pods)
 	if err != nil {
-		if instanceStatuses == nil || len(instanceStatuses) <= 0 {
+		if len(instanceStatuses) == 0 {
 			return err
 		}
 	}

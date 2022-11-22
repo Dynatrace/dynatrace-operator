@@ -6,15 +6,16 @@ import (
 )
 
 func (installer UrlInstaller) downloadOneAgentFromUrl(tmpFile afero.File) error {
-	if installer.props.Url != "" {
+	switch {
+	case installer.props.Url != "":
 		if err := installer.downloadOneAgentViaInstallerUrl(tmpFile); err != nil {
 			return errors.WithStack(err)
 		}
-	} else if installer.props.TargetVersion == VersionLatest {
+	case installer.props.TargetVersion == VersionLatest:
 		if err := installer.downloadLatestOneAgent(tmpFile); err != nil {
 			return errors.WithStack(err)
 		}
-	} else {
+	default:
 		if err := installer.downloadOneAgentWithVersion(tmpFile); err != nil {
 			return err
 		}
