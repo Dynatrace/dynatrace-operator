@@ -44,7 +44,7 @@ func (extractor OneAgentExtractor) ExtractGzip(sourceFilePath, targetDir string)
 func extractFilesFromGzip(fs afero.Fs, targetDir string, reader *tar.Reader) error {
 	for {
 		header, err := reader.Next()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			return nil
 		} else if err != nil {
 			return errors.WithStack(err)

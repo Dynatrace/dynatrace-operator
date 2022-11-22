@@ -35,7 +35,7 @@ func TestMakeRequest(t *testing.T) {
 		defer resp.Body.Close()
 	}
 	{
-		resp, err := dc.makeRequest("%s/v1/deployment/installer/agent/connectioninfo", dynatraceApiToken) //nolint
+		resp, err := dc.makeRequest("%s/v1/deployment/installer/agent/connectioninfo", dynatraceApiToken) //nolint:bodyclose
 		assert.Error(t, err, "unsupported protocol scheme")
 		assert.Nil(t, resp)
 	}
