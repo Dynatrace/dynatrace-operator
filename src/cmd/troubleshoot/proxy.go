@@ -10,7 +10,7 @@ import (
 )
 
 func checkProxySettings(troubleshootCtx *troubleshootContext) error {
-	return checkProxySettingsWithLog(troubleshootCtx, newTroubleshootLogger("[proxy     ] "))
+	return checkProxySettingsWithLog(troubleshootCtx, newSubTestLogger("proxy"))
 }
 
 func checkProxySettingsWithLog(troubleshootCtx *troubleshootContext, logger logr.Logger) error {
