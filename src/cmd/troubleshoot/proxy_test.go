@@ -22,7 +22,6 @@ func TestCheckProxySettings(t *testing.T) {
 		troubleshootCtx := troubleshootContext{
 			context:       context.TODO(),
 			namespaceName: testNamespace,
-			dynakubeName:  testDynakube,
 		}
 
 		logOutput := runProxyTestWithTestLogger(t.Name(), func(logger logr.Logger) {
@@ -42,7 +41,6 @@ func TestCheckProxySettings(t *testing.T) {
 		troubleshootCtx := troubleshootContext{
 			context:       context.TODO(),
 			namespaceName: testNamespace,
-			dynakubeName:  testDynakube,
 		}
 
 		logOutput := runProxyTestWithTestLogger(t.Name(), func(logger logr.Logger) {
@@ -62,7 +60,6 @@ func TestCheckProxySettings(t *testing.T) {
 		troubleshootCtx := troubleshootContext{
 			context:       context.TODO(),
 			namespaceName: testNamespace,
-			dynakubeName:  testDynakube,
 		}
 
 		logOutput := runProxyTestWithTestLogger(t.Name(), func(logger logr.Logger) {
@@ -83,7 +80,6 @@ func TestCheckProxySettings(t *testing.T) {
 		troubleshootCtx := troubleshootContext{
 			context:       context.TODO(),
 			namespaceName: testNamespace,
-			dynakubeName:  testDynakube,
 		}
 
 		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
@@ -121,7 +117,6 @@ func TestCheckProxySettings(t *testing.T) {
 			context:       context.TODO(),
 			apiReader:     clt,
 			namespaceName: testNamespace,
-			dynakubeName:  testDynakube,
 		}
 
 		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
@@ -145,7 +140,6 @@ func TestCheckProxySettings(t *testing.T) {
 		troubleshootCtx := troubleshootContext{
 			context:       context.TODO(),
 			namespaceName: testNamespace,
-			dynakubeName:  testDynakube,
 		}
 
 		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).

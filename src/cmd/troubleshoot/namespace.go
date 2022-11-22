@@ -7,7 +7,7 @@ import (
 )
 
 func checkNamespace(troubleshootCtx *troubleshootContext) error {
-	log = newTroubleshootLogger("[namespace ] ")
+	log = newTroubleshootLogger("namespace")
 
 	logNewCheckf("checking if namespace '%s' exists ...", troubleshootCtx.namespaceName)
 

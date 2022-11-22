@@ -23,36 +23,57 @@ const (
 	colorYellow = "\033[33m"
 	colorReset  = "\033[0m"
 
-	levelNewCheck = 1
-	levelSuccess  = 2
-	levelWarning  = 3
-	levelError    = 4
+	levelNewCheck    = 1
+	levelSuccess     = 2
+	levelWarning     = 3
+	levelError       = 4
+	levelNewDynakube = 5
 )
 
 type troubleshootLogger struct {
 	logger logr.Logger
 }
 
-func newTroubleshootLogger(testName string) logr.Logger {
-	return newTroubleshootLoggerToWriter(testName, os.Stdout)
+type subTestLogger struct {
+	troubleshootLogger
 }
 
-func newTroubleshootLoggerToWriter(testName string, out io.Writer) logr.Logger {
+func newRawTroubleshootLogger(testName string, out io.Writer) troubleshootLogger {
 	config := zap.NewProductionEncoderConfig()
 	config.TimeKey = ""
 	config.LevelKey = ""
 	config.NameKey = "name"
 	config.EncodeTime = zapcore.ISO8601TimeEncoder
 
-	return logr.New(
-		troubleshootLogger{
-			logger: ctrlzap.New(ctrlzap.WriteTo(out), ctrlzap.Encoder(zapcore.NewConsoleEncoder(config))).WithName(testName),
-		},
-	)
+	testName = fmt.Sprintf("[%-10s] ", testName)
+
+	return troubleshootLogger{
+		logger: ctrlzap.New(ctrlzap.WriteTo(out), ctrlzap.Encoder(zapcore.NewConsoleEncoder(config))).WithName(testName),
+	}
+}
+
+func newTroubleshootLoggerToWriter(testName string, out io.Writer) logr.Logger {
+	return logr.New(newRawTroubleshootLogger(testName, out))
+}
+
+func newSubTestLoggerToWriter(testName string, out io.Writer) logr.Logger {
+	return logr.New(subTestLogger{newRawTroubleshootLogger(testName, out)})
+}
+
+func newTroubleshootLogger(testName string) logr.Logger {
+	return newTroubleshootLoggerToWriter(testName, os.Stdout)
+}
+
+func newSubTestLogger(testName string) logr.Logger {
+	return newSubTestLoggerToWriter(testName, os.Stdout)
 }
 
 func logNewCheckf(format string, v ...interface{}) {
 	log.V(levelNewCheck).Info(fmt.Sprintf(format, v...))
+}
+
+func logNewDynakubef(format string, v ...interface{}) {
+	log.V(levelNewDynakube).Info(fmt.Sprintf(format, v...))
 }
 
 func logInfof(format string, v ...interface{}) {
@@ -73,20 +94,33 @@ func logErrorf(format string, v ...interface{}) {
 
 func (dtl troubleshootLogger) Init(_ logr.RuntimeInfo) {}
 
+func (dtl subTestLogger) Info(level int, message string, keysAndValues ...interface{}) {
+	message = addPrefixes(level, message)
+	message = " |" + message
+	dtl.logger.Info(message, keysAndValues...)
+}
+
 func (dtl troubleshootLogger) Info(level int, message string, keysAndValues ...interface{}) {
+	message = addPrefixes(level, message)
+	dtl.logger.Info(message, keysAndValues...)
+}
+
+func addPrefixes(level int, message string) string {
 	switch level {
 	case levelNewCheck:
-		dtl.logger.Info(prefixNewTest+message, keysAndValues...)
+		return prefixNewTest + message
 	case levelSuccess:
-		dtl.logger.Info(withSuccessPrefix(message), keysAndValues...)
+		return withSuccessPrefix(message)
 	case levelWarning:
-		dtl.logger.Info(withWarningPrefix(message), keysAndValues...)
+		return withWarningPrefix(message)
 	case levelError:
 		// Info is used for errors to suppress printing a stacktrace
 		// Printing a stacktrace would confuse people in thinking the troubleshooter crashed
-		dtl.logger.Info(withErrorPrefix(message), keysAndValues...)
+		return withErrorPrefix(message)
+	case levelNewDynakube:
+		return message
 	default:
-		dtl.logger.Info(prefixInfo+message, keysAndValues...)
+		return prefixInfo + message
 	}
 }
 
