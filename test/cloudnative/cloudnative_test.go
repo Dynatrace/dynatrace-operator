@@ -32,6 +32,7 @@ func TestMain(m *testing.M) {
 
 func TestCloudNative(t *testing.T) {
 	testEnvironment.Test(t, Install(t, false))
+	testEnvironment.Test(t, Upgrade(t))
 	testEnvironment.Test(t, CodeModules(t, false))
 	testEnvironment.Test(t, NetworkProblems(t))
 }
