@@ -33,37 +33,36 @@ func Install(ctx context.Context, t *testing.T, config *envconf.Config) context.
 }
 
 func RestartHalf(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
-	var sampleDeployment appsv1.Deployment
-	var pods corev1.PodList
-	resource := config.Client().Resources()
-
-	require.NoError(t, resource.WithNamespace(Namespace).List(ctx, &pods))
-
-	for i, podItem := range pods.Items {
-		if i%2 == 1 {
-			continue // skip odd-indexed pods
+	deleteFn := func(t *testing.T, ctx context.Context, pods corev1.PodList, resource *resources.Resources) {
+		for i, podItem := range pods.Items {
+			if i%2 == 1 {
+				continue // skip odd-indexed pods
+			}
+			require.NoError(t, resource.Delete(ctx, &podItem))
 		}
-		require.NoError(t, resource.Delete(ctx, &podItem))
 	}
 
-	require.NoError(t, resource.Get(ctx, Name, Namespace, &sampleDeployment))
-	require.NoError(t, wait.For(
-		conditions.New(resource).DeploymentConditionMatch(
-			&sampleDeployment, appsv1.DeploymentAvailable, corev1.ConditionTrue)))
-
-	return ctx
+	return doRestart(ctx, t, config, deleteFn)
 }
 
 func Restart(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
+	deleteFn := func(t *testing.T, ctx context.Context, pods corev1.PodList, resource *resources.Resources) {
+		for _, podItem := range pods.Items {
+			require.NoError(t, resource.Delete(ctx, &podItem))
+		}
+	}
+
+	return doRestart(ctx, t, config, deleteFn)
+}
+
+func doRestart(ctx context.Context, t *testing.T, config *envconf.Config, deleteFn func(t *testing.T, ctx context.Context, pods corev1.PodList, resource *resources.Resources)) context.Context {
 	var sampleDeployment appsv1.Deployment
 	var pods corev1.PodList
 	resource := config.Client().Resources()
 
 	require.NoError(t, resource.WithNamespace(Namespace).List(ctx, &pods))
 
-	for _, podItem := range pods.Items {
-		require.NoError(t, resource.Delete(ctx, &podItem))
-	}
+	deleteFn(t, ctx, pods, resource)
 
 	require.NoError(t, resource.Get(ctx, Name, Namespace, &sampleDeployment))
 	require.NoError(t, wait.For(
@@ -73,7 +72,7 @@ func Restart(ctx context.Context, t *testing.T, config *envconf.Config) context.
 	return ctx
 }
 
-func Get(t *testing.T, ctx context.Context, resource *resources.Resources) corev1.PodList {
+func Get(ctx context.Context, t *testing.T, resource *resources.Resources) corev1.PodList {
 	var pods corev1.PodList
 
 	require.NoError(t, resource.WithNamespace(Namespace).List(ctx, &pods))
