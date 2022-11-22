@@ -109,15 +109,19 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		}
 
 		results := NewChecksResults()
-		_ = runChecks(results, &troubleshootCtx, getDynakubeUnrelatedChecks()) // ignore error to avoid polluting pretty logs
+		err = runChecks(results, &troubleshootCtx, getPrerequisiteChecks()) // ignore error to avoid polluting pretty logs
 		resetLogger()
+		if err != nil {
+			logErrorf("prerequisite checks failed, aborting")
+			return nil
+		}
 
 		dynakubes, err := getDynakubes(troubleshootCtx, dynakubeFlagValue)
 		if err != nil {
 			return nil
 		}
 
-		runChecksForAllDynakubes(results, getDynakubeSpecificChecks(results, getDynakubeUnrelatedChecks()), dynakubes, apiReader)
+		runChecksForAllDynakubes(results, getDynakubeSpecificChecks(results), dynakubes, apiReader)
 
 		return nil
 	}
@@ -125,7 +129,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 
 func runChecksForAllDynakubes(results ChecksResults, checks []*Check, dynakubes []dynatracev1beta1.DynaKube, apiReader client.Reader) {
 	for _, dynakube := range dynakubes {
-		results.checkResultMap = results.resetResults(getDynakubeUnrelatedChecks())
+		results.checkResultMap = map[*Check]Result{}
 		logNewDynakubef(dynakube.Name)
 
 		troubleshootCtx := troubleshootContext{
@@ -136,7 +140,7 @@ func runChecksForAllDynakubes(results ChecksResults, checks []*Check, dynakubes 
 			dynakube:      dynakube,
 		}
 
-		_ = runChecks(results, &troubleshootCtx, getDynakubeSpecificChecks(results, checks)) // ignore error to avoid polluting pretty logs
+		_ = runChecks(results, &troubleshootCtx, checks) // ignore error to avoid polluting pretty logs
 		resetLogger()
 		if !results.hasErrors() {
 			logOkf("'%s' - all checks passed", dynakube.Name)
@@ -144,7 +148,7 @@ func runChecksForAllDynakubes(results ChecksResults, checks []*Check, dynakubes 
 	}
 }
 
-func getDynakubeUnrelatedChecks() []*Check {
+func getPrerequisiteChecks() []*Check {
 	namespaceCheck := &Check{
 		Name: namespaceCheckName,
 		Do:   checkNamespace,
@@ -156,30 +160,29 @@ func getDynakubeUnrelatedChecks() []*Check {
 	return []*Check{namespaceCheck, crdCheck}
 }
 
-func getDynakubeSpecificChecks(results ChecksResults, globalPrerequisites []*Check) []*Check {
+func getDynakubeSpecificChecks(results ChecksResults) []*Check {
 	dynakubeCheck := &Check{
 		Name: dynakubeCheckName,
 		Do: func(troubleshootCtx *troubleshootContext) error {
 			return checkDynakube(results, troubleshootCtx)
 		},
-		Prerequisites: globalPrerequisites,
 	}
 	dtClusterConnectionCheck := &Check{
 		Name: dtClusterConnectionCheckName,
 		Do: func(troubleshootCtx *troubleshootContext) error {
 			return checkDtClusterConnection(results, troubleshootCtx)
 		},
-		Prerequisites: append(globalPrerequisites, dynakubeCheck),
+		Prerequisites: []*Check{dynakubeCheck},
 	}
 	imagePullableCheck := &Check{
 		Name:          imagePullableCheckName,
 		Do:            verifyAllImagesAvailable,
-		Prerequisites: append(globalPrerequisites, dynakubeCheck),
+		Prerequisites: []*Check{dynakubeCheck},
 	}
 	proxySettingsCheck := &Check{
 		Name:          proxySettingsCheckName,
 		Do:            checkProxySettings,
-		Prerequisites: append(globalPrerequisites, dynakubeCheck),
+		Prerequisites: []*Check{dynakubeCheck},
 	}
 	return []*Check{dynakubeCheck, dtClusterConnectionCheck, imagePullableCheck, proxySettingsCheck}
 }

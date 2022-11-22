@@ -31,16 +31,6 @@ func NewChecksResults() ChecksResults {
 	return ChecksResults{checkResultMap: map[*Check]Result{}}
 }
 
-func (checkResults ChecksResults) resetResults(keepChecks []*Check) map[*Check]Result {
-	keptResults := map[*Check]Result{}
-
-	for _, check := range keepChecks {
-		keptResults[check] = checkResults.checkResultMap[check]
-	}
-
-	return keptResults
-}
-
 func (checkResults ChecksResults) set(check *Check, result Result) {
 	checkResults.checkResultMap[check] = result
 }
