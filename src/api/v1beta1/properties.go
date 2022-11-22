@@ -21,6 +21,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/src/api"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -387,7 +388,7 @@ func (dk *DynaKube) OneAgentImage() string {
 		return ""
 	}
 
-	tag := "latest"
+	tag := api.LatestTag
 	if version := dk.Version(); version != "" {
 		truncatedVersion := truncateBuildDate(version)
 		tag = truncatedVersion
@@ -504,7 +505,7 @@ func splitArg(arg string) (key, value string) {
 
 func getRawImageTag(imageURI string) string {
 	if !strings.Contains(imageURI, ":") {
-		return "latest"
+		return api.LatestTag
 	}
 	splitURI := strings.Split(imageURI, ":")
 	return splitURI[len(splitURI)-1]

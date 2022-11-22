@@ -38,7 +38,7 @@ func defaultAuths(server string) Auths {
 }
 
 func setupDockerMocker(handleUrls []string) (*httptest.Server, *corev1.Secret, string, error) {
-	dockerServer := httptest.NewTLSServer(testDockerServerHandler("GET", handleUrls))
+	dockerServer := httptest.NewTLSServer(testDockerServerHandler(http.MethodGet, handleUrls))
 
 	url, err := url.Parse(dockerServer.URL)
 	if err != nil {

@@ -47,7 +47,7 @@ const (
 // makeRequest does an HTTP request by formatting the URL from the given arguments and returns the response.
 // The response body must be closed by the caller when no longer used.
 func (dtc *dynatraceClient) makeRequest(url string, tokenType tokenType) (*http.Response, error) {
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, errors.WithMessage(err, "error initializing http request")
 	}

@@ -11,6 +11,8 @@ linters-settings:
     disable:
       # Disable checking for copied locks since it causes a lot of annoying false-positives
       - copylocks
+  goconst:
+    ignore-tests: true
 
 linters:
   disable-all: true
@@ -29,6 +31,7 @@ linters:
   - depguard
   - dogsled
   - errorlint
+  - goconst
 
 service:
   golangci-lint-version: 1.49.x # use the fixed version to not introduce new linters unexpectedly

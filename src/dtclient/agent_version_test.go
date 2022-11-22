@@ -291,7 +291,7 @@ func (ipHandler *ipHandler) ServeHTTP(writer http.ResponseWriter, request *http.
 	}
 
 	switch request.Method {
-	case "GET":
+	case http.MethodGet:
 		writer.WriteHeader(http.StatusOK)
 		resp := []byte(agentVersionHostsResponse)
 		if strings.HasSuffix(request.URL.Path, "/latest") {
@@ -310,7 +310,7 @@ func (ipHandler *ipHandler) ServeHTTP(writer http.ResponseWriter, request *http.
 
 func handleLatestAgentVersion(request *http.Request, writer http.ResponseWriter) {
 	switch request.Method {
-	case "GET":
+	case http.MethodGet:
 		writer.WriteHeader(http.StatusOK)
 		out, _ := json.Marshal(map[string]string{"latestAgentVersion": "1.242.0.20220429-180918"})
 		_, _ = writer.Write(out)
@@ -321,7 +321,7 @@ func handleLatestAgentVersion(request *http.Request, writer http.ResponseWriter)
 
 func handleAvailableAgentVersions(request *http.Request, writer http.ResponseWriter) {
 	switch request.Method {
-	case "GET":
+	case http.MethodGet:
 		writer.WriteHeader(http.StatusOK)
 		out, _ := json.Marshal(
 			map[string][]string{
