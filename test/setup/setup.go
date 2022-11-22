@@ -12,7 +12,7 @@ import (
 )
 
 func DeploySampleApps(builder *features.FeatureBuilder, deploymentPath string) {
-	builder.Setup(manifests.InstallFromLocalFile(deploymentPath))
+	builder.Setup(manifests.InstallFromFile(deploymentPath))
 }
 
 func InstallDynatraceFromSource(builder *features.FeatureBuilder, secretConfig *secrets.Secret) {

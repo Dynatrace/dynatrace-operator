@@ -32,10 +32,10 @@ var ProxySpec = &v1beta1.DynaKubeProxy{
 
 func InstallProxy(builder *features.FeatureBuilder, proxySpec *v1beta1.DynaKubeProxy) {
 	if proxySpec != nil {
-		builder.Assess("install proxy", manifests.InstallFromLocalFile("../testdata/proxy/proxy.yaml"))
+		builder.Assess("install proxy", manifests.InstallFromFile("../testdata/proxy/proxy.yaml"))
 		builder.Assess("proxy started", deployment.WaitFor(ProxyDeployment, ProxyNamespace))
 
-		builder.Assess("query webhook via proxy", manifests.InstallFromLocalFile("../testdata/activegate/curl-pod-webhook-via-proxy.yaml"))
+		builder.Assess("query webhook via proxy", manifests.InstallFromFile("../testdata/activegate/curl-pod-webhook-via-proxy.yaml"))
 		builder.Assess("query is completed", WaitForCurlProxyPod(CurlPodProxy, dynakube.Namespace))
 		builder.Assess("proxy is running", CheckProxyService())
 	}

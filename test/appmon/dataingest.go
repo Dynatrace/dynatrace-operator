@@ -57,7 +57,7 @@ func dataIngest(t *testing.T) features.Feature {
 	dataIngestFeature.Setup(secrets.ApplyDefault(tenantSecret))
 	dataIngestFeature.Setup(dynakube.Apply(dataIngestDynakube))
 	dataIngestFeature.Setup(dynakube.WaitForDynakubePhase(dataIngestDynakube))
-	dataIngestFeature.Setup(manifests.InstallFromLocalFile(sampleApps))
+	dataIngestFeature.Setup(manifests.InstallFromFile(sampleApps))
 	dataIngestFeature.Setup(deployment.WaitFor("test-deployment", sampleapps.Namespace))
 	dataIngestFeature.Setup(pod.WaitFor("test-pod", sampleapps.Namespace))
 

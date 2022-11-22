@@ -57,9 +57,9 @@ func CodeModules(t *testing.T, istioEnabled bool) features.Feature {
 	codeModulesInjection := features.New("codemodules injection")
 
 	if istioEnabled {
-		codeModulesInjection.Setup(manifests.InstallFromLocalFile("../testdata/cloudnativeistio/test-namespace.yaml"))
+		codeModulesInjection.Setup(manifests.InstallFromFile("../testdata/cloudnativeistio/test-namespace.yaml"))
 	} else {
-		codeModulesInjection.Setup(manifests.InstallFromLocalFile("../testdata/cloudnative/test-namespace.yaml"))
+		codeModulesInjection.Setup(manifests.InstallFromFile("../testdata/cloudnative/test-namespace.yaml"))
 	}
 	setup.InstallDynatraceFromSource(codeModulesInjection, &secretConfigs[0])
 	setup.AssessOperatorDeployment(codeModulesInjection)

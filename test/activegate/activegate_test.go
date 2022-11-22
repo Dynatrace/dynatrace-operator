@@ -161,7 +161,7 @@ func assessActiveGate(builder *features.FeatureBuilder) {
 	builder.Assess("ActiveGate has required containers", checkIfAgHasContainers)
 	builder.Assess("ActiveGate modules are active", checkActiveModules)
 	builder.Assess("ActiveGate containers have mount points", checkMountPoints)
-	builder.Assess("ActiveGate query via AG service", manifests.InstallFromLocalFile("../testdata/activegate/curl-pod.yaml"))
+	builder.Assess("ActiveGate query via AG service", manifests.InstallFromFile("../testdata/activegate/curl-pod.yaml"))
 	builder.Assess("ActiveGate query is completed", pod.WaitFor(curlPod, dynakube.Namespace))
 	builder.Assess("ActiveGate service is running", checkService)
 }

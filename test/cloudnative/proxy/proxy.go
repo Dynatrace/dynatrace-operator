@@ -55,7 +55,7 @@ func WithProxy(t *testing.T, proxySpec *v1beta1.DynaKubeProxy) features.Feature 
 			Build()),
 	)
 	cloudNativeWithProxy.Setup(secrets.ApplyDefault(secretConfig))
-	cloudNativeWithProxy.Setup(manifests.InstallFromLocalFile(kubernetesAllPath))
+	cloudNativeWithProxy.Setup(manifests.InstallFromFile(kubernetesAllPath))
 	setup.AssessOperatorDeployment(cloudNativeWithProxy)
 
 	assesProxy(cloudNativeWithProxy, proxySpec)
@@ -72,10 +72,10 @@ func WithProxy(t *testing.T, proxySpec *v1beta1.DynaKubeProxy) features.Feature 
 	setup.AssessDynakubeStartup(cloudNativeWithProxy)
 
 	cloudNativeWithProxy.Assess("osAgent can connect", oneagent.OSAgentCanConnect())
-	cloudNativeWithProxy.Assess("cut off dynatrace namespace", manifests.InstallFromLocalFile(dynatraceNetworkPolicy))
-	cloudNativeWithProxy.Assess("cut off sample namespace", manifests.InstallFromLocalFile(sampleNamespaceNetworkPolicy))
+	cloudNativeWithProxy.Assess("cut off dynatrace namespace", manifests.InstallFromFile(dynatraceNetworkPolicy))
+	cloudNativeWithProxy.Assess("cut off sample namespace", manifests.InstallFromFile(sampleNamespaceNetworkPolicy))
 	cloudNativeWithProxy.Assess("check env variables of oneagent pods", checkOneAgentEnvVars)
-	cloudNativeWithProxy.Assess("install deployment", manifests.InstallFromLocalFile(sampleAppDeployment))
+	cloudNativeWithProxy.Assess("install deployment", manifests.InstallFromFile(sampleAppDeployment))
 	cloudNativeWithProxy.Assess("check existing init container and env var", checkSampleInitContainerEnvVars)
 
 	return cloudNativeWithProxy.Feature()
@@ -83,10 +83,10 @@ func WithProxy(t *testing.T, proxySpec *v1beta1.DynaKubeProxy) features.Feature 
 
 func assesProxy(builder *features.FeatureBuilder, proxySpec *v1beta1.DynaKubeProxy) {
 	if proxySpec != nil {
-		builder.Assess("install proxy", manifests.InstallFromLocalFile(proxyPath))
+		builder.Assess("install proxy", manifests.InstallFromFile(proxyPath))
 		builder.Assess("proxy started", deployment.WaitFor(proxy.ProxyDeployment, proxy.ProxyNamespace))
 
-		builder.Assess("query webhook via proxy", manifests.InstallFromLocalFile(curlPodPath))
+		builder.Assess("query webhook via proxy", manifests.InstallFromFile(curlPodPath))
 		builder.Assess("query is completed", proxy.WaitForCurlProxyPod(proxy.CurlPodProxy, dynakube.Namespace))
 		builder.Assess("proxy is running", proxy.CheckProxyService())
 	}

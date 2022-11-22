@@ -40,8 +40,8 @@ func NetworkProblems(t *testing.T) features.Feature {
 	require.NoError(t, err)
 
 	createNetworkProblems := features.New("creating network problems")
-	createNetworkProblems.Setup(manifests.InstallFromLocalFile(csiNetworkPolicy))
-	createNetworkProblems.Setup(manifests.InstallFromLocalFile(sampleNSPath))
+	createNetworkProblems.Setup(manifests.InstallFromFile(csiNetworkPolicy))
+	createNetworkProblems.Setup(manifests.InstallFromFile(sampleNSPath))
 	createNetworkProblems.Setup(secrets.ApplyDefault(secretConfigs[0]))
 	createNetworkProblems.Setup(operator.InstallOperatorFromSource(true))
 
@@ -55,7 +55,7 @@ func NetworkProblems(t *testing.T) features.Feature {
 			Build()),
 	)
 	createNetworkProblems.Assess("dynakube phase changes to 'Running'", dynakube.WaitForDynakubePhase(dynakube.NewBuilder().WithDefaultObjectMeta().Build()))
-	createNetworkProblems.Assess("install deployment", manifests.InstallFromLocalFile(deploymentPath))
+	createNetworkProblems.Assess("install deployment", manifests.InstallFromFile(deploymentPath))
 	createNetworkProblems.Assess("start sample apps and injection", sampleapps.Install)
 	createNetworkProblems.Assess("check for dummy volume", checkForDummyVolume)
 	createNetworkProblems.Assess("check pods after sleep", checkPodsAfterSleep)

@@ -28,7 +28,7 @@ func Upgrade(t *testing.T) features.Feature {
 }
 
 func installReleasedOperatorAndDeploySampleApps(t *testing.T, defaultInstallation *features.FeatureBuilder, releaseTag string) {
-	defaultInstallation.Setup(manifests.InstallFromLocalFile("../testdata/cloudnative/test-namespace.yaml"))
+	defaultInstallation.Setup(manifests.InstallFromFile("../testdata/cloudnative/test-namespace.yaml"))
 
 	secretConfig := getSecretConfig(t)
 	setup.InstallDynatraceFromGithub(defaultInstallation, &secretConfig, releaseTag)

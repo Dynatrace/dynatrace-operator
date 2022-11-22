@@ -63,7 +63,7 @@ func InstallOperatorFromSource(withCsi bool) features.Func {
 		paths = append(paths, path.Join(localManifestsDir, csiManifest))
 	}
 
-	return manifests.InstallFromLocalFiles(paths)
+	return manifests.InstallFromFiles(paths)
 }
 
 func InstallOperatorFromGithub(releaseTag string, withCsi bool) features.Func {

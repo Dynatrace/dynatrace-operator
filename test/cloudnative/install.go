@@ -31,9 +31,9 @@ func Install(t *testing.T, istioEnabled bool) features.Feature {
 	defaultInstallation := features.New("default installation")
 
 	if istioEnabled {
-		defaultInstallation.Setup(manifests.InstallFromLocalFile("../testdata/cloudnativeistio/test-namespace.yaml"))
+		defaultInstallation.Setup(manifests.InstallFromFile("../testdata/cloudnativeistio/test-namespace.yaml"))
 	} else {
-		defaultInstallation.Setup(manifests.InstallFromLocalFile("../testdata/cloudnative/test-namespace.yaml"))
+		defaultInstallation.Setup(manifests.InstallFromFile("../testdata/cloudnative/test-namespace.yaml"))
 	}
 	setup.InstallDynatraceFromSource(defaultInstallation, &secretConfig)
 	setup.AssessOperatorDeployment(defaultInstallation)

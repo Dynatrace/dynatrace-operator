@@ -57,7 +57,7 @@ func installFromSingleUrl(t *testing.T, ctx context.Context, environmentConfig *
 	})))
 }
 
-func InstallFromLocalFiles(paths []string) features.Func {
+func InstallFromFiles(paths []string) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		for _, path := range paths {
 			installFromSingleFile(t, ctx, environmentConfig, path)
@@ -66,7 +66,7 @@ func InstallFromLocalFiles(paths []string) features.Func {
 	}
 }
 
-func InstallFromLocalFile(path string) features.Func {
+func InstallFromFile(path string) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		installFromSingleFile(t, ctx, environmentConfig, path)
 		return ctx
