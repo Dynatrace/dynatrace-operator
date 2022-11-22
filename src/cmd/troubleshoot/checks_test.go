@@ -77,6 +77,7 @@ func Test_runChecks(t *testing.T) {
 			failingCheckDependendOnFailingCheck, // should be skipped and error should not be reported
 		}
 		results := NewChecksResults()
+		resetLogger()
 		err := runChecks(results, tsContext, checks)
 		require.Error(t, err)
 

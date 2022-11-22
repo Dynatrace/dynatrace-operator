@@ -125,7 +125,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 
 func runChecksForAllDynakubes(results ChecksResults, checks []*Check, dynakubes []dynatracev1beta1.DynaKube, apiReader client.Reader) {
 	for _, dynakube := range dynakubes {
-		results.check2Result = results.resetResults(getDynakubeUnrelatedChecks())
+		results.checkResultMap = results.resetResults(getDynakubeUnrelatedChecks())
 		logNewDynakubef(dynakube.Name)
 
 		troubleshootCtx := troubleshootContext{
