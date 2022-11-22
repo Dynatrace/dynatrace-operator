@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 
@@ -108,8 +108,9 @@ func (dtc *dynatraceClient) CreateOrUpdateKubernetesSetting(clusterLabel, kubeSy
 	if err != nil {
 		return "", fmt.Errorf("error making post request to dynatrace api: %s", err.Error())
 	}
+	defer res.Body.Close()
 
-	resData, err := ioutil.ReadAll(res.Body)
+	resData, err := io.ReadAll(res.Body)
 	if err != nil {
 		return "", fmt.Errorf("error reading response: %w", err)
 	}
