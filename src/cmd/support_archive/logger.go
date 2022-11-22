@@ -18,13 +18,13 @@ const (
 func registerSupportArchiveLogger(ctx *supportArchiveContext) {
 	if ctx.toStdout {
 		// using stderr because we use stdout to deliver the tarball
-		ctx.log = newSupportArchiveLoggerToWriter(supportArchiveLoggerName, os.Stderr)
+		ctx.log = newSupportArchiveLogger(supportArchiveLoggerName, os.Stderr)
 	} else {
-		ctx.log = newSupportArchiveLoggerToWriter(supportArchiveLoggerName, os.Stdout)
+		ctx.log = newSupportArchiveLogger(supportArchiveLoggerName, os.Stdout)
 	}
 }
 
-func newSupportArchiveLoggerToWriter(name string, out io.Writer) logr.Logger {
+func newSupportArchiveLogger(name string, out io.Writer) logr.Logger {
 	config := zap.NewProductionEncoderConfig()
 	config.TimeKey = ""
 	config.LevelKey = ""

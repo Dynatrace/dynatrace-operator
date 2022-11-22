@@ -23,7 +23,7 @@ func TestVersionCollector(t *testing.T) {
 		ctx:           context.TODO(),
 		namespaceName: "",
 		toStdout:      false,
-		log:           newSupportArchiveLoggerToWriter(t.Name(), &logBuffer),
+		log:           newSupportArchiveLogger(t.Name(), &logBuffer),
 	}
 
 	require.NoError(t, collectOperatorVersion(&ctx, &tarball))
