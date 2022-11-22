@@ -25,7 +25,7 @@ func install(t *testing.T) features.Feature {
 	installClassicFullStack := features.New("install classic fullstack")
 	secretConfig := getSecretConfig(t)
 
-	setup.InstallDynatraceFromSource(installClassicFullStack, secretConfig)
+	setup.InstallDynatraceFromSource(installClassicFullStack, &secretConfig)
 	setup.DeploySampleApps(installClassicFullStack, "../testdata/classic-fullstack/sample-deployment.yaml")
 
 	installClassicFullStack.Assess("operator started", operator.WaitForDeployment())
