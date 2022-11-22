@@ -13,7 +13,7 @@ import (
 
 func InstallAndDeploy(builder *features.FeatureBuilder, secretConfig secrets.Secret, deploymentPath string) {
 	builder.Setup(secrets.ApplyDefault(secretConfig))
-	builder.Setup(operator.InstallAllForKubernetes())
+	builder.Setup(operator.InstallAll())
 	builder.Setup(manifests.InstallFromFile(deploymentPath))
 }
 

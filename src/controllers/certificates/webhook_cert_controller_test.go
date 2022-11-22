@@ -30,7 +30,7 @@ const (
 )
 
 func TestReconcileCertificate_Create(t *testing.T) {
-	clt := prepareFakeClient(false, false)
+	clt := newFakeClientBuilder().WithCRD().Build()
 	controller, request := prepareController(clt)
 
 	res, err := controller.Reconcile(context.TODO(), request)
@@ -56,8 +56,17 @@ func TestReconcileCertificate_Create(t *testing.T) {
 	verifyCertificates(t, controller, secret, clt, false)
 }
 
+func TestReconcileCertificate_Create_NoCRD(t *testing.T) {
+	clt := newFakeClientBuilder().Build()
+	controller, request := prepareController(clt)
+
+	res, err := controller.Reconcile(context.TODO(), request)
+	assert.Error(t, err)
+	assert.Equal(t, res, reconcile.Result{})
+}
+
 func TestReconcileCertificate_Update(t *testing.T) {
-	clt := prepareFakeClient(true, false)
+	clt := newFakeClientBuilder().WithInvalidCertificateSecret().WithCRD().Build()
 	controller, request := prepareController(clt)
 
 	res, err := controller.Reconcile(context.TODO(), request)
@@ -84,7 +93,7 @@ func TestReconcileCertificate_Update(t *testing.T) {
 }
 
 func TestReconcileCertificate_ExistingSecretWithValidCertificate(t *testing.T) {
-	clt := prepareFakeClient(true, true)
+	clt := newFakeClientBuilder().WithValidCertificateSecret().WithCRD().Build()
 	controller, request := prepareController(clt)
 
 	res, err := controller.Reconcile(context.TODO(), request)
@@ -189,59 +198,6 @@ func TestReconcile(t *testing.T) {
 	})
 }
 
-func prepareFakeClient(withSecret bool, generateValidSecret bool) client.Client {
-	objs := []client.Object{
-		&admissionregistrationv1.MutatingWebhookConfiguration{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: webhook.DeploymentName,
-			},
-			Webhooks: []admissionregistrationv1.MutatingWebhook{
-				{
-					ClientConfig: admissionregistrationv1.WebhookClientConfig{},
-				},
-				{
-					ClientConfig: admissionregistrationv1.WebhookClientConfig{},
-				},
-			},
-		},
-		&admissionregistrationv1.ValidatingWebhookConfiguration{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: webhook.DeploymentName,
-			},
-			Webhooks: []admissionregistrationv1.ValidatingWebhook{
-				{
-					ClientConfig: admissionregistrationv1.WebhookClientConfig{},
-				},
-			},
-		},
-		&apiv1.CustomResourceDefinition{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: crdName,
-			},
-			Spec: apiv1.CustomResourceDefinitionSpec{
-				Conversion: &apiv1.CustomResourceConversion{
-					Strategy: strategyWebhook,
-					Webhook: &apiv1.WebhookConversion{
-						ClientConfig: &apiv1.WebhookClientConfig{},
-					},
-				},
-			},
-		},
-	}
-	if withSecret {
-		certData := createInvalidTestCertData(nil)
-		if generateValidSecret {
-			certData = createValidTestCertData(nil)
-		}
-
-		objs = append(objs,
-			createTestSecret(nil, certData),
-		)
-	}
-
-	return fake.NewClient(objs...)
-}
-
 func createInvalidTestCertData(_ *testing.T) map[string][]byte {
 	return map[string][]byte{
 		RootKey:    {testBytes},
@@ -328,4 +284,78 @@ func verifyCertificates(t *testing.T, rec *WebhookCertificateController, secret 
 	require.NoError(t, err)
 	assert.Len(t, validatingWebhookConfig.Webhooks, 1)
 	testWebhookClientConfig(t, &validatingWebhookConfig.Webhooks[0].ClientConfig, secret.Data, isUpdate)
+}
+
+type fakeClientBuilder struct {
+	objs []client.Object
+}
+
+func newFakeClientBuilder() *fakeClientBuilder {
+	objs := []client.Object{
+		&admissionregistrationv1.MutatingWebhookConfiguration{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: webhook.DeploymentName,
+			},
+			Webhooks: []admissionregistrationv1.MutatingWebhook{
+				{
+					ClientConfig: admissionregistrationv1.WebhookClientConfig{},
+				},
+				{
+					ClientConfig: admissionregistrationv1.WebhookClientConfig{},
+				},
+			},
+		},
+		&admissionregistrationv1.ValidatingWebhookConfiguration{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: webhook.DeploymentName,
+			},
+			Webhooks: []admissionregistrationv1.ValidatingWebhook{
+				{
+					ClientConfig: admissionregistrationv1.WebhookClientConfig{},
+				},
+			},
+		},
+	}
+
+	return &fakeClientBuilder{objs: objs}
+}
+
+func (builder *fakeClientBuilder) WithValidCertificateSecret() *fakeClientBuilder {
+	builder.objs = append(builder.objs,
+		createTestSecret(nil, createValidTestCertData(nil)),
+	)
+
+	return builder
+}
+
+func (builder *fakeClientBuilder) WithInvalidCertificateSecret() *fakeClientBuilder {
+	builder.objs = append(builder.objs,
+		createTestSecret(nil, createInvalidTestCertData(nil)),
+	)
+
+	return builder
+}
+
+func (builder *fakeClientBuilder) WithCRD() *fakeClientBuilder {
+	builder.objs = append(builder.objs,
+		&apiv1.CustomResourceDefinition{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: crdName,
+			},
+			Spec: apiv1.CustomResourceDefinitionSpec{
+				Conversion: &apiv1.CustomResourceConversion{
+					Strategy: strategyWebhook,
+					Webhook: &apiv1.WebhookConversion{
+						ClientConfig: &apiv1.WebhookClientConfig{},
+					},
+				},
+			},
+		},
+	)
+
+	return builder
+}
+
+func (builder *fakeClientBuilder) Build() client.Client {
+	return fake.NewClient(builder.objs...)
 }
