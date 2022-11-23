@@ -29,7 +29,7 @@ const (
 	envStatsdStartupArgsPath     = "StatsdExecArgsPath"
 
 	dataSourceStartupArgsMountPoint = "/mnt/dsexecargs"
-	dataSourceAuthTokenMountPoint   = "/var/lib/dynatrace/remotepluginmodule/agent/runtime/datasources"
+	dataSourceAuthTokenMountPoint   = "/var/lib/dynatrace/remotepluginmodule/agent/runtime/datasources" //nolint:gosec
 	dataSourceMetadataMountPoint    = "/mnt/dsmetadata"
 	statsdMetadataMountPoint        = "/opt/dynatrace/remotepluginmodule/agent/datasources/statsd"
 )

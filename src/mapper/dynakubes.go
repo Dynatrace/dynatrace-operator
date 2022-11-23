@@ -56,6 +56,7 @@ func (dm DynakubeMapper) UnmapFromDynaKube() error {
 	}
 	for _, ns := range nsList {
 		delete(ns.Labels, dtwebhook.InjectionInstanceLabel)
+		ns := ns
 		setUpdatedViaDynakubeAnnotation(&ns)
 		if err := dm.client.Update(dm.ctx, &ns); err != nil {
 			return errors.WithMessagef(err, "failed to remove label %s from namespace %s", dtwebhook.InjectionInstanceLabel, ns.Name)

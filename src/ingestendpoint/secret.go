@@ -21,9 +21,9 @@ import (
 )
 
 const (
-	MetricsUrlSecretField   = "DT_METRICS_INGEST_URL"
-	MetricsTokenSecretField = "DT_METRICS_INGEST_API_TOKEN"
-	StatsdUrlSecretField    = "DT_STATSD_INGEST_URL"
+	MetricsUrlSecretField   = "DT_METRICS_INGEST_URL"       //nolint:gosec
+	MetricsTokenSecretField = "DT_METRICS_INGEST_API_TOKEN" //nolint:gosec
+	StatsdUrlSecretField    = "DT_STATSD_INGEST_URL"        //nolint:gosec
 	configFile              = "endpoint.properties"
 )
 

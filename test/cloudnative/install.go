@@ -95,7 +95,7 @@ func checkInitContainers(ctx context.Context, t *testing.T, environmentConfig *e
 
 		for _, initContainer := range podItem.Spec.InitContainers {
 			if initContainer.Name == oneAgentInstallContainerName {
-				oneAgentInstallContainer = &initContainer
+				oneAgentInstallContainer = &initContainer //nolint:gosec // loop breaks after assignment, memory aliasing is not a problem
 				break
 			}
 		}

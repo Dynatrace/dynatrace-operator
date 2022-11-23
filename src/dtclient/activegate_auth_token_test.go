@@ -6,8 +6,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const activeGateAuthTokenUrl = "/v2/activeGateTokens"
-const dynakubeName = "dynakube"
+const (
+	activeGateAuthTokenUrl = "/v2/activeGateTokens" //nolint:gosec
+	dynakubeName           = "dynakube"
+)
 
 var activeGateAuthTokenResponse = &ActiveGateAuthTokenInfo{
 	TokenId: "test",

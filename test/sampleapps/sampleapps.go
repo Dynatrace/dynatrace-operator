@@ -40,6 +40,7 @@ func Restart(ctx context.Context, t *testing.T, config *envconf.Config) context.
 	require.NoError(t, resource.WithNamespace(Namespace).List(ctx, &pods))
 
 	for _, podItem := range pods.Items {
+		podItem := podItem
 		require.NoError(t, resource.Delete(ctx, &podItem))
 	}
 

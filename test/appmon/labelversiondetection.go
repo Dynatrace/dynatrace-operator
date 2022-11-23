@@ -163,6 +163,8 @@ func assertBuildLabels(namespaceName string, expectedBuildLabels map[string]buil
 		pods := pod.List(t, ctx, resources, namespaceName)
 
 		for _, podItem := range pods.Items {
+			podItem := podItem
+
 			require.NotNil(t, podItem)
 			require.NotNil(t, podItem.Spec)
 

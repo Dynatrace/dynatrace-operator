@@ -13,6 +13,11 @@ linters-settings:
       - copylocks
   goconst:
     ignore-tests: true
+  gosec:
+    excludes:
+      - G305 # File traversal when extracting zip/tar archive
+
+
 
 linters:
   disable-all: true
@@ -34,6 +39,16 @@ linters:
   - goconst
   - gocritic
   - gofmt
+  - gosec
 
 service:
   golangci-lint-version: 1.49.x # use the fixed version to not introduce new linters unexpectedly
+
+issues:
+  exclude-rules:
+    - linters:
+        - gosec
+      path: src/webhook/validation/proxy_url_test.go
+    - linters:
+        - gosec
+      path: src/ingestendpoint/secret_test.go

@@ -1,7 +1,7 @@
 package dtclient
 
 import (
-	"crypto/md5"
+	"crypto/md5" //nolint:gosec
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -136,7 +136,7 @@ func (dtc *dynatraceClient) makeRequestForBinary(url string, token tokenType, wr
 		return "", errors.Errorf("dynatrace server error %d: %s", errorResponse.ErrorMessage.Code, errorResponse.ErrorMessage.Message)
 	}
 
-	hash := md5.New()
+	hash := md5.New() //nolint:gosec
 	_, err = io.Copy(writer, io.TeeReader(resp.Body, hash))
 	return hex.EncodeToString(hash.Sum(nil)), err
 }

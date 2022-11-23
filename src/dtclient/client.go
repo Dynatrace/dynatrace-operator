@@ -156,7 +156,7 @@ func SkipCertificateValidation(skip bool) Option {
 		if skip {
 			t := c.httpClient.Transport.(*http.Transport)
 			if t.TLSClientConfig == nil {
-				t.TLSClientConfig = &tls.Config{}
+				t.TLSClientConfig = &tls.Config{} //nolint:gosec // fix is expected to be delivered soon
 			}
 			t.TLSClientConfig.InsecureSkipVerify = true
 		}
@@ -184,7 +184,7 @@ func Certs(certs []byte) Option {
 
 		t := c.httpClient.Transport.(*http.Transport)
 		if t.TLSClientConfig == nil {
-			t.TLSClientConfig = &tls.Config{}
+			t.TLSClientConfig = &tls.Config{} //nolint:gosec // fix is expected to be delivered soon
 		}
 		t.TLSClientConfig.RootCAs = rootCAs
 	}

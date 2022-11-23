@@ -152,7 +152,7 @@ func (reconciler *IstioReconciler) reconcileIstioCreateConfigurations(instance *
 	configurationUpdated := false
 	for _, commHost := range communicationHosts {
 		name := BuildNameForEndpoint(instance.GetName(), commHost.Protocol, commHost.Host, commHost.Port)
-
+		commHost := commHost
 		istioConfig := &istioConfiguration{
 			instance:   instance,
 			reconciler: reconciler,

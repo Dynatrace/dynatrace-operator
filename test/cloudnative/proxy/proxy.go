@@ -33,7 +33,7 @@ const (
 	sampleNamespace              = "test-namespace-1"
 	dtProxy                      = "DT_PROXY"
 	sampleAppDeployment          = "../../testdata/cloudnative/sample-deployment.yaml"
-	secretPath                   = "../../testdata/secrets/single-tenant.yaml"
+	secretPath                   = "../../testdata/secrets/single-tenant.yaml" //nolint:gosec
 	kubernetesAllPath            = "../../../config/deploy/kubernetes/kubernetes-all.yaml"
 	curlPodPath                  = "../../testdata/activegate/curl-pod-webhook-via-proxy.yaml"
 	proxyPath                    = "../../testdata/proxy/proxy.yaml"

@@ -33,7 +33,7 @@ const (
 	PullSecretSuffix             = "-pull-secret"
 	ActiveGateTenantSecretSuffix = "-activegate-tenant-secret"
 	OneAgentTenantSecretSuffix   = "-oneagent-tenant-secret"
-	AuthTokenSecretSuffix        = "-activegate-authtoken-secret"
+	AuthTokenSecretSuffix        = "-activegate-authtoken-secret" //nolint:gosec
 	PodNameOsAgent               = "oneagent"
 
 	defaultActiveGateImage = "/linux/activegate:latest"

@@ -18,7 +18,7 @@ const (
 	getSelectedDynakubeCheckName           = "getSelectedDynakube"
 	apiUrlCheckName                        = "apiUrl"
 	apiSecretCheckName                     = "apiSecret"
-	dynatraceApiSecretHasApiTokenCheckName = "dynatraceApiSecretHasApiToken"
+	dynatraceApiSecretHasApiTokenCheckName = "dynatraceApiSecretHasApiToken" //nolint:gosec
 	pullSecretExistsCheckName              = "pullSecretExists"
 	pullSecretHasRequiredTokensCheckName   = "pullSecretHasRequiredTokens"
 	proxySecretCheckName                   = "proxySecret"
