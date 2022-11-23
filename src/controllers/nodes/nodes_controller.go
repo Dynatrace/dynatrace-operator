@@ -25,7 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-type NodesController struct {
+type Controller struct {
 	client                 client.Client
 	apiReader              client.Reader
 	scheme                 *runtime.Scheme
@@ -44,14 +44,14 @@ func Add(mgr manager.Manager, _ string) error {
 	return NewController(mgr).SetupWithManager(mgr)
 }
 
-func (controller *NodesController) SetupWithManager(mgr ctrl.Manager) error {
+func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.Node{}).
 		WithEventFilter(nodeDeletionPredicate(controller)).
 		Complete(controller)
 }
 
-func nodeDeletionPredicate(controller *NodesController) predicate.Predicate {
+func nodeDeletionPredicate(controller *Controller) predicate.Predicate {
 	return predicate.Funcs{
 		DeleteFunc: func(deleteEvent event.DeleteEvent) bool {
 			node := deleteEvent.Object.GetName()
@@ -64,8 +64,8 @@ func nodeDeletionPredicate(controller *NodesController) predicate.Predicate {
 	}
 }
 
-func NewController(mgr manager.Manager) *NodesController {
-	return &NodesController{
+func NewController(mgr manager.Manager) *Controller {
+	return &Controller{
 		client:                 mgr.GetClient(),
 		apiReader:              mgr.GetAPIReader(),
 		scheme:                 mgr.GetScheme(),
@@ -75,7 +75,7 @@ func NewController(mgr manager.Manager) *NodesController {
 	}
 }
 
-func (controller *NodesController) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+func (controller *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	nodeName := request.NamespacedName.Name
 	dynakube, err := controller.determineDynakubeForNode(nodeName)
 	if err != nil {
@@ -137,7 +137,7 @@ func (controller *NodesController) Reconcile(ctx context.Context, request reconc
 	return reconcile.Result{}, controller.updateCache(ctx, nodeCache)
 }
 
-func (controller *NodesController) reconcileNodeDeletion(ctx context.Context, nodeName string) error {
+func (controller *Controller) reconcileNodeDeletion(ctx context.Context, nodeName string) error {
 	nodeCache, err := controller.getCache(ctx)
 	if err != nil {
 		return err
@@ -176,7 +176,7 @@ func (controller *NodesController) reconcileNodeDeletion(ctx context.Context, no
 	return nil
 }
 
-func (controller *NodesController) getCache(ctx context.Context) (*Cache, error) {
+func (controller *Controller) getCache(ctx context.Context) (*Cache, error) {
 	var cm corev1.ConfigMap
 
 	err := controller.apiReader.Get(ctx, client.ObjectKey{Name: cacheName, Namespace: controller.podNamespace}, &cm)
@@ -210,7 +210,7 @@ func (controller *NodesController) getCache(ctx context.Context) (*Cache, error)
 	return nil, err
 }
 
-func (controller *NodesController) updateCache(ctx context.Context, nodeCache *Cache) error {
+func (controller *Controller) updateCache(ctx context.Context, nodeCache *Cache) error {
 	if !nodeCache.Changed() {
 		return nil
 	}
@@ -225,7 +225,7 @@ func (controller *NodesController) updateCache(ctx context.Context, nodeCache *C
 	return nil
 }
 
-func (controller *NodesController) handleOutdatedCache(ctx context.Context, nodeCache *Cache) error {
+func (controller *Controller) handleOutdatedCache(ctx context.Context, nodeCache *Cache) error {
 	var nodeLst corev1.NodeList
 	if err := controller.client.List(context.TODO(), &nodeLst); err != nil {
 		return err
@@ -259,13 +259,13 @@ func (controller *NodesController) handleOutdatedCache(ctx context.Context, node
 	return nil
 }
 
-func (controller *NodesController) removeNodeFromCache(nodeCache *Cache, cachedNode CacheEntry, nodeName string) {
+func (controller *Controller) removeNodeFromCache(nodeCache *Cache, cachedNode CacheEntry, nodeName string) {
 	if controller.isNodeDeletable(cachedNode) {
 		nodeCache.Delete(nodeName)
 	}
 }
 
-func (controller *NodesController) isNodeDeletable(cachedNode CacheEntry) bool {
+func (controller *Controller) isNodeDeletable(cachedNode CacheEntry) bool {
 	if time.Now().UTC().Sub(cachedNode.LastSeen).Hours() > 1 {
 		return true
 	} else if cachedNode.IPAddress == "" {
@@ -274,7 +274,7 @@ func (controller *NodesController) isNodeDeletable(cachedNode CacheEntry) bool {
 	return false
 }
 
-func (controller *NodesController) sendMarkedForTermination(dynakubeInstance *dynatracev1beta1.DynaKube, cachedNode CacheEntry) error {
+func (controller *Controller) sendMarkedForTermination(dynakubeInstance *dynatracev1beta1.DynaKube, cachedNode CacheEntry) error {
 	tokenReader := token.NewReader(controller.apiReader, dynakubeInstance)
 	tokens, err := tokenReader.ReadTokens(context.TODO())
 
@@ -311,7 +311,7 @@ func (controller *NodesController) sendMarkedForTermination(dynakubeInstance *dy
 	})
 }
 
-func (controller *NodesController) markForTermination(dynakube *dynatracev1beta1.DynaKube, cachedNodeData CachedNodeInfo) error {
+func (controller *Controller) markForTermination(dynakube *dynatracev1beta1.DynaKube, cachedNodeData CachedNodeInfo) error {
 	if !controller.isMarkableForTermination(&cachedNodeData.cachedNode) {
 		return nil
 	}
@@ -326,11 +326,11 @@ func (controller *NodesController) markForTermination(dynakube *dynatracev1beta1
 	return controller.sendMarkedForTermination(dynakube, cachedNodeData.cachedNode)
 }
 
-func (controller *NodesController) isUnschedulable(node *corev1.Node) bool {
+func (controller *Controller) isUnschedulable(node *corev1.Node) bool {
 	return node.Spec.Unschedulable || controller.hasUnschedulableTaint(node)
 }
 
-func (controller *NodesController) hasUnschedulableTaint(node *corev1.Node) bool {
+func (controller *Controller) hasUnschedulableTaint(node *corev1.Node) bool {
 	for _, taint := range node.Spec.Taints {
 		for _, unschedulableTaint := range unschedulableTaints {
 			if taint.Key == unschedulableTaint {
@@ -342,7 +342,7 @@ func (controller *NodesController) hasUnschedulableTaint(node *corev1.Node) bool
 }
 
 // isMarkableForTermination checks if the timestamp from last mark is at least one hour old
-func (controller *NodesController) isMarkableForTermination(nodeInfo *CacheEntry) bool {
+func (controller *Controller) isMarkableForTermination(nodeInfo *CacheEntry) bool {
 	// If the last mark was an hour ago, mark again
 	// Zero value for time.Time is 0001-01-01, so first mark is also executed
 	lastMarked := nodeInfo.LastMarkedForTermination

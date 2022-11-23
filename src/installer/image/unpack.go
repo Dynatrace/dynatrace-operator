@@ -23,7 +23,7 @@ type imagePullInfo struct {
 	destinationRef *types.ImageReference
 }
 
-func (installer ImageInstaller) extractAgentBinariesFromImage(pullInfo imagePullInfo) error {
+func (installer Installer) extractAgentBinariesFromImage(pullInfo imagePullInfo) error {
 	manifestBlob, err := copyImageToCache(pullInfo)
 	if err != nil {
 		log.Info("failed to get manifests blob",
@@ -45,7 +45,7 @@ func (installer ImageInstaller) extractAgentBinariesFromImage(pullInfo imagePull
 
 }
 
-func (installer ImageInstaller) unmarshalManifestBlob(manifestBlob []byte, imageCacheDir string) ([]*manifest.OCI1, error) {
+func (installer Installer) unmarshalManifestBlob(manifestBlob []byte, imageCacheDir string) ([]*manifest.OCI1, error) {
 	var manifests []*manifest.OCI1
 
 	switch manifest.GuessMIMEType(manifestBlob) {
@@ -66,7 +66,7 @@ func (installer ImageInstaller) unmarshalManifestBlob(manifestBlob []byte, image
 	return manifests, nil
 }
 
-func (installer ImageInstaller) unpackOciImage(manifests []*manifest.OCI1, imageCacheDir string, targetDir string) error {
+func (installer Installer) unpackOciImage(manifests []*manifest.OCI1, imageCacheDir string, targetDir string) error {
 	for _, entry := range manifests {
 		for _, layer := range entry.LayerInfos() {
 			switch layer.MediaType {

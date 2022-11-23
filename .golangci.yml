@@ -16,6 +16,9 @@ linters-settings:
   gosec:
     excludes:
       - G305 # File traversal when extracting zip/tar archive
+  revive:
+    rules:
+      - name: exported
 
 
 
@@ -42,6 +45,7 @@ linters:
   - gosec
   - nilerr
   - prealloc
+  - revive
 
 service:
   golangci-lint-version: 1.49.x # use the fixed version to not introduce new linters unexpectedly

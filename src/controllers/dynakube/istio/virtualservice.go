@@ -76,7 +76,7 @@ func buildVirtualServiceTLSRoute(host string, port uint32) []*istio.TLSRoute {
 	}}
 }
 
-func handleIstioConfigurationForVirtualService(istioConfig *istioConfiguration) (bool, error) {
+func handleIstioConfigurationForVirtualService(istioConfig *configuration) (bool, error) {
 	probe, err := kubeobjects.KubernetesObjectProbe(VirtualServiceGVK, istioConfig.instance.GetNamespace(), istioConfig.name, istioConfig.reconciler.config)
 	if probe == kubeobjects.ProbeObjectFound {
 		return false, nil
@@ -121,7 +121,7 @@ func createIstioConfigurationForVirtualService(dynaKube *dynatracev1beta1.DynaKu
 	return nil
 }
 
-func removeIstioConfigurationForVirtualService(istioConfig *istioConfiguration, seen map[string]bool) (bool, error) {
+func removeIstioConfigurationForVirtualService(istioConfig *configuration, seen map[string]bool) (bool, error) {
 
 	list, err := istioConfig.reconciler.istioClient.NetworkingV1alpha3().VirtualServices(istioConfig.instance.GetNamespace()).List(context.TODO(), *istioConfig.listOps)
 	if err != nil {

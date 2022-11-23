@@ -7,7 +7,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (controller *NodesController) determineDynakubeForNode(nodeName string) (*dynatracev1beta1.DynaKube, error) {
+func (controller *Controller) determineDynakubeForNode(nodeName string) (*dynatracev1beta1.DynaKube, error) {
 	dks, err := controller.getDynakubeList()
 	if err != nil {
 		return nil, err
@@ -15,7 +15,7 @@ func (controller *NodesController) determineDynakubeForNode(nodeName string) (*d
 	return controller.filterDynakubeFromList(dks, nodeName), nil
 }
 
-func (controller *NodesController) getDynakubeList() (*dynatracev1beta1.DynaKubeList, error) {
+func (controller *Controller) getDynakubeList() (*dynatracev1beta1.DynaKubeList, error) {
 	var dynakubeList dynatracev1beta1.DynaKubeList
 	err := controller.apiReader.List(context.TODO(), &dynakubeList, client.InNamespace(controller.podNamespace))
 	if err != nil {
@@ -24,7 +24,7 @@ func (controller *NodesController) getDynakubeList() (*dynatracev1beta1.DynaKube
 	return &dynakubeList, nil
 }
 
-func (controller *NodesController) filterDynakubeFromList(dkList *dynatracev1beta1.DynaKubeList,
+func (controller *Controller) filterDynakubeFromList(dkList *dynatracev1beta1.DynaKubeList,
 	nodeName string) *dynatracev1beta1.DynaKube {
 
 	for _, dynakube := range dkList.Items {

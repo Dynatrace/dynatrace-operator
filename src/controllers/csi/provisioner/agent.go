@@ -42,7 +42,7 @@ func newAgentUrlUpdater(
 	}
 	targetVersion := dk.CodeModulesVersion()
 
-	agentInstaller := url.NewUrlInstaller(fs, dtc, getUrlProperties(targetVersion, previousVersion, path))
+	agentInstaller := url.NewInstaller(fs, dtc, getUrlProperties(targetVersion, previousVersion, path))
 	eventRecorder := updaterEventRecorder{
 		recorder: recorder,
 		dynakube: dk,

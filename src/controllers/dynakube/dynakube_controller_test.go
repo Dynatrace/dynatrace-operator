@@ -98,7 +98,7 @@ func TestMonitoringModesDynakube_Reconcile(t *testing.T) {
 
 func TestReconcileActiveGate_Reconcile(t *testing.T) {
 	t.Run(`Create works with minimal setup`, func(t *testing.T) {
-		controller := &DynakubeController{
+		controller := &Controller{
 			client:    fake.NewClient(),
 			apiReader: fake.NewClient(),
 		}
@@ -421,7 +421,7 @@ func TestRemoveOneAgentDaemonset(t *testing.T) {
 		mockDtcBuilder := &dynatraceclient.StubBuilder{
 			DynatraceClient: mockClient,
 		}
-		controller := &DynakubeController{
+		controller := &Controller{
 			client:                 fakeClient,
 			apiReader:              fakeClient,
 			scheme:                 scheme.Scheme,
@@ -646,7 +646,7 @@ func createDTMockClient(paasTokenScopes, apiTokenScopes dtclient.TokenScopes) *d
 	return mockClient
 }
 
-func createFakeClientAndReconciler(mockClient dtclient.Client, instance *dynatracev1beta1.DynaKube, paasToken, apiToken string) *DynakubeController {
+func createFakeClientAndReconciler(mockClient dtclient.Client, instance *dynatracev1beta1.DynaKube, paasToken, apiToken string) *Controller {
 	data := map[string][]byte{
 		dtclient.DynatraceApiToken: []byte(apiToken),
 	}
@@ -672,7 +672,7 @@ func createFakeClientAndReconciler(mockClient dtclient.Client, instance *dynatra
 	mockDtcBuilder := &dynatraceclient.StubBuilder{
 		DynatraceClient: mockClient,
 	}
-	controller := &DynakubeController{
+	controller := &Controller{
 		client:                 fakeClient,
 		apiReader:              fakeClient,
 		scheme:                 scheme.Scheme,
@@ -854,7 +854,7 @@ func TestGetDynakube(t *testing.T) {
 				},
 			},
 		})
-		controller := &DynakubeController{
+		controller := &Controller{
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
@@ -876,7 +876,7 @@ func TestGetDynakube(t *testing.T) {
 			},
 		}
 		fakeClient := fake.NewClient(namespace)
-		controller := &DynakubeController{
+		controller := &Controller{
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
@@ -891,7 +891,7 @@ func TestGetDynakube(t *testing.T) {
 		assert.NotContains(t, namespace.Labels, dtwebhook.InjectionInstanceLabel)
 	})
 	t.Run("return unknown error", func(t *testing.T) {
-		controller := &DynakubeController{
+		controller := &Controller{
 			client:    errorClient{},
 			apiReader: errorClient{},
 		}
@@ -907,7 +907,7 @@ func TestGetDynakube(t *testing.T) {
 func TestReconcileIstio(t *testing.T) {
 	fakeClient := fake.NewClient()
 	dynakube := &dynatracev1beta1.DynaKube{}
-	controller := &DynakubeController{
+	controller := &Controller{
 		client:    fakeClient,
 		apiReader: fakeClient,
 	}
@@ -922,7 +922,7 @@ func TestTokenConditions(t *testing.T) {
 	t.Run("token condition error is set if token are invalid", func(t *testing.T) {
 		fakeClient := fake.NewClient()
 		dynakube := &dynatracev1beta1.DynaKube{}
-		controller := &DynakubeController{
+		controller := &Controller{
 			client:    fakeClient,
 			apiReader: fakeClient,
 		}
@@ -952,7 +952,7 @@ func TestTokenConditions(t *testing.T) {
 		mockDtcBuilder := &dynatraceclient.StubBuilder{
 			DynatraceClient: mockClient,
 		}
-		controller := &DynakubeController{
+		controller := &Controller{
 			client:                 fakeClient,
 			apiReader:              fakeClient,
 			dynatraceClientBuilder: mockDtcBuilder,

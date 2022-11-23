@@ -85,7 +85,7 @@ func TestController_ReconcileIstio(t *testing.T) {
 			APIURL: serverUrl.String(),
 		},
 	}
-	reconciler := IstioReconciler{
+	reconciler := Reconciler{
 		istioClient: fakeistio.NewSimpleClientset(virtualService),
 		scheme:      scheme.Scheme,
 		config: &rest.Config{
@@ -94,7 +94,7 @@ func TestController_ReconcileIstio(t *testing.T) {
 		},
 	}
 
-	updated, err := reconciler.ReconcileIstio(instance)
+	updated, err := reconciler.Reconcile(instance)
 
 	assert.NoError(t, err)
 	assert.False(t, updated)

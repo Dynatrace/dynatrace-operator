@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/afero"
 )
 
-func (installer UrlInstaller) downloadOneAgentFromUrl(tmpFile afero.File) error {
+func (installer Installer) downloadOneAgentFromUrl(tmpFile afero.File) error {
 	switch {
 	case installer.props.Url != "":
 		if err := installer.downloadOneAgentViaInstallerUrl(tmpFile); err != nil {
@@ -23,7 +23,7 @@ func (installer UrlInstaller) downloadOneAgentFromUrl(tmpFile afero.File) error 
 	return nil
 }
 
-func (installer UrlInstaller) downloadLatestOneAgent(tmpFile afero.File) error {
+func (installer Installer) downloadLatestOneAgent(tmpFile afero.File) error {
 	log.Info("downloading latest OneAgent package", "props", installer.props)
 	return installer.dtc.GetLatestAgent(
 		installer.props.Os,
@@ -35,7 +35,7 @@ func (installer UrlInstaller) downloadLatestOneAgent(tmpFile afero.File) error {
 	)
 }
 
-func (installer UrlInstaller) downloadOneAgentWithVersion(tmpFile afero.File) error {
+func (installer Installer) downloadOneAgentWithVersion(tmpFile afero.File) error {
 	log.Info("downloading specific OneAgent package", "version", installer.props.TargetVersion)
 	err := installer.dtc.GetAgent(
 		installer.props.Os,
@@ -64,7 +64,7 @@ func (installer UrlInstaller) downloadOneAgentWithVersion(tmpFile afero.File) er
 	return nil
 }
 
-func (installer UrlInstaller) downloadOneAgentViaInstallerUrl(tmpFile afero.File) error {
+func (installer Installer) downloadOneAgentViaInstallerUrl(tmpFile afero.File) error {
 	log.Info("downloading OneAgent package using provided url, all other properties are ignored", "url", installer.props.Url)
 	return installer.dtc.GetAgentViaInstallerUrl(installer.props.Url, tmpFile)
 }

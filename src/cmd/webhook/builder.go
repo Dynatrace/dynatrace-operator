@@ -55,7 +55,7 @@ func (builder CommandBuilder) SetManagerProvider(provider cmdManager.Provider) C
 
 func (builder CommandBuilder) GetManagerProvider() cmdManager.Provider {
 	if builder.managerProvider == nil {
-		builder.managerProvider = NewWebhookManagerProvider(certificateDirectory, certificateKeyFileName, certificateFileName)
+		builder.managerProvider = NewProvider(certificateDirectory, certificateKeyFileName, certificateFileName)
 	}
 
 	return builder.managerProvider

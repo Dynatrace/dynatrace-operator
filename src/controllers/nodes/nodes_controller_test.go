@@ -186,8 +186,8 @@ func (builder mockDynatraceClientBuilder) BuildWithTokenVerification(*dynatracev
 	return builder.dynatraceClient, nil
 }
 
-func createDefaultReconciler(fakeClient client.Client, dtClient *dtclient.MockDynatraceClient) *NodesController {
-	return &NodesController{
+func createDefaultReconciler(fakeClient client.Client, dtClient *dtclient.MockDynatraceClient) *Controller {
+	return &Controller{
 		client:    fakeClient,
 		apiReader: fakeClient,
 		scheme:    scheme.Scheme,
@@ -208,7 +208,7 @@ func createDTMockClient(ip, host string) *dtclient.MockDynatraceClient {
 	return dtClient
 }
 
-func reconcileAllNodes(t *testing.T, ctrl *NodesController, fakeClient client.Client) {
+func reconcileAllNodes(t *testing.T, ctrl *Controller, fakeClient client.Client) {
 	var nodeList corev1.NodeList
 	err := fakeClient.List(context.TODO(), &nodeList)
 

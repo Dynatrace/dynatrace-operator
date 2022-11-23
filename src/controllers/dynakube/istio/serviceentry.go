@@ -69,7 +69,7 @@ func buildServiceEntryIP(name, namespace, host string, port uint32) *istiov1alph
 	}
 }
 
-func handleIstioConfigurationForServiceEntry(istioConfig *istioConfiguration) (bool, error) {
+func handleIstioConfigurationForServiceEntry(istioConfig *configuration) (bool, error) {
 	probe, err := kubeobjects.KubernetesObjectProbe(ServiceEntryGVK, istioConfig.instance.GetNamespace(), istioConfig.name, istioConfig.reconciler.config)
 	if probe == kubeobjects.ProbeObjectFound {
 		return false, nil
@@ -107,7 +107,7 @@ func createIstioConfigurationForServiceEntry(dynaKube *dynatracev1beta1.DynaKube
 	return nil
 }
 
-func removeIstioConfigurationForServiceEntry(istioConfig *istioConfiguration, seen map[string]bool) (bool, error) {
+func removeIstioConfigurationForServiceEntry(istioConfig *configuration, seen map[string]bool) (bool, error) {
 
 	list, err := istioConfig.reconciler.istioClient.NetworkingV1alpha3().ServiceEntries(istioConfig.instance.GetNamespace()).List(context.TODO(), *istioConfig.listOps)
 	if err != nil {

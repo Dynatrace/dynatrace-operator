@@ -25,7 +25,7 @@ const (
 )
 
 // VersionProviderCallback fetches the version for a given image.
-type VersionProviderCallback func(string, *dockerconfig.DockerConfig) (ImageVersion, error)
+type VersionProviderCallback func(string, *dockerconfig.DockerConfig) (ImageVersion, error) //nolint:revive
 
 // ReconcileVersions updates the version and hash for the images used by the rec.Dynakube DynaKube instance.
 func ReconcileVersions(

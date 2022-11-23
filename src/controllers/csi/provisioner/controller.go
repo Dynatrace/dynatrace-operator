@@ -206,7 +206,7 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Cont
 		return nil, true, nil
 	} else if updatedVersion != "" {
 		dynakubeMetadata.LatestVersion = updatedVersion
-		imageInstaller, isImageInstaller := agentUpdater.installer.(*image.ImageInstaller)
+		imageInstaller, isImageInstaller := agentUpdater.installer.(*image.Installer)
 		if isImageInstaller {
 			dynakubeMetadata.ImageDigest = imageInstaller.ImageDigest()
 		} else {

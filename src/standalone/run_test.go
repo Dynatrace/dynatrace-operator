@@ -123,10 +123,10 @@ func TestInstallOneAgent(t *testing.T) {
 		runner.dtclient.(*dtclient.MockDynatraceClient).
 			On("GetProcessModuleConfig", uint(0)).
 			Return(&testProcessModuleConfig, nil)
-		runner.installer.(*installer.InstallerMock).
+		runner.installer.(*installer.Mock).
 			On("UpdateProcessModuleConfig", config.AgentBinDirMount, &testProcessModuleConfig).
 			Return(nil)
-		runner.installer.(*installer.InstallerMock).
+		runner.installer.(*installer.Mock).
 			On("InstallAgent", config.AgentBinDirMount).
 			Return(true, nil)
 
@@ -136,7 +136,7 @@ func TestInstallOneAgent(t *testing.T) {
 	})
 	t.Run(`sad install -> install fail`, func(t *testing.T) {
 		runner := createMockedRunner(t)
-		runner.installer.(*installer.InstallerMock).
+		runner.installer.(*installer.Mock).
 			On("InstallAgent", config.AgentBinDirMount).
 			Return(false, fmt.Errorf("BOOM"))
 
@@ -149,10 +149,10 @@ func TestInstallOneAgent(t *testing.T) {
 		runner.dtclient.(*dtclient.MockDynatraceClient).
 			On("GetProcessModuleConfig", uint(0)).
 			Return(&testProcessModuleConfig, nil)
-		runner.installer.(*installer.InstallerMock).
+		runner.installer.(*installer.Mock).
 			On("UpdateProcessModuleConfig", config.AgentBinDirMount, &testProcessModuleConfig).
 			Return(fmt.Errorf("BOOM"))
-		runner.installer.(*installer.InstallerMock).
+		runner.installer.(*installer.Mock).
 			On("InstallAgent", config.AgentBinDirMount).
 			Return(true, nil)
 
@@ -165,10 +165,10 @@ func TestInstallOneAgent(t *testing.T) {
 		runner.dtclient.(*dtclient.MockDynatraceClient).
 			On("GetProcessModuleConfig", uint(0)).
 			Return(&dtclient.ProcessModuleConfig{}, fmt.Errorf("BOOM"))
-		runner.installer.(*installer.InstallerMock).
+		runner.installer.(*installer.Mock).
 			On("UpdateProcessModuleConfig", config.AgentBinDirMount, &testProcessModuleConfig).
 			Return(nil)
-		runner.installer.(*installer.InstallerMock).
+		runner.installer.(*installer.Mock).
 			On("InstallAgent", config.AgentBinDirMount).
 			Return(true, nil)
 
@@ -185,7 +185,7 @@ func TestRun(t *testing.T) {
 	runner.dtclient.(*dtclient.MockDynatraceClient).
 		On("GetProcessModuleConfig", uint(0)).
 		Return(&testProcessModuleConfig, nil)
-	runner.installer.(*installer.InstallerMock).
+	runner.installer.(*installer.Mock).
 		On("UpdateProcessModuleConfig", config.AgentBinDirMount, &testProcessModuleConfig).
 		Return(nil)
 
@@ -201,7 +201,7 @@ func TestRun(t *testing.T) {
 
 	})
 	t.Run(`install + config generation`, func(t *testing.T) {
-		runner.installer.(*installer.InstallerMock).
+		runner.installer.(*installer.Mock).
 			On("InstallAgent", config.AgentBinDirMount).
 			Return(true, nil)
 		runner.fs = afero.NewMemMapFs()
@@ -359,7 +359,7 @@ func creatTestRunner(t *testing.T) *Runner {
 
 func createMockedRunner(t *testing.T) *Runner {
 	runner := creatTestRunner(t)
-	runner.installer = &installer.InstallerMock{}
+	runner.installer = &installer.Mock{}
 	runner.dtclient = &dtclient.MockDynatraceClient{}
 	return runner
 }
