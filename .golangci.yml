@@ -124,6 +124,7 @@ linters:
   - nilerr
   - prealloc
   - revive
+  - unconvert
 
 service:
   golangci-lint-version: 1.49.x # use the fixed version to not introduce new linters unexpectedly
