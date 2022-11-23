@@ -64,7 +64,9 @@ func findVersionFromFileSystem(fs afero.Fs, targetDir string) (string, error) {
 		}
 		return nil
 	}
-	if err := aferoFs.Walk(targetDir, walkFiles); err != nil && errors.Is(err, iofs.ErrExist) {
+
+	err := aferoFs.Walk(targetDir, walkFiles)
+	if errors.Is(err, iofs.ErrNotExist) {
 		return "", errors.WithStack(err)
 	}
 	return version, nil
