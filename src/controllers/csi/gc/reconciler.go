@@ -78,7 +78,7 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 
 	gcInfo, err := collectGCInfo(*dynakube, dynakubeList)
 	if err != nil || gcInfo == nil {
-		return defaultReconcileResult, nil
+		return defaultReconcileResult, nil //nolint:nilerr
 	}
 	if err := ctx.Err(); err != nil {
 		return defaultReconcileResult, err
@@ -125,7 +125,7 @@ func collectGCInfo(dynakube dynatracev1beta1.DynaKube, dynakubeList *dynatracev1
 	tenantUUID, err := dynakube.TenantUUID()
 	if err != nil {
 		log.Info("failed to get tenantUUID of DynaKube, checking later")
-		return nil, nil
+		return nil, nil //nolint:nilerr
 	}
 
 	latestAgentVersion := dynakube.Status.LatestAgentVersionUnixPaas
