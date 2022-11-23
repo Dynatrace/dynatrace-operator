@@ -1,7 +1,6 @@
 package support_archive
 
 import (
-	"context"
 	"os"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -47,13 +46,8 @@ func addFlags(cmd *cobra.Command) {
 
 func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-		ctx := supportArchiveContext{
-			ctx:           context.TODO(),
-			namespaceName: namespaceFlagValue,
-			log:           newSupportArchiveLogger(stdoutFlagValue),
-		}
-
-		version.LogVersionToLogger(ctx.log)
+		log := newSupportArchiveLogger(stdoutFlagValue)
+		version.LogVersionToLogger(log)
 
 		err := dynatracev1beta1.AddToScheme(scheme.Scheme)
 		if err != nil {
@@ -68,24 +62,26 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		defer tarFile.Close()
 		defer supportArchive.close()
 
-		ctx.supportArchive = supportArchive
-		runCollectors(ctx)
-		printCopyCommand(ctx.log, stdoutFlagValue, tarFile.Name())
+		runCollectors(log, supportArchive)
+		printCopyCommand(log, stdoutFlagValue, tarFile.Name())
 
 		return nil
 	}
 }
 
-type collectorFunc func(supportArchiveContext) error
-
-func runCollectors(ctx supportArchiveContext) {
-	collectors := []collectorFunc{
-		collectOperatorVersion,
+func runCollectors(log logr.Logger, supportArchive tarball) {
+	collectors := []collector{
+		operatorVersionCollector{
+			collectorCommon{
+				log:            log,
+				supportArchive: supportArchive,
+			},
+		},
 	}
 
 	for _, c := range collectors {
-		if err := c(ctx); err != nil {
-			logErrorf(ctx.log, err, "failed collector")
+		if err := c.Do(); err != nil {
+			logErrorf(log, err, "%s failed", c.Name())
 		}
 	}
 }

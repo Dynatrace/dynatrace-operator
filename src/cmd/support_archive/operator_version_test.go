@@ -3,7 +3,6 @@ package support_archive
 import (
 	"archive/tar"
 	"bytes"
-	"context"
 	"io"
 	"testing"
 
@@ -16,16 +15,17 @@ func TestVersionCollector(t *testing.T) {
 
 	tarBuffer := bytes.Buffer{}
 
-	ctx := supportArchiveContext{
-		ctx:           context.TODO(),
-		namespaceName: "",
-		log:           newSupportArchiveLoggerWithWriter(&logBuffer),
-		supportArchive: tarball{
-			tarWriter: tar.NewWriter(&tarBuffer),
+	versionCollector := operatorVersionCollector{
+		collectorCommon{
+			log: newSupportArchiveLoggerWithWriter(&logBuffer),
+			supportArchive: tarball{
+				tarWriter: tar.NewWriter(&tarBuffer),
+			},
 		},
 	}
+	assert.Equal(t, operatorVersionCollectorName, versionCollector.Name())
 
-	require.NoError(t, collectOperatorVersion(ctx))
+	require.NoError(t, versionCollector.Do())
 	tarReader := tar.NewReader(&tarBuffer)
 
 	assert.Contains(t, logBuffer.String(), "Storing operator version")

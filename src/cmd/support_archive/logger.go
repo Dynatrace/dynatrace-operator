@@ -15,9 +15,9 @@ const (
 	supportArchiveLoggerName = "[support-archive]"
 )
 
-func newSupportArchiveLogger(useStdout bool) logr.Logger {
-	if useStdout {
-		// using stderr because we use stdout to deliver the tarball
+func newSupportArchiveLogger(tarballToStdout bool) logr.Logger {
+	if tarballToStdout {
+		// avoid corrupting tarball
 		return newSupportArchiveLoggerWithWriter(os.Stderr)
 	} else {
 		return newSupportArchiveLoggerWithWriter(os.Stdout)

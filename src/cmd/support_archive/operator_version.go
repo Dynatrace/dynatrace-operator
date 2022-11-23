@@ -8,10 +8,15 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 )
 
-const versionFileName = "operator-version.txt"
+const operatorVersionCollectorName = "operatorVersionCollector"
+const operatorVersionFileName = "operator-version.txt"
 
-func collectOperatorVersion(ctx supportArchiveContext) error {
-	logInfof(ctx.log, "Storing operator version into %s", versionFileName)
+type operatorVersionCollector struct {
+	collectorCommon
+}
+
+func (vc operatorVersionCollector) Do() error {
+	logInfof(vc.log, "Storing operator version into %s", operatorVersionFileName)
 
 	versionString := fmt.Sprintf("version: %s\ngitCommit: %s\nbuildDate: %s\ngoVersion %s\nplatform %s/%s\n",
 		version.Version,
@@ -19,7 +24,11 @@ func collectOperatorVersion(ctx supportArchiveContext) error {
 		version.BuildDate,
 		runtime.Version(),
 		runtime.GOOS, runtime.GOARCH)
-	ctx.supportArchive.addFile(versionFileName, strings.NewReader(versionString))
+	vc.supportArchive.addFile(operatorVersionFileName, strings.NewReader(versionString))
 
 	return nil
+}
+
+func (vc operatorVersionCollector) Name() string {
+	return operatorVersionCollectorName
 }
