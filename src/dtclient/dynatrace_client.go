@@ -193,27 +193,25 @@ func (dtc *dynatraceClient) buildHostCache() error {
 	return nil
 }
 
-func (dtc *dynatraceClient) setHostCacheFromResponse(response []byte) error {
-	type hostInfoResponse struct {
-		IPAddresses  []string
-		AgentVersion *struct {
-			Major     int
-			Minor     int
-			Revision  int
-			Timestamp string
-		}
-		EntityID          string
-		NetworkZoneID     string
-		LastSeenTimestamp int64
+type hostInfoResponse struct {
+	IPAddresses  []string
+	AgentVersion *struct {
+		Major     int
+		Minor     int
+		Revision  int
+		Timestamp string
 	}
+	EntityID          string
+	NetworkZoneID     string
+	LastSeenTimestamp int64
+}
 
+func (dtc *dynatraceClient) setHostCacheFromResponse(response []byte) error {
 	dtc.hostCache = make(map[string]hostInfo)
 
-	var hostInfoResponses []hostInfoResponse
-	err := json.Unmarshal(response, &hostInfoResponses)
+	hostInfoResponses, err := dtc.extractHostInfoResponse(response)
 	if err != nil {
-		log.Error(err, "error unmarshalling json response", "response", string(response))
-		return errors.WithStack(err)
+		return err
 	}
 
 	now := dtc.now
@@ -222,7 +220,6 @@ func (dtc *dynatraceClient) setHostCacheFromResponse(response []byte) error {
 	}
 
 	var inactive []string
-
 	for _, info := range hostInfoResponses {
 		// If we haven't seen this host in the last 30 minutes, ignore it.
 		if tm := time.Unix(info.LastSeenTimestamp/1000, 0).UTC(); tm.Before(now.Add(-30 * time.Minute)) {
@@ -239,13 +236,7 @@ func (dtc *dynatraceClient) setHostCacheFromResponse(response []byte) error {
 				hostInfo.version = fmt.Sprintf("%d.%d.%d.%s", v.Major, v.Minor, v.Revision, v.Timestamp)
 			}
 
-			for _, ip := range info.IPAddresses {
-				if old, ok := dtc.hostCache[ip]; ok {
-					log.Info("hosts cache: replacing host", "ip", ip, "new", hostInfo.entityID, "old", old.entityID)
-				}
-
-				dtc.hostCache[ip] = hostInfo
-			}
+			dtc.updateHostCache(info, hostInfo)
 		}
 	}
 
@@ -254,6 +245,26 @@ func (dtc *dynatraceClient) setHostCacheFromResponse(response []byte) error {
 	}
 
 	return nil
+}
+
+func (dtc *dynatraceClient) updateHostCache(info hostInfoResponse, hostInfo hostInfo) {
+	for _, ip := range info.IPAddresses {
+		if old, ok := dtc.hostCache[ip]; ok {
+			log.Info("hosts cache: replacing host", "ip", ip, "new", hostInfo.entityID, "old", old.entityID)
+		}
+
+		dtc.hostCache[ip] = hostInfo
+	}
+}
+
+func (dtc *dynatraceClient) extractHostInfoResponse(response []byte) ([]hostInfoResponse, error) {
+	var hostInfoResponses []hostInfoResponse
+	err := json.Unmarshal(response, &hostInfoResponses)
+	if err != nil {
+		log.Error(err, "error unmarshalling json response", "response", string(response))
+		return nil, errors.WithStack(err)
+	}
+	return hostInfoResponses, nil
 }
 
 type serverErrorResponse struct {

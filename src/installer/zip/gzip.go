@@ -57,27 +57,35 @@ func extractFilesFromGzip(fs afero.Fs, targetDir string, reader *tar.Reader) err
 			return fmt.Errorf("illegal file path: %s", target)
 		}
 
-		switch header.Typeflag {
-		case tar.TypeDir:
-			if err := fs.MkdirAll(target, header.FileInfo().Mode()); err != nil {
-				return errors.WithStack(err)
-			}
-		case tar.TypeLink:
-			if err := extractLink(fs, targetDir, target, header); err != nil {
-				return errors.WithStack(err)
-			}
-		case tar.TypeSymlink:
-			if err := extractSymlink(fs, targetDir, target, header); err != nil {
-				return errors.WithStack(err)
-			}
-		case tar.TypeReg:
-			if err := extractFile(fs, target, header, reader); err != nil {
-				return errors.WithStack(err)
-			}
-		default:
-			log.Info("skipping special file", "name", header.Name)
+		err = extract(fs, targetDir, reader, header, target)
+		if err != nil {
+			return err
 		}
 	}
+}
+
+func extract(fs afero.Fs, targetDir string, reader *tar.Reader, header *tar.Header, target string) error {
+	switch header.Typeflag {
+	case tar.TypeDir:
+		if err := fs.MkdirAll(target, header.FileInfo().Mode()); err != nil {
+			return errors.WithStack(err)
+		}
+	case tar.TypeLink:
+		if err := extractLink(fs, targetDir, target, header); err != nil {
+			return errors.WithStack(err)
+		}
+	case tar.TypeSymlink:
+		if err := extractSymlink(fs, targetDir, target, header); err != nil {
+			return errors.WithStack(err)
+		}
+	case tar.TypeReg:
+		if err := extractFile(fs, target, header, reader); err != nil {
+			return errors.WithStack(err)
+		}
+	default:
+		log.Info("skipping special file", "name", header.Name)
+	}
+	return nil
 }
 
 func extractLink(fs afero.Fs, targetDir, target string, header *tar.Header) error {

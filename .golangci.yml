@@ -20,7 +20,7 @@ linters-settings:
     enable-all-rules: true
     rules:
       - name: cognitive-complexity
-        disabled: true
+        arguments: [20] # max allowed cognitive complexity factor
       - name: function-result-limit
         disabled: true
       - name: function-length
