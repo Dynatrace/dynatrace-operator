@@ -331,7 +331,6 @@ func mockHandleSettingsRequest(request *http.Request, writer http.ResponseWriter
 	default:
 		writeError(writer, http.StatusMethodNotAllowed)
 	}
-
 }
 
 func mockDynatraceServerEntitiesHandler(entities []MonitoredEntity, isError bool) http.HandlerFunc {

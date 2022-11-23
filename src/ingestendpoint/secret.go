@@ -184,11 +184,7 @@ func (g *EndpointSecretGenerator) PrepareFields(ctx context.Context, dk *dynatra
 	}
 
 	if dk.IsStatsdActiveGateEnabled() {
-		if statsdUrl, err := statsdIngestUrl(dk); err != nil {
-			return nil, err
-		} else {
-			fields[StatsdUrlSecretField] = statsdUrl
-		}
+		fields[StatsdUrlSecretField] = statsdIngestUrl(dk)
 	}
 
 	return fields, nil
@@ -219,7 +215,7 @@ func metricsIngestUrlForClusterActiveGate(dk *dynatracev1beta1.DynaKube) (string
 	return fmt.Sprintf("https://%s.%s/e/%s/api/v2/metrics/ingest", serviceName, dk.Namespace, tenant), nil
 }
 
-func statsdIngestUrl(dk *dynatracev1beta1.DynaKube) (string, error) {
+func statsdIngestUrl(dk *dynatracev1beta1.DynaKube) string {
 	serviceName := capability.BuildServiceName(dk.Name, consts.MultiActiveGateName)
-	return fmt.Sprintf("%s.%s:%d", serviceName, dk.Namespace, consts.StatsdIngestPort), nil
+	return fmt.Sprintf("%s.%s:%d", serviceName, dk.Namespace, consts.StatsdIngestPort)
 }

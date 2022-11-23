@@ -26,7 +26,6 @@ func (controller *Controller) getDynakubeList() (*dynatracev1beta1.DynaKubeList,
 
 func (controller *Controller) filterDynakubeFromList(dkList *dynatracev1beta1.DynaKubeList,
 	nodeName string) *dynatracev1beta1.DynaKube {
-
 	for _, dynakube := range dkList.Items {
 		items := dynakube.Status.OneAgent.Instances
 		if _, ok := items[nodeName]; ok {

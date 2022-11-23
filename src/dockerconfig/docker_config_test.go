@@ -76,7 +76,6 @@ func TestSetupAuths(t *testing.T) {
 		assert.NotEmpty(t, dockerConfig.Auths)
 		assert.Equal(t, testName, dockerConfig.Auths[testKey].Username)
 		assert.Equal(t, testValue, dockerConfig.Auths[testKey].Password)
-
 	})
 	t.Run("using custom pull secret", func(t *testing.T) {
 		dynakube := dynatracev1beta1.DynaKube{
@@ -137,7 +136,6 @@ func TestSetupAuths(t *testing.T) {
 		require.Error(t, err)
 		assert.Empty(t, dockerConfig.Auths)
 	})
-
 }
 
 func TestParseDockerAuthsFromSecret(t *testing.T) {

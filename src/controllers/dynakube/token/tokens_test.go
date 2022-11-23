@@ -148,7 +148,6 @@ func testVerifyTokenScopes(t *testing.T) {
 	assert.EqualError(t,
 		apiError.VerifyScopes(fakeDynatraceClient),
 		"test api-error")
-
 }
 
 func testVerifyTokenValues(t *testing.T) {

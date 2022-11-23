@@ -29,8 +29,8 @@ func createTestDynakubeWithAppInject(name string, labels map[string]string, labe
 	return dk
 }
 
-func createTestDynakubeWithMultipleFeatures(name string, labels map[string]string, labelExpression []metav1.LabelSelectorRequirement) *dynatracev1beta1.DynaKube {
-	dk := createTestDynakubeWithAppInject(name, labels, labelExpression)
+func createTestDynakubeWithMultipleFeatures(name string, labels map[string]string) *dynatracev1beta1.DynaKube {
+	dk := createTestDynakubeWithAppInject(name, labels, nil)
 	dk.Spec.Routing.Enabled = true
 	return dk
 }
@@ -47,7 +47,7 @@ func createNamespace(name string, labels map[string]string) *corev1.Namespace {
 func TestUpdateNamespace(t *testing.T) {
 	t.Run("Add to namespace", func(t *testing.T) {
 		labels := map[string]string{"test": "selector"}
-		dk := createTestDynakubeWithMultipleFeatures("dk-test", labels, nil)
+		dk := createTestDynakubeWithMultipleFeatures("dk-test", labels)
 		namespace := createNamespace("test-namespace", labels)
 
 		updated, err := updateNamespace(namespace, &dynatracev1beta1.DynaKubeList{Items: []dynatracev1beta1.DynaKube{*dk}})
@@ -58,7 +58,7 @@ func TestUpdateNamespace(t *testing.T) {
 	})
 	t.Run("Overwrite stale entry in labels", func(t *testing.T) {
 		labels := map[string]string{"test": "selector"}
-		dk := createTestDynakubeWithMultipleFeatures("dk-test", labels, nil)
+		dk := createTestDynakubeWithMultipleFeatures("dk-test", labels)
 		nsLabels := map[string]string{
 			dtwebhook.InjectionInstanceLabel: "old-dk",
 			"test":                           "selector",
@@ -88,8 +88,8 @@ func TestUpdateNamespace(t *testing.T) {
 	})
 	t.Run("Throw error in case of conflicting Dynakubes", func(t *testing.T) {
 		labels := map[string]string{"test": "selector"}
-		dk := createTestDynakubeWithMultipleFeatures("dk-test", labels, nil)
-		conflictingDk := createTestDynakubeWithMultipleFeatures("conflicting-dk", labels, nil)
+		dk := createTestDynakubeWithMultipleFeatures("dk-test", labels)
+		conflictingDk := createTestDynakubeWithMultipleFeatures("conflicting-dk", labels)
 		nsLabels := map[string]string{
 			dtwebhook.InjectionInstanceLabel: dk.Name,
 			"test":                           "selector",
@@ -101,7 +101,7 @@ func TestUpdateNamespace(t *testing.T) {
 		assert.Error(t, err)
 	})
 	t.Run("Ignore kube namespaces", func(t *testing.T) {
-		dk := createTestDynakubeWithMultipleFeatures("appMonitoring", nil, nil)
+		dk := createTestDynakubeWithMultipleFeatures("appMonitoring", nil)
 		namespace := createNamespace("kube-something", nil)
 
 		updated, err := updateNamespace(namespace, &dynatracev1beta1.DynaKubeList{Items: []dynatracev1beta1.DynaKube{*dk}})
@@ -112,7 +112,7 @@ func TestUpdateNamespace(t *testing.T) {
 	})
 
 	t.Run("Ignore openshift namespaces", func(t *testing.T) {
-		dk := createTestDynakubeWithMultipleFeatures("appMonitoring", nil, nil)
+		dk := createTestDynakubeWithMultipleFeatures("appMonitoring", nil)
 		namespace := createNamespace("openshift-something", nil)
 
 		updated, err := updateNamespace(namespace, &dynatracev1beta1.DynaKubeList{Items: []dynatracev1beta1.DynaKube{*dk}})
@@ -124,8 +124,8 @@ func TestUpdateNamespace(t *testing.T) {
 	t.Run("Double dynakube, 1. ignores openshift namespaces, 2. doesn't", func(t *testing.T) {
 		labels := map[string]string{"test": "selector"}
 		otherLabels := map[string]string{"test1": "selector"}
-		ignoreDk := createTestDynakubeWithMultipleFeatures("appMonitoring", otherLabels, nil)
-		notIgnoreDk := createTestDynakubeWithMultipleFeatures("boom", labels, nil)
+		ignoreDk := createTestDynakubeWithMultipleFeatures("appMonitoring", otherLabels)
+		notIgnoreDk := createTestDynakubeWithMultipleFeatures("boom", labels)
 		notIgnoreDk.Annotations = map[string]string{
 			dynatracev1beta1.AnnotationFeatureIgnoredNamespaces: "[\"asd\"]",
 		}
@@ -141,8 +141,8 @@ func TestUpdateNamespace(t *testing.T) {
 	t.Run("Double dynakube, 1. doesn't, 2. ignores openshift namespaces", func(t *testing.T) {
 		labels := map[string]string{"test": "selector"}
 		otherLabels := map[string]string{"test1": "selector"}
-		ignoreDk := createTestDynakubeWithMultipleFeatures("appMonitoring", otherLabels, nil)
-		notIgnoreDk := createTestDynakubeWithMultipleFeatures("boom", labels, nil)
+		ignoreDk := createTestDynakubeWithMultipleFeatures("appMonitoring", otherLabels)
+		notIgnoreDk := createTestDynakubeWithMultipleFeatures("boom", labels)
 		notIgnoreDk.Annotations = map[string]string{
 			dynatracev1beta1.AnnotationFeatureIgnoredNamespaces: "[\"asd\"]",
 		}

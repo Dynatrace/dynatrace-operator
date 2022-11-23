@@ -96,7 +96,6 @@ func (reconciler *Reconciler) Reconcile(instance *dynatracev1beta1.DynaKube) (bo
 
 func (reconciler *Reconciler) reconcileIstioConfigurations(instance *dynatracev1beta1.DynaKube,
 	comHosts []dtclient.CommunicationHost, role string) (bool, error) {
-
 	add, err := reconciler.reconcileCreateConfigurations(instance, comHosts, role)
 	if err != nil {
 		return false, err
@@ -111,7 +110,6 @@ func (reconciler *Reconciler) reconcileIstioConfigurations(instance *dynatracev1
 
 func (reconciler *Reconciler) reconcileRemoveConfigurations(instance *dynatracev1beta1.DynaKube,
 	comHosts []dtclient.CommunicationHost, role string) (bool, error) {
-
 	labelSelector := labels.SelectorFromSet(buildIstioLabels(instance.GetName(), role)).String()
 	listOps := &metav1.ListOptions{
 		LabelSelector: labelSelector,
@@ -142,7 +140,6 @@ func (reconciler *Reconciler) reconcileRemoveConfigurations(instance *dynatracev
 
 func (reconciler *Reconciler) reconcileCreateConfigurations(instance *dynatracev1beta1.DynaKube,
 	communicationHosts []dtclient.CommunicationHost, role string) (bool, error) {
-
 	crdProbe := verifyIstioCrdAvailability(instance, reconciler.config)
 	if crdProbe != kubeobjects.ProbeTypeFound {
 		log.Info("istio: failed to lookup CRD for ServiceEntry/VirtualService: Did you install Istio recently? Please restart the Operator.")

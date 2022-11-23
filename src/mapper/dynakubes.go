@@ -91,7 +91,6 @@ func (dm DynakubeMapper) mapFromDynakube(nsList *corev1.NamespaceList, dkList *d
 		if updated {
 			modifiedNs = append(modifiedNs, namespace)
 		}
-
 	}
 	return modifiedNs, err
 }

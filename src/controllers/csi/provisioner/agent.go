@@ -27,15 +27,7 @@ type agentUpdater struct {
 	recorder      updaterEventRecorder
 }
 
-func newAgentUrlUpdater(
-	ctx context.Context,
-	fs afero.Fs,
-	dtc dtclient.Client,
-	previousVersion string,
-	path metadata.PathResolver,
-	recorder record.EventRecorder,
-	dk *dynatracev1beta1.DynaKube) (*agentUpdater, error) {
-
+func newAgentUrlUpdater(fs afero.Fs, dtc dtclient.Client, previousVersion string, path metadata.PathResolver, recorder record.EventRecorder, dk *dynatracev1beta1.DynaKube) (*agentUpdater, error) {
 	tenantUUID, err := dk.TenantUUID()
 	if err != nil {
 		return nil, err
@@ -66,7 +58,6 @@ func newAgentImageUpdater(
 	db metadata.Access,
 	recorder record.EventRecorder,
 	dk *dynatracev1beta1.DynaKube) (*agentUpdater, error) {
-
 	tenantUUID, err := dk.TenantUUID()
 	if err != nil {
 		return nil, err
@@ -92,7 +83,6 @@ func newAgentImageUpdater(
 		installer:     agentInstaller,
 		recorder:      eventRecorder,
 	}, nil
-
 }
 
 func getUrlProperties(targetVersion, previousVersion string, pathResolver metadata.PathResolver) *url.Properties {

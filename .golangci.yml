@@ -100,7 +100,6 @@ linters-settings:
       - name: range-val-address
         disabled: true
 
-
 linters:
   disable-all: true
   enable:
@@ -127,6 +126,7 @@ linters:
   - revive
   - unconvert
   - unparam
+  - whitespace
 
 service:
   golangci-lint-version: 1.49.x # use the fixed version to not introduce new linters unexpectedly

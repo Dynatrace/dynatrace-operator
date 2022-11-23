@@ -58,7 +58,6 @@ func (statsd StatsdModifier) Modify(sts *appsv1.StatefulSet) {
 
 	baseContainer := kubeobjects.FindContainerInPodSpec(&sts.Spec.Template.Spec, consts.ActiveGateContainerName)
 	baseContainer.VolumeMounts = append(baseContainer.VolumeMounts, statsd.getActiveGateVolumeMounts(baseContainer.VolumeMounts)...)
-
 }
 
 func (statsd StatsdModifier) getActiveGateVolumeMounts(presentMounts []corev1.VolumeMount) []corev1.VolumeMount {

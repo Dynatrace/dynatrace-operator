@@ -76,13 +76,7 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 		return defaultReconcileResult, nil
 	}
 
-	gcInfo, err := collectGCInfo(*dynakube, dynakubeList)
-	if err != nil || gcInfo == nil {
-		return defaultReconcileResult, nil //nolint:nilerr
-	}
-	if err := ctx.Err(); err != nil {
-		return defaultReconcileResult, err
-	}
+	gcInfo := collectGCInfo(*dynakube, dynakubeList)
 
 	log.Info("running binary garbage collection")
 	gc.runBinaryGarbageCollection(ctx, gcInfo.pinnedVersions, gcInfo.tenantUUID, gcInfo.latestAgentVersion)
@@ -92,7 +86,7 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 	}
 
 	log.Info("running log garbage collection")
-	gc.runUnmountedVolumeGarbageCollection(ctx, gcInfo.tenantUUID)
+	gc.runUnmountedVolumeGarbageCollection(gcInfo.tenantUUID)
 
 	if err := ctx.Err(); err != nil {
 		return defaultReconcileResult, err
@@ -121,30 +115,26 @@ func getDynakubeFromRequest(ctx context.Context, apiReader client.Reader, reques
 	return &dynakube, nil
 }
 
-func collectGCInfo(dynakube dynatracev1beta1.DynaKube, dynakubeList *dynatracev1beta1.DynaKubeList) (*garbageCollectionInfo, error) {
+func collectGCInfo(dynakube dynatracev1beta1.DynaKube, dynakubeList *dynatracev1beta1.DynaKubeList) *garbageCollectionInfo {
 	tenantUUID, err := dynakube.TenantUUID()
 	if err != nil {
 		log.Info("failed to get tenantUUID of DynaKube, checking later")
-		return nil, nil //nolint:nilerr
+		return nil
 	}
 
 	latestAgentVersion := dynakube.Status.LatestAgentVersionUnixPaas
 	if latestAgentVersion == "" {
 		log.Info("no latest agent version found in dynakube, checking later")
-		return nil, nil
+		return nil
 	}
 
-	pinnedVersions, err := getAllPinnedVersionsForTenantUUID(dynakubeList, tenantUUID)
-	if err != nil {
-		log.Info("failed to determine pinned agent versions")
-		return nil, err
-	}
+	pinnedVersions := getAllPinnedVersionsForTenantUUID(dynakubeList, tenantUUID)
 
 	return &garbageCollectionInfo{
 		tenantUUID:         tenantUUID,
 		latestAgentVersion: latestAgentVersion,
 		pinnedVersions:     pinnedVersions,
-	}, nil
+	}
 }
 
 func isSafeToGC(ctx context.Context, access metadata.Access, dynakubeList *dynatracev1beta1.DynaKubeList) bool {
@@ -178,7 +168,7 @@ func isUpgrading(dkMetadata *metadata.Dynakube, filteredDynakubes map[string]dyn
 // A pinned version is either:
 // - the image tag or digest set in the custom resource (this doesn't matter in context of the GC)
 // - the version set in the custom resource if applicationMonitoring is used
-func getAllPinnedVersionsForTenantUUID(dynakubeList *dynatracev1beta1.DynaKubeList, tenantUUID string) (pinnedVersionSet, error) {
+func getAllPinnedVersionsForTenantUUID(dynakubeList *dynatracev1beta1.DynaKubeList, tenantUUID string) pinnedVersionSet {
 	pinnedVersions := make(pinnedVersionSet)
 	for _, dynakube := range dynakubeList.Items {
 		uuid, err := dynakube.TenantUUID()
@@ -194,7 +184,7 @@ func getAllPinnedVersionsForTenantUUID(dynakubeList *dynatracev1beta1.DynaKubeLi
 			pinnedVersions[codeModuleVersion] = true
 		}
 	}
-	return pinnedVersions, nil
+	return pinnedVersions
 }
 
 func getAllDynakubes(ctx context.Context, apiReader client.Reader, namespace string) (*dynatracev1beta1.DynaKubeList, error) {

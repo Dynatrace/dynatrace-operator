@@ -302,7 +302,7 @@ func createTestAgentUrlUpdater(t *testing.T, dk *dynatracev1beta1.DynaKube) *age
 	fs := afero.NewMemMapFs()
 	rec := record.NewFakeRecorder(10)
 
-	updater, err := newAgentUrlUpdater(context.TODO(), fs, &mockedClient, testVersion, path, rec, dk)
+	updater, err := newAgentUrlUpdater(fs, &mockedClient, testVersion, path, rec, dk)
 	require.NoError(t, err)
 	updater.installer = &installer.Mock{}
 

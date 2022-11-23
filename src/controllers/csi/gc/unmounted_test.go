@@ -102,7 +102,6 @@ func TestIsUnmountedVolumeTooOld(t *testing.T) {
 }
 
 func TestRemoveUnmountedVolumesIfNecessary(t *testing.T) {
-
 	t.Run("remove only too old unmounted volume", func(t *testing.T) {
 		gc := NewMockGarbageCollector()
 		gc.mockUnmountedVolumeIDPath(testVersion1, testVersion2, testVersion3)
@@ -129,11 +128,9 @@ func TestRemoveUnmountedVolumesIfNecessary(t *testing.T) {
 			assert.True(t, volumeExists)
 		}
 	})
-
 }
 
 func TestDetermineMaxUnmountedVolumeAge(t *testing.T) {
-
 	t.Run("no env set ==> use default", func(t *testing.T) {
 		maxVolumeAge := determineMaxUnmountedVolumeAge("")
 
@@ -151,7 +148,6 @@ func TestDetermineMaxUnmountedVolumeAge(t *testing.T) {
 
 		assert.Equal(t, time.Duration(0), maxVolumeAge)
 	})
-
 }
 
 func (gc *CSIGarbageCollector) mockMountedVolumeIDPath(volumeIDs ...string) {

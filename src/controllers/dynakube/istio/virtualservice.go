@@ -105,7 +105,6 @@ func handleIstioConfigurationForVirtualService(istioConfig *configuration) (bool
 func createIstioConfigurationForVirtualService(dynaKube *dynatracev1beta1.DynaKube,
 	virtualService *istiov1alpha3.VirtualService, role string,
 	istioClient istioclientset.Interface, scheme *runtime.Scheme) error {
-
 	virtualService.Labels = buildIstioLabels(dynaKube.GetName(), role)
 	if err := controllerutil.SetControllerReference(dynaKube, virtualService, scheme); err != nil {
 		return err
@@ -122,7 +121,6 @@ func createIstioConfigurationForVirtualService(dynaKube *dynatracev1beta1.DynaKu
 }
 
 func removeIstioConfigurationForVirtualService(istioConfig *configuration, seen map[string]bool) (bool, error) {
-
 	list, err := istioConfig.reconciler.istioClient.NetworkingV1alpha3().VirtualServices(istioConfig.instance.GetNamespace()).List(context.TODO(), *istioConfig.listOps)
 	if err != nil {
 		log.Error(err, "istio: error listing virtual service")

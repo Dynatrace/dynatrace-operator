@@ -198,7 +198,6 @@ func TestRun(t *testing.T) {
 		require.NoError(t, err)
 		assertIfAgentFilesExists(t, *runner)
 		assertIfEnrichmentFilesExists(t, *runner)
-
 	})
 	t.Run(`install + config generation`, func(t *testing.T) {
 		runner.installer.(*installer.Mock).
@@ -212,7 +211,6 @@ func TestRun(t *testing.T) {
 		require.NoError(t, err)
 		assertIfAgentFilesExists(t, *runner)
 		assertIfEnrichmentFilesExists(t, *runner)
-
 	})
 }
 
@@ -230,7 +228,6 @@ func TestConfigureInstallation(t *testing.T) {
 		require.NoError(t, err)
 		assertIfAgentFilesExists(t, *runner)
 		assertIfEnrichmentFilesExists(t, *runner)
-
 	})
 	t.Run(`create only container confs`, func(t *testing.T) {
 		runner.fs = afero.NewMemMapFs()
@@ -242,7 +239,6 @@ func TestConfigureInstallation(t *testing.T) {
 		require.NoError(t, err)
 		assertIfAgentFilesExists(t, *runner)
 		assertIfEnrichmentFilesNotExists(t, *runner)
-
 	})
 	t.Run(`create only enrichment file`, func(t *testing.T) {
 		runner.fs = afero.NewMemMapFs()
@@ -255,7 +251,6 @@ func TestConfigureInstallation(t *testing.T) {
 		assertIfAgentFilesNotExists(t, *runner)
 		// enrichemt
 		assertIfEnrichmentFilesExists(t, *runner)
-
 	})
 }
 
@@ -381,7 +376,6 @@ func assertIfAgentFilesExists(t *testing.T, runner Runner) {
 	assertIfFileExists(t,
 		runner.fs,
 		filepath.Join(config.AgentShareDirMount, "custom.pem"))
-
 }
 
 func assertIfEnrichmentFilesExists(t *testing.T, runner Runner) {
@@ -395,7 +389,6 @@ func assertIfEnrichmentFilesExists(t *testing.T, runner Runner) {
 		filepath.Join(
 			config.EnrichmentMountPath,
 			fmt.Sprintf(config.EnrichmentFilenameTemplate, "properties")))
-
 }
 
 func assertIfAgentFilesNotExists(t *testing.T, runner Runner) {
@@ -415,7 +408,6 @@ func assertIfAgentFilesNotExists(t *testing.T, runner Runner) {
 	assertIfFileNotExists(t,
 		runner.fs,
 		filepath.Join(config.AgentShareDirMount, "custom.pem"))
-
 }
 
 func assertIfEnrichmentFilesNotExists(t *testing.T, runner Runner) {
@@ -429,7 +421,6 @@ func assertIfEnrichmentFilesNotExists(t *testing.T, runner Runner) {
 		filepath.Join(
 			config.EnrichmentMountPath,
 			fmt.Sprintf(config.EnrichmentFilenameTemplate, "properties")))
-
 }
 
 func assertIfFileExists(t *testing.T, fs afero.Fs, path string) {

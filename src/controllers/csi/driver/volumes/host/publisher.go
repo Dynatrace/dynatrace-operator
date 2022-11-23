@@ -88,7 +88,6 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 }
 
 func (publisher *HostVolumePublisher) UnpublishVolume(ctx context.Context, volumeInfo *csivolumes.VolumeInfo) (*csi.NodeUnpublishVolumeResponse, error) {
-
 	volume, err := publisher.db.GetOsAgentVolumeViaVolumeID(ctx, volumeInfo.VolumeID)
 	if err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to get osagent volume info from database: %s", err.Error()))
@@ -97,9 +96,7 @@ func (publisher *HostVolumePublisher) UnpublishVolume(ctx context.Context, volum
 		return nil, nil
 	}
 
-	if err := publisher.umountOneAgent(volumeInfo.TargetPath); err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to unmount osagent volume: %s", err.Error()))
-	}
+	publisher.umountOneAgent(volumeInfo.TargetPath)
 
 	timestamp := time.Now()
 	volume.Mounted = false
@@ -138,10 +135,8 @@ func (publisher *HostVolumePublisher) mountOneAgent(tenantUUID string, volumeCfg
 	return nil
 }
 
-func (publisher *HostVolumePublisher) umountOneAgent(targetPath string) error {
+func (publisher *HostVolumePublisher) umountOneAgent(targetPath string) {
 	if err := publisher.mounter.Unmount(targetPath); err != nil {
 		log.Error(err, "Unmount failed", "path", targetPath)
 	}
-
-	return nil
 }

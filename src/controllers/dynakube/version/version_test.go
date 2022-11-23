@@ -89,7 +89,6 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 
 		err = ReconcileVersions(ctx, dynakube, fakeClient, fs, registry.ImageVersionExt, *timeProvider)
 		assert.NoError(t, err)
-
 	})
 
 	t.Run("some image versions were updated", func(t *testing.T) {

@@ -11,7 +11,6 @@ import (
 
 func TestConflictingActiveGateConfiguration(t *testing.T) {
 	t.Run(`valid dynakube specs`, func(t *testing.T) {
-
 		assertAllowedResponseWithoutWarnings(t, &dynatracev1beta1.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynatracev1beta1.DynaKubeSpec{
@@ -71,7 +70,6 @@ func TestConflictingActiveGateConfiguration(t *testing.T) {
 }
 
 func TestDuplicateActiveGateCapabilities(t *testing.T) {
-
 	t.Run(`conflicting dynakube specs`, func(t *testing.T) {
 		assertDeniedResponse(t,
 			[]string{fmt.Sprintf(errorDuplicateActiveGateCapability, dynatracev1beta1.RoutingCapability.DisplayName)},
@@ -91,7 +89,6 @@ func TestDuplicateActiveGateCapabilities(t *testing.T) {
 }
 
 func TestInvalidActiveGateCapabilities(t *testing.T) {
-
 	t.Run(`conflicting dynakube specs`, func(t *testing.T) {
 		assertDeniedResponse(t,
 			[]string{fmt.Sprintf(errorInvalidActiveGateCapability, "invalid-capability")},

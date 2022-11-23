@@ -422,7 +422,6 @@ func TestNewDaemonset_Affinity(t *testing.T) {
 				},
 			},
 		})
-
 	})
 }
 

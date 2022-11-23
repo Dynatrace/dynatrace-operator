@@ -92,7 +92,6 @@ func handleIstioConfigurationForServiceEntry(istioConfig *configuration) (bool, 
 func createIstioConfigurationForServiceEntry(dynaKube *dynatracev1beta1.DynaKube,
 	serviceEntry *istiov1alpha3.ServiceEntry, role string,
 	istioClient istioclientset.Interface, scheme *runtime.Scheme) error {
-
 	serviceEntry.Labels = buildIstioLabels(dynaKube.GetName(), role)
 	if err := controllerutil.SetControllerReference(dynaKube, serviceEntry, scheme); err != nil {
 		return err
@@ -108,7 +107,6 @@ func createIstioConfigurationForServiceEntry(dynaKube *dynatracev1beta1.DynaKube
 }
 
 func removeIstioConfigurationForServiceEntry(istioConfig *configuration, seen map[string]bool) (bool, error) {
-
 	list, err := istioConfig.reconciler.istioClient.NetworkingV1alpha3().ServiceEntries(istioConfig.instance.GetNamespace()).List(context.TODO(), *istioConfig.listOps)
 	if err != nil {
 		log.Error(err, "istio: error listing service entries")

@@ -42,7 +42,6 @@ func (installer Installer) extractAgentBinariesFromImage(pullInfo imagePullInfo)
 		return errors.WithStack(err)
 	}
 	return installer.unpackOciImage(manifests, pullInfo.imageCacheDir, pullInfo.targetDir)
-
 }
 
 func (installer Installer) unmarshalManifestBlob(manifestBlob []byte, imageCacheDir string) ([]*manifest.OCI1, error) {

@@ -474,7 +474,6 @@ func tenantUUID(apiUrl string) (string, error) {
 	hostnameWithDomains := strings.FieldsFunc(parsedUrl.Hostname(), runeIs('.'))
 	if len(hostnameWithDomains) >= 1 {
 		return hostnameWithDomains[0], nil
-
 	}
 
 	return "", errors.Errorf("problem getting tenant id from API URL '%s'", apiUrl)

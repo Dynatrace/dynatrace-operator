@@ -344,7 +344,6 @@ func (controller *Controller) setupAutomaticApiMonitoring(dynakube *dynatracev1b
 	if dynakube.Status.KubeSystemUUID != "" &&
 		dynakube.FeatureAutomaticKubernetesApiMonitoring() &&
 		dynakube.IsKubernetesMonitoringActiveGateEnabled() {
-
 		clusterLabel := dynakube.FeatureAutomaticKubernetesApiMonitoringClusterName()
 		if clusterLabel == "" {
 			clusterLabel = dynakube.Name

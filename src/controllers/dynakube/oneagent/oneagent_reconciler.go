@@ -188,7 +188,7 @@ func (r *Reconciler) reconcileInstanceStatuses(ctx context.Context, dynakube *dy
 		handlePodListError(err, listOpts)
 	}
 
-	instanceStatuses, err := getInstanceStatuses(pods)
+	instanceStatuses := getInstanceStatuses(pods)
 	if err != nil {
 		if len(instanceStatuses) == 0 {
 			return err
@@ -203,7 +203,7 @@ func (r *Reconciler) reconcileInstanceStatuses(ctx context.Context, dynakube *dy
 	return err
 }
 
-func getInstanceStatuses(pods []corev1.Pod) (map[string]dynatracev1beta1.OneAgentInstance, error) {
+func getInstanceStatuses(pods []corev1.Pod) map[string]dynatracev1beta1.OneAgentInstance {
 	instanceStatuses := make(map[string]dynatracev1beta1.OneAgentInstance)
 
 	for _, pod := range pods {
@@ -213,5 +213,5 @@ func getInstanceStatuses(pods []corev1.Pod) (map[string]dynatracev1beta1.OneAgen
 		}
 	}
 
-	return instanceStatuses, nil
+	return instanceStatuses
 }

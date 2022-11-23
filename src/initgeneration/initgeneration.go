@@ -194,7 +194,6 @@ func getAPIToken(tokens corev1.Secret) string {
 //
 // Checks all the dynakubes with host-monitoring against all the nodes (using the nodeSelector), creating the above mentioned mapping.
 func (g *InitGenerator) getHostMonitoringNodes(dk *dynatracev1beta1.DynaKube) (map[string]string, error) {
-
 	imNodes := map[string]string{}
 	if !dk.CloudNativeFullstackMode() {
 		return imNodes, nil

@@ -104,7 +104,6 @@ func TestApiUrl(t *testing.T) {
 		assert.NoErrorf(t, checkApiUrl(&troubleshootCtx), "invalid ApiUrl")
 	})
 	t.Run("invalid ApiUrl", func(t *testing.T) {
-
 		troubleshootCtx := troubleshootContext{namespaceName: testNamespace, dynakube: *testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testOtherApiUrl).build()}
 		assert.Errorf(t, checkApiUrl(&troubleshootCtx), "valid ApiUrl")
 	})

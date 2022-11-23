@@ -21,7 +21,7 @@ func (webhook *podMutatorWebhook) createMutationRequestBase(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	dynakubeName, err := getDynakubeName(*namespace, webhook.deployedViaOLM)
+	dynakubeName, err := getDynakubeName(*namespace)
 	if err != nil && !webhook.deployedViaOLM {
 		return nil, err
 	} else if err != nil {
@@ -59,7 +59,7 @@ func getNamespaceFromRequest(ctx context.Context, apiReader client.Reader, req a
 	return &namespace, nil
 }
 
-func getDynakubeName(namespace corev1.Namespace, deployedViaOLM bool) (string, error) {
+func getDynakubeName(namespace corev1.Namespace) (string, error) {
 	dynakubeName, ok := namespace.Labels[dtwebhook.InjectionInstanceLabel]
 	if !ok {
 		return "", errors.Errorf("no DynaKube instance set for namespace: %s", namespace.Name)

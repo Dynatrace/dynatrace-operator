@@ -186,7 +186,7 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Cont
 			return nil, false, err
 		}
 	} else {
-		agentUpdater, err = newAgentUrlUpdater(ctx, provisioner.fs, dtc, dynakubeMetadata.LatestVersion, provisioner.path, provisioner.recorder, dk)
+		agentUpdater, err = newAgentUrlUpdater(provisioner.fs, dtc, dynakubeMetadata.LatestVersion, provisioner.path, provisioner.recorder, dk)
 		if err != nil {
 			log.Info("error when setting up the agent url updater", "error", err.Error())
 			return nil, false, err
