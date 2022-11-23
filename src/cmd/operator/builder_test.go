@@ -222,7 +222,7 @@ func TestOperatorCommand(t *testing.T) {
 }
 
 func createFakeClient(isDeployedViaOlm bool) client.WithWatch {
-	var annotations map[string]string = map[string]string{}
+	annotations := map[string]string{}
 	if isDeployedViaOlm {
 		annotations = map[string]string{
 			"olm.operatorNamespace": "operators",

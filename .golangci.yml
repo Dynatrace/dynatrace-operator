@@ -17,10 +17,88 @@ linters-settings:
     excludes:
       - G305 # File traversal when extracting zip/tar archive
   revive:
+    enable-all-rules: true
     rules:
-      - name: exported
-
-
+      - name: cognitive-complexity
+        disabled: true
+      - name: function-result-limit
+        disabled: true
+      - name: function-length
+        disabled: true
+      - name: cyclomatic
+        disabled: true
+      - name: banned-characters
+        disabled: true
+      - name: file-header
+        disabled: true
+      - name: max-public-structs
+        disabled: true
+      - name: argument-limit
+        disabled: true
+      - name: line-length-limit
+        disabled: true
+      - name: add-constant
+        disabled: true
+      - name: var-naming
+        disabled: true
+      - name: unused-receiver
+        disabled: true
+      - name: import-shadowing
+        disabled: true
+      - name: modifies-value-receiver
+        disabled: true
+      - name: bare-return
+        disabled: true
+      - name: bare-return
+        disabled: true
+      - name: if-return
+        disabled: true
+      - name: redefines-builtin-id
+        disabled: true
+      - name: context-keys-type
+        disabled: true
+      - name: unused-parameter
+        disabled: true
+      - name: time-naming
+        disabled: true
+      - name: errorf
+        disabled: true
+      - name: unexported-return
+        disabled: true
+      - name: unhandled-error
+        disabled: true
+      - name: confusing-naming
+        disabled: true
+      - name: indent-error-flow
+        disabled: true
+      - name: early-return
+        disabled: true
+      - name: bool-literal-in-expr
+        disabled: true
+      - name: error-strings
+        disabled: true
+      - name: empty-lines
+        disabled: true
+      - name: flag-parameter
+        disabled: true
+      - name: blank-imports
+        disabled: true
+      - name: increment-decrement
+        disabled: true
+      - name: context-as-argument
+        disabled: true
+      - name: confusing-results
+        disabled: true
+      - name: receiver-naming
+        disabled: true
+      - name: nested-structs
+        disabled: true
+      - name: struct-tag
+        disabled: true
+      - name: error-naming
+        disabled: true
+      - name: range-val-address
+        disabled: true
 
 linters:
   disable-all: true
