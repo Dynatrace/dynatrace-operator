@@ -17,7 +17,7 @@ func TestVersionCollector(t *testing.T) {
 
 	versionCollector := operatorVersionCollector{
 		collectorCommon{
-			log: newSupportArchiveLoggerWithWriter(&logBuffer),
+			log: newSupportArchiveLogger(&logBuffer),
 			supportArchive: tarball{
 				tarWriter: tar.NewWriter(&tarBuffer),
 			},

@@ -3,7 +3,6 @@ package support_archive
 import (
 	"fmt"
 	"io"
-	"os"
 
 	"github.com/go-logr/logr"
 	"go.uber.org/zap"
@@ -15,16 +14,7 @@ const (
 	supportArchiveLoggerName = "[support-archive]"
 )
 
-func newSupportArchiveLogger(tarballToStdout bool) logr.Logger {
-	if tarballToStdout {
-		// avoid corrupting tarball
-		return newSupportArchiveLoggerWithWriter(os.Stderr)
-	} else {
-		return newSupportArchiveLoggerWithWriter(os.Stdout)
-	}
-}
-
-func newSupportArchiveLoggerWithWriter(out io.Writer) logr.Logger {
+func newSupportArchiveLogger(out io.Writer) logr.Logger {
 	config := zap.NewProductionEncoderConfig()
 	config.TimeKey = ""
 	config.LevelKey = ""

@@ -9,7 +9,7 @@ import (
 
 func TestSupportArchiveLogger(t *testing.T) {
 	logBuffer := bytes.Buffer{}
-	logger := newSupportArchiveLoggerWithWriter(&logBuffer)
+	logger := newSupportArchiveLogger(&logBuffer)
 
 	logger.Info("info message")
 	logger.Error(assert.AnError, "error message")

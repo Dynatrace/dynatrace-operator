@@ -1,6 +1,7 @@
 package support_archive
 
 import (
+	"io"
 	"os"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -13,13 +14,13 @@ import (
 const (
 	use                            = "support-archive"
 	namespaceFlagName              = "namespace"
-	stdoutFlagName                 = "stdout"
+	tarballToStdoutFlagName        = "stdout"
 	defaultSupportArchiveTargetDir = "/tmp/dynatrace-operator"
 )
 
 var (
-	namespaceFlagValue string
-	stdoutFlagValue    bool
+	namespaceFlagValue       string
+	tarballToStdoutFlagValue bool
 )
 
 type CommandBuilder struct {
@@ -41,12 +42,12 @@ func (builder CommandBuilder) Build() *cobra.Command {
 
 func addFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&namespaceFlagValue, namespaceFlagName, "dynatrace", "Specify a different Namespace.")
-	cmd.PersistentFlags().BoolVar(&stdoutFlagValue, stdoutFlagName, false, "Write tarball to stdout.")
+	cmd.PersistentFlags().BoolVar(&tarballToStdoutFlagValue, tarballToStdoutFlagName, false, "Write tarball to stdout.")
 }
 
 func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-		log := newSupportArchiveLogger(stdoutFlagValue)
+		log := newSupportArchiveLogger(getLogOutput(tarballToStdoutFlagValue))
 		version.LogVersionToLogger(log)
 
 		err := dynatracev1beta1.AddToScheme(scheme.Scheme)
@@ -54,7 +55,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		tarFile, err := createTarballTargetFile(stdoutFlagValue, defaultSupportArchiveTargetDir)
+		tarFile, err := createTarballTargetFile(tarballToStdoutFlagValue, defaultSupportArchiveTargetDir)
 		if err != nil {
 			return err
 		}
@@ -63,9 +64,18 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		defer supportArchive.close()
 
 		runCollectors(log, supportArchive)
-		printCopyCommand(log, stdoutFlagValue, tarFile.Name())
+		printCopyCommand(log, tarballToStdoutFlagValue, tarFile.Name())
 
 		return nil
+	}
+}
+
+func getLogOutput(tarballToStdout bool) io.Writer {
+	if tarballToStdout {
+		// avoid corrupting tarball
+		return os.Stderr
+	} else {
+		return os.Stdout
 	}
 }
 
