@@ -24,7 +24,7 @@ const (
 
 	DeploymentTypeActiveGate = "active_gate"
 
-	AuthTokenSecretVolumeName = "ag-authtoken-secret" //nolint:gosec
+	AuthTokenSecretVolumeName = "ag-authtoken-secret"
 	AuthTokenMountPoint       = connectioninfo.TokenBasePath + "/auth-token"
 
 	EnvDtServer             = "DT_SERVER"
@@ -40,7 +40,7 @@ const (
 	AnnotationActiveGateConfigurationHash = dynatracev1beta1.InternalFlagPrefix + "activegate-configuration-hash"
 	AnnotationActiveGateContainerAppArmor = "container.apparmor.security.beta.kubernetes.io/" + ActiveGateContainerName
 
-	InternalProxySecretMountPath = "/var/lib/dynatrace/secrets/internal-proxy" //nolint:gosec
+	InternalProxySecretMountPath = "/var/lib/dynatrace/secrets/internal-proxy"
 
 	InternalProxySecretVolumeName = "internal-proxy-secret-volume"
 

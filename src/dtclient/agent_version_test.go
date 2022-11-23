@@ -15,8 +15,8 @@ import (
 )
 
 const (
-	apiToken  = "some-API-token"  //nolint:gosec
-	paasToken = "some-PaaS-token" //nolint:gosec
+	apiToken  = "some-API-token"
+	paasToken = "some-PaaS-token"
 
 	testErrorMessage = `{ "error": { "message" : "test-error", "code": 400 } }`
 )

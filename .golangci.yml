@@ -15,6 +15,7 @@ linters-settings:
     ignore-tests: true
   gosec:
     excludes:
+      - G101 # "pattern": "(?i)passwd|pass|password|pwd|secret|private_key|token"
       - G305 # File traversal when extracting zip/tar archive
   revive:
     enable-all-rules: true

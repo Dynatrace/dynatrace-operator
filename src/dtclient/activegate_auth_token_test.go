@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	activeGateAuthTokenUrl = "/v2/activeGateTokens" //nolint:gosec
+	activeGateAuthTokenUrl = "/v2/activeGateTokens"
 	dynakubeName           = "dynakube"
 )
 

@@ -9,7 +9,7 @@ const (
 	CommunicationEndpointsName = "communication-endpoints"
 	TenantUuidName             = "tenant-uuid"
 
-	TokenBasePath         = "/var/lib/dynatrace/secrets/tokens" //nolint:gosec
+	TokenBasePath         = "/var/lib/dynatrace/secrets/tokens"
 	TenantTokenMountPoint = TokenBasePath + "/tenant-token"
 
 	TenantSecretVolumeName = "connection-info-secret"

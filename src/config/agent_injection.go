@@ -5,7 +5,7 @@ type InstallMode string
 const (
 	AgentNoHostTenant                  = "-"
 	AgentContainerConfFilenameTemplate = "container_%s.conf"
-	AgentInitSecretName                = "dynatrace-dynakube-config" //nolint:gosec
+	AgentInitSecretName                = "dynatrace-dynakube-config"
 	AgentInitSecretConfigField         = "config"
 
 	LdPreloadFilename = "ld.so.preload"

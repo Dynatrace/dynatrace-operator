@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const testSecretFileContent = "apiUrl: apiUrl\napiToken: apiToken" //nolint:gosec
+const testSecretFileContent = "apiUrl: apiUrl\napiToken: apiToken"
 
 func TestNewFromConfig(t *testing.T) {
 	fs := afero.NewMemMapFs()

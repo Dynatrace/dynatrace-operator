@@ -26,7 +26,7 @@ const activeGateInternalCommunicationPort = 9999
 
 const (
 	dataSourceStartupArguments = "eec-ds-shared"
-	dataSourceAuthToken        = "dsauthtokendir" //nolint:gosec
+	dataSourceAuthToken        = "dsauthtokendir"
 	eecLogs                    = "extensions-logs"
 	eecConfig                  = "eec-config"
 

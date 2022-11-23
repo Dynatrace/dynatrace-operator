@@ -17,7 +17,7 @@ var _ builder.Modifier = CertificatesModifier{}
 
 const (
 	jettyCerts     = "server-certs"
-	secretsRootDir = "/var/lib/dynatrace/secrets/" //nolint:gosec
+	secretsRootDir = "/var/lib/dynatrace/secrets/"
 )
 
 func NewCertificatesModifier(dynakube dynatracev1beta1.DynaKube) CertificatesModifier {

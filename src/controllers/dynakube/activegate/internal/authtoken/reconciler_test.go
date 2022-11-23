@@ -21,7 +21,7 @@ const (
 	testDynakubeName = "test-dynakube"
 	testNamespace    = "test-namespace"
 	secretName       = testDynakubeName + dynatracev1beta1.AuthTokenSecretSuffix
-	testToken        = "dt.testtoken.test" //nolint:gosec
+	testToken        = "dt.testtoken.test"
 )
 
 var (
