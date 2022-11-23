@@ -23,15 +23,19 @@ type tarball struct {
 	tarFile    *os.File
 }
 
-func newTarball(ctx *supportArchiveContext) (*tarball, error) {
+func newTarball(useStdout bool) (tarball, error) {
+	return newTarballWithTargetDir(useStdout, "")
+}
+
+func newTarballWithTargetDir(useStdout bool, targetDir string) (tarball, error) {
 	var err error
-	tarball := tarball{}
-	if tarball.tarFile, err = selectAndCreateTargetFile(ctx); err != nil {
-		return nil, err
+	newTarball := tarball{}
+	if newTarball.tarFile, err = newTarball.selectAndCreateTargetFile(useStdout, targetDir); err != nil {
+		return tarball{}, err
 	}
-	tarball.gzipWriter = gzip.NewWriter(tarball.tarFile)
-	tarball.tarWriter = tar.NewWriter(tarball.gzipWriter)
-	return &tarball, nil
+	newTarball.gzipWriter = gzip.NewWriter(newTarball.tarFile)
+	newTarball.tarWriter = tar.NewWriter(newTarball.gzipWriter)
+	return newTarball, nil
 }
 
 func (t *tarball) close() {
@@ -71,11 +75,11 @@ func (t *tarball) addFile(fileName string, file io.Reader) error {
 	return nil
 }
 
-func selectAndCreateTargetFile(ctx *supportArchiveContext) (*os.File, error) {
-	if ctx.toStdout {
+func (t *tarball) selectAndCreateTargetFile(useStdout bool, targetDir string) (*os.File, error) {
+	if useStdout {
 		return os.Stdout, nil
 	} else {
-		tarFile, err := createTarFile(ctx)
+		tarFile, err := t.createTarFile(targetDir)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
@@ -83,12 +87,12 @@ func selectAndCreateTargetFile(ctx *supportArchiveContext) (*os.File, error) {
 	}
 }
 
-func createTarFile(ctx *supportArchiveContext) (*os.File, error) {
+func (t *tarball) createTarFile(targetDir string) (*os.File, error) {
 	var tarballFilePath string
-	if ctx.tarballTargetDir == "" {
+	if targetDir == "" {
 		tarballFilePath = fmt.Sprintf(tarFileName, defaultTargetDir, time.Now().Format(time.RFC3339))
 	} else {
-		tarballFilePath = fmt.Sprintf(tarFileName, ctx.tarballTargetDir, time.Now().Format(time.RFC3339))
+		tarballFilePath = fmt.Sprintf(tarFileName, targetDir, time.Now().Format(time.RFC3339))
 	}
 
 	tarballFilePath = strings.Replace(tarballFilePath, ":", "_", -1)

@@ -3,7 +3,6 @@ package support_archive
 import (
 	"archive/tar"
 	"bytes"
-	"context"
 	"io"
 	"os"
 	"testing"
@@ -18,12 +17,7 @@ func TestAddFile(t *testing.T) {
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
-	ctx := supportArchiveContext{
-		ctx:              context.TODO(),
-		tarballTargetDir: tmpDir,
-	}
-
-	tarball, err := newTarball(&ctx)
+	tarball, err := newTarballWithTargetDir(false, tmpDir)
 	require.NoError(t, err)
 
 	fileName := tarball.tarFile.Name()
@@ -52,12 +46,7 @@ func TestAddFile(t *testing.T) {
 }
 
 func TestTarballToStdout(t *testing.T) {
-	ctx := supportArchiveContext{
-		ctx:      context.TODO(),
-		toStdout: true,
-	}
-
-	tarball, err := newTarball(&ctx)
+	tarball, err := newTarball(true)
 	require.NoError(t, err)
 
 	assert.Equal(t, tarball.tarFile, os.Stdout)

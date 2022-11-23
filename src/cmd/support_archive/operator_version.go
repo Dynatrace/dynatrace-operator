@@ -10,7 +10,7 @@ import (
 
 const versionFileName = "operator-version.txt"
 
-func collectOperatorVersion(ctx *supportArchiveContext, tarball *tarball) error {
+func collectOperatorVersion(ctx supportArchiveContext) error {
 	logInfof(ctx.log, "Storing operator version into %s", versionFileName)
 
 	versionString := fmt.Sprintf("version: %s\ngitCommit: %s\nbuildDate: %s\ngoVersion %s\nplatform %s/%s\n",
@@ -19,7 +19,7 @@ func collectOperatorVersion(ctx *supportArchiveContext, tarball *tarball) error 
 		version.BuildDate,
 		runtime.Version(),
 		runtime.GOOS, runtime.GOARCH)
-	tarball.addFile(versionFileName, strings.NewReader(versionString))
+	ctx.supportArchive.addFile(versionFileName, strings.NewReader(versionString))
 
 	return nil
 }

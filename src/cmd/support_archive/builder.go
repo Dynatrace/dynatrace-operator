@@ -7,6 +7,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
+	"github.com/go-logr/logr"
 	"github.com/spf13/cobra"
 )
 
@@ -48,10 +49,9 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		ctx := supportArchiveContext{
 			ctx:           context.TODO(),
 			namespaceName: namespaceFlagValue,
-			toStdout:      stdoutFlagValue,
+			log:           newSupportArchiveLogger(stdoutFlagValue),
 		}
 
-		registerSupportArchiveLogger(&ctx)
 		version.LogVersionToLogger(ctx.log)
 
 		err := dynatracev1beta1.AddToScheme(scheme.Scheme)
@@ -59,34 +59,38 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		supportArchive, err := newTarball(&ctx)
+		supportArchive, err := newTarball(stdoutFlagValue)
 		if err != nil {
 			return err
 		}
 		defer supportArchive.close()
 
-		runCollectors(&ctx, supportArchive)
-		printCopyCommand(&ctx, supportArchive)
+		ctx.supportArchive = supportArchive
+
+		runCollectors(ctx)
+		printCopyCommand(ctx.log, stdoutFlagValue, supportArchive)
 
 		return nil
 	}
 }
 
-func runCollectors(ctx *supportArchiveContext, supportArchive *tarball) {
-	collectors := []func(*supportArchiveContext, *tarball) error{
+type collectorFunc func(supportArchiveContext) error
+
+func runCollectors(ctx supportArchiveContext) {
+	collectors := []collectorFunc{
 		collectOperatorVersion,
 	}
 
 	for _, c := range collectors {
-		if err := c(ctx, supportArchive); err != nil {
+		if err := c(ctx); err != nil {
 			logErrorf(ctx.log, err, "failed collector")
 		}
 	}
 }
 
-func printCopyCommand(ctx *supportArchiveContext, supportArchive *tarball) {
-	if !ctx.toStdout {
-		logInfof(ctx.log, "kubectl -n %s cp %s:%s .%s\n",
+func printCopyCommand(log logr.Logger, tarballToStdout bool, supportArchive tarball) {
+	if !tarballToStdout {
+		logInfof(log, "kubectl -n %s cp %s:%s .%s\n",
 			os.Getenv("POD_NAMESPACE"),
 			os.Getenv("POD_NAME"),
 			supportArchive.tarFile.Name(),

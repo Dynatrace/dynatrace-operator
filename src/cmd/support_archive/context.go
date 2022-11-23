@@ -7,9 +7,8 @@ import (
 )
 
 type supportArchiveContext struct {
-	ctx              context.Context
-	namespaceName    string
-	toStdout         bool
-	log              logr.Logger
-	tarballTargetDir string
+	ctx            context.Context
+	namespaceName  string
+	log            logr.Logger
+	supportArchive tarball
 }

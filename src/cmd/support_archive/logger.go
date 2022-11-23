@@ -15,22 +15,22 @@ const (
 	supportArchiveLoggerName = "[support-archive]"
 )
 
-func registerSupportArchiveLogger(ctx *supportArchiveContext) {
-	if ctx.toStdout {
+func newSupportArchiveLogger(useStdout bool) logr.Logger {
+	if useStdout {
 		// using stderr because we use stdout to deliver the tarball
-		ctx.log = newSupportArchiveLogger(supportArchiveLoggerName, os.Stderr)
+		return newSupportArchiveLoggerWithWriter(os.Stderr)
 	} else {
-		ctx.log = newSupportArchiveLogger(supportArchiveLoggerName, os.Stdout)
+		return newSupportArchiveLoggerWithWriter(os.Stdout)
 	}
 }
 
-func newSupportArchiveLogger(name string, out io.Writer) logr.Logger {
+func newSupportArchiveLoggerWithWriter(out io.Writer) logr.Logger {
 	config := zap.NewProductionEncoderConfig()
 	config.TimeKey = ""
 	config.LevelKey = ""
 	config.NameKey = "name"
 	config.EncodeTime = zapcore.ISO8601TimeEncoder
-	return ctrlzap.New(ctrlzap.WriteTo(out), ctrlzap.Encoder(zapcore.NewConsoleEncoder(config))).WithName(name)
+	return ctrlzap.New(ctrlzap.WriteTo(out), ctrlzap.Encoder(zapcore.NewConsoleEncoder(config))).WithName(supportArchiveLoggerName)
 }
 
 func logInfof(log logr.Logger, format string, v ...interface{}) {

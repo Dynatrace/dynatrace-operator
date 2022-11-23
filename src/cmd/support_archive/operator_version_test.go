@@ -15,18 +15,17 @@ func TestVersionCollector(t *testing.T) {
 	logBuffer := bytes.Buffer{}
 
 	tarBuffer := bytes.Buffer{}
-	tarball := tarball{
-		tarWriter: tar.NewWriter(&tarBuffer),
-	}
 
 	ctx := supportArchiveContext{
 		ctx:           context.TODO(),
 		namespaceName: "",
-		toStdout:      false,
-		log:           newSupportArchiveLogger(t.Name(), &logBuffer),
+		log:           newSupportArchiveLoggerWithWriter(&logBuffer),
+		supportArchive: tarball{
+			tarWriter: tar.NewWriter(&tarBuffer),
+		},
 	}
 
-	require.NoError(t, collectOperatorVersion(&ctx, &tarball))
+	require.NoError(t, collectOperatorVersion(ctx))
 	tarReader := tar.NewReader(&tarBuffer)
 
 	assert.Contains(t, logBuffer.String(), "Storing operator version")

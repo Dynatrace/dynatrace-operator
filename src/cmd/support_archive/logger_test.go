@@ -9,7 +9,7 @@ import (
 
 func TestSupportArchiveLogger(t *testing.T) {
 	logBuffer := bytes.Buffer{}
-	logger := newSupportArchiveLogger("testL0gger", &logBuffer)
+	logger := newSupportArchiveLoggerWithWriter(&logBuffer)
 
 	logger.Info("info message")
 	logger.Error(assert.AnError, "error message")
@@ -18,5 +18,5 @@ func TestSupportArchiveLogger(t *testing.T) {
 
 	assert.Contains(t, logLines, "info message")
 	assert.Contains(t, logLines, "error message")
-	assert.Contains(t, logLines, "testL0gger")
+	assert.Contains(t, logLines, supportArchiveLoggerName)
 }
