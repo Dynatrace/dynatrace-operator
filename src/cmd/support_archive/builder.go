@@ -12,9 +12,10 @@ import (
 )
 
 const (
-	use               = "support-archive"
-	namespaceFlagName = "namespace"
-	stdoutFlagName    = "stdout"
+	use                            = "support-archive"
+	namespaceFlagName              = "namespace"
+	stdoutFlagName                 = "stdout"
+	defaultSupportArchiveTargetDir = "/tmp/dynatrace-operator"
 )
 
 var (
@@ -59,16 +60,17 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		supportArchive, err := newTarball(stdoutFlagValue)
+		tarFile, err := createTarballTargetFile(stdoutFlagValue, defaultSupportArchiveTargetDir)
 		if err != nil {
 			return err
 		}
+		supportArchive := newTarball(tarFile)
+		defer tarFile.Close()
 		defer supportArchive.close()
 
 		ctx.supportArchive = supportArchive
-
 		runCollectors(ctx)
-		printCopyCommand(ctx.log, stdoutFlagValue, supportArchive)
+		printCopyCommand(ctx.log, stdoutFlagValue, tarFile.Name())
 
 		return nil
 	}
@@ -88,12 +90,19 @@ func runCollectors(ctx supportArchiveContext) {
 	}
 }
 
-func printCopyCommand(log logr.Logger, tarballToStdout bool, supportArchive tarball) {
-	if !tarballToStdout {
+func printCopyCommand(log logr.Logger, tarballToStdout bool, tarFileName string) {
+	podNamespace := os.Getenv("POD_NAMESPACE")
+	podName := os.Getenv("POD_NAME")
+
+	if tarballToStdout {
+		return
+	}
+
+	if podNamespace == "" || podName == "" {
+		// most probably not running on a pod
+		logInfof(log, "cp %s .", tarFileName)
+	} else {
 		logInfof(log, "kubectl -n %s cp %s:%s .%s\n",
-			os.Getenv("POD_NAMESPACE"),
-			os.Getenv("POD_NAME"),
-			supportArchive.tarFile.Name(),
-			supportArchive.tarFile.Name())
+			podNamespace, podName, tarFileName, tarFileName)
 	}
 }

@@ -15,42 +15,30 @@ import (
 )
 
 const tarFileName = "%s/operator-support-archive-%s.tgz"
-const defaultTargetDir = "/tmp/dynatrace-operator"
 
 type tarball struct {
 	tarWriter  *tar.Writer
 	gzipWriter *gzip.Writer
-	tarFile    *os.File
 }
 
-func newTarball(useStdout bool) (tarball, error) {
-	return newTarballWithTargetDir(useStdout, "")
-}
-
-func newTarballWithTargetDir(useStdout bool, targetDir string) (tarball, error) {
-	var err error
+func newTarball(target io.Writer) tarball {
 	newTarball := tarball{}
-	if newTarball.tarFile, err = newTarball.selectAndCreateTargetFile(useStdout, targetDir); err != nil {
-		return tarball{}, err
-	}
-	newTarball.gzipWriter = gzip.NewWriter(newTarball.tarFile)
+
+	newTarball.gzipWriter = gzip.NewWriter(target)
 	newTarball.tarWriter = tar.NewWriter(newTarball.gzipWriter)
-	return newTarball, nil
+	return newTarball
 }
 
-func (t *tarball) close() {
+func (t tarball) close() {
 	if t.tarWriter != nil {
 		t.tarWriter.Close()
 	}
 	if t.gzipWriter != nil {
 		t.gzipWriter.Close()
 	}
-	if t.tarFile != nil {
-		t.tarFile.Close()
-	}
 }
 
-func (t *tarball) addFile(fileName string, file io.Reader) error {
+func (t tarball) addFile(fileName string, file io.Reader) error {
 	buffer := &bytes.Buffer{}
 	_, err := io.Copy(buffer, file)
 	if err != nil {
@@ -75,11 +63,11 @@ func (t *tarball) addFile(fileName string, file io.Reader) error {
 	return nil
 }
 
-func (t *tarball) selectAndCreateTargetFile(useStdout bool, targetDir string) (*os.File, error) {
+func createTarballTargetFile(useStdout bool, targetDir string) (*os.File, error) {
 	if useStdout {
 		return os.Stdout, nil
 	} else {
-		tarFile, err := t.createTarFile(targetDir)
+		tarFile, err := createTarFile(targetDir)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
@@ -87,14 +75,8 @@ func (t *tarball) selectAndCreateTargetFile(useStdout bool, targetDir string) (*
 	}
 }
 
-func (t *tarball) createTarFile(targetDir string) (*os.File, error) {
-	var tarballFilePath string
-	if targetDir == "" {
-		tarballFilePath = fmt.Sprintf(tarFileName, defaultTargetDir, time.Now().Format(time.RFC3339))
-	} else {
-		tarballFilePath = fmt.Sprintf(tarFileName, targetDir, time.Now().Format(time.RFC3339))
-	}
-
+func createTarFile(targetDir string) (*os.File, error) {
+	tarballFilePath := fmt.Sprintf(tarFileName, targetDir, time.Now().Format(time.RFC3339))
 	tarballFilePath = strings.Replace(tarballFilePath, ":", "_", -1)
 
 	tarFile, err := os.Create(tarballFilePath)

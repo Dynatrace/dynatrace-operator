@@ -17,24 +17,26 @@ func TestAddFile(t *testing.T) {
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
-	tarball, err := newTarballWithTargetDir(false, tmpDir)
+	tarFile, err := createTarFile(tmpDir)
 	require.NoError(t, err)
+	tarball := newTarball(tarFile)
 
-	fileName := tarball.tarFile.Name()
+	fileName := tarFile.Name()
 
 	testString := []byte(`Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.`)
 	require.NoError(t, tarball.addFile("lorem-ipsum.txt", bytes.NewReader(testString)))
 	tarball.close()
+	tarFile.Close()
 
-	tarFile, err := os.OpenFile(fileName, os.O_RDONLY, os.ModeTemporary)
+	resultFile, err := os.OpenFile(fileName, os.O_RDONLY, os.ModeTemporary)
 	require.NoError(t, err)
 	defer tarFile.Close()
 
-	zipReader, err := gzip.NewReader(tarFile)
+	zipReader, err := gzip.NewReader(resultFile)
 	require.NoError(t, err)
 	tarReader := tar.NewReader(zipReader)
-	hdr, err := tarReader.Next()
 
+	hdr, err := tarReader.Next()
 	require.NoError(t, err)
 	assert.Equal(t, "lorem-ipsum.txt", hdr.Name)
 
@@ -43,11 +45,7 @@ func TestAddFile(t *testing.T) {
 	require.Equal(t, io.EOF, err)
 	assert.Equal(t, len(testString), resultLen)
 	assert.Equal(t, testString, resultString[:resultLen])
-}
 
-func TestTarballToStdout(t *testing.T) {
-	tarball, err := newTarball(true)
-	require.NoError(t, err)
-
-	assert.Equal(t, tarball.tarFile, os.Stdout)
+	zipReader.Close()
+	resultFile.Close()
 }
