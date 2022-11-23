@@ -67,7 +67,7 @@ func SetDynakubeStatus(dynakube *dynatracev1beta1.DynaKube, opts Options) error 
 }
 
 func communicationHostsToStatus(communicationHosts []dtclient.CommunicationHost) []dynatracev1beta1.CommunicationHostStatus {
-	var communicationHostStatuses []dynatracev1beta1.CommunicationHostStatus
+	communicationHostStatuses := make([]dynatracev1beta1.CommunicationHostStatus, len(communicationHosts))
 
 	for _, communicationHost := range communicationHosts {
 		communicationHostStatuses = append(communicationHostStatuses, dynatracev1beta1.CommunicationHostStatus(communicationHost))

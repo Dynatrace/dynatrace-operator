@@ -442,7 +442,7 @@ func (dk *DynaKube) ConnectionInfo() dtclient.OneAgentConnectionInfo {
 }
 
 func (dk *DynaKube) CommunicationHosts() []dtclient.CommunicationHost {
-	var communicationHosts []dtclient.CommunicationHost
+	communicationHosts := make([]dtclient.CommunicationHost, len(dk.Status.ConnectionInfo.CommunicationHosts))
 	for _, communicationHost := range dk.Status.ConnectionInfo.CommunicationHosts {
 		communicationHosts = append(communicationHosts, dtclient.CommunicationHost(communicationHost))
 	}

@@ -170,7 +170,7 @@ func (dtc *dynatraceClient) GetSettingsForMonitoredEntities(monitoredEntities []
 		return GetSettingsResponse{TotalCount: 0}, nil
 	}
 
-	var scopes []string
+	scopes := make([]string, len(monitoredEntities))
 	for _, entity := range monitoredEntities {
 		scopes = append(scopes, entity.EntityId)
 	}

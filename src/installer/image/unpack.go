@@ -86,7 +86,6 @@ func (installer ImageInstaller) unpackOciImage(manifests []*manifest.OCI1, image
 }
 
 func unmarshallImageIndex(fs afero.Fs, imageCacheDir string, manifestBlob []byte) ([]*manifest.OCI1, error) {
-	var manifests []*manifest.OCI1
 	index, err := manifest.OCI1IndexFromManifest(manifestBlob)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -94,6 +93,8 @@ func unmarshallImageIndex(fs afero.Fs, imageCacheDir string, manifestBlob []byte
 	aferoFs := afero.Afero{
 		Fs: fs,
 	}
+
+	var manifests []*manifest.OCI1 //nolint:prealloc
 	for _, descriptor := range index.Manifests {
 		manifestFile, err := aferoFs.ReadFile(filepath.Join(imageCacheDir, "blobs", descriptor.Digest.Algorithm().String(), descriptor.Digest.Hex()))
 		if err != nil {
