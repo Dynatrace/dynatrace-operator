@@ -100,6 +100,7 @@ linters-settings:
       - name: range-val-address
         disabled: true
 
+
 linters:
   disable-all: true
   enable:
@@ -138,3 +139,6 @@ issues:
     - linters:
         - gosec
       path: src/ingestendpoint/secret_test.go
+    - linters:
+        - unparam
+      text: always receives

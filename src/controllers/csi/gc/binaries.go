@@ -41,7 +41,7 @@ func (gc *CSIGarbageCollector) runBinaryGarbageCollection(ctx context.Context, p
 
 func (gc *CSIGarbageCollector) getStoredVersions(fs *afero.Afero, tenantUUID string) ([]string, error) {
 	bins, err := fs.ReadDir(gc.path.AgentBinaryDir(tenantUUID))
-	versions := make([]string, len(bins))
+	versions := make([]string, 0, len(bins))
 
 	if os.IsNotExist(err) {
 		log.Info("no versions stored")
