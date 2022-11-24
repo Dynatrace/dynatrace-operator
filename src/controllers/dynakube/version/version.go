@@ -36,35 +36,25 @@ func ReconcileVersions(
 	versionProvider VersionProviderCallback,
 	timeProvider kubeobjects.TimeProvider,
 ) error {
-	needsOneAgentUpdate := needsOneAgentUpdate(dynakube, timeProvider)
 	needsActiveGateUpdate := needsActiveGateUpdate(dynakube, timeProvider)
 	needsEecUpdate := needsEecUpdate(dynakube, timeProvider)
 	needsStatsdUpdate := needsStatsdUpdate(dynakube, timeProvider)
+	needsOneAgentUpdate := needsOneAgentUpdate(dynakube, timeProvider)
 
-	if !(needsActiveGateUpdate || needsOneAgentUpdate || needsEecUpdate || needsStatsdUpdate) {
+	if !(needsActiveGateUpdate || needsEecUpdate || needsStatsdUpdate || needsOneAgentUpdate) {
 		return nil
 	}
 
-	caCertPath := path.Join(TmpCAPath, TmpCAName)
-	dockerConfig := dockerconfig.NewDockerConfig(apiReader, *dynakube)
-	err := dockerConfig.SetupAuths(ctx)
+	return updateImages(ctx, dynakube, apiReader, fs, versionProvider, timeProvider, needsActiveGateUpdate, needsEecUpdate, needsStatsdUpdate, needsOneAgentUpdate)
+}
+
+func updateImages(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader, fs afero.Afero, versionProvider VersionProviderCallback, timeProvider kubeobjects.TimeProvider, needsActiveGateUpdate bool, needsEecUpdate bool, needsStatsdUpdate bool, needsOneAgentUpdate bool) error {
+	now := timeProvider.Now()
+	dockerConfig, err := createDockerConfigWithCustomCAs(ctx, dynakube, apiReader, fs)
 	if err != nil {
-		log.Info("failed to set up auths for image version checks")
 		return err
 	}
-	if dynakube.Spec.TrustedCAs != "" {
-		_ = os.MkdirAll(TmpCAPath, 0755)
-		err := dockerConfig.SaveCustomCAs(ctx, fs, caCertPath)
-		if err != nil {
-			log.Info("failed to save CAs locally for image version checks")
-			return err
-		}
-		defer func() {
-			_ = os.Remove(TmpCAPath)
-		}()
-	}
 
-	now := timeProvider.Now()
 	if needsActiveGateUpdate {
 		err := updateImageVersion(*now, dynakube.ActiveGateImage(), &dynakube.Status.ActiveGate.VersionStatus, dockerConfig, versionProvider, true)
 		if err != nil {
@@ -92,8 +82,29 @@ func ReconcileVersions(
 			log.Error(err, "failed to update OneAgent image version")
 		}
 	}
-
 	return nil
+}
+
+func createDockerConfigWithCustomCAs(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader, fs afero.Afero) (*dockerconfig.DockerConfig, error) {
+	caCertPath := path.Join(TmpCAPath, TmpCAName)
+	dockerConfig := dockerconfig.NewDockerConfig(apiReader, *dynakube)
+	err := dockerConfig.SetupAuths(ctx)
+	if err != nil {
+		log.Info("failed to set up auths for image version checks")
+		return nil, err
+	}
+	if dynakube.Spec.TrustedCAs != "" {
+		_ = os.MkdirAll(TmpCAPath, 0755)
+		err := dockerConfig.SaveCustomCAs(ctx, fs, caCertPath)
+		if err != nil {
+			log.Info("failed to save CAs locally for image version checks")
+			return nil, err
+		}
+		defer func() {
+			_ = os.Remove(TmpCAPath)
+		}()
+	}
+	return dockerConfig, nil
 }
 
 func needsStatsdUpdate(dynakube *dynatracev1beta1.DynaKube, timeProvider kubeobjects.TimeProvider) bool {
