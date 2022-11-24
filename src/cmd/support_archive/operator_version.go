@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/src/version"
+	"github.com/go-logr/logr"
 )
 
 const operatorVersionCollectorName = "operatorVersionCollector"
@@ -13,6 +14,15 @@ const operatorVersionFileName = "operator-version.txt"
 
 type operatorVersionCollector struct {
 	collectorCommon
+}
+
+func newOperatorVersionCollector(log logr.Logger, supportArchive tarball) collector {
+	return operatorVersionCollector{
+		collectorCommon{
+			log:            log,
+			supportArchive: supportArchive,
+		},
+	}
 }
 
 func (vc operatorVersionCollector) Do() error {

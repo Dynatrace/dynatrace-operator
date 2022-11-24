@@ -81,12 +81,7 @@ func getLogOutput(tarballToStdout bool) io.Writer {
 
 func runCollectors(log logr.Logger, supportArchive tarball) {
 	collectors := []collector{
-		operatorVersionCollector{
-			collectorCommon{
-				log:            log,
-				supportArchive: supportArchive,
-			},
-		},
+		newOperatorVersionCollector(log, supportArchive),
 	}
 
 	for _, c := range collectors {
