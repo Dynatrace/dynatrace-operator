@@ -36,7 +36,10 @@ func ReconcileVersions(
 	versionProvider VersionProviderCallback,
 	timeProvider kubeobjects.TimeProvider,
 ) error {
-	needsOneAgentUpdate, needsActiveGateUpdate, needsEecUpdate, needsStatsdUpdate := determineNeeds(dynakube, timeProvider)
+	needsOneAgentUpdate := needsOneAgentUpdate(dynakube, timeProvider)
+	needsActiveGateUpdate := needsActiveGateUpdate(dynakube, timeProvider)
+	needsEecUpdate := needsEecUpdate(dynakube, timeProvider)
+	needsStatsdUpdate := needsStatsdUpdate(dynakube, timeProvider)
 
 	if !(needsActiveGateUpdate || needsOneAgentUpdate || needsEecUpdate || needsStatsdUpdate) {
 		return nil
@@ -93,23 +96,28 @@ func ReconcileVersions(
 	return nil
 }
 
-func determineNeeds(dynakube *dynatracev1beta1.DynaKube, timeProvider kubeobjects.TimeProvider) (bool, bool, bool, bool) {
-	needsOneAgentUpdate := dynakube.NeedsOneAgent() &&
-		timeProvider.IsOutdated(dynakube.Status.OneAgent.LastUpdateProbeTimestamp, ProbeThreshold) &&
-		dynakube.ShouldAutoUpdateOneAgent()
-
-	needsActiveGateUpdate := dynakube.NeedsActiveGate() &&
-		!dynakube.FeatureDisableActiveGateUpdates() &&
-		timeProvider.IsOutdated(dynakube.Status.ActiveGate.LastUpdateProbeTimestamp, ProbeThreshold)
-
-	needsEecUpdate := dynakube.IsStatsdActiveGateEnabled() &&
-		!dynakube.FeatureDisableActiveGateUpdates() &&
-		timeProvider.IsOutdated(dynakube.Status.ExtensionController.LastUpdateProbeTimestamp, ProbeThreshold)
-
-	needsStatsdUpdate := dynakube.IsStatsdActiveGateEnabled() &&
+func needsStatsdUpdate(dynakube *dynatracev1beta1.DynaKube, timeProvider kubeobjects.TimeProvider) bool {
+	return dynakube.IsStatsdActiveGateEnabled() &&
 		!dynakube.FeatureDisableActiveGateUpdates() &&
 		timeProvider.IsOutdated(dynakube.Status.Statsd.LastUpdateProbeTimestamp, ProbeThreshold)
-	return needsOneAgentUpdate, needsActiveGateUpdate, needsEecUpdate, needsStatsdUpdate
+}
+
+func needsEecUpdate(dynakube *dynatracev1beta1.DynaKube, timeProvider kubeobjects.TimeProvider) bool {
+	return dynakube.IsStatsdActiveGateEnabled() &&
+		!dynakube.FeatureDisableActiveGateUpdates() &&
+		timeProvider.IsOutdated(dynakube.Status.ExtensionController.LastUpdateProbeTimestamp, ProbeThreshold)
+}
+
+func needsActiveGateUpdate(dynakube *dynatracev1beta1.DynaKube, timeProvider kubeobjects.TimeProvider) bool {
+	return dynakube.NeedsActiveGate() &&
+		!dynakube.FeatureDisableActiveGateUpdates() &&
+		timeProvider.IsOutdated(dynakube.Status.ActiveGate.LastUpdateProbeTimestamp, ProbeThreshold)
+}
+
+func needsOneAgentUpdate(dynakube *dynatracev1beta1.DynaKube, timeProvider kubeobjects.TimeProvider) bool {
+	return dynakube.NeedsOneAgent() &&
+		timeProvider.IsOutdated(dynakube.Status.OneAgent.LastUpdateProbeTimestamp, ProbeThreshold) &&
+		dynakube.ShouldAutoUpdateOneAgent()
 }
 
 func updateImageVersion(
