@@ -239,7 +239,7 @@ func (dsInfo *builderInfo) immutableOneAgentImage() string {
 	if dsInfo.instance == nil {
 		return ""
 	}
-	return dsInfo.instance.ImmutableOneAgentImage()
+	return dsInfo.instance.OneAgentImage()
 }
 
 func (dsInfo *builderInfo) tolerations() []corev1.Toleration {

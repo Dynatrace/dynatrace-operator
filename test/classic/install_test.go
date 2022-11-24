@@ -55,7 +55,7 @@ func install(t *testing.T) features.Feature {
 
 func isAgentInjected(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 	resources := environmentConfig.Client().Resources()
-	pods := sampleapps.Get(t, ctx, resources)
+	pods := pod.List(t, ctx, resources, sampleapps.Namespace)
 
 	for _, podItem := range pods.Items {
 		require.NotNil(t, podItem)

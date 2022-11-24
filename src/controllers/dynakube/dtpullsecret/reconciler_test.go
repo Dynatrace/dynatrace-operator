@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
@@ -20,15 +21,17 @@ const (
 )
 
 func TestReconciler_Reconcile(t *testing.T) {
-	t.Run(`Reconcile works with minimal setup`, func(t *testing.T) {
+	t.Run(`Create works with minimal setup`, func(t *testing.T) {
 		mockDTC := &dtclient.MockDynatraceClient{}
-		instance := &dynatracev1beta1.DynaKube{
+		dynakube := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 				Name:      testName,
 			}}
 		fakeClient := fake.NewClient()
-		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, "", testPaasToken)
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, token.Tokens{
+			dtclient.DynatraceApiToken: token.Token{Value: testValue},
+		})
 
 		mockDTC.
 			On("GetOneAgentConnectionInfo").
@@ -49,8 +52,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.Contains(t, pullSecret.Data, ".dockerconfigjson")
 		assert.NotEmpty(t, pullSecret.Data[".dockerconfigjson"])
 	})
-	t.Run(`Reconcile does not reconcile with custom pull secret`, func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{
+	t.Run(`Create does not reconcile with custom pull secret`, func(t *testing.T) {
+		dynakube := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 				Name:      testName,
@@ -58,14 +61,14 @@ func TestReconciler_Reconcile(t *testing.T) {
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				CustomPullSecret: testValue,
 			}}
-		r := NewReconciler(nil, nil, nil, instance, "nil", "")
+		r := NewReconciler(context.TODO(), nil, nil, nil, dynakube, nil)
 		err := r.Reconcile()
 
 		assert.NoError(t, err)
 	})
-	t.Run(`Reconcile creates correct docker config`, func(t *testing.T) {
+	t.Run(`Create creates correct docker config`, func(t *testing.T) {
 		expectedJSON := `{"auths":{"test-endpoint.com":{"username":"test-name","password":"test-value","auth":"dGVzdC1uYW1lOnRlc3QtdmFsdWU="}}}`
-		instance := &dynatracev1beta1.DynaKube{
+		dynakube := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 				Name:      testName,
@@ -80,7 +83,9 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 		}
 		fakeClient := fake.NewClient()
-		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, "", testValue)
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, token.Tokens{
+			dtclient.DynatraceApiToken: token.Token{Value: testValue},
+		})
 
 		err := r.Reconcile()
 
@@ -98,9 +103,9 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.NotEmpty(t, pullSecret.Data[".dockerconfigjson"])
 		assert.Equal(t, expectedJSON, string(pullSecret.Data[".dockerconfigjson"]))
 	})
-	t.Run(`Reconcile update secret if data changed`, func(t *testing.T) {
+	t.Run(`Create update secret if data changed`, func(t *testing.T) {
 		expectedJSON := `{"auths":{"test-endpoint.com":{"username":"test-name","password":"test-value","auth":"dGVzdC1uYW1lOnRlc3QtdmFsdWU="}}}`
-		instance := &dynatracev1beta1.DynaKube{
+		dynakube := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 				Name:      testName,
@@ -115,7 +120,9 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 		}
 		fakeClient := fake.NewClient()
-		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, "", testValue)
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, token.Tokens{
+			dtclient.DynatraceApiToken: token.Token{Value: testValue},
+		})
 
 		err := r.Reconcile()
 

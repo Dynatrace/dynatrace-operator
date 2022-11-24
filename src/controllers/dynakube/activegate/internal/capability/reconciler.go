@@ -5,6 +5,7 @@ import (
 	"reflect"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
@@ -14,18 +15,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-var _ kubeobjects.Reconciler = &Reconciler{}
+var _ controllers.Reconciler = &Reconciler{}
 
 type Reconciler struct {
 	client                     client.Client
 	capability                 capability.Capability
-	statefulsetReconciler      kubeobjects.Reconciler
-	customPropertiesReconciler kubeobjects.Reconciler
+	statefulsetReconciler      controllers.Reconciler
+	customPropertiesReconciler controllers.Reconciler
 	dynakube                   *dynatracev1beta1.DynaKube
 }
 
-func NewReconciler(clt client.Client, capability capability.Capability, dynakube *dynatracev1beta1.DynaKube, statefulsetReconciler kubeobjects.Reconciler, customPropertiesReconciler kubeobjects.Reconciler) *Reconciler {
-
+func NewReconciler(clt client.Client, capability capability.Capability, dynakube *dynatracev1beta1.DynaKube, statefulsetReconciler controllers.Reconciler, customPropertiesReconciler controllers.Reconciler) *Reconciler {
 	return &Reconciler{
 		statefulsetReconciler:      statefulsetReconciler,
 		customPropertiesReconciler: customPropertiesReconciler,
@@ -35,60 +35,63 @@ func NewReconciler(clt client.Client, capability capability.Capability, dynakube
 	}
 }
 
-type NewReconcilerFunc = func(clt client.Client, capability capability.Capability, dynakube *dynatracev1beta1.DynaKube, statefulsetReconciler kubeobjects.Reconciler, customPropertiesReconciler kubeobjects.Reconciler) *Reconciler
+type NewReconcilerFunc = func(clt client.Client, capability capability.Capability, dynakube *dynatracev1beta1.DynaKube, statefulsetReconciler controllers.Reconciler, customPropertiesReconciler controllers.Reconciler) *Reconciler
 
-func (r *Reconciler) Reconcile() (update bool, err error) {
-	_, err = r.customPropertiesReconciler.Reconcile()
+func (r *Reconciler) Reconcile() error {
+	err := r.customPropertiesReconciler.Reconcile()
 	if err != nil {
-		return update, errors.WithStack(err)
+		return errors.WithStack(err)
 	}
 
-	if r.dynakube.NeedsActiveGateServicePorts() {
-		update, err = r.createOrUpdateService()
-		if update || err != nil {
-			return update, errors.WithStack(err)
+	if r.dynakube.NeedsActiveGateService() {
+		err = r.createOrUpdateService()
+		if err != nil {
+			return errors.WithStack(err)
 		}
 	}
 
 	if r.dynakube.IsStatsdActiveGateEnabled() {
-		update, err = r.createOrUpdateEecConfigMap()
-		if update || err != nil {
-			return update, errors.WithStack(err)
+		err = r.createOrUpdateEecConfigMap()
+		if err != nil {
+			return errors.WithStack(err)
 		}
 	}
 
-	update, err = r.statefulsetReconciler.Reconcile()
-	return update, errors.WithStack(err)
+	err = r.statefulsetReconciler.Reconcile()
+	return errors.WithStack(err)
 }
 
-func (r *Reconciler) createOrUpdateService() (bool, error) {
+func (r *Reconciler) createOrUpdateService() error {
 	desired := CreateService(r.dynakube, r.capability.ShortName())
-
 	installed := &corev1.Service{}
 	err := r.client.Get(context.TODO(), kubeobjects.Key(desired), installed)
+
 	if k8serrors.IsNotFound(err) {
 		log.Info("creating AG service", "module", r.capability.ShortName())
-		if err = controllerutil.SetControllerReference(r.dynakube, desired, r.client.Scheme()); err != nil {
-			return false, errors.WithStack(err)
+
+		err = controllerutil.SetControllerReference(r.dynakube, desired, r.client.Scheme())
+		if err != nil {
+			return errors.WithStack(err)
 		}
 
 		err = r.client.Create(context.TODO(), desired)
-		return true, errors.WithStack(err)
+		return errors.WithStack(err)
 	}
 
 	if err != nil {
-		return false, errors.WithStack(err)
+		return errors.WithStack(err)
 	}
 
 	if r.portsAreOutdated(installed, desired) || r.labelsAreOutdated(installed, desired) {
 		desired.Spec.ClusterIP = installed.Spec.ClusterIP
 		desired.ObjectMeta.ResourceVersion = installed.ObjectMeta.ResourceVersion
-		if err := r.client.Update(context.TODO(), desired); err != nil {
-			return false, err
+		err = r.client.Update(context.TODO(), desired)
+
+		if err != nil {
+			return err
 		}
-		return true, nil
 	}
-	return false, nil
+	return nil
 }
 
 func (r *Reconciler) portsAreOutdated(installedService, desiredService *corev1.Service) bool {

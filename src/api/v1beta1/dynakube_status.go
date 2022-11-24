@@ -19,9 +19,11 @@ type DynaKubeStatus struct {
 	// LastAPITokenProbeTimestamp tracks when the last request for the API token validity was sent
 	LastAPITokenProbeTimestamp *metav1.Time `json:"lastAPITokenProbeTimestamp,omitempty"`
 
+	// Deprecated, use LastAPITokenProbeTimestamp instead
 	// LastPaaSTokenProbeTimestamp tracks when the last request for the PaaS token validity was sent
 	LastPaaSTokenProbeTimestamp *metav1.Time `json:"lastPaaSTokenProbeTimestamp,omitempty"`
 
+	// Deprecated, use LastAPITokenProbeTimestamp instead
 	// LastDataIngestTokenProbeTimestamp tracks when the last request for the DataIngest token validity was sent
 	LastDataIngestTokenProbeTimestamp *metav1.Time `json:"lastDataIngestTokenProbeTimestamp,omitempty"`
 

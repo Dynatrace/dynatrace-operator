@@ -77,9 +77,8 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 func TestReconcile(t *testing.T) {
 	t.Run(`create stateful set`, func(t *testing.T) {
 		r := createDefaultReconciler(t)
-		update, err := r.Reconcile()
+		err := r.Reconcile()
 
-		assert.True(t, update)
 		assert.NoError(t, err)
 
 		statefulSet := &appsv1.StatefulSet{}
@@ -90,9 +89,8 @@ func TestReconcile(t *testing.T) {
 	})
 	t.Run(`update stateful set`, func(t *testing.T) {
 		r := createDefaultReconciler(t)
-		update, err := r.Reconcile()
+		err := r.Reconcile()
 
-		assert.True(t, update)
 		assert.NoError(t, err)
 
 		statefulSet := &appsv1.StatefulSet{}
@@ -102,9 +100,8 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 
 		r.dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
-		update, err = r.Reconcile()
+		err = r.Reconcile()
 
-		assert.True(t, update)
 		assert.NoError(t, err)
 
 		newStatefulSet := &appsv1.StatefulSet{}
@@ -125,8 +122,7 @@ func TestReconcile(t *testing.T) {
 
 func TestReconcile_GetStatefulSet(t *testing.T) {
 	r := createDefaultReconciler(t)
-	update, err := r.Reconcile()
-	assert.True(t, update)
+	err := r.Reconcile()
 	assert.NoError(t, err)
 
 	desiredSts, err := r.buildDesiredStatefulSet()
@@ -188,36 +184,65 @@ func TestReconcile_UpdateStatefulSetIfOutdated(t *testing.T) {
 }
 
 func TestReconcile_DeleteStatefulSetIfOldLabelsAreUsed(t *testing.T) {
-	r := createDefaultReconciler(t)
-	desiredSts, err := r.buildDesiredStatefulSet()
-	require.NoError(t, err)
-	require.NotNil(t, desiredSts)
+	t.Run("statefulset is deleted when old labels are used", func(t *testing.T) {
+		r := createDefaultReconciler(t)
+		desiredSts, err := r.buildDesiredStatefulSet()
+		require.NoError(t, err)
+		require.NotNil(t, desiredSts)
 
-	deleted, err := r.deleteStatefulSetIfOldLabelsAreUsed(desiredSts)
-	assert.Error(t, err)
-	assert.False(t, deleted)
-	assert.True(t, k8serrors.IsNotFound(errors.Cause(err)))
+		deleted, err := r.deleteStatefulSetIfSelectorChanged(desiredSts)
+		assert.Error(t, err)
+		assert.False(t, deleted)
+		assert.True(t, k8serrors.IsNotFound(errors.Cause(err)))
 
-	created, err := r.createStatefulSetIfNotExists(desiredSts)
-	require.True(t, created)
-	require.NoError(t, err)
+		created, err := r.createStatefulSetIfNotExists(desiredSts)
+		require.True(t, created)
+		require.NoError(t, err)
 
-	deleted, err = r.deleteStatefulSetIfOldLabelsAreUsed(desiredSts)
-	assert.NoError(t, err)
-	assert.False(t, deleted)
+		deleted, err = r.deleteStatefulSetIfSelectorChanged(desiredSts)
+		assert.NoError(t, err)
+		assert.False(t, deleted)
 
-	r.dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
-	desiredSts, err = r.buildDesiredStatefulSet()
-	require.NoError(t, err)
-	correctLabels := desiredSts.Labels
-	desiredSts.Labels = map[string]string{"activegate": "dynakube"}
-	err = r.client.Update(context.TODO(), desiredSts)
-	assert.NoError(t, err)
+		r.dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
+		desiredSts, err = r.buildDesiredStatefulSet()
+		require.NoError(t, err)
 
-	desiredSts.Labels = correctLabels
-	deleted, err = r.deleteStatefulSetIfOldLabelsAreUsed(desiredSts)
-	assert.NoError(t, err)
-	assert.True(t, deleted)
+		correctLabels := desiredSts.Spec.Selector.MatchLabels
+		desiredSts.Spec.Selector.MatchLabels = map[string]string{"activegate": "dynakube"}
+		err = r.client.Update(context.TODO(), desiredSts)
+		assert.NoError(t, err)
+
+		desiredSts.Spec.Selector.MatchLabels = correctLabels
+		deleted, err = r.deleteStatefulSetIfSelectorChanged(desiredSts)
+		assert.NoError(t, err)
+		assert.True(t, deleted)
+	})
+	t.Run("statefulset is not deleted when custom labels are used", func(t *testing.T) {
+		r := createDefaultReconciler(t)
+		appliedStatefulset, err := r.buildDesiredStatefulSet()
+
+		require.NoError(t, err)
+		require.NotNil(t, appliedStatefulset)
+
+		created, err := r.createStatefulSetIfNotExists(appliedStatefulset)
+
+		require.True(t, created)
+		require.NoError(t, err)
+
+		appliedStatefulset.Labels[testName] = testValue
+		err = r.client.Update(context.TODO(), appliedStatefulset)
+
+		require.NoError(t, err)
+
+		desiredStatefulset, err := r.buildDesiredStatefulSet()
+
+		require.NoError(t, err)
+
+		deleted, err := r.deleteStatefulSetIfSelectorChanged(desiredStatefulset)
+
+		assert.NoError(t, err)
+		assert.False(t, deleted)
+	})
 }
 
 func TestReconcile_GetCustomPropertyHash(t *testing.T) {
@@ -275,4 +300,59 @@ func TestReconcile_GetActiveGateAuthTokenHash(t *testing.T) {
 	hash, err = r.calculateActiveGateConfigurationHash()
 	assert.NoError(t, err)
 	assert.Empty(t, hash)
+}
+
+func TestManageStatefulSet(t *testing.T) {
+	t.Run("do not delete statefulset if custom labels were added", func(t *testing.T) {
+		r := createDefaultReconciler(t)
+		desiredStatefulSet, err := r.buildDesiredStatefulSet()
+
+		require.NoError(t, err)
+
+		err = r.manageStatefulSet()
+		assert.NoError(t, err)
+
+		actualStatefulSet, err := r.getStatefulSet(desiredStatefulSet)
+		assert.NoError(t, err)
+		assert.NotNil(t, actualStatefulSet)
+
+		actualStatefulSet.Labels[testName] = testValue
+		err = r.client.Update(context.TODO(), actualStatefulSet)
+
+		require.NoError(t, err)
+
+		err = r.manageStatefulSet()
+		assert.NoError(t, err)
+
+		actualStatefulSet, err = r.getStatefulSet(desiredStatefulSet)
+		assert.NoError(t, err)
+		assert.NotNil(t, actualStatefulSet)
+		assert.Contains(t, actualStatefulSet.Labels, testName)
+	})
+	t.Run("delete statefulset if selector differs", func(t *testing.T) {
+		r := createDefaultReconciler(t)
+		desiredStatefulSet, err := r.buildDesiredStatefulSet()
+
+		require.NoError(t, err)
+
+		err = r.manageStatefulSet()
+		assert.NoError(t, err)
+
+		actualStatefulSet, err := r.getStatefulSet(desiredStatefulSet)
+		assert.NoError(t, err)
+		assert.NotNil(t, actualStatefulSet)
+
+		actualStatefulSet.Spec.Selector.MatchLabels["activegate"] = testValue
+		err = r.client.Update(context.TODO(), actualStatefulSet)
+
+		require.NoError(t, err)
+
+		err = r.manageStatefulSet()
+		assert.NoError(t, err)
+
+		actualStatefulSet, err = r.getStatefulSet(desiredStatefulSet)
+		assert.Error(t, err)
+		assert.Nil(t, actualStatefulSet)
+		assert.True(t, k8serrors.IsNotFound(err))
+	})
 }

@@ -57,6 +57,13 @@ func (dynakubeBuilder Builder) WithDefaultObjectMeta() Builder {
 	return dynakubeBuilder
 }
 
+func (dynakubeBuilder Builder) WithAnnotations(annotations map[string]string) Builder {
+	for key, value := range annotations {
+		dynakubeBuilder.dynakube.ObjectMeta.Annotations[key] = value
+	}
+	return dynakubeBuilder
+}
+
 func (dynakubeBuilder Builder) ApiUrl(apiUrl string) Builder {
 	dynakubeBuilder.dynakube.Spec.APIURL = apiUrl
 	return dynakubeBuilder
@@ -75,6 +82,11 @@ func (dynakubeBuilder Builder) WithActiveGate() Builder {
 	return dynakubeBuilder
 }
 
+func (dynakubeBuilder Builder) Tokens(secretName string) Builder {
+	dynakubeBuilder.dynakube.Spec.Tokens = secretName
+	return dynakubeBuilder
+}
+
 func (dynakubeBuilder Builder) NamespaceSelector(selector metav1.LabelSelector) Builder {
 	dynakubeBuilder.dynakube.Spec.NamespaceSelector = selector
 	return dynakubeBuilder
@@ -90,6 +102,11 @@ func (dynakubeBuilder Builder) WithDynakubeNamespaceSelector() Builder {
 
 func (dynakubeBuilder Builder) Proxy(proxy *dynatracev1beta1.DynaKubeProxy) Builder {
 	dynakubeBuilder.dynakube.Spec.Proxy = proxy
+	return dynakubeBuilder
+}
+
+func (dynakubeBuilder Builder) WithIstio() Builder {
+	dynakubeBuilder.dynakube.Spec.EnableIstio = true
 	return dynakubeBuilder
 }
 

@@ -10,20 +10,20 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func (controller *DynakubeController) determineDynaKubePhase(dynakube *dynatracev1beta1.DynaKube) bool {
+func (controller *DynakubeController) determineDynaKubePhase(dynakube *dynatracev1beta1.DynaKube) dynatracev1beta1.DynaKubePhaseType {
 	if dynakube.NeedsActiveGate() {
 		activeGatePods, err := controller.numberOfMissingActiveGatePods(dynakube)
 		if err != nil {
 			log.Error(err, "activegate statefulset could not be accessed", "dynakube", dynakube.Name)
-			return updatePhaseIfChanged(dynakube, dynatracev1beta1.Error)
+			return dynatracev1beta1.Error
 		}
 		if activeGatePods > 0 {
 			log.Info("activegate statefulset is still deploying", "dynakube", dynakube.Name)
-			return updatePhaseIfChanged(dynakube, dynatracev1beta1.Deploying)
+			return dynatracev1beta1.Deploying
 		}
 		if activeGatePods < 0 {
 			log.Info("activegate statefulset not yet available", "dynakube", dynakube.Name)
-			return updatePhaseIfChanged(dynakube, dynatracev1beta1.Deploying)
+			return dynatracev1beta1.Deploying
 		}
 	}
 
@@ -31,19 +31,19 @@ func (controller *DynakubeController) determineDynaKubePhase(dynakube *dynatrace
 		oneAgentPods, err := controller.numberOfMissingOneagentPods(dynakube)
 		if k8serrors.IsNotFound(err) {
 			log.Info("oneagent daemonset not yet available", "dynakube", dynakube.Name)
-			return updatePhaseIfChanged(dynakube, dynatracev1beta1.Deploying)
+			return dynatracev1beta1.Deploying
 		}
 		if err != nil {
 			log.Error(err, "oneagent daemonset could not be accessed", "dynakube", dynakube.Name)
-			return updatePhaseIfChanged(dynakube, dynatracev1beta1.Error)
+			return dynatracev1beta1.Error
 		}
 		if oneAgentPods > 0 {
 			log.Info("oneagent daemonset is still deploying", "dynakube", dynakube.Name)
-			return updatePhaseIfChanged(dynakube, dynatracev1beta1.Deploying)
+			return dynatracev1beta1.Deploying
 		}
 	}
 
-	return updatePhaseIfChanged(dynakube, dynatracev1beta1.Running)
+	return dynatracev1beta1.Running
 }
 
 func (controller *DynakubeController) numberOfMissingOneagentPods(dynakube *dynatracev1beta1.DynaKube) (int32, error) {

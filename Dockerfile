@@ -1,4 +1,4 @@
-FROM golang:1.19.2-alpine AS operator-build
+FROM golang:1.19.3-alpine AS operator-build
 
 RUN apk update --no-cache && \
     apk add --no-cache gcc musl-dev btrfs-progs-dev lvm2-dev device-mapper-static gpgme-dev git && \
@@ -13,11 +13,11 @@ RUN if [ -d ./mod ]; then mkdir -p ${GOPATH}/pkg && [ -d mod ] && mv ./mod ${GOP
 
 RUN CGO_ENABLED=1 CGO_CFLAGS="-O2 -Wno-return-local-addr" go build -ldflags="${GO_LINKER_ARGS}" -o ./build/_output/bin/dynatrace-operator ./src/cmd/
 
-FROM registry.access.redhat.com/ubi9-minimal:9.0.0 as dependency-src
+FROM registry.access.redhat.com/ubi9-minimal:9.1.0 as dependency-src
 
 RUN  microdnf install util-linux tar --nodocs -y && microdnf clean all
 
-FROM registry.access.redhat.com/ubi9-micro:9.0.0
+FROM registry.access.redhat.com/ubi9-micro:9.1.0
 
 # operator dependencies
 COPY --from=operator-build /etc/ssl/cert.pem /etc/ssl/cert.pem
@@ -33,8 +33,8 @@ COPY --from=operator-build /usr/lib/libgpg-error.so.* /usr/lib/
 COPY --from=operator-build /usr/lib/libgpgme.so.* /usr/lib/
 
 # csi binaries
-COPY --from=k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.5.1 /csi-node-driver-registrar /usr/local/bin
-COPY --from=k8s.gcr.io/sig-storage/livenessprobe:v2.7.0 /livenessprobe /usr/local/bin
+COPY --from=k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.6.0 /csi-node-driver-registrar /usr/local/bin
+COPY --from=k8s.gcr.io/sig-storage/livenessprobe:v2.8.0 /livenessprobe /usr/local/bin
 
 # csi depdenencies
 COPY --from=dependency-src /bin/mount /bin/umount /bin/tar /bin/

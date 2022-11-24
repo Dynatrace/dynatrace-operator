@@ -25,7 +25,8 @@ import (
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
 	csigc "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/gc"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/image"
 	"github.com/pkg/errors"
@@ -46,30 +47,29 @@ const (
 
 // OneAgentProvisioner reconciles a DynaKube object
 type OneAgentProvisioner struct {
-	client       client.Client
-	apiReader    client.Reader
-	opts         dtcsi.CSIOptions
-	dtcBuildFunc dynakube.DynatraceClientFunc
-	fs           afero.Fs
-	recorder     record.EventRecorder
-	db           metadata.Access
-	path         metadata.PathResolver
-
-	gc reconcile.Reconciler
+	client                 client.Client
+	apiReader              client.Reader
+	dynatraceClientBuilder dynatraceclient.Builder
+	opts                   dtcsi.CSIOptions
+	fs                     afero.Fs
+	recorder               record.EventRecorder
+	db                     metadata.Access
+	path                   metadata.PathResolver
+	gc                     reconcile.Reconciler
 }
 
 // NewOneAgentProvisioner returns a new OneAgentProvisioner
 func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions, db metadata.Access) *OneAgentProvisioner {
 	return &OneAgentProvisioner{
-		client:       mgr.GetClient(),
-		apiReader:    mgr.GetAPIReader(),
-		opts:         opts,
-		dtcBuildFunc: dynakube.BuildDynatraceClient,
-		fs:           afero.NewOsFs(),
-		recorder:     mgr.GetEventRecorderFor("OneAgentProvisioner"),
-		db:           db,
-		path:         metadata.PathResolver{RootDir: opts.RootDir},
-		gc:           csigc.NewCSIGarbageCollector(mgr.GetAPIReader(), opts, db),
+		client:                 mgr.GetClient(),
+		apiReader:              mgr.GetAPIReader(),
+		opts:                   opts,
+		dynatraceClientBuilder: dynatraceclient.NewBuilder(mgr.GetAPIReader()),
+		fs:                     afero.NewOsFs(),
+		recorder:               mgr.GetEventRecorderFor("OneAgentProvisioner"),
+		db:                     db,
+		path:                   metadata.PathResolver{RootDir: opts.RootDir},
+		gc:                     csigc.NewCSIGarbageCollector(mgr.GetAPIReader(), opts, db),
 	}
 }
 
@@ -264,16 +264,24 @@ func (provisioner *OneAgentProvisioner) createOrUpdateDynakubeMetadata(ctx conte
 }
 
 func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk *dynatracev1beta1.DynaKube) (dtclient.Client, error) {
-	dtp, err := dynakube.NewDynatraceClientProperties(ctx, provisioner.apiReader, *dk)
+	tokenReader := token.NewReader(provisioner.apiReader, dk)
+	tokens, err := tokenReader.ReadTokens(ctx)
+
 	if err != nil {
 		return nil, err
 	}
-	dtc, err := provisioner.dtcBuildFunc(*dtp)
+
+	dynatraceClient, err := provisioner.dynatraceClientBuilder.
+		SetContext(ctx).
+		SetDynakube(*dk).
+		SetTokens(tokens).
+		Build()
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Dynatrace client: %w", err)
 	}
 
-	return dtc, nil
+	return dynatraceClient, nil
 }
 
 func (provisioner *OneAgentProvisioner) getDynaKube(ctx context.Context, name types.NamespacedName) (*dynatracev1beta1.DynaKube, error) {
