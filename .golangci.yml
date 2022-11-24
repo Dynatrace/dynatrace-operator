@@ -23,7 +23,7 @@ linters-settings:
       - name: cognitive-complexity
         arguments: [20] # max allowed cognitive complexity factor
       - name: function-result-limit
-        disabled: true
+        arguments: [3]
       - name: function-length
         disabled: true
       - name: cyclomatic

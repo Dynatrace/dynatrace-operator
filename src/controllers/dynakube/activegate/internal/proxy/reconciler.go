@@ -135,7 +135,7 @@ func (r *Reconciler) proxyUrlFromUserSecret(ctx context.Context, dynakube *dynat
 	return string(proxy), nil
 }
 
-func parseProxyUrl(proxy string) (host string, port string, username string, password string, err error) {
+func parseProxyUrl(proxy string) (host, port, username, password string, err error) { //nolint:revive // maximum number of return results per function exceeded; max 3 but got 5
 	proxyUrl, err := url.Parse(proxy)
 	if err != nil {
 		return "", "", "", "", errors.New("could not parse proxy URL")
