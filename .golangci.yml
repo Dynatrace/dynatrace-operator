@@ -25,7 +25,8 @@ linters-settings:
       - name: function-result-limit
         arguments: [3]
       - name: function-length
-        disabled: true
+        # following values set to avoid further regressions:
+        arguments: [52, 468]  # the maximum allowed statements and lines. 0 disables the check
       - name: cyclomatic
         disabled: true
       - name: banned-characters
