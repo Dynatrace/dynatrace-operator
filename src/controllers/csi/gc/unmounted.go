@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	defaultMaxUnmountedCsiVolumeAge = 14 * 24 * time.Hour
+	defaultMaxUnmountedCsiVolumeAge = 7 * 24 * time.Hour
 	maxUnmountedCsiVolumeAgeEnv     = "MAX_UNMOUNTED_VOLUME_AGE"
 )
 
