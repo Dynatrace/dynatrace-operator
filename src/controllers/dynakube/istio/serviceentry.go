@@ -23,20 +23,20 @@ const (
 	protocolTcp      = "TCP"
 )
 
-func buildServiceEntry(name, namespace, host, protocol string, port uint32) *istiov1alpha3.ServiceEntry {
+func buildServiceEntry(meta metav1.ObjectMeta, host, protocol string, port uint32) *istiov1alpha3.ServiceEntry {
 	if net.ParseIP(host) != nil { // It's an IP.
-		return buildServiceEntryIP(name, namespace, host, port)
+		return buildServiceEntryIP(meta, host, port)
 	}
 
-	return buildServiceEntryFQDN(name, namespace, host, protocol, port)
+	return buildServiceEntryFQDN(meta, host, protocol, port)
 }
 
-func buildServiceEntryFQDN(name, namespace, host, protocol string, port uint32) *istiov1alpha3.ServiceEntry {
+func buildServiceEntryFQDN(meta metav1.ObjectMeta, host, protocol string, port uint32) *istiov1alpha3.ServiceEntry {
 	portStr := strconv.Itoa(int(port))
 	protocolStr := strings.ToUpper(protocol)
 
 	return &istiov1alpha3.ServiceEntry{
-		ObjectMeta: buildObjectMeta(name, namespace),
+		ObjectMeta: meta,
 		Spec: istio.ServiceEntry{
 			Hosts: []string{host},
 			Ports: []*istio.Port{{
@@ -50,11 +50,11 @@ func buildServiceEntryFQDN(name, namespace, host, protocol string, port uint32) 
 	}
 }
 
-func buildServiceEntryIP(name, namespace, host string, port uint32) *istiov1alpha3.ServiceEntry {
+func buildServiceEntryIP(meta metav1.ObjectMeta, host string, port uint32) *istiov1alpha3.ServiceEntry {
 	portStr := strconv.Itoa(int(port))
 
 	return &istiov1alpha3.ServiceEntry{
-		ObjectMeta: buildObjectMeta(name, namespace),
+		ObjectMeta: meta,
 		Spec: istio.ServiceEntry{
 			Hosts:     []string{ignoredSubdomain},
 			Addresses: []string{host + subnetMask},
@@ -78,7 +78,7 @@ func handleIstioConfigurationForServiceEntry(istioConfig *configuration) (bool, 
 		return false, err
 	}
 
-	serviceEntry := buildServiceEntry(istioConfig.name, istioConfig.instance.GetNamespace(), istioConfig.commHost.Host, istioConfig.commHost.Protocol, istioConfig.commHost.Port)
+	serviceEntry := buildServiceEntry(buildObjectMeta(istioConfig.name, istioConfig.instance.GetNamespace()), istioConfig.commHost.Host, istioConfig.commHost.Protocol, istioConfig.commHost.Port)
 	err = createIstioConfigurationForServiceEntry(istioConfig.instance, serviceEntry, istioConfig.role, istioConfig.reconciler.istioClient, istioConfig.reconciler.scheme)
 	if err != nil {
 		log.Error(err, "istio: failed to create ServiceEntry")
@@ -89,7 +89,7 @@ func handleIstioConfigurationForServiceEntry(istioConfig *configuration) (bool, 
 	return true, nil
 }
 
-func createIstioConfigurationForServiceEntry(dynaKube *dynatracev1beta1.DynaKube,
+func createIstioConfigurationForServiceEntry(dynaKube *dynatracev1beta1.DynaKube, //nolint:revive // argument-limit doesn't apply to constructors
 	serviceEntry *istiov1alpha3.ServiceEntry, role string,
 	istioClient istioclientset.Interface, scheme *runtime.Scheme) error {
 	serviceEntry.Labels = buildIstioLabels(dynaKube.GetName(), role)

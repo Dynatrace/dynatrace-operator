@@ -19,7 +19,7 @@ type DynakubeMapper struct {
 	dk         *dynatracev1beta1.DynaKube
 }
 
-func NewDynakubeMapper(ctx context.Context, clt client.Client, apiReader client.Reader, operatorNs string, dk *dynatracev1beta1.DynaKube) DynakubeMapper {
+func NewDynakubeMapper(ctx context.Context, clt client.Client, apiReader client.Reader, operatorNs string, dk *dynatracev1beta1.DynaKube) DynakubeMapper { //nolint:revive // argument-limit doesn't apply to constructors
 	return DynakubeMapper{ctx, clt, apiReader, operatorNs, dk}
 }
 

@@ -27,7 +27,7 @@ type agentUpdater struct {
 	recorder      updaterEventRecorder
 }
 
-func newAgentUrlUpdater(fs afero.Fs, dtc dtclient.Client, previousVersion string, path metadata.PathResolver, recorder record.EventRecorder, dk *dynatracev1beta1.DynaKube) (*agentUpdater, error) {
+func newAgentUrlUpdater(fs afero.Fs, dtc dtclient.Client, previousVersion string, path metadata.PathResolver, recorder record.EventRecorder, dk *dynatracev1beta1.DynaKube) (*agentUpdater, error) { //nolint:revive // argument-limit doesn't apply to constructors
 	tenantUUID, err := dk.TenantUUID()
 	if err != nil {
 		return nil, err
@@ -50,7 +50,7 @@ func newAgentUrlUpdater(fs afero.Fs, dtc dtclient.Client, previousVersion string
 	}, nil
 }
 
-func newAgentImageUpdater(
+func newAgentImageUpdater( //nolint:revive // argument-limit doesn't apply to constructors
 	ctx context.Context,
 	fs afero.Fs,
 	apiReader client.Reader,
@@ -64,7 +64,7 @@ func newAgentImageUpdater(
 	}
 	certPath := path.ImageCertPath(tenantUUID)
 
-	agentInstaller, err := setupImageInstaller(ctx, fs, apiReader, path, db, certPath, dk)
+	agentInstaller, err := newImageInstaller(ctx, fs, apiReader, path, db, certPath, dk)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +98,7 @@ func getUrlProperties(targetVersion, previousVersion string, pathResolver metada
 	}
 }
 
-func setupImageInstaller(ctx context.Context, fs afero.Fs, apiReader client.Reader, pathResolver metadata.PathResolver, db metadata.Access, certPath string, dynakube *dynatracev1beta1.DynaKube) (installer.Installer, error) {
+func newImageInstaller(ctx context.Context, fs afero.Fs, apiReader client.Reader, pathResolver metadata.PathResolver, db metadata.Access, certPath string, dynakube *dynatracev1beta1.DynaKube) (installer.Installer, error) { //nolint:revive // argument-limit doesn't apply to constructors
 	dockerConfig := dockerconfig.NewDockerConfig(apiReader, *dynakube)
 	if dynakube.Spec.CustomPullSecret != "" {
 		err := dockerConfig.SetupAuths(ctx)

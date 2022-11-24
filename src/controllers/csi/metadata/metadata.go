@@ -15,7 +15,7 @@ type Dynakube struct {
 }
 
 // NewDynakube returns a new metadata.Dynakube if all fields are set.
-func NewDynakube(dynakubeName, tenantUUID, latestVersion, imageDigest string, maxFailedMountAttempts int) *Dynakube {
+func NewDynakube(dynakubeName, tenantUUID, latestVersion, imageDigest string, maxFailedMountAttempts int) *Dynakube { //nolint:revive // argument-limit doesn't apply to constructors
 	if tenantUUID == "" || dynakubeName == "" {
 		return nil
 	}
@@ -38,7 +38,7 @@ type Volume struct {
 }
 
 // NewVolume returns a new Volume if all fields (except version) are set.
-func NewVolume(id, podName, version, tenantUUID string, mountAttempts int) *Volume {
+func NewVolume(id, podName, version, tenantUUID string, mountAttempts int) *Volume { //nolint:revive // argument-limit doesn't apply to constructors
 	if id == "" || podName == "" || tenantUUID == "" {
 		return nil
 	}

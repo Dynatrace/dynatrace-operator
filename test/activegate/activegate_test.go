@@ -232,7 +232,7 @@ func checkService(ctx context.Context, t *testing.T, environmentConfig *envconf.
 	return ctx
 }
 
-func assertMountPointMissing(t *testing.T, environmentConfig *envconf.Config, podItem corev1.Pod, containerName string, mountPoints []string) {
+func assertMountPointMissing(t *testing.T, environmentConfig *envconf.Config, podItem corev1.Pod, containerName string, mountPoints []string) { //nolint:revive // argument-limit
 	executionQuery := pod.NewExecutionQuery(podItem, containerName, "cat /proc/mounts")
 	executionResult, err := executionQuery.Execute(environmentConfig.Client().RESTConfig())
 	require.NoError(t, err)

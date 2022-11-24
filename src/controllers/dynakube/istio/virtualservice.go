@@ -19,13 +19,13 @@ const (
 	protocolHttps = "https"
 )
 
-func buildVirtualService(name, namespace, host, protocol string, port uint32) *istiov1alpha3.VirtualService {
+func buildVirtualService(meta metav1.ObjectMeta, host string, protocol string, port uint32) *istiov1alpha3.VirtualService {
 	if isIp(host) {
 		return nil
 	}
 
 	return &istiov1alpha3.VirtualService{
-		ObjectMeta: buildObjectMeta(name, namespace),
+		ObjectMeta: meta,
 		Spec:       buildVirtualServiceSpec(host, protocol, port),
 	}
 }
@@ -85,7 +85,7 @@ func handleIstioConfigurationForVirtualService(istioConfig *configuration) (bool
 		return false, err
 	}
 
-	virtualService := buildVirtualService(istioConfig.name, istioConfig.instance.GetNamespace(), istioConfig.commHost.Host, istioConfig.commHost.Protocol,
+	virtualService := buildVirtualService(metav1.ObjectMeta{Name: istioConfig.name, Namespace: istioConfig.instance.GetNamespace()}, istioConfig.commHost.Host, istioConfig.commHost.Protocol,
 		istioConfig.commHost.Port)
 	if virtualService == nil {
 		return false, nil
@@ -102,7 +102,7 @@ func handleIstioConfigurationForVirtualService(istioConfig *configuration) (bool
 	return true, nil
 }
 
-func createIstioConfigurationForVirtualService(dynaKube *dynatracev1beta1.DynaKube,
+func createIstioConfigurationForVirtualService(dynaKube *dynatracev1beta1.DynaKube, //nolint:revive // argument-limit doesn't apply to constructors
 	virtualService *istiov1alpha3.VirtualService, role string,
 	istioClient istioclientset.Interface, scheme *runtime.Scheme) error {
 	virtualService.Labels = buildIstioLabels(dynaKube.GetName(), role)

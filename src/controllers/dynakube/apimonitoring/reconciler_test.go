@@ -24,7 +24,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 	return createReconciler(t, testUID, []dtclient.MonitoredEntity{}, dtclient.GetSettingsResponse{TotalCount: 0}, "")
 }
 
-func createReconciler(t *testing.T, uid string, monitoredEntities []dtclient.MonitoredEntity, getSettingsResponse dtclient.GetSettingsResponse, objectID string) *Reconciler {
+func createReconciler(t *testing.T, uid string, monitoredEntities []dtclient.MonitoredEntity, getSettingsResponse dtclient.GetSettingsResponse, objectID string) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
 	mockClient := &dtclient.MockDynatraceClient{}
 	mockClient.On("GetMonitoredEntitiesForKubeSystemUUID", mock.AnythingOfType("string")).
 		Return(monitoredEntities, nil)

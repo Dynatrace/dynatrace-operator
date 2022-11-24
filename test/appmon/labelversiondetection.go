@@ -216,7 +216,7 @@ func assertValues(t *testing.T, restConfig *rest.Config, podItem corev1.Pod, exp
 	}
 }
 
-func assertValue(t *testing.T, restConfig *rest.Config, podItem corev1.Pod, variableName string, expectedValue string) {
+func assertValue(t *testing.T, restConfig *rest.Config, podItem corev1.Pod, variableName string, expectedValue string) { //nolint:revive // argument-limit
 	executionQuery := pod.NewExecutionQuery(podItem, sampleapps.Name, "echo $"+variableName)
 	executionResult, err := executionQuery.Execute(restConfig)
 	require.NoError(t, err)

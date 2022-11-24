@@ -969,7 +969,7 @@ func TestTokenConditions(t *testing.T) {
 	})
 }
 
-func assertCondition(t *testing.T, dk *dynatracev1beta1.DynaKube, expectedConditionType string, expectedConditionStatus metav1.ConditionStatus, expectedReason string, expectedMessage string) {
+func assertCondition(t *testing.T, dk *dynatracev1beta1.DynaKube, expectedConditionType string, expectedConditionStatus metav1.ConditionStatus, expectedReason string, expectedMessage string) { //nolint:revive // argument-limit
 	t.Helper()
 
 	actualCondition := meta.FindStatusCondition(dk.Status.Conditions, expectedConditionType)

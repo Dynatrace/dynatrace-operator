@@ -32,7 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func NewHostVolumePublisher(client client.Client, fs afero.Afero, mounter mount.Interface, db metadata.Access, path metadata.PathResolver) csivolumes.Publisher {
+func NewHostVolumePublisher(client client.Client, fs afero.Afero, mounter mount.Interface, db metadata.Access, path metadata.PathResolver) csivolumes.Publisher { //nolint:revive // argument-limit doesn't apply to constructors
 	return &HostVolumePublisher{
 		client:  client,
 		fs:      fs,
