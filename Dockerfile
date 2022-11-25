@@ -33,7 +33,7 @@ COPY --from=operator-build /usr/lib/libgpg-error.so.* /usr/lib/
 COPY --from=operator-build /usr/lib/libgpgme.so.* /usr/lib/
 
 # csi binaries
-COPY --from=k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.6.0 /csi-node-driver-registrar /usr/local/bin
+COPY --from=k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.6.1 /csi-node-driver-registrar /usr/local/bin
 COPY --from=k8s.gcr.io/sig-storage/livenessprobe:v2.8.0 /livenessprobe /usr/local/bin
 
 # csi depdenencies
