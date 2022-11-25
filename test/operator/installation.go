@@ -44,6 +44,11 @@ func manifestsPaths(withCsi bool) []string {
 }
 
 func InstallOperatorFromGithub(releaseTag string, withCsi bool) features.Func {
+	manifestsUrls := manifestsUrls(releaseTag, withCsi)
+	return manifests.InstallFromUrls(manifestsUrls)
+}
+
+func manifestsUrls(releaseTag string, withCsi bool) []string {
 	const dynatraceOperatorGithubDownloadUrl = "https://github.com/Dynatrace/dynatrace-operator/releases/download/"
 	platform := kubeobjects.ResolvePlatformFromEnv()
 
@@ -64,8 +69,7 @@ func InstallOperatorFromGithub(releaseTag string, withCsi bool) features.Func {
 			manifestsUrls = append(manifestsUrls, kubernetesCsiManifestsUrl)
 		}
 	}
-
-	return manifests.InstallFromUrls(manifestsUrls)
+	return manifestsUrls
 }
 
 func WaitForDeployment() features.Func {
