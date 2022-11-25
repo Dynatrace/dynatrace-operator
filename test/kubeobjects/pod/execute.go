@@ -24,16 +24,25 @@ type ExecutionResult struct {
 
 type ExecutionQuery struct {
 	pod       v1.Pod
-	command   string
+	command   []string
 	container string
+	tty       bool
 }
 
-func NewExecutionQuery(pod v1.Pod, container string, command string) ExecutionQuery {
-	return ExecutionQuery{
+func NewExecutionQuery(pod v1.Pod, container string, command ...string) ExecutionQuery {
+	query := ExecutionQuery{
 		pod:       pod,
-		command:   command,
 		container: container,
+		command:   make([]string, 0),
+		tty:       false,
 	}
+	query.command = append(query.command, command...)
+	return query
+}
+
+func (query ExecutionQuery) WithTTY(tty bool) ExecutionQuery {
+	query.tty = tty
+	return query
 }
 
 func (query ExecutionQuery) Execute(restConfig *rest.Config) (*ExecutionResult, error) {
@@ -53,23 +62,29 @@ func (query ExecutionQuery) Execute(restConfig *rest.Config) (*ExecutionResult, 
 		StdOut: &bytes.Buffer{},
 		StdErr: &bytes.Buffer{},
 	}
+
 	err = executor.Stream(remotecommand.StreamOptions{
 		Stdout: result.StdOut,
 		Stderr: result.StdErr,
-		Tty:    true,
+		Tty:    query.tty,
 	})
 
-	return result, errors.WithStack(err)
+	if err != nil {
+		return result, errors.WithMessagef(errors.WithStack(err),
+			"stdout:\n%s\nstderr:\n%s", result.StdOut.String(), result.StdErr.String())
+	}
+
+	return result, nil
 }
 
 func (query ExecutionQuery) buildExecutionOptions() *v1.PodExecOptions {
 	return &v1.PodExecOptions{
-		Command:   query.buildCommands(),
+		Command:   query.command,
 		Container: query.container,
 		Stdin:     false,
 		Stdout:    true,
 		Stderr:    true,
-		TTY:       true,
+		TTY:       query.tty,
 	}
 }
 
@@ -77,10 +92,4 @@ func (query ExecutionQuery) buildRequest(client kubernetes.Interface) *rest.Requ
 	return client.CoreV1().RESTClient().Post().Resource(resourcePods).
 		Namespace(query.pod.Namespace).Name(query.pod.Name).SubResource(resourceExec).
 		VersionedParams(query.buildExecutionOptions(), scheme.ParameterCodec)
-}
-
-func (query ExecutionQuery) buildCommands() []string {
-	return []string{
-		"sh", "-c", query.command,
-	}
 }

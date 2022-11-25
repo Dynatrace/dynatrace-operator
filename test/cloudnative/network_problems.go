@@ -19,7 +19,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -76,11 +75,11 @@ func checkForDummyVolume(ctx context.Context, t *testing.T, environmentConfig *e
 		var result *pod.ExecutionResult
 		result, err := pod.
 			NewExecutionQuery(podItem, sampleapps.Name,
-				bash.ListDirectory(agentMountPath)).
+				bash.ListDirectory(agentMountPath)...).
 			Execute(restConfig)
 
 		require.NoError(t, err)
-		assert.Contains(t, result.StdOut.String(), ldPreloadError)
+		assert.Contains(t, result.StdErr.String(), ldPreloadError)
 	}
 	return ctx
 }

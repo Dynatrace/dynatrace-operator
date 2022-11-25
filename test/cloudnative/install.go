@@ -117,7 +117,7 @@ func checkInitContainers(ctx context.Context, t *testing.T, environmentConfig *e
 		require.NoError(t, err)
 		logs.AssertContains(t, logStream, "standalone agent init completed")
 
-		executionQuery := pod.NewExecutionQuery(podItem, sampleapps.Name, "cat /opt/dynatrace/oneagent-paas/log/nginx/ruxitagent_nginx_myapp-__bootstrap_1.0.log")
+		executionQuery := pod.NewExecutionQuery(podItem, sampleapps.Name, "cat", "/opt/dynatrace/oneagent-paas/log/nginx/ruxitagent_nginx_myapp-__bootstrap_1.0.log")
 		executionResult, err := executionQuery.Execute(environmentConfig.Client().RESTConfig())
 
 		require.NoError(t, err)

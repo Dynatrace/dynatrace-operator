@@ -61,7 +61,7 @@ func isAgentInjected(ctx context.Context, t *testing.T, environmentConfig *envco
 	for _, podItem := range pods.Items {
 		require.NotNil(t, podItem)
 
-		executionQuery := pod.NewExecutionQuery(podItem, sampleapps.Name, "ls /var/lib/dynatrace")
+		executionQuery := pod.NewExecutionQuery(podItem, sampleapps.Name, "ls", "/var/lib/dynatrace")
 		executionResult, err := executionQuery.Execute(environmentConfig.Client().RESTConfig())
 
 		require.NoError(t, err)

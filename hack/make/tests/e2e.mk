@@ -1,5 +1,5 @@
 ## Runs e2e tests
-test/e2e: manifests/branch test/e2e/cloudnative test/e2e/applicationmonitoring test/e2e/activegate
+test/e2e: manifests/branch test/e2e/cloudnative test/e2e/applicationmonitoring test/e2e/activegate test/e2e/supportarchive
 
 ## Runs ActiveGate e2e test only
 test/e2e/activegate:
@@ -24,3 +24,7 @@ test/e2e/cloudnative/proxy:
 ## Runs Application Monitoring e2e test only
 test/e2e/applicationmonitoring:
 	go test -v -tags e2e -count=1 -failfast ./test/appmon
+
+## Runs Application Monitoring e2e test only
+test/e2e/supportarchive:
+	go test -v -tags e2e -count=1 -failfast ./test/support_archive

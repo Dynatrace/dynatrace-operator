@@ -86,7 +86,7 @@ func CodeModules(t *testing.T, istioEnabled bool) features.Feature {
 
 	codeModulesInjection.Assess("csi driver did not crash", csiDriverIsAvailable)
 	codeModulesInjection.Assess("codemodules have been downloaded", imageHasBeenDownloaded)
-	codeModulesInjection.Assess("storage size has not increased", diskUsageDoesNotIncrease(secretConfigs[1]))
+	codeModulesInjection.Assess("storage size has not increased", diskUsageDoesNotIncrease(secretConfigs[0]))
 	codeModulesInjection.Assess("volumes are mounted correctly", volumesAreMountedCorrectly())
 
 	return codeModulesInjection.Feature()
@@ -122,14 +122,14 @@ func imageHasBeenDownloaded(ctx context.Context, t *testing.T, environmentConfig
 	err := csi.ForEachPod(ctx, resource, func(podItem corev1.Pod) {
 		var result *pod.ExecutionResult
 		result, err := pod.
-			NewExecutionQuery(podItem, "provisioner", bash.ListDirectory(dataPath)).
+			NewExecutionQuery(podItem, "provisioner", bash.ListDirectory(dataPath)...).
 			Execute(restConfig)
 
 		require.NoError(t, err)
 		assert.Contains(t, result.StdOut.String(), "codemodules")
 
 		result, err = pod.
-			NewExecutionQuery(podItem, "provisioner", bash.ReadFile(getManifestPath())).
+			NewExecutionQuery(podItem, "provisioner", bash.Shell(bash.ReadFile(getManifestPath()))...).
 			Execute(restConfig)
 
 		require.NoError(t, err)
@@ -137,7 +137,7 @@ func imageHasBeenDownloaded(ctx context.Context, t *testing.T, environmentConfig
 		var codeModulesManifest manifest
 		err = json.Unmarshal(result.StdOut.Bytes(), &codeModulesManifest)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, codeModulesVersion, codeModulesManifest.Version)
 	})
 
@@ -154,9 +154,9 @@ func diskUsageDoesNotIncrease(secretConfig secrets.Secret) features.Func {
 		err := csi.ForEachPod(ctx, resource, func(podItem corev1.Pod) {
 			var result *pod.ExecutionResult
 			result, err := pod.
-				NewExecutionQuery(podItem, "provisioner", bash.Pipe(
+				NewExecutionQuery(podItem, "provisioner", bash.Shell(bash.Pipe(
 					bash.DiskUsageWithTotal(dataPath),
-					bash.FilterLastLineOnly())).
+					bash.FilterLastLineOnly()))...).
 				Execute(restConfig)
 
 			require.NoError(t, err)
@@ -183,9 +183,9 @@ func diskUsageDoesNotIncrease(secretConfig secrets.Secret) features.Func {
 		err = csi.ForEachPod(ctx, resource, func(podItem corev1.Pod) {
 			var result *pod.ExecutionResult
 			result, err = pod.
-				NewExecutionQuery(podItem, "provisioner", bash.Pipe(
+				NewExecutionQuery(podItem, "provisioner", bash.Shell(bash.Pipe(
 					bash.DiskUsageWithTotal(dataPath),
-					bash.FilterLastLineOnly())).
+					bash.FilterLastLineOnly()))...).
 				Execute(restConfig)
 
 			require.NoError(t, err)
@@ -215,20 +215,20 @@ func volumesAreMountedCorrectly() features.Func {
 			assert.True(t, isVolumeMounted(t, volumeMounts, oneagent_mutation.OneAgentBinVolumeName))
 
 			executionResult, err := pod.
-				NewExecutionQuery(podItem, sampleapps.Name, bash.ListDirectory(webhook.DefaultInstallPath)).
+				NewExecutionQuery(podItem, sampleapps.Name, bash.ListDirectory(webhook.DefaultInstallPath)...).
 				Execute(environmentConfig.Client().RESTConfig())
 
 			require.NoError(t, err)
 			assert.NotEmpty(t, executionResult.StdOut.String())
 
 			executionResult, err = pod.
-				NewExecutionQuery(podItem, sampleapps.Name, bash.Pipe(
+				NewExecutionQuery(podItem, sampleapps.Name, bash.Shell(bash.Pipe(
 					bash.DiskUsageWithTotal(webhook.DefaultInstallPath),
-					bash.FilterLastLineOnly())).
+					bash.FilterLastLineOnly()))...).
 				Execute(environmentConfig.Client().RESTConfig())
 
 			require.NoError(t, err)
-			assert.NotEmpty(t, executionResult.StdOut.String())
+			require.Contains(t, executionResult.StdOut.String(), "total")
 
 			diskUsage, err := strconv.Atoi(strings.Split(executionResult.StdOut.String(), "\t")[0])
 
