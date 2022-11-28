@@ -18,7 +18,7 @@ const (
 	openshiftOperatorManifest  = "openshift.yaml"
 )
 
-func InstallOperatorFromSource(withCsi bool) features.Func {
+func InstallFromSource(withCsi bool) features.Func {
 	paths := manifestsPaths(withCsi)
 	return manifests.InstallFromFiles(paths)
 }
@@ -43,7 +43,7 @@ func manifestsPaths(withCsi bool) []string {
 	return paths
 }
 
-func InstallOperatorFromGithub(releaseTag string, withCsi bool) features.Func {
+func InstallFromGithub(releaseTag string, withCsi bool) features.Func {
 	manifestsUrls := manifestsUrls(releaseTag, withCsi)
 	return manifests.InstallFromUrls(manifestsUrls)
 }

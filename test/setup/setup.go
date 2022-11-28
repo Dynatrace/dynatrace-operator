@@ -19,14 +19,14 @@ func InstallDynatraceFromSource(builder *features.FeatureBuilder, secretConfig *
 	if secretConfig != nil {
 		builder.Setup(secrets.ApplyDefault(*secretConfig))
 	}
-	builder.Setup(operator.InstallOperatorFromSource(true))
+	builder.Setup(operator.InstallFromSource(true))
 }
 
 func InstallDynatraceFromGithub(builder *features.FeatureBuilder, secretConfig *secrets.Secret, releaseTag string) {
 	if secretConfig != nil {
 		builder.Setup(secrets.ApplyDefault(*secretConfig))
 	}
-	builder.Setup(operator.InstallOperatorFromGithub(releaseTag, true))
+	builder.Setup(operator.InstallFromGithub(releaseTag, true))
 }
 
 func AssessOperatorDeployment(builder *features.FeatureBuilder) {
