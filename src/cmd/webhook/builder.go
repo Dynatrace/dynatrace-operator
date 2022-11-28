@@ -10,6 +10,7 @@ import (
 	cmdManager "github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
+	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook/mutation/namespace_mutator"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook/mutation/pod_mutator"
@@ -90,6 +91,8 @@ func addFlags(cmd *cobra.Command) {
 
 func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
+		version.LogVersion()
+
 		kubeConfig, err := builder.configProvider.GetConfig()
 		if err != nil {
 			return err

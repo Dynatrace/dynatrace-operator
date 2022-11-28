@@ -6,6 +6,7 @@ import (
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
 	csiprovisioner "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/provisioner"
+	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
@@ -100,6 +101,7 @@ func addFlags(cmd *cobra.Command) {
 func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		unix.Umask(0000)
+		version.LogVersion()
 
 		kubeConfig, err := builder.configProvider.GetConfig()
 		if err != nil {
