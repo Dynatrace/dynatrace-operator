@@ -51,7 +51,7 @@ func dataIngest(t *testing.T) features.Feature {
 
 	require.NoError(t, err)
 
-	dataIngestFeature.Setup(operator.Install())
+	dataIngestFeature.Setup(operator.InstallFromSource(false))
 	dataIngestFeature.Setup(operator.WaitForDeployment())
 	dataIngestFeature.Setup(webhook.WaitForDeployment())
 	dataIngestFeature.Setup(secrets.ApplyDefault(tenantSecret))
