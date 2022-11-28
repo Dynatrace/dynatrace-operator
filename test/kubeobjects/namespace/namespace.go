@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -67,7 +68,9 @@ func DeleteIfExists(name string) func(ctx context.Context, environmentConfig *en
 				Name: name,
 			},
 		}
-		err := environmentConfig.Client().Resources().Delete(ctx, &namespace)
+		err := environmentConfig.Client().Resources().Delete(ctx, &namespace, func(options *metav1.DeleteOptions) {
+			options.GracePeriodSeconds = address.Of[int64](0)
+		})
 
 		if err != nil {
 			if k8serrors.IsNotFound(err) {

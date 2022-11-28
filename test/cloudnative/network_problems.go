@@ -43,9 +43,9 @@ func NetworkProblems(t *testing.T) features.Feature {
 	createNetworkProblems.Setup(manifests.InstallFromFile(csiNetworkPolicy))
 	createNetworkProblems.Setup(manifests.InstallFromFile(sampleNSPath))
 	createNetworkProblems.Setup(secrets.ApplyDefault(secretConfigs[0]))
-	createNetworkProblems.Setup(operator.InstallAll())
+	createNetworkProblems.Setup(operator.InstallFromSource(true))
 
-	setup.AssessDeployment(createNetworkProblems)
+	setup.AssessOperatorDeployment(createNetworkProblems)
 
 	createNetworkProblems.Assess("install dynakube", dynakube.Apply(
 		dynakube.NewBuilder().
@@ -66,7 +66,7 @@ func NetworkProblems(t *testing.T) features.Feature {
 func checkForDummyVolume(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 	resources := environmentConfig.Client().Resources()
 	restConfig := environmentConfig.Client().RESTConfig()
-	pods := sampleapps.Get(t, ctx, resources)
+	pods := sampleapps.Get(ctx, t, resources)
 
 	for _, podItem := range pods.Items {
 		require.NotNil(t, podItem)
@@ -87,7 +87,7 @@ func checkForDummyVolume(ctx context.Context, t *testing.T, environmentConfig *e
 
 func checkPodsAfterSleep(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 	resources := environmentConfig.Client().Resources()
-	samplePods := sampleapps.Get(t, ctx, resources)
+	samplePods := sampleapps.Get(ctx, t, resources)
 
 	for _, podItem := range samplePods.Items {
 		require.NotNil(t, podItem)
@@ -99,7 +99,7 @@ func checkPodsAfterSleep(ctx context.Context, t *testing.T, environmentConfig *e
 
 	time.Sleep(podRestartTimeout)
 
-	samplePods = sampleapps.Get(t, ctx, resources)
+	samplePods = sampleapps.Get(ctx, t, resources)
 	for _, podItem := range samplePods.Items {
 		require.NotNil(t, podItem)
 		require.NotNil(t, podItem.Spec)

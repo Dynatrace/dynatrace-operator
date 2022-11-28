@@ -25,10 +25,6 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-const (
-	oneAgentInstallContainerName = "install-oneagent"
-)
-
 func Install(t *testing.T, istioEnabled bool) features.Feature {
 	secretConfig := getSecretConfig(t)
 
@@ -39,8 +35,10 @@ func Install(t *testing.T, istioEnabled bool) features.Feature {
 	} else {
 		defaultInstallation.Setup(manifests.InstallFromFile("../testdata/cloudnative/test-namespace.yaml"))
 	}
-	setup.InstallAndDeploy(defaultInstallation, secretConfig, "../testdata/cloudnative/sample-deployment.yaml")
-	setup.AssessDeployment(defaultInstallation)
+	setup.InstallDynatraceFromSource(defaultInstallation, &secretConfig)
+	setup.AssessOperatorDeployment(defaultInstallation)
+
+	setup.DeploySampleApps(defaultInstallation, "../testdata/cloudnative/sample-deployment.yaml")
 
 	dynakubeBuilder := dynakube.NewBuilder().
 		WithDefaultObjectMeta().
@@ -52,6 +50,8 @@ func Install(t *testing.T, istioEnabled bool) features.Feature {
 	defaultInstallation.Assess("dynakube applied", dynakube.Apply(dynakubeBuilder.Build()))
 
 	setup.AssessDynakubeStartup(defaultInstallation)
+
+	assessSampleAppsRestart(defaultInstallation)
 	assessOneAgentsAreRunning(defaultInstallation)
 
 	if istioEnabled {
@@ -61,8 +61,15 @@ func Install(t *testing.T, istioEnabled bool) features.Feature {
 	return defaultInstallation.Feature()
 }
 
-func assessOneAgentsAreRunning(builder *features.FeatureBuilder) {
+func assessSampleAppsRestart(builder *features.FeatureBuilder) {
 	builder.Assess("restart sample apps", sampleapps.Restart)
+}
+
+func assessSampleAppsRestartHalf(builder *features.FeatureBuilder) {
+	builder.Assess("restart half of sample apps", sampleapps.RestartHalf)
+}
+
+func assessOneAgentsAreRunning(builder *features.FeatureBuilder) {
 	builder.Assess("sample apps have working init containers", checkInitContainers)
 	builder.Assess("osAgent can connect", oneagent.OSAgentCanConnect())
 }
@@ -108,7 +115,7 @@ func checkInitContainers(ctx context.Context, t *testing.T, environmentConfig *e
 		}).Stream(ctx)
 
 		require.NoError(t, err)
-		logs.AssertLogContains(t, logStream, "standalone agent init completed")
+		logs.AssertContains(t, logStream, "standalone agent init completed")
 
 		executionQuery := pod.NewExecutionQuery(podItem, sampleapps.Name, "cat /opt/dynatrace/oneagent-paas/log/nginx/ruxitagent_nginx_myapp-__bootstrap_1.0.log")
 		executionResult, err := executionQuery.Execute(environmentConfig.Client().RESTConfig())
@@ -120,7 +127,7 @@ func checkInitContainers(ctx context.Context, t *testing.T, environmentConfig *e
 
 		assert.NotEmpty(t, stdOut)
 		assert.Empty(t, stdErr)
-		assert.Contains(t, stdOut, "info    [native] Communicating via https://")
+		assert.Contains(t, stdOut, "[native] Dynatrace Bootstrap Agent")
 	}
 
 	return ctx

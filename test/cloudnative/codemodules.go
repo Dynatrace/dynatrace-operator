@@ -61,9 +61,10 @@ func CodeModules(t *testing.T, istioEnabled bool) features.Feature {
 	} else {
 		codeModulesInjection.Setup(manifests.InstallFromFile("../testdata/cloudnative/test-namespace.yaml"))
 	}
-	setup.InstallAndDeploy(codeModulesInjection, secretConfigs[0], "../testdata/cloudnative/codemodules-deployment.yaml")
+	setup.InstallDynatraceFromSource(codeModulesInjection, &secretConfigs[0])
+	setup.AssessOperatorDeployment(codeModulesInjection)
 
-	setup.AssessDeployment(codeModulesInjection)
+	setup.DeploySampleApps(codeModulesInjection, "../testdata/cloudnative/codemodules-deployment.yaml")
 
 	dynakubeBuilder := dynakube.NewBuilder().
 		WithDefaultObjectMeta().
@@ -76,6 +77,7 @@ func CodeModules(t *testing.T, istioEnabled bool) features.Feature {
 	codeModulesInjection.Assess("install dynakube", dynakube.Apply(dynakubeBuilder.Build()))
 
 	setup.AssessDynakubeStartup(codeModulesInjection)
+	assessSampleAppsRestart(codeModulesInjection)
 	assessOneAgentsAreRunning(codeModulesInjection)
 
 	if istioEnabled {

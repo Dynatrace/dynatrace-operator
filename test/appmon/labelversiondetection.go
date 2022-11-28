@@ -100,7 +100,7 @@ func installOperator(t *testing.T) features.Feature {
 	defaultInstallation := features.New("default installation")
 
 	defaultInstallation.Setup(secrets.ApplyDefault(secretConfig))
-	defaultInstallation.Setup(operator.Install())
+	defaultInstallation.Setup(operator.InstallFromSource(false))
 	defaultInstallation.Assess("operator started", operator.WaitForDeployment())
 	defaultInstallation.Assess("webhook started", webhook.WaitForDeployment())
 
