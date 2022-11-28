@@ -14,8 +14,13 @@ manifests/crd/uninstall: prerequisites/kustomize manifests/crd/generate
 manifests/crd/helm: helm/version prerequisites/kustomize manifests/crd/generate
 	# Build crd
 	mkdir -p "$(HELM_CRD_DIR)"
-	$(KUSTOMIZE) build config/crd > $(MANIFESTS_DIR)/kubernetes/$(DYNATRACE_OPERATOR_CRD_YAML)
+	$(KUSTOMIZE) build config/crd > "$(MANIFESTS_DIR)/kubernetes/$(DYNATRACE_OPERATOR_CRD_YAML)"
 
-	# Copy crd to CHART PATH
-	mkdir -p "$(HELM_GENERATED_DIR)"
-	cp "$(MANIFESTS_DIR)/kubernetes/$(DYNATRACE_OPERATOR_CRD_YAML)" "$(HELM_GENERATED_DIR)"
+	sed "s/namespace: dynatrace/namespace: {{.Release.Namespace}}/" "$(MANIFESTS_DIR)/kubernetes/$(DYNATRACE_OPERATOR_CRD_YAML)" > "$(MANIFESTS_DIR)/kubernetes/tmp_crd"
+	mv "$(MANIFESTS_DIR)/kubernetes/tmp_crd" "$(MANIFESTS_DIR)/kubernetes/$(DYNATRACE_OPERATOR_CRD_YAML)"
+
+	echo "{{- include \"dynatrace-operator.platformRequired\" . }}" > "$(HELM_CRD_FILE)"
+	echo "{{ if and .Values.installCRD (eq (include \"dynatrace-operator.partial\" .) \"false\") }}" >> "$(HELM_CRD_FILE)"
+	cat "$(MANIFESTS_DIR)/kubernetes/$(DYNATRACE_OPERATOR_CRD_YAML)" >> "$(HELM_CRD_FILE)"
+	echo "{{- end -}}" >> "$(HELM_CRD_FILE)"
+
