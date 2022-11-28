@@ -77,7 +77,7 @@ func createTarballTargetFile(useStdout bool, targetDir string) (*os.File, error)
 
 func createTarFile(targetDir string) (*os.File, error) {
 	tarballFilePath := fmt.Sprintf(tarFileName, targetDir, time.Now().Format(time.RFC3339))
-	tarballFilePath = strings.Replace(tarballFilePath, ":", "_", -1)
+	tarballFilePath = strings.ReplaceAll(tarballFilePath, ":", "_")
 
 	tarFile, err := os.Create(tarballFilePath)
 	if err != nil {
