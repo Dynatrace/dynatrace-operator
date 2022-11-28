@@ -292,8 +292,8 @@ func mockHandleEntitiesRequest(request *http.Request, writer http.ResponseWriter
 }
 
 func mockHandleSettingsRequest(request *http.Request, writer http.ResponseWriter, totalCount int, objectId string) {
-	switch {
-	case request.Method == http.MethodGet:
+	switch request.Method {
+	case http.MethodGet:
 		if request.Form.Get("schemaIds") != "builtin:cloud.kubernetes" || request.Form.Get("scopes") == "" {
 			writer.WriteHeader(http.StatusBadRequest)
 			return
@@ -304,7 +304,7 @@ func mockHandleSettingsRequest(request *http.Request, writer http.ResponseWriter
 		}
 		writer.WriteHeader(http.StatusOK)
 		writer.Write(settingsGetResponse)
-	case request.Method == http.MethodPost:
+	case http.MethodPost:
 		if request.Body == nil {
 			writer.WriteHeader(http.StatusBadRequest)
 			return
