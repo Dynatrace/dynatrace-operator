@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/arch"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
@@ -97,9 +96,7 @@ func assessVersionChecks(builder *features.FeatureBuilder, version version.Seman
 // this method assigns the queried versions to the variables 'old' and 'new'.
 // it makes sure, that old gets an older version than new, in order to
 // be able to simulate the upgrade of version.
-func assignVersions(t *testing.T, versions []string,
-	old version.SemanticVersion, new version.SemanticVersion) (version.SemanticVersion, version.SemanticVersion) {
-
+func assignVersions(t *testing.T, versions []string, old version.SemanticVersion, new version.SemanticVersion) (version.SemanticVersion, version.SemanticVersion) {
 	first := versions[0]
 	second := versions[len(versions)-1]
 
