@@ -83,16 +83,6 @@ jobs:
           version: ${{ needs.prepare.outputs.version }}
           registry: ${{ matrix.url }}
           repository: ${{ secrets[matrix.repository] }}
-      - name: Run preflight
-        if: matrix.registry == 'rhcc'
-        uses: ./.github/actions/preflight
-        with:
-         version: ${{ needs.prepare.outputs.version }}
-         registry: ${{ matrix.url }}
-         repository: ${{ secrets[matrix.repository] }}
-         report-name: "preflight.json"
-         redhat-project-id: ${{ secrets.REDHAT_PROJECT_ID }}
-         pyxis-api-token: ${{ secrets.PYXIS_API_TOKEN }}
       - name: Sign image for ${{matrix.registry}}
         if: matrix.registry != 'rhcc'
         uses: ./.github/actions/sign-image
@@ -141,7 +131,18 @@ jobs:
           registry: ${{ matrix.url }}
           repository: ${{ secrets[matrix.repository] }}
           combined: true
+      - name: Run preflight
+        if: matrix.registry == 'rhcc'
+        uses: ./.github/actions/preflight
+        with:
+          version: ${{ needs.prepare.outputs.version }}
+          registry: ${{ matrix.url }}
+          repository: ${{ secrets[matrix.repository] }}
+          report-name: "preflight.json"
+          redhat-project-id: ${{ secrets.REDHAT_PROJECT_ID }}
+          pyxis-api-token: ${{ secrets.PYXIS_API_TOKEN }}
       - name: Sign manifests for ${{matrix.registry}}
+        if: matrix.registry != 'rhcc'
         uses: ./.github/actions/sign-image
         with:
           image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}
