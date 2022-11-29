@@ -24,7 +24,6 @@ import (
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/rand"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,7 +34,7 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-const VERSION = "VERSION"
+const agentVersion = "VERSION"
 
 var injectionLabel = map[string]string{
 	"inject": "dynakube",
@@ -97,27 +96,27 @@ func assessVersionChecks(builder *features.FeatureBuilder, version version.Seman
 	builder.Assess("check env vars of init container", checkVersionInSampleApp(version))
 }
 
+// this method assigns the queried versions to the variables 'old' and 'new'.
+// it makes sure, that old gets an older version than new, in order to
+// be able to simulate the upgrade of version.
 func assignVersions(t *testing.T, versions []string,
 	old version.SemanticVersion, new version.SemanticVersion) (version.SemanticVersion, version.SemanticVersion) {
 
-	lowerHalf := versions[0 : len(versions)/2]
-	upperHalf := versions[len(versions)/2+1 : len(versions)-1]
+	first := versions[0]
+	second := versions[len(versions)-1]
 
-	lowerValue := lowerHalf[rand.Intn(len(lowerHalf))]
-	upperValue := upperHalf[rand.Intn(len(upperHalf))]
-
-	lowerVersion, err := version.ExtractSemanticVersion(lowerValue)
+	firstVersion, err := version.ExtractSemanticVersion(first)
 	require.NoError(t, err)
-	newerVersion, err := version.ExtractSemanticVersion(upperValue)
+	secondVersion, err := version.ExtractSemanticVersion(second)
 	require.NoError(t, err)
 
-	compare := version.CompareSemanticVersions(lowerVersion, newerVersion)
+	compare := version.CompareSemanticVersions(firstVersion, secondVersion)
 	if compare > 0 {
-		old = newerVersion
-		new = lowerVersion
+		old = secondVersion
+		new = firstVersion
 	} else if compare < 0 {
-		old = lowerVersion
-		new = newerVersion
+		old = firstVersion
+		new = secondVersion
 	}
 	return old, new
 }
@@ -172,16 +171,14 @@ func checkVersionInSampleApp(semanticVersion version.SemanticVersion) features.F
 			require.NotNil(t, podItem)
 			require.NotNil(t, podItem.Spec)
 			require.NotNil(t, podItem.Spec.InitContainers)
-
-			for _, container := range podItem.Spec.InitContainers {
-				if container.Name == "install-oneagent" {
-					require.NotNil(t, container.Env)
-					require.True(t, kubeobjects.EnvVarIsIn(container.Env, VERSION))
-					for _, env := range container.Env {
-						if env.Name == VERSION {
-							require.NotNil(t, env.Value)
-							assert.Equal(t, semanticVersion.String(), env.Value)
-						}
+			initContainer := podItem.Spec.InitContainers[0]
+			if initContainer.Name == "install-oneagent" {
+				require.NotNil(t, initContainer.Env)
+				require.True(t, kubeobjects.EnvVarIsIn(initContainer.Env, agentVersion))
+				for _, env := range initContainer.Env {
+					if env.Name == agentVersion {
+						require.NotNil(t, env.Value)
+						assert.Equal(t, semanticVersion.String(), env.Value)
 					}
 				}
 			}
