@@ -3,9 +3,6 @@ kind: DynaKube
 metadata:
   name: dynakube
   namespace: dynatrace
-  # Optional: necessary in case of a node using cgroup V2
-  # annotations:
-  #   feature.dynatrace.com/oneagent-privileged: "true"
 spec:
   # Dynatrace apiUrl including the `/api` path at the end.
   # For SaaS, set `YOUR_ENVIRONMENT_ID` to your environment ID.
@@ -127,6 +124,11 @@ spec:
       #
       # dnsPolicy: "ClusterFirstWithHostNet"
 
+      # Optional: Adds additional annotations to the OneAgent pods
+      #
+      # annotations:
+      #   annotation-key: annotation-value
+
       # Optional: Defines labels added to OneAgent pods
       # Can be used to structure workloads
       #
@@ -235,11 +237,6 @@ spec:
     #
     # env: []
 
-    # Optional: Adds TopologySpreadConstraints to the ActiveGate pods
-    # For more information on TopologySpreadConstraints, see https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
-    #
-    # topologySpreadConstraints: []
-
     # Optional: Specifies the name of a secret containing a TLS certificate, a TLS key and the TLS key's password to be used by ActiveGate instances
     # If unset, a self-signed certificate is used
     # The secret is expected to have the following key-value pairs
@@ -259,3 +256,13 @@ spec:
     # For more information on priority classes, see https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/
     #
     # priorityClassName: priority-class
+
+    # Optional: Adds additional annotations to the ActiveGate pods
+    #
+    # annotations:
+    #   annotation-key: annotation-value
+
+    # Optional: Adds TopologySpreadConstraints to the ActiveGate pods
+    # For more information on TopologySpreadConstraints, see https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
+    #
+    # topologySpreadConstraints: []
