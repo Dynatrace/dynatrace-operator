@@ -49,7 +49,7 @@ func AgentVersionSet(t *testing.T) features.Feature {
 		WithDefaultObjectMeta().
 		WithDynakubeNamespaceSelector().
 		ApiUrl(secretConfig.ApiUrl).
-		CloudNativeWithAgentVersion(&v1beta1.CloudNativeFullStackSpec{}, oldVersion).
+		CloudNativeWithAgentVersion(&dynatracev1beta1.CloudNativeFullStackSpec{}, oldVersion).
 		Build()
 
 	agentVersionset := features.New("cloudnative with agent version set")
