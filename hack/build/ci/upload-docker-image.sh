@@ -15,10 +15,7 @@ readonly version=${4}
 readonly imageTarPath="/tmp/operator-${platform}.tar"
 
 targetImageTag="${registry}/${repository}:${version}"
-if [ "${registry}" != "scan.connect.redhat.com" ]
-then
-  targetImageTag=${targetImageTag}-${platform}
-fi
+targetImageTag=${targetImageTag}-${platform}
 
 docker load -i "${imageTarPath}"
 
