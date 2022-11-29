@@ -12,15 +12,5 @@ manifests/crd/uninstall: prerequisites/kustomize manifests/crd/generate
 
 ## Builds a CRD and puts it with the Helm charts
 manifests/crd/helm: helm/version prerequisites/kustomize manifests/crd/generate
-	# Build crd
-	mkdir -p "$(HELM_CRD_DIR)"
-	$(KUSTOMIZE) build config/crd > "$(MANIFESTS_DIR)/kubernetes/$(DYNATRACE_OPERATOR_CRD_YAML)"
-
-	sed "s/namespace: dynatrace/namespace: {{.Release.Namespace}}/" "$(MANIFESTS_DIR)/kubernetes/$(DYNATRACE_OPERATOR_CRD_YAML)" > "$(MANIFESTS_DIR)/kubernetes/tmp_crd"
-	mv "$(MANIFESTS_DIR)/kubernetes/tmp_crd" "$(MANIFESTS_DIR)/kubernetes/$(DYNATRACE_OPERATOR_CRD_YAML)"
-
-	echo "{{- include \"dynatrace-operator.platformRequired\" . }}" > "$(HELM_CRD_FILE)"
-	echo "{{ if and .Values.installCRD (eq (include \"dynatrace-operator.partial\" .) \"false\") }}" >> "$(HELM_CRD_FILE)"
-	cat "$(MANIFESTS_DIR)/kubernetes/$(DYNATRACE_OPERATOR_CRD_YAML)" >> "$(HELM_CRD_FILE)"
-	echo "{{- end -}}" >> "$(HELM_CRD_FILE)"
+	./hack/helm/generate-crd.sh $(KUSTOMIZE) $(HELM_CRD_DIR) $(MANIFESTS_DIR)
 
