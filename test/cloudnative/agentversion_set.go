@@ -17,7 +17,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/namespace"
-	"github.com/Dynatrace/dynatrace-operator/test/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/sampleapps"
 	"github.com/Dynatrace/dynatrace-operator/test/secrets"
 	"github.com/Dynatrace/dynatrace-operator/test/setup"
@@ -60,11 +59,10 @@ func AgentVersionSet(t *testing.T) features.Feature {
 			WithLabels(injectionLabel).
 			Build()),
 	)
-	agentVersionset.Setup(secrets.ApplyDefault(secretConfig))
-	agentVersionset.Setup(operator.InstallAllForKubernetes())
 	agentVersionset.Setup(manifests.InstallFromFile("../testdata/cloudnative/sample-deployment.yaml"))
+	setup.InstallDynatraceFromSource(agentVersionset, &secretConfig)
 
-	setup.AssessDeployment(agentVersionset)
+	setup.AssessOperatorDeployment(agentVersionset)
 
 	agentVersionset.Assess("install dynakube", dynakube.Apply(dk))
 
@@ -73,7 +71,7 @@ func AgentVersionSet(t *testing.T) features.Feature {
 	agentVersionset.Assess("update dynakube", updateDynakube(newVersion))
 	agentVersionset.Assess("dynakube phase changes to 'Running'",
 		dynakube.WaitForDynakubePhase(dynakube.NewBuilder().WithDefaultObjectMeta().Build()))
-	setup.AssessDeployment(agentVersionset)
+	setup.AssessOperatorDeployment(agentVersionset)
 
 	assessVersionChecks(agentVersionset, newVersion)
 
@@ -165,7 +163,7 @@ func checkVersionInSampleApp(semanticVersion version.SemanticVersion) features.F
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		time.Sleep(time.Minute)
 		resources := environmentConfig.Client().Resources()
-		pods := sampleapps.Get(t, ctx, resources)
+		pods := sampleapps.Get(ctx, t, resources)
 
 		for _, podItem := range pods.Items {
 			require.NotNil(t, podItem)
