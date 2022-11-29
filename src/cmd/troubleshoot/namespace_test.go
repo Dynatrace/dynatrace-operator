@@ -12,7 +12,6 @@ import (
 
 const (
 	testDynakube       = "dynakube"
-	testOtherDynakube  = "otherdynakube"
 	testUID            = "test-uid"
 	testNamespace      = "dynatrace"
 	testOtherNamespace = "othernamespace"
@@ -30,7 +29,7 @@ func TestTroubleshootNamespace(t *testing.T) {
 			}).
 			Build()
 
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
+		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace}
 		assert.NoErrorf(t, checkNamespace(&troubleshootCtx), "'%s' namespace not found", troubleshootCtx.namespaceName)
 	})
 	t.Run("namespace does not exist in cluster", func(t *testing.T) {
@@ -44,7 +43,7 @@ func TestTroubleshootNamespace(t *testing.T) {
 			}).
 			Build()
 
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace, dynakubeName: testDynakube}
+		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace}
 		assert.Errorf(t, checkNamespace(&troubleshootCtx), "'%s' namespace found", troubleshootCtx.namespaceName)
 	})
 	t.Run("invalid namespace selected", func(t *testing.T) {
@@ -58,7 +57,7 @@ func TestTroubleshootNamespace(t *testing.T) {
 			}).
 			Build()
 
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testOtherNamespace, dynakubeName: testDynakube}
+		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testOtherNamespace}
 		assert.Errorf(t, checkNamespace(&troubleshootCtx), "'%s' namespace found", troubleshootCtx.namespaceName)
 	})
 }

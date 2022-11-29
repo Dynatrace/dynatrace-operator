@@ -101,7 +101,6 @@ func (mod KubernetesMonitoringModifier) getReadOnlyInitVolumes() []corev1.Volume
 		}
 	}
 	return []corev1.Volume{}
-
 }
 
 func (mod KubernetesMonitoringModifier) getVolumeMounts() []corev1.VolumeMount {

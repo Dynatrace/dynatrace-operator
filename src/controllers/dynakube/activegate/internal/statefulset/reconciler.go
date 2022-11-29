@@ -34,7 +34,7 @@ type Reconciler struct {
 	modifiers  []builder.Modifier
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, capability capability.Capability) *Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, capability capability.Capability) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
 	return &Reconciler{
 		client:     clt,
 		apiReader:  apiReader,
@@ -72,7 +72,7 @@ func (r *Reconciler) manageStatefulSet() error {
 		return errors.WithStack(err)
 	}
 
-	deleted, err := r.deleteStatefulSetIfOldLabelsAreUsed(desiredSts)
+	deleted, err := r.deleteStatefulSetIfSelectorChanged(desiredSts)
 	if deleted || err != nil {
 		return errors.WithStack(err)
 	}
@@ -154,21 +154,29 @@ func (r *Reconciler) recreateStatefulSet(currentSts, desiredSts *appsv1.Stateful
 	return true, r.client.Create(context.TODO(), desiredSts)
 }
 
-func (r *Reconciler) deleteStatefulSetIfOldLabelsAreUsed(desiredSts *appsv1.StatefulSet) (bool, error) {
+// the selector, e.g. MatchLabels, of a stateful set is immutable.
+// if it changed, for example due to a new operator version, deleteStatefulSetIfSelectorChanged deletes the stateful set
+// so it can be updated correctly afterwards.
+func (r *Reconciler) deleteStatefulSetIfSelectorChanged(desiredSts *appsv1.StatefulSet) (bool, error) {
 	currentSts, err := r.getStatefulSet(desiredSts)
 	if err != nil {
 		return false, err
 	}
 
-	if !reflect.DeepEqual(currentSts.Labels, desiredSts.Labels) {
-		log.Info("deleting existing stateful set")
+	if hasSelectorChanged(desiredSts, currentSts) {
+		log.Info("deleting existing stateful set because selector changed")
 		if err = r.client.Delete(context.TODO(), desiredSts); err != nil {
 			return false, err
 		}
+
 		return true, nil
 	}
 
 	return false, nil
+}
+
+func hasSelectorChanged(desiredSts *appsv1.StatefulSet, currentSts *appsv1.StatefulSet) bool {
+	return !reflect.DeepEqual(currentSts.Spec.Selector, desiredSts.Spec.Selector)
 }
 
 func (r *Reconciler) calculateActiveGateConfigurationHash() (string, error) {

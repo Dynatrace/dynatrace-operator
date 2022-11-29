@@ -22,7 +22,6 @@ func TestCheckProxySettings(t *testing.T) {
 		troubleshootCtx := troubleshootContext{
 			context:       context.TODO(),
 			namespaceName: testNamespace,
-			dynakubeName:  testDynakube,
 		}
 
 		logOutput := runProxyTestWithTestLogger(t.Name(), func(logger logr.Logger) {
@@ -42,7 +41,6 @@ func TestCheckProxySettings(t *testing.T) {
 		troubleshootCtx := troubleshootContext{
 			context:       context.TODO(),
 			namespaceName: testNamespace,
-			dynakubeName:  testDynakube,
 		}
 
 		logOutput := runProxyTestWithTestLogger(t.Name(), func(logger logr.Logger) {
@@ -62,7 +60,6 @@ func TestCheckProxySettings(t *testing.T) {
 		troubleshootCtx := troubleshootContext{
 			context:       context.TODO(),
 			namespaceName: testNamespace,
-			dynakubeName:  testDynakube,
 		}
 
 		logOutput := runProxyTestWithTestLogger(t.Name(), func(logger logr.Logger) {
@@ -74,7 +71,6 @@ func TestCheckProxySettings(t *testing.T) {
 		assert.Contains(t, logOutput, "HTTPS_PROXY")
 		assert.NotContains(t, logOutput, "Dynakube")
 		assert.NotContains(t, logOutput, "No proxy settings found.")
-
 	})
 	t.Run("Dynakube proxy", func(t *testing.T) {
 		os.Setenv("HTTP_PROXY", "")
@@ -83,7 +79,6 @@ func TestCheckProxySettings(t *testing.T) {
 		troubleshootCtx := troubleshootContext{
 			context:       context.TODO(),
 			namespaceName: testNamespace,
-			dynakubeName:  testDynakube,
 		}
 
 		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
@@ -99,7 +94,6 @@ func TestCheckProxySettings(t *testing.T) {
 		assert.NotContains(t, logOutput, "HTTPS_PROXY")
 		assert.Contains(t, logOutput, "Dynakube")
 		assert.NotContains(t, logOutput, "No proxy settings found.")
-
 	})
 	t.Run("Dynakube proxy from secret", func(t *testing.T) {
 		os.Setenv("HTTP_PROXY", "")
@@ -121,7 +115,6 @@ func TestCheckProxySettings(t *testing.T) {
 			context:       context.TODO(),
 			apiReader:     clt,
 			namespaceName: testNamespace,
-			dynakubeName:  testDynakube,
 		}
 
 		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
@@ -145,7 +138,6 @@ func TestCheckProxySettings(t *testing.T) {
 		troubleshootCtx := troubleshootContext{
 			context:       context.TODO(),
 			namespaceName: testNamespace,
-			dynakubeName:  testDynakube,
 		}
 
 		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).

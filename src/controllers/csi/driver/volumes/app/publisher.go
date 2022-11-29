@@ -35,7 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func NewAppVolumePublisher(client client.Client, fs afero.Afero, mounter mount.Interface, db metadata.Access, path metadata.PathResolver) csivolumes.Publisher {
+func NewAppVolumePublisher(client client.Client, fs afero.Afero, mounter mount.Interface, db metadata.Access, path metadata.PathResolver) csivolumes.Publisher { //nolint:revive // argument-limit doesn't apply to constructors
 	return &AppVolumePublisher{
 		client:  client,
 		fs:      fs,
@@ -103,10 +103,7 @@ func (publisher *AppVolumePublisher) UnpublishVolume(ctx context.Context, volume
 	}
 
 	overlayFSPath := publisher.path.AgentRunDirForVolume(volume.TenantUUID, volumeInfo.VolumeID)
-
-	if err = publisher.umountOneAgent(volumeInfo.TargetPath, overlayFSPath); err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to unmount oneagent volume: %s", err.Error()))
-	}
+	publisher.umountOneAgent(volumeInfo.TargetPath, overlayFSPath)
 
 	if err = publisher.db.DeleteVolume(ctx, volume.VolumeID); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -192,7 +189,7 @@ func (publisher *AppVolumePublisher) mountOneAgent(bindCfg *csivolumes.BindConfi
 	return nil
 }
 
-func (publisher *AppVolumePublisher) umountOneAgent(targetPath string, overlayFSPath string) error {
+func (publisher *AppVolumePublisher) umountOneAgent(targetPath string, overlayFSPath string) {
 	if err := publisher.mounter.Unmount(targetPath); err != nil {
 		log.Error(err, "Unmount failed", "path", targetPath)
 	}
@@ -203,8 +200,6 @@ func (publisher *AppVolumePublisher) umountOneAgent(targetPath string, overlayFS
 			log.Error(err, "Unmount failed", "path", agentDirectoryForPod)
 		}
 	}
-
-	return nil
 }
 
 func (publisher *AppVolumePublisher) hasTooManyMountAttempts(ctx context.Context, bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) (bool, error) {

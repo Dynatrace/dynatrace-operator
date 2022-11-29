@@ -27,7 +27,6 @@ type ActiveGateAuthTokenParams struct {
 }
 
 func (dtc *dynatraceClient) GetActiveGateAuthToken(dynakubeName string) (*ActiveGateAuthTokenInfo, error) {
-
 	request, err := dtc.createAuthTokenRequest(dynakubeName)
 	if err != nil {
 		return nil, errors.WithStack(err)

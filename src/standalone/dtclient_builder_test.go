@@ -18,7 +18,6 @@ func TestCreateClient(t *testing.T) {
 		require.NotNil(t, client)
 
 		assert.Len(t, builder.options, 0)
-
 	})
 
 	t.Run(`multiple options`, func(t *testing.T) {
@@ -31,7 +30,6 @@ func TestCreateClient(t *testing.T) {
 		require.NotNil(t, client)
 
 		assert.Len(t, builder.options, 3)
-
 	})
 }
 

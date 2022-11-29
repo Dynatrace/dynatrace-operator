@@ -29,7 +29,7 @@ const (
 func TestPublishVolume(t *testing.T) {
 	t.Run(`ready dynakube`, func(t *testing.T) {
 		mounter := mount.NewFakeMounter([]mount.MountPoint{})
-		publisher := newPublisherForTesting(t, mounter)
+		publisher := newPublisherForTesting(mounter)
 
 		mockDynakube(t, &publisher)
 
@@ -42,7 +42,7 @@ func TestPublishVolume(t *testing.T) {
 	})
 	t.Run(`not ready dynakube`, func(t *testing.T) {
 		mounter := mount.NewFakeMounter([]mount.MountPoint{})
-		publisher := newPublisherForTesting(t, mounter)
+		publisher := newPublisherForTesting(mounter)
 
 		mockDynakubeWithoutVersion(t, &publisher)
 
@@ -60,7 +60,7 @@ func TestUnpublishVolume(t *testing.T) {
 		mounter := mount.NewFakeMounter([]mount.MountPoint{
 			{Path: testTargetPath},
 		})
-		publisher := newPublisherForTesting(t, mounter)
+		publisher := newPublisherForTesting(mounter)
 		mockPublishedvolume(t, &publisher)
 
 		response, err := publisher.UnpublishVolume(context.TODO(), createTestVolumeInfo())
@@ -75,7 +75,7 @@ func TestUnpublishVolume(t *testing.T) {
 		mounter := mount.NewFakeMounter([]mount.MountPoint{
 			{Path: testTargetPath},
 		})
-		publisher := newPublisherForTesting(t, mounter)
+		publisher := newPublisherForTesting(mounter)
 
 		response, err := publisher.UnpublishVolume(context.TODO(), createTestVolumeInfo())
 
@@ -90,7 +90,7 @@ func TestUnpublishVolume(t *testing.T) {
 
 func TestNodePublishAndUnpublishVolume(t *testing.T) {
 	mounter := mount.NewFakeMounter([]mount.MountPoint{})
-	publisher := newPublisherForTesting(t, mounter)
+	publisher := newPublisherForTesting(mounter)
 	mockDynakube(t, &publisher)
 
 	publishResponse, err := publisher.PublishVolume(context.TODO(), createTestVolumeConfig())
@@ -108,7 +108,7 @@ func TestNodePublishAndUnpublishVolume(t *testing.T) {
 	assertReferencesForUnpublishedVolume(t, &publisher)
 }
 
-func newPublisherForTesting(t *testing.T, mounter *mount.FakeMounter) HostVolumePublisher {
+func newPublisherForTesting(mounter *mount.FakeMounter) HostVolumePublisher {
 	objects := []client.Object{
 		&dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{

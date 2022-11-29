@@ -91,7 +91,7 @@ func (dtc *dynatraceClient) GetOneAgentConnectionInfo() (OneAgentConnectionInfo,
 		return OneAgentConnectionInfo{}, err
 	}
 	defer func() {
-		//Swallow error, nothing has to be done at this point
+		// Swallow error, nothing has to be done at this point
 		_ = resp.Body.Close()
 	}()
 

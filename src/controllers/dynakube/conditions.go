@@ -6,7 +6,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (controller *DynakubeController) setConditionTokenError(dynakube *dynatracev1beta1.DynaKube, err error) {
+func (controller *Controller) setConditionTokenError(dynakube *dynatracev1beta1.DynaKube, err error) {
 	tokenErrorCondition := metav1.Condition{
 		Type:    dynatracev1beta1.TokenConditionType,
 		Status:  metav1.ConditionFalse,
@@ -17,7 +17,7 @@ func (controller *DynakubeController) setConditionTokenError(dynakube *dynatrace
 	controller.setAndLogCondition(dynakube, tokenErrorCondition)
 }
 
-func (controller *DynakubeController) setConditionTokenReady(dynakube *dynatracev1beta1.DynaKube) {
+func (controller *Controller) setConditionTokenReady(dynakube *dynatracev1beta1.DynaKube) {
 	tokenErrorCondition := metav1.Condition{
 		Type:   dynatracev1beta1.TokenConditionType,
 		Status: metav1.ConditionTrue,
@@ -27,7 +27,7 @@ func (controller *DynakubeController) setConditionTokenReady(dynakube *dynatrace
 	controller.setAndLogCondition(dynakube, tokenErrorCondition)
 }
 
-func (controller *DynakubeController) setAndLogCondition(dynakube *dynatracev1beta1.DynaKube, newCondition metav1.Condition) {
+func (controller *Controller) setAndLogCondition(dynakube *dynatracev1beta1.DynaKube, newCondition metav1.Condition) {
 	controller.removeDeprecatedConditionTypes(dynakube)
 	statusCondition := meta.FindStatusCondition(dynakube.Status.Conditions, newCondition.Type)
 
@@ -53,7 +53,7 @@ func areStatusesEqual(statusCondition *metav1.Condition, newCondition metav1.Con
 		statusCondition.Status == newCondition.Status
 }
 
-func (controller *DynakubeController) removeDeprecatedConditionTypes(dynakube *dynatracev1beta1.DynaKube) {
+func (controller *Controller) removeDeprecatedConditionTypes(dynakube *dynatracev1beta1.DynaKube) {
 	if meta.FindStatusCondition(dynakube.Status.Conditions, dynatracev1beta1.PaaSTokenConditionType) != nil {
 		meta.RemoveStatusCondition(&dynakube.Status.Conditions, dynatracev1beta1.PaaSTokenConditionType)
 	}

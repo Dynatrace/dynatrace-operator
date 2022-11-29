@@ -37,8 +37,8 @@ func defaultAuths(server string) Auths {
 	}
 }
 
-func setupDockerMocker(handleUrls []string) (*httptest.Server, *corev1.Secret, string, error) {
-	dockerServer := httptest.NewTLSServer(testDockerServerHandler("GET", handleUrls))
+func setupDockerMocker(handleUrls []string) (*httptest.Server, *corev1.Secret, string, error) { //nolint:revive // maximum number of return results per function exceeded; max 3 but got 4
+	dockerServer := httptest.NewTLSServer(testDockerServerHandler(http.MethodGet, handleUrls))
 
 	url, err := url.Parse(dockerServer.URL)
 	if err != nil {
@@ -89,7 +89,6 @@ func TestOneAgentImagePullable(t *testing.T) {
 	troubleshootCtx := troubleshootContext{
 		context:       context.TODO(),
 		namespaceName: testNamespace,
-		dynakubeName:  testDynakube,
 		pullSecret:    *secret,
 		httpClient:    dockerServer.Client(),
 	}
@@ -181,7 +180,6 @@ func TestOneAgentCustomImagePullable(t *testing.T) {
 	troubleshootCtx := troubleshootContext{
 		httpClient:    dockerServer.Client(),
 		namespaceName: testNamespace,
-		dynakubeName:  testDynakube,
 		context:       context.TODO(),
 		pullSecret:    *secret,
 	}
@@ -307,7 +305,6 @@ func TestOneAgentImageNotPullable(t *testing.T) {
 	troubleshootCtx := troubleshootContext{
 		context:       context.TODO(),
 		namespaceName: testNamespace,
-		dynakubeName:  testDynakube,
 		pullSecret:    *secret,
 		httpClient:    dockerServer.Client(),
 	}
@@ -385,7 +382,6 @@ func TestOneAgentImageNotPullable(t *testing.T) {
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
-
 		})
 		require.Contains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "reading manifest")
@@ -399,7 +395,6 @@ func TestOneAgentImageNotPullable(t *testing.T) {
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
-
 		})
 		require.Contains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "no such host")
@@ -421,7 +416,6 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 		context:       context.TODO(),
 		httpClient:    dockerServer.Client(),
 		namespaceName: testNamespace,
-		dynakubeName:  testDynakube,
 		pullSecret:    *secret,
 	}
 
@@ -433,7 +427,6 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
-
 		})
 		assert.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
@@ -446,7 +439,6 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
-
 		})
 		require.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
@@ -459,7 +451,6 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
-
 		})
 		require.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
@@ -472,7 +463,6 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
-
 		})
 		require.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
@@ -485,7 +475,6 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
-
 		})
 		require.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
@@ -498,7 +487,6 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
-
 		})
 		require.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
@@ -511,7 +499,6 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
-
 		})
 		require.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
@@ -524,7 +511,6 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
-
 		})
 		assert.Contains(t, logOutput, "failed")
 		assert.NotContains(t, logOutput, "can be successfully pulled")
@@ -537,7 +523,6 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
-
 		})
 		assert.Contains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "no such host")
@@ -561,7 +546,6 @@ func TestActiveGateImagePullable(t *testing.T) {
 		context:       context.TODO(),
 		httpClient:    dockerServer.Client(),
 		namespaceName: testNamespace,
-		dynakubeName:  testDynakube,
 		pullSecret:    *secret,
 	}
 
@@ -572,7 +556,6 @@ func TestActiveGateImagePullable(t *testing.T) {
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentActiveGate, false)
-
 		})
 		assert.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
@@ -585,7 +568,6 @@ func TestActiveGateImagePullable(t *testing.T) {
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentActiveGate, false)
-
 		})
 		assert.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
@@ -598,7 +580,6 @@ func TestActiveGateImagePullable(t *testing.T) {
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentActiveGate, false)
-
 		})
 		assert.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
@@ -611,7 +592,6 @@ func TestActiveGateImagePullable(t *testing.T) {
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentActiveGate, false)
-
 		})
 		assert.NotContains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "can be successfully pulled")
@@ -630,7 +610,6 @@ func TestActiveGateImageNotPullable(t *testing.T) {
 		context:       context.TODO(),
 		httpClient:    dockerServer.Client(),
 		namespaceName: testNamespace,
-		dynakubeName:  testDynakube,
 		pullSecret:    *secret,
 	}
 
@@ -641,7 +620,6 @@ func TestActiveGateImageNotPullable(t *testing.T) {
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentActiveGate, false)
-
 		})
 		require.Contains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "reading manifest")
@@ -656,7 +634,6 @@ func TestActiveGateImageNotPullable(t *testing.T) {
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentActiveGate, false)
-
 		})
 		require.Contains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "reading manifest")
@@ -671,7 +648,6 @@ func TestActiveGateImageNotPullable(t *testing.T) {
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentActiveGate, false)
-
 		})
 		require.Contains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "no such host")
@@ -695,7 +671,6 @@ func TestImagePullablePullSecret(t *testing.T) {
 	t.Run("valid pull secret", func(t *testing.T) {
 		troubleshootcontext := troubleshootContext{
 			namespaceName: testNamespace,
-			dynakubeName:  testDynakube,
 			pullSecret:    *testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend(dtpullsecret.DockerConfigJson, pullSecretFieldValue).build(),
 		}
 		secret, err := getPullSecretToken(&troubleshootcontext)
@@ -706,7 +681,6 @@ func TestImagePullablePullSecret(t *testing.T) {
 	t.Run("invalid pull secret", func(t *testing.T) {
 		troubleshootcontext := troubleshootContext{
 			namespaceName: testNamespace,
-			dynakubeName:  testDynakube,
 			pullSecret:    *testNewSecretBuilder(testNamespace, testDynakube+pullSecretSuffix).dataAppend("invalidToken", pullSecretFieldValue).build(),
 		}
 		secret, err := getPullSecretToken(&troubleshootcontext)

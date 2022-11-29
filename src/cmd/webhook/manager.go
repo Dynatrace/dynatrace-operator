@@ -13,21 +13,21 @@ const (
 	port               = 8443
 )
 
-type WebhookProvider struct {
+type Provider struct {
 	certificateDirectory string
 	certificateFileName  string
 	keyFileName          string
 }
 
-func NewWebhookManagerProvider(certificateDirectory string, keyFileName string, certificateFileName string) WebhookProvider {
-	return WebhookProvider{
+func NewProvider(certificateDirectory string, keyFileName string, certificateFileName string) Provider {
+	return Provider{
 		certificateDirectory: certificateDirectory,
 		certificateFileName:  certificateFileName,
 		keyFileName:          keyFileName,
 	}
 }
 
-func (provider WebhookProvider) CreateManager(namespace string, config *rest.Config) (manager.Manager, error) {
+func (provider Provider) CreateManager(namespace string, config *rest.Config) (manager.Manager, error) {
 	mgr, err := ctrl.NewManager(config, provider.createOptions(namespace))
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -36,7 +36,7 @@ func (provider WebhookProvider) CreateManager(namespace string, config *rest.Con
 	return provider.setupWebhookServer(mgr), nil
 }
 
-func (provider WebhookProvider) createOptions(namespace string) ctrl.Options {
+func (provider Provider) createOptions(namespace string) ctrl.Options {
 	return ctrl.Options{
 		Namespace:          namespace,
 		Scheme:             scheme.Scheme,
@@ -45,7 +45,7 @@ func (provider WebhookProvider) createOptions(namespace string) ctrl.Options {
 	}
 }
 
-func (provider WebhookProvider) setupWebhookServer(mgr manager.Manager) manager.Manager {
+func (provider Provider) setupWebhookServer(mgr manager.Manager) manager.Manager {
 	webhookServer := mgr.GetWebhookServer()
 	webhookServer.CertDir = provider.certificateDirectory
 	webhookServer.KeyName = provider.keyFileName

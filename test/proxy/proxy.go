@@ -59,7 +59,7 @@ func CheckProxyService() features.Func {
 		}).Stream(ctx)
 		require.NoError(t, err)
 
-		logs.AssertLogContains(t, logStream, "CONNECT dynatrace-webhook.dynatrace.svc.cluster.local")
+		logs.AssertContains(t, logStream, "CONNECT dynatrace-webhook.dynatrace.svc.cluster.local")
 
 		return ctx
 	}

@@ -79,5 +79,4 @@ func TestStatefulsetBuilder(t *testing.T) {
 		expected := mocks.DataMock{}
 		assert.Equal(t, expected, actual)
 	})
-
 }

@@ -61,7 +61,14 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 		registry := newEmptyFakeRegistry()
 		fs := afero.Afero{Fs: afero.NewMemMapFs()}
 
-		err := ReconcileVersions(ctx, dynakube, fakeClient, fs, registry.ImageVersionExt, *timeProvider)
+		versionReconciler := Reconciler{
+			Dynakube:        dynakube,
+			ApiReader:       fakeClient,
+			Fs:              fs,
+			VersionProvider: registry.ImageVersionExt,
+			TimeProvider:    timeProvider,
+		}
+		err := versionReconciler.Reconcile(ctx)
 		assert.Error(t, err)
 	})
 
@@ -80,16 +87,22 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 			oneAgentImagePath: "1.0.0",
 		})
 
-		err := ReconcileVersions(ctx, dynakube, fakeClient, fs, registry.ImageVersionExt, *timeProvider)
+		versionReconciler := Reconciler{
+			Dynakube:        dynakube,
+			ApiReader:       fakeClient,
+			Fs:              fs,
+			VersionProvider: registry.ImageVersionExt,
+			TimeProvider:    timeProvider,
+		}
+		err := versionReconciler.Reconcile(ctx)
 		assert.NoError(t, err)
 		assertVersionStatusEquals(t, registry, agImagePath, *timeProvider, &dkStatus.ActiveGate)
 		assertVersionStatusEquals(t, registry, oneAgentImagePath, *timeProvider, &dkStatus.OneAgent)
 		assertVersionStatusEquals(t, registry, eecImagePath, *timeProvider, &dkStatus.ExtensionController)
 		assertVersionStatusEquals(t, registry, statsdImagePath, *timeProvider, &dkStatus.Statsd)
 
-		err = ReconcileVersions(ctx, dynakube, fakeClient, fs, registry.ImageVersionExt, *timeProvider)
+		err = versionReconciler.Reconcile(ctx)
 		assert.NoError(t, err)
-
 	})
 
 	t.Run("some image versions were updated", func(t *testing.T) {
@@ -107,7 +120,14 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 			oneAgentImagePath: "1.0.0",
 		})
 
-		err := ReconcileVersions(ctx, dynakube, fakeClient, fs, registry.ImageVersionExt, *timeProvider)
+		versionReconciler := Reconciler{
+			Dynakube:        dynakube,
+			ApiReader:       fakeClient,
+			Fs:              fs,
+			VersionProvider: registry.ImageVersionExt,
+			TimeProvider:    timeProvider,
+		}
+		err := versionReconciler.Reconcile(ctx)
 		assert.NoError(t, err)
 
 		assertVersionStatusEquals(t, registry, agImagePath, *timeProvider, &dkStatus.ActiveGate)
@@ -117,7 +137,7 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 
 		registry.SetVersion(eecImagePath, "1.0.1")
 
-		err = ReconcileVersions(ctx, dynakube, fakeClient, fs, registry.ImageVersionExt, *timeProvider)
+		err = versionReconciler.Reconcile(ctx)
 		assert.NoError(t, err)
 
 		assertVersionStatusEquals(t, registry, agImagePath, *timeProvider, &dkStatus.ActiveGate)
@@ -127,8 +147,8 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 		}), eecImagePath, *timeProvider, &dkStatus.ExtensionController)
 		assertVersionStatusEquals(t, registry, statsdImagePath, *timeProvider, &dkStatus.Statsd)
 
-		changeTime(t, timeProvider, 15*time.Minute+1*time.Second)
-		err = ReconcileVersions(ctx, dynakube, fakeClient, fs, registry.ImageVersionExt, *timeProvider)
+		changeTime(timeProvider, 15*time.Minute+1*time.Second)
+		err = versionReconciler.Reconcile(ctx)
 		assert.NoError(t, err)
 
 		assertVersionStatusEquals(t, registry, agImagePath, *timeProvider, &dkStatus.ActiveGate)
@@ -183,7 +203,7 @@ func (registry *fakeRegistry) ImageVersionExt(imagePath string, _ *dockerconfig.
 	return registry.ImageVersion(imagePath)
 }
 
-func assertVersionStatusEquals(t *testing.T, registry *fakeRegistry, imagePath string, timeProvider kubeobjects.TimeProvider, versionStatusNamer dynatracev1beta1.VersionStatusNamer) {
+func assertVersionStatusEquals(t *testing.T, registry *fakeRegistry, imagePath string, timeProvider kubeobjects.TimeProvider, versionStatusNamer dynatracev1beta1.VersionStatusNamer) { //nolint:revive // argument-limit
 	expectedVersion, err := registry.ImageVersion(imagePath)
 
 	assert.NoError(t, err, "Image version is unexpectedly unknown for '%s'", imagePath)
@@ -194,7 +214,7 @@ func assertVersionStatusEquals(t *testing.T, registry *fakeRegistry, imagePath s
 	}
 }
 
-func changeTime(_ *testing.T, timeProvider *kubeobjects.TimeProvider, duration time.Duration) {
+func changeTime(timeProvider *kubeobjects.TimeProvider, duration time.Duration) {
 	newTime := metav1.NewTime(timeProvider.Now().Add(duration))
 	timeProvider.SetNow(&newTime)
 }

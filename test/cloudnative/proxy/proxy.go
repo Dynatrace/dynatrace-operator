@@ -56,7 +56,7 @@ func WithProxy(t *testing.T, proxySpec *v1beta1.DynaKubeProxy) features.Feature 
 	)
 	cloudNativeWithProxy.Setup(secrets.ApplyDefault(secretConfig))
 	cloudNativeWithProxy.Setup(manifests.InstallFromFile(kubernetesAllPath))
-	setup.AssessDeployment(cloudNativeWithProxy)
+	setup.AssessOperatorDeployment(cloudNativeWithProxy)
 
 	assesProxy(cloudNativeWithProxy, proxySpec)
 
@@ -110,7 +110,7 @@ func checkOneAgentEnvVars(ctx context.Context, t *testing.T, environmentConfig *
 
 func checkSampleInitContainerEnvVars(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 	resources := environmentConfig.Client().Resources()
-	pods := sampleapps.Get(t, ctx, resources)
+	pods := sampleapps.Get(ctx, t, resources)
 
 	for _, podItem := range pods.Items {
 		require.NotNil(t, podItem)

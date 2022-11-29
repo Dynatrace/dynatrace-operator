@@ -40,7 +40,7 @@ func handleTokenScopes(request *http.Request, writer http.ResponseWriter) {
 	}
 
 	defer func() {
-		//Swallow error, nothing can be done at this point
+		// Swallow error, nothing can be done at this point
 		_ = request.Body.Close()
 	}()
 	d, _ := ioutil.ReadAll(request.Body)

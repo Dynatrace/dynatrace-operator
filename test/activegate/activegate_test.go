@@ -137,7 +137,7 @@ func install(t *testing.T, proxySpec *v1beta1.DynaKubeProxy) features.Feature {
 
 func installAndDeploy(builder *features.FeatureBuilder, secretConfig secrets.Secret) {
 	builder.Setup(secrets.ApplyDefault(secretConfig))
-	builder.Setup(operator.InstallAllForKubernetes())
+	builder.Setup(operator.InstallFromSource(true))
 }
 
 func assessDeployment(builder *features.FeatureBuilder) {
@@ -227,12 +227,12 @@ func checkService(ctx context.Context, t *testing.T, environmentConfig *envconf.
 	}).Stream(ctx)
 	require.NoError(t, err)
 
-	logs.AssertLogContains(t, logStream, "RUNNING")
+	logs.AssertContains(t, logStream, "RUNNING")
 
 	return ctx
 }
 
-func assertMountPointMissing(t *testing.T, environmentConfig *envconf.Config, podItem corev1.Pod, containerName string, mountPoints []string) {
+func assertMountPointMissing(t *testing.T, environmentConfig *envconf.Config, podItem corev1.Pod, containerName string, mountPoints []string) { //nolint:revive // argument-limit
 	executionQuery := pod.NewExecutionQuery(podItem, containerName, "cat /proc/mounts")
 	executionResult, err := executionQuery.Execute(environmentConfig.Client().RESTConfig())
 	require.NoError(t, err)

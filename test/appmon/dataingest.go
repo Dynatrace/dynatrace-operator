@@ -51,7 +51,7 @@ func dataIngest(t *testing.T) features.Feature {
 
 	require.NoError(t, err)
 
-	dataIngestFeature.Setup(operator.InstallForKubernetes())
+	dataIngestFeature.Setup(operator.InstallFromSource(false))
 	dataIngestFeature.Setup(operator.WaitForDeployment())
 	dataIngestFeature.Setup(webhook.WaitForDeployment())
 	dataIngestFeature.Setup(secrets.ApplyDefault(tenantSecret))
@@ -134,7 +134,6 @@ func getDataIngestMetadataFromPod(t *testing.T, restConfig *rest.Config, dataIng
 
 func assessOnlyDataIngestIsInjected(t *testing.T) deployment.PodConsumer {
 	return func(pod corev1.Pod) {
-
 		initContainers := pod.Spec.InitContainers
 
 		assert.Len(t, initContainers, 1)
