@@ -81,8 +81,10 @@ func Test_runChecks(t *testing.T) {
 		err := runChecks(results, tsContext, checks)
 		require.Error(t, err)
 
-		aggregatedError := err.(tserrors.AggregatedError)
+		aggregatedError := tserrors.AggregatedError{}
+		isAggredatedError := errors.As(err, &aggregatedError)
 
+		require.True(t, isAggredatedError)
 		require.Len(t, aggregatedError.Errs, 2)
 		require.ErrorIs(t, aggregatedError.Errs[0], checkError)
 		require.ErrorIs(t, aggregatedError.Errs[1], checkError)

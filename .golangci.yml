@@ -11,6 +11,96 @@ linters-settings:
     disable:
       # Disable checking for copied locks since it causes a lot of annoying false-positives
       - copylocks
+  goconst:
+    ignore-tests: true
+  gosec:
+    excludes:
+      - G101 # "pattern": "(?i)passwd|pass|password|pwd|secret|private_key|token"
+      - G305 # File traversal when extracting zip/tar archive
+  revive:
+    enable-all-rules: true
+    rules:
+      - name: cognitive-complexity
+        arguments: [20] # max allowed cognitive complexity factor
+      - name: function-result-limit
+        arguments: [3]
+      - name: function-length
+        # following values set to avoid further regressions:
+        arguments: [52, 468]  # the maximum allowed statements and lines. 0 disables the check
+      - name: cyclomatic
+        arguments: [12]
+      - name: banned-characters
+        disabled: true
+      - name: file-header
+        disabled: true
+      - name: max-public-structs
+        disabled: true
+      - name: argument-limit
+        arguments: [4]
+      - name: line-length-limit
+        disabled: true
+      - name: add-constant
+        disabled: true
+      - name: var-naming
+        disabled: true
+      - name: unused-receiver
+        disabled: true
+      - name: import-shadowing
+        disabled: true
+      - name: modifies-value-receiver
+        disabled: true
+      - name: bare-return
+        disabled: true
+      - name: bare-return
+        disabled: true
+      - name: if-return
+        disabled: true
+      - name: redefines-builtin-id
+        disabled: true
+      - name: context-keys-type
+        disabled: true
+      - name: unused-parameter
+        disabled: true
+      - name: time-naming
+        disabled: true
+      - name: errorf
+        disabled: true
+      - name: unexported-return
+        disabled: true
+      - name: unhandled-error
+        disabled: true
+      - name: confusing-naming
+        disabled: true
+      - name: indent-error-flow
+        disabled: true
+      - name: early-return
+        disabled: true
+      - name: bool-literal-in-expr
+        disabled: true
+      - name: error-strings
+        disabled: true
+      - name: empty-lines
+        disabled: true
+      - name: flag-parameter
+        disabled: true
+      - name: blank-imports
+        disabled: true
+      - name: increment-decrement
+        disabled: true
+      - name: context-as-argument
+        disabled: true
+      - name: confusing-results
+        disabled: true
+      - name: receiver-naming
+        disabled: true
+      - name: nested-structs
+        disabled: true
+      - name: struct-tag
+        disabled: true
+      - name: error-naming
+        disabled: true
+      - name: range-val-address
+        disabled: true
 
 linters:
   disable-all: true
@@ -22,8 +112,39 @@ linters:
   - ineffassign
   - staticcheck
   - typecheck
-  - unused
   - misspell
+  - asciicheck
+  - bodyclose
+  - depguard
+  - dogsled
+  - errorlint
+  - goconst
+  - gocritic
+  - gofmt
+  - gosec
+  - nilerr
+  - prealloc
+  - revive
+  - unconvert
+  - unparam
+  - whitespace
+  - unused
+  - ineffassign
 
 service:
   golangci-lint-version: 1.49.x # use the fixed version to not introduce new linters unexpectedly
+
+issues:
+  exclude-rules:
+    - linters:
+        - gosec
+      path: src/webhook/validation/proxy_url_test.go
+    - linters:
+        - gosec
+      path: src/ingestendpoint/secret_test.go
+    - linters:
+        - unparam
+      text: always receives
+    - linters:
+        - revive
+      path: src/dtclient # it's awaiting refactoring

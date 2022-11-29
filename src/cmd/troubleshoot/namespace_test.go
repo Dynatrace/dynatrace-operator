@@ -12,7 +12,6 @@ import (
 
 const (
 	testDynakube       = "dynakube"
-	testOtherDynakube  = "otherdynakube"
 	testUID            = "test-uid"
 	testNamespace      = "dynatrace"
 	testOtherNamespace = "othernamespace"

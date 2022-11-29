@@ -19,7 +19,6 @@ const (
 
 func TestServiceEntryGeneration(t *testing.T) {
 	const (
-		testName = "com1"
 		testHost = "comtest.com"
 		testPort = 9999
 	)
@@ -41,10 +40,10 @@ func TestServiceEntryGeneration(t *testing.T) {
 				Resolution: istio.ServiceEntry_DNS,
 			},
 		}
-		result := buildServiceEntry(testName, testNamespace, testHost, protocolHttps, testPort)
+		result := buildServiceEntry(buildObjectMeta(testName, testNamespace), testHost, protocolHttps, testPort)
 		assert.EqualValues(t, expected, result)
 
-		result = buildServiceEntry(testName, testNamespace, testHost1, protocolHttps, testPort1)
+		result = buildServiceEntry(buildObjectMeta(testName, testNamespace), testHost1, protocolHttps, testPort1)
 		assert.NotEqualValues(t, expected, result)
 	})
 	t.Run(`generate with Ip`, func(t *testing.T) {
@@ -66,29 +65,29 @@ func TestServiceEntryGeneration(t *testing.T) {
 				Resolution: istio.ServiceEntry_NONE,
 			},
 		}
-		result := buildServiceEntry(testName, testNamespace, testIp, protocolHttps, testPort)
+		result := buildServiceEntry(buildObjectMeta(testName, testNamespace), testIp, protocolHttps, testPort)
 		assert.EqualValues(t, expected, result)
 
-		result = buildServiceEntry(testName, testNamespace, testIp, protocolHttps, testPort1)
+		result = buildServiceEntry(buildObjectMeta(testName, testNamespace), testIp, protocolHttps, testPort1)
 		assert.NotEqualValues(t, expected, result)
 	})
 }
 
 func TestBuildServiceEntryForHostname(t *testing.T) {
 	expected := buildExpectedServiceEntryForHostname(t)
-	result := buildServiceEntryFQDN(testName, testNamespace, testHost1, protocolHttp, testPort1)
+	result := buildServiceEntryFQDN(buildObjectMeta(testName, testNamespace), testHost1, protocolHttp, testPort1)
 	assert.EqualValues(t, expected, result)
 
-	result = buildServiceEntryFQDN(testName, testNamespace, testHost2, protocolHttp, testPort2)
+	result = buildServiceEntryFQDN(buildObjectMeta(testName, testNamespace), testHost2, protocolHttp, testPort2)
 	assert.NotEqualValues(t, expected, result)
 }
 
 func TestBuildServiceEntryIp(t *testing.T) {
 	expected := buildExpectedServiceEntryForIp(t)
-	result := buildServiceEntryIP(testName, testNamespace, testHost1, testPort1)
+	result := buildServiceEntryIP(buildObjectMeta(testName, testNamespace), testHost1, testPort1)
 	assert.EqualValues(t, expected, result)
 
-	result = buildServiceEntryIP(testName, testNamespace, testHost2, testPort2)
+	result = buildServiceEntryIP(buildObjectMeta(testName, testNamespace), testHost2, testPort2)
 	assert.NotEqualValues(t, expected, result)
 }
 

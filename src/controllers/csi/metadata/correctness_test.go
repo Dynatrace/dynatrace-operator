@@ -57,7 +57,7 @@ func TestCreateTestDynakube(t *testing.T) {
 	assert.Equal(t, "sha256:246", dynakube2.ImageDigest)
 
 	// Check that they are not references of each other
-	dynakube0.Name = "new-name"
+	dynakube0.Name = "new-name" //nolint:goconst
 	newDynakube0 := createTestDynakube(0)
 
 	assert.NotEqual(t, dynakube0.Name, newDynakube0.Name)

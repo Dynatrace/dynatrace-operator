@@ -33,7 +33,7 @@ const (
 func TestPublishVolume(t *testing.T) {
 	t.Run(`using url`, func(t *testing.T) {
 		mounter := mount.NewFakeMounter([]mount.MountPoint{})
-		publisher := newPublisherForTesting(t, mounter)
+		publisher := newPublisherForTesting(mounter)
 		mockUrlDynakubeMetadata(t, &publisher)
 
 		response, err := publisher.PublishVolume(context.TODO(), createTestVolumeConfig())
@@ -61,7 +61,7 @@ func TestPublishVolume(t *testing.T) {
 
 	t.Run(`using code modules image`, func(t *testing.T) {
 		mounter := mount.NewFakeMounter([]mount.MountPoint{})
-		publisher := newPublisherForTesting(t, mounter)
+		publisher := newPublisherForTesting(mounter)
 		mockImageDynakubeMetadata(t, &publisher)
 
 		response, err := publisher.PublishVolume(context.TODO(), createTestVolumeConfig())
@@ -89,7 +89,7 @@ func TestPublishVolume(t *testing.T) {
 
 	t.Run(`too many mount attempts`, func(t *testing.T) {
 		mounter := mount.NewFakeMounter([]mount.MountPoint{})
-		publisher := newPublisherForTesting(t, mounter)
+		publisher := newPublisherForTesting(mounter)
 		mockFailedPublishedVolume(t, &publisher)
 
 		response, err := publisher.PublishVolume(context.TODO(), createTestVolumeConfig())
@@ -102,7 +102,7 @@ func TestPublishVolume(t *testing.T) {
 
 func TestHasTooManyMountAttempts(t *testing.T) {
 	t.Run(`initial try`, func(t *testing.T) {
-		publisher := newPublisherForTesting(t, nil)
+		publisher := newPublisherForTesting(nil)
 		bindCfg := &csivolumes.BindConfig{
 			TenantUUID:       testTenantUUID,
 			MaxMountAttempts: dynatracev1beta1.DefaultMaxFailedCsiMountAttempts,
@@ -117,10 +117,9 @@ func TestHasTooManyMountAttempts(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, volume)
 		assert.Equal(t, 1, volume.MountAttempts)
-
 	})
 	t.Run(`too many mount attempts`, func(t *testing.T) {
-		publisher := newPublisherForTesting(t, nil)
+		publisher := newPublisherForTesting(nil)
 		mockFailedPublishedVolume(t, &publisher)
 		bindCfg := &csivolumes.BindConfig{
 			MaxMountAttempts: dynatracev1beta1.DefaultMaxFailedCsiMountAttempts,
@@ -140,7 +139,7 @@ func TestUnpublishVolume(t *testing.T) {
 			{Path: testTargetPath},
 			{Path: fmt.Sprintf("/%s/run/%s/mapped", testTenantUUID, testVolumeId)},
 		})
-		publisher := newPublisherForTesting(t, mounter)
+		publisher := newPublisherForTesting(mounter)
 		mockPublishedVolume(t, &publisher)
 
 		assert.Equal(t, 1, testutil.CollectAndCount(agentsVersionsMetric))
@@ -163,7 +162,7 @@ func TestUnpublishVolume(t *testing.T) {
 			{Path: testTargetPath},
 			{Path: fmt.Sprintf("/%s/run/%s/mapped", testTenantUUID, testVolumeId)},
 		})
-		publisher := newPublisherForTesting(t, mounter)
+		publisher := newPublisherForTesting(mounter)
 
 		response, err := publisher.UnpublishVolume(context.TODO(), createTestVolumeInfo())
 
@@ -179,7 +178,7 @@ func TestUnpublishVolume(t *testing.T) {
 	t.Run(`remove dummy volume created after too many failed attempts`, func(t *testing.T) {
 		resetMetrics()
 		mounter := mount.NewFakeMounter([]mount.MountPoint{})
-		publisher := newPublisherForTesting(t, mounter)
+		publisher := newPublisherForTesting(mounter)
 		mockFailedPublishedVolume(t, &publisher)
 
 		response, err := publisher.UnpublishVolume(context.TODO(), createTestVolumeInfo())
@@ -193,7 +192,7 @@ func TestUnpublishVolume(t *testing.T) {
 func TestNodePublishAndUnpublishVolume(t *testing.T) {
 	resetMetrics()
 	mounter := mount.NewFakeMounter([]mount.MountPoint{})
-	publisher := newPublisherForTesting(t, mounter)
+	publisher := newPublisherForTesting(mounter)
 	mockUrlDynakubeMetadata(t, &publisher)
 
 	publishResponse, err := publisher.PublishVolume(context.TODO(), createTestVolumeConfig())
@@ -219,7 +218,7 @@ func TestNodePublishAndUnpublishVolume(t *testing.T) {
 
 func TestStoreAndLoadPodInfo(t *testing.T) {
 	mounter := mount.NewFakeMounter([]mount.MountPoint{})
-	publisher := newPublisherForTesting(t, mounter)
+	publisher := newPublisherForTesting(mounter)
 
 	bindCfg := &csivolumes.BindConfig{
 		Version:    testAgentVersion,
@@ -241,14 +240,14 @@ func TestStoreAndLoadPodInfo(t *testing.T) {
 
 func TestLoadPodInfo_Empty(t *testing.T) {
 	mounter := mount.NewFakeMounter([]mount.MountPoint{})
-	publisher := newPublisherForTesting(t, mounter)
+	publisher := newPublisherForTesting(mounter)
 
 	volume, err := publisher.loadVolume(context.TODO(), testVolumeId)
 	require.NoError(t, err)
 	require.Nil(t, volume)
 }
 
-func newPublisherForTesting(t *testing.T, mounter *mount.FakeMounter) AppVolumePublisher {
+func newPublisherForTesting(mounter *mount.FakeMounter) AppVolumePublisher {
 	objects := []client.Object{
 		&dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{

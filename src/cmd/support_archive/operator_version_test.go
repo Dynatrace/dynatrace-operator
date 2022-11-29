@@ -6,6 +6,7 @@ import (
 	"io"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -37,7 +38,7 @@ func TestVersionCollector(t *testing.T) {
 	versionFile := make([]byte, hdr.Size)
 
 	bytesRead, err := tarReader.Read(versionFile)
-	if err != io.EOF {
+	if !errors.Is(err, io.EOF) {
 		require.NoError(t, err)
 	}
 	assert.Equal(t, hdr.Size, int64(bytesRead))

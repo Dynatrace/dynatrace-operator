@@ -41,7 +41,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type CSIDriverServer struct {
+type Server struct {
 	client  client.Client
 	opts    dtcsi.CSIOptions
 	fs      afero.Afero
@@ -52,11 +52,11 @@ type CSIDriverServer struct {
 	publishers map[string]csivolumes.Publisher
 }
 
-var _ csi.IdentityServer = &CSIDriverServer{}
-var _ csi.NodeServer = &CSIDriverServer{}
+var _ csi.IdentityServer = &Server{}
+var _ csi.NodeServer = &Server{}
 
-func NewServer(client client.Client, opts dtcsi.CSIOptions, db metadata.Access) *CSIDriverServer {
-	return &CSIDriverServer{
+func NewServer(client client.Client, opts dtcsi.CSIOptions, db metadata.Access) *Server {
+	return &Server{
 		client:  client,
 		opts:    opts,
 		fs:      afero.Afero{Fs: afero.NewOsFs()},
@@ -66,11 +66,11 @@ func NewServer(client client.Client, opts dtcsi.CSIOptions, db metadata.Access) 
 	}
 }
 
-func (svr *CSIDriverServer) SetupWithManager(mgr ctrl.Manager) error {
+func (svr *Server) SetupWithManager(mgr ctrl.Manager) error {
 	return mgr.Add(svr)
 }
 
-func (svr *CSIDriverServer) Start(ctx context.Context) error {
+func (svr *Server) Start(ctx context.Context) error {
 	defer metadata.LogAccessOverview(svr.db)
 	proto, addr, err := parseEndpoint(svr.opts.Endpoint)
 	if err != nil {
@@ -124,19 +124,19 @@ func (svr *CSIDriverServer) Start(ctx context.Context) error {
 	return err
 }
 
-func (svr *CSIDriverServer) GetPluginInfo(context.Context, *csi.GetPluginInfoRequest) (*csi.GetPluginInfoResponse, error) {
+func (svr *Server) GetPluginInfo(context.Context, *csi.GetPluginInfoRequest) (*csi.GetPluginInfoResponse, error) {
 	return &csi.GetPluginInfoResponse{Name: dtcsi.DriverName, VendorVersion: version.Version}, nil
 }
 
-func (svr *CSIDriverServer) Probe(context.Context, *csi.ProbeRequest) (*csi.ProbeResponse, error) {
+func (svr *Server) Probe(context.Context, *csi.ProbeRequest) (*csi.ProbeResponse, error) {
 	return &csi.ProbeResponse{}, nil
 }
 
-func (svr *CSIDriverServer) GetPluginCapabilities(context.Context, *csi.GetPluginCapabilitiesRequest) (*csi.GetPluginCapabilitiesResponse, error) {
+func (svr *Server) GetPluginCapabilities(context.Context, *csi.GetPluginCapabilitiesRequest) (*csi.GetPluginCapabilitiesResponse, error) {
 	return &csi.GetPluginCapabilitiesResponse{}, nil
 }
 
-func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
+func (svr *Server) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
 	volumeCfg, err := csivolumes.ParseNodePublishVolumeRequest(req)
 	if err != nil {
 		return nil, err
@@ -163,7 +163,7 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 	return publisher.PublishVolume(ctx, volumeCfg)
 }
 
-func (svr *CSIDriverServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {
+func (svr *Server) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {
 	volumeInfo, err := csivolumes.ParseNodeUnpublishVolumeRequest(req)
 	if err != nil {
 		return nil, err
@@ -185,34 +185,34 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(ctx context.Context, req *csi.No
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
-func (svr *CSIDriverServer) unmountUnknownVolume(volumeInfo csivolumes.VolumeInfo) {
+func (svr *Server) unmountUnknownVolume(volumeInfo csivolumes.VolumeInfo) {
 	log.Info("VolumeID not present in the database", "volumeID", volumeInfo.VolumeID, "targetPath", volumeInfo.TargetPath)
 	if err := svr.mounter.Unmount(volumeInfo.TargetPath); err != nil {
 		log.Error(err, "Tried to unmount unknown volume", "volumeID", volumeInfo.VolumeID)
 	}
 }
 
-func (svr *CSIDriverServer) NodeStageVolume(context.Context, *csi.NodeStageVolumeRequest) (*csi.NodeStageVolumeResponse, error) {
+func (svr *Server) NodeStageVolume(context.Context, *csi.NodeStageVolumeRequest) (*csi.NodeStageVolumeResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "")
 }
 
-func (svr *CSIDriverServer) NodeUnstageVolume(context.Context, *csi.NodeUnstageVolumeRequest) (*csi.NodeUnstageVolumeResponse, error) {
+func (svr *Server) NodeUnstageVolume(context.Context, *csi.NodeUnstageVolumeRequest) (*csi.NodeUnstageVolumeResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "")
 }
 
-func (svr *CSIDriverServer) NodeGetInfo(context.Context, *csi.NodeGetInfoRequest) (*csi.NodeGetInfoResponse, error) {
+func (svr *Server) NodeGetInfo(context.Context, *csi.NodeGetInfoRequest) (*csi.NodeGetInfoResponse, error) {
 	return &csi.NodeGetInfoResponse{NodeId: svr.opts.NodeId}, nil
 }
 
-func (svr *CSIDriverServer) NodeGetCapabilities(context.Context, *csi.NodeGetCapabilitiesRequest) (*csi.NodeGetCapabilitiesResponse, error) {
+func (svr *Server) NodeGetCapabilities(context.Context, *csi.NodeGetCapabilitiesRequest) (*csi.NodeGetCapabilitiesResponse, error) {
 	return &csi.NodeGetCapabilitiesResponse{Capabilities: []*csi.NodeServiceCapability{}}, nil
 }
 
-func (svr *CSIDriverServer) NodeGetVolumeStats(context.Context, *csi.NodeGetVolumeStatsRequest) (*csi.NodeGetVolumeStatsResponse, error) {
+func (svr *Server) NodeGetVolumeStats(context.Context, *csi.NodeGetVolumeStatsRequest) (*csi.NodeGetVolumeStatsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "")
 }
 
-func (svr *CSIDriverServer) NodeExpandVolume(context.Context, *csi.NodeExpandVolumeRequest) (*csi.NodeExpandVolumeResponse, error) {
+func (svr *Server) NodeExpandVolume(context.Context, *csi.NodeExpandVolumeRequest) (*csi.NodeExpandVolumeResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "")
 }
 

@@ -1,8 +1,6 @@
 package server
 
 import (
-	"path/filepath"
-
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 	cmdManager "github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
@@ -148,5 +146,5 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 }
 
 func createCsiDataPath(fs afero.Fs) error {
-	return errors.WithStack(fs.MkdirAll(filepath.Join(dtcsi.DataPath), 0770))
+	return errors.WithStack(fs.MkdirAll(dtcsi.DataPath, 0770))
 }

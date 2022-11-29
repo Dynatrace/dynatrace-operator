@@ -23,7 +23,6 @@ const (
 
 func KubernetesObjectProbe(gvk schema.GroupVersionKind,
 	namespace string, name string, config *rest.Config) (ProbeResult, error) {
-
 	var objQuery unstructured.Unstructured
 	objQuery.Object = make(map[string]interface{})
 

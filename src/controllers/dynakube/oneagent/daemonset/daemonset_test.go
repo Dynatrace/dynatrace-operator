@@ -137,7 +137,6 @@ func TestLabels(t *testing.T) {
 		assert.Equal(t, expectedLabels, ds.Labels)
 		assert.Equal(t, expectedMatchLabels, ds.Spec.Selector.MatchLabels)
 		assert.Equal(t, expectedLabels, ds.Spec.Template.Labels)
-
 	})
 }
 

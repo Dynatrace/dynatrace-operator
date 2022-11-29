@@ -23,11 +23,12 @@ type fakeMounter struct {
 }
 
 func (*fakeMounter) IsLikelyNotMountPoint(target string) (bool, error) {
-	if target == testTargetNotExist {
+	switch {
+	case target == testTargetNotExist:
 		return false, os.ErrNotExist
-	} else if target == testTargetError {
+	case target == testTargetError:
 		return false, fmt.Errorf(testError)
-	} else if target == testTargetMounted {
+	case target == testTargetMounted:
 		return true, nil
 	}
 	return false, nil
