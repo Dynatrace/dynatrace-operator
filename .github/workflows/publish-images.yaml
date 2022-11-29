@@ -52,7 +52,7 @@ jobs:
         registry: [gcr, dockerhub, rhcc]
         include:
         - registry: rhcc
-          url: scan.connect.redhat.com
+          url: quay.io
           repository: RHCC_REPOSITORY
           username: RHCC_USERNAME
           password: RHCC_PASSWORD
