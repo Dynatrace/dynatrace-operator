@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/test/bash"
 	"github.com/Dynatrace/dynatrace-operator/test/csi"
 	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/environment"
@@ -233,7 +234,7 @@ func checkService(ctx context.Context, t *testing.T, environmentConfig *envconf.
 }
 
 func assertMountPointMissing(t *testing.T, environmentConfig *envconf.Config, podItem corev1.Pod, containerName string, mountPoints []string) { //nolint:revive // argument-limit
-	executionQuery := pod.NewExecutionQuery(podItem, containerName, "cat /proc/mounts")
+	executionQuery := pod.NewExecutionQuery(podItem, containerName, bash.ReadFile("/proc/mounts")...)
 	executionResult, err := executionQuery.Execute(environmentConfig.Client().RESTConfig())
 	require.NoError(t, err)
 

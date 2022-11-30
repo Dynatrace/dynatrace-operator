@@ -4,11 +4,13 @@ package appmon
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
+	"github.com/Dynatrace/dynatrace-operator/test/bash"
 	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/manifests"
@@ -217,7 +219,7 @@ func assertValues(t *testing.T, restConfig *rest.Config, podItem corev1.Pod, exp
 }
 
 func assertValue(t *testing.T, restConfig *rest.Config, podItem corev1.Pod, variableName string, expectedValue string) { //nolint:revive // argument-limit
-	executionQuery := pod.NewExecutionQuery(podItem, sampleapps.Name, "echo $"+variableName)
+	executionQuery := pod.NewExecutionQuery(podItem, sampleapps.Name, bash.Shell(bash.Echo(fmt.Sprintf("$%s", variableName)))...)
 	executionResult, err := executionQuery.Execute(restConfig)
 	require.NoError(t, err)
 

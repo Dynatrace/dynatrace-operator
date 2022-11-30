@@ -41,3 +41,7 @@ func (c Command) String() string {
 	}
 	return strings.Trim(cmdString, " ")
 }
+
+func Echo(msg string) Command {
+	return Command{"echo", msg}
+}
