@@ -43,14 +43,14 @@ func (dtc *dynatraceClient) SendEvent(eventData *EventData) error {
 
 	req, err := http.NewRequest("POST", dtc.getEventsUrl(), bytes.NewBuffer(jsonStr))
 	if err != nil {
-		return fmt.Errorf("error initializing http request: %s", err.Error())
+		return fmt.Errorf("error initializing http request: %w", err)
 	}
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Authorization", fmt.Sprintf("Api-Token %s", dtc.apiToken))
 
 	response, err := dtc.httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("error making post request to dynatrace api: %s", err.Error())
+		return fmt.Errorf("error making post request to dynatrace api: %w", err)
 	}
 
 	_, err = dtc.getServerResponseData(response)

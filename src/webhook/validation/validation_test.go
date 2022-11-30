@@ -60,7 +60,6 @@ var dummyNamespace2 = corev1.Namespace{
 
 func TestDynakubeValidator_Handle(t *testing.T) {
 	t.Run(`valid dynakube specs`, func(t *testing.T) {
-
 		assertAllowedResponseWithWarnings(t, 3, &dynatracev1beta1.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynatracev1beta1.DynaKubeSpec{
@@ -112,7 +111,6 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 			}, &dummyNamespace, &dummyNamespace2, &defaultCSIDaemonSet)
 	})
 	t.Run(`conflicting dynakube specs`, func(t *testing.T) {
-
 		assertDeniedResponse(t,
 			[]string{
 				errorCSIRequired,
@@ -187,7 +185,6 @@ func assertDeniedResponse(t *testing.T, errMessages []string, dynakube *dynatrac
 	for _, errMsg := range errMessages {
 		assert.Contains(t, reason, errMsg)
 	}
-
 }
 
 func assertAllowedResponseWithoutWarnings(t *testing.T, dynakube *dynatracev1beta1.DynaKube, other ...client.Object) {

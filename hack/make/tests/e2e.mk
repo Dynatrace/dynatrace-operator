@@ -7,7 +7,11 @@ test/e2e/activegate:
 
 ## Runs CloudNative e2e test only
 test/e2e/cloudnative:
-	go test -v -tags e2e -count=1 -failfast ./test/cloudnative
+	go test -v -tags e2e -timeout 10m -count=1 -failfast ./test/cloudnative
+
+## Runs CloudNative e2e test only
+test/e2e/classic:
+	go test -v -tags e2e -timeout 10m -count=1 -failfast ./test/classic
 
 ## Runs CloudNative istio e2e test only
 test/e2e/cloudnative/istio:

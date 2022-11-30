@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 
@@ -106,10 +106,11 @@ func (dtc *dynatraceClient) CreateOrUpdateKubernetesSetting(clusterLabel, kubeSy
 
 	res, err := dtc.httpClient.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("error making post request to dynatrace api: %s", err.Error())
+		return "", fmt.Errorf("error making post request to dynatrace api: %w", err)
 	}
+	defer res.Body.Close()
 
-	resData, err := ioutil.ReadAll(res.Body)
+	resData, err := io.ReadAll(res.Body)
 	if err != nil {
 		return "", fmt.Errorf("error reading response: %w", err)
 	}
@@ -158,7 +159,7 @@ func (dtc *dynatraceClient) GetMonitoredEntitiesForKubeSystemUUID(kubeSystemUUID
 	var resDataJson monitoredEntitiesResponse
 	err = dtc.unmarshalToJson(res, &resDataJson)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing response body: %s", err.Error())
+		return nil, fmt.Errorf("error parsing response body: %w", err)
 	}
 
 	return resDataJson.Entities, nil
@@ -169,7 +170,7 @@ func (dtc *dynatraceClient) GetSettingsForMonitoredEntities(monitoredEntities []
 		return GetSettingsResponse{TotalCount: 0}, nil
 	}
 
-	var scopes []string
+	scopes := make([]string, 0, len(monitoredEntities))
 	for _, entity := range monitoredEntities {
 		scopes = append(scopes, entity.EntityId)
 	}
@@ -193,7 +194,7 @@ func (dtc *dynatraceClient) GetSettingsForMonitoredEntities(monitoredEntities []
 	var resDataJson GetSettingsResponse
 	err = dtc.unmarshalToJson(res, &resDataJson)
 	if err != nil {
-		return GetSettingsResponse{}, fmt.Errorf("error parsing response body: %s", err.Error())
+		return GetSettingsResponse{}, fmt.Errorf("error parsing response body: %w", err)
 	}
 
 	return resDataJson, nil
@@ -203,12 +204,12 @@ func (dtc *dynatraceClient) unmarshalToJson(res *http.Response, resDataJson inte
 	resData, err := dtc.getServerResponseData(res)
 
 	if err != nil {
-		return fmt.Errorf("error reading response body: %s", err.Error())
+		return fmt.Errorf("error reading response body: %w", err)
 	}
 	err = json.Unmarshal(resData, resDataJson)
 
 	if err != nil {
-		return fmt.Errorf("error parsing response body: %s", err.Error())
+		return fmt.Errorf("error parsing response body: %w", err)
 	}
 
 	return nil

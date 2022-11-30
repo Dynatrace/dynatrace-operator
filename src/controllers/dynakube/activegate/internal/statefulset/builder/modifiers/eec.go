@@ -57,7 +57,6 @@ func (eec ExtensionControllerModifier) Modify(sts *appsv1.StatefulSet) {
 
 	baseContainer := kubeobjects.FindContainerInPodSpec(&sts.Spec.Template.Spec, consts.ActiveGateContainerName)
 	baseContainer.VolumeMounts = append(baseContainer.VolumeMounts, eec.getActiveGateVolumeMounts(baseContainer.VolumeMounts)...)
-
 }
 
 func (eec ExtensionControllerModifier) getActiveGateVolumeMounts(presentMounts []corev1.VolumeMount) []corev1.VolumeMount {

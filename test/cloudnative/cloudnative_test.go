@@ -17,8 +17,8 @@ var testEnvironment env.Environment
 
 func TestMain(m *testing.M) {
 	testEnvironment = environment.Get()
+	testEnvironment.BeforeEachTest(namespace.DeleteIfExists(dynakube.Namespace))
 	testEnvironment.BeforeEachTest(namespace.DeleteIfExists(sampleapps.Namespace))
-	testEnvironment.BeforeEachTest(dynakube.DeleteIfExists(dynakube.NewBuilder().WithDefaultObjectMeta().Build()))
 	testEnvironment.BeforeEachTest(oneagent.WaitForDaemonSetPodsDeletion())
 	testEnvironment.BeforeEachTest(namespace.Recreate(namespace.NewBuilder(dynakube.Namespace).Build()))
 
@@ -32,6 +32,7 @@ func TestMain(m *testing.M) {
 
 func TestCloudNative(t *testing.T) {
 	testEnvironment.Test(t, Install(t, false))
+	testEnvironment.Test(t, Upgrade(t))
 	testEnvironment.Test(t, CodeModules(t, false))
 	testEnvironment.Test(t, NetworkProblems(t))
 }

@@ -15,7 +15,6 @@ const (
 )
 
 func (dsInfo *builderInfo) arguments() []string {
-
 	args := make([]string, 0)
 
 	args = dsInfo.appendHostInjectArgs(args)

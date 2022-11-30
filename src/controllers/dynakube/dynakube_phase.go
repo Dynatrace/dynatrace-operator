@@ -10,7 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func (controller *DynakubeController) determineDynaKubePhase(dynakube *dynatracev1beta1.DynaKube) dynatracev1beta1.DynaKubePhaseType {
+func (controller *Controller) determineDynaKubePhase(dynakube *dynatracev1beta1.DynaKube) dynatracev1beta1.DynaKubePhaseType {
 	if dynakube.NeedsActiveGate() {
 		activeGatePods, err := controller.numberOfMissingActiveGatePods(dynakube)
 		if err != nil {
@@ -46,7 +46,7 @@ func (controller *DynakubeController) determineDynaKubePhase(dynakube *dynatrace
 	return dynatracev1beta1.Running
 }
 
-func (controller *DynakubeController) numberOfMissingOneagentPods(dynakube *dynatracev1beta1.DynaKube) (int32, error) {
+func (controller *Controller) numberOfMissingOneagentPods(dynakube *dynatracev1beta1.DynaKube) (int32, error) {
 	oneAgentDaemonSet := &appsv1.DaemonSet{}
 	instanceName := dynakube.OneAgentDaemonsetName()
 	err := controller.client.Get(context.TODO(), types.NamespacedName{Name: instanceName, Namespace: dynakube.Namespace}, oneAgentDaemonSet)
@@ -57,7 +57,7 @@ func (controller *DynakubeController) numberOfMissingOneagentPods(dynakube *dyna
 	return oneAgentDaemonSet.Status.CurrentNumberScheduled - oneAgentDaemonSet.Status.NumberReady, nil
 }
 
-func (controller *DynakubeController) numberOfMissingActiveGatePods(dynakube *dynatracev1beta1.DynaKube) (int32, error) {
+func (controller *Controller) numberOfMissingActiveGatePods(dynakube *dynatracev1beta1.DynaKube) (int32, error) {
 	capabilities := capability.GenerateActiveGateCapabilities(dynakube)
 
 	sum := int32(0)

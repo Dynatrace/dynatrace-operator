@@ -194,39 +194,54 @@ func getAPIToken(tokens corev1.Secret) string {
 //
 // Checks all the dynakubes with host-monitoring against all the nodes (using the nodeSelector), creating the above mentioned mapping.
 func (g *InitGenerator) getHostMonitoringNodes(dk *dynatracev1beta1.DynaKube) (map[string]string, error) {
-
 	imNodes := map[string]string{}
 	if !dk.CloudNativeFullstackMode() {
 		return imNodes, nil
 	}
 	tenantUUID := dk.Status.ConnectionInfo.TenantUUID
 	if g.canWatchNodes {
-		nodeInf, err := g.initIMNodes()
+		var err error
+		imNodes, err = g.calculateImNodes(dk, tenantUUID)
 		if err != nil {
 			return nil, err
 		}
-		nodeSelector := labels.SelectorFromSet(dk.NodeSelector())
-		for _, node := range nodeInf.nodes {
-			nodeLabels := labels.Set(node.Labels)
-			if nodeSelector.Matches(nodeLabels) {
-				if tenantUUID != "" {
-					nodeInf.imNodes[node.Name] = tenantUUID
-				} else if !dk.FeatureIgnoreUnknownState() {
-					delete(nodeInf.imNodes, node.Name)
-				}
-			}
-		}
-		imNodes = nodeInf.imNodes
 	} else {
-		for nodeName := range dk.Status.OneAgent.Instances {
+		updateImNodes(dk, tenantUUID, imNodes)
+	}
+	return imNodes, nil
+}
+
+func (g *InitGenerator) calculateImNodes(dk *dynatracev1beta1.DynaKube, tenantUUID string) (map[string]string, error) {
+	nodeInf, err := g.initIMNodes()
+	if err != nil {
+		return nil, err
+	}
+	nodeSelector := labels.SelectorFromSet(dk.NodeSelector())
+	updateNodeInfImNodes(dk, nodeInf, nodeSelector, tenantUUID)
+	return nodeInf.imNodes, nil
+}
+
+func updateImNodes(dk *dynatracev1beta1.DynaKube, tenantUUID string, imNodes map[string]string) {
+	for nodeName := range dk.Status.OneAgent.Instances {
+		if tenantUUID != "" {
+			imNodes[nodeName] = tenantUUID
+		} else if !dk.FeatureIgnoreUnknownState() {
+			delete(imNodes, nodeName)
+		}
+	}
+}
+
+func updateNodeInfImNodes(dk *dynatracev1beta1.DynaKube, nodeInf nodeInfo, nodeSelector labels.Selector, tenantUUID string) {
+	for _, node := range nodeInf.nodes {
+		nodeLabels := labels.Set(node.Labels)
+		if nodeSelector.Matches(nodeLabels) {
 			if tenantUUID != "" {
-				imNodes[nodeName] = tenantUUID
+				nodeInf.imNodes[node.Name] = tenantUUID
 			} else if !dk.FeatureIgnoreUnknownState() {
-				delete(imNodes, nodeName)
+				delete(nodeInf.imNodes, node.Name)
 			}
 		}
 	}
-	return imNodes, nil
 }
 
 func (g *InitGenerator) initIMNodes() (nodeInfo, error) {

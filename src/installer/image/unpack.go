@@ -23,7 +23,7 @@ type imagePullInfo struct {
 	destinationRef *types.ImageReference
 }
 
-func (installer ImageInstaller) extractAgentBinariesFromImage(pullInfo imagePullInfo) error {
+func (installer Installer) extractAgentBinariesFromImage(pullInfo imagePullInfo) error {
 	manifestBlob, err := copyImageToCache(pullInfo)
 	if err != nil {
 		log.Info("failed to get manifests blob",
@@ -42,10 +42,9 @@ func (installer ImageInstaller) extractAgentBinariesFromImage(pullInfo imagePull
 		return errors.WithStack(err)
 	}
 	return installer.unpackOciImage(manifests, pullInfo.imageCacheDir, pullInfo.targetDir)
-
 }
 
-func (installer ImageInstaller) unmarshalManifestBlob(manifestBlob []byte, imageCacheDir string) ([]*manifest.OCI1, error) {
+func (installer Installer) unmarshalManifestBlob(manifestBlob []byte, imageCacheDir string) ([]*manifest.OCI1, error) {
 	var manifests []*manifest.OCI1
 
 	switch manifest.GuessMIMEType(manifestBlob) {
@@ -66,7 +65,7 @@ func (installer ImageInstaller) unmarshalManifestBlob(manifestBlob []byte, image
 	return manifests, nil
 }
 
-func (installer ImageInstaller) unpackOciImage(manifests []*manifest.OCI1, imageCacheDir string, targetDir string) error {
+func (installer Installer) unpackOciImage(manifests []*manifest.OCI1, imageCacheDir string, targetDir string) error {
 	for _, entry := range manifests {
 		for _, layer := range entry.LayerInfos() {
 			switch layer.MediaType {
@@ -86,7 +85,6 @@ func (installer ImageInstaller) unpackOciImage(manifests []*manifest.OCI1, image
 }
 
 func unmarshallImageIndex(fs afero.Fs, imageCacheDir string, manifestBlob []byte) ([]*manifest.OCI1, error) {
-	var manifests []*manifest.OCI1
 	index, err := manifest.OCI1IndexFromManifest(manifestBlob)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -94,6 +92,8 @@ func unmarshallImageIndex(fs afero.Fs, imageCacheDir string, manifestBlob []byte
 	aferoFs := afero.Afero{
 		Fs: fs,
 	}
+
+	var manifests []*manifest.OCI1 //nolint:prealloc
 	for _, descriptor := range index.Manifests {
 		manifestFile, err := aferoFs.ReadFile(filepath.Join(imageCacheDir, "blobs", descriptor.Digest.Algorithm().String(), descriptor.Digest.Hex()))
 		if err != nil {

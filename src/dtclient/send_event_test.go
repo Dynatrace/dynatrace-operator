@@ -79,7 +79,6 @@ func TestSendEvent(t *testing.T) {
 				"error making post request to dynatrace api: Post \""+
 					dynatraceServer.URL+
 					"/v1/events\""))
-
 	})
 }
 

@@ -89,7 +89,6 @@ func NewMultiCapability(dk *dynatracev1beta1.DynaKube) *MultiCapability {
 	}
 	mc.argName = strings.Join(capabilityNames, ",")
 	return &mc
-
 }
 
 // Deprecated

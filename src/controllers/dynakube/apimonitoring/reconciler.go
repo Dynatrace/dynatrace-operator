@@ -5,21 +5,21 @@ import (
 	"github.com/pkg/errors"
 )
 
-type ApiMonitoringReconciler struct {
+type Reconciler struct {
 	dtc            dtclient.Client
 	clusterLabel   string
 	kubeSystemUUID string
 }
 
-func NewReconciler(dtc dtclient.Client, clusterLabel, kubeSystemUUID string) *ApiMonitoringReconciler {
-	return &ApiMonitoringReconciler{
+func NewReconciler(dtc dtclient.Client, clusterLabel, kubeSystemUUID string) *Reconciler {
+	return &Reconciler{
 		dtc,
 		clusterLabel,
 		kubeSystemUUID,
 	}
 }
 
-func (r *ApiMonitoringReconciler) Reconcile() error {
+func (r *Reconciler) Reconcile() error {
 	objectID, err := r.createObjectIdIfNotExists()
 
 	if err != nil {
@@ -35,7 +35,7 @@ func (r *ApiMonitoringReconciler) Reconcile() error {
 	return nil
 }
 
-func (r *ApiMonitoringReconciler) createObjectIdIfNotExists() (string, error) {
+func (r *Reconciler) createObjectIdIfNotExists() (string, error) {
 	if r.kubeSystemUUID == "" {
 		return "", errors.New("no kube-system namespace UUID given")
 	}

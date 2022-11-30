@@ -340,7 +340,6 @@ func TestRemoveEndpointSecrets(t *testing.T) {
 
 	checkTestSecretDoesntExist(t, fakeClient, types.NamespacedName{Namespace: testNamespace1, Name: config.EnrichmentEndpointSecretName})
 	checkTestSecretDoesntExist(t, fakeClient, types.NamespacedName{Namespace: testNamespace2, Name: config.EnrichmentEndpointSecretName})
-
 }
 
 func checkTestSecretContains(t *testing.T, fakeClient client.Client, secretName types.NamespacedName, data string) {

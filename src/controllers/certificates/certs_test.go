@@ -68,7 +68,7 @@ func TestCertsValidation(t *testing.T) {
 	})
 }
 
-func requireValidCerts(t *testing.T, domain string, now time.Time, caCert, tlsCert []byte) {
+func requireValidCerts(t *testing.T, domain string, now time.Time, caCert, tlsCert []byte) { //nolint:revive // argument-limit
 	caCerts := x509.NewCertPool()
 	require.True(t, caCerts.AppendCertsFromPEM(caCert))
 

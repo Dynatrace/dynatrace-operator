@@ -204,7 +204,6 @@ func TestAddTemplateSpec(t *testing.T) {
 		spec := sts.Spec.Template.Spec
 
 		assert.Equal(t, testNodeSelector, spec.NodeSelector)
-
 	})
 	t.Run("set tolerations", func(t *testing.T) {
 		dynakube := getTestDynakube()

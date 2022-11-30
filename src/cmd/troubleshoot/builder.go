@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
+	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -84,6 +85,8 @@ func clusterOptions(opts *cluster.Options) {
 
 func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
+		version.LogVersion()
+
 		kubeConfig, err := builder.configProvider.GetConfig()
 		if err != nil {
 			return err
@@ -113,12 +116,12 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		resetLogger()
 		if err != nil {
 			logErrorf("prerequisite checks failed, aborting")
-			return nil
+			return nil //nolint:nilerr
 		}
 
 		dynakubes, err := getDynakubes(troubleshootCtx, dynakubeFlagValue)
 		if err != nil {
-			return nil
+			return nil //nolint:nilerr
 		}
 
 		runChecksForAllDynakubes(results, getDynakubeSpecificChecks(results), dynakubes, apiReader)

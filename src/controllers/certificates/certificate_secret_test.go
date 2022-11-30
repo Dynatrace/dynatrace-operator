@@ -15,8 +15,7 @@ import (
 )
 
 const (
-	testName = "test-name"
-	testKey  = "test-key"
+	testKey = "test-key"
 )
 
 var testValue1 = []byte{1, 2, 3, 4}

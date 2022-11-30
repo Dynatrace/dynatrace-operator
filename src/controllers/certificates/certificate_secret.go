@@ -32,12 +32,13 @@ func (certSecret *certificateSecret) setSecretFromReader(ctx context.Context, ap
 	query := kubeobjects.NewSecretQuery(ctx, nil, apiReader, log)
 	secret, err := query.Get(types.NamespacedName{Name: buildSecretName(), Namespace: namespace})
 
-	if k8serrors.IsNotFound(err) {
+	switch {
+	case k8serrors.IsNotFound(err):
 		certSecret.secret = kubeobjects.NewSecret(buildSecretName(), namespace, map[string][]byte{})
 		certSecret.existsInCluster = false
-	} else if err != nil {
+	case err != nil:
 		return errors.WithStack(err)
-	} else {
+	default:
 		certSecret.secret = &secret
 		certSecret.existsInCluster = true
 	}
@@ -46,12 +47,12 @@ func (certSecret *certificateSecret) setSecretFromReader(ctx context.Context, ap
 }
 
 func (certSecret *certificateSecret) isRecent() bool {
-	if certSecret.secret == nil && certSecret.certificates == nil {
+	switch {
+	case certSecret.secret == nil && certSecret.certificates == nil:
 		return true
-	} else if certSecret.secret == nil || certSecret.certificates == nil {
+	case certSecret.secret == nil || certSecret.certificates == nil:
 		return false
-	} else if !reflect.DeepEqual(certSecret.certificates.Data, certSecret.secret.Data) {
-		// certificates need to be updated
+	case !reflect.DeepEqual(certSecret.certificates.Data, certSecret.secret.Data):
 		return false
 	}
 	return true
@@ -82,7 +83,7 @@ func getDomain(namespace string) string {
 
 func (certSecret *certificateSecret) areWebhookConfigsValid(configs []*admissionregistrationv1.WebhookClientConfig) bool {
 	for i := range configs {
-		if configs[i] != nil && !certSecret.isBundleValid((*configs[i]).CABundle) {
+		if configs[i] != nil && !certSecret.isBundleValid(configs[i].CABundle) {
 			return false
 		}
 	}

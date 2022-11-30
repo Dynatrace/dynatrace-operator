@@ -1,7 +1,6 @@
 package csigc
 
 import (
-	"context"
 	"os"
 	"strconv"
 	"time"
@@ -14,7 +13,7 @@ const (
 	maxUnmountedCsiVolumeAgeEnv     = "MAX_UNMOUNTED_VOLUME_AGE"
 )
 
-func (gc *CSIGarbageCollector) runUnmountedVolumeGarbageCollection(ctx context.Context, tenantUUID string) {
+func (gc *CSIGarbageCollector) runUnmountedVolumeGarbageCollection(tenantUUID string) {
 	unmountedVolumes, err := gc.getUnmountedVolumes(tenantUUID)
 	if err != nil {
 		log.Info("failed to get unmounted volume information")

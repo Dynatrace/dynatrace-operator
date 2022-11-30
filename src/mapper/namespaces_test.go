@@ -33,7 +33,7 @@ func TestMatchForNamespaceNothingEverything(t *testing.T) {
 
 func TestMapFromNamespace(t *testing.T) {
 	labels := map[string]string{"test": "selector"}
-	dk := createTestDynakubeWithMultipleFeatures("appMonitoring-1", labels, nil)
+	dk := createTestDynakubeWithMultipleFeatures("appMonitoring-1", labels)
 	namespace := createNamespace("test-namespace", labels)
 
 	t.Run("Add to namespace", func(t *testing.T) {
@@ -74,7 +74,7 @@ func TestMapFromNamespace(t *testing.T) {
 	})
 
 	t.Run("Ignore kube namespaces", func(t *testing.T) {
-		dk := createTestDynakubeWithMultipleFeatures("appMonitoring", nil, nil)
+		dk := createTestDynakubeWithMultipleFeatures("appMonitoring", nil)
 		namespace := createNamespace("kube-something", nil)
 		clt := fake.NewClient(dk)
 		nm := NewNamespaceMapper(context.TODO(), clt, clt, "dynatrace", namespace)
@@ -87,7 +87,7 @@ func TestMapFromNamespace(t *testing.T) {
 	})
 
 	t.Run("Ignore openshift namespaces", func(t *testing.T) {
-		dk := createTestDynakubeWithMultipleFeatures("appMonitoring", nil, nil)
+		dk := createTestDynakubeWithMultipleFeatures("appMonitoring", nil)
 		namespace := createNamespace("openshift-something", nil)
 		clt := fake.NewClient(dk)
 		nm := NewNamespaceMapper(context.TODO(), clt, clt, "dynatrace", namespace)
@@ -100,7 +100,7 @@ func TestMapFromNamespace(t *testing.T) {
 	})
 
 	t.Run("ComponentFeature flag for monitoring system namespaces", func(t *testing.T) {
-		dk := createTestDynakubeWithMultipleFeatures("appMonitoring", nil, nil)
+		dk := createTestDynakubeWithMultipleFeatures("appMonitoring", nil)
 		dk.Annotations = map[string]string{
 			dynatracev1beta1.AnnotationFeatureIgnoredNamespaces: "[]",
 		}
