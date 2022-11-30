@@ -12,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/src/functional"
 	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/environment"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/namespace"
@@ -21,6 +22,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/setup"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/e2e-framework/klient/conf"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
@@ -67,7 +69,7 @@ func SupportArchiveExecution(t *testing.T) features.Feature {
 
 func checkSupportArchiveExecution() features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		result := executeSupportArchive(context.TODO(), t, environmentConfig, "--stdout")
+		result := executeSupportArchive(context.Background(), t, environmentConfig, "--stdout")
 		require.NotNil(t, result)
 
 		zipReader, err := gzip.NewReader(result.StdOut)
@@ -89,24 +91,25 @@ func checkSupportArchiveExecution() features.Func {
 
 func executeSupportArchive(ctx context.Context, t *testing.T, environmentConfig *envconf.Config, cmdLineArguments string) *pod.ExecutionResult {
 	resources := environmentConfig.Client().Resources()
+
 	pods := operator.Get(t, ctx, resources)
-	for _, podItem := range pods.Items {
-		require.NotNil(t, podItem)
+	require.NotNil(t, pods.Items)
 
-		if strings.Contains(podItem.Name, "dynatrace-operator") {
-			executionQuery := pod.NewExecutionQuery(podItem,
-				"dynatrace-operator",
-				"/usr/local/bin/dynatrace-operator",
-				"support-archive",
-				cmdLineArguments)
-			executionResult, err := executionQuery.Execute(environmentConfig.Client().RESTConfig())
-			require.NoError(t, err)
+	operatorPods := functional.Filter(pods.Items, func(podItem v1.Pod) bool {
+		return strings.Contains(podItem.Name, "dynatrace-operator")
+	})
 
-			return executionResult
-		}
-	}
-	t.Fatalf("didn't find operator pod, support-archive command hasn't been executed")
-	return nil
+	require.Len(t, operatorPods, 1)
+
+	executionQuery := pod.NewExecutionQuery(operatorPods[0],
+		"dynatrace-operator",
+		"/usr/local/bin/dynatrace-operator",
+		"support-archive",
+		cmdLineArguments)
+	executionResult, err := executionQuery.Execute(environmentConfig.Client().RESTConfig())
+	require.NoError(t, err)
+
+	return executionResult
 }
 
 // Note: mainly for dev purposes, test requires a running cluster with deployed operator to be successful

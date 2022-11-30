@@ -24,6 +24,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/sampleapps"
 	"github.com/Dynatrace/dynatrace-operator/test/secrets"
 	"github.com/Dynatrace/dynatrace-operator/test/setup"
+	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -136,8 +137,11 @@ func imageHasBeenDownloaded(ctx context.Context, t *testing.T, environmentConfig
 
 		var codeModulesManifest manifest
 		err = json.Unmarshal(result.StdOut.Bytes(), &codeModulesManifest)
-
+		if err != nil {
+			errors.WithMessagef(err, "json:\n%s", result.StdOut)
+		}
 		require.NoError(t, err)
+
 		assert.Equal(t, codeModulesVersion, codeModulesManifest.Version)
 	})
 
