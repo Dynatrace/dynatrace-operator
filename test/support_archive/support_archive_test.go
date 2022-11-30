@@ -6,9 +6,7 @@ import (
 	"archive/tar"
 	"compress/gzip"
 	"context"
-	"fmt"
 	"io"
-	"os"
 	"strings"
 	"testing"
 
@@ -32,15 +30,6 @@ import (
 var testEnvironment env.Environment
 
 func TestMain(m *testing.M) {
-	workingDir, err := os.Getwd()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	//	require.NoError(m, err)
-
-	fmt.Println(workingDir)
-
 	testEnvironment = environment.Get()
 	testEnvironment.BeforeEachTest(dynakube.DeleteIfExists(dynakube.NewBuilder().WithDefaultObjectMeta().Build()))
 	testEnvironment.BeforeEachTest(oneagent.WaitForDaemonSetPodsDeletion())
