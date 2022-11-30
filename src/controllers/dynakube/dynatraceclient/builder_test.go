@@ -59,7 +59,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 		dynatraceClientBuilder := builder{
 			apiReader: fakeClient,
 			tokens: map[string]token.Token{
-				//Simulate missing values
+				// Simulate missing values
 				dtclient.DynatraceApiToken:  {Value: ""},
 				dtclient.DynatracePaasToken: {Value: ""},
 			},

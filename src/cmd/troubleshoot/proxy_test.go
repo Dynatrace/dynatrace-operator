@@ -71,7 +71,6 @@ func TestCheckProxySettings(t *testing.T) {
 		assert.Contains(t, logOutput, "HTTPS_PROXY")
 		assert.NotContains(t, logOutput, "Dynakube")
 		assert.NotContains(t, logOutput, "No proxy settings found.")
-
 	})
 	t.Run("Dynakube proxy", func(t *testing.T) {
 		os.Setenv("HTTP_PROXY", "")
@@ -95,7 +94,6 @@ func TestCheckProxySettings(t *testing.T) {
 		assert.NotContains(t, logOutput, "HTTPS_PROXY")
 		assert.Contains(t, logOutput, "Dynakube")
 		assert.NotContains(t, logOutput, "No proxy settings found.")
-
 	})
 	t.Run("Dynakube proxy from secret", func(t *testing.T) {
 		os.Setenv("HTTP_PROXY", "")

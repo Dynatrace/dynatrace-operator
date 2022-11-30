@@ -62,7 +62,7 @@ func (watcher *CertificateWatcher) updateCertificatesFromSecret() (bool, error) 
 	if _, err = watcher.fs.Stat(watcher.certificateDirectory); os.IsNotExist(err) {
 		err = watcher.fs.MkdirAll(watcher.certificateDirectory, 0755)
 		if err != nil {
-			return false, fmt.Errorf("could not create cert directory: %s", err)
+			return false, fmt.Errorf("could not create cert directory: %w", err)
 		}
 	}
 

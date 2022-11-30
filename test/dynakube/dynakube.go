@@ -154,7 +154,7 @@ func DeleteIfExists(dynakube dynatracev1beta1.DynaKube) func(ctx context.Context
 		}
 
 		err = resources.Delete(ctx, &dynakube)
-		_, isNoKindMatchErr := err.(*meta.NoKindMatchError)
+		isNoKindMatchErr := meta.IsNoMatchError(err)
 
 		if err != nil {
 			if k8serrors.IsNotFound(err) || isNoKindMatchErr {

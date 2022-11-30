@@ -163,6 +163,8 @@ func assertBuildLabels(namespaceName string, expectedBuildLabels map[string]buil
 		pods := pod.List(t, ctx, resources, namespaceName)
 
 		for _, podItem := range pods.Items {
+			podItem := podItem
+
 			require.NotNil(t, podItem)
 			require.NotNil(t, podItem.Spec)
 
@@ -214,7 +216,7 @@ func assertValues(t *testing.T, restConfig *rest.Config, podItem corev1.Pod, exp
 	}
 }
 
-func assertValue(t *testing.T, restConfig *rest.Config, podItem corev1.Pod, variableName string, expectedValue string) {
+func assertValue(t *testing.T, restConfig *rest.Config, podItem corev1.Pod, variableName string, expectedValue string) { //nolint:revive // argument-limit
 	executionQuery := pod.NewExecutionQuery(podItem, sampleapps.Name, "echo $"+variableName)
 	executionResult, err := executionQuery.Execute(restConfig)
 	require.NoError(t, err)

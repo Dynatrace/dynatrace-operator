@@ -176,14 +176,9 @@ func TestGetLatestAgent(t *testing.T) {
 
 func TestDynatraceClient_GetAgent(t *testing.T) {
 	t.Run(`handle response correctly`, func(t *testing.T) {
-		dynatraceServer, _ := createTestDynatraceClientWithFunc(t, agentRequestHandler)
+		dynatraceServer, dtc := createTestDynatraceClientWithFunc(t, agentRequestHandler)
 		defer dynatraceServer.Close()
 
-		dtc := dynatraceClient{
-			httpClient: dynatraceServer.Client(),
-			url:        dynatraceServer.URL,
-			paasToken:  paasToken,
-		}
 		readWriter := &memoryReadWriter{data: make([]byte, len(versionedAgentResponse))}
 		err := dtc.GetAgent(OsUnix, InstallerTypePaaS, "", "", "", nil, readWriter)
 
@@ -191,14 +186,9 @@ func TestDynatraceClient_GetAgent(t *testing.T) {
 		assert.Equal(t, versionedAgentResponse, string(readWriter.data))
 	})
 	t.Run(`handle server error`, func(t *testing.T) {
-		dynatraceServer, _ := createTestDynatraceClientWithFunc(t, errorHandler)
+		dynatraceServer, dtc := createTestDynatraceClientWithFunc(t, errorHandler)
 		defer dynatraceServer.Close()
 
-		dtc := dynatraceClient{
-			httpClient: dynatraceServer.Client(),
-			url:        dynatraceServer.URL,
-			paasToken:  paasToken,
-		}
 		readWriter := &memoryReadWriter{data: make([]byte, len(versionedAgentResponse))}
 		err := dtc.GetAgent(OsUnix, InstallerTypePaaS, "", "", "", nil, readWriter)
 
@@ -208,14 +198,9 @@ func TestDynatraceClient_GetAgent(t *testing.T) {
 
 func TestDynatraceClient_GetAgentVersions(t *testing.T) {
 	t.Run(`handle response correctly`, func(t *testing.T) {
-		dynatraceServer, _ := createTestDynatraceClientWithFunc(t, versionsRequestHandler)
+		dynatraceServer, dtc := createTestDynatraceClientWithFunc(t, versionsRequestHandler)
 		defer dynatraceServer.Close()
 
-		dtc := dynatraceClient{
-			httpClient: dynatraceServer.Client(),
-			url:        dynatraceServer.URL,
-			paasToken:  paasToken,
-		}
 		availableVersions, err := dtc.GetAgentVersions(OsUnix, InstallerTypePaaS, "", "")
 
 		assert.NoError(t, err)
@@ -226,14 +211,9 @@ func TestDynatraceClient_GetAgentVersions(t *testing.T) {
 		assert.Contains(t, availableVersions, "1.123.4")
 	})
 	t.Run(`handle server error`, func(t *testing.T) {
-		dynatraceServer, _ := createTestDynatraceClientWithFunc(t, errorHandler)
+		dynatraceServer, dtc := createTestDynatraceClientWithFunc(t, errorHandler)
 		defer dynatraceServer.Close()
 
-		dtc := dynatraceClient{
-			httpClient: dynatraceServer.Client(),
-			url:        dynatraceServer.URL,
-			paasToken:  paasToken,
-		}
 		availableVersions, err := dtc.GetAgentVersions(OsUnix, InstallerTypePaaS, "", "")
 
 		assert.EqualError(t, err, "dynatrace server error 400: test-error")
@@ -291,7 +271,7 @@ func (ipHandler *ipHandler) ServeHTTP(writer http.ResponseWriter, request *http.
 	}
 
 	switch request.Method {
-	case "GET":
+	case http.MethodGet:
 		writer.WriteHeader(http.StatusOK)
 		resp := []byte(agentVersionHostsResponse)
 		if strings.HasSuffix(request.URL.Path, "/latest") {
@@ -310,7 +290,7 @@ func (ipHandler *ipHandler) ServeHTTP(writer http.ResponseWriter, request *http.
 
 func handleLatestAgentVersion(request *http.Request, writer http.ResponseWriter) {
 	switch request.Method {
-	case "GET":
+	case http.MethodGet:
 		writer.WriteHeader(http.StatusOK)
 		out, _ := json.Marshal(map[string]string{"latestAgentVersion": "1.242.0.20220429-180918"})
 		_, _ = writer.Write(out)
@@ -321,7 +301,7 @@ func handleLatestAgentVersion(request *http.Request, writer http.ResponseWriter)
 
 func handleAvailableAgentVersions(request *http.Request, writer http.ResponseWriter) {
 	switch request.Method {
-	case "GET":
+	case http.MethodGet:
 		writer.WriteHeader(http.StatusOK)
 		out, _ := json.Marshal(
 			map[string][]string{

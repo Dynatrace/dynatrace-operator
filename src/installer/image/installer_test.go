@@ -13,7 +13,7 @@ func TestIsAlreadyDownloaded(t *testing.T) {
 	pathResolver := metadata.PathResolver{}
 
 	t.Run(`returns early if path doesn't exist`, func(t *testing.T) {
-		installer := ImageInstaller{
+		installer := Installer{
 			fs: afero.NewMemMapFs(),
 			props: &Properties{
 				PathResolver: pathResolver,
@@ -23,7 +23,7 @@ func TestIsAlreadyDownloaded(t *testing.T) {
 		assert.False(t, isDownloaded)
 	})
 	t.Run(`returns true if path present`, func(t *testing.T) {
-		installer := ImageInstaller{
+		installer := Installer{
 			fs: testFileSystemWithSharedDirPresent(pathResolver, imageDigest),
 			props: &Properties{
 				PathResolver: pathResolver,

@@ -330,7 +330,6 @@ func TestIsOneAgentPrivileged(t *testing.T) {
 }
 
 func TestGetOneAgentEnvironment(t *testing.T) {
-
 	t.Run("get environment from classicFullstack", func(t *testing.T) {
 		dk := DynaKube{
 			Spec: DynaKubeSpec{

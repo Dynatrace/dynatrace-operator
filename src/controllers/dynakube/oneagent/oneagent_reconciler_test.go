@@ -76,7 +76,7 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 
 	dtClient := &dtclient.MockDynatraceClient{}
 
-	reconciler := &OneAgentReconciler{
+	reconciler := &Reconciler{
 		client:    fakeClient,
 		apiReader: fakeClient,
 		scheme:    scheme.Scheme,
@@ -164,7 +164,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 	dtcMock.On("GetTokenScopes", "42").Return(dtclient.TokenScopes{dtclient.DynatracePaasToken}, nil)
 	dtcMock.On("GetTokenScopes", "84").Return(dtclient.TokenScopes{dtclient.DynatraceApiToken}, nil)
 
-	reconciler := &OneAgentReconciler{
+	reconciler := &Reconciler{
 		client:    c,
 		apiReader: c,
 		scheme:    scheme.Scheme,
@@ -252,7 +252,7 @@ func NewSecret(name, namespace string, kv map[string]string) *corev1.Secret {
 func TestMigrationForDaemonSetWithoutAnnotation(t *testing.T) {
 	dkKey := metav1.ObjectMeta{Name: "my-dynakube", Namespace: "my-namespace"}
 	ds1 := &appsv1.DaemonSet{ObjectMeta: dkKey}
-	r := OneAgentReconciler{
+	r := Reconciler{
 		feature: daemonset.DeploymentTypeHostMonitoring,
 	}
 
@@ -275,7 +275,7 @@ func TestMigrationForDaemonSetWithoutAnnotation(t *testing.T) {
 func TestHasSpecChanged(t *testing.T) {
 	runTest := func(msg string, exp bool, mod func(old *dynatracev1beta1.DynaKube, new *dynatracev1beta1.DynaKube)) {
 		t.Run(msg, func(t *testing.T) {
-			r := OneAgentReconciler{
+			r := Reconciler{
 				feature: daemonset.DeploymentTypeHostMonitoring,
 			}
 			key := metav1.ObjectMeta{Name: "my-oneagent", Namespace: "my-namespace"}
@@ -381,7 +381,7 @@ func TestHasSpecChanged(t *testing.T) {
 func TestNewDaemonset_Affinity(t *testing.T) {
 	t.Run(`adds correct affinities`, func(t *testing.T) {
 		versionProvider := &fakeVersionProvider{}
-		r := OneAgentReconciler{
+		r := Reconciler{
 			feature: daemonset.DeploymentTypeHostMonitoring,
 		}
 		dynakube := newDynaKube()
@@ -422,7 +422,6 @@ func TestNewDaemonset_Affinity(t *testing.T) {
 				},
 			},
 		})
-
 	})
 }
 
@@ -504,7 +503,7 @@ func TestInstanceStatus(t *testing.T) {
 		NewSecret(dkName, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}),
 		sampleKubeSystemNS)
 
-	reconciler := &OneAgentReconciler{
+	reconciler := &Reconciler{
 		client:    fakeClient,
 		apiReader: fakeClient,
 		scheme:    scheme.Scheme,
@@ -557,7 +556,7 @@ func TestEmptyInstancesWithWrongLabels(t *testing.T) {
 		NewSecret(dkName, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}),
 		sampleKubeSystemNS)
 
-	reconciler := &OneAgentReconciler{
+	reconciler := &Reconciler{
 		client:    fakeClient,
 		apiReader: fakeClient,
 		scheme:    scheme.Scheme,

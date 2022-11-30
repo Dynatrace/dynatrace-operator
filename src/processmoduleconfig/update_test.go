@@ -53,7 +53,6 @@ test test3
 		assertTestConf(t, memFs, ruxitAgentProcPath, expectedUsed)
 		assertTestConf(t, memFs, sourceRuxitAgentProcPath, testRuxitConf)
 	})
-
 }
 
 func TestCreateAgentConfigDir(t *testing.T) {

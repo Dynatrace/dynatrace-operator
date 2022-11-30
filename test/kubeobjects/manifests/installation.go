@@ -18,7 +18,7 @@ import (
 )
 
 func httpGetResponseReader(url string) (io.Reader, error) {
-	response, err := http.Get(url)
+	response, err := http.Get(url) //nolint:gosec // G107: Potential HTTP request made with variable url - fine, same applies to naked `http.Get(url)`
 	if err != nil {
 		return nil, err
 	}
@@ -51,10 +51,7 @@ func installFromSingleUrl(t *testing.T, ctx context.Context, environmentConfig *
 	require.NoError(t, err, "could not fetch release yaml")
 
 	resources := environmentConfig.Client().Resources()
-	require.NoError(t, decoder.DecodeEach(ctx, manifestReader, decoder.IgnoreErrorHandler(decoder.CreateHandler(resources), func(err error) bool {
-		// Ignore if the resource already exists
-		return k8serrors.IsAlreadyExists(err)
-	})))
+	require.NoError(t, decoder.DecodeEach(ctx, manifestReader, decoder.IgnoreErrorHandler(decoder.CreateHandler(resources), k8serrors.IsAlreadyExists)))
 }
 
 func InstallFromFiles(paths []string) features.Func {
@@ -68,7 +65,13 @@ func InstallFromFiles(paths []string) features.Func {
 
 func InstallFromFile(path string) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		installFromSingleFile(t, ctx, environmentConfig, path)
+		kubernetesManifest, err := os.Open(path)
+		defer func() { require.NoError(t, kubernetesManifest.Close()) }()
+		require.NoError(t, err)
+
+		resources := environmentConfig.Client().Resources()
+		require.NoError(t, decoder.DecodeEach(ctx, kubernetesManifest, decoder.IgnoreErrorHandler(decoder.CreateHandler(resources), k8serrors.IsAlreadyExists)))
+
 		return ctx
 	}
 }
@@ -79,8 +82,5 @@ func installFromSingleFile(t *testing.T, ctx context.Context, environmentConfig 
 	require.NoError(t, err)
 
 	resources := environmentConfig.Client().Resources()
-	require.NoError(t, decoder.DecodeEach(ctx, manifest, decoder.IgnoreErrorHandler(decoder.CreateHandler(resources), func(err error) bool {
-		// Ignore if the resource already exists
-		return k8serrors.IsAlreadyExists(err)
-	})))
+	require.NoError(t, decoder.DecodeEach(ctx, manifest, decoder.IgnoreErrorHandler(decoder.CreateHandler(resources), k8serrors.IsAlreadyExists)))
 }

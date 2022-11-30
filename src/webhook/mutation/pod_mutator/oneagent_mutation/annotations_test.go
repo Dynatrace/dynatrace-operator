@@ -3,12 +3,11 @@ package oneagent_mutation
 import "reflect"
 
 const (
-	testFlavor        = "testFlavor"
-	testTechnologies  = "testTech"
-	testInstallPath   = "testInstallPath"
-	testInstallerURL  = "testInstallerUrl"
-	testFailurePolicy = "testFailurePolicy"
-	testVersion       = "testVersion"
+	testFlavor       = "testFlavor"
+	testTechnologies = "testTech"
+	testInstallPath  = "testInstallPath"
+	testInstallerURL = "testInstallerUrl"
+	testVersion      = "testVersion"
 )
 
 func getTestInstallerInfo() installerInfo {

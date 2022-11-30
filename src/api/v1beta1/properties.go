@@ -21,6 +21,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/src/api"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -177,14 +178,16 @@ func (dk *DynaKube) NeedsOneAgentPrivileged() bool {
 
 // ShouldAutoUpdateOneAgent returns true if the Operator should update OneAgent instances automatically.
 func (dk *DynaKube) ShouldAutoUpdateOneAgent() bool {
-	if dk.CloudNativeFullstackMode() {
+	switch {
+	case dk.CloudNativeFullstackMode():
 		return dk.Spec.OneAgent.CloudNativeFullStack.AutoUpdate == nil || *dk.Spec.OneAgent.CloudNativeFullStack.AutoUpdate
-	} else if dk.HostMonitoringMode() {
+	case dk.HostMonitoringMode():
 		return dk.Spec.OneAgent.HostMonitoring.AutoUpdate == nil || *dk.Spec.OneAgent.HostMonitoring.AutoUpdate
-	} else if dk.ClassicFullStackMode() {
+	case dk.ClassicFullStackMode():
 		return dk.Spec.OneAgent.ClassicFullStack.AutoUpdate == nil || *dk.Spec.OneAgent.ClassicFullStack.AutoUpdate
+	default:
+		return false
 	}
-	return false
 }
 
 // ActivegateTenantSecret returns the name of the secret containing tenant UUID, token and communication endpoints for ActiveGate
@@ -294,11 +297,12 @@ func (dk *DynaKube) NeedAppInjection() bool {
 }
 
 func (dk *DynaKube) CustomOneAgentImage() string {
-	if dk.ClassicFullStackMode() {
+	switch {
+	case dk.ClassicFullStackMode():
 		return dk.Spec.OneAgent.ClassicFullStack.Image
-	} else if dk.HostMonitoringMode() {
+	case dk.HostMonitoringMode():
 		return dk.Spec.OneAgent.HostMonitoring.Image
-	} else if dk.CloudNativeFullstackMode() {
+	case dk.CloudNativeFullstackMode():
 		return dk.Spec.OneAgent.CloudNativeFullStack.Image
 	}
 	return ""
@@ -323,35 +327,38 @@ func (dk *DynaKube) InitResources() *corev1.ResourceRequirements {
 }
 
 func (dk *DynaKube) OneAgentResources() *corev1.ResourceRequirements {
-	if dk.ClassicFullStackMode() {
+	switch {
+	case dk.ClassicFullStackMode():
 		return &dk.Spec.OneAgent.ClassicFullStack.OneAgentResources
-	} else if dk.HostMonitoringMode() {
+	case dk.HostMonitoringMode():
 		return &dk.Spec.OneAgent.HostMonitoring.OneAgentResources
-	} else if dk.CloudNativeFullstackMode() {
+	case dk.CloudNativeFullstackMode():
 		return &dk.Spec.OneAgent.CloudNativeFullStack.OneAgentResources
 	}
 	return nil
 }
 
 func (dk *DynaKube) NodeSelector() map[string]string {
-	if dk.ClassicFullStackMode() {
+	switch {
+	case dk.ClassicFullStackMode():
 		return dk.Spec.OneAgent.ClassicFullStack.NodeSelector
-	} else if dk.HostMonitoringMode() {
+	case dk.HostMonitoringMode():
 		return dk.Spec.OneAgent.HostMonitoring.NodeSelector
-	} else if dk.CloudNativeFullstackMode() {
+	case dk.CloudNativeFullstackMode():
 		return dk.Spec.OneAgent.CloudNativeFullStack.NodeSelector
 	}
 	return nil
 }
 
 func (dk *DynaKube) Version() string {
-	if dk.ClassicFullStackMode() {
+	switch {
+	case dk.ClassicFullStackMode():
 		return dk.Spec.OneAgent.ClassicFullStack.Version
-	} else if dk.CloudNativeFullstackMode() {
+	case dk.CloudNativeFullstackMode():
 		return dk.Spec.OneAgent.CloudNativeFullStack.Version
-	} else if dk.ApplicationMonitoringMode() {
+	case dk.ApplicationMonitoringMode():
 		return dk.Spec.OneAgent.ApplicationMonitoring.Version
-	} else if dk.HostMonitoringMode() {
+	case dk.HostMonitoringMode():
 		return dk.Spec.OneAgent.HostMonitoring.Version
 	}
 	return ""
@@ -387,7 +394,7 @@ func (dk *DynaKube) OneAgentImage() string {
 		return ""
 	}
 
-	tag := "latest"
+	tag := api.LatestTag
 	if version := dk.Version(); version != "" {
 		truncatedVersion := truncateBuildDate(version)
 		tag = truncatedVersion
@@ -435,7 +442,7 @@ func (dk *DynaKube) ConnectionInfo() dtclient.OneAgentConnectionInfo {
 }
 
 func (dk *DynaKube) CommunicationHosts() []dtclient.CommunicationHost {
-	var communicationHosts []dtclient.CommunicationHost
+	communicationHosts := make([]dtclient.CommunicationHost, 0, len(dk.Status.ConnectionInfo.CommunicationHosts))
 	for _, communicationHost := range dk.Status.ConnectionInfo.CommunicationHosts {
 		communicationHosts = append(communicationHosts, dtclient.CommunicationHost(communicationHost))
 	}
@@ -467,7 +474,6 @@ func tenantUUID(apiUrl string) (string, error) {
 	hostnameWithDomains := strings.FieldsFunc(parsedUrl.Hostname(), runeIs('.'))
 	if len(hostnameWithDomains) >= 1 {
 		return hostnameWithDomains[0], nil
-
 	}
 
 	return "", errors.Errorf("problem getting tenant id from API URL '%s'", apiUrl)
@@ -504,7 +510,7 @@ func splitArg(arg string) (key, value string) {
 
 func getRawImageTag(imageURI string) string {
 	if !strings.Contains(imageURI, ":") {
-		return "latest"
+		return api.LatestTag
 	}
 	splitURI := strings.Split(imageURI, ":")
 	return splitURI[len(splitURI)-1]

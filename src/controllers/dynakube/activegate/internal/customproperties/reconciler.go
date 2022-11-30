@@ -33,7 +33,7 @@ type Reconciler struct {
 	instance                  *dynatracev1beta1.DynaKube
 }
 
-func NewReconciler(clt client.Client, instance *dynatracev1beta1.DynaKube, customPropertiesOwnerName string, scheme *runtime.Scheme, customPropertiesSource *dynatracev1beta1.DynaKubeValueSource) *Reconciler {
+func NewReconciler(clt client.Client, instance *dynatracev1beta1.DynaKube, customPropertiesOwnerName string, scheme *runtime.Scheme, customPropertiesSource *dynatracev1beta1.DynaKubeValueSource) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
 	return &Reconciler{
 		client:                    clt,
 		instance:                  instance,

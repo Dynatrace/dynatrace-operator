@@ -38,7 +38,7 @@ func RestartHalf(ctx context.Context, t *testing.T, config *envconf.Config) cont
 			if i%2 == 1 {
 				continue // skip odd-indexed pods
 			}
-			require.NoError(t, resource.Delete(ctx, &podItem))
+			require.NoError(t, resource.Delete(ctx, &podItem)) //nolint:gosec
 		}
 	}
 
@@ -48,7 +48,7 @@ func RestartHalf(ctx context.Context, t *testing.T, config *envconf.Config) cont
 func Restart(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
 	deleteFn := func(t *testing.T, ctx context.Context, pods corev1.PodList, resource *resources.Resources) {
 		for _, podItem := range pods.Items {
-			require.NoError(t, resource.Delete(ctx, &podItem))
+			require.NoError(t, resource.Delete(ctx, &podItem)) //nolint:gosec
 		}
 	}
 

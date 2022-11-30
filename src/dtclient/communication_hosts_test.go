@@ -157,7 +157,7 @@ func handleCommunicationHosts(request *http.Request, writer http.ResponseWriter)
 	}`)
 
 	switch request.Method {
-	case "GET":
+	case http.MethodGet:
 		writer.WriteHeader(http.StatusOK)
 		_, _ = writer.Write(commHostOutput)
 	default:

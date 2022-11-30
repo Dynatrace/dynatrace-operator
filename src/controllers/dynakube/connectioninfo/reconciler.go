@@ -17,7 +17,7 @@ type Reconciler struct {
 	dynakube  *dynatracev1beta1.DynaKube
 }
 
-func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) *Reconciler {
+func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
 	return &Reconciler{
 		context:   ctx,
 		client:    clt,

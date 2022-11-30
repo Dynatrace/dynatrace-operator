@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -322,7 +321,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
 		gc.AssertNumberOfCalls(t, "Create", 0)
-		require.EqualError(t, err, "failed to create directory "+filepath.Join(tenantUUID)+": "+errorMsg)
+		require.EqualError(t, err, "failed to create directory "+tenantUUID+": "+errorMsg)
 		require.NotNil(t, result)
 		require.Equal(t, reconcile.Result{}, result)
 

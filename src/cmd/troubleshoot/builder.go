@@ -116,12 +116,12 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		resetLogger()
 		if err != nil {
 			logErrorf("prerequisite checks failed, aborting")
-			return nil
+			return nil //nolint:nilerr
 		}
 
 		dynakubes, err := getDynakubes(troubleshootCtx, dynakubeFlagValue)
 		if err != nil {
-			return nil
+			return nil //nolint:nilerr
 		}
 
 		runChecksForAllDynakubes(results, getDynakubeSpecificChecks(results), dynakubes, apiReader)

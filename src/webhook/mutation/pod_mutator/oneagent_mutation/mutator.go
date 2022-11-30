@@ -20,7 +20,7 @@ type OneAgentPodMutator struct {
 	apiReader        client.Reader
 }
 
-func NewOneAgentPodMutator(image, clusterID, webhookNamespace string, client client.Client, apiReader client.Reader) *OneAgentPodMutator {
+func NewOneAgentPodMutator(image, clusterID, webhookNamespace string, client client.Client, apiReader client.Reader) *OneAgentPodMutator { //nolint:revive // argument-limit doesn't apply to constructors
 	return &OneAgentPodMutator{
 		image:            image,
 		clusterID:        clusterID,
