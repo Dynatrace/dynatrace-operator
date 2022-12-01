@@ -37,8 +37,7 @@ func TestCollectGCInfo(t *testing.T) {
 			},
 		}
 
-		gcInfo, err := collectGCInfo(dynakube, &dkList)
-		require.NoError(t, err)
+		gcInfo := collectGCInfo(dynakube, &dkList)
 		assert.Equal(t, tenantUUID, gcInfo.tenantUUID)
 		assert.Equal(t, latestVersion, gcInfo.latestAgentVersion)
 		assert.Empty(t, gcInfo.pinnedVersions)
@@ -68,8 +67,7 @@ func TestCollectGCInfo(t *testing.T) {
 			},
 		}
 
-		gcInfo, err := collectGCInfo(dynakube, &dkList)
-		require.NoError(t, err)
+		gcInfo := collectGCInfo(dynakube, &dkList)
 		assert.Len(t, gcInfo.pinnedVersions, 1)
 	})
 	t.Run(`multi pinned version`, func(t *testing.T) {
@@ -116,8 +114,7 @@ func TestCollectGCInfo(t *testing.T) {
 			},
 		}
 
-		gcInfo, err := collectGCInfo(cloudNativeDynakube, &dkList)
-		require.NoError(t, err)
+		gcInfo := collectGCInfo(cloudNativeDynakube, &dkList)
 		assert.Len(t, gcInfo.pinnedVersions, 2)
 	})
 }

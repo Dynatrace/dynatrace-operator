@@ -21,6 +21,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/src/api"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -35,10 +36,32 @@ const (
 	AuthTokenSecretSuffix        = "-activegate-authtoken-secret"
 	PodNameOsAgent               = "oneagent"
 
+	defaultActiveGateImage = "/linux/activegate:latest"
+	defaultStatsDImage     = "/linux/dynatrace-datasource-statsd:latest"
+	defaultEecImage        = "/linux/dynatrace-eec:latest"
+
 	TrustedCAKey = "certs"
 	ProxyKey     = "proxy"
 	TlsCertKey   = "server.crt"
 )
+
+// ApiUrl is a getter for dk.Spec.APIURL
+func (dk *DynaKube) ApiUrl() string {
+	return dk.Spec.APIURL
+}
+
+// ApiUrlHost returns the host of dk.Spec.APIURL
+// E.g. if the APIURL is set to "https://my-tenant.dynatrace.com/api", it returns "my-tenant.dynatrace.com"
+// If the URL cannot be parsed, it returns an empty string
+func (dk *DynaKube) ApiUrlHost() string {
+	parsedUrl, err := url.Parse(dk.ApiUrl())
+
+	if err != nil {
+		return ""
+	}
+
+	return parsedUrl.Host
+}
 
 // NeedsActiveGate returns true when a feature requires ActiveGate instances.
 func (dk *DynaKube) NeedsActiveGate() bool {
@@ -125,6 +148,10 @@ func (dk *DynaKube) NeedsActiveGateServicePorts() bool {
 		dk.IsMetricsIngestActiveGateEnabled()
 }
 
+func (dk *DynaKube) NeedsActiveGateService() bool {
+	return dk.NeedsActiveGateServicePorts() || dk.IsStatsdActiveGateEnabled()
+}
+
 func (dk *DynaKube) IsStatsdActiveGateEnabled() bool {
 	return dk.IsActiveGateMode(StatsdIngestCapability.DisplayName)
 }
@@ -133,32 +160,34 @@ func (dk *DynaKube) HasActiveGateCaCert() bool {
 	return dk.ActiveGateMode() && dk.Spec.ActiveGate.TlsSecretName != ""
 }
 
-func (dk *DynaKube) hasProxy() bool {
+func (dk *DynaKube) HasProxy() bool {
 	return dk.Spec.Proxy != nil && (dk.Spec.Proxy.Value != "" || dk.Spec.Proxy.ValueFrom != "")
 }
 
 func (dk *DynaKube) NeedsActiveGateProxy() bool {
-	return !dk.FeatureActiveGateIgnoreProxy() && dk.hasProxy()
+	return !dk.FeatureActiveGateIgnoreProxy() && dk.HasProxy()
 }
 
 func (dk *DynaKube) NeedsOneAgentProxy() bool {
-	return !dk.FeatureOneAgentIgnoreProxy() && dk.hasProxy()
+	return !dk.FeatureOneAgentIgnoreProxy() && dk.HasProxy()
 }
 
-func (dk *DynaKube) IsOneAgentPrivileged() bool {
-	return dk.FeatureAgentRunPrivileged() || dk.ClassicFullStackMode()
+func (dk *DynaKube) NeedsOneAgentPrivileged() bool {
+	return dk.FeatureOneAgentPrivileged()
 }
 
 // ShouldAutoUpdateOneAgent returns true if the Operator should update OneAgent instances automatically.
 func (dk *DynaKube) ShouldAutoUpdateOneAgent() bool {
-	if dk.CloudNativeFullstackMode() {
+	switch {
+	case dk.CloudNativeFullstackMode():
 		return dk.Spec.OneAgent.CloudNativeFullStack.AutoUpdate == nil || *dk.Spec.OneAgent.CloudNativeFullStack.AutoUpdate
-	} else if dk.HostMonitoringMode() {
+	case dk.HostMonitoringMode():
 		return dk.Spec.OneAgent.HostMonitoring.AutoUpdate == nil || *dk.Spec.OneAgent.HostMonitoring.AutoUpdate
-	} else if dk.ClassicFullStackMode() {
+	case dk.ClassicFullStackMode():
 		return dk.Spec.OneAgent.ClassicFullStack.AutoUpdate == nil || *dk.Spec.OneAgent.ClassicFullStack.AutoUpdate
+	default:
+		return false
 	}
-	return false
 }
 
 // ActivegateTenantSecret returns the name of the secret containing tenant UUID, token and communication endpoints for ActiveGate
@@ -186,21 +215,65 @@ func (dk *DynaKube) PullSecret() string {
 
 // ActiveGateImage returns the ActiveGate image to be used with the dk DynaKube instance.
 func (dk *DynaKube) ActiveGateImage() string {
-	return resolveImagePath(newActiveGateImagePath(dk))
+	if dk.CustomActiveGateImage() != "" {
+		return dk.CustomActiveGateImage()
+	}
+
+	apiUrlHost := dk.ApiUrlHost()
+
+	if apiUrlHost == "" {
+		return ""
+	}
+
+	return apiUrlHost + defaultActiveGateImage
+}
+
+func (dk *DynaKube) deprecatedActiveGateImage() string {
+	if dk.Spec.KubernetesMonitoring.Image != "" {
+		return dk.Spec.KubernetesMonitoring.Image
+	} else if dk.Spec.Routing.Image != "" {
+		return dk.Spec.Routing.Image
+	}
+
+	return ""
 }
 
 func (dk *DynaKube) CustomActiveGateImage() string {
-	return newActiveGateImagePath(dk).CustomImagePath()
+	if dk.DeprecatedActiveGateMode() {
+		return dk.deprecatedActiveGateImage()
+	}
+
+	return dk.Spec.ActiveGate.Image
 }
 
 // EecImage returns the Extension Controller image to be used with the dk DynaKube instance.
 func (dk *DynaKube) EecImage() string {
-	return resolveImagePath(newEecImagePath(dk))
+	if dk.FeatureCustomEecImage() != "" {
+		return dk.FeatureCustomEecImage()
+	}
+
+	apiUrlHost := dk.ApiUrlHost()
+
+	if apiUrlHost == "" {
+		return ""
+	}
+
+	return apiUrlHost + defaultEecImage
 }
 
 // StatsdImage returns the StatsD data source image to be used with the dk DynaKube instance.
 func (dk *DynaKube) StatsdImage() string {
-	return resolveImagePath(newStatsdImagePath(dk))
+	if dk.FeatureCustomStatsdImage() != "" {
+		return dk.FeatureCustomStatsdImage()
+	}
+
+	apiUrlHost := dk.ApiUrlHost()
+
+	if apiUrlHost == "" {
+		return ""
+	}
+
+	return apiUrlHost + defaultStatsDImage
 }
 
 func (dk *DynaKube) NeedsReadOnlyOneAgents() bool {
@@ -224,11 +297,12 @@ func (dk *DynaKube) NeedAppInjection() bool {
 }
 
 func (dk *DynaKube) CustomOneAgentImage() string {
-	if dk.ClassicFullStackMode() {
+	switch {
+	case dk.ClassicFullStackMode():
 		return dk.Spec.OneAgent.ClassicFullStack.Image
-	} else if dk.HostMonitoringMode() {
+	case dk.HostMonitoringMode():
 		return dk.Spec.OneAgent.HostMonitoring.Image
-	} else if dk.CloudNativeFullstackMode() {
+	case dk.CloudNativeFullstackMode():
 		return dk.Spec.OneAgent.CloudNativeFullStack.Image
 	}
 	return ""
@@ -253,61 +327,64 @@ func (dk *DynaKube) InitResources() *corev1.ResourceRequirements {
 }
 
 func (dk *DynaKube) OneAgentResources() *corev1.ResourceRequirements {
-	if dk.ClassicFullStackMode() {
+	switch {
+	case dk.ClassicFullStackMode():
 		return &dk.Spec.OneAgent.ClassicFullStack.OneAgentResources
-	} else if dk.HostMonitoringMode() {
+	case dk.HostMonitoringMode():
 		return &dk.Spec.OneAgent.HostMonitoring.OneAgentResources
-	} else if dk.CloudNativeFullstackMode() {
+	case dk.CloudNativeFullstackMode():
 		return &dk.Spec.OneAgent.CloudNativeFullStack.OneAgentResources
 	}
 	return nil
 }
 
 func (dk *DynaKube) NodeSelector() map[string]string {
-	if dk.ClassicFullStackMode() {
+	switch {
+	case dk.ClassicFullStackMode():
 		return dk.Spec.OneAgent.ClassicFullStack.NodeSelector
-	} else if dk.HostMonitoringMode() {
+	case dk.HostMonitoringMode():
 		return dk.Spec.OneAgent.HostMonitoring.NodeSelector
-	} else if dk.CloudNativeFullstackMode() {
+	case dk.CloudNativeFullstackMode():
 		return dk.Spec.OneAgent.CloudNativeFullStack.NodeSelector
 	}
 	return nil
 }
 
 func (dk *DynaKube) Version() string {
-	if dk.ClassicFullStackMode() {
+	switch {
+	case dk.ClassicFullStackMode():
 		return dk.Spec.OneAgent.ClassicFullStack.Version
-	} else if dk.CloudNativeFullstackMode() {
+	case dk.CloudNativeFullstackMode():
 		return dk.Spec.OneAgent.CloudNativeFullStack.Version
-	} else if dk.ApplicationMonitoringMode() {
+	case dk.ApplicationMonitoringMode():
 		return dk.Spec.OneAgent.ApplicationMonitoring.Version
-	} else if dk.HostMonitoringMode() {
+	case dk.HostMonitoringMode():
 		return dk.Spec.OneAgent.HostMonitoring.Version
 	}
 	return ""
 }
 
-// The dynakube.Version is not take into account when using cloudNative to avoid confusion
-func (dynakube DynaKube) CodeModulesVersion() string {
-	if !dynakube.CloudNativeFullstackMode() && !dynakube.ApplicationMonitoringMode() {
+// CodeModulesVersion does not take dynakube.Version into account when using cloudNative to avoid confusion
+func (dk *DynaKube) CodeModulesVersion() string {
+	if !dk.CloudNativeFullstackMode() && !dk.ApplicationMonitoringMode() {
 		return ""
 	}
-	if dynakube.CodeModulesImage() != "" {
-		codeModulesImage := dynakube.CodeModulesImage()
+	if dk.CodeModulesImage() != "" {
+		codeModulesImage := dk.CodeModulesImage()
 		return getRawImageTag(codeModulesImage)
 	}
-	if dynakube.Version() != "" && !dynakube.CloudNativeFullstackMode() {
-		return dynakube.Version()
+	if dk.Version() != "" && !dk.CloudNativeFullstackMode() {
+		return dk.Version()
 	}
-	return dynakube.Status.LatestAgentVersionUnixPaas
+	return dk.Status.LatestAgentVersionUnixPaas
 }
 
 func (dk *DynaKube) NamespaceSelector() *metav1.LabelSelector {
 	return &dk.Spec.NamespaceSelector
 }
 
-// ImmutableOneAgentImage returns the immutable OneAgent image to be used with the DynaKube instance.
-func (dk *DynaKube) ImmutableOneAgentImage() string {
+// OneAgentImage returns the immutable OneAgent image to be used with the DynaKube instance.
+func (dk *DynaKube) OneAgentImage() string {
 	oneAgentImage := dk.CustomOneAgentImage()
 	if oneAgentImage != "" {
 		return oneAgentImage
@@ -317,14 +394,19 @@ func (dk *DynaKube) ImmutableOneAgentImage() string {
 		return ""
 	}
 
-	tag := "latest"
+	tag := api.LatestTag
 	if version := dk.Version(); version != "" {
 		truncatedVersion := truncateBuildDate(version)
 		tag = truncatedVersion
 	}
 
-	registry := buildImageRegistry(dk.Spec.APIURL)
-	return fmt.Sprintf("%s/linux/oneagent:%s", registry, tag)
+	apiUrlHost := dk.ApiUrlHost()
+
+	if apiUrlHost == "" {
+		return ""
+	}
+
+	return fmt.Sprintf("%s/linux/oneagent:%s", apiUrlHost, tag)
 }
 
 func truncateBuildDate(version string) string {
@@ -360,7 +442,7 @@ func (dk *DynaKube) ConnectionInfo() dtclient.OneAgentConnectionInfo {
 }
 
 func (dk *DynaKube) CommunicationHosts() []dtclient.CommunicationHost {
-	var communicationHosts []dtclient.CommunicationHost
+	communicationHosts := make([]dtclient.CommunicationHost, 0, len(dk.Status.ConnectionInfo.CommunicationHosts))
 	for _, communicationHost := range dk.Status.ConnectionInfo.CommunicationHosts {
 		communicationHosts = append(communicationHosts, dtclient.CommunicationHost(communicationHost))
 	}
@@ -392,7 +474,6 @@ func tenantUUID(apiUrl string) (string, error) {
 	hostnameWithDomains := strings.FieldsFunc(parsedUrl.Hostname(), runeIs('.'))
 	if len(hostnameWithDomains) >= 1 {
 		return hostnameWithDomains[0], nil
-
 	}
 
 	return "", errors.Errorf("problem getting tenant id from API URL '%s'", apiUrl)
@@ -429,7 +510,7 @@ func splitArg(arg string) (key, value string) {
 
 func getRawImageTag(imageURI string) string {
 	if !strings.Contains(imageURI, ":") {
-		return "latest"
+		return api.LatestTag
 	}
 	splitURI := strings.Split(imageURI, ":")
 	return splitURI[len(splitURI)-1]

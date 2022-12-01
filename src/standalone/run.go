@@ -32,7 +32,7 @@ func NewRunner(fs afero.Fs) (*Runner, error) {
 
 	var secretConfig *SecretConfig
 	var client dtclient.Client
-	var oneAgentInstaller *url.UrlInstaller
+	var oneAgentInstaller *url.Installer
 	if env.OneAgentInjected {
 		secretConfig, err = newSecretConfigViaFs(fs)
 		if err != nil {
@@ -43,8 +43,11 @@ func NewRunner(fs afero.Fs) (*Runner, error) {
 		if err != nil {
 			return nil, err
 		}
-
-		oneAgentInstaller = url.NewUrlInstaller(
+		targetVersion := url.VersionLatest
+		if env.InstallVersion != "" {
+			targetVersion = env.InstallVersion
+		}
+		oneAgentInstaller = url.NewInstaller(
 			fs,
 			client,
 			&url.Properties{
@@ -53,7 +56,7 @@ func NewRunner(fs afero.Fs) (*Runner, error) {
 				Flavor:        env.InstallerFlavor,
 				Arch:          arch.Arch,
 				Technologies:  env.InstallerTech,
-				TargetVersion: url.VersionLatest,
+				TargetVersion: targetVersion,
 				Url:           env.InstallerUrl,
 				PathResolver:  metadata.PathResolver{RootDir: config.AgentBinDirMount},
 			},

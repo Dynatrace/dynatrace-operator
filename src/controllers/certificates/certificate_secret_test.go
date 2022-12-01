@@ -15,8 +15,7 @@ import (
 )
 
 const (
-	testName = "test-name"
-	testKey  = "test-key"
+	testKey = "test-key"
 )
 
 var testValue1 = []byte{1, 2, 3, 4}
@@ -82,8 +81,8 @@ func TestAreConfigsValid(t *testing.T) {
 	t.Run(`true if no configs were given`, func(t *testing.T) {
 		certSecret := newCertificateSecret()
 
-		assert.True(t, certSecret.areConfigsValid(nil))
-		assert.True(t, certSecret.areConfigsValid(make([]*admissionregistrationv1.WebhookClientConfig, 0)))
+		assert.True(t, certSecret.areWebhookConfigsValid(nil))
+		assert.True(t, certSecret.areWebhookConfigsValid(make([]*admissionregistrationv1.WebhookClientConfig, 0)))
 	})
 	t.Run(`true if all CABundle matches certificate data, false otherwise`, func(t *testing.T) {
 		certSecret := newCertificateSecret()
@@ -101,13 +100,13 @@ func TestAreConfigsValid(t *testing.T) {
 			CABundle: testValue1,
 		})
 
-		assert.True(t, certSecret.areConfigsValid(webhookConfigs))
+		assert.True(t, certSecret.areWebhookConfigsValid(webhookConfigs))
 
 		webhookConfigs = append(webhookConfigs, &admissionregistrationv1.WebhookClientConfig{
 			CABundle: testValue2,
 		})
 
-		assert.False(t, certSecret.areConfigsValid(webhookConfigs))
+		assert.False(t, certSecret.areWebhookConfigsValid(webhookConfigs))
 	})
 }
 
@@ -187,48 +186,4 @@ func TestCreateOrUpdateIfNecessary(t *testing.T) {
 		assert.NotNil(t, newSecret)
 		assert.EqualValues(t, certSecret.certificates.Data, newSecret.Data)
 	})
-}
-
-func TestUpdateClientConfigurations(t *testing.T) {
-	mutatingWebhookConfig := admissionregistrationv1.MutatingWebhookConfiguration{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testName,
-			Namespace: testNamespace,
-		},
-		Webhooks: []admissionregistrationv1.MutatingWebhook{
-			{
-				ClientConfig: admissionregistrationv1.WebhookClientConfig{},
-			},
-			{
-				ClientConfig: admissionregistrationv1.WebhookClientConfig{},
-			},
-			{
-				ClientConfig: admissionregistrationv1.WebhookClientConfig{},
-			},
-		},
-	}
-	secret := corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      buildSecretName(),
-			Namespace: testNamespace,
-		},
-		Data: map[string][]byte{RootCert: testValue1},
-	}
-	fakeClient := fake.NewClient(&mutatingWebhookConfig, &secret)
-	clientConfigs := getClientConfigsFromMutatingWebhook(&mutatingWebhookConfig)
-	certSecret := newCertificateSecret()
-	certSecret.secret = &secret
-
-	err := certSecret.updateClientConfigurations(context.TODO(), fakeClient, clientConfigs, &mutatingWebhookConfig)
-
-	assert.NoError(t, err)
-
-	err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: testName, Namespace: testNamespace}, &mutatingWebhookConfig)
-
-	assert.NoError(t, err)
-	assert.Equal(t, 3, len(mutatingWebhookConfig.Webhooks))
-
-	for _, mutatingWebhook := range mutatingWebhookConfig.Webhooks {
-		assert.EqualValues(t, mutatingWebhook.ClientConfig.CABundle, secret.Data[RootCert])
-	}
 }

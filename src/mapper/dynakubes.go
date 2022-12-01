@@ -19,7 +19,7 @@ type DynakubeMapper struct {
 	dk         *dynatracev1beta1.DynaKube
 }
 
-func NewDynakubeMapper(ctx context.Context, clt client.Client, apiReader client.Reader, operatorNs string, dk *dynatracev1beta1.DynaKube) DynakubeMapper {
+func NewDynakubeMapper(ctx context.Context, clt client.Client, apiReader client.Reader, operatorNs string, dk *dynatracev1beta1.DynaKube) DynakubeMapper { //nolint:revive // argument-limit doesn't apply to constructors
 	return DynakubeMapper{ctx, clt, apiReader, operatorNs, dk}
 }
 
@@ -56,6 +56,7 @@ func (dm DynakubeMapper) UnmapFromDynaKube() error {
 	}
 	for _, ns := range nsList {
 		delete(ns.Labels, dtwebhook.InjectionInstanceLabel)
+		ns := ns
 		setUpdatedViaDynakubeAnnotation(&ns)
 		if err := dm.client.Update(dm.ctx, &ns); err != nil {
 			return errors.WithMessagef(err, "failed to remove label %s from namespace %s", dtwebhook.InjectionInstanceLabel, ns.Name)
@@ -90,7 +91,6 @@ func (dm DynakubeMapper) mapFromDynakube(nsList *corev1.NamespaceList, dkList *d
 		if updated {
 			modifiedNs = append(modifiedNs, namespace)
 		}
-
 	}
 	return modifiedNs, err
 }

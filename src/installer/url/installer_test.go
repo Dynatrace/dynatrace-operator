@@ -38,11 +38,11 @@ func TestInstallAgentFromUrl(t *testing.T) {
 		fs := failFs{
 			Fs: afero.NewMemMapFs(),
 		}
-		installer := &UrlInstaller{
+		installer := &Installer{
 			fs: fs,
 		}
 
-		err := installer.installAgentFromUrl("")
+		err := installer.installAgent("")
 		assert.EqualError(t, err, testErrorMessage)
 	})
 	t.Run(`error when downloading latest agent`, func(t *testing.T) {
@@ -55,7 +55,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 		dtc.
 			On("GetAgentVersions", dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.FlavorMultidistro, mock.AnythingOfType("string")).
 			Return([]string{}, fmt.Errorf(testErrorMessage))
-		installer := &UrlInstaller{
+		installer := &Installer{
 			fs:  fs,
 			dtc: dtc,
 			props: &Properties{
@@ -65,7 +65,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 			},
 		}
 
-		err := installer.installAgentFromUrl("")
+		err := installer.installAgent("")
 		assert.EqualError(t, err, testErrorMessage)
 	})
 	t.Run(`error unzipping file`, func(t *testing.T) {
@@ -85,7 +85,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 				require.NoError(t, err)
 			}).
 			Return(nil)
-		installer := &UrlInstaller{
+		installer := &Installer{
 			fs:        fs,
 			dtc:       dtc,
 			extractor: zip.NewOneAgentExtractor(fs, metadata.PathResolver{}),
@@ -96,7 +96,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 			},
 		}
 
-		err := installer.installAgentFromUrl("")
+		err := installer.installAgent("")
 		assert.Error(t, err)
 	})
 	t.Run(`downloading and unzipping agent via version`, func(t *testing.T) {
@@ -115,7 +115,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 				require.NoError(t, err)
 			}).
 			Return(nil)
-		installer := &UrlInstaller{
+		installer := &Installer{
 			fs:        fs,
 			dtc:       dtc,
 			extractor: zip.NewOneAgentExtractor(fs, metadata.PathResolver{}),
@@ -127,7 +127,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 			},
 		}
 
-		err := installer.installAgentFromUrl(testDir)
+		err := installer.installAgent(testDir)
 		require.NoError(t, err)
 		// afero can't rename directories properly: https://github.com/spf13/afero/issues/141
 	})
@@ -147,7 +147,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 				require.NoError(t, err)
 			}).
 			Return(nil)
-		installer := &UrlInstaller{
+		installer := &Installer{
 			fs:        fs,
 			dtc:       dtc,
 			extractor: zip.NewOneAgentExtractor(fs, metadata.PathResolver{}),
@@ -159,7 +159,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 			},
 		}
 
-		err := installer.installAgentFromUrl(testDir)
+		err := installer.installAgent(testDir)
 		require.NoError(t, err)
 		// afero can't rename directories properly: https://github.com/spf13/afero/issues/141
 	})
@@ -178,7 +178,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 				require.NoError(t, err)
 			}).
 			Return(nil)
-		installer := &UrlInstaller{
+		installer := &Installer{
 			fs:        fs,
 			dtc:       dtc,
 			extractor: zip.NewOneAgentExtractor(fs, metadata.PathResolver{}),
@@ -187,7 +187,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 			},
 		}
 
-		err := installer.installAgentFromUrl(testDir)
+		err := installer.installAgent(testDir)
 		require.NoError(t, err)
 		// afero can't rename directories properly: https://github.com/spf13/afero/issues/141
 	})
@@ -198,7 +198,7 @@ func TestIsAlreadyDownloaded(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		targetDir := "test/test"
 		fs.MkdirAll(targetDir, 0666)
-		installer := &UrlInstaller{
+		installer := &Installer{
 			fs: fs,
 		}
 		assert.True(t, installer.isAlreadyDownloaded(targetDir))
@@ -206,7 +206,7 @@ func TestIsAlreadyDownloaded(t *testing.T) {
 	t.Run(`false if standalone`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		targetDir := config.AgentBinDirMount
-		installer := &UrlInstaller{
+		installer := &Installer{
 			fs:    fs,
 			props: &Properties{},
 		}

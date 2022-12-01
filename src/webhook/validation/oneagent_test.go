@@ -290,7 +290,6 @@ func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
 			},
 		}, &defaultCSIDaemonSet)
 	})
-
 }
 
 func TestOneAgentVolumeStorageReadOnlyModeConflict(t *testing.T) {

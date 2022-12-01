@@ -13,7 +13,7 @@ import (
 )
 
 // example match: [general]
-var sectionRegexp, _ = regexp.Compile(`\[(.*)\]`)
+var sectionRegexp = regexp.MustCompile(`\[(.*)\]`)
 
 // Update opens the file at `sourcePath` and merges it with the ConfMap provided
 // then writes the results into a file at `destPath`
@@ -31,7 +31,10 @@ func Update(fs afero.Fs, sourcePath, destPath string, conf dtclient.ConfMap) err
 	content := []string{}
 	for scanner.Scan() {
 		line := scanner.Text()
-		if header := confSectionHeader(line); header != "" {
+		header := confSectionHeader(line)
+
+		switch {
+		case header != "":
 			leftovers := addLeftoversForSection(currentSection, conf)
 			if hasExtraNewLine(leftovers, content) {
 				content = content[:len(content)-1]
@@ -40,9 +43,9 @@ func Update(fs afero.Fs, sourcePath, destPath string, conf dtclient.ConfMap) err
 			content = append(content, leftovers...)
 			currentSection = header
 			content = append(content, line)
-		} else if strings.HasPrefix(line, "#") {
+		case strings.HasPrefix(line, "#"):
 			content = append(content, line)
-		} else {
+		default:
 			content = append(content, mergeLine(line, currentSection, conf))
 		}
 	}

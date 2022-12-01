@@ -17,7 +17,6 @@ type BindConfig struct {
 }
 
 func NewBindConfig(ctx context.Context, access metadata.Access, volumeCfg *VolumeConfig) (*BindConfig, error) {
-
 	dynakube, err := access.GetDynakube(ctx, volumeCfg.DynakubeName)
 	if err != nil {
 		return nil, status.Error(codes.Unavailable, fmt.Sprintf("failed to extract tenant for DynaKube %s: %s", volumeCfg.DynakubeName, err.Error()))

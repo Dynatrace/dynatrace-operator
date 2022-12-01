@@ -39,6 +39,7 @@ tests:
       - equal:
           path: spec.template.metadata.annotations
           value:
+            dynatrace.com/inject: "false"
             kubectl.kubernetes.io/default-container: webhook
       - isNotEmpty:
           path: spec.template.metadata.labels
@@ -208,6 +209,7 @@ tests:
       - equal:
           path: spec.template.metadata.annotations
           value:
+            dynatrace.com/inject: "false"
             kubectl.kubernetes.io/default-container: webhook
       - isNotEmpty:
           path: spec.template.metadata.labels
@@ -329,6 +331,7 @@ tests:
       - equal:
           path: spec.template.metadata.annotations
           value:
+            dynatrace.com/inject: "false"
             kubectl.kubernetes.io/default-container: webhook
       - isNotEmpty:
           path: spec.template.metadata.labels
@@ -457,6 +460,7 @@ tests:
       - equal:
           path: spec.template.metadata.annotations
           value:
+            dynatrace.com/inject: "false"
             kubectl.kubernetes.io/default-container: webhook
             testKey: testValue
 

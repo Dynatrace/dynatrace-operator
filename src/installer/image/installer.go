@@ -27,25 +27,25 @@ type Properties struct {
 	imageDigest  string
 }
 
-func NewImageInstaller(fs afero.Fs, props *Properties) *ImageInstaller {
-	return &ImageInstaller{
+func NewImageInstaller(fs afero.Fs, props *Properties) *Installer {
+	return &Installer{
 		fs:        fs,
 		extractor: zip.NewOneAgentExtractor(fs, props.PathResolver),
 		props:     props,
 	}
 }
 
-type ImageInstaller struct {
+type Installer struct {
 	fs        afero.Fs
 	extractor zip.Extractor
 	props     *Properties
 }
 
-func (installer ImageInstaller) ImageDigest() string {
+func (installer Installer) ImageDigest() string {
 	return installer.props.imageDigest
 }
 
-func (installer *ImageInstaller) InstallAgent(targetDir string) (bool, error) {
+func (installer *Installer) InstallAgent(targetDir string) (bool, error) {
 	log.Info("installing agent from image")
 
 	err := installer.fs.MkdirAll(installer.props.PathResolver.AgentSharedBinaryDirBase(), common.MkDirFileMode)
@@ -70,12 +70,12 @@ func (installer *ImageInstaller) InstallAgent(targetDir string) (bool, error) {
 	return true, nil
 }
 
-func (installer ImageInstaller) UpdateProcessModuleConfig(targetDir string, processModuleConfig *dtypes.ProcessModuleConfig) error {
+func (installer Installer) UpdateProcessModuleConfig(targetDir string, processModuleConfig *dtypes.ProcessModuleConfig) error {
 	sourceDir := installer.props.PathResolver.AgentSharedBinaryDirForImage(installer.ImageDigest())
 	return processmoduleconfig.CreateAgentConfigDir(installer.fs, targetDir, sourceDir, processModuleConfig)
 }
 
-func (installer *ImageInstaller) installAgentFromImage() error {
+func (installer *Installer) installAgentFromImage() error {
 	defer installer.fs.RemoveAll(CacheDir)
 	err := installer.fs.MkdirAll(CacheDir, common.MkDirFileMode)
 	if err != nil {
@@ -128,7 +128,7 @@ func (installer *ImageInstaller) installAgentFromImage() error {
 	return nil
 }
 
-func (installer ImageInstaller) isAlreadyDownloaded(imageDigestEncoded string) bool {
+func (installer Installer) isAlreadyDownloaded(imageDigestEncoded string) bool {
 	sharedDir := installer.props.PathResolver.AgentSharedBinaryDirForImage(imageDigestEncoded)
 	_, err := installer.fs.Stat(sharedDir)
 	return !os.IsNotExist(err)

@@ -46,7 +46,6 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 		assert.Equal(t, float64(1), testutil.ToFloat64(gcRunsMetric))
 		assert.Equal(t, float64(0), testutil.ToFloat64(foldersRemovedMetric))
 		assert.Equal(t, float64(0), testutil.ToFloat64(reclaimedMemoryMetric))
-
 	})
 	t.Run("ignores latest", func(t *testing.T) {
 		resetMetrics()
@@ -115,9 +114,10 @@ func TestBinaryGarbageCollector_getUsedVersions(t *testing.T) {
 
 func NewMockGarbageCollector() *CSIGarbageCollector {
 	return &CSIGarbageCollector{
-		fs:   afero.NewMemMapFs(),
-		db:   metadata.FakeMemoryDB(),
-		path: metadata.PathResolver{RootDir: testRootDir},
+		fs:                    afero.NewMemMapFs(),
+		db:                    metadata.FakeMemoryDB(),
+		path:                  metadata.PathResolver{RootDir: testRootDir},
+		maxUnmountedVolumeAge: defaultMaxUnmountedCsiVolumeAge,
 	}
 }
 

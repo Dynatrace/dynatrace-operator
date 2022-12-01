@@ -5,7 +5,7 @@ import (
 )
 
 var (
-	log = logger.NewDTLogger().WithName("mutation-webhook.pod.oneagent")
+	log = logger.Factory.GetLogger("mutation-oneagent")
 )
 
 const (
@@ -13,8 +13,11 @@ const (
 	networkZoneEnv       = "DT_NETWORK_ZONE"
 	proxyEnv             = "DT_PROXY"
 	dynatraceMetadataEnv = "DT_DEPLOYMENT_METADATA"
-	releaseVersionEnv    = "DT_RELEASE_VERSION"
-	releaseProductEnv    = "DT_RELEASE_PRODUCT"
+
+	releaseVersionEnv      = "DT_RELEASE_VERSION"
+	releaseProductEnv      = "DT_RELEASE_PRODUCT"
+	releaseStageEnv        = "DT_RELEASE_STAGE"
+	releaseBuildVersionEnv = "DT_RELEASE_BUILD_VERSION"
 
 	OneAgentBinVolumeName     = "oneagent-bin"
 	oneAgentShareVolumeName   = "oneagent-share"

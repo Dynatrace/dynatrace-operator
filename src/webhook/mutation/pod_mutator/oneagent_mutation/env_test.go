@@ -53,13 +53,14 @@ func TestAddInstallerInitEnvs(t *testing.T) {
 		testVolumeMode := "testMode"
 		installerInfo := getTestInstallerInfo()
 		addInstallerInitEnvs(container, installerInfo, testVolumeMode)
-		require.Len(t, container.Env, 6)
+		require.Len(t, container.Env, expectedBaseInitContainerEnvCount)
 		assert.Equal(t, installerInfo.flavor, container.Env[0].Value)
 		assert.Equal(t, installerInfo.technologies, container.Env[1].Value)
 		assert.Equal(t, installerInfo.installPath, container.Env[2].Value)
 		assert.Equal(t, installerInfo.installerURL, container.Env[3].Value)
-		assert.Equal(t, testVolumeMode, container.Env[4].Value)
-		assert.Equal(t, "true", container.Env[5].Value)
+		assert.Equal(t, installerInfo.version, container.Env[4].Value)
+		assert.Equal(t, testVolumeMode, container.Env[5].Value)
+		assert.Equal(t, "true", container.Env[6].Value)
 	})
 }
 

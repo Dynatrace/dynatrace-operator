@@ -4,22 +4,39 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/pkg/errors"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
-	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
+	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func Create(name string) env.Func {
-	return func(ctx context.Context, environmentConfig *envconf.Config) (context.Context, error) {
-		namespace := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: name}}
-		err := environmentConfig.Client().Resources().Create(ctx, namespace)
-		return ctx, errors.WithStack(err)
+type Builder struct {
+	namespace corev1.Namespace
+}
+
+func NewBuilder(name string) Builder {
+	return Builder{
+		namespace: corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: name,
+			},
+		},
 	}
+}
+
+func (namespaceBuilder Builder) WithLabels(labels map[string]string) Builder {
+	namespaceBuilder.namespace.ObjectMeta.Labels = labels
+	return namespaceBuilder
+}
+
+func (namespaceBuilder Builder) Build() corev1.Namespace {
+	return namespaceBuilder.namespace
 }
 
 func Delete(name string) func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
@@ -51,7 +68,9 @@ func DeleteIfExists(name string) func(ctx context.Context, environmentConfig *en
 				Name: name,
 			},
 		}
-		err := environmentConfig.Client().Resources().Delete(ctx, &namespace)
+		err := environmentConfig.Client().Resources().Delete(ctx, &namespace, func(options *metav1.DeleteOptions) {
+			options.GracePeriodSeconds = address.Of[int64](0)
+		})
 
 		if err != nil {
 			if k8serrors.IsNotFound(err) {
@@ -68,14 +87,24 @@ func DeleteIfExists(name string) func(ctx context.Context, environmentConfig *en
 	}
 }
 
-func Recreate(name string) func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
+func Recreate(namespace corev1.Namespace) func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
 	return func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
-		ctx, err := Delete(name)(ctx, environmentConfig, t)
+		ctx, err := Delete(namespace.Name)(ctx, environmentConfig, t)
 
 		if err != nil && !k8serrors.IsNotFound(errors.Cause(err)) {
 			return ctx, err
 		}
 
-		return Create(name)(ctx, environmentConfig)
+		createNamespace := namespace
+		err = environmentConfig.Client().Resources().Create(ctx, &createNamespace)
+		return ctx, errors.WithStack(err)
+	}
+}
+
+func Create(namespace corev1.Namespace) features.Func {
+	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+		require.NoError(t, environmentConfig.Client().Resources().Create(ctx, &namespace))
+
+		return ctx
 	}
 }

@@ -16,6 +16,40 @@ For those just getting started, consult this  [guide](https://help.github.com/ar
 - Do not create methods with more than two parameters (in extremely rare occasions maybe three) except constructors and factory functions. Structs and interfaces exist for a reason.
 - Avoid returning responses (e.g., reconcile.Result, admission.Patched) in anything but Reconcile or Handle functions.
 
+### Cuddling of statements
+Statements must be cuddled, i.e., written as a single block, if an `if`-statement directly follows a single assignment and the condition is directly related to the assignment.
+This commonly occurs with error handling, but is not restricted to it.  
+Example:
+```
+err := assignment1()
+if err != nil {
+  do()
+}
+
+value1 := assignment2()
+if value1 {
+  do()
+}
+```
+
+Statements must not be cuddled with each other if multiple of the same type of statements follow each other.
+A statement must be cuddled with following statements, if they are of the same type.  
+Example:
+```
+value1 := assignment1()
+value2 := assignment2()
+value3, err := assignment3()
+
+if err != nil {
+  do()
+}
+if value1 == "something" {
+  do()
+}
+if value2 {
+  do()
+}
+```
 
 ### Reconciler vs Controller
 #### A **Controller** is a struct that **DIRECTLY** handles the reconcile Requests.
@@ -55,7 +89,7 @@ Important characteristics:
     - Example: in webhook/mutation `var nsLog = log.WithName("namespace")` (the name of this logger is `mutation-webhook.namespace`)
 - Use the logger defined in the `dynatrace-operator/src/logger` and always give it a name.
   - The name of the logger (given via `.WithName("...")`) should use `-` to divide longer names.
-  - Example: `var log = logger.NewDTLogger().WithName("mutation-webhook")`
+  - Example: `var log = logger.Factory.GetLogger("mutation-webhook")`
 
 #### Don'ts
 - Don't use `fmt.Sprintf` for creating log messages, the values you wish to replace via `Sprintf` should be provided to the logger as key-value pairs.

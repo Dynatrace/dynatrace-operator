@@ -25,18 +25,25 @@ func install(t *testing.T) features.Feature {
 	installClassicFullStack := features.New("install classic fullstack")
 	secretConfig := getSecretConfig(t)
 
-	setup.InstallAndDeploy(installClassicFullStack, secretConfig, "../testdata/classic-fullstack/sample-deployment.yaml")
+	setup.InstallDynatraceFromSource(installClassicFullStack, &secretConfig)
+	setup.DeploySampleApps(installClassicFullStack, "../testdata/classic-fullstack/sample-deployment.yaml")
 
 	installClassicFullStack.Assess("operator started", operator.WaitForDeployment())
 	installClassicFullStack.Assess("webhook started", webhook.WaitForDeployment())
-	installClassicFullStack.Assess("install dynakube", dynakube.ApplyClassicFullStack(secretConfig.ApiUrl, &dynatracev1beta1.HostInjectSpec{
-		Env: []v1.EnvVar{
-			{
-				Name:  "ONEAGENT_ENABLE_VOLUME_STORAGE",
-				Value: "true",
-			},
-		},
-	}))
+	installClassicFullStack.Assess("install dynakube", dynakube.Apply(
+		dynakube.NewBuilder().
+			WithDefaultObjectMeta().
+			ApiUrl(secretConfig.ApiUrl).
+			ClassicFullstack(&dynatracev1beta1.HostInjectSpec{
+				Env: []v1.EnvVar{
+					{
+						Name:  "ONEAGENT_ENABLE_VOLUME_STORAGE",
+						Value: "true",
+					},
+				},
+			}).
+			Build()),
+	)
 
 	setup.AssessDynakubeStartup(installClassicFullStack)
 
@@ -49,7 +56,7 @@ func install(t *testing.T) features.Feature {
 
 func isAgentInjected(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 	resources := environmentConfig.Client().Resources()
-	pods := sampleapps.Get(t, ctx, resources)
+	pods := pod.List(t, ctx, resources, sampleapps.Namespace)
 
 	for _, podItem := range pods.Items {
 		require.NotNil(t, podItem)

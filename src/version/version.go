@@ -5,6 +5,7 @@ import (
 	"runtime"
 
 	"github.com/Dynatrace/dynatrace-operator/src/logger"
+	"github.com/go-logr/logr"
 )
 
 var (
@@ -21,11 +22,15 @@ var (
 	// BuildDate is the date when the binary was build. Assigned externally.
 	BuildDate = ""
 
-	log = logger.NewDTLogger().WithName("dynatrace-operator-version")
+	log = logger.Factory.GetLogger("version")
 )
 
 // LogVersion logs metadata about the Operator.
 func LogVersion() {
+	LogVersionToLogger(log)
+}
+
+func LogVersionToLogger(log logr.Logger) {
 	log.Info(AppName,
 		"version", Version,
 		"gitCommit", Commit,

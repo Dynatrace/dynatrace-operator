@@ -23,6 +23,8 @@ const (
 	activeGateSslPath         = "/var/lib/dynatrace/gateway/ssl"
 	k8scrt2jksWorkingDir      = "/var/lib/dynatrace/gateway"
 	initContainerTemplateName = "certificate-loader"
+
+	certLoaderWorkDirVolume = "cert-tmp"
 )
 
 func NewKubernetesMonitoringModifier(dynakube dynatracev1beta1.DynaKube, capability capability.Capability) KubernetesMonitoringModifier {
@@ -49,6 +51,16 @@ func (mod KubernetesMonitoringModifier) Modify(sts *appsv1.StatefulSet) {
 }
 
 func (mod KubernetesMonitoringModifier) getInitContainers() []corev1.Container {
+	readOnlyRootFs := mod.dynakube.FeatureActiveGateReadOnlyFilesystem()
+	volumeMounts := []corev1.VolumeMount{
+		{
+			ReadOnly:  false,
+			Name:      trustStoreVolume,
+			MountPath: activeGateSslPath,
+		},
+	}
+	volumeMounts = append(volumeMounts, mod.getReadOnlyInitVolumeMounts()...)
+
 	return []corev1.Container{
 		{
 			Name:            initContainerTemplateName,
@@ -57,20 +69,17 @@ func (mod KubernetesMonitoringModifier) getInitContainers() []corev1.Container {
 			WorkingDir:      k8scrt2jksWorkingDir,
 			Command:         []string{"/bin/bash"},
 			Args:            []string{"-c", k8scrt2jksPath},
-			VolumeMounts: []corev1.VolumeMount{
-				{
-					ReadOnly:  false,
-					Name:      trustStoreVolume,
-					MountPath: activeGateSslPath,
-				},
+			VolumeMounts:    volumeMounts,
+			Resources:       mod.capability.Properties().Resources,
+			SecurityContext: &corev1.SecurityContext{
+				ReadOnlyRootFilesystem: &readOnlyRootFs,
 			},
-			Resources: mod.capability.Properties().Resources,
 		},
 	}
 }
 
 func (mod KubernetesMonitoringModifier) getVolumes() []corev1.Volume {
-	return []corev1.Volume{
+	volumes := []corev1.Volume{
 		{
 			Name: trustStoreVolume,
 			VolumeSource: corev1.VolumeSource{
@@ -78,6 +87,20 @@ func (mod KubernetesMonitoringModifier) getVolumes() []corev1.Volume {
 			},
 		},
 	}
+	return append(volumes, mod.getReadOnlyInitVolumes()...)
+}
+
+func (mod KubernetesMonitoringModifier) getReadOnlyInitVolumes() []corev1.Volume {
+	readOnlyRootFs := mod.dynakube.FeatureActiveGateReadOnlyFilesystem()
+	if readOnlyRootFs {
+		return []corev1.Volume{
+			{
+				Name:         certLoaderWorkDirVolume,
+				VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
+			},
+		}
+	}
+	return []corev1.Volume{}
 }
 
 func (mod KubernetesMonitoringModifier) getVolumeMounts() []corev1.VolumeMount {
@@ -89,4 +112,18 @@ func (mod KubernetesMonitoringModifier) getVolumeMounts() []corev1.VolumeMount {
 			SubPath:   k8sCertificateFile,
 		},
 	}
+}
+
+func (mod KubernetesMonitoringModifier) getReadOnlyInitVolumeMounts() []corev1.VolumeMount {
+	readOnlyRootFs := mod.dynakube.FeatureActiveGateReadOnlyFilesystem()
+	if readOnlyRootFs {
+		return []corev1.VolumeMount{
+			{
+				ReadOnly:  false,
+				Name:      certLoaderWorkDirVolume,
+				MountPath: k8scrt2jksWorkingDir,
+			},
+		}
+	}
+	return []corev1.VolumeMount{}
 }

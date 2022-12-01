@@ -3,8 +3,6 @@
 package classic
 
 import (
-	"os"
-	"path"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
@@ -18,22 +16,18 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/env"
 )
 
-const (
-	installSecretsPath = "../testdata/secrets/classic-fullstack-install.yaml"
-)
-
 var testEnvironment env.Environment
 
 func TestMain(m *testing.M) {
 	testEnvironment = environment.Get()
-	testEnvironment.BeforeEachTest(dynakube.DeleteIfExists())
-	testEnvironment.BeforeEachTest(oneagent.WaitForDaemonSetPodsDeletion())
 	testEnvironment.BeforeEachTest(namespace.DeleteIfExists(sampleapps.Namespace))
-	testEnvironment.BeforeEachTest(namespace.Recreate(dynakube.Namespace))
+	testEnvironment.BeforeEachTest(dynakube.DeleteIfExists(dynakube.NewBuilder().WithDefaultObjectMeta().Build()))
+	testEnvironment.BeforeEachTest(oneagent.WaitForDaemonSetPodsDeletion())
+	testEnvironment.BeforeEachTest(namespace.Recreate(namespace.NewBuilder(dynakube.Namespace).Build()))
 
-	testEnvironment.AfterEachTest(dynakube.DeleteIfExists())
-	testEnvironment.AfterEachTest(oneagent.WaitForDaemonSetPodsDeletion())
 	testEnvironment.AfterEachTest(namespace.Delete(sampleapps.Namespace))
+	testEnvironment.AfterEachTest(dynakube.DeleteIfExists(dynakube.NewBuilder().WithDefaultObjectMeta().Build()))
+	testEnvironment.AfterEachTest(oneagent.WaitForDaemonSetPodsDeletion())
 	testEnvironment.AfterEachTest(namespace.Delete(dynakube.Namespace))
 
 	testEnvironment.Run(m)
@@ -44,11 +38,7 @@ func TestClassicFullStack(t *testing.T) {
 }
 
 func getSecretConfig(t *testing.T) secrets.Secret {
-	currentWorkingDirectory, err := os.Getwd()
-	require.NoError(t, err)
-
-	secretPath := path.Join(currentWorkingDirectory, installSecretsPath)
-	secretConfig, err := secrets.NewFromConfig(afero.NewOsFs(), secretPath)
+	secretConfig, err := secrets.DefaultSingleTenant(afero.NewOsFs())
 
 	require.NoError(t, err)
 

@@ -24,7 +24,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
       - name: Set up Helm
-        uses: azure/setup-helm@b5b231a831f96336bbfeccc1329990f0005c5bb1 # v3.3
+        uses: azure/setup-helm@f382f75448129b3be48f8121b9857be18d815a82 # v3.4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Download dependencies
         id: helm-unittest-download
         run: |
@@ -41,7 +43,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
       - name: Set up Helm
-        uses: azure/setup-helm@b5b231a831f96336bbfeccc1329990f0005c5bb1 # v3.3
+        uses: azure/setup-helm@f382f75448129b3be48f8121b9857be18d815a82 # v3.4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Run Linting
         id: helm-linting
         run: |
@@ -54,7 +58,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
       - name: Setup Golang
-        uses: actions/setup-go@268d8c0ca0432bb2cf416faae41297df9d262d7f # v3.3.0
+        uses: actions/setup-go@c4a742cab115ed795e34d4513e2cf7d472deb55f # v3.3.1
         with:
           go-version-file: "${{ github.workspace }}/go.mod"
       - name: Download dependencies
@@ -72,7 +76,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
-      - uses: actions/setup-go@268d8c0ca0432bb2cf416faae41297df9d262d7f # v3.3.0
+      - uses: actions/setup-go@c4a742cab115ed795e34d4513e2cf7d472deb55f # v3.3.1
         with:
           go-version-file: "${{ github.workspace }}/go.mod"
       - name: Download dependencies
@@ -80,10 +84,10 @@ jobs:
         run: |
           hack/build/ci/install-cgo-dependencies.sh
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@537aa1903e5d359d0b27dbc19ddd22c5087f3fbc # v3.2.0
+        uses: golangci/golangci-lint-action@0ad9a0988b3973e851ab0a07adf248ec2e100376 # v3.3.1
         with:
           version: v1.49
-          args: --build-tags integration,containers_image_storage_stub,e2e --timeout 300s
+          args: --build-tags containers_image_storage_stub,e2e --timeout 300s
 
   prepare:
     name: Prepare properties
@@ -95,6 +99,15 @@ jobs:
         id: prep
         run: |
           hack/build/ci/prepare-build-variables.sh
+      - name: Docker metadata
+        uses: docker/metadata-action@57396166ad8aefe6098280995947635806a0e6ea # v4.1.1
+        id: meta
+        with:
+          images: dynatrace/dynatrace-operator
+          tags: ${{ steps.prep.outputs.docker_image_tag }}
+          labels: |
+            ${{ steps.prep.outputs.docker_image_labels }}
+            vcs-ref=${{ github.sha }}
       - name: Prepare build parameters
         id: prepenv
         run: |
@@ -102,10 +115,10 @@ jobs:
           # Reason: global envs do not work in workflow calls
           # More info: https://github.com/actions/runner/issues/480#issuecomment-1021278915
 
-          echo ::set-output name=registry::${{ env.DOCKER_REGISTRY }}
-          echo ::set-output name=repository::${{ env.DOCKER_REPOSITORY }}
+          echo "registry=${{ env.DOCKER_REGISTRY }}" >> "$GITHUB_OUTPUT"
+          echo "repository=${{ env.DOCKER_REPOSITORY }}" >> "$GITHUB_OUTPUT"
     outputs:
-      labels: ${{ steps.prep.outputs.docker_image_labels }}
+      labels: ${{ steps.meta.outputs.labels }}
       version: ${{ steps.prep.outputs.docker_image_tag }}
       registry: ${{ steps.prepenv.outputs.registry }}
       repository: ${{ steps.prepenv.outputs.repository }}
@@ -121,7 +134,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
       - name: Login to Registry
-        uses: docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b # v2.0.0
+        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a # v2.1.0
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_USERNAME }}
@@ -145,7 +158,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
       - name: Login to Registry
-        uses: docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b # v2.0.0
+        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a # v2.1.0
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_USERNAME }}
@@ -170,7 +183,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
       - name: Login to Registry
-        uses: docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b # v2.0.0
+        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a # v2.1.0
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_USERNAME }}

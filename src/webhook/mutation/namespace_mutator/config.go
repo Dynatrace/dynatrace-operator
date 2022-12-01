@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	log = logger.NewDTLogger().WithName("mutation-webhook.namespace")
+	log = logger.Factory.GetLogger("mutation-namespace")
 )

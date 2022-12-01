@@ -22,17 +22,17 @@ import (
 	csiServer "github.com/Dynatrace/dynatrace-operator/src/cmd/csi/server"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/operator"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/standalone"
+	"github.com/Dynatrace/dynatrace-operator/src/cmd/support_archive"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/troubleshoot"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/webhook"
 	"github.com/Dynatrace/dynatrace-operator/src/logger"
-	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 var (
-	log = logger.NewDTLogger().WithName("main")
+	log = logger.Factory.GetLogger("main")
 )
 
 const (
@@ -45,7 +45,6 @@ func newRootCommand() *cobra.Command {
 		Use:  "dynatrace-operator",
 		RunE: rootCommand,
 	}
-
 	return cmd
 }
 
@@ -80,12 +79,15 @@ func createTroubleshootCommandBuilder() troubleshoot.CommandBuilder {
 		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
 }
 
+func createSupportArchiveCommandBuilder() support_archive.CommandBuilder {
+	return support_archive.NewCommandBuilder()
+}
+
 func rootCommand(_ *cobra.Command, _ []string) error {
 	return errors.New("operator binary must be called with one of the subcommands")
 }
 
 func main() {
-	version.LogVersion()
 	ctrl.SetLogger(log)
 	cmd := newRootCommand()
 
@@ -96,6 +98,7 @@ func main() {
 		createCsiProvisionerCommandBuilder().Build(),
 		standalone.NewStandaloneCommand(),
 		createTroubleshootCommandBuilder().Build(),
+		createSupportArchiveCommandBuilder().Build(),
 	)
 
 	err := cmd.Execute()

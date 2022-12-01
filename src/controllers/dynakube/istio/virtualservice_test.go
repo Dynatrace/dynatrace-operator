@@ -46,7 +46,7 @@ func TestVirtualServiceGeneration(t *testing.T) {
 					},
 				}}},
 		}
-		result := buildVirtualService(testName, testNamespace, testHost, protocolHttps, testPort)
+		result := buildVirtualService(buildObjectMeta(testName, testNamespace), testHost, protocolHttps, testPort)
 
 		assert.EqualValues(t, expected, result)
 	})
@@ -70,13 +70,13 @@ func TestVirtualServiceGeneration(t *testing.T) {
 					},
 				}}},
 		}
-		result := buildVirtualService(testName, testNamespace, testHost, protocolHttp, testPort)
+		result := buildVirtualService(buildObjectMeta(testName, testNamespace), testHost, protocolHttp, testPort)
 
 		assert.EqualValues(t, expected, result)
 	})
 	t.Run("generate for invalid protocol", func(t *testing.T) {
 		const invalidHost = "42.42.42.42"
-		assert.Nil(t, buildVirtualService(testName, testNamespace, invalidHost, protocolHttp, testPort))
+		assert.Nil(t, buildVirtualService(buildObjectMeta(testName, testNamespace), invalidHost, protocolHttp, testPort))
 	})
 }
 

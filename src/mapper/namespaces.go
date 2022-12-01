@@ -18,7 +18,7 @@ type NamespaceMapper struct {
 	targetNs   *corev1.Namespace
 }
 
-func NewNamespaceMapper(ctx context.Context, clt client.Client, apiReader client.Reader, operatorNs string, targetNs *corev1.Namespace) NamespaceMapper {
+func NewNamespaceMapper(ctx context.Context, clt client.Client, apiReader client.Reader, operatorNs string, targetNs *corev1.Namespace) NamespaceMapper { //nolint:revive // argument-limit doesn't apply to constructors
 	return NamespaceMapper{ctx, clt, apiReader, operatorNs, targetNs}
 }
 

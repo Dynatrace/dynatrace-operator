@@ -7,11 +7,12 @@ import (
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/status"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -24,95 +25,144 @@ const (
 )
 
 // VersionProviderCallback fetches the version for a given image.
-type VersionProviderCallback func(string, *dockerconfig.DockerConfig) (ImageVersion, error)
+type VersionProviderCallback func(string, *dockerconfig.DockerConfig) (ImageVersion, error) //nolint:revive
 
-// ReconcileVersions updates the version and hash for the images used by the rec.Dynakube DynaKube instance.
-func ReconcileVersions(
-	ctx context.Context,
-	dkState *status.DynakubeState,
-	apiReader client.Reader,
-	fs afero.Afero,
-	verProvider VersionProviderCallback,
-) (bool, error) {
-	upd := false
-	dk := dkState.Instance
+type Reconciler struct {
+	Dynakube        *dynatracev1beta1.DynaKube
+	ApiReader       client.Reader
+	Fs              afero.Afero
+	VersionProvider VersionProviderCallback
+	TimeProvider    *kubeobjects.TimeProvider
+}
 
-	needsOneAgentUpdate := dk.NeedsOneAgent() &&
-		dkState.IsOutdated(dk.Status.OneAgent.LastUpdateProbeTimestamp, ProbeThreshold) &&
-		dk.ShouldAutoUpdateOneAgent()
+type updateSpec struct {
+	updateActiveGate bool
+	updateEec        bool
+	statsdUpdate     bool
+	oneAgentUpdate   bool
+}
 
-	needsActiveGateUpdate := dk.NeedsActiveGate() &&
-		!dk.FeatureDisableActiveGateUpdates() &&
-		dkState.IsOutdated(dk.Status.ActiveGate.LastUpdateProbeTimestamp, ProbeThreshold)
+func (s updateSpec) needsUpdate() bool {
+	return s.updateActiveGate || s.updateEec || s.statsdUpdate || s.oneAgentUpdate
+}
 
-	needsEecUpdate := dk.IsStatsdActiveGateEnabled() &&
-		!dk.FeatureDisableActiveGateUpdates() &&
-		dkState.IsOutdated(dk.Status.ExtensionController.LastUpdateProbeTimestamp, ProbeThreshold)
-
-	needsStatsdUpdate := dk.IsStatsdActiveGateEnabled() &&
-		!dk.FeatureDisableActiveGateUpdates() &&
-		dkState.IsOutdated(dk.Status.Statsd.LastUpdateProbeTimestamp, ProbeThreshold)
-
-	if !(needsActiveGateUpdate || needsOneAgentUpdate || needsEecUpdate || needsStatsdUpdate) {
-		return false, nil
+// Reconcile updates the version and hash for the images used by the rec.Dynakube DynaKube instance.
+func (r *Reconciler) Reconcile(ctx context.Context) error {
+	updateSpec := updateSpec{
+		updateActiveGate: needsActiveGateUpdate(r.Dynakube, *r.TimeProvider),
+		updateEec:        needsEecUpdate(r.Dynakube, *r.TimeProvider),
+		statsdUpdate:     needsStatsdUpdate(r.Dynakube, *r.TimeProvider),
+		oneAgentUpdate:   needsOneAgentUpdate(r.Dynakube, *r.TimeProvider),
 	}
 
+	if !updateSpec.needsUpdate() {
+		return nil
+	}
+
+	return r.updateImages(ctx, updateSpec)
+}
+
+func (r *Reconciler) updateImages(ctx context.Context, spec updateSpec) error {
+	dockerConfig, err := createDockerConfigWithCustomCAs(ctx, r.Dynakube, r.ApiReader, r.Fs)
+	if err != nil {
+		return err
+	}
+
+	imageUpdater := imageUpdater{
+		now:         *r.TimeProvider.Now(),
+		dockerCfg:   dockerConfig,
+		verProvider: r.VersionProvider,
+	}
+	if spec.updateActiveGate {
+		err := imageUpdater.update(r.Dynakube.ActiveGateImage(), &r.Dynakube.Status.ActiveGate.VersionStatus, true)
+		if err != nil {
+			log.Error(err, "failed to update ActiveGate image version")
+		}
+	}
+
+	if spec.updateEec {
+		err := imageUpdater.update(r.Dynakube.EecImage(), &r.Dynakube.Status.ExtensionController.VersionStatus, true)
+		if err != nil {
+			log.Error(err, "Failed to update Extension Controller image version")
+		}
+	}
+
+	if spec.statsdUpdate {
+		err := imageUpdater.update(r.Dynakube.StatsdImage(), &r.Dynakube.Status.Statsd.VersionStatus, true)
+		if err != nil {
+			log.Error(err, "Failed to update StatsD image version")
+		}
+	}
+
+	if spec.oneAgentUpdate {
+		err := imageUpdater.update(r.Dynakube.OneAgentImage(), &r.Dynakube.Status.OneAgent.VersionStatus, false)
+		if err != nil {
+			log.Error(err, "failed to update OneAgent image version")
+		}
+	}
+	return nil
+}
+
+func createDockerConfigWithCustomCAs(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader, fs afero.Afero) (*dockerconfig.DockerConfig, error) {
 	caCertPath := path.Join(TmpCAPath, TmpCAName)
-	dockerConfig := dockerconfig.NewDockerConfig(apiReader, *dkState.Instance)
+	dockerConfig := dockerconfig.NewDockerConfig(apiReader, *dynakube)
 	err := dockerConfig.SetupAuths(ctx)
 	if err != nil {
-		return false, err
+		log.Info("failed to set up auths for image version checks")
+		return nil, err
 	}
-	if dk.Spec.TrustedCAs != "" {
+	if dynakube.Spec.TrustedCAs != "" {
 		_ = os.MkdirAll(TmpCAPath, 0755)
 		err := dockerConfig.SaveCustomCAs(ctx, fs, caCertPath)
 		if err != nil {
-			return false, err
+			log.Info("failed to save CAs locally for image version checks")
+			return nil, err
 		}
 		defer func() {
 			_ = os.Remove(TmpCAPath)
 		}()
 	}
-	upd = true // updateImageVersion() always updates the status
-
-	if needsActiveGateUpdate {
-		if err := updateImageVersion(dkState, dk.ActiveGateImage(), &dk.Status.ActiveGate.VersionStatus, dockerConfig, verProvider, true); err != nil {
-			log.Error(err, "failed to update ActiveGate image version")
-		}
-	}
-
-	if needsEecUpdate {
-		if err := updateImageVersion(dkState, dk.EecImage(), &dk.Status.ExtensionController.VersionStatus, dockerConfig, verProvider, true); err != nil {
-			log.Error(err, "Failed to update Extension Controller image version")
-		}
-	}
-
-	if needsStatsdUpdate {
-		if err := updateImageVersion(dkState, dk.StatsdImage(), &dk.Status.Statsd.VersionStatus, dockerConfig, verProvider, true); err != nil {
-			log.Error(err, "Failed to update StatsD image version")
-		}
-	}
-
-	if needsOneAgentUpdate {
-		if err := updateImageVersion(dkState, dk.ImmutableOneAgentImage(), &dk.Status.OneAgent.VersionStatus, dockerConfig, verProvider, false); err != nil {
-			log.Error(err, "failed to update OneAgent image version")
-		}
-	}
-
-	return upd, nil
+	return dockerConfig, nil
 }
 
-func updateImageVersion(
-	dkState *status.DynakubeState,
+func needsStatsdUpdate(dynakube *dynatracev1beta1.DynaKube, timeProvider kubeobjects.TimeProvider) bool {
+	return dynakube.IsStatsdActiveGateEnabled() &&
+		!dynakube.FeatureDisableActiveGateUpdates() &&
+		timeProvider.IsOutdated(dynakube.Status.Statsd.LastUpdateProbeTimestamp, ProbeThreshold)
+}
+
+func needsEecUpdate(dynakube *dynatracev1beta1.DynaKube, timeProvider kubeobjects.TimeProvider) bool {
+	return dynakube.IsStatsdActiveGateEnabled() &&
+		!dynakube.FeatureDisableActiveGateUpdates() &&
+		timeProvider.IsOutdated(dynakube.Status.ExtensionController.LastUpdateProbeTimestamp, ProbeThreshold)
+}
+
+func needsActiveGateUpdate(dynakube *dynatracev1beta1.DynaKube, timeProvider kubeobjects.TimeProvider) bool {
+	return dynakube.NeedsActiveGate() &&
+		!dynakube.FeatureDisableActiveGateUpdates() &&
+		timeProvider.IsOutdated(dynakube.Status.ActiveGate.LastUpdateProbeTimestamp, ProbeThreshold)
+}
+
+func needsOneAgentUpdate(dynakube *dynatracev1beta1.DynaKube, timeProvider kubeobjects.TimeProvider) bool {
+	return dynakube.NeedsOneAgent() &&
+		timeProvider.IsOutdated(dynakube.Status.OneAgent.LastUpdateProbeTimestamp, ProbeThreshold) &&
+		dynakube.ShouldAutoUpdateOneAgent()
+}
+
+type imageUpdater struct {
+	now         metav1.Time
+	dockerCfg   *dockerconfig.DockerConfig
+	verProvider VersionProviderCallback
+}
+
+func (updater imageUpdater) update(
 	img string,
 	target *dynatracev1beta1.VersionStatus,
-	dockerCfg *dockerconfig.DockerConfig,
-	verProvider VersionProviderCallback,
 	allowDowngrades bool,
 ) error {
-	target.LastUpdateProbeTimestamp = dkState.Now.DeepCopy()
+	target.LastUpdateProbeTimestamp = &updater.now
 
-	ver, err := verProvider(img, dockerCfg)
+	ver, err := updater.verProvider(img, updater.dockerCfg)
 	if err != nil {
 		return errors.WithMessage(err, "failed to get image version")
 	}

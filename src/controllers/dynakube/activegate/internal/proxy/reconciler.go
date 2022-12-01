@@ -6,6 +6,7 @@ import (
 	"net/url"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
@@ -23,7 +24,7 @@ const (
 	proxyPasswordField = "password"
 )
 
-var _ kubeobjects.Reconciler = &Reconciler{}
+var _ controllers.Reconciler = &Reconciler{}
 
 // Reconciler manages the ActiveGate proxy secret generation for the dynatrace namespace.
 type Reconciler struct {
@@ -32,13 +33,12 @@ type Reconciler struct {
 	dynakube  *dynatracev1beta1.DynaKube
 }
 
-func (r *Reconciler) Reconcile() (update bool, err error) {
+func (r *Reconciler) Reconcile() error {
 	if r.dynakube.NeedsActiveGateProxy() {
-		err = r.generateForDynakube(context.TODO(), r.dynakube)
-	} else {
-		err = r.ensureDeleted(context.TODO(), r.dynakube)
+		return r.generateForDynakube(context.TODO(), r.dynakube)
 	}
-	return true, err
+
+	return r.ensureDeleted(context.TODO(), r.dynakube)
 }
 
 func NewReconciler(client client.Client, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube) *Reconciler {
@@ -87,13 +87,15 @@ func (r *Reconciler) ensureDeleted(ctx context.Context, dynakube *dynatracev1bet
 func (r *Reconciler) createProxyMap(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) (map[string][]byte, error) {
 	var err error
 	proxyUrl := ""
-	if dynakube.Spec.Proxy != nil && dynakube.Spec.Proxy.ValueFrom != "" {
+
+	switch {
+	case dynakube.Spec.Proxy != nil && dynakube.Spec.Proxy.ValueFrom != "":
 		if proxyUrl, err = r.proxyUrlFromUserSecret(ctx, dynakube); err != nil {
 			return nil, err
 		}
-	} else if dynakube.Spec.Proxy != nil && len(dynakube.Spec.Proxy.Value) > 0 {
+	case dynakube.Spec.Proxy != nil && len(dynakube.Spec.Proxy.Value) > 0:
 		proxyUrl = proxyUrlFromSpec(dynakube)
-	} else {
+	default:
 		// the parsed-proxy secret is expected to exist and the entrypoint.sh script handles empty values properly
 		return map[string][]byte{
 			proxyHostField:     []byte(""),
@@ -133,7 +135,7 @@ func (r *Reconciler) proxyUrlFromUserSecret(ctx context.Context, dynakube *dynat
 	return string(proxy), nil
 }
 
-func parseProxyUrl(proxy string) (host string, port string, username string, password string, err error) {
+func parseProxyUrl(proxy string) (host, port, username, password string, err error) { //nolint:revive // maximum number of return results per function exceeded; max 3 but got 5
 	proxyUrl, err := url.Parse(proxy)
 	if err != nil {
 		return "", "", "", "", errors.New("could not parse proxy URL")

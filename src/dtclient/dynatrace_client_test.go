@@ -32,9 +32,10 @@ func TestMakeRequest(t *testing.T) {
 		resp, err := dc.makeRequest(url, dynatraceApiToken)
 		assert.NoError(t, err)
 		assert.NotNil(t, resp)
+		defer resp.Body.Close()
 	}
 	{
-		resp, err := dc.makeRequest("%s/v1/deployment/installer/agent/connectioninfo", dynatraceApiToken)
+		resp, err := dc.makeRequest("%s/v1/deployment/installer/agent/connectioninfo", dynatraceApiToken) //nolint:bodyclose
 		assert.Error(t, err, "unsupported protocol scheme")
 		assert.Nil(t, resp)
 	}
@@ -230,26 +231,26 @@ func TestIgnoreNonCurrentlySeenHosts(t *testing.T) {
 }
 
 func createTestDynatraceClient(t *testing.T, handler http.Handler, networkZoneName string) (*httptest.Server, Client) {
-	faultyDynatraceServer := httptest.NewServer(handler)
+	dynatraceServer := httptest.NewServer(handler)
 
 	skipCert := SkipCertificateValidation(true)
 	networkZone := NetworkZone(networkZoneName)
-	faultyDynatraceClient, err := NewClient(faultyDynatraceServer.URL, apiToken, paasToken, skipCert, networkZone)
+	dynatraceClient, err := NewClient(dynatraceServer.URL, apiToken, paasToken, skipCert, networkZone)
 
 	require.NoError(t, err)
-	require.NotNil(t, faultyDynatraceClient)
+	require.NotNil(t, dynatraceClient)
 
-	return faultyDynatraceServer, faultyDynatraceClient
+	return dynatraceServer, dynatraceClient
 }
 
 func createTestDynatraceClientWithFunc(t *testing.T, handler http.HandlerFunc) (*httptest.Server, Client) {
-	faultyDynatraceServer := httptest.NewServer(handler)
+	dynatraceServer := httptest.NewServer(handler)
 
 	skipCert := SkipCertificateValidation(true)
-	faultyDynatraceClient, err := NewClient(faultyDynatraceServer.URL, apiToken, paasToken, skipCert)
+	dynatraceClient, err := NewClient(dynatraceServer.URL, apiToken, paasToken, skipCert)
 
 	require.NoError(t, err)
-	require.NotNil(t, faultyDynatraceClient)
+	require.NotNil(t, dynatraceClient)
 
-	return faultyDynatraceServer, faultyDynatraceClient
+	return dynatraceServer, dynatraceClient
 }

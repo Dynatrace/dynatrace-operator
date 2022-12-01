@@ -27,7 +27,7 @@ spec:
   # Optional: Set custom proxy settings either directly or from a secret with the field 'proxy'
   #
   # proxy:
-  #   value: https://my-proxy-url.com
+  #   value: my-proxy-url.com
   #   valueFrom: name-of-my-proxy-secret
 
   # Optional: Adds custom RootCAs from a configmap
@@ -183,3 +183,19 @@ spec:
     # For more information on DNS policies, see https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy
     #
     # dnsPolicy: "Default"
+
+    # Optional: Specifies the priority class to assign to the ActiveGate Pods
+    # No class is set by default
+    # For more information on priority classes, see https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/
+    #
+    # priorityClassName: priority-class
+
+    # Optional: Adds additional annotations to the ActiveGate pods
+    #
+    # annotations:
+    #   annotation-key: annotation-value
+
+    # Optional: Adds TopologySpreadConstraints to the ActiveGate pods
+    # For more information on TopologySpreadConstraints, see https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
+    #
+    # topologySpreadConstraints: []

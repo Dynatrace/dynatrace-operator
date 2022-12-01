@@ -30,7 +30,7 @@ const (
 )
 
 func TestReconcileCertificate_Create(t *testing.T) {
-	clt := prepareFakeClient(false, false)
+	clt := newFakeClientBuilder().WithCRD().Build()
 	controller, request := prepareController(clt)
 
 	res, err := controller.Reconcile(context.TODO(), request)
@@ -56,8 +56,17 @@ func TestReconcileCertificate_Create(t *testing.T) {
 	verifyCertificates(t, controller, secret, clt, false)
 }
 
+func TestReconcileCertificate_Create_NoCRD(t *testing.T) {
+	clt := newFakeClientBuilder().Build()
+	controller, request := prepareController(clt)
+
+	res, err := controller.Reconcile(context.TODO(), request)
+	assert.Error(t, err)
+	assert.Equal(t, res, reconcile.Result{})
+}
+
 func TestReconcileCertificate_Update(t *testing.T) {
-	clt := prepareFakeClient(true, false)
+	clt := newFakeClientBuilder().WithInvalidCertificateSecret().WithCRD().Build()
 	controller, request := prepareController(clt)
 
 	res, err := controller.Reconcile(context.TODO(), request)
@@ -84,7 +93,7 @@ func TestReconcileCertificate_Update(t *testing.T) {
 }
 
 func TestReconcileCertificate_ExistingSecretWithValidCertificate(t *testing.T) {
-	clt := prepareFakeClient(true, true)
+	clt := newFakeClientBuilder().WithValidCertificateSecret().WithCRD().Build()
 	controller, request := prepareController(clt)
 
 	res, err := controller.Reconcile(context.TODO(), request)
@@ -153,6 +162,26 @@ func TestReconcile(t *testing.T) {
 		assert.NotNil(t, result)
 	})
 
+	t.Run(`update crd successfully with up-to-date secret`, func(t *testing.T) {
+		fakeClient := fake.NewClient(crd)
+		cs := newCertificateSecret()
+		_ = cs.setSecretFromReader(context.TODO(), fakeClient, testNamespace)
+		_ = cs.validateCertificates(testNamespace)
+		_ = cs.createOrUpdateIfNecessary(context.TODO(), fakeClient)
+
+		controller, request := prepareController(fakeClient)
+		result, err := controller.Reconcile(context.TODO(), request)
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+
+		expectedBundle, err := cs.loadCombinedBundle()
+		require.NoError(t, err)
+		actualCrd := &apiv1.CustomResourceDefinition{}
+		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: crdName}, actualCrd)
+		require.NoError(t, err)
+		assert.Equal(t, expectedBundle, actualCrd.Spec.Conversion.Webhook.ClientConfig.CABundle)
+	})
+
 	// Generation must not be skipped because webhook startup routine listens for the secret
 	// See cmd/operator/manager.go and cmd/operator/watcher.go
 	t.Run(`do not skip certificates generation if no configuration exists`, func(t *testing.T) {
@@ -167,59 +196,6 @@ func TestReconcile(t *testing.T) {
 		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: expectedSecretName, Namespace: testNamespace}, secret)
 		assert.NoError(t, err)
 	})
-}
-
-func prepareFakeClient(withSecret bool, generateValidSecret bool) client.Client {
-	objs := []client.Object{
-		&admissionregistrationv1.MutatingWebhookConfiguration{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: webhook.DeploymentName,
-			},
-			Webhooks: []admissionregistrationv1.MutatingWebhook{
-				{
-					ClientConfig: admissionregistrationv1.WebhookClientConfig{},
-				},
-				{
-					ClientConfig: admissionregistrationv1.WebhookClientConfig{},
-				},
-			},
-		},
-		&admissionregistrationv1.ValidatingWebhookConfiguration{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: webhook.DeploymentName,
-			},
-			Webhooks: []admissionregistrationv1.ValidatingWebhook{
-				{
-					ClientConfig: admissionregistrationv1.WebhookClientConfig{},
-				},
-			},
-		},
-		&apiv1.CustomResourceDefinition{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: crdName,
-			},
-			Spec: apiv1.CustomResourceDefinitionSpec{
-				Conversion: &apiv1.CustomResourceConversion{
-					Strategy: strategyWebhook,
-					Webhook: &apiv1.WebhookConversion{
-						ClientConfig: &apiv1.WebhookClientConfig{},
-					},
-				},
-			},
-		},
-	}
-	if withSecret {
-		certData := createInvalidTestCertData(nil)
-		if generateValidSecret {
-			certData = createValidTestCertData(nil)
-		}
-
-		objs = append(objs,
-			createTestSecret(nil, certData),
-		)
-	}
-
-	return fake.NewClient(objs...)
 }
 
 func createInvalidTestCertData(_ *testing.T) map[string][]byte {
@@ -281,7 +257,7 @@ func testWebhookClientConfig(
 	assert.Equal(t, expectedCert, webhookClientConfig.CABundle)
 }
 
-func verifyCertificates(t *testing.T, rec *WebhookCertificateController, secret *corev1.Secret, clt client.Client, isUpdate bool) {
+func verifyCertificates(t *testing.T, rec *WebhookCertificateController, secret *corev1.Secret, clt client.Client, isUpdate bool) { //nolint:revive // argument-limit
 	cert := Certs{
 		Domain:  getDomain(rec.namespace),
 		Data:    secret.Data,
@@ -308,4 +284,78 @@ func verifyCertificates(t *testing.T, rec *WebhookCertificateController, secret 
 	require.NoError(t, err)
 	assert.Len(t, validatingWebhookConfig.Webhooks, 1)
 	testWebhookClientConfig(t, &validatingWebhookConfig.Webhooks[0].ClientConfig, secret.Data, isUpdate)
+}
+
+type fakeClientBuilder struct {
+	objs []client.Object
+}
+
+func newFakeClientBuilder() *fakeClientBuilder {
+	objs := []client.Object{
+		&admissionregistrationv1.MutatingWebhookConfiguration{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: webhook.DeploymentName,
+			},
+			Webhooks: []admissionregistrationv1.MutatingWebhook{
+				{
+					ClientConfig: admissionregistrationv1.WebhookClientConfig{},
+				},
+				{
+					ClientConfig: admissionregistrationv1.WebhookClientConfig{},
+				},
+			},
+		},
+		&admissionregistrationv1.ValidatingWebhookConfiguration{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: webhook.DeploymentName,
+			},
+			Webhooks: []admissionregistrationv1.ValidatingWebhook{
+				{
+					ClientConfig: admissionregistrationv1.WebhookClientConfig{},
+				},
+			},
+		},
+	}
+
+	return &fakeClientBuilder{objs: objs}
+}
+
+func (builder *fakeClientBuilder) WithValidCertificateSecret() *fakeClientBuilder {
+	builder.objs = append(builder.objs,
+		createTestSecret(nil, createValidTestCertData(nil)),
+	)
+
+	return builder
+}
+
+func (builder *fakeClientBuilder) WithInvalidCertificateSecret() *fakeClientBuilder {
+	builder.objs = append(builder.objs,
+		createTestSecret(nil, createInvalidTestCertData(nil)),
+	)
+
+	return builder
+}
+
+func (builder *fakeClientBuilder) WithCRD() *fakeClientBuilder {
+	builder.objs = append(builder.objs,
+		&apiv1.CustomResourceDefinition{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: crdName,
+			},
+			Spec: apiv1.CustomResourceDefinitionSpec{
+				Conversion: &apiv1.CustomResourceConversion{
+					Strategy: strategyWebhook,
+					Webhook: &apiv1.WebhookConversion{
+						ClientConfig: &apiv1.WebhookClientConfig{},
+					},
+				},
+			},
+		},
+	)
+
+	return builder
+}
+
+func (builder *fakeClientBuilder) Build() client.Client {
+	return fake.NewClient(builder.objs...)
 }

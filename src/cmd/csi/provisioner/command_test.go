@@ -42,6 +42,6 @@ func TestCsiCommand(t *testing.T) {
 	assert.True(t, exists)
 	assert.NoError(t, err)
 
-	// logging new line so go test can parse output correctly
-	logger.NewDTLogger().Info("")
+	// Logging a newline because otherwise `go test` doesn't recognize the result
+	logger.Factory.GetLogger("csi command").Info("")
 }

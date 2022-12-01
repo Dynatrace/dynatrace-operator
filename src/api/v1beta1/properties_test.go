@@ -37,12 +37,14 @@ func TestActiveGateImage(t *testing.T) {
 		dk := DynaKube{Spec: DynaKubeSpec{APIURL: testAPIURL}}
 		assert.Equal(t, "test-endpoint/linux/activegate:latest", dk.ActiveGateImage())
 	})
-	//
-	//t.Run(`ActiveGateImage with custom image`, func(t *testing.T) {
-	//	customImg := "registry/my/activegate:latest"
-	//	dk := DynaKube{Spec: DynaKubeSpec{ActiveGate: ActiveGateSpec{Image: customImg}}}
-	//	assert.Equal(t, customImg, dk.ActiveGateImage())
-	//})
+
+	t.Run(`ActiveGateImage with custom image`, func(t *testing.T) {
+		customImg := "registry/my/activegate:latest"
+		dk := DynaKube{Spec: DynaKubeSpec{ActiveGate: ActiveGateSpec{CapabilityProperties: CapabilityProperties{
+			Image: customImg,
+		}}}}
+		assert.Equal(t, customImg, dk.ActiveGateImage())
+	})
 }
 
 func TestDynaKube_UseCSIDriver(t *testing.T) {
@@ -80,23 +82,23 @@ func TestDynaKube_UseCSIDriver(t *testing.T) {
 func TestOneAgentImage(t *testing.T) {
 	t.Run(`OneAgentImage with no API URL`, func(t *testing.T) {
 		dk := DynaKube{}
-		assert.Equal(t, "", dk.ImmutableOneAgentImage())
+		assert.Equal(t, "", dk.OneAgentImage())
 	})
 
 	t.Run(`OneAgentImage with API URL`, func(t *testing.T) {
 		dk := DynaKube{Spec: DynaKubeSpec{APIURL: testAPIURL}}
-		assert.Equal(t, "test-endpoint/linux/oneagent:latest", dk.ImmutableOneAgentImage())
+		assert.Equal(t, "test-endpoint/linux/oneagent:latest", dk.OneAgentImage())
 	})
 
 	t.Run(`OneAgentImage with API URL and custom version`, func(t *testing.T) {
 		dk := DynaKube{Spec: DynaKubeSpec{APIURL: testAPIURL, OneAgent: OneAgentSpec{ClassicFullStack: &HostInjectSpec{Version: "1.234.5"}}}}
-		assert.Equal(t, "test-endpoint/linux/oneagent:1.234.5", dk.ImmutableOneAgentImage())
+		assert.Equal(t, "test-endpoint/linux/oneagent:1.234.5", dk.OneAgentImage())
 	})
 
 	t.Run(`OneAgentImage with custom image`, func(t *testing.T) {
 		customImg := "registry/my/oneagent:latest"
 		dk := DynaKube{Spec: DynaKubeSpec{OneAgent: OneAgentSpec{ClassicFullStack: &HostInjectSpec{Image: customImg}}}}
-		assert.Equal(t, customImg, dk.ImmutableOneAgentImage())
+		assert.Equal(t, customImg, dk.OneAgentImage())
 	})
 
 	t.Run(`OneAgentImage with custom version truncates build date`, func(t *testing.T) {
@@ -116,7 +118,7 @@ func TestOneAgentImage(t *testing.T) {
 			},
 		}
 
-		assert.Equal(t, expectedImage, dynakube.ImmutableOneAgentImage())
+		assert.Equal(t, expectedImage, dynakube.OneAgentImage())
 		assert.Equal(t, version, dynakube.Version())
 	})
 }
@@ -301,7 +303,7 @@ func TestIsOneAgentPrivileged(t *testing.T) {
 	t.Run("is false by default", func(t *testing.T) {
 		dynakube := DynaKube{}
 
-		assert.False(t, dynakube.IsOneAgentPrivileged())
+		assert.False(t, dynakube.FeatureOneAgentPrivileged())
 	})
 	t.Run("is true when annotation is set to true", func(t *testing.T) {
 		dynakube := DynaKube{
@@ -312,7 +314,7 @@ func TestIsOneAgentPrivileged(t *testing.T) {
 			},
 		}
 
-		assert.True(t, dynakube.IsOneAgentPrivileged())
+		assert.True(t, dynakube.FeatureOneAgentPrivileged())
 	})
 	t.Run("is false when annotation is set to false", func(t *testing.T) {
 		dynakube := DynaKube{
@@ -323,33 +325,11 @@ func TestIsOneAgentPrivileged(t *testing.T) {
 			},
 		}
 
-		assert.False(t, dynakube.IsOneAgentPrivileged())
-	})
-	t.Run("is true in classicFullStack mode", func(t *testing.T) {
-		dynakube := DynaKube{
-			Spec: DynaKubeSpec{
-				OneAgent: OneAgentSpec{ClassicFullStack: &HostInjectSpec{}},
-			},
-		}
-
-		assert.True(t, dynakube.IsOneAgentPrivileged())
-
-		dynakube.Annotations = map[string]string{
-			AnnotationFeatureRunOneAgentContainerPrivileged: "false",
-		}
-
-		assert.True(t, dynakube.IsOneAgentPrivileged())
-
-		dynakube.Annotations = map[string]string{
-			AnnotationFeatureRunOneAgentContainerPrivileged: "true",
-		}
-
-		assert.True(t, dynakube.IsOneAgentPrivileged())
+		assert.False(t, dynakube.FeatureOneAgentPrivileged())
 	})
 }
 
 func TestGetOneAgentEnvironment(t *testing.T) {
-
 	t.Run("get environment from classicFullstack", func(t *testing.T) {
 		dk := DynaKube{
 			Spec: DynaKubeSpec{

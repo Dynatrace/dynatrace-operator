@@ -10,5 +10,5 @@ const (
 )
 
 var (
-	log = logger.NewDTLogger().WithName("csi-provisioner")
+	log = logger.Factory.GetLogger("csi-provisioner")
 )

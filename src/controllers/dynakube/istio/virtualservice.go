@@ -6,7 +6,6 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/go-logr/logr"
 	istio "istio.io/api/networking/v1alpha3"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	istioclientset "istio.io/client-go/pkg/clientset/versioned"
@@ -20,13 +19,13 @@ const (
 	protocolHttps = "https"
 )
 
-func buildVirtualService(name, namespace, host, protocol string, port uint32) *istiov1alpha3.VirtualService {
+func buildVirtualService(meta metav1.ObjectMeta, host string, protocol string, port uint32) *istiov1alpha3.VirtualService {
 	if isIp(host) {
 		return nil
 	}
 
 	return &istiov1alpha3.VirtualService{
-		ObjectMeta: buildObjectMeta(name, namespace),
+		ObjectMeta: meta,
 		Spec:       buildVirtualServiceSpec(host, protocol, port),
 	}
 }
@@ -77,8 +76,7 @@ func buildVirtualServiceTLSRoute(host string, port uint32) []*istio.TLSRoute {
 	}}
 }
 
-func handleIstioConfigurationForVirtualService(istioConfig *istioConfiguration, log logr.Logger) (bool, error) {
-
+func handleIstioConfigurationForVirtualService(istioConfig *configuration) (bool, error) {
 	probe, err := kubeobjects.KubernetesObjectProbe(VirtualServiceGVK, istioConfig.instance.GetNamespace(), istioConfig.name, istioConfig.reconciler.config)
 	if probe == kubeobjects.ProbeObjectFound {
 		return false, nil
@@ -87,7 +85,7 @@ func handleIstioConfigurationForVirtualService(istioConfig *istioConfiguration, 
 		return false, err
 	}
 
-	virtualService := buildVirtualService(istioConfig.name, istioConfig.instance.GetNamespace(), istioConfig.commHost.Host, istioConfig.commHost.Protocol,
+	virtualService := buildVirtualService(metav1.ObjectMeta{Name: istioConfig.name, Namespace: istioConfig.instance.GetNamespace()}, istioConfig.commHost.Host, istioConfig.commHost.Protocol,
 		istioConfig.commHost.Port)
 	if virtualService == nil {
 		return false, nil
@@ -104,10 +102,9 @@ func handleIstioConfigurationForVirtualService(istioConfig *istioConfiguration, 
 	return true, nil
 }
 
-func createIstioConfigurationForVirtualService(dynaKube *dynatracev1beta1.DynaKube,
+func createIstioConfigurationForVirtualService(dynaKube *dynatracev1beta1.DynaKube, //nolint:revive // argument-limit doesn't apply to constructors
 	virtualService *istiov1alpha3.VirtualService, role string,
 	istioClient istioclientset.Interface, scheme *runtime.Scheme) error {
-
 	virtualService.Labels = buildIstioLabels(dynaKube.GetName(), role)
 	if err := controllerutil.SetControllerReference(dynaKube, virtualService, scheme); err != nil {
 		return err
@@ -123,8 +120,7 @@ func createIstioConfigurationForVirtualService(dynaKube *dynatracev1beta1.DynaKu
 	return nil
 }
 
-func removeIstioConfigurationForVirtualService(istioConfig *istioConfiguration, seen map[string]bool) (bool, error) {
-
+func removeIstioConfigurationForVirtualService(istioConfig *configuration, seen map[string]bool) (bool, error) {
 	list, err := istioConfig.reconciler.istioClient.NetworkingV1alpha3().VirtualServices(istioConfig.instance.GetNamespace()).List(context.TODO(), *istioConfig.listOps)
 	if err != nil {
 		log.Error(err, "istio: error listing virtual service")

@@ -27,21 +27,41 @@ const (
 	livezEndpointName    = "livez"
 )
 
-type bootstrapManagerProvider struct{}
+type bootstrapManagerProvider struct {
+	managerBuilder
+}
 
 func NewBootstrapManagerProvider() cmdManager.Provider {
 	return bootstrapManagerProvider{}
 }
 
 func (provider bootstrapManagerProvider) CreateManager(namespace string, config *rest.Config) (manager.Manager, error) {
-	controlManager, err := ctrl.NewManager(config, ctrl.Options{
-		Scheme:    scheme.Scheme,
-		Namespace: namespace,
+	controlManager, err := provider.getManager(config, ctrl.Options{
+		Scheme:                 scheme.Scheme,
+		Namespace:              namespace,
+		HealthProbeBindAddress: healthProbeBindAddress,
+		LivenessEndpointName:   livenessEndpointName,
 	})
+
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	err = controlManager.AddHealthzCheck(livezEndpointName, healthz.Ping)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	err = controlManager.AddReadyzCheck(readyzEndpointName, healthz.Ping)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
 	return controlManager, errors.WithStack(err)
 }
 
 type operatorManagerProvider struct {
+	managerBuilder
 	deployedViaOlm bool
 }
 
@@ -52,20 +72,20 @@ func NewOperatorManagerProvider(deployedViaOlm bool) cmdManager.Provider {
 }
 
 func (provider operatorManagerProvider) CreateManager(namespace string, cfg *rest.Config) (manager.Manager, error) {
-	mgr, err := ctrl.NewManager(cfg, provider.createOptions(namespace))
+	mgr, err := provider.getManager(cfg, provider.createOptions(namespace))
 
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	err = provider.addHealthzCheck(mgr)
+	err = mgr.AddHealthzCheck(livezEndpointName, healthz.Ping)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
-	err = provider.addReadyzCheck(mgr)
+	err = mgr.AddReadyzCheck(readyzEndpointName, healthz.Ping)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	err = dynakube.Add(mgr, namespace)
@@ -108,22 +128,20 @@ func (provider operatorManagerProvider) createOptions(namespace string) ctrl.Opt
 	}
 }
 
-func (provider operatorManagerProvider) addHealthzCheck(mgr manager.Manager) error {
-	err := mgr.AddHealthzCheck(livezEndpointName, healthz.Ping)
-
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
+// managerBuilder is used for testing the createManager functions in the providers
+type managerBuilder struct {
+	mgr manager.Manager
 }
 
-func (provider operatorManagerProvider) addReadyzCheck(mgr manager.Manager) error {
-	err := mgr.AddReadyzCheck(readyzEndpointName, healthz.Ping)
-
-	if err != nil {
-		return errors.WithStack(err)
+func (builder *managerBuilder) getManager(config *rest.Config, options manager.Options) (manager.Manager, error) {
+	var err error
+	if builder.mgr == nil {
+		builder.mgr, err = ctrl.NewManager(config, options)
 	}
 
-	return nil
+	return builder.mgr, err
+}
+
+func (builder *managerBuilder) setManager(mgr manager.Manager) {
+	builder.mgr = mgr
 }

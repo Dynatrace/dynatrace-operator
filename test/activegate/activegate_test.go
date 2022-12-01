@@ -6,8 +6,6 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"os"
-	"path"
 	"strings"
 	"testing"
 
@@ -85,12 +83,13 @@ var testEnvironment env.Environment
 
 func TestMain(m *testing.M) {
 	testEnvironment = environment.Get()
-	testEnvironment.BeforeEachTest(dynakube.DeleteIfExists())
+
+	testEnvironment.BeforeEachTest(dynakube.DeleteIfExists(dynakube.NewBuilder().WithDefaultObjectMeta().Build()))
 	testEnvironment.BeforeEachTest(oneagent.WaitForDaemonSetPodsDeletion())
-	testEnvironment.BeforeEachTest(namespace.Recreate(dynakube.Namespace))
+	testEnvironment.BeforeEachTest(namespace.Recreate(namespace.NewBuilder(dynakube.Namespace).Build()))
 	testEnvironment.BeforeEachTest(proxy.DeleteProxyIfExists())
 
-	testEnvironment.AfterEachTest(dynakube.DeleteIfExists())
+	testEnvironment.AfterEachTest(dynakube.DeleteIfExists(dynakube.NewBuilder().WithDefaultObjectMeta().Build()))
 	testEnvironment.AfterEachTest(oneagent.WaitForDaemonSetPodsDeletion())
 	testEnvironment.AfterEachTest(namespace.Delete(dynakube.Namespace))
 	testEnvironment.AfterEachTest(proxy.DeleteProxyIfExists())
@@ -107,11 +106,7 @@ func TestActiveGateProxy(t *testing.T) {
 }
 
 func install(t *testing.T, proxySpec *v1beta1.DynaKubeProxy) features.Feature {
-	currentWorkingDirectory, err := os.Getwd()
-	require.NoError(t, err)
-
-	secretPath := path.Join(currentWorkingDirectory, "../testdata/secrets/activegate-install.yaml")
-	secretConfig, err := secrets.NewFromConfig(afero.NewOsFs(), secretPath)
+	secretConfig, err := secrets.DefaultSingleTenant(afero.NewOsFs())
 
 	require.NoError(t, err)
 
@@ -122,12 +117,19 @@ func install(t *testing.T, proxySpec *v1beta1.DynaKubeProxy) features.Feature {
 
 	proxy.InstallProxy(defaultInstallation, proxySpec)
 
-	defaultInstallation.Assess("dynakube applied", dynakube.ApplyDynakube(secretConfig.ApiUrl, &v1beta1.CloudNativeFullStackSpec{}, proxySpec))
+	defaultInstallation.Assess("dynakube applied", dynakube.Apply(
+		dynakube.NewBuilder().
+			WithDefaultObjectMeta().
+			WithActiveGate().
+			WithDynakubeNamespaceSelector().
+			ApiUrl(secretConfig.ApiUrl).
+			CloudNative(&v1beta1.CloudNativeFullStackSpec{}).
+			Proxy(proxySpec).
+			Build()),
+	)
 
 	assessDynakubeStartup(defaultInstallation)
-
 	assessOneAgentsAreRunning(defaultInstallation)
-
 	assessActiveGate(defaultInstallation)
 
 	return defaultInstallation.Feature()
@@ -135,7 +137,7 @@ func install(t *testing.T, proxySpec *v1beta1.DynaKubeProxy) features.Feature {
 
 func installAndDeploy(builder *features.FeatureBuilder, secretConfig secrets.Secret) {
 	builder.Setup(secrets.ApplyDefault(secretConfig))
-	builder.Setup(operator.InstallForKubernetes())
+	builder.Setup(operator.InstallFromSource(true))
 }
 
 func assessDeployment(builder *features.FeatureBuilder) {
@@ -145,9 +147,9 @@ func assessDeployment(builder *features.FeatureBuilder) {
 }
 
 func assessDynakubeStartup(builder *features.FeatureBuilder) {
-	builder.Assess("activegate started", WaitForStatefulSet())
 	builder.Assess("oneagent started", oneagent.WaitForDaemonset())
-	builder.Assess("dynakube phase changes to 'Running'", dynakube.WaitForDynakubePhase())
+	builder.Assess("dynakube phase changes to 'Running'", dynakube.WaitForDynakubePhase(
+		dynakube.NewBuilder().WithDefaultObjectMeta().Build()))
 }
 
 func assessOneAgentsAreRunning(builder *features.FeatureBuilder) {
@@ -155,6 +157,7 @@ func assessOneAgentsAreRunning(builder *features.FeatureBuilder) {
 }
 
 func assessActiveGate(builder *features.FeatureBuilder) {
+	builder.Assess("ActiveGate started", WaitForStatefulSet())
 	builder.Assess("ActiveGate has required containers", checkIfAgHasContainers)
 	builder.Assess("ActiveGate modules are active", checkActiveModules)
 	builder.Assess("ActiveGate containers have mount points", checkMountPoints)
@@ -166,17 +169,17 @@ func assessActiveGate(builder *features.FeatureBuilder) {
 func checkIfAgHasContainers(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 	resources := environmentConfig.Client().Resources()
 
-	var pod corev1.Pod
-	require.NoError(t, resources.WithNamespace(dynakube.Namespace).Get(ctx, agPodName, agNamespace, &pod))
+	var activeGatePod corev1.Pod
+	require.NoError(t, resources.WithNamespace(dynakube.Namespace).Get(ctx, agPodName, agNamespace, &activeGatePod))
 
-	require.NotNil(t, pod.Spec)
-	require.NotEmpty(t, pod.Spec.InitContainers)
-	require.NotEmpty(t, pod.Spec.Containers)
+	require.NotNil(t, activeGatePod.Spec)
+	require.NotEmpty(t, activeGatePod.Spec.InitContainers)
+	require.NotEmpty(t, activeGatePod.Spec.Containers)
 
-	assertInitContainerUnknown(t, pod.Spec.InitContainers)
-	assertInitContainerMissing(t, pod.Spec.InitContainers)
-	assertContainerUnknown(t, pod.Spec.Containers)
-	assertContainerMissing(t, pod.Spec.Containers)
+	assertInitContainerUnknown(t, activeGatePod.Spec.InitContainers)
+	assertInitContainerMissing(t, activeGatePod.Spec.InitContainers)
+	assertContainerUnknown(t, activeGatePod.Spec.Containers)
+	assertContainerMissing(t, activeGatePod.Spec.Containers)
 
 	return ctx
 }
@@ -184,8 +187,8 @@ func checkIfAgHasContainers(ctx context.Context, t *testing.T, environmentConfig
 func checkActiveModules(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 	resources := environmentConfig.Client().Resources()
 
-	var pod corev1.Pod
-	require.NoError(t, resources.WithNamespace("dynatrace").Get(ctx, agPodName, agNamespace, &pod))
+	var activeGatePod corev1.Pod
+	require.NoError(t, resources.WithNamespace("dynatrace").Get(ctx, agPodName, agNamespace, &activeGatePod))
 
 	clientset, err := kubernetes.NewForConfig(resources.GetConfig())
 	require.NoError(t, err)
@@ -203,11 +206,11 @@ func checkActiveModules(ctx context.Context, t *testing.T, environmentConfig *en
 func checkMountPoints(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 	resources := environmentConfig.Client().Resources()
 
-	var pod corev1.Pod
-	require.NoError(t, resources.WithNamespace("dynatrace").Get(ctx, agPodName, agNamespace, &pod))
+	var activeGatePod corev1.Pod
+	require.NoError(t, resources.WithNamespace("dynatrace").Get(ctx, agPodName, agNamespace, &activeGatePod))
 
 	for name, mountPoints := range agMounts {
-		assertMountPointMissing(t, environmentConfig, pod, name, mountPoints)
+		assertMountPointMissing(t, environmentConfig, activeGatePod, name, mountPoints)
 	}
 
 	return ctx
@@ -224,12 +227,12 @@ func checkService(ctx context.Context, t *testing.T, environmentConfig *envconf.
 	}).Stream(ctx)
 	require.NoError(t, err)
 
-	logs.AssertLogContains(t, logStream, "RUNNING")
+	logs.AssertContains(t, logStream, "RUNNING")
 
 	return ctx
 }
 
-func assertMountPointMissing(t *testing.T, environmentConfig *envconf.Config, podItem corev1.Pod, containerName string, mountPoints []string) {
+func assertMountPointMissing(t *testing.T, environmentConfig *envconf.Config, podItem corev1.Pod, containerName string, mountPoints []string) { //nolint:revive // argument-limit
 	executionQuery := pod.NewExecutionQuery(podItem, containerName, "cat /proc/mounts")
 	executionResult, err := executionQuery.Execute(environmentConfig.Client().RESTConfig())
 	require.NoError(t, err)

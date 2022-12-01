@@ -2,10 +2,10 @@ package dtpullsecret
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -20,32 +20,30 @@ const (
 )
 
 type Reconciler struct {
-	client.Client
-	apiReader           client.Reader
-	instance            *dynatracev1beta1.DynaKube
-	scheme              *runtime.Scheme
-	apiToken, paasToken string
+	ctx       context.Context
+	client    client.Client
+	apiReader client.Reader
+	dynakube  *dynatracev1beta1.DynaKube
+	scheme    *runtime.Scheme
+	tokens    token.Tokens
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, instance *dynatracev1beta1.DynaKube, apiToken, paasToken string) *Reconciler {
-	if paasToken == "" {
-		paasToken = apiToken
-	}
+func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, tokens token.Tokens) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
 	return &Reconciler{
-		Client:    clt,
+		ctx:       ctx,
+		client:    clt,
 		apiReader: apiReader,
 		scheme:    scheme,
-		instance:  instance,
-		apiToken:  apiToken,
-		paasToken: paasToken,
+		dynakube:  dynakube,
+		tokens:    tokens,
 	}
 }
 
 func (r *Reconciler) Reconcile() error {
-	if r.instance.Spec.CustomPullSecret == "" {
+	if r.dynakube.Spec.CustomPullSecret == "" {
 		err := r.reconcilePullSecret()
 		if err != nil {
-			log.Error(err, "could not reconcile pull secret")
+			log.Info("could not reconcile pull secret")
 			return errors.WithStack(err)
 		}
 	}
@@ -56,12 +54,12 @@ func (r *Reconciler) Reconcile() error {
 func (r *Reconciler) reconcilePullSecret() error {
 	pullSecretData, err := r.GenerateData()
 	if err != nil {
-		return fmt.Errorf("could not generate pull secret data: %w", err)
+		return errors.WithMessage(err, "could not generate pull secret data")
 	}
 
 	pullSecret, err := r.createPullSecretIfNotExists(pullSecretData)
 	if err != nil {
-		return fmt.Errorf("failed to create or update secret: %w", err)
+		return errors.WithMessage(err, "failed to create or update secret")
 	}
 
 	return r.updatePullSecretIfOutdated(pullSecret, pullSecretData)
@@ -69,7 +67,7 @@ func (r *Reconciler) reconcilePullSecret() error {
 
 func (r *Reconciler) createPullSecretIfNotExists(pullSecretData map[string][]byte) (*corev1.Secret, error) {
 	var config corev1.Secret
-	err := r.apiReader.Get(context.TODO(), client.ObjectKey{Name: extendWithPullSecretSuffix(r.instance.Name), Namespace: r.instance.Namespace}, &config)
+	err := r.apiReader.Get(r.ctx, client.ObjectKey{Name: extendWithPullSecretSuffix(r.dynakube.Name), Namespace: r.dynakube.Namespace}, &config)
 	if k8serrors.IsNotFound(err) {
 		log.Info("creating pull secret")
 		return r.createPullSecret(pullSecretData)
@@ -85,15 +83,15 @@ func (r *Reconciler) updatePullSecretIfOutdated(pullSecret *corev1.Secret, desir
 }
 
 func (r *Reconciler) createPullSecret(pullSecretData map[string][]byte) (*corev1.Secret, error) {
-	pullSecret := BuildPullSecret(r.instance, pullSecretData)
+	pullSecret := BuildPullSecret(r.dynakube, pullSecretData)
 
-	if err := controllerutil.SetControllerReference(r.instance, pullSecret, r.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(r.dynakube, pullSecret, r.scheme); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	err := r.Create(context.TODO(), pullSecret)
+	err := r.client.Create(r.ctx, pullSecret)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create secret '%s': %w", extendWithPullSecretSuffix(r.instance.Name), err)
+		return nil, errors.WithMessagef(err, "failed to create secret %s", extendWithPullSecretSuffix(r.dynakube.Name))
 	}
 	return pullSecret, nil
 }
@@ -101,8 +99,8 @@ func (r *Reconciler) createPullSecret(pullSecretData map[string][]byte) (*corev1
 func (r *Reconciler) updatePullSecret(pullSecret *corev1.Secret, desiredPullSecretData map[string][]byte) error {
 	log.Info("updating secret", "name", pullSecret.Name)
 	pullSecret.Data = desiredPullSecretData
-	if err := r.Update(context.TODO(), pullSecret); err != nil {
-		return fmt.Errorf("failed to update secret %s: %w", pullSecret.Name, err)
+	if err := r.client.Update(r.ctx, pullSecret); err != nil {
+		return errors.WithMessagef(err, "failed to update secret %s", pullSecret.Name)
 	}
 	return nil
 }
@@ -111,11 +109,11 @@ func isPullSecretEqual(currentSecret *corev1.Secret, desired map[string][]byte) 
 	return reflect.DeepEqual(desired, currentSecret.Data)
 }
 
-func BuildPullSecret(instance *dynatracev1beta1.DynaKube, pullSecretData map[string][]byte) *corev1.Secret {
+func BuildPullSecret(dynakube *dynatracev1beta1.DynaKube, pullSecretData map[string][]byte) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      extendWithPullSecretSuffix(instance.Name),
-			Namespace: instance.Namespace,
+			Name:      extendWithPullSecretSuffix(dynakube.Name),
+			Namespace: dynakube.Namespace,
 		},
 		Type: corev1.SecretTypeDockerConfigJson,
 		Data: pullSecretData,

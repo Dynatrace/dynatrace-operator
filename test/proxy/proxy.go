@@ -21,9 +21,9 @@ import (
 )
 
 const (
-	proxyNamespace  = "proxy"
-	proxyDeployment = "squid"
-	curlPodProxy    = "curl-proxy"
+	ProxyNamespace  = "proxy"
+	ProxyDeployment = "squid"
+	CurlPodProxy    = "curl-proxy"
 )
 
 var ProxySpec = &v1beta1.DynaKubeProxy{
@@ -33,39 +33,39 @@ var ProxySpec = &v1beta1.DynaKubeProxy{
 func InstallProxy(builder *features.FeatureBuilder, proxySpec *v1beta1.DynaKubeProxy) {
 	if proxySpec != nil {
 		builder.Assess("install proxy", manifests.InstallFromFile("../testdata/proxy/proxy.yaml"))
-		builder.Assess("proxy started", deployment.WaitFor(proxyDeployment, proxyNamespace))
+		builder.Assess("proxy started", deployment.WaitFor(ProxyDeployment, ProxyNamespace))
 
 		builder.Assess("query webhook via proxy", manifests.InstallFromFile("../testdata/activegate/curl-pod-webhook-via-proxy.yaml"))
-		builder.Assess("query is completed", waitForCurlProxyPod(curlPodProxy, dynakube.Namespace))
-		builder.Assess("proxy is running", checkProxyService())
+		builder.Assess("query is completed", WaitForCurlProxyPod(CurlPodProxy, dynakube.Namespace))
+		builder.Assess("proxy is running", CheckProxyService())
 	}
 }
 
 func DeleteProxyIfExists() func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
 	return func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
-		return namespace.DeleteIfExists(proxyNamespace)(ctx, environmentConfig, t)
+		return namespace.DeleteIfExists(ProxyNamespace)(ctx, environmentConfig, t)
 	}
 }
 
-func checkProxyService() features.Func {
+func CheckProxyService() features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resources := environmentConfig.Client().Resources()
 
 		clientset, err := kubernetes.NewForConfig(resources.GetConfig())
 		require.NoError(t, err)
 
-		logStream, err := clientset.CoreV1().Pods(dynakube.Namespace).GetLogs(curlPodProxy, &corev1.PodLogOptions{
-			Container: curlPodProxy,
+		logStream, err := clientset.CoreV1().Pods(dynakube.Namespace).GetLogs(CurlPodProxy, &corev1.PodLogOptions{
+			Container: CurlPodProxy,
 		}).Stream(ctx)
 		require.NoError(t, err)
 
-		logs.AssertLogContains(t, logStream, "CONNECT dynatrace-webhook.dynatrace.svc.cluster.local")
+		logs.AssertContains(t, logStream, "CONNECT dynatrace-webhook.dynatrace.svc.cluster.local")
 
 		return ctx
 	}
 }
 
-func waitForCurlProxyPod(name string, namespace string) features.Func {
+func WaitForCurlProxyPod(name string, namespace string) features.Func {
 	return pod.WaitForCondition(name, namespace, func(object k8s.Object) bool {
 		pod, isPod := object.(*corev1.Pod)
 		return isPod && pod.Status.Phase == corev1.PodSucceeded

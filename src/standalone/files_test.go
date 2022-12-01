@@ -27,7 +27,6 @@ func TestCreateConfFile(t *testing.T) {
 		content, err := ioutil.ReadAll(file)
 		require.NoError(t, err)
 		assert.Contains(t, string(content), "test")
-
 	})
 	t.Run(`create nested file`, func(t *testing.T) {
 		path := filepath.Join("dir1", "dir2", "test")
@@ -41,7 +40,6 @@ func TestCreateConfFile(t *testing.T) {
 		content, err := ioutil.ReadAll(file)
 		require.NoError(t, err)
 		assert.Contains(t, string(content), "test")
-
 	})
 }
 

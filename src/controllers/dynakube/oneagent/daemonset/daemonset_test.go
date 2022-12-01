@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
+	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -37,7 +38,7 @@ func TestUseImmutableImage(t *testing.T) {
 
 		podSpecs := ds.Spec.Template.Spec
 		assert.NotNil(t, podSpecs)
-		assert.Equal(t, instance.ImmutableOneAgentImage(), podSpecs.Containers[0].Image)
+		assert.Equal(t, instance.OneAgentImage(), podSpecs.Containers[0].Image)
 	})
 	t.Run(`if image is set, set image is used`, func(t *testing.T) {
 		instance := dynatracev1beta1.DynaKube{
@@ -96,7 +97,7 @@ func TestLabels(t *testing.T) {
 
 		podSpecs := ds.Spec.Template.Spec
 		assert.NotNil(t, podSpecs)
-		assert.Equal(t, instance.ImmutableOneAgentImage(), podSpecs.Containers[0].Image)
+		assert.Equal(t, instance.OneAgentImage(), podSpecs.Containers[0].Image)
 		assert.Equal(t, expectedLabels, ds.Labels)
 		assert.Equal(t, expectedMatchLabels, ds.Spec.Selector.MatchLabels)
 		assert.Equal(t, expectedLabels, ds.Spec.Template.Labels)
@@ -136,7 +137,6 @@ func TestLabels(t *testing.T) {
 		assert.Equal(t, expectedLabels, ds.Labels)
 		assert.Equal(t, expectedMatchLabels, ds.Spec.Selector.MatchLabels)
 		assert.Equal(t, expectedLabels, ds.Spec.Template.Labels)
-
 	})
 }
 
@@ -596,7 +596,7 @@ func TestImmutableOneAgentImage(t *testing.T) {
 		}
 		image := dsInfo.immutableOneAgentImage()
 
-		assert.Equal(t, dsInfo.instance.ImmutableOneAgentImage(), image)
+		assert.Equal(t, dsInfo.instance.OneAgentImage(), image)
 	})
 }
 
@@ -612,7 +612,8 @@ func TestAnnotations(t *testing.T) {
 			},
 		}
 		expectedAnnotations := map[string]string{
-			annotationUnprivileged: annotationUnprivilegedValue,
+			webhook.AnnotationDynatraceInject: "false",
+			annotationUnprivileged:            annotationUnprivilegedValue,
 		}
 
 		builder := NewCloudNativeFullStack(&dynakube, testClusterID)
@@ -631,7 +632,8 @@ func TestAnnotations(t *testing.T) {
 			},
 		}
 		expectedAnnotations := map[string]string{
-			annotationUnprivileged: annotationUnprivilegedValue,
+			webhook.AnnotationDynatraceInject: "false",
+			annotationUnprivileged:            annotationUnprivilegedValue,
 		}
 
 		builder := NewHostMonitoring(&dynakube, testClusterID)
@@ -650,7 +652,8 @@ func TestAnnotations(t *testing.T) {
 			},
 		}
 		expectedAnnotations := map[string]string{
-			annotationUnprivileged: annotationUnprivilegedValue,
+			webhook.AnnotationDynatraceInject: "false",
+			annotationUnprivileged:            annotationUnprivilegedValue,
 		}
 
 		builder := NewClassicFullStack(&dynakube, testClusterID)
@@ -675,8 +678,9 @@ func TestAnnotations(t *testing.T) {
 			},
 		}
 		expectedAnnotations := map[string]string{
-			annotationUnprivileged: annotationUnprivilegedValue,
-			testKey:                testName,
+			webhook.AnnotationDynatraceInject: "false",
+			annotationUnprivileged:            annotationUnprivilegedValue,
+			testKey:                           testName,
 		}
 
 		builder := NewCloudNativeFullStack(&dynakube, testClusterID)
@@ -699,8 +703,9 @@ func TestAnnotations(t *testing.T) {
 			},
 		}
 		expectedAnnotations := map[string]string{
-			annotationUnprivileged: annotationUnprivilegedValue,
-			testKey:                testName,
+			webhook.AnnotationDynatraceInject: "false",
+			annotationUnprivileged:            annotationUnprivilegedValue,
+			testKey:                           testName,
 		}
 
 		builder := NewHostMonitoring(&dynakube, testClusterID)
@@ -723,8 +728,9 @@ func TestAnnotations(t *testing.T) {
 			},
 		}
 		expectedAnnotations := map[string]string{
-			annotationUnprivileged: annotationUnprivilegedValue,
-			testKey:                testName,
+			webhook.AnnotationDynatraceInject: "false",
+			annotationUnprivileged:            annotationUnprivilegedValue,
+			testKey:                           testName,
 		}
 
 		builder := NewClassicFullStack(&dynakube, testClusterID)
