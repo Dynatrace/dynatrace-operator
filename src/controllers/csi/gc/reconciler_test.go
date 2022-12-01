@@ -31,15 +31,14 @@ func TestReconcile(t *testing.T) {
 		}
 		gc := CSIGarbageCollector{
 			apiReader: fake.NewClient(&dynakube),
-			fs: afero.NewMemMapFs(),
-			db: metadata.FakeMemoryDB(),
+			fs:        afero.NewMemMapFs(),
+			db:        metadata.FakeMemoryDB(),
 		}
 		result, err := gc.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakube.Name}})
 
 		require.NoError(t, err)
 		assert.Equal(t, result, reconcile.Result{})
 	})
-
 }
 
 func TestCollectGCInfo(t *testing.T) {
