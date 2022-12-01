@@ -15,11 +15,15 @@ test/e2e/classic: manifests
 
 ## Runs CloudNative istio e2e test only
 test/e2e/cloudnative/istio: manifests
-	go test -v -tags e2e -count=1 -failfast ./test/cloudnativeistio
+	go test -v -tags e2e -timeout 10m -count=1 -failfast ./test/cloudnative/istio
 
 ## Runs CloudNative proxy e2e test only
 test/e2e/cloudnative/proxy: manifests
 	go test -v -tags e2e -count=1 -failfast ./test/cloudnative/proxy
+
+## Runs CloudNative network problem e2e test only
+test/e2e/cloudnative/network: manifests
+	go test -v -tags e2e -timeout 10m -count=1 -failfast ./test/cloudnative/network
 
 ## Runs Application Monitoring e2e test only
 test/e2e/applicationmonitoring: manifests
