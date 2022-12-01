@@ -1,10 +1,7 @@
 CRD_OPTIONS ?= "crd:crdVersions=v1"
 OLM ?= false
 
-DYNATRACE_OPERATOR_CRD_YAML=dynatrace-operator-crd.yaml
-
 HELM_CHART_DEFAULT_DIR=config/helm/chart/default/
-HELM_GENERATED_DIR=$(HELM_CHART_DEFAULT_DIR)/generated/
 HELM_TEMPLATES_DIR=$(HELM_CHART_DEFAULT_DIR)/templates/
 HELM_CRD_DIR=$(HELM_TEMPLATES_DIR)/Common/crd/
 
