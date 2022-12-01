@@ -6,7 +6,6 @@ import (
 	"context"
 	"sort"
 	"testing"
-	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/arch"
@@ -14,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/sampleapps"
@@ -22,7 +22,6 @@ import (
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
@@ -83,7 +82,7 @@ func getAvailableVersions(secret secrets.Secret, t *testing.T) []string {
 }
 
 func assessVersionChecks(builder *features.FeatureBuilder, version version.SemanticVersion) {
-	builder.Assess("wait for sample deployment", waitForSampleDeployment)
+	builder.Assess("wait for sample deployment", deployment.WaitFor("myapp", "test-namespace-1"))
 	builder.Assess("restart sample apps", sampleapps.Restart)
 	builder.Assess("check init containers", checkInitContainers)
 	builder.Assess("check env vars of init container", checkVersionInSampleApp(version))
@@ -132,20 +131,8 @@ func updateDynakube(semanticVersion version.SemanticVersion) features.Func {
 	}
 }
 
-func waitForSampleDeployment(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-	resources := environmentConfig.Client().Resources()
-	var deployment appsv1.Deployment
-	err := resources.Get(ctx, "myapp", "test-namespace-1", &deployment)
-	require.NoError(t, err)
-	time.Sleep(time.Minute)
-
-	assert.Equal(t, deployment.Status.AvailableReplicas, deployment.Status.ReadyReplicas)
-	return ctx
-}
-
 func checkVersionInSampleApp(semanticVersion version.SemanticVersion) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		time.Sleep(time.Minute)
 		resources := environmentConfig.Client().Resources()
 		pods := sampleapps.Get(ctx, t, resources)
 
