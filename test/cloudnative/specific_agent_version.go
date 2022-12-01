@@ -38,7 +38,7 @@ var injectionLabel = map[string]string{
 	"inject": "dynakube",
 }
 
-func AgentVersionSet(t *testing.T) features.Feature {
+func SpecificAgentVersion(t *testing.T) features.Feature {
 	secretConfig, err := secrets.DefaultSingleTenant(afero.NewOsFs())
 	require.NoError(t, err)
 
@@ -52,29 +52,29 @@ func AgentVersionSet(t *testing.T) features.Feature {
 		CloudNativeWithAgentVersion(&dynatracev1beta1.CloudNativeFullStackSpec{}, oldVersion).
 		Build()
 
-	agentVersionset := features.New("cloudnative with agent version set")
-	agentVersionset.Setup(namespace.Create(
+	specificAgentVersion := features.New("cloudnative with specific agent version")
+	specificAgentVersion.Setup(namespace.Create(
 		namespace.NewBuilder("test-namespace-1").
 			WithLabels(injectionLabel).
 			Build()),
 	)
-	agentVersionset.Setup(manifests.InstallFromFile("../testdata/cloudnative/sample-deployment.yaml"))
-	setup.InstallDynatraceFromSource(agentVersionset, &secretConfig)
+	specificAgentVersion.Setup(manifests.InstallFromFile("../testdata/cloudnative/sample-deployment.yaml"))
 
-	setup.AssessOperatorDeployment(agentVersionset)
+	setup.InstallDynatraceFromSource(specificAgentVersion, &secretConfig)
+	setup.AssessOperatorDeployment(specificAgentVersion)
 
-	agentVersionset.Assess("install dynakube", dynakube.Apply(dk))
+	specificAgentVersion.Assess("install dynakube", dynakube.Apply(dk))
 
-	assessVersionChecks(agentVersionset, oldVersion)
+	assessVersionChecks(specificAgentVersion, oldVersion)
 
-	agentVersionset.Assess("update dynakube", updateDynakube(newVersion))
-	agentVersionset.Assess("dynakube phase changes to 'Running'",
+	specificAgentVersion.Assess("update dynakube", updateDynakube(newVersion))
+	specificAgentVersion.Assess("dynakube phase changes to 'Running'",
 		dynakube.WaitForDynakubePhase(dynakube.NewBuilder().WithDefaultObjectMeta().Build()))
-	setup.AssessOperatorDeployment(agentVersionset)
+	setup.AssessOperatorDeployment(specificAgentVersion)
 
-	assessVersionChecks(agentVersionset, newVersion)
+	assessVersionChecks(specificAgentVersion, newVersion)
 
-	return agentVersionset.Feature()
+	return specificAgentVersion.Feature()
 }
 
 func getAvailableVersions(secret secrets.Secret, t *testing.T) []string {
@@ -88,7 +88,7 @@ func getAvailableVersions(secret secrets.Secret, t *testing.T) []string {
 
 func assessVersionChecks(builder *features.FeatureBuilder, version version.SemanticVersion) {
 	builder.Assess("restart csi driver", restartCSIDriver)
-	builder.Assess("start sample apps and injection", sampleapps.Restart)
+	builder.Assess("restart sample apps", sampleapps.Restart)
 	builder.Assess("check init containers", checkInitContainers)
 	builder.Assess("check env vars of init container", checkVersionInSampleApp(version))
 }
@@ -167,17 +167,21 @@ func checkVersionInSampleApp(semanticVersion version.SemanticVersion) features.F
 			require.NotNil(t, podItem.Spec)
 			require.NotNil(t, podItem.Spec.InitContainers)
 			initContainer := podItem.Spec.InitContainers[0]
-			if initContainer.Name == "install-oneagent" {
-				require.NotNil(t, initContainer.Env)
-				require.True(t, kubeobjects.EnvVarIsIn(initContainer.Env, agentVersion))
-				for _, env := range initContainer.Env {
-					if env.Name == agentVersion {
-						require.NotNil(t, env.Value)
-						assert.Equal(t, semanticVersion.String(), env.Value)
-					}
-				}
-			}
+			checkVersionInInitContainer(t, initContainer, semanticVersion)
 		}
 		return ctx
+	}
+}
+
+func checkVersionInInitContainer(t *testing.T, initContainer corev1.Container, semanticVersion version.SemanticVersion) {
+	if initContainer.Name == "install-oneagent" {
+		require.NotNil(t, initContainer.Env)
+		require.True(t, kubeobjects.EnvVarIsIn(initContainer.Env, agentVersion))
+		for _, env := range initContainer.Env {
+			if env.Name == agentVersion {
+				require.NotNil(t, env.Value)
+				assert.Equal(t, semanticVersion.String(), env.Value)
+			}
+		}
 	}
 }
