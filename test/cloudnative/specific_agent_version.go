@@ -4,6 +4,7 @@ package cloudnative
 
 import (
 	"context"
+	"sort"
 	"testing"
 	"time"
 
@@ -12,7 +13,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
-	"github.com/Dynatrace/dynatrace-operator/test/csi"
 	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/namespace"
@@ -25,9 +25,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/e2e-framework/klient/k8s"
-	"sigs.k8s.io/e2e-framework/klient/wait"
-	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -43,6 +40,7 @@ func SpecificAgentVersion(t *testing.T) features.Feature {
 	require.NoError(t, err)
 
 	versions := getAvailableVersions(secretConfig, t)
+	sort.Strings(versions)
 	oldVersion, newVersion := assignVersions(t, versions, version.SemanticVersion{}, version.SemanticVersion{})
 
 	dk := dynakube.NewBuilder().
@@ -58,18 +56,16 @@ func SpecificAgentVersion(t *testing.T) features.Feature {
 			WithLabels(injectionLabel).
 			Build()),
 	)
-	specificAgentVersion.Setup(manifests.InstallFromFile("../testdata/cloudnative/sample-deployment.yaml"))
 
 	setup.InstallDynatraceFromSource(specificAgentVersion, &secretConfig)
 	setup.AssessOperatorDeployment(specificAgentVersion)
 
+	specificAgentVersion.Assess("install sample deployment", manifests.InstallFromFile("../testdata/cloudnative/sample-deployment.yaml"))
 	specificAgentVersion.Assess("install dynakube", dynakube.Apply(dk))
 
 	assessVersionChecks(specificAgentVersion, oldVersion)
 
 	specificAgentVersion.Assess("update dynakube", updateDynakube(newVersion))
-	specificAgentVersion.Assess("dynakube phase changes to 'Running'",
-		dynakube.WaitForDynakubePhase(dynakube.NewBuilder().WithDefaultObjectMeta().Build()))
 	setup.AssessOperatorDeployment(specificAgentVersion)
 
 	assessVersionChecks(specificAgentVersion, newVersion)
@@ -87,7 +83,7 @@ func getAvailableVersions(secret secrets.Secret, t *testing.T) []string {
 }
 
 func assessVersionChecks(builder *features.FeatureBuilder, version version.SemanticVersion) {
-	builder.Assess("restart csi driver", restartCSIDriver)
+	builder.Assess("wait for sample deployment", waitForSampleDeployment)
 	builder.Assess("restart sample apps", sampleapps.Restart)
 	builder.Assess("check init containers", checkInitContainers)
 	builder.Assess("check env vars of init container", checkVersionInSampleApp(version))
@@ -136,23 +132,14 @@ func updateDynakube(semanticVersion version.SemanticVersion) features.Func {
 	}
 }
 
-func restartCSIDriver(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+func waitForSampleDeployment(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 	resources := environmentConfig.Client().Resources()
-	var csiDaemonSet appsv1.DaemonSet
-
-	err := csi.ForEachPod(ctx, resources, func(podItem corev1.Pod) {
-		require.NoError(t, resources.Delete(ctx, &podItem))
-	})
-
-	require.NoError(t, resources.Get(ctx, "dynatrace-oneagent-csi-driver", "dynatrace", &csiDaemonSet))
-	require.NoError(t, wait.For(conditions.New(resources).ResourceMatch(&csiDaemonSet, func(object k8s.Object) bool {
-		daemonSet, isDaemonSet := object.(*appsv1.DaemonSet)
-		return isDaemonSet && daemonSet.Status.NumberReady == daemonSet.Status.NumberAvailable
-	}), wait.WithTimeout(10*time.Minute)))
-
+	var deployment appsv1.Deployment
+	err := resources.Get(ctx, "myapp", "test-namespace-1", &deployment)
 	require.NoError(t, err)
 	time.Sleep(time.Minute)
 
+	assert.Equal(t, deployment.Status.AvailableReplicas, deployment.Status.ReadyReplicas)
 	return ctx
 }
 
