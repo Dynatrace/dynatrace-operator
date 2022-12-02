@@ -1,7 +1,6 @@
 package bash
 
 import (
-	"fmt"
 	"strings"
 )
 
@@ -11,7 +10,7 @@ func DiskUsageWithTotal(directory string) Command {
 	return Command{"du", "-c", directory}
 }
 
-func FilterLastLineOnly() []string {
+func FilterLastLineOnly() Command {
 	return Command{"tail", "-n", "1"}
 }
 
@@ -35,11 +34,7 @@ func Shell(command Command) Command {
 }
 
 func (c Command) String() string {
-	cmdString := ""
-	for _, str := range c {
-		cmdString = fmt.Sprintf("%s %s", cmdString, str)
-	}
-	return strings.Trim(cmdString, " ")
+	return strings.Join(c, " ")
 }
 
 func Echo(msg string) Command {
