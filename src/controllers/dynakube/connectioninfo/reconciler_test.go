@@ -29,15 +29,9 @@ func TestReconcile_ActivegateSecret(t *testing.T) {
 			Name:      testName,
 		}}
 
-	tenantInfoResponse := &dtclient.ActiveGateConnectionInfo{
-		ConnectionInfo: dtclient.ConnectionInfo{
-			TenantUUID:  testTenantUuid,
-			TenantToken: testTenantToken,
-			Endpoints:   testTenantEndpoints,
-		},
-	}
 	dtc := &dtclient.MockDynatraceClient{}
-	dtc.On("GetActiveGateConnectionInfo").Return(tenantInfoResponse, nil)
+	dtc.On("GetActiveGateConnectionInfo").Return(getTestActiveGateConnectionInfo(), nil)
+	dtc.On("GetOneAgentConnectionInfo").Return(getTestOneAgentConnectionInfo(), nil)
 
 	t.Run(`create activegate secret`, func(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().Build()
@@ -104,20 +98,12 @@ func TestReconcile_OneagentSecret(t *testing.T) {
 			Namespace: testNamespace,
 			Name:      testName,
 			Annotations: map[string]string{
-				dynatracev1beta1.AnnotationFeatureActiveGateRawImage:     "false",
-				dynatracev1beta1.AnnotationFeatureOneAgentImmutableImage: "true",
+				dynatracev1beta1.AnnotationFeatureActiveGateRawImage: "false",
 			},
 		}}
 
-	connectionInfo := dtclient.OneAgentConnectionInfo{
-		ConnectionInfo: dtclient.ConnectionInfo{
-			TenantUUID:  testTenantUuid,
-			TenantToken: testTenantToken,
-			Endpoints:   testTenantEndpoints,
-		},
-	}
 	dtc := &dtclient.MockDynatraceClient{}
-	dtc.On("GetOneAgentConnectionInfo").Return(connectionInfo, nil)
+	dtc.On("GetOneAgentConnectionInfo").Return(getTestOneAgentConnectionInfo(), nil)
 
 	t.Run(`create oneagent secret`, func(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().Build()
@@ -178,4 +164,24 @@ func TestReconcile_OneagentSecret(t *testing.T) {
 		err := r.Reconcile()
 		require.NoError(t, err)
 	})
+}
+
+func getTestOneAgentConnectionInfo() dtclient.OneAgentConnectionInfo {
+	return dtclient.OneAgentConnectionInfo{
+		ConnectionInfo: dtclient.ConnectionInfo{
+			TenantUUID:  testTenantUuid,
+			TenantToken: testTenantToken,
+			Endpoints:   testTenantEndpoints,
+		},
+	}
+}
+
+func getTestActiveGateConnectionInfo() *dtclient.ActiveGateConnectionInfo {
+	return &dtclient.ActiveGateConnectionInfo{
+		ConnectionInfo: dtclient.ConnectionInfo{
+			TenantUUID:  testTenantUuid,
+			TenantToken: testTenantToken,
+			Endpoints:   testTenantEndpoints,
+		},
+	}
 }

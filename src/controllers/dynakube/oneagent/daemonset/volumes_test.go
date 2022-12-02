@@ -32,9 +32,6 @@ func TestPrepareVolumes(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
 			ObjectMeta: corev1.ObjectMeta{
 				Name: testName,
-				Annotations: map[string]string{
-					dynatracev1beta1.AnnotationFeatureOneAgentImmutableImage: "true",
-				},
 			},
 		}
 		volumes := prepareVolumes(instance)
