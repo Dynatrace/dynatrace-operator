@@ -98,7 +98,7 @@ func TestReconcile_OneagentSecret(t *testing.T) {
 			Namespace: testNamespace,
 			Name:      testName,
 			Annotations: map[string]string{
-				dynatracev1beta1.AnnotationFeatureActiveGateRawImage:     "false",
+				dynatracev1beta1.AnnotationFeatureActiveGateRawImage: "false",
 			},
 		}}
 
@@ -176,8 +176,8 @@ func getTestOneAgentConnectionInfo() dtclient.OneAgentConnectionInfo {
 	}
 }
 
-func getTestActiveGateConnectionInfo() dtclient.ActiveGateConnectionInfo {
-	return dtclient.ActiveGateConnectionInfo{
+func getTestActiveGateConnectionInfo() *dtclient.ActiveGateConnectionInfo {
+	return &dtclient.ActiveGateConnectionInfo{
 		ConnectionInfo: dtclient.ConnectionInfo{
 			TenantUUID:  testTenantUuid,
 			TenantToken: testTenantToken,
