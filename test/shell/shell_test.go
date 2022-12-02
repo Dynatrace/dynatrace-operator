@@ -1,4 +1,4 @@
-package bash
+package shell
 
 import (
 	"github.com/stretchr/testify/assert"
