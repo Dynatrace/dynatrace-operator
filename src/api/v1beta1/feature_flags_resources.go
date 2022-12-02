@@ -9,7 +9,6 @@ const (
 	annotationFeatureActiveGate = AnnotationFeaturePrefix + "activegate-"
 	annotationFeatureEec        = annotationFeatureActiveGate + "eec-"
 	annotationFeatureStatsd     = annotationFeatureActiveGate + "statsd-"
-	annotationFeatureSynthetic  = annotationFeatureActiveGate + "synthetic-"
 )
 
 // FeatureEecResourcesRequests is a feature flag to define CPU or memory requests for the EEC container
@@ -32,14 +31,6 @@ func (dk *DynaKube) FeatureStatsdResourcesLimits(resourceName corev1.ResourceNam
 	return statsdResourceRequirements(dk, "limits-"+resourceName)
 }
 
-func (dk *DynaKube) FeatureSyntheticResourcesRequests(resourceName corev1.ResourceName) *resource.Quantity {
-	return syntheticResourceRequirements(dk, "requests-"+resourceName)
-}
-
-func (dk *DynaKube) FeatureSyntheticResourcesLimits(resourceName corev1.ResourceName) *resource.Quantity {
-	return syntheticResourceRequirements(dk, "limits-"+resourceName)
-}
-
 func formatResourceName(resourceName corev1.ResourceName) string {
 	return "resources-" + string(resourceName)
 }
@@ -50,10 +41,6 @@ func eecResourceRequirements(dk *DynaKube, resourceName corev1.ResourceName) *re
 
 func statsdResourceRequirements(dk *DynaKube, resourceName corev1.ResourceName) *resource.Quantity {
 	return resourceRequirements(dk, annotationFeatureStatsd, resourceName)
-}
-
-func syntheticResourceRequirements(dk *DynaKube, resourceName corev1.ResourceName) *resource.Quantity {
-	return resourceRequirements(dk, annotationFeatureSynthetic, resourceName)
 }
 
 func resourceRequirements(dk *DynaKube, flagPrefix string, resourceName corev1.ResourceName) *resource.Quantity {

@@ -101,10 +101,6 @@ func (dm DynakubeMapper) updateNamespaces(modifiedNs []*corev1.Namespace) error 
 		if err := dm.client.Update(dm.ctx, ns); err != nil {
 			return err
 		}
-		log.Info(
-			"updated namespace",
-			"namespace", ns.Name,
-			"dynakube", dm.dk.Name)
 	}
 	return nil
 }

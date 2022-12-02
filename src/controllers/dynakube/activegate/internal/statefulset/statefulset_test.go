@@ -379,7 +379,15 @@ func TestBuildCommonEnvs(t *testing.T) {
 			t,
 			dynatracev1beta1.SyntheticCapability.ArgumentName,
 			kubeobjects.FindEnvVar(builder.buildCommonEnvs(), consts.EnvDtCapabilities).
-				Value)
+				Value,
+			"declared env: %v",
+			consts.EnvDtCapabilities)
+
+		assert.Equal(
+			t,
+			modifiers.ActiveGateResourceRequirements,
+			builder.buildResources(),
+			"declared resource requirements for ActiveGate")
 
 		sts, _ := builder.CreateStatefulSet(
 			modifiers.GenerateAllModifiers(

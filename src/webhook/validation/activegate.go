@@ -2,6 +2,7 @@ package validation
 
 import (
 	"fmt"
+	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -62,10 +63,10 @@ func invalidActiveGateCapabilities(dv *dynakubeValidator, dynakube *dynatracev1b
 }
 
 func missingActiveGateMemoryLimit(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
-	if dynakube.ActiveGateMode() {
-		if !memoryLimitSet(dynakube.Spec.ActiveGate.Resources) {
-			return warningMissingActiveGateMemoryLimit
-		}
+	if dynakube.ActiveGateMode() &&
+		!dynakube.IsSyntheticActiveGateEnabled() &&
+		!memoryLimitSet(dynakube.Spec.ActiveGate.Resources) {
+		return warningMissingActiveGateMemoryLimit
 	}
 	return ""
 }
@@ -74,27 +75,31 @@ func memoryLimitSet(resources corev1.ResourceRequirements) bool {
 	return resources.Limits != nil && resources.Limits.Memory() != nil
 }
 
-func exclusiveSyntheticCapability(dv *dynakubeValidator, dk *dynatracev1beta1.DynaKube) string {
-	if dk.IsSyntheticActiveGateEnabled() &&
-		len(dk.Spec.ActiveGate.Capabilities) > 1 {
+func exclusiveSyntheticCapability(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+	if dynakube.IsSyntheticActiveGateEnabled() && len(dynakube.Spec.ActiveGate.Capabilities) > 1 {
 		log.Info(
 			"requested dynakube has the synthetic active gate capability accompanied with others",
-			"name", dk.Name,
-			"namespace", dk.Namespace)
-		return fmt.Sprintf(errorJoinedSyntheticActiveGateCapability, syntheticlessCapabilities(dk))
+			"name", dynakube.Name,
+			"namespace", dynakube.Namespace)
+		return fmt.Sprintf(errorJoinedSyntheticActiveGateCapability, syntheticlessCapabilities(dynakube))
 	}
 	return ""
 }
 
-func syntheticlessCapabilities(dk *dynatracev1beta1.DynaKube) string {
-	collected := []byte{'['}
-	for _, c := range dk.Spec.ActiveGate.Capabilities {
-		if c != dynatracev1beta1.SyntheticCapability.DisplayName {
-			if len(collected) > 1 {
-				collected = append(collected, ' ')
+func syntheticlessCapabilities(dynakube *dynatracev1beta1.DynaKube) string {
+	const separator = ' '
+
+	collected := strings.Builder{}
+	collected.WriteRune('[')
+	for _, capability := range dynakube.Spec.ActiveGate.Capabilities {
+		if capability != dynatracev1beta1.SyntheticCapability.DisplayName {
+			if collected.Len() > 1 {
+				collected.WriteRune(separator)
 			}
-			collected = append(collected, string(c)...)
+			collected.WriteString(string(capability))
 		}
 	}
-	return string(append(collected, ']'))
+	collected.WriteRune(']')
+
+	return collected.String()
 }

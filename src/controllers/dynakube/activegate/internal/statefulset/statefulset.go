@@ -128,7 +128,7 @@ func (statefulSetBuilder Builder) buildBaseContainer() []corev1.Container {
 	container := corev1.Container{
 		Name:            consts.ActiveGateContainerName,
 		Image:           statefulSetBuilder.dynakube.ActiveGateImage(),
-		Resources:       statefulSetBuilder.capability.Properties().Resources,
+		Resources:       statefulSetBuilder.buildResources(),
 		Env:             statefulSetBuilder.buildCommonEnvs(),
 		ImagePullPolicy: corev1.PullAlways,
 		ReadinessProbe: &corev1.Probe{
@@ -159,6 +159,14 @@ func (statefulSetBuilder Builder) buildBaseContainer() []corev1.Container {
 	}
 
 	return []corev1.Container{container}
+}
+
+func (statefulSetBuilder Builder) buildResources() corev1.ResourceRequirements {
+	if statefulSetBuilder.dynakube.IsSyntheticActiveGateEnabled() {
+		return modifiers.ActiveGateResourceRequirements
+	} else {
+		return statefulSetBuilder.capability.Properties().Resources
+	}
 }
 
 func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {

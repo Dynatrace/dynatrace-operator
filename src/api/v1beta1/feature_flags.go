@@ -94,6 +94,13 @@ const (
 
 	falsePhrase = "false"
 	truePhrase  = "true"
+
+	// synthetic node type
+	AnnotationFeatureSyntheticNodeType = AnnotationFeaturePrefix + "synthetic-node-type"
+
+	SyntheticNodeXs = "XS"
+	SyntheticNodeS  = "S"
+	SyntheticNodeM  = "M"
 )
 
 const (
@@ -314,4 +321,12 @@ func (dk *DynaKube) FeatureMaxFailedCsiMountAttempts() int {
 	}
 
 	return maxCsiMountAttempts
+}
+
+func (dk *DynaKube) FeatureSyntheticNodeType() string {
+	node, ok := dk.Annotations[AnnotationFeatureSyntheticNodeType]
+	if !ok {
+		return SyntheticNodeS
+	}
+	return node
 }

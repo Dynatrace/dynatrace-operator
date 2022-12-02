@@ -13,10 +13,8 @@ import (
 )
 
 const (
-	envMaxHeap         = "DT_MAX_HEAP_MEMORY"
-	envMaxHeapDefault  = "1024m"
-	envNodeType        = "DT_NODE_SIZE"
-	envNodeTypeDefault = "S"
+	envNodeType = "DT_NODE_SIZE"
+	envMaxHeap  = "DT_MAX_HEAP_MEMORY"
 
 	ChromiumCacheMountName = "chromium-cache"
 	chromiumCacheMountPath = "/var/tmp/dynatrace/synthetic/cache"
@@ -38,15 +36,71 @@ type SyntheticModifier struct {
 	dynakube dynatracev1beta1.DynaKube
 }
 
-var livenessCmd = []string{
-	"/bin/sh",
-	"-c",
-	"curl http://localhost:7878/command/version",
+// make the compiler watch the implemented interfaces
+var (
+	_ volumeMountModifier = (*SyntheticModifier)(nil)
+	_ envModifier         = (*SyntheticModifier)(nil)
+	_ volumeModifier      = (*SyntheticModifier)(nil)
+)
+
+type nodeRequirements struct {
+	requestResources corev1.ResourceList
+	limitResources   corev1.ResourceList
+
+	jvmHeap                              *resource.Quantity
+	chromiumCacheVolume                  *resource.Quantity
+	tmpStorageVolume                     *resource.Quantity
+	persistentVolumeClaimResourceStorage resource.Quantity
 }
 
-func newSyntheticModifier(kube dynatracev1beta1.DynaKube) SyntheticModifier {
+var nodeRequirementsBySize = map[string]nodeRequirements{
+	dynatracev1beta1.SyntheticNodeXs: nodeRequirements{
+		requestResources:                     buildRequirementResources("0.75", "1.5Gi"),
+		limitResources:                       buildRequirementResources("1.5", "2.5Gi"),
+		jvmHeap:                              buildQuantity("768M"),
+		chromiumCacheVolume:                  buildQuantity("256Mi"),
+		tmpStorageVolume:                     buildQuantity("8Mi"),
+		persistentVolumeClaimResourceStorage: *buildQuantity("4Gi"),
+	},
+
+	dynatracev1beta1.SyntheticNodeS: nodeRequirements{
+		requestResources:                     buildRequirementResources("1", "2Gi"),
+		limitResources:                       buildRequirementResources("2", "3Gi"),
+		jvmHeap:                              buildQuantity("1024M"),
+		chromiumCacheVolume:                  buildQuantity("512Mi"),
+		tmpStorageVolume:                     buildQuantity("10Mi"),
+		persistentVolumeClaimResourceStorage: *buildQuantity("6Gi"),
+	},
+
+	dynatracev1beta1.SyntheticNodeM: nodeRequirements{
+		requestResources:                     buildRequirementResources("1.5", "2.5Gi"),
+		limitResources:                       buildRequirementResources("2.5", "3.5Gi"),
+		jvmHeap:                              buildQuantity("1536M"),
+		chromiumCacheVolume:                  buildQuantity("1Gi"),
+		tmpStorageVolume:                     buildQuantity("12Mi"),
+		persistentVolumeClaimResourceStorage: *buildQuantity("8Gi"),
+	},
+}
+
+func (syn SyntheticModifier) nodeRequirements() nodeRequirements {
+	return nodeRequirementsBySize[syn.dynakube.FeatureSyntheticNodeType()]
+}
+
+var (
+	livenessCmd = []string{
+		"/bin/sh",
+		"-c",
+		"curl http://localhost:7878/command/version",
+	}
+	ActiveGateResourceRequirements = corev1.ResourceRequirements{
+		Limits:   buildRequirementResources("300m", "1Gi"),
+		Requests: buildRequirementResources("150m", "250Mi"),
+	}
+)
+
+func newSyntheticModifier(dynakube dynatracev1beta1.DynaKube) SyntheticModifier {
 	return SyntheticModifier{
-		dynakube: kube,
+		dynakube: dynakube,
 	}
 }
 
@@ -65,7 +119,7 @@ func (syn SyntheticModifier) Modify(sts *appsv1.StatefulSet) {
 		sts.Spec.Template.Spec.Volumes,
 		syn.getVolumes()...)
 	sts.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{}
-	sts.Spec.Template.Spec.SecurityContext.FSGroup = address.Of(int64(1001))
+	sts.Spec.Template.Spec.SecurityContext.FSGroup = address.Of[int64](1001)
 
 	baseContainer := kubeobjects.FindContainerInPodSpec(
 		&sts.Spec.Template.Spec,
@@ -104,11 +158,8 @@ func (syn SyntheticModifier) image() string {
 	return syn.dynakube.SyntheticImage()
 }
 
-// make the compiler watch the implemented volumeMountModifier
-var _ volumeMountModifier = (*SyntheticModifier)(nil)
-
 func (syn SyntheticModifier) getVolumeMounts() []corev1.VolumeMount {
-	private := []corev1.VolumeMount{
+	privateMounts := []corev1.VolumeMount{
 		{
 			Name:      ChromiumCacheMountName,
 			MountPath: chromiumCacheMountPath,
@@ -120,16 +171,20 @@ func (syn SyntheticModifier) getVolumeMounts() []corev1.VolumeMount {
 		},
 	}
 	return append(
-		private,
+		privateMounts,
 		buildPublicVolumeMounts()...)
 }
 
-var _ envModifier = (*SyntheticModifier)(nil)
-
 func (syn SyntheticModifier) getEnvs() []corev1.EnvVar {
 	return []corev1.EnvVar{
-		{Name: envMaxHeap, Value: envMaxHeapDefault},
-		{Name: envNodeType, Value: envNodeTypeDefault},
+		{
+			Name:  envNodeType,
+			Value: syn.dynakube.FeatureSyntheticNodeType(),
+		},
+		{
+			Name:  envMaxHeap,
+			Value: syn.nodeRequirements().jvmHeap.String(),
+		},
 	}
 }
 
@@ -139,7 +194,7 @@ func (syn SyntheticModifier) buildSecurityContext() *corev1.SecurityContext {
 		AllowPrivilegeEscalation: address.Of(false),
 		ReadOnlyRootFilesystem:   address.Of(true),
 		RunAsNonRoot:             address.Of(true),
-		RunAsUser:                address.Of(int64(1001)),
+		RunAsUser:                address.Of[int64](1001),
 
 		Capabilities: &corev1.Capabilities{
 			Drop: []corev1.Capability{
@@ -149,18 +204,11 @@ func (syn SyntheticModifier) buildSecurityContext() *corev1.SecurityContext {
 	}
 }
 
-var _ dynatracev1beta1.ResourceRequirementer = (*SyntheticModifier)(nil)
-
-func (syn SyntheticModifier) Limits(res corev1.ResourceName) *resource.Quantity {
-	return syn.dynakube.FeatureSyntheticResourcesLimits(res)
-}
-
-func (syn SyntheticModifier) Requests(res corev1.ResourceName) *resource.Quantity {
-	return syn.dynakube.FeatureSyntheticResourcesRequests(res)
-}
-
 func (syn SyntheticModifier) buildResources() corev1.ResourceRequirements {
-	return dynatracev1beta1.BuildResourceRequirements(syn)
+	return corev1.ResourceRequirements{
+		Limits:   syn.nodeRequirements().limitResources,
+		Requests: syn.nodeRequirements().requestResources,
+	}
 }
 
 func buildPublicVolumeMounts() []corev1.VolumeMount {
@@ -183,21 +231,14 @@ func buildPublicVolumeMounts() []corev1.VolumeMount {
 	}
 }
 
-var _ volumeModifier = (*SyntheticModifier)(nil)
-
 func (syn SyntheticModifier) getVolumes() []corev1.Volume {
-	buildLimit := func(quantity string) *resource.Quantity {
-		built := resource.MustParse(quantity)
-		return &built
-	}
-
 	return []corev1.Volume{
 		{
 			Name: ChromiumCacheMountName,
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{
 					Medium:    "Memory",
-					SizeLimit: buildLimit("512Mi"),
+					SizeLimit: syn.nodeRequirements().chromiumCacheVolume,
 				},
 			},
 		},
@@ -205,7 +246,7 @@ func (syn SyntheticModifier) getVolumes() []corev1.Volume {
 			Name: TmpStorageMountName,
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{
-					SizeLimit: buildLimit("10Mi"),
+					SizeLimit: syn.nodeRequirements().tmpStorageVolume,
 				},
 			},
 		},
@@ -222,10 +263,22 @@ func (syn SyntheticModifier) buildVolumeClaimTemplates() []corev1.PersistentVolu
 				AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
-						corev1.ResourceStorage: resource.MustParse("6Gi"),
+						corev1.ResourceStorage: syn.nodeRequirements().persistentVolumeClaimResourceStorage,
 					},
 				},
 			},
 		},
 	}
+}
+
+func buildRequirementResources(cpu, memory string) corev1.ResourceList {
+	return corev1.ResourceList{
+		corev1.ResourceCPU:    *buildQuantity(cpu),
+		corev1.ResourceMemory: *buildQuantity(memory),
+	}
+}
+
+func buildQuantity(serialized string) *resource.Quantity {
+	built := resource.MustParse(serialized)
+	return &built
 }

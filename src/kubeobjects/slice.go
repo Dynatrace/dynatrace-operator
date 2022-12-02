@@ -44,8 +44,8 @@ func PortIsIn(ports []corev1.ContainerPort, portToCheck int32) bool {
 }
 
 func VolumeClaimIsDefined(claims []corev1.PersistentVolumeClaim, claimNameToCheck string) bool {
-	for _, c := range claims {
-		if c.ObjectMeta.Name == claimNameToCheck {
+	for _, claim := range claims {
+		if claim.ObjectMeta.Name == claimNameToCheck {
 			return true
 		}
 	}
