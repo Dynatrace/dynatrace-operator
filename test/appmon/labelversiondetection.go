@@ -4,6 +4,7 @@ package appmon
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/sampleapps"
 	"github.com/Dynatrace/dynatrace-operator/test/secrets"
+	"github.com/Dynatrace/dynatrace-operator/test/shell"
 	"github.com/Dynatrace/dynatrace-operator/test/webhook"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -217,12 +219,11 @@ func assertValues(t *testing.T, restConfig *rest.Config, podItem corev1.Pod, exp
 }
 
 func assertValue(t *testing.T, restConfig *rest.Config, podItem corev1.Pod, variableName string, expectedValue string) { //nolint:revive // argument-limit
-	executionQuery := pod.NewExecutionQuery(podItem, sampleapps.Name, "echo $"+variableName)
+	executionQuery := pod.NewExecutionQuery(podItem, sampleapps.Name, shell.Shell(shell.Echo(fmt.Sprintf("$%s", variableName)))...)
 	executionResult, err := executionQuery.Execute(restConfig)
 	require.NoError(t, err)
 
 	stdOut := strings.TrimSpace(executionResult.StdOut.String())
-	stdErr := executionResult.StdErr.String()
-	assert.Empty(t, stdErr)
+	assert.Zero(t, executionResult.StdErr.Len())
 	assert.Equal(t, expectedValue, stdOut, "%s:%s pod - %s variable has invalid value", podItem.Namespace, podItem.Name, variableName)
 }
