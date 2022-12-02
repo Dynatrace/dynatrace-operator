@@ -35,4 +35,5 @@ func TestCloudNative(t *testing.T) {
 	testEnvironment.Test(t, Upgrade(t))
 	testEnvironment.Test(t, CodeModules(t, false))
 	testEnvironment.Test(t, NetworkProblems(t))
+	testEnvironment.Test(t, SpecificAgentVersion(t))
 }
