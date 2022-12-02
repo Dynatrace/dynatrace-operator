@@ -2,9 +2,9 @@ package pod
 
 import (
 	"bytes"
-	"github.com/Dynatrace/dynatrace-operator/test/shell"
 	"net/http"
 
+	"github.com/Dynatrace/dynatrace-operator/test/shell"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
