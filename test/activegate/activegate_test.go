@@ -21,6 +21,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/proxy"
 	"github.com/Dynatrace/dynatrace-operator/test/secrets"
+	"github.com/Dynatrace/dynatrace-operator/test/shell"
 	"github.com/Dynatrace/dynatrace-operator/test/webhook"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -233,7 +234,7 @@ func checkService(ctx context.Context, t *testing.T, environmentConfig *envconf.
 }
 
 func assertMountPointMissing(t *testing.T, environmentConfig *envconf.Config, podItem corev1.Pod, containerName string, mountPoints []string) { //nolint:revive // argument-limit
-	executionQuery := pod.NewExecutionQuery(podItem, containerName, "cat /proc/mounts")
+	executionQuery := pod.NewExecutionQuery(podItem, containerName, shell.ReadFile("/proc/mounts")...)
 	executionResult, err := executionQuery.Execute(environmentConfig.Client().RESTConfig())
 	require.NoError(t, err)
 

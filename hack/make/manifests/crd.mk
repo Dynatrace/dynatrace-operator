@@ -12,10 +12,5 @@ manifests/crd/uninstall: prerequisites/kustomize manifests/crd/generate
 
 ## Builds a CRD and puts it with the Helm charts
 manifests/crd/helm: helm/version prerequisites/kustomize manifests/crd/generate
-	# Build crd
-	mkdir -p "$(HELM_CRD_DIR)"
-	$(KUSTOMIZE) build config/crd > $(MANIFESTS_DIR)/kubernetes/$(DYNATRACE_OPERATOR_CRD_YAML)
+	./hack/helm/generate-crd.sh $(KUSTOMIZE) $(HELM_CRD_DIR) $(MANIFESTS_DIR)
 
-	# Copy crd to CHART PATH
-	mkdir -p "$(HELM_GENERATED_DIR)"
-	cp "$(MANIFESTS_DIR)/kubernetes/$(DYNATRACE_OPERATOR_CRD_YAML)" "$(HELM_GENERATED_DIR)"

@@ -16,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/sampleapps"
 	"github.com/Dynatrace/dynatrace-operator/test/secrets"
 	"github.com/Dynatrace/dynatrace-operator/test/setup"
+	"github.com/Dynatrace/dynatrace-operator/test/shell"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -117,7 +118,7 @@ func checkInitContainers(ctx context.Context, t *testing.T, environmentConfig *e
 		require.NoError(t, err)
 		logs.AssertContains(t, logStream, "standalone agent init completed")
 
-		executionQuery := pod.NewExecutionQuery(podItem, sampleapps.Name, "cat /opt/dynatrace/oneagent-paas/log/nginx/ruxitagent_nginx_myapp-__bootstrap_1.0.log")
+		executionQuery := pod.NewExecutionQuery(podItem, sampleapps.Name, shell.ReadFile("/opt/dynatrace/oneagent-paas/log/nginx/ruxitagent_nginx_myapp-__bootstrap_1.0.log")...)
 		executionResult, err := executionQuery.Execute(environmentConfig.Client().RESTConfig())
 
 		require.NoError(t, err)

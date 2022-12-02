@@ -18,6 +18,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/sampleapps"
 	"github.com/Dynatrace/dynatrace-operator/test/secrets"
+	"github.com/Dynatrace/dynatrace-operator/test/shell"
 	"github.com/Dynatrace/dynatrace-operator/test/webhook"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -116,12 +117,12 @@ func assessDeploymentHasDataIngestFile(t *testing.T, restConfig *rest.Config) de
 }
 
 func getDataIngestMetadataFromPod(t *testing.T, restConfig *rest.Config, dataIngestPod corev1.Pod) metadata {
-	query := pod.NewExecutionQuery(dataIngestPod, dataIngestPod.Spec.Containers[0].Name, "cat "+metadataFile)
+	query := pod.NewExecutionQuery(dataIngestPod, dataIngestPod.Spec.Containers[0].Name, shell.ReadFile(metadataFile)...)
 	result, err := query.Execute(restConfig)
 
 	require.NoError(t, err)
 
-	assert.Empty(t, result.StdErr)
+	assert.Zero(t, result.StdErr.Len())
 	assert.NotEmpty(t, result.StdOut)
 
 	var dataIngestMetadata metadata
