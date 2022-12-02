@@ -2,6 +2,7 @@ package pod
 
 import (
 	"bytes"
+	"github.com/Dynatrace/dynatrace-operator/test/shell"
 	"net/http"
 
 	"github.com/pkg/errors"
@@ -24,7 +25,7 @@ type ExecutionResult struct {
 
 type ExecutionQuery struct {
 	pod       v1.Pod
-	command   []string
+	command   shell.Command
 	container string
 	tty       bool
 }
