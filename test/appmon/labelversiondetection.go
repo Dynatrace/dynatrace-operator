@@ -10,7 +10,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
-	"github.com/Dynatrace/dynatrace-operator/test/bash"
 	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/manifests"
@@ -18,6 +17,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/sampleapps"
 	"github.com/Dynatrace/dynatrace-operator/test/secrets"
+	"github.com/Dynatrace/dynatrace-operator/test/shell"
 	"github.com/Dynatrace/dynatrace-operator/test/webhook"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -219,7 +219,7 @@ func assertValues(t *testing.T, restConfig *rest.Config, podItem corev1.Pod, exp
 }
 
 func assertValue(t *testing.T, restConfig *rest.Config, podItem corev1.Pod, variableName string, expectedValue string) { //nolint:revive // argument-limit
-	executionQuery := pod.NewExecutionQuery(podItem, sampleapps.Name, bash.Shell(bash.Echo(fmt.Sprintf("$%s", variableName)))...)
+	executionQuery := pod.NewExecutionQuery(podItem, sampleapps.Name, shell.Shell(shell.Echo(fmt.Sprintf("$%s", variableName)))...)
 	executionResult, err := executionQuery.Execute(restConfig)
 	require.NoError(t, err)
 

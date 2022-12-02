@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/test/bash"
 	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/pod"
@@ -15,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/sampleapps"
 	"github.com/Dynatrace/dynatrace-operator/test/secrets"
 	"github.com/Dynatrace/dynatrace-operator/test/setup"
+	"github.com/Dynatrace/dynatrace-operator/test/shell"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -75,7 +75,7 @@ func checkForDummyVolume(ctx context.Context, t *testing.T, environmentConfig *e
 		var result *pod.ExecutionResult
 		result, err := pod.
 			NewExecutionQuery(podItem, sampleapps.Name,
-				bash.ListDirectory(agentMountPath)...).
+				shell.ListDirectory(agentMountPath)...).
 			Execute(restConfig)
 
 		require.NoError(t, err)
