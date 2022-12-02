@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/sampleapps"
 	"github.com/Dynatrace/dynatrace-operator/test/setup"
+	"github.com/Dynatrace/dynatrace-operator/test/shell"
 	"github.com/Dynatrace/dynatrace-operator/test/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -61,7 +62,7 @@ func isAgentInjected(ctx context.Context, t *testing.T, environmentConfig *envco
 	for _, podItem := range pods.Items {
 		require.NotNil(t, podItem)
 
-		executionQuery := pod.NewExecutionQuery(podItem, sampleapps.Name, "ls /var/lib/dynatrace")
+		executionQuery := pod.NewExecutionQuery(podItem, sampleapps.Name, shell.ListDirectory("/var/lib/dynatrace")...)
 		executionResult, err := executionQuery.Execute(environmentConfig.Client().RESTConfig())
 
 		require.NoError(t, err)

@@ -16,6 +16,7 @@ tramp
 .org-id-locations
 *_archive
 !/src/cmd/support_archive
+!/test/support_archive
 # flymake-mode
 *_flymake.*
 # eshell files

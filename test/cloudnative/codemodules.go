@@ -14,7 +14,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook/mutation/pod_mutator/oneagent_mutation"
-	"github.com/Dynatrace/dynatrace-operator/test/bash"
 	"github.com/Dynatrace/dynatrace-operator/test/csi"
 	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/istiosetup"
@@ -24,6 +23,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/sampleapps"
 	"github.com/Dynatrace/dynatrace-operator/test/secrets"
 	"github.com/Dynatrace/dynatrace-operator/test/setup"
+	"github.com/Dynatrace/dynatrace-operator/test/shell"
+	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -86,7 +87,7 @@ func CodeModules(t *testing.T, istioEnabled bool) features.Feature {
 
 	codeModulesInjection.Assess("csi driver did not crash", csiDriverIsAvailable)
 	codeModulesInjection.Assess("codemodules have been downloaded", imageHasBeenDownloaded)
-	codeModulesInjection.Assess("storage size has not increased", diskUsageDoesNotIncrease(secretConfigs[1]))
+	codeModulesInjection.Assess("storage size has not increased", diskUsageDoesNotIncrease(secretConfigs[0]))
 	codeModulesInjection.Assess("volumes are mounted correctly", volumesAreMountedCorrectly())
 
 	return codeModulesInjection.Feature()
@@ -122,22 +123,25 @@ func imageHasBeenDownloaded(ctx context.Context, t *testing.T, environmentConfig
 	err := csi.ForEachPod(ctx, resource, func(podItem corev1.Pod) {
 		var result *pod.ExecutionResult
 		result, err := pod.
-			NewExecutionQuery(podItem, "provisioner", bash.ListDirectory(dataPath)).
+			NewExecutionQuery(podItem, "provisioner", shell.ListDirectory(dataPath)...).
 			Execute(restConfig)
 
 		require.NoError(t, err)
 		assert.Contains(t, result.StdOut.String(), "codemodules")
 
 		result, err = pod.
-			NewExecutionQuery(podItem, "provisioner", bash.ReadFile(getManifestPath())).
+			NewExecutionQuery(podItem, "provisioner", shell.Shell(shell.ReadFile(getManifestPath()))...).
 			Execute(restConfig)
 
 		require.NoError(t, err)
 
 		var codeModulesManifest manifest
 		err = json.Unmarshal(result.StdOut.Bytes(), &codeModulesManifest)
+		if err != nil {
+			err = errors.WithMessagef(err, "json:\n%s", result.StdOut)
+		}
+		require.NoError(t, err)
 
-		assert.NoError(t, err)
 		assert.Equal(t, codeModulesVersion, codeModulesManifest.Version)
 	})
 
@@ -154,9 +158,9 @@ func diskUsageDoesNotIncrease(secretConfig secrets.Secret) features.Func {
 		err := csi.ForEachPod(ctx, resource, func(podItem corev1.Pod) {
 			var result *pod.ExecutionResult
 			result, err := pod.
-				NewExecutionQuery(podItem, "provisioner", bash.Pipe(
-					bash.DiskUsageWithTotal(dataPath),
-					bash.FilterLastLineOnly())).
+				NewExecutionQuery(podItem, "provisioner", shell.Shell(shell.Pipe(
+					shell.DiskUsageWithTotal(dataPath),
+					shell.FilterLastLineOnly()))...).
 				Execute(restConfig)
 
 			require.NoError(t, err)
@@ -183,9 +187,9 @@ func diskUsageDoesNotIncrease(secretConfig secrets.Secret) features.Func {
 		err = csi.ForEachPod(ctx, resource, func(podItem corev1.Pod) {
 			var result *pod.ExecutionResult
 			result, err = pod.
-				NewExecutionQuery(podItem, "provisioner", bash.Pipe(
-					bash.DiskUsageWithTotal(dataPath),
-					bash.FilterLastLineOnly())).
+				NewExecutionQuery(podItem, "provisioner", shell.Shell(shell.Pipe(
+					shell.DiskUsageWithTotal(dataPath),
+					shell.FilterLastLineOnly()))...).
 				Execute(restConfig)
 
 			require.NoError(t, err)
@@ -215,20 +219,20 @@ func volumesAreMountedCorrectly() features.Func {
 			assert.True(t, isVolumeMounted(t, volumeMounts, oneagent_mutation.OneAgentBinVolumeName))
 
 			executionResult, err := pod.
-				NewExecutionQuery(podItem, sampleapps.Name, bash.ListDirectory(webhook.DefaultInstallPath)).
+				NewExecutionQuery(podItem, sampleapps.Name, shell.ListDirectory(webhook.DefaultInstallPath)...).
 				Execute(environmentConfig.Client().RESTConfig())
 
 			require.NoError(t, err)
 			assert.NotEmpty(t, executionResult.StdOut.String())
 
 			executionResult, err = pod.
-				NewExecutionQuery(podItem, sampleapps.Name, bash.Pipe(
-					bash.DiskUsageWithTotal(webhook.DefaultInstallPath),
-					bash.FilterLastLineOnly())).
+				NewExecutionQuery(podItem, sampleapps.Name, shell.Shell(shell.Pipe(
+					shell.DiskUsageWithTotal(webhook.DefaultInstallPath),
+					shell.FilterLastLineOnly()))...).
 				Execute(environmentConfig.Client().RESTConfig())
 
 			require.NoError(t, err)
-			assert.NotEmpty(t, executionResult.StdOut.String())
+			require.Contains(t, executionResult.StdOut.String(), "total")
 
 			diskUsage, err := strconv.Atoi(strings.Split(executionResult.StdOut.String(), "\t")[0])
 

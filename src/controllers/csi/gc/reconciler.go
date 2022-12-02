@@ -77,6 +77,9 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 	}
 
 	gcInfo := collectGCInfo(*dynakube, dynakubeList)
+	if gcInfo == nil {
+		return defaultReconcileResult, nil
+	}
 
 	log.Info("running binary garbage collection")
 	gc.runBinaryGarbageCollection(ctx, gcInfo.pinnedVersions, gcInfo.tenantUUID, gcInfo.latestAgentVersion)
