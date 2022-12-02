@@ -40,18 +40,15 @@ func (r *Reconciler) Reconcile() (err error) {
 			return err
 		}
 	}
+	oneAgentConnectionInfo, err := r.dtc.GetOneAgentConnectionInfo()
+	if err != nil {
+		log.Info("failed to get oneagent connection info")
+		return err
+	}
 
-	if r.dynakube.FeatureOneAgentImmutableImage() {
-		oneAgentConnectionInfo, err := r.dtc.GetOneAgentConnectionInfo()
-		if err != nil {
-			log.Info("failed to get oneagent connection info")
-			return err
-		}
-
-		err = r.createOrUpdateSecret(r.dynakube.OneagentTenantSecret(), oneAgentConnectionInfo.ConnectionInfo)
-		if err != nil {
-			return err
-		}
+	err = r.createOrUpdateSecret(r.dynakube.OneagentTenantSecret(), oneAgentConnectionInfo.ConnectionInfo)
+	if err != nil {
+		return err
 	}
 
 	return nil
