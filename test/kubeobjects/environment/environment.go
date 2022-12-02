@@ -1,8 +1,11 @@
+//go:build e2e
+
 package environment
 
 import (
 	"os"
 
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"sigs.k8s.io/e2e-framework/klient/conf"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
@@ -21,6 +24,6 @@ func Get() env.Environment {
 	}
 
 	kubeConfigPath := conf.ResolveKubeConfigFile()
-	kubeConfig := envconf.NewWithKubeConfig(kubeConfigPath)
-	return env.NewWithConfig(kubeConfig)
+	envConfig := envconf.NewWithKubeConfig(kubeConfigPath)
+	return env.NewWithConfig(envConfig)
 }
