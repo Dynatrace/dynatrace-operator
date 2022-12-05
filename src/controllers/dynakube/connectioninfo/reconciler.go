@@ -27,26 +27,15 @@ func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Read
 	}
 }
 
-func (r *Reconciler) Reconcile() (err error) {
+func (r *Reconciler) Reconcile() error {
 	if !r.dynakube.FeatureDisableActivegateRawImage() {
-		activeGateConnectionInfo, err := r.dtc.GetActiveGateConnectionInfo()
-		if err != nil {
-			log.Info("failed to get activegate connection info")
-			return err
-		}
-
-		err = r.createOrUpdateSecret(r.dynakube.ActivegateTenantSecret(), activeGateConnectionInfo.ConnectionInfo)
+		err := r.reconcileActiveGateConnectionInfo()
 		if err != nil {
 			return err
 		}
 	}
-	oneAgentConnectionInfo, err := r.dtc.GetOneAgentConnectionInfo()
-	if err != nil {
-		log.Info("failed to get oneagent connection info")
-		return err
-	}
 
-	err = r.createOrUpdateSecret(r.dynakube.OneagentTenantSecret(), oneAgentConnectionInfo.ConnectionInfo)
+	err := r.reconcileOneAgentConnectionInfo()
 	if err != nil {
 		return err
 	}
@@ -54,9 +43,64 @@ func (r *Reconciler) Reconcile() (err error) {
 	return nil
 }
 
-func (r *Reconciler) createOrUpdateSecret(secretName string, connectionInfo dtclient.ConnectionInfo) error {
-	data := buildConnectionInfoSecret(connectionInfo)
-	secret := kubeobjects.NewSecret(secretName, r.dynakube.Namespace, data)
+func (r *Reconciler) reconcileOneAgentConnectionInfo() error {
+	oneAgentConnectionInfo, err := r.dtc.GetOneAgentConnectionInfo()
+	if err != nil {
+		log.Info("failed to get oneagent connection info")
+		return err
+	}
+
+	err = r.maintainConnectionInfoObjects(r.dynakube.OneagentTenantSecret(), r.dynakube.OneAgentConnectionInfoConfigMapName(), oneAgentConnectionInfo.ConnectionInfo)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *Reconciler) reconcileActiveGateConnectionInfo() error {
+	activeGateConnectionInfo, err := r.dtc.GetActiveGateConnectionInfo()
+	if err != nil {
+		log.Info("failed to get activegate connection info")
+		return err
+	}
+
+	err = r.maintainConnectionInfoObjects(r.dynakube.ActivegateTenantSecret(), r.dynakube.ActiveGateConnectionInfoConfigMapName(), activeGateConnectionInfo.ConnectionInfo)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *Reconciler) maintainConnectionInfoObjects(secretName string, configMapName string, connectionInfo dtclient.ConnectionInfo) error {
+	err := r.createTokenSecret(secretName, connectionInfo)
+	if err != nil {
+		return err
+	}
+
+	err = r.createTenantUuidAndCommunicationEndpointsConfigMap(configMapName, connectionInfo)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *Reconciler) createTenantUuidAndCommunicationEndpointsConfigMap(secretName string, connectionInfo dtclient.ConnectionInfo) error {
+	configMapData := buildConnectionInfoConfigMap(connectionInfo)
+	configMap := kubeobjects.NewConfigMap(secretName, r.dynakube.Namespace, configMapData)
+
+	query := kubeobjects.NewConfigMapQuery(r.context, r.client, r.apiReader, log)
+	err := query.CreateOrUpdate(*configMap)
+	if err != nil {
+		log.Info("could not create or update configMap for connection info", "name", configMap.Name)
+		return err
+	}
+	return nil
+}
+
+func (r *Reconciler) createTokenSecret(secretName string, connectionInfo dtclient.ConnectionInfo) error {
+	secretData := buildConnectionInfoSecret(connectionInfo)
+	secret := kubeobjects.NewSecret(secretName, r.dynakube.Namespace, secretData)
 
 	query := kubeobjects.NewSecretQuery(r.context, r.client, r.apiReader, log)
 	err := query.CreateOrUpdate(*secret)
@@ -72,11 +116,17 @@ func buildConnectionInfoSecret(connectionInfo dtclient.ConnectionInfo) map[strin
 		TenantTokenName: []byte(connectionInfo.TenantToken),
 	}
 
+	return data
+}
+
+func buildConnectionInfoConfigMap(connectionInfo dtclient.ConnectionInfo) map[string]string {
+	data := map[string]string{}
+
 	if connectionInfo.TenantUUID != "" {
-		data[TenantUuidName] = []byte(connectionInfo.TenantUUID)
+		data[TenantUuidName] = connectionInfo.TenantUUID
 	}
 	if connectionInfo.Endpoints != "" {
-		data[CommunicationEndpointsName] = []byte(connectionInfo.Endpoints)
+		data[CommunicationEndpointsName] = connectionInfo.Endpoints
 	}
 
 	return data

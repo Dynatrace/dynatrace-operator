@@ -29,7 +29,7 @@ func (dsInfo *builderInfo) arguments() []string {
 
 func (dsInfo *builderInfo) appendImmutableImageArgs(args []string) []string {
 	args = append(args, fmt.Sprintf("--set-tenant=%s", dsInfo.instance.Status.ConnectionInfo.TenantUUID))
-	args = append(args, fmt.Sprintf("--set-server={%s}", dsInfo.instance.Status.ConnectionInfo.FormattedCommunicationEndpoints))
+	args = append(args, fmt.Sprintf("--set-server={$(%s)}", dtCommunication))
 	return args
 }
 
