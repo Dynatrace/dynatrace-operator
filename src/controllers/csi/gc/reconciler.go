@@ -66,6 +66,11 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 		return defaultReconcileResult, nil
 	}
 
+	if !dynakube.NeedAppInjection() {
+		log.Info("app injection not enabled, skip garbage collection", "dynakube", dynakube.Name)
+		return defaultReconcileResult, nil
+	}
+
 	dynakubeList, err := getAllDynakubes(ctx, gc.apiReader, dynakube.Namespace)
 	if err != nil {
 		return defaultReconcileResult, err

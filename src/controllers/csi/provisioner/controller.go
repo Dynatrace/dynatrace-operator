@@ -89,7 +89,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		}
 		return reconcile.Result{}, err
 	}
-	if !dk.NeedsCSIDriver() || !dk.NeedAppInjection() {
+	if !dk.NeedsCSIDriver() {
 		log.Info("CSI driver provisioner not needed")
 		return reconcile.Result{RequeueAfter: longRequeueDuration}, provisioner.db.DeleteDynakube(ctx, request.Name)
 	}
@@ -113,12 +113,6 @@ func (provisioner *OneAgentProvisioner) collectGarbage(ctx context.Context, requ
 }
 
 func (provisioner *OneAgentProvisioner) provision(ctx context.Context, dk *dynatracev1beta1.DynaKube) error {
-	// creates a dt client and checks tokens exist for the given dynakube
-	dtc, err := buildDtc(provisioner, ctx, dk)
-	if err != nil {
-		return err
-	}
-
 	dynakubeMetadata, oldDynakubeMetadata, err := provisioner.handleMetadata(ctx, dk)
 	if err != nil {
 		return err
@@ -139,6 +133,16 @@ func (provisioner *OneAgentProvisioner) provision(ctx context.Context, dk *dynat
 		return errors.WithStack(err)
 	}
 	log.Info("csi directories exist", "path", provisioner.path.TenantDir(dynakubeMetadata.TenantUUID))
+
+	if !dk.NeedAppInjection() {
+		log.Info("app injection not necessary, skip agent download", "dynakube", dk.Name)
+		return nil
+	}
+	// creates a dt client and checks tokens exist for the given dynakube
+	dtc, err := buildDtc(provisioner, ctx, dk)
+	if err != nil {
+		return err
+	}
 
 	latestProcessModuleConfigCache, requeue, err := provisioner.updateAgentInstallation(ctx, dtc, dynakubeMetadata, dk)
 	if requeue || err != nil {
