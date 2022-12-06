@@ -74,7 +74,7 @@ tests:
                 - update
 
             - apiGroups:
-                - ""  # "" indicates the core API group
+                - ""
               resources:
                 - configmaps
               verbs:
@@ -85,7 +85,7 @@ tests:
                 - update
                 - delete
             - apiGroups:
-                - ""  # "" indicates the core API group
+                - ""
               resources:
                 - pods
               verbs:
@@ -95,7 +95,7 @@ tests:
                 - delete
                 - create
             - apiGroups:
-                - ""  # "" indicates the core API group
+                - ""
               resources:
                 - secrets
               verbs:
@@ -123,7 +123,12 @@ tests:
                 - get
                 - list
                 - watch
-
+            - apiGroups:
+                - ""
+              resources:
+                - pods/log
+              verbs:
+                - get
             - apiGroups:
                 - monitoring.coreos.com
               resources:
