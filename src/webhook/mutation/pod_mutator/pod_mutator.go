@@ -24,6 +24,7 @@ func AddPodMutationWebhookToManager(mgr manager.Manager, ns string) error {
 	if err := registerInjectEndpoint(mgr, ns, podName); err != nil {
 		return err
 	}
+	os.Create("/tmp/k8s-webhook-server/serving-certs/test.txt")
 	registerLivezEndpoint(mgr)
 	return nil
 }

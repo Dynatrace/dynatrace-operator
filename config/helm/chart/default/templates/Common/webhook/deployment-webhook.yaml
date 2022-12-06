@@ -49,6 +49,7 @@ spec:
         {{- toYaml .Values.webhook.labels | nindent 8 }}
         {{- end }}
     spec:
+      terminationGracePeriodSeconds: 60
       {{- if (.Values.webhook).highAvailability }}
       topologySpreadConstraints:
         - maxSkew: 1
@@ -87,6 +88,10 @@ spec:
                       - linux
       containers:
         - name: webhook
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/bash","-c","rm -r /tmp/k8s-webhook-server/serving-certs/test.txt && sleep 60"]
           args:
             - webhook-server
             # OLM mounts the certificates here, so we reuse it for simplicity

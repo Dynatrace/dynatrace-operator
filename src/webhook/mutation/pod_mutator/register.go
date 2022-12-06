@@ -3,6 +3,7 @@ package pod_mutator
 import (
 	"context"
 	"net/http"
+	"os"
 
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
@@ -86,7 +87,12 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 
 func registerLivezEndpoint(mgr manager.Manager) {
 	mgr.GetWebhookServer().Register("/livez", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
+		_, err := os.Open("/tmp/k8s-webhook-server/serving-certs/test.txt")
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+		} else {
+			w.WriteHeader(http.StatusOK)
+		}
 	}))
 	log.Info("registered /livez endpoint")
 }
