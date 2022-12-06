@@ -6,10 +6,12 @@ import (
 	"archive/tar"
 	"compress/gzip"
 	"context"
+	"fmt"
 	"io"
 	"strings"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/src/cmd/support_archive"
 	"github.com/Dynatrace/dynatrace-operator/src/functional"
 	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/environment"
@@ -20,6 +22,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/setup"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/slices"
 	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/e2e-framework/klient/conf"
 	"sigs.k8s.io/e2e-framework/pkg/env"
@@ -58,22 +61,32 @@ func SupportArchiveExecution(t *testing.T) features.Feature {
 
 func checkSupportArchiveExecution() features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		result := executeSupportArchive(context.Background(), t, environmentConfig, "--stdout")
+		result := executeSupportArchive(ctx, t, environmentConfig, "--stdout")
 		require.NotNil(t, result)
 
 		zipReader, err := gzip.NewReader(result.StdOut)
 		require.NoError(t, err)
 
+		requiredFiles := make([]string, 0)
+		requiredFiles = append(requiredFiles, support_archive.OperatorVersionFileName)
+		requiredFiles = append(requiredFiles, getRequiredLogFiles(t, ctx, environmentConfig)...)
+
 		tarReader := tar.NewReader(zipReader)
+
 		hdr, err := tarReader.Next()
-		require.NoError(t, err)
-		assert.Equal(t, "operator-version.txt", hdr.Name)
+		for err == nil {
+			index := slices.IndexFunc(requiredFiles, func(file string) bool { return file == hdr.Name })
+			assert.NotEqualf(t, -1, index, "Found unexpected file %s.", hdr.Name)
 
-		resultString := make([]byte, hdr.Size)
-		resultLen, err := tarReader.Read(resultString)
+			if index != -1 {
+				requiredFiles = slices.Delete(requiredFiles, index, index+1)
+			}
+
+			assert.NotZerof(t, hdr.Size, "File %s is empty.", hdr.Name)
+			hdr, err = tarReader.Next()
+		}
 		require.Equal(t, io.EOF, err)
-		assert.Equal(t, hdr.Size, int64(resultLen))
-
+		assert.Emptyf(t, requiredFiles, "Support archive does not contain all expected files.")
 		return ctx
 	}
 }
@@ -99,6 +112,21 @@ func executeSupportArchive(ctx context.Context, t *testing.T, environmentConfig 
 	require.NoError(t, err)
 
 	return executionResult
+}
+
+func getRequiredLogFiles(t *testing.T, ctx context.Context, envConfig *envconf.Config) []string {
+	resources := envConfig.Client().Resources()
+	opPods := operator.Get(t, ctx, resources)
+
+	requiredLogs := make([]string, 0)
+
+	for _, pod := range opPods.Items {
+		for _, container := range pod.Spec.Containers {
+			requiredLogs = append(requiredLogs, fmt.Sprintf("%s/%s/%s.log",
+				support_archive.LogsDirectoryName, pod.Name, container.Name))
+		}
+	}
+	return requiredLogs
 }
 
 // Note: mainly for dev purposes, test requires a running cluster with deployed operator to be successful
