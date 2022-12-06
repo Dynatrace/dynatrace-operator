@@ -581,10 +581,10 @@ func TestHandleMetadata(t *testing.T) {
 	}
 	dynakubeMetadata, oldMetadata, err := provisioner.handleMetadata(ctx, instance)
 
-	assert.NoError(t, err)
-	assert.NotNil(t, dynakubeMetadata)
-	assert.NotNil(t, oldMetadata)
-	assert.Equal(t, dynatracev1beta1.DefaultMaxFailedCsiMountAttempts, dynakubeMetadata.MaxFailedMountAttempts)
+	require.NoError(t, err)
+	require.NotNil(t, dynakubeMetadata)
+	require.NotNil(t, oldMetadata)
+	require.Equal(t, dynatracev1beta1.DefaultMaxFailedCsiMountAttempts, dynakubeMetadata.MaxFailedMountAttempts)
 
 	instance.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureMaxFailedCsiMountAttempts: "5"}
 	dynakubeMetadata, oldMetadata, err = provisioner.handleMetadata(ctx, instance)
