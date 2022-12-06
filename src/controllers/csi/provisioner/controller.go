@@ -89,7 +89,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		}
 		return reconcile.Result{}, err
 	}
-	if !dk.NeedsCSIDriver() {
+	if !dk.NeedsCSIDriver() || !dk.NeedAppInjection() {
 		log.Info("CSI driver provisioner not needed")
 		return reconcile.Result{RequeueAfter: longRequeueDuration}, provisioner.db.DeleteDynakube(ctx, request.Name)
 	}
@@ -140,22 +140,20 @@ func (provisioner *OneAgentProvisioner) provision(ctx context.Context, dk *dynat
 	}
 	log.Info("csi directories exist", "path", provisioner.path.TenantDir(dynakubeMetadata.TenantUUID))
 
-	if dk.NeedAppInjection() {
-		latestProcessModuleConfigCache, requeue, err := provisioner.updateAgentInstallation(ctx, dtc, dynakubeMetadata, dk)
-		if requeue || err != nil {
-			return err
-		}
+	latestProcessModuleConfigCache, requeue, err := provisioner.updateAgentInstallation(ctx, dtc, dynakubeMetadata, dk)
+	if requeue || err != nil {
+		return err
+	}
 
-		// Set/Update the `LatestVersion` field in the database entry
-		err = provisioner.createOrUpdateDynakubeMetadata(ctx, oldDynakubeMetadata, dynakubeMetadata)
-		if err != nil {
-			return err
-		}
+	// Set/Update the `LatestVersion` field in the database entry
+	err = provisioner.createOrUpdateDynakubeMetadata(ctx, oldDynakubeMetadata, dynakubeMetadata)
+	if err != nil {
+		return err
+	}
 
-		err = provisioner.writeProcessModuleConfigCache(dynakubeMetadata.TenantUUID, latestProcessModuleConfigCache)
-		if err != nil {
-			return err
-		}
+	err = provisioner.writeProcessModuleConfigCache(dynakubeMetadata.TenantUUID, latestProcessModuleConfigCache)
+	if err != nil {
+		return err
 	}
 
 	return nil

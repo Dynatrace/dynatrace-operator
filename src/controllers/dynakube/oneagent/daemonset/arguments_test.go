@@ -127,7 +127,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 	t.Run(`feature flag immutable image is enabled`, func(t *testing.T) {
 		podSpecs = dsInfo.podSpec()
 		assert.Contains(t, podSpecs.Containers[0].Args, "--set-tenant="+testTenantUUID)
-		assert.Contains(t, podSpecs.Containers[0].Args, fmt.Sprintf("--set-server={%s}", testFormattedCommunicationHosts))
+		assert.Contains(t, podSpecs.Containers[0].Args, fmt.Sprintf("--set-server={$(%s)}", dtCommunication))
 	})
 	t.Run(`has network zone arg`, func(t *testing.T) {
 		instance.Spec.NetworkZone = testValue

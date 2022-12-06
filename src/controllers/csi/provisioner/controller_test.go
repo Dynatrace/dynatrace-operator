@@ -53,9 +53,8 @@ func (fs *mkDirAllErrorFs) MkdirAll(_ string, _ os.FileMode) error {
 	return fmt.Errorf(errorMsg)
 }
 
-func TestOneAgentProvisioner_Reconcile(t *testing.T) {
+func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 	ctx := context.TODO()
-	dynakubeName := "test-dk"
 
 	t.Run(`no dynakube instance`, func(t *testing.T) {
 		gc := &CSIGarbageCollectorMock{}
@@ -100,7 +99,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: dynakubeName,
+						Name: dkName,
 					},
 					Spec: dynatracev1beta1.DynaKubeSpec{
 						OneAgent: dynatracev1beta1.OneAgentSpec{},
@@ -110,7 +109,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			db: metadata.FakeMemoryDB(),
 			gc: gc,
 		}
-		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakubeName}})
+		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
 		gc.AssertNumberOfCalls(t, "Create", 0)
 		require.NoError(t, err)
@@ -124,7 +123,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: dynakubeName,
+						Name: dkName,
 					},
 					Spec: dynatracev1beta1.DynaKubeSpec{
 						OneAgent: dynatracev1beta1.OneAgentSpec{
@@ -138,7 +137,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			db: metadata.FakeMemoryDB(),
 			gc: gc,
 		}
-		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakubeName}})
+		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
 		gc.AssertNumberOfCalls(t, "Create", 0)
 		require.NoError(t, err)
@@ -149,12 +148,12 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		gc := &CSIGarbageCollectorMock{}
 		gc.On("Create").Return(reconcile.Result{}, nil)
 		db := metadata.FakeMemoryDB()
-		_ = db.InsertDynakube(ctx, &metadata.Dynakube{Name: dynakubeName})
+		_ = db.InsertDynakube(ctx, &metadata.Dynakube{Name: dkName})
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: dynakubeName,
+						Name: dkName,
 					},
 					Spec: dynatracev1beta1.DynaKubeSpec{
 						OneAgent: dynatracev1beta1.OneAgentSpec{
@@ -168,7 +167,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			db: db,
 			gc: gc,
 		}
-		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakubeName}})
+		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
 		gc.AssertNumberOfCalls(t, "Create", 0)
 		require.NoError(t, err)
@@ -180,27 +179,44 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		require.Len(t, dynakubeMetadatas, 0)
 	})
 	t.Run(`host monitoring used`, func(t *testing.T) {
+		fakeClient := fake.NewClient(
+			&dynatracev1beta1.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: dkName,
+				},
+				Spec: dynatracev1beta1.DynaKubeSpec{
+					APIURL: testAPIURL,
+					OneAgent: dynatracev1beta1.OneAgentSpec{
+						HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
+					},
+				},
+			},
+			&v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: dkName,
+				},
+				Data: map[string][]byte{
+					dtclient.DynatraceApiToken: []byte("api-token"),
+				},
+			},
+		)
+		mockClient := &dtclient.MockDynatraceClient{}
+		mockDtcBuilder := &dynatraceclient.StubBuilder{
+			DynatraceClient: mockClient,
+		}
+
 		gc := &CSIGarbageCollectorMock{}
 		gc.On("Create").Return(reconcile.Result{}, nil)
 		db := metadata.FakeMemoryDB()
-		_ = db.InsertDynakube(ctx, &metadata.Dynakube{Name: dynakubeName})
+		_ = db.InsertDynakube(ctx, &metadata.Dynakube{Name: dkName, TenantUUID: testTenantUUID})
 		provisioner := &OneAgentProvisioner{
-			apiReader: fake.NewClient(
-				&dynatracev1beta1.DynaKube{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: dynakubeName,
-					},
-					Spec: dynatracev1beta1.DynaKubeSpec{
-						OneAgent: dynatracev1beta1.OneAgentSpec{
-							HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
-						},
-					},
-				},
-			),
-			db: db,
-			gc: gc,
+			apiReader:              fakeClient,
+			client:                 fakeClient,
+			dynatraceClientBuilder: mockDtcBuilder,
+			db:                     db,
+			gc:                     gc,
 		}
-		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakubeName}})
+		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
 		gc.AssertNumberOfCalls(t, "Create", 0)
 		require.NoError(t, err)
