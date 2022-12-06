@@ -52,7 +52,7 @@ func (fs *mkDirAllErrorFs) MkdirAll(_ string, _ os.FileMode) error {
 	return fmt.Errorf(errorMsg)
 }
 
-func TestOneAgentProvisioner_Reconcile(t *testing.T) {
+func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 	ctx := context.TODO()
 	dynakubeName := "test-dk"
 
@@ -170,7 +170,6 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		require.Len(t, dynakubeMetadatas, 0)
 	})
 	t.Run(`host monitoring used`, func(t *testing.T) {
-	
 		fakeClient := fake.NewClient(
 			&dynatracev1beta1.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
@@ -196,30 +195,21 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		mockDtcBuilder := &dynatraceclient.StubBuilder{
 			DynatraceClient: mockClient,
 		}
-	
+
 		gc := &CSIGarbageCollectorMock{}
 		gc.On("Reconcile").Return(reconcile.Result{}, nil)
 		db := metadata.FakeMemoryDB()
+
 		provisioner := &OneAgentProvisioner{
-			apiReader: fake.NewClient(
-				&dynatracev1beta1.DynaKube{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: dynakubeName,
-					},
-					Spec: dynatracev1beta1.DynaKubeSpec{
-						APIURL: testAPIURL,
-						OneAgent: dynatracev1beta1.OneAgentSpec{
-							HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
-						},
-					},
-				},
-			),
-			fs:   afero.NewMemMapFs(),
-			db:   db,
-			gc:   gc,
-			path: metadata.PathResolver{},
+			apiReader:              fakeClient,
+			client:                 fakeClient,
+			fs:                     afero.NewMemMapFs(),
+			db:                     db,
+			gc:                     gc,
+			path:                   metadata.PathResolver{},
+			dynatraceClientBuilder: mockDtcBuilder,
 		}
-		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakubeName}})
+		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
