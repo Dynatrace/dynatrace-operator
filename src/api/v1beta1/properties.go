@@ -33,9 +33,9 @@ const (
 	PullSecretSuffix                        = "-pull-secret"
 	ActiveGateTenantSecretSuffix            = "-activegate-tenant"
 	OneAgentTenantSecretSuffix              = "-oneagent-tenant"
-	OneAgentConnectionInfoConfigMapSuffix   = "-oneagent-connection-info"
-	ActiveGateConnectionInfoConfigMapSuffix = "-activegate-connection-info"
-	AuthTokenSecretSuffix                   = "-activegate-authtoken"
+	OneAgentConnectionInfoConfigMapSuffix   = "-oneagent-connection-info-secret"
+	ActiveGateConnectionInfoConfigMapSuffix = "-activegate-connection-info-secret"
+	AuthTokenSecretSuffix                   = "-activegate-authtoken-secret"
 	PodNameOsAgent                          = "oneagent"
 
 	defaultActiveGateImage = "/linux/activegate:latest"
