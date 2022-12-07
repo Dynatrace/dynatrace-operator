@@ -123,7 +123,7 @@ func buildConnectionInfoConfigMap(connectionInfo dtclient.ConnectionInfo) map[st
 	data := map[string]string{}
 
 	if connectionInfo.TenantUUID != "" {
-		data[TenantUuidName] = connectionInfo.TenantUUID
+		data[REMOVE_IT_TenantUuidName] = connectionInfo.TenantUUID
 	}
 	if connectionInfo.Endpoints != "" {
 		data[CommunicationEndpointsName] = connectionInfo.Endpoints
