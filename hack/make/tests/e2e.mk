@@ -7,7 +7,7 @@ test/e2e/activegate: manifests
 
 ## Runs CloudNative e2e test only
 test/e2e/cloudnative: manifests
-	go test -v -tags e2e -timeout 10m -count=1 -failfast ./test/cloudnative
+	go test -v -tags e2e -timeout 20m -count=1 -failfast ./test/cloudnative
 
 ## Runs CloudNative e2e test only
 test/e2e/classic: manifests
@@ -15,7 +15,7 @@ test/e2e/classic: manifests
 
 ## Runs CloudNative istio e2e test only
 test/e2e/cloudnative/istio: manifests
-	go test -v -tags e2e -timeout 10m -count=1 -failfast ./test/cloudnative/istio
+	go test -v -tags e2e -timeout 20m -count=1 -failfast ./test/cloudnative/istio
 
 ## Runs CloudNative proxy e2e test only
 test/e2e/cloudnative/proxy: manifests
