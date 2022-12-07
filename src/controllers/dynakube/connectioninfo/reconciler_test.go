@@ -104,7 +104,6 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 		var actual corev1.ConfigMap
 		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: dynakube.ActiveGateConnectionInfoConfigMapName(), Namespace: testNamespace}, &actual)
 		require.NoError(t, err)
-		assert.Equal(t, testTenantUuid, actual.Data[REMOVE_IT_TenantUuidName])
 		assert.Equal(t, testTenantEndpoints, actual.Data[CommunicationEndpointsName])
 	})
 	t.Run(`update activegate ConfigMap`, func(t *testing.T) {
@@ -115,7 +114,6 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Data: map[string]string{
-					REMOVE_IT_TenantUuidName:   "outdated",
 					CommunicationEndpointsName: "outdated",
 				},
 			},
@@ -127,7 +125,6 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 		var actual corev1.ConfigMap
 		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: dynakube.ActiveGateConnectionInfoConfigMapName(), Namespace: testNamespace}, &actual)
 		require.NoError(t, err)
-		assert.Equal(t, testTenantUuid, actual.Data[REMOVE_IT_TenantUuidName])
 		assert.Equal(t, testTenantEndpoints, actual.Data[CommunicationEndpointsName])
 	})
 	t.Run(`up to date activegate secret`, func(t *testing.T) {
@@ -138,7 +135,6 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Data: map[string]string{
-					REMOVE_IT_TenantUuidName:   testTenantUuid,
 					CommunicationEndpointsName: testTenantEndpoints,
 				},
 			},
@@ -239,7 +235,6 @@ func TestReconcile_OneagentConfigMap(t *testing.T) {
 		var actual corev1.ConfigMap
 		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: dynakube.OneAgentConnectionInfoConfigMapName(), Namespace: testNamespace}, &actual)
 		require.NoError(t, err)
-		assert.Equal(t, testTenantUuid, actual.Data[REMOVE_IT_TenantUuidName])
 		assert.Equal(t, testTenantEndpoints, actual.Data[CommunicationEndpointsName])
 	})
 	t.Run(`update oneagent ConfigMap`, func(t *testing.T) {
@@ -250,7 +245,6 @@ func TestReconcile_OneagentConfigMap(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Data: map[string]string{
-					REMOVE_IT_TenantUuidName:   "outdated",
 					CommunicationEndpointsName: "outdated",
 				},
 			},
@@ -263,7 +257,6 @@ func TestReconcile_OneagentConfigMap(t *testing.T) {
 		var actual corev1.ConfigMap
 		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: dynakube.OneAgentConnectionInfoConfigMapName(), Namespace: testNamespace}, &actual)
 		require.NoError(t, err)
-		assert.Equal(t, testTenantUuid, actual.Data[REMOVE_IT_TenantUuidName])
 		assert.Equal(t, testTenantEndpoints, actual.Data[CommunicationEndpointsName])
 	})
 	t.Run(`up to date oneagent ConfigMap`, func(t *testing.T) {
@@ -274,7 +267,6 @@ func TestReconcile_OneagentConfigMap(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Data: map[string]string{
-					REMOVE_IT_TenantUuidName:   testTenantUuid,
 					CommunicationEndpointsName: testTenantEndpoints,
 				},
 			},
