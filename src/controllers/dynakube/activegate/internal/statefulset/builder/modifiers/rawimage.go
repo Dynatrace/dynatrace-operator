@@ -30,11 +30,12 @@ func (mod RawImageModifier) Enabled() bool {
 	return !mod.dynakube.FeatureDisableActivegateRawImage()
 }
 
-func (mod RawImageModifier) Modify(sts *appsv1.StatefulSet) {
+func (mod RawImageModifier) Modify(sts *appsv1.StatefulSet) error {
 	baseContainer := kubeobjects.FindContainerInPodSpec(&sts.Spec.Template.Spec, consts.ActiveGateContainerName)
 	sts.Spec.Template.Spec.Volumes = append(sts.Spec.Template.Spec.Volumes, mod.getVolumes()...)
 	baseContainer.VolumeMounts = append(baseContainer.VolumeMounts, mod.getVolumeMounts()...)
 	baseContainer.Env = append(baseContainer.Env, mod.getEnvs()...)
+	return nil
 }
 
 func (mod RawImageModifier) getVolumes() []corev1.Volume {

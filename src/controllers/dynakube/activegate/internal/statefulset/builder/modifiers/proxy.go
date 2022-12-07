@@ -28,10 +28,11 @@ func (mod ProxyModifier) Enabled() bool {
 	return mod.dynakube.NeedsActiveGateProxy()
 }
 
-func (mod ProxyModifier) Modify(sts *appsv1.StatefulSet) {
+func (mod ProxyModifier) Modify(sts *appsv1.StatefulSet) error {
 	sts.Spec.Template.Spec.Volumes = append(sts.Spec.Template.Spec.Volumes, mod.getVolumes()...)
 	baseContainer := kubeobjects.FindContainerInPodSpec(&sts.Spec.Template.Spec, consts.ActiveGateContainerName)
 	baseContainer.VolumeMounts = append(baseContainer.VolumeMounts, mod.getVolumeMounts()...)
+	return nil
 }
 
 func (mod ProxyModifier) getVolumes() []corev1.Volume {

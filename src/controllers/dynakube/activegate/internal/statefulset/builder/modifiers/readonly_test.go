@@ -45,7 +45,7 @@ func TestReadOnlyModify(t *testing.T) {
 		expectedVolumes := mod.getVolumes()
 		expectedVolumeMounts := mod.getVolumeMounts()
 
-		sts := builder.AddModifier(mod).Build()
+		sts, _ := builder.AddModifier(mod).Build()
 
 		require.NotEmpty(t, sts)
 		isSubset(t, expectedVolumes, sts.Spec.Template.Spec.Volumes)

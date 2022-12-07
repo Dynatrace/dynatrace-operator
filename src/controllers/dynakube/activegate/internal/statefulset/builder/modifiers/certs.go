@@ -34,10 +34,11 @@ func (mod CertificatesModifier) Enabled() bool {
 	return mod.dynakube.HasActiveGateCaCert()
 }
 
-func (mod CertificatesModifier) Modify(sts *appsv1.StatefulSet) {
+func (mod CertificatesModifier) Modify(sts *appsv1.StatefulSet) error {
 	baseContainer := kubeobjects.FindContainerInPodSpec(&sts.Spec.Template.Spec, consts.ActiveGateContainerName)
 	sts.Spec.Template.Spec.Volumes = append(sts.Spec.Template.Spec.Volumes, mod.getVolumes()...)
 	baseContainer.VolumeMounts = append(baseContainer.VolumeMounts, mod.getVolumeMounts()...)
+	return nil
 }
 
 func (mod CertificatesModifier) getVolumes() []corev1.Volume {
