@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -16,7 +15,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
-	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -60,7 +58,6 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 
 	t.Run(`no dynakube instance`, func(t *testing.T) {
 		gc := &CSIGarbageCollectorMock{}
-		gc.On("Create").Return(reconcile.Result{}, nil)
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(),
 			db:        metadata.FakeMemoryDB(),
@@ -68,14 +65,12 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		}
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{})
 
-		gc.AssertNumberOfCalls(t, "Create", 0)
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		require.Equal(t, reconcile.Result{}, result)
 	})
 	t.Run(`dynakube deleted`, func(t *testing.T) {
 		gc := &CSIGarbageCollectorMock{}
-		gc.On("Create").Return(reconcile.Result{}, nil)
 		db := metadata.FakeMemoryDB()
 		dynakube := metadata.Dynakube{TenantUUID: tenantUUID, LatestVersion: agentVersion, Name: dkName}
 		_ = db.InsertDynakube(ctx, &dynakube)
@@ -96,7 +91,6 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	})
 	t.Run(`application monitoring disabled`, func(t *testing.T) {
 		gc := &CSIGarbageCollectorMock{}
-		gc.On("Create").Return(reconcile.Result{}, nil)
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
@@ -113,14 +107,12 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		}
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakubeName}})
 
-		gc.AssertNumberOfCalls(t, "Create", 0)
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		require.Equal(t, reconcile.Result{RequeueAfter: longRequeueDuration}, result)
 	})
 	t.Run(`csi driver not enabled`, func(t *testing.T) {
 		gc := &CSIGarbageCollectorMock{}
-		gc.On("Create").Return(reconcile.Result{}, nil)
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
@@ -141,14 +133,12 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		}
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakubeName}})
 
-		gc.AssertNumberOfCalls(t, "Create", 0)
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		require.Equal(t, reconcile.Result{RequeueAfter: longRequeueDuration}, result)
 	})
 	t.Run(`csi driver disabled`, func(t *testing.T) {
 		gc := &CSIGarbageCollectorMock{}
-		gc.On("Create").Return(reconcile.Result{}, nil)
 		db := metadata.FakeMemoryDB()
 		_ = db.InsertDynakube(ctx, &metadata.Dynakube{Name: dynakubeName})
 		provisioner := &OneAgentProvisioner{
@@ -171,7 +161,6 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		}
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakubeName}})
 
-		gc.AssertNumberOfCalls(t, "Create", 0)
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		require.Equal(t, reconcile.Result{RequeueAfter: longRequeueDuration}, result)
@@ -182,9 +171,8 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	})
 	t.Run(`host monitoring used`, func(t *testing.T) {
 		gc := &CSIGarbageCollectorMock{}
-		gc.On("Create").Return(reconcile.Result{}, nil)
+		gc.On("Reconcile").Return(reconcile.Result{}, nil)
 		db := metadata.FakeMemoryDB()
-		_ = db.InsertDynakube(ctx, &metadata.Dynakube{Name: dynakubeName})
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
@@ -192,29 +180,30 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 						Name: dynakubeName,
 					},
 					Spec: dynatracev1beta1.DynaKubeSpec{
+						APIURL: testAPIURL,
 						OneAgent: dynatracev1beta1.OneAgentSpec{
 							HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
 						},
 					},
 				},
 			),
-			db: db,
-			gc: gc,
+			fs:   afero.NewMemMapFs(),
+			db:   db,
+			gc:   gc,
+			path: metadata.PathResolver{},
 		}
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakubeName}})
 
-		gc.AssertNumberOfCalls(t, "Create", 0)
 		require.NoError(t, err)
 		require.NotNil(t, result)
-		require.Equal(t, reconcile.Result{RequeueAfter: longRequeueDuration}, result)
+		require.Equal(t, reconcile.Result{RequeueAfter: defaultRequeueDuration}, result)
 
 		dynakubeMetadatas, err := db.GetAllDynakubes(ctx)
 		require.NoError(t, err)
-		require.Len(t, dynakubeMetadatas, 0)
+		require.Len(t, dynakubeMetadatas, 1)
 	})
 	t.Run(`no tokens`, func(t *testing.T) {
 		gc := &CSIGarbageCollectorMock{}
-		gc.On("Create").Return(reconcile.Result{}, nil)
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
@@ -230,17 +219,17 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 				},
 			),
 			gc: gc,
+			db: metadata.FakeMemoryDB(),
+			fs: afero.NewMemMapFs(),
 		}
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
-		gc.AssertNumberOfCalls(t, "Create", 0)
 		require.EqualError(t, err, `secrets "`+dkName+`" not found`)
 		require.NotNil(t, result)
 		require.Equal(t, reconcile.Result{}, result)
 	})
 	t.Run(`error when creating dynatrace client`, func(t *testing.T) {
 		gc := &CSIGarbageCollectorMock{}
-		gc.On("Create").Return(reconcile.Result{}, nil)
 		mockDtcBuilder := &dynatraceclient.StubBuilder{
 			Err: fmt.Errorf(errorMsg),
 		}
@@ -268,18 +257,17 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			),
 			dynatraceClientBuilder: mockDtcBuilder,
 			gc:                     gc,
+			db:                     metadata.FakeMemoryDB(),
+			fs:                     afero.NewMemMapFs(),
 		}
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
-		gc.AssertNumberOfCalls(t, "Create", 0)
 		require.EqualError(t, err, "failed to create Dynatrace client: "+errorMsg)
 		require.NotNil(t, result)
 		require.Equal(t, reconcile.Result{}, result)
 	})
 	t.Run(`error creating directories`, func(t *testing.T) {
 		gc := &CSIGarbageCollectorMock{}
-		gcError := errors.New("Custom GC error")
-		gc.On("Create").Return(reconcile.Result{}, gcError)
 		errorfs := &mkDirAllErrorFs{
 			Fs: afero.NewMemMapFs(),
 		}
@@ -321,8 +309,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		}
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
-		gc.AssertNumberOfCalls(t, "Create", 0)
-		require.EqualError(t, err, "failed to create directory "+filepath.Join(tenantUUID)+": "+errorMsg)
+		require.EqualError(t, err, "failed to create directory "+tenantUUID+": "+errorMsg)
 		require.NotNil(t, result)
 		require.Equal(t, reconcile.Result{}, result)
 
@@ -399,7 +386,6 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	})
 	t.Run(`error getting dynakube from db`, func(t *testing.T) {
 		gc := &CSIGarbageCollectorMock{}
-		gc.On("Create").Return(reconcile.Result{}, nil)
 		memFs := afero.NewMemMapFs()
 		mockClient := &dtclient.MockDynatraceClient{}
 		mockClient.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{
@@ -440,7 +426,6 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
-		gc.AssertNumberOfCalls(t, "Create", 0)
 		require.Error(t, err)
 		require.Empty(t, result)
 	})
