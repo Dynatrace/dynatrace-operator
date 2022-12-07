@@ -31,10 +31,10 @@ import (
 const (
 	// PullSecretSuffix is the suffix appended to the DynaKube name to n.
 	PullSecretSuffix                        = "-pull-secret"
-	ActiveGateTenantSecretSuffix            = "-activegate-tenant"
-	OneAgentTenantSecretSuffix              = "-oneagent-tenant"
-	OneAgentConnectionInfoConfigMapSuffix   = "-oneagent-connection-info-secret"
-	ActiveGateConnectionInfoConfigMapSuffix = "-activegate-connection-info-secret"
+	ActiveGateTenantSecretSuffix            = "-activegate-tenant-secret"
+	OneAgentTenantSecretSuffix              = "-oneagent-tenant-secret"
+	OneAgentConnectionInfoConfigMapSuffix   = "-oneagent-connection-info"
+	ActiveGateConnectionInfoConfigMapSuffix = "-activegate-connection-info"
 	AuthTokenSecretSuffix                   = "-activegate-authtoken-secret"
 	PodNameOsAgent                          = "oneagent"
 
