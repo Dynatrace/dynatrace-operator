@@ -34,7 +34,7 @@ func (dsInfo *builderInfo) environmentVariables() []corev1.EnvVar {
 			Name: dsInfo.instance.OneAgentConnectionInfoConfigMapName(),
 		},
 		Key:      connectioninfo.CommunicationEndpointsName,
-		Optional: address.Of[bool](false),
+		Optional: address.Of(false),
 	}})
 	envVarMap = setDefaultValue(envVarMap, dtClusterId, dsInfo.clusterId)
 

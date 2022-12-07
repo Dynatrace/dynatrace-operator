@@ -94,7 +94,7 @@ func (mod RawImageModifier) communicationEndpointEnvVar() corev1.EnvVar {
 				Name: mod.dynakube.ActiveGateConnectionInfoConfigMapName(),
 			},
 			Key:      connectioninfo.CommunicationEndpointsName,
-			Optional: address.Of[bool](false),
+			Optional: address.Of(false),
 		}},
 	}
 }

@@ -175,7 +175,7 @@ func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {
 				Name: statefulSetBuilder.dynakube.ActiveGateConnectionInfoConfigMapName(),
 			},
 			Key:      connectioninfo.CommunicationEndpointsName,
-			Optional: address.Of[bool](false),
+			Optional: address.Of(false),
 		}}},
 	}
 	envs = append(envs, statefulSetBuilder.capability.Properties().Env...)
