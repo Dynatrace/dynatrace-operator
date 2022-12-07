@@ -39,7 +39,7 @@ func TestSyntheticContainers(t *testing.T) {
 				env.Name)
 		}
 
-		expectedRequestCpu := resource.NewScaledQuantity(750, resource.Milli).String()
+		expectedRequestCpu := resource.NewScaledQuantity(1000, resource.Milli).String()
 		assertion.Equal(
 			container.Resources.Requests.Cpu().String(),
 			expectedRequestCpu,

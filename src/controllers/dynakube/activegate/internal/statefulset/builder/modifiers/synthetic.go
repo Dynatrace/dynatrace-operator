@@ -54,31 +54,31 @@ type nodeRequirements struct {
 }
 
 var nodeRequirementsBySize = map[string]nodeRequirements{
-	dynatracev1beta1.SyntheticNodeXs: nodeRequirements{
-		requestResources:                     buildRequirementResources("0.75", "1.5Gi"),
-		limitResources:                       buildRequirementResources("1.5", "2.5Gi"),
-		jvmHeap:                              buildQuantity("768M"),
-		chromiumCacheVolume:                  buildQuantity("256Mi"),
-		tmpStorageVolume:                     buildQuantity("8Mi"),
-		persistentVolumeClaimResourceStorage: *buildQuantity("4Gi"),
-	},
-
-	dynatracev1beta1.SyntheticNodeS: nodeRequirements{
+	dynatracev1beta1.SyntheticNodeXs: {
 		requestResources:                     buildRequirementResources("1", "2Gi"),
 		limitResources:                       buildRequirementResources("2", "3Gi"),
+		jvmHeap:                              buildQuantity("700M"),
+		chromiumCacheVolume:                  buildQuantity("256Mi"),
+		tmpStorageVolume:                     buildQuantity("8Mi"),
+		persistentVolumeClaimResourceStorage: *buildQuantity("3Gi"),
+	},
+
+	dynatracev1beta1.SyntheticNodeS: {
+		requestResources:                     buildRequirementResources("2", "3Gi"),
+		limitResources:                       buildRequirementResources("4", "6Gi"),
 		jvmHeap:                              buildQuantity("1024M"),
 		chromiumCacheVolume:                  buildQuantity("512Mi"),
 		tmpStorageVolume:                     buildQuantity("10Mi"),
 		persistentVolumeClaimResourceStorage: *buildQuantity("6Gi"),
 	},
 
-	dynatracev1beta1.SyntheticNodeM: nodeRequirements{
-		requestResources:                     buildRequirementResources("1.5", "2.5Gi"),
-		limitResources:                       buildRequirementResources("2.5", "3.5Gi"),
-		jvmHeap:                              buildQuantity("1536M"),
+	dynatracev1beta1.SyntheticNodeM: {
+		requestResources:                     buildRequirementResources("4", "5Gi"),
+		limitResources:                       buildRequirementResources("8", "10Gi"),
+		jvmHeap:                              buildQuantity("2048M"),
 		chromiumCacheVolume:                  buildQuantity("1Gi"),
 		tmpStorageVolume:                     buildQuantity("12Mi"),
-		persistentVolumeClaimResourceStorage: *buildQuantity("8Gi"),
+		persistentVolumeClaimResourceStorage: *buildQuantity("12Gi"),
 	},
 }
 
