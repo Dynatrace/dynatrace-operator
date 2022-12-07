@@ -1,13 +1,12 @@
 //go:build e2e
 
-package cloudnativeistio
+package cloudnativenetwork
 
 import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/cloudnative"
 	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/test/istiosetup"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/environment"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/oneagent"
@@ -19,12 +18,10 @@ var testEnvironment env.Environment
 
 func TestMain(m *testing.M) {
 	testEnvironment = environment.Get()
-	testEnvironment.BeforeEachTest(istiosetup.AssertIstioNamespace())
-	testEnvironment.BeforeEachTest(istiosetup.AssertIstiodDeployment())
 	testEnvironment.BeforeEachTest(namespace.DeleteIfExists(sampleapps.Namespace))
-	testEnvironment.BeforeEachTest(dynakube.DeleteIfExists(dynakube.NewBuilder().WithDefaultObjectMeta().Build()))
+	testEnvironment.BeforeEachTest(namespace.DeleteIfExists(dynakube.Namespace))
 	testEnvironment.BeforeEachTest(oneagent.WaitForDaemonSetPodsDeletion())
-	testEnvironment.BeforeEachTest(namespace.Recreate(namespace.NewBuilder(dynakube.Namespace).WithLabels(istiosetup.IstioLabel).Build()))
+	testEnvironment.BeforeEachTest(namespace.Recreate(namespace.NewBuilder(dynakube.Namespace).Build()))
 
 	testEnvironment.AfterEachTest(namespace.DeleteIfExists(sampleapps.Namespace))
 	testEnvironment.AfterEachTest(dynakube.DeleteIfExists(dynakube.NewBuilder().WithDefaultObjectMeta().Build()))
@@ -35,6 +32,5 @@ func TestMain(m *testing.M) {
 }
 
 func TestCloudNative(t *testing.T) {
-	testEnvironment.Test(t, cloudnative.Install(t, true))
-	testEnvironment.Test(t, cloudnative.CodeModules(t, true))
+	testEnvironment.Test(t, cloudnative.NetworkProblems(t))
 }

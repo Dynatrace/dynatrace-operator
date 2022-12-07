@@ -4,6 +4,7 @@ package cloudnative
 
 import (
 	"context"
+	"path"
 	"testing"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/operator"
+	"github.com/Dynatrace/dynatrace-operator/test/project"
 	"github.com/Dynatrace/dynatrace-operator/test/sampleapps"
 	"github.com/Dynatrace/dynatrace-operator/test/secrets"
 	"github.com/Dynatrace/dynatrace-operator/test/setup"
@@ -25,12 +27,12 @@ import (
 
 const (
 	agentMountPath        = "/opt/dynatrace/oneagent-paas"
-	sampleNSPath          = "../testdata/cloudnative/test-namespace.yaml"
-	deploymentPath        = "../testdata/cloudnative/codemodules-deployment.yaml"
+	sampleNSPath          = "cloudnative/test-namespace.yaml"
+	deploymentPath        = "cloudnative/codemodules-deployment.yaml"
 	ldPreloadError        = "ERROR: ld.so: object '/opt/dynatrace/oneagent-paas/agent/lib64/liboneagentproc.so' from LD_PRELOAD cannot be preloaded"
 	podRestartTimeout     = 5 * time.Minute
 	restartCountThreshold = int32(3)
-	csiNetworkPolicy      = "../testdata/network/csi-denial.yaml"
+	csiNetworkPolicy      = "network/csi-denial.yaml"
 )
 
 func NetworkProblems(t *testing.T) features.Feature {
@@ -39,8 +41,8 @@ func NetworkProblems(t *testing.T) features.Feature {
 	require.NoError(t, err)
 
 	createNetworkProblems := features.New("creating network problems")
-	createNetworkProblems.Setup(manifests.InstallFromFile(csiNetworkPolicy))
-	createNetworkProblems.Setup(manifests.InstallFromFile(sampleNSPath))
+	createNetworkProblems.Setup(manifests.InstallFromFile(path.Join(project.TestDataDir(), csiNetworkPolicy)))
+	createNetworkProblems.Setup(manifests.InstallFromFile(path.Join(project.TestDataDir(), sampleNSPath)))
 	createNetworkProblems.Setup(secrets.ApplyDefault(secretConfigs[0]))
 	createNetworkProblems.Setup(operator.InstallFromSource(true))
 
@@ -54,7 +56,7 @@ func NetworkProblems(t *testing.T) features.Feature {
 			Build()),
 	)
 	createNetworkProblems.Assess("dynakube phase changes to 'Running'", dynakube.WaitForDynakubePhase(dynakube.NewBuilder().WithDefaultObjectMeta().Build()))
-	createNetworkProblems.Assess("install deployment", manifests.InstallFromFile(deploymentPath))
+	createNetworkProblems.Assess("install deployment", manifests.InstallFromFile(path.Join(project.TestDataDir(), deploymentPath)))
 	createNetworkProblems.Assess("start sample apps and injection", sampleapps.Install)
 	createNetworkProblems.Assess("check for dummy volume", checkForDummyVolume)
 	createNetworkProblems.Assess("check pods after sleep", checkPodsAfterSleep)
