@@ -459,7 +459,7 @@ func (dk *DynaKube) CommunicationHosts() []dtclient.CommunicationHost {
 	return communicationHosts
 }
 
-func (dk *DynaKube) TenantUUID() (string, error) {
+func (dk *DynaKube) TenantUuidOrAliasFromApiUrl() (string, error) {
 	return tenantUUID(dk.Spec.APIURL)
 }
 
