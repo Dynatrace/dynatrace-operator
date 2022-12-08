@@ -48,9 +48,6 @@ func TestRawImageModify(t *testing.T) {
 		require.NotEmpty(t, sts)
 		isSubset(t, mod.getVolumes(), sts.Spec.Template.Spec.Volumes)
 		isSubset(t, mod.getVolumeMounts(), sts.Spec.Template.Spec.Containers[0].VolumeMounts)
-
-		envs, err := mod.getEnvs()
-		assert.NoError(t, err)
-		isSubset(t, envs, sts.Spec.Template.Spec.Containers[0].Env)
+		isSubset(t, mod.getEnvs(), sts.Spec.Template.Spec.Containers[0].Env)
 	})
 }

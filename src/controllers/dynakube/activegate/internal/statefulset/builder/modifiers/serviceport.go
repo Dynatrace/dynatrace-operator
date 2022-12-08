@@ -37,12 +37,7 @@ func (mod ServicePortModifier) Modify(sts *appsv1.StatefulSet) error {
 	baseContainer := kubeobjects.FindContainerInPodSpec(&sts.Spec.Template.Spec, consts.ActiveGateContainerName)
 	baseContainer.ReadinessProbe.HTTPGet.Port = intstr.FromString(consts.HttpsServicePortName)
 	baseContainer.Ports = append(baseContainer.Ports, mod.getPorts()...)
-
-	envs, err := mod.getEnvs()
-	if err != nil {
-		return err
-	}
-	baseContainer.Env = append(baseContainer.Env, envs...)
+	baseContainer.Env = append(baseContainer.Env, mod.getEnvs()...)
 	return nil
 }
 
@@ -59,13 +54,13 @@ func (mod ServicePortModifier) getPorts() []corev1.ContainerPort {
 	}
 }
 
-func (mod ServicePortModifier) getEnvs() ([]corev1.EnvVar, error) {
+func (mod ServicePortModifier) getEnvs() []corev1.EnvVar {
 	return []corev1.EnvVar{
 		{
 			Name:  consts.EnvDtDnsEntryPoint,
 			Value: mod.buildDNSEntryPoint(),
 		},
-	}, nil
+	}
 }
 
 func (mod ServicePortModifier) buildDNSEntryPoint() string {

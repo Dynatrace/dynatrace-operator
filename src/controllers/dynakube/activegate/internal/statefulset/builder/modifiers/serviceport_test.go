@@ -46,7 +46,7 @@ func TestServicePortModify(t *testing.T) {
 		mod := NewServicePortModifier(dynakube, multiCapability)
 		builder := createBuilderForTesting()
 		expectedPorts := mod.getPorts()
-		expectedEnv, _ := mod.getEnvs()
+		expectedEnv := mod.getEnvs()
 
 		sts, _ := builder.AddModifier(mod).Build()
 

@@ -17,8 +17,6 @@ import (
 const (
 	testDynakubeName  = "testDk"
 	testNamespaceName = "testNs"
-	testTenant        = "testTenant"
-	testApiUrl        = "https://" + testTenant + ".xyz/api"
 )
 
 func createBuilderForTesting() builder.Builder {
@@ -58,7 +56,7 @@ func getBaseDynakube() dynatracev1beta1.DynaKube {
 			Namespace:   testNamespaceName,
 			Annotations: map[string]string{},
 		},
-		Spec: dynatracev1beta1.DynaKubeSpec{APIURL: testApiUrl},
+		Spec: dynatracev1beta1.DynaKubeSpec{},
 	}
 }
 
@@ -106,9 +104,7 @@ func TestNoConflict(t *testing.T) {
 			}
 			envMod, ok := mod.(envModifier)
 			if ok {
-				envs, err := envMod.getEnvs()
-				assert.NoError(t, err)
-				isSubset(t, envs, sts.Spec.Template.Spec.Containers[0].Env)
+				isSubset(t, envMod.getEnvs(), sts.Spec.Template.Spec.Containers[0].Env)
 			}
 			initMod, ok := mod.(initContainerModifier)
 			if ok {

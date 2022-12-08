@@ -17,7 +17,7 @@ type volumeMountModifier interface {
 }
 
 type envModifier interface {
-	getEnvs() ([]corev1.EnvVar, error)
+	getEnvs() []corev1.EnvVar
 }
 
 type initContainerModifier interface {

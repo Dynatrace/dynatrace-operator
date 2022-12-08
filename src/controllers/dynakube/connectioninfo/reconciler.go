@@ -122,6 +122,9 @@ func buildConnectionInfoSecret(connectionInfo dtclient.ConnectionInfo) map[strin
 func buildConnectionInfoConfigMap(connectionInfo dtclient.ConnectionInfo) map[string]string {
 	data := map[string]string{}
 
+	if connectionInfo.TenantUUID != "" {
+		data[TenantUuidName] = connectionInfo.TenantUUID
+	}
 	if connectionInfo.Endpoints != "" {
 		data[CommunicationEndpointsName] = connectionInfo.Endpoints
 	}

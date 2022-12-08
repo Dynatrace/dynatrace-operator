@@ -34,12 +34,7 @@ func (mod RawImageModifier) Modify(sts *appsv1.StatefulSet) error {
 	baseContainer := kubeobjects.FindContainerInPodSpec(&sts.Spec.Template.Spec, consts.ActiveGateContainerName)
 	sts.Spec.Template.Spec.Volumes = append(sts.Spec.Template.Spec.Volumes, mod.getVolumes()...)
 	baseContainer.VolumeMounts = append(baseContainer.VolumeMounts, mod.getVolumeMounts()...)
-
-	envs, err := mod.getEnvs()
-	if err != nil {
-		return err
-	}
-	baseContainer.Env = append(baseContainer.Env, envs...)
+	baseContainer.Env = append(baseContainer.Env, mod.getEnvs()...)
 	return nil
 }
 
@@ -67,23 +62,20 @@ func (mod RawImageModifier) getVolumeMounts() []corev1.VolumeMount {
 	}
 }
 
-func (mod RawImageModifier) getEnvs() ([]corev1.EnvVar, error) {
-	envVar, err := mod.tenantUuidEnvVar()
-	if err != nil {
-		return nil, err
-	}
-	return []corev1.EnvVar{envVar, mod.communicationEndpointEnvVar()}, nil
+func (mod RawImageModifier) getEnvs() []corev1.EnvVar {
+	return []corev1.EnvVar{mod.tenantUUIDNameEnvVar(), mod.communicationEndpointEnvVar()}
 }
 
-func (mod RawImageModifier) tenantUuidEnvVar() (corev1.EnvVar, error) {
-	uuid, err := mod.dynakube.TenantUUID()
-	if err != nil {
-		return corev1.EnvVar{}, err
-	}
+func (mod RawImageModifier) tenantUUIDNameEnvVar() corev1.EnvVar {
 	return corev1.EnvVar{
-		Name:  consts.EnvDtTenant,
-		Value: uuid,
-	}, nil
+		Name: consts.EnvDtTenant,
+		ValueFrom: &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: mod.dynakube.ActiveGateConnectionInfoConfigMapName(),
+			},
+			Key:      connectioninfo.TenantUuidName,
+			Optional: address.Of[bool](false),
+		}}}
 }
 
 func (mod RawImageModifier) communicationEndpointEnvVar() corev1.EnvVar {
