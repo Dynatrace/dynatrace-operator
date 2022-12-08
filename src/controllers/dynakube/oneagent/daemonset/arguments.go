@@ -3,6 +3,7 @@ package daemonset
 import (
 	"fmt"
 
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 )
@@ -28,8 +29,8 @@ func (dsInfo *builderInfo) arguments() []string {
 }
 
 func (dsInfo *builderInfo) appendImmutableImageArgs(args []string) []string {
-	args = append(args, fmt.Sprintf("--set-tenant=%s", dsInfo.instance.Status.ConnectionInfo.TenantUUID))
-	args = append(args, fmt.Sprintf("--set-server={$(%s)}", dtCommunication))
+	args = append(args, fmt.Sprintf("--set-tenant=$(%s)", consts.EnvDtTenant))
+	args = append(args, fmt.Sprintf("--set-server={$(%s)}", consts.EnvDtServer))
 	return args
 }
 
