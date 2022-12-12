@@ -459,7 +459,7 @@ func (dk *DynaKube) CommunicationHosts() []dtclient.CommunicationHost {
 	return communicationHosts
 }
 
-// Gets the tenantUUID from the ApiUrl provided, if the tenant is aliased then the alias will be returned
+// TenantUUIDFromApiUrl gets the tenantUUID from the ApiUrl present in the struct, if the tenant is aliased then the alias will be returned
 func (dk *DynaKube) TenantUUIDFromApiUrl() (string, error) {
 	return tenantUUID(dk.Spec.APIURL)
 }
