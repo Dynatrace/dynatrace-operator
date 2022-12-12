@@ -7,11 +7,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/manifests"
+	"github.com/Dynatrace/dynatrace-operator/test/project"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
 const (
-	localManifestsDir          = "../../config/deploy/kubernetes/"
+	localManifestsDir          = "config/deploy/kubernetes/"
 	kubernetesCsiManifest      = "kubernetes-csi.yaml"
 	kubernetesOperatorManifest = "kubernetes.yaml"
 	openshiftCsiManifest       = "openshift-csi.yaml"
@@ -29,14 +30,14 @@ func manifestsPaths(withCsi bool) []string {
 
 	switch platform {
 	case kubeobjects.Openshift:
-		paths = append(paths, path.Join(localManifestsDir, kubernetesOperatorManifest))
+		paths = append(paths, path.Join(project.RootDir(), localManifestsDir, kubernetesOperatorManifest))
 		if withCsi {
-			paths = append(paths, path.Join(localManifestsDir, kubernetesCsiManifest))
+			paths = append(paths, path.Join(project.RootDir(), localManifestsDir, kubernetesCsiManifest))
 		}
 	default:
-		paths = append(paths, path.Join(localManifestsDir, kubernetesOperatorManifest))
+		paths = append(paths, path.Join(project.RootDir(), localManifestsDir, kubernetesOperatorManifest))
 		if withCsi {
-			paths = append(paths, path.Join(localManifestsDir, kubernetesCsiManifest))
+			paths = append(paths, path.Join(project.RootDir(), localManifestsDir, kubernetesCsiManifest))
 		}
 	}
 

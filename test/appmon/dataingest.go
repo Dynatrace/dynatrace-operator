@@ -5,6 +5,7 @@ package appmon
 import (
 	"context"
 	"encoding/json"
+	"path"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -16,6 +17,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/operator"
+	"github.com/Dynatrace/dynatrace-operator/test/project"
 	"github.com/Dynatrace/dynatrace-operator/test/sampleapps"
 	"github.com/Dynatrace/dynatrace-operator/test/secrets"
 	"github.com/Dynatrace/dynatrace-operator/test/shell"
@@ -31,7 +33,7 @@ import (
 )
 
 const (
-	sampleApps   = "../testdata/application-monitoring/sample-apps.yaml"
+	sampleApps   = "application-monitoring/sample-apps.yaml"
 	metadataFile = "/var/lib/dynatrace/enrichment/dt_metadata.json"
 )
 
@@ -58,7 +60,7 @@ func dataIngest(t *testing.T) features.Feature {
 	dataIngestFeature.Setup(secrets.ApplyDefault(tenantSecret))
 	dataIngestFeature.Setup(dynakube.Apply(dataIngestDynakube))
 	dataIngestFeature.Setup(dynakube.WaitForDynakubePhase(dataIngestDynakube))
-	dataIngestFeature.Setup(manifests.InstallFromFile(sampleApps))
+	dataIngestFeature.Setup(manifests.InstallFromFile(path.Join(project.TestDataDir(), sampleApps)))
 	dataIngestFeature.Setup(deployment.WaitFor("test-deployment", sampleapps.Namespace))
 	dataIngestFeature.Setup(pod.WaitFor("test-pod", sampleapps.Namespace))
 

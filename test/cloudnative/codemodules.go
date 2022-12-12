@@ -5,6 +5,7 @@ package cloudnative
 import (
 	"context"
 	"encoding/json"
+	"path"
 	"strconv"
 	"strings"
 	"testing"
@@ -20,6 +21,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/pod"
+	"github.com/Dynatrace/dynatrace-operator/test/project"
 	"github.com/Dynatrace/dynatrace-operator/test/sampleapps"
 	"github.com/Dynatrace/dynatrace-operator/test/secrets"
 	"github.com/Dynatrace/dynatrace-operator/test/setup"
@@ -46,6 +48,10 @@ const (
 	dataPath = "/data/"
 )
 
+var (
+	codeModulesDeploymentConfig = path.Join(project.TestDataDir(), "cloudnative/codemodules-deployment.yaml")
+)
+
 type manifest struct {
 	Version string `json:"version,omitempty"`
 }
@@ -58,14 +64,14 @@ func CodeModules(t *testing.T, istioEnabled bool) features.Feature {
 	codeModulesInjection := features.New("codemodules injection")
 
 	if istioEnabled {
-		codeModulesInjection.Setup(manifests.InstallFromFile("../testdata/cloudnativeistio/test-namespace.yaml"))
+		codeModulesInjection.Setup(manifests.InstallFromFile(istioTestNamespaceConfig))
 	} else {
-		codeModulesInjection.Setup(manifests.InstallFromFile("../testdata/cloudnative/test-namespace.yaml"))
+		codeModulesInjection.Setup(manifests.InstallFromFile(testNamespaceConfig))
 	}
 	setup.InstallDynatraceFromSource(codeModulesInjection, &secretConfigs[0])
 	setup.AssessOperatorDeployment(codeModulesInjection)
 
-	setup.DeploySampleApps(codeModulesInjection, "../testdata/cloudnative/codemodules-deployment.yaml")
+	setup.DeploySampleApps(codeModulesInjection, codeModulesDeploymentConfig)
 
 	dynakubeBuilder := dynakube.NewBuilder().
 		WithDefaultObjectMeta().
