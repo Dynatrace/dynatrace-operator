@@ -54,7 +54,7 @@ func TestCustomPropertyModify(t *testing.T) {
 		mod := NewCustomPropertiesModifier(dynakube, multiCapability)
 		builder := createBuilderForTesting()
 
-		sts := builder.AddModifier(mod).Build()
+		sts, _ := builder.AddModifier(mod).Build()
 
 		require.NotEmpty(t, sts)
 		isSubset(t, mod.getVolumes(), sts.Spec.Template.Spec.Volumes)

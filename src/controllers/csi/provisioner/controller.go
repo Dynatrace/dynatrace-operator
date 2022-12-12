@@ -232,7 +232,7 @@ func (provisioner *OneAgentProvisioner) handleMetadata(ctx context.Context, dk *
 		oldDynakubeMetadata = *dynakubeMetadata
 	}
 
-	tenantUUID, err := dk.TenantUUID()
+	tenantUUID, err := dk.TenantUUIDFromApiUrl()
 	if err != nil {
 		return nil, metadata.Dynakube{}, err
 	}
@@ -295,13 +295,13 @@ func (provisioner *OneAgentProvisioner) getDynaKube(ctx context.Context, name ty
 	return &dk, err
 }
 
-func (provisioner *OneAgentProvisioner) createCSIDirectories(tenantUuid string) error {
-	tenantDir := provisioner.path.TenantDir(tenantUuid)
+func (provisioner *OneAgentProvisioner) createCSIDirectories(tenantUUID string) error {
+	tenantDir := provisioner.path.TenantDir(tenantUUID)
 	if err := provisioner.fs.MkdirAll(tenantDir, 0755); err != nil {
 		return fmt.Errorf("failed to create directory %s: %w", tenantDir, err)
 	}
 
-	agentBinaryDir := provisioner.path.AgentBinaryDir(tenantUuid)
+	agentBinaryDir := provisioner.path.AgentBinaryDir(tenantUUID)
 	if err := provisioner.fs.MkdirAll(agentBinaryDir, 0755); err != nil {
 		return fmt.Errorf("failed to create directory %s: %w", agentBinaryDir, err)
 	}

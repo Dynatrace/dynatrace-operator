@@ -38,7 +38,7 @@ func (statefulSetBuilder Builder) CreateStatefulSet(mods []builder.Modifier) (*a
 	if len(mods) == 0 {
 		mods = modifiers.GenerateAllModifiers(statefulSetBuilder.dynakube, statefulSetBuilder.capability)
 	}
-	sts := activeGateBuilder.AddModifier(mods...).Build()
+	sts, _ := activeGateBuilder.AddModifier(mods...).Build()
 
 	if err := setHash(&sts); err != nil {
 		return nil, err
@@ -178,6 +178,7 @@ func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {
 	if statefulSetBuilder.dynakube.Spec.NetworkZone != "" {
 		envs = append(envs, corev1.EnvVar{Name: consts.EnvDtNetworkZone, Value: statefulSetBuilder.dynakube.Spec.NetworkZone})
 	}
+
 	return envs
 }
 

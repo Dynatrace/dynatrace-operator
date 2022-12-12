@@ -30,7 +30,7 @@ func (mod ReadOnlyModifier) Enabled() bool {
 	return mod.dynakube.FeatureActiveGateReadOnlyFilesystem()
 }
 
-func (mod ReadOnlyModifier) Modify(sts *appsv1.StatefulSet) {
+func (mod ReadOnlyModifier) Modify(sts *appsv1.StatefulSet) error {
 	mod.presentVolumes = sts.Spec.Template.Spec.Volumes
 	sts.Spec.Template.Spec.Volumes = append(sts.Spec.Template.Spec.Volumes, mod.getVolumes()...)
 
@@ -38,6 +38,8 @@ func (mod ReadOnlyModifier) Modify(sts *appsv1.StatefulSet) {
 	baseContainer.SecurityContext.ReadOnlyRootFilesystem = address.Of(true)
 	mod.presentMounts = baseContainer.VolumeMounts
 	baseContainer.VolumeMounts = append(baseContainer.VolumeMounts, mod.getVolumeMounts()...)
+
+	return nil
 }
 
 func (mod ReadOnlyModifier) getVolumes() []corev1.Volume {
