@@ -4,6 +4,7 @@ package cloudnative
 
 import (
 	"context"
+	"path"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -13,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/logs"
 	"github.com/Dynatrace/dynatrace-operator/test/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/test/project"
 	"github.com/Dynatrace/dynatrace-operator/test/sampleapps"
 	"github.com/Dynatrace/dynatrace-operator/test/secrets"
 	"github.com/Dynatrace/dynatrace-operator/test/setup"
@@ -26,20 +28,26 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
+var (
+	testNamespaceConfig      = path.Join(project.TestDataDir(), "cloudnative/test-namespace.yaml")
+	istioTestNamespaceConfig = path.Join(project.TestDataDir(), "cloudnativeistio/test-namespace.yaml")
+	sampleDeploymentConfig   = path.Join(project.TestDataDir(), "cloudnative/sample-deployment.yaml")
+)
+
 func Install(t *testing.T, istioEnabled bool) features.Feature {
 	secretConfig := getSecretConfig(t)
 
 	defaultInstallation := features.New("default installation")
 
 	if istioEnabled {
-		defaultInstallation.Setup(manifests.InstallFromFile("../testdata/cloudnativeistio/test-namespace.yaml"))
+		defaultInstallation.Setup(manifests.InstallFromFile(istioTestNamespaceConfig))
 	} else {
-		defaultInstallation.Setup(manifests.InstallFromFile("../testdata/cloudnative/test-namespace.yaml"))
+		defaultInstallation.Setup(manifests.InstallFromFile(testNamespaceConfig))
 	}
 	setup.InstallDynatraceFromSource(defaultInstallation, &secretConfig)
 	setup.AssessOperatorDeployment(defaultInstallation)
 
-	setup.DeploySampleApps(defaultInstallation, "../testdata/cloudnative/sample-deployment.yaml")
+	setup.DeploySampleApps(defaultInstallation, sampleDeploymentConfig)
 
 	dynakubeBuilder := dynakube.NewBuilder().
 		WithDefaultObjectMeta().

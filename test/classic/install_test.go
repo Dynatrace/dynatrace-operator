@@ -4,6 +4,7 @@ package classic
 
 import (
 	"context"
+	"path"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -11,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/operator"
+	"github.com/Dynatrace/dynatrace-operator/test/project"
 	"github.com/Dynatrace/dynatrace-operator/test/sampleapps"
 	"github.com/Dynatrace/dynatrace-operator/test/setup"
 	"github.com/Dynatrace/dynatrace-operator/test/shell"
@@ -27,7 +29,7 @@ func install(t *testing.T) features.Feature {
 	secretConfig := getSecretConfig(t)
 
 	setup.InstallDynatraceFromSource(installClassicFullStack, &secretConfig)
-	setup.DeploySampleApps(installClassicFullStack, "../testdata/classic-fullstack/sample-deployment.yaml")
+	setup.DeploySampleApps(installClassicFullStack, path.Join(project.TestDataDir(), "classic-fullstack/sample-deployment.yaml"))
 
 	installClassicFullStack.Assess("operator started", operator.WaitForDeployment())
 	installClassicFullStack.Assess("webhook started", webhook.WaitForDeployment())

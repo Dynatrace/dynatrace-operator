@@ -12,10 +12,10 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func Upgrade(t *testing.T) features.Feature {
+func Upgrade(t *testing.T, istioEnabled bool) features.Feature {
 	defaultInstallation := features.New("default installation")
 
-	installReleasedOperatorAndDeploySampleApps(t, defaultInstallation, "v0.9.1")
+	installReleasedOperatorAndDeploySampleApps(t, defaultInstallation, "v0.9.1", istioEnabled)
 
 	// update to snapshot
 	setup.InstallDynatraceFromSource(defaultInstallation, nil)
@@ -27,20 +27,22 @@ func Upgrade(t *testing.T) features.Feature {
 	return defaultInstallation.Feature()
 }
 
-func installReleasedOperatorAndDeploySampleApps(t *testing.T, defaultInstallation *features.FeatureBuilder, releaseTag string) {
-	defaultInstallation.Setup(manifests.InstallFromFile("../testdata/cloudnative/test-namespace.yaml"))
+func installReleasedOperatorAndDeploySampleApps(t *testing.T, defaultInstallation *features.FeatureBuilder, releaseTag string, istioEnabled bool) {
+	defaultInstallation.Setup(manifests.InstallFromFile(testNamespaceConfig))
 
 	secretConfig := getSecretConfig(t)
 	setup.InstallDynatraceFromGithub(defaultInstallation, &secretConfig, releaseTag)
 	setup.AssessOperatorDeployment(defaultInstallation)
 
-	setup.DeploySampleApps(defaultInstallation, "../testdata/cloudnative/sample-deployment.yaml")
+	setup.DeploySampleApps(defaultInstallation, sampleDeploymentConfig)
 
 	dynakubeBuilder := dynakube.NewBuilder().
 		WithDefaultObjectMeta().
 		ApiUrl(secretConfig.ApiUrl).
 		CloudNative(&v1beta1.CloudNativeFullStackSpec{})
-
+	if istioEnabled {
+		dynakubeBuilder = dynakubeBuilder.WithIstio()
+	}
 	defaultInstallation.Assess("dynakube applied", dynakube.Apply(dynakubeBuilder.Build()))
 
 	setup.AssessDynakubeStartup(defaultInstallation)
