@@ -30,9 +30,9 @@ func manifestsPaths(withCsi bool) []string {
 
 	switch platform {
 	case kubeobjects.Openshift:
-		paths = append(paths, path.Join(project.RootDir(), localManifestsDir, kubernetesOperatorManifest))
+		paths = append(paths, path.Join(project.RootDir(), localManifestsDir, openshiftOperatorManifest))
 		if withCsi {
-			paths = append(paths, path.Join(project.RootDir(), localManifestsDir, kubernetesCsiManifest))
+			paths = append(paths, path.Join(project.RootDir(), localManifestsDir, openshiftCsiManifest))
 		}
 	default:
 		paths = append(paths, path.Join(project.RootDir(), localManifestsDir, kubernetesOperatorManifest))
