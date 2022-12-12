@@ -34,7 +34,7 @@ var injectionLabel = map[string]string{
 	"inject": "dynakube",
 }
 
-func SpecificAgentVersion(t *testing.T) features.Feature {
+func SpecificAgentVersion(t *testing.T, istioEnabled bool) features.Feature {
 	secretConfig, err := secrets.DefaultSingleTenant(afero.NewOsFs())
 	require.NoError(t, err)
 
@@ -42,12 +42,15 @@ func SpecificAgentVersion(t *testing.T) features.Feature {
 	sort.Strings(versions)
 	oldVersion, newVersion := assignVersions(t, versions, version.SemanticVersion{}, version.SemanticVersion{})
 
-	dk := dynakube.NewBuilder().
+	dynakubeBuilder := dynakube.NewBuilder().
 		WithDefaultObjectMeta().
 		WithDynakubeNamespaceSelector().
 		ApiUrl(secretConfig.ApiUrl).
-		CloudNativeWithAgentVersion(&dynatracev1beta1.CloudNativeFullStackSpec{}, oldVersion).
-		Build()
+		CloudNativeWithAgentVersion(&dynatracev1beta1.CloudNativeFullStackSpec{}, oldVersion)
+	if istioEnabled {
+		dynakubeBuilder = dynakubeBuilder.WithIstio()
+	}
+	dk := dynakubeBuilder.Build()
 
 	specificAgentVersion := features.New("cloudnative with specific agent version")
 	specificAgentVersion.Setup(namespace.Create(
@@ -59,7 +62,7 @@ func SpecificAgentVersion(t *testing.T) features.Feature {
 	setup.InstallDynatraceFromSource(specificAgentVersion, &secretConfig)
 	setup.AssessOperatorDeployment(specificAgentVersion)
 
-	specificAgentVersion.Assess("install sample deployment", manifests.InstallFromFile("../testdata/cloudnative/sample-deployment.yaml"))
+	specificAgentVersion.Assess("install sample deployment", manifests.InstallFromFile(sampleDeploymentConfig))
 	specificAgentVersion.Assess("install dynakube", dynakube.Apply(dk))
 
 	assessVersionChecks(specificAgentVersion, oldVersion)

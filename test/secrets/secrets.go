@@ -2,8 +2,10 @@ package secrets
 
 import (
 	"context"
+	"path"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/test/project"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
@@ -14,9 +16,9 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-const (
-	defaultSingleTenant = "../testdata/secrets/single-tenant.yaml"
-	defaultMultiTenant  = "../testdata/secrets/multi-tenant.yaml"
+var (
+	defaultSingleTenant = path.Join(project.TestDataDir(), "secrets/single-tenant.yaml")
+	defaultMultiTenant  = path.Join(project.TestDataDir(), "secrets/multi-tenant.yaml")
 )
 
 type Secrets struct {

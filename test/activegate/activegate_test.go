@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"path"
 	"strings"
 	"testing"
 
@@ -19,6 +20,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/logs"
 	"github.com/Dynatrace/dynatrace-operator/test/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/operator"
+	"github.com/Dynatrace/dynatrace-operator/test/project"
 	"github.com/Dynatrace/dynatrace-operator/test/proxy"
 	"github.com/Dynatrace/dynatrace-operator/test/secrets"
 	"github.com/Dynatrace/dynatrace-operator/test/shell"
@@ -162,7 +164,7 @@ func assessActiveGate(builder *features.FeatureBuilder) {
 	builder.Assess("ActiveGate has required containers", checkIfAgHasContainers)
 	builder.Assess("ActiveGate modules are active", checkActiveModules)
 	builder.Assess("ActiveGate containers have mount points", checkMountPoints)
-	builder.Assess("ActiveGate query via AG service", manifests.InstallFromFile("../testdata/activegate/curl-pod.yaml"))
+	builder.Assess("ActiveGate query via AG service", manifests.InstallFromFile(path.Join(project.TestDataDir(), "activegate/curl-pod.yaml")))
 	builder.Assess("ActiveGate query is completed", pod.WaitFor(curlPod, dynakube.Namespace))
 	builder.Assess("ActiveGate service is running", checkService)
 }
