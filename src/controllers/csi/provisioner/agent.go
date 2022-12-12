@@ -28,7 +28,7 @@ type agentUpdater struct {
 }
 
 func newAgentUrlUpdater(fs afero.Fs, dtc dtclient.Client, previousVersion string, path metadata.PathResolver, recorder record.EventRecorder, dk *dynatracev1beta1.DynaKube) (*agentUpdater, error) { //nolint:revive // argument-limit doesn't apply to constructors
-	tenantUUID, err := dk.TenantUuidOrAliasFromApiUrl()
+	tenantUUID, err := dk.TenantUUIDFromApiUrl()
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +58,7 @@ func newAgentImageUpdater( //nolint:revive // argument-limit doesn't apply to co
 	db metadata.Access,
 	recorder record.EventRecorder,
 	dk *dynatracev1beta1.DynaKube) (*agentUpdater, error) {
-	tenantUUID, err := dk.TenantUuidOrAliasFromApiUrl()
+	tenantUUID, err := dk.TenantUUIDFromApiUrl()
 	if err != nil {
 		return nil, err
 	}

@@ -18,7 +18,7 @@ const (
 	testName            = "test-name"
 	testNamespace       = "test-namespace"
 	testTenantToken     = "test-token"
-	testTenantUuid      = "test-uuid"
+	testTenantUUID      = "test-uuid"
 	testTenantEndpoints = "test-endpoints"
 )
 
@@ -104,7 +104,7 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 		var actual corev1.ConfigMap
 		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: dynakube.ActiveGateConnectionInfoConfigMapName(), Namespace: testNamespace}, &actual)
 		require.NoError(t, err)
-		assert.Equal(t, testTenantUuid, actual.Data[TenantUuidName])
+		assert.Equal(t, testTenantUUID, actual.Data[TenantUUIDName])
 		assert.Equal(t, testTenantEndpoints, actual.Data[CommunicationEndpointsName])
 	})
 	t.Run(`update activegate ConfigMap`, func(t *testing.T) {
@@ -115,7 +115,7 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Data: map[string]string{
-					TenantUuidName:             "outdated",
+					TenantUUIDName:             "outdated",
 					CommunicationEndpointsName: "outdated",
 				},
 			},
@@ -127,7 +127,7 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 		var actual corev1.ConfigMap
 		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: dynakube.ActiveGateConnectionInfoConfigMapName(), Namespace: testNamespace}, &actual)
 		require.NoError(t, err)
-		assert.Equal(t, testTenantUuid, actual.Data[TenantUuidName])
+		assert.Equal(t, testTenantUUID, actual.Data[TenantUUIDName])
 		assert.Equal(t, testTenantEndpoints, actual.Data[CommunicationEndpointsName])
 	})
 	t.Run(`up to date activegate secret`, func(t *testing.T) {
@@ -138,7 +138,7 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Data: map[string]string{
-					TenantUuidName:             testTenantUuid,
+					TenantUUIDName:             testTenantUUID,
 					CommunicationEndpointsName: testTenantEndpoints,
 				},
 			},
@@ -239,7 +239,7 @@ func TestReconcile_OneagentConfigMap(t *testing.T) {
 		var actual corev1.ConfigMap
 		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: dynakube.OneAgentConnectionInfoConfigMapName(), Namespace: testNamespace}, &actual)
 		require.NoError(t, err)
-		assert.Equal(t, testTenantUuid, actual.Data[TenantUuidName])
+		assert.Equal(t, testTenantUUID, actual.Data[TenantUUIDName])
 		assert.Equal(t, testTenantEndpoints, actual.Data[CommunicationEndpointsName])
 	})
 	t.Run(`update oneagent ConfigMap`, func(t *testing.T) {
@@ -250,7 +250,7 @@ func TestReconcile_OneagentConfigMap(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Data: map[string]string{
-					TenantUuidName:             "outdated",
+					TenantUUIDName:             "outdated",
 					CommunicationEndpointsName: "outdated",
 				},
 			},
@@ -263,7 +263,7 @@ func TestReconcile_OneagentConfigMap(t *testing.T) {
 		var actual corev1.ConfigMap
 		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: dynakube.OneAgentConnectionInfoConfigMapName(), Namespace: testNamespace}, &actual)
 		require.NoError(t, err)
-		assert.Equal(t, testTenantUuid, actual.Data[TenantUuidName])
+		assert.Equal(t, testTenantUUID, actual.Data[TenantUUIDName])
 		assert.Equal(t, testTenantEndpoints, actual.Data[CommunicationEndpointsName])
 	})
 	t.Run(`up to date oneagent ConfigMap`, func(t *testing.T) {
@@ -274,7 +274,7 @@ func TestReconcile_OneagentConfigMap(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Data: map[string]string{
-					TenantUuidName:             testTenantUuid,
+					TenantUUIDName:             testTenantUUID,
 					CommunicationEndpointsName: testTenantEndpoints,
 				},
 			},
@@ -289,7 +289,7 @@ func TestReconcile_OneagentConfigMap(t *testing.T) {
 func getTestOneAgentConnectionInfo() dtclient.OneAgentConnectionInfo {
 	return dtclient.OneAgentConnectionInfo{
 		ConnectionInfo: dtclient.ConnectionInfo{
-			TenantUUID:  testTenantUuid,
+			TenantUUID:  testTenantUUID,
 			TenantToken: testTenantToken,
 			Endpoints:   testTenantEndpoints,
 		},
@@ -299,7 +299,7 @@ func getTestOneAgentConnectionInfo() dtclient.OneAgentConnectionInfo {
 func getTestActiveGateConnectionInfo() *dtclient.ActiveGateConnectionInfo {
 	return &dtclient.ActiveGateConnectionInfo{
 		ConnectionInfo: dtclient.ConnectionInfo{
-			TenantUUID:  testTenantUuid,
+			TenantUUID:  testTenantUUID,
 			TenantToken: testTenantToken,
 			Endpoints:   testTenantEndpoints,
 		},

@@ -63,17 +63,17 @@ func (mod RawImageModifier) getVolumeMounts() []corev1.VolumeMount {
 }
 
 func (mod RawImageModifier) getEnvs() []corev1.EnvVar {
-	return []corev1.EnvVar{mod.tenantUuidEnvVar(), mod.communicationEndpointEnvVar()}
+	return []corev1.EnvVar{mod.tenantUUIDEnvVar(), mod.communicationEndpointEnvVar()}
 }
 
-func (mod RawImageModifier) tenantUuidEnvVar() corev1.EnvVar {
+func (mod RawImageModifier) tenantUUIDEnvVar() corev1.EnvVar {
 	return corev1.EnvVar{
 		Name: consts.EnvDtTenant,
 		ValueFrom: &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 			LocalObjectReference: corev1.LocalObjectReference{
 				Name: mod.dynakube.ActiveGateConnectionInfoConfigMapName(),
 			},
-			Key:      connectioninfo.TenantUuidName,
+			Key:      connectioninfo.TenantUUIDName,
 			Optional: address.Of(false),
 		}}}
 }

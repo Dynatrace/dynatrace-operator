@@ -118,7 +118,7 @@ func (dtc *dynatraceClient) readResponseForOneAgentConnectionInfo(response []byt
 		return OneAgentConnectionInfo{}, err
 	}
 
-	tenantUuid := resp.TenantUUID
+	tenantUUID := resp.TenantUUID
 	tenantToken := resp.TenantToken
 	communicationHosts := make([]CommunicationHost, 0, len(resp.CommunicationEndpoints))
 	formattedCommunicationEndpoints := resp.FormattedCommunicationEndpoints
@@ -139,7 +139,7 @@ func (dtc *dynatraceClient) readResponseForOneAgentConnectionInfo(response []byt
 	ci := OneAgentConnectionInfo{
 		CommunicationHosts: communicationHosts,
 		ConnectionInfo: ConnectionInfo{
-			TenantUUID:  tenantUuid,
+			TenantUUID:  tenantUUID,
 			TenantToken: tenantToken,
 			Endpoints:   formattedCommunicationEndpoints,
 		},

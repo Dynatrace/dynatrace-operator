@@ -35,7 +35,7 @@ func (dsInfo *builderInfo) environmentVariables() []corev1.EnvVar {
 		LocalObjectReference: corev1.LocalObjectReference{
 			Name: dsInfo.instance.OneAgentConnectionInfoConfigMapName(),
 		},
-		Key:      connectioninfo.TenantUuidName,
+		Key:      connectioninfo.TenantUUIDName,
 		Optional: address.Of(false),
 	}})
 	envVarMap = setDefaultValueSource(envVarMap, consts.EnvDtServer, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{

@@ -194,7 +194,7 @@ func (eec ExtensionControllerModifier) buildVolumeMounts() []corev1.VolumeMount 
 }
 
 func (eec ExtensionControllerModifier) buildEnvs() []corev1.EnvVar {
-	tenantId, err := eec.dynakube.TenantUuidOrAliasFromApiUrl()
+	tenantId, err := eec.dynakube.TenantUUIDFromApiUrl()
 	if err != nil {
 		log.Error(err, "Problem getting tenant id from api url")
 	}

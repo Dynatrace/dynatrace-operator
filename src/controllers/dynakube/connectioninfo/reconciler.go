@@ -72,12 +72,12 @@ func (r *Reconciler) reconcileActiveGateConnectionInfo() error {
 }
 
 func (r *Reconciler) maintainConnectionInfoObjects(secretName string, configMapName string, connectionInfo dtclient.ConnectionInfo) error {
-	err := r.createTokenSecret(secretName, connectionInfo)
+	err := r.createTenantTokenSecret(secretName, connectionInfo)
 	if err != nil {
 		return err
 	}
 
-	err = r.createTenantUuidAndCommunicationEndpointsConfigMap(configMapName, connectionInfo)
+	err = r.createTenantConnectionInfoConfigMap(configMapName, connectionInfo)
 	if err != nil {
 		return err
 	}
@@ -85,8 +85,8 @@ func (r *Reconciler) maintainConnectionInfoObjects(secretName string, configMapN
 	return nil
 }
 
-func (r *Reconciler) createTenantUuidAndCommunicationEndpointsConfigMap(secretName string, connectionInfo dtclient.ConnectionInfo) error {
-	configMapData := buildConnectionInfoConfigMap(connectionInfo)
+func (r *Reconciler) createTenantConnectionInfoConfigMap(secretName string, connectionInfo dtclient.ConnectionInfo) error {
+	configMapData := extractPublicData(connectionInfo)
 	configMap := kubeobjects.NewConfigMap(secretName, r.dynakube.Namespace, configMapData)
 
 	query := kubeobjects.NewConfigMapQuery(r.context, r.client, r.apiReader, log)
@@ -98,8 +98,8 @@ func (r *Reconciler) createTenantUuidAndCommunicationEndpointsConfigMap(secretNa
 	return nil
 }
 
-func (r *Reconciler) createTokenSecret(secretName string, connectionInfo dtclient.ConnectionInfo) error {
-	secretData := buildConnectionInfoSecret(connectionInfo)
+func (r *Reconciler) createTenantTokenSecret(secretName string, connectionInfo dtclient.ConnectionInfo) error {
+	secretData := extractSensitiveData(connectionInfo)
 	secret := kubeobjects.NewSecret(secretName, r.dynakube.Namespace, secretData)
 
 	query := kubeobjects.NewSecretQuery(r.context, r.client, r.apiReader, log)
@@ -111,7 +111,7 @@ func (r *Reconciler) createTokenSecret(secretName string, connectionInfo dtclien
 	return nil
 }
 
-func buildConnectionInfoSecret(connectionInfo dtclient.ConnectionInfo) map[string][]byte {
+func extractSensitiveData(connectionInfo dtclient.ConnectionInfo) map[string][]byte {
 	data := map[string][]byte{
 		TenantTokenName: []byte(connectionInfo.TenantToken),
 	}
@@ -119,11 +119,11 @@ func buildConnectionInfoSecret(connectionInfo dtclient.ConnectionInfo) map[strin
 	return data
 }
 
-func buildConnectionInfoConfigMap(connectionInfo dtclient.ConnectionInfo) map[string]string {
+func extractPublicData(connectionInfo dtclient.ConnectionInfo) map[string]string {
 	data := map[string]string{}
 
 	if connectionInfo.TenantUUID != "" {
-		data[TenantUuidName] = connectionInfo.TenantUUID
+		data[TenantUUIDName] = connectionInfo.TenantUUID
 	}
 	if connectionInfo.Endpoints != "" {
 		data[CommunicationEndpointsName] = connectionInfo.Endpoints
