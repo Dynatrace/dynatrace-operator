@@ -6,6 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -29,11 +30,12 @@ func (mod RawImageModifier) Enabled() bool {
 	return !mod.dynakube.FeatureDisableActivegateRawImage()
 }
 
-func (mod RawImageModifier) Modify(sts *appsv1.StatefulSet) {
+func (mod RawImageModifier) Modify(sts *appsv1.StatefulSet) error {
 	baseContainer := kubeobjects.FindContainerInPodSpec(&sts.Spec.Template.Spec, consts.ActiveGateContainerName)
 	sts.Spec.Template.Spec.Volumes = append(sts.Spec.Template.Spec.Volumes, mod.getVolumes()...)
 	baseContainer.VolumeMounts = append(baseContainer.VolumeMounts, mod.getVolumeMounts()...)
 	baseContainer.Env = append(baseContainer.Env, mod.getEnvs()...)
+	return nil
 }
 
 func (mod RawImageModifier) getVolumes() []corev1.Volume {
@@ -61,33 +63,30 @@ func (mod RawImageModifier) getVolumeMounts() []corev1.VolumeMount {
 }
 
 func (mod RawImageModifier) getEnvs() []corev1.EnvVar {
-	return []corev1.EnvVar{mod.tenantUUIDNameEnvVar(), mod.communicationEndpointEnvVar()}
+	return []corev1.EnvVar{mod.tenantUUIDEnvVar(), mod.communicationEndpointEnvVar()}
 }
 
-func (mod RawImageModifier) tenantUUIDNameEnvVar() corev1.EnvVar {
+func (mod RawImageModifier) tenantUUIDEnvVar() corev1.EnvVar {
 	return corev1.EnvVar{
 		Name: consts.EnvDtTenant,
-		ValueFrom: &corev1.EnvVarSource{
-			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: mod.dynakube.ActivegateTenantSecret(),
-				},
-				Key: connectioninfo.TenantUuidName,
+		ValueFrom: &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: mod.dynakube.ActiveGateConnectionInfoConfigMapName(),
 			},
-		},
-	}
+			Key:      connectioninfo.TenantUUIDName,
+			Optional: address.Of(false),
+		}}}
 }
 
 func (mod RawImageModifier) communicationEndpointEnvVar() corev1.EnvVar {
 	return corev1.EnvVar{
 		Name: consts.EnvDtServer,
-		ValueFrom: &corev1.EnvVarSource{
-			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: mod.dynakube.ActivegateTenantSecret(),
-				},
-				Key: connectioninfo.CommunicationEndpointsName,
+		ValueFrom: &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: mod.dynakube.ActiveGateConnectionInfoConfigMapName(),
 			},
-		},
+			Key:      connectioninfo.CommunicationEndpointsName,
+			Optional: address.Of(false),
+		}},
 	}
 }

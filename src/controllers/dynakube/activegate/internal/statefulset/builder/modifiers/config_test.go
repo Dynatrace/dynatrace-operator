@@ -90,7 +90,7 @@ func TestNoConflict(t *testing.T) {
 		mods := GenerateAllModifiers(dynakube, multiCapability)
 		builder := createBuilderForTesting()
 
-		sts := builder.AddModifier(mods...).Build()
+		sts, _ := builder.AddModifier(mods...).Build()
 
 		require.NotEmpty(t, sts)
 		for _, mod := range mods {

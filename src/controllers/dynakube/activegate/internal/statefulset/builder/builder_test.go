@@ -21,14 +21,16 @@ func (m *ModifierMock) Enabled() bool {
 	return args.Bool(0)
 }
 
-func (m *ModifierMock) Modify(sts *appsv1.StatefulSet) {
-	m.Called(sts)
+func (m *ModifierMock) Modify(sts *appsv1.StatefulSet) error {
+	args := m.Called(sts)
+	return args.Error(0)
 }
 
 func TestBuilder(t *testing.T) {
 	t.Run("Simple, no modifiers", func(t *testing.T) {
 		b := Builder{}
-		actual := b.Build()
+		actual, err := b.Build()
+		assert.NoError(t, err)
 		expected := appsv1.StatefulSet{}
 		assert.Equal(t, expected, actual)
 	})
@@ -36,10 +38,10 @@ func TestBuilder(t *testing.T) {
 		b := Builder{}
 
 		modifierMock := NewModifierMock()
-		modifierMock.On("Modify", mock.Anything).Return()
+		modifierMock.On("Modify", mock.Anything).Return(nil)
 		modifierMock.On("Enabled").Return(true)
 
-		actual := b.AddModifier(modifierMock).Build()
+		actual, _ := b.AddModifier(modifierMock).Build()
 
 		modifierMock.AssertNumberOfCalls(t, "Modify", 1)
 
@@ -50,10 +52,10 @@ func TestBuilder(t *testing.T) {
 		b := Builder{}
 
 		modifierMock := NewModifierMock()
-		modifierMock.On("Modify", mock.Anything).Return()
+		modifierMock.On("Modify", mock.Anything).Return(nil)
 		modifierMock.On("Enabled").Return(false)
 
-		actual := b.AddModifier(modifierMock).Build()
+		actual, _ := b.AddModifier(modifierMock).Build()
 
 		modifierMock.AssertNumberOfCalls(t, "Modify", 0)
 
@@ -65,12 +67,12 @@ func TestBuilder(t *testing.T) {
 
 		modifierMock0 := NewModifierMock()
 		modifierMock0.On("Enabled").Return(true)
-		modifierMock0.On("Modify", mock.Anything).Return()
+		modifierMock0.On("Modify", mock.Anything).Return(nil)
 		modifierMock1 := NewModifierMock()
 		modifierMock1.On("Enabled").Return(true)
-		modifierMock1.On("Modify", mock.Anything).Return()
+		modifierMock1.On("Modify", mock.Anything).Return(nil)
 
-		actual := b.AddModifier(modifierMock0, modifierMock0, modifierMock1).Build()
+		actual, _ := b.AddModifier(modifierMock0, modifierMock0, modifierMock1).Build()
 
 		modifierMock0.AssertNumberOfCalls(t, "Modify", 2)
 		modifierMock1.AssertNumberOfCalls(t, "Modify", 1)

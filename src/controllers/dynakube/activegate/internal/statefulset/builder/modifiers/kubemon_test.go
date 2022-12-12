@@ -48,7 +48,7 @@ func TestKubernetesMonitoringModify(t *testing.T) {
 		expectedIniContainers := mod.getInitContainers()
 		expectedVolumeMounts := mod.getVolumeMounts()
 
-		sts := builder.AddModifier(mod).Build()
+		sts, _ := builder.AddModifier(mod).Build()
 
 		require.NotEmpty(t, sts)
 		container := sts.Spec.Template.Spec.Containers[0]
@@ -67,7 +67,7 @@ func TestKubernetesMonitoringModify(t *testing.T) {
 		expectedIniContainers := mod.getInitContainers()
 		expectedVolumeMounts := mod.getVolumeMounts()
 
-		sts := builder.AddModifier(mod).Build()
+		sts, _ := builder.AddModifier(mod).Build()
 
 		require.NotEmpty(t, sts)
 		container := sts.Spec.Template.Spec.Containers[0]
