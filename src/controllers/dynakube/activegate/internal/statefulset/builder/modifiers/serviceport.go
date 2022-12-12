@@ -33,11 +33,12 @@ func (mod ServicePortModifier) Enabled() bool {
 	return mod.dynakube.NeedsActiveGateServicePorts()
 }
 
-func (mod ServicePortModifier) Modify(sts *appsv1.StatefulSet) {
+func (mod ServicePortModifier) Modify(sts *appsv1.StatefulSet) error {
 	baseContainer := kubeobjects.FindContainerInPodSpec(&sts.Spec.Template.Spec, consts.ActiveGateContainerName)
 	baseContainer.ReadinessProbe.HTTPGet.Port = intstr.FromString(consts.HttpsServicePortName)
 	baseContainer.Ports = append(baseContainer.Ports, mod.getPorts()...)
 	baseContainer.Env = append(baseContainer.Env, mod.getEnvs()...)
+	return nil
 }
 
 func (mod ServicePortModifier) getPorts() []corev1.ContainerPort {

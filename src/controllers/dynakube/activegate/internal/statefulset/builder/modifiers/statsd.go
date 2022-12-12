@@ -52,13 +52,14 @@ func (statsd StatsdModifier) Enabled() bool {
 	return statsd.dynakube.IsStatsdActiveGateEnabled()
 }
 
-func (statsd StatsdModifier) Modify(sts *appsv1.StatefulSet) {
+func (statsd StatsdModifier) Modify(sts *appsv1.StatefulSet) error {
 	sts.Spec.Template.Spec.Containers = append(sts.Spec.Template.Spec.Containers, statsd.buildContainer())
 	sts.Spec.Template.Spec.Volumes = append(sts.Spec.Template.Spec.Volumes, statsd.getVolumes(sts.Spec.Template.Spec.Volumes)...)
 
 	baseContainer := kubeobjects.FindContainerInPodSpec(&sts.Spec.Template.Spec, consts.ActiveGateContainerName)
 	baseContainer.VolumeMounts = append(baseContainer.VolumeMounts, statsd.getActiveGateVolumeMounts(baseContainer.VolumeMounts)...)
 
+	return nil
 }
 
 func (statsd *StatsdModifier) getActiveGateVolumeMounts(presentMounts []corev1.VolumeMount) []corev1.VolumeMount {

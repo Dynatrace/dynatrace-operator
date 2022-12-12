@@ -105,3 +105,5 @@ kind-logs-*
 /csi.db
 
 test/testdata/secrets/*
+
+local/

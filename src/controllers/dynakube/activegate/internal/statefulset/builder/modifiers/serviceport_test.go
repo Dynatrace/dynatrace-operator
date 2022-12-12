@@ -48,7 +48,7 @@ func TestServicePortModify(t *testing.T) {
 		expectedPorts := mod.getPorts()
 		expectedEnv := mod.getEnvs()
 
-		sts := builder.AddModifier(mod).Build()
+		sts, _ := builder.AddModifier(mod).Build()
 
 		require.NotEmpty(t, sts)
 		container := sts.Spec.Template.Spec.Containers[0]

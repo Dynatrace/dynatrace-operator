@@ -15,6 +15,7 @@ func (m *ModifierMock[T]) Enabled() bool {
 	return args.Bool(0)
 }
 
-func (m *ModifierMock[T]) Modify(data *T) {
-	m.Called(data)
+func (m *ModifierMock[T]) Modify(data *T) error {
+	args := m.Called(data)
+	return args.Error(0)
 }

@@ -29,11 +29,13 @@ import (
 
 const (
 	// PullSecretSuffix is the suffix appended to the DynaKube name to n.
-	PullSecretSuffix             = "-pull-secret"
-	ActiveGateTenantSecretSuffix = "-activegate-tenant-secret"
-	OneAgentTenantSecretSuffix   = "-oneagent-tenant-secret"
-	AuthTokenSecretSuffix        = "-activegate-authtoken-secret"
-	PodNameOsAgent               = "oneagent"
+	PullSecretSuffix                        = "-pull-secret"
+	ActiveGateTenantSecretSuffix            = "-activegate-tenant-secret"
+	OneAgentTenantSecretSuffix              = "-oneagent-tenant-secret"
+	OneAgentConnectionInfoConfigMapSuffix   = "-oneagent-connection-info"
+	ActiveGateConnectionInfoConfigMapSuffix = "-activegate-connection-info"
+	AuthTokenSecretSuffix                   = "-activegate-authtoken-secret"
+	PodNameOsAgent                          = "oneagent"
 
 	defaultActiveGateImage = "/linux/activegate:latest"
 	defaultStatsDImage     = "/linux/dynatrace-datasource-statsd:latest"
@@ -196,6 +198,14 @@ func (dk *DynaKube) OneagentTenantSecret() string {
 // ActiveGateAuthTokenSecret returns the name of the secret containing the ActiveGateAuthToken, which is mounted to the AGs
 func (dk *DynaKube) ActiveGateAuthTokenSecret() string {
 	return dk.Name + AuthTokenSecretSuffix
+}
+
+func (dk *DynaKube) ActiveGateConnectionInfoConfigMapName() string {
+	return dk.Name + ActiveGateConnectionInfoConfigMapSuffix
+}
+
+func (dk *DynaKube) OneAgentConnectionInfoConfigMapName() string {
+	return dk.Name + OneAgentConnectionInfoConfigMapSuffix
 }
 
 // PullSecret returns the name of the pull secret to be used for immutable images.
@@ -438,7 +448,8 @@ func (dk *DynaKube) CommunicationHosts() []dtclient.CommunicationHost {
 	return communicationHosts
 }
 
-func (dk *DynaKube) TenantUUID() (string, error) {
+// TenantUUIDFromApiUrl gets the tenantUUID from the ApiUrl present in the struct, if the tenant is aliased then the alias will be returned
+func (dk *DynaKube) TenantUUIDFromApiUrl() (string, error) {
 	return tenantUUID(dk.Spec.APIURL)
 }
 

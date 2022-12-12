@@ -43,11 +43,12 @@ func (mod KubernetesMonitoringModifier) Enabled() bool {
 	return mod.dynakube.IsKubernetesMonitoringActiveGateEnabled()
 }
 
-func (mod KubernetesMonitoringModifier) Modify(sts *appsv1.StatefulSet) {
+func (mod KubernetesMonitoringModifier) Modify(sts *appsv1.StatefulSet) error {
 	baseContainer := kubeobjects.FindContainerInPodSpec(&sts.Spec.Template.Spec, consts.ActiveGateContainerName)
 	sts.Spec.Template.Spec.Volumes = append(sts.Spec.Template.Spec.Volumes, mod.getVolumes()...)
 	baseContainer.VolumeMounts = append(baseContainer.VolumeMounts, mod.getVolumeMounts()...)
 	sts.Spec.Template.Spec.InitContainers = append(sts.Spec.Template.Spec.InitContainers, mod.getInitContainers()...)
+	return nil
 }
 
 func (mod KubernetesMonitoringModifier) getInitContainers() []corev1.Container {

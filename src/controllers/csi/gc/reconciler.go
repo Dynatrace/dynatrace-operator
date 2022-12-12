@@ -127,7 +127,7 @@ func getDynakubeFromRequest(ctx context.Context, apiReader client.Reader, reques
 }
 
 func collectGCInfo(dynakube dynatracev1beta1.DynaKube, dynakubeList *dynatracev1beta1.DynaKubeList) (*garbageCollectionInfo, error) {
-	tenantUUID, err := dynakube.TenantUUID()
+	tenantUUID, err := dynakube.TenantUUIDFromApiUrl()
 	if err != nil {
 		log.Info("failed to get tenantUUID of DynaKube, checking later")
 		return nil, nil
@@ -186,7 +186,7 @@ func isUpgrading(dkMetadata *metadata.Dynakube, filteredDynakubes map[string]dyn
 func getAllPinnedVersionsForTenantUUID(dynakubeList *dynatracev1beta1.DynaKubeList, tenantUUID string) (pinnedVersionSet, error) {
 	pinnedVersions := make(pinnedVersionSet)
 	for _, dynakube := range dynakubeList.Items {
-		uuid, err := dynakube.TenantUUID()
+		uuid, err := dynakube.TenantUUIDFromApiUrl()
 		if err != nil {
 			log.Error(err, "failed to get tenantUUID of DynaKube")
 			continue

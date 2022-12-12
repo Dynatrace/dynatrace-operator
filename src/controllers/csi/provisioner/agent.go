@@ -36,7 +36,7 @@ func newAgentUrlUpdater(
 	recorder record.EventRecorder,
 	dk *dynatracev1beta1.DynaKube) (*agentUpdater, error) {
 
-	tenantUUID, err := dk.TenantUUID()
+	tenantUUID, err := dk.TenantUUIDFromApiUrl()
 	if err != nil {
 		return nil, err
 	}
@@ -66,8 +66,7 @@ func newAgentImageUpdater(
 	db metadata.Access,
 	recorder record.EventRecorder,
 	dk *dynatracev1beta1.DynaKube) (*agentUpdater, error) {
-
-	tenantUUID, err := dk.TenantUUID()
+	tenantUUID, err := dk.TenantUUIDFromApiUrl()
 	if err != nil {
 		return nil, err
 	}

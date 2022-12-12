@@ -33,10 +33,11 @@ func (mod CustomPropertiesModifier) Enabled() bool {
 	return mod.hasCustomProperties()
 }
 
-func (mod CustomPropertiesModifier) Modify(sts *appsv1.StatefulSet) {
+func (mod CustomPropertiesModifier) Modify(sts *appsv1.StatefulSet) error {
 	baseContainer := kubeobjects.FindContainerInPodSpec(&sts.Spec.Template.Spec, consts.ActiveGateContainerName)
 	sts.Spec.Template.Spec.Volumes = append(sts.Spec.Template.Spec.Volumes, mod.getVolumes()...)
 	baseContainer.VolumeMounts = append(baseContainer.VolumeMounts, mod.getVolumeMounts()...)
+	return nil
 }
 
 func (mod CustomPropertiesModifier) getVolumes() []corev1.Volume {
