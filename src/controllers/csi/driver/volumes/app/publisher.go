@@ -81,8 +81,15 @@ func (publisher *AppVolumePublisher) PublishVolume(ctx context.Context, volumeCf
 	}
 
 	if err := publisher.storeVolume(ctx, bindCfg, volumeCfg); err != nil {
+		overlayFSPath := publisher.path.AgentRunDirForVolume(bindCfg.TenantUUID, volumeCfg.VolumeID)
+		unmountErr := publisher.umountOneAgent(volumeCfg.TargetPath, overlayFSPath)
+		if unmountErr != nil {
+			return nil, status.Error(codes.Internal, fmt.Sprintf("Error while unmounting on failed database call: %s", unmountErr))
+		}
+
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to store volume info: %s", err))
 	}
+
 	agentsVersionsMetric.WithLabelValues(bindCfg.Version).Inc()
 	return &csi.NodePublishVolumeResponse{}, nil
 }
@@ -97,7 +104,7 @@ func (publisher *AppVolumePublisher) UnpublishVolume(ctx context.Context, volume
 	}
 	log.Info("loaded volume info", "id", volume.VolumeID, "pod name", volume.PodName, "version", volume.Version, "dynakube", volume.TenantUUID)
 
-	if volume.Version == "" {
+	if volume.Version == ""{
 		log.Info("requester has a dummy volume, no node-level unmount is needed")
 		return &csi.NodeUnpublishVolumeResponse{}, publisher.db.DeleteVolume(ctx, volume.VolumeID)
 	}
