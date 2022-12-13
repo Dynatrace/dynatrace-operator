@@ -101,13 +101,13 @@ spec:
       #     cpu: 300m
       #     memory: 1.5Gi
 
-      # Optional: Adds arguments to add to the OneAgent installer
+      # Optional: Adds custom arguments to the OneAgent installer
       # For a list of available options, see https://www.dynatrace.com/support/help/shortlink/linux-custom-installation
       # For a list of the limitations for OneAgents in Docker, see https://www.dynatrace.com/support/help/shortlink/oneagent-docker#limitations
       #
       # args: []
 
-      # Optional: Adds additional environment variables to OneAgent pods
+      # Optional: Adds custom environment variables to OneAgent pods
       #
       # env: []
 
@@ -124,12 +124,12 @@ spec:
       #
       # dnsPolicy: "ClusterFirstWithHostNet"
 
-      # Optional: Adds additional annotations to the OneAgent pods
+      # Optional: Adds custom annotations to OneAgent pods
       #
       # annotations:
-      #   annotation-key: annotation-value
+      #   custom: annotation
 
-      # Optional: Defines labels added to OneAgent pods
+      # Optional: Adds custom labels to OneAgent pods
       # Can be used to structure workloads
       #
       # labels:
@@ -227,13 +227,13 @@ spec:
     #   key: node-role.kubernetes.io/master
     #   operator: Exists
 
-    # Optional: Defines labels added to ActiveGate pods
+    # Optional: Adds custom labels to ActiveGate pods
     # Can be used to structure workloads
     #
     # labels:
     #   custom: label
 
-    # Optional: Adds additional environment variables to ActiveGate pods
+    # Optional: Adds custom environment variables to ActiveGate pods
     #
     # env: []
 
@@ -257,10 +257,10 @@ spec:
     #
     # priorityClassName: priority-class
 
-    # Optional: Adds additional annotations to the ActiveGate pods
+    # Optional: Adds custom annotations to ActiveGate pods
     #
     # annotations:
-    #   annotation-key: annotation-value
+    #   custom: annotation
 
     # Optional: Adds TopologySpreadConstraints to the ActiveGate pods
     # For more information on TopologySpreadConstraints, see https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
