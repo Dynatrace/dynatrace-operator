@@ -117,7 +117,6 @@ func TestHasTooManyMountAttempts(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, volume)
 		assert.Equal(t, 1, volume.MountAttempts)
-
 	})
 	t.Run(`too many mount attempts`, func(t *testing.T) {
 		publisher := newPublisherForTesting(nil)
@@ -262,7 +261,6 @@ func TestMountIfDBHasError(t *testing.T) {
 	require.Error(t, err)
 	require.Empty(t, mounter.MountPoints)
 }
-
 
 func newPublisherForTesting(mounter *mount.FakeMounter) AppVolumePublisher {
 	objects := []client.Object{
