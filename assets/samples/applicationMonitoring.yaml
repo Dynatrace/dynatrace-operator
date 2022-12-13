@@ -147,13 +147,13 @@ spec:
         cpu: 1000m
         memory: 1.5Gi
 
-    # Optional: Defines labels added to ActiveGate pods
+    # Optional: Adds custom labels to ActiveGate pods
     # Can be used to structure workloads
     #
     # labels:
     #   custom: label
 
-    # Optional: Adds additional environment variables to ActiveGate pods
+    # Optional: Adds custom environment variables to ActiveGate pods
     #
     # env: []
 
@@ -190,10 +190,10 @@ spec:
     #
     # priorityClassName: priority-class
 
-    # Optional: Adds additional annotations to the ActiveGate pods
+    # Optional: Adds custom annotations to ActiveGate pods
     #
     # annotations:
-    #   annotation-key: annotation-value
+    #   custom: annotation
 
     # Optional: Adds TopologySpreadConstraints to the ActiveGate pods
     # For more information on TopologySpreadConstraints, see https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
