@@ -12,11 +12,12 @@ import (
 )
 
 const (
-	localManifestsDir          = "config/deploy/kubernetes/"
-	kubernetesCsiManifest      = "kubernetes-csi.yaml"
-	kubernetesOperatorManifest = "kubernetes.yaml"
-	openshiftCsiManifest       = "openshift-csi.yaml"
-	openshiftOperatorManifest  = "openshift.yaml"
+	localKubernetesManifestsDir = "config/deploy/kubernetes/"
+	localOpenshiftManifestsDir  = "config/deploy/openshift/"
+	kubernetesCsiManifest       = "kubernetes-csi.yaml"
+	kubernetesOperatorManifest  = "kubernetes.yaml"
+	openshiftCsiManifest        = "openshift-csi.yaml"
+	openshiftOperatorManifest   = "openshift.yaml"
 )
 
 func InstallFromSource(withCsi bool) features.Func {
@@ -30,14 +31,14 @@ func manifestsPaths(withCsi bool) []string {
 
 	switch platform {
 	case kubeobjects.Openshift:
-		paths = append(paths, path.Join(project.RootDir(), localManifestsDir, kubernetesOperatorManifest))
+		paths = append(paths, path.Join(project.RootDir(), localOpenshiftManifestsDir, openshiftOperatorManifest))
 		if withCsi {
-			paths = append(paths, path.Join(project.RootDir(), localManifestsDir, kubernetesCsiManifest))
+			paths = append(paths, path.Join(project.RootDir(), localOpenshiftManifestsDir, openshiftCsiManifest))
 		}
 	default:
-		paths = append(paths, path.Join(project.RootDir(), localManifestsDir, kubernetesOperatorManifest))
+		paths = append(paths, path.Join(project.RootDir(), localKubernetesManifestsDir, kubernetesOperatorManifest))
 		if withCsi {
-			paths = append(paths, path.Join(project.RootDir(), localManifestsDir, kubernetesCsiManifest))
+			paths = append(paths, path.Join(project.RootDir(), localKubernetesManifestsDir, kubernetesCsiManifest))
 		}
 	}
 

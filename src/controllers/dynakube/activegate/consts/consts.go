@@ -30,6 +30,7 @@ const (
 
 	EnvDtServer             = "DT_SERVER"
 	EnvDtTenant             = "DT_TENANT"
+	EnvDtCommunication      = "DT_COMMUNICATION"
 	EnvDtCapabilities       = "DT_CAPABILITIES"
 	EnvDtIdSeedNamespace    = "DT_ID_SEED_NAMESPACE"
 	EnvDtIdSeedClusterId    = "DT_ID_SEED_K8S_CLUSTER_ID"

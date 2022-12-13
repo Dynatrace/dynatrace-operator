@@ -11,20 +11,20 @@ import (
 const (
 	activeGateConnectionInfoEndpoint = "/v1/deployment/installer/gateway/connectioninfo"
 
-	testTenantUuid  = "1234"
+	testTenantUUID  = "1234"
 	testTenantToken = "abcd"
 	testEndpoint    = "/some/url"
 )
 
 func Test_GetActiveGateConnectionInfo(t *testing.T) {
 	activegateJsonResponse := &activeGateConnectionInfoJsonResponse{
-		TenantUUID:             testTenantUuid,
+		TenantUUID:             testTenantUUID,
 		TenantToken:            testTenantToken,
 		CommunicationEndpoints: testEndpoint,
 	}
 	expectedActivegateConnectionInfo := &ActiveGateConnectionInfo{
 		ConnectionInfo: ConnectionInfo{
-			TenantUUID:  testTenantUuid,
+			TenantUUID:  testTenantUUID,
 			TenantToken: testTenantToken,
 			Endpoints:   testEndpoint,
 		},

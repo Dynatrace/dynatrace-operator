@@ -28,10 +28,11 @@ func (mod AuthTokenModifier) Enabled() bool {
 	return mod.dynakube.UseActiveGateAuthToken()
 }
 
-func (mod AuthTokenModifier) Modify(sts *appsv1.StatefulSet) {
+func (mod AuthTokenModifier) Modify(sts *appsv1.StatefulSet) error {
 	baseContainer := kubeobjects.FindContainerInPodSpec(&sts.Spec.Template.Spec, consts.ActiveGateContainerName)
 	sts.Spec.Template.Spec.Volumes = append(sts.Spec.Template.Spec.Volumes, mod.getVolumes()...)
 	baseContainer.VolumeMounts = append(baseContainer.VolumeMounts, mod.getVolumeMounts()...)
+	return nil
 }
 
 func (mod AuthTokenModifier) getVolumes() []corev1.Volume {
