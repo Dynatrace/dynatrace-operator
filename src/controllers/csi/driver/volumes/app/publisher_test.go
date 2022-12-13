@@ -263,7 +263,6 @@ func TestMountIfDBHasError(t *testing.T) {
 	require.Empty(t, mounter.MountPoints)
 }
 
-
 func newPublisherForTesting(mounter *mount.FakeMounter) AppVolumePublisher {
 	objects := []client.Object{
 		&dynatracev1beta1.DynaKube{

@@ -76,7 +76,7 @@ func (publisher *AppVolumePublisher) PublishVolume(ctx context.Context, volumeCf
 		)
 	}
 
-	if err = publisher.ensureMountSteps(ctx, bindCfg, volumeCfg); err != nil{
+	if err = publisher.ensureMountSteps(ctx, bindCfg, volumeCfg); err != nil {
 		return nil, err
 	}
 
