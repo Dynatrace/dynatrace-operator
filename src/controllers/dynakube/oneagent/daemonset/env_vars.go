@@ -29,9 +29,36 @@ func (dsInfo *builderInfo) environmentVariables() []corev1.EnvVar {
 	}
 
 	envVarMap := envVarsToMap(environmentVariables)
-	envVarMap = setDefaultValueSource(envVarMap, dtNodeName, &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}})
-	envVarMap = setDefaultValue(envVarMap, dtClusterId, dsInfo.clusterId)
-	envVarMap = setDefaultValue(envVarMap, deploymentmetadata.EnvDtDeploymentMetadata, deploymentmetadata.NewDeploymentMetadata(dsInfo.clusterId, dsInfo.deploymentType).AsString())
+	envVarMap = addNodeNameEnv(envVarMap)
+
+	envVarMap = dsInfo.addClusterIDEnv(envVarMap)
+	envVarMap = dsInfo.addDeploymentMetadataEnv(envVarMap)
+	envVarMap = dsInfo.addConnectionInfoEnvs(envVarMap)
+	envVarMap = dsInfo.addProxyEnv(envVarMap)
+	envVarMap = dsInfo.addReadOnlyEnv(envVarMap)
+
+	return mapToArray(envVarMap)
+}
+
+func addNodeNameEnv(envVarMap map[string]corev1.EnvVar) map[string]corev1.EnvVar{
+	return setDefaultValueSource(envVarMap, dtNodeName, &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}})
+}
+
+func (dsInfo *builderInfo) addClusterIDEnv(envVarMap map[string]corev1.EnvVar) map[string]corev1.EnvVar{
+	return setDefaultValue(envVarMap, dtClusterId, dsInfo.clusterId)
+}
+
+func (dsInfo *builderInfo) addDeploymentMetadataEnv(envVarMap map[string]corev1.EnvVar) map[string]corev1.EnvVar{
+	return setDefaultValueSource(envVarMap, deploymentmetadata.EnvDtDeploymentMetadata, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+		LocalObjectReference: corev1.LocalObjectReference{
+			Name: deploymentmetadata.GetDeploymentMetadataConfigMapName(dsInfo.instance.Name),
+		},
+		Key:      deploymentmetadata.OneAgentMetadataKey,
+		Optional: address.Of(false),
+	}})
+}
+
+func (dsInfo *builderInfo) addConnectionInfoEnvs(envVarMap map[string]corev1.EnvVar) map[string]corev1.EnvVar{
 	envVarMap = setDefaultValueSource(envVarMap, connectioninfo.EnvDtTenant, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 		LocalObjectReference: corev1.LocalObjectReference{
 			Name: dsInfo.instance.OneAgentConnectionInfoConfigMapName(),
@@ -46,17 +73,33 @@ func (dsInfo *builderInfo) environmentVariables() []corev1.EnvVar {
 		Key:      connectioninfo.CommunicationEndpointsName,
 		Optional: address.Of(false),
 	}})
+	return envVarMap
+}
 
-	if dsInfo.hasProxy() {
-		envVarMap = dsInfo.setDefaultProxy(envVarMap)
+func (dsInfo *builderInfo) addProxyEnv(envVarMap map[string]corev1.EnvVar) map[string]corev1.EnvVar {
+	if !dsInfo.hasProxy() {
+		return envVarMap
 	}
+	if dsInfo.instance.Spec.Proxy.ValueFrom != "" {
+		setDefaultValueSource(envVarMap, proxy, &corev1.EnvVarSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{Name: dsInfo.instance.Spec.Proxy.ValueFrom},
+				Key:                  "proxy",
+			},
+		})
+	} else {
+		setDefaultValue(envVarMap, proxy, dsInfo.instance.Spec.Proxy.Value)
+	}
+	return envVarMap
+}
 
+func (dsInfo *builderInfo) addReadOnlyEnv(envVarMap map[string]corev1.EnvVar) map[string]corev1.EnvVar {
 	if dsInfo.instance != nil && dsInfo.instance.NeedsReadOnlyOneAgents() {
 		envVarMap = setDefaultValue(envVarMap, oneagentReadOnlyMode, "true")
 	}
-
-	return mapToArray(envVarMap)
+	return envVarMap
 }
+
 
 func (dsInfo *HostMonitoring) appendInfraMonEnvVars(daemonset *appsv1.DaemonSet) {
 	envVars := daemonset.Spec.Template.Spec.Containers[0].Env
@@ -82,20 +125,6 @@ func mapToArray(envVarMap map[string]corev1.EnvVar) []corev1.EnvVar {
 	}
 
 	return result
-}
-
-func (dsInfo *builderInfo) setDefaultProxy(envVarMap map[string]corev1.EnvVar) map[string]corev1.EnvVar {
-	if dsInfo.instance.Spec.Proxy.ValueFrom != "" {
-		setDefaultValueSource(envVarMap, proxy, &corev1.EnvVarSource{
-			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{Name: dsInfo.instance.Spec.Proxy.ValueFrom},
-				Key:                  "proxy",
-			},
-		})
-	} else {
-		setDefaultValue(envVarMap, proxy, dsInfo.instance.Spec.Proxy.Value)
-	}
-	return envVarMap
 }
 
 func setDefaultValue(envVarMap map[string]corev1.EnvVar, name string, value string) map[string]corev1.EnvVar {

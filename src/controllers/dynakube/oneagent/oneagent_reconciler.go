@@ -12,8 +12,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
-	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -34,12 +32,14 @@ func NewOneAgentReconciler(
 	client client.Client,
 	apiReader client.Reader,
 	scheme *runtime.Scheme,
-	feature string) *Reconciler {
+	feature string,
+	clusterID string) *Reconciler {
 	return &Reconciler{
 		client:    client,
 		apiReader: apiReader,
 		scheme:    scheme,
 		feature:   feature,
+		clusterID: clusterID,
 	}
 }
 
@@ -50,6 +50,7 @@ type Reconciler struct {
 	apiReader client.Reader
 	scheme    *runtime.Scheme
 	feature   string
+	clusterID string
 }
 
 // Reconcile reads that state of the cluster for a OneAgent object and makes changes based on the state read
@@ -129,19 +130,6 @@ func (r *Reconciler) reconcileRollout(ctx context.Context, dynakube *dynatracev1
 	return nil
 }
 
-func (r *Reconciler) getDesiredDaemonSet(dynakube *dynatracev1beta1.DynaKube) (*appsv1.DaemonSet, error) {
-	kubeSysUID, err := kubesystem.GetUID(r.apiReader)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	dsDesired, err := r.newDaemonSetForCR(dynakube, string(kubeSysUID))
-	if err != nil {
-		return nil, err
-	}
-	return dsDesired, nil
-}
-
 func (r *Reconciler) getOneagentPods(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, feature string) ([]corev1.Pod, []client.ListOption, error) {
 	agentVersion := dynakube.Status.OneAgent.Version
 	if dynakube.CustomOneAgentImage() != "" {
@@ -158,17 +146,17 @@ func (r *Reconciler) getOneagentPods(ctx context.Context, dynakube *dynatracev1b
 	return podList.Items, listOps, err
 }
 
-func (r *Reconciler) newDaemonSetForCR(dynakube *dynatracev1beta1.DynaKube, clusterID string) (*appsv1.DaemonSet, error) {
+func (r *Reconciler) getDesiredDaemonSet(dynakube *dynatracev1beta1.DynaKube) (*appsv1.DaemonSet, error) {
 	var ds *appsv1.DaemonSet
 	var err error
 
 	switch r.feature {
 	case deploymentmetadata.DeploymentTypeFullStack:
-		ds, err = daemonset.NewClassicFullStack(dynakube, clusterID).BuildDaemonSet()
+		ds, err = daemonset.NewClassicFullStack(dynakube, r.clusterID).BuildDaemonSet()
 	case deploymentmetadata.DeploymentTypeHostMonitoring:
-		ds, err = daemonset.NewHostMonitoring(dynakube, clusterID).BuildDaemonSet()
+		ds, err = daemonset.NewHostMonitoring(dynakube, r.clusterID).BuildDaemonSet()
 	case deploymentmetadata.DeploymentTypeCloudNative:
-		ds, err = daemonset.NewCloudNativeFullStack(dynakube, clusterID).BuildDaemonSet()
+		ds, err = daemonset.NewCloudNativeFullStack(dynakube, r.clusterID).BuildDaemonSet()
 	}
 	if err != nil {
 		return nil, err

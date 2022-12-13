@@ -22,6 +22,7 @@ import (
 	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/src/ingestendpoint"
 	"github.com/Dynatrace/dynatrace-operator/src/initgeneration"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/mapper"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
@@ -43,15 +44,19 @@ const (
 )
 
 func Add(mgr manager.Manager, _ string) error {
-	return NewController(mgr).SetupWithManager(mgr)
+	kubeSysUID, err := kubesystem.GetUID(mgr.GetAPIReader())
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	return NewController(mgr, string(kubeSysUID)).SetupWithManager(mgr)
 }
 
 // NewController returns a new ReconcileDynaKube
-func NewController(mgr manager.Manager) *Controller {
-	return NewDynaKubeController(mgr.GetClient(), mgr.GetAPIReader(), mgr.GetScheme(), mgr.GetConfig())
+func NewController(mgr manager.Manager, clusterID string) *Controller {
+	return NewDynaKubeController(mgr.GetClient(), mgr.GetAPIReader(), mgr.GetScheme(), mgr.GetConfig(), clusterID)
 }
 
-func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, scheme *runtime.Scheme, config *rest.Config) *Controller {
+func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, scheme *runtime.Scheme, config *rest.Config, clusterID string) *Controller {
 	return &Controller{
 		client:                 kubeClient,
 		apiReader:              apiReader,
@@ -60,6 +65,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, sc
 		dynatraceClientBuilder: dynatraceclient.NewBuilder(apiReader),
 		config:                 config,
 		operatorNamespace:      os.Getenv("POD_NAMESPACE"),
+		clusterID:              clusterID,
 	}
 }
 
@@ -82,6 +88,7 @@ type Controller struct {
 	dynatraceClientBuilder dynatraceclient.Builder
 	config                 *rest.Config
 	operatorNamespace      string
+	clusterID              string
 }
 
 // Reconcile reads that state of the cluster for a DynaKube object and makes changes based on the state read
@@ -218,6 +225,11 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		return err
 	}
 
+	err = deploymentmetadata.NewReconciler(ctx, controller.client, controller.apiReader, *dynakube, controller.clusterID).Reconcile()
+	if err != nil {
+		return err
+	}
+
 	versionReconciler := version.Reconciler{
 		Dynakube:        dynakube,
 		ApiReader:       controller.apiReader,
@@ -313,7 +325,7 @@ func (controller *Controller) reconcileOneAgent(ctx context.Context, dynakube *d
 	}
 
 	return oneagent.NewOneAgentReconciler(
-		controller.client, controller.apiReader, controller.scheme, deploymentType,
+		controller.client, controller.apiReader, controller.scheme, deploymentType, controller.clusterID,
 	).Reconcile(ctx, dynakube)
 }
 

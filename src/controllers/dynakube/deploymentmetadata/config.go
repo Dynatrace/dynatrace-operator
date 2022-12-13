@@ -18,6 +18,9 @@ const (
 	DeploymentTypeActiveGate            = "active_gate"
 
 	EnvDtDeploymentMetadata = "DT_DEPLOYMENT_METADATA"
+
+	OneAgentMetadataKey = "oneagent"
+	ActiveGateMetadataKey = "activegate"
 )
 
 var (

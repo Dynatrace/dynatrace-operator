@@ -170,13 +170,19 @@ func (statefulSetBuilder Builder) buildResources() corev1.ResourceRequirements {
 }
 
 func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {
-	deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(string(statefulSetBuilder.kubeUID), deploymentmetadata.DeploymentTypeActiveGate)
-
 	envs := []corev1.EnvVar{
 		{Name: consts.EnvDtCapabilities, Value: statefulSetBuilder.capability.ArgName()},
 		{Name: consts.EnvDtIdSeedNamespace, Value: statefulSetBuilder.dynakube.Namespace},
 		{Name: consts.EnvDtIdSeedClusterId, Value: string(statefulSetBuilder.kubeUID)},
-		{Name: deploymentmetadata.EnvDtDeploymentMetadata, Value: deploymentMetadata.AsString()},
+		{Name: deploymentmetadata.EnvDtDeploymentMetadata, ValueFrom: &corev1.EnvVarSource{
+			ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: deploymentmetadata.GetDeploymentMetadataConfigMapName(statefulSetBuilder.dynakube.Name),
+				},
+				Key: deploymentmetadata.ActiveGateMetadataKey,
+				Optional: address.Of(false),
+			},
+		}},
 	}
 	envs = append(envs, statefulSetBuilder.capability.Properties().Env...)
 
