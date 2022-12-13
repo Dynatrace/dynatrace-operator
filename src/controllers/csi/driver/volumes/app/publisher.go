@@ -69,10 +69,6 @@ func (publisher *AppVolumePublisher) PublishVolume(ctx context.Context, volumeCf
 		return &csi.NodePublishVolumeResponse{}, nil
 	}
 
-	if err = publisher.ensureMountSteps(ctx, bindCfg, volumeCfg); err != nil{
-		return nil, err
-	}
-
 	if bindCfg.Version == "" {
 		return nil, status.Error(
 			codes.Unavailable,
@@ -80,6 +76,9 @@ func (publisher *AppVolumePublisher) PublishVolume(ctx context.Context, volumeCf
 		)
 	}
 
+	if err = publisher.ensureMountSteps(ctx, bindCfg, volumeCfg); err != nil{
+		return nil, err
+	}
 
 	agentsVersionsMetric.WithLabelValues(bindCfg.Version).Inc()
 	return &csi.NodePublishVolumeResponse{}, nil
