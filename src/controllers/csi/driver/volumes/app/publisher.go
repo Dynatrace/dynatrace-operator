@@ -69,6 +69,10 @@ func (publisher *AppVolumePublisher) PublishVolume(ctx context.Context, volumeCf
 		return &csi.NodePublishVolumeResponse{}, nil
 	}
 
+	if err = publisher.ensureMountSteps(ctx, bindCfg, volumeCfg); err != nil{
+		return nil, err
+	}
+
 	if bindCfg.Version == "" {
 		return nil, status.Error(
 			codes.Unavailable,
@@ -76,19 +80,6 @@ func (publisher *AppVolumePublisher) PublishVolume(ctx context.Context, volumeCf
 		)
 	}
 
-	if err := publisher.mountOneAgent(bindCfg, volumeCfg); err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to mount oneagent volume: %s", err))
-	}
-
-	if err := publisher.storeVolume(ctx, bindCfg, volumeCfg); err != nil {
-		overlayFSPath := publisher.path.AgentRunDirForVolume(bindCfg.TenantUUID, volumeCfg.VolumeID)
-		unmountErr := publisher.umountOneAgent(volumeCfg.TargetPath, overlayFSPath)
-		if unmountErr != nil {
-			return nil, status.Error(codes.Internal, fmt.Sprintf("Error while unmounting on failed database call: %s", unmountErr))
-		}
-
-		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to store volume info: %s", err))
-	}
 
 	agentsVersionsMetric.WithLabelValues(bindCfg.Version).Inc()
 	return &csi.NodePublishVolumeResponse{}, nil
@@ -211,6 +202,23 @@ func (publisher *AppVolumePublisher) umountOneAgent(targetPath string, overlayFS
 		}
 	}
 
+	return nil
+}
+
+func (publisher *AppVolumePublisher) ensureMountSteps(ctx context.Context, bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) error {
+	if err := publisher.mountOneAgent(bindCfg, volumeCfg); err != nil {
+		return status.Error(codes.Internal, fmt.Sprintf("failed to mount oneagent volume: %s", err))
+	}
+
+	if err := publisher.storeVolume(ctx, bindCfg, volumeCfg); err != nil {
+		overlayFSPath := publisher.path.AgentRunDirForVolume(bindCfg.TenantUUID, volumeCfg.VolumeID)
+		unmountErr := publisher.umountOneAgent(volumeCfg.TargetPath, overlayFSPath)
+		if unmountErr != nil {
+			return status.Error(codes.Internal, fmt.Sprintf("Error while unmounting on failed database call: %s", unmountErr))
+		}
+
+		return status.Error(codes.Internal, fmt.Sprintf("Failed to store volume info: %s", err))
+	}
 	return nil
 }
 
