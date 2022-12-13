@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
-	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -33,7 +33,7 @@ func TestArguments(t *testing.T) {
 			instance: &dynatracev1beta1.DynaKube{},
 		}
 		arguments := builder.arguments()
-		expectedDefaultArguments := builder.appendImmutableImageArgs(builder.appendMetadataArgs(appendOperatorVersionArg([]string{})))
+		expectedDefaultArguments := builder.appendImmutableImageArgs(appendOperatorVersionArg([]string{}))
 
 		assert.Equal(t, expectedDefaultArguments, arguments)
 	})
@@ -83,14 +83,13 @@ func TestPodSpec_Arguments(t *testing.T) {
 			},
 		},
 	}
-	metadata := deploymentmetadata.NewDeploymentMetadata(testClusterID, DeploymentTypeFullStack)
 	hostInjectSpecs := instance.Spec.OneAgent.ClassicFullStack
 	dsInfo := ClassicFullStack{
 		builderInfo{
 			instance:       instance,
 			hostInjectSpec: hostInjectSpecs,
 			clusterId:      testClusterID,
-			deploymentType: DeploymentTypeFullStack,
+			deploymentType: deploymentmetadata.DeploymentTypeFullStack,
 		},
 	}
 
@@ -104,12 +103,6 @@ func TestPodSpec_Arguments(t *testing.T) {
 	}
 	assert.Contains(t, podSpecs.Containers[0].Args, "--set-host-property=OperatorVersion="+version.Version)
 
-	// hardcoded, because a change of consts should not be done
-	assert.Contains(t, podSpecs.Containers[0].Args, "--set-deployment-metadata=orchestration_tech=Operator-classic_fullstack")
-	metadataArgs := metadata.AsArgs()
-	for _, metadataArg := range metadataArgs {
-		assert.Contains(t, podSpecs.Containers[0].Args, metadataArg)
-	}
 	t.Run(`has proxy arg`, func(t *testing.T) {
 		instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
 		podSpecs = dsInfo.podSpec()
@@ -127,8 +120,8 @@ func TestPodSpec_Arguments(t *testing.T) {
 	})
 	t.Run(`feature flag immutable image is enabled`, func(t *testing.T) {
 		podSpecs = dsInfo.podSpec()
-		assert.Contains(t, podSpecs.Containers[0].Args, "--set-tenant=$("+consts.EnvDtTenant+")")
-		assert.Contains(t, podSpecs.Containers[0].Args, fmt.Sprintf("--set-server={$(%s)}", consts.EnvDtServer))
+		assert.Contains(t, podSpecs.Containers[0].Args, fmt.Sprintf("--set-tenant={$(%s)}", connectioninfo.EnvDtTenant))
+		assert.Contains(t, podSpecs.Containers[0].Args, fmt.Sprintf("--set-server={$(%s)}", connectioninfo.EnvDtServer))
 	})
 	t.Run(`has network zone arg`, func(t *testing.T) {
 		instance.Spec.NetworkZone = testValue
@@ -167,7 +160,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 				instance:       instance,
 				hostInjectSpec: hostInjectSpecs,
 				clusterId:      testClusterID,
-				deploymentType: DeploymentTypeCloudNative,
+				deploymentType: deploymentmetadata.DeploymentTypeCloudNative,
 			},
 		}
 		podSpecs = dsInfo.podSpec()
@@ -186,7 +179,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 				instance:       instance,
 				hostInjectSpec: hostInjectSpecs,
 				clusterId:      testClusterID,
-				deploymentType: DeploymentTypeHostMonitoring,
+				deploymentType: deploymentmetadata.DeploymentTypeHostMonitoring,
 			},
 		}
 		podSpecs = dsInfo.podSpec()

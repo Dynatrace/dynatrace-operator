@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent/daemonset"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -85,7 +85,7 @@ func TestAddDeploymentMetadataEnv(t *testing.T) {
 		addDeploymentMetadataEnv(container, dynakube, testClusterID)
 		require.Len(t, container.Env, 1)
 		assert.Contains(t, container.Env[0].Value, testClusterID)
-		assert.Contains(t, container.Env[0].Value, daemonset.DeploymentTypeCloudNative)
+		assert.Contains(t, container.Env[0].Value, deploymentmetadata.DeploymentTypeCloudNative)
 	})
 
 	t.Run("Add appMonitoring deployment metadata env", func(t *testing.T) {
@@ -100,7 +100,7 @@ func TestAddDeploymentMetadataEnv(t *testing.T) {
 		addDeploymentMetadataEnv(container, dynakube, testClusterID)
 		require.Len(t, container.Env, 1)
 		assert.Contains(t, container.Env[0].Value, testClusterID)
-		assert.Contains(t, container.Env[0].Value, daemonset.DeploymentTypeApplicationMonitoring)
+		assert.Contains(t, container.Env[0].Value, deploymentmetadata.DeploymentTypeApplicationMonitoring)
 	})
 }
 

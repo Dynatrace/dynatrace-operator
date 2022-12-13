@@ -9,6 +9,7 @@ import (
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
@@ -161,12 +162,12 @@ func (r *Reconciler) newDaemonSetForCR(dynakube *dynatracev1beta1.DynaKube, clus
 	var ds *appsv1.DaemonSet
 	var err error
 
-	switch {
-	case r.feature == daemonset.DeploymentTypeFullStack:
+	switch r.feature {
+	case deploymentmetadata.DeploymentTypeFullStack:
 		ds, err = daemonset.NewClassicFullStack(dynakube, clusterID).BuildDaemonSet()
-	case r.feature == daemonset.DeploymentTypeHostMonitoring:
+	case deploymentmetadata.DeploymentTypeHostMonitoring:
 		ds, err = daemonset.NewHostMonitoring(dynakube, clusterID).BuildDaemonSet()
-	case r.feature == daemonset.DeploymentTypeCloudNative:
+	case deploymentmetadata.DeploymentTypeCloudNative:
 		ds, err = daemonset.NewCloudNativeFullStack(dynakube, clusterID).BuildDaemonSet()
 	}
 	if err != nil {

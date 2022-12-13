@@ -3,16 +3,8 @@ package daemonset
 import (
 	"fmt"
 
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
-	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
-)
-
-const (
-	DeploymentTypeApplicationMonitoring = "application_monitoring"
-	DeploymentTypeFullStack             = "classic_fullstack"
-	DeploymentTypeCloudNative           = "cloud_native_fullstack"
-	DeploymentTypeHostMonitoring        = "host_monitoring"
 )
 
 func (dsInfo *builderInfo) arguments() []string {
@@ -22,21 +14,15 @@ func (dsInfo *builderInfo) arguments() []string {
 	args = dsInfo.appendProxyArg(args)
 	args = dsInfo.appendNetworkZoneArg(args)
 	args = appendOperatorVersionArg(args)
-	args = dsInfo.appendMetadataArgs(args)
 	args = dsInfo.appendImmutableImageArgs(args)
 
 	return args
 }
 
 func (dsInfo *builderInfo) appendImmutableImageArgs(args []string) []string {
-	args = append(args, fmt.Sprintf("--set-tenant=$(%s)", consts.EnvDtTenant))
-	args = append(args, fmt.Sprintf("--set-server={$(%s)}", consts.EnvDtServer))
+	args = append(args, fmt.Sprintf("--set-tenant=$(%s)", connectioninfo.EnvDtTenant))
+	args = append(args, fmt.Sprintf("--set-server={$(%s)}", connectioninfo.EnvDtServer))
 	return args
-}
-
-func (dsInfo *builderInfo) appendMetadataArgs(args []string) []string {
-	metadata := deploymentmetadata.NewDeploymentMetadata(dsInfo.clusterId, dsInfo.deploymentType)
-	return append(args, metadata.AsArgs()...)
 }
 
 func (dsInfo *builderInfo) appendHostInjectArgs(args []string) []string {

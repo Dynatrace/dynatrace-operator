@@ -23,20 +23,14 @@ const (
 	HttpsContainerPort      = 9999
 	HttpContainerPort       = 9998
 
-	DeploymentTypeActiveGate = "active_gate"
-
 	AuthTokenSecretVolumeName = "ag-authtoken-secret"
 	AuthTokenMountPoint       = connectioninfo.TokenBasePath + "/auth-token"
 
-	EnvDtServer             = "DT_SERVER"
-	EnvDtTenant             = "DT_TENANT"
-	EnvDtCommunication      = "DT_COMMUNICATION"
 	EnvDtCapabilities       = "DT_CAPABILITIES"
 	EnvDtIdSeedNamespace    = "DT_ID_SEED_NAMESPACE"
 	EnvDtIdSeedClusterId    = "DT_ID_SEED_K8S_CLUSTER_ID"
 	EnvDtNetworkZone        = "DT_NETWORK_ZONE"
 	EnvDtGroup              = "DT_GROUP"
-	EnvDtDeploymentMetadata = "DT_DEPLOYMENT_METADATA"
 	EnvDtDnsEntryPoint      = "DT_DNS_ENTRY_POINT"
 
 	AnnotationActiveGateConfigurationHash = dynatracev1beta1.InternalFlagPrefix + "activegate-configuration-hash"

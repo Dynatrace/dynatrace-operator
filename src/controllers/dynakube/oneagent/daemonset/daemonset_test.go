@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
@@ -62,7 +63,7 @@ func TestUseImmutableImage(t *testing.T) {
 }
 
 func TestLabels(t *testing.T) {
-	feature := strings.ReplaceAll(DeploymentTypeFullStack, "_", "")
+	feature := strings.ReplaceAll(deploymentmetadata.DeploymentTypeFullStack, "_", "")
 	t.Run(`if image is unset, use version`, func(t *testing.T) {
 		instance := dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{

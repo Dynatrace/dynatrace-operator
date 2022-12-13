@@ -10,11 +10,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/apimonitoring"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/status"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/version"
@@ -306,28 +306,15 @@ func (controller *Controller) removeAppInjection(ctx context.Context, dynakube *
 }
 
 func (controller *Controller) reconcileOneAgent(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
-	deploymentType := getDeploymentType(dynakube)
+	deploymentType := deploymentmetadata.GetOneAgentDeploymentType(*dynakube)
 
-	if deploymentType == "" {
+	if deploymentType == "" || deploymentType == deploymentmetadata.DeploymentTypeApplicationMonitoring {
 		return controller.removeOneAgentDaemonSet(ctx, dynakube)
 	}
 
 	return oneagent.NewOneAgentReconciler(
 		controller.client, controller.apiReader, controller.scheme, deploymentType,
 	).Reconcile(ctx, dynakube)
-}
-
-func getDeploymentType(dynakube *dynatracev1beta1.DynaKube) string {
-	switch {
-	case dynakube.HostMonitoringMode():
-		return daemonset.DeploymentTypeHostMonitoring
-	case dynakube.CloudNativeFullstackMode():
-		return daemonset.DeploymentTypeCloudNative
-	case dynakube.ClassicFullStackMode():
-		return daemonset.DeploymentTypeFullStack
-	}
-
-	return ""
 }
 
 func (controller *Controller) removeOneAgentDaemonSet(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {

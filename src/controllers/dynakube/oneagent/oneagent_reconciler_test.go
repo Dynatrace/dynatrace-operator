@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
@@ -80,7 +81,7 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 		client:    fakeClient,
 		apiReader: fakeClient,
 		scheme:    scheme.Scheme,
-		feature:   daemonset.DeploymentTypeFullStack,
+		feature:   deploymentmetadata.DeploymentTypeFullStack,
 	}
 
 	err := reconciler.Reconcile(context.TODO(), dynakube)
@@ -168,7 +169,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		client:    c,
 		apiReader: c,
 		scheme:    scheme.Scheme,
-		feature:   daemonset.DeploymentTypeFullStack,
+		feature:   deploymentmetadata.DeploymentTypeFullStack,
 	}
 
 	expectedLabels := map[string]string{
@@ -253,7 +254,7 @@ func TestMigrationForDaemonSetWithoutAnnotation(t *testing.T) {
 	dkKey := metav1.ObjectMeta{Name: "my-dynakube", Namespace: "my-namespace"}
 	ds1 := &appsv1.DaemonSet{ObjectMeta: dkKey}
 	r := Reconciler{
-		feature: daemonset.DeploymentTypeHostMonitoring,
+		feature: deploymentmetadata.DeploymentTypeHostMonitoring,
 	}
 
 	dynakube := &dynatracev1beta1.DynaKube{
@@ -276,7 +277,7 @@ func TestHasSpecChanged(t *testing.T) {
 	runTest := func(msg string, exp bool, mod func(old *dynatracev1beta1.DynaKube, new *dynatracev1beta1.DynaKube)) {
 		t.Run(msg, func(t *testing.T) {
 			r := Reconciler{
-				feature: daemonset.DeploymentTypeHostMonitoring,
+				feature: deploymentmetadata.DeploymentTypeHostMonitoring,
 			}
 			key := metav1.ObjectMeta{Name: "my-oneagent", Namespace: "my-namespace"}
 			oldInstance := dynatracev1beta1.DynaKube{
@@ -382,7 +383,7 @@ func TestNewDaemonset_Affinity(t *testing.T) {
 	t.Run(`adds correct affinities`, func(t *testing.T) {
 		versionProvider := &fakeVersionProvider{}
 		r := Reconciler{
-			feature: daemonset.DeploymentTypeHostMonitoring,
+			feature: deploymentmetadata.DeploymentTypeHostMonitoring,
 		}
 		dynakube := newDynaKube()
 		versionProvider.On("Major").Return("1", nil)
@@ -486,7 +487,7 @@ func TestInstanceStatus(t *testing.T) {
 				"app.kubernetes.io/component":     "oneagent",
 				"app.kubernetes.io/created-by":    dkName,
 				"app.kubernetes.io/version":       "snapshot",
-				"component.dynatrace.com/feature": daemonset.DeploymentTypeHostMonitoring,
+				"component.dynatrace.com/feature": deploymentmetadata.DeploymentTypeHostMonitoring,
 			},
 		},
 		Spec: corev1.PodSpec{
@@ -507,7 +508,7 @@ func TestInstanceStatus(t *testing.T) {
 		client:    fakeClient,
 		apiReader: fakeClient,
 		scheme:    scheme.Scheme,
-		feature:   daemonset.DeploymentTypeHostMonitoring,
+		feature:   deploymentmetadata.DeploymentTypeHostMonitoring,
 	}
 
 	err := reconciler.reconcileInstanceStatuses(context.Background(), dynakube)
@@ -560,7 +561,7 @@ func TestEmptyInstancesWithWrongLabels(t *testing.T) {
 		client:    fakeClient,
 		apiReader: fakeClient,
 		scheme:    scheme.Scheme,
-		feature:   daemonset.DeploymentTypeHostMonitoring,
+		feature:   deploymentmetadata.DeploymentTypeHostMonitoring,
 	}
 
 	err := reconciler.reconcileInstanceStatuses(context.Background(), dynakube)
