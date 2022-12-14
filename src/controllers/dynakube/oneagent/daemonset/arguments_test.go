@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/stretchr/testify/assert"
@@ -126,8 +127,8 @@ func TestPodSpec_Arguments(t *testing.T) {
 	})
 	t.Run(`feature flag immutable image is enabled`, func(t *testing.T) {
 		podSpecs = dsInfo.podSpec()
-		assert.Contains(t, podSpecs.Containers[0].Args, "--set-tenant="+testTenantUUID)
-		assert.Contains(t, podSpecs.Containers[0].Args, fmt.Sprintf("--set-server={%s}", testFormattedCommunicationHosts))
+		assert.Contains(t, podSpecs.Containers[0].Args, "--set-tenant=$("+consts.EnvDtTenant+")")
+		assert.Contains(t, podSpecs.Containers[0].Args, fmt.Sprintf("--set-server={$(%s)}", consts.EnvDtServer))
 	})
 	t.Run(`has network zone arg`, func(t *testing.T) {
 		instance.Spec.NetworkZone = testValue

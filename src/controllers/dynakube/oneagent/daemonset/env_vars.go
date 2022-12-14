@@ -3,13 +3,17 @@ package daemonset
 import (
 	"sort"
 
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
 
 const (
-	dtNodeName  = "DT_K8S_NODE_NAME"
-	dtClusterId = "DT_K8S_CLUSTER_ID"
+	dtNodeName      = "DT_K8S_NODE_NAME"
+	dtClusterId     = "DT_K8S_CLUSTER_ID"
+	dtCommunication = "DT_COMMUNICATION"
 
 	oneagentDisableContainerInjection = "ONEAGENT_DISABLE_CONTAINER_INJECTION"
 	oneagentReadOnlyMode              = "ONEAGENT_READ_ONLY_MODE"
@@ -27,6 +31,20 @@ func (dsInfo *builderInfo) environmentVariables() []corev1.EnvVar {
 	envVarMap := envVarsToMap(environmentVariables)
 	envVarMap = setDefaultValueSource(envVarMap, dtNodeName, &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}})
 	envVarMap = setDefaultValue(envVarMap, dtClusterId, dsInfo.clusterId)
+	envVarMap = setDefaultValueSource(envVarMap, consts.EnvDtTenant, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+		LocalObjectReference: corev1.LocalObjectReference{
+			Name: dsInfo.instance.OneAgentConnectionInfoConfigMapName(),
+		},
+		Key:      connectioninfo.TenantUUIDName,
+		Optional: address.Of(false),
+	}})
+	envVarMap = setDefaultValueSource(envVarMap, consts.EnvDtServer, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+		LocalObjectReference: corev1.LocalObjectReference{
+			Name: dsInfo.instance.OneAgentConnectionInfoConfigMapName(),
+		},
+		Key:      connectioninfo.CommunicationEndpointsName,
+		Optional: address.Of(false),
+	}})
 
 	if dsInfo.hasProxy() {
 		envVarMap = dsInfo.setDefaultProxy(envVarMap)

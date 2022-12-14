@@ -51,13 +51,14 @@ func (eec ExtensionControllerModifier) Enabled() bool {
 	return eec.dynakube.IsStatsdActiveGateEnabled()
 }
 
-func (eec ExtensionControllerModifier) Modify(sts *appsv1.StatefulSet) {
+func (eec ExtensionControllerModifier) Modify(sts *appsv1.StatefulSet) error {
 	sts.Spec.Template.Spec.Containers = append(sts.Spec.Template.Spec.Containers, eec.buildContainer())
 	sts.Spec.Template.Spec.Volumes = append(sts.Spec.Template.Spec.Volumes, eec.getVolumes(sts.Spec.Template.Spec.Volumes)...)
 
 	baseContainer := kubeobjects.FindContainerInPodSpec(&sts.Spec.Template.Spec, consts.ActiveGateContainerName)
 	baseContainer.VolumeMounts = append(baseContainer.VolumeMounts, eec.getActiveGateVolumeMounts(baseContainer.VolumeMounts)...)
 
+	return nil
 }
 
 func (eec ExtensionControllerModifier) getActiveGateVolumeMounts(presentMounts []corev1.VolumeMount) []corev1.VolumeMount {
@@ -193,7 +194,7 @@ func (eec ExtensionControllerModifier) buildVolumeMounts() []corev1.VolumeMount 
 }
 
 func (eec ExtensionControllerModifier) buildEnvs() []corev1.EnvVar {
-	tenantId, err := eec.dynakube.TenantUUID()
+	tenantId, err := eec.dynakube.TenantUUIDFromApiUrl()
 	if err != nil {
 		log.Error(err, "Problem getting tenant id from api url")
 	}
