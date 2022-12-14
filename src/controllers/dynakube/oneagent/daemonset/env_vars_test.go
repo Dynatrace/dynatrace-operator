@@ -16,7 +16,7 @@ import (
 func TestEnvironmentVariables(t *testing.T) {
 	t.Run("returns default values when members are nil", func(t *testing.T) {
 		dsInfo := builderInfo{
-			instance: &dynatracev1beta1.DynaKube{},
+			dynakube: &dynatracev1beta1.DynaKube{},
 		}
 		envVars := dsInfo.environmentVariables()
 
@@ -39,8 +39,8 @@ func TestEnvironmentVariables(t *testing.T) {
 			},
 		}
 		dsInfo := builderInfo{
-			instance:  dynakube,
-			clusterId: clusterID,
+			dynakube:  dynakube,
+			clusterID: clusterID,
 		}
 		envVars := dsInfo.environmentVariables()
 
@@ -71,8 +71,8 @@ func TestAddClusterIDEnv(t *testing.T) {
 	t.Run("adds clusterID value from struct", func(t *testing.T) {
 		clusterID := "test"
 		dsInfo := builderInfo{
-			instance:  &dynatracev1beta1.DynaKube{},
-			clusterId: clusterID,
+			dynakube:  &dynatracev1beta1.DynaKube{},
+			clusterID: clusterID,
 		}
 		envVars := dsInfo.addClusterIDEnv(map[string]corev1.EnvVar{})
 
@@ -90,7 +90,7 @@ func TestAddDeploymentMetadataEnv(t *testing.T) {
 	t.Run("adds deployment metadata value via configmap ref", func(t *testing.T) {
 		dynakubeName := "test"
 		dsInfo := builderInfo{
-			instance: &dynatracev1beta1.DynaKube{
+			dynakube: &dynatracev1beta1.DynaKube{
 				ObjectMeta: v1.ObjectMeta{
 					Name: dynakubeName,
 				},
@@ -123,7 +123,7 @@ func TestAddConnectionInfoEnvs(t *testing.T) {
 			},
 		}
 		dsInfo := builderInfo{
-			instance: dynakube,
+			dynakube: dynakube,
 		}
 		envVars := dsInfo.addConnectionInfoEnvs(map[string]corev1.EnvVar{})
 
@@ -168,7 +168,7 @@ func TestAddProxyEnvs(t *testing.T) {
 			},
 		}
 		dsInfo := builderInfo{
-			instance: dynakube,
+			dynakube: dynakube,
 		}
 		envVars := dsInfo.addProxyEnv(map[string]corev1.EnvVar{})
 
@@ -187,7 +187,7 @@ func TestAddProxyEnvs(t *testing.T) {
 			},
 		}
 		dsInfo := builderInfo{
-			instance: dynakube,
+			dynakube: dynakube,
 		}
 		envVars := dsInfo.addProxyEnv(map[string]corev1.EnvVar{})
 
@@ -218,7 +218,7 @@ func TestAddReadOnlyEnv(t *testing.T) {
 			},
 		}
 		dsInfo := builderInfo{
-			instance: dynakube,
+			dynakube: dynakube,
 		}
 		envVars := dsInfo.addReadOnlyEnv(map[string]corev1.EnvVar{})
 
@@ -232,7 +232,7 @@ func TestAddReadOnlyEnv(t *testing.T) {
 			},
 		}
 		dsInfo := builderInfo{
-			instance: dynakube,
+			dynakube: dynakube,
 		}
 		envVars := dsInfo.addReadOnlyEnv(map[string]corev1.EnvVar{})
 

@@ -28,7 +28,7 @@ const (
 func TestArguments(t *testing.T) {
 	t.Run("returns default arguments if hostInjection is nil", func(t *testing.T) {
 		builder := builderInfo{
-			instance: &dynatracev1beta1.DynaKube{},
+			dynakube: &dynatracev1beta1.DynaKube{},
 		}
 		arguments := builder.arguments()
 		expectedDefaultArguments := builder.appendImmutableImageArgs(appendOperatorVersionArg([]string{}))
@@ -48,9 +48,9 @@ func TestArguments(t *testing.T) {
 		}
 		dsInfo := ClassicFullStack{
 			builderInfo{
-				instance:       &instance,
+				dynakube:       &instance,
 				hostInjectSpec: instance.Spec.OneAgent.ClassicFullStack,
-				clusterId:      testClusterID,
+				clusterID:      testClusterID,
 			},
 		}
 		podSpecs := dsInfo.podSpec()
@@ -84,9 +84,9 @@ func TestPodSpec_Arguments(t *testing.T) {
 	hostInjectSpecs := instance.Spec.OneAgent.ClassicFullStack
 	dsInfo := ClassicFullStack{
 		builderInfo{
-			instance:       instance,
+			dynakube:       instance,
 			hostInjectSpec: hostInjectSpecs,
-			clusterId:      testClusterID,
+			clusterID:      testClusterID,
 			deploymentType: deploymentmetadata.DeploymentTypeFullStack,
 		},
 	}
@@ -132,9 +132,9 @@ func TestPodSpec_Arguments(t *testing.T) {
 
 		dsInfo := HostMonitoring{
 			builderInfo{
-				instance:       instance,
+				dynakube:       instance,
 				hostInjectSpec: hostInjectSpecs,
-				clusterId:      testClusterID,
+				clusterID:      testClusterID,
 			},
 		}
 		daemonset, _ = dsInfo.BuildDaemonSet()

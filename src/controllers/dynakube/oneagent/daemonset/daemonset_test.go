@@ -379,7 +379,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 func TestPodSpecServiceAccountName(t *testing.T) {
 	t.Run("service account name is unprivileged + readonly by default", func(t *testing.T) {
 		builder := builderInfo{
-			instance: &dynatracev1beta1.DynaKube{},
+			dynakube: &dynatracev1beta1.DynaKube{},
 		}
 		podSpec := builder.podSpec()
 
@@ -387,7 +387,7 @@ func TestPodSpecServiceAccountName(t *testing.T) {
 	})
 	t.Run("unprivileged and not readonly is recognized", func(t *testing.T) {
 		builder := builderInfo{
-			instance: &dynatracev1beta1.DynaKube{
+			dynakube: &dynatracev1beta1.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent: "false"},
 				},
@@ -399,7 +399,7 @@ func TestPodSpecServiceAccountName(t *testing.T) {
 	})
 	t.Run("privileged and not readonly is recognized", func(t *testing.T) {
 		builder := builderInfo{
-			instance: &dynatracev1beta1.DynaKube{
+			dynakube: &dynatracev1beta1.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent:               "false",
@@ -414,7 +414,7 @@ func TestPodSpecServiceAccountName(t *testing.T) {
 	})
 	t.Run("privileged and readonly is recognized", func(t *testing.T) {
 		builder := builderInfo{
-			instance: &dynatracev1beta1.DynaKube{
+			dynakube: &dynatracev1beta1.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						dynatracev1beta1.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
@@ -435,7 +435,7 @@ func TestPodSpecServiceAccountName(t *testing.T) {
 			},
 		}
 		builder := builderInfo{
-			instance: dynakube,
+			dynakube: dynakube,
 		}
 		podSpec := builder.podSpec()
 
@@ -553,7 +553,7 @@ func TestImagePullSecrets(t *testing.T) {
 	})
 	t.Run("returns default instance pull secret", func(t *testing.T) {
 		dsInfo := builderInfo{
-			instance: &dynatracev1beta1.DynaKube{
+			dynakube: &dynatracev1beta1.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: testName,
 				},
@@ -567,7 +567,7 @@ func TestImagePullSecrets(t *testing.T) {
 	})
 	t.Run("returns custom pull secret", func(t *testing.T) {
 		dsInfo := builderInfo{
-			instance: &dynatracev1beta1.DynaKube{
+			dynakube: &dynatracev1beta1.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: testName,
 				},
@@ -593,11 +593,11 @@ func TestImmutableOneAgentImage(t *testing.T) {
 	})
 	t.Run("returns instance image", func(t *testing.T) {
 		dsInfo := builderInfo{
-			instance: &dynatracev1beta1.DynaKube{},
+			dynakube: &dynatracev1beta1.DynaKube{},
 		}
 		image := dsInfo.immutableOneAgentImage()
 
-		assert.Equal(t, dsInfo.instance.OneAgentImage(), image)
+		assert.Equal(t, dsInfo.dynakube.OneAgentImage(), image)
 	})
 }
 

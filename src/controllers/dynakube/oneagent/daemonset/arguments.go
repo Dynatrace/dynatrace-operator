@@ -38,19 +38,19 @@ func appendOperatorVersionArg(args []string) []string {
 }
 
 func (dsInfo *builderInfo) appendNetworkZoneArg(args []string) []string {
-	if dsInfo.instance != nil && dsInfo.instance.Spec.NetworkZone != "" {
-		return append(args, fmt.Sprintf("--set-network-zone=%s", dsInfo.instance.Spec.NetworkZone))
+	if dsInfo.dynakube != nil && dsInfo.dynakube.Spec.NetworkZone != "" {
+		return append(args, fmt.Sprintf("--set-network-zone=%s", dsInfo.dynakube.Spec.NetworkZone))
 	}
 	return args
 }
 
 func (dsInfo *builderInfo) appendProxyArg(args []string) []string {
-	if dsInfo.instance != nil && dsInfo.instance.NeedsOneAgentProxy() {
+	if dsInfo.dynakube != nil && dsInfo.dynakube.NeedsOneAgentProxy() {
 		return append(args, "--set-proxy=$(https_proxy)")
 	}
 	return args
 }
 
 func (dsInfo *builderInfo) hasProxy() bool {
-	return dsInfo.instance != nil && dsInfo.instance.Spec.Proxy != nil && (dsInfo.instance.Spec.Proxy.ValueFrom != "" || dsInfo.instance.Spec.Proxy.Value != "")
+	return dsInfo.dynakube != nil && dsInfo.dynakube.Spec.Proxy != nil && (dsInfo.dynakube.Spec.Proxy.ValueFrom != "" || dsInfo.dynakube.Spec.Proxy.Value != "")
 }
