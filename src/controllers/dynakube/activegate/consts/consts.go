@@ -26,12 +26,12 @@ const (
 	AuthTokenSecretVolumeName = "ag-authtoken-secret"
 	AuthTokenMountPoint       = connectioninfo.TokenBasePath + "/auth-token"
 
-	EnvDtCapabilities       = "DT_CAPABILITIES"
-	EnvDtIdSeedNamespace    = "DT_ID_SEED_NAMESPACE"
-	EnvDtIdSeedClusterId    = "DT_ID_SEED_K8S_CLUSTER_ID"
-	EnvDtNetworkZone        = "DT_NETWORK_ZONE"
-	EnvDtGroup              = "DT_GROUP"
-	EnvDtDnsEntryPoint      = "DT_DNS_ENTRY_POINT"
+	EnvDtCapabilities    = "DT_CAPABILITIES"
+	EnvDtIdSeedNamespace = "DT_ID_SEED_NAMESPACE"
+	EnvDtIdSeedClusterId = "DT_ID_SEED_K8S_CLUSTER_ID"
+	EnvDtNetworkZone     = "DT_NETWORK_ZONE"
+	EnvDtGroup           = "DT_GROUP"
+	EnvDtDnsEntryPoint   = "DT_DNS_ENTRY_POINT"
 
 	AnnotationActiveGateConfigurationHash = dynatracev1beta1.InternalFlagPrefix + "activegate-configuration-hash"
 	AnnotationActiveGateContainerAppArmor = "container.apparmor.security.beta.kubernetes.io/" + ActiveGateContainerName

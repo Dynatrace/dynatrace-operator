@@ -40,15 +40,15 @@ func (dsInfo *builderInfo) environmentVariables() []corev1.EnvVar {
 	return mapToArray(envVarMap)
 }
 
-func addNodeNameEnv(envVarMap map[string]corev1.EnvVar) map[string]corev1.EnvVar{
+func addNodeNameEnv(envVarMap map[string]corev1.EnvVar) map[string]corev1.EnvVar {
 	return setDefaultValueSource(envVarMap, dtNodeName, &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}})
 }
 
-func (dsInfo *builderInfo) addClusterIDEnv(envVarMap map[string]corev1.EnvVar) map[string]corev1.EnvVar{
+func (dsInfo *builderInfo) addClusterIDEnv(envVarMap map[string]corev1.EnvVar) map[string]corev1.EnvVar {
 	return setDefaultValue(envVarMap, dtClusterId, dsInfo.clusterId)
 }
 
-func (dsInfo *builderInfo) addDeploymentMetadataEnv(envVarMap map[string]corev1.EnvVar) map[string]corev1.EnvVar{
+func (dsInfo *builderInfo) addDeploymentMetadataEnv(envVarMap map[string]corev1.EnvVar) map[string]corev1.EnvVar {
 	return setDefaultValueSource(envVarMap, deploymentmetadata.EnvDtDeploymentMetadata, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 		LocalObjectReference: corev1.LocalObjectReference{
 			Name: deploymentmetadata.GetDeploymentMetadataConfigMapName(dsInfo.instance.Name),
@@ -58,7 +58,7 @@ func (dsInfo *builderInfo) addDeploymentMetadataEnv(envVarMap map[string]corev1.
 	}})
 }
 
-func (dsInfo *builderInfo) addConnectionInfoEnvs(envVarMap map[string]corev1.EnvVar) map[string]corev1.EnvVar{
+func (dsInfo *builderInfo) addConnectionInfoEnvs(envVarMap map[string]corev1.EnvVar) map[string]corev1.EnvVar {
 	envVarMap = setDefaultValueSource(envVarMap, connectioninfo.EnvDtTenant, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 		LocalObjectReference: corev1.LocalObjectReference{
 			Name: dsInfo.instance.OneAgentConnectionInfoConfigMapName(),
@@ -99,7 +99,6 @@ func (dsInfo *builderInfo) addReadOnlyEnv(envVarMap map[string]corev1.EnvVar) ma
 	}
 	return envVarMap
 }
-
 
 func (dsInfo *HostMonitoring) appendInfraMonEnvVars(daemonset *appsv1.DaemonSet) {
 	envVars := daemonset.Spec.Template.Spec.Containers[0].Env

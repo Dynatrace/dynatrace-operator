@@ -25,6 +25,7 @@ func TestConfigMapQuery(t *testing.T) {
 	t.Run(`Update configMap when data has changed`, testUpdateConfigMapWhenDataChanged)
 	t.Run(`Update configMap when labels have changed`, testUpdateConfigMapWhenLabelsChanged)
 	t.Run(`Create configMap in target namespace`, testCreateConfigMapInTargetNamespace)
+	t.Run(`Delete configMap in target namespace`, testDeleteConfigMap)
 }
 
 func testGetConfigMap(t *testing.T) {
@@ -236,6 +237,30 @@ func testCreateConfigMapInTargetNamespace(t *testing.T) {
 	assert.True(t, reflect.DeepEqual(labels, newConfigMap.Labels))
 	assert.Equal(t, testConfigMapName, newConfigMap.Name)
 	assert.Equal(t, testNamespace, newConfigMap.Namespace)
+}
+
+func testDeleteConfigMap(t *testing.T) {
+	data := map[string]string{testKey1: string(testValue1)}
+	labels := map[string]string{
+		"label": "test",
+	}
+	fakeClient := fake.NewClient(&corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testConfigMapName,
+			Namespace: testNamespace,
+			Labels:    labels,
+		},
+		Data: data,
+	})
+	configMap := createTestConfigMap(labels, data)
+	configMapQuery := NewConfigMapQuery(context.TODO(), fakeClient, fakeClient, log)
+
+	err := configMapQuery.Delete(*configMap)
+	assert.NoError(t, err)
+
+	var deletedConfigMap corev1.ConfigMap
+	err = fakeClient.Get(context.TODO(), types.NamespacedName{Name: testConfigMapName, Namespace: testNamespace}, &deletedConfigMap)
+	assert.Error(t, err)
 }
 
 func createTestConfigMap(labels map[string]string, data map[string]string) *corev1.ConfigMap {

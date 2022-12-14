@@ -19,7 +19,7 @@ const (
 
 	EnvDtDeploymentMetadata = "DT_DEPLOYMENT_METADATA"
 
-	OneAgentMetadataKey = "oneagent"
+	OneAgentMetadataKey   = "oneagent"
 	ActiveGateMetadataKey = "activegate"
 )
 

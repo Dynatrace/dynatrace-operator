@@ -179,7 +179,7 @@ func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {
 				LocalObjectReference: corev1.LocalObjectReference{
 					Name: deploymentmetadata.GetDeploymentMetadataConfigMapName(statefulSetBuilder.dynakube.Name),
 				},
-				Key: deploymentmetadata.ActiveGateMetadataKey,
+				Key:      deploymentmetadata.ActiveGateMetadataKey,
 				Optional: address.Of(false),
 			},
 		}},

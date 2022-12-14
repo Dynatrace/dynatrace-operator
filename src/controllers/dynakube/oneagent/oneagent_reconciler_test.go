@@ -266,7 +266,7 @@ func TestMigrationForDaemonSetWithoutAnnotation(t *testing.T) {
 		},
 	}
 
-	ds2, err := r.newDaemonSetForCR(dynakube, "cluster1")
+	ds2, err := r.getDesiredDaemonSet(dynakube)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, ds2.Annotations[kubeobjects.AnnotationHash])
 
@@ -297,10 +297,10 @@ func TestHasSpecChanged(t *testing.T) {
 				},
 			}
 			mod(&oldInstance, &newInstance)
-			ds1, err := r.newDaemonSetForCR(&oldInstance, "cluster1")
+			ds1, err := r.getDesiredDaemonSet(&oldInstance)
 			assert.NoError(t, err)
 
-			ds2, err := r.newDaemonSetForCR(&newInstance, "cluster1")
+			ds2, err := r.getDesiredDaemonSet(&newInstance)
 			assert.NoError(t, err)
 
 			assert.NotEmpty(t, ds1.Annotations[kubeobjects.AnnotationHash])
@@ -388,7 +388,7 @@ func TestNewDaemonset_Affinity(t *testing.T) {
 		dynakube := newDynaKube()
 		versionProvider.On("Major").Return("1", nil)
 		versionProvider.On("Minor").Return("20+", nil)
-		ds, err := r.newDaemonSetForCR(dynakube, "cluster1")
+		ds, err := r.getDesiredDaemonSet(dynakube)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, ds)

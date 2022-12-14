@@ -56,7 +56,7 @@ func NewController(mgr manager.Manager, clusterID string) *Controller {
 	return NewDynaKubeController(mgr.GetClient(), mgr.GetAPIReader(), mgr.GetScheme(), mgr.GetConfig(), clusterID)
 }
 
-func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, scheme *runtime.Scheme, config *rest.Config, clusterID string) *Controller {
+func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, scheme *runtime.Scheme, config *rest.Config, clusterID string) *Controller { //nolint:revive // maximum number of return results per function exceeded; max 3 but got 4
 	return &Controller{
 		client:                 kubeClient,
 		apiReader:              apiReader,

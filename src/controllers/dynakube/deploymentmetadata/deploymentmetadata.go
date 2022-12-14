@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/src/version"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/version"
 )
 
 type DeploymentMetadata struct {
@@ -49,4 +49,3 @@ func (metadata *DeploymentMetadata) OrchestrationTech() string {
 func formatKeyValue(key string, value string) string {
 	return fmt.Sprintf("%s=%s", key, value)
 }
-

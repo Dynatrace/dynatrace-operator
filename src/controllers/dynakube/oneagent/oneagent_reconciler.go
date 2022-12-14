@@ -28,7 +28,7 @@ const (
 )
 
 // NewOneAgentReconciler initializes a new ReconcileOneAgent instance
-func NewOneAgentReconciler(
+func NewOneAgentReconciler( //nolint:revive // maximum number of return results per function exceeded; max 3 but got 4
 	client client.Client,
 	apiReader client.Reader,
 	scheme *runtime.Scheme,

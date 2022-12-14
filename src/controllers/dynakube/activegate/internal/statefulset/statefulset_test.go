@@ -308,7 +308,9 @@ func TestBuildCommonEnvs(t *testing.T) {
 		assert.Equal(t, testKubeUID, idEnv.Value)
 		metadataEnv := kubeobjects.FindEnvVar(envs, deploymentmetadata.EnvDtDeploymentMetadata)
 		require.NotNil(t, metadataEnv)
-		assert.NotEmpty(t, metadataEnv.Value)
+		assert.NotEmpty(t, metadataEnv.ValueFrom.ConfigMapKeyRef)
+		assert.Equal(t, deploymentmetadata.ActiveGateMetadataKey, metadataEnv.ValueFrom.ConfigMapKeyRef.Key)
+		assert.Equal(t, deploymentmetadata.GetDeploymentMetadataConfigMapName(dynakube.Name), metadataEnv.ValueFrom.ConfigMapKeyRef.Name)
 	})
 
 	t.Run("adds extra envs", func(t *testing.T) {
