@@ -247,6 +247,21 @@ func TestLoadPodInfo_Empty(t *testing.T) {
 	require.Nil(t, volume)
 }
 
+func TestMountIfDBHasError(t *testing.T) {
+	mounter := mount.NewFakeMounter([]mount.MountPoint{})
+	publisher := newPublisherForTesting(mounter)
+	publisher.db = &metadata.FakeFailDB{}
+
+	bindCfg := &csivolumes.BindConfig{
+		TenantUUID:       testTenantUUID,
+		MaxMountAttempts: dynatracev1beta1.DefaultMaxFailedCsiMountAttempts,
+	}
+
+	err := publisher.ensureMountSteps(context.TODO(), bindCfg, createTestVolumeConfig())
+	require.Error(t, err)
+	require.Empty(t, mounter.MountPoints)
+}
+
 func newPublisherForTesting(mounter *mount.FakeMounter) AppVolumePublisher {
 	objects := []client.Object{
 		&dynatracev1beta1.DynaKube{
