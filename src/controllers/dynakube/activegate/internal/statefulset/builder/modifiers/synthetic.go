@@ -108,7 +108,7 @@ func (syn SyntheticModifier) Enabled() bool {
 	return syn.dynakube.IsSyntheticActiveGateEnabled()
 }
 
-func (syn SyntheticModifier) Modify(sts *appsv1.StatefulSet) {
+func (syn SyntheticModifier) Modify(sts *appsv1.StatefulSet) error {
 	sts.Spec.Template.Spec.Containers = append(
 		sts.Spec.Template.Spec.Containers,
 		syn.buildContainer())
@@ -127,6 +127,8 @@ func (syn SyntheticModifier) Modify(sts *appsv1.StatefulSet) {
 	baseContainer.VolumeMounts = append(
 		baseContainer.VolumeMounts,
 		buildPublicVolumeMounts()...)
+
+	return nil
 }
 
 func (syn SyntheticModifier) buildContainer() corev1.Container {
