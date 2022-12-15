@@ -21,14 +21,25 @@ const (
 	testTenantEndpoints = "test-endpoints"
 )
 
+func createTestDynakubeObjectMeta() metav1.ObjectMeta {
+	return metav1.ObjectMeta{
+		Namespace: testNamespace,
+		Name:      testName,
+	}
+}
+
+func createTestDynakube(spec *dynatracev1beta1.DynaKubeSpec) *dynatracev1beta1.DynaKube {
+	dynakube := &dynatracev1beta1.DynaKube{ObjectMeta: createTestDynakubeObjectMeta()}
+	if spec != nil {
+		dynakube.Spec = *spec
+	}
+	return dynakube
+}
+
 func TestReconcile(t *testing.T) {
 	clusterID := "test"
 	t.Run(`don't create anything, if no mode is configured`, func(t *testing.T) {
-		dynakube := &dynatracev1beta1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testName,
-			}}
+		dynakube := createTestDynakube(nil)
 		fakeClient := fake.NewClientBuilder().Build()
 		r := NewReconciler(context.TODO(), fakeClient, fakeClient, *dynakube, clusterID)
 		err := r.Reconcile()
@@ -39,11 +50,7 @@ func TestReconcile(t *testing.T) {
 		require.Error(t, err)
 	})
 	t.Run(`delete configmap, if no mode is configured`, func(t *testing.T) {
-		dynakube := &dynatracev1beta1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testName,
-			}}
+		dynakube := createTestDynakube(nil)
 		fakeClient := fake.NewClientBuilder().WithObjects(
 			&corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
@@ -62,17 +69,12 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run(`create configmap with 1 key, if only oneagent is needed`, func(t *testing.T) {
-		dynakube := &dynatracev1beta1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testName,
-			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
+		dynakube := createTestDynakube(
+			&dynatracev1beta1.DynaKubeSpec{
 				OneAgent: dynatracev1beta1.OneAgentSpec{
 					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
 				},
-			},
-		}
+			})
 
 		fakeClient := fake.NewClientBuilder().Build()
 		r := NewReconciler(context.TODO(), fakeClient, fakeClient, *dynakube, clusterID)
@@ -87,19 +89,14 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run(`create configmap with 1 key, if only activegate is needed`, func(t *testing.T) {
-		dynakube := &dynatracev1beta1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testName,
-			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
+		dynakube := createTestDynakube(
+			&dynatracev1beta1.DynaKubeSpec{
 				ActiveGate: dynatracev1beta1.ActiveGateSpec{
 					Capabilities: []dynatracev1beta1.CapabilityDisplayName{
 						dynatracev1beta1.KubeMonCapability.DisplayName,
 					},
 				},
-			},
-		}
+			})
 
 		fakeClient := fake.NewClientBuilder().Build()
 		r := NewReconciler(context.TODO(), fakeClient, fakeClient, *dynakube, clusterID)
@@ -113,12 +110,8 @@ func TestReconcile(t *testing.T) {
 		assert.NotEmpty(t, actualConfigMap.Data[ActiveGateMetadataKey])
 	})
 	t.Run(`create configmap with 2 keys, if both oneagent and activegate is needed`, func(t *testing.T) {
-		dynakube := &dynatracev1beta1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testName,
-			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
+		dynakube := createTestDynakube(
+			&dynatracev1beta1.DynaKubeSpec{
 				OneAgent: dynatracev1beta1.OneAgentSpec{
 					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
 				},
@@ -127,8 +120,7 @@ func TestReconcile(t *testing.T) {
 						dynatracev1beta1.KubeMonCapability.DisplayName,
 					},
 				},
-			},
-		}
+			})
 
 		fakeClient := fake.NewClientBuilder().Build()
 		r := NewReconciler(context.TODO(), fakeClient, fakeClient, *dynakube, clusterID)
