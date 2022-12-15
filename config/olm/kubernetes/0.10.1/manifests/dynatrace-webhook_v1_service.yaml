@@ -5,7 +5,7 @@ metadata:
   labels:
     app.kubernetes.io/component: webhook
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: 0.10.0
+    app.kubernetes.io/version: 0.10.1
   name: dynatrace-webhook
 spec:
   ports:
@@ -15,6 +15,6 @@ spec:
   selector:
     app.kubernetes.io/component: webhook
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: 0.10.0
+    app.kubernetes.io/version: 0.10.1
 status:
   loadBalancer: {}

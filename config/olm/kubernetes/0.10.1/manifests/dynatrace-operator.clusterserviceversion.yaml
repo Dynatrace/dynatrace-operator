@@ -1193,7 +1193,7 @@ spec:
               labels:
                 app.kubernetes.io/component: operator
                 app.kubernetes.io/name: dynatrace-operator
-                app.kubernetes.io/version: 0.10.0
+                app.kubernetes.io/version: 0.10.1
                 name: dynatrace-operator
             spec:
               affinity:
@@ -1293,7 +1293,7 @@ spec:
               labels:
                 app.kubernetes.io/component: webhook
                 app.kubernetes.io/name: dynatrace-operator
-                app.kubernetes.io/version: 0.10.0
+                app.kubernetes.io/version: 0.10.1
                 internal.dynatrace.com/app: webhook
                 internal.dynatrace.com/component: webhook
             spec:
