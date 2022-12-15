@@ -40,5 +40,7 @@ func GenerateAllModifiers(dynakube dynatracev1beta1.DynaKube, capability capabil
 		NewProxyModifier(dynakube),
 		NewRawImageModifier(dynakube),
 		NewReadOnlyModifier(dynakube),
+		NewStatsdModifier(dynakube, capability),
+		newSyntheticModifier(dynakube),
 	}
 }

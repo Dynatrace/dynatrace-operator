@@ -146,3 +146,84 @@ func TestMissingActiveGateMemoryLimit(t *testing.T) {
 			})
 	})
 }
+
+func TestExclusiveSyntheticCapability(t *testing.T) {
+	synthetic := []dynatracev1beta1.CapabilityDisplayName{
+		dynatracev1beta1.SyntheticCapability.DisplayName,
+	}
+	syntheticless := []dynatracev1beta1.CapabilityDisplayName{
+		dynatracev1beta1.MetricsIngestCapability.DisplayName,
+		dynatracev1beta1.KubeMonCapability.DisplayName,
+	}
+
+	subSyntheticless := syntheticless[:1]
+	t.Run("synthetic-and-another-capability", func(t *testing.T) {
+		assertDeniedResponse(t,
+			[]string{fmt.Sprintf(errorJoinedSyntheticActiveGateCapability, subSyntheticless)},
+			&dynatracev1beta1.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynatracev1beta1.DynaKubeSpec{
+					APIURL: testApiUrl,
+					ActiveGate: dynatracev1beta1.ActiveGateSpec{
+						Capabilities: deepJoin(
+							subSyntheticless,
+							synthetic),
+					},
+				},
+			})
+	})
+
+	t.Run("synthetic-surrounded-with-other-capabilities", func(t *testing.T) {
+		assertDeniedResponse(t,
+			[]string{fmt.Sprintf(errorJoinedSyntheticActiveGateCapability, syntheticless)},
+			&dynatracev1beta1.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynatracev1beta1.DynaKubeSpec{
+					APIURL: testApiUrl,
+					ActiveGate: dynatracev1beta1.ActiveGateSpec{
+						Capabilities: deepJoin(
+
+							syntheticless[:1],
+							synthetic,
+							syntheticless[1:]),
+					},
+				},
+			})
+	})
+
+	t.Run("synthetic-ahead-of-other-capabilities", func(t *testing.T) {
+		assertDeniedResponse(
+			t,
+			[]string{
+				fmt.Sprintf(errorJoinedSyntheticActiveGateCapability, syntheticless),
+			},
+			&dynatracev1beta1.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynatracev1beta1.DynaKubeSpec{
+					APIURL: testApiUrl,
+					ActiveGate: dynatracev1beta1.ActiveGateSpec{
+						Capabilities: deepJoin(
+							synthetic,
+							syntheticless),
+					},
+				},
+			})
+	})
+}
+
+func deepJoin[T any](toJoin ...[]T) []T {
+	joined := make([]T, deepLen(toJoin))
+	for _, seq := range toJoin {
+		joined = append(joined, seq...)
+	}
+
+	return joined
+}
+
+func deepLen[T any](toCount ...[]T) int {
+	length := 0
+	for _, seq := range toCount {
+		length += len(seq)
+	}
+	return length
+}

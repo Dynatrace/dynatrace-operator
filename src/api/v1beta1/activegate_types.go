@@ -48,6 +48,12 @@ var (
 		ShortName:    "statsd-ingest",
 		ArgumentName: "extension_controller",
 	}
+
+	SyntheticCapability = ActiveGateCapability{
+		DisplayName:  "synthetic",
+		ShortName:    "synthetic",
+		ArgumentName: "synthetic,beacon_forwarder,beacon_forwarder_synthetic",
+	}
 )
 
 var ActiveGateDisplayNames = map[CapabilityDisplayName]struct{}{
@@ -56,6 +62,7 @@ var ActiveGateDisplayNames = map[CapabilityDisplayName]struct{}{
 	MetricsIngestCapability.DisplayName: {},
 	DynatraceApiCapability.DisplayName:  {},
 	StatsdIngestCapability.DisplayName:  {},
+	SyntheticCapability.DisplayName:     {},
 }
 
 type ActiveGateSpec struct {
