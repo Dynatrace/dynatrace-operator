@@ -87,7 +87,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 			dynakube:       instance,
 			hostInjectSpec: hostInjectSpecs,
 			clusterID:      testClusterID,
-			deploymentType: deploymentmetadata.DeploymentTypeFullStack,
+			deploymentType: deploymentmetadata.ClassicFullStackDeploymentType,
 		},
 	}
 

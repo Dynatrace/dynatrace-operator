@@ -7,15 +7,15 @@ import (
 const (
 	orchestrationTech = "Operator"
 
-	keyOperatorScriptVersion = "script_version"
-	keyOrchestratorID        = "orchestrator_id"
-	keyOrchestrationTech     = "orchestration_tech"
+	operatorScriptVersionKey = "script_version"
+	orchestratorIDKey        = "orchestrator_id"
+	orchestrationTechKey     = "orchestration_tech"
 
-	DeploymentTypeApplicationMonitoring = "application_monitoring"
-	DeploymentTypeFullStack             = "classic_fullstack"
-	DeploymentTypeCloudNative           = "cloud_native_fullstack"
-	DeploymentTypeHostMonitoring        = "host_monitoring"
-	DeploymentTypeActiveGate            = "active_gate"
+	ApplicationMonitoringDeploymentType = "application_monitoring"
+	ClassicFullStackDeploymentType      = "classic_fullstack"
+	CloudNativeDeploymentType           = "cloud_native_fullstack"
+	HostMonitoringDeploymentType        = "host_monitoring"
+	ActiveGateDeploymentType            = "active_gate"
 
 	EnvDtDeploymentMetadata = "DT_DEPLOYMENT_METADATA"
 

@@ -66,7 +66,7 @@ func NewHostMonitoring(instance *dynatracev1beta1.DynaKube, clusterId string) Bu
 			dynakube:       instance,
 			hostInjectSpec: instance.Spec.OneAgent.HostMonitoring,
 			clusterID:      clusterId,
-			deploymentType: deploymentmetadata.DeploymentTypeHostMonitoring,
+			deploymentType: deploymentmetadata.HostMonitoringDeploymentType,
 		},
 	}
 }
@@ -77,7 +77,7 @@ func NewCloudNativeFullStack(instance *dynatracev1beta1.DynaKube, clusterId stri
 			dynakube:       instance,
 			hostInjectSpec: &instance.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec,
 			clusterID:      clusterId,
-			deploymentType: deploymentmetadata.DeploymentTypeCloudNative,
+			deploymentType: deploymentmetadata.CloudNativeDeploymentType,
 		},
 	}
 }
@@ -88,7 +88,7 @@ func NewClassicFullStack(instance *dynatracev1beta1.DynaKube, clusterId string) 
 			dynakube:       instance,
 			hostInjectSpec: instance.Spec.OneAgent.ClassicFullStack,
 			clusterID:      clusterId,
-			deploymentType: deploymentmetadata.DeploymentTypeFullStack,
+			deploymentType: deploymentmetadata.ClassicFullStackDeploymentType,
 		},
 	}
 }
@@ -129,21 +129,21 @@ func appendHostIdArgument(result *appsv1.DaemonSet, source string) {
 }
 
 func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
-	instance := dsInfo.dynakube
+	dynakube := dsInfo.dynakube
 	podSpec := dsInfo.podSpec()
 
-	versionLabelValue := instance.Status.OneAgent.Version
-	if instance.CustomOneAgentImage() != "" {
+	versionLabelValue := dynakube.Status.OneAgent.Version
+	if dynakube.CustomOneAgentImage() != "" {
 		versionLabelValue = kubeobjects.CustomImageLabelValue
 	}
 
-	appLabels := kubeobjects.NewAppLabels(kubeobjects.OneAgentComponentLabel, instance.Name,
+	appLabels := kubeobjects.NewAppLabels(kubeobjects.OneAgentComponentLabel, dynakube.Name,
 		dsInfo.deploymentType, versionLabelValue)
 	labels := kubeobjects.MergeMap(
 		appLabels.BuildLabels(),
 		dsInfo.hostInjectSpec.Labels,
 	)
-	maxUnavailable := intstr.FromInt(instance.FeatureOneAgentMaxUnavailable())
+	maxUnavailable := intstr.FromInt(dynakube.FeatureOneAgentMaxUnavailable())
 	annotations := map[string]string{
 		annotationUnprivileged:            annotationUnprivilegedValue,
 		webhook.AnnotationDynatraceInject: "false",
@@ -153,8 +153,8 @@ func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 
 	result := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        instance.Name,
-			Namespace:   instance.Namespace,
+			Name:        dynakube.Name,
+			Namespace:   dynakube.Namespace,
 			Labels:      labels,
 			Annotations: map[string]string{},
 		},

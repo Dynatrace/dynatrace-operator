@@ -36,24 +36,24 @@ func (r *Reconciler) Reconcile() error {
 	return r.maintainMetadataConfigMap(configMapData)
 }
 
-func (r *Reconciler) addOneAgentDeploymentMetadata(data map[string]string) {
+func (r *Reconciler) addOneAgentDeploymentMetadata(configMapData map[string]string) {
 	if !r.dynakube.NeedsOneAgent() {
 		return
 	}
-	data[OneAgentMetadataKey] = NewDeploymentMetadata(r.clusterID, GetOneAgentDeploymentType(r.dynakube)).AsString()
+	configMapData[OneAgentMetadataKey] = NewDeploymentMetadata(r.clusterID, GetOneAgentDeploymentType(r.dynakube)).AsString()
 }
 
-func (r *Reconciler) addActiveGateDeploymentMetadata(data map[string]string) {
+func (r *Reconciler) addActiveGateDeploymentMetadata(configMapData map[string]string) {
 	if !r.dynakube.NeedsActiveGate() {
 		return
 	}
-	data[ActiveGateMetadataKey] = NewDeploymentMetadata(r.clusterID, ActiveGateMetadataKey).AsString()
+	configMapData[ActiveGateMetadataKey] = NewDeploymentMetadata(r.clusterID, ActiveGateMetadataKey).AsString()
 }
 
-func (r *Reconciler) maintainMetadataConfigMap(data map[string]string) error {
+func (r *Reconciler) maintainMetadataConfigMap(configMapData map[string]string) error {
 	configMapQuery := kubeobjects.NewConfigMapQuery(r.context, r.client, r.apiReader, log)
-	configMap := kubeobjects.NewConfigMap(GetDeploymentMetadataConfigMapName(r.dynakube.Name), r.dynakube.Namespace, data)
-	if len(data) > 0 {
+	configMap := kubeobjects.NewConfigMap(GetDeploymentMetadataConfigMapName(r.dynakube.Name), r.dynakube.Namespace, configMapData)
+	if len(configMapData) > 0 {
 		return configMapQuery.CreateOrUpdate(*configMap)
 	}
 	return configMapQuery.Delete(*configMap)

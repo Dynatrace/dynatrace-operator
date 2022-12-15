@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestEnvironmentVariables(t *testing.T) {
@@ -26,7 +26,7 @@ func TestEnvironmentVariables(t *testing.T) {
 	t.Run("returns all when everything is turned on", func(t *testing.T) {
 		clusterID := "test"
 		dynakube := &dynatracev1beta1.DynaKube{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Name: "test",
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{
@@ -91,7 +91,7 @@ func TestAddDeploymentMetadataEnv(t *testing.T) {
 		dynakubeName := "test"
 		dsInfo := builderInfo{
 			dynakube: &dynatracev1beta1.DynaKube{
-				ObjectMeta: v1.ObjectMeta{
+				ObjectMeta: metav1.ObjectMeta{
 					Name: dynakubeName,
 				},
 			},
@@ -118,7 +118,7 @@ func assertDeploymentMetadataEnv(t *testing.T, envs []corev1.EnvVar, dynakubeNam
 func TestAddConnectionInfoEnvs(t *testing.T) {
 	t.Run("adds connection info value via configmap ref", func(t *testing.T) {
 		dynakube := &dynatracev1beta1.DynaKube{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Name: "test",
 			},
 		}
@@ -158,7 +158,7 @@ func assertConnectionInfoEnv(t *testing.T, envs []corev1.EnvVar, dynakube *dynat
 func TestAddProxyEnvs(t *testing.T) {
 	t.Run("adds proxy value from dynakube", func(t *testing.T) {
 		dynakube := &dynatracev1beta1.DynaKube{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Name: "test",
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{
@@ -177,7 +177,7 @@ func TestAddProxyEnvs(t *testing.T) {
 
 	t.Run("adds proxy value via secret ref from dynakube", func(t *testing.T) {
 		dynakube := &dynatracev1beta1.DynaKube{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Name: "test",
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{
@@ -208,7 +208,7 @@ func assertProxyEnv(t *testing.T, envs []corev1.EnvVar, dynakube *dynatracev1bet
 func TestAddReadOnlyEnv(t *testing.T) {
 	t.Run("adds readonly value for supported oneagent mode", func(t *testing.T) {
 		dynakube := &dynatracev1beta1.DynaKube{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Name: "test",
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{
@@ -227,7 +227,7 @@ func TestAddReadOnlyEnv(t *testing.T) {
 
 	t.Run("not adds readonly value for supported oneagent mode", func(t *testing.T) {
 		dynakube := &dynatracev1beta1.DynaKube{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Name: "test",
 			},
 		}

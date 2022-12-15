@@ -85,7 +85,7 @@ func TestAddDeploymentMetadataEnv(t *testing.T) {
 		addDeploymentMetadataEnv(container, dynakube, testClusterID)
 		require.Len(t, container.Env, 1)
 		assert.Contains(t, container.Env[0].Value, testClusterID)
-		assert.Contains(t, container.Env[0].Value, deploymentmetadata.DeploymentTypeCloudNative)
+		assert.Contains(t, container.Env[0].Value, deploymentmetadata.CloudNativeDeploymentType)
 	})
 
 	t.Run("Add appMonitoring deployment metadata env", func(t *testing.T) {
@@ -100,7 +100,7 @@ func TestAddDeploymentMetadataEnv(t *testing.T) {
 		addDeploymentMetadataEnv(container, dynakube, testClusterID)
 		require.Len(t, container.Env, 1)
 		assert.Contains(t, container.Env[0].Value, testClusterID)
-		assert.Contains(t, container.Env[0].Value, deploymentmetadata.DeploymentTypeApplicationMonitoring)
+		assert.Contains(t, container.Env[0].Value, deploymentmetadata.ApplicationMonitoringDeploymentType)
 	})
 }
 

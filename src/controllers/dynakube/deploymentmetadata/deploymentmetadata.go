@@ -16,13 +16,13 @@ type DeploymentMetadata struct {
 func GetOneAgentDeploymentType(dynakube dynatracev1beta1.DynaKube) string {
 	switch {
 	case dynakube.HostMonitoringMode():
-		return DeploymentTypeHostMonitoring
+		return HostMonitoringDeploymentType
 	case dynakube.CloudNativeFullstackMode():
-		return DeploymentTypeCloudNative
+		return CloudNativeDeploymentType
 	case dynakube.ClassicFullStackMode():
-		return DeploymentTypeFullStack
+		return ClassicFullStackDeploymentType
 	case dynakube.ApplicationMonitoringMode():
-		return DeploymentTypeApplicationMonitoring
+		return ApplicationMonitoringDeploymentType
 	}
 
 	return ""
@@ -34,9 +34,9 @@ func NewDeploymentMetadata(orchestratorID string, dt string) *DeploymentMetadata
 
 func (metadata *DeploymentMetadata) AsString() string {
 	res := []string{
-		formatKeyValue(keyOrchestrationTech, metadata.OrchestrationTech()),
-		formatKeyValue(keyOperatorScriptVersion, version.Version),
-		formatKeyValue(keyOrchestratorID, metadata.OrchestratorID),
+		formatKeyValue(orchestrationTechKey, metadata.OrchestrationTech()),
+		formatKeyValue(operatorScriptVersionKey, version.Version),
+		formatKeyValue(orchestratorIDKey, metadata.OrchestratorID),
 	}
 
 	return strings.Join(res, ";")

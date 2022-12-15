@@ -32,13 +32,11 @@ func NewOneAgentReconciler( //nolint:revive // maximum number of return results 
 	client client.Client,
 	apiReader client.Reader,
 	scheme *runtime.Scheme,
-	feature string,
 	clusterID string) *Reconciler {
 	return &Reconciler{
 		client:    client,
 		apiReader: apiReader,
 		scheme:    scheme,
-		feature:   feature,
 		clusterID: clusterID,
 	}
 }
@@ -49,7 +47,6 @@ type Reconciler struct {
 	client    client.Client
 	apiReader client.Reader
 	scheme    *runtime.Scheme
-	feature   string
 	clusterID string
 }
 
@@ -88,13 +85,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, dynakube *dynatracev1beta1.D
 		log.Info("oneagent instance statuses reconciled")
 	}
 
-	log.Info("reconciled " + r.feature)
+	log.Info("reconciled " + deploymentmetadata.GetOneAgentDeploymentType(*dynakube))
 	return nil
 }
 
 func (r *Reconciler) reconcileRollout(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
 	// Define a new DaemonSet object
-	dsDesired, err := r.getDesiredDaemonSet(dynakube)
+	dsDesired, err := r.buildDesiredDaemonSet(dynakube)
 	if err != nil {
 		log.Info("failed to get desired daemonset")
 		return err
@@ -146,16 +143,16 @@ func (r *Reconciler) getOneagentPods(ctx context.Context, dynakube *dynatracev1b
 	return podList.Items, listOps, err
 }
 
-func (r *Reconciler) getDesiredDaemonSet(dynakube *dynatracev1beta1.DynaKube) (*appsv1.DaemonSet, error) {
+func (r *Reconciler) buildDesiredDaemonSet(dynakube *dynatracev1beta1.DynaKube) (*appsv1.DaemonSet, error) {
 	var ds *appsv1.DaemonSet
 	var err error
 
-	switch r.feature {
-	case deploymentmetadata.DeploymentTypeFullStack:
+	switch {
+	case dynakube.ClassicFullStackMode():
 		ds, err = daemonset.NewClassicFullStack(dynakube, r.clusterID).BuildDaemonSet()
-	case deploymentmetadata.DeploymentTypeHostMonitoring:
+	case dynakube.HostMonitoringMode():
 		ds, err = daemonset.NewHostMonitoring(dynakube, r.clusterID).BuildDaemonSet()
-	case deploymentmetadata.DeploymentTypeCloudNative:
+	case dynakube.CloudNativeFullstackMode():
 		ds, err = daemonset.NewCloudNativeFullStack(dynakube, r.clusterID).BuildDaemonSet()
 	}
 	if err != nil {
@@ -172,7 +169,7 @@ func (r *Reconciler) getDesiredDaemonSet(dynakube *dynatracev1beta1.DynaKube) (*
 }
 
 func (r *Reconciler) reconcileInstanceStatuses(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
-	pods, listOpts, err := r.getOneagentPods(ctx, dynakube, r.feature)
+	pods, listOpts, err := r.getOneagentPods(ctx, dynakube, deploymentmetadata.GetOneAgentDeploymentType(*dynakube))
 	if err != nil {
 		handlePodListError(err, listOpts)
 	}

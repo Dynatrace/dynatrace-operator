@@ -318,14 +318,12 @@ func (controller *Controller) removeAppInjection(ctx context.Context, dynakube *
 }
 
 func (controller *Controller) reconcileOneAgent(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
-	deploymentType := deploymentmetadata.GetOneAgentDeploymentType(*dynakube)
-
-	if deploymentType == "" || deploymentType == deploymentmetadata.DeploymentTypeApplicationMonitoring {
+	if !dynakube.NeedsOneAgent() {
 		return controller.removeOneAgentDaemonSet(ctx, dynakube)
 	}
 
 	return oneagent.NewOneAgentReconciler(
-		controller.client, controller.apiReader, controller.scheme, deploymentType, controller.clusterID,
+		controller.client, controller.apiReader, controller.scheme, controller.clusterID,
 	).Reconcile(ctx, dynakube)
 }
 

@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/logger"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -256,7 +257,7 @@ func testDeleteConfigMap(t *testing.T) {
 	configMapQuery := NewConfigMapQuery(context.TODO(), fakeClient, fakeClient, log)
 
 	err := configMapQuery.Delete(*configMap)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	var deletedConfigMap corev1.ConfigMap
 	err = fakeClient.Get(context.TODO(), types.NamespacedName{Name: testConfigMapName, Namespace: testNamespace}, &deletedConfigMap)

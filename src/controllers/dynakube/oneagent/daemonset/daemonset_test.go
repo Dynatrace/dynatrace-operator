@@ -63,7 +63,7 @@ func TestUseImmutableImage(t *testing.T) {
 }
 
 func TestLabels(t *testing.T) {
-	feature := strings.ReplaceAll(deploymentmetadata.DeploymentTypeFullStack, "_", "")
+	feature := strings.ReplaceAll(deploymentmetadata.ClassicFullStackDeploymentType, "_", "")
 	t.Run(`if image is unset, use version`, func(t *testing.T) {
 		instance := dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
