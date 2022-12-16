@@ -1,14 +1,18 @@
 package support_archive
 
 import (
+	"context"
 	"io"
 	"os"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"k8s.io/client-go/kubernetes"
 )
 
 const (
@@ -24,10 +28,16 @@ var (
 )
 
 type CommandBuilder struct {
+	configProvider config.Provider
 }
 
 func NewCommandBuilder() CommandBuilder {
 	return CommandBuilder{}
+}
+
+func (builder CommandBuilder) SetConfigProvider(provider config.Provider) CommandBuilder {
+	builder.configProvider = provider
+	return builder
 }
 
 func (builder CommandBuilder) Build() *cobra.Command {
@@ -52,7 +62,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 
 		err := dynatracev1beta1.AddToScheme(scheme.Scheme)
 		if err != nil {
-			return err
+			return errors.WithStack(err)
 		}
 
 		tarFile, err := createTarballTargetFile(tarballToStdoutFlagValue, defaultSupportArchiveTargetDir)
@@ -63,7 +73,10 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		defer tarFile.Close()
 		defer supportArchive.close()
 
-		runCollectors(log, supportArchive)
+		err = runCollectors(log, supportArchive, builder.configProvider)
+		if err != nil {
+			return err
+		}
 		printCopyCommand(log, tarballToStdoutFlagValue, tarFile.Name())
 
 		return nil
@@ -79,9 +92,22 @@ func getLogOutput(tarballToStdout bool) io.Writer {
 	}
 }
 
-func runCollectors(log logr.Logger, supportArchive tarball) {
+func runCollectors(log logr.Logger, supportArchive tarball, configProvider config.Provider) error {
+	context := context.Background()
+
+	kubeConfig, err := configProvider.GetConfig()
+	if err != nil {
+		return err
+	}
+
+	clientSet, err := kubernetes.NewForConfig(kubeConfig)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
 	collectors := []collector{
 		newOperatorVersionCollector(log, supportArchive),
+		newLogCollector(context, log, supportArchive, clientSet.CoreV1().Pods(namespaceFlagValue)),
 	}
 
 	for _, c := range collectors {
@@ -89,6 +115,7 @@ func runCollectors(log logr.Logger, supportArchive tarball) {
 			logErrorf(log, err, "%s failed", c.Name())
 		}
 	}
+	return nil
 }
 
 func printCopyCommand(log logr.Logger, tarballToStdout bool, tarFileName string) {
