@@ -1,5 +1,7 @@
 ### Table of contents
-- [Active Gate](#activegate)
+- Active Gate
+  - [basic](#activegate---basic)
+  - [proxy](#activegate---proxy)
 - [Application Monitoring](#applicationmonitoring)
   - [data ingest](#data-ingest)
   - [build label propagation](#build-label-propagation)
@@ -11,16 +13,29 @@
   - [proxy](#cloudnative---proxy)
 - [Support Archive](#supportarchive)
 
-# ActiveGate
+# ActiveGate - basic
 ## Prerequisites
 
 ## Setup
-CloudNative deployment with CSI driver
+OneAgent disabled
 
 ## Goals
 Verification if ActiveGate is rolled out successfully. All ActiveGate
 capabilities are enabled in Dynakube. The test checks if related *Gateway*
 modules are active and that the *Gateway* process is reachable via *Gateway service*.
+
+# ActiveGate - proxy
+## Prerequisites
+cilium service mesh
+
+## Setup
+OneAgent disabled
+
+## Goals
+Verification if ActiveGate is rolled out successfully. All ActiveGate
+capabilities are enabled in Dynakube. The test checks if ActiveGate is able to
+communicate over a http proxy, related *Gateway* modules are active and that
+the *Gateway* process is reachable via *Gateway service*.
 
 # ApplicationMonitoring
 ## Prerequisites

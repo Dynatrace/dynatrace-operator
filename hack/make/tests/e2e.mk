@@ -3,7 +3,11 @@ test/e2e: manifests/branch test/e2e/cloudnative test/e2e/applicationmonitoring t
 
 ## Runs ActiveGate e2e test only
 test/e2e/activegate: manifests
-	go test -v -tags e2e -timeout 20m -count=1 -failfast ./test/scenarios/activegate
+	go test -v -tags e2e -timeout 20m -count=1 -failfast ./test/scenarios/activegate/basic
+
+## Runs ActiveGate proxy e2e test only
+test/e2e/activegate/proxy: manifests
+	go test -v -tags e2e -timeout 20m -count=1 -failfast ./test/scenarios/activegate/proxy
 
 ## Runs CloudNative e2e test only
 test/e2e/cloudnative: manifests

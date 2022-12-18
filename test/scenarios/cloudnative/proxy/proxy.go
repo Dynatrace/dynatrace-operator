@@ -35,13 +35,11 @@ const (
 )
 
 var (
-	dynatraceNetworkPolicy       = path.Join(project.TestDataDir(), "network/dynatrace-denial.yaml")
-	sampleNamespaceNetworkPolicy = path.Join(project.TestDataDir(), "network/sample-ns-denial.yaml")
-	sampleAppDeployment          = path.Join(project.TestDataDir(), "cloudnative/sample-deployment.yaml")
-	secretPath                   = path.Join(project.TestDataDir(), "secrets/single-tenant.yaml")
-	kubernetesAllPath            = path.Join(project.RootDir(), "config/deploy/kubernetes/kubernetes-all.yaml")
-	curlPodPath                  = path.Join(project.TestDataDir(), "activegate/curl-pod-webhook-via-proxy.yaml")
-	proxyPath                    = path.Join(project.TestDataDir(), "proxy/proxy.yaml")
+	sampleAppDeployment = path.Join(project.TestDataDir(), "cloudnative/sample-deployment.yaml")
+	secretPath          = path.Join(project.TestDataDir(), "secrets/single-tenant.yaml")
+	kubernetesAllPath   = path.Join(project.RootDir(), "config/deploy/kubernetes/kubernetes-all.yaml")
+	curlPodPath         = path.Join(project.TestDataDir(), "activegate/curl-pod-webhook-via-proxy.yaml")
+	proxyPath           = path.Join(project.TestDataDir(), "proxy/proxy.yaml")
 
 	injectionLabel = map[string]string{
 		"inject": "dynakube",
@@ -77,8 +75,8 @@ func WithProxy(t *testing.T, proxySpec *v1beta1.DynaKubeProxy) features.Feature 
 	setup.AssessDynakubeStartup(cloudNativeWithProxy)
 
 	cloudNativeWithProxy.Assess("osAgent can connect", oneagent.OSAgentCanConnect())
-	cloudNativeWithProxy.Assess("cut off dynatrace namespace", manifests.InstallFromFile(dynatraceNetworkPolicy))
-	cloudNativeWithProxy.Assess("cut off sample namespace", manifests.InstallFromFile(sampleNamespaceNetworkPolicy))
+	proxy.CutOffDynatraceNamespace(cloudNativeWithProxy, proxySpec)
+	proxy.CutOffSampleNamespace(cloudNativeWithProxy, proxySpec)
 	cloudNativeWithProxy.Assess("check env variables of oneagent pods", checkOneAgentEnvVars)
 	cloudNativeWithProxy.Assess("install deployment", manifests.InstallFromFile(sampleAppDeployment))
 	cloudNativeWithProxy.Assess("check existing init container and env var", checkSampleInitContainerEnvVars)
