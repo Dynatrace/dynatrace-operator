@@ -20,8 +20,17 @@ jobs:
         id: prep
         run: |
           hack/build/ci/prepare-build-variables.sh
+      - name: Docker metadata
+        uses: docker/metadata-action@57396166ad8aefe6098280995947635806a0e6ea # v4.1.1
+        id: meta
+        with:
+          images: dynatrace/dynatrace-operator
+          tags: ${{ steps.prep.outputs.docker_image_tag }}
+          labels: |
+            ${{ steps.prep.outputs.docker_image_labels }}
+            vcs-ref=${{ github.sha }}
     outputs:
-      labels: ${{ steps.prep.outputs.docker_image_labels }}
+      labels: ${{ steps.meta.outputs.labels }}
       version: ${{ steps.prep.outputs.docker_image_tag }}
 
   build:
