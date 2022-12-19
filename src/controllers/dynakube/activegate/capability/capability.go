@@ -16,6 +16,7 @@ var activeGateCapabilities = map[dynatracev1beta1.CapabilityDisplayName]baseFunc
 	dynatracev1beta1.MetricsIngestCapability.DisplayName: metricsIngestBase,
 	dynatracev1beta1.DynatraceApiCapability.DisplayName:  dynatraceApiBase,
 	dynatracev1beta1.StatsdIngestCapability.DisplayName:  statsdIngestBase,
+	dynatracev1beta1.SyntheticCapability.DisplayName:     syntheticBase,
 }
 
 type Capability interface {
@@ -152,6 +153,14 @@ func statsdIngestBase() *capabilityBase {
 	c := capabilityBase{
 		shortName: dynatracev1beta1.StatsdIngestCapability.ShortName,
 		argName:   dynatracev1beta1.StatsdIngestCapability.ArgumentName,
+	}
+	return &c
+}
+
+func syntheticBase() *capabilityBase {
+	c := capabilityBase{
+		shortName: dynatracev1beta1.SyntheticCapability.ShortName,
+		argName:   dynatracev1beta1.SyntheticCapability.ArgumentName,
 	}
 	return &c
 }

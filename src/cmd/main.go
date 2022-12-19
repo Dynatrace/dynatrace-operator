@@ -80,7 +80,8 @@ func createTroubleshootCommandBuilder() troubleshoot.CommandBuilder {
 }
 
 func createSupportArchiveCommandBuilder() support_archive.CommandBuilder {
-	return support_archive.NewCommandBuilder()
+	return support_archive.NewCommandBuilder().
+		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
 }
 
 func rootCommand(_ *cobra.Command, _ []string) error {

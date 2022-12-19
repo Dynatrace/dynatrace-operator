@@ -94,6 +94,10 @@ func TestNoConflict(t *testing.T) {
 
 		require.NotEmpty(t, sts)
 		for _, mod := range mods {
+			if !mod.Enabled() {
+				continue
+			}
+
 			volumesMod, ok := mod.(volumeModifier)
 			if ok {
 				isSubset(t, volumesMod.getVolumes(), sts.Spec.Template.Spec.Volumes)

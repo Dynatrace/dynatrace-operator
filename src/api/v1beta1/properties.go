@@ -41,6 +41,7 @@ const (
 	defaultActiveGateImage = "/linux/activegate:latest"
 	defaultStatsDImage     = "/linux/dynatrace-datasource-statsd:latest"
 	defaultEecImage        = "/linux/dynatrace-eec:latest"
+	defaultSynthetic       = "/linux/dynatrace-synthetic:latest"
 
 	TrustedCAKey = "certs"
 	ProxyKey     = "proxy"
@@ -156,6 +157,10 @@ func (dk *DynaKube) NeedsActiveGateService() bool {
 
 func (dk *DynaKube) IsStatsdActiveGateEnabled() bool {
 	return dk.IsActiveGateMode(StatsdIngestCapability.DisplayName)
+}
+
+func (dk *DynaKube) IsSyntheticActiveGateEnabled() bool {
+	return dk.IsActiveGateMode(SyntheticCapability.DisplayName)
 }
 
 func (dk *DynaKube) HasActiveGateCaCert() bool {
@@ -275,6 +280,21 @@ func (dk *DynaKube) EecImage() string {
 func (dk *DynaKube) StatsdImage() string {
 	if dk.FeatureCustomStatsdImage() != "" {
 		return dk.FeatureCustomStatsdImage()
+	}
+
+	apiUrlHost := dk.ApiUrlHost()
+
+	if apiUrlHost == "" {
+		return ""
+	}
+
+	return apiUrlHost + defaultStatsDImage
+}
+
+// returns the synthetic image supplied by the given DynaKube.
+func (dk *DynaKube) SyntheticImage() string {
+	if dk.FeatureCustomSyntheticImage() != "" {
+		return dk.FeatureCustomSyntheticImage()
 	}
 
 	apiUrlHost := dk.ApiUrlHost()

@@ -4014,6 +4014,12 @@ rules:
       - get
       - list
       - watch
+  - apiGroups:
+      - ""
+    resources:
+      - pods/log
+    verbs:
+      - get
 
   - apiGroups:
       - monitoring.coreos.com

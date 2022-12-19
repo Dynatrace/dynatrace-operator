@@ -58,6 +58,7 @@ type DynaKubeStatus struct {
 	ExtensionController EecStatus        `json:"eec,omitempty"`
 	Statsd              StatsdStatus     `json:"statsd,omitempty"`
 	OneAgent            OneAgentStatus   `json:"oneAgent,omitempty"`
+	Synthetic           SyntheticStatus  `json:"synthetic,omitempty"`
 }
 
 type ConnectionInfoStatus struct {
@@ -141,6 +142,16 @@ func (oneAgentStatus *OneAgentStatus) Name() string {
 type OneAgentInstance struct {
 	PodName   string `json:"podName,omitempty"`
 	IPAddress string `json:"ipAddress,omitempty"`
+}
+
+var _ VersionStatusNamer = (*SyntheticStatus)(nil)
+
+type SyntheticStatus struct {
+	VersionStatus `json:",inline"`
+}
+
+func (syn *SyntheticStatus) Name() string {
+	return "Synthetic"
 }
 
 type DynaKubePhaseType string
