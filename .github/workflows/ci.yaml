@@ -133,12 +133,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@755da8c3cf115ac066823e79a1e1788f8940201b # v3.2.0
-      - name: Login to Registry
-        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a # v2.1.0
-        with:
-          registry: quay.io
-          username: ${{ secrets.QUAY_USERNAME }}
-          password: ${{ secrets.QUAY_PASSWORD }}
       - name: Build image
         if: matrix.platform != 'arm64' || github.ref_protected
         uses: ./.github/actions/build-image
