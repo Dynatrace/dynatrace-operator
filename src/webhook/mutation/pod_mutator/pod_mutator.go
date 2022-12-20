@@ -60,7 +60,6 @@ func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.
 	}
 
 	podName := mutationRequest.Pod.GenerateName // at this point, the pod name is not yet set
-
 	webhook.setupEventRecorder(mutationRequest)
 
 	if webhook.isInjected(mutationRequest) {
@@ -69,7 +68,7 @@ func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.
 			webhook.recorder.sendPodUpdateEvent()
 			return createResponseForPod(mutationRequest.Pod, request)
 		}
-		log.Info("pod already injected, no change", "podName", podName)
+		log.Info("no change to pod injection", "podName", podName)
 		return emptyPatch
 	}
 

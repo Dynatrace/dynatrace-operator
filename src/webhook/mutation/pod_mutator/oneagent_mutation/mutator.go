@@ -47,6 +47,7 @@ func (mutator *OneAgentPodMutator) Mutate(request *dtwebhook.MutationRequest) er
 	installerInfo := getInstallerInfo(request.Pod, request.DynaKube)
 	mutator.addVolumes(request.Pod, request.DynaKube)
 	mutator.configureInitContainer(request, installerInfo)
+	mutator.setContainerCount(request.InstallContainer, len(request.Pod.Spec.Containers))
 	mutator.mutateUserContainers(request)
 	addInjectionConfigVolumeMount(request.InstallContainer)
 	setInjectedAnnotation(request.Pod)
@@ -57,7 +58,7 @@ func (mutator *OneAgentPodMutator) Reinvoke(request *dtwebhook.ReinvocationReque
 	if !mutator.Injected(request.BaseRequest) {
 		return false
 	}
-	log.Info("reinvoking", "podName", request.Pod.GenerateName)
+	log.Info("reinvoking", "pod.Name", request.Pod.Name)
 	return mutator.reinvokeUserContainers(request)
 }
 

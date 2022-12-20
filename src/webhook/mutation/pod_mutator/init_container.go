@@ -1,7 +1,6 @@
 package pod_mutator
 
 import (
-	"strconv"
 	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -19,7 +18,6 @@ func createInstallInitContainerBase(webhookImage, clusterID string, pod *corev1.
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		Args:            []string{"init"},
 		Env: []corev1.EnvVar{
-			{Name: config.AgentContainerCountEnv, Value: strconv.Itoa(len(pod.Spec.Containers))},
 			{Name: config.InjectionFailurePolicyEnv, Value: kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationFailurePolicy, "silent")},
 			{Name: config.K8sPodNameEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("metadata.name")},
 			{Name: config.K8sPodUIDEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("metadata.uid")},
