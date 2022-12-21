@@ -489,4 +489,12 @@ tests:
       - equal:
           path: spec.template.spec.containers[2].volumeMounts[2].mountPath
           value: "my/kubelet/plugins/csi.oneagent.dynatrace.com/"
-
+  - it: should use existing priority class if given
+    set:
+      platform: kubernetes
+      csidriver.existingPriorityClassName: "my-custom-priority-class"
+      csidriver.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.priorityClassName
+          value: "my-custom-priority-class"

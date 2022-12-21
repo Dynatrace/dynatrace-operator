@@ -33,3 +33,11 @@ tests:
     asserts:
       - hasDocuments:
           count: 0
+  - it: should not exists if csi enabled and custom priority class name is given
+    set:
+      platform: kubernetes
+      csidriver.existingPriorityClassName: "my-custom-priority-class"
+      csidriver.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 0
