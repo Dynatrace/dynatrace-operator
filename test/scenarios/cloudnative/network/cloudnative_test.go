@@ -1,6 +1,6 @@
 //go:build e2e
 
-package cloudnative
+package cloudnativenetwork
 
 import (
 	"testing"
@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/sampleapps"
+	"github.com/Dynatrace/dynatrace-operator/test/scenarios/cloudnative"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 )
 
@@ -31,8 +32,5 @@ func TestMain(m *testing.M) {
 }
 
 func TestCloudNative(t *testing.T) {
-	testEnvironment.Test(t, Install(t, false))
-	testEnvironment.Test(t, Upgrade(t, false))
-	testEnvironment.Test(t, CodeModules(t, false))
-	testEnvironment.Test(t, SpecificAgentVersion(t, false))
+	testEnvironment.Test(t, cloudnative.NetworkProblems(t))
 }

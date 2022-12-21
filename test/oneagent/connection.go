@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/test/log"
+	"github.com/Dynatrace/dynatrace-operator/test/logs"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
@@ -23,7 +23,7 @@ func OSAgentCanConnect() features.Func {
 
 			require.NoError(t, err)
 
-			log.AssertLogContains(t, logStream, "[oneagentos] [PingReceiver] Ping received: Healthy(0)")
+			logs.AssertContains(t, logStream, "[oneagentos] [PingReceiver] Ping received: Healthy(0)")
 		}))
 
 		return ctx

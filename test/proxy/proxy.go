@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"context"
+	"path"
 	"testing"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/logs"
+	"github.com/Dynatrace/dynatrace-operator/test/project"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
@@ -26,16 +28,21 @@ const (
 	CurlPodProxy    = "curl-proxy"
 )
 
-var ProxySpec = &v1beta1.DynaKubeProxy{
-	Value: "http://squid.proxy:3128",
-}
+var (
+	dynatraceNetworkPolicy       = path.Join(project.TestDataDir(), "network/dynatrace-denial.yaml")
+	sampleNamespaceNetworkPolicy = path.Join(project.TestDataDir(), "network/sample-ns-denial.yaml")
+
+	ProxySpec = &v1beta1.DynaKubeProxy{
+		Value: "http://squid.proxy:3128",
+	}
+)
 
 func InstallProxy(builder *features.FeatureBuilder, proxySpec *v1beta1.DynaKubeProxy) {
 	if proxySpec != nil {
-		builder.Assess("install proxy", manifests.InstallFromFile("../testdata/proxy/proxy.yaml"))
+		builder.Assess("install proxy", manifests.InstallFromFile(path.Join(project.TestDataDir(), "proxy/proxy.yaml")))
 		builder.Assess("proxy started", deployment.WaitFor(ProxyDeployment, ProxyNamespace))
 
-		builder.Assess("query webhook via proxy", manifests.InstallFromFile("../testdata/activegate/curl-pod-webhook-via-proxy.yaml"))
+		builder.Assess("query webhook via proxy", manifests.InstallFromFile(path.Join(project.TestDataDir(), "activegate/curl-pod-webhook-via-proxy.yaml")))
 		builder.Assess("query is completed", WaitForCurlProxyPod(CurlPodProxy, dynakube.Namespace))
 		builder.Assess("proxy is running", CheckProxyService())
 	}
@@ -70,4 +77,16 @@ func WaitForCurlProxyPod(name string, namespace string) features.Func {
 		pod, isPod := object.(*corev1.Pod)
 		return isPod && pod.Status.Phase == corev1.PodSucceeded
 	}, 30*time.Second)
+}
+
+func CutOffDynatraceNamespace(builder *features.FeatureBuilder, proxySpec *v1beta1.DynaKubeProxy) {
+	if proxySpec != nil {
+		builder.Assess("cut off dynatrace namespace", manifests.InstallFromFile(dynatraceNetworkPolicy))
+	}
+}
+
+func CutOffSampleNamespace(builder *features.FeatureBuilder, proxySpec *v1beta1.DynaKubeProxy) {
+	if proxySpec != nil {
+		builder.Assess("cut off sample namespace", manifests.InstallFromFile(sampleNamespaceNetworkPolicy))
+	}
 }

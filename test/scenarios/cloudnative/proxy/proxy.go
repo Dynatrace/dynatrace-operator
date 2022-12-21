@@ -4,6 +4,7 @@ package cloudnativeproxy
 
 import (
 	"context"
+	"path"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -14,6 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/test/project"
 	"github.com/Dynatrace/dynatrace-operator/test/proxy"
 	"github.com/Dynatrace/dynatrace-operator/test/sampleapps"
 	"github.com/Dynatrace/dynatrace-operator/test/secrets"
@@ -27,21 +29,22 @@ import (
 )
 
 const (
-	dynatraceNetworkPolicy       = "../../testdata/network/dynatrace-denial.yaml"
-	httpsProxy                   = "https_proxy"
-	sampleNamespaceNetworkPolicy = "../../testdata/network/sample-ns-denial.yaml"
-	sampleNamespace              = "test-namespace-1"
-	dtProxy                      = "DT_PROXY"
-	sampleAppDeployment          = "../../testdata/cloudnative/sample-deployment.yaml"
-	secretPath                   = "../../testdata/secrets/single-tenant.yaml"
-	kubernetesAllPath            = "../../../config/deploy/kubernetes/kubernetes-all.yaml"
-	curlPodPath                  = "../../testdata/activegate/curl-pod-webhook-via-proxy.yaml"
-	proxyPath                    = "../../testdata/proxy/proxy.yaml"
+	httpsProxy      = "https_proxy"
+	sampleNamespace = "test-namespace-1"
+	dtProxy         = "DT_PROXY"
 )
 
-var injectionLabel = map[string]string{
-	"inject": "dynakube",
-}
+var (
+	sampleAppDeployment = path.Join(project.TestDataDir(), "cloudnative/sample-deployment.yaml")
+	secretPath          = path.Join(project.TestDataDir(), "secrets/single-tenant.yaml")
+	kubernetesAllPath   = path.Join(project.RootDir(), "config/deploy/kubernetes/kubernetes-all.yaml")
+	curlPodPath         = path.Join(project.TestDataDir(), "activegate/curl-pod-webhook-via-proxy.yaml")
+	proxyPath           = path.Join(project.TestDataDir(), "proxy/proxy.yaml")
+
+	injectionLabel = map[string]string{
+		"inject": "dynakube",
+	}
+)
 
 func WithProxy(t *testing.T, proxySpec *v1beta1.DynaKubeProxy) features.Feature {
 	secretConfig, err := secrets.NewFromConfig(afero.NewOsFs(), secretPath)
@@ -72,8 +75,8 @@ func WithProxy(t *testing.T, proxySpec *v1beta1.DynaKubeProxy) features.Feature 
 	setup.AssessDynakubeStartup(cloudNativeWithProxy)
 
 	cloudNativeWithProxy.Assess("osAgent can connect", oneagent.OSAgentCanConnect())
-	cloudNativeWithProxy.Assess("cut off dynatrace namespace", manifests.InstallFromFile(dynatraceNetworkPolicy))
-	cloudNativeWithProxy.Assess("cut off sample namespace", manifests.InstallFromFile(sampleNamespaceNetworkPolicy))
+	proxy.CutOffDynatraceNamespace(cloudNativeWithProxy, proxySpec)
+	proxy.CutOffSampleNamespace(cloudNativeWithProxy, proxySpec)
 	cloudNativeWithProxy.Assess("check env variables of oneagent pods", checkOneAgentEnvVars)
 	cloudNativeWithProxy.Assess("install deployment", manifests.InstallFromFile(sampleAppDeployment))
 	cloudNativeWithProxy.Assess("check existing init container and env var", checkSampleInitContainerEnvVars)
