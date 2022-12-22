@@ -9,9 +9,6 @@ import (
 	"github.com/go-logr/logr"
 )
 
-const operatorVersionCollectorName = "operatorVersionCollector"
-const operatorVersionFileName = "operator-version.txt"
-
 type operatorVersionCollector struct {
 	collectorCommon
 }
@@ -26,7 +23,7 @@ func newOperatorVersionCollector(log logr.Logger, supportArchive tarball) collec
 }
 
 func (vc operatorVersionCollector) Do() error {
-	logInfof(vc.log, "Storing operator version into %s", operatorVersionFileName)
+	logInfof(vc.log, "Storing operator version into %s", OperatorVersionFileName)
 
 	versionString := fmt.Sprintf("version: %s\ngitCommit: %s\nbuildDate: %s\ngoVersion %s\nplatform %s/%s\n",
 		version.Version,
@@ -34,7 +31,7 @@ func (vc operatorVersionCollector) Do() error {
 		version.BuildDate,
 		runtime.Version(),
 		runtime.GOOS, runtime.GOARCH)
-	vc.supportArchive.addFile(operatorVersionFileName, strings.NewReader(versionString))
+	vc.supportArchive.addFile(OperatorVersionFileName, strings.NewReader(versionString))
 
 	return nil
 }

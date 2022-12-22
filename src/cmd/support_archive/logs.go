@@ -12,9 +12,6 @@ import (
 	clientgocorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
-const logCollectorName = "logCollector"
-const logsDirectoryName = "logs"
-
 type logCollector struct {
 	collectorCommon
 
@@ -118,7 +115,7 @@ func (collector logCollector) collectContainerLogs(pod *corev1.Pod, container co
 
 func buildLogFileName(pod *corev1.Pod, container corev1.Container, logOptions corev1.PodLogOptions) string {
 	if logOptions.Previous {
-		return fmt.Sprintf("%s/%s/%s_previous.log", logsDirectoryName, pod.Name, container.Name)
+		return fmt.Sprintf("%s/%s/%s_previous.log", LogsDirectoryName, pod.Name, container.Name)
 	}
-	return fmt.Sprintf("%s/%s/%s.log", logsDirectoryName, pod.Name, container.Name)
+	return fmt.Sprintf("%s/%s/%s.log", LogsDirectoryName, pod.Name, container.Name)
 }
