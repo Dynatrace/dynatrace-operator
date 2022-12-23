@@ -27,7 +27,7 @@ runs:
       run: |
         hack/build/ci/prepare-build-variables.sh
     - name: Setup cache
-      uses: actions/cache@9b0c1fce7a93df8e3bb8926b0d6e9d89e92f20a7 # v3.0.11
+      uses: actions/cache@c17f4bf4666a8001b1a45c09eb7a485c41aa64c3 # v3.2.0
       with:
         path: |
           ~/go/pkg/mod
