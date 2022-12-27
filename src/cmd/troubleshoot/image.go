@@ -40,7 +40,7 @@ func verifyAllImagesAvailable(troubleshootCtx *troubleshootContext) error {
 
 func verifyImageIsAvailable(troubleshootCtx *troubleshootContext, comp component, proxyWarning bool) {
 	image, isCustomImage := comp.getImage(&troubleshootCtx.dynakube)
-	if image == "" && comp.String() != "OneAgentCodeModules" {
+	if image == "" && comp != componentCodeModules {
 		logErrorf("Unknown %s image", comp.String())
 		return
 	}
