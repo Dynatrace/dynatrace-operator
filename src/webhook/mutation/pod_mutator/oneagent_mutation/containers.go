@@ -56,9 +56,12 @@ func (mutator *OneAgentPodMutator) reinvokeUserContainers(request *dtwebhook.Rei
 		mutator.addOneAgentToContainer(request, currentContainer)
 	}
 
-	mutator.setContainerCount(oneAgentInstallContainer, len(request.Pod.Spec.Containers))
+	if len(newContainers) == 0 {
+		return false
+	}
 
-	return len(newContainers) > 0
+	mutator.setContainerCount(oneAgentInstallContainer, len(request.Pod.Spec.Containers))
+	return true
 }
 
 func (mutator *OneAgentPodMutator) addOneAgentToContainer(request *dtwebhook.ReinvocationRequest, container *corev1.Container) {

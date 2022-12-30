@@ -50,7 +50,6 @@ SHELL ?= bash
 -include hack/make/tests/*.mk
 -include hack/make/deploy/*.mk
 -include hack/make/helm/*.mk
--include hack/make/dev/*.mk
 
 ## Installs dependencies
 deps: prerequisites/setup-pre-commit prerequisites/kustomize prerequisites/controller-gen

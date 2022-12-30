@@ -1,3 +1,0 @@
-FROM quay.io/dynatrace/dynatrace-operator:snapshot
-
-COPY build/_output/bin/dynatrace-operator /usr/local/bin
