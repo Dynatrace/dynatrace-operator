@@ -15,14 +15,8 @@ func (mutator *OneAgentPodMutator) configureInitContainer(request *dtwebhook.Mut
 }
 
 func (mutator *OneAgentPodMutator) setContainerCount(initContainer *corev1.Container, containerCount int) {
-	containerCountEnvVar := kubeobjects.FindEnvVar(initContainer.Env, config.AgentContainerCountEnv)
 	desiredContainerCountEnvVarValue := strconv.Itoa(containerCount)
-
-	if containerCountEnvVar != nil {
-		containerCountEnvVar.Value = desiredContainerCountEnvVarValue
-	} else {
-		initContainer.Env = append(initContainer.Env, corev1.EnvVar{Name: config.AgentContainerCountEnv, Value: desiredContainerCountEnvVarValue})
-	}
+	initContainer.Env = kubeobjects.AddOrUpdate(initContainer.Env, corev1.EnvVar{Name: config.AgentContainerCountEnv, Value: desiredContainerCountEnvVarValue})
 }
 
 func (mutator *OneAgentPodMutator) mutateUserContainers(request *dtwebhook.MutationRequest) {

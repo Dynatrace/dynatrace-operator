@@ -1,6 +1,8 @@
 package kubeobjects
 
-import corev1 "k8s.io/api/core/v1"
+import (
+	corev1 "k8s.io/api/core/v1"
+)
 
 func FindEnvVar(envVarList []corev1.EnvVar, name string) *corev1.EnvVar {
 	for i, envVar := range envVarList {
@@ -19,6 +21,16 @@ func EnvVarIsIn(envVars []corev1.EnvVar, envVarToCheck string) bool {
 		}
 	}
 	return false
+}
+
+func AddOrUpdate(envvars []corev1.EnvVar, desiredEnvVar corev1.EnvVar) []corev1.EnvVar {
+	targetEnvVar := FindEnvVar(envvars, desiredEnvVar.Name)
+	if targetEnvVar != nil {
+		*targetEnvVar = desiredEnvVar
+	} else {
+		envvars = append(envvars, desiredEnvVar)
+	}
+	return envvars
 }
 
 func NewEnvVarSourceForField(fieldPath string) *corev1.EnvVarSource {
