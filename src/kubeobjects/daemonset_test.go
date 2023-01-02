@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/src/logger"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -11,6 +12,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+var daemonSetLog = logger.Factory.GetLogger("test-daemonset")
 
 func TestCreateOrUpdateDaemonSet(t *testing.T) {
 	const namespaceName = "dynatrace"
@@ -21,7 +24,7 @@ func TestCreateOrUpdateDaemonSet(t *testing.T) {
 		annotations := map[string]string{AnnotationHash: "hash"}
 		daemonSet := createTestDaemonSetWithMatchLabels(daemonsetName, namespaceName, annotations, nil)
 
-		created, err := CreateOrUpdateDaemonSet(fakeClient, log, &daemonSet)
+		created, err := CreateOrUpdateDaemonSet(fakeClient, daemonSetLog, &daemonSet)
 
 		require.NoError(t, err)
 		assert.True(t, created)
@@ -33,7 +36,7 @@ func TestCreateOrUpdateDaemonSet(t *testing.T) {
 		newDaemonSet := createTestDaemonSetWithMatchLabels(daemonsetName, namespaceName, newAnnotations, nil)
 		fakeClient := fake.NewClient(&oldDaemonSet)
 
-		updated, err := CreateOrUpdateDaemonSet(fakeClient, log, &newDaemonSet)
+		updated, err := CreateOrUpdateDaemonSet(fakeClient, daemonSetLog, &newDaemonSet)
 
 		require.NoError(t, err)
 		assert.True(t, updated)
@@ -44,7 +47,7 @@ func TestCreateOrUpdateDaemonSet(t *testing.T) {
 
 		fakeClient := fake.NewClient(&oldDaemonSet)
 
-		updated, err := CreateOrUpdateDaemonSet(fakeClient, log, &oldDaemonSet)
+		updated, err := CreateOrUpdateDaemonSet(fakeClient, daemonSetLog, &oldDaemonSet)
 		require.NoError(t, err)
 		assert.False(t, updated)
 	})
@@ -58,7 +61,7 @@ func TestCreateOrUpdateDaemonSet(t *testing.T) {
 		newDaemonSet := createTestDaemonSetWithMatchLabels(daemonsetName, namespaceName, newAnnotations, newMatchLabels)
 		fakeClient := fake.NewClient(&oldDaemonSet)
 
-		updated, err := CreateOrUpdateDaemonSet(fakeClient, log, &newDaemonSet)
+		updated, err := CreateOrUpdateDaemonSet(fakeClient, daemonSetLog, &newDaemonSet)
 
 		require.NoError(t, err)
 		assert.True(t, updated)
