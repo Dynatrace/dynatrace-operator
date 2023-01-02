@@ -45,6 +45,21 @@ func (query SecretQuery) Update(secret corev1.Secret) error {
 	return errors.WithStack(query.kubeClient.Update(query.ctx, &secret))
 }
 
+func (query SecretQuery) GetAllFromNamespaces(secretName string) ([]corev1.Secret, error) {
+	secretList := &corev1.SecretList{}
+	listOps := []client.ListOption{
+		client.MatchingFields{
+			"metadata.name": secretName, // todo delete comment - config.AgentInitSecretName,
+		},
+	}
+	err := query.kubeReader.List(query.ctx, secretList, listOps...)
+
+	if client.IgnoreNotFound(err) != nil {
+		return nil, errors.WithStack(err)
+	}
+	return secretList.Items, err
+}
+
 func (query SecretQuery) CreateOrUpdate(secret corev1.Secret) error {
 	currentSecret, err := query.Get(types.NamespacedName{Name: secret.Name, Namespace: secret.Namespace})
 	if err != nil {
@@ -59,7 +74,6 @@ func (query SecretQuery) CreateOrUpdate(secret corev1.Secret) error {
 	}
 
 	if AreSecretsEqual(secret, currentSecret) {
-		query.log.Info("secret unchanged", "name", secret.Name, "namespace", secret.Namespace)
 		return nil
 	}
 
@@ -68,6 +82,42 @@ func (query SecretQuery) CreateOrUpdate(secret corev1.Secret) error {
 		return errors.WithStack(err)
 	}
 	return nil
+}
+
+func (query SecretQuery) CreateOrUpdateForNamespacesList(newSecret corev1.Secret, namespaces []corev1.Namespace) (int, error) {
+	secretList, err := query.GetAllFromNamespaces(newSecret.Name)
+	if err != nil {
+		return 0, err
+	}
+
+	namespacesContainingSecret := make(map[string]corev1.Secret)
+	for _, secret := range secretList {
+		namespacesContainingSecret[secret.Namespace] = secret
+	}
+
+	updateAndCreationCount := 0
+
+	for _, namespace := range namespaces {
+		newSecret.Namespace = namespace.Name
+
+		if oldSecret, ok := namespacesContainingSecret[namespace.Name]; ok {
+			if !AreSecretsEqual(oldSecret, newSecret) {
+				err = query.Update(newSecret)
+				if err != nil {
+					return updateAndCreationCount, err
+				}
+				updateAndCreationCount++
+			}
+		} else {
+			err = query.Create(newSecret)
+			if err != nil {
+				return updateAndCreationCount, err
+			}
+			updateAndCreationCount++
+		}
+	}
+
+	return updateAndCreationCount, nil
 }
 
 func AreSecretsEqual(secret corev1.Secret, other corev1.Secret) bool {
