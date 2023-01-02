@@ -49,7 +49,7 @@ func (query SecretQuery) GetAllFromNamespaces(secretName string) ([]corev1.Secre
 	secretList := &corev1.SecretList{}
 	listOps := []client.ListOption{
 		client.MatchingFields{
-			"metadata.name": secretName, // todo delete comment - config.AgentInitSecretName,
+			"metadata.name": secretName,
 		},
 	}
 	err := query.kubeReader.List(query.ctx, secretList, listOps...)
