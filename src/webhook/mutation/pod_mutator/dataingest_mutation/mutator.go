@@ -40,7 +40,7 @@ func (mutator *DataIngestPodMutator) Injected(request *dtwebhook.BaseRequest) bo
 }
 
 func (mutator *DataIngestPodMutator) Mutate(request *dtwebhook.MutationRequest) error {
-	log.Info("injecting data-ingest into pod", "podName", request.Pod.GenerateName)
+	log.Info("injecting data-ingest into pod", "podName", request.PodName())
 	workload, err := mutator.retrieveWorkload(request)
 	if err != nil {
 		return errors.WithStack(err)
@@ -60,7 +60,7 @@ func (mutator *DataIngestPodMutator) Reinvoke(request *dtwebhook.ReinvocationReq
 	if !mutator.Injected(request.BaseRequest) {
 		return false
 	}
-	log.Info("reinvoking", "pod", request.Pod.GenerateName)
+	log.Info("reinvoking", "podName", request.PodName())
 	return reinvokeUserContainers(request.Pod)
 }
 

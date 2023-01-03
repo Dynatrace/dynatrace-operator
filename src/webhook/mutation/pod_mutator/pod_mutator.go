@@ -59,8 +59,7 @@ func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.
 		return emptyPatch
 	}
 
-	podName := mutationRequest.Pod.GenerateName // at this point, the pod name is not yet set
-
+	podName := mutationRequest.PodName()
 	webhook.setupEventRecorder(mutationRequest)
 
 	if webhook.isInjected(mutationRequest) {
@@ -69,7 +68,7 @@ func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.
 			webhook.recorder.sendPodUpdateEvent()
 			return createResponseForPod(mutationRequest.Pod, request)
 		}
-		log.Info("pod already injected, no change", "podName", podName)
+		log.Info("no change, all containers already injected", "podName", podName)
 		return emptyPatch
 	}
 
@@ -162,7 +161,7 @@ func createResponseForPod(pod *corev1.Pod, req admission.Request) admission.Resp
 
 func silentErrorResponse(pod *corev1.Pod, err error) admission.Response {
 	rsp := admission.Patched("")
-	podName := pod.GenerateName
+	podName := kubeobjects.GetPodName(*pod)
 	log.Error(err, "failed to inject into pod", "podName", podName)
 	rsp.Result.Message = fmt.Sprintf("Failed to inject into pod: %s because %s", podName, err.Error())
 	return rsp
