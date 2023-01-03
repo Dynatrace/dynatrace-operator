@@ -254,7 +254,7 @@ func testDeleteConfigMap(t *testing.T) {
 		Data: data,
 	})
 	configMap := createTestConfigMap(labels, data)
-	configMapQuery := NewConfigMapQuery(context.TODO(), fakeClient, fakeClient, log)
+	configMapQuery := NewConfigMapQuery(context.TODO(), fakeClient, fakeClient, configMapLog)
 
 	err := configMapQuery.Delete(*configMap)
 	require.NoError(t, err)
