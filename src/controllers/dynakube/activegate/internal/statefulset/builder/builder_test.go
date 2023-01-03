@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 )
 
@@ -41,7 +42,8 @@ func TestBuilder(t *testing.T) {
 		modifierMock.On("Modify", mock.Anything).Return(nil)
 		modifierMock.On("Enabled").Return(true)
 
-		actual, _ := b.AddModifier(modifierMock).Build()
+		actual, err := b.AddModifier(modifierMock).Build()
+		require.NoError(t, err)
 
 		modifierMock.AssertNumberOfCalls(t, "Modify", 1)
 
@@ -55,7 +57,8 @@ func TestBuilder(t *testing.T) {
 		modifierMock.On("Modify", mock.Anything).Return(nil)
 		modifierMock.On("Enabled").Return(false)
 
-		actual, _ := b.AddModifier(modifierMock).Build()
+		actual, err := b.AddModifier(modifierMock).Build()
+		require.NoError(t, err)
 
 		modifierMock.AssertNumberOfCalls(t, "Modify", 0)
 
@@ -72,7 +75,8 @@ func TestBuilder(t *testing.T) {
 		modifierMock1.On("Enabled").Return(true)
 		modifierMock1.On("Modify", mock.Anything).Return(nil)
 
-		actual, _ := b.AddModifier(modifierMock0, modifierMock0, modifierMock1).Build()
+		actual, err := b.AddModifier(modifierMock0, modifierMock0, modifierMock1).Build()
+		require.NoError(t, err)
 
 		modifierMock0.AssertNumberOfCalls(t, "Modify", 2)
 		modifierMock1.AssertNumberOfCalls(t, "Modify", 1)
