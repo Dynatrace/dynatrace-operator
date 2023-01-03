@@ -100,7 +100,7 @@ func (query SecretQuery) CreateOrUpdateForNamespacesList(newSecret corev1.Secret
 		return err
 	}
 
-	query.log.Info("creating/updating secret for multiple namespaces",
+	query.log.Info("reconciling secret for multiple namespaces",
 		"name", newSecret.Name, "len(namespaces)", len(namespaces))
 
 	namespacesContainingSecret := make(map[string]corev1.Secret, len(secretList))
@@ -131,7 +131,7 @@ func (query SecretQuery) CreateOrUpdateForNamespacesList(newSecret corev1.Secret
 		}
 	}
 
-	query.log.Info("created/updated secret for multiple namespaces",
+	query.log.Info("reconciled secret for multiple namespaces",
 		"name", newSecret.Name, "creationCount", creationCount, "updateCount", updateCount)
 
 	return nil
