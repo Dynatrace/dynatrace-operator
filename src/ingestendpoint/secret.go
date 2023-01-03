@@ -101,12 +101,12 @@ func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *d
 		Type: corev1.SecretTypeOpaque,
 	}
 
-	updateCnt, err := secretQuery.CreateOrUpdateForNamespacesList(secret, nsList)
+	err = secretQuery.CreateOrUpdateForNamespacesList(secret, nsList)
 	if err != nil {
 		return err
 	}
 
-	log.Info("done updating data-ingest endpoint secrets", "update/creation count", updateCnt)
+	log.Info("done updating data-ingest endpoint secrets", "update/creation count")
 	return nil
 }
 

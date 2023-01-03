@@ -98,12 +98,12 @@ func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1
 		Type: corev1.SecretTypeOpaque,
 	}
 
-	updateCnt, err := secretQuery.CreateOrUpdateForNamespacesList(secret, nsList)
+	err = secretQuery.CreateOrUpdateForNamespacesList(secret, nsList)
 	if err != nil {
 		return err
 	}
 
-	log.Info("done updating init secrets", "update/creation count", updateCnt)
+	log.Info("done updating init secrets")
 	return nil
 }
 
