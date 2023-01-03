@@ -9,6 +9,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 )
 
@@ -68,7 +70,7 @@ func testHealthzAndReadyz(t *testing.T, createProviderAndRunManager func(mockMgr
 	mockMgr.On(addHealthzCheckMethodName, livezEndpointName, mock.AnythingOfType(checkerArgumentType)).Return(nil)
 	mockMgr.On(addReadyzCheckMethodName, readyzEndpointName, mock.AnythingOfType(checkerArgumentType)).Return(nil)
 
-	client := fake.NewClient()
+	client := fake.NewClient(&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "kube-system"}})
 	mockMgr.On("GetConfig").Return(&rest.Config{})
 	mockMgr.On("GetScheme").Return(scheme.Scheme)
 	mockMgr.On("GetClient").Return(client)

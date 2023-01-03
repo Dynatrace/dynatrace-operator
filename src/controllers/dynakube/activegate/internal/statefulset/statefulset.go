@@ -6,7 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder/modifiers"
-	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/pkg/errors"
@@ -170,13 +170,19 @@ func (statefulSetBuilder Builder) buildResources() corev1.ResourceRequirements {
 }
 
 func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {
-	deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(string(statefulSetBuilder.kubeUID), consts.DeploymentTypeActiveGate)
-
 	envs := []corev1.EnvVar{
 		{Name: consts.EnvDtCapabilities, Value: statefulSetBuilder.capability.ArgName()},
 		{Name: consts.EnvDtIdSeedNamespace, Value: statefulSetBuilder.dynakube.Namespace},
 		{Name: consts.EnvDtIdSeedClusterId, Value: string(statefulSetBuilder.kubeUID)},
-		{Name: consts.EnvDtDeploymentMetadata, Value: deploymentMetadata.AsString()},
+		{Name: deploymentmetadata.EnvDtDeploymentMetadata, ValueFrom: &corev1.EnvVarSource{
+			ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: deploymentmetadata.GetDeploymentMetadataConfigMapName(statefulSetBuilder.dynakube.Name),
+				},
+				Key:      deploymentmetadata.ActiveGateMetadataKey,
+				Optional: address.Of(false),
+			},
+		}},
 	}
 	envs = append(envs, statefulSetBuilder.capability.Properties().Env...)
 
