@@ -37,3 +37,27 @@ func TestEnvVarIsIn(t *testing.T) {
 	assert.True(t, EnvVarIsIn(envVars, testKey2))
 	assert.False(t, EnvVarIsIn(envVars, "invalid-key"))
 }
+
+func TestAddOrUpdate(t *testing.T) {
+	newEnvVar := v1.EnvVar{Name: "x", Value: "X"}
+
+	t.Run("Add envvar", func(t *testing.T) {
+		envVars := []v1.EnvVar{
+			{Name: "a", Value: "A"},
+			{Name: "b", Value: "B"},
+		}
+		envVars = AddOrUpdate(envVars, newEnvVar)
+		assert.Len(t, envVars, 3)
+		assert.Contains(t, envVars, newEnvVar)
+	})
+	t.Run("Update envvar", func(t *testing.T) {
+		envVars := []v1.EnvVar{
+			{Name: "a", Value: "A"},
+			{Name: "b", Value: "B"},
+			{Name: newEnvVar.Name, Value: "this value should be updated"},
+		}
+		envVars = AddOrUpdate(envVars, newEnvVar)
+		assert.Len(t, envVars, 3)
+		assert.Contains(t, envVars, newEnvVar)
+	})
+}

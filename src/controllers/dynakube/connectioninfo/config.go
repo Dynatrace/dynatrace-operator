@@ -13,6 +13,9 @@ const (
 	TenantTokenMountPoint = TokenBasePath + "/tenant-token"
 
 	TenantSecretVolumeName = "connection-info-secret"
+
+	EnvDtServer = "DT_SERVER"
+	EnvDtTenant = "DT_TENANT"
 )
 
 var (

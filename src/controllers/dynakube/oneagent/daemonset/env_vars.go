@@ -3,8 +3,8 @@ package daemonset
 import (
 	"sort"
 
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -29,32 +29,75 @@ func (dsInfo *builderInfo) environmentVariables() []corev1.EnvVar {
 	}
 
 	envVarMap := envVarsToMap(environmentVariables)
-	envVarMap = setDefaultValueSource(envVarMap, dtNodeName, &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}})
-	envVarMap = setDefaultValue(envVarMap, dtClusterId, dsInfo.clusterId)
-	envVarMap = setDefaultValueSource(envVarMap, consts.EnvDtTenant, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+	envVarMap = addNodeNameEnv(envVarMap)
+
+	envVarMap = dsInfo.addClusterIDEnv(envVarMap)
+	envVarMap = dsInfo.addDeploymentMetadataEnv(envVarMap)
+	envVarMap = dsInfo.addConnectionInfoEnvs(envVarMap)
+	envVarMap = dsInfo.addProxyEnv(envVarMap)
+	envVarMap = dsInfo.addReadOnlyEnv(envVarMap)
+
+	return mapToArray(envVarMap)
+}
+
+func addNodeNameEnv(envVarMap map[string]corev1.EnvVar) map[string]corev1.EnvVar {
+	return setDefaultValueSource(envVarMap, dtNodeName, &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}})
+}
+
+func (dsInfo *builderInfo) addClusterIDEnv(envVarMap map[string]corev1.EnvVar) map[string]corev1.EnvVar {
+	return setDefaultValue(envVarMap, dtClusterId, dsInfo.clusterID)
+}
+
+func (dsInfo *builderInfo) addDeploymentMetadataEnv(envVarMap map[string]corev1.EnvVar) map[string]corev1.EnvVar {
+	return setDefaultValueSource(envVarMap, deploymentmetadata.EnvDtDeploymentMetadata, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 		LocalObjectReference: corev1.LocalObjectReference{
-			Name: dsInfo.instance.OneAgentConnectionInfoConfigMapName(),
+			Name: deploymentmetadata.GetDeploymentMetadataConfigMapName(dsInfo.dynakube.Name),
+		},
+		Key:      deploymentmetadata.OneAgentMetadataKey,
+		Optional: address.Of(false),
+	}})
+}
+
+func (dsInfo *builderInfo) addConnectionInfoEnvs(envVarMap map[string]corev1.EnvVar) map[string]corev1.EnvVar {
+	envVarMap = setDefaultValueSource(envVarMap, connectioninfo.EnvDtTenant, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+		LocalObjectReference: corev1.LocalObjectReference{
+			Name: dsInfo.dynakube.OneAgentConnectionInfoConfigMapName(),
 		},
 		Key:      connectioninfo.TenantUUIDName,
 		Optional: address.Of(false),
 	}})
-	envVarMap = setDefaultValueSource(envVarMap, consts.EnvDtServer, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+	envVarMap = setDefaultValueSource(envVarMap, connectioninfo.EnvDtServer, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 		LocalObjectReference: corev1.LocalObjectReference{
-			Name: dsInfo.instance.OneAgentConnectionInfoConfigMapName(),
+			Name: dsInfo.dynakube.OneAgentConnectionInfoConfigMapName(),
 		},
 		Key:      connectioninfo.CommunicationEndpointsName,
 		Optional: address.Of(false),
 	}})
+	return envVarMap
+}
 
-	if dsInfo.hasProxy() {
-		envVarMap = dsInfo.setDefaultProxy(envVarMap)
+func (dsInfo *builderInfo) addProxyEnv(envVarMap map[string]corev1.EnvVar) map[string]corev1.EnvVar {
+	if !dsInfo.hasProxy() {
+		return envVarMap
 	}
+	if dsInfo.dynakube.Spec.Proxy.ValueFrom != "" {
+		setDefaultValueSource(envVarMap, proxy, &corev1.EnvVarSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{Name: dsInfo.dynakube.Spec.Proxy.ValueFrom},
+				Key:                  "proxy",
+			},
+		})
+	} else {
+		setDefaultValue(envVarMap, proxy, dsInfo.dynakube.Spec.Proxy.Value)
+	}
+	return envVarMap
+}
 
-	if dsInfo.instance != nil && dsInfo.instance.NeedsReadOnlyOneAgents() {
+func (dsInfo *builderInfo) addReadOnlyEnv(envVarMap map[string]corev1.EnvVar) map[string]corev1.EnvVar {
+	if dsInfo.dynakube != nil && dsInfo.dynakube.NeedsReadOnlyOneAgents() {
 		envVarMap = setDefaultValue(envVarMap, oneagentReadOnlyMode, "true")
 	}
-
-	return mapToArray(envVarMap)
+	return envVarMap
 }
 
 func (dsInfo *HostMonitoring) appendInfraMonEnvVars(daemonset *appsv1.DaemonSet) {
@@ -81,20 +124,6 @@ func mapToArray(envVarMap map[string]corev1.EnvVar) []corev1.EnvVar {
 	}
 
 	return result
-}
-
-func (dsInfo *builderInfo) setDefaultProxy(envVarMap map[string]corev1.EnvVar) map[string]corev1.EnvVar {
-	if dsInfo.instance.Spec.Proxy.ValueFrom != "" {
-		setDefaultValueSource(envVarMap, proxy, &corev1.EnvVarSource{
-			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{Name: dsInfo.instance.Spec.Proxy.ValueFrom},
-				Key:                  "proxy",
-			},
-		})
-	} else {
-		setDefaultValue(envVarMap, proxy, dsInfo.instance.Spec.Proxy.Value)
-	}
-	return envVarMap
 }
 
 func setDefaultValue(envVarMap map[string]corev1.EnvVar, name string, value string) map[string]corev1.EnvVar {
