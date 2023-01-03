@@ -43,6 +43,8 @@ func TestGetSecret(t *testing.T) {
 
 func TestMultipleSecrets(t *testing.T) {
 	testSecretName := "testSecret"
+	// the query filter we use is not supported by the fake client => would return all secrets
+	// therefore this list contains only one secret
 	fakeClient := fake.NewClient(
 		&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
@@ -56,14 +58,6 @@ func TestMultipleSecrets(t *testing.T) {
 				Namespace: "ns2",
 			},
 		},
-		// the query filter we use is not supported by the fake client => would return all secrets
-		/*
-			&corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "differentSecret",
-					Namespace: "ns2",
-				},
-			},*/
 		&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testSecretName,
@@ -78,12 +72,6 @@ func TestMultipleSecrets(t *testing.T) {
 		require.NoError(t, err)
 		assert.Len(t, secrets, 3)
 	})
-	// does not work due to the fake client
-	/*t.Run("get not yet existing secret from all namespaces", func(t *testing.T) {
-		secrets, err := secretQuery.GetAllFromNamespaces("not a secret")
-		require.NoError(t, err)
-		assert.Len(t, secrets, 0)
-	})*/
 	t.Run("update and create secret in specific namespaces", func(t *testing.T) {
 		namespaces := []corev1.Namespace{
 			{
