@@ -90,7 +90,7 @@ func (query SecretQuery) CreateOrUpdateForNamespacesList(newSecret corev1.Secret
 		return 0, err
 	}
 
-	namespacesContainingSecret := make(map[string]corev1.Secret)
+	namespacesContainingSecret := make(map[string]corev1.Secret, len(secretList))
 	for _, secret := range secretList {
 		namespacesContainingSecret[secret.Namespace] = secret
 	}
