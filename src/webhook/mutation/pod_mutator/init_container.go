@@ -99,10 +99,7 @@ func isNonRoot(ctx *corev1.SecurityContext) bool {
 }
 
 func getBasePodName(pod *corev1.Pod) string {
-	basePodName := pod.GenerateName
-	if basePodName == "" {
-		basePodName = pod.Name
-	}
+	basePodName := kubeobjects.GetPodName(*pod)
 
 	// Only include up to the last dash character, exclusive.
 	if lastDashIndex := strings.LastIndex(basePodName, "-"); lastDashIndex != -1 {
