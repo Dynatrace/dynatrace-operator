@@ -36,16 +36,26 @@ func (query SecretQuery) Get(objectKey client.ObjectKey) (corev1.Secret, error) 
 func (query SecretQuery) Create(secret corev1.Secret) error {
 	query.log.Info("creating secret", "name", secret.Name, "namespace", secret.Namespace)
 
-	return errors.WithStack(query.kubeClient.Create(query.ctx, &secret))
+	return query.create(secret)
 }
 
 func (query SecretQuery) Update(secret corev1.Secret) error {
 	query.log.Info("updating secret", "name", secret.Name, "namespace", secret.Namespace)
 
+	return query.update(secret)
+}
+
+func (query SecretQuery) create(secret corev1.Secret) error {
+	return errors.WithStack(query.kubeClient.Create(query.ctx, &secret))
+}
+
+func (query SecretQuery) update(secret corev1.Secret) error {
 	return errors.WithStack(query.kubeClient.Update(query.ctx, &secret))
 }
 
 func (query SecretQuery) GetAllFromNamespaces(secretName string) ([]corev1.Secret, error) {
+	query.log.Info("querying secret from all namespaces", "name", secretName)
+
 	secretList := &corev1.SecretList{}
 	listOps := []client.ListOption{
 		client.MatchingFields{
@@ -84,40 +94,47 @@ func (query SecretQuery) CreateOrUpdate(secret corev1.Secret) error {
 	return nil
 }
 
-func (query SecretQuery) CreateOrUpdateForNamespacesList(newSecret corev1.Secret, namespaces []corev1.Namespace) (int, error) {
+func (query SecretQuery) CreateOrUpdateForNamespacesList(newSecret corev1.Secret, namespaces []corev1.Namespace) error {
 	secretList, err := query.GetAllFromNamespaces(newSecret.Name)
 	if err != nil {
-		return 0, err
+		return err
 	}
+
+	query.log.Info("creating/updating secret for multiple namespaces",
+		"name", newSecret.Name, "len(namespaces)", len(namespaces))
 
 	namespacesContainingSecret := make(map[string]corev1.Secret, len(secretList))
 	for _, secret := range secretList {
 		namespacesContainingSecret[secret.Namespace] = secret
 	}
 
-	updateAndCreationCount := 0
+	updateCount := 0
+	creationCount := 0
 
 	for _, namespace := range namespaces {
 		newSecret.Namespace = namespace.Name
 
 		if oldSecret, ok := namespacesContainingSecret[namespace.Name]; ok {
 			if !AreSecretsEqual(oldSecret, newSecret) {
-				err = query.Update(newSecret)
+				err = query.update(newSecret)
 				if err != nil {
-					return updateAndCreationCount, err
+					return err
 				}
-				updateAndCreationCount++
+				updateCount++
 			}
 		} else {
-			err = query.Create(newSecret)
+			err = query.create(newSecret)
 			if err != nil {
-				return updateAndCreationCount, err
+				return err
 			}
-			updateAndCreationCount++
+			creationCount++
 		}
 	}
 
-	return updateAndCreationCount, nil
+	query.log.Info("created/updated secret for multiple namespaces",
+		"name", newSecret.Name, "creationCount", creationCount, "updateCount", updateCount)
+
+	return nil
 }
 
 func AreSecretsEqual(secret corev1.Secret, other corev1.Secret) bool {
