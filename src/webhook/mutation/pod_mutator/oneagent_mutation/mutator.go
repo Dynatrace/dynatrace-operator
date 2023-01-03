@@ -58,7 +58,7 @@ func (mutator *OneAgentPodMutator) Reinvoke(request *dtwebhook.ReinvocationReque
 	if !mutator.Injected(request.BaseRequest) {
 		return false
 	}
-	log.Info("reinvoking", "pod.Name", request.PodName())
+	log.Info("reinvoking", "podName", request.PodName())
 	return mutator.reinvokeUserContainers(request)
 }
 

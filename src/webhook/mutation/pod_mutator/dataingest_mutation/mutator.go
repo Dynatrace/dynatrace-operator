@@ -60,7 +60,7 @@ func (mutator *DataIngestPodMutator) Reinvoke(request *dtwebhook.ReinvocationReq
 	if !mutator.Injected(request.BaseRequest) {
 		return false
 	}
-	log.Info("reinvoking", "pod", request.PodName())
+	log.Info("reinvoking", "podName", request.PodName())
 	return reinvokeUserContainers(request.Pod)
 }
 

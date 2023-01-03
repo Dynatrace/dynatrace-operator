@@ -68,7 +68,7 @@ func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.
 			webhook.recorder.sendPodUpdateEvent()
 			return createResponseForPod(mutationRequest.Pod, request)
 		}
-		log.Info("no change to pod injection", "podName", podName)
+		log.Info("no change, all containers already injected", "podName", podName)
 		return emptyPatch
 	}
 
