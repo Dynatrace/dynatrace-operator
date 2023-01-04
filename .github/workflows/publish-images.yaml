@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3.0.2
+        uses: actions/checkout@755da8c3cf115ac066823e79a1e1788f8940201b # v3.2.0
       - name: Prepare build parameters
         id: prep
         run: |
@@ -33,7 +33,7 @@ jobs:
         platform: [amd64, arm64]
     steps:
       - name: Checkout
-        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3.0.2
+        uses: actions/checkout@755da8c3cf115ac066823e79a1e1788f8940201b # v3.2.0
       - name: Build image
         uses: ./.github/actions/build-image
         with:
@@ -49,13 +49,8 @@ jobs:
     strategy:
       matrix:
         platform: [amd64, arm64]
-        registry: [gcr, dockerhub, rhcc]
+        registry: [gcr, dockerhub]
         include:
-        - registry: rhcc
-          url: scan.connect.redhat.com
-          repository: RHCC_REPOSITORY
-          username: RHCC_USERNAME
-          password: RHCC_PASSWORD
         - registry: gcr
           url: gcr.io
           repository: GCR_REPOSITORY
@@ -68,42 +63,65 @@ jobs:
           password: DOCKERHUB_PASSWORD
     steps:
       - name: Checkout
-        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3.0.2
+        uses: actions/checkout@755da8c3cf115ac066823e79a1e1788f8940201b # v3.2.0
       - name: Login to Registry
-        uses: docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b # v2.0.0
+        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a # v2.1.0
         with:
           registry: ${{ matrix.url }}
           username: ${{ secrets[matrix.username] }}
           password: ${{ secrets[matrix.password] }}
       - name: Push ${{matrix.platform}} to ${{matrix.registry}}
         uses: ./.github/actions/upload-image
-        if: matrix.registry != 'rhcc' || matrix.platform == 'amd64'
         with:
           platform: ${{ matrix.platform }}
           labels: ${{ needs.prepare.outputs.labels }}
           version: ${{ needs.prepare.outputs.version }}
           registry: ${{ matrix.url }}
           repository: ${{ secrets[matrix.repository] }}
-      - name: Run preflight
-        if: matrix.registry == 'rhcc' && matrix.platform == 'amd64'
-        uses: ./.github/actions/preflight
-        with:
-         version: ${{ needs.prepare.outputs.version }}
-         registry: ${{ matrix.url }}
-         repository: ${{ secrets[matrix.repository] }}
-         report-name: "preflight.json"
-         redhat-project-id: ${{ secrets.REDHAT_PROJECT_ID }}
-         pyxis-api-token: ${{ secrets.PYXIS_API_TOKEN }}
       - name: Sign image for ${{matrix.registry}}
-        if: matrix.registry != 'rhcc'
         uses: ./.github/actions/sign-image
         with:
           image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}-${{ matrix.platform }}
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
 
+  push-rhcc:
+    name: Push amd64 image to RHCC
+    environment: Release
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    env:
+      SCAN_REGISTRY: "quay.io"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@755da8c3cf115ac066823e79a1e1788f8940201b # v3.2.0
+      - name: Login to Registry
+        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a # v2.1.0
+        with:
+          registry: ${{ env.SCAN_REGISTRY }}
+          username: ${{ secrets.RHCC_USERNAME }}
+          password: ${{ secrets.RHCC_PASSWORD }}
+      - name: Push amd64 image to scan registry
+        uses: ./.github/actions/upload-image
+        with:
+          platform: "amd64"
+          labels: ${{ needs.prepare.outputs.labels }}
+          version: ${{ needs.prepare.outputs.version }}
+          registry: ${{ env.SCAN_REGISTRY }}
+          repository: ${{ secrets.RHCC_REPOSITORY }}
+          skip-platform-suffix: true
+      - name: Run preflight
+        uses: ./.github/actions/preflight
+        with:
+          version: ${{ needs.prepare.outputs.version }}
+          registry: ${{ env.SCAN_REGISTRY }}
+          repository: ${{ secrets.RHCC_REPOSITORY }}
+          report-name: "preflight.json"
+          redhat-project-id: ${{ secrets.REDHAT_PROJECT_ID }}
+          pyxis-api-token: ${{ secrets.PYXIS_API_TOKEN }}
+
   manifest:
-    name: Create manifests
+    name: Create manifest
     environment: Release
     needs: [prepare, push]
     runs-on: ubuntu-latest
@@ -123,9 +141,9 @@ jobs:
             password: DOCKERHUB_PASSWORD
     steps:
       - name: Checkout
-        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3.0.2
+        uses: actions/checkout@755da8c3cf115ac066823e79a1e1788f8940201b # v3.2.0
       - name: Login to Registry
-        uses: docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b # v2.0.0
+        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a # v2.1.0
         with:
           registry: ${{ matrix.url }}
           username: ${{ secrets[matrix.username] }}
