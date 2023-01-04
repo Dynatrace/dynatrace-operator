@@ -88,23 +88,19 @@ func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1
 
 	coreLabels := kubeobjects.NewCoreLabels(dk.Name, kubeobjects.WebhookComponentLabel)
 	secretQuery := kubeobjects.NewSecretQuery(ctx, g.client, g.apiReader, log)
+	secret := corev1.Secret{
+		TypeMeta: metav1.TypeMeta{},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   config.AgentInitSecretName,
+			Labels: coreLabels.BuildMatchLabels(),
+		},
+		Data: data,
+		Type: corev1.SecretTypeOpaque,
+	}
 
-	for _, targetNs := range nsList {
-		secret := &corev1.Secret{
-			TypeMeta: metav1.TypeMeta{},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      config.AgentInitSecretName,
-				Namespace: targetNs.Name,
-				Labels:    coreLabels.BuildMatchLabels(),
-			},
-			Data: data,
-			Type: corev1.SecretTypeOpaque,
-		}
-
-		err = secretQuery.CreateOrUpdate(*secret)
-		if err != nil {
-			return errors.WithStack(err)
-		}
+	err = secretQuery.CreateOrUpdateForNamespacesList(secret, nsList)
+	if err != nil {
+		return err
 	}
 
 	log.Info("done updating init secrets")

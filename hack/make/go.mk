@@ -29,7 +29,7 @@ go/test-all:
 go/run: export RUN_LOCAL=true
 go/run: export POD_NAMESPACE=dynatrace
 go/run: manifests/kubernetes manifests/openshift go/fmt go/vet
-	go run ./src/cmd/operator/
+	go run ./src/cmd/ operator
 
 ## Builds the Operators binary and writes it to bin/manager
 go/build/manager: manifests/crd/generate go/fmt go/vet
