@@ -3,7 +3,7 @@
 set -x
 
 readonly PREFLIGHT_VERSION="${1}"
-readonly IMAGE_TAG="${2}"
+readonly IMAGE_URI="${2}"
 readonly PREFLIGHT_REPORT_NAME="${3}"
 
 readonly PREFLIGHT_EXECUTABLE="preflight-linux-amd64"
@@ -15,7 +15,7 @@ download_preflight() {
 }
 
 check_image() {
-  ./"${PREFLIGHT_EXECUTABLE}" check container "${IMAGE_TAG}" \
+  ./"${PREFLIGHT_EXECUTABLE}" check container "${IMAGE_URI}" \
     --docker-config="${HOME}/.docker/config.json" \
     1> "${PREFLIGHT_REPORT_NAME}" 2> "${PREFLIGHT_LOG}"
   echo "${PREFLIGHT_EXECUTABLE} returned ${?}"
@@ -24,7 +24,7 @@ check_image() {
 }
 
 submit_report() {
-  ./"${PREFLIGHT_EXECUTABLE}" check container "${IMAGE_TAG}" \
+  ./"${PREFLIGHT_EXECUTABLE}" check container "${IMAGE_URI}" \
     --pyxis-api-token="${RHCC_APITOKEN}" --certification-project-id="${RHCC_PROJECT_ID}" \
     --docker-config="${HOME}/.docker/config.json" \
     --submit

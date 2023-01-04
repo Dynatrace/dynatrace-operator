@@ -16,6 +16,11 @@ inputs:
   repository:
     description: The repository in the registry where the image is uploaded
     required: true
+  skip-platform-suffix:
+    description: Set if platform suffix should be skipped for image
+    required: false
+    default: ""
+
 runs:
   using: "composite"
   steps:
@@ -26,5 +31,7 @@ runs:
         path: /tmp
     - name: Upload image to Registry
       shell: bash
+      env:
+        IMAGE: "${{ inputs.registry }}/${{ inputs.repository }}:${{ inputs.version }}"
       run: |
-        hack/build/ci/upload-docker-image.sh "${{ inputs.platform }}" "${{ inputs.registry }}" "${{ inputs.repository }}" "${{ inputs.version }}"
+        hack/build/ci/upload-docker-image.sh "${{ inputs.platform }}" "${{ env.IMAGE }}" "${{ inputs.skip-platform-suffix }}"
