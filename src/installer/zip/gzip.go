@@ -32,7 +32,7 @@ func (extractor OneAgentExtractor) ExtractGzip(sourceFilePath, targetDir string)
 	}
 	defer gzipReader.Close()
 
-	tmpUnzipDir := extractor.pathResolver.AgentTempUnzipDir()
+	tmpUnzipDir := extractor.pathResolver.AgentTempUnzipRootDir()
 	tarReader := tar.NewReader(gzipReader)
 	err = extractFilesFromGzip(fs, tmpUnzipDir, tarReader)
 	if err != nil {
