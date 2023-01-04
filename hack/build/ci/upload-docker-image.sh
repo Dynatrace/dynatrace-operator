@@ -3,7 +3,7 @@
 set -x
 
 readonly platform="${1}"
-readonly targetImage="${2}"
+targetImage="${2}"
 readonly skip_platform_suffix="${3}"
 
 readonly imageTarPath="/tmp/operator-${platform}.tar"
