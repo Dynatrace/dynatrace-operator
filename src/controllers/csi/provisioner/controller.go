@@ -118,6 +118,11 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	}
 	log.Info("csi directories exist", "path", provisioner.path.TenantDir(dynakubeMetadata.TenantUUID))
 
+	if !dk.NeedAppInjection() {
+		log.Info("app injection not necessary, skip agent download", "dynakube", dk.Name)
+		return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
+	}
+
 	latestProcessModuleConfigCache, requeue, err := provisioner.updateAgentInstallation(ctx, dtc, dynakubeMetadata, dk)
 	if requeue {
 		return reconcile.Result{RequeueAfter: defaultRequeueDuration}, err
