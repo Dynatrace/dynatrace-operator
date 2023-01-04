@@ -1,4 +1,4 @@
-FROM golang:1.19.1-alpine AS operator-build
+FROM golang:1.19.4-alpine AS operator-build
 
 RUN apk update --no-cache && \
     apk add --no-cache gcc musl-dev btrfs-progs-dev lvm2-dev device-mapper-static gpgme-dev git && \
@@ -33,8 +33,8 @@ COPY --from=operator-build /usr/lib/libgpg-error.so.* /usr/lib/
 COPY --from=operator-build /usr/lib/libgpgme.so.* /usr/lib/
 
 # csi binaries
-COPY --from=k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.5.1 /csi-node-driver-registrar /usr/local/bin
-COPY --from=k8s.gcr.io/sig-storage/livenessprobe:v2.7.0 /livenessprobe /usr/local/bin
+COPY --from=k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.7.0 /csi-node-driver-registrar /usr/local/bin
+COPY --from=k8s.gcr.io/sig-storage/livenessprobe:v2.9.0 /livenessprobe /usr/local/bin
 
 # csi depdenencies
 COPY --from=dependency-src /bin/mount /bin/umount /bin/tar /bin/
