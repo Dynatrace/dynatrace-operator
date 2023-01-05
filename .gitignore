@@ -84,6 +84,8 @@ tags
 /reapply-all.sh
 config/deploy/kustomization.yaml
 
+.fleet/*
+
 /.run/
 config/deploy/kubernetes/kubernetes.yaml
 config/deploy/kubernetes/gke-autopilot.yaml

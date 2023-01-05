@@ -2,8 +2,12 @@ package metadata
 
 import (
 	"context"
+	"math/rand"
 	"fmt"
+	"os"
 	"strconv"
+	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -11,6 +15,239 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestDatabaseLocked(t *testing.T) {
+	dbPath := "test.sqlite"
+	t.Run("1 writer 1 reader, same table", func(t *testing.T) {
+		defer os.Remove(dbPath)
+		var wait sync.WaitGroup
+
+		db1 := createDB(t, dbPath)
+		db2 := createDB(t, dbPath)
+
+		startRoutine(&wait, writeALotOfDynakubesToDB, t, db1, 0, 3000)
+		startRoutine(&wait, readALotOfDynakubesFromDB, t, db2, 5, 500)
+
+		wait.Wait()
+	})
+	t.Run("2 writers different tables", func(t *testing.T) {
+		defer os.Remove(dbPath)
+		var wait sync.WaitGroup
+
+		db1 := createDB(t, dbPath)
+		db2 := createDB(t, dbPath)
+
+		startRoutine(&wait, writeALotOfDynakubesToDB, t, db1, 0, 3000)
+		startRoutine(&wait, writeALotOfVolumesToDB, t, db2, 0, 3000)
+
+		wait.Wait()
+	})
+	t.Run("2 writers same table", func(t *testing.T) {
+		defer os.Remove(dbPath)
+		var wait sync.WaitGroup
+
+		db1 := createDB(t, dbPath)
+		db2 := createDB(t, dbPath)
+
+		wait.Add(1)
+		go func() {
+			defer wait.Done()
+			writeALotOfDynakubesToDB(t, db1, 0, 3000)
+		}()
+
+		wait.Add(1)
+		go func() {
+			defer wait.Done()
+			writeALotOfDynakubesToDB(t, db2, 3001, 5000)
+		}()
+
+		wait.Wait()
+	})
+
+	t.Run("5 writers same table", func(t *testing.T) {
+		defer os.Remove(dbPath)
+		var wait sync.WaitGroup
+
+		startRoutineXTimes(5, &wait, writeALotOfVolumesToDB, t, dbPath, 0, 5000)
+
+		wait.Wait()
+	})
+
+	t.Run("x writers same table", func(t *testing.T) {
+		defer os.Remove(dbPath)
+		var wait sync.WaitGroup
+
+		x := 60
+		end := x * 10
+
+		startRoutineXTimes(x, &wait, writeALotOfVolumesToDB, t, dbPath, 0, end)
+
+		wait.Wait()
+
+		checkVolumesFromDB(t, createDB(t, dbPath), 6, end)
+	})
+
+	t.Run("x writers same table, shared db object", func(t *testing.T) {
+		defer os.Remove(dbPath)
+		var wait sync.WaitGroup
+
+		x := 10
+		end := x * 1000
+
+		startRoutineXTimesSharedDB(x, &wait, writeALotOfVolumesToDB, t, dbPath, 0, end)
+
+		wait.Wait()
+	})
+
+	t.Run("x writers same table, error handling", func(t *testing.T) {
+		defer os.Remove(dbPath)
+		var wait sync.WaitGroup
+
+		x := 1000
+		end := x * 10
+
+		startRoutineXTimes(x, &wait, writeALotOfVolumesToDBWithErrorHandling, t, dbPath, 0, end)
+
+		wait.Wait()
+
+		checkVolumesFromDB(t, createDB(t, dbPath), 0, end)
+	})
+}
+
+func startRoutineXTimes(x int, wait *sync.WaitGroup, fun func(t *testing.T, db Access, start, end int), t *testing.T, dbPath string, start, end int) {
+    var dbs []Access
+	for i := 0; i <= x; i++ {
+		dbs = append(dbs, createDB(t, dbPath))
+	}
+	jump := end/x
+	j := 0
+	for i := start; i <= end; i = i+jump+1 {
+		startRoutine(wait, fun, t, dbs[j], i, i+jump)
+		j++
+	}
+}
+
+func startRoutineXTimesSharedDB(x int, wait *sync.WaitGroup, fun func(t *testing.T, db Access, start, end int), t *testing.T, dbPath string, start, end int) {
+	db := createDB(t, dbPath)
+	jump := end/x
+	j := 0
+	for i := start; i <= end; i = i+jump+1 {
+		startRoutine(wait, fun, t, db, i, i+jump)
+		j++
+	}
+}
+
+func startRoutine(wait *sync.WaitGroup, fun func(t *testing.T, db Access, start, end int), t *testing.T, db Access, start, end int) {
+	wait.Add(1)
+	go func() {
+		defer wait.Done()
+		fun(t, db, start, end)
+	}()
+}
+
+func readALotOfDynakubesFromDB(t *testing.T, db Access, start, end int) {
+	ctx := context.TODO()
+	for i := start; i <= end; i++ {
+		_, err := db.GetDynakube(ctx, generateTestDynakube(i).Name)
+		if err != nil {
+			t.Logf("failed to read dynakube %d, because %s", i, err.Error())
+		}
+		require.NoError(t, err)
+	}
+}
+
+func readALotOfVolumesFromDB(t *testing.T, db Access, start, end int) {
+	ctx := context.TODO()
+	for i := start; i <= end; i++ {
+		_, err := db.GetVolume(ctx, generateTestVolume(i).VolumeID)
+		if err != nil {
+			t.Logf("failed to read volume %d, because %s", i, err.Error())
+		}
+		require.NoError(t, err)
+	}
+}
+
+func checkVolumesFromDB(t *testing.T, db Access, start, end int) {
+	ctx := context.TODO()
+	for i := start; i <= end; i++ {
+		volume, err := db.GetVolume(ctx, generateTestVolume(i).VolumeID)
+		if err != nil {
+			t.Logf("failed to read volume %d, because %s", i, err.Error())
+		}
+		if volume == nil {
+			t.Logf("missing volume %d", i)
+		}
+		require.NotNil(t, volume)
+		require.Equal(t, *volume, *generateTestVolume(i))
+	}
+}
+
+
+func writeALotOfDynakubesToDB(t *testing.T, db Access, start, end int) {
+	ctx := context.TODO()
+	for i := start; i <= end; i++ {
+		err := db.InsertDynakube(ctx, generateTestDynakube(i))
+		if err != nil {
+			t.Logf("failed to write dynakube %d, because %s", i, err.Error())
+		}
+		require.NoError(t, err)
+	}
+}
+
+func writeALotOfVolumesToDB(t *testing.T, db Access, start, end int) {
+	ctx := context.TODO()
+	for i := start; i <= end; i++ {
+		err := db.InsertVolume(ctx, generateTestVolume(i))
+		if err != nil {
+			t.Logf("failed to write volume %d, because %s", i, err.Error())
+		}
+		require.NoError(t, err)
+	}
+}
+
+func writeALotOfVolumesToDBWithErrorHandling(t *testing.T, db Access, start, end int) {
+	ctx := context.TODO()
+	for i := start; i <= end; i++ {
+		err := db.InsertVolume(ctx, generateTestVolume(i))
+		if err != nil {
+			t.Logf("failed to write volume %d, because %s", i, err.Error())
+			for err != nil && strings.Contains(err.Error(), "database is locked") {
+				time.Sleep(time.Duration(rand.Intn(10)))
+				err = db.InsertVolume(ctx, generateTestVolume(i))
+			}
+		}
+		require.NoError(t, err)
+	}
+}
+
+func createDB(t *testing.T, dbPath string) Access {
+	ctx := context.TODO()
+	db, err := NewAccess(ctx, dbPath)
+	if err != nil {
+		require.NoError(t, err)
+	}
+	return db
+}
+
+func generateTestDynakube(i int) *Dynakube {
+	return &Dynakube{
+		Name:                   fmt.Sprintf("dynakube-%d", i),
+		TenantUUID:             fmt.Sprintf("tenant-%d", i),
+		LatestVersion:          fmt.Sprintf("version-%d", i),
+		ImageDigest:            fmt.Sprintf("digest-%d", i),
+		MaxFailedMountAttempts: i,
+	}
+}
+
+func generateTestVolume(i int) *Volume {
+	return &Volume{
+		VolumeID:      fmt.Sprintf("volume-%d", i),
+		PodName:       fmt.Sprintf("pod-%d", i),
+		Version:       fmt.Sprintf("version-%d", i),
+		TenantUUID:    fmt.Sprintf("tenant-%d", i),
+		MountAttempts: i,
+	}
+}
 
 func TestNewAccess(t *testing.T) {
 	db, err := NewAccess(context.TODO(), ":memory:")
