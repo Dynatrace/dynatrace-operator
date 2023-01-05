@@ -95,7 +95,7 @@ func (svr *Server) Start(ctx context.Context) error {
 		return fmt.Errorf("failed to start server: %w", err)
 	}
 
-	server := grpc.NewServer(grpc.UnaryInterceptor(logGRPC()))
+	server := grpc.NewServer(grpc.UnaryInterceptor(logGRPC()), grpc.MaxConcurrentStreams(1))
 	go func() {
 		ticker := time.NewTicker(memoryMetricTick)
 		done := false
