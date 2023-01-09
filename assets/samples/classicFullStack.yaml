@@ -101,8 +101,8 @@ spec:
       #     memory: 1.5Gi
 
       # Optional: Enables or disables automatic updates of OneAgent pods
-      # By default, if a new version is available, the OneAgent pods are restart to apply the update
-      # If set to "false", this behaviour is disabled
+      # By default, if a new version is available, the OneAgent pods are restarted to apply the update
+      # If set to "false", this behavior is disabled
       # Defaults to "true"
       #
       # autoUpdate: true
@@ -199,8 +199,8 @@ spec:
     #
     # group: ""
 
-    # Optional: Defines a custom properties file providing either as a value or as a reference to a secret
-    # If a reference to a secret is used, the key to the data must be 'customProperties'
+    # Optional: Defines a custom properties file, the file contents can be provided either as a value in this yaml or as a reference to a secret.
+    # If a reference to a secret is used, then the file contents must be stored under the 'customProperties' key within the secret.
     #
     # customProperties:
     #   value: |
