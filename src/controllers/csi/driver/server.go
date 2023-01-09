@@ -23,6 +23,7 @@ import (
 	"os"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
@@ -95,7 +96,8 @@ func (svr *Server) Start(ctx context.Context) error {
 		return fmt.Errorf("failed to start server: %w", err)
 	}
 
-	server := grpc.NewServer(grpc.UnaryInterceptor(logGRPC()), grpc.MaxConcurrentStreams(1))
+	var muti sync.Mutex
+	server := grpc.NewServer(grpc.UnaryInterceptor(logGRPC(&muti)))
 	go func() {
 		ticker := time.NewTicker(memoryMetricTick)
 		done := false
@@ -226,17 +228,21 @@ func isMounted(mounter mount.Interface, targetPath string) (bool, error) {
 	return !isNotMounted, nil
 }
 
-func logGRPC() grpc.UnaryServerInterceptor {
+func logGRPC(mutex *sync.Mutex) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		if info.FullMethod == "/csi.v1.Identity/Probe" || info.FullMethod == "/csi.v1.Node/NodeGetCapabilities" {
 			return handler(ctx, req)
 		}
 		methodName := ""
 		if info.FullMethod == "/csi.v1.Node/NodePublishVolume" {
+			defer mutex.Unlock()
+			mutex.Lock()
 			req := req.(*csi.NodePublishVolumeRequest)
 			methodName = "NodePublishVolume"
 			log.Info("GRPC call", "method", methodName, "volume-id", req.VolumeId)
 		} else if info.FullMethod == "/csi.v1.Node/NodeUnpublishVolume" {
+			defer mutex.Unlock()
+			mutex.Lock()
 			req := req.(*csi.NodeUnpublishVolumeRequest)
 			methodName = "NodeUnpublishVolume"
 			log.Info("GRPC call", "method", methodName, "volume-id", req.VolumeId)

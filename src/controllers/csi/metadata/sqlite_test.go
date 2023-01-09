@@ -2,8 +2,8 @@ package metadata
 
 import (
 	"context"
-	"math/rand"
 	"fmt"
+	"math/rand"
 	"os"
 	"strconv"
 	"strings"
@@ -86,8 +86,8 @@ func TestDatabaseLocked(t *testing.T) {
 		defer os.Remove(dbPath)
 		var wait sync.WaitGroup
 
-		startRoutineXTimes(5, &wait, writeALotOfVolumesToDB, t, dbPath, 0, 4000)
-		startRoutineXTimes(5, &wait, writeALotOfDynakubesToDB, t, dbPath, 0, 4000)
+		go startRoutineXTimes(5, &wait, writeALotOfVolumesToDB, t, dbPath, 0, 4000)
+		go startRoutineXTimes(5, &wait, writeALotOfDynakubesToDB, t, dbPath, 0, 4000)
 
 		wait.Wait()
 	})
@@ -96,10 +96,10 @@ func TestDatabaseLocked(t *testing.T) {
 		defer os.Remove(dbPath)
 		var wait sync.WaitGroup
 
-		startRoutineXTimes(2, &wait, writeALotOfVolumesToDB, t, dbPath, 0, 8000)
-		startRoutineXTimes(2, &wait, writeALotOfDynakubesToDB, t, dbPath, 0, 8000)
-		startRoutineXTimes(2, &wait, readALotOfVolumesFromDB, t, dbPath, 0, 8000)
-		startRoutineXTimes(2, &wait, readALotOfDynakubesFromDB, t, dbPath, 0, 8000)
+		go startRoutineXTimes(2, &wait, writeALotOfVolumesToDB, t, dbPath, 0, 8000)
+		go startRoutineXTimes(2, &wait, writeALotOfDynakubesToDB, t, dbPath, 0, 8000)
+		go startRoutineXTimes(2, &wait, readALotOfVolumesFromDB, t, dbPath, 0, 8000)
+		go startRoutineXTimes(2, &wait, readALotOfDynakubesFromDB, t, dbPath, 0, 8000)
 
 		wait.Wait()
 	})
@@ -143,16 +143,32 @@ func TestDatabaseLocked(t *testing.T) {
 
 		checkVolumesFromDB(t, createDB(t, dbPath), 0, end)
 	})
+
+	t.Run("only readers and deletes", func(t *testing.T) {
+		defer os.Remove(dbPath)
+		var wait sync.WaitGroup
+
+		db := createDB(t, dbPath)
+		//prep
+		writeALotOfVolumesToDB(t, db, 0, 10000)
+
+
+		go startRoutineXTimes(30, &wait, readALotOfVolumesFromDB, t, dbPath, 0, 5000)
+		go startRoutineXTimes(30, &wait, deleteALotOfVolumesFromDB, t, dbPath, 5001, 10000)
+
+		wait.Wait()
+
+	})
 }
 
 func startRoutineXTimes(x int, wait *sync.WaitGroup, fun func(t *testing.T, db Access, start, end int), t *testing.T, dbPath string, start, end int) {
-    var dbs []Access
+	var dbs []Access
 	for i := 0; i <= x; i++ {
 		dbs = append(dbs, createDB(t, dbPath))
 	}
-	jump := end/x
+	jump := end / x
 	j := 0
-	for i := start; i <= end; i = i+jump+1 {
+	for i := start; i <= end; i = i + jump + 1 {
 		startRoutine(wait, fun, t, dbs[j], i, i+jump)
 		j++
 	}
@@ -160,9 +176,9 @@ func startRoutineXTimes(x int, wait *sync.WaitGroup, fun func(t *testing.T, db A
 
 func startRoutineXTimesSharedDB(x int, wait *sync.WaitGroup, fun func(t *testing.T, db Access, start, end int), t *testing.T, dbPath string, start, end int) {
 	db := createDB(t, dbPath)
-	jump := end/x
+	jump := end / x
 	j := 0
-	for i := start; i <= end; i = i+jump+1 {
+	for i := start; i <= end; i = i + jump + 1 {
 		startRoutine(wait, fun, t, db, i, i+jump)
 		j++
 	}
@@ -202,6 +218,18 @@ func readALotOfVolumesFromDB(t *testing.T, db Access, start, end int) {
 	}
 }
 
+func deleteALotOfVolumesFromDB(t *testing.T, db Access, start, end int) {
+	ctx := context.TODO()
+	for i := start; i <= end; i++ {
+		t.Logf("%s vl-reader-%d: reading %d", time.Now(), start, i)
+		_, err := db.GetVolume(ctx, generateTestVolume(i).VolumeID)
+		if err != nil {
+			t.Logf("failed to delete volume %d, because %s", i, err.Error())
+		}
+		require.NoError(t, err)
+	}
+}
+
 func checkVolumesFromDB(t *testing.T, db Access, start, end int) {
 	ctx := context.TODO()
 	for i := start; i <= end; i++ {
@@ -216,7 +244,6 @@ func checkVolumesFromDB(t *testing.T, db Access, start, end int) {
 		require.Equal(t, *volume, *generateTestVolume(i))
 	}
 }
-
 
 func writeALotOfDynakubesToDB(t *testing.T, db Access, start, end int) {
 	ctx := context.TODO()
