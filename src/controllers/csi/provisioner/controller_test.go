@@ -154,32 +154,47 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	})
 	t.Run(`host monitoring used`, func(t *testing.T) {
 		db := metadata.FakeMemoryDB()
-		db.InsertDynakube(ctx, &metadata.Dynakube{Name: dynakubeName})
-		provisioner := &OneAgentProvisioner{
-			apiReader: fake.NewClient(
-				&dynatracev1beta1.DynaKube{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: dynakubeName,
-					},
-					Spec: dynatracev1beta1.DynaKubeSpec{
-						OneAgent: dynatracev1beta1.OneAgentSpec{
-							HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
-						},
+		fakeClient := fake.NewClient(
+			&dynatracev1beta1.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: dkName,
+				},
+				Spec: dynatracev1beta1.DynaKubeSpec{
+					APIURL: testAPIURL,
+					OneAgent: dynatracev1beta1.OneAgentSpec{
+						HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
 					},
 				},
-			),
-			db: db,
+			},
+			&v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: dkName,
+				},
+				Data: map[string][]byte{
+					dtclient.DynatraceApiToken: []byte("api-token"),
+				},
+			},
+		)
+		mockClient := &dtclient.MockDynatraceClient{}
+		provisioner := &OneAgentProvisioner{
+			apiReader: fakeClient,
+			client:    fakeClient,
+			fs:        afero.NewMemMapFs(),
+			db:        db,
+			path:      metadata.PathResolver{},
+			dtcBuildFunc: func(dynakube.DynatraceClientProperties) (dtclient.Client, error) {
+				return mockClient, nil
+			},
 		}
-		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakubeName}})
+		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
 		require.NoError(t, err)
-		assert.NotNil(t, result)
-		assert.Equal(t, reconcile.Result{RequeueAfter: longRequeueDuration}, result)
+		require.NotNil(t, result)
+		require.Equal(t, reconcile.Result{RequeueAfter: defaultRequeueDuration}, result)
 
 		dynakubeMetadatas, err := db.GetAllDynakubes(ctx)
 		require.NoError(t, err)
-		assert.Len(t, dynakubeMetadatas, 0)
-
+		require.Len(t, dynakubeMetadatas, 1)
 	})
 	t.Run(`no tokens`, func(t *testing.T) {
 		provisioner := &OneAgentProvisioner{
@@ -581,10 +596,10 @@ func TestHandleMetadata(t *testing.T) {
 	}
 	dynakubeMetadata, oldMetadata, err := provisioner.handleMetadata(ctx, instance)
 
-	assert.NoError(t, err)
-	assert.NotNil(t, dynakubeMetadata)
-	assert.NotNil(t, oldMetadata)
-	assert.Equal(t, dynatracev1beta1.DefaultMaxFailedCsiMountAttempts, dynakubeMetadata.MaxFailedMountAttempts)
+	require.NoError(t, err)
+	require.NotNil(t, dynakubeMetadata)
+	require.NotNil(t, oldMetadata)
+	require.Equal(t, dynatracev1beta1.DefaultMaxFailedCsiMountAttempts, dynakubeMetadata.MaxFailedMountAttempts)
 
 	instance.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureMaxFailedCsiMountAttempts: "5"}
 	dynakubeMetadata, oldMetadata, err = provisioner.handleMetadata(ctx, instance)
