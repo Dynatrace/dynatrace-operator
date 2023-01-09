@@ -73,6 +73,37 @@ func TestDatabaseLocked(t *testing.T) {
 		wait.Wait()
 	})
 
+	t.Run("10 writers same table", func(t *testing.T) {
+		defer os.Remove(dbPath)
+		var wait sync.WaitGroup
+
+		startRoutineXTimes(10, &wait, writeALotOfVolumesToDB, t, dbPath, 0, 8000)
+
+		wait.Wait()
+	})
+
+	t.Run("5-5 writers different table", func(t *testing.T) {
+		defer os.Remove(dbPath)
+		var wait sync.WaitGroup
+
+		startRoutineXTimes(5, &wait, writeALotOfVolumesToDB, t, dbPath, 0, 4000)
+		startRoutineXTimes(5, &wait, writeALotOfDynakubesToDB, t, dbPath, 0, 4000)
+
+		wait.Wait()
+	})
+
+	t.Run("2-2 2-2 readers-writers 2 table", func(t *testing.T) {
+		defer os.Remove(dbPath)
+		var wait sync.WaitGroup
+
+		startRoutineXTimes(2, &wait, writeALotOfVolumesToDB, t, dbPath, 0, 8000)
+		startRoutineXTimes(2, &wait, writeALotOfDynakubesToDB, t, dbPath, 0, 8000)
+		startRoutineXTimes(2, &wait, readALotOfVolumesFromDB, t, dbPath, 0, 8000)
+		startRoutineXTimes(2, &wait, readALotOfDynakubesFromDB, t, dbPath, 0, 8000)
+
+		wait.Wait()
+	})
+
 	t.Run("x writers same table", func(t *testing.T) {
 		defer os.Remove(dbPath)
 		var wait sync.WaitGroup
@@ -92,7 +123,7 @@ func TestDatabaseLocked(t *testing.T) {
 		var wait sync.WaitGroup
 
 		x := 10
-		end := x * 1000
+		end := x * 10000
 
 		startRoutineXTimesSharedDB(x, &wait, writeALotOfVolumesToDB, t, dbPath, 0, end)
 
@@ -141,13 +172,16 @@ func startRoutine(wait *sync.WaitGroup, fun func(t *testing.T, db Access, start,
 	wait.Add(1)
 	go func() {
 		defer wait.Done()
+		t.Logf("started routine from %d to %d", start, end)
 		fun(t, db, start, end)
+		t.Logf("ended routine from %d to %d", start, end)
 	}()
 }
 
 func readALotOfDynakubesFromDB(t *testing.T, db Access, start, end int) {
 	ctx := context.TODO()
 	for i := start; i <= end; i++ {
+		t.Logf("%s dk-reader-%d: reading %d", time.Now(), start, i)
 		_, err := db.GetDynakube(ctx, generateTestDynakube(i).Name)
 		if err != nil {
 			t.Logf("failed to read dynakube %d, because %s", i, err.Error())
@@ -159,6 +193,7 @@ func readALotOfDynakubesFromDB(t *testing.T, db Access, start, end int) {
 func readALotOfVolumesFromDB(t *testing.T, db Access, start, end int) {
 	ctx := context.TODO()
 	for i := start; i <= end; i++ {
+		t.Logf("%s vl-reader-%d: reading %d", time.Now(), start, i)
 		_, err := db.GetVolume(ctx, generateTestVolume(i).VolumeID)
 		if err != nil {
 			t.Logf("failed to read volume %d, because %s", i, err.Error())
@@ -186,6 +221,7 @@ func checkVolumesFromDB(t *testing.T, db Access, start, end int) {
 func writeALotOfDynakubesToDB(t *testing.T, db Access, start, end int) {
 	ctx := context.TODO()
 	for i := start; i <= end; i++ {
+		t.Logf("%s dk-writer-%d: writing %d", time.Now(), start, i)
 		err := db.InsertDynakube(ctx, generateTestDynakube(i))
 		if err != nil {
 			t.Logf("failed to write dynakube %d, because %s", i, err.Error())
@@ -197,6 +233,7 @@ func writeALotOfDynakubesToDB(t *testing.T, db Access, start, end int) {
 func writeALotOfVolumesToDB(t *testing.T, db Access, start, end int) {
 	ctx := context.TODO()
 	for i := start; i <= end; i++ {
+		t.Logf("%s vl-writer-%d: writing %d", time.Now(), start, i)
 		err := db.InsertVolume(ctx, generateTestVolume(i))
 		if err != nil {
 			t.Logf("failed to write volume %d, because %s", i, err.Error())
@@ -208,6 +245,7 @@ func writeALotOfVolumesToDB(t *testing.T, db Access, start, end int) {
 func writeALotOfVolumesToDBWithErrorHandling(t *testing.T, db Access, start, end int) {
 	ctx := context.TODO()
 	for i := start; i <= end; i++ {
+		t.Logf("%s vl-writer-%d: writing %d", time.Now(), start, i)
 		err := db.InsertVolume(ctx, generateTestVolume(i))
 		if err != nil {
 			t.Logf("failed to write volume %d, because %s", i, err.Error())
