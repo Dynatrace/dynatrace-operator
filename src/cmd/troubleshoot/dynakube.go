@@ -144,17 +144,17 @@ func checkIfDynatraceApiSecretHasApiToken(troubleshootCtx *troubleshootContext) 
 }
 
 func checkApiUrlSyntax(troubleshootCtx *troubleshootContext) error {
-	logInfof("checking if syntax of api url is valid")
+	logInfof("checking if syntax of API URL is valid")
 
 	validation.SetLogger(log)
 	if validation.NoApiUrl(nil, &troubleshootCtx.dynakube) != "" {
-		return errors.New("api url is invalid")
+		return errors.New("API URL is invalid")
 	}
 	if validation.IsInvalidApiUrl(nil, &troubleshootCtx.dynakube) != "" {
-		return errors.New("api url is invalid")
+		return errors.New("API URL is invalid")
 	}
 
-	logInfof("syntax of api url is valid")
+	logInfof("syntax of API URL is valid")
 	return nil
 }
 
@@ -186,7 +186,7 @@ func checkDynatraceApiTokenScopes(troubleshootCtx *troubleshootContext) error {
 }
 
 func checkApiUrlForLatestAgentVersion(troubleshootCtx *troubleshootContext) error {
-	logInfof("checking if can get latest agent version")
+	logInfof("checking if can pull latest agent version")
 
 	dtc, err := dynatraceclient.NewBuilder(troubleshootCtx.apiReader).
 		SetContext(troubleshootCtx.context).
@@ -202,7 +202,7 @@ func checkApiUrlForLatestAgentVersion(troubleshootCtx *troubleshootContext) erro
 		return errors.Wrap(err, "failed to connect to DynatraceAPI")
 	}
 
-	logInfof("can get latest agent version")
+	logInfof("API token is valid, can pull latest agent version")
 	return nil
 }
 
