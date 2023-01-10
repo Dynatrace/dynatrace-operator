@@ -21,12 +21,17 @@ FROM registry.access.redhat.com/ubi9-micro:9.1.0
 # operator binary
 COPY --from=operator-build /app/build/_output/bin /usr/local/bin
 
-COPY --from=dependency-src /etc/ssl/cert.pem /etc/ssl/cert.pem
-
 # cgo dependencies
 COPY --from=operator-build /usr/lib/*/libdevmapper.so.* /usr/lib/
 COPY --from=operator-build /lib/*/libdevmapper.so.* /lib/
 COPY --from=operator-build /usr/lib/*/libudev.so.* /usr/lib/
+
+# trusted certificates
+COPY --from=dependency-src /etc/ssl/cert.pem /etc/ssl/cert.pem
+
+# csi dependencies
+COPY --from=dependency-src /bin/mount /bin/umount /bin/tar /bin/
+COPY --from=dependency-src /lib64/libmount.so.1 /lib64/libblkid.so.1 /lib64/libuuid.so.1 /lib64/
 
 # fix permission and add .so files to cache
 RUN chmod +x /usr/lib/* && ldconfig
@@ -34,10 +39,6 @@ RUN chmod +x /usr/lib/* && ldconfig
 # csi binaries
 COPY --from=registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.7.0 /csi-node-driver-registrar /usr/local/bin
 COPY --from=registry.k8s.io/sig-storage/livenessprobe:v2.9.0 /livenessprobe /usr/local/bin
-
-# csi dependencies
-COPY --from=dependency-src /bin/mount /bin/umount /bin/tar /bin/
-COPY --from=dependency-src /lib64/libmount.so.1 /lib64/libblkid.so.1 /lib64/libuuid.so.1 /lib64/
 
 COPY ./third_party_licenses /usr/share/dynatrace-operator/third_party_licenses
 COPY LICENSE /licenses/
