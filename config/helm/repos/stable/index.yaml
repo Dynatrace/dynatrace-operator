@@ -2,10 +2,10 @@ apiVersion: v1
 entries:
   dynatrace-operator:
   - apiVersion: v2
-    appVersion: 0.10.1
-    created: '2022-12-15T15:06:11.704927482Z'
+    appVersion: 0.9.2
+    created: '2023-01-10T10:27:48.223633059Z'
     description: The Dynatrace Operator Helm chart for Kubernetes and OpenShift
-    digest: 6f6f77209a26731358e226fbd46a5dfb188ccf25e413c99842fc8bdc08407e49
+    digest: 5cbc4275bf8da98ddb7e6a2a726d787e05eaa0b5a24db961ac7498bc4efb22bf
     home: https://www.dynatrace.com/
     icon: https://assets.dynatrace.com/global/resources/Signet_Logo_RGB_CP_512x512px.png
     kubeVersion: '>=1.21.0-0'
@@ -21,30 +21,8 @@ entries:
     - https://github.com/Dynatrace/dynatrace-operator
     type: application
     urls:
-    - https://github.com/Dynatrace/dynatrace-operator/releases/download/v0.10.1/dynatrace-operator-0.10.1.tgz
-    version: 0.10.1
-  - apiVersion: v2
-    appVersion: 0.10.0
-    created: '2022-11-29T14:43:56.974452373Z'
-    description: The Dynatrace Operator Helm chart for Kubernetes and OpenShift
-    digest: 6c6b0d0d985d92a353b8622a51eb5cbb2e7f1c91f9eac172d3b6f78945517832
-    home: https://www.dynatrace.com/
-    icon: https://assets.dynatrace.com/global/resources/Signet_Logo_RGB_CP_512x512px.png
-    kubeVersion: '>=1.21.0-0'
-    maintainers:
-    - email: marcell.sevcsik@dynatrace.com
-      name: 0sewa0
-    - email: christoph.muellner@dynatrace.com
-      name: chrismuellner
-    - email: lukas.hinterreiter@dynatrace.com
-      name: luhi-DT
-    name: dynatrace-operator
-    sources:
-    - https://github.com/Dynatrace/dynatrace-operator
-    type: application
-    urls:
-    - https://github.com/Dynatrace/dynatrace-operator/releases/download/v0.10.0/dynatrace-operator-0.10.0.tgz
-    version: 0.10.0
+    - https://github.com/Dynatrace/dynatrace-operator/releases/download/v0.9.2/dynatrace-operator-0.9.2.tgz
+    version: 0.9.2
   - apiVersion: v2
     appVersion: 0.9.1
     created: '2022-10-19T13:37:49.27714868Z'
@@ -444,4 +422,4 @@ entries:
     urls:
     - https://raw.githubusercontent.com/Dynatrace/helm-charts/master/repos/stable/dynatrace-operator-0.1.0.tgz
     version: 0.1.0
-generated: '2022-12-15T15:06:11.702962341Z'
+generated: '2023-01-10T10:27:48.221637725Z'
