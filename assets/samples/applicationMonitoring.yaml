@@ -5,7 +5,7 @@ metadata:
   namespace: dynatrace
 spec:
   # Dynatrace apiUrl including the `/api` path at the end.
-  # For SaaS, set `YOUR_ENVIRONMENT_ID` to your environment ID.
+  # For SaaS, set `ENVIRONMENTID` to your environment ID.
   # For Managed, change the apiUrl address.
   # For instructions on how to determine the environment ID and how to configure the apiUrl address, see https://www.dynatrace.com/support/help/reference/dynatrace-concepts/environment-id/.
   apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
@@ -27,7 +27,7 @@ spec:
   # Optional: Set custom proxy settings either directly or from a secret with the field 'proxy'
   #
   # proxy:
-  #   value: https://my-proxy-url.com
+  #   value: my-proxy-url.com
   #   valueFrom: name-of-my-proxy-secret
 
   # Optional: Adds custom RootCAs from a configmap
@@ -147,13 +147,13 @@ spec:
         cpu: 1000m
         memory: 1.5Gi
 
-    # Optional: Defines labels added to ActiveGate pods
+    # Optional: Adds custom labels to ActiveGate pods
     # Can be used to structure workloads
     #
     # labels:
     #   custom: label
 
-    # Optional: Adds additional environment variables to ActiveGate pods
+    # Optional: Adds custom environment variables to ActiveGate pods
     #
     # env: []
 
@@ -161,8 +161,8 @@ spec:
     #
     # group: ""
 
-    # Optional: Defines a custom properties file providing either as a value or as a reference to a secret
-    # If a reference to a secret is used, the key to the data must be 'customProperties'
+    # Optional: Defines a custom properties file, the file contents can be provided either as a value in this yaml or as a reference to a secret.
+    # If a reference to a secret is used, then the file contents must be stored under the 'customProperties' key within the secret.
     #
     # customProperties:
     #   value: |
@@ -183,3 +183,19 @@ spec:
     # For more information on DNS policies, see https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy
     #
     # dnsPolicy: "Default"
+
+    # Optional: Specifies the priority class to assign to the ActiveGate Pods
+    # No class is set by default
+    # For more information on priority classes, see https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/
+    #
+    # priorityClassName: priority-class
+
+    # Optional: Adds custom annotations to ActiveGate pods
+    #
+    # annotations:
+    #   custom: annotation
+
+    # Optional: Adds TopologySpreadConstraints to the ActiveGate pods
+    # For more information on TopologySpreadConstraints, see https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
+    #
+    # topologySpreadConstraints: []

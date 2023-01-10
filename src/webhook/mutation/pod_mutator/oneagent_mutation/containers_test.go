@@ -113,13 +113,10 @@ func TestReinvokeUserContainers(t *testing.T) {
 		})
 		mutator.reinvokeUserContainers(request)
 
-		require.Len(t, installContainer.Env, len(request.Pod.Spec.Containers)*2)
-		assert.Equal(t, request.Pod.Spec.Containers[0].Name, installContainer.Env[0].Value)
-		assert.Equal(t, request.Pod.Spec.Containers[0].Image, installContainer.Env[1].Value)
-		assert.Equal(t, request.Pod.Spec.Containers[1].Name, installContainer.Env[2].Value)
-		assert.Equal(t, request.Pod.Spec.Containers[1].Image, installContainer.Env[3].Value)
-		assert.Equal(t, request.Pod.Spec.Containers[2].Name, installContainer.Env[4].Value)
-		assert.Equal(t, request.Pod.Spec.Containers[2].Image, installContainer.Env[5].Value)
+		require.Len(t, installContainer.Env, 1+len(request.Pod.Spec.Containers)*2) // CONTAINERS_COUNT + N*(CONTAINER_x_IMAGE, CONTAINER_x_NAME)
+
+		assertContainersNamesAndImages(t, request, installContainer, 3)
+
 		assert.Len(t, request.Pod.Spec.Containers[0].VolumeMounts, initialContainerVolumeMountsLen+expectedAdditionalVolumeCount)
 		assert.Len(t, request.Pod.Spec.Containers[0].Env, initialNumberOfContainerEnvsLen+expectedAdditionalEnvCount)
 		assert.Len(t, request.Pod.Spec.Containers[2].VolumeMounts, expectedAdditionalVolumeCount)
@@ -149,19 +146,32 @@ func TestReinvokeUserContainers(t *testing.T) {
 		})
 		mutator.reinvokeUserContainers(request)
 
-		require.Len(t, installContainer.Env, len(request.Pod.Spec.Containers)*2)
-		assert.Equal(t, request.Pod.Spec.Containers[0].Name, installContainer.Env[0].Value)
-		assert.Equal(t, request.Pod.Spec.Containers[0].Image, installContainer.Env[1].Value)
-		assert.Equal(t, request.Pod.Spec.Containers[1].Name, installContainer.Env[2].Value)
-		assert.Equal(t, request.Pod.Spec.Containers[1].Image, installContainer.Env[3].Value)
-		assert.Equal(t, request.Pod.Spec.Containers[2].Name, installContainer.Env[4].Value)
-		assert.Equal(t, request.Pod.Spec.Containers[2].Image, installContainer.Env[5].Value)
+		require.Len(t, installContainer.Env, 1+len(request.Pod.Spec.Containers)*2)
+		assertContainersNamesAndImages(t, request, installContainer, 3)
 
 		assert.Len(t, request.Pod.Spec.Containers[0].VolumeMounts, initialContainerVolumeMountsLen+expectedAdditionalVolumeCount)
 		assert.Len(t, request.Pod.Spec.Containers[0].Env, initialNumberOfContainerEnvsLen+expectedAdditionalEnvCount)
 		assert.Len(t, request.Pod.Spec.Containers[2].VolumeMounts, expectedAdditionalVolumeCount)
 		assert.Len(t, request.Pod.Spec.Containers[2].Env, expectedAdditionalEnvCount)
 	})
+}
+
+func assertContainersNamesAndImages(t *testing.T, request *dtwebhook.ReinvocationRequest, installContainer *corev1.Container, containersNumber int) {
+	for containerIdx := 0; containerIdx < containersNumber; containerIdx++ {
+		internalContainerIndex := 1 + containerIdx // starting from 1
+
+		containerNameEnvVarName := getContainerNameEnv(internalContainerIndex)
+		containerImageEnvVarName := getContainerImageEnv(internalContainerIndex)
+		container := request.Pod.Spec.Containers[containerIdx]
+
+		nameEnvVar := kubeobjects.FindEnvVar(installContainer.Env, containerNameEnvVarName)
+		assert.NotNil(t, nameEnvVar)
+		assert.Equal(t, container.Name, nameEnvVar.Value)
+
+		imageEnvVar := kubeobjects.FindEnvVar(installContainer.Env, containerImageEnvVarName)
+		assert.NotNil(t, imageEnvVar)
+		assert.Equal(t, container.Image, imageEnvVar.Value)
+	}
 }
 
 func TestVersionDetectionMappingDrivenByNamespaceAnnotations(t *testing.T) {
@@ -254,7 +264,7 @@ func TestVersionDetectionMappingDrivenByNamespaceAnnotations(t *testing.T) {
 	})
 }
 
-func doTestMappings(t *testing.T, podAnnotations map[string]string, namespaceAnnotations map[string]string, expectedMappings map[string]string, unexpectedMappingsKeys []string) {
+func doTestMappings(t *testing.T, podAnnotations map[string]string, namespaceAnnotations map[string]string, expectedMappings map[string]string, unexpectedMappingsKeys []string) { //nolint:revive // argument-limit
 	mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
 	request := createTestMutationRequest(getTestComplexDynakube(), podAnnotations, getTestNamespace(namespaceAnnotations))
 	mutator.mutateUserContainers(request)

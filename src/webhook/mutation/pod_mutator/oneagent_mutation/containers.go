@@ -1,6 +1,9 @@
 package oneagent_mutation
 
 import (
+	"strconv"
+
+	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	corev1 "k8s.io/api/core/v1"
@@ -9,6 +12,11 @@ import (
 func (mutator *OneAgentPodMutator) configureInitContainer(request *dtwebhook.MutationRequest, installer installerInfo) {
 	addInstallerInitEnvs(request.InstallContainer, installer, mutator.getVolumeMode(request.DynaKube))
 	addInitVolumeMounts(request.InstallContainer)
+}
+
+func (mutator *OneAgentPodMutator) setContainerCount(initContainer *corev1.Container, containerCount int) {
+	desiredContainerCountEnvVarValue := strconv.Itoa(containerCount)
+	initContainer.Env = kubeobjects.AddOrUpdate(initContainer.Env, corev1.EnvVar{Name: config.AgentContainerCountEnv, Value: desiredContainerCountEnvVarValue})
 }
 
 func (mutator *OneAgentPodMutator) mutateUserContainers(request *dtwebhook.MutationRequest) {
@@ -24,7 +32,7 @@ func (mutator *OneAgentPodMutator) mutateUserContainers(request *dtwebhook.Mutat
 // that doesn't conflict with the previous environment variables of the originally injected containers
 func (mutator *OneAgentPodMutator) reinvokeUserContainers(request *dtwebhook.ReinvocationRequest) bool {
 	pod := request.Pod
-	initContainer := findOneAgentInstallContainer(pod.Spec.InitContainers)
+	oneAgentInstallContainer := findOneAgentInstallContainer(pod.Spec.InitContainers)
 	newContainers := []*corev1.Container{}
 
 	for i := range pod.Spec.Containers {
@@ -38,10 +46,16 @@ func (mutator *OneAgentPodMutator) reinvokeUserContainers(request *dtwebhook.Rei
 	oldContainersLen := len(pod.Spec.Containers) - len(newContainers)
 	for i := range newContainers {
 		currentContainer := newContainers[i]
-		addContainerInfoInitEnv(initContainer, oldContainersLen+i+1, currentContainer.Name, currentContainer.Image)
+		addContainerInfoInitEnv(oneAgentInstallContainer, oldContainersLen+i+1, currentContainer.Name, currentContainer.Image)
 		mutator.addOneAgentToContainer(request, currentContainer)
 	}
-	return len(newContainers) > 0
+
+	if len(newContainers) == 0 {
+		return false
+	}
+
+	mutator.setContainerCount(oneAgentInstallContainer, len(request.Pod.Spec.Containers))
+	return true
 }
 
 func (mutator *OneAgentPodMutator) addOneAgentToContainer(request *dtwebhook.ReinvocationRequest, container *corev1.Container) {

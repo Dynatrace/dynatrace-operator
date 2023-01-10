@@ -12,17 +12,21 @@ const (
 )
 
 func metricIngestPreviewWarning(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
-	if dynakube.IsActiveGateMode(dynatracev1beta1.MetricsIngestCapability.DisplayName) {
-		log.Info("DynaKube with metrics-ingest was applied, warning was provided.")
-		return fmt.Sprintf(featurePreviewWarningMessage, "metrics-ingest")
+	return warnOnCapabilityIfActive(dynatracev1beta1.MetricsIngestCapability.DisplayName, dynakube)
+}
+
+func warnOnCapabilityIfActive(capability dynatracev1beta1.CapabilityDisplayName, dynakube *dynatracev1beta1.DynaKube) string {
+	if dynakube.IsActiveGateMode(capability) {
+		log.Info(fmt.Sprintf("DynaKube with %s was applied, warning was provided.", capability))
+		return fmt.Sprintf(featurePreviewWarningMessage, capability)
 	}
 	return ""
 }
 
 func statsdIngestPreviewWarning(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
-	if dynakube.IsActiveGateMode(dynatracev1beta1.StatsdIngestCapability.DisplayName) {
-		log.Info("DynaKube with statsd-ingest was applied, warning was provided.")
-		return fmt.Sprintf(featurePreviewWarningMessage, "statsd-ingest")
-	}
-	return ""
+	return warnOnCapabilityIfActive(dynatracev1beta1.StatsdIngestCapability.DisplayName, dynakube)
+}
+
+func syntheticPreviewWarning(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+	return warnOnCapabilityIfActive(dynatracev1beta1.SyntheticCapability.DisplayName, dynakube)
 }

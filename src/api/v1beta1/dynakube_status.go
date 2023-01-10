@@ -19,9 +19,11 @@ type DynaKubeStatus struct {
 	// LastAPITokenProbeTimestamp tracks when the last request for the API token validity was sent
 	LastAPITokenProbeTimestamp *metav1.Time `json:"lastAPITokenProbeTimestamp,omitempty"`
 
+	// Deprecated: use LastAPITokenProbeTimestamp instead
 	// LastPaaSTokenProbeTimestamp tracks when the last request for the PaaS token validity was sent
 	LastPaaSTokenProbeTimestamp *metav1.Time `json:"lastPaaSTokenProbeTimestamp,omitempty"`
 
+	// Deprecated: use LastAPITokenProbeTimestamp instead
 	// LastDataIngestTokenProbeTimestamp tracks when the last request for the DataIngest token validity was sent
 	LastDataIngestTokenProbeTimestamp *metav1.Time `json:"lastDataIngestTokenProbeTimestamp,omitempty"`
 
@@ -56,6 +58,7 @@ type DynaKubeStatus struct {
 	ExtensionController EecStatus        `json:"eec,omitempty"`
 	Statsd              StatsdStatus     `json:"statsd,omitempty"`
 	OneAgent            OneAgentStatus   `json:"oneAgent,omitempty"`
+	Synthetic           SyntheticStatus  `json:"synthetic,omitempty"`
 }
 
 type ConnectionInfoStatus struct {
@@ -139,6 +142,16 @@ func (oneAgentStatus *OneAgentStatus) Name() string {
 type OneAgentInstance struct {
 	PodName   string `json:"podName,omitempty"`
 	IPAddress string `json:"ipAddress,omitempty"`
+}
+
+var _ VersionStatusNamer = (*SyntheticStatus)(nil)
+
+type SyntheticStatus struct {
+	VersionStatus `json:",inline"`
+}
+
+func (syn *SyntheticStatus) Name() string {
+	return "Synthetic"
 }
 
 type DynaKubePhaseType string

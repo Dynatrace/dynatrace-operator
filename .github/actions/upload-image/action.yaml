@@ -16,15 +16,22 @@ inputs:
   repository:
     description: The repository in the registry where the image is uploaded
     required: true
+  skip-platform-suffix:
+    description: Set if platform suffix should be skipped for image
+    required: false
+    default: ""
+
 runs:
   using: "composite"
   steps:
     - name: Download artifact
-      uses: actions/download-artifact@fb598a63ae348fa914e94cd0ff38f362e927b741 # v3.0.0
+      uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
       with:
         name: operator-${{ inputs.platform }}
         path: /tmp
     - name: Upload image to Registry
       shell: bash
+      env:
+        IMAGE: "${{ inputs.registry }}/${{ inputs.repository }}:${{ inputs.version }}"
       run: |
-        hack/build/ci/upload-docker-image.sh "${{ inputs.platform }}" "${{ inputs.registry }}" "${{ inputs.repository }}" "${{ inputs.version }}"
+        hack/build/ci/upload-docker-image.sh "${{ inputs.platform }}" "${{ env.IMAGE }}" "${{ inputs.skip-platform-suffix }}"

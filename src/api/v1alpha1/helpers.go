@@ -16,6 +16,8 @@ package v1alpha1
 import (
 	"fmt"
 	"strings"
+
+	"github.com/Dynatrace/dynatrace-operator/src/api"
 )
 
 const (
@@ -65,7 +67,7 @@ func (dk *DynaKube) ImmutableOneAgentImage() string {
 		return ""
 	}
 
-	tag := "latest"
+	tag := api.LatestTag
 	if ver := dk.Spec.OneAgent.Version; ver != "" {
 		tag = ver
 	}

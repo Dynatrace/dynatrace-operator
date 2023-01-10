@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 	cmdManager "github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
+	dtfake "github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -156,6 +157,11 @@ func TestOperatorCommand(t *testing.T) {
 
 		mockMgr := &cmdManager.MockManager{}
 		mockMgr.On("Start", mock.Anything).Return(nil)
+		clt := dtfake.NewClient()
+		mockMgr.On("GetConfig").Return(&rest.Config{})
+		mockMgr.On("GetScheme").Return(scheme.Scheme)
+		mockMgr.On("GetClient").Return(clt)
+		mockMgr.On("GetAPIReader").Return(clt)
 
 		mockMgrProvider := &cmdManager.MockProvider{}
 		mockMgrProvider.
@@ -216,7 +222,7 @@ func TestOperatorCommand(t *testing.T) {
 }
 
 func createFakeClient(isDeployedViaOlm bool) client.WithWatch {
-	var annotations map[string]string = map[string]string{}
+	annotations := map[string]string{}
 	if isDeployedViaOlm {
 		annotations = map[string]string{
 			"olm.operatorNamespace": "operators",

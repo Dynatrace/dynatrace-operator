@@ -4,13 +4,16 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/pkg/errors"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
+	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
 type Builder struct {
@@ -65,7 +68,9 @@ func DeleteIfExists(name string) func(ctx context.Context, environmentConfig *en
 				Name: name,
 			},
 		}
-		err := environmentConfig.Client().Resources().Delete(ctx, &namespace)
+		err := environmentConfig.Client().Resources().Delete(ctx, &namespace, func(options *metav1.DeleteOptions) {
+			options.GracePeriodSeconds = address.Of[int64](0)
+		})
 
 		if err != nil {
 			if k8serrors.IsNotFound(err) {
@@ -93,5 +98,13 @@ func Recreate(namespace corev1.Namespace) func(ctx context.Context, environmentC
 		createNamespace := namespace
 		err = environmentConfig.Client().Resources().Create(ctx, &createNamespace)
 		return ctx, errors.WithStack(err)
+	}
+}
+
+func Create(namespace corev1.Namespace) features.Func {
+	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+		require.NoError(t, environmentConfig.Client().Resources().Create(ctx, &namespace))
+
+		return ctx
 	}
 }

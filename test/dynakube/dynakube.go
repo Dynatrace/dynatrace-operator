@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -57,6 +58,13 @@ func (dynakubeBuilder Builder) WithDefaultObjectMeta() Builder {
 	return dynakubeBuilder
 }
 
+func (dynakubeBuilder Builder) WithAnnotations(annotations map[string]string) Builder {
+	for key, value := range annotations {
+		dynakubeBuilder.dynakube.ObjectMeta.Annotations[key] = value
+	}
+	return dynakubeBuilder
+}
+
 func (dynakubeBuilder Builder) ApiUrl(apiUrl string) Builder {
 	dynakubeBuilder.dynakube.Spec.APIURL = apiUrl
 	return dynakubeBuilder
@@ -72,6 +80,11 @@ func (dynakubeBuilder Builder) WithActiveGate() Builder {
 			dynatracev1beta1.StatsdIngestCapability.DisplayName,
 		},
 	}
+	return dynakubeBuilder
+}
+
+func (dynakubeBuilder Builder) Tokens(secretName string) Builder {
+	dynakubeBuilder.dynakube.Spec.Tokens = secretName
 	return dynakubeBuilder
 }
 
@@ -113,6 +126,12 @@ func (dynakubeBuilder Builder) CloudNative(cloudNativeFullStackSpec *dynatracev1
 	return dynakubeBuilder
 }
 
+func (dynakubeBuilder Builder) CloudNativeWithAgentVersion(cloudNativeFullStackSpec *dynatracev1beta1.CloudNativeFullStackSpec, version version.SemanticVersion) Builder {
+	dynakubeBuilder.dynakube.Spec.OneAgent.CloudNativeFullStack = cloudNativeFullStackSpec
+	dynakubeBuilder.dynakube.Spec.OneAgent.CloudNativeFullStack.Version = version.String()
+	return dynakubeBuilder
+}
+
 func (dynakubeBuilder Builder) ApplicationMonitoring(applicationMonitoringSpec *dynatracev1beta1.ApplicationMonitoringSpec) Builder {
 	dynakubeBuilder.dynakube.Spec.OneAgent.ApplicationMonitoring = applicationMonitoringSpec
 	return dynakubeBuilder
@@ -142,7 +161,7 @@ func DeleteIfExists(dynakube dynatracev1beta1.DynaKube) func(ctx context.Context
 		}
 
 		err = resources.Delete(ctx, &dynakube)
-		_, isNoKindMatchErr := err.(*meta.NoKindMatchError)
+		isNoKindMatchErr := meta.IsNoMatchError(err)
 
 		if err != nil {
 			if k8serrors.IsNotFound(err) || isNoKindMatchErr {

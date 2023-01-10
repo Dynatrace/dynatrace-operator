@@ -91,26 +91,22 @@ func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *d
 	}
 
 	secretQuery := kubeobjects.NewSecretQuery(ctx, g.client, g.apiReader, log)
-
-	for _, targetNs := range nsList {
-		secret := &corev1.Secret{
-			TypeMeta: metav1.TypeMeta{},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      config.EnrichmentEndpointSecretName,
-				Namespace: targetNs.Name,
-				Labels:    coreLabels.BuildMatchLabels(),
-			},
-			Data: data,
-			Type: corev1.SecretTypeOpaque,
-		}
-
-		err = secretQuery.CreateOrUpdate(*secret)
-		if err != nil {
-			return errors.WithStack(err)
-		}
+	secret := corev1.Secret{
+		TypeMeta: metav1.TypeMeta{},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   config.EnrichmentEndpointSecretName,
+			Labels: coreLabels.BuildMatchLabels(),
+		},
+		Data: data,
+		Type: corev1.SecretTypeOpaque,
 	}
 
-	log.Info("done updating data-ingest endpoint secrets")
+	err = secretQuery.CreateOrUpdateForNamespacesList(secret, nsList)
+	if err != nil {
+		return err
+	}
+
+	log.Info("done updating data-ingest endpoint secrets", "update/creation count")
 	return nil
 }
 
@@ -184,22 +180,19 @@ func (g *EndpointSecretGenerator) PrepareFields(ctx context.Context, dk *dynatra
 	}
 
 	if dk.IsStatsdActiveGateEnabled() {
-		if statsdUrl, err := statsdIngestUrl(dk); err != nil {
-			return nil, err
-		} else {
-			fields[StatsdUrlSecretField] = statsdUrl
-		}
+		fields[StatsdUrlSecretField] = statsdIngestUrl(dk)
 	}
 
 	return fields, nil
 }
 
 func dataIngestUrlFor(dk *dynatracev1beta1.DynaKube) (string, error) {
-	if dk.IsActiveGateMode(dynatracev1beta1.MetricsIngestCapability.DisplayName) {
+	switch {
+	case dk.IsActiveGateMode(dynatracev1beta1.MetricsIngestCapability.DisplayName):
 		return metricsIngestUrlForClusterActiveGate(dk)
-	} else if len(dk.Spec.APIURL) > 0 {
+	case len(dk.Spec.APIURL) > 0:
 		return metricsIngestUrlForDynatraceActiveGate(dk)
-	} else {
+	default:
 		return "", fmt.Errorf("failed to create data-ingest endpoint, DynaKube.spec.apiUrl is empty")
 	}
 }
@@ -209,7 +202,7 @@ func metricsIngestUrlForDynatraceActiveGate(dk *dynatracev1beta1.DynaKube) (stri
 }
 
 func metricsIngestUrlForClusterActiveGate(dk *dynatracev1beta1.DynaKube) (string, error) {
-	tenant, err := dk.TenantUUID()
+	tenant, err := dk.TenantUUIDFromApiUrl()
 	if err != nil {
 		return "", err
 	}
@@ -218,7 +211,7 @@ func metricsIngestUrlForClusterActiveGate(dk *dynatracev1beta1.DynaKube) (string
 	return fmt.Sprintf("https://%s.%s/e/%s/api/v2/metrics/ingest", serviceName, dk.Namespace, tenant), nil
 }
 
-func statsdIngestUrl(dk *dynatracev1beta1.DynaKube) (string, error) {
+func statsdIngestUrl(dk *dynatracev1beta1.DynaKube) string {
 	serviceName := capability.BuildServiceName(dk.Name, consts.MultiActiveGateName)
-	return fmt.Sprintf("%s.%s:%d", serviceName, dk.Namespace, consts.StatsdIngestPort), nil
+	return fmt.Sprintf("%s.%s:%d", serviceName, dk.Namespace, consts.StatsdIngestPort)
 }

@@ -1,7 +1,7 @@
 package dtclient
 
 import (
-	"crypto/md5"
+	"crypto/md5" //nolint:gosec
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -47,9 +47,9 @@ const (
 // makeRequest does an HTTP request by formatting the URL from the given arguments and returns the response.
 // The response body must be closed by the caller when no longer used.
 func (dtc *dynatraceClient) makeRequest(url string, tokenType tokenType) (*http.Response, error) {
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("error initializing http request: %s", err.Error())
+		return nil, errors.WithMessage(err, "error initializing http request")
 	}
 
 	var authHeader string
@@ -57,12 +57,12 @@ func (dtc *dynatraceClient) makeRequest(url string, tokenType tokenType) (*http.
 	switch tokenType {
 	case dynatraceApiToken:
 		if dtc.apiToken == "" {
-			return nil, fmt.Errorf("not able to set token since api token is empty for request: %s", url)
+			return nil, errors.Errorf("not able to set token since api token is empty for request: %s", url)
 		}
 		authHeader = fmt.Sprintf("Api-Token %s", dtc.apiToken)
 	case dynatracePaaSToken:
 		if dtc.paasToken == "" {
-			return nil, fmt.Errorf("not able to set token since paas token is empty for request: %s", url)
+			return nil, errors.Errorf("not able to set token since paas token is empty for request: %s", url)
 		}
 		authHeader = fmt.Sprintf("Api-Token %s", dtc.paasToken)
 	case installerUrlToken:
@@ -79,7 +79,7 @@ func (dtc *dynatraceClient) makeRequest(url string, tokenType tokenType) (*http.
 func createBaseRequest(url, method, apiToken string, body io.Reader) (*http.Request, error) {
 	req, err := http.NewRequest(method, url, body)
 	if err != nil {
-		return nil, fmt.Errorf("error initializing http request: %s", err.Error())
+		return nil, errors.WithMessage(err, "error initializing http request")
 	}
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Authorization", fmt.Sprintf("Api-Token %s", apiToken))
@@ -94,7 +94,7 @@ func createBaseRequest(url, method, apiToken string, body io.Reader) (*http.Requ
 func (dtc *dynatraceClient) getServerResponseData(response *http.Response) ([]byte, error) {
 	responseData, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return nil, fmt.Errorf("error reading response: %w", err)
+		return nil, errors.WithMessage(err, "error reading response")
 	}
 
 	if response.StatusCode != http.StatusOK &&
@@ -133,10 +133,10 @@ func (dtc *dynatraceClient) makeRequestForBinary(url string, token tokenType, wr
 		if err != nil {
 			return "", err
 		}
-		return "", fmt.Errorf("dynatrace server error %d: %s", errorResponse.ErrorMessage.Code, errorResponse.ErrorMessage.Message)
+		return "", errors.Errorf("dynatrace server error %d: %s", errorResponse.ErrorMessage.Code, errorResponse.ErrorMessage.Message)
 	}
 
-	hash := md5.New()
+	hash := md5.New() //nolint:gosec
 	_, err = io.Copy(writer, io.TeeReader(resp.Body, hash))
 	return hex.EncodeToString(hash.Sum(nil)), err
 }
@@ -144,7 +144,7 @@ func (dtc *dynatraceClient) makeRequestForBinary(url string, token tokenType, wr
 func (dtc *dynatraceClient) handleErrorResponseFromAPI(response []byte, statusCode int) error {
 	se := serverErrorResponse{}
 	if err := json.Unmarshal(response, &se); err != nil {
-		return fmt.Errorf("response error: %d, can't unmarshal json response: %w", statusCode, err)
+		return errors.WithMessagef(err, "response error, can't unmarshal json response %d", statusCode)
 	}
 
 	return se.ErrorMessage
@@ -154,7 +154,7 @@ func (dtc *dynatraceClient) getHostInfoForIP(ip string) (*hostInfo, error) {
 	if len(dtc.hostCache) == 0 {
 		err := dtc.buildHostCache()
 		if err != nil {
-			return nil, fmt.Errorf("error building hostcache from dynatrace cluster: %w", err)
+			return nil, errors.WithMessage(err, "error building host-cache from dynatrace cluster")
 		}
 	}
 
@@ -193,27 +193,25 @@ func (dtc *dynatraceClient) buildHostCache() error {
 	return nil
 }
 
-func (dtc *dynatraceClient) setHostCacheFromResponse(response []byte) error {
-	type hostInfoResponse struct {
-		IPAddresses  []string
-		AgentVersion *struct {
-			Major     int
-			Minor     int
-			Revision  int
-			Timestamp string
-		}
-		EntityID          string
-		NetworkZoneID     string
-		LastSeenTimestamp int64
+type hostInfoResponse struct {
+	IPAddresses  []string
+	AgentVersion *struct {
+		Major     int
+		Minor     int
+		Revision  int
+		Timestamp string
 	}
+	EntityID          string
+	NetworkZoneID     string
+	LastSeenTimestamp int64
+}
 
+func (dtc *dynatraceClient) setHostCacheFromResponse(response []byte) error {
 	dtc.hostCache = make(map[string]hostInfo)
 
-	var hostInfoResponses []hostInfoResponse
-	err := json.Unmarshal(response, &hostInfoResponses)
+	hostInfoResponses, err := dtc.extractHostInfoResponse(response)
 	if err != nil {
-		log.Error(err, "error unmarshalling json response", "response", string(response))
-		return errors.WithStack(err)
+		return err
 	}
 
 	now := dtc.now
@@ -222,7 +220,6 @@ func (dtc *dynatraceClient) setHostCacheFromResponse(response []byte) error {
 	}
 
 	var inactive []string
-
 	for _, info := range hostInfoResponses {
 		// If we haven't seen this host in the last 30 minutes, ignore it.
 		if tm := time.Unix(info.LastSeenTimestamp/1000, 0).UTC(); tm.Before(now.Add(-30 * time.Minute)) {
@@ -239,13 +236,7 @@ func (dtc *dynatraceClient) setHostCacheFromResponse(response []byte) error {
 				hostInfo.version = fmt.Sprintf("%d.%d.%d.%s", v.Major, v.Minor, v.Revision, v.Timestamp)
 			}
 
-			for _, ip := range info.IPAddresses {
-				if old, ok := dtc.hostCache[ip]; ok {
-					log.Info("hosts cache: replacing host", "ip", ip, "new", hostInfo.entityID, "old", old.entityID)
-				}
-
-				dtc.hostCache[ip] = hostInfo
-			}
+			dtc.updateHostCache(info, hostInfo)
 		}
 	}
 
@@ -254,6 +245,26 @@ func (dtc *dynatraceClient) setHostCacheFromResponse(response []byte) error {
 	}
 
 	return nil
+}
+
+func (dtc *dynatraceClient) updateHostCache(info hostInfoResponse, hostInfo hostInfo) {
+	for _, ip := range info.IPAddresses {
+		if old, ok := dtc.hostCache[ip]; ok {
+			log.Info("hosts cache: replacing host", "ip", ip, "new", hostInfo.entityID, "old", old.entityID)
+		}
+
+		dtc.hostCache[ip] = hostInfo
+	}
+}
+
+func (dtc *dynatraceClient) extractHostInfoResponse(response []byte) ([]hostInfoResponse, error) {
+	var hostInfoResponses []hostInfoResponse
+	err := json.Unmarshal(response, &hostInfoResponses)
+	if err != nil {
+		log.Error(err, "error unmarshalling json response", "response", string(response))
+		return nil, errors.WithStack(err)
+	}
+	return hostInfoResponses, nil
 }
 
 type serverErrorResponse struct {

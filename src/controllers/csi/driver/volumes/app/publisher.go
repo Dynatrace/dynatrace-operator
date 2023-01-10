@@ -35,7 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func NewAppVolumePublisher(client client.Client, fs afero.Afero, mounter mount.Interface, db metadata.Access, path metadata.PathResolver) csivolumes.Publisher {
+func NewAppVolumePublisher(client client.Client, fs afero.Afero, mounter mount.Interface, db metadata.Access, path metadata.PathResolver) csivolumes.Publisher { //nolint:revive // argument-limit doesn't apply to constructors
 	return &AppVolumePublisher{
 		client:  client,
 		fs:      fs,
@@ -76,13 +76,10 @@ func (publisher *AppVolumePublisher) PublishVolume(ctx context.Context, volumeCf
 		)
 	}
 
-	if err := publisher.mountOneAgent(bindCfg, volumeCfg); err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to mount oneagent volume: %s", err))
+	if err := publisher.ensureMountSteps(ctx, bindCfg, volumeCfg); err != nil {
+		return nil, err
 	}
 
-	if err := publisher.storeVolume(ctx, bindCfg, volumeCfg); err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to store volume info: %s", err))
-	}
 	agentsVersionsMetric.WithLabelValues(bindCfg.Version).Inc()
 	return &csi.NodePublishVolumeResponse{}, nil
 }
@@ -103,10 +100,7 @@ func (publisher *AppVolumePublisher) UnpublishVolume(ctx context.Context, volume
 	}
 
 	overlayFSPath := publisher.path.AgentRunDirForVolume(volume.TenantUUID, volumeInfo.VolumeID)
-
-	if err = publisher.umountOneAgent(volumeInfo.TargetPath, overlayFSPath); err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to unmount oneagent volume: %s", err.Error()))
-	}
+	publisher.umountOneAgent(volumeInfo.TargetPath, overlayFSPath)
 
 	if err = publisher.db.DeleteVolume(ctx, volume.VolumeID); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -192,7 +186,7 @@ func (publisher *AppVolumePublisher) mountOneAgent(bindCfg *csivolumes.BindConfi
 	return nil
 }
 
-func (publisher *AppVolumePublisher) umountOneAgent(targetPath string, overlayFSPath string) error {
+func (publisher *AppVolumePublisher) umountOneAgent(targetPath string, overlayFSPath string) {
 	if err := publisher.mounter.Unmount(targetPath); err != nil {
 		log.Error(err, "Unmount failed", "path", targetPath)
 	}
@@ -203,7 +197,19 @@ func (publisher *AppVolumePublisher) umountOneAgent(targetPath string, overlayFS
 			log.Error(err, "Unmount failed", "path", agentDirectoryForPod)
 		}
 	}
+}
 
+func (publisher *AppVolumePublisher) ensureMountSteps(ctx context.Context, bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) error {
+	if err := publisher.mountOneAgent(bindCfg, volumeCfg); err != nil {
+		return status.Error(codes.Internal, fmt.Sprintf("failed to mount oneagent volume: %s", err))
+	}
+
+	if err := publisher.storeVolume(ctx, bindCfg, volumeCfg); err != nil {
+		overlayFSPath := publisher.path.AgentRunDirForVolume(bindCfg.TenantUUID, volumeCfg.VolumeID)
+		publisher.umountOneAgent(volumeCfg.TargetPath, overlayFSPath)
+
+		return status.Error(codes.Internal, fmt.Sprintf("Failed to store volume info: %s", err))
+	}
 	return nil
 }
 

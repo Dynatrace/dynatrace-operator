@@ -6,7 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder/modifiers"
-	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/pkg/errors"
@@ -17,15 +17,15 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-type StatefulSetBuilder struct {
+type Builder struct {
 	kubeUID    types.UID
 	configHash string
 	dynakube   dynatracev1beta1.DynaKube
 	capability capability.Capability
 }
 
-func NewStatefulSetBuilder(kubeUID types.UID, configHash string, dynakube dynatracev1beta1.DynaKube, capability capability.Capability) StatefulSetBuilder {
-	return StatefulSetBuilder{
+func NewStatefulSetBuilder(kubeUID types.UID, configHash string, dynakube dynatracev1beta1.DynaKube, capability capability.Capability) Builder {
+	return Builder{
 		kubeUID:    kubeUID,
 		configHash: configHash,
 		dynakube:   dynakube,
@@ -33,12 +33,12 @@ func NewStatefulSetBuilder(kubeUID types.UID, configHash string, dynakube dynatr
 	}
 }
 
-func (statefulSetBuilder StatefulSetBuilder) CreateStatefulSet(mods []builder.Modifier) (*appsv1.StatefulSet, error) {
+func (statefulSetBuilder Builder) CreateStatefulSet(mods []builder.Modifier) (*appsv1.StatefulSet, error) {
 	activeGateBuilder := builder.NewBuilder(statefulSetBuilder.getBase())
 	if len(mods) == 0 {
 		mods = modifiers.GenerateAllModifiers(statefulSetBuilder.dynakube, statefulSetBuilder.capability)
 	}
-	sts := activeGateBuilder.AddModifier(mods...).Build()
+	sts, _ := activeGateBuilder.AddModifier(mods...).Build()
 
 	if err := setHash(&sts); err != nil {
 		return nil, err
@@ -47,7 +47,7 @@ func (statefulSetBuilder StatefulSetBuilder) CreateStatefulSet(mods []builder.Mo
 	return &sts, nil
 }
 
-func (statefulSetBuilder StatefulSetBuilder) getBase() appsv1.StatefulSet {
+func (statefulSetBuilder Builder) getBase() appsv1.StatefulSet {
 	var sts appsv1.StatefulSet
 	sts.ObjectMeta = statefulSetBuilder.getBaseObjectMeta()
 	sts.Spec = statefulSetBuilder.getBaseSpec()
@@ -61,7 +61,7 @@ func (statefulSetBuilder StatefulSetBuilder) getBase() appsv1.StatefulSet {
 	return sts
 }
 
-func (statefulSetBuilder StatefulSetBuilder) getBaseObjectMeta() metav1.ObjectMeta {
+func (statefulSetBuilder Builder) getBaseObjectMeta() metav1.ObjectMeta {
 	return metav1.ObjectMeta{
 		Name:        statefulSetBuilder.dynakube.Name + "-" + statefulSetBuilder.capability.ShortName(),
 		Namespace:   statefulSetBuilder.dynakube.Namespace,
@@ -69,7 +69,7 @@ func (statefulSetBuilder StatefulSetBuilder) getBaseObjectMeta() metav1.ObjectMe
 	}
 }
 
-func (statefulSetBuilder StatefulSetBuilder) getBaseSpec() appsv1.StatefulSetSpec {
+func (statefulSetBuilder Builder) getBaseSpec() appsv1.StatefulSetSpec {
 	return appsv1.StatefulSetSpec{
 		Replicas:            statefulSetBuilder.capability.Properties().Replicas,
 		PodManagementPolicy: appsv1.ParallelPodManagement,
@@ -83,7 +83,7 @@ func (statefulSetBuilder StatefulSetBuilder) getBaseSpec() appsv1.StatefulSetSpe
 	}
 }
 
-func (statefulSetBuilder StatefulSetBuilder) addLabels(sts *appsv1.StatefulSet) {
+func (statefulSetBuilder Builder) addLabels(sts *appsv1.StatefulSet) {
 	versionLabelValue := statefulSetBuilder.dynakube.Status.ActiveGate.Version
 	if statefulSetBuilder.dynakube.CustomActiveGateImage() != "" {
 		versionLabelValue = kubeobjects.CustomImageLabelValue
@@ -95,12 +95,12 @@ func (statefulSetBuilder StatefulSetBuilder) addLabels(sts *appsv1.StatefulSet) 
 	sts.Spec.Template.ObjectMeta.Labels = kubeobjects.MergeMap(statefulSetBuilder.capability.Properties().Labels, appLabels.BuildLabels())
 }
 
-func (statefulSetBuilder StatefulSetBuilder) addUserAnnotations(sts *appsv1.StatefulSet) {
+func (statefulSetBuilder Builder) addUserAnnotations(sts *appsv1.StatefulSet) {
 	sts.ObjectMeta.Annotations = kubeobjects.MergeMap(sts.ObjectMeta.Annotations, statefulSetBuilder.dynakube.Spec.ActiveGate.Annotations)
 	sts.Spec.Template.ObjectMeta.Annotations = kubeobjects.MergeMap(sts.Spec.Template.ObjectMeta.Annotations, statefulSetBuilder.dynakube.Spec.ActiveGate.Annotations)
 }
 
-func (statefulSetBuilder StatefulSetBuilder) addTemplateSpec(sts *appsv1.StatefulSet) {
+func (statefulSetBuilder Builder) addTemplateSpec(sts *appsv1.StatefulSet) {
 	podSpec := corev1.PodSpec{
 		Containers:         statefulSetBuilder.buildBaseContainer(),
 		NodeSelector:       statefulSetBuilder.capability.Properties().NodeSelector,
@@ -118,15 +118,17 @@ func (statefulSetBuilder StatefulSetBuilder) addTemplateSpec(sts *appsv1.Statefu
 }
 
 func buildTolerations(capability capability.Capability) []corev1.Toleration {
-	tolerations := append(capability.Properties().Tolerations, kubeobjects.TolerationForAmd()...)
+	tolerations := make([]corev1.Toleration, len(capability.Properties().Tolerations))
+	copy(tolerations, capability.Properties().Tolerations)
+	tolerations = append(tolerations, kubeobjects.TolerationForAmd()...)
 	return tolerations
 }
 
-func (statefulSetBuilder StatefulSetBuilder) buildBaseContainer() []corev1.Container {
+func (statefulSetBuilder Builder) buildBaseContainer() []corev1.Container {
 	container := corev1.Container{
 		Name:            consts.ActiveGateContainerName,
 		Image:           statefulSetBuilder.dynakube.ActiveGateImage(),
-		Resources:       statefulSetBuilder.capability.Properties().Resources,
+		Resources:       statefulSetBuilder.buildResources(),
 		Env:             statefulSetBuilder.buildCommonEnvs(),
 		ImagePullPolicy: corev1.PullAlways,
 		ReadinessProbe: &corev1.Probe{
@@ -159,14 +161,28 @@ func (statefulSetBuilder StatefulSetBuilder) buildBaseContainer() []corev1.Conta
 	return []corev1.Container{container}
 }
 
-func (statefulSetBuilder StatefulSetBuilder) buildCommonEnvs() []corev1.EnvVar {
-	deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(string(statefulSetBuilder.kubeUID), consts.DeploymentTypeActiveGate)
+func (statefulSetBuilder Builder) buildResources() corev1.ResourceRequirements {
+	if statefulSetBuilder.dynakube.IsSyntheticActiveGateEnabled() {
+		return modifiers.ActiveGateResourceRequirements
+	} else {
+		return statefulSetBuilder.capability.Properties().Resources
+	}
+}
 
+func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {
 	envs := []corev1.EnvVar{
 		{Name: consts.EnvDtCapabilities, Value: statefulSetBuilder.capability.ArgName()},
 		{Name: consts.EnvDtIdSeedNamespace, Value: statefulSetBuilder.dynakube.Namespace},
 		{Name: consts.EnvDtIdSeedClusterId, Value: string(statefulSetBuilder.kubeUID)},
-		{Name: consts.EnvDtDeploymentMetadata, Value: deploymentMetadata.AsString()},
+		{Name: deploymentmetadata.EnvDtDeploymentMetadata, ValueFrom: &corev1.EnvVarSource{
+			ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: deploymentmetadata.GetDeploymentMetadataConfigMapName(statefulSetBuilder.dynakube.Name),
+				},
+				Key:      deploymentmetadata.ActiveGateMetadataKey,
+				Optional: address.Of(false),
+			},
+		}},
 	}
 	envs = append(envs, statefulSetBuilder.capability.Properties().Env...)
 
@@ -176,6 +192,7 @@ func (statefulSetBuilder StatefulSetBuilder) buildCommonEnvs() []corev1.EnvVar {
 	if statefulSetBuilder.dynakube.Spec.NetworkZone != "" {
 		envs = append(envs, corev1.EnvVar{Name: consts.EnvDtNetworkZone, Value: statefulSetBuilder.dynakube.Spec.NetworkZone})
 	}
+
 	return envs
 }
 

@@ -52,16 +52,17 @@ func (statsd StatsdModifier) Enabled() bool {
 	return statsd.dynakube.IsStatsdActiveGateEnabled()
 }
 
-func (statsd StatsdModifier) Modify(sts *appsv1.StatefulSet) {
+func (statsd StatsdModifier) Modify(sts *appsv1.StatefulSet) error {
 	sts.Spec.Template.Spec.Containers = append(sts.Spec.Template.Spec.Containers, statsd.buildContainer())
 	sts.Spec.Template.Spec.Volumes = append(sts.Spec.Template.Spec.Volumes, statsd.getVolumes(sts.Spec.Template.Spec.Volumes)...)
 
 	baseContainer := kubeobjects.FindContainerInPodSpec(&sts.Spec.Template.Spec, consts.ActiveGateContainerName)
 	baseContainer.VolumeMounts = append(baseContainer.VolumeMounts, statsd.getActiveGateVolumeMounts(baseContainer.VolumeMounts)...)
 
+	return nil
 }
 
-func (statsd *StatsdModifier) getActiveGateVolumeMounts(presentMounts []corev1.VolumeMount) []corev1.VolumeMount {
+func (statsd StatsdModifier) getActiveGateVolumeMounts(presentMounts []corev1.VolumeMount) []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{{Name: dataSourceStatsdLogs, MountPath: extensionsLogsDir + "/statsd", ReadOnly: true}}
 	neededMount := corev1.VolumeMount{
 		ReadOnly:  false,
@@ -128,15 +129,7 @@ func (statsd StatsdModifier) buildContainer() corev1.Container {
 		SecurityContext: statsd.buildSecurityContext(),
 		Resources:       statsd.buildResourceRequirements(),
 	}
-	if statsd.dynakube.NeedsActiveGateServicePorts() {
-		container.Ports = []corev1.ContainerPort{
-			{
-				Name:          consts.StatsdIngestTargetPort,
-				ContainerPort: consts.StatsdIngestPort,
-				Protocol:      corev1.ProtocolUDP,
-			},
-		}
-	}
+
 	return container
 }
 
@@ -175,7 +168,7 @@ func (statsd StatsdModifier) buildCommand() []string {
 
 func (statsd StatsdModifier) buildPorts() []corev1.ContainerPort {
 	return []corev1.ContainerPort{
-		{Name: consts.StatsdIngestTargetPort, ContainerPort: consts.StatsdIngestPort},
+		{Name: consts.StatsdIngestTargetPort, ContainerPort: consts.StatsdIngestPort, Protocol: corev1.ProtocolUDP},
 		{Name: statsdProbesPortName, ContainerPort: statsdProbesPort},
 	}
 }

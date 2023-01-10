@@ -84,19 +84,19 @@ type Client interface {
 // Known OS values.
 const (
 	OsUnix = "unix"
-	//Commented for linter, left for further reference
-	//OsWindows = "windows"
-	//OsAix     = "aix"
-	//OsSolaris = "solaris"
+	// Commented for linter, left for further reference
+	// OsWindows = "windows"
+	// OsAix     = "aix"
+	// OsSolaris = "solaris"
 )
 
 // Known installer types.
 const (
 	InstallerTypeDefault = "default"
-	//Commented for linter, left for further reference
-	//InstallerTypeUnattended = "default-unattended"
+	// Commented for linter, left for further reference
+	// InstallerTypeUnattended = "default-unattended"
 	InstallerTypePaaS = "paas"
-	//InstallerTypePaasSh     = "paas-sh"
+	// InstallerTypePaasSh     = "paas-sh"
 )
 
 // Known token scopes
@@ -156,7 +156,7 @@ func SkipCertificateValidation(skip bool) Option {
 		if skip {
 			t := c.httpClient.Transport.(*http.Transport)
 			if t.TLSClientConfig == nil {
-				t.TLSClientConfig = &tls.Config{}
+				t.TLSClientConfig = &tls.Config{} //nolint:gosec // fix is expected to be delivered soon
 			}
 			t.TLSClientConfig.InsecureSkipVerify = true
 		}
@@ -184,7 +184,7 @@ func Certs(certs []byte) Option {
 
 		t := c.httpClient.Transport.(*http.Transport)
 		if t.TLSClientConfig == nil {
-			t.TLSClientConfig = &tls.Config{}
+			t.TLSClientConfig = &tls.Config{} //nolint:gosec // fix is expected to be delivered soon
 		}
 		t.TLSClientConfig.RootCAs = rootCAs
 	}

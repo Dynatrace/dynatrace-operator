@@ -33,15 +33,15 @@ func (props *Properties) fillEmptyWithDefaults() {
 	}
 }
 
-type UrlInstaller struct {
+type Installer struct {
 	fs        afero.Fs
 	dtc       dtclient.Client
 	extractor zip.Extractor
 	props     *Properties
 }
 
-func NewUrlInstaller(fs afero.Fs, dtc dtclient.Client, props *Properties) *UrlInstaller {
-	return &UrlInstaller{
+func NewInstaller(fs afero.Fs, dtc dtclient.Client, props *Properties) *Installer {
+	return &Installer{
 		fs:        fs,
 		dtc:       dtc,
 		extractor: zip.NewOneAgentExtractor(fs, props.PathResolver),
@@ -49,14 +49,14 @@ func NewUrlInstaller(fs afero.Fs, dtc dtclient.Client, props *Properties) *UrlIn
 	}
 }
 
-func (installer UrlInstaller) InstallAgent(targetDir string) (bool, error) {
+func (installer Installer) InstallAgent(targetDir string) (bool, error) {
 	if installer.isAlreadyDownloaded(targetDir) {
 		log.Info("agent already installed", "target dir", targetDir)
 		return false, nil
 	}
 	log.Info("installing agent", "target dir", targetDir)
 	installer.props.fillEmptyWithDefaults()
-	if err := installer.installAgentFromUrl(targetDir); err != nil {
+	if err := installer.installAgent(targetDir); err != nil {
 		_ = installer.fs.RemoveAll(targetDir)
 		log.Info("failed to install agent", "targetDir", targetDir)
 		return false, err
@@ -70,11 +70,11 @@ func (installer UrlInstaller) InstallAgent(targetDir string) (bool, error) {
 	return true, nil
 }
 
-func (installer UrlInstaller) UpdateProcessModuleConfig(targetDir string, processModuleConfig *dtclient.ProcessModuleConfig) error {
+func (installer Installer) UpdateProcessModuleConfig(targetDir string, processModuleConfig *dtclient.ProcessModuleConfig) error {
 	return processmoduleconfig.UpdateProcessModuleConfigInPlace(installer.fs, targetDir, processModuleConfig)
 }
 
-func (installer UrlInstaller) installAgentFromUrl(targetDir string) error {
+func (installer Installer) installAgent(targetDir string) error {
 	fs := installer.fs
 	path := ""
 	if installer.isInitContainerMode() {
@@ -101,14 +101,14 @@ func (installer UrlInstaller) installAgentFromUrl(targetDir string) error {
 	return installer.unpackOneAgentZip(targetDir, tmpFile)
 }
 
-func (installer UrlInstaller) isInitContainerMode() bool {
+func (installer Installer) isInitContainerMode() bool {
 	if installer.props != nil {
 		return installer.props.PathResolver.RootDir == config.AgentBinDirMount
 	}
 	return false
 }
 
-func (installer UrlInstaller) isAlreadyDownloaded(targetDir string) bool {
+func (installer Installer) isAlreadyDownloaded(targetDir string) bool {
 	if config.AgentBinDirMount == targetDir {
 		return false
 	}

@@ -52,6 +52,7 @@ const (
 	AnnotationFeatureUseActiveGateImageForStatsd = AnnotationFeaturePrefix + "use-activegate-image-for-statsd"
 	AnnotationFeatureCustomEecImage              = AnnotationFeaturePrefix + "custom-eec-image"
 	AnnotationFeatureCustomStatsdImage           = AnnotationFeaturePrefix + "custom-statsd-image"
+	AnnotationFeatureCustomSyntheticImage        = AnnotationFeaturePrefix + "custom-synthetic-image"
 
 	// dtClient
 
@@ -71,7 +72,6 @@ const (
 	AnnotationFeatureOneAgentIgnoreProxy            = AnnotationFeaturePrefix + "oneagent-ignore-proxy"
 	AnnotationFeatureOneAgentInitialConnectRetry    = AnnotationFeaturePrefix + "oneagent-initial-connect-retry-ms"
 	AnnotationFeatureRunOneAgentContainerPrivileged = AnnotationFeaturePrefix + "oneagent-privileged"
-	AnnotationFeatureOneAgentImmutableImage         = AnnotationFeaturePrefix + "oneagent-immutable-image"
 
 	// injection (webhook)
 
@@ -90,6 +90,16 @@ const (
 
 	// CSI
 	AnnotationFeatureMaxFailedCsiMountAttempts = AnnotationFeaturePrefix + "max-csi-mount-attempts"
+
+	falsePhrase = "false"
+	truePhrase  = "true"
+
+	// synthetic node type
+	AnnotationFeatureSyntheticNodeType = AnnotationFeaturePrefix + "synthetic-node-type"
+
+	SyntheticNodeXs = "XS"
+	SyntheticNodeS  = "S"
+	SyntheticNodeM  = "M"
 )
 
 const (
@@ -101,8 +111,8 @@ var (
 )
 
 func (dk *DynaKube) getDisableFlagWithDeprecatedAnnotation(annotation string, deprecatedAnnotation string) bool {
-	return dk.getFeatureFlagRaw(annotation) == "false" ||
-		dk.getFeatureFlagRaw(deprecatedAnnotation) == "true" && dk.getFeatureFlagRaw(annotation) == ""
+	return dk.getFeatureFlagRaw(annotation) == falsePhrase ||
+		dk.getFeatureFlagRaw(deprecatedAnnotation) == truePhrase && dk.getFeatureFlagRaw(annotation) == ""
 }
 
 // FeatureDisableActiveGateUpdates is a feature flag to disable ActiveGate updates.
@@ -139,7 +149,7 @@ func (dk *DynaKube) FeatureDisableWebhookReinvocationPolicy() bool {
 // FeatureIgnoreUnknownState is a feature flag that makes the operator inject into applications even when the dynakube is in an UNKNOWN state,
 // this may cause extra host to appear in the tenant for each process.
 func (dk *DynaKube) FeatureIgnoreUnknownState() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureIgnoreUnknownState) == "true"
+	return dk.getFeatureFlagRaw(AnnotationFeatureIgnoreUnknownState) == truePhrase
 }
 
 // FeatureIgnoredNamespaces is a feature flag for ignoring certain namespaces.
@@ -170,7 +180,7 @@ func (dk *DynaKube) getDefaultIgnoredNamespaces() []string {
 // FeatureAutomaticKubernetesApiMonitoring is a feature flag to enable automatic kubernetes api monitoring,
 // which ensures that settings for this kubernetes cluster exist in Dynatrace
 func (dk *DynaKube) FeatureAutomaticKubernetesApiMonitoring() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureAutomaticK8sApiMonitoring) == "true"
+	return dk.getFeatureFlagRaw(AnnotationFeatureAutomaticK8sApiMonitoring) == truePhrase
 }
 
 // FeatureAutomaticKubernetesApiMonitoringClusterName is a feature flag to set custom cluster name for automatic-kubernetes-api-monitoring
@@ -186,13 +196,13 @@ func (dk *DynaKube) FeatureDisableMetadataEnrichment() bool {
 // FeatureAutomaticInjection controls OneAgent is injected to pods in selected namespaces automatically ("automatic-injection=true" or flag not set)
 // or if pods need to be opted-in one by one ("automatic-injection=false")
 func (dk *DynaKube) FeatureAutomaticInjection() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureAutomaticInjection) != "false"
+	return dk.getFeatureFlagRaw(AnnotationFeatureAutomaticInjection) != falsePhrase
 }
 
 // FeatureUseActiveGateImageForStatsd is a feature flag that makes the operator use ActiveGate image when initializing Extension Controller and Statsd containers
 // (using special predefined entry points).
 func (dk *DynaKube) FeatureUseActiveGateImageForStatsd() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureUseActiveGateImageForStatsd) == "true"
+	return dk.getFeatureFlagRaw(AnnotationFeatureUseActiveGateImageForStatsd) == truePhrase
 }
 
 // FeatureCustomEecImage is a feature flag to specify custom Extension Controller Docker image path
@@ -203,6 +213,10 @@ func (dk *DynaKube) FeatureCustomEecImage() string {
 // FeatureCustomStatsdImage is a feature flag to specify custom StatsD Docker image path
 func (dk *DynaKube) FeatureCustomStatsdImage() string {
 	return dk.getFeatureFlagRaw(AnnotationFeatureCustomStatsdImage)
+}
+
+func (dk *DynaKube) FeatureCustomSyntheticImage() string {
+	return dk.getFeatureFlagRaw(AnnotationFeatureCustomSyntheticImage)
 }
 
 // FeatureDisableReadOnlyOneAgent is a feature flag to specify if the operator needs to deploy the oneagents in a readonly mode,
@@ -222,37 +236,37 @@ func (dk *DynaKube) FeatureDisableActivegateRawImage() bool {
 
 // FeatureEnableMultipleOsAgentsOnNode is a feature flag to enable multiple osagents running on the same host
 func (dk *DynaKube) FeatureEnableMultipleOsAgentsOnNode() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureMultipleOsAgentsOnNode) == "true"
+	return dk.getFeatureFlagRaw(AnnotationFeatureMultipleOsAgentsOnNode) == truePhrase
 }
 
 // FeatureActiveGateReadOnlyFilesystem is a feature flag to enable RO mounted filesystem in ActiveGate container
 func (dk *DynaKube) FeatureActiveGateReadOnlyFilesystem() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateReadOnlyFilesystem) == "true"
+	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateReadOnlyFilesystem) == truePhrase
 }
 
 // FeatureActiveGateAppArmor is a feature flag to enable AppArmor in ActiveGate container
 func (dk *DynaKube) FeatureActiveGateAppArmor() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateAppArmor) == "true"
+	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateAppArmor) == truePhrase
 }
 
 // FeatureOneAgentIgnoreProxy is a feature flag to ignore the proxy for oneAgents when set in CR
 func (dk *DynaKube) FeatureOneAgentIgnoreProxy() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureOneAgentIgnoreProxy) == "true"
+	return dk.getFeatureFlagRaw(AnnotationFeatureOneAgentIgnoreProxy) == truePhrase
 }
 
 // FeatureActiveGateIgnoreProxy is a feature flag to ignore the proxy for ActiveGate when set in CR
 func (dk *DynaKube) FeatureActiveGateIgnoreProxy() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateIgnoreProxy) == "true"
+	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateIgnoreProxy) == truePhrase
 }
 
 // FeatureActiveGateAuthToken is a feature flag to enable authToken usage in the activeGate
 func (dk *DynaKube) FeatureActiveGateAuthToken() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateAuthToken) != "false"
+	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateAuthToken) != falsePhrase
 }
 
 // FeatureLabelVersionDetection is a feature flag to enable injecting additional environment variables based on user labels
 func (dk *DynaKube) FeatureLabelVersionDetection() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureLabelVersionDetection) == "true"
+	return dk.getFeatureFlagRaw(AnnotationFeatureLabelVersionDetection) == truePhrase
 }
 
 // FeatureAgentInitialConnectRetry is a feature flag to configure startup delay of standalone agents
@@ -272,7 +286,7 @@ func (dk *DynaKube) FeatureAgentInitialConnectRetry() int {
 }
 
 func (dk *DynaKube) FeatureOneAgentPrivileged() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureRunOneAgentContainerPrivileged) == "true"
+	return dk.getFeatureFlagRaw(AnnotationFeatureRunOneAgentContainerPrivileged) == truePhrase
 }
 
 func (dk *DynaKube) getFeatureFlagRaw(annotation string) string {
@@ -285,11 +299,6 @@ func (dk *DynaKube) getFeatureFlagRaw(annotation string) string {
 		return raw
 	}
 	return ""
-}
-
-// FeatureOneAgentImmutableImage is a feature flag to treat the OneAgent image as immutable
-func (dk *DynaKube) FeatureOneAgentImmutableImage() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureOneAgentImmutableImage) == "true"
 }
 
 func (dk *DynaKube) FeatureMaxFailedCsiMountAttempts() int {
@@ -306,4 +315,12 @@ func (dk *DynaKube) FeatureMaxFailedCsiMountAttempts() int {
 	}
 
 	return maxCsiMountAttempts
+}
+
+func (dk *DynaKube) FeatureSyntheticNodeType() string {
+	node, ok := dk.Annotations[AnnotationFeatureSyntheticNodeType]
+	if !ok {
+		return SyntheticNodeS
+	}
+	return node
 }

@@ -1,4 +1,4 @@
-FROM golang:1.19.2 AS operator-build
+FROM golang:1.19.4 AS operator-build
 
 ARG GO_LINKER_ARGS
 
@@ -12,11 +12,11 @@ RUN CGO_ENABLED=1 CGO_CFLAGS="-O2 -Wno-return-local-addr" \
     go build -tags "containers_image_openpgp" -ldflags="${GO_LINKER_ARGS}" \
     -o ./build/_output/bin/dynatrace-operator ./src/cmd/
 
-FROM registry.access.redhat.com/ubi9-minimal:9.0.0 as dependency-src
+FROM registry.access.redhat.com/ubi9-minimal:9.1.0 as dependency-src
 
 RUN microdnf install -y util-linux tar --nodocs
 
-FROM registry.access.redhat.com/ubi9-micro:9.0.0
+FROM registry.access.redhat.com/ubi9-micro:9.1.0
 
 # operator binary
 COPY --from=operator-build /app/build/_output/bin /usr/local/bin
@@ -31,9 +31,9 @@ COPY --from=operator-build /usr/lib/*/libudev.so.* /usr/lib/
 # fix permission and add .so files to cache
 RUN chmod +x /usr/lib/* && ldconfig
 
-# csi registrar/livenessprobe binaries
-COPY --from=k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.5.1 /csi-node-driver-registrar /usr/local/bin
-COPY --from=k8s.gcr.io/sig-storage/livenessprobe:v2.7.0 /livenessprobe /usr/local/bin
+# csi binaries
+COPY --from=registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.7.0 /csi-node-driver-registrar /usr/local/bin
+COPY --from=registry.k8s.io/sig-storage/livenessprobe:v2.9.0 /livenessprobe /usr/local/bin
 
 # csi dependencies
 COPY --from=dependency-src /bin/mount /bin/umount /bin/tar /bin/

@@ -32,17 +32,18 @@ type SecretConfig struct {
 }
 
 func (secret SecretConfig) logContent() {
+	const asterisks = "***"
 	if secret.ApiToken != "" {
-		secret.ApiToken = "***"
+		secret.ApiToken = asterisks
 	}
 	if secret.PaasToken != "" {
-		secret.PaasToken = "***"
+		secret.PaasToken = asterisks
 	}
 	if secret.TrustedCAs != "" {
-		secret.TrustedCAs = "***"
+		secret.TrustedCAs = asterisks
 	}
 	if secret.TlsCert != "" {
-		secret.TlsCert = "***"
+		secret.TlsCert = asterisks
 	}
 	log.Info("contents of secret config", "content", secret)
 }

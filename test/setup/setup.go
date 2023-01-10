@@ -1,3 +1,5 @@
+//go:build e2e
+
 package setup
 
 import (
@@ -11,13 +13,25 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func InstallAndDeploy(builder *features.FeatureBuilder, secretConfig secrets.Secret, deploymentPath string) {
-	builder.Setup(secrets.ApplyDefault(secretConfig))
-	builder.Setup(operator.InstallAllForKubernetes())
+func DeploySampleApps(builder *features.FeatureBuilder, deploymentPath string) {
 	builder.Setup(manifests.InstallFromFile(deploymentPath))
 }
 
-func AssessDeployment(builder *features.FeatureBuilder) {
+func InstallDynatraceFromSource(builder *features.FeatureBuilder, secretConfig *secrets.Secret) {
+	if secretConfig != nil {
+		builder.Setup(secrets.ApplyDefault(*secretConfig))
+	}
+	builder.Setup(operator.InstallFromSource(true))
+}
+
+func InstallDynatraceFromGithub(builder *features.FeatureBuilder, secretConfig *secrets.Secret, releaseTag string) {
+	if secretConfig != nil {
+		builder.Setup(secrets.ApplyDefault(*secretConfig))
+	}
+	builder.Setup(operator.InstallFromGithub(releaseTag, true))
+}
+
+func AssessOperatorDeployment(builder *features.FeatureBuilder) {
 	builder.Assess("operator started", operator.WaitForDeployment())
 	builder.Assess("webhook started", webhook.WaitForDeployment())
 	builder.Assess("csi driver started", csi.WaitForDaemonset())

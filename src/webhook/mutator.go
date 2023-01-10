@@ -4,6 +4,7 @@ import (
 	"context"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -31,6 +32,13 @@ type BaseRequest struct {
 	Namespace corev1.Namespace
 }
 
+func (req BaseRequest) PodName() string {
+	if req.Pod == nil {
+		return ""
+	}
+	return kubeobjects.GetPodName(*req.Pod)
+}
+
 // MutationRequest contains all the information needed to mutate a pod
 // It is meant to be passed into each mutator, so that they can mutate the elements in the way they need to,
 // and after passing it in to all the mutator the request will have the final state which can be used to mutate the pod.
@@ -55,7 +63,7 @@ func newBaseRequest(pod *corev1.Pod, namespace corev1.Namespace, dynakube dynatr
 	}
 }
 
-func NewMutationRequest(ctx context.Context, namespace corev1.Namespace, installContainer *corev1.Container, pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) *MutationRequest {
+func NewMutationRequest(ctx context.Context, namespace corev1.Namespace, installContainer *corev1.Container, pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) *MutationRequest { //nolint:revive // argument-limit doesn't apply to constructors
 	return &MutationRequest{
 		BaseRequest:      newBaseRequest(pod, namespace, dynakube),
 		Context:          ctx,

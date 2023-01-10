@@ -124,7 +124,7 @@ func TestMutate(t *testing.T) {
 		assert.Len(t, request.Pod.Annotations, initialAnnotationsLen+1)
 		assert.Equal(t, initialInitContainers, request.Pod.Spec.InitContainers)
 
-		assert.Len(t, request.InstallContainer.Env, expectedBaseInitContainerEnvCount+(initialContainersLen*2))
+		assert.Len(t, request.InstallContainer.Env, 1+expectedBaseInitContainerEnvCount+(initialContainersLen*2))
 		assert.Len(t, request.InstallContainer.VolumeMounts, 3)
 	})
 	t.Run("everything turned on, should mutate the pod and init container in the request", func(t *testing.T) {
@@ -148,7 +148,7 @@ func TestMutate(t *testing.T) {
 		assert.Len(t, request.Pod.Annotations, initialAnnotationsLen+1)
 		assert.Equal(t, initialInitContainers, request.Pod.Spec.InitContainers)
 
-		assert.Len(t, request.InstallContainer.Env, expectedBaseInitContainerEnvCount+(initialContainersLen*2))
+		assert.Len(t, request.InstallContainer.Env, 1+expectedBaseInitContainerEnvCount+(initialContainersLen*2))
 		assert.Len(t, request.InstallContainer.VolumeMounts, 3)
 	})
 }
@@ -172,7 +172,7 @@ func TestReinvoke(t *testing.T) {
 
 		assert.Len(t, request.Pod.Spec.Containers[0].Env, initialNumberOfContainerEnvsLen+2)
 		assert.Len(t, request.Pod.Spec.Containers[0].VolumeMounts, initialContainerVolumeMountsLen+3)
-		assert.Len(t, request.Pod.Spec.InitContainers[1].Env, initialContainersLen*2)
+		assert.Len(t, request.Pod.Spec.InitContainers[1].Env, 1+initialContainersLen*2)
 	})
 	t.Run("everything turned on, should only mutate the containers in the pod", func(t *testing.T) {
 		mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
@@ -192,7 +192,7 @@ func TestReinvoke(t *testing.T) {
 
 		assert.Len(t, request.Pod.Spec.Containers[0].Env, initialNumberOfContainerEnvsLen+6)
 		assert.Len(t, request.Pod.Spec.Containers[0].VolumeMounts, initialContainerVolumeMountsLen+5)
-		assert.Len(t, request.Pod.Spec.InitContainers[1].Env, initialContainersLen*2)
+		assert.Len(t, request.Pod.Spec.InitContainers[1].Env, 1+initialContainersLen*2)
 	})
 	t.Run("no change ==> no update", func(t *testing.T) {
 		mutator := createTestPodMutator([]client.Object{getTestInitSecret()})

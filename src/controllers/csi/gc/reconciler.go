@@ -2,6 +2,8 @@ package csigc
 
 import (
 	"context"
+	"os"
+	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
@@ -35,6 +37,8 @@ type CSIGarbageCollector struct {
 	fs        afero.Fs
 	db        metadata.Access
 	path      metadata.PathResolver
+
+	maxUnmountedVolumeAge time.Duration
 }
 
 var _ reconcile.Reconciler = (*CSIGarbageCollector)(nil)
@@ -42,10 +46,11 @@ var _ reconcile.Reconciler = (*CSIGarbageCollector)(nil)
 // NewCSIGarbageCollector returns a new CSIGarbageCollector
 func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db metadata.Access) *CSIGarbageCollector {
 	return &CSIGarbageCollector{
-		apiReader: apiReader,
-		fs:        afero.NewOsFs(),
-		db:        db,
-		path:      metadata.PathResolver{RootDir: opts.RootDir},
+		apiReader:             apiReader,
+		fs:                    afero.NewOsFs(),
+		db:                    db,
+		path:                  metadata.PathResolver{RootDir: opts.RootDir},
+		maxUnmountedVolumeAge: determineMaxUnmountedVolumeAge(os.Getenv(maxUnmountedCsiVolumeAgeEnv)),
 	}
 }
 
@@ -61,6 +66,11 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 		return defaultReconcileResult, nil
 	}
 
+	if !dynakube.NeedAppInjection() {
+		log.Info("app injection not enabled, skip garbage collection", "dynakube", dynakube.Name)
+		return defaultReconcileResult, nil
+	}
+
 	dynakubeList, err := getAllDynakubes(ctx, gc.apiReader, dynakube.Namespace)
 	if err != nil {
 		return defaultReconcileResult, err
@@ -71,12 +81,9 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 		return defaultReconcileResult, nil
 	}
 
-	gcInfo, err := collectGCInfo(*dynakube, dynakubeList)
-	if err != nil || gcInfo == nil {
+	gcInfo := collectGCInfo(*dynakube, dynakubeList)
+	if gcInfo == nil {
 		return defaultReconcileResult, nil
-	}
-	if err := ctx.Err(); err != nil {
-		return defaultReconcileResult, err
 	}
 
 	log.Info("running binary garbage collection")
@@ -87,7 +94,7 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 	}
 
 	log.Info("running log garbage collection")
-	gc.runLogGarbageCollection(ctx, gcInfo.tenantUUID)
+	gc.runUnmountedVolumeGarbageCollection(gcInfo.tenantUUID)
 
 	if err := ctx.Err(); err != nil {
 		return defaultReconcileResult, err
@@ -116,30 +123,26 @@ func getDynakubeFromRequest(ctx context.Context, apiReader client.Reader, reques
 	return &dynakube, nil
 }
 
-func collectGCInfo(dynakube dynatracev1beta1.DynaKube, dynakubeList *dynatracev1beta1.DynaKubeList) (*garbageCollectionInfo, error) {
-	tenantUUID, err := dynakube.TenantUUID()
+func collectGCInfo(dynakube dynatracev1beta1.DynaKube, dynakubeList *dynatracev1beta1.DynaKubeList) *garbageCollectionInfo {
+	tenantUUID, err := dynakube.TenantUUIDFromApiUrl()
 	if err != nil {
 		log.Info("failed to get tenantUUID of DynaKube, checking later")
-		return nil, nil
+		return nil
 	}
 
 	latestAgentVersion := dynakube.Status.LatestAgentVersionUnixPaas
 	if latestAgentVersion == "" {
 		log.Info("no latest agent version found in dynakube, checking later")
-		return nil, nil
+		return nil
 	}
 
-	pinnedVersions, err := getAllPinnedVersionsForTenantUUID(dynakubeList, tenantUUID)
-	if err != nil {
-		log.Info("failed to determine pinned agent versions")
-		return nil, err
-	}
+	pinnedVersions := getAllPinnedVersionsForTenantUUID(dynakubeList, tenantUUID)
 
 	return &garbageCollectionInfo{
 		tenantUUID:         tenantUUID,
 		latestAgentVersion: latestAgentVersion,
 		pinnedVersions:     pinnedVersions,
-	}, nil
+	}
 }
 
 func isSafeToGC(ctx context.Context, access metadata.Access, dynakubeList *dynatracev1beta1.DynaKubeList) bool {
@@ -173,10 +176,10 @@ func isUpgrading(dkMetadata *metadata.Dynakube, filteredDynakubes map[string]dyn
 // A pinned version is either:
 // - the image tag or digest set in the custom resource (this doesn't matter in context of the GC)
 // - the version set in the custom resource if applicationMonitoring is used
-func getAllPinnedVersionsForTenantUUID(dynakubeList *dynatracev1beta1.DynaKubeList, tenantUUID string) (pinnedVersionSet, error) {
+func getAllPinnedVersionsForTenantUUID(dynakubeList *dynatracev1beta1.DynaKubeList, tenantUUID string) pinnedVersionSet {
 	pinnedVersions := make(pinnedVersionSet)
 	for _, dynakube := range dynakubeList.Items {
-		uuid, err := dynakube.TenantUUID()
+		uuid, err := dynakube.TenantUUIDFromApiUrl()
 		if err != nil {
 			log.Error(err, "failed to get tenantUUID of DynaKube")
 			continue
@@ -189,7 +192,7 @@ func getAllPinnedVersionsForTenantUUID(dynakubeList *dynatracev1beta1.DynaKubeLi
 			pinnedVersions[codeModuleVersion] = true
 		}
 	}
-	return pinnedVersions, nil
+	return pinnedVersions
 }
 
 func getAllDynakubes(ctx context.Context, apiReader client.Reader, namespace string) (*dynatracev1beta1.DynaKubeList, error) {

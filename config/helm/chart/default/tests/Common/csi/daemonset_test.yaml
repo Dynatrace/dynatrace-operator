@@ -33,6 +33,18 @@ tests:
             key: ToBeDeletedByClusterAutoscaler
             operator: Exists
 
+  - it: should set the env maxUnmountedVolumeAge
+    set:
+      platform: kubernetes
+      csidriver.enabled: true
+      csidriver.maxUnmountedVolumeAge: 1h
+    asserts:
+    - equal:
+        path: spec.template.spec.containers[1].env[1] #provisioner
+        value:
+          name: MAX_UNMOUNTED_VOLUME_AGE
+          value: 1h
+
   - it: should have nodeSelectors if set
     set:
       platform: kubernetes

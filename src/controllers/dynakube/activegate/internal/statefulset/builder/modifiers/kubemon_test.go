@@ -48,7 +48,26 @@ func TestKubernetesMonitoringModify(t *testing.T) {
 		expectedIniContainers := mod.getInitContainers()
 		expectedVolumeMounts := mod.getVolumeMounts()
 
-		sts := builder.AddModifier(mod).Build()
+		sts, _ := builder.AddModifier(mod).Build()
+
+		require.NotEmpty(t, sts)
+		container := sts.Spec.Template.Spec.Containers[0]
+		isSubset(t, expectedVolumes, sts.Spec.Template.Spec.Volumes)
+		isSubset(t, expectedVolumeMounts, container.VolumeMounts)
+		isSubset(t, expectedIniContainers, sts.Spec.Template.Spec.InitContainers)
+	})
+	t.Run("successfully modified with readonly feature flag", func(t *testing.T) {
+		dynakube := getBaseDynakube()
+		setKubernetesMonitoringUsage(&dynakube, true)
+		setReadOnlyUsage(&dynakube, true)
+		multiCapability := capability.NewMultiCapability(&dynakube)
+		mod := NewKubernetesMonitoringModifier(dynakube, multiCapability)
+		builder := createBuilderForTesting()
+		expectedVolumes := mod.getVolumes()
+		expectedIniContainers := mod.getInitContainers()
+		expectedVolumeMounts := mod.getVolumeMounts()
+
+		sts, _ := builder.AddModifier(mod).Build()
 
 		require.NotEmpty(t, sts)
 		container := sts.Spec.Template.Spec.Containers[0]

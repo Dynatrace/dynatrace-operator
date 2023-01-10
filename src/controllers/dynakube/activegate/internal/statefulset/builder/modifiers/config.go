@@ -31,6 +31,7 @@ var (
 func GenerateAllModifiers(dynakube dynatracev1beta1.DynaKube, capability capability.Capability) []builder.Modifier {
 	return []builder.Modifier{
 		NewKubernetesMonitoringModifier(dynakube, capability),
+		NewStatsdModifier(dynakube, capability),
 		NewServicePortModifier(dynakube, capability),
 		NewAuthTokenModifier(dynakube),
 		NewCertificatesModifier(dynakube),
@@ -39,6 +40,6 @@ func GenerateAllModifiers(dynakube dynatracev1beta1.DynaKube, capability capabil
 		NewProxyModifier(dynakube),
 		NewRawImageModifier(dynakube),
 		NewReadOnlyModifier(dynakube),
-		NewStatsdModifier(dynakube, capability),
+		newSyntheticModifier(dynakube),
 	}
 }

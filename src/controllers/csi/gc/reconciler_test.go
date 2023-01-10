@@ -7,10 +7,39 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
+	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
+
+func TestReconcile(t *testing.T) {
+	tenantUUID := "testTenant"
+	apiUrl := fmt.Sprintf("https://%s.dev.dynatracelabs.com/api", tenantUUID)
+	namespace := "test-namespace"
+	t.Run(`no latest version in status`, func(t *testing.T) {
+		dynakube := dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: namespace,
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: apiUrl,
+			},
+		}
+		gc := CSIGarbageCollector{
+			apiReader: fake.NewClient(&dynakube),
+			fs:        afero.NewMemMapFs(),
+			db:        metadata.FakeMemoryDB(),
+		}
+		result, err := gc.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakube.Name}})
+
+		require.NoError(t, err)
+		assert.Equal(t, result, reconcile.Result{})
+	})
+}
 
 func TestCollectGCInfo(t *testing.T) {
 	tenantUUID := "testTenant"
@@ -37,8 +66,7 @@ func TestCollectGCInfo(t *testing.T) {
 			},
 		}
 
-		gcInfo, err := collectGCInfo(dynakube, &dkList)
-		require.NoError(t, err)
+		gcInfo := collectGCInfo(dynakube, &dkList)
 		assert.Equal(t, tenantUUID, gcInfo.tenantUUID)
 		assert.Equal(t, latestVersion, gcInfo.latestAgentVersion)
 		assert.Empty(t, gcInfo.pinnedVersions)
@@ -68,8 +96,7 @@ func TestCollectGCInfo(t *testing.T) {
 			},
 		}
 
-		gcInfo, err := collectGCInfo(dynakube, &dkList)
-		require.NoError(t, err)
+		gcInfo := collectGCInfo(dynakube, &dkList)
 		assert.Len(t, gcInfo.pinnedVersions, 1)
 	})
 	t.Run(`multi pinned version`, func(t *testing.T) {
@@ -116,8 +143,7 @@ func TestCollectGCInfo(t *testing.T) {
 			},
 		}
 
-		gcInfo, err := collectGCInfo(cloudNativeDynakube, &dkList)
-		require.NoError(t, err)
+		gcInfo := collectGCInfo(cloudNativeDynakube, &dkList)
 		assert.Len(t, gcInfo.pinnedVersions, 2)
 	})
 }

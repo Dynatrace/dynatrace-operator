@@ -32,7 +32,7 @@ func NewRunner(fs afero.Fs) (*Runner, error) {
 
 	var secretConfig *SecretConfig
 	var client dtclient.Client
-	var oneAgentInstaller *url.UrlInstaller
+	var oneAgentInstaller *url.Installer
 	if env.OneAgentInjected {
 		secretConfig, err = newSecretConfigViaFs(fs)
 		if err != nil {
@@ -47,7 +47,7 @@ func NewRunner(fs afero.Fs) (*Runner, error) {
 		if env.InstallVersion != "" {
 			targetVersion = env.InstallVersion
 		}
-		oneAgentInstaller = url.NewUrlInstaller(
+		oneAgentInstaller = url.NewInstaller(
 			fs,
 			client,
 			&url.Properties{

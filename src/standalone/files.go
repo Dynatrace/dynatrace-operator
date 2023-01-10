@@ -94,7 +94,6 @@ func (runner *Runner) createJsonEnrichmentFile() error {
 	jsonPath := filepath.Join(config.EnrichmentMountPath, fmt.Sprintf(config.EnrichmentFilenameTemplate, "json"))
 
 	return errors.WithStack(runner.createConfFile(jsonPath, jsonContent))
-
 }
 
 func (runner *Runner) createPropsEnrichmentFile() error {

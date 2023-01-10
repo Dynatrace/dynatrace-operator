@@ -30,7 +30,6 @@ func conflictingNamespaceSelector(dv *dynakubeValidator, dynakube *dynatracev1be
 			log.Info("requested dynakube has conflicting namespaceSelector", "name", dynakube.Name, "namespace", dynakube.Namespace)
 			return errorConflictingNamespaceSelector
 		}
-
 	}
 	return ""
 }

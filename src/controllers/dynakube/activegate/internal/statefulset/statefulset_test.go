@@ -1,11 +1,14 @@
 package statefulset
 
 import (
+	"encoding/json"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder/modifiers"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -202,7 +205,6 @@ func TestAddTemplateSpec(t *testing.T) {
 		spec := sts.Spec.Template.Spec
 
 		assert.Equal(t, testNodeSelector, spec.NodeSelector)
-
 	})
 	t.Run("set tolerations", func(t *testing.T) {
 		dynakube := getTestDynakube()
@@ -304,9 +306,11 @@ func TestBuildCommonEnvs(t *testing.T) {
 		idEnv := kubeobjects.FindEnvVar(envs, consts.EnvDtIdSeedClusterId)
 		require.NotNil(t, idEnv)
 		assert.Equal(t, testKubeUID, idEnv.Value)
-		metadataEnv := kubeobjects.FindEnvVar(envs, consts.EnvDtDeploymentMetadata)
+		metadataEnv := kubeobjects.FindEnvVar(envs, deploymentmetadata.EnvDtDeploymentMetadata)
 		require.NotNil(t, metadataEnv)
-		assert.NotEmpty(t, metadataEnv.Value)
+		assert.NotEmpty(t, metadataEnv.ValueFrom.ConfigMapKeyRef)
+		assert.Equal(t, deploymentmetadata.ActiveGateMetadataKey, metadataEnv.ValueFrom.ConfigMapKeyRef.Key)
+		assert.Equal(t, deploymentmetadata.GetDeploymentMetadataConfigMapName(dynakube.Name), metadataEnv.ValueFrom.ConfigMapKeyRef.Name)
 	})
 
 	t.Run("adds extra envs", func(t *testing.T) {
@@ -361,5 +365,56 @@ func TestBuildCommonEnvs(t *testing.T) {
 		zoneEnv := kubeobjects.FindEnvVar(envs, consts.EnvDtNetworkZone)
 		require.NotNil(t, zoneEnv)
 		assert.Equal(t, dynakube.Spec.NetworkZone, zoneEnv.Value)
+	})
+
+	t.Run("syn-capability", func(t *testing.T) {
+		dynakube := getTestDynakube()
+		dynakube.Spec.ActiveGate.Capabilities = []dynatracev1beta1.CapabilityDisplayName{
+			dynatracev1beta1.SyntheticCapability.DisplayName,
+		}
+		builder := NewStatefulSetBuilder(
+			testKubeUID,
+			testConfigHash,
+			dynakube,
+			capability.NewMultiCapability(&dynakube))
+
+		assert.Equal(
+			t,
+			dynatracev1beta1.SyntheticCapability.ArgumentName,
+			kubeobjects.FindEnvVar(builder.buildCommonEnvs(), consts.EnvDtCapabilities).
+				Value,
+			"declared env: %v",
+			consts.EnvDtCapabilities)
+
+		assert.Equal(
+			t,
+			modifiers.ActiveGateResourceRequirements,
+			builder.buildResources(),
+			"declared resource requirements for ActiveGate")
+
+		sts, _ := builder.CreateStatefulSet(
+			modifiers.GenerateAllModifiers(
+				dynakube,
+				capability.NewMultiCapability(&dynakube)))
+		jsonized, _ := json.Marshal(sts)
+		t.Logf("manifest: %s", jsonized)
+
+		volumes := []string{
+			modifiers.ChromiumCacheMountName,
+			modifiers.TmpStorageMountName,
+		}
+		for _, v := range volumes {
+			assert.True(
+				t,
+				kubeobjects.VolumeIsDefined(sts.Spec.Template.Spec.Volumes, v),
+				"declared volume: %s",
+				v)
+		}
+
+		assert.True(
+			t,
+			kubeobjects.VolumeClaimIsDefined(sts.Spec.VolumeClaimTemplates, modifiers.PersistentStorageMountName),
+			"declared volume claim: %s",
+			modifiers.PersistentStorageMountName)
 	})
 }

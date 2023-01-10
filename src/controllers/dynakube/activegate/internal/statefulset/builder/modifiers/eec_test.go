@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -50,6 +51,9 @@ func TestExtensionController_BuildContainerAndVolumes(t *testing.T) {
 		} {
 			assertion.Truef(kubeobjects.EnvVarIsIn(container.Env, envVar), "Expected that EEC container defined environment variable %s", envVar)
 		}
+
+		// Logging a newline because otherwise `go test` doesn't recognize the result
+		logger.Factory.GetLogger("extension controller").Info("")
 	})
 
 	t.Run("hardened container security context", func(t *testing.T) {
@@ -63,6 +67,9 @@ func TestExtensionController_BuildContainerAndVolumes(t *testing.T) {
 		assertion.False(*securityContext.Privileged)
 		assertion.False(*securityContext.AllowPrivilegeEscalation)
 		assertion.False(*securityContext.ReadOnlyRootFilesystem)
+
+		// Logging a newline because otherwise `go test` doesn't recognize the result
+		logger.Factory.GetLogger("extension controller").Info("")
 	})
 
 	t.Run("resource requirements from feature flags", func(t *testing.T) {
@@ -76,6 +83,9 @@ func TestExtensionController_BuildContainerAndVolumes(t *testing.T) {
 
 		assert.Equal(t, resource.NewScaledQuantity(200, resource.Milli).String(), container.Resources.Limits.Cpu().String())
 		assert.True(t, container.Resources.Limits.Memory().IsZero())
+
+		// Logging a newline because otherwise `go test` doesn't recognize the result
+		logger.Factory.GetLogger("extension controller").Info("")
 	})
 }
 

@@ -59,10 +59,10 @@ func TestNewEnv(t *testing.T) {
 		assert.Empty(t, env.Containers)
 
 		assert.Empty(t, env.K8NodeName)
-		assert.Empty(t, env.K8PodName)
-		assert.Empty(t, env.K8PodUID)
 		assert.Empty(t, env.K8BasePodName)
-		assert.Empty(t, env.K8Namespace)
+		assert.NotEmpty(t, env.K8PodName)
+		assert.NotEmpty(t, env.K8PodUID)
+		assert.NotEmpty(t, env.K8Namespace)
 
 		assert.NotEmpty(t, env.K8ClusterID)
 		assert.NotEmpty(t, env.WorkloadKind)
@@ -175,6 +175,9 @@ func prepDataIngestTestEnv(t *testing.T, isUnknownWorkload bool) func() {
 		config.EnrichmentWorkloadKindEnv,
 		config.EnrichmentWorkloadNameEnv,
 		config.K8sClusterIDEnv,
+		config.K8sPodNameEnv,
+		config.K8sPodUIDEnv,
+		config.K8sNamespaceEnv,
 	}
 	for _, envvar := range envs {
 		if isUnknownWorkload &&
@@ -203,7 +206,7 @@ func prepDataIngestTestEnv(t *testing.T, isUnknownWorkload bool) func() {
 func resetTestEnv(envs []string) func() {
 	return func() {
 		for _, envvar := range envs {
-			os.Unsetenv(envvar)
+			_ = os.Unsetenv(envvar)
 		}
 	}
 }
