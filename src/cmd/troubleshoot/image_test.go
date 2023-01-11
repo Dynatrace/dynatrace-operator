@@ -528,6 +528,17 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 		assert.Contains(t, logOutput, "no such host")
 		assert.NotContains(t, logOutput, "can be successfully pulled")
 	})
+	t.Run("OneAgent code modules image with unset image", func(t *testing.T) {
+		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+			withApiUrl(dockerServer.URL + "/api").
+			withCloudNativeCodeModulesImage("").
+			build()
+
+		logOutput := runWithTestLogger(t.Name(), func() {
+			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
+		})
+		assert.NotContains(t, logOutput, "Unknown OneAgentCodeModules image")
+	})
 }
 
 func TestActiveGateImagePullable(t *testing.T) {
