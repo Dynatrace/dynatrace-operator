@@ -18,14 +18,6 @@ endif
 bundle: prerequisites/kustomize manifests/$(PLATFORM)
 	./hack/build/bundle.sh "$(PLATFORM)" "$(VERSION)" "$(BUNDLE_CHANNELS)" "$(BUNDLE_DEFAULT_CHANNEL)"
 
-bundle/kubernetes: OLM=true
-bundle/kubernetes: PLATFORM=kubernetes
-bundle/kubernetes: bundle
-
-bundle/openshift: OLM=true
-bundle/openshift: PLATFORM=openshift
-bundle/openshift: bundle
-
 .PHONY: bundle/minimal
 ## Generates bundle manifests and metadata, validates generated files and removes everything but the CSV file
 bundle/minimal: bundle
