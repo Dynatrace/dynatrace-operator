@@ -6,8 +6,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/config"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent/daemonset"
-	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -93,12 +92,8 @@ func addDeploymentMetadataEnv(container *corev1.Container, dynakube dynatracev1b
 	if kubeobjects.EnvVarIsIn(container.Env, dynatraceMetadataEnv) {
 		return
 	}
-	var deploymentMetadata *deploymentmetadata.DeploymentMetadata
-	if dynakube.CloudNativeFullstackMode() {
-		deploymentMetadata = deploymentmetadata.NewDeploymentMetadata(clusterID, daemonset.DeploymentTypeCloudNative)
-	} else {
-		deploymentMetadata = deploymentmetadata.NewDeploymentMetadata(clusterID, daemonset.DeploymentTypeApplicationMonitoring)
-	}
+
+	deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(clusterID, deploymentmetadata.GetOneAgentDeploymentType(dynakube))
 	container.Env = append(container.Env,
 		corev1.EnvVar{
 			Name:  dynatraceMetadataEnv,

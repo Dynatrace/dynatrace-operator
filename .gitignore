@@ -79,6 +79,7 @@ tags
 .history
 # End of https://www.gitignore.io/api/go,vim,emacs,visualstudiocode
 /.idea/
+/.fleet/
 /debug.sh
 /tmp/
 /reapply-all.sh

@@ -91,26 +91,22 @@ func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *d
 	}
 
 	secretQuery := kubeobjects.NewSecretQuery(ctx, g.client, g.apiReader, log)
-
-	for _, targetNs := range nsList {
-		secret := &corev1.Secret{
-			TypeMeta: metav1.TypeMeta{},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      config.EnrichmentEndpointSecretName,
-				Namespace: targetNs.Name,
-				Labels:    coreLabels.BuildMatchLabels(),
-			},
-			Data: data,
-			Type: corev1.SecretTypeOpaque,
-		}
-
-		err = secretQuery.CreateOrUpdate(*secret)
-		if err != nil {
-			return errors.WithStack(err)
-		}
+	secret := corev1.Secret{
+		TypeMeta: metav1.TypeMeta{},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   config.EnrichmentEndpointSecretName,
+			Labels: coreLabels.BuildMatchLabels(),
+		},
+		Data: data,
+		Type: corev1.SecretTypeOpaque,
 	}
 
-	log.Info("done updating data-ingest endpoint secrets")
+	err = secretQuery.CreateOrUpdateForNamespacesList(secret, nsList)
+	if err != nil {
+		return err
+	}
+
+	log.Info("done updating data-ingest endpoint secrets", "update/creation count")
 	return nil
 }
 

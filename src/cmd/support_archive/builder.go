@@ -13,6 +13,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/cluster"
 )
 
 const (
@@ -29,6 +32,7 @@ var (
 
 type CommandBuilder struct {
 	configProvider config.Provider
+	cluster        cluster.Cluster
 }
 
 func NewCommandBuilder() CommandBuilder {
@@ -38,6 +42,21 @@ func NewCommandBuilder() CommandBuilder {
 func (builder CommandBuilder) SetConfigProvider(provider config.Provider) CommandBuilder {
 	builder.configProvider = provider
 	return builder
+}
+
+func (builder CommandBuilder) GetCluster(kubeConfig *rest.Config) (cluster.Cluster, error) {
+	if builder.cluster == nil {
+		k8sCluster, err := cluster.New(kubeConfig, clusterOptions)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		builder.cluster = k8sCluster
+	}
+	return builder.cluster, nil
+}
+
+func clusterOptions(opts *cluster.Options) {
+	opts.Scheme = scheme.Scheme
 }
 
 func (builder CommandBuilder) Build() *cobra.Command {
@@ -73,7 +92,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		defer tarFile.Close()
 		defer supportArchive.close()
 
-		err = runCollectors(log, supportArchive, builder.configProvider)
+		err = builder.runCollectors(log, supportArchive)
 		if err != nil {
 			return err
 		}
@@ -92,22 +111,18 @@ func getLogOutput(tarballToStdout bool) io.Writer {
 	}
 }
 
-func runCollectors(log logr.Logger, supportArchive tarball, configProvider config.Provider) error {
+func (builder CommandBuilder) runCollectors(log logr.Logger, supportArchive tarball) error {
 	context := context.Background()
 
-	kubeConfig, err := configProvider.GetConfig()
+	clientSet, apiReader, err := getK8sClients(builder.configProvider)
 	if err != nil {
 		return err
-	}
-
-	clientSet, err := kubernetes.NewForConfig(kubeConfig)
-	if err != nil {
-		return errors.WithStack(err)
 	}
 
 	collectors := []collector{
 		newOperatorVersionCollector(log, supportArchive),
 		newLogCollector(context, log, supportArchive, clientSet.CoreV1().Pods(namespaceFlagValue)),
+		newK8sObjectCollector(context, log, supportArchive, namespaceFlagValue, apiReader),
 	}
 
 	for _, c := range collectors {
@@ -116,6 +131,26 @@ func runCollectors(log logr.Logger, supportArchive tarball, configProvider confi
 		}
 	}
 	return nil
+}
+
+func getK8sClients(configProvider config.Provider) (*kubernetes.Clientset, client.Reader, error) {
+	kubeConfig, err := configProvider.GetConfig()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	k8sCluster, err := cluster.New(kubeConfig, clusterOptions)
+	if err != nil {
+		return nil, nil, errors.WithStack(err)
+	}
+
+	clientSet, err := kubernetes.NewForConfig(kubeConfig)
+	if err != nil {
+		return nil, nil, errors.WithStack(err)
+	}
+	apiReader := k8sCluster.GetAPIReader()
+
+	return clientSet, apiReader, nil
 }
 
 func printCopyCommand(log logr.Logger, tarballToStdout bool, tarFileName string) {

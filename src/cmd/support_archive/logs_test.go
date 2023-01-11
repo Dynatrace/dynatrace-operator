@@ -93,7 +93,7 @@ var podListOptions = metav1.ListOptions{
 	},
 }
 
-//go:generate mockery --case=snake --srcpkg=k8s.io/client-go/kubernetes/typed/core/v1 --with-expecter --name=PodInterface --output ../../corev1mocks/k8s.io/client-go/kubernetes/typed/core/v1
+//go:generate mockery --case=snake --srcpkg=k8s.io/client-go/kubernetes/typed/core/v1 --with-expecter --name=PodInterface --output ../../mocks/k8s.io/client-go/kubernetes/typed/core/v1
 func TestLogCollectorPodListError(t *testing.T) {
 	context := context.Background()
 	logBuffer := bytes.Buffer{}

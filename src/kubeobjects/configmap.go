@@ -42,6 +42,15 @@ func (query ConfigMapQuery) Update(configMap corev1.ConfigMap) error {
 	return errors.WithStack(query.kubeClient.Update(query.ctx, &configMap))
 }
 
+func (query ConfigMapQuery) Delete(configMap corev1.ConfigMap) error {
+	query.log.Info("removing configMap", "name", configMap.Name, "namespace", configMap.Namespace)
+	err := query.kubeClient.Delete(query.ctx, &configMap)
+	if k8serrors.IsNotFound(err) {
+		return nil
+	}
+	return errors.WithStack(err)
+}
+
 func (query ConfigMapQuery) CreateOrUpdate(configMap corev1.ConfigMap) error {
 	currentConfigMap, err := query.Get(types.NamespacedName{Name: configMap.Name, Namespace: configMap.Namespace})
 	if err != nil {

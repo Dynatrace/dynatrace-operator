@@ -8,13 +8,14 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/logger"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var log = logger.Factory.GetLogger("test-configMap")
+var configMapLog = logger.Factory.GetLogger("test-configMap")
 
 func TestConfigMapQuery(t *testing.T) {
 	t.Run(`Get configMap`, testGetConfigMap)
@@ -25,6 +26,7 @@ func TestConfigMapQuery(t *testing.T) {
 	t.Run(`Update configMap when data has changed`, testUpdateConfigMapWhenDataChanged)
 	t.Run(`Update configMap when labels have changed`, testUpdateConfigMapWhenLabelsChanged)
 	t.Run(`Create configMap in target namespace`, testCreateConfigMapInTargetNamespace)
+	t.Run(`Delete configMap in target namespace`, testDeleteConfigMap)
 }
 
 func testGetConfigMap(t *testing.T) {
@@ -36,7 +38,7 @@ func testGetConfigMap(t *testing.T) {
 		Data: map[string]string{testKey1: testConfigMapValue},
 	}
 	fakeClient := fake.NewClient(&configMap)
-	configMapQuery := NewConfigMapQuery(context.TODO(), fakeClient, fakeClient, log)
+	configMapQuery := NewConfigMapQuery(context.TODO(), fakeClient, fakeClient, configMapLog)
 
 	foundConfigMap, err := configMapQuery.Get(client.ObjectKey{Name: testConfigMapName, Namespace: testNamespace})
 
@@ -46,7 +48,7 @@ func testGetConfigMap(t *testing.T) {
 
 func testCreateConfigMap(t *testing.T) {
 	fakeClient := fake.NewClient()
-	configMapQuery := NewConfigMapQuery(context.TODO(), fakeClient, fakeClient, log)
+	configMapQuery := NewConfigMapQuery(context.TODO(), fakeClient, fakeClient, configMapLog)
 	configMap := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testConfigMapName,
@@ -75,7 +77,7 @@ func testUpdateConfigMap(t *testing.T) {
 		Data: map[string]string{testKey1: testConfigMapValue},
 	}
 	fakeClient := fake.NewClient()
-	configMapQuery := NewConfigMapQuery(context.TODO(), fakeClient, fakeClient, log)
+	configMapQuery := NewConfigMapQuery(context.TODO(), fakeClient, fakeClient, configMapLog)
 
 	err := configMapQuery.Update(configMap)
 
@@ -105,7 +107,7 @@ func testCreateOrUpdateConfigMap(t *testing.T) {
 		Data: map[string]string{testKey1: testConfigMapValue},
 	}
 	fakeClient := fake.NewClient()
-	configMapQuery := NewConfigMapQuery(context.TODO(), fakeClient, fakeClient, log)
+	configMapQuery := NewConfigMapQuery(context.TODO(), fakeClient, fakeClient, configMapLog)
 
 	err := configMapQuery.CreateOrUpdate(configMap)
 	assert.NoError(t, err)
@@ -151,7 +153,7 @@ func testIdenticalConfigMapIsNotUpdated(t *testing.T) {
 		Data: data,
 	})
 	configMap := createTestConfigMap(labels, data)
-	configMapQuery := NewConfigMapQuery(context.TODO(), fakeClient, fakeClient, log)
+	configMapQuery := NewConfigMapQuery(context.TODO(), fakeClient, fakeClient, configMapLog)
 
 	err := configMapQuery.CreateOrUpdate(*configMap)
 	assert.NoError(t, err)
@@ -171,7 +173,7 @@ func testUpdateConfigMapWhenDataChanged(t *testing.T) {
 		Data: map[string]string{},
 	})
 	configMap := createTestConfigMap(labels, data)
-	configMapQuery := NewConfigMapQuery(context.TODO(), fakeClient, fakeClient, log)
+	configMapQuery := NewConfigMapQuery(context.TODO(), fakeClient, fakeClient, configMapLog)
 
 	err := configMapQuery.CreateOrUpdate(*configMap)
 	assert.NoError(t, err)
@@ -197,7 +199,7 @@ func testUpdateConfigMapWhenLabelsChanged(t *testing.T) {
 		Data: data,
 	})
 	configMap := createTestConfigMap(labels, data)
-	configMapQuery := NewConfigMapQuery(context.TODO(), fakeClient, fakeClient, log)
+	configMapQuery := NewConfigMapQuery(context.TODO(), fakeClient, fakeClient, configMapLog)
 
 	err := configMapQuery.CreateOrUpdate(*configMap)
 	assert.NoError(t, err)
@@ -222,7 +224,7 @@ func testCreateConfigMapInTargetNamespace(t *testing.T) {
 		Data: map[string]string{},
 	})
 	configMap := createTestConfigMap(labels, data)
-	configMapQuery := NewConfigMapQuery(context.TODO(), fakeClient, fakeClient, log)
+	configMapQuery := NewConfigMapQuery(context.TODO(), fakeClient, fakeClient, configMapLog)
 
 	err := configMapQuery.CreateOrUpdate(*configMap)
 
@@ -236,6 +238,30 @@ func testCreateConfigMapInTargetNamespace(t *testing.T) {
 	assert.True(t, reflect.DeepEqual(labels, newConfigMap.Labels))
 	assert.Equal(t, testConfigMapName, newConfigMap.Name)
 	assert.Equal(t, testNamespace, newConfigMap.Namespace)
+}
+
+func testDeleteConfigMap(t *testing.T) {
+	data := map[string]string{testKey1: string(testValue1)}
+	labels := map[string]string{
+		"label": "test",
+	}
+	fakeClient := fake.NewClient(&corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testConfigMapName,
+			Namespace: testNamespace,
+			Labels:    labels,
+		},
+		Data: data,
+	})
+	configMap := createTestConfigMap(labels, data)
+	configMapQuery := NewConfigMapQuery(context.TODO(), fakeClient, fakeClient, configMapLog)
+
+	err := configMapQuery.Delete(*configMap)
+	require.NoError(t, err)
+
+	var deletedConfigMap corev1.ConfigMap
+	err = fakeClient.Get(context.TODO(), types.NamespacedName{Name: testConfigMapName, Namespace: testNamespace}, &deletedConfigMap)
+	assert.Error(t, err)
 }
 
 func createTestConfigMap(labels map[string]string, data map[string]string) *corev1.ConfigMap {

@@ -46,8 +46,12 @@ func (pr PathResolver) AgentSharedBinaryDirBase() string {
 	return filepath.Join(pr.RootDir, dtcsi.SharedAgentBinDir)
 }
 
-func (pr PathResolver) AgentTempUnzipDir() string {
+func (pr PathResolver) AgentTempUnzipRootDir() string {
 	return filepath.Join(pr.RootDir, "tmp_zip")
+}
+
+func (pr PathResolver) AgentTempUnzipDir() string {
+	return filepath.Join(pr.AgentTempUnzipRootDir(), "opt", "dynatrace", "oneagent")
 }
 
 func (pr PathResolver) AgentSharedBinaryDirForImage(digest string) string {

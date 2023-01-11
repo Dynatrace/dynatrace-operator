@@ -1,6 +1,8 @@
 package zip
 
 import (
+	"os"
+
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
 	"github.com/spf13/afero"
 )
@@ -23,10 +25,18 @@ type OneAgentExtractor struct {
 }
 
 func (extractor OneAgentExtractor) cleanTempZipDir() {
-	extractor.fs.RemoveAll(extractor.pathResolver.AgentTempUnzipDir())
+	extractor.fs.RemoveAll(extractor.pathResolver.AgentTempUnzipRootDir())
 }
 
 func (extractor OneAgentExtractor) moveToTargetDir(targetDir string) error {
+	defer extractor.cleanTempZipDir()
 	log.Info("moving unpacked archive to target", "targetDir", targetDir)
-	return extractor.fs.Rename(extractor.pathResolver.AgentTempUnzipDir(), targetDir)
+	_, err := extractor.fs.Stat(extractor.pathResolver.AgentTempUnzipDir())
+	if err == nil {
+		return extractor.fs.Rename(extractor.pathResolver.AgentTempUnzipDir(), targetDir)
+	}
+	if !os.IsNotExist(err) {
+		return err
+	}
+	return extractor.fs.Rename(extractor.pathResolver.AgentTempUnzipRootDir(), targetDir)
 }

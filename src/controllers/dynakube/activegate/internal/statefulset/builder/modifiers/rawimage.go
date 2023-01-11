@@ -68,7 +68,7 @@ func (mod RawImageModifier) getEnvs() []corev1.EnvVar {
 
 func (mod RawImageModifier) tenantUUIDEnvVar() corev1.EnvVar {
 	return corev1.EnvVar{
-		Name: consts.EnvDtTenant,
+		Name: connectioninfo.EnvDtTenant,
 		ValueFrom: &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 			LocalObjectReference: corev1.LocalObjectReference{
 				Name: mod.dynakube.ActiveGateConnectionInfoConfigMapName(),
@@ -80,7 +80,7 @@ func (mod RawImageModifier) tenantUUIDEnvVar() corev1.EnvVar {
 
 func (mod RawImageModifier) communicationEndpointEnvVar() corev1.EnvVar {
 	return corev1.EnvVar{
-		Name: consts.EnvDtServer,
+		Name: connectioninfo.EnvDtServer,
 		ValueFrom: &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 			LocalObjectReference: corev1.LocalObjectReference{
 				Name: mod.dynakube.ActiveGateConnectionInfoConfigMapName(),

@@ -3,16 +3,8 @@ package daemonset
 import (
 	"fmt"
 
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
-	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
-)
-
-const (
-	DeploymentTypeApplicationMonitoring = "application_monitoring"
-	DeploymentTypeFullStack             = "classic_fullstack"
-	DeploymentTypeCloudNative           = "cloud_native_fullstack"
-	DeploymentTypeHostMonitoring        = "host_monitoring"
 )
 
 func (dsInfo *builderInfo) arguments() []string {
@@ -22,21 +14,15 @@ func (dsInfo *builderInfo) arguments() []string {
 	args = dsInfo.appendProxyArg(args)
 	args = dsInfo.appendNetworkZoneArg(args)
 	args = appendOperatorVersionArg(args)
-	args = dsInfo.appendMetadataArgs(args)
 	args = dsInfo.appendImmutableImageArgs(args)
 
 	return args
 }
 
 func (dsInfo *builderInfo) appendImmutableImageArgs(args []string) []string {
-	args = append(args, fmt.Sprintf("--set-tenant=$(%s)", consts.EnvDtTenant))
-	args = append(args, fmt.Sprintf("--set-server={$(%s)}", consts.EnvDtServer))
+	args = append(args, fmt.Sprintf("--set-tenant=$(%s)", connectioninfo.EnvDtTenant))
+	args = append(args, fmt.Sprintf("--set-server={$(%s)}", connectioninfo.EnvDtServer))
 	return args
-}
-
-func (dsInfo *builderInfo) appendMetadataArgs(args []string) []string {
-	metadata := deploymentmetadata.NewDeploymentMetadata(dsInfo.clusterId, dsInfo.deploymentType)
-	return append(args, metadata.AsArgs()...)
 }
 
 func (dsInfo *builderInfo) appendHostInjectArgs(args []string) []string {
@@ -52,19 +38,19 @@ func appendOperatorVersionArg(args []string) []string {
 }
 
 func (dsInfo *builderInfo) appendNetworkZoneArg(args []string) []string {
-	if dsInfo.instance != nil && dsInfo.instance.Spec.NetworkZone != "" {
-		return append(args, fmt.Sprintf("--set-network-zone=%s", dsInfo.instance.Spec.NetworkZone))
+	if dsInfo.dynakube != nil && dsInfo.dynakube.Spec.NetworkZone != "" {
+		return append(args, fmt.Sprintf("--set-network-zone=%s", dsInfo.dynakube.Spec.NetworkZone))
 	}
 	return args
 }
 
 func (dsInfo *builderInfo) appendProxyArg(args []string) []string {
-	if dsInfo.instance != nil && dsInfo.instance.NeedsOneAgentProxy() {
+	if dsInfo.dynakube != nil && dsInfo.dynakube.NeedsOneAgentProxy() {
 		return append(args, "--set-proxy=$(https_proxy)")
 	}
 	return args
 }
 
 func (dsInfo *builderInfo) hasProxy() bool {
-	return dsInfo.instance != nil && dsInfo.instance.Spec.Proxy != nil && (dsInfo.instance.Spec.Proxy.ValueFrom != "" || dsInfo.instance.Spec.Proxy.Value != "")
+	return dsInfo.dynakube != nil && dsInfo.dynakube.Spec.Proxy != nil && (dsInfo.dynakube.Spec.Proxy.ValueFrom != "" || dsInfo.dynakube.Spec.Proxy.Value != "")
 }
