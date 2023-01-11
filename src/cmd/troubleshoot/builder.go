@@ -170,13 +170,6 @@ func getDynakubeSpecificChecks(results ChecksResults) []*Check {
 			return checkDynakube(results, troubleshootCtx)
 		},
 	}
-	dtClusterConnectionCheck := &Check{
-		Name: dtClusterConnectionCheckName,
-		Do: func(troubleshootCtx *troubleshootContext) error {
-			return checkDtClusterConnection(results, troubleshootCtx)
-		},
-		Prerequisites: []*Check{dynakubeCheck},
-	}
 	imagePullableCheck := &Check{
 		Name:          imagePullableCheckName,
 		Do:            verifyAllImagesAvailable,
@@ -187,7 +180,7 @@ func getDynakubeSpecificChecks(results ChecksResults) []*Check {
 		Do:            checkProxySettings,
 		Prerequisites: []*Check{dynakubeCheck},
 	}
-	return []*Check{dynakubeCheck, dtClusterConnectionCheck, imagePullableCheck, proxySettingsCheck}
+	return []*Check{dynakubeCheck, imagePullableCheck, proxySettingsCheck}
 }
 
 func getDynakubes(troubleshootCtx troubleshootContext, dynakubeName string) ([]dynatracev1beta1.DynaKube, error) {

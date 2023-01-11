@@ -35,11 +35,11 @@ func (checkResults ChecksResults) set(check *Check, result Result) {
 	checkResults.checkResultMap[check] = result
 }
 
-func (checkResults ChecksResults) failedPrerequisites(check *Check) []*Check {
-	isFailed := func(check *Check) bool {
-		return checkResults.checkResultMap[check] == FAILED
+func (checkResults ChecksResults) failedOrSkippedPrerequisites(check *Check) []*Check {
+	isFailedOrSkipped := func(check *Check) bool {
+		return checkResults.checkResultMap[check] == FAILED || checkResults.checkResultMap[check] == SKIPPED
 	}
-	return functional.Filter(check.Prerequisites, isFailed)
+	return functional.Filter(check.Prerequisites, isFailedOrSkipped)
 }
 
 func (checkResults ChecksResults) hasErrors() bool {
@@ -78,16 +78,16 @@ func runChecks(results ChecksResults, troubleshootCtx *troubleshootContext, chec
 }
 
 func shouldSkip(results ChecksResults, check *Check) bool {
-	failedPrerequisites := results.failedPrerequisites(check)
+	failedOrSkippedPrerequisites := results.failedOrSkippedPrerequisites(check)
 
-	if len(failedPrerequisites) == 0 {
+	if len(failedOrSkippedPrerequisites) == 0 {
 		return false
 	}
 
 	getCheckName := func(check *Check) string {
 		return check.Name
 	}
-	prerequisitesNames := strings.Join(functional.Map(failedPrerequisites, getCheckName), ",")
+	prerequisitesNames := strings.Join(functional.Map(failedOrSkippedPrerequisites, getCheckName), ",")
 	logWarningf("Skipped '%s' check because prerequisites aren't met: [%s]", check.Name, prerequisitesNames)
 
 	return true
