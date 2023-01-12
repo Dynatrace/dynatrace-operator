@@ -105,14 +105,7 @@ func (runner *Runner) consumeErrorIfNecessary(resultedError *error) {
 
 func (runner *Runner) setHostTenant() error {
 	log.Info("setting host tenant")
-	runner.hostTenant = config.AgentNoHostTenant
-	if runner.config.HasHost {
-		hostTenant, ok := runner.config.MonitoringNodes[runner.env.K8NodeName]
-		if !ok {
-			return errors.Errorf("host tenant info is missing for %s", runner.env.K8NodeName)
-		}
-		runner.hostTenant = hostTenant
-	}
+	runner.hostTenant = runner.config.TenantUUID
 	log.Info("successfully set host tenant", "hostTenant", runner.hostTenant)
 	return nil
 }
