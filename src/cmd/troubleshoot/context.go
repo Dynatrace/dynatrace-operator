@@ -6,20 +6,21 @@ import (
 	"net/url"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type troubleshootContext struct {
-	context            context.Context
-	apiReader          client.Reader
-	httpClient         *http.Client
-	namespaceName      string // the default namespace ("dynatrace") or provided in the command line
-	dynakube           v1beta1.DynaKube
-	dynatraceApiSecret corev1.Secret
-	pullSecret         corev1.Secret
-	proxySecret        *corev1.Secret
+	context                  context.Context
+	apiReader                client.Reader
+	httpClient               *http.Client
+	namespaceName            string // the default namespace ("dynatrace") or provided in the command line
+	dynakube                 v1beta1.DynaKube
+	dynatraceApiSecretTokens token.Tokens
+	pullSecret               corev1.Secret
+	proxySecret              *corev1.Secret
 }
 
 func (troubleshootCtx *troubleshootContext) SetTransportProxy(proxy string) error {

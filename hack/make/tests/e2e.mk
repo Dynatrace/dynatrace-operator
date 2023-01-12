@@ -34,5 +34,5 @@ test/e2e/applicationmonitoring: manifests
 	go test -v -tags e2e -count=1 -failfast ./test/scenarios/applicationmonitoring
 
 ## Runs Application Monitoring e2e test only
-test/e2e/supportarchive:
+test/e2e/supportarchive: manifests
 	go test -v -tags e2e -count=1 -failfast ./test/scenarios/support_archive

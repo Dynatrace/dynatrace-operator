@@ -101,11 +101,11 @@ func TestDynakube(t *testing.T) {
 func TestApiUrl(t *testing.T) {
 	t.Run("valid ApiUrl", func(t *testing.T) {
 		troubleshootCtx := troubleshootContext{namespaceName: testNamespace, dynakube: *testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).build()}
-		assert.NoErrorf(t, checkApiUrl(&troubleshootCtx), "invalid ApiUrl")
+		assert.NoErrorf(t, checkApiUrlSyntax(&troubleshootCtx), "invalid ApiUrl")
 	})
 	t.Run("invalid ApiUrl", func(t *testing.T) {
 		troubleshootCtx := troubleshootContext{namespaceName: testNamespace, dynakube: *testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testOtherApiUrl).build()}
-		assert.Errorf(t, checkApiUrl(&troubleshootCtx), "valid ApiUrl")
+		assert.Errorf(t, checkApiUrlSyntax(&troubleshootCtx), "valid ApiUrl")
 	})
 }
 
@@ -143,15 +143,43 @@ func TestDynatraceSecret(t *testing.T) {
 			namespaceName: testNamespace,
 			dynakube:      *testNewDynakubeBuilder(testNamespace, testDynakube).build(),
 		}
-		assert.Errorf(t, getDynatraceApiSecret(&troubleshootCtx), "Dynatrace secret found")
+		assert.Errorf(t, checkIfDynatraceApiSecretHasApiToken(&troubleshootCtx), "Dynatrace secret found")
 	})
 
 	t.Run("Dynatrace secret has apiToken token", func(t *testing.T) {
-		troubleshootCtx := troubleshootContext{namespaceName: testNamespace, dynatraceApiSecret: *testNewSecretBuilder(testNamespace, testDynatraceSecret).dataAppend("apiToken", testApiToken).dataAppend("paasToken", testPaasToken).build()}
+		dynakube := testNewDynakubeBuilder(testNamespace, testDynakube).withTokens(testDynatraceSecret).build()
+		clt := fake.NewClientBuilder().
+			WithScheme(scheme.Scheme).
+			WithObjects(
+				dynakube,
+				testBuildNamespace(testNamespace),
+				testNewSecretBuilder(testNamespace, testDynatraceSecret).dataAppend("apiToken", testApiToken).dataAppend("paasToken", testPaasToken).build(),
+			).
+			Build()
+
+		troubleshootCtx := troubleshootContext{
+			apiReader:     clt,
+			namespaceName: testNamespace,
+			dynakube:      *dynakube,
+		}
 		assert.NoErrorf(t, checkIfDynatraceApiSecretHasApiToken(&troubleshootCtx), "Dynatrace secret does not have required tokens")
 	})
 	t.Run("Dynatrace secret - apiToken is missing", func(t *testing.T) {
-		troubleshootCtx := troubleshootContext{namespaceName: testNamespace, dynatraceApiSecret: *testNewSecretBuilder(testNamespace, testDynatraceSecret).dataAppend("paasToken", testPaasToken).build()}
+		dynakube := testNewDynakubeBuilder(testNamespace, testDynakube).withTokens(testDynatraceSecret).build()
+		clt := fake.NewClientBuilder().
+			WithScheme(scheme.Scheme).
+			WithObjects(
+				dynakube,
+				testBuildNamespace(testNamespace),
+				testNewSecretBuilder(testNamespace, testDynatraceSecret).dataAppend("paasToken", testPaasToken).build(),
+			).
+			Build()
+
+		troubleshootCtx := troubleshootContext{
+			apiReader:     clt,
+			namespaceName: testNamespace,
+			dynakube:      *dynakube,
+		}
 		assert.Errorf(t, checkIfDynatraceApiSecretHasApiToken(&troubleshootCtx), "Dynatrace secret does not have apiToken")
 	})
 }

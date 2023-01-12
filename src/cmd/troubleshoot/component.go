@@ -23,6 +23,10 @@ func (c component) Name(isCustomImage bool) string {
 	return c.String()
 }
 
+func (c component) SkipImageCheck(image string) bool {
+	return image == "" && c != componentCodeModules
+}
+
 func (c component) getImage(dynakube *v1beta1.DynaKube) (string, bool) {
 	if dynakube == nil {
 		return "", false
@@ -32,9 +36,10 @@ func (c component) getImage(dynakube *v1beta1.DynaKube) (string, bool) {
 	case componentOneAgent:
 		return dynakube.OneAgentImage(), dynakube.CustomOneAgentImage() != ""
 	case componentCodeModules:
-		return dynakube.CodeModulesImage(), false
+		return dynakube.CodeModulesImage(), true
 	case componentActiveGate:
-		return dynakube.ActiveGateImage(), dynakube.ActiveGateImage() != ""
+		activeGateImage := dynakube.ActiveGateImage()
+		return activeGateImage, activeGateImage != ""
 	}
 	return "", false
 }
