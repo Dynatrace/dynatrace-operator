@@ -22,9 +22,9 @@ FROM registry.access.redhat.com/ubi9-micro:9.1.0
 COPY --from=operator-build /app/build/_output/bin /usr/local/bin
 
 # cgo dependencies
-COPY --from=operator-build /usr/lib/*/libdevmapper.so.* /usr/lib/
-COPY --from=operator-build /lib/*/libdevmapper.so.* /lib/
-COPY --from=operator-build /usr/lib/*/libudev.so.* /usr/lib/
+COPY --from=operator-build /usr/lib/*/libdevmapper.so* /usr/lib/
+COPY --from=operator-build /lib/*/libdevmapper.so* /lib/
+COPY --from=operator-build /usr/lib/*/libudev.so* /usr/lib/
 
 # trusted certificates
 COPY --from=dependency-src /etc/ssl/cert.pem /etc/ssl/cert.pem
