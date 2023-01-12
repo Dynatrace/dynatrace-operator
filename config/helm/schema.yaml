@@ -15,16 +15,14 @@
 x-google-marketplace:
   schemaVersion: v2
   applicationApiVersion: v1beta1
-  publishedVersion: 0.10.1
+  publishedVersion: 0.10.2
   publishedVersionMetadata:
     releaseNote: "<!-- Release notes generated using configuration in .github/release.yml\
-      \ at v0.10.1 -->\n\n## What's Changed\n### Bugfixes \U0001FAB2\n* Make mounting\
-      \ of pods more safe by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/1401\n\
-      ### Core changes \U0001F389\n* Add dynamic docker labels on release by @chrismuellner\
-      \ in https://github.com/Dynatrace/dynatrace-operator/pull/1407\n### Documentation\
-      \ changes \U0001F4DA\n* Update annotation description in dynakube samples by\
-      \ @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/1402\n\
-      \n\n**Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v0.10.0...v0.10.1"
+      \ at v0.10.2 -->\n\n## What's Changed\n### Core changes \U0001F389\n* Adapt\
+      \ Chart.yaml for release of 0.10.1 by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/1409\n\
+      ### Helm changes \u26D1\uFE0F\n* Use chart version in `application.yaml` by\
+      \ @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/1443\n\n\n\
+      **Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v0.10.1...v0.10.2"
     releaseTypes:
     - Feature
     recommended: true
