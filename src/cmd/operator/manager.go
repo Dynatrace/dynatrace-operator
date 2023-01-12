@@ -132,9 +132,9 @@ func (provider operatorManagerProvider) createOptions(namespace string) ctrl.Opt
 		LeaderElectionNamespace:    namespace,
 		HealthProbeBindAddress:     healthProbeBindAddress,
 		LivenessEndpointName:       livenessEndpointName,
-		RenewDeadline:              getTimeFromEnvWithDefault(leaderElectionEnvVarRenewDeadline, 15),
-		RetryPeriod:                getTimeFromEnvWithDefault(leaderElectionEnvVarRetryPeriod, 10),
-		LeaseDuration:              getTimeFromEnvWithDefault(leaderElectionEnvVarLeaseDuration, 2),
+		LeaseDuration:              getTimeFromEnvWithDefault(leaderElectionEnvVarLeaseDuration, 15),
+		RenewDeadline:              getTimeFromEnvWithDefault(leaderElectionEnvVarRenewDeadline, 10),
+		RetryPeriod:                getTimeFromEnvWithDefault(leaderElectionEnvVarRetryPeriod, 2),
 	}
 }
 
@@ -162,11 +162,11 @@ func getTimeFromEnvWithDefault(envName string, defaultValue int64) *time.Duratio
 	if envValue != "" {
 		asInt, err := strconv.ParseInt(envValue, 10, 64)
 		if err == nil {
+			log.Info("using non-default value for", "env", envName, "value", asInt)
 			duration = time.Duration(asInt) * time.Second
 			return &duration
 		}
 		log.Info("failed to convert envvar value to int so default value is used", "env", envName, "default", defaultValue)
 	}
-	log.Info("using default", "possible-env", envName, "default", defaultValue)
 	return &duration
 }
