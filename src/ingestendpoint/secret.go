@@ -106,7 +106,7 @@ func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *d
 		return err
 	}
 
-	log.Info("done updating data-ingest endpoint secrets", "update/creation count")
+	log.Info("done updating data-ingest endpoint secrets")
 	return nil
 }
 
