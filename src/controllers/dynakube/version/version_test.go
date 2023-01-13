@@ -30,8 +30,6 @@ const (
 	testApiUrl         = "https://" + testDockerRegistry + "/api"
 
 	agImagePath       = testDockerRegistry + "/linux/activegate:latest"
-	eecImagePath      = testDockerRegistry + "/linux/dynatrace-eec:latest"
-	statsdImagePath   = testDockerRegistry + "/linux/dynatrace-datasource-statsd:latest"
 	oneAgentImagePath = testDockerRegistry + "/linux/oneagent:latest"
 )
 
@@ -48,7 +46,6 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 			ActiveGate: dynatracev1beta1.ActiveGateSpec{
 				Capabilities: []dynatracev1beta1.CapabilityDisplayName{
 					dynatracev1beta1.CapabilityDisplayName(dynatracev1beta1.KubeMonCapability.ShortName),
-					dynatracev1beta1.CapabilityDisplayName(dynatracev1beta1.StatsdIngestCapability.ShortName),
 				},
 			},
 		},
@@ -82,8 +79,6 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 		dkStatus := &dynakube.Status
 		registry := newFakeRegistry(map[string]string{
 			agImagePath:       "1.0.0",
-			eecImagePath:      "1.0.0",
-			statsdImagePath:   "1.0.0",
 			oneAgentImagePath: "1.0.0",
 		})
 
@@ -98,8 +93,6 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 		assert.NoError(t, err)
 		assertVersionStatusEquals(t, registry, agImagePath, *timeProvider, &dkStatus.ActiveGate)
 		assertVersionStatusEquals(t, registry, oneAgentImagePath, *timeProvider, &dkStatus.OneAgent)
-		assertVersionStatusEquals(t, registry, eecImagePath, *timeProvider, &dkStatus.ExtensionController)
-		assertVersionStatusEquals(t, registry, statsdImagePath, *timeProvider, &dkStatus.Statsd)
 
 		err = versionReconciler.Reconcile(ctx)
 		assert.NoError(t, err)
@@ -115,8 +108,6 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 		dkStatus := &dynakube.Status
 		registry := newFakeRegistry(map[string]string{
 			agImagePath:       "1.0.0",
-			eecImagePath:      "1.0.0",
-			statsdImagePath:   "1.0.0",
 			oneAgentImagePath: "1.0.0",
 		})
 
@@ -132,20 +123,12 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 
 		assertVersionStatusEquals(t, registry, agImagePath, *timeProvider, &dkStatus.ActiveGate)
 		assertVersionStatusEquals(t, registry, oneAgentImagePath, *timeProvider, &dkStatus.OneAgent)
-		assertVersionStatusEquals(t, registry, eecImagePath, *timeProvider, &dkStatus.ExtensionController)
-		assertVersionStatusEquals(t, registry, statsdImagePath, *timeProvider, &dkStatus.Statsd)
-
-		registry.SetVersion(eecImagePath, "1.0.1")
 
 		err = versionReconciler.Reconcile(ctx)
 		assert.NoError(t, err)
 
 		assertVersionStatusEquals(t, registry, agImagePath, *timeProvider, &dkStatus.ActiveGate)
 		assertVersionStatusEquals(t, registry, oneAgentImagePath, *timeProvider, &dkStatus.OneAgent)
-		assertVersionStatusEquals(t, newFakeRegistry(map[string]string{
-			eecImagePath: "1.0.0", // Previous state
-		}), eecImagePath, *timeProvider, &dkStatus.ExtensionController)
-		assertVersionStatusEquals(t, registry, statsdImagePath, *timeProvider, &dkStatus.Statsd)
 
 		changeTime(timeProvider, 15*time.Minute+1*time.Second)
 		err = versionReconciler.Reconcile(ctx)
@@ -153,8 +136,6 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 
 		assertVersionStatusEquals(t, registry, agImagePath, *timeProvider, &dkStatus.ActiveGate)
 		assertVersionStatusEquals(t, registry, oneAgentImagePath, *timeProvider, &dkStatus.OneAgent)
-		assertVersionStatusEquals(t, registry, eecImagePath, *timeProvider, &dkStatus.ExtensionController)
-		assertVersionStatusEquals(t, registry, statsdImagePath, *timeProvider, &dkStatus.Statsd)
 	})
 }
 

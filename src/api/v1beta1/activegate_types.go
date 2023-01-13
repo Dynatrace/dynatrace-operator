@@ -43,12 +43,6 @@ var (
 		ArgumentName: "restInterface",
 	}
 
-	StatsdIngestCapability = ActiveGateCapability{
-		DisplayName:  "statsd-ingest",
-		ShortName:    "statsd-ingest",
-		ArgumentName: "extension_controller",
-	}
-
 	SyntheticCapability = ActiveGateCapability{
 		DisplayName:  "synthetic",
 		ShortName:    "synthetic",
@@ -61,7 +55,6 @@ var ActiveGateDisplayNames = map[CapabilityDisplayName]struct{}{
 	KubeMonCapability.DisplayName:       {},
 	MetricsIngestCapability.DisplayName: {},
 	DynatraceApiCapability.DisplayName:  {},
-	StatsdIngestCapability.DisplayName:  {},
 	SyntheticCapability.DisplayName:     {},
 }
 

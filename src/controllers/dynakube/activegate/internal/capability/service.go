@@ -30,17 +30,6 @@ func CreateService(dynakube *dynatracev1beta1.DynaKube, feature string) *corev1.
 		)
 	}
 
-	if dynakube.IsStatsdActiveGateEnabled() {
-		ports = append(ports,
-			corev1.ServicePort{
-				Name:       consts.StatsdIngestPortName,
-				Protocol:   corev1.ProtocolUDP,
-				Port:       consts.StatsdIngestPort,
-				TargetPort: intstr.FromString(consts.StatsdIngestTargetPort),
-			},
-		)
-	}
-
 	coreLabels := kubeobjects.NewCoreLabels(dynakube.Name, kubeobjects.ActiveGateComponentLabel)
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{

@@ -8,7 +8,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -18,6 +17,7 @@ const (
 	testComponentFeature = "test-component-feature"
 	testNamespace        = "test-namespace"
 	testName             = "test-name"
+	testApiUrl           = "https://demo.dev.dynatracelabs.com/api"
 )
 
 func testCreateInstance() *dynatracev1beta1.DynaKube {
@@ -32,12 +32,6 @@ func testCreateInstance() *dynatracev1beta1.DynaKube {
 }
 
 func TestCreateService(t *testing.T) {
-	statsdPort := corev1.ServicePort{
-		Name:       consts.StatsdIngestPortName,
-		Protocol:   corev1.ProtocolUDP,
-		Port:       consts.StatsdIngestPort,
-		TargetPort: intstr.FromString(consts.StatsdIngestTargetPort),
-	}
 	agHttpsPort := corev1.ServicePort{
 		Name:       consts.HttpsServicePortName,
 		Protocol:   corev1.ProtocolTCP,
@@ -77,53 +71,13 @@ func TestCreateService(t *testing.T) {
 		assert.Equal(t, expectedSelector, serviceSpec.Selector)
 	})
 
-	t.Run("check AG service if metrics ingest enabled, but not StatsD", func(t *testing.T) {
+	t.Run("check AG service if metrics ingest enabled", func(t *testing.T) {
 		instance := testCreateInstance()
 		kubeobjects.SwitchCapability(instance, dynatracev1beta1.MetricsIngestCapability, true)
-		kubeobjects.SwitchCapability(instance, dynatracev1beta1.StatsdIngestCapability, false)
-		require.True(t, !instance.IsStatsdActiveGateEnabled())
 
 		service := CreateService(instance, testComponentFeature)
 		ports := service.Spec.Ports
 
 		assert.Contains(t, ports, agHttpsPort, agHttpPort)
-		assert.NotContains(t, ports, statsdPort)
-	})
-
-	t.Run("check AG service if metrics ingest and StatsD enabled", func(t *testing.T) {
-		instance := testCreateInstance()
-		kubeobjects.SwitchCapability(instance, dynatracev1beta1.MetricsIngestCapability, true)
-		kubeobjects.SwitchCapability(instance, dynatracev1beta1.StatsdIngestCapability, true)
-		require.True(t, instance.IsStatsdActiveGateEnabled())
-
-		service := CreateService(instance, testComponentFeature)
-		ports := service.Spec.Ports
-
-		assert.Contains(t, ports, agHttpsPort, agHttpPort, statsdPort)
-	})
-
-	t.Run("check AG service if StatsD enabled, but not metrics ingest", func(t *testing.T) {
-		instance := testCreateInstance()
-		kubeobjects.SwitchCapability(instance, dynatracev1beta1.MetricsIngestCapability, false)
-		kubeobjects.SwitchCapability(instance, dynatracev1beta1.StatsdIngestCapability, true)
-		require.True(t, instance.IsStatsdActiveGateEnabled())
-
-		service := CreateService(instance, testComponentFeature)
-		ports := service.Spec.Ports
-
-		assert.NotContains(t, ports, agHttpsPort, agHttpPort)
-		assert.Contains(t, ports, statsdPort)
-	})
-
-	t.Run("check AG service if StatsD and metrics ingest are disabled", func(t *testing.T) {
-		instance := testCreateInstance()
-		kubeobjects.SwitchCapability(instance, dynatracev1beta1.MetricsIngestCapability, false)
-		kubeobjects.SwitchCapability(instance, dynatracev1beta1.StatsdIngestCapability, false)
-		require.True(t, !instance.IsStatsdActiveGateEnabled())
-
-		service := CreateService(instance, testComponentFeature)
-		ports := service.Spec.Ports
-
-		assert.NotContains(t, ports, agHttpsPort, agHttpPort, statsdPort)
 	})
 }
