@@ -1,4 +1,4 @@
-FROM golang:1.19.4 AS operator-build
+FROM golang:1.19.5 AS operator-build
 
 ARG GO_LINKER_ARGS
 
