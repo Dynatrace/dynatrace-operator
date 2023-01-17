@@ -6,7 +6,10 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 type Reconciler struct {
@@ -15,14 +18,16 @@ type Reconciler struct {
 	apiReader client.Reader
 	dtc       dtclient.Client
 	dynakube  *dynatracev1beta1.DynaKube
+	scheme    *runtime.Scheme
 }
 
-func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
+func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
 	return &Reconciler{
 		context:   ctx,
 		client:    clt,
 		apiReader: apiReader,
 		dynakube:  dynakube,
+		scheme:    scheme,
 		dtc:       dtc,
 	}
 }
@@ -88,6 +93,9 @@ func (r *Reconciler) maintainConnectionInfoObjects(secretName string, configMapN
 func (r *Reconciler) createTenantConnectionInfoConfigMap(secretName string, connectionInfo dtclient.ConnectionInfo) error {
 	configMapData := extractPublicData(connectionInfo)
 	configMap := kubeobjects.NewConfigMap(secretName, r.dynakube.Namespace, configMapData)
+	if err := controllerutil.SetControllerReference(r.dynakube, configMap, r.scheme); err != nil {
+		return errors.WithStack(err)
+	}
 
 	query := kubeobjects.NewConfigMapQuery(r.context, r.client, r.apiReader, log)
 	err := query.CreateOrUpdate(*configMap)
@@ -101,6 +109,9 @@ func (r *Reconciler) createTenantConnectionInfoConfigMap(secretName string, conn
 func (r *Reconciler) createTenantTokenSecret(secretName string, connectionInfo dtclient.ConnectionInfo) error {
 	secretData := extractSensitiveData(connectionInfo)
 	secret := kubeobjects.NewSecret(secretName, r.dynakube.Namespace, secretData)
+	if err := controllerutil.SetControllerReference(r.dynakube, secret, r.scheme); err != nil {
+		return errors.WithStack(err)
+	}
 
 	query := kubeobjects.NewSecretQuery(r.context, r.client, r.apiReader, log)
 	err := query.CreateOrUpdate(*secret)
