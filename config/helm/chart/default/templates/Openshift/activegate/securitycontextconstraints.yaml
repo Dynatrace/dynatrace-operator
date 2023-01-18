@@ -21,11 +21,7 @@ allowPrivilegedContainer: false
 fsGroup:
   type: RunAsAny
 priority: 1
-{{- if (.Values.activeGate).readOnlyFs }}
-readOnlyRootFilesystem: true
-{{ else }}
 readOnlyRootFilesystem: false
-{{ end }}
 requiredDropCapabilities:
   - ALL
 runAsUser:
