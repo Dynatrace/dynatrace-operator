@@ -8,12 +8,7 @@ import (
 const (
 	MultiActiveGateName     = "activegate"
 	ActiveGateContainerName = "activegate"
-	EecContainerName        = ActiveGateContainerName + "-eec"
-	StatsdContainerName     = ActiveGateContainerName + "-statsd"
 	SyntheticContainerName  = "synthetic"
-	StatsdIngestPort        = 18125
-	StatsdIngestTargetPort  = "statsd-port"
-	StatsdIngestPortName    = "statsd"
 	ProxySecretSuffix       = "internal-proxy"
 	ProxySecretKey          = "proxy"
 	HttpsServicePortName    = "https"
