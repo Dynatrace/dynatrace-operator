@@ -47,12 +47,8 @@ const (
 	AnnotationFeatureAutomaticK8sApiMonitoringClusterName = AnnotationFeaturePrefix + "automatic-kubernetes-api-monitoring-cluster-name"
 	AnnotationFeatureActiveGateIgnoreProxy                = AnnotationFeaturePrefix + "activegate-ignore-proxy"
 
-	// statsD
-
-	AnnotationFeatureUseActiveGateImageForStatsd = AnnotationFeaturePrefix + "use-activegate-image-for-statsd"
-	AnnotationFeatureCustomEecImage              = AnnotationFeaturePrefix + "custom-eec-image"
-	AnnotationFeatureCustomStatsdImage           = AnnotationFeaturePrefix + "custom-statsd-image"
-	AnnotationFeatureCustomSyntheticImage        = AnnotationFeaturePrefix + "custom-synthetic-image"
+	// synthetic
+	AnnotationFeatureCustomSyntheticImage = AnnotationFeaturePrefix + "custom-synthetic-image"
 
 	// dtClient
 
@@ -197,22 +193,6 @@ func (dk *DynaKube) FeatureDisableMetadataEnrichment() bool {
 // or if pods need to be opted-in one by one ("automatic-injection=false")
 func (dk *DynaKube) FeatureAutomaticInjection() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureAutomaticInjection) != falsePhrase
-}
-
-// FeatureUseActiveGateImageForStatsd is a feature flag that makes the operator use ActiveGate image when initializing Extension Controller and Statsd containers
-// (using special predefined entry points).
-func (dk *DynaKube) FeatureUseActiveGateImageForStatsd() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureUseActiveGateImageForStatsd) == truePhrase
-}
-
-// FeatureCustomEecImage is a feature flag to specify custom Extension Controller Docker image path
-func (dk *DynaKube) FeatureCustomEecImage() string {
-	return dk.getFeatureFlagRaw(AnnotationFeatureCustomEecImage)
-}
-
-// FeatureCustomStatsdImage is a feature flag to specify custom StatsD Docker image path
-func (dk *DynaKube) FeatureCustomStatsdImage() string {
-	return dk.getFeatureFlagRaw(AnnotationFeatureCustomStatsdImage)
 }
 
 func (dk *DynaKube) FeatureCustomSyntheticImage() string {

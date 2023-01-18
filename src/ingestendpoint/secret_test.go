@@ -42,15 +42,6 @@ DT_METRICS_INGEST_API_TOKEN=test-data-ingest-token
 DT_METRICS_INGEST_API_TOKEN=test-data-ingest-token
 `
 
-	testDataIngestSecretLocalAGWithMetricsAndStatsd = `DT_METRICS_INGEST_URL=https://dynakube-activegate.dynatrace/e/tenant/api/v2/metrics/ingest
-DT_METRICS_INGEST_API_TOKEN=test-data-ingest-token
-DT_STATSD_INGEST_URL=dynakube-activegate.dynatrace:18125
-`
-
-	testUpdatedApiUrlDataIngestSecretLocalAGWithStatsd = `DT_METRICS_INGEST_URL=https://dynakube-activegate.dynatrace/e/tenant/api/v2/metrics/ingest
-DT_METRICS_INGEST_API_TOKEN=test-data-ingest-token
-DT_STATSD_INGEST_URL=dynakube-activegate.dynatrace:18125
-`
 	testEmptyFile = ``
 
 	testNamespace1 = "test-namespace-one"
@@ -220,91 +211,7 @@ func TestGenerateDataIngestSecret_ForDynakube(t *testing.T) {
 			checkTestSecretDoesntExist(t, fakeClient, types.NamespacedName{Namespace: testNamespaceDynatrace, Name: config.EnrichmentEndpointSecretName})
 		}
 	})
-	t.Run(`metrics-ingest with statsd endpoint secret created (local AG) in all namespaces and apiUrl updated`, func(t *testing.T) {
-		fakeClient := buildTestClientBeforeGenerate(buildTestDynakube())
-
-		{
-			instance := buildTestDynakubeWithDataIngestCapability([]dynatracev1beta1.CapabilityDisplayName{
-				dynatracev1beta1.CapabilityDisplayName(dynatracev1beta1.KubeMonCapability.ShortName),
-				dynatracev1beta1.CapabilityDisplayName(dynatracev1beta1.MetricsIngestCapability.ShortName),
-				dynatracev1beta1.CapabilityDisplayName(dynatracev1beta1.StatsdIngestCapability.ShortName),
-			})
-
-			testGenerateEndpointsSecret(t, instance, fakeClient)
-
-			checkTestSecretContains(t, fakeClient, types.NamespacedName{Namespace: testNamespace1, Name: config.EnrichmentEndpointSecretName}, testDataIngestSecretLocalAGWithMetricsAndStatsd)
-			checkTestSecretContains(t, fakeClient, types.NamespacedName{Namespace: testNamespace2, Name: config.EnrichmentEndpointSecretName}, testDataIngestSecretLocalAGWithMetricsAndStatsd)
-			checkTestSecretDoesntExist(t, fakeClient, types.NamespacedName{Namespace: testNamespaceDynatrace, Name: config.EnrichmentEndpointSecretName})
-		}
-		{
-			newInstance := updatedTestDynakubeWithDataIngestCapability([]dynatracev1beta1.CapabilityDisplayName{
-				dynatracev1beta1.CapabilityDisplayName(dynatracev1beta1.KubeMonCapability.ShortName),
-				dynatracev1beta1.CapabilityDisplayName(dynatracev1beta1.MetricsIngestCapability.ShortName),
-				dynatracev1beta1.CapabilityDisplayName(dynatracev1beta1.StatsdIngestCapability.ShortName),
-			})
-
-			testGenerateEndpointsSecret(t, newInstance, fakeClient)
-
-			checkTestSecretContains(t, fakeClient, types.NamespacedName{Namespace: testNamespace1, Name: config.EnrichmentEndpointSecretName}, testUpdatedApiUrlDataIngestSecretLocalAGWithStatsd)
-			checkTestSecretContains(t, fakeClient, types.NamespacedName{Namespace: testNamespace2, Name: config.EnrichmentEndpointSecretName}, testUpdatedApiUrlDataIngestSecretLocalAGWithStatsd)
-			checkTestSecretDoesntExist(t, fakeClient, types.NamespacedName{Namespace: testNamespaceDynatrace, Name: config.EnrichmentEndpointSecretName})
-		}
-	})
-	t.Run(`StatsD ingest URL is added/removed to endpoint properties when statsd-ingest capability is added/removed`, func(t *testing.T) {
-		fakeClient := buildTestClientBeforeGenerate(buildTestDynakube())
-
-		{
-			instance := buildTestDynakubeWithDataIngestCapability([]dynatracev1beta1.CapabilityDisplayName{
-				dynatracev1beta1.CapabilityDisplayName(dynatracev1beta1.KubeMonCapability.ShortName),
-				dynatracev1beta1.CapabilityDisplayName(dynatracev1beta1.MetricsIngestCapability.ShortName),
-			})
-
-			testGenerateEndpointsSecret(t, instance, fakeClient)
-
-			checkTestSecretContains(t, fakeClient, types.NamespacedName{Namespace: testNamespace1, Name: config.EnrichmentEndpointSecretName}, testDataIngestSecretLocalAGWithMetrics)
-			checkTestSecretContains(t, fakeClient, types.NamespacedName{Namespace: testNamespace2, Name: config.EnrichmentEndpointSecretName}, testDataIngestSecretLocalAGWithMetrics)
-			checkTestSecretDoesntExist(t, fakeClient, types.NamespacedName{Namespace: testNamespaceDynatrace, Name: config.EnrichmentEndpointSecretName})
-		}
-
-		{
-			newInstance := updatedTestDynakubeWithDataIngestCapability([]dynatracev1beta1.CapabilityDisplayName{
-				dynatracev1beta1.CapabilityDisplayName(dynatracev1beta1.KubeMonCapability.ShortName),
-				dynatracev1beta1.CapabilityDisplayName(dynatracev1beta1.MetricsIngestCapability.ShortName),
-				dynatracev1beta1.CapabilityDisplayName(dynatracev1beta1.StatsdIngestCapability.ShortName),
-			})
-
-			testGenerateEndpointsSecret(t, newInstance, fakeClient)
-
-			checkTestSecretContains(t, fakeClient, types.NamespacedName{Namespace: testNamespace1, Name: config.EnrichmentEndpointSecretName}, testUpdatedApiUrlDataIngestSecretLocalAGWithStatsd)
-			checkTestSecretContains(t, fakeClient, types.NamespacedName{Namespace: testNamespace2, Name: config.EnrichmentEndpointSecretName}, testUpdatedApiUrlDataIngestSecretLocalAGWithStatsd)
-			checkTestSecretDoesntExist(t, fakeClient, types.NamespacedName{Namespace: testNamespaceDynatrace, Name: config.EnrichmentEndpointSecretName})
-		}
-		{
-			newerInstance := updatedTestDynakubeWithDataIngestCapability([]dynatracev1beta1.CapabilityDisplayName{
-				dynatracev1beta1.CapabilityDisplayName(dynatracev1beta1.KubeMonCapability.ShortName),
-				dynatracev1beta1.CapabilityDisplayName(dynatracev1beta1.MetricsIngestCapability.ShortName),
-			})
-
-			testGenerateEndpointsSecret(t, newerInstance, fakeClient)
-
-			checkTestSecretContains(t, fakeClient, types.NamespacedName{Namespace: testNamespace1, Name: config.EnrichmentEndpointSecretName}, testDataIngestSecretLocalAGWithMetrics)
-			checkTestSecretContains(t, fakeClient, types.NamespacedName{Namespace: testNamespace2, Name: config.EnrichmentEndpointSecretName}, testDataIngestSecretLocalAGWithMetrics)
-			checkTestSecretDoesntExist(t, fakeClient, types.NamespacedName{Namespace: testNamespaceDynatrace, Name: config.EnrichmentEndpointSecretName})
-		}
-		{
-			unchangedInstance := updatedTestDynakubeWithDataIngestCapability([]dynatracev1beta1.CapabilityDisplayName{
-				dynatracev1beta1.CapabilityDisplayName(dynatracev1beta1.KubeMonCapability.ShortName),
-				dynatracev1beta1.CapabilityDisplayName(dynatracev1beta1.MetricsIngestCapability.ShortName),
-			})
-
-			testGenerateEndpointsSecret(t, unchangedInstance, fakeClient)
-
-			checkTestSecretContains(t, fakeClient, types.NamespacedName{Namespace: testNamespace1, Name: config.EnrichmentEndpointSecretName}, testDataIngestSecretLocalAGWithMetrics)
-			checkTestSecretContains(t, fakeClient, types.NamespacedName{Namespace: testNamespace2, Name: config.EnrichmentEndpointSecretName}, testDataIngestSecretLocalAGWithMetrics)
-			checkTestSecretDoesntExist(t, fakeClient, types.NamespacedName{Namespace: testNamespaceDynatrace, Name: config.EnrichmentEndpointSecretName})
-		}
-	})
-	t.Run(`No ingestion is enabled (statsd capability is not enabled, disable-metadata-enrichment feature flag is set true)`, func(t *testing.T) {
+	t.Run(`No ingestion is enabled (disable-metadata-enrichment feature flag is set true)`, func(t *testing.T) {
 		fakeClient := buildTestClientBeforeGenerate(buildTestDynakube())
 
 		{
