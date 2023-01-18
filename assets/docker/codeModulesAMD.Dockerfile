@@ -14,4 +14,4 @@ RUN [ "$(jq .sha256 -r checksum)" == "$(sha256sum agent.zip | awk '{ print $1 }'
 RUN unzip /agent.zip -d /data
 
 FROM scratch
-COPY --from=builder /data /
+COPY --from=builder /data /opt/dynatrace/oneagent
