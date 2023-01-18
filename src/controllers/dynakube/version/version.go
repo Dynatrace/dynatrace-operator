@@ -109,8 +109,6 @@ func createDockerConfigWithCustomCAs(ctx context.Context, dynakube *dynatracev1b
 	return dockerConfig, nil
 }
 
-// TODO: should there be a needsSyntheticUpdate(...)?
-
 func needsActiveGateUpdate(dynakube *dynatracev1beta1.DynaKube, timeProvider kubeobjects.TimeProvider) bool {
 	return dynakube.NeedsActiveGate() &&
 		!dynakube.FeatureDisableActiveGateUpdates() &&

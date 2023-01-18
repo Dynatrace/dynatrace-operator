@@ -23,7 +23,6 @@ import (
 const (
 	MetricsUrlSecretField   = "DT_METRICS_INGEST_URL"
 	MetricsTokenSecretField = "DT_METRICS_INGEST_API_TOKEN"
-	StatsdUrlSecretField    = "DT_STATSD_INGEST_URL"
 	configFile              = "endpoint.properties"
 )
 
