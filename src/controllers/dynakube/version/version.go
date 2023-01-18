@@ -76,8 +76,6 @@ func (r *Reconciler) updateImages(ctx context.Context, spec updateSpec) error {
 		}
 	}
 
-	// TODO: should there be a synthetic update
-
 	if spec.oneAgentUpdate {
 		err := imageUpdater.update(r.Dynakube.OneAgentImage(), &r.Dynakube.Status.OneAgent.VersionStatus, false)
 		if err != nil {
