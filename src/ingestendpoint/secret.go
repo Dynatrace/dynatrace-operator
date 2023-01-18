@@ -23,7 +23,6 @@ import (
 const (
 	MetricsUrlSecretField   = "DT_METRICS_INGEST_URL"
 	MetricsTokenSecretField = "DT_METRICS_INGEST_API_TOKEN"
-	StatsdUrlSecretField    = "DT_STATSD_INGEST_URL"
 	configFile              = "endpoint.properties"
 )
 
@@ -106,7 +105,7 @@ func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *d
 		return err
 	}
 
-	log.Info("done updating data-ingest endpoint secrets", "update/creation count")
+	log.Info("done updating data-ingest endpoint secrets")
 	return nil
 }
 
@@ -147,12 +146,6 @@ func (g *EndpointSecretGenerator) prepare(ctx context.Context, dk *dynatracev1be
 		}
 	}
 
-	if dk.IsStatsdActiveGateEnabled() {
-		if _, err := endpointPropertiesBuilder.WriteString(fmt.Sprintf("%s=%s\n", StatsdUrlSecretField, fields[StatsdUrlSecretField])); err != nil {
-			return nil, errors.WithStack(err)
-		}
-	}
-
 	data := map[string][]byte{
 		configFile: bytes.NewBufferString(endpointPropertiesBuilder.String()).Bytes(),
 	}
@@ -177,10 +170,6 @@ func (g *EndpointSecretGenerator) PrepareFields(ctx context.Context, dk *dynatra
 		} else {
 			fields[MetricsUrlSecretField] = dataIngestUrl
 		}
-	}
-
-	if dk.IsStatsdActiveGateEnabled() {
-		fields[StatsdUrlSecretField] = statsdIngestUrl(dk)
 	}
 
 	return fields, nil
@@ -209,9 +198,4 @@ func metricsIngestUrlForClusterActiveGate(dk *dynatracev1beta1.DynaKube) (string
 
 	serviceName := capability.BuildServiceName(dk.Name, consts.MultiActiveGateName)
 	return fmt.Sprintf("https://%s.%s/e/%s/api/v2/metrics/ingest", serviceName, dk.Namespace, tenant), nil
-}
-
-func statsdIngestUrl(dk *dynatracev1beta1.DynaKube) string {
-	serviceName := capability.BuildServiceName(dk.Name, consts.MultiActiveGateName)
-	return fmt.Sprintf("%s.%s:%d", serviceName, dk.Namespace, consts.StatsdIngestPort)
 }

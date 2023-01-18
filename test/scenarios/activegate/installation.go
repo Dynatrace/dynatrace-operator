@@ -33,18 +33,14 @@ const (
 	agNamespace = "dynatrace"
 	agPodName   = "dynakube-activegate-0"
 
-	agContainerName       = "activegate"
-	agEecContainerName    = "activegate-eec"
-	agStatsdContainerName = "activegate-statsd"
+	agContainerName = "activegate"
 
 	curlPod = "curl"
 )
 
 var (
 	agContainers = map[string]bool{
-		agContainerName:       false,
-		agStatsdContainerName: false,
-		agEecContainerName:    false,
+		agContainerName: false,
 	}
 
 	agInitContainers = map[string]bool{
@@ -53,25 +49,9 @@ var (
 
 	agMounts = map[string][]string{
 		agContainerName: {
-			" /var/lib/dynatrace/gateway/config ",
 			" /var/lib/dynatrace/secrets/tokens/tenant-token ",
 			" /var/lib/dynatrace/secrets/tokens/auth-token ",
-			" /var/lib/dynatrace/remotepluginmodule/log/extensions/eec ",
-			" /var/lib/dynatrace/remotepluginmodule/log/extensions/statsd ",
 			" /opt/dynatrace/gateway/jre/lib/security/cacerts ",
-		},
-
-		agEecContainerName: {
-			" /var/lib/dynatrace/gateway/config ",
-			" /var/lib/dynatrace/remotepluginmodule/log/extensions ",
-			" /opt/dynatrace/remotepluginmodule/agent/datasources/statsd ",
-			" /var/lib/dynatrace/remotepluginmodule/log/extensions/datasources-statsd ",
-			" /var/lib/dynatrace/remotepluginmodule/agent/conf/runtime ",
-			" /var/lib/dynatrace/remotepluginmodule/agent/runtime/datasources ",
-		},
-		agStatsdContainerName: {
-			" /var/lib/dynatrace/remotepluginmodule/agent/runtime/datasources ",
-			" /var/lib/dynatrace/remotepluginmodule/log/extensions/datasources-statsd ",
 		},
 	}
 )
@@ -143,17 +123,17 @@ func checkIfAgHasContainers(ctx context.Context, t *testing.T, environmentConfig
 	require.NotEmpty(t, activeGatePod.Spec.InitContainers)
 	require.NotEmpty(t, activeGatePod.Spec.Containers)
 
-	assertInitContainerUnknown(t, activeGatePod.Spec.InitContainers)
-	assertInitContainerMissing(t, activeGatePod.Spec.InitContainers)
-	assertContainerUnknown(t, activeGatePod.Spec.Containers)
-	assertContainerMissing(t, activeGatePod.Spec.Containers)
+	assertInitContainerKnown(t, activeGatePod.Spec.InitContainers)
+	assertInitContainerExists(t, activeGatePod.Spec.InitContainers)
+	assertContainersKnown(t, activeGatePod.Spec.Containers)
+	assertContainersExist(t, activeGatePod.Spec.Containers)
 
 	return ctx
 }
 
 func checkActiveModules(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 	log := readActiveGateLog(ctx, t, environmentConfig)
-	assertModuleNotActive(t, log)
+	assertExpectedModulesAreActive(t, log)
 	return ctx
 }
 
@@ -170,7 +150,7 @@ func checkMountPoints(ctx context.Context, t *testing.T, environmentConfig *envc
 	require.NoError(t, resources.WithNamespace("dynatrace").Get(ctx, agPodName, agNamespace, &activeGatePod))
 
 	for name, mountPoints := range agMounts {
-		assertMountPointMissing(t, environmentConfig, activeGatePod, name, mountPoints)
+		assertMountPointsExist(t, environmentConfig, activeGatePod, name, mountPoints)
 	}
 
 	return ctx
@@ -192,7 +172,7 @@ func checkService(ctx context.Context, t *testing.T, environmentConfig *envconf.
 	return ctx
 }
 
-func assertMountPointMissing(t *testing.T, environmentConfig *envconf.Config, podItem corev1.Pod, containerName string, mountPoints []string) { //nolint:revive // argument-limit
+func assertMountPointsExist(t *testing.T, environmentConfig *envconf.Config, podItem corev1.Pod, containerName string, mountPoints []string) { //nolint:revive // argument-limit
 	executionQuery := pod.NewExecutionQuery(podItem, containerName, shell.ReadFile("/proc/mounts")...)
 	executionResult, err := executionQuery.Execute(environmentConfig.Client().RESTConfig())
 	require.NoError(t, err)
@@ -204,10 +184,11 @@ func assertMountPointMissing(t *testing.T, environmentConfig *envconf.Config, po
 
 	for _, mountPoint := range mountPoints {
 		assert.True(t, strings.Contains(stdOut, mountPoint), "mount point not found: '"+mountPoint+"'")
+		assert.Contains(t, stdOut, mountPoint, "mount point not found: '"+mountPoint+"'")
 	}
 }
 
-func assertInitContainerUnknown(t *testing.T, podInitContainers []corev1.Container) {
+func assertInitContainerKnown(t *testing.T, podInitContainers []corev1.Container) {
 	containers := initMap(&agInitContainers)
 
 	for _, container := range podInitContainers {
@@ -216,7 +197,7 @@ func assertInitContainerUnknown(t *testing.T, podInitContainers []corev1.Contain
 	}
 }
 
-func assertInitContainerMissing(t *testing.T, podInitContainers []corev1.Container) {
+func assertInitContainerExists(t *testing.T, podInitContainers []corev1.Container) {
 	containers := initMap(&agInitContainers)
 
 	markExistingContainers(&containers, podInitContainers)
@@ -226,7 +207,7 @@ func assertInitContainerMissing(t *testing.T, podInitContainers []corev1.Contain
 	}
 }
 
-func assertContainerUnknown(t *testing.T, podContainers []corev1.Container) {
+func assertContainersKnown(t *testing.T, podContainers []corev1.Container) {
 	containers := initMap(&agContainers)
 
 	for _, container := range podContainers {
@@ -235,7 +216,7 @@ func assertContainerUnknown(t *testing.T, podContainers []corev1.Container) {
 	}
 }
 
-func assertContainerMissing(t *testing.T, podContainers []corev1.Container) {
+func assertContainersExist(t *testing.T, podContainers []corev1.Container) {
 	containers := initMap(&agContainers)
 
 	markExistingContainers(&containers, podContainers)
@@ -245,10 +226,9 @@ func assertContainerMissing(t *testing.T, podContainers []corev1.Container) {
 	}
 }
 
-func assertModuleNotActive(t *testing.T, log string) {
+func assertExpectedModulesAreActive(t *testing.T, log string) {
 	var expectedModules = []string{
 		"kubernetes_monitoring",
-		"extension_controller",
 		"odin_collector",
 		"metrics_ingest",
 	}
@@ -263,7 +243,6 @@ func assertModuleNotActive(t *testing.T, log string) {
 		Expected log messages of the Gateway process:
 			`Active:
 				    kubernetes_monitoring"
-				    extension_controller"
 				    odin_collector"
 				    metrics_ingest"
 			Lifecycle listeners:`

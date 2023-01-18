@@ -37,21 +37,17 @@ type Reconciler struct {
 
 type updateSpec struct {
 	updateActiveGate bool
-	updateEec        bool
-	statsdUpdate     bool
 	oneAgentUpdate   bool
 }
 
 func (s updateSpec) needsUpdate() bool {
-	return s.updateActiveGate || s.updateEec || s.statsdUpdate || s.oneAgentUpdate
+	return s.updateActiveGate || s.oneAgentUpdate
 }
 
 // Reconcile updates the version and hash for the images used by the rec.Dynakube DynaKube instance.
 func (r *Reconciler) Reconcile(ctx context.Context) error {
 	updateSpec := updateSpec{
 		updateActiveGate: needsActiveGateUpdate(r.Dynakube, *r.TimeProvider),
-		updateEec:        needsEecUpdate(r.Dynakube, *r.TimeProvider),
-		statsdUpdate:     needsStatsdUpdate(r.Dynakube, *r.TimeProvider),
 		oneAgentUpdate:   needsOneAgentUpdate(r.Dynakube, *r.TimeProvider),
 	}
 
@@ -77,20 +73,6 @@ func (r *Reconciler) updateImages(ctx context.Context, spec updateSpec) error {
 		err := imageUpdater.update(r.Dynakube.ActiveGateImage(), &r.Dynakube.Status.ActiveGate.VersionStatus, true)
 		if err != nil {
 			log.Error(err, "failed to update ActiveGate image version")
-		}
-	}
-
-	if spec.updateEec {
-		err := imageUpdater.update(r.Dynakube.EecImage(), &r.Dynakube.Status.ExtensionController.VersionStatus, true)
-		if err != nil {
-			log.Error(err, "Failed to update Extension Controller image version")
-		}
-	}
-
-	if spec.statsdUpdate {
-		err := imageUpdater.update(r.Dynakube.StatsdImage(), &r.Dynakube.Status.Statsd.VersionStatus, true)
-		if err != nil {
-			log.Error(err, "Failed to update StatsD image version")
 		}
 	}
 
@@ -123,18 +105,6 @@ func createDockerConfigWithCustomCAs(ctx context.Context, dynakube *dynatracev1b
 		}()
 	}
 	return dockerConfig, nil
-}
-
-func needsStatsdUpdate(dynakube *dynatracev1beta1.DynaKube, timeProvider kubeobjects.TimeProvider) bool {
-	return dynakube.IsStatsdActiveGateEnabled() &&
-		!dynakube.FeatureDisableActiveGateUpdates() &&
-		timeProvider.IsOutdated(dynakube.Status.Statsd.LastUpdateProbeTimestamp, ProbeThreshold)
-}
-
-func needsEecUpdate(dynakube *dynatracev1beta1.DynaKube, timeProvider kubeobjects.TimeProvider) bool {
-	return dynakube.IsStatsdActiveGateEnabled() &&
-		!dynakube.FeatureDisableActiveGateUpdates() &&
-		timeProvider.IsOutdated(dynakube.Status.ExtensionController.LastUpdateProbeTimestamp, ProbeThreshold)
 }
 
 func needsActiveGateUpdate(dynakube *dynatracev1beta1.DynaKube, timeProvider kubeobjects.TimeProvider) bool {

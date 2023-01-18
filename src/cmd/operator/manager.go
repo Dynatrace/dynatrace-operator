@@ -1,13 +1,17 @@
 package operator
 
 import (
+	"os"
+	"strconv"
+	"time"
+
 	cmdManager "github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/certificates"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/nodes"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/pkg/errors"
-	_ "k8s.io/client-go/plugin/pkg/client/auth" // important for runnning operator locally
+	_ "k8s.io/client-go/plugin/pkg/client/auth" // important for running operator locally
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -19,8 +23,11 @@ const (
 	healthProbeBindAddress = ":10080"
 	operatorManagerPort    = 8383
 
-	leaderElectionId           = "dynatrace-operator-lock"
-	leaderElectionResourceLock = "configmapsleases"
+	leaderElectionId                  = "dynatrace-operator-lock"
+	leaderElectionResourceLock        = "leases"
+	leaderElectionEnvVarRenewDeadline = "LEADER_ELECTION_RENEW_DEADLINE"
+	leaderElectionEnvVarRetryPeriod   = "LEADER_ELECTION_RETRY_PERIOD"
+	leaderElectionEnvVarLeaseDuration = "LEADER_ELECTION_LEASE_DURATION"
 
 	livenessEndpointName = "/livez"
 	readyzEndpointName   = "readyz"
@@ -125,6 +132,9 @@ func (provider operatorManagerProvider) createOptions(namespace string) ctrl.Opt
 		LeaderElectionNamespace:    namespace,
 		HealthProbeBindAddress:     healthProbeBindAddress,
 		LivenessEndpointName:       livenessEndpointName,
+		LeaseDuration:              getTimeFromEnvWithDefault(leaderElectionEnvVarLeaseDuration, 15),
+		RenewDeadline:              getTimeFromEnvWithDefault(leaderElectionEnvVarRenewDeadline, 10),
+		RetryPeriod:                getTimeFromEnvWithDefault(leaderElectionEnvVarRetryPeriod, 2),
 	}
 }
 
@@ -144,4 +154,19 @@ func (builder *managerBuilder) getManager(config *rest.Config, options manager.O
 
 func (builder *managerBuilder) setManager(mgr manager.Manager) {
 	builder.mgr = mgr
+}
+
+func getTimeFromEnvWithDefault(envName string, defaultValue int64) *time.Duration {
+	duration := time.Duration(defaultValue) * time.Second
+	envValue := os.Getenv(envName)
+	if envValue != "" {
+		asInt, err := strconv.ParseInt(envValue, 10, 64)
+		if err == nil {
+			log.Info("using non-default value for", "env", envName, "value", asInt)
+			duration = time.Duration(asInt) * time.Second
+			return &duration
+		}
+		log.Info("failed to convert envvar value to int so default value is used", "env", envName, "default", defaultValue)
+	}
+	return &duration
 }

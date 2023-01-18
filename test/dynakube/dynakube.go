@@ -77,7 +77,6 @@ func (dynakubeBuilder Builder) WithActiveGate() Builder {
 			dynatracev1beta1.DynatraceApiCapability.DisplayName,
 			dynatracev1beta1.RoutingCapability.DisplayName,
 			dynatracev1beta1.MetricsIngestCapability.DisplayName,
-			dynatracev1beta1.StatsdIngestCapability.DisplayName,
 		},
 	}
 	return dynakubeBuilder

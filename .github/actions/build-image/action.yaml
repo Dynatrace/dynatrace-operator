@@ -27,7 +27,7 @@ runs:
       run: |
         hack/build/ci/prepare-build-variables.sh
     - name: Setup cache
-      uses: actions/cache@4723a57e26efda3a62cbde1812113b730952852d # v3.2.2
+      uses: actions/cache@58c146cc91c5b9e778e71775dfe9bf1442ad9a12 # v3.2.3
       with:
         path: |
           ~/go/pkg/mod
@@ -52,7 +52,7 @@ runs:
         labels: ${{ inputs.labels }}
         outputs: type=docker,dest=/tmp/operator-${{ inputs.platform }}.tar
     - name: Upload artifact
-      uses: actions/upload-artifact@83fd05a356d7e2593de66fc9913b3002723633cb # v3.1.1
+      uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
       with:
         name: operator-${{ inputs.platform }}
         path: /tmp/operator-${{ inputs.platform }}.tar
