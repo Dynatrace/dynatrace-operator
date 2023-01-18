@@ -131,8 +131,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	} else {
 		dynakube.Status.SetPhase(controller.determineDynaKubePhase(dynakube))
 	}
-
-
+	
 	if isStatusDifferent, err := kubeobjects.IsDifferent(oldStatus, dynakube.Status); err != nil {
 		log.Error(err, "failed to generate hash for the status section")
 	} else if isStatusDifferent {
