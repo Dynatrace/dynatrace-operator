@@ -14,6 +14,6 @@ go_linker_args=(
   "-X 'github.com/Dynatrace/dynatrace-operator/src/version.Version=${version}'"
   "-X 'github.com/Dynatrace/dynatrace-operator/src/version.Commit=${commit}'"
   "-X 'github.com/Dynatrace/dynatrace-operator/src/version.BuildDate=${build_date}'"
-  "-s -w"
+  "-extldflags=-static -s -w"
 )
 echo "${go_linker_args[*]}"
