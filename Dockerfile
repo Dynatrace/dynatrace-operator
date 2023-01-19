@@ -1,12 +1,20 @@
-FROM golang:1.19.5 AS operator-build
+FROM debian:unstable as operator-build
 
 ARG GO_LINKER_ARGS
 
 COPY . /app
 WORKDIR /app
 
+RUN apt-get update && apt-get install -y ca-certificates openssl
+# Get certificate from "github.com"
+RUN openssl s_client -showcerts -connect github.com:443 </dev/null 2>/dev/null|openssl x509 -outform PEM > ${cert_location}/github.crt
+# Get certificate from "proxy.golang.org"
+RUN openssl s_client -showcerts -connect proxy.golang.org:443 </dev/null 2>/dev/null|openssl x509 -outform PEM >  ${cert_location}/proxy.golang.crt
+# Update certificates
+RUN update-ca-certificates
+
 RUN apt-get update && \
-    apt-get install -y libbtrfs-dev libdevmapper-dev
+    apt-get install -y golang-go libbtrfs-dev libdevmapper-dev
 
 RUN CGO_ENABLED=1 CGO_CFLAGS="-O2 -Wno-return-local-addr" \
     go build -tags "containers_image_openpgp,osusergo,netgo,sqlite_omit_load_extension,containers_image_storage_stub,containers_image_docker_daemon_stub" -trimpath -ldflags="${GO_LINKER_ARGS}" \
