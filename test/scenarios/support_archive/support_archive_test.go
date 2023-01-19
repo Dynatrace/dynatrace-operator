@@ -30,12 +30,11 @@ import (
 	"golang.org/x/exp/slices"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/e2e-framework/klient/conf"
-	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-var testEnvironment env.Environment
+var testEnvironment *environment.Environment
 
 const testAppNameNotInjected = "application1"
 const testAppNameInjected = "application2"

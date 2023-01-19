@@ -1,4 +1,5 @@
 ### Table of contents
+- Running E2E tests
 - Active Gate
   - [basic](#activegate---basic)
   - [proxy](#activegate---proxy)
@@ -12,6 +13,27 @@
   - [network](#cloudnative---network)
   - [proxy](#cloudnative---proxy)
 - [Support Archive](#supportarchive)
+
+# Running E2E Tests
+
+## How to run E2E tests
+
+Create a kube config for accessing GKE clusters without having to use gcloud (<1.24):
+https://archive-docs.d2iq.com/dkp/kommander/2.0/clusters/attach-cluster/generate-kubeconfig/index.html
+
+Run E2E tests by calling the following make command:
+```bash
+export KUBECONFIG=<path_to>/kommander-cluster-admin-config
+make build manifests/branch test/e2e
+```
+
+## Cluster cleanup switch
+Usually the test cluster is cleaned up after each test to provide a clean slate for the next. The cleanup behaviour can be
+fine-tuned via the environment variable `TEST_ENV_CLEANUP`.
+
+* `always` - cleanup after each test
+* `never` - never clean up
+* `onSuccess` - only clea nup if test was successful
 
 # ActiveGate - basic
 ## Prerequisites

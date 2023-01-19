@@ -13,10 +13,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/secrets"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
-	"sigs.k8s.io/e2e-framework/pkg/env"
 )
 
-var testEnvironment env.Environment
+var testEnvironment *environment.Environment
 
 func TestMain(m *testing.M) {
 	testEnvironment = environment.Get()

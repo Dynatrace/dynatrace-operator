@@ -10,10 +10,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/proxy"
 	"github.com/Dynatrace/dynatrace-operator/test/scenarios/activegate"
-	"sigs.k8s.io/e2e-framework/pkg/env"
 )
 
-var testEnvironment env.Environment
+var testEnvironment *environment.Environment
 
 func TestMain(m *testing.M) {
 	testEnvironment = environment.Get()

@@ -12,10 +12,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/sampleapps"
 	"github.com/Dynatrace/dynatrace-operator/test/scenarios/cloudnative"
-	"sigs.k8s.io/e2e-framework/pkg/env"
 )
 
-var testEnvironment env.Environment
+var testEnvironment *environment.Environment
 
 func TestMain(m *testing.M) {
 	testEnvironment = environment.Get()

@@ -11,10 +11,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/proxy"
 	"github.com/Dynatrace/dynatrace-operator/test/sampleapps"
-	"sigs.k8s.io/e2e-framework/pkg/env"
 )
 
-var testEnvironment env.Environment
+var testEnvironment *environment.Environment
 
 func TestMain(m *testing.M) {
 	testEnvironment = environment.Get()
