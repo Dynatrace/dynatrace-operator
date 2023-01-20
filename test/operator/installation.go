@@ -3,7 +3,6 @@ package operator
 import (
 	"context"
 	"net/url"
-	"os"
 	"os/exec"
 	"path"
 	"strings"
@@ -33,7 +32,7 @@ func InstallFromSource(withCsi bool) features.Func {
 
 func InstallViaMake() features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		rootDir := getSourceRootDir()
+		rootDir := project.RootDir()
 
 		runBuildAndManifests(rootDir, t)
 
@@ -71,18 +70,6 @@ func runBuildAndManifests(rootDir string, t *testing.T) {
 		t.Fatal("failed to install the operator via the make command", err)
 		return
 	}
-}
-
-func getSourceRootDir() string {
-	currentDir, err := os.Getwd()
-
-	if err != nil {
-		return ""
-	}
-
-	rootDir := strings.Split(currentDir, "test")
-
-	return rootDir[0]
 }
 
 func manifestsPaths(withCsi bool) []string {
