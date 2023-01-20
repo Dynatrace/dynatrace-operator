@@ -39,11 +39,12 @@ func InstallViaMake() features.Func {
 
 		platform := kubeobjects.ResolvePlatformFromEnv()
 		makeTarget := "deploy"
-		if platform == kubeobjects.Openshift {
+		switch platform {
+		case kubeobjects.Openshift:
 			makeTarget = strings.Join([]string{makeTarget, "openshift"}, "/")
-		} else if platform == kubeobjects.Kubernetes {
+		case kubeobjects.Kubernetes:
 			makeTarget = strings.Join([]string{makeTarget, "kubernetes"}, "/")
-		} else {
+		default:
 			t.Fatal("failed to install the operator via the make command as no correct platform was set")
 			return nil
 		}
