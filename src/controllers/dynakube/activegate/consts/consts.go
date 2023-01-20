@@ -11,17 +11,18 @@ const (
 	EecContainerName        = ActiveGateContainerName + "-eec"
 	StatsdContainerName     = ActiveGateContainerName + "-statsd"
 	SyntheticContainerName  = "synthetic"
-	StatsdIngestPort        = 18125
-	StatsdIngestTargetPort  = "statsd-port"
-	StatsdIngestPortName    = "statsd"
-	ProxySecretSuffix       = "internal-proxy"
-	ProxySecretKey          = "proxy"
-	HttpsServicePortName    = "https"
-	HttpsServicePort        = 443
-	HttpServicePortName     = "http"
-	HttpServicePort         = 80
-	HttpsContainerPort      = 9999
-	HttpContainerPort       = 9998
+
+	StatsdIngestPort       = 18125
+	StatsdIngestTargetPort = "statsd-port"
+	StatsdIngestPortName   = "statsd"
+	ProxySecretSuffix      = "internal-proxy"
+	ProxySecretKey         = "proxy"
+	HttpsServicePortName   = "https"
+	HttpsServicePort       = 443
+	HttpServicePortName    = "http"
+	HttpServicePort        = 80
+	HttpsContainerPort     = 9999
+	HttpContainerPort      = 9998
 
 	AuthTokenSecretVolumeName = "ag-authtoken-secret"
 	AuthTokenMountPoint       = connectioninfo.TokenBasePath + "/auth-token"

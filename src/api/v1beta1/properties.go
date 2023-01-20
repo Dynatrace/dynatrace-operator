@@ -19,6 +19,7 @@ package v1beta1
 import (
 	"fmt"
 	"net/url"
+	"reflect"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api"
@@ -41,11 +42,23 @@ const (
 	defaultActiveGateImage = "/linux/activegate:latest"
 	defaultStatsDImage     = "/linux/dynatrace-datasource-statsd:latest"
 	defaultEecImage        = "/linux/dynatrace-eec:latest"
-	defaultSynthetic       = "/linux/dynatrace-synthetic:latest"
+	defaultSyntheticImage  = "/linux/dynatrace-synthetic:latest"
+	defaultDynaMetricImage = "/linux/dynatrace-synthetic-adapter:latest"
 
 	TrustedCAKey = "certs"
 	ProxyKey     = "proxy"
 	TlsCertKey   = "server.crt"
+
+	SyntheticNodeXs = "XS"
+	SyntheticNodeS  = "S"
+	SyntheticNodeM  = "M"
+
+	defaultSyntheticAutoscalerDynaQuery = `dsfm:synthetic.engine_utilization:filter(eq("dt.entity.synthetic_location","%s")):merge("host.name","dt.active_gate.working_mode","dt.active_gate.id","location.name"):fold(avg)`
+)
+
+var (
+	defaultSyntheticAutoscalerMinReplicas = int32(1)
+	defaultSyntheticAutoscalerMaxReplicas = int32(2)
 )
 
 // ApiUrl is a getter for dk.Spec.APIURL
@@ -67,8 +80,10 @@ func (dk *DynaKube) ApiUrlHost() string {
 }
 
 // NeedsActiveGate returns true when a feature requires ActiveGate instances.
-func (dk *DynaKube) NeedsActiveGate() bool {
-	return dk.DeprecatedActiveGateMode() || dk.ActiveGateMode()
+func (dynaKube *DynaKube) NeedsActiveGate() bool {
+	return dynaKube.DeprecatedActiveGateMode() ||
+		dynaKube.ActiveGateMode() ||
+		dynaKube.IsSyntheticMonitoringEnabled()
 }
 
 // ApplicationMonitoringMode returns true when application only section is used.
@@ -159,8 +174,8 @@ func (dk *DynaKube) IsStatsdActiveGateEnabled() bool {
 	return dk.IsActiveGateMode(StatsdIngestCapability.DisplayName)
 }
 
-func (dk *DynaKube) IsSyntheticActiveGateEnabled() bool {
-	return dk.IsActiveGateMode(SyntheticCapability.DisplayName)
+func (dynaKube *DynaKube) IsSyntheticMonitoringEnabled() bool {
+	return !reflect.DeepEqual(dynaKube.Spec.Synthetic, SyntheticSpec{})
 }
 
 func (dk *DynaKube) HasActiveGateCaCert() bool {
@@ -292,9 +307,24 @@ func (dk *DynaKube) StatsdImage() string {
 }
 
 // returns the synthetic image supplied by the given DynaKube.
-func (dk *DynaKube) SyntheticImage() string {
-	if dk.FeatureCustomSyntheticImage() != "" {
-		return dk.FeatureCustomSyntheticImage()
+func (dynaKube *DynaKube) SyntheticImage() string {
+	if dynaKube.FeatureCustomSyntheticImage() != "" {
+		return dynaKube.FeatureCustomSyntheticImage()
+	}
+
+	apiUrlHost := dynaKube.ApiUrlHost()
+
+	if apiUrlHost == "" {
+		return ""
+	}
+
+	return apiUrlHost + defaultSyntheticImage
+}
+
+// returns the DynaMetric image supplied by the given DynaKube.
+func (dk *DynaKube) DynaMetricImage() string {
+	if dk.FeatureCustomDynaMetricImage() != "" {
+		return dk.FeatureCustomDynaMetricImage()
 	}
 
 	apiUrlHost := dk.ApiUrlHost()
@@ -303,7 +333,7 @@ func (dk *DynaKube) SyntheticImage() string {
 		return ""
 	}
 
-	return apiUrlHost + defaultStatsDImage
+	return apiUrlHost + defaultDynaMetricImage
 }
 
 func (dk *DynaKube) NeedsReadOnlyOneAgents() bool {
@@ -557,4 +587,47 @@ func (dk *DynaKube) GetOneAgentEnvironment() []corev1.EnvVar {
 		return dk.Spec.OneAgent.HostMonitoring.Env
 	}
 	return []corev1.EnvVar{}
+}
+
+func (dynaKube *DynaKube) SyntheticNodeType() string {
+	node := SyntheticNodeS
+	if dynaKube.Spec.Synthetic.NodeType != "" {
+		node = dynaKube.Spec.Synthetic.NodeType
+	}
+
+	return node
+}
+
+func (dynaKube *DynaKube) SyntheticAutoscalerMinReplicas() int32 {
+	return dynaKube.getSyntheticAutoscalerReplicas(
+		dynaKube.Spec.Synthetic.Autoscaler.MinReplicas,
+		defaultSyntheticAutoscalerMinReplicas,
+	)
+}
+
+func (dynaKube *DynaKube) getSyntheticAutoscalerReplicas(declared, defaultReplicas int32) int32 {
+	replicas := defaultReplicas
+	if (dynaKube.Spec.Synthetic.Autoscaler != AutoscalerSpec{}) &&
+		declared > 0 {
+		replicas = declared
+	}
+
+	return replicas
+}
+
+func (dynaKube *DynaKube) SyntheticAutoscalerMaxReplicas() int32 {
+	return dynaKube.getSyntheticAutoscalerReplicas(
+		dynaKube.Spec.Synthetic.Autoscaler.MaxReplicas,
+		defaultSyntheticAutoscalerMaxReplicas,
+	)
+}
+
+func (dynaKube *DynaKube) SyntheticAutoscalerDynaQuery() string {
+	query := defaultSyntheticAutoscalerDynaQuery
+	if (dynaKube.Spec.Synthetic.Autoscaler != AutoscalerSpec{}) &&
+		dynaKube.Spec.Synthetic.Autoscaler.DynaQuery != "" {
+		query = dynaKube.Spec.Synthetic.Autoscaler.DynaQuery
+	}
+
+	return fmt.Sprintf(query, dynaKube.Spec.Synthetic.LocationEntityId)
 }

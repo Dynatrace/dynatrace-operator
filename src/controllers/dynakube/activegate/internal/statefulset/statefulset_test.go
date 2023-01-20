@@ -368,23 +368,25 @@ func TestBuildCommonEnvs(t *testing.T) {
 	})
 
 	t.Run("syn-capability", func(t *testing.T) {
-		dynakube := getTestDynakube()
-		dynakube.Spec.ActiveGate.Capabilities = []dynatracev1beta1.CapabilityDisplayName{
-			dynatracev1beta1.SyntheticCapability.DisplayName,
-		}
+		dynaKube := getTestDynakube()
+		dynaKube.Spec.Synthetic.LocationEntityId = "doctored"
+		synCapability := capability.NewSyntheticCapability(&dynaKube)
+
 		builder := NewStatefulSetBuilder(
 			testKubeUID,
 			testConfigHash,
-			dynakube,
-			capability.NewMultiCapability(&dynakube))
+			dynaKube,
+			synCapability)
 
-		assert.Equal(
+		assert.Contains(
 			t,
-			dynatracev1beta1.SyntheticCapability.ArgumentName,
-			kubeobjects.FindEnvVar(builder.buildCommonEnvs(), consts.EnvDtCapabilities).
-				Value,
-			"declared env: %v",
-			consts.EnvDtCapabilities)
+			builder.buildCommonEnvs(),
+			corev1.EnvVar{
+				Name:  consts.EnvDtCapabilities,
+				Value: capability.SyntheticActiveGateEnvCapabilities,
+			},
+			"declared env dt capabilities: %s",
+			capability.SyntheticActiveGateEnvCapabilities)
 
 		assert.Equal(
 			t,
@@ -393,27 +395,52 @@ func TestBuildCommonEnvs(t *testing.T) {
 			"declared resource requirements for ActiveGate")
 
 		sts, _ := builder.CreateStatefulSet(
-			modifiers.GenerateAllModifiers(
-				dynakube,
-				capability.NewMultiCapability(&dynakube)))
+			modifiers.GenerateAllModifiers(dynaKube, synCapability))
 		jsonized, _ := json.Marshal(sts)
 		t.Logf("manifest: %s", jsonized)
 
-		volumes := []string{
-			modifiers.ChromiumCacheMountName,
-			modifiers.TmpStorageMountName,
+		volumes := []corev1.Volume{
+			{
+				Name: modifiers.ChromiumCacheMountName,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{
+						Medium:    "Memory",
+						SizeLimit: kubeobjects.NewQuantity("512Mi"),
+					},
+				},
+			},
+			{
+				Name: modifiers.TmpStorageMountName,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{
+						SizeLimit: kubeobjects.NewQuantity("10Mi"),
+					},
+				},
+			},
 		}
-		for _, v := range volumes {
-			assert.True(
-				t,
-				kubeobjects.VolumeIsDefined(sts.Spec.Template.Spec.Volumes, v),
-				"declared volume: %s",
-				v)
-		}
-
-		assert.True(
+		assert.Subset(
 			t,
-			kubeobjects.VolumeClaimIsDefined(sts.Spec.VolumeClaimTemplates, modifiers.PersistentStorageMountName),
+			sts.Spec.Template.Spec.Volumes,
+			volumes,
+			"declared syn volumes")
+
+		claim := corev1.PersistentVolumeClaim{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: modifiers.PersistentStorageMountName,
+			},
+			Spec: corev1.PersistentVolumeClaimSpec{
+				AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceStorage: *kubeobjects.NewQuantity("6Gi"),
+					},
+				},
+			},
+		}
+		assert.Contains(
+			t,
+			sts.Spec.VolumeClaimTemplates,
+			claim,
 			"declared volume claim: %s",
 			modifiers.PersistentStorageMountName)
 	})

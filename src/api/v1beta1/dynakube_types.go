@@ -129,6 +129,10 @@ type DynaKubeSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Kubernetes Monitoring"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	KubernetesMonitoring KubernetesMonitoringSpec `json:"kubernetesMonitoring,omitempty"`
+
+	// General configuration for Synthetic Monitoring
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Synthetic Monitoring",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
+	Synthetic SyntheticSpec `json:"synthetic,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

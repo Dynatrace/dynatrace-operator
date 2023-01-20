@@ -53,6 +53,7 @@ const (
 	AnnotationFeatureCustomEecImage              = AnnotationFeaturePrefix + "custom-eec-image"
 	AnnotationFeatureCustomStatsdImage           = AnnotationFeaturePrefix + "custom-statsd-image"
 	AnnotationFeatureCustomSyntheticImage        = AnnotationFeaturePrefix + "custom-synthetic-image"
+	AnnotationFeatureCustomDynaMetricImage       = AnnotationFeaturePrefix + "custom-dynametric-image"
 
 	// dtClient
 
@@ -93,13 +94,6 @@ const (
 
 	falsePhrase = "false"
 	truePhrase  = "true"
-
-	// synthetic node type
-	AnnotationFeatureSyntheticNodeType = AnnotationFeaturePrefix + "synthetic-node-type"
-
-	SyntheticNodeXs = "XS"
-	SyntheticNodeS  = "S"
-	SyntheticNodeM  = "M"
 )
 
 const (
@@ -219,6 +213,10 @@ func (dk *DynaKube) FeatureCustomSyntheticImage() string {
 	return dk.getFeatureFlagRaw(AnnotationFeatureCustomSyntheticImage)
 }
 
+func (dk *DynaKube) FeatureCustomDynaMetricImage() string {
+	return dk.getFeatureFlagRaw(AnnotationFeatureCustomDynaMetricImage)
+}
+
 // FeatureDisableReadOnlyOneAgent is a feature flag to specify if the operator needs to deploy the oneagents in a readonly mode,
 // where the csi-driver would provide the volume for logs and such
 // Defaults to false
@@ -315,12 +313,4 @@ func (dk *DynaKube) FeatureMaxFailedCsiMountAttempts() int {
 	}
 
 	return maxCsiMountAttempts
-}
-
-func (dk *DynaKube) FeatureSyntheticNodeType() string {
-	node, ok := dk.Annotations[AnnotationFeatureSyntheticNodeType]
-	if !ok {
-		return SyntheticNodeS
-	}
-	return node
 }

@@ -64,8 +64,19 @@ rules:
   - apiGroups:
       - apps
     resources:
-      - replicasets
       - deployments
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - delete
+
+  - apiGroups:
+      - apps
+    resources:
+      - replicasets
     verbs:
       - get
       - list
@@ -162,4 +173,16 @@ rules:
       - get
       - update
       - create
+
+  - apiGroups:
+      - autoscaling
+    resources:
+      - horizontalpodautoscalers
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - delete
 {{ end }}

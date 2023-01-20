@@ -59,6 +59,7 @@ type DynaKubeStatus struct {
 	Statsd              StatsdStatus     `json:"statsd,omitempty"`
 	OneAgent            OneAgentStatus   `json:"oneAgent,omitempty"`
 	Synthetic           SyntheticStatus  `json:"synthetic,omitempty"`
+	DynaMetrics         DynaMetricStatus `json:"dynaMetrics,omitempty"`
 }
 
 type ConnectionInfoStatus struct {
@@ -152,6 +153,16 @@ type SyntheticStatus struct {
 
 func (syn *SyntheticStatus) Name() string {
 	return "Synthetic"
+}
+
+var _ VersionStatusNamer = (*DynaMetricStatus)(nil)
+
+type DynaMetricStatus struct {
+	VersionStatus `json:",inline"`
+}
+
+func (syn *DynaMetricStatus) Name() string {
+	return "DynaMetrics"
 }
 
 type DynaKubePhaseType string

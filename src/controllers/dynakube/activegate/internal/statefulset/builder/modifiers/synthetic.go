@@ -13,8 +13,9 @@ import (
 )
 
 const (
-	envNodeType = "DT_NODE_SIZE"
-	envMaxHeap  = "DT_MAX_HEAP_MEMORY"
+	envNodeType   = "DT_NODE_SIZE"
+	envMaxHeap    = "DT_MAX_HEAP_MEMORY"
+	envLocationId = "DT_LOCATION_ID"
 
 	ChromiumCacheMountName = "chromium-cache"
 	chromiumCacheMountPath = "/var/tmp/dynatrace/synthetic/cache"
@@ -30,10 +31,11 @@ const (
 	vucConfigTmpStorageMountSubPath = "vuc-config"
 	xvfbTmpStorageMountPath         = "/tmp"
 	xvfbTmpStorageMountSubPath      = "xvfb-tmp"
+	gatewayConfigMountSubPath       = "ag-config"
 )
 
 type SyntheticModifier struct {
-	dynakube dynatracev1beta1.DynaKube
+	dynatracev1beta1.DynaKube
 }
 
 // make the compiler watch the implemented interfaces
@@ -55,35 +57,35 @@ type nodeRequirements struct {
 
 var nodeRequirementsBySize = map[string]nodeRequirements{
 	dynatracev1beta1.SyntheticNodeXs: {
-		requestResources:                     buildRequirementResources("1", "2Gi"),
-		limitResources:                       buildRequirementResources("2", "3Gi"),
-		jvmHeap:                              buildQuantity("700M"),
-		chromiumCacheVolume:                  buildQuantity("256Mi"),
-		tmpStorageVolume:                     buildQuantity("8Mi"),
-		persistentVolumeClaimResourceStorage: *buildQuantity("3Gi"),
+		requestResources:                     kubeobjects.NewResources("1", "2Gi"),
+		limitResources:                       kubeobjects.NewResources("2", "3Gi"),
+		jvmHeap:                              kubeobjects.NewQuantity("700M"),
+		chromiumCacheVolume:                  kubeobjects.NewQuantity("256Mi"),
+		tmpStorageVolume:                     kubeobjects.NewQuantity("8Mi"),
+		persistentVolumeClaimResourceStorage: *kubeobjects.NewQuantity("3Gi"),
 	},
 
 	dynatracev1beta1.SyntheticNodeS: {
-		requestResources:                     buildRequirementResources("2", "3Gi"),
-		limitResources:                       buildRequirementResources("4", "6Gi"),
-		jvmHeap:                              buildQuantity("1024M"),
-		chromiumCacheVolume:                  buildQuantity("512Mi"),
-		tmpStorageVolume:                     buildQuantity("10Mi"),
-		persistentVolumeClaimResourceStorage: *buildQuantity("6Gi"),
+		requestResources:                     kubeobjects.NewResources("2", "3Gi"),
+		limitResources:                       kubeobjects.NewResources("4", "6Gi"),
+		jvmHeap:                              kubeobjects.NewQuantity("1024M"),
+		chromiumCacheVolume:                  kubeobjects.NewQuantity("512Mi"),
+		tmpStorageVolume:                     kubeobjects.NewQuantity("10Mi"),
+		persistentVolumeClaimResourceStorage: *kubeobjects.NewQuantity("6Gi"),
 	},
 
 	dynatracev1beta1.SyntheticNodeM: {
-		requestResources:                     buildRequirementResources("4", "5Gi"),
-		limitResources:                       buildRequirementResources("8", "10Gi"),
-		jvmHeap:                              buildQuantity("2048M"),
-		chromiumCacheVolume:                  buildQuantity("1Gi"),
-		tmpStorageVolume:                     buildQuantity("12Mi"),
-		persistentVolumeClaimResourceStorage: *buildQuantity("12Gi"),
+		requestResources:                     kubeobjects.NewResources("4", "5Gi"),
+		limitResources:                       kubeobjects.NewResources("8", "10Gi"),
+		jvmHeap:                              kubeobjects.NewQuantity("2048M"),
+		chromiumCacheVolume:                  kubeobjects.NewQuantity("1Gi"),
+		tmpStorageVolume:                     kubeobjects.NewQuantity("12Mi"),
+		persistentVolumeClaimResourceStorage: *kubeobjects.NewQuantity("12Gi"),
 	},
 }
 
 func (syn SyntheticModifier) nodeRequirements() nodeRequirements {
-	return nodeRequirementsBySize[syn.dynakube.FeatureSyntheticNodeType()]
+	return nodeRequirementsBySize[syn.DynaKube.SyntheticNodeType()]
 }
 
 var (
@@ -93,19 +95,19 @@ var (
 		"curl http://localhost:7878/command/version",
 	}
 	ActiveGateResourceRequirements = corev1.ResourceRequirements{
-		Limits:   buildRequirementResources("300m", "1Gi"),
-		Requests: buildRequirementResources("150m", "250Mi"),
+		Limits:   kubeobjects.NewResources("300m", "1Gi"),
+		Requests: kubeobjects.NewResources("150m", "250Mi"),
 	}
 )
 
-func newSyntheticModifier(dynakube dynatracev1beta1.DynaKube) SyntheticModifier {
+func newSyntheticModifier(dynaKube dynatracev1beta1.DynaKube) SyntheticModifier {
 	return SyntheticModifier{
-		dynakube: dynakube,
+		DynaKube: dynaKube,
 	}
 }
 
 func (syn SyntheticModifier) Enabled() bool {
-	return syn.dynakube.IsSyntheticActiveGateEnabled()
+	return syn.DynaKube.IsSyntheticMonitoringEnabled()
 }
 
 func (syn SyntheticModifier) Modify(sts *appsv1.StatefulSet) error {
@@ -127,6 +129,12 @@ func (syn SyntheticModifier) Modify(sts *appsv1.StatefulSet) error {
 	baseContainer.VolumeMounts = append(
 		baseContainer.VolumeMounts,
 		buildPublicVolumeMounts()...)
+	baseContainer.Env = append(
+		baseContainer.Env,
+		corev1.EnvVar{
+			Name:  envLocationId,
+			Value: syn.DynaKube.Spec.Synthetic.LocationEntityId,
+		})
 
 	return nil
 }
@@ -157,7 +165,7 @@ func (syn SyntheticModifier) buildContainer() corev1.Container {
 }
 
 func (syn SyntheticModifier) image() string {
-	return syn.dynakube.SyntheticImage()
+	return syn.DynaKube.SyntheticImage()
 }
 
 func (syn SyntheticModifier) getVolumeMounts() []corev1.VolumeMount {
@@ -178,16 +186,20 @@ func (syn SyntheticModifier) getVolumeMounts() []corev1.VolumeMount {
 }
 
 func (syn SyntheticModifier) getEnvs() []corev1.EnvVar {
-	return []corev1.EnvVar{
+	variables := []corev1.EnvVar{
 		{
 			Name:  envNodeType,
-			Value: syn.dynakube.FeatureSyntheticNodeType(),
+			Value: syn.DynaKube.SyntheticNodeType(),
 		},
 		{
 			Name:  envMaxHeap,
 			Value: syn.nodeRequirements().jvmHeap.String(),
 		},
 	}
+
+	return append(
+		variables,
+		syn.DynaKube.Spec.Synthetic.Env...)
 }
 
 func (syn SyntheticModifier) buildSecurityContext() *corev1.SecurityContext {
@@ -230,6 +242,11 @@ func buildPublicVolumeMounts() []corev1.VolumeMount {
 			SubPath:   vucConfigTmpStorageMountSubPath,
 			MountPath: vucConfigTmpStorageMountPath,
 		},
+		{
+			Name:      TmpStorageMountName,
+			SubPath:   gatewayConfigMountSubPath,
+			MountPath: consts.GatewayConfigMountPoint,
+		},
 	}
 }
 
@@ -271,16 +288,4 @@ func (syn SyntheticModifier) buildVolumeClaimTemplates() []corev1.PersistentVolu
 			},
 		},
 	}
-}
-
-func buildRequirementResources(cpu, memory string) corev1.ResourceList {
-	return corev1.ResourceList{
-		corev1.ResourceCPU:    *buildQuantity(cpu),
-		corev1.ResourceMemory: *buildQuantity(memory),
-	}
-}
-
-func buildQuantity(serialized string) *resource.Quantity {
-	built := resource.MustParse(serialized)
-	return &built
 }

@@ -42,18 +42,19 @@ func (r *Reconciler) Reconcile() error {
 	if err != nil {
 		return errors.WithStack(err)
 	}
-
-	if r.dynakube.NeedsActiveGateService() {
-		err = r.createOrUpdateService()
-		if err != nil {
-			return errors.WithStack(err)
+	if !r.capability.AssistsSynthetic() {
+		if r.dynakube.NeedsActiveGateService() {
+			err = r.createOrUpdateService()
+			if err != nil {
+				return errors.WithStack(err)
+			}
 		}
-	}
 
-	if r.dynakube.IsStatsdActiveGateEnabled() {
-		err = r.createOrUpdateEecConfigMap()
-		if err != nil {
-			return errors.WithStack(err)
+		if r.dynakube.IsStatsdActiveGateEnabled() {
+			err = r.createOrUpdateEecConfigMap()
+			if err != nil {
+				return errors.WithStack(err)
+			}
 		}
 	}
 

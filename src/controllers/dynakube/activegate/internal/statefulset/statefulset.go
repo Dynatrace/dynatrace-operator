@@ -88,7 +88,16 @@ func (statefulSetBuilder Builder) addLabels(sts *appsv1.StatefulSet) {
 	if statefulSetBuilder.dynakube.CustomActiveGateImage() != "" {
 		versionLabelValue = kubeobjects.CustomImageLabelValue
 	}
-	appLabels := kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, statefulSetBuilder.dynakube.Name, statefulSetBuilder.capability.ShortName(), versionLabelValue)
+
+	componentLabel := kubeobjects.ActiveGateComponentLabel
+	if statefulSetBuilder.dynakube.IsSyntheticMonitoringEnabled() {
+		componentLabel = kubeobjects.SyntheticComponentLabel
+	}
+	appLabels := kubeobjects.NewAppLabels(
+		componentLabel,
+		statefulSetBuilder.dynakube.Name,
+		statefulSetBuilder.capability.ShortName(),
+		versionLabelValue)
 
 	sts.ObjectMeta.Labels = appLabels.BuildLabels()
 	sts.Spec.Selector = &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()}
@@ -162,7 +171,7 @@ func (statefulSetBuilder Builder) buildBaseContainer() []corev1.Container {
 }
 
 func (statefulSetBuilder Builder) buildResources() corev1.ResourceRequirements {
-	if statefulSetBuilder.dynakube.IsSyntheticActiveGateEnabled() {
+	if statefulSetBuilder.dynakube.IsSyntheticMonitoringEnabled() {
 		return modifiers.ActiveGateResourceRequirements
 	} else {
 		return statefulSetBuilder.capability.Properties().Resources

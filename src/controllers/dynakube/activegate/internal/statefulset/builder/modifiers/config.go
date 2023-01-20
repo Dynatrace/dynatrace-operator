@@ -28,18 +28,26 @@ var (
 	log = logger.Factory.GetLogger("activegate-statefulset-builder")
 )
 
-func GenerateAllModifiers(dynakube dynatracev1beta1.DynaKube, capability capability.Capability) []builder.Modifier {
-	return []builder.Modifier{
-		NewKubernetesMonitoringModifier(dynakube, capability),
-		NewStatsdModifier(dynakube, capability),
-		NewServicePortModifier(dynakube, capability),
-		NewAuthTokenModifier(dynakube),
-		NewCertificatesModifier(dynakube),
-		NewCustomPropertiesModifier(dynakube, capability),
-		NewExtensionControllerModifier(dynakube, capability),
-		NewProxyModifier(dynakube),
-		NewRawImageModifier(dynakube),
-		NewReadOnlyModifier(dynakube),
-		newSyntheticModifier(dynakube),
+func GenerateAllModifiers(dynaKube dynatracev1beta1.DynaKube, capability capability.Capability) []builder.Modifier {
+	generated := []builder.Modifier{
+		NewAuthTokenModifier(dynaKube),
+		NewCertificatesModifier(dynaKube),
+		NewCustomPropertiesModifier(dynaKube, capability),
+		NewProxyModifier(dynaKube),
+		NewRawImageModifier(dynaKube),
+		NewReadOnlyModifier(dynaKube),
 	}
+
+	if capability.AssistsSynthetic() {
+		generated = append(generated, newSyntheticModifier(dynaKube))
+	} else {
+		generated = append(
+			generated,
+			NewKubernetesMonitoringModifier(dynaKube, capability),
+			NewStatsdModifier(dynaKube, capability),
+			NewServicePortModifier(dynaKube, capability),
+			NewExtensionControllerModifier(dynaKube, capability))
+	}
+
+	return generated
 }

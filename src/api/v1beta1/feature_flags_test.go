@@ -203,25 +203,3 @@ func TestDynaKube_FeatureIgnoredNamespaces(t *testing.T) {
 
 	assert.True(t, dynakubeNamespaceMatches)
 }
-
-func TestSyntheticNodeType(t *testing.T) {
-	assertion := assert.New(t)
-
-	t.Run("synthetic-node-type", func(t *testing.T) {
-		dynakube := createDynakubeWithAnnotation()
-		assertion.Equal(
-			SyntheticNodeS,
-			dynakube.FeatureSyntheticNodeType(),
-			"default node type: %s",
-			SyntheticNodeS)
-
-		dynakube = createDynakubeWithAnnotation(
-			AnnotationFeatureSyntheticNodeType,
-			SyntheticNodeXs)
-		assertion.Equal(
-			SyntheticNodeXs,
-			dynakube.FeatureSyntheticNodeType(),
-			"declared node type: %s",
-			SyntheticNodeXs)
-	})
-}

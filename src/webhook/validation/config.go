@@ -27,8 +27,8 @@ var validators = []validator{
 	noResourcesAvailable,
 	imageFieldSetWithoutCSIFlag,
 	conflictingOneAgentVolumeStorageSettings,
-	exclusiveSyntheticCapability,
 	invalidSyntheticNodeType,
+	invalidSyntheticAutoscalerReplicaBounds,
 }
 
 var warnings = []validator{

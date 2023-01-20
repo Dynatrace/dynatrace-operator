@@ -97,3 +97,19 @@ OneAgent labels
 {{ include "dynatrace-operator.commonLabels" . }}
 app.kubernetes.io/component: oneagent
 {{- end -}}
+
+{{/*
+Synthetic labels
+*/}}
+{{- define "dynatrace-operator.syntheticLabels" -}}
+{{ include "dynatrace-operator.commonLabels" . }}
+app.kubernetes.io/component: synthetic
+{{- end -}}
+
+{{/*
+DynaMetric Service labels
+*/}}
+{{- define "dynatrace-operator.dynaMetricLabels" -}}
+{{ include "dynatrace-operator.commonLabels" . }}
+app.kubernetes.io/component: dynametrics
+{{- end -}}

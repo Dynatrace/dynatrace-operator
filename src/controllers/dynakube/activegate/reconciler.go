@@ -73,12 +73,16 @@ func (r *Reconciler) Reconcile() error {
 	var caps = capability.GenerateActiveGateCapabilities(r.dynakube)
 	for _, agCapability := range caps {
 		if agCapability.Enabled() {
-			return r.createCapability(agCapability)
-		} else {
-			err = r.deleteCapability(agCapability)
-			if err != nil {
+			err = r.createCapability(agCapability)
+			if !r.dynakube.IsSyntheticMonitoringEnabled() {
 				return err
 			}
+		} else {
+			err = r.deleteCapability(agCapability)
+		}
+
+		if err != nil {
+			return err
 		}
 	}
 

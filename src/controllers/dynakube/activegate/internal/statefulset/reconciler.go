@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/synthetic/autoscaler"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/pkg/errors"
@@ -63,26 +64,29 @@ func (r *Reconciler) manageStatefulSet() error {
 		return errors.WithStack(err)
 	}
 
-	if err := controllerutil.SetControllerReference(r.dynakube, desiredSts, r.scheme); err != nil {
+	if err = controllerutil.SetControllerReference(r.dynakube, desiredSts, r.scheme); err != nil {
 		return errors.WithStack(err)
 	}
 
-	created, err := r.createStatefulSetIfNotExists(desiredSts)
-	if created || err != nil {
+	reconcilesSet, err := r.createStatefulSetIfNotExists(desiredSts)
+	if err != nil {
 		return errors.WithStack(err)
 	}
-
-	deleted, err := r.deleteStatefulSetIfSelectorChanged(desiredSts)
-	if deleted || err != nil {
-		return errors.WithStack(err)
+	if !reconcilesSet {
+		reconcilesSet, err = r.deleteStatefulSetIfSelectorChanged(desiredSts)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+	}
+	if !reconcilesSet {
+		_, err = r.updateStatefulSetIfOutdated(desiredSts)
+		if err != nil {
+			return errors.WithStack(err)
+		}
 	}
 
-	updated, err := r.updateStatefulSetIfOutdated(desiredSts)
-	if updated || err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
+	err = r.reconcileSynAutoscaler(desiredSts)
+	return errors.WithStack(err)
 }
 
 func (r *Reconciler) buildDesiredStatefulSet() (*appsv1.StatefulSet, error) {
@@ -239,4 +243,23 @@ func (r *Reconciler) getDataFromAuthTokenSecret() (string, error) {
 
 func needsCustomPropertyHash(customProperties *dynatracev1beta1.DynaKubeValueSource) bool {
 	return customProperties != nil && (customProperties.Value != "" || customProperties.ValueFrom != "")
+}
+
+func (reconciler *Reconciler) reconcileSynAutoscaler(toScale *appsv1.StatefulSet) error {
+	deployed, err := reconciler.getStatefulSet(toScale)
+	switch {
+	case k8serrors.IsNotFound(err):
+		err = nil
+	case deployed != nil:
+		err = autoscaler.NewReconciler(
+			context.TODO(),
+			reconciler.apiReader,
+			reconciler.client,
+			reconciler.scheme,
+			reconciler.dynakube,
+			deployed,
+		).Reconcile()
+	}
+
+	return errors.WithStack(err)
 }

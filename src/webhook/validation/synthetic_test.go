@@ -9,28 +9,37 @@ import (
 )
 
 func TestSyntheticInvalidSettings(t *testing.T) {
-	capability := []dynatracev1beta1.CapabilityDisplayName{
-		dynatracev1beta1.SyntheticCapability.DisplayName,
-	}
 	invalidType := "XL"
+	dynaKube := dynatracev1beta1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testName,
+			Namespace: testNamespace,
+		},
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			APIURL: testApiUrl,
+			Synthetic: dynatracev1beta1.SyntheticSpec{
+				NodeType: invalidType,
+				Autoscaler: dynatracev1beta1.AutoscalerSpec{
+					MinReplicas: 3,
+					MaxReplicas: 3,
+				},
+			},
+		},
+	}
 
-	t.Run("synthetic-node-type", func(t *testing.T) {
-		assertDeniedResponse(t,
+	toAssertInvalidNodeType := func(t *testing.T) {
+		assertDeniedResponse(
+			t,
 			[]string{fmt.Sprintf(errorInvalidSyntheticNodeType, invalidType)},
-			&dynatracev1beta1.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      testName,
-					Namespace: testNamespace,
-					Annotations: map[string]string{
-						dynatracev1beta1.AnnotationFeatureSyntheticNodeType: invalidType,
-					},
-				},
-				Spec: dynatracev1beta1.DynaKubeSpec{
-					APIURL: testApiUrl,
-					ActiveGate: dynatracev1beta1.ActiveGateSpec{
-						Capabilities: capability,
-					},
-				},
-			})
-	})
+			&dynaKube)
+	}
+	t.Run("node-type", toAssertInvalidNodeType)
+
+	toAssertInvalidReplicaBounds := func(t *testing.T) {
+		assertDeniedResponse(
+			t,
+			[]string{errorInvalidSyntheticAutoscalerReplicaBounds},
+			&dynaKube)
+	}
+	t.Run("autoscaler-replica-bounds", toAssertInvalidReplicaBounds)
 }

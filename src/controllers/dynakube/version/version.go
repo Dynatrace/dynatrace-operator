@@ -35,71 +35,144 @@ type Reconciler struct {
 	TimeProvider    *kubeobjects.TimeProvider
 }
 
-type updateSpec struct {
-	updateActiveGate bool
-	updateEec        bool
-	statsdUpdate     bool
-	oneAgentUpdate   bool
+type updateScope struct {
+	onActiveGate bool
+	onEec        bool
+	onStats      bool
+	onOneAgent   bool
+	onSynthetic  bool
+	onDynaMetric bool
 }
 
-func (s updateSpec) needsUpdate() bool {
-	return s.updateActiveGate || s.updateEec || s.statsdUpdate || s.oneAgentUpdate
+func (scope updateScope) needsUpdate() bool {
+	return scope.onActiveGate ||
+		scope.onEec ||
+		scope.onStats ||
+		scope.onOneAgent ||
+		scope.onSynthetic ||
+		scope.onDynaMetric
+}
+
+func (scope updateScope) reconcileActiveGate(dynakube *dynatracev1beta1.DynaKube, updater *imageUpdater) {
+	if !scope.onActiveGate {
+		return
+	}
+
+	err := updater.update(
+		dynakube.ActiveGateImage(),
+		&dynakube.Status.ActiveGate.VersionStatus,
+		true)
+	if err != nil {
+		log.Error(err, "failed to update ActiveGate image version")
+	}
+}
+
+func (scope updateScope) reconcileEec(dynakube *dynatracev1beta1.DynaKube, updater *imageUpdater) {
+	if !scope.onEec {
+		return
+	}
+
+	err := updater.update(
+		dynakube.EecImage(),
+		&dynakube.Status.ExtensionController.VersionStatus,
+		true)
+	if err != nil {
+		log.Error(err, "Failed to update Extension Controller image version")
+	}
+}
+
+func (scope updateScope) reconcileStatsd(dynakube *dynatracev1beta1.DynaKube, updater *imageUpdater) {
+	if !scope.onStats {
+		return
+	}
+
+	err := updater.update(
+		dynakube.StatsdImage(),
+		&dynakube.Status.Statsd.VersionStatus,
+		true)
+	if err != nil {
+		log.Error(err, "Failed to update StatsD image version")
+	}
+}
+
+func (scope updateScope) reconcileOneAgent(dynakube *dynatracev1beta1.DynaKube, updater *imageUpdater) {
+	if !scope.onOneAgent {
+		return
+	}
+
+	err := updater.update(
+		dynakube.OneAgentImage(),
+		&dynakube.Status.OneAgent.VersionStatus,
+		false)
+	if err != nil {
+		log.Error(err, "failed to update OneAgent image version")
+	}
+}
+
+func (scope updateScope) reconcileSynthetic(dynaKube *dynatracev1beta1.DynaKube, updater *imageUpdater) {
+	if !scope.onSynthetic {
+		return
+	}
+
+	err := updater.update(
+		dynaKube.SyntheticImage(),
+		&dynaKube.Status.Synthetic.VersionStatus,
+		true)
+	if err != nil {
+		log.Error(err, "failed to update synthetic image version")
+	}
+}
+
+func (scope updateScope) reconcileDynaMetrics(dynaKube *dynatracev1beta1.DynaKube, updater *imageUpdater) {
+	if !scope.onDynaMetric {
+		return
+	}
+
+	err := updater.update(
+		dynaKube.DynaMetricImage(),
+		&dynaKube.Status.DynaMetrics.VersionStatus,
+		true)
+	if err != nil {
+		log.Error(err, "failed to update DynaMetric image version")
+	}
 }
 
 // Reconcile updates the version and hash for the images used by the rec.Dynakube DynaKube instance.
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	updateSpec := updateSpec{
-		updateActiveGate: needsActiveGateUpdate(r.Dynakube, *r.TimeProvider),
-		updateEec:        needsEecUpdate(r.Dynakube, *r.TimeProvider),
-		statsdUpdate:     needsStatsdUpdate(r.Dynakube, *r.TimeProvider),
-		oneAgentUpdate:   needsOneAgentUpdate(r.Dynakube, *r.TimeProvider),
+	scope := updateScope{
+		onActiveGate: needsActiveGateUpdate(r.Dynakube, *r.TimeProvider),
+		onEec:        needsEecUpdate(r.Dynakube, *r.TimeProvider),
+		onStats:      needsStatsdUpdate(r.Dynakube, *r.TimeProvider),
+		onOneAgent:   needsOneAgentUpdate(r.Dynakube, *r.TimeProvider),
+		onSynthetic:  needsSynMonitoringUpdate(r.Dynakube, *r.TimeProvider),
+		onDynaMetric: needsDynaMetricUpdate(r.Dynakube, *r.TimeProvider),
 	}
 
-	if !updateSpec.needsUpdate() {
+	if !scope.needsUpdate() {
 		return nil
 	}
 
-	return r.updateImages(ctx, updateSpec)
+	return r.updateImages(ctx, scope)
 }
 
-func (r *Reconciler) updateImages(ctx context.Context, spec updateSpec) error {
+func (r *Reconciler) updateImages(ctx context.Context, scope updateScope) error {
 	dockerConfig, err := createDockerConfigWithCustomCAs(ctx, r.Dynakube, r.ApiReader, r.Fs)
 	if err != nil {
 		return err
 	}
 
-	imageUpdater := imageUpdater{
+	imageUpdater := &imageUpdater{
 		now:         *r.TimeProvider.Now(),
 		dockerCfg:   dockerConfig,
 		verProvider: r.VersionProvider,
 	}
-	if spec.updateActiveGate {
-		err := imageUpdater.update(r.Dynakube.ActiveGateImage(), &r.Dynakube.Status.ActiveGate.VersionStatus, true)
-		if err != nil {
-			log.Error(err, "failed to update ActiveGate image version")
-		}
-	}
+	scope.reconcileActiveGate(r.Dynakube, imageUpdater)
+	scope.reconcileEec(r.Dynakube, imageUpdater)
+	scope.reconcileStatsd(r.Dynakube, imageUpdater)
+	scope.reconcileOneAgent(r.Dynakube, imageUpdater)
+	scope.reconcileSynthetic(r.Dynakube, imageUpdater)
+	scope.reconcileDynaMetrics(r.Dynakube, imageUpdater)
 
-	if spec.updateEec {
-		err := imageUpdater.update(r.Dynakube.EecImage(), &r.Dynakube.Status.ExtensionController.VersionStatus, true)
-		if err != nil {
-			log.Error(err, "Failed to update Extension Controller image version")
-		}
-	}
-
-	if spec.statsdUpdate {
-		err := imageUpdater.update(r.Dynakube.StatsdImage(), &r.Dynakube.Status.Statsd.VersionStatus, true)
-		if err != nil {
-			log.Error(err, "Failed to update StatsD image version")
-		}
-	}
-
-	if spec.oneAgentUpdate {
-		err := imageUpdater.update(r.Dynakube.OneAgentImage(), &r.Dynakube.Status.OneAgent.VersionStatus, false)
-		if err != nil {
-			log.Error(err, "failed to update OneAgent image version")
-		}
-	}
 	return nil
 }
 
@@ -149,13 +222,25 @@ func needsOneAgentUpdate(dynakube *dynatracev1beta1.DynaKube, timeProvider kubeo
 		dynakube.ShouldAutoUpdateOneAgent()
 }
 
+func needsSynMonitoringUpdate(dynakube *dynatracev1beta1.DynaKube, timeProvider kubeobjects.TimeProvider) bool {
+	return dynakube.IsSyntheticMonitoringEnabled() &&
+		dynakube.FeatureCustomSyntheticImage() == "" &&
+		timeProvider.IsOutdated(dynakube.Status.Synthetic.LastUpdateProbeTimestamp, ProbeThreshold)
+}
+
+func needsDynaMetricUpdate(dynakube *dynatracev1beta1.DynaKube, timeProvider kubeobjects.TimeProvider) bool {
+	return dynakube.IsSyntheticMonitoringEnabled() &&
+		dynakube.FeatureCustomDynaMetricImage() == "" &&
+		timeProvider.IsOutdated(dynakube.Status.DynaMetrics.LastUpdateProbeTimestamp, ProbeThreshold)
+}
+
 type imageUpdater struct {
 	now         metav1.Time
 	dockerCfg   *dockerconfig.DockerConfig
 	verProvider VersionProviderCallback
 }
 
-func (updater imageUpdater) update(
+func (updater *imageUpdater) update(
 	img string,
 	target *dynatracev1beta1.VersionStatus,
 	allowDowngrades bool,
