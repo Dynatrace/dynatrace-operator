@@ -21,7 +21,7 @@ func InstallDynatraceFromSource(builder *features.FeatureBuilder, secretConfig *
 	if secretConfig != nil {
 		builder.Setup(secrets.ApplyDefault(*secretConfig))
 	}
-	builder.Setup(operator.InstallFromSource(true))
+	builder.Setup(operator.InstallViaMake())
 }
 
 func InstallDynatraceFromGithub(builder *features.FeatureBuilder, secretConfig *secrets.Secret, releaseTag string) {

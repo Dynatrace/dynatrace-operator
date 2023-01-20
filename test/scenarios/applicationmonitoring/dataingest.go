@@ -11,7 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/manifests"
@@ -48,13 +47,11 @@ func dataIngest(t *testing.T) features.Feature {
 	dataIngestDynakube := dynakube.NewBuilder().
 		WithDefaultObjectMeta().
 		ApiUrl(tenantSecret.ApiUrl).
-		ApplicationMonitoring(&v1beta1.ApplicationMonitoringSpec{
-			UseCSIDriver: address.Of(false),
-		}).Build()
+		ApplicationMonitoring(&v1beta1.ApplicationMonitoringSpec{}).Build()
 
 	require.NoError(t, err)
 
-	dataIngestFeature.Setup(operator.InstallFromSource(false))
+	dataIngestFeature.Setup(operator.InstallViaMake())
 	dataIngestFeature.Setup(operator.WaitForDeployment())
 	dataIngestFeature.Setup(webhook.WaitForDeployment())
 	dataIngestFeature.Setup(secrets.ApplyDefault(tenantSecret))

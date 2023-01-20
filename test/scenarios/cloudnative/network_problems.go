@@ -44,7 +44,7 @@ func NetworkProblems(t *testing.T) features.Feature {
 	createNetworkProblems.Setup(manifests.InstallFromFile(path.Join(project.TestDataDir(), csiNetworkPolicy)))
 	createNetworkProblems.Setup(manifests.InstallFromFile(path.Join(project.TestDataDir(), sampleNSPath)))
 	createNetworkProblems.Setup(secrets.ApplyDefault(secretConfigs[0]))
-	createNetworkProblems.Setup(operator.InstallFromSource(true))
+	createNetworkProblems.Setup(operator.InstallViaMake())
 
 	setup.AssessOperatorDeployment(createNetworkProblems)
 

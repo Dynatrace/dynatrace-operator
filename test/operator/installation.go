@@ -1,8 +1,14 @@
 package operator
 
 import (
+	"context"
 	"net/url"
+	"os"
+	"os/exec"
 	"path"
+	"sigs.k8s.io/e2e-framework/pkg/envconf"
+	"strings"
+	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/deployment"
@@ -23,6 +29,40 @@ const (
 func InstallFromSource(withCsi bool) features.Func {
 	paths := manifestsPaths(withCsi)
 	return manifests.InstallFromFiles(paths)
+}
+
+func InstallViaMake() features.Func {
+	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+		rootDir := getCorrectDir()
+
+		platform := kubeobjects.ResolvePlatformFromEnv()
+		makeTarget := "deploy"
+		if platform == kubeobjects.Openshift {
+			makeTarget = strings.Join([]string{makeTarget, "openshift"}, "/")
+		} else if platform == kubeobjects.Kubernetes {
+			makeTarget = strings.Join([]string{makeTarget, "kubernetes"}, "/")
+		}
+
+		err := exec.Command("make", "-C", rootDir, makeTarget).Run()
+		if err != nil {
+			t.Fatal("failed to install the operator via the make command")
+			return nil
+		}
+
+		return ctx
+	}
+}
+
+func getCorrectDir() string {
+	currentDir, err := os.Getwd()
+
+	if err != nil {
+		return ""
+	}
+
+	rootDir := strings.Split(currentDir, "test")
+
+	return rootDir[0]
 }
 
 func manifestsPaths(withCsi bool) []string {
