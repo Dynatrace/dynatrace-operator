@@ -6,6 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -62,7 +63,7 @@ func (mod KubernetesMonitoringModifier) getInitContainers() []corev1.Container {
 	}
 	volumeMounts = append(volumeMounts, mod.getReadOnlyInitVolumeMounts()...)
 
-	return []corev1.Container{
+	containers := []corev1.Container{
 		{
 			Name:            initContainerTemplateName,
 			Image:           mod.dynakube.ActiveGateImage(),
@@ -72,11 +73,11 @@ func (mod KubernetesMonitoringModifier) getInitContainers() []corev1.Container {
 			Args:            []string{"-c", k8scrt2jksPath},
 			VolumeMounts:    volumeMounts,
 			Resources:       mod.capability.Properties().Resources,
-			SecurityContext: &corev1.SecurityContext{
-				ReadOnlyRootFilesystem: &readOnlyRootFs,
-			},
+			SecurityContext: consts.ContainerSecurityContext.DeepCopy(),
 		},
 	}
+	containers[0].SecurityContext.ReadOnlyRootFilesystem = address.Of(readOnlyRootFs)
+	return containers
 }
 
 func (mod KubernetesMonitoringModifier) getVolumes() []corev1.Volume {

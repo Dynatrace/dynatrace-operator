@@ -143,19 +143,7 @@ func (statefulSetBuilder Builder) buildBaseContainer() []corev1.Container {
 			PeriodSeconds:       15,
 			FailureThreshold:    3,
 		},
-		SecurityContext: &corev1.SecurityContext{
-			Privileged:               address.Of(false),
-			AllowPrivilegeEscalation: address.Of(false),
-			RunAsNonRoot:             address.Of(true),
-			Capabilities: &corev1.Capabilities{
-				Drop: []corev1.Capability{
-					"ALL",
-				},
-			},
-			SeccompProfile: &corev1.SeccompProfile{
-				Type: corev1.SeccompProfileTypeRuntimeDefault,
-			},
-		},
+		SecurityContext: consts.ContainerSecurityContext.DeepCopy(),
 	}
 
 	return []corev1.Container{container}

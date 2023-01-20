@@ -25,7 +25,8 @@ readOnlyRootFilesystem: false
 requiredDropCapabilities:
   - ALL
 runAsUser:
-  type: MustRunAsNonRoot
+  type: MustRunAs
+  uid: 1001
 seLinuxContext:
   type: RunAsAny
 seccompProfiles:
