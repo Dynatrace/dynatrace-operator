@@ -1,1 +1,11 @@
 .git
+.github
+.gitignore
+.golangci.yaml
+.editorconfig
+
+test
+config
+assets
+
+*.md
