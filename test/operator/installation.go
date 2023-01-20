@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"strings"
 	"testing"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/project"
+	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
@@ -33,7 +33,9 @@ func InstallFromSource(withCsi bool) features.Func {
 
 func InstallViaMake() features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		rootDir := getCorrectDir()
+		rootDir := getSourceRootDir()
+
+		runBuildAndManifests(rootDir, t)
 
 		platform := kubeobjects.ResolvePlatformFromEnv()
 		makeTarget := "deploy"
@@ -41,11 +43,14 @@ func InstallViaMake() features.Func {
 			makeTarget = strings.Join([]string{makeTarget, "openshift"}, "/")
 		} else if platform == kubeobjects.Kubernetes {
 			makeTarget = strings.Join([]string{makeTarget, "kubernetes"}, "/")
+		} else {
+			t.Fatal("failed to install the operator via the make command as no correct platform was set")
+			return nil
 		}
 
 		err := exec.Command("make", "-C", rootDir, makeTarget).Run()
 		if err != nil {
-			t.Fatal("failed to install the operator via the make command")
+			t.Fatal("failed to install the operator via the make command", err)
 			return nil
 		}
 
@@ -53,7 +58,21 @@ func InstallViaMake() features.Func {
 	}
 }
 
-func getCorrectDir() string {
+func runBuildAndManifests(rootDir string, t *testing.T) {
+	err := exec.Command("make", "-C", rootDir, "build").Run()
+	if err != nil {
+		t.Fatal("failed to install the operator via the make command", err)
+		return
+	}
+
+	err = exec.Command("make", "-C", rootDir, "manifests/branch").Run()
+	if err != nil {
+		t.Fatal("failed to install the operator via the make command", err)
+		return
+	}
+}
+
+func getSourceRootDir() string {
 	currentDir, err := os.Getwd()
 
 	if err != nil {
