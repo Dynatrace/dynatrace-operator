@@ -136,15 +136,13 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 			return reconcile.Result{RequeueAfter: requeueAfter}, nil
 		}
 		dynakube.Status.SetPhase(dynatracev1beta1.Error)
+		log.Error(err, "error reconciling DynaKube", "namespace", dynakube.Namespace, "name", dynakube.Name)
 	} else {
 		dynakube.Status.SetPhase(controller.determineDynaKubePhase(dynakube))
 	}
-
-	isStatusDifferent, err := kubeobjects.IsDifferent(oldStatus, dynakube.Status)
-	if err != nil {
+	if isStatusDifferent, err := kubeobjects.IsDifferent(oldStatus, dynakube.Status); err != nil {
 		log.Error(err, "failed to generate hash for the status section")
-	}
-	if isStatusDifferent {
+	} else if isStatusDifferent {
 		log.Info("status changed, updating DynaKube")
 		requeueAfter = changesUpdateInterval
 		if errClient := controller.updateDynakubeStatus(ctx, dynakube); errClient != nil {
@@ -229,12 +227,12 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		return err
 	}
 
-	err = connectioninfo.NewReconciler(ctx, controller.client, controller.apiReader, dynakube, dynatraceClient).Reconcile()
+	err = connectioninfo.NewReconciler(ctx, controller.client, controller.apiReader, controller.scheme, dynakube, dynatraceClient).Reconcile()
 	if err != nil {
 		return err
 	}
 
-	err = deploymentmetadata.NewReconciler(ctx, controller.client, controller.apiReader, *dynakube, controller.clusterID).Reconcile()
+	err = deploymentmetadata.NewReconciler(ctx, controller.client, controller.apiReader, controller.scheme, *dynakube, controller.clusterID).Reconcile()
 	if err != nil {
 		return err
 	}

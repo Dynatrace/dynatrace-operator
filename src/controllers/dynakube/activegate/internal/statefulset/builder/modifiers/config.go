@@ -4,7 +4,6 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder"
-	"github.com/Dynatrace/dynatrace-operator/src/logger"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -24,10 +23,6 @@ type initContainerModifier interface {
 	getInitContainers() []corev1.Container
 }
 
-var (
-	log = logger.Factory.GetLogger("activegate-statefulset-builder")
-)
-
 func GenerateAllModifiers(dynaKube dynatracev1beta1.DynaKube, capability capability.Capability) []builder.Modifier {
 	generated := []builder.Modifier{
 		NewAuthTokenModifier(dynaKube),
@@ -44,9 +39,7 @@ func GenerateAllModifiers(dynaKube dynatracev1beta1.DynaKube, capability capabil
 		generated = append(
 			generated,
 			NewKubernetesMonitoringModifier(dynaKube, capability),
-			NewStatsdModifier(dynaKube, capability),
-			NewServicePortModifier(dynaKube, capability),
-			NewExtensionControllerModifier(dynaKube, capability))
+			NewServicePortModifier(dynaKube, capability))
 	}
 
 	return generated

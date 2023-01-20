@@ -37,8 +37,6 @@ type Reconciler struct {
 
 type updateScope struct {
 	onActiveGate bool
-	onEec        bool
-	onStats      bool
 	onOneAgent   bool
 	onSynthetic  bool
 	onDynaMetric bool
@@ -46,8 +44,6 @@ type updateScope struct {
 
 func (scope updateScope) needsUpdate() bool {
 	return scope.onActiveGate ||
-		scope.onEec ||
-		scope.onStats ||
 		scope.onOneAgent ||
 		scope.onSynthetic ||
 		scope.onDynaMetric
@@ -64,34 +60,6 @@ func (scope updateScope) reconcileActiveGate(dynakube *dynatracev1beta1.DynaKube
 		true)
 	if err != nil {
 		log.Error(err, "failed to update ActiveGate image version")
-	}
-}
-
-func (scope updateScope) reconcileEec(dynakube *dynatracev1beta1.DynaKube, updater *imageUpdater) {
-	if !scope.onEec {
-		return
-	}
-
-	err := updater.update(
-		dynakube.EecImage(),
-		&dynakube.Status.ExtensionController.VersionStatus,
-		true)
-	if err != nil {
-		log.Error(err, "Failed to update Extension Controller image version")
-	}
-}
-
-func (scope updateScope) reconcileStatsd(dynakube *dynatracev1beta1.DynaKube, updater *imageUpdater) {
-	if !scope.onStats {
-		return
-	}
-
-	err := updater.update(
-		dynakube.StatsdImage(),
-		&dynakube.Status.Statsd.VersionStatus,
-		true)
-	if err != nil {
-		log.Error(err, "Failed to update StatsD image version")
 	}
 }
 
@@ -141,8 +109,6 @@ func (scope updateScope) reconcileDynaMetrics(dynaKube *dynatracev1beta1.DynaKub
 func (r *Reconciler) Reconcile(ctx context.Context) error {
 	scope := updateScope{
 		onActiveGate: needsActiveGateUpdate(r.Dynakube, *r.TimeProvider),
-		onEec:        needsEecUpdate(r.Dynakube, *r.TimeProvider),
-		onStats:      needsStatsdUpdate(r.Dynakube, *r.TimeProvider),
 		onOneAgent:   needsOneAgentUpdate(r.Dynakube, *r.TimeProvider),
 		onSynthetic:  needsSynMonitoringUpdate(r.Dynakube, *r.TimeProvider),
 		onDynaMetric: needsDynaMetricUpdate(r.Dynakube, *r.TimeProvider),
@@ -167,8 +133,6 @@ func (r *Reconciler) updateImages(ctx context.Context, scope updateScope) error 
 		verProvider: r.VersionProvider,
 	}
 	scope.reconcileActiveGate(r.Dynakube, imageUpdater)
-	scope.reconcileEec(r.Dynakube, imageUpdater)
-	scope.reconcileStatsd(r.Dynakube, imageUpdater)
 	scope.reconcileOneAgent(r.Dynakube, imageUpdater)
 	scope.reconcileSynthetic(r.Dynakube, imageUpdater)
 	scope.reconcileDynaMetrics(r.Dynakube, imageUpdater)
@@ -196,18 +160,6 @@ func createDockerConfigWithCustomCAs(ctx context.Context, dynakube *dynatracev1b
 		}()
 	}
 	return dockerConfig, nil
-}
-
-func needsStatsdUpdate(dynakube *dynatracev1beta1.DynaKube, timeProvider kubeobjects.TimeProvider) bool {
-	return dynakube.IsStatsdActiveGateEnabled() &&
-		!dynakube.FeatureDisableActiveGateUpdates() &&
-		timeProvider.IsOutdated(dynakube.Status.Statsd.LastUpdateProbeTimestamp, ProbeThreshold)
-}
-
-func needsEecUpdate(dynakube *dynatracev1beta1.DynaKube, timeProvider kubeobjects.TimeProvider) bool {
-	return dynakube.IsStatsdActiveGateEnabled() &&
-		!dynakube.FeatureDisableActiveGateUpdates() &&
-		timeProvider.IsOutdated(dynakube.Status.ExtensionController.LastUpdateProbeTimestamp, ProbeThreshold)
 }
 
 func needsActiveGateUpdate(dynakube *dynatracev1beta1.DynaKube, timeProvider kubeobjects.TimeProvider) bool {

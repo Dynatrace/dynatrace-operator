@@ -133,9 +133,6 @@ func TestServiceCreation(t *testing.T) {
 				consts.HttpsServicePortName,
 				consts.HttpServicePortName,
 			},
-			dynatracev1beta1.StatsdIngestCapability.DisplayName: {
-				consts.StatsdIngestPortName,
-			},
 			dynatracev1beta1.KubeMonCapability.DisplayName: {},
 		}
 
@@ -166,12 +163,10 @@ func TestServiceCreation(t *testing.T) {
 		reconciler := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, dynatraceClient)
 		dynakube.Spec.ActiveGate.Capabilities = []dynatracev1beta1.CapabilityDisplayName{
 			dynatracev1beta1.RoutingCapability.DisplayName,
-			dynatracev1beta1.StatsdIngestCapability.DisplayName,
 		}
 		expectedPorts := []string{
 			consts.HttpsServicePortName,
 			consts.HttpServicePortName,
-			consts.StatsdIngestPortName,
 		}
 
 		err := reconciler.Reconcile()

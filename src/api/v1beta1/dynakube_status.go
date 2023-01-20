@@ -54,12 +54,10 @@ type DynaKubeStatus struct {
 	// Conditions includes status about the current state of the instance
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 
-	ActiveGate          ActiveGateStatus `json:"activeGate,omitempty"`
-	ExtensionController EecStatus        `json:"eec,omitempty"`
-	Statsd              StatsdStatus     `json:"statsd,omitempty"`
-	OneAgent            OneAgentStatus   `json:"oneAgent,omitempty"`
-	Synthetic           SyntheticStatus  `json:"synthetic,omitempty"`
-	DynaMetrics         DynaMetricStatus `json:"dynaMetrics,omitempty"`
+	ActiveGate  ActiveGateStatus `json:"activeGate,omitempty"`
+	OneAgent    OneAgentStatus   `json:"oneAgent,omitempty"`
+	Synthetic   SyntheticStatus  `json:"synthetic,omitempty"`
+	DynaMetrics DynaMetricStatus `json:"dynaMetrics,omitempty"`
 }
 
 type ConnectionInfoStatus struct {
@@ -103,26 +101,6 @@ type ActiveGateStatus struct {
 
 func (agStatus *ActiveGateStatus) Name() string {
 	return "ActiveGate"
-}
-
-var _ VersionStatusNamer = (*EecStatus)(nil)
-
-type EecStatus struct {
-	VersionStatus `json:",inline"`
-}
-
-func (eecStatus *EecStatus) Name() string {
-	return "Extension Controller"
-}
-
-var _ VersionStatusNamer = (*StatsdStatus)(nil)
-
-type StatsdStatus struct {
-	VersionStatus `json:",inline"`
-}
-
-func (statsdStatus *StatsdStatus) Name() string {
-	return "StatsD data source"
 }
 
 var _ VersionStatusNamer = (*OneAgentStatus)(nil)

@@ -40,8 +40,6 @@ const (
 	PodNameOsAgent                          = "oneagent"
 
 	defaultActiveGateImage = "/linux/activegate:latest"
-	defaultStatsDImage     = "/linux/dynatrace-datasource-statsd:latest"
-	defaultEecImage        = "/linux/dynatrace-eec:latest"
 	defaultSyntheticImage  = "/linux/dynatrace-synthetic:latest"
 	defaultDynaMetricImage = "/linux/dynatrace-synthetic-adapter:latest"
 
@@ -167,11 +165,7 @@ func (dk *DynaKube) NeedsActiveGateServicePorts() bool {
 }
 
 func (dk *DynaKube) NeedsActiveGateService() bool {
-	return dk.NeedsActiveGateServicePorts() || dk.IsStatsdActiveGateEnabled()
-}
-
-func (dk *DynaKube) IsStatsdActiveGateEnabled() bool {
-	return dk.IsActiveGateMode(StatsdIngestCapability.DisplayName)
+	return dk.NeedsActiveGateServicePorts()
 }
 
 func (dynaKube *DynaKube) IsSyntheticMonitoringEnabled() bool {
@@ -274,36 +268,6 @@ func (dk *DynaKube) CustomActiveGateImage() string {
 	}
 
 	return dk.Spec.ActiveGate.Image
-}
-
-// EecImage returns the Extension Controller image to be used with the dk DynaKube instance.
-func (dk *DynaKube) EecImage() string {
-	if dk.FeatureCustomEecImage() != "" {
-		return dk.FeatureCustomEecImage()
-	}
-
-	apiUrlHost := dk.ApiUrlHost()
-
-	if apiUrlHost == "" {
-		return ""
-	}
-
-	return apiUrlHost + defaultEecImage
-}
-
-// StatsdImage returns the StatsD data source image to be used with the dk DynaKube instance.
-func (dk *DynaKube) StatsdImage() string {
-	if dk.FeatureCustomStatsdImage() != "" {
-		return dk.FeatureCustomStatsdImage()
-	}
-
-	apiUrlHost := dk.ApiUrlHost()
-
-	if apiUrlHost == "" {
-		return ""
-	}
-
-	return apiUrlHost + defaultStatsDImage
 }
 
 // returns the synthetic image supplied by the given DynaKube.
