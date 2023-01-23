@@ -20,7 +20,7 @@ check_image() {
     1> "${PREFLIGHT_REPORT_NAME}" 2> "${PREFLIGHT_LOG}"
   echo "${PREFLIGHT_EXECUTABLE} returned ${?}"
   cat "${PREFLIGHT_LOG}"
-  rm -rf artifacts preflight.log
+  rm -rf artifacts
   grep "Preflight result: PASSED" "${PREFLIGHT_LOG}" || exit 1
 }
 
