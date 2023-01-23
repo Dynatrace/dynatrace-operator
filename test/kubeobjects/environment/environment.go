@@ -32,7 +32,7 @@ const (
 type Environment struct {
 	env.Environment
 	skipCleanup CleanupMode
-	t           *testing.T
+	t           TestingT
 }
 
 type CleanupFunction func(ctx context.Context, envconf *envconf.Config, t *testing.T) (context.Context, error)
@@ -57,9 +57,21 @@ func Get() *Environment {
 	}
 }
 
-func (environment *Environment) Test(t *testing.T, features ...features.Feature) {
+type TestingT interface {
+	Failed() bool
+	Errorf(format string, args ...interface{})
+}
+
+func (environment *Environment) Test(t TestingT, features ...features.Feature) {
 	environment.t = t
-	environment.Environment.Test(t, features...)
+
+	testingT, ok := t.(*testing.T)
+	if !ok {
+		t.Errorf("Wrong argument type passed, must be *testing.T")
+		return
+	}
+
+	environment.Environment.Test(testingT, features...)
 }
 
 func (environment *Environment) AfterEachTest(cleanupFunctions ...func(context.Context, *envconf.Config, *testing.T) (context.Context, error)) *Environment {
