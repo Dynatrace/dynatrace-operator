@@ -5,6 +5,7 @@ package applicationmonitoring
 import (
 	"context"
 	"fmt"
+	"path"
 	"strings"
 	"testing"
 
@@ -132,7 +133,7 @@ func installDynakube(t *testing.T, name string, annotations map[string]string) f
 
 func installSampleApplications() features.Feature {
 	defaultInstallation := features.New("sample applications installation")
-	defaultInstallation.Assess("sample applications applied", manifests.InstallFromFile(project.RootDir()+"/test/testdata/application-monitoring/buildlabels-sample-apps.yaml"))
+	defaultInstallation.Assess("sample applications applied", manifests.InstallFromFile(path.Join(project.TestDataDir(), "application-monitoring/buildlabels-sample-apps.yaml")))
 	for _, namespaceName := range namespaceNames {
 		defaultInstallation.Assess(namespaceName+" is ready", deployment.WaitFor(sampleapps.Name, namespaceName))
 	}
