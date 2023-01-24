@@ -3,8 +3,6 @@ package consts
 import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
-	corev1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -64,23 +62,4 @@ const (
 
 	DockerImageUser  int64 = 1001
 	DockerImageGroup int64 = 1001
-)
-
-var (
-	ContainerSecurityContext = corev1.SecurityContext{
-		Privileged:               address.Of(false),
-		AllowPrivilegeEscalation: address.Of(false),
-		RunAsNonRoot:             address.Of(true),
-		RunAsUser:                address.Of(DockerImageUser),
-		RunAsGroup:               address.Of(DockerImageGroup),
-		Capabilities: &corev1.Capabilities{
-			Drop: []corev1.Capability{
-				"ALL",
-			},
-		},
-		SeccompProfile: &corev1.SeccompProfile{
-			Type: corev1.SeccompProfileTypeRuntimeDefault,
-		},
-		ReadOnlyRootFilesystem: address.Of(false),
-	}
 )

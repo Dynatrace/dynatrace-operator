@@ -63,7 +63,7 @@ func (mod KubernetesMonitoringModifier) getInitContainers() []corev1.Container {
 	}
 	volumeMounts = append(volumeMounts, mod.getReadOnlyInitVolumeMounts()...)
 
-	containers := []corev1.Container{
+	return []corev1.Container{
 		{
 			Name:            initContainerTemplateName,
 			Image:           mod.dynakube.ActiveGateImage(),
@@ -73,11 +73,9 @@ func (mod KubernetesMonitoringModifier) getInitContainers() []corev1.Container {
 			Args:            []string{"-c", k8scrt2jksPath},
 			VolumeMounts:    volumeMounts,
 			Resources:       mod.capability.Properties().Resources,
-			SecurityContext: consts.ContainerSecurityContext.DeepCopy(),
+			SecurityContext: GetSecurityContext(readOnlyRootFs),
 		},
 	}
-	containers[0].SecurityContext.ReadOnlyRootFilesystem = address.Of(readOnlyRootFs)
-	return containers
 }
 
 func (mod KubernetesMonitoringModifier) getVolumes() []corev1.Volume {
@@ -128,4 +126,24 @@ func (mod KubernetesMonitoringModifier) getReadOnlyInitVolumeMounts() []corev1.V
 		}
 	}
 	return []corev1.VolumeMount{}
+}
+
+func GetSecurityContext(readOnlyRootFileSystem bool) *corev1.SecurityContext {
+	securityContext := corev1.SecurityContext{
+		Privileged:               address.Of(false),
+		AllowPrivilegeEscalation: address.Of(false),
+		RunAsNonRoot:             address.Of(true),
+		RunAsUser:                address.Of(consts.DockerImageUser),
+		RunAsGroup:               address.Of(consts.DockerImageGroup),
+		Capabilities: &corev1.Capabilities{
+			Drop: []corev1.Capability{
+				"ALL",
+			},
+		},
+		SeccompProfile: &corev1.SeccompProfile{
+			Type: corev1.SeccompProfileTypeRuntimeDefault,
+		},
+		ReadOnlyRootFilesystem: address.Of(readOnlyRootFileSystem),
+	}
+	return &securityContext
 }

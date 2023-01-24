@@ -143,7 +143,7 @@ func (statefulSetBuilder Builder) buildBaseContainer() []corev1.Container {
 			PeriodSeconds:       15,
 			FailureThreshold:    3,
 		},
-		SecurityContext: consts.ContainerSecurityContext.DeepCopy(),
+		SecurityContext: modifiers.GetSecurityContext(false),
 	}
 
 	return []corev1.Container{container}
