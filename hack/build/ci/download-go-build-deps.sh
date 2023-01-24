@@ -6,5 +6,5 @@ if ! [ -d ./third_party_licenses ]; then
 fi
 
 # fetch dependencies
-go get -d ./...
+go get -d ./...  # <-- WHY???
 ls -la $HOME/go/pkg/mod

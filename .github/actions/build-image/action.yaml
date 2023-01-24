@@ -26,14 +26,6 @@ runs:
       shell: bash
       run: |
         hack/build/ci/prepare-build-variables.sh
-    - name: Setup cache
-      uses: actions/cache@58c146cc91c5b9e778e71775dfe9bf1442ad9a12 # v3.2.3
-      with:
-        path: |
-          ~/go/pkg/mod
-          ~/.cache/go-build
-          ./third_party_licenses
-        key: ${{ runner.os }}-go-build-cache-${{ hashFiles('**/go.sum') }}
     - name: Download go build dependencies
       shell: bash
       run: |
