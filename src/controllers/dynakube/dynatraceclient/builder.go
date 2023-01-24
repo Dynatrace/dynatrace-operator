@@ -2,19 +2,14 @@ package dynatraceclient
 
 import (
 	"context"
-	"time"
-
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-const apiTokenProbeDelay = 5 * time.Minute
 
 type Builder interface {
 	SetContext(ctx context.Context) Builder
@@ -120,24 +115,17 @@ func (dynatraceClientBuilder builder) BuildWithTokenVerification(dynaKubeStatus 
 }
 
 func (dynatraceClientBuilder builder) verifyTokenScopes(dynatraceClient dtclient.Client, dynaKubeStatus *dynatracev1beta1.DynaKubeStatus) error {
-	if dynaKubeStatus.LastAPITokenProbeTimestamp == nil {
-		dynaKubeStatus.LastAPITokenProbeTimestamp = &metav1.Time{}
+	var err error
+	if dynatracev1beta1.IsRequestOutdated(dynaKubeStatus.DynatraceApi.LastTokenProbe) {
+		dynaKubeStatus.DynatraceApi.LastTokenProbe = metav1.Now()
+		err = dynatraceClientBuilder.tokens.VerifyScopes(dynatraceClient)
+	} else {
+		log.Info(dynaKubeStatus.DynatraceApi.NotOutdatedMessage("token verification"))
+		err = lastErrorFromCondition(dynaKubeStatus)
 	}
 
-	if isLastApiCallTooRecent(dynaKubeStatus) {
-		log.Info("returning a cached result because tokens are only validated once every five minutes to avoid rate limiting")
-		err := lastErrorFromCondition(dynaKubeStatus)
-
-		if err != nil {
-			return err
-		}
-	} else {
-		dynaKubeStatus.LastAPITokenProbeTimestamp = address.Of(metav1.Now())
-		err := dynatraceClientBuilder.tokens.VerifyScopes(dynatraceClient)
-
-		if err != nil {
-			return err
-		}
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -150,8 +138,4 @@ func lastErrorFromCondition(dynaKubeStatus *dynatracev1beta1.DynaKubeStatus) err
 	}
 
 	return nil
-}
-
-func isLastApiCallTooRecent(dynaKubeStatus *dynatracev1beta1.DynaKubeStatus) bool {
-	return time.Now().Before(dynaKubeStatus.LastAPITokenProbeTimestamp.Add(apiTokenProbeDelay))
 }

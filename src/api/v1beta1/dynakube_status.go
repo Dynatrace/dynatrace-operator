@@ -1,7 +1,9 @@
 package v1beta1
 
 import (
+	"fmt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"time"
 )
 
 // DynaKubeStatus defines the observed state of DynaKube
@@ -54,9 +56,29 @@ type DynaKubeStatus struct {
 	// Conditions includes status about the current state of the instance
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 
-	ActiveGate ActiveGateStatus `json:"activeGate,omitempty"`
-	OneAgent   OneAgentStatus   `json:"oneAgent,omitempty"`
-	Synthetic  SyntheticStatus  `json:"synthetic,omitempty"`
+	ActiveGate   ActiveGateStatus   `json:"activeGate,omitempty"`
+	OneAgent     OneAgentStatus     `json:"oneAgent,omitempty"`
+	Synthetic    SyntheticStatus    `json:"synthetic,omitempty"`
+	DynatraceApi DynatraceApiStatus `json:"dynatraceApi,omitempty"`
+}
+
+const MaxRequestInterval = 15 * time.Minute
+
+type DynatraceApiStatus struct {
+	LastTokenProbe                     metav1.Time `json:"lastTokenProbe,omitempty"`
+	LastOneAgentConnectionInfoUpdate   metav1.Time `json:"lastOneAgentConnectionInfoUpdate,omitempty"`
+	LastActiveGateConnectionInfoUpdate metav1.Time `json:"lastActiveGateConnectionInfoUpdate,omitempty"`
+	LastAuthTokenSecretUpdate          metav1.Time `json:"lastAuthTokenSecretUpdate,omitempty"`
+}
+
+func (_ *DynatraceApiStatus) NotOutdatedMessage(functionName string) string {
+	return fmt.Sprintf("skipping %s, last request was made less than %d minutes ago",
+		functionName,
+		int(MaxRequestInterval.Minutes()))
+}
+
+func IsRequestOutdated(time metav1.Time) bool {
+	return time.Add(MaxRequestInterval).Before(metav1.Now().Time)
 }
 
 type ConnectionInfoStatus struct {

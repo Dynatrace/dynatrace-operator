@@ -2,6 +2,7 @@ package authtoken
 
 import (
 	"context"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -45,11 +46,17 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 }
 
 func (r *Reconciler) Reconcile() error {
+	if !dynatracev1beta1.IsRequestOutdated(r.dynakube.Status.DynatraceApi.LastAuthTokenSecretUpdate) {
+		log.Info(r.dynakube.Status.DynatraceApi.NotOutdatedMessage("ActiveGate auth token secret generation"))
+		return nil
+	}
+
 	err := r.reconcileAuthTokenSecret()
 	if err != nil {
 		return errors.Errorf("failed to create activeGateAuthToken secret: %v", err)
 	}
 
+	r.dynakube.Status.DynatraceApi.LastAuthTokenSecretUpdate = metav1.Now()
 	return nil
 }
 

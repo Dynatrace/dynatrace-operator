@@ -2,11 +2,11 @@ package connectioninfo
 
 import (
 	"context"
-
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -49,6 +49,12 @@ func (r *Reconciler) Reconcile() error {
 }
 
 func (r *Reconciler) reconcileOneAgentConnectionInfo() error {
+	if !dynatracev1beta1.IsRequestOutdated(r.dynakube.Status.DynatraceApi.LastOneAgentConnectionInfoUpdate) {
+		log.Info(r.dynakube.Status.DynatraceApi.NotOutdatedMessage("oneagent connection info update"))
+		return nil
+	}
+
+	r.dynakube.Status.DynatraceApi.LastOneAgentConnectionInfoUpdate = metav1.Now()
 	oneAgentConnectionInfo, err := r.dtc.GetOneAgentConnectionInfo()
 	if err != nil {
 		log.Info("failed to get oneagent connection info")
@@ -63,6 +69,12 @@ func (r *Reconciler) reconcileOneAgentConnectionInfo() error {
 }
 
 func (r *Reconciler) reconcileActiveGateConnectionInfo() error {
+	if !dynatracev1beta1.IsRequestOutdated(r.dynakube.Status.DynatraceApi.LastActiveGateConnectionInfoUpdate) {
+		log.Info(r.dynakube.Status.DynatraceApi.NotOutdatedMessage("activegate connection info update"))
+		return nil
+	}
+
+	r.dynakube.Status.DynatraceApi.LastActiveGateConnectionInfoUpdate = metav1.Now()
 	activeGateConnectionInfo, err := r.dtc.GetActiveGateConnectionInfo()
 	if err != nil {
 		log.Info("failed to get activegate connection info")
