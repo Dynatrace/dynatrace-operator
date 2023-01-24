@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/manifests"
@@ -103,7 +104,7 @@ func installOperator(t *testing.T) features.Feature {
 	defaultInstallation := features.New("default installation")
 
 	defaultInstallation.Setup(secrets.ApplyDefault(secretConfig))
-	defaultInstallation.Setup(operator.InstallViaMake())
+	defaultInstallation.Setup(operator.InstallViaMake(true))
 	defaultInstallation.Assess("operator started", operator.WaitForDeployment())
 	defaultInstallation.Assess("webhook started", webhook.WaitForDeployment())
 
@@ -125,7 +126,9 @@ func installDynakube(t *testing.T, name string, annotations map[string]string) f
 			},
 		}).
 		Tokens(dynakube.Name).
-		ApplicationMonitoring(&v1beta1.ApplicationMonitoringSpec{}).Build()))
+		ApplicationMonitoring(&v1beta1.ApplicationMonitoringSpec{
+			UseCSIDriver: address.Of(false),
+		}).Build()))
 	defaultInstallation.Assess("dynakube phase changes to 'Running'", dynakube.WaitForDynakubePhase(dynakube.NewBuilder().Name(name).Namespace(dynakube.Namespace).Build()))
 
 	return defaultInstallation.Feature()

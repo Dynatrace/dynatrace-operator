@@ -30,7 +30,7 @@ func InstallFromSource(withCsi bool) features.Func {
 	return manifests.InstallFromFiles(paths)
 }
 
-func InstallViaMake() features.Func {
+func InstallViaMake(withCSI bool) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		rootDir := project.RootDir()
 
@@ -46,6 +46,10 @@ func InstallViaMake() features.Func {
 		default:
 			t.Fatal("failed to install the operator via the make command as no correct platform was set")
 			return nil
+		}
+
+		if !withCSI {
+			makeTarget = strings.Join([]string{makeTarget, "no-csi"}, "-")
 		}
 
 		err := exec.Command("make", "-C", rootDir, makeTarget).Run()
