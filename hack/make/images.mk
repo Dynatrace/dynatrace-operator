@@ -13,9 +13,9 @@ ifeq ($(origin IMG),undefined)
 	ifneq ($(shell git branch --show-current | grep "^release-"),)
 		# then the MASTER_IMAGE points to quay.io and has a snapshot-<branch-name> tag
 		MASTER_IMAGE=$(BRANCH_IMAGE)
-	# Otherwise, if the current branch is the master branch
-	else ifeq ($(shell git branch --show-current), master)
-		# the branch image has the same value as the master branch which has the snapshot tag
+	# Otherwise, if the current branch is the main branch
+	else ifeq ($(shell git branch --show-current), main)
+		# the branch image has the same value as the main branch which has the snapshot tag
 		BRANCH_IMAGE=$(MASTER_IMAGE)
 	endif
 endif
