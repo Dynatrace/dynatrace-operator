@@ -83,4 +83,21 @@ var (
 		},
 		ReadOnlyRootFilesystem: address.Of(false),
 	}
+
+	PodSecurityContext = corev1.PodSecurityContext{
+		// Privileged:               address.Of(false),
+		// AllowPrivilegeEscalation: address.Of(false),
+		RunAsNonRoot: address.Of(true),
+		RunAsUser:    address.Of(DockerImageUser),
+		RunAsGroup:   address.Of(DockerImageGroup),
+		// Capabilities: &corev1.Capabilities{
+		//	Drop: []corev1.Capability{
+		//		"ALL",
+		//	},
+		// },
+		SeccompProfile: &corev1.SeccompProfile{
+			Type: corev1.SeccompProfileTypeRuntimeDefault,
+		},
+		//ReadOnlyRootFilesystem: address.Of(false),
+	}
 )

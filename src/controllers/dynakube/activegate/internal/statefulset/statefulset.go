@@ -113,6 +113,7 @@ func (statefulSetBuilder Builder) addTemplateSpec(sts *appsv1.StatefulSet) {
 		PriorityClassName:         statefulSetBuilder.dynakube.Spec.ActiveGate.PriorityClassName,
 		DNSPolicy:                 statefulSetBuilder.dynakube.Spec.ActiveGate.DNSPolicy,
 		TopologySpreadConstraints: statefulSetBuilder.capability.Properties().TopologySpreadConstraints,
+		SecurityContext:           consts.PodSecurityContext.DeepCopy(),
 	}
 	sts.Spec.Template.Spec = podSpec
 }
