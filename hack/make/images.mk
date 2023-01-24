@@ -1,4 +1,4 @@
-MASTER_IMAGE ?= quay.io/dynatrace/dynatrace-operator:snapshot
+MAIN_IMAGE ?= quay.io/dynatrace/dynatrace-operator:snapshot
 
 # Default bundle image tag
 BUNDLE_IMG ?= controller-bundle:$(VERSION)
@@ -11,12 +11,12 @@ OLM_IMAGE ?= registry.connect.redhat.com/dynatrace/dynatrace-operator:v${VERSION
 ifeq ($(origin IMG),undefined)
 	# If the current branch is not a release branch
 	ifneq ($(shell git branch --show-current | grep "^release-"),)
-		# then the MASTER_IMAGE points to quay.io and has a snapshot-<branch-name> tag
-		MASTER_IMAGE=$(BRANCH_IMAGE)
+		# then the MAIN_IMAGE points to quay.io and has a snapshot-<branch-name> tag
+		MAIN_IMAGE=$(BRANCH_IMAGE)
 	# Otherwise, if the current branch is the main branch
 	else ifeq ($(shell git branch --show-current), main)
 		# the branch image has the same value as the main branch which has the snapshot tag
-		BRANCH_IMAGE=$(MASTER_IMAGE)
+		BRANCH_IMAGE=$(MAIN_IMAGE)
 	endif
 endif
 
