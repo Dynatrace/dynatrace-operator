@@ -211,28 +211,28 @@ func TestManifestCollectionFails(t *testing.T) {
 		Return(assert.AnError)
 
 	mockedApiReader.
-		On("List", toFlatInterfaceSlice(context, getExpectedObjectsList(queries[3].groupVersionKind), queries[2].filters)...).
+		On("List", toFlatInterfaceSlice(context, getExpectedObjectsList(queries[3].groupVersionKind), queries[3].filters)...).
 		// here an empty DaemonSet list will be produced, make sure it doesn't stop further processing
 		Return(clt.List)
 
 	mockedApiReader.
-		On("List", toFlatInterfaceSlice(context, getExpectedObjectsList(queries[4].groupVersionKind), queries[2].filters)...).
+		On("List", toFlatInterfaceSlice(context, getExpectedObjectsList(queries[4].groupVersionKind), queries[4].filters)...).
 		Return(clt.List)
 
 	mockedApiReader.
-		On("List", toFlatInterfaceSlice(context, getExpectedObjectsList(queries[5].groupVersionKind), queries[2].filters)...).
+		On("List", toFlatInterfaceSlice(context, getExpectedObjectsList(queries[5].groupVersionKind), queries[5].filters)...).
 		Return(clt.List)
 
 	mockedApiReader.
-		On("List", toFlatInterfaceSlice(context, getExpectedObjectsList(queries[6].groupVersionKind), queries[2].filters)...).
+		On("List", toFlatInterfaceSlice(context, getExpectedObjectsList(queries[6].groupVersionKind), queries[6].filters)...).
 		Return(clt.List)
 
 	mockedApiReader.
-		On("List", toFlatInterfaceSlice(context, getExpectedObjectsList(queries[7].groupVersionKind), queries[2].filters)...).
+		On("List", toFlatInterfaceSlice(context, getExpectedObjectsList(queries[7].groupVersionKind), queries[7].filters)...).
 		Return(clt.List)
 
 	mockedApiReader.
-		On("List", toFlatInterfaceSlice(context, getExpectedObjectsList(queries[8].groupVersionKind), queries[2].filters)...).
+		On("List", toFlatInterfaceSlice(context, getExpectedObjectsList(queries[8].groupVersionKind), queries[8].filters)...).
 		Return(clt.List)
 
 	tarBuffer := bytes.Buffer{}

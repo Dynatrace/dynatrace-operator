@@ -11,9 +11,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/support_archive"
 	"github.com/Dynatrace/dynatrace-operator/src/functional"
-	"github.com/Dynatrace/dynatrace-operator/src/webhook"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/test/csi"
 	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/environment"
@@ -29,6 +30,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/slices"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/e2e-framework/klient/conf"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
@@ -46,9 +48,7 @@ func TestMain(m *testing.M) {
 	testEnvironment.BeforeEachTest(oneagent.WaitForDaemonSetPodsDeletion())
 	testEnvironment.BeforeEachTest(namespace.Recreate(namespace.NewBuilder(dynakube.Namespace).Build()))
 	testEnvironment.BeforeEachTest(namespace.Recreate(namespace.NewBuilder(testAppNameNotInjected).Build()))
-	testEnvironment.BeforeEachTest(namespace.Recreate(namespace.NewBuilder(testAppNameInjected).WithLabels(map[string]string{
-		webhook.InjectionInstanceLabel: "abc12345",
-	}).Build()))
+	testEnvironment.BeforeEachTest(namespace.Recreate(namespace.NewBuilder(testAppNameInjected).Build()))
 
 	testEnvironment.AfterEachTest(namespace.Delete(testAppNameInjected))
 	testEnvironment.AfterEachTest(namespace.Delete(testAppNameNotInjected))
@@ -69,6 +69,18 @@ func SupportArchiveExecution(t *testing.T) features.Feature {
 	supportArchiveExecution := features.New("support archive execution")
 	setup.InstallDynatraceFromSource(supportArchiveExecution, &secretConfig)
 	setup.AssessOperatorDeployment(supportArchiveExecution)
+
+	dynakubeBuilder := dynakube.NewBuilder().
+		WithDefaultObjectMeta().
+		NamespaceSelector(v1.LabelSelector{
+			MatchLabels: map[string]string{
+				"kubernetes.io/metadata.name": testAppNameInjected,
+			},
+		}).
+		ApiUrl(secretConfig.ApiUrl).
+		CloudNative(&v1beta1.CloudNativeFullStackSpec{})
+	supportArchiveExecution.Assess("dynakube applied", dynakube.Apply(dynakubeBuilder.Build()))
+	setup.AssessDynakubeStartup(supportArchiveExecution)
 
 	supportArchiveExecution.Assess("support archive subcommand can be executed correctly", testSupportArchiveCommand())
 	return supportArchiveExecution.Feature()
@@ -130,13 +142,20 @@ func collectRequiredFiles(t *testing.T, ctx context.Context, environmentConfig *
 	requiredFiles = append(requiredFiles, getRequiredServiceFiles(t, ctx, environmentConfig)...)
 	requiredFiles = append(requiredFiles, getRequiredWorkloadFiles()...)
 	requiredFiles = append(requiredFiles, getRequiredNamespaceFiles()...)
+	requiredFiles = append(requiredFiles, getRequiredDynaKubeFiles()...)
 	return requiredFiles
 }
 
 func getRequiredPodFiles(t *testing.T, ctx context.Context, environmentConfig *envconf.Config) []string {
-	opPods := pod.List(t, ctx, environmentConfig.Client().Resources(), operator.Namespace)
+	pods := pod.List(t, ctx, environmentConfig.Client().Resources(), operator.Namespace)
 	requiredFiles := make([]string, 0)
-	for _, pod := range opPods.Items {
+
+	operatorPods := functional.Filter(pods.Items, func(podItem corev1.Pod) bool {
+		appNameLabel, ok := podItem.Labels[kubeobjects.AppNameLabel]
+		return ok && appNameLabel == "dynatrace-operator"
+	})
+
+	for _, pod := range operatorPods {
 		requiredFiles = append(requiredFiles,
 			fmt.Sprintf("%s/%s/Pod/%s%s", support_archive.ManifestsDirectoryName, pod.Namespace, pod.Name, support_archive.ManifestsFileExtension))
 		for _, container := range pod.Spec.Containers {
@@ -207,6 +226,19 @@ func getRequiredNamespaceFiles() []string {
 			support_archive.InjectedNamespacesManifestsDirectoryName,
 			testAppNameInjected,
 			support_archive.ManifestsFileExtension))
+	return requiredFiles
+}
+
+func getRequiredDynaKubeFiles() []string {
+	requiredFiles := make([]string, 0)
+	requiredFiles = append(requiredFiles,
+		fmt.Sprintf("%s/%s/%s/%s%s",
+			support_archive.ManifestsDirectoryName,
+			dynakube.Namespace,
+			"DynaKube",
+			dynakube.Name,
+			support_archive.ManifestsFileExtension))
+
 	return requiredFiles
 }
 
