@@ -34,8 +34,6 @@ func InstallViaMake(withCSI bool) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		rootDir := project.RootDir()
 
-		runBuildAndManifests(rootDir, t)
-
 		platform := kubeobjects.ResolvePlatformFromEnv()
 		makeTarget := getDeployMakeTarget(platform, withCSI, t)
 
@@ -73,19 +71,6 @@ func getDeployMakeTarget(platform kubeobjects.Platform, withCSI bool, t *testing
 	return makeTarget
 }
 
-func runBuildAndManifests(rootDir string, t *testing.T) {
-	err := exec.Command("make", "-C", rootDir, "build").Run()
-	if err != nil {
-		t.Fatal("failed to install the operator via the make command", err)
-		return
-	}
-
-	err = exec.Command("make", "-C", rootDir, "manifests/branch").Run()
-	if err != nil {
-		t.Fatal("failed to install the operator via the make command", err)
-		return
-	}
-}
 
 func manifestsPaths(withCsi bool) []string {
 	platform := kubeobjects.ResolvePlatformFromEnv()
