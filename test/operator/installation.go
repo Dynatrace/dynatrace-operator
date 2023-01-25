@@ -37,20 +37,7 @@ func InstallViaMake(withCSI bool) features.Func {
 		runBuildAndManifests(rootDir, t)
 
 		platform := kubeobjects.ResolvePlatformFromEnv()
-		makeTarget := "deploy"
-		switch platform {
-		case kubeobjects.Openshift:
-			makeTarget = strings.Join([]string{makeTarget, "openshift"}, "/")
-		case kubeobjects.Kubernetes:
-			makeTarget = strings.Join([]string{makeTarget, "kubernetes"}, "/")
-		default:
-			t.Fatal("failed to install the operator via the make command as no correct platform was set")
-			return nil
-		}
-
-		if !withCSI {
-			makeTarget = strings.Join([]string{makeTarget, "no-csi"}, "-")
-		}
+		makeTarget := getDeployMakeTarget(platform, withCSI, t)
 
 		err := exec.Command("make", "-C", rootDir, makeTarget).Run()
 		if err != nil {
@@ -60,6 +47,25 @@ func InstallViaMake(withCSI bool) features.Func {
 
 		return ctx
 	}
+}
+
+func getDeployMakeTarget(platform kubeobjects.Platform, withCSI bool, t *testing.T) string {
+	makeTarget := "deploy"
+	switch platform {
+	case kubeobjects.Openshift:
+		makeTarget = strings.Join([]string{makeTarget, "openshift"}, "/")
+	case kubeobjects.Kubernetes:
+		makeTarget = strings.Join([]string{makeTarget, "kubernetes"}, "/")
+	default:
+		t.Fatal("failed to install the operator via the make command as no correct platform was set")
+		return ""
+	}
+
+	if !withCSI {
+		makeTarget = strings.Join([]string{makeTarget, "no-csi"}, "-")
+	}
+
+	return makeTarget
 }
 
 func runBuildAndManifests(rootDir string, t *testing.T) {
