@@ -20,7 +20,7 @@ This script checks the following scenarios:
 - Image (OneAgent and ActiveGate)
   - registry is accessible
   - image is accessible from the operator pod using registry from the tenant or (custom) pull secret
-  
+
 ## Requirements
 
 The script has the following dependencies:
@@ -36,7 +36,7 @@ In addition, macOS has the following requirements:
     brew install gnu-getopt && brew link --force gnu-getopt
     ```
 - GNU implementation of `cut`
-  - please install `gcut`: 
+  - please install `gcut`:
     ```bash
     brew install coreutils
     ```
@@ -46,7 +46,7 @@ In addition, macOS has the following requirements:
 Run the following command to run the script.
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/dynatrace/dynatrace-operator/master/hack/troubleshoot/troubleshoot.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/dynatrace/dynatrace-operator/main/hack/troubleshoot/troubleshoot.sh)"
 ```
 
 Make sure to inspect the contents of the troubleshooting script before executing it.
