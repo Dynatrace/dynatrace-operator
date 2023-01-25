@@ -39,6 +39,11 @@ func InstallViaMake(withCSI bool) features.Func {
 		platform := kubeobjects.ResolvePlatformFromEnv()
 		makeTarget := getDeployMakeTarget(platform, withCSI, t)
 
+		if makeTarget == "" {
+			t.Fatal("failed to install the operator via the make command, as the make target was empty")
+			return nil
+		}
+
 		err := exec.Command("make", "-C", rootDir, makeTarget).Run()
 		if err != nil {
 			t.Fatal("failed to install the operator via the make command", err)
