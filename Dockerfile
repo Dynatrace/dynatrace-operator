@@ -9,7 +9,7 @@ RUN apt-get update && \
     apt-get install -y libbtrfs-dev libdevmapper-dev
 
 RUN CGO_ENABLED=1 CGO_CFLAGS="-O2 -Wno-return-local-addr" \
-    go build -tags "containers_image_openpgp" -ldflags="${GO_LINKER_ARGS}" \
+    go build -tags "containers_image_openpgp,osusergo,netgo,sqlite_omit_load_extension,containers_image_storage_stub,containers_image_docker_daemon_stub" -trimpath -ldflags="${GO_LINKER_ARGS}" \
     -o ./build/_output/bin/dynatrace-operator ./src/cmd/
 
 FROM registry.access.redhat.com/ubi9-minimal:9.1.0 as dependency-src
@@ -21,20 +21,12 @@ FROM registry.access.redhat.com/ubi9-micro:9.1.0
 # operator binary
 COPY --from=operator-build /app/build/_output/bin /usr/local/bin
 
-# cgo dependencies
-COPY --from=operator-build /usr/lib/*/libdevmapper.so* /usr/lib/
-COPY --from=operator-build /lib/*/libdevmapper.so* /lib/
-COPY --from=operator-build /usr/lib/*/libudev.so* /usr/lib/
-
-# trusted certificates
+# # trusted certificates
 COPY --from=dependency-src /etc/ssl/cert.pem /etc/ssl/cert.pem
 
 # csi dependencies
 COPY --from=dependency-src /bin/mount /bin/umount /bin/tar /bin/
 COPY --from=dependency-src /lib64/libmount.so.1 /lib64/libblkid.so.1 /lib64/libuuid.so.1 /lib64/
-
-# fix permission and add .so files to cache
-RUN chmod +x /usr/lib/* && ldconfig
 
 # csi binaries
 COPY --from=registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.7.0 /csi-node-driver-registrar /usr/local/bin

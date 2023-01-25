@@ -77,7 +77,7 @@ func (query ConfigMapQuery) CreateOrUpdate(configMap corev1.ConfigMap) error {
 }
 
 func AreConfigMapsEqual(configMap corev1.ConfigMap, other corev1.ConfigMap) bool {
-	return reflect.DeepEqual(configMap.Data, other.Data) && reflect.DeepEqual(configMap.Labels, other.Labels)
+	return reflect.DeepEqual(configMap.Data, other.Data) && reflect.DeepEqual(configMap.Labels, other.Labels) && reflect.DeepEqual(configMap.OwnerReferences, other.OwnerReferences)
 }
 
 func NewConfigMap(name string, namespace string, data map[string]string) *corev1.ConfigMap {
