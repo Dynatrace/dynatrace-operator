@@ -5,5 +5,5 @@ manifests/prepare-directory:
 manifests: manifests/prepare-directory manifests/kubernetes manifests/openshift
 
 ## Generate manifests for the branch's image tag
-manifests/branch: export MASTER_IMAGE=quay.io/dynatrace/dynatrace-operator:snapshot${SNAPSHOT_SUFFIX}
+manifests/branch: export MAIN_IMAGE=quay.io/dynatrace/dynatrace-operator:snapshot${SNAPSHOT_SUFFIX}
 manifests/branch: manifests
