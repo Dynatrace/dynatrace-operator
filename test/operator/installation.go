@@ -71,7 +71,6 @@ func getDeployMakeTarget(platform kubeobjects.Platform, withCSI bool, t *testing
 	return makeTarget
 }
 
-
 func manifestsPaths(withCsi bool) []string {
 	platform := kubeobjects.ResolvePlatformFromEnv()
 	paths := []string{}
