@@ -30,7 +30,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/slices"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/e2e-framework/klient/conf"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
@@ -72,7 +72,7 @@ func SupportArchiveExecution(t *testing.T) features.Feature {
 
 	dynakubeBuilder := dynakube.NewBuilder().
 		WithDefaultObjectMeta().
-		NamespaceSelector(v1.LabelSelector{
+		NamespaceSelector(metav1.LabelSelector{
 			MatchLabels: map[string]string{
 				"kubernetes.io/metadata.name": testAppNameInjected,
 			},
