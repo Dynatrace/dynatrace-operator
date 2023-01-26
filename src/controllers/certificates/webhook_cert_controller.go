@@ -11,6 +11,7 @@ import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -45,6 +46,7 @@ func newWebhookCertificateController(mgr manager.Manager, cancelMgr context.Canc
 		cancelMgrFunc: cancelMgr,
 		client:        mgr.GetClient(),
 		apiReader:     mgr.GetAPIReader(),
+		scheme:        mgr.GetScheme(),
 	}
 }
 
@@ -54,6 +56,7 @@ type WebhookCertificateController struct {
 	apiReader     client.Reader
 	namespace     string
 	cancelMgrFunc context.CancelFunc
+	scheme        *runtime.Scheme
 }
 
 func (controller *WebhookCertificateController) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -70,7 +73,13 @@ func (controller *WebhookCertificateController) Reconcile(ctx context.Context, r
 		return reconcile.Result{}, errors.WithStack(err)
 	}
 
-	certSecret := newCertificateSecret()
+	webhookDeployment := appsv1.Deployment{}
+	err = controller.apiReader.Get(controller.ctx, types.NamespacedName{Name: webhook.DeploymentName, Namespace: controller.namespace}, &webhookDeployment)
+	if err != nil {
+		return reconcile.Result{}, errors.WithStack(err)
+	}
+
+	certSecret := newCertificateSecret(controller.scheme, &webhookDeployment)
 
 	err = certSecret.setSecretFromReader(controller.ctx, controller.apiReader, controller.namespace)
 	if err != nil {

@@ -10,7 +10,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 type Reconciler struct {
@@ -107,13 +106,13 @@ func (r *Reconciler) maintainConnectionInfoObjects(secretName string, configMapN
 
 func (r *Reconciler) createTenantConnectionInfoConfigMap(secretName string, connectionInfo dtclient.ConnectionInfo) error {
 	configMapData := extractPublicData(connectionInfo)
-	configMap := kubeobjects.NewConfigMap(secretName, r.dynakube.Namespace, configMapData)
-	if err := controllerutil.SetControllerReference(r.dynakube, configMap, r.scheme); err != nil {
+	configMap, err := kubeobjects.NewConfigMapBuilder(r.scheme, r.dynakube).Build(secretName, r.dynakube.Namespace, configMapData)
+	if err != nil {
 		return errors.WithStack(err)
 	}
 
 	query := kubeobjects.NewConfigMapQuery(r.context, r.client, r.apiReader, log)
-	err := query.CreateOrUpdate(*configMap)
+	err = query.CreateOrUpdate(*configMap)
 	if err != nil {
 		log.Info("could not create or update configMap for connection info", "name", configMap.Name)
 		return err
@@ -123,13 +122,13 @@ func (r *Reconciler) createTenantConnectionInfoConfigMap(secretName string, conn
 
 func (r *Reconciler) createTenantTokenSecret(secretName string, connectionInfo dtclient.ConnectionInfo) error {
 	secretData := extractSensitiveData(connectionInfo)
-	secret := kubeobjects.NewSecret(secretName, r.dynakube.Namespace, secretData)
-	if err := controllerutil.SetControllerReference(r.dynakube, secret, r.scheme); err != nil {
+	secret, err := kubeobjects.NewSecretBuilder(r.scheme, r.dynakube).Build(secretName, r.dynakube.Namespace, secretData)
+	if err != nil {
 		return errors.WithStack(err)
 	}
 
 	query := kubeobjects.NewSecretQuery(r.context, r.client, r.apiReader, log)
-	err := query.CreateOrUpdate(*secret)
+	err = query.CreateOrUpdate(*secret)
 	if err != nil {
 		log.Info("could not create or update secret for connection info", "name", secret.Name)
 		return err

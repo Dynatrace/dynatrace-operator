@@ -6,14 +6,15 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 type SecretQuery struct {
@@ -146,44 +147,6 @@ type Tokens struct {
 	PaasToken string
 }
 
-func NewTokens(secret *corev1.Secret) (*Tokens, error) {
-	if secret == nil {
-		return nil, fmt.Errorf("could not parse tokens: secret is nil")
-	}
-
-	var apiToken string
-	var paasToken string
-	var err error
-
-	if err = verifySecret(secret); err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	// Errors would have been caught by verifySecret
-	apiToken, _ = ExtractToken(secret, dtclient.DynatraceApiToken)
-	paasToken, err = ExtractToken(secret, dtclient.DynatracePaasToken)
-	if err != nil {
-		paasToken = apiToken
-	}
-
-	return &Tokens{
-		ApiToken:  apiToken,
-		PaasToken: paasToken,
-	}, nil
-}
-
-func verifySecret(secret *corev1.Secret) error {
-	for _, token := range []string{
-		dtclient.DynatraceApiToken} {
-		_, err := ExtractToken(secret, token)
-		if err != nil {
-			return errors.Errorf("invalid secret %s, %s", secret.Name, err)
-		}
-	}
-
-	return nil
-}
-
 func ExtractToken(secret *corev1.Secret, key string) (string, error) {
 	value, hasKey := secret.Data[key]
 	if !hasKey {
@@ -208,16 +171,48 @@ func GetDataFromSecretName(apiReader client.Reader, namespacedName types.Namespa
 	return value, nil
 }
 
-func NewSecret(name string, namespace string, data map[string][]byte) *corev1.Secret {
-	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
-		Data: data,
+type SecretBuilder struct {
+	scheme     *runtime.Scheme
+	owner      metav1.Object
+	secretType corev1.SecretType
+	labels     map[string]string
+}
+
+func NewSecretBuilder(scheme *runtime.Scheme, owner metav1.Object) *SecretBuilder {
+	return &SecretBuilder{
+		scheme: scheme,
+		owner:  owner,
 	}
 }
 
-func IsSecretDataEqual(currentSecret *corev1.Secret, desired map[string][]byte) bool {
-	return reflect.DeepEqual(desired, currentSecret.Data)
+func (secretBuilder *SecretBuilder) WithType(secretType corev1.SecretType) *SecretBuilder {
+	secretBuilder.secretType = secretType
+	return secretBuilder
+}
+
+func (secretBuilder *SecretBuilder) WithLables(labels map[string]string) *SecretBuilder {
+	if secretBuilder.labels == nil {
+		secretBuilder.labels = map[string]string{}
+	}
+	for k, v := range labels {
+		secretBuilder.labels[k] = v
+	}
+	return secretBuilder
+}
+
+func (secretBuilder *SecretBuilder) Build(name string, namespace string, data map[string][]byte) (*corev1.Secret, error) {
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+			Labels:    secretBuilder.labels,
+		},
+		Type: secretBuilder.secretType,
+		Data: data,
+	}
+
+	if err := controllerutil.SetControllerReference(secretBuilder.owner, secret, secretBuilder.scheme); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return secret, nil
 }

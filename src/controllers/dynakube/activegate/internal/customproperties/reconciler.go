@@ -6,13 +6,12 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 const (
@@ -101,29 +100,14 @@ func (r *Reconciler) updateCustomProperties(customProperties *corev1.Secret) err
 }
 
 func (r *Reconciler) createCustomProperties() error {
-	customPropertiesSecret := r.buildCustomPropertiesSecret(
-		r.buildCustomPropertiesName(r.instance.Name),
-		r.customPropertiesSource.Value,
-	)
-
-	err := controllerutil.SetControllerReference(r.instance, customPropertiesSecret, r.scheme)
+	customPropertiesSecret, err := kubeobjects.NewSecretBuilder(r.scheme, r.instance).Build(r.buildCustomPropertiesName(r.instance.Name), r.instance.Namespace, map[string][]byte{
+		DataKey: []byte(r.customPropertiesSource.Value),
+	})
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
 	return r.client.Create(context.TODO(), customPropertiesSecret)
-}
-
-func (r *Reconciler) buildCustomPropertiesSecret(secretName string, data string) *corev1.Secret {
-	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      secretName,
-			Namespace: r.instance.Namespace,
-		},
-		Data: map[string][]byte{
-			DataKey: []byte(data),
-		},
-	}
 }
 
 func (r *Reconciler) buildCustomPropertiesName(name string) string {

@@ -9,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 type Reconciler struct {
@@ -57,8 +56,8 @@ func (r *Reconciler) addActiveGateDeploymentMetadata(configMapData map[string]st
 
 func (r *Reconciler) maintainMetadataConfigMap(configMapData map[string]string) error {
 	configMapQuery := kubeobjects.NewConfigMapQuery(r.context, r.client, r.apiReader, log)
-	configMap := kubeobjects.NewConfigMap(GetDeploymentMetadataConfigMapName(r.dynakube.Name), r.dynakube.Namespace, configMapData)
-	if err := controllerutil.SetControllerReference(&r.dynakube, configMap, r.scheme); err != nil {
+	configMap, err := kubeobjects.NewConfigMapBuilder(r.scheme, &r.dynakube).Build(GetDeploymentMetadataConfigMapName(r.dynakube.Name), r.dynakube.Namespace, configMapData)
+	if err != nil {
 		return errors.WithStack(err)
 	}
 

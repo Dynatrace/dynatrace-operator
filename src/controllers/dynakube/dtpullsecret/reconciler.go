@@ -6,13 +6,12 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 const (
@@ -83,13 +82,12 @@ func (r *Reconciler) updatePullSecretIfOutdated(pullSecret *corev1.Secret, desir
 }
 
 func (r *Reconciler) createPullSecret(pullSecretData map[string][]byte) (*corev1.Secret, error) {
-	pullSecret := BuildPullSecret(r.dynakube, pullSecretData)
-
-	if err := controllerutil.SetControllerReference(r.dynakube, pullSecret, r.scheme); err != nil {
+	pullSecret, err := kubeobjects.NewSecretBuilder(r.scheme, r.dynakube).WithType(corev1.SecretTypeDockerConfigJson).Build(extendWithPullSecretSuffix(r.dynakube.Name), r.dynakube.Namespace, pullSecretData)
+	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	err := r.client.Create(r.ctx, pullSecret)
+	err = r.client.Create(r.ctx, pullSecret)
 	if err != nil {
 		return nil, errors.WithMessagef(err, "failed to create secret %s", extendWithPullSecretSuffix(r.dynakube.Name))
 	}
@@ -107,17 +105,6 @@ func (r *Reconciler) updatePullSecret(pullSecret *corev1.Secret, desiredPullSecr
 
 func isPullSecretEqual(currentSecret *corev1.Secret, desired map[string][]byte) bool {
 	return reflect.DeepEqual(desired, currentSecret.Data)
-}
-
-func BuildPullSecret(dynakube *dynatracev1beta1.DynaKube, pullSecretData map[string][]byte) *corev1.Secret {
-	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      extendWithPullSecretSuffix(dynakube.Name),
-			Namespace: dynakube.Namespace,
-		},
-		Type: corev1.SecretTypeDockerConfigJson,
-		Data: pullSecretData,
-	}
 }
 
 func extendWithPullSecretSuffix(name string) string {

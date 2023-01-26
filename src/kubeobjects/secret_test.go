@@ -5,9 +5,11 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/logger"
+	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -16,8 +18,6 @@ import (
 var secretLog = logger.Factory.GetLogger("test-secret")
 
 func TestGetSecret(t *testing.T) {
-	testSecretName := "testSecret"
-	testNamespace := "testNamespace"
 	fakeClient := fake.NewClient(
 		&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
@@ -42,7 +42,6 @@ func TestGetSecret(t *testing.T) {
 }
 
 func TestMultipleSecrets(t *testing.T) {
-	testSecretName := "testSecret"
 	fakeClient := fake.NewClientWithIndex(
 		&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
@@ -145,5 +144,55 @@ func TestInitialMultipleSecrets(t *testing.T) {
 		secrets, err := secretQuery.GetAllFromNamespaces(testSecretName)
 		require.NoError(t, err)
 		assert.Len(t, secrets, 0)
+	})
+}
+
+func TestSecretBuilder(t *testing.T) {
+	labels := map[string]string{
+		"name": "value",
+	}
+	dockerCfg := map[string][]byte{
+		".dockercfg": {},
+	}
+	labelName := "name"
+	labelValue := "value"
+
+	t.Run("create secret", func(t *testing.T) {
+		secret, err := NewSecretBuilder(scheme.Scheme, &appsv1.Deployment{}).Build(testSecretName, testNamespace, map[string][]byte{})
+		require.NoError(t, err)
+		assert.Len(t, secret.OwnerReferences, 1)
+
+		assert.Equal(t, secret.Name, testSecretName)
+		assert.Len(t, secret.Labels, 0)
+		assert.Equal(t, secret.Type, corev1.SecretType(""))
+	})
+	t.Run("create secret with label", func(t *testing.T) {
+		secret, err := NewSecretBuilder(scheme.Scheme, &appsv1.Deployment{}).WithLables(labels).Build(testSecretName, testNamespace, map[string][]byte{})
+		require.NoError(t, err)
+		assert.Len(t, secret.OwnerReferences, 1)
+
+		assert.Equal(t, secret.Name, testSecretName)
+		require.Len(t, secret.Labels, 1)
+		assert.Equal(t, secret.Labels[labelName], labelValue)
+		assert.Equal(t, secret.Type, corev1.SecretType(""))
+	})
+	t.Run("create secret with type", func(t *testing.T) {
+		secret, err := NewSecretBuilder(scheme.Scheme, &appsv1.Deployment{}).WithType(corev1.SecretTypeDockercfg).Build(testSecretName, testNamespace, dockerCfg)
+		require.NoError(t, err)
+		assert.Len(t, secret.OwnerReferences, 1)
+
+		assert.Equal(t, secret.Name, testSecretName)
+		assert.Len(t, secret.Labels, 0)
+		assert.Equal(t, secret.Type, corev1.SecretTypeDockercfg)
+	})
+	t.Run("create secret with label and type", func(t *testing.T) {
+		secret, err := NewSecretBuilder(scheme.Scheme, &appsv1.Deployment{}).WithLables(labels).WithType(corev1.SecretTypeDockercfg).Build(testSecretName, testNamespace, dockerCfg)
+		require.NoError(t, err)
+		assert.Len(t, secret.OwnerReferences, 1)
+
+		assert.Equal(t, secret.Name, testSecretName)
+		require.Len(t, secret.Labels, 1)
+		assert.Equal(t, secret.Labels[labelName], labelValue)
+		assert.Equal(t, secret.Type, corev1.SecretTypeDockercfg)
 	})
 }

@@ -9,8 +9,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 type ConfigMapQuery struct {
@@ -80,16 +82,29 @@ func AreConfigMapsEqual(configMap corev1.ConfigMap, other corev1.ConfigMap) bool
 	return reflect.DeepEqual(configMap.Data, other.Data) && reflect.DeepEqual(configMap.Labels, other.Labels) && reflect.DeepEqual(configMap.OwnerReferences, other.OwnerReferences)
 }
 
-func NewConfigMap(name string, namespace string, data map[string]string) *corev1.ConfigMap {
-	return &corev1.ConfigMap{
+type ConfigMapBuilder struct {
+	scheme *runtime.Scheme
+	owner  metav1.Object
+}
+
+func NewConfigMapBuilder(scheme *runtime.Scheme, owner metav1.Object) ConfigMapBuilder {
+	return ConfigMapBuilder{
+		scheme: scheme,
+		owner:  owner,
+	}
+}
+
+func (configMapBuilder ConfigMapBuilder) Build(name string, namespace string, data map[string]string) (*corev1.ConfigMap, error) {
+	configMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
 		Data: data,
 	}
-}
 
-func IsConfigMapDataEqual(currentConfigMap *corev1.ConfigMap, desired map[string]string) bool {
-	return reflect.DeepEqual(desired, currentConfigMap.Data)
+	if err := controllerutil.SetControllerReference(configMapBuilder.owner, configMap, configMapBuilder.scheme); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return configMap, nil
 }
