@@ -218,12 +218,12 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		return err
 	}
 
-	err = connectioninfo.NewReconciler(ctx, controller.client, controller.apiReader, dynakube, dynatraceClient).Reconcile()
+	err = connectioninfo.NewReconciler(ctx, controller.client, controller.apiReader, controller.scheme, dynakube, dynatraceClient).Reconcile()
 	if err != nil {
 		return err
 	}
 
-	err = deploymentmetadata.NewReconciler(ctx, controller.client, controller.apiReader, *dynakube, controller.clusterID).Reconcile()
+	err = deploymentmetadata.NewReconciler(ctx, controller.client, controller.apiReader, controller.scheme, *dynakube, controller.clusterID).Reconcile()
 	if err != nil {
 		return err
 	}

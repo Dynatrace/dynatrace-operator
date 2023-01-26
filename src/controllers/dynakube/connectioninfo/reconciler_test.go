@@ -6,6 +6,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -35,7 +36,7 @@ func TestReconcile_ActivegateSecret(t *testing.T) {
 
 	t.Run(`create activegate secret`, func(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().Build()
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, dynakube, dtc)
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
 		err := r.Reconcile()
 		require.NoError(t, err)
 
@@ -56,7 +57,7 @@ func TestReconcile_ActivegateSecret(t *testing.T) {
 				},
 			},
 		).Build()
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, dynakube, dtc)
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
 		err := r.Reconcile()
 		require.NoError(t, err)
 
@@ -78,7 +79,7 @@ func TestReconcile_ActivegateSecret(t *testing.T) {
 			},
 		).Build()
 
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, dynakube, dtc)
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
 		err := r.Reconcile()
 		require.NoError(t, err)
 	})
@@ -97,7 +98,7 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 
 	t.Run(`create activegate ConfigMap`, func(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().Build()
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, dynakube, dtc)
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
 		err := r.Reconcile()
 		require.NoError(t, err)
 
@@ -120,7 +121,7 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 				},
 			},
 		).Build()
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, dynakube, dtc)
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
 		err := r.Reconcile()
 		require.NoError(t, err)
 
@@ -144,7 +145,7 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 			},
 		).Build()
 
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, dynakube, dtc)
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
 		err := r.Reconcile()
 		require.NoError(t, err)
 	})
@@ -166,7 +167,7 @@ func TestReconcile_OneagentSecret(t *testing.T) {
 	t.Run(`create oneagent secret`, func(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().Build()
 
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, dynakube, dtc)
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
 		err := r.Reconcile()
 		require.NoError(t, err)
 
@@ -188,7 +189,7 @@ func TestReconcile_OneagentSecret(t *testing.T) {
 			},
 		).Build()
 
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, dynakube, dtc)
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
 		err := r.Reconcile()
 		require.NoError(t, err)
 
@@ -210,7 +211,7 @@ func TestReconcile_OneagentSecret(t *testing.T) {
 			},
 		).Build()
 
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, dynakube, dtc)
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
 		err := r.Reconcile()
 		require.NoError(t, err)
 	})
@@ -232,7 +233,7 @@ func TestReconcile_OneagentConfigMap(t *testing.T) {
 	t.Run(`create oneagent ConfigMap`, func(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().Build()
 
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, dynakube, dtc)
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
 		err := r.Reconcile()
 		require.NoError(t, err)
 
@@ -256,7 +257,7 @@ func TestReconcile_OneagentConfigMap(t *testing.T) {
 			},
 		).Build()
 
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, dynakube, dtc)
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
 		err := r.Reconcile()
 		require.NoError(t, err)
 
@@ -280,7 +281,7 @@ func TestReconcile_OneagentConfigMap(t *testing.T) {
 			},
 		).Build()
 
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, dynakube, dtc)
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
 		err := r.Reconcile()
 		require.NoError(t, err)
 	})

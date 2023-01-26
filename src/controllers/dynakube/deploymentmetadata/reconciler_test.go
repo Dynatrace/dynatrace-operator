@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -41,7 +42,7 @@ func TestReconcile(t *testing.T) {
 	t.Run(`don't create anything, if no mode is configured`, func(t *testing.T) {
 		dynakube := createTestDynakube(nil)
 		fakeClient := fake.NewClientBuilder().Build()
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, *dynakube, clusterID)
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, *dynakube, clusterID)
 		err := r.Reconcile()
 		require.NoError(t, err)
 
@@ -59,7 +60,7 @@ func TestReconcile(t *testing.T) {
 				},
 			},
 		).Build()
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, *dynakube, clusterID)
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, *dynakube, clusterID)
 		err := r.Reconcile()
 		require.NoError(t, err)
 
@@ -77,7 +78,7 @@ func TestReconcile(t *testing.T) {
 			})
 
 		fakeClient := fake.NewClientBuilder().Build()
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, *dynakube, clusterID)
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, *dynakube, clusterID)
 		err := r.Reconcile()
 		require.NoError(t, err)
 
@@ -99,7 +100,7 @@ func TestReconcile(t *testing.T) {
 			})
 
 		fakeClient := fake.NewClientBuilder().Build()
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, *dynakube, clusterID)
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, *dynakube, clusterID)
 		err := r.Reconcile()
 		require.NoError(t, err)
 
@@ -123,7 +124,7 @@ func TestReconcile(t *testing.T) {
 			})
 
 		fakeClient := fake.NewClientBuilder().Build()
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, *dynakube, clusterID)
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, *dynakube, clusterID)
 		err := r.Reconcile()
 		require.NoError(t, err)
 

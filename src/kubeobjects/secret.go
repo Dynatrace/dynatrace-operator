@@ -138,7 +138,7 @@ func (query SecretQuery) CreateOrUpdateForNamespacesList(newSecret corev1.Secret
 }
 
 func AreSecretsEqual(secret corev1.Secret, other corev1.Secret) bool {
-	return reflect.DeepEqual(secret.Data, other.Data) && reflect.DeepEqual(secret.Labels, other.Labels)
+	return reflect.DeepEqual(secret.Data, other.Data) && reflect.DeepEqual(secret.Labels, other.Labels) && reflect.DeepEqual(secret.OwnerReferences, other.OwnerReferences)
 }
 
 type Tokens struct {
