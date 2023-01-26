@@ -6,7 +6,7 @@ createDockerImageTag() {
   else
     if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
       echo "${GITHUB_REF_NAME}"
-    elif [[ "${GITHUB_REF_NAME}" == "master" ]]; then
+    elif [[ "${GITHUB_REF_NAME}" == "main" ]]; then
       echo "snapshot"
     else
       echo "snapshot-$(echo "${GITHUB_REF_NAME}" | sed 's#[^a-zA-Z0-9_-]#-#g')"
