@@ -16,7 +16,7 @@ mkdir -p third_party_licenses
 docker build . -f ./Dockerfile -t "${base_image}" \
 --build-arg "GO_LINKER_ARGS=${go_linker_args}" \
 --label "quay.expires-after=14d" \
---no-cache
+
 rm -rf third_party_licenses
 
 docker tag "${base_image}" "${out_image}"
