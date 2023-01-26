@@ -13,18 +13,10 @@ out_image="${IMG:-quay.io/dynatrace/dynatrace-operator}:${TAG}"
 
 # directory required by docker copy command
 mkdir -p third_party_licenses
-
-if [[ "${NO_CACHE}" ]]; then
-  docker build . -f ./Dockerfile -t "${base_image}" \
-  --build-arg "GO_LINKER_ARGS=${go_linker_args}" \
-  --label "quay.expires-after=14d" \
-  --no-cache
-else
 docker build . -f ./Dockerfile -t "${base_image}" \
-  --build-arg "GO_LINKER_ARGS=${go_linker_args}" \
-  --label "quay.expires-after=14d"
-fi
-
+--build-arg "GO_LINKER_ARGS=${go_linker_args}" \
+--label "quay.expires-after=14d" \
+--no-cache
 rm -rf third_party_licenses
 
 docker tag "${base_image}" "${out_image}"
