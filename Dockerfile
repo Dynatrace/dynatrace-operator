@@ -1,27 +1,35 @@
-FROM golang:1.19.5 AS operator-build
+# setup build image
+FROM golang:1.19.5 AS go-base
+RUN \
+    --mount=type=cache,target=/var/cache/apt \
+    apt-get update && apt-get install -y libbtrfs-dev libdevmapper-dev
 
-ARG GO_LINKER_ARGS
-
-COPY . /app
+# download go dependencies
+FROM go-base AS go-mod
 WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download && go mod verify
 
-RUN apt-get update && \
-    apt-get install -y libbtrfs-dev libdevmapper-dev
-
+# build operator binary
+FROM go-mod AS operator-build
+ARG GO_LINKER_ARGS
+COPY src ./src
 RUN CGO_ENABLED=1 CGO_CFLAGS="-O2 -Wno-return-local-addr" \
     go build -tags "containers_image_openpgp,osusergo,netgo,sqlite_omit_load_extension,containers_image_storage_stub,containers_image_docker_daemon_stub" -trimpath -ldflags="${GO_LINKER_ARGS}" \
     -o ./build/_output/bin/dynatrace-operator ./src/cmd/
 
+# download additional image dependencies
 FROM registry.access.redhat.com/ubi9-minimal:9.1.0 as dependency-src
-
-RUN microdnf install -y util-linux tar --nodocs
+RUN \
+    --mount=type=cache,target=/var/cache/dnf \
+    microdnf install -y util-linux tar --nodocs
 
 FROM registry.access.redhat.com/ubi9-micro:9.1.0
 
 # operator binary
 COPY --from=operator-build /app/build/_output/bin /usr/local/bin
 
-# # trusted certificates
+# trusted certificates
 COPY --from=dependency-src /etc/ssl/cert.pem /etc/ssl/cert.pem
 
 # csi dependencies
