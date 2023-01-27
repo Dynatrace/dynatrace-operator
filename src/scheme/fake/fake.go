@@ -29,7 +29,7 @@ func NewClient(objs ...client.Object) client.Client {
 	return fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(objs...).Build()
 }
 
-// NewClientWithIndex returns a fake client with the
+// NewClientWithIndex returns a fake client with common indexes already configured
 func NewClientWithIndex(objs ...client.Object) client.Client {
 	clientBuilder := fake.NewClientBuilder().
 		WithScheme(scheme.Scheme).
