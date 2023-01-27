@@ -92,20 +92,20 @@ func TestManifestCollector(t *testing.T) {
 	require.NoError(t, newK8sObjectCollector(ctx, log, supportArchive, testOperatorNamespace, mockedApiReader).Do())
 
 	expectedFiles := []string{
-		fmt.Sprintf("%s/Namespace-some-app-namespace.json", InjectedNamespacesManifestsDirectoryName),
-		fmt.Sprintf("%s/Namespace-dynatrace.json", testOperatorNamespace),
+		fmt.Sprintf("%s/Namespace-some-app-namespace.yaml", InjectedNamespacesManifestsDirectoryName),
+		fmt.Sprintf("%s/Namespace-dynatrace.yaml", testOperatorNamespace),
 
 		// fake.Client does not respect the field selector of the list options in query_objects.go
 		// therefore the resourceQuery for the operator namespace returns all namespaces configured above
 		// That's why these two namespaces are expected in this test, although they should actually be filtered out.
 		// This sucks, but it works in production code because client.Client.List respects the field selector filter.
-		fmt.Sprintf("%s/Namespace-some-app-namespace.json", InjectedNamespacesManifestsDirectoryName),
-		fmt.Sprintf("%s/Namespace-uninjectednamespace.json", InjectedNamespacesManifestsDirectoryName),
+		fmt.Sprintf("%s/Namespace-some-app-namespace.yaml", InjectedNamespacesManifestsDirectoryName),
+		fmt.Sprintf("%s/Namespace-uninjectednamespace.yaml", InjectedNamespacesManifestsDirectoryName),
 
-		fmt.Sprintf("%s/Deployment/deployment1.json", testOperatorNamespace),
-		fmt.Sprintf("%s/StatefulSet/statefulset1.json", testOperatorNamespace),
-		fmt.Sprintf("%s/DaemonSet/daemonset1.json", testOperatorNamespace),
-		fmt.Sprintf("%s/DynaKube/dynakube1.json", testOperatorNamespace),
+		fmt.Sprintf("%s/Deployment/deployment1.yaml", testOperatorNamespace),
+		fmt.Sprintf("%s/StatefulSet/statefulset1.yaml", testOperatorNamespace),
+		fmt.Sprintf("%s/DaemonSet/daemonset1.yaml", testOperatorNamespace),
+		fmt.Sprintf("%s/DynaKube/dynakube1.yaml", testOperatorNamespace),
 	}
 
 	tarReader := tar.NewReader(&tarBuffer)
@@ -247,15 +247,15 @@ func TestManifestCollectionFails(t *testing.T) {
 
 	hdr, err := tarReader.Next()
 	require.NoError(t, err)
-	assert.Equal(t, expectedFilename("injected_namespaces/Namespace-some-app-namespace.json"), hdr.Name)
+	assert.Equal(t, expectedFilename("injected_namespaces/Namespace-some-app-namespace.yaml"), hdr.Name)
 
 	hdr, err = tarReader.Next()
 	require.NoError(t, err)
-	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/StatefulSet/statefulset1.json", testOperatorNamespace)), hdr.Name)
+	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/StatefulSet/statefulset1.yaml", testOperatorNamespace)), hdr.Name)
 
 	hdr, err = tarReader.Next()
 	require.NoError(t, err)
-	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/DynaKube/dynakube1.json", testOperatorNamespace)), hdr.Name)
+	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/DynaKube/dynakube1.yaml", testOperatorNamespace)), hdr.Name)
 }
 
 func getExpectedObjectsList(groupVersionKind schema.GroupVersionKind) *unstructured.UnstructuredList {

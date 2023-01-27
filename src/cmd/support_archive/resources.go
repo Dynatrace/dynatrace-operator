@@ -3,8 +3,8 @@ package support_archive
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
+	"sigs.k8s.io/yaml"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -65,22 +65,14 @@ func (collector k8sResourceCollector) readObjectsList(groupVersionKind schema.Gr
 }
 
 func (collector k8sResourceCollector) storeObject(resource unstructured.Unstructured) {
-	document, err := resource.MarshalJSON()
+	document, err := yaml.Marshal(resource)
 	if err != nil {
 		logErrorf(collector.log, err, "Failed to marshal %s %s/%s", resource.GetKind(), collector.namespace, resource.GetName())
 		return
 	}
-
-	var prettyJson bytes.Buffer
-	err = json.Indent(&prettyJson, document, "", "  ")
-	if err != nil {
-		logErrorf(collector.log, err, "Failed to pretty print %s %s/%s", resource.GetKind(), collector.namespace, resource.GetName())
-		return
-	}
-
 	fileName := collector.createFileName(resource.GetKind(), resource)
 
-	err = collector.supportArchive.addFile(fileName, &prettyJson)
+	err = collector.supportArchive.addFile(fileName, bytes.NewBuffer(document))
 	if err != nil {
 		logErrorf(collector.log, err, "Failed to add %s to support archive", fileName)
 		return
