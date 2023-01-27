@@ -134,6 +134,7 @@ func sendData(i interface{}, w http.ResponseWriter) {
 		_, _ = w.Write([]byte(err.Error()))
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 	_, _ = w.Write(data)
 }
