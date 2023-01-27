@@ -4,6 +4,8 @@ VERSION ?= 0.0.1
 PLATFORM ?= openshift
 # Needed variable for manifest generation
 OLM ?= false
+# Default bundle image tag
+BUNDLE_IMG ?= controller-bundle:$(VERSION)
 
 # Options for 'bundle-build'
 ifneq ($(origin CHANNELS), undefined)
@@ -15,7 +17,7 @@ endif
 
 .PHONY: bundle
 ## Generates bundle manifests and metadata, then validates generated files
-bundle: prerequisites/kustomize manifests/$(PLATFORM)
+bundle: manifests/$(PLATFORM)
 	./hack/build/bundle.sh "$(PLATFORM)" "$(VERSION)" "$(BUNDLE_CHANNELS)" "$(BUNDLE_DEFAULT_CHANNEL)"
 
 .PHONY: bundle/minimal

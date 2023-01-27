@@ -27,7 +27,7 @@ ifneq ($(shell git branch --show-current | grep "^release-"),)
 	endif
 else ifeq ($(shell git branch --show-current), main)
 	# if the current branch is the main branch
-	CHART_VERSION=snapshot
+	CHART_VERSION=0.0.0-snapshot
 else
 	# otherwise do not change Chart.yaml
     CHART_VERSION=
