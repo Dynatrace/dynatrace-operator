@@ -6,19 +6,17 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme"
+	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 const testOperatorNamespace = "dynatrace"
@@ -27,74 +25,66 @@ func TestManifestCollector_Success(t *testing.T) {
 	logBuffer := bytes.Buffer{}
 	log := newSupportArchiveLogger(&logBuffer)
 
-	clt := fake.NewClientBuilder().
-		WithScheme(scheme.Scheme).
-		WithObjects(
-			&appsv1.Deployment{
-				TypeMeta:   typeMeta("Deployment"),
-				ObjectMeta: objectMeta("deployment1"),
-			},
-			&appsv1.DaemonSet{
-				TypeMeta:   typeMeta("DaemonSet"),
-				ObjectMeta: objectMeta("daemonset1"),
-			},
-			&appsv1.StatefulSet{
-				TypeMeta:   typeMeta("StatefulSet"),
-				ObjectMeta: objectMeta("statefulset1"),
-			},
-			&corev1.Namespace{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "corev1",
-					Kind:       "Namespace",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "uninjectednamespace",
-					Labels: map[string]string{
-						"random": "label",
-					},
-				},
-			},
-			&corev1.Namespace{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "core/v1",
-					Kind:       "Namespace",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "some-app-namespace",
-					Labels: map[string]string{
-						webhook.InjectionInstanceLabel: "abc12345",
-					},
-				},
-			},
-			&corev1.Namespace{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "core/v1",
-					Kind:       "Namespace",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "random",
-				},
-			},
-			&corev1.Namespace{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "core/v1",
-					Kind:       "Namespace",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name: testOperatorNamespace,
-				},
-			},
-			&dynatracev1beta1.DynaKube{
-				TypeMeta:   typeMeta("DynaKube"),
-				ObjectMeta: objectMeta("dynakube1"),
-			},
-		).WithIndex(
-		&corev1.Namespace{},
-		"metadata.name",
-		func(obj client.Object) []string {
-			return []string{obj.GetName()}
+	clt := fake.NewClientWithIndex(
+		&appsv1.Deployment{
+			TypeMeta:   typeMeta("Deployment"),
+			ObjectMeta: objectMeta("deployment1"),
 		},
-	).Build()
+		&appsv1.DaemonSet{
+			TypeMeta:   typeMeta("DaemonSet"),
+			ObjectMeta: objectMeta("daemonset1"),
+		},
+		&appsv1.StatefulSet{
+			TypeMeta:   typeMeta("StatefulSet"),
+			ObjectMeta: objectMeta("statefulset1"),
+		},
+		&corev1.Namespace{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "corev1",
+				Kind:       "Namespace",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "uninjectednamespace",
+				Labels: map[string]string{
+					"random": "label",
+				},
+			},
+		},
+		&corev1.Namespace{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "core/v1",
+				Kind:       "Namespace",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "some-app-namespace",
+				Labels: map[string]string{
+					webhook.InjectionInstanceLabel: "abc12345",
+				},
+			},
+		},
+		&corev1.Namespace{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "core/v1",
+				Kind:       "Namespace",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "random",
+			},
+		},
+		&corev1.Namespace{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "core/v1",
+				Kind:       "Namespace",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: testOperatorNamespace,
+			},
+		},
+		&dynatracev1beta1.DynaKube{
+			TypeMeta:   typeMeta("DynaKube"),
+			ObjectMeta: objectMeta("dynakube1"),
+		},
+	)
 
 	tarBuffer := bytes.Buffer{}
 	supportArchive := tarball{
@@ -132,9 +122,7 @@ func TestManifestCollector_NoManifestsAvailable(t *testing.T) {
 	logBuffer := bytes.Buffer{}
 	log := newSupportArchiveLogger(&logBuffer)
 
-	clt := fake.NewClientBuilder().
-		WithScheme(scheme.Scheme).
-		Build()
+	clt := fake.NewClientWithIndex()
 
 	tarBuffer := bytes.Buffer{}
 	supportArchive := tarball{
@@ -158,32 +146,25 @@ func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
 	queries := getQueries(testOperatorNamespace)
 	require.Len(t, queries, 9)
 
-	clt := fake.NewClientBuilder().
-		WithScheme(scheme.Scheme).
-		WithObjects(
-			&appsv1.StatefulSet{
-				TypeMeta:   typeMeta("StatefulSet"),
-				ObjectMeta: objectMeta("statefulset1"),
-			},
-			&corev1.Namespace{
-				TypeMeta: typeMeta("Namespace"),
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "some-app-namespace",
-					Labels: map[string]string{
-						webhook.InjectionInstanceLabel: "abc12345",
-					},
+	clt := fake.NewClientWithIndex(
+		&appsv1.StatefulSet{
+			TypeMeta:   typeMeta("StatefulSet"),
+			ObjectMeta: objectMeta("statefulset1"),
+		},
+		&corev1.Namespace{
+			TypeMeta: typeMeta("Namespace"),
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "some-app-namespace",
+				Labels: map[string]string{
+					webhook.InjectionInstanceLabel: "abc12345",
 				},
 			},
-			&dynatracev1beta1.DynaKube{
-				TypeMeta:   typeMeta("DynaKube"),
-				ObjectMeta: objectMeta("dynakube1"),
-			},
-		).WithIndex(
-		&corev1.Namespace{},
-		"metadata.name",
-		func(o client.Object) []string {
-			return []string{o.GetName()}
-		}).Build()
+		},
+		&dynatracev1beta1.DynaKube{
+			TypeMeta:   typeMeta("DynaKube"),
+			ObjectMeta: objectMeta("dynakube1"),
+		},
+	)
 
 	context := context.TODO()
 
