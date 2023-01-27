@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/url"
 	"os/exec"
-	"path"
 	"strings"
 	"testing"
 
@@ -24,11 +23,6 @@ const (
 	openshiftCsiManifest        = "openshift-csi.yaml"
 	openshiftOperatorManifest   = "openshift.yaml"
 )
-
-func InstallFromSource(withCsi bool) features.Func {
-	paths := manifestsPaths(withCsi)
-	return manifests.InstallFromFiles(paths)
-}
 
 func InstallViaMake(withCSI bool) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
@@ -69,26 +63,6 @@ func getDeployMakeTarget(platform kubeobjects.Platform, withCSI bool, t *testing
 	}
 
 	return makeTarget
-}
-
-func manifestsPaths(withCsi bool) []string {
-	platform := kubeobjects.ResolvePlatformFromEnv()
-	paths := []string{}
-
-	switch platform {
-	case kubeobjects.Openshift:
-		paths = append(paths, path.Join(project.RootDir(), localOpenshiftManifestsDir, openshiftOperatorManifest))
-		if withCsi {
-			paths = append(paths, path.Join(project.RootDir(), localOpenshiftManifestsDir, openshiftCsiManifest))
-		}
-	default:
-		paths = append(paths, path.Join(project.RootDir(), localKubernetesManifestsDir, kubernetesOperatorManifest))
-		if withCsi {
-			paths = append(paths, path.Join(project.RootDir(), localKubernetesManifestsDir, kubernetesCsiManifest))
-		}
-	}
-
-	return paths
 }
 
 func InstallFromGithub(releaseTag string, withCsi bool) features.Func {
