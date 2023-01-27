@@ -1,6 +1,7 @@
 package support_archive
 
 import (
+	"k8s.io/apimachinery/pkg/fields"
 	"reflect"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -49,8 +50,8 @@ func getOperatorNamespaceQueryGroup(namespace string) resourceQueryGroup {
 			toGroupVersionKind(corev1.SchemeGroupVersion, corev1.Namespace{}),
 		},
 		filters: []client.ListOption{
-			client.MatchingFields{
-				"metadata.name": namespace,
+			&client.ListOptions{
+				FieldSelector: fields.OneTermEqualSelector("metadata.name", namespace),
 			},
 		},
 	}
