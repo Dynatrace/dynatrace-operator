@@ -69,6 +69,7 @@ type DynatraceApiStatus struct {
 	LastOneAgentConnectionInfoUpdate   metav1.Time `json:"lastOneAgentConnectionInfoUpdate,omitempty"`
 	LastActiveGateConnectionInfoUpdate metav1.Time `json:"lastActiveGateConnectionInfoUpdate,omitempty"`
 	LastAuthTokenSecretUpdate          metav1.Time `json:"lastAuthTokenSecretUpdate,omitempty"`
+	LastBasicStatusInformationUpdate   metav1.Time `json:"lastBasicStatusInformationUpdate,omitempty"`
 }
 
 func (_ *DynatraceApiStatus) NotOutdatedMessage(functionName string) string {

@@ -4,6 +4,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -13,6 +14,11 @@ type Options struct {
 }
 
 func SetDynakubeStatus(dynakube *dynatracev1beta1.DynaKube, opts Options) error {
+	if !dynatracev1beta1.IsRequestOutdated(dynakube.Status.DynatraceApi.LastBasicStatusInformationUpdate) {
+		log.Info(dynakube.Status.DynatraceApi.NotOutdatedMessage("basic status information update"))
+		return nil
+	}
+
 	apiReader := opts.ApiReader
 	dtClient := opts.DtClient
 
@@ -62,6 +68,8 @@ func SetDynakubeStatus(dynakube *dynatracev1beta1.DynaKube, opts Options) error 
 	dynakube.Status.LatestAgentVersionUnixDefault = latestAgentVersionUnixDefault
 	dynakube.Status.LatestAgentVersionUnixPaas = latestAgentVersionUnixPaas
 	dynakube.Status.Tokens = dynakube.Tokens()
+
+	dynakube.Status.DynatraceApi.LastBasicStatusInformationUpdate = metav1.Now()
 
 	return nil
 }

@@ -54,7 +54,6 @@ func (r *Reconciler) reconcileOneAgentConnectionInfo() error {
 		return nil
 	}
 
-	r.dynakube.Status.DynatraceApi.LastOneAgentConnectionInfoUpdate = metav1.Now()
 	oneAgentConnectionInfo, err := r.dtc.GetOneAgentConnectionInfo()
 	if err != nil {
 		log.Info("failed to get oneagent connection info")
@@ -65,6 +64,8 @@ func (r *Reconciler) reconcileOneAgentConnectionInfo() error {
 	if err != nil {
 		return err
 	}
+
+	r.dynakube.Status.DynatraceApi.LastOneAgentConnectionInfoUpdate = metav1.Now()
 	return nil
 }
 
@@ -74,7 +75,6 @@ func (r *Reconciler) reconcileActiveGateConnectionInfo() error {
 		return nil
 	}
 
-	r.dynakube.Status.DynatraceApi.LastActiveGateConnectionInfoUpdate = metav1.Now()
 	activeGateConnectionInfo, err := r.dtc.GetActiveGateConnectionInfo()
 	if err != nil {
 		log.Info("failed to get activegate connection info")

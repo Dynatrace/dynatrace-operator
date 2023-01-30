@@ -3452,6 +3452,9 @@ spec:
                   lastAuthTokenSecretUpdate:
                     format: date-time
                     type: string
+                  lastBasicStatusInformationUpdate:
+                    format: date-time
+                    type: string
                   lastOneAgentConnectionInfoUpdate:
                     format: date-time
                     type: string
