@@ -4,7 +4,7 @@ VERSION ?= 0.0.1
 PLATFORM ?= openshift
 # Needed variable for manifest generation
 OLM ?= false
-# Default bundle image tag
+# Default bundle image with tag
 BUNDLE_IMG ?= controller-bundle:$(VERSION)
 
 # Options for 'bundle-build'
