@@ -55,7 +55,7 @@ SHELL ?= bash
 deps: prerequisites/setup-pre-commit prerequisites/kustomize prerequisites/controller-gen
 
 ## Builds the operator image and pushes it to quay with a snapshot tag
-build: images/push/tagged
+build: images/build/push
 
 ## Installs (deploys) the operator on a Kubernetes cluster
 install: deploy/kubernetes

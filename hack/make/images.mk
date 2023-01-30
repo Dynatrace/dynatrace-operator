@@ -1,33 +1,25 @@
-MAIN_IMAGE ?= quay.io/dynatrace/dynatrace-operator:snapshot
-
-# Default bundle image tag
-BUNDLE_IMG ?= controller-bundle:$(VERSION)
-SNAPSHOT_SUFFIX = -$(shell git branch --show-current | sed "s/[^a-zA-Z0-9_-]/-/g")
-BRANCH_IMAGE ?= quay.io/dynatrace/dynatrace-operator:snapshot${SNAPSHOT_SUFFIX}
-OLM_IMAGE ?= registry.connect.redhat.com/dynatrace/dynatrace-operator:v${VERSION}
-
-# Image URL to use all building/pushing image targets
-# If the IMG variable is undefined
-ifeq ($(origin IMG),undefined)
-	# If the current branch is not a release branch
-	ifneq ($(shell git branch --show-current | grep "^release-"),)
-		# then the MAIN_IMAGE points to quay.io and has a snapshot-<branch-name> tag
-		MAIN_IMAGE=$(BRANCH_IMAGE)
-	# Otherwise, if the current branch is the main branch
-	else ifeq ($(shell git branch --show-current), main)
-		# the branch image has the same value as the main branch which has the snapshot tag
-		BRANCH_IMAGE=$(MAIN_IMAGE)
-	endif
+IMAGE ?= quay.io/dynatrace/dynatrace-operator
+#Needed for the e2e pipeline to work
+BRANCH ?= $(shell git branch --show-current)
+SNAPSHOT_SUFFIX ?= $(shell echo "${BRANCH}" | sed "s/[^a-zA-Z0-9_-]/-/g")
+ifneq ($(BRANCH), main)
+	TAG ?= snapshot-${SNAPSHOT_SUFFIX}
+else
+	TAG ?= snapshot
 endif
 
-## Builds and pushes an Operator image with a given TAG
-images/push:
-	./hack/build/push_image.sh
+IMAGE_URI ?= "$(IMAGE):$(TAG)"
 
-## Builds and pushes an Operator image with a snapshot tag
-images/push/tagged: export TAG=snapshot${SNAPSHOT_SUFFIX}
-images/push/tagged: images/push
+## Pushes an ALREADY BUILT Operator image with a given IMAGE and TAG
+images/build:
+	./hack/build/build_image.sh "${IMAGE}" "${TAG}"
+
+## Builds an Operator image with a given IMAGE and TAG
+images/push:
+	./hack/build/push_image.sh "${IMAGE}" "${TAG}"
+
+images/build/push: images/build images/push
 
 ## Builds and pushes the deployer image for the Google marketplace to the development environment on GCR
 images/gcr/deployer:
-	./hack/gcr/deployer-image.sh ":snapshot${SNAPSHOT_SUFFIX}"
+	./hack/gcr/deployer-image.sh ":${TAG}"

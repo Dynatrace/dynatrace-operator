@@ -7,7 +7,7 @@ deploy/openshift: manifests/crd/helm
 			--set platform="openshift" \
 			--set csidriver.enabled=true \
 			--set manifests=true \
-			--set image="$(BRANCH_IMAGE)" | oc apply -f -
+			--set image="$(IMAGE_URI)" | oc apply -f -
 
 deploy/openshift-no-csi: manifests/crd/helm
 	oc get project dynatrace || oc adm new-project --node-selector="" dynatrace
@@ -16,4 +16,4 @@ deploy/openshift-no-csi: manifests/crd/helm
 			--set installCRD=true \
 			--set platform="openshift" \
 			--set manifests=true \
-			--set image="$(BRANCH_IMAGE)" | oc apply -f -
+			--set image="$(IMAGE_URI)" | oc apply -f -
