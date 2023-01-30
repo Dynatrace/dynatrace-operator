@@ -190,6 +190,9 @@ func TestManifestCollectionFails(t *testing.T) {
 				TypeMeta:   typeMeta("DynaKube"),
 				ObjectMeta: objectMeta("dynakube1"),
 			},
+
+			// there's no DaemonSet in this list on purpose to make sure an empty list response to a query doesn't stop processing
+
 		).Build()
 
 	context := context.TODO()
@@ -210,30 +213,11 @@ func TestManifestCollectionFails(t *testing.T) {
 		On("List", toFlatInterfaceSlice(context, getExpectedObjectsList(queries[2].groupVersionKind), queries[2].filters)...).
 		Return(assert.AnError)
 
-	mockedApiReader.
-		On("List", toFlatInterfaceSlice(context, getExpectedObjectsList(queries[3].groupVersionKind), queries[2].filters)...).
-		// here an empty DaemonSet list will be produced, make sure it doesn't stop further processing
-		Return(clt.List)
-
-	mockedApiReader.
-		On("List", toFlatInterfaceSlice(context, getExpectedObjectsList(queries[4].groupVersionKind), queries[2].filters)...).
-		Return(clt.List)
-
-	mockedApiReader.
-		On("List", toFlatInterfaceSlice(context, getExpectedObjectsList(queries[5].groupVersionKind), queries[2].filters)...).
-		Return(clt.List)
-
-	mockedApiReader.
-		On("List", toFlatInterfaceSlice(context, getExpectedObjectsList(queries[6].groupVersionKind), queries[2].filters)...).
-		Return(clt.List)
-
-	mockedApiReader.
-		On("List", toFlatInterfaceSlice(context, getExpectedObjectsList(queries[7].groupVersionKind), queries[2].filters)...).
-		Return(clt.List)
-
-	mockedApiReader.
-		On("List", toFlatInterfaceSlice(context, getExpectedObjectsList(queries[8].groupVersionKind), queries[2].filters)...).
-		Return(clt.List)
+	for i := 3; i <= 8; i++ {
+		mockedApiReader.
+			On("List", toFlatInterfaceSlice(context, getExpectedObjectsList(queries[i].groupVersionKind), queries[i].filters)...).
+			Return(clt.List)
+	}
 
 	tarBuffer := bytes.Buffer{}
 	supportArchive := tarball{
