@@ -18,6 +18,8 @@ package fake
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -25,4 +27,23 @@ import (
 // NewClient returns a new controller-runtime fake Client configured with the Operator's scheme, and initialized with objs.
 func NewClient(objs ...client.Object) client.Client {
 	return fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(objs...).Build()
+}
+
+// NewClientWithIndex returns a fake client with common indexes already configured
+func NewClientWithIndex(objs ...client.Object) client.Client {
+	clientBuilder := fake.NewClientBuilder().
+		WithScheme(scheme.Scheme).
+		WithObjects(objs...)
+
+	objects := []runtime.Object{
+		&corev1.Namespace{},
+		&corev1.Secret{},
+	}
+
+	for _, object := range objects {
+		clientBuilder.WithIndex(object, "metadata.name", func(o client.Object) []string {
+			return []string{o.GetName()}
+		})
+	}
+	return clientBuilder.Build()
 }

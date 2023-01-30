@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -50,8 +51,8 @@ func getOperatorNamespaceQueryGroup(namespace string) resourceQueryGroup {
 			toGroupVersionKind(corev1.SchemeGroupVersion, corev1.Namespace{}),
 		},
 		filters: []client.ListOption{
-			client.MatchingFields{
-				"metadata.name": namespace,
+			&client.ListOptions{
+				FieldSelector: fields.OneTermEqualSelector("metadata.name", namespace),
 			},
 		},
 	}
