@@ -19,6 +19,7 @@ type DynaKubeStatus struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors.x-descriptors="urn:alm:descriptor:text"
 	UpdatedTimestamp metav1.Time `json:"updatedTimestamp,omitempty"`
 
+	// Deprecated: use DynatraceApiStatus.LastTokenScopeRequest instead
 	// LastAPITokenProbeTimestamp tracks when the last request for the API token validity was sent
 	LastAPITokenProbeTimestamp *metav1.Time `json:"lastAPITokenProbeTimestamp,omitempty"`
 
@@ -66,19 +67,19 @@ type DynaKubeStatus struct {
 const MaxRequestInterval = 15 * time.Minute
 
 type DynatraceApiStatus struct {
-	LastTokenProbe                     metav1.Time `json:"lastTokenProbe,omitempty"`
-	LastOneAgentConnectionInfoUpdate   metav1.Time `json:"lastOneAgentConnectionInfoUpdate,omitempty"`
-	LastActiveGateConnectionInfoUpdate metav1.Time `json:"lastActiveGateConnectionInfoUpdate,omitempty"`
-	LastAuthTokenSecretUpdate          metav1.Time `json:"lastAuthTokenSecretUpdate,omitempty"`
-	LastBasicStatusInformationUpdate   metav1.Time `json:"lastBasicStatusInformationUpdate,omitempty"`
+	LastTokenScopeRequest               metav1.Time `json:"LastTokenScopeRequest,omitempty"`
+	LastOneAgentConnectionInfoRequest   metav1.Time `json:"LastOneAgentConnectionInfoRequest,omitempty"`
+	LastActiveGateConnectionInfoRequest metav1.Time `json:"LastActiveGateConnectionInfoRequest,omitempty"`
+	LastAuthTokenSecretRequest          metav1.Time `json:"LastAuthTokenSecretRequest,omitempty"`
+	LastBasicStatusInformationRequest   metav1.Time `json:"LastBasicStatusInformationRequest,omitempty"`
 }
 
 func (dynatraceApiStatus *DynatraceApiStatus) ResetCachedTimestamps() {
-	dynatraceApiStatus.LastTokenProbe = metav1.Time{}
-	dynatraceApiStatus.LastOneAgentConnectionInfoUpdate = metav1.Time{}
-	dynatraceApiStatus.LastActiveGateConnectionInfoUpdate = metav1.Time{}
-	dynatraceApiStatus.LastAuthTokenSecretUpdate = metav1.Time{}
-	dynatraceApiStatus.LastBasicStatusInformationUpdate = metav1.Time{}
+	dynatraceApiStatus.LastTokenScopeRequest = metav1.Time{}
+	dynatraceApiStatus.LastOneAgentConnectionInfoRequest = metav1.Time{}
+	dynatraceApiStatus.LastActiveGateConnectionInfoRequest = metav1.Time{}
+	dynatraceApiStatus.LastAuthTokenSecretRequest = metav1.Time{}
+	dynatraceApiStatus.LastBasicStatusInformationRequest = metav1.Time{}
 }
 
 func CacheValidMessage(functionName string) string {
@@ -141,7 +142,7 @@ type OneAgentStatus struct {
 
 	Instances map[string]OneAgentInstance `json:"instances,omitempty"`
 
-	LastInstanceStatusUpdateTimestamp *metav1.Time `json:"lastInstanceStatusUpdateTimestamp,omitempty"`
+	LastInstanceStatusUpdate *metav1.Time `json:"LastInstanceStatusUpdate,omitempty"`
 }
 
 func (oneAgentStatus *OneAgentStatus) Name() string {

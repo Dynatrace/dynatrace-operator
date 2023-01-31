@@ -3498,19 +3498,19 @@ spec:
                 type: object
               dynatraceApi:
                 properties:
-                  lastActiveGateConnectionInfoUpdate:
+                  LastActiveGateConnectionInfoRequest:
                     format: date-time
                     type: string
-                  lastAuthTokenSecretUpdate:
+                  LastAuthTokenSecretRequest:
                     format: date-time
                     type: string
-                  lastBasicStatusInformationUpdate:
+                  LastBasicStatusInformationRequest:
                     format: date-time
                     type: string
-                  lastOneAgentConnectionInfoUpdate:
+                  LastOneAgentConnectionInfoRequest:
                     format: date-time
                     type: string
-                  lastTokenProbe:
+                  LastTokenScopeRequest:
                     format: date-time
                     type: string
                 type: object
@@ -3519,8 +3519,9 @@ spec:
                   cluster
                 type: string
               lastAPITokenProbeTimestamp:
-                description: LastAPITokenProbeTimestamp tracks when the last request
-                  for the API token validity was sent
+                description: 'Deprecated: use DynatraceApiStatus.LastTokenScopeRequest
+                  instead LastAPITokenProbeTimestamp tracks when the last request
+                  for the API token validity was sent'
                 format: date-time
                 type: string
               lastClusterVersionProbeTimestamp:
@@ -3551,6 +3552,9 @@ spec:
                 type: string
               oneAgent:
                 properties:
+                  LastInstanceStatusUpdate:
+                    format: date-time
+                    type: string
                   imageHash:
                     description: ImageHash contains the last image hash seen.
                     type: string
@@ -3563,9 +3567,6 @@ spec:
                           type: string
                       type: object
                     type: object
-                  lastInstanceStatusUpdateTimestamp:
-                    format: date-time
-                    type: string
                   lastUpdateProbeTimestamp:
                     description: LastUpdateProbeTimestamp defines the last timestamp
                       when the querying for updates have been done

@@ -46,7 +46,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 }
 
 func (r *Reconciler) Reconcile() error {
-	if !dynatracev1beta1.IsRequestOutdated(r.dynakube.Status.DynatraceApi.LastAuthTokenSecretUpdate) {
+	if !dynatracev1beta1.IsRequestOutdated(r.dynakube.Status.DynatraceApi.LastAuthTokenSecretRequest) {
 		log.Info(dynatracev1beta1.CacheValidMessage("ActiveGate auth token secret generation"))
 		return nil
 	}
@@ -56,7 +56,7 @@ func (r *Reconciler) Reconcile() error {
 		return errors.Errorf("failed to create activeGateAuthToken secret: %v", err)
 	}
 
-	r.dynakube.Status.DynatraceApi.LastAuthTokenSecretUpdate = metav1.Now()
+	r.dynakube.Status.DynatraceApi.LastAuthTokenSecretRequest = metav1.Now()
 	return nil
 }
 

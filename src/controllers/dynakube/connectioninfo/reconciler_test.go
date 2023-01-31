@@ -47,17 +47,8 @@ func TestReconcile_ActivegateSecret(t *testing.T) {
 		assert.Equal(t, []byte(testTenantToken), actualSecret.Data[TenantTokenName])
 	})
 	t.Run(`update activegate secret`, func(t *testing.T) {
-		fakeClient := fake.NewClientBuilder().WithObjects(
-			&corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      dynakube.ActivegateTenantSecret(),
-					Namespace: testNamespace,
-				},
-				Data: map[string][]byte{
-					TenantTokenName: []byte(testOutdated),
-				},
-			},
-		).Build()
+		fakeClient := fake.NewClientBuilder().WithObjects(buildActiveGateSecret(*dynakube, testOutdated)).Build()
+		dynakube.Status.DynatraceApi.ResetCachedTimestamps()
 		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
 		err := r.Reconcile()
 		require.NoError(t, err)
@@ -67,23 +58,36 @@ func TestReconcile_ActivegateSecret(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, []byte(testTenantToken), actualSecret.Data[TenantTokenName])
 	})
+	t.Run(`check activegate secret caches`, func(t *testing.T) {
+		fakeClient := fake.NewClientBuilder().WithObjects(buildActiveGateSecret(*dynakube, testOutdated)).Build()
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
+		err := r.Reconcile()
+		require.NoError(t, err)
+
+		var actualSecret corev1.Secret
+		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: dynakube.ActivegateTenantSecret(), Namespace: testNamespace}, &actualSecret)
+		require.NoError(t, err)
+		assert.Equal(t, []byte(testOutdated), actualSecret.Data[TenantTokenName])
+	})
 	t.Run(`up to date activegate secret`, func(t *testing.T) {
-		fakeClient := fake.NewClientBuilder().WithObjects(
-			&corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      dynakube.ActivegateTenantSecret(),
-					Namespace: testNamespace,
-				},
-				Data: map[string][]byte{
-					TenantTokenName: []byte(testTenantToken),
-				},
-			},
-		).Build()
+		fakeClient := fake.NewClientBuilder().WithObjects(buildActiveGateSecret(*dynakube, testTenantToken)).Build()
 
 		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
 		err := r.Reconcile()
 		require.NoError(t, err)
 	})
+}
+
+func buildActiveGateSecret(dynakube dynatracev1beta1.DynaKube, token string) *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      dynakube.ActivegateTenantSecret(),
+			Namespace: testNamespace,
+		},
+		Data: map[string][]byte{
+			TenantTokenName: []byte(token),
+		},
+	}
 }
 
 func TestReconcile_ActivegateConfigMap(t *testing.T) {
@@ -109,19 +113,21 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 		assert.Equal(t, testTenantUUID, actual.Data[TenantUUIDName])
 		assert.Equal(t, testTenantEndpoints, actual.Data[CommunicationEndpointsName])
 	})
+	t.Run(`test activegate ConfigMap cache is used`, func(t *testing.T) {
+		fakeClient := fake.NewClientBuilder().WithObjects(buildActiveGateConfigMap(*dynakube, testOutdated, testOutdated)).Build()
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
+		err := r.Reconcile()
+		require.NoError(t, err)
+
+		var actual corev1.ConfigMap
+		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: dynakube.ActiveGateConnectionInfoConfigMapName(), Namespace: testNamespace}, &actual)
+		require.NoError(t, err)
+		assert.Equal(t, testOutdated, actual.Data[TenantUUIDName])
+		assert.Equal(t, testOutdated, actual.Data[CommunicationEndpointsName])
+	})
 	t.Run(`update activegate ConfigMap`, func(t *testing.T) {
-		fakeClient := fake.NewClientBuilder().WithObjects(
-			&corev1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      dynakube.ActiveGateConnectionInfoConfigMapName(),
-					Namespace: testNamespace,
-				},
-				Data: map[string]string{
-					TenantUUIDName:             testOutdated,
-					CommunicationEndpointsName: testOutdated,
-				},
-			},
-		).Build()
+		fakeClient := fake.NewClientBuilder().WithObjects(buildActiveGateConfigMap(*dynakube, testOutdated, testOutdated)).Build()
+		dynakube.Status.DynatraceApi.ResetCachedTimestamps()
 		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
 		err := r.Reconcile()
 		require.NoError(t, err)
@@ -133,23 +139,25 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 		assert.Equal(t, testTenantEndpoints, actual.Data[CommunicationEndpointsName])
 	})
 	t.Run(`up to date activegate secret`, func(t *testing.T) {
-		fakeClient := fake.NewClientBuilder().WithObjects(
-			&corev1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      dynakube.ActiveGateConnectionInfoConfigMapName(),
-					Namespace: testNamespace,
-				},
-				Data: map[string]string{
-					TenantUUIDName:             testTenantUUID,
-					CommunicationEndpointsName: testTenantEndpoints,
-				},
-			},
-		).Build()
+		fakeClient := fake.NewClientBuilder().WithObjects(buildActiveGateConfigMap(*dynakube, testTenantUUID, testTenantEndpoints)).Build()
 
 		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
 		err := r.Reconcile()
 		require.NoError(t, err)
 	})
+}
+
+func buildActiveGateConfigMap(dynakube dynatracev1beta1.DynaKube, tenantUUID, endpoints string) *corev1.ConfigMap {
+	return &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      dynakube.ActiveGateConnectionInfoConfigMapName(),
+			Namespace: testNamespace,
+		},
+		Data: map[string]string{
+			TenantUUIDName:             tenantUUID,
+			CommunicationEndpointsName: endpoints,
+		},
+	}
 }
 
 func TestReconcile_OneagentSecret(t *testing.T) {
