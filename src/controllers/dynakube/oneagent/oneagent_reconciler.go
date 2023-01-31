@@ -74,14 +74,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, dynakube *dynatracev1beta1.D
 	}
 
 	now := metav1.Now()
-	if kubeobjects.IsOutdated(dynakube.Status.OneAgent.LastHostsRequestTimestamp, &now, updInterval) {
-		dynakube.Status.OneAgent.LastHostsRequestTimestamp = &now
-		log.Info("updated last host request time stamp")
-
+	if kubeobjects.IsOutdated(dynakube.Status.OneAgent.LastInstanceStatusUpdate, &now, updInterval) {
 		err = r.reconcileInstanceStatuses(ctx, dynakube)
 		if err != nil {
 			return err
 		}
+		dynakube.Status.OneAgent.LastInstanceStatusUpdate = &now
 		log.Info("oneagent instance statuses reconciled")
 	}
 
