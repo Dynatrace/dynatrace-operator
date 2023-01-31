@@ -20,7 +20,7 @@ limitations under the License.
 package v1beta1
 
 import (
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
@@ -551,8 +551,8 @@ func (in *OneAgentStatus) DeepCopyInto(out *OneAgentStatus) {
 			(*out)[key] = val
 		}
 	}
-	if in.LastHostsRequestTimestamp != nil {
-		in, out := &in.LastHostsRequestTimestamp, &out.LastHostsRequestTimestamp
+	if in.LastInstanceStatusUpdateTimestamp != nil {
+		in, out := &in.LastInstanceStatusUpdateTimestamp, &out.LastInstanceStatusUpdateTimestamp
 		*out = (*in).DeepCopy()
 	}
 }

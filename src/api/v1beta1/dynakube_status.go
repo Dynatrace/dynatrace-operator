@@ -2,8 +2,9 @@ package v1beta1
 
 import (
 	"fmt"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"time"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // DynaKubeStatus defines the observed state of DynaKube

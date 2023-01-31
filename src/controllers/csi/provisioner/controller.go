@@ -178,6 +178,7 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Cont
 	var agentUpdater *agentUpdater
 	if dk.CodeModulesImage() != "" {
 		connectionInfo, err := dtc.GetOneAgentConnectionInfo()
+
 		if err != nil {
 			log.Info("could not query connection info")
 			return nil, false, err
