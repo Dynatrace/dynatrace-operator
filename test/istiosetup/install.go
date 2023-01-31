@@ -2,6 +2,7 @@ package istiosetup
 
 import (
 	"context"
+	"os"
 	"strings"
 	"testing"
 
@@ -27,16 +28,25 @@ import (
 const (
 	istioNamespace         = "istio-system"
 	istioInitContainerName = "istio-init"
+	enforceIstioEnv        = "ENFORCE_ISTIO"
 )
 
 var IstioLabel = map[string]string{
 	"istio-injection": "enabled",
 }
 
+func enforceIstio() bool {
+	return os.Getenv(enforceIstioEnv) == "true"
+}
+
 func AssertIstioNamespace() func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
 	return func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
 		var namespace corev1.Namespace
 		err := environmentConfig.Client().Resources().Get(ctx, istioNamespace, "", &namespace)
+		if err != nil && !enforceIstio() {
+			t.Skip("skipping istio test, istio namespace is not present")
+			return ctx, nil
+		}
 		return ctx, errors.WithStack(err)
 	}
 }
@@ -45,6 +55,10 @@ func AssertIstiodDeployment() func(ctx context.Context, environmentConfig *envco
 	return func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
 		var deployment appsv1.Deployment
 		err := environmentConfig.Client().Resources().Get(ctx, "istiod", "istio-system", &deployment)
+		if err != nil && !enforceIstio() {
+			t.Skip("skipping istio test, istiod deployment is not present")
+			return ctx, nil
+		}
 		return ctx, errors.WithStack(err)
 	}
 }
