@@ -3523,9 +3523,7 @@ spec:
                           type: string
                       type: object
                     type: object
-                  lastHostsRequestTimestamp:
-                    description: LastHostsRequestTimestamp indicates the last timestamp
-                      the Operator queried for hosts
+                  lastInstanceStatusUpdateTimestamp:
                     format: date-time
                     type: string
                   lastUpdateProbeTimestamp:
