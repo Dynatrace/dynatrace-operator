@@ -72,7 +72,15 @@ type DynatraceApiStatus struct {
 	LastBasicStatusInformationUpdate   metav1.Time `json:"lastBasicStatusInformationUpdate,omitempty"`
 }
 
-func (_ *DynatraceApiStatus) NotOutdatedMessage(functionName string) string {
+func (dynatraceApiStatus *DynatraceApiStatus) ResetCachedTimestamps() {
+	dynatraceApiStatus.LastTokenProbe = metav1.Time{}
+	dynatraceApiStatus.LastOneAgentConnectionInfoUpdate = metav1.Time{}
+	dynatraceApiStatus.LastActiveGateConnectionInfoUpdate = metav1.Time{}
+	dynatraceApiStatus.LastAuthTokenSecretUpdate = metav1.Time{}
+	dynatraceApiStatus.LastBasicStatusInformationUpdate = metav1.Time{}
+}
+
+func CacheValidMessage(functionName string) string {
 	return fmt.Sprintf("skipping %s, last request was made less than %d minutes ago",
 		functionName,
 		int(MaxRequestInterval.Minutes()))
@@ -132,8 +140,7 @@ type OneAgentStatus struct {
 
 	Instances map[string]OneAgentInstance `json:"instances,omitempty"`
 
-	// LastHostsRequestTimestamp indicates the last timestamp the Operator queried for hosts
-	LastHostsRequestTimestamp *metav1.Time `json:"lastHostsRequestTimestamp,omitempty"`
+	LastInstanceStatusUpdateTimestamp *metav1.Time `json:"lastInstanceStatusUpdateTimestamp,omitempty"`
 }
 
 func (oneAgentStatus *OneAgentStatus) Name() string {

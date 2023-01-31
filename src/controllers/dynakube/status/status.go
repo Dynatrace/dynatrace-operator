@@ -15,7 +15,7 @@ type Options struct {
 
 func SetDynakubeStatus(dynakube *dynatracev1beta1.DynaKube, opts Options) error {
 	if !dynatracev1beta1.IsRequestOutdated(dynakube.Status.DynatraceApi.LastBasicStatusInformationUpdate) {
-		log.Info(dynakube.Status.DynatraceApi.NotOutdatedMessage("basic status information update"))
+		log.Info(dynatracev1beta1.CacheValidMessage("basic status information update"))
 		return nil
 	}
 

@@ -120,7 +120,7 @@ func (dynatraceClientBuilder builder) verifyTokenScopes(dynatraceClient dtclient
 		dynaKubeStatus.DynatraceApi.LastTokenProbe = metav1.Now()
 		err = dynatraceClientBuilder.tokens.VerifyScopes(dynatraceClient)
 	} else {
-		log.Info(dynaKubeStatus.DynatraceApi.NotOutdatedMessage("token verification"))
+		log.Info(dynatracev1beta1.CacheValidMessage("token verification"))
 		err = lastErrorFromCondition(dynaKubeStatus)
 	}
 

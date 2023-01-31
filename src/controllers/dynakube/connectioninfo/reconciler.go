@@ -50,7 +50,7 @@ func (r *Reconciler) Reconcile() error {
 
 func (r *Reconciler) reconcileOneAgentConnectionInfo() error {
 	if !dynatracev1beta1.IsRequestOutdated(r.dynakube.Status.DynatraceApi.LastOneAgentConnectionInfoUpdate) {
-		log.Info(r.dynakube.Status.DynatraceApi.NotOutdatedMessage("oneagent connection info update"))
+		log.Info(dynatracev1beta1.CacheValidMessage("oneagent connection info update"))
 		return nil
 	}
 
@@ -71,7 +71,7 @@ func (r *Reconciler) reconcileOneAgentConnectionInfo() error {
 
 func (r *Reconciler) reconcileActiveGateConnectionInfo() error {
 	if !dynatracev1beta1.IsRequestOutdated(r.dynakube.Status.DynatraceApi.LastActiveGateConnectionInfoUpdate) {
-		log.Info(r.dynakube.Status.DynatraceApi.NotOutdatedMessage("activegate connection info update"))
+		log.Info(dynatracev1beta1.CacheValidMessage("activegate connection info update"))
 		return nil
 	}
 

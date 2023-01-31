@@ -47,7 +47,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 
 func (r *Reconciler) Reconcile() error {
 	if !dynatracev1beta1.IsRequestOutdated(r.dynakube.Status.DynatraceApi.LastAuthTokenSecretUpdate) {
-		log.Info(r.dynakube.Status.DynatraceApi.NotOutdatedMessage("ActiveGate auth token secret generation"))
+		log.Info(dynatracev1beta1.CacheValidMessage("ActiveGate auth token secret generation"))
 		return nil
 	}
 
