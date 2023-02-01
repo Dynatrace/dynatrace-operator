@@ -32,9 +32,10 @@ func (gc *CSIGarbageCollector) getUnmountedVolumes(tenantUUID string) ([]os.File
 	}
 
 	for _, volumeID := range volumeIDs {
-		isUnused, err := afero.IsEmpty(gc.fs, gc.path.OverlayMappedDir(tenantUUID, volumeID.Name()))
+		mappedDir := gc.path.OverlayMappedDir(tenantUUID, volumeID.Name())
+		isUnused, err := afero.IsEmpty(gc.fs, mappedDir)
 		if err != nil {
-			log.Info("failed to check if directory is empty, skipping", "folder", gc.path.OverlayMappedDir(tenantUUID, volumeID.Name()), "error", err)
+			log.Info("failed to check if directory is empty, skipping", "folder", mappedDir, "error", err)
 			continue
 		}
 
