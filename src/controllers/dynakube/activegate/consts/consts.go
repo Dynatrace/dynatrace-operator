@@ -60,4 +60,7 @@ const (
 	GatewaySslMountPoint     = "/var/lib/dynatrace/gateway/ssl"
 	GatewayLogMountPoint     = "/var/log/dynatrace/gateway"
 	GatewayTmpMountPoint     = "/var/tmp/dynatrace/gateway"
+
+	DockerImageUser  int64 = 1001
+	DockerImageGroup int64 = 1001
 )

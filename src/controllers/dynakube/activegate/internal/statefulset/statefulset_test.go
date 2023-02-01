@@ -2,11 +2,13 @@ package statefulset
 
 import (
 	"encoding/json"
+	"reflect"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder/modifiers"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
@@ -443,5 +445,35 @@ func TestBuildCommonEnvs(t *testing.T) {
 			claim,
 			"declared volume claim: %s",
 			modifiers.PersistentStorageMountName)
+	})
+}
+
+func TestSecurityContexts(t *testing.T) {
+	checkSecurityContexts := func(t *testing.T, isReadOnlyFileSystem bool) {
+		dynakube := getTestDynakube()
+		if isReadOnlyFileSystem {
+			dynakube.Annotations = map[string]string{
+				dynatracev1beta1.AnnotationFeatureActiveGateReadOnlyFilesystem: "true",
+			}
+		}
+		dynakube.Spec.ActiveGate.Capabilities = append(dynakube.Spec.ActiveGate.Capabilities, dynatracev1beta1.KubeMonCapability.DisplayName)
+
+		multiCapability := capability.NewMultiCapability(&dynakube)
+
+		statefulsetBuilder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dynakube, multiCapability)
+		sts, _ := statefulsetBuilder.CreateStatefulSet([]builder.Modifier{
+			modifiers.NewKubernetesMonitoringModifier(dynakube, multiCapability),
+			modifiers.NewReadOnlyModifier(dynakube),
+		})
+
+		require.NotEmpty(t, sts)
+		require.Truef(t, reflect.DeepEqual(sts.Spec.Template.Spec.InitContainers[0].SecurityContext, sts.Spec.Template.Spec.Containers[0].SecurityContext), "InitContainer and Container have different SecurityContexts")
+	}
+
+	t.Run("containers have the same security context if writable file system", func(t *testing.T) {
+		checkSecurityContexts(t, false)
+	})
+	t.Run("containers have the same security context if read-only filesystem", func(t *testing.T) {
+		checkSecurityContexts(t, true)
 	})
 }

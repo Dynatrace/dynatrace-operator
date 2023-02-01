@@ -16,7 +16,7 @@ Install the Dynatrace Operator via Helm by running the following commands.
 
 Add `dynatrace` helm repository:
 ```
-helm repo add dynatrace https://raw.githubusercontent.com/Dynatrace/dynatrace-operator/master/config/helm/repos/stable
+helm repo add dynatrace https://raw.githubusercontent.com/Dynatrace/dynatrace-operator/main/config/helm/repos/stable
 ```
 
 Install `dynatrace-operator` helm chart and create the corresponding `dynatrace` namespace:
