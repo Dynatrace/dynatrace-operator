@@ -16,7 +16,7 @@ const (
 func (gc *CSIGarbageCollector) runUnmountedVolumeGarbageCollection(tenantUUID string) {
 	unmountedVolumes, err := gc.getUnmountedVolumes(tenantUUID)
 	if err != nil {
-		log.Info("failed to get unmounted volume information")
+		log.Info("failed to get unmounted volume information", "error", err)
 		return
 	}
 
