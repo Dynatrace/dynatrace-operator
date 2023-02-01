@@ -111,7 +111,7 @@ func (builder *builder) volumes() []corev1.Volume {
 			Name: dynaMetricMountName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: builder.DynaKube.Spec.Synthetic.DynaMetrics.Token,
+					SecretName: builder.DynaKube.FeatureDynaMetricsToken(),
 				},
 			},
 		},
@@ -145,7 +145,7 @@ func (builder *builder) image() string {
 }
 
 func (builder *builder) envVars() []corev1.EnvVar {
-	vars := []corev1.EnvVar{
+	return []corev1.EnvVar{
 		{
 			Name: envBaseUrl,
 			Value: fmt.Sprintf(
@@ -154,10 +154,6 @@ func (builder *builder) envVars() []corev1.EnvVar {
 				builder.DynaKube.Status.ConnectionInfo.TenantUUID),
 		},
 	}
-
-	return append(
-		vars,
-		builder.DynaKube.Spec.Synthetic.DynaMetrics.Env...)
 }
 
 func (*builder) args() []string {

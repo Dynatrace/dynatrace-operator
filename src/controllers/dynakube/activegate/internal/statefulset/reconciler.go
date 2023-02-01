@@ -14,9 +14,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/synthetic/autoscaler"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -27,15 +29,32 @@ import (
 var _ controllers.Reconciler = &Reconciler{}
 
 type Reconciler struct {
-	client     client.Client
-	dynakube   *dynatracev1beta1.DynaKube
-	apiReader  client.Reader
-	scheme     *runtime.Scheme
-	capability capability.Capability
-	modifiers  []builder.Modifier
+	client           client.Client
+	dynakube         *dynatracev1beta1.DynaKube
+	apiReader        client.Reader
+	scheme           *runtime.Scheme
+	capability       capability.Capability
+	modifiers        []builder.Modifier
+	foundStatefulSet *appsv1.StatefulSet
+
+	persistentVolumeClaims *kubeobjects.ApiRequests[
+		corev1.PersistentVolumeClaim,
+		*corev1.PersistentVolumeClaim,
+		corev1.PersistentVolumeClaimList,
+		*corev1.PersistentVolumeClaimList,
+	]
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, capability capability.Capability) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
+// argument-limit doesn't apply to constructors
+//
+//nolint:revive
+func NewReconciler(
+	clt client.Client,
+	apiReader client.Reader,
+	scheme *runtime.Scheme,
+	dynakube *dynatracev1beta1.DynaKube,
+	capability capability.Capability,
+) *Reconciler {
 	return &Reconciler{
 		client:     clt,
 		apiReader:  apiReader,
@@ -43,6 +62,18 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 		dynakube:   dynakube,
 		capability: capability,
 		modifiers:  []builder.Modifier{},
+
+		persistentVolumeClaims: kubeobjects.NewApiRequests[
+			corev1.PersistentVolumeClaim,
+			*corev1.PersistentVolumeClaim,
+			corev1.PersistentVolumeClaimList,
+			*corev1.PersistentVolumeClaimList,
+		](
+			context.TODO(),
+			apiReader,
+			clt,
+			scheme,
+		),
 	}
 }
 
@@ -85,8 +116,12 @@ func (r *Reconciler) manageStatefulSet() error {
 		}
 	}
 
-	err = r.reconcileSynAutoscaler(desiredSts)
-	return errors.WithStack(err)
+	err = r.findStatefulSet(desiredSts)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return errors.WithStack(r.reconcileDependents())
 }
 
 func (r *Reconciler) buildDesiredStatefulSet() (*appsv1.StatefulSet, error) {
@@ -245,21 +280,80 @@ func needsCustomPropertyHash(customProperties *dynatracev1beta1.DynaKubeValueSou
 	return customProperties != nil && (customProperties.Value != "" || customProperties.ValueFrom != "")
 }
 
-func (reconciler *Reconciler) reconcileSynAutoscaler(toScale *appsv1.StatefulSet) error {
-	deployed, err := reconciler.getStatefulSet(toScale)
-	switch {
-	case k8serrors.IsNotFound(err):
+func (reconciler *Reconciler) findStatefulSet(toFind *appsv1.StatefulSet) (err error) {
+	reconciler.foundStatefulSet, err = reconciler.getStatefulSet(toFind)
+	if k8serrors.IsNotFound(err) {
 		err = nil
-	case deployed != nil:
-		err = autoscaler.NewReconciler(
-			context.TODO(),
-			reconciler.apiReader,
-			reconciler.client,
-			reconciler.scheme,
-			reconciler.dynakube,
-			deployed,
-		).Reconcile()
 	}
 
 	return errors.WithStack(err)
+}
+
+func (reconciler *Reconciler) reconcileDependents() (err error) {
+	if reconciler.foundStatefulSet != nil {
+		err = reconciler.reconcileSynAutoscaler()
+		if err == nil {
+			err = reconciler.setOwnershipToVolumeClaims()
+		}
+	}
+
+	return errors.WithStack(err)
+}
+
+func (reconciler *Reconciler) reconcileSynAutoscaler() error {
+	err := autoscaler.NewReconciler(
+		context.TODO(),
+		reconciler.apiReader,
+		reconciler.client,
+		reconciler.scheme,
+		reconciler.dynakube,
+		reconciler.foundStatefulSet,
+	).Reconcile()
+
+	return errors.WithStack(err)
+}
+
+func (reconciler *Reconciler) setOwnershipToVolumeClaims() error {
+	claims, err := reconciler.persistentVolumeClaims.List(
+		client.InNamespace(reconciler.dynakube.Namespace),
+		client.MatchingLabels{
+			kubeobjects.AppCreatedByLabel: reconciler.dynakube.Name,
+		},
+	)
+
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	for _, claim := range claims.Items {
+		toUpdateClaim := address.Of(claim)
+		if !reconciler.underOwnership(reconciler.dynakube, toUpdateClaim) {
+			err = reconciler.persistentVolumeClaims.Update(
+				reconciler.dynakube,
+				toUpdateClaim)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			log.Info(
+				"set ownership",
+				"dynakube",
+				reconciler.dynakube.Name,
+				"persistent volume claim",
+				claim.Name)
+		}
+	}
+
+	return nil
+}
+
+func (*Reconciler) underOwnership(
+	dynaKube *dynatracev1beta1.DynaKube,
+	claim *corev1.PersistentVolumeClaim,
+) bool {
+	for _, scanned := range claim.GetOwnerReferences() {
+		if scanned.UID == dynaKube.GetUID() {
+			return true
+		}
+	}
+	return false
 }

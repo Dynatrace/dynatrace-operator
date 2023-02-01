@@ -85,7 +85,7 @@ var nodeRequirementsBySize = map[string]nodeRequirements{
 }
 
 func (syn SyntheticModifier) nodeRequirements() nodeRequirements {
-	return nodeRequirementsBySize[syn.DynaKube.SyntheticNodeType()]
+	return nodeRequirementsBySize[syn.DynaKube.FeatureSyntheticNodeType()]
 }
 
 var (
@@ -133,7 +133,7 @@ func (syn SyntheticModifier) Modify(sts *appsv1.StatefulSet) error {
 		baseContainer.Env,
 		corev1.EnvVar{
 			Name:  envLocationId,
-			Value: syn.DynaKube.Spec.Synthetic.LocationEntityId,
+			Value: syn.DynaKube.FeatureSyntheticLocationEntityId(),
 		})
 
 	return nil
@@ -186,20 +186,16 @@ func (syn SyntheticModifier) getVolumeMounts() []corev1.VolumeMount {
 }
 
 func (syn SyntheticModifier) getEnvs() []corev1.EnvVar {
-	variables := []corev1.EnvVar{
+	return []corev1.EnvVar{
 		{
 			Name:  envNodeType,
-			Value: syn.DynaKube.SyntheticNodeType(),
+			Value: syn.DynaKube.FeatureSyntheticNodeType(),
 		},
 		{
 			Name:  envMaxHeap,
 			Value: syn.nodeRequirements().jvmHeap.String(),
 		},
 	}
-
-	return append(
-		variables,
-		syn.DynaKube.Spec.Synthetic.Env...)
 }
 
 func (syn SyntheticModifier) buildSecurityContext() *corev1.SecurityContext {

@@ -61,14 +61,14 @@ func (builder *builder) newAutoscaler() *scalingv2.HorizontalPodAutoscaler {
 				Name:       builder.StatefulSet.GetName(),
 				APIVersion: builder.StatefulSet.TypeMeta.APIVersion,
 			},
-			MinReplicas: address.Of(builder.DynaKube.SyntheticAutoscalerMinReplicas()),
-			MaxReplicas: builder.DynaKube.SyntheticAutoscalerMaxReplicas(),
+			MinReplicas: address.Of(builder.DynaKube.FeatureSyntheticAutoscalerMinReplicas()),
+			MaxReplicas: builder.DynaKube.FeatureSyntheticAutoscalerMaxReplicas(),
 			Metrics: []scalingv2.MetricSpec{
 				{
 					Type: scalingv2.ExternalMetricSourceType,
 					External: &scalingv2.ExternalMetricSource{
 						Metric: scalingv2.MetricIdentifier{
-							Name: builder.DynaKube.SyntheticAutoscalerDynaQuery(),
+							Name: builder.DynaKube.FeatureSyntheticAutoscalerDynaQuery(),
 						},
 						Target: scalingv2.MetricTarget{
 							Type:  scalingv2.ValueMetricType,

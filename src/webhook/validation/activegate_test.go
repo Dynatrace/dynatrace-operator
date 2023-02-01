@@ -152,19 +152,21 @@ func TestSyntheticMonitoring(t *testing.T) {
 		dynatracev1beta1.MetricsIngestCapability.DisplayName,
 		dynatracev1beta1.KubeMonCapability.DisplayName,
 	}
+	meta := defaultDynakubeObjectMeta.DeepCopy()
+	meta.Annotations = map[string]string{
+		dynatracev1beta1.AnnotationFeatureSyntheticLocationEntityId: "doctored",
+		dynatracev1beta1.AnnotationFeatureDynaMetricsToken:          "undeclared",
+	}
 
 	t.Run("synthetic-and-activegate-capabilities", func(t *testing.T) {
 		assertAllowedResponseWithWarnings(t,
 			len(syntheticless)+1,
 			&dynatracev1beta1.DynaKube{
-				ObjectMeta: defaultDynakubeObjectMeta,
+				ObjectMeta: *meta,
 				Spec: dynatracev1beta1.DynaKubeSpec{
 					APIURL: testApiUrl,
 					ActiveGate: dynatracev1beta1.ActiveGateSpec{
 						Capabilities: syntheticless,
-					},
-					Synthetic: dynatracev1beta1.SyntheticSpec{
-						LocationEntityId: "doctored",
 					},
 				},
 			})

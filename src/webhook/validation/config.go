@@ -29,6 +29,7 @@ var validators = []validator{
 	conflictingOneAgentVolumeStorageSettings,
 	invalidSyntheticNodeType,
 	invalidSyntheticAutoscalerReplicaBounds,
+	invalidDynaMetricsToken,
 }
 
 var warnings = []validator{

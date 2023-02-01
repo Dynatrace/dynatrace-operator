@@ -24,11 +24,6 @@ const (
 )
 
 var (
-	suplementaryEnvBinding = corev1.EnvVar{
-		Name:  "anonymous",
-		Value: "any",
-	}
-
 	dynaMetricPortArg = "--secure-port=" + fmt.Sprint(common.HttpsServicePort)
 
 	dynakube = &dynatracev1beta1.DynaKube{
@@ -36,18 +31,11 @@ var (
 			Name:      "ephemeral",
 			Namespace: "experimental",
 			Annotations: map[string]string{
-				"feature.dynatrace.com/custom-dynametric-image": dynaMetricImage,
+				dynatracev1beta1.AnnotationFeatureSyntheticLocationEntityId: "doctored",
+				dynatracev1beta1.AnnotationFeatureCustomDynaMetricImage:     dynaMetricImage,
 			},
 		},
 		Spec: dynatracev1beta1.DynaKubeSpec{
-			Synthetic: dynatracev1beta1.SyntheticSpec{
-				LocationEntityId: "doctored",
-				DynaMetrics: dynatracev1beta1.DynaMetricSpec{
-					Env: []corev1.EnvVar{
-						suplementaryEnvBinding,
-					},
-				},
-			},
 			APIURL: tenantApiUrl,
 		},
 		Status: dynatracev1beta1.DynaKubeStatus{
@@ -81,7 +69,7 @@ func TestDynaMetricDeployment(t *testing.T) {
 		}
 		assertion.Subset(
 			deployment.Spec.Template.Spec.Containers[0].Env,
-			append(envBindings, suplementaryEnvBinding),
+			envBindings,
 			"declared env variables")
 		jsonized, _ := json.Marshal(deployment)
 		t.Logf("manifest:\n%s", jsonized)

@@ -5,29 +5,14 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/stretchr/testify/assert"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-)
-
-var (
-	suplementaryEnvBindings = []corev1.EnvVar{
-		{
-			Name:  "anonymous",
-			Value: "any",
-		},
-		{
-			Name:  "artificial",
-			Value: "0",
-		},
-	}
 )
 
 func TestSyntheticContainer(t *testing.T) {
 	assertion := assert.New(t)
 
 	dynaKube := getBaseDynakube()
-	dynaKube.Spec.Synthetic.NodeType = dynatracev1beta1.SyntheticNodeXs
-	dynaKube.Spec.Synthetic.Env = suplementaryEnvBindings
+	dynaKube.ObjectMeta.Annotations[dynatracev1beta1.AnnotationFeatureSyntheticNodeType] = dynatracev1beta1.SyntheticNodeXs
 
 	modifier := newSyntheticModifier(dynaKube)
 	container := modifier.buildContainer()
@@ -65,11 +50,6 @@ func TestSyntheticContainer(t *testing.T) {
 			container.Env,
 			modifier.getEnvs(),
 			"declared environment variables")
-
-		assertion.Subset(
-			container.Env,
-			suplementaryEnvBindings,
-			"declared extra environment variables")
 	}
 	t.Run("by-environment-variables", toAssertEnv)
 }

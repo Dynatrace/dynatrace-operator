@@ -17,7 +17,6 @@ limitations under the License.
 package v1beta1
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -417,98 +416,4 @@ func TestGetOneAgentEnvironment(t *testing.T) {
 		require.NotNil(t, env)
 		assert.Len(t, env, 0)
 	})
-}
-
-func TestSyntheticMonitoring(t *testing.T) {
-	assertion := assert.New(t)
-
-	t.Run("with-non-empty-loc-id",
-		func(t *testing.T) {
-			loc := "some-identifier"
-			dynaKube := DynaKube{
-				Spec: DynaKubeSpec{
-					Synthetic: SyntheticSpec{
-						LocationEntityId: loc,
-					},
-				},
-			}
-			assertion.Equal(
-				loc,
-				dynaKube.Spec.Synthetic.LocationEntityId,
-				"declared syn loc entity id: %s",
-				loc)
-		})
-
-	t.Run("with-default-node-type",
-		func(t *testing.T) {
-			dynaKube := DynaKube{}
-			assertion.Equal(
-				SyntheticNodeS,
-				dynaKube.SyntheticNodeType(),
-				"default node type: %s",
-				SyntheticNodeS)
-		})
-
-	t.Run("with-declared-node-type",
-		func(t *testing.T) {
-			dynaKube := DynaKube{
-				Spec: DynaKubeSpec{
-					Synthetic: SyntheticSpec{
-						NodeType: SyntheticNodeXs,
-					},
-				},
-			}
-			assertion.Equal(
-				SyntheticNodeXs,
-				dynaKube.Spec.Synthetic.NodeType,
-				"declared node type: %s",
-				SyntheticNodeXs)
-		})
-
-	t.Run("with-default-autoscaler-min-replicas",
-		func(t *testing.T) {
-			dynaKube := DynaKube{}
-			assertion.Equal(
-				defaultSyntheticAutoscalerMinReplicas,
-				dynaKube.SyntheticAutoscalerMinReplicas(),
-				"default autoscaler min replicas: %s",
-				defaultSyntheticAutoscalerMinReplicas)
-		})
-
-	t.Run("with-declared-autoscaler-min-replicas",
-		func(t *testing.T) {
-			autoscalerMinReplicas := int32(7)
-			dynaKube := DynaKube{
-				Spec: DynaKubeSpec{
-					Synthetic: SyntheticSpec{
-						Autoscaler: AutoscalerSpec{
-							MinReplicas: autoscalerMinReplicas,
-						},
-					},
-				},
-			}
-			assertion.Equal(
-				autoscalerMinReplicas,
-				dynaKube.SyntheticAutoscalerMinReplicas(),
-				"declared autoscaler min replicas: %s",
-				autoscalerMinReplicas)
-		})
-
-	t.Run("with-default-autoscaler-dynaquery",
-		func(t *testing.T) {
-			loc := "other-identifier"
-			query := fmt.Sprintf(defaultSyntheticAutoscalerDynaQuery, loc)
-			dynaKube := DynaKube{
-				Spec: DynaKubeSpec{
-					Synthetic: SyntheticSpec{
-						LocationEntityId: loc,
-					},
-				},
-			}
-			assertion.Equal(
-				query,
-				dynaKube.SyntheticAutoscalerDynaQuery(),
-				"default autoscaler DynaQuery: %s",
-				query)
-		})
 }

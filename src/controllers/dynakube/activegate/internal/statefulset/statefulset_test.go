@@ -369,7 +369,7 @@ func TestBuildCommonEnvs(t *testing.T) {
 
 	t.Run("syn-capability", func(t *testing.T) {
 		dynaKube := getTestDynakube()
-		dynaKube.Spec.Synthetic.LocationEntityId = "doctored"
+		dynaKube.ObjectMeta.Annotations[dynatracev1beta1.AnnotationFeatureSyntheticLocationEntityId] = "doctored"
 		synCapability := capability.NewSyntheticCapability(&dynaKube)
 
 		builder := NewStatefulSetBuilder(

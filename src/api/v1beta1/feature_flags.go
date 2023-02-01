@@ -89,14 +89,37 @@ const (
 
 	falsePhrase = "false"
 	truePhrase  = "true"
+
+	// synthetic location
+	AnnotationFeatureSyntheticLocationEntityId = AnnotationFeaturePrefix + "synthetic-location-entity-id"
+
+	// synthetic node type
+	AnnotationFeatureSyntheticNodeType = AnnotationFeaturePrefix + "synthetic-node-type"
+
+	SyntheticNodeXs = "XS"
+	SyntheticNodeS  = "S"
+	SyntheticNodeM  = "M"
+
+	// synthetic autoscaler
+	AnnotationFeatureSyntheticAutoscalerMinReplicas = AnnotationFeaturePrefix + "synthetic-autoscaler-min-replicas"
+	AnnotationFeatureSyntheticAutoscalerMaxReplicas = AnnotationFeaturePrefix + "synthetic-autoscaler-max-replicas"
+	AnnotationFeatureSyntheticAutoscalerDynaQuery   = AnnotationFeaturePrefix + "synthetic-autoscaler-dynaquery"
+
+	// dynaMetrics token
+	AnnotationFeatureDynaMetricsToken = AnnotationFeaturePrefix + "dynametrics-token"
 )
 
 const (
 	DefaultMaxFailedCsiMountAttempts = 10
+
+	defaultSyntheticAutoscalerDynaQuery = `dsfm:synthetic.engine_utilization:filter(eq("dt.entity.synthetic_location","%s")):merge("host.name","dt.active_gate.working_mode","dt.active_gate.id","location.name"):fold(avg)`
 )
 
 var (
 	log = logger.Factory.GetLogger("dynakube-api")
+
+	defaultSyntheticAutoscalerMinReplicas = int32(1)
+	defaultSyntheticAutoscalerMaxReplicas = int32(2)
 )
 
 func (dk *DynaKube) getDisableFlagWithDeprecatedAnnotation(annotation string, deprecatedAnnotation string) bool {
@@ -292,4 +315,55 @@ func (dk *DynaKube) FeatureMaxFailedCsiMountAttempts() int {
 	}
 
 	return maxCsiMountAttempts
+}
+
+func (dynaKube *DynaKube) FeatureSyntheticLocationEntityId() string {
+	return dynaKube.Annotations[AnnotationFeatureSyntheticLocationEntityId]
+}
+
+func (dynaKube *DynaKube) FeatureSyntheticNodeType() string {
+	node, containsKey := dynaKube.Annotations[AnnotationFeatureSyntheticNodeType]
+	if !containsKey {
+		return SyntheticNodeS
+	}
+	return node
+}
+
+func (dynaKube *DynaKube) FeatureSyntheticAutoscalerMinReplicas() int32 {
+	return dynaKube.getSyntheticAutoscalerReplicas(
+		AnnotationFeatureSyntheticAutoscalerMinReplicas,
+		defaultSyntheticAutoscalerMinReplicas)
+}
+
+func (dynaKube *DynaKube) getSyntheticAutoscalerReplicas(feature string, defaultReplicas int32) int32 {
+	replicas := defaultReplicas
+	value, containsKey := dynaKube.Annotations[feature]
+	if containsKey {
+		parsed, err := strconv.ParseInt(value, 0, 32)
+		if err == nil {
+			replicas = int32(parsed)
+		}
+	}
+
+	return replicas
+}
+
+func (dynaKube *DynaKube) FeatureSyntheticAutoscalerMaxReplicas() int32 {
+	return dynaKube.getSyntheticAutoscalerReplicas(
+		AnnotationFeatureSyntheticAutoscalerMaxReplicas,
+		defaultSyntheticAutoscalerMaxReplicas)
+}
+
+func (dynaKube *DynaKube) FeatureSyntheticAutoscalerDynaQuery() string {
+	query, containsKey := dynaKube.Annotations[AnnotationFeatureSyntheticAutoscalerDynaQuery]
+	if !containsKey {
+		query = defaultSyntheticAutoscalerDynaQuery
+	}
+
+	return fmt.Sprintf(query, dynaKube.FeatureSyntheticLocationEntityId())
+}
+
+// a token to offer external metrics from Dynatrace
+func (dynaKube *DynaKube) FeatureDynaMetricsToken() string {
+	return dynaKube.Annotations[AnnotationFeatureDynaMetricsToken]
 }

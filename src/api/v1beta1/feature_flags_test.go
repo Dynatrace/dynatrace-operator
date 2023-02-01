@@ -1,6 +1,7 @@
 package v1beta1
 
 import (
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -202,4 +203,96 @@ func TestDynaKube_FeatureIgnoredNamespaces(t *testing.T) {
 	}
 
 	assert.True(t, dynakubeNamespaceMatches)
+}
+
+func TestSyntheticMonitoringFlags(t *testing.T) {
+	assertion := assert.New(t)
+
+	t.Run("with-non-empty-loc-id",
+		func(t *testing.T) {
+			loc := "some-identifier"
+			dynaKube := DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						AnnotationFeatureSyntheticLocationEntityId: loc,
+					},
+				},
+			}
+			assertion.Equal(
+				loc,
+				dynaKube.FeatureSyntheticLocationEntityId(),
+				"declared syn loc entity id: %s",
+				loc)
+		})
+
+	t.Run("with-default-node-type",
+		func(t *testing.T) {
+			dynaKube := DynaKube{}
+			assertion.Equal(
+				SyntheticNodeS,
+				dynaKube.FeatureSyntheticNodeType(),
+				"default node type: %s",
+				SyntheticNodeS)
+		})
+
+	t.Run("with-declared-node-type",
+		func(t *testing.T) {
+			dynaKube := DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						AnnotationFeatureSyntheticNodeType: SyntheticNodeXs,
+					},
+				},
+			}
+			assertion.Equal(
+				SyntheticNodeXs,
+				dynaKube.FeatureSyntheticNodeType(),
+				"declared node type: %s",
+				SyntheticNodeXs)
+		})
+
+	t.Run("with-default-autoscaler-min-replicas",
+		func(t *testing.T) {
+			dynaKube := DynaKube{}
+			assertion.Equal(
+				defaultSyntheticAutoscalerMinReplicas,
+				dynaKube.FeatureSyntheticAutoscalerMinReplicas(),
+				"default autoscaler min replicas: %s",
+				defaultSyntheticAutoscalerMinReplicas)
+		})
+
+	t.Run("with-declared-autoscaler-min-replicas",
+		func(t *testing.T) {
+			autoscalerMinReplicas := int32(7)
+			dynaKube := DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						AnnotationFeatureSyntheticAutoscalerMinReplicas: fmt.Sprint(autoscalerMinReplicas),
+					},
+				},
+			}
+			assertion.Equal(
+				autoscalerMinReplicas,
+				dynaKube.FeatureSyntheticAutoscalerMinReplicas(),
+				"declared autoscaler min replicas: %s",
+				autoscalerMinReplicas)
+		})
+
+	t.Run("with-default-autoscaler-dynaquery",
+		func(t *testing.T) {
+			loc := "other-identifier"
+			query := fmt.Sprintf(defaultSyntheticAutoscalerDynaQuery, loc)
+			dynaKube := DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						AnnotationFeatureSyntheticLocationEntityId: loc,
+					},
+				},
+			}
+			assertion.Equal(
+				query,
+				dynaKube.FeatureSyntheticAutoscalerDynaQuery(),
+				"default autoscaler DynaQuery: %s",
+				query)
+		})
 }

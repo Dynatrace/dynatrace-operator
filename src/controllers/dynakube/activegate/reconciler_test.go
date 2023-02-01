@@ -37,6 +37,15 @@ var (
 			UID:  "01234-5678-9012-3456",
 		},
 	}
+
+	syntheticCapabilityObjectMeta = metav1.ObjectMeta{
+		Namespace: testNamespace,
+		Name:      testName,
+		Annotations: map[string]string{
+			dynatracev1beta1.AnnotationFeatureSyntheticLocationEntityId: "imaginary",
+			dynatracev1beta1.AnnotationFeatureSyntheticNodeType:         dynatracev1beta1.SyntheticNodeXs,
+		},
+	}
 )
 
 func TestReconciler_Reconcile(t *testing.T) {
@@ -207,15 +216,7 @@ func TestExclusiveSynMonitoring(t *testing.T) {
 		&dtclient.ActiveGateAuthTokenInfo{},
 		nil)
 	dynaKube := &dynatracev1beta1.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: testNamespace,
-			Name:      testName,
-		},
-		Spec: dynatracev1beta1.DynaKubeSpec{
-			Synthetic: dynatracev1beta1.SyntheticSpec{
-				NodeType: dynatracev1beta1.SyntheticNodeXs,
-			},
-		},
+		ObjectMeta: syntheticCapabilityObjectMeta,
 	}
 	k8sRequests := fake.NewClient(testKubeSystemNamespace)
 	reconciler := NewReconciler(
@@ -303,19 +304,13 @@ func TestCombinedSynAndK8sMonitoring(t *testing.T) {
 		&dtclient.ActiveGateAuthTokenInfo{},
 		nil)
 	dynakube := &dynatracev1beta1.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: testNamespace,
-			Name:      testName,
-		},
+		ObjectMeta: syntheticCapabilityObjectMeta,
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			ActiveGate: dynatracev1beta1.ActiveGateSpec{
 				Capabilities: []dynatracev1beta1.CapabilityDisplayName{
 					dynatracev1beta1.KubeMonCapability.DisplayName,
 					dynatracev1beta1.RoutingCapability.DisplayName,
 				},
-			},
-			Synthetic: dynatracev1beta1.SyntheticSpec{
-				NodeType: dynatracev1beta1.SyntheticNodeXs,
 			},
 		},
 	}

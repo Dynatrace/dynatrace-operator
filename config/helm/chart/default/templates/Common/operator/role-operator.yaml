@@ -185,4 +185,14 @@ rules:
       - create
       - update
       - delete
+
+  - apiGroups:
+      - ""
+    resources:
+      - persistentvolumeclaims
+    verbs:
+      - get
+      - list
+      - watch
+      - update
 {{ end }}
