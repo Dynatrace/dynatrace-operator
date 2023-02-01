@@ -1,0 +1,129 @@
+package dtclient
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+const (
+	oneAgentImageUrl    = "/v1/deployment/image/agent/oneAgent/latest"
+	codeModulesImageUrl = "/v1/deployment/image/agent/codeModules/latest"
+	activeGateImageUrl  = "/v1/deployment/image/gateway/latest"
+)
+
+var latestOneAgentImageResponse = &LatestImageInfo{
+	Source: "dt.oneAgent/test",
+	Tag:    "1.xxx",
+}
+
+var latestActiveGateImageResponse = &LatestImageInfo{
+	Source: "dt.activeGate/test",
+	Tag:    "1.xxx",
+}
+
+var latestCodeModulesImageResponse = &LatestImageInfo{
+	Source: "dt.codeModules/test",
+	Tag:    "1.xxx",
+}
+
+func TestGetLatestImage(t *testing.T) {
+	t.Run("GetLatestAgentImage works", func(t *testing.T) {
+		dynatraceServer, dynatraceClient := createTestDynatraceClient(t, connectionInfoServerHandler(oneAgentImageUrl, latestOneAgentImageResponse), "")
+		defer dynatraceServer.Close()
+
+		latestImageInfo, err := dynatraceClient.GetLatestAgentImage()
+		assert.NoError(t, err)
+		assert.NotNil(t, latestImageInfo)
+
+		assert.Equal(t, latestImageInfo.Source, latestOneAgentImageResponse.Source)
+		assert.Contains(t, latestImageInfo.Tag, latestOneAgentImageResponse.Tag)
+	})
+	t.Run("GetLatestActiveGateImage works", func(t *testing.T) {
+		dynatraceServer, dynatraceClient := createTestDynatraceClient(t, connectionInfoServerHandler(activeGateImageUrl, latestActiveGateImageResponse), "")
+		defer dynatraceServer.Close()
+
+		latestImageInfo, err := dynatraceClient.GetLatestActiveGateImage()
+		assert.NoError(t, err)
+		assert.NotNil(t, latestImageInfo)
+
+		assert.Equal(t, latestImageInfo.Source, latestActiveGateImageResponse.Source)
+		assert.Contains(t, latestImageInfo.Tag, latestActiveGateImageResponse.Tag)
+	})
+	t.Run("GetLatestCodeModulesImage works", func(t *testing.T) {
+		dynatraceServer, dynatraceClient := createTestDynatraceClient(t, connectionInfoServerHandler(codeModulesImageUrl, latestCodeModulesImageResponse), "")
+		defer dynatraceServer.Close()
+
+		latestImageInfo, err := dynatraceClient.GetLatestCodeModulesImage()
+		assert.NoError(t, err)
+		assert.NotNil(t, latestImageInfo)
+
+		assert.Equal(t, latestImageInfo.Source, latestCodeModulesImageResponse.Source)
+		assert.Contains(t, latestImageInfo.Tag, latestCodeModulesImageResponse.Tag)
+	})
+}
+
+func TestGetLatestImageFailure(t *testing.T) {
+	t.Run("GetLatestAgentImage handle internal server error", func(t *testing.T) {
+		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceClient(t, tenantInternalServerError(oneAgentImageUrl), "")
+		defer faultyDynatraceServer.Close()
+
+		latestImageInfo, err := faultyDynatraceClient.GetLatestAgentImage()
+		assert.Error(t, err)
+		assert.Nil(t, latestImageInfo)
+
+		assert.Equal(t, "dynatrace server error 500: error retrieving tenant info", err.Error())
+
+	})
+	t.Run("GetLatestActiveGateImage handle internal server error", func(t *testing.T) {
+		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceClient(t, tenantInternalServerError(activeGateImageUrl), "")
+		defer faultyDynatraceServer.Close()
+
+		latestImageInfo, err := faultyDynatraceClient.GetLatestActiveGateImage()
+		assert.Error(t, err)
+		assert.Nil(t, latestImageInfo)
+
+		assert.Equal(t, "dynatrace server error 500: error retrieving tenant info", err.Error())
+	})
+	t.Run("GetLatestCodeModulesImage handle internal server error", func(t *testing.T) {
+		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceClient(t, tenantInternalServerError(codeModulesImageUrl), "")
+		defer faultyDynatraceServer.Close()
+
+		latestImageInfo, err := faultyDynatraceClient.GetLatestCodeModulesImage()
+		assert.Error(t, err)
+		assert.Nil(t, latestImageInfo)
+
+		assert.Equal(t, "dynatrace server error 500: error retrieving tenant info", err.Error())
+	})
+	t.Run("GetLatestAgentImage handle malformed json error", func(t *testing.T) {
+		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceClient(t, tenantMalformedJson(oneAgentImageUrl), "")
+		defer faultyDynatraceServer.Close()
+
+		latestImageInfo, err := faultyDynatraceClient.GetLatestAgentImage()
+		assert.Error(t, err)
+		assert.Nil(t, latestImageInfo)
+
+		assert.Equal(t, "invalid character 'h' in literal true (expecting 'r')", err.Error())
+
+	})
+	t.Run("GetLatestActiveGateImage handle malformed json error", func(t *testing.T) {
+		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceClient(t, tenantMalformedJson(activeGateImageUrl), "")
+		defer faultyDynatraceServer.Close()
+
+		latestImageInfo, err := faultyDynatraceClient.GetLatestActiveGateImage()
+		assert.Error(t, err)
+		assert.Nil(t, latestImageInfo)
+
+		assert.Equal(t, "invalid character 'h' in literal true (expecting 'r')", err.Error())
+	})
+	t.Run("GetLatestCodeModulesImage handle malformed json error", func(t *testing.T) {
+		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceClient(t, tenantMalformedJson(codeModulesImageUrl), "")
+		defer faultyDynatraceServer.Close()
+
+		latestImageInfo, err := faultyDynatraceClient.GetLatestCodeModulesImage()
+		assert.Error(t, err)
+		assert.Nil(t, latestImageInfo)
+
+		assert.Equal(t, "invalid character 'h' in literal true (expecting 'r')", err.Error())
+	})
+}
