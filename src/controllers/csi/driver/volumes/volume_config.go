@@ -26,6 +26,7 @@ type VolumeConfig struct {
 	PodName      string
 	Mode         string
 	DynakubeName string
+	ReadOnly     bool
 }
 
 // Transforms the NodePublishVolumeRequest into a VolumeConfig
@@ -80,6 +81,7 @@ func ParseNodePublishVolumeRequest(req *csi.NodePublishVolumeRequest) (*VolumeCo
 		PodName:      podName,
 		Mode:         mode,
 		DynakubeName: dynakubeName,
+		ReadOnly:     req.GetReadonly(),
 	}, nil
 }
 

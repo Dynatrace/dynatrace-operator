@@ -178,10 +178,15 @@ func (publisher *AppVolumePublisher) mountOneAgent(bindCfg *csivolumes.BindConfi
 		return err
 	}
 
+	mountOptions := []string{"bind"}
+	if volumeCfg.ReadOnly {
+		mountOptions = append(mountOptions, "ro")
+	}
+
 	if err := publisher.mounter.Mount("overlay", mappedDir, "overlay", overlayOptions); err != nil {
 		return err
 	}
-	if err := publisher.mounter.Mount(mappedDir, volumeCfg.TargetPath, "", []string{"bind"}); err != nil {
+	if err := publisher.mounter.Mount(mappedDir, volumeCfg.TargetPath, "", mountOptions); err != nil {
 		_ = publisher.mounter.Unmount(mappedDir)
 		return err
 	}

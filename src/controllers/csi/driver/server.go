@@ -155,7 +155,7 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 		"csiMode", volumeCfg.Mode,
 		"target", volumeCfg.TargetPath,
 		"fstype", req.GetVolumeCapability().GetMount().GetFsType(),
-		"readonly", req.GetReadonly(),
+		"readonly", volumeCfg.ReadOnly,
 		"volumeID", volumeCfg.VolumeID,
 		"attributes", req.GetVolumeContext(),
 		"mountflags", req.GetVolumeCapability().GetMount().GetMountFlags(),
