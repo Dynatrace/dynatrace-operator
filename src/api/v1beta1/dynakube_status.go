@@ -67,9 +67,9 @@ type DynaKubeStatus struct {
 const MaxRequestInterval = 15 * time.Minute
 
 type DynatraceApiStatus struct {
-	LastTokenScopeRequest               metav1.Time `json:"LastTokenScopeRequest,omitempty"`
-	LastOneAgentConnectionInfoRequest   metav1.Time `json:"LastOneAgentConnectionInfoRequest,omitempty"`
-	LastActiveGateConnectionInfoRequest metav1.Time `json:"LastActiveGateConnectionInfoRequest,omitempty"`
+	LastTokenScopeRequest               metav1.Time `json:"lastTokenScopeRequest,omitempty"`
+	LastOneAgentConnectionInfoRequest   metav1.Time `json:"lastOneAgentConnectionInfoRequest,omitempty"`
+	LastActiveGateConnectionInfoRequest metav1.Time `json:"lastActiveGateConnectionInfoRequest,omitempty"`
 }
 
 func (dynatraceApiStatus *DynatraceApiStatus) ResetCachedTimestamps() {
