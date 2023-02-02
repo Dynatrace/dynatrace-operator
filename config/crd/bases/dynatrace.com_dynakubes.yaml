@@ -3486,13 +3486,13 @@ spec:
                 type: object
               dynatraceApi:
                 properties:
-                  LastActiveGateConnectionInfoRequest:
+                  lastActiveGateConnectionInfoRequest:
                     format: date-time
                     type: string
-                  LastOneAgentConnectionInfoRequest:
+                  lastOneAgentConnectionInfoRequest:
                     format: date-time
                     type: string
-                  LastTokenScopeRequest:
+                  lastTokenScopeRequest:
                     format: date-time
                     type: string
                 type: object
