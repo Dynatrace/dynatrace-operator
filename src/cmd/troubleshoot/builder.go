@@ -27,6 +27,7 @@ const (
 	namespaceCheckName           = "namespace"
 	crdCheckName                 = "crd"
 	dynakubeCheckName            = "dynakube"
+	oneAgentAPMCheckName         = "oneAgentAPM"
 	dtClusterConnectionCheckName = "DynatraceClusterConnection"
 	imagePullableCheckName       = "imagePullable"
 	proxySettingsCheckName       = "proxySettings"
@@ -111,8 +112,10 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			namespaceName: namespaceFlagValue,
 		}
 
+		client := k8scluster.GetClient()
+
 		results := NewChecksResults()
-		err = runChecks(results, &troubleshootCtx, getPrerequisiteChecks()) // ignore error to avoid polluting pretty logs
+		err = runChecks(results, &troubleshootCtx, getPrerequisiteChecks(&client)) // ignore error to avoid polluting pretty logs
 		resetLogger()
 		if err != nil {
 			logErrorf("prerequisite checks failed, aborting")
@@ -151,7 +154,7 @@ func runChecksForAllDynakubes(results ChecksResults, checks []*Check, dynakubes 
 	}
 }
 
-func getPrerequisiteChecks() []*Check {
+func getPrerequisiteChecks(client *client.Client) []*Check {
 	namespaceCheck := &Check{
 		Name: namespaceCheckName,
 		Do:   checkNamespace,
@@ -160,7 +163,13 @@ func getPrerequisiteChecks() []*Check {
 		Name: crdCheckName,
 		Do:   checkCRD,
 	}
-	return []*Check{namespaceCheck, crdCheck}
+	oneAgentAPMCheck := &Check{
+		Name: oneAgentAPMCheckName,
+		Do: func(troubleshootCtx *troubleshootContext) error {
+			return checkOneAgentAPM(*client, troubleshootCtx)
+		},
+	}
+	return []*Check{namespaceCheck, crdCheck, oneAgentAPMCheck}
 }
 
 func getDynakubeSpecificChecks(results ChecksResults) []*Check {

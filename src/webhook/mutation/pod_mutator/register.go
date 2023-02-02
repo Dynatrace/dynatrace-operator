@@ -32,7 +32,7 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 		return err
 	}
 
-	apmExists, err := kubeobjects.CheckIfOneAgentAPMExists(kubeConfig)
+	apmExists, err := kubeobjects.CheckIfOneAgentAPMExists(kubeClient)
 	if err != nil {
 		return errors.WithStack(err)
 	}

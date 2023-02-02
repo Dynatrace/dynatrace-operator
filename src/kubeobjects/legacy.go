@@ -1,27 +1,26 @@
 package kubeobjects
 
 import (
-	"k8s.io/client-go/discovery"
-	"k8s.io/client-go/rest"
+	"context"
+	apiv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const crdName = "oneagentapms.dynatrace.com"
+
 // CheckIfOneAgentAPMExists checks if a OneAgentAPM object exists
-func CheckIfOneAgentAPMExists(cfg *rest.Config) (bool, error) {
-	client, err := discovery.NewDiscoveryClientForConfig(cfg)
-	if err != nil {
-		return false, err
-	}
-	_, resourceList, err := client.ServerGroupsAndResources()
-	if err != nil {
+func CheckIfOneAgentAPMExists(clt client.Client) (bool, error) {
+	var crd apiv1.CustomResourceDefinition
+
+	err := clt.Get(context.TODO(), client.ObjectKey{Name: crdName}, &crd)
+
+	if client.IgnoreNotFound(err) != nil {
 		return false, err
 	}
 
-	for _, resource := range resourceList {
-		for _, apiResource := range resource.APIResources {
-			if apiResource.Kind == "OneAgentAPM" {
-				return true, nil
-			}
-		}
+	if crd.Kind == "OneAgentAPM" {
+		return true, nil
 	}
+
 	return false, nil
 }
