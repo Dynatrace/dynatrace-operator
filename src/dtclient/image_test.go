@@ -28,11 +28,11 @@ var latestCodeModulesImageResponse = &LatestImageInfo{
 }
 
 func TestGetLatestImage(t *testing.T) {
-	t.Run("GetLatestAgentImage works", func(t *testing.T) {
+	t.Run("GetLatestOneAgentImage works", func(t *testing.T) {
 		dynatraceServer, dynatraceClient := createTestDynatraceClient(t, connectionInfoServerHandler(oneAgentImageUrl, latestOneAgentImageResponse), "")
 		defer dynatraceServer.Close()
 
-		latestImageInfo, err := dynatraceClient.GetLatestAgentImage()
+		latestImageInfo, err := dynatraceClient.GetLatestOneAgentImage()
 		assert.NoError(t, err)
 		assert.NotNil(t, latestImageInfo)
 
@@ -64,11 +64,11 @@ func TestGetLatestImage(t *testing.T) {
 }
 
 func TestGetLatestImageFailure(t *testing.T) {
-	t.Run("GetLatestAgentImage handle internal server error", func(t *testing.T) {
+	t.Run("GetLatestOneAgentImage handle internal server error", func(t *testing.T) {
 		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceClient(t, tenantInternalServerError(oneAgentImageUrl), "")
 		defer faultyDynatraceServer.Close()
 
-		latestImageInfo, err := faultyDynatraceClient.GetLatestAgentImage()
+		latestImageInfo, err := faultyDynatraceClient.GetLatestOneAgentImage()
 		assert.Error(t, err)
 		assert.Nil(t, latestImageInfo)
 
@@ -95,11 +95,11 @@ func TestGetLatestImageFailure(t *testing.T) {
 
 		assert.Equal(t, "dynatrace server error 500: error retrieving tenant info", err.Error())
 	})
-	t.Run("GetLatestAgentImage handle malformed json error", func(t *testing.T) {
+	t.Run("GetLatestOneAgentImage handle malformed json error", func(t *testing.T) {
 		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceClient(t, tenantMalformedJson(oneAgentImageUrl), "")
 		defer faultyDynatraceServer.Close()
 
-		latestImageInfo, err := faultyDynatraceClient.GetLatestAgentImage()
+		latestImageInfo, err := faultyDynatraceClient.GetLatestOneAgentImage()
 		assert.Error(t, err)
 		assert.Nil(t, latestImageInfo)
 

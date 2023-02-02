@@ -80,7 +80,7 @@ type Client interface {
 	// or an api error otherwise
 	GetActiveGateAuthToken(dynakubeName string) (*ActiveGateAuthTokenInfo, error)
 
-	GetLatestAgentImage() (*LatestImageInfo, error)
+	GetLatestOneAgentImage() (*LatestImageInfo, error)
 
 	GetLatestCodeModulesImage() (*LatestImageInfo, error)
 
