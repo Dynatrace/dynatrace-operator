@@ -70,16 +70,12 @@ type DynatraceApiStatus struct {
 	LastTokenScopeRequest               metav1.Time `json:"LastTokenScopeRequest,omitempty"`
 	LastOneAgentConnectionInfoRequest   metav1.Time `json:"LastOneAgentConnectionInfoRequest,omitempty"`
 	LastActiveGateConnectionInfoRequest metav1.Time `json:"LastActiveGateConnectionInfoRequest,omitempty"`
-	LastAuthTokenSecretRequest          metav1.Time `json:"LastAuthTokenSecretRequest,omitempty"`
-	LastBasicStatusInformationRequest   metav1.Time `json:"LastBasicStatusInformationRequest,omitempty"`
 }
 
 func (dynatraceApiStatus *DynatraceApiStatus) ResetCachedTimestamps() {
 	dynatraceApiStatus.LastTokenScopeRequest = metav1.Time{}
 	dynatraceApiStatus.LastOneAgentConnectionInfoRequest = metav1.Time{}
 	dynatraceApiStatus.LastActiveGateConnectionInfoRequest = metav1.Time{}
-	dynatraceApiStatus.LastAuthTokenSecretRequest = metav1.Time{}
-	dynatraceApiStatus.LastBasicStatusInformationRequest = metav1.Time{}
 }
 
 func CacheValidMessage(functionName string) string {

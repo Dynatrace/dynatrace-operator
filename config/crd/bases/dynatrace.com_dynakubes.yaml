@@ -3489,12 +3489,6 @@ spec:
                   LastActiveGateConnectionInfoRequest:
                     format: date-time
                     type: string
-                  LastAuthTokenSecretRequest:
-                    format: date-time
-                    type: string
-                  LastBasicStatusInformationRequest:
-                    format: date-time
-                    type: string
                   LastOneAgentConnectionInfoRequest:
                     format: date-time
                     type: string
