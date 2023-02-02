@@ -11,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -46,17 +45,10 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 }
 
 func (r *Reconciler) Reconcile() error {
-	if !dynatracev1beta1.IsRequestOutdated(r.dynakube.Status.DynatraceApi.LastAuthTokenSecretRequest) {
-		log.Info(dynatracev1beta1.CacheValidMessage("ActiveGate auth token secret generation"))
-		return nil
-	}
-
 	err := r.reconcileAuthTokenSecret()
 	if err != nil {
 		return errors.Errorf("failed to create activeGateAuthToken secret: %v", err)
 	}
-
-	r.dynakube.Status.DynatraceApi.LastAuthTokenSecretRequest = metav1.Now()
 	return nil
 }
 

@@ -5,7 +5,6 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.11.1
-  creationTimestamp: null
   name: dynakubes.dynatrace.com
 spec:
   conversion:
@@ -3499,12 +3498,6 @@ spec:
               dynatraceApi:
                 properties:
                   LastActiveGateConnectionInfoRequest:
-                    format: date-time
-                    type: string
-                  LastAuthTokenSecretRequest:
-                    format: date-time
-                    type: string
-                  LastBasicStatusInformationRequest:
                     format: date-time
                     type: string
                   LastOneAgentConnectionInfoRequest:
