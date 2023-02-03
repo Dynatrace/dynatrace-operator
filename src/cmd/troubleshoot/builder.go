@@ -163,9 +163,7 @@ func getPrerequisiteChecks() []*Check {
 	}
 	oneAgentAPMCheck := &Check{
 		Name: oneAgentAPMCheckName,
-		Do: func(troubleshootCtx *troubleshootContext) error {
-			return checkOneAgentAPM(troubleshootCtx)
-		},
+		Do:   checkOneAgentAPM,
 	}
 	return []*Check{namespaceCheck, crdCheck, oneAgentAPMCheck}
 }
