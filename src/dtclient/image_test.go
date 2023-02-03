@@ -73,7 +73,6 @@ func TestGetLatestImageFailure(t *testing.T) {
 		assert.Nil(t, latestImageInfo)
 
 		assert.Equal(t, "dynatrace server error 500: error retrieving tenant info", err.Error())
-
 	})
 	t.Run("GetLatestActiveGateImage handle internal server error", func(t *testing.T) {
 		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceClient(t, tenantInternalServerError(activeGateImageUrl), "")
@@ -104,7 +103,6 @@ func TestGetLatestImageFailure(t *testing.T) {
 		assert.Nil(t, latestImageInfo)
 
 		assert.Equal(t, "invalid character 'h' in literal true (expecting 'r')", err.Error())
-
 	})
 	t.Run("GetLatestActiveGateImage handle malformed json error", func(t *testing.T) {
 		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceClient(t, tenantMalformedJson(activeGateImageUrl), "")
