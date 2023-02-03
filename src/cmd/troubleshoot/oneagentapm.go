@@ -1,8 +1,10 @@
 package troubleshoot
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
+	apiv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func checkOneAgentAPM(ctx *troubleshootContext) error {
@@ -10,16 +12,23 @@ func checkOneAgentAPM(ctx *troubleshootContext) error {
 
 	logNewCheckf("checking if OneAgentAPM object exists ...")
 
-	exists, err := kubeobjects.CheckIfOneAgentAPMExists(ctx.apiReader)
+	crdList := &apiv1.CustomResourceDefinitionList{}
+	err := ctx.apiReader.List(ctx.context, crdList, &client.ListOptions{Namespace: ctx.namespaceName})
 
 	if err != nil {
+		if runtime.IsNotRegisteredError(err) {
+			logOkf("OneAgentAPM does not exist")
+			return nil
+		}
 		return err
 	}
 
-	if exists {
-		return errors.New("OneAgentAPM object still exists - either delete OneAgentAPM objects or fully install the oneAgent operator")
+	for _, crd := range crdList.Items {
+		if crd.Kind == "OneAgentAPM" {
+			return errors.Wrap(err, "OneAgentAPM still exists - either delete OneAgentAPM objects or fully install the oneAgent operator")
+		}
 	}
 
-	logOkf("OneAgentAPM object does not exist")
+	logOkf("OneAgentAPM does not exist")
 	return nil
 }
