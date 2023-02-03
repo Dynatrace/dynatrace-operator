@@ -24,6 +24,6 @@ func TestTroubleshootOneAgentAPM(t *testing.T) {
 			Build()
 
 		troubleshootCtx := troubleshootContext{context: context.TODO(), apiReader: clt}
-		assert.NoError(t, checkOneAgentAPM(clt, &troubleshootCtx))
+		assert.NoError(t, checkOneAgentAPM(&troubleshootCtx))
 	})
 }

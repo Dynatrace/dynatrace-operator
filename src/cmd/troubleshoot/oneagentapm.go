@@ -3,15 +3,14 @@ package troubleshoot
 import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func checkOneAgentAPM(clt client.Client, ctx *troubleshootContext) error {
+func checkOneAgentAPM(ctx *troubleshootContext) error {
 	log = newTroubleshootLogger("oneAgentAPM")
 
 	logNewCheckf("checking if OneAgentAPM object exists ...")
 
-	exists, err := kubeobjects.CheckIfOneAgentAPMExists(clt)
+	exists, err := kubeobjects.CheckIfOneAgentAPMExists(ctx.apiReader)
 
 	if err != nil {
 		return err

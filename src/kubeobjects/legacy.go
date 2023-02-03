@@ -10,7 +10,7 @@ import (
 const crdName = "oneagentapms.dynatrace.com"
 
 // CheckIfOneAgentAPMExists checks if a OneAgentAPM object exists
-func CheckIfOneAgentAPMExists(clt client.Client) (bool, error) {
+func CheckIfOneAgentAPMExists(clt client.Reader) (bool, error) {
 	var crd apiv1.CustomResourceDefinition
 
 	err := clt.Get(context.TODO(), client.ObjectKey{Name: crdName}, &crd)
