@@ -17,7 +17,7 @@ func checkOneAgentAPM(ctx *troubleshootContext) error {
 	}
 
 	if exists {
-		return errors.New("OneAgentAPM object still exists")
+		return errors.New("OneAgentAPM object still exists - either delete OneAgentAPM objects or fully install the oneAgent operator")
 	}
 
 	logOkf("OneAgentAPM object does not exist")

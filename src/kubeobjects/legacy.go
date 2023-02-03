@@ -7,20 +7,24 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const crdName = "oneagentapms.dynatrace.com"
+const namespace = "dynatrace"
 
 // CheckIfOneAgentAPMExists checks if a OneAgentAPM object exists
 func CheckIfOneAgentAPMExists(clt client.Reader) (bool, error) {
-	var crd apiv1.CustomResourceDefinition
+	var crds apiv1.CustomResourceDefinitionList
 
-	err := clt.Get(context.TODO(), client.ObjectKey{Name: crdName}, &crd)
+	err := clt.List(context.TODO(), &crds, &client.ListOptions{
+		Namespace: namespace,
+	})
 
 	if client.IgnoreNotFound(err) != nil {
 		return false, err
 	}
 
-	if crd.Kind == "OneAgentAPM" {
-		return true, nil
+	for _, crd := range crds.Items {
+		if crd.Kind == "OneAgentAPM" {
+			return true, nil
+		}
 	}
 
 	return false, nil
