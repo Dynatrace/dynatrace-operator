@@ -51,6 +51,7 @@ csidriver:
   enabled: false
   nodeSelector: {}
   kubeletPath: "/var/lib/kubelet"
+  existingPriorityClassName: "" # if defined, use this priorityclass instead of creating a new one
   priorityClassValue: "1000000"
   maxUnmountedVolumeAge: "" # defined in days, must be a plain number, default is "14"
   tolerations:
