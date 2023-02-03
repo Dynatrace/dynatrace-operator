@@ -22,8 +22,8 @@ require (
 	golang.org/x/net v0.5.0
 	golang.org/x/sys v0.4.0
 	google.golang.org/grpc v1.51.0
-	istio.io/api v0.0.0-20221109202042-b9e5d446a83d
-	istio.io/client-go v1.16.0
+	istio.io/api v0.0.0-20230125212921-f04847bedb29
+	istio.io/client-go v1.16.2
 	k8s.io/api v0.26.1
 	k8s.io/apiextensions-apiserver v0.26.1
 	k8s.io/apimachinery v0.26.1
