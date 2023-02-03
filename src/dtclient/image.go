@@ -14,7 +14,7 @@ type LatestImageInfo struct {
 }
 
 func (dtc *dynatraceClient) GetLatestOneAgentImage() (*LatestImageInfo, error) {
-	request, err := dtc.createLatestAgentImageRequest()
+	request, err := dtc.createLatestImageRequest(dtc.getLatestOneAgentImageUrl())
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -35,7 +35,7 @@ func (dtc *dynatraceClient) GetLatestOneAgentImage() (*LatestImageInfo, error) {
 }
 
 func (dtc *dynatraceClient) GetLatestCodeModulesImage() (*LatestImageInfo, error) {
-	request, err := dtc.createLatestCodeModulesImageRequest()
+	request, err := dtc.createLatestImageRequest(dtc.getLatestCodeModulesImageUrl())
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -56,7 +56,7 @@ func (dtc *dynatraceClient) GetLatestCodeModulesImage() (*LatestImageInfo, error
 }
 
 func (dtc *dynatraceClient) GetLatestActiveGateImage() (*LatestImageInfo, error) {
-	request, err := dtc.createLatestActiveGateImageRequest()
+	request, err := dtc.createLatestImageRequest(dtc.getLatestActiveGateImageUrl())
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -96,7 +96,7 @@ func (dtc *dynatraceClient) handleLatestImageResponse(response *http.Response) (
 	return latestImageInfo, err
 }
 
-func (dtc *dynatraceClient) createLatestAgentImageRequest() (*http.Request, error) {
+func (dtc *dynatraceClient) createLatestImageRequest(url string) (*http.Request, error) {
 	body := &LatestImageInfo{}
 
 	bodyData, err := json.Marshal(body)
@@ -105,51 +105,7 @@ func (dtc *dynatraceClient) createLatestAgentImageRequest() (*http.Request, erro
 	}
 
 	request, err := createBaseRequest(
-		dtc.getLatestAgentImageUrl(),
-		http.MethodGet,
-		dtc.apiToken,
-		bytes.NewReader(bodyData),
-	)
-
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	return request, nil
-}
-
-func (dtc *dynatraceClient) createLatestCodeModulesImageRequest() (*http.Request, error) {
-	body := &LatestImageInfo{}
-
-	bodyData, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-
-	request, err := createBaseRequest(
-		dtc.getLatestCodeModulesImageUrl(),
-		http.MethodGet,
-		dtc.apiToken,
-		bytes.NewReader(bodyData),
-	)
-
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	return request, nil
-}
-
-func (dtc *dynatraceClient) createLatestActiveGateImageRequest() (*http.Request, error) {
-	body := &LatestImageInfo{}
-
-	bodyData, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-
-	request, err := createBaseRequest(
-		dtc.getLatestActiveGateImageUrl(),
+		url,
 		http.MethodGet,
 		dtc.apiToken,
 		bytes.NewReader(bodyData),

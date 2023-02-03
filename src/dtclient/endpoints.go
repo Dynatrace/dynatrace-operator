@@ -64,7 +64,7 @@ func (dtc *dynatraceClient) getActiveGateAuthTokenUrl() string {
 	return fmt.Sprintf("%s/v2/activeGateTokens", dtc.url)
 }
 
-func (dtc *dynatraceClient) getLatestAgentImageUrl() string {
+func (dtc *dynatraceClient) getLatestOneAgentImageUrl() string {
 	return fmt.Sprintf("%s/v1/deployment/image/agent/oneAgent/latest", dtc.url)
 }
 
