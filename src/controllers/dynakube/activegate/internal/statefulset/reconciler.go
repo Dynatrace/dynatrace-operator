@@ -121,7 +121,7 @@ func (r *Reconciler) manageStatefulSet() error {
 		return errors.WithStack(err)
 	}
 
-	return errors.WithStack(r.reconcileDependents())
+	return errors.WithStack(r.reconcileSynDependents())
 }
 
 func (r *Reconciler) buildDesiredStatefulSet() (*appsv1.StatefulSet, error) {
@@ -289,8 +289,9 @@ func (reconciler *Reconciler) findStatefulSet(toFind *appsv1.StatefulSet) (err e
 	return errors.WithStack(err)
 }
 
-func (reconciler *Reconciler) reconcileDependents() (err error) {
-	if reconciler.foundStatefulSet != nil {
+func (reconciler *Reconciler) reconcileSynDependents() (err error) {
+	if reconciler.foundStatefulSet != nil &&
+		reconciler.foundStatefulSet.ObjectMeta.Labels[kubeobjects.AppComponentLabel] == kubeobjects.SyntheticComponentLabel {
 		err = reconciler.reconcileSynAutoscaler()
 		if err == nil {
 			err = reconciler.setOwnershipToVolumeClaims()
@@ -320,24 +321,23 @@ func (reconciler *Reconciler) setOwnershipToVolumeClaims() error {
 			kubeobjects.AppCreatedByLabel: reconciler.dynakube.Name,
 		},
 	)
-
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
 	for _, claim := range claims.Items {
 		toUpdateClaim := address.Of(claim)
-		if !reconciler.underOwnership(reconciler.dynakube, toUpdateClaim) {
+		if !reconciler.underOwnership(reconciler.foundStatefulSet, toUpdateClaim) {
 			err = reconciler.persistentVolumeClaims.Update(
-				reconciler.dynakube,
+				reconciler.foundStatefulSet,
 				toUpdateClaim)
 			if err != nil {
 				return errors.WithStack(err)
 			}
 			log.Info(
 				"set ownership",
-				"dynakube",
-				reconciler.dynakube.Name,
+				"statefulset",
+				reconciler.foundStatefulSet.Name,
 				"persistent volume claim",
 				claim.Name)
 		}
@@ -347,11 +347,11 @@ func (reconciler *Reconciler) setOwnershipToVolumeClaims() error {
 }
 
 func (*Reconciler) underOwnership(
-	dynaKube *dynatracev1beta1.DynaKube,
+	statefulSet *appsv1.StatefulSet,
 	claim *corev1.PersistentVolumeClaim,
 ) bool {
 	for _, scanned := range claim.GetOwnerReferences() {
-		if scanned.UID == dynaKube.GetUID() {
+		if scanned.UID == statefulSet.GetUID() {
 			return true
 		}
 	}

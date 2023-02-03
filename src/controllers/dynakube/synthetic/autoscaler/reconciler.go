@@ -22,6 +22,7 @@ type Reconciler struct {
 		scalingv2.HorizontalPodAutoscalerList,
 		*scalingv2.HorizontalPodAutoscalerList,
 	]
+	foundAutoscaler *scalingv2.HorizontalPodAutoscaler
 }
 
 var _ controllers.Reconciler = (*Reconciler)(nil)
@@ -52,22 +53,48 @@ func NewReconciler(
 }
 
 func (reconciler *Reconciler) Reconcile() error {
-	toReconcile := reconciler.builder.newAutoscaler()
+	toReconcile, err := reconciler.builder.newAutoscaler()
+	if err != nil {
+		return errors.WithStack(err)
+	}
 
-	_, err := reconciler.autoscalers.Get(toReconcile)
+	err = reconciler.findAutoscaler(toReconcile)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	if reconciler.ignores(toReconcile) {
+		return nil
+	}
+
 	switch {
-	case apierrors.IsNotFound(err):
+	case reconciler.foundAutoscaler == nil &&
+		reconciler.builder.DynaKube.IsSyntheticMonitoringEnabled():
+		err = reconciler.create(toReconcile)
+	case reconciler.foundAutoscaler != nil:
 		if reconciler.builder.DynaKube.IsSyntheticMonitoringEnabled() {
-			err = reconciler.create(toReconcile)
+			err = reconciler.update(toReconcile)
 		} else {
-			err = nil
+			err = reconciler.delete()
 		}
-	case err == nil &&
-		!reconciler.builder.DynaKube.IsSyntheticMonitoringEnabled():
-		err = reconciler.delete(toReconcile)
 	}
 
 	return errors.WithStack(err)
+}
+
+func (reconciler *Reconciler) findAutoscaler(toFind *scalingv2.HorizontalPodAutoscaler) (err error) {
+	reconciler.foundAutoscaler, err = reconciler.autoscalers.Get(toFind)
+	if apierrors.IsNotFound(err) {
+		err = nil
+	}
+
+	return err
+}
+
+func (reconciler *Reconciler) ignores(toReconcile *scalingv2.HorizontalPodAutoscaler) bool {
+	return reconciler.foundAutoscaler != nil &&
+		toReconcile.GetAnnotations()[kubeobjects.AnnotationHash] ==
+			reconciler.foundAutoscaler.GetAnnotations()[kubeobjects.AnnotationHash]
 }
 
 func (reconciler *Reconciler) create(toCreate *scalingv2.HorizontalPodAutoscaler) error {
@@ -78,24 +105,33 @@ func (reconciler *Reconciler) create(toCreate *scalingv2.HorizontalPodAutoscaler
 		log.Error(
 			err,
 			"could not create",
-			"object", *toCreate)
+			"name", toCreate.Name)
 		return errors.WithStack(err)
 	}
 
-	log.Info("created autoscaler")
+	log.Info("created", "name", toCreate.Name)
 	return nil
 }
 
-func (reconciler *Reconciler) delete(toDelete *scalingv2.HorizontalPodAutoscaler) error {
-	err := reconciler.autoscalers.Delete(toDelete)
+func (reconciler *Reconciler) update(toUpdate *scalingv2.HorizontalPodAutoscaler) error {
+	err := reconciler.autoscalers.Update(reconciler.builder.DynaKube, toUpdate)
+	if err == nil {
+		log.Info("updated", "name", toUpdate.Name)
+	}
+
+	return errors.WithStack(err)
+}
+
+func (reconciler *Reconciler) delete() error {
+	err := reconciler.autoscalers.Delete(reconciler.foundAutoscaler)
 	if err != nil {
 		log.Error(
 			err,
 			"could not delete",
-			"object", *toDelete)
+			"name", reconciler.foundAutoscaler.Name)
 		return errors.WithStack(err)
 	}
 
-	log.Info("deleted autoscaler")
+	log.Info("deleted", "name", reconciler.foundAutoscaler.Name)
 	return nil
 }

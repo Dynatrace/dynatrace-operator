@@ -4,6 +4,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
+	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	scalingv2 "k8s.io/api/autoscaling/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,8 +47,8 @@ func newBuilder(
 	}
 }
 
-func (builder *builder) newAutoscaler() *scalingv2.HorizontalPodAutoscaler {
-	return &scalingv2.HorizontalPodAutoscaler{
+func (builder *builder) newAutoscaler() (*scalingv2.HorizontalPodAutoscaler, error) {
+	autoscaler := scalingv2.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      builder.DynaKube.Name + "-" + SynAutoscaler,
 			Namespace: builder.DynaKube.Namespace,
@@ -91,4 +92,14 @@ func (builder *builder) newAutoscaler() *scalingv2.HorizontalPodAutoscaler {
 			},
 		},
 	}
+
+	hash, err := kubeobjects.GenerateHash(autoscaler)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	autoscaler.ObjectMeta.Annotations = map[string]string{
+		kubeobjects.AnnotationHash: hash,
+	}
+
+	return &autoscaler, nil
 }
