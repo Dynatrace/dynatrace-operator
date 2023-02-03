@@ -154,7 +154,7 @@ func runChecksForAllDynakubes(results ChecksResults, checks []*Check, dynakubes 
 	}
 }
 
-func getPrerequisiteChecks(client *client.Client) []*Check {
+func getPrerequisiteChecks() []*Check {
 	namespaceCheck := &Check{
 		Name: namespaceCheckName,
 		Do:   checkNamespace,
