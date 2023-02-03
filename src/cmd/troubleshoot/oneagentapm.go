@@ -13,7 +13,7 @@ func checkOneAgentAPM(ctx *troubleshootContext) error {
 	logNewCheckf("checking if OneAgentAPM object exists ...")
 
 	crdList := &apiv1.CustomResourceDefinitionList{}
-	err := ctx.apiReader.List(ctx.context, crdList, &client.ListOptions{Namespace: ctx.namespaceName})
+	err := ctx.apiReader.List(ctx.context, crdList, &client.ListOptions{})
 
 	if err != nil {
 		if runtime.IsNotRegisteredError(err) {
