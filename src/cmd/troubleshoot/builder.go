@@ -112,10 +112,8 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			namespaceName: namespaceFlagValue,
 		}
 
-		client := k8scluster.GetClient()
-
 		results := NewChecksResults()
-		err = runChecks(results, &troubleshootCtx, getPrerequisiteChecks(&client)) // ignore error to avoid polluting pretty logs
+		err = runChecks(results, &troubleshootCtx, getPrerequisiteChecks()) // ignore error to avoid polluting pretty logs
 		resetLogger()
 		if err != nil {
 			logErrorf("prerequisite checks failed, aborting")
