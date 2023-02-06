@@ -49,12 +49,12 @@ func testReadTokens(t *testing.T) {
 				Namespace: "dynatrace",
 			},
 		}
-		secret, err := kubeobjects.NewSecretBuilder(scheme.Scheme, &dynakube).Build("dynakube", "dynatrace", map[string][]byte{
+		secret, err := kubeobjects.CreateSecret(scheme.Scheme, &dynakube, kubeobjects.NewSecretNameModifier("dynakube"), kubeobjects.NewSecretNamespaceModifier("dynatrace"), kubeobjects.NewSecretDataModifier(map[string][]byte{
 			dtclient.DynatraceApiToken:        []byte(testApiToken),
 			dtclient.DynatracePaasToken:       []byte(testPaasToken),
 			dtclient.DynatraceDataIngestToken: []byte(testDataIngestToken),
 			testIrrelevantTokenKey:            []byte(testIrrelevantToken),
-		})
+		}))
 		assert.NoError(t, err)
 		clt := fake.NewClient(secret, &dynakube)
 

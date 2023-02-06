@@ -41,7 +41,7 @@ func (certSecret *certificateSecret) setSecretFromReader(ctx context.Context, ap
 
 	switch {
 	case k8serrors.IsNotFound(err):
-		certSecret.secret, err = kubeobjects.NewSecretBuilder(certSecret.scheme, certSecret.owner).Build(buildSecretName(), namespace, map[string][]byte{})
+		certSecret.secret, err = kubeobjects.CreateSecret(certSecret.scheme, certSecret.owner, kubeobjects.NewSecretNameModifier(buildSecretName()), kubeobjects.NewSecretNamespaceModifier(namespace), kubeobjects.NewSecretDataModifier(map[string][]byte{}))
 		if err != nil {
 			return errors.WithStack(err)
 		}

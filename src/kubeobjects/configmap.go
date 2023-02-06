@@ -4,6 +4,7 @@ import (
 	"context"
 	"reflect"
 
+	"github.com/Dynatrace/dynatrace-operator/src/builder"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -82,29 +83,91 @@ func AreConfigMapsEqual(configMap corev1.ConfigMap, other corev1.ConfigMap) bool
 	return reflect.DeepEqual(configMap.Data, other.Data) && reflect.DeepEqual(configMap.Labels, other.Labels) && reflect.DeepEqual(configMap.OwnerReferences, other.OwnerReferences)
 }
 
-type ConfigMapBuilder struct {
-	scheme *runtime.Scheme
-	owner  metav1.Object
+type configMapData = corev1.ConfigMap
+type configMapModifier = builder.Modifier[configMapData]
+
+func CreateConfigMap(scheme *runtime.Scheme, owner metav1.Object, mods ...configMapModifier) (*corev1.ConfigMap, error) {
+	builderOfSecret := builder.NewBuilder(corev1.ConfigMap{})
+	secret, err := builderOfSecret.AddModifier(mods...).AddModifier(newConfigMapOwnerModifier(scheme, owner)).Build()
+	return &secret, err
 }
 
-func NewConfigMapBuilder(scheme *runtime.Scheme, owner metav1.Object) ConfigMapBuilder {
-	return ConfigMapBuilder{
+func newConfigMapOwnerModifier(scheme *runtime.Scheme, owner metav1.Object) configMapOwnerModifier {
+	return configMapOwnerModifier{
 		scheme: scheme,
 		owner:  owner,
 	}
 }
 
-func (configMapBuilder ConfigMapBuilder) Build(name string, namespace string, data map[string]string) (*corev1.ConfigMap, error) {
-	configMap := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
-		Data: data,
-	}
+type configMapOwnerModifier struct {
+	scheme *runtime.Scheme
+	owner  metav1.Object
+}
 
-	if err := controllerutil.SetControllerReference(configMapBuilder.owner, configMap, configMapBuilder.scheme); err != nil {
-		return nil, errors.WithStack(err)
+func (mod configMapOwnerModifier) Enabled() bool {
+	return true
+}
+
+func (mod configMapOwnerModifier) Modify(secret *corev1.ConfigMap) error {
+	if err := controllerutil.SetControllerReference(mod.owner, secret, mod.scheme); err != nil {
+		return errors.WithStack(err)
 	}
-	return configMap, nil
+	return nil
+}
+
+func NewConfigMapNameModifier(name string) ConfigMapNameModifier {
+	return ConfigMapNameModifier{
+		name: name,
+	}
+}
+
+type ConfigMapNameModifier struct {
+	name string
+}
+
+func (mod ConfigMapNameModifier) Enabled() bool {
+	return true
+}
+
+func (mod ConfigMapNameModifier) Modify(configMap *corev1.ConfigMap) error {
+	configMap.Name = mod.name
+	return nil
+}
+
+func NewConfigMapNamespaceModifier(namespaceName string) ConfigMapNamespaceModifier {
+	return ConfigMapNamespaceModifier{
+		namespaceName: namespaceName,
+	}
+}
+
+type ConfigMapNamespaceModifier struct {
+	namespaceName string
+}
+
+func (mod ConfigMapNamespaceModifier) Enabled() bool {
+	return true
+}
+
+func (mod ConfigMapNamespaceModifier) Modify(configMap *corev1.ConfigMap) error {
+	configMap.Namespace = mod.namespaceName
+	return nil
+}
+
+func NewConfigMapDataModifier(data map[string]string) ConfigMapDataModifier {
+	return ConfigMapDataModifier{
+		data: data,
+	}
+}
+
+type ConfigMapDataModifier struct {
+	data map[string]string
+}
+
+func (mod ConfigMapDataModifier) Enabled() bool {
+	return true
+}
+
+func (mod ConfigMapDataModifier) Modify(configMap *corev1.ConfigMap) error {
+	configMap.Data = mod.data
+	return nil
 }

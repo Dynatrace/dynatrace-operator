@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/src/builder"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -171,48 +172,129 @@ func GetDataFromSecretName(apiReader client.Reader, namespacedName types.Namespa
 	return value, nil
 }
 
-type SecretBuilder struct {
-	scheme     *runtime.Scheme
-	owner      metav1.Object
-	secretType corev1.SecretType
-	labels     map[string]string
+type secretBuilderData = corev1.Secret
+type secretBuilderModifier = builder.Modifier[secretBuilderData]
+
+func CreateSecret(scheme *runtime.Scheme, owner metav1.Object, mods ...secretBuilderModifier) (*corev1.Secret, error) {
+	builderOfSecret := builder.NewBuilder(corev1.Secret{})
+	secret, err := builderOfSecret.AddModifier(mods...).AddModifier(newSecretOwnerModifier(scheme, owner)).Build()
+	return &secret, err
 }
 
-func NewSecretBuilder(scheme *runtime.Scheme, owner metav1.Object) *SecretBuilder {
-	return &SecretBuilder{
+func newSecretOwnerModifier(scheme *runtime.Scheme, owner metav1.Object) secretOwnerModifier {
+	return secretOwnerModifier{
 		scheme: scheme,
 		owner:  owner,
 	}
 }
 
-func (secretBuilder *SecretBuilder) WithType(secretType corev1.SecretType) *SecretBuilder {
-	secretBuilder.secretType = secretType
-	return secretBuilder
+type secretOwnerModifier struct {
+	scheme *runtime.Scheme
+	owner  metav1.Object
 }
 
-func (secretBuilder *SecretBuilder) WithLables(labels map[string]string) *SecretBuilder {
-	if secretBuilder.labels == nil {
-		secretBuilder.labels = map[string]string{}
-	}
-	for k, v := range labels {
-		secretBuilder.labels[k] = v
-	}
-	return secretBuilder
+func (mod secretOwnerModifier) Enabled() bool {
+	return true
 }
 
-func (secretBuilder *SecretBuilder) Build(name string, namespace string, data map[string][]byte) (*corev1.Secret, error) {
-	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-			Labels:    secretBuilder.labels,
-		},
-		Type: secretBuilder.secretType,
-		Data: data,
+func (mod secretOwnerModifier) Modify(secret *corev1.Secret) error {
+	if err := controllerutil.SetControllerReference(mod.owner, secret, mod.scheme); err != nil {
+		return errors.WithStack(err)
 	}
+	return nil
+}
 
-	if err := controllerutil.SetControllerReference(secretBuilder.owner, secret, secretBuilder.scheme); err != nil {
-		return nil, errors.WithStack(err)
+func NewSecretNameModifier(name string) SecretNameModifier {
+	return SecretNameModifier{
+		name: name,
 	}
-	return secret, nil
+}
+
+type SecretNameModifier struct {
+	name string
+}
+
+func (mod SecretNameModifier) Enabled() bool {
+	return true
+}
+
+func (mod SecretNameModifier) Modify(secret *corev1.Secret) error {
+	secret.Name = mod.name
+	return nil
+}
+
+func NewSecretNamespaceModifier(namespaceName string) SecretNamespaceModifier {
+	return SecretNamespaceModifier{
+		namespaceName: namespaceName,
+	}
+}
+
+type SecretNamespaceModifier struct {
+	namespaceName string
+}
+
+func (mod SecretNamespaceModifier) Enabled() bool {
+	return true
+}
+
+func (mod SecretNamespaceModifier) Modify(secret *corev1.Secret) error {
+	secret.Namespace = mod.namespaceName
+	return nil
+}
+
+func NewSecretDataModifier(data map[string][]byte) SecretDataModifier {
+	return SecretDataModifier{
+		data: data,
+	}
+}
+
+type SecretDataModifier struct {
+	data map[string][]byte
+}
+
+func (mod SecretDataModifier) Enabled() bool {
+	return true
+}
+
+func (mod SecretDataModifier) Modify(secret *corev1.Secret) error {
+	secret.Data = mod.data
+	return nil
+}
+
+func NewSecretTypeModifier(secretType corev1.SecretType) SecretTypeModifier {
+	return SecretTypeModifier{
+		secretType: secretType,
+	}
+}
+
+type SecretTypeModifier struct {
+	secretType corev1.SecretType
+}
+
+func (mod SecretTypeModifier) Enabled() bool {
+	return true
+}
+
+func (mod SecretTypeModifier) Modify(secret *corev1.Secret) error {
+	secret.Type = mod.secretType
+	return nil
+}
+
+func NewSecretLabelsModifier(labels map[string]string) SecretLabelsModifier {
+	return SecretLabelsModifier{
+		labels: labels,
+	}
+}
+
+type SecretLabelsModifier struct {
+	labels map[string]string
+}
+
+func (mod SecretLabelsModifier) Enabled() bool {
+	return true
+}
+
+func (mod SecretLabelsModifier) Modify(secret *corev1.Secret) error {
+	secret.Labels = mod.labels
+	return nil
 }

@@ -25,6 +25,8 @@ const (
 	crdName                      = "dynakubes.dynatrace.com"
 	secretPostfix                = "-certs"
 	errorCertificatesSecretEmpty = "certificates secret is empty"
+
+	operatorDeploymentName = "dynatrace-operator"
 )
 
 func Add(mgr manager.Manager, ns string) error {
@@ -73,13 +75,13 @@ func (controller *WebhookCertificateController) Reconcile(ctx context.Context, r
 		return reconcile.Result{}, errors.WithStack(err)
 	}
 
-	webhookDeployment := appsv1.Deployment{}
-	err = controller.apiReader.Get(controller.ctx, types.NamespacedName{Name: webhook.DeploymentName, Namespace: controller.namespace}, &webhookDeployment)
+	operatorDeployment := appsv1.Deployment{}
+	err = controller.apiReader.Get(controller.ctx, types.NamespacedName{Name: operatorDeploymentName, Namespace: controller.namespace}, &operatorDeployment)
 	if err != nil {
 		return reconcile.Result{}, errors.WithStack(err)
 	}
 
-	certSecret := newCertificateSecret(controller.scheme, &webhookDeployment)
+	certSecret := newCertificateSecret(controller.scheme, &operatorDeployment)
 
 	err = certSecret.setSecretFromReader(controller.ctx, controller.apiReader, controller.namespace)
 	if err != nil {

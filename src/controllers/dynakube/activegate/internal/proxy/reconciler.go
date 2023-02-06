@@ -59,10 +59,12 @@ func (r *Reconciler) generateForDynakube(ctx context.Context, dynakube *dynatrac
 	}
 
 	coreLabels := kubeobjects.NewCoreLabels(dynakube.Name, kubeobjects.ActiveGateComponentLabel)
-	secret, err := kubeobjects.NewSecretBuilder(r.scheme, r.dynakube).
-		WithType(corev1.SecretTypeOpaque).
-		WithLables(coreLabels.BuildMatchLabels()).
-		Build(capability.BuildProxySecretName(), r.dynakube.Namespace, data)
+	secret, err := kubeobjects.CreateSecret(r.scheme, r.dynakube,
+		kubeobjects.NewSecretTypeModifier(corev1.SecretTypeOpaque),
+		kubeobjects.NewSecretLabelsModifier(coreLabels.BuildMatchLabels()),
+		kubeobjects.NewSecretNameModifier(capability.BuildProxySecretName()),
+		kubeobjects.NewSecretNamespaceModifier(r.dynakube.Namespace),
+		kubeobjects.NewSecretDataModifier(data))
 	if err != nil {
 		return errors.WithStack(err)
 	}

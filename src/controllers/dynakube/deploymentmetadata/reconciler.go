@@ -56,7 +56,10 @@ func (r *Reconciler) addActiveGateDeploymentMetadata(configMapData map[string]st
 
 func (r *Reconciler) maintainMetadataConfigMap(configMapData map[string]string) error {
 	configMapQuery := kubeobjects.NewConfigMapQuery(r.context, r.client, r.apiReader, log)
-	configMap, err := kubeobjects.NewConfigMapBuilder(r.scheme, &r.dynakube).Build(GetDeploymentMetadataConfigMapName(r.dynakube.Name), r.dynakube.Namespace, configMapData)
+	configMap, err := kubeobjects.CreateConfigMap(r.scheme, &r.dynakube,
+		kubeobjects.NewConfigMapNameModifier(GetDeploymentMetadataConfigMapName(r.dynakube.Name)),
+		kubeobjects.NewConfigMapNamespaceModifier(r.dynakube.Namespace),
+		kubeobjects.NewConfigMapDataModifier(configMapData))
 	if err != nil {
 		return errors.WithStack(err)
 	}

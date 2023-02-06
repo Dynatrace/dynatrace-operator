@@ -17,6 +17,10 @@ import (
 
 var secretLog = logger.Factory.GetLogger("test-secret")
 
+const (
+	deploymentName = "deployment-as-owner-of-secret"
+)
+
 func TestGetSecret(t *testing.T) {
 	fakeClient := fake.NewClient(
 		&corev1.Secret{
@@ -148,51 +152,81 @@ func TestInitialMultipleSecrets(t *testing.T) {
 }
 
 func TestSecretBuilder(t *testing.T) {
-	labels := map[string]string{
-		"name": "value",
-	}
-	dockerCfg := map[string][]byte{
-		".dockercfg": {},
-	}
 	labelName := "name"
 	labelValue := "value"
+	labels := map[string]string{
+		labelName: labelValue,
+	}
+	dataKey := ".dockercfg"
+	dockerCfg := map[string][]byte{
+		dataKey: {},
+	}
 
 	t.Run("create secret", func(t *testing.T) {
-		secret, err := NewSecretBuilder(scheme.Scheme, &appsv1.Deployment{}).Build(testSecretName, testNamespace, map[string][]byte{})
+		secret, err := CreateSecret(scheme.Scheme, createDeployment(),
+			NewSecretNameModifier(testSecretName),
+			NewSecretNamespaceModifier(testNamespace))
 		require.NoError(t, err)
-		assert.Len(t, secret.OwnerReferences, 1)
-
-		assert.Equal(t, secret.Name, testSecretName)
+		require.Len(t, secret.OwnerReferences, 1)
+		assert.Equal(t, deploymentName, secret.OwnerReferences[0].Name)
+		assert.Equal(t, testSecretName, secret.Name)
 		assert.Len(t, secret.Labels, 0)
-		assert.Equal(t, secret.Type, corev1.SecretType(""))
+		assert.Equal(t, corev1.SecretType(""), secret.Type)
+		assert.Len(t, secret.Data, 0)
 	})
 	t.Run("create secret with label", func(t *testing.T) {
-		secret, err := NewSecretBuilder(scheme.Scheme, &appsv1.Deployment{}).WithLables(labels).Build(testSecretName, testNamespace, map[string][]byte{})
+		secret, err := CreateSecret(scheme.Scheme, createDeployment(),
+			NewSecretLabelsModifier(labels),
+			NewSecretNameModifier(testSecretName),
+			NewSecretNamespaceModifier(testNamespace),
+			NewSecretDataModifier(map[string][]byte{}))
 		require.NoError(t, err)
-		assert.Len(t, secret.OwnerReferences, 1)
-
-		assert.Equal(t, secret.Name, testSecretName)
+		require.Len(t, secret.OwnerReferences, 1)
+		assert.Equal(t, deploymentName, secret.OwnerReferences[0].Name)
+		assert.Equal(t, testSecretName, secret.Name)
 		require.Len(t, secret.Labels, 1)
-		assert.Equal(t, secret.Labels[labelName], labelValue)
-		assert.Equal(t, secret.Type, corev1.SecretType(""))
+		assert.Equal(t, labelValue, secret.Labels[labelName])
+		assert.Equal(t, corev1.SecretType(""), secret.Type)
+		assert.Len(t, secret.Data, 0)
 	})
 	t.Run("create secret with type", func(t *testing.T) {
-		secret, err := NewSecretBuilder(scheme.Scheme, &appsv1.Deployment{}).WithType(corev1.SecretTypeDockercfg).Build(testSecretName, testNamespace, dockerCfg)
+		secret, err := CreateSecret(scheme.Scheme, createDeployment(),
+			NewSecretTypeModifier(corev1.SecretTypeDockercfg),
+			NewSecretNameModifier(testSecretName),
+			NewSecretNamespaceModifier(testNamespace),
+			NewSecretDataModifier(dockerCfg))
 		require.NoError(t, err)
-		assert.Len(t, secret.OwnerReferences, 1)
-
-		assert.Equal(t, secret.Name, testSecretName)
+		require.Len(t, secret.OwnerReferences, 1)
+		assert.Equal(t, deploymentName, secret.OwnerReferences[0].Name)
+		assert.Equal(t, testSecretName, secret.Name)
 		assert.Len(t, secret.Labels, 0)
-		assert.Equal(t, secret.Type, corev1.SecretTypeDockercfg)
+		assert.Equal(t, corev1.SecretTypeDockercfg, secret.Type)
+		_, found := secret.Data[dataKey]
+		assert.True(t, found)
 	})
 	t.Run("create secret with label and type", func(t *testing.T) {
-		secret, err := NewSecretBuilder(scheme.Scheme, &appsv1.Deployment{}).WithLables(labels).WithType(corev1.SecretTypeDockercfg).Build(testSecretName, testNamespace, dockerCfg)
+		secret, err := CreateSecret(scheme.Scheme, createDeployment(),
+			NewSecretLabelsModifier(labels),
+			NewSecretTypeModifier(corev1.SecretTypeDockercfg),
+			NewSecretNameModifier(testSecretName),
+			NewSecretNamespaceModifier(testNamespace),
+			NewSecretDataModifier(dockerCfg))
 		require.NoError(t, err)
-		assert.Len(t, secret.OwnerReferences, 1)
-
-		assert.Equal(t, secret.Name, testSecretName)
+		require.Len(t, secret.OwnerReferences, 1)
+		assert.Equal(t, deploymentName, secret.OwnerReferences[0].Name)
+		assert.Equal(t, testSecretName, secret.Name)
 		require.Len(t, secret.Labels, 1)
-		assert.Equal(t, secret.Labels[labelName], labelValue)
-		assert.Equal(t, secret.Type, corev1.SecretTypeDockercfg)
+		assert.Equal(t, labelValue, secret.Labels[labelName])
+		assert.Equal(t, corev1.SecretTypeDockercfg, secret.Type)
+		_, found := secret.Data[dataKey]
+		assert.True(t, found)
 	})
+}
+
+func createDeployment() *appsv1.Deployment {
+	return &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: deploymentName,
+		},
+	}
 }

@@ -10,7 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -280,11 +279,30 @@ func createTestConfigMap(labels map[string]string, data map[string]string) *core
 }
 
 func TestConfigMapBuilder(t *testing.T) {
+	dataKey := "cfg"
+	data := map[string]string{
+		dataKey: "",
+	}
 	t.Run("create config map", func(t *testing.T) {
-		secret, err := NewConfigMapBuilder(scheme.Scheme, &appsv1.Deployment{}).Build(testConfigMapName, testNamespace, map[string]string{})
+		configMap, err := CreateConfigMap(scheme.Scheme, createDeployment(),
+			NewConfigMapNameModifier(testConfigMapName),
+			NewConfigMapNamespaceModifier(testNamespace))
 		require.NoError(t, err)
-		assert.Len(t, secret.OwnerReferences, 1)
-
-		assert.Equal(t, secret.Name, testConfigMapName)
+		require.Len(t, configMap.OwnerReferences, 1)
+		assert.Equal(t, deploymentName, configMap.OwnerReferences[0].Name)
+		assert.Equal(t, configMap.Name, testConfigMapName)
+		assert.Len(t, configMap.Data, 0)
+	})
+	t.Run("create config map with data", func(t *testing.T) {
+		configMap, err := CreateConfigMap(scheme.Scheme, createDeployment(),
+			NewConfigMapNameModifier(testConfigMapName),
+			NewConfigMapNamespaceModifier(testNamespace),
+			NewConfigMapDataModifier(data))
+		require.NoError(t, err)
+		require.Len(t, configMap.OwnerReferences, 1)
+		assert.Equal(t, deploymentName, configMap.OwnerReferences[0].Name)
+		assert.Equal(t, configMap.Name, testConfigMapName)
+		_, found := configMap.Data[dataKey]
+		assert.True(t, found)
 	})
 }
