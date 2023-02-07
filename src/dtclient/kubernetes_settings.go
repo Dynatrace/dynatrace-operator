@@ -152,17 +152,17 @@ func (dtc *dynatraceClient) GetMonitoredEntitiesForKubeSystemUUID(kubeSystemUUID
 
 	res, err := dtc.httpClient.Do(req)
 
+	if err != nil {
+		log.Info("check if ME exists failed")
+		return nil, err
+	}
+
 	defer func() {
 		err := res.Body.Close()
 		if err != nil {
 			log.Error(err, err.Error())
 		}
 	}()
-
-	if err != nil {
-		log.Info("check if ME exists failed")
-		return nil, err
-	}
 
 	var resDataJson monitoredEntitiesResponse
 	err = dtc.unmarshalToJson(res, &resDataJson)
