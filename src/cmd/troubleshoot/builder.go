@@ -89,6 +89,8 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		version.LogVersion()
 
 		kubeConfig, err := builder.configProvider.GetConfig()
+		fmt.Println(kubeConfig)
+		fmt.Println(err)
 		if err != nil {
 			return err
 		}
@@ -110,6 +112,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			apiReader:     apiReader,
 			httpClient:    &http.Client{},
 			namespaceName: namespaceFlagValue,
+			kubeConfig:    *kubeConfig,
 		}
 
 		results := NewChecksResults()
