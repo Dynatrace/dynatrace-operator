@@ -3,6 +3,7 @@ package manifests
 import (
 	"bytes"
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"io"
 	"net/http"
 	"os"
@@ -22,7 +23,7 @@ func httpGetResponseReader(url string) (io.Reader, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer response.Body.Close()
+	defer dtclient.CloseBodyAfterRequest(response)
 
 	if response.StatusCode != http.StatusOK {
 		return nil, errors.New("Response status code was not 200(StatusOK): " + strconv.Itoa(response.StatusCode))
