@@ -14,20 +14,10 @@ type LatestImageInfo struct {
 }
 
 func (dtc *dynatraceClient) GetLatestOneAgentImage() (*LatestImageInfo, error) {
-	request, err := dtc.createLatestImageRequest(dtc.getLatestOneAgentImageUrl())
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
+	latestImageInfo, err := dtc.processRequest(dtc.getLatestOneAgentImageUrl())
 
-	response, err := dtc.httpClient.Do(request)
 	if err != nil {
-		log.Info("failed to retrieve latest image")
-		return nil, err
-	}
-
-	latestImageInfo, err := dtc.handleLatestImageResponse(response)
-	if err != nil {
-		log.Info("failed to handle latest image response")
+		log.Info("failed to process latest image response")
 		return nil, err
 	}
 
@@ -35,20 +25,10 @@ func (dtc *dynatraceClient) GetLatestOneAgentImage() (*LatestImageInfo, error) {
 }
 
 func (dtc *dynatraceClient) GetLatestCodeModulesImage() (*LatestImageInfo, error) {
-	request, err := dtc.createLatestImageRequest(dtc.getLatestCodeModulesImageUrl())
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
+	latestImageInfo, err := dtc.processRequest(dtc.getLatestCodeModulesImageUrl())
 
-	response, err := dtc.httpClient.Do(request)
 	if err != nil {
-		log.Info("failed to retrieve latest image")
-		return nil, err
-	}
-
-	latestImageInfo, err := dtc.handleLatestImageResponse(response)
-	if err != nil {
-		log.Info("failed to handle latest image response")
+		log.Info("failed to process latest image response")
 		return nil, err
 	}
 
@@ -56,7 +36,18 @@ func (dtc *dynatraceClient) GetLatestCodeModulesImage() (*LatestImageInfo, error
 }
 
 func (dtc *dynatraceClient) GetLatestActiveGateImage() (*LatestImageInfo, error) {
-	request, err := dtc.createLatestImageRequest(dtc.getLatestActiveGateImageUrl())
+	latestImageInfo, err := dtc.processRequest(dtc.getLatestActiveGateImageUrl())
+
+	if err != nil {
+		log.Info("failed to process latest image response")
+		return nil, err
+	}
+
+	return latestImageInfo, nil
+}
+
+func (dtc *dynatraceClient) processRequest(url string) (*LatestImageInfo, error) {
+	request, err := dtc.createLatestImageRequest(url)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
