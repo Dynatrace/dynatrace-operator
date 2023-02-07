@@ -88,7 +88,7 @@ func (reconciler *Reconciler) findAutoscaler(toFind *scalingv2.HorizontalPodAuto
 		err = nil
 	}
 
-	return err
+	return errors.WithStack(err)
 }
 
 func (reconciler *Reconciler) ignores(toReconcile *scalingv2.HorizontalPodAutoscaler) bool {

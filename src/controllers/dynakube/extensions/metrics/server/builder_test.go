@@ -26,7 +26,7 @@ const (
 var (
 	dynaMetricPortArg = "--secure-port=" + fmt.Sprint(common.HttpsServicePort)
 
-	dynakube = &dynatracev1beta1.DynaKube{
+	dynaKube = &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "ephemeral",
 			Namespace: "experimental",
@@ -48,7 +48,7 @@ var (
 
 func TestDynaMetricDeployment(t *testing.T) {
 	assertion := assert.New(t)
-	deployment, err := newBuilder(dynakube).newDeployment()
+	deployment, err := newBuilder(dynaKube).newDeployment()
 
 	toAssertImage := func(t *testing.T) {
 		assertion.NoError(err)

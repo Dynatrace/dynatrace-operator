@@ -118,7 +118,7 @@ const (
 var (
 	log = logger.Factory.GetLogger("dynakube-api")
 
-	defaultSyntheticAutoscalerMinReplicas = int32(1)
+	DefaultSyntheticAutoscalerMinReplicas = int32(1)
 	defaultSyntheticAutoscalerMaxReplicas = int32(2)
 )
 
@@ -332,7 +332,7 @@ func (dynaKube *DynaKube) FeatureSyntheticNodeType() string {
 func (dynaKube *DynaKube) FeatureSyntheticAutoscalerMinReplicas() int32 {
 	return dynaKube.getSyntheticAutoscalerReplicas(
 		AnnotationFeatureSyntheticAutoscalerMinReplicas,
-		defaultSyntheticAutoscalerMinReplicas)
+		DefaultSyntheticAutoscalerMinReplicas)
 }
 
 func (dynaKube *DynaKube) getSyntheticAutoscalerReplicas(feature string, defaultReplicas int32) int32 {

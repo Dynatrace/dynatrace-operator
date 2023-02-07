@@ -255,10 +255,10 @@ func TestSyntheticMonitoringFlags(t *testing.T) {
 		func(t *testing.T) {
 			dynaKube := DynaKube{}
 			assertion.Equal(
-				defaultSyntheticAutoscalerMinReplicas,
+				DefaultSyntheticAutoscalerMinReplicas,
 				dynaKube.FeatureSyntheticAutoscalerMinReplicas(),
 				"default autoscaler min replicas: %s",
-				defaultSyntheticAutoscalerMinReplicas)
+				DefaultSyntheticAutoscalerMinReplicas)
 		})
 
 	t.Run("with-declared-autoscaler-min-replicas",

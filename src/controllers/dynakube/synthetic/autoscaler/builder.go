@@ -13,7 +13,6 @@ import (
 type builder struct {
 	*dynatracev1beta1.DynaKube
 	*appsv1.StatefulSet
-	*kubeobjects.AppLabels
 }
 
 var (
@@ -32,18 +31,12 @@ var (
 )
 
 func newBuilder(
-	dynakube *dynatracev1beta1.DynaKube,
+	dynaKube *dynatracev1beta1.DynaKube,
 	statefulSet *appsv1.StatefulSet,
 ) *builder {
 	return &builder{
-		DynaKube:    dynakube,
+		DynaKube:    dynaKube,
 		StatefulSet: statefulSet,
-		AppLabels: kubeobjects.NewAppLabels(
-			SynAutoscaler,
-			dynakube.Name,
-			kubeobjects.SyntheticComponentLabel,
-			kubeobjects.CustomImageLabelValue,
-		),
 	}
 }
 
@@ -52,7 +45,7 @@ func (builder *builder) newAutoscaler() (*scalingv2.HorizontalPodAutoscaler, err
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      builder.DynaKube.Name + "-" + SynAutoscaler,
 			Namespace: builder.DynaKube.Namespace,
-			Labels:    builder.AppLabels.BuildLabels(),
+			Labels:    builder.StatefulSet.ObjectMeta.Labels,
 		},
 		Spec: scalingv2.HorizontalPodAutoscalerSpec{
 			ScaleTargetRef: scalingv2.CrossVersionObjectReference{

@@ -101,7 +101,7 @@ func (reconciler *Reconciler) findApiService() (err error) {
 		reconciler.configDynaKubeName = reconciler.foundApiService.GetAnnotations()[common.ControlledByDynaKubeAnnotation]
 	}
 
-	return err
+	return errors.WithStack(err)
 }
 
 func (reconciler *Reconciler) findDynaKubesBySynMonitoring() error {

@@ -91,7 +91,7 @@ func (reconciler *Reconciler) findDeployment() (err error) {
 		err = nil
 	}
 
-	return err
+	return errors.WithStack(err)
 }
 
 func (reconciler *Reconciler) ignores(toReconcile *appsv1.Deployment) bool {

@@ -3,7 +3,6 @@ package service
 import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/extensions/metrics/common"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -22,8 +21,7 @@ const (
 
 type builder struct {
 	*dynatracev1beta1.DynaKube
-	serviceName string
-	*kubeobjects.AppLabels
+	*appsv1.Deployment
 }
 
 func newBuilder(
@@ -31,27 +29,21 @@ func newBuilder(
 	deployment *appsv1.Deployment,
 ) *builder {
 	return &builder{
-		DynaKube:    dynaKube,
-		serviceName: deployment.ObjectMeta.Name,
-		AppLabels: kubeobjects.NewAppLabels(
-			deployment.ObjectMeta.Name,
-			dynaKube.Name,
-			kubeobjects.ExtApiComponentLabel,
-			kubeobjects.CustomImageLabelValue,
-		),
+		DynaKube:   dynaKube,
+		Deployment: deployment,
 	}
 }
 
 func (builder *builder) newService() *corev1.Service {
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      builder.serviceName,
+			Name:      builder.Deployment.Name,
 			Namespace: builder.DynaKube.Namespace,
-			Labels:    builder.AppLabels.BuildLabels(),
+			Labels:    builder.Deployment.ObjectMeta.Labels,
 		},
 		Spec: corev1.ServiceSpec{
 			Type:     corev1.ServiceTypeClusterIP,
-			Selector: builder.AppLabels.BuildMatchLabels(),
+			Selector: builder.Deployment.Spec.Selector.MatchLabels,
 
 			Ports: []corev1.ServicePort{
 				{
@@ -81,7 +73,7 @@ func (builder *builder) newApiService() *regv1.APIService {
 		},
 		Spec: regv1.APIServiceSpec{
 			Service: &regv1.ServiceReference{
-				Name:      builder.serviceName,
+				Name:      builder.Deployment.Name,
 				Namespace: builder.DynaKube.Namespace,
 				Port:      address.Of[int32](httpsServicePort),
 			},

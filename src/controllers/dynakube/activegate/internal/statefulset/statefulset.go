@@ -84,24 +84,36 @@ func (statefulSetBuilder Builder) getBaseSpec() appsv1.StatefulSetSpec {
 }
 
 func (statefulSetBuilder Builder) addLabels(sts *appsv1.StatefulSet) {
-	versionLabelValue := statefulSetBuilder.dynakube.Status.ActiveGate.Version
-	if statefulSetBuilder.dynakube.CustomActiveGateImage() != "" {
-		versionLabelValue = kubeobjects.CustomImageLabelValue
-	}
-
-	componentLabel := kubeobjects.ActiveGateComponentLabel
-	if statefulSetBuilder.dynakube.IsSyntheticMonitoringEnabled() {
-		componentLabel = kubeobjects.SyntheticComponentLabel
-	}
+	componentLabel, versionLabel := statefulSetBuilder.findCapabilityLabels()
 	appLabels := kubeobjects.NewAppLabels(
 		componentLabel,
 		statefulSetBuilder.dynakube.Name,
 		statefulSetBuilder.capability.ShortName(),
-		versionLabelValue)
+		versionLabel)
 
 	sts.ObjectMeta.Labels = appLabels.BuildLabels()
 	sts.Spec.Selector = &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()}
 	sts.Spec.Template.ObjectMeta.Labels = kubeobjects.MergeMap(statefulSetBuilder.capability.Properties().Labels, appLabels.BuildLabels())
+}
+
+func (statefulSetBuilder Builder) findCapabilityLabels() (component, version string) {
+	if statefulSetBuilder.capability.AssistsSynthetic() {
+		component = kubeobjects.SyntheticComponentLabel
+		if statefulSetBuilder.dynakube.FeatureCustomSyntheticImage() != "" {
+			version = kubeobjects.CustomImageLabelValue
+		} else {
+			version = statefulSetBuilder.dynakube.Status.Synthetic.Version
+		}
+	} else {
+		component = kubeobjects.ActiveGateComponentLabel
+		if statefulSetBuilder.dynakube.CustomActiveGateImage() != "" {
+			version = kubeobjects.CustomImageLabelValue
+		} else {
+			version = statefulSetBuilder.dynakube.Status.ActiveGate.Version
+		}
+	}
+
+	return
 }
 
 func (statefulSetBuilder Builder) addUserAnnotations(sts *appsv1.StatefulSet) {
@@ -159,7 +171,7 @@ func (statefulSetBuilder Builder) buildBaseContainer() []corev1.Container {
 }
 
 func (statefulSetBuilder Builder) buildResources() corev1.ResourceRequirements {
-	if statefulSetBuilder.dynakube.IsSyntheticMonitoringEnabled() {
+	if statefulSetBuilder.capability.AssistsSynthetic() {
 		return modifiers.ActiveGateResourceRequirements
 	} else {
 		return statefulSetBuilder.capability.Properties().Resources
