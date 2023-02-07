@@ -3,13 +3,13 @@ package manifests
 import (
 	"bytes"
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"io"
 	"net/http"
 	"os"
 	"strconv"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -55,15 +55,6 @@ func installFromSingleUrl(t *testing.T, ctx context.Context, environmentConfig *
 	require.NoError(t, decoder.DecodeEach(ctx, manifestReader, decoder.IgnoreErrorHandler(decoder.CreateHandler(resources), k8serrors.IsAlreadyExists)))
 }
 
-func InstallFromFiles(paths []string) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		for _, path := range paths {
-			installFromSingleFile(t, ctx, environmentConfig, path)
-		}
-		return ctx
-	}
-}
-
 func InstallFromFile(path string) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		kubernetesManifest, err := os.Open(path)
@@ -75,13 +66,4 @@ func InstallFromFile(path string) features.Func {
 
 		return ctx
 	}
-}
-
-func installFromSingleFile(t *testing.T, ctx context.Context, environmentConfig *envconf.Config, path string) {
-	manifest, err := os.Open(path)
-	defer func() { require.NoError(t, manifest.Close()) }()
-	require.NoError(t, err)
-
-	resources := environmentConfig.Client().Resources()
-	require.NoError(t, decoder.DecodeEach(ctx, manifest, decoder.IgnoreErrorHandler(decoder.CreateHandler(resources), k8serrors.IsAlreadyExists)))
 }

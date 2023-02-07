@@ -202,8 +202,8 @@ func DisableHostsRequests(disabledHostsRequests bool) Option {
 	}
 }
 
-func CloseBodyAfterRequest(response *http.Response){
-	if response != nil && response.Body != nil{
+func CloseBodyAfterRequest(response *http.Response) {
+	if response != nil && response.Body != nil {
 		response.Body.Close()
 	}
 }
