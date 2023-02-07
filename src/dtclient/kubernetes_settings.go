@@ -151,6 +151,14 @@ func (dtc *dynatraceClient) GetMonitoredEntitiesForKubeSystemUUID(kubeSystemUUID
 	req.URL.RawQuery = q.Encode()
 
 	res, err := dtc.httpClient.Do(req)
+
+	defer func() {
+		err := res.Body.Close()
+		if err != nil {
+			log.Error(err, err.Error())
+		}
+	}()
+
 	if err != nil {
 		log.Info("check if ME exists failed")
 		return nil, err
@@ -186,6 +194,14 @@ func (dtc *dynatraceClient) GetSettingsForMonitoredEntities(monitoredEntities []
 	req.URL.RawQuery = q.Encode()
 
 	res, err := dtc.httpClient.Do(req)
+
+	defer func() {
+		err := res.Body.Close()
+		if err != nil {
+			log.Error(err, err.Error())
+		}
+	}()
+
 	if err != nil {
 		log.Info("failed to retrieve MEs")
 		return GetSettingsResponse{}, err
