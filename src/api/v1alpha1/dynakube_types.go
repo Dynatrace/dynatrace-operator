@@ -221,8 +221,8 @@ type DynaKubeValueSource struct {
 }
 
 type DynaKubeProxy struct {
-	Value     string `json:"value,omitempty"`
-	ValueFrom string `json:"valueFrom,omitempty"`
+	Value     string `json:"value,omitempty"` //nolint:unused
+	ValueFrom string `json:"valueFrom,omitempty"` //nolint:unused
 }
 
 // DynaKubeStatus defines the observed state of DynaKube

@@ -34,17 +34,17 @@ func (dtc *dynatraceClient) GetActiveGateAuthToken(dynakubeName string) (*Active
 
 	response, err := dtc.httpClient.Do(request)
 
+	if err != nil {
+		log.Info("failed to retrieve ag-auth-token")
+		return nil, err
+	}
+
 	defer func() {
 		err := response.Body.Close()
 		if err != nil {
 			log.Error(err, err.Error())
 		}
 	}()
-
-	if err != nil {
-		log.Info("failed to retrieve ag-auth-token")
-		return nil, err
-	}
 
 	authTokenInfo, err := dtc.handleAuthTokenResponse(response)
 	if err != nil {

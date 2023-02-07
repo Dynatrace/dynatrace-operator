@@ -195,17 +195,17 @@ func (dtc *dynatraceClient) GetSettingsForMonitoredEntities(monitoredEntities []
 
 	res, err := dtc.httpClient.Do(req)
 
+	if err != nil {
+		log.Info("failed to retrieve MEs")
+		return GetSettingsResponse{}, err
+	}
+
 	defer func() {
 		err := res.Body.Close()
 		if err != nil {
 			log.Error(err, err.Error())
 		}
 	}()
-
-	if err != nil {
-		log.Info("failed to retrieve MEs")
-		return GetSettingsResponse{}, err
-	}
 
 	var resDataJson GetSettingsResponse
 	err = dtc.unmarshalToJson(res, &resDataJson)
