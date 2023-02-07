@@ -1,6 +1,7 @@
 package webhook
 
 import (
+	"crypto/tls"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/rest"
@@ -46,10 +47,15 @@ func (provider Provider) createOptions(namespace string) ctrl.Options {
 }
 
 func (provider Provider) setupWebhookServer(mgr manager.Manager) manager.Manager {
+	tlsConfig := func(config *tls.Config) {
+		config.MinVersion = tls.VersionTLS13
+	}
+
 	webhookServer := mgr.GetWebhookServer()
 	webhookServer.CertDir = provider.certificateDirectory
 	webhookServer.KeyName = provider.keyFileName
 	webhookServer.CertName = provider.certificateFileName
+	webhookServer.TLSOpts = []func(*tls.Config){tlsConfig}
 
 	return mgr
 }
