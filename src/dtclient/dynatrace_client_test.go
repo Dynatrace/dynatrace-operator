@@ -32,7 +32,7 @@ func TestMakeRequest(t *testing.T) {
 		resp, err := dc.makeRequest(url, dynatraceApiToken)
 		assert.NoError(t, err)
 		assert.NotNil(t, resp)
-		defer resp.Body.Close()
+		defer CloseBodyAfterRequest(resp)
 	}
 	{
 		resp, err := dc.makeRequest("%s/v1/deployment/installer/agent/connectioninfo", dynatraceApiToken) //nolint:bodyclose

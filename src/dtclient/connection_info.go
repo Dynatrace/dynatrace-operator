@@ -38,12 +38,7 @@ func (dtc *dynatraceClient) GetActiveGateConnectionInfo() (*ActiveGateConnection
 		return nil, errors.WithStack(err)
 	}
 
-	defer func() {
-		err := response.Body.Close()
-		if err != nil {
-			log.Error(err, err.Error())
-		}
-	}()
+	defer CloseBodyAfterRequest(response)
 
 	data, err := dtc.getServerResponseData(response)
 	if err != nil {
@@ -90,10 +85,7 @@ func (dtc *dynatraceClient) GetOneAgentConnectionInfo() (OneAgentConnectionInfo,
 	if err != nil {
 		return OneAgentConnectionInfo{}, err
 	}
-	defer func() {
-		// Swallow error, nothing has to be done at this point
-		_ = resp.Body.Close()
-	}()
+	defer CloseBodyAfterRequest(resp)
 
 	responseData, err := dtc.getServerResponseData(resp)
 	if err != nil {
