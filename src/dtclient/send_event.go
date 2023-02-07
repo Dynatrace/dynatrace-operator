@@ -54,12 +54,7 @@ func (dtc *dynatraceClient) SendEvent(eventData *EventData) error {
 		return fmt.Errorf("error making post request to dynatrace api: %w", err)
 	}
 
-	defer func() {
-		err := response.Body.Close()
-		if err != nil {
-			log.Error(err, err.Error())
-		}
-	}()
+	defer CloseBodyAfterRequest(response)
 
 	_, err = dtc.getServerResponseData(response)
 	return errors.WithStack(err)

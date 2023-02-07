@@ -44,10 +44,7 @@ func (dtc *dynatraceClient) GetTokenScopes(token string) (TokenScopes, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error making post request to dynatrace api: %w", err)
 	}
-	defer func() {
-		// Swallow error, nothing has to be done at this point
-		_ = resp.Body.Close()
-	}()
+	defer CloseBodyAfterRequest(resp)
 
 	data, err := dtc.getServerResponseData(resp)
 	if err != nil {

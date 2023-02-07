@@ -142,10 +142,7 @@ func (dtc *dynatraceClient) GetProcessModuleConfig(prevRevision uint) (*ProcessM
 	if err != nil {
 		return nil, fmt.Errorf("error while requesting process module config: %w", err)
 	}
-	defer func() {
-		// Swallow error, nothing has to be done at this point
-		_ = resp.Body.Close()
-	}()
+	defer CloseBodyAfterRequest(resp)
 
 	responseData, err := dtc.getServerResponseData(resp)
 	if err != nil {

@@ -39,12 +39,7 @@ func (dtc *dynatraceClient) GetActiveGateAuthToken(dynakubeName string) (*Active
 		return nil, err
 	}
 
-	defer func() {
-		err := response.Body.Close()
-		if err != nil {
-			log.Error(err, err.Error())
-		}
-	}()
+	defer CloseBodyAfterRequest(response)
 
 	authTokenInfo, err := dtc.handleAuthTokenResponse(response)
 	if err != nil {
