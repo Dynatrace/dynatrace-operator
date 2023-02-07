@@ -33,10 +33,18 @@ func (dtc *dynatraceClient) GetActiveGateAuthToken(dynakubeName string) (*Active
 	}
 
 	response, err := dtc.httpClient.Do(request)
+
 	if err != nil {
 		log.Info("failed to retrieve ag-auth-token")
 		return nil, err
 	}
+
+	defer func() {
+		err := response.Body.Close()
+		if err != nil {
+			log.Error(err, err.Error())
+		}
+	}()
 
 	authTokenInfo, err := dtc.handleAuthTokenResponse(response)
 	if err != nil {
@@ -72,13 +80,6 @@ func (dtc *dynatraceClient) createAuthTokenRequest(dynakubeName string) (*http.R
 }
 
 func (dtc *dynatraceClient) handleAuthTokenResponse(response *http.Response) (*ActiveGateAuthTokenInfo, error) {
-	defer func() {
-		err := response.Body.Close()
-		if err != nil {
-			log.Error(err, err.Error())
-		}
-	}()
-
 	data, err := dtc.getServerResponseData(response)
 	if err != nil {
 		return nil, dtc.handleErrorResponseFromAPI(data, response.StatusCode)

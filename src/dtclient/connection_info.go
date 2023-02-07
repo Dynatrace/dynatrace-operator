@@ -23,9 +23,9 @@ type OneAgentConnectionInfo struct {
 
 // CommunicationHost => struct of connection endpoint
 type CommunicationHost struct {
-	Protocol string
-	Host     string
-	Port     uint32
+	Protocol string // nolint:unused
+	Host     string // nolint:unused
+	Port     uint32 // nolint:unused
 }
 
 func (dtc *dynatraceClient) GetActiveGateConnectionInfo() (*ActiveGateConnectionInfo, error) {
