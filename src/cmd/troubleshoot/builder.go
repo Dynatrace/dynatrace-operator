@@ -27,6 +27,7 @@ const (
 	namespaceCheckName           = "namespace"
 	crdCheckName                 = "crd"
 	dynakubeCheckName            = "dynakube"
+	oneAgentAPMCheckName         = "oneAgentAPM"
 	dtClusterConnectionCheckName = "DynatraceClusterConnection"
 	imagePullableCheckName       = "imagePullable"
 	proxySettingsCheckName       = "proxySettings"
@@ -88,6 +89,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		version.LogVersion()
 
 		kubeConfig, err := builder.configProvider.GetConfig()
+
 		if err != nil {
 			return err
 		}
@@ -109,6 +111,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			apiReader:     apiReader,
 			httpClient:    &http.Client{},
 			namespaceName: namespaceFlagValue,
+			kubeConfig:    *kubeConfig,
 		}
 
 		results := NewChecksResults()
@@ -160,7 +163,11 @@ func getPrerequisiteChecks() []*Check {
 		Name: crdCheckName,
 		Do:   checkCRD,
 	}
-	return []*Check{namespaceCheck, crdCheck}
+	oneAgentAPMCheck := &Check{
+		Name: oneAgentAPMCheckName,
+		Do:   checkOneAgentAPM,
+	}
+	return []*Check{namespaceCheck, crdCheck, oneAgentAPMCheck}
 }
 
 func getDynakubeSpecificChecks(results ChecksResults) []*Check {

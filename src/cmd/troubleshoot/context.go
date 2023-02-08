@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -21,6 +22,7 @@ type troubleshootContext struct {
 	dynatraceApiSecretTokens token.Tokens
 	pullSecret               corev1.Secret
 	proxySecret              *corev1.Secret
+	kubeConfig               rest.Config
 }
 
 func (troubleshootCtx *troubleshootContext) SetTransportProxy(proxy string) error {
