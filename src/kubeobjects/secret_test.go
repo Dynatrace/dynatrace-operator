@@ -5,9 +5,11 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/logger"
+	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -15,9 +17,11 @@ import (
 
 var secretLog = logger.Factory.GetLogger("test-secret")
 
+const (
+	deploymentName = "deployment-as-owner-of-secret"
+)
+
 func TestGetSecret(t *testing.T) {
-	testSecretName := "testSecret"
-	testNamespace := "testNamespace"
 	fakeClient := fake.NewClient(
 		&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
@@ -42,7 +46,6 @@ func TestGetSecret(t *testing.T) {
 }
 
 func TestMultipleSecrets(t *testing.T) {
-	testSecretName := "testSecret"
 	fakeClient := fake.NewClientWithIndex(
 		&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
@@ -146,4 +149,84 @@ func TestInitialMultipleSecrets(t *testing.T) {
 		require.NoError(t, err)
 		assert.Len(t, secrets, 0)
 	})
+}
+
+func TestSecretBuilder(t *testing.T) {
+	labelName := "name"
+	labelValue := "value"
+	labels := map[string]string{
+		labelName: labelValue,
+	}
+	dataKey := ".dockercfg"
+	dockerCfg := map[string][]byte{
+		dataKey: {},
+	}
+
+	t.Run("create secret", func(t *testing.T) {
+		secret, err := CreateSecret(scheme.Scheme, createDeployment(),
+			NewSecretNameModifier(testSecretName),
+			NewSecretNamespaceModifier(testNamespace))
+		require.NoError(t, err)
+		require.Len(t, secret.OwnerReferences, 1)
+		assert.Equal(t, deploymentName, secret.OwnerReferences[0].Name)
+		assert.Equal(t, testSecretName, secret.Name)
+		assert.Len(t, secret.Labels, 0)
+		assert.Equal(t, corev1.SecretType(""), secret.Type)
+		assert.Len(t, secret.Data, 0)
+	})
+	t.Run("create secret with label", func(t *testing.T) {
+		secret, err := CreateSecret(scheme.Scheme, createDeployment(),
+			NewSecretLabelsModifier(labels),
+			NewSecretNameModifier(testSecretName),
+			NewSecretNamespaceModifier(testNamespace),
+			NewSecretDataModifier(map[string][]byte{}))
+		require.NoError(t, err)
+		require.Len(t, secret.OwnerReferences, 1)
+		assert.Equal(t, deploymentName, secret.OwnerReferences[0].Name)
+		assert.Equal(t, testSecretName, secret.Name)
+		require.Len(t, secret.Labels, 1)
+		assert.Equal(t, labelValue, secret.Labels[labelName])
+		assert.Equal(t, corev1.SecretType(""), secret.Type)
+		assert.Len(t, secret.Data, 0)
+	})
+	t.Run("create secret with type", func(t *testing.T) {
+		secret, err := CreateSecret(scheme.Scheme, createDeployment(),
+			NewSecretTypeModifier(corev1.SecretTypeDockercfg),
+			NewSecretNameModifier(testSecretName),
+			NewSecretNamespaceModifier(testNamespace),
+			NewSecretDataModifier(dockerCfg))
+		require.NoError(t, err)
+		require.Len(t, secret.OwnerReferences, 1)
+		assert.Equal(t, deploymentName, secret.OwnerReferences[0].Name)
+		assert.Equal(t, testSecretName, secret.Name)
+		assert.Len(t, secret.Labels, 0)
+		assert.Equal(t, corev1.SecretTypeDockercfg, secret.Type)
+		_, found := secret.Data[dataKey]
+		assert.True(t, found)
+	})
+	t.Run("create secret with label and type", func(t *testing.T) {
+		secret, err := CreateSecret(scheme.Scheme, createDeployment(),
+			NewSecretLabelsModifier(labels),
+			NewSecretTypeModifier(corev1.SecretTypeDockercfg),
+			NewSecretNameModifier(testSecretName),
+			NewSecretNamespaceModifier(testNamespace),
+			NewSecretDataModifier(dockerCfg))
+		require.NoError(t, err)
+		require.Len(t, secret.OwnerReferences, 1)
+		assert.Equal(t, deploymentName, secret.OwnerReferences[0].Name)
+		assert.Equal(t, testSecretName, secret.Name)
+		require.Len(t, secret.Labels, 1)
+		assert.Equal(t, labelValue, secret.Labels[labelName])
+		assert.Equal(t, corev1.SecretTypeDockercfg, secret.Type)
+		_, found := secret.Data[dataKey]
+		assert.True(t, found)
+	})
+}
+
+func createDeployment() *appsv1.Deployment {
+	return &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: deploymentName,
+		},
+	}
 }

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/logger"
+	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -275,4 +276,33 @@ func createTestConfigMap(labels map[string]string, data map[string]string) *core
 		Data: data,
 	}
 	return configMap
+}
+
+func TestConfigMapBuilder(t *testing.T) {
+	dataKey := "cfg"
+	data := map[string]string{
+		dataKey: "",
+	}
+	t.Run("create config map", func(t *testing.T) {
+		configMap, err := CreateConfigMap(scheme.Scheme, createDeployment(),
+			NewConfigMapNameModifier(testConfigMapName),
+			NewConfigMapNamespaceModifier(testNamespace))
+		require.NoError(t, err)
+		require.Len(t, configMap.OwnerReferences, 1)
+		assert.Equal(t, deploymentName, configMap.OwnerReferences[0].Name)
+		assert.Equal(t, configMap.Name, testConfigMapName)
+		assert.Len(t, configMap.Data, 0)
+	})
+	t.Run("create config map with data", func(t *testing.T) {
+		configMap, err := CreateConfigMap(scheme.Scheme, createDeployment(),
+			NewConfigMapNameModifier(testConfigMapName),
+			NewConfigMapNamespaceModifier(testNamespace),
+			NewConfigMapDataModifier(data))
+		require.NoError(t, err)
+		require.Len(t, configMap.OwnerReferences, 1)
+		assert.Equal(t, deploymentName, configMap.OwnerReferences[0].Name)
+		assert.Equal(t, configMap.Name, testConfigMapName)
+		_, found := configMap.Data[dataKey]
+		assert.True(t, found)
+	})
 }

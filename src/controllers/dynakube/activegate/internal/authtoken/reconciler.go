@@ -13,7 +13,6 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 const (
@@ -95,12 +94,15 @@ func (r *Reconciler) getActiveGateAuthToken() (map[string][]byte, error) {
 
 func (r *Reconciler) createSecret(secretData map[string][]byte) error {
 	secretName := r.dynakube.ActiveGateAuthTokenSecret()
-	secret := kubeobjects.NewSecret(secretName, r.dynakube.Namespace, secretData)
-	if err := controllerutil.SetControllerReference(r.dynakube, secret, r.scheme); err != nil {
+	secret, err := kubeobjects.CreateSecret(r.scheme, r.dynakube,
+		kubeobjects.NewSecretNameModifier(secretName),
+		kubeobjects.NewSecretNamespaceModifier(r.dynakube.Namespace),
+		kubeobjects.NewSecretDataModifier(secretData))
+	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	err := r.client.Create(context.TODO(), secret)
+	err = r.client.Create(context.TODO(), secret)
 	if err != nil {
 		return errors.Errorf("failed to create secret '%s': %v", secretName, err)
 	}

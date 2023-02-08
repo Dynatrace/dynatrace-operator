@@ -38,7 +38,7 @@ var _ controllers.Reconciler = (*Reconciler)(nil)
 
 func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) controllers.Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
 	authTokenReconciler := authtoken.NewReconciler(clt, apiReader, scheme, dynakube, dtc)
-	proxyReconciler := proxy.NewReconciler(clt, apiReader, dynakube)
+	proxyReconciler := proxy.NewReconciler(clt, apiReader, scheme, dynakube)
 	newCustomPropertiesReconcilerFunc := func(customPropertiesOwnerName string, customPropertiesSource *dynatracev1beta1.DynaKubeValueSource) controllers.Reconciler {
 		return customproperties.NewReconciler(clt, dynakube, customPropertiesOwnerName, scheme, customPropertiesSource)
 	}
