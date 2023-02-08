@@ -14,7 +14,7 @@ type LatestImageInfo struct {
 }
 
 func (dtc *dynatraceClient) GetLatestOneAgentImage() (*LatestImageInfo, error) {
-	latestImageInfo, err := dtc.processRequest(dtc.getLatestOneAgentImageUrl())
+	latestImageInfo, err := dtc.processLatestImageRequest(dtc.getLatestOneAgentImageUrl())
 
 	if err != nil {
 		log.Info("failed to process latest image response")
@@ -25,7 +25,7 @@ func (dtc *dynatraceClient) GetLatestOneAgentImage() (*LatestImageInfo, error) {
 }
 
 func (dtc *dynatraceClient) GetLatestCodeModulesImage() (*LatestImageInfo, error) {
-	latestImageInfo, err := dtc.processRequest(dtc.getLatestCodeModulesImageUrl())
+	latestImageInfo, err := dtc.processLatestImageRequest(dtc.getLatestCodeModulesImageUrl())
 
 	if err != nil {
 		log.Info("failed to process latest image response")
@@ -36,7 +36,7 @@ func (dtc *dynatraceClient) GetLatestCodeModulesImage() (*LatestImageInfo, error
 }
 
 func (dtc *dynatraceClient) GetLatestActiveGateImage() (*LatestImageInfo, error) {
-	latestImageInfo, err := dtc.processRequest(dtc.getLatestActiveGateImageUrl())
+	latestImageInfo, err := dtc.processLatestImageRequest(dtc.getLatestActiveGateImageUrl())
 
 	if err != nil {
 		log.Info("failed to process latest image response")
@@ -46,7 +46,7 @@ func (dtc *dynatraceClient) GetLatestActiveGateImage() (*LatestImageInfo, error)
 	return latestImageInfo, nil
 }
 
-func (dtc *dynatraceClient) processRequest(url string) (*LatestImageInfo, error) {
+func (dtc *dynatraceClient) processLatestImageRequest(url string) (*LatestImageInfo, error) {
 	request, err := dtc.createLatestImageRequest(url)
 	if err != nil {
 		return nil, errors.WithStack(err)
