@@ -68,6 +68,7 @@ const (
 	AnnotationFeatureOneAgentIgnoreProxy            = AnnotationFeaturePrefix + "oneagent-ignore-proxy"
 	AnnotationFeatureOneAgentInitialConnectRetry    = AnnotationFeaturePrefix + "oneagent-initial-connect-retry-ms"
 	AnnotationFeatureRunOneAgentContainerPrivileged = AnnotationFeaturePrefix + "oneagent-privileged"
+	AnnotationFeatureOneAgentSecCompProfile         = AnnotationFeaturePrefix + "oneagent-seccomp-profile"
 
 	// injection (webhook)
 
@@ -267,6 +268,10 @@ func (dk *DynaKube) FeatureAgentInitialConnectRetry() int {
 
 func (dk *DynaKube) FeatureOneAgentPrivileged() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureRunOneAgentContainerPrivileged) == truePhrase
+}
+
+func (dk *DynaKube) FeatureOneAgentSecCompProfile() string {
+	return dk.getFeatureFlagRaw(AnnotationFeatureOneAgentSecCompProfile)
 }
 
 func (dk *DynaKube) getFeatureFlagRaw(annotation string) string {

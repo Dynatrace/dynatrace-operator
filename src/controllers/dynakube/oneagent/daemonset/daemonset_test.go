@@ -283,6 +283,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		assert.Equal(t, address.Of(int64(1000)), securityContext.RunAsGroup)
 		assert.Equal(t, address.Of(true), securityContext.RunAsNonRoot)
 		assert.NotEmpty(t, securityContext.Capabilities)
+		assert.Nil(t, securityContext.SeccompProfile)
 	})
 
 	t.Run(`No User and group id set when read only mode is disabled`, func(t *testing.T) {
@@ -313,6 +314,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		assert.Nil(t, securityContext.RunAsNonRoot)
 		assert.Nil(t, securityContext.Privileged)
 		assert.NotEmpty(t, securityContext.Capabilities)
+		assert.Nil(t, securityContext.SeccompProfile)
 	})
 
 	t.Run(`privileged security context when feature flag is enabled`, func(t *testing.T) {
@@ -343,6 +345,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		assert.Equal(t, address.Of(true), securityContext.RunAsNonRoot)
 		assert.Equal(t, address.Of(true), securityContext.Privileged)
 		assert.Empty(t, securityContext.Capabilities)
+		assert.Nil(t, securityContext.SeccompProfile)
 	})
 
 	t.Run(`privileged security context when feature flag is enabled for classic fullstack`, func(t *testing.T) {
@@ -373,6 +376,73 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		assert.Nil(t, securityContext.RunAsNonRoot)
 		assert.Equal(t, address.Of(true), securityContext.Privileged)
 		assert.Empty(t, securityContext.Capabilities)
+		assert.Nil(t, securityContext.SeccompProfile)
+	})
+
+	t.Run(`localhost seccomp profile when feature flag is enabled`, func(t *testing.T) {
+		customSecCompProfile := "seccomp.json"
+		instance := dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					dynatracev1beta1.AnnotationFeatureOneAgentSecCompProfile: customSecCompProfile,
+				},
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: testURL,
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
+				},
+			},
+		}
+		dsInfo := NewClassicFullStack(&instance, testClusterID)
+		ds, err := dsInfo.BuildDaemonSet()
+		require.NoError(t, err)
+
+		assert.GreaterOrEqual(t, 1, len(ds.Spec.Template.Spec.Containers))
+
+		securityContext := ds.Spec.Template.Spec.Containers[0].SecurityContext
+
+		assert.NotNil(t, securityContext)
+		assert.Nil(t, securityContext.RunAsUser)
+		assert.Nil(t, securityContext.RunAsGroup)
+		assert.Nil(t, securityContext.RunAsNonRoot)
+		assert.Nil(t, securityContext.Privileged)
+		assert.NotEmpty(t, securityContext.Capabilities)
+		assert.Equal(t, corev1.SeccompProfileTypeLocalhost, securityContext.SeccompProfile.Type)
+		assert.Equal(t, customSecCompProfile, *securityContext.SeccompProfile.LocalhostProfile)
+	})
+
+	t.Run(`localhost seccomp profile disabled if privileged security context enabled`, func(t *testing.T) {
+		customSecCompProfile := "seccomp.json"
+		instance := dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					dynatracev1beta1.AnnotationFeatureOneAgentSecCompProfile:         customSecCompProfile,
+					dynatracev1beta1.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
+				},
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: testURL,
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
+				},
+			},
+		}
+		dsInfo := NewClassicFullStack(&instance, testClusterID)
+		ds, err := dsInfo.BuildDaemonSet()
+		require.NoError(t, err)
+
+		assert.GreaterOrEqual(t, 1, len(ds.Spec.Template.Spec.Containers))
+
+		securityContext := ds.Spec.Template.Spec.Containers[0].SecurityContext
+
+		assert.NotNil(t, securityContext)
+		assert.Nil(t, securityContext.RunAsUser)
+		assert.Nil(t, securityContext.RunAsGroup)
+		assert.Nil(t, securityContext.RunAsNonRoot)
+		assert.Equal(t, address.Of(true), securityContext.Privileged)
+		assert.Empty(t, securityContext.Capabilities)
+		assert.Nil(t, securityContext.SeccompProfile)
 	})
 }
 
