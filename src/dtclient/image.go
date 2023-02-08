@@ -58,6 +58,8 @@ func (dtc *dynatraceClient) processLatestImageRequest(url string) (*LatestImageI
 		return nil, err
 	}
 
+	defer CloseBodyAfterRequest(response)
+
 	latestImageInfo, err := dtc.handleLatestImageResponse(response)
 	if err != nil {
 		log.Info("failed to handle latest image response")
