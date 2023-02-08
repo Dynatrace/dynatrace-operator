@@ -108,7 +108,7 @@ func (dtc *dynatraceClient) CreateOrUpdateKubernetesSetting(clusterLabel, kubeSy
 	if err != nil {
 		return "", fmt.Errorf("error making post request to dynatrace api: %w", err)
 	}
-	defer res.Body.Close()
+	defer CloseBodyAfterRequest(res)
 
 	resData, err := io.ReadAll(res.Body)
 	if err != nil {
@@ -151,10 +151,13 @@ func (dtc *dynatraceClient) GetMonitoredEntitiesForKubeSystemUUID(kubeSystemUUID
 	req.URL.RawQuery = q.Encode()
 
 	res, err := dtc.httpClient.Do(req)
+
 	if err != nil {
 		log.Info("check if ME exists failed")
 		return nil, err
 	}
+
+	defer CloseBodyAfterRequest(res)
 
 	var resDataJson monitoredEntitiesResponse
 	err = dtc.unmarshalToJson(res, &resDataJson)
@@ -186,10 +189,13 @@ func (dtc *dynatraceClient) GetSettingsForMonitoredEntities(monitoredEntities []
 	req.URL.RawQuery = q.Encode()
 
 	res, err := dtc.httpClient.Do(req)
+
 	if err != nil {
 		log.Info("failed to retrieve MEs")
 		return GetSettingsResponse{}, err
 	}
+
+	defer CloseBodyAfterRequest(res)
 
 	var resDataJson GetSettingsResponse
 	err = dtc.unmarshalToJson(res, &resDataJson)
