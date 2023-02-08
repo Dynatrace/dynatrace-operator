@@ -100,9 +100,12 @@ func (r *Reconciler) updateCustomProperties(customProperties *corev1.Secret) err
 }
 
 func (r *Reconciler) createCustomProperties() error {
-	customPropertiesSecret, err := kubeobjects.CreateSecret(r.scheme, r.instance, kubeobjects.NewSecretNameModifier(r.buildCustomPropertiesName(r.instance.Name)), kubeobjects.NewSecretNamespaceModifier(r.instance.Namespace), kubeobjects.NewSecretDataModifier(map[string][]byte{
-		DataKey: []byte(r.customPropertiesSource.Value),
-	}))
+	customPropertiesSecret, err := kubeobjects.CreateSecret(r.scheme, r.instance,
+		kubeobjects.NewSecretNameModifier(r.buildCustomPropertiesName(r.instance.Name)),
+		kubeobjects.NewSecretNamespaceModifier(r.instance.Namespace),
+		kubeobjects.NewSecretDataModifier(map[string][]byte{
+			DataKey: []byte(r.customPropertiesSource.Value),
+		}))
 	if err != nil {
 		return errors.WithStack(err)
 	}

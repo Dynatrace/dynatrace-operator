@@ -60,10 +60,10 @@ func (r *Reconciler) generateForDynakube(ctx context.Context, dynakube *dynatrac
 
 	coreLabels := kubeobjects.NewCoreLabels(dynakube.Name, kubeobjects.ActiveGateComponentLabel)
 	secret, err := kubeobjects.CreateSecret(r.scheme, r.dynakube,
-		kubeobjects.NewSecretTypeModifier(corev1.SecretTypeOpaque),
-		kubeobjects.NewSecretLabelsModifier(coreLabels.BuildMatchLabels()),
 		kubeobjects.NewSecretNameModifier(capability.BuildProxySecretName()),
 		kubeobjects.NewSecretNamespaceModifier(r.dynakube.Namespace),
+		kubeobjects.NewSecretLabelsModifier(coreLabels.BuildMatchLabels()),
+		kubeobjects.NewSecretTypeModifier(corev1.SecretTypeOpaque),
 		kubeobjects.NewSecretDataModifier(data))
 	if err != nil {
 		return errors.WithStack(err)

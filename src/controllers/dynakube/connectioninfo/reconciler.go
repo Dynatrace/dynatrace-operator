@@ -125,7 +125,10 @@ func (r *Reconciler) createTenantConnectionInfoConfigMap(secretName string, conn
 
 func (r *Reconciler) createTenantTokenSecret(secretName string, connectionInfo dtclient.ConnectionInfo) error {
 	secretData := extractSensitiveData(connectionInfo)
-	secret, err := kubeobjects.CreateSecret(r.scheme, r.dynakube, kubeobjects.NewSecretNameModifier(secretName), kubeobjects.NewSecretNamespaceModifier(r.dynakube.Namespace), kubeobjects.NewSecretDataModifier(secretData))
+	secret, err := kubeobjects.CreateSecret(r.scheme, r.dynakube,
+		kubeobjects.NewSecretNameModifier(secretName),
+		kubeobjects.NewSecretNamespaceModifier(r.dynakube.Namespace),
+		kubeobjects.NewSecretDataModifier(secretData))
 	if err != nil {
 		return errors.WithStack(err)
 	}

@@ -82,7 +82,11 @@ func (r *Reconciler) updatePullSecretIfOutdated(pullSecret *corev1.Secret, desir
 }
 
 func (r *Reconciler) createPullSecret(pullSecretData map[string][]byte) (*corev1.Secret, error) {
-	pullSecret, err := kubeobjects.CreateSecret(r.scheme, r.dynakube, kubeobjects.NewSecretTypeModifier(corev1.SecretTypeDockerConfigJson), kubeobjects.NewSecretNameModifier(extendWithPullSecretSuffix(r.dynakube.Name)), kubeobjects.NewSecretNamespaceModifier(r.dynakube.Namespace), kubeobjects.NewSecretDataModifier(pullSecretData))
+	pullSecret, err := kubeobjects.CreateSecret(r.scheme, r.dynakube,
+		kubeobjects.NewSecretNameModifier(extendWithPullSecretSuffix(r.dynakube.Name)),
+		kubeobjects.NewSecretNamespaceModifier(r.dynakube.Namespace),
+		kubeobjects.NewSecretTypeModifier(corev1.SecretTypeDockerConfigJson),
+		kubeobjects.NewSecretDataModifier(pullSecretData))
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

@@ -94,7 +94,10 @@ func (r *Reconciler) getActiveGateAuthToken() (map[string][]byte, error) {
 
 func (r *Reconciler) createSecret(secretData map[string][]byte) error {
 	secretName := r.dynakube.ActiveGateAuthTokenSecret()
-	secret, err := kubeobjects.CreateSecret(r.scheme, r.dynakube, kubeobjects.NewSecretNameModifier(secretName), kubeobjects.NewSecretNamespaceModifier(r.dynakube.Namespace), kubeobjects.NewSecretDataModifier(secretData))
+	secret, err := kubeobjects.CreateSecret(r.scheme, r.dynakube,
+		kubeobjects.NewSecretNameModifier(secretName),
+		kubeobjects.NewSecretNamespaceModifier(r.dynakube.Namespace),
+		kubeobjects.NewSecretDataModifier(secretData))
 	if err != nil {
 		return errors.WithStack(err)
 	}
