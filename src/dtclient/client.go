@@ -79,6 +79,12 @@ type Client interface {
 	// GetSettingsForMonitoredEntities returns the settings response with the number of settings objects,
 	// or an api error otherwise
 	GetActiveGateAuthToken(dynakubeName string) (*ActiveGateAuthTokenInfo, error)
+
+	GetLatestOneAgentImage() (*LatestImageInfo, error)
+
+	GetLatestCodeModulesImage() (*LatestImageInfo, error)
+
+	GetLatestActiveGateImage() (*LatestImageInfo, error)
 }
 
 // Known OS values.
