@@ -5,6 +5,7 @@ package applicationmonitoring
 import (
 	"context"
 	"fmt"
+	"path"
 	"strings"
 	"testing"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/operator"
+	"github.com/Dynatrace/dynatrace-operator/test/project"
 	"github.com/Dynatrace/dynatrace-operator/test/sampleapps"
 	"github.com/Dynatrace/dynatrace-operator/test/secrets"
 	"github.com/Dynatrace/dynatrace-operator/test/shell"
@@ -102,7 +104,7 @@ func installOperator(t *testing.T) features.Feature {
 	defaultInstallation := features.New("default installation")
 
 	defaultInstallation.Setup(secrets.ApplyDefault(secretConfig))
-	defaultInstallation.Setup(operator.InstallFromSource(false))
+	defaultInstallation.Setup(operator.InstallViaMake(false))
 	defaultInstallation.Assess("operator started", operator.WaitForDeployment())
 	defaultInstallation.Assess("webhook started", webhook.WaitForDeployment())
 
@@ -134,7 +136,7 @@ func installDynakube(t *testing.T, name string, annotations map[string]string) f
 
 func installSampleApplications() features.Feature {
 	defaultInstallation := features.New("sample applications installation")
-	defaultInstallation.Assess("sample applications applied", manifests.InstallFromFile("../testdata/application-monitoring/buildlabels-sample-apps.yaml"))
+	defaultInstallation.Assess("sample applications applied", manifests.InstallFromFile(path.Join(project.TestDataDir(), "application-monitoring/buildlabels-sample-apps.yaml")))
 	for _, namespaceName := range namespaceNames {
 		defaultInstallation.Assess(namespaceName+" is ready", deployment.WaitFor(sampleapps.Name, namespaceName))
 	}

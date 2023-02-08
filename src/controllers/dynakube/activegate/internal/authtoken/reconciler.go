@@ -49,7 +49,6 @@ func (r *Reconciler) Reconcile() error {
 	if err != nil {
 		return errors.Errorf("failed to create activeGateAuthToken secret: %v", err)
 	}
-
 	return nil
 }
 

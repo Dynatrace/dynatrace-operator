@@ -1,5 +1,5 @@
 ## Unit tests the Helm charts
-test/helm/unit:
+test/helm/unit: prerequisites/helm
 	./hack/helm/test.sh
 
 ## Lints the Helm charts

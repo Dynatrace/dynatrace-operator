@@ -349,7 +349,7 @@ func buildTestDynakubeWithDataIngestCapability(capabilities []dynatracev1beta1.C
 }
 
 func buildTestClientBeforeGenerate(dk *dynatracev1beta1.DynaKube) client.Client {
-	return fake.NewClient(dk,
+	return fake.NewClientWithIndex(dk,
 		&corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: testNamespaceDynatrace,

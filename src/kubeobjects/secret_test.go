@@ -43,12 +43,16 @@ func TestGetSecret(t *testing.T) {
 
 func TestMultipleSecrets(t *testing.T) {
 	testSecretName := "testSecret"
-	// the query filter we use is not supported by the fake client => would return all secrets
-	// therefore this list contains only one secret
-	fakeClient := fake.NewClient(
+	fakeClient := fake.NewClientWithIndex(
 		&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testSecretName,
+				Namespace: "ns1",
+			},
+		},
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "other",
 				Namespace: "ns1",
 			},
 		},
@@ -60,7 +64,19 @@ func TestMultipleSecrets(t *testing.T) {
 		},
 		&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
+				Name:      "other",
+				Namespace: "ns2",
+			},
+		},
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
 				Name:      testSecretName,
+				Namespace: "ns3",
+			},
+		},
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "other",
 				Namespace: "ns3",
 			},
 		},
@@ -122,7 +138,7 @@ func TestMultipleSecrets(t *testing.T) {
 
 func TestInitialMultipleSecrets(t *testing.T) {
 	testSecretName := "testSecret"
-	fakeClient := fake.NewClient()
+	fakeClient := fake.NewClientWithIndex()
 	secretQuery := NewSecretQuery(context.TODO(), fakeClient, fakeClient, secretLog)
 
 	t.Run("get existing secret from all namespaces", func(t *testing.T) {

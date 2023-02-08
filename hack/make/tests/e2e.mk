@@ -1,38 +1,39 @@
 ## Runs e2e tests
-test/e2e: manifests/branch test/e2e/cloudnative test/e2e/applicationmonitoring test/e2e/activegate test/e2e/supportarchive
+test/e2e:
+	./hack/e2e/run_all.sh
 
 ## Runs ActiveGate e2e test only
-test/e2e/activegate: manifests
+test/e2e/activegate: manifests/crd/helm
 	go test -v -tags e2e -timeout 20m -count=1 -failfast ./test/scenarios/activegate/basic
 
 ## Runs ActiveGate proxy e2e test only
-test/e2e/activegate/proxy: manifests
+test/e2e/activegate/proxy: manifests/crd/helm
 	go test -v -tags e2e -timeout 20m -count=1 -failfast ./test/scenarios/activegate/proxy
 
 ## Runs CloudNative e2e test only
-test/e2e/cloudnative: manifests
-	go test -v -tags e2e -timeout 20m -count=1 -failfast ./test/scenarios/cloudnative/basic
+test/e2e/cloudnative: manifests/crd/helm
+	go test -v -tags e2e -timeout 30m -count=1 -failfast ./test/scenarios/cloudnative/basic
 
 ## Runs CloudNative e2e test only
-test/e2e/classic: manifests
+test/e2e/classic: manifests/crd/helm
 	go test -v -tags e2e -timeout 10m -count=1 -failfast ./test/scenarios/classic
 
 ## Runs CloudNative istio e2e test only
-test/e2e/cloudnative/istio: manifests
+test/e2e/cloudnative/istio: manifests/crd/helm
 	go test -v -tags e2e -timeout 20m -count=1 -failfast ./test/scenarios/cloudnative/istio
 
 ## Runs CloudNative proxy e2e test only
-test/e2e/cloudnative/proxy: manifests
+test/e2e/cloudnative/proxy: manifests/crd/helm
 	go test -v -tags e2e -count=1 -failfast ./test/scenarios/cloudnative/proxy
 
 ## Runs CloudNative network problem e2e test only
-test/e2e/cloudnative/network: manifests
+test/e2e/cloudnative/network: manifests/crd/helm
 	go test -v -tags e2e -timeout 10m -count=1 -failfast ./test/scenarios/cloudnative/network
 
 ## Runs Application Monitoring e2e test only
-test/e2e/applicationmonitoring: manifests
+test/e2e/applicationmonitoring: manifests/crd/helm
 	go test -v -tags e2e -count=1 -failfast ./test/scenarios/applicationmonitoring
 
 ## Runs Application Monitoring e2e test only
-test/e2e/supportarchive: manifests
+test/e2e/supportarchive: manifests/crd/helm
 	go test -v -tags e2e -count=1 -failfast ./test/scenarios/support_archive
