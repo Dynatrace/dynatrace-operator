@@ -87,12 +87,6 @@ func TestLogCollector(t *testing.T) {
 	assert.Equal(t, "logs/pod2/container2_previous.log", tarHeader.Name)
 }
 
-var podListOptions = metav1.ListOptions{
-	TypeMeta: metav1.TypeMeta{
-		Kind: "pod",
-	},
-}
-
 //go:generate mockery --case=snake --srcpkg=k8s.io/client-go/kubernetes/typed/core/v1 --with-expecter --name=PodInterface --output ../../mocks/k8s.io/client-go/kubernetes/typed/core/v1
 func TestLogCollectorPodListError(t *testing.T) {
 	context := context.Background()

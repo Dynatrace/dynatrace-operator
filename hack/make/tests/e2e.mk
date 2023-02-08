@@ -1,5 +1,6 @@
 ## Runs e2e tests
-test/e2e: test/e2e/cloudnative test/e2e/applicationmonitoring test/e2e/activegate test/e2e/supportarchive
+test/e2e:
+	./hack/e2e/run_all.sh
 
 ## Runs ActiveGate e2e test only
 test/e2e/activegate: manifests/crd/helm

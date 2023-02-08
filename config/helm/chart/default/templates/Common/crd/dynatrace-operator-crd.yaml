@@ -5,7 +5,6 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.11.1
-  creationTimestamp: null
   name: dynakubes.dynatrace.com
 spec:
   conversion:
@@ -3496,13 +3495,26 @@ spec:
                   tenantUUID:
                     type: string
                 type: object
+              dynatraceApi:
+                properties:
+                  lastActiveGateConnectionInfoRequest:
+                    format: date-time
+                    type: string
+                  lastOneAgentConnectionInfoRequest:
+                    format: date-time
+                    type: string
+                  lastTokenScopeRequest:
+                    format: date-time
+                    type: string
+                type: object
               kubeSystemUUID:
                 description: KubeSystemUUID contains the UUID of the current Kubernetes
                   cluster
                 type: string
               lastAPITokenProbeTimestamp:
-                description: LastAPITokenProbeTimestamp tracks when the last request
-                  for the API token validity was sent
+                description: 'Deprecated: use DynatraceApiStatus.LastTokenScopeRequest
+                  instead LastAPITokenProbeTimestamp tracks when the last request
+                  for the API token validity was sent'
                 format: date-time
                 type: string
               lastClusterVersionProbeTimestamp:
@@ -3533,6 +3545,9 @@ spec:
                 type: string
               oneAgent:
                 properties:
+                  LastInstanceStatusUpdate:
+                    format: date-time
+                    type: string
                   imageHash:
                     description: ImageHash contains the last image hash seen.
                     type: string
@@ -3545,11 +3560,6 @@ spec:
                           type: string
                       type: object
                     type: object
-                  lastHostsRequestTimestamp:
-                    description: LastHostsRequestTimestamp indicates the last timestamp
-                      the Operator queried for hosts
-                    format: date-time
-                    type: string
                   lastUpdateProbeTimestamp:
                     description: LastUpdateProbeTimestamp defines the last timestamp
                       when the querying for updates have been done

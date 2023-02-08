@@ -1,6 +1,9 @@
 package v1beta1
 
 import (
+	"fmt"
+	"time"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -16,6 +19,7 @@ type DynaKubeStatus struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors.x-descriptors="urn:alm:descriptor:text"
 	UpdatedTimestamp metav1.Time `json:"updatedTimestamp,omitempty"`
 
+	// Deprecated: use DynatraceApiStatus.LastTokenScopeRequest instead
 	// LastAPITokenProbeTimestamp tracks when the last request for the API token validity was sent
 	LastAPITokenProbeTimestamp *metav1.Time `json:"lastAPITokenProbeTimestamp,omitempty"`
 
@@ -54,9 +58,34 @@ type DynaKubeStatus struct {
 	// Conditions includes status about the current state of the instance
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 
-	ActiveGate ActiveGateStatus `json:"activeGate,omitempty"`
-	OneAgent   OneAgentStatus   `json:"oneAgent,omitempty"`
-	Synthetic  SyntheticStatus  `json:"synthetic,omitempty"`
+	ActiveGate   ActiveGateStatus   `json:"activeGate,omitempty"`
+	OneAgent     OneAgentStatus     `json:"oneAgent,omitempty"`
+	Synthetic    SyntheticStatus    `json:"synthetic,omitempty"`
+	DynatraceApi DynatraceApiStatus `json:"dynatraceApi,omitempty"`
+}
+
+const MaxRequestInterval = 15 * time.Minute
+
+type DynatraceApiStatus struct {
+	LastTokenScopeRequest               metav1.Time `json:"lastTokenScopeRequest,omitempty"`
+	LastOneAgentConnectionInfoRequest   metav1.Time `json:"lastOneAgentConnectionInfoRequest,omitempty"`
+	LastActiveGateConnectionInfoRequest metav1.Time `json:"lastActiveGateConnectionInfoRequest,omitempty"`
+}
+
+func (dynatraceApiStatus *DynatraceApiStatus) ResetCachedTimestamps() {
+	dynatraceApiStatus.LastTokenScopeRequest = metav1.Time{}
+	dynatraceApiStatus.LastOneAgentConnectionInfoRequest = metav1.Time{}
+	dynatraceApiStatus.LastActiveGateConnectionInfoRequest = metav1.Time{}
+}
+
+func CacheValidMessage(functionName string) string {
+	return fmt.Sprintf("skipping %s, last request was made less than %d minutes ago",
+		functionName,
+		int(MaxRequestInterval.Minutes()))
+}
+
+func IsRequestOutdated(time metav1.Time) bool {
+	return time.Add(MaxRequestInterval).Before(metav1.Now().Time)
 }
 
 type ConnectionInfoStatus struct {
@@ -109,8 +138,7 @@ type OneAgentStatus struct {
 
 	Instances map[string]OneAgentInstance `json:"instances,omitempty"`
 
-	// LastHostsRequestTimestamp indicates the last timestamp the Operator queried for hosts
-	LastHostsRequestTimestamp *metav1.Time `json:"lastHostsRequestTimestamp,omitempty"`
+	LastInstanceStatusUpdate *metav1.Time `json:"LastInstanceStatusUpdate,omitempty"`
 }
 
 func (oneAgentStatus *OneAgentStatus) Name() string {

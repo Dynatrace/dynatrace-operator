@@ -1,5 +1,5 @@
 {{- include "dynatrace-operator.platformRequired" . }}
-{{ if eq (include "dynatrace-operator.needCSI" .) "true" }}
+{{ if (eq (include "dynatrace-operator.needPriorityClass" .) "true") }}
 
 # Copyright 2021 Dynatrace LLC
 
