@@ -19,13 +19,20 @@ RUN CGO_ENABLED=1 CGO_CFLAGS="-O2 -Wno-return-local-addr" \
     -o ./build/_output/bin/dynatrace-operator ./src/cmd/
 
 # download additional image dependencies
-FROM registry.access.redhat.com/ubi9-minimal:9.1.0 as dependency-src
-RUN \
-    --mount=type=cache,target=/var/cache/dnf \
-    microdnf install -y util-linux tar --nodocs
+FROM registry.access.redhat.com/ubi9:9.1.0 AS dependency-src
+RUN mkdir -p /mnt/rootfs
+RUN yum install --installroot /mnt/rootfs \
+    util-linux-core tar \
+    --releasever 9 \
+    --setopt install_weak_deps=false \
+    --nodocs -y && \
+    yum --installroot /mnt/rootfs clean all
+RUN rm -rf \
+    /mnt/rootfs/var/cache/* \
+    /mnt/rootfs/var/log/dnf* \
+    /mnt/rootfs/var/log/yum.*
 
-FROM registry.access.redhat.com/ubi9-micro:9.1.0
-
+FROM registry.access.redhat.com/ubi9-micro:9.1.0 as base
 # operator binary
 COPY --from=operator-build /app/build/_output/bin /usr/local/bin
 
@@ -33,8 +40,7 @@ COPY --from=operator-build /app/build/_output/bin /usr/local/bin
 COPY --from=dependency-src /etc/ssl/cert.pem /etc/ssl/cert.pem
 
 # csi dependencies
-COPY --from=dependency-src /bin/mount /bin/umount /bin/tar /bin/
-COPY --from=dependency-src /lib64/libmount.so.1 /lib64/libblkid.so.1 /lib64/libuuid.so.1 /lib64/
+COPY --from=dependency-src /mnt/rootfs /
 
 # csi binaries
 COPY --from=registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.7.0 /csi-node-driver-registrar /usr/local/bin
