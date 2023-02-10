@@ -18,9 +18,14 @@ RUN CGO_ENABLED=1 CGO_CFLAGS="-O2 -Wno-return-local-addr" \
     go build -tags "containers_image_openpgp,osusergo,netgo,sqlite_omit_load_extension,containers_image_storage_stub,containers_image_docker_daemon_stub" -trimpath -ldflags="${GO_LINKER_ARGS}" \
     -o ./build/_output/bin/dynatrace-operator ./src/cmd/
 
+FROM registry.access.redhat.com/ubi9-micro:9.1.0 as base
+
 # download additional image dependencies
 FROM registry.access.redhat.com/ubi9:9.1.0 AS dependency-src
+
 RUN mkdir -p /mnt/rootfs
+COPY --from=base / /mnt/rootfs
+
 RUN yum install --installroot /mnt/rootfs \
     util-linux-core tar \
     --releasever 9 \
@@ -32,7 +37,7 @@ RUN rm -rf \
     /mnt/rootfs/var/log/dnf* \
     /mnt/rootfs/var/log/yum.*
 
-FROM registry.access.redhat.com/ubi9-micro:9.1.0 as base
+FROM base
 # operator binary
 COPY --from=operator-build /app/build/_output/bin /usr/local/bin
 
