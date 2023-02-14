@@ -2,7 +2,9 @@ package oneagent_mutation
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
+	"strconv"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/config"
@@ -97,10 +99,19 @@ func addOneAgentVolumes(pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) {
 	)
 }
 
+func setReadOnly() *bool {
+	readOnly := false
+	if os.Getenv(readOnlyFileSystem) != "" {
+		readOnly, _ = strconv.ParseBool(os.Getenv(readOnlyFileSystem))
+	}
+	return &readOnly
+}
+
 func getInstallerVolumeSource(dynakube dynatracev1beta1.DynaKube) corev1.VolumeSource {
 	volumeSource := corev1.VolumeSource{}
 	if dynakube.NeedsCSIDriver() {
 		volumeSource.CSI = &corev1.CSIVolumeSource{
+			ReadOnly: setReadOnly(),
 			Driver: dtcsi.DriverName,
 			VolumeAttributes: map[string]string{
 				csivolumes.CSIVolumeAttributeModeField:     appvolumes.Mode,

@@ -28,4 +28,6 @@ const (
 
 	preloadPath       = "/etc/ld.so.preload"
 	containerConfPath = "/var/lib/dynatrace/oneagent/agent/config/container.conf"
+
+	readOnlyFileSystem = "DT_MOUNT_READ_ONLY"
 )
