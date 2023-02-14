@@ -94,6 +94,8 @@ spec:
           image: {{ include "dynatrace-operator.image" . }}
           imagePullPolicy: Always
           env:
+            - name: DT_MOUNT_READ_ONLY
+              value: "{{ .Values.csidriver.readOnlyFileSystem }}"
             - name: POD_NAMESPACE
               valueFrom:
                 fieldRef:

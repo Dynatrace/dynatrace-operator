@@ -49,6 +49,7 @@ webhook:
 
 csidriver:
   enabled: false
+  readOnlyFileSystem: false # Set to true if you are deploying it in the bottlerocket OS
   nodeSelector: {}
   kubeletPath: "/var/lib/kubelet"
   existingPriorityClassName: "" # if defined, use this priorityclass instead of creating a new one
