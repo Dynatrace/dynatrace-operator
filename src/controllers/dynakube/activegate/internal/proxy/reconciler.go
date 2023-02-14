@@ -14,6 +14,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -30,6 +31,7 @@ var _ controllers.Reconciler = &Reconciler{}
 type Reconciler struct {
 	client    client.Client
 	apiReader client.Reader
+	scheme    *runtime.Scheme
 	dynakube  *dynatracev1beta1.DynaKube
 }
 
@@ -41,10 +43,11 @@ func (r *Reconciler) Reconcile() error {
 	return r.ensureDeleted(context.TODO(), r.dynakube)
 }
 
-func NewReconciler(client client.Client, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube) *Reconciler {
+func NewReconciler(client client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube) *Reconciler {
 	return &Reconciler{
 		client:    client,
 		apiReader: apiReader,
+		scheme:    scheme,
 		dynakube:  dynakube,
 	}
 }
@@ -56,16 +59,16 @@ func (r *Reconciler) generateForDynakube(ctx context.Context, dynakube *dynatrac
 	}
 
 	coreLabels := kubeobjects.NewCoreLabels(dynakube.Name, kubeobjects.ActiveGateComponentLabel)
-	secret := &corev1.Secret{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      capability.BuildProxySecretName(),
-			Namespace: r.dynakube.Namespace,
-			Labels:    coreLabels.BuildMatchLabels(),
-		},
-		Data: data,
-		Type: corev1.SecretTypeOpaque,
+	secret, err := kubeobjects.CreateSecret(r.scheme, r.dynakube,
+		kubeobjects.NewSecretNameModifier(capability.BuildProxySecretName()),
+		kubeobjects.NewSecretNamespaceModifier(r.dynakube.Namespace),
+		kubeobjects.NewSecretLabelsModifier(coreLabels.BuildMatchLabels()),
+		kubeobjects.NewSecretTypeModifier(corev1.SecretTypeOpaque),
+		kubeobjects.NewSecretDataModifier(data))
+	if err != nil {
+		return errors.WithStack(err)
 	}
+
 	secretQuery := kubeobjects.NewSecretQuery(ctx, r.client, r.apiReader, log)
 
 	err = secretQuery.CreateOrUpdate(*secret)

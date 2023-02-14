@@ -7,6 +7,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
+	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -38,7 +39,7 @@ func newTestReconcilerWithInstance(client client.Client) *Reconciler {
 		},
 	}
 
-	r := NewReconciler(client, client, instance)
+	r := NewReconciler(client, client, scheme.Scheme, instance)
 	return r
 }
 

@@ -1,23 +1,15 @@
 #!/bin/bash
 
-if [[ ! "${TAG}" ]]; then
-  echo "TAG variable not set"
-  echo "usage: 'make deploy-local TAG=\"<your-image-tag>\"' or 'make deploy-local-easy'"
-  exit 5
+if [[ ! "${1}" ]]; then
+  echo "first param is not set, should be the image without the tag"
+  exit 1
 fi
+if [[ ! "${2}" ]]; then
+  echo "second param is not set, should be the tag of the image"
+  exit 1
+fi
+image=${1}
+tag=${2}
 
-commit=$(git rev-parse HEAD)
-go_linker_args=$(hack/build/create_go_linker_args.sh "${TAG}" "${commit}")
-base_image="dynatrace-operator"
-out_image="${IMG:-quay.io/dynatrace/dynatrace-operator}:${TAG}"
-
-# directory required by docker copy command
-mkdir -p third_party_licenses
-docker build . -f ./Dockerfile -t "${base_image}" \
-  --build-arg "GO_LINKER_ARGS=${go_linker_args}" \
-  --label "quay.expires-after=14d" \
-  --no-cache
-rm -rf third_party_licenses
-
-docker tag "${base_image}" "${out_image}"
+out_image="${image}:${tag}"
 docker push "${out_image}"

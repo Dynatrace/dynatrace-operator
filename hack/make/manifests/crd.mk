@@ -11,6 +11,6 @@ manifests/crd/uninstall: prerequisites/kustomize manifests/crd/generate
 	$(KUSTOMIZE) build config/crd | kubectl delete -f -
 
 ## Builds a CRD and puts it with the Helm charts
-manifests/crd/helm: helm/version prerequisites/kustomize manifests/crd/generate
+manifests/crd/helm: prerequisites/kustomize helm/version manifests/crd/generate
 	./hack/helm/generate-crd.sh $(KUSTOMIZE) $(HELM_CRD_DIR) $(MANIFESTS_DIR)
 

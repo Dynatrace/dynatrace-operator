@@ -49,9 +49,12 @@ func (dtc *dynatraceClient) SendEvent(eventData *EventData) error {
 	req.Header.Add("Authorization", fmt.Sprintf("Api-Token %s", dtc.apiToken))
 
 	response, err := dtc.httpClient.Do(req)
+
 	if err != nil {
 		return fmt.Errorf("error making post request to dynatrace api: %w", err)
 	}
+
+	defer CloseBodyAfterRequest(response)
 
 	_, err = dtc.getServerResponseData(response)
 	return errors.WithStack(err)

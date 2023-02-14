@@ -79,6 +79,12 @@ type Client interface {
 	// GetSettingsForMonitoredEntities returns the settings response with the number of settings objects,
 	// or an api error otherwise
 	GetActiveGateAuthToken(dynakubeName string) (*ActiveGateAuthTokenInfo, error)
+
+	GetLatestOneAgentImage() (*LatestImageInfo, error)
+
+	GetLatestCodeModulesImage() (*LatestImageInfo, error)
+
+	GetLatestActiveGateImage() (*LatestImageInfo, error)
 }
 
 // Known OS values.
@@ -199,5 +205,11 @@ func NetworkZone(networkZone string) Option {
 func DisableHostsRequests(disabledHostsRequests bool) Option {
 	return func(c *dynatraceClient) {
 		c.disableHostsRequests = disabledHostsRequests
+	}
+}
+
+func CloseBodyAfterRequest(response *http.Response) {
+	if response != nil && response.Body != nil {
+		response.Body.Close()
 	}
 }

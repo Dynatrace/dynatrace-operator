@@ -4,10 +4,12 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,7 +25,7 @@ var testValue2 = []byte{5, 6, 7, 8}
 
 func TestSetSecretFromReader(t *testing.T) {
 	t.Run(`fill with empty secret if secret does not exist`, func(t *testing.T) {
-		certSecret := newCertificateSecret()
+		certSecret := newCertificateSecret(scheme.Scheme, &appsv1.Deployment{})
 		err := certSecret.setSecretFromReader(context.TODO(), fake.NewClient(), testNamespace)
 
 		assert.NoError(t, err)
@@ -31,7 +33,7 @@ func TestSetSecretFromReader(t *testing.T) {
 		assert.NotNil(t, certSecret.secret)
 	})
 	t.Run(`find existing secret`, func(t *testing.T) {
-		certSecret := newCertificateSecret()
+		certSecret := newCertificateSecret(scheme.Scheme, &appsv1.Deployment{})
 		err := certSecret.setSecretFromReader(context.TODO(), fake.NewClient(
 			createTestSecret(t, createInvalidTestCertData(t))), testNamespace)
 
@@ -43,12 +45,12 @@ func TestSetSecretFromReader(t *testing.T) {
 
 func TestIsRecent(t *testing.T) {
 	t.Run(`true if certs and secret are nil`, func(t *testing.T) {
-		certSecret := newCertificateSecret()
+		certSecret := newCertificateSecret(scheme.Scheme, &appsv1.Deployment{})
 
 		assert.True(t, certSecret.isRecent())
 	})
 	t.Run(`false if only one is nil`, func(t *testing.T) {
-		certSecret := newCertificateSecret()
+		certSecret := newCertificateSecret(scheme.Scheme, &appsv1.Deployment{})
 		certSecret.secret = &corev1.Secret{}
 
 		assert.False(t, certSecret.isRecent())
@@ -59,7 +61,7 @@ func TestIsRecent(t *testing.T) {
 		assert.False(t, certSecret.isRecent())
 	})
 	t.Run(`true if data is equal, false otherwise`, func(t *testing.T) {
-		certSecret := newCertificateSecret()
+		certSecret := newCertificateSecret(scheme.Scheme, &appsv1.Deployment{})
 		secret := corev1.Secret{
 			Data: map[string][]byte{testKey: testValue1},
 		}
@@ -79,13 +81,13 @@ func TestIsRecent(t *testing.T) {
 
 func TestAreConfigsValid(t *testing.T) {
 	t.Run(`true if no configs were given`, func(t *testing.T) {
-		certSecret := newCertificateSecret()
+		certSecret := newCertificateSecret(scheme.Scheme, &appsv1.Deployment{})
 
 		assert.True(t, certSecret.areWebhookConfigsValid(nil))
 		assert.True(t, certSecret.areWebhookConfigsValid(make([]*admissionregistrationv1.WebhookClientConfig, 0)))
 	})
 	t.Run(`true if all CABundle matches certificate data, false otherwise`, func(t *testing.T) {
-		certSecret := newCertificateSecret()
+		certSecret := newCertificateSecret(scheme.Scheme, &appsv1.Deployment{})
 		certSecret.certificates = &Certs{
 			Data: map[string][]byte{RootCert: testValue1},
 		}
@@ -113,7 +115,7 @@ func TestAreConfigsValid(t *testing.T) {
 func TestCreateOrUpdateIfNecessary(t *testing.T) {
 	t.Run(`do nothing if certificate is recent and exists`, func(t *testing.T) {
 		fakeClient := fake.NewClient()
-		certSecret := newCertificateSecret()
+		certSecret := newCertificateSecret(scheme.Scheme, &appsv1.Deployment{})
 		certSecret.existsInCluster = true
 
 		err := certSecret.createOrUpdateIfNecessary(context.TODO(), fakeClient)
@@ -127,7 +129,7 @@ func TestCreateOrUpdateIfNecessary(t *testing.T) {
 	})
 	t.Run(`create if secret does not exist`, func(t *testing.T) {
 		fakeClient := fake.NewClient()
-		certSecret := newCertificateSecret()
+		certSecret := newCertificateSecret(scheme.Scheme, &appsv1.Deployment{})
 		certSecret.secret = &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      buildSecretName(),
@@ -151,7 +153,7 @@ func TestCreateOrUpdateIfNecessary(t *testing.T) {
 	})
 	t.Run(`update if secret exists`, func(t *testing.T) {
 		fakeClient := fake.NewClient()
-		certSecret := newCertificateSecret()
+		certSecret := newCertificateSecret(scheme.Scheme, &appsv1.Deployment{})
 		certSecret.secret = &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      buildSecretName(),

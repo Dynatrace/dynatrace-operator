@@ -110,7 +110,7 @@ func (dtc *dynatraceClient) makeRequestAndUnmarshal(url string, token tokenType,
 	if err != nil {
 		return err
 	}
-	defer func() { _ = resp.Body.Close() }()
+	defer CloseBodyAfterRequest(resp)
 
 	responseData, err := dtc.getServerResponseData(resp)
 	if err != nil {
@@ -125,7 +125,7 @@ func (dtc *dynatraceClient) makeRequestForBinary(url string, token tokenType, wr
 	if err != nil {
 		return "", err
 	}
-	defer func() { _ = resp.Body.Close() }()
+	defer CloseBodyAfterRequest(resp)
 
 	if resp.StatusCode != http.StatusOK {
 		var errorResponse serverErrorResponse
@@ -175,10 +175,7 @@ func (dtc *dynatraceClient) buildHostCache() error {
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	defer func() {
-		// Swallow error
-		_ = resp.Body.Close()
-	}()
+	defer CloseBodyAfterRequest(resp)
 
 	responseData, err := dtc.getServerResponseData(resp)
 	if err != nil {

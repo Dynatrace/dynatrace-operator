@@ -11,9 +11,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/pkg/errors"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -22,10 +24,15 @@ type certificateSecret struct {
 	secret          *corev1.Secret
 	certificates    *Certs
 	existsInCluster bool
+	owner           *appsv1.Deployment
+	scheme          *runtime.Scheme
 }
 
-func newCertificateSecret() *certificateSecret {
-	return &certificateSecret{}
+func newCertificateSecret(scheme *runtime.Scheme, deployment *appsv1.Deployment) *certificateSecret {
+	return &certificateSecret{
+		owner:  deployment,
+		scheme: scheme,
+	}
 }
 
 func (certSecret *certificateSecret) setSecretFromReader(ctx context.Context, apiReader client.Reader, namespace string) error {
@@ -34,7 +41,13 @@ func (certSecret *certificateSecret) setSecretFromReader(ctx context.Context, ap
 
 	switch {
 	case k8serrors.IsNotFound(err):
-		certSecret.secret = kubeobjects.NewSecret(buildSecretName(), namespace, map[string][]byte{})
+		certSecret.secret, err = kubeobjects.CreateSecret(certSecret.scheme, certSecret.owner,
+			kubeobjects.NewSecretNameModifier(buildSecretName()),
+			kubeobjects.NewSecretNamespaceModifier(namespace),
+			kubeobjects.NewSecretDataModifier(map[string][]byte{}))
+		if err != nil {
+			return errors.WithStack(err)
+		}
 		certSecret.existsInCluster = false
 	case err != nil:
 		return errors.WithStack(err)
