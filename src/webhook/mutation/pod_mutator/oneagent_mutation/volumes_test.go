@@ -67,6 +67,26 @@ func TestAddOneAgentVolumes(t *testing.T) {
 		assert.NotNil(t, pod.Spec.Volumes[0].VolumeSource.CSI)
 	})
 
+	t.Run("should add oneagent volumes, with csi read only considering bottlerocket OS", func(t *testing.T) {
+		pod := &corev1.Pod{}
+
+		err := os.Setenv(readOnlyFileSystem, "true")
+		assert.Nil(t, err)
+
+		dynakube := dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
+				},
+			},
+		}
+
+		addOneAgentVolumes(pod, dynakube)
+		require.Len(t, pod.Spec.Volumes, 2)
+		assert.NotNil(t, pod.Spec.Volumes[0].VolumeSource.CSI)
+		assert.Equal(t, pod.Spec.Volumes[0].VolumeSource.CSI.ReadOnly, setReadOnly())
+	})
+
 	t.Run("should add oneagent volumes, without csi", func(t *testing.T) {
 		pod := &corev1.Pod{}
 		dynakube := dynatracev1beta1.DynaKube{
