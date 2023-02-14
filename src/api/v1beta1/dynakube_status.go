@@ -62,7 +62,7 @@ type DynaKubeStatus struct {
 	OneAgent     OneAgentStatus     `json:"oneAgent,omitempty"`
 	Synthetic    SyntheticStatus    `json:"synthetic,omitempty"`
 	DynatraceApi DynatraceApiStatus `json:"dynatraceApi,omitempty"`
-	DynaMetrics DynaMetricStatus `json:"dynaMetrics,omitempty"`
+	DynaMetrics  DynaMetricStatus   `json:"dynaMetrics,omitempty"`
 }
 
 const MaxRequestInterval = 15 * time.Minute

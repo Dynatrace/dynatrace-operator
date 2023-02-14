@@ -281,6 +281,7 @@ func (syn SyntheticModifier) buildVolumeClaimTemplates() []corev1.PersistentVolu
 						corev1.ResourceStorage: syn.nodeRequirements().persistentVolumeClaimResourceStorage,
 					},
 				},
+				StorageClassName: address.Of(syn.DynaKube.FeaturePersistentVolumesStorageClass()),
 			},
 		},
 	}

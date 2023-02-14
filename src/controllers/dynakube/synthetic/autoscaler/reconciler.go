@@ -33,11 +33,11 @@ func NewReconciler(
 	reader client.Reader,
 	client client.Client,
 	scheme *runtime.Scheme,
-	dynakube *dynatracev1beta1.DynaKube,
+	dynaKube *dynatracev1beta1.DynaKube,
 	statefulSet *appsv1.StatefulSet,
 ) controllers.Reconciler {
 	return &Reconciler{
-		builder: newBuilder(dynakube, statefulSet),
+		builder: newBuilder(dynaKube, statefulSet),
 		autoscalers: kubeobjects.NewApiRequests[
 			scalingv2.HorizontalPodAutoscaler,
 			*scalingv2.HorizontalPodAutoscaler,

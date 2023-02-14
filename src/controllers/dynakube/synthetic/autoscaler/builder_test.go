@@ -6,6 +6,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -48,7 +49,7 @@ func TestSyntheticAutoscaler(t *testing.T) {
 	autoscaler, err := newBuilder(dynaKube, statefulSet).newAutoscaler()
 
 	toAssertScaleTargetReference := func(t *testing.T) {
-		assertion.NoError(err)
+		require.NoError(t, err)
 		assertion.Equal(
 			autoscaler.Spec.ScaleTargetRef.Name,
 			statefulSet.Name,

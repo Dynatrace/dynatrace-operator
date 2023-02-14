@@ -210,7 +210,7 @@ func TestSyntheticMonitoringFlags(t *testing.T) {
 
 	t.Run("with-non-empty-loc-id",
 		func(t *testing.T) {
-			loc := "some-identifier"
+			const loc = "some-identifier"
 			dynaKube := DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
@@ -280,7 +280,7 @@ func TestSyntheticMonitoringFlags(t *testing.T) {
 
 	t.Run("with-default-autoscaler-dynaquery",
 		func(t *testing.T) {
-			loc := "other-identifier"
+			const loc = "other-identifier"
 			query := fmt.Sprintf(defaultSyntheticAutoscalerDynaQuery, loc)
 			dynaKube := DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
@@ -295,4 +295,25 @@ func TestSyntheticMonitoringFlags(t *testing.T) {
 				"default autoscaler DynaQuery: %s",
 				query)
 		})
+}
+
+func TestPersistentStorageClassFlag(t *testing.T) {
+	assertion := assert.New(t)
+
+	toAssertClass := func(t *testing.T) {
+		const class = "imaginary-class"
+		dynaKube := DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					AnnotationFeaturePersistentVolumesStorageClass: class,
+				},
+			},
+		}
+		assertion.Equal(
+			class,
+			dynaKube.FeaturePersistentVolumesStorageClass(),
+			"declared persistent volumes class: %s",
+			class)
+	}
+	t.Run("with-custom-class", toAssertClass)
 }

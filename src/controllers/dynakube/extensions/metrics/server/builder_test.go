@@ -8,6 +8,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/extensions/metrics/common"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -51,7 +52,7 @@ func TestDynaMetricDeployment(t *testing.T) {
 	deployment, err := newBuilder(dynaKube).newDeployment()
 
 	toAssertImage := func(t *testing.T) {
-		assertion.NoError(err)
+		require.NoError(t, err)
 		assertion.Equal(
 			deployment.Spec.Template.Spec.Containers[0].Image,
 			dynaMetricImage,

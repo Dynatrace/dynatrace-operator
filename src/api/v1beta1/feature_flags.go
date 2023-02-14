@@ -108,6 +108,10 @@ const (
 
 	// dynaMetrics token
 	AnnotationFeatureDynaMetricsToken = AnnotationFeaturePrefix + "dynametrics-token"
+
+	// storage class for persistent volumes
+	AnnotationFeaturePersistentVolumesStorageClass = AnnotationFeaturePrefix + "persisten-volumes-storage-class"
+	DefaultPersistentVolumesStorageClass           = "default"
 )
 
 const (
@@ -329,7 +333,7 @@ func (dynaKube *DynaKube) FeatureSyntheticLocationEntityId() string {
 func (dynaKube *DynaKube) FeatureSyntheticNodeType() string {
 	node, containsKey := dynaKube.Annotations[AnnotationFeatureSyntheticNodeType]
 	if !containsKey {
-		return SyntheticNodeS
+		node = SyntheticNodeS
 	}
 	return node
 }
@@ -371,4 +375,13 @@ func (dynaKube *DynaKube) FeatureSyntheticAutoscalerDynaQuery() string {
 // a token to offer external metrics from Dynatrace
 func (dynaKube *DynaKube) FeatureDynaMetricsToken() string {
 	return dynaKube.Annotations[AnnotationFeatureDynaMetricsToken]
+}
+
+// a storage class
+func (dynaKube *DynaKube) FeaturePersistentVolumesStorageClass() string {
+	class, containsKey := dynaKube.Annotations[AnnotationFeaturePersistentVolumesStorageClass]
+	if !containsKey {
+		class = DefaultPersistentVolumesStorageClass
+	}
+	return class
 }

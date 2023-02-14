@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder/modifiers"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -437,6 +438,7 @@ func TestBuildCommonEnvs(t *testing.T) {
 						corev1.ResourceStorage: *kubeobjects.NewQuantity("6Gi"),
 					},
 				},
+				StorageClassName: address.Of(dynatracev1beta1.DefaultPersistentVolumesStorageClass),
 			},
 		}
 		assert.Contains(

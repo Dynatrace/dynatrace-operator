@@ -239,7 +239,7 @@ func TestExclusiveSynMonitoring(t *testing.T) {
 			context.TODO(),
 			&sets,
 			client.InNamespace(testNamespace))
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		require.Len(t, sets.Items, 1)
 		assert.True(
 			t,
@@ -256,7 +256,7 @@ func TestExclusiveSynMonitoring(t *testing.T) {
 			context.TODO(),
 			&autoscalers,
 			client.InNamespace(testNamespace))
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		require.Len(t, autoscalers.Items, 1)
 		assert.True(
 			t,
@@ -273,7 +273,7 @@ func TestExclusiveSynMonitoring(t *testing.T) {
 			context.TODO(),
 			&services,
 			client.InNamespace(testNamespace))
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		require.Len(t, services.Items, 0)
 	}
 	t.Run("for-serviceless-activegate", toAssertServicelessActiveGate)
@@ -335,7 +335,7 @@ func TestCombinedSynAndK8sMonitoring(t *testing.T) {
 			context.TODO(),
 			&sets,
 			client.InNamespace(testNamespace))
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		require.Len(t, sets.Items, 2)
 		assert.True(
 			t,
@@ -358,7 +358,7 @@ func TestCombinedSynAndK8sMonitoring(t *testing.T) {
 			context.TODO(),
 			&services,
 			client.InNamespace(testNamespace))
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		require.Len(t, services.Items, 1)
 		assert.True(
 			t,
