@@ -1,26 +1,25 @@
+//go:build e2e
+
 package activegate
 
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
-	"path"
 	"strings"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/manifests"
-	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/pod"
-	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/statefulset"
-	"github.com/Dynatrace/dynatrace-operator/test/logs"
-	"github.com/Dynatrace/dynatrace-operator/test/operator"
-	"github.com/Dynatrace/dynatrace-operator/test/project"
-	"github.com/Dynatrace/dynatrace-operator/test/proxy"
-	"github.com/Dynatrace/dynatrace-operator/test/secrets"
-	"github.com/Dynatrace/dynatrace-operator/test/shell"
-	"github.com/Dynatrace/dynatrace-operator/test/webhook"
-	"github.com/spf13/afero"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/proxy"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -30,12 +29,9 @@ import (
 )
 
 const (
-	agNamespace = "dynatrace"
-	agPodName   = "dynakube-activegate-0"
+	agPodName = "dynakube-activegate-0"
 
 	agContainerName = "activegate"
-
-	curlPod = "curl"
 )
 
 var (
@@ -56,120 +52,97 @@ var (
 	}
 )
 
-func Install(t *testing.T, proxySpec *v1beta1.DynaKubeProxy) features.Feature {
-	secretConfig, err := secrets.DefaultSingleTenant(afero.NewOsFs())
+func Install(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features.Feature {
+	builder := features.New("activegate-capabilities")
+	secretConfig := tenant.GetSingleTenantSecret(t)
+	testDynakube := dynakube.NewBuilder().
+		WithDefaultObjectMeta().
+		WithActiveGate().
+		WithDynakubeNamespaceSelector().
+		ApiUrl(secretConfig.ApiUrl).
+		Proxy(proxySpec).
+		Build()
 
-	require.NoError(t, err)
+	// Register operator install
+	assess.InstallOperatorFromSource(builder, testDynakube)
 
-	defaultInstallation := features.New("capabilities")
+	// Register proxy install and uninstall
+	proxy.SetupProxyWithTeardown(builder, testDynakube)
+	proxy.CutOffDynatraceNamespace(builder, proxySpec)
 
-	installAndDeploy(defaultInstallation, secretConfig)
-	assessDeployment(defaultInstallation)
+	// Register actual test
+	assess.InstallDynakube(builder, &secretConfig, testDynakube)
+	assessActiveGate(builder, &testDynakube)
 
-	proxy.InstallProxy(defaultInstallation, proxySpec)
-	proxy.CutOffDynatraceNamespace(defaultInstallation, proxySpec)
+	// Register operator + dynakube uninstall
+	teardown.DeleteDynakube(builder, testDynakube)
+	teardown.UninstallOperatorFromSource(builder, testDynakube)
 
-	defaultInstallation.Assess("dynakube applied", dynakube.Apply(
-		dynakube.NewBuilder().
-			WithDefaultObjectMeta().
-			WithActiveGate().
-			WithDynakubeNamespaceSelector().
-			ApiUrl(secretConfig.ApiUrl).
-			Proxy(proxySpec).
-			Build()),
-	)
-
-	assessDynakubeStartup(defaultInstallation)
-	assessActiveGate(defaultInstallation, proxySpec)
-
-	return defaultInstallation.Feature()
+	return builder.Feature()
 }
 
-func installAndDeploy(builder *features.FeatureBuilder, secretConfig secrets.Secret) {
-	builder.Setup(secrets.ApplyDefault(secretConfig))
-	builder.Setup(operator.InstallViaMake(false))
-}
-
-func assessDeployment(builder *features.FeatureBuilder) {
-	builder.Assess("operator started", operator.WaitForDeployment())
-	builder.Assess("webhook started", webhook.WaitForDeployment())
-}
-
-func assessDynakubeStartup(builder *features.FeatureBuilder) {
-	builder.Assess("dynakube phase changes to 'Running'", dynakube.WaitForDynakubePhase(
-		dynakube.NewBuilder().WithDefaultObjectMeta().Build()))
-}
-
-func assessActiveGate(builder *features.FeatureBuilder, proxySpec *v1beta1.DynaKubeProxy) {
+func assessActiveGate(builder *features.FeatureBuilder, testDynakube *dynatracev1beta1.DynaKube) {
 	builder.Assess("ActiveGate started", WaitForStatefulSet())
-	builder.Assess("ActiveGate has required containers", checkIfAgHasContainers)
-	builder.Assess("ActiveGate modules are active", checkActiveModules)
-	if proxySpec != nil {
-		builder.Assess("ActiveGate uses proxy", checkIfProxyUsed)
+	builder.Assess("ActiveGate has required containers", checkIfAgHasContainers(testDynakube))
+	builder.Assess("ActiveGate modules are active", checkActiveModules(testDynakube))
+	if testDynakube.Spec.Proxy != nil {
+		builder.Assess("ActiveGate uses proxy", checkIfProxyUsed(testDynakube))
 	}
-	builder.Assess("ActiveGate containers have mount points", checkMountPoints)
-	builder.Assess("ActiveGate query via AG service", manifests.InstallFromFile(path.Join(project.TestDataDir(), "activegate/curl-pod.yaml")))
-	builder.Assess("ActiveGate query is completed", pod.WaitFor(curlPod, dynakube.Namespace))
-	builder.Assess("ActiveGate service is running", checkService)
+	builder.Assess("ActiveGate containers have mount points", checkMountPoints(testDynakube))
+	builder.Assess("ActiveGate query via AG service", sampleapps.InstallActiveGateCurlPod(*testDynakube))
+	builder.Assess("ActiveGate query is completed", sampleapps.WaitForActiveGateCurlPod(*testDynakube))
+	builder.Assess("ActiveGate service is running", sampleapps.CheckActiveGateCurlResult(*testDynakube))
 }
 
-func checkIfAgHasContainers(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-	resources := environmentConfig.Client().Resources()
+func checkIfAgHasContainers(testDynakube *dynatracev1beta1.DynaKube) features.Func {
+	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+		resources := environmentConfig.Client().Resources()
 
-	var activeGatePod corev1.Pod
-	require.NoError(t, resources.WithNamespace(dynakube.Namespace).Get(ctx, agPodName, agNamespace, &activeGatePod))
+		var activeGatePod corev1.Pod
+		require.NoError(t, resources.WithNamespace(testDynakube.Namespace).Get(ctx, agPodName, testDynakube.Namespace, &activeGatePod))
 
-	require.NotNil(t, activeGatePod.Spec)
-	require.NotEmpty(t, activeGatePod.Spec.InitContainers)
-	require.NotEmpty(t, activeGatePod.Spec.Containers)
+		require.NotNil(t, activeGatePod.Spec)
+		require.NotEmpty(t, activeGatePod.Spec.InitContainers)
+		require.NotEmpty(t, activeGatePod.Spec.Containers)
 
-	assertInitContainerKnown(t, activeGatePod.Spec.InitContainers)
-	assertInitContainerExists(t, activeGatePod.Spec.InitContainers)
-	assertContainersKnown(t, activeGatePod.Spec.Containers)
-	assertContainersExist(t, activeGatePod.Spec.Containers)
+		assertInitContainerKnown(t, activeGatePod.Spec.InitContainers)
+		assertInitContainerExists(t, activeGatePod.Spec.InitContainers)
+		assertContainersKnown(t, activeGatePod.Spec.Containers)
+		assertContainersExist(t, activeGatePod.Spec.Containers)
 
-	return ctx
-}
-
-func checkActiveModules(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-	log := readActiveGateLog(ctx, t, environmentConfig)
-	assertExpectedModulesAreActive(t, log)
-	return ctx
-}
-
-func checkIfProxyUsed(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-	log := readActiveGateLog(ctx, t, environmentConfig)
-	assertProxyUsed(t, log)
-	return ctx
-}
-
-func checkMountPoints(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-	resources := environmentConfig.Client().Resources()
-
-	var activeGatePod corev1.Pod
-	require.NoError(t, resources.WithNamespace("dynatrace").Get(ctx, agPodName, agNamespace, &activeGatePod))
-
-	for name, mountPoints := range agMounts {
-		assertMountPointsExist(t, environmentConfig, activeGatePod, name, mountPoints)
+		return ctx
 	}
-
-	return ctx
 }
 
-func checkService(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-	resources := environmentConfig.Client().Resources()
+func checkActiveModules(testDynakube *dynatracev1beta1.DynaKube) features.Func {
+	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+		log := readActiveGateLog(ctx, t, environmentConfig, testDynakube)
+		assertExpectedModulesAreActive(t, log)
+		return ctx
+	}
+}
 
-	clientset, err := kubernetes.NewForConfig(resources.GetConfig())
-	require.NoError(t, err)
+func checkIfProxyUsed(testDynakube *dynatracev1beta1.DynaKube) features.Func {
+	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+		log := readActiveGateLog(ctx, t, environmentConfig, testDynakube)
+		assertProxyUsed(t, log, testDynakube.Spec.Proxy.Value)
+		return ctx
+	}
+}
 
-	logStream, err := clientset.CoreV1().Pods(dynakube.Namespace).GetLogs(curlPod, &corev1.PodLogOptions{
-		Container: curlPod,
-	}).Stream(ctx)
-	require.NoError(t, err)
+func checkMountPoints(testDynakube *dynatracev1beta1.DynaKube) features.Func {
+	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+		resources := environmentConfig.Client().Resources()
 
-	logs.AssertContains(t, logStream, "RUNNING")
+		var activeGatePod corev1.Pod
+		require.NoError(t, resources.Get(ctx, agPodName, testDynakube.Namespace, &activeGatePod))
 
-	return ctx
+		for name, mountPoints := range agMounts {
+			assertMountPointsExist(t, environmentConfig, activeGatePod, name, mountPoints)
+		}
+
+		return ctx
+	}
 }
 
 func assertMountPointsExist(t *testing.T, environmentConfig *envconf.Config, podItem corev1.Pod, containerName string, mountPoints []string) { //nolint:revive // argument-limit
@@ -254,8 +227,9 @@ func assertExpectedModulesAreActive(t *testing.T, log string) {
 	}
 }
 
-func assertProxyUsed(t *testing.T, log string) {
-	assert.True(t, strings.Contains(log, "[HttpClientServiceImpl] Setup proxy server at: http://squid.proxy:3128"), "ActiveGate doesn't use proxy")
+func assertProxyUsed(t *testing.T, log, proxyUrl string) {
+	expectedLog := fmt.Sprintf("[HttpClientServiceImpl] Setup proxy server at: %s", proxyUrl)
+	assert.True(t, strings.Contains(log, expectedLog), "ActiveGate doesn't use proxy")
 }
 
 func markExistingContainers(containers *map[string]bool, podContainers []corev1.Container) {
@@ -278,16 +252,16 @@ func WaitForStatefulSet() features.Func {
 	return statefulset.WaitFor("dynakube-activegate", "dynatrace")
 }
 
-func readActiveGateLog(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) string {
+func readActiveGateLog(ctx context.Context, t *testing.T, environmentConfig *envconf.Config, testDynakube *dynatracev1beta1.DynaKube) string {
 	resources := environmentConfig.Client().Resources()
 
 	var activeGatePod corev1.Pod
-	require.NoError(t, resources.WithNamespace("dynatrace").Get(ctx, agPodName, agNamespace, &activeGatePod))
+	require.NoError(t, resources.WithNamespace("dynatrace").Get(ctx, agPodName, testDynakube.Namespace, &activeGatePod))
 
 	clientset, err := kubernetes.NewForConfig(resources.GetConfig())
 	require.NoError(t, err)
 
-	logStream, err := clientset.CoreV1().Pods(agNamespace).GetLogs(agPodName, &corev1.PodLogOptions{
+	logStream, err := clientset.CoreV1().Pods(testDynakube.Namespace).GetLogs(agPodName, &corev1.PodLogOptions{
 		Container: agContainerName,
 	}).Stream(ctx)
 	require.NoError(t, err)
