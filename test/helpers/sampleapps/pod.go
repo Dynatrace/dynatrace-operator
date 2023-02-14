@@ -69,7 +69,7 @@ func (app SamplePod) Restart(ctx context.Context, t *testing.T, config *envconf.
 	return app.doRestart(ctx, t, config, restart)
 }
 
-func (app SamplePod) doRestart(ctx context.Context, t *testing.T, config *envconf.Config, restartFunc func(t *testing.T, ctx context.Context, pods corev1.PodList, resource *resources.Resources)) context.Context {
+func (app SamplePod) doRestart(ctx context.Context, t *testing.T, config *envconf.Config, restartFunc restartFunc) context.Context {
 	resource := config.Client().Resources()
 	restartFunc(t, ctx, app.GetPods(ctx, t, resource), resource)
 

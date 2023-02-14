@@ -91,11 +91,11 @@ func (app SampleDeployment) Restart(ctx context.Context, t *testing.T, config *e
 	return app.doRestart(ctx, t, config, restart)
 }
 
-func (app SampleDeployment) doRestart(ctx context.Context, t *testing.T, config *envconf.Config, deleteFn func(t *testing.T, ctx context.Context, pods corev1.PodList, resource *resources.Resources)) context.Context {
+func (app SampleDeployment) doRestart(ctx context.Context, t *testing.T, config *envconf.Config, restartFunc restartFunc) context.Context {
 	resource := config.Client().Resources()
 	pods := app.GetPods(ctx, t, resource)
 
-	deleteFn(t, ctx, pods, resource)
+	restartFunc(t, ctx, pods, resource)
 
 	deployment.WaitUntilReady(resource, app.Build().(*appsv1.Deployment))
 
