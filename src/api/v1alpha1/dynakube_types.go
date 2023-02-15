@@ -221,9 +221,7 @@ type DynaKubeValueSource struct {
 }
 
 type DynaKubeProxy struct {
-	// nolint:unused
-	Value string `json:"value,omitempty"`
-	// nolint:unused
+	Value     string `json:"value,omitempty"`
 	ValueFrom string `json:"valueFrom,omitempty"`
 }
 
