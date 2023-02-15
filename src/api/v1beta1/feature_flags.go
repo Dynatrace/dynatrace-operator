@@ -110,7 +110,7 @@ const (
 	AnnotationFeatureDynaMetricsToken = AnnotationFeaturePrefix + "dynametrics-token"
 
 	// storage class for persistent volumes
-	AnnotationFeaturePersistentVolumesStorageClass = AnnotationFeaturePrefix + "persisten-volumes-storage-class"
+	AnnotationFeaturePersistentVolumesStorageClass = AnnotationFeaturePrefix + "persistent-volumes-storage-class"
 	DefaultPersistentVolumesStorageClass           = "default"
 )
 
