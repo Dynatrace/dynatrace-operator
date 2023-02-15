@@ -29,11 +29,11 @@ func Get(ctx context.Context, resource *resources.Resources, namespace string) (
 	}).Get()
 }
 
-func ForEachPod(ctx context.Context, resource *resources.Resources, namespace string, consumer daemonset.PodConsumer) error {
+func ForEachPod(ctx context.Context, resource *resources.Resources, namespace string, actionFunc daemonset.PodConsumer) error {
 	return daemonset.NewQuery(ctx, resource, client.ObjectKey{
 		Name:      DaemonSetName,
 		Namespace: namespace,
-	}).ForEachPod(consumer)
+	}).ForEachPod(actionFunc)
 }
 
 func CleanUpEachPod(namespace string) features.Func {

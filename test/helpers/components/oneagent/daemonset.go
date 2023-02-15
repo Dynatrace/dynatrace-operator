@@ -29,9 +29,9 @@ func Get(ctx context.Context, resource *resources.Resources, dynakube dynatracev
 	}).Get()
 }
 
-func ForEachPod(ctx context.Context, resource *resources.Resources, dynakube dynatracev1beta1.DynaKube, consumer daemonset.PodConsumer) error {
+func ForEachPod(ctx context.Context, resource *resources.Resources, dynakube dynatracev1beta1.DynaKube, actionFunc daemonset.PodConsumer) error {
 	return daemonset.NewQuery(ctx, resource, client.ObjectKey{
 		Name:      dynakube.OneAgentDaemonsetName(),
 		Namespace: dynakube.Namespace,
-	}).ForEachPod(consumer)
+	}).ForEachPod(actionFunc)
 }

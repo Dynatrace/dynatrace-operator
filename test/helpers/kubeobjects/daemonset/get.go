@@ -34,7 +34,7 @@ func (query *Query) Get() (appsv1.DaemonSet, error) {
 	return daemonSet, err
 }
 
-func (query *Query) ForEachPod(consumer PodConsumer) error {
+func (query *Query) ForEachPod(actionFunc PodConsumer) error {
 	var pods corev1.PodList
 	daemonSet, err := query.Get()
 
@@ -49,7 +49,7 @@ func (query *Query) ForEachPod(consumer PodConsumer) error {
 	}
 
 	for _, pod := range pods.Items {
-		consumer(pod)
+		actionFunc(pod)
 	}
 
 	return nil
