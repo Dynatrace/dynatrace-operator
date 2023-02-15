@@ -10,7 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,26 +23,8 @@ const (
 	testDynakube = "test-dynakube"
 )
 
-type MockStatefulSetReconciler struct {
-	mock.Mock
-}
-
-func (m *MockStatefulSetReconciler) Reconcile() error {
-	args := m.Called()
-	return args.Error(0)
-}
-
-type MockCustomPropertiesReconciler struct {
-	mock.Mock
-}
-
-func (m *MockCustomPropertiesReconciler) Reconcile() error {
-	args := m.Called()
-	return args.Error(0)
-}
-
-func createMultiCapabilityReconciler(t *testing.T) *Reconciler {
-	clt := fake.NewClientBuilder().
+func createClient() client.WithWatch {
+	return fake.NewClientBuilder().
 		WithScheme(scheme.Scheme).
 		WithObjects(&corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
@@ -59,6 +40,9 @@ func createMultiCapabilityReconciler(t *testing.T) *Reconciler {
 			Data: map[string][]byte{authtoken.ActiveGateAuthTokenName: []byte(testToken)},
 		}).
 		Build()
+}
+
+func createInstance() *dynatracev1beta1.DynaKube {
 	instance := &dynatracev1beta1.DynaKube{
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			ActiveGate: dynatracev1beta1.ActiveGateSpec{
@@ -75,31 +59,49 @@ func createMultiCapabilityReconciler(t *testing.T) *Reconciler {
 			Name:      testDynakube,
 			Namespace: testNamespace,
 		}}
+	return instance
+}
 
-	statefulSetReconcilerMock := MockStatefulSetReconciler{}
-	statefulSetReconcilerMock.On("Reconcile").Return(nil)
+func getMockReconciler() *MockReconciler {
+	mockReconciler := MockReconciler{}
+	mockReconciler.On("Reconcile").Return(nil)
+	return &mockReconciler
+}
 
-	custompropertiesReconcilerMock := MockCustomPropertiesReconciler{}
-	custompropertiesReconcilerMock.On("Reconcile").Return(nil)
-
-	r := NewReconciler(clt, capability.NewMultiCapability(instance), instance, &statefulSetReconcilerMock, &custompropertiesReconcilerMock)
+func verifyReconciler(t *testing.T, r *Reconciler) {
 	require.NotNil(t, r)
 	require.NotNil(t, r.client)
 	require.NotNil(t, r)
 	require.NotNil(t, r.dynakube)
-
-	return r
 }
 
 func TestReconcile(t *testing.T) {
 	t.Run(`Reconciler works with multiple capabilities`, func(t *testing.T) {
-		r := createMultiCapabilityReconciler(t)
+		clt := createClient()
+		instance := createInstance()
+		mockStatefulSetReconciler := getMockReconciler()
+		mockCustompropertiesReconciler := getMockReconciler()
+
+		r := NewReconciler(clt, capability.NewMultiCapability(instance), instance, mockStatefulSetReconciler, mockCustompropertiesReconciler)
+		verifyReconciler(t, r)
+
 		err := r.Reconcile()
+		mockStatefulSetReconciler.AssertCalled(t, "Reconcile")
+		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile")
 		require.NoError(t, err)
 	})
 	t.Run(`Service gets created`, func(t *testing.T) {
-		r := createMultiCapabilityReconciler(t)
+		clt := createClient()
+		instance := createInstance()
+		mockStatefulSetReconciler := getMockReconciler()
+		mockCustompropertiesReconciler := getMockReconciler()
+
+		r := NewReconciler(clt, capability.NewMultiCapability(instance), instance, mockStatefulSetReconciler, mockCustompropertiesReconciler)
+		verifyReconciler(t, r)
+
 		err := r.Reconcile()
+		mockStatefulSetReconciler.AssertCalled(t, "Reconcile")
+		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile")
 		require.NoError(t, err)
 
 		service := corev1.Service{}
@@ -108,8 +110,29 @@ func TestReconcile(t *testing.T) {
 		assert.NotNil(t, service)
 		assert.NoError(t, err)
 	})
-	t.Run(`CreateOrUpdateService works`, func(t *testing.T) {
-		r := createMultiCapabilityReconciler(t)
+	t.Run(`Reconcile fails`, func(t *testing.T) {
+		clt := createClient()
+		instance := createInstance()
+		mockStatefulSetReconciler := getMockReconciler()
+		mockCustompropertiesReconciler := getMockReconciler()
+
+		r := NewReconciler(clt, capability.NewMultiCapability(instance), instance, mockStatefulSetReconciler, mockCustompropertiesReconciler)
+		verifyReconciler(t, r)
+
+		err := r.Reconcile()
+		require.NoError(t, err)
+	})
+}
+
+func TestReconciler_CreateOrUpdate(t *testing.T) {
+	t.Run(`createOrUpdateService works`, func(t *testing.T) {
+		clt := createClient()
+		instance := createInstance()
+		mockStatefulSetReconciler := getMockReconciler()
+		mockCustompropertiesReconciler := getMockReconciler()
+
+		r := NewReconciler(clt, capability.NewMultiCapability(instance), instance, mockStatefulSetReconciler, mockCustompropertiesReconciler)
+		verifyReconciler(t, r)
 
 		service := &corev1.Service{}
 		err := r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, service)
@@ -125,7 +148,13 @@ func TestReconcile(t *testing.T) {
 		assert.NotNil(t, service)
 	})
 	t.Run(`Update works for ports`, func(t *testing.T) {
-		r := createMultiCapabilityReconciler(t)
+		clt := createClient()
+		instance := createInstance()
+		mockStatefulSetReconciler := getMockReconciler()
+		mockCustompropertiesReconciler := getMockReconciler()
+
+		r := NewReconciler(clt, capability.NewMultiCapability(instance), instance, mockStatefulSetReconciler, mockCustompropertiesReconciler)
+		verifyReconciler(t, r)
 
 		err := r.createOrUpdateService()
 		require.NoError(t, err)
@@ -148,8 +177,14 @@ func TestReconcile(t *testing.T) {
 
 		require.NotEqual(t, tmpService, service)
 	})
-	t.Run(`Update works for labels`, func(t *testing.T) {
-		r := createMultiCapabilityReconciler(t)
+	t.Run(`update works for labels`, func(t *testing.T) {
+		clt := createClient()
+		instance := createInstance()
+		mockStatefulSetReconciler := getMockReconciler()
+		mockCustompropertiesReconciler := getMockReconciler()
+
+		r := NewReconciler(clt, capability.NewMultiCapability(instance), instance, mockStatefulSetReconciler, mockCustompropertiesReconciler)
+		verifyReconciler(t, r)
 
 		err := r.createOrUpdateService()
 		require.NoError(t, err)
@@ -172,8 +207,17 @@ func TestReconcile(t *testing.T) {
 
 		require.NotEqual(t, tmpService, service)
 	})
+}
+
+func TestReconcile_PortsAreOutdate(t *testing.T) {
 	t.Run(`portsAreOutdated works`, func(t *testing.T) {
-		r := createMultiCapabilityReconciler(t)
+		clt := createClient()
+		instance := createInstance()
+		mockStatefulSetReconciler := getMockReconciler()
+		mockCustompropertiesReconciler := getMockReconciler()
+
+		r := NewReconciler(clt, capability.NewMultiCapability(instance), instance, mockStatefulSetReconciler, mockCustompropertiesReconciler)
+		verifyReconciler(t, r)
 
 		desiredService := CreateService(r.dynakube, r.capability.ShortName())
 
@@ -191,8 +235,17 @@ func TestReconcile(t *testing.T) {
 
 		assert.True(t, r.portsAreOutdated(service, desiredService))
 	})
+}
+
+func TestReconcile_LabelsAreOutdated(t *testing.T) {
 	t.Run(`labelsAreOutdated works`, func(t *testing.T) {
-		r := createMultiCapabilityReconciler(t)
+		clt := createClient()
+		instance := createInstance()
+		mockStatefulSetReconciler := getMockReconciler()
+		mockCustompropertiesReconciler := getMockReconciler()
+
+		r := NewReconciler(clt, capability.NewMultiCapability(instance), instance, mockStatefulSetReconciler, mockCustompropertiesReconciler)
+		verifyReconciler(t, r)
 
 		desiredService := CreateService(r.dynakube, r.capability.ShortName())
 
