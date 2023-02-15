@@ -38,45 +38,14 @@ var (
 
 func InstallActiveGateCurlPod(testDynakube dynatracev1beta1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		pod := manifests.ObjectFromFile[*corev1.Pod](t, curlPodTemplatePath)
+		curlPod := manifests.ObjectFromFile[*corev1.Pod](t, curlPodTemplatePath)
 
 		serviceUrl := getActiveGateServiceUrl(testDynakube)
-		curlEndpoint := fmt.Sprintf("%s/%s", serviceUrl, activeGateEndpoint)
+		curlTarget := fmt.Sprintf("%s/%s", serviceUrl, activeGateEndpoint)
 
-		podName := getCurlPodName(testDynakube)
-		pod.Name = podName
-		pod.Spec.Containers[0].Name = podName
+		setupCurlPod(curlPod, testDynakube, curlTarget)
 
-		if testDynakube.HasProxy() {
-			proxyArguments := []string{}
-			proxyArguments = append(proxyArguments, testDynakube.Spec.Proxy.Value)
-			proxyArguments = append(proxyArguments, "-o", "/dev/null")
-			proxyArguments = append(proxyArguments, "-v", "--max-time", "4")
-			pod.Spec.Containers[0].Args = append(pod.Spec.Containers[0].Args, proxyArguments...)
-
-			probeEndpoint := fmt.Sprintf("%s%s", serviceUrl, livezEndpoint)
-			curlEndpoint = probeEndpoint
-
-			probeCommand := []string{"curl", probeEndpoint, "-k"}
-			probeCommand = append(probeCommand, proxyArguments...)
-
-			pod.Spec.Containers[0].LivenessProbe = &corev1.Probe{
-				ProbeHandler: corev1.ProbeHandler{
-					Exec: &corev1.ExecAction{
-						Command: probeCommand,
-					},
-				},
-				InitialDelaySeconds: 5,
-				PeriodSeconds:       5,
-				FailureThreshold:    1,
-			}
-			pod.Spec.RestartPolicy = corev1.RestartPolicyOnFailure
-		}
-
-		pod.Namespace = testDynakube.Namespace
-		pod.Spec.Containers[0].Args[0] = curlEndpoint
-
-		require.NoError(t, environmentConfig.Client().Resources().Create(ctx, pod))
+		require.NoError(t, environmentConfig.Client().Resources().Create(ctx, curlPod))
 		return ctx
 	}
 }
@@ -99,27 +68,25 @@ func CheckActiveGateCurlResult(testDynakube dynatracev1beta1.DynaKube) features.
 
 func InstallWebhookCurlProxyPod(testDynakube dynatracev1beta1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		pod := manifests.ObjectFromFile[*corev1.Pod](t, curlPodTemplatePath)
+		curlPod := manifests.ObjectFromFile[*corev1.Pod](t, curlPodTemplatePath)
 
 		serviceUrl := getWebhookServiceUrl(testDynakube)
-		curlEndpoint := fmt.Sprintf("%s/%s", serviceUrl, livezEndpoint)
+		curlTarget := fmt.Sprintf("%s/%s", serviceUrl, livezEndpoint)
 
-		podName := getCurlPodName(testDynakube)
-		pod.Name = podName
-		pod.Spec.Containers[0].Name = podName
+		setupCurlPod(curlPod, testDynakube, curlTarget)
 
 		if testDynakube.HasProxy() {
 			proxyArguments := []string{}
 			proxyArguments = append(proxyArguments, testDynakube.Spec.Proxy.Value)
 			proxyArguments = append(proxyArguments, "-o", "/dev/null")
 			proxyArguments = append(proxyArguments, "-v", "--max-time", "4")
-			pod.Spec.Containers[0].Args = append(pod.Spec.Containers[0].Args, proxyArguments...)
+			curlPod.Spec.Containers[0].Args = append(curlPod.Spec.Containers[0].Args, proxyArguments...)
 
-			probeEndpoint := curlEndpoint
+			probeEndpoint := curlTarget
 			probeCommand := []string{"curl", probeEndpoint, "-k"}
 			probeCommand = append(probeCommand, proxyArguments...)
 
-			pod.Spec.Containers[0].LivenessProbe = &corev1.Probe{
+			curlPod.Spec.Containers[0].LivenessProbe = &corev1.Probe{
 				ProbeHandler: corev1.ProbeHandler{
 					Exec: &corev1.ExecAction{
 						Command: probeCommand,
@@ -129,13 +96,9 @@ func InstallWebhookCurlProxyPod(testDynakube dynatracev1beta1.DynaKube) features
 				PeriodSeconds:       5,
 				FailureThreshold:    1,
 			}
-			pod.Spec.RestartPolicy = corev1.RestartPolicyOnFailure
+			curlPod.Spec.RestartPolicy = corev1.RestartPolicyOnFailure
 		}
-
-		pod.Namespace = testDynakube.Namespace
-		pod.Spec.Containers[0].Args[0] = curlEndpoint
-
-		require.NoError(t, environmentConfig.Client().Resources().Create(ctx, pod))
+		require.NoError(t, environmentConfig.Client().Resources().Create(ctx, curlPod))
 		return ctx
 	}
 }
@@ -184,4 +147,12 @@ func getCurlPodLogStream(ctx context.Context, t *testing.T, resources *resources
 	require.NoError(t, err)
 
 	return logStream
+}
+
+func setupCurlPod(curlPod *corev1.Pod, testDynakube dynatracev1beta1.DynaKube, curlUrl string) {
+	podName := getCurlPodName(testDynakube)
+	curlPod.Name = podName
+	curlPod.Spec.Containers[0].Name = podName
+	curlPod.Namespace = testDynakube.Namespace
+	curlPod.Spec.Containers[0].Args[0] = curlUrl
 }
