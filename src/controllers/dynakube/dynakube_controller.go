@@ -28,13 +28,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	appsv1 "k8s.io/api/apps/v1"
-	scalingv2 "k8s.io/api/autoscaling/v2"
-	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
-	regv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -79,9 +76,6 @@ func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&appsv1.DaemonSet{}).
 		Owns(&appsv1.Deployment{}).
-		Owns(&corev1.Service{}).
-		Owns(&regv1.APIService{}).
-		Owns(&scalingv2.HorizontalPodAutoscaler{}).
 		Complete(controller)
 }
 

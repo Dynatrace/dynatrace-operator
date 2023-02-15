@@ -117,9 +117,6 @@ rules:
       - apiservices
     verbs:
       - get
-      - list
-      - watch
       - create
-      - update
       - delete
 {{ end }}

@@ -180,8 +180,6 @@ rules:
       - horizontalpodautoscalers
     verbs:
       - get
-      - list
-      - watch
       - create
       - update
       - delete
@@ -191,8 +189,6 @@ rules:
     resources:
       - persistentvolumeclaims
     verbs:
-      - get
       - list
-      - watch
       - update
 {{ end }}
