@@ -441,6 +441,12 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:text
+      - description: 'Optional: Adds additional annotations to the ActiveGate pods'
+        displayName: Annotations
+        path: activeGate.annotations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
       - description: 'Optional: Adds additional annotations to the OneAgent pods'
         displayName: Annotations
         path: oneAgent.classicFullStack.annotations
