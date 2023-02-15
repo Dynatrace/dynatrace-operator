@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/statefulset"
@@ -27,16 +28,9 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
-
-const (
-	agPodName = "dynakube-activegate-0"
-
-	agContainerName = "activegate"
-)
-
 var (
 	agContainers = map[string]bool{
-		agContainerName: false,
+		consts.ActiveGateContainerName: false,
 	}
 
 	agInitContainers = map[string]bool{
@@ -44,7 +38,7 @@ var (
 	}
 
 	agMounts = map[string][]string{
-		agContainerName: {
+		consts.ActiveGateContainerName: {
 			" /var/lib/dynatrace/secrets/tokens/tenant-token ",
 			" /var/lib/dynatrace/secrets/tokens/auth-token ",
 			" /opt/dynatrace/gateway/jre/lib/security/cacerts ",
@@ -82,7 +76,7 @@ func Install(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features.F
 }
 
 func assessActiveGate(builder *features.FeatureBuilder, testDynakube *dynatracev1beta1.DynaKube) {
-	builder.Assess("ActiveGate started", WaitForStatefulSet())
+	builder.Assess("ActiveGate started", WaitForStatefulSet(testDynakube))
 	builder.Assess("ActiveGate has required containers", checkIfAgHasContainers(testDynakube))
 	builder.Assess("ActiveGate modules are active", checkActiveModules(testDynakube))
 	if testDynakube.Spec.Proxy != nil {
@@ -98,8 +92,9 @@ func checkIfAgHasContainers(testDynakube *dynatracev1beta1.DynaKube) features.Fu
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resources := environmentConfig.Client().Resources()
 
+
 		var activeGatePod corev1.Pod
-		require.NoError(t, resources.WithNamespace(testDynakube.Namespace).Get(ctx, agPodName, testDynakube.Namespace, &activeGatePod))
+		require.NoError(t, resources.WithNamespace(testDynakube.Namespace).Get(ctx, getActiveGatePodName(testDynakube), testDynakube.Namespace, &activeGatePod))
 
 		require.NotNil(t, activeGatePod.Spec)
 		require.NotEmpty(t, activeGatePod.Spec.InitContainers)
@@ -135,7 +130,7 @@ func checkMountPoints(testDynakube *dynatracev1beta1.DynaKube) features.Func {
 		resources := environmentConfig.Client().Resources()
 
 		var activeGatePod corev1.Pod
-		require.NoError(t, resources.Get(ctx, agPodName, testDynakube.Namespace, &activeGatePod))
+		require.NoError(t, resources.Get(ctx, getActiveGatePodName(testDynakube), testDynakube.Namespace, &activeGatePod))
 
 		for name, mountPoints := range agMounts {
 			assertMountPointsExist(t, environmentConfig, activeGatePod, name, mountPoints)
@@ -248,21 +243,21 @@ func initMap(srcMap *map[string]bool) map[string]bool {
 	return dstMap
 }
 
-func WaitForStatefulSet() features.Func {
-	return statefulset.WaitFor("dynakube-activegate", "dynatrace")
+func WaitForStatefulSet(testDynakube *dynatracev1beta1.DynaKube) features.Func {
+	return statefulset.WaitFor(getActiveGateStateFulSetName(testDynakube), testDynakube.Namespace)
 }
 
 func readActiveGateLog(ctx context.Context, t *testing.T, environmentConfig *envconf.Config, testDynakube *dynatracev1beta1.DynaKube) string {
 	resources := environmentConfig.Client().Resources()
 
 	var activeGatePod corev1.Pod
-	require.NoError(t, resources.WithNamespace("dynatrace").Get(ctx, agPodName, testDynakube.Namespace, &activeGatePod))
+	require.NoError(t, resources.WithNamespace(testDynakube.Namespace).Get(ctx, getActiveGatePodName(testDynakube), testDynakube.Namespace, &activeGatePod))
 
 	clientset, err := kubernetes.NewForConfig(resources.GetConfig())
 	require.NoError(t, err)
 
-	logStream, err := clientset.CoreV1().Pods(testDynakube.Namespace).GetLogs(agPodName, &corev1.PodLogOptions{
-		Container: agContainerName,
+	logStream, err := clientset.CoreV1().Pods(testDynakube.Namespace).GetLogs(getActiveGatePodName(testDynakube), &corev1.PodLogOptions{
+		Container: consts.ActiveGateContainerName,
 	}).Stream(ctx)
 	require.NoError(t, err)
 
@@ -271,4 +266,12 @@ func readActiveGateLog(ctx context.Context, t *testing.T, environmentConfig *env
 	require.NoError(t, err, "ActiveGate log not found")
 
 	return buffer.String()
+}
+
+func getActiveGatePodName(testDynakube *dynatracev1beta1.DynaKube) string {
+	return fmt.Sprintf("%s-0", getActiveGateStateFulSetName(testDynakube))
+}
+
+func getActiveGateStateFulSetName(testDynakube *dynatracev1beta1.DynaKube) string {
+	return fmt.Sprintf("%s-activegate", testDynakube.Name)
 }
