@@ -92,7 +92,7 @@ func createMultiCapabilityReconciler(t *testing.T) *Reconciler {
 }
 
 func TestReconcile(t *testing.T) {
-	t.Run(`Reconciler works with multiple capabilites`, func(t *testing.T) {
+	t.Run(`Reconciler works with multiple capabilities`, func(t *testing.T) {
 		r := createMultiCapabilityReconciler(t)
 		err := r.Reconcile()
 		require.NoError(t, err)
