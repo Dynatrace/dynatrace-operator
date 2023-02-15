@@ -148,3 +148,6 @@ issues:
     - linters:
         - revive
       path: src/dtclient # it's awaiting refactoring
+    - linters:
+        - "*"
+      path: src/api/v1alpha1 # legacy version, should not be changed
