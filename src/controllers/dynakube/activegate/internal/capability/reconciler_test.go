@@ -62,6 +62,23 @@ func createInstance() *dynatracev1beta1.DynaKube {
 	return instance
 }
 
+func createInstanceWithoutActiveGateService() *dynatracev1beta1.DynaKube {
+	instance := &dynatracev1beta1.DynaKube{
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			ActiveGate: dynatracev1beta1.ActiveGateSpec{
+				Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+					dynatracev1beta1.KubeMonCapability.DisplayName,
+					dynatracev1beta1.SyntheticCapability.DisplayName,
+				},
+			},
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testDynakube,
+			Namespace: testNamespace,
+		}}
+	return instance
+}
+
 func getMockReconciler() *MockReconciler {
 	mockReconciler := MockReconciler{}
 	mockReconciler.On("Reconcile").Return(nil)
@@ -109,6 +126,26 @@ func TestReconcile(t *testing.T) {
 
 		assert.NotNil(t, service)
 		assert.NoError(t, err)
+	})
+	t.Run(`Service doesnt get created when missing capabilities`, func(t *testing.T) {
+		clt := createClient()
+		instance := createInstanceWithoutActiveGateService()
+		mockStatefulSetReconciler := getMockReconciler()
+		mockCustompropertiesReconciler := getMockReconciler()
+
+		r := NewReconciler(clt, capability.NewMultiCapability(instance), instance, mockStatefulSetReconciler, mockCustompropertiesReconciler)
+		verifyReconciler(t, r)
+
+		err := r.Reconcile()
+		mockStatefulSetReconciler.AssertCalled(t, "Reconcile")
+		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile")
+		require.NoError(t, err)
+
+		service := corev1.Service{}
+		err = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, &service)
+
+		assert.Empty(t, service)
+		assert.Error(t, err)
 	})
 }
 
