@@ -601,8 +601,10 @@ spec:
                   or from a secret with the field ''proxy'''
                 properties:
                   value:
+                    description: nolint:unused
                     type: string
                   valueFrom:
+                    description: nolint:unused
                     type: string
                 type: object
               routing:
