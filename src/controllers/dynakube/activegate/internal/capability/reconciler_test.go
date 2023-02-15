@@ -1,517 +1,213 @@
 package capability
 
-// import (
-// 	"context"
-// 	"fmt"
-// 	"testing"
+import (
+	"context"
+	"testing"
 
-// 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-// 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
-// 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
-// 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/customproperties"
-// 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-// 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
-// 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
-// 	"github.com/stretchr/testify/assert"
-// 	"github.com/stretchr/testify/mock"
-// 	"github.com/stretchr/testify/require"
-// 	appsv1 "k8s.io/api/apps/v1"
-// 	corev1 "k8s.io/api/core/v1"
-// 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-// 	"k8s.io/apimachinery/pkg/util/intstr"
-// 	"sigs.k8s.io/controller-runtime/pkg/client"
-// 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-// )
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/authtoken"
+	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
+	"github.com/Dynatrace/dynatrace-operator/src/scheme"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+)
 
-// var metricsCapability = capability.NewRoutingCapability(
-// 	&dynatracev1beta1.DynaKube{
-// 		Spec: dynatracev1beta1.DynaKubeSpec{
-// 			Routing: dynatracev1beta1.RoutingSpec{
-// 				Enabled: true,
-// 			},
-// 		},
-// 	},
-// )
+const (
+	testToken    = "dt.testtoken.test"
+	testUID      = "test-uid"
+	testDynakube = "test-dynakube"
+)
 
-// type testBaseReconciler struct {
-// 	client.Client
-// 	statefulsetReconciler
-// 	mock.Mock
-// }
+type MockStatefulSetReconciler struct {
+	mock.Mock
+}
 
-// func (r *testBaseReconciler) Reconcile() (update bool, err error) {
-// 	args := r.Called()
-// 	return args.Bool(0), args.Error(1)
-// }
+func (m *MockStatefulSetReconciler) Reconcile() error {
+	args := m.Called()
+	return args.Error(0)
+}
 
-// func (r *testBaseReconciler) Get(ctx context.Context, key client.ObjectKey, obj client.Object) error {
-// 	return r.Client.Get(ctx, key, obj)
-// }
+type MockCustomPropertiesReconciler struct {
+	mock.Mock
+}
 
-// type PseudoReconcilerMock struct {
-// 	mock.Mock
-// }
+func (m *MockCustomPropertiesReconciler) Reconcile() error {
+	args := m.Called()
+	return args.Error(0)
+}
 
-// var _ kubeobjects.Reconciler = (*PseudoReconcilerMock)(nil)
+func createMultiCapabilityReconciler(t *testing.T) *Reconciler {
+	clt := fake.NewClientBuilder().
+		WithScheme(scheme.Scheme).
+		WithObjects(&corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: kubesystem.Namespace,
+				UID:  testUID,
+			},
+		}).
+		WithObjects(&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      dynatracev1beta1.AuthTokenSecretSuffix,
+				Namespace: testNamespace,
+			},
+			Data: map[string][]byte{authtoken.ActiveGateAuthTokenName: []byte(testToken)},
+		}).
+		Build()
+	instance := &dynatracev1beta1.DynaKube{
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			ActiveGate: dynatracev1beta1.ActiveGateSpec{
+				Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+					dynatracev1beta1.RoutingCapability.DisplayName,
+					dynatracev1beta1.KubeMonCapability.DisplayName,
+					dynatracev1beta1.MetricsIngestCapability.DisplayName,
+					dynatracev1beta1.DynatraceApiCapability.DisplayName,
+					dynatracev1beta1.SyntheticCapability.DisplayName,
+				},
+			},
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testDynakube,
+			Namespace: testNamespace,
+		}}
 
-// func (r *PseudoReconcilerMock) Reconcile() (update bool, err error) {
-// 	args := r.Called()
-// 	return args.Get(0).(bool), args.Error(1)
-// }
+	statefulSetReconcilerMock := MockStatefulSetReconciler{}
+	statefulSetReconcilerMock.On("Reconcile").Return(nil)
 
-// func TestNewReconiler(t *testing.T) {
-// 	createDefaultReconciler(t)
-// }
+	custompropertiesReconcilerMock := MockCustomPropertiesReconciler{}
+	custompropertiesReconcilerMock.On("Reconcile").Return(nil)
 
-// func createDefaultReconciler(t *testing.T) (*Reconciler, *testBaseReconciler) {
-// 	clt := fake.NewClientBuilder().
-// 		WithScheme(scheme.Scheme).
-// 		WithObjects(&corev1.Namespace{
-// 			ObjectMeta: metav1.ObjectMeta{
-// 				Name: kubesystem.Namespace,
-// 				UID:  testUID,
-// 			},
-// 		}).
-// 		Build()
-// 	instance := &dynatracev1beta1.DynaKube{
-// 		ObjectMeta: metav1.ObjectMeta{
-// 			Namespace: testNamespace,
-// 			Name:      testName,
-// 		},
-// 		Spec: dynatracev1beta1.DynaKubeSpec{
-// 			APIURL: "https://testing.dev.dynatracelabs.com/api",
-// 		},
-// 	}
-// 	baseReconciler := &testBaseReconciler{
-// 		Client: clt,
-// 	}
+	r := NewReconciler(clt, capability.NewMultiCapability(instance), instance, &statefulSetReconcilerMock, &custompropertiesReconcilerMock)
+	require.NotNil(t, r)
+	require.NotNil(t, r.client)
+	require.NotNil(t, r)
+	require.NotNil(t, r.dynakube)
 
-// 	customPropertiesReconcilerMock := &PseudoReconcilerMock{}
-// 	customPropertiesReconcilerMock.On("Reconcile").Return(false, nil)
+	return r
+}
 
-// 	r := NewReconciler(clt, metricsCapability, instance, baseReconciler, customPropertiesReconcilerMock).(*Reconciler)
-// 	require.NotNil(t, r)
-// 	require.NotNil(t, r.statefulsetReconciler)
-// 	require.NotNil(t, r.dynakube)
-// 	require.NotEmpty(t, r.dynakube.ObjectMeta.Name)
+func TestReconcile(t *testing.T) {
+	t.Run(`Reconciler works with multiple capabilites`, func(t *testing.T) {
+		r := createMultiCapabilityReconciler(t)
+		err := r.Reconcile()
+		require.NoError(t, err)
+	})
+	t.Run(`Service gets created`, func(t *testing.T) {
+		r := createMultiCapabilityReconciler(t)
+		err := r.Reconcile()
+		require.NoError(t, err)
 
-// 	return r, baseReconciler
-// }
+		service := corev1.Service{}
+		err = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, &service)
 
-// func TestReconcile(t *testing.T) {
-// 	assertStatefulSetExists := func(r *Reconciler) *appsv1.StatefulSet {
-// 		statefulSet := new(appsv1.StatefulSet)
-// 		assert.NoError(t, r.client.Get(context.TODO(), client.ObjectKey{Name: r.calculateStatefulSetName(), Namespace: r.dynakube.Namespace}, statefulSet))
-// 		assert.NotNil(t, statefulSet)
-// 		return statefulSet
-// 	}
-// 	assertServiceExists := func(r *Reconciler) *corev1.Service {
-// 		svc := new(corev1.Service)
-// 		assert.NoError(t, r.client.Get(context.TODO(), client.ObjectKey{Name: capability.BuildServiceName(r.dynakube.Name, r.capability.ShortName()), Namespace: r.dynakube.Namespace}, svc))
-// 		assert.NotNil(t, svc)
-// 		return svc
-// 	}
-// 	reconcileAndExpectUpdate := func(r *Reconciler, updateExpected bool) {
-// 		update, err := r.Reconcile()
-// 		assert.NoError(t, err)
-// 		assert.Equal(t, updateExpected, update)
-// 	}
-// 	setStatsdCapability := func(r *Reconciler, wantEnabled bool) {
-// 		kubeobjects.SwitchCapability(r.dynakube, dynatracev1beta1.StatsdIngestCapability, wantEnabled)
-// 	}
-// 	setMetricsIngestCapability := func(r *Reconciler, wantEnabled bool) {
-// 		kubeobjects.SwitchCapability(r.dynakube, dynatracev1beta1.MetricsIngestCapability, wantEnabled)
-// 	}
+		assert.NotNil(t, service)
+		assert.NoError(t, err)
+	})
+	t.Run(`CreateOrUpdateService works`, func(t *testing.T) {
+		r := createMultiCapabilityReconciler(t)
 
-// 	agIngestServicePort := corev1.ServicePort{
-// 		Name:       consts.HttpsServicePortName,
-// 		Protocol:   corev1.ProtocolTCP,
-// 		Port:       consts.HttpsServicePort,
-// 		TargetPort: intstr.FromString(consts.HttpsServicePortName),
-// 	}
-// 	agIngestHttpServicePort := corev1.ServicePort{
-// 		Name:       consts.HttpServicePortName,
-// 		Protocol:   corev1.ProtocolTCP,
-// 		Port:       consts.HttpServicePort,
-// 		TargetPort: intstr.FromString(consts.HttpServicePortName),
-// 	}
-// 	statsdIngestServicePort := corev1.ServicePort{
-// 		Name:       consts.StatsdIngestPortName,
-// 		Protocol:   corev1.ProtocolUDP,
-// 		Port:       consts.StatsdIngestPort,
-// 		TargetPort: intstr.FromString(consts.StatsdIngestTargetPort),
-// 	}
+		service := &corev1.Service{}
+		err := r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, service)
+		require.Error(t, err)
+		assert.NotNil(t, service)
 
-// 	t.Run(`reconcile custom properties`, func(t *testing.T) {
-// 		r, baseReconciler := createDefaultReconciler(t)
+		err = r.createOrUpdateService()
+		require.NoError(t, err)
 
-// 		metricsCapability.Properties().CustomProperties = &dynatracev1beta1.DynaKubeValueSource{
-// 			Value: testValue,
-// 		}
+		service = &corev1.Service{}
+		err = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, service)
+		require.NoError(t, err)
+		assert.NotNil(t, service)
+	})
+	t.Run(`Update works for ports`, func(t *testing.T) {
+		r := createMultiCapabilityReconciler(t)
 
-// 		baseReconciler.On("Reconcile").Return(true, nil).Run(func(args mock.Arguments) {
-// 			err := r.client.Create(context.TODO(), &corev1.Secret{
-// 				ObjectMeta: metav1.ObjectMeta{
-// 					Name:      r.dynakube.Name + "-" + metricsCapability.ShortName() + "-" + customproperties.Suffix,
-// 					Namespace: r.dynakube.Namespace,
-// 				},
-// 				Data: map[string][]byte{customproperties.DataKey: []byte(testValue)},
-// 			})
-// 			require.NoError(t, err)
-// 		})
+		err := r.createOrUpdateService()
+		require.NoError(t, err)
 
-// 		// Reconcile twice since service is created before the stateful set is
-// 		reconcileAndExpectUpdate(r, true)
-// 		reconcileAndExpectUpdate(r, true)
+		service := &corev1.Service{}
+		err = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, service)
+		require.NoError(t, err)
+		assert.NotNil(t, service)
 
-// 		var customProperties corev1.Secret
-// 		err := r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.Name + "-" + metricsCapability.ShortName() + "-" + customproperties.Suffix, Namespace: r.dynakube.Namespace}, &customProperties)
-// 		assert.NoError(t, err)
-// 		assert.NotNil(t, customProperties)
-// 		assert.Contains(t, customProperties.Data, customproperties.DataKey)
-// 		assert.Equal(t, testValue, string(customProperties.Data[customproperties.DataKey]))
-// 	})
-// 	t.Run(`create stateful set`, func(t *testing.T) {
-// 		r, baseReconciler := createDefaultReconciler(t)
+		tmpService := &corev1.Service{}
 
-// 		baseReconciler.On("Reconcile").Return(true, nil).Run(func(args mock.Arguments) {
-// 			err := r.client.Create(context.TODO(), &appsv1.StatefulSet{
-// 				ObjectMeta: metav1.ObjectMeta{
-// 					Name:      r.calculateStatefulSetName(),
-// 					Namespace: r.dynakube.Namespace,
-// 				},
-// 				Spec: appsv1.StatefulSetSpec{
-// 					Template: corev1.PodTemplateSpec{
-// 						Spec: corev1.PodSpec{
-// 							Containers: []corev1.Container{
-// 								{
-// 									Env: []corev1.EnvVar{{Name: consts.EnvDtDnsEntryPoint, Value: buildDNSEntryPoint(r.dynakube, r.ShortName())}}}},
-// 						},
-// 					},
-// 				},
-// 			})
-// 			require.NoError(t, err)
-// 		})
+		service.Spec.Ports = []corev1.ServicePort{}
 
-// 		// Reconcile twice since service is created before the stateful set is
-// 		reconcileAndExpectUpdate(r, true)
-// 		reconcileAndExpectUpdate(r, true)
+		err = r.createOrUpdateService()
+		require.NoError(t, err)
 
-// 		statefulSet := assertStatefulSetExists(r)
-// 		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{
-// 			Name:  dtDnsEntryPoint,
-// 			Value: buildDNSEntryPoint(r.dynakube, r.ShortName()),
-// 		})
-// 	})
-// 	t.Run(`update stateful set`, func(t *testing.T) {
-// 		r, baseReconciler := createDefaultReconciler(t)
+		err = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, tmpService)
+		require.NoError(t, err)
+		assert.NotNil(t, tmpService)
 
-// 		call := baseReconciler.On("Reconcile").Return(true, nil).Run(func(args mock.Arguments) {
-// 			err := r.client.Create(context.TODO(), &appsv1.StatefulSet{
-// 				ObjectMeta: metav1.ObjectMeta{
-// 					Name:      r.calculateStatefulSetName(),
-// 					Namespace: r.dynakube.Namespace,
-// 				},
-// 				Spec: appsv1.StatefulSetSpec{
-// 					Template: corev1.PodTemplateSpec{
-// 						Spec: corev1.PodSpec{
-// 							Containers: []corev1.Container{{}},
-// 						},
-// 					},
-// 				},
-// 			})
-// 			require.NoError(t, err)
-// 		})
+		require.NotEqual(t, tmpService, service)
+	})
+	t.Run(`Update works for labels`, func(t *testing.T) {
+		r := createMultiCapabilityReconciler(t)
 
-// 		// Reconcile twice since service is created before the stateful set is
-// 		reconcileAndExpectUpdate(r, true)
-// 		reconcileAndExpectUpdate(r, true)
-// 		{
-// 			statefulSet := assertStatefulSetExists(r)
-// 			assert.Equal(t, 0, len(statefulSet.Spec.Template.Spec.Containers[0].Env))
-// 		}
+		err := r.createOrUpdateService()
+		require.NoError(t, err)
 
-// 		r.dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
+		service := &corev1.Service{}
+		err = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, service)
+		require.NoError(t, err)
+		assert.NotNil(t, service)
 
-// 		call.Run(func(args mock.Arguments) {
-// 			err := r.client.Update(context.TODO(), &appsv1.StatefulSet{
-// 				ObjectMeta: metav1.ObjectMeta{
-// 					Name:      r.calculateStatefulSetName(),
-// 					Namespace: r.dynakube.Namespace,
-// 				},
-// 				Spec: appsv1.StatefulSetSpec{
-// 					Template: corev1.PodTemplateSpec{
-// 						Spec: corev1.PodSpec{
-// 							Containers: []corev1.Container{{
-// 								Env: []corev1.EnvVar{
-// 									{Name: "a", Value: "a"},
-// 									{Name: "b", Value: "b"},
-// 									{Name: "c", Value: "c"},
-// 									{Name: "d", Value: "d"},
-// 								},
-// 							}},
-// 						},
-// 					},
-// 				},
-// 			})
-// 			require.NoError(t, err)
-// 		})
+		tmpService := &corev1.Service{}
 
-// 		reconcileAndExpectUpdate(r, true)
-// 		{
-// 			statefulSet := assertStatefulSetExists(r)
-// 			assert.Equal(t, 4, len(statefulSet.Spec.Template.Spec.Containers[0].Env))
-// 		}
-// 	})
-// 	t.Run(`create service`, func(t *testing.T) {
-// 		r, baseReconciler := createDefaultReconciler(t)
+		service.Labels = map[string]string{}
 
-// 		call := baseReconciler.On("Reconcile").Return(true, nil)
+		err = r.createOrUpdateService()
+		require.NoError(t, err)
 
-// 		reconcileAndExpectUpdate(r, true)
-// 		assertServiceExists(r)
+		err = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, tmpService)
+		require.NoError(t, err)
+		assert.NotNil(t, service)
 
-// 		call.Run(func(args mock.Arguments) {
-// 			err := r.client.Create(context.TODO(), &appsv1.StatefulSet{
-// 				ObjectMeta: metav1.ObjectMeta{
-// 					Name:      r.calculateStatefulSetName(),
-// 					Namespace: r.dynakube.Namespace,
-// 				},
-// 			})
-// 			require.NoError(t, err)
-// 		})
+		require.NotEqual(t, tmpService, service)
+	})
+	t.Run(`portsAreOutdated works`, func(t *testing.T) {
+		r := createMultiCapabilityReconciler(t)
 
-// 		reconcileAndExpectUpdate(r, true)
-// 		assertStatefulSetExists(r)
-// 	})
-// 	t.Run(`update service`, func(t *testing.T) {
-// 		r, baseReconciler := createDefaultReconciler(t)
+		desiredService := CreateService(r.dynakube, r.capability.ShortName())
 
-// 		call := baseReconciler.On("Reconcile").Return(true, nil)
+		err := r.Reconcile()
+		require.NoError(t, err)
 
-// 		setMetricsIngestCapability(r, true)
-// 		reconcileAndExpectUpdate(r, true)
-// 		{
-// 			service := assertServiceExists(r)
-// 			assert.Len(t, service.Spec.Ports, 2)
+		service := &corev1.Service{}
+		err = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, service)
+		require.NoError(t, err)
+		assert.NotNil(t, service)
 
-// 			assert.Error(t, r.client.Get(context.TODO(), client.ObjectKey{Name: r.calculateStatefulSetName(), Namespace: r.dynakube.Namespace}, &appsv1.StatefulSet{}))
-// 		}
+		assert.False(t, r.portsAreOutdated(service, desiredService))
 
-// 		call.Run(func(args mock.Arguments) {
-// 			err := r.client.Create(context.TODO(), &appsv1.StatefulSet{
-// 				ObjectMeta: metav1.ObjectMeta{
-// 					Name:      r.calculateStatefulSetName(),
-// 					Namespace: r.dynakube.Namespace,
-// 				},
-// 				Spec: appsv1.StatefulSetSpec{
-// 					Template: corev1.PodTemplateSpec{
-// 						Spec: corev1.PodSpec{
-// 							Containers: []corev1.Container{{}},
-// 						},
-// 					},
-// 				},
-// 			})
-// 			require.NoError(t, err)
-// 		})
+		service.Spec.Ports = []corev1.ServicePort{}
 
-// 		reconcileAndExpectUpdate(r, true)
-// 		{
-// 			service := assertServiceExists(r)
-// 			assert.Len(t, service.Spec.Ports, 2)
-// 			assert.ElementsMatch(t, service.Spec.Ports, []corev1.ServicePort{
-// 				agIngestServicePort, agIngestHttpServicePort,
-// 			})
+		assert.True(t, r.portsAreOutdated(service, desiredService))
+	})
+	t.Run(`labelsAreOutdated works`, func(t *testing.T) {
+		r := createMultiCapabilityReconciler(t)
 
-// 			statefulSet := assertStatefulSetExists(r)
-// 			assert.Len(t, statefulSet.Spec.Template.Spec.Containers, 1)
-// 		}
+		desiredService := CreateService(r.dynakube, r.capability.ShortName())
 
-// 		call.Return(false, nil).Run(func(args mock.Arguments) {
-// 			err := r.client.Update(context.TODO(), &appsv1.StatefulSet{
-// 				ObjectMeta: metav1.ObjectMeta{
-// 					Name:      r.calculateStatefulSetName(),
-// 					Namespace: r.dynakube.Namespace,
-// 				},
-// 				Spec: appsv1.StatefulSetSpec{
-// 					Template: corev1.PodTemplateSpec{
-// 						Spec: corev1.PodSpec{
-// 							Containers: []corev1.Container{{}},
-// 						},
-// 					},
-// 				},
-// 			})
-// 			require.NoError(t, err)
-// 		})
-// 		reconcileAndExpectUpdate(r, false)
+		err := r.Reconcile()
+		require.NoError(t, err)
 
-// 		call.Return(true, nil)
-// 		setStatsdCapability(r, true)
-// 		reconcileAndExpectUpdate(r, true)
-// 		{
-// 			service := assertServiceExists(r)
-// 			assert.Len(t, service.Spec.Ports, 3)
-// 			assert.ElementsMatch(t, service.Spec.Ports, []corev1.ServicePort{
-// 				agIngestServicePort, agIngestHttpServicePort, statsdIngestServicePort,
-// 			})
+		service := &corev1.Service{}
+		err = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, service)
+		require.NoError(t, err)
+		assert.NotNil(t, service)
 
-// 			statefulSet := assertStatefulSetExists(r)
-// 			assert.Len(t, statefulSet.Spec.Template.Spec.Containers, 1)
-// 		}
+		assert.False(t, r.labelsAreOutdated(service, desiredService))
 
-// 		call.Run(func(args mock.Arguments) {
-// 			err := r.client.Update(context.TODO(), &appsv1.StatefulSet{
-// 				ObjectMeta: metav1.ObjectMeta{
-// 					Name:      r.calculateStatefulSetName(),
-// 					Namespace: r.dynakube.Namespace,
-// 				},
-// 				Spec: appsv1.StatefulSetSpec{
-// 					Template: corev1.PodTemplateSpec{
-// 						Spec: corev1.PodSpec{
-// 							Containers: []corev1.Container{{}, {}, {}},
-// 						},
-// 					},
-// 				},
-// 			})
-// 			require.NoError(t, err)
-// 		})
+		service.Labels = map[string]string{}
 
-// 		reconcileAndExpectUpdate(r, true)
-// 		{
-// 			service := assertServiceExists(r)
-// 			assert.ElementsMatch(t, service.Spec.Ports, []corev1.ServicePort{
-// 				agIngestServicePort, agIngestHttpServicePort, statsdIngestServicePort,
-// 			})
-
-// 			statefulSet := assertStatefulSetExists(r)
-// 			assert.Len(t, statefulSet.Spec.Template.Spec.Containers, 3)
-// 		}
-// 		call.Return(false, nil)
-// 		reconcileAndExpectUpdate(r, false)
-// 		reconcileAndExpectUpdate(r, false)
-
-// 		setStatsdCapability(r, false)
-// 		call.Return(true, nil)
-// 		reconcileAndExpectUpdate(r, true)
-// 		reconcileAndExpectUpdate(r, true)
-// 		call.Return(false, nil)
-
-// 		call.Run(func(args mock.Arguments) {
-// 			err := r.client.Update(context.TODO(), &appsv1.StatefulSet{
-// 				ObjectMeta: metav1.ObjectMeta{
-// 					Name:      r.calculateStatefulSetName(),
-// 					Namespace: r.dynakube.Namespace,
-// 				},
-// 				Spec: appsv1.StatefulSetSpec{
-// 					Template: corev1.PodTemplateSpec{
-// 						Spec: corev1.PodSpec{
-// 							Containers: []corev1.Container{{}},
-// 						},
-// 					},
-// 				},
-// 			})
-// 			require.NoError(t, err)
-// 		})
-
-// 		reconcileAndExpectUpdate(r, false)
-// 		{
-// 			service := assertServiceExists(r)
-// 			assert.ElementsMatch(t, service.Spec.Ports, []corev1.ServicePort{
-// 				agIngestServicePort, agIngestHttpServicePort,
-// 			})
-
-// 			statefulSet := assertStatefulSetExists(r)
-// 			assert.Len(t, statefulSet.Spec.Template.Spec.Containers, 1)
-// 		}
-// 	})
-// }
-
-// func TestReconciler_calculateStatefulSetName(t *testing.T) {
-// 	type fields struct {
-// 		Instance   *dynatracev1beta1.DynaKube
-// 		Capability *capability.RoutingCapability
-// 	}
-// 	tests := []struct {
-// 		name   string
-// 		fields fields
-// 		want   string
-// 	}{
-// 		{
-// 			name: "instance and module names are defined",
-// 			fields: fields{
-// 				Instance: &dynatracev1beta1.DynaKube{
-// 					ObjectMeta: metav1.ObjectMeta{
-// 						Name: "instanceName",
-// 					},
-// 				},
-// 				Capability: metricsCapability,
-// 			},
-// 			want: "instanceName-routing",
-// 		},
-// 		{
-// 			name: "empty instance name",
-// 			fields: fields{
-// 				Instance: &dynatracev1beta1.DynaKube{
-// 					ObjectMeta: metav1.ObjectMeta{
-// 						Name: "",
-// 					},
-// 				},
-// 				Capability: metricsCapability,
-// 			},
-// 			want: "-" + metricsCapability.ShortName(),
-// 		},
-// 	}
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			r := &Reconciler{
-// 				dynakube:   tt.fields.Instance,
-// 				Capability: tt.fields.Capability,
-// 			}
-// 			if got := r.calculateStatefulSetName(); got != tt.want {
-// 				t.Errorf("Reconciler.calculateStatefulSetName() = %v, want %v", got, tt.want)
-// 			}
-// 		})
-// 	}
-// }
-
-// func TestGetContainerByName(t *testing.T) {
-// 	verify := func(t *testing.T, containers []corev1.Container, lookingForContainer string, errorMessage string) {
-// 		container, err := getContainerByName(containers, lookingForContainer)
-// 		if errorMessage == "" {
-// 			assert.NoError(t, err)
-// 			assert.NotNil(t, container)
-// 			assert.Equal(t, lookingForContainer, container.Name)
-// 		} else {
-// 			assert.Error(t, err)
-// 			assert.Contains(t, err.Error(), errorMessage)
-// 			assert.Nil(t, container)
-// 		}
-// 	}
-
-// 	t.Run("empty slice test cases", func(t *testing.T) {
-// 		verify(t, nil, "", `Cannot find container "" in the provided slice (len 0)`)
-// 		verify(t, []corev1.Container{}, "", `Cannot find container "" in the provided slice (len 0)`)
-// 		verify(t, []corev1.Container{}, "something", `Cannot find container "something" in the provided slice (len 0)`)
-// 	})
-
-// 	t.Run("non-empty collection but cannot match name", func(t *testing.T) {
-// 		verify(t,
-// 			[]corev1.Container{
-// 				{Name: consts.ActiveGateContainerName},
-// 				{Name: consts.StatsdContainerName},
-// 			},
-// 			consts.EecContainerName,
-// 			fmt.Sprintf(`Cannot find container "%s" in the provided slice (len 2)`, consts.EecContainerName),
-// 		)
-// 	})
-
-// 	t.Run("happy path", func(t *testing.T) {
-// 		verify(t,
-// 			[]corev1.Container{
-// 				{Name: consts.StatsdContainerName},
-// 			},
-// 			consts.StatsdContainerName,
-// 			"",
-// 		)
-// 	})
-// }
+		assert.True(t, r.labelsAreOutdated(service, desiredService))
+	})
+}
