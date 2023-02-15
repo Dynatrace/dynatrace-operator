@@ -28,6 +28,7 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
+
 var (
 	agContainers = map[string]bool{
 		consts.ActiveGateContainerName: false,
@@ -91,7 +92,6 @@ func assessActiveGate(builder *features.FeatureBuilder, testDynakube *dynatracev
 func checkIfAgHasContainers(testDynakube *dynatracev1beta1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resources := environmentConfig.Client().Resources()
-
 
 		var activeGatePod corev1.Pod
 		require.NoError(t, resources.WithNamespace(testDynakube.Namespace).Get(ctx, getActiveGatePodName(testDynakube), testDynakube.Namespace, &activeGatePod))
