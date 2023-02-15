@@ -83,11 +83,6 @@ func InstallFromGithub(releaseTag string, withCsi bool) features.Func {
 	return manifests.InstallFromUrls(manifestsUrls)
 }
 
-func UninstallFromGithub(releaseTag string, withCsi bool) features.Func {
-	manifestsUrls := manifestsUrls(releaseTag, withCsi)
-	return manifests.UninstallFromUrls(manifestsUrls)
-}
-
 func manifestsUrls(releaseTag string, withCsi bool) []string {
 	const dynatraceOperatorGithubDownloadUrl = "https://github.com/Dynatrace/dynatrace-operator/releases/download/"
 	platform := kubeobjects.ResolvePlatformFromEnv()

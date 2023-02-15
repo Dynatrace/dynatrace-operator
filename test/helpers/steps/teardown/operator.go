@@ -16,12 +16,6 @@ func UninstallOperatorFromSource(builder *features.FeatureBuilder, testDynakube 
 	builder.WithTeardown("deleted operator namespace", namespace.Delete(testDynakube.Namespace))
 }
 
-func UninstallOperatorFromRelease(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube, releaseTag string) {
-	addCsiCleanUp(builder, testDynakube)
-	builder.WithTeardown("operator manifests uninstalled", operator.UninstallFromGithub(releaseTag, testDynakube.NeedsCSIDriver()))
-	builder.WithTeardown("deleted operator namespace", namespace.Delete(testDynakube.Namespace))
-}
-
 func addCsiCleanUp(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube) {
 	if testDynakube.NeedsCSIDriver() {
 		builder.WithTeardown("clean up csi driver files", csi.CleanUpEachPod(testDynakube.Namespace))
