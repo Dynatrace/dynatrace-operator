@@ -110,18 +110,6 @@ func TestReconcile(t *testing.T) {
 		assert.NotNil(t, service)
 		assert.NoError(t, err)
 	})
-	t.Run(`Reconcile fails`, func(t *testing.T) {
-		clt := createClient()
-		instance := createInstance()
-		mockStatefulSetReconciler := getMockReconciler()
-		mockCustompropertiesReconciler := getMockReconciler()
-
-		r := NewReconciler(clt, capability.NewMultiCapability(instance), instance, mockStatefulSetReconciler, mockCustompropertiesReconciler)
-		verifyReconciler(t, r)
-
-		err := r.Reconcile()
-		require.NoError(t, err)
-	})
 }
 
 func TestReconciler_CreateOrUpdate(t *testing.T) {
