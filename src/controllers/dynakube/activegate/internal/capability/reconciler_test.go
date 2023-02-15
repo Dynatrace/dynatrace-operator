@@ -112,7 +112,7 @@ func TestReconcile(t *testing.T) {
 	})
 }
 
-func TestReconciler_CreateOrUpdate(t *testing.T) {
+func TestReconciler_CreateOrUpdateService(t *testing.T) {
 	t.Run(`createOrUpdateService works`, func(t *testing.T) {
 		clt := createClient()
 		instance := createInstance()
@@ -226,7 +226,7 @@ func TestReconcile_PortsAreOutdate(t *testing.T) {
 }
 
 func TestReconcile_LabelsAreOutdated(t *testing.T) {
-	t.Run(`labelsAreOutdated works`, func(t *testing.T) {
+	t.Run(`labelsAreOutdated works for labels`, func(t *testing.T) {
 		clt := createClient()
 		instance := createInstance()
 		mockStatefulSetReconciler := getMockReconciler()
@@ -248,6 +248,31 @@ func TestReconcile_LabelsAreOutdated(t *testing.T) {
 		assert.False(t, r.labelsAreOutdated(service, desiredService))
 
 		service.Labels = map[string]string{}
+
+		assert.True(t, r.labelsAreOutdated(service, desiredService))
+	})
+	t.Run(`labelsAreOutdated works for selectors`, func(t *testing.T) {
+		clt := createClient()
+		instance := createInstance()
+		mockStatefulSetReconciler := getMockReconciler()
+		mockCustompropertiesReconciler := getMockReconciler()
+
+		r := NewReconciler(clt, capability.NewMultiCapability(instance), instance, mockStatefulSetReconciler, mockCustompropertiesReconciler)
+		verifyReconciler(t, r)
+
+		desiredService := CreateService(r.dynakube, r.capability.ShortName())
+
+		err := r.Reconcile()
+		require.NoError(t, err)
+
+		service := &corev1.Service{}
+		err = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, service)
+		require.NoError(t, err)
+		assert.NotNil(t, service)
+
+		assert.False(t, r.labelsAreOutdated(service, desiredService))
+
+		service.Spec.Selector = map[string]string{}
 
 		assert.True(t, r.labelsAreOutdated(service, desiredService))
 	})
