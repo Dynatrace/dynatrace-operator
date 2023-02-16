@@ -4,23 +4,18 @@ package cloudnativeproxy
 
 import (
 	"context"
-	"path"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/daemonset"
-	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/deployment"
-	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/manifests"
-	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/namespace"
-	"github.com/Dynatrace/dynatrace-operator/test/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/test/project"
-	"github.com/Dynatrace/dynatrace-operator/test/proxy"
-	"github.com/Dynatrace/dynatrace-operator/test/sampleapps"
-	"github.com/Dynatrace/dynatrace-operator/test/secrets"
-	"github.com/Dynatrace/dynatrace-operator/test/setup"
-	"github.com/spf13/afero"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/daemonset"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/proxy"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,100 +24,83 @@ import (
 )
 
 const (
-	httpsProxy      = "https_proxy"
-	sampleNamespace = "test-namespace-1"
-	dtProxy         = "DT_PROXY"
+	httpsProxy = "https_proxy"
+	dtProxy    = "DT_PROXY"
 )
 
-var (
-	sampleAppDeployment = path.Join(project.TestDataDir(), "cloudnative/sample-deployment.yaml")
-	secretPath          = path.Join(project.TestDataDir(), "secrets/single-tenant.yaml")
-	kubernetesAllPath   = path.Join(project.RootDir(), "config/deploy/kubernetes/kubernetes-all.yaml")
-	curlPodPath         = path.Join(project.TestDataDir(), "activegate/curl-pod-webhook-via-proxy.yaml")
-	proxyPath           = path.Join(project.TestDataDir(), "proxy/proxy.yaml")
+func withProxy(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features.Feature {
+	builder := features.New("cloudNative with proxy")
+	secretConfig := tenant.GetSingleTenantSecret(t)
 
-	injectionLabel = map[string]string{
-		"inject": "dynakube",
-	}
-)
+	testDynakube := dynakube.NewBuilder().
+		WithDefaultObjectMeta().
+		WithDynakubeNamespaceSelector().
+		ApiUrl(secretConfig.ApiUrl).
+		CloudNative(&dynatracev1beta1.CloudNativeFullStackSpec{}).
+		Proxy(proxySpec).
+		Build()
 
-func WithProxy(t *testing.T, proxySpec *v1beta1.DynaKubeProxy) features.Feature {
-	secretConfig, err := secrets.NewFromConfig(afero.NewOsFs(), secretPath)
+	sampleNamespace := namespace.NewBuilder("proxy-sample").WithLabels(testDynakube.NamespaceSelector().MatchLabels).Build()
+	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
+	sampleApp.WithLabels(testDynakube.NamespaceSelector().MatchLabels)
+	sampleApp.WithNamespace(sampleNamespace)
 
-	require.NoError(t, err)
+	// Register sample namespace create and delete
+	builder.Assess("create sample namespace", namespace.Create(sampleNamespace))
+	builder.Teardown(sampleApp.UninstallNamespace())
 
-	cloudNativeWithProxy := features.New("cloudNative with proxy")
-	cloudNativeWithProxy.Setup(namespace.Create(
-		namespace.NewBuilder(sampleNamespace).
-			WithLabels(injectionLabel).
-			Build()),
-	)
-	cloudNativeWithProxy.Setup(secrets.ApplyDefault(secretConfig))
-	cloudNativeWithProxy.Setup(manifests.InstallFromFile(kubernetesAllPath))
-	setup.AssessOperatorDeployment(cloudNativeWithProxy)
+	// Register operator install
+	assess.InstallOperatorFromSource(builder, testDynakube)
 
-	assesProxy(cloudNativeWithProxy, proxySpec)
+	// Register proxy create and delete
+	proxy.SetupProxyWithTeardown(builder, testDynakube)
+	proxy.CutOffDynatraceNamespace(builder, proxySpec)
+	proxy.CutOffSampleNamespace(builder, proxySpec)
 
-	cloudNativeWithProxy.Assess("install dynakube", dynakube.Apply(
-		dynakube.NewBuilder().
-			WithDefaultObjectMeta().
-			WithDynakubeNamespaceSelector().
-			ApiUrl(secretConfig.ApiUrl).
-			CloudNative(&v1beta1.CloudNativeFullStackSpec{}).
-			Proxy(proxySpec).
-			Build()),
-	)
-	setup.AssessDynakubeStartup(cloudNativeWithProxy)
+	// Register actual test
+	assess.InstallDynakube(builder, &secretConfig, testDynakube)
+	builder.Assess("check env variables of oneagent pods", checkOneAgentEnvVars(testDynakube))
+	builder.Assess("install sample app", sampleApp.Install())
+	builder.Assess("check existing init container and env var", checkSampleInitContainerEnvVars(sampleApp))
 
-	cloudNativeWithProxy.Assess("osAgent can connect", oneagent.OSAgentCanConnect())
-	proxy.CutOffDynatraceNamespace(cloudNativeWithProxy, proxySpec)
-	proxy.CutOffSampleNamespace(cloudNativeWithProxy, proxySpec)
-	cloudNativeWithProxy.Assess("check env variables of oneagent pods", checkOneAgentEnvVars)
-	cloudNativeWithProxy.Assess("install deployment", manifests.InstallFromFile(sampleAppDeployment))
-	cloudNativeWithProxy.Assess("check existing init container and env var", checkSampleInitContainerEnvVars)
+	// Register operator and dynakube uninstall
+	teardown.UninstallDynatrace(builder, testDynakube)
 
-	return cloudNativeWithProxy.Feature()
+	return builder.Feature()
 }
 
-func assesProxy(builder *features.FeatureBuilder, proxySpec *v1beta1.DynaKubeProxy) {
-	if proxySpec != nil {
-		builder.Assess("install proxy", manifests.InstallFromFile(proxyPath))
-		builder.Assess("proxy started", deployment.WaitFor(proxy.ProxyDeployment, proxy.ProxyNamespace))
+func checkOneAgentEnvVars(dynakube dynatracev1beta1.DynaKube) features.Func {
+	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+		resources := environmentConfig.Client().Resources()
+		err := daemonset.NewQuery(ctx, resources, client.ObjectKey{
+			Name:      dynakube.OneAgentDaemonsetName(),
+			Namespace: dynakube.Namespace,
+		}).ForEachPod(func(podItem v1.Pod) {
+			require.NotNil(t, podItem)
+			require.NotNil(t, podItem.Spec)
 
-		builder.Assess("query webhook via proxy", manifests.InstallFromFile(curlPodPath))
-		builder.Assess("query is completed", proxy.WaitForCurlProxyPod(proxy.CurlPodProxy, dynakube.Namespace))
-		builder.Assess("proxy is running", proxy.CheckProxyService())
+			checkEnvVarsInContainer(t, podItem, dynakube.OneAgentDaemonsetName(), httpsProxy)
+		})
+
+		require.NoError(t, err)
+		return ctx
 	}
 }
 
-func checkOneAgentEnvVars(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-	resources := environmentConfig.Client().Resources()
-	err := daemonset.NewQuery(ctx, resources, client.ObjectKey{
-		Name:      "dynakube-oneagent",
-		Namespace: "dynatrace",
-	}).ForEachPod(func(podItem v1.Pod) {
-		require.NotNil(t, podItem)
-		require.NotNil(t, podItem.Spec)
+func checkSampleInitContainerEnvVars(sampleApp sampleapps.SampleApp) features.Func {
+	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+		resources := environmentConfig.Client().Resources()
+		pods := sampleApp.GetPods(ctx, t, resources)
 
-		checkEnvVarsInContainer(t, podItem, "dynakube-oneagent", httpsProxy)
-	})
+		for _, podItem := range pods.Items {
+			require.NotNil(t, podItem)
+			require.NotNil(t, podItem.Spec)
+			require.NotNil(t, podItem.Spec.InitContainers)
 
-	require.NoError(t, err)
-	return ctx
-}
-
-func checkSampleInitContainerEnvVars(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-	resources := environmentConfig.Client().Resources()
-	pods := sampleapps.Get(ctx, t, resources)
-
-	for _, podItem := range pods.Items {
-		require.NotNil(t, podItem)
-		require.NotNil(t, podItem.Spec)
-		require.NotNil(t, podItem.Spec.InitContainers)
-
-		checkEnvVarsInContainer(t, podItem, sampleapps.Name, dtProxy)
+			checkEnvVarsInContainer(t, podItem, sampleApp.ContainerName(), dtProxy)
+		}
+		return ctx
 	}
-	return ctx
 }
 
 func checkEnvVarsInContainer(t *testing.T, podItem v1.Pod, containerName string, envVar string) {

@@ -5,12 +5,9 @@ package cloudnativeproxy
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/environment"
-	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/namespace"
-	"github.com/Dynatrace/dynatrace-operator/test/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/test/proxy"
-	"github.com/Dynatrace/dynatrace-operator/test/sampleapps"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/istio"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/proxy"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 )
 
@@ -18,21 +15,13 @@ var testEnvironment env.Environment
 
 func TestMain(m *testing.M) {
 	testEnvironment = environment.Get()
-	testEnvironment.BeforeEachTest(namespace.DeleteIfExists(sampleapps.Namespace))
-	testEnvironment.BeforeEachTest(dynakube.DeleteIfExists(dynakube.NewBuilder().WithDefaultObjectMeta().Build()))
-	testEnvironment.BeforeEachTest(oneagent.WaitForDaemonSetPodsDeletion())
-	testEnvironment.BeforeEachTest(namespace.Recreate(namespace.NewBuilder(dynakube.Namespace).Build()))
-	testEnvironment.BeforeEachTest(proxy.DeleteProxyIfExists())
-
-	testEnvironment.AfterEachTest(namespace.Delete(sampleapps.Namespace))
-	testEnvironment.AfterEachTest(dynakube.DeleteIfExists(dynakube.NewBuilder().WithDefaultObjectMeta().Build()))
-	testEnvironment.AfterEachTest(oneagent.WaitForDaemonSetPodsDeletion())
-	testEnvironment.AfterEachTest(namespace.Delete(dynakube.Namespace))
-	testEnvironment.AfterEachTest(proxy.DeleteProxyIfExists())
+	// TODO: Currently it needs Cilium and not Istio, but that will change soon
+	testEnvironment.BeforeEachTest(istio.AssertIstioNamespace())
+	testEnvironment.BeforeEachTest(istio.AssertIstiodDeployment())
 
 	testEnvironment.Run(m)
 }
 
 func TestCloudNativeWithProxy(t *testing.T) {
-	testEnvironment.Test(t, WithProxy(t, proxy.ProxySpec))
+	testEnvironment.Test(t, withProxy(t, proxy.ProxySpec))
 }
