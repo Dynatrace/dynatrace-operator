@@ -14,8 +14,9 @@ test/e2e/activegate/proxy: manifests/crd/helm
 test/e2e/cloudnative: manifests/crd/helm
 	go test -v -tags e2e -timeout 30m -count=1 ./test/scenarios/cloudnative/basic
 
-## Runs CloudNative e2e test only
-test/e2e/classic: manifests/crd/helm
+## Runs ClassicFullStack e2e test only
+## TODO: rename after proper implementation of cleanup step
+test/e2e/zz_classic: manifests/crd/helm
 	go test -v -tags e2e -timeout 20m -count=1 ./test/scenarios/classic
 
 ## Runs CloudNative istio e2e test only
@@ -34,6 +35,6 @@ test/e2e/cloudnative/network: manifests/crd/helm
 test/e2e/applicationmonitoring: manifests/crd/helm
 	go test -v -tags e2e -count=1 ./test/scenarios/applicationmonitoring
 
-## Runs Application Monitoring e2e test only
+## Runs SupportArchive e2e test only
 test/e2e/supportarchive: manifests/crd/helm
 	go test -v -tags e2e -count=1 ./test/scenarios/support_archive
