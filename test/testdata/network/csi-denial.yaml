@@ -1,3 +1,4 @@
+# TODO: Replace with istio
 apiVersion: "cilium.io/v2"
 kind: CiliumNetworkPolicy
 metadata:

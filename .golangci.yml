@@ -36,7 +36,7 @@ linters-settings:
       - name: max-public-structs
         disabled: true
       - name: argument-limit
-        arguments: [4]
+        arguments: [5]
       - name: line-length-limit
         disabled: true
       - name: add-constant
@@ -148,3 +148,7 @@ issues:
     - linters:
         - revive
       path: src/dtclient # it's awaiting refactoring
+
+run:
+  skip-dirs:
+    - src/api/v1alpha1 # legacy version, should not be changed

@@ -182,17 +182,6 @@ spec:
         - --kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)
         command:
         - csi-node-driver-registrar
-        livenessProbe:
-          exec:
-            command:
-              - csi-node-driver-registrar
-              - --kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)
-              - --mode=kubelet-registration-probe
-          failureThreshold: 3
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          successThreshold: 1
-          timeoutSeconds: 15
         resources:
           {{- if .Values.csidriver.registrar.resources }}
           {{- toYaml .Values.csidriver.registrar.resources | nindent 10 }}

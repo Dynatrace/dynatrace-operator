@@ -18,7 +18,7 @@ For those just getting started, consult this  [guide](https://help.github.com/ar
 
 ### Cuddling of statements
 Statements must be cuddled, i.e., written as a single block, if an `if`-statement directly follows a single assignment and the condition is directly related to the assignment.
-This commonly occurs with error handling, but is not restricted to it.  
+This commonly occurs with error handling, but is not restricted to it.
 Example:
 ```
 err := assignment1()
@@ -33,7 +33,7 @@ if value1 {
 ```
 
 Statements must not be cuddled with each other if multiple of the same type of statements follow each other.
-A statement must be cuddled with following statements, if they are of the same type.  
+A statement must be cuddled with following statements, if they are of the same type.
 Example:
 ```
 value1 := assignment1()
@@ -141,3 +141,31 @@ func TestMyFunction(t *testing.T) {
 - Don't name the testing helper functions/variables/constants in a way that could be confused with actual functions. (e.g. add `test` to the beginning)
 - Avoid magic ints/strings/... where possible, give names to your values and try to reuse them where possible
 - Don't name test functions like `TestMyFunctionFirstCase`, instead use single `TestMyFunction` test function with multiple `t.Run` cases in it that have descriptive names.
+
+## E2E testing guide
+
+We are using the https://github.com/kubernetes-sigs/e2e-framework package to write our E2E tests.
+
+This framework allows the user a lot of ways to write/structure their tests. Therefore we had to agree on how we are going to structure our tests, otherwise it would be just a convoluted mess.
+
+So here are some basic guidelines:
+- Each `TestMain` should test a single `features.Feature`
+  - Good Example: `test/scenarios/classic/classic_test.go`
+  - Bad Example: `test/scenarios/cloudnative/basic/cloudnative_test.go` (should be refactored)
+  - Reason: So you can easily run the tests 1-by-1.
+- Test cases are defined as a single `features.Feature`
+  - Reason: In a `features.Feature` you can define Setup - Assess - Teardown steps, in a nice way.
+    - Having the cleanup close to the logic that creates it makes it easier to make sure that everything will be cleaned up/
+    - Furthermore it makes it more understandable what a test case does.
+- Don't use `Setup` step in a `features.Feature
+  - Reason: If a `Setup` test fails, no other step will run, which sound fine, but this includes `Teardown` steps, which is not acceptable.
+    - We run the test one after the other on the same cluster daily, so cleanup is essential.
+	- So we use `Assess` steps for setting up the environment and checking it.
+	   - The downside of this that even if we fail during setup, still all test will run needlessly, as they will definitely fail.
+	   - Still better then no no cleanup.
+- Use the `DynaKube` as the "single-source-of-truth" as much as possible
+  - Reason: Most things that the operator deploys (name of services and pods, contents of labels, should CSI be used, etc...) depend on the `DynaKube`
+     - Also the namespace of the `DynaKube` should be the same as the operator, so it can help how the operator should be deployed
+     - This eliminates lots of hardcoded strings and such
+- Don't reinvent the wheel, try to use what is already there.
+  - If a helper function is almost fits your use case then first just try to "renovate the wheel" and make what is already there better :)
