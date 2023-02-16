@@ -15,7 +15,8 @@ test/e2e/cloudnative: manifests/crd/helm
 	go test -v -tags e2e -timeout 30m -count=1 ./test/scenarios/cloudnative/basic
 
 ## Runs CloudNative e2e test only
-test/e2e/classic: manifests/crd/helm
+## TODO: rename after proper implementation of cleanup step
+test/e2e/zz_classic: manifests/crd/helm
 	go test -v -tags e2e -timeout 20m -count=1 ./test/scenarios/classic
 
 ## Runs CloudNative istio e2e test only
