@@ -16,7 +16,6 @@ const (
 	DynatraceApiToken              = "apiToken"
 	DynatraceDataIngestToken       = "dataIngestToken"
 	CustomCertificatesConfigMapKey = "certs"
-	CustomProxySecretKey           = "proxy"
 )
 
 // Client is the interface for the Dynatrace REST API client.
