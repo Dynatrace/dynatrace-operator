@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -107,6 +108,49 @@ func TestReconcile(t *testing.T) {
 		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile")
 		require.NoError(t, err)
 	})
+	t.Run(`statefulSetReconciler errors`, func(t *testing.T) {
+		clt := createClient()
+		instance := createInstanceWithoutActiveGateService()
+		mockStatefulSetReconciler := &MockReconciler{}
+		mockStatefulSetReconciler.On("Reconcile").Return(errors.New(""))
+		mockCustompropertiesReconciler := getMockReconciler()
+
+		r := NewReconciler(clt, capability.NewMultiCapability(instance), instance, mockStatefulSetReconciler, mockCustompropertiesReconciler)
+		verifyReconciler(t, r)
+
+		err := r.Reconcile()
+		mockStatefulSetReconciler.AssertCalled(t, "Reconcile")
+		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile")
+		require.Error(t, err)
+	})
+	t.Run(`customPropertiesReconciler errors`, func(t *testing.T) {
+		clt := createClient()
+		instance := createInstanceWithoutActiveGateService()
+		mockStatefulSetReconciler := getMockReconciler()
+		mockCustompropertiesReconciler := &MockReconciler{}
+		mockCustompropertiesReconciler.On("Reconcile").Return(errors.New(""))
+
+		r := NewReconciler(clt, capability.NewMultiCapability(instance), instance, mockStatefulSetReconciler, mockCustompropertiesReconciler)
+		verifyReconciler(t, r)
+
+		err := r.Reconcile()
+		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile")
+		require.Error(t, err)
+	})
+	t.Run(`statefulSetReconciler and customPropertiesReconciler error`, func(t *testing.T) {
+		clt := createClient()
+		instance := createInstanceWithoutActiveGateService()
+		mockStatefulSetReconciler := &MockReconciler{}
+		mockStatefulSetReconciler.On("Reconcile").Return(errors.New(""))
+		mockCustompropertiesReconciler := &MockReconciler{}
+		mockCustompropertiesReconciler.On("Reconcile").Return(errors.New(""))
+
+		r := NewReconciler(clt, capability.NewMultiCapability(instance), instance, mockStatefulSetReconciler, mockCustompropertiesReconciler)
+		verifyReconciler(t, r)
+
+		err := r.Reconcile()
+		require.Error(t, err)
+	})
 	t.Run(`Service gets created`, func(t *testing.T) {
 		clt := createClient()
 		instance := createInstance()
@@ -149,7 +193,7 @@ func TestReconcile(t *testing.T) {
 	})
 }
 
-func TestReconciler_CreateOrUpdateService(t *testing.T) {
+func TestCreateOrUpdateService(t *testing.T) {
 	t.Run(`createOrUpdateService works`, func(t *testing.T) {
 		clt := createClient()
 		instance := createInstance()
@@ -234,7 +278,7 @@ func TestReconciler_CreateOrUpdateService(t *testing.T) {
 	})
 }
 
-func TestReconcile_PortsAreOutdate(t *testing.T) {
+func TestPortsAreOutdated(t *testing.T) {
 	t.Run(`portsAreOutdated works`, func(t *testing.T) {
 		clt := createClient()
 		instance := createInstance()
@@ -262,7 +306,7 @@ func TestReconcile_PortsAreOutdate(t *testing.T) {
 	})
 }
 
-func TestReconcile_LabelsAreOutdated(t *testing.T) {
+func TestLabelsAreOutdated(t *testing.T) {
 	t.Run(`labelsAreOutdated works for labels`, func(t *testing.T) {
 		clt := createClient()
 		instance := createInstance()
