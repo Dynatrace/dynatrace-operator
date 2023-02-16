@@ -54,14 +54,16 @@ func (dk *DynaKube) NeedsOneAgentProxy() bool {
 }
 
 func (dk *DynaKube) proxyUrlFromUserSecret(ctx context.Context, kubeReader client.Reader) (string, error) {
+	secretName := dk.Spec.Proxy.ValueFrom
 	var proxySecret corev1.Secret
-	proxySecretName := dk.Spec.Proxy.ValueFrom
-	if err := kubeReader.Get(ctx, client.ObjectKey{Name: proxySecretName, Namespace: dk.Namespace}, &proxySecret); err != nil {
-		return "", errors.WithMessage(err, fmt.Sprintf("failed to query %s secret", proxySecretName))
+	err := kubeReader.Get(ctx, client.ObjectKey{Name: secretName, Namespace: dk.Namespace}, &proxySecret)
+	if err != nil {
+		return "", errors.WithMessage(err, fmt.Sprintf("failed to get proxy from %s secret", secretName))
 	}
+
 	proxy, hasKey := proxySecret.Data[ProxyKey]
 	if !hasKey {
-		err := errors.Errorf("missing token %s in proxy secret %s", ProxyKey, proxySecretName)
+		err := errors.Errorf("missing token %s in proxy secret %s", ProxyKey, secretName)
 		return "", err
 	}
 	return string(proxy), nil

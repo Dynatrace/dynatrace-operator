@@ -8,7 +8,6 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/spf13/cobra"
@@ -210,8 +209,8 @@ func getDynakubes(troubleshootCtx troubleshootContext, dynakubeName string) ([]d
 }
 
 func getAllDynakubesInNamespace(troubleshootContext troubleshootContext) ([]dynatracev1beta1.DynaKube, error) {
-	query := kubeobjects.NewDynakubeQuery(troubleshootContext.apiReader, troubleshootContext.namespaceName).WithContext(troubleshootContext.context)
-	dynakubes, err := query.List()
+	var dynakubes dynatracev1beta1.DynaKubeList
+	err := troubleshootContext.apiReader.List(troubleshootContext.context, &dynakubes, client.InNamespace(troubleshootContext.namespaceName))
 
 	if err != nil {
 		logErrorf("failed to list Dynakubes: %v", err)

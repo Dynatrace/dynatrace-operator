@@ -74,7 +74,7 @@ func (dynatraceClientBuilder builder) Build() (dtclient.Client, error) {
 	opts.appendNetworkZone(dynatraceClientBuilder.dynakube.Spec.NetworkZone)
 	opts.appendDisableHostsRequests(dynatraceClientBuilder.dynakube.FeatureDisableHostsRequests())
 
-	err := opts.appendProxySettings(apiReader, dynatraceClientBuilder.dynakube.Spec.Proxy, namespace)
+	err := opts.appendProxySettings(apiReader, &dynatraceClientBuilder.dynakube, namespace)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

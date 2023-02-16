@@ -7,41 +7,22 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
-	errorInvalidActiveGateProxyUrl = `The DynaKube's specification has an invalid Proxy URL value set. Make sure you correctly specify the URL in your custom resource.`
-	errorInvalidEvalCharacter      = `The DynaKube's specification has an invalid Proxy password value set. Make sure you don't use forbidden characters: space, apostrophe, backtick, comma, ampersand, equals sign, plus sign, percent sign, backslash.`
+	errorInvalidProxyUrl      = `The DynaKube's specification has an invalid Proxy URL value set. Make sure you correctly specify the URL in your custom resource or in the provided secret.`
+	errorInvalidEvalCharacter = `The DynaKube's specification has an invalid Proxy password value set. Make sure you don't use forbidden characters: space, apostrophe, backtick, comma, ampersand, equals sign, plus sign, percent sign, backslash.`
 
-	errorMissingActiveGateProxySecret = `The Proxy secret indicated by the DynaKube specification doesn't exist.`
-
-	errorInvalidProxySecretFormat = `The Proxy secret indicated by the DynaKube specification has an invalid format. Make sure you correctly creates the secret.`
-
-	errorInvalidProxySecretUrl           = `The Proxy secret indicated by the DynaKube specification has an invalid URL value set. Make sure you correctly specify the URL in the secret.`
-	errorInvalidProxySecretEvalCharacter = `The Proxy secret indicated by the DynaKube specification has an invalid Proxy password value set. Make sure you don't use forbidden characters: space, apostrophe, backtick, comma, ampersand, equals sign, plus sign, percent sign, backslash.`
+	errorMissingProxySecret = `Error occurred while reading PROXY secret indicated in the Dynakube specification`
 )
 
 func invalidActiveGateProxyUrl(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	if dynakube.Spec.Proxy != nil {
-		if len(dynakube.Spec.Proxy.ValueFrom) > 0 {
-			var proxySecret corev1.Secret
-			err := dv.clt.Get(context.TODO(), client.ObjectKey{Name: dynakube.Spec.Proxy.ValueFrom, Namespace: dynakube.Namespace}, &proxySecret)
-			if k8serrors.IsNotFound(err) {
-				return errorMissingActiveGateProxySecret
-			} else if err != nil {
-				return errors.Wrap(err, "error occurred while reading PROXY secret indicated in the Dynakube specification").Error()
-			}
-			proxyUrl, ok := proxySecret.Data[dynatracev1beta1.ProxyKey]
-			if !ok {
-				return errorInvalidProxySecretFormat
-			}
-			return validateProxyUrl(string(proxyUrl), errorInvalidProxySecretUrl, errorInvalidProxySecretEvalCharacter)
-		} else if len(dynakube.Spec.Proxy.Value) > 0 {
-			return validateProxyUrl(dynakube.Spec.Proxy.Value, errorInvalidActiveGateProxyUrl, errorInvalidEvalCharacter)
+		proxyUrl, err := dynakube.Proxy(context.TODO(), dv.apiReader)
+		if err != nil {
+			return errors.Wrap(err, errorMissingProxySecret).Error()
 		}
+		return validateProxyUrl(proxyUrl, errorInvalidProxyUrl, errorInvalidEvalCharacter)
 	}
 	return ""
 }

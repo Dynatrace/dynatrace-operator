@@ -7,7 +7,6 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/config"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/src/standalone"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
@@ -364,7 +363,6 @@ func testInitialConnectRetrySetCorrectly(t *testing.T) {
 	initGenerator := InitGenerator{
 		client:        clt,
 		namespace:     operatorNamespace,
-		dynakubeQuery: kubeobjects.NewDynakubeQuery(clt, operatorNamespace),
 	}
 	secretConfig, err := initGenerator.createSecretConfigForDynaKube(context.TODO(), dynakube, kubesystemUID, map[string]string{})
 

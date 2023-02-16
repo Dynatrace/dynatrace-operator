@@ -3,6 +3,7 @@ package troubleshoot
 import (
 	"fmt"
 
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
@@ -12,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -100,8 +102,8 @@ func dynakubeNotValidMessage() string {
 }
 
 func getSelectedDynakube(troubleshootCtx *troubleshootContext) error {
-	query := kubeobjects.NewDynakubeQuery(troubleshootCtx.apiReader, troubleshootCtx.namespaceName).WithContext(troubleshootCtx.context)
-	dynakube, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.dynakube.Name})
+	var dynakube dynatracev1beta1.DynaKube
+	err := troubleshootCtx.apiReader.Get(troubleshootCtx.context, client.ObjectKey{Name: troubleshootCtx.dynakube.Name, Namespace: troubleshootCtx.namespaceName}, &dynakube)
 
 	if err != nil {
 		return determineSelectedDynakubeError(troubleshootCtx, err)

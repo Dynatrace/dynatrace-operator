@@ -5,7 +5,6 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -37,12 +36,12 @@ func (opts *options) appendDisableHostsRequests(disableHostsRequests bool) {
 	opts.Opts = append(opts.Opts, dtclient.DisableHostsRequests(disableHostsRequests))
 }
 
-func (opts *options) appendProxySettings(apiReader client.Reader, proxyEntry *dynatracev1beta1.DynaKubeProxy, namespace string) error {
-	if proxyEntry == nil {
+func (opts *options) appendProxySettings(apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube, namespace string) error {
+	if dynakube == nil || !dynakube.HasProxy() {
 		return nil
 	}
 
-	proxyOption, err := opts.createProxyOption(apiReader, proxyEntry, namespace)
+	proxyOption, err := opts.createProxyOption(apiReader, dynakube, namespace)
 	if err != nil {
 		return err
 	}
@@ -51,37 +50,16 @@ func (opts *options) appendProxySettings(apiReader client.Reader, proxyEntry *dy
 	return nil
 }
 
-func (opts *options) createProxyOption(apiReader client.Reader, proxyEntry *dynatracev1beta1.DynaKubeProxy, namespace string) (dtclient.Option, error) {
+func (opts *options) createProxyOption(apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube, namespace string) (dtclient.Option, error) {
 	var proxyOption dtclient.Option
 
-	if proxyEntry.ValueFrom != "" {
-		proxyURL, err := opts.getProxyUrlFromSecret(apiReader, proxyEntry, namespace)
-		if err != nil {
-			return nil, err
-		}
-
-		proxyOption = dtclient.Proxy(proxyURL)
-	} else if proxyEntry.Value != "" {
-		proxyOption = dtclient.Proxy(proxyEntry.Value)
+	proxyUrl, err := dynakube.Proxy(opts.ctx, apiReader)
+	if err != nil {
+		return proxyOption, err
 	}
 
+	proxyOption = dtclient.Proxy(proxyUrl)
 	return proxyOption, nil
-}
-
-func (opts *options) getProxyUrlFromSecret(apiReader client.Reader, proxyEntry *dynatracev1beta1.DynaKubeProxy, namespace string) (string, error) {
-	proxySecret := &corev1.Secret{}
-	err := apiReader.Get(opts.ctx, client.ObjectKey{Name: proxyEntry.ValueFrom, Namespace: namespace}, proxySecret)
-
-	if err != nil {
-		return "", errors.WithMessage(err, "failed to get proxy secret")
-	}
-
-	proxyURL, err := kubeobjects.ExtractToken(proxySecret, dtclient.CustomProxySecretKey)
-	if err != nil {
-		return "", errors.WithMessage(err, "failed to extract proxy secret field")
-	}
-
-	return proxyURL, nil
 }
 
 func (opts *options) appendTrustedCerts(apiReader client.Reader, trustedCerts string, namespace string) error {
