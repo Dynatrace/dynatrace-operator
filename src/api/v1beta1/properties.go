@@ -42,7 +42,6 @@ const (
 	defaultSyntheticImage  = "/linux/dynatrace-synthetic:latest"
 
 	TrustedCAKey = "certs"
-	ProxyKey     = "proxy"
 	TlsCertKey   = "server.crt"
 )
 
@@ -159,18 +158,6 @@ func (dk *DynaKube) IsSyntheticActiveGateEnabled() bool {
 
 func (dk *DynaKube) HasActiveGateCaCert() bool {
 	return dk.ActiveGateMode() && dk.Spec.ActiveGate.TlsSecretName != ""
-}
-
-func (dk *DynaKube) HasProxy() bool {
-	return dk.Spec.Proxy != nil && (dk.Spec.Proxy.Value != "" || dk.Spec.Proxy.ValueFrom != "")
-}
-
-func (dk *DynaKube) NeedsActiveGateProxy() bool {
-	return !dk.FeatureActiveGateIgnoreProxy() && dk.HasProxy()
-}
-
-func (dk *DynaKube) NeedsOneAgentProxy() bool {
-	return !dk.FeatureOneAgentIgnoreProxy() && dk.HasProxy()
 }
 
 func (dk *DynaKube) NeedsOneAgentPrivileged() bool {
