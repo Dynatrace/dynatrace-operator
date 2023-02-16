@@ -8,7 +8,6 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -131,7 +130,7 @@ func (r *Reconciler) proxyUrlFromUserSecret(ctx context.Context, dynakube *dynat
 		return "", errors.WithMessage(err, fmt.Sprintf("failed to query %s secret", dynakube.Spec.Proxy.ValueFrom))
 	}
 
-	proxy, ok := proxySecret.Data[consts.ProxySecretKey]
+	proxy, ok := proxySecret.Data[dynatracev1beta1.ProxyKey]
 	if !ok {
 		return "", fmt.Errorf("invalid secret %s", dynakube.Spec.Proxy.ValueFrom)
 	}

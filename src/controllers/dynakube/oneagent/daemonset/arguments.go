@@ -52,5 +52,5 @@ func (dsInfo *builderInfo) appendProxyArg(args []string) []string {
 }
 
 func (dsInfo *builderInfo) hasProxy() bool {
-	return dsInfo.dynakube != nil && dsInfo.dynakube.Spec.Proxy != nil && (dsInfo.dynakube.Spec.Proxy.ValueFrom != "" || dsInfo.dynakube.Spec.Proxy.Value != "")
+	return dsInfo.dynakube != nil && dsInfo.dynakube.HasProxy()
 }
