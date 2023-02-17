@@ -24,7 +24,7 @@ RUN \
     --mount=type=cache,target=/var/cache/dnf \
     microdnf install -y util-linux tar --nodocs
 
-FROM registry.access.redhat.com/ubi9-micro:9.1.0
+FROM registry.access.redhat.com/ubi9-micro:9.1.0-13
 
 # operator binary
 COPY --from=operator-build /app/build/_output/bin /usr/local/bin
