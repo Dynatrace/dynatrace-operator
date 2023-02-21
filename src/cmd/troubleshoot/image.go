@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/containers/image/v5/docker"
 	"github.com/containers/image/v5/types"
+	"github.com/spf13/afero"
 )
 
 const (
@@ -74,7 +75,13 @@ func tryImagePull(troubleshootCtx *troubleshootContext, image string) error {
 		return err
 	}
 
-	systemCtx, err := makeSysContext(troubleshootCtx, imageReference)
+	fs := afero.Afero{Fs: afero.NewOsFs()}
+	dockerCfg := dockerconfig.NewDockerConfig(troubleshootCtx.apiReader, troubleshootCtx.dynakube)
+	defer func(dockerCfg *dockerconfig.DockerConfig, fs afero.Afero) {
+		_ = dockerCfg.Cleanup(fs)
+	}(dockerCfg, fs)
+
+	systemCtx, err := makeSysContext(troubleshootCtx, imageReference, dockerCfg)
 	if err != nil {
 		return err
 	}
@@ -84,8 +91,8 @@ func tryImagePull(troubleshootCtx *troubleshootContext, image string) error {
 	if err != nil {
 		return err
 	}
-	defer imageSource.Close()
 
+	_ = imageSource.Close()
 	return nil
 }
 
@@ -93,9 +100,9 @@ func normalizeDockerReference(image string) string {
 	return "//" + image
 }
 
-func makeSysContext(troubleshootCtx *troubleshootContext, imageReference types.ImageReference) (*types.SystemContext, error) {
-	dockerCfg := dockerconfig.NewDockerConfig(troubleshootCtx.apiReader, troubleshootCtx.dynakube)
-	err := dockerCfg.SetupAuthsFromSecret(&troubleshootCtx.pullSecret)
+func makeSysContext(troubleshootCtx *troubleshootContext, imageReference types.ImageReference, dockerCfg *dockerconfig.DockerConfig) (*types.SystemContext, error) {
+	dockerCfg.SetRegistryAuthSecret(&troubleshootCtx.pullSecret)
+	err := dockerCfg.StoreRequiredFiles(troubleshootCtx.context, afero.Afero{Fs: afero.NewOsFs()})
 	if err != nil {
 		return nil, err
 	}

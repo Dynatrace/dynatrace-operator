@@ -22,10 +22,6 @@ func (pr PathResolver) AgentBinaryDir(tenantUUID string) string {
 	return filepath.Join(pr.TenantDir(tenantUUID), dtcsi.AgentBinaryDir)
 }
 
-func (pr PathResolver) ImageCertPath(tenantUUID string) string {
-	return filepath.Join(pr.TenantDir(tenantUUID), "ca.crt")
-}
-
 func (pr PathResolver) AgentProcessModuleConfigForVersion(tenantUUID string, version string) string {
 	return filepath.Join(pr.AgentBinaryDirForVersion(tenantUUID, version), "agent", "conf", "ruxitagentproc.conf")
 }

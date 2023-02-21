@@ -75,6 +75,10 @@ func (installer Installer) UpdateProcessModuleConfig(targetDir string, processMo
 	return processmoduleconfig.CreateAgentConfigDir(installer.fs, targetDir, sourceDir, processModuleConfig)
 }
 
+func (installer Installer) Cleanup() error {
+	return installer.props.DockerConfig.Cleanup(afero.Afero{Fs: installer.fs})
+}
+
 func (installer *Installer) installAgentFromImage() error {
 	defer installer.fs.RemoveAll(CacheDir)
 	err := installer.fs.MkdirAll(CacheDir, common.MkDirFileMode)
