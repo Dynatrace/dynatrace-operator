@@ -1,17 +1,13 @@
-# TODO: Replace with istio
-apiVersion: "cilium.io/v2"
-kind: CiliumNetworkPolicy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
 metadata:
-  name: "csi-driver-deny-egress-to-world"
+  name: "csi-driver-deny-egress"
   namespace: dynatrace
 spec:
-  endpointSelector:
+  podSelector:
     matchLabels:
-      internal.oneagent.dynatrace.com/app: csi-driver
-      internal.oneagent.dynatrace.com/component: csi-driver
-  egress:
-    - toEntities:
-        - "cluster"
-  ingress:
-    - fromEntities:
-        - "cluster"
+      app.kubernetes.io/name: dynatrace-operator
+      app.kubernetes.io/component: csi-driver
+  policyTypes:
+  - Egress
+  - Ingress

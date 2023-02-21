@@ -26,7 +26,7 @@ modules are active and that the *Gateway* process is reachable via *Gateway serv
 
 # ActiveGate - proxy
 ## Prerequisites
-cilium service mesh
+istio service mesh
 
 ## Setup
 OneAgent disabled
@@ -116,7 +116,7 @@ installed and pre-configured on the cluster.
 
 # CloudNative - network
 ## Prerequisites
-cilium service mesh
+istio service mesh
 
 ## Setup
 CloudNative deployment with CSI driver
@@ -132,7 +132,7 @@ pods are up and running.
 
 # CloudNative - proxy
 ## Prerequisites
-cilium service mesh
+istio service mesh
 
 ## Setup
 CloudNative deployment with CSI driver
