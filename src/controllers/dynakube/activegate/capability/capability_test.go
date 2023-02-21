@@ -69,7 +69,7 @@ func TestNewMultiCapability(t *testing.T) {
 		assert.Equal(t, expectedShortName, mc.ShortName())
 		assert.Equal(t, expectedArgName, mc.ArgName())
 	})
-	t.Run(`creates new multicapability without capabilites set in dynakube`, func(t *testing.T) {
+	t.Run(`creates new multicapability without capabilities set in dynakube`, func(t *testing.T) {
 		dk := buildDynakube(false)
 		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
