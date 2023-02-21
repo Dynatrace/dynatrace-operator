@@ -18,9 +18,9 @@ const (
 )
 
 func buildDynakube(includeCapabilites bool) *dynatracev1beta1.DynaKube {
-	var capabilites []dynatracev1beta1.CapabilityDisplayName
+	var capabilities []dynatracev1beta1.CapabilityDisplayName
 	if includeCapabilites {
-		capabilites = []dynatracev1beta1.CapabilityDisplayName{
+		capabilities = []dynatracev1beta1.CapabilityDisplayName{
 			dynatracev1beta1.RoutingCapability.DisplayName,
 			dynatracev1beta1.KubeMonCapability.DisplayName,
 			dynatracev1beta1.MetricsIngestCapability.DisplayName,
@@ -36,7 +36,7 @@ func buildDynakube(includeCapabilites bool) *dynatracev1beta1.DynaKube {
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			APIURL: testApiUrl,
 			ActiveGate: dynatracev1beta1.ActiveGateSpec{
-				Capabilities: capabilites,
+				Capabilities: capabilities,
 			},
 		},
 	}
