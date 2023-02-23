@@ -72,7 +72,9 @@ func determineMaxUnmountedVolumeAge(maxAgeEnvValue string) time.Duration {
 		return defaultMaxUnmountedCsiVolumeAge
 	}
 	if maxAge < 0 {
-		return 0
+		maxAge = 0
 	}
+
+	log.Info("GarbageCollection is using", "MaxUnmountedCsiVolumeAge", maxAge)
 	return 24 * time.Duration(maxAge) * time.Hour
 }
