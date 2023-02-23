@@ -48,11 +48,11 @@ func NetworkProblems(t *testing.T) features.Feature {
 	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
 	sampleApp.WithNamespace(sampleNamespace)
 
-	// Register sample namespace and network-policy install
-	assess.InstallManifest(builder, csiNetworkPolicy)
-
 	// Register operator install
 	assess.InstallOperatorFromSource(builder, testDynakube)
+
+	// Register network policy to block csi driver traffic
+	assess.InstallManifest(builder, csiNetworkPolicy)
 
 	// Register actual test
 	assess.InstallDynakube(builder, &secretConfig, testDynakube)
