@@ -16,6 +16,10 @@
 platform: "kubernetes"
 
 image: ""
+# The docker repository to use. If it is defined, it has priority over the `image` definition.
+repository: ""
+# The image tag to use. The default is the chart appVersion.
+tag: ""
 customPullSecret: ""
 installCRD: false
 

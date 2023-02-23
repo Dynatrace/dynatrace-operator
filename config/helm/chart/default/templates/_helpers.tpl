@@ -24,7 +24,9 @@ Create chart name and version as used by the chart label.
 Check if default image is used
 */}}
 {{- define "dynatrace-operator.image" -}}
-{{- if .Values.image -}}
+{{- if .Values.repository -}}
+	{{- printf "%s:v%s" .Values.repository (default .Chart.AppVersion .Values.tag) -}}
+{{- else if .Values.image -}}
 	{{- printf "%s" .Values.image -}}
 {{- else -}}
 	{{- if eq .Values.platform "google-marketplace" -}}
