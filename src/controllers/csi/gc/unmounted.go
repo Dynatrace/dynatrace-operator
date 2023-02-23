@@ -71,8 +71,11 @@ func determineMaxUnmountedVolumeAge(maxAgeEnvValue string) time.Duration {
 		log.Error(err, "failed to parse MaxUnmountedCsiVolumeAge from", "env", maxUnmountedCsiVolumeAgeEnv, "value", maxAgeEnvValue)
 		return defaultMaxUnmountedCsiVolumeAge
 	}
-	if maxAge < 0 {
+	if maxAge <= 0 {
+		log.Info("max unmounted csi volume age is set to 0, files will be deleted immediately")
 		return 0
 	}
+
+	log.Info("max unmounted csi volume age used", "age in days", maxAge)
 	return 24 * time.Duration(maxAge) * time.Hour
 }
