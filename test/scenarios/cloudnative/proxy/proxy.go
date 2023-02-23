@@ -17,7 +17,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
@@ -56,7 +56,6 @@ func withProxy(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features
 	proxy.SetupProxyWithTeardown(builder, testDynakube)
 	proxy.CutOffDynatraceNamespace(builder, proxySpec)
 	proxy.CutOffSampleNamespace(builder, proxySpec)
-	// todo: verify traffic does not work
 
 	// Register actual test
 	assess.InstallDynakube(builder, &secretConfig, testDynakube)
@@ -76,7 +75,7 @@ func checkOneAgentEnvVars(dynakube dynatracev1beta1.DynaKube) features.Func {
 		err := daemonset.NewQuery(ctx, resources, client.ObjectKey{
 			Name:      dynakube.OneAgentDaemonsetName(),
 			Namespace: dynakube.Namespace,
-		}).ForEachPod(func(podItem v1.Pod) {
+		}).ForEachPod(func(podItem corev1.Pod) {
 			require.NotNil(t, podItem)
 			require.NotNil(t, podItem.Spec)
 
@@ -104,7 +103,7 @@ func checkSampleInitContainerEnvVars(sampleApp sampleapps.SampleApp) features.Fu
 	}
 }
 
-func checkEnvVarsInContainer(t *testing.T, podItem v1.Pod, containerName string, envVar string) {
+func checkEnvVarsInContainer(t *testing.T, podItem corev1.Pod, containerName string, envVar string) {
 	for _, container := range podItem.Spec.Containers {
 		if container.Name == containerName {
 			require.NotNil(t, container.Env)

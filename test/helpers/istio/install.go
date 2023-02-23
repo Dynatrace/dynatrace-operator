@@ -66,7 +66,6 @@ func AssertIstiodDeployment() func(ctx context.Context, environmentConfig *envco
 func AssessIstio(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube, sampleApp sampleapps.SampleApp) {
 	builder.Assess("sample apps have working istio init container", checkSampleAppIstioInitContainers(sampleApp, testDynakube))
 	builder.Assess("operator pods have working istio init container", checkOperatorIstioInitContainers(testDynakube))
-	// todo: how can operator pod have init container if namespace as not labeled?
 	builder.Assess("istio virtual service for ApiUrl created", checkVirtualServiceForApiUrl(testDynakube))
 	builder.Assess("istio service entry for ApiUrl created", checkServiceEntryForApiUrl(testDynakube))
 }
