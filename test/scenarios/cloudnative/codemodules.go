@@ -80,7 +80,7 @@ func CodeModules(t *testing.T, istioEnabled bool) features.Feature {
 
 	namespaceBuilder := namespace.NewBuilder("codemodules-sample")
 	if istioEnabled {
-		namespaceBuilder = namespaceBuilder.WithLabels(istio.IstioLabel)
+		namespaceBuilder = namespaceBuilder.WithLabels(istio.InjectionLabel)
 	}
 	sampleNamespace := namespaceBuilder.WithLabels(cloudNativeDynakube.NamespaceSelector().MatchLabels).Build()
 	sampleApp := sampleapps.NewSampleDeployment(t, cloudNativeDynakube)

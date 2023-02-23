@@ -28,6 +28,7 @@ import (
 
 func Install(t *testing.T, istioEnabled bool) features.Feature {
 	builder := features.New("default installation")
+	t.Logf("istio enabled: %v", istioEnabled)
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
 	dynakubeBuilder := dynakube.NewBuilder().
@@ -40,12 +41,16 @@ func Install(t *testing.T, istioEnabled bool) features.Feature {
 	testDynakube := dynakubeBuilder.Build()
 
 	// Register operator install
-	assess.InstallOperatorFromSource(builder, testDynakube)
+	operatorNamespaceBuilder := namespace.NewBuilder(testDynakube.Namespace)
+	if istioEnabled {
+		operatorNamespaceBuilder = operatorNamespaceBuilder.WithLabels(istio.InjectionLabel)
+	}
+	assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), testDynakube)
 
 	// Register sample app install
 	namespaceBuilder := namespace.NewBuilder("cloudnative-sample")
 	if istioEnabled {
-		namespaceBuilder = namespaceBuilder.WithLabels(istio.IstioLabel)
+		namespaceBuilder = namespaceBuilder.WithLabels(istio.InjectionLabel)
 	}
 	sampleNamespace := namespaceBuilder.Build()
 	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)

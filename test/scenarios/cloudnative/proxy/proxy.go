@@ -56,6 +56,7 @@ func withProxy(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features
 	proxy.SetupProxyWithTeardown(builder, testDynakube)
 	proxy.CutOffDynatraceNamespace(builder, proxySpec)
 	proxy.CutOffSampleNamespace(builder, proxySpec)
+	// todo: verify traffic does not work
 
 	// Register actual test
 	assess.InstallDynakube(builder, &secretConfig, testDynakube)
