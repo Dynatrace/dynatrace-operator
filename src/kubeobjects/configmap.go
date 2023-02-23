@@ -2,7 +2,9 @@ package kubeobjects
 
 import (
 	"context"
+	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/src/builder"
 	"github.com/go-logr/logr"
@@ -81,6 +83,24 @@ func (query ConfigMapQuery) CreateOrUpdate(configMap corev1.ConfigMap) error {
 
 func AreConfigMapsEqual(configMap corev1.ConfigMap, other corev1.ConfigMap) bool {
 	return reflect.DeepEqual(configMap.Data, other.Data) && reflect.DeepEqual(configMap.Labels, other.Labels) && reflect.DeepEqual(configMap.OwnerReferences, other.OwnerReferences)
+}
+
+func ExtractField(configMap *corev1.ConfigMap, key string) (string, error) {
+	value, hasKey := configMap.Data[key]
+	if !hasKey {
+		err := fmt.Errorf("missing field %s", key)
+		return "", err
+	}
+
+	return strings.TrimSpace(value), nil
+}
+
+func (query ConfigMapQuery) GetDataByKey(connectionInfoConfigMapName string, namespaceName string, keyName string) (string, error) {
+	oneAgentConnectionInfo, err := query.Get(types.NamespacedName{Name: connectionInfoConfigMapName, Namespace: namespaceName})
+	if err != nil {
+		return "", err
+	}
+	return ExtractField(&oneAgentConnectionInfo, keyName)
 }
 
 type configMapData = corev1.ConfigMap

@@ -2,6 +2,7 @@ package connectioninfo
 
 import (
 	"context"
+	"encoding/json"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
@@ -60,7 +61,7 @@ func (r *Reconciler) reconcileOneAgentConnectionInfo() error {
 		return err
 	}
 
-	err = r.maintainConnectionInfoObjects(r.dynakube.OneagentTenantSecret(), r.dynakube.OneAgentConnectionInfoConfigMapName(), oneAgentConnectionInfo.ConnectionInfo)
+	err = r.maintainOneAgentConnectionInfoObjects(r.dynakube.OneagentTenantSecret(), r.dynakube.OneAgentConnectionInfoConfigMapName(), oneAgentConnectionInfo)
 	if err != nil {
 		return err
 	}
@@ -104,8 +105,45 @@ func (r *Reconciler) maintainConnectionInfoObjects(secretName string, configMapN
 	return nil
 }
 
+func (r *Reconciler) maintainOneAgentConnectionInfoObjects(secretName string, configMapName string, connectionInfo dtclient.OneAgentConnectionInfo) error {
+	err := r.createTenantTokenSecret(secretName, connectionInfo.ConnectionInfo)
+	if err != nil {
+		return err
+	}
+
+	err = r.createOneAgentTenantConnectionInfoConfigMap(configMapName, connectionInfo)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (r *Reconciler) createTenantConnectionInfoConfigMap(secretName string, connectionInfo dtclient.ConnectionInfo) error {
-	configMapData := extractPublicData(connectionInfo)
+	configMapData := extractPublicData(connectionInfo, "")
+	configMap, err := kubeobjects.CreateConfigMap(r.scheme, r.dynakube,
+		kubeobjects.NewConfigMapNameModifier(secretName),
+		kubeobjects.NewConfigMapNamespaceModifier(r.dynakube.Namespace),
+		kubeobjects.NewConfigMapDataModifier(configMapData))
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	query := kubeobjects.NewConfigMapQuery(r.context, r.client, r.apiReader, log)
+	err = query.CreateOrUpdate(*configMap)
+	if err != nil {
+		log.Info("could not create or update configMap for connection info", "name", configMap.Name)
+		return err
+	}
+	return nil
+}
+
+func (r *Reconciler) createOneAgentTenantConnectionInfoConfigMap(secretName string, connectionInfo dtclient.OneAgentConnectionInfo) error {
+	communicationHosts, err := encodeCommunicationHosts(connectionInfo)
+	if err != nil {
+		return err
+	}
+	configMapData := extractPublicData(connectionInfo.ConnectionInfo, communicationHosts)
 	configMap, err := kubeobjects.CreateConfigMap(r.scheme, r.dynakube,
 		kubeobjects.NewConfigMapNameModifier(secretName),
 		kubeobjects.NewConfigMapNamespaceModifier(r.dynakube.Namespace),
@@ -150,7 +188,7 @@ func extractSensitiveData(connectionInfo dtclient.ConnectionInfo) map[string][]b
 	return data
 }
 
-func extractPublicData(connectionInfo dtclient.ConnectionInfo) map[string]string {
+func extractPublicData(connectionInfo dtclient.ConnectionInfo, communicationHosts string) map[string]string {
 	data := map[string]string{}
 
 	if connectionInfo.TenantUUID != "" {
@@ -160,5 +198,19 @@ func extractPublicData(connectionInfo dtclient.ConnectionInfo) map[string]string
 		data[CommunicationEndpointsName] = connectionInfo.Endpoints
 	}
 
+	if communicationHosts != "" {
+		data[CommunicationHosts] = communicationHosts
+	}
 	return data
+}
+
+func encodeCommunicationHosts(connectionInfo dtclient.OneAgentConnectionInfo) (string, error) {
+	if len(connectionInfo.CommunicationHosts) > 0 {
+		communicationHostsBytes, err := json.Marshal(connectionInfo.CommunicationHosts)
+		if err != nil {
+			return "", errors.WithStack(err)
+		}
+		return string(communicationHostsBytes), nil
+	}
+	return "", nil
 }

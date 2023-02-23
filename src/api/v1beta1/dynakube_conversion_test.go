@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -230,9 +231,7 @@ func TestConversion_ConvertFrom(t *testing.T) {
 	assert.Equal(t, oldDynakube.Status.ActiveGate.LastImageProbeTimestamp, convertedDynakube.Status.ActiveGate.LastUpdateProbeTimestamp)
 	assert.Equal(t, oldDynakube.Status.ActiveGate.ImageVersion, convertedDynakube.Status.ActiveGate.Version)
 	assert.Equal(t, oldDynakube.Status.Conditions, convertedDynakube.Status.Conditions)
-	assert.Equal(t, oldDynakube.Status.LastAPITokenProbeTimestamp, convertedDynakube.Status.LastAPITokenProbeTimestamp)
-	assert.Equal(t, oldDynakube.Status.LastClusterVersionProbeTimestamp, convertedDynakube.Status.LastClusterVersionProbeTimestamp)
-	assert.Equal(t, oldDynakube.Status.LastPaaSTokenProbeTimestamp, convertedDynakube.Status.LastPaaSTokenProbeTimestamp)
+	assert.Equal(t, oldDynakube.Status.LastAPITokenProbeTimestamp, convertedDynakube.Status.LastTokenProbeTimestamp)
 	assert.Equal(t, oldDynakube.Status.OneAgent.ImageHash, convertedDynakube.Status.OneAgent.ImageHash)
 
 	assert.Len(t, convertedDynakube.Status.OneAgent.Instances, 1)
@@ -244,7 +243,6 @@ func TestConversion_ConvertFrom(t *testing.T) {
 	assert.Equal(t, oldDynakube.Status.OneAgent.LastUpdateProbeTimestamp, convertedDynakube.Status.OneAgent.LastUpdateProbeTimestamp)
 	assert.Equal(t, oldDynakube.Status.OneAgent.Version, convertedDynakube.Status.OneAgent.Version)
 	assert.Equal(t, string(oldDynakube.Status.Phase), string(convertedDynakube.Status.Phase))
-	assert.Equal(t, oldDynakube.Status.Tokens, convertedDynakube.Status.Tokens)
 	assert.Equal(t, oldDynakube.Status.UpdatedTimestamp, convertedDynakube.Status.UpdatedTimestamp)
 }
 
@@ -378,12 +376,9 @@ func TestConversion_ConvertTo(t *testing.T) {
 			},
 		},
 		Status: DynaKubeStatus{
-			Phase:                            "test-phase",
-			UpdatedTimestamp:                 time,
-			LastAPITokenProbeTimestamp:       &time,
-			LastPaaSTokenProbeTimestamp:      &time,
-			Tokens:                           "test-tokens",
-			LastClusterVersionProbeTimestamp: &time,
+			Phase:                   "test-phase",
+			UpdatedTimestamp:        time,
+			LastTokenProbeTimestamp: &time,
 			Conditions: []metav1.Condition{
 				{
 					Type:               "type",
@@ -450,9 +445,9 @@ func TestConversion_ConvertTo(t *testing.T) {
 
 	assert.Equal(t, oldDynakube.Status.ActiveGate.ImageHash, convertedDynakube.Status.ActiveGate.ImageHash)
 	assert.Equal(t, oldDynakube.Status.Conditions, convertedDynakube.Status.Conditions)
-	assert.Equal(t, oldDynakube.Status.LastAPITokenProbeTimestamp, convertedDynakube.Status.LastAPITokenProbeTimestamp)
-	assert.Equal(t, oldDynakube.Status.LastClusterVersionProbeTimestamp, convertedDynakube.Status.LastClusterVersionProbeTimestamp)
-	assert.Equal(t, oldDynakube.Status.LastPaaSTokenProbeTimestamp, convertedDynakube.Status.LastPaaSTokenProbeTimestamp)
+	assert.Equal(t, oldDynakube.Status.LastTokenProbeTimestamp, convertedDynakube.Status.LastAPITokenProbeTimestamp)
+	assert.WithinDuration(t, v1.Time{}.Time, convertedDynakube.Status.LastClusterVersionProbeTimestamp.Time, 0)
+	assert.WithinDuration(t, v1.Time{}.Time, convertedDynakube.Status.LastPaaSTokenProbeTimestamp.Time, 0)
 	assert.Equal(t, oldDynakube.Status.OneAgent.ImageHash, convertedDynakube.Status.OneAgent.ImageHash)
 
 	assert.Len(t, convertedDynakube.Status.OneAgent.Instances, 1)
@@ -464,7 +459,7 @@ func TestConversion_ConvertTo(t *testing.T) {
 	assert.Equal(t, oldDynakube.Status.OneAgent.LastUpdateProbeTimestamp, convertedDynakube.Status.OneAgent.LastUpdateProbeTimestamp)
 	assert.Equal(t, oldDynakube.Status.OneAgent.Version, convertedDynakube.Status.OneAgent.Version)
 	assert.Equal(t, string(oldDynakube.Status.Phase), string(convertedDynakube.Status.Phase))
-	assert.Equal(t, oldDynakube.Status.Tokens, convertedDynakube.Status.Tokens)
+	assert.Equal(t, "", convertedDynakube.Status.Tokens)
 	assert.Equal(t, oldDynakube.Status.UpdatedTimestamp, convertedDynakube.Status.UpdatedTimestamp)
 }
 

@@ -25,6 +25,8 @@ type InitGenerator struct {
 	apiReader     client.Reader
 	namespace     string
 	canWatchNodes bool
+	dynakubeQuery kubeobjects.DynakubeQuery
+	tenantUUID    string
 }
 
 type nodeInfo struct {
@@ -159,7 +161,7 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dynak
 		NetworkZone:         dynakube.Spec.NetworkZone,
 		TrustedCAs:          string(trustedCAs),
 		SkipCertCheck:       dynakube.Spec.SkipCertCheck,
-		TenantUUID:          dynakube.Status.ConnectionInfo.TenantUUID,
+		TenantUUID:          g.tenantUUID,
 		HasHost:             dynakube.CloudNativeFullstackMode(),
 		MonitoringNodes:     hostMonitoringNodes,
 		TlsCert:             tlsCert,
@@ -192,15 +194,15 @@ func (g *InitGenerator) getHostMonitoringNodes(dk *dynatracev1beta1.DynaKube) (m
 	if !dk.CloudNativeFullstackMode() {
 		return imNodes, nil
 	}
-	tenantUUID := dk.Status.ConnectionInfo.TenantUUID
+
 	if g.canWatchNodes {
 		var err error
-		imNodes, err = g.calculateImNodes(dk, tenantUUID)
+		imNodes, err = g.calculateImNodes(dk, g.tenantUUID)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		updateImNodes(dk, tenantUUID, imNodes)
+		updateImNodes(dk, g.tenantUUID, imNodes)
 	}
 	return imNodes, nil
 }

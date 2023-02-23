@@ -2,6 +2,7 @@ package dynakube
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"os"
 	"time"
@@ -30,6 +31,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -109,7 +111,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	}
 
 	oldStatus := *dynakube.Status.DeepCopy()
-	updated := controller.reconcileIstio(dynakube)
+	updated := controller.reconcileIstio(ctx, dynakube)
 	if updated {
 		log.Info("istio: objects updated")
 	}
@@ -165,12 +167,16 @@ func (controller *Controller) createDynakubeMapper(ctx context.Context, dynakube
 	return &dkMapper
 }
 
-func (controller *Controller) reconcileIstio(dynakube *dynatracev1beta1.DynaKube) bool {
-	var err error
+func (controller *Controller) reconcileIstio(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) bool {
 	updated := false
 
 	if dynakube.Spec.EnableIstio {
-		updated, err = istio.NewReconciler(controller.config, controller.scheme).Reconcile(dynakube)
+		communicationHosts, err := controller.getCommunicationHosts(ctx, dynakube)
+		if err != nil {
+			return false
+		}
+
+		updated, err = istio.NewReconciler(controller.config, controller.scheme).Reconcile(dynakube, communicationHosts)
 		if err != nil {
 			// If there are errors log them, but move on.
 			log.Info("istio: failed to reconcile objects", "error", err)
@@ -178,6 +184,26 @@ func (controller *Controller) reconcileIstio(dynakube *dynatracev1beta1.DynaKube
 	}
 
 	return updated
+}
+
+func (controller *Controller) getCommunicationHosts(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) ([]dtclient.CommunicationHost, error) {
+	connectionInfoQuery := kubeobjects.NewConfigMapQuery(ctx, controller.client, controller.apiReader, log)
+	oneAgentConnectionInfo, err := connectionInfoQuery.Get(types.NamespacedName{Name: dynakube.OneAgentConnectionInfoConfigMapName(), Namespace: dynakube.Namespace})
+	if err != nil {
+		log.Info("istio: failed to reconcile objects", "error", err)
+		return nil, err
+	}
+	communicationHostsString, err := kubeobjects.ExtractField(&oneAgentConnectionInfo, connectioninfo.CommunicationHosts)
+	if err != nil {
+		log.Info("istio: failed to reconcile objects", "error", err)
+		return nil, err
+	}
+	var communicationHosts []dtclient.CommunicationHost
+	if err := json.Unmarshal([]byte(communicationHostsString), &communicationHosts); err != nil {
+		log.Info("istio: failed to reconcile objects", "error", err)
+		return nil, err
+	}
+	return communicationHosts, nil
 }
 
 func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
@@ -210,16 +236,16 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		return err
 	}
 
+	err = connectioninfo.NewReconciler(ctx, controller.client, controller.apiReader, controller.scheme, dynakube, dynatraceClient).Reconcile()
+	if err != nil {
+		return err
+	}
+
 	err = dtpullsecret.
 		NewReconciler(ctx, controller.client, controller.apiReader, controller.scheme, dynakube, tokens).
 		Reconcile()
 	if err != nil {
 		log.Info("could not reconcile Dynatrace pull secret")
-		return err
-	}
-
-	err = connectioninfo.NewReconciler(ctx, controller.client, controller.apiReader, controller.scheme, dynakube, dynatraceClient).Reconcile()
-	if err != nil {
 		return err
 	}
 

@@ -42,18 +42,6 @@ func TestReconciler_GenerateData(t *testing.T) {
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			APIURL: testApiUrl,
 		},
-		Status: dynatracev1beta1.DynaKubeStatus{
-			ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
-				CommunicationHosts: []dynatracev1beta1.CommunicationHostStatus{
-					{
-						Protocol: testProtocol,
-						Host:     testHost,
-						Port:     testPort,
-					},
-				},
-				TenantUUID: testTenant,
-			},
-		},
 	}
 	r := &Reconciler{
 		ctx:      context.Background(),
@@ -61,6 +49,7 @@ func TestReconciler_GenerateData(t *testing.T) {
 		tokens: token.Tokens{
 			dtclient.DynatracePaasToken: token.Token{Value: testPaasToken},
 		},
+		tenantUUID: testTenant,
 	}
 
 	data, err := r.GenerateData()

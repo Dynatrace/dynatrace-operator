@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
@@ -28,7 +29,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Namespace: testNamespace,
 				Name:      testName,
 			}}
-		fakeClient := fake.NewClient()
+		fakeClient := fake.NewClient(connectioninfo.CreateTestConnectionInfoConfigMap(testName, dynakube))
 		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, token.Tokens{
 			dtclient.DynatraceApiToken: token.Token{Value: testValue},
 		})
@@ -76,13 +77,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testEndpoint,
 			},
-			Status: dynatracev1beta1.DynaKubeStatus{
-				ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
-					TenantUUID: testName,
-				},
-			},
 		}
-		fakeClient := fake.NewClient()
+		fakeClient := fake.NewClient(connectioninfo.CreateTestConnectionInfoConfigMap(testName, dynakube))
 		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, token.Tokens{
 			dtclient.DynatraceApiToken: token.Token{Value: testValue},
 		})
@@ -113,13 +109,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testEndpoint,
 			},
-			Status: dynatracev1beta1.DynaKubeStatus{
-				ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
-					TenantUUID: testName,
-				},
-			},
 		}
-		fakeClient := fake.NewClient()
+		fakeClient := fake.NewClient(connectioninfo.CreateTestConnectionInfoConfigMap(testName, dynakube))
 		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, token.Tokens{
 			dtclient.DynatraceApiToken: token.Token{Value: testValue},
 		})

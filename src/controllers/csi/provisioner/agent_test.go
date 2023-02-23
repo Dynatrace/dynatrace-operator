@@ -119,11 +119,6 @@ func TestUpdateAgent(t *testing.T) {
 					},
 				},
 			},
-			Status: dynatracev1beta1.DynaKubeStatus{
-				ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
-					TenantUUID: tenantUUID,
-				},
-			},
 		}
 		updater := createTestAgentUrlUpdater(t, &dk)
 		processModuleCache := createTestProcessModuleConfigCache("1")
