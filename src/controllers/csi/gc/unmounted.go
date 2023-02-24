@@ -17,7 +17,7 @@ const (
 func (gc *CSIGarbageCollector) runUnmountedVolumeGarbageCollection(ctx context.Context, tenantUUID string) {
 	unmountedVolumes, err := gc.getUnmountedVolumes(tenantUUID)
 	if err != nil {
-		log.Info("failed to get unmounted volume information")
+		log.Info("failed to get unmounted volume information", "error", err)
 		return
 	}
 
@@ -33,9 +33,11 @@ func (gc *CSIGarbageCollector) getUnmountedVolumes(tenantUUID string) ([]os.File
 	}
 
 	for _, volumeID := range volumeIDs {
-		isUnused, err := afero.IsEmpty(gc.fs, gc.path.OverlayMappedDir(tenantUUID, volumeID.Name()))
+		mappedDir := gc.path.OverlayMappedDir(tenantUUID, volumeID.Name())
+		isUnused, err := afero.IsEmpty(gc.fs, mappedDir)
 		if err != nil {
-			return nil, err
+			log.Info("failed to check if directory is empty, skipping", "folder", mappedDir, "error", err)
+			continue
 		}
 
 		if isUnused {
@@ -70,8 +72,11 @@ func determineMaxUnmountedVolumeAge(maxAgeEnvValue string) time.Duration {
 		log.Error(err, "failed to parse MaxUnmountedCsiVolumeAge from", "env", maxUnmountedCsiVolumeAgeEnv, "value", maxAgeEnvValue)
 		return defaultMaxUnmountedCsiVolumeAge
 	}
-	if maxAge < 0 {
+	if maxAge <= 0 {
+		log.Info("max unmounted csi volume age is set to 0, files will be deleted immediately")
 		return 0
 	}
+
+	log.Info("max unmounted csi volume age used", "age in days", maxAge)
 	return 24 * time.Duration(maxAge) * time.Hour
 }
