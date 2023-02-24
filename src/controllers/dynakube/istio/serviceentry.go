@@ -39,7 +39,7 @@ func buildServiceEntryFQDN(meta metav1.ObjectMeta, host, protocol string, port u
 		ObjectMeta: meta,
 		Spec: istio.ServiceEntry{
 			Hosts: []string{host},
-			Ports: []*istio.Port{{
+			Ports: []*istio.ServicePort{{
 				Name:     protocol + "-" + portStr,
 				Number:   port,
 				Protocol: protocolStr,
@@ -58,7 +58,7 @@ func buildServiceEntryIP(meta metav1.ObjectMeta, host string, port uint32) *isti
 		Spec: istio.ServiceEntry{
 			Hosts:     []string{ignoredSubdomain},
 			Addresses: []string{host + subnetMask},
-			Ports: []*istio.Port{{
+			Ports: []*istio.ServicePort{{
 				Name:     protocolTcp + "-" + portStr,
 				Number:   port,
 				Protocol: protocolTcp,
