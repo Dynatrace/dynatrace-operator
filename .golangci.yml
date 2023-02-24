@@ -27,3 +27,8 @@ linters:
 
 service:
   golangci-lint-version: 1.49.x # use the fixed version to not introduce new linters unexpectedly
+
+run:
+  skip-dirs:
+    - src/api/v1alpha1 # legacy version, should not be changed
+
