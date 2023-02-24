@@ -14,3 +14,10 @@ manifests/crd/uninstall: prerequisites/kustomize manifests/crd/generate
 manifests/crd/helm: helm/version prerequisites/kustomize manifests/crd/generate
 	./hack/helm/generate-crd.sh $(KUSTOMIZE) $(HELM_CRD_DIR) $(MANIFESTS_DIR)
 
+## Builds a CRD for the release
+manifests/crd/release: manifests/crd/helm
+	helm template dynatrace-operator config/helm/chart/default \
+			--namespace dynatrace \
+			--set installCRD=true \
+			--set partial="crd" > $(RELEASE_CRD_YAML)
+
