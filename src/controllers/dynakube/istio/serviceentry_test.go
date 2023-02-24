@@ -32,7 +32,7 @@ func TestServiceEntryGeneration(t *testing.T) {
 			Spec: istio.ServiceEntry{
 				Hosts:    []string{testHost},
 				Location: istio.ServiceEntry_MESH_EXTERNAL,
-				Ports: []*istio.Port{{
+				Ports: []*istio.ServicePort{{
 					Name:     protocolHttps + "-" + strconv.Itoa(testPort),
 					Number:   testPort,
 					Protocol: strings.ToUpper(protocolHttps),
@@ -57,7 +57,7 @@ func TestServiceEntryGeneration(t *testing.T) {
 				Hosts:     []string{ignoredSubdomain},
 				Addresses: []string{testIp + subnetMask},
 				Location:  istio.ServiceEntry_MESH_EXTERNAL,
-				Ports: []*istio.Port{{
+				Ports: []*istio.ServicePort{{
 					Name:     protocolTcp + "-" + strconv.Itoa(testPort),
 					Number:   testPort,
 					Protocol: protocolTcp,
@@ -99,7 +99,7 @@ func buildExpectedServiceEntryForHostname(_ *testing.T) *istiov1alpha3.ServiceEn
 		},
 		Spec: istio.ServiceEntry{
 			Hosts: []string{testHost1},
-			Ports: []*istio.Port{{
+			Ports: []*istio.ServicePort{{
 				Name:     protocolHttp + "-" + testPort1String,
 				Number:   testPort1,
 				Protocol: strings.ToUpper(protocolHttp),
@@ -119,7 +119,7 @@ func buildExpectedServiceEntryForIp(_ *testing.T) *istiov1alpha3.ServiceEntry {
 		Spec: istio.ServiceEntry{
 			Hosts:     []string{ignoredSubdomain},
 			Addresses: []string{testHost1 + subnetMask},
-			Ports: []*istio.Port{{
+			Ports: []*istio.ServicePort{{
 				Name:     protocolTcp + "-" + testPort1String,
 				Number:   testPort1,
 				Protocol: protocolTcp,
