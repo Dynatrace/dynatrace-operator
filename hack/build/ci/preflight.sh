@@ -20,6 +20,7 @@ check_image() {
     1> "${PREFLIGHT_REPORT_NAME}" 2> "${PREFLIGHT_LOG}"
   echo "${PREFLIGHT_EXECUTABLE} returned ${?}"
   cat "${PREFLIGHT_LOG}"
+  rm -rf artifacts
   grep "Preflight result: PASSED" "${PREFLIGHT_LOG}" || exit 1
 }
 
@@ -34,7 +35,7 @@ download_preflight
 check_image
 readonly passed=$?
 if [[ ${passed} -eq 0 ]]; then
-    submit_report
+  submit_report
 fi
 
 exit ${passed}
