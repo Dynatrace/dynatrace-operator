@@ -24,6 +24,19 @@ const (
 	testDynakube = "test-dynakube"
 )
 
+var capabilitiesWithService = []dynatracev1beta1.CapabilityDisplayName{
+	dynatracev1beta1.RoutingCapability.DisplayName,
+	dynatracev1beta1.KubeMonCapability.DisplayName,
+	dynatracev1beta1.MetricsIngestCapability.DisplayName,
+	dynatracev1beta1.DynatraceApiCapability.DisplayName,
+	dynatracev1beta1.SyntheticCapability.DisplayName,
+}
+
+var capabilitiesWithoutService = []dynatracev1beta1.CapabilityDisplayName{
+	dynatracev1beta1.KubeMonCapability.DisplayName,
+	dynatracev1beta1.SyntheticCapability.DisplayName,
+}
+
 func createClient() client.WithWatch {
 	return fake.NewClientBuilder().
 		WithScheme(scheme.Scheme).
@@ -43,21 +56,7 @@ func createClient() client.WithWatch {
 		Build()
 }
 
-func buildDynakube(includeActiveGateService bool) *dynatracev1beta1.DynaKube {
-	capabilities := []dynatracev1beta1.CapabilityDisplayName{
-		dynatracev1beta1.KubeMonCapability.DisplayName,
-		dynatracev1beta1.SyntheticCapability.DisplayName,
-	}
-	if includeActiveGateService {
-		capabilities = []dynatracev1beta1.CapabilityDisplayName{
-			dynatracev1beta1.RoutingCapability.DisplayName,
-			dynatracev1beta1.KubeMonCapability.DisplayName,
-			dynatracev1beta1.MetricsIngestCapability.DisplayName,
-			dynatracev1beta1.DynatraceApiCapability.DisplayName,
-			dynatracev1beta1.SyntheticCapability.DisplayName,
-		}
-	}
-
+func buildDynakube(capabilities []dynatracev1beta1.CapabilityDisplayName) *dynatracev1beta1.DynaKube {
 	return &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
@@ -89,7 +88,7 @@ func TestReconcile(t *testing.T) {
 	clt := createClient()
 
 	t.Run(`reconciler works with multiple capabilities`, func(t *testing.T) {
-		dynakube := buildDynakube(true)
+		dynakube := buildDynakube(capabilitiesWithService)
 		mockStatefulSetReconciler := getMockReconciler()
 		mockCustompropertiesReconciler := getMockReconciler()
 
@@ -102,7 +101,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 	})
 	t.Run(`statefulSetReconciler errors`, func(t *testing.T) {
-		dynakube := buildDynakube(false)
+		dynakube := buildDynakube(capabilitiesWithoutService)
 		mockStatefulSetReconciler := &MockReconciler{}
 		mockStatefulSetReconciler.On("Reconcile").Return(errors.New(""))
 		mockCustompropertiesReconciler := getMockReconciler()
@@ -116,7 +115,7 @@ func TestReconcile(t *testing.T) {
 		require.Error(t, err)
 	})
 	t.Run(`customPropertiesReconciler errors`, func(t *testing.T) {
-		dynakube := buildDynakube(false)
+		dynakube := buildDynakube(capabilitiesWithoutService)
 		mockStatefulSetReconciler := getMockReconciler()
 		mockCustompropertiesReconciler := &MockReconciler{}
 		mockCustompropertiesReconciler.On("Reconcile").Return(errors.New(""))
@@ -129,7 +128,7 @@ func TestReconcile(t *testing.T) {
 		require.Error(t, err)
 	})
 	t.Run(`statefulSetReconciler and customPropertiesReconciler error`, func(t *testing.T) {
-		dynakube := buildDynakube(false)
+		dynakube := buildDynakube(capabilitiesWithoutService)
 		mockStatefulSetReconciler := &MockReconciler{}
 		mockStatefulSetReconciler.On("Reconcile").Return(errors.New(""))
 		mockCustompropertiesReconciler := &MockReconciler{}
@@ -142,7 +141,7 @@ func TestReconcile(t *testing.T) {
 		require.Error(t, err)
 	})
 	t.Run(`service gets created`, func(t *testing.T) {
-		dynakube := buildDynakube(true)
+		dynakube := buildDynakube(capabilitiesWithService)
 		mockStatefulSetReconciler := getMockReconciler()
 		mockCustompropertiesReconciler := getMockReconciler()
 
@@ -162,7 +161,7 @@ func TestReconcile(t *testing.T) {
 	})
 	t.Run(`service does not get created when missing capabilities`, func(t *testing.T) {
 		clt := createClient()
-		dynakube := buildDynakube(false)
+		dynakube := buildDynakube(capabilitiesWithoutService)
 		mockStatefulSetReconciler := getMockReconciler()
 		mockCustompropertiesReconciler := getMockReconciler()
 
@@ -184,7 +183,7 @@ func TestReconcile(t *testing.T) {
 
 func TestCreateOrUpdateService(t *testing.T) {
 	clt := createClient()
-	dynakube := buildDynakube(true)
+	dynakube := buildDynakube(capabilitiesWithService)
 	mockStatefulSetReconciler := getMockReconciler()
 	mockCustompropertiesReconciler := getMockReconciler()
 
@@ -264,7 +263,7 @@ func TestCreateOrUpdateService(t *testing.T) {
 
 func TestPortsAreOutdated(t *testing.T) {
 	clt := createClient()
-	dynakube := buildDynakube(true)
+	dynakube := buildDynakube(capabilitiesWithService)
 	mockStatefulSetReconciler := getMockReconciler()
 	mockCustompropertiesReconciler := getMockReconciler()
 
@@ -292,7 +291,7 @@ func TestPortsAreOutdated(t *testing.T) {
 
 func TestLabelsAreOutdated(t *testing.T) {
 	clt := createClient()
-	dynakube := buildDynakube(true)
+	dynakube := buildDynakube(capabilitiesWithService)
 	mockStatefulSetReconciler := getMockReconciler()
 	mockCustompropertiesReconciler := getMockReconciler()
 	r := NewReconciler(clt, capability.NewMultiCapability(dynakube), dynakube, mockStatefulSetReconciler, mockCustompropertiesReconciler)

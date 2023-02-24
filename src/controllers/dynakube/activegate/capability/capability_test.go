@@ -1,12 +1,12 @@
 package capability
 
 import (
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -17,18 +17,15 @@ const (
 	expectedArgName   = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface,synthetic,beacon_forwarder,beacon_forwarder_synthetic"
 )
 
-func buildDynakube(includeCapabilites bool) *dynatracev1beta1.DynaKube {
-	var capabilities []dynatracev1beta1.CapabilityDisplayName
-	if includeCapabilites {
-		capabilities = []dynatracev1beta1.CapabilityDisplayName{
-			dynatracev1beta1.RoutingCapability.DisplayName,
-			dynatracev1beta1.KubeMonCapability.DisplayName,
-			dynatracev1beta1.MetricsIngestCapability.DisplayName,
-			dynatracev1beta1.DynatraceApiCapability.DisplayName,
-			dynatracev1beta1.SyntheticCapability.DisplayName,
-		}
-	}
+var capabilites = []dynatracev1beta1.CapabilityDisplayName{
+	dynatracev1beta1.RoutingCapability.DisplayName,
+	dynatracev1beta1.KubeMonCapability.DisplayName,
+	dynatracev1beta1.MetricsIngestCapability.DisplayName,
+	dynatracev1beta1.DynatraceApiCapability.DisplayName,
+	dynatracev1beta1.SyntheticCapability.DisplayName,
+}
 
+func buildDynakube(capabilities []dynatracev1beta1.CapabilityDisplayName) *dynatracev1beta1.DynaKube {
 	return &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace, Name: testName,
@@ -62,7 +59,7 @@ func TestBuildServiceName(t *testing.T) {
 
 func TestNewMultiCapability(t *testing.T) {
 	t.Run(`creates new multicapability`, func(t *testing.T) {
-		dk := buildDynakube(true)
+		dk := buildDynakube(capabilites)
 		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
 		assert.True(t, mc.Enabled())
@@ -70,7 +67,8 @@ func TestNewMultiCapability(t *testing.T) {
 		assert.Equal(t, expectedArgName, mc.ArgName())
 	})
 	t.Run(`creates new multicapability without capabilities set in dynakube`, func(t *testing.T) {
-		dk := buildDynakube(false)
+		var emptyCapabilites []dynatracev1beta1.CapabilityDisplayName
+		dk := buildDynakube(emptyCapabilites)
 		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
 		assert.False(t, mc.Enabled())
