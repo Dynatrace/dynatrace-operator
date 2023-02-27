@@ -128,7 +128,7 @@ spec:
                 fieldPath: metadata.namespace
           {{- if .Values.csidriver.maxUnmountedVolumeAge }}
           - name: MAX_UNMOUNTED_VOLUME_AGE
-            value: {{ .Values.csidriver.maxUnmountedVolumeAge}}
+            value: "{{ .Values.csidriver.maxUnmountedVolumeAge}}"
           {{- end }}
         livenessProbe:
           failureThreshold: 3
