@@ -17,3 +17,21 @@ deploy/openshift-no-csi: manifests/crd/helm
 			--set platform="openshift" \
 			--set manifests=true \
 			--set image="$(IMAGE_URI)" | oc apply -f -
+
+
+undeploy/openshift: manifests/crd/helm
+	helm template dynatrace-operator config/helm/chart/default \
+			--namespace dynatrace \
+			--set installCRD=true \
+			--set platform="openshift" \
+			--set csidriver.enabled=true \
+			--set manifests=true \
+			--set image="$(IMAGE_URI)" | oc delete -f -
+
+undeploy/openshift-no-csi: manifests/crd/helm
+	helm template dynatrace-operator config/helm/chart/default \
+			--namespace dynatrace \
+			--set installCRD=true \
+			--set platform="openshift" \
+			--set manifests=true \
+			--set image="$(IMAGE_URI)" | oc delete -f -

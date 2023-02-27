@@ -68,7 +68,7 @@ jobs:
       - name: Run Unit tests
         id: unittest
         run: |
-          make go/test-all
+          make go/test
 
   linting:
     name: Run linting

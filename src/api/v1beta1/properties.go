@@ -422,12 +422,12 @@ func (dk *DynaKube) OneAgentImage() string {
 }
 
 func truncateBuildDate(version string) string {
-	const versionSeperator = "."
+	const versionSeparator = "."
 	const buildDateIndex = 3
 
-	if strings.Count(version, versionSeperator) >= buildDateIndex {
-		splitVersion := strings.Split(version, versionSeperator)
-		truncatedVersion := strings.Join(splitVersion[:buildDateIndex], versionSeperator)
+	if strings.Count(version, versionSeparator) >= buildDateIndex {
+		splitVersion := strings.Split(version, versionSeparator)
+		truncatedVersion := strings.Join(splitVersion[:buildDateIndex], versionSeparator)
 
 		return truncatedVersion
 	}
