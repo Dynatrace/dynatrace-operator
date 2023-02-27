@@ -8,11 +8,17 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/webhook"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
 func InstallOperatorFromSource(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube) {
-	builder.Assess("create operator namespace", namespace.Create(namespace.NewBuilder(testDynakube.Namespace).Build()))
+	namespaceBuilder := namespace.NewBuilder(testDynakube.Namespace)
+	InstallOperatorFromSourceWithCustomNamespace(builder, namespaceBuilder.Build(), testDynakube)
+}
+
+func InstallOperatorFromSourceWithCustomNamespace(builder *features.FeatureBuilder, operatorNamespace corev1.Namespace, testDynakube dynatracev1beta1.DynaKube) {
+	builder.Assess("create operator namespace", namespace.Create(operatorNamespace))
 	builder.Assess("operator manifests installed", operator.InstallViaMake(testDynakube.NeedsCSIDriver()))
 	verifyOperatorDeployment(builder, testDynakube)
 }

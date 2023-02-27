@@ -1,14 +1,10 @@
-# TODO: Replace with istio
-apiVersion: "cilium.io/v2"
-kind: CiliumNetworkPolicy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
 metadata:
   name: "sample-ns-deny-egress-to-world"
-  namespace: test-namespace-1
+  namespace: proxy-sample
 spec:
-  endpointSelector: {}
-  egress:
-    - toEntities:
-        - "cluster"
-  ingress:
-    - fromEntities:
-        - "cluster"
+  podSelector: {}
+  policyTypes:
+  - Egress
+  - Ingress

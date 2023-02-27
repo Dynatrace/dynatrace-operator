@@ -31,7 +31,7 @@ const (
 	enforceIstioEnv        = "ENFORCE_ISTIO"
 )
 
-var IstioLabel = map[string]string{
+var InjectionLabel = map[string]string{
 	"istio-injection": "enabled",
 }
 
