@@ -9,7 +9,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -20,11 +19,11 @@ const (
 	ChromiumCacheMountName = "chromium-cache"
 	chromiumCacheMountPath = "/var/tmp/dynatrace/synthetic/cache"
 
-	PersistentStorageMountName          = "persistent-storage"
-	synLogPersistentStorageMountPath    = "/var/log/dynatrace/synthetic"
-	synLogPersistentStorageMountSubPath = "syn-log"
-	synTmpPersistentStorageMountPath    = "/var/tmp/dynatrace/synthetic"
-	synTmpPersistentStorageMountSubPath = "syn-tmp"
+	ArchiveStorageMountName          = "archive-storage"
+	synLogArchiveStorageMountPath    = "/var/log/dynatrace/synthetic"
+	synLogArchiveStorageMountSubPath = "syn-log"
+	synTmpArchiveStorageMountPath    = "/var/tmp/dynatrace/synthetic"
+	synTmpArchiveStorageMountSubPath = "syn-tmp"
 
 	TmpStorageMountName             = "tmp-storage"
 	vucConfigTmpStorageMountPath    = "/var/lib/dynatrace/synthetic/config"
@@ -49,38 +48,38 @@ type nodeRequirements struct {
 	requestResources corev1.ResourceList
 	limitResources   corev1.ResourceList
 
-	jvmHeap                              *resource.Quantity
-	chromiumCacheVolume                  *resource.Quantity
-	tmpStorageVolume                     *resource.Quantity
-	persistentVolumeClaimResourceStorage resource.Quantity
+	jvmHeap              *resource.Quantity
+	chromiumCacheVolume  *resource.Quantity
+	tmpStorageVolume     *resource.Quantity
+	supportArchiveVolume *resource.Quantity
 }
 
 var nodeRequirementsBySize = map[string]nodeRequirements{
 	dynatracev1beta1.SyntheticNodeXs: {
-		requestResources:                     kubeobjects.NewResources("1", "2Gi"),
-		limitResources:                       kubeobjects.NewResources("2", "3Gi"),
-		jvmHeap:                              kubeobjects.NewQuantity("700M"),
-		chromiumCacheVolume:                  kubeobjects.NewQuantity("256Mi"),
-		tmpStorageVolume:                     kubeobjects.NewQuantity("8Mi"),
-		persistentVolumeClaimResourceStorage: *kubeobjects.NewQuantity("3Gi"),
+		requestResources:     kubeobjects.NewResources("1", "2Gi"),
+		limitResources:       kubeobjects.NewResources("2", "3Gi"),
+		jvmHeap:              kubeobjects.NewQuantity("700M"),
+		chromiumCacheVolume:  kubeobjects.NewQuantity("256Mi"),
+		tmpStorageVolume:     kubeobjects.NewQuantity("8Mi"),
+		supportArchiveVolume: kubeobjects.NewQuantity("3Gi"),
 	},
 
 	dynatracev1beta1.SyntheticNodeS: {
-		requestResources:                     kubeobjects.NewResources("2", "3Gi"),
-		limitResources:                       kubeobjects.NewResources("4", "6Gi"),
-		jvmHeap:                              kubeobjects.NewQuantity("1024M"),
-		chromiumCacheVolume:                  kubeobjects.NewQuantity("512Mi"),
-		tmpStorageVolume:                     kubeobjects.NewQuantity("10Mi"),
-		persistentVolumeClaimResourceStorage: *kubeobjects.NewQuantity("6Gi"),
+		requestResources:     kubeobjects.NewResources("2", "3Gi"),
+		limitResources:       kubeobjects.NewResources("4", "6Gi"),
+		jvmHeap:              kubeobjects.NewQuantity("1024M"),
+		chromiumCacheVolume:  kubeobjects.NewQuantity("512Mi"),
+		tmpStorageVolume:     kubeobjects.NewQuantity("10Mi"),
+		supportArchiveVolume: kubeobjects.NewQuantity("6Gi"),
 	},
 
 	dynatracev1beta1.SyntheticNodeM: {
-		requestResources:                     kubeobjects.NewResources("4", "5Gi"),
-		limitResources:                       kubeobjects.NewResources("8", "10Gi"),
-		jvmHeap:                              kubeobjects.NewQuantity("2048M"),
-		chromiumCacheVolume:                  kubeobjects.NewQuantity("1Gi"),
-		tmpStorageVolume:                     kubeobjects.NewQuantity("12Mi"),
-		persistentVolumeClaimResourceStorage: *kubeobjects.NewQuantity("12Gi"),
+		requestResources:     kubeobjects.NewResources("4", "5Gi"),
+		limitResources:       kubeobjects.NewResources("8", "10Gi"),
+		jvmHeap:              kubeobjects.NewQuantity("2048M"),
+		chromiumCacheVolume:  kubeobjects.NewQuantity("1Gi"),
+		tmpStorageVolume:     kubeobjects.NewQuantity("12Mi"),
+		supportArchiveVolume: kubeobjects.NewQuantity("12Gi"),
 	},
 }
 
@@ -114,9 +113,6 @@ func (syn SyntheticModifier) Modify(sts *appsv1.StatefulSet) error {
 	sts.Spec.Template.Spec.Containers = append(
 		sts.Spec.Template.Spec.Containers,
 		syn.buildContainer())
-	sts.Spec.VolumeClaimTemplates = append(
-		sts.Spec.VolumeClaimTemplates,
-		syn.buildVolumeClaimTemplates()...)
 	sts.Spec.Template.Spec.Volumes = append(
 		sts.Spec.Template.Spec.Volumes,
 		syn.getVolumes()...)
@@ -224,14 +220,14 @@ func (syn SyntheticModifier) buildResources() corev1.ResourceRequirements {
 func buildPublicVolumeMounts() []corev1.VolumeMount {
 	return []corev1.VolumeMount{
 		{
-			Name:      PersistentStorageMountName,
-			SubPath:   synLogPersistentStorageMountSubPath,
-			MountPath: synLogPersistentStorageMountPath,
+			Name:      ArchiveStorageMountName,
+			SubPath:   synLogArchiveStorageMountSubPath,
+			MountPath: synLogArchiveStorageMountPath,
 		},
 		{
-			Name:      PersistentStorageMountName,
-			SubPath:   synTmpPersistentStorageMountSubPath,
-			MountPath: synTmpPersistentStorageMountPath,
+			Name:      ArchiveStorageMountName,
+			SubPath:   synTmpArchiveStorageMountSubPath,
+			MountPath: synTmpArchiveStorageMountPath,
 		},
 		{
 			Name:      TmpStorageMountName,
@@ -265,23 +261,12 @@ func (syn SyntheticModifier) getVolumes() []corev1.Volume {
 				},
 			},
 		},
-	}
-}
-
-func (syn SyntheticModifier) buildVolumeClaimTemplates() []corev1.PersistentVolumeClaim {
-	return []corev1.PersistentVolumeClaim{
 		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: PersistentStorageMountName,
-			},
-			Spec: corev1.PersistentVolumeClaimSpec{
-				AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
-				Resources: corev1.ResourceRequirements{
-					Requests: corev1.ResourceList{
-						corev1.ResourceStorage: syn.nodeRequirements().persistentVolumeClaimResourceStorage,
-					},
+			Name: ArchiveStorageMountName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{
+					SizeLimit: syn.nodeRequirements().supportArchiveVolume,
 				},
-				StorageClassName: address.Of(syn.DynaKube.FeaturePersistentVolumesStorageClass()),
 			},
 		},
 	}

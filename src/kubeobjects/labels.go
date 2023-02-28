@@ -18,7 +18,6 @@ const (
 	ActiveGateComponentLabel = "activegate"
 	WebhookComponentLabel    = "webhook"
 	SyntheticComponentLabel  = "synthetic"
-	ExtApiComponentLabel     = "extension-api"
 
 	CustomImageLabelValue = "custom-image"
 )

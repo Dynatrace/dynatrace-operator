@@ -101,30 +101,18 @@ const (
 	SyntheticNodeS  = "S"
 	SyntheticNodeM  = "M"
 
-	// synthetic autoscaler
-	AnnotationFeatureSyntheticAutoscalerMinReplicas = AnnotationFeaturePrefix + "synthetic-autoscaler-min-replicas"
-	AnnotationFeatureSyntheticAutoscalerMaxReplicas = AnnotationFeaturePrefix + "synthetic-autoscaler-max-replicas"
-	AnnotationFeatureSyntheticAutoscalerDynaQuery   = AnnotationFeaturePrefix + "synthetic-autoscaler-dynaquery"
-
-	// dynaMetrics token
-	AnnotationFeatureDynaMetricsToken = AnnotationFeaturePrefix + "dynametrics-token"
-
-	// storage class for persistent volumes
-	AnnotationFeaturePersistentVolumesStorageClass = AnnotationFeaturePrefix + "persistent-volumes-storage-class"
-	DefaultPersistentVolumesStorageClass           = "default"
+	// replicas for the synthetic monitoring
+	AnnotationFeatureSyntheticReplicas = AnnotationFeaturePrefix + "synthetic-replicas"
 )
 
 const (
 	DefaultMaxFailedCsiMountAttempts = 10
-
-	defaultSyntheticAutoscalerDynaQuery = `dsfm:synthetic.engine_utilization:filter(eq("dt.entity.synthetic_location","%s")):merge("host.name","dt.active_gate.working_mode","dt.active_gate.id","location.name"):fold(avg)`
 )
 
 var (
 	log = logger.Factory.GetLogger("dynakube-api")
 
-	DefaultSyntheticAutoscalerMinReplicas = int32(1)
-	defaultSyntheticAutoscalerMaxReplicas = int32(2)
+	DefaultSyntheticReplicas = int32(1)
 )
 
 func (dk *DynaKube) getDisableFlagWithDeprecatedAnnotation(annotation string, deprecatedAnnotation string) bool {
@@ -338,15 +326,9 @@ func (dynaKube *DynaKube) FeatureSyntheticNodeType() string {
 	return node
 }
 
-func (dynaKube *DynaKube) FeatureSyntheticAutoscalerMinReplicas() int32 {
-	return dynaKube.getSyntheticAutoscalerReplicas(
-		AnnotationFeatureSyntheticAutoscalerMinReplicas,
-		DefaultSyntheticAutoscalerMinReplicas)
-}
-
-func (dynaKube *DynaKube) getSyntheticAutoscalerReplicas(feature string, defaultReplicas int32) int32 {
-	replicas := defaultReplicas
-	value, containsKey := dynaKube.Annotations[feature]
+func (dynaKube *DynaKube) FeatureSyntheticReplicas() int32 {
+	replicas := DefaultSyntheticReplicas
+	value, containsKey := dynaKube.Annotations[AnnotationFeatureSyntheticReplicas]
 	if containsKey {
 		parsed, err := strconv.ParseInt(value, 0, 32)
 		if err == nil {
@@ -355,33 +337,4 @@ func (dynaKube *DynaKube) getSyntheticAutoscalerReplicas(feature string, default
 	}
 
 	return replicas
-}
-
-func (dynaKube *DynaKube) FeatureSyntheticAutoscalerMaxReplicas() int32 {
-	return dynaKube.getSyntheticAutoscalerReplicas(
-		AnnotationFeatureSyntheticAutoscalerMaxReplicas,
-		defaultSyntheticAutoscalerMaxReplicas)
-}
-
-func (dynaKube *DynaKube) FeatureSyntheticAutoscalerDynaQuery() string {
-	query, containsKey := dynaKube.Annotations[AnnotationFeatureSyntheticAutoscalerDynaQuery]
-	if !containsKey {
-		query = defaultSyntheticAutoscalerDynaQuery
-	}
-
-	return fmt.Sprintf(query, dynaKube.FeatureSyntheticLocationEntityId())
-}
-
-// a token to offer external metrics from Dynatrace
-func (dynaKube *DynaKube) FeatureDynaMetricsToken() string {
-	return dynaKube.Annotations[AnnotationFeatureDynaMetricsToken]
-}
-
-// a storage class
-func (dynaKube *DynaKube) FeaturePersistentVolumesStorageClass() string {
-	class, containsKey := dynaKube.Annotations[AnnotationFeaturePersistentVolumesStorageClass]
-	if !containsKey {
-		class = DefaultPersistentVolumesStorageClass
-	}
-	return class
 }

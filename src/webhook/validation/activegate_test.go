@@ -155,7 +155,6 @@ func TestSyntheticMonitoring(t *testing.T) {
 	meta := defaultDynakubeObjectMeta.DeepCopy()
 	meta.Annotations = map[string]string{
 		dynatracev1beta1.AnnotationFeatureSyntheticLocationEntityId: "doctored",
-		dynatracev1beta1.AnnotationFeatureDynaMetricsToken:          "undeclared",
 	}
 
 	t.Run("synthetic-and-activegate-capabilities", func(t *testing.T) {

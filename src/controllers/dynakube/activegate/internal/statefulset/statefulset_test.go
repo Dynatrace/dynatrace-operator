@@ -2,6 +2,7 @@ package statefulset
 
 import (
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -12,7 +13,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder/modifiers"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -373,6 +373,7 @@ func TestBuildCommonEnvs(t *testing.T) {
 	t.Run("syn-capability", func(t *testing.T) {
 		dynaKube := getTestDynakube()
 		dynaKube.ObjectMeta.Annotations[dynatracev1beta1.AnnotationFeatureSyntheticLocationEntityId] = "doctored"
+		dynaKube.ObjectMeta.Annotations[dynatracev1beta1.AnnotationFeatureSyntheticReplicas] = fmt.Sprint(testReplicas)
 		synCapability := capability.NewSyntheticCapability(&dynaKube)
 
 		builder := NewStatefulSetBuilder(
@@ -402,6 +403,13 @@ func TestBuildCommonEnvs(t *testing.T) {
 		jsonized, _ := json.Marshal(sts)
 		t.Logf("manifest: %s", jsonized)
 
+		assert.Equal(
+			t,
+			*sts.Spec.Replicas,
+			testReplicas,
+			"declared replicas: %s",
+			testReplicas)
+
 		volumes := []corev1.Volume{
 			{
 				Name: modifiers.ChromiumCacheMountName,
@@ -420,33 +428,20 @@ func TestBuildCommonEnvs(t *testing.T) {
 					},
 				},
 			},
+			{
+				Name: modifiers.ArchiveStorageMountName,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{
+						SizeLimit: kubeobjects.NewQuantity("6Gi"),
+					},
+				},
+			},
 		}
 		assert.Subset(
 			t,
 			sts.Spec.Template.Spec.Volumes,
 			volumes,
 			"declared syn volumes")
-
-		claim := corev1.PersistentVolumeClaim{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: modifiers.PersistentStorageMountName,
-			},
-			Spec: corev1.PersistentVolumeClaimSpec{
-				AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
-				Resources: corev1.ResourceRequirements{
-					Requests: corev1.ResourceList{
-						corev1.ResourceStorage: *kubeobjects.NewQuantity("6Gi"),
-					},
-				},
-				StorageClassName: address.Of(dynatracev1beta1.DefaultPersistentVolumesStorageClass),
-			},
-		}
-		assert.Contains(
-			t,
-			sts.Spec.VolumeClaimTemplates,
-			claim,
-			"declared volume claim: %s",
-			modifiers.PersistentStorageMountName)
 	})
 }
 

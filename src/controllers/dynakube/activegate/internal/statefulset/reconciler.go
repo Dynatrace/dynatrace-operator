@@ -12,13 +12,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/synthetic/autoscaler"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -29,20 +26,12 @@ import (
 var _ controllers.Reconciler = &Reconciler{}
 
 type Reconciler struct {
-	client           client.Client
-	dynakube         *dynatracev1beta1.DynaKube
-	apiReader        client.Reader
-	scheme           *runtime.Scheme
-	capability       capability.Capability
-	modifiers        []builder.Modifier
-	foundStatefulSet *appsv1.StatefulSet
-
-	persistentVolumeClaims *kubeobjects.ApiRequests[
-		corev1.PersistentVolumeClaim,
-		*corev1.PersistentVolumeClaim,
-		corev1.PersistentVolumeClaimList,
-		*corev1.PersistentVolumeClaimList,
-	]
+	client     client.Client
+	dynakube   *dynatracev1beta1.DynaKube
+	apiReader  client.Reader
+	scheme     *runtime.Scheme
+	capability capability.Capability
+	modifiers  []builder.Modifier
 }
 
 // argument-limit doesn't apply to constructors
@@ -62,18 +51,6 @@ func NewReconciler(
 		dynakube:   dynakube,
 		capability: capability,
 		modifiers:  []builder.Modifier{},
-
-		persistentVolumeClaims: kubeobjects.NewApiRequests[
-			corev1.PersistentVolumeClaim,
-			*corev1.PersistentVolumeClaim,
-			corev1.PersistentVolumeClaimList,
-			*corev1.PersistentVolumeClaimList,
-		](
-			context.TODO(),
-			apiReader,
-			clt,
-			scheme,
-		),
 	}
 }
 
@@ -95,33 +72,26 @@ func (r *Reconciler) manageStatefulSet() error {
 		return errors.WithStack(err)
 	}
 
-	if err = controllerutil.SetControllerReference(r.dynakube, desiredSts, r.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(r.dynakube, desiredSts, r.scheme); err != nil {
 		return errors.WithStack(err)
 	}
 
-	reconcilesSet, err := r.createStatefulSetIfNotExists(desiredSts)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	if !reconcilesSet {
-		reconcilesSet, err = r.deleteStatefulSetIfSelectorChanged(desiredSts)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-	}
-	if !reconcilesSet {
-		_, err = r.updateStatefulSetIfOutdated(desiredSts)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-	}
-
-	err = r.findStatefulSet(desiredSts)
-	if err != nil {
+	created, err := r.createStatefulSetIfNotExists(desiredSts)
+	if created || err != nil {
 		return errors.WithStack(err)
 	}
 
-	return errors.WithStack(r.reconcileSynDependents())
+	deleted, err := r.deleteStatefulSetIfSelectorChanged(desiredSts)
+	if deleted || err != nil {
+		return errors.WithStack(err)
+	}
+
+	updated, err := r.updateStatefulSetIfOutdated(desiredSts)
+	if updated || err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }
 
 func (r *Reconciler) buildDesiredStatefulSet() (*appsv1.StatefulSet, error) {
@@ -278,82 +248,4 @@ func (r *Reconciler) getDataFromAuthTokenSecret() (string, error) {
 
 func needsCustomPropertyHash(customProperties *dynatracev1beta1.DynaKubeValueSource) bool {
 	return customProperties != nil && (customProperties.Value != "" || customProperties.ValueFrom != "")
-}
-
-func (reconciler *Reconciler) findStatefulSet(toFind *appsv1.StatefulSet) (err error) {
-	reconciler.foundStatefulSet, err = reconciler.getStatefulSet(toFind)
-	if k8serrors.IsNotFound(err) {
-		err = nil
-	}
-
-	return errors.WithStack(err)
-}
-
-func (reconciler *Reconciler) reconcileSynDependents() (err error) {
-	if reconciler.foundStatefulSet != nil &&
-		reconciler.foundStatefulSet.ObjectMeta.Labels[kubeobjects.AppComponentLabel] == kubeobjects.SyntheticComponentLabel {
-		err = reconciler.reconcileSynAutoscaler()
-		if err == nil {
-			err = reconciler.setOwnershipToVolumeClaims()
-		}
-	}
-
-	return errors.WithStack(err)
-}
-
-func (reconciler *Reconciler) reconcileSynAutoscaler() error {
-	err := autoscaler.NewReconciler(
-		context.TODO(),
-		reconciler.apiReader,
-		reconciler.client,
-		reconciler.scheme,
-		reconciler.dynakube,
-		reconciler.foundStatefulSet,
-	).Reconcile()
-
-	return errors.WithStack(err)
-}
-
-func (reconciler *Reconciler) setOwnershipToVolumeClaims() error {
-	claims, err := reconciler.persistentVolumeClaims.List(
-		client.InNamespace(reconciler.dynakube.Namespace),
-		client.MatchingLabels{
-			kubeobjects.AppCreatedByLabel: reconciler.dynakube.Name,
-		},
-	)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	for _, claim := range claims.Items {
-		toUpdateClaim := address.Of(claim)
-		if !reconciler.underOwnership(reconciler.foundStatefulSet, toUpdateClaim) {
-			err = reconciler.persistentVolumeClaims.Update(
-				reconciler.foundStatefulSet,
-				toUpdateClaim)
-			if err != nil {
-				return errors.WithStack(err)
-			}
-			log.Info(
-				"set ownership",
-				"statefulset",
-				reconciler.foundStatefulSet.Name,
-				"persistent volume claim",
-				claim.Name)
-		}
-	}
-
-	return nil
-}
-
-func (*Reconciler) underOwnership(
-	statefulSet *appsv1.StatefulSet,
-	claim *corev1.PersistentVolumeClaim,
-) bool {
-	for _, scanned := range claim.GetOwnerReferences() {
-		if scanned.UID == statefulSet.GetUID() {
-			return true
-		}
-	}
-	return false
 }

@@ -251,69 +251,30 @@ func TestSyntheticMonitoringFlags(t *testing.T) {
 				SyntheticNodeXs)
 		})
 
-	t.Run("with-default-autoscaler-min-replicas",
+	t.Run("with-default-replicas",
 		func(t *testing.T) {
 			dynaKube := DynaKube{}
 			assertion.Equal(
-				DefaultSyntheticAutoscalerMinReplicas,
-				dynaKube.FeatureSyntheticAutoscalerMinReplicas(),
-				"default autoscaler min replicas: %s",
-				DefaultSyntheticAutoscalerMinReplicas)
+				DefaultSyntheticReplicas,
+				dynaKube.FeatureSyntheticReplicas(),
+				"default replicas: %s",
+				DefaultSyntheticReplicas)
 		})
 
-	t.Run("with-declared-autoscaler-min-replicas",
+	t.Run("with-declared-replicas",
 		func(t *testing.T) {
-			autoscalerMinReplicas := int32(7)
+			replicas := int32(7)
 			dynaKube := DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						AnnotationFeatureSyntheticAutoscalerMinReplicas: fmt.Sprint(autoscalerMinReplicas),
+						AnnotationFeatureSyntheticReplicas: fmt.Sprint(replicas),
 					},
 				},
 			}
 			assertion.Equal(
-				autoscalerMinReplicas,
-				dynaKube.FeatureSyntheticAutoscalerMinReplicas(),
-				"declared autoscaler min replicas: %s",
-				autoscalerMinReplicas)
+				replicas,
+				dynaKube.FeatureSyntheticReplicas(),
+				"declared replicas: %s",
+				replicas)
 		})
-
-	t.Run("with-default-autoscaler-dynaquery",
-		func(t *testing.T) {
-			const loc = "other-identifier"
-			query := fmt.Sprintf(defaultSyntheticAutoscalerDynaQuery, loc)
-			dynaKube := DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						AnnotationFeatureSyntheticLocationEntityId: loc,
-					},
-				},
-			}
-			assertion.Equal(
-				query,
-				dynaKube.FeatureSyntheticAutoscalerDynaQuery(),
-				"default autoscaler DynaQuery: %s",
-				query)
-		})
-}
-
-func TestPersistentStorageClassFlag(t *testing.T) {
-	assertion := assert.New(t)
-
-	toAssertClass := func(t *testing.T) {
-		const class = "imaginary-class"
-		dynaKube := DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					AnnotationFeaturePersistentVolumesStorageClass: class,
-				},
-			},
-		}
-		assertion.Equal(
-			class,
-			dynaKube.FeaturePersistentVolumesStorageClass(),
-			"declared persistent volumes class: %s",
-			class)
-	}
-	t.Run("with-custom-class", toAssertClass)
 }

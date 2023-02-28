@@ -7,7 +7,6 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/synthetic/autoscaler"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
@@ -15,7 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
-	scalingv2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -249,23 +247,6 @@ func TestExclusiveSynMonitoring(t *testing.T) {
 			"unique StatefulSet for syn-mon")
 	}
 	t.Run("for-unique-statefulset", toAssertSingleStatefulSet)
-
-	toAssertSingleAutoScaler := func(t *testing.T) {
-		var autoscalers scalingv2.HorizontalPodAutoscalerList
-		err = k8sRequests.List(
-			context.TODO(),
-			&autoscalers,
-			client.InNamespace(testNamespace))
-		require.NoError(t, err)
-		require.Len(t, autoscalers.Items, 1)
-		assert.True(
-			t,
-			containsKubject(
-				autoscalers.Items,
-				capability.BuildServiceName(testName, autoscaler.SynAutoscaler)),
-			"unique HorizontalPodAutoscaler for syn-mon")
-	}
-	t.Run("for-unique-autoscaler", toAssertSingleAutoScaler)
 
 	toAssertServicelessActiveGate := func(t *testing.T) {
 		var services corev1.ServiceList

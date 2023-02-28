@@ -13,7 +13,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
-	dynametrics "github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/extensions/metrics"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/status"
@@ -75,7 +74,6 @@ func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 		For(&dynatracev1beta1.DynaKube{}).
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&appsv1.DaemonSet{}).
-		Owns(&appsv1.Deployment{}).
 		Complete(controller)
 }
 
@@ -107,8 +105,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	if err != nil {
 		return reconcile.Result{}, err
 	} else if dynakube == nil {
-		err = controller.reconcileDynaMetrics(ctx)
-		return reconcile.Result{}, err
+		return reconcile.Result{}, nil
 	}
 
 	oldStatus := *dynakube.Status.DeepCopy()
@@ -262,11 +259,6 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		return err
 	}
 
-	err = controller.reconcileDynaMetrics(ctx)
-	if err != nil {
-		return errors.WithMessage(err, "could not reconcile DynaMetrics")
-	}
-
 	return nil
 }
 
@@ -373,20 +365,6 @@ func (controller *Controller) updateDynakubeStatus(ctx context.Context, dynakube
 	if err != nil && k8serrors.IsConflict(err) {
 		log.Info("could not update dynakube due to conflict", "name", dynakube.Name)
 		return nil
-	}
-	return errors.WithStack(err)
-}
-
-func (controller *Controller) reconcileDynaMetrics(context context.Context) error {
-	err := dynametrics.NewReconciler(
-		context,
-		controller.apiReader,
-		controller.client,
-		controller.scheme,
-	).Reconcile()
-
-	if err != nil {
-		log.Error(err, "failed to reconcile DynaMetrics")
 	}
 	return errors.WithStack(err)
 }

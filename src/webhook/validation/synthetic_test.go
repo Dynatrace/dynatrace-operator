@@ -10,18 +10,17 @@ import (
 
 func TestSyntheticInvalidSettings(t *testing.T) {
 	const (
-		invalidType = "XL"
-		replicas    = "3"
+		invalidType     = "XL"
+		invalidReplicas = "?"
 	)
 	dynaKube := dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNamespace,
 			Annotations: map[string]string{
-				dynatracev1beta1.AnnotationFeatureSyntheticLocationEntityId:      "unknown",
-				dynatracev1beta1.AnnotationFeatureSyntheticNodeType:              invalidType,
-				dynatracev1beta1.AnnotationFeatureSyntheticAutoscalerMinReplicas: replicas,
-				dynatracev1beta1.AnnotationFeatureSyntheticAutoscalerMaxReplicas: replicas,
+				dynatracev1beta1.AnnotationFeatureSyntheticLocationEntityId: "unknown",
+				dynatracev1beta1.AnnotationFeatureSyntheticNodeType:         invalidType,
+				dynatracev1beta1.AnnotationFeatureSyntheticReplicas:         invalidReplicas,
 			},
 		},
 		Spec: dynatracev1beta1.DynaKubeSpec{
@@ -37,18 +36,11 @@ func TestSyntheticInvalidSettings(t *testing.T) {
 	}
 	t.Run("node-type", toAssertInvalidNodeType)
 
-	toAssertInvalidReplicaBounds := func(t *testing.T) {
-		assertDeniedResponse(
-			t,
-			[]string{errorInvalidSyntheticAutoscalerReplicaBounds},
-			&dynaKube)
+	delete(
+		dynaKube.ObjectMeta.Annotations,
+		dynatracev1beta1.AnnotationFeatureSyntheticNodeType)
+	toAssertDefaultReplicas := func(t *testing.T) {
+		assertAllowedResponseWithWarnings(t, 2, &dynaKube)
 	}
-	t.Run("autoscaler-replica-bounds", toAssertInvalidReplicaBounds)
-
-	toAssertUndefinedDynaMetricsToken := func(t *testing.T) {
-		assertDeniedResponse(t,
-			[]string{errorInvalidDynaMetricsToken},
-			&dynaKube)
-	}
-	t.Run("dynametrics-token", toAssertUndefinedDynaMetricsToken)
+	t.Run("valid-replicas", toAssertDefaultReplicas)
 }

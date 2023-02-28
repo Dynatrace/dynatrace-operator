@@ -20,13 +20,11 @@ import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
-	scalingv2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
 	apiv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	regv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 )
 
 // Scheme contains the type definitions used by the Operator and tests
@@ -39,7 +37,5 @@ func init() {
 	utilruntime.Must(istiov1alpha3.AddToScheme(Scheme))
 	utilruntime.Must(corev1.AddToScheme(Scheme))
 	utilruntime.Must(apiv1.AddToScheme(Scheme))
-	utilruntime.Must(scalingv2.AddToScheme(Scheme))
-	utilruntime.Must(regv1.AddToScheme(Scheme))
 	// +kubebuilder:scaffold:scheme
 }

@@ -28,8 +28,6 @@ var validators = []validator{
 	imageFieldSetWithoutCSIFlag,
 	conflictingOneAgentVolumeStorageSettings,
 	invalidSyntheticNodeType,
-	invalidSyntheticAutoscalerReplicaBounds,
-	invalidDynaMetricsToken,
 }
 
 var warnings = []validator{

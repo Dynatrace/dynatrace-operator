@@ -70,8 +70,15 @@ func (statefulSetBuilder Builder) getBaseObjectMeta() metav1.ObjectMeta {
 }
 
 func (statefulSetBuilder Builder) getBaseSpec() appsv1.StatefulSetSpec {
+	var replicas *int32
+	if statefulSetBuilder.capability.AssistsSynthetic() {
+		replicas = address.Of(statefulSetBuilder.dynakube.FeatureSyntheticReplicas())
+	} else {
+		replicas = statefulSetBuilder.capability.Properties().Replicas
+	}
+
 	return appsv1.StatefulSetSpec{
-		Replicas:            statefulSetBuilder.capability.Properties().Replicas,
+		Replicas:            replicas,
 		PodManagementPolicy: appsv1.ParallelPodManagement,
 		Template: corev1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{

@@ -101,22 +101,4 @@ rules:
     verbs:
       - use
   {{ end }}
-
-  - apiGroups:
-      - rbac.authorization.k8s.io
-    resources:
-      - clusterroles
-    resourceNames:
-      - dynatrace-metric-server
-    verbs:
-      - get
-
-  - apiGroups:
-      - apiregistration.k8s.io
-    resources:
-      - apiservices
-    verbs:
-      - get
-      - create
-      - delete
 {{ end }}
