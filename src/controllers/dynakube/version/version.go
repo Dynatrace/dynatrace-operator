@@ -39,14 +39,12 @@ type updateScope struct {
 	onActiveGate bool
 	onOneAgent   bool
 	onSynthetic  bool
-	onDynaMetric bool
 }
 
 func (scope updateScope) needsUpdate() bool {
 	return scope.onActiveGate ||
 		scope.onOneAgent ||
-		scope.onSynthetic ||
-		scope.onDynaMetric
+		scope.onSynthetic
 }
 
 func (scope updateScope) reconcileActiveGate(dynakube *dynatracev1beta1.DynaKube, updater *imageUpdater) {
@@ -91,27 +89,12 @@ func (scope updateScope) reconcileSynthetic(dynaKube *dynatracev1beta1.DynaKube,
 	}
 }
 
-func (scope updateScope) reconcileDynaMetrics(dynaKube *dynatracev1beta1.DynaKube, updater *imageUpdater) {
-	if !scope.onDynaMetric {
-		return
-	}
-
-	err := updater.update(
-		dynaKube.DynaMetricImage(),
-		&dynaKube.Status.DynaMetrics.VersionStatus,
-		true)
-	if err != nil {
-		log.Error(err, "failed to update DynaMetric image version")
-	}
-}
-
 // Reconcile updates the version and hash for the images used by the rec.Dynakube DynaKube instance.
 func (r *Reconciler) Reconcile(ctx context.Context) error {
 	scope := updateScope{
 		onActiveGate: needsActiveGateUpdate(r.Dynakube, *r.TimeProvider),
 		onOneAgent:   needsOneAgentUpdate(r.Dynakube, *r.TimeProvider),
 		onSynthetic:  needsSynMonitoringUpdate(r.Dynakube, *r.TimeProvider),
-		onDynaMetric: needsDynaMetricUpdate(r.Dynakube, *r.TimeProvider),
 	}
 
 	if !scope.needsUpdate() {
@@ -135,7 +118,6 @@ func (r *Reconciler) updateImages(ctx context.Context, scope updateScope) error 
 	scope.reconcileActiveGate(r.Dynakube, imageUpdater)
 	scope.reconcileOneAgent(r.Dynakube, imageUpdater)
 	scope.reconcileSynthetic(r.Dynakube, imageUpdater)
-	scope.reconcileDynaMetrics(r.Dynakube, imageUpdater)
 
 	return nil
 }
@@ -178,12 +160,6 @@ func needsSynMonitoringUpdate(dynakube *dynatracev1beta1.DynaKube, timeProvider 
 	return dynakube.IsSyntheticMonitoringEnabled() &&
 		dynakube.FeatureCustomSyntheticImage() == "" &&
 		timeProvider.IsOutdated(dynakube.Status.Synthetic.LastUpdateProbeTimestamp, ProbeThreshold)
-}
-
-func needsDynaMetricUpdate(dynakube *dynatracev1beta1.DynaKube, timeProvider kubeobjects.TimeProvider) bool {
-	return dynakube.IsSyntheticMonitoringEnabled() &&
-		dynakube.FeatureCustomDynaMetricImage() == "" &&
-		timeProvider.IsOutdated(dynakube.Status.DynaMetrics.LastUpdateProbeTimestamp, ProbeThreshold)
 }
 
 type imageUpdater struct {

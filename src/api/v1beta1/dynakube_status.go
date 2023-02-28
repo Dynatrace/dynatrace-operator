@@ -62,7 +62,6 @@ type DynaKubeStatus struct {
 	OneAgent     OneAgentStatus     `json:"oneAgent,omitempty"`
 	Synthetic    SyntheticStatus    `json:"synthetic,omitempty"`
 	DynatraceApi DynatraceApiStatus `json:"dynatraceApi,omitempty"`
-	DynaMetrics  DynaMetricStatus   `json:"dynaMetrics,omitempty"`
 }
 
 const MaxRequestInterval = 15 * time.Minute
@@ -159,16 +158,6 @@ type SyntheticStatus struct {
 
 func (syn *SyntheticStatus) Name() string {
 	return "Synthetic"
-}
-
-var _ VersionStatusNamer = (*DynaMetricStatus)(nil)
-
-type DynaMetricStatus struct {
-	VersionStatus `json:",inline"`
-}
-
-func (syn *DynaMetricStatus) Name() string {
-	return "DynaMetrics"
 }
 
 type DynaKubePhaseType string

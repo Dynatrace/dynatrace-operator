@@ -47,8 +47,7 @@ const (
 	AnnotationFeatureAutomaticK8sApiMonitoringClusterName = AnnotationFeaturePrefix + "automatic-kubernetes-api-monitoring-cluster-name"
 	AnnotationFeatureActiveGateIgnoreProxy                = AnnotationFeaturePrefix + "activegate-ignore-proxy"
 
-	AnnotationFeatureCustomSyntheticImage  = AnnotationFeaturePrefix + "custom-synthetic-image"
-	AnnotationFeatureCustomDynaMetricImage = AnnotationFeaturePrefix + "custom-dynametric-image"
+	AnnotationFeatureCustomSyntheticImage = AnnotationFeaturePrefix + "custom-synthetic-image"
 
 	// dtClient
 
@@ -206,10 +205,6 @@ func (dk *DynaKube) FeatureAutomaticInjection() bool {
 
 func (dk *DynaKube) FeatureCustomSyntheticImage() string {
 	return dk.getFeatureFlagRaw(AnnotationFeatureCustomSyntheticImage)
-}
-
-func (dk *DynaKube) FeatureCustomDynaMetricImage() string {
-	return dk.getFeatureFlagRaw(AnnotationFeatureCustomDynaMetricImage)
 }
 
 // FeatureDisableReadOnlyOneAgent is a feature flag to specify if the operator needs to deploy the oneagents in a readonly mode,

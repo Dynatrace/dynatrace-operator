@@ -40,7 +40,6 @@ const (
 
 	defaultActiveGateImage = "/linux/activegate:latest"
 	defaultSyntheticImage  = "/linux/dynatrace-synthetic:latest"
-	defaultDynaMetricImage = "/linux/dynatrace-synthetic-adapter:latest"
 
 	TrustedCAKey = "certs"
 	ProxyKey     = "proxy"
@@ -271,21 +270,6 @@ func (dynaKube *DynaKube) SyntheticImage() string {
 	}
 
 	return apiUrlHost + defaultSyntheticImage
-}
-
-// returns the DynaMetric image supplied by the given DynaKube.
-func (dk *DynaKube) DynaMetricImage() string {
-	if dk.FeatureCustomDynaMetricImage() != "" {
-		return dk.FeatureCustomDynaMetricImage()
-	}
-
-	apiUrlHost := dk.ApiUrlHost()
-
-	if apiUrlHost == "" {
-		return ""
-	}
-
-	return apiUrlHost + defaultDynaMetricImage
 }
 
 func (dk *DynaKube) NeedsReadOnlyOneAgents() bool {
