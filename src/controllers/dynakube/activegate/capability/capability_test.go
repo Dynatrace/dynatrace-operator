@@ -1,12 +1,12 @@
 package capability
 
 import (
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"testing"
 
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -17,7 +17,7 @@ const (
 	expectedArgName   = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface,synthetic,beacon_forwarder,beacon_forwarder_synthetic"
 )
 
-var capabilites = []dynatracev1beta1.CapabilityDisplayName{
+var capabilities = []dynatracev1beta1.CapabilityDisplayName{
 	dynatracev1beta1.RoutingCapability.DisplayName,
 	dynatracev1beta1.KubeMonCapability.DisplayName,
 	dynatracev1beta1.MetricsIngestCapability.DisplayName,
@@ -59,7 +59,7 @@ func TestBuildServiceName(t *testing.T) {
 
 func TestNewMultiCapability(t *testing.T) {
 	t.Run(`creates new multicapability`, func(t *testing.T) {
-		dk := buildDynakube(capabilites)
+		dk := buildDynakube(capabilities)
 		mc := NewMultiCapability(dk)
 		require.NotNil(t, mc)
 		assert.True(t, mc.Enabled())
