@@ -15,14 +15,12 @@
 x-google-marketplace:
   schemaVersion: v2
   applicationApiVersion: v1beta1
-  publishedVersion: 0.10.2
+  publishedVersion: 0.10.3
   publishedVersionMetadata:
     releaseNote: "<!-- Release notes generated using configuration in .github/release.yml\
-      \ at v0.10.2 -->\n\n## What's Changed\n### Core changes \U0001F389\n* Adapt\
-      \ Chart.yaml for release of 0.10.1 by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/1409\n\
-      ### Helm changes \u26D1\uFE0F\n* Use chart version in `application.yaml` by\
-      \ @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/1443\n\n\n\
-      **Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v0.10.1...v0.10.2"
+      \ at v0.10.3 -->\n\n## What's Changed\n### Helm changes \u26D1\uFE0F\n* Adapt\
+      \ helm files on release branch for 0.10.2 by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/1466\n\
+      \n\n**Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v0.10.2...v0.10.3"
     releaseTypes:
     - Feature
     recommended: true
