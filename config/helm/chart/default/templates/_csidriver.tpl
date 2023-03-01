@@ -22,6 +22,22 @@ Check if we need the csi driver.
 {{- end -}}
 
 {{/*
+CSI PriorityClassName
+*/}}
+{{- define "dynatrace-operator.CSIPriorityClassName" -}}
+	{{- default "dynatrace-high-priority" .Values.csidriver.existingPriorityClassName -}}
+{{- end -}}
+
+{{/*
+Check if we need the csi default priority class
+*/}}
+{{- define "dynatrace-operator.needPriorityClass" -}}
+	{{- if and (eq (include "dynatrace-operator.needCSI" .) "true") (not .Values.csidriver.existingPriorityClassName) -}}
+		{{- printf "true" -}}
+	{{- end -}}
+{{- end -}}
+
+{{/*
 CSI plugin-dir path
 */}}
 {{- define "dynatrace-operator.CSIPluginDir" -}}

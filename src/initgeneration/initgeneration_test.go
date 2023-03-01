@@ -225,7 +225,7 @@ func TestGenerateForDynakube(t *testing.T) {
 				Labels: map[string]string{dtwebhook.InjectionInstanceLabel: testDynakubeComplex.Name},
 			},
 		}
-		clt := fake.NewClient(&testNamespace, testSecretDynakubeComplex, kubeNamespace, caConfigMap, testTlsSecretDynakubeComplex, testNode1, testNode2)
+		clt := fake.NewClientWithIndex(&testNamespace, testSecretDynakubeComplex, kubeNamespace, caConfigMap, testTlsSecretDynakubeComplex, testNode1, testNode2)
 		ig := NewInitGenerator(clt, clt, operatorNamespace)
 
 		err := ig.GenerateForDynakube(context.TODO(), dk)
@@ -251,7 +251,7 @@ func TestGenerateForDynakube(t *testing.T) {
 				Labels: map[string]string{dtwebhook.InjectionInstanceLabel: testDynakubeSimple.Name},
 			},
 		}
-		clt := fake.NewClient(&testNamespace, testSecretDynakubeSimple, kubeNamespace, testNode1, testNode2)
+		clt := fake.NewClientWithIndex(&testNamespace, testSecretDynakubeSimple, kubeNamespace, testNode1, testNode2)
 		ig := NewInitGenerator(clt, clt, operatorNamespace)
 
 		err := ig.GenerateForDynakube(context.TODO(), dk)
@@ -283,7 +283,7 @@ func TestGenerateForDynakube(t *testing.T) {
 				Labels: map[string]string{dtwebhook.InjectionInstanceLabel: testDynakubeSimple.Name},
 			},
 		}
-		clt := fake.NewClient(&testNamespace, &testOtherNamespace, testSecretDynakubeSimple, kubeNamespace, testNode1, testNode2)
+		clt := fake.NewClientWithIndex(&testNamespace, &testOtherNamespace, testSecretDynakubeSimple, kubeNamespace, testNode1, testNode2)
 		ig := NewInitGenerator(clt, clt, operatorNamespace)
 
 		err := ig.GenerateForDynakube(context.TODO(), dk)

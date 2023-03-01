@@ -4,22 +4,20 @@ package cloudnative
 
 import (
 	"context"
-	"path"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/test/istiosetup"
-	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/manifests"
-	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/pod"
-	"github.com/Dynatrace/dynatrace-operator/test/logs"
-	"github.com/Dynatrace/dynatrace-operator/test/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/test/project"
-	"github.com/Dynatrace/dynatrace-operator/test/sampleapps"
-	"github.com/Dynatrace/dynatrace-operator/test/secrets"
-	"github.com/Dynatrace/dynatrace-operator/test/setup"
-	"github.com/Dynatrace/dynatrace-operator/test/shell"
-	"github.com/spf13/afero"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/webhook"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/istio"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/logs"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -28,116 +26,120 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-var (
-	testNamespaceConfig      = path.Join(project.TestDataDir(), "cloudnative/test-namespace.yaml")
-	istioTestNamespaceConfig = path.Join(project.TestDataDir(), "cloudnativeistio/test-namespace.yaml")
-	sampleDeploymentConfig   = path.Join(project.TestDataDir(), "cloudnative/sample-deployment.yaml")
-)
-
 func Install(t *testing.T, istioEnabled bool) features.Feature {
-	secretConfig := getSecretConfig(t)
-
-	defaultInstallation := features.New("default installation")
-
-	if istioEnabled {
-		defaultInstallation.Setup(manifests.InstallFromFile(istioTestNamespaceConfig))
-	} else {
-		defaultInstallation.Setup(manifests.InstallFromFile(testNamespaceConfig))
-	}
-	setup.InstallDynatraceFromSource(defaultInstallation, &secretConfig)
-	setup.AssessOperatorDeployment(defaultInstallation)
-
-	setup.DeploySampleApps(defaultInstallation, sampleDeploymentConfig)
+	builder := features.New("default installation")
+	t.Logf("istio enabled: %v", istioEnabled)
+	secretConfig := tenant.GetSingleTenantSecret(t)
 
 	dynakubeBuilder := dynakube.NewBuilder().
 		WithDefaultObjectMeta().
 		ApiUrl(secretConfig.ApiUrl).
-		CloudNative(&v1beta1.CloudNativeFullStackSpec{})
+		CloudNative(defaultCloudNativeSpec())
 	if istioEnabled {
 		dynakubeBuilder = dynakubeBuilder.WithIstio()
 	}
-	defaultInstallation.Assess("dynakube applied", dynakube.Apply(dynakubeBuilder.Build()))
+	testDynakube := dynakubeBuilder.Build()
 
-	setup.AssessDynakubeStartup(defaultInstallation)
-
-	assessSampleAppsRestart(defaultInstallation)
-	assessOneAgentsAreRunning(defaultInstallation)
-
+	// Register operator install
+	operatorNamespaceBuilder := namespace.NewBuilder(testDynakube.Namespace)
 	if istioEnabled {
-		istiosetup.AssessIstio(defaultInstallation)
+		operatorNamespaceBuilder = operatorNamespaceBuilder.WithLabels(istio.InjectionLabel)
+	}
+	assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), testDynakube)
+
+	// Register sample app install
+	namespaceBuilder := namespace.NewBuilder("cloudnative-sample")
+	if istioEnabled {
+		namespaceBuilder = namespaceBuilder.WithLabels(istio.InjectionLabel)
+	}
+	sampleNamespace := namespaceBuilder.Build()
+	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
+	sampleApp.WithNamespace(sampleNamespace)
+
+	// Register sample app install
+	builder.Assess("install sample app", sampleApp.Install())
+
+	// Register actual test
+	assess.InstallDynakube(builder, &secretConfig, testDynakube)
+	assessSampleAppsRestart(builder, sampleApp)
+	assessSampleInitContainers(builder, sampleApp)
+	if istioEnabled {
+		istio.AssessIstio(builder, testDynakube, sampleApp)
 	}
 
-	return defaultInstallation.Feature()
+	// Register sample, dynakube and operator uninstall
+	builder.Teardown(sampleApp.UninstallNamespace())
+	teardown.UninstallDynatrace(builder, testDynakube)
+
+	return builder.Feature()
 }
 
-func assessSampleAppsRestart(builder *features.FeatureBuilder) {
-	builder.Assess("restart sample apps", sampleapps.Restart)
+func assessSampleAppsRestart(builder *features.FeatureBuilder, sampleApp sampleapps.SampleApp) {
+	builder.Assess("restart sample apps", sampleApp.Restart)
 }
 
-func assessSampleAppsRestartHalf(builder *features.FeatureBuilder) {
-	builder.Assess("restart half of sample apps", sampleapps.RestartHalf)
+func assessSampleAppsRestartHalf(builder *features.FeatureBuilder, sampleApp sampleapps.SampleApp) {
+	builder.Assess("restart half of sample apps", sampleApp.RestartHalf)
 }
 
-func assessOneAgentsAreRunning(builder *features.FeatureBuilder) {
-	builder.Assess("sample apps have working init containers", checkInitContainers)
-	builder.Assess("osAgent can connect", oneagent.OSAgentCanConnect())
+func assessSampleInitContainers(builder *features.FeatureBuilder, sampleApp sampleapps.SampleApp) {
+	builder.Assess("sample apps have working init containers", checkInitContainers(sampleApp))
 }
 
-func getSecretConfig(t *testing.T) secrets.Secret {
-	secretConfig, err := secrets.DefaultSingleTenant(afero.NewOsFs())
+func checkInitContainers(sampleApp sampleapps.SampleApp) features.Func {
+	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+		resources := environmentConfig.Client().Resources()
+		pods := sampleApp.GetPods(ctx, t, resources)
+		clientset, err := kubernetes.NewForConfig(resources.GetConfig())
 
-	require.NoError(t, err)
+		require.NoError(t, err)
 
-	return secretConfig
-}
-
-func checkInitContainers(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-	resources := environmentConfig.Client().Resources()
-	pods := pod.List(t, ctx, resources, sampleapps.Namespace)
-	clientset, err := kubernetes.NewForConfig(resources.GetConfig())
-
-	require.NoError(t, err)
-
-	for _, podItem := range pods.Items {
-		if podItem.DeletionTimestamp != nil {
-			continue
-		}
-
-		require.NotNil(t, podItem)
-		require.NotNil(t, podItem.Spec)
-		require.NotEmpty(t, podItem.Spec.InitContainers)
-
-		var oneAgentInstallContainer *corev1.Container
-
-		for _, initContainer := range podItem.Spec.InitContainers {
-			if initContainer.Name == oneAgentInstallContainerName {
-				oneAgentInstallContainer = &initContainer //nolint:gosec // loop breaks after assignment, memory aliasing is not a problem
-				break
+		for _, podItem := range pods.Items {
+			if podItem.DeletionTimestamp != nil {
+				continue
 			}
+
+			require.NotNil(t, podItem)
+			require.NotNil(t, podItem.Spec)
+			require.NotEmpty(t, podItem.Spec.InitContainers)
+
+			var oneAgentInstallContainer *corev1.Container
+
+			for _, initContainer := range podItem.Spec.InitContainers {
+				if initContainer.Name == webhook.InstallContainerName {
+					oneAgentInstallContainer = &initContainer //nolint:gosec // loop breaks after assignment, memory aliasing is not a problem
+					break
+				}
+			}
+			require.NotNil(t, oneAgentInstallContainer, "'%s' pod - '%s' container not found", podItem.Name, webhook.InstallContainerName)
+
+			assert.Equal(t, webhook.InstallContainerName, oneAgentInstallContainer.Name)
+
+			logStream, err := clientset.CoreV1().Pods(podItem.Namespace).GetLogs(podItem.Name, &corev1.PodLogOptions{
+				Container: webhook.InstallContainerName,
+			}).Stream(ctx)
+
+			require.NoError(t, err)
+			logs.AssertContains(t, logStream, "standalone agent init completed")
+
+			executionQuery := pod.NewExecutionQuery(podItem, sampleApp.ContainerName(), shell.CheckIfEmpty("/opt/dynatrace/oneagent-paas/log/php/")...)
+			executionResult, err := executionQuery.Execute(environmentConfig.Client().RESTConfig())
+
+			require.NoError(t, err)
+
+			stdOut := executionResult.StdOut.String()
+			stdErr := executionResult.StdErr.String()
+
+			assert.Empty(t, stdOut)
+			assert.Empty(t, stdErr)
 		}
-		require.NotNil(t, oneAgentInstallContainer, "'%s' pod - '%s' container not found", podItem.Name, oneAgentInstallContainerName)
 
-		assert.Equal(t, oneAgentInstallContainerName, oneAgentInstallContainer.Name)
-
-		logStream, err := clientset.CoreV1().Pods(podItem.Namespace).GetLogs(podItem.Name, &corev1.PodLogOptions{
-			Container: oneAgentInstallContainerName,
-		}).Stream(ctx)
-
-		require.NoError(t, err)
-		logs.AssertContains(t, logStream, "standalone agent init completed")
-
-		executionQuery := pod.NewExecutionQuery(podItem, sampleapps.Name, shell.ReadFile("/opt/dynatrace/oneagent-paas/log/nginx/ruxitagent_nginx_myapp-__bootstrap_1.0.log")...)
-		executionResult, err := executionQuery.Execute(environmentConfig.Client().RESTConfig())
-
-		require.NoError(t, err)
-
-		stdOut := executionResult.StdOut.String()
-		stdErr := executionResult.StdErr.String()
-
-		assert.NotEmpty(t, stdOut)
-		assert.Empty(t, stdErr)
-		assert.Contains(t, stdOut, "[native] Dynatrace Bootstrap Agent")
+		return ctx
 	}
+}
 
-	return ctx
+func defaultCloudNativeSpec() *dynatracev1beta1.CloudNativeFullStackSpec {
+	return &dynatracev1beta1.CloudNativeFullStackSpec{
+		HostInjectSpec: dynatracev1beta1.HostInjectSpec{},
+	}
 }

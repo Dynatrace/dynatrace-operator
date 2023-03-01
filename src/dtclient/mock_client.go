@@ -11,6 +11,21 @@ type MockDynatraceClient struct {
 	mock.Mock
 }
 
+func (o *MockDynatraceClient) GetLatestOneAgentImage() (*LatestImageInfo, error) {
+	args := o.Called()
+	return args.Get(0).(*LatestImageInfo), args.Error(1)
+}
+
+func (o *MockDynatraceClient) GetLatestCodeModulesImage() (*LatestImageInfo, error) {
+	args := o.Called()
+	return args.Get(0).(*LatestImageInfo), args.Error(1)
+}
+
+func (o *MockDynatraceClient) GetLatestActiveGateImage() (*LatestImageInfo, error) {
+	args := o.Called()
+	return args.Get(0).(*LatestImageInfo), args.Error(1)
+}
+
 func (o *MockDynatraceClient) GetActiveGateConnectionInfo() (*ActiveGateConnectionInfo, error) {
 	args := o.Called()
 	return args.Get(0).(*ActiveGateConnectionInfo), args.Error(1)

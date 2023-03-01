@@ -6,6 +6,7 @@ HELM_TEMPLATES_DIR=$(HELM_CHART_DEFAULT_DIR)/templates/
 HELM_CRD_DIR=$(HELM_TEMPLATES_DIR)/Common/crd/
 
 MANIFESTS_DIR=config/deploy/
+RELEASE_CRD_YAML=config/deploy/dynatrace-operator-crd.yaml
 
 KUBERNETES_CORE_YAML=$(MANIFESTS_DIR)kubernetes/kubernetes.yaml
 KUBERNETES_AUTOPILOT_YAML=$(MANIFESTS_DIR)kubernetes/gke-autopilot.yaml
@@ -27,7 +28,7 @@ ifneq ($(shell git branch --show-current | grep "^release-"),)
 	endif
 else ifeq ($(shell git branch --show-current), main)
 	# if the current branch is the main branch
-	CHART_VERSION=snapshot
+	CHART_VERSION=0.0.0-snapshot
 else
 	# otherwise do not change Chart.yaml
     CHART_VERSION=

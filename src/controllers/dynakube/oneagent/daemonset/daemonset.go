@@ -322,8 +322,15 @@ func (dsInfo *builderInfo) securityContext() *corev1.SecurityContext {
 		securityContext.Privileged = address.Of(true)
 	} else {
 		securityContext.Capabilities = defaultSecurityContextCapabilities()
-	}
 
+		if dsInfo.dynakube != nil && dsInfo.dynakube.FeatureOneAgentSecCompProfile() != "" {
+			secCompName := dsInfo.dynakube.FeatureOneAgentSecCompProfile()
+			securityContext.SeccompProfile = &corev1.SeccompProfile{
+				Type:             corev1.SeccompProfileTypeLocalhost,
+				LocalhostProfile: &secCompName,
+			}
+		}
+	}
 	return &securityContext
 }
 

@@ -5,23 +5,19 @@ package applicationmonitoring
 import (
 	"context"
 	"fmt"
-	"path"
 	"strings"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
-	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/deployment"
-	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/manifests"
-	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/pod"
-	"github.com/Dynatrace/dynatrace-operator/test/operator"
-	"github.com/Dynatrace/dynatrace-operator/test/project"
-	"github.com/Dynatrace/dynatrace-operator/test/sampleapps"
-	"github.com/Dynatrace/dynatrace-operator/test/secrets"
-	"github.com/Dynatrace/dynatrace-operator/test/shell"
-	"github.com/Dynatrace/dynatrace-operator/test/webhook"
-	"github.com/spf13/afero"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -37,12 +33,10 @@ const (
 	dtReleaseStage        = "DT_RELEASE_STAGE"
 	dtReleaseBuildVersion = "DT_RELEASE_BUILD_VERSION"
 
-	buildLabelsDynakube = "dynakube-labels"
-
 	disabledBuildLabelsNamespace  = "disabled-build-labels-namespace"
 	defaultBuildLabelsNamespace   = "default-build-labels-namespace"
-	customBuildLablesNamespace    = "custom-build-labels-namespace"
-	preservedBuildLablesNamespace = "preserved-build-labels-namespace"
+	customBuildLabelsNamespace    = "custom-build-labels-namespace"
+	preservedBuildLabelsNamespace = "preserved-build-labels-namespace"
 	invalidBuildLabelsNamespace   = "invalid-build-labels-namespace"
 )
 
@@ -52,12 +46,12 @@ type buildLabel struct {
 }
 
 var (
-	namespaceNames = []string{
-		disabledBuildLabelsNamespace,
-		defaultBuildLabelsNamespace,
-		customBuildLablesNamespace,
-		preservedBuildLablesNamespace,
-		invalidBuildLabelsNamespace,
+	namespaceToExpectedLabels = map[string]map[string]buildLabel{
+		disabledBuildLabelsNamespace:  disabledBuildLabels,
+		defaultBuildLabelsNamespace:   defaultBuildLabels,
+		customBuildLabelsNamespace:    customBuildLabels,
+		preservedBuildLabelsNamespace: preservedCustomBuildLabels,
+		invalidBuildLabelsNamespace:   invalidCustomBuildLabels,
 	}
 
 	disabledBuildLabels = map[string]buildLabel{
@@ -98,73 +92,84 @@ var (
 	}
 )
 
-func installOperator(t *testing.T) features.Feature {
-	secretConfig := getSecretConfig(t)
-
-	defaultInstallation := features.New("default installation")
-
-	defaultInstallation.Setup(secrets.ApplyDefault(secretConfig))
-	defaultInstallation.Setup(operator.InstallViaMake(false))
-	defaultInstallation.Assess("operator started", operator.WaitForDeployment())
-	defaultInstallation.Assess("webhook started", webhook.WaitForDeployment())
-
-	return defaultInstallation.Feature()
-}
-
-func installDynakube(t *testing.T, name string, annotations map[string]string) features.Feature {
-	secretConfig := getSecretConfig(t)
-	defaultInstallation := features.New(name + " installation")
-
-	defaultInstallation.Assess("dynakube applied", dynakube.Apply(dynakube.NewBuilder().
-		Name(name).
-		Namespace(dynakube.Namespace).
-		WithAnnotations(annotations).
+func labelVersionDetection(t *testing.T) features.Feature {
+	builder := features.New("label version")
+	secretConfig := tenant.GetSingleTenantSecret(t)
+	defaultDynakubeName := "dynakube"
+	defaultDynakube := dynakube.NewBuilder().
+		WithDefaultObjectMeta().
+		Name(defaultDynakubeName).
 		ApiUrl(secretConfig.ApiUrl).
 		NamespaceSelector(metav1.LabelSelector{
 			MatchLabels: map[string]string{
-				"inject": name,
+				"inject": defaultDynakubeName,
 			},
 		}).
-		Tokens(dynakube.Name).
-		ApplicationMonitoring(&v1beta1.ApplicationMonitoringSpec{
+		ApplicationMonitoring(&dynatracev1beta1.ApplicationMonitoringSpec{
 			UseCSIDriver: address.Of(false),
-		}).Build()))
-	defaultInstallation.Assess("dynakube phase changes to 'Running'", dynakube.WaitForDynakubePhase(dynakube.NewBuilder().Name(name).Namespace(dynakube.Namespace).Build()))
+		}).Build()
 
-	return defaultInstallation.Feature()
-}
+	labelVersionDynakubeName := "dynakube-labels"
+	labelVersionDynakube := dynakube.NewBuilder().
+		WithDefaultObjectMeta().
+		Name(labelVersionDynakubeName).
+		WithAnnotations(map[string]string{dynatracev1beta1.AnnotationFeatureLabelVersionDetection: "true"}).
+		ApiUrl(secretConfig.ApiUrl).
+		NamespaceSelector(metav1.LabelSelector{
+			MatchLabels: map[string]string{
+				"inject": labelVersionDynakubeName,
+			},
+		}).
+		ApplicationMonitoring(&dynatracev1beta1.ApplicationMonitoringSpec{
+			UseCSIDriver: address.Of(false),
+		}).Build()
 
-func installSampleApplications() features.Feature {
-	defaultInstallation := features.New("sample applications installation")
-	defaultInstallation.Assess("sample applications applied", manifests.InstallFromFile(path.Join(project.TestDataDir(), "application-monitoring/buildlabels-sample-apps.yaml")))
-	for _, namespaceName := range namespaceNames {
-		defaultInstallation.Assess(namespaceName+" is ready", deployment.WaitFor(sampleapps.Name, namespaceName))
+	sampleApps := []sampleapps.SampleApp{
+		buildDisabledBuildLabelSampleApp(t, defaultDynakube),
+		buildDefaultBuildLabelSampleApp(t, labelVersionDynakube),
+		buildCustomBuildLabelSampleApp(t, labelVersionDynakube),
+		buildPreservedBuildLabelSampleApp(t, labelVersionDynakube),
+		buildInvalidBuildLabelSampleApp(t, labelVersionDynakube),
 	}
-	return defaultInstallation.Feature()
-}
 
-func checkBuildLabels() features.Feature {
-	builder := features.New("check build labels")
-	builder.Assess("disabled", assertBuildLabels(sampleapps.Namespace, disabledBuildLabels))
-	builder.Assess("default", assertBuildLabels(defaultBuildLabelsNamespace, defaultBuildLabels))
-	builder.Assess("custom", assertBuildLabels(customBuildLablesNamespace, customBuildLabels))
-	builder.Assess("preserved", assertBuildLabels(preservedBuildLablesNamespace, preservedCustomBuildLabels))
-	builder.Assess("invalid", assertBuildLabels(invalidBuildLabelsNamespace, invalidCustomBuildLabels))
+	// Register operator install
+	assess.InstallOperatorFromSource(builder, defaultDynakube)
+	// Register dynakubes install and uninstall
+	assess.InstallDynakubeWithTeardown(builder, &secretConfig, defaultDynakube)
+	assess.InstallDynakubeWithTeardown(builder, &secretConfig, labelVersionDynakube)
+
+	// Register actual test (+sample cleanup)
+	installSampleApplications(builder, sampleApps)
+	checkBuildLabels(builder, sampleApps)
+	teardownSampleApplications(builder, sampleApps)
+	// Register operator uninstall
+	teardown.UninstallOperatorFromSource(builder, labelVersionDynakube)
+
 	return builder.Feature()
 }
 
-func getSecretConfig(t *testing.T) secrets.Secret {
-	secretConfig, err := secrets.DefaultSingleTenant(afero.NewOsFs())
-
-	require.NoError(t, err)
-
-	return secretConfig
+func installSampleApplications(builder *features.FeatureBuilder, sampleApps []sampleapps.SampleApp) {
+	for _, sampleApp := range sampleApps {
+		builder.Assess(sampleApp.Name()+" is ready", sampleApp.Install())
+	}
 }
 
-func assertBuildLabels(namespaceName string, expectedBuildLabels map[string]buildLabel) func(context.Context, *testing.T, *envconf.Config) context.Context {
+func teardownSampleApplications(builder *features.FeatureBuilder, sampleApps []sampleapps.SampleApp) {
+	for _, sampleApp := range sampleApps {
+		builder.WithTeardown(sampleApp.Name()+" is uninstalled", sampleApp.UninstallNamespace())
+	}
+}
+
+func checkBuildLabels(builder *features.FeatureBuilder, sampleApps []sampleapps.SampleApp) {
+	for _, sampleApp := range sampleApps {
+		builder.Assess("checking "+sampleApp.Name(), assertBuildLabels(sampleApp, namespaceToExpectedLabels[sampleApp.Namespace().Name]))
+	}
+}
+
+func assertBuildLabels(sampleApp sampleapps.SampleApp, expectedBuildLabels map[string]buildLabel) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resources := environmentConfig.Client().Resources()
-		pods := pod.List(t, ctx, resources, namespaceName)
+		pods := sampleApp.GetPods(ctx, t, resources)
 
 		for _, podItem := range pods.Items {
 			podItem := podItem
@@ -173,23 +178,23 @@ func assertBuildLabels(namespaceName string, expectedBuildLabels map[string]buil
 			require.NotNil(t, podItem.Spec)
 
 			appContainer := podItem.Spec.Containers[0]
-			assert.Equal(t, sampleapps.Name, appContainer.Name, "%s namespace", namespaceName)
+			assert.Equal(t, sampleApp.Name(), appContainer.Name, "%s namespace", sampleApp.Namespace().Name)
 
-			assertReferences(t, &podItem, expectedBuildLabels)
+			assertReferences(t, &podItem, sampleApp, expectedBuildLabels)
 
-			assertValues(t, environmentConfig.Client().RESTConfig(), podItem, expectedBuildLabels)
+			assertValues(t, environmentConfig.Client().RESTConfig(), podItem, sampleApp, expectedBuildLabels)
 		}
 
 		return ctx
 	}
 }
 
-func assertReferences(t *testing.T, pod *corev1.Pod, expectedBuildLabels map[string]buildLabel) {
+func assertReferences(t *testing.T, pod *corev1.Pod, sampleApp sampleapps.SampleApp, expectedBuildLabels map[string]buildLabel) {
 	require.NotNil(t, pod)
 	require.NotNil(t, pod.Spec)
 
 	appContainer := pod.Spec.Containers[0]
-	require.Equal(t, "myapp", appContainer.Name)
+	require.Equal(t, sampleApp.ContainerName(), appContainer.Name)
 
 	variablesFound := map[string]bool{}
 
@@ -214,18 +219,154 @@ func assertReferences(t *testing.T, pod *corev1.Pod, expectedBuildLabels map[str
 	}
 }
 
-func assertValues(t *testing.T, restConfig *rest.Config, podItem corev1.Pod, expectedBuildLabels map[string]buildLabel) {
+func assertValues(t *testing.T, restConfig *rest.Config, podItem corev1.Pod, sampleApp sampleapps.SampleApp, expectedBuildLabels map[string]buildLabel) {
 	for _, variableName := range []string{dtReleaseVersion, dtReleaseProduct, dtReleaseStage, dtReleaseBuildVersion} {
-		assertValue(t, restConfig, podItem, variableName, expectedBuildLabels[variableName].value)
+		assertValue(t, restConfig, podItem, sampleApp, variableName, expectedBuildLabels[variableName].value)
 	}
 }
 
-func assertValue(t *testing.T, restConfig *rest.Config, podItem corev1.Pod, variableName string, expectedValue string) { //nolint:revive // argument-limit
-	executionQuery := pod.NewExecutionQuery(podItem, sampleapps.Name, shell.Shell(shell.Echo(fmt.Sprintf("$%s", variableName)))...)
+func assertValue(t *testing.T, restConfig *rest.Config, podItem corev1.Pod, sampleApp sampleapps.SampleApp, variableName string, expectedValue string) { //nolint:revive // argument-limit
+	executionQuery := pod.NewExecutionQuery(podItem, sampleApp.ContainerName(), shell.Shell(shell.Echo(fmt.Sprintf("$%s", variableName)))...)
 	executionResult, err := executionQuery.Execute(restConfig)
 	require.NoError(t, err)
 
 	stdOut := strings.TrimSpace(executionResult.StdOut.String())
 	assert.Zero(t, executionResult.StdErr.Len())
 	assert.Equal(t, expectedValue, stdOut, "%s:%s pod - %s variable has invalid value", podItem.Namespace, podItem.Name, variableName)
+}
+
+func buildDisabledBuildLabelNamespace(testDynakube dynatracev1beta1.DynaKube) corev1.Namespace {
+	return namespace.NewBuilder(disabledBuildLabelsNamespace).WithLabels(testDynakube.NamespaceSelector().MatchLabels).Build()
+}
+
+func buildDisabledBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1beta1.DynaKube) sampleapps.SampleApp {
+	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
+	sampleApp.WithNamespace(buildDisabledBuildLabelNamespace(testDynakube))
+	return sampleApp
+}
+
+func buildDefaultBuildLabelNamespace(testDynakube dynatracev1beta1.DynaKube) corev1.Namespace {
+	return namespace.NewBuilder(defaultBuildLabelsNamespace).WithLabels(testDynakube.NamespaceSelector().MatchLabels).Build()
+}
+
+func buildDefaultBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1beta1.DynaKube) sampleapps.SampleApp {
+	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
+	sampleApp.WithNamespace(buildDefaultBuildLabelNamespace(testDynakube))
+	sampleApp.WithLabels(map[string]string{
+		"app.kubernetes.io/version": "app-kubernetes-io-version",
+		"app.kubernetes.io/part-of": "app-kubernetes-io-part-of",
+		"my.domain/version":         "my-domain-version",
+		"my.domain/product":         "my-domain-product",
+		"my.domain/stage":           "my-domain-stage",
+		"my.domain/build-version":   "my-domain-build-version",
+	})
+	return sampleApp
+}
+
+func buildCustomBuildLabelNamespace(testDynakube dynatracev1beta1.DynaKube) corev1.Namespace {
+	return namespace.NewBuilder(customBuildLabelsNamespace).WithLabels(testDynakube.NamespaceSelector().MatchLabels).
+		WithAnnotation(map[string]string{
+			"mapping.release.dynatrace.com/version":       "metadata.labels['my.domain/version']",
+			"mapping.release.dynatrace.com/product":       "metadata.labels['my.domain/product']",
+			"mapping.release.dynatrace.com/stage":         "metadata.labels['my.domain/stage']",
+			"mapping.release.dynatrace.com/build-version": "metadata.labels['my.domain/build-version']",
+		}).Build()
+}
+
+func buildCustomBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1beta1.DynaKube) sampleapps.SampleApp {
+	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
+	sampleApp.WithNamespace(buildCustomBuildLabelNamespace(testDynakube))
+	sampleApp.WithLabels(map[string]string{
+		"app.kubernetes.io/version": "app-kubernetes-io-version",
+		"app.kubernetes.io/part-of": "app-kubernetes-io-part-of",
+		"my.domain/version":         "my-domain-version",
+		"my.domain/product":         "my-domain-product",
+		"my.domain/stage":           "my-domain-stage",
+		"my.domain/build-version":   "my-domain-build-version",
+	})
+	return sampleApp
+}
+
+func buildPreservedBuildLabelNamespace(testDynakube dynatracev1beta1.DynaKube) corev1.Namespace {
+	return namespace.NewBuilder(preservedBuildLabelsNamespace).WithLabels(testDynakube.NamespaceSelector().MatchLabels).
+		WithAnnotation(map[string]string{
+			"mapping.release.dynatrace.com/version":       "metadata.labels['my.domain/version']",
+			"mapping.release.dynatrace.com/product":       "metadata.labels['my.domain/product']",
+			"mapping.release.dynatrace.com/stage":         "metadata.labels['my.domain/stage']",
+			"mapping.release.dynatrace.com/build-version": "metadata.labels['my.domain/build-version']",
+		}).Build()
+}
+
+func buildPreservedBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1beta1.DynaKube) sampleapps.SampleApp {
+	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
+	sampleApp.WithNamespace(buildPreservedBuildLabelNamespace(testDynakube))
+	sampleApp.WithLabels(map[string]string{
+		"app.kubernetes.io/version": "app-kubernetes-io-version",
+		"app.kubernetes.io/part-of": "app-kubernetes-io-part-of",
+		"my.domain/version":         "my-domain-version",
+		"my.domain/product":         "my-domain-product",
+		"my.domain/stage":           "my-domain-stage",
+		"my.domain/build-version":   "my-domain-build-version",
+		"my-version":                "my-version",
+		"my-product":                "my-product",
+		"my-stage":                  "my-stage",
+		"my-build-version":          "my-build-version",
+	})
+	sampleApp.WithEnvs([]corev1.EnvVar{
+		{
+			Name: dtReleaseVersion,
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "metadata.labels['my-version']",
+				},
+			},
+		},
+		{
+			Name: dtReleaseStage,
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "metadata.labels['my-stage']",
+				},
+			},
+		},
+		{
+			Name: dtReleaseProduct,
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "metadata.labels['my-product']",
+				},
+			},
+		},
+		{
+			Name: dtReleaseBuildVersion,
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "metadata.labels['my-build-version']",
+				},
+			},
+		},
+	})
+	return sampleApp
+}
+
+func buildInvalidBuildLabelNamespace(testDynakube dynatracev1beta1.DynaKube) corev1.Namespace {
+	return namespace.NewBuilder(invalidBuildLabelsNamespace).WithLabels(testDynakube.NamespaceSelector().MatchLabels).
+		WithAnnotation(map[string]string{
+			"mapping.release.dynatrace.com/stage":         "metadata.labels['my.domain/invalid-stage']",
+			"mapping.release.dynatrace.com/build-version": "metadata.labels['my.domain/invalid-build-version']",
+		}).Build()
+}
+
+func buildInvalidBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1beta1.DynaKube) sampleapps.SampleApp {
+	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
+	sampleApp.WithNamespace(buildInvalidBuildLabelNamespace(testDynakube))
+	sampleApp.WithLabels(map[string]string{
+		"app.kubernetes.io/version": "app-kubernetes-io-version",
+		"app.kubernetes.io/part-of": "app-kubernetes-io-part-of",
+		"my.domain/version":         "my-domain-version",
+		"my.domain/product":         "my-domain-product",
+		"my.domain/stage":           "my-domain-stage",
+		"my.domain/build-version":   "my-domain-build-version",
+	})
+	return sampleApp
 }

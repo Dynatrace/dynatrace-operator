@@ -654,7 +654,7 @@ func createFakeClientAndReconciler(mockClient dtclient.Client, instance *dynatra
 		data[dtclient.DynatracePaasToken] = []byte(paasToken)
 	}
 
-	fakeClient := fake.NewClient(instance,
+	fakeClient := fake.NewClientWithIndex(instance,
 		&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,

@@ -5,11 +5,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -124,16 +126,23 @@ func TestReconcile(t *testing.T) {
 	}
 
 	t.Run(`reconcile successfully without mutatingwebhookconfiguration`, func(t *testing.T) {
-		fakeClient := fake.NewClient(crd, &admissionregistrationv1.ValidatingWebhookConfiguration{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: webhook.DeploymentName,
-			},
-			Webhooks: []admissionregistrationv1.ValidatingWebhook{
-				{
-					ClientConfig: admissionregistrationv1.WebhookClientConfig{},
+		fakeClient := fake.NewClient(crd,
+			&admissionregistrationv1.ValidatingWebhookConfiguration{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: webhook.DeploymentName,
+				},
+				Webhooks: []admissionregistrationv1.ValidatingWebhook{
+					{
+						ClientConfig: admissionregistrationv1.WebhookClientConfig{},
+					},
 				},
 			},
-		})
+			&appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      operatorDeploymentName,
+					Namespace: testNamespace,
+				},
+			})
 		controller, request := prepareController(fakeClient)
 		result, err := controller.Reconcile(context.TODO(), request)
 
@@ -142,19 +151,26 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run(`reconcile successfully without validatingwebhookconfiguration`, func(t *testing.T) {
-		fakeClient := fake.NewClient(crd, &admissionregistrationv1.MutatingWebhookConfiguration{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: webhook.DeploymentName,
-			},
-			Webhooks: []admissionregistrationv1.MutatingWebhook{
-				{
-					ClientConfig: admissionregistrationv1.WebhookClientConfig{},
+		fakeClient := fake.NewClient(crd,
+			&admissionregistrationv1.MutatingWebhookConfiguration{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: webhook.DeploymentName,
 				},
-				{
-					ClientConfig: admissionregistrationv1.WebhookClientConfig{},
+				Webhooks: []admissionregistrationv1.MutatingWebhook{
+					{
+						ClientConfig: admissionregistrationv1.WebhookClientConfig{},
+					},
+					{
+						ClientConfig: admissionregistrationv1.WebhookClientConfig{},
+					},
 				},
 			},
-		})
+			&appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      operatorDeploymentName,
+					Namespace: testNamespace,
+				},
+			})
 		controller, request := prepareController(fakeClient)
 		result, err := controller.Reconcile(context.TODO(), request)
 
@@ -163,8 +179,13 @@ func TestReconcile(t *testing.T) {
 	})
 
 	t.Run(`update crd successfully with up-to-date secret`, func(t *testing.T) {
-		fakeClient := fake.NewClient(crd)
-		cs := newCertificateSecret()
+		fakeClient := fake.NewClient(crd, &appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      operatorDeploymentName,
+				Namespace: testNamespace,
+			},
+		})
+		cs := newCertificateSecret(scheme.Scheme, &appsv1.Deployment{})
 		_ = cs.setSecretFromReader(context.TODO(), fakeClient, testNamespace)
 		_ = cs.validateCertificates(testNamespace)
 		_ = cs.createOrUpdateIfNecessary(context.TODO(), fakeClient)
@@ -185,7 +206,12 @@ func TestReconcile(t *testing.T) {
 	// Generation must not be skipped because webhook startup routine listens for the secret
 	// See cmd/operator/manager.go and cmd/operator/watcher.go
 	t.Run(`do not skip certificates generation if no configuration exists`, func(t *testing.T) {
-		fakeClient := fake.NewClient(crd)
+		fakeClient := fake.NewClient(crd, &appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      operatorDeploymentName,
+				Namespace: testNamespace,
+			},
+		})
 		controller, request := prepareController(fakeClient)
 		result, err := controller.Reconcile(context.TODO(), request)
 
@@ -232,6 +258,7 @@ func prepareController(clt client.Client) (*WebhookCertificateController, reconc
 		client:    clt,
 		apiReader: clt,
 		namespace: testNamespace,
+		scheme:    scheme.Scheme,
 	}
 
 	request := reconcile.Request{
@@ -313,6 +340,12 @@ func newFakeClientBuilder() *fakeClientBuilder {
 				{
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{},
 				},
+			},
+		},
+		&appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      operatorDeploymentName,
+				Namespace: testNamespace,
 			},
 		},
 	}

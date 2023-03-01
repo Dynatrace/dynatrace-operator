@@ -26,7 +26,7 @@ fi
 
 helm plugin uninstall unittest || true
 curl \
-  -L "https://github.com/quintush/helm-unittest/releases/download/v0.2.8/helm-unittest-${PLATFORM}-${ARCH}-0.2.8.tgz" \
+  -L "https://github.com/quintush/helm-unittest/releases/download/v0.2.11/helm-unittest-${PLATFORM}-${ARCH}-0.2.11.tgz" \
   -o helm-unittest.tgz
 mkdir -p "${HELM_PLUGINS}/unittest"
 tar xzvf helm-unittest.tgz -C "${HELM_PLUGINS}/unittest"
