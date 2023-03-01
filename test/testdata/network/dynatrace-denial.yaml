@@ -1,13 +1,10 @@
-apiVersion: "cilium.io/v2"
-kind: CiliumNetworkPolicy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
 metadata:
   name: "dynatrace-deny-egress-to-world"
   namespace: dynatrace
 spec:
-  endpointSelector: {}
-  egress:
-    - toEntities:
-        - "cluster"
-  ingress:
-    - fromEntities:
-        - "cluster"
+  podSelector: {}
+  policyTypes:
+  - Egress
+  - Ingress
