@@ -132,9 +132,9 @@ func (provider operatorManagerProvider) createOptions(namespace string) ctrl.Opt
 		LeaderElectionNamespace:    namespace,
 		HealthProbeBindAddress:     healthProbeBindAddress,
 		LivenessEndpointName:       livenessEndpointName,
-		LeaseDuration:              getTimeFromEnvWithDefault(leaderElectionEnvVarLeaseDuration, 15),
-		RenewDeadline:              getTimeFromEnvWithDefault(leaderElectionEnvVarRenewDeadline, 10),
-		RetryPeriod:                getTimeFromEnvWithDefault(leaderElectionEnvVarRetryPeriod, 2),
+		LeaseDuration:              getTimeFromEnvWithDefault(leaderElectionEnvVarLeaseDuration, 30),
+		RenewDeadline:              getTimeFromEnvWithDefault(leaderElectionEnvVarRenewDeadline, 20),
+		RetryPeriod:                getTimeFromEnvWithDefault(leaderElectionEnvVarRetryPeriod, 6),
 	}
 }
 
