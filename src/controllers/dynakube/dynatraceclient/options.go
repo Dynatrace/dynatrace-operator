@@ -58,7 +58,7 @@ func (opts *options) createProxyOption(apiReader client.Reader, dynakube *dynatr
 		return proxyOption, err
 	}
 
-	proxyOption = dtclient.Proxy(proxyUrl)
+	proxyOption = dtclient.Proxy(proxyUrl, dynakube.FeatureNoProxy())
 	return proxyOption, nil
 }
 

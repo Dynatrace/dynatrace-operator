@@ -26,7 +26,8 @@ import (
 )
 
 const (
-	ProxyKey = "proxy"
+	ProxyKey   = "proxy"
+	NoProxyKey = "noProxy"
 )
 
 func (dk *DynaKube) Proxy(ctx context.Context, kubeReader client.Reader) (string, error) {

@@ -155,6 +155,7 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dynak
 		ApiToken:            getAPIToken(tokens),
 		PaasToken:           getPaasToken(tokens),
 		Proxy:               proxy,
+		NoProxy:             dynakube.FeatureNoProxy(),
 		NetworkZone:         dynakube.Spec.NetworkZone,
 		TrustedCAs:          string(trustedCAs),
 		SkipCertCheck:       dynakube.Spec.SkipCertCheck,
