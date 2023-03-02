@@ -34,9 +34,9 @@ type nodeInfo struct {
 
 func NewInitGenerator(client client.Client, apiReader client.Reader, namespace string) *InitGenerator {
 	return &InitGenerator{
-		client:        client,
-		apiReader:     apiReader,
-		namespace:     namespace,
+		client:    client,
+		apiReader: apiReader,
+		namespace: namespace,
 	}
 }
 

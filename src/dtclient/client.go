@@ -3,13 +3,13 @@ package dtclient
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"golang.org/x/net/http/httpproxy"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
 
 	"github.com/pkg/errors"
+	"golang.org/x/net/http/httpproxy"
 )
 
 const (
@@ -188,8 +188,8 @@ func Proxy(proxyURL string, noProxy string) Option {
 
 func proxyWrapper(proxyConfig httpproxy.Config) func(req *http.Request) (*url.URL, error) {
 	return func(req *http.Request) (*url.URL, error) {
-          return proxyConfig.ProxyFunc()(req.URL)
-    }
+		return proxyConfig.ProxyFunc()(req.URL)
+	}
 }
 
 func Certs(certs []byte) Option {

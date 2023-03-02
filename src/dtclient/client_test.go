@@ -55,7 +55,6 @@ func TestProxy(t *testing.T) {
 
 		checkProxyForUrl(t, *transport, proxyRawURL, "http://working.url", false)
 		checkProxyForUrl(t, *transport, proxyRawURL, "https://working.url", false)
-
 	})
 	t.Run("set NO_PROXY", func(t *testing.T) {
 		dtc := createTestDynatraceClient(*dynatraceServer)
@@ -74,7 +73,6 @@ func TestProxy(t *testing.T) {
 
 		checkProxyForUrl(t, *transport, proxyRawURL, "http://proxied.url", false)
 		checkProxyForUrl(t, *transport, proxyRawURL, "https://proxied.url", false)
-
 	})
 	t.Run("set incorrect proxy", func(t *testing.T) {
 		dtc := createTestDynatraceClient(*dynatraceServer)
@@ -82,7 +80,6 @@ func TestProxy(t *testing.T) {
 		require.NotNil(t, options)
 		options(&dtc)
 	})
-
 }
 
 func TestCerts(t *testing.T) {
@@ -110,7 +107,6 @@ func checkProxyForUrl(t *testing.T, transport http.Transport, proxyRawURL, targe
 	} else {
 		require.Nil(t, url)
 	}
-
 }
 
 func createTestDynatraceClient(dynatraceServer httptest.Server) dynatraceClient {

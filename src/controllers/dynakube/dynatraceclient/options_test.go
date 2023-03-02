@@ -65,11 +65,11 @@ func TestOptions(t *testing.T) {
 		assert.NotNil(t, opts)
 		assert.Empty(t, opts.Opts)
 
-		err := opts.appendProxySettings(nil, nil, "")
+		err := opts.appendProxySettings(nil, nil)
 		assert.NoError(t, err)
 		assert.Empty(t, opts.Opts)
 
-		err = opts.appendProxySettings(nil, createTestDynakubeWithProxy(dynatracev1beta1.DynaKubeProxy{Value: testValue}), "")
+		err = opts.appendProxySettings(nil, createTestDynakubeWithProxy(dynatracev1beta1.DynaKubeProxy{Value: testValue}))
 
 		assert.NoError(t, err)
 		assert.NotEmpty(t, opts.Opts)
@@ -85,7 +85,7 @@ func TestOptions(t *testing.T) {
 				},
 			})
 		opts = newOptions(context.Background())
-		err = opts.appendProxySettings(fakeClient, createTestDynakubeWithProxy(dynatracev1beta1.DynaKubeProxy{ValueFrom: testName}), testNamespace)
+		err = opts.appendProxySettings(fakeClient, createTestDynakubeWithProxy(dynatracev1beta1.DynaKubeProxy{ValueFrom: testName}))
 
 		assert.NoError(t, err)
 		assert.NotEmpty(t, opts.Opts)
@@ -93,7 +93,7 @@ func TestOptions(t *testing.T) {
 	t.Run(`AppendProxySettings handles missing or malformed secret`, func(t *testing.T) {
 		fakeClient := fake.NewClient()
 		opts := newOptions(context.Background())
-		err := opts.appendProxySettings(fakeClient, createTestDynakubeWithProxy(dynatracev1beta1.DynaKubeProxy{ValueFrom: testName}), testNamespace)
+		err := opts.appendProxySettings(fakeClient, createTestDynakubeWithProxy(dynatracev1beta1.DynaKubeProxy{ValueFrom: testName}))
 
 		assert.Error(t, err)
 		assert.Empty(t, opts.Opts)
@@ -107,7 +107,7 @@ func TestOptions(t *testing.T) {
 				Data: map[string][]byte{},
 			})
 		opts = newOptions(context.Background())
-		err = opts.appendProxySettings(fakeClient, createTestDynakubeWithProxy(dynatracev1beta1.DynaKubeProxy{ValueFrom: testName}), testNamespace)
+		err = opts.appendProxySettings(fakeClient, createTestDynakubeWithProxy(dynatracev1beta1.DynaKubeProxy{ValueFrom: testName}))
 
 		assert.Error(t, err)
 		assert.Empty(t, opts.Opts)

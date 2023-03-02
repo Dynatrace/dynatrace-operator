@@ -261,7 +261,7 @@ func TestProxySecret(t *testing.T) {
 		troubleshootCtx := troubleshootContext{
 			namespaceName: testNamespace,
 			httpClient:    &http.Client{},
-			apiReader: clt,
+			apiReader:     clt,
 		}
 		assert.NoErrorf(t, applyProxySettings(&troubleshootCtx), "proxy secret does not have required tokens")
 	})

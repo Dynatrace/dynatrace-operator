@@ -36,12 +36,12 @@ func (opts *options) appendDisableHostsRequests(disableHostsRequests bool) {
 	opts.Opts = append(opts.Opts, dtclient.DisableHostsRequests(disableHostsRequests))
 }
 
-func (opts *options) appendProxySettings(apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube, namespace string) error {
+func (opts *options) appendProxySettings(apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube) error {
 	if dynakube == nil || !dynakube.HasProxy() {
 		return nil
 	}
 
-	proxyOption, err := opts.createProxyOption(apiReader, dynakube, namespace)
+	proxyOption, err := opts.createProxyOption(apiReader, dynakube)
 	if err != nil {
 		return err
 	}
@@ -50,7 +50,7 @@ func (opts *options) appendProxySettings(apiReader client.Reader, dynakube *dyna
 	return nil
 }
 
-func (opts *options) createProxyOption(apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube, namespace string) (dtclient.Option, error) {
+func (opts *options) createProxyOption(apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube) (dtclient.Option, error) {
 	var proxyOption dtclient.Option
 
 	proxyUrl, err := dynakube.Proxy(opts.ctx, apiReader)
