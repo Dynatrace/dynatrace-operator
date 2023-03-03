@@ -103,7 +103,14 @@ func dynakubeNotValidMessage() string {
 
 func getSelectedDynakube(troubleshootCtx *troubleshootContext) error {
 	var dynakube dynatracev1beta1.DynaKube
-	err := troubleshootCtx.apiReader.Get(troubleshootCtx.context, client.ObjectKey{Name: troubleshootCtx.dynakube.Name, Namespace: troubleshootCtx.namespaceName}, &dynakube)
+	err := troubleshootCtx.apiReader.Get(
+		troubleshootCtx.context,
+		client.ObjectKey{
+			Name:      troubleshootCtx.dynakube.Name,
+			Namespace: troubleshootCtx.namespaceName,
+		},
+		&dynakube,
+	)
 
 	if err != nil {
 		return determineSelectedDynakubeError(troubleshootCtx, err)
