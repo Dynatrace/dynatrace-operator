@@ -7,6 +7,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/go-logr/logr"
@@ -70,7 +71,7 @@ func (builder CommandBuilder) Build() *cobra.Command {
 }
 
 func addFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&namespaceFlagValue, namespaceFlagName, "dynatrace", "Specify a different Namespace.")
+	cmd.PersistentFlags().StringVar(&namespaceFlagValue, namespaceFlagName, kubeobjects.DefaultNamespace(), "Specify a different Namespace.")
 	cmd.PersistentFlags().BoolVar(&tarballToStdoutFlagValue, tarballToStdoutFlagName, false, "Write tarball to stdout.")
 }
 
