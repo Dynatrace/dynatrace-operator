@@ -19,7 +19,7 @@ RUN CGO_ENABLED=1 CGO_CFLAGS="-O2 -Wno-return-local-addr" \
     -o ./build/_output/bin/dynatrace-operator ./src/cmd/
 
 # download additional image dependencies
-FROM registry.access.redhat.com/ubi9-minimal:9.1.0 as dependency-src
+FROM registry.access.redhat.com/ubi9-minimal:9.1.0-1793 as dependency-src
 RUN \
     --mount=type=cache,target=/var/cache/dnf \
     microdnf install -y util-linux tar --nodocs
