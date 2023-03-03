@@ -105,12 +105,12 @@ func executeSupportArchiveCommand(ctx context.Context, t *testing.T, environment
 
 	require.Len(t, operatorPods, 1)
 
-	executionQuery := pod.NewExecutionQuery(operatorPods[0],
-		"dynatrace-operator",
+	executionQuery := pod.NewExecutionQuery(ctx, environmentConfig.Client().Resources(), operatorPods[0],
+		operator.ContainerName,
 		"/usr/local/bin/dynatrace-operator",
 		"support-archive",
 		cmdLineArguments)
-	executionResult, err := executionQuery.Execute(environmentConfig.Client().RESTConfig())
+	executionResult, err := executionQuery.Execute()
 	require.NoError(t, err)
 
 	return executionResult

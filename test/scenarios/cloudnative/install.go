@@ -122,8 +122,8 @@ func checkInitContainers(sampleApp sampleapps.SampleApp) features.Func {
 			require.NoError(t, err)
 			logs.AssertContains(t, logStream, "standalone agent init completed")
 
-			executionQuery := pod.NewExecutionQuery(podItem, sampleApp.ContainerName(), shell.CheckIfEmpty("/opt/dynatrace/oneagent-paas/log/php/")...)
-			executionResult, err := executionQuery.Execute(environmentConfig.Client().RESTConfig())
+			ifEmptyCommand := shell.CheckIfEmpty("/opt/dynatrace/oneagent-paas/log/php/")
+			executionResult, err := pod.NewExecutionQuery(ctx, resources, podItem, sampleApp.ContainerName(), ifEmptyCommand...).Execute()
 
 			require.NoError(t, err)
 

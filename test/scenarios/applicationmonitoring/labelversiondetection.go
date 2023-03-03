@@ -22,7 +22,7 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/rest"
+	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -182,7 +182,7 @@ func assertBuildLabels(sampleApp sampleapps.SampleApp, expectedBuildLabels map[s
 
 			assertReferences(t, &podItem, sampleApp, expectedBuildLabels)
 
-			assertValues(t, environmentConfig.Client().RESTConfig(), podItem, sampleApp, expectedBuildLabels)
+			assertValues(ctx, t, environmentConfig.Client().Resources(), podItem, sampleApp, expectedBuildLabels)
 		}
 
 		return ctx
@@ -219,15 +219,16 @@ func assertReferences(t *testing.T, pod *corev1.Pod, sampleApp sampleapps.Sample
 	}
 }
 
-func assertValues(t *testing.T, restConfig *rest.Config, podItem corev1.Pod, sampleApp sampleapps.SampleApp, expectedBuildLabels map[string]buildLabel) {
+func assertValues(ctx context.Context, t *testing.T, resource *resources.Resources, podItem corev1.Pod, sampleApp sampleapps.SampleApp, expectedBuildLabels map[string]buildLabel) { //nolint:revive // argument-limit
 	for _, variableName := range []string{dtReleaseVersion, dtReleaseProduct, dtReleaseStage, dtReleaseBuildVersion} {
-		assertValue(t, restConfig, podItem, sampleApp, variableName, expectedBuildLabels[variableName].value)
+		assertValue(ctx, t, resource, podItem, sampleApp, variableName, expectedBuildLabels[variableName].value)
 	}
 }
 
-func assertValue(t *testing.T, restConfig *rest.Config, podItem corev1.Pod, sampleApp sampleapps.SampleApp, variableName string, expectedValue string) { //nolint:revive // argument-limit
-	executionQuery := pod.NewExecutionQuery(podItem, sampleApp.ContainerName(), shell.Shell(shell.Echo(fmt.Sprintf("$%s", variableName)))...)
-	executionResult, err := executionQuery.Execute(restConfig)
+func assertValue(ctx context.Context, t *testing.T, resource *resources.Resources, podItem corev1.Pod, sampleApp sampleapps.SampleApp, variableName string, expectedValue string) { //nolint:revive // argument-limit
+	echoCommand := shell.Shell(shell.Echo(fmt.Sprintf("$%s", variableName)))
+	executionQuery := pod.NewExecutionQuery(ctx, resource, podItem, sampleApp.ContainerName(), echoCommand...)
+	executionResult, err := executionQuery.Execute()
 	require.NoError(t, err)
 
 	stdOut := strings.TrimSpace(executionResult.StdOut.String())

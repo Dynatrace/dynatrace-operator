@@ -30,6 +30,7 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -127,20 +128,20 @@ func codeModulesAppInjectSpec() *dynatracev1beta1.AppInjectionSpec {
 func imageHasBeenDownloaded(namespace string) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resource := environmentConfig.Client().Resources()
-		restConfig := environmentConfig.Client().RESTConfig()
 
 		err := csi.ForEachPod(ctx, resource, namespace, func(podItem corev1.Pod) {
-			var result *pod.ExecutionResult
+			listCommand := shell.ListDirectory(dataPath)
 			result, err := pod.
-				NewExecutionQuery(podItem, provisionerContainerName, shell.ListDirectory(dataPath)...).
-				Execute(restConfig)
+				NewExecutionQuery(ctx, resource, podItem, provisionerContainerName, listCommand...).
+				Execute()
 
 			require.NoError(t, err)
 			assert.Contains(t, result.StdOut.String(), dtcsi.SharedAgentBinDir)
 
+			readManifestCommand := shell.Shell(shell.ReadFile(getManifestPath()))
 			result, err = pod.
-				NewExecutionQuery(podItem, provisionerContainerName, shell.Shell(shell.ReadFile(getManifestPath()))...).
-				Execute(restConfig)
+				NewExecutionQuery(ctx, resource, podItem, provisionerContainerName, readManifestCommand...).
+				Execute()
 
 			require.NoError(t, err)
 
@@ -163,21 +164,8 @@ func imageHasBeenDownloaded(namespace string) features.Func {
 func measureDiskUsage(namespace string, storageMap map[string]int) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resource := environmentConfig.Client().Resources()
-		restConfig := environmentConfig.Client().RESTConfig()
 		err := csi.ForEachPod(ctx, resource, namespace, func(podItem corev1.Pod) {
-			var result *pod.ExecutionResult
-			result, err := pod.
-				NewExecutionQuery(podItem, provisionerContainerName, shell.Shell(shell.Pipe(
-					shell.DiskUsageWithTotal(dataPath),
-					shell.FilterLastLineOnly()))...).
-				Execute(restConfig)
-
-			require.NoError(t, err)
-
-			diskUsage, err := strconv.Atoi(strings.Split(result.StdOut.String(), "\t")[0])
-
-			require.NoError(t, err)
-
+			diskUsage := getProvisionerDiskUsage(ctx, t, environmentConfig.Client().Resources(), podItem)
 			storageMap[podItem.Name] = diskUsage
 		})
 		require.NoError(t, err)
@@ -188,20 +176,8 @@ func measureDiskUsage(namespace string, storageMap map[string]int) features.Func
 func diskUsageDoesNotIncrease(namespace string, storageMap map[string]int) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resource := environmentConfig.Client().Resources()
-		restConfig := environmentConfig.Client().RESTConfig()
 		err := csi.ForEachPod(ctx, resource, namespace, func(podItem corev1.Pod) {
-			var result *pod.ExecutionResult
-			result, err := pod.
-				NewExecutionQuery(podItem, provisionerContainerName, shell.Shell(shell.Pipe(
-					shell.DiskUsageWithTotal(dataPath),
-					shell.FilterLastLineOnly()))...).
-				Execute(restConfig)
-
-			require.NoError(t, err)
-
-			diskUsage, err := strconv.Atoi(strings.Split(result.StdOut.String(), "\t")[0])
-
-			require.NoError(t, err)
+			diskUsage := getProvisionerDiskUsage(ctx, t, environmentConfig.Client().Resources(), podItem)
 			// Dividing it by 1000 so the sizes do not need to be exactly the same down to the byte
 			assert.Equal(t, storageMap[podItem.Name]/1000, diskUsage/1000)
 		})
@@ -209,6 +185,22 @@ func diskUsageDoesNotIncrease(namespace string, storageMap map[string]int) featu
 
 		return ctx
 	}
+}
+
+func getProvisionerDiskUsage(ctx context.Context, t *testing.T, resource *resources.Resources, podItem corev1.Pod) int {
+	command := shell.Shell(
+		shell.Pipe(
+			shell.DiskUsageWithTotal(dataPath),
+			shell.FilterLastLineOnly(),
+		),
+	)
+	result, err := pod.NewExecutionQuery(ctx, resource, podItem, provisionerContainerName, command...).Execute()
+	require.NoError(t, err)
+
+	diskUsage, err := strconv.Atoi(strings.Split(result.StdOut.String(), "\t")[0])
+	require.NoError(t, err)
+
+	return diskUsage
 }
 
 func volumesAreMountedCorrectly(sampleApp sampleapps.SampleApp) features.Func {
@@ -224,25 +216,15 @@ func volumesAreMountedCorrectly(sampleApp sampleapps.SampleApp) features.Func {
 			assert.True(t, isVolumeAttached(t, volumes, oneagent_mutation.OneAgentBinVolumeName))
 			assert.True(t, isVolumeMounted(t, volumeMounts, oneagent_mutation.OneAgentBinVolumeName))
 
+			listCommand := shell.ListDirectory(webhook.DefaultInstallPath)
 			executionResult, err := pod.
-				NewExecutionQuery(podItem, sampleApp.ContainerName(), shell.ListDirectory(webhook.DefaultInstallPath)...).
-				Execute(environmentConfig.Client().RESTConfig())
+				NewExecutionQuery(ctx, resource, podItem, sampleApp.ContainerName(), listCommand...).
+				Execute()
 
 			require.NoError(t, err)
 			assert.NotEmpty(t, executionResult.StdOut.String())
 
-			executionResult, err = pod.
-				NewExecutionQuery(podItem, sampleApp.ContainerName(), shell.Shell(shell.Pipe(
-					shell.DiskUsageWithTotal(webhook.DefaultInstallPath),
-					shell.FilterLastLineOnly()))...).
-				Execute(environmentConfig.Client().RESTConfig())
-
-			require.NoError(t, err)
-			require.Contains(t, executionResult.StdOut.String(), "total")
-
-			diskUsage, err := strconv.Atoi(strings.Split(executionResult.StdOut.String(), "\t")[0])
-
-			require.NoError(t, err)
+			diskUsage := getProvisionerDiskUsage(ctx, t, environmentConfig.Client().Resources(), podItem)
 			assert.Greater(t, diskUsage, 0)
 		})
 

@@ -133,16 +133,17 @@ func checkMountPoints(testDynakube *dynatracev1beta1.DynaKube) features.Func {
 		require.NoError(t, resources.Get(ctx, getActiveGatePodName(testDynakube), testDynakube.Namespace, &activeGatePod))
 
 		for name, mountPoints := range agMounts {
-			assertMountPointsExist(t, environmentConfig, activeGatePod, name, mountPoints)
+			assertMountPointsExist(ctx, t, environmentConfig, activeGatePod, name, mountPoints)
 		}
 
 		return ctx
 	}
 }
 
-func assertMountPointsExist(t *testing.T, environmentConfig *envconf.Config, podItem corev1.Pod, containerName string, mountPoints []string) { //nolint:revive // argument-limit
-	executionQuery := pod.NewExecutionQuery(podItem, containerName, shell.ReadFile("/proc/mounts")...)
-	executionResult, err := executionQuery.Execute(environmentConfig.Client().RESTConfig())
+func assertMountPointsExist(ctx context.Context, t *testing.T, environmentConfig *envconf.Config, podItem corev1.Pod, containerName string, mountPoints []string) { //nolint:revive // argument-limit
+	readFileCommand := shell.ReadFile("/proc/mounts")
+	executionQuery := pod.NewExecutionQuery(ctx, environmentConfig.Client().Resources(), podItem, containerName, readFileCommand...)
+	executionResult, err := executionQuery.Execute()
 	require.NoError(t, err)
 
 	stdOut := executionResult.StdOut.String()
