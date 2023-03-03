@@ -40,9 +40,6 @@ const (
 
 	defaultActiveGateImage = "/linux/activegate:latest"
 	defaultSyntheticImage  = "/linux/dynatrace-synthetic:latest"
-
-	TrustedCAKey = "certs"
-	TlsCertKey   = "server.crt"
 )
 
 // ApiUrl is a getter for dk.Spec.APIURL

@@ -68,10 +68,10 @@ func (opts *options) appendTrustedCerts(apiReader client.Reader, trustedCerts st
 		if err := apiReader.Get(opts.ctx, client.ObjectKey{Namespace: namespace, Name: trustedCerts}, certs); err != nil {
 			return errors.WithMessage(err, "failed to get certificate configmap")
 		}
-		if certs.Data[dtclient.CustomCertificatesConfigMapKey] == "" {
+		if certs.Data[dynatracev1beta1.TrustedCAKey] == "" {
 			return errors.New("failed to extract certificate configmap field: missing field certs")
 		}
-		opts.Opts = append(opts.Opts, dtclient.Certs([]byte(certs.Data[dtclient.CustomCertificatesConfigMapKey])))
+		opts.Opts = append(opts.Opts, dtclient.Certs([]byte(certs.Data[dynatracev1beta1.TrustedCAKey])))
 	}
 	return nil
 }

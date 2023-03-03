@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -130,7 +129,7 @@ func TestOptions(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Data: map[string]string{
-					dtclient.CustomCertificatesConfigMapKey: testValue,
+					dynatracev1beta1.TrustedCAKey: testValue,
 				}})
 		err = opts.appendTrustedCerts(fakeClient, testName, testNamespace)
 
