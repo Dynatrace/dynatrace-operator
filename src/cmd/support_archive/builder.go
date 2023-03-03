@@ -1,6 +1,7 @@
 package support_archive
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"os"
@@ -77,7 +78,8 @@ func addFlags(cmd *cobra.Command) {
 
 func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-		log := newSupportArchiveLogger(getLogOutput(tarballToStdoutFlagValue))
+		logBuffer := bytes.Buffer{}
+		log := newSupportArchiveLogger(getLogOutput(tarballToStdoutFlagValue, &logBuffer))
 		version.LogVersionToLogger(log)
 
 		err := dynatracev1beta1.AddToScheme(scheme.Scheme)
@@ -99,16 +101,18 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		}
 		printCopyCommand(log, tarballToStdoutFlagValue, tarFile.Name())
 
+		// make sure to run this collector at the very end
+		newSupportArchiveOutputCollector(log, supportArchive, &logBuffer).Do()
 		return nil
 	}
 }
 
-func getLogOutput(tarballToStdout bool) io.Writer {
+func getLogOutput(tarballToStdout bool, logBuffer *bytes.Buffer) io.Writer {
 	if tarballToStdout {
 		// avoid corrupting tarball
-		return os.Stderr
+		return io.MultiWriter(os.Stderr, logBuffer)
 	} else {
-		return os.Stdout
+		return io.MultiWriter(os.Stdout, logBuffer)
 	}
 }
 
