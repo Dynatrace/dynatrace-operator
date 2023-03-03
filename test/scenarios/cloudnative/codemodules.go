@@ -165,7 +165,7 @@ func measureDiskUsage(namespace string, storageMap map[string]int) features.Func
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resource := environmentConfig.Client().Resources()
 		err := csi.ForEachPod(ctx, resource, namespace, func(podItem corev1.Pod) {
-			diskUsage := getProvisionerDiskUsage(ctx, t, environmentConfig.Client().Resources(), podItem)
+			diskUsage := getDiskUsage(ctx, t, environmentConfig.Client().Resources(), podItem, provisionerContainerName, dataPath)
 			storageMap[podItem.Name] = diskUsage
 		})
 		require.NoError(t, err)
@@ -177,7 +177,7 @@ func diskUsageDoesNotIncrease(namespace string, storageMap map[string]int) featu
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resource := environmentConfig.Client().Resources()
 		err := csi.ForEachPod(ctx, resource, namespace, func(podItem corev1.Pod) {
-			diskUsage := getProvisionerDiskUsage(ctx, t, environmentConfig.Client().Resources(), podItem)
+			diskUsage := getDiskUsage(ctx, t, environmentConfig.Client().Resources(), podItem, provisionerContainerName, dataPath)
 			// Dividing it by 1000 so the sizes do not need to be exactly the same down to the byte
 			assert.Equal(t, storageMap[podItem.Name]/1000, diskUsage/1000)
 		})
@@ -187,14 +187,14 @@ func diskUsageDoesNotIncrease(namespace string, storageMap map[string]int) featu
 	}
 }
 
-func getProvisionerDiskUsage(ctx context.Context, t *testing.T, resource *resources.Resources, podItem corev1.Pod) int {
+func getDiskUsage(ctx context.Context, t *testing.T, resource *resources.Resources, podItem corev1.Pod, containerName, path string) int { //nolint:revive
 	command := shell.Shell(
 		shell.Pipe(
-			shell.DiskUsageWithTotal(dataPath),
+			shell.DiskUsageWithTotal(path),
 			shell.FilterLastLineOnly(),
 		),
 	)
-	result, err := pod.NewExecutionQuery(ctx, resource, podItem, provisionerContainerName, command...).Execute()
+	result, err := pod.NewExecutionQuery(ctx, resource, podItem, containerName, command...).Execute()
 	require.NoError(t, err)
 
 	diskUsage, err := strconv.Atoi(strings.Split(result.StdOut.String(), "\t")[0])
@@ -224,7 +224,7 @@ func volumesAreMountedCorrectly(sampleApp sampleapps.SampleApp) features.Func {
 			require.NoError(t, err)
 			assert.NotEmpty(t, executionResult.StdOut.String())
 
-			diskUsage := getProvisionerDiskUsage(ctx, t, environmentConfig.Client().Resources(), podItem)
+			diskUsage := getDiskUsage(ctx, t, environmentConfig.Client().Resources(), podItem, sampleApp.ContainerName(), webhook.DefaultInstallPath)
 			assert.Greater(t, diskUsage, 0)
 		})
 
