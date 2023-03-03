@@ -56,7 +56,7 @@ func Test_runChecks(t *testing.T) {
 	t.Run("no checks", func(t *testing.T) {
 		checks := []*Check{}
 		results := NewChecksResults()
-		err := runChecks(results, tsContext, checks)
+		err := runChecks(getNullLogger(t), results, tsContext, checks)
 		require.NoError(t, err)
 	})
 	t.Run("a few passing checks", func(t *testing.T) {
@@ -65,7 +65,7 @@ func Test_runChecks(t *testing.T) {
 			passingCheckDependendOnPassingCheck,
 		}
 		results := NewChecksResults()
-		err := runChecks(results, tsContext, checks)
+		err := runChecks(getNullLogger(t), results, tsContext, checks)
 		require.NoError(t, err)
 	})
 	t.Run("passing and failing checks", func(t *testing.T) {
@@ -77,8 +77,8 @@ func Test_runChecks(t *testing.T) {
 			failingCheckDependendOnFailingCheck, // should be skipped and error should not be reported
 		}
 		results := NewChecksResults()
-		resetLogger()
-		err := runChecks(results, tsContext, checks)
+
+		err := runChecks(getNullLogger(t), results, tsContext, checks)
 		require.Error(t, err)
 
 		aggregatedError := tserrors.AggregatedError{}
@@ -95,7 +95,7 @@ func Test_runChecks(t *testing.T) {
 			failingCheckDependendOnFailingCheck, // should be skipped and error should not be reported
 		}
 		results := NewChecksResults()
-		err := runChecks(results, tsContext, checks)
+		err := runChecks(getNullLogger(t), results, tsContext, checks)
 		require.Error(t, err)
 	})
 }
