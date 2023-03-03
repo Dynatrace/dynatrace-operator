@@ -52,8 +52,7 @@ func isAgentInjected(sampleApp sampleapps.SampleApp) features.Func {
 			require.NotNil(t, podItem)
 
 			listCommand := shell.ListDirectory("/var/lib/dynatrace")
-			executionQuery := pod.NewExecutionQuery(ctx, resources, podItem, sampleApp.ContainerName(), listCommand...)
-			executionResult, err := executionQuery.Execute()
+			executionResult, err := pod.NewExecutionQuery(ctx, resources, podItem, sampleApp.ContainerName(), listCommand...).Execute()
 
 			require.NoError(t, err)
 

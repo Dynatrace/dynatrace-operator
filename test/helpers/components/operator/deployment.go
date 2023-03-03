@@ -14,7 +14,6 @@ import (
 
 const (
 	DeploymentName = "dynatrace-operator"
-	ContainerName  = DeploymentName
 )
 
 func Get(ctx context.Context, resource *resources.Resources, namespace string) (appsv1.Deployment, error) {
