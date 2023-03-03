@@ -1,4 +1,3 @@
-{{- include "dynatrace-operator.platformRequired" . }}
 {{ if eq (include "dynatrace-operator.partial" .) "false" }}
 # Copyright 2021 Dynatrace LLC
 
@@ -106,7 +105,7 @@ spec:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
               - matchExpressions:
-                  {{- if ne .Values.platform "gke-autopilot"}}
+                  {{- if ne (include "dynatrace-operator.platform" .) "gke-autopilot" }}
                   - key: kubernetes.io/arch
                     operator: In
                     values:

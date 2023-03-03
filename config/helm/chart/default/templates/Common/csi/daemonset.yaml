@@ -1,4 +1,3 @@
-{{- include "dynatrace-operator.platformRequired" . }}
 {{ if eq (include "dynatrace-operator.needCSI" .) "true" }}
 # Copyright 2021 Dynatrace LLC
 
@@ -34,7 +33,7 @@ spec:
         dynatrace.com/inject: "false"
         kubectl.kubernetes.io/default-container: provisioner
         cluster-autoscaler.kubernetes.io/enable-ds-eviction: "false"
-        {{- if and (eq (default false .Values.apparmor) true) (ne .Values.platform "openshift") }}
+        {{- if and (eq (default false .Values.apparmor) true) (ne (include "dynatrace-operator.platform" .) "openshift") }}
         container.apparmor.security.beta.kubernetes.io/driver: runtime/default
         container.apparmor.security.beta.kubernetes.io/registrar: runtime/default
         container.apparmor.security.beta.kubernetes.io/liveness-probe: runtime/default
