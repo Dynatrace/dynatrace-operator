@@ -11,15 +11,79 @@ import (
 )
 
 func TestAddPreloadEnv(t *testing.T) {
+	installPath := "path/test"
 	t.Run("Add preload env", func(t *testing.T) {
 		container := &corev1.Container{}
-		installPath := "path/test"
 
 		addPreloadEnv(container, installPath)
 
 		require.Len(t, container.Env, 1)
 		assert.Equal(t, container.Env[0].Name, preloadEnv)
 		assert.Contains(t, container.Env[0].Value, installPath)
+	})
+	t.Run("Concat preload env, default delimiter", func(t *testing.T) {
+		existingPath := "path/user"
+		container := &corev1.Container{
+			Env: []corev1.EnvVar{
+				{
+					Name: preloadEnv,
+					Value: existingPath,
+				},
+				{
+					Name: "some-other-env",
+					Value: "some-value",
+				},
+			},
+		}
+
+		addPreloadEnv(container, installPath)
+
+		require.Len(t, container.Env, 2)
+		assert.Equal(t, container.Env[0].Name, preloadEnv)
+		assert.Contains(t, container.Env[0].Value, existingPath+":"+installPath)
+	})
+	t.Run("Concat preload env, respect delimiter", func(t *testing.T) {
+		existingPath := "path1/user path2/user"
+		container := &corev1.Container{
+			Env: []corev1.EnvVar{
+				{
+					Name: preloadEnv,
+					Value: existingPath,
+				},
+				{
+					Name: "some-other-env",
+					Value: "some-value",
+				},
+			},
+		}
+
+		addPreloadEnv(container, installPath)
+
+		require.Len(t, container.Env, 2)
+		assert.Equal(t, container.Env[0].Name, preloadEnv)
+		assert.Contains(t, container.Env[0].Value, existingPath+" "+installPath)
+	})
+	t.Run("Ignore preload env, if value already present", func(t *testing.T) {
+		existingPath := "path1/user path2/user"
+		existingPath += " "+ installPath
+		container := &corev1.Container{
+			Env: []corev1.EnvVar{
+				{
+					Name: "some-other-env",
+					Value: "some-value",
+				},
+				{
+					Name: preloadEnv,
+					Value: existingPath,
+				},
+			},
+		}
+
+		addPreloadEnv(container, installPath)
+
+		require.Len(t, container.Env, 2)
+		assert.Equal(t, container.Env[1].Name, preloadEnv)
+		assert.Contains(t, container.Env[1].Value, existingPath)
 	})
 }
 
