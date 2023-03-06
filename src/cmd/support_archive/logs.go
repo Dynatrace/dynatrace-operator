@@ -3,6 +3,7 @@ package support_archive
 import (
 	"context"
 	"fmt"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/go-logr/logr"
@@ -95,8 +96,11 @@ func (collector logCollector) collectContainerLogs(pod *corev1.Pod, container co
 	podLogs, err := req.Stream(collector.context)
 
 	if logOptions.Previous && err != nil {
-		// Soften error message for previous pods as they may just not exist.
-		logInfof(collector.log, "%v", err)
+		if k8serrors.IsBadRequest(err){ // Prevent logging of "previous terminated container not found" error
+			return
+		}
+
+		logErrorf(collector.log, err, "error getting previous logs")
 		return
 	} else if err != nil {
 		logErrorf(collector.log, err, "error in opening stream")
