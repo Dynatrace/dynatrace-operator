@@ -26,11 +26,11 @@ func TestAddPreloadEnv(t *testing.T) {
 		container := &corev1.Container{
 			Env: []corev1.EnvVar{
 				{
-					Name: preloadEnv,
+					Name:  preloadEnv,
 					Value: existingPath,
 				},
 				{
-					Name: "some-other-env",
+					Name:  "some-other-env",
 					Value: "some-value",
 				},
 			},
@@ -47,11 +47,11 @@ func TestAddPreloadEnv(t *testing.T) {
 		container := &corev1.Container{
 			Env: []corev1.EnvVar{
 				{
-					Name: preloadEnv,
+					Name:  preloadEnv,
 					Value: existingPath,
 				},
 				{
-					Name: "some-other-env",
+					Name:  "some-other-env",
 					Value: "some-value",
 				},
 			},
@@ -65,15 +65,15 @@ func TestAddPreloadEnv(t *testing.T) {
 	})
 	t.Run("Ignore preload env, if value already present", func(t *testing.T) {
 		existingPath := "path1/user path2/user"
-		existingPath += " "+ installPath
+		existingPath += " " + installPath
 		container := &corev1.Container{
 			Env: []corev1.EnvVar{
 				{
-					Name: "some-other-env",
+					Name:  "some-other-env",
 					Value: "some-value",
 				},
 				{
-					Name: preloadEnv,
+					Name:  preloadEnv,
 					Value: existingPath,
 				},
 			},

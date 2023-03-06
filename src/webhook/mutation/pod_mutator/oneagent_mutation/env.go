@@ -16,8 +16,8 @@ func addPreloadEnv(container *corev1.Container, installPath string) {
 	preloadPath := filepath.Join(installPath, config.LibAgentProcPath)
 
 	env := kubeobjects.FindEnvVar(container.Env, preloadEnv)
-	if env != nil{
-		if strings.Contains(env.Value, installPath){
+	if env != nil {
+		if strings.Contains(env.Value, installPath) {
 			return
 		}
 		env.Value = concatPreloadPaths(env.Value, preloadPath)
@@ -36,7 +36,6 @@ func concatPreloadPaths(originalPaths, additionalPath string) string {
 	} else {
 		return originalPaths + ":" + additionalPath
 	}
-
 }
 
 func addNetworkZoneEnv(container *corev1.Container, networkZone string) {
