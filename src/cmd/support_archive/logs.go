@@ -3,12 +3,12 @@ package support_archive
 import (
 	"context"
 	"fmt"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientgocorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
