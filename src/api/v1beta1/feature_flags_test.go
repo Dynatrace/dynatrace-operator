@@ -210,19 +210,25 @@ func TestSyntheticMonitoringFlags(t *testing.T) {
 
 	t.Run("with-non-empty-loc-id",
 		func(t *testing.T) {
-			const loc = "some-identifier"
+			const locOrdinal = uint64(77777777777)
+			locId := fmt.Sprintf("SYNTHETIC_LOCATION-%x", locOrdinal)
 			dynaKube := DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						AnnotationFeatureSyntheticLocationEntityId: loc,
+						AnnotationFeatureSyntheticLocationEntityId: locId,
 					},
 				},
 			}
 			assertion.Equal(
-				loc,
+				locId,
 				dynaKube.FeatureSyntheticLocationEntityId(),
 				"declared syn loc entity id: %s",
-				loc)
+				locId)
+			assertion.Equal(
+				locOrdinal,
+				dynaKube.FeatureSyntheticLocationOrdinal(),
+				"declared syn loc ordinal id: %d",
+				locOrdinal)
 		})
 
 	t.Run("with-default-node-type",

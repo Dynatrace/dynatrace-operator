@@ -26,7 +26,7 @@ type Capability interface {
 	ShortName() string
 	ArgName() string
 	Properties() *dynatracev1beta1.CapabilityProperties
-	AssistsSynthetic() bool
+	IsSynthetic() bool
 }
 
 type capabilityBase struct {
@@ -52,7 +52,7 @@ func (capability *capabilityBase) ArgName() string {
 	return capability.argName
 }
 
-func (capability *capabilityBase) AssistsSynthetic() bool {
+func (capability *capabilityBase) IsSynthetic() bool {
 	return capability.shortName == SyntheticName
 }
 

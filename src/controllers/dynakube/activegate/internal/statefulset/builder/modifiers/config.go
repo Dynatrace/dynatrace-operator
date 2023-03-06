@@ -33,7 +33,7 @@ func GenerateAllModifiers(dynaKube dynatracev1beta1.DynaKube, capability capabil
 		NewReadOnlyModifier(dynaKube),
 	}
 
-	if capability.AssistsSynthetic() {
+	if capability.IsSynthetic() {
 		generated = append(generated, newSyntheticModifier(dynaKube))
 	} else {
 		generated = append(

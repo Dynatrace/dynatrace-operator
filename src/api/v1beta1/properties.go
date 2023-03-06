@@ -243,8 +243,9 @@ func (dk *DynaKube) CustomActiveGateImage() string {
 
 // returns the synthetic image supplied by the given DynaKube.
 func (dynaKube *DynaKube) SyntheticImage() string {
-	if dynaKube.FeatureCustomSyntheticImage() != "" {
-		return dynaKube.FeatureCustomSyntheticImage()
+	image := dynaKube.FeatureCustomSyntheticImage()
+	if image != "" {
+		return image
 	}
 
 	apiUrlHost := dynaKube.ApiUrlHost()

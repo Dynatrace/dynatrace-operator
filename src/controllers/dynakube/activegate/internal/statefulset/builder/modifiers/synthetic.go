@@ -34,7 +34,7 @@ const (
 )
 
 type SyntheticModifier struct {
-	dynatracev1beta1.DynaKube
+	dynaKube dynatracev1beta1.DynaKube
 }
 
 // make the compiler watch the implemented interfaces
@@ -84,7 +84,7 @@ var nodeRequirementsBySize = map[string]nodeRequirements{
 }
 
 func (syn SyntheticModifier) nodeRequirements() nodeRequirements {
-	return nodeRequirementsBySize[syn.DynaKube.FeatureSyntheticNodeType()]
+	return nodeRequirementsBySize[syn.dynaKube.FeatureSyntheticNodeType()]
 }
 
 var (
@@ -101,12 +101,12 @@ var (
 
 func newSyntheticModifier(dynaKube dynatracev1beta1.DynaKube) SyntheticModifier {
 	return SyntheticModifier{
-		DynaKube: dynaKube,
+		dynaKube: dynaKube,
 	}
 }
 
 func (syn SyntheticModifier) Enabled() bool {
-	return syn.DynaKube.IsSyntheticMonitoringEnabled()
+	return syn.dynaKube.IsSyntheticMonitoringEnabled()
 }
 
 func (syn SyntheticModifier) Modify(sts *appsv1.StatefulSet) error {
@@ -129,7 +129,7 @@ func (syn SyntheticModifier) Modify(sts *appsv1.StatefulSet) error {
 		baseContainer.Env,
 		corev1.EnvVar{
 			Name:  envLocationId,
-			Value: syn.DynaKube.FeatureSyntheticLocationEntityId(),
+			Value: syn.dynaKube.FeatureSyntheticLocationEntityId(),
 		})
 
 	return nil
@@ -161,7 +161,7 @@ func (syn SyntheticModifier) buildContainer() corev1.Container {
 }
 
 func (syn SyntheticModifier) image() string {
-	return syn.DynaKube.SyntheticImage()
+	return syn.dynaKube.SyntheticImage()
 }
 
 func (syn SyntheticModifier) getVolumeMounts() []corev1.VolumeMount {
@@ -185,7 +185,7 @@ func (syn SyntheticModifier) getEnvs() []corev1.EnvVar {
 	return []corev1.EnvVar{
 		{
 			Name:  envNodeType,
-			Value: syn.DynaKube.FeatureSyntheticNodeType(),
+			Value: syn.dynaKube.FeatureSyntheticNodeType(),
 		},
 		{
 			Name:  envMaxHeap,

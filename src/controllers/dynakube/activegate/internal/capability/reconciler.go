@@ -42,12 +42,11 @@ func (r *Reconciler) Reconcile() error {
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	if !r.capability.AssistsSynthetic() {
-		if r.dynakube.NeedsActiveGateService() {
-			err = r.createOrUpdateService()
-			if err != nil {
-				return errors.WithStack(err)
-			}
+	if !r.capability.IsSynthetic() &&
+		r.dynakube.NeedsActiveGateService() {
+		err = r.createOrUpdateService()
+		if err != nil {
+			return errors.WithStack(err)
 		}
 	}
 

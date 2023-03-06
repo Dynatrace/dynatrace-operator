@@ -70,11 +70,9 @@ func (statefulSetBuilder Builder) getBaseObjectMeta() metav1.ObjectMeta {
 }
 
 func (statefulSetBuilder Builder) getBaseSpec() appsv1.StatefulSetSpec {
-	var replicas *int32
-	if statefulSetBuilder.capability.AssistsSynthetic() {
+	replicas := statefulSetBuilder.capability.Properties().Replicas
+	if statefulSetBuilder.capability.IsSynthetic() {
 		replicas = address.Of(statefulSetBuilder.dynakube.FeatureSyntheticReplicas())
-	} else {
-		replicas = statefulSetBuilder.capability.Properties().Replicas
 	}
 
 	return appsv1.StatefulSetSpec{
@@ -104,19 +102,19 @@ func (statefulSetBuilder Builder) addLabels(sts *appsv1.StatefulSet) {
 }
 
 func (statefulSetBuilder Builder) findCapabilityLabels() (component, version string) {
-	if statefulSetBuilder.capability.AssistsSynthetic() {
+	component = kubeobjects.ActiveGateComponentLabel
+	if statefulSetBuilder.dynakube.CustomActiveGateImage() != "" {
+		version = kubeobjects.CustomImageLabelValue
+	} else {
+		version = statefulSetBuilder.dynakube.Status.ActiveGate.Version
+	}
+
+	if statefulSetBuilder.capability.IsSynthetic() {
 		component = kubeobjects.SyntheticComponentLabel
 		if statefulSetBuilder.dynakube.FeatureCustomSyntheticImage() != "" {
 			version = kubeobjects.CustomImageLabelValue
 		} else {
 			version = statefulSetBuilder.dynakube.Status.Synthetic.Version
-		}
-	} else {
-		component = kubeobjects.ActiveGateComponentLabel
-		if statefulSetBuilder.dynakube.CustomActiveGateImage() != "" {
-			version = kubeobjects.CustomImageLabelValue
-		} else {
-			version = statefulSetBuilder.dynakube.Status.ActiveGate.Version
 		}
 	}
 
@@ -178,11 +176,11 @@ func (statefulSetBuilder Builder) buildBaseContainer() []corev1.Container {
 }
 
 func (statefulSetBuilder Builder) buildResources() corev1.ResourceRequirements {
-	if statefulSetBuilder.capability.AssistsSynthetic() {
+	if statefulSetBuilder.capability.IsSynthetic() {
 		return modifiers.ActiveGateResourceRequirements
-	} else {
-		return statefulSetBuilder.capability.Properties().Resources
 	}
+
+	return statefulSetBuilder.capability.Properties().Resources
 }
 
 func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {

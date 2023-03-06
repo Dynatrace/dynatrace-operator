@@ -88,21 +88,22 @@ const (
 	// CSI
 	AnnotationFeatureMaxFailedCsiMountAttempts = AnnotationFeaturePrefix + "max-csi-mount-attempts"
 
-	falsePhrase = "false"
-	truePhrase  = "true"
-
 	// synthetic location
 	AnnotationFeatureSyntheticLocationEntityId = AnnotationFeaturePrefix + "synthetic-location-entity-id"
 
 	// synthetic node type
 	AnnotationFeatureSyntheticNodeType = AnnotationFeaturePrefix + "synthetic-node-type"
 
+	// replicas for the synthetic monitoring
+	AnnotationFeatureSyntheticReplicas = AnnotationFeaturePrefix + "synthetic-replicas"
+
+	falsePhrase = "false"
+	truePhrase  = "true"
+
+	// synthetic node types
 	SyntheticNodeXs = "XS"
 	SyntheticNodeS  = "S"
 	SyntheticNodeM  = "M"
-
-	// replicas for the synthetic monitoring
-	AnnotationFeatureSyntheticReplicas = AnnotationFeaturePrefix + "synthetic-replicas"
 )
 
 const (
@@ -316,12 +317,26 @@ func (dk *DynaKube) FeatureMaxFailedCsiMountAttempts() int {
 }
 
 func (dynaKube *DynaKube) FeatureSyntheticLocationEntityId() string {
-	return dynaKube.Annotations[AnnotationFeatureSyntheticLocationEntityId]
+	return dynaKube.getFeatureFlagRaw(AnnotationFeatureSyntheticLocationEntityId)
+}
+
+func (dynaKube *DynaKube) FeatureSyntheticLocationOrdinal() uint64 {
+	id := uint64(0)
+
+	_, suffix, found := strings.Cut(dynaKube.FeatureSyntheticLocationEntityId(), "-")
+	if found {
+		parsed, err := strconv.ParseUint(suffix, 16, 64)
+		if err == nil {
+			id = parsed
+		}
+	}
+
+	return id
 }
 
 func (dynaKube *DynaKube) FeatureSyntheticNodeType() string {
-	node, containsKey := dynaKube.Annotations[AnnotationFeatureSyntheticNodeType]
-	if !containsKey {
+	node := dynaKube.getFeatureFlagRaw(AnnotationFeatureSyntheticNodeType)
+	if node == "" {
 		node = SyntheticNodeS
 	}
 	return node
@@ -329,8 +344,8 @@ func (dynaKube *DynaKube) FeatureSyntheticNodeType() string {
 
 func (dynaKube *DynaKube) FeatureSyntheticReplicas() int32 {
 	replicas := DefaultSyntheticReplicas
-	value, containsKey := dynaKube.Annotations[AnnotationFeatureSyntheticReplicas]
-	if containsKey {
+	value := dynaKube.getFeatureFlagRaw(AnnotationFeatureSyntheticReplicas)
+	if value != "" {
 		parsed, err := strconv.ParseInt(value, 0, 32)
 		if err == nil {
 			replicas = int32(parsed)
