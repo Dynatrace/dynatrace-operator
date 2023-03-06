@@ -70,7 +70,6 @@ func NetworkProblems(t *testing.T) features.Feature {
 func checkForDummyVolume(sampleApp sampleapps.SampleApp) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resources := environmentConfig.Client().Resources()
-		restConfig := environmentConfig.Client().RESTConfig()
 		pods := sampleApp.GetPods(ctx, t, resources)
 
 		for _, podItem := range pods.Items {
@@ -78,11 +77,8 @@ func checkForDummyVolume(sampleApp sampleapps.SampleApp) features.Func {
 			require.NotNil(t, podItem.Spec)
 			require.NotEmpty(t, podItem.Spec.InitContainers)
 
-			var result *pod.ExecutionResult
-			result, err := pod.
-				NewExecutionQuery(podItem, sampleApp.ContainerName(),
-					shell.ListDirectory(agentMountPath)...).
-				Execute(restConfig)
+			listCommand := shell.ListDirectory(agentMountPath)
+			result, err := pod.Exec(ctx, resources, podItem, sampleApp.ContainerName(), listCommand...)
 
 			require.NoError(t, err)
 			assert.Contains(t, result.StdErr.String(), ldPreloadError)
