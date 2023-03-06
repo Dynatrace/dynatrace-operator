@@ -78,7 +78,7 @@ func checkForDummyVolume(sampleApp sampleapps.SampleApp) features.Func {
 			require.NotEmpty(t, podItem.Spec.InitContainers)
 
 			listCommand := shell.ListDirectory(agentMountPath)
-			result, err := pod.NewExecutionQuery(ctx, resources, podItem, sampleApp.ContainerName(), listCommand...).Execute()
+			result, err := pod.Exec(ctx, resources, podItem, sampleApp.ContainerName(), listCommand...)
 
 			require.NoError(t, err)
 			assert.Contains(t, result.StdErr.String(), ldPreloadError)

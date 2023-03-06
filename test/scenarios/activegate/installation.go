@@ -25,6 +25,7 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -133,17 +134,16 @@ func checkMountPoints(testDynakube *dynatracev1beta1.DynaKube) features.Func {
 		require.NoError(t, resources.Get(ctx, getActiveGatePodName(testDynakube), testDynakube.Namespace, &activeGatePod))
 
 		for name, mountPoints := range agMounts {
-			assertMountPointsExist(ctx, t, environmentConfig, activeGatePod, name, mountPoints)
+			assertMountPointsExist(ctx, t, resources, activeGatePod, name, mountPoints)
 		}
 
 		return ctx
 	}
 }
 
-func assertMountPointsExist(ctx context.Context, t *testing.T, environmentConfig *envconf.Config, podItem corev1.Pod, containerName string, mountPoints []string) { //nolint:revive // argument-limit
+func assertMountPointsExist(ctx context.Context, t *testing.T, resources *resources.Resources, podItem corev1.Pod, containerName string, mountPoints []string) { //nolint:revive // argument-limit
 	readFileCommand := shell.ReadFile("/proc/mounts")
-	executionQuery := pod.NewExecutionQuery(ctx, environmentConfig.Client().Resources(), podItem, containerName, readFileCommand...)
-	executionResult, err := executionQuery.Execute()
+	executionResult, err := pod.Exec(ctx, resources, podItem, containerName, readFileCommand...)
 	require.NoError(t, err)
 
 	stdOut := executionResult.StdOut.String()

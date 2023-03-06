@@ -122,9 +122,10 @@ func assessDeploymentHasDataIngestFile(ctx context.Context, t *testing.T, resour
 }
 
 func getDataIngestMetadataFromPod(ctx context.Context, t *testing.T, resource *resources.Resources, dataIngestPod corev1.Pod) metadata {
+	require.NotEmpty(t, dataIngestPod.Spec.Containers)
+	dataIngestContainer := dataIngestPod.Spec.Containers[0].Name
 	readMetadataCommand := shell.ReadFile(metadataFile)
-	executeQuery := pod.NewExecutionQuery(ctx, resource, dataIngestPod, dataIngestPod.Spec.Containers[0].Name, readMetadataCommand...)
-	result, err := executeQuery.Execute()
+	result, err := pod.Exec(ctx, resource, dataIngestPod, dataIngestContainer, readMetadataCommand...)
 
 	require.NoError(t, err)
 

@@ -123,7 +123,7 @@ func checkInitContainers(sampleApp sampleapps.SampleApp) features.Func {
 			logs.AssertContains(t, logStream, "standalone agent init completed")
 
 			ifEmptyCommand := shell.CheckIfEmpty("/opt/dynatrace/oneagent-paas/log/php/")
-			executionResult, err := pod.NewExecutionQuery(ctx, resources, podItem, sampleApp.ContainerName(), ifEmptyCommand...).Execute()
+			executionResult, err := pod.Exec(ctx, resources, podItem, sampleApp.ContainerName(), ifEmptyCommand...)
 
 			require.NoError(t, err)
 

@@ -17,7 +17,7 @@ type ExecutionResult struct {
 	StdErr *bytes.Buffer
 }
 
-type ExecutionQuery struct {
+type executionQuery struct {
 	ctx       context.Context
 	resource  *resources.Resources
 	pod       corev1.Pod
@@ -25,8 +25,8 @@ type ExecutionQuery struct {
 	container string
 }
 
-func NewExecutionQuery(ctx context.Context, resource *resources.Resources, pod corev1.Pod, container string, command ...string) ExecutionQuery {
-	query := ExecutionQuery{
+func Exec(ctx context.Context, resource *resources.Resources, pod corev1.Pod, container string, command ...string) (*ExecutionResult, error) {
+	query := executionQuery{
 		ctx:       ctx,
 		resource:  resource,
 		pod:       pod,
@@ -34,10 +34,10 @@ func NewExecutionQuery(ctx context.Context, resource *resources.Resources, pod c
 		command:   make([]string, 0),
 	}
 	query.command = append(query.command, command...)
-	return query
+	return query.execute()
 }
 
-func (query ExecutionQuery) Execute() (*ExecutionResult, error) {
+func (query executionQuery) execute() (*ExecutionResult, error) {
 	result := &ExecutionResult{
 		StdOut: &bytes.Buffer{},
 		StdErr: &bytes.Buffer{},

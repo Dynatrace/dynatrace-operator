@@ -227,8 +227,7 @@ func assertValues(ctx context.Context, t *testing.T, resource *resources.Resourc
 
 func assertValue(ctx context.Context, t *testing.T, resource *resources.Resources, podItem corev1.Pod, sampleApp sampleapps.SampleApp, variableName string, expectedValue string) { //nolint:revive // argument-limit
 	echoCommand := shell.Shell(shell.Echo(fmt.Sprintf("$%s", variableName)))
-	executionQuery := pod.NewExecutionQuery(ctx, resource, podItem, sampleApp.ContainerName(), echoCommand...)
-	executionResult, err := executionQuery.Execute()
+	executionResult, err := pod.Exec(ctx, resource, podItem, sampleApp.ContainerName(), echoCommand...)
 	require.NoError(t, err)
 
 	stdOut := strings.TrimSpace(executionResult.StdOut.String())

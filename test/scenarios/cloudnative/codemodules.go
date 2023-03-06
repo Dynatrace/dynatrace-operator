@@ -131,17 +131,13 @@ func imageHasBeenDownloaded(namespace string) features.Func {
 
 		err := csi.ForEachPod(ctx, resource, namespace, func(podItem corev1.Pod) {
 			listCommand := shell.ListDirectory(dataPath)
-			result, err := pod.
-				NewExecutionQuery(ctx, resource, podItem, provisionerContainerName, listCommand...).
-				Execute()
+			result, err := pod.Exec(ctx, resource, podItem, provisionerContainerName, listCommand...)
 
 			require.NoError(t, err)
 			assert.Contains(t, result.StdOut.String(), dtcsi.SharedAgentBinDir)
 
 			readManifestCommand := shell.Shell(shell.ReadFile(getManifestPath()))
-			result, err = pod.
-				NewExecutionQuery(ctx, resource, podItem, provisionerContainerName, readManifestCommand...).
-				Execute()
+			result, err = pod.Exec(ctx, resource, podItem, provisionerContainerName, readManifestCommand...)
 
 			require.NoError(t, err)
 
@@ -188,13 +184,13 @@ func diskUsageDoesNotIncrease(namespace string, storageMap map[string]int) featu
 }
 
 func getDiskUsage(ctx context.Context, t *testing.T, resource *resources.Resources, podItem corev1.Pod, containerName, path string) int { //nolint:revive
-	command := shell.Shell(
+	diskUsageCommand := shell.Shell(
 		shell.Pipe(
 			shell.DiskUsageWithTotal(path),
 			shell.FilterLastLineOnly(),
 		),
 	)
-	result, err := pod.NewExecutionQuery(ctx, resource, podItem, containerName, command...).Execute()
+	result, err := pod.Exec(ctx, resource, podItem, containerName, diskUsageCommand...)
 	require.NoError(t, err)
 
 	diskUsage, err := strconv.Atoi(strings.Split(result.StdOut.String(), "\t")[0])
@@ -217,9 +213,7 @@ func volumesAreMountedCorrectly(sampleApp sampleapps.SampleApp) features.Func {
 			assert.True(t, isVolumeMounted(t, volumeMounts, oneagent_mutation.OneAgentBinVolumeName))
 
 			listCommand := shell.ListDirectory(webhook.DefaultInstallPath)
-			executionResult, err := pod.
-				NewExecutionQuery(ctx, resource, podItem, sampleApp.ContainerName(), listCommand...).
-				Execute()
+			executionResult, err := pod.Exec(ctx, resource, podItem, sampleApp.ContainerName(), listCommand...)
 
 			require.NoError(t, err)
 			assert.NotEmpty(t, executionResult.StdOut.String())
