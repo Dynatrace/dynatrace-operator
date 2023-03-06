@@ -237,7 +237,7 @@ func TestUpdateAgent(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Data: map[string]string{
-					dtclient.CustomCertificatesConfigMapKey: "I-am-a-cert-trust-me",
+					dynatracev1beta1.TrustedCAKey: "I-am-a-cert-trust-me",
 				},
 			},
 		}

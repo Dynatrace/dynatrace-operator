@@ -7,7 +7,6 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/config"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/src/standalone"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
@@ -27,6 +26,7 @@ const (
 	testTokensName           = "kitchen-sink"
 	testApiUrl               = "https://test-url/api"
 	testProxy                = "testproxy.com"
+	testNoProxy              = "noproxy.com,nopeproxy.com"
 	testtrustCAsCM           = "testtrustedCAsConfigMap"
 	testCAValue              = "somecertificate"
 	testTenantUUID           = "abc12345"
@@ -40,7 +40,13 @@ const (
 var (
 	testSelectorLabels  = map[string]string{"test": "label"}
 	testDynakubeComplex = &dynatracev1beta1.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{Name: testDynakubeComplexName, Namespace: operatorNamespace},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testDynakubeComplexName,
+			Namespace: operatorNamespace,
+			Annotations: map[string]string{
+				dynatracev1beta1.AnnotationFeatureNoProxy: testNoProxy,
+			},
+		},
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			APIURL:     testApiUrl,
 			Proxy:      &dynatracev1beta1.DynaKubeProxy{Value: testProxy},
@@ -362,9 +368,8 @@ func testInitialConnectRetrySetCorrectly(t *testing.T) {
 	}
 	clt := fake.NewClient(testSecretDynakubeSimple, caConfigMap, testTlsSecretDynakubeComplex)
 	initGenerator := InitGenerator{
-		client:        clt,
-		namespace:     operatorNamespace,
-		dynakubeQuery: kubeobjects.NewDynakubeQuery(clt, operatorNamespace),
+		client:    clt,
+		namespace: operatorNamespace,
 	}
 	secretConfig, err := initGenerator.createSecretConfigForDynaKube(context.TODO(), dynakube, kubesystemUID, map[string]string{})
 
@@ -398,6 +403,7 @@ func testForCorrectContent(t *testing.T, secret *corev1.Secret) {
 		ApiToken:            string(secret.Data["apiToken"]),
 		SkipCertCheck:       dk.Spec.SkipCertCheck,
 		Proxy:               testProxy,
+		NoProxy:             testNoProxy,
 		TrustedCAs:          testCAValue,
 		ClusterID:           string(kubesystemUID),
 		TenantUUID:          dk.Status.ConnectionInfo.TenantUUID,

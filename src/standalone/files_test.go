@@ -1,7 +1,7 @@
 package standalone
 
 import (
-	"io/ioutil"
+	"io"
 	"path/filepath"
 	"testing"
 
@@ -24,7 +24,7 @@ func TestCreateConfFile(t *testing.T) {
 
 		file, err := fs.Open(path)
 		require.NoError(t, err)
-		content, err := ioutil.ReadAll(file)
+		content, err := io.ReadAll(file)
 		require.NoError(t, err)
 		assert.Contains(t, string(content), "test")
 	})
@@ -37,7 +37,7 @@ func TestCreateConfFile(t *testing.T) {
 
 		file, err := fs.Open(path)
 		require.NoError(t, err)
-		content, err := ioutil.ReadAll(file)
+		content, err := io.ReadAll(file)
 		require.NoError(t, err)
 		assert.Contains(t, string(content), "test")
 	})

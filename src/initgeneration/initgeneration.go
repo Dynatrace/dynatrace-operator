@@ -25,7 +25,6 @@ type InitGenerator struct {
 	apiReader     client.Reader
 	namespace     string
 	canWatchNodes bool
-	dynakubeQuery kubeobjects.DynakubeQuery
 }
 
 type nodeInfo struct {
@@ -35,10 +34,9 @@ type nodeInfo struct {
 
 func NewInitGenerator(client client.Client, apiReader client.Reader, namespace string) *InitGenerator {
 	return &InitGenerator{
-		client:        client,
-		apiReader:     apiReader,
-		namespace:     namespace,
-		dynakubeQuery: kubeobjects.NewDynakubeQuery(apiReader, namespace),
+		client:    client,
+		apiReader: apiReader,
+		namespace: namespace,
 	}
 }
 
@@ -137,18 +135,17 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dynak
 		return nil, errors.WithMessage(err, "failed to query tokens")
 	}
 
-	dynakubeQuery := g.dynakubeQuery.WithContext(ctx)
-	proxy, err := dynakubeQuery.Proxy(*dynakube)
+	proxy, err := dynakube.Proxy(ctx, g.apiReader)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	trustedCAs, err := dynakubeQuery.TrustedCAs(*dynakube)
+	trustedCAs, err := dynakube.TrustedCAs(ctx, g.apiReader)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	tlsCert, err := dynakubeQuery.TlsCert(*dynakube)
+	tlsCert, err := dynakube.ActiveGateTlsCert(ctx, g.apiReader)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -158,6 +155,7 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dynak
 		ApiToken:            getAPIToken(tokens),
 		PaasToken:           getPaasToken(tokens),
 		Proxy:               proxy,
+		NoProxy:             dynakube.FeatureNoProxy(),
 		NetworkZone:         dynakube.Spec.NetworkZone,
 		TrustedCAs:          string(trustedCAs),
 		SkipCertCheck:       dynakube.Spec.SkipCertCheck,

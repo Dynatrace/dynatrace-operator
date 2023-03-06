@@ -18,7 +18,9 @@ import (
 var secretLog = logger.Factory.GetLogger("test-secret")
 
 const (
-	deploymentName = "deployment-as-owner-of-secret"
+	deploymentName  = "deployment-as-owner-of-secret"
+	testSecretName  = "test-secret"
+	testSecretValue = "test-secret-value"
 )
 
 func TestGetSecret(t *testing.T) {

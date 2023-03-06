@@ -9,14 +9,13 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"golang.org/x/net/http/httpproxy"
 )
 
 const (
-	DynatracePaasToken             = "paasToken"
-	DynatraceApiToken              = "apiToken"
-	DynatraceDataIngestToken       = "dataIngestToken"
-	CustomCertificatesConfigMapKey = "certs"
-	CustomProxySecretKey           = "proxy"
+	DynatracePaasToken       = "paasToken"
+	DynatraceApiToken        = "apiToken"
+	DynatraceDataIngestToken = "dataIngestToken"
 )
 
 // Client is the interface for the Dynatrace REST API client.
@@ -169,15 +168,26 @@ func SkipCertificateValidation(skip bool) Option {
 	}
 }
 
-func Proxy(proxyURL string) Option {
-	return func(c *dynatraceClient) {
-		p, err := url.Parse(proxyURL)
+func Proxy(proxyURL string, noProxy string) Option {
+	return func(dtclient *dynatraceClient) {
+		parsedURL, err := url.Parse(proxyURL)
 		if err != nil {
 			log.Info("could not parse proxy URL!")
 			return
 		}
-		t := c.httpClient.Transport.(*http.Transport)
-		t.Proxy = http.ProxyURL(p)
+		transport := dtclient.httpClient.Transport.(*http.Transport)
+		proxyConfig := httpproxy.Config{
+			HTTPProxy:  parsedURL.String(),
+			HTTPSProxy: parsedURL.String(),
+			NoProxy:    noProxy,
+		}
+		transport.Proxy = proxyWrapper(proxyConfig)
+	}
+}
+
+func proxyWrapper(proxyConfig httpproxy.Config) func(req *http.Request) (*url.URL, error) {
+	return func(req *http.Request) (*url.URL, error) {
+		return proxyConfig.ProxyFunc()(req.URL)
 	}
 }
 

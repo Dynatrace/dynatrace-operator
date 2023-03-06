@@ -2,7 +2,7 @@ package standalone
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"path/filepath"
 
 	"github.com/Dynatrace/dynatrace-operator/src/config"
@@ -15,6 +15,7 @@ type SecretConfig struct {
 	ApiToken      string `json:"apiToken"`
 	PaasToken     string `json:"paasToken"`
 	Proxy         string `json:"proxy"`
+	NoProxy       string `json:"noProxy"`
 	NetworkZone   string `json:"networkZone"`
 	TrustedCAs    string `json:"trustedCAs"`
 	SkipCertCheck bool   `json:"skipCertCheck"`
@@ -54,7 +55,7 @@ func newSecretConfigViaFs(fs afero.Fs) (*SecretConfig, error) {
 		return nil, err
 	}
 
-	rawJson, err := ioutil.ReadAll(file)
+	rawJson, err := io.ReadAll(file)
 	if err != nil {
 		return nil, err
 	}

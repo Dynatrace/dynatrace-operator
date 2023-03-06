@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
@@ -100,7 +100,7 @@ func TestCheckProxySettings(t *testing.T) {
 		os.Setenv("HTTPS_PROXY", "")
 
 		proxySecret := testNewSecretBuilder(testNamespace, testSecretName)
-		proxySecret.dataAppend(dtclient.CustomProxySecretKey, "foobar:1234")
+		proxySecret.dataAppend(dynatracev1beta1.ProxyKey, "foobar:1234")
 
 		clt := fake.NewClientBuilder().
 			WithScheme(scheme.Scheme).
