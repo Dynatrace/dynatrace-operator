@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -216,7 +215,7 @@ func TestSaveCustomCAs(t *testing.T) {
 				Namespace: namespace,
 			},
 			Data: map[string]string{
-				dtclient.CustomCertificatesConfigMapKey: `I-am-a-cert-trust-me`,
+				dynatracev1beta1.TrustedCAKey: `I-am-a-cert-trust-me`,
 			},
 		})
 		dockerConfig := DockerConfig{

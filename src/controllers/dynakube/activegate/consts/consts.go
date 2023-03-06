@@ -10,7 +10,6 @@ const (
 	ActiveGateContainerName = "activegate"
 	SyntheticContainerName  = "synthetic"
 	ProxySecretSuffix       = "internal-proxy"
-	ProxySecretKey          = "proxy"
 	HttpsServicePortName    = "https"
 	HttpsServicePort        = 443
 	HttpServicePortName     = "http"

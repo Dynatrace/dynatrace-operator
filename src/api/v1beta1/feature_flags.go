@@ -55,6 +55,7 @@ const (
 	// Deprecated: AnnotationFeatureDisableHostsRequests use AnnotationFeatureHostsRequests instead
 	AnnotationFeatureDisableHostsRequests = AnnotationFeaturePrefix + "disable-hosts-requests"
 	AnnotationFeatureHostsRequests        = AnnotationFeaturePrefix + "hosts-requests"
+	AnnotationFeatureNoProxy              = AnnotationFeaturePrefix + "no-proxy"
 
 	// oneAgent
 
@@ -120,6 +121,11 @@ func (dk *DynaKube) FeatureDisableActiveGateUpdates() bool {
 // FeatureDisableHostsRequests is a feature flag to disable queries to the Hosts API.
 func (dk *DynaKube) FeatureDisableHostsRequests() bool {
 	return dk.getDisableFlagWithDeprecatedAnnotation(AnnotationFeatureHostsRequests, AnnotationFeatureDisableHostsRequests)
+}
+
+// FeatureNoProxy is a feature flag to set the NO_PROXY value to be used by the dtClient.
+func (dk *DynaKube) FeatureNoProxy() string {
+	return dk.getFeatureFlagRaw(AnnotationFeatureNoProxy)
 }
 
 // FeatureOneAgentMaxUnavailable is a feature flag to configure maxUnavailable on the OneAgent DaemonSets rolling upgrades.

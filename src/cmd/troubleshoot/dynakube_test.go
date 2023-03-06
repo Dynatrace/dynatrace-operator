@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/pkg/errors"
@@ -252,12 +251,17 @@ func TestProxySecret(t *testing.T) {
 	})
 	t.Run("proxy secret has required tokens", func(t *testing.T) {
 		proxySecret := *testNewSecretBuilder(testNamespace, testSecretName).
-			dataAppend(dtclient.CustomProxySecretKey, testCustomPullSecretToken).
+			dataAppend(dynatracev1beta1.ProxyKey, testCustomPullSecretToken).
 			build()
+		dynakube := *testNewDynakubeBuilder(testNamespace, testDynakube).withProxySecret(testSecretName).build()
+		clt := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
+			&dynakube,
+			&proxySecret).
+			Build()
 		troubleshootCtx := troubleshootContext{
 			namespaceName: testNamespace,
-			proxySecret:   &proxySecret,
 			httpClient:    &http.Client{},
+			apiReader:     clt,
 		}
 		assert.NoErrorf(t, applyProxySettings(&troubleshootCtx), "proxy secret does not have required tokens")
 	})
@@ -270,7 +274,6 @@ func TestProxySecret(t *testing.T) {
 			Build()
 		troubleshootCtx := troubleshootContext{
 			namespaceName: testNamespace,
-			proxySecret:   &secret,
 			dynakube:      dynakube,
 			apiReader:     clt}
 		assert.Errorf(t, applyProxySettings(&troubleshootCtx), "proxy secret has required tokens")
