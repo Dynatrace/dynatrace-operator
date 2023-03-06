@@ -23,8 +23,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -81,14 +81,14 @@ func podHasOnlyDataIngestInitContainer(samplePod sampleapps.SampleApp) features.
 		testPod := samplePod.Get(ctx, t, environmentConfig.Client().Resources()).(*corev1.Pod)
 
 		assessOnlyDataIngestIsInjected(t)(*testPod)
-		assessPodHasDataIngestFile(t, environmentConfig.Client().RESTConfig(), *testPod)
+		assessPodHasDataIngestFile(ctx, t, environmentConfig.Client().Resources(), *testPod)
 
 		return ctx
 	}
 }
 
-func assessPodHasDataIngestFile(t *testing.T, restConfig *rest.Config, testPod corev1.Pod) {
-	dataIngestMetadata := getDataIngestMetadataFromPod(t, restConfig, testPod)
+func assessPodHasDataIngestFile(ctx context.Context, t *testing.T, resource *resources.Resources, testPod corev1.Pod) {
+	dataIngestMetadata := getDataIngestMetadataFromPod(ctx, t, resource, testPod)
 
 	assert.Equal(t, dataIngestMetadata.WorkloadKind, "Pod")
 	assert.Equal(t, dataIngestMetadata.WorkloadName, testPod.Name)
@@ -104,7 +104,7 @@ func deploymentPodsHaveOnlyDataIngestInitContainer(sampleApp sampleapps.SampleAp
 
 		require.NoError(t, err)
 
-		err = query.ForEachPod(assessDeploymentHasDataIngestFile(t, environmentConfig.Client().RESTConfig(), sampleApp.Name()))
+		err = query.ForEachPod(assessDeploymentHasDataIngestFile(ctx, t, environmentConfig.Client().Resources(), sampleApp.Name()))
 
 		require.NoError(t, err)
 
@@ -112,18 +112,20 @@ func deploymentPodsHaveOnlyDataIngestInitContainer(sampleApp sampleapps.SampleAp
 	}
 }
 
-func assessDeploymentHasDataIngestFile(t *testing.T, restConfig *rest.Config, deploymentName string) deployment.PodConsumer {
+func assessDeploymentHasDataIngestFile(ctx context.Context, t *testing.T, resource *resources.Resources, deploymentName string) deployment.PodConsumer {
 	return func(pod corev1.Pod) {
-		dataIngestMetadata := getDataIngestMetadataFromPod(t, restConfig, pod)
+		dataIngestMetadata := getDataIngestMetadataFromPod(ctx, t, resource, pod)
 
 		assert.Equal(t, dataIngestMetadata.WorkloadKind, "Deployment")
 		assert.Equal(t, dataIngestMetadata.WorkloadName, deploymentName)
 	}
 }
 
-func getDataIngestMetadataFromPod(t *testing.T, restConfig *rest.Config, dataIngestPod corev1.Pod) metadata {
-	query := pod.NewExecutionQuery(dataIngestPod, dataIngestPod.Spec.Containers[0].Name, shell.ReadFile(metadataFile)...)
-	result, err := query.Execute(restConfig)
+func getDataIngestMetadataFromPod(ctx context.Context, t *testing.T, resource *resources.Resources, dataIngestPod corev1.Pod) metadata {
+	require.NotEmpty(t, dataIngestPod.Spec.Containers)
+	dataIngestContainer := dataIngestPod.Spec.Containers[0].Name
+	readMetadataCommand := shell.ReadFile(metadataFile)
+	result, err := pod.Exec(ctx, resource, dataIngestPod, dataIngestContainer, readMetadataCommand...)
 
 	require.NoError(t, err)
 

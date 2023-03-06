@@ -51,8 +51,8 @@ func isAgentInjected(sampleApp sampleapps.SampleApp) features.Func {
 		for _, podItem := range pods.Items {
 			require.NotNil(t, podItem)
 
-			executionQuery := pod.NewExecutionQuery(podItem, sampleApp.ContainerName(), shell.ListDirectory("/var/lib/dynatrace")...)
-			executionResult, err := executionQuery.Execute(environmentConfig.Client().RESTConfig())
+			listCommand := shell.ListDirectory("/var/lib/dynatrace")
+			executionResult, err := pod.Exec(ctx, resources, podItem, sampleApp.ContainerName(), listCommand...)
 
 			require.NoError(t, err)
 
