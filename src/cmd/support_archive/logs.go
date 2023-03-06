@@ -8,6 +8,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientgocorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
@@ -95,8 +96,11 @@ func (collector logCollector) collectContainerLogs(pod *corev1.Pod, container co
 	podLogs, err := req.Stream(collector.context)
 
 	if logOptions.Previous && err != nil {
-		// Soften error message for previous pods as they may just not exist.
-		logInfof(collector.log, "%v", err)
+		if k8serrors.IsBadRequest(err) { // Prevent logging of "previous terminated container not found" error
+			return
+		}
+
+		logErrorf(collector.log, err, "error getting previous logs")
 		return
 	} else if err != nil {
 		logErrorf(collector.log, err, "error in opening stream")
