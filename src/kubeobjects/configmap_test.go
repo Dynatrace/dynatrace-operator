@@ -16,6 +16,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	testConfigMapName  = "test-config-map"
+	testConfigMapValue = "test-config-map-value"
+)
+
 var configMapLog = logger.Factory.GetLogger("test-configMap")
 
 func TestConfigMapQuery(t *testing.T) {

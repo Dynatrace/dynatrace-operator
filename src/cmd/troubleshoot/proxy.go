@@ -1,12 +1,9 @@
 package troubleshoot
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"golang.org/x/net/http/httpproxy"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 func checkProxySettings(troubleshootCtx *troubleshootContext) error {
@@ -94,46 +91,8 @@ func applyProxySettings(troubleshootCtx *troubleshootContext) error {
 }
 
 func getProxyURL(troubleshootCtx *troubleshootContext) (string, error) {
-	if troubleshootCtx.dynakube.Spec.Proxy == nil {
+	if !troubleshootCtx.dynakube.HasProxy() {
 		return "", nil
 	}
-
-	if troubleshootCtx.dynakube.Spec.Proxy.Value != "" {
-		return troubleshootCtx.dynakube.Spec.Proxy.Value, nil
-	}
-
-	if troubleshootCtx.dynakube.Spec.Proxy.ValueFrom != "" {
-		err := setProxySecret(troubleshootCtx)
-		if err != nil {
-			return "", err
-		}
-
-		proxyUrl, err := kubeobjects.ExtractToken(troubleshootCtx.proxySecret, dtclient.CustomProxySecretKey)
-		if err != nil {
-			return "", errors.Wrapf(err, "failed to extract proxy secret field")
-		}
-		return proxyUrl, nil
-	}
-	return "", nil
-}
-
-func setProxySecret(troubleshootCtx *troubleshootContext) error {
-	if troubleshootCtx.proxySecret != nil {
-		return nil
-	}
-
-	query := kubeobjects.NewSecretQuery(troubleshootCtx.context, nil, troubleshootCtx.apiReader, log)
-	secret, err := query.Get(types.NamespacedName{
-		Namespace: troubleshootCtx.namespaceName,
-		Name:      troubleshootCtx.dynakube.Spec.Proxy.ValueFrom})
-
-	if err != nil {
-		return errors.Wrapf(err, "'%s:%s' proxy secret is missing",
-			troubleshootCtx.namespaceName, troubleshootCtx.dynakube.Spec.Proxy.ValueFrom)
-	}
-
-	troubleshootCtx.proxySecret = &secret
-	logInfof("proxy secret '%s:%s' exists",
-		troubleshootCtx.namespaceName, troubleshootCtx.dynakube.Spec.Proxy.ValueFrom)
-	return nil
+	return troubleshootCtx.dynakube.Proxy(troubleshootCtx.context, troubleshootCtx.apiReader)
 }

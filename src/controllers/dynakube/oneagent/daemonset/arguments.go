@@ -45,12 +45,12 @@ func (dsInfo *builderInfo) appendNetworkZoneArg(args []string) []string {
 }
 
 func (dsInfo *builderInfo) appendProxyArg(args []string) []string {
-	if dsInfo.dynakube != nil && dsInfo.dynakube.NeedsOneAgentProxy() {
+	if dsInfo.hasProxy() {
 		return append(args, "--set-proxy=$(https_proxy)")
 	}
 	return args
 }
 
 func (dsInfo *builderInfo) hasProxy() bool {
-	return dsInfo.dynakube != nil && dsInfo.dynakube.Spec.Proxy != nil && (dsInfo.dynakube.Spec.Proxy.ValueFrom != "" || dsInfo.dynakube.Spec.Proxy.Value != "")
+	return dsInfo.dynakube != nil && dsInfo.dynakube.NeedsOneAgentProxy()
 }
