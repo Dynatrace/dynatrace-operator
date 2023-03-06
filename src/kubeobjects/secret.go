@@ -2,7 +2,6 @@ package kubeobjects
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 	"strings"
 
@@ -151,7 +150,7 @@ type Tokens struct {
 func ExtractToken(secret *corev1.Secret, key string) (string, error) {
 	value, hasKey := secret.Data[key]
 	if !hasKey {
-		err := fmt.Errorf("missing token %s", key)
+		err := errors.Errorf("missing token %s", key)
 		return "", err
 	}
 

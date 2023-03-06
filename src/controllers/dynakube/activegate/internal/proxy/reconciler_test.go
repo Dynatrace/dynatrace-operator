@@ -6,7 +6,6 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -168,7 +167,7 @@ func createProxySecret(proxyUrl string) *corev1.Secret {
 			Name:      customProxySecret,
 			Namespace: testNamespace,
 		},
-		Data: map[string][]byte{consts.ProxySecretKey: []byte(proxyUrl)},
+		Data: map[string][]byte{dynatracev1beta1.ProxyKey: []byte(proxyUrl)},
 	}
 }
 

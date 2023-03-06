@@ -21,7 +21,6 @@ type troubleshootContext struct {
 	dynakube                 v1beta1.DynaKube
 	dynatraceApiSecretTokens token.Tokens
 	pullSecret               corev1.Secret
-	proxySecret              *corev1.Secret
 	kubeConfig               rest.Config
 }
 

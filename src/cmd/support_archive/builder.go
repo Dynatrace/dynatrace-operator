@@ -1,12 +1,14 @@
 package support_archive
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"os"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/go-logr/logr"
@@ -70,13 +72,14 @@ func (builder CommandBuilder) Build() *cobra.Command {
 }
 
 func addFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&namespaceFlagValue, namespaceFlagName, "dynatrace", "Specify a different Namespace.")
+	cmd.PersistentFlags().StringVar(&namespaceFlagValue, namespaceFlagName, kubeobjects.DefaultNamespace(), "Specify a different Namespace.")
 	cmd.PersistentFlags().BoolVar(&tarballToStdoutFlagValue, tarballToStdoutFlagName, false, "Write tarball to stdout.")
 }
 
 func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-		log := newSupportArchiveLogger(getLogOutput(tarballToStdoutFlagValue))
+		logBuffer := bytes.Buffer{}
+		log := newSupportArchiveLogger(getLogOutput(tarballToStdoutFlagValue, &logBuffer))
 		version.LogVersionToLogger(log)
 
 		err := dynatracev1beta1.AddToScheme(scheme.Scheme)
@@ -98,16 +101,18 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		}
 		printCopyCommand(log, tarballToStdoutFlagValue, tarFile.Name())
 
+		// make sure to run this collector at the very end
+		newSupportArchiveOutputCollector(log, supportArchive, &logBuffer).Do()
 		return nil
 	}
 }
 
-func getLogOutput(tarballToStdout bool) io.Writer {
+func getLogOutput(tarballToStdout bool, logBuffer *bytes.Buffer) io.Writer {
 	if tarballToStdout {
 		// avoid corrupting tarball
-		return os.Stderr
+		return io.MultiWriter(os.Stderr, logBuffer)
 	} else {
-		return os.Stdout
+		return io.MultiWriter(os.Stdout, logBuffer)
 	}
 }
 

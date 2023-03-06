@@ -1,7 +1,6 @@
 package capability
 
 import (
-	"regexp"
 	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -191,10 +190,6 @@ func GenerateActiveGateCapabilities(dynaKube *dynatracev1beta1.DynaKube) []Capab
 		NewMultiCapability(dynaKube),
 		NewSyntheticCapability(dynaKube),
 	}
-}
-
-func BuildEecConfigMapName(dynakubeName string, module string) string {
-	return regexp.MustCompile(`[^\w\-]`).ReplaceAllString(dynakubeName+"-"+module+"-eec-config", "_")
 }
 
 func BuildProxySecretName() string {

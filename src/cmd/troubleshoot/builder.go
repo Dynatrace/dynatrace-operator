@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
@@ -68,16 +67,7 @@ func (builder CommandBuilder) Build() *cobra.Command {
 
 func addFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVarP(&dynakubeFlagValue, dynakubeFlagName, dynakubeFlagShorthand, "", "Specify a different Dynakube name.")
-	cmd.PersistentFlags().StringVarP(&namespaceFlagValue, namespaceFlagName, namespaceFlagShorthand, defaultNamespace(), "Specify a different Namespace.")
-}
-
-func defaultNamespace() string {
-	namespace := os.Getenv("POD_NAMESPACE")
-
-	if namespace == "" {
-		return "dynatrace"
-	}
-	return namespace
+	cmd.PersistentFlags().StringVarP(&namespaceFlagValue, namespaceFlagName, namespaceFlagShorthand, kubeobjects.DefaultNamespace(), "Specify a different Namespace.")
 }
 
 func clusterOptions(opts *cluster.Options) {
@@ -210,8 +200,8 @@ func getDynakubes(troubleshootCtx troubleshootContext, dynakubeName string) ([]d
 }
 
 func getAllDynakubesInNamespace(troubleshootContext troubleshootContext) ([]dynatracev1beta1.DynaKube, error) {
-	query := kubeobjects.NewDynakubeQuery(troubleshootContext.apiReader, troubleshootContext.namespaceName).WithContext(troubleshootContext.context)
-	dynakubes, err := query.List()
+	var dynakubes dynatracev1beta1.DynaKubeList
+	err := troubleshootContext.apiReader.List(troubleshootContext.context, &dynakubes, client.InNamespace(troubleshootContext.namespaceName))
 
 	if err != nil {
 		logErrorf("failed to list Dynakubes: %v", err)

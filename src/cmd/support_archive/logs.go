@@ -12,6 +12,8 @@ import (
 	clientgocorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
+const logCollectorName = "logCollector"
+
 type logCollector struct {
 	collectorCommon
 

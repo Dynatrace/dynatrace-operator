@@ -18,6 +18,7 @@ const (
 	testPaasToken = "testz"
 
 	testProxy       = "proxy"
+	testNoProxy     = "no-proxy"
 	testNetworkZone = "zone"
 	testTrustedCA   = "secret"
 
@@ -35,6 +36,7 @@ var testSecretConfig = SecretConfig{
 	ApiToken:      testApiToken,
 	PaasToken:     testPaasToken,
 	Proxy:         testProxy,
+	NoProxy:       testNoProxy,
 	NetworkZone:   testNetworkZone,
 	TrustedCAs:    testTrustedCA,
 	SkipCertCheck: true,
