@@ -96,7 +96,7 @@ func (collector logCollector) collectContainerLogs(pod *corev1.Pod, container co
 	podLogs, err := req.Stream(collector.context)
 
 	if logOptions.Previous && err != nil {
-		if k8serrors.IsBadRequest(err){ // Prevent logging of "previous terminated container not found" error
+		if k8serrors.IsBadRequest(err) { // Prevent logging of "previous terminated container not found" error
 			return
 		}
 
