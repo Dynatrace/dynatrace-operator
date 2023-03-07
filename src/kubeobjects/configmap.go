@@ -95,14 +95,6 @@ func ExtractField(configMap *corev1.ConfigMap, key string) (string, error) {
 	return strings.TrimSpace(value), nil
 }
 
-func (query ConfigMapQuery) GetDataByKey(connectionInfoConfigMapName string, namespaceName string, keyName string) (string, error) {
-	oneAgentConnectionInfo, err := query.Get(types.NamespacedName{Name: connectionInfoConfigMapName, Namespace: namespaceName})
-	if err != nil {
-		return "", err
-	}
-	return ExtractField(&oneAgentConnectionInfo, keyName)
-}
-
 type configMapData = corev1.ConfigMap
 type configMapModifier = builder.Modifier[configMapData]
 

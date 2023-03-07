@@ -2,9 +2,9 @@ package v1beta1
 
 import (
 	"testing"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1"
-	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -309,7 +309,7 @@ func compareAlphaCapability(t *testing.T, expectedCapability v1alpha1.Capability
 }
 
 func TestConversion_ConvertTo(t *testing.T) {
-	time := metav1.Now()
+	timeNow := metav1.Now()
 	oldDynakube := &DynaKube{
 		ObjectMeta: prepareObjectMeta(),
 		Spec: DynaKubeSpec{
@@ -377,14 +377,14 @@ func TestConversion_ConvertTo(t *testing.T) {
 		},
 		Status: DynaKubeStatus{
 			Phase:                   "test-phase",
-			UpdatedTimestamp:        time,
-			LastTokenProbeTimestamp: &time,
+			UpdatedTimestamp:        timeNow,
+			LastTokenProbeTimestamp: &timeNow,
 			Conditions: []metav1.Condition{
 				{
 					Type:               "type",
 					Status:             "status",
 					ObservedGeneration: 3,
-					LastTransitionTime: time,
+					LastTransitionTime: timeNow,
 					Reason:             "reason",
 					Message:            "message",
 				},
@@ -446,8 +446,8 @@ func TestConversion_ConvertTo(t *testing.T) {
 	assert.Equal(t, oldDynakube.Status.ActiveGate.ImageHash, convertedDynakube.Status.ActiveGate.ImageHash)
 	assert.Equal(t, oldDynakube.Status.Conditions, convertedDynakube.Status.Conditions)
 	assert.Equal(t, oldDynakube.Status.LastTokenProbeTimestamp, convertedDynakube.Status.LastAPITokenProbeTimestamp)
-	assert.WithinDuration(t, v1.Time{}.Time, convertedDynakube.Status.LastClusterVersionProbeTimestamp.Time, 0)
-	assert.WithinDuration(t, v1.Time{}.Time, convertedDynakube.Status.LastPaaSTokenProbeTimestamp.Time, 0)
+	assert.WithinDuration(t, metav1.Now().Time, convertedDynakube.Status.LastClusterVersionProbeTimestamp.Time, time.Duration(1)*time.Second)
+	assert.WithinDuration(t, metav1.Now().Time, convertedDynakube.Status.LastPaaSTokenProbeTimestamp.Time, time.Duration(1)*time.Second)
 	assert.Equal(t, oldDynakube.Status.OneAgent.ImageHash, convertedDynakube.Status.OneAgent.ImageHash)
 
 	assert.Len(t, convertedDynakube.Status.OneAgent.Instances, 1)

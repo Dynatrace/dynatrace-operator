@@ -55,13 +55,7 @@ func (r *Reconciler) reconcileOneAgentConnectionInfo() error {
 		return nil
 	}
 
-	oneAgentConnectionInfo, err := r.dtc.GetOneAgentConnectionInfo()
-	if err != nil {
-		log.Info("failed to get oneagent connection info")
-		return err
-	}
-
-	err = r.maintainOneAgentConnectionInfoObjects(r.dynakube.OneagentTenantSecret(), r.dynakube.OneAgentConnectionInfoConfigMapName(), oneAgentConnectionInfo)
+	err := r.maintainOneAgentConnectionInfoObjects()
 	if err != nil {
 		return err
 	}
@@ -76,13 +70,7 @@ func (r *Reconciler) reconcileActiveGateConnectionInfo() error {
 		return nil
 	}
 
-	activeGateConnectionInfo, err := r.dtc.GetActiveGateConnectionInfo()
-	if err != nil {
-		log.Info("failed to get activegate connection info")
-		return err
-	}
-
-	err = r.maintainConnectionInfoObjects(r.dynakube.ActivegateTenantSecret(), r.dynakube.ActiveGateConnectionInfoConfigMapName(), activeGateConnectionInfo.ConnectionInfo)
+	err := r.maintainConnectionInfoObjects()
 	if err != nil {
 		return err
 	}
@@ -91,13 +79,19 @@ func (r *Reconciler) reconcileActiveGateConnectionInfo() error {
 	return nil
 }
 
-func (r *Reconciler) maintainConnectionInfoObjects(secretName string, configMapName string, connectionInfo dtclient.ConnectionInfo) error {
-	err := r.createTenantTokenSecret(secretName, connectionInfo)
+func (r *Reconciler) maintainConnectionInfoObjects() error {
+	connectionInfo, err := r.dtc.GetActiveGateConnectionInfo()
+	if err != nil {
+		log.Info("failed to get activegate connection info")
+		return err
+	}
+
+	err = r.createTenantTokenSecret(r.dynakube.ActivegateTenantSecret(), connectionInfo.ConnectionInfo)
 	if err != nil {
 		return err
 	}
 
-	err = r.createTenantConnectionInfoConfigMap(configMapName, connectionInfo)
+	err = r.createTenantConnectionInfoConfigMap(r.dynakube.ActiveGateConnectionInfoConfigMapName(), connectionInfo.ConnectionInfo)
 	if err != nil {
 		return err
 	}
@@ -105,13 +99,19 @@ func (r *Reconciler) maintainConnectionInfoObjects(secretName string, configMapN
 	return nil
 }
 
-func (r *Reconciler) maintainOneAgentConnectionInfoObjects(secretName string, configMapName string, connectionInfo dtclient.OneAgentConnectionInfo) error {
-	err := r.createTenantTokenSecret(secretName, connectionInfo.ConnectionInfo)
+func (r *Reconciler) maintainOneAgentConnectionInfoObjects() error {
+	connectionInfo, err := r.dtc.GetOneAgentConnectionInfo()
+	if err != nil {
+		log.Info("failed to get oneagent connection info")
+		return err
+	}
+
+	err = r.createTenantTokenSecret(r.dynakube.OneagentTenantSecret(), connectionInfo.ConnectionInfo)
 	if err != nil {
 		return err
 	}
 
-	err = r.createOneAgentTenantConnectionInfoConfigMap(configMapName, connectionInfo)
+	err = r.createOneAgentTenantConnectionInfoConfigMap(r.dynakube.OneAgentConnectionInfoConfigMapName(), connectionInfo)
 	if err != nil {
 		return err
 	}

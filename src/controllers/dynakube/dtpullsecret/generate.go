@@ -52,10 +52,15 @@ func (r *Reconciler) GenerateData() (map[string][]byte, error) {
 		return nil, errors.New("token secret does not contain a paas or api token, cannot generate docker config")
 	}
 
-	dockerCfg := newDockerConfigWithAuth(r.tenantUUID,
+	tenantUUID, err := r.dynakube.TenantUUIDFromApiUrl()
+	if err != nil {
+		return nil, errors.WithMessage(err, "cannot generate docker config")
+	}
+
+	dockerCfg := newDockerConfigWithAuth(tenantUUID,
 		registryToken,
 		registry,
-		r.buildAuthString(r.tenantUUID, registryToken))
+		r.buildAuthString(tenantUUID, registryToken))
 
 	return pullSecretDataFromDockerConfig(dockerCfg)
 }

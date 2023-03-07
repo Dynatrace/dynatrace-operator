@@ -7,7 +7,6 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/config"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/src/standalone"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
@@ -25,7 +24,7 @@ const (
 	testDynakubeComplexName  = "dynakubeComplex"
 	testDynakubeSimpleName   = "dynakubeSimple"
 	testTokensName           = "kitchen-sink"
-	testApiUrl               = "https://test-url/api"
+	testApiUrl               = "https://test-url/e/" + testTenantUUID + "/api"
 	testProxy                = "testproxy.com"
 	testNoProxy              = "noproxy.com,nopeproxy.com"
 	testtrustCAsCM           = "testtrustedCAsConfigMap"
@@ -159,20 +158,6 @@ var (
 			Labels: testSelectorLabels,
 		},
 	}
-
-	testDynakubeSimpleConnectionInfoConfigMap = &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{Name: testDynakubeSimple.OneAgentConnectionInfoConfigMapName(), Namespace: operatorNamespace},
-		Data: map[string]string{
-			connectioninfo.TenantUUIDName: testTenantUUID,
-		},
-	}
-
-	testDynakubeComplexConnectionInfoConfigMap = &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{Name: testDynakubeComplex.OneAgentConnectionInfoConfigMapName(), Namespace: operatorNamespace},
-		Data: map[string]string{
-			connectioninfo.TenantUUIDName: testTenantUUID,
-		},
-	}
 )
 
 func TestGenerateForNamespace(t *testing.T) {
@@ -183,7 +168,7 @@ func TestGenerateForNamespace(t *testing.T) {
 				Labels: map[string]string{dtwebhook.InjectionInstanceLabel: testDynakubeComplex.Name},
 			},
 		}
-		clt := fake.NewClient(testDynakubeComplex, &testNamespace, testSecretDynakubeComplex, kubeNamespace, caConfigMap, testTlsSecretDynakubeComplex, testNode1, testNode2, testDynakubeComplexConnectionInfoConfigMap)
+		clt := fake.NewClient(testDynakubeComplex, &testNamespace, testSecretDynakubeComplex, kubeNamespace, caConfigMap, testTlsSecretDynakubeComplex, testNode1, testNode2)
 		ig := NewInitGenerator(clt, clt, operatorNamespace)
 
 		err := ig.GenerateForNamespace(context.TODO(), *testDynakubeComplex, testNamespace.Name)
@@ -208,7 +193,7 @@ func TestGenerateForNamespace(t *testing.T) {
 				Labels: map[string]string{dtwebhook.InjectionInstanceLabel: testDynakubeSimple.Name},
 			},
 		}
-		clt := fake.NewClient(testDynakubeSimple, &testNamespace, testSecretDynakubeSimple, kubeNamespace, testNode1, testNode2, testDynakubeSimpleConnectionInfoConfigMap)
+		clt := fake.NewClient(testDynakubeSimple, &testNamespace, testSecretDynakubeSimple, kubeNamespace, testNode1, testNode2)
 		ig := NewInitGenerator(clt, clt, operatorNamespace)
 
 		err := ig.GenerateForNamespace(context.TODO(), *testDynakubeSimple, testNamespace.Name)
@@ -237,7 +222,7 @@ func TestGenerateForDynakube(t *testing.T) {
 				Labels: map[string]string{dtwebhook.InjectionInstanceLabel: testDynakubeComplex.Name},
 			},
 		}
-		clt := fake.NewClientWithIndex(&testNamespace, testSecretDynakubeComplex, kubeNamespace, caConfigMap, testTlsSecretDynakubeComplex, testNode1, testNode2, testDynakubeComplexConnectionInfoConfigMap)
+		clt := fake.NewClientWithIndex(&testNamespace, testSecretDynakubeComplex, kubeNamespace, caConfigMap, testTlsSecretDynakubeComplex, testNode1, testNode2)
 		ig := NewInitGenerator(clt, clt, operatorNamespace)
 
 		err := ig.GenerateForDynakube(context.TODO(), dk)
@@ -263,7 +248,7 @@ func TestGenerateForDynakube(t *testing.T) {
 				Labels: map[string]string{dtwebhook.InjectionInstanceLabel: testDynakubeSimple.Name},
 			},
 		}
-		clt := fake.NewClientWithIndex(&testNamespace, testSecretDynakubeSimple, kubeNamespace, testNode1, testNode2, testDynakubeSimpleConnectionInfoConfigMap)
+		clt := fake.NewClientWithIndex(&testNamespace, testSecretDynakubeSimple, kubeNamespace, testNode1, testNode2)
 		ig := NewInitGenerator(clt, clt, operatorNamespace)
 
 		err := ig.GenerateForDynakube(context.TODO(), dk)
@@ -295,7 +280,7 @@ func TestGenerateForDynakube(t *testing.T) {
 				Labels: map[string]string{dtwebhook.InjectionInstanceLabel: testDynakubeSimple.Name},
 			},
 		}
-		clt := fake.NewClientWithIndex(&testNamespace, &testOtherNamespace, testSecretDynakubeSimple, kubeNamespace, testNode1, testNode2, testDynakubeSimpleConnectionInfoConfigMap)
+		clt := fake.NewClientWithIndex(&testNamespace, &testOtherNamespace, testSecretDynakubeSimple, kubeNamespace, testNode1, testNode2)
 		ig := NewInitGenerator(clt, clt, operatorNamespace)
 
 		err := ig.GenerateForDynakube(context.TODO(), dk)
@@ -331,7 +316,6 @@ func TestGetInfraMonitoringNodes(t *testing.T) {
 		clt := fake.NewClient(testNode1, testNode2)
 		ig := NewInitGenerator(clt, clt, operatorNamespace)
 		ig.canWatchNodes = true
-		ig.tenantUUID = testTenantUUID
 		imNodes, err := ig.getHostMonitoringNodes(testDynakubeSimple)
 		assert.NoError(t, err)
 		assert.Equal(t, 2, len(imNodes))
@@ -342,7 +326,6 @@ func TestGetInfraMonitoringNodes(t *testing.T) {
 		clt := fake.NewClient()
 		ig := NewInitGenerator(clt, clt, operatorNamespace)
 		ig.canWatchNodes = false
-		ig.tenantUUID = testTenantUUID
 		imNodes, err := ig.getHostMonitoringNodes(testDynakubeSimple)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(imNodes))
@@ -352,7 +335,6 @@ func TestGetInfraMonitoringNodes(t *testing.T) {
 		clt := fake.NewClient(testNodeWithLabels, testNode1, testNode2)
 		ig := NewInitGenerator(clt, clt, operatorNamespace)
 		ig.canWatchNodes = true
-		ig.tenantUUID = testTenantUUID
 		imNodes, err := ig.getHostMonitoringNodes(testDynakubeWithSelector)
 		assert.NoError(t, err)
 		assert.Equal(t, 3, len(imNodes))
@@ -373,7 +355,13 @@ func TestPrepareSecretConfigForDynaKube(t *testing.T) {
 
 func testInitialConnectRetrySetCorrectly(t *testing.T) {
 	dynakube := &dynatracev1beta1.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{Name: testDynakubeSimpleName, Namespace: operatorNamespace},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testDynakubeSimpleName,
+			Namespace: operatorNamespace,
+		},
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			APIURL: testApiUrl,
+		},
 	}
 	clt := fake.NewClient(testSecretDynakubeSimple, caConfigMap, testTlsSecretDynakubeComplex)
 	initGenerator := InitGenerator{
@@ -404,7 +392,6 @@ func testForCorrectContent(t *testing.T, secret *corev1.Secret) {
 	}
 	clt := fake.NewClient(&testNamespace, secret, caConfigMap, testTlsSecretDynakubeComplex)
 	ig := NewInitGenerator(clt, clt, operatorNamespace)
-	ig.tenantUUID = testTenantUUID
 	imNodes := map[string]string{testNode1Name: testTenantUUID, testNode2Name: testTenantUUID}
 	secretConfig, err := ig.createSecretConfigForDynaKube(context.TODO(), dk, kubesystemUID, imNodes)
 	assert.NoError(t, err)

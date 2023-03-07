@@ -68,6 +68,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, sc
 		config:                 config,
 		operatorNamespace:      os.Getenv("POD_NAMESPACE"),
 		clusterID:              clusterID,
+		versionProvider:        version.GetImageVersion,
 	}
 }
 
@@ -91,6 +92,7 @@ type Controller struct {
 	config                 *rest.Config
 	operatorNamespace      string
 	clusterID              string
+	versionProvider        version.VersionProviderCallback
 }
 
 // Reconcile reads that state of the cluster for a DynaKube object and makes changes based on the state read
@@ -173,6 +175,7 @@ func (controller *Controller) reconcileIstio(ctx context.Context, dynakube *dyna
 	if dynakube.Spec.EnableIstio {
 		communicationHosts, err := controller.getCommunicationHosts(ctx, dynakube)
 		if err != nil {
+			log.Info("istio: failed to reconcile objects", "error", err)
 			return false
 		}
 
@@ -190,18 +193,15 @@ func (controller *Controller) getCommunicationHosts(ctx context.Context, dynakub
 	connectionInfoQuery := kubeobjects.NewConfigMapQuery(ctx, controller.client, controller.apiReader, log)
 	oneAgentConnectionInfo, err := connectionInfoQuery.Get(types.NamespacedName{Name: dynakube.OneAgentConnectionInfoConfigMapName(), Namespace: dynakube.Namespace})
 	if err != nil {
-		log.Info("istio: failed to reconcile objects", "error", err)
-		return nil, err
+		return nil, errors.WithMessage(err, "failed to query configmap")
 	}
 	communicationHostsString, err := kubeobjects.ExtractField(&oneAgentConnectionInfo, connectioninfo.CommunicationHosts)
 	if err != nil {
-		log.Info("istio: failed to reconcile objects", "error", err)
-		return nil, err
+		return nil, errors.WithMessagef(err, "failed to extract %s field of %s configmap", connectioninfo.CommunicationHosts, dynakube.OneAgentConnectionInfoConfigMapName())
 	}
 	var communicationHosts []dtclient.CommunicationHost
 	if err := json.Unmarshal([]byte(communicationHostsString), &communicationHosts); err != nil {
-		log.Info("istio: failed to reconcile objects", "error", err)
-		return nil, err
+		return nil, errors.WithMessagef(err, "failed to decode %s field of %s configmap", connectioninfo.CommunicationHosts, dynakube.OneAgentConnectionInfoConfigMapName())
 	}
 	return communicationHosts, nil
 }
@@ -258,7 +258,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		Dynakube:        dynakube,
 		ApiReader:       controller.apiReader,
 		Fs:              controller.fs,
-		VersionProvider: version.GetImageVersion,
+		VersionProvider: controller.versionProvider,
 		TimeProvider:    kubeobjects.NewTimeProvider(),
 	}
 	err = versionReconciler.Reconcile(ctx)

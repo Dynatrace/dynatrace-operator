@@ -5,7 +5,6 @@ import (
 	"reflect"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
@@ -20,13 +19,12 @@ const (
 )
 
 type Reconciler struct {
-	ctx        context.Context
-	client     client.Client
-	apiReader  client.Reader
-	dynakube   *dynatracev1beta1.DynaKube
-	scheme     *runtime.Scheme
-	tokens     token.Tokens
-	tenantUUID string
+	ctx       context.Context
+	client    client.Client
+	apiReader client.Reader
+	dynakube  *dynatracev1beta1.DynaKube
+	scheme    *runtime.Scheme
+	tokens    token.Tokens
 }
 
 func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, tokens token.Tokens) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
@@ -53,10 +51,6 @@ func (r *Reconciler) Reconcile() error {
 }
 
 func (r *Reconciler) reconcilePullSecret() error {
-	if err := r.getTenantUUID(); err != nil {
-		return err
-	}
-
 	pullSecretData, err := r.GenerateData()
 	if err != nil {
 		return errors.WithMessage(err, "could not generate pull secret data")
@@ -68,16 +62,6 @@ func (r *Reconciler) reconcilePullSecret() error {
 	}
 
 	return r.updatePullSecretIfOutdated(pullSecret, pullSecretData)
-}
-
-func (r *Reconciler) getTenantUUID() error {
-	connectionInfoQuery := kubeobjects.NewConfigMapQuery(r.ctx, r.client, r.apiReader, log)
-	var err error
-	r.tenantUUID, err = connectionInfoQuery.GetDataByKey(r.dynakube.OneAgentConnectionInfoConfigMapName(), r.dynakube.Namespace, connectioninfo.TenantUUIDName)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	return nil
 }
 
 func (r *Reconciler) createPullSecretIfNotExists(pullSecretData map[string][]byte) (*corev1.Secret, error) {
