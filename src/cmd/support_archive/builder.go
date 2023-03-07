@@ -119,7 +119,12 @@ func getLogOutput(tarballToStdout bool, logBuffer *bytes.Buffer) io.Writer {
 func (builder CommandBuilder) runCollectors(log logr.Logger, supportArchive tarball) error {
 	context := context.Background()
 
-	clientSet, apiReader, err := getK8sClients(builder.configProvider)
+	kubeConfig, err := builder.configProvider.GetConfig()
+	if err != nil {
+		return err
+	}
+
+	clientSet, apiReader, err := getK8sClients(kubeConfig)
 	if err != nil {
 		return err
 	}
@@ -128,6 +133,7 @@ func (builder CommandBuilder) runCollectors(log logr.Logger, supportArchive tarb
 		newOperatorVersionCollector(log, supportArchive),
 		newLogCollector(context, log, supportArchive, clientSet.CoreV1().Pods(namespaceFlagValue)),
 		newK8sObjectCollector(context, log, supportArchive, namespaceFlagValue, apiReader),
+		newTroubleshootCollector(context, log, supportArchive, namespaceFlagValue, apiReader, *kubeConfig),
 	}
 
 	for _, c := range collectors {
@@ -138,12 +144,7 @@ func (builder CommandBuilder) runCollectors(log logr.Logger, supportArchive tarb
 	return nil
 }
 
-func getK8sClients(configProvider config.Provider) (*kubernetes.Clientset, client.Reader, error) {
-	kubeConfig, err := configProvider.GetConfig()
-	if err != nil {
-		return nil, nil, err
-	}
-
+func getK8sClients(kubeConfig *rest.Config) (*kubernetes.Clientset, client.Reader, error) {
 	k8sCluster, err := cluster.New(kubeConfig, clusterOptions)
 	if err != nil {
 		return nil, nil, errors.WithStack(err)
