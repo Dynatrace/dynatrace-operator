@@ -2,7 +2,6 @@ package dynakube
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"os"
 	"time"
@@ -31,7 +30,6 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -173,7 +171,7 @@ func (controller *Controller) reconcileIstio(ctx context.Context, dynakube *dyna
 	updated := false
 
 	if dynakube.Spec.EnableIstio {
-		communicationHosts, err := controller.getCommunicationHosts(ctx, dynakube)
+		communicationHosts, err := connectioninfo.GetCommunicationHosts(ctx, controller.client, controller.apiReader, dynakube)
 		if err != nil {
 			log.Info("istio: failed to reconcile objects", "error", err)
 			return false
@@ -187,23 +185,6 @@ func (controller *Controller) reconcileIstio(ctx context.Context, dynakube *dyna
 	}
 
 	return updated
-}
-
-func (controller *Controller) getCommunicationHosts(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) ([]dtclient.CommunicationHost, error) {
-	connectionInfoQuery := kubeobjects.NewConfigMapQuery(ctx, controller.client, controller.apiReader, log)
-	oneAgentConnectionInfo, err := connectionInfoQuery.Get(types.NamespacedName{Name: dynakube.OneAgentConnectionInfoConfigMapName(), Namespace: dynakube.Namespace})
-	if err != nil {
-		return nil, errors.WithMessage(err, "failed to query configmap")
-	}
-	communicationHostsString, err := kubeobjects.ExtractField(&oneAgentConnectionInfo, connectioninfo.CommunicationHosts)
-	if err != nil {
-		return nil, errors.WithMessagef(err, "failed to extract %s field of %s configmap", connectioninfo.CommunicationHosts, dynakube.OneAgentConnectionInfoConfigMapName())
-	}
-	var communicationHosts []dtclient.CommunicationHost
-	if err := json.Unmarshal([]byte(communicationHostsString), &communicationHosts); err != nil {
-		return nil, errors.WithMessagef(err, "failed to decode %s field of %s configmap", connectioninfo.CommunicationHosts, dynakube.OneAgentConnectionInfoConfigMapName())
-	}
-	return communicationHosts, nil
 }
 
 func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {

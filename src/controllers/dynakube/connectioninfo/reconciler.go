@@ -70,7 +70,7 @@ func (r *Reconciler) reconcileActiveGateConnectionInfo() error {
 		return nil
 	}
 
-	err := r.maintainConnectionInfoObjects()
+	err := r.maintainActiveGateConnectionInfoObjects()
 	if err != nil {
 		return err
 	}
@@ -79,7 +79,7 @@ func (r *Reconciler) reconcileActiveGateConnectionInfo() error {
 	return nil
 }
 
-func (r *Reconciler) maintainConnectionInfoObjects() error {
+func (r *Reconciler) maintainActiveGateConnectionInfoObjects() error {
 	connectionInfo, err := r.dtc.GetActiveGateConnectionInfo()
 	if err != nil {
 		log.Info("failed to get activegate connection info")
@@ -91,7 +91,7 @@ func (r *Reconciler) maintainConnectionInfoObjects() error {
 		return err
 	}
 
-	err = r.createTenantConnectionInfoConfigMap(r.dynakube.ActiveGateConnectionInfoConfigMapName(), connectionInfo.ConnectionInfo)
+	err = r.createActiveGateTenantConnectionInfoConfigMap(r.dynakube.ActiveGateConnectionInfoConfigMapName(), connectionInfo.ConnectionInfo)
 	if err != nil {
 		return err
 	}
@@ -119,7 +119,7 @@ func (r *Reconciler) maintainOneAgentConnectionInfoObjects() error {
 	return nil
 }
 
-func (r *Reconciler) createTenantConnectionInfoConfigMap(secretName string, connectionInfo dtclient.ConnectionInfo) error {
+func (r *Reconciler) createActiveGateTenantConnectionInfoConfigMap(secretName string, connectionInfo dtclient.ConnectionInfo) error {
 	configMapData := extractPublicData(connectionInfo, "")
 	configMap, err := kubeobjects.CreateConfigMap(r.scheme, r.dynakube,
 		kubeobjects.NewConfigMapNameModifier(secretName),
