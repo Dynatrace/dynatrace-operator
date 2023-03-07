@@ -3,6 +3,7 @@ package oneagent_mutation
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/config"
@@ -12,11 +13,29 @@ import (
 )
 
 func addPreloadEnv(container *corev1.Container, installPath string) {
-	container.Env = append(container.Env,
-		corev1.EnvVar{
-			Name:  preloadEnv,
-			Value: filepath.Join(installPath, config.LibAgentProcPath),
-		})
+	preloadPath := filepath.Join(installPath, config.LibAgentProcPath)
+
+	env := kubeobjects.FindEnvVar(container.Env, preloadEnv)
+	if env != nil {
+		if strings.Contains(env.Value, installPath) {
+			return
+		}
+		env.Value = concatPreloadPaths(env.Value, preloadPath)
+	} else {
+		container.Env = append(container.Env,
+			corev1.EnvVar{
+				Name:  preloadEnv,
+				Value: preloadPath,
+			})
+	}
+}
+
+func concatPreloadPaths(originalPaths, additionalPath string) string {
+	if strings.Contains(originalPaths, " ") {
+		return originalPaths + " " + additionalPath
+	} else {
+		return originalPaths + ":" + additionalPath
+	}
 }
 
 func addNetworkZoneEnv(container *corev1.Container, networkZone string) {
