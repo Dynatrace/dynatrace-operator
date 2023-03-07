@@ -5,6 +5,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -12,79 +13,64 @@ import (
 
 func TestAddPreloadEnv(t *testing.T) {
 	installPath := "path/test"
+
 	t.Run("Add preload env", func(t *testing.T) {
-		container := &corev1.Container{}
+		container := createContainerWithPreloadEnv("")
 
 		addPreloadEnv(container, installPath)
 
-		require.Len(t, container.Env, 1)
-		assert.Equal(t, container.Env[0].Name, preloadEnv)
-		assert.Contains(t, container.Env[0].Value, installPath)
+		verifyContainerWithPreloadEnv(t, container, installPath)
 	})
 	t.Run("Concat preload env, default delimiter", func(t *testing.T) {
 		existingPath := "path/user"
-		container := &corev1.Container{
-			Env: []corev1.EnvVar{
-				{
-					Name:  preloadEnv,
-					Value: existingPath,
-				},
-				{
-					Name:  "some-other-env",
-					Value: "some-value",
-				},
-			},
-		}
+		container := createContainerWithPreloadEnv(existingPath)
 
 		addPreloadEnv(container, installPath)
 
-		require.Len(t, container.Env, 2)
-		assert.Equal(t, container.Env[0].Name, preloadEnv)
-		assert.Contains(t, container.Env[0].Value, existingPath+":"+installPath)
+		verifyContainerWithPreloadEnv(t, container, existingPath+":"+installPath)
 	})
 	t.Run("Concat preload env, respect delimiter", func(t *testing.T) {
 		existingPath := "path1/user path2/user"
-		container := &corev1.Container{
-			Env: []corev1.EnvVar{
-				{
-					Name:  preloadEnv,
-					Value: existingPath,
-				},
-				{
-					Name:  "some-other-env",
-					Value: "some-value",
-				},
-			},
-		}
+		container := createContainerWithPreloadEnv(existingPath)
 
 		addPreloadEnv(container, installPath)
 
-		require.Len(t, container.Env, 2)
-		assert.Equal(t, container.Env[0].Name, preloadEnv)
-		assert.Contains(t, container.Env[0].Value, existingPath+" "+installPath)
+		verifyContainerWithPreloadEnv(t, container, existingPath+" "+installPath)
 	})
 	t.Run("Ignore preload env, if value already present", func(t *testing.T) {
 		existingPath := "path1/user path2/user"
 		existingPath += " " + installPath
-		container := &corev1.Container{
-			Env: []corev1.EnvVar{
-				{
-					Name:  "some-other-env",
-					Value: "some-value",
-				},
-				{
-					Name:  preloadEnv,
-					Value: existingPath,
-				},
-			},
-		}
+		container := createContainerWithPreloadEnv(existingPath)
 
 		addPreloadEnv(container, installPath)
 
-		require.Len(t, container.Env, 2)
-		assert.Equal(t, container.Env[1].Name, preloadEnv)
-		assert.Contains(t, container.Env[1].Value, existingPath)
+		verifyContainerWithPreloadEnv(t, container, existingPath)
 	})
+}
+
+func createContainerWithPreloadEnv(existingPath string) *corev1.Container {
+	container := &corev1.Container{
+		Env: []corev1.EnvVar{
+			{
+				Name:  "some-other-env",
+				Value: "some-value",
+			},
+		},
+	}
+	if existingPath != "" {
+		container.Env = append(container.Env, corev1.EnvVar{
+			Name:  preloadEnv,
+			Value: existingPath,
+		})
+	}
+	return container
+}
+
+func verifyContainerWithPreloadEnv(t *testing.T, container *corev1.Container, expectedPath string) {
+	require.NotEmpty(t, container.Env)
+	env := kubeobjects.FindEnvVar(container.Env, preloadEnv)
+	require.NotNil(t, env)
+	assert.Contains(t, env.Value, expectedPath)
 }
 
 func TestAddNetworkZoneEnv(t *testing.T) {
