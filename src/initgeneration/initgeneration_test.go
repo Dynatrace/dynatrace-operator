@@ -24,7 +24,7 @@ const (
 	testDynakubeComplexName  = "dynakubeComplex"
 	testDynakubeSimpleName   = "dynakubeSimple"
 	testTokensName           = "kitchen-sink"
-	testApiUrl               = "https://test-url/api"
+	testApiUrl               = "https://test-url/e/" + testTenantUUID + "/api"
 	testProxy                = "testproxy.com"
 	testNoProxy              = "noproxy.com,nopeproxy.com"
 	testtrustCAsCM           = "testtrustedCAsConfigMap"
@@ -69,9 +69,6 @@ var (
 			},
 		},
 		Status: dynatracev1beta1.DynaKubeStatus{
-			ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
-				TenantUUID: testTenantUUID,
-			},
 			OneAgent: dynatracev1beta1.OneAgentStatus{
 				Instances: map[string]dynatracev1beta1.OneAgentInstance{
 					testNode1Name: {},
@@ -87,9 +84,6 @@ var (
 			OneAgent: dynatracev1beta1.OneAgentSpec{CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{}},
 		},
 		Status: dynatracev1beta1.DynaKubeStatus{
-			ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
-				TenantUUID: testTenantUUID,
-			},
 			OneAgent: dynatracev1beta1.OneAgentStatus{
 				Instances: map[string]dynatracev1beta1.OneAgentInstance{
 					testNode2Name: {},
@@ -111,9 +105,6 @@ var (
 			},
 		},
 		Status: dynatracev1beta1.DynaKubeStatus{
-			ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
-				TenantUUID: testTenantUUID,
-			},
 			OneAgent: dynatracev1beta1.OneAgentStatus{
 				Instances: map[string]dynatracev1beta1.OneAgentInstance{
 					testNodeWithSelectorName: {},
@@ -364,7 +355,13 @@ func TestPrepareSecretConfigForDynaKube(t *testing.T) {
 
 func testInitialConnectRetrySetCorrectly(t *testing.T) {
 	dynakube := &dynatracev1beta1.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{Name: testDynakubeSimpleName, Namespace: operatorNamespace},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testDynakubeSimpleName,
+			Namespace: operatorNamespace,
+		},
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			APIURL: testApiUrl,
+		},
 	}
 	clt := fake.NewClient(testSecretDynakubeSimple, caConfigMap, testTlsSecretDynakubeComplex)
 	initGenerator := InitGenerator{
@@ -406,7 +403,7 @@ func testForCorrectContent(t *testing.T, secret *corev1.Secret) {
 		NoProxy:             testNoProxy,
 		TrustedCAs:          testCAValue,
 		ClusterID:           string(kubesystemUID),
-		TenantUUID:          dk.Status.ConnectionInfo.TenantUUID,
+		TenantUUID:          testTenantUUID,
 		MonitoringNodes:     imNodes,
 		HasHost:             true,
 		TlsCert:             "testing",

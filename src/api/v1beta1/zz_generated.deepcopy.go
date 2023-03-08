@@ -20,7 +20,7 @@ limitations under the License.
 package v1beta1
 
 import (
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
@@ -337,24 +337,10 @@ func (in *DynaKubeSpec) DeepCopy() *DynaKubeSpec {
 func (in *DynaKubeStatus) DeepCopyInto(out *DynaKubeStatus) {
 	*out = *in
 	in.UpdatedTimestamp.DeepCopyInto(&out.UpdatedTimestamp)
-	if in.LastAPITokenProbeTimestamp != nil {
-		in, out := &in.LastAPITokenProbeTimestamp, &out.LastAPITokenProbeTimestamp
+	if in.LastTokenProbeTimestamp != nil {
+		in, out := &in.LastTokenProbeTimestamp, &out.LastTokenProbeTimestamp
 		*out = (*in).DeepCopy()
 	}
-	if in.LastPaaSTokenProbeTimestamp != nil {
-		in, out := &in.LastPaaSTokenProbeTimestamp, &out.LastPaaSTokenProbeTimestamp
-		*out = (*in).DeepCopy()
-	}
-	if in.LastDataIngestTokenProbeTimestamp != nil {
-		in, out := &in.LastDataIngestTokenProbeTimestamp, &out.LastDataIngestTokenProbeTimestamp
-		*out = (*in).DeepCopy()
-	}
-	if in.LastClusterVersionProbeTimestamp != nil {
-		in, out := &in.LastClusterVersionProbeTimestamp, &out.LastClusterVersionProbeTimestamp
-		*out = (*in).DeepCopy()
-	}
-	in.ConnectionInfo.DeepCopyInto(&out.ConnectionInfo)
-	out.CommunicationHostForClient = in.CommunicationHostForClient
 	if in.Conditions != nil {
 		in, out := &in.Conditions, &out.Conditions
 		*out = make([]metav1.Condition, len(*in))

@@ -59,7 +59,7 @@ func (reconciler *Reconciler) initializeIstioClient(config *rest.Config) (istioc
 
 // Reconcile - runs the istio's reconcile workflow,
 // creating/deleting VS & SE for external communications
-func (reconciler *Reconciler) Reconcile(instance *dynatracev1beta1.DynaKube) (bool, error) {
+func (reconciler *Reconciler) Reconcile(instance *dynatracev1beta1.DynaKube, communicationHosts []dtclient.CommunicationHost) (bool, error) {
 	enabled, err := CheckIstioEnabled(reconciler.config)
 	if err != nil {
 		return false, fmt.Errorf("istio: failed to verify Istio availability: %w", err)
@@ -83,8 +83,7 @@ func (reconciler *Reconciler) Reconcile(instance *dynatracev1beta1.DynaKube) (bo
 	}
 
 	// Fetch endpoints via Dynatrace client
-	ci := instance.ConnectionInfo()
-	upd, err = reconciler.reconcileIstioConfigurations(instance, ci.CommunicationHosts, "communication-endpoint")
+	upd, err = reconciler.reconcileIstioConfigurations(instance, communicationHosts, "communication-endpoint")
 	if err != nil {
 		return false, errors.WithMessage(err, "istio: error reconciling config for Dynatrace communication endpoints:")
 	} else if upd {

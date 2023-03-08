@@ -20,37 +20,11 @@ type DynaKubeStatus struct {
 	UpdatedTimestamp metav1.Time `json:"updatedTimestamp,omitempty"`
 
 	// Deprecated: use DynatraceApiStatus.LastTokenScopeRequest instead
-	// LastAPITokenProbeTimestamp tracks when the last request for the API token validity was sent
-	LastAPITokenProbeTimestamp *metav1.Time `json:"lastAPITokenProbeTimestamp,omitempty"`
-
-	// Deprecated: use LastAPITokenProbeTimestamp instead
-	// LastPaaSTokenProbeTimestamp tracks when the last request for the PaaS token validity was sent
-	LastPaaSTokenProbeTimestamp *metav1.Time `json:"lastPaaSTokenProbeTimestamp,omitempty"`
-
-	// Deprecated: use LastAPITokenProbeTimestamp instead
-	// LastDataIngestTokenProbeTimestamp tracks when the last request for the DataIngest token validity was sent
-	LastDataIngestTokenProbeTimestamp *metav1.Time `json:"lastDataIngestTokenProbeTimestamp,omitempty"`
-
-	// Credentials used to connect back to Dynatrace.
-	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors=true
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="API and PaaS Tokens"
-	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors.x-descriptors="urn:alm:descriptor:text"
-	Tokens string `json:"tokens,omitempty"`
-
-	// LastClusterVersionProbeTimestamp indicates when the cluster's version was last checked
-	LastClusterVersionProbeTimestamp *metav1.Time `json:"lastClusterVersionProbeTimestamp,omitempty"`
+	// LastTokenProbeTimestamp tracks when the last request for the API token validity was sent
+	LastTokenProbeTimestamp *metav1.Time `json:"lastTokenProbeTimestamp,omitempty"`
 
 	// KubeSystemUUID contains the UUID of the current Kubernetes cluster
 	KubeSystemUUID string `json:"kubeSystemUUID,omitempty"`
-
-	// ConnectionInfo caches information about the tenant and its communication hosts
-	ConnectionInfo ConnectionInfoStatus `json:"connectionInfo,omitempty"`
-
-	// CommunicationHostForClient caches a communication host specific to the api url.
-	CommunicationHostForClient CommunicationHostStatus `json:"communicationHostForClient,omitempty"`
-
-	// LatestAgentVersionUnixDefault caches the current agent version for unix and the default installer which is configured for the environment
-	LatestAgentVersionUnixDefault string `json:"latestAgentVersionUnixDefault,omitempty"`
 
 	// LatestAgentVersionUnixDefault caches the current agent version for unix and the PaaS installer which is configured for the environment
 	LatestAgentVersionUnixPaas string `json:"latestAgentVersionUnixPaas,omitempty"`

@@ -195,7 +195,6 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		pod.Labels = expectedLabels
 		pod.Spec = ds.Spec.Template.Spec
 		pod.Status.HostIP = hostIP
-		dk.Status.Tokens = dk.Tokens()
 		err = reconciler.client.Create(context.TODO(), pod)
 
 		assert.NoError(t, err)
@@ -226,7 +225,6 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		pod.Labels = expectedLabels
 		pod.Spec = ds.Spec.Template.Spec
 		pod.Status.HostIP = hostIP
-		dk.Status.Tokens = dk.Tokens()
 
 		err = reconciler.client.Create(context.TODO(), pod)
 
