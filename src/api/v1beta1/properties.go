@@ -22,7 +22,6 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api"
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -407,24 +406,6 @@ func (dk *DynaKube) Tokens() string {
 		return tkns
 	}
 	return dk.Name
-}
-
-func (dk *DynaKube) ConnectionInfo() dtclient.OneAgentConnectionInfo {
-	return dtclient.OneAgentConnectionInfo{
-		CommunicationHosts: dk.CommunicationHosts(),
-		ConnectionInfo: dtclient.ConnectionInfo{
-			TenantUUID: dk.Status.ConnectionInfo.TenantUUID,
-			Endpoints:  dk.Status.ConnectionInfo.FormattedCommunicationEndpoints,
-		},
-	}
-}
-
-func (dk *DynaKube) CommunicationHosts() []dtclient.CommunicationHost {
-	communicationHosts := make([]dtclient.CommunicationHost, 0, len(dk.Status.ConnectionInfo.CommunicationHosts))
-	for _, communicationHost := range dk.Status.ConnectionInfo.CommunicationHosts {
-		communicationHosts = append(communicationHosts, dtclient.CommunicationHost(communicationHost))
-	}
-	return communicationHosts
 }
 
 // TenantUUIDFromApiUrl gets the tenantUUID from the ApiUrl present in the struct, if the tenant is aliased then the alias will be returned

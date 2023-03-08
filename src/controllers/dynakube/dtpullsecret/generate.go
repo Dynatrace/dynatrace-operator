@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/pkg/errors"
 )
 
@@ -39,7 +38,6 @@ func newDockerConfigWithAuth(username string, password string, registry string, 
 func (r *Reconciler) GenerateData() (map[string][]byte, error) {
 	var registryToken string
 
-	connectionInfo := r.dynakube.ConnectionInfo()
 	registry, err := getImageRegistryFromAPIURL(r.dynakube.Spec.APIURL)
 	if err != nil {
 		return nil, err
@@ -54,16 +52,21 @@ func (r *Reconciler) GenerateData() (map[string][]byte, error) {
 		return nil, errors.New("token secret does not contain a paas or api token, cannot generate docker config")
 	}
 
-	dockerCfg := newDockerConfigWithAuth(connectionInfo.TenantUUID,
+	tenantUUID, err := r.dynakube.TenantUUIDFromApiUrl()
+	if err != nil {
+		return nil, errors.WithMessage(err, "cannot generate docker config")
+	}
+
+	dockerCfg := newDockerConfigWithAuth(tenantUUID,
 		registryToken,
 		registry,
-		r.buildAuthString(connectionInfo, registryToken))
+		r.buildAuthString(tenantUUID, registryToken))
 
 	return pullSecretDataFromDockerConfig(dockerCfg)
 }
 
-func (r *Reconciler) buildAuthString(connectionInfo dtclient.OneAgentConnectionInfo, registryToken string) string {
-	auth := fmt.Sprintf("%s:%s", connectionInfo.TenantUUID, registryToken)
+func (r *Reconciler) buildAuthString(tenantUUID string, registryToken string) string {
+	auth := fmt.Sprintf("%s:%s", tenantUUID, registryToken)
 	return b64.StdEncoding.EncodeToString([]byte(auth))
 }
 

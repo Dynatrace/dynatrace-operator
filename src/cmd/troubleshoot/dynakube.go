@@ -29,37 +29,59 @@ const (
 	proxySecretCheckName                   = "proxySecret"
 )
 
+const dynakubeCheckLoggerName = "dynakube"
+
 func checkDynakube(results ChecksResults, troubleshootCtx *troubleshootContext) error {
-	log = newSubTestLogger("dynakube")
+	log := troubleshootCtx.baseLog.WithName(dynakubeCheckLoggerName)
 
-	logNewCheckf("checking if '%s:%s' Dynakube is configured correctly", troubleshootCtx.namespaceName, troubleshootCtx.dynakube.Name)
+	logNewCheckf(log, "checking if '%s:%s' Dynakube is configured correctly", troubleshootCtx.namespaceName, troubleshootCtx.dynakube.Name)
 
-	err := runChecks(results, troubleshootCtx, getDynakubeChecks())
+	dynaKube, err := getSelectedDynakube(troubleshootCtx)
+	if err != nil {
+		return errors.Wrapf(err, "Could not get DynaKube %s/%s",
+			troubleshootCtx.namespaceName, troubleshootCtx.dynakube.Name)
+	}
+
+	troubleshootCtx.dynakube = dynaKube
+	logInfof(troubleshootCtx.baseLog, "using '%s:%s' Dynakube", troubleshootCtx.namespaceName, troubleshootCtx.dynakube.Name)
+
+	err = runChecks(log, results, troubleshootCtx, getDynakubeChecks())
 	if err != nil {
 		return errors.Wrapf(err, "'%s:%s' Dynakube isn't valid. %s",
 			troubleshootCtx.namespaceName, troubleshootCtx.dynakube.Name, dynakubeNotValidMessage())
 	}
 
-	logOkf("'%s:%s' Dynakube is valid", troubleshootCtx.namespaceName, troubleshootCtx.dynakube.Name)
+	logOkf(log, "'%s:%s' Dynakube is valid", troubleshootCtx.namespaceName, troubleshootCtx.dynakube.Name)
 	return nil
 }
 
-func getDynakubeChecks() []*Check {
-	selectedDynakubeCheck := &Check{
-		Name: getSelectedDynakubeCheckName,
-		Do:   getSelectedDynakube,
+func getSelectedDynakube(troubleshootCtx *troubleshootContext) (dynatracev1beta1.DynaKube, error) {
+	var dynaKube dynatracev1beta1.DynaKube
+	err := troubleshootCtx.apiReader.Get(
+		troubleshootCtx.context,
+		client.ObjectKey{
+			Name:      troubleshootCtx.dynakube.Name,
+			Namespace: troubleshootCtx.namespaceName,
+		},
+		&dynaKube,
+	)
+
+	if err != nil {
+		return dynatracev1beta1.DynaKube{}, determineSelectedDynakubeError(troubleshootCtx, err)
 	}
 
+	return dynaKube, nil
+}
+
+func getDynakubeChecks() []*Check {
 	ifDynatraceApiSecretHasApiTokenCheck := &Check{
-		Name:          dynatraceApiSecretHasApiTokenCheckName,
-		Do:            checkIfDynatraceApiSecretHasApiToken,
-		Prerequisites: []*Check{selectedDynakubeCheck},
+		Name: dynatraceApiSecretHasApiTokenCheckName,
+		Do:   checkIfDynatraceApiSecretHasApiToken,
 	}
 
 	apiUrlSyntaxCheck := &Check{
-		Name:          apiUrlSyntaxCheckName,
-		Do:            checkApiUrlSyntax,
-		Prerequisites: []*Check{selectedDynakubeCheck},
+		Name: apiUrlSyntaxCheckName,
+		Do:   checkApiUrlSyntax,
 	}
 
 	apiUrlTokenScopesCheck := &Check{
@@ -87,39 +109,19 @@ func getDynakubeChecks() []*Check {
 	}
 
 	proxySecretIfItExistsCheck := &Check{
-		Name:          proxySecretCheckName,
-		Do:            applyProxySettings,
-		Prerequisites: []*Check{selectedDynakubeCheck},
+		Name: proxySecretCheckName,
+		Do: func(troubleshootCtx *troubleshootContext) error {
+			return applyProxySettings(troubleshootCtx.baseLog.WithName(dynakubeCheckLoggerName), troubleshootCtx)
+		},
 	}
 
-	return []*Check{selectedDynakubeCheck, ifDynatraceApiSecretHasApiTokenCheck, apiUrlSyntaxCheck, apiUrlTokenScopesCheck, apiUrlLatestAgentVersionCheck, pullSecretExistsCheck, pullSecretHasRequiredTokensCheck, proxySecretIfItExistsCheck}
+	return []*Check{ifDynatraceApiSecretHasApiTokenCheck, apiUrlSyntaxCheck, apiUrlTokenScopesCheck, apiUrlLatestAgentVersionCheck, pullSecretExistsCheck, pullSecretHasRequiredTokensCheck, proxySecretIfItExistsCheck}
 }
 
 func dynakubeNotValidMessage() string {
 	return fmt.Sprintf(
 		"Target namespace and dynakube can be changed by providing '--%s <namespace>' or '--%s <dynakube>' parameters.",
 		namespaceFlagName, dynakubeFlagName)
-}
-
-func getSelectedDynakube(troubleshootCtx *troubleshootContext) error {
-	var dynakube dynatracev1beta1.DynaKube
-	err := troubleshootCtx.apiReader.Get(
-		troubleshootCtx.context,
-		client.ObjectKey{
-			Name:      troubleshootCtx.dynakube.Name,
-			Namespace: troubleshootCtx.namespaceName,
-		},
-		&dynakube,
-	)
-
-	if err != nil {
-		return determineSelectedDynakubeError(troubleshootCtx, err)
-	}
-
-	troubleshootCtx.dynakube = dynakube
-
-	logInfof("using '%s:%s' Dynakube", troubleshootCtx.namespaceName, troubleshootCtx.dynakube.Name)
-	return nil
 }
 
 func determineSelectedDynakubeError(troubleshootCtx *troubleshootContext, err error) error {
@@ -135,6 +137,8 @@ func determineSelectedDynakubeError(troubleshootCtx *troubleshootContext, err er
 }
 
 func checkIfDynatraceApiSecretHasApiToken(troubleshootCtx *troubleshootContext) error {
+	log := troubleshootCtx.baseLog.WithName(dynakubeCheckLoggerName)
+
 	tokenReader := token.NewReader(troubleshootCtx.apiReader, &troubleshootCtx.dynakube)
 	tokens, err := tokenReader.ReadTokens(troubleshootCtx.context)
 	if err != nil {
@@ -148,12 +152,14 @@ func checkIfDynatraceApiSecretHasApiToken(troubleshootCtx *troubleshootContext) 
 
 	troubleshootCtx.dynatraceApiSecretTokens = tokens
 
-	logInfof("secret token 'apiToken' exists")
+	logInfof(log, "secret token 'apiToken' exists")
 	return nil
 }
 
 func checkApiUrlSyntax(troubleshootCtx *troubleshootContext) error {
-	logInfof("checking if syntax of API URL is valid")
+	log := troubleshootCtx.baseLog.WithName(dynakubeCheckLoggerName)
+
+	logInfof(log, "checking if syntax of API URL is valid")
 
 	validation.SetLogger(log)
 	if validation.NoApiUrl(nil, &troubleshootCtx.dynakube) != "" {
@@ -163,12 +169,14 @@ func checkApiUrlSyntax(troubleshootCtx *troubleshootContext) error {
 		return errors.New("API URL is invalid")
 	}
 
-	logInfof("syntax of API URL is valid")
+	logInfof(log, "syntax of API URL is valid")
 	return nil
 }
 
 func checkDynatraceApiTokenScopes(troubleshootCtx *troubleshootContext) error {
-	logInfof("checking if token scopes are valid")
+	log := troubleshootCtx.baseLog.WithName(dynakubeCheckLoggerName)
+
+	logInfof(log, "checking if token scopes are valid")
 
 	dtc, err := dynatraceclient.NewBuilder(troubleshootCtx.apiReader).
 		SetContext(troubleshootCtx.context).
@@ -190,12 +198,14 @@ func checkDynatraceApiTokenScopes(troubleshootCtx *troubleshootContext) error {
 		return errors.Wrapf(err, "invalid '%s:%s' secret", troubleshootCtx.namespaceName, troubleshootCtx.dynakube.Tokens())
 	}
 
-	logInfof("token scopes are valid")
+	logInfof(log, "token scopes are valid")
 	return nil
 }
 
 func checkApiUrlForLatestAgentVersion(troubleshootCtx *troubleshootContext) error {
-	logInfof("checking if can pull latest agent version")
+	log := troubleshootCtx.baseLog.WithName(dynakubeCheckLoggerName)
+
+	logInfof(log, "checking if can pull latest agent version")
 
 	dtc, err := dynatraceclient.NewBuilder(troubleshootCtx.apiReader).
 		SetContext(troubleshootCtx.context).
@@ -211,11 +221,13 @@ func checkApiUrlForLatestAgentVersion(troubleshootCtx *troubleshootContext) erro
 		return errors.Wrap(err, "failed to connect to DynatraceAPI")
 	}
 
-	logInfof("API token is valid, can pull latest agent version")
+	logInfof(log, "API token is valid, can pull latest agent version")
 	return nil
 }
 
 func checkPullSecretExists(troubleshootCtx *troubleshootContext) error {
+	log := troubleshootCtx.baseLog.WithName(dynakubeCheckLoggerName)
+
 	query := kubeobjects.NewSecretQuery(troubleshootCtx.context, nil, troubleshootCtx.apiReader, log)
 	secret, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.dynakube.PullSecret()})
 
@@ -225,15 +237,17 @@ func checkPullSecretExists(troubleshootCtx *troubleshootContext) error {
 		troubleshootCtx.pullSecret = secret
 	}
 
-	logInfof("pull secret '%s:%s' exists", troubleshootCtx.namespaceName, troubleshootCtx.dynakube.PullSecret())
+	logInfof(log, "pull secret '%s:%s' exists", troubleshootCtx.namespaceName, troubleshootCtx.dynakube.PullSecret())
 	return nil
 }
 
 func checkPullSecretHasRequiredTokens(troubleshootCtx *troubleshootContext) error {
+	log := troubleshootCtx.baseLog.WithName(dynakubeCheckLoggerName)
+
 	if _, err := kubeobjects.ExtractToken(&troubleshootCtx.pullSecret, dtpullsecret.DockerConfigJson); err != nil {
 		return errors.Wrapf(err, "invalid '%s:%s' secret", troubleshootCtx.namespaceName, troubleshootCtx.dynakube.PullSecret())
 	}
 
-	logInfof("secret token '%s' exists", dtpullsecret.DockerConfigJson)
+	logInfof(log, "secret token '%s' exists", dtpullsecret.DockerConfigJson)
 	return nil
 }

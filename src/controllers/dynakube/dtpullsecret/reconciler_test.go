@@ -16,7 +16,6 @@ import (
 )
 
 const (
-	testEndpoint  = "http://test-endpoint.com/api"
 	testPaasToken = "test-paas-token"
 )
 
@@ -27,7 +26,11 @@ func TestReconciler_Reconcile(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 				Name:      testName,
-			}}
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: testApiUrl,
+			},
+		}
 		fakeClient := fake.NewClient()
 		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, token.Tokens{
 			dtclient.DynatraceApiToken: token.Token{Value: testValue},
@@ -67,19 +70,14 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.NoError(t, err)
 	})
 	t.Run(`Create creates correct docker config`, func(t *testing.T) {
-		expectedJSON := `{"auths":{"test-endpoint.com":{"username":"test-name","password":"test-value","auth":"dGVzdC1uYW1lOnRlc3QtdmFsdWU="}}}`
+		expectedJSON := `{"auths":{"test-api-url":{"username":"test-tenant","password":"test-value","auth":"dGVzdC10ZW5hbnQ6dGVzdC12YWx1ZQ=="}}}`
 		dynakube := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 				Name:      testName,
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{
-				APIURL: testEndpoint,
-			},
-			Status: dynatracev1beta1.DynaKubeStatus{
-				ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
-					TenantUUID: testName,
-				},
+				APIURL: testApiUrl,
 			},
 		}
 		fakeClient := fake.NewClient()
@@ -104,19 +102,14 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.Equal(t, expectedJSON, string(pullSecret.Data[".dockerconfigjson"]))
 	})
 	t.Run(`Create update secret if data changed`, func(t *testing.T) {
-		expectedJSON := `{"auths":{"test-endpoint.com":{"username":"test-name","password":"test-value","auth":"dGVzdC1uYW1lOnRlc3QtdmFsdWU="}}}`
+		expectedJSON := `{"auths":{"test-api-url":{"username":"test-tenant","password":"test-value","auth":"dGVzdC10ZW5hbnQ6dGVzdC12YWx1ZQ=="}}}`
 		dynakube := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 				Name:      testName,
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{
-				APIURL: testEndpoint,
-			},
-			Status: dynatracev1beta1.DynaKubeStatus{
-				ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
-					TenantUUID: testName,
-				},
+				APIURL: testApiUrl,
 			},
 		}
 		fakeClient := fake.NewClient()
