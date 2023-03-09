@@ -3,10 +3,13 @@ package csiprovisioner
 import (
 	"context"
 	"fmt"
+	"io"
+	"path"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
+	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/installer"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
@@ -56,6 +59,9 @@ func TestUpdateAgent(t *testing.T) {
 		updater.installer.(*installer.Mock).
 			On("UpdateProcessModuleConfig", targetDir, &testProcessModuleConfig).
 			Return(nil)
+		updater.installer.(*installer.Mock).
+			On("Cleanup").
+			Return(nil)
 
 		currentVersion, err := updater.updateAgent(
 			&processModuleCache)
@@ -99,6 +105,9 @@ func TestUpdateAgent(t *testing.T) {
 		updater.installer.(*installer.Mock).
 			On("UpdateProcessModuleConfig", targetDir, &testProcessModuleConfig).
 			Return(nil)
+		updater.installer.(*installer.Mock).
+			On("Cleanup").
+			Return(nil)
 		_ = updater.fs.MkdirAll(targetDir, 0755)
 
 		currentVersion, err := updater.updateAgent(
@@ -134,6 +143,9 @@ func TestUpdateAgent(t *testing.T) {
 		updater.installer.(*installer.Mock).
 			On("InstallAgent", targetDir).
 			Return(false, fmt.Errorf("BOOM"))
+		updater.installer.(*installer.Mock).
+			On("Cleanup").
+			Return(nil)
 
 		currentVersion, err := updater.updateAgent(
 			&processModuleCache)
@@ -156,6 +168,8 @@ func TestUpdateAgent(t *testing.T) {
 		pullSecretName := "test-pull-secret"
 		testNamespace := "test-namespace"
 		processModuleConfig := createTestProcessModuleConfigCache("1")
+		dockerconfigjsonContent := `{"auths":{}}`
+
 		dk := dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-dk",
@@ -179,7 +193,7 @@ func TestUpdateAgent(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Data: map[string][]byte{
-				".dockerconfigjson": []byte("{}"),
+				".dockerconfigjson": []byte(dockerconfigjsonContent),
 			},
 		}
 		updater := createTestAgentImageUpdater(t, &dk, mockedPullSecret)
@@ -190,11 +204,17 @@ func TestUpdateAgent(t *testing.T) {
 		updater.installer.(*installer.Mock).
 			On("UpdateProcessModuleConfig", targetDir, &testProcessModuleConfig).
 			Return(nil)
+		updater.installer.(*installer.Mock).
+			On("Cleanup").
+			Return(nil)
 
 		currentVersion, err := updater.updateAgent(
 			&processModuleConfig)
 		require.NoError(t, err)
 		assert.Equal(t, tag, currentVersion)
+
+		dockerJsonPath := path.Join(dockerconfig.TmpPath, dockerconfig.RegistryAuthDir, dk.Name)
+		checkFilesCreatedAndCleanedUp(t, updater, dockerJsonPath, dockerconfigjsonContent)
 	})
 	t.Run(`codeModulesImage + trustedCA set`, func(t *testing.T) {
 		image := "test-image"
@@ -202,6 +222,9 @@ func TestUpdateAgent(t *testing.T) {
 		pullSecretName := "test-pull-secret"
 		trustedCAName := "test-trusted-ca"
 		testNamespace := "test-namespace"
+		customCertContent := "I-am-a-cert-trust-me"
+		dockerconfigjsonContent := `{"auths":{}}`
+
 		processModuleConfig := createTestProcessModuleConfigCache("1")
 		dk := dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
@@ -228,7 +251,7 @@ func TestUpdateAgent(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Data: map[string][]byte{
-					".dockerconfigjson": []byte("{}"),
+					".dockerconfigjson": []byte(dockerconfigjsonContent),
 				},
 			},
 			&corev1.ConfigMap{
@@ -237,7 +260,7 @@ func TestUpdateAgent(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Data: map[string]string{
-					dtclient.CustomCertificatesConfigMapKey: "I-am-a-cert-trust-me",
+					dtclient.CustomCertificatesConfigMapKey: customCertContent,
 				},
 			},
 		}
@@ -250,14 +273,33 @@ func TestUpdateAgent(t *testing.T) {
 		updater.installer.(*installer.Mock).
 			On("UpdateProcessModuleConfig", targetDir, &testProcessModuleConfig).
 			Return(nil)
+		updater.installer.(*installer.Mock).
+			On("Cleanup").
+			Return(nil)
 
 		currentVersion, err := updater.updateAgent(
 			&processModuleConfig)
 		require.NoError(t, err)
 		assert.Equal(t, tag, currentVersion)
-		_, err = updater.fs.Stat(updater.path.ImageCertPath(testTenantUUID))
-		assert.Error(t, err)
+
+		dockerJsonPath := path.Join(dockerconfig.TmpPath, dockerconfig.RegistryAuthDir, dk.Name)
+		checkFilesCreatedAndCleanedUp(t, updater, dockerJsonPath, dockerconfigjsonContent)
+
+		caFilePath := path.Join(dockerconfig.TmpPath, dockerconfig.CADir, dk.Name)
+		checkFilesCreatedAndCleanedUp(t, updater, caFilePath, customCertContent)
 	})
+}
+
+func checkFilesCreatedAndCleanedUp(t *testing.T, updater *agentUpdater, caFilePath string, certContent string) {
+	updater.installer.(*installer.Mock).
+		AssertCalled(t, "Cleanup")
+
+	caFile, err := updater.fs.Open(caFilePath)
+	require.NoError(t, err)
+
+	caFileContent, err := io.ReadAll(caFile)
+	require.NoError(t, err)
+	require.Equal(t, certContent, string(caFileContent))
 }
 
 func testUpdateOneagent(t *testing.T, alreadyInstalled bool) {
@@ -284,6 +326,9 @@ func testUpdateOneagent(t *testing.T, alreadyInstalled bool) {
 		Return(!alreadyInstalled, nil)
 	updater.installer.(*installer.Mock).
 		On("UpdateProcessModuleConfig", targetDir, &testProcessModuleConfig).
+		Return(nil)
+	updater.installer.(*installer.Mock).
+		On("Cleanup").
 		Return(nil)
 	if alreadyInstalled {
 		_ = updater.fs.MkdirAll(targetDir, 0755)
