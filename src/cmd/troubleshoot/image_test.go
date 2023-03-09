@@ -197,6 +197,7 @@ func TestOneAgentCustomImagePullable(t *testing.T) {
 			withApiUrl(dockerServer.URL + "/api").
 			withCloudNativeFullStackCustomImage(server + "/" + testCustomOneAgentImage).
 			build()
+		resetFileSystem(&troubleshootCtx)
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
@@ -209,6 +210,7 @@ func TestOneAgentCustomImagePullable(t *testing.T) {
 			withApiUrl(dockerServer.URL + "/api").
 			withCloudNativeFullStackCustomImage(server + "/" + testCustomOneAgentImage + ":latest").
 			build()
+		resetFileSystem(&troubleshootCtx)
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
@@ -221,6 +223,7 @@ func TestOneAgentCustomImagePullable(t *testing.T) {
 			withApiUrl(dockerServer.URL + "/api").
 			withCloudNativeFullStackCustomImage(server + "/" + testCustomOneAgentImage + ":" + testVersion).
 			build()
+		resetFileSystem(&troubleshootCtx)
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
@@ -233,6 +236,7 @@ func TestOneAgentCustomImagePullable(t *testing.T) {
 			withApiUrl(dockerServer.URL + "/api").
 			withClassicFullStackCustomImage(server + "/" + testCustomOneAgentImage).
 			build()
+		resetFileSystem(&troubleshootCtx)
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
@@ -245,6 +249,7 @@ func TestOneAgentCustomImagePullable(t *testing.T) {
 			withApiUrl(dockerServer.URL + "/api").
 			withClassicFullStackCustomImage(server + "/" + testCustomOneAgentImage + ":latest").
 			build()
+		resetFileSystem(&troubleshootCtx)
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
@@ -257,6 +262,7 @@ func TestOneAgentCustomImagePullable(t *testing.T) {
 			withApiUrl(dockerServer.URL + "/api").
 			withClassicFullStackCustomImage(server + "/" + testCustomOneAgentImage + ":" + testVersion).
 			build()
+		resetFileSystem(&troubleshootCtx)
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
@@ -269,6 +275,7 @@ func TestOneAgentCustomImagePullable(t *testing.T) {
 			withApiUrl(dockerServer.URL + "/api").
 			withHostMonitoringCustomImage(server + "/" + testCustomOneAgentImage).
 			build()
+		resetFileSystem(&troubleshootCtx)
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
@@ -281,6 +288,7 @@ func TestOneAgentCustomImagePullable(t *testing.T) {
 			withApiUrl(dockerServer.URL + "/api").
 			withHostMonitoringCustomImage(server + "/" + testCustomOneAgentImage + ":latest").
 			build()
+		resetFileSystem(&troubleshootCtx)
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
@@ -293,6 +301,7 @@ func TestOneAgentCustomImagePullable(t *testing.T) {
 			withApiUrl(dockerServer.URL + "/api").
 			withHostMonitoringCustomImage(server + "/" + testCustomOneAgentImage + ":" + testVersion).
 			build()
+		resetFileSystem(&troubleshootCtx)
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
@@ -322,6 +331,7 @@ func TestOneAgentImageNotPullable(t *testing.T) {
 			withApiUrl(dockerServer.URL + "/api").
 			withCloudNativeFullStack().
 			build()
+		resetFileSystem(&troubleshootCtx)
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
@@ -335,6 +345,7 @@ func TestOneAgentImageNotPullable(t *testing.T) {
 			withApiUrl(dockerServer.URL + "/api").
 			withCloudNativeFullStackCustomImage(server + "/foobar").
 			build()
+		resetFileSystem(&troubleshootCtx)
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
@@ -348,6 +359,7 @@ func TestOneAgentImageNotPullable(t *testing.T) {
 			withApiUrl(dockerServer.URL + "/api").
 			withClassicFullStack().
 			build()
+		resetFileSystem(&troubleshootCtx)
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
@@ -361,6 +373,7 @@ func TestOneAgentImageNotPullable(t *testing.T) {
 			withApiUrl(dockerServer.URL + "/api").
 			withClassicFullStackCustomImage(server + "/foobar").
 			build()
+		resetFileSystem(&troubleshootCtx)
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
@@ -374,6 +387,7 @@ func TestOneAgentImageNotPullable(t *testing.T) {
 			withApiUrl(dockerServer.URL + "/api").
 			withHostMonitoring().
 			build()
+		resetFileSystem(&troubleshootCtx)
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
@@ -387,6 +401,7 @@ func TestOneAgentImageNotPullable(t *testing.T) {
 			withApiUrl(dockerServer.URL + "/api").
 			withHostMonitoringCustomImage(server + "/foobar").
 			build()
+		resetFileSystem(&troubleshootCtx)
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
@@ -400,6 +415,7 @@ func TestOneAgentImageNotPullable(t *testing.T) {
 			withApiUrl(dockerServer.URL + "/api").
 			withHostMonitoringCustomImage("myunknownserver.com/foobar/image").
 			build()
+		resetFileSystem(&troubleshootCtx)
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentOneAgent, false)
@@ -432,6 +448,7 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 			withApiUrl(dockerServer.URL + "/api").
 			withCloudNativeCodeModulesImage(server + "/" + testOneAgentCodeModulesImage + ":" + testVersion).
 			build()
+		resetFileSystem(&troubleshootCtx)
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
@@ -444,6 +461,7 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 			withApiUrl(dockerServer.URL + "/api").
 			withCloudNativeCodeModulesImage(server + "/" + testOneAgentCodeModulesImage + ":" + testVersion).
 			build()
+		resetFileSystem(&troubleshootCtx)
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
@@ -456,6 +474,7 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 			withApiUrl(dockerServer.URL + "/api").
 			withCloudNativeCodeModulesImage(server + "/" + testOneAgentCodeModulesImage + ":latest").
 			build()
+		resetFileSystem(&troubleshootCtx)
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
@@ -468,6 +487,7 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 			withApiUrl(dockerServer.URL + "/api").
 			withCloudNativeCodeModulesImage(server + "/" + testOneAgentCodeModulesImage).
 			build()
+		resetFileSystem(&troubleshootCtx)
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
@@ -480,6 +500,7 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 			withApiUrl(dockerServer.URL + "/api").
 			withApplicationMonitoringCodeModulesImage(server + "/" + testOneAgentCodeModulesImage + ":" + testVersion).
 			build()
+		resetFileSystem(&troubleshootCtx)
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
@@ -492,6 +513,7 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 			withApiUrl(dockerServer.URL + "/api").
 			withApplicationMonitoringCodeModulesImage(server + "/" + testOneAgentCodeModulesImage + ":latest").
 			build()
+		resetFileSystem(&troubleshootCtx)
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
@@ -504,6 +526,7 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 			withApiUrl(dockerServer.URL + "/api").
 			withApplicationMonitoringCodeModulesImage(server + "/" + testOneAgentCodeModulesImage).
 			build()
+		resetFileSystem(&troubleshootCtx)
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
@@ -516,6 +539,7 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 			withApiUrl(dockerServer.URL + "/api").
 			withCloudNativeCodeModulesImage(server + "/non-existing-image").
 			build()
+		resetFileSystem(&troubleshootCtx)
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
@@ -528,6 +552,7 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 			withApiUrl(dockerServer.URL + "/api").
 			withCloudNativeCodeModulesImage("myunknownserver.com/myrepo/mymissingcodemodules").
 			build()
+		resetFileSystem(&troubleshootCtx)
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
@@ -541,6 +566,7 @@ func TestOneAgentCodeModulesImagePullable(t *testing.T) {
 			withApiUrl(dockerServer.URL + "/api").
 			withCloudNativeCodeModulesImage("").
 			build()
+		resetFileSystem(&troubleshootCtx)
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentCodeModules, true)
@@ -572,6 +598,7 @@ func TestActiveGateImagePullable(t *testing.T) {
 		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			build()
+		resetFileSystem(&troubleshootCtx)
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentActiveGate, false)
@@ -584,6 +611,7 @@ func TestActiveGateImagePullable(t *testing.T) {
 			withApiUrl(dockerServer.URL + "/api").
 			withActiveGateCustomImage(server + "/" + testActiveGateCustomImage).
 			build()
+		resetFileSystem(&troubleshootCtx)
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentActiveGate, false)
@@ -596,6 +624,7 @@ func TestActiveGateImagePullable(t *testing.T) {
 			withApiUrl(dockerServer.URL + "/api").
 			withActiveGateCustomImage(server + "/" + testActiveGateCustomImage + ":latest").
 			build()
+		resetFileSystem(&troubleshootCtx)
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentActiveGate, false)
@@ -608,6 +637,7 @@ func TestActiveGateImagePullable(t *testing.T) {
 			withApiUrl(dockerServer.URL + "/api").
 			withActiveGateCustomImage(server + "/" + testActiveGateCustomImage + ":" + testVersion).
 			build()
+		resetFileSystem(&troubleshootCtx)
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentActiveGate, false)
@@ -636,6 +666,7 @@ func TestActiveGateImageNotPullable(t *testing.T) {
 		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
 			withApiUrl(dockerServer.URL + "/api").
 			build()
+		resetFileSystem(&troubleshootCtx)
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentActiveGate, false)
@@ -650,6 +681,7 @@ func TestActiveGateImageNotPullable(t *testing.T) {
 			withActiveGateCustomImage(server + "/" + testActiveGateCustomImage).
 			withActiveGateCapability(v1beta1.RoutingCapability.DisplayName).
 			build()
+		resetFileSystem(&troubleshootCtx)
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentActiveGate, false)
@@ -664,6 +696,7 @@ func TestActiveGateImageNotPullable(t *testing.T) {
 			withActiveGateCustomImage("myunknownserver.com/foobar/image").
 			withActiveGateCapability(v1beta1.RoutingCapability.DisplayName).
 			build()
+		resetFileSystem(&troubleshootCtx)
 
 		logOutput := runWithTestLogger(t.Name(), func() {
 			verifyImageIsAvailable(&troubleshootCtx, componentActiveGate, false)
@@ -706,4 +739,8 @@ func TestImagePullablePullSecret(t *testing.T) {
 		require.Errorf(t, err, "expected error")
 		assert.NotEqual(t, pullSecretFieldValue, secret, "valid contents of pull secret")
 	})
+}
+
+func resetFileSystem(troubleshootCtx *troubleshootContext) {
+	troubleshootCtx.fs = afero.Afero{Fs: afero.NewMemMapFs()}
 }
