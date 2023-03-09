@@ -80,134 +80,16 @@ func checkFileContents(t *testing.T, fs afero.Afero, targetPath, expectedContent
 
 func TestSetupAuths(t *testing.T) {
 	t.Run("using default pull secret", func(t *testing.T) {
-		registryAuthContent := fmt.Sprintf(`{ "auths": { "%s": { "username": "%s", "password": "%s" } } }`, testKey, testName, testValue)
-
-		dynakube := dynatracev1beta1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: testName,
-			},
-		}
-		pullSecret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: dynakube.PullSecret(),
-			},
-			Data: map[string][]byte{
-				".dockerconfigjson": []byte(registryAuthContent),
-			},
-		}
-		apiReader := fake.NewClient(pullSecret)
-		dockerConfig := NewDockerConfig(apiReader, dynakube)
-
-		fs := afero.Afero{Fs: afero.NewBasePathFs(afero.NewOsFs(), path.Join(os.TempDir(), "dttest"))}
-		defer func(fs afero.Afero, path string) {
-			_ = fs.RemoveAll(path)
-		}(fs, "/")
-
-		err := dockerConfig.StoreRequiredFiles(context.TODO(), fs)
-		require.NoError(t, err)
-
-		checkFileContents(t, fs, dockerConfig.RegistryAuthPath, registryAuthContent)
+		testPullSecret(t, false, false, false)
 	})
 	t.Run("using default pull secret with ca certs set", func(t *testing.T) {
-		registryAuthContent := fmt.Sprintf(`{ "auths": { "%s": { "username": "%s", "password": "%s" } } }`, testKey, testName, testValue)
-		secureCertName := "secure-cert-name"
-
-		dynakube := dynatracev1beta1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: testName,
-			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				TrustedCAs: secureCertName,
-			},
-		}
-		pullSecret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: dynakube.PullSecret(),
-			},
-			Data: map[string][]byte{
-				".dockerconfigjson": []byte(registryAuthContent),
-			},
-		}
-		caCertsConfigMap := &corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: secureCertName,
-			},
-			Data: map[string]string{
-				dtclient.CustomCertificatesConfigMapKey: testValue,
-			},
-		}
-		apiReader := fake.NewClient(pullSecret, caCertsConfigMap)
-		dockerConfig := NewDockerConfig(apiReader, dynakube)
-
-		fs := afero.Afero{Fs: afero.NewBasePathFs(afero.NewOsFs(), path.Join(os.TempDir(), "dttest"))}
-		defer func(fs afero.Afero, path string) {
-			_ = fs.RemoveAll(path)
-		}(fs, "/")
-
-		err := dockerConfig.StoreRequiredFiles(context.TODO(), fs)
-		require.NoError(t, err)
-
-		checkFileContents(t, fs, dockerConfig.RegistryAuthPath, registryAuthContent)
-		checkFileContents(t, fs, dockerConfig.TrustedCertsPath, testValue)
+		testPullSecret(t, true, false, false)
 	})
 	t.Run("using custom pull secret", func(t *testing.T) {
-		registryAuthContent := fmt.Sprintf(`{ "auths": { "%s": { "username": "%s", "password": "%s" } } }`, testKey, testName, testValue)
-
-		dynakube := dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				CustomPullSecret: testName,
-			},
-		}
-		pullSecret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: dynakube.PullSecret(),
-			},
-			Data: map[string][]byte{
-				".dockerconfigjson": []byte(registryAuthContent),
-			},
-		}
-		apiReader := fake.NewClient(pullSecret)
-		dockerConfig := NewDockerConfig(apiReader, dynakube)
-
-		fs := afero.Afero{Fs: afero.NewBasePathFs(afero.NewOsFs(), path.Join(os.TempDir(), "dttest"))}
-		defer func(fs afero.Afero, path string) {
-			_ = fs.RemoveAll(path)
-		}(fs, "/")
-
-		err := dockerConfig.StoreRequiredFiles(context.TODO(), fs)
-		require.NoError(t, err)
-
-		checkFileContents(t, fs, dockerConfig.RegistryAuthPath, registryAuthContent)
+		testPullSecret(t, false, true, false)
 	})
 	t.Run("using preset pull secret", func(t *testing.T) {
-		registryAuthContent := fmt.Sprintf(`{ "auths": { "%s": { "username": "%s", "password": "%s" } } }`, testKey, testName, testValue)
-
-		dynakube := dynatracev1beta1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: testName,
-			},
-		}
-		pullSecret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: dynakube.PullSecret(),
-			},
-			Data: map[string][]byte{
-				".dockerconfigjson": []byte(registryAuthContent),
-			},
-		}
-		apiReader := fake.NewClient()
-		dockerConfig := NewDockerConfig(apiReader, dynakube)
-		dockerConfig.SetRegistryAuthSecret(pullSecret)
-
-		fs := afero.Afero{Fs: afero.NewBasePathFs(afero.NewOsFs(), path.Join(os.TempDir(), "dttest"))}
-		defer func(fs afero.Afero, path string) {
-			_ = fs.RemoveAll(path)
-		}(fs, "/")
-
-		err := dockerConfig.StoreRequiredFiles(context.TODO(), fs)
-		require.NoError(t, err)
-
-		checkFileContents(t, fs, dockerConfig.RegistryAuthPath, registryAuthContent)
+		testPullSecret(t, false, false, true)
 	})
 	t.Run("handles no secret", func(t *testing.T) {
 		dynakube := dynatracev1beta1.DynaKube{
@@ -252,4 +134,63 @@ func TestParseDockerAuthsFromSecret(t *testing.T) {
 		require.NotEmpty(t, auths)
 		assert.Contains(t, string(auths), testKey)
 	})
+}
+
+func testPullSecret(t *testing.T, withCaCerts, customPullSecret, injectedPullSecret bool) {
+	registryAuthContent := fmt.Sprintf(`{ "auths": { "%s": { "username": "%s", "password": "%s" } } }`, testKey, testName, testValue)
+	secureCertName := "secure-cert-name"
+
+	spec := dynatracev1beta1.DynaKubeSpec{}
+	if withCaCerts {
+		spec.TrustedCAs = secureCertName
+	}
+	if customPullSecret {
+		spec.CustomPullSecret = testName
+	}
+	dynakube := dynatracev1beta1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: testName,
+		},
+		Spec: spec,
+	}
+	pullSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: dynakube.PullSecret(),
+		},
+		Data: map[string][]byte{
+			".dockerconfigjson": []byte(registryAuthContent),
+		},
+	}
+	apiReader := fake.NewClient()
+	dockerConfig := NewDockerConfig(apiReader, dynakube)
+
+	if !injectedPullSecret {
+		assert.NoError(t, apiReader.Create(context.Background(), pullSecret))
+	} else {
+		dockerConfig.SetRegistryAuthSecret(pullSecret)
+	}
+	if withCaCerts {
+		caCertsConfigMap := &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: secureCertName,
+			},
+			Data: map[string]string{
+				dtclient.CustomCertificatesConfigMapKey: testValue,
+			},
+		}
+		assert.NoError(t, apiReader.Create(context.Background(), caCertsConfigMap))
+	}
+
+	fs := afero.Afero{Fs: afero.NewBasePathFs(afero.NewOsFs(), path.Join(os.TempDir(), "dttest"))}
+	defer func(fs afero.Afero, path string) {
+		_ = fs.RemoveAll(path)
+	}(fs, "/")
+
+	err := dockerConfig.StoreRequiredFiles(context.TODO(), fs)
+	require.NoError(t, err)
+
+	checkFileContents(t, fs, dockerConfig.RegistryAuthPath, registryAuthContent)
+	if withCaCerts {
+		checkFileContents(t, fs, dockerConfig.TrustedCertsPath, testValue)
+	}
 }
