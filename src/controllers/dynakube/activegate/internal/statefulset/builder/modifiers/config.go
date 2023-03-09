@@ -31,15 +31,9 @@ func GenerateAllModifiers(dynaKube dynatracev1beta1.DynaKube, capability capabil
 		NewProxyModifier(dynaKube),
 		NewRawImageModifier(dynaKube),
 		NewReadOnlyModifier(dynaKube),
-	}
-
-	if capability.IsSynthetic() {
-		generated = append(generated, newSyntheticModifier(dynaKube))
-	} else {
-		generated = append(
-			generated,
-			NewKubernetesMonitoringModifier(dynaKube, capability),
-			NewServicePortModifier(dynaKube, capability))
+		newSyntheticModifier(dynaKube, capability),
+		NewServicePortModifier(dynaKube, capability),
+		NewKubernetesMonitoringModifier(dynaKube, capability),
 	}
 
 	return generated

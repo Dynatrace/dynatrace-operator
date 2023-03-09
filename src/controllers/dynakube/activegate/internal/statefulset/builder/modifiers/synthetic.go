@@ -2,6 +2,7 @@ package modifiers
 
 import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	_ "github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
@@ -34,7 +35,8 @@ const (
 )
 
 type SyntheticModifier struct {
-	dynaKube dynatracev1beta1.DynaKube
+	dynaKube   dynatracev1beta1.DynaKube
+	capability capability.Capability
 }
 
 // make the compiler watch the implemented interfaces
@@ -99,14 +101,19 @@ var (
 	}
 )
 
-func newSyntheticModifier(dynaKube dynatracev1beta1.DynaKube) SyntheticModifier {
+func newSyntheticModifier(
+	dynaKube dynatracev1beta1.DynaKube,
+	capability capability.Capability,
+) SyntheticModifier {
 	return SyntheticModifier{
-		dynaKube: dynaKube,
+		dynaKube:   dynaKube,
+		capability: capability,
 	}
 }
 
 func (syn SyntheticModifier) Enabled() bool {
-	return syn.dynaKube.IsSyntheticMonitoringEnabled()
+	return syn.dynaKube.IsSyntheticMonitoringEnabled() &&
+		syn.capability.IsSynthetic()
 }
 
 func (syn SyntheticModifier) Modify(sts *appsv1.StatefulSet) error {

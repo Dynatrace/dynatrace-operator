@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
@@ -14,7 +15,10 @@ func TestSyntheticContainer(t *testing.T) {
 	dynaKube := getBaseDynakube()
 	dynaKube.ObjectMeta.Annotations[dynatracev1beta1.AnnotationFeatureSyntheticNodeType] = dynatracev1beta1.SyntheticNodeXs
 
-	modifier := newSyntheticModifier(dynaKube)
+	modifier := newSyntheticModifier(
+		dynaKube,
+		capability.NewSyntheticCapability(&dynaKube),
+	)
 	container := modifier.buildContainer()
 
 	toAssertProbe := func(t *testing.T) {
