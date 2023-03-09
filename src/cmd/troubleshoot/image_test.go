@@ -7,10 +7,13 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
+	"path"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -91,7 +94,12 @@ func TestOneAgentImagePullable(t *testing.T) {
 		namespaceName: testNamespace,
 		pullSecret:    *secret,
 		httpClient:    dockerServer.Client(),
+		fs:            afero.Afero{Fs: afero.NewBasePathFs(afero.NewOsFs(), path.Join(os.TempDir(), "dttest"))},
 	}
+
+	defer func(fs afero.Afero, path string) {
+		_ = fs.RemoveAll(path)
+	}(troubleshootCtx.fs, "/")
 
 	t.Run("OneAgent image", func(t *testing.T) {
 		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).

@@ -75,11 +75,10 @@ func tryImagePull(troubleshootCtx *troubleshootContext, image string) error {
 		return err
 	}
 
-	fs := afero.Afero{Fs: afero.NewOsFs()}
 	dockerCfg := dockerconfig.NewDockerConfig(troubleshootCtx.apiReader, troubleshootCtx.dynakube)
 	defer func(dockerCfg *dockerconfig.DockerConfig, fs afero.Afero) {
 		_ = dockerCfg.Cleanup(fs)
-	}(dockerCfg, fs)
+	}(dockerCfg, troubleshootCtx.fs)
 
 	systemCtx, err := makeSysContext(troubleshootCtx, imageReference, dockerCfg)
 	if err != nil {
@@ -102,7 +101,7 @@ func normalizeDockerReference(image string) string {
 
 func makeSysContext(troubleshootCtx *troubleshootContext, imageReference types.ImageReference, dockerCfg *dockerconfig.DockerConfig) (*types.SystemContext, error) {
 	dockerCfg.SetRegistryAuthSecret(&troubleshootCtx.pullSecret)
-	err := dockerCfg.StoreRequiredFiles(troubleshootCtx.context, afero.Afero{Fs: afero.NewOsFs()})
+	err := dockerCfg.StoreRequiredFiles(troubleshootCtx.context, troubleshootCtx.fs)
 	if err != nil {
 		return nil, err
 	}

@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -144,6 +145,7 @@ func runChecksForAllDynakubes(results ChecksResults, checks []*Check, dynakubes 
 			httpClient:    &http.Client{},
 			namespaceName: namespaceFlagValue,
 			dynakube:      dynakube,
+			fs:            afero.Afero{Fs: afero.NewOsFs()},
 		}
 
 		_ = runChecks(results, &troubleshootCtx, checks) // ignore error to avoid polluting pretty logs
