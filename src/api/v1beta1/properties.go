@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api"
+	timeutil "github.com/Dynatrace/dynatrace-operator/src/time"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -486,4 +487,28 @@ func (dk *DynaKube) GetOneAgentEnvironment() []corev1.EnvVar {
 		return dk.Spec.OneAgent.HostMonitoring.Env
 	}
 	return []corev1.EnvVar{}
+}
+
+func (dk *DynaKube) ShallUpdateOneAgentConnectionInfo() bool {
+	return dk.shallUpdateOneAgentConnectionInfo(timeutil.NewProvider())
+}
+
+func (dk *DynaKube) shallUpdateOneAgentConnectionInfo(timeProvider *timeutil.Provider) bool {
+	return timeutil.TimeoutReached(&dk.Status.DynatraceApi.LastOneAgentConnectionInfoRequest, timeProvider.Now(), dk.FeatureApiRequestThreshold())
+}
+
+func (dk *DynaKube) ShallUpdateActiveGateConnectionInfo() bool {
+	return dk.shallUpdateActiveGateConnectionInfo(timeutil.NewProvider())
+}
+
+func (dk *DynaKube) shallUpdateActiveGateConnectionInfo(timeProvider *timeutil.Provider) bool {
+	return timeutil.TimeoutReached(&dk.Status.DynatraceApi.LastActiveGateConnectionInfoRequest, timeProvider.Now(), dk.FeatureApiRequestThreshold())
+}
+
+func (dk *DynaKube) ShallVerifyTokenScope() bool {
+	return dk.shallVerifyTokenScope(timeutil.NewProvider())
+}
+
+func (dk *DynaKube) shallVerifyTokenScope(timeProvider *timeutil.Provider) bool {
+	return timeutil.TimeoutReached(&dk.Status.DynatraceApi.LastTokenScopeRequest, timeProvider.Now(), dk.FeatureApiRequestThreshold())
 }

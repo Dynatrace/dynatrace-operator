@@ -17,8 +17,11 @@ limitations under the License.
 package v1beta1
 
 import (
+	"fmt"
 	"testing"
+	"time"
 
+	timeutil "github.com/Dynatrace/dynatrace-operator/src/time"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -416,4 +419,86 @@ func TestGetOneAgentEnvironment(t *testing.T) {
 		require.NotNil(t, env)
 		assert.Len(t, env, 0)
 	})
+}
+
+func TestDynaKube_ShallUpdateActiveGateConnectionInfo(t *testing.T) {
+	dk := DynaKube{
+		Status: DynaKubeStatus{
+			DynatraceApi: DynatraceApiStatus{
+				LastTokenScopeRequest:               metav1.Time{},
+				LastOneAgentConnectionInfoRequest:   metav1.Time{},
+				LastActiveGateConnectionInfoRequest: metav1.Time{},
+			},
+		},
+	}
+
+	timeProvider := timeutil.NewProvider()
+	tests := map[string]struct {
+		lastRequestTimeDeltaMinutes int
+		shallUpdate                 bool
+		featureFlagValue            int
+	}{
+		"Do not update after 10 minutes using default interval": {
+			lastRequestTimeDeltaMinutes: -10,
+			shallUpdate:                 false,
+			featureFlagValue:            -1,
+		},
+		"Do update after 20 minutes using default interval": {
+			lastRequestTimeDeltaMinutes: -20,
+			shallUpdate:                 true,
+			featureFlagValue:            -1,
+		},
+		"Do not update after 3 minutes using 5m interval": {
+			lastRequestTimeDeltaMinutes: -3,
+			shallUpdate:                 false,
+			featureFlagValue:            5,
+		},
+		"Do update after 7 minutes using 5m interval": {
+			lastRequestTimeDeltaMinutes: -7,
+			shallUpdate:                 true,
+			featureFlagValue:            5,
+		},
+		"Do not update after 17 minutes using 20m interval": {
+			lastRequestTimeDeltaMinutes: -17,
+			shallUpdate:                 false,
+			featureFlagValue:            20,
+		},
+		"Do update after 22 minutes using 20m interval": {
+			lastRequestTimeDeltaMinutes: -22,
+			shallUpdate:                 true,
+			featureFlagValue:            20,
+		},
+		"Do update immediately using 0m interval": {
+			lastRequestTimeDeltaMinutes: 0,
+			shallUpdate:                 true,
+			featureFlagValue:            0,
+		},
+		"Do update after 1 minute using 0m interval": {
+			lastRequestTimeDeltaMinutes: -1,
+			shallUpdate:                 true,
+			featureFlagValue:            0,
+		},
+		"Do update after 20 minutes using 0m interval": {
+			lastRequestTimeDeltaMinutes: -20,
+			shallUpdate:                 true,
+			featureFlagValue:            0,
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			dk.ObjectMeta.Annotations = map[string]string{
+				AnnotationFeatureApiRequestThreshold: fmt.Sprintf("%d", test.featureFlagValue),
+			}
+
+			lastRequestTime := timeProvider.Now().Add(time.Duration(test.lastRequestTimeDeltaMinutes) * time.Minute)
+			dk.Status.DynatraceApi.LastActiveGateConnectionInfoRequest.Time = lastRequestTime
+			dk.Status.DynatraceApi.LastOneAgentConnectionInfoRequest.Time = lastRequestTime
+			dk.Status.DynatraceApi.LastTokenScopeRequest.Time = lastRequestTime
+
+			assert.Equal(t, test.shallUpdate, dk.shallUpdateOneAgentConnectionInfo(timeProvider))
+			assert.Equal(t, test.shallUpdate, dk.shallUpdateActiveGateConnectionInfo(timeProvider))
+			assert.Equal(t, test.shallUpdate, dk.shallVerifyTokenScope(timeProvider))
+		})
+	}
 }

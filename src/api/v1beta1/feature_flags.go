@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/src/logger"
 )
@@ -56,6 +57,7 @@ const (
 	AnnotationFeatureDisableHostsRequests = AnnotationFeaturePrefix + "disable-hosts-requests"
 	AnnotationFeatureHostsRequests        = AnnotationFeaturePrefix + "hosts-requests"
 	AnnotationFeatureNoProxy              = AnnotationFeaturePrefix + "no-proxy"
+	AnnotationFeatureApiRequestThreshold  = AnnotationFeaturePrefix + "dynatrace-api-request-threshold"
 
 	// oneAgent
 
@@ -104,7 +106,8 @@ const (
 )
 
 const (
-	DefaultMaxFailedCsiMountAttempts = 10
+	DefaultMaxFailedCsiMountAttempts  = 10
+	DefaultMinRequestThresholdMinutes = 15
 )
 
 var (
@@ -131,19 +134,17 @@ func (dk *DynaKube) FeatureNoProxy() string {
 	return dk.getFeatureFlagRaw(AnnotationFeatureNoProxy)
 }
 
+func (dk *DynaKube) FeatureApiRequestThreshold() time.Duration {
+	interval := dk.getFeatureFlagInt(AnnotationFeatureApiRequestThreshold, DefaultMinRequestThresholdMinutes)
+	if interval < 0 {
+		interval = DefaultMinRequestThresholdMinutes
+	}
+	return time.Duration(interval) * time.Minute
+}
+
 // FeatureOneAgentMaxUnavailable is a feature flag to configure maxUnavailable on the OneAgent DaemonSets rolling upgrades.
 func (dk *DynaKube) FeatureOneAgentMaxUnavailable() int {
-	raw := dk.getFeatureFlagRaw(AnnotationFeatureOneAgentMaxUnavailable)
-	if raw == "" {
-		return 1
-	}
-
-	val, err := strconv.Atoi(raw)
-	if err != nil {
-		return 1
-	}
-
-	return val
+	return dk.getFeatureFlagInt(AnnotationFeatureOneAgentMaxUnavailable, 1)
 }
 
 // FeatureDisableWebhookReinvocationPolicy disables the reinvocation for the Operator's webhooks.
@@ -261,18 +262,7 @@ func (dk *DynaKube) FeatureLabelVersionDetection() bool {
 
 // FeatureAgentInitialConnectRetry is a feature flag to configure startup delay of standalone agents
 func (dk *DynaKube) FeatureAgentInitialConnectRetry() int {
-	raw := dk.getFeatureFlagRaw(AnnotationFeatureOneAgentInitialConnectRetry)
-	if raw == "" {
-		return -1
-	}
-
-	val, err := strconv.Atoi(raw)
-	if err != nil {
-		log.Error(err, "failed to parse agentInitialConnectRetry feature-flag")
-		return -1
-	}
-
-	return val
+	return dk.getFeatureFlagInt(AnnotationFeatureOneAgentInitialConnectRetry, -1)
 }
 
 func (dk *DynaKube) FeatureOneAgentPrivileged() bool {
@@ -281,6 +271,22 @@ func (dk *DynaKube) FeatureOneAgentPrivileged() bool {
 
 func (dk *DynaKube) FeatureOneAgentSecCompProfile() string {
 	return dk.getFeatureFlagRaw(AnnotationFeatureOneAgentSecCompProfile)
+}
+
+func (dk *DynaKube) FeatureMaxFailedCsiMountAttempts() int {
+	maxCsiMountAttemptsValue := dk.getFeatureFlagInt(AnnotationFeatureMaxFailedCsiMountAttempts, DefaultMaxFailedCsiMountAttempts)
+	if maxCsiMountAttemptsValue < 0 {
+		return DefaultMaxFailedCsiMountAttempts
+	}
+	return maxCsiMountAttemptsValue
+}
+
+func (dk *DynaKube) FeatureSyntheticNodeType() string {
+	node, ok := dk.Annotations[AnnotationFeatureSyntheticNodeType]
+	if !ok {
+		return SyntheticNodeS
+	}
+	return node
 }
 
 func (dk *DynaKube) getFeatureFlagRaw(annotation string) string {
@@ -295,28 +301,16 @@ func (dk *DynaKube) getFeatureFlagRaw(annotation string) string {
 	return ""
 }
 
-func (dk *DynaKube) FeatureMaxFailedCsiMountAttempts() int {
-	maxCsiMountAttemptsValue := dk.getFeatureFlagRaw(AnnotationFeatureMaxFailedCsiMountAttempts)
-
-	if maxCsiMountAttemptsValue == "" {
-		return DefaultMaxFailedCsiMountAttempts
+func (dk *DynaKube) getFeatureFlagInt(annotation string, defaultVal int) int {
+	raw := dk.getFeatureFlagRaw(annotation)
+	if raw == "" {
+		return defaultVal
 	}
-
-	maxCsiMountAttempts, err := strconv.Atoi(maxCsiMountAttemptsValue)
-
-	if err != nil || maxCsiMountAttempts < 0 {
-		return DefaultMaxFailedCsiMountAttempts
+	val, err := strconv.Atoi(raw)
+	if err != nil {
+		return defaultVal
 	}
-
-	return maxCsiMountAttempts
-}
-
-func (dk *DynaKube) FeatureSyntheticNodeType() string {
-	node, ok := dk.Annotations[AnnotationFeatureSyntheticNodeType]
-	if !ok {
-		return SyntheticNodeS
-	}
-	return node
+	return val
 }
 
 func (dk *DynaKube) FeatureInjectionFailurePolicy() string {

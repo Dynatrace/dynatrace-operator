@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	timeutil "github.com/Dynatrace/dynatrace-operator/src/time"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -74,7 +75,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, dynakube *dynatracev1beta1.D
 	}
 
 	now := metav1.Now()
-	if kubeobjects.IsOutdated(dynakube.Status.OneAgent.LastInstanceStatusUpdate, &now, updInterval) {
+	if timeutil.TimeoutReached(dynakube.Status.OneAgent.LastInstanceStatusUpdate, &now, updInterval) {
 		err = r.reconcileInstanceStatuses(ctx, dynakube)
 		if err != nil {
 			return err
