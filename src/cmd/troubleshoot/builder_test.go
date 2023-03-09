@@ -25,7 +25,7 @@ func TestTroubleshootCommandBuilder(t *testing.T) {
 
 		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace}
 
-		dynakubes, err := getAllDynakubesInNamespace(troubleshootCtx)
+		dynakubes, err := getAllDynakubesInNamespace(getNullLogger(t), troubleshootCtx)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(dynakubes))
 		assert.Equal(t, dynakube.Name, dynakubes[0].Name)
@@ -38,7 +38,7 @@ func TestTroubleshootCommandBuilder(t *testing.T) {
 			namespaceName: testNamespace,
 		}
 
-		dynakubes, err := getDynakubes(troubleshootCtx, dynakube.Name)
+		dynakubes, err := getDynakubes(getNullLogger(t), troubleshootCtx, dynakube.Name)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(dynakubes))
 		assert.Equal(t, testDynakube, dynakubes[0].Name)

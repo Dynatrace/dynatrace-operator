@@ -16,11 +16,8 @@ import (
 
 const (
 	testTenant     = "test-tenant"
-	testProtocol   = "http"
-	testHost       = "test-host"
-	testPort       = 1234
-	testApiUrl     = "https://test-api-url/api"
 	testApiUrlHost = "test-api-url"
+	testApiUrl     = "https://" + testApiUrlHost + "/e/" + testTenant + "/api"
 )
 
 func TestGetImageRegistryFromAPIURL(t *testing.T) {
@@ -41,18 +38,6 @@ func TestReconciler_GenerateData(t *testing.T) {
 	dynakube := &dynatracev1beta1.DynaKube{
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			APIURL: testApiUrl,
-		},
-		Status: dynatracev1beta1.DynaKubeStatus{
-			ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
-				CommunicationHosts: []dynatracev1beta1.CommunicationHostStatus{
-					{
-						Protocol: testProtocol,
-						Host:     testHost,
-						Port:     testPort,
-					},
-				},
-				TenantUUID: testTenant,
-			},
 		},
 	}
 	r := &Reconciler{

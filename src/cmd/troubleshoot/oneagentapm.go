@@ -7,9 +7,9 @@ import (
 )
 
 func checkOneAgentAPM(ctx *troubleshootContext) error {
-	log = newTroubleshootLogger("oneAgentAPM")
+	log := ctx.baseLog.WithName("oneAgentAPM")
 
-	logNewCheckf("checking if OneAgentAPM object exists ...")
+	logNewCheckf(log, "checking if OneAgentAPM object exists ...")
 	exists, err := kubeobjects.CheckIfOneAgentAPMExists(&ctx.kubeConfig)
 
 	if err != nil {
@@ -20,6 +20,6 @@ func checkOneAgentAPM(ctx *troubleshootContext) error {
 		return errors.New("OneAgentAPM object still exists - either delete OneAgentAPM objects or fully install the oneAgent operator")
 	}
 
-	logOkf("OneAgentAPM does not exist")
+	logOkf(log, "OneAgentAPM does not exist")
 	return nil
 }

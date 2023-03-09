@@ -7,9 +7,9 @@ import (
 )
 
 func checkNamespace(troubleshootCtx *troubleshootContext) error {
-	log = newTroubleshootLogger("namespace")
+	log := troubleshootCtx.baseLog.WithName("namespace")
 
-	logNewCheckf("checking if namespace '%s' exists ...", troubleshootCtx.namespaceName)
+	logNewCheckf(log, "checking if namespace '%s' exists ...", troubleshootCtx.namespaceName)
 
 	var namespace corev1.Namespace
 	err := troubleshootCtx.apiReader.Get(troubleshootCtx.context, client.ObjectKey{Name: troubleshootCtx.namespaceName}, &namespace)
@@ -18,6 +18,6 @@ func checkNamespace(troubleshootCtx *troubleshootContext) error {
 		return errors.Wrapf(err, "missing namespace '%s'", troubleshootCtx.namespaceName)
 	}
 
-	logOkf("using namespace '%s'", troubleshootCtx.namespaceName)
+	logOkf(log, "using namespace '%s'", troubleshootCtx.namespaceName)
 	return nil
 }

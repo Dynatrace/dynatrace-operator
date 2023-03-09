@@ -27,16 +27,15 @@ func TestVersionCollector(t *testing.T) {
 	assert.Equal(t, operatorVersionCollectorName, versionCollector.Name())
 
 	require.NoError(t, versionCollector.Do())
-	tarReader := tar.NewReader(&tarBuffer)
 
 	assert.Contains(t, logBuffer.String(), "Storing operator version")
 
+	tarReader := tar.NewReader(&tarBuffer)
 	hdr, err := tarReader.Next()
 	require.NoError(t, err)
 	assert.Equal(t, "operator-version.txt", hdr.Name)
 
 	versionFile := make([]byte, hdr.Size)
-
 	bytesRead, err := tarReader.Read(versionFile)
 	if !errors.Is(err, io.EOF) {
 		require.NoError(t, err)

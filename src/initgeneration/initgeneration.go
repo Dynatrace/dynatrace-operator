@@ -150,6 +150,11 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dynak
 		return nil, errors.WithStack(err)
 	}
 
+	tenantUUID, err := dynakube.TenantUUIDFromApiUrl()
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
 	return &standalone.SecretConfig{
 		ApiUrl:              dynakube.Spec.APIURL,
 		ApiToken:            getAPIToken(tokens),
@@ -159,7 +164,7 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dynak
 		NetworkZone:         dynakube.Spec.NetworkZone,
 		TrustedCAs:          string(trustedCAs),
 		SkipCertCheck:       dynakube.Spec.SkipCertCheck,
-		TenantUUID:          dynakube.Status.ConnectionInfo.TenantUUID,
+		TenantUUID:          tenantUUID,
 		HasHost:             dynakube.CloudNativeFullstackMode(),
 		MonitoringNodes:     hostMonitoringNodes,
 		TlsCert:             tlsCert,
@@ -188,11 +193,16 @@ func getAPIToken(tokens corev1.Secret) string {
 //
 // Checks all the dynakubes with host-monitoring against all the nodes (using the nodeSelector), creating the above mentioned mapping.
 func (g *InitGenerator) getHostMonitoringNodes(dk *dynatracev1beta1.DynaKube) (map[string]string, error) {
+	tenantUUID, err := dk.TenantUUIDFromApiUrl()
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
 	imNodes := map[string]string{}
 	if !dk.CloudNativeFullstackMode() {
 		return imNodes, nil
 	}
-	tenantUUID := dk.Status.ConnectionInfo.TenantUUID
+
 	if g.canWatchNodes {
 		var err error
 		imNodes, err = g.calculateImNodes(dk, tenantUUID)

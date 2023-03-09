@@ -23,12 +23,12 @@ go/vet:
 
 ## Runs golangci-lint
 go/golangci:
-	golangci-lint run --build-tags "containers_image_openpgp,osusergo,netgo,sqlite_omit_load_extension,containers_image_storage_stub,containers_image_docker_daemon_stub,e2e" --timeout 300s
+	golangci-lint run --build-tags "$(shell ./hack/build/create_go_build_tags.sh true)" --timeout 300s
 
 ## Runs all the linting tools
 go/lint: go/format go/vet go/golangci
 
 ## Runs all go unit tests and writes the coverprofile to cover.out
 go/test:
-	go test ./... -coverprofile cover.out -tags "containers_image_openpgp,osusergo,netgo,sqlite_omit_load_extension,containers_image_storage_stub,containers_image_docker_daemon_stub"
+	go test ./... -coverprofile cover.out -tags "$(shell ./hack/build/create_go_build_tags.sh false)"
 

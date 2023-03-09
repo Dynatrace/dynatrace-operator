@@ -13,9 +13,10 @@ RUN go mod download && go mod verify
 # build operator binary
 FROM go-mod AS operator-build
 ARG GO_LINKER_ARGS
+ARG GO_BUILD_TAGS
 COPY src ./src
 RUN CGO_ENABLED=1 CGO_CFLAGS="-O2 -Wno-return-local-addr" \
-    go build -tags "containers_image_openpgp,osusergo,netgo,sqlite_omit_load_extension,containers_image_storage_stub,containers_image_docker_daemon_stub" -trimpath -ldflags="${GO_LINKER_ARGS}" \
+    go build -tags "${GO_BUILD_TAGS}" -trimpath -ldflags="${GO_LINKER_ARGS}" \
     -o ./build/_output/bin/dynatrace-operator ./src/cmd/
 
 # download additional image dependencies

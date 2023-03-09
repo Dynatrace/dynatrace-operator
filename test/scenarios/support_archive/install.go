@@ -121,6 +121,7 @@ func collectRequiredFiles(t *testing.T, ctx context.Context, resources *resource
 	namespace := testDynakube.Namespace
 	requiredFiles := make([]string, 0)
 	requiredFiles = append(requiredFiles, support_archive.OperatorVersionFileName)
+	requiredFiles = append(requiredFiles, support_archive.TroublshootOutputFileName)
 	requiredFiles = append(requiredFiles, support_archive.SupportArchiveOutputFileName)
 	requiredFiles = append(requiredFiles, getRequiredPodFiles(t, ctx, resources, namespace)...)
 	requiredFiles = append(requiredFiles, getRequiredReplicaSetFiles(t, ctx, resources, namespace)...)
