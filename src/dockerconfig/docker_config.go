@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	corev1 "k8s.io/api/core/v1"
@@ -95,10 +94,10 @@ func (config *DockerConfig) getCustomCAs(ctx context.Context) ([]byte, error) {
 		log.Info("failed to load trusted CAs")
 		return nil, errors.WithStack(err)
 	}
-	if certs.Data[dtclient.CustomCertificatesConfigMapKey] == "" {
+	if certs.Data[dynatracev1beta1.TrustedCAKey] == "" {
 		return nil, errors.New("failed to extract certificate configmap field: missing field certs")
 	}
-	return []byte(certs.Data[dtclient.CustomCertificatesConfigMapKey]), nil
+	return []byte(certs.Data[dynatracev1beta1.TrustedCAKey]), nil
 }
 
 func (config *DockerConfig) getRegistryCredentials(ctx context.Context) ([]byte, error) {

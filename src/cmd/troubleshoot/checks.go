@@ -5,6 +5,7 @@ import (
 
 	tserrors "github.com/Dynatrace/dynatrace-operator/src/cmd/troubleshoot/errors"
 	"github.com/Dynatrace/dynatrace-operator/src/functional"
+	"github.com/go-logr/logr"
 )
 
 type Result int
@@ -51,18 +52,18 @@ func (checkResults ChecksResults) hasErrors() bool {
 	return false
 }
 
-func runChecks(results ChecksResults, troubleshootCtx *troubleshootContext, checks []*Check) error {
+func runChecks(log logr.Logger, results ChecksResults, troubleshootCtx *troubleshootContext, checks []*Check) error {
 	errs := tserrors.NewAggregatedError()
 
 	for _, check := range checks {
-		if shouldSkip(results, check) {
+		if shouldSkip(log, results, check) {
 			results.set(check, SKIPPED)
 			continue
 		}
 
 		err := check.Do(troubleshootCtx)
 		if err != nil {
-			logErrorf(err.Error())
+			logErrorf(log, err.Error())
 			errs.Add(err)
 			results.set(check, FAILED)
 		} else {
@@ -77,7 +78,7 @@ func runChecks(results ChecksResults, troubleshootCtx *troubleshootContext, chec
 	return errs
 }
 
-func shouldSkip(results ChecksResults, check *Check) bool {
+func shouldSkip(log logr.Logger, results ChecksResults, check *Check) bool {
 	failedOrSkippedPrerequisites := results.failedOrSkippedPrerequisites(check)
 
 	if len(failedOrSkippedPrerequisites) == 0 {
@@ -88,7 +89,7 @@ func shouldSkip(results ChecksResults, check *Check) bool {
 		return check.Name
 	}
 	prerequisitesNames := strings.Join(functional.Map(failedOrSkippedPrerequisites, getCheckName), ",")
-	logWarningf("Skipped '%s' check because prerequisites aren't met: [%s]", check.Name, prerequisitesNames)
+	logWarningf(log, "Skipped '%s' check because prerequisites aren't met: [%s]", check.Name, prerequisitesNames)
 
 	return true
 }

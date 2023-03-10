@@ -30,7 +30,7 @@ func Test_GetActiveGateConnectionInfo(t *testing.T) {
 		},
 	}
 	t.Run("no network zone", func(t *testing.T) {
-		dynatraceServer, dynatraceClient := createTestDynatraceClient(t, connectionInfoServerHandler(activeGateConnectionInfoEndpoint, activegateJsonResponse), "")
+		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(activeGateConnectionInfoEndpoint, activegateJsonResponse), "")
 		defer dynatraceServer.Close()
 
 		connectionInfo, err := dynatraceClient.GetActiveGateConnectionInfo()
@@ -40,7 +40,7 @@ func Test_GetActiveGateConnectionInfo(t *testing.T) {
 		assert.Equal(t, expectedActivegateConnectionInfo, connectionInfo)
 	})
 	t.Run("with network zone", func(t *testing.T) {
-		dynatraceServer, dynatraceClient := createTestDynatraceClient(t, connectionInfoServerHandler(activeGateConnectionInfoEndpoint, activegateJsonResponse), "nz")
+		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(activeGateConnectionInfoEndpoint, activegateJsonResponse), "nz")
 		defer dynatraceServer.Close()
 
 		connectionInfo, err := dynatraceClient.GetActiveGateConnectionInfo()
@@ -50,7 +50,7 @@ func Test_GetActiveGateConnectionInfo(t *testing.T) {
 		assert.Equal(t, expectedActivegateConnectionInfo, connectionInfo)
 	})
 	t.Run("with non-existent network zone", func(t *testing.T) {
-		dynatraceServer, dynatraceClient := createTestDynatraceClient(t, connectionInfoServerHandler(activeGateConnectionInfoEndpoint, activegateJsonResponse), "")
+		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(activeGateConnectionInfoEndpoint, activegateJsonResponse), "")
 		defer dynatraceServer.Close()
 
 		connectionInfo, err := dynatraceClient.GetActiveGateConnectionInfo()
@@ -60,7 +60,7 @@ func Test_GetActiveGateConnectionInfo(t *testing.T) {
 		assert.Equal(t, expectedActivegateConnectionInfo, connectionInfo)
 	})
 	t.Run("handle malformed json", func(t *testing.T) {
-		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceClient(t, tenantMalformedJson(activeGateConnectionInfoEndpoint), "")
+		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceServer(t, tenantMalformedJson(activeGateConnectionInfoEndpoint), "")
 		defer faultyDynatraceServer.Close()
 
 		connectionInfo, err := faultyDynatraceClient.GetActiveGateConnectionInfo()
@@ -70,7 +70,7 @@ func Test_GetActiveGateConnectionInfo(t *testing.T) {
 		assert.Equal(t, "invalid character 'h' in literal true (expecting 'r')", err.Error())
 	})
 	t.Run("handle internal server error", func(t *testing.T) {
-		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceClient(t, tenantInternalServerError(activeGateConnectionInfoEndpoint), "")
+		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceServer(t, tenantInternalServerError(activeGateConnectionInfoEndpoint), "")
 		defer faultyDynatraceServer.Close()
 
 		connectionInfo, err := faultyDynatraceClient.GetActiveGateConnectionInfo()

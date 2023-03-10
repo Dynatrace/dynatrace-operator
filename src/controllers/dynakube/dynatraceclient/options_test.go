@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -16,6 +15,16 @@ const (
 	testName        = "test-name"
 	testNetworkZone = "zone-1"
 )
+
+func createTestDynakubeWithProxy(proxy dynatracev1beta1.DynaKubeProxy) *dynatracev1beta1.DynaKube {
+	dk := &dynatracev1beta1.DynaKube{
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			Proxy: &proxy,
+		},
+	}
+	dk.Namespace = testNamespace
+	return dk
+}
 
 func TestOptions(t *testing.T) {
 	t.Run(`Test append network zone`, func(t *testing.T) {
@@ -55,11 +64,11 @@ func TestOptions(t *testing.T) {
 		assert.NotNil(t, opts)
 		assert.Empty(t, opts.Opts)
 
-		err := opts.appendProxySettings(nil, nil, "")
+		err := opts.appendProxySettings(nil, nil)
 		assert.NoError(t, err)
 		assert.Empty(t, opts.Opts)
 
-		err = opts.appendProxySettings(nil, &dynatracev1beta1.DynaKubeProxy{Value: testValue}, "")
+		err = opts.appendProxySettings(nil, createTestDynakubeWithProxy(dynatracev1beta1.DynaKubeProxy{Value: testValue}))
 
 		assert.NoError(t, err)
 		assert.NotEmpty(t, opts.Opts)
@@ -71,11 +80,11 @@ func TestOptions(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Data: map[string][]byte{
-					dtclient.CustomProxySecretKey: []byte(testValue),
+					dynatracev1beta1.ProxyKey: []byte(testValue),
 				},
 			})
 		opts = newOptions(context.Background())
-		err = opts.appendProxySettings(fakeClient, &dynatracev1beta1.DynaKubeProxy{ValueFrom: testName}, testNamespace)
+		err = opts.appendProxySettings(fakeClient, createTestDynakubeWithProxy(dynatracev1beta1.DynaKubeProxy{ValueFrom: testName}))
 
 		assert.NoError(t, err)
 		assert.NotEmpty(t, opts.Opts)
@@ -83,7 +92,7 @@ func TestOptions(t *testing.T) {
 	t.Run(`AppendProxySettings handles missing or malformed secret`, func(t *testing.T) {
 		fakeClient := fake.NewClient()
 		opts := newOptions(context.Background())
-		err := opts.appendProxySettings(fakeClient, &dynatracev1beta1.DynaKubeProxy{ValueFrom: testName}, testNamespace)
+		err := opts.appendProxySettings(fakeClient, createTestDynakubeWithProxy(dynatracev1beta1.DynaKubeProxy{ValueFrom: testName}))
 
 		assert.Error(t, err)
 		assert.Empty(t, opts.Opts)
@@ -97,7 +106,7 @@ func TestOptions(t *testing.T) {
 				Data: map[string][]byte{},
 			})
 		opts = newOptions(context.Background())
-		err = opts.appendProxySettings(fakeClient, &dynatracev1beta1.DynaKubeProxy{ValueFrom: testName}, testNamespace)
+		err = opts.appendProxySettings(fakeClient, createTestDynakubeWithProxy(dynatracev1beta1.DynaKubeProxy{ValueFrom: testName}))
 
 		assert.Error(t, err)
 		assert.Empty(t, opts.Opts)
@@ -120,7 +129,7 @@ func TestOptions(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Data: map[string]string{
-					dtclient.CustomCertificatesConfigMapKey: testValue,
+					dynatracev1beta1.TrustedCAKey: testValue,
 				}})
 		err = opts.appendTrustedCerts(fakeClient, testName, testNamespace)
 

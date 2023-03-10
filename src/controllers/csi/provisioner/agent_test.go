@@ -128,11 +128,6 @@ func TestUpdateAgent(t *testing.T) {
 					},
 				},
 			},
-			Status: dynatracev1beta1.DynaKubeStatus{
-				ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
-					TenantUUID: tenantUUID,
-				},
-			},
 		}
 		updater := createTestAgentUrlUpdater(t, &dk)
 		processModuleCache := createTestProcessModuleConfigCache("1")
@@ -260,7 +255,7 @@ func TestUpdateAgent(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Data: map[string]string{
-					dtclient.CustomCertificatesConfigMapKey: customCertContent,
+					dynatracev1beta1.TrustedCAKey: customCertContent,
 				},
 			},
 		}

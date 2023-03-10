@@ -4,20 +4,11 @@ package pod
 
 import (
 	"bytes"
-	"net/http"
+	"context"
 
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
 	"github.com/pkg/errors"
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/remotecommand"
-)
-
-const (
-	resourcePods = "pods"
-	resourceExec = "exec"
+	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 )
 
 type ExecutionResult struct {
@@ -25,52 +16,21 @@ type ExecutionResult struct {
 	StdErr *bytes.Buffer
 }
 
-type ExecutionQuery struct {
-	pod       v1.Pod
-	command   shell.Command
-	container string
-	tty       bool
-}
-
-func NewExecutionQuery(pod v1.Pod, container string, command ...string) ExecutionQuery {
-	query := ExecutionQuery{
-		pod:       pod,
-		container: container,
-		command:   make([]string, 0),
-		tty:       false,
-	}
-	query.command = append(query.command, command...)
-	return query
-}
-
-func (query ExecutionQuery) WithTTY(tty bool) ExecutionQuery {
-	query.tty = tty
-	return query
-}
-
-func (query ExecutionQuery) Execute(restConfig *rest.Config) (*ExecutionResult, error) {
-	client, err := kubernetes.NewForConfig(restConfig)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	req := query.buildRequest(client)
-	executor, err := remotecommand.NewSPDYExecutor(restConfig, http.MethodPost, req.URL())
-
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
+func Exec(ctx context.Context, resource *resources.Resources, pod corev1.Pod, container string, command ...string) (*ExecutionResult, error) {
 	result := &ExecutionResult{
 		StdOut: &bytes.Buffer{},
 		StdErr: &bytes.Buffer{},
 	}
 
-	err = executor.Stream(remotecommand.StreamOptions{
-		Stdout: result.StdOut,
-		Stderr: result.StdErr,
-		Tty:    query.tty,
-	})
+	err := resource.ExecInPod(
+		ctx,
+		pod.Namespace,
+		pod.Name,
+		container,
+		command,
+		result.StdOut,
+		result.StdErr,
+	)
 
 	if err != nil {
 		return result, errors.WithMessagef(errors.WithStack(err),
@@ -78,21 +38,4 @@ func (query ExecutionQuery) Execute(restConfig *rest.Config) (*ExecutionResult, 
 	}
 
 	return result, nil
-}
-
-func (query ExecutionQuery) buildExecutionOptions() *v1.PodExecOptions {
-	return &v1.PodExecOptions{
-		Command:   query.command,
-		Container: query.container,
-		Stdin:     false,
-		Stdout:    true,
-		Stderr:    true,
-		TTY:       query.tty,
-	}
-}
-
-func (query ExecutionQuery) buildRequest(client kubernetes.Interface) *rest.Request {
-	return client.CoreV1().RESTClient().Post().Resource(resourcePods).
-		Namespace(query.pod.Namespace).Name(query.pod.Name).SubResource(resourceExec).
-		VersionedParams(query.buildExecutionOptions(), scheme.ParameterCodec)
 }

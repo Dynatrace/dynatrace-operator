@@ -76,34 +76,12 @@ func TestSetDynakubeStatus(t *testing.T) {
 			},
 		}, nil)
 
-		dtc.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(testVersion, nil)
 		dtc.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypePaaS).Return(testVersionPaas, nil)
 
 		err := SetDynakubeStatus(instance, options)
 
 		assert.NoError(t, err)
 		assert.Equal(t, testUUID, instance.Status.KubeSystemUUID)
-		assert.NotNil(t, instance.Status.CommunicationHostForClient)
-		assert.Equal(t, testHost, instance.Status.CommunicationHostForClient.Host)
-		assert.Equal(t, testPort, instance.Status.CommunicationHostForClient.Port)
-		assert.Equal(t, testProtocol, instance.Status.CommunicationHostForClient.Protocol)
-		assert.NotNil(t, instance.Status.ConnectionInfo)
-		assert.Equal(t, testUUID, instance.Status.ConnectionInfo.TenantUUID)
-		assert.NotNil(t, instance.Status.ConnectionInfo.CommunicationHosts)
-		assert.Equal(t, []dynatracev1beta1.CommunicationHostStatus{
-			{
-				Protocol: testProtocol,
-				Host:     testHost,
-				Port:     testPort,
-			},
-			{
-				Protocol: testAnotherProtocol,
-				Host:     testAnotherHost,
-				Port:     testAnotherPort,
-			},
-		}, instance.Status.ConnectionInfo.CommunicationHosts)
-		assert.NotNil(t, instance.Status.LatestAgentVersionUnixDefault)
-		assert.Equal(t, testVersion, instance.Status.LatestAgentVersionUnixDefault)
 		assert.Equal(t, testVersionPaas, instance.Status.LatestAgentVersionUnixPaas)
 	})
 	t.Run(`error querying kube system uid`, func(t *testing.T) {
@@ -117,93 +95,6 @@ func TestSetDynakubeStatus(t *testing.T) {
 
 		err := SetDynakubeStatus(instance, options)
 		assert.EqualError(t, err, "namespaces \"kube-system\" not found")
-	})
-	t.Run(`error querying communication host for client`, func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{}
-		dtc := &dtclient.MockDynatraceClient{}
-		clt := fake.NewClient(&v1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: kubesystem.Namespace,
-				UID:  testUUID,
-			},
-		})
-		options := Options{
-			DtClient:  dtc,
-			ApiReader: clt,
-		}
-
-		dtc.On("GetCommunicationHostForClient").Return(dtclient.CommunicationHost{}, fmt.Errorf(testError))
-
-		err := SetDynakubeStatus(instance, options)
-		assert.EqualError(t, err, testError)
-	})
-	t.Run(`error querying connection info`, func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{}
-		dtc := &dtclient.MockDynatraceClient{}
-		clt := fake.NewClient(&v1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: kubesystem.Namespace,
-				UID:  testUUID,
-			},
-		})
-		options := Options{
-			DtClient:  dtc,
-			ApiReader: clt,
-		}
-
-		dtc.On("GetCommunicationHostForClient").Return(dtclient.CommunicationHost{
-			Protocol: testProtocol,
-			Host:     testHost,
-			Port:     testPort,
-		}, nil)
-
-		dtc.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{}, fmt.Errorf(testError))
-
-		err := SetDynakubeStatus(instance, options)
-		assert.EqualError(t, err, testError)
-	})
-	t.Run(`error querying latest agent version for unix / default`, func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{}
-		dtc := &dtclient.MockDynatraceClient{}
-		clt := fake.NewClient(&v1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: kubesystem.Namespace,
-				UID:  testUUID,
-			},
-		})
-		options := Options{
-			DtClient:  dtc,
-			ApiReader: clt,
-		}
-
-		dtc.On("GetCommunicationHostForClient").Return(dtclient.CommunicationHost{
-			Protocol: testProtocol,
-			Host:     testHost,
-			Port:     testPort,
-		}, nil)
-
-		dtc.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{
-			CommunicationHosts: []dtclient.CommunicationHost{
-				{
-					Protocol: testProtocol,
-					Host:     testHost,
-					Port:     testPort,
-				},
-				{
-					Protocol: testAnotherProtocol,
-					Host:     testAnotherHost,
-					Port:     testAnotherPort,
-				},
-			},
-			ConnectionInfo: dtclient.ConnectionInfo{
-				TenantUUID: testUUID,
-			},
-		}, nil)
-
-		dtc.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return("", fmt.Errorf(testError))
-
-		err := SetDynakubeStatus(instance, options)
-		assert.EqualError(t, err, testError)
 	})
 	t.Run(`error querying latest agent version for unix / paas`, func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{}

@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -175,7 +174,7 @@ func testPullSecret(t *testing.T, withCaCerts, customPullSecret, injectedPullSec
 				Name: secureCertName,
 			},
 			Data: map[string]string{
-				dtclient.CustomCertificatesConfigMapKey: testValue,
+				dynatracev1beta1.TrustedCAKey: testValue,
 			},
 		}
 		assert.NoError(t, apiReader.Create(context.Background(), caCertsConfigMap))

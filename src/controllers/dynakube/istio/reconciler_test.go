@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -94,7 +95,7 @@ func TestController_ReconcileIstio(t *testing.T) {
 		},
 	}
 
-	updated, err := reconciler.Reconcile(instance)
+	updated, err := reconciler.Reconcile(instance, []dtclient.CommunicationHost{})
 
 	assert.NoError(t, err)
 	assert.False(t, updated)

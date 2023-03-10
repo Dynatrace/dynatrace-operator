@@ -7,6 +7,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
+	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	corev1 "k8s.io/api/core/v1"
@@ -22,12 +23,12 @@ type troubleshootContext struct {
 	dynakube                 v1beta1.DynaKube
 	dynatraceApiSecretTokens token.Tokens
 	pullSecret               corev1.Secret
-	proxySecret              *corev1.Secret
 	kubeConfig               rest.Config
 	fs                       afero.Afero
+	baseLog                  logr.Logger
 }
 
-func (troubleshootCtx *troubleshootContext) SetTransportProxy(proxy string) error {
+func (troubleshootCtx *troubleshootContext) SetTransportProxy(log logr.Logger, proxy string) error {
 	if proxy != "" {
 		proxyUrl, err := url.Parse(proxy)
 		if err != nil {
@@ -39,7 +40,7 @@ func (troubleshootCtx *troubleshootContext) SetTransportProxy(proxy string) erro
 		}
 
 		troubleshootCtx.httpClient.Transport.(*http.Transport).Proxy = http.ProxyURL(proxyUrl)
-		logInfof("using '%s' proxy to connect to the registry", proxyUrl.Host)
+		logInfof(log, "using '%s' proxy to connect to the registry", proxyUrl.Host)
 	}
 
 	return nil

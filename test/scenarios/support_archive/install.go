@@ -105,12 +105,13 @@ func executeSupportArchiveCommand(ctx context.Context, t *testing.T, environment
 
 	require.Len(t, operatorPods, 1)
 
-	executionQuery := pod.NewExecutionQuery(operatorPods[0],
-		"dynatrace-operator",
+	executionResult, err := pod.Exec(ctx, environmentConfig.Client().Resources(),
+		operatorPods[0],
+		operator.DeploymentName,
 		"/usr/local/bin/dynatrace-operator",
 		"support-archive",
-		cmdLineArguments)
-	executionResult, err := executionQuery.Execute(environmentConfig.Client().RESTConfig())
+		cmdLineArguments,
+	)
 	require.NoError(t, err)
 
 	return executionResult
@@ -120,6 +121,8 @@ func collectRequiredFiles(t *testing.T, ctx context.Context, resources *resource
 	namespace := testDynakube.Namespace
 	requiredFiles := make([]string, 0)
 	requiredFiles = append(requiredFiles, support_archive.OperatorVersionFileName)
+	requiredFiles = append(requiredFiles, support_archive.TroublshootOutputFileName)
+	requiredFiles = append(requiredFiles, support_archive.SupportArchiveOutputFileName)
 	requiredFiles = append(requiredFiles, getRequiredPodFiles(t, ctx, resources, namespace)...)
 	requiredFiles = append(requiredFiles, getRequiredReplicaSetFiles(t, ctx, resources, namespace)...)
 	requiredFiles = append(requiredFiles, getRequiredServiceFiles(t, ctx, resources, namespace)...)
