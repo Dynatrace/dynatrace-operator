@@ -1,6 +1,8 @@
 package pod_mutator
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
@@ -125,5 +127,41 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 
 		require.NotNil(t, *initContainer.SecurityContext.RunAsGroup)
 		assert.Equal(t, *initContainer.SecurityContext.RunAsGroup, rootUserGroup)
+	})
+	t.Run("should handle failure policy feature flag correctly", func(t *testing.T) {
+		dynakube := getTestDynakube()
+		dynakube.Annotations = map[string]string{v1beta1.AnnotationInjectionFailurePolicy: "fail"}
+		pod := getTestPod()
+		webhookImage := "test-image"
+		clusterID := "id"
+
+		initContainer := createInstallInitContainerBase(webhookImage, clusterID, pod, *dynakube)
+
+		assert.True(t, kubeobjects.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "fail")
+		assert.False(t, kubeobjects.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "silent")
+	})
+	t.Run("should set default failure policy to silent", func(t *testing.T) {
+		dynakube := getTestDynakube()
+		dynakube.Annotations = map[string]string{v1beta1.AnnotationInjectionFailurePolicy: "test"}
+		pod := getTestPod()
+		webhookImage := "test-image"
+		clusterID := "id"
+
+		initContainer := createInstallInitContainerBase(webhookImage, clusterID, pod, *dynakube)
+
+		assert.False(t, kubeobjects.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "fail")
+		assert.True(t, kubeobjects.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "silent")
+	})
+	t.Run("should take silent as failure policy if set explicitly", func(t *testing.T) {
+		dynakube := getTestDynakube()
+		dynakube.Annotations = map[string]string{v1beta1.AnnotationInjectionFailurePolicy: "silent"}
+		pod := getTestPod()
+		webhookImage := "test-image"
+		clusterID := "id"
+
+		initContainer := createInstallInitContainerBase(webhookImage, clusterID, pod, *dynakube)
+
+		assert.False(t, kubeobjects.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "fail")
+		assert.True(t, kubeobjects.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "silent")
 	})
 }
