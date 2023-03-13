@@ -1,6 +1,7 @@
 package pod_mutator
 
 import (
+	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -156,6 +157,34 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 		dynakube := getTestDynakube()
 		dynakube.Annotations = map[string]string{v1beta1.AnnotationInjectionFailurePolicy: "silent"}
 		pod := getTestPod()
+		webhookImage := "test-image"
+		clusterID := "id"
+
+		initContainer := createInstallInitContainerBase(webhookImage, clusterID, pod, *dynakube)
+
+		assert.False(t, kubeobjects.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "fail")
+		assert.True(t, kubeobjects.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "silent")
+	})
+	t.Run("should take pod annotation when set", func(t *testing.T) {
+		dynakube := getTestDynakube()
+		dynakube.Annotations = map[string]string{v1beta1.AnnotationInjectionFailurePolicy: "silent"}
+		pod := getTestPod()
+		pod.Annotations = map[string]string{}
+		pod.Annotations[dtwebhook.AnnotationFailurePolicy] = "fail"
+		webhookImage := "test-image"
+		clusterID := "id"
+
+		initContainer := createInstallInitContainerBase(webhookImage, clusterID, pod, *dynakube)
+
+		assert.True(t, kubeobjects.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "fail")
+		assert.False(t, kubeobjects.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "silent")
+	})
+	t.Run("should fall back to feature flag if invalid value is set to pod annotation", func(t *testing.T) {
+		dynakube := getTestDynakube()
+		dynakube.Annotations = map[string]string{v1beta1.AnnotationInjectionFailurePolicy: "fail"}
+		pod := getTestPod()
+		pod.Annotations = map[string]string{}
+		pod.Annotations[dtwebhook.AnnotationFailurePolicy] = "silent"
 		webhookImage := "test-image"
 		clusterID := "id"
 
