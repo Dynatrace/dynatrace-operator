@@ -143,7 +143,7 @@ func getRequiredPodFiles(t *testing.T, ctx context.Context, resources *resources
 
 	for _, pod := range operatorPods {
 		requiredFiles = append(requiredFiles,
-			fmt.Sprintf("%s/%s/Pod/%s%s", support_archive.ManifestsDirectoryName, pod.Namespace, pod.Name, support_archive.ManifestsFileExtension))
+			fmt.Sprintf("%s/%s/pod/%s%s", support_archive.ManifestsDirectoryName, pod.Namespace, pod.Name, support_archive.ManifestsFileExtension))
 		for _, container := range pod.Spec.Containers {
 			requiredFiles = append(requiredFiles,
 				fmt.Sprintf("%s/%s/%s.log", support_archive.LogsDirectoryName, pod.Name, container.Name))
@@ -157,7 +157,7 @@ func getRequiredReplicaSetFiles(t *testing.T, ctx context.Context, resources *re
 	requiredFiles := make([]string, 0)
 	for _, replicaSet := range replicaSets.Items {
 		requiredFiles = append(requiredFiles,
-			fmt.Sprintf("%s/%s/ReplicaSet/%s%s", support_archive.ManifestsDirectoryName, replicaSet.Namespace, replicaSet.Name, support_archive.ManifestsFileExtension))
+			fmt.Sprintf("%s/%s/replicaset/%s%s", support_archive.ManifestsDirectoryName, replicaSet.Namespace, replicaSet.Name, support_archive.ManifestsFileExtension))
 	}
 	return requiredFiles
 }
@@ -167,7 +167,7 @@ func getRequiredServiceFiles(t *testing.T, ctx context.Context, resources *resou
 	requiredFiles := make([]string, 0)
 	for _, service := range services.Items {
 		requiredFiles = append(requiredFiles,
-			fmt.Sprintf("%s/%s/Service/%s%s", support_archive.ManifestsDirectoryName, service.Namespace, service.Name, support_archive.ManifestsFileExtension))
+			fmt.Sprintf("%s/%s/service/%s%s", support_archive.ManifestsDirectoryName, service.Namespace, service.Name, support_archive.ManifestsFileExtension))
 	}
 	return requiredFiles
 }
@@ -178,21 +178,21 @@ func getRequiredWorkloadFiles(namespace string) []string {
 		fmt.Sprintf("%s/%s/%s/%s%s",
 			support_archive.ManifestsDirectoryName,
 			namespace,
-			"Deployment",
+			"deployment",
 			operator.DeploymentName,
 			support_archive.ManifestsFileExtension))
 	requiredFiles = append(requiredFiles,
 		fmt.Sprintf("%s/%s/%s/%s%s",
 			support_archive.ManifestsDirectoryName,
 			namespace,
-			"Deployment",
+			"deployment",
 			e2ewebhook.DeploymentName,
 			support_archive.ManifestsFileExtension))
 	requiredFiles = append(requiredFiles,
 		fmt.Sprintf("%s/%s/%s/%s%s",
 			support_archive.ManifestsDirectoryName,
 			namespace,
-			"DaemonSet",
+			"daemonset",
 			csi.DaemonSetName,
 			support_archive.ManifestsFileExtension))
 	return requiredFiles
@@ -201,13 +201,13 @@ func getRequiredWorkloadFiles(namespace string) []string {
 func getRequiredNamespaceFiles(namespace string) []string {
 	requiredFiles := make([]string, 0)
 	requiredFiles = append(requiredFiles,
-		fmt.Sprintf("%s/%s/Namespace-%s%s",
+		fmt.Sprintf("%s/%s/namespace-%s%s",
 			support_archive.ManifestsDirectoryName,
 			namespace,
 			namespace,
 			support_archive.ManifestsFileExtension))
 	requiredFiles = append(requiredFiles,
-		fmt.Sprintf("%s/%s/Namespace-%s%s",
+		fmt.Sprintf("%s/%s/namespace-%s%s",
 			support_archive.ManifestsDirectoryName,
 			support_archive.InjectedNamespacesManifestsDirectoryName,
 			testAppNameInjected,
@@ -221,7 +221,7 @@ func getRequiredDynaKubeFiles(testDynakube dynatracev1beta1.DynaKube) []string {
 		fmt.Sprintf("%s/%s/%s/%s%s",
 			support_archive.ManifestsDirectoryName,
 			testDynakube.Namespace,
-			"DynaKube",
+			"dynakube",
 			testDynakube.Name,
 			support_archive.ManifestsFileExtension))
 
