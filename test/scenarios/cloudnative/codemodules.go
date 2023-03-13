@@ -179,7 +179,7 @@ func diskUsageDoesNotIncrease(namespace string, storageMap map[string]int) featu
 		err := csi.ForEachPod(ctx, resource, namespace, func(podItem corev1.Pod) {
 			diskUsage := getDiskUsage(ctx, t, environmentConfig.Client().Resources(), podItem, provisionerContainerName, dataPath)
 			// Dividing it by 1000 so the sizes do not need to be exactly the same down to the byte
-			assert.Equal(t, storageMap[podItem.Name]/1000, diskUsage/1000)
+			assert.InDelta(t, storageMap[podItem.Name], diskUsage, 100)
 		})
 		require.NoError(t, err)
 
