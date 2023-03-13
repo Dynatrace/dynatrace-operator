@@ -12,19 +12,13 @@ import (
 )
 
 func createInstallInitContainerBase(webhookImage, clusterID string, pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) *corev1.Container {
-	injectionFailurePolicy := kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationFailurePolicy, "silent")
-
-	if dynakube.FeatureInjectionFailurePolicy() == "fail" {
-		injectionFailurePolicy = dynakube.FeatureInjectionFailurePolicy()
-	}
-
 	return &corev1.Container{
 		Name:            dtwebhook.InstallContainerName,
 		Image:           webhookImage,
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		Args:            []string{"init"},
 		Env: []corev1.EnvVar{
-			{Name: config.InjectionFailurePolicyEnv, Value: injectionFailurePolicy},
+			{Name: config.InjectionFailurePolicyEnv, Value: kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationFailurePolicy, dynakube.FeatureInjectionFailurePolicy())},
 			{Name: config.K8sPodNameEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("metadata.name")},
 			{Name: config.K8sPodUIDEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("metadata.uid")},
 			{Name: config.K8sBasePodNameEnv, Value: getBasePodName(pod)},
