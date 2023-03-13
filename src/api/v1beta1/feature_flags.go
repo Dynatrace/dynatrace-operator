@@ -70,6 +70,7 @@ const (
 	AnnotationFeatureOneAgentInitialConnectRetry    = AnnotationFeaturePrefix + "oneagent-initial-connect-retry-ms"
 	AnnotationFeatureRunOneAgentContainerPrivileged = AnnotationFeaturePrefix + "oneagent-privileged"
 	AnnotationFeatureOneAgentSecCompProfile         = AnnotationFeaturePrefix + "oneagent-seccomp-profile"
+	AnnotationInjectionFailurePolicy                = AnnotationFeaturePrefix + "injection-failure-policy"
 
 	// injection (webhook)
 
@@ -89,8 +90,10 @@ const (
 	// CSI
 	AnnotationFeatureMaxFailedCsiMountAttempts = AnnotationFeaturePrefix + "max-csi-mount-attempts"
 
-	falsePhrase = "false"
-	truePhrase  = "true"
+	falsePhrase  = "false"
+	truePhrase   = "true"
+	silentPhrase = "silent"
+	failPhrase   = "fail"
 
 	// synthetic node type
 	AnnotationFeatureSyntheticNodeType = AnnotationFeaturePrefix + "synthetic-node-type"
@@ -314,4 +317,11 @@ func (dk *DynaKube) FeatureSyntheticNodeType() string {
 		return SyntheticNodeS
 	}
 	return node
+}
+
+func (dk *DynaKube) FeatureInjectionFailurePolicy() string {
+	if dk.getFeatureFlagRaw(AnnotationInjectionFailurePolicy) == failPhrase {
+		return failPhrase
+	}
+	return silentPhrase
 }
