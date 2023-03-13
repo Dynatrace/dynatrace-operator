@@ -5,35 +5,31 @@ package applicationmonitoring
 import (
 	"context"
 	"encoding/json"
-	"path"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
-	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/deployment"
-	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/manifests"
-	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/pod"
-	"github.com/Dynatrace/dynatrace-operator/test/operator"
-	"github.com/Dynatrace/dynatrace-operator/test/project"
-	"github.com/Dynatrace/dynatrace-operator/test/sampleapps"
-	"github.com/Dynatrace/dynatrace-operator/test/secrets"
-	"github.com/Dynatrace/dynatrace-operator/test/shell"
-	"github.com/Dynatrace/dynatrace-operator/test/webhook"
-	"github.com/spf13/afero"
+	"github.com/Dynatrace/dynatrace-operator/src/webhook"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
 const (
-	sampleApps   = "application-monitoring/sample-apps.yaml"
 	metadataFile = "/var/lib/dynatrace/enrichment/dt_metadata.json"
 )
 
@@ -43,65 +39,72 @@ type metadata struct {
 }
 
 func dataIngest(t *testing.T) features.Feature {
-	dataIngestFeature := features.New("data-ingest")
-	tenantSecret, err := secrets.DefaultSingleTenant(afero.NewOsFs())
-	dataIngestDynakube := dynakube.NewBuilder().
+	builder := features.New("data-ingest")
+	secretConfig := tenant.GetSingleTenantSecret(t)
+	testDynakube := dynakube.NewBuilder().
 		WithDefaultObjectMeta().
-		ApiUrl(tenantSecret.ApiUrl).
-		ApplicationMonitoring(&v1beta1.ApplicationMonitoringSpec{
+		ApiUrl(secretConfig.ApiUrl).
+		ApplicationMonitoring(&dynatracev1beta1.ApplicationMonitoringSpec{
 			UseCSIDriver: address.Of(false),
 		}).Build()
 
-	require.NoError(t, err)
+	sampleDeployment := sampleapps.NewSampleDeployment(t, testDynakube)
+	sampleDeployment.WithAnnotations(map[string]string{
+		webhook.AnnotationOneAgentInject:   "false",
+		webhook.AnnotationDataIngestInject: "true",
+	})
+	samplePod := sampleapps.NewSamplePod(t, testDynakube)
+	samplePod.WithAnnotations(map[string]string{
+		webhook.AnnotationOneAgentInject:   "false",
+		webhook.AnnotationDataIngestInject: "true",
+	})
 
-	dataIngestFeature.Setup(operator.InstallViaMake(false))
-	dataIngestFeature.Setup(operator.WaitForDeployment())
-	dataIngestFeature.Setup(webhook.WaitForDeployment())
-	dataIngestFeature.Setup(secrets.ApplyDefault(tenantSecret))
-	dataIngestFeature.Setup(dynakube.Apply(dataIngestDynakube))
-	dataIngestFeature.Setup(dynakube.WaitForDynakubePhase(dataIngestDynakube))
-	dataIngestFeature.Setup(manifests.InstallFromFile(path.Join(project.TestDataDir(), sampleApps)))
-	dataIngestFeature.Setup(deployment.WaitFor("test-deployment", sampleapps.Namespace))
-	dataIngestFeature.Setup(pod.WaitFor("test-pod", sampleapps.Namespace))
+	// Register operator + dynakube install
+	assess.InstallDynatrace(builder, &secretConfig, testDynakube)
 
-	dataIngestFeature.Assess("deployment pods only have data ingest", deploymentPodsHaveOnlyDataIngestInitContainer())
-	dataIngestFeature.Assess("pod only has data ingest", podHasOnlyDataIngestInitContainer())
+	// Register actual test (+sample cleanup)
+	builder.Assess("install sample deployment and wait till ready", sampleDeployment.Install())
+	builder.Assess("install sample pod  and wait till ready", samplePod.Install())
+	builder.Assess("deployment pods only have data ingest", deploymentPodsHaveOnlyDataIngestInitContainer(sampleDeployment))
+	builder.Assess("pod only has data ingest", podHasOnlyDataIngestInitContainer(samplePod))
 
-	return dataIngestFeature.Feature()
+	builder.WithTeardown("removing samples", sampleDeployment.UninstallNamespace())
+
+	// Register operator + dynakube uninstall
+	teardown.UninstallDynatrace(builder, testDynakube)
+
+	return builder.Feature()
 }
 
-func podHasOnlyDataIngestInitContainer() features.Func {
+func podHasOnlyDataIngestInitContainer(samplePod sampleapps.SampleApp) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		var testPod corev1.Pod
-		err := environmentConfig.Client().Resources().Get(ctx, "test-pod", sampleapps.Namespace, &testPod)
+		testPod := samplePod.Get(ctx, t, environmentConfig.Client().Resources()).(*corev1.Pod)
 
-		require.NoError(t, err)
-
-		assessOnlyDataIngestIsInjected(t)(testPod)
-		assessPodHasDataIngestFile(t, environmentConfig.Client().RESTConfig(), testPod)
+		assessOnlyDataIngestIsInjected(t)(*testPod)
+		assessPodHasDataIngestFile(ctx, t, environmentConfig.Client().Resources(), *testPod)
 
 		return ctx
 	}
 }
 
-func assessPodHasDataIngestFile(t *testing.T, restConfig *rest.Config, testPod corev1.Pod) {
-	dataIngestMetadata := getDataIngestMetadataFromPod(t, restConfig, testPod)
+func assessPodHasDataIngestFile(ctx context.Context, t *testing.T, resource *resources.Resources, testPod corev1.Pod) {
+	dataIngestMetadata := getDataIngestMetadataFromPod(ctx, t, resource, testPod)
 
 	assert.Equal(t, dataIngestMetadata.WorkloadKind, "Pod")
-	assert.Equal(t, dataIngestMetadata.WorkloadName, "test-pod")
+	assert.Equal(t, dataIngestMetadata.WorkloadName, testPod.Name)
 }
 
-func deploymentPodsHaveOnlyDataIngestInitContainer() features.Func {
+func deploymentPodsHaveOnlyDataIngestInitContainer(sampleApp sampleapps.SampleApp) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		query := deployment.NewQuery(ctx, environmentConfig.Client().Resources(), client.ObjectKey{
-			Name:      "test-deployment",
-			Namespace: sampleapps.Namespace,
+			Name:      sampleApp.Name(),
+			Namespace: sampleApp.Namespace().Name,
 		})
 		err := query.ForEachPod(assessOnlyDataIngestIsInjected(t))
 
 		require.NoError(t, err)
 
-		err = query.ForEachPod(assessDeploymentHasDataIngestFile(t, environmentConfig.Client().RESTConfig()))
+		err = query.ForEachPod(assessDeploymentHasDataIngestFile(ctx, t, environmentConfig.Client().Resources(), sampleApp.Name()))
 
 		require.NoError(t, err)
 
@@ -109,18 +112,20 @@ func deploymentPodsHaveOnlyDataIngestInitContainer() features.Func {
 	}
 }
 
-func assessDeploymentHasDataIngestFile(t *testing.T, restConfig *rest.Config) deployment.PodConsumer {
+func assessDeploymentHasDataIngestFile(ctx context.Context, t *testing.T, resource *resources.Resources, deploymentName string) deployment.PodConsumer {
 	return func(pod corev1.Pod) {
-		dataIngestMetadata := getDataIngestMetadataFromPod(t, restConfig, pod)
+		dataIngestMetadata := getDataIngestMetadataFromPod(ctx, t, resource, pod)
 
 		assert.Equal(t, dataIngestMetadata.WorkloadKind, "Deployment")
-		assert.Equal(t, dataIngestMetadata.WorkloadName, "test-deployment")
+		assert.Equal(t, dataIngestMetadata.WorkloadName, deploymentName)
 	}
 }
 
-func getDataIngestMetadataFromPod(t *testing.T, restConfig *rest.Config, dataIngestPod corev1.Pod) metadata {
-	query := pod.NewExecutionQuery(dataIngestPod, dataIngestPod.Spec.Containers[0].Name, shell.ReadFile(metadataFile)...)
-	result, err := query.Execute(restConfig)
+func getDataIngestMetadataFromPod(ctx context.Context, t *testing.T, resource *resources.Resources, dataIngestPod corev1.Pod) metadata {
+	require.NotEmpty(t, dataIngestPod.Spec.Containers)
+	dataIngestContainer := dataIngestPod.Spec.Containers[0].Name
+	readMetadataCommand := shell.ReadFile(metadataFile)
+	result, err := pod.Exec(ctx, resource, dataIngestPod, dataIngestContainer, readMetadataCommand...)
 
 	require.NoError(t, err)
 
@@ -139,7 +144,7 @@ func assessOnlyDataIngestIsInjected(t *testing.T) deployment.PodConsumer {
 	return func(pod corev1.Pod) {
 		initContainers := pod.Spec.InitContainers
 
-		assert.Len(t, initContainers, 1)
+		require.Len(t, initContainers, 1)
 
 		installOneAgentContainer := initContainers[0]
 		envVars := installOneAgentContainer.Env

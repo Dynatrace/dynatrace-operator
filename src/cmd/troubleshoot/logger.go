@@ -3,7 +3,7 @@ package troubleshoot
 import (
 	"fmt"
 	"io"
-	"os"
+	"strings"
 
 	"github.com/go-logr/logr"
 	"go.uber.org/zap"
@@ -18,140 +18,67 @@ const (
 	prefixWarning = " \u26a0  " // ⚠
 	prefixError   = " X  "      // X
 
-	colorRed    = "\033[31m"
-	colorGreen  = "\033[32m"
-	colorYellow = "\033[33m"
-	colorReset  = "\033[0m"
-
-	levelNewCheck    = 1
-	levelSuccess     = 2
-	levelWarning     = 3
-	levelError       = 4
-	levelNewDynakube = 5
+	colorError   = "\033[31m" // red
+	colorOk      = "\033[32m" // green
+	colorWarning = "\033[33m" // yellow
+	colorReset   = "\033[0m"
 )
 
-type troubleshootLogger struct {
-	logger logr.Logger
-}
-
-type subTestLogger struct {
-	troubleshootLogger
-}
-
-func newRawTroubleshootLogger(testName string, out io.Writer) troubleshootLogger {
+func NewTroubleshootLoggerToWriter(out io.Writer) logr.Logger {
 	config := zap.NewProductionEncoderConfig()
 	config.TimeKey = ""
 	config.LevelKey = ""
 	config.NameKey = "name"
 	config.EncodeTime = zapcore.ISO8601TimeEncoder
+	config.EncodeName = loggerNameEncoder
 
-	testName = fmt.Sprintf("[%-10s] ", testName)
+	logger := ctrlzap.New(
+		ctrlzap.WriteTo(out),
+		ctrlzap.Encoder(zapcore.NewConsoleEncoder(config))).
+		// need to use non-empty name for root logger, otherwise name printing is omitted completely
+		WithName(" ")
 
-	return troubleshootLogger{
-		logger: ctrlzap.New(ctrlzap.WriteTo(out), ctrlzap.Encoder(zapcore.NewConsoleEncoder(config))).WithName(testName),
-	}
+	return logger
 }
 
-func newTroubleshootLoggerToWriter(testName string, out io.Writer) logr.Logger {
-	return logr.New(newRawTroubleshootLogger(testName, out))
+func loggerNameEncoder(name string, encoder zapcore.PrimitiveArrayEncoder) {
+	// trim space from root logger name and dot added by logr to keep only actual test name
+	testName := fmt.Sprintf("[%-10s] ", strings.Trim(name, " ."))
+	encoder.AppendString(testName)
 }
 
-func newSubTestLoggerToWriter(testName string, out io.Writer) logr.Logger {
-	return logr.New(subTestLogger{newRawTroubleshootLogger(testName, out)})
+func logNewCheckf(log logr.Logger, format string, v ...interface{}) {
+	log.Info(prefixNewTest + fmt.Sprintf(format, v...))
 }
 
-func newTroubleshootLogger(testName string) logr.Logger {
-	return newTroubleshootLoggerToWriter(testName, os.Stdout)
-}
-
-func newSubTestLogger(testName string) logr.Logger {
-	return newSubTestLoggerToWriter(testName, os.Stdout)
-}
-
-func logNewCheckf(format string, v ...interface{}) {
-	log.V(levelNewCheck).Info(fmt.Sprintf(format, v...))
-}
-
-func logNewDynakubef(format string, v ...interface{}) {
-	log.V(levelNewDynakube).Info(fmt.Sprintf(format, v...))
-}
-
-func logInfof(format string, v ...interface{}) {
+func logNewDynakubef(log logr.Logger, format string, v ...interface{}) {
 	log.Info(fmt.Sprintf(format, v...))
 }
 
-func logOkf(format string, v ...interface{}) {
-	log.V(levelSuccess).Info(fmt.Sprintf(format, v...))
+func logInfof(log logr.Logger, format string, v ...interface{}) {
+	log.Info(prefixInfo + fmt.Sprintf(format, v...))
 }
 
-func logWarningf(format string, v ...interface{}) {
-	log.V(levelWarning).Info(fmt.Sprintf(format, v...))
+func logOkf(log logr.Logger, format string, v ...interface{}) {
+	log.Info(withSuccessPrefix(fmt.Sprintf(format, v...)))
 }
 
-func logErrorf(format string, v ...interface{}) {
-	log.V(levelError).Info(fmt.Sprintf(format, v...))
+func logWarningf(log logr.Logger, format string, v ...interface{}) {
+	log.Info(withWarningPrefix(fmt.Sprintf(format, v...)))
 }
 
-func (dtl troubleshootLogger) Init(_ logr.RuntimeInfo) {}
-
-func (dtl subTestLogger) Info(level int, message string, keysAndValues ...interface{}) {
-	message = addPrefixes(level, message)
-	message = " |" + message
-	dtl.logger.Info(message, keysAndValues...)
-}
-
-func (dtl troubleshootLogger) Info(level int, message string, keysAndValues ...interface{}) {
-	message = addPrefixes(level, message)
-	dtl.logger.Info(message, keysAndValues...)
-}
-
-func addPrefixes(level int, message string) string {
-	switch level {
-	case levelNewCheck:
-		return prefixNewTest + message
-	case levelSuccess:
-		return withSuccessPrefix(message)
-	case levelWarning:
-		return withWarningPrefix(message)
-	case levelError:
-		// Info is used for errors to suppress printing a stacktrace
-		// Printing a stacktrace would confuse people in thinking the troubleshooter crashed
-		return withErrorPrefix(message)
-	case levelNewDynakube:
-		return message
-	default:
-		return prefixInfo + message
-	}
+func logErrorf(log logr.Logger, format string, v ...interface{}) {
+	log.Info(withErrorPrefix(fmt.Sprintf(format, v...)))
 }
 
 func withSuccessPrefix(message string) string {
-	return fmt.Sprintf("%s%s%s%s", colorGreen, prefixSuccess, message, colorReset)
+	return fmt.Sprintf("%s%s%s%s", colorOk, prefixSuccess, message, colorReset)
 }
 
 func withWarningPrefix(message string) string {
-	return fmt.Sprintf("%s%s%s%s", colorYellow, prefixWarning, message, colorReset)
+	return fmt.Sprintf("%s%s%s%s", colorWarning, prefixWarning, message, colorReset)
 }
 
 func withErrorPrefix(message string) string {
-	return fmt.Sprintf("%s%s%s%s", colorRed, prefixError, message, colorReset)
-}
-
-func (dtl troubleshootLogger) Enabled(_ int) bool {
-	return dtl.logger.Enabled()
-}
-
-func (dtl troubleshootLogger) Error(err error, msg string, keysAndValues ...interface{}) {
-	dtl.logger.Error(err, prefixError+msg, keysAndValues...)
-}
-
-func (dtl troubleshootLogger) WithValues(keysAndValues ...interface{}) logr.LogSink {
-	return troubleshootLogger{
-		logger: dtl.logger.WithValues(keysAndValues...),
-	}
-}
-
-func (dtl troubleshootLogger) WithName(name string) logr.LogSink {
-	return troubleshootLogger{
-		logger: dtl.logger.WithName(name),
-	}
+	return fmt.Sprintf("%s%s%s%s", colorError, prefixError, message, colorReset)
 }

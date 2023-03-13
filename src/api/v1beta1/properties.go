@@ -22,7 +22,6 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api"
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,10 +39,6 @@ const (
 
 	defaultActiveGateImage = "/linux/activegate:latest"
 	defaultSyntheticImage  = "/linux/dynatrace-synthetic:latest"
-
-	TrustedCAKey = "certs"
-	ProxyKey     = "proxy"
-	TlsCertKey   = "server.crt"
 )
 
 // ApiUrl is a getter for dk.Spec.APIURL
@@ -159,18 +154,6 @@ func (dk *DynaKube) IsSyntheticActiveGateEnabled() bool {
 
 func (dk *DynaKube) HasActiveGateCaCert() bool {
 	return dk.ActiveGateMode() && dk.Spec.ActiveGate.TlsSecretName != ""
-}
-
-func (dk *DynaKube) HasProxy() bool {
-	return dk.Spec.Proxy != nil && (dk.Spec.Proxy.Value != "" || dk.Spec.Proxy.ValueFrom != "")
-}
-
-func (dk *DynaKube) NeedsActiveGateProxy() bool {
-	return !dk.FeatureActiveGateIgnoreProxy() && dk.HasProxy()
-}
-
-func (dk *DynaKube) NeedsOneAgentProxy() bool {
-	return !dk.FeatureOneAgentIgnoreProxy() && dk.HasProxy()
 }
 
 func (dk *DynaKube) NeedsOneAgentPrivileged() bool {
@@ -404,12 +387,12 @@ func (dk *DynaKube) OneAgentImage() string {
 }
 
 func truncateBuildDate(version string) string {
-	const versionSeperator = "."
+	const versionSeparator = "."
 	const buildDateIndex = 3
 
-	if strings.Count(version, versionSeperator) >= buildDateIndex {
-		splitVersion := strings.Split(version, versionSeperator)
-		truncatedVersion := strings.Join(splitVersion[:buildDateIndex], versionSeperator)
+	if strings.Count(version, versionSeparator) >= buildDateIndex {
+		splitVersion := strings.Split(version, versionSeparator)
+		truncatedVersion := strings.Join(splitVersion[:buildDateIndex], versionSeparator)
 
 		return truncatedVersion
 	}
@@ -423,24 +406,6 @@ func (dk *DynaKube) Tokens() string {
 		return tkns
 	}
 	return dk.Name
-}
-
-func (dk *DynaKube) ConnectionInfo() dtclient.OneAgentConnectionInfo {
-	return dtclient.OneAgentConnectionInfo{
-		CommunicationHosts: dk.CommunicationHosts(),
-		ConnectionInfo: dtclient.ConnectionInfo{
-			TenantUUID: dk.Status.ConnectionInfo.TenantUUID,
-			Endpoints:  dk.Status.ConnectionInfo.FormattedCommunicationEndpoints,
-		},
-	}
-}
-
-func (dk *DynaKube) CommunicationHosts() []dtclient.CommunicationHost {
-	communicationHosts := make([]dtclient.CommunicationHost, 0, len(dk.Status.ConnectionInfo.CommunicationHosts))
-	for _, communicationHost := range dk.Status.ConnectionInfo.CommunicationHosts {
-		communicationHosts = append(communicationHosts, dtclient.CommunicationHost(communicationHost))
-	}
-	return communicationHosts
 }
 
 // TenantUUIDFromApiUrl gets the tenantUUID from the ApiUrl present in the struct, if the tenant is aliased then the alias will be returned

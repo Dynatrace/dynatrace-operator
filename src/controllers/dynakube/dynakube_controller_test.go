@@ -9,6 +9,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
+	imageversion "github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/version"
+	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
@@ -52,6 +54,8 @@ const (
 
 	testName      = "test-name"
 	testNamespace = "test-namespace"
+
+	testApiUrl = "https://" + testHost + "/e/" + testUUID + "/api"
 )
 
 func TestMonitoringModesDynakube_Reconcile(t *testing.T) {
@@ -76,7 +80,7 @@ func TestMonitoringModesDynakube_Reconcile(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Spec: dynatracev1beta1.DynaKubeSpec{
-					APIURL:   testHost,
+					APIURL:   testApiUrl,
 					OneAgent: deploymentModes[mode],
 				},
 			}
@@ -117,7 +121,11 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
-			}}
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: testApiUrl,
+			},
+		}
 		controller := createFakeClientAndReconciler(mockClient, instance, testPaasToken, testAPIToken)
 
 		result, err := controller.Reconcile(context.TODO(), reconcile.Request{
@@ -139,6 +147,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: testApiUrl,
 				KubernetesMonitoring: dynatracev1beta1.KubernetesMonitoringSpec{
 					Enabled: true,
 				}}}
@@ -176,6 +185,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 				},
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: testApiUrl,
 				ActiveGate: dynatracev1beta1.ActiveGateSpec{
 					Capabilities: []dynatracev1beta1.CapabilityDisplayName{
 						dynatracev1beta1.KubeMonCapability.DisplayName,
@@ -217,6 +227,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 				},
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: testApiUrl,
 				ActiveGate: dynatracev1beta1.ActiveGateSpec{
 					Capabilities: []dynatracev1beta1.CapabilityDisplayName{
 						dynatracev1beta1.KubeMonCapability.DisplayName,
@@ -249,6 +260,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: testApiUrl,
 				Proxy: &dynatracev1beta1.DynaKubeProxy{
 					Value:     "https://proxy:1234",
 					ValueFrom: "",
@@ -281,6 +293,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: testApiUrl,
 				Proxy: &dynatracev1beta1.DynaKubeProxy{
 					Value:     "https://proxy:1234",
 					ValueFrom: "",
@@ -317,6 +330,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 				},
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: testApiUrl,
 				ActiveGate: dynatracev1beta1.ActiveGateSpec{
 					Capabilities: []dynatracev1beta1.CapabilityDisplayName{
 						dynatracev1beta1.KubeMonCapability.DisplayName,
@@ -359,7 +373,9 @@ func TestReconcileOnlyOneTokenProvided_Reconcile(t *testing.T) {
 				Name:      testName,
 				Namespace: testNamespace,
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{}}
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: testApiUrl,
+			}}
 		controller := createFakeClientAndReconciler(mockClient, instance, "", testAPIToken)
 
 		result, err := controller.Reconcile(context.TODO(), reconcile.Request{
@@ -394,7 +410,9 @@ func TestRemoveOneAgentDaemonset(t *testing.T) {
 				Name:      testName,
 				Namespace: testNamespace,
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{}}
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: testApiUrl,
+			}}
 		data := map[string][]byte{
 			dtclient.DynatraceApiToken: []byte(testAPIToken),
 		}
@@ -455,6 +473,7 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 			Namespace: testNamespace,
 		},
 		Spec: dynatracev1beta1.DynaKubeSpec{
+			APIURL: testApiUrl,
 			Routing: dynatracev1beta1.RoutingSpec{
 				Enabled: true,
 			}}}
@@ -530,6 +549,7 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 			Namespace: testNamespace,
 		},
 		Spec: dynatracev1beta1.DynaKubeSpec{
+			APIURL: testApiUrl,
 			ActiveGate: dynatracev1beta1.ActiveGateSpec{
 				Capabilities: []dynatracev1beta1.CapabilityDisplayName{
 					dynatracev1beta1.MetricsIngestCapability.DisplayName,
@@ -646,6 +666,13 @@ func createDTMockClient(paasTokenScopes, apiTokenScopes dtclient.TokenScopes) *d
 	return mockClient
 }
 
+func fakeVersionProvider(string, *dockerconfig.DockerConfig) (imageversion.ImageVersion, error) {
+	return imageversion.ImageVersion{
+		Version: "",
+		Hash:    "",
+	}, nil
+}
+
 func createFakeClientAndReconciler(mockClient dtclient.Client, instance *dynatracev1beta1.DynaKube, paasToken, apiToken string) *Controller {
 	data := map[string][]byte{
 		dtclient.DynatraceApiToken: []byte(apiToken),
@@ -677,6 +704,7 @@ func createFakeClientAndReconciler(mockClient dtclient.Client, instance *dynatra
 		apiReader:              fakeClient,
 		scheme:                 scheme.Scheme,
 		dynatraceClientBuilder: mockDtcBuilder,
+		versionProvider:        fakeVersionProvider,
 	}
 
 	return controller
@@ -911,7 +939,7 @@ func TestReconcileIstio(t *testing.T) {
 		client:    fakeClient,
 		apiReader: fakeClient,
 	}
-	updated := controller.reconcileIstio(dynakube)
+	updated := controller.reconcileIstio(context.TODO(), dynakube)
 
 	assert.False(t, updated)
 

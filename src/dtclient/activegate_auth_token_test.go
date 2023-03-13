@@ -18,7 +18,7 @@ var activeGateAuthTokenResponse = &ActiveGateAuthTokenInfo{
 
 func TestGetActiveGateAuthTokenInfo(t *testing.T) {
 	t.Run("GetActiveGateAuthToken works", func(t *testing.T) {
-		dynatraceServer, dynatraceClient := createTestDynatraceClient(t, connectionInfoServerHandler(activeGateAuthTokenUrl, activeGateAuthTokenResponse), "")
+		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(activeGateAuthTokenUrl, activeGateAuthTokenResponse), "")
 		defer dynatraceServer.Close()
 
 		agAuthTokenInfo, err := dynatraceClient.GetActiveGateAuthToken(dynakubeName)
@@ -28,7 +28,7 @@ func TestGetActiveGateAuthTokenInfo(t *testing.T) {
 		assert.Equal(t, activeGateAuthTokenResponse, agAuthTokenInfo)
 	})
 	t.Run("GetActiveGateAuthToken handle malformed json", func(t *testing.T) {
-		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceClient(t, tenantMalformedJson(activeGateAuthTokenUrl), "")
+		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceServer(t, tenantMalformedJson(activeGateAuthTokenUrl), "")
 		defer faultyDynatraceServer.Close()
 
 		tenantInfo, err := faultyDynatraceClient.GetActiveGateAuthToken(dynakubeName)
@@ -38,7 +38,7 @@ func TestGetActiveGateAuthTokenInfo(t *testing.T) {
 		assert.Equal(t, "invalid character 'h' in literal true (expecting 'r')", err.Error())
 	})
 	t.Run("GetActiveGateAuthToken handle internal server error", func(t *testing.T) {
-		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceClient(t, tenantInternalServerError(activeGateAuthTokenUrl), "")
+		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceServer(t, tenantInternalServerError(activeGateAuthTokenUrl), "")
 		defer faultyDynatraceServer.Close()
 
 		tenantInfo, err := faultyDynatraceClient.GetActiveGateAuthToken(dynakubeName)

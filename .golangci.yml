@@ -36,7 +36,7 @@ linters-settings:
       - name: max-public-structs
         disabled: true
       - name: argument-limit
-        arguments: [4]
+        arguments: [5]
       - name: line-length-limit
         disabled: true
       - name: add-constant

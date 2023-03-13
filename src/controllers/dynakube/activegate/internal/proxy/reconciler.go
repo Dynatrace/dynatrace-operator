@@ -2,13 +2,11 @@ package proxy
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -88,17 +86,7 @@ func (r *Reconciler) ensureDeleted(ctx context.Context, dynakube *dynatracev1bet
 }
 
 func (r *Reconciler) createProxyMap(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) (map[string][]byte, error) {
-	var err error
-	proxyUrl := ""
-
-	switch {
-	case dynakube.Spec.Proxy != nil && dynakube.Spec.Proxy.ValueFrom != "":
-		if proxyUrl, err = r.proxyUrlFromUserSecret(ctx, dynakube); err != nil {
-			return nil, err
-		}
-	case dynakube.Spec.Proxy != nil && len(dynakube.Spec.Proxy.Value) > 0:
-		proxyUrl = proxyUrlFromSpec(dynakube)
-	default:
+	if !dynakube.HasProxy() {
 		// the parsed-proxy secret is expected to exist and the entrypoint.sh script handles empty values properly
 		return map[string][]byte{
 			proxyHostField:     []byte(""),
@@ -106,6 +94,11 @@ func (r *Reconciler) createProxyMap(ctx context.Context, dynakube *dynatracev1be
 			proxyUsernameField: []byte(""),
 			proxyPasswordField: []byte(""),
 		}, nil
+	}
+
+	proxyUrl, err := dynakube.Proxy(ctx, r.apiReader)
+	if err != nil {
+		return nil, err
 	}
 
 	host, port, username, password, err := parseProxyUrl(proxyUrl)
@@ -119,23 +112,6 @@ func (r *Reconciler) createProxyMap(ctx context.Context, dynakube *dynatracev1be
 		proxyUsernameField: []byte(username),
 		proxyPasswordField: []byte(password),
 	}, nil
-}
-
-func proxyUrlFromSpec(dynakube *dynatracev1beta1.DynaKube) string {
-	return dynakube.Spec.Proxy.Value
-}
-
-func (r *Reconciler) proxyUrlFromUserSecret(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) (string, error) {
-	var proxySecret corev1.Secret
-	if err := r.client.Get(ctx, client.ObjectKey{Name: dynakube.Spec.Proxy.ValueFrom, Namespace: r.dynakube.Namespace}, &proxySecret); err != nil {
-		return "", errors.WithMessage(err, fmt.Sprintf("failed to query %s secret", dynakube.Spec.Proxy.ValueFrom))
-	}
-
-	proxy, ok := proxySecret.Data[consts.ProxySecretKey]
-	if !ok {
-		return "", fmt.Errorf("invalid secret %s", dynakube.Spec.Proxy.ValueFrom)
-	}
-	return string(proxy), nil
 }
 
 func parseProxyUrl(proxy string) (host, port, username, password string, err error) { //nolint:revive // maximum number of return results per function exceeded; max 3 but got 5

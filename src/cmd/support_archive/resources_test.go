@@ -20,6 +20,7 @@ import (
 )
 
 const testOperatorNamespace = "dynatrace"
+const manifestExtension = ".yaml"
 
 func TestManifestCollector_Success(t *testing.T) {
 	logBuffer := bytes.Buffer{}
@@ -95,13 +96,13 @@ func TestManifestCollector_Success(t *testing.T) {
 	require.NoError(t, newK8sObjectCollector(ctx, log, supportArchive, testOperatorNamespace, clt).Do())
 
 	expectedFiles := []string{
-		fmt.Sprintf("%s/Namespace-some-app-namespace.json", InjectedNamespacesManifestsDirectoryName),
-		fmt.Sprintf("%s/Namespace-dynatrace.json", testOperatorNamespace),
+		fmt.Sprintf("%s/namespace-some-app-namespace%s", InjectedNamespacesManifestsDirectoryName, manifestExtension),
+		fmt.Sprintf("%s/namespace-dynatrace%s", testOperatorNamespace, manifestExtension),
 
-		fmt.Sprintf("%s/Deployment/deployment1.json", testOperatorNamespace),
-		fmt.Sprintf("%s/StatefulSet/statefulset1.json", testOperatorNamespace),
-		fmt.Sprintf("%s/DaemonSet/daemonset1.json", testOperatorNamespace),
-		fmt.Sprintf("%s/DynaKube/dynakube1.json", testOperatorNamespace),
+		fmt.Sprintf("%s/deployment/deployment1%s", testOperatorNamespace, manifestExtension),
+		fmt.Sprintf("%s/statefulset/statefulset1%s", testOperatorNamespace, manifestExtension),
+		fmt.Sprintf("%s/daemonset/daemonset1%s", testOperatorNamespace, manifestExtension),
+		fmt.Sprintf("%s/dynakube/dynakube1%s", testOperatorNamespace, manifestExtension),
 	}
 
 	tarReader := tar.NewReader(&tarBuffer)
@@ -180,15 +181,15 @@ func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
 
 	hdr, err := tarReader.Next()
 	require.NoError(t, err)
-	assert.Equal(t, expectedFilename("injected_namespaces/Namespace-some-app-namespace.json"), hdr.Name)
+	assert.Equal(t, expectedFilename(fmt.Sprintf("injected_namespaces/namespace-some-app-namespace%s", manifestExtension)), hdr.Name)
 
 	hdr, err = tarReader.Next()
 	require.NoError(t, err)
-	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/StatefulSet/statefulset1.json", testOperatorNamespace)), hdr.Name)
+	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/statefulset/statefulset1%s", testOperatorNamespace, manifestExtension)), hdr.Name)
 
 	hdr, err = tarReader.Next()
 	require.NoError(t, err)
-	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/DynaKube/dynakube1.json", testOperatorNamespace)), hdr.Name)
+	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/dynakube/dynakube1%s", testOperatorNamespace, manifestExtension)), hdr.Name)
 
 	_, err = tarReader.Next()
 	require.ErrorIs(t, err, io.EOF)

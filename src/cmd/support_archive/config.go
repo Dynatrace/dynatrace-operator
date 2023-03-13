@@ -1,10 +1,9 @@
 package support_archive
 
 const OperatorVersionFileName = "operator-version.txt"
+const SupportArchiveOutputFileName = "supportarchive_console.log"
+
 const LogsDirectoryName = "logs"
 const ManifestsDirectoryName = "manifests"
 const InjectedNamespacesManifestsDirectoryName = "injected_namespaces"
-const ManifestsFileExtension = ".json"
-
-const operatorVersionCollectorName = "operatorVersionCollector"
-const logCollectorName = "logCollector"
+const ManifestsFileExtension = ".yaml"

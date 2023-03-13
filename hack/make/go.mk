@@ -1,27 +1,34 @@
-ENVTEST_ASSETS_DIR = $(shell pwd)/testbin
+LINT_TARGET ?= ./...
+
+ifeq ($(LINT_TARGET), ./...)
+	GCI_TARGET ?= .
+else
+	GCI_TARGET ?= $(LINT_TARGET)
+endif
 
 ## Runs go fmt
 go/fmt:
-	go fmt ./...
+	go fmt $(LINT_TARGET)
+
+## Runs gci
+go/gci:
+	gci write $(GCI_TARGET)
+
+## Runs linters that format/change the code in place
+go/format: go/fmt go/gci
 
 ## Runs go vet
 go/vet:
-	go vet -copylocks=false ./...
+	go vet -copylocks=false $(LINT_TARGET)
 
-## Lints the go code
-go/lint: go/fmt go/vet
-	gci write .
-	golangci-lint run --build-tags containers_image_storage_stub,e2e --timeout 300s
+## Runs golangci-lint
+go/golangci:
+	golangci-lint run --build-tags "$(shell ./hack/build/create_go_build_tags.sh true)" --timeout 300s
 
-## Runs go unit tests (without containers_image_storage_stub) and writes the coverprofile to cover.out
-go/test: go/fmt
-	mkdir -p $(ENVTEST_ASSETS_DIR)
-	test -f $(ENVTEST_ASSETS_DIR)/setup-envtest.sh || curl -sSLo $(ENVTEST_ASSETS_DIR)/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/v0.6.3/hack/setup-envtest.sh
-	source $(ENVTEST_ASSETS_DIR)/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test ./... -coverprofile cover.out
+## Runs all the linting tools
+go/lint: go/format go/vet go/golangci
 
 ## Runs all go unit tests and writes the coverprofile to cover.out
-go/test-all:
-	mkdir -p $(ENVTEST_ASSETS_DIR)
-	test -f $(ENVTEST_ASSETS_DIR)/setup-envtest.sh || curl -sSLo $(ENVTEST_ASSETS_DIR)/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/v0.6.3/hack/setup-envtest.sh
-	source $(ENVTEST_ASSETS_DIR)/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test ./... -coverprofile cover.out -tags containers_image_storage_stub
+go/test:
+	go test ./... -coverprofile cover.out -tags "$(shell ./hack/build/create_go_build_tags.sh false)"
 

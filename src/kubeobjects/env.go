@@ -1,6 +1,8 @@
 package kubeobjects
 
 import (
+	"os"
+
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -35,4 +37,13 @@ func AddOrUpdate(envVars []corev1.EnvVar, desiredEnvVar corev1.EnvVar) []corev1.
 
 func NewEnvVarSourceForField(fieldPath string) *corev1.EnvVarSource {
 	return &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: fieldPath}}
+}
+
+func DefaultNamespace() string {
+	namespace := os.Getenv("POD_NAMESPACE")
+
+	if namespace == "" {
+		return "dynatrace"
+	}
+	return namespace
 }

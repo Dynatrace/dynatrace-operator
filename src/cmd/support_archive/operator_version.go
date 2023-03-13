@@ -9,6 +9,8 @@ import (
 	"github.com/go-logr/logr"
 )
 
+const operatorVersionCollectorName = "operatorVersionCollector"
+
 type operatorVersionCollector struct {
 	collectorCommon
 }

@@ -20,9 +20,6 @@ const (
 	testClusterID = "test-cluster-id"
 	testURL       = "https://testing.dev.dynatracelabs.com/api"
 	testName      = "test-name"
-
-	testFormattedCommunicationHosts = "test-communication-hosts"
-	testTenantUUID                  = "test-tenant-uuid"
 )
 
 func TestArguments(t *testing.T) {
@@ -74,10 +71,6 @@ func TestPodSpec_Arguments(t *testing.T) {
 				VersionStatus: dynatracev1beta1.VersionStatus{
 					Version: testContainerImageVersion,
 				},
-			},
-			ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
-				TenantUUID:                      testTenantUUID,
-				FormattedCommunicationEndpoints: testFormattedCommunicationHosts,
 			},
 		},
 	}

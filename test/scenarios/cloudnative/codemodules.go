@@ -5,37 +5,32 @@ package cloudnative
 import (
 	"context"
 	"encoding/json"
-	"path"
 	"strconv"
 	"strings"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook/mutation/pod_mutator/oneagent_mutation"
-	"github.com/Dynatrace/dynatrace-operator/test/csi"
-	"github.com/Dynatrace/dynatrace-operator/test/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/test/istiosetup"
-	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/deployment"
-	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/manifests"
-	"github.com/Dynatrace/dynatrace-operator/test/kubeobjects/pod"
-	"github.com/Dynatrace/dynatrace-operator/test/project"
-	"github.com/Dynatrace/dynatrace-operator/test/sampleapps"
-	"github.com/Dynatrace/dynatrace-operator/test/secrets"
-	"github.com/Dynatrace/dynatrace-operator/test/setup"
-	"github.com/Dynatrace/dynatrace-operator/test/shell"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/csi"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/istio"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/pkg/errors"
-	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/e2e-framework/klient/k8s"
-	"sigs.k8s.io/e2e-framework/klient/wait"
-	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
+	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -45,11 +40,8 @@ const (
 	codeModulesImage       = "quay.io/dynatrace/codemodules:" + codeModulesVersion
 	codeModulesImageDigest = "7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
 
-	dataPath = "/data/"
-)
-
-var (
-	codeModulesDeploymentConfig = path.Join(project.TestDataDir(), "cloudnative/codemodules-deployment.yaml")
+	dataPath                 = "/data/"
+	provisionerContainerName = "provisioner"
 )
 
 type manifest struct {
@@ -57,166 +49,166 @@ type manifest struct {
 }
 
 func CodeModules(t *testing.T, istioEnabled bool) features.Feature {
-	secretConfigs, err := secrets.DefaultMultiTenant(afero.NewOsFs())
-
-	require.NoError(t, err)
-
-	codeModulesInjection := features.New("codemodules injection")
-
-	if istioEnabled {
-		codeModulesInjection.Setup(manifests.InstallFromFile(istioTestNamespaceConfig))
-	} else {
-		codeModulesInjection.Setup(manifests.InstallFromFile(testNamespaceConfig))
-	}
-	setup.InstallDynatraceFromSource(codeModulesInjection, &secretConfigs[0])
-	setup.AssessOperatorDeployment(codeModulesInjection)
-
-	setup.DeploySampleApps(codeModulesInjection, codeModulesDeploymentConfig)
+	builder := features.New("codemodules injection")
+	storageMap := make(map[string]int)
+	secretConfigs := tenant.GetMultiTenantSecret(t)
+	require.Len(t, secretConfigs, 2)
 
 	dynakubeBuilder := dynakube.NewBuilder().
 		WithDefaultObjectMeta().
+		Name("cloudnative-codemodules").
+		WithDynakubeNamespaceSelector().
 		ApiUrl(secretConfigs[0].ApiUrl).
-		CloudNative(codeModulesSpec())
+		CloudNative(codeModulesCloudNativeSpec())
 	if istioEnabled {
 		dynakubeBuilder = dynakubeBuilder.WithIstio()
 	}
+	cloudNativeDynakube := dynakubeBuilder.Build()
 
-	codeModulesInjection.Assess("install dynakube", dynakube.Apply(dynakubeBuilder.Build()))
-
-	setup.AssessDynakubeStartup(codeModulesInjection)
-	assessSampleAppsRestart(codeModulesInjection)
-	assessOneAgentsAreRunning(codeModulesInjection)
-
+	dynakubeBuilder = dynakube.NewBuilder().
+		WithDefaultObjectMeta().
+		Name("app-codemodules").
+		WithDynakubeNamespaceSelector().
+		ApiUrl(secretConfigs[1].ApiUrl).
+		ApplicationMonitoring(&dynatracev1beta1.ApplicationMonitoringSpec{
+			AppInjectionSpec: *codeModulesAppInjectSpec(),
+			UseCSIDriver:     address.Of(true),
+		})
 	if istioEnabled {
-		istiosetup.AssessIstio(codeModulesInjection)
+		dynakubeBuilder = dynakubeBuilder.WithIstio()
 	}
+	appDynakube := dynakubeBuilder.Build()
 
-	codeModulesInjection.Assess("csi driver did not crash", csiDriverIsAvailable)
-	codeModulesInjection.Assess("codemodules have been downloaded", imageHasBeenDownloaded)
-	codeModulesInjection.Assess("storage size has not increased", diskUsageDoesNotIncrease(secretConfigs[0]))
-	codeModulesInjection.Assess("volumes are mounted correctly", volumesAreMountedCorrectly())
+	namespaceBuilder := namespace.NewBuilder("codemodules-sample")
+	if istioEnabled {
+		namespaceBuilder = namespaceBuilder.WithLabels(istio.InjectionLabel)
+	}
+	sampleNamespace := namespaceBuilder.WithLabels(cloudNativeDynakube.NamespaceSelector().MatchLabels).Build()
+	sampleApp := sampleapps.NewSampleDeployment(t, cloudNativeDynakube)
+	sampleApp.WithNamespace(sampleNamespace)
 
-	return codeModulesInjection.Feature()
+	// Register operator install
+	operatorNamespaceBuilder := namespace.NewBuilder(cloudNativeDynakube.Namespace)
+	if istioEnabled {
+		operatorNamespaceBuilder = operatorNamespaceBuilder.WithLabels(istio.InjectionLabel)
+	}
+	assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), cloudNativeDynakube)
+
+	// Register actual test
+	assess.InstallDynakube(builder, &secretConfigs[0], cloudNativeDynakube)
+	builder.Assess("install sample app", sampleApp.Install())
+	assessSampleInitContainers(builder, sampleApp)
+	if istioEnabled {
+		istio.AssessIstio(builder, cloudNativeDynakube, sampleApp)
+	}
+	builder.Assess("codemodules have been downloaded", imageHasBeenDownloaded(cloudNativeDynakube.Namespace))
+	builder.Assess("checking storage used", measureDiskUsage(appDynakube.Namespace, storageMap))
+	assess.InstallDynakube(builder, &secretConfigs[1], appDynakube)
+	builder.Assess("storage size has not increased", diskUsageDoesNotIncrease(appDynakube.Namespace, storageMap))
+	builder.Assess("volumes are mounted correctly", volumesAreMountedCorrectly(sampleApp))
+
+	// Register sample, dynakube and operator uninstall
+	builder.Teardown(sampleApp.UninstallNamespace())
+	teardown.UninstallDynatrace(builder, cloudNativeDynakube)
+
+	return builder.Feature()
 }
 
-func codeModulesSpec() *v1beta1.CloudNativeFullStackSpec {
-	return &v1beta1.CloudNativeFullStackSpec{
-		HostInjectSpec: v1beta1.HostInjectSpec{
-			NodeSelector: map[string]string{
-				"inject": "dynakube",
-			},
+func codeModulesCloudNativeSpec() *dynatracev1beta1.CloudNativeFullStackSpec {
+	return &dynatracev1beta1.CloudNativeFullStackSpec{
+		HostInjectSpec: dynatracev1beta1.HostInjectSpec{
+			Args: []string{"INTERNAL_OVERRIDE_CHECKS=downgrade"},
 		},
-		AppInjectionSpec: v1beta1.AppInjectionSpec{
-			CodeModulesImage: codeModulesImage,
-		},
+		AppInjectionSpec: *codeModulesAppInjectSpec(),
 	}
 }
 
-func csiDriverIsAvailable(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-	resource := envConfig.Client().Resources()
-	daemonset, err := csi.Get(ctx, resource)
-
-	require.NoError(t, err)
-	assert.Equal(t, daemonset.Status.DesiredNumberScheduled, daemonset.Status.NumberReady)
-
-	return ctx
+func codeModulesAppInjectSpec() *dynatracev1beta1.AppInjectionSpec {
+	return &dynatracev1beta1.AppInjectionSpec{
+		CodeModulesImage: codeModulesImage,
+	}
 }
 
-func imageHasBeenDownloaded(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-	resource := environmentConfig.Client().Resources()
-	restConfig := environmentConfig.Client().RESTConfig()
-
-	err := csi.ForEachPod(ctx, resource, func(podItem corev1.Pod) {
-		var result *pod.ExecutionResult
-		result, err := pod.
-			NewExecutionQuery(podItem, "provisioner", shell.ListDirectory(dataPath)...).
-			Execute(restConfig)
-
-		require.NoError(t, err)
-		assert.Contains(t, result.StdOut.String(), "codemodules")
-
-		result, err = pod.
-			NewExecutionQuery(podItem, "provisioner", shell.Shell(shell.ReadFile(getManifestPath()))...).
-			Execute(restConfig)
-
-		require.NoError(t, err)
-
-		var codeModulesManifest manifest
-		err = json.Unmarshal(result.StdOut.Bytes(), &codeModulesManifest)
-		if err != nil {
-			err = errors.WithMessagef(err, "json:\n%s", result.StdOut)
-		}
-		require.NoError(t, err)
-
-		assert.Equal(t, codeModulesVersion, codeModulesManifest.Version)
-	})
-
-	require.NoError(t, err)
-
-	return ctx
-}
-
-func diskUsageDoesNotIncrease(secretConfig secrets.Secret) features.Func {
+func imageHasBeenDownloaded(namespace string) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resource := environmentConfig.Client().Resources()
-		restConfig := environmentConfig.Client().RESTConfig()
-		storageMap := make(map[string]int)
-		err := csi.ForEachPod(ctx, resource, func(podItem corev1.Pod) {
-			var result *pod.ExecutionResult
-			result, err := pod.
-				NewExecutionQuery(podItem, "provisioner", shell.Shell(shell.Pipe(
-					shell.DiskUsageWithTotal(dataPath),
-					shell.FilterLastLineOnly()))...).
-				Execute(restConfig)
+
+		err := csi.ForEachPod(ctx, resource, namespace, func(podItem corev1.Pod) {
+			listCommand := shell.ListDirectory(dataPath)
+			result, err := pod.Exec(ctx, resource, podItem, provisionerContainerName, listCommand...)
+
+			require.NoError(t, err)
+			assert.Contains(t, result.StdOut.String(), dtcsi.SharedAgentBinDir)
+
+			readManifestCommand := shell.Shell(shell.ReadFile(getManifestPath()))
+			result, err = pod.Exec(ctx, resource, podItem, provisionerContainerName, readManifestCommand...)
 
 			require.NoError(t, err)
 
-			diskUsage, err := strconv.Atoi(strings.Split(result.StdOut.String(), "\t")[0])
-
+			var codeModulesManifest manifest
+			err = json.Unmarshal(result.StdOut.Bytes(), &codeModulesManifest)
+			if err != nil {
+				err = errors.WithMessagef(err, "json:\n%s", result.StdOut)
+			}
 			require.NoError(t, err)
 
-			storageMap[podItem.Name] = diskUsage
+			assert.Equal(t, codeModulesVersion, codeModulesManifest.Version)
 		})
-
-		secondTenantSecret := getSecondTenantSecret(secretConfig.ApiToken)
-		secondTenant := getSecondTenantDynakube(secretConfig.ApiUrl)
 
 		require.NoError(t, err)
-		require.NoError(t, resource.Create(ctx, &secondTenantSecret))
-		require.NoError(t, resource.Create(ctx, &secondTenant))
-
-		require.NoError(t, wait.For(conditions.New(resource).ResourceMatch(&secondTenant, func(object k8s.Object) bool {
-			dynakubeInstance, isDynakube := object.(*v1beta1.DynaKube)
-			return isDynakube && dynakubeInstance.Status.Phase == v1beta1.Running
-		})))
-
-		err = csi.ForEachPod(ctx, resource, func(podItem corev1.Pod) {
-			var result *pod.ExecutionResult
-			result, err = pod.
-				NewExecutionQuery(podItem, "provisioner", shell.Shell(shell.Pipe(
-					shell.DiskUsageWithTotal(dataPath),
-					shell.FilterLastLineOnly()))...).
-				Execute(restConfig)
-
-			require.NoError(t, err)
-
-			diskUsage, err := strconv.Atoi(strings.Split(result.StdOut.String(), "\t")[0])
-
-			require.NoError(t, err)
-			// Dividing it by 1000 so the sizes do not need to be exactly the same down to the byte
-			assert.Equal(t, storageMap[podItem.Name]/1000, diskUsage/1000)
-		})
 
 		return ctx
 	}
 }
 
-func volumesAreMountedCorrectly() features.Func {
+func measureDiskUsage(namespace string, storageMap map[string]int) features.Func {
+	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+		resource := environmentConfig.Client().Resources()
+		err := csi.ForEachPod(ctx, resource, namespace, func(podItem corev1.Pod) {
+			diskUsage := getDiskUsage(ctx, t, environmentConfig.Client().Resources(), podItem, provisionerContainerName, dataPath)
+			storageMap[podItem.Name] = diskUsage
+		})
+		require.NoError(t, err)
+		return ctx
+	}
+}
+
+func diskUsageDoesNotIncrease(namespace string, storageMap map[string]int) features.Func {
+	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+		resource := environmentConfig.Client().Resources()
+		err := csi.ForEachPod(ctx, resource, namespace, func(podItem corev1.Pod) {
+			diskUsage := getDiskUsage(ctx, t, environmentConfig.Client().Resources(), podItem, provisionerContainerName, dataPath)
+			// Dividing it by 1000 so the sizes do not need to be exactly the same down to the byte
+			assert.Equal(t, storageMap[podItem.Name]/1000, diskUsage/1000)
+		})
+		require.NoError(t, err)
+
+		return ctx
+	}
+}
+
+func getDiskUsage(ctx context.Context, t *testing.T, resource *resources.Resources, podItem corev1.Pod, containerName, path string) int { //nolint:revive
+	diskUsageCommand := shell.Shell(
+		shell.Pipe(
+			shell.DiskUsageWithTotal(path),
+			shell.FilterLastLineOnly(),
+		),
+	)
+	result, err := pod.Exec(ctx, resource, podItem, containerName, diskUsageCommand...)
+	require.NoError(t, err)
+
+	diskUsage, err := strconv.Atoi(strings.Split(result.StdOut.String(), "\t")[0])
+	require.NoError(t, err)
+
+	return diskUsage
+}
+
+func volumesAreMountedCorrectly(sampleApp sampleapps.SampleApp) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resource := environmentConfig.Client().Resources()
 		err := deployment.NewQuery(ctx, resource, client.ObjectKey{
-			Name:      sampleapps.Name,
-			Namespace: sampleapps.Namespace,
+			Name:      sampleApp.Name(),
+			Namespace: sampleApp.Namespace().Name,
 		}).ForEachPod(func(podItem corev1.Pod) {
 			volumes := podItem.Spec.Volumes
 			volumeMounts := podItem.Spec.Containers[0].VolumeMounts
@@ -224,25 +216,13 @@ func volumesAreMountedCorrectly() features.Func {
 			assert.True(t, isVolumeAttached(t, volumes, oneagent_mutation.OneAgentBinVolumeName))
 			assert.True(t, isVolumeMounted(t, volumeMounts, oneagent_mutation.OneAgentBinVolumeName))
 
-			executionResult, err := pod.
-				NewExecutionQuery(podItem, sampleapps.Name, shell.ListDirectory(webhook.DefaultInstallPath)...).
-				Execute(environmentConfig.Client().RESTConfig())
+			listCommand := shell.ListDirectory(webhook.DefaultInstallPath)
+			executionResult, err := pod.Exec(ctx, resource, podItem, sampleApp.ContainerName(), listCommand...)
 
 			require.NoError(t, err)
 			assert.NotEmpty(t, executionResult.StdOut.String())
 
-			executionResult, err = pod.
-				NewExecutionQuery(podItem, sampleapps.Name, shell.Shell(shell.Pipe(
-					shell.DiskUsageWithTotal(webhook.DefaultInstallPath),
-					shell.FilterLastLineOnly()))...).
-				Execute(environmentConfig.Client().RESTConfig())
-
-			require.NoError(t, err)
-			require.Contains(t, executionResult.StdOut.String(), "total")
-
-			diskUsage, err := strconv.Atoi(strings.Split(executionResult.StdOut.String(), "\t")[0])
-
-			require.NoError(t, err)
+			diskUsage := getDiskUsage(ctx, t, environmentConfig.Client().Resources(), podItem, sampleApp.ContainerName(), webhook.DefaultInstallPath)
 			assert.Greater(t, diskUsage, 0)
 		})
 
@@ -279,45 +259,6 @@ func isVolumeAttached(t *testing.T, volumes []corev1.Volume, volumeName string) 
 		}
 	}
 	return result
-}
-
-func getSecondTenantSecret(apiToken string) corev1.Secret {
-	return corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "dynakube-2",
-			Namespace: dynakube.Namespace,
-		},
-		Data: map[string][]byte{
-			"apiToken": []byte(apiToken),
-		},
-	}
-}
-
-func getSecondTenantDynakube(apiUrl string) v1beta1.DynaKube {
-	dynakubeInstance := v1beta1.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "dynakube-2",
-			Namespace: dynakube.Namespace,
-		},
-		Spec: v1beta1.DynaKubeSpec{
-			APIURL: apiUrl,
-			OneAgent: v1beta1.OneAgentSpec{
-				ApplicationMonitoring: &v1beta1.ApplicationMonitoringSpec{
-					UseCSIDriver: address.Of(true),
-					AppInjectionSpec: v1beta1.AppInjectionSpec{
-						CodeModulesImage: codeModulesImage,
-					},
-				},
-			},
-		},
-	}
-	dynakubeInstance.Spec.NamespaceSelector = metav1.LabelSelector{
-		MatchLabels: map[string]string{
-			"test-key": "test-value",
-		},
-	}
-
-	return dynakubeInstance
 }
 
 func getManifestPath() string {

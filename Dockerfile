@@ -1,5 +1,5 @@
 # setup build image
-FROM golang:1.20.0 AS go-base
+FROM golang:1.20.2 AS go-base
 RUN \
     --mount=type=cache,target=/var/cache/apt \
     apt-get update && apt-get install -y libbtrfs-dev libdevmapper-dev
@@ -13,9 +13,10 @@ RUN go mod download && go mod verify
 # build operator binary
 FROM go-mod AS operator-build
 ARG GO_LINKER_ARGS
+ARG GO_BUILD_TAGS
 COPY src ./src
 RUN CGO_ENABLED=1 CGO_CFLAGS="-O2 -Wno-return-local-addr" \
-    go build -tags "containers_image_openpgp,osusergo,netgo,sqlite_omit_load_extension,containers_image_storage_stub,containers_image_docker_daemon_stub" -trimpath -ldflags="${GO_LINKER_ARGS}" \
+    go build -tags "${GO_BUILD_TAGS}" -trimpath -ldflags="${GO_LINKER_ARGS}" \
     -o ./build/_output/bin/dynatrace-operator ./src/cmd/
 
 FROM registry.access.redhat.com/ubi9-micro:9.1.0 AS base

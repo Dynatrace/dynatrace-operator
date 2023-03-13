@@ -2,6 +2,7 @@ package v1beta1
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
@@ -64,9 +65,10 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 
 	dst.Status.Conditions = src.Status.Conditions
 
-	dst.Status.LastAPITokenProbeTimestamp = src.Status.LastAPITokenProbeTimestamp
-	dst.Status.LastClusterVersionProbeTimestamp = src.Status.LastClusterVersionProbeTimestamp
-	dst.Status.LastPaaSTokenProbeTimestamp = src.Status.LastPaaSTokenProbeTimestamp
+	dst.Status.LastAPITokenProbeTimestamp = src.Status.LastTokenProbeTimestamp
+	timeNow := metav1.Now()
+	dst.Status.LastClusterVersionProbeTimestamp = &timeNow
+	dst.Status.LastPaaSTokenProbeTimestamp = &timeNow
 
 	dst.Status.OneAgent.UseImmutableImage = true
 	dst.Status.OneAgent.ImageHash = src.Status.OneAgent.ImageHash
@@ -84,7 +86,7 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 	dst.Status.OneAgent.ImageVersion = src.Status.OneAgent.Version
 
 	dst.Status.Phase = v1alpha1.DynaKubePhaseType(src.Status.Phase)
-	dst.Status.Tokens = src.Status.Tokens
+	dst.Status.Tokens = ""
 	dst.Status.UpdatedTimestamp = src.Status.UpdatedTimestamp
 
 	return nil
@@ -166,9 +168,7 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 
 	dst.Status.Conditions = src.Status.Conditions
 
-	dst.Status.LastAPITokenProbeTimestamp = src.Status.LastAPITokenProbeTimestamp
-	dst.Status.LastClusterVersionProbeTimestamp = src.Status.LastClusterVersionProbeTimestamp
-	dst.Status.LastPaaSTokenProbeTimestamp = src.Status.LastPaaSTokenProbeTimestamp
+	dst.Status.LastTokenProbeTimestamp = src.Status.LastAPITokenProbeTimestamp
 
 	dst.Status.OneAgent.ImageHash = src.Status.OneAgent.ImageHash
 	dst.Status.OneAgent.Instances = map[string]OneAgentInstance{}
@@ -183,7 +183,6 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	dst.Status.OneAgent.Version = src.Status.OneAgent.Version
 
 	dst.Status.Phase = DynaKubePhaseType(src.Status.Phase)
-	dst.Status.Tokens = src.Status.Tokens
 	dst.Status.UpdatedTimestamp = src.Status.UpdatedTimestamp
 
 	return nil
