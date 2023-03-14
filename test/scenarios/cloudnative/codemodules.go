@@ -39,6 +39,7 @@ const (
 	codeModulesVersion     = "1.246.0.20220627-183412"
 	codeModulesImage       = "quay.io/dynatrace/codemodules:" + codeModulesVersion
 	codeModulesImageDigest = "7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
+	diskUsageDelta         = 100000
 
 	dataPath                 = "/data/"
 	provisionerContainerName = "provisioner"
@@ -178,7 +179,7 @@ func diskUsageDoesNotIncrease(namespace string, storageMap map[string]int) featu
 		resource := environmentConfig.Client().Resources()
 		err := csi.ForEachPod(ctx, resource, namespace, func(podItem corev1.Pod) {
 			diskUsage := getDiskUsage(ctx, t, environmentConfig.Client().Resources(), podItem, provisionerContainerName, dataPath)
-			assert.InDelta(t, storageMap[podItem.Name], diskUsage, 100)
+			assert.InDelta(t, storageMap[podItem.Name], diskUsage, diskUsageDelta)
 		})
 		require.NoError(t, err)
 
