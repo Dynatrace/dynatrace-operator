@@ -9,9 +9,6 @@ import (
 )
 
 const (
-	errorConflictingActiveGateSections = `The DynaKube's specification tries to use the deprecated ActiveGate section(s) alongside the new ActiveGate section, which is not supported.
-`
-
 	errorInvalidActiveGateCapability = `The DynaKube's specification tries to use an invalid capability in ActiveGate section, invalid capability=%s.
 Make sure you correctly specify the ActiveGate capabilities in your custom resource.
 `
