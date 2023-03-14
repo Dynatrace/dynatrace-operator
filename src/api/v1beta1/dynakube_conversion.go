@@ -73,24 +73,6 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 	return nil
 }
 
-func convertToDeprecatedActiveGateCapability(dst *v1alpha1.CapabilityProperties, src *CapabilityProperties) {
-	dst.Enabled = true
-
-	dst.Replicas = src.Replicas
-	dst.Group = src.Group
-	if src.CustomProperties != nil {
-		dst.CustomProperties = &v1alpha1.DynaKubeValueSource{
-			Value:     src.CustomProperties.Value,
-			ValueFrom: src.CustomProperties.ValueFrom,
-		}
-	}
-	dst.Resources = src.Resources
-	dst.NodeSelector = src.NodeSelector
-	dst.Tolerations = src.Tolerations
-	dst.Labels = src.Labels
-	dst.Env = src.Env
-}
-
 // ConvertFrom converts v1alpha1 to v1beta1
 func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	src := srcRaw.(*v1alpha1.DynaKube)
@@ -149,20 +131,4 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	dst.Status.UpdatedTimestamp = src.Status.UpdatedTimestamp
 
 	return nil
-}
-
-func convertFromDeprecatedActiveGateCapability(dst *CapabilityProperties, src *v1alpha1.CapabilityProperties) {
-	dst.Replicas = src.Replicas
-	dst.Group = src.Group
-	if src.CustomProperties != nil {
-		dst.CustomProperties = &DynaKubeValueSource{
-			Value:     src.CustomProperties.Value,
-			ValueFrom: src.CustomProperties.ValueFrom,
-		}
-	}
-	dst.Resources = src.Resources
-	dst.NodeSelector = src.NodeSelector
-	dst.Tolerations = src.Tolerations
-	dst.Labels = src.Labels
-	dst.Env = src.Env
 }
