@@ -285,6 +285,18 @@ func prepareAlphaCapability() v1alpha1.CapabilityProperties {
 	}
 }
 
+func compareAlphaCapability(t *testing.T, expectedCapability v1alpha1.CapabilityProperties, actualCapability CapabilityProperties) {
+	assert.Equal(t, expectedCapability.Replicas, actualCapability.Replicas)
+	assert.Equal(t, expectedCapability.Group, actualCapability.Group)
+	assert.Equal(t, expectedCapability.CustomProperties.ValueFrom, actualCapability.CustomProperties.ValueFrom)
+	assert.Equal(t, expectedCapability.CustomProperties.Value, actualCapability.CustomProperties.Value)
+	assert.Equal(t, expectedCapability.Resources, actualCapability.Resources)
+	assert.Equal(t, expectedCapability.NodeSelector, actualCapability.NodeSelector)
+	assert.Equal(t, expectedCapability.Tolerations, actualCapability.Tolerations)
+	assert.Equal(t, expectedCapability.Labels, actualCapability.Labels)
+	assert.Equal(t, expectedCapability.Env, actualCapability.Env)
+}
+
 func TestConversion_ConvertTo(t *testing.T) {
 	timeNow := metav1.Now()
 	oldDynakube := &DynaKube{
@@ -418,4 +430,55 @@ func TestConversion_ConvertTo(t *testing.T) {
 	assert.Equal(t, string(oldDynakube.Status.Phase), string(convertedDynakube.Status.Phase))
 	assert.Equal(t, "", convertedDynakube.Status.Tokens)
 	assert.Equal(t, oldDynakube.Status.UpdatedTimestamp, convertedDynakube.Status.UpdatedTimestamp)
+}
+
+func compareBetaCapability(t *testing.T, expectedCapability CapabilityProperties, actualCapability v1alpha1.CapabilityProperties) {
+	assert.Equal(t, expectedCapability.Replicas, actualCapability.Replicas)
+	assert.Equal(t, expectedCapability.Group, actualCapability.Group)
+	assert.Equal(t, expectedCapability.CustomProperties.ValueFrom, actualCapability.CustomProperties.ValueFrom)
+	assert.Equal(t, expectedCapability.CustomProperties.Value, actualCapability.CustomProperties.Value)
+	assert.Equal(t, expectedCapability.Resources, actualCapability.Resources)
+	assert.Equal(t, expectedCapability.NodeSelector, actualCapability.NodeSelector)
+	assert.Equal(t, expectedCapability.Tolerations, actualCapability.Tolerations)
+	assert.Equal(t, expectedCapability.Labels, actualCapability.Labels)
+	assert.Equal(t, expectedCapability.Env, actualCapability.Env)
+}
+
+func prepareBetaCapability() CapabilityProperties {
+	intVal := int32(3)
+	return CapabilityProperties{
+		Replicas: &intVal,
+		Group:    "test-activegate-group",
+		CustomProperties: &DynaKubeValueSource{
+			Value: "test-routing-value",
+		},
+		Resources: corev1.ResourceRequirements{
+			Limits: map[corev1.ResourceName]resource.Quantity{
+				corev1.ResourceCPU: *resource.NewScaledQuantity(1, 1),
+			},
+			Requests: map[corev1.ResourceName]resource.Quantity{
+				corev1.ResourceMemory: *resource.NewScaledQuantity(2, 2),
+			},
+		},
+		NodeSelector: map[string]string{
+			"key": "value",
+		},
+		Tolerations: []corev1.Toleration{
+			{
+				Key:      "key",
+				Operator: "operator",
+				Value:    "value",
+				Effect:   "effect",
+			},
+		},
+		Labels: map[string]string{
+			"key": "value",
+		},
+		Env: []corev1.EnvVar{
+			{
+				Name:  "name",
+				Value: "value",
+			},
+		},
+	}
 }

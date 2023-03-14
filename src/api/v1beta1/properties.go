@@ -217,6 +217,7 @@ func (dk *DynaKube) ActiveGateImage() string {
 }
 
 func (dk *DynaKube) CustomActiveGateImage() string {
+
 	return dk.Spec.ActiveGate.Image
 }
 
