@@ -285,18 +285,6 @@ func prepareAlphaCapability() v1alpha1.CapabilityProperties {
 	}
 }
 
-func compareAlphaCapability(t *testing.T, expectedCapability v1alpha1.CapabilityProperties, actualCapability CapabilityProperties) {
-	assert.Equal(t, expectedCapability.Replicas, actualCapability.Replicas)
-	assert.Equal(t, expectedCapability.Group, actualCapability.Group)
-	assert.Equal(t, expectedCapability.CustomProperties.ValueFrom, actualCapability.CustomProperties.ValueFrom)
-	assert.Equal(t, expectedCapability.CustomProperties.Value, actualCapability.CustomProperties.Value)
-	assert.Equal(t, expectedCapability.Resources, actualCapability.Resources)
-	assert.Equal(t, expectedCapability.NodeSelector, actualCapability.NodeSelector)
-	assert.Equal(t, expectedCapability.Tolerations, actualCapability.Tolerations)
-	assert.Equal(t, expectedCapability.Labels, actualCapability.Labels)
-	assert.Equal(t, expectedCapability.Env, actualCapability.Env)
-}
-
 func TestConversion_ConvertTo(t *testing.T) {
 	timeNow := metav1.Now()
 	oldDynakube := &DynaKube{
