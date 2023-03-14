@@ -148,9 +148,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,
-				KubernetesMonitoring: dynatracev1beta1.KubernetesMonitoringSpec{
-					Enabled: true,
-				}}}
+			}}
 		controller := createFakeClientAndReconciler(mockClient, instance, testPaasToken, testAPIToken)
 
 		result, err := controller.Reconcile(context.TODO(), reconcile.Request{
@@ -160,14 +158,6 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
 
-		var statefulSet appsv1.StatefulSet
-
-		kubeMonCapability := capability.NewKubeMonCapability(instance)
-		name := capability.CalculateStatefulSetName(kubeMonCapability, instance.Name)
-		err = controller.client.Get(context.TODO(), client.ObjectKey{Name: name, Namespace: testNamespace}, &statefulSet)
-
-		assert.NoError(t, err)
-		assert.NotNil(t, statefulSet)
 	})
 	t.Run(`Create reconciles automatic kubernetes api monitoring`, func(t *testing.T) {
 		mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
@@ -473,10 +463,7 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 			Namespace: testNamespace,
 		},
 		Spec: dynatracev1beta1.DynaKubeSpec{
-			APIURL: testApiUrl,
-			Routing: dynatracev1beta1.RoutingSpec{
-				Enabled: true,
-			}}}
+			APIURL: testApiUrl}}
 	controller := createFakeClientAndReconciler(mockClient, instance, testPaasToken, testAPIToken)
 	request := reconcile.Request{
 		NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -489,29 +476,26 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 	_, err = controller.Reconcile(context.TODO(), request)
 	assert.NoError(t, err)
 
-	routingCapability := capability.NewRoutingCapability(instance)
-	stsName := capability.CalculateStatefulSetName(routingCapability, testName)
+	stsName := capability.CalculateStatefulSetName(capability.NewMultiCapability(instance), testName)
 
 	routingSts := &appsv1.StatefulSet{}
 	err = controller.client.Get(context.TODO(), client.ObjectKey{
 		Namespace: testNamespace,
 		Name:      stsName,
 	}, routingSts)
-	assert.NoError(t, err)
+	assert.Error(t, err)
 	assert.NotNil(t, routingSts)
 
 	routingSvc := &corev1.Service{}
 	err = controller.client.Get(context.TODO(), client.ObjectKey{
 		Namespace: testNamespace,
-		Name:      testName + "-" + routingCapability.ShortName(),
 	}, routingSvc)
-	assert.NoError(t, err)
+	assert.Error(t, err)
 	assert.NotNil(t, routingSvc)
 
 	err = controller.client.Get(context.TODO(), client.ObjectKey{Name: instance.Name, Namespace: instance.Namespace}, instance)
 	require.NoError(t, err)
 
-	instance.Spec.Routing.Enabled = false
 	err = controller.client.Update(context.TODO(), instance)
 	require.NoError(t, err)
 
@@ -527,7 +511,6 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 
 	err = controller.client.Get(context.TODO(), client.ObjectKey{
 		Namespace: testNamespace,
-		Name:      testName + "-" + routingCapability.ShortName(),
 	}, routingSvc)
 	assert.Error(t, err)
 	assert.True(t, k8serrors.IsNotFound(err))

@@ -27,10 +27,6 @@ Make sure such a capability is the single one.
 )
 
 func conflictingActiveGateConfiguration(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
-	if dynakube.DeprecatedActiveGateMode() && dynakube.ActiveGateMode() {
-		log.Info("requested dynakube has conflicting active gate configuration", "name", dynakube.Name, "namespace", dynakube.Namespace)
-		return errorConflictingActiveGateSections
-	}
 	return ""
 }
 

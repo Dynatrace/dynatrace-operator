@@ -89,32 +89,6 @@ func NewMultiCapability(dk *dynatracev1beta1.DynaKube) *MultiCapability {
 	return &mc
 }
 
-// Deprecated
-func NewKubeMonCapability(dk *dynatracev1beta1.DynaKube) *KubeMonCapability {
-	c := &KubeMonCapability{
-		*kubeMonBase(),
-	}
-	if dk == nil {
-		return c
-	}
-	c.enabled = dk.Spec.KubernetesMonitoring.Enabled
-	c.properties = &dk.Spec.KubernetesMonitoring.CapabilityProperties
-	return c
-}
-
-// Deprecated
-func NewRoutingCapability(dk *dynatracev1beta1.DynaKube) *RoutingCapability {
-	c := &RoutingCapability{
-		*routingBase(),
-	}
-	if dk == nil {
-		return c
-	}
-	c.enabled = dk.Spec.Routing.Enabled
-	c.properties = &dk.Spec.Routing.CapabilityProperties
-	return c
-}
-
 func kubeMonBase() *capabilityBase {
 	c := capabilityBase{
 		shortName: dynatracev1beta1.KubeMonCapability.ShortName,
@@ -157,8 +131,6 @@ func syntheticBase() *capabilityBase {
 
 func GenerateActiveGateCapabilities(dynakube *dynatracev1beta1.DynaKube) []Capability {
 	return []Capability{
-		NewKubeMonCapability(dynakube),
-		NewRoutingCapability(dynakube),
 		NewMultiCapability(dynakube),
 	}
 }

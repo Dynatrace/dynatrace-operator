@@ -31,7 +31,6 @@ func createTestDynakubeWithAppInject(name string, labels map[string]string, labe
 
 func createTestDynakubeWithMultipleFeatures(name string, labels map[string]string) *dynatracev1beta1.DynaKube {
 	dk := createTestDynakubeWithAppInject(name, labels, nil)
-	dk.Spec.Routing.Enabled = true
 	return dk
 }
 

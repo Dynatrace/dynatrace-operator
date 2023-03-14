@@ -39,25 +39,6 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 		dst.Spec.ClassicFullStack.Labels = src.Spec.OneAgent.ClassicFullStack.Labels
 	}
 
-	// ActiveGates
-	if src.Spec.Routing.Image != "" {
-		dst.Spec.ActiveGate.Image = src.Spec.Routing.Image
-	} else if src.Spec.KubernetesMonitoring.Image != "" {
-		dst.Spec.ActiveGate.Image = src.Spec.KubernetesMonitoring.Image
-	}
-
-	if src.Spec.Routing.Enabled {
-		convertToDeprecatedActiveGateCapability(
-			&dst.Spec.RoutingSpec.CapabilityProperties,
-			&src.Spec.Routing.CapabilityProperties)
-	}
-
-	if src.Spec.KubernetesMonitoring.Enabled {
-		convertToDeprecatedActiveGateCapability(
-			&dst.Spec.KubernetesMonitoringSpec.CapabilityProperties,
-			&src.Spec.KubernetesMonitoring.CapabilityProperties)
-	}
-
 	// Status
 	dst.Status.ActiveGate.ImageHash = src.Status.ActiveGate.ImageHash
 	dst.Status.ActiveGate.LastImageProbeTimestamp = src.Status.ActiveGate.LastUpdateProbeTimestamp
@@ -141,24 +122,6 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 		dst.Spec.OneAgent.ClassicFullStack.Env = src.Spec.ClassicFullStack.Env
 		dst.Spec.OneAgent.ClassicFullStack.DNSPolicy = src.Spec.ClassicFullStack.DNSPolicy
 		dst.Spec.OneAgent.ClassicFullStack.Labels = src.Spec.ClassicFullStack.Labels
-	}
-
-	// ActiveGates
-	dst.Spec.Routing.Image = src.Spec.ActiveGate.Image
-	dst.Spec.KubernetesMonitoring.Image = src.Spec.ActiveGate.Image
-
-	if src.Spec.RoutingSpec.Enabled {
-		dst.Spec.Routing.Enabled = true
-		convertFromDeprecatedActiveGateCapability(
-			&dst.Spec.Routing.CapabilityProperties,
-			&src.Spec.RoutingSpec.CapabilityProperties)
-	}
-
-	if src.Spec.KubernetesMonitoringSpec.Enabled {
-		dst.Spec.KubernetesMonitoring.Enabled = true
-		convertFromDeprecatedActiveGateCapability(
-			&dst.Spec.KubernetesMonitoring.CapabilityProperties,
-			&src.Spec.KubernetesMonitoringSpec.CapabilityProperties)
 	}
 
 	// Status

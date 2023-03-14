@@ -62,9 +62,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 			Namespace: testNamespace,
 		}}
 
-	capability.NewRoutingCapability(instance)
-
-	r := NewReconciler(clt, clt, scheme.Scheme, instance, capability.NewRoutingCapability(instance))
+	r := NewReconciler(clt, clt, scheme.Scheme, instance, capability.NewMultiCapability(instance))
 	r.dynakube.Annotations = map[string]string{}
 	require.NotNil(t, r)
 	require.NotNil(t, r.client)
@@ -251,16 +249,14 @@ func TestReconcile_GetCustomPropertyHash(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, hash)
 
-	r.dynakube.Spec.Routing.CustomProperties = &dynatracev1beta1.DynaKubeValueSource{Value: testValue}
 	hash, err = r.calculateActiveGateConfigurationHash()
 	assert.NoError(t, err)
 	assert.NotEmpty(t, hash)
 
-	r.dynakube.Spec.Routing.CustomProperties = &dynatracev1beta1.DynaKubeValueSource{ValueFrom: testName}
 	hash, err = r.calculateActiveGateConfigurationHash()
 	r.dynakube.Annotations[dynatracev1beta1.AnnotationFeatureActiveGateAuthToken] = "false"
-	assert.Error(t, err)
-	assert.Empty(t, hash)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, hash)
 
 	err = r.client.Create(context.TODO(), &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -275,7 +271,7 @@ func TestReconcile_GetCustomPropertyHash(t *testing.T) {
 
 	hash, err = r.calculateActiveGateConfigurationHash()
 	assert.NoError(t, err)
-	assert.NotEmpty(t, hash)
+	assert.Empty(t, hash)
 }
 
 func TestReconcile_GetActiveGateAuthTokenHash(t *testing.T) {

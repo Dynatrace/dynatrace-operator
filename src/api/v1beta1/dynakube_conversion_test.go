@@ -214,17 +214,6 @@ func TestConversion_ConvertFrom(t *testing.T) {
 	assert.Equal(t, oldDynakube.Spec.ClassicFullStack.DNSPolicy, convertedDynakube.Spec.OneAgent.ClassicFullStack.DNSPolicy)
 	assert.Equal(t, oldDynakube.Spec.ClassicFullStack.Labels, convertedDynakube.Spec.OneAgent.ClassicFullStack.Labels)
 
-	require.NotNil(t, convertedDynakube.Spec.Routing)
-	assert.Equal(t, oldDynakube.Spec.ActiveGate.Image, convertedDynakube.Spec.Routing.Image)
-	compareAlphaCapability(t,
-		oldDynakube.Spec.RoutingSpec.CapabilityProperties,
-		convertedDynakube.Spec.Routing.CapabilityProperties)
-
-	require.NotNil(t, convertedDynakube.Spec.KubernetesMonitoring)
-	compareAlphaCapability(t,
-		oldDynakube.Spec.KubernetesMonitoringSpec.CapabilityProperties,
-		convertedDynakube.Spec.KubernetesMonitoring.CapabilityProperties)
-
 	assert.Len(t, convertedDynakube.Spec.ActiveGate.Capabilities, 0)
 
 	assert.Equal(t, oldDynakube.Status.ActiveGate.ImageHash, convertedDynakube.Status.ActiveGate.ImageHash)
@@ -364,16 +353,6 @@ func TestConversion_ConvertTo(t *testing.T) {
 					},
 				},
 			},
-
-			Routing: RoutingSpec{
-				Enabled:              true,
-				CapabilityProperties: prepareBetaCapability(),
-			},
-
-			KubernetesMonitoring: KubernetesMonitoringSpec{
-				Enabled:              true,
-				CapabilityProperties: prepareBetaCapability(),
-			},
 		},
 		Status: DynaKubeStatus{
 			Phase:                   "test-phase",
@@ -432,16 +411,6 @@ func TestConversion_ConvertTo(t *testing.T) {
 
 	require.NotNil(t, convertedDynakube.Spec.ActiveGate)
 	assert.Equal(t, oldDynakube.Spec.ActiveGate.Image, convertedDynakube.Spec.ActiveGate.Image)
-
-	require.NotNil(t, convertedDynakube.Spec.RoutingSpec)
-	compareBetaCapability(t,
-		oldDynakube.Spec.Routing.CapabilityProperties,
-		convertedDynakube.Spec.RoutingSpec.CapabilityProperties)
-
-	require.NotNil(t, convertedDynakube.Spec.KubernetesMonitoringSpec)
-	compareBetaCapability(t,
-		oldDynakube.Spec.KubernetesMonitoring.CapabilityProperties,
-		convertedDynakube.Spec.KubernetesMonitoringSpec.CapabilityProperties)
 
 	assert.Equal(t, oldDynakube.Status.ActiveGate.ImageHash, convertedDynakube.Status.ActiveGate.ImageHash)
 	assert.Equal(t, oldDynakube.Status.Conditions, convertedDynakube.Status.Conditions)
