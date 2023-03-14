@@ -157,7 +157,6 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
-
 	})
 	t.Run(`Create reconciles automatic kubernetes api monitoring`, func(t *testing.T) {
 		mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
