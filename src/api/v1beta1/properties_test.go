@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	timeutil "github.com/Dynatrace/dynatrace-operator/src/time"
+	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -432,7 +432,7 @@ func TestDynaKube_ShallUpdateActiveGateConnectionInfo(t *testing.T) {
 		},
 	}
 
-	timeProvider := timeutil.NewProvider()
+	timeProvider := timeprovider.New()
 	tests := map[string]struct {
 		lastRequestTimeDeltaMinutes int
 		shallUpdate                 bool
@@ -496,9 +496,9 @@ func TestDynaKube_ShallUpdateActiveGateConnectionInfo(t *testing.T) {
 			dk.Status.DynatraceApi.LastOneAgentConnectionInfoRequest.Time = lastRequestTime
 			dk.Status.DynatraceApi.LastTokenScopeRequest.Time = lastRequestTime
 
-			assert.Equal(t, test.shallUpdate, dk.shallUpdateOneAgentConnectionInfo(timeProvider))
-			assert.Equal(t, test.shallUpdate, dk.shallUpdateActiveGateConnectionInfo(timeProvider))
-			assert.Equal(t, test.shallUpdate, dk.shallVerifyTokenScope(timeProvider))
+			assert.Equal(t, test.shallUpdate, dk.ShallUpdateOneAgentConnectionInfo(timeProvider))
+			assert.Equal(t, test.shallUpdate, dk.ShallUpdateActiveGateConnectionInfo(timeProvider))
+			assert.Equal(t, test.shallUpdate, dk.ShallVerifyTokenScope(timeProvider))
 		})
 	}
 }

@@ -7,6 +7,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -14,22 +15,24 @@ import (
 )
 
 type Reconciler struct {
-	context   context.Context
-	client    client.Client
-	apiReader client.Reader
-	dtc       dtclient.Client
-	dynakube  *dynatracev1beta1.DynaKube
-	scheme    *runtime.Scheme
+	context      context.Context
+	client       client.Client
+	apiReader    client.Reader
+	dtc          dtclient.Client
+	dynakube     *dynatracev1beta1.DynaKube
+	scheme       *runtime.Scheme
+	timeProvider *timeprovider.Provider
 }
 
 func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
 	return &Reconciler{
-		context:   ctx,
-		client:    clt,
-		apiReader: apiReader,
-		dynakube:  dynakube,
-		scheme:    scheme,
-		dtc:       dtc,
+		context:      ctx,
+		client:       clt,
+		apiReader:    apiReader,
+		dynakube:     dynakube,
+		scheme:       scheme,
+		dtc:          dtc,
+		timeProvider: timeprovider.New(),
 	}
 }
 
@@ -50,7 +53,7 @@ func (r *Reconciler) Reconcile() error {
 }
 
 func (r *Reconciler) reconcileOneAgentConnectionInfo() error {
-	if !r.dynakube.ShallUpdateOneAgentConnectionInfo() {
+	if !r.dynakube.ShallUpdateOneAgentConnectionInfo(r.timeProvider) {
 		log.Info(dynatracev1beta1.GetCacheValidMessage(
 			"oneagent connection info update",
 			r.dynakube.Status.DynatraceApi.LastOneAgentConnectionInfoRequest,
@@ -69,7 +72,7 @@ func (r *Reconciler) reconcileOneAgentConnectionInfo() error {
 }
 
 func (r *Reconciler) reconcileActiveGateConnectionInfo() error {
-	if !r.dynakube.ShallUpdateActiveGateConnectionInfo() {
+	if !r.dynakube.ShallUpdateActiveGateConnectionInfo(r.timeProvider) {
 		log.Info(dynatracev1beta1.GetCacheValidMessage(
 			"activegate connection info update",
 			r.dynakube.Status.DynatraceApi.LastActiveGateConnectionInfoRequest,

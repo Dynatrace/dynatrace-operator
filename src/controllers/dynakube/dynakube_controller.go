@@ -24,7 +24,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/mapper"
-	timeutil "github.com/Dynatrace/dynatrace-operator/src/time"
+	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	appsv1 "k8s.io/api/apps/v1"
@@ -241,7 +241,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		ApiReader:       controller.apiReader,
 		Fs:              controller.fs,
 		VersionProvider: controller.versionProvider,
-		TimeProvider:    timeutil.NewProvider(),
+		TimeProvider:    timeprovider.New(),
 	}
 	err = versionReconciler.Reconcile(ctx)
 	if err != nil {

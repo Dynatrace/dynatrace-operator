@@ -6,6 +6,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -118,7 +119,7 @@ func (dynatraceClientBuilder builder) BuildWithTokenVerification(dynaKubeStatus 
 func (dynatraceClientBuilder builder) verifyTokenScopes(dynatraceClient dtclient.Client, dynaKubeStatus *dynatracev1beta1.DynaKubeStatus) error {
 	var err error
 
-	if dynatraceClientBuilder.dynakube.ShallVerifyTokenScope() {
+	if dynatraceClientBuilder.dynakube.ShallVerifyTokenScope(timeprovider.New()) {
 		dynaKubeStatus.DynatraceApi.LastTokenScopeRequest = metav1.Now()
 		err = dynatraceClientBuilder.tokens.VerifyScopes(dynatraceClient)
 		log.Info("token verified")

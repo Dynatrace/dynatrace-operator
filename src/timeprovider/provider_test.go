@@ -1,4 +1,4 @@
-package time
+package timeprovider
 
 import (
 	"testing"
@@ -40,7 +40,7 @@ func TestTimeoutReached(t *testing.T) {
 }
 
 func TestTimeProvider(t *testing.T) {
-	provider := NewProvider()
+	provider := New()
 	now := provider.Now()
 
 	t.Run(`returns true if the previous timestamp is too far in the past`, func(t *testing.T) {

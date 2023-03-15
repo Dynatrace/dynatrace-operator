@@ -1,4 +1,4 @@
-package time
+package timeprovider
 
 import (
 	"time"
@@ -6,7 +6,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func NewProvider() *Provider {
+func New() *Provider {
 	now := metav1.Now()
 	return &Provider{
 		now: &now,
