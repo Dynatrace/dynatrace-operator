@@ -1,11 +1,13 @@
 package dtclient
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
 
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -51,7 +53,7 @@ func TestProxy(t *testing.T) {
 		assert.NotNil(t, options)
 		options(&dtc)
 
-		transport := dtc.httpClient.Transport.(*http.Transport)
+		transport := dtc.httpClient.HTTPClient.Transport.(*http.Transport)
 
 		checkProxyForUrl(t, *transport, proxyRawURL, "http://working.url", false)
 		checkProxyForUrl(t, *transport, proxyRawURL, "https://working.url", false)
@@ -63,7 +65,7 @@ func TestProxy(t *testing.T) {
 		assert.NotNil(t, options)
 		options(&dtc)
 
-		transport := dtc.httpClient.Transport.(*http.Transport)
+		transport := dtc.httpClient.HTTPClient.Transport.(*http.Transport)
 
 		checkProxyForUrl(t, *transport, proxyRawURL, "http://working.url", true)
 		checkProxyForUrl(t, *transport, proxyRawURL, "https://working.url", true)
@@ -87,7 +89,7 @@ func TestCerts(t *testing.T) {
 	defer dynatraceServer.Close()
 
 	dtc := createTestDynatraceClient(*dynatraceServer)
-	transport := dtc.httpClient.Transport.(*http.Transport)
+	transport := dtc.httpClient.HTTPClient.Transport.(*http.Transport)
 
 	certs := Certs(nil)
 	assert.NotNil(t, certs)
@@ -110,11 +112,17 @@ func checkProxyForUrl(t *testing.T, transport http.Transport, proxyRawURL, targe
 }
 
 func createTestDynatraceClient(dynatraceServer httptest.Server) dynatraceClient {
+	retryClient := retryablehttp.NewClient()
+	retryClient.HTTPClient = dynatraceServer.Client()
+	retryClient.RetryMax = 0
+	retryClient.CheckRetry = func(ctx context.Context, resp *http.Response, err error) (bool, error) {
+		return false, err
+	}
 	return dynatraceClient{
 		url:        dynatraceServer.URL,
 		apiToken:   apiToken,
 		paasToken:  paasToken,
-		httpClient: dynatraceServer.Client(),
-		hostCache:  nil,
+		httpClient: retryClient,
+		hostCache:  make(map[string]hostInfo),
 	}
 }

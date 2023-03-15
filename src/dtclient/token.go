@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/pkg/errors"
 )
 
@@ -33,7 +34,7 @@ func (dtc *dynatraceClient) GetTokenScopes(token string) (TokenScopes, error) {
 		return nil, errors.WithStack(err)
 	}
 
-	req, err := http.NewRequest("POST", dtc.getTokensLookupUrl(), bytes.NewBuffer(jsonStr))
+	req, err := retryablehttp.NewRequest(http.MethodPost, dtc.getTokensLookupUrl(), bytes.NewBuffer(jsonStr))
 	if err != nil {
 		return nil, fmt.Errorf("error initializing http request: %w", err)
 	}

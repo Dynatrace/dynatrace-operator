@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/pkg/errors"
 )
 
@@ -152,8 +153,8 @@ func (dtc *dynatraceClient) GetProcessModuleConfig(prevRevision uint) (*ProcessM
 	return dtc.readResponseForProcessModuleConfig(responseData)
 }
 
-func (dtc *dynatraceClient) createProcessModuleConfigRequest(prevRevision uint) (*http.Request, error) {
-	req, err := http.NewRequest(http.MethodGet, dtc.getProcessModuleConfigUrl(), nil)
+func (dtc *dynatraceClient) createProcessModuleConfigRequest(prevRevision uint) (*retryablehttp.Request, error) {
+	req, err := retryablehttp.NewRequest(http.MethodGet, dtc.getProcessModuleConfigUrl(), nil)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing http request: %w", err)
 	}

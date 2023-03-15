@@ -39,35 +39,29 @@ func TestReadCommunicationHosts(t *testing.T) {
 		return dc.readResponseForOneAgentConnectionInfo(response)
 	}
 
-	{
-		m, err := readFromString(goodCommunicationEndpointsResponse)
-		if assert.NoError(t, err) {
-			expected := []CommunicationHost{
-				{Protocol: "https", Host: "example.live.dynatrace.com", Port: 443},
-				{Protocol: "https", Host: "managedhost.com", Port: 9999},
-				{Protocol: "https", Host: "10.0.0.1", Port: 8000},
-				{Protocol: "http", Host: "insecurehost", Port: 80},
-			}
-			assert.Equal(t, expected, m.CommunicationHosts)
+	m, err := readFromString(goodCommunicationEndpointsResponse)
+	if assert.NoError(t, err) {
+		expected := []CommunicationHost{
+			{Protocol: "https", Host: "example.live.dynatrace.com", Port: 443},
+			{Protocol: "https", Host: "managedhost.com", Port: 9999},
+			{Protocol: "https", Host: "10.0.0.1", Port: 8000},
+			{Protocol: "http", Host: "insecurehost", Port: 80},
 		}
+		assert.Equal(t, expected, m.CommunicationHosts)
 	}
-	{
-		m, err := readFromString(mixedCommunicationEndpointsResponse)
-		if assert.NoError(t, err) {
-			expected := []CommunicationHost{
-				{Protocol: "https", Host: "example.live.dynatrace.com", Port: 443},
-			}
-			assert.Equal(t, expected, m.CommunicationHosts)
+	m, err = readFromString(mixedCommunicationEndpointsResponse)
+	if assert.NoError(t, err) {
+		expected := []CommunicationHost{
+			{Protocol: "https", Host: "example.live.dynatrace.com", Port: 443},
 		}
+		assert.Equal(t, expected, m.CommunicationHosts)
 	}
-	{
-		_, err := readFromString("")
-		assert.Error(t, err, "empty response")
-	}
-	{
-		_, err := readFromString(`{"communicationEndpoints": ["shouldnotbeparsed"]}`)
-		assert.Error(t, err, "no hosts available")
-	}
+
+	_, err = readFromString("")
+	assert.Error(t, err, "empty response")
+
+	_, err = readFromString(`{"communicationEndpoints": ["shouldnotbeparsed"]}`)
+	assert.Error(t, err, "no hosts available")
 }
 
 func TestParseEndpoints(t *testing.T) {

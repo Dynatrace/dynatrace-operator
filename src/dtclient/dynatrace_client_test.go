@@ -16,15 +16,7 @@ func TestMakeRequest(t *testing.T) {
 	dynatraceServer := httptest.NewServer(dynatraceServerHandler())
 	defer dynatraceServer.Close()
 
-	dc := &dynatraceClient{
-		url:       dynatraceServer.URL,
-		apiToken:  apiToken,
-		paasToken: paasToken,
-
-		hostCache:  make(map[string]hostInfo),
-		httpClient: http.DefaultClient,
-	}
-
+	dc := createTestDynatraceClient(*dynatraceServer)
 	require.NotNil(t, dc)
 
 	{
@@ -45,15 +37,7 @@ func TestGetResponseOrServerError(t *testing.T) {
 	dynatraceServer := httptest.NewServer(dynatraceServerHandler())
 	defer dynatraceServer.Close()
 
-	dc := &dynatraceClient{
-		url:       dynatraceServer.URL,
-		apiToken:  apiToken,
-		paasToken: paasToken,
-
-		hostCache:  make(map[string]hostInfo),
-		httpClient: http.DefaultClient,
-	}
-
+	dc := createTestDynatraceClient(*dynatraceServer)
 	require.NotNil(t, dc)
 
 	reqURL := fmt.Sprintf("%s/v1/deployment/installer/agent/connectioninfo", dc.url)
@@ -72,51 +56,38 @@ func TestBuildHostCache(t *testing.T) {
 	dynatraceServer := httptest.NewServer(dynatraceServerHandler())
 	defer dynatraceServer.Close()
 
-	dc := &dynatraceClient{
-		url:       dynatraceServer.URL,
-		paasToken: paasToken,
-		now:       time.Unix(1521540000, 0),
-
-		hostCache:  make(map[string]hostInfo),
-		httpClient: http.DefaultClient,
-	}
-
+	dc := createTestDynatraceClient(*dynatraceServer)
+	dc.now = time.Unix(1521540000, 0)
 	require.NotNil(t, dc)
 
-	{
-		err := dc.buildHostCache()
-		assert.Error(t, err, "error querying dynatrace server")
-		assert.Empty(t, dc.hostCache)
-	}
-	{
-		dc.apiToken = apiToken
-		err := dc.buildHostCache()
-		assert.NoError(t, err)
-		assert.NotZero(t, len(dc.hostCache))
-		assert.ObjectsAreEqualValues(dc.hostCache, map[string]hostInfo{
-			"10.11.12.13": {version: "1.142.0.20180313-173634", entityID: "dynatraceSampleEntityId"},
-			"192.168.0.1": {version: "1.142.0.20180313-173634", entityID: "dynatraceSampleEntityId"},
-		})
-	}
+	dc.apiToken = ""
+	err := dc.buildHostCache()
+	assert.Error(t, err, "error querying dynatrace server")
+	assert.Empty(t, dc.hostCache)
+
+	dc.apiToken = apiToken
+	err = dc.buildHostCache()
+	assert.NoError(t, err)
+	assert.NotZero(t, len(dc.hostCache))
+	assert.ObjectsAreEqualValues(dc.hostCache, map[string]hostInfo{
+		"10.11.12.13": {version: "1.142.0.20180313-173634", entityID: "dynatraceSampleEntityId"},
+		"192.168.0.1": {version: "1.142.0.20180313-173634", entityID: "dynatraceSampleEntityId"},
+	})
 }
 
 func TestServerError(t *testing.T) {
-	{
-		se := &ServerError{Code: 401, Message: "Unauthorized"}
-		assert.Equal(t, se.Error(), "dynatrace server error 401: Unauthorized")
-	}
-	{
-		se := &ServerError{Message: "Unauthorized"}
-		assert.Equal(t, se.Error(), "dynatrace server error 0: Unauthorized")
-	}
-	{
-		se := &ServerError{Code: 401}
-		assert.Equal(t, se.Error(), "dynatrace server error 401: ")
-	}
-	{
-		se := &ServerError{}
-		assert.Equal(t, se.Error(), "unknown server error")
-	}
+	se := &ServerError{Code: 401, Message: "Unauthorized"}
+	assert.Equal(t, se.Error(), "dynatrace server error 401: Unauthorized")
+
+	se = &ServerError{Message: "Unauthorized"}
+	assert.Equal(t, se.Error(), "dynatrace server error 0: Unauthorized")
+
+	se = &ServerError{Code: 401}
+	assert.Equal(t, se.Error(), "dynatrace server error 401: ")
+
+	se = &ServerError{}
+	assert.Equal(t, se.Error(), "unknown server error")
+
 }
 
 func TestDynatraceClientWithServer(t *testing.T) {
@@ -235,7 +206,7 @@ func createTestDynatraceServer(t *testing.T, handler http.Handler, networkZoneNa
 
 	skipCert := SkipCertificateValidation(true)
 	networkZone := NetworkZone(networkZoneName)
-	dynatraceClient, err := NewClient(dynatraceServer.URL, apiToken, paasToken, skipCert, networkZone)
+	dynatraceClient, err := NewClient(dynatraceServer.URL, apiToken, paasToken, skipCert, networkZone, NoRetry())
 
 	require.NoError(t, err)
 	require.NotNil(t, dynatraceClient)
@@ -247,7 +218,7 @@ func createTestDynatraceClientWithFunc(t *testing.T, handler http.HandlerFunc) (
 	dynatraceServer := httptest.NewServer(handler)
 
 	skipCert := SkipCertificateValidation(true)
-	dynatraceClient, err := NewClient(dynatraceServer.URL, apiToken, paasToken, skipCert)
+	dynatraceClient, err := NewClient(dynatraceServer.URL, apiToken, paasToken, skipCert, NoRetry())
 
 	require.NoError(t, err)
 	require.NotNil(t, dynatraceClient)

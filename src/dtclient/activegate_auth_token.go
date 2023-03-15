@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/pkg/errors"
 )
 
@@ -50,7 +51,7 @@ func (dtc *dynatraceClient) GetActiveGateAuthToken(dynakubeName string) (*Active
 	return authTokenInfo, nil
 }
 
-func (dtc *dynatraceClient) createAuthTokenRequest(dynakubeName string) (*http.Request, error) {
+func (dtc *dynatraceClient) createAuthTokenRequest(dynakubeName string) (*retryablehttp.Request, error) {
 	body := &ActiveGateAuthTokenParams{
 		Name:           dynakubeName,
 		SeedToken:      false,

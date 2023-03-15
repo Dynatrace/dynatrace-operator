@@ -56,12 +56,8 @@ func TestGetEntityIDForIP(t *testing.T) {
 	dynatraceServer, _ := createTestDynatraceServer(t, &ipHandler{}, "")
 	defer dynatraceServer.Close()
 
-	dtc := dynatraceClient{
-		apiToken:   apiToken,
-		paasToken:  paasToken,
-		httpClient: dynatraceServer.Client(),
-		url:        dynatraceServer.URL,
-	}
+	dtc := createTestDynatraceClient(*dynatraceServer)
+
 	require.NoError(t, dtc.setHostCacheFromResponse([]byte(
 		fmt.Sprintf(`[
 	{
@@ -146,12 +142,7 @@ func TestGetLatestAgent(t *testing.T) {
 	dynatraceServer, _ := createTestDynatraceServer(t, &ipHandler{fs}, "")
 	defer dynatraceServer.Close()
 
-	dtc := dynatraceClient{
-		apiToken:   apiToken,
-		paasToken:  paasToken,
-		httpClient: dynatraceServer.Client(),
-		url:        dynatraceServer.URL,
-	}
+	dtc := createTestDynatraceClient(*dynatraceServer)
 
 	t.Run(`file download successful`, func(t *testing.T) {
 		file, err := afero.TempFile(fs, "client", "installer")

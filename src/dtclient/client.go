@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/pkg/errors"
 	"golang.org/x/net/http/httpproxy"
 )
@@ -133,15 +134,17 @@ func NewClient(url, apiToken, paasToken string, opts ...Option) (Client, error) 
 
 	url = strings.TrimSuffix(url, "/")
 
+	retryClient := retryablehttp.NewClient()
+	retryClient.Backoff = retryablehttp.LinearJitterBackoff
+	retryClient.CheckRetry = retryablehttp.DefaultRetryPolicy
+
 	dc := &dynatraceClient{
 		url:       url,
 		apiToken:  apiToken,
 		paasToken: paasToken,
 
-		hostCache: make(map[string]hostInfo),
-		httpClient: &http.Client{
-			Transport: http.DefaultTransport.(*http.Transport).Clone(),
-		},
+		hostCache:  make(map[string]hostInfo),
+		httpClient: retryClient,
 	}
 
 	for _, opt := range opts {
@@ -159,7 +162,7 @@ type Option func(*dynatraceClient)
 func SkipCertificateValidation(skip bool) Option {
 	return func(c *dynatraceClient) {
 		if skip {
-			t := c.httpClient.Transport.(*http.Transport)
+			t := c.httpClient.HTTPClient.Transport.(*http.Transport)
 			if t.TLSClientConfig == nil {
 				t.TLSClientConfig = &tls.Config{} //nolint:gosec // fix is expected to be delivered soon
 			}
@@ -175,13 +178,20 @@ func Proxy(proxyURL string, noProxy string) Option {
 			log.Info("could not parse proxy URL!")
 			return
 		}
-		transport := dtclient.httpClient.Transport.(*http.Transport)
+		transport := dtclient.httpClient.HTTPClient.Transport.(*http.Transport)
 		proxyConfig := httpproxy.Config{
 			HTTPProxy:  parsedURL.String(),
 			HTTPSProxy: parsedURL.String(),
 			NoProxy:    noProxy,
 		}
 		transport.Proxy = proxyWrapper(proxyConfig)
+	}
+}
+
+func NoRetry() Option {
+	return func(dtclient *dynatraceClient) {
+		dtclient.httpClient.RetryMax = 0
+		dtclient.httpClient.ErrorHandler = retryablehttp.PassthroughErrorHandler
 	}
 }
 
@@ -198,7 +208,7 @@ func Certs(certs []byte) Option {
 			log.Info("failed to append custom certs!")
 		}
 
-		t := c.httpClient.Transport.(*http.Transport)
+		t := c.httpClient.HTTPClient.Transport.(*http.Transport)
 		if t.TLSClientConfig == nil {
 			t.TLSClientConfig = &tls.Config{} //nolint:gosec // fix is expected to be delivered soon
 		}

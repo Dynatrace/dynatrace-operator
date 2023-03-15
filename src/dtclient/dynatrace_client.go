@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/pkg/errors"
 )
 
@@ -28,7 +29,7 @@ type dynatraceClient struct {
 
 	disableHostsRequests bool
 
-	httpClient *http.Client
+	httpClient *retryablehttp.Client
 
 	hostCache map[string]hostInfo
 
@@ -47,7 +48,7 @@ const (
 // makeRequest does an HTTP request by formatting the URL from the given arguments and returns the response.
 // The response body must be closed by the caller when no longer used.
 func (dtc *dynatraceClient) makeRequest(url string, tokenType tokenType) (*http.Response, error) {
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	req, err := retryablehttp.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, errors.WithMessage(err, "error initializing http request")
 	}
@@ -76,19 +77,24 @@ func (dtc *dynatraceClient) makeRequest(url string, tokenType tokenType) (*http.
 	return dtc.httpClient.Do(req)
 }
 
-func createBaseRequest(url, method, apiToken string, body io.Reader) (*http.Request, error) {
-	req, err := http.NewRequest(method, url, body)
+func createBaseRequest(url, method, apiToken string, body io.Reader) (*retryablehttp.Request, error) {
+	baseRequest, err := http.NewRequest(method, url, body)
 	if err != nil {
 		return nil, errors.WithMessage(err, "error initializing http request")
 	}
-	req.Header.Add("Accept", "application/json")
-	req.Header.Add("Authorization", fmt.Sprintf("Api-Token %s", apiToken))
+	baseRequest.Header.Add("Accept", "application/json")
+	baseRequest.Header.Add("Authorization", fmt.Sprintf("Api-Token %s", apiToken))
 
 	if method == http.MethodPost {
-		req.Header.Add("Content-Type", "application/json")
+		baseRequest.Header.Add("Content-Type", "application/json")
 	}
 
-	return req, nil
+	request, err := retryablehttp.FromRequest(baseRequest)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return request, nil
 }
 
 func (dtc *dynatraceClient) getServerResponseData(response *http.Response) ([]byte, error) {

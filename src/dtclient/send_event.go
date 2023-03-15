@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/pkg/errors"
 )
 
@@ -41,9 +42,9 @@ func (dtc *dynatraceClient) SendEvent(eventData *EventData) error {
 		return errors.WithStack(err)
 	}
 
-	req, err := http.NewRequest("POST", dtc.getEventsUrl(), bytes.NewBuffer(jsonStr))
+	req, err := retryablehttp.NewRequest(http.MethodPost, dtc.getEventsUrl(), bytes.NewBuffer(jsonStr))
 	if err != nil {
-		return fmt.Errorf("error initializing http request: %w", err)
+		return errors.Wrap(err, "error initializing http request")
 	}
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Authorization", fmt.Sprintf("Api-Token %s", dtc.apiToken))

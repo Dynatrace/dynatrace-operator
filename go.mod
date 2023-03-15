@@ -7,6 +7,7 @@ require (
 	github.com/containers/image/v5 v5.24.2
 	github.com/evanphx/json-patch v5.6.0+incompatible
 	github.com/go-logr/logr v1.2.3
+	github.com/hashicorp/go-retryablehttp v0.7.2
 	github.com/klauspost/compress v1.15.15
 	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/opencontainers/go-digest v1.0.0
@@ -81,6 +82,7 @@ require (
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
+	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect

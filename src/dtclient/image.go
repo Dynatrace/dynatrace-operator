@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/pkg/errors"
 )
 
@@ -89,7 +90,7 @@ func (dtc *dynatraceClient) handleLatestImageResponse(response *http.Response) (
 	return latestImageInfo, err
 }
 
-func (dtc *dynatraceClient) createLatestImageRequest(url string) (*http.Request, error) {
+func (dtc *dynatraceClient) createLatestImageRequest(url string) (*retryablehttp.Request, error) {
 	body := &LatestImageInfo{}
 
 	bodyData, err := json.Marshal(body)
