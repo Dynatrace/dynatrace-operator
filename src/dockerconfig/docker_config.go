@@ -75,18 +75,6 @@ func (config *DockerConfig) Cleanup(fs afero.Afero) error {
 	return nil
 }
 
-func (config *DockerConfig) getCustomCAs(ctx context.Context) ([]byte, error) {
-	certs := &corev1.ConfigMap{}
-	if err := config.ApiReader.Get(ctx, client.ObjectKey{Namespace: config.Dynakube.Namespace, Name: config.Dynakube.Spec.TrustedCAs}, certs); err != nil {
-		log.Info("failed to load trusted CAs")
-		return nil, errors.WithStack(err)
-	}
-	if certs.Data[dynatracev1beta1.TrustedCAKey] == "" {
-		return nil, errors.New("failed to extract certificate configmap field: missing field certs")
-	}
-	return []byte(certs.Data[dynatracev1beta1.TrustedCAKey]), nil
-}
-
 func (config *DockerConfig) getRegistryCredentials(ctx context.Context) ([]byte, error) {
 	var pullSecret corev1.Secret
 	if config.registryAuthSecret != nil {
@@ -120,7 +108,7 @@ func (config *DockerConfig) storeRegistryCredentials(ctx context.Context, fs afe
 }
 
 func (config *DockerConfig) storeTrustedCAs(ctx context.Context, fs afero.Afero) error {
-	customCAs, err := config.getCustomCAs(ctx)
+	customCAs, err := config.Dynakube.TrustedCAs(ctx, config.ApiReader)
 	if err != nil {
 		return err
 	}
