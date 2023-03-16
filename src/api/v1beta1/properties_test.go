@@ -496,9 +496,9 @@ func TestDynaKube_ShallUpdateActiveGateConnectionInfo(t *testing.T) {
 			dk.Status.DynatraceApi.LastOneAgentConnectionInfoRequest.Time = lastRequestTime
 			dk.Status.DynatraceApi.LastTokenScopeRequest.Time = lastRequestTime
 
-			assert.Equal(t, test.updateExpected, dk.ShallUpdateOneAgentConnectionInfo(timeProvider))
-			assert.Equal(t, test.updateExpected, dk.ShallUpdateActiveGateConnectionInfo(timeProvider))
-			assert.Equal(t, test.updateExpected, dk.ShallVerifyTokenScope(timeProvider))
+			assert.Equal(t, test.updateExpected, dk.IsOneAgentConnectionInfoUpdateAllowed(timeProvider))
+			assert.Equal(t, test.updateExpected, dk.IsActiveGateConnectionInfoUpdateAllowed(timeProvider))
+			assert.Equal(t, test.updateExpected, dk.IsTokenScopeVerificationAllowed(timeProvider))
 		})
 	}
 }

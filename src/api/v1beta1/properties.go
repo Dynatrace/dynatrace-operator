@@ -489,14 +489,14 @@ func (dk *DynaKube) GetOneAgentEnvironment() []corev1.EnvVar {
 	return []corev1.EnvVar{}
 }
 
-func (dk *DynaKube) ShallUpdateOneAgentConnectionInfo(timeProvider *timeprovider.Provider) bool {
+func (dk *DynaKube) IsOneAgentConnectionInfoUpdateAllowed(timeProvider *timeprovider.Provider) bool {
 	return timeProvider.IsOutdated(&dk.Status.DynatraceApi.LastOneAgentConnectionInfoRequest, dk.FeatureApiRequestThreshold())
 }
 
-func (dk *DynaKube) ShallUpdateActiveGateConnectionInfo(timeProvider *timeprovider.Provider) bool {
+func (dk *DynaKube) IsActiveGateConnectionInfoUpdateAllowed(timeProvider *timeprovider.Provider) bool {
 	return timeProvider.IsOutdated(&dk.Status.DynatraceApi.LastActiveGateConnectionInfoRequest, dk.FeatureApiRequestThreshold())
 }
 
-func (dk *DynaKube) ShallVerifyTokenScope(timeProvider *timeprovider.Provider) bool {
+func (dk *DynaKube) IsTokenScopeVerificationAllowed(timeProvider *timeprovider.Provider) bool {
 	return timeProvider.IsOutdated(&dk.Status.DynatraceApi.LastTokenScopeRequest, dk.FeatureApiRequestThreshold())
 }
