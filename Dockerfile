@@ -32,7 +32,7 @@ RUN dnf install --installroot /tmp/rootfs-dependency \
  && rm -rf \
       /tmp/rootfs-dependency/var/cache/* \
       /tmp/rootfs-dependency/var/log/dnf* \
-      /tmp/rootfs-dependency/var/log/yum.* \
+      /tmp/rootfs-dependency/var/log/yum.*
 
 FROM base
 
