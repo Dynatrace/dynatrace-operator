@@ -130,7 +130,7 @@ func collectGCInfo(dynakube dynatracev1beta1.DynaKube, dynakubeList *dynatracev1
 		return nil
 	}
 
-	latestAgentVersion := dynakube.Status.LatestAgentVersionUnixPaas
+	latestAgentVersion := dynakube.CodeModulesVersion()
 	if latestAgentVersion == "" {
 		log.Info("no latest agent version found in dynakube, checking later")
 		return nil
@@ -207,7 +207,7 @@ func getAllDynakubes(ctx context.Context, apiReader client.Reader, namespace str
 func filterCodeModulesImageDynakubes(dynakubeList *dynatracev1beta1.DynaKubeList) map[string]dynatracev1beta1.DynaKube {
 	filteredDynakubes := make(map[string]dynatracev1beta1.DynaKube)
 	for _, dynakube := range dynakubeList.Items {
-		if dynakube.CodeModulesImage() != "" {
+		if dynakube.CustomCodeModulesImage() != "" {
 			filteredDynakubes[dynakube.Name] = dynakube
 		}
 	}

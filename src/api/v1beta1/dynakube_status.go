@@ -26,14 +26,12 @@ type DynaKubeStatus struct {
 	// KubeSystemUUID contains the UUID of the current Kubernetes cluster
 	KubeSystemUUID string `json:"kubeSystemUUID,omitempty"`
 
-	// LatestAgentVersionUnixDefault caches the current agent version for unix and the PaaS installer which is configured for the environment
-	LatestAgentVersionUnixPaas string `json:"latestAgentVersionUnixPaas,omitempty"`
-
 	// Conditions includes status about the current state of the instance
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 
 	ActiveGate   ActiveGateStatus   `json:"activeGate,omitempty"`
 	OneAgent     OneAgentStatus     `json:"oneAgent,omitempty"`
+	CodeModules  CodeModulesStatus  `json:"codeModules,omitempty"`
 	Synthetic    SyntheticStatus    `json:"synthetic,omitempty"`
 	DynatraceApi DynatraceApiStatus `json:"dynatraceApi,omitempty"`
 }
@@ -71,38 +69,31 @@ type CommunicationHostStatus struct {
 	Port     uint32 `json:"port,omitempty"`
 }
 
-// +kubebuilder:object:generate=false
-type VersionStatusNamer interface {
-	Status() VersionStatus
-	Name() string
-}
+type VersionSource string
+
+const (
+	DefaultVersionSource        VersionSource = "default"
+	CustomImageVersionSource    VersionSource = "custom-image"
+	CustomVersionVersionSource  VersionSource = "custom-version"
+	PublicRegistryVersionSource VersionSource = "public-registry"
+)
 
 type VersionStatus struct {
-	// ImageHash contains the last image hash seen.
-	ImageHash string `json:"imageHash,omitempty"`
-
-	// Version contains the version to be deployed.
-	Version string `json:"version,omitempty"`
-
-	// LastUpdateProbeTimestamp defines the last timestamp when the querying for updates have been done
-	LastUpdateProbeTimestamp *metav1.Time `json:"lastUpdateProbeTimestamp,omitempty"`
+	Source             VersionSource `json:"source,omitempty"`
+	ImageHash          string        `json:"imageHash,omitempty"`
+	ImageRepository    string        `json:"imageRepository,omitempty"`
+	ImageTag           string        `json:"imageTag,omitempty"`
+	Version            string        `json:"version,omitempty"`
+	LastProbeTimestamp *metav1.Time  `json:"lastProbeTimestamp,omitempty"`
 }
-
-func (verStatus *VersionStatus) Status() VersionStatus {
-	return *verStatus.DeepCopy()
-}
-
-var _ VersionStatusNamer = (*ActiveGateStatus)(nil)
 
 type ActiveGateStatus struct {
 	VersionStatus `json:",inline"`
 }
 
-func (agStatus *ActiveGateStatus) Name() string {
-	return "ActiveGate"
+type CodeModulesStatus struct {
+	VersionStatus `json:",inline"`
 }
-
-var _ VersionStatusNamer = (*OneAgentStatus)(nil)
 
 type OneAgentStatus struct {
 	VersionStatus `json:",inline"`
@@ -112,23 +103,13 @@ type OneAgentStatus struct {
 	LastInstanceStatusUpdate *metav1.Time `json:"LastInstanceStatusUpdate,omitempty"`
 }
 
-func (oneAgentStatus *OneAgentStatus) Name() string {
-	return "OneAgent"
-}
-
 type OneAgentInstance struct {
 	PodName   string `json:"podName,omitempty"`
 	IPAddress string `json:"ipAddress,omitempty"`
 }
 
-var _ VersionStatusNamer = (*SyntheticStatus)(nil)
-
 type SyntheticStatus struct {
 	VersionStatus `json:",inline"`
-}
-
-func (syn *SyntheticStatus) Name() string {
-	return "Synthetic"
 }
 
 type DynaKubePhaseType string
