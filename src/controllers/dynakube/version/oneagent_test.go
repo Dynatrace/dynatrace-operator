@@ -35,7 +35,7 @@ func TestOneAgentUpdater(t *testing.T) {
 		updater := newOneAgentUpdater(dynakube, mockClient, registry.ImageVersionExt)
 
 		assert.Equal(t, "oneagent", updater.Name())
-		assert.True(t, updater.Enabled())
+		assert.True(t, updater.IsEnabled())
 		assert.Equal(t, dynakube.Spec.OneAgent.ClassicFullStack.Image, updater.CustomImage())
 		assert.Equal(t, dynakube.Spec.OneAgent.ClassicFullStack.Version, updater.CustomVersion())
 		assert.False(t, updater.IsAutoUpdateEnabled())

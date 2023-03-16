@@ -92,7 +92,7 @@ func (reconciler *Reconciler) needsReconcile(updaters []versionStatusUpdater) bo
 }
 
 func (reconciler *Reconciler) needsUpdate(updater versionStatusUpdater) bool {
-	if !updater.Enabled() {
+	if !updater.IsEnabled() {
 		log.Info("skipping version status update for disabled section", "updater", updater.Name())
 		return false
 	}

@@ -30,7 +30,7 @@ func (updater activeGateUpdater) Name() string {
 	return "activegate"
 }
 
-func (updater activeGateUpdater) Enabled() bool {
+func (updater activeGateUpdater) IsEnabled() bool {
 	return updater.dynakube.NeedsActiveGate()
 }
 

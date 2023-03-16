@@ -11,7 +11,7 @@ import (
 
 type versionStatusUpdater interface {
 	Name() string
-	Enabled() bool
+	IsEnabled() bool
 	Target() *dynatracev1beta1.VersionStatus
 
 	CustomImage() string

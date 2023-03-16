@@ -40,7 +40,7 @@ func TestActiveGateUpdater(t *testing.T) {
 		updater := newActiveGateUpdater(dynakube, mockClient, registry.ImageVersionExt)
 
 		assert.Equal(t, "activegate", updater.Name())
-		assert.True(t, updater.Enabled())
+		assert.True(t, updater.IsEnabled())
 		assert.Equal(t, dynakube.Spec.ActiveGate.Image, updater.CustomImage())
 		assert.Equal(t, "", updater.CustomVersion())
 		assert.False(t, updater.IsAutoUpdateEnabled())

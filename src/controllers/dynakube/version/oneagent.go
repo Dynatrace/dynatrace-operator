@@ -31,7 +31,7 @@ func (updater oneAgentUpdater) Name() string {
 	return "oneagent"
 }
 
-func (updater oneAgentUpdater) Enabled() bool {
+func (updater oneAgentUpdater) IsEnabled() bool {
 	return updater.dynakube.NeedsOneAgent()
 }
 

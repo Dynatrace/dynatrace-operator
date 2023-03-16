@@ -24,7 +24,7 @@ func (updater codeModulesUpdater) Name() string {
 	return "codemodules"
 }
 
-func (updater codeModulesUpdater) Enabled() bool {
+func (updater codeModulesUpdater) IsEnabled() bool {
 	return updater.dynakube.NeedAppInjection()
 }
 

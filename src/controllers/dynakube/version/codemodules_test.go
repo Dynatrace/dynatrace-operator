@@ -35,7 +35,7 @@ func TestCodeModulesUpdater(t *testing.T) {
 		updater := newCodeModulesUpdater(dynakube, mockClient)
 
 		assert.Equal(t, "codemodules", updater.Name())
-		assert.True(t, updater.Enabled())
+		assert.True(t, updater.IsEnabled())
 		assert.Equal(t, dynakube.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage, updater.CustomImage())
 		assert.Equal(t, dynakube.Spec.OneAgent.ApplicationMonitoring.Version, updater.CustomVersion())
 		assert.True(t, updater.IsAutoUpdateEnabled())

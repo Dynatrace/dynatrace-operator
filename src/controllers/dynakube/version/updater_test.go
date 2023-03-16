@@ -21,7 +21,7 @@ func (m *mockUpdater) Name() string {
 	args := m.Called()
 	return args.Get(0).(string)
 }
-func (m *mockUpdater) Enabled() bool {
+func (m *mockUpdater) IsEnabled() bool {
 	args := m.Called()
 	return args.Get(0).(bool)
 }
