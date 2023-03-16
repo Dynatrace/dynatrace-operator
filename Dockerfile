@@ -19,23 +19,27 @@ RUN CGO_ENABLED=1 CGO_CFLAGS="-O2 -Wno-return-local-addr" \
     go build -tags "${GO_BUILD_TAGS}" -trimpath -ldflags="${GO_LINKER_ARGS}" \
     -o ./build/_output/bin/dynatrace-operator ./src/cmd/
 
-# download additional image dependencies
-FROM registry.access.redhat.com/ubi9-minimal:9.1.0 as dependency-src
-RUN \
-    --mount=type=cache,target=/var/cache/dnf \
-    microdnf install -y util-linux tar --nodocs
+FROM registry.access.redhat.com/ubi9-micro:9.1.0 AS base
+FROM registry.access.redhat.com/ubi9:9.1.0 AS dependency
+RUN mkdir -p /tmp/rootfs-dependency
+COPY --from=base / /tmp/rootfs-dependency
+RUN dnf install --installroot /tmp/rootfs-dependency \
+      util-linux-core tar \
+      --releasever 9 \
+      --setopt install_weak_deps=false \
+      --nodocs -y \
+ && dnf --installroot /tmp/rootfs-dependency clean all \
+ && rm -rf \
+      /tmp/rootfs-dependency/var/cache/* \
+      /tmp/rootfs-dependency/var/log/dnf* \
+      /tmp/rootfs-dependency/var/log/yum.* \
 
-FROM registry.access.redhat.com/ubi9-micro:9.1.0
+FROM base
+
+COPY --from=dependency /tmp/rootfs-dependency /
 
 # operator binary
 COPY --from=operator-build /app/build/_output/bin /usr/local/bin
-
-# trusted certificates
-COPY --from=dependency-src /etc/ssl/cert.pem /etc/ssl/cert.pem
-
-# csi dependencies
-COPY --from=dependency-src /bin/mount /bin/umount /bin/tar /bin/
-COPY --from=dependency-src /lib64/libmount.so.1 /lib64/libblkid.so.1 /lib64/libuuid.so.1 /lib64/
 
 # csi binaries
 COPY --from=registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.7.0 /csi-node-driver-registrar /usr/local/bin
