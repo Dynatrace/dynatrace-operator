@@ -435,52 +435,52 @@ func TestDynaKube_ShallUpdateActiveGateConnectionInfo(t *testing.T) {
 	timeProvider := timeprovider.New()
 	tests := map[string]struct {
 		lastRequestTimeDeltaMinutes int
-		shallUpdate                 bool
+		updateExpected              bool
 		featureFlagValue            int
 	}{
 		"Do not update after 10 minutes using default interval": {
 			lastRequestTimeDeltaMinutes: -10,
-			shallUpdate:                 false,
+			updateExpected:              false,
 			featureFlagValue:            -1,
 		},
 		"Do update after 20 minutes using default interval": {
 			lastRequestTimeDeltaMinutes: -20,
-			shallUpdate:                 true,
+			updateExpected:              true,
 			featureFlagValue:            -1,
 		},
 		"Do not update after 3 minutes using 5m interval": {
 			lastRequestTimeDeltaMinutes: -3,
-			shallUpdate:                 false,
+			updateExpected:              false,
 			featureFlagValue:            5,
 		},
 		"Do update after 7 minutes using 5m interval": {
 			lastRequestTimeDeltaMinutes: -7,
-			shallUpdate:                 true,
+			updateExpected:              true,
 			featureFlagValue:            5,
 		},
 		"Do not update after 17 minutes using 20m interval": {
 			lastRequestTimeDeltaMinutes: -17,
-			shallUpdate:                 false,
+			updateExpected:              false,
 			featureFlagValue:            20,
 		},
 		"Do update after 22 minutes using 20m interval": {
 			lastRequestTimeDeltaMinutes: -22,
-			shallUpdate:                 true,
+			updateExpected:              true,
 			featureFlagValue:            20,
 		},
 		"Do update immediately using 0m interval": {
 			lastRequestTimeDeltaMinutes: 0,
-			shallUpdate:                 true,
+			updateExpected:              true,
 			featureFlagValue:            0,
 		},
 		"Do update after 1 minute using 0m interval": {
 			lastRequestTimeDeltaMinutes: -1,
-			shallUpdate:                 true,
+			updateExpected:              true,
 			featureFlagValue:            0,
 		},
 		"Do update after 20 minutes using 0m interval": {
 			lastRequestTimeDeltaMinutes: -20,
-			shallUpdate:                 true,
+			updateExpected:              true,
 			featureFlagValue:            0,
 		},
 	}
@@ -496,9 +496,9 @@ func TestDynaKube_ShallUpdateActiveGateConnectionInfo(t *testing.T) {
 			dk.Status.DynatraceApi.LastOneAgentConnectionInfoRequest.Time = lastRequestTime
 			dk.Status.DynatraceApi.LastTokenScopeRequest.Time = lastRequestTime
 
-			assert.Equal(t, test.shallUpdate, dk.ShallUpdateOneAgentConnectionInfo(timeProvider))
-			assert.Equal(t, test.shallUpdate, dk.ShallUpdateActiveGateConnectionInfo(timeProvider))
-			assert.Equal(t, test.shallUpdate, dk.ShallVerifyTokenScope(timeProvider))
+			assert.Equal(t, test.updateExpected, dk.ShallUpdateOneAgentConnectionInfo(timeProvider))
+			assert.Equal(t, test.updateExpected, dk.ShallUpdateActiveGateConnectionInfo(timeProvider))
+			assert.Equal(t, test.updateExpected, dk.ShallVerifyTokenScope(timeProvider))
 		})
 	}
 }
