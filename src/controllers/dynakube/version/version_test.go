@@ -11,8 +11,8 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -54,7 +54,7 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 	t.Run("no update if version provider returns error", func(t *testing.T) {
 		dynakube := dynakubeTemplate.DeepCopy()
 		fakeClient := fake.NewClient()
-		timeProvider := kubeobjects.NewTimeProvider()
+		timeProvider := timeprovider.New()
 		registry := newEmptyFakeRegistry()
 		fs := afero.Afero{Fs: afero.NewMemMapFs()}
 
@@ -73,7 +73,7 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 		dynakube := dynakubeTemplate.DeepCopy()
 		fs := afero.Afero{Fs: afero.NewMemMapFs()}
 		fakeClient := fake.NewClient()
-		timeProvider := kubeobjects.NewTimeProvider()
+		timeProvider := timeprovider.New()
 		setupPullSecret(t, fakeClient, *dynakube)
 
 		dkStatus := &dynakube.Status
@@ -101,7 +101,7 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 	t.Run("some image versions were updated", func(t *testing.T) {
 		dynakube := dynakubeTemplate.DeepCopy()
 		fakeClient := fake.NewClient()
-		timeProvider := kubeobjects.NewTimeProvider()
+		timeProvider := timeprovider.New()
 		setupPullSecret(t, fakeClient, *dynakube)
 
 		fs := afero.Afero{Fs: afero.NewMemMapFs()}
@@ -184,7 +184,7 @@ func (registry *fakeRegistry) ImageVersionExt(imagePath string, _ *dockerconfig.
 	return registry.ImageVersion(imagePath)
 }
 
-func assertVersionStatusEquals(t *testing.T, registry *fakeRegistry, imagePath string, timeProvider kubeobjects.TimeProvider, versionStatusNamer dynatracev1beta1.VersionStatusNamer) { //nolint:revive // argument-limit
+func assertVersionStatusEquals(t *testing.T, registry *fakeRegistry, imagePath string, timeProvider timeprovider.Provider, versionStatusNamer dynatracev1beta1.VersionStatusNamer) { //nolint:revive // argument-limit
 	expectedVersion, err := registry.ImageVersion(imagePath)
 
 	assert.NoError(t, err, "Image version is unexpectedly unknown for '%s'", imagePath)
@@ -195,7 +195,7 @@ func assertVersionStatusEquals(t *testing.T, registry *fakeRegistry, imagePath s
 	}
 }
 
-func changeTime(timeProvider *kubeobjects.TimeProvider, duration time.Duration) {
+func changeTime(timeProvider *timeprovider.Provider, duration time.Duration) {
 	newTime := metav1.NewTime(timeProvider.Now().Add(duration))
 	timeProvider.SetNow(&newTime)
 }
