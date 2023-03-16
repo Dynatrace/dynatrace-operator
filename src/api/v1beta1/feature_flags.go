@@ -69,6 +69,7 @@ const (
 	AnnotationFeatureOneAgentInitialConnectRetry    = AnnotationFeaturePrefix + "oneagent-initial-connect-retry-ms"
 	AnnotationFeatureRunOneAgentContainerPrivileged = AnnotationFeaturePrefix + "oneagent-privileged"
 	AnnotationFeatureOneAgentSecCompProfile         = AnnotationFeaturePrefix + "oneagent-seccomp-profile"
+	AnnotationInjectionFailurePolicy                = AnnotationFeaturePrefix + "injection-failure-policy"
 
 	// injection (webhook)
 
@@ -97,8 +98,10 @@ const (
 	// replicas for the synthetic monitoring
 	AnnotationFeatureSyntheticReplicas = AnnotationFeaturePrefix + "synthetic-replicas"
 
-	falsePhrase = "false"
-	truePhrase  = "true"
+	falsePhrase  = "false"
+	truePhrase   = "true"
+	silentPhrase = "silent"
+	failPhrase   = "fail"
 
 	// synthetic node types
 	SyntheticNodeXs = "XS"
@@ -340,6 +343,13 @@ func (dynaKube *DynaKube) FeatureSyntheticNodeType() string {
 		node = SyntheticNodeS
 	}
 	return node
+}
+
+func (dk *DynaKube) FeatureInjectionFailurePolicy() string {
+	if dk.getFeatureFlagRaw(AnnotationInjectionFailurePolicy) == failPhrase {
+		return failPhrase
+	}
+	return silentPhrase
 }
 
 func (dynaKube *DynaKube) FeatureSyntheticReplicas() int32 {
