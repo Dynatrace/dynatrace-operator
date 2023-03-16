@@ -98,11 +98,9 @@ func getUrlProperties(targetVersion, previousVersion string, pathResolver metada
 
 func newImageInstaller(ctx context.Context, fs afero.Fs, apiReader client.Reader, pathResolver metadata.PathResolver, db metadata.Access, dynakube *dynatracev1beta1.DynaKube) (installer.Installer, error) { //nolint:revive // argument-limit doesn't apply to constructors
 	dockerConfig := dockerconfig.NewDockerConfig(apiReader, *dynakube)
-	if dynakube.Spec.CustomPullSecret != "" {
-		err := dockerConfig.StoreRequiredFiles(ctx, afero.Afero{Fs: fs})
-		if err != nil {
-			return nil, err
-		}
+	err := dockerConfig.StoreRequiredFiles(ctx, afero.Afero{Fs: fs})
+	if err != nil {
+		return nil, err
 	}
 
 	imageInstaller := image.NewImageInstaller(fs, &image.Properties{

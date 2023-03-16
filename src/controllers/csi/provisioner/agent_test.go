@@ -157,59 +157,11 @@ func TestUpdateAgent(t *testing.T) {
 			},
 		)
 	})
-	t.Run(`codeModulesImage set`, func(t *testing.T) {
-		image := "test-image"
-		tag := "tag"
-		pullSecretName := "test-pull-secret"
-		testNamespace := "test-namespace"
-		processModuleConfig := createTestProcessModuleConfigCache("1")
-		dockerconfigjsonContent := `{"auths":{}}`
-
-		dk := dynatracev1beta1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-dk",
-				Namespace: testNamespace,
-			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				APIURL:           "https://" + testTenantUUID + ".dynatrace.com",
-				CustomPullSecret: pullSecretName,
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
-						AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{
-							CodeModulesImage: image + ":" + tag,
-						},
-					},
-				},
-			},
-		}
-		mockedPullSecret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      pullSecretName,
-				Namespace: testNamespace,
-			},
-			Data: map[string][]byte{
-				".dockerconfigjson": []byte(dockerconfigjsonContent),
-			},
-		}
-		updater := createTestAgentImageUpdater(t, &dk, mockedPullSecret)
-		targetDir := updater.targetDir
-		updater.installer.(*installer.Mock).
-			On("InstallAgent", targetDir).
-			Return(true, nil)
-		updater.installer.(*installer.Mock).
-			On("UpdateProcessModuleConfig", targetDir, &testProcessModuleConfig).
-			Return(nil)
-		updater.installer.(*installer.Mock).
-			On("Cleanup").
-			Return(nil)
-
-		currentVersion, err := updater.updateAgent(
-			&processModuleConfig)
-		require.NoError(t, err)
-		assert.Equal(t, tag, currentVersion)
-
-		dockerJsonPath := path.Join(dockerconfig.TmpPath, dockerconfig.RegistryAuthDir, dk.Name)
-		checkFilesCreatedAndCleanedUp(t, updater, dockerJsonPath, dockerconfigjsonContent)
+	t.Run(`codeModulesImage set without custom pull secret`, func(t *testing.T) {
+		testCodeModules(t, false)
+	})
+	t.Run(`codeModulesImage set with custom pull secret`, func(t *testing.T) {
+		testCodeModules(t, true)
 	})
 	t.Run(`codeModulesImage + trustedCA set`, func(t *testing.T) {
 		image := "test-image"
@@ -295,6 +247,65 @@ func checkFilesCreatedAndCleanedUp(t *testing.T, updater *agentUpdater, caFilePa
 	caFileContent, err := io.ReadAll(caFile)
 	require.NoError(t, err)
 	require.Equal(t, certContent, string(caFileContent))
+}
+
+func testCodeModules(t *testing.T, customPullSecret bool) {
+	image := "test-image"
+	tag := "tag"
+	pullSecretName := "test-pull-secret"
+	testNamespace := "test-namespace"
+	processModuleConfig := createTestProcessModuleConfigCache("1")
+	dockerconfigjsonContent := `{"auths":{}}`
+
+	dk := dynatracev1beta1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-dk",
+			Namespace: testNamespace,
+		},
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			APIURL: "https://" + testTenantUUID + ".dynatrace.com",
+			OneAgent: dynatracev1beta1.OneAgentSpec{
+				CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
+					AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{
+						CodeModulesImage: image + ":" + tag,
+					},
+				},
+			},
+		},
+	}
+
+	if customPullSecret {
+		dk.Spec.CustomPullSecret = pullSecretName
+	}
+
+	mockedPullSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      dk.PullSecret(),
+			Namespace: testNamespace,
+		},
+		Data: map[string][]byte{
+			".dockerconfigjson": []byte(dockerconfigjsonContent),
+		},
+	}
+	updater := createTestAgentImageUpdater(t, &dk, mockedPullSecret)
+	targetDir := updater.targetDir
+	updater.installer.(*installer.Mock).
+		On("InstallAgent", targetDir).
+		Return(true, nil)
+	updater.installer.(*installer.Mock).
+		On("UpdateProcessModuleConfig", targetDir, &testProcessModuleConfig).
+		Return(nil)
+	updater.installer.(*installer.Mock).
+		On("Cleanup").
+		Return(nil)
+
+	currentVersion, err := updater.updateAgent(
+		&processModuleConfig)
+	require.NoError(t, err)
+	assert.Equal(t, tag, currentVersion)
+
+	dockerJsonPath := path.Join(dockerconfig.TmpPath, dockerconfig.RegistryAuthDir, dk.Name)
+	checkFilesCreatedAndCleanedUp(t, updater, dockerJsonPath, dockerconfigjsonContent)
 }
 
 func testUpdateOneagent(t *testing.T, alreadyInstalled bool) {

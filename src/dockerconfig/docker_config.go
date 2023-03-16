@@ -41,25 +41,12 @@ func NewDockerConfig(apiReader client.Reader, dynakube dynatracev1beta1.DynaKube
 }
 
 func (config *DockerConfig) StoreRequiredFiles(ctx context.Context, fs afero.Afero) error {
-	registryCredentials, err := config.getRegistryCredentials(ctx)
-	if err != nil {
-		return err
-	}
-
-	if err := saveFile(registryCredentials, fs, config.RegistryAuthPath); err != nil {
-		log.Info("failed to store registry credentials", "dynakube", config.Dynakube.Name)
+	if err := config.storeRegistryCredentials(ctx, fs); err != nil {
 		return err
 	}
 
 	if config.Dynakube.Spec.TrustedCAs != "" {
-		config.TrustedCertsPath = path.Join(TmpPath, CADir, config.Dynakube.Name)
-		customCAs, err := config.getCustomCAs(ctx)
-		if err != nil {
-			return err
-		}
-
-		if err := saveFile(customCAs, fs, config.TrustedCertsPath); err != nil {
-			log.Info("failed to store custom certificates", "dynakube", config.Dynakube.Name)
+		if err := config.storeTrustedCAs(ctx, fs); err != nil {
 			return err
 		}
 	}
@@ -116,6 +103,34 @@ func (config *DockerConfig) getRegistryCredentials(ctx context.Context) ([]byte,
 		return nil, err
 	}
 	return dockerAuths, nil
+}
+
+func (config *DockerConfig) storeRegistryCredentials(ctx context.Context, fs afero.Afero) error {
+	registryCredentials, err := config.getRegistryCredentials(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err := saveFile(registryCredentials, fs, config.RegistryAuthPath); err != nil {
+		log.Info("failed to store registry credentials", "dynakube", config.Dynakube.Name)
+		return err
+	}
+
+	return nil
+}
+
+func (config *DockerConfig) storeTrustedCAs(ctx context.Context, fs afero.Afero) error {
+	customCAs, err := config.getCustomCAs(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err := saveFile(customCAs, fs, config.TrustedCertsPath); err != nil {
+		log.Info("failed to store custom certificates", "dynakube", config.Dynakube.Name)
+		return err
+	}
+
+	return nil
 }
 
 func saveFile(data []byte, fs afero.Afero, path string) error {
