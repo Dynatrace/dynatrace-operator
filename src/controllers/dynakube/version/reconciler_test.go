@@ -2,16 +2,14 @@ package version
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
-	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -29,7 +27,7 @@ const (
 
 func TestReconcile(t *testing.T) {
 	ctx := context.Background()
-	latestAgentVersion := "1.2.3"
+	latestAgentVersion := "1.2.3.4-5"
 
 	dynakubeTemplate := dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace},
@@ -54,7 +52,7 @@ func TestReconcile(t *testing.T) {
 			apiReader:    fake.NewClient(),
 			fs:           afero.Afero{Fs: afero.NewMemMapFs()},
 			hashFunc:     faultyRegistry.ImageVersionExt,
-			timeProvider: kubeobjects.NewTimeProvider(),
+			timeProvider: timeprovider.New(),
 		}
 		err := versionReconciler.Reconcile(ctx)
 		assert.Error(t, err)
@@ -65,7 +63,7 @@ func TestReconcile(t *testing.T) {
 		testOneAgentImage := getTestOneAgentImageInfo()
 		dynakube := dynakubeTemplate.DeepCopy()
 		fakeClient := fake.NewClient()
-		timeProvider := kubeobjects.NewTimeProvider()
+		timeProvider := timeprovider.New()
 		setupPullSecret(t, fakeClient, *dynakube)
 
 		dkStatus := &dynakube.Status
@@ -122,7 +120,7 @@ func TestReconcile(t *testing.T) {
 			apiReader:    fakeClient,
 			fs:           afero.Afero{Fs: afero.NewMemMapFs()},
 			hashFunc:     registry.ImageVersionExt,
-			timeProvider: kubeobjects.NewTimeProvider(),
+			timeProvider: timeprovider.New(),
 			dtClient:     mockClient,
 		}
 		err := versionReconciler.Reconcile(ctx)
@@ -134,7 +132,7 @@ func TestReconcile(t *testing.T) {
 }
 
 func TestNeedsUpdate(t *testing.T) {
-	timeProvider := kubeobjects.NewTimeProvider()
+	timeProvider := timeprovider.New()
 
 	dynakube := dynatracev1beta1.DynaKube{
 		Spec: dynatracev1beta1.DynaKubeSpec{
@@ -207,7 +205,7 @@ func setupPullSecret(t *testing.T, fakeClient client.Client, dynakube dynatracev
 	require.NoError(t, err)
 }
 
-func changeTime(timeProvider *kubeobjects.TimeProvider, duration time.Duration) {
+func changeTime(timeProvider *timeprovider.Provider, duration time.Duration) {
 	newTime := metav1.NewTime(timeProvider.Now().Add(duration))
 	timeProvider.SetNow(&newTime)
 }

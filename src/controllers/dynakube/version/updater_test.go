@@ -7,7 +7,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -57,7 +57,7 @@ func TestRun(t *testing.T) {
 		Tag:    "1.2.3",
 	}
 	testDockerCfg := &dockerconfig.DockerConfig{}
-	timeProvider := kubeobjects.NewTimeProvider()
+	timeProvider := timeprovider.New()
 
 	t.Run("set source and probe at the end, if no error", func(t *testing.T) {
 		registry := newFakeRegistryForImages(testImage)

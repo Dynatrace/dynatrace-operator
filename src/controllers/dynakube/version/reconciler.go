@@ -2,13 +2,11 @@ package version
 
 import (
 	"context"
-	"os"
-	"path"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/spf13/afero"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -22,13 +20,13 @@ type Reconciler struct {
 	dynakube     *dynatracev1beta1.DynaKube
 	dtClient     dtclient.Client
 	hashFunc     ImageHashFunc
-	timeProvider *kubeobjects.TimeProvider
+	timeProvider *timeprovider.Provider
 
 	fs        afero.Afero
 	apiReader client.Reader
 }
 
-func NewReconciler(dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader, dtClient dtclient.Client, fs afero.Afero, versionProvider ImageHashFunc, timeProvider *kubeobjects.TimeProvider) *Reconciler { //nolint:revive
+func NewReconciler(dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader, dtClient dtclient.Client, fs afero.Afero, versionProvider ImageHashFunc, timeProvider *timeprovider.Provider) *Reconciler { //nolint:revive
 	return &Reconciler{
 		dynakube:     dynakube,
 		apiReader:    apiReader,
@@ -69,16 +67,15 @@ func (reconciler *Reconciler) updateVersionStatuses(ctx context.Context, updater
 		log.Info("updating version status", "updater", updater.Name())
 		err := reconciler.run(ctx, updater, dockerConfig)
 		if err != nil {
-			log.Error(err, "failed to update version status", "updater", updater.Name())
+			return err
 		}
 	}
 	return nil
 }
 
 func (reconciler *Reconciler) createDockerConfigWithCustomCAs(ctx context.Context) (*dockerconfig.DockerConfig, error) {
-	caCertPath := path.Join(TmpCAPath, TmpCAName)
 	dockerConfig := dockerconfig.NewDockerConfig(reconciler.apiReader, *reconciler.dynakube)
-	err := dockerConfig.StoreRequiredFiles(ctx, fs)
+	err := dockerConfig.StoreRequiredFiles(ctx, reconciler.fs)
 	if err != nil {
 		log.Info("failed to store required files for docker config")
 	}
@@ -105,7 +102,7 @@ func (reconciler *Reconciler) needsUpdate(updater versionStatusUpdater) bool {
 		return true
 	}
 
-	if !reconciler.timeProvider.IsOutdated(updater.Target().LastProbeTimestamp, dynatracev1beta1.MaxRequestInterval) {
+	if !reconciler.timeProvider.IsOutdated(updater.Target().LastProbeTimestamp, reconciler.dynakube.FeatureApiRequestThreshold()) {
 		log.Info("status timestamp still valid, skipping version status updater", "updater", updater.Name())
 		return false
 	}
