@@ -38,8 +38,6 @@ type DynaKubeStatus struct {
 	DynatraceApi DynatraceApiStatus `json:"dynatraceApi,omitempty"`
 }
 
-const MaxRequestInterval = 15 * time.Minute
-
 type DynatraceApiStatus struct {
 	LastTokenScopeRequest               metav1.Time `json:"lastTokenScopeRequest,omitempty"`
 	LastOneAgentConnectionInfoRequest   metav1.Time `json:"lastOneAgentConnectionInfoRequest,omitempty"`
@@ -52,14 +50,13 @@ func (dynatraceApiStatus *DynatraceApiStatus) ResetCachedTimestamps() {
 	dynatraceApiStatus.LastActiveGateConnectionInfoRequest = metav1.Time{}
 }
 
-func CacheValidMessage(functionName string) string {
-	return fmt.Sprintf("skipping %s, last request was made less than %d minutes ago",
-		functionName,
-		int(MaxRequestInterval.Minutes()))
-}
+func GetCacheValidMessage(functionName string, lastRequestTimestamp metav1.Time, timeout time.Duration) string {
+	remaining := timeout - time.Since(lastRequestTimestamp.Time)
 
-func IsRequestOutdated(time metav1.Time) bool {
-	return time.Add(MaxRequestInterval).Before(metav1.Now().Time)
+	return fmt.Sprintf("skipping %s, last request was made less than %d minutes ago, %d minutes remaining until next request",
+		functionName,
+		int(timeout.Minutes()),
+		int(remaining.Minutes()))
 }
 
 type ConnectionInfoStatus struct {

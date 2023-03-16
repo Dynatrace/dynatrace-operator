@@ -6,7 +6,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
@@ -27,7 +27,7 @@ type Reconciler struct {
 	ApiReader       client.Reader
 	Fs              afero.Afero
 	VersionProvider VersionProviderCallback
-	TimeProvider    *kubeobjects.TimeProvider
+	TimeProvider    *timeprovider.Provider
 }
 
 type updateSpec struct {
@@ -94,13 +94,13 @@ func createDockerConfigWithCustomCAs(ctx context.Context, dynakube *dynatracev1b
 	return dockerConfig, nil
 }
 
-func needsActiveGateUpdate(dynakube *dynatracev1beta1.DynaKube, timeProvider kubeobjects.TimeProvider) bool {
+func needsActiveGateUpdate(dynakube *dynatracev1beta1.DynaKube, timeProvider timeprovider.Provider) bool {
 	return dynakube.NeedsActiveGate() &&
 		!dynakube.FeatureDisableActiveGateUpdates() &&
 		timeProvider.IsOutdated(dynakube.Status.ActiveGate.LastUpdateProbeTimestamp, ProbeThreshold)
 }
 
-func needsOneAgentUpdate(dynakube *dynatracev1beta1.DynaKube, timeProvider kubeobjects.TimeProvider) bool {
+func needsOneAgentUpdate(dynakube *dynatracev1beta1.DynaKube, timeProvider timeprovider.Provider) bool {
 	return dynakube.NeedsOneAgent() &&
 		timeProvider.IsOutdated(dynakube.Status.OneAgent.LastUpdateProbeTimestamp, ProbeThreshold) &&
 		dynakube.ShouldAutoUpdateOneAgent()
