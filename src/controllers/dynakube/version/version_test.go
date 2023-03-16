@@ -3,7 +3,6 @@ package version
 import (
 	"context"
 	"crypto/sha256"
-	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -140,9 +139,7 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 }
 
 func setupPullSecret(t *testing.T, fakeClient client.Client, dynakube dynatracev1beta1.DynaKube) {
-	data, err := buildTestDockerAuth()
-	require.NoError(t, err)
-	err = createTestPullSecret(fakeClient, dynakube, data)
+	err := createTestPullSecret(fakeClient, dynakube)
 	require.NoError(t, err)
 }
 
@@ -200,28 +197,14 @@ func changeTime(timeProvider *timeprovider.Provider, duration time.Duration) {
 	timeProvider.SetNow(&newTime)
 }
 
-func createTestPullSecret(fakeClient client.Client, dynakube dynatracev1beta1.DynaKube, data []byte) error {
+func createTestPullSecret(fakeClient client.Client, dynakube dynatracev1beta1.DynaKube) error {
 	return fakeClient.Create(context.TODO(), &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: dynakube.Namespace,
 			Name:      dynakube.Name + dtpullsecret.PullSecretSuffix,
 		},
 		Data: map[string][]byte{
-			".dockerconfigjson": data,
+			".dockerconfigjson": []byte("{}"),
 		},
 	})
-}
-
-func buildTestDockerAuth() ([]byte, error) {
-	dockerConf := struct {
-		Auths map[string]dockerconfig.DockerAuth `json:"auths"`
-	}{
-		Auths: map[string]dockerconfig.DockerAuth{
-			testRegistry: {
-				Username: testName,
-				Password: testPaaSToken,
-			},
-		},
-	}
-	return json.Marshal(dockerConf)
 }

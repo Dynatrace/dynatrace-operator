@@ -20,6 +20,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/pkg/errors"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -704,6 +705,7 @@ func createFakeClientAndReconciler(mockClient dtclient.Client, instance *dynatra
 		apiReader:              fakeClient,
 		scheme:                 scheme.Scheme,
 		dynatraceClientBuilder: mockDtcBuilder,
+		fs:                     afero.Afero{Fs: afero.NewMemMapFs()},
 		versionProvider:        fakeVersionProvider,
 	}
 

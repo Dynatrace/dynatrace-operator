@@ -7,7 +7,9 @@ import (
 )
 
 const (
-	testString = "string"
+	testString           = "string"
+	testRegistryAuthPath = "registryAuthPath"
+	testTrustedCertsPath = "trustedCertsPath"
 )
 
 func TestMakeSystemContext(t *testing.T) {
@@ -19,19 +21,14 @@ func TestMakeSystemContext(t *testing.T) {
 		systemContext := MakeSystemContext(&mockDockerReference{}, &DockerConfig{})
 		assert.NotNil(t, systemContext)
 	})
-	t.Run(`MakeSystemContext sets credentials from docker config`, func(t *testing.T) {
+	t.Run(`MakeSystemContext sets authfile and trusted certs path`, func(t *testing.T) {
 		systemContext := MakeSystemContext(&mockDockerReference{}, &DockerConfig{
-			Auths: map[string]DockerAuth{
-				testName: {
-					Username: testName,
-					Password: testString,
-				},
-			},
+			RegistryAuthPath: testRegistryAuthPath,
+			TrustedCertsPath: testTrustedCertsPath,
 		})
 		assert.NotNil(t, systemContext)
-		assert.NotNil(t, systemContext.DockerAuthConfig)
-		assert.Equal(t, testName, systemContext.DockerAuthConfig.Username)
-		assert.Equal(t, testString, systemContext.DockerAuthConfig.Password)
+		assert.Equal(t, testRegistryAuthPath, systemContext.AuthFilePath)
+		assert.Equal(t, testTrustedCertsPath, systemContext.DockerCertPath)
 	})
 }
 

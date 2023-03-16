@@ -10,12 +10,12 @@ import (
 )
 
 const (
-	testDir           = "test"
-	testImageRegistry = "quay.io"
-	testImageName     = "image:tag"
-	testImageUri      = testImageRegistry + "/repo/" + testImageName
-	testPassword      = "pass"
-	testUsername      = "user"
+	testDir              = "test"
+	testImageRegistry    = "quay.io"
+	testImageName        = "image:tag"
+	testImageUri         = testImageRegistry + "/repo/" + testImageName
+	testRegistryAuthPath = "testAuthPath"
+	testCAPath           = "testCAPath"
 )
 
 func TestGetSourceInfo(t *testing.T) {
@@ -51,22 +51,16 @@ func TestBuildSourceContext(t *testing.T) {
 		dockerConfig := createTestDockerConfig()
 		sourceContext := buildSourceContext(imageRef, testDir, dockerConfig)
 		require.NotNil(t, sourceContext)
-		assert.Equal(t, testUsername, sourceContext.DockerAuthConfig.Username)
-		assert.Equal(t, testPassword, sourceContext.DockerAuthConfig.Password)
+		assert.Equal(t, testCAPath, sourceContext.DockerCertPath)
+		assert.Equal(t, testRegistryAuthPath, sourceContext.AuthFilePath)
 	})
 }
 
 func createTestDockerConfig() dockerconfig.DockerConfig {
-	testDockerAuth := dockerconfig.DockerAuth{
-		Username: testUsername,
-		Password: testPassword,
+	return dockerconfig.DockerConfig{
+		RegistryAuthPath: testRegistryAuthPath,
+		TrustedCertsPath: testCAPath,
 	}
-	dockerConfig := dockerconfig.DockerConfig{
-		Auths: map[string]dockerconfig.DockerAuth{
-			testImageRegistry: testDockerAuth,
-		},
-	}
-	return dockerConfig
 }
 
 func getTestImageReference(t *testing.T) reference.Named {

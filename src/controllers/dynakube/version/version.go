@@ -2,8 +2,6 @@ package version
 
 import (
 	"context"
-	"os"
-	"path"
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -19,9 +17,6 @@ import (
 const (
 	// ProbeThreshold is the minimum time to wait between version upgrades.
 	ProbeThreshold = 15 * time.Minute
-
-	TmpCAPath = "/tmp/dynatrace-operator"
-	TmpCAName = "dynatraceCustomCA.crt"
 )
 
 // VersionProviderCallback fetches the version for a given image.
@@ -64,6 +59,10 @@ func (r *Reconciler) updateImages(ctx context.Context, spec updateSpec) error {
 		return err
 	}
 
+	defer func(dockerConfig *dockerconfig.DockerConfig, fs afero.Afero) {
+		_ = dockerConfig.Cleanup(fs)
+	}(dockerConfig, r.Fs)
+
 	imageUpdater := imageUpdater{
 		now:         *r.TimeProvider.Now(),
 		dockerCfg:   dockerConfig,
@@ -86,23 +85,11 @@ func (r *Reconciler) updateImages(ctx context.Context, spec updateSpec) error {
 }
 
 func createDockerConfigWithCustomCAs(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader, fs afero.Afero) (*dockerconfig.DockerConfig, error) {
-	caCertPath := path.Join(TmpCAPath, TmpCAName)
 	dockerConfig := dockerconfig.NewDockerConfig(apiReader, *dynakube)
-	err := dockerConfig.SetupAuths(ctx)
+	err := dockerConfig.StoreRequiredFiles(ctx, fs)
 	if err != nil {
-		log.Info("failed to set up auths for image version checks")
+		log.Info("failed to store required files for docker config")
 		return nil, err
-	}
-	if dynakube.Spec.TrustedCAs != "" {
-		_ = os.MkdirAll(TmpCAPath, 0755)
-		err := dockerConfig.SaveCustomCAs(ctx, fs, caCertPath)
-		if err != nil {
-			log.Info("failed to save CAs locally for image version checks")
-			return nil, err
-		}
-		defer func() {
-			_ = os.Remove(TmpCAPath)
-		}()
 	}
 	return dockerConfig, nil
 }
