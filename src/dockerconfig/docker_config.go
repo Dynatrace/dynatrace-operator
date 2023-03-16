@@ -67,10 +67,10 @@ func (config *DockerConfig) SkipCertCheck() bool {
 
 func (config *DockerConfig) Cleanup(fs afero.Afero) error {
 	if err := fs.RemoveAll(config.RegistryAuthPath); err != nil {
-		log.Info("failed to remove registry credentials", "dynakube", config.Dynakube.Name)
+		log.Info("failed to remove registry credentials", "dynakube", config.Dynakube.Name, "error", err)
 	}
 	if err := fs.RemoveAll(config.TrustedCertsPath); err != nil {
-		log.Info("failed to remove custom certificates", "dynakube", config.Dynakube.Name)
+		log.Info("failed to remove custom certificates", "dynakube", config.Dynakube.Name, "error", err)
 	}
 	return nil
 }
@@ -97,7 +97,7 @@ func (config *DockerConfig) getRegistryCredentials(ctx context.Context) ([]byte,
 			return nil, errors.WithStack(err)
 		}
 	}
-	dockerAuths, err := parseDockerAuthsFromSecret(&pullSecret)
+	dockerAuths, err := extractDockerAuthsFromSecret(&pullSecret)
 	if err != nil {
 		log.Info("failed to parse pull secret content", "dynakube", config.Dynakube.Name)
 		return nil, err
@@ -140,7 +140,7 @@ func saveFile(data []byte, fs afero.Afero, path string) error {
 	return fs.WriteFile(path, data, 0666)
 }
 
-func parseDockerAuthsFromSecret(secret *corev1.Secret) ([]byte, error) {
+func extractDockerAuthsFromSecret(secret *corev1.Secret) ([]byte, error) {
 	if secret == nil {
 		return nil, errors.New("pull secret is nil, parsing not possible")
 	}

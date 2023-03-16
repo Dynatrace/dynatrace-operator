@@ -111,18 +111,18 @@ func TestSetupAuths(t *testing.T) {
 }
 
 func TestParseDockerAuthsFromSecret(t *testing.T) {
-	t.Run("parseDockerAuthsFromSecret handles nil secret", func(t *testing.T) {
-		auths, err := parseDockerAuthsFromSecret(nil)
+	t.Run("extractDockerAuthsFromSecret handles nil secret", func(t *testing.T) {
+		auths, err := extractDockerAuthsFromSecret(nil)
 		require.Nil(t, auths)
 		require.Error(t, err)
 	})
-	t.Run("parseDockerAuthsFromSecret handles missing secret data", func(t *testing.T) {
-		auths, err := parseDockerAuthsFromSecret(&corev1.Secret{})
+	t.Run("extractDockerAuthsFromSecret handles missing secret data", func(t *testing.T) {
+		auths, err := extractDockerAuthsFromSecret(&corev1.Secret{})
 		require.Nil(t, auths)
 		require.Error(t, err)
 	})
-	t.Run("parseDockerAuthsFromSecret handles valid json", func(t *testing.T) {
-		auths, err := parseDockerAuthsFromSecret(&corev1.Secret{
+	t.Run("extractDockerAuthsFromSecret handles valid json", func(t *testing.T) {
+		auths, err := extractDockerAuthsFromSecret(&corev1.Secret{
 			Data: map[string][]byte{
 				".dockerconfigjson": []byte(
 					fmt.Sprintf(`{ "auths": { "%s": { "username": "%s", "password": "%s" } } }`, testKey, testName, testValue)),
