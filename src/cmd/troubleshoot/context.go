@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
+	"github.com/spf13/afero"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -23,6 +24,7 @@ type troubleshootContext struct {
 	dynatraceApiSecretTokens token.Tokens
 	pullSecret               corev1.Secret
 	kubeConfig               rest.Config
+	fs                       afero.Afero
 	baseLog                  logr.Logger
 }
 

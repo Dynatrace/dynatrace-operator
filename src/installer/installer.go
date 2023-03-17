@@ -7,4 +7,5 @@ import (
 type Installer interface {
 	InstallAgent(targetDir string) (bool, error)
 	UpdateProcessModuleConfig(targetDir string, processModuleConfig *dtclient.ProcessModuleConfig) error
+	Cleanup() error
 }

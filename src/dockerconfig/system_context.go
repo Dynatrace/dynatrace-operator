@@ -1,8 +1,6 @@
 package dockerconfig
 
 import (
-	"strings"
-
 	"github.com/containers/image/v5/docker/reference"
 	"github.com/containers/image/v5/types"
 )
@@ -21,13 +19,8 @@ func MakeSystemContext(dockerReference reference.Named, dockerConfig *DockerConf
 	if dockerConfig.TrustedCertsPath != "" {
 		systemContext.DockerCertPath = dockerConfig.TrustedCertsPath
 	}
-
-	registry := strings.Split(dockerReference.Name(), "/")[0]
-
-	for _, r := range []string{registry, "https://" + registry} {
-		if creds, ok := dockerConfig.Auths[r]; ok {
-			systemContext.DockerAuthConfig = &types.DockerAuthConfig{Username: creds.Username, Password: creds.Password}
-		}
+	if dockerConfig.RegistryAuthPath != "" {
+		systemContext.AuthFilePath = dockerConfig.RegistryAuthPath
 	}
 
 	return &systemContext

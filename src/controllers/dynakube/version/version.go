@@ -2,13 +2,11 @@ package version
 
 import (
 	"context"
-	"os"
-	"path"
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
@@ -19,9 +17,6 @@ import (
 const (
 	// ProbeThreshold is the minimum time to wait between version upgrades.
 	ProbeThreshold = 15 * time.Minute
-
-	TmpCAPath = "/tmp/dynatrace-operator"
-	TmpCAName = "dynatraceCustomCA.crt"
 )
 
 // VersionProviderCallback fetches the version for a given image.
@@ -32,7 +27,7 @@ type Reconciler struct {
 	ApiReader       client.Reader
 	Fs              afero.Afero
 	VersionProvider VersionProviderCallback
-	TimeProvider    *kubeobjects.TimeProvider
+	TimeProvider    *timeprovider.Provider
 }
 
 type updateSpec struct {
@@ -64,6 +59,10 @@ func (r *Reconciler) updateImages(ctx context.Context, spec updateSpec) error {
 		return err
 	}
 
+	defer func(dockerConfig *dockerconfig.DockerConfig, fs afero.Afero) {
+		_ = dockerConfig.Cleanup(fs)
+	}(dockerConfig, r.Fs)
+
 	imageUpdater := imageUpdater{
 		now:         *r.TimeProvider.Now(),
 		dockerCfg:   dockerConfig,
@@ -86,34 +85,22 @@ func (r *Reconciler) updateImages(ctx context.Context, spec updateSpec) error {
 }
 
 func createDockerConfigWithCustomCAs(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader, fs afero.Afero) (*dockerconfig.DockerConfig, error) {
-	caCertPath := path.Join(TmpCAPath, TmpCAName)
 	dockerConfig := dockerconfig.NewDockerConfig(apiReader, *dynakube)
-	err := dockerConfig.SetupAuths(ctx)
+	err := dockerConfig.StoreRequiredFiles(ctx, fs)
 	if err != nil {
-		log.Info("failed to set up auths for image version checks")
+		log.Info("failed to store required files for docker config")
 		return nil, err
-	}
-	if dynakube.Spec.TrustedCAs != "" {
-		_ = os.MkdirAll(TmpCAPath, 0755)
-		err := dockerConfig.SaveCustomCAs(ctx, fs, caCertPath)
-		if err != nil {
-			log.Info("failed to save CAs locally for image version checks")
-			return nil, err
-		}
-		defer func() {
-			_ = os.Remove(TmpCAPath)
-		}()
 	}
 	return dockerConfig, nil
 }
 
-func needsActiveGateUpdate(dynakube *dynatracev1beta1.DynaKube, timeProvider kubeobjects.TimeProvider) bool {
+func needsActiveGateUpdate(dynakube *dynatracev1beta1.DynaKube, timeProvider timeprovider.Provider) bool {
 	return dynakube.NeedsActiveGate() &&
 		!dynakube.FeatureDisableActiveGateUpdates() &&
 		timeProvider.IsOutdated(dynakube.Status.ActiveGate.LastUpdateProbeTimestamp, ProbeThreshold)
 }
 
-func needsOneAgentUpdate(dynakube *dynatracev1beta1.DynaKube, timeProvider kubeobjects.TimeProvider) bool {
+func needsOneAgentUpdate(dynakube *dynatracev1beta1.DynaKube, timeProvider timeprovider.Provider) bool {
 	return dynakube.NeedsOneAgent() &&
 		timeProvider.IsOutdated(dynakube.Status.OneAgent.LastUpdateProbeTimestamp, ProbeThreshold) &&
 		dynakube.ShouldAutoUpdateOneAgent()
