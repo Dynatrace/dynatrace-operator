@@ -78,6 +78,7 @@ func (reconciler *Reconciler) createDockerConfigWithCustomCAs(ctx context.Contex
 	err := dockerConfig.StoreRequiredFiles(ctx, reconciler.fs)
 	if err != nil {
 		log.Info("failed to store required files for docker config")
+		return nil, err
 	}
 	return dockerConfig, nil
 }
