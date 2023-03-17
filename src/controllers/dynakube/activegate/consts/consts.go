@@ -12,10 +12,7 @@ const (
 	ProxySecretSuffix       = "internal-proxy"
 	HttpsServicePortName    = "https"
 	HttpsServicePort        = 443
-	HttpServicePortName     = "http"
-	HttpServicePort         = 80
 	HttpsContainerPort      = 9999
-	HttpContainerPort       = 9998
 
 	AuthTokenSecretVolumeName = "ag-authtoken-secret"
 	AuthTokenMountPoint       = connectioninfo.TokenBasePath + "/auth-token"
