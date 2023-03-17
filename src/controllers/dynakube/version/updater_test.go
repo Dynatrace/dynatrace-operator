@@ -41,6 +41,10 @@ func (m *mockUpdater) IsAutoUpdateEnabled() bool {
 	args := m.Called()
 	return args.Get(0).(bool)
 }
+func (m *mockUpdater) IsPublicRegistryEnabled() bool {
+	args := m.Called()
+	return args.Get(0).(bool)
+}
 func (m *mockUpdater) LatestImageInfo() (*dtclient.LatestImageInfo, error) {
 	args := m.Called()
 	return args.Get(0).(*dtclient.LatestImageInfo), args.Error(1)
@@ -148,61 +152,25 @@ func TestDetermineSource(t *testing.T) {
 	customVersion := "3.2.1"
 	t.Run("custom-image", func(t *testing.T) {
 		updater := newCustomImageUpdater(nil, customImage)
-
-		versionReconciler := Reconciler{
-			dynakube: &dynatracev1beta1.DynaKube{},
-		}
-		source := versionReconciler.determineSource(updater)
-		assert.Equal(t, source, dynatracev1beta1.CustomImageVersionSource)
+		source := determineSource(updater)
+		assert.Equal(t, dynatracev1beta1.CustomImageVersionSource, source)
 	})
 	t.Run("custom-version", func(t *testing.T) {
 		updater := newCustomVersionUpdater(nil, customVersion, false)
-
-		versionReconciler := Reconciler{
-			dynakube: &dynatracev1beta1.DynaKube{},
-		}
-		source := versionReconciler.determineSource(updater)
-		assert.Equal(t, source, dynatracev1beta1.CustomVersionVersionSource)
+		source := determineSource(updater)
+		assert.Equal(t, dynatracev1beta1.CustomVersionVersionSource, source)
 	})
 
 	t.Run("public-registry", func(t *testing.T) {
 		updater := newPublicRegistryUpdater(nil, nil, false)
-
-		versionReconciler := Reconciler{
-			dynakube: enablePublicRegistry(&dynatracev1beta1.DynaKube{}),
-		}
-		source := versionReconciler.determineSource(updater)
-		assert.Equal(t, source, dynatracev1beta1.PublicRegistryVersionSource)
+		source := determineSource(updater)
+		assert.Equal(t, dynatracev1beta1.PublicRegistryVersionSource, source)
 	})
 
 	t.Run("default", func(t *testing.T) {
 		updater := newDefaultUpdater(nil, true)
-
-		versionReconciler := Reconciler{
-			dynakube: &dynatracev1beta1.DynaKube{},
-		}
-		source := versionReconciler.determineSource(updater)
-		assert.Equal(t, source, dynatracev1beta1.DefaultVersionSource)
-	})
-
-	t.Run("custom-image overrules public-registry", func(t *testing.T) {
-		updater := newCustomImageUpdater(nil, customImage)
-
-		versionReconciler := Reconciler{
-			dynakube: enablePublicRegistry(&dynatracev1beta1.DynaKube{}),
-		}
-		source := versionReconciler.determineSource(updater)
-		assert.Equal(t, source, dynatracev1beta1.CustomImageVersionSource)
-	})
-
-	t.Run("custom-version overruled by public-registry", func(t *testing.T) {
-		updater := newCustomVersionUpdater(nil, customVersion, true)
-
-		versionReconciler := Reconciler{
-			dynakube: enablePublicRegistry(&dynatracev1beta1.DynaKube{}),
-		}
-		source := versionReconciler.determineSource(updater)
-		assert.Equal(t, source, dynatracev1beta1.PublicRegistryVersionSource)
+		source := determineSource(updater)
+		assert.Equal(t, dynatracev1beta1.DefaultVersionSource, source)
 	})
 }
 
@@ -239,42 +207,41 @@ func enablePublicRegistry(dynakube *dynatracev1beta1.DynaKube) *dynatracev1beta1
 }
 
 func newCustomImageUpdater(target *dynatracev1beta1.VersionStatus, image string) *mockUpdater {
-	updater := newBaseUpdater(true)
+	updater := newBaseUpdater(target, true)
 	updater.On("CustomImage").Return(image)
-	updater.On("CustomVersion").Return("")
-	updater.On("Target").Return(target)
 	return updater
 }
 
 func newCustomVersionUpdater(target *dynatracev1beta1.VersionStatus, version string, autoUpdate bool) *mockUpdater {
-	updater := newBaseUpdater(autoUpdate)
+	updater := newBaseUpdater(target, autoUpdate)
 	updater.On("CustomImage").Return("")
+	updater.On("IsPublicRegistryEnabled").Return(false)
 	updater.On("CustomVersion").Return(version)
-	updater.On("Target").Return(target)
 	return updater
 }
 
 func newDefaultUpdater(target *dynatracev1beta1.VersionStatus, autoUpdate bool) *mockUpdater {
-	updater := newBaseUpdater(autoUpdate)
+	updater := newBaseUpdater(target, autoUpdate)
 	updater.On("CustomImage").Return("")
+	updater.On("IsPublicRegistryEnabled").Return(false)
 	updater.On("CustomVersion").Return("")
 	updater.On("UseDefaults").Return(nil)
-	updater.On("Target").Return(target)
 	return updater
 }
 
 func newPublicRegistryUpdater(target *dynatracev1beta1.VersionStatus, imageInfo *dtclient.LatestImageInfo, autoUpdate bool) *mockUpdater {
-	updater := newBaseUpdater(autoUpdate)
+	updater := newBaseUpdater(target, autoUpdate)
 	updater.On("CustomImage").Return("")
-	updater.On("CustomVersion").Return("")
+	updater.On("IsPublicRegistryEnabled").Return(true)
 	updater.On("LatestImageInfo").Return(imageInfo, nil)
-	updater.On("Target").Return(target)
 	return updater
 }
 
-func newBaseUpdater(autoUpdate bool) *mockUpdater {
+func newBaseUpdater(target *dynatracev1beta1.VersionStatus, autoUpdate bool) *mockUpdater {
 	updater := mockUpdater{}
 	updater.On("Name").Return("mock")
+	updater.On("Target").Return(target)
+	updater.On("IsEnabled").Return(true)
 	updater.On("IsAutoUpdateEnabled").Return(autoUpdate)
 	return &updater
 }

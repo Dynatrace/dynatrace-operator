@@ -44,6 +44,10 @@ func (updater codeModulesUpdater) IsAutoUpdateEnabled() bool {
 	return true
 }
 
+func (updater codeModulesUpdater) IsPublicRegistryEnabled() bool {
+	return updater.dynakube.FeaturePublicRegistry()
+}
+
 func (updater codeModulesUpdater) LatestImageInfo() (*dtclient.LatestImageInfo, error) {
 	return updater.dtClient.GetLatestCodeModulesImage()
 }

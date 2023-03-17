@@ -50,6 +50,10 @@ func (updater activeGateUpdater) IsAutoUpdateEnabled() bool {
 	return !updater.dynakube.FeatureDisableActiveGateUpdates()
 }
 
+func (updater activeGateUpdater) IsPublicRegistryEnabled() bool {
+	return updater.dynakube.FeaturePublicRegistry()
+}
+
 func (updater activeGateUpdater) LatestImageInfo() (*dtclient.LatestImageInfo, error) {
 	return updater.dtClient.GetLatestActiveGateImage()
 }

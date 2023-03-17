@@ -98,7 +98,7 @@ func (reconciler *Reconciler) needsUpdate(updater versionStatusUpdater) bool {
 		return false
 	}
 
-	if updater.Target().Source != reconciler.determineSource(updater) {
+	if updater.Target().Source != determineSource(updater) {
 		log.Info("source changed, update for version status is needed", "updater", updater.Name())
 		return true
 	}

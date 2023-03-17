@@ -51,6 +51,10 @@ func (updater oneAgentUpdater) IsAutoUpdateEnabled() bool {
 	return updater.dynakube.ShouldAutoUpdateOneAgent()
 }
 
+func (updater oneAgentUpdater) IsPublicRegistryEnabled() bool {
+	return updater.dynakube.FeaturePublicRegistry()
+}
+
 func (updater oneAgentUpdater) LatestImageInfo() (*dtclient.LatestImageInfo, error) {
 	return updater.dtClient.GetLatestOneAgentImage()
 }

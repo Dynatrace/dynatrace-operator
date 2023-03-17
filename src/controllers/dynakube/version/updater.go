@@ -17,13 +17,14 @@ type versionStatusUpdater interface {
 	CustomImage() string
 	CustomVersion() string
 	IsAutoUpdateEnabled() bool
+	IsPublicRegistryEnabled() bool
 	LatestImageInfo() (*dtclient.LatestImageInfo, error)
 
 	UseDefaults(context.Context, *dockerconfig.DockerConfig) error
 }
 
 func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpdater, dockerCfg *dockerconfig.DockerConfig) error {
-	currentSource := reconciler.determineSource(updater)
+	currentSource := determineSource(updater)
 	var err error
 	defer func() {
 		if err == nil {
@@ -49,7 +50,7 @@ func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpda
 		}
 	}
 
-	if reconciler.dynakube.FeaturePublicRegistry() {
+	if updater.IsPublicRegistryEnabled() {
 		var publicImage *dtclient.LatestImageInfo
 		publicImage, err = updater.LatestImageInfo()
 		if err != nil {
@@ -69,11 +70,11 @@ func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpda
 	return err
 }
 
-func (reconciler *Reconciler) determineSource(updater versionStatusUpdater) dynatracev1beta1.VersionSource {
+func determineSource(updater versionStatusUpdater) dynatracev1beta1.VersionSource {
 	if updater.CustomImage() != "" {
 		return dynatracev1beta1.CustomImageVersionSource
 	}
-	if reconciler.dynakube.FeaturePublicRegistry() {
+	if updater.IsPublicRegistryEnabled() {
 		return dynatracev1beta1.PublicRegistryVersionSource
 	}
 	if updater.CustomVersion() != "" {
