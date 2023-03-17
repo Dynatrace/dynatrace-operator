@@ -4,7 +4,6 @@ package cloudnative
 
 import (
 	"context"
-	"encoding/json"
 	"strconv"
 	"strings"
 	"testing"
@@ -20,15 +19,16 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/logs"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
@@ -102,7 +102,7 @@ func CodeModules(t *testing.T, istioEnabled bool) features.Feature {
 	if istioEnabled {
 		istio.AssessIstio(builder, cloudNativeDynakube, sampleApp)
 	}
-	builder.Assess("codemodules have been downloaded", imageHasBeenDownloaded(cloudNativeDynakube.Namespace))
+	builder.Assess("codemodules have been downloaded", imageHasBeenDownloaded(cloudNativeDynakube.Namespace, secretConfigs[0]))
 	builder.Assess("checking storage used", measureDiskUsage(appDynakube.Namespace, storageMap))
 	assess.InstallDynakube(builder, &secretConfigs[1], appDynakube)
 	builder.Assess("storage size has not increased", diskUsageDoesNotIncrease(appDynakube.Namespace, storageMap))
@@ -130,30 +130,23 @@ func codeModulesAppInjectSpec() *dynatracev1beta1.AppInjectionSpec {
 	}
 }
 
-func imageHasBeenDownloaded(namespace string) features.Func {
+func imageHasBeenDownloaded(namespace string, secret tenant.Secret) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resource := environmentConfig.Client().Resources()
+		clientset, err := kubernetes.NewForConfig(resource.GetConfig())
 
-		err := csi.ForEachPod(ctx, resource, namespace, func(podItem corev1.Pod) {
+		err = csi.ForEachPod(ctx, resource, namespace, func(podItem corev1.Pod) {
+			logStream, err := clientset.CoreV1().Pods(podItem.Namespace).GetLogs(podItem.Name, &corev1.PodLogOptions{
+				Container: provisionerContainerName,
+			}).Stream(ctx)
+			require.NoError(t, err)
+			logs.AssertContains(t, logStream, "Installed agent version: "+codeModulesVersion+" to tenant: "+secret.TenantUid)
+
 			listCommand := shell.ListDirectory(dataPath)
 			result, err := pod.Exec(ctx, resource, podItem, provisionerContainerName, listCommand...)
 
 			require.NoError(t, err)
 			assert.Contains(t, result.StdOut.String(), dtcsi.SharedAgentBinDir)
-
-			readManifestCommand := shell.Shell(shell.ReadFile(getManifestPath()))
-			result, err = pod.Exec(ctx, resource, podItem, provisionerContainerName, readManifestCommand...)
-
-			require.NoError(t, err)
-
-			var codeModulesManifest manifest
-			err = json.Unmarshal(result.StdOut.Bytes(), &codeModulesManifest)
-			if err != nil {
-				err = errors.WithMessagef(err, "json:\n%s", result.StdOut)
-			}
-			require.NoError(t, err)
-
-			assert.Equal(t, codeModulesVersion, codeModulesManifest.Version)
 		})
 
 		require.NoError(t, err)
