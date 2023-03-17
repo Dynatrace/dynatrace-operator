@@ -119,7 +119,7 @@ const (
 var (
 	log = logger.Factory.GetLogger("dynakube-api")
 
-	DefaultSyntheticReplicas = int32(1)
+	defaultSyntheticReplicas = int32(1)
 )
 
 func (dk *DynaKube) getDisableFlagWithDeprecatedAnnotation(annotation string, deprecatedAnnotation string) bool {
@@ -322,31 +322,8 @@ func (dk *DynaKube) getFeatureFlagInt(annotation string, defaultVal int) int {
 	return val
 }
 
-func (dynaKube *DynaKube) FeatureSyntheticLocationEntityId() string {
-	return dynaKube.getFeatureFlagRaw(AnnotationFeatureSyntheticLocationEntityId)
-}
-
-func (dynaKube *DynaKube) FeatureSyntheticLocationOrdinal() uint64 {
-	id := uint64(0)
-
-	_, suffix, found := strings.Cut(dynaKube.FeatureSyntheticLocationEntityId(), "-")
-	if found {
-		parsed, err := strconv.ParseUint(suffix, 16, 64)
-		if err == nil {
-			id = parsed
-		}
-	}
-
-	return id
-}
-
-func (dynaKube *DynaKube) FeatureSyntheticNodeType() string {
-	node := dynaKube.getFeatureFlagRaw(AnnotationFeatureSyntheticNodeType)
-	if node == "" {
-		node = SyntheticNodeS
-	}
-	return node
-	return val
+func (dk *DynaKube) FeatureSyntheticLocationEntityId() string {
+	return dk.getFeatureFlagRaw(AnnotationFeatureSyntheticLocationEntityId)
 }
 
 func (dk *DynaKube) FeatureInjectionFailurePolicy() string {
@@ -356,15 +333,16 @@ func (dk *DynaKube) FeatureInjectionFailurePolicy() string {
 	return silentPhrase
 }
 
-func (dynaKube *DynaKube) FeatureSyntheticReplicas() int32 {
-	replicas := DefaultSyntheticReplicas
-	value := dynaKube.getFeatureFlagRaw(AnnotationFeatureSyntheticReplicas)
-	if value != "" {
-		parsed, err := strconv.ParseInt(value, 0, 32)
-		if err == nil {
-			replicas = int32(parsed)
-		}
+func (dk *DynaKube) FeatureSyntheticReplicas() int32 {
+	value := dk.getFeatureFlagRaw(AnnotationFeatureSyntheticReplicas)
+	if value == "" {
+		return defaultSyntheticReplicas
 	}
 
-	return replicas
+	parsed, err := strconv.ParseInt(value, 0, 32)
+	if err != nil {
+		return defaultSyntheticReplicas
+	}
+
+	return int32(parsed)
 }

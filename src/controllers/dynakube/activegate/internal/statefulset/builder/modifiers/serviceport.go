@@ -30,8 +30,7 @@ type ServicePortModifier struct {
 }
 
 func (mod ServicePortModifier) Enabled() bool {
-	return mod.dynakube.NeedsActiveGateServicePorts() &&
-		!mod.capability.IsSynthetic()
+	return mod.dynakube.NeedsActiveGateServicePorts()
 }
 
 func (mod ServicePortModifier) Modify(sts *appsv1.StatefulSet) error {

@@ -41,8 +41,7 @@ type KubernetesMonitoringModifier struct {
 }
 
 func (mod KubernetesMonitoringModifier) Enabled() bool {
-	return mod.dynakube.IsKubernetesMonitoringActiveGateEnabled() &&
-		!mod.capability.IsSynthetic()
+	return mod.dynakube.IsKubernetesMonitoringActiveGateEnabled()
 }
 
 func (mod KubernetesMonitoringModifier) Modify(sts *appsv1.StatefulSet) error {

@@ -24,8 +24,8 @@ func warnOnCapabilityIfActive(capability dynatracev1beta1.CapabilityDisplayName,
 	return ""
 }
 
-func syntheticPreviewWarning(dv *dynakubeValidator, dynaKube *dynatracev1beta1.DynaKube) string {
-	if dynaKube.IsSyntheticMonitoringEnabled() {
+func syntheticPreviewWarning(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+	if dynakube.IsSyntheticMonitoringEnabled() {
 		log.Info(fmt.Sprintf("DynaKube with %s was applied, warning was provided.", capability.SyntheticName))
 		return fmt.Sprintf(featurePreviewWarningMessage, capability.SyntheticName)
 	}

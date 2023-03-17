@@ -61,10 +61,10 @@ func (dk *DynaKube) ApiUrlHost() string {
 }
 
 // NeedsActiveGate returns true when a feature requires ActiveGate instances.
-func (dynaKube *DynaKube) NeedsActiveGate() bool {
-	return dynaKube.DeprecatedActiveGateMode() ||
-		dynaKube.ActiveGateMode() ||
-		dynaKube.IsSyntheticMonitoringEnabled()
+func (dk *DynaKube) NeedsActiveGate() bool {
+	return dk.DeprecatedActiveGateMode() ||
+		dk.ActiveGateMode() ||
+		dk.IsSyntheticMonitoringEnabled()
 }
 
 // ApplicationMonitoringMode returns true when application only section is used.
@@ -242,19 +242,22 @@ func (dk *DynaKube) CustomActiveGateImage() string {
 }
 
 // returns the synthetic image supplied by the given DynaKube.
-func (dynaKube *DynaKube) SyntheticImage() string {
-	image := dynaKube.FeatureCustomSyntheticImage()
+func (dk *DynaKube) SyntheticImage() string {
+	image := dk.FeatureCustomSyntheticImage()
 	if image != "" {
 		return image
 	}
 
-	apiUrlHost := dynaKube.ApiUrlHost()
+	if dk.ApiUrl() == "" {
+		return ""
+	}
 
+	apiUrlHost := dk.ApiUrlHost()
 	if apiUrlHost == "" {
 		return ""
 	}
 
-	return apiUrlHost + defaultSyntheticImage
+	return fmt.Sprintf("%s/linux/dynatrace-synthetic:%s", apiUrlHost, api.LatestTag)
 }
 
 func (dk *DynaKube) NeedsReadOnlyOneAgents() bool {
@@ -382,7 +385,6 @@ func (dk *DynaKube) OneAgentImage() string {
 	}
 
 	apiUrlHost := dk.ApiUrlHost()
-
 	if apiUrlHost == "" {
 		return ""
 	}

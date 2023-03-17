@@ -70,13 +70,8 @@ func (statefulSetBuilder Builder) getBaseObjectMeta() metav1.ObjectMeta {
 }
 
 func (statefulSetBuilder Builder) getBaseSpec() appsv1.StatefulSetSpec {
-	replicas := statefulSetBuilder.capability.Properties().Replicas
-	if statefulSetBuilder.capability.IsSynthetic() {
-		replicas = address.Of(statefulSetBuilder.dynakube.FeatureSyntheticReplicas())
-	}
-
 	return appsv1.StatefulSetSpec{
-		Replicas:            replicas,
+		Replicas:            statefulSetBuilder.capability.Properties().Replicas,
 		PodManagementPolicy: appsv1.ParallelPodManagement,
 		Template: corev1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
@@ -89,36 +84,15 @@ func (statefulSetBuilder Builder) getBaseSpec() appsv1.StatefulSetSpec {
 }
 
 func (statefulSetBuilder Builder) addLabels(sts *appsv1.StatefulSet) {
-	componentLabel, versionLabel := statefulSetBuilder.findCapabilityLabels()
-	appLabels := kubeobjects.NewAppLabels(
-		componentLabel,
-		statefulSetBuilder.dynakube.Name,
-		statefulSetBuilder.capability.ShortName(),
-		versionLabel)
+	versionLabelValue := statefulSetBuilder.dynakube.Status.ActiveGate.Version
+	if statefulSetBuilder.dynakube.CustomActiveGateImage() != "" {
+		versionLabelValue = kubeobjects.CustomImageLabelValue
+	}
+	appLabels := kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, statefulSetBuilder.dynakube.Name, statefulSetBuilder.capability.ShortName(), versionLabelValue)
 
 	sts.ObjectMeta.Labels = appLabels.BuildLabels()
 	sts.Spec.Selector = &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()}
 	sts.Spec.Template.ObjectMeta.Labels = kubeobjects.MergeMap(statefulSetBuilder.capability.Properties().Labels, appLabels.BuildLabels())
-}
-
-func (statefulSetBuilder Builder) findCapabilityLabels() (component, version string) {
-	component = kubeobjects.ActiveGateComponentLabel
-	if statefulSetBuilder.dynakube.CustomActiveGateImage() != "" {
-		version = kubeobjects.CustomImageLabelValue
-	} else {
-		version = statefulSetBuilder.dynakube.Status.ActiveGate.Version
-	}
-
-	if statefulSetBuilder.capability.IsSynthetic() {
-		component = kubeobjects.SyntheticComponentLabel
-		if statefulSetBuilder.dynakube.FeatureCustomSyntheticImage() != "" {
-			version = kubeobjects.CustomImageLabelValue
-		} else {
-			version = statefulSetBuilder.dynakube.Status.Synthetic.Version
-		}
-	}
-
-	return
 }
 
 func (statefulSetBuilder Builder) addUserAnnotations(sts *appsv1.StatefulSet) {
@@ -176,10 +150,6 @@ func (statefulSetBuilder Builder) buildBaseContainer() []corev1.Container {
 }
 
 func (statefulSetBuilder Builder) buildResources() corev1.ResourceRequirements {
-	if statefulSetBuilder.capability.IsSynthetic() {
-		return modifiers.ActiveGateResourceRequirements
-	}
-
 	return statefulSetBuilder.capability.Properties().Resources
 }
 

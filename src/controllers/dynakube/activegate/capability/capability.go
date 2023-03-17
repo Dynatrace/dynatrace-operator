@@ -26,7 +26,6 @@ type Capability interface {
 	ShortName() string
 	ArgName() string
 	Properties() *dynatracev1beta1.CapabilityProperties
-	IsSynthetic() bool
 }
 
 type capabilityBase struct {
@@ -50,10 +49,6 @@ func (capability *capabilityBase) ShortName() string {
 
 func (capability *capabilityBase) ArgName() string {
 	return capability.argName
-}
-
-func (capability *capabilityBase) IsSynthetic() bool {
-	return capability.shortName == SyntheticName
 }
 
 func CalculateStatefulSetName(capability Capability, dynakubeName string) string {
@@ -128,18 +123,15 @@ func NewRoutingCapability(dk *dynatracev1beta1.DynaKube) *RoutingCapability {
 	return c
 }
 
-func NewSyntheticCapability(dynaKube *dynatracev1beta1.DynaKube) *SyntheticCapability {
+func NewSyntheticCapability(dk *dynatracev1beta1.DynaKube) *SyntheticCapability {
 	capability := &SyntheticCapability{
 		*syntheticBase(),
 	}
-	if dynaKube == nil {
+	if dk == nil {
 		return capability
 	}
-	capability.enabled = dynaKube.IsSyntheticMonitoringEnabled()
-	capability.properties = &dynatracev1beta1.CapabilityProperties{
-		Image: dynaKube.Spec.ActiveGate.CapabilityProperties.Image,
-		Env:   dynaKube.Spec.ActiveGate.CapabilityProperties.Env,
-	}
+	capability.enabled = dk.IsSyntheticMonitoringEnabled()
+	capability.properties = &dk.Spec.Routing.CapabilityProperties
 	return capability
 }
 
@@ -183,12 +175,12 @@ func syntheticBase() *capabilityBase {
 	return &c
 }
 
-func GenerateActiveGateCapabilities(dynaKube *dynatracev1beta1.DynaKube) []Capability {
+func GenerateActiveGateCapabilities(dk *dynatracev1beta1.DynaKube) []Capability {
 	return []Capability{
-		NewKubeMonCapability(dynaKube),
-		NewRoutingCapability(dynaKube),
-		NewMultiCapability(dynaKube),
-		NewSyntheticCapability(dynaKube),
+		NewKubeMonCapability(dk),
+		NewRoutingCapability(dk),
+		NewMultiCapability(dk),
+		NewSyntheticCapability(dk),
 	}
 }
 

@@ -1,7 +1,6 @@
 package statefulset
 
 import (
-	"encoding/json"
 	"fmt"
 	"reflect"
 	"testing"
@@ -370,7 +369,7 @@ func TestBuildCommonEnvs(t *testing.T) {
 		assert.Equal(t, dynakube.Spec.NetworkZone, zoneEnv.Value)
 	})
 
-	t.Run("syn-capability", func(t *testing.T) {
+	t.Run("synthetic capability", func(t *testing.T) {
 		dynaKube := getTestDynakube()
 		dynaKube.ObjectMeta.Annotations[dynatracev1beta1.AnnotationFeatureSyntheticLocationEntityId] = "doctored"
 		dynaKube.ObjectMeta.Annotations[dynatracev1beta1.AnnotationFeatureSyntheticReplicas] = fmt.Sprint(testReplicas)
@@ -382,8 +381,7 @@ func TestBuildCommonEnvs(t *testing.T) {
 			dynaKube,
 			synCapability)
 
-		assert.Contains(
-			t,
+		assert.Contains(t,
 			builder.buildCommonEnvs(),
 			corev1.EnvVar{
 				Name:  consts.EnvDtCapabilities,
@@ -392,23 +390,19 @@ func TestBuildCommonEnvs(t *testing.T) {
 			"declared env dt capabilities: %s",
 			capability.SyntheticActiveGateEnvCapabilities)
 
-		assert.Equal(
-			t,
-			modifiers.ActiveGateResourceRequirements,
-			builder.buildResources(),
-			"declared resource requirements for ActiveGate")
-
-		sts, _ := builder.CreateStatefulSet(
+		statefulSet, _ := builder.CreateStatefulSet(
 			modifiers.GenerateAllModifiers(dynaKube, synCapability))
-		jsonized, _ := json.Marshal(sts)
-		t.Logf("manifest: %s", jsonized)
 
-		assert.Equal(
-			t,
-			*sts.Spec.Replicas,
+		assert.Equal(t,
+			*statefulSet.Spec.Replicas,
 			testReplicas,
 			"declared replicas: %s",
 			testReplicas)
+
+		assert.Equal(t,
+			modifiers.SyntheticActiveGateResourceRequirements,
+			statefulSet.Spec.Template.Spec.Containers[0].Resources,
+			"declared resource requirements for ActiveGate")
 
 		volumes := []corev1.Volume{
 			{
@@ -437,9 +431,8 @@ func TestBuildCommonEnvs(t *testing.T) {
 				},
 			},
 		}
-		assert.Subset(
-			t,
-			sts.Spec.Template.Spec.Volumes,
+		assert.Subset(t,
+			statefulSet.Spec.Template.Spec.Volumes,
 			volumes,
 			"declared syn volumes")
 	})

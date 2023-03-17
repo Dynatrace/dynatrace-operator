@@ -17,6 +17,7 @@ var validators = []validator{
 	IsInvalidApiUrl,
 	missingCSIDaemonSet,
 	conflictingActiveGateConfiguration,
+	exclusiveSyntheticCapability,
 	invalidActiveGateCapabilities,
 	duplicateActiveGateCapabilities,
 	invalidActiveGateProxyUrl,

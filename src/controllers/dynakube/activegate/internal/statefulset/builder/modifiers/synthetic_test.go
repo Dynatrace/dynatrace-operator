@@ -21,24 +21,22 @@ func TestSyntheticContainer(t *testing.T) {
 	)
 	container := modifier.buildContainer()
 
-	toAssertProbe := func(t *testing.T) {
+	t.Run("by liveness probe", func(t *testing.T) {
 		assertion.NotEmpty(container.LivenessProbe, "declared liveness probe")
 		assertion.Equal(
 			container.LivenessProbe.Exec.Command,
 			livenessCmd,
 			"declared command for liveness probe")
-	}
-	t.Run("by-probe", toAssertProbe)
+	})
 
-	toAssertVolumes := func(t *testing.T) {
+	t.Run("by volumes", func(t *testing.T) {
 		assertion.Subset(
 			container.VolumeMounts,
 			modifier.getVolumeMounts(),
 			"declared mount paths")
-	}
-	t.Run("by-volumes", toAssertVolumes)
+	})
 
-	toAssertRequirements := func(t *testing.T) {
+	t.Run("by requirements", func(t *testing.T) {
 		expectedRequestCpu := resource.NewScaledQuantity(1000, resource.Milli).String()
 		assertion.Equal(
 			container.Resources.Requests.Cpu().String(),
@@ -46,14 +44,12 @@ func TestSyntheticContainer(t *testing.T) {
 			"declared for %v node resource request CPU: %v",
 			dynatracev1beta1.SyntheticNodeXs,
 			expectedRequestCpu)
-	}
-	t.Run("by-requirements", toAssertRequirements)
+	})
 
-	toAssertEnv := func(t *testing.T) {
+	t.Run("by environment variables", func(t *testing.T) {
 		assertion.Subset(
 			container.Env,
 			modifier.getEnvs(),
 			"declared environment variables")
-	}
-	t.Run("by-environment-variables", toAssertEnv)
+	})
 }

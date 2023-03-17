@@ -2,6 +2,7 @@ package version
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -30,76 +31,71 @@ type Reconciler struct {
 	TimeProvider    *timeprovider.Provider
 }
 
-type updateScope struct {
-	onActiveGate bool
-	onOneAgent   bool
-	onSynthetic  bool
+type toUpdateImage struct {
+	url             string
+	component       string
+	version         *dynatracev1beta1.VersionStatus
+	allowsDowngrade bool
 }
 
-func (scope updateScope) needsUpdate() bool {
-	return scope.onActiveGate ||
-		scope.onOneAgent ||
-		scope.onSynthetic
-}
-
-func (scope updateScope) reconcileActiveGate(dynakube *dynatracev1beta1.DynaKube, updater *imageUpdater) {
-	if !scope.onActiveGate {
-		return
-	}
-
-	err := updater.update(
-		dynakube.ActiveGateImage(),
-		&dynakube.Status.ActiveGate.VersionStatus,
-		true)
+func (i toUpdateImage) update(updater *imageUpdater) {
+	err := updater.update(i)
 	if err != nil {
-		log.Error(err, "failed to update ActiveGate image version")
-	}
-}
-
-func (scope updateScope) reconcileOneAgent(dynakube *dynatracev1beta1.DynaKube, updater *imageUpdater) {
-	if !scope.onOneAgent {
-		return
-	}
-
-	err := updater.update(
-		dynakube.OneAgentImage(),
-		&dynakube.Status.OneAgent.VersionStatus,
-		false)
-	if err != nil {
-		log.Error(err, "failed to update OneAgent image version")
-	}
-}
-
-func (scope updateScope) reconcileSynthetic(dynaKube *dynatracev1beta1.DynaKube, updater *imageUpdater) {
-	if !scope.onSynthetic {
-		return
-	}
-
-	err := updater.update(
-		dynaKube.SyntheticImage(),
-		&dynaKube.Status.Synthetic.VersionStatus,
-		true)
-	if err != nil {
-		log.Error(err, "failed to update synthetic image version")
+		log.Error(err,
+			fmt.Sprintf("failed to update %s image version", i.component))
 	}
 }
 
 // Reconcile updates the version and hash for the images used by the rec.Dynakube DynaKube instance.
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	scope := updateScope{
-		onActiveGate: needsActiveGateUpdate(r.Dynakube, *r.TimeProvider),
-		onOneAgent:   needsOneAgentUpdate(r.Dynakube, *r.TimeProvider),
-		onSynthetic:  needsSynMonitoringUpdate(r.Dynakube, *r.TimeProvider),
+	images := []toUpdateImage{}
+	addToUpdateImage := func(
+		needsUpdate bool,
+		image string,
+		component string,
+		version *dynatracev1beta1.VersionStatus,
+		allowsDowngrade bool,
+	) {
+		if !needsUpdate {
+			return
+		}
+
+		images = append(images,
+			toUpdateImage{
+				image,
+				component,
+				version,
+				allowsDowngrade,
+			})
 	}
 
-	if !scope.needsUpdate() {
+	addToUpdateImage(
+		r.needsActiveGateUpdate(),
+		r.Dynakube.ActiveGateImage(),
+		r.Dynakube.Status.ActiveGate.Name(),
+		&r.Dynakube.Status.ActiveGate.VersionStatus,
+		true)
+	addToUpdateImage(
+		r.needsOneAgentUpdate(),
+		r.Dynakube.OneAgentImage(),
+		r.Dynakube.Status.OneAgent.Name(),
+		&r.Dynakube.Status.OneAgent.VersionStatus,
+		false)
+	addToUpdateImage(
+		r.needsSynMonitoringUpdate(),
+		r.Dynakube.SyntheticImage(),
+		r.Dynakube.Status.Synthetic.Name(),
+		&r.Dynakube.Status.Synthetic.VersionStatus,
+		true)
+
+	if len(images) == 0 {
 		return nil
 	}
 
-	return r.updateImages(ctx, scope)
+	return r.updateImages(ctx, images)
 }
 
-func (r *Reconciler) updateImages(ctx context.Context, scope updateScope) error {
+func (r *Reconciler) updateImages(ctx context.Context, images []toUpdateImage) error {
 	dockerConfig, err := createDockerConfigWithCustomCAs(ctx, r.Dynakube, r.ApiReader, r.Fs)
 	if err != nil {
 		return err
@@ -110,9 +106,9 @@ func (r *Reconciler) updateImages(ctx context.Context, scope updateScope) error 
 		dockerCfg:   dockerConfig,
 		verProvider: r.VersionProvider,
 	}
-	scope.reconcileActiveGate(r.Dynakube, imageUpdater)
-	scope.reconcileOneAgent(r.Dynakube, imageUpdater)
-	scope.reconcileSynthetic(r.Dynakube, imageUpdater)
+	for _, image := range images {
+		image.update(imageUpdater)
+	}
 
 	return nil
 }
@@ -127,22 +123,21 @@ func createDockerConfigWithCustomCAs(ctx context.Context, dynakube *dynatracev1b
 	return dockerConfig, nil
 }
 
-func needsActiveGateUpdate(dynakube *dynatracev1beta1.DynaKube, timeProvider timeprovider.Provider) bool {
-	return dynakube.NeedsActiveGate() &&
-		!dynakube.FeatureDisableActiveGateUpdates() &&
-		timeProvider.IsOutdated(dynakube.Status.ActiveGate.LastUpdateProbeTimestamp, ProbeThreshold)
+func (r *Reconciler) needsActiveGateUpdate() bool {
+	return r.Dynakube.NeedsActiveGate() &&
+		!r.Dynakube.FeatureDisableActiveGateUpdates() &&
+		r.TimeProvider.IsOutdated(r.Dynakube.Status.ActiveGate.LastUpdateProbeTimestamp, ProbeThreshold)
 }
 
-func needsOneAgentUpdate(dynakube *dynatracev1beta1.DynaKube, timeProvider timeprovider.Provider) bool {
-	return dynakube.NeedsOneAgent() &&
-		timeProvider.IsOutdated(dynakube.Status.OneAgent.LastUpdateProbeTimestamp, ProbeThreshold) &&
-		dynakube.ShouldAutoUpdateOneAgent()
+func (r *Reconciler) needsOneAgentUpdate() bool {
+	return r.Dynakube.NeedsOneAgent() &&
+		r.TimeProvider.IsOutdated(r.Dynakube.Status.OneAgent.LastUpdateProbeTimestamp, ProbeThreshold) &&
+		r.Dynakube.ShouldAutoUpdateOneAgent()
 }
 
-func needsSynMonitoringUpdate(dynakube *dynatracev1beta1.DynaKube, timeProvider kubeobjects.TimeProvider) bool {
-	return dynakube.IsSyntheticMonitoringEnabled() &&
-		dynakube.FeatureCustomSyntheticImage() == "" &&
-		timeProvider.IsOutdated(dynakube.Status.Synthetic.LastUpdateProbeTimestamp, ProbeThreshold)
+func (r *Reconciler) needsSynMonitoringUpdate() bool {
+	return r.Dynakube.IsSyntheticMonitoringEnabled() &&
+		r.TimeProvider.IsOutdated(r.Dynakube.Status.Synthetic.LastUpdateProbeTimestamp, ProbeThreshold)
 }
 
 type imageUpdater struct {
@@ -151,24 +146,20 @@ type imageUpdater struct {
 	verProvider VersionProviderCallback
 }
 
-func (updater *imageUpdater) update(
-	img string,
-	target *dynatracev1beta1.VersionStatus,
-	allowDowngrades bool,
-) error {
-	target.LastUpdateProbeTimestamp = &updater.now
+func (updater *imageUpdater) update(image toUpdateImage) error {
+	image.version.LastUpdateProbeTimestamp = &updater.now
 
-	ver, err := updater.verProvider(img, updater.dockerCfg)
+	ver, err := updater.verProvider(image.url, updater.dockerCfg)
 	if err != nil {
 		return errors.WithMessage(err, "failed to get image version")
 	}
 
-	if target.Version == ver.Version {
+	if image.version.Version == ver.Version {
 		return nil
 	}
 
-	if !allowDowngrades && target.Version != "" {
-		if upgrade, err := version.NeedsUpgradeRaw(target.Version, ver.Version); err != nil {
+	if !image.allowsDowngrade && image.version.Version != "" {
+		if upgrade, err := version.NeedsUpgradeRaw(image.version.Version, ver.Version); err != nil {
 			return err
 		} else if !upgrade {
 			return nil
@@ -176,10 +167,12 @@ func (updater *imageUpdater) update(
 	}
 
 	log.Info("update found",
-		"image", img,
-		"oldVersion", target.Version, "newVersion", ver.Version,
-		"oldHash", target.ImageHash, "newHash", ver.Hash)
-	target.Version = ver.Version
-	target.ImageHash = ver.Hash
+		"image", image.url,
+		"oldVersion", image.version.Version,
+		"newVersion", ver.Version,
+		"oldHash", image.version.ImageHash,
+		"newHash", ver.Hash)
+	image.version.Version = ver.Version
+	image.version.ImageHash = ver.Hash
 	return nil
 }

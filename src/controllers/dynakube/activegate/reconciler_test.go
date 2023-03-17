@@ -8,7 +8,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
@@ -206,147 +205,42 @@ func getTestActiveGateService(t *testing.T, fakeClient client.Client) corev1.Ser
 }
 
 func TestExclusiveSynMonitoring(t *testing.T) {
-	dtRequests := &dtclient.MockDynatraceClient{}
-	dtRequests.On(
-		"GetActiveGateAuthToken",
-		testName,
-	).Return(
-		&dtclient.ActiveGateAuthTokenInfo{},
-		nil)
-	dynaKube := &dynatracev1beta1.DynaKube{
-		ObjectMeta: syntheticCapabilityObjectMeta,
-	}
-	k8sRequests := fake.NewClient(testKubeSystemNamespace)
-	reconciler := NewReconciler(
-		context.TODO(),
-		k8sRequests,
-		k8sRequests,
-		scheme.Scheme,
-		dynaKube,
-		dtRequests)
-	err := reconciler.Reconcile()
+	mockDtClient := &dtclient.MockDynatraceClient{}
+	mockDtClient.On("GetActiveGateAuthToken", testName).
+		Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
 
-	toAssertReconciliation := func(t *testing.T) {
-		require.NoError(t, err, "successfully reconciled for syn-mon")
-	}
-	t.Run("for-errorless-reconciliation", toAssertReconciliation)
-
-	toAssertSingleStatefulSet := func(t *testing.T) {
-		var sets appsv1.StatefulSetList
-		err = k8sRequests.List(
-			context.TODO(),
-			&sets,
-			client.InNamespace(testNamespace))
-		require.NoError(t, err)
-		require.Len(t, sets.Items, 1)
-		assert.True(
-			t,
-			containsKubject(
-				sets.Items,
-				capability.BuildServiceName(testName, capability.SyntheticName)),
-			"unique StatefulSet for syn-mon")
-	}
-	t.Run("for-unique-statefulset", toAssertSingleStatefulSet)
-
-	toAssertServicelessActiveGate := func(t *testing.T) {
-		var services corev1.ServiceList
-		err = k8sRequests.List(
-			context.TODO(),
-			&services,
-			client.InNamespace(testNamespace))
-		require.NoError(t, err)
-		require.Len(t, services.Items, 0)
-	}
-	t.Run("for-serviceless-activegate", toAssertServicelessActiveGate)
-}
-
-func containsKubject[
-	BO any,
-	O interface {
-		*BO
-		client.Object
-	},
-](toScan []BO, toContainName string) bool {
-	for _, scanned := range toScan {
-		if O(address.Of(scanned)).GetName() == toContainName {
-			return true
-		}
-	}
-
-	return false
-}
-
-func TestCombinedSynAndK8sMonitoring(t *testing.T) {
-	dtRequests := &dtclient.MockDynatraceClient{}
-	dtRequests.On(
-		"GetActiveGateAuthToken",
-		testName,
-	).Return(
-		&dtclient.ActiveGateAuthTokenInfo{},
-		nil)
 	dynakube := &dynatracev1beta1.DynaKube{
 		ObjectMeta: syntheticCapabilityObjectMeta,
-		Spec: dynatracev1beta1.DynaKubeSpec{
-			ActiveGate: dynatracev1beta1.ActiveGateSpec{
-				Capabilities: []dynatracev1beta1.CapabilityDisplayName{
-					dynatracev1beta1.KubeMonCapability.DisplayName,
-					dynatracev1beta1.RoutingCapability.DisplayName,
-				},
-			},
-		},
 	}
-	k8sRequests := fake.NewClient(testKubeSystemNamespace)
-	reconciler := NewReconciler(
-		context.TODO(),
-		k8sRequests,
-		k8sRequests,
-		scheme.Scheme,
-		dynakube,
-		dtRequests)
+	fakeClient := fake.NewClient(testKubeSystemNamespace)
+	reconciler := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, mockDtClient)
 	err := reconciler.Reconcile()
 
-	toAssertReconciliation := func(t *testing.T) {
-		require.NoError(t, err, "successfully reconciled for syn-mon")
-	}
-	t.Run("for-errorless-reconciliation", toAssertReconciliation)
+	require.NoError(t, err, "successfully reconciled for syn-mon")
 
-	toAssertStatefulSets := func(t *testing.T) {
-		var sets appsv1.StatefulSetList
-		err = k8sRequests.List(
-			context.TODO(),
-			&sets,
-			client.InNamespace(testNamespace))
-		require.NoError(t, err)
-		require.Len(t, sets.Items, 2)
-		assert.True(
-			t,
-			containsKubject(
-				sets.Items,
-				capability.BuildServiceName(testName, capability.SyntheticName)),
-			"unique StatefulSet for syn-mon")
-		assert.True(
-			t,
-			containsKubject(
-				sets.Items,
-				capability.BuildServiceName(testName, consts.MultiActiveGateName)),
-			"unique StatefulSet for observability-specific ActiveGate")
-	}
-	t.Run("for-two-statefulsets", toAssertStatefulSets)
+	var statefulSets appsv1.StatefulSetList
+	err = fakeClient.List(
+		context.TODO(),
+		&statefulSets,
+		client.InNamespace(testNamespace))
+	require.NoError(t, err)
+	require.Len(t, statefulSets.Items, 1)
 
-	toAssertService := func(t *testing.T) {
-		var services corev1.ServiceList
-		err = k8sRequests.List(
-			context.TODO(),
-			&services,
-			client.InNamespace(testNamespace))
-		require.NoError(t, err)
-		require.Len(t, services.Items, 1)
-		assert.True(
-			t,
-			containsKubject(
-				services.Items,
-				capability.BuildServiceName(testName, consts.MultiActiveGateName)),
-			"unique Service for observability-specific ActiveGate")
+	statefulSetCreated := false
+	expectedName := capability.BuildServiceName(testName, capability.SyntheticName)
+	for _, statefulSet := range statefulSets.Items {
+		if statefulSet.GetName() == expectedName {
+			statefulSetCreated = true
+			break
+		}
 	}
-	t.Run("for-service-backed-activegate", toAssertService)
+	assert.True(t, statefulSetCreated, "unique StatefulSet for syn-mon")
+
+	var services corev1.ServiceList
+	err = fakeClient.List(
+		context.TODO(),
+		&services,
+		client.InNamespace(testNamespace))
+	require.NoError(t, err)
+	require.Len(t, services.Items, 0)
 }

@@ -35,7 +35,7 @@ const (
 )
 
 type SyntheticModifier struct {
-	dynaKube   dynatracev1beta1.DynaKube
+	dynakube   dynatracev1beta1.DynaKube
 	capability capability.Capability
 }
 
@@ -85,8 +85,8 @@ var nodeRequirementsBySize = map[string]nodeRequirements{
 	},
 }
 
-func (syn SyntheticModifier) nodeRequirements() nodeRequirements {
-	return nodeRequirementsBySize[syn.dynaKube.FeatureSyntheticNodeType()]
+func (modifier SyntheticModifier) nodeRequirements() nodeRequirements {
+	return nodeRequirementsBySize[modifier.dynakube.FeatureSyntheticNodeType()]
 }
 
 var (
@@ -95,34 +95,44 @@ var (
 		"-c",
 		"curl http://localhost:7878/command/version",
 	}
-	ActiveGateResourceRequirements = corev1.ResourceRequirements{
+	SyntheticActiveGateResourceRequirements = corev1.ResourceRequirements{
 		Limits:   kubeobjects.NewResources("300m", "1Gi"),
 		Requests: kubeobjects.NewResources("150m", "250Mi"),
 	}
 )
 
 func newSyntheticModifier(
-	dynaKube dynatracev1beta1.DynaKube,
+	dynakube dynatracev1beta1.DynaKube,
 	capability capability.Capability,
 ) SyntheticModifier {
 	return SyntheticModifier{
-		dynaKube:   dynaKube,
+		dynakube:   dynakube,
 		capability: capability,
 	}
 }
 
-func (syn SyntheticModifier) Enabled() bool {
-	return syn.dynaKube.IsSyntheticMonitoringEnabled() &&
-		syn.capability.IsSynthetic()
+func (modifier SyntheticModifier) Enabled() bool {
+	return modifier.dynakube.IsSyntheticMonitoringEnabled()
 }
 
-func (syn SyntheticModifier) Modify(sts *appsv1.StatefulSet) error {
+func (modifier SyntheticModifier) Modify(sts *appsv1.StatefulSet) error {
+	version := modifier.dynakube.Status.Synthetic.Version
+	if modifier.dynakube.FeatureCustomSyntheticImage() != "" {
+		version = kubeobjects.CustomImageLabelValue
+	}
+	sts.Labels[kubeobjects.AppVersionLabel] = version
+	sts.Labels[kubeobjects.AppComponentLabel] = kubeobjects.SyntheticComponentLabel
+
+	sts.Spec.Template.Spec.Containers[0].Resources = SyntheticActiveGateResourceRequirements
+
+	sts.Spec.Replicas = address.Of(modifier.dynakube.FeatureSyntheticReplicas())
+
 	sts.Spec.Template.Spec.Containers = append(
 		sts.Spec.Template.Spec.Containers,
-		syn.buildContainer())
+		modifier.buildContainer())
 	sts.Spec.Template.Spec.Volumes = append(
 		sts.Spec.Template.Spec.Volumes,
-		syn.getVolumes()...)
+		modifier.getVolumes()...)
 	sts.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{}
 	sts.Spec.Template.Spec.SecurityContext.FSGroup = address.Of[int64](1001)
 
@@ -136,19 +146,19 @@ func (syn SyntheticModifier) Modify(sts *appsv1.StatefulSet) error {
 		baseContainer.Env,
 		corev1.EnvVar{
 			Name:  envLocationId,
-			Value: syn.dynaKube.FeatureSyntheticLocationEntityId(),
+			Value: modifier.dynakube.FeatureSyntheticLocationEntityId(),
 		})
 
 	return nil
 }
 
-func (syn SyntheticModifier) buildContainer() corev1.Container {
+func (modifier SyntheticModifier) buildContainer() corev1.Container {
 	container := corev1.Container{
 		Name:            consts.SyntheticContainerName,
-		Image:           syn.image(),
+		Image:           modifier.image(),
 		ImagePullPolicy: corev1.PullAlways,
-		Env:             syn.getEnvs(),
-		VolumeMounts:    syn.getVolumeMounts(),
+		Env:             modifier.getEnvs(),
+		VolumeMounts:    modifier.getVolumeMounts(),
 		LivenessProbe: &corev1.Probe{
 			ProbeHandler: corev1.ProbeHandler{
 				Exec: &corev1.ExecAction{
@@ -161,17 +171,17 @@ func (syn SyntheticModifier) buildContainer() corev1.Container {
 			SuccessThreshold:    1,
 			TimeoutSeconds:      3,
 		},
-		SecurityContext: syn.buildSecurityContext(),
-		Resources:       syn.buildResources(),
+		SecurityContext: modifier.buildSecurityContext(),
+		Resources:       modifier.buildResources(),
 	}
 	return container
 }
 
-func (syn SyntheticModifier) image() string {
-	return syn.dynaKube.SyntheticImage()
+func (modifier SyntheticModifier) image() string {
+	return modifier.dynakube.SyntheticImage()
 }
 
-func (syn SyntheticModifier) getVolumeMounts() []corev1.VolumeMount {
+func (modifier SyntheticModifier) getVolumeMounts() []corev1.VolumeMount {
 	privateMounts := []corev1.VolumeMount{
 		{
 			Name:      ChromiumCacheMountName,
@@ -188,20 +198,20 @@ func (syn SyntheticModifier) getVolumeMounts() []corev1.VolumeMount {
 		buildPublicVolumeMounts()...)
 }
 
-func (syn SyntheticModifier) getEnvs() []corev1.EnvVar {
+func (modifier SyntheticModifier) getEnvs() []corev1.EnvVar {
 	return []corev1.EnvVar{
 		{
 			Name:  envNodeType,
-			Value: syn.dynaKube.FeatureSyntheticNodeType(),
+			Value: modifier.dynakube.FeatureSyntheticNodeType(),
 		},
 		{
 			Name:  envMaxHeap,
-			Value: syn.nodeRequirements().jvmHeap.String(),
+			Value: modifier.nodeRequirements().jvmHeap.String(),
 		},
 	}
 }
 
-func (syn SyntheticModifier) buildSecurityContext() *corev1.SecurityContext {
+func (modifier SyntheticModifier) buildSecurityContext() *corev1.SecurityContext {
 	return &corev1.SecurityContext{
 		Privileged:               address.Of(false),
 		AllowPrivilegeEscalation: address.Of(false),
@@ -217,10 +227,10 @@ func (syn SyntheticModifier) buildSecurityContext() *corev1.SecurityContext {
 	}
 }
 
-func (syn SyntheticModifier) buildResources() corev1.ResourceRequirements {
+func (modifier SyntheticModifier) buildResources() corev1.ResourceRequirements {
 	return corev1.ResourceRequirements{
-		Limits:   syn.nodeRequirements().limitResources,
-		Requests: syn.nodeRequirements().requestResources,
+		Limits:   modifier.nodeRequirements().limitResources,
+		Requests: modifier.nodeRequirements().requestResources,
 	}
 }
 
@@ -249,14 +259,14 @@ func buildPublicVolumeMounts() []corev1.VolumeMount {
 	}
 }
 
-func (syn SyntheticModifier) getVolumes() []corev1.Volume {
+func (modifier SyntheticModifier) getVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
 			Name: ChromiumCacheMountName,
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{
 					Medium:    "Memory",
-					SizeLimit: syn.nodeRequirements().chromiumCacheVolume,
+					SizeLimit: modifier.nodeRequirements().chromiumCacheVolume,
 				},
 			},
 		},
@@ -264,7 +274,7 @@ func (syn SyntheticModifier) getVolumes() []corev1.Volume {
 			Name: TmpStorageMountName,
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{
-					SizeLimit: syn.nodeRequirements().tmpStorageVolume,
+					SizeLimit: modifier.nodeRequirements().tmpStorageVolume,
 				},
 			},
 		},
@@ -272,7 +282,7 @@ func (syn SyntheticModifier) getVolumes() []corev1.Volume {
 			Name: ArchiveStorageMountName,
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{
-					SizeLimit: syn.nodeRequirements().supportArchiveVolume,
+					SizeLimit: modifier.nodeRequirements().supportArchiveVolume,
 				},
 			},
 		},

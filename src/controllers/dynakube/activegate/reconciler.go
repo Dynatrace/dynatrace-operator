@@ -70,17 +70,22 @@ func (r *Reconciler) Reconcile() error {
 		return err
 	}
 
-	var caps = capability.GenerateActiveGateCapabilities(r.dynakube)
+	caps := capability.GenerateActiveGateCapabilities(r.dynakube)
+
+	if r.dynakube.IsSyntheticMonitoringEnabled() {
+		for _, cap := range caps {
+			if cap.Enabled() && cap.ShortName() != capability.SyntheticName {
+				return errors.New("synthetic capability can't be enabled with other capabilities in the same DynaKube")
+			}
+		}
+	}
+
 	for _, agCapability := range caps {
 		if agCapability.Enabled() {
 			err = r.createCapability(agCapability)
-			if !r.dynakube.IsSyntheticMonitoringEnabled() {
-				return err
-			}
 		} else {
 			err = r.deleteCapability(agCapability)
 		}
-
 		if err != nil {
 			return err
 		}

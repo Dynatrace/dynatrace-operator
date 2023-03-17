@@ -23,18 +23,16 @@ type initContainerModifier interface {
 	getInitContainers() []corev1.Container
 }
 
-func GenerateAllModifiers(dynaKube dynatracev1beta1.DynaKube, capability capability.Capability) []builder.Modifier {
-	generated := []builder.Modifier{
-		NewAuthTokenModifier(dynaKube),
-		NewCertificatesModifier(dynaKube),
-		NewCustomPropertiesModifier(dynaKube, capability),
-		NewProxyModifier(dynaKube),
-		NewRawImageModifier(dynaKube),
-		NewReadOnlyModifier(dynaKube),
-		newSyntheticModifier(dynaKube, capability),
-		NewServicePortModifier(dynaKube, capability),
-		NewKubernetesMonitoringModifier(dynaKube, capability),
+func GenerateAllModifiers(dynakube dynatracev1beta1.DynaKube, capability capability.Capability) []builder.Modifier {
+	return []builder.Modifier{
+		NewAuthTokenModifier(dynakube),
+		NewCertificatesModifier(dynakube),
+		NewCustomPropertiesModifier(dynakube, capability),
+		NewProxyModifier(dynakube),
+		NewRawImageModifier(dynakube),
+		NewReadOnlyModifier(dynakube),
+		newSyntheticModifier(dynakube, capability),
+		NewServicePortModifier(dynakube, capability),
+		NewKubernetesMonitoringModifier(dynakube, capability),
 	}
-
-	return generated
 }

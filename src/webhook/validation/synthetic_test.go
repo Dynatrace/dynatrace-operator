@@ -28,19 +28,17 @@ func TestSyntheticInvalidSettings(t *testing.T) {
 		},
 	}
 
-	toAssertInvalidNodeType := func(t *testing.T) {
+	t.Run("node type", func(t *testing.T) {
 		assertDeniedResponse(
 			t,
 			[]string{fmt.Sprintf(errorInvalidSyntheticNodeType, invalidType)},
 			&dynaKube)
-	}
-	t.Run("node-type", toAssertInvalidNodeType)
+	})
 
 	delete(
 		dynaKube.ObjectMeta.Annotations,
 		dynatracev1beta1.AnnotationFeatureSyntheticNodeType)
-	toAssertDefaultReplicas := func(t *testing.T) {
+	t.Run("valid replicas", func(t *testing.T) {
 		assertAllowedResponseWithWarnings(t, 2, &dynaKube)
-	}
-	t.Run("valid-replicas", toAssertDefaultReplicas)
+	})
 }

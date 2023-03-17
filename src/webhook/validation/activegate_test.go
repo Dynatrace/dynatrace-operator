@@ -157,9 +157,9 @@ func TestSyntheticMonitoring(t *testing.T) {
 		dynatracev1beta1.AnnotationFeatureSyntheticLocationEntityId: "doctored",
 	}
 
-	t.Run("synthetic-and-activegate-capabilities", func(t *testing.T) {
-		assertAllowedResponseWithWarnings(t,
-			len(syntheticless)+1,
+	t.Run("denied synthetic and activegate capabilities", func(t *testing.T) {
+		assertDeniedResponse(t,
+			[]string{fmt.Sprintf(errorJoinedSyntheticActiveGateCapability, syntheticless)},
 			&dynatracev1beta1.DynaKube{
 				ObjectMeta: *meta,
 				Spec: dynatracev1beta1.DynaKubeSpec{
