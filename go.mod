@@ -16,7 +16,7 @@ require (
 	github.com/prometheus/client_model v0.3.0
 	github.com/spf13/afero v1.9.5
 	github.com/spf13/cobra v1.6.1
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.8.2
 	go.uber.org/zap v1.24.0
 	golang.org/x/exp v0.0.0-20230108222341-4b8118a2686a
 	golang.org/x/net v0.7.0
