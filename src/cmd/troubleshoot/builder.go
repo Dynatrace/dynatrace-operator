@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/go-logr/logr"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -142,6 +143,7 @@ func runChecksForAllDynakubes(log logr.Logger, results ChecksResults, checks []*
 			httpClient:    &http.Client{},
 			namespaceName: namespaceFlagValue,
 			dynakube:      dynakube,
+			fs:            afero.Afero{Fs: afero.NewOsFs()},
 			baseLog:       log,
 		}
 
