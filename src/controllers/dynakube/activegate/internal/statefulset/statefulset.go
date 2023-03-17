@@ -110,9 +110,10 @@ func (statefulSetBuilder Builder) addTemplateSpec(sts *appsv1.StatefulSet) {
 		ImagePullSecrets: []corev1.LocalObjectReference{
 			{Name: statefulSetBuilder.dynakube.PullSecret()},
 		},
-		PriorityClassName:         statefulSetBuilder.dynakube.Spec.ActiveGate.PriorityClassName,
-		DNSPolicy:                 statefulSetBuilder.dynakube.Spec.ActiveGate.DNSPolicy,
-		TopologySpreadConstraints: statefulSetBuilder.capability.Properties().TopologySpreadConstraints,
+		PriorityClassName: statefulSetBuilder.dynakube.Spec.ActiveGate.PriorityClassName,
+		DNSPolicy:         statefulSetBuilder.dynakube.Spec.ActiveGate.DNSPolicy,
+
+		TopologySpreadConstraints: buildTopologySpreadConstraints(statefulSetBuilder.capability),
 	}
 	sts.Spec.Template.Spec = podSpec
 }
@@ -122,6 +123,37 @@ func buildTolerations(capability capability.Capability) []corev1.Toleration {
 	copy(tolerations, capability.Properties().Tolerations)
 	tolerations = append(tolerations, kubeobjects.TolerationForAmd()...)
 	return tolerations
+}
+
+func buildTopologySpreadConstraints(capability capability.Capability) []corev1.TopologySpreadConstraint {
+	if len(capability.Properties().TopologySpreadConstraints) > 0 {
+		return capability.Properties().TopologySpreadConstraints
+	}
+
+	return defaultTopologyConstraints()
+}
+
+func defaultTopologyConstraints() []corev1.TopologySpreadConstraint {
+	labelSelector := &metav1.LabelSelector{
+		MatchLabels: map[string]string{
+			kubeobjects.AppComponentLabel: kubeobjects.ActiveGateComponentLabel,
+			kubeobjects.AppNameLabel:      kubeobjects.ActiveGateComponentLabel,
+		},
+	}
+	return []corev1.TopologySpreadConstraint{
+		{
+			MaxSkew:           1,
+			TopologyKey:       "topology.kubernetes.io/zone",
+			WhenUnsatisfiable: "ScheduleAnyway",
+			LabelSelector:     labelSelector,
+		},
+		{
+			MaxSkew:           1,
+			TopologyKey:       "kubernetes.io/hostname",
+			WhenUnsatisfiable: "DoNotSchedule",
+			LabelSelector:     labelSelector,
+		},
+	}
 }
 
 func (statefulSetBuilder Builder) buildBaseContainer() []corev1.Container {

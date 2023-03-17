@@ -255,6 +255,17 @@ func TestAddTemplateSpec(t *testing.T) {
 
 		assert.Equal(t, testPriorityClass, spec.PriorityClassName)
 	})
+	t.Run("default topologyConstraint", func(t *testing.T) {
+		dynakube := getTestDynakube()
+
+		multiCapability := capability.NewMultiCapability(&dynakube)
+		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dynakube, multiCapability)
+		sts := appsv1.StatefulSet{}
+
+		builder.addTemplateSpec(&sts)
+		spec := sts.Spec.Template.Spec
+		assert.Equal(t, defaultTopologyConstraints(), spec.TopologySpreadConstraints)
+	})
 	t.Run("set topologyConstraint", func(t *testing.T) {
 		dynakube := getTestDynakube()
 		testTopologyConstraint := []corev1.TopologySpreadConstraint{
