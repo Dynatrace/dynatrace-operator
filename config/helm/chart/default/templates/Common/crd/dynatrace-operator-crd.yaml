@@ -3383,7 +3383,7 @@ spec:
                     type: string
                   imageTag:
                     type: string
-                  lastProbe:
+                  lastProbeTimestamp:
                     format: date-time
                     type: string
                   source:
@@ -3399,7 +3399,7 @@ spec:
                     type: string
                   imageTag:
                     type: string
-                  lastProbe:
+                  lastProbeTimestamp:
                     format: date-time
                     type: string
                   source:
@@ -3501,9 +3501,6 @@ spec:
                 type: string
               oneAgent:
                 properties:
-                  LastInstanceStatusUpdate:
-                    format: date-time
-                    type: string
                   imageHash:
                     type: string
                   imageRepository:
@@ -3519,7 +3516,10 @@ spec:
                           type: string
                       type: object
                     type: object
-                  lastProbe:
+                  lastInstanceStatusUpdate:
+                    format: date-time
+                    type: string
+                  lastProbeTimestamp:
                     format: date-time
                     type: string
                   source:
@@ -3539,7 +3539,7 @@ spec:
                     type: string
                   imageTag:
                     type: string
-                  lastProbe:
+                  lastProbeTimestamp:
                     format: date-time
                     type: string
                   source:
