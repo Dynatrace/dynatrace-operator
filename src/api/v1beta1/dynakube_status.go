@@ -100,7 +100,7 @@ type OneAgentStatus struct {
 
 	Instances map[string]OneAgentInstance `json:"instances,omitempty"`
 
-	LastInstanceStatusUpdate *metav1.Time `json:"LastInstanceStatusUpdate,omitempty"`
+	LastInstanceStatusUpdate *metav1.Time `json:"lastInstanceStatusUpdate,omitempty"`
 }
 
 type OneAgentInstance struct {
