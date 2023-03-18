@@ -2,6 +2,7 @@ package image
 
 import (
 	"context"
+	"github.com/containers/image/v5/docker/reference"
 	"os"
 	"path/filepath"
 
@@ -90,13 +91,12 @@ func (installer *ImageInstaller) installAgentFromImage() error {
 		return errors.WithStack(err)
 	}
 
-	imageDigest, err := getImageDigest(sourceCtx, sourceRef)
+	imageDigestEncoded, err := getImageDigestEncoded(sourceCtx, sourceRef, image)
 	if err != nil {
 		log.Info("failed to get image digest", "image", image)
 		return errors.WithStack(err)
 	}
 
-	imageDigestEncoded := imageDigest.Encoded()
 	if installer.isAlreadyDownloaded(imageDigestEncoded) {
 		log.Info("image is already installed", "image", image, "digest", imageDigestEncoded)
 		installer.props.imageDigest = imageDigestEncoded
@@ -125,6 +125,7 @@ func (installer *ImageInstaller) installAgentFromImage() error {
 		return errors.WithStack(err)
 	}
 	installer.props.imageDigest = imageDigestEncoded
+
 	return nil
 }
 
@@ -134,8 +135,33 @@ func (installer ImageInstaller) isAlreadyDownloaded(imageDigestEncoded string) b
 	return !os.IsNotExist(err)
 }
 
-func getImageDigest(systemContext *types.SystemContext, imageReference *types.ImageReference) (digest.Digest, error) {
+func getImageDigestEncoded(systemContext *types.SystemContext, imageReference *types.ImageReference, imageName string) (string, error){
+	if digestFromName := getImageDigestFromImageName(imageName); digestFromName != ""{
+		log.Info("Image digest found in Image name", "imageName", imageName)
+		return digestFromName.Encoded(), nil
+	}
+
+	digestFromRef, err := getImageDigestFromReference(systemContext, imageReference)
+	if err != nil {
+		return "", err
+	}
+	return digestFromRef.Encoded(), nil
+}
+
+func getImageDigestFromReference(systemContext *types.SystemContext, imageReference *types.ImageReference) (digest.Digest, error) {
 	return docker.GetDigest(context.TODO(), systemContext, *imageReference)
+}
+
+func getImageDigestFromImageName(name string) digest.Digest{
+	ref, err := reference.Parse(name)
+	if err != nil{
+		return ""
+	}
+
+	if _, ok:= ref.(reference.Canonical); ok{
+		return ref.(reference.Canonical).Digest()
+	}
+	return ""
 }
 
 func getCacheDirPath(digest string) string {
