@@ -226,7 +226,6 @@ func TestCreateOrUpdateService(t *testing.T) {
 		assert.NotNil(t, actualService)
 
 		assert.Equal(t, int32(443), actualService.Spec.Ports[0].Port)
-		assert.Equal(t, int32(80), actualService.Spec.Ports[1].Port)
 
 		require.NotEqual(t, actualService, service)
 		require.NotEqual(t, actualService.Spec.Ports, service.Spec.Ports)

@@ -18,15 +18,11 @@ spec:
     ports:
     # from activegate ports
     - protocol: TCP
-      port: 9999   
-    - protocol: TCP
-      port: 9998    
+      port: 9999
     - protocol: TCP
       port: 443
-    - protocol: TCP
-      port: 80
   egress:
-  # Allow DNS lookup 
+  # Allow DNS lookup
   - to:
     - namespaceSelector:
         matchLabels:
