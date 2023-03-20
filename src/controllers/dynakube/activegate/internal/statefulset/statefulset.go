@@ -135,7 +135,7 @@ func (statefulSetBuilder Builder) buildBaseContainer() []corev1.Container {
 			ProbeHandler: corev1.ProbeHandler{
 				HTTPGet: &corev1.HTTPGetAction{
 					Path:   "/rest/health",
-					Port:   intstr.IntOrString{IntVal: 9999},
+					Port:   intstr.IntOrString{IntVal: consts.HttpsContainerPort},
 					Scheme: "HTTPS",
 				},
 			},

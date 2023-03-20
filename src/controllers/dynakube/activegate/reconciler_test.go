@@ -118,15 +118,12 @@ func TestServiceCreation(t *testing.T) {
 		expectedCapabilityPorts := map[dynatracev1beta1.CapabilityDisplayName][]string{
 			dynatracev1beta1.RoutingCapability.DisplayName: {
 				consts.HttpsServicePortName,
-				consts.HttpServicePortName,
 			},
 			dynatracev1beta1.MetricsIngestCapability.DisplayName: {
 				consts.HttpsServicePortName,
-				consts.HttpServicePortName,
 			},
 			dynatracev1beta1.DynatraceApiCapability.DisplayName: {
 				consts.HttpsServicePortName,
-				consts.HttpServicePortName,
 			},
 			dynatracev1beta1.KubeMonCapability.DisplayName: {},
 		}
@@ -161,7 +158,6 @@ func TestServiceCreation(t *testing.T) {
 		}
 		expectedPorts := []string{
 			consts.HttpsServicePortName,
-			consts.HttpServicePortName,
 		}
 
 		err := reconciler.Reconcile()
