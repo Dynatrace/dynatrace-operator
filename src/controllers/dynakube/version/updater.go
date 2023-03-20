@@ -6,6 +6,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/containers/image/v5/docker/reference"
 	"github.com/pkg/errors"
 )
 
@@ -33,8 +34,8 @@ func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpda
 		}
 	}()
 
-	customImage := dtclient.ImageInfoFromUri(updater.CustomImage())
-	if customImage != nil {
+	customImage := updater.CustomImage()
+	if customImage != "" {
 		err = updateVersionStatus(ctx, updater.Target(), customImage, reconciler.hashFunc, dockerCfg)
 		return err
 	}
@@ -57,7 +58,7 @@ func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpda
 			log.Info("could not get public image", "updater", updater.Name())
 			return err
 		}
-		err = updateVersionStatus(ctx, updater.Target(), publicImage, reconciler.hashFunc, dockerCfg)
+		err = updateVersionStatus(ctx, updater.Target(), publicImage.String(), reconciler.hashFunc, dockerCfg)
 		if err != nil {
 			log.Info("could not update version status according to the public registry", "updater", updater.Name())
 			return err
@@ -86,25 +87,38 @@ func determineSource(updater versionStatusUpdater) dynatracev1beta1.VersionSourc
 func updateVersionStatus(
 	ctx context.Context,
 	target *dynatracev1beta1.VersionStatus,
-	image *dtclient.LatestImageInfo,
+	imageUri string,
 	hashFunc ImageHashFunc,
 	dockerCfg *dockerconfig.DockerConfig,
 ) error {
-	imageUri := image.Uri()
-
-	hash, err := hashFunc(ctx, imageUri, dockerCfg)
+	ref, err := reference.Parse(imageUri)
 	if err != nil {
-		return errors.WithMessage(err, "failed to get image hash")
+		return errors.WithMessage(err, "failed to parse image uri")
+	}
+
+	var repo, hash, tag string
+	if canonRef, ok := ref.(reference.Canonical); ok {
+		repo = canonRef.Name()
+		hash = canonRef.Digest().String()
+		tag = hash
+	} else if taggedRef, ok := ref.(reference.NamedTagged); ok {
+		repo = taggedRef.Name()
+		tag = taggedRef.Tag()
+		hash, err = hashFunc(ctx, imageUri, dockerCfg)
+		if err != nil {
+			return errors.WithMessage(err, "failed to get image hash")
+		}
 	}
 
 	log.Info("checked image version info",
-		"image", image,
-		"oldTag", target.ImageTag, "newTag", image.Tag,
+		"image", imageUri,
+		"oldRepo", target.ImageRepository, "newRepo", repo,
+		"oldTag", target.ImageTag, "newTag", tag,
 		"oldHash", target.ImageHash, "newHash", hash)
 
-	target.ImageTag = image.Tag
+	target.ImageTag = tag
 	target.ImageHash = hash
-	target.ImageRepository = image.Source
+	target.ImageRepository = repo
 	// Version will be set elsewhere, as it differs between modes
 	// unset is necessary so we have a consistent status
 	target.Version = ""

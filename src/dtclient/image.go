@@ -4,9 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
-	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/src/api"
 	"github.com/pkg/errors"
 )
 
@@ -15,20 +13,7 @@ type LatestImageInfo struct {
 	Tag    string `json:"tag"`
 }
 
-func ImageInfoFromUri(imageUri string) *LatestImageInfo {
-	if imageUri == "" {
-		return nil
-	}
-	imageParts := strings.Split(imageUri, ":")
-	source := imageParts[0]
-	tag := api.LatestTag
-	if len(imageParts) == 2 {
-		tag = imageParts[1]
-	}
-	return &LatestImageInfo{Source: source, Tag: tag}
-}
-
-func (image LatestImageInfo) Uri() string {
+func (image LatestImageInfo) String() string {
 	return image.Source + ":" + image.Tag
 }
 

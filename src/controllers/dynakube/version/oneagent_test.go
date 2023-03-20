@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
+	"github.com/containers/image/v5/docker/reference"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -23,7 +24,7 @@ func TestOneAgentUpdater(t *testing.T) {
 				OneAgent: dynatracev1beta1.OneAgentSpec{
 					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{
 						AutoUpdate: address.Of(false),
-						Image:      testImage.Uri(),
+						Image:      testImage.String(),
 						Version:    testImage.Tag,
 					},
 				},
@@ -58,8 +59,8 @@ func TestOneAgentUseDefault(t *testing.T) {
 				},
 			},
 		}
-		expectedImage := dtclient.ImageInfoFromUri(dynakube.DefaultOneAgentImage())
-		registry := newFakeRegistryForImages(*expectedImage)
+		expectedImage := dynakube.DefaultOneAgentImage()
+		registry := newFakeRegistryForImages(expectedImage)
 
 		mockClient := &dtclient.MockDynatraceClient{}
 		updater := newOneAgentUpdater(dynakube, mockClient, registry.ImageVersionExt)
@@ -67,7 +68,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 		err := updater.UseDefaults(context.TODO(), &dockerconfig.DockerConfig{})
 
 		require.NoError(t, err)
-		assertDefaultOneAgentStatus(t, registry, *expectedImage, testVersion, dynakube.Status.OneAgent.VersionStatus)
+		assertDefaultOneAgentStatus(t, registry, getTaggedReference(t, expectedImage), testVersion, dynakube.Status.OneAgent.VersionStatus)
 	})
 	t.Run("Set according to default", func(t *testing.T) {
 		dynakube := &dynatracev1beta1.DynaKube{
@@ -78,8 +79,8 @@ func TestOneAgentUseDefault(t *testing.T) {
 				},
 			},
 		}
-		expectedImage := dtclient.ImageInfoFromUri(dynakube.DefaultOneAgentImage())
-		registry := newFakeRegistryForImages(*expectedImage)
+		expectedImage := dynakube.DefaultOneAgentImage()
+		registry := newFakeRegistryForImages(expectedImage)
 
 		mockClient := &dtclient.MockDynatraceClient{}
 		mockLatestAgentVersion(mockClient, testVersion)
@@ -88,7 +89,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 		err := updater.UseDefaults(context.TODO(), &dockerconfig.DockerConfig{})
 
 		require.NoError(t, err)
-		assertDefaultOneAgentStatus(t, registry, *expectedImage, testVersion, dynakube.Status.OneAgent.VersionStatus)
+		assertDefaultOneAgentStatus(t, registry, getTaggedReference(t, expectedImage), testVersion, dynakube.Status.OneAgent.VersionStatus)
 	})
 	t.Run("Don't allow downgrades", func(t *testing.T) {
 		dynakube := &dynatracev1beta1.DynaKube{
@@ -106,8 +107,9 @@ func TestOneAgentUseDefault(t *testing.T) {
 				},
 			},
 		}
-		expectedImage := dtclient.ImageInfoFromUri(dynakube.DefaultOneAgentImage())
-		registry := newFakeRegistryForImages(*expectedImage)
+
+		expectedImage := dynakube.DefaultOneAgentImage()
+		registry := newFakeRegistryForImages(expectedImage)
 
 		mockClient := &dtclient.MockDynatraceClient{}
 		mockLatestAgentVersion(mockClient, testVersion)
@@ -119,7 +121,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 	})
 }
 
-func assertDefaultOneAgentStatus(t *testing.T, registry *fakeRegistry, image dtclient.LatestImageInfo, expectedVersion string, versionStatus dynatracev1beta1.VersionStatus) { //nolint:revive // argument-limit
-	assertVersionStatusEquals(t, registry, image, versionStatus)
+func assertDefaultOneAgentStatus(t *testing.T, registry *fakeRegistry, imageRef reference.NamedTagged, expectedVersion string, versionStatus dynatracev1beta1.VersionStatus) { //nolint:revive // argument-limit
+	assertVersionStatusEquals(t, registry, imageRef, versionStatus)
 	assert.Equal(t, expectedVersion, versionStatus.Version)
 }

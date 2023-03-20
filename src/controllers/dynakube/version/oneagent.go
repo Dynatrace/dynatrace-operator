@@ -79,7 +79,7 @@ func (updater *oneAgentUpdater) UseDefaults(ctx context.Context, dockerCfg *dock
 		}
 	}
 
-	defaultImage := dtclient.ImageInfoFromUri(updater.dynakube.DefaultOneAgentImage())
+	defaultImage := updater.dynakube.DefaultOneAgentImage()
 	err = updateVersionStatus(ctx, updater.Target(), defaultImage, updater.hashFunc, dockerCfg)
 	if err != nil {
 		return err

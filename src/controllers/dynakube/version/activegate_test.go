@@ -28,7 +28,7 @@ func TestActiveGateUpdater(t *testing.T) {
 				ActiveGate: dynatracev1beta1.ActiveGateSpec{
 					Capabilities: []dynatracev1beta1.CapabilityDisplayName{dynatracev1beta1.DynatraceApiCapability.DisplayName},
 					CapabilityProperties: dynatracev1beta1.CapabilityProperties{
-						Image: testImage.Uri(),
+						Image: testImage.String(),
 					},
 				},
 			},
@@ -67,14 +67,14 @@ func TestActiveGateUseDefault(t *testing.T) {
 				},
 			},
 		}
-		expectedImage := dtclient.ImageInfoFromUri(dynakube.DefaultActiveGateImage())
+		expectedImage := dynakube.DefaultActiveGateImage()
 		mockClient := &dtclient.MockDynatraceClient{}
-		registry := newFakeRegistryForImages(*expectedImage)
+		registry := newFakeRegistryForImages(expectedImage)
 		updater := newActiveGateUpdater(dynakube, mockClient, registry.ImageVersionExt)
 
 		err := updater.UseDefaults(context.TODO(), &dockerconfig.DockerConfig{})
 		require.NoError(t, err)
-		assertVersionStatusEquals(t, registry, *expectedImage, dynakube.Status.ActiveGate.VersionStatus)
+		assertVersionStatusEquals(t, registry, getTaggedReference(t, expectedImage), dynakube.Status.ActiveGate.VersionStatus)
 		assert.Empty(t, dynakube.Status.ActiveGate.Version)
 	})
 }

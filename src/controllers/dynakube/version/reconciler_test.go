@@ -67,7 +67,7 @@ func TestReconcile(t *testing.T) {
 		setupPullSecret(t, fakeClient, *dynakube)
 
 		dkStatus := &dynakube.Status
-		registry := newFakeRegistryForImages(testActiveGateImage, testOneAgentImage)
+		registry := newFakeRegistryForImages(testActiveGateImage.String(), testOneAgentImage.String())
 		mockClient := &dtclient.MockDynatraceClient{}
 		mockLatestAgentVersion(mockClient, latestAgentVersion)
 
@@ -81,8 +81,8 @@ func TestReconcile(t *testing.T) {
 		}
 		err := versionReconciler.Reconcile(ctx)
 		require.NoError(t, err)
-		assertVersionStatusEquals(t, registry, testActiveGateImage, dkStatus.ActiveGate.VersionStatus)
-		assertVersionStatusEquals(t, registry, testOneAgentImage, dkStatus.OneAgent.VersionStatus)
+		assertVersionStatusEquals(t, registry, getTaggedReference(t, testActiveGateImage.String()), dkStatus.ActiveGate.VersionStatus)
+		assertVersionStatusEquals(t, registry, getTaggedReference(t, testOneAgentImage.String()), dkStatus.OneAgent.VersionStatus)
 		assert.Equal(t, latestAgentVersion, dkStatus.OneAgent.VersionStatus.Version)
 		assert.Equal(t, latestAgentVersion, dkStatus.CodeModules.VersionStatus.Version)
 
@@ -109,7 +109,7 @@ func TestReconcile(t *testing.T) {
 		setupPullSecret(t, fakeClient, *dynakube)
 
 		dkStatus := &dynakube.Status
-		registry := newFakeRegistryForImages(testActiveGateImage, testOneAgentImage, testCodeModulesImage)
+		registry := newFakeRegistryForImages(testActiveGateImage.String(), testOneAgentImage.String(), testCodeModulesImage.String())
 		mockClient := &dtclient.MockDynatraceClient{}
 		mockActiveGateImageInfo(mockClient, testActiveGateImage)
 		mockCodeModulesImageInfo(mockClient, testCodeModulesImage)
@@ -125,9 +125,9 @@ func TestReconcile(t *testing.T) {
 		}
 		err := versionReconciler.Reconcile(ctx)
 		require.NoError(t, err)
-		assertPublicRegistryVersionStatusEquals(t, registry, testActiveGateImage, dkStatus.ActiveGate.VersionStatus)
-		assertPublicRegistryVersionStatusEquals(t, registry, testOneAgentImage, dkStatus.OneAgent.VersionStatus)
-		assertPublicRegistryVersionStatusEquals(t, registry, testCodeModulesImage, dkStatus.CodeModules.VersionStatus)
+		assertPublicRegistryVersionStatusEquals(t, registry, getTaggedReference(t, testActiveGateImage.String()), dkStatus.ActiveGate.VersionStatus)
+		assertPublicRegistryVersionStatusEquals(t, registry, getTaggedReference(t, testOneAgentImage.String()), dkStatus.OneAgent.VersionStatus)
+		assertPublicRegistryVersionStatusEquals(t, registry, getTaggedReference(t, testCodeModulesImage.String()), dkStatus.CodeModules.VersionStatus)
 	})
 }
 

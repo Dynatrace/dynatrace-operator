@@ -2,12 +2,14 @@ package version
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
+	"github.com/containers/image/v5/docker/reference"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -64,19 +66,19 @@ func TestRun(t *testing.T) {
 	timeProvider := timeprovider.New()
 
 	t.Run("set source and probe at the end, if no error", func(t *testing.T) {
-		registry := newFakeRegistryForImages(testImage)
+		registry := newFakeRegistryForImages(testImage.String())
 		target := &dynatracev1beta1.VersionStatus{}
 		versionReconciler := Reconciler{
 			dynakube:     &dynatracev1beta1.DynaKube{},
 			timeProvider: timeProvider,
 			hashFunc:     registry.ImageVersionExt,
 		}
-		updater := newCustomImageUpdater(target, testImage.Uri())
+		updater := newCustomImageUpdater(target, testImage.String())
 		err := versionReconciler.run(ctx, updater, testDockerCfg)
 		require.NoError(t, err)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, dynatracev1beta1.CustomImageVersionSource, target.Source)
-		assertVersionStatusEquals(t, registry, testImage, *target)
+		assertVersionStatusEquals(t, registry, getTaggedReference(t, testImage.String()), *target)
 	})
 	t.Run("DON'T set source and probe at the end, if error", func(t *testing.T) {
 		registry := newEmptyFakeRegistry()
@@ -86,7 +88,7 @@ func TestRun(t *testing.T) {
 			timeProvider: timeProvider,
 			hashFunc:     registry.ImageVersionExt,
 		}
-		updater := newCustomImageUpdater(target, testImage.Uri())
+		updater := newCustomImageUpdater(target, testImage.String())
 		err := versionReconciler.run(ctx, updater, testDockerCfg)
 		require.Error(t, err)
 		assert.Nil(t, target.LastProbeTimestamp)
@@ -126,7 +128,7 @@ func TestRun(t *testing.T) {
 		updater.AssertNumberOfCalls(t, "UseDefaults", 2)
 	})
 	t.Run("public registry, version set to imageTag", func(t *testing.T) {
-		registry := newFakeRegistryForImages(testImage)
+		registry := newFakeRegistryForImages(testImage.String())
 		target := &dynatracev1beta1.VersionStatus{
 			Source: dynatracev1beta1.TenantRegistryVersionSource,
 		}
@@ -142,7 +144,7 @@ func TestRun(t *testing.T) {
 		updater.AssertNumberOfCalls(t, "LatestImageInfo", 1)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, dynatracev1beta1.PublicRegistryVersionSource, target.Source)
-		assertVersionStatusEquals(t, registry, testImage, *target)
+		assertVersionStatusEquals(t, registry, getTaggedReference(t, testImage.String()), *target)
 		assert.Equal(t, target.ImageTag, target.Version)
 	})
 }
@@ -185,16 +187,32 @@ func TestUpdateVersionStatus(t *testing.T) {
 	t.Run("missing image", func(t *testing.T) {
 		registry := newEmptyFakeRegistry()
 		target := dynatracev1beta1.VersionStatus{}
-		err := updateVersionStatus(ctx, &target, &testImage, registry.ImageVersionExt, testDockerCfg)
+		err := updateVersionStatus(ctx, &target, testImage.String(), registry.ImageVersionExt, testDockerCfg)
 		assert.Error(t, err)
 	})
 
 	t.Run("set status", func(t *testing.T) {
-		registry := newFakeRegistryForImages(testImage)
+		registry := newFakeRegistryForImages(testImage.String())
 		target := dynatracev1beta1.VersionStatus{}
-		err := updateVersionStatus(ctx, &target, &testImage, registry.ImageVersionExt, testDockerCfg)
+		err := updateVersionStatus(ctx, &target, testImage.String(), registry.ImageVersionExt, testDockerCfg)
 		require.NoError(t, err)
-		assertVersionStatusEquals(t, registry, testImage, target)
+		assertVersionStatusEquals(t, registry, getTaggedReference(t, testImage.String()), target)
+	})
+
+	t.Run("set status, not call hash func", func(t *testing.T) {
+		expectedRepo := "some.registry.com/image"
+		expectedHash := "sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
+		testImage := fmt.Sprintf(expectedRepo + "@" + expectedHash)
+		target := dynatracev1beta1.VersionStatus{}
+		boomFunc := func(_ context.Context, imagePath string, _ *dockerconfig.DockerConfig) (string, error) {
+			t.Error("hash function was called unexpectedly")
+			return "", nil
+		}
+		err := updateVersionStatus(ctx, &target, testImage, boomFunc, testDockerCfg)
+		require.NoError(t, err)
+		assert.Equal(t, expectedHash, target.ImageHash)
+		assert.Equal(t, expectedHash, target.ImageTag)
+		assert.Equal(t, expectedRepo, target.ImageRepository)
 	})
 }
 
@@ -244,4 +262,12 @@ func newBaseUpdater(target *dynatracev1beta1.VersionStatus, autoUpdate bool) *mo
 	updater.On("IsEnabled").Return(true)
 	updater.On("IsAutoUpdateEnabled").Return(autoUpdate)
 	return &updater
+}
+
+func getTaggedReference(t *testing.T, image string) reference.NamedTagged {
+	ref, err := reference.Parse(image)
+	require.NoError(t, err)
+	taggedRef, ok := ref.(reference.NamedTagged)
+	require.True(t, ok)
+	return taggedRef
 }

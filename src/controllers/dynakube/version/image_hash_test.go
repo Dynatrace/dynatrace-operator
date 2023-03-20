@@ -8,7 +8,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/containers/image/v5/docker/reference"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,10 +20,10 @@ func newEmptyFakeRegistry() *fakeRegistry {
 	return newFakeRegistry(make(map[string]string))
 }
 
-func newFakeRegistryForImages(imageInfos ...dtclient.LatestImageInfo) *fakeRegistry {
-	registryMap := make(map[string]string, len(imageInfos))
-	for i, imageInfo := range imageInfos {
-		registryMap[imageInfo.Uri()] = fmt.Sprintf("hash-%d", i)
+func newFakeRegistryForImages(images ...string) *fakeRegistry {
+	registryMap := make(map[string]string, len(images))
+	for i, imageInfo := range images {
+		registryMap[imageInfo] = fmt.Sprintf("hash-%d", i)
 	}
 	return newFakeRegistry(registryMap)
 }
@@ -55,16 +55,16 @@ func (registry *fakeRegistry) ImageVersionExt(_ context.Context, imagePath strin
 	return registry.ImageVersion(imagePath)
 }
 
-func assertPublicRegistryVersionStatusEquals(t *testing.T, registry *fakeRegistry, image dtclient.LatestImageInfo, versionStatus dynatracev1beta1.VersionStatus) { //nolint:revive // argument-limit
-	assertVersionStatusEquals(t, registry, image, versionStatus)
+func assertPublicRegistryVersionStatusEquals(t *testing.T, registry *fakeRegistry, imageRef reference.NamedTagged, versionStatus dynatracev1beta1.VersionStatus) { //nolint:revive // argument-limit
+	assertVersionStatusEquals(t, registry, imageRef, versionStatus)
 	assert.Equal(t, versionStatus.ImageTag, versionStatus.Version)
 }
 
-func assertVersionStatusEquals(t *testing.T, registry *fakeRegistry, image dtclient.LatestImageInfo, versionStatus dynatracev1beta1.VersionStatus) { //nolint:revive // argument-limit
-	expectedHash, err := registry.ImageVersion(image.Uri())
+func assertVersionStatusEquals(t *testing.T, registry *fakeRegistry, imageRef reference.NamedTagged, versionStatus dynatracev1beta1.VersionStatus) { //nolint:revive // argument-limit
+	expectedHash, err := registry.ImageVersion(imageRef.String())
 
-	assert.NoError(t, err, "Image version is unexpectedly unknown for '%s'", image.Uri())
+	assert.NoError(t, err, "Image version is unexpectedly unknown for '%s'", imageRef.String())
 	assert.Equal(t, expectedHash, versionStatus.ImageHash)
-	assert.Equal(t, image.Tag, versionStatus.ImageTag)
-	assert.Equal(t, image.Source, versionStatus.ImageRepository)
+	assert.Equal(t, imageRef.Tag(), versionStatus.ImageTag)
+	assert.Equal(t, imageRef.Name(), versionStatus.ImageRepository)
 }

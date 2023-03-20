@@ -24,7 +24,7 @@ func TestCodeModulesUpdater(t *testing.T) {
 						Version:      testImage.Tag,
 						UseCSIDriver: address.Of(true),
 						AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{
-							CodeModulesImage: testImage.Uri(),
+							CodeModulesImage: testImage.String(),
 						},
 					},
 				},

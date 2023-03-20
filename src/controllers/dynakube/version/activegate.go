@@ -59,6 +59,6 @@ func (updater activeGateUpdater) LatestImageInfo() (*dtclient.LatestImageInfo, e
 }
 
 func (updater *activeGateUpdater) UseDefaults(ctx context.Context, dockerCfg *dockerconfig.DockerConfig) error {
-	defaultImage := dtclient.ImageInfoFromUri(updater.dynakube.DefaultActiveGateImage())
+	defaultImage := updater.dynakube.DefaultActiveGateImage()
 	return updateVersionStatus(ctx, updater.Target(), defaultImage, updater.hashFunc, dockerCfg)
 }

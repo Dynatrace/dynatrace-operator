@@ -43,7 +43,7 @@ func GetImageHash(ctx context.Context, imageName string, dockerConfig *dockercon
 		return "", errors.WithStack(err)
 	}
 
-	return digest.Encoded(), nil
+	return digest.String(), nil
 }
 
 func closeImageSource(source types.ImageSource) {
