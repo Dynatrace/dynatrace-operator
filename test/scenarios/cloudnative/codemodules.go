@@ -45,10 +45,6 @@ const (
 	provisionerContainerName = "provisioner"
 )
 
-type manifest struct {
-	Version string `json:"version,omitempty"`
-}
-
 func CodeModules(t *testing.T, istioEnabled bool) features.Feature {
 	builder := features.New("codemodules injection")
 	storageMap := make(map[string]int)
@@ -134,6 +130,7 @@ func imageHasBeenDownloaded(namespace string, secret tenant.Secret) features.Fun
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resource := environmentConfig.Client().Resources()
 		clientset, err := kubernetes.NewForConfig(resource.GetConfig())
+		require.NoError(t, err)
 
 		err = csi.ForEachPod(ctx, resource, namespace, func(podItem corev1.Pod) {
 			logStream, err := clientset.CoreV1().Pods(podItem.Namespace).GetLogs(podItem.Name, &corev1.PodLogOptions{
@@ -252,8 +249,4 @@ func isVolumeAttached(t *testing.T, volumes []corev1.Volume, volumeName string) 
 		}
 	}
 	return result
-}
-
-func getManifestPath() string {
-	return "/data/codemodules/" + codeModulesImageDigest + "/manifest.json"
 }
