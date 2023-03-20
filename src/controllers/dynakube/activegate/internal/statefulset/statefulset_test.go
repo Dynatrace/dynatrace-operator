@@ -24,7 +24,7 @@ const (
 	testConfigHash    = "test-hash"
 	testDynakubeName  = "test-dynakube"
 	testNamespaceName = "test-namespace"
-	testVersion       = "test-version"
+	testTag           = "test-tag"
 )
 
 var (
@@ -51,7 +51,7 @@ func getTestDynakube() dynatracev1beta1.DynaKube {
 		Status: dynatracev1beta1.DynaKubeStatus{
 			ActiveGate: dynatracev1beta1.ActiveGateStatus{
 				VersionStatus: dynatracev1beta1.VersionStatus{
-					Version: testVersion,
+					ImageTag: testTag,
 				},
 			},
 		},
@@ -120,7 +120,7 @@ func TestAddLabels(t *testing.T) {
 		multiCapability := capability.NewMultiCapability(&dynakube)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dynakube, multiCapability)
 		sts := appsv1.StatefulSet{}
-		appLabels := kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, builder.dynakube.Name, builder.capability.ShortName(), testVersion)
+		appLabels := kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, builder.dynakube.Name, builder.capability.ShortName(), testTag)
 		expectedLabels := appLabels.BuildLabels()
 		expectedSelectorLabels := metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()}
 
@@ -140,7 +140,7 @@ func TestAddLabels(t *testing.T) {
 		multiCapability := capability.NewMultiCapability(&dynakube)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dynakube, multiCapability)
 		sts := appsv1.StatefulSet{}
-		appLabels := kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, builder.dynakube.Name, builder.capability.ShortName(), testVersion)
+		appLabels := kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, builder.dynakube.Name, builder.capability.ShortName(), testTag)
 		expectedTemplateLabels := appLabels.BuildLabels()
 		expectedTemplateLabels["test"] = "test"
 

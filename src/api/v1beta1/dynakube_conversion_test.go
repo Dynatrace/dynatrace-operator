@@ -228,8 +228,8 @@ func TestConversion_ConvertFrom(t *testing.T) {
 	assert.Len(t, convertedDynakube.Spec.ActiveGate.Capabilities, 0)
 
 	assert.Equal(t, oldDynakube.Status.ActiveGate.ImageHash, convertedDynakube.Status.ActiveGate.ImageHash)
-	assert.Equal(t, oldDynakube.Status.ActiveGate.LastImageProbeTimestamp, convertedDynakube.Status.ActiveGate.LastUpdateProbeTimestamp)
-	assert.Equal(t, oldDynakube.Status.ActiveGate.ImageVersion, convertedDynakube.Status.ActiveGate.Version)
+	assert.Equal(t, oldDynakube.Status.ActiveGate.LastImageProbeTimestamp, convertedDynakube.Status.ActiveGate.LastProbeTimestamp)
+	assert.Equal(t, oldDynakube.Status.ActiveGate.ImageVersion, convertedDynakube.Status.ActiveGate.ImageTag)
 	assert.Equal(t, oldDynakube.Status.Conditions, convertedDynakube.Status.Conditions)
 	assert.Equal(t, oldDynakube.Status.LastAPITokenProbeTimestamp, convertedDynakube.Status.LastTokenProbeTimestamp)
 	assert.Equal(t, oldDynakube.Status.OneAgent.ImageHash, convertedDynakube.Status.OneAgent.ImageHash)
@@ -240,8 +240,8 @@ func TestConversion_ConvertFrom(t *testing.T) {
 	assert.Equal(t, oldInstance.IPAddress, convertedInstance.IPAddress)
 	assert.Equal(t, oldInstance.PodName, convertedInstance.PodName)
 
-	assert.Equal(t, oldDynakube.Status.OneAgent.LastUpdateProbeTimestamp, convertedDynakube.Status.OneAgent.LastUpdateProbeTimestamp)
-	assert.Equal(t, oldDynakube.Status.OneAgent.Version, convertedDynakube.Status.OneAgent.Version)
+	assert.Equal(t, oldDynakube.Status.OneAgent.LastUpdateProbeTimestamp, convertedDynakube.Status.OneAgent.LastProbeTimestamp)
+	assert.Equal(t, oldDynakube.Status.OneAgent.Version, convertedDynakube.Status.OneAgent.ImageTag)
 	assert.Equal(t, string(oldDynakube.Status.Phase), string(convertedDynakube.Status.Phase))
 	assert.Equal(t, oldDynakube.Status.UpdatedTimestamp, convertedDynakube.Status.UpdatedTimestamp)
 }
@@ -456,8 +456,8 @@ func TestConversion_ConvertTo(t *testing.T) {
 	assert.Equal(t, oldInstance.IPAddress, convertedInstance.IPAddress)
 	assert.Equal(t, oldInstance.PodName, convertedInstance.PodName)
 
-	assert.Equal(t, oldDynakube.Status.OneAgent.LastUpdateProbeTimestamp, convertedDynakube.Status.OneAgent.LastUpdateProbeTimestamp)
-	assert.Equal(t, oldDynakube.Status.OneAgent.Version, convertedDynakube.Status.OneAgent.Version)
+	assert.Equal(t, oldDynakube.Status.OneAgent.LastProbeTimestamp, convertedDynakube.Status.OneAgent.LastUpdateProbeTimestamp)
+	assert.Equal(t, oldDynakube.Status.OneAgent.ImageTag, convertedDynakube.Status.OneAgent.Version)
 	assert.Equal(t, string(oldDynakube.Status.Phase), string(convertedDynakube.Status.Phase))
 	assert.Equal(t, "", convertedDynakube.Status.Tokens)
 	assert.Equal(t, oldDynakube.Status.UpdatedTimestamp, convertedDynakube.Status.UpdatedTimestamp)

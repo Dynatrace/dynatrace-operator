@@ -122,7 +122,7 @@ func TestOneAgentImage(t *testing.T) {
 		}
 
 		assert.Equal(t, expectedImage, dynakube.OneAgentImage())
-		assert.Equal(t, version, dynakube.Version())
+		assert.Equal(t, version, dynakube.CustomOneAgentVersion())
 	})
 }
 
@@ -230,7 +230,11 @@ func TestCodeModulesVersion(t *testing.T) {
 				},
 			},
 			Status: DynaKubeStatus{
-				LatestAgentVersionUnixPaas: testVersion,
+				CodeModules: CodeModulesStatus{
+					VersionStatus: VersionStatus{
+						Version: testVersion,
+					},
+				},
 			},
 		}
 		version := dk.CodeModulesVersion()
@@ -246,7 +250,11 @@ func TestCodeModulesVersion(t *testing.T) {
 				},
 			},
 			Status: DynaKubeStatus{
-				LatestAgentVersionUnixPaas: "other",
+				CodeModules: CodeModulesStatus{
+					VersionStatus: VersionStatus{
+						Version: "other",
+					},
+				},
 			},
 		}
 		version := dk.CodeModulesVersion()
@@ -267,7 +275,11 @@ func TestCodeModulesVersion(t *testing.T) {
 				},
 			},
 			Status: DynaKubeStatus{
-				LatestAgentVersionUnixPaas: "other",
+				CodeModules: CodeModulesStatus{
+					VersionStatus: VersionStatus{
+						Version: "other",
+					},
+				},
 			},
 		}
 		version := dk.CodeModulesVersion()
