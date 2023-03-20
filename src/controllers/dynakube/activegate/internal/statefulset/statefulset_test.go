@@ -400,7 +400,7 @@ func TestBuildCommonEnvs(t *testing.T) {
 			testReplicas)
 
 		assert.Equal(t,
-			modifiers.SyntheticActiveGateResourceRequirements,
+			capability.SyntheticActiveGateResourceRequirements,
 			statefulSet.Spec.Template.Spec.Containers[0].Resources,
 			"declared resource requirements for ActiveGate")
 

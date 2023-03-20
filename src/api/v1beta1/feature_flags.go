@@ -290,8 +290,8 @@ func (dk *DynaKube) FeatureMaxFailedCsiMountAttempts() int {
 }
 
 func (dk *DynaKube) FeatureSyntheticNodeType() string {
-	node, ok := dk.Annotations[AnnotationFeatureSyntheticNodeType]
-	if !ok {
+	node := dk.getFeatureFlagRaw(AnnotationFeatureSyntheticNodeType)
+	if node == "" {
 		return SyntheticNodeS
 	}
 	return node

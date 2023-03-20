@@ -5,6 +5,9 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
+	corev1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -14,12 +17,19 @@ const (
 
 type baseFunc func() *capabilityBase
 
-var activeGateCapabilities = map[dynatracev1beta1.CapabilityDisplayName]baseFunc{
-	dynatracev1beta1.KubeMonCapability.DisplayName:       kubeMonBase,
-	dynatracev1beta1.RoutingCapability.DisplayName:       routingBase,
-	dynatracev1beta1.MetricsIngestCapability.DisplayName: metricsIngestBase,
-	dynatracev1beta1.DynatraceApiCapability.DisplayName:  dynatraceApiBase,
-}
+var (
+	activeGateCapabilities = map[dynatracev1beta1.CapabilityDisplayName]baseFunc{
+		dynatracev1beta1.KubeMonCapability.DisplayName:       kubeMonBase,
+		dynatracev1beta1.RoutingCapability.DisplayName:       routingBase,
+		dynatracev1beta1.MetricsIngestCapability.DisplayName: metricsIngestBase,
+		dynatracev1beta1.DynatraceApiCapability.DisplayName:  dynatraceApiBase,
+	}
+
+	SyntheticActiveGateResourceRequirements = corev1.ResourceRequirements{
+		Limits:   kubeobjects.NewResources("300m", "1Gi"),
+		Requests: kubeobjects.NewResources("150m", "250Mi"),
+	}
+)
 
 type Capability interface {
 	Enabled() bool
@@ -131,7 +141,12 @@ func NewSyntheticCapability(dk *dynatracev1beta1.DynaKube) *SyntheticCapability 
 		return capability
 	}
 	capability.enabled = dk.IsSyntheticMonitoringEnabled()
-	capability.properties = &dk.Spec.Routing.CapabilityProperties
+	capability.properties = &dk.Spec.ActiveGate.CapabilityProperties
+	if capability.enabled {
+		capability.properties.Replicas = address.Of(dk.FeatureSyntheticReplicas())
+		capability.properties.Resources = SyntheticActiveGateResourceRequirements
+	}
+
 	return capability
 }
 

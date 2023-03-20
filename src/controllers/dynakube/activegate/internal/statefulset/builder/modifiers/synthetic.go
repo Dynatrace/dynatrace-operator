@@ -95,10 +95,6 @@ var (
 		"-c",
 		"curl http://localhost:7878/command/version",
 	}
-	SyntheticActiveGateResourceRequirements = corev1.ResourceRequirements{
-		Limits:   kubeobjects.NewResources("300m", "1Gi"),
-		Requests: kubeobjects.NewResources("150m", "250Mi"),
-	}
 )
 
 func newSyntheticModifier(
@@ -122,10 +118,6 @@ func (modifier SyntheticModifier) Modify(sts *appsv1.StatefulSet) error {
 	}
 	sts.Labels[kubeobjects.AppVersionLabel] = version
 	sts.Labels[kubeobjects.AppComponentLabel] = kubeobjects.SyntheticComponentLabel
-
-	sts.Spec.Template.Spec.Containers[0].Resources = SyntheticActiveGateResourceRequirements
-
-	sts.Spec.Replicas = address.Of(modifier.dynakube.FeatureSyntheticReplicas())
 
 	sts.Spec.Template.Spec.Containers = append(
 		sts.Spec.Template.Spec.Containers,
