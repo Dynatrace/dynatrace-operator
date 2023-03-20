@@ -56,7 +56,7 @@ spec:
     #
     classicFullStack:
       # Optional: If specified, indicates the OneAgent version to use
-      # Defaults to "latest"
+      # Defaults to what is configured on the tenant
       # The version is expected to be provided in the semver format
       # Example: {major.minor.release}, e.g., "1.200.0"
       #
