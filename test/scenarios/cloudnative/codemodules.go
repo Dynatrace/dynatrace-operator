@@ -139,7 +139,7 @@ func imageHasBeenDownloaded(namespace string, secret tenant.Secret) features.Fun
 					Container: provisionerContainerName,
 				}).Stream(ctx)
 				require.NoError(t, err)
-				return logs.Contains(t, logStream, "Installed agent version: "+codeModulesVersion+" to tenant: "+secret.TenantUid), nil
+				return logs.Contains(t, logStream, "Installed agent version: "+codeModulesVersion+" to tenant: "+secret.TenantUid), err
 			}, wait.WithTimeout(time.Minute*5))
 			require.NoError(t, err)
 
