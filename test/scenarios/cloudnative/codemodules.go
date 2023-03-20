@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
@@ -31,15 +32,15 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
+	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
 const (
-	codeModulesVersion     = "1.246.0.20220627-183412"
-	codeModulesImage       = "quay.io/dynatrace/codemodules:" + codeModulesVersion
-	codeModulesImageDigest = "7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
-	diskUsageKiBDelta      = 100000
+	codeModulesVersion = "1.246.0.20220627-183412"
+	codeModulesImage   = "quay.io/dynatrace/codemodules:" + codeModulesVersion
+	diskUsageKiBDelta  = 100000
 
 	dataPath                 = "/data/"
 	provisionerContainerName = "provisioner"
@@ -133,11 +134,17 @@ func imageHasBeenDownloaded(namespace string, secret tenant.Secret) features.Fun
 		require.NoError(t, err)
 
 		err = csi.ForEachPod(ctx, resource, namespace, func(podItem corev1.Pod) {
-			logStream, err := clientset.CoreV1().Pods(podItem.Namespace).GetLogs(podItem.Name, &corev1.PodLogOptions{
-				Container: provisionerContainerName,
-			}).Stream(ctx)
+			err = wait.For(func() (done bool, err error) {
+				logStream, err := clientset.CoreV1().Pods(podItem.Namespace).GetLogs(podItem.Name, &corev1.PodLogOptions{
+					Container: provisionerContainerName,
+				}).Stream(ctx)
+				require.NoError(t, err)
+				if logs.Contains(t, logStream, "Installed agent version: "+codeModulesVersion+" to tenant: "+secret.TenantUid) {
+					return true, nil
+				}
+				return false, nil
+			}, wait.WithTimeout(time.Minute*5))
 			require.NoError(t, err)
-			logs.AssertContains(t, logStream, "Installed agent version: "+codeModulesVersion+" to tenant: "+secret.TenantUid)
 
 			listCommand := shell.ListDirectory(dataPath)
 			result, err := pod.Exec(ctx, resource, podItem, provisionerContainerName, listCommand...)
