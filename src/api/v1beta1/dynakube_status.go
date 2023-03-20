@@ -72,7 +72,7 @@ type CommunicationHostStatus struct {
 type VersionSource string
 
 const (
-	DefaultVersionSource        VersionSource = "default"
+	TenantRegistryVersionSource VersionSource = "tenant-registry"
 	CustomImageVersionSource    VersionSource = "custom-image"
 	CustomVersionVersionSource  VersionSource = "custom-version"
 	PublicRegistryVersionSource VersionSource = "public-registry"

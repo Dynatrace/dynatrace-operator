@@ -80,7 +80,7 @@ func determineSource(updater versionStatusUpdater) dynatracev1beta1.VersionSourc
 	if updater.CustomVersion() != "" {
 		return dynatracev1beta1.CustomVersionVersionSource
 	}
-	return dynatracev1beta1.DefaultVersionSource
+	return dynatracev1beta1.TenantRegistryVersionSource
 }
 
 func updateVersionStatus(

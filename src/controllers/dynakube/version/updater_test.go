@@ -107,7 +107,7 @@ func TestRun(t *testing.T) {
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "UseDefaults", 1)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
-		assert.Equal(t, dynatracev1beta1.DefaultVersionSource, target.Source)
+		assert.Equal(t, dynatracev1beta1.TenantRegistryVersionSource, target.Source)
 
 		// 2. call => status NOT empty => should NOT run
 		err = versionReconciler.run(ctx, updater, testDockerCfg)
@@ -128,7 +128,7 @@ func TestRun(t *testing.T) {
 	t.Run("public registry, version set to imageTag", func(t *testing.T) {
 		registry := newFakeRegistryForImages(testImage)
 		target := &dynatracev1beta1.VersionStatus{
-			Source: dynatracev1beta1.DefaultVersionSource,
+			Source: dynatracev1beta1.TenantRegistryVersionSource,
 		}
 		versionReconciler := Reconciler{
 			dynakube:     enablePublicRegistry(&dynatracev1beta1.DynaKube{}),
@@ -170,7 +170,7 @@ func TestDetermineSource(t *testing.T) {
 	t.Run("default", func(t *testing.T) {
 		updater := newDefaultUpdater(nil, true)
 		source := determineSource(updater)
-		assert.Equal(t, dynatracev1beta1.DefaultVersionSource, source)
+		assert.Equal(t, dynatracev1beta1.TenantRegistryVersionSource, source)
 	})
 }
 

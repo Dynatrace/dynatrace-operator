@@ -158,7 +158,7 @@ func TestNeedsUpdate(t *testing.T) {
 	})
 	t.Run("does not need, because not old enough", func(t *testing.T) {
 		updatedDynakube := dynakube.DeepCopy()
-		updatedDynakube.Status.OneAgent.Source = dynatracev1beta1.DefaultVersionSource
+		updatedDynakube.Status.OneAgent.Source = dynatracev1beta1.TenantRegistryVersionSource
 		updatedDynakube.Status.OneAgent.LastProbeTimestamp = timeProvider.Now()
 		reconciler := Reconciler{
 			dynakube:     updatedDynakube,
