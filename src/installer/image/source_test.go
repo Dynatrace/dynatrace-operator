@@ -12,8 +12,6 @@ import (
 const (
 	testDir           = "test"
 	testImageRegistry = "quay.io"
-	//testImageName     = "busybox:1.36.0"
-	//testImageName = "busybox@sha256:b5d6fe0712636ceb7430189de28819e195e8966372edfc2d9409d79402a0dc16"
 	testImageName = "busybox:1.36.0@sha256:b5d6fe0712636ceb7430189de28819e195e8966372edfc2d9409d79402a0dc16"
 	testImageUri  = testImageRegistry + "/repo/" + testImageName
 	testPassword  = "pass"

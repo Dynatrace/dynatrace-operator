@@ -96,7 +96,7 @@ func (installer *ImageInstaller) installAgentFromImage() error {
 		log.Info("failed to get image digest", "image", imageRef)
 		return errors.WithStack(err)
 	}
-	log.Info("image digest", "image", imageRef, "digest", imageDigestEncoded)
+	log.Info("got image digest", "image", imageRef, "digest", imageDigestEncoded)
 
 	if installer.isAlreadyDownloaded(imageDigestEncoded) {
 		log.Info("image is already installed", "image", image, "digest", imageDigestEncoded)
@@ -138,6 +138,7 @@ func (installer ImageInstaller) isAlreadyDownloaded(imageDigestEncoded string) b
 
 func getImageDigestEncoded(systemContext *types.SystemContext, imageReference *types.ImageReference, imageRef reference.Named) (string, error) {
 	if c, ok := imageRef.(reference.Canonical); ok {
+		log.Info("using digest from imageRef, skipping request")
 		return c.Digest().Encoded(), nil
 	}
 
