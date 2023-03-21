@@ -52,6 +52,7 @@ func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpda
 	}
 
 	if updater.IsPublicRegistryEnabled() {
+		log.Info("updating version status according to public registry", "updater", updater.Name())
 		var publicImage *dtclient.LatestImageInfo
 		publicImage, err = updater.LatestImageInfo()
 		if err != nil {
