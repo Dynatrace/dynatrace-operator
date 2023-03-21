@@ -2,7 +2,6 @@ package image
 
 import (
 	"context"
-	"github.com/containers/image/v5/docker/reference"
 	"os"
 	"path/filepath"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/installer/zip"
 	"github.com/Dynatrace/dynatrace-operator/src/processmoduleconfig"
 	"github.com/containers/image/v5/docker"
+	"github.com/containers/image/v5/docker/reference"
 	"github.com/containers/image/v5/types"
 	"github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
