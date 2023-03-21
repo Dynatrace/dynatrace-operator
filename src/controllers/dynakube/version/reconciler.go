@@ -62,9 +62,6 @@ func (reconciler *Reconciler) updateVersionStatuses(ctx context.Context, updater
 	}(dockerConfig, reconciler.fs)
 
 	for _, updater := range updaters {
-		if !reconciler.needsUpdate(updater) {
-			continue
-		}
 		log.Info("updating version status", "updater", updater.Name())
 		err := reconciler.run(ctx, updater, dockerConfig)
 		if err != nil {
@@ -85,12 +82,14 @@ func (reconciler *Reconciler) createDockerConfigWithCustomCAs(ctx context.Contex
 }
 
 func (reconciler *Reconciler) needsReconcile(updaters []versionStatusUpdater) bool {
+	neededUpdaters := []versionStatusUpdater{}
 	for _, updater := range updaters {
 		if reconciler.needsUpdate(updater) {
-			return true
+			neededUpdaters = append(neededUpdaters, updater)
 		}
 	}
-	return false
+	updaters = neededUpdaters
+	return len(updaters) > 0
 }
 
 func (reconciler *Reconciler) needsUpdate(updater versionStatusUpdater) bool {
