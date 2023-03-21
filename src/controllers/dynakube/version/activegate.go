@@ -54,6 +54,10 @@ func (updater activeGateUpdater) IsPublicRegistryEnabled() bool {
 	return updater.dynakube.FeaturePublicRegistry()
 }
 
+func (updater activeGateUpdater) IsClassicFullStackEnabled() bool {
+	return updater.dynakube.ClassicFullStackMode()
+}
+
 func (updater activeGateUpdater) LatestImageInfo() (*dtclient.LatestImageInfo, error) {
 	return updater.dtClient.GetLatestActiveGateImage()
 }

@@ -55,6 +55,10 @@ func (updater oneAgentUpdater) IsPublicRegistryEnabled() bool {
 	return updater.dynakube.FeaturePublicRegistry()
 }
 
+func (updater oneAgentUpdater) IsClassicFullStackEnabled() bool {
+	return updater.dynakube.ClassicFullStackMode()
+}
+
 func (updater oneAgentUpdater) LatestImageInfo() (*dtclient.LatestImageInfo, error) {
 	return updater.dtClient.GetLatestOneAgentImage()
 }

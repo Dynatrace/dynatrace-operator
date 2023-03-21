@@ -48,6 +48,10 @@ func (updater codeModulesUpdater) IsPublicRegistryEnabled() bool {
 	return updater.dynakube.FeaturePublicRegistry()
 }
 
+func (updater codeModulesUpdater) IsClassicFullStackEnabled() bool {
+	return updater.dynakube.ClassicFullStackMode()
+}
+
 func (updater codeModulesUpdater) LatestImageInfo() (*dtclient.LatestImageInfo, error) {
 	return updater.dtClient.GetLatestCodeModulesImage()
 }
