@@ -93,7 +93,11 @@ func TestUpdateAgent(t *testing.T) {
 				},
 			},
 			Status: dynatracev1beta1.DynaKubeStatus{
-				LatestAgentVersionUnixPaas: testVersion,
+				CodeModules: dynatracev1beta1.CodeModulesStatus{
+					VersionStatus: dynatracev1beta1.VersionStatus{
+						Version: testVersion,
+					},
+				},
 			},
 		}
 		updater := createTestAgentUrlUpdater(t, &dk)
@@ -317,7 +321,11 @@ func testUpdateOneagent(t *testing.T, alreadyInstalled bool) {
 			},
 		},
 		Status: dynatracev1beta1.DynaKubeStatus{
-			LatestAgentVersionUnixPaas: testVersion,
+			CodeModules: dynatracev1beta1.CodeModulesStatus{
+				VersionStatus: dynatracev1beta1.VersionStatus{
+					Version: testVersion,
+				},
+			},
 		},
 	}
 	updater := createTestAgentUrlUpdater(t, &dk)

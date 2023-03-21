@@ -127,7 +127,7 @@ func (r *Reconciler) reconcileRollout(ctx context.Context, dynakube *dynatracev1
 }
 
 func (r *Reconciler) getOneagentPods(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, feature string) ([]corev1.Pod, []client.ListOption, error) {
-	agentVersion := dynakube.Status.OneAgent.Version
+	agentVersion := dynakube.Status.OneAgent.ImageTag
 	if dynakube.CustomOneAgentImage() != "" {
 		agentVersion = kubeobjects.CustomImageLabelValue
 	}

@@ -57,7 +57,7 @@ func NewController(mgr manager.Manager, clusterID string) *Controller {
 	return NewDynaKubeController(mgr.GetClient(), mgr.GetAPIReader(), mgr.GetScheme(), mgr.GetConfig(), clusterID)
 }
 
-func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, scheme *runtime.Scheme, config *rest.Config, clusterID string) *Controller { //nolint:revive // maximum number of return results per function exceeded; max 3 but got 4
+func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, scheme *runtime.Scheme, config *rest.Config, clusterID string) *Controller { //nolint:revive
 	return &Controller{
 		client:                 kubeClient,
 		apiReader:              apiReader,
@@ -67,7 +67,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, sc
 		config:                 config,
 		operatorNamespace:      os.Getenv("POD_NAMESPACE"),
 		clusterID:              clusterID,
-		versionProvider:        version.GetImageVersion,
+		hashProvider:           version.GetImageHash,
 	}
 }
 
@@ -91,7 +91,7 @@ type Controller struct {
 	config                 *rest.Config
 	operatorNamespace      string
 	clusterID              string
-	versionProvider        version.VersionProviderCallback
+	hashProvider           version.ImageHashFunc
 }
 
 // Reconcile reads that state of the cluster for a DynaKube object and makes changes based on the state read
@@ -209,10 +209,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 	}
 
 	controller.setConditionTokenReady(dynakube)
-	err = status.SetDynakubeStatus(dynakube, status.Options{
-		DtClient:  dynatraceClient,
-		ApiReader: controller.apiReader,
-	})
+	err = status.SetDynakubeStatus(dynakube, controller.apiReader)
 	if err != nil {
 		log.Info("could not update Dynakube status")
 		return err
@@ -236,13 +233,14 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		return err
 	}
 
-	versionReconciler := version.Reconciler{
-		Dynakube:        dynakube,
-		ApiReader:       controller.apiReader,
-		Fs:              controller.fs,
-		VersionProvider: controller.versionProvider,
-		TimeProvider:    timeprovider.New(),
-	}
+	versionReconciler := version.NewReconciler(
+		dynakube,
+		controller.apiReader,
+		dynatraceClient,
+		controller.fs,
+		controller.hashProvider,
+		timeprovider.New(),
+	)
 	err = versionReconciler.Reconcile(ctx)
 	if err != nil {
 		log.Info("could not reconcile component versions")

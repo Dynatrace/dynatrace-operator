@@ -55,9 +55,16 @@ func TestCollectGCInfo(t *testing.T) {
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: apiUrl,
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
+				},
 			},
 			Status: dynatracev1beta1.DynaKubeStatus{
-				LatestAgentVersionUnixPaas: latestVersion,
+				CodeModules: dynatracev1beta1.CodeModulesStatus{
+					VersionStatus: dynatracev1beta1.VersionStatus{
+						Version: latestVersion,
+					},
+				},
 			},
 		}
 		dkList := dynatracev1beta1.DynaKubeList{
@@ -69,7 +76,7 @@ func TestCollectGCInfo(t *testing.T) {
 		gcInfo := collectGCInfo(dynakube, &dkList)
 		assert.Equal(t, tenantUUID, gcInfo.tenantUUID)
 		assert.Equal(t, latestVersion, gcInfo.latestAgentVersion)
-		assert.Empty(t, gcInfo.pinnedVersions)
+		assert.Len(t, gcInfo.pinnedVersions, 1)
 	})
 	t.Run(`1 pinned version`, func(t *testing.T) {
 		dynakube := dynatracev1beta1.DynaKube{
@@ -87,7 +94,11 @@ func TestCollectGCInfo(t *testing.T) {
 				},
 			},
 			Status: dynatracev1beta1.DynaKubeStatus{
-				LatestAgentVersionUnixPaas: latestVersion,
+				CodeModules: dynatracev1beta1.CodeModulesStatus{
+					VersionStatus: dynatracev1beta1.VersionStatus{
+						Version: latestVersion,
+					},
+				},
 			},
 		}
 		dkList := dynatracev1beta1.DynaKubeList{
@@ -116,7 +127,11 @@ func TestCollectGCInfo(t *testing.T) {
 				},
 			},
 			Status: dynatracev1beta1.DynaKubeStatus{
-				LatestAgentVersionUnixPaas: latestVersion,
+				CodeModules: dynatracev1beta1.CodeModulesStatus{
+					VersionStatus: dynatracev1beta1.VersionStatus{
+						Version: latestVersion,
+					},
+				},
 			},
 		}
 		appMonitoringDynakube := dynatracev1beta1.DynaKube{
@@ -133,7 +148,11 @@ func TestCollectGCInfo(t *testing.T) {
 				},
 			},
 			Status: dynatracev1beta1.DynaKubeStatus{
-				LatestAgentVersionUnixPaas: latestVersion,
+				CodeModules: dynatracev1beta1.CodeModulesStatus{
+					VersionStatus: dynatracev1beta1.VersionStatus{
+						Version: latestVersion,
+					},
+				},
 			},
 		}
 		dkList := dynatracev1beta1.DynaKubeList{

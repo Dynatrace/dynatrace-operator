@@ -180,7 +180,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 
 	t.Run(`reconileImp Instances set, if autoUpdate is true`, func(t *testing.T) {
 		dk := base.DeepCopy()
-		dk.Status.OneAgent.Version = oldComponentVersion
+		dk.Status.OneAgent.ImageTag = oldComponentVersion
 		dsInfo := daemonset.NewClassicFullStack(dk, testClusterID)
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
@@ -210,7 +210,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		dk := base.DeepCopy()
 		autoUpdate := false
 		dk.Spec.OneAgent.ClassicFullStack.AutoUpdate = &autoUpdate
-		dk.Status.OneAgent.Version = oldComponentVersion
+		dk.Status.OneAgent.ImageTag = oldComponentVersion
 		dsInfo := daemonset.NewClassicFullStack(dk, testClusterID)
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)

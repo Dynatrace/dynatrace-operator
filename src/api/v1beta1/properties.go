@@ -212,6 +212,10 @@ func (dk *DynaKube) ActiveGateImage() string {
 		return dk.CustomActiveGateImage()
 	}
 
+	return dk.DefaultActiveGateImage()
+}
+
+func (dk *DynaKube) DefaultActiveGateImage() string {
 	apiUrlHost := dk.ApiUrlHost()
 
 	if apiUrlHost == "" {
@@ -286,7 +290,7 @@ func (dk *DynaKube) CustomOneAgentImage() string {
 	return ""
 }
 
-func (dk *DynaKube) CodeModulesImage() string {
+func (dk *DynaKube) CustomCodeModulesImage() string {
 	if dk.CloudNativeFullstackMode() {
 		return dk.Spec.OneAgent.CloudNativeFullStack.CodeModulesImage
 	} else if dk.ApplicationMonitoringMode() && dk.NeedsCSIDriver() {
@@ -328,7 +332,7 @@ func (dk *DynaKube) NodeSelector() map[string]string {
 	return nil
 }
 
-func (dk *DynaKube) Version() string {
+func (dk *DynaKube) CustomOneAgentVersion() string {
 	switch {
 	case dk.ClassicFullStackMode():
 		return dk.Spec.OneAgent.ClassicFullStack.Version
@@ -347,14 +351,21 @@ func (dk *DynaKube) CodeModulesVersion() string {
 	if !dk.CloudNativeFullstackMode() && !dk.ApplicationMonitoringMode() {
 		return ""
 	}
-	if dk.CodeModulesImage() != "" {
-		codeModulesImage := dk.CodeModulesImage()
+	if dk.CustomCodeModulesImage() != "" {
+		codeModulesImage := dk.CustomCodeModulesImage()
 		return getRawImageTag(codeModulesImage)
 	}
-	if dk.Version() != "" && !dk.CloudNativeFullstackMode() {
-		return dk.Version()
+	if dk.CustomCodeModulesVersion() != "" {
+		return dk.CustomCodeModulesVersion()
 	}
-	return dk.Status.LatestAgentVersionUnixPaas
+	return dk.Status.CodeModules.Version
+}
+
+func (dk *DynaKube) CustomCodeModulesVersion() string {
+	if !dk.ApplicationMonitoringMode() {
+		return ""
+	}
+	return dk.CustomOneAgentVersion()
 }
 
 func (dk *DynaKube) NamespaceSelector() *metav1.LabelSelector {
@@ -367,13 +378,16 @@ func (dk *DynaKube) OneAgentImage() string {
 	if oneAgentImage != "" {
 		return oneAgentImage
 	}
+	return dk.DefaultOneAgentImage()
+}
 
+func (dk *DynaKube) DefaultOneAgentImage() string {
 	if dk.Spec.APIURL == "" {
 		return ""
 	}
 
 	tag := api.LatestTag
-	if version := dk.Version(); version != "" {
+	if version := dk.CustomOneAgentVersion(); version != "" {
 		truncatedVersion := truncateBuildDate(version)
 		tag = truncatedVersion
 	}
