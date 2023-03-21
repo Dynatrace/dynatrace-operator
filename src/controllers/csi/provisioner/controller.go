@@ -41,6 +41,7 @@ import (
 )
 
 const (
+	shortRequeueDuration   = 1 * time.Minute
 	defaultRequeueDuration = 5 * time.Minute
 	longRequeueDuration    = 30 * time.Minute
 )
@@ -92,6 +93,11 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	if !dk.NeedsCSIDriver() {
 		log.Info("CSI driver provisioner not needed")
 		return reconcile.Result{RequeueAfter: longRequeueDuration}, provisioner.db.DeleteDynakube(ctx, request.Name)
+	}
+
+	if dk.CodeModulesImage() != "" && dk.CodeModulesVersion() != "" {
+		log.Info("dynakube status is not yet ready, requeuing", "dynakube", dk.Name)
+		return reconcile.Result{RequeueAfter: shortRequeueDuration}, err
 	}
 
 	err = provisioner.provision(ctx, dk)
@@ -176,7 +182,7 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Cont
 	latestProcessModuleConfig = latestProcessModuleConfig.AddHostGroup(dk.HostGroup())
 
 	var agentUpdater *agentUpdater
-	if dk.CustomCodeModulesImage() != "" {
+	if dk.CodeModulesImage() != "" {
 		connectionInfo, err := dtc.GetOneAgentConnectionInfo()
 		if err != nil {
 			log.Info("could not query connection info")

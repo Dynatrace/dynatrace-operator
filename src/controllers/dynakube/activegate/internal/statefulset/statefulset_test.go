@@ -25,6 +25,7 @@ const (
 	testDynakubeName  = "test-dynakube"
 	testNamespaceName = "test-namespace"
 	testTag           = "test-tag"
+	testVersion       = "test-version"
 )
 
 var (
@@ -52,6 +53,7 @@ func getTestDynakube() dynatracev1beta1.DynaKube {
 			ActiveGate: dynatracev1beta1.ActiveGateStatus{
 				VersionStatus: dynatracev1beta1.VersionStatus{
 					ImageTag: testTag,
+					Version:  testVersion,
 				},
 			},
 		},
@@ -120,7 +122,7 @@ func TestAddLabels(t *testing.T) {
 		multiCapability := capability.NewMultiCapability(&dynakube)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dynakube, multiCapability)
 		sts := appsv1.StatefulSet{}
-		appLabels := kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, builder.dynakube.Name, builder.capability.ShortName(), testTag)
+		appLabels := kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, builder.dynakube.Name, builder.capability.ShortName(), testVersion)
 		expectedLabels := appLabels.BuildLabels()
 		expectedSelectorLabels := metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()}
 
@@ -140,7 +142,7 @@ func TestAddLabels(t *testing.T) {
 		multiCapability := capability.NewMultiCapability(&dynakube)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dynakube, multiCapability)
 		sts := appsv1.StatefulSet{}
-		appLabels := kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, builder.dynakube.Name, builder.capability.ShortName(), testTag)
+		appLabels := kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, builder.dynakube.Name, builder.capability.ShortName(), testVersion)
 		expectedTemplateLabels := appLabels.BuildLabels()
 		expectedTemplateLabels["test"] = "test"
 
@@ -148,20 +150,6 @@ func TestAddLabels(t *testing.T) {
 
 		require.NotEmpty(t, sts.Spec.Template.Labels)
 		assert.Equal(t, expectedTemplateLabels, sts.Spec.Template.Labels)
-	})
-	t.Run("use custom image", func(t *testing.T) {
-		dynakube := getTestDynakube()
-		dynakube.Spec.ActiveGate.Image = "test"
-		multiCapability := capability.NewMultiCapability(&dynakube)
-		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dynakube, multiCapability)
-		sts := appsv1.StatefulSet{}
-		appLabels := kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, builder.dynakube.Name, builder.capability.ShortName(), kubeobjects.CustomImageLabelValue)
-		expectedLabels := appLabels.BuildLabels()
-
-		builder.addLabels(&sts)
-
-		require.NotEmpty(t, sts.ObjectMeta.Labels)
-		assert.Equal(t, expectedLabels, sts.ObjectMeta.Labels)
 	})
 }
 

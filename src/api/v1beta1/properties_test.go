@@ -30,23 +30,30 @@ import (
 
 const testAPIURL = "http://test-endpoint/api"
 
-func TestActiveGateImage(t *testing.T) {
+func TestDefaultActiveGateImage(t *testing.T) {
 	t.Run(`ActiveGateImage with no API URL`, func(t *testing.T) {
 		dk := DynaKube{}
-		assert.Equal(t, "", dk.ActiveGateImage())
+		assert.Equal(t, "", dk.DefaultActiveGateImage())
 	})
 
 	t.Run(`ActiveGateImage with API URL`, func(t *testing.T) {
 		dk := DynaKube{Spec: DynaKubeSpec{APIURL: testAPIURL}}
-		assert.Equal(t, "test-endpoint/linux/activegate:latest", dk.ActiveGateImage())
+		assert.Equal(t, "test-endpoint/linux/activegate:latest", dk.DefaultActiveGateImage())
 	})
+}
 
+func TestCustomActiveGateImage(t *testing.T) {
 	t.Run(`ActiveGateImage with custom image`, func(t *testing.T) {
 		customImg := "registry/my/activegate:latest"
 		dk := DynaKube{Spec: DynaKubeSpec{ActiveGate: ActiveGateSpec{CapabilityProperties: CapabilityProperties{
 			Image: customImg,
 		}}}}
-		assert.Equal(t, customImg, dk.ActiveGateImage())
+		assert.Equal(t, customImg, dk.CustomActiveGateImage())
+	})
+
+	t.Run(`ActiveGateImage with no custom image`, func(t *testing.T) {
+		dk := DynaKube{Spec: DynaKubeSpec{ActiveGate: ActiveGateSpec{CapabilityProperties: CapabilityProperties{}}}}
+		assert.Equal(t, "", dk.CustomActiveGateImage())
 	})
 }
 
@@ -82,26 +89,20 @@ func TestDynaKube_UseCSIDriver(t *testing.T) {
 	})
 }
 
-func TestOneAgentImage(t *testing.T) {
+func TestDefaultOneAgentImage(t *testing.T) {
 	t.Run(`OneAgentImage with no API URL`, func(t *testing.T) {
 		dk := DynaKube{}
-		assert.Equal(t, "", dk.OneAgentImage())
+		assert.Equal(t, "", dk.DefaultOneAgentImage())
 	})
 
 	t.Run(`OneAgentImage with API URL`, func(t *testing.T) {
 		dk := DynaKube{Spec: DynaKubeSpec{APIURL: testAPIURL}}
-		assert.Equal(t, "test-endpoint/linux/oneagent:latest", dk.OneAgentImage())
+		assert.Equal(t, "test-endpoint/linux/oneagent:latest", dk.DefaultOneAgentImage())
 	})
 
 	t.Run(`OneAgentImage with API URL and custom version`, func(t *testing.T) {
 		dk := DynaKube{Spec: DynaKubeSpec{APIURL: testAPIURL, OneAgent: OneAgentSpec{ClassicFullStack: &HostInjectSpec{Version: "1.234.5"}}}}
-		assert.Equal(t, "test-endpoint/linux/oneagent:1.234.5", dk.OneAgentImage())
-	})
-
-	t.Run(`OneAgentImage with custom image`, func(t *testing.T) {
-		customImg := "registry/my/oneagent:latest"
-		dk := DynaKube{Spec: DynaKubeSpec{OneAgent: OneAgentSpec{ClassicFullStack: &HostInjectSpec{Image: customImg}}}}
-		assert.Equal(t, customImg, dk.OneAgentImage())
+		assert.Equal(t, "test-endpoint/linux/oneagent:1.234.5", dk.DefaultOneAgentImage())
 	})
 
 	t.Run(`OneAgentImage with custom version truncates build date`, func(t *testing.T) {
@@ -121,8 +122,21 @@ func TestOneAgentImage(t *testing.T) {
 			},
 		}
 
-		assert.Equal(t, expectedImage, dynakube.OneAgentImage())
+		assert.Equal(t, expectedImage, dynakube.DefaultOneAgentImage())
 		assert.Equal(t, version, dynakube.CustomOneAgentVersion())
+	})
+}
+
+func TestCustomOneAgentImage(t *testing.T) {
+	t.Run(`OneAgentImage with custom image`, func(t *testing.T) {
+		customImg := "registry/my/oneagent:latest"
+		dk := DynaKube{Spec: DynaKubeSpec{OneAgent: OneAgentSpec{ClassicFullStack: &HostInjectSpec{Image: customImg}}}}
+		assert.Equal(t, customImg, dk.CustomOneAgentImage())
+	})
+
+	t.Run(`OneAgentImage with no custom image`, func(t *testing.T) {
+		dk := DynaKube{Spec: DynaKubeSpec{OneAgent: OneAgentSpec{ClassicFullStack: &HostInjectSpec{}}}}
+		assert.Equal(t, "", dk.CustomOneAgentImage())
 	})
 }
 
@@ -257,32 +271,7 @@ func TestCodeModulesVersion(t *testing.T) {
 				},
 			},
 		}
-		version := dk.CodeModulesVersion()
-		assert.Equal(t, testVersion, version)
-	})
-	t.Run(`use image tag `, func(t *testing.T) {
-		dk := DynaKube{
-			Spec: DynaKubeSpec{
-				OneAgent: OneAgentSpec{
-					CloudNativeFullStack: &CloudNativeFullStackSpec{
-						HostInjectSpec: HostInjectSpec{
-							Version: testVersion,
-						},
-						AppInjectionSpec: AppInjectionSpec{
-							CodeModulesImage: "image:" + testVersion,
-						},
-					},
-				},
-			},
-			Status: DynaKubeStatus{
-				CodeModules: CodeModulesStatus{
-					VersionStatus: VersionStatus{
-						Version: "other",
-					},
-				},
-			},
-		}
-		version := dk.CodeModulesVersion()
+		version := dk.CustomCodeModulesVersion()
 		assert.Equal(t, testVersion, version)
 	})
 }

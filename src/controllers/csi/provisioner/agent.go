@@ -76,7 +76,7 @@ func newAgentImageUpdater( //nolint:revive // argument-limit doesn't apply to co
 		fs:            fs,
 		path:          path,
 		targetDir:     path.AgentConfigDir(tenantUUID),
-		targetVersion: dk.CodeModulesVersion(),
+		targetVersion: dk.CodeModulesImageTag(),
 		tenantUUID:    tenantUUID,
 		installer:     agentInstaller,
 		recorder:      eventRecorder,
@@ -103,12 +103,11 @@ func newImageInstaller(ctx context.Context, fs afero.Fs, apiReader client.Reader
 		return nil, err
 	}
 
-	imageInstaller := image.NewImageInstaller(fs, &image.Properties{
-		ImageUri:     dynakube.CustomCodeModulesImage(),
+	return image.NewImageInstaller(fs, &image.Properties{
+		ImageUri:     dynakube.CodeModulesImage(),
 		PathResolver: pathResolver,
 		Metadata:     db,
 		DockerConfig: *dockerConfig})
-	return imageInstaller, nil
 }
 
 func (updater *agentUpdater) updateAgent(latestProcessModuleConfigCache *processModuleConfigCache) (string, error) {

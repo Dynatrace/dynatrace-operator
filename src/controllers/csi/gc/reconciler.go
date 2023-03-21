@@ -26,9 +26,8 @@ func (set pinnedVersionSet) isNotPinned(version string) bool {
 // garbageCollectionInfo stores tenant specific information
 // used to delete unused files or directories connected to that tenant
 type garbageCollectionInfo struct {
-	tenantUUID         string
-	latestAgentVersion string
-	pinnedVersions     pinnedVersionSet
+	tenantUUID     string
+	pinnedVersions pinnedVersionSet
 }
 
 // CSIGarbageCollector removes unused and outdated agent versions
@@ -87,7 +86,7 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 	}
 
 	log.Info("running binary garbage collection")
-	gc.runBinaryGarbageCollection(ctx, gcInfo.pinnedVersions, gcInfo.tenantUUID, gcInfo.latestAgentVersion)
+	gc.runBinaryGarbageCollection(ctx, gcInfo.pinnedVersions, gcInfo.tenantUUID)
 
 	if err := ctx.Err(); err != nil {
 		return defaultReconcileResult, err
@@ -130,18 +129,11 @@ func collectGCInfo(dynakube dynatracev1beta1.DynaKube, dynakubeList *dynatracev1
 		return nil
 	}
 
-	latestAgentVersion := dynakube.CodeModulesVersion()
-	if latestAgentVersion == "" {
-		log.Info("no latest agent version found in dynakube, checking later")
-		return nil
-	}
-
 	pinnedVersions := getAllPinnedVersionsForTenantUUID(dynakubeList, tenantUUID)
 
 	return &garbageCollectionInfo{
-		tenantUUID:         tenantUUID,
-		latestAgentVersion: latestAgentVersion,
-		pinnedVersions:     pinnedVersions,
+		tenantUUID:     tenantUUID,
+		pinnedVersions: pinnedVersions,
 	}
 }
 
@@ -169,7 +161,11 @@ func isInstalling(dkMetadata *metadata.Dynakube) bool {
 
 func isUpgrading(dkMetadata *metadata.Dynakube, filteredDynakubes map[string]dynatracev1beta1.DynaKube) bool {
 	dynakube, ok := filteredDynakubes[dkMetadata.Name]
-	return ok && dynakube.CodeModulesVersion() != dkMetadata.LatestVersion
+	expectedVersion := dynakube.CodeModulesImageTag()
+	if expectedVersion == "" {
+		expectedVersion = dynakube.CodeModulesVersion()
+	}
+	return ok && expectedVersion != dkMetadata.LatestVersion
 }
 
 // getAllPinnedVersionsForTenantUUID returns all pinned versions for a given tenantUUID.
@@ -207,7 +203,7 @@ func getAllDynakubes(ctx context.Context, apiReader client.Reader, namespace str
 func filterCodeModulesImageDynakubes(dynakubeList *dynatracev1beta1.DynaKubeList) map[string]dynatracev1beta1.DynaKube {
 	filteredDynakubes := make(map[string]dynatracev1beta1.DynaKube)
 	for _, dynakube := range dynakubeList.Items {
-		if dynakube.CustomCodeModulesImage() != "" {
+		if dynakube.CodeModulesImageTag() != "" {
 			filteredDynakubes[dynakube.Name] = dynakube
 		}
 	}

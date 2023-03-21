@@ -208,13 +208,65 @@ func (dk *DynaKube) PullSecret() string {
 	return dk.Name + PullSecretSuffix
 }
 
-// ActiveGateImage returns the ActiveGate image to be used with the dk DynaKube instance.
-func (dk *DynaKube) ActiveGateImage() string {
-	if dk.CustomActiveGateImage() != "" {
-		return dk.CustomActiveGateImage()
-	}
+func (dk *DynaKube) NeedsReadOnlyOneAgents() bool {
+	inSupportedMode := dk.HostMonitoringMode() || dk.CloudNativeFullstackMode()
+	return inSupportedMode && !dk.FeatureDisableReadOnlyOneAgent()
+}
 
-	return dk.DefaultActiveGateImage()
+func (dk *DynaKube) NeedsCSIDriver() bool {
+	isAppMonitoringWithCSI := dk.ApplicationMonitoringMode() &&
+		dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver != nil &&
+		*dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver
+
+	isReadOnlyHostMonitoring := dk.HostMonitoringMode() &&
+		!dk.FeatureDisableReadOnlyOneAgent()
+
+	return dk.CloudNativeFullstackMode() || isAppMonitoringWithCSI || isReadOnlyHostMonitoring
+}
+
+func (dk *DynaKube) NeedAppInjection() bool {
+	return dk.CloudNativeFullstackMode() || dk.ApplicationMonitoringMode()
+}
+
+func (dk *DynaKube) InitResources() *corev1.ResourceRequirements {
+	if dk.ApplicationMonitoringMode() {
+		return &dk.Spec.OneAgent.ApplicationMonitoring.InitResources
+	} else if dk.CloudNativeFullstackMode() {
+		return &dk.Spec.OneAgent.CloudNativeFullStack.InitResources
+	}
+	return nil
+}
+
+func (dk *DynaKube) OneAgentResources() *corev1.ResourceRequirements {
+	switch {
+	case dk.ClassicFullStackMode():
+		return &dk.Spec.OneAgent.ClassicFullStack.OneAgentResources
+	case dk.HostMonitoringMode():
+		return &dk.Spec.OneAgent.HostMonitoring.OneAgentResources
+	case dk.CloudNativeFullstackMode():
+		return &dk.Spec.OneAgent.CloudNativeFullStack.OneAgentResources
+	}
+	return nil
+}
+
+func (dk *DynaKube) NamespaceSelector() *metav1.LabelSelector {
+	return &dk.Spec.NamespaceSelector
+}
+
+func (dk *DynaKube) NodeSelector() map[string]string {
+	switch {
+	case dk.ClassicFullStackMode():
+		return dk.Spec.OneAgent.ClassicFullStack.NodeSelector
+	case dk.HostMonitoringMode():
+		return dk.Spec.OneAgent.HostMonitoring.NodeSelector
+	case dk.CloudNativeFullstackMode():
+		return dk.Spec.OneAgent.CloudNativeFullStack.NodeSelector
+	}
+	return nil
+}
+
+func (dk *DynaKube) ActiveGateImage() string {
+	return dk.Status.ActiveGate.ImageURI()
 }
 
 func (dk *DynaKube) DefaultActiveGateImage() string {
@@ -245,13 +297,8 @@ func (dk *DynaKube) CustomActiveGateImage() string {
 	return dk.Spec.ActiveGate.Image
 }
 
-// returns the synthetic image supplied by the given DynaKube.
 func (dk *DynaKube) SyntheticImage() string {
-	image := dk.CustomSyntheticImage()
-	if image != "" {
-		return image
-	}
-	return dk.DefaultSyntheticImage()
+	return dk.Status.Synthetic.ImageURI()
 }
 
 func (dk *DynaKube) CustomSyntheticImage() string {
@@ -259,10 +306,6 @@ func (dk *DynaKube) CustomSyntheticImage() string {
 }
 
 func (dk *DynaKube) DefaultSyntheticImage() string {
-	if dk.ApiUrl() == "" {
-		return ""
-	}
-
 	apiUrlHost := dk.ApiUrlHost()
 	if apiUrlHost == "" {
 		return ""
@@ -274,36 +317,20 @@ func (dk *DynaKube) DefaultSyntheticImage() string {
 		api.LatestTag)
 }
 
-func (dk *DynaKube) NeedsReadOnlyOneAgents() bool {
-	inSupportedMode := dk.HostMonitoringMode() || dk.CloudNativeFullstackMode()
-	return inSupportedMode && !dk.FeatureDisableReadOnlyOneAgent()
+func (dk *DynaKube) CodeModulesImageTag() string {
+	return dk.Status.CodeModules.ImageTag
 }
 
-func (dk *DynaKube) NeedsCSIDriver() bool {
-	isAppMonitoringWithCSI := dk.ApplicationMonitoringMode() &&
-		dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver != nil &&
-		*dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver
-
-	isReadOnlyHostMonitoring := dk.HostMonitoringMode() &&
-		!dk.FeatureDisableReadOnlyOneAgent()
-
-	return dk.CloudNativeFullstackMode() || isAppMonitoringWithCSI || isReadOnlyHostMonitoring
+func (dk *DynaKube) CodeModulesImageHash() string {
+	return dk.Status.CodeModules.ImageHash
 }
 
-func (dk *DynaKube) NeedAppInjection() bool {
-	return dk.CloudNativeFullstackMode() || dk.ApplicationMonitoringMode()
+func (dk *DynaKube) CodeModulesVersion() string {
+	return dk.Status.CodeModules.Version
 }
 
-func (dk *DynaKube) CustomOneAgentImage() string {
-	switch {
-	case dk.ClassicFullStackMode():
-		return dk.Spec.OneAgent.ClassicFullStack.Image
-	case dk.HostMonitoringMode():
-		return dk.Spec.OneAgent.HostMonitoring.Image
-	case dk.CloudNativeFullstackMode():
-		return dk.Spec.OneAgent.CloudNativeFullStack.Image
-	}
-	return ""
+func (dk *DynaKube) CodeModulesImage() string {
+	return dk.Status.CodeModules.ImageURI()
 }
 
 func (dk *DynaKube) CustomCodeModulesImage() string {
@@ -315,37 +342,15 @@ func (dk *DynaKube) CustomCodeModulesImage() string {
 	return ""
 }
 
-func (dk *DynaKube) InitResources() *corev1.ResourceRequirements {
-	if dk.ApplicationMonitoringMode() {
-		return &dk.Spec.OneAgent.ApplicationMonitoring.InitResources
-	} else if dk.CloudNativeFullstackMode() {
-		return &dk.Spec.OneAgent.CloudNativeFullStack.InitResources
+func (dk *DynaKube) CustomCodeModulesVersion() string {
+	if !dk.ApplicationMonitoringMode() {
+		return ""
 	}
-	return nil
+	return dk.CustomOneAgentVersion()
 }
 
-func (dk *DynaKube) OneAgentResources() *corev1.ResourceRequirements {
-	switch {
-	case dk.ClassicFullStackMode():
-		return &dk.Spec.OneAgent.ClassicFullStack.OneAgentResources
-	case dk.HostMonitoringMode():
-		return &dk.Spec.OneAgent.HostMonitoring.OneAgentResources
-	case dk.CloudNativeFullstackMode():
-		return &dk.Spec.OneAgent.CloudNativeFullStack.OneAgentResources
-	}
-	return nil
-}
-
-func (dk *DynaKube) NodeSelector() map[string]string {
-	switch {
-	case dk.ClassicFullStackMode():
-		return dk.Spec.OneAgent.ClassicFullStack.NodeSelector
-	case dk.HostMonitoringMode():
-		return dk.Spec.OneAgent.HostMonitoring.NodeSelector
-	case dk.CloudNativeFullstackMode():
-		return dk.Spec.OneAgent.CloudNativeFullStack.NodeSelector
-	}
-	return nil
+func (dk *DynaKube) OneAgentImage() string {
+	return dk.Status.OneAgent.ImageURI()
 }
 
 func (dk *DynaKube) CustomOneAgentVersion() string {
@@ -362,39 +367,16 @@ func (dk *DynaKube) CustomOneAgentVersion() string {
 	return ""
 }
 
-// CodeModulesVersion does not take dynakube.Version into account when using cloudNative to avoid confusion
-func (dk *DynaKube) CodeModulesVersion() string {
-	if !dk.CloudNativeFullstackMode() && !dk.ApplicationMonitoringMode() {
-		return ""
+func (dk *DynaKube) CustomOneAgentImage() string {
+	switch {
+	case dk.ClassicFullStackMode():
+		return dk.Spec.OneAgent.ClassicFullStack.Image
+	case dk.HostMonitoringMode():
+		return dk.Spec.OneAgent.HostMonitoring.Image
+	case dk.CloudNativeFullstackMode():
+		return dk.Spec.OneAgent.CloudNativeFullStack.Image
 	}
-	if dk.CustomCodeModulesImage() != "" {
-		codeModulesImage := dk.CustomCodeModulesImage()
-		return getRawImageTag(codeModulesImage)
-	}
-	if dk.CustomCodeModulesVersion() != "" {
-		return dk.CustomCodeModulesVersion()
-	}
-	return dk.Status.CodeModules.Version
-}
-
-func (dk *DynaKube) CustomCodeModulesVersion() string {
-	if !dk.ApplicationMonitoringMode() {
-		return ""
-	}
-	return dk.CustomOneAgentVersion()
-}
-
-func (dk *DynaKube) NamespaceSelector() *metav1.LabelSelector {
-	return &dk.Spec.NamespaceSelector
-}
-
-// OneAgentImage returns the immutable OneAgent image to be used with the DynaKube instance.
-func (dk *DynaKube) OneAgentImage() string {
-	oneAgentImage := dk.CustomOneAgentImage()
-	if oneAgentImage != "" {
-		return oneAgentImage
-	}
-	return dk.DefaultOneAgentImage()
+	return ""
 }
 
 func (dk *DynaKube) DefaultOneAgentImage() string {

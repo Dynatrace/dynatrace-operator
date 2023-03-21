@@ -84,10 +84,7 @@ func (statefulSetBuilder Builder) getBaseSpec() appsv1.StatefulSetSpec {
 }
 
 func (statefulSetBuilder Builder) addLabels(sts *appsv1.StatefulSet) {
-	versionLabelValue := statefulSetBuilder.dynakube.Status.ActiveGate.ImageTag
-	if statefulSetBuilder.dynakube.CustomActiveGateImage() != "" {
-		versionLabelValue = kubeobjects.CustomImageLabelValue
-	}
+	versionLabelValue := statefulSetBuilder.dynakube.Status.ActiveGate.Version
 	appLabels := kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, statefulSetBuilder.dynakube.Name, statefulSetBuilder.capability.ShortName(), versionLabelValue)
 
 	sts.ObjectMeta.Labels = appLabels.BuildLabels()

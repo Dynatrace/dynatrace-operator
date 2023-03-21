@@ -178,9 +178,9 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		kubeobjects.AppManagedByLabel: version.AppName,
 	}
 
-	t.Run(`reconileImp Instances set, if autoUpdate is true`, func(t *testing.T) {
+	t.Run("reconileImp Instances set, if autoUpdate is true", func(t *testing.T) {
 		dk := base.DeepCopy()
-		dk.Status.OneAgent.ImageTag = oldComponentVersion
+		dk.Status.OneAgent.Version = oldComponentVersion
 		dsInfo := daemonset.NewClassicFullStack(dk, testClusterID)
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
@@ -210,7 +210,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		dk := base.DeepCopy()
 		autoUpdate := false
 		dk.Spec.OneAgent.ClassicFullStack.AutoUpdate = &autoUpdate
-		dk.Status.OneAgent.ImageTag = oldComponentVersion
+		dk.Status.OneAgent.Version = oldComponentVersion
 		dsInfo := daemonset.NewClassicFullStack(dk, testClusterID)
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
@@ -304,22 +304,28 @@ func TestHasSpecChanged(t *testing.T) {
 
 	runTest("no changes", false, func(old *dynatracev1beta1.DynaKube, new *dynatracev1beta1.DynaKube) {})
 
-	runTest("image added", true, func(old *dynatracev1beta1.DynaKube, new *dynatracev1beta1.DynaKube) {
-		new.Spec.OneAgent.HostMonitoring.Image = "docker.io/dynatrace/oneagent"
+	runTest("image present", true, func(old *dynatracev1beta1.DynaKube, new *dynatracev1beta1.DynaKube) {
+		new.Status.OneAgent.ImageRepository = "docker.io/dynatrace/oneagent"
+		new.Status.OneAgent.ImageTag = "latest"
+		new.Status.OneAgent.ImageHash = "sha256:12345"
 	})
 
 	runTest("image set but no change", false, func(old *dynatracev1beta1.DynaKube, new *dynatracev1beta1.DynaKube) {
-		old.Spec.OneAgent.HostMonitoring.Image = "docker.io/dynatrace/oneagent"
-		new.Spec.OneAgent.HostMonitoring.Image = "docker.io/dynatrace/oneagent"
-	})
-
-	runTest("image removed", true, func(old *dynatracev1beta1.DynaKube, new *dynatracev1beta1.DynaKube) {
-		old.Spec.OneAgent.HostMonitoring.Image = "docker.io/dynatrace/oneagent"
+		old.Status.OneAgent.ImageRepository = "docker.io/dynatrace/oneagent"
+		old.Status.OneAgent.ImageTag = "latest"
+		old.Status.OneAgent.ImageHash = "sha256:12345"
+		new.Status.OneAgent.ImageRepository = "docker.io/dynatrace/oneagent"
+		new.Status.OneAgent.ImageTag = "latest"
+		new.Status.OneAgent.ImageHash = "sha256:12345"
 	})
 
 	runTest("image changed", true, func(old *dynatracev1beta1.DynaKube, new *dynatracev1beta1.DynaKube) {
-		old.Spec.OneAgent.HostMonitoring.Image = "registry.access.redhat.com/dynatrace/oneagent"
-		new.Spec.OneAgent.HostMonitoring.Image = "docker.io/dynatrace/oneagent"
+		old.Status.OneAgent.ImageRepository = "registry.access.redhat.com/dynatrace/oneagent"
+		old.Status.OneAgent.ImageTag = "latest"
+		old.Status.OneAgent.ImageHash = "sha256:12345"
+		new.Status.OneAgent.ImageRepository = "docker.io/dynatrace/oneagent"
+		new.Status.OneAgent.ImageTag = "latest"
+		new.Status.OneAgent.ImageHash = "sha256:34567"
 	})
 
 	runTest("argument removed", true, func(old *dynatracev1beta1.DynaKube, new *dynatracev1beta1.DynaKube) {

@@ -87,6 +87,13 @@ type VersionStatus struct {
 	LastProbeTimestamp *metav1.Time  `json:"lastProbeTimestamp,omitempty"`
 }
 
+func (versionStatus VersionStatus) ImageURI() string {
+	if versionStatus.ImageRepository == "" || versionStatus.ImageHash == "" {
+		return ""
+	}
+	return fmt.Sprintf("%s@%s", versionStatus.ImageRepository, versionStatus.ImageHash)
+}
+
 type ActiveGateStatus struct {
 	VersionStatus `json:",inline"`
 }

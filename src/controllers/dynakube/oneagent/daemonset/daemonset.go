@@ -132,10 +132,7 @@ func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	dynakube := dsInfo.dynakube
 	podSpec := dsInfo.podSpec()
 
-	versionLabelValue := dynakube.Status.OneAgent.ImageTag
-	if dynakube.CustomOneAgentImage() != "" {
-		versionLabelValue = kubeobjects.CustomImageLabelValue
-	}
+	versionLabelValue := dynakube.Status.OneAgent.Version
 
 	appLabels := kubeobjects.NewAppLabels(kubeobjects.OneAgentComponentLabel, dynakube.Name,
 		dsInfo.deploymentType, versionLabelValue)
