@@ -19,11 +19,6 @@ type mockUpdater struct {
 	mock.Mock
 }
 
-func (m *mockUpdater) IsClassicFullStackEnabled() bool {
-	args := m.Called()
-	return args.Get(0).(bool)
-}
-
 func (m *mockUpdater) Name() string {
 	args := m.Called()
 	return args.Get(0).(string)
@@ -163,10 +158,10 @@ func TestRun(t *testing.T) {
 			timeProvider: timeProvider,
 			hashFunc:     registry.ImageVersionExt,
 		}
-		updater := newPublicRegistryUpdater(target, &testImage, false)
-		updater.On("IsClassicFullStackEnabled").Return(true)
-		updater.On("UseDefaults").Return(nil)
+		updater := newClassicFullStackUpdater(target, false)
+		updater.On("CustomImage").Return("")
 		updater.On("CustomVersion").Return("")
+		updater.On("UseDefaults").Return(nil)
 
 		err := versionReconciler.run(ctx, updater, testDockerCfg)
 		require.NoError(t, err)
@@ -185,17 +180,16 @@ func TestRun(t *testing.T) {
 			timeProvider: timeProvider,
 			hashFunc:     registry.ImageVersionExt,
 		}
-		updater := newPublicRegistryUpdater(target, &testImage, false)
-		updater.On("IsClassicFullStackEnabled").Return(true)
-		updater.On("UseDefaults").Return(nil)
+		updater := newClassicFullStackUpdater(target, false)
+		updater.On("CustomImage").Return(testImage.String())
 		updater.On("CustomVersion").Return(testImage.Tag)
+		updater.On("UseDefaults").Return(nil)
 
 		err := versionReconciler.run(ctx, updater, testDockerCfg)
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "LatestImageInfo", 0)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
-		assert.Equal(t, dynatracev1beta1.CustomVersionVersionSource, target.Source)
-		assert.Equal(t, target.ImageTag, target.Version)
+		assert.Equal(t, dynatracev1beta1.CustomImageVersionSource, target.Source)
 	})
 }
 
@@ -215,7 +209,6 @@ func TestDetermineSource(t *testing.T) {
 
 	t.Run("public-registry", func(t *testing.T) {
 		updater := newPublicRegistryUpdater(nil, nil, false)
-		updater.On("IsClassicFullStackEnabled").Return(false)
 		source := determineSource(updater)
 		assert.Equal(t, dynatracev1beta1.PublicRegistryVersionSource, source)
 	})
@@ -227,8 +220,8 @@ func TestDetermineSource(t *testing.T) {
 	})
 
 	t.Run("classicfullstack ignores public registry feature flag", func(t *testing.T) {
-		updater := newPublicRegistryUpdater(nil, nil, false)
-		updater.On("IsClassicFullStackEnabled").Return(true)
+		updater := newClassicFullStackUpdater(nil, false)
+		updater.On("CustomImage").Return("")
 		updater.On("CustomVersion").Return("")
 		source := determineSource(updater)
 		assert.Equal(t, dynatracev1beta1.TenantRegistryVersionSource, source)
@@ -239,8 +232,8 @@ func TestDetermineSource(t *testing.T) {
 			Source: "some.registry.com",
 			Tag:    "1.2.3",
 		}
-		updater := newPublicRegistryUpdater(nil, nil, false)
-		updater.On("IsClassicFullStackEnabled").Return(true)
+		updater := newClassicFullStackUpdater(nil, false)
+		updater.On("CustomImage").Return("")
 		updater.On("CustomVersion").Return(testImage.Tag)
 		source := determineSource(updater)
 		assert.Equal(t, dynatracev1beta1.CustomVersionVersionSource, source)
@@ -323,6 +316,12 @@ func newPublicRegistryUpdater(target *dynatracev1beta1.VersionStatus, imageInfo 
 	updater.On("CustomImage").Return("")
 	updater.On("IsPublicRegistryEnabled").Return(true)
 	updater.On("LatestImageInfo").Return(imageInfo, nil)
+	return updater
+}
+
+func newClassicFullStackUpdater(target *dynatracev1beta1.VersionStatus, autoUpdate bool) *mockUpdater {
+	updater := newBaseUpdater(target, autoUpdate)
+	updater.On("IsPublicRegistryEnabled").Return(false)
 	return updater
 }
 

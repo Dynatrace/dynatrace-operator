@@ -17,7 +17,6 @@ type versionStatusUpdater interface {
 
 	CustomImage() string
 	CustomVersion() string
-	IsClassicFullStackEnabled() bool
 	IsAutoUpdateEnabled() bool
 	IsPublicRegistryEnabled() bool
 	LatestImageInfo() (*dtclient.LatestImageInfo, error)
@@ -52,7 +51,7 @@ func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpda
 		}
 	}
 
-	if updater.IsPublicRegistryEnabled() && !updater.IsClassicFullStackEnabled() {
+	if updater.IsPublicRegistryEnabled() {
 		var publicImage *dtclient.LatestImageInfo
 		publicImage, err = updater.LatestImageInfo()
 		if err != nil {
@@ -76,7 +75,7 @@ func determineSource(updater versionStatusUpdater) dynatracev1beta1.VersionSourc
 	if updater.CustomImage() != "" {
 		return dynatracev1beta1.CustomImageVersionSource
 	}
-	if updater.IsPublicRegistryEnabled() && !updater.IsClassicFullStackEnabled() {
+	if updater.IsPublicRegistryEnabled() {
 		return dynatracev1beta1.PublicRegistryVersionSource
 	}
 	if updater.CustomVersion() != "" {
