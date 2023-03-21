@@ -10,7 +10,6 @@ import (
 
 func TestIsAlreadyDownloaded(t *testing.T) {
 	imageDigest := "test"
-	imageWithDigest := "quay.io/somerepo/codemod@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
 	pathResolver := metadata.PathResolver{}
 
 	t.Run(`returns early if path doesn't exist`, func(t *testing.T) {
@@ -32,11 +31,6 @@ func TestIsAlreadyDownloaded(t *testing.T) {
 		}
 		isDownloaded := installer.isAlreadyDownloaded(imageDigest)
 		assert.True(t, isDownloaded)
-	})
-	t.Run(`returns proper digest`, func(t *testing.T) {
-		digest := getImageDigestFromImageName(imageWithDigest)
-		assert.NotEmpty(t, digest)
-		assert.Equal(t, "7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f", digest.Encoded())
 	})
 }
 

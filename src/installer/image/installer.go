@@ -85,17 +85,18 @@ func (installer *ImageInstaller) installAgentFromImage() error {
 	}
 	image := installer.props.ImageUri
 
-	sourceCtx, sourceRef, err := getSourceInfo(CacheDir, *installer.props)
+	sourceCtx, sourceRef, imageRef, err := getSourceInfo(CacheDir, *installer.props)
 	if err != nil {
 		log.Info("failed to get source information", "image", image)
 		return errors.WithStack(err)
 	}
 
-	imageDigestEncoded, err := getImageDigestEncoded(sourceCtx, sourceRef, image)
+	imageDigestEncoded, err := getImageDigestEncoded(sourceCtx, sourceRef, imageRef)
 	if err != nil {
-		log.Info("failed to get image digest", "image", image)
+		log.Info("failed to get image digest", "image", imageRef)
 		return errors.WithStack(err)
 	}
+	log.Info("image digest", "image", imageRef, "digest", imageDigestEncoded)
 
 	if installer.isAlreadyDownloaded(imageDigestEncoded) {
 		log.Info("image is already installed", "image", image, "digest", imageDigestEncoded)
@@ -135,10 +136,9 @@ func (installer ImageInstaller) isAlreadyDownloaded(imageDigestEncoded string) b
 	return !os.IsNotExist(err)
 }
 
-func getImageDigestEncoded(systemContext *types.SystemContext, imageReference *types.ImageReference, imageName string) (string, error){
-	if digestFromName := getImageDigestFromImageName(imageName); digestFromName != ""{
-		log.Info("Image digest found in Image name", "imageName", imageName)
-		return digestFromName.Encoded(), nil
+func getImageDigestEncoded(systemContext *types.SystemContext, imageReference *types.ImageReference, imageRef reference.Named) (string, error) {
+	if c, ok := imageRef.(reference.Canonical); ok {
+		return c.Digest().Encoded(), nil
 	}
 
 	digestFromRef, err := getImageDigestFromReference(systemContext, imageReference)
@@ -150,18 +150,6 @@ func getImageDigestEncoded(systemContext *types.SystemContext, imageReference *t
 
 func getImageDigestFromReference(systemContext *types.SystemContext, imageReference *types.ImageReference) (digest.Digest, error) {
 	return docker.GetDigest(context.TODO(), systemContext, *imageReference)
-}
-
-func getImageDigestFromImageName(name string) digest.Digest{
-	ref, err := reference.Parse(name)
-	if err != nil{
-		return ""
-	}
-
-	if _, ok:= ref.(reference.Canonical); ok{
-		return ref.(reference.Canonical).Digest()
-	}
-	return ""
 }
 
 func getCacheDirPath(digest string) string {
