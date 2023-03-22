@@ -151,8 +151,8 @@ func (dk *DynaKube) NeedsActiveGateService() bool {
 	return dk.NeedsActiveGateServicePorts()
 }
 
-func (dynaKube *DynaKube) IsSyntheticMonitoringEnabled() bool {
-	return dynaKube.FeatureSyntheticLocationEntityId() != ""
+func (dk *DynaKube) IsSyntheticMonitoringEnabled() bool {
+	return dk.FeatureSyntheticLocationEntityId() != ""
 }
 
 func (dk *DynaKube) HasActiveGateCaCert() bool {
@@ -351,6 +351,10 @@ func (dk *DynaKube) CustomCodeModulesVersion() string {
 
 func (dk *DynaKube) OneAgentImage() string {
 	return dk.Status.OneAgent.ImageURI()
+}
+
+func (dk *DynaKube) OneAgentVersion() string {
+	return dk.Status.OneAgent.Version
 }
 
 func (dk *DynaKube) CustomOneAgentVersion() string {

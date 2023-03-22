@@ -57,7 +57,7 @@ func (registry *fakeRegistry) ImageVersionExt(_ context.Context, imagePath strin
 
 func assertPublicRegistryVersionStatusEquals(t *testing.T, registry *fakeRegistry, imageRef reference.NamedTagged, versionStatus dynatracev1beta1.VersionStatus) { //nolint:revive // argument-limit
 	assertVersionStatusEquals(t, registry, imageRef, versionStatus)
-	assert.Equal(t, versionStatus.ImageTag, versionStatus.Version)
+	assert.Empty(t, versionStatus.Version)
 }
 
 func assertVersionStatusEquals(t *testing.T, registry *fakeRegistry, imageRef reference.NamedTagged, versionStatus dynatracev1beta1.VersionStatus) { //nolint:revive // argument-limit

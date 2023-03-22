@@ -146,7 +146,7 @@ func TestRun(t *testing.T) {
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, dynatracev1beta1.PublicRegistryVersionSource, target.Source)
 		assertVersionStatusEquals(t, registry, getTaggedReference(t, testImage.String()), *target)
-		assert.Equal(t, target.ImageTag, target.Version)
+		assert.Empty(t, target.Version)
 	})
 	t.Run("classicfullstack enabled, public registry is ignored", func(t *testing.T) {
 		registry := newFakeRegistryForImages(testImage.String())

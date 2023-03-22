@@ -127,7 +127,7 @@ func (r *Reconciler) reconcileRollout(ctx context.Context, dynakube *dynatracev1
 }
 
 func (r *Reconciler) getOneagentPods(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, feature string) ([]corev1.Pod, []client.ListOption, error) {
-	agentVersion := dynakube.Status.OneAgent.Version
+	agentVersion := dynakube.OneAgentVersion()
 	appLabels := kubeobjects.NewAppLabels(kubeobjects.OneAgentComponentLabel, dynakube.Name,
 		feature, agentVersion)
 	podList := &corev1.PodList{}

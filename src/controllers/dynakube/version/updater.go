@@ -64,7 +64,6 @@ func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpda
 			log.Info("could not update version status according to the public registry", "updater", updater.Name())
 			return err
 		}
-		updater.Target().Version = updater.Target().ImageTag
 		return nil
 	}
 
