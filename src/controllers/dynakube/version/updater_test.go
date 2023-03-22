@@ -274,8 +274,8 @@ func TestUpdateVersionStatus(t *testing.T) {
 		}
 		err := updateVersionStatus(ctx, &target, testImage, boomFunc, testDockerCfg)
 		require.NoError(t, err)
-		assert.Equal(t, expectedHash, target.ImageHash)
-		assert.Equal(t, expectedHash, target.ImageTag)
+		assert.Equal(t, expectedHash, target.ImageDigest)
+		assert.Empty(t, target.ImageTag)
 		assert.Equal(t, expectedRepo, target.ImageRepository)
 	})
 }

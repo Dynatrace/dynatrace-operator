@@ -265,10 +265,14 @@ func (dk *DynaKube) NodeSelector() map[string]string {
 	return nil
 }
 
+// ActiveGateImage provides the image reference set in Status for the ActiveGate.
+// Format: repo@sha256:digest
 func (dk *DynaKube) ActiveGateImage() string {
 	return dk.Status.ActiveGate.ImageURI()
 }
 
+// DefaultActiveGateImage provides the image reference for the ActiveGate from tenant registry.
+// Format: repo:tag
 func (dk *DynaKube) DefaultActiveGateImage() string {
 	apiUrlHost := dk.ApiUrlHost()
 
@@ -289,6 +293,7 @@ func (dk *DynaKube) deprecatedActiveGateImage() string {
 	return ""
 }
 
+// CustomActiveGateImage provides the image reference for the ActiveGate provided in the Spec.
 func (dk *DynaKube) CustomActiveGateImage() string {
 	if dk.DeprecatedActiveGateMode() {
 		return dk.deprecatedActiveGateImage()
@@ -297,14 +302,19 @@ func (dk *DynaKube) CustomActiveGateImage() string {
 	return dk.Spec.ActiveGate.Image
 }
 
+// SyntheticImage provides the image reference set in Status for Synthetic.
+// Format: repo@sha256:digest
 func (dk *DynaKube) SyntheticImage() string {
 	return dk.Status.Synthetic.ImageURI()
 }
 
+// CustomSyntheticImage provides the image reference for Synthetic provided in the feature-flags.
 func (dk *DynaKube) CustomSyntheticImage() string {
 	return dk.FeatureCustomSyntheticImage()
 }
 
+// DefaultActiveGateImage provides the image reference for Synthetic from tenant registry.
+// Format: repo:tag
 func (dk *DynaKube) DefaultSyntheticImage() string {
 	apiUrlHost := dk.ApiUrlHost()
 	if apiUrlHost == "" {
@@ -317,22 +327,28 @@ func (dk *DynaKube) DefaultSyntheticImage() string {
 		api.LatestTag)
 }
 
+// CodeModulesImageTag provides the image tag set in Status for the CodeModules.
 func (dk *DynaKube) CodeModulesImageTag() string {
 	return dk.Status.CodeModules.ImageTag
 }
 
-func (dk *DynaKube) CodeModulesImageHash() string {
-	return dk.Status.CodeModules.ImageHash
+// CodeModulesImageDigest provides the image hash set in Status for the CodeModules.
+func (dk *DynaKube) CodeModulesImageDigest() string {
+	return dk.Status.CodeModules.ImageDigest
 }
 
+// CodeModulesVersion provides version set in Status for the CodeModules.
 func (dk *DynaKube) CodeModulesVersion() string {
 	return dk.Status.CodeModules.Version
 }
 
+// CodeModulesImage provides the image reference set in Status for the CodeModules.
+// Format: repo@sha256:digest
 func (dk *DynaKube) CodeModulesImage() string {
 	return dk.Status.CodeModules.ImageURI()
 }
 
+// CustomCodeModulesImage provides the image reference for the CodeModules provided in the Spec.
 func (dk *DynaKube) CustomCodeModulesImage() string {
 	if dk.CloudNativeFullstackMode() {
 		return dk.Spec.OneAgent.CloudNativeFullStack.CodeModulesImage
@@ -342,6 +358,7 @@ func (dk *DynaKube) CustomCodeModulesImage() string {
 	return ""
 }
 
+// CustomCodeModulesVersion provides the version for the CodeModules provided in the Spec.
 func (dk *DynaKube) CustomCodeModulesVersion() string {
 	if !dk.ApplicationMonitoringMode() {
 		return ""
@@ -349,14 +366,18 @@ func (dk *DynaKube) CustomCodeModulesVersion() string {
 	return dk.CustomOneAgentVersion()
 }
 
+// OneAgentImage provides the image reference set in Status for the OneAgent.
+// Format: repo@sha256:digest
 func (dk *DynaKube) OneAgentImage() string {
 	return dk.Status.OneAgent.ImageURI()
 }
 
+// OneAgentVersion provides version set in Status for the OneAgent.
 func (dk *DynaKube) OneAgentVersion() string {
 	return dk.Status.OneAgent.Version
 }
 
+// CustomOneAgentVersion provides the version for the OneAgent provided in the Spec.
 func (dk *DynaKube) CustomOneAgentVersion() string {
 	switch {
 	case dk.ClassicFullStackMode():
@@ -371,6 +392,7 @@ func (dk *DynaKube) CustomOneAgentVersion() string {
 	return ""
 }
 
+// CustomOneAgentImage provides the image reference for the OneAgent provided in the Spec.
 func (dk *DynaKube) CustomOneAgentImage() string {
 	switch {
 	case dk.ClassicFullStackMode():
@@ -383,6 +405,7 @@ func (dk *DynaKube) CustomOneAgentImage() string {
 	return ""
 }
 
+// DefaultOneAgentImage provides the image reference for the OneAgent from tenant registry.
 func (dk *DynaKube) DefaultOneAgentImage() string {
 	if dk.Spec.APIURL == "" {
 		return ""

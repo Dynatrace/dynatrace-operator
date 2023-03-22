@@ -96,15 +96,14 @@ func updateVersionStatus(
 		return errors.WithMessage(err, "failed to parse image uri")
 	}
 
-	var repo, hash, tag string
+	var repo, digest, tag string
 	if canonRef, ok := ref.(reference.Canonical); ok {
 		repo = canonRef.Name()
-		hash = canonRef.Digest().String()
-		tag = hash
+		digest = canonRef.Digest().String()
 	} else if taggedRef, ok := ref.(reference.NamedTagged); ok {
 		repo = taggedRef.Name()
 		tag = taggedRef.Tag()
-		hash, err = hashFunc(ctx, imageUri, dockerCfg)
+		digest, err = hashFunc(ctx, imageUri, dockerCfg)
 		if err != nil {
 			return errors.WithMessage(err, "failed to get image hash")
 		}
@@ -114,10 +113,9 @@ func updateVersionStatus(
 		"image", imageUri,
 		"oldRepo", target.ImageRepository, "newRepo", repo,
 		"oldTag", target.ImageTag, "newTag", tag,
-		"oldHash", target.ImageHash, "newHash", hash)
-
+		"oldHash", target.ImageDigest, "newHash", digest)
 	target.ImageTag = tag
-	target.ImageHash = hash
+	target.ImageDigest = digest
 	target.ImageRepository = repo
 	// Version will be set elsewhere, as it differs between modes
 	// unset is necessary so we have a consistent status

@@ -80,7 +80,7 @@ const (
 
 type VersionStatus struct {
 	Source             VersionSource `json:"source,omitempty"`
-	ImageHash          string        `json:"imageHash,omitempty"`
+	ImageDigest        string        `json:"imageDigest,omitempty"`
 	ImageRepository    string        `json:"imageRepository,omitempty"`
 	ImageTag           string        `json:"imageTag,omitempty"`
 	Version            string        `json:"version,omitempty"`
@@ -88,10 +88,13 @@ type VersionStatus struct {
 }
 
 func (versionStatus VersionStatus) ImageURI() string {
-	if versionStatus.ImageRepository == "" || versionStatus.ImageHash == "" {
+	if versionStatus.ImageRepository == ""  {
 		return ""
 	}
-	return fmt.Sprintf("%s@%s", versionStatus.ImageRepository, versionStatus.ImageHash)
+	if versionStatus.ImageDigest != "" {
+		return fmt.Sprintf("%s@%s", versionStatus.ImageRepository, versionStatus.ImageDigest)
+	}
+	return fmt.Sprintf("%s:%s", versionStatus.ImageRepository, versionStatus.ImageTag)
 }
 
 type ActiveGateStatus struct {

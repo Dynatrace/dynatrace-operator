@@ -39,7 +39,7 @@ func TestUseImmutableImage(t *testing.T) {
 					VersionStatus: dynatracev1beta1.VersionStatus{
 						ImageRepository: testRepo,
 						ImageTag:        testTag,
-						ImageHash:       testHash,
+						ImageDigest:     testHash,
 					},
 				},
 			},

@@ -185,7 +185,7 @@ func TestUpdateAgent(t *testing.T) {
 					VersionStatus: dynatracev1beta1.VersionStatus{
 						ImageRepository: image,
 						ImageTag:        tag,
-						ImageHash:       hash,
+						ImageDigest:     hash,
 					},
 				},
 			},
@@ -270,7 +270,7 @@ func testCodeModules(t *testing.T, customPullSecret bool) {
 				VersionStatus: dynatracev1beta1.VersionStatus{
 					ImageRepository: image,
 					ImageTag:        tag,
-					ImageHash:       hash,
+					ImageDigest:     hash,
 				},
 			},
 		},

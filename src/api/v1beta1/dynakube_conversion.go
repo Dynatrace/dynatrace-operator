@@ -59,7 +59,7 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 	}
 
 	// Status
-	dst.Status.ActiveGate.ImageHash = src.Status.ActiveGate.ImageHash
+	dst.Status.ActiveGate.ImageHash = src.Status.ActiveGate.ImageDigest
 	dst.Status.ActiveGate.LastImageProbeTimestamp = src.Status.ActiveGate.LastProbeTimestamp
 	dst.Status.ActiveGate.ImageVersion = src.Status.ActiveGate.ImageTag
 
@@ -71,7 +71,7 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 	dst.Status.LastPaaSTokenProbeTimestamp = &timeNow
 
 	dst.Status.OneAgent.UseImmutableImage = true
-	dst.Status.OneAgent.ImageHash = src.Status.OneAgent.ImageHash
+	dst.Status.OneAgent.ImageHash = src.Status.OneAgent.ImageDigest
 	dst.Status.OneAgent.Instances = map[string]v1alpha1.OneAgentInstance{}
 	for key, value := range src.Status.OneAgent.Instances {
 		tmp := v1alpha1.OneAgentInstance{
@@ -162,7 +162,7 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	}
 
 	// Status
-	dst.Status.ActiveGate.ImageHash = src.Status.ActiveGate.ImageHash
+	dst.Status.ActiveGate.ImageDigest = src.Status.ActiveGate.ImageHash
 	dst.Status.ActiveGate.LastProbeTimestamp = src.Status.ActiveGate.LastImageProbeTimestamp
 	dst.Status.ActiveGate.ImageTag = src.Status.ActiveGate.ImageVersion
 
@@ -170,7 +170,7 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 
 	dst.Status.LastTokenProbeTimestamp = src.Status.LastAPITokenProbeTimestamp
 
-	dst.Status.OneAgent.ImageHash = src.Status.OneAgent.ImageHash
+	dst.Status.OneAgent.ImageDigest = src.Status.OneAgent.ImageHash
 	dst.Status.OneAgent.Instances = map[string]OneAgentInstance{}
 	for key, value := range src.Status.OneAgent.Instances {
 		instance := OneAgentInstance{

@@ -307,25 +307,25 @@ func TestHasSpecChanged(t *testing.T) {
 	runTest("image present", true, func(old *dynatracev1beta1.DynaKube, new *dynatracev1beta1.DynaKube) {
 		new.Status.OneAgent.ImageRepository = "docker.io/dynatrace/oneagent"
 		new.Status.OneAgent.ImageTag = "latest"
-		new.Status.OneAgent.ImageHash = "sha256:12345"
+		new.Status.OneAgent.ImageDigest = "sha256:12345"
 	})
 
 	runTest("image set but no change", false, func(old *dynatracev1beta1.DynaKube, new *dynatracev1beta1.DynaKube) {
 		old.Status.OneAgent.ImageRepository = "docker.io/dynatrace/oneagent"
 		old.Status.OneAgent.ImageTag = "latest"
-		old.Status.OneAgent.ImageHash = "sha256:12345"
+		old.Status.OneAgent.ImageDigest = "sha256:12345"
 		new.Status.OneAgent.ImageRepository = "docker.io/dynatrace/oneagent"
 		new.Status.OneAgent.ImageTag = "latest"
-		new.Status.OneAgent.ImageHash = "sha256:12345"
+		new.Status.OneAgent.ImageDigest = "sha256:12345"
 	})
 
 	runTest("image changed", true, func(old *dynatracev1beta1.DynaKube, new *dynatracev1beta1.DynaKube) {
 		old.Status.OneAgent.ImageRepository = "registry.access.redhat.com/dynatrace/oneagent"
 		old.Status.OneAgent.ImageTag = "latest"
-		old.Status.OneAgent.ImageHash = "sha256:12345"
+		old.Status.OneAgent.ImageDigest = "sha256:12345"
 		new.Status.OneAgent.ImageRepository = "docker.io/dynatrace/oneagent"
 		new.Status.OneAgent.ImageTag = "latest"
-		new.Status.OneAgent.ImageHash = "sha256:34567"
+		new.Status.OneAgent.ImageDigest = "sha256:34567"
 	})
 
 	runTest("argument removed", true, func(old *dynatracev1beta1.DynaKube, new *dynatracev1beta1.DynaKube) {

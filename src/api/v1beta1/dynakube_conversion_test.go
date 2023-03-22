@@ -227,12 +227,12 @@ func TestConversion_ConvertFrom(t *testing.T) {
 
 	assert.Len(t, convertedDynakube.Spec.ActiveGate.Capabilities, 0)
 
-	assert.Equal(t, oldDynakube.Status.ActiveGate.ImageHash, convertedDynakube.Status.ActiveGate.ImageHash)
+	assert.Equal(t, oldDynakube.Status.ActiveGate.ImageHash, convertedDynakube.Status.ActiveGate.ImageDigest)
 	assert.Equal(t, oldDynakube.Status.ActiveGate.LastImageProbeTimestamp, convertedDynakube.Status.ActiveGate.LastProbeTimestamp)
 	assert.Equal(t, oldDynakube.Status.ActiveGate.ImageVersion, convertedDynakube.Status.ActiveGate.ImageTag)
 	assert.Equal(t, oldDynakube.Status.Conditions, convertedDynakube.Status.Conditions)
 	assert.Equal(t, oldDynakube.Status.LastAPITokenProbeTimestamp, convertedDynakube.Status.LastTokenProbeTimestamp)
-	assert.Equal(t, oldDynakube.Status.OneAgent.ImageHash, convertedDynakube.Status.OneAgent.ImageHash)
+	assert.Equal(t, oldDynakube.Status.OneAgent.ImageHash, convertedDynakube.Status.OneAgent.ImageDigest)
 
 	assert.Len(t, convertedDynakube.Status.OneAgent.Instances, 1)
 	oldInstance := oldDynakube.Status.OneAgent.Instances[testStatusOneAgentInstanceKey]
@@ -443,12 +443,12 @@ func TestConversion_ConvertTo(t *testing.T) {
 		oldDynakube.Spec.KubernetesMonitoring.CapabilityProperties,
 		convertedDynakube.Spec.KubernetesMonitoringSpec.CapabilityProperties)
 
-	assert.Equal(t, oldDynakube.Status.ActiveGate.ImageHash, convertedDynakube.Status.ActiveGate.ImageHash)
+	assert.Equal(t, oldDynakube.Status.ActiveGate.ImageDigest, convertedDynakube.Status.ActiveGate.ImageHash)
 	assert.Equal(t, oldDynakube.Status.Conditions, convertedDynakube.Status.Conditions)
 	assert.Equal(t, oldDynakube.Status.LastTokenProbeTimestamp, convertedDynakube.Status.LastAPITokenProbeTimestamp)
 	assert.WithinDuration(t, metav1.Now().Time, convertedDynakube.Status.LastClusterVersionProbeTimestamp.Time, time.Duration(1)*time.Second)
 	assert.WithinDuration(t, metav1.Now().Time, convertedDynakube.Status.LastPaaSTokenProbeTimestamp.Time, time.Duration(1)*time.Second)
-	assert.Equal(t, oldDynakube.Status.OneAgent.ImageHash, convertedDynakube.Status.OneAgent.ImageHash)
+	assert.Equal(t, oldDynakube.Status.OneAgent.ImageDigest, convertedDynakube.Status.OneAgent.ImageHash)
 
 	assert.Len(t, convertedDynakube.Status.OneAgent.Instances, 1)
 	oldInstance := oldDynakube.Status.OneAgent.Instances[testStatusOneAgentInstanceKey]
