@@ -9,7 +9,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
-	imageversion "github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
@@ -561,7 +560,7 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 		Status: dynatracev1beta1.DynaKubeStatus{
 			ActiveGate: dynatracev1beta1.ActiveGateStatus{
 				VersionStatus: dynatracev1beta1.VersionStatus{
-					Version: testComponentVersion,
+					ImageTag: testComponentVersion,
 				},
 			},
 		}}
@@ -654,8 +653,7 @@ func createDTMockClient(paasTokenScopes, apiTokenScopes dtclient.TokenScopes) *d
 				TenantUUID: "abc123456",
 			},
 		}, nil)
-	mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(testVersion, nil)
-	mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypePaaS).Return(testVersion, nil)
+	mockClient.On("GetLatestAgentVersion", mock.Anything, mock.Anything).Return(testVersion, nil)
 	mockClient.On("GetMonitoredEntitiesForKubeSystemUUID", mock.AnythingOfType("string")).
 		Return([]dtclient.MonitoredEntity{}, nil)
 	mockClient.On("GetSettingsForMonitoredEntities", []dtclient.MonitoredEntity{}).
@@ -667,11 +665,8 @@ func createDTMockClient(paasTokenScopes, apiTokenScopes dtclient.TokenScopes) *d
 	return mockClient
 }
 
-func fakeVersionProvider(string, *dockerconfig.DockerConfig) (imageversion.ImageVersion, error) {
-	return imageversion.ImageVersion{
-		Version: "",
-		Hash:    "",
-	}, nil
+func fakeHashProvider(context.Context, string, *dockerconfig.DockerConfig) (string, error) {
+	return "", nil
 }
 
 func createFakeClientAndReconciler(mockClient dtclient.Client, instance *dynatracev1beta1.DynaKube, paasToken, apiToken string) *Controller {
@@ -706,7 +701,7 @@ func createFakeClientAndReconciler(mockClient dtclient.Client, instance *dynatra
 		scheme:                 scheme.Scheme,
 		dynatraceClientBuilder: mockDtcBuilder,
 		fs:                     afero.Afero{Fs: afero.NewMemMapFs()},
-		versionProvider:        fakeVersionProvider,
+		hashProvider:           fakeHashProvider,
 	}
 
 	return controller

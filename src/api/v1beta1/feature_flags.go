@@ -31,6 +31,9 @@ const (
 
 	AnnotationFeaturePrefix = "feature.dynatrace.com/"
 
+	// General
+	AnnotationFeaturePublicRegistry = AnnotationFeaturePrefix + "public-registry"
+
 	// activeGate
 
 	// Deprecated: AnnotationFeatureDisableActiveGateUpdates use AnnotationFeatureActiveGateUpdates instead
@@ -71,7 +74,6 @@ const (
 	AnnotationFeatureOneAgentInitialConnectRetry    = AnnotationFeaturePrefix + "oneagent-initial-connect-retry-ms"
 	AnnotationFeatureRunOneAgentContainerPrivileged = AnnotationFeaturePrefix + "oneagent-privileged"
 	AnnotationFeatureOneAgentSecCompProfile         = AnnotationFeaturePrefix + "oneagent-seccomp-profile"
-	AnnotationInjectionFailurePolicy                = AnnotationFeaturePrefix + "injection-failure-policy"
 
 	// injection (webhook)
 
@@ -87,6 +89,7 @@ const (
 	AnnotationFeatureIgnoredNamespaces     = AnnotationFeaturePrefix + "ignored-namespaces"
 	AnnotationFeatureAutomaticInjection    = AnnotationFeaturePrefix + "automatic-injection"
 	AnnotationFeatureLabelVersionDetection = AnnotationFeaturePrefix + "label-version-detection"
+	AnnotationInjectionFailurePolicy       = AnnotationFeaturePrefix + "injection-failure-policy"
 
 	// CSI
 	AnnotationFeatureMaxFailedCsiMountAttempts = AnnotationFeaturePrefix + "max-csi-mount-attempts"
@@ -331,6 +334,10 @@ func (dk *DynaKube) FeatureInjectionFailurePolicy() string {
 		return failPhrase
 	}
 	return silentPhrase
+}
+
+func (dk *DynaKube) FeaturePublicRegistry() bool {
+	return dk.getFeatureFlagRaw(AnnotationFeaturePublicRegistry) == truePhrase
 }
 
 func (dk *DynaKube) FeatureSyntheticReplicas() int32 {

@@ -39,7 +39,7 @@ const (
 	PodNameOsAgent                          = "oneagent"
 
 	defaultActiveGateImage = "/linux/activegate:latest"
-	defaultSyntheticImage  = "/linux/dynatrace-synthetic:latest"
+	defaultSyntheticImage  = "linux/dynatrace-synthetic"
 )
 
 // ApiUrl is a getter for dk.Spec.APIURL
@@ -214,6 +214,10 @@ func (dk *DynaKube) ActiveGateImage() string {
 		return dk.CustomActiveGateImage()
 	}
 
+	return dk.DefaultActiveGateImage()
+}
+
+func (dk *DynaKube) DefaultActiveGateImage() string {
 	apiUrlHost := dk.ApiUrlHost()
 
 	if apiUrlHost == "" {
@@ -243,11 +247,18 @@ func (dk *DynaKube) CustomActiveGateImage() string {
 
 // returns the synthetic image supplied by the given DynaKube.
 func (dk *DynaKube) SyntheticImage() string {
-	image := dk.FeatureCustomSyntheticImage()
+	image := dk.CustomSyntheticImage()
 	if image != "" {
 		return image
 	}
+	return dk.DefaultSyntheticImage()
+}
 
+func (dk *DynaKube) CustomSyntheticImage() string {
+	return dk.FeatureCustomSyntheticImage()
+}
+
+func (dk *DynaKube) DefaultSyntheticImage() string {
 	if dk.ApiUrl() == "" {
 		return ""
 	}
@@ -257,7 +268,10 @@ func (dk *DynaKube) SyntheticImage() string {
 		return ""
 	}
 
-	return fmt.Sprintf("%s/linux/dynatrace-synthetic:%s", apiUrlHost, api.LatestTag)
+	return fmt.Sprintf("%s/%s:%s",
+		apiUrlHost,
+		defaultSyntheticImage,
+		api.LatestTag)
 }
 
 func (dk *DynaKube) NeedsReadOnlyOneAgents() bool {
@@ -292,7 +306,7 @@ func (dk *DynaKube) CustomOneAgentImage() string {
 	return ""
 }
 
-func (dk *DynaKube) CodeModulesImage() string {
+func (dk *DynaKube) CustomCodeModulesImage() string {
 	if dk.CloudNativeFullstackMode() {
 		return dk.Spec.OneAgent.CloudNativeFullStack.CodeModulesImage
 	} else if dk.ApplicationMonitoringMode() && dk.NeedsCSIDriver() {
@@ -334,7 +348,7 @@ func (dk *DynaKube) NodeSelector() map[string]string {
 	return nil
 }
 
-func (dk *DynaKube) Version() string {
+func (dk *DynaKube) CustomOneAgentVersion() string {
 	switch {
 	case dk.ClassicFullStackMode():
 		return dk.Spec.OneAgent.ClassicFullStack.Version
@@ -353,14 +367,21 @@ func (dk *DynaKube) CodeModulesVersion() string {
 	if !dk.CloudNativeFullstackMode() && !dk.ApplicationMonitoringMode() {
 		return ""
 	}
-	if dk.CodeModulesImage() != "" {
-		codeModulesImage := dk.CodeModulesImage()
+	if dk.CustomCodeModulesImage() != "" {
+		codeModulesImage := dk.CustomCodeModulesImage()
 		return getRawImageTag(codeModulesImage)
 	}
-	if dk.Version() != "" && !dk.CloudNativeFullstackMode() {
-		return dk.Version()
+	if dk.CustomCodeModulesVersion() != "" {
+		return dk.CustomCodeModulesVersion()
 	}
-	return dk.Status.LatestAgentVersionUnixPaas
+	return dk.Status.CodeModules.Version
+}
+
+func (dk *DynaKube) CustomCodeModulesVersion() string {
+	if !dk.ApplicationMonitoringMode() {
+		return ""
+	}
+	return dk.CustomOneAgentVersion()
 }
 
 func (dk *DynaKube) NamespaceSelector() *metav1.LabelSelector {
@@ -373,13 +394,16 @@ func (dk *DynaKube) OneAgentImage() string {
 	if oneAgentImage != "" {
 		return oneAgentImage
 	}
+	return dk.DefaultOneAgentImage()
+}
 
+func (dk *DynaKube) DefaultOneAgentImage() string {
 	if dk.Spec.APIURL == "" {
 		return ""
 	}
 
 	tag := api.LatestTag
-	if version := dk.Version(); version != "" {
+	if version := dk.CustomOneAgentVersion(); version != "" {
 		truncatedVersion := truncateBuildDate(version)
 		tag = truncatedVersion
 	}
