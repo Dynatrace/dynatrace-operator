@@ -215,11 +215,12 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Cont
 		// reporting error but not returning it to avoid immediate requeue and subsequently calling the API every few seconds
 		return nil, true, nil
 	} else if updatedVersion != "" {
-		dynakubeMetadata.LatestVersion = updatedVersion
 		imageInstaller, isImageInstaller := agentUpdater.installer.(*image.Installer)
 		if isImageInstaller {
+			dynakubeMetadata.LatestVersion = ""
 			dynakubeMetadata.ImageDigest = imageInstaller.ImageDigest()
 		} else {
+			dynakubeMetadata.LatestVersion = updatedVersion
 			dynakubeMetadata.ImageDigest = ""
 		}
 	}

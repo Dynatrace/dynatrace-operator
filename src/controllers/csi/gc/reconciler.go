@@ -75,11 +75,6 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 		return defaultReconcileResult, err
 	}
 
-	if !isSafeToGC(ctx, gc.db, dynakubeList) {
-		log.Info("dynakube metadata is in a unfinished state, checking later")
-		return defaultReconcileResult, nil
-	}
-
 	gcInfo := collectGCInfo(*dynakube, dynakubeList)
 	if gcInfo == nil {
 		return defaultReconcileResult, nil
@@ -137,37 +132,6 @@ func collectGCInfo(dynakube dynatracev1beta1.DynaKube, dynakubeList *dynatracev1
 	}
 }
 
-func isSafeToGC(ctx context.Context, access metadata.Access, dynakubeList *dynatracev1beta1.DynaKubeList) bool {
-	dkMetadataList, err := access.GetAllDynakubes(ctx)
-	if err != nil {
-		log.Info("failed to get dynakube metadata from database", "err", err)
-		return false
-	}
-	filteredDynakubes := filterCodeModulesImageDynakubes(dynakubeList)
-	for _, dkMetadata := range dkMetadataList {
-		if isInstalling(dkMetadata) {
-			return false
-		}
-		if isUpgrading(dkMetadata, filteredDynakubes) {
-			return false
-		}
-	}
-	return true
-}
-
-func isInstalling(dkMetadata *metadata.Dynakube) bool {
-	return dkMetadata.LatestVersion == ""
-}
-
-func isUpgrading(dkMetadata *metadata.Dynakube, filteredDynakubes map[string]dynatracev1beta1.DynaKube) bool {
-	dynakube, ok := filteredDynakubes[dkMetadata.Name]
-	expectedVersion := dynakube.CodeModulesImageTag()
-	if expectedVersion == "" {
-		expectedVersion = dynakube.CodeModulesVersion()
-	}
-	return ok && expectedVersion != dkMetadata.LatestVersion
-}
-
 // getAllPinnedVersionsForTenantUUID returns all pinned versions for a given tenantUUID.
 // A pinned version is either:
 // - the image tag or digest set in the custom resource (this doesn't matter in context of the GC)
@@ -198,14 +162,4 @@ func getAllDynakubes(ctx context.Context, apiReader client.Reader, namespace str
 		return nil, errors.WithStack(err)
 	}
 	return &dynakubeList, nil
-}
-
-func filterCodeModulesImageDynakubes(dynakubeList *dynatracev1beta1.DynaKubeList) map[string]dynatracev1beta1.DynaKube {
-	filteredDynakubes := make(map[string]dynatracev1beta1.DynaKube)
-	for _, dynakube := range dynakubeList.Items {
-		if dynakube.CodeModulesImageTag() != "" {
-			filteredDynakubes[dynakube.Name] = dynakube
-		}
-	}
-	return filteredDynakubes
 }

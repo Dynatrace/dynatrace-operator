@@ -226,7 +226,7 @@ func TestUpdateAgent(t *testing.T) {
 		currentVersion, err := updater.updateAgent(
 			&processModuleConfig)
 		require.NoError(t, err)
-		assert.Equal(t, tag, currentVersion)
+		assert.Equal(t, dk.CodeModulesImage(), currentVersion)
 
 		dockerJsonPath := path.Join(dockerconfig.TmpPath, dockerconfig.RegistryAuthDir, dk.Name)
 		checkFilesCreatedAndCleanedUp(t, updater, dockerJsonPath, dockerconfigjsonContent)
@@ -304,7 +304,7 @@ func testCodeModules(t *testing.T, customPullSecret bool) {
 	currentVersion, err := updater.updateAgent(
 		&processModuleConfig)
 	require.NoError(t, err)
-	assert.Equal(t, tag, currentVersion)
+	assert.Equal(t, dk.CodeModulesImage(), currentVersion)
 
 	dockerJsonPath := path.Join(dockerconfig.TmpPath, dockerconfig.RegistryAuthDir, dk.Name)
 	checkFilesCreatedAndCleanedUp(t, updater, dockerJsonPath, dockerconfigjsonContent)

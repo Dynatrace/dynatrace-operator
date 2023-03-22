@@ -76,7 +76,7 @@ func newAgentImageUpdater( //nolint:revive // argument-limit doesn't apply to co
 		fs:            fs,
 		path:          path,
 		targetDir:     path.AgentConfigDir(tenantUUID),
-		targetVersion: dk.CodeModulesImageTag(),
+		targetVersion: dk.CodeModulesImage(),
 		tenantUUID:    tenantUUID,
 		installer:     agentInstaller,
 		recorder:      eventRecorder,
