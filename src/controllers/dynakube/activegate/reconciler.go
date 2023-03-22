@@ -82,12 +82,12 @@ func (r *Reconciler) Reconcile() error {
 
 	for _, agCapability := range caps {
 		if agCapability.Enabled() {
-			err = r.createCapability(agCapability)
+			return r.createCapability(agCapability)
 		} else {
 			err = r.deleteCapability(agCapability)
-		}
-		if err != nil {
-			return err
+			if err != nil {
+				return err
+			}
 		}
 	}
 
