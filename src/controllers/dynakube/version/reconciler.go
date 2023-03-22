@@ -45,8 +45,10 @@ func (reconciler *Reconciler) Reconcile(ctx context.Context) error {
 		newCodeModulesUpdater(reconciler.dynakube, reconciler.dtClient),
 		newSyntheticUpdater(reconciler.dynakube, reconciler.dtClient, reconciler.hashFunc),
 	}
-	if reconciler.needsReconcile(updaters) {
-		return reconciler.updateVersionStatuses(ctx, updaters)
+
+	neededUpdaters := reconciler.needsReconcile(updaters)
+	if  len(neededUpdaters) > 0 {
+		return reconciler.updateVersionStatuses(ctx, neededUpdaters)
 	}
 	return nil
 }
@@ -81,15 +83,14 @@ func (reconciler *Reconciler) createDockerConfigWithCustomCAs(ctx context.Contex
 	return dockerConfig, nil
 }
 
-func (reconciler *Reconciler) needsReconcile(updaters []versionStatusUpdater) bool {
+func (reconciler *Reconciler) needsReconcile(updaters []versionStatusUpdater) []versionStatusUpdater {
 	neededUpdaters := []versionStatusUpdater{}
 	for _, updater := range updaters {
 		if reconciler.needsUpdate(updater) {
 			neededUpdaters = append(neededUpdaters, updater)
 		}
 	}
-	updaters = neededUpdaters
-	return len(updaters) > 0
+	return neededUpdaters
 }
 
 func (reconciler *Reconciler) needsUpdate(updater versionStatusUpdater) bool {
