@@ -47,7 +47,7 @@ func (reconciler *Reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	neededUpdaters := reconciler.needsReconcile(updaters)
-	if  len(neededUpdaters) > 0 {
+	if len(neededUpdaters) > 0 {
 		return reconciler.updateVersionStatuses(ctx, neededUpdaters)
 	}
 	return nil

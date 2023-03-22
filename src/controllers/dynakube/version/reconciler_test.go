@@ -131,6 +131,33 @@ func TestReconcile(t *testing.T) {
 	})
 }
 
+func TestNeedsReconcile(t *testing.T) {
+	timeProvider := timeprovider.New()
+
+	dynakube := dynatracev1beta1.DynaKube{
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			OneAgent: dynatracev1beta1.OneAgentSpec{
+				ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
+			},
+		},
+	}
+
+	t.Run("return only updaters needed", func(t *testing.T) {
+		reconciler := Reconciler{
+			dynakube:     &dynakube,
+			timeProvider: timeProvider,
+		}
+		updaters := []versionStatusUpdater{
+			newOneAgentUpdater(&dynakube, nil, nil),
+			newActiveGateUpdater(&dynakube, nil, nil),
+		}
+
+		neededUpdater := reconciler.needsReconcile(updaters)
+
+		assert.Len(t, neededUpdater, 1)
+	})
+}
+
 func TestNeedsUpdate(t *testing.T) {
 	timeProvider := timeprovider.New()
 
