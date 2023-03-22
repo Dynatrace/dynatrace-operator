@@ -70,6 +70,8 @@ func Install(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features.F
 	assess.InstallDynakube(builder, &secretConfig, testDynakube)
 	assessActiveGate(builder, &testDynakube)
 
+	assessReadOnlyActiveGate(builder, secretConfig, proxySpec)
+
 	// Register operator + dynakube uninstall
 	teardown.DeleteDynakube(builder, testDynakube)
 	teardown.UninstallOperatorFromSource(builder, testDynakube)
@@ -275,4 +277,124 @@ func getActiveGatePodName(testDynakube *dynatracev1beta1.DynaKube) string {
 
 func getActiveGateStateFulSetName(testDynakube *dynatracev1beta1.DynaKube) string {
 	return fmt.Sprintf("%s-activegate", testDynakube.Name)
+}
+
+func assessReadOnlyActiveGate(builder *features.FeatureBuilder, secretConfig tenant.Secret, proxySpec *dynatracev1beta1.DynaKubeProxy) {
+	if proxySpec == nil {
+		testDynakube := dynakube.NewBuilder().
+			WithDefaultObjectMeta().
+			WithActiveGate().
+			WithDynakubeNamespaceSelector().
+			ApiUrl(secretConfig.ApiUrl).
+			WithAnnotations(map[string]string{
+				dynatracev1beta1.AnnotationFeatureActiveGateReadOnlyFilesystem: "true",
+			}).
+			Build()
+		assess.UpdateDynakube(builder, testDynakube)
+		builder.Assess("dynakube phase changes to 'Deploying'", dynakube.WaitForDynakubePhase(testDynakube, dynatracev1beta1.Deploying))
+		builder.Assess("dynakube phase changes to 'Running'", dynakube.WaitForDynakubePhase(testDynakube, dynatracev1beta1.Running))
+
+		builder.Assess("ActiveGate ro filesystem", checkReadOnlySettings(&testDynakube))
+	}
+}
+
+func checkReadOnlySettings(testDynakube *dynatracev1beta1.DynaKube) features.Func {
+	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+		resources := environmentConfig.Client().Resources()
+
+		var activeGatePod corev1.Pod
+		require.NoError(t, resources.WithNamespace(testDynakube.Namespace).Get(ctx, getActiveGatePodName(testDynakube), testDynakube.Namespace, &activeGatePod))
+
+		require.NotNil(t, activeGatePod.Spec)
+		require.NotEmpty(t, activeGatePod.Spec.InitContainers)
+		require.NotEmpty(t, activeGatePod.Spec.Containers)
+
+		assertReadOnlyRootFilesystems(t, activeGatePod)
+		assertReadOnlyVolumes(t, activeGatePod)
+		assertReadOnlyVolumeMounts(t, activeGatePod)
+		return ctx
+	}
+}
+
+func assertReadOnlyRootFilesystems(t *testing.T, activeGatePod corev1.Pod) {
+	assert.NotNil(t, *activeGatePod.Spec.InitContainers[0].SecurityContext)
+	assert.True(t, *activeGatePod.Spec.InitContainers[0].SecurityContext.ReadOnlyRootFilesystem, "InitContainer should have ReadOnly filesystem")
+	assert.NotNil(t, *activeGatePod.Spec.Containers[0].SecurityContext)
+	assert.True(t, *activeGatePod.Spec.Containers[0].SecurityContext.ReadOnlyRootFilesystem, "Container should have ReadOnly filesystem")
+}
+
+func assertReadOnlyVolumes(t *testing.T, activeGatePod corev1.Pod) {
+	require.NotNil(t, activeGatePod.Spec)
+	require.NotEmpty(t, activeGatePod.Spec.Containers)
+
+	expectedVolumes := []corev1.Volume{
+		{
+			Name: consts.GatewayLibTempVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
+		{
+			Name: consts.GatewayDataVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
+		{
+			Name: consts.GatewayLogVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
+		{
+			Name: consts.GatewayTmpVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
+		{
+			Name: consts.GatewayConfigVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
+	}
+
+	for _, r := range expectedVolumes {
+		assert.Contains(t, activeGatePod.Spec.Volumes, r)
+	}
+}
+
+func assertReadOnlyVolumeMounts(t *testing.T, activeGatePod corev1.Pod) {
+	expectedVolumeMounts := []corev1.VolumeMount{
+		{
+			ReadOnly:  false,
+			Name:      consts.GatewayLibTempVolumeName,
+			MountPath: consts.GatewayLibTempMountPoint,
+		},
+		{
+			ReadOnly:  false,
+			Name:      consts.GatewayDataVolumeName,
+			MountPath: consts.GatewayDataMountPoint,
+		},
+		{
+			ReadOnly:  false,
+			Name:      consts.GatewayLogVolumeName,
+			MountPath: consts.GatewayLogMountPoint,
+		},
+		{
+			ReadOnly:  false,
+			Name:      consts.GatewayTmpVolumeName,
+			MountPath: consts.GatewayTmpMountPoint,
+		},
+		{
+			ReadOnly:  false,
+			Name:      consts.GatewayConfigVolumeName,
+			MountPath: consts.GatewayConfigMountPoint,
+		},
+	}
+
+	for _, r := range expectedVolumeMounts {
+		assert.Contains(t, activeGatePod.Spec.Containers[0].VolumeMounts, r)
+	}
 }
