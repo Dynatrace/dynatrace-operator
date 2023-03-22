@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/installer/zip"
 	"github.com/Dynatrace/dynatrace-operator/src/processmoduleconfig"
 	"github.com/containers/image/v5/docker"
+	"github.com/containers/image/v5/docker/reference"
 	"github.com/containers/image/v5/types"
 	"github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
@@ -84,19 +85,19 @@ func (installer *ImageInstaller) installAgentFromImage() error {
 	}
 	image := installer.props.ImageUri
 
-	sourceCtx, sourceRef, err := getSourceInfo(CacheDir, *installer.props)
+	sourceCtx, sourceRef, imageRef, err := getSourceInfo(CacheDir, *installer.props)
 	if err != nil {
 		log.Info("failed to get source information", "image", image)
 		return errors.WithStack(err)
 	}
 
-	imageDigest, err := getImageDigest(sourceCtx, sourceRef)
+	imageDigestEncoded, err := getImageDigestEncoded(sourceCtx, sourceRef, imageRef)
 	if err != nil {
-		log.Info("failed to get image digest", "image", image)
+		log.Info("failed to get image digest", "image", imageRef)
 		return errors.WithStack(err)
 	}
+	log.Info("got image digest", "image", imageRef, "digest", imageDigestEncoded)
 
-	imageDigestEncoded := imageDigest.Encoded()
 	if installer.isAlreadyDownloaded(imageDigestEncoded) {
 		log.Info("image is already installed", "image", image, "digest", imageDigestEncoded)
 		installer.props.imageDigest = imageDigestEncoded
@@ -125,6 +126,7 @@ func (installer *ImageInstaller) installAgentFromImage() error {
 		return errors.WithStack(err)
 	}
 	installer.props.imageDigest = imageDigestEncoded
+
 	return nil
 }
 
@@ -134,7 +136,20 @@ func (installer ImageInstaller) isAlreadyDownloaded(imageDigestEncoded string) b
 	return !os.IsNotExist(err)
 }
 
-func getImageDigest(systemContext *types.SystemContext, imageReference *types.ImageReference) (digest.Digest, error) {
+func getImageDigestEncoded(systemContext *types.SystemContext, imageReference *types.ImageReference, imageRef reference.Named) (string, error) {
+	if c, ok := imageRef.(reference.Canonical); ok {
+		log.Info("using digest from imageRef, skipping request")
+		return c.Digest().Encoded(), nil
+	}
+
+	digestFromRef, err := getImageDigestFromReference(systemContext, imageReference)
+	if err != nil {
+		return "", err
+	}
+	return digestFromRef.Encoded(), nil
+}
+
+func getImageDigestFromReference(systemContext *types.SystemContext, imageReference *types.ImageReference) (digest.Digest, error) {
 	return docker.GetDigest(context.TODO(), systemContext, *imageReference)
 }
 
