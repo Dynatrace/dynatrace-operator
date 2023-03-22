@@ -39,7 +39,7 @@ const (
 	PodNameOsAgent                          = "oneagent"
 
 	defaultActiveGateImage = "/linux/activegate:latest"
-	defaultSyntheticImage  = "/linux/dynatrace-synthetic:latest"
+	defaultSyntheticImage  = "linux/dynatrace-synthetic"
 )
 
 // ApiUrl is a getter for dk.Spec.APIURL
@@ -62,7 +62,9 @@ func (dk *DynaKube) ApiUrlHost() string {
 
 // NeedsActiveGate returns true when a feature requires ActiveGate instances.
 func (dk *DynaKube) NeedsActiveGate() bool {
-	return dk.DeprecatedActiveGateMode() || dk.ActiveGateMode()
+	return dk.DeprecatedActiveGateMode() ||
+		dk.ActiveGateMode() ||
+		dk.IsSyntheticMonitoringEnabled()
 }
 
 // ApplicationMonitoringMode returns true when application only section is used.
@@ -149,8 +151,8 @@ func (dk *DynaKube) NeedsActiveGateService() bool {
 	return dk.NeedsActiveGateServicePorts()
 }
 
-func (dk *DynaKube) IsSyntheticActiveGateEnabled() bool {
-	return dk.IsActiveGateMode(SyntheticCapability.DisplayName)
+func (dynaKube *DynaKube) IsSyntheticMonitoringEnabled() bool {
+	return dynaKube.FeatureSyntheticLocationEntityId() != ""
 }
 
 func (dk *DynaKube) HasActiveGateCaCert() bool {
@@ -245,17 +247,31 @@ func (dk *DynaKube) CustomActiveGateImage() string {
 
 // returns the synthetic image supplied by the given DynaKube.
 func (dk *DynaKube) SyntheticImage() string {
-	if dk.FeatureCustomSyntheticImage() != "" {
-		return dk.FeatureCustomSyntheticImage()
+	image := dk.CustomSyntheticImage()
+	if image != "" {
+		return image
+	}
+	return dk.DefaultSyntheticImage()
+}
+
+func (dk *DynaKube) CustomSyntheticImage() string {
+	return dk.FeatureCustomSyntheticImage()
+}
+
+func (dk *DynaKube) DefaultSyntheticImage() string {
+	if dk.ApiUrl() == "" {
+		return ""
 	}
 
 	apiUrlHost := dk.ApiUrlHost()
-
 	if apiUrlHost == "" {
 		return ""
 	}
 
-	return apiUrlHost + defaultSyntheticImage
+	return fmt.Sprintf("%s/%s:%s",
+		apiUrlHost,
+		defaultSyntheticImage,
+		api.LatestTag)
 }
 
 func (dk *DynaKube) NeedsReadOnlyOneAgents() bool {
@@ -393,7 +409,6 @@ func (dk *DynaKube) DefaultOneAgentImage() string {
 	}
 
 	apiUrlHost := dk.ApiUrlHost()
-
 	if apiUrlHost == "" {
 		return ""
 	}

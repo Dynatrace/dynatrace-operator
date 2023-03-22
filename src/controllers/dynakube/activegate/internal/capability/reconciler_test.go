@@ -29,12 +29,10 @@ var capabilitiesWithService = []dynatracev1beta1.CapabilityDisplayName{
 	dynatracev1beta1.KubeMonCapability.DisplayName,
 	dynatracev1beta1.MetricsIngestCapability.DisplayName,
 	dynatracev1beta1.DynatraceApiCapability.DisplayName,
-	dynatracev1beta1.SyntheticCapability.DisplayName,
 }
 
 var capabilitiesWithoutService = []dynatracev1beta1.CapabilityDisplayName{
 	dynatracev1beta1.KubeMonCapability.DisplayName,
-	dynatracev1beta1.SyntheticCapability.DisplayName,
 }
 
 func createClient() client.WithWatch {

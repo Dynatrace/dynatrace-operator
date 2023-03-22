@@ -51,7 +51,6 @@ const (
 	AnnotationFeatureAutomaticK8sApiMonitoringClusterName = AnnotationFeaturePrefix + "automatic-kubernetes-api-monitoring-cluster-name"
 	AnnotationFeatureActiveGateIgnoreProxy                = AnnotationFeaturePrefix + "activegate-ignore-proxy"
 
-	// synthetic
 	AnnotationFeatureCustomSyntheticImage = AnnotationFeaturePrefix + "custom-synthetic-image"
 
 	// dtClient
@@ -95,14 +94,21 @@ const (
 	// CSI
 	AnnotationFeatureMaxFailedCsiMountAttempts = AnnotationFeaturePrefix + "max-csi-mount-attempts"
 
+	// synthetic location
+	AnnotationFeatureSyntheticLocationEntityId = AnnotationFeaturePrefix + "synthetic-location-entity-id"
+
+	// synthetic node type
+	AnnotationFeatureSyntheticNodeType = AnnotationFeaturePrefix + "synthetic-node-type"
+
+	// replicas for the synthetic monitoring
+	AnnotationFeatureSyntheticReplicas = AnnotationFeaturePrefix + "synthetic-replicas"
+
 	falsePhrase  = "false"
 	truePhrase   = "true"
 	silentPhrase = "silent"
 	failPhrase   = "fail"
 
-	// synthetic node type
-	AnnotationFeatureSyntheticNodeType = AnnotationFeaturePrefix + "synthetic-node-type"
-
+	// synthetic node types
 	SyntheticNodeXs = "XS"
 	SyntheticNodeS  = "S"
 	SyntheticNodeM  = "M"
@@ -115,6 +121,8 @@ const (
 
 var (
 	log = logger.Factory.GetLogger("dynakube-api")
+
+	defaultSyntheticReplicas = int32(1)
 )
 
 func (dk *DynaKube) getDisableFlagWithDeprecatedAnnotation(annotation string, deprecatedAnnotation string) bool {
@@ -285,8 +293,8 @@ func (dk *DynaKube) FeatureMaxFailedCsiMountAttempts() int {
 }
 
 func (dk *DynaKube) FeatureSyntheticNodeType() string {
-	node, ok := dk.Annotations[AnnotationFeatureSyntheticNodeType]
-	if !ok {
+	node := dk.getFeatureFlagRaw(AnnotationFeatureSyntheticNodeType)
+	if node == "" {
 		return SyntheticNodeS
 	}
 	return node
@@ -313,7 +321,12 @@ func (dk *DynaKube) getFeatureFlagInt(annotation string, defaultVal int) int {
 	if err != nil {
 		return defaultVal
 	}
+
 	return val
+}
+
+func (dk *DynaKube) FeatureSyntheticLocationEntityId() string {
+	return dk.getFeatureFlagRaw(AnnotationFeatureSyntheticLocationEntityId)
 }
 
 func (dk *DynaKube) FeatureInjectionFailurePolicy() string {
@@ -325,4 +338,18 @@ func (dk *DynaKube) FeatureInjectionFailurePolicy() string {
 
 func (dk *DynaKube) FeaturePublicRegistry() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeaturePublicRegistry) == truePhrase
+}
+
+func (dk *DynaKube) FeatureSyntheticReplicas() int32 {
+	value := dk.getFeatureFlagRaw(AnnotationFeatureSyntheticReplicas)
+	if value == "" {
+		return defaultSyntheticReplicas
+	}
+
+	parsed, err := strconv.ParseInt(value, 0, 32)
+	if err != nil {
+		return defaultSyntheticReplicas
+	}
+
+	return int32(parsed)
 }

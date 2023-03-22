@@ -14,7 +14,7 @@ const (
 	testName          = "test-name"
 	testApiUrl        = "https://demo.dev.dynatracelabs.com/api"
 	expectedShortName = "activegate"
-	expectedArgName   = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface,synthetic,beacon_forwarder,beacon_forwarder_synthetic"
+	expectedArgName   = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface"
 )
 
 var capabilities = []dynatracev1beta1.CapabilityDisplayName{
@@ -22,7 +22,6 @@ var capabilities = []dynatracev1beta1.CapabilityDisplayName{
 	dynatracev1beta1.KubeMonCapability.DisplayName,
 	dynatracev1beta1.MetricsIngestCapability.DisplayName,
 	dynatracev1beta1.DynatraceApiCapability.DisplayName,
-	dynatracev1beta1.SyntheticCapability.DisplayName,
 }
 
 func buildDynakube(capabilities []dynatracev1beta1.CapabilityDisplayName) *dynatracev1beta1.DynaKube {

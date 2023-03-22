@@ -43,6 +43,7 @@ func (reconciler *Reconciler) Reconcile(ctx context.Context) error {
 		newActiveGateUpdater(reconciler.dynakube, reconciler.dtClient, reconciler.hashFunc),
 		newOneAgentUpdater(reconciler.dynakube, reconciler.dtClient, reconciler.hashFunc),
 		newCodeModulesUpdater(reconciler.dynakube, reconciler.dtClient),
+		newSyntheticUpdater(reconciler.dynakube, reconciler.dtClient, reconciler.hashFunc),
 	}
 	if reconciler.needsReconcile(updaters) {
 		return reconciler.updateVersionStatuses(ctx, updaters)
