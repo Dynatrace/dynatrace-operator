@@ -1,4 +1,4 @@
-FROM golang:1.19.6-alpine AS operator-build
+FROM golang:1.19.7-alpine AS operator-build
 
 RUN apk update --no-cache && \
     apk add --no-cache gcc musl-dev btrfs-progs-dev lvm2-dev device-mapper-static gpgme-dev git && \
