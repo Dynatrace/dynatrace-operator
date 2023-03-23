@@ -176,7 +176,7 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Cont
 	latestProcessModuleConfig = latestProcessModuleConfig.AddHostGroup(dk.HostGroup())
 
 	var agentUpdater *agentUpdater
-	if dk.CodeModulesImage() != "" {
+	if dk.CustomCodeModulesImage() != "" {
 		connectionInfo, err := dtc.GetOneAgentConnectionInfo()
 		if err != nil {
 			log.Info("could not query connection info")

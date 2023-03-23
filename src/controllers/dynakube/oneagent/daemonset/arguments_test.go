@@ -11,9 +11,7 @@ import (
 )
 
 const (
-	testUID                   = "test-uid"
-	testContainerImageVersion = "1.203.0.20200908-220956"
-
+	testUID   = "test-uid"
 	testKey   = "test-key"
 	testValue = "test-value"
 
@@ -69,7 +67,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 		Status: dynatracev1beta1.DynaKubeStatus{
 			OneAgent: dynatracev1beta1.OneAgentStatus{
 				VersionStatus: dynatracev1beta1.VersionStatus{
-					Version: testContainerImageVersion,
+					ImageTag: testImageTag,
 				},
 			},
 		},

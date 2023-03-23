@@ -84,7 +84,7 @@ func (statefulSetBuilder Builder) getBaseSpec() appsv1.StatefulSetSpec {
 }
 
 func (statefulSetBuilder Builder) addLabels(sts *appsv1.StatefulSet) {
-	versionLabelValue := statefulSetBuilder.dynakube.Status.ActiveGate.Version
+	versionLabelValue := statefulSetBuilder.dynakube.Status.ActiveGate.ImageTag
 	if statefulSetBuilder.dynakube.CustomActiveGateImage() != "" {
 		versionLabelValue = kubeobjects.CustomImageLabelValue
 	}
@@ -150,11 +150,7 @@ func (statefulSetBuilder Builder) buildBaseContainer() []corev1.Container {
 }
 
 func (statefulSetBuilder Builder) buildResources() corev1.ResourceRequirements {
-	if statefulSetBuilder.dynakube.IsSyntheticActiveGateEnabled() {
-		return modifiers.ActiveGateResourceRequirements
-	} else {
-		return statefulSetBuilder.capability.Properties().Resources
-	}
+	return statefulSetBuilder.capability.Properties().Resources
 }
 
 func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {

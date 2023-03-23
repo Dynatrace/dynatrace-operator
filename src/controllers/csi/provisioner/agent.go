@@ -104,7 +104,7 @@ func newImageInstaller(ctx context.Context, fs afero.Fs, apiReader client.Reader
 	}
 
 	imageInstaller := image.NewImageInstaller(fs, &image.Properties{
-		ImageUri:     dynakube.CodeModulesImage(),
+		ImageUri:     dynakube.CustomCodeModulesImage(),
 		PathResolver: pathResolver,
 		Metadata:     db,
 		DockerConfig: *dockerConfig})

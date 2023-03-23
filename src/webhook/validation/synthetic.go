@@ -23,7 +23,7 @@ func invalidSyntheticNodeType(dv *dynakubeValidator, dynakube *dynatracev1beta1.
 		return false
 	}
 
-	if dynakube.IsSyntheticActiveGateEnabled() && !isTypeValid() {
+	if dynakube.IsSyntheticMonitoringEnabled() && !isTypeValid() {
 		log.Info(
 			"requested dynakube has the invalid synthetic node type",
 			"name", dynakube.Name,

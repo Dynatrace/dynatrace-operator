@@ -17,6 +17,7 @@ const (
 	OneAgentComponentLabel   = "oneagent"
 	ActiveGateComponentLabel = "activegate"
 	WebhookComponentLabel    = "webhook"
+	SyntheticComponentLabel  = "synthetic"
 
 	CustomImageLabelValue = "custom-image"
 )

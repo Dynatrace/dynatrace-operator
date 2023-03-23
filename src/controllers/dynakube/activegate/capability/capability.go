@@ -5,17 +5,31 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
+	corev1 "k8s.io/api/core/v1"
+)
+
+const (
+	SyntheticName                      = "synthetic"
+	SyntheticActiveGateEnvCapabilities = "synthetic,beacon_forwarder,beacon_forwarder_synthetic"
 )
 
 type baseFunc func() *capabilityBase
 
-var activeGateCapabilities = map[dynatracev1beta1.CapabilityDisplayName]baseFunc{
-	dynatracev1beta1.KubeMonCapability.DisplayName:       kubeMonBase,
-	dynatracev1beta1.RoutingCapability.DisplayName:       routingBase,
-	dynatracev1beta1.MetricsIngestCapability.DisplayName: metricsIngestBase,
-	dynatracev1beta1.DynatraceApiCapability.DisplayName:  dynatraceApiBase,
-	dynatracev1beta1.SyntheticCapability.DisplayName:     syntheticBase,
-}
+var (
+	activeGateCapabilities = map[dynatracev1beta1.CapabilityDisplayName]baseFunc{
+		dynatracev1beta1.KubeMonCapability.DisplayName:       kubeMonBase,
+		dynatracev1beta1.RoutingCapability.DisplayName:       routingBase,
+		dynatracev1beta1.MetricsIngestCapability.DisplayName: metricsIngestBase,
+		dynatracev1beta1.DynatraceApiCapability.DisplayName:  dynatraceApiBase,
+	}
+
+	SyntheticActiveGateResourceRequirements = corev1.ResourceRequirements{
+		Limits:   kubeobjects.NewResources("300m", "1Gi"),
+		Requests: kubeobjects.NewResources("150m", "250Mi"),
+	}
+)
 
 type Capability interface {
 	Enabled() bool
@@ -31,20 +45,20 @@ type capabilityBase struct {
 	properties *dynatracev1beta1.CapabilityProperties
 }
 
-func (c *capabilityBase) Enabled() bool {
-	return c.enabled
+func (capability *capabilityBase) Enabled() bool {
+	return capability.enabled
 }
 
-func (c *capabilityBase) Properties() *dynatracev1beta1.CapabilityProperties {
-	return c.properties
+func (capability *capabilityBase) Properties() *dynatracev1beta1.CapabilityProperties {
+	return capability.properties
 }
 
-func (c *capabilityBase) ShortName() string {
-	return c.shortName
+func (capability *capabilityBase) ShortName() string {
+	return capability.shortName
 }
 
-func (c *capabilityBase) ArgName() string {
-	return c.argName
+func (capability *capabilityBase) ArgName() string {
+	return capability.argName
 }
 
 func CalculateStatefulSetName(capability Capability, dynakubeName string) string {
@@ -62,6 +76,10 @@ type RoutingCapability struct {
 }
 
 type MultiCapability struct {
+	capabilityBase
+}
+
+type SyntheticCapability struct {
 	capabilityBase
 }
 
@@ -115,6 +133,23 @@ func NewRoutingCapability(dk *dynatracev1beta1.DynaKube) *RoutingCapability {
 	return c
 }
 
+func NewSyntheticCapability(dk *dynatracev1beta1.DynaKube) *SyntheticCapability {
+	capability := &SyntheticCapability{
+		*syntheticBase(),
+	}
+	if dk == nil {
+		return capability
+	}
+	capability.enabled = dk.IsSyntheticMonitoringEnabled()
+	capability.properties = &dk.Spec.ActiveGate.CapabilityProperties
+	if capability.enabled {
+		capability.properties.Replicas = address.Of(dk.FeatureSyntheticReplicas())
+		capability.properties.Resources = SyntheticActiveGateResourceRequirements
+	}
+
+	return capability
+}
+
 func kubeMonBase() *capabilityBase {
 	c := capabilityBase{
 		shortName: dynatracev1beta1.KubeMonCapability.ShortName,
@@ -149,17 +184,18 @@ func dynatraceApiBase() *capabilityBase {
 
 func syntheticBase() *capabilityBase {
 	c := capabilityBase{
-		shortName: dynatracev1beta1.SyntheticCapability.ShortName,
-		argName:   dynatracev1beta1.SyntheticCapability.ArgumentName,
+		shortName: SyntheticName,
+		argName:   SyntheticActiveGateEnvCapabilities,
 	}
 	return &c
 }
 
-func GenerateActiveGateCapabilities(dynakube *dynatracev1beta1.DynaKube) []Capability {
+func GenerateActiveGateCapabilities(dk *dynatracev1beta1.DynaKube) []Capability {
 	return []Capability{
-		NewKubeMonCapability(dynakube),
-		NewRoutingCapability(dynakube),
-		NewMultiCapability(dynakube),
+		NewKubeMonCapability(dk),
+		NewRoutingCapability(dk),
+		NewMultiCapability(dk),
+		NewSyntheticCapability(dk),
 	}
 }
 

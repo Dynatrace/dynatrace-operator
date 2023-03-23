@@ -36,7 +36,7 @@ func (c component) getImage(dynakube *v1beta1.DynaKube) (string, bool) {
 	case componentOneAgent:
 		return dynakube.OneAgentImage(), dynakube.CustomOneAgentImage() != ""
 	case componentCodeModules:
-		return dynakube.CodeModulesImage(), true
+		return dynakube.CustomCodeModulesImage(), true
 	case componentActiveGate:
 		activeGateImage := dynakube.ActiveGateImage()
 		return activeGateImage, activeGateImage != ""

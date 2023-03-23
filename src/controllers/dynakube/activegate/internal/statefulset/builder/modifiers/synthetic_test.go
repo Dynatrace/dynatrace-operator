@@ -4,41 +4,39 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-func TestSyntheticContainers(t *testing.T) {
+func TestSyntheticContainer(t *testing.T) {
 	assertion := assert.New(t)
 
-	t.Run("synthetic-container", func(t *testing.T) {
-		dynakube := getBaseDynakube()
-		dynakube.Annotations[dynatracev1beta1.AnnotationFeatureSyntheticNodeType] = dynatracev1beta1.SyntheticNodeXs
+	dynaKube := getBaseDynakube()
+	dynaKube.ObjectMeta.Annotations[dynatracev1beta1.AnnotationFeatureSyntheticNodeType] = dynatracev1beta1.SyntheticNodeXs
 
-		syn := newSyntheticModifier(dynakube)
-		container := syn.buildContainer()
+	modifier := newSyntheticModifier(
+		dynaKube,
+		capability.NewSyntheticCapability(&dynaKube),
+	)
+	container := modifier.buildContainer()
 
+	t.Run("by liveness probe", func(t *testing.T) {
 		assertion.NotEmpty(container.LivenessProbe, "declared liveness probe")
 		assertion.Equal(
 			container.LivenessProbe.Exec.Command,
 			livenessCmd,
 			"declared command for liveness probe")
+	})
 
-		for _, mnt := range syn.getVolumeMounts() {
-			assertion.Truef(
-				kubeobjects.MountPathIsIn(container.VolumeMounts, mnt.MountPath),
-				"declared mount path: %s",
-				mnt.MountPath)
-		}
+	t.Run("by volumes", func(t *testing.T) {
+		assertion.Subset(
+			container.VolumeMounts,
+			modifier.getVolumeMounts(),
+			"declared mount paths")
+	})
 
-		for _, env := range syn.getEnvs() {
-			assertion.Truef(
-				kubeobjects.EnvVarIsIn(container.Env, env.Name),
-				"declared environment variable: %s",
-				env.Name)
-		}
-
+	t.Run("by requirements", func(t *testing.T) {
 		expectedRequestCpu := resource.NewScaledQuantity(1000, resource.Milli).String()
 		assertion.Equal(
 			container.Resources.Requests.Cpu().String(),
@@ -46,5 +44,12 @@ func TestSyntheticContainers(t *testing.T) {
 			"declared for %v node resource request CPU: %v",
 			dynatracev1beta1.SyntheticNodeXs,
 			expectedRequestCpu)
+	})
+
+	t.Run("by environment variables", func(t *testing.T) {
+		assertion.Subset(
+			container.Env,
+			modifier.getEnvs(),
+			"declared environment variables")
 	})
 }
