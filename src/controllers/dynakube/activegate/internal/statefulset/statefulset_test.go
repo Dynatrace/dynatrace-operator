@@ -1,7 +1,7 @@
 package statefulset
 
 import (
-	"encoding/json"
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -369,55 +369,72 @@ func TestBuildCommonEnvs(t *testing.T) {
 		assert.Equal(t, dynakube.Spec.NetworkZone, zoneEnv.Value)
 	})
 
-	t.Run("syn-capability", func(t *testing.T) {
-		dynakube := getTestDynakube()
-		dynakube.Spec.ActiveGate.Capabilities = []dynatracev1beta1.CapabilityDisplayName{
-			dynatracev1beta1.SyntheticCapability.DisplayName,
-		}
+	t.Run("synthetic capability", func(t *testing.T) {
+		dynaKube := getTestDynakube()
+		dynaKube.ObjectMeta.Annotations[dynatracev1beta1.AnnotationFeatureSyntheticLocationEntityId] = "doctored"
+		dynaKube.ObjectMeta.Annotations[dynatracev1beta1.AnnotationFeatureSyntheticReplicas] = fmt.Sprint(testReplicas)
+		synCapability := capability.NewSyntheticCapability(&dynaKube)
+
 		builder := NewStatefulSetBuilder(
 			testKubeUID,
 			testConfigHash,
-			dynakube,
-			capability.NewMultiCapability(&dynakube))
+			dynaKube,
+			synCapability)
 
-		assert.Equal(
-			t,
-			dynatracev1beta1.SyntheticCapability.ArgumentName,
-			kubeobjects.FindEnvVar(builder.buildCommonEnvs(), consts.EnvDtCapabilities).
-				Value,
-			"declared env: %v",
-			consts.EnvDtCapabilities)
+		assert.Contains(t,
+			builder.buildCommonEnvs(),
+			corev1.EnvVar{
+				Name:  consts.EnvDtCapabilities,
+				Value: capability.SyntheticActiveGateEnvCapabilities,
+			},
+			"declared env dt capabilities: %s",
+			capability.SyntheticActiveGateEnvCapabilities)
 
-		assert.Equal(
-			t,
-			modifiers.ActiveGateResourceRequirements,
-			builder.buildResources(),
+		statefulSet, _ := builder.CreateStatefulSet(
+			modifiers.GenerateAllModifiers(dynaKube, synCapability))
+
+		assert.Equal(t,
+			*statefulSet.Spec.Replicas,
+			testReplicas,
+			"declared replicas: %s",
+			testReplicas)
+
+		assert.Equal(t,
+			capability.SyntheticActiveGateResourceRequirements,
+			statefulSet.Spec.Template.Spec.Containers[0].Resources,
 			"declared resource requirements for ActiveGate")
 
-		sts, _ := builder.CreateStatefulSet(
-			modifiers.GenerateAllModifiers(
-				dynakube,
-				capability.NewMultiCapability(&dynakube)))
-		jsonized, _ := json.Marshal(sts)
-		t.Logf("manifest: %s", jsonized)
-
-		volumes := []string{
-			modifiers.ChromiumCacheMountName,
-			modifiers.TmpStorageMountName,
+		volumes := []corev1.Volume{
+			{
+				Name: modifiers.ChromiumCacheMountName,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{
+						Medium:    "Memory",
+						SizeLimit: kubeobjects.NewQuantity("512Mi"),
+					},
+				},
+			},
+			{
+				Name: modifiers.TmpStorageMountName,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{
+						SizeLimit: kubeobjects.NewQuantity("10Mi"),
+					},
+				},
+			},
+			{
+				Name: modifiers.ArchiveStorageMountName,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{
+						SizeLimit: kubeobjects.NewQuantity("6Gi"),
+					},
+				},
+			},
 		}
-		for _, v := range volumes {
-			assert.True(
-				t,
-				kubeobjects.VolumeIsDefined(sts.Spec.Template.Spec.Volumes, v),
-				"declared volume: %s",
-				v)
-		}
-
-		assert.True(
-			t,
-			kubeobjects.VolumeClaimIsDefined(sts.Spec.VolumeClaimTemplates, modifiers.PersistentStorageMountName),
-			"declared volume claim: %s",
-			modifiers.PersistentStorageMountName)
+		assert.Subset(t,
+			statefulSet.Spec.Template.Spec.Volumes,
+			volumes,
+			"declared syn volumes")
 	})
 }
 

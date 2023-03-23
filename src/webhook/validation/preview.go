@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 )
 
 const (
@@ -24,5 +25,9 @@ func warnOnCapabilityIfActive(capability dynatracev1beta1.CapabilityDisplayName,
 }
 
 func syntheticPreviewWarning(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
-	return warnOnCapabilityIfActive(dynatracev1beta1.SyntheticCapability.DisplayName, dynakube)
+	if dynakube.IsSyntheticMonitoringEnabled() {
+		log.Info(fmt.Sprintf("DynaKube with %s was applied, warning was provided.", capability.SyntheticName))
+		return fmt.Sprintf(featurePreviewWarningMessage, capability.SyntheticName)
+	}
+	return ""
 }
