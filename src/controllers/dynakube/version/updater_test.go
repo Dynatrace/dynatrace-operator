@@ -156,7 +156,7 @@ func TestRun(t *testing.T) {
 		versionReconciler := Reconciler{
 			dynakube:     enablePublicRegistry(newClassicFullStackDynakube()),
 			timeProvider: timeProvider,
-			digestFunc:     registry.ImageVersionExt,
+			digestFunc:   registry.ImageVersionExt,
 		}
 		updater := newClassicFullStackUpdater(target, false)
 		updater.On("CustomImage").Return("")
@@ -178,7 +178,7 @@ func TestRun(t *testing.T) {
 		versionReconciler := Reconciler{
 			dynakube:     enablePublicRegistry(newClassicFullStackDynakube()),
 			timeProvider: timeProvider,
-			digestFunc:     registry.ImageVersionExt,
+			digestFunc:   registry.ImageVersionExt,
 		}
 		updater := newClassicFullStackUpdater(target, false)
 		updater.On("CustomImage").Return(testImage.String())
