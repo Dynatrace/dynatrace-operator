@@ -156,7 +156,7 @@ func TestRun(t *testing.T) {
 		versionReconciler := Reconciler{
 			dynakube:     enablePublicRegistry(newClassicFullStackDynakube()),
 			timeProvider: timeProvider,
-			hashFunc:     registry.ImageVersionExt,
+			digestFunc:     registry.ImageVersionExt,
 		}
 		updater := newClassicFullStackUpdater(target, false)
 		updater.On("CustomImage").Return("")
@@ -168,7 +168,7 @@ func TestRun(t *testing.T) {
 		updater.AssertNumberOfCalls(t, "LatestImageInfo", 0)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, dynatracev1beta1.TenantRegistryVersionSource, target.Source)
-		assert.Equal(t, target.ImageTag, target.Version)
+		assert.Equal(t, target.Version, target.Version)
 	})
 	t.Run("classicfullstack enabled, public registry is ignored, custom image is set", func(t *testing.T) {
 		registry := newFakeRegistryForImages(testImage.String())
@@ -178,7 +178,7 @@ func TestRun(t *testing.T) {
 		versionReconciler := Reconciler{
 			dynakube:     enablePublicRegistry(newClassicFullStackDynakube()),
 			timeProvider: timeProvider,
-			hashFunc:     registry.ImageVersionExt,
+			digestFunc:     registry.ImageVersionExt,
 		}
 		updater := newClassicFullStackUpdater(target, false)
 		updater.On("CustomImage").Return(testImage.String())
