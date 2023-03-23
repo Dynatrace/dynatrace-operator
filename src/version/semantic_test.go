@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestExtractVersion(t *testing.T) {
@@ -83,14 +84,15 @@ func TestCompareClusterVersion(t *testing.T) {
 }
 
 func TestNeedsUpgradeRaw(t *testing.T) {
-	res, err := NeedsUpgradeRaw("1.203.0.20200908-220956", "1.203.0.20210908-220956") // Upgrade
-	assert.True(t, res)
-	assert.NoError(t, err)
-
-	_, err = NeedsUpgradeRaw("1.203.1.20210908-220956", "1.203.0.20200908-220956") // Downgrade
-	assert.Error(t, err)
-
-	res, err = NeedsUpgradeRaw("1.203.0.20200908-220956", "1.203.0.20200908-220956") // Same versions
+	res, err := IsDowngrade("1.203.0.20200908-220956", "1.203.0.20210908-220956") // Upgrade
+	require.NoError(t, err)
 	assert.False(t, res)
-	assert.NoError(t, err)
+
+	res, err = IsDowngrade("1.203.1.20210908-220956", "1.203.0.20200908-220956") // Downgrade
+	require.NoError(t, err)
+	assert.True(t, res)
+
+	res, err = IsDowngrade("1.203.0.20200908-220956", "1.203.0.20200908-220956") // Same versions
+	require.NoError(t, err)
+	assert.False(t, res)
 }

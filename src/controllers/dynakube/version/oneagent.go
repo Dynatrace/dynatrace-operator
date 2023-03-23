@@ -71,10 +71,10 @@ func (updater *oneAgentUpdater) UseDefaults(ctx context.Context, dockerCfg *dock
 
 	previousVersion := updater.Target().Version
 	if previousVersion != "" {
-		if upgrade, err := version.NeedsUpgradeRaw(previousVersion, latestVersion); err != nil {
+		if downgrade, err := version.IsDowngrade(previousVersion, latestVersion); err != nil {
 			return err
-		} else if !upgrade {
-			log.Info("downgrade detected, which is not allowed in this configuration", "updater", updater.Name())
+		} else if downgrade {
+			log.Info("downgrade detected, which is not allowed in this configuration", "updater", updater.Name(), "from", previousVersion, "to", latestVersion)
 			return nil
 		}
 	}
