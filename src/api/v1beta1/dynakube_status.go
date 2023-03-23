@@ -80,9 +80,7 @@ const (
 
 type VersionStatus struct {
 	Source             VersionSource `json:"source,omitempty"`
-	ImageHash          string        `json:"imageHash,omitempty"`
-	ImageRepository    string        `json:"imageRepository,omitempty"`
-	ImageTag           string        `json:"imageTag,omitempty"`
+	ImageID            string        `json:"imageID,omitempty"`
 	Version            string        `json:"version,omitempty"`
 	LastProbeTimestamp *metav1.Time  `json:"lastProbeTimestamp,omitempty"`
 }

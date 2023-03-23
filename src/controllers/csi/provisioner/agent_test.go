@@ -43,8 +43,10 @@ func TestUpdateAgent(t *testing.T) {
 		dk := dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: "https://" + testTenantUUID + ".dynatrace.com",
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{
+			},
+			Status: dynatracev1beta1.DynaKubeStatus{
+				CodeModules: dynatracev1beta1.CodeModulesStatus{
+					VersionStatus: dynatracev1beta1.VersionStatus{
 						Version: testVersion,
 					},
 				},
@@ -88,9 +90,6 @@ func TestUpdateAgent(t *testing.T) {
 		dk := dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: "https://" + testTenantUUID + ".dynatrace.com",
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
-				},
 			},
 			Status: dynatracev1beta1.DynaKubeStatus{
 				CodeModules: dynatracev1beta1.CodeModulesStatus{
@@ -124,13 +123,6 @@ func TestUpdateAgent(t *testing.T) {
 		dk := dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: "https://" + testTenantUUID + ".dynatrace.com",
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
-						HostInjectSpec: dynatracev1beta1.HostInjectSpec{
-							Version: testVersion,
-						},
-					},
-				},
 			},
 		}
 		updater := createTestAgentUrlUpdater(t, &dk)
@@ -168,8 +160,7 @@ func TestUpdateAgent(t *testing.T) {
 		testCodeModules(t, true)
 	})
 	t.Run(`codeModulesImage + trustedCA set`, func(t *testing.T) {
-		image := "test-image"
-		tag := "tag"
+		imageID := "some.registry.com/image:1.234.345@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
 		pullSecretName := "test-pull-secret"
 		trustedCAName := "test-trusted-ca"
 		testNamespace := "test-namespace"
@@ -186,11 +177,11 @@ func TestUpdateAgent(t *testing.T) {
 				APIURL:           "https://" + testTenantUUID + ".dynatrace.com",
 				CustomPullSecret: pullSecretName,
 				TrustedCAs:       trustedCAName,
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
-						AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{
-							CodeModulesImage: image + ":" + tag,
-						},
+			},
+			Status: dynatracev1beta1.DynaKubeStatus{
+				CodeModules: dynatracev1beta1.CodeModulesStatus{
+					VersionStatus: dynatracev1beta1.VersionStatus{
+						ImageID: imageID,
 					},
 				},
 			},
@@ -231,7 +222,7 @@ func TestUpdateAgent(t *testing.T) {
 		currentVersion, err := updater.updateAgent(
 			&processModuleConfig)
 		require.NoError(t, err)
-		assert.Equal(t, tag, currentVersion)
+		assert.Equal(t, dk.CodeModulesImage(), currentVersion)
 
 		dockerJsonPath := path.Join(dockerconfig.TmpPath, dockerconfig.RegistryAuthDir, dk.Name)
 		checkFilesCreatedAndCleanedUp(t, updater, dockerJsonPath, dockerconfigjsonContent)
@@ -254,8 +245,7 @@ func checkFilesCreatedAndCleanedUp(t *testing.T, updater *agentUpdater, caFilePa
 }
 
 func testCodeModules(t *testing.T, customPullSecret bool) {
-	image := "test-image"
-	tag := "tag"
+	imageID := "some.registry.com/image:1.234.345@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
 	pullSecretName := "test-pull-secret"
 	testNamespace := "test-namespace"
 	processModuleConfig := createTestProcessModuleConfigCache("1")
@@ -268,11 +258,11 @@ func testCodeModules(t *testing.T, customPullSecret bool) {
 		},
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			APIURL: "https://" + testTenantUUID + ".dynatrace.com",
-			OneAgent: dynatracev1beta1.OneAgentSpec{
-				CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
-					AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{
-						CodeModulesImage: image + ":" + tag,
-					},
+		},
+		Status: dynatracev1beta1.DynaKubeStatus{
+			CodeModules: dynatracev1beta1.CodeModulesStatus{
+				VersionStatus: dynatracev1beta1.VersionStatus{
+					ImageID: imageID,
 				},
 			},
 		},
@@ -306,7 +296,7 @@ func testCodeModules(t *testing.T, customPullSecret bool) {
 	currentVersion, err := updater.updateAgent(
 		&processModuleConfig)
 	require.NoError(t, err)
-	assert.Equal(t, tag, currentVersion)
+	assert.Equal(t, dk.CodeModulesImage(), currentVersion)
 
 	dockerJsonPath := path.Join(dockerconfig.TmpPath, dockerconfig.RegistryAuthDir, dk.Name)
 	checkFilesCreatedAndCleanedUp(t, updater, dockerJsonPath, dockerconfigjsonContent)
@@ -316,9 +306,6 @@ func testUpdateOneagent(t *testing.T, alreadyInstalled bool) {
 	dk := dynatracev1beta1.DynaKube{
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			APIURL: "https://" + testTenantUUID + ".dynatrace.com",
-			OneAgent: dynatracev1beta1.OneAgentSpec{
-				CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
-			},
 		},
 		Status: dynatracev1beta1.DynaKubeStatus{
 			CodeModules: dynatracev1beta1.CodeModulesStatus{

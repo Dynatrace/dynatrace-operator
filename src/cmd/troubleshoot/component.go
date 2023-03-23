@@ -34,12 +34,17 @@ func (c component) getImage(dynakube *v1beta1.DynaKube) (string, bool) {
 
 	switch c {
 	case componentOneAgent:
-		return dynakube.OneAgentImage(), dynakube.CustomOneAgentImage() != ""
+		if dynakube.CustomOneAgentImage() != "" {
+			return dynakube.CustomOneAgentImage(), true
+		}
+		return dynakube.DefaultOneAgentImage(), false
 	case componentCodeModules:
 		return dynakube.CustomCodeModulesImage(), true
 	case componentActiveGate:
-		activeGateImage := dynakube.ActiveGateImage()
-		return activeGateImage, activeGateImage != ""
+		if dynakube.CustomActiveGateImage() != "" {
+			return dynakube.CustomActiveGateImage(), true
+		}
+		return dynakube.DefaultActiveGateImage(), false
 	}
 	return "", false
 }

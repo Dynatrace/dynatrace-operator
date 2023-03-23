@@ -30,7 +30,7 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 		resetMetrics()
 		gc := NewMockGarbageCollector()
 
-		gc.runBinaryGarbageCollection(context.TODO(), pinnedVersionSet{}, testTenantUUID, testVersion1)
+		gc.runBinaryGarbageCollection(context.TODO(), pinnedVersionSet{}, testTenantUUID)
 
 		assert.Equal(t, float64(1), testutil.ToFloat64(gcRunsMetric))
 		assert.Equal(t, float64(0), testutil.ToFloat64(foldersRemovedMetric))
@@ -41,34 +41,21 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 		gc := NewMockGarbageCollector()
 		_ = gc.fs.MkdirAll(testBinaryDir, 0770)
 
-		gc.runBinaryGarbageCollection(context.TODO(), pinnedVersionSet{}, testTenantUUID, testVersion1)
+		gc.runBinaryGarbageCollection(context.TODO(), pinnedVersionSet{}, testTenantUUID)
 
 		assert.Equal(t, float64(1), testutil.ToFloat64(gcRunsMetric))
 		assert.Equal(t, float64(0), testutil.ToFloat64(foldersRemovedMetric))
 		assert.Equal(t, float64(0), testutil.ToFloat64(reclaimedMemoryMetric))
-	})
-	t.Run("ignores latest", func(t *testing.T) {
-		resetMetrics()
-		gc := NewMockGarbageCollector()
-		gc.mockUnusedVersions(testVersion1)
-
-		gc.runBinaryGarbageCollection(context.TODO(), pinnedVersionSet{}, testTenantUUID, testVersion1)
-
-		assert.Equal(t, float64(1), testutil.ToFloat64(gcRunsMetric))
-		assert.Equal(t, float64(0), testutil.ToFloat64(foldersRemovedMetric))
-		assert.Equal(t, float64(0), testutil.ToFloat64(reclaimedMemoryMetric))
-
-		gc.assertVersionExists(t, testVersion1)
 	})
 	t.Run("remove unused", func(t *testing.T) {
 		resetMetrics()
 		gc := NewMockGarbageCollector()
 		gc.mockUnusedVersions(testVersion1, testVersion2, testVersion3)
 
-		gc.runBinaryGarbageCollection(context.TODO(), pinnedVersionSet{}, testTenantUUID, testVersion2)
+		gc.runBinaryGarbageCollection(context.TODO(), pinnedVersionSet{}, testTenantUUID)
 
 		assert.Equal(t, float64(1), testutil.ToFloat64(gcRunsMetric))
-		assert.Equal(t, float64(2), testutil.ToFloat64(foldersRemovedMetric))
+		assert.Equal(t, float64(3), testutil.ToFloat64(foldersRemovedMetric))
 
 		gc.assertVersionNotExists(t, testVersion1, testVersion3)
 	})
@@ -77,7 +64,7 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 		gc := NewMockGarbageCollector()
 		gc.mockUsedVersions(testVersion1, testVersion2, testVersion3)
 
-		gc.runBinaryGarbageCollection(context.TODO(), pinnedVersionSet{}, testTenantUUID, testVersion3)
+		gc.runBinaryGarbageCollection(context.TODO(), pinnedVersionSet{}, testTenantUUID)
 
 		assert.Equal(t, float64(1), testutil.ToFloat64(gcRunsMetric))
 		assert.Equal(t, float64(0), testutil.ToFloat64(foldersRemovedMetric))
@@ -90,7 +77,7 @@ func TestRunBinaryGarbageCollection(t *testing.T) {
 		gc := NewMockGarbageCollector()
 		gc.mockUsedVersions(testVersion1, testVersion2)
 
-		gc.runBinaryGarbageCollection(context.TODO(), pinnedVersionSet{testVersion2: true}, testTenantUUID, testVersion1)
+		gc.runBinaryGarbageCollection(context.TODO(), pinnedVersionSet{testVersion2: true}, testTenantUUID)
 
 		assert.Equal(t, float64(1), testutil.ToFloat64(gcRunsMetric))
 		assert.Equal(t, float64(0), testutil.ToFloat64(foldersRemovedMetric))

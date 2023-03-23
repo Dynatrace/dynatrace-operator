@@ -10,20 +10,20 @@ import (
 )
 
 type oneAgentUpdater struct {
-	dynakube *dynatracev1beta1.DynaKube
-	dtClient dtclient.Client
-	hashFunc ImageHashFunc
+	dynakube   *dynatracev1beta1.DynaKube
+	dtClient   dtclient.Client
+	digestFunc ImageDigestFunc
 }
 
 func newOneAgentUpdater(
 	dynakube *dynatracev1beta1.DynaKube,
 	dtClient dtclient.Client,
-	hashFunc ImageHashFunc,
+	digestFunc ImageDigestFunc,
 ) *oneAgentUpdater {
 	return &oneAgentUpdater{
-		dynakube: dynakube,
-		dtClient: dtClient,
-		hashFunc: hashFunc,
+		dynakube:   dynakube,
+		dtClient:   dtClient,
+		digestFunc: digestFunc,
 	}
 }
 
@@ -71,16 +71,16 @@ func (updater *oneAgentUpdater) UseDefaults(ctx context.Context, dockerCfg *dock
 
 	previousVersion := updater.Target().Version
 	if previousVersion != "" {
-		if upgrade, err := version.NeedsUpgradeRaw(previousVersion, latestVersion); err != nil {
+		if downgrade, err := version.IsDowngrade(previousVersion, latestVersion); err != nil {
 			return err
-		} else if !upgrade {
-			log.Info("downgrade detected, which is not allowed in this configuration", "updater", updater.Name())
+		} else if downgrade {
+			log.Info("downgrade detected, which is not allowed in this configuration", "updater", updater.Name(), "from", previousVersion, "to", latestVersion)
 			return nil
 		}
 	}
 
 	defaultImage := updater.dynakube.DefaultOneAgentImage()
-	err = updateVersionStatus(ctx, updater.Target(), defaultImage, updater.hashFunc, dockerCfg)
+	err = updateVersionStatus(ctx, updater.Target(), defaultImage, updater.digestFunc, dockerCfg)
 	if err != nil {
 		return err
 	}

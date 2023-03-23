@@ -64,13 +64,6 @@ func TestPodSpec_Arguments(t *testing.T) {
 				},
 			},
 		},
-		Status: dynatracev1beta1.DynaKubeStatus{
-			OneAgent: dynatracev1beta1.OneAgentStatus{
-				VersionStatus: dynatracev1beta1.VersionStatus{
-					ImageTag: testImageTag,
-				},
-			},
-		},
 	}
 	hostInjectSpecs := instance.Spec.OneAgent.ClassicFullStack
 	dsInfo := ClassicFullStack{

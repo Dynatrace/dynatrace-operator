@@ -19,19 +19,19 @@ const (
 type Reconciler struct {
 	dynakube     *dynatracev1beta1.DynaKube
 	dtClient     dtclient.Client
-	hashFunc     ImageHashFunc
+	digestFunc   ImageDigestFunc
 	timeProvider *timeprovider.Provider
 
 	fs        afero.Afero
 	apiReader client.Reader
 }
 
-func NewReconciler(dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader, dtClient dtclient.Client, fs afero.Afero, versionProvider ImageHashFunc, timeProvider *timeprovider.Provider) *Reconciler { //nolint:revive
+func NewReconciler(dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader, dtClient dtclient.Client, fs afero.Afero, digestProvider ImageDigestFunc, timeProvider *timeprovider.Provider) *Reconciler { //nolint:revive
 	return &Reconciler{
 		dynakube:     dynakube,
 		apiReader:    apiReader,
 		fs:           fs,
-		hashFunc:     versionProvider,
+		digestFunc:   digestProvider,
 		timeProvider: timeProvider,
 		dtClient:     dtClient,
 	}
@@ -40,13 +40,15 @@ func NewReconciler(dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader,
 // Reconcile updates the version status used by the dynakube
 func (reconciler *Reconciler) Reconcile(ctx context.Context) error {
 	updaters := []versionStatusUpdater{
-		newActiveGateUpdater(reconciler.dynakube, reconciler.dtClient, reconciler.hashFunc),
-		newOneAgentUpdater(reconciler.dynakube, reconciler.dtClient, reconciler.hashFunc),
+		newActiveGateUpdater(reconciler.dynakube, reconciler.dtClient, reconciler.digestFunc),
+		newOneAgentUpdater(reconciler.dynakube, reconciler.dtClient, reconciler.digestFunc),
 		newCodeModulesUpdater(reconciler.dynakube, reconciler.dtClient),
-		newSyntheticUpdater(reconciler.dynakube, reconciler.dtClient, reconciler.hashFunc),
+		newSyntheticUpdater(reconciler.dynakube, reconciler.dtClient, reconciler.digestFunc),
 	}
-	if reconciler.needsReconcile(updaters) {
-		return reconciler.updateVersionStatuses(ctx, updaters)
+
+	neededUpdaters := reconciler.needsReconcile(updaters)
+	if len(neededUpdaters) > 0 {
+		return reconciler.updateVersionStatuses(ctx, neededUpdaters)
 	}
 	return nil
 }
@@ -62,9 +64,6 @@ func (reconciler *Reconciler) updateVersionStatuses(ctx context.Context, updater
 	}(dockerConfig, reconciler.fs)
 
 	for _, updater := range updaters {
-		if !reconciler.needsUpdate(updater) {
-			continue
-		}
 		log.Info("updating version status", "updater", updater.Name())
 		err := reconciler.run(ctx, updater, dockerConfig)
 		if err != nil {
@@ -84,13 +83,14 @@ func (reconciler *Reconciler) createDockerConfigWithCustomCAs(ctx context.Contex
 	return dockerConfig, nil
 }
 
-func (reconciler *Reconciler) needsReconcile(updaters []versionStatusUpdater) bool {
+func (reconciler *Reconciler) needsReconcile(updaters []versionStatusUpdater) []versionStatusUpdater {
+	neededUpdaters := []versionStatusUpdater{}
 	for _, updater := range updaters {
 		if reconciler.needsUpdate(updater) {
-			return true
+			neededUpdaters = append(neededUpdaters, updater)
 		}
 	}
-	return false
+	return neededUpdaters
 }
 
 func (reconciler *Reconciler) needsUpdate(updater versionStatusUpdater) bool {

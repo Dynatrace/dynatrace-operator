@@ -67,7 +67,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, sc
 		config:                 config,
 		operatorNamespace:      os.Getenv("POD_NAMESPACE"),
 		clusterID:              clusterID,
-		hashProvider:           version.GetImageHash,
+		digestProvider:         version.GetImageDigest,
 	}
 }
 
@@ -91,7 +91,7 @@ type Controller struct {
 	config                 *rest.Config
 	operatorNamespace      string
 	clusterID              string
-	hashProvider           version.ImageHashFunc
+	digestProvider         version.ImageDigestFunc
 }
 
 // Reconcile reads that state of the cluster for a DynaKube object and makes changes based on the state read
@@ -238,7 +238,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		controller.apiReader,
 		dynatraceClient,
 		controller.fs,
-		controller.hashProvider,
+		controller.digestProvider,
 		timeprovider.New(),
 	)
 	err = versionReconciler.Reconcile(ctx)

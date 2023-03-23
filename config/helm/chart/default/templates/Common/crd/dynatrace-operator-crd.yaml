@@ -3377,11 +3377,7 @@ spec:
             properties:
               activeGate:
                 properties:
-                  imageHash:
-                    type: string
-                  imageRepository:
-                    type: string
-                  imageTag:
+                  imageID:
                     type: string
                   lastProbeTimestamp:
                     format: date-time
@@ -3393,11 +3389,7 @@ spec:
                 type: object
               codeModules:
                 properties:
-                  imageHash:
-                    type: string
-                  imageRepository:
-                    type: string
-                  imageTag:
+                  imageID:
                     type: string
                   lastProbeTimestamp:
                     format: date-time
@@ -3501,11 +3493,7 @@ spec:
                 type: string
               oneAgent:
                 properties:
-                  imageHash:
-                    type: string
-                  imageRepository:
-                    type: string
-                  imageTag:
+                  imageID:
                     type: string
                   instances:
                     additionalProperties:
@@ -3533,11 +3521,7 @@ spec:
                 type: string
               synthetic:
                 properties:
-                  imageHash:
-                    type: string
-                  imageRepository:
-                    type: string
-                  imageTag:
+                  imageID:
                     type: string
                   lastProbeTimestamp:
                     format: date-time

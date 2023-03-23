@@ -92,16 +92,12 @@ func TestCodeModulesUseDefault(t *testing.T) {
 func oldCodeModulesStatus() dynatracev1beta1.CodeModulesStatus {
 	return dynatracev1beta1.CodeModulesStatus{
 		VersionStatus: dynatracev1beta1.VersionStatus{
-			ImageHash:       "prev",
-			ImageTag:        "prev",
-			ImageRepository: "prev",
+			ImageID: "prev",
 		},
 	}
 }
 
 func assertDefaultCodeModulesStatus(t *testing.T, expectedVersion string, codeModulesStatus dynatracev1beta1.CodeModulesStatus) {
 	assert.Equal(t, expectedVersion, codeModulesStatus.Version)
-	assert.Empty(t, codeModulesStatus.ImageHash)
-	assert.Empty(t, codeModulesStatus.ImageTag)
-	assert.Empty(t, codeModulesStatus.ImageRepository)
+	assert.Empty(t, codeModulesStatus.ImageID)
 }
