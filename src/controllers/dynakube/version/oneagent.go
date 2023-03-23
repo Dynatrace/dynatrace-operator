@@ -52,7 +52,7 @@ func (updater oneAgentUpdater) IsAutoUpdateEnabled() bool {
 }
 
 func (updater oneAgentUpdater) IsPublicRegistryEnabled() bool {
-	return updater.dynakube.FeaturePublicRegistry()
+	return updater.dynakube.FeaturePublicRegistry() && !updater.dynakube.ClassicFullStackMode()
 }
 
 func (updater oneAgentUpdater) LatestImageInfo() (*dtclient.LatestImageInfo, error) {
