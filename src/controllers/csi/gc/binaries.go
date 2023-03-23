@@ -28,12 +28,13 @@ func (gc *CSIGarbageCollector) runBinaryGarbageCollection(ctx context.Context, p
 
 	for _, version := range storedVersions {
 		shouldDelete := shouldDeleteVersion(version, usedVersions) && pinnedVersions.isNotPinned(version)
-		if shouldDelete {
-			binaryPath := gc.path.AgentBinaryDirForVersion(tenantUUID, version)
-			log.Info("deleting unused version", "version", version, "path", binaryPath)
-
-			removeUnusedVersion(fs, binaryPath)
+		if !shouldDelete {
+			log.Info("skipped, version should not be deleted", "version", version)
+			continue
 		}
+		binaryPath := gc.path.AgentBinaryDirForVersion(tenantUUID, version)
+		log.Info("deleting unused version", "version", version, "path", binaryPath)
+		removeUnusedVersion(fs, binaryPath)
 	}
 }
 

@@ -9,20 +9,20 @@ import (
 )
 
 type activeGateUpdater struct {
-	dynakube *dynatracev1beta1.DynaKube
-	dtClient dtclient.Client
-	hashFunc ImageHashFunc
+	dynakube   *dynatracev1beta1.DynaKube
+	dtClient   dtclient.Client
+	digestFunc ImageDigestFunc
 }
 
 func newActiveGateUpdater(
 	dynakube *dynatracev1beta1.DynaKube,
 	dtClient dtclient.Client,
-	hashFunc ImageHashFunc,
+	digestFunc ImageDigestFunc,
 ) *activeGateUpdater {
 	return &activeGateUpdater{
-		dynakube: dynakube,
-		dtClient: dtClient,
-		hashFunc: hashFunc,
+		dynakube:   dynakube,
+		dtClient:   dtClient,
+		digestFunc: digestFunc,
 	}
 }
 
@@ -60,5 +60,5 @@ func (updater activeGateUpdater) LatestImageInfo() (*dtclient.LatestImageInfo, e
 
 func (updater *activeGateUpdater) UseDefaults(ctx context.Context, dockerCfg *dockerconfig.DockerConfig) error {
 	defaultImage := updater.dynakube.DefaultActiveGateImage()
-	return updateVersionStatus(ctx, updater.Target(), defaultImage, updater.hashFunc, dockerCfg)
+	return updateVersionStatus(ctx, updater.Target(), defaultImage, updater.digestFunc, dockerCfg)
 }

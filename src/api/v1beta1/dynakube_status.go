@@ -80,21 +80,9 @@ const (
 
 type VersionStatus struct {
 	Source             VersionSource `json:"source,omitempty"`
-	ImageDigest        string        `json:"imageDigest,omitempty"`
-	ImageRepository    string        `json:"imageRepository,omitempty"`
-	ImageTag           string        `json:"imageTag,omitempty"`
+	ImageID            string        `json:"imageID,omitempty"`
 	Version            string        `json:"version,omitempty"`
 	LastProbeTimestamp *metav1.Time  `json:"lastProbeTimestamp,omitempty"`
-}
-
-func (versionStatus VersionStatus) ImageURI() string {
-	if versionStatus.ImageRepository == ""  {
-		return ""
-	}
-	if versionStatus.ImageDigest != "" {
-		return fmt.Sprintf("%s@%s", versionStatus.ImageRepository, versionStatus.ImageDigest)
-	}
-	return fmt.Sprintf("%s:%s", versionStatus.ImageRepository, versionStatus.ImageTag)
 }
 
 type ActiveGateStatus struct {

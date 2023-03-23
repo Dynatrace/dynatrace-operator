@@ -160,9 +160,7 @@ func TestUpdateAgent(t *testing.T) {
 		testCodeModules(t, true)
 	})
 	t.Run(`codeModulesImage + trustedCA set`, func(t *testing.T) {
-		image := "my.repo.com/image"
-		tag := "tag"
-		hash := "sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
+		imageID := "some.registry.com/image:1.234.345@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
 		pullSecretName := "test-pull-secret"
 		trustedCAName := "test-trusted-ca"
 		testNamespace := "test-namespace"
@@ -183,9 +181,7 @@ func TestUpdateAgent(t *testing.T) {
 			Status: dynatracev1beta1.DynaKubeStatus{
 				CodeModules: dynatracev1beta1.CodeModulesStatus{
 					VersionStatus: dynatracev1beta1.VersionStatus{
-						ImageRepository: image,
-						ImageTag:        tag,
-						ImageDigest:     hash,
+						ImageID: imageID,
 					},
 				},
 			},
@@ -249,9 +245,7 @@ func checkFilesCreatedAndCleanedUp(t *testing.T, updater *agentUpdater, caFilePa
 }
 
 func testCodeModules(t *testing.T, customPullSecret bool) {
-	image := "my.repo.com/image"
-	tag := "tag"
-	hash := "sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
+	imageID := "some.registry.com/image:1.234.345@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
 	pullSecretName := "test-pull-secret"
 	testNamespace := "test-namespace"
 	processModuleConfig := createTestProcessModuleConfigCache("1")
@@ -268,9 +262,7 @@ func testCodeModules(t *testing.T, customPullSecret bool) {
 		Status: dynatracev1beta1.DynaKubeStatus{
 			CodeModules: dynatracev1beta1.CodeModulesStatus{
 				VersionStatus: dynatracev1beta1.VersionStatus{
-					ImageRepository: image,
-					ImageTag:        tag,
-					ImageDigest:     hash,
+					ImageID: imageID,
 				},
 			},
 		},

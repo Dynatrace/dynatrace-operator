@@ -24,9 +24,7 @@ const (
 
 func TestUseImmutableImage(t *testing.T) {
 	t.Run(`use image from status`, func(t *testing.T) {
-		testRepo := "my.repo.com/image"
-		testTag := "my-tag"
-		testHash := "sha256:123"
+		imageID := "my.repo.com/image:my-tag"
 		instance := dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testURL,
@@ -37,9 +35,7 @@ func TestUseImmutableImage(t *testing.T) {
 			Status: dynatracev1beta1.DynaKubeStatus{
 				OneAgent: dynatracev1beta1.OneAgentStatus{
 					VersionStatus: dynatracev1beta1.VersionStatus{
-						ImageRepository: testRepo,
-						ImageTag:        testTag,
-						ImageDigest:     testHash,
+						ImageID: imageID,
 					},
 				},
 			},
@@ -50,7 +46,7 @@ func TestUseImmutableImage(t *testing.T) {
 
 		podSpecs := ds.Spec.Template.Spec
 		assert.NotNil(t, podSpecs)
-		assert.Equal(t, testRepo+"@"+testHash, podSpecs.Containers[0].Image)
+		assert.Equal(t, imageID, podSpecs.Containers[0].Image)
 	})
 }
 

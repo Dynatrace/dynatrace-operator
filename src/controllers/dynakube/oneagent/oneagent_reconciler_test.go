@@ -305,27 +305,17 @@ func TestHasSpecChanged(t *testing.T) {
 	runTest("no changes", false, func(old *dynatracev1beta1.DynaKube, new *dynatracev1beta1.DynaKube) {})
 
 	runTest("image present", true, func(old *dynatracev1beta1.DynaKube, new *dynatracev1beta1.DynaKube) {
-		new.Status.OneAgent.ImageRepository = "docker.io/dynatrace/oneagent"
-		new.Status.OneAgent.ImageTag = "latest"
-		new.Status.OneAgent.ImageDigest = "sha256:12345"
+		new.Status.OneAgent.ImageID = "docker.io/dynatrace/oneagent:1.234.345@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
 	})
 
 	runTest("image set but no change", false, func(old *dynatracev1beta1.DynaKube, new *dynatracev1beta1.DynaKube) {
-		old.Status.OneAgent.ImageRepository = "docker.io/dynatrace/oneagent"
-		old.Status.OneAgent.ImageTag = "latest"
-		old.Status.OneAgent.ImageDigest = "sha256:12345"
-		new.Status.OneAgent.ImageRepository = "docker.io/dynatrace/oneagent"
-		new.Status.OneAgent.ImageTag = "latest"
-		new.Status.OneAgent.ImageDigest = "sha256:12345"
+		old.Status.OneAgent.ImageID = "docker.io/dynatrace/oneagent:1.234.345@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
+		new.Status.OneAgent.ImageID = "docker.io/dynatrace/oneagent:1.234.345@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
 	})
 
 	runTest("image changed", true, func(old *dynatracev1beta1.DynaKube, new *dynatracev1beta1.DynaKube) {
-		old.Status.OneAgent.ImageRepository = "registry.access.redhat.com/dynatrace/oneagent"
-		old.Status.OneAgent.ImageTag = "latest"
-		old.Status.OneAgent.ImageDigest = "sha256:12345"
-		new.Status.OneAgent.ImageRepository = "docker.io/dynatrace/oneagent"
-		new.Status.OneAgent.ImageTag = "latest"
-		new.Status.OneAgent.ImageDigest = "sha256:34567"
+		old.Status.OneAgent.ImageID = "registry.access.redhat.com/dynatrace/oneagent:1.233.345@sha256:6ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
+		new.Status.OneAgent.ImageID = "docker.io/dynatrace/oneagent:1.234.345@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
 	})
 
 	runTest("argument removed", true, func(old *dynatracev1beta1.DynaKube, new *dynatracev1beta1.DynaKube) {

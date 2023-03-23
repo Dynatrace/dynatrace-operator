@@ -10,20 +10,20 @@ import (
 )
 
 type syntheticUpdater struct {
-	dynakube *dynatracev1beta1.DynaKube
-	dtClient dtclient.Client
-	hashFunc ImageHashFunc
+	dynakube   *dynatracev1beta1.DynaKube
+	dtClient   dtclient.Client
+	digestFunc ImageDigestFunc
 }
 
 func newSyntheticUpdater(
 	dynakube *dynatracev1beta1.DynaKube,
 	dtClient dtclient.Client,
-	hashFunc ImageHashFunc,
+	digestFunc ImageDigestFunc,
 ) *syntheticUpdater {
 	return &syntheticUpdater{
-		dynakube: dynakube,
-		dtClient: dtClient,
-		hashFunc: hashFunc,
+		dynakube:   dynakube,
+		dtClient:   dtClient,
+		digestFunc: digestFunc,
 	}
 }
 
@@ -61,5 +61,5 @@ func (updater syntheticUpdater) LatestImageInfo() (*dtclient.LatestImageInfo, er
 
 func (updater *syntheticUpdater) UseDefaults(ctx context.Context, dockerCfg *dockerconfig.DockerConfig) error {
 	defaultImage := updater.dynakube.DefaultSyntheticImage()
-	return updateVersionStatus(ctx, updater.Target(), defaultImage, updater.hashFunc, dockerCfg)
+	return updateVersionStatus(ctx, updater.Target(), defaultImage, updater.digestFunc, dockerCfg)
 }

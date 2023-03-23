@@ -51,10 +51,7 @@ func getTestDynakube() dynatracev1beta1.DynaKube {
 		},
 		Status: dynatracev1beta1.DynaKubeStatus{
 			ActiveGate: dynatracev1beta1.ActiveGateStatus{
-				VersionStatus: dynatracev1beta1.VersionStatus{
-					ImageTag: testTag,
-					Version:  testVersion,
-				},
+				VersionStatus: dynatracev1beta1.VersionStatus{},
 			},
 		},
 	}

@@ -46,7 +46,6 @@ func TestCollectGCInfo(t *testing.T) {
 	apiUrl := fmt.Sprintf("https://%s.dev.dynatracelabs.com/api", tenantUUID)
 	namespace := "test-namespace"
 	latestVersion := "test-version"
-	imageTag := "tag"
 
 	t.Run(`1 pinned version`, func(t *testing.T) {
 		oldVersion := "old-version"
@@ -91,7 +90,7 @@ func TestCollectGCInfo(t *testing.T) {
 		gcInfo := collectGCInfo(newVersionDynakube, &dkList)
 		assert.Len(t, gcInfo.pinnedVersions, 2)
 	})
-	t.Run(`only consider version, not the tag`, func(t *testing.T) {
+	t.Run("only consider version, not the tag", func(t *testing.T) {
 		versionDynakube := dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test1",
@@ -118,9 +117,7 @@ func TestCollectGCInfo(t *testing.T) {
 			},
 			Status: dynatracev1beta1.DynaKubeStatus{
 				CodeModules: dynatracev1beta1.CodeModulesStatus{
-					VersionStatus: dynatracev1beta1.VersionStatus{
-						ImageTag: imageTag,
-					},
+					VersionStatus: dynatracev1beta1.VersionStatus{},
 				},
 			},
 		}

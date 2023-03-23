@@ -268,7 +268,7 @@ func (dk *DynaKube) NodeSelector() map[string]string {
 // ActiveGateImage provides the image reference set in Status for the ActiveGate.
 // Format: repo@sha256:digest
 func (dk *DynaKube) ActiveGateImage() string {
-	return dk.Status.ActiveGate.ImageURI()
+	return dk.Status.ActiveGate.ImageID
 }
 
 // DefaultActiveGateImage provides the image reference for the ActiveGate from tenant registry.
@@ -305,7 +305,7 @@ func (dk *DynaKube) CustomActiveGateImage() string {
 // SyntheticImage provides the image reference set in Status for Synthetic.
 // Format: repo@sha256:digest
 func (dk *DynaKube) SyntheticImage() string {
-	return dk.Status.Synthetic.ImageURI()
+	return dk.Status.Synthetic.ImageID
 }
 
 // CustomSyntheticImage provides the image reference for Synthetic provided in the feature-flags.
@@ -327,16 +327,6 @@ func (dk *DynaKube) DefaultSyntheticImage() string {
 		api.LatestTag)
 }
 
-// CodeModulesImageTag provides the image tag set in Status for the CodeModules.
-func (dk *DynaKube) CodeModulesImageTag() string {
-	return dk.Status.CodeModules.ImageTag
-}
-
-// CodeModulesImageDigest provides the image hash set in Status for the CodeModules.
-func (dk *DynaKube) CodeModulesImageDigest() string {
-	return dk.Status.CodeModules.ImageDigest
-}
-
 // CodeModulesVersion provides version set in Status for the CodeModules.
 func (dk *DynaKube) CodeModulesVersion() string {
 	return dk.Status.CodeModules.Version
@@ -345,7 +335,7 @@ func (dk *DynaKube) CodeModulesVersion() string {
 // CodeModulesImage provides the image reference set in Status for the CodeModules.
 // Format: repo@sha256:digest
 func (dk *DynaKube) CodeModulesImage() string {
-	return dk.Status.CodeModules.ImageURI()
+	return dk.Status.CodeModules.ImageID
 }
 
 // CustomCodeModulesImage provides the image reference for the CodeModules provided in the Spec.
@@ -369,7 +359,7 @@ func (dk *DynaKube) CustomCodeModulesVersion() string {
 // OneAgentImage provides the image reference set in Status for the OneAgent.
 // Format: repo@sha256:digest
 func (dk *DynaKube) OneAgentImage() string {
-	return dk.Status.OneAgent.ImageURI()
+	return dk.Status.OneAgent.ImageID
 }
 
 // OneAgentVersion provides version set in Status for the OneAgent.

@@ -8,16 +8,17 @@ import (
 	"github.com/containers/image/v5/manifest"
 	"github.com/containers/image/v5/transports/alltransports"
 	"github.com/containers/image/v5/types"
+	"github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
 )
 
-// ImageHashFunc can fetch image information from img
-type ImageHashFunc func(ctx context.Context, imageName string, dockerConfig *dockerconfig.DockerConfig) (string, error)
+// ImageDigestFunc can fetch image information from img
+type ImageDigestFunc func(ctx context.Context, imageName string, dockerConfig *dockerconfig.DockerConfig) (digest.Digest, error)
 
-var _ ImageHashFunc = GetImageHash
+var _ ImageDigestFunc = GetImageDigest
 
-// GetImageHash fetches image information for imageName
-func GetImageHash(ctx context.Context, imageName string, dockerConfig *dockerconfig.DockerConfig) (string, error) {
+// GetImageDigest fetches image information for imageName
+func GetImageDigest(ctx context.Context, imageName string, dockerConfig *dockerconfig.DockerConfig) (digest.Digest, error) {
 	transportImageName := fmt.Sprintf("docker://%s", imageName)
 
 	imageReference, err := alltransports.ParseImageName(transportImageName)
@@ -43,7 +44,7 @@ func GetImageHash(ctx context.Context, imageName string, dockerConfig *dockercon
 		return "", errors.WithStack(err)
 	}
 
-	return digest.String(), nil
+	return digest, nil
 }
 
 func closeImageSource(source types.ImageSource) {

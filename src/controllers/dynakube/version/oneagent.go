@@ -10,20 +10,20 @@ import (
 )
 
 type oneAgentUpdater struct {
-	dynakube *dynatracev1beta1.DynaKube
-	dtClient dtclient.Client
-	hashFunc ImageHashFunc
+	dynakube   *dynatracev1beta1.DynaKube
+	dtClient   dtclient.Client
+	digestFunc ImageDigestFunc
 }
 
 func newOneAgentUpdater(
 	dynakube *dynatracev1beta1.DynaKube,
 	dtClient dtclient.Client,
-	hashFunc ImageHashFunc,
+	digestFunc ImageDigestFunc,
 ) *oneAgentUpdater {
 	return &oneAgentUpdater{
-		dynakube: dynakube,
-		dtClient: dtClient,
-		hashFunc: hashFunc,
+		dynakube:   dynakube,
+		dtClient:   dtClient,
+		digestFunc: digestFunc,
 	}
 }
 
@@ -80,7 +80,7 @@ func (updater *oneAgentUpdater) UseDefaults(ctx context.Context, dockerCfg *dock
 	}
 
 	defaultImage := updater.dynakube.DefaultOneAgentImage()
-	err = updateVersionStatus(ctx, updater.Target(), defaultImage, updater.hashFunc, dockerCfg)
+	err = updateVersionStatus(ctx, updater.Target(), defaultImage, updater.digestFunc, dockerCfg)
 	if err != nil {
 		return err
 	}
