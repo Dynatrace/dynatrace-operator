@@ -37,6 +37,7 @@ func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpda
 
 	customImage := updater.CustomImage()
 	if customImage != "" {
+		log.Info("updating version status according to custom image", "updater", updater.Name())
 		err = updateVersionStatus(ctx, updater.Target(), customImage, reconciler.digestFunc, dockerCfg)
 		return err
 	}
@@ -68,6 +69,7 @@ func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpda
 		return nil
 	}
 
+	log.Info("updating version status according to the tenant registry", "updater", updater.Name())
 	err = updater.UseDefaults(ctx, dockerCfg)
 	return err
 }
@@ -109,12 +111,12 @@ func updateVersionStatus(
 			target.ImageID = taggedRef.String()
 			log.Error(err, "failed to get image digest, falling back to tag")
 		} else {
-			cannonRef, err := reference.WithDigest(taggedRef, digest)
+			canonRef, err := reference.WithDigest(taggedRef, digest)
 			if err != nil {
 				target.ImageID = taggedRef.String()
 				log.Error(err, "failed to create canonical image reference, falling back to tag")
 			} else {
-				target.ImageID = cannonRef.String()
+				target.ImageID = canonRef.String()
 			}
 		}
 	} else {
