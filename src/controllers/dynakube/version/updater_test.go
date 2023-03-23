@@ -266,8 +266,8 @@ func TestUpdateVersionStatus(t *testing.T) {
 
 	t.Run("set status, not call digest func", func(t *testing.T) {
 		expectedRepo := "some.registry.com/image"
-		expectedHash := "sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
-		expectedID := expectedRepo + "@" + expectedHash
+		expectedDigest := "sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
+		expectedID := expectedRepo + "@" + expectedDigest
 		target := dynatracev1beta1.VersionStatus{}
 		boomFunc := func(_ context.Context, imagePath string, _ *dockerconfig.DockerConfig) (digest.Digest, error) {
 			t.Error("digest function was called unexpectedly")
@@ -279,8 +279,8 @@ func TestUpdateVersionStatus(t *testing.T) {
 	})
 	t.Run("accept tagged + digest image reference", func(t *testing.T) {
 		expectedRepo := "some.registry.com/image"
-		expectedHash := "sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
-		expectedID := expectedRepo + ":tag@" + expectedHash
+		expectedDigest := "sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
+		expectedID := expectedRepo + ":tag@" + expectedDigest
 		target := dynatracev1beta1.VersionStatus{}
 		boomFunc := func(_ context.Context, imagePath string, _ *dockerconfig.DockerConfig) (digest.Digest, error) {
 			t.Error("digest function was called unexpectedly")
