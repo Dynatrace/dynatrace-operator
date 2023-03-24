@@ -69,10 +69,10 @@ func (publisher *AppVolumePublisher) PublishVolume(ctx context.Context, volumeCf
 		return &csi.NodePublishVolumeResponse{}, nil
 	}
 
-	if bindCfg.Version == "" {
+	if !bindCfg.IsArchiveAvailable() {
 		return nil, status.Error(
 			codes.Unavailable,
-			fmt.Sprintf("version is not yet set, csi-provisioner hasn't finished setup yet for tenant: %s", bindCfg.TenantUUID),
+			fmt.Sprintf("version or digest is not yet set, csi-provisioner hasn't finished setup yet for tenant: %s", bindCfg.TenantUUID),
 		)
 	}
 
@@ -80,7 +80,7 @@ func (publisher *AppVolumePublisher) PublishVolume(ctx context.Context, volumeCf
 		return nil, err
 	}
 
-	agentsVersionsMetric.WithLabelValues(bindCfg.Version).Inc()
+	agentsVersionsMetric.WithLabelValues(bindCfg.MetricVersionLabel()).Inc()
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 
