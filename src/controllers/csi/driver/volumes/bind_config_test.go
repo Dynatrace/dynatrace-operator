@@ -45,3 +45,48 @@ func TestNewBindConfig(t *testing.T) {
 		assert.Equal(t, expected, *bindCfg)
 	})
 }
+
+func TestIsArchiveAvailable(t *testing.T) {
+	t.Run(`no version, no digest`, func(t *testing.T) {
+		bindCfg := BindConfig{}
+
+		assert.False(t, bindCfg.IsArchiveAvailable())
+	})
+	t.Run(`version set, no digest`, func(t *testing.T) {
+		bindCfg := BindConfig{
+			Version: "1.2.3",
+		}
+
+		assert.True(t, bindCfg.IsArchiveAvailable())
+	})
+	t.Run(`no version, digest set`, func(t *testing.T) {
+		bindCfg := BindConfig{
+			ImageDigest: "sha256:123",
+		}
+
+		assert.True(t, bindCfg.IsArchiveAvailable())
+	})
+}
+
+func TestMetricVersionLabel(t *testing.T) {
+	t.Run(`no version, no digest`, func(t *testing.T) {
+		bindCfg := BindConfig{}
+
+		assert.Empty(t, bindCfg.MetricVersionLabel())
+	})
+	t.Run(`version set, no digest`, func(t *testing.T) {
+		bindCfg := BindConfig{
+			Version: "1.2.3",
+		}
+
+		assert.Equal(t, bindCfg.Version, bindCfg.MetricVersionLabel())
+	})
+	t.Run(`no version, digest set`, func(t *testing.T) {
+		bindCfg := BindConfig{
+			ImageDigest: "sha256:123",
+		}
+
+		assert.Equal(t, bindCfg.ImageDigest, bindCfg.MetricVersionLabel())
+	})
+}
+
