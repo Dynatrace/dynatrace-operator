@@ -2,7 +2,6 @@ package operator
 
 import (
 	"context"
-	"os"
 
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 	cmdManager "github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
@@ -125,7 +124,7 @@ func (builder CommandBuilder) buildRun() func(cmd *cobra.Command, args []string)
 			return err
 		}
 
-		if isInDebugMode() {
+		if kubesystem.IsRunLocally() {
 			log.Info("running locally in debug mode")
 			return builder.runLocally(kubeCfg)
 		}
@@ -159,10 +158,6 @@ func (builder CommandBuilder) runLocally(kubeCfg *rest.Config) error {
 	}
 
 	return builder.runOperatorManager(kubeCfg, false)
-}
-
-func isInDebugMode() bool {
-	return os.Getenv("RUN_LOCAL") == "true"
 }
 
 func (builder CommandBuilder) runBootstrapper(kubeCfg *rest.Config) error {
