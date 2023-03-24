@@ -20,7 +20,7 @@ RUN CGO_ENABLED=1 CGO_CFLAGS="-O2 -Wno-return-local-addr" \
     -o ./build/_output/bin/dynatrace-operator ./src/cmd/
 
 FROM registry.access.redhat.com/ubi9-micro:9.1.0 AS base
-FROM registry.access.redhat.com/ubi9:9.1.0 AS dependency
+FROM registry.access.redhat.com/ubi9:9.1.0-1782 AS dependency
 RUN mkdir -p /tmp/rootfs-dependency
 COPY --from=base / /tmp/rootfs-dependency
 RUN dnf install --installroot /tmp/rootfs-dependency \
