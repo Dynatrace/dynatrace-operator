@@ -84,11 +84,7 @@ func (statefulSetBuilder Builder) getBaseSpec() appsv1.StatefulSetSpec {
 }
 
 func (statefulSetBuilder Builder) addLabels(sts *appsv1.StatefulSet) {
-	versionLabelValue := statefulSetBuilder.dynakube.Status.ActiveGate.Version
-	if statefulSetBuilder.dynakube.CustomActiveGateImage() != "" {
-		versionLabelValue = kubeobjects.CustomImageLabelValue
-	}
-	appLabels := kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, statefulSetBuilder.dynakube.Name, statefulSetBuilder.capability.ShortName(), versionLabelValue)
+	appLabels := kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, statefulSetBuilder.dynakube.Name, statefulSetBuilder.capability.ShortName(), "")
 
 	sts.ObjectMeta.Labels = appLabels.BuildLabels()
 	sts.Spec.Selector = &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()}
@@ -167,7 +163,7 @@ func (statefulSetBuilder Builder) buildBaseContainer() []corev1.Container {
 			ProbeHandler: corev1.ProbeHandler{
 				HTTPGet: &corev1.HTTPGetAction{
 					Path:   "/rest/health",
-					Port:   intstr.IntOrString{IntVal: 9999},
+					Port:   intstr.IntOrString{IntVal: consts.HttpsContainerPort},
 					Scheme: "HTTPS",
 				},
 			},
@@ -182,11 +178,7 @@ func (statefulSetBuilder Builder) buildBaseContainer() []corev1.Container {
 }
 
 func (statefulSetBuilder Builder) buildResources() corev1.ResourceRequirements {
-	if statefulSetBuilder.dynakube.IsSyntheticActiveGateEnabled() {
-		return modifiers.ActiveGateResourceRequirements
-	} else {
-		return statefulSetBuilder.capability.Properties().Resources
-	}
+	return statefulSetBuilder.capability.Properties().Resources
 }
 
 func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {

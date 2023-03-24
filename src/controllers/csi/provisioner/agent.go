@@ -2,7 +2,6 @@ package csiprovisioner
 
 import (
 	"context"
-	"os"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/arch"
@@ -62,9 +61,8 @@ func newAgentImageUpdater( //nolint:revive // argument-limit doesn't apply to co
 	if err != nil {
 		return nil, err
 	}
-	certPath := path.ImageCertPath(tenantUUID)
 
-	agentInstaller, err := newImageInstaller(ctx, fs, apiReader, path, db, certPath, dk)
+	agentInstaller, err := newImageInstaller(ctx, fs, apiReader, path, db, dk)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +76,7 @@ func newAgentImageUpdater( //nolint:revive // argument-limit doesn't apply to co
 		fs:            fs,
 		path:          path,
 		targetDir:     path.AgentConfigDir(tenantUUID),
-		targetVersion: dk.CodeModulesVersion(),
+		targetVersion: dk.CodeModulesImage(),
 		tenantUUID:    tenantUUID,
 		installer:     agentInstaller,
 		recorder:      eventRecorder,
@@ -98,32 +96,24 @@ func getUrlProperties(targetVersion, previousVersion string, pathResolver metada
 	}
 }
 
-func newImageInstaller(ctx context.Context, fs afero.Fs, apiReader client.Reader, pathResolver metadata.PathResolver, db metadata.Access, certPath string, dynakube *dynatracev1beta1.DynaKube) (installer.Installer, error) { //nolint:revive // argument-limit doesn't apply to constructors
+func newImageInstaller(ctx context.Context, fs afero.Fs, apiReader client.Reader, pathResolver metadata.PathResolver, db metadata.Access, dynakube *dynatracev1beta1.DynaKube) (installer.Installer, error) { //nolint:revive // argument-limit doesn't apply to constructors
 	dockerConfig := dockerconfig.NewDockerConfig(apiReader, *dynakube)
-	if dynakube.Spec.CustomPullSecret != "" {
-		err := dockerConfig.SetupAuths(ctx)
-		if err != nil {
-			return nil, err
-		}
+	err := dockerConfig.StoreRequiredFiles(ctx, afero.Afero{Fs: fs})
+	if err != nil {
+		return nil, err
 	}
 
-	if dynakube.Spec.TrustedCAs != "" {
-		err := dockerConfig.SaveCustomCAs(ctx, afero.Afero{Fs: fs}, certPath)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	imageInstaller := image.NewImageInstaller(fs, &image.Properties{
+	return image.NewImageInstaller(fs, &image.Properties{
 		ImageUri:     dynakube.CodeModulesImage(),
 		PathResolver: pathResolver,
 		Metadata:     db,
 		DockerConfig: *dockerConfig})
-	return imageInstaller, nil
 }
 
 func (updater *agentUpdater) updateAgent(latestProcessModuleConfigCache *processModuleConfigCache) (string, error) {
-	defer updater.cleanCertsIfPresent()
+	defer func(installer installer.Installer) {
+		_ = installer.Cleanup()
+	}(updater.installer)
 	var updatedVersion string
 
 	log.Info("updating agent",
@@ -154,13 +144,4 @@ func (updater *agentUpdater) installAgent() error {
 		updater.recorder.sendInstalledAgentVersionEvent(updater.targetVersion, updater.tenantUUID)
 	}
 	return nil
-}
-
-func (updater *agentUpdater) cleanCertsIfPresent() {
-	err := updater.fs.RemoveAll(updater.path.ImageCertPath(updater.tenantUUID))
-	if err != nil && os.IsNotExist(err) {
-		log.Info("no ca.crt found to clean")
-	} else if err != nil {
-		log.Error(err, "failed to clean ca.crt")
-	}
 }

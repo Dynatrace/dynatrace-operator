@@ -30,6 +30,6 @@ func getInstallerInfo(pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) insta
 		technologies: url.QueryEscape(kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationTechnologies, "all")),
 		installPath:  kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath),
 		installerURL: kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInstallerUrl, ""),
-		version:      dynakube.Version(),
+		version:      dynakube.CodeModulesVersion(),
 	}
 }

@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api"
+	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,7 +39,7 @@ const (
 	PodNameOsAgent                          = "oneagent"
 
 	defaultActiveGateImage = "/linux/activegate:latest"
-	defaultSyntheticImage  = "/linux/dynatrace-synthetic:latest"
+	defaultSyntheticImage  = "linux/dynatrace-synthetic"
 )
 
 // ApiUrl is a getter for dk.Spec.APIURL
@@ -61,7 +62,9 @@ func (dk *DynaKube) ApiUrlHost() string {
 
 // NeedsActiveGate returns true when a feature requires ActiveGate instances.
 func (dk *DynaKube) NeedsActiveGate() bool {
-	return dk.DeprecatedActiveGateMode() || dk.ActiveGateMode()
+	return dk.DeprecatedActiveGateMode() ||
+		dk.ActiveGateMode() ||
+		dk.IsSyntheticMonitoringEnabled()
 }
 
 // ApplicationMonitoringMode returns true when application only section is used.
@@ -148,8 +151,8 @@ func (dk *DynaKube) NeedsActiveGateService() bool {
 	return dk.NeedsActiveGateServicePorts()
 }
 
-func (dk *DynaKube) IsSyntheticActiveGateEnabled() bool {
-	return dk.IsActiveGateMode(SyntheticCapability.DisplayName)
+func (dk *DynaKube) IsSyntheticMonitoringEnabled() bool {
+	return dk.FeatureSyntheticLocationEntityId() != ""
 }
 
 func (dk *DynaKube) HasActiveGateCaCert() bool {
@@ -205,54 +208,6 @@ func (dk *DynaKube) PullSecret() string {
 	return dk.Name + PullSecretSuffix
 }
 
-// ActiveGateImage returns the ActiveGate image to be used with the dk DynaKube instance.
-func (dk *DynaKube) ActiveGateImage() string {
-	if dk.CustomActiveGateImage() != "" {
-		return dk.CustomActiveGateImage()
-	}
-
-	apiUrlHost := dk.ApiUrlHost()
-
-	if apiUrlHost == "" {
-		return ""
-	}
-
-	return apiUrlHost + defaultActiveGateImage
-}
-
-func (dk *DynaKube) deprecatedActiveGateImage() string {
-	if dk.Spec.KubernetesMonitoring.Image != "" {
-		return dk.Spec.KubernetesMonitoring.Image
-	} else if dk.Spec.Routing.Image != "" {
-		return dk.Spec.Routing.Image
-	}
-
-	return ""
-}
-
-func (dk *DynaKube) CustomActiveGateImage() string {
-	if dk.DeprecatedActiveGateMode() {
-		return dk.deprecatedActiveGateImage()
-	}
-
-	return dk.Spec.ActiveGate.Image
-}
-
-// returns the synthetic image supplied by the given DynaKube.
-func (dk *DynaKube) SyntheticImage() string {
-	if dk.FeatureCustomSyntheticImage() != "" {
-		return dk.FeatureCustomSyntheticImage()
-	}
-
-	apiUrlHost := dk.ApiUrlHost()
-
-	if apiUrlHost == "" {
-		return ""
-	}
-
-	return apiUrlHost + defaultSyntheticImage
-}
-
 func (dk *DynaKube) NeedsReadOnlyOneAgents() bool {
 	inSupportedMode := dk.HostMonitoringMode() || dk.CloudNativeFullstackMode()
 	return inSupportedMode && !dk.FeatureDisableReadOnlyOneAgent()
@@ -271,27 +226,6 @@ func (dk *DynaKube) NeedsCSIDriver() bool {
 
 func (dk *DynaKube) NeedAppInjection() bool {
 	return dk.CloudNativeFullstackMode() || dk.ApplicationMonitoringMode()
-}
-
-func (dk *DynaKube) CustomOneAgentImage() string {
-	switch {
-	case dk.ClassicFullStackMode():
-		return dk.Spec.OneAgent.ClassicFullStack.Image
-	case dk.HostMonitoringMode():
-		return dk.Spec.OneAgent.HostMonitoring.Image
-	case dk.CloudNativeFullstackMode():
-		return dk.Spec.OneAgent.CloudNativeFullStack.Image
-	}
-	return ""
-}
-
-func (dk *DynaKube) CodeModulesImage() string {
-	if dk.CloudNativeFullstackMode() {
-		return dk.Spec.OneAgent.CloudNativeFullStack.CodeModulesImage
-	} else if dk.ApplicationMonitoringMode() && dk.NeedsCSIDriver() {
-		return dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage
-	}
-	return ""
 }
 
 func (dk *DynaKube) InitResources() *corev1.ResourceRequirements {
@@ -315,6 +249,10 @@ func (dk *DynaKube) OneAgentResources() *corev1.ResourceRequirements {
 	return nil
 }
 
+func (dk *DynaKube) NamespaceSelector() *metav1.LabelSelector {
+	return &dk.Spec.NamespaceSelector
+}
+
 func (dk *DynaKube) NodeSelector() map[string]string {
 	switch {
 	case dk.ClassicFullStackMode():
@@ -327,7 +265,110 @@ func (dk *DynaKube) NodeSelector() map[string]string {
 	return nil
 }
 
-func (dk *DynaKube) Version() string {
+// ActiveGateImage provides the image reference set in Status for the ActiveGate.
+// Format: repo@sha256:digest
+func (dk *DynaKube) ActiveGateImage() string {
+	return dk.Status.ActiveGate.ImageID
+}
+
+// DefaultActiveGateImage provides the image reference for the ActiveGate from tenant registry.
+// Format: repo:tag
+func (dk *DynaKube) DefaultActiveGateImage() string {
+	apiUrlHost := dk.ApiUrlHost()
+
+	if apiUrlHost == "" {
+		return ""
+	}
+
+	return apiUrlHost + defaultActiveGateImage
+}
+
+func (dk *DynaKube) deprecatedActiveGateImage() string {
+	if dk.Spec.KubernetesMonitoring.Image != "" {
+		return dk.Spec.KubernetesMonitoring.Image
+	} else if dk.Spec.Routing.Image != "" {
+		return dk.Spec.Routing.Image
+	}
+
+	return ""
+}
+
+// CustomActiveGateImage provides the image reference for the ActiveGate provided in the Spec.
+func (dk *DynaKube) CustomActiveGateImage() string {
+	if dk.DeprecatedActiveGateMode() {
+		return dk.deprecatedActiveGateImage()
+	}
+
+	return dk.Spec.ActiveGate.Image
+}
+
+// SyntheticImage provides the image reference set in Status for Synthetic.
+// Format: repo@sha256:digest
+func (dk *DynaKube) SyntheticImage() string {
+	return dk.Status.Synthetic.ImageID
+}
+
+// CustomSyntheticImage provides the image reference for Synthetic provided in the feature-flags.
+func (dk *DynaKube) CustomSyntheticImage() string {
+	return dk.FeatureCustomSyntheticImage()
+}
+
+// DefaultActiveGateImage provides the image reference for Synthetic from tenant registry.
+// Format: repo:tag
+func (dk *DynaKube) DefaultSyntheticImage() string {
+	apiUrlHost := dk.ApiUrlHost()
+	if apiUrlHost == "" {
+		return ""
+	}
+
+	return fmt.Sprintf("%s/%s:%s",
+		apiUrlHost,
+		defaultSyntheticImage,
+		api.LatestTag)
+}
+
+// CodeModulesVersion provides version set in Status for the CodeModules.
+func (dk *DynaKube) CodeModulesVersion() string {
+	return dk.Status.CodeModules.Version
+}
+
+// CodeModulesImage provides the image reference set in Status for the CodeModules.
+// Format: repo@sha256:digest
+func (dk *DynaKube) CodeModulesImage() string {
+	return dk.Status.CodeModules.ImageID
+}
+
+// CustomCodeModulesImage provides the image reference for the CodeModules provided in the Spec.
+func (dk *DynaKube) CustomCodeModulesImage() string {
+	if dk.CloudNativeFullstackMode() {
+		return dk.Spec.OneAgent.CloudNativeFullStack.CodeModulesImage
+	} else if dk.ApplicationMonitoringMode() && dk.NeedsCSIDriver() {
+		return dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage
+	}
+	return ""
+}
+
+// CustomCodeModulesVersion provides the version for the CodeModules provided in the Spec.
+func (dk *DynaKube) CustomCodeModulesVersion() string {
+	if !dk.ApplicationMonitoringMode() {
+		return ""
+	}
+	return dk.CustomOneAgentVersion()
+}
+
+// OneAgentImage provides the image reference set in Status for the OneAgent.
+// Format: repo@sha256:digest
+func (dk *DynaKube) OneAgentImage() string {
+	return dk.Status.OneAgent.ImageID
+}
+
+// OneAgentVersion provides version set in Status for the OneAgent.
+func (dk *DynaKube) OneAgentVersion() string {
+	return dk.Status.OneAgent.Version
+}
+
+// CustomOneAgentVersion provides the version for the OneAgent provided in the Spec.
+func (dk *DynaKube) CustomOneAgentVersion() string {
 	switch {
 	case dk.ClassicFullStackMode():
 		return dk.Spec.OneAgent.ClassicFullStack.Version
@@ -341,44 +382,32 @@ func (dk *DynaKube) Version() string {
 	return ""
 }
 
-// CodeModulesVersion does not take dynakube.Version into account when using cloudNative to avoid confusion
-func (dk *DynaKube) CodeModulesVersion() string {
-	if !dk.CloudNativeFullstackMode() && !dk.ApplicationMonitoringMode() {
-		return ""
+// CustomOneAgentImage provides the image reference for the OneAgent provided in the Spec.
+func (dk *DynaKube) CustomOneAgentImage() string {
+	switch {
+	case dk.ClassicFullStackMode():
+		return dk.Spec.OneAgent.ClassicFullStack.Image
+	case dk.HostMonitoringMode():
+		return dk.Spec.OneAgent.HostMonitoring.Image
+	case dk.CloudNativeFullstackMode():
+		return dk.Spec.OneAgent.CloudNativeFullStack.Image
 	}
-	if dk.CodeModulesImage() != "" {
-		codeModulesImage := dk.CodeModulesImage()
-		return getRawImageTag(codeModulesImage)
-	}
-	if dk.Version() != "" && !dk.CloudNativeFullstackMode() {
-		return dk.Version()
-	}
-	return dk.Status.LatestAgentVersionUnixPaas
+	return ""
 }
 
-func (dk *DynaKube) NamespaceSelector() *metav1.LabelSelector {
-	return &dk.Spec.NamespaceSelector
-}
-
-// OneAgentImage returns the immutable OneAgent image to be used with the DynaKube instance.
-func (dk *DynaKube) OneAgentImage() string {
-	oneAgentImage := dk.CustomOneAgentImage()
-	if oneAgentImage != "" {
-		return oneAgentImage
-	}
-
+// DefaultOneAgentImage provides the image reference for the OneAgent from tenant registry.
+func (dk *DynaKube) DefaultOneAgentImage() string {
 	if dk.Spec.APIURL == "" {
 		return ""
 	}
 
 	tag := api.LatestTag
-	if version := dk.Version(); version != "" {
+	if version := dk.CustomOneAgentVersion(); version != "" {
 		truncatedVersion := truncateBuildDate(version)
 		tag = truncatedVersion
 	}
 
 	apiUrlHost := dk.ApiUrlHost()
-
 	if apiUrlHost == "" {
 		return ""
 	}
@@ -486,4 +515,16 @@ func (dk *DynaKube) GetOneAgentEnvironment() []corev1.EnvVar {
 		return dk.Spec.OneAgent.HostMonitoring.Env
 	}
 	return []corev1.EnvVar{}
+}
+
+func (dk *DynaKube) IsOneAgentConnectionInfoUpdateAllowed(timeProvider *timeprovider.Provider) bool {
+	return timeProvider.IsOutdated(&dk.Status.DynatraceApi.LastOneAgentConnectionInfoRequest, dk.FeatureApiRequestThreshold())
+}
+
+func (dk *DynaKube) IsActiveGateConnectionInfoUpdateAllowed(timeProvider *timeprovider.Provider) bool {
+	return timeProvider.IsOutdated(&dk.Status.DynatraceApi.LastActiveGateConnectionInfoRequest, dk.FeatureApiRequestThreshold())
+}
+
+func (dk *DynaKube) IsTokenScopeVerificationAllowed(timeProvider *timeprovider.Provider) bool {
+	return timeProvider.IsOutdated(&dk.Status.DynatraceApi.LastTokenScopeRequest, dk.FeatureApiRequestThreshold())
 }

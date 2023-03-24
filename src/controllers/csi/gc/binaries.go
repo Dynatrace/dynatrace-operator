@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/afero"
 )
 
-func (gc *CSIGarbageCollector) runBinaryGarbageCollection(ctx context.Context, pinnedVersions pinnedVersionSet, tenantUUID string, latestVersion string) {
+func (gc *CSIGarbageCollector) runBinaryGarbageCollection(ctx context.Context, pinnedVersions pinnedVersionSet, tenantUUID string) {
 	fs := &afero.Afero{Fs: gc.fs}
 	gcRunsMetric.Inc()
 
@@ -27,15 +27,14 @@ func (gc *CSIGarbageCollector) runBinaryGarbageCollection(ctx context.Context, p
 	log.Info("got all stored versions", "tenantUUID", tenantUUID, "len(storedVersions)", len(storedVersions))
 
 	for _, version := range storedVersions {
-		shouldDelete := isNotLatestVersion(version, latestVersion) &&
-			shouldDeleteVersion(version, usedVersions) && pinnedVersions.isNotPinned(version)
-
-		if shouldDelete {
-			binaryPath := gc.path.AgentBinaryDirForVersion(tenantUUID, version)
-			log.Info("deleting unused version", "version", version, "path", binaryPath)
-
-			removeUnusedVersion(fs, binaryPath)
+		shouldDelete := shouldDeleteVersion(version, usedVersions) && pinnedVersions.isNotPinned(version)
+		if !shouldDelete {
+			log.Info("skipped, version should not be deleted", "version", version)
+			continue
 		}
+		binaryPath := gc.path.AgentBinaryDirForVersion(tenantUUID, version)
+		log.Info("deleting unused version", "version", version, "path", binaryPath)
+		removeUnusedVersion(fs, binaryPath)
 	}
 }
 
@@ -58,14 +57,6 @@ func (gc *CSIGarbageCollector) getStoredVersions(fs *afero.Afero, tenantUUID str
 
 func shouldDeleteVersion(version string, usedVersions map[string]bool) bool {
 	return !usedVersions[version]
-}
-
-func isNotLatestVersion(version string, latestVersion string) bool {
-	if version == latestVersion {
-		log.Info("skipped, is latest")
-		return false
-	}
-	return true
 }
 
 func removeUnusedVersion(fs *afero.Afero, binaryPath string) {

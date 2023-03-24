@@ -20,3 +20,8 @@ func (mock *Mock) UpdateProcessModuleConfig(targetDir string, processModuleConfi
 	args := mock.Called(targetDir, processModuleConfig)
 	return args.Error(0)
 }
+
+func (mock *Mock) Cleanup() error {
+	args := mock.Called()
+	return args.Error(0)
+}

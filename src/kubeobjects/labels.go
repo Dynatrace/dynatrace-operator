@@ -17,8 +17,7 @@ const (
 	OneAgentComponentLabel   = "oneagent"
 	ActiveGateComponentLabel = "activegate"
 	WebhookComponentLabel    = "webhook"
-
-	CustomImageLabelValue = "custom-image"
+	SyntheticComponentLabel  = "synthetic"
 )
 
 type appMatchLabels struct {

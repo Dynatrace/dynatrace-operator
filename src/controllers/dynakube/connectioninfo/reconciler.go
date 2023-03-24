@@ -7,6 +7,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -14,22 +15,24 @@ import (
 )
 
 type Reconciler struct {
-	context   context.Context
-	client    client.Client
-	apiReader client.Reader
-	dtc       dtclient.Client
-	dynakube  *dynatracev1beta1.DynaKube
-	scheme    *runtime.Scheme
+	context      context.Context
+	client       client.Client
+	apiReader    client.Reader
+	dtc          dtclient.Client
+	dynakube     *dynatracev1beta1.DynaKube
+	scheme       *runtime.Scheme
+	timeProvider *timeprovider.Provider
 }
 
 func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
 	return &Reconciler{
-		context:   ctx,
-		client:    clt,
-		apiReader: apiReader,
-		dynakube:  dynakube,
-		scheme:    scheme,
-		dtc:       dtc,
+		context:      ctx,
+		client:       clt,
+		apiReader:    apiReader,
+		dynakube:     dynakube,
+		scheme:       scheme,
+		dtc:          dtc,
+		timeProvider: timeprovider.New(),
 	}
 }
 
@@ -50,8 +53,11 @@ func (r *Reconciler) Reconcile() error {
 }
 
 func (r *Reconciler) reconcileOneAgentConnectionInfo() error {
-	if !dynatracev1beta1.IsRequestOutdated(r.dynakube.Status.DynatraceApi.LastOneAgentConnectionInfoRequest) {
-		log.Info(dynatracev1beta1.CacheValidMessage("oneagent connection info update"))
+	if !r.dynakube.IsOneAgentConnectionInfoUpdateAllowed(r.timeProvider) {
+		log.Info(dynatracev1beta1.GetCacheValidMessage(
+			"oneagent connection info update",
+			r.dynakube.Status.DynatraceApi.LastOneAgentConnectionInfoRequest,
+			r.dynakube.FeatureApiRequestThreshold()))
 		return nil
 	}
 
@@ -61,12 +67,16 @@ func (r *Reconciler) reconcileOneAgentConnectionInfo() error {
 	}
 
 	r.dynakube.Status.DynatraceApi.LastOneAgentConnectionInfoRequest = metav1.Now()
+	log.Info("oneagent connection info updated")
 	return nil
 }
 
 func (r *Reconciler) reconcileActiveGateConnectionInfo() error {
-	if !dynatracev1beta1.IsRequestOutdated(r.dynakube.Status.DynatraceApi.LastActiveGateConnectionInfoRequest) {
-		log.Info(dynatracev1beta1.CacheValidMessage("activegate connection info update"))
+	if !r.dynakube.IsActiveGateConnectionInfoUpdateAllowed(r.timeProvider) {
+		log.Info(dynatracev1beta1.GetCacheValidMessage(
+			"activegate connection info update",
+			r.dynakube.Status.DynatraceApi.LastActiveGateConnectionInfoRequest,
+			r.dynakube.FeatureApiRequestThreshold()))
 		return nil
 	}
 
@@ -76,6 +86,8 @@ func (r *Reconciler) reconcileActiveGateConnectionInfo() error {
 	}
 
 	r.dynakube.Status.DynatraceApi.LastActiveGateConnectionInfoRequest = metav1.Now()
+
+	log.Info("activegate connection info updated")
 	return nil
 }
 

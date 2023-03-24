@@ -10,12 +10,11 @@ import (
 )
 
 const (
-	testDir           = "test"
-	testImageRegistry = "quay.io"
-	testImageName     = "image:tag"
-	testImageUri      = testImageRegistry + "/repo/" + testImageName
-	testPassword      = "pass"
-	testUsername      = "user"
+	testDir              = "test"
+	testImageUri         = "some.registry.com/image:tag@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
+	expectedRef          = "some.registry.com/image@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
+	testRegistryAuthPath = "testAuthPath"
+	testCAPath           = "testCAPath"
 )
 
 func TestGetSourceInfo(t *testing.T) {
@@ -51,28 +50,22 @@ func TestBuildSourceContext(t *testing.T) {
 		dockerConfig := createTestDockerConfig()
 		sourceContext := buildSourceContext(imageRef, testDir, dockerConfig)
 		require.NotNil(t, sourceContext)
-		assert.Equal(t, testUsername, sourceContext.DockerAuthConfig.Username)
-		assert.Equal(t, testPassword, sourceContext.DockerAuthConfig.Password)
+		assert.Equal(t, testCAPath, sourceContext.DockerCertPath)
+		assert.Equal(t, testRegistryAuthPath, sourceContext.AuthFilePath)
 	})
 }
 
 func createTestDockerConfig() dockerconfig.DockerConfig {
-	testDockerAuth := dockerconfig.DockerAuth{
-		Username: testUsername,
-		Password: testPassword,
+	return dockerconfig.DockerConfig{
+		RegistryAuthPath: testRegistryAuthPath,
+		TrustedCertsPath: testCAPath,
 	}
-	dockerConfig := dockerconfig.DockerConfig{
-		Auths: map[string]dockerconfig.DockerAuth{
-			testImageRegistry: testDockerAuth,
-		},
-	}
-	return dockerConfig
 }
 
 func getTestImageReference(t *testing.T) reference.Named {
 	imageRef, err := parseImageReference(testImageUri)
 	require.NoError(t, err)
 	require.NotNil(t, imageRef)
-	assert.Equal(t, testImageUri, imageRef.String())
+	assert.Equal(t, expectedRef, imageRef.String())
 	return imageRef
 }

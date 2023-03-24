@@ -47,10 +47,6 @@ func (mod ServicePortModifier) getPorts() []corev1.ContainerPort {
 			Name:          consts.HttpsServicePortName,
 			ContainerPort: consts.HttpsContainerPort,
 		},
-		{
-			Name:          consts.HttpServicePortName,
-			ContainerPort: consts.HttpContainerPort,
-		},
 	}
 }
 

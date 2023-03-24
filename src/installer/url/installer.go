@@ -74,6 +74,10 @@ func (installer Installer) UpdateProcessModuleConfig(targetDir string, processMo
 	return processmoduleconfig.UpdateProcessModuleConfigInPlace(installer.fs, targetDir, processModuleConfig)
 }
 
+func (installer Installer) Cleanup() error {
+	return nil
+}
+
 func (installer Installer) installAgent(targetDir string) error {
 	fs := installer.fs
 	path := ""

@@ -59,9 +59,7 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 	}
 
 	// Status
-	dst.Status.ActiveGate.ImageHash = src.Status.ActiveGate.ImageHash
-	dst.Status.ActiveGate.LastImageProbeTimestamp = src.Status.ActiveGate.LastUpdateProbeTimestamp
-	dst.Status.ActiveGate.ImageVersion = src.Status.ActiveGate.Version
+	dst.Status.ActiveGate.LastImageProbeTimestamp = src.Status.ActiveGate.LastProbeTimestamp
 
 	dst.Status.Conditions = src.Status.Conditions
 
@@ -71,19 +69,17 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 	dst.Status.LastPaaSTokenProbeTimestamp = &timeNow
 
 	dst.Status.OneAgent.UseImmutableImage = true
-	dst.Status.OneAgent.ImageHash = src.Status.OneAgent.ImageHash
 	dst.Status.OneAgent.Instances = map[string]v1alpha1.OneAgentInstance{}
 	for key, value := range src.Status.OneAgent.Instances {
 		tmp := v1alpha1.OneAgentInstance{
-			Version:   src.Status.OneAgent.VersionStatus.Version,
+			Version:   src.Status.OneAgent.Version,
 			PodName:   value.PodName,
 			IPAddress: value.IPAddress,
 		}
 		dst.Status.OneAgent.Instances[key] = tmp
 	}
-	dst.Status.OneAgent.LastUpdateProbeTimestamp = src.Status.OneAgent.LastUpdateProbeTimestamp
+	dst.Status.OneAgent.LastUpdateProbeTimestamp = src.Status.OneAgent.LastProbeTimestamp
 	dst.Status.OneAgent.Version = src.Status.OneAgent.Version
-	dst.Status.OneAgent.ImageVersion = src.Status.OneAgent.Version
 
 	dst.Status.Phase = v1alpha1.DynaKubePhaseType(src.Status.Phase)
 	dst.Status.Tokens = ""
@@ -162,15 +158,13 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	}
 
 	// Status
-	dst.Status.ActiveGate.ImageHash = src.Status.ActiveGate.ImageHash
-	dst.Status.ActiveGate.LastUpdateProbeTimestamp = src.Status.ActiveGate.LastImageProbeTimestamp
+	dst.Status.ActiveGate.LastProbeTimestamp = src.Status.ActiveGate.LastImageProbeTimestamp
 	dst.Status.ActiveGate.Version = src.Status.ActiveGate.ImageVersion
 
 	dst.Status.Conditions = src.Status.Conditions
 
 	dst.Status.LastTokenProbeTimestamp = src.Status.LastAPITokenProbeTimestamp
 
-	dst.Status.OneAgent.ImageHash = src.Status.OneAgent.ImageHash
 	dst.Status.OneAgent.Instances = map[string]OneAgentInstance{}
 	for key, value := range src.Status.OneAgent.Instances {
 		instance := OneAgentInstance{
@@ -179,8 +173,8 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 		}
 		dst.Status.OneAgent.Instances[key] = instance
 	}
-	dst.Status.OneAgent.LastUpdateProbeTimestamp = src.Status.OneAgent.LastUpdateProbeTimestamp
 	dst.Status.OneAgent.Version = src.Status.OneAgent.Version
+	dst.Status.OneAgent.LastProbeTimestamp = src.Status.OneAgent.LastUpdateProbeTimestamp
 
 	dst.Status.Phase = DynaKubePhaseType(src.Status.Phase)
 	dst.Status.UpdatedTimestamp = src.Status.UpdatedTimestamp
