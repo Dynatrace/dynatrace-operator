@@ -2,6 +2,7 @@ package certificates
 
 import (
 	"context"
+	apiextensionv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
@@ -188,4 +189,127 @@ func TestCreateOrUpdateIfNecessary(t *testing.T) {
 		assert.NotNil(t, newSecret)
 		assert.EqualValues(t, certSecret.certificates.Data, newSecret.Data)
 	})
+}
+
+func TestCertificateSecret_isBundleValid(t *testing.T) {
+	certSecret := &certificateSecret{
+		certificates: &Certs{
+			Data: map[string][]byte{RootCert: testValue1},
+		},
+	}
+
+	tests := []struct {
+		name string
+		args []byte
+		want bool
+	}{
+		{
+			name: "bundle is nil",
+			args: nil,
+			want: false,
+		},
+		{
+			name: "root cert and bundle are different",
+			args: testValue2,
+			want: false,
+		},
+		{
+			name: "root cert and bundle are equal",
+			args: testValue1,
+			want: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equalf(t, tt.want, certSecret.isBundleValid(tt.args), "isBundleValid(%v)", tt.args)
+		})
+	}
+}
+
+func TestCertificateSecret_isCRDConversionValid(t *testing.T) {
+	certSecret := &certificateSecret{
+		certificates: &Certs{
+			Data: map[string][]byte{RootCert: testValue1},
+		},
+	}
+
+	tests := []struct {
+		name string
+		args *apiextensionv1.CustomResourceConversion
+		want bool
+	}{
+		{
+			name: "nil converter is invalid",
+			args: nil,
+			want: false,
+		},
+		{
+			name: "no converter is valid",
+			args: &apiextensionv1.CustomResourceConversion{
+				Strategy: apiextensionv1.NoneConverter,
+			},
+			want: true,
+		},
+		{
+			name: "nil webhook converter is invalid",
+			args: &apiextensionv1.CustomResourceConversion{
+				Strategy: apiextensionv1.WebhookConverter,
+				Webhook:  nil,
+			},
+			want: false,
+		},
+		{
+			name: "webhook converter with nil client config is invalid",
+			args: &apiextensionv1.CustomResourceConversion{
+				Strategy: apiextensionv1.WebhookConverter,
+				Webhook: &apiextensionv1.WebhookConversion{
+					ClientConfig: nil,
+				},
+			},
+			want: false,
+		},
+		{
+			name: "webhook converter with client config with nil ca bundle is invalid",
+			args: &apiextensionv1.CustomResourceConversion{
+				Strategy: apiextensionv1.WebhookConverter,
+				Webhook: &apiextensionv1.WebhookConversion{
+					ClientConfig: &apiextensionv1.WebhookClientConfig{
+						CABundle: nil,
+					},
+				},
+			},
+			want: false,
+		},
+		{
+			name: "equal data is valid",
+			args: &apiextensionv1.CustomResourceConversion{
+				Strategy: apiextensionv1.WebhookConverter,
+				Webhook: &apiextensionv1.WebhookConversion{
+					ClientConfig: &apiextensionv1.WebhookClientConfig{
+						CABundle: testValue1,
+					},
+				},
+			},
+			want: true,
+		},
+		{
+			name: "out of sync data is invalid",
+			args: &apiextensionv1.CustomResourceConversion{
+				Strategy: apiextensionv1.WebhookConverter,
+				Webhook: &apiextensionv1.WebhookConversion{
+					ClientConfig: &apiextensionv1.WebhookClientConfig{
+						CABundle: testValue2,
+					},
+				},
+			},
+			want: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equalf(t, tt.want, certSecret.isCRDConversionValid(tt.args), "isCRDConversionValid(%v)", tt.args)
+		})
+	}
 }
