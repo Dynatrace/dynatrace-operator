@@ -84,11 +84,14 @@ func (statefulSetBuilder Builder) getBaseSpec() appsv1.StatefulSetSpec {
 }
 
 func (statefulSetBuilder Builder) addLabels(sts *appsv1.StatefulSet) {
-	appLabels := kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, statefulSetBuilder.dynakube.Name, statefulSetBuilder.capability.ShortName(), "")
-
+	appLabels := statefulSetBuilder.buildAppLabels()
 	sts.ObjectMeta.Labels = appLabels.BuildLabels()
 	sts.Spec.Selector = &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()}
 	sts.Spec.Template.ObjectMeta.Labels = kubeobjects.MergeMap(statefulSetBuilder.capability.Properties().Labels, appLabels.BuildLabels())
+}
+
+func (statefulSetBuilder Builder) buildAppLabels() *kubeobjects.AppLabels {
+	return kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, statefulSetBuilder.dynakube.Name, statefulSetBuilder.capability.ShortName(), "")
 }
 
 func (statefulSetBuilder Builder) addUserAnnotations(sts *appsv1.StatefulSet) {
@@ -106,9 +109,10 @@ func (statefulSetBuilder Builder) addTemplateSpec(sts *appsv1.StatefulSet) {
 		ImagePullSecrets: []corev1.LocalObjectReference{
 			{Name: statefulSetBuilder.dynakube.PullSecret()},
 		},
-		PriorityClassName:         statefulSetBuilder.dynakube.Spec.ActiveGate.PriorityClassName,
-		DNSPolicy:                 statefulSetBuilder.dynakube.Spec.ActiveGate.DNSPolicy,
-		TopologySpreadConstraints: statefulSetBuilder.capability.Properties().TopologySpreadConstraints,
+		PriorityClassName: statefulSetBuilder.dynakube.Spec.ActiveGate.PriorityClassName,
+		DNSPolicy:         statefulSetBuilder.dynakube.Spec.ActiveGate.DNSPolicy,
+
+		TopologySpreadConstraints: statefulSetBuilder.buildTopologySpreadConstraints(statefulSetBuilder.capability),
 	}
 	sts.Spec.Template.Spec = podSpec
 }
@@ -118,6 +122,31 @@ func buildTolerations(capability capability.Capability) []corev1.Toleration {
 	copy(tolerations, capability.Properties().Tolerations)
 	tolerations = append(tolerations, kubeobjects.TolerationForAmd()...)
 	return tolerations
+}
+
+func (statefulSetBuilder Builder) buildTopologySpreadConstraints(capability capability.Capability) []corev1.TopologySpreadConstraint {
+	if len(capability.Properties().TopologySpreadConstraints) > 0 {
+		return capability.Properties().TopologySpreadConstraints
+	}
+	return statefulSetBuilder.defaultTopologyConstraints()
+}
+
+func (statefulSetBuilder Builder) defaultTopologyConstraints() []corev1.TopologySpreadConstraint {
+	appLabels := statefulSetBuilder.buildAppLabels()
+	return []corev1.TopologySpreadConstraint{
+		{
+			MaxSkew:           1,
+			TopologyKey:       "topology.kubernetes.io/zone",
+			WhenUnsatisfiable: "ScheduleAnyway",
+			LabelSelector:     &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()},
+		},
+		{
+			MaxSkew:           1,
+			TopologyKey:       "kubernetes.io/hostname",
+			WhenUnsatisfiable: "DoNotSchedule",
+			LabelSelector:     &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()},
+		},
+	}
 }
 
 func (statefulSetBuilder Builder) buildBaseContainer() []corev1.Container {
@@ -141,7 +170,6 @@ func (statefulSetBuilder Builder) buildBaseContainer() []corev1.Container {
 		},
 		SecurityContext: modifiers.GetSecurityContext(false),
 	}
-
 	return []corev1.Container{container}
 }
 
