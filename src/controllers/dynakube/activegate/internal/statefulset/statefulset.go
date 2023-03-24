@@ -84,11 +84,14 @@ func (statefulSetBuilder Builder) getBaseSpec() appsv1.StatefulSetSpec {
 }
 
 func (statefulSetBuilder Builder) addLabels(sts *appsv1.StatefulSet) {
-	appLabels := kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, statefulSetBuilder.dynakube.Name, statefulSetBuilder.capability.ShortName(), "")
-
+	appLabels := statefulSetBuilder.buildAppLabels()
 	sts.ObjectMeta.Labels = appLabels.BuildLabels()
 	sts.Spec.Selector = &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()}
 	sts.Spec.Template.ObjectMeta.Labels = kubeobjects.MergeMap(statefulSetBuilder.capability.Properties().Labels, appLabels.BuildLabels())
+}
+
+func (statefulSetBuilder Builder) buildAppLabels() *kubeobjects.AppLabels {
+	return kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, statefulSetBuilder.dynakube.Name, statefulSetBuilder.capability.ShortName(), "")
 }
 
 func (statefulSetBuilder Builder) addUserAnnotations(sts *appsv1.StatefulSet) {
@@ -109,7 +112,7 @@ func (statefulSetBuilder Builder) addTemplateSpec(sts *appsv1.StatefulSet) {
 		PriorityClassName: statefulSetBuilder.dynakube.Spec.ActiveGate.PriorityClassName,
 		DNSPolicy:         statefulSetBuilder.dynakube.Spec.ActiveGate.DNSPolicy,
 
-		TopologySpreadConstraints: buildTopologySpreadConstraints(statefulSetBuilder.capability),
+		TopologySpreadConstraints: statefulSetBuilder.buildTopologySpreadConstraints(statefulSetBuilder.capability),
 	}
 	sts.Spec.Template.Spec = podSpec
 }
@@ -121,33 +124,27 @@ func buildTolerations(capability capability.Capability) []corev1.Toleration {
 	return tolerations
 }
 
-func buildTopologySpreadConstraints(capability capability.Capability) []corev1.TopologySpreadConstraint {
+func (statefulSetBuilder Builder) buildTopologySpreadConstraints(capability capability.Capability) []corev1.TopologySpreadConstraint {
 	if len(capability.Properties().TopologySpreadConstraints) > 0 {
 		return capability.Properties().TopologySpreadConstraints
 	}
-
-	return defaultTopologyConstraints()
+	return statefulSetBuilder.defaultTopologyConstraints()
 }
 
-func defaultTopologyConstraints() []corev1.TopologySpreadConstraint {
-	labelSelector := &metav1.LabelSelector{
-		MatchLabels: map[string]string{
-			kubeobjects.AppComponentLabel: kubeobjects.ActiveGateComponentLabel,
-			kubeobjects.AppNameLabel:      kubeobjects.ActiveGateComponentLabel,
-		},
-	}
+func (statefulSetBuilder Builder) defaultTopologyConstraints() []corev1.TopologySpreadConstraint {
+	appLabels := statefulSetBuilder.buildAppLabels()
 	return []corev1.TopologySpreadConstraint{
 		{
 			MaxSkew:           1,
 			TopologyKey:       "topology.kubernetes.io/zone",
 			WhenUnsatisfiable: "ScheduleAnyway",
-			LabelSelector:     labelSelector,
+			LabelSelector:     &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()},
 		},
 		{
 			MaxSkew:           1,
 			TopologyKey:       "kubernetes.io/hostname",
 			WhenUnsatisfiable: "DoNotSchedule",
-			LabelSelector:     labelSelector,
+			LabelSelector:     &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()},
 		},
 	}
 }
@@ -173,7 +170,6 @@ func (statefulSetBuilder Builder) buildBaseContainer() []corev1.Container {
 		},
 		SecurityContext: modifiers.GetSecurityContext(false),
 	}
-
 	return []corev1.Container{container}
 }
 
