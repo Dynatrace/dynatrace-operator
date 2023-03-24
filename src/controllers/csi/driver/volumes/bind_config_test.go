@@ -89,4 +89,3 @@ func TestMetricVersionLabel(t *testing.T) {
 		assert.Equal(t, bindCfg.ImageDigest, bindCfg.MetricVersionLabel())
 	})
 }
-
