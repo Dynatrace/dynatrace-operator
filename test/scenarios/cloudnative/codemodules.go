@@ -99,7 +99,7 @@ func CodeModules(t *testing.T, istioEnabled bool) features.Feature {
 	if istioEnabled {
 		istio.AssessIstio(builder, cloudNativeDynakube, sampleApp)
 	}
-	builder.Assess("codemodules have been downloaded", imageHasBeenDownloaded(cloudNativeDynakube.Namespace, secretConfigs[0]))
+	builder.Assess("codemodules have been downloaded", imageHasBeenDownloaded(cloudNativeDynakube.Namespace))
 	builder.Assess("checking storage used", measureDiskUsage(appDynakube.Namespace, storageMap))
 	assess.InstallDynakube(builder, &secretConfigs[1], appDynakube)
 	builder.Assess("storage size has not increased", diskUsageDoesNotIncrease(appDynakube.Namespace, storageMap))
@@ -127,7 +127,7 @@ func codeModulesAppInjectSpec() *dynatracev1beta1.AppInjectionSpec {
 	}
 }
 
-func imageHasBeenDownloaded(namespace string, secret tenant.Secret) features.Func {
+func imageHasBeenDownloaded(namespace string) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resource := environmentConfig.Client().Resources()
 		clientset, err := kubernetes.NewForConfig(resource.GetConfig())
@@ -139,7 +139,7 @@ func imageHasBeenDownloaded(namespace string, secret tenant.Secret) features.Fun
 					Container: provisionerContainerName,
 				}).Stream(ctx)
 				require.NoError(t, err)
-				return logs.Contains(t, logStream, "Installed agent version: "+codeModulesVersion+" to tenant: "+secret.TenantUid), err
+				return logs.Contains(t, logStream, "Installed agent version: "+codeModulesImage), err
 			}, wait.WithTimeout(time.Minute*5))
 			require.NoError(t, err)
 
