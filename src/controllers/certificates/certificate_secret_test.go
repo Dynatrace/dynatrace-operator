@@ -234,8 +234,6 @@ func TestCertificateSecret_isCRDConversionValid(t *testing.T) {
 		},
 	}
 
-
-
 	tests := []struct {
 		name string
 		args *apiextensionv1.CustomResourceDefinition
@@ -316,9 +314,9 @@ func TestCertificateSecret_isCRDConversionValid(t *testing.T) {
 	}
 }
 
-func getCRDFromConversionSpec(conversionSpec *apiextensionv1.CustomResourceConversion)*apiextensionv1.CustomResourceDefinition{
+func getCRDFromConversionSpec(conversionSpec *apiextensionv1.CustomResourceConversion) *apiextensionv1.CustomResourceDefinition {
 	return &apiextensionv1.CustomResourceDefinition{
-		Spec:apiextensionv1.CustomResourceDefinitionSpec{
+		Spec: apiextensionv1.CustomResourceDefinitionSpec{
 			Conversion: conversionSpec,
 		}}
 }
