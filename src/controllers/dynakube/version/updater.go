@@ -2,6 +2,7 @@ package version
 
 import (
 	"context"
+	"fmt"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
@@ -36,7 +37,8 @@ func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpda
 
 	customImage := updater.CustomImage()
 	if customImage != "" {
-		err = updateVersionStatus(ctx, updater.Target(), customImage, reconciler.hashFunc, dockerCfg)
+		log.Info("updating version status according to custom image", "updater", updater.Name())
+		err = updateVersionStatus(ctx, updater.Target(), customImage, reconciler.digestFunc, dockerCfg)
 		return err
 	}
 
@@ -52,21 +54,22 @@ func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpda
 	}
 
 	if updater.IsPublicRegistryEnabled() {
+		log.Info("updating version status according to public registry", "updater", updater.Name())
 		var publicImage *dtclient.LatestImageInfo
 		publicImage, err = updater.LatestImageInfo()
 		if err != nil {
 			log.Info("could not get public image", "updater", updater.Name())
 			return err
 		}
-		err = updateVersionStatus(ctx, updater.Target(), publicImage.String(), reconciler.hashFunc, dockerCfg)
+		err = updateVersionStatus(ctx, updater.Target(), publicImage.String(), reconciler.digestFunc, dockerCfg)
 		if err != nil {
 			log.Info("could not update version status according to the public registry", "updater", updater.Name())
 			return err
 		}
-		updater.Target().Version = updater.Target().ImageTag
 		return nil
 	}
 
+	log.Info("updating version status according to the tenant registry", "updater", updater.Name())
 	err = updater.UseDefaults(ctx, dockerCfg)
 	return err
 }
@@ -88,7 +91,7 @@ func updateVersionStatus(
 	ctx context.Context,
 	target *dynatracev1beta1.VersionStatus,
 	imageUri string,
-	hashFunc ImageHashFunc,
+	digestFunc ImageDigestFunc,
 	dockerCfg *dockerconfig.DockerConfig,
 ) error {
 	ref, err := reference.Parse(imageUri)
@@ -96,29 +99,33 @@ func updateVersionStatus(
 		return errors.WithMessage(err, "failed to parse image uri")
 	}
 
-	var repo, hash, tag string
+	log.Info("updating image version info",
+		"image", imageUri,
+		"oldImageID", target.ImageID)
+
 	if canonRef, ok := ref.(reference.Canonical); ok {
-		repo = canonRef.Name()
-		hash = canonRef.Digest().String()
-		tag = hash
+		target.ImageID = canonRef.String()
 	} else if taggedRef, ok := ref.(reference.NamedTagged); ok {
-		repo = taggedRef.Name()
-		tag = taggedRef.Tag()
-		hash, err = hashFunc(ctx, imageUri, dockerCfg)
+		digest, err := digestFunc(ctx, imageUri, dockerCfg)
 		if err != nil {
-			return errors.WithMessage(err, "failed to get image hash")
+			target.ImageID = taggedRef.String()
+			log.Error(err, "failed to get image digest, falling back to tag")
+		} else {
+			canonRef, err := reference.WithDigest(taggedRef, digest)
+			if err != nil {
+				target.ImageID = taggedRef.String()
+				log.Error(err, "failed to create canonical image reference, falling back to tag")
+			} else {
+				target.ImageID = canonRef.String()
+			}
 		}
+	} else {
+		return errors.New(fmt.Sprintf("unsupported image reference: %s", imageUri))
 	}
 
-	log.Info("checked image version info",
-		"image", imageUri,
-		"oldRepo", target.ImageRepository, "newRepo", repo,
-		"oldTag", target.ImageTag, "newTag", tag,
-		"oldHash", target.ImageHash, "newHash", hash)
+	log.Info("updated image version info",
+		"newImageID", target.ImageID)
 
-	target.ImageTag = tag
-	target.ImageHash = hash
-	target.ImageRepository = repo
 	// Version will be set elsewhere, as it differs between modes
 	// unset is necessary so we have a consistent status
 	target.Version = ""

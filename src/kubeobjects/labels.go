@@ -18,8 +18,6 @@ const (
 	ActiveGateComponentLabel = "activegate"
 	WebhookComponentLabel    = "webhook"
 	SyntheticComponentLabel  = "synthetic"
-
-	CustomImageLabelValue = "custom-image"
 )
 
 type appMatchLabels struct {

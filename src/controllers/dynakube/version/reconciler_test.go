@@ -51,7 +51,7 @@ func TestReconcile(t *testing.T) {
 			dynakube:     dynakubeTemplate.DeepCopy(),
 			apiReader:    fake.NewClient(),
 			fs:           afero.Afero{Fs: afero.NewMemMapFs()},
-			hashFunc:     faultyRegistry.ImageVersionExt,
+			digestFunc:   faultyRegistry.ImageVersionExt,
 			timeProvider: timeprovider.New(),
 		}
 		err := versionReconciler.Reconcile(ctx)
@@ -75,7 +75,7 @@ func TestReconcile(t *testing.T) {
 			dynakube:     dynakube,
 			apiReader:    fakeClient,
 			fs:           afero.Afero{Fs: afero.NewMemMapFs()},
-			hashFunc:     registry.ImageVersionExt,
+			digestFunc:   registry.ImageVersionExt,
 			timeProvider: timeProvider,
 			dtClient:     mockClient,
 		}
@@ -119,7 +119,7 @@ func TestReconcile(t *testing.T) {
 			dynakube:     dynakube,
 			apiReader:    fakeClient,
 			fs:           afero.Afero{Fs: afero.NewMemMapFs()},
-			hashFunc:     registry.ImageVersionExt,
+			digestFunc:   registry.ImageVersionExt,
 			timeProvider: timeprovider.New(),
 			dtClient:     mockClient,
 		}
@@ -128,6 +128,33 @@ func TestReconcile(t *testing.T) {
 		assertPublicRegistryVersionStatusEquals(t, registry, getTaggedReference(t, testActiveGateImage.String()), dkStatus.ActiveGate.VersionStatus)
 		assertPublicRegistryVersionStatusEquals(t, registry, getTaggedReference(t, testOneAgentImage.String()), dkStatus.OneAgent.VersionStatus)
 		assertPublicRegistryVersionStatusEquals(t, registry, getTaggedReference(t, testCodeModulesImage.String()), dkStatus.CodeModules.VersionStatus)
+	})
+}
+
+func TestNeedsReconcile(t *testing.T) {
+	timeProvider := timeprovider.New()
+
+	dynakube := dynatracev1beta1.DynaKube{
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			OneAgent: dynatracev1beta1.OneAgentSpec{
+				ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
+			},
+		},
+	}
+
+	t.Run("return only updaters needed", func(t *testing.T) {
+		reconciler := Reconciler{
+			dynakube:     &dynakube,
+			timeProvider: timeProvider,
+		}
+		updaters := []versionStatusUpdater{
+			newOneAgentUpdater(&dynakube, nil, nil),
+			newActiveGateUpdater(&dynakube, nil, nil),
+		}
+
+		neededUpdater := reconciler.needsReconcile(updaters)
+
+		assert.Len(t, neededUpdater, 1)
 	})
 }
 

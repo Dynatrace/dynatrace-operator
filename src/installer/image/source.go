@@ -28,13 +28,7 @@ func getSourceInfo(cacheDir string, pullInfo Properties) (*types.SystemContext, 
 }
 
 func parseImageReference(uri string) (reference.Named, error) {
-	ref, err := reference.ParseNormalizedNamed(uri)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	ref = reference.TagNameOnly(ref)
-
-	return ref, nil
+	return reference.ParseDockerRef(uri)
 }
 
 func getSourceReference(named reference.Named) (*types.ImageReference, error) {

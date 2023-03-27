@@ -113,9 +113,6 @@ func (modifier SyntheticModifier) Enabled() bool {
 
 func (modifier SyntheticModifier) Modify(sts *appsv1.StatefulSet) error {
 	version := modifier.dynakube.Status.Synthetic.Version
-	if modifier.dynakube.FeatureCustomSyntheticImage() != "" {
-		version = kubeobjects.CustomImageLabelValue
-	}
 	sts.Labels[kubeobjects.AppVersionLabel] = version
 	sts.Labels[kubeobjects.AppComponentLabel] = kubeobjects.SyntheticComponentLabel
 

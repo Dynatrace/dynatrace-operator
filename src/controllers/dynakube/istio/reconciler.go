@@ -37,7 +37,7 @@ func NewReconciler(config *rest.Config, scheme *runtime.Scheme) *Reconciler {
 	reconciler := &Reconciler{
 		config:    config,
 		scheme:    scheme,
-		namespace: os.Getenv("POD_NAMESPACE"),
+		namespace: os.Getenv(kubeobjects.EnvPodNamespace),
 	}
 	istioClient, err := reconciler.initializeIstioClient(config)
 	if err != nil {

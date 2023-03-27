@@ -69,9 +69,8 @@ func (version SemanticVersion) String() string {
 	return fmt.Sprintf("%d.%d.%d.%s", version.major, version.minor, version.release, version.timestamp)
 }
 
-// NeedsUpgradeRaw parses prev and curr, and returns true when curr is a newer version than prev, or false if they are
-// the same. In case curr is older than prev an error is returned.
-func NeedsUpgradeRaw(prev string, curr string) (bool, error) {
+// IsDowngrade parses prev and curr, and returns true when curr is a older version than prev
+func IsDowngrade(prev string, curr string) (bool, error) {
 	parsedPrev, err := ExtractSemanticVersion(prev)
 	if err != nil {
 		return false, errors.WithMessage(err, "failed to parse version")
@@ -83,9 +82,5 @@ func NeedsUpgradeRaw(prev string, curr string) (bool, error) {
 	}
 
 	comp := CompareSemanticVersions(parsedPrev, parsedCurr)
-	if comp > 0 {
-		return false, errors.Errorf("trying to downgrade from '%s' to '%s'", parsedPrev, parsedCurr)
-	}
-
-	return comp < 0, nil
+	return comp > 0, nil
 }

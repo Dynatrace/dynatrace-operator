@@ -166,9 +166,6 @@ func TestUnpublishVolume(t *testing.T) {
 
 		response, err := publisher.UnpublishVolume(context.TODO(), createTestVolumeInfo())
 
-		assert.Equal(t, 1, testutil.CollectAndCount(agentsVersionsMetric))
-		assert.Equal(t, float64(0), testutil.ToFloat64(agentsVersionsMetric.WithLabelValues(testAgentVersion)))
-
 		require.NoError(t, err)
 		require.Nil(t, response)
 		require.NotEmpty(t, mounter.MountPoints)
@@ -313,7 +310,7 @@ func mockUrlDynakubeMetadata(t *testing.T, publisher *AppVolumePublisher) {
 }
 
 func mockImageDynakubeMetadata(t *testing.T, publisher *AppVolumePublisher) {
-	err := publisher.db.InsertDynakube(context.TODO(), metadata.NewDynakube(testDynakubeName, testTenantUUID, testAgentVersion, testImageDigest, dynatracev1beta1.DefaultMaxFailedCsiMountAttempts))
+	err := publisher.db.InsertDynakube(context.TODO(), metadata.NewDynakube(testDynakubeName, testTenantUUID, "", testImageDigest, dynatracev1beta1.DefaultMaxFailedCsiMountAttempts))
 	require.NoError(t, err)
 }
 
@@ -344,7 +341,8 @@ func assertNoReferencesForUnpublishedVolume(t *testing.T, publisher *AppVolumePu
 }
 
 func resetMetrics() {
-	agentsVersionsMetric.WithLabelValues(testAgentVersion).Set(0)
+	agentsVersionsMetric.DeleteLabelValues(testAgentVersion)
+	agentsVersionsMetric.DeleteLabelValues(testImageDigest)
 }
 
 func createTestVolumeConfig() *csivolumes.VolumeConfig {

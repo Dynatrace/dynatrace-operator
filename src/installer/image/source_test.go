@@ -11,9 +11,8 @@ import (
 
 const (
 	testDir              = "test"
-	testImageRegistry    = "quay.io"
-	testImageName        = "image:tag"
-	testImageUri         = testImageRegistry + "/repo/" + testImageName
+	testImageUri         = "some.registry.com/image:tag@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
+	expectedRef          = "some.registry.com/image@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
 	testRegistryAuthPath = "testAuthPath"
 	testCAPath           = "testCAPath"
 )
@@ -67,6 +66,6 @@ func getTestImageReference(t *testing.T) reference.Named {
 	imageRef, err := parseImageReference(testImageUri)
 	require.NoError(t, err)
 	require.NotNil(t, imageRef)
-	assert.Equal(t, testImageUri, imageRef.String())
+	assert.Equal(t, expectedRef, imageRef.String())
 	return imageRef
 }

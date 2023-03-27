@@ -18,6 +18,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
+	"github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -557,13 +558,8 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 					dynatracev1beta1.RoutingCapability.DisplayName,
 				},
 			}},
-		Status: dynatracev1beta1.DynaKubeStatus{
-			ActiveGate: dynatracev1beta1.ActiveGateStatus{
-				VersionStatus: dynatracev1beta1.VersionStatus{
-					ImageTag: testComponentVersion,
-				},
-			},
-		}}
+	}
+
 	r := createFakeClientAndReconciler(mockClient, instance, testPaasToken, testAPIToken)
 	request := reconcile.Request{
 		NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -665,7 +661,7 @@ func createDTMockClient(paasTokenScopes, apiTokenScopes dtclient.TokenScopes) *d
 	return mockClient
 }
 
-func fakeHashProvider(context.Context, string, *dockerconfig.DockerConfig) (string, error) {
+func fakeDigestProvider(context.Context, string, *dockerconfig.DockerConfig) (digest.Digest, error) {
 	return "", nil
 }
 
@@ -701,7 +697,7 @@ func createFakeClientAndReconciler(mockClient dtclient.Client, instance *dynatra
 		scheme:                 scheme.Scheme,
 		dynatraceClientBuilder: mockDtcBuilder,
 		fs:                     afero.Afero{Fs: afero.NewMemMapFs()},
-		hashProvider:           fakeHashProvider,
+		digestProvider:         fakeDigestProvider,
 	}
 
 	return controller
