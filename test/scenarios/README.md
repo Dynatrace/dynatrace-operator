@@ -155,3 +155,19 @@ DTO with CSI driver
 Verification if support-archive package created by the support-archive command and printed
 to the standard output is a valid tar.gz package and contains required *operator-version.txt*
 file.
+
+# Synthetic - monolocation
+## Prerequisites
+Define from a tenant a synthetic private location attributed with a browser monitor.
+
+## Setup
+Specify the entities IDs for the prerequisites in `single-tenant.yaml`.
+
+## Goals
+The test suite requires the operator to set up an **Active Gate** focused on the observability and a **synthetic location** apt to complete a browser visit.
+
+Particularly it applies a `DynaKubes` for the **Active Gate** and one for **location**. Then it searches the container logs for:
+1. Observability modules specific for **Active Gate**,
+2. The location ordinal and the synthetic module for the supplementary **Active Gate**,
+3. **VUC** with the running status,
+4. And a completed visit.

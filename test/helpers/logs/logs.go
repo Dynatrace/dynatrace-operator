@@ -13,12 +13,18 @@ import (
 )
 
 func AssertContains(t *testing.T, logStream io.ReadCloser, contains string) {
-	buffer := new(bytes.Buffer)
-	copied, err := io.Copy(buffer, logStream)
+	content := RequireContent(t, logStream)
+	assert.Contains(t, content, contains)
+}
 
+func RequireContent(t *testing.T, logStream io.ReadCloser) string {
+	buffer := new(bytes.Buffer)
+
+	copied, err := io.Copy(buffer, logStream)
 	require.NoError(t, err)
 	require.Equal(t, int64(buffer.Len()), copied)
-	assert.Contains(t, buffer.String(), contains)
+
+	return buffer.String()
 }
 
 func Contains(t *testing.T, logStream io.ReadCloser, contains string) bool {

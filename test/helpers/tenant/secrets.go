@@ -29,9 +29,11 @@ type Secrets struct {
 }
 
 type Secret struct {
-	TenantUid string `yaml:"tenantUid"`
-	ApiUrl    string `yaml:"apiUrl"`
-	ApiToken  string `yaml:"apiToken"`
+	TenantUid                       string `yaml:"tenantUid"`
+	ApiUrl                          string `yaml:"apiUrl"`
+	ApiToken                        string `yaml:"apiToken"`
+	SyntheticLocEntityId            string `yaml:"syntheticLocEntityId"`
+	SyntheticBrowserMonitorEntityId string `yaml:"syntheticBrowserMonitorEntityId"`
 }
 
 func manyFromConfig(fs afero.Fs, path string) ([]Secret, error) {

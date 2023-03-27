@@ -38,3 +38,7 @@ test/e2e/applicationmonitoring: manifests/crd/helm
 ## Runs SupportArchive e2e test only
 test/e2e/supportarchive: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -count=1 ./test/scenarios/support_archive
+
+## synthetic monitoring
+test/e2e/synthetic: manifests/crd/helm
+	go test -v -tags e2e -timeout 25m -count=1 ./test/scenarios/synthetic/monolocation
