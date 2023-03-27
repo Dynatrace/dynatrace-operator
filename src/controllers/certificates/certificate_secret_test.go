@@ -234,75 +234,77 @@ func TestCertificateSecret_isCRDConversionValid(t *testing.T) {
 		},
 	}
 
+
+
 	tests := []struct {
 		name string
-		args *apiextensionv1.CustomResourceConversion
+		args *apiextensionv1.CustomResourceDefinition
 		want bool
 	}{
 		{
-			name: "nil converter is invalid",
-			args: nil,
-			want: false,
-		},
-		{
-			name: "no converter is valid",
-			args: &apiextensionv1.CustomResourceConversion{
-				Strategy: apiextensionv1.NoneConverter,
-			},
+			name: "nil converter is valid",
+			args: getCRDSpec(&apiextensionv1.CustomResourceConversion{}),
 			want: true,
 		},
 		{
-			name: "nil webhook converter is invalid",
-			args: &apiextensionv1.CustomResourceConversion{
-				Strategy: apiextensionv1.WebhookConverter,
-				Webhook:  nil,
-			},
-			want: false,
+			name: "no converter is valid",
+			args: getCRDSpec(&apiextensionv1.CustomResourceConversion{
+				Strategy: apiextensionv1.NoneConverter,
+			}),
+			want: true,
 		},
 		{
-			name: "webhook converter with nil client config is invalid",
-			args: &apiextensionv1.CustomResourceConversion{
+			name: "nil webhook converter is valid",
+			args: getCRDSpec(&apiextensionv1.CustomResourceConversion{
+				Strategy: apiextensionv1.WebhookConverter,
+				Webhook:  nil,
+			}),
+			want: true,
+		},
+		{
+			name: "webhook converter with nil client config is valid",
+			args: getCRDSpec(&apiextensionv1.CustomResourceConversion{
 				Strategy: apiextensionv1.WebhookConverter,
 				Webhook: &apiextensionv1.WebhookConversion{
 					ClientConfig: nil,
 				},
-			},
-			want: false,
+			}),
+			want: true,
 		},
 		{
 			name: "webhook converter with client config with nil ca bundle is invalid",
-			args: &apiextensionv1.CustomResourceConversion{
+			args: getCRDSpec(&apiextensionv1.CustomResourceConversion{
 				Strategy: apiextensionv1.WebhookConverter,
 				Webhook: &apiextensionv1.WebhookConversion{
 					ClientConfig: &apiextensionv1.WebhookClientConfig{
 						CABundle: nil,
 					},
 				},
-			},
+			}),
 			want: false,
 		},
 		{
 			name: "equal data is valid",
-			args: &apiextensionv1.CustomResourceConversion{
+			args: getCRDSpec(&apiextensionv1.CustomResourceConversion{
 				Strategy: apiextensionv1.WebhookConverter,
 				Webhook: &apiextensionv1.WebhookConversion{
 					ClientConfig: &apiextensionv1.WebhookClientConfig{
 						CABundle: testValue1,
 					},
 				},
-			},
+			}),
 			want: true,
 		},
 		{
 			name: "out of sync data is invalid",
-			args: &apiextensionv1.CustomResourceConversion{
+			args: getCRDSpec(&apiextensionv1.CustomResourceConversion{
 				Strategy: apiextensionv1.WebhookConverter,
 				Webhook: &apiextensionv1.WebhookConversion{
 					ClientConfig: &apiextensionv1.WebhookClientConfig{
 						CABundle: testValue2,
 					},
 				},
-			},
+			}),
 			want: false,
 		},
 	}
@@ -312,4 +314,11 @@ func TestCertificateSecret_isCRDConversionValid(t *testing.T) {
 			assert.Equalf(t, tt.want, certSecret.isCRDConversionValid(tt.args), "isCRDConversionValid(%v)", tt.args)
 		})
 	}
+}
+
+func getCRDSpec(conversionSpec *apiextensionv1.CustomResourceConversion)*apiextensionv1.CustomResourceDefinition{
+	return &apiextensionv1.CustomResourceDefinition{
+		Spec:apiextensionv1.CustomResourceDefinitionSpec{
+			Conversion: conversionSpec,
+		}}
 }
