@@ -28,4 +28,3 @@ runs:
       run: cosign sign ${TAGS}
       env:
         TAGS: ${{ inputs.image }}
-        COSIGN_EXPERIMENTAL: "true"
