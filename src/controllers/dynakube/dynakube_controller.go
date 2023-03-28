@@ -65,7 +65,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, sc
 		fs:                     afero.Afero{Fs: afero.NewOsFs()},
 		dynatraceClientBuilder: dynatraceclient.NewBuilder(apiReader),
 		config:                 config,
-		operatorNamespace:      os.Getenv("POD_NAMESPACE"),
+		operatorNamespace:      os.Getenv(kubeobjects.EnvPodNamespace),
 		clusterID:              clusterID,
 		digestProvider:         version.GetImageDigest,
 	}

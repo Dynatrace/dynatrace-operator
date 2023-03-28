@@ -6,6 +6,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+const (
+	EnvPodNamespace = "POD_NAMESPACE"
+	EnvPodName      = "POD_NAME"
+)
+
 func FindEnvVar(envVars []corev1.EnvVar, name string) *corev1.EnvVar {
 	for i, envVar := range envVars {
 		if envVar.Name == name {
@@ -40,7 +45,7 @@ func NewEnvVarSourceForField(fieldPath string) *corev1.EnvVarSource {
 }
 
 func DefaultNamespace() string {
-	namespace := os.Getenv("POD_NAMESPACE")
+	namespace := os.Getenv(EnvPodNamespace)
 
 	if namespace == "" {
 		return "dynatrace"

@@ -160,8 +160,8 @@ func getK8sClients(kubeConfig *rest.Config) (*kubernetes.Clientset, client.Reade
 }
 
 func printCopyCommand(log logr.Logger, tarballToStdout bool, tarFileName string) {
-	podNamespace := os.Getenv("POD_NAMESPACE")
-	podName := os.Getenv("POD_NAME")
+	podNamespace := os.Getenv(kubeobjects.EnvPodNamespace)
+	podName := os.Getenv(kubeobjects.EnvPodName)
 
 	if tarballToStdout {
 		return
