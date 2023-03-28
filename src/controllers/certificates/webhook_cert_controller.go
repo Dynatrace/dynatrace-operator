@@ -132,7 +132,7 @@ func (controller *WebhookCertificateController) Reconcile(ctx context.Context, r
 func (controller *WebhookCertificateController) isUpToDate(certSecret *certificateSecret, mutatingWebhookClientConfigs []*admissionregistrationv1.WebhookClientConfig, validatingWebhookConfigConfigs []*admissionregistrationv1.WebhookClientConfig, crd *apiv1.CustomResourceDefinition) bool {
 	areMutatingWebhookConfigsValid := certSecret.areWebhookConfigsValid(mutatingWebhookClientConfigs)
 	areValidatingWebhookConfigsValid := certSecret.areWebhookConfigsValid(validatingWebhookConfigConfigs)
-	isCRDConversionConfigValid := certSecret.isCRDConversionValid(crd.Spec.Conversion)
+	isCRDConversionConfigValid := certSecret.isCRDConversionValid(crd)
 
 	isUpToDate := certSecret.isRecent() &&
 		areMutatingWebhookConfigsValid &&
