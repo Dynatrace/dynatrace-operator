@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/interface"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -20,7 +21,7 @@ type SamplePod struct {
 	sampleApp
 }
 
-func NewSamplePod(t *testing.T, testDynakube dynatracev1beta1.DynaKube) SampleApp {
+func NewSamplePod(t *testing.T, testDynakube dynatracev1beta1.DynaKube) sampleapps.SampleApp {
 	return &SamplePod{
 		sampleApp: *newSampleApp(t, testDynakube),
 	}

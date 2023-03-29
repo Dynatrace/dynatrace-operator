@@ -15,7 +15,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
+	sample "github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/interface"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
@@ -48,12 +49,12 @@ func dataIngest(t *testing.T) features.Feature {
 			UseCSIDriver: address.Of(false),
 		}).Build()
 
-	sampleDeployment := sampleapps.NewSampleDeployment(t, testDynakube)
+	sampleDeployment := sample.NewSampleDeployment(t, testDynakube)
 	sampleDeployment.WithAnnotations(map[string]string{
 		webhook.AnnotationOneAgentInject:   "false",
 		webhook.AnnotationDataIngestInject: "true",
 	})
-	samplePod := sampleapps.NewSamplePod(t, testDynakube)
+	samplePod := sample.NewSamplePod(t, testDynakube)
 	samplePod.WithAnnotations(map[string]string{
 		webhook.AnnotationOneAgentInject:   "false",
 		webhook.AnnotationDataIngestInject: "true",

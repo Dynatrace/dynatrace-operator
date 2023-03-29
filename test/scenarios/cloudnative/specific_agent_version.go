@@ -15,7 +15,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
+	sample "github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/interface"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
@@ -29,7 +30,7 @@ import (
 
 const agentVersion = "VERSION"
 
-func SpecificAgentVersion(t *testing.T, istioEnabled bool) features.Feature {
+func SpecificAgentVersion(t *testing.T) features.Feature {
 	builder := features.New("cloudnative with specific agent version")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
@@ -42,12 +43,9 @@ func SpecificAgentVersion(t *testing.T, istioEnabled bool) features.Feature {
 		WithDynakubeNamespaceSelector().
 		ApiUrl(secretConfig.ApiUrl).
 		CloudNativeWithAgentVersion(defaultCloudNativeSpec(), oldVersion)
-	if istioEnabled {
-		dynakubeBuilder = dynakubeBuilder.WithIstio()
-	}
 	testDynakube := dynakubeBuilder.Build()
 	sampleNamespace := namespace.NewBuilder("specific-agent-sample").WithLabels(testDynakube.NamespaceSelector().MatchLabels).Build()
-	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
+	sampleApp := sample.NewSampleDeployment(t, testDynakube)
 	sampleApp.WithNamespace(sampleNamespace)
 
 	// Register sample app install

@@ -9,7 +9,8 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/interface"
+	sample "github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
@@ -28,7 +29,7 @@ func install(t *testing.T) features.Feature {
 		ClassicFullstack(&dynatracev1beta1.HostInjectSpec{}).
 		Build()
 
-	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
+	sampleApp := sample.NewSampleDeployment(t, testDynakube)
 
 	// Register sample apps install and teardown
 	builder.Assess("install sample app", sampleApp.Install())

@@ -13,7 +13,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
+	sample "github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/interface"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
@@ -240,7 +241,7 @@ func buildDisabledBuildLabelNamespace(testDynakube dynatracev1beta1.DynaKube) co
 }
 
 func buildDisabledBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1beta1.DynaKube) sampleapps.SampleApp {
-	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
+	sampleApp := sample.NewSampleDeployment(t, testDynakube)
 	sampleApp.WithNamespace(buildDisabledBuildLabelNamespace(testDynakube))
 	return sampleApp
 }
@@ -250,7 +251,7 @@ func buildDefaultBuildLabelNamespace(testDynakube dynatracev1beta1.DynaKube) cor
 }
 
 func buildDefaultBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1beta1.DynaKube) sampleapps.SampleApp {
-	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
+	sampleApp := sample.NewSampleDeployment(t, testDynakube)
 	sampleApp.WithNamespace(buildDefaultBuildLabelNamespace(testDynakube))
 	sampleApp.WithLabels(map[string]string{
 		"app.kubernetes.io/version": "app-kubernetes-io-version",
@@ -274,7 +275,7 @@ func buildCustomBuildLabelNamespace(testDynakube dynatracev1beta1.DynaKube) core
 }
 
 func buildCustomBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1beta1.DynaKube) sampleapps.SampleApp {
-	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
+	sampleApp := sample.NewSampleDeployment(t, testDynakube)
 	sampleApp.WithNamespace(buildCustomBuildLabelNamespace(testDynakube))
 	sampleApp.WithLabels(map[string]string{
 		"app.kubernetes.io/version": "app-kubernetes-io-version",
@@ -298,7 +299,7 @@ func buildPreservedBuildLabelNamespace(testDynakube dynatracev1beta1.DynaKube) c
 }
 
 func buildPreservedBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1beta1.DynaKube) sampleapps.SampleApp {
-	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
+	sampleApp := sample.NewSampleDeployment(t, testDynakube)
 	sampleApp.WithNamespace(buildPreservedBuildLabelNamespace(testDynakube))
 	sampleApp.WithLabels(map[string]string{
 		"app.kubernetes.io/version": "app-kubernetes-io-version",
@@ -358,7 +359,7 @@ func buildInvalidBuildLabelNamespace(testDynakube dynatracev1beta1.DynaKube) cor
 }
 
 func buildInvalidBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1beta1.DynaKube) sampleapps.SampleApp {
-	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
+	sampleApp := sample.NewSampleDeployment(t, testDynakube)
 	sampleApp.WithNamespace(buildInvalidBuildLabelNamespace(testDynakube))
 	sampleApp.WithLabels(map[string]string{
 		"app.kubernetes.io/version": "app-kubernetes-io-version",

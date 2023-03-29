@@ -21,7 +21,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/logs"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/interface"
+	sample "github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
@@ -82,7 +83,7 @@ func CodeModules(t *testing.T, istioEnabled bool) features.Feature {
 		namespaceBuilder = namespaceBuilder.WithLabels(istio.InjectionLabel)
 	}
 	sampleNamespace := namespaceBuilder.WithLabels(cloudNativeDynakube.NamespaceSelector().MatchLabels).Build()
-	sampleApp := sampleapps.NewSampleDeployment(t, cloudNativeDynakube)
+	sampleApp := sample.NewSampleDeployment(t, cloudNativeDynakube)
 	sampleApp.WithNamespace(sampleNamespace)
 
 	// Register operator install

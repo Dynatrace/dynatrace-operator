@@ -13,7 +13,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/logs"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/interface"
+	sample "github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
@@ -53,7 +54,7 @@ func Install(t *testing.T, istioEnabled bool) features.Feature {
 		namespaceBuilder = namespaceBuilder.WithLabels(istio.InjectionLabel)
 	}
 	sampleNamespace := namespaceBuilder.Build()
-	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
+	sampleApp := sample.NewSampleDeployment(t, testDynakube)
 	sampleApp.WithNamespace(sampleNamespace)
 
 	// Register sample app install
