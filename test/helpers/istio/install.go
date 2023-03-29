@@ -14,7 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/manifests"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/interface"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/base"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/Dynatrace/dynatrace-operator/test/project"
 	"github.com/pkg/errors"
@@ -85,14 +85,14 @@ func AssertIstiodDeployment() func(ctx context.Context, environmentConfig *envco
 	}
 }
 
-func AssessIstio(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube, sampleApp sampleapps.SampleApp) {
+func AssessIstio(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube, sampleApp base.App) {
 	builder.Assess("sample apps have working istio init container", checkSampleAppIstioInitContainers(sampleApp, testDynakube))
 	builder.Assess("operator pods have working istio init container", checkOperatorIstioInitContainers(testDynakube))
 	builder.Assess("istio virtual service for ApiUrl created", checkVirtualServiceForApiUrl(testDynakube))
 	builder.Assess("istio service entry for ApiUrl created", checkServiceEntryForApiUrl(testDynakube))
 }
 
-func checkSampleAppIstioInitContainers(sampleApp sampleapps.SampleApp, testDynakube dynatracev1beta1.DynaKube) features.Func {
+func checkSampleAppIstioInitContainers(sampleApp base.App, testDynakube dynatracev1beta1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resources := environmentConfig.Client().Resources()
 		pods := sampleApp.GetPods(ctx, t, resources)

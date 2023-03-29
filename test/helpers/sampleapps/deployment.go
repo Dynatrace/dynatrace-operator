@@ -10,7 +10,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/interface"
+	sample "github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/base"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -25,7 +25,7 @@ type SampleDeployment struct {
 	sampleApp
 }
 
-func NewSampleDeployment(t *testing.T, testDynakube dynatracev1beta1.DynaKube) sampleapps.SampleApp {
+func NewSampleDeployment(t *testing.T, testDynakube dynatracev1beta1.DynaKube) sample.App {
 	return &SampleDeployment{
 		sampleApp: *newSampleApp(t, testDynakube),
 	}

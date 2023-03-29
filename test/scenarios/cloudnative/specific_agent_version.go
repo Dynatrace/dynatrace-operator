@@ -15,8 +15,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
-	sample "github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/interface"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
+	sample "github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/base"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
@@ -45,7 +45,7 @@ func SpecificAgentVersion(t *testing.T) features.Feature {
 		CloudNativeWithAgentVersion(defaultCloudNativeSpec(), oldVersion)
 	testDynakube := dynakubeBuilder.Build()
 	sampleNamespace := namespace.NewBuilder("specific-agent-sample").WithLabels(testDynakube.NamespaceSelector().MatchLabels).Build()
-	sampleApp := sample.NewSampleDeployment(t, testDynakube)
+	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
 	sampleApp.WithNamespace(sampleNamespace)
 
 	// Register sample app install
@@ -76,7 +76,7 @@ func getAvailableVersions(secret tenant.Secret, t *testing.T) []string {
 	return versions
 }
 
-func assessVersionChecks(builder *features.FeatureBuilder, version version.SemanticVersion, sampleApp sampleapps.SampleApp) {
+func assessVersionChecks(builder *features.FeatureBuilder, version version.SemanticVersion, sampleApp sample.App) {
 	builder.Assess("restart sample apps", sampleApp.Restart)
 	builder.Assess("check init containers", checkInitContainers(sampleApp))
 	builder.Assess("check env vars of init container", checkVersionInSampleApp(version, sampleApp))
@@ -126,7 +126,7 @@ func updateDynakube(testDynakube dynatracev1beta1.DynaKube, semanticVersion vers
 	}
 }
 
-func checkVersionInSampleApp(semanticVersion version.SemanticVersion, sampleApp sampleapps.SampleApp) features.Func {
+func checkVersionInSampleApp(semanticVersion version.SemanticVersion, sampleApp sample.App) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resources := environmentConfig.Client().Resources()
 		pods := sampleApp.GetPods(ctx, t, resources)

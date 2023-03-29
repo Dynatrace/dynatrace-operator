@@ -1,6 +1,6 @@
 //go:build e2e
 
-package sampleapps
+package base
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-type SampleApp interface {
+type App interface {
 	Name() string
 	ContainerName() string
 	Namespace() *corev1.Namespace
@@ -34,4 +34,3 @@ type SampleApp interface {
 	Get(ctx context.Context, t *testing.T, resource *resources.Resources) client.Object
 	GetPods(ctx context.Context, t *testing.T, resource *resources.Resources) corev1.PodList
 }
-

@@ -12,8 +12,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/proxy"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/interface"
-	sample "github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
+	sample "github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/base"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
@@ -42,7 +42,7 @@ func withProxy(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features
 		Build()
 
 	sampleNamespace := namespace.NewBuilder("proxy-sample").WithLabels(testDynakube.NamespaceSelector().MatchLabels).Build()
-	sampleApp := sample.NewSampleDeployment(t, testDynakube)
+	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
 	sampleApp.WithLabels(testDynakube.NamespaceSelector().MatchLabels)
 	sampleApp.WithNamespace(sampleNamespace)
 
@@ -88,7 +88,7 @@ func checkOneAgentEnvVars(dynakube dynatracev1beta1.DynaKube) features.Func {
 	}
 }
 
-func checkSampleInitContainerEnvVars(sampleApp sampleapps.SampleApp) features.Func {
+func checkSampleInitContainerEnvVars(sampleApp sample.App) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resources := environmentConfig.Client().Resources()
 		pods := sampleApp.GetPods(ctx, t, resources)

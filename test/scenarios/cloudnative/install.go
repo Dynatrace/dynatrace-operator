@@ -13,8 +13,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/logs"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/interface"
-	sample "github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
+	sample "github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/base"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
@@ -54,7 +54,7 @@ func Install(t *testing.T, istioEnabled bool) features.Feature {
 		namespaceBuilder = namespaceBuilder.WithLabels(istio.InjectionLabel)
 	}
 	sampleNamespace := namespaceBuilder.Build()
-	sampleApp := sample.NewSampleDeployment(t, testDynakube)
+	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
 	sampleApp.WithNamespace(sampleNamespace)
 
 	// Register sample app install
@@ -75,19 +75,19 @@ func Install(t *testing.T, istioEnabled bool) features.Feature {
 	return builder.Feature()
 }
 
-func assessSampleAppsRestart(builder *features.FeatureBuilder, sampleApp sampleapps.SampleApp) {
+func assessSampleAppsRestart(builder *features.FeatureBuilder, sampleApp sample.App) {
 	builder.Assess("restart sample apps", sampleApp.Restart)
 }
 
-func assessSampleAppsRestartHalf(builder *features.FeatureBuilder, sampleApp sampleapps.SampleApp) {
+func assessSampleAppsRestartHalf(builder *features.FeatureBuilder, sampleApp sample.App) {
 	builder.Assess("restart half of sample apps", sampleApp.RestartHalf)
 }
 
-func assessSampleInitContainers(builder *features.FeatureBuilder, sampleApp sampleapps.SampleApp) {
+func assessSampleInitContainers(builder *features.FeatureBuilder, sampleApp sample.App) {
 	builder.Assess("sample apps have working init containers", checkInitContainers(sampleApp))
 }
 
-func checkInitContainers(sampleApp sampleapps.SampleApp) features.Func {
+func checkInitContainers(sampleApp sample.App) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resources := environmentConfig.Client().Resources()
 		pods := sampleApp.GetPods(ctx, t, resources)

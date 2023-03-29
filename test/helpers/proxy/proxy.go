@@ -28,7 +28,7 @@ var (
 	sampleNamespaceNetworkPolicy = path.Join(project.TestDataDir(), "network/sample-ns-denial.yaml")
 
 	proxyDeploymentPath = path.Join(project.TestDataDir(), "network/proxy.yaml")
-	proxySCCPath = path.Join(project.TestDataDir(), "network/proxy-scc.yaml")
+	proxySCCPath        = path.Join(project.TestDataDir(), "network/proxy-scc.yaml")
 
 	ProxySpec = &dynatracev1beta1.DynaKubeProxy{
 		Value: "http://squid.proxy.svc.cluster.local:3128",
