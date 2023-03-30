@@ -1,0 +1,30 @@
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: proxy
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+fsGroup:
+  type: RunAsAny
+supplementalGroups:
+  type: RunAsAny
+allowHostDirVolumePlugin: true
+allowHostIPC: true
+allowHostNetwork: true
+allowHostPID: true
+allowHostPorts: true
+allowPrivilegeEscalation: true
+allowPrivilegedContainer: true
+allowedCapabilities:
+ - "*"
+allowedUnsafeSysctls:
+ - "*"
+priority: 1
+readOnlyRootFilesystem: false
+requiredDropCapabilities: []
+users:
+  - system:serviceaccount:proxy:proxy
+volumes:
+- "*"

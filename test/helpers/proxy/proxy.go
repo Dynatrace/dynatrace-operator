@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
@@ -27,14 +28,16 @@ var (
 	sampleNamespaceNetworkPolicy = path.Join(project.TestDataDir(), "network/sample-ns-denial.yaml")
 
 	proxyDeploymentPath = path.Join(project.TestDataDir(), "network/proxy.yaml")
+	proxySCCPath        = path.Join(project.TestDataDir(), "network/proxy-scc.yaml")
 
 	ProxySpec = &dynatracev1beta1.DynaKubeProxy{
-		Value: "http://squid.proxy:3128",
+		Value: "http://squid.proxy.svc.cluster.local:3128",
 	}
 )
 
 func SetupProxyWithTeardown(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube) {
 	if testDynakube.Spec.Proxy != nil {
+		installProxySCC(builder)
 		builder.Assess("create proxy namespace", namespace.Create(namespace.NewBuilder(proxyNamespaceName).Build()))
 		builder.Assess("install proxy", manifests.InstallFromFile(proxyDeploymentPath))
 		builder.Assess("proxy started", deployment.WaitFor(proxyDeploymentName, proxyNamespaceName))
@@ -44,6 +47,12 @@ func SetupProxyWithTeardown(builder *features.FeatureBuilder, testDynakube dynat
 		builder.Assess("proxy is running", sampleapps.CheckWebhookCurlProxyResult(testDynakube))
 
 		builder.WithTeardown("removing proxy", DeleteProxy())
+	}
+}
+
+func installProxySCC(builder *features.FeatureBuilder) {
+	if kubeobjects.ResolvePlatformFromEnv() == kubeobjects.Openshift {
+		builder.Assess("install proxy scc", manifests.InstallFromFile(proxySCCPath))
 	}
 }
 

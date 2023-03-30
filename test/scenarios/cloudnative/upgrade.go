@@ -14,16 +14,13 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func Upgrade(t *testing.T, istioEnabled bool) features.Feature {
+func Upgrade(t *testing.T) features.Feature {
 	builder := features.New("upgrade_installation")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	dynakubeBuilder := dynakube.NewBuilder().
 		WithDefaultObjectMeta().
 		ApiUrl(secretConfig.ApiUrl).
 		CloudNative(defaultCloudNativeSpec())
-	if istioEnabled {
-		dynakubeBuilder = dynakubeBuilder.WithIstio()
-	}
 	testDynakube := dynakubeBuilder.Build()
 
 	sampleNamespace := namespace.NewBuilder("upgrade-sample").Build()
@@ -40,7 +37,6 @@ func Upgrade(t *testing.T, istioEnabled bool) features.Feature {
 	assess.UpgradeOperatorFromSource(builder, testDynakube)
 	assessSampleAppsRestartHalf(builder, sampleApp)
 	assessSampleInitContainers(builder, sampleApp)
-
 	builder.Teardown(sampleApp.UninstallNamespace())
 	teardown.UninstallDynatrace(builder, testDynakube)
 

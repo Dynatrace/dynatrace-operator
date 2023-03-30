@@ -22,6 +22,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/logs"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
+	sample "github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/base"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
@@ -197,7 +198,7 @@ func getDiskUsage(ctx context.Context, t *testing.T, resource *resources.Resourc
 	return diskUsage
 }
 
-func volumesAreMountedCorrectly(sampleApp sampleapps.SampleApp) features.Func {
+func volumesAreMountedCorrectly(sampleApp sample.App) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resource := environmentConfig.Client().Resources()
 		err := deployment.NewQuery(ctx, resource, client.ObjectKey{

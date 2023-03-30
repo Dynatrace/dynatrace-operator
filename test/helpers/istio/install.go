@@ -5,14 +5,18 @@ package istio
 import (
 	"context"
 	"os"
+	"path"
 	"strings"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/manifests"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/base"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
+	"github.com/Dynatrace/dynatrace-operator/test/project"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -21,22 +25,40 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
+	"sigs.k8s.io/e2e-framework/klient/decoder"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
 const (
-	istioNamespace         = "istio-system"
-	istioInitContainerName = "istio-init"
-	enforceIstioEnv        = "ENFORCE_ISTIO"
+	istioNamespace                  = "istio-system"
+	istioInitContainerName          = "istio-init"
+	openshiftIstioInitContainerName = "istio-validation"
+	enforceIstioEnv                 = "ENFORCE_ISTIO"
 )
 
 var InjectionLabel = map[string]string{
 	"istio-injection": "enabled",
 }
 
+var networkAttachmentPath = path.Join(project.TestDataDir(), "network/ocp-istio-cni.yaml")
+
 func enforceIstio() bool {
 	return os.Getenv(enforceIstioEnv) == "true"
+}
+
+func AddIstioNetworkAttachment(namespace corev1.Namespace) func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
+	return func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
+		if kubeobjects.ResolvePlatformFromEnv() != kubeobjects.Openshift {
+			return ctx, nil
+		}
+		for key, value := range InjectionLabel {
+			if namespace.Labels[key] == value {
+				ctx = manifests.InstallFromFile(networkAttachmentPath, decoder.MutateNamespace(namespace.Name))(ctx, t, environmentConfig)
+			}
+		}
+		return ctx, nil
+	}
 }
 
 func AssertIstioNamespace() func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
@@ -63,14 +85,14 @@ func AssertIstiodDeployment() func(ctx context.Context, environmentConfig *envco
 	}
 }
 
-func AssessIstio(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube, sampleApp sampleapps.SampleApp) {
+func AssessIstio(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube, sampleApp base.App) {
 	builder.Assess("sample apps have working istio init container", checkSampleAppIstioInitContainers(sampleApp, testDynakube))
 	builder.Assess("operator pods have working istio init container", checkOperatorIstioInitContainers(testDynakube))
 	builder.Assess("istio virtual service for ApiUrl created", checkVirtualServiceForApiUrl(testDynakube))
 	builder.Assess("istio service entry for ApiUrl created", checkServiceEntryForApiUrl(testDynakube))
 }
 
-func checkSampleAppIstioInitContainers(sampleApp sampleapps.SampleApp, testDynakube dynatracev1beta1.DynaKube) features.Func {
+func checkSampleAppIstioInitContainers(sampleApp base.App, testDynakube dynatracev1beta1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resources := environmentConfig.Client().Resources()
 		pods := sampleApp.GetPods(ctx, t, resources)
@@ -91,6 +113,7 @@ func checkOperatorIstioInitContainers(testDynakube dynatracev1beta1.DynaKube) fe
 }
 
 func assertIstioInitContainer(t *testing.T, pods corev1.PodList, testDynakube dynatracev1beta1.DynaKube) {
+	istioInitName := determineIstioInitContainerName()
 	for _, podItem := range pods.Items {
 		if podItem.DeletionTimestamp != nil {
 			continue
@@ -108,13 +131,21 @@ func assertIstioInitContainer(t *testing.T, pods corev1.PodList, testDynakube dy
 		istioInitFound := false
 
 		for _, initContainer := range podItem.Spec.InitContainers {
-			if initContainer.Name == istioInitContainerName {
+			if initContainer.Name == istioInitName {
 				istioInitFound = true
 				break
 			}
 		}
-		assert.True(t, istioInitFound, "'%s' pod - '%s' init container not found", podItem.Name, istioInitContainerName)
+		assert.True(t, istioInitFound, "'%s' pod - '%s' init container not found", podItem.Name, istioInitName)
 	}
+}
+
+func determineIstioInitContainerName() string {
+	istioInitName := istioInitContainerName
+	if kubeobjects.ResolvePlatformFromEnv() == kubeobjects.Openshift {
+		istioInitName = openshiftIstioInitContainerName
+	}
+	return istioInitName
 }
 
 func checkVirtualServiceForApiUrl(dynakube dynatracev1beta1.DynaKube) features.Func {
