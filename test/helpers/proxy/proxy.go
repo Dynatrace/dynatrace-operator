@@ -37,9 +37,7 @@ var (
 
 func SetupProxyWithTeardown(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube) {
 	if testDynakube.Spec.Proxy != nil {
-		if kubeobjects.ResolvePlatformFromEnv() == kubeobjects.Openshift {
-			builder.Assess("install proxy scc", manifests.InstallFromFile(proxySCCPath))
-		}
+		installProxySCC(builder)
 		builder.Assess("create proxy namespace", namespace.Create(namespace.NewBuilder(proxyNamespaceName).Build()))
 		builder.Assess("install proxy", manifests.InstallFromFile(proxyDeploymentPath))
 		builder.Assess("proxy started", deployment.WaitFor(proxyDeploymentName, proxyNamespaceName))
@@ -49,6 +47,12 @@ func SetupProxyWithTeardown(builder *features.FeatureBuilder, testDynakube dynat
 		builder.Assess("proxy is running", sampleapps.CheckWebhookCurlProxyResult(testDynakube))
 
 		builder.WithTeardown("removing proxy", DeleteProxy())
+	}
+}
+
+func installProxySCC(builder *features.FeatureBuilder) {
+	if kubeobjects.ResolvePlatformFromEnv() == kubeobjects.Openshift {
+		builder.Assess("install proxy scc", manifests.InstallFromFile(proxySCCPath))
 	}
 }
 

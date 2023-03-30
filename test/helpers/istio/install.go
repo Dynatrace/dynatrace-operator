@@ -113,10 +113,7 @@ func checkOperatorIstioInitContainers(testDynakube dynatracev1beta1.DynaKube) fe
 }
 
 func assertIstioInitContainer(t *testing.T, pods corev1.PodList, testDynakube dynatracev1beta1.DynaKube) {
-	istioInitName := istioInitContainerName
-	if kubeobjects.ResolvePlatformFromEnv() == kubeobjects.Openshift {
-		istioInitName = openshiftIstioInitContainerName
-	}
+	istioInitName := determineIstioInitContainerName()
 	for _, podItem := range pods.Items {
 		if podItem.DeletionTimestamp != nil {
 			continue
@@ -141,6 +138,14 @@ func assertIstioInitContainer(t *testing.T, pods corev1.PodList, testDynakube dy
 		}
 		assert.True(t, istioInitFound, "'%s' pod - '%s' init container not found", podItem.Name, istioInitName)
 	}
+}
+
+func determineIstioInitContainerName() string {
+	istioInitName := istioInitContainerName
+	if kubeobjects.ResolvePlatformFromEnv() == kubeobjects.Openshift {
+		istioInitName = openshiftIstioInitContainerName
+	}
+	return istioInitName
 }
 
 func checkVirtualServiceForApiUrl(dynakube dynatracev1beta1.DynaKube) features.Func {
