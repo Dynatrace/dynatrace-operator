@@ -45,4 +45,4 @@ test/e2e/supportarchive: manifests/crd/helm
 
 ## synthetic monitoring
 test/e2e/synthetic: manifests/crd/helm
-	go test -v -tags e2e -timeout 25m -count=1 ./test/scenarios/synthetic/monolocation
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 25m -count=1 ./test/scenarios/synthetic/monolocation $(SKIPCLEANUP)
