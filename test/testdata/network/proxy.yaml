@@ -4,6 +4,14 @@ metadata:
   name: proxy
   annotations:
     dynatrace.com/inject: "false"
+  labels:
+    app: squid
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: proxy
+  namespace: proxy
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -60,12 +68,19 @@ spec:
       labels:
         app: squid
     spec:
+      serviceAccountName: proxy
       containers:
       - image: ubuntu/squid
         name: squid
         volumeMounts:
           - mountPath: /etc/squid/
             name: config-volume
+        securityContext:
+          privileged: true
+          capabilities:
+            add:
+             - CAP_NET_RAW
+
       volumes:
         - name: config-volume
           configMap:

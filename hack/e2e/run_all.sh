@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-tests=$(make help | grep -oE "test\/e2e\/\S*")
+tests=$(make help | grep -oE "test\/e2e\/\S*" | grep -v "%\/debug")
 result=0
 for test in $tests
 do
