@@ -39,8 +39,9 @@ Exclude Kubernetes manifest not running on OLM
 {{/*
 Check if platform is set to a valid one
 */}}
-{{- define "dynatrace-operator.platformValid" -}}
-{{- if or (eq (include "dynatrace-operator.platform" .) "kubernetes") (eq (include "dynatrace-operator.platform" .) "openshift") (eq (include "dynatrace-operator.platform" .) "google-marketplace") (eq (include "dynatrace-operator.platform" .) "gke-autopilot") -}}
+{{- define "dynatrace-operator.platformIsValid" -}}
+{{- $validPlatforms := list "kubernetes" "openshift" "google-marketplace" "gke-autopilot" -}}
+{{- if has (include "dynatrace-operator.platform" .) $validPlatforms -}}
     {{ default "set" }}
 {{- end -}}
 {{- end -}}
@@ -49,5 +50,5 @@ Check if platform is set to a valid one
 Enforces that platform is set to a valid one
 */}}
 {{- define "dynatrace-operator.platformRequired" -}}
-{{- $platformIsSet := printf "%s" (required "Platform needs to be set to kubernetes, openshift, google-marketplace, or gke-autopilot" (include "dynatrace-operator.platformValid" .))}}
+{{- $platformIsSet := printf "%s" (required "Platform needs to be set to kubernetes, openshift, google-marketplace, or gke-autopilot" (include "dynatrace-operator.platformIsValid" .))}}
 {{- end -}}
