@@ -33,28 +33,6 @@ var (
 	sccPath             = path.Join(project.TestDataDir(), "sample-app/restricted-csi.yaml")
 )
 
-type SampleApp interface {
-	Name() string
-	ContainerName() string
-	Namespace() *corev1.Namespace
-
-	WithName(name string)
-	WithNamespace(namespace corev1.Namespace)
-	WithAnnotations(annotations map[string]string)
-	WithLabels(labels map[string]string)
-	WithEnvs(envs []corev1.EnvVar)
-	Build() client.Object
-
-	Install() features.Func
-	Uninstall() features.Func
-	Restart(ctx context.Context, t *testing.T, config *envconf.Config) context.Context
-	RestartHalf(ctx context.Context, t *testing.T, config *envconf.Config) context.Context
-	UninstallNamespace() features.Func
-
-	Get(ctx context.Context, t *testing.T, resource *resources.Resources) client.Object
-	GetPods(ctx context.Context, t *testing.T, resource *resources.Resources) corev1.PodList
-}
-
 type restartFunc func(t *testing.T, ctx context.Context, pods corev1.PodList, resource *resources.Resources)
 
 type sampleApp struct {

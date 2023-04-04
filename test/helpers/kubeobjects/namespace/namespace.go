@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/istio"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -82,6 +83,8 @@ func Create(namespace corev1.Namespace) features.Func {
 			}
 			require.NoError(t, err)
 		}
+
+		ctx, _ = istio.AddIstioNetworkAttachment(namespace)(ctx, environmentConfig, t)
 		return ctx
 	}
 }
