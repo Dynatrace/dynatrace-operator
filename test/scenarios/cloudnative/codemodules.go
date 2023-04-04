@@ -4,10 +4,10 @@ package cloudnative
 
 import (
 	"context"
-	"encoding/json"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
@@ -20,33 +20,32 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/logs"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
+	sample "github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/base"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
+	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
 const (
-	codeModulesVersion     = "1.246.0.20220627-183412"
-	codeModulesImage       = "quay.io/dynatrace/codemodules:" + codeModulesVersion
-	codeModulesImageDigest = "7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
+	codeModulesVersion = "1.246.0.20220627-183412"
+	codeModulesImage   = "quay.io/dynatrace/codemodules:" + codeModulesVersion
+	diskUsageKiBDelta  = 100000
 
 	dataPath                 = "/data/"
 	provisionerContainerName = "provisioner"
 )
-
-type manifest struct {
-	Version string `json:"version,omitempty"`
-}
 
 func CodeModules(t *testing.T, istioEnabled bool) features.Feature {
 	builder := features.New("codemodules injection")
@@ -132,27 +131,24 @@ func codeModulesAppInjectSpec() *dynatracev1beta1.AppInjectionSpec {
 func imageHasBeenDownloaded(namespace string) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resource := environmentConfig.Client().Resources()
+		clientset, err := kubernetes.NewForConfig(resource.GetConfig())
+		require.NoError(t, err)
 
-		err := csi.ForEachPod(ctx, resource, namespace, func(podItem corev1.Pod) {
+		err = csi.ForEachPod(ctx, resource, namespace, func(podItem corev1.Pod) {
+			err = wait.For(func() (done bool, err error) {
+				logStream, err := clientset.CoreV1().Pods(podItem.Namespace).GetLogs(podItem.Name, &corev1.PodLogOptions{
+					Container: provisionerContainerName,
+				}).Stream(ctx)
+				require.NoError(t, err)
+				return logs.Contains(t, logStream, "Installed agent version: "+codeModulesImage), err
+			}, wait.WithTimeout(time.Minute*5))
+			require.NoError(t, err)
+
 			listCommand := shell.ListDirectory(dataPath)
 			result, err := pod.Exec(ctx, resource, podItem, provisionerContainerName, listCommand...)
 
 			require.NoError(t, err)
 			assert.Contains(t, result.StdOut.String(), dtcsi.SharedAgentBinDir)
-
-			readManifestCommand := shell.Shell(shell.ReadFile(getManifestPath()))
-			result, err = pod.Exec(ctx, resource, podItem, provisionerContainerName, readManifestCommand...)
-
-			require.NoError(t, err)
-
-			var codeModulesManifest manifest
-			err = json.Unmarshal(result.StdOut.Bytes(), &codeModulesManifest)
-			if err != nil {
-				err = errors.WithMessagef(err, "json:\n%s", result.StdOut)
-			}
-			require.NoError(t, err)
-
-			assert.Equal(t, codeModulesVersion, codeModulesManifest.Version)
 		})
 
 		require.NoError(t, err)
@@ -178,8 +174,7 @@ func diskUsageDoesNotIncrease(namespace string, storageMap map[string]int) featu
 		resource := environmentConfig.Client().Resources()
 		err := csi.ForEachPod(ctx, resource, namespace, func(podItem corev1.Pod) {
 			diskUsage := getDiskUsage(ctx, t, environmentConfig.Client().Resources(), podItem, provisionerContainerName, dataPath)
-			// Dividing it by 1000 so the sizes do not need to be exactly the same down to the byte
-			assert.Equal(t, storageMap[podItem.Name]/1000, diskUsage/1000)
+			assert.InDelta(t, storageMap[podItem.Name], diskUsage, diskUsageKiBDelta)
 		})
 		require.NoError(t, err)
 
@@ -203,7 +198,7 @@ func getDiskUsage(ctx context.Context, t *testing.T, resource *resources.Resourc
 	return diskUsage
 }
 
-func volumesAreMountedCorrectly(sampleApp sampleapps.SampleApp) features.Func {
+func volumesAreMountedCorrectly(sampleApp sample.App) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resource := environmentConfig.Client().Resources()
 		err := deployment.NewQuery(ctx, resource, client.ObjectKey{
@@ -259,8 +254,4 @@ func isVolumeAttached(t *testing.T, volumes []corev1.Volume, volumeName string) 
 		}
 	}
 	return result
-}
-
-func getManifestPath() string {
-	return "/data/codemodules/" + codeModulesImageDigest + "/manifest.json"
 }

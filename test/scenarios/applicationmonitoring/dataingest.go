@@ -16,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
+	sample "github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/base"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
@@ -76,7 +77,7 @@ func dataIngest(t *testing.T) features.Feature {
 	return builder.Feature()
 }
 
-func podHasOnlyDataIngestInitContainer(samplePod sampleapps.SampleApp) features.Func {
+func podHasOnlyDataIngestInitContainer(samplePod sample.App) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		testPod := samplePod.Get(ctx, t, environmentConfig.Client().Resources()).(*corev1.Pod)
 
@@ -94,7 +95,7 @@ func assessPodHasDataIngestFile(ctx context.Context, t *testing.T, resource *res
 	assert.Equal(t, dataIngestMetadata.WorkloadName, testPod.Name)
 }
 
-func deploymentPodsHaveOnlyDataIngestInitContainer(sampleApp sampleapps.SampleApp) features.Func {
+func deploymentPodsHaveOnlyDataIngestInitContainer(sampleApp sample.App) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		query := deployment.NewQuery(ctx, environmentConfig.Client().Resources(), client.ObjectKey{
 			Name:      sampleApp.Name(),

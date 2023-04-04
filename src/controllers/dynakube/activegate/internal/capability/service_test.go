@@ -38,13 +38,6 @@ func TestCreateService(t *testing.T) {
 		Port:       consts.HttpsServicePort,
 		TargetPort: intstr.FromString(consts.HttpsServicePortName),
 	}
-	agHttpPort := corev1.ServicePort{
-		Name:       consts.HttpServicePortName,
-		Protocol:   corev1.ProtocolTCP,
-		Port:       consts.HttpServicePort,
-		TargetPort: intstr.FromString(consts.HttpServicePortName),
-	}
-
 	t.Run("check service name, labels and selector", func(t *testing.T) {
 		instance := testCreateInstance()
 		service := CreateService(instance, testComponentFeature)
@@ -78,6 +71,6 @@ func TestCreateService(t *testing.T) {
 		service := CreateService(instance, testComponentFeature)
 		ports := service.Spec.Ports
 
-		assert.Contains(t, ports, agHttpsPort, agHttpPort)
+		assert.Contains(t, ports, agHttpsPort)
 	})
 }

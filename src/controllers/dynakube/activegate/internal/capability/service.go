@@ -21,12 +21,6 @@ func CreateService(dynakube *dynatracev1beta1.DynaKube, feature string) *corev1.
 				Port:       consts.HttpsServicePort,
 				TargetPort: intstr.FromString(consts.HttpsServicePortName),
 			},
-			corev1.ServicePort{
-				Name:       consts.HttpServicePortName,
-				Protocol:   corev1.ProtocolTCP,
-				Port:       consts.HttpServicePort,
-				TargetPort: intstr.FromString(consts.HttpServicePortName),
-			},
 		)
 	}
 

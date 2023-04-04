@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
 	"github.com/go-logr/logr"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -275,6 +276,7 @@ func TestImagePullable(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			troubleshootCtx.dynakube = *test.dynaKube
+			resetFileSystem(&troubleshootCtx)
 
 			logOutput := runWithTestLogger(func(log logr.Logger) {
 				verifyImageIsAvailable(log, &troubleshootCtx, test.component, test.proxyWarning)
@@ -367,6 +369,7 @@ func TestImageNotPullable(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			troubleshootCtx.dynakube = *test.dynaKube
+			resetFileSystem(&troubleshootCtx)
 
 			logOutput := runWithTestLogger(func(log logr.Logger) {
 				verifyImageIsAvailable(log, &troubleshootCtx, test.component, false)
@@ -407,6 +410,7 @@ func TestOneAgentCodeModulesImageNotPullable(t *testing.T) {
 			withApiUrl(dockerServer.URL + "/api").
 			withCloudNativeCodeModulesImage("myunknownserver.com/myrepo/mymissingcodemodules").
 			build()
+		resetFileSystem(&troubleshootCtx)
 
 		logOutput := runWithTestLogger(func(log logr.Logger) {
 			verifyImageIsAvailable(log, &troubleshootCtx, componentCodeModules, true)
@@ -421,6 +425,7 @@ func TestOneAgentCodeModulesImageNotPullable(t *testing.T) {
 			withApiUrl(dockerServer.URL + "/api").
 			withCloudNativeCodeModulesImage("").
 			build()
+		resetFileSystem(&troubleshootCtx)
 
 		logOutput := runWithTestLogger(func(log logr.Logger) {
 			verifyImageIsAvailable(log, &troubleshootCtx, componentCodeModules, true)
@@ -461,4 +466,8 @@ func TestImagePullablePullSecret(t *testing.T) {
 		require.Errorf(t, err, "expected error")
 		assert.NotEqual(t, pullSecretFieldValue, secret, "valid contents of pull secret")
 	})
+}
+
+func resetFileSystem(troubleshootCtx *troubleshootContext) {
+	troubleshootCtx.fs = afero.Afero{Fs: afero.NewMemMapFs()}
 }

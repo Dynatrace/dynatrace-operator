@@ -7,4 +7,14 @@ spec:
   podSelector: {}
   policyTypes:
   - Egress
-  - Ingress
+  egress:
+  - to:
+    - ipBlock:
+        cidr: 10.0.0.0/8
+  - ports:
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
+    to:
+    - namespaceSelector: {}

@@ -42,7 +42,6 @@ func (r *Reconciler) Reconcile() error {
 	if err != nil {
 		return errors.WithStack(err)
 	}
-
 	if r.dynakube.NeedsActiveGateService() {
 		err = r.createOrUpdateService()
 		if err != nil {

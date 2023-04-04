@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
+	sample "github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/base"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
@@ -124,7 +125,7 @@ func labelVersionDetection(t *testing.T) features.Feature {
 			UseCSIDriver: address.Of(false),
 		}).Build()
 
-	sampleApps := []sampleapps.SampleApp{
+	sampleApps := []sample.App{
 		buildDisabledBuildLabelSampleApp(t, defaultDynakube),
 		buildDefaultBuildLabelSampleApp(t, labelVersionDynakube),
 		buildCustomBuildLabelSampleApp(t, labelVersionDynakube),
@@ -148,25 +149,25 @@ func labelVersionDetection(t *testing.T) features.Feature {
 	return builder.Feature()
 }
 
-func installSampleApplications(builder *features.FeatureBuilder, sampleApps []sampleapps.SampleApp) {
+func installSampleApplications(builder *features.FeatureBuilder, sampleApps []sample.App) {
 	for _, sampleApp := range sampleApps {
 		builder.Assess(sampleApp.Name()+" is ready", sampleApp.Install())
 	}
 }
 
-func teardownSampleApplications(builder *features.FeatureBuilder, sampleApps []sampleapps.SampleApp) {
+func teardownSampleApplications(builder *features.FeatureBuilder, sampleApps []sample.App) {
 	for _, sampleApp := range sampleApps {
 		builder.WithTeardown(sampleApp.Name()+" is uninstalled", sampleApp.UninstallNamespace())
 	}
 }
 
-func checkBuildLabels(builder *features.FeatureBuilder, sampleApps []sampleapps.SampleApp) {
+func checkBuildLabels(builder *features.FeatureBuilder, sampleApps []sample.App) {
 	for _, sampleApp := range sampleApps {
 		builder.Assess("checking "+sampleApp.Name(), assertBuildLabels(sampleApp, namespaceToExpectedLabels[sampleApp.Namespace().Name]))
 	}
 }
 
-func assertBuildLabels(sampleApp sampleapps.SampleApp, expectedBuildLabels map[string]buildLabel) features.Func {
+func assertBuildLabels(sampleApp sample.App, expectedBuildLabels map[string]buildLabel) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resources := environmentConfig.Client().Resources()
 		pods := sampleApp.GetPods(ctx, t, resources)
@@ -189,7 +190,7 @@ func assertBuildLabels(sampleApp sampleapps.SampleApp, expectedBuildLabels map[s
 	}
 }
 
-func assertReferences(t *testing.T, pod *corev1.Pod, sampleApp sampleapps.SampleApp, expectedBuildLabels map[string]buildLabel) {
+func assertReferences(t *testing.T, pod *corev1.Pod, sampleApp sample.App, expectedBuildLabels map[string]buildLabel) {
 	require.NotNil(t, pod)
 	require.NotNil(t, pod.Spec)
 
@@ -219,13 +220,13 @@ func assertReferences(t *testing.T, pod *corev1.Pod, sampleApp sampleapps.Sample
 	}
 }
 
-func assertValues(ctx context.Context, t *testing.T, resource *resources.Resources, podItem corev1.Pod, sampleApp sampleapps.SampleApp, expectedBuildLabels map[string]buildLabel) { //nolint:revive // argument-limit
+func assertValues(ctx context.Context, t *testing.T, resource *resources.Resources, podItem corev1.Pod, sampleApp sample.App, expectedBuildLabels map[string]buildLabel) { //nolint:revive // argument-limit
 	for _, variableName := range []string{dtReleaseVersion, dtReleaseProduct, dtReleaseStage, dtReleaseBuildVersion} {
 		assertValue(ctx, t, resource, podItem, sampleApp, variableName, expectedBuildLabels[variableName].value)
 	}
 }
 
-func assertValue(ctx context.Context, t *testing.T, resource *resources.Resources, podItem corev1.Pod, sampleApp sampleapps.SampleApp, variableName string, expectedValue string) { //nolint:revive // argument-limit
+func assertValue(ctx context.Context, t *testing.T, resource *resources.Resources, podItem corev1.Pod, sampleApp sample.App, variableName string, expectedValue string) { //nolint:revive // argument-limit
 	echoCommand := shell.Shell(shell.Echo(fmt.Sprintf("$%s", variableName)))
 	executionResult, err := pod.Exec(ctx, resource, podItem, sampleApp.ContainerName(), echoCommand...)
 	require.NoError(t, err)
@@ -239,7 +240,7 @@ func buildDisabledBuildLabelNamespace(testDynakube dynatracev1beta1.DynaKube) co
 	return namespace.NewBuilder(disabledBuildLabelsNamespace).WithLabels(testDynakube.NamespaceSelector().MatchLabels).Build()
 }
 
-func buildDisabledBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1beta1.DynaKube) sampleapps.SampleApp {
+func buildDisabledBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1beta1.DynaKube) sample.App {
 	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
 	sampleApp.WithNamespace(buildDisabledBuildLabelNamespace(testDynakube))
 	return sampleApp
@@ -249,7 +250,7 @@ func buildDefaultBuildLabelNamespace(testDynakube dynatracev1beta1.DynaKube) cor
 	return namespace.NewBuilder(defaultBuildLabelsNamespace).WithLabels(testDynakube.NamespaceSelector().MatchLabels).Build()
 }
 
-func buildDefaultBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1beta1.DynaKube) sampleapps.SampleApp {
+func buildDefaultBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1beta1.DynaKube) sample.App {
 	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
 	sampleApp.WithNamespace(buildDefaultBuildLabelNamespace(testDynakube))
 	sampleApp.WithLabels(map[string]string{
@@ -273,7 +274,7 @@ func buildCustomBuildLabelNamespace(testDynakube dynatracev1beta1.DynaKube) core
 		}).Build()
 }
 
-func buildCustomBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1beta1.DynaKube) sampleapps.SampleApp {
+func buildCustomBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1beta1.DynaKube) sample.App {
 	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
 	sampleApp.WithNamespace(buildCustomBuildLabelNamespace(testDynakube))
 	sampleApp.WithLabels(map[string]string{
@@ -297,7 +298,7 @@ func buildPreservedBuildLabelNamespace(testDynakube dynatracev1beta1.DynaKube) c
 		}).Build()
 }
 
-func buildPreservedBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1beta1.DynaKube) sampleapps.SampleApp {
+func buildPreservedBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1beta1.DynaKube) sample.App {
 	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
 	sampleApp.WithNamespace(buildPreservedBuildLabelNamespace(testDynakube))
 	sampleApp.WithLabels(map[string]string{
@@ -357,7 +358,7 @@ func buildInvalidBuildLabelNamespace(testDynakube dynatracev1beta1.DynaKube) cor
 		}).Build()
 }
 
-func buildInvalidBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1beta1.DynaKube) sampleapps.SampleApp {
+func buildInvalidBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1beta1.DynaKube) sample.App {
 	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
 	sampleApp.WithNamespace(buildInvalidBuildLabelNamespace(testDynakube))
 	sampleApp.WithLabels(map[string]string{

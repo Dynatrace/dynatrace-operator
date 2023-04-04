@@ -29,12 +29,10 @@ var capabilitiesWithService = []dynatracev1beta1.CapabilityDisplayName{
 	dynatracev1beta1.KubeMonCapability.DisplayName,
 	dynatracev1beta1.MetricsIngestCapability.DisplayName,
 	dynatracev1beta1.DynatraceApiCapability.DisplayName,
-	dynatracev1beta1.SyntheticCapability.DisplayName,
 }
 
 var capabilitiesWithoutService = []dynatracev1beta1.CapabilityDisplayName{
 	dynatracev1beta1.KubeMonCapability.DisplayName,
-	dynatracev1beta1.SyntheticCapability.DisplayName,
 }
 
 func createClient() client.WithWatch {
@@ -228,7 +226,6 @@ func TestCreateOrUpdateService(t *testing.T) {
 		assert.NotNil(t, actualService)
 
 		assert.Equal(t, int32(443), actualService.Spec.Ports[0].Port)
-		assert.Equal(t, int32(80), actualService.Spec.Ports[1].Port)
 
 		require.NotEqual(t, actualService, service)
 		require.NotEqual(t, actualService.Spec.Ports, service.Spec.Ports)

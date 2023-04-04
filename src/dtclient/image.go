@@ -13,6 +13,10 @@ type LatestImageInfo struct {
 	Tag    string `json:"tag"`
 }
 
+func (image LatestImageInfo) String() string {
+	return image.Source + ":" + image.Tag
+}
+
 func (dtc *dynatraceClient) GetLatestOneAgentImage() (*LatestImageInfo, error) {
 	latestImageInfo, err := dtc.processLatestImageRequest(dtc.getLatestOneAgentImageUrl())
 

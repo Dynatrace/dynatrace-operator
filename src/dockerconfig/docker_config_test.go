@@ -3,7 +3,9 @@ package dockerconfig
 import (
 	"context"
 	"fmt"
-	"path/filepath"
+	"io"
+	"os"
+	"path"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -28,8 +30,8 @@ func TestNewDockerConfig(t *testing.T) {
 		dockerConfig := NewDockerConfig(apiReader, dynakube)
 
 		require.NotNil(t, dockerConfig)
-		assert.NotNil(t, dockerConfig.Auths)
-		assert.Empty(t, dockerConfig.Auths)
+		assert.NotEqual(t, "", dockerConfig.RegistryAuthPath)
+		assert.Equal(t, "", dockerConfig.TrustedCertsPath)
 		assert.Equal(t, apiReader, dockerConfig.ApiReader)
 		assert.False(t, dockerConfig.SkipCertCheck())
 	})
@@ -42,124 +44,85 @@ func TestNewDockerConfig(t *testing.T) {
 		dockerConfig := NewDockerConfig(apiReader, dynakube)
 
 		require.NotNil(t, dockerConfig)
-		assert.NotNil(t, dockerConfig.Auths)
-		assert.Empty(t, dockerConfig.Auths)
+		assert.NotEqual(t, "", dockerConfig.RegistryAuthPath)
+		assert.Equal(t, "", dockerConfig.TrustedCertsPath)
 		assert.Equal(t, apiReader, dockerConfig.ApiReader)
 		assert.True(t, dockerConfig.SkipCertCheck())
 	})
+	t.Run("regular dynakube", func(t *testing.T) {
+		dynakube := dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testName,
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				TrustedCAs: "secure-cert-here",
+			},
+		}
+		dockerConfig := NewDockerConfig(apiReader, dynakube)
+
+		require.NotNil(t, dockerConfig)
+		assert.Equal(t, path.Join(TmpPath, RegistryAuthDir, dynakube.Name), dockerConfig.RegistryAuthPath)
+		assert.Equal(t, path.Join(TmpPath, CADir, dynakube.Name), dockerConfig.TrustedCertsPath)
+		assert.Equal(t, apiReader, dockerConfig.ApiReader)
+		assert.False(t, dockerConfig.SkipCertCheck())
+	})
+}
+
+func checkFileContents(t *testing.T, fs afero.Afero, targetPath, expectedContent string) {
+	targetFile, err := fs.Open(targetPath)
+	assert.NoError(t, err)
+	targetFileContent, err := io.ReadAll(targetFile)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedContent, string(targetFileContent))
 }
 
 func TestSetupAuths(t *testing.T) {
 	t.Run("using default pull secret", func(t *testing.T) {
+		testPullSecret(t, false, false, false)
+	})
+	t.Run("using default pull secret with ca certs set", func(t *testing.T) {
+		testPullSecret(t, true, false, false)
+	})
+	t.Run("using custom pull secret", func(t *testing.T) {
+		testPullSecret(t, false, true, false)
+	})
+	t.Run("using preset pull secret", func(t *testing.T) {
+		testPullSecret(t, false, false, true)
+	})
+	t.Run("handles no secret", func(t *testing.T) {
 		dynakube := dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: testName,
 			},
 		}
-		pullSecret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: dynakube.PullSecret(),
-			},
-			Data: map[string][]byte{
-				".dockerconfigjson": []byte(
-					fmt.Sprintf(`{ "auths": { "%s": { "username": "%s", "password": "%s" } } }`, testKey, testName, testValue)),
-			},
-		}
-		apiReader := fake.NewClient(pullSecret)
-		dockerConfig := NewDockerConfig(apiReader, dynakube)
-
-		err := dockerConfig.SetupAuths(context.TODO())
-
-		require.NoError(t, err)
-		assert.NotNil(t, dockerConfig.Auths)
-		assert.NotEmpty(t, dockerConfig.Auths)
-		assert.Equal(t, testName, dockerConfig.Auths[testKey].Username)
-		assert.Equal(t, testValue, dockerConfig.Auths[testKey].Password)
-	})
-	t.Run("using custom pull secret", func(t *testing.T) {
-		dynakube := dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				CustomPullSecret: testName,
-			},
-		}
-		pullSecret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: dynakube.PullSecret(),
-			},
-			Data: map[string][]byte{
-				".dockerconfigjson": []byte(
-					fmt.Sprintf(`{ "auths": { "%s": { "username": "%s", "password": "%s" } } }`, testKey, testName, testValue)),
-			},
-		}
-		apiReader := fake.NewClient(pullSecret)
-		dockerConfig := NewDockerConfig(apiReader, dynakube)
-
-		err := dockerConfig.SetupAuths(context.TODO())
-
-		require.NoError(t, err)
-		assert.NotNil(t, dockerConfig.Auths)
-		assert.NotEmpty(t, dockerConfig.Auths)
-		assert.Equal(t, testName, dockerConfig.Auths[testKey].Username)
-		assert.Equal(t, testValue, dockerConfig.Auths[testKey].Password)
-	})
-	t.Run("handles invalid json", func(t *testing.T) {
-		dynakube := dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				CustomPullSecret: testName,
-			},
-		}
-		pullSecret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: dynakube.PullSecret(),
-			},
-			Data: map[string][]byte{
-				".dockerconfigjson": []byte("asd"),
-			},
-		}
-		apiReader := fake.NewClient(pullSecret)
-		dockerConfig := NewDockerConfig(apiReader, dynakube)
-
-		err := dockerConfig.SetupAuths(context.TODO())
-
-		require.Error(t, err)
-		assert.Empty(t, dockerConfig.Auths)
-	})
-	t.Run("handles no secret", func(t *testing.T) {
-		dynakube := dynatracev1beta1.DynaKube{}
 
 		apiReader := fake.NewClient()
 		dockerConfig := NewDockerConfig(apiReader, dynakube)
 
-		err := dockerConfig.SetupAuths(context.TODO())
+		fs := afero.Afero{Fs: afero.NewBasePathFs(afero.NewOsFs(), path.Join(os.TempDir(), "dttest"))}
+		defer func(fs afero.Afero, path string) {
+			_ = fs.RemoveAll(path)
+		}(fs, "/")
+		err := dockerConfig.StoreRequiredFiles(context.TODO(), fs)
 
 		require.Error(t, err)
-		assert.Empty(t, dockerConfig.Auths)
 	})
 }
 
 func TestParseDockerAuthsFromSecret(t *testing.T) {
-	t.Run("parseDockerAuthsFromSecret handles nil secret", func(t *testing.T) {
-		auths, err := parseDockerAuthsFromSecret(nil)
+	t.Run("extractDockerAuthsFromSecret handles nil secret", func(t *testing.T) {
+		auths, err := extractDockerAuthsFromSecret(nil)
 		require.Nil(t, auths)
 		require.Error(t, err)
 	})
-	t.Run("parseDockerAuthsFromSecret handles missing secret data", func(t *testing.T) {
-		auths, err := parseDockerAuthsFromSecret(&corev1.Secret{})
+	t.Run("extractDockerAuthsFromSecret handles missing secret data", func(t *testing.T) {
+		auths, err := extractDockerAuthsFromSecret(&corev1.Secret{})
 		require.Nil(t, auths)
 		require.Error(t, err)
 	})
-	t.Run("parseDockerAuthsFromSecret handles invalid json", func(t *testing.T) {
-		auths, err := parseDockerAuthsFromSecret(&corev1.Secret{
-			Data: map[string][]byte{
-				".dockerconfigjson": []byte(`invalid json`),
-			},
-		})
-
-		require.Nil(t, auths)
-		require.Error(t, err)
-	})
-	t.Run("parseDockerAuthsFromSecret handles valid json", func(t *testing.T) {
-		auths, err := parseDockerAuthsFromSecret(&corev1.Secret{
+	t.Run("extractDockerAuthsFromSecret handles valid json", func(t *testing.T) {
+		auths, err := extractDockerAuthsFromSecret(&corev1.Secret{
 			Data: map[string][]byte{
 				".dockerconfigjson": []byte(
 					fmt.Sprintf(`{ "auths": { "%s": { "username": "%s", "password": "%s" } } }`, testKey, testName, testValue)),
@@ -168,66 +131,65 @@ func TestParseDockerAuthsFromSecret(t *testing.T) {
 
 		require.NoError(t, err)
 		require.NotEmpty(t, auths)
-		assert.Contains(t, auths, testKey)
-		assert.Equal(t, testName, auths[testKey].Username)
-		assert.Equal(t, testValue, auths[testKey].Password)
+		assert.Contains(t, string(auths), testKey)
 	})
 }
 
-func TestSaveCustomCAs(t *testing.T) {
-	caSecretName := "ca-secret"
-	namespace := "test-namespace"
-	testPath := "/test/path"
+func testPullSecret(t *testing.T, withCaCerts, customPullSecret, injectedPullSecret bool) {
+	registryAuthContent := fmt.Sprintf(`{ "auths": { "%s": { "username": "%s", "password": "%s" } } }`, testKey, testName, testValue)
+	secureCertName := "secure-cert-name"
 
+	spec := dynatracev1beta1.DynaKubeSpec{}
+	if withCaCerts {
+		spec.TrustedCAs = secureCertName
+	}
+	if customPullSecret {
+		spec.CustomPullSecret = testName
+	}
 	dynakube := dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "dk",
-			Namespace: namespace,
+			Name: testName,
 		},
-		Spec: dynatracev1beta1.DynaKubeSpec{
-			TrustedCAs: caSecretName,
+		Spec: spec,
+	}
+	pullSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: dynakube.PullSecret(),
+		},
+		Data: map[string][]byte{
+			".dockerconfigjson": []byte(registryAuthContent),
 		},
 	}
+	apiReader := fake.NewClient()
+	dockerConfig := NewDockerConfig(apiReader, dynakube)
 
-	t.Run("fail because of bad secret", func(t *testing.T) {
-		client := fake.NewClient(&corev1.Secret{
+	if !injectedPullSecret {
+		assert.NoError(t, apiReader.Create(context.Background(), pullSecret))
+	} else {
+		dockerConfig.SetRegistryAuthSecret(pullSecret)
+	}
+	if withCaCerts {
+		caCertsConfigMap := &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      caSecretName,
-				Namespace: namespace,
-			},
-			Data: map[string][]byte{
-				"invalid-key": []byte(`invalid json`),
-			},
-		})
-		dockerConfig := DockerConfig{
-			ApiReader: client,
-			Dynakube:  &dynakube,
-		}
-		fs := afero.Afero{Fs: afero.NewMemMapFs()}
-		err := dockerConfig.SaveCustomCAs(context.TODO(), fs, testPath)
-		require.Error(t, err)
-	})
-
-	t.Run("stores it in the given fs", func(t *testing.T) {
-		client := fake.NewClient(&corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      caSecretName,
-				Namespace: namespace,
+				Name: secureCertName,
 			},
 			Data: map[string]string{
-				dynatracev1beta1.TrustedCAKey: `I-am-a-cert-trust-me`,
+				dynatracev1beta1.TrustedCAKey: testValue,
 			},
-		})
-		dockerConfig := DockerConfig{
-			ApiReader: client,
-			Dynakube:  &dynakube,
 		}
-		fs := afero.Afero{Fs: afero.NewMemMapFs()}
-		err := dockerConfig.SaveCustomCAs(context.TODO(), fs, testPath)
-		require.NoError(t, err)
-		exists, err := fs.Exists(testPath)
-		require.NoError(t, err)
-		assert.True(t, exists)
-		assert.Equal(t, filepath.Dir(testPath), dockerConfig.TrustedCertsPath)
-	})
+		assert.NoError(t, apiReader.Create(context.Background(), caCertsConfigMap))
+	}
+
+	fs := afero.Afero{Fs: afero.NewBasePathFs(afero.NewOsFs(), path.Join(os.TempDir(), "dttest"))}
+	defer func(fs afero.Afero, path string) {
+		_ = fs.RemoveAll(path)
+	}(fs, "/")
+
+	err := dockerConfig.StoreRequiredFiles(context.TODO(), fs)
+	require.NoError(t, err)
+
+	checkFileContents(t, fs, dockerConfig.RegistryAuthPath, registryAuthContent)
+	if withCaCerts {
+		checkFileContents(t, fs, dockerConfig.TrustedCertsPath, testValue)
+	}
 }

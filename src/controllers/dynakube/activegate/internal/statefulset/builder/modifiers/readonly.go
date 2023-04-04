@@ -43,7 +43,7 @@ func (mod ReadOnlyModifier) Modify(sts *appsv1.StatefulSet) error {
 }
 
 func (mod ReadOnlyModifier) getVolumes() []corev1.Volume {
-	volumes := []corev1.Volume{
+	return []corev1.Volume{
 		{
 			Name: consts.GatewayLibTempVolumeName,
 			VolumeSource: corev1.VolumeSource{
@@ -67,24 +67,18 @@ func (mod ReadOnlyModifier) getVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
-		}}
-
-	_, err := kubeobjects.GetVolumeByName(mod.presentVolumes, consts.GatewayConfigVolumeName)
-	if err != nil {
-		volumes = append(volumes,
-			corev1.Volume{
-				Name: consts.GatewayConfigVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
+		},
+		{
+			Name: consts.GatewayConfigVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
-		)
+		},
 	}
-	return volumes
 }
 
 func (mod ReadOnlyModifier) getVolumeMounts() []corev1.VolumeMount {
-	volumeMounts := []corev1.VolumeMount{
+	return []corev1.VolumeMount{
 		{
 			ReadOnly:  false,
 			Name:      consts.GatewayLibTempVolumeName,
@@ -104,15 +98,11 @@ func (mod ReadOnlyModifier) getVolumeMounts() []corev1.VolumeMount {
 			ReadOnly:  false,
 			Name:      consts.GatewayTmpVolumeName,
 			MountPath: consts.GatewayTmpMountPoint,
-		}}
-
-	neededMount := corev1.VolumeMount{
-		ReadOnly:  false,
-		Name:      consts.GatewayConfigVolumeName,
-		MountPath: consts.GatewayConfigMountPoint,
+		},
+		{
+			ReadOnly:  false,
+			Name:      consts.GatewayConfigVolumeName,
+			MountPath: consts.GatewayConfigMountPoint,
+		},
 	}
-	if !kubeobjects.IsVolumeMountPresent(mod.presentMounts, neededMount) {
-		volumeMounts = append(volumeMounts, neededMount)
-	}
-	return volumeMounts
 }

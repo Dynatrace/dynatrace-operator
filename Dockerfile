@@ -19,23 +19,27 @@ RUN CGO_ENABLED=1 CGO_CFLAGS="-O2 -Wno-return-local-addr" \
     go build -tags "${GO_BUILD_TAGS}" -trimpath -ldflags="${GO_LINKER_ARGS}" \
     -o ./build/_output/bin/dynatrace-operator ./src/cmd/
 
-# download additional image dependencies
-FROM registry.access.redhat.com/ubi9-minimal:9.1.0 as dependency-src
-RUN \
-    --mount=type=cache,target=/var/cache/dnf \
-    microdnf install -y util-linux tar --nodocs
+FROM registry.access.redhat.com/ubi9-micro:9.1.0 AS base
+FROM registry.access.redhat.com/ubi9:9.1.0 AS dependency
+RUN mkdir -p /tmp/rootfs-dependency
+COPY --from=base / /tmp/rootfs-dependency
+RUN dnf install --installroot /tmp/rootfs-dependency \
+      util-linux-core tar \
+      --releasever 9 \
+      --setopt install_weak_deps=false \
+      --nodocs -y \
+ && dnf --installroot /tmp/rootfs-dependency clean all \
+ && rm -rf \
+      /tmp/rootfs-dependency/var/cache/* \
+      /tmp/rootfs-dependency/var/log/dnf* \
+      /tmp/rootfs-dependency/var/log/yum.*
 
-FROM registry.access.redhat.com/ubi9-micro:9.1.0
+FROM base
+
+COPY --from=dependency /tmp/rootfs-dependency /
 
 # operator binary
 COPY --from=operator-build /app/build/_output/bin /usr/local/bin
-
-# trusted certificates
-COPY --from=dependency-src /etc/ssl/cert.pem /etc/ssl/cert.pem
-
-# csi dependencies
-COPY --from=dependency-src /bin/mount /bin/umount /bin/tar /bin/
-COPY --from=dependency-src /lib64/libmount.so.1 /lib64/libblkid.so.1 /lib64/libuuid.so.1 /lib64/
 
 # csi binaries
 COPY --from=registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.7.0 /csi-node-driver-registrar /usr/local/bin
@@ -53,11 +57,11 @@ LABEL name="Dynatrace Operator" \
       version="1.x" \
       release="1" \
       url="https://www.dynatrace.com" \
-      summary="Dynatrace is an all-in-one, zero-config monitoring platform designed by and for cloud natives. It is powered by artificial intelligence that identifies performance problems and pinpoints their root causes in seconds." \
-      description="ActiveGate works as a proxy between Dynatrace OneAgent and Dynatrace Cluster" \
-      io.k8s.description="Dynatrace Operator image." \
+      summary="The Dynatrace Operator is an open source Kubernetes Operator for easily deploying and managing Dynatrace components for Kubernetes / OpenShift observability. By leveraging the Dynatrace Operator you can innovate faster with the full potential of Kubernetes / OpenShift and Dynatrace’s best-in-class observability and intelligent automation." \
+      description="Automate Kubernetes observability with Dynatrace" \
+      io.k8s.description="Automate Kubernetes observability with Dynatrace" \
       io.k8s.display-name="Dynatrace Operator" \
-      io.openshift.tags="dynatrace-operator" \
+      io.openshift.tags="observability,monitoring,dynatrace,operator,logging,metrics,tracing,prometheus,alerts" \
       vcs-url="https://github.com/Dynatrace/dynatrace-operator.git" \
       vcs-type="git" \
       changelog-url="https://github.com/Dynatrace/dynatrace-operator/releases"

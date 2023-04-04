@@ -1,7 +1,7 @@
 package statefulset
 
 import (
-	"encoding/json"
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -24,6 +24,7 @@ const (
 	testConfigHash    = "test-hash"
 	testDynakubeName  = "test-dynakube"
 	testNamespaceName = "test-namespace"
+	testTag           = "test-tag"
 	testVersion       = "test-version"
 )
 
@@ -50,9 +51,7 @@ func getTestDynakube() dynatracev1beta1.DynaKube {
 		},
 		Status: dynatracev1beta1.DynaKubeStatus{
 			ActiveGate: dynatracev1beta1.ActiveGateStatus{
-				VersionStatus: dynatracev1beta1.VersionStatus{
-					Version: testVersion,
-				},
+				VersionStatus: dynatracev1beta1.VersionStatus{},
 			},
 		},
 	}
@@ -120,7 +119,7 @@ func TestAddLabels(t *testing.T) {
 		multiCapability := capability.NewMultiCapability(&dynakube)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dynakube, multiCapability)
 		sts := appsv1.StatefulSet{}
-		appLabels := kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, builder.dynakube.Name, builder.capability.ShortName(), testVersion)
+		appLabels := kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, builder.dynakube.Name, builder.capability.ShortName(), "")
 		expectedLabels := appLabels.BuildLabels()
 		expectedSelectorLabels := metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()}
 
@@ -140,7 +139,7 @@ func TestAddLabels(t *testing.T) {
 		multiCapability := capability.NewMultiCapability(&dynakube)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dynakube, multiCapability)
 		sts := appsv1.StatefulSet{}
-		appLabels := kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, builder.dynakube.Name, builder.capability.ShortName(), testVersion)
+		appLabels := kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, builder.dynakube.Name, builder.capability.ShortName(), "")
 		expectedTemplateLabels := appLabels.BuildLabels()
 		expectedTemplateLabels["test"] = "test"
 
@@ -148,20 +147,6 @@ func TestAddLabels(t *testing.T) {
 
 		require.NotEmpty(t, sts.Spec.Template.Labels)
 		assert.Equal(t, expectedTemplateLabels, sts.Spec.Template.Labels)
-	})
-	t.Run("use custom image", func(t *testing.T) {
-		dynakube := getTestDynakube()
-		dynakube.Spec.ActiveGate.Image = "test"
-		multiCapability := capability.NewMultiCapability(&dynakube)
-		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dynakube, multiCapability)
-		sts := appsv1.StatefulSet{}
-		appLabels := kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, builder.dynakube.Name, builder.capability.ShortName(), kubeobjects.CustomImageLabelValue)
-		expectedLabels := appLabels.BuildLabels()
-
-		builder.addLabels(&sts)
-
-		require.NotEmpty(t, sts.ObjectMeta.Labels)
-		assert.Equal(t, expectedLabels, sts.ObjectMeta.Labels)
 	})
 }
 
@@ -255,6 +240,16 @@ func TestAddTemplateSpec(t *testing.T) {
 
 		assert.Equal(t, testPriorityClass, spec.PriorityClassName)
 	})
+	t.Run("default topologyConstraint", func(t *testing.T) {
+		dynakube := getTestDynakube()
+
+		multiCapability := capability.NewMultiCapability(&dynakube)
+		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dynakube, multiCapability)
+		sts, err := builder.CreateStatefulSet(nil)
+		require.NoError(t, err)
+
+		assert.Equal(t, builder.defaultTopologyConstraints(), sts.Spec.Template.Spec.TopologySpreadConstraints)
+	})
 	t.Run("set topologyConstraint", func(t *testing.T) {
 		dynakube := getTestDynakube()
 		testTopologyConstraint := []corev1.TopologySpreadConstraint{
@@ -265,11 +260,10 @@ func TestAddTemplateSpec(t *testing.T) {
 		dynakube.Spec.ActiveGate.TopologySpreadConstraints = testTopologyConstraint
 		multiCapability := capability.NewMultiCapability(&dynakube)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dynakube, multiCapability)
-		sts := appsv1.StatefulSet{}
+		sts, err := builder.CreateStatefulSet(nil)
+		require.NoError(t, err)
 
-		builder.addTemplateSpec(&sts)
-		spec := sts.Spec.Template.Spec
-		assert.Equal(t, testTopologyConstraint, spec.TopologySpreadConstraints)
+		assert.Equal(t, testTopologyConstraint, sts.Spec.Template.Spec.TopologySpreadConstraints)
 	})
 }
 
@@ -369,55 +363,72 @@ func TestBuildCommonEnvs(t *testing.T) {
 		assert.Equal(t, dynakube.Spec.NetworkZone, zoneEnv.Value)
 	})
 
-	t.Run("syn-capability", func(t *testing.T) {
-		dynakube := getTestDynakube()
-		dynakube.Spec.ActiveGate.Capabilities = []dynatracev1beta1.CapabilityDisplayName{
-			dynatracev1beta1.SyntheticCapability.DisplayName,
-		}
+	t.Run("synthetic capability", func(t *testing.T) {
+		dynaKube := getTestDynakube()
+		dynaKube.ObjectMeta.Annotations[dynatracev1beta1.AnnotationFeatureSyntheticLocationEntityId] = "doctored"
+		dynaKube.ObjectMeta.Annotations[dynatracev1beta1.AnnotationFeatureSyntheticReplicas] = fmt.Sprint(testReplicas)
+		synCapability := capability.NewSyntheticCapability(&dynaKube)
+
 		builder := NewStatefulSetBuilder(
 			testKubeUID,
 			testConfigHash,
-			dynakube,
-			capability.NewMultiCapability(&dynakube))
+			dynaKube,
+			synCapability)
 
-		assert.Equal(
-			t,
-			dynatracev1beta1.SyntheticCapability.ArgumentName,
-			kubeobjects.FindEnvVar(builder.buildCommonEnvs(), consts.EnvDtCapabilities).
-				Value,
-			"declared env: %v",
-			consts.EnvDtCapabilities)
+		assert.Contains(t,
+			builder.buildCommonEnvs(),
+			corev1.EnvVar{
+				Name:  consts.EnvDtCapabilities,
+				Value: capability.SyntheticActiveGateEnvCapabilities,
+			},
+			"declared env dt capabilities: %s",
+			capability.SyntheticActiveGateEnvCapabilities)
 
-		assert.Equal(
-			t,
-			modifiers.ActiveGateResourceRequirements,
-			builder.buildResources(),
+		statefulSet, _ := builder.CreateStatefulSet(
+			modifiers.GenerateAllModifiers(dynaKube, synCapability))
+
+		assert.Equal(t,
+			*statefulSet.Spec.Replicas,
+			testReplicas,
+			"declared replicas: %s",
+			testReplicas)
+
+		assert.Equal(t,
+			capability.SyntheticActiveGateResourceRequirements,
+			statefulSet.Spec.Template.Spec.Containers[0].Resources,
 			"declared resource requirements for ActiveGate")
 
-		sts, _ := builder.CreateStatefulSet(
-			modifiers.GenerateAllModifiers(
-				dynakube,
-				capability.NewMultiCapability(&dynakube)))
-		jsonized, _ := json.Marshal(sts)
-		t.Logf("manifest: %s", jsonized)
-
-		volumes := []string{
-			modifiers.ChromiumCacheMountName,
-			modifiers.TmpStorageMountName,
+		volumes := []corev1.Volume{
+			{
+				Name: modifiers.ChromiumCacheMountName,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{
+						Medium:    "Memory",
+						SizeLimit: kubeobjects.NewQuantity("512Mi"),
+					},
+				},
+			},
+			{
+				Name: modifiers.TmpStorageMountName,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{
+						SizeLimit: kubeobjects.NewQuantity("10Mi"),
+					},
+				},
+			},
+			{
+				Name: modifiers.ArchiveStorageMountName,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{
+						SizeLimit: kubeobjects.NewQuantity("6Gi"),
+					},
+				},
+			},
 		}
-		for _, v := range volumes {
-			assert.True(
-				t,
-				kubeobjects.VolumeIsDefined(sts.Spec.Template.Spec.Volumes, v),
-				"declared volume: %s",
-				v)
-		}
-
-		assert.True(
-			t,
-			kubeobjects.VolumeClaimIsDefined(sts.Spec.VolumeClaimTemplates, modifiers.PersistentStorageMountName),
-			"declared volume claim: %s",
-			modifiers.PersistentStorageMountName)
+		assert.Subset(t,
+			statefulSet.Spec.Template.Spec.Volumes,
+			volumes,
+			"declared syn volumes")
 	})
 }
 

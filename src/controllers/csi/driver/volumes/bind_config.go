@@ -31,3 +31,15 @@ func NewBindConfig(ctx context.Context, access metadata.Access, volumeCfg *Volum
 		MaxMountAttempts: dynakube.MaxFailedMountAttempts,
 	}, nil
 }
+
+func (cfg BindConfig) IsArchiveAvailable() bool {
+	return cfg.Version != "" || cfg.ImageDigest != ""
+}
+
+func (cfg BindConfig) MetricVersionLabel() string {
+	versionLabel := cfg.Version
+	if versionLabel == "" {
+		versionLabel = cfg.ImageDigest
+	}
+	return versionLabel
+}

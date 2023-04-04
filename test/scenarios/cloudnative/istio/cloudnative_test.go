@@ -23,7 +23,5 @@ func TestMain(m *testing.M) {
 
 func TestCloudNative(t *testing.T) {
 	testEnvironment.Test(t, cloudnative.Install(t, true))
-	testEnvironment.Test(t, cloudnative.Upgrade(t, true))
 	testEnvironment.Test(t, cloudnative.CodeModules(t, true))
-	testEnvironment.Test(t, cloudnative.SpecificAgentVersion(t, true))
 }

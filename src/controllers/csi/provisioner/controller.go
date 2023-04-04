@@ -41,6 +41,7 @@ import (
 )
 
 const (
+	shortRequeueDuration   = 1 * time.Minute
 	defaultRequeueDuration = 5 * time.Minute
 	longRequeueDuration    = 30 * time.Minute
 )
@@ -92,6 +93,11 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	if !dk.NeedsCSIDriver() {
 		log.Info("CSI driver provisioner not needed")
 		return reconcile.Result{RequeueAfter: longRequeueDuration}, provisioner.db.DeleteDynakube(ctx, request.Name)
+	}
+
+	if dk.CodeModulesImage() != "" && dk.CodeModulesVersion() != "" {
+		log.Info("dynakube status is not yet ready, requeuing", "dynakube", dk.Name)
+		return reconcile.Result{RequeueAfter: shortRequeueDuration}, err
 	}
 
 	err = provisioner.provision(ctx, dk)
@@ -210,11 +216,12 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Cont
 		// reporting error but not returning it to avoid immediate requeue and subsequently calling the API every few seconds
 		return nil, true, nil
 	} else if updatedVersion != "" {
-		dynakubeMetadata.LatestVersion = updatedVersion
 		imageInstaller, isImageInstaller := agentUpdater.installer.(*image.Installer)
 		if isImageInstaller {
+			dynakubeMetadata.LatestVersion = ""
 			dynakubeMetadata.ImageDigest = imageInstaller.ImageDigest()
 		} else {
+			dynakubeMetadata.LatestVersion = updatedVersion
 			dynakubeMetadata.ImageDigest = ""
 		}
 	}

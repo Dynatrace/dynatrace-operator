@@ -26,9 +26,8 @@ func (set pinnedVersionSet) isNotPinned(version string) bool {
 // garbageCollectionInfo stores tenant specific information
 // used to delete unused files or directories connected to that tenant
 type garbageCollectionInfo struct {
-	tenantUUID         string
-	latestAgentVersion string
-	pinnedVersions     pinnedVersionSet
+	tenantUUID     string
+	pinnedVersions pinnedVersionSet
 }
 
 // CSIGarbageCollector removes unused and outdated agent versions
@@ -76,18 +75,13 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 		return defaultReconcileResult, err
 	}
 
-	if !isSafeToGC(ctx, gc.db, dynakubeList) {
-		log.Info("dynakube metadata is in a unfinished state, checking later")
-		return defaultReconcileResult, nil
-	}
-
 	gcInfo := collectGCInfo(*dynakube, dynakubeList)
 	if gcInfo == nil {
 		return defaultReconcileResult, nil
 	}
 
 	log.Info("running binary garbage collection")
-	gc.runBinaryGarbageCollection(ctx, gcInfo.pinnedVersions, gcInfo.tenantUUID, gcInfo.latestAgentVersion)
+	gc.runBinaryGarbageCollection(ctx, gcInfo.pinnedVersions, gcInfo.tenantUUID)
 
 	if err := ctx.Err(); err != nil {
 		return defaultReconcileResult, err
@@ -130,46 +124,12 @@ func collectGCInfo(dynakube dynatracev1beta1.DynaKube, dynakubeList *dynatracev1
 		return nil
 	}
 
-	latestAgentVersion := dynakube.Status.LatestAgentVersionUnixPaas
-	if latestAgentVersion == "" {
-		log.Info("no latest agent version found in dynakube, checking later")
-		return nil
-	}
-
 	pinnedVersions := getAllPinnedVersionsForTenantUUID(dynakubeList, tenantUUID)
 
 	return &garbageCollectionInfo{
-		tenantUUID:         tenantUUID,
-		latestAgentVersion: latestAgentVersion,
-		pinnedVersions:     pinnedVersions,
+		tenantUUID:     tenantUUID,
+		pinnedVersions: pinnedVersions,
 	}
-}
-
-func isSafeToGC(ctx context.Context, access metadata.Access, dynakubeList *dynatracev1beta1.DynaKubeList) bool {
-	dkMetadataList, err := access.GetAllDynakubes(ctx)
-	if err != nil {
-		log.Info("failed to get dynakube metadata from database", "err", err)
-		return false
-	}
-	filteredDynakubes := filterCodeModulesImageDynakubes(dynakubeList)
-	for _, dkMetadata := range dkMetadataList {
-		if isInstalling(dkMetadata) {
-			return false
-		}
-		if isUpgrading(dkMetadata, filteredDynakubes) {
-			return false
-		}
-	}
-	return true
-}
-
-func isInstalling(dkMetadata *metadata.Dynakube) bool {
-	return dkMetadata.LatestVersion == ""
-}
-
-func isUpgrading(dkMetadata *metadata.Dynakube, filteredDynakubes map[string]dynatracev1beta1.DynaKube) bool {
-	dynakube, ok := filteredDynakubes[dkMetadata.Name]
-	return ok && dynakube.CodeModulesVersion() != dkMetadata.LatestVersion
 }
 
 // getAllPinnedVersionsForTenantUUID returns all pinned versions for a given tenantUUID.
@@ -202,14 +162,4 @@ func getAllDynakubes(ctx context.Context, apiReader client.Reader, namespace str
 		return nil, errors.WithStack(err)
 	}
 	return &dynakubeList, nil
-}
-
-func filterCodeModulesImageDynakubes(dynakubeList *dynatracev1beta1.DynaKubeList) map[string]dynatracev1beta1.DynaKube {
-	filteredDynakubes := make(map[string]dynatracev1beta1.DynaKube)
-	for _, dynakube := range dynakubeList.Items {
-		if dynakube.CodeModulesImage() != "" {
-			filteredDynakubes[dynakube.Name] = dynakube
-		}
-	}
-	return filteredDynakubes
 }

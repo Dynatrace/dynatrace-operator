@@ -25,14 +25,14 @@ type initContainerModifier interface {
 
 func GenerateAllModifiers(dynakube dynatracev1beta1.DynaKube, capability capability.Capability) []builder.Modifier {
 	return []builder.Modifier{
-		NewKubernetesMonitoringModifier(dynakube, capability),
-		NewServicePortModifier(dynakube, capability),
 		NewAuthTokenModifier(dynakube),
 		NewCertificatesModifier(dynakube),
 		NewCustomPropertiesModifier(dynakube, capability),
 		NewProxyModifier(dynakube),
 		NewRawImageModifier(dynakube),
 		NewReadOnlyModifier(dynakube),
-		newSyntheticModifier(dynakube),
+		newSyntheticModifier(dynakube, capability),
+		NewServicePortModifier(dynakube, capability),
+		NewKubernetesMonitoringModifier(dynakube, capability),
 	}
 }

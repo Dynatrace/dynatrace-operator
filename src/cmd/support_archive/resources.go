@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -70,7 +71,6 @@ func (collector k8sResourceCollector) storeObject(resource unstructured.Unstruct
 		logErrorf(collector.log, err, "Failed to marshal %s %s/%s", resource.GetKind(), collector.namespace, resource.GetName())
 		return
 	}
-
 	fileName := collector.createFileName(resource.GetKind(), resource)
 
 	err = collector.supportArchive.addFile(fileName, bytes.NewBuffer(yamlManifest))
@@ -83,6 +83,7 @@ func (collector k8sResourceCollector) storeObject(resource unstructured.Unstruct
 }
 
 func (collector k8sResourceCollector) createFileName(kind string, resourceMeta unstructured.Unstructured) string {
+	kind = strings.ToLower(kind)
 	switch {
 	case resourceMeta.GetNamespace() != "":
 		return fmt.Sprintf("%s/%s/%s/%s%s", ManifestsDirectoryName, resourceMeta.GetNamespace(), kind, resourceMeta.GetName(), ManifestsFileExtension)

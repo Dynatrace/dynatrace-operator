@@ -9,7 +9,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
-	imageversion "github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
@@ -19,7 +18,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
+	"github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -557,13 +558,8 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 					dynatracev1beta1.RoutingCapability.DisplayName,
 				},
 			}},
-		Status: dynatracev1beta1.DynaKubeStatus{
-			ActiveGate: dynatracev1beta1.ActiveGateStatus{
-				VersionStatus: dynatracev1beta1.VersionStatus{
-					Version: testComponentVersion,
-				},
-			},
-		}}
+	}
+
 	r := createFakeClientAndReconciler(mockClient, instance, testPaasToken, testAPIToken)
 	request := reconcile.Request{
 		NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -653,8 +649,7 @@ func createDTMockClient(paasTokenScopes, apiTokenScopes dtclient.TokenScopes) *d
 				TenantUUID: "abc123456",
 			},
 		}, nil)
-	mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(testVersion, nil)
-	mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypePaaS).Return(testVersion, nil)
+	mockClient.On("GetLatestAgentVersion", mock.Anything, mock.Anything).Return(testVersion, nil)
 	mockClient.On("GetMonitoredEntitiesForKubeSystemUUID", mock.AnythingOfType("string")).
 		Return([]dtclient.MonitoredEntity{}, nil)
 	mockClient.On("GetSettingsForMonitoredEntities", []dtclient.MonitoredEntity{}).
@@ -666,11 +661,8 @@ func createDTMockClient(paasTokenScopes, apiTokenScopes dtclient.TokenScopes) *d
 	return mockClient
 }
 
-func fakeVersionProvider(string, *dockerconfig.DockerConfig) (imageversion.ImageVersion, error) {
-	return imageversion.ImageVersion{
-		Version: "",
-		Hash:    "",
-	}, nil
+func fakeDigestProvider(context.Context, string, *dockerconfig.DockerConfig) (digest.Digest, error) {
+	return "", nil
 }
 
 func createFakeClientAndReconciler(mockClient dtclient.Client, instance *dynatracev1beta1.DynaKube, paasToken, apiToken string) *Controller {
@@ -704,7 +696,8 @@ func createFakeClientAndReconciler(mockClient dtclient.Client, instance *dynatra
 		apiReader:              fakeClient,
 		scheme:                 scheme.Scheme,
 		dynatraceClientBuilder: mockDtcBuilder,
-		versionProvider:        fakeVersionProvider,
+		fs:                     afero.Afero{Fs: afero.NewMemMapFs()},
+		digestProvider:         fakeDigestProvider,
 	}
 
 	return controller

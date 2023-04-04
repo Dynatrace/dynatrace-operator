@@ -5,12 +5,14 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -30,6 +32,15 @@ var (
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "kube-system",
 			UID:  "01234-5678-9012-3456",
+		},
+	}
+
+	syntheticCapabilityObjectMeta = metav1.ObjectMeta{
+		Namespace: testNamespace,
+		Name:      testName,
+		Annotations: map[string]string{
+			dynatracev1beta1.AnnotationFeatureSyntheticLocationEntityId: "imaginary",
+			dynatracev1beta1.AnnotationFeatureSyntheticNodeType:         dynatracev1beta1.SyntheticNodeXs,
 		},
 	}
 )
@@ -118,15 +129,12 @@ func TestServiceCreation(t *testing.T) {
 		expectedCapabilityPorts := map[dynatracev1beta1.CapabilityDisplayName][]string{
 			dynatracev1beta1.RoutingCapability.DisplayName: {
 				consts.HttpsServicePortName,
-				consts.HttpServicePortName,
 			},
 			dynatracev1beta1.MetricsIngestCapability.DisplayName: {
 				consts.HttpsServicePortName,
-				consts.HttpServicePortName,
 			},
 			dynatracev1beta1.DynatraceApiCapability.DisplayName: {
 				consts.HttpsServicePortName,
-				consts.HttpServicePortName,
 			},
 			dynatracev1beta1.KubeMonCapability.DisplayName: {},
 		}
@@ -161,7 +169,6 @@ func TestServiceCreation(t *testing.T) {
 		}
 		expectedPorts := []string{
 			consts.HttpsServicePortName,
-			consts.HttpServicePortName,
 		}
 
 		err := reconciler.Reconcile()
@@ -191,4 +198,45 @@ func getTestActiveGateService(t *testing.T, fakeClient client.Client) corev1.Ser
 	require.NoError(t, err)
 
 	return activegateService
+}
+
+func TestExclusiveSynMonitoring(t *testing.T) {
+	mockDtClient := &dtclient.MockDynatraceClient{}
+	mockDtClient.On("GetActiveGateAuthToken", testName).
+		Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
+
+	dynakube := &dynatracev1beta1.DynaKube{
+		ObjectMeta: syntheticCapabilityObjectMeta,
+	}
+	fakeClient := fake.NewClient(testKubeSystemNamespace)
+	reconciler := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, mockDtClient)
+	err := reconciler.Reconcile()
+
+	require.NoError(t, err, "successfully reconciled for syn-mon")
+
+	var statefulSets appsv1.StatefulSetList
+	err = fakeClient.List(
+		context.TODO(),
+		&statefulSets,
+		client.InNamespace(testNamespace))
+	require.NoError(t, err)
+	require.Len(t, statefulSets.Items, 1)
+
+	statefulSetCreated := false
+	expectedName := capability.BuildServiceName(testName, capability.SyntheticName)
+	for _, statefulSet := range statefulSets.Items {
+		if statefulSet.GetName() == expectedName {
+			statefulSetCreated = true
+			break
+		}
+	}
+	assert.True(t, statefulSetCreated, "unique StatefulSet for syn-mon")
+
+	var services corev1.ServiceList
+	err = fakeClient.List(
+		context.TODO(),
+		&services,
+		client.InNamespace(testNamespace))
+	require.NoError(t, err)
+	require.Len(t, services.Items, 0)
 }

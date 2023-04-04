@@ -25,6 +25,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/support_archive"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/troubleshoot"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/webhook"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/logger"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -33,11 +34,6 @@ import (
 
 var (
 	log = logger.Factory.GetLogger("main")
-)
-
-const (
-	envPodNamespace = "POD_NAMESPACE"
-	envPodName      = "POD_NAME"
 )
 
 func newRootCommand() *cobra.Command {
@@ -50,27 +46,27 @@ func newRootCommand() *cobra.Command {
 
 func createWebhookCommandBuilder() webhook.CommandBuilder {
 	return webhook.NewWebhookCommandBuilder().
-		SetNamespace(os.Getenv(envPodNamespace)).
-		SetPodName(os.Getenv(envPodName)).
+		SetNamespace(os.Getenv(kubeobjects.EnvPodNamespace)).
+		SetPodName(os.Getenv(kubeobjects.EnvPodName)).
 		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
 }
 
 func createOperatorCommandBuilder() operator.CommandBuilder {
 	return operator.NewOperatorCommandBuilder().
-		SetNamespace(os.Getenv(envPodNamespace)).
-		SetPodName(os.Getenv(envPodName)).
+		SetNamespace(os.Getenv(kubeobjects.EnvPodNamespace)).
+		SetPodName(os.Getenv(kubeobjects.EnvPodName)).
 		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
 }
 
 func createCsiServerCommandBuilder() csiServer.CommandBuilder {
 	return csiServer.NewCsiServerCommandBuilder().
-		SetNamespace(os.Getenv(envPodNamespace)).
+		SetNamespace(os.Getenv(kubeobjects.EnvPodNamespace)).
 		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
 }
 
 func createCsiProvisionerCommandBuilder() csiProvisioner.CommandBuilder {
 	return csiProvisioner.NewCsiProvisionerCommandBuilder().
-		SetNamespace(os.Getenv(envPodNamespace)).
+		SetNamespace(os.Getenv(kubeobjects.EnvPodNamespace)).
 		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
 }
 

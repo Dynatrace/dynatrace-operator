@@ -13,6 +13,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -53,7 +54,7 @@ func TestIstioClient_CreateIstioObjects(t *testing.T) {
 }
 
 func TestIstioClient_BuildDynatraceVirtualService(t *testing.T) {
-	err := os.Setenv("POD_NAMESPACE", DefaultTestNamespace)
+	err := os.Setenv(kubeobjects.EnvPodNamespace, DefaultTestNamespace)
 	if err != nil {
 		t.Error("Failed to set environment variable")
 	}
