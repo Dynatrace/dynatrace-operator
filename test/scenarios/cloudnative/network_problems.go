@@ -6,7 +6,6 @@ import (
 	"context"
 	"path"
 	"testing"
-	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
@@ -25,9 +24,8 @@ import (
 )
 
 const (
-	agentMountPath    = "/opt/dynatrace/oneagent-paas"
-	ldPreloadError    = "ERROR: ld.so: object '/opt/dynatrace/oneagent-paas/agent/lib64/liboneagentproc.so' from LD_PRELOAD cannot be preloaded"
-	podRestartTimeout = 5 * time.Minute
+	agentMountPath = "/opt/dynatrace/oneagent-paas"
+	ldPreloadError = "ERROR: ld.so: object '/opt/dynatrace/oneagent-paas/agent/lib64/liboneagentproc.so' from LD_PRELOAD cannot be preloaded"
 )
 
 var (
@@ -42,6 +40,9 @@ func NetworkProblems(t *testing.T) features.Feature {
 		WithDefaultObjectMeta().
 		ApiUrl(secretConfig.ApiUrl).
 		CloudNative(defaultCloudNativeSpec()).
+		WithAnnotations(map[string]string{
+			"feature.dynatrace.com/max-csi-mount-attempts": "2",
+		}).
 		Build()
 
 	namespaceBuilder := namespace.NewBuilder("network-problem-sample")
