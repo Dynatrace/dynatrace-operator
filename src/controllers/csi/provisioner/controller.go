@@ -181,15 +181,20 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Cont
 	}
 	latestProcessModuleConfig = latestProcessModuleConfig.AddHostGroup(dk.HostGroup())
 
+	log.Info("querying OneAgent connection info")
+
+	connectionInfo, err := dtc.GetOneAgentConnectionInfo()
+	if err != nil {
+		log.Info("error when querying connection info", "error", err.Error())
+		return nil, false, err
+	}
+
+	log.Info("got current connection endpoints", "tenantUUID", dynakubeMetadata.TenantUUID, "endpoints", connectionInfo.Endpoints)
+
+	latestProcessModuleConfig = latestProcessModuleConfig.AddConnectionInfo(connectionInfo)
+
 	var agentUpdater *agentUpdater
 	if dk.CodeModulesImage() != "" {
-		connectionInfo, err := dtc.GetOneAgentConnectionInfo()
-		if err != nil {
-			log.Info("could not query connection info")
-			return nil, false, err
-		}
-
-		latestProcessModuleConfig = latestProcessModuleConfig.AddConnectionInfo(connectionInfo)
 		agentUpdater, err = newAgentImageUpdater(ctx, provisioner.fs, provisioner.apiReader, provisioner.path, provisioner.db, provisioner.recorder, dk)
 		if err != nil {
 			log.Error(err, "error when setting up the agent image updater")
@@ -205,10 +210,6 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Cont
 
 	latestProcessModuleConfigCache = newProcessModuleConfigCache(latestProcessModuleConfig)
 
-	if err != nil {
-		log.Info("error when setting up the agent updater", "error", err.Error())
-		return nil, false, err
-	}
 	updatedVersion, err := agentUpdater.updateAgent(latestProcessModuleConfigCache)
 	if err != nil {
 		log.Info("error when updating agent", "error", err.Error())
