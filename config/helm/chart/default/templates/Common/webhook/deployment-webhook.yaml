@@ -74,7 +74,7 @@ spec:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
               - matchExpressions:
-                    {{- if ne .Values.platform "gke-autopilot"}}
+                    {{- if ne (include "dynatrace-operator.platform" .) "gke-autopilot"}}
                   - key: kubernetes.io/arch
                     operator: In
                     values:

@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strconv"
 	"testing"
 	"time"
 
@@ -32,6 +33,10 @@ const (
 	curlPodNameActivegate = "curl-activegate"
 	curlPodNameWebhook    = "curl-webhook"
 	curlContainerName     = "curl"
+
+	connectionTimeout = 5
+
+	proxyNamespaceName = "proxy"
 )
 
 func InstallActiveGateCurlPod(dynakube dynatracev1beta1.DynaKube) features.Func {
@@ -39,31 +44,38 @@ func InstallActiveGateCurlPod(dynakube dynatracev1beta1.DynaKube) features.Func 
 		serviceUrl := getActiveGateServiceUrl(dynakube)
 		curlTarget := fmt.Sprintf("%s/%s", serviceUrl, activeGateEndpoint)
 
-		curlPod := setupCurlPod(dynakube, curlPodNameActivegate, curlTarget)
+		curlPod := NewCurlPodBuilder(curlPodNameActivegate, curlNamespace(dynakube), curlTarget).WithProxy(dynakube).Build()
 		require.NoError(t, environmentConfig.Client().Resources().Create(ctx, curlPod))
 		return ctx
 	}
 }
 
 func WaitForActiveGateCurlPod(dynakube dynatracev1beta1.DynaKube) features.Func {
-	return pod.WaitFor(curlPodNameActivegate, dynakube.Namespace)
+	return pod.WaitFor(curlPodNameActivegate, curlNamespace(dynakube))
 }
 
 func CheckActiveGateCurlResult(dynakube dynatracev1beta1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resources := environmentConfig.Client().Resources()
 
-		logStream := getCurlPodLogStream(ctx, t, resources, curlPodNameActivegate, dynakube.Namespace)
+		logStream := getCurlPodLogStream(ctx, t, resources, curlPodNameActivegate, curlNamespace(dynakube))
 		logs.AssertContains(t, logStream, "RUNNING")
 
 		return ctx
 	}
 }
 
+func curlNamespace(dynakube dynatracev1beta1.DynaKube) string {
+	if dynakube.HasProxy() {
+		return proxyNamespaceName
+	}
+	return dynakube.Namespace
+}
+
 func InstallWebhookCurlProxyPod(dynakube dynatracev1beta1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		curlTarget := fmt.Sprintf("https://%s/%s", getWebhookServiceUrl(dynakube), livezEndpoint)
-		curlPod := setupCurlPod(dynakube, curlPodNameWebhook, curlTarget)
+		curlTarget := fmt.Sprintf("https://%s/%s", GetWebhookServiceUrl(dynakube), livezEndpoint)
+		curlPod := NewCurlPodBuilder(curlPodNameWebhook, dynakube.Namespace, curlTarget).WithProxy(dynakube).Build()
 		require.NoError(t, environmentConfig.Client().Resources().Create(ctx, curlPod))
 
 		return ctx
@@ -83,7 +95,7 @@ func CheckWebhookCurlProxyResult(dynakube dynatracev1beta1.DynaKube) features.Fu
 
 		logStream := getCurlPodLogStream(ctx, t, resources, curlPodNameWebhook, dynakube.Namespace)
 
-		webhookServiceUrl := getWebhookServiceUrl(dynakube)
+		webhookServiceUrl := GetWebhookServiceUrl(dynakube)
 		logs.AssertContains(t, logStream, fmt.Sprintf("CONNECT %s:443", webhookServiceUrl))
 
 		return ctx
@@ -95,7 +107,7 @@ func getActiveGateServiceUrl(dynakube dynatracev1beta1.DynaKube) string {
 	return fmt.Sprintf("https://%s.%s.svc.cluster.local", serviceName, dynakube.Namespace)
 }
 
-func getWebhookServiceUrl(dynakube dynatracev1beta1.DynaKube) string {
+func GetWebhookServiceUrl(dynakube dynatracev1beta1.DynaKube) string {
 	return fmt.Sprintf("%s.%s.svc.cluster.local", webhook.DeploymentName, dynakube.Namespace)
 }
 
@@ -112,37 +124,77 @@ func getCurlPodLogStream(ctx context.Context, t *testing.T, resources *resources
 	return logStream
 }
 
-func setupCurlPod(dynakube dynatracev1beta1.DynaKube, podName, targetUrl string) *corev1.Pod {
-	curlPod := &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      podName,
-			Namespace: dynakube.Namespace,
-		},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name:  curlContainerName,
-					Image: "curlimages/curl",
-					Command: []string{
-						"curl",
-					},
-					Args: []string{
-						targetUrl,
-						"--insecure",
-						"--verbose",
+func InstallCutOffCurlPod(podName, namespaceName, curlTarget string) features.Func {
+	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+		// if curl command can't connect to the host, returns 28 after 131[s] by default
+		curlPod := NewCurlPodBuilder(podName, namespaceName, curlTarget).WithRestartPolicy(corev1.RestartPolicyNever).WithParameters("--connect-timeout", strconv.Itoa(connectionTimeout)).Build()
+		require.NoError(t, environmentConfig.Client().Resources().Create(ctx, curlPod))
+		return ctx
+	}
+}
+
+func WaitForCutOffCurlPod(podName, namespaceName string) features.Func {
+	return pod.WaitForCondition(podName, namespaceName, func(object k8s.Object) bool {
+		pod, isPod := object.(*corev1.Pod)
+		// kubernetes 28
+		// openshift 7
+		return isPod && pod.Status.ContainerStatuses[0].State.Terminated != nil && (pod.Status.ContainerStatuses[0].State.Terminated.ExitCode == 28 || pod.Status.ContainerStatuses[0].State.Terminated.ExitCode == 7)
+	}, connectionTimeout*2*time.Second)
+}
+
+type CurlPodBuilder struct {
+	curlPod *corev1.Pod
+}
+
+func NewCurlPodBuilder(podName, namespaceName, targetUrl string) CurlPodBuilder {
+	return CurlPodBuilder{
+		curlPod: &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      podName,
+				Namespace: namespaceName,
+			},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					{
+						Name:  curlContainerName,
+						Image: "curlimages/curl",
+						Command: []string{
+							"curl",
+						},
+						Args: []string{
+							targetUrl,
+							"--insecure",
+							"--verbose",
+						},
 					},
 				},
+				RestartPolicy: corev1.RestartPolicyOnFailure,
 			},
-			RestartPolicy: corev1.RestartPolicyOnFailure,
 		},
 	}
+}
 
+func (curlPodBuilder CurlPodBuilder) WithProxy(dynakube dynatracev1beta1.DynaKube) CurlPodBuilder {
 	if dynakube.HasProxy() {
 		proxyEnv := corev1.EnvVar{
 			Name:  "https_proxy",
 			Value: dynakube.Spec.Proxy.Value,
 		}
-		curlPod.Spec.Containers[0].Env = append(curlPod.Spec.Containers[0].Env, proxyEnv)
+		curlPodBuilder.curlPod.Spec.Containers[0].Env = append(curlPodBuilder.curlPod.Spec.Containers[0].Env, proxyEnv)
 	}
-	return curlPod
+	return curlPodBuilder
+}
+
+func (curlPodBuilder CurlPodBuilder) WithRestartPolicy(restartPolicy corev1.RestartPolicy) CurlPodBuilder {
+	curlPodBuilder.curlPod.Spec.RestartPolicy = restartPolicy
+	return curlPodBuilder
+}
+
+func (curlPodBuilder CurlPodBuilder) WithParameters(params ...string) CurlPodBuilder {
+	curlPodBuilder.curlPod.Spec.Containers[0].Args = append(curlPodBuilder.curlPod.Spec.Containers[0].Args, params...)
+	return curlPodBuilder
+}
+
+func (curlPodBuilder CurlPodBuilder) Build() *corev1.Pod {
+	return curlPodBuilder.curlPod
 }
