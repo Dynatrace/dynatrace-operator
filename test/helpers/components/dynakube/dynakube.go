@@ -21,7 +21,7 @@ import (
 
 const (
 	defaultName      = "dynakube"
-	DefaultNamespace = "dynatrace"
+	defaultNamespace = "dynatrace"
 )
 
 type Builder struct {
@@ -52,7 +52,7 @@ func (dynakubeBuilder Builder) Namespace(namespace string) Builder {
 func (dynakubeBuilder Builder) WithDefaultObjectMeta() Builder {
 	dynakubeBuilder.dynakube.ObjectMeta = metav1.ObjectMeta{
 		Name:        defaultName,
-		Namespace:   DefaultNamespace,
+		Namespace:   defaultNamespace,
 		Annotations: map[string]string{},
 	}
 
