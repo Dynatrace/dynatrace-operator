@@ -33,15 +33,7 @@ type stepContext struct {
 	containerLogSpec corev1.PodLogOptions
 }
 
-type contextValueKey int
-
-const stepContextKey = contextValueKey(1)
-
 var config tenant.Secret
-
-func extractSyntheticStep(ctx context.Context) *stepContext {
-	return ctx.Value(stepContextKey).(*stepContext)
-}
 
 func newFeature(t *testing.T) features.Feature {
 	config = tenant.GetSingleTenantSecret(t)
@@ -49,7 +41,9 @@ func newFeature(t *testing.T) features.Feature {
 	builder := features.New("synthetic capability with single loc")
 	builder.Setup(requireSyntheticLoc)
 	builder.Setup(requireSyntheticBrowserMonitor)
-	builder.Setup(buildStepContext)
+
+	ctx := &stepContext{}
+	builder.Setup(ctx.initStepContext)
 
 	gateDynaKube := dynakube.NewBuilder().
 		WithDefaultObjectMeta().
@@ -59,8 +53,8 @@ func newFeature(t *testing.T) features.Feature {
 	assess.InstallDynatraceWithTeardown(builder, &config, gateDynaKube)
 	builder.Assess(
 		"observability activegate deployed",
-		requireStepContext(gateDynaKube, consts.MultiActiveGateName))
-	builder.Assess("observability activegate running", requireObservabilityFocusedActiveGate)
+		ctx.requireStepContext(gateDynaKube, consts.MultiActiveGateName))
+	builder.Assess("observability activegate running", ctx.requireObservabilityFocusedActiveGate)
 
 	synDynaKube := dynakube.NewBuilder().
 		Name("private-loc").
@@ -72,10 +66,10 @@ func newFeature(t *testing.T) features.Feature {
 	assess.InstallDynakubeWithTeardown(builder, nil, synDynaKube)
 	builder.Assess(
 		"synthetic loc deployed",
-		requireStepContext(synDynaKube, capability.SyntheticName))
-	builder.Assess("synthetic activegate running", requireSyntheticFocusedActiveGate)
-	builder.Assess("vuc running", requireOperableVuc)
-	builder.Assess("visit completed", requireSyntheticVisitCompleted)
+		ctx.requireStepContext(synDynaKube, capability.SyntheticName))
+	builder.Assess("synthetic activegate running", ctx.requireSyntheticFocusedActiveGate)
+	builder.Assess("vuc running", ctx.requireOperableVuc)
+	builder.Assess("visit completed", ctx.requireSyntheticVisitCompleted)
 
 	return builder.Feature()
 }
@@ -94,17 +88,14 @@ func requireSyntheticBrowserMonitor(ctx context.Context, t *testing.T, cfg *envc
 	return ctx
 }
 
-func buildStepContext(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-	return context.WithValue(
-		ctx,
-		stepContextKey,
-		&stepContext{
-			t:      t,
-			config: cfg,
-		})
+func (c *stepContext) initStepContext(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+	c.t = t
+	c.config = cfg
+
+	return ctx
 }
 
-func requireStepContext(dynaKube dynatracev1beta1.DynaKube, component string) features.Func {
+func (c *stepContext) requireStepContext(dynaKube dynatracev1beta1.DynaKube, component string) features.Func {
 	return func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 		pods := pod.GetPodsForOwner(
 			ctx,
@@ -119,30 +110,33 @@ func requireStepContext(dynaKube dynatracev1beta1.DynaKube, component string) fe
 			"unique %s pod deployed",
 			component)
 
-		extractSyntheticStep(ctx).dynaKube = dynaKube
-		extractSyntheticStep(ctx).pod = pods.Items[0]
+		c.dynaKube = dynaKube
+		c.pod = pods.Items[0]
 
 		return ctx
 	}
 }
 
-func requireObservabilityFocusedActiveGate(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+func (c *stepContext) requireObservabilityFocusedActiveGate(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 	const activatedModulesLogMsg = `Active:([
 [:blank:]]+(kubernetes_monitoring|odin_collector|metrics_ingest)){3}[
 [:blank:]]+Lifecycle[[:blank:]]+listeners:`
-	extractSyntheticStep(ctx).containerLogSpec.Container = consts.ActiveGateContainerName
+	c.containerLogSpec.Container = consts.ActiveGateContainerName
 
 	activatedModulesLogMsgRegexp := regexp.MustCompile(activatedModulesLogMsg)
 	require.Regexp(
 		t,
 		activatedModulesLogMsgRegexp,
-		requireContainerLogToMatch(ctx, activatedModulesLogMsgRegexp),
+		c.requireContainerLogToMatch(ctx, activatedModulesLogMsgRegexp),
 		"on-service status for observability ActiveGate found in log")
 
 	return ctx
 }
 
-func requireContainerLogToMatch(ctx context.Context, regexp *regexp.Regexp) string {
+func (c *stepContext) requireContainerLogToMatch(
+	ctx context.Context,
+	regexp *regexp.Regexp,
+) string {
 	const (
 		logReadSeriesDuration = 3 * time.Minute
 		logReadPeriod         = 10 * time.Second
@@ -150,77 +144,77 @@ func requireContainerLogToMatch(ctx context.Context, regexp *regexp.Regexp) stri
 
 	var log string
 	matches := func() bool {
-		log = requireContainerLog(ctx)
+		log = c.requireContainerLog(ctx)
 		return regexp.MatchString(log)
 	}
 
 	require.Eventually(
-		extractSyntheticStep(ctx).t,
+		c.t,
 		matches,
 		logReadSeriesDuration,
 		logReadPeriod)
 
-	extractSyntheticStep(ctx).t.Logf(
+	c.t.Logf(
 		"%s/%s log:\n%s",
-		extractSyntheticStep(ctx).pod.Name,
-		extractSyntheticStep(ctx).containerLogSpec.Container,
+		c.pod.Name,
+		c.containerLogSpec.Container,
 		log)
 	return log
 }
 
-func requireContainerLog(ctx context.Context) string {
+func (c *stepContext) requireContainerLog(ctx context.Context) string {
 	client, err := kubernetes.NewForConfig(
-		extractSyntheticStep(ctx).config.Client().Resources().GetConfig())
-	require.NoError(extractSyntheticStep(ctx).t, err, "k8s client created")
+		c.config.Client().Resources().GetConfig())
+	require.NoError(c.t, err, "k8s client created")
 
 	logStream, err := client.CoreV1().
-		Pods(extractSyntheticStep(ctx).dynaKube.Namespace).
+		Pods(c.dynaKube.Namespace).
 		GetLogs(
-			extractSyntheticStep(ctx).pod.Name,
-			&extractSyntheticStep(ctx).containerLogSpec).
+			c.pod.Name,
+			&c.containerLogSpec).
 		Stream(ctx)
-	require.NoError(extractSyntheticStep(ctx).t, err, "log streamified")
+	require.NoError(c.t, err, "log streamified")
 
-	return logs.RequireContent(extractSyntheticStep(ctx).t, logStream)
+	return logs.RequireContent(c.t, logStream)
 }
 
-func requireSyntheticFocusedActiveGate(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+func (c *stepContext) requireSyntheticFocusedActiveGate(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 	const boundLocationLogMsg = `Setting synthetic private location id to %d
 Applying default config
 Enabling selected features: %s`
-	extractSyntheticStep(ctx).containerLogSpec.Container = consts.ActiveGateContainerName
+	c.containerLogSpec.Container = consts.ActiveGateContainerName
 
 	boundLocationLogMsgRegexp, err := regexp.Compile(
 		fmt.Sprintf(
 			boundLocationLogMsg,
-			int64(dynakube.SyntheticLocationOrdinal(extractSyntheticStep(ctx).dynaKube)),
+			int64(dynakube.SyntheticLocationOrdinal(c.dynaKube)),
 			capability.SyntheticActiveGateEnvCapabilities))
 	require.NoError(t, err, "regexp compiled")
 	require.Regexp(
 		t,
 		boundLocationLogMsgRegexp,
-		requireContainerLogToMatch(ctx, boundLocationLogMsgRegexp),
+		c.requireContainerLogToMatch(ctx, boundLocationLogMsgRegexp),
 		"on-service status for synthetic ActiveGate found in log")
 
 	return ctx
 }
 
-func requireOperableVuc(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+func (c *stepContext) requireOperableVuc(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 	const activeLogMsg = `VUC state changed to: Running(\\z|
 )`
-	extractSyntheticStep(ctx).containerLogSpec.Container = consts.SyntheticContainerName
+	c.containerLogSpec.Container = consts.SyntheticContainerName
 
 	activeLogMsgRegexp := regexp.MustCompile(activeLogMsg)
 	require.Regexp(
 		t,
 		activeLogMsg,
-		requireContainerLogToMatch(ctx, activeLogMsgRegexp),
+		c.requireContainerLogToMatch(ctx, activeLogMsgRegexp),
 		"VUC running status found in log")
 
 	return ctx
 }
 
-func requireSyntheticVisitCompleted(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+func (c *stepContext) requireSyntheticVisitCompleted(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 	const (
 		logReadSeriesDuration = 7 * time.Minute
 		logReadPeriod         = 20 * time.Second
@@ -234,7 +228,7 @@ func requireSyntheticVisitCompleted(ctx context.Context, t *testing.T, cfg *envc
 
 	var log string
 	matches := func() bool {
-		log = requireVucBrowserLog(ctx)
+		log = c.requireVucBrowserLog(ctx)
 		return regexp.MatchString(log)
 	}
 
@@ -250,16 +244,16 @@ func requireSyntheticVisitCompleted(ctx context.Context, t *testing.T, cfg *envc
 	return ctx
 }
 
-func requireVucBrowserLog(ctx context.Context) string {
+func (c *stepContext) requireVucBrowserLog(ctx context.Context) string {
 	const log = "/var/log/dynatrace/synthetic/vuc-browser.log"
 
 	logReadResult, err := pod.Exec(
 		ctx,
-		extractSyntheticStep(ctx).config.Client().Resources(),
-		extractSyntheticStep(ctx).pod,
+		c.config.Client().Resources(),
+		c.pod,
 		consts.SyntheticContainerName,
 		shell.ReadFile(log)...)
-	require.NoError(extractSyntheticStep(ctx).t, err, "VUC browser log read")
+	require.NoError(c.t, err, "VUC browser log read")
 
 	return logReadResult.StdOut.String()
 }
