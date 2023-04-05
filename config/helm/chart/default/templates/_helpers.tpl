@@ -27,7 +27,7 @@ Check if default image is used
 {{- if .Values.image -}}
 	{{- printf "%s" .Values.image -}}
 {{- else -}}
-	{{- if eq .Values.platform "google-marketplace" -}}
+	{{- if eq (include "dynatrace-operator.platform" .) "google-marketplace" -}}
     	{{- printf "%s:%s" "gcr.io/dynatrace-marketplace-prod/dynatrace-operator" .Chart.AppVersion }}
 	{{- else -}}
 		{{- printf "%s:v%s" "docker.io/dynatrace/dynatrace-operator" .Chart.AppVersion }}
@@ -44,30 +44,4 @@ Check if we are generating only a part of the yamls
 	{{- else -}}
 	    {{- printf "false" -}}
 	{{- end -}}
-{{- end -}}
-
-
-{{/*
-Check if platform is set
-*/}}
-{{- define "dynatrace-operator.platformSet" -}}
-{{- if or (eq .Values.platform "kubernetes") (eq .Values.platform "openshift") (eq .Values.platform "google-marketplace") (eq .Values.platform "gke-autopilot") -}}
-    {{ default "set" }}
-{{- end -}}
-{{- end -}}
-
-{{/*
-Exclude Kubernetes manifest not running on OLM
-*/}}
-{{- define "dynatrace-operator.openshiftOrOlm" -}}
-{{- if and (or (eq .Values.platform "openshift") (.Values.olm)) (eq (include "dynatrace-operator.partial" .) "false") -}}
-    {{ default "true" }}
-{{- end -}}
-{{- end -}}
-
-{{/*
-Check if the platform is set
-*/}}
-{{- define "dynatrace-operator.platformRequired" -}}
-{{- $platformIsSet := printf "%s" (required "Platform needs to be set to kubernetes, openshift, google-marketplace, or gke-autopilot" (include "dynatrace-operator.platformSet" .))}}
 {{- end -}}
