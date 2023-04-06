@@ -56,6 +56,11 @@ func (m *mockUpdater) UseDefaults(_ context.Context, _ *dockerconfig.DockerConfi
 	return args.Error(0)
 }
 
+func (m *mockUpdater) CheckForDowngrade(latestVersion string) (bool, error) {
+	args := m.Called()
+	return args.Bool(0), args.Error(1)
+}
+
 func TestRun(t *testing.T) {
 	ctx := context.TODO()
 	testImage := dtclient.LatestImageInfo{
@@ -127,7 +132,7 @@ func TestRun(t *testing.T) {
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "UseDefaults", 2)
 	})
-	t.Run("public registry, version set to imageTag", func(t *testing.T) {
+	t.Run("public registry", func(t *testing.T) {
 		registry := newFakeRegistryForImages(testImage.String())
 		target := &dynatracev1beta1.VersionStatus{
 			Source: dynatracev1beta1.TenantRegistryVersionSource,
@@ -139,6 +144,7 @@ func TestRun(t *testing.T) {
 		}
 		updater := newPublicRegistryUpdater(target, &testImage, false)
 		updater.On("IsClassicFullStackEnabled").Return(false)
+		updater.On("CheckForDowngrade").Return(false, nil)
 
 		err := versionReconciler.run(ctx, updater, testDockerCfg)
 		require.NoError(t, err)
@@ -147,6 +153,29 @@ func TestRun(t *testing.T) {
 		assert.Equal(t, dynatracev1beta1.PublicRegistryVersionSource, target.Source)
 		assertVersionStatusEquals(t, registry, getTaggedReference(t, testImage.String()), *target)
 		assert.Empty(t, target.Version)
+	})
+
+	t.Run("public registry, no downgrade allowed", func(t *testing.T) {
+		registry := newFakeRegistryForImages(testImage.String())
+		target := &dynatracev1beta1.VersionStatus{
+			Source: dynatracev1beta1.TenantRegistryVersionSource,
+		}
+		versionReconciler := Reconciler{
+			dynakube:     enablePublicRegistry(&dynatracev1beta1.DynaKube{}),
+			timeProvider: timeProvider,
+			digestFunc:   registry.ImageVersionExt,
+		}
+		updater := newPublicRegistryUpdater(target, &testImage, false)
+		updater.On("IsClassicFullStackEnabled").Return(false)
+		updater.On("CheckForDowngrade").Return(true, nil)
+
+		err := versionReconciler.run(ctx, updater, testDockerCfg)
+		require.NoError(t, err)
+		updater.AssertNumberOfCalls(t, "LatestImageInfo", 1)
+		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
+		assert.Equal(t, dynatracev1beta1.PublicRegistryVersionSource, target.Source)
+		assert.Empty(t, target.Version)
+		assert.Empty(t, target.ImageID)
 	})
 	t.Run("classicfullstack enabled, public registry is ignored", func(t *testing.T) {
 		registry := newFakeRegistryForImages(testImage.String())

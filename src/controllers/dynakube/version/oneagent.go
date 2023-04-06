@@ -7,6 +7,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
+	"github.com/containers/image/v5/docker/reference"
+	"github.com/pkg/errors"
 )
 
 type oneAgentUpdater struct {
@@ -70,13 +72,9 @@ func (updater *oneAgentUpdater) UseDefaults(ctx context.Context, dockerCfg *dock
 	}
 
 	previousVersion := updater.Target().Version
-	if previousVersion != "" {
-		if downgrade, err := version.IsDowngrade(previousVersion, latestVersion); err != nil {
-			return err
-		} else if downgrade {
-			log.Info("downgrade detected, which is not allowed in this configuration", "updater", updater.Name(), "from", previousVersion, "to", latestVersion)
-			return nil
-		}
+	downgrade, err := isDowngrade(updater.Name(), previousVersion, latestVersion)
+	if err != nil || downgrade {
+		return err
 	}
 
 	defaultImage := updater.dynakube.DefaultOneAgentImage()
@@ -88,4 +86,36 @@ func (updater *oneAgentUpdater) UseDefaults(ctx context.Context, dockerCfg *dock
 	updater.Target().Version = latestVersion
 
 	return nil
+}
+
+func (updater *oneAgentUpdater) CheckForDowngrade(latestVersion string) (bool, error) {
+	previousSource := updater.Target().Source
+	imageID := updater.Target().ImageID
+	if previousSource != dynatracev1beta1.PublicRegistryVersionSource || imageID == "" {
+		return false, nil
+	}
+
+	ref, err := reference.Parse(imageID)
+	if err != nil {
+		return false, err
+	}
+	taggedRef, ok := ref.(reference.NamedTagged)
+	if !ok {
+		return false, errors.New("no tag found to check for downgrade")
+	}
+
+	previousVersion := taggedRef.Tag()
+	return isDowngrade(updater.Name(), previousVersion, latestVersion)
+}
+
+func isDowngrade(updaterName, previousVersion, latestVersion string) (bool , error){
+	if previousVersion != "" {
+		if downgrade, err := version.IsDowngrade(previousVersion, latestVersion); err != nil {
+			return false, err
+		} else if downgrade {
+			log.Info("downgrade detected, which is not allowed in this configuration", "updater", updaterName, "from", previousVersion, "to", latestVersion)
+			return true, err
+		}
+	}
+	return false, nil
 }

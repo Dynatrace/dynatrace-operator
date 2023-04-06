@@ -58,6 +58,10 @@ func (updater activeGateUpdater) LatestImageInfo() (*dtclient.LatestImageInfo, e
 	return updater.dtClient.GetLatestActiveGateImage()
 }
 
+func (updater *activeGateUpdater) CheckForDowngrade(latestVersion string) (bool, error) {
+	return false, nil
+}
+
 func (updater *activeGateUpdater) UseDefaults(ctx context.Context, dockerCfg *dockerconfig.DockerConfig) error {
 	defaultImage := updater.dynakube.DefaultActiveGateImage()
 	return updateVersionStatus(ctx, updater.Target(), defaultImage, updater.digestFunc, dockerCfg)

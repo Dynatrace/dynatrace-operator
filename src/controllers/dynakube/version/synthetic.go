@@ -59,6 +59,11 @@ func (updater syntheticUpdater) LatestImageInfo() (*dtclient.LatestImageInfo, er
 	return nil, errors.New("unsupported method")
 }
 
+func (updater syntheticUpdater) CheckForDowngrade(latestVersion string) (bool, error) {
+	return false, nil
+}
+
+
 func (updater *syntheticUpdater) UseDefaults(ctx context.Context, dockerCfg *dockerconfig.DockerConfig) error {
 	defaultImage := updater.dynakube.DefaultSyntheticImage()
 	return updateVersionStatus(ctx, updater.Target(), defaultImage, updater.digestFunc, dockerCfg)

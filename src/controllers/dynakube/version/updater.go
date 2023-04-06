@@ -20,6 +20,7 @@ type versionStatusUpdater interface {
 	CustomVersion() string
 	IsAutoUpdateEnabled() bool
 	IsPublicRegistryEnabled() bool
+	CheckForDowngrade(latestVersion string) (bool, error)
 	LatestImageInfo() (*dtclient.LatestImageInfo, error)
 
 	UseDefaults(context.Context, *dockerconfig.DockerConfig) error
@@ -43,8 +44,8 @@ func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpda
 	}
 
 	if !updater.IsAutoUpdateEnabled() {
-		emptyVersionStatus := dynatracev1beta1.VersionStatus{}
 		previousSource := updater.Target().Source
+		emptyVersionStatus := dynatracev1beta1.VersionStatus{}
 		if updater.Target() == nil || *updater.Target() == emptyVersionStatus {
 			log.Info("initial status update in progress with no auto update", "updater", updater.Name())
 		} else if previousSource == currentSource {
@@ -61,6 +62,15 @@ func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpda
 			log.Info("could not get public image", "updater", updater.Name())
 			return err
 		}
+		isDowngrade, err := updater.CheckForDowngrade(publicImage.Tag)
+		if err != nil {
+			log.Info("could not determine if is downgrade for public registry", "updater", updater.Name())
+			return err
+		}
+		if isDowngrade {
+			return nil
+		}
+
 		err = updateVersionStatus(ctx, updater.Target(), publicImage.String(), reconciler.digestFunc, dockerCfg)
 		if err != nil {
 			log.Info("could not update version status according to the public registry", "updater", updater.Name())
