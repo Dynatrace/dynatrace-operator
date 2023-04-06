@@ -59,10 +59,13 @@ func withProxy(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features
 	proxy.IsDynatraceNamespaceCutOff(builder, testDynakube)
 	proxy.ApproveConnectionsWithK8SAndProxy(builder, proxySpec)
 
-	// Register actual test
+	// Register dynakube install
 	assess.InstallDynakube(builder, &secretConfig, testDynakube)
-	builder.Assess("check env variables of oneagent pods", checkOneAgentEnvVars(testDynakube))
+	// Register sample app install
 	builder.Assess("install sample app", sampleApp.Install())
+
+	// Register actual test
+	builder.Assess("check env variables of oneagent pods", checkOneAgentEnvVars(testDynakube))
 	builder.Assess("check existing init container and env var", checkSampleInitContainerEnvVars(sampleApp))
 
 	// Register operator and dynakube uninstall

@@ -57,12 +57,13 @@ func Install(t *testing.T, istioEnabled bool) features.Feature {
 	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
 	sampleApp.WithNamespace(sampleNamespace)
 
+	// Register dynakube install
+	assess.InstallDynakube(builder, &secretConfig, testDynakube)
+
 	// Register sample app install
 	builder.Assess("install sample app", sampleApp.Install())
 
 	// Register actual test
-	assess.InstallDynakube(builder, &secretConfig, testDynakube)
-	assessSampleAppsRestart(builder, sampleApp)
 	assessSampleInitContainers(builder, sampleApp)
 	if istioEnabled {
 		istio.AssessIstio(builder, testDynakube, sampleApp)
@@ -73,10 +74,6 @@ func Install(t *testing.T, istioEnabled bool) features.Feature {
 	teardown.UninstallDynatrace(builder, testDynakube)
 
 	return builder.Feature()
-}
-
-func assessSampleAppsRestart(builder *features.FeatureBuilder, sampleApp sample.App) {
-	builder.Assess("restart sample apps", sampleApp.Restart)
 }
 
 func assessSampleAppsRestartHalf(builder *features.FeatureBuilder, sampleApp sample.App) {
