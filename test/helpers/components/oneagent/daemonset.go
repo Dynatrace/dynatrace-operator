@@ -43,7 +43,7 @@ func ForEachPod(ctx context.Context, resource *resources.Resources, dynakube dyn
 	}).ForEachPod(actionFunc)
 }
 
-func OneAgentPodsAreReady(dynakube dynatracev1beta1.DynaKube) features.Func {
+func PodsAreReady(dynakube dynatracev1beta1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resource := environmentConfig.Client().Resources()
 
