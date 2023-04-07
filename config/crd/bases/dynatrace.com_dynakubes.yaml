@@ -3374,8 +3374,14 @@ spec:
                 properties:
                   connectionInfoStatus:
                     properties:
+                      endpoints:
+                        type: string
                       lastRequest:
                         format: date-time
+                        type: string
+                      tenantToken:
+                        type: string
+                      tenantUUID:
                         type: string
                     type: object
                   imageID:
@@ -3502,8 +3508,14 @@ spec:
                               type: string
                           type: object
                         type: array
+                      endpoints:
+                        type: string
                       lastRequest:
                         format: date-time
+                        type: string
+                      tenantToken:
+                        type: string
+                      tenantUUID:
                         type: string
                     type: object
                   imageID:
