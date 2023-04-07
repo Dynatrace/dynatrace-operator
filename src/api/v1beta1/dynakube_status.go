@@ -37,20 +37,11 @@ type DynaKubeStatus struct {
 }
 
 type DynatraceApiStatus struct {
-	LastTokenScopeRequest               metav1.Time `json:"lastTokenScopeRequest,omitempty"`
-	LastOneAgentConnectionInfoRequest   metav1.Time `json:"lastOneAgentConnectionInfoRequest,omitempty"`
-	LastActiveGateConnectionInfoRequest metav1.Time `json:"lastActiveGateConnectionInfoRequest,omitempty"`
-}
-
-func (dynatraceApiStatus *DynatraceApiStatus) ResetCachedTimestamps() {
-	dynatraceApiStatus.LastTokenScopeRequest = metav1.Time{}
-	dynatraceApiStatus.LastOneAgentConnectionInfoRequest = metav1.Time{}
-	dynatraceApiStatus.LastActiveGateConnectionInfoRequest = metav1.Time{}
+	LastTokenScopeRequest metav1.Time `json:"lastTokenScopeRequest,omitempty"`
 }
 
 func GetCacheValidMessage(functionName string, lastRequestTimestamp metav1.Time, timeout time.Duration) string {
 	remaining := timeout - time.Since(lastRequestTimestamp.Time)
-
 	return fmt.Sprintf("skipping %s, last request was made less than %d minutes ago, %d minutes remaining until next request",
 		functionName,
 		int(timeout.Minutes()),
@@ -58,9 +49,19 @@ func GetCacheValidMessage(functionName string, lastRequestTimestamp metav1.Time,
 }
 
 type ConnectionInfoStatus struct {
-	CommunicationHosts              []CommunicationHostStatus `json:"communicationHosts,omitempty"`
-	TenantUUID                      string                    `json:"tenantUUID,omitempty"`
-	FormattedCommunicationEndpoints string                    `json:"formattedCommunicationEndpoints,omitempty"`
+	TenantUUID  string      `json:"tenantUUID,omitempty"`
+	TenantToken string      `json:"tenantToken,omitempty"`
+	Endpoints   string      `json:"endpoints,omitempty"`
+	LastRequest metav1.Time `json:"lastRequest,omitempty"`
+}
+
+type OneAgentConnectionInfoStatus struct {
+	ConnectionInfoStatus `json:",inline"`
+	CommunicationHosts   []CommunicationHostStatus `json:"communicationHosts,omitempty"`
+}
+
+type ActiveGateConnectionInfoStatus struct {
+	ConnectionInfoStatus `json:",inline"`
 }
 
 type CommunicationHostStatus struct {
@@ -86,7 +87,8 @@ type VersionStatus struct {
 }
 
 type ActiveGateStatus struct {
-	VersionStatus `json:",inline"`
+	VersionStatus        `json:",inline"`
+	ConnectionInfoStatus ActiveGateConnectionInfoStatus `json:"connectionInfoStatus,omitempty"`
 }
 
 type CodeModulesStatus struct {
@@ -99,6 +101,8 @@ type OneAgentStatus struct {
 	Instances map[string]OneAgentInstance `json:"instances,omitempty"`
 
 	LastInstanceStatusUpdate *metav1.Time `json:"lastInstanceStatusUpdate,omitempty"`
+
+	ConnectionInfoStatus OneAgentConnectionInfoStatus `json:"connectionInfoStatus,omitempty"`
 }
 
 type OneAgentInstance struct {

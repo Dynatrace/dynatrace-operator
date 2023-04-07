@@ -181,17 +181,7 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Cont
 	}
 	latestProcessModuleConfig = latestProcessModuleConfig.AddHostGroup(dk.HostGroup())
 
-	log.Info("querying OneAgent connection info")
-
-	connectionInfo, err := dtc.GetOneAgentConnectionInfo()
-	if err != nil {
-		log.Info("error when querying connection info", "error", err.Error())
-		return nil, false, err
-	}
-
-	log.Info("got current connection endpoints", "tenantUUID", dynakubeMetadata.TenantUUID, "endpoints", connectionInfo.Endpoints)
-
-	latestProcessModuleConfig = latestProcessModuleConfig.AddConnectionInfo(connectionInfo)
+	latestProcessModuleConfig = latestProcessModuleConfig.AddConnectionInfo(dk.Status.OneAgent.ConnectionInfoStatus)
 
 	var agentUpdater *agentUpdater
 	if dk.CodeModulesImage() != "" {

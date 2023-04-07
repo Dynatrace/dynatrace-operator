@@ -48,7 +48,7 @@ func TestReconcile_ActivegateSecret(t *testing.T) {
 	})
 	t.Run(`update activegate secret`, func(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithObjects(buildActiveGateSecret(*dynakube, testOutdated)).Build()
-		dynakube.Status.DynatraceApi.ResetCachedTimestamps()
+		resetCachedTimestamps(&dynakube.Status)
 		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
 		err := r.Reconcile()
 		require.NoError(t, err)
@@ -127,7 +127,7 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 	})
 	t.Run(`update activegate ConfigMap`, func(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithObjects(buildActiveGateConfigMap(*dynakube, testOutdated, testOutdated)).Build()
-		dynakube.Status.DynatraceApi.ResetCachedTimestamps()
+		resetCachedTimestamps(&dynakube.Status)
 		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
 		err := r.Reconcile()
 		require.NoError(t, err)
@@ -190,7 +190,7 @@ func TestReconcile_OneagentSecret(t *testing.T) {
 
 		// responses from the Dynatrace API are cached for 15 minutes, so we need to reset the cache here and assume
 		// we traveled 15 minutes into the future
-		dynakube.Status.DynatraceApi.ResetCachedTimestamps()
+		resetCachedTimestamps(&dynakube.Status)
 
 		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
 		err := r.Reconcile()
@@ -263,7 +263,7 @@ func TestReconcile_OneagentConfigMap(t *testing.T) {
 	t.Run(`update oneagent ConfigMap`, func(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithObjects(buildOneAgentConfigMap(*dynakube, testOutdated, testOutdated)).Build()
 
-		dynakube.Status.DynatraceApi.ResetCachedTimestamps()
+		resetCachedTimestamps(&dynakube.Status)
 
 		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
 		err := r.Reconcile()
@@ -328,4 +328,10 @@ func getTestActiveGateConnectionInfo() *dtclient.ActiveGateConnectionInfo {
 			Endpoints:   testTenantEndpoints,
 		},
 	}
+}
+
+func resetCachedTimestamps(dynakubeStatus *dynatracev1beta1.DynaKubeStatus) {
+	dynakubeStatus.DynatraceApi.LastTokenScopeRequest = metav1.Time{}
+	dynakubeStatus.OneAgent.ConnectionInfoStatus.LastRequest = metav1.Time{}
+	dynakubeStatus.ActiveGate.ConnectionInfoStatus.LastRequest = metav1.Time{}
 }
