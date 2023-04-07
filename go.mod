@@ -20,7 +20,7 @@ require (
 	go.uber.org/zap v1.24.0
 	golang.org/x/exp v0.0.0-20230108222341-4b8118a2686a
 	golang.org/x/net v0.8.0
-	golang.org/x/sys v0.6.0
+	golang.org/x/sys v0.7.0
 	google.golang.org/grpc v1.54.0
 	istio.io/api v0.0.0-20230217221049-9d422bf48675
 	istio.io/client-go v1.17.1
