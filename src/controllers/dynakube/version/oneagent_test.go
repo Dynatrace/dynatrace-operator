@@ -128,10 +128,10 @@ func TestOneAgentUseDefault(t *testing.T) {
 	})
 }
 
-type CheckForDowngradeCheck struct {
-	testName        string
-	dynakube        *dynatracev1beta1.DynaKube
-	newVersion      string
+type CheckForDowngradeTestCase struct {
+	testName    string
+	dynakube    *dynatracev1beta1.DynaKube
+	newVersion  string
 	isDowngrade bool
 }
 
@@ -148,7 +148,7 @@ func newDynakubeWithOneAgentStatus(status dynatracev1beta1.VersionStatus) *dynat
 func TestCheckForDowngrade(t *testing.T) {
 	olderVersion := "1.2.3.4-5"
 	newerVersion := "5.4.3.2-1"
-	testCases := []CheckForDowngradeCheck{
+	testCases := []CheckForDowngradeTestCase{
 		{
 			testName: "is downgrade, tenant registry",
 			dynakube: newDynakubeWithOneAgentStatus(dynatracev1beta1.VersionStatus{
@@ -156,7 +156,7 @@ func TestCheckForDowngrade(t *testing.T) {
 				Version: newerVersion,
 				Source:  dynatracev1beta1.TenantRegistryVersionSource,
 			}),
-			newVersion:      olderVersion,
+			newVersion:  olderVersion,
 			isDowngrade: true,
 		},
 		{
@@ -165,7 +165,7 @@ func TestCheckForDowngrade(t *testing.T) {
 				ImageID: "some.registry.com:" + newerVersion,
 				Source:  dynatracev1beta1.PublicRegistryVersionSource,
 			}),
-			newVersion:      olderVersion,
+			newVersion:  olderVersion,
 			isDowngrade: true,
 		},
 		{
@@ -175,7 +175,7 @@ func TestCheckForDowngrade(t *testing.T) {
 				Version: olderVersion,
 				Source:  dynatracev1beta1.TenantRegistryVersionSource,
 			}),
-			newVersion:      newerVersion,
+			newVersion:  newerVersion,
 			isDowngrade: false,
 		},
 		{
@@ -184,7 +184,7 @@ func TestCheckForDowngrade(t *testing.T) {
 				ImageID: "some.registry.com:" + olderVersion,
 				Source:  dynatracev1beta1.PublicRegistryVersionSource,
 			}),
-			newVersion:      newerVersion,
+			newVersion:  newerVersion,
 			isDowngrade: false,
 		},
 	}
@@ -199,7 +199,6 @@ func TestCheckForDowngrade(t *testing.T) {
 		})
 	}
 }
-
 
 func assertDefaultOneAgentStatus(t *testing.T, registry *fakeRegistry, imageRef reference.NamedTagged, expectedVersion string, versionStatus dynatracev1beta1.VersionStatus) { //nolint:revive // argument-limit
 	assertVersionStatusEquals(t, registry, imageRef, versionStatus)

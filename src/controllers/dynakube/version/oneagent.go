@@ -103,4 +103,3 @@ func (updater *oneAgentUpdater) CheckForDowngrade(latestVersion string) (bool, e
 	}
 	return isDowngrade(updater.Name(), previousVersion, latestVersion)
 }
-

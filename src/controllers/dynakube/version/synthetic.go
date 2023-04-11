@@ -63,7 +63,6 @@ func (updater syntheticUpdater) CheckForDowngrade(latestVersion string) (bool, e
 	return false, nil
 }
 
-
 func (updater *syntheticUpdater) UseDefaults(ctx context.Context, dockerCfg *dockerconfig.DockerConfig) error {
 	defaultImage := updater.dynakube.DefaultSyntheticImage()
 	return updateVersionStatus(ctx, updater.Target(), defaultImage, updater.digestFunc, dockerCfg)
