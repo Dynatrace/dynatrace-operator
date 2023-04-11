@@ -38,13 +38,14 @@ func install(t *testing.T) features.Feature {
 	assess.InstallDynatraceWithTeardown(builder, &secretConfig, testDynakube)
 
 	// Register actual test
+	builder.Assess("sample apps are not injected", isAgentInjected(sampleApp, assert.NotContains))
 	builder.Assess("restart sample apps", sampleApp.Restart)
-	builder.Assess("sample apps are injected", isAgentInjected(sampleApp))
+	builder.Assess("sample apps are injected", isAgentInjected(sampleApp, assert.Contains))
 
 	return builder.Feature()
 }
 
-func isAgentInjected(sampleApp sample.App) features.Func {
+func isAgentInjected(sampleApp sample.App, assertCondition func(t assert.TestingT, s, contains interface{}, msgAndArgs ...interface{}) bool) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resources := environmentConfig.Client().Resources()
 		pods := sampleApp.GetPods(ctx, t, resources)
@@ -62,7 +63,7 @@ func isAgentInjected(sampleApp sample.App) features.Func {
 
 			assert.NotEmpty(t, stdOut)
 			assert.Empty(t, stdErr)
-			assert.Contains(t, stdOut, "oneagent")
+			assertCondition(t, stdOut, "oneagent")
 		}
 		return ctx
 	}

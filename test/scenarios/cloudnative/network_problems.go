@@ -56,9 +56,13 @@ func NetworkProblems(t *testing.T) features.Feature {
 	// Register network policy to block csi driver traffic
 	assess.InstallManifest(builder, csiNetworkPolicy)
 
-	// Register actual test
+	// Register dynakube install
 	assess.InstallDynakube(builder, &secretConfig, testDynakube)
+
+	// Register sample app install
 	builder.Assess("install sample-apps", sampleApp.Install())
+
+	// Register actual test
 	builder.Assess("check for dummy volume", checkForDummyVolume(sampleApp))
 
 	// Register network-policy, sample, dynakube and operator uninstall
