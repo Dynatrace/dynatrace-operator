@@ -321,6 +321,24 @@ func TestUpdateVersionStatus(t *testing.T) {
 	})
 }
 
+func TestGetTagFromImageID(t *testing.T) {
+	t.Run("get tag from imageID", func(t *testing.T) {
+		imageID := "some.registry.com:1.2.3@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
+
+		tag, err := getTagFromImageID(imageID)
+
+		require.NoError(t, err)
+		assert.Equal(t, "1.2.3", tag)
+	})
+	t.Run("error for malformed imageID", func(t *testing.T) {
+		imageID := "some.registry.com@1.2.3"
+
+		_, err := getTagFromImageID(imageID)
+
+		require.Error(t, err)
+	})
+}
+
 func enablePublicRegistry(dynakube *dynatracev1beta1.DynaKube) *dynatracev1beta1.DynaKube {
 	if dynakube.Annotations == nil {
 		dynakube.Annotations = make(map[string]string)

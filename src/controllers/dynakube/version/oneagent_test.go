@@ -102,7 +102,9 @@ func TestOneAgentUseDefault(t *testing.T) {
 			Status: dynatracev1beta1.DynaKubeStatus{
 				OneAgent: dynatracev1beta1.OneAgentStatus{
 					VersionStatus: dynatracev1beta1.VersionStatus{
-						Version: "999.999.999",
+						ImageID: "some.registry.com:999.999.999.999-999",
+						Version: "999.999.999.999-999",
+						Source:  dynatracev1beta1.TenantRegistryVersionSource,
 					},
 				},
 			},
@@ -116,10 +118,88 @@ func TestOneAgentUseDefault(t *testing.T) {
 		updater := newOneAgentUpdater(dynakube, mockClient, registry.ImageVersionExt)
 
 		err := updater.UseDefaults(context.TODO(), &dockerconfig.DockerConfig{})
+		require.Error(t, err)
 
+		dynakube.Status.OneAgent.Version = ""
+		dynakube.Status.OneAgent.Source = dynatracev1beta1.PublicRegistryVersionSource
+
+		err = updater.UseDefaults(context.TODO(), &dockerconfig.DockerConfig{})
 		require.Error(t, err)
 	})
 }
+
+type CheckForDowngradeCheck struct {
+	testName        string
+	dynakube        *dynatracev1beta1.DynaKube
+	newVersion      string
+	isDowngrade bool
+}
+
+func newDynakubeWithOneAgentStatus(status dynatracev1beta1.VersionStatus) *dynatracev1beta1.DynaKube {
+	return &dynatracev1beta1.DynaKube{
+		Status: dynatracev1beta1.DynaKubeStatus{
+			OneAgent: dynatracev1beta1.OneAgentStatus{
+				VersionStatus: status,
+			},
+		},
+	}
+}
+
+func TestCheckForDowngrade(t *testing.T) {
+	olderVersion := "1.2.3.4-5"
+	newerVersion := "5.4.3.2-1"
+	testCases := []CheckForDowngradeCheck{
+		{
+			testName: "is downgrade, tenant registry",
+			dynakube: newDynakubeWithOneAgentStatus(dynatracev1beta1.VersionStatus{
+				ImageID: "does-not-matter",
+				Version: newerVersion,
+				Source:  dynatracev1beta1.TenantRegistryVersionSource,
+			}),
+			newVersion:      olderVersion,
+			isDowngrade: true,
+		},
+		{
+			testName: "is downgrade, public registry",
+			dynakube: newDynakubeWithOneAgentStatus(dynatracev1beta1.VersionStatus{
+				ImageID: "some.registry.com:" + newerVersion,
+				Source:  dynatracev1beta1.PublicRegistryVersionSource,
+			}),
+			newVersion:      olderVersion,
+			isDowngrade: true,
+		},
+		{
+			testName: "is NOT downgrade, tenant registry",
+			dynakube: newDynakubeWithOneAgentStatus(dynatracev1beta1.VersionStatus{
+				ImageID: "does-not-matter",
+				Version: olderVersion,
+				Source:  dynatracev1beta1.TenantRegistryVersionSource,
+			}),
+			newVersion:      newerVersion,
+			isDowngrade: false,
+		},
+		{
+			testName: "is NOT downgrade, public registry",
+			dynakube: newDynakubeWithOneAgentStatus(dynatracev1beta1.VersionStatus{
+				ImageID: "some.registry.com:" + olderVersion,
+				Source:  dynatracev1beta1.PublicRegistryVersionSource,
+			}),
+			newVersion:      newerVersion,
+			isDowngrade: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.testName, func(t *testing.T) {
+			updater := newOneAgentUpdater(testCase.dynakube, nil, nil)
+
+			isDowngrade, err := updater.CheckForDowngrade(testCase.newVersion)
+			require.NoError(t, err)
+			assert.Equal(t, testCase.isDowngrade, isDowngrade)
+		})
+	}
+}
+
 
 func assertDefaultOneAgentStatus(t *testing.T, registry *fakeRegistry, imageRef reference.NamedTagged, expectedVersion string, versionStatus dynatracev1beta1.VersionStatus) { //nolint:revive // argument-limit
 	assertVersionStatusEquals(t, registry, imageRef, versionStatus)

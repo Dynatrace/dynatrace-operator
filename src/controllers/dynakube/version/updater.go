@@ -7,6 +7,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/containers/image/v5/docker/reference"
 	"github.com/pkg/errors"
 )
@@ -63,12 +64,8 @@ func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpda
 			return err
 		}
 		isDowngrade, err := updater.CheckForDowngrade(publicImage.Tag)
-		if err != nil {
-			log.Info("could not determine if is downgrade for public registry", "updater", updater.Name())
+		if err != nil || isDowngrade {
 			return err
-		}
-		if isDowngrade {
-			return nil
 		}
 
 		err = updateVersionStatus(ctx, updater.Target(), publicImage.String(), reconciler.digestFunc, dockerCfg)
@@ -140,4 +137,28 @@ func updateVersionStatus(
 	// unset is necessary so we have a consistent status
 	target.Version = ""
 	return nil
+}
+
+func getTagFromImageID(imageID string) (string, error) {
+	ref, err := reference.Parse(imageID)
+	if err != nil {
+		return "", err
+	}
+	taggedRef, ok := ref.(reference.NamedTagged)
+	if !ok {
+		return "", errors.New("no tag found to check for downgrade")
+	}
+	return taggedRef.Tag(), nil
+}
+
+func isDowngrade(updaterName, previousVersion, latestVersion string) (bool, error) {
+	if previousVersion != "" {
+		if downgrade, err := version.IsDowngrade(previousVersion, latestVersion); err != nil {
+			return false, err
+		} else if downgrade {
+			log.Info("downgrade detected, which is not allowed in this configuration", "updater", updaterName, "from", previousVersion, "to", latestVersion)
+			return true, err
+		}
+	}
+	return false, nil
 }
