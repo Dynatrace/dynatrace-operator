@@ -28,10 +28,14 @@ func Upgrade(t *testing.T) features.Feature {
 	sampleApp.WithNamespace(sampleNamespace)
 
 	assess.InstallOperatorFromRelease(builder, testDynakube, "v0.9.1")
+
+	// Register dynakube install
+	assess.InstallDynakube(builder, &secretConfig, testDynakube)
+
+	// Register sample app install
 	builder.Assess("install sample app", sampleApp.Install())
 
-	assess.InstallDynakube(builder, &secretConfig, testDynakube)
-	assessSampleAppsRestart(builder, sampleApp)
+	// Register actual test
 	assessSampleInitContainers(builder, sampleApp)
 	// update to snapshot
 	assess.UpgradeOperatorFromSource(builder, testDynakube)

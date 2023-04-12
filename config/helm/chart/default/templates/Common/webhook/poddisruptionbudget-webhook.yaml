@@ -1,6 +1,7 @@
 {{- include "dynatrace-operator.platformRequired" . }}
 {{ if and (.Values.webhook).highAvailability (eq (include "dynatrace-operator.partial" .) "false") }}
-apiVersion: policy/v1
+# v1 version supported since k8s 1.21
+apiVersion: {{ .Capabilities.APIVersions.Has "policy/v1" | ternary "policy/v1" "policy/v1beta1" }}
 kind: PodDisruptionBudget
 metadata:
   name: dynatrace-webhook
