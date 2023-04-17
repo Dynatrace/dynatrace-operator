@@ -93,9 +93,13 @@ func CodeModules(t *testing.T, istioEnabled bool) features.Feature {
 	}
 	assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), cloudNativeDynakube)
 
-	// Register actual test
+	// Register dynakube install
 	assess.InstallDynakube(builder, &secretConfigs[0], cloudNativeDynakube)
+
+	// Register sample app install
 	builder.Assess("install sample app", sampleApp.Install())
+
+	// Register actual test
 	assessSampleInitContainers(builder, sampleApp)
 	if istioEnabled {
 		istio.AssessIstio(builder, cloudNativeDynakube, sampleApp)
