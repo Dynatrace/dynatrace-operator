@@ -7,6 +7,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/containers/image/v5/docker/reference"
 	"github.com/pkg/errors"
 )
@@ -20,6 +21,7 @@ type versionStatusUpdater interface {
 	CustomVersion() string
 	IsAutoUpdateEnabled() bool
 	IsPublicRegistryEnabled() bool
+	CheckForDowngrade(latestVersion string) (bool, error)
 	LatestImageInfo() (*dtclient.LatestImageInfo, error)
 
 	UseDefaults(context.Context, *dockerconfig.DockerConfig) error
@@ -43,8 +45,8 @@ func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpda
 	}
 
 	if !updater.IsAutoUpdateEnabled() {
-		emptyVersionStatus := dynatracev1beta1.VersionStatus{}
 		previousSource := updater.Target().Source
+		emptyVersionStatus := dynatracev1beta1.VersionStatus{}
 		if updater.Target() == nil || *updater.Target() == emptyVersionStatus {
 			log.Info("initial status update in progress with no auto update", "updater", updater.Name())
 		} else if previousSource == currentSource {
@@ -61,6 +63,11 @@ func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpda
 			log.Info("could not get public image", "updater", updater.Name())
 			return err
 		}
+		isDowngrade, err := updater.CheckForDowngrade(publicImage.Tag)
+		if err != nil || isDowngrade {
+			return err
+		}
+
 		err = updateVersionStatus(ctx, updater.Target(), publicImage.String(), reconciler.digestFunc, dockerCfg)
 		if err != nil {
 			log.Info("could not update version status according to the public registry", "updater", updater.Name())
@@ -130,4 +137,28 @@ func updateVersionStatus(
 	// unset is necessary so we have a consistent status
 	target.Version = ""
 	return nil
+}
+
+func getTagFromImageID(imageID string) (string, error) {
+	ref, err := reference.Parse(imageID)
+	if err != nil {
+		return "", err
+	}
+	taggedRef, ok := ref.(reference.NamedTagged)
+	if !ok {
+		return "", errors.New("no tag found to check for downgrade")
+	}
+	return taggedRef.Tag(), nil
+}
+
+func isDowngrade(updaterName, previousVersion, latestVersion string) (bool, error) {
+	if previousVersion != "" {
+		if downgrade, err := version.IsDowngrade(previousVersion, latestVersion); err != nil {
+			return false, err
+		} else if downgrade {
+			log.Info("downgrade detected, which is not allowed in this configuration", "updater", updaterName, "from", previousVersion, "to", latestVersion)
+			return true, err
+		}
+	}
+	return false, nil
 }
