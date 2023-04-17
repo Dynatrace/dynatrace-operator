@@ -52,6 +52,10 @@ func (updater codeModulesUpdater) LatestImageInfo() (*dtclient.LatestImageInfo, 
 	return updater.dtClient.GetLatestCodeModulesImage()
 }
 
+func (updater *codeModulesUpdater) CheckForDowngrade(latestVersion string) (bool, error) {
+	return false, nil
+}
+
 func (updater *codeModulesUpdater) UseDefaults(_ context.Context, _ *dockerconfig.DockerConfig) error {
 	customVersion := updater.CustomVersion()
 	if customVersion != "" {
