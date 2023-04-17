@@ -32,7 +32,10 @@ func Get(ctx context.Context, resource *resources.Resources, namespace string) (
 func CleanUpEachPod(namespace string) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resource := environmentConfig.Client().Resources()
-		require.NoError(t, daemonset.ForEachPod(ctx, resource, DaemonSetName, namespace, cleanUpPodConsumer(ctx, resource)))
+		require.NoError(t, daemonset.NewQuery(ctx, resource, client.ObjectKey{
+			Name:      DaemonSetName,
+			Namespace: namespace,
+		}).ForEachPod(cleanUpPodConsumer(ctx, resource)))
 		return ctx
 	}
 }

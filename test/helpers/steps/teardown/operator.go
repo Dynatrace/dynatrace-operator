@@ -26,7 +26,7 @@ func addCsiCleanUp(builder *features.FeatureBuilder, testDynakube dynatracev1bet
 
 func addNodeCleanUp(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube) {
 	if testDynakube.ClassicFullStackMode() {
-		builder.WithTeardown("clean up OneAgent files from nodes", oneagent.CreateUninstallDaemonSet(testDynakube.Namespace))
+		builder.WithTeardown("clean up OneAgent files from nodes", oneagent.CreateUninstallDaemonSet(testDynakube))
 		builder.WithTeardown("wait for daemonset", oneagent.WaitForUninstallOneAgentDaemonset(testDynakube.Namespace))
 		builder.WithTeardown("OneAgent files removed from nodes", oneagent.CleanUpEachNode(testDynakube.Namespace))
 	}

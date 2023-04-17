@@ -45,12 +45,13 @@ func Get(ctx context.Context, resource *resources.Resources, dynakube dynatracev
 	}).Get()
 }
 
-func CreateUninstallDaemonSet(namespace string) features.Func {
+func CreateUninstallDaemonSet(dynakube dynatracev1beta1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		oaDaemonSet := manifests.ObjectFromFile[*appsv1.DaemonSet](t, uninstallOneAgentDaemonSetPath)
-		oaDaemonSet.Namespace = namespace
+		uninstallDaemonSet := manifests.ObjectFromFile[*appsv1.DaemonSet](t, uninstallOneAgentDaemonSetPath)
+		uninstallDaemonSet.Namespace = dynakube.Namespace
+		uninstallDaemonSet.Spec.Template.Spec.Tolerations = dynakube.Spec.OneAgent.ClassicFullStack.Tolerations
 		resource := environmentConfig.Client().Resources()
-		require.NoError(t, resource.Create(ctx, oaDaemonSet))
+		require.NoError(t, resource.Create(ctx, uninstallDaemonSet))
 		return ctx
 	}
 }
@@ -62,7 +63,10 @@ func WaitForUninstallOneAgentDaemonset(namespace string) features.Func {
 func CleanUpEachNode(namespace string) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resource := environmentConfig.Client().Resources()
-		require.NoError(t, daemonset.ForEachPod(ctx, resource, uninstallOneAgentDaemonSetName, namespace, cleanUpNodeConsumer(ctx, t, resource)))
+		require.NoError(t, daemonset.NewQuery(ctx, resource, client.ObjectKey{
+			Name:      uninstallOneAgentDaemonSetName,
+			Namespace: namespace,
+		}).ForEachPod(cleanUpNodeConsumer(ctx, t, resource)))
 		return ctx
 	}
 }
