@@ -436,7 +436,7 @@ func (builder *testDynaKubeBuilder) withCloudNativeCodeModulesImage(image string
 	} else {
 		builder.dynakube.Spec.OneAgent.CloudNativeFullStack = &dynatracev1beta1.CloudNativeFullStackSpec{
 			AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{
-				InitResources:    corev1.ResourceRequirements{},
+				InitResources:    &corev1.ResourceRequirements{},
 				CodeModulesImage: image,
 			},
 		}
@@ -451,7 +451,7 @@ func (builder *testDynaKubeBuilder) withApplicationMonitoringCodeModulesImage(im
 	} else {
 		builder.dynakube.Spec.OneAgent.ApplicationMonitoring = &dynatracev1beta1.ApplicationMonitoringSpec{
 			AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{
-				InitResources:    corev1.ResourceRequirements{},
+				InitResources:    &corev1.ResourceRequirements{},
 				CodeModulesImage: image,
 			},
 			UseCSIDriver: address.Of(true),

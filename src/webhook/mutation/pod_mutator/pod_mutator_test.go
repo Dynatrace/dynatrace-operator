@@ -261,8 +261,24 @@ func getTestDynakube() *dynatracev1beta1.DynaKube {
 			OneAgent: dynatracev1beta1.OneAgentSpec{
 				CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
 					AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{
-						InitResources: testResourceRequirements,
+						InitResources: &testResourceRequirements,
 					},
+				},
+			},
+		},
+	}
+}
+
+func getSimpleTestDynakube() *dynatracev1beta1.DynaKube {
+	return &dynatracev1beta1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testDynakubeName,
+			Namespace: testNamespaceName,
+		},
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			OneAgent: dynatracev1beta1.OneAgentSpec{
+				CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
+					AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{},
 				},
 			},
 		},
