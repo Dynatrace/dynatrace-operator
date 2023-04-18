@@ -213,6 +213,4 @@ func TestInitContainerResources(t *testing.T) {
 		require.NotNil(t, initResources)
 		assert.Equal(t, testResourceRequirements, *initResources)
 	})
-
-
 }

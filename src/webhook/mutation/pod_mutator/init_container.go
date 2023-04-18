@@ -45,7 +45,7 @@ func initContainerResources(dynakube dynatracev1beta1.DynaKube) *corev1.Resource
 func defaultInitContainerResources() *corev1.ResourceRequirements {
 	return &corev1.ResourceRequirements{
 		Requests: kubeobjects.NewResources("30m", "30Mi"),
-		Limits: kubeobjects.NewResources("100m", "60Mi"),
+		Limits:   kubeobjects.NewResources("100m", "60Mi"),
 	}
 }
 
