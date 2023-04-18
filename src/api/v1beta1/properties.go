@@ -237,18 +237,6 @@ func (dk *DynaKube) InitResources() *corev1.ResourceRequirements {
 	return nil
 }
 
-func (dk *DynaKube) OneAgentResources() *corev1.ResourceRequirements {
-	switch {
-	case dk.ClassicFullStackMode():
-		return &dk.Spec.OneAgent.ClassicFullStack.OneAgentResources
-	case dk.HostMonitoringMode():
-		return &dk.Spec.OneAgent.HostMonitoring.OneAgentResources
-	case dk.CloudNativeFullstackMode():
-		return &dk.Spec.OneAgent.CloudNativeFullStack.OneAgentResources
-	}
-	return nil
-}
-
 func (dk *DynaKube) NamespaceSelector() *metav1.LabelSelector {
 	return &dk.Spec.NamespaceSelector
 }
