@@ -8,17 +8,10 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/istio"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/logs"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
 	sample "github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/base"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -27,69 +20,18 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func Install(t *testing.T, istioEnabled bool) features.Feature {
-	builder := features.New("default installation")
-	t.Logf("istio enabled: %v", istioEnabled)
-	secretConfig := tenant.GetSingleTenantSecret(t)
-
-	dynakubeBuilder := dynakube.NewBuilder().
-		WithDefaultObjectMeta().
-		ApiUrl(secretConfig.ApiUrl).
-		CloudNative(defaultCloudNativeSpec())
-	if istioEnabled {
-		dynakubeBuilder = dynakubeBuilder.WithIstio()
-	}
-	testDynakube := dynakubeBuilder.Build()
-
-	// Register operator install
-	operatorNamespaceBuilder := namespace.NewBuilder(testDynakube.Namespace)
-	if istioEnabled {
-		operatorNamespaceBuilder = operatorNamespaceBuilder.WithLabels(istio.InjectionLabel)
-	}
-	assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), testDynakube)
-
-	// Register sample app install
-	namespaceBuilder := namespace.NewBuilder("cloudnative-sample")
-	if istioEnabled {
-		namespaceBuilder = namespaceBuilder.WithLabels(istio.InjectionLabel)
-	}
-	sampleNamespace := namespaceBuilder.Build()
-	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
-	sampleApp.WithNamespace(sampleNamespace)
-
-	// Register dynakube install
-	assess.InstallDynakube(builder, &secretConfig, testDynakube)
-
-	// Register sample app install
-	builder.Assess("install sample app", sampleApp.Install())
-
-	// Register actual test
-	assessSampleInitContainers(builder, sampleApp)
-	if istioEnabled {
-		istio.AssessIstio(builder, testDynakube, sampleApp)
-	}
-
-	// Register sample, dynakube and operator uninstall
-	builder.Teardown(sampleApp.UninstallNamespace())
-	teardown.UninstallDynatrace(builder, testDynakube)
-
-	return builder.Feature()
-}
-
-func assessSampleAppsRestartHalf(builder *features.FeatureBuilder, sampleApp sample.App) {
-	builder.Assess("restart half of sample apps", sampleApp.RestartHalf)
-}
-
-func assessSampleInitContainers(builder *features.FeatureBuilder, sampleApp sample.App) {
+func AssessSampleInitContainers(builder *features.FeatureBuilder, sampleApp sample.App) {
 	builder.Assess("sample apps have working init containers", checkInitContainers(sampleApp))
 }
 
 func checkInitContainers(sampleApp sample.App) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resources := environmentConfig.Client().Resources()
-		pods := sampleApp.GetPods(ctx, t, resources)
-		clientset, err := kubernetes.NewForConfig(resources.GetConfig())
 
+		pods := sampleApp.GetPods(ctx, t, resources)
+		require.NotEmpty(t, pods.Items)
+
+		clientset, err := kubernetes.NewForConfig(resources.GetConfig())
 		require.NoError(t, err)
 
 		for _, podItem := range pods.Items {
@@ -120,8 +62,8 @@ func checkInitContainers(sampleApp sample.App) features.Func {
 			require.NoError(t, err)
 			logs.AssertContains(t, logStream, "standalone agent init completed")
 
-			ifEmptyCommand := shell.CheckIfEmpty("/opt/dynatrace/oneagent-paas/log/php/")
-			executionResult, err := pod.Exec(ctx, resources, podItem, sampleApp.ContainerName(), ifEmptyCommand...)
+			ifNotEmptyCommand := shell.Shell(shell.CheckIfNotEmpty("/opt/dynatrace/oneagent-paas/log/php/"))
+			executionResult, err := pod.Exec(ctx, resources, podItem, sampleApp.ContainerName(), ifNotEmptyCommand...)
 
 			require.NoError(t, err)
 
@@ -136,7 +78,7 @@ func checkInitContainers(sampleApp sample.App) features.Func {
 	}
 }
 
-func defaultCloudNativeSpec() *dynatracev1beta1.CloudNativeFullStackSpec {
+func DefaultCloudNativeSpec() *dynatracev1beta1.CloudNativeFullStackSpec {
 	return &dynatracev1beta1.CloudNativeFullStackSpec{
 		HostInjectSpec: dynatracev1beta1.HostInjectSpec{},
 	}
