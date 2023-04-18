@@ -197,7 +197,7 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 
 func TestInitContainerResources(t *testing.T) {
 	t.Run("should return default if nothing is set", func(t *testing.T) {
-		dynakube := getSimpleTestDynakube()
+		dynakube := getTestDynakubeNoInitLimits()
 
 		initResources := initContainerResources(*dynakube)
 
@@ -212,5 +212,13 @@ func TestInitContainerResources(t *testing.T) {
 
 		require.NotNil(t, initResources)
 		assert.Equal(t, testResourceRequirements, *initResources)
+	})
+
+	t.Run("should ignore if csi not used", func(t *testing.T) {
+		dynakube := getTestDynakubeDefaultAppMon()
+
+		initResources := initContainerResources(*dynakube)
+
+		require.Nil(t, initResources)
 	})
 }
