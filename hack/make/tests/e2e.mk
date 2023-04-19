@@ -19,8 +19,7 @@ test/e2e/cloudnative: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 30m -count=1 ./test/scenarios/cloudnative/basic $(SKIPCLEANUP)
 
 ## Runs ClassicFullStack e2e test only
-## TODO: rename after proper implementation of cleanup step
-test/e2e/zz_classic: manifests/crd/helm
+test/e2e/classic: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1 ./test/scenarios/classic $(SKIPCLEANUP)
 
 ## Runs CloudNative istio e2e test only

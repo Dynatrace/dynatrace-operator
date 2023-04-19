@@ -6,7 +6,6 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/version"
 )
 
 type oneAgentUpdater struct {
@@ -69,14 +68,9 @@ func (updater *oneAgentUpdater) UseDefaults(ctx context.Context, dockerCfg *dock
 		}
 	}
 
-	previousVersion := updater.Target().Version
-	if previousVersion != "" {
-		if downgrade, err := version.IsDowngrade(previousVersion, latestVersion); err != nil {
-			return err
-		} else if downgrade {
-			log.Info("downgrade detected, which is not allowed in this configuration", "updater", updater.Name(), "from", previousVersion, "to", latestVersion)
-			return nil
-		}
+	downgrade, err := updater.CheckForDowngrade(latestVersion)
+	if err != nil || downgrade {
+		return err
 	}
 
 	defaultImage := updater.dynakube.DefaultOneAgentImage()
@@ -88,4 +82,24 @@ func (updater *oneAgentUpdater) UseDefaults(ctx context.Context, dockerCfg *dock
 	updater.Target().Version = latestVersion
 
 	return nil
+}
+
+func (updater *oneAgentUpdater) CheckForDowngrade(latestVersion string) (bool, error) {
+	imageID := updater.Target().ImageID
+	if imageID == "" {
+		return false, nil
+	}
+
+	var previousVersion string
+	var err error
+	switch updater.Target().Source {
+	case dynatracev1beta1.TenantRegistryVersionSource:
+		previousVersion = updater.Target().Version
+	case dynatracev1beta1.PublicRegistryVersionSource:
+		previousVersion, err = getTagFromImageID(imageID)
+		if err != nil {
+			return false, err
+		}
+	}
+	return isDowngrade(updater.Name(), previousVersion, latestVersion)
 }
