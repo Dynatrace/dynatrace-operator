@@ -32,9 +32,9 @@ func createInstallInitContainerBase(webhookImage, clusterID string, pod *corev1.
 }
 
 func initContainerResources(dynakube dynatracev1beta1.DynaKube) *corev1.ResourceRequirements {
-	initResources := dynakube.InitResources()
-	if initResources != nil {
-		return initResources
+	customInitResources := dynakube.InitResources()
+	if customInitResources != nil {
+		return customInitResources
 	}
 	if !dynakube.NeedsCSIDriver() {
 		return nil
