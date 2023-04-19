@@ -17,6 +17,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/csi"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/istio"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
@@ -138,7 +139,10 @@ func imageHasBeenDownloaded(namespace string) features.Func {
 		clientset, err := kubernetes.NewForConfig(resource.GetConfig())
 		require.NoError(t, err)
 
-		err = csi.ForEachPod(ctx, resource, namespace, func(podItem corev1.Pod) {
+		err = daemonset.NewQuery(ctx, resource, client.ObjectKey{
+			Name:      csi.DaemonSetName,
+			Namespace: namespace,
+		}).ForEachPod(func(podItem corev1.Pod) {
 			err = wait.For(func() (done bool, err error) {
 				logStream, err := clientset.CoreV1().Pods(podItem.Namespace).GetLogs(podItem.Name, &corev1.PodLogOptions{
 					Container: provisionerContainerName,
@@ -164,7 +168,10 @@ func imageHasBeenDownloaded(namespace string) features.Func {
 func measureDiskUsage(namespace string, storageMap map[string]int) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resource := environmentConfig.Client().Resources()
-		err := csi.ForEachPod(ctx, resource, namespace, func(podItem corev1.Pod) {
+		err := daemonset.NewQuery(ctx, resource, client.ObjectKey{
+			Name:      csi.DaemonSetName,
+			Namespace: namespace,
+		}).ForEachPod(func(podItem corev1.Pod) {
 			diskUsage := getDiskUsage(ctx, t, environmentConfig.Client().Resources(), podItem, provisionerContainerName, dataPath)
 			storageMap[podItem.Name] = diskUsage
 		})
@@ -176,7 +183,10 @@ func measureDiskUsage(namespace string, storageMap map[string]int) features.Func
 func diskUsageDoesNotIncrease(namespace string, storageMap map[string]int) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resource := environmentConfig.Client().Resources()
-		err := csi.ForEachPod(ctx, resource, namespace, func(podItem corev1.Pod) {
+		err := daemonset.NewQuery(ctx, resource, client.ObjectKey{
+			Name:      csi.DaemonSetName,
+			Namespace: namespace,
+		}).ForEachPod(func(podItem corev1.Pod) {
 			diskUsage := getDiskUsage(ctx, t, environmentConfig.Client().Resources(), podItem, provisionerContainerName, dataPath)
 			assert.InDelta(t, storageMap[podItem.Name], diskUsage, diskUsageKiBDelta)
 		})
