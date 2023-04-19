@@ -179,9 +179,9 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Cont
 		log.Error(err, "error when getting the latest ruxitagentproc.conf")
 		return nil, false, err
 	}
-	latestProcessModuleConfig = latestProcessModuleConfig.AddHostGroup(dk.HostGroup())
-
-	latestProcessModuleConfig = latestProcessModuleConfig.AddConnectionInfo(dk.Status.OneAgent.ConnectionInfoStatus)
+	latestProcessModuleConfig = latestProcessModuleConfig.
+		AddHostGroup(dk.HostGroup()).
+		AddConnectionInfo(dk.Status.OneAgent.ConnectionInfoStatus)
 
 	var agentUpdater *agentUpdater
 	if dk.CodeModulesImage() != "" {

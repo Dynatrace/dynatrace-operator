@@ -7,6 +7,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
@@ -239,4 +240,48 @@ func TestExclusiveSynMonitoring(t *testing.T) {
 		client.InNamespace(testNamespace))
 	require.NoError(t, err)
 	require.Len(t, services.Items, 0)
+}
+
+func TestReconcile_ActivegateConfigMap(t *testing.T) {
+	const (
+		testName            = "test-name"
+		testNamespace       = "test-namespace"
+		testTenantToken     = "test-token"
+		testTenantUUID      = "test-uuid"
+		testTenantEndpoints = "test-endpoints"
+	)
+
+	dynakube := &dynatracev1beta1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: testNamespace,
+			Name:      testName,
+		},
+		Status: dynatracev1beta1.DynaKubeStatus{
+			ActiveGate: dynatracev1beta1.ActiveGateStatus{
+				ConnectionInfoStatus: dynatracev1beta1.ActiveGateConnectionInfoStatus{
+					ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
+						TenantUUID:  testTenantUUID,
+						TenantToken: testTenantToken,
+						Endpoints:   testTenantEndpoints,
+						LastRequest: metav1.Time{},
+					},
+				},
+			},
+		},
+	}
+
+	mockDtClient := &dtclient.MockDynatraceClient{}
+
+	t.Run(`create activegate ConfigMap`, func(t *testing.T) {
+		fakeClient := fake.NewClient(testKubeSystemNamespace)
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, mockDtClient)
+		err := r.Reconcile()
+		require.NoError(t, err)
+
+		var actual corev1.ConfigMap
+		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: dynakube.ActiveGateConnectionInfoConfigMapName(), Namespace: testNamespace}, &actual)
+		require.NoError(t, err)
+		assert.Equal(t, testTenantUUID, actual.Data[connectioninfo.TenantUUIDName])
+		assert.Equal(t, testTenantEndpoints, actual.Data[connectioninfo.CommunicationEndpointsName])
+	})
 }

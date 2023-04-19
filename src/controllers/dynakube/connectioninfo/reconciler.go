@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -50,6 +51,86 @@ func (r *Reconciler) Reconcile() error {
 	return nil
 }
 
+func (r *Reconciler) reconcileOneAgentConnectionInfo() error {
+	if !r.dynakube.IsOneAgentConnectionInfoUpdateAllowed(r.timeProvider) {
+		log.Info(dynatracev1beta1.GetCacheValidMessage(
+			"oneagent connection info update",
+			r.dynakube.Status.OneAgent.ConnectionInfoStatus.LastRequest,
+			r.dynakube.FeatureApiRequestThreshold()))
+		return nil
+	}
+
+	connectionInfo, err := r.dtc.GetOneAgentConnectionInfo()
+	if err != nil {
+		log.Info("failed to get oneagent connection info")
+		return err
+	}
+
+	r.updateDynakubeOneAgentStatus(connectionInfo)
+
+	err = r.createTenantTokenSecret(r.dynakube.OneagentTenantSecret(), connectionInfo.ConnectionInfo)
+	if err != nil {
+		return err
+	}
+
+	log.Info("oneagent connection info updated")
+	r.dynakube.Status.OneAgent.ConnectionInfoStatus.LastRequest = metav1.Now()
+	return nil
+}
+
+func (r *Reconciler) updateDynakubeOneAgentStatus(connectionInfo dtclient.OneAgentConnectionInfo) {
+	r.dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID = connectionInfo.TenantUUID
+	r.dynakube.Status.OneAgent.ConnectionInfoStatus.TenantToken = connectionInfo.TenantToken
+	r.dynakube.Status.OneAgent.ConnectionInfoStatus.Endpoints = connectionInfo.Endpoints
+	copyCommunicationHosts(r.dynakube.Status.OneAgent.ConnectionInfoStatus, connectionInfo.CommunicationHosts)
+}
+
+func copyCommunicationHosts(dest dynatracev1beta1.OneAgentConnectionInfoStatus, src []dtclient.CommunicationHost) {
+	if dest.CommunicationHosts == nil {
+		dest.CommunicationHosts = make([]dynatracev1beta1.CommunicationHostStatus, 0, len(src))
+	}
+	for _, host := range src {
+		dest.CommunicationHosts = append(dest.CommunicationHosts, dynatracev1beta1.CommunicationHostStatus{
+			Protocol: host.Protocol,
+			Host:     host.Host,
+			Port:     host.Port,
+		})
+	}
+}
+
+func (r *Reconciler) reconcileActiveGateConnectionInfo() error {
+	if !r.dynakube.IsActiveGateConnectionInfoUpdateAllowed(r.timeProvider) {
+		log.Info(dynatracev1beta1.GetCacheValidMessage(
+			"activegate connection info update",
+			r.dynakube.Status.ActiveGate.ConnectionInfoStatus.LastRequest,
+			r.dynakube.FeatureApiRequestThreshold()))
+		return nil
+	}
+
+	connectionInfo, err := r.dtc.GetActiveGateConnectionInfo()
+	if err != nil {
+		log.Info("failed to get activegate connection info")
+		return err
+	}
+
+	r.updateDynakubeActiveGateStatus(connectionInfo)
+
+	err = r.createTenantTokenSecret(r.dynakube.ActivegateTenantSecret(), connectionInfo.ConnectionInfo)
+	if err != nil {
+		return err
+	}
+
+	log.Info("activegate connection info updated")
+	r.dynakube.Status.ActiveGate.ConnectionInfoStatus.LastRequest = metav1.Now()
+	return nil
+}
+
+func (r *Reconciler) updateDynakubeActiveGateStatus(connectionInfo dtclient.ActiveGateConnectionInfo) {
+	r.dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID = connectionInfo.TenantUUID
+	r.dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantToken = connectionInfo.TenantToken
+	r.dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints = connectionInfo.Endpoints
+}
+
 func (r *Reconciler) createTenantTokenSecret(secretName string, connectionInfo dtclient.ConnectionInfo) error {
 	secretData := extractSensitiveData(connectionInfo)
 	secret, err := kubeobjects.CreateSecret(r.scheme, r.dynakube,
@@ -72,19 +153,6 @@ func (r *Reconciler) createTenantTokenSecret(secretName string, connectionInfo d
 func extractSensitiveData(connectionInfo dtclient.ConnectionInfo) map[string][]byte {
 	data := map[string][]byte{
 		TenantTokenName: []byte(connectionInfo.TenantToken),
-	}
-
-	return data
-}
-
-func extractPublicData(connectionInfo dtclient.ConnectionInfo) map[string]string {
-	data := map[string]string{}
-
-	if connectionInfo.TenantUUID != "" {
-		data[TenantUUIDName] = connectionInfo.TenantUUID
-	}
-	if connectionInfo.Endpoints != "" {
-		data[CommunicationEndpointsName] = connectionInfo.Endpoints
 	}
 	return data
 }

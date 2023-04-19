@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/proxy"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
@@ -58,6 +59,11 @@ func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Read
 }
 
 func (r *Reconciler) Reconcile() error {
+	err := r.createActiveGateTenantConnectionInfoConfigMap()
+	if err != nil {
+		return err
+	}
+
 	if r.dynakube.UseActiveGateAuthToken() {
 		err := r.authTokenReconciler.Reconcile()
 		if err != nil {
@@ -65,7 +71,7 @@ func (r *Reconciler) Reconcile() error {
 		}
 	}
 
-	err := r.proxyReconciler.Reconcile()
+	err = r.proxyReconciler.Reconcile()
 	if err != nil {
 		return err
 	}
@@ -92,6 +98,38 @@ func (r *Reconciler) Reconcile() error {
 	}
 
 	return err
+}
+
+func (r *Reconciler) createActiveGateTenantConnectionInfoConfigMap() error {
+	configMapData := extractPublicData(r.dynakube)
+
+	configMap, err := kubeobjects.CreateConfigMap(r.scheme, r.dynakube,
+		kubeobjects.NewConfigMapNameModifier(r.dynakube.ActiveGateConnectionInfoConfigMapName()),
+		kubeobjects.NewConfigMapNamespaceModifier(r.dynakube.Namespace),
+		kubeobjects.NewConfigMapDataModifier(configMapData))
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	query := kubeobjects.NewConfigMapQuery(r.context, r.client, r.apiReader, log)
+	err = query.CreateOrUpdate(*configMap)
+	if err != nil {
+		log.Info("could not create or update configMap for connection info", "name", configMap.Name)
+		return err
+	}
+	return nil
+}
+
+func extractPublicData(dynakube *dynatracev1beta1.DynaKube) map[string]string {
+	data := map[string]string{}
+
+	if dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID != "" {
+		data[connectioninfo.TenantUUIDName] = dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID
+	}
+	if dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints != "" {
+		data[connectioninfo.CommunicationEndpointsName] = dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints
+	}
+	return data
 }
 
 func (r *Reconciler) createCapability(agCapability capability.Capability) error {
