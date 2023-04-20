@@ -11,6 +11,7 @@ import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -65,17 +66,20 @@ func (controller *WebhookCertificateController) Reconcile(ctx context.Context, r
 	controller.namespace = request.Namespace
 	controller.ctx = ctx
 
+	webhookDeployment := appsv1.Deployment{}
+	err := controller.apiReader.Get(controller.ctx, types.NamespacedName{Name: webhook.DeploymentName, Namespace: controller.namespace}, &webhookDeployment)
+	if k8serrors.IsNotFound(err) {
+		log.Info("no webhook deployment found, skipping webhook certificate generation")
+		return reconcile.Result{}, nil
+	} else if err != nil {
+		return reconcile.Result{}, errors.WithStack(err)
+	}
+
 	mutatingWebhookConfiguration, validatingWebhookConfiguration := controller.getWebhooksConfigurations()
 
 	crd, err := controller.getCrd()
 	if err != nil {
 		log.Info("could not find CRD configuration")
-		return reconcile.Result{}, errors.WithStack(err)
-	}
-
-	webhookDeployment := appsv1.Deployment{}
-	err = controller.apiReader.Get(controller.ctx, types.NamespacedName{Name: webhook.DeploymentName, Namespace: controller.namespace}, &webhookDeployment)
-	if err != nil {
 		return reconcile.Result{}, errors.WithStack(err)
 	}
 
