@@ -194,3 +194,31 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 		assert.True(t, kubeobjects.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "silent")
 	})
 }
+
+func TestInitContainerResources(t *testing.T) {
+	t.Run("should return default if nothing is set", func(t *testing.T) {
+		dynakube := getTestDynakubeNoInitLimits()
+
+		initResources := initContainerResources(*dynakube)
+
+		require.NotNil(t, initResources)
+		assert.Equal(t, *defaultInitContainerResources(), *initResources)
+	})
+
+	t.Run("should return custom if set in dynakube", func(t *testing.T) {
+		dynakube := getTestDynakube()
+
+		initResources := initContainerResources(*dynakube)
+
+		require.NotNil(t, initResources)
+		assert.Equal(t, testResourceRequirements, *initResources)
+	})
+
+	t.Run("should ignore if csi not used", func(t *testing.T) {
+		dynakube := getTestDynakubeDefaultAppMon()
+
+		initResources := initContainerResources(*dynakube)
+
+		require.Nil(t, initResources)
+	})
+}
