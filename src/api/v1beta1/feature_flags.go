@@ -93,6 +93,7 @@ const (
 
 	// CSI
 	AnnotationFeatureMaxFailedCsiMountAttempts = AnnotationFeaturePrefix + "max-csi-mount-attempts"
+	AnnotationFeatureReadOnlyCsiVolume = AnnotationFeaturePrefix + "injection-readonly-volume"
 
 	// synthetic location
 	AnnotationFeatureSyntheticLocationEntityId = AnnotationFeaturePrefix + "synthetic-location-entity-id"
@@ -290,6 +291,10 @@ func (dk *DynaKube) FeatureMaxFailedCsiMountAttempts() int {
 		return DefaultMaxFailedCsiMountAttempts
 	}
 	return maxCsiMountAttemptsValue
+}
+
+func (dk *DynaKube) FeatureReadOnlyCsiVolume() bool {
+	return dk.getFeatureFlagRaw(AnnotationFeatureReadOnlyCsiVolume) == truePhrase
 }
 
 func (dk *DynaKube) FeatureSyntheticNodeType() string {
