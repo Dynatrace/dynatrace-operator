@@ -4,30 +4,32 @@ package operator
 
 import (
 	"context"
-	"net/url"
+	"fmt"
+	"os"
 	"os/exec"
-	"strings"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/project"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
+	"sigs.k8s.io/e2e-framework/third_party/helm"
 )
 
 const (
-	kubernetesCsiManifest      = "kubernetes-csi.yaml"
-	kubernetesOperatorManifest = "kubernetes.yaml"
-	openshiftCsiManifest       = "openshift-csi.yaml"
-	openshiftOperatorManifest  = "openshift.yaml"
+	helmRepoUrl = "https://raw.githubusercontent.com/Dynatrace/dynatrace-operator/main/config/helm/repos/stable"
 )
 
 func InstallViaMake(withCSI bool) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		rootDir := project.RootDir()
-		makeTarget := getMakeCommand("deploy", withCSI, t)
-		execMakeCommand(rootDir, makeTarget, t)
+		execMakeCommand(t, rootDir, "install", fmt.Sprintf("ENABLE_CSI=%t", withCSI))
+		return ctx
+	}
+}
+
+func InstallViaHelm(releaseTag string, withCsi bool, namespace string) features.Func {
+	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+		installViaHelm(t, releaseTag, withCsi, namespace)
 		return ctx
 	}
 }
@@ -35,74 +37,44 @@ func InstallViaMake(withCSI bool) features.Func {
 func UninstallViaMake(withCSI bool) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		rootDir := project.RootDir()
-		makeTarget := getMakeCommand("undeploy", withCSI, t)
-		execMakeCommand(rootDir, makeTarget, t)
+		execMakeCommand(t, rootDir, "uninstall", fmt.Sprintf("ENABLE_CSI=%t", withCSI))
 		return ctx
 	}
 }
 
-func getMakeCommand(rootTarget string, withCSI bool, t *testing.T) string {
-	platform := kubeobjects.ResolvePlatformFromEnv()
-	makeTarget := getMakeTarget(rootTarget, platform, withCSI, t)
+func execMakeCommand(t *testing.T, rootDir, makeTarget string, envVariables ...string) {
+	command := exec.Command("make", "-C", rootDir, makeTarget)
+	command.Env = os.Environ()
+	command.Env = append(command.Env, envVariables...)
 
-	if makeTarget == "" {
-		t.Fatal("failed to install the operator via the make command, as the make target was empty")
-		return ""
-	}
-	return makeTarget
-}
-
-func execMakeCommand(rootDir, makeTarget string, t *testing.T) {
-	err := exec.Command("make", "-C", rootDir, makeTarget).Run()
+	err := command.Run()
 	if err != nil {
 		t.Fatal("failed to install the operator via the make command", err)
 	}
 }
 
-func getMakeTarget(rootTarget string, platform kubeobjects.Platform, withCSI bool, t *testing.T) string {
-	makeTarget := rootTarget
-	switch platform {
-	case kubeobjects.Openshift:
-		makeTarget = strings.Join([]string{makeTarget, "openshift"}, "/")
-	case kubeobjects.Kubernetes:
-		makeTarget = strings.Join([]string{makeTarget, "kubernetes"}, "/")
-	default:
-		t.Fatal("failed to install the operator via the make command as no correct platform was set")
-		return ""
+func installViaHelm(t *testing.T, releaseTag string, withCsi bool, namespace string) {
+	manager := helm.New("''")
+	err := manager.RunRepo(helm.WithArgs("add", "dynatrace", helmRepoUrl))
+	if err != nil {
+		t.Log("failed to add dynatrace helm chart repo", err)
 	}
 
-	if !withCSI {
-		makeTarget = strings.Join([]string{makeTarget, "no-csi"}, "-")
+	err = manager.RunRepo(helm.WithArgs("update"))
+	if err != nil {
+		t.Fatal("failed to upgrade helm repo")
 	}
 
-	return makeTarget
-}
-
-func InstallFromGithub(releaseTag string, withCsi bool) features.Func {
-	manifestsUrls := manifestsUrls(releaseTag, withCsi)
-	return manifests.InstallFromUrls(manifestsUrls)
-}
-
-func manifestsUrls(releaseTag string, withCsi bool) []string {
-	const dynatraceOperatorGithubDownloadUrl = "https://github.com/Dynatrace/dynatrace-operator/releases/download/"
-	platform := kubeobjects.ResolvePlatformFromEnv()
-
-	manifestsUrls := []string{}
-	switch platform {
-	case kubeobjects.Openshift:
-		openshiftOperatorManifestsUrl, _ := url.JoinPath(dynatraceOperatorGithubDownloadUrl, releaseTag, openshiftOperatorManifest)
-		openshiftCsiManifestsUrl, _ := url.JoinPath(dynatraceOperatorGithubDownloadUrl, releaseTag, openshiftCsiManifest)
-		manifestsUrls = append(manifestsUrls, openshiftOperatorManifestsUrl)
-		if withCsi {
-			manifestsUrls = append(manifestsUrls, openshiftCsiManifestsUrl)
-		}
-	default:
-		kubernetesOperatorManifestsUrl, _ := url.JoinPath(dynatraceOperatorGithubDownloadUrl, releaseTag, kubernetesOperatorManifest)
-		kubernetesCsiManifestsUrl, _ := url.JoinPath(dynatraceOperatorGithubDownloadUrl, releaseTag, kubernetesCsiManifest)
-		manifestsUrls = append(manifestsUrls, kubernetesOperatorManifestsUrl)
-		if withCsi {
-			manifestsUrls = append(manifestsUrls, kubernetesCsiManifestsUrl)
-		}
+	err = manager.RunUpgrade(helm.WithName("dynatrace-operator"), helm.WithNamespace(namespace),
+		helm.WithReleaseName("dynatrace/dynatrace-operator"),
+		helm.WithVersion(releaseTag),
+		helm.WithArgs("--create-namespace"),
+		helm.WithArgs("--install"),
+		helm.WithArgs("--set", "installCRD=true"),
+		helm.WithArgs("--set", fmt.Sprintf("csidriver.enabled=%s", withCsi)),
+		helm.WithArgs("--set", "manifests=true"),
+	)
+	if err != nil {
+		t.Fatal("failed to install dynatrace operator via helm")
 	}
-	return manifestsUrls
 }
