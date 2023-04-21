@@ -10,8 +10,8 @@ import (
 )
 
 func (mutator *OneAgentPodMutator) configureInitContainer(request *dtwebhook.MutationRequest, installer installerInfo) {
-	addInstallerInitEnvs(request.InstallContainer, installer, mutator.getVolumeMode(request.DynaKube))
-	addInitVolumeMounts(request.InstallContainer)
+	addInstallerInitEnvs(request.InstallContainer, installer, request.DynaKube)
+	addInitVolumeMounts(request.InstallContainer, request.DynaKube)
 }
 
 func (mutator *OneAgentPodMutator) setContainerCount(initContainer *corev1.Container, containerCount int) {
@@ -64,6 +64,7 @@ func (mutator *OneAgentPodMutator) addOneAgentToContainer(request *dtwebhook.Rei
 
 	dynakube := request.DynaKube
 	addOneAgentVolumeMounts(container, installPath)
+	addReadOnlyCSIVolumeMounts(container, dynakube)
 	addDeploymentMetadataEnv(container, dynakube, mutator.clusterID)
 	addPreloadEnv(container, installPath)
 

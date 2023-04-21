@@ -81,14 +81,10 @@ func TestInjected(t *testing.T) {
 
 func TestGetVolumeMode(t *testing.T) {
 	t.Run("should return csi volume mode", func(t *testing.T) {
-		mutator := createTestPodMutator(nil)
-
-		assert.Equal(t, string(config.AgentCsiMode), mutator.getVolumeMode(*getTestCSIDynakube()))
+		assert.Equal(t, string(config.AgentCsiMode), getVolumeMode(*getTestCSIDynakube()))
 	})
 	t.Run("should return empty volume mode", func(t *testing.T) {
-		mutator := createTestPodMutator(nil)
-
-		assert.Equal(t, string(config.AgentInstallerMode), mutator.getVolumeMode(*getTestDynakube()))
+		assert.Equal(t, string(config.AgentInstallerMode), getVolumeMode(*getTestDynakube()))
 	})
 }
 

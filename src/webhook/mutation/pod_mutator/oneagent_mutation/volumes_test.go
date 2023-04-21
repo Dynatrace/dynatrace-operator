@@ -46,7 +46,7 @@ func TestAddInitVolumeMounts(t *testing.T) {
 	t.Run("should add init volume mounts", func(t *testing.T) {
 		container := &corev1.Container{}
 
-		addInitVolumeMounts(container)
+		addInitVolumeMounts(container, *getTestDynakube())
 		require.Len(t, container.VolumeMounts, 2)
 	})
 }

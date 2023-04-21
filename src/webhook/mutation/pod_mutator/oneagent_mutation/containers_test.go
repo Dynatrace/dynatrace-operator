@@ -12,7 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var expectedBaseInitContainerEnvCount = getInstallerInfoFieldCount() + 2 // volumeMode + oneagent injected
+var expectedBaseInitContainerEnvCount = getInstallerInfoFieldCount() + 3 // volumeMode + oneagent injected + readonly-csi
 
 func TestConfigureInitContainer(t *testing.T) {
 	t.Run("add envs and volume mounts (no-csi)", func(t *testing.T) {
