@@ -38,8 +38,8 @@ deploy/gke-autopilot: manifests/crd/helm
 			--set image="$(IMAGE_URI)" | kubectl apply -f -
 
 ## Undeploy the operator in a cluster configured in ~/.kube/config where platform and k8s version are autodetected
-undeploy: manifests/crd/helm
-	helm uninstall dynatrace-operator \
+undeploy:
+	-helm uninstall dynatrace-operator \
 			--namespace dynatrace
 	kubectl delete namespace dynatrace
 
