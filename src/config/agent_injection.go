@@ -30,8 +30,8 @@ const (
 	AgentInjectedEnv = "ONEAGENT_INJECTED"
 	AgentReadonlyCSI = "CSI_VOLUME_READONLY"
 
-	AgentBinDirMount    = "/mnt/bin"
-	AgentShareDirMount  = "/mnt/share"
-	AgentConfigDirMount = "/mnt/config"
-	AgentConfDirMount   = "/mnt/bin/agent-conf"
+	AgentBinDirMount      = "/mnt/bin"
+	AgentShareDirMount    = "/mnt/share"
+	AgentConfigDirMount   = "/mnt/config"
+	AgentConfInitDirMount = "/mnt/agent-conf"
 )

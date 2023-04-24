@@ -76,7 +76,7 @@ func addInitVolumeMounts(initContainer *corev1.Container, dynakube dynatracev1be
 		{Name: oneAgentShareVolumeName, MountPath: config.AgentShareDirMount},
 	}
 	if dynakube.FeatureReadOnlyCsiVolume() {
-		volumeMounts = append(volumeMounts, corev1.VolumeMount{Name: oneagentConfVolumeName, MountPath: config.AgentConfDirMount})
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{Name: oneagentConfVolumeName, MountPath: config.AgentConfInitDirMount})
 	}
 	initContainer.VolumeMounts = append(initContainer.VolumeMounts, volumeMounts...)
 }
