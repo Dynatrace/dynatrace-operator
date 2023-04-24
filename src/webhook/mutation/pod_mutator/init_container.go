@@ -27,23 +27,23 @@ func createInstallInitContainerBase(webhookImage, clusterID string, pod *corev1.
 			{Name: config.K8sNodeNameEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("spec.nodeName")},
 		},
 		SecurityContext: securityContextForInitContainer(pod),
-		Resources:       *initContainerResources(dynakube),
+		Resources:       initContainerResources(dynakube),
 	}
 }
 
-func initContainerResources(dynakube dynatracev1beta1.DynaKube) *corev1.ResourceRequirements {
+func initContainerResources(dynakube dynatracev1beta1.DynaKube) corev1.ResourceRequirements {
 	customInitResources := dynakube.InitResources()
 	if customInitResources != nil {
-		return customInitResources
+		return *customInitResources
 	}
 	if !dynakube.NeedsCSIDriver() {
-		return nil
+		return corev1.ResourceRequirements{}
 	}
 	return defaultInitContainerResources()
 }
 
-func defaultInitContainerResources() *corev1.ResourceRequirements {
-	return &corev1.ResourceRequirements{
+func defaultInitContainerResources() corev1.ResourceRequirements {
+	return corev1.ResourceRequirements{
 		Requests: kubeobjects.NewResources("30m", "30Mi"),
 		Limits:   kubeobjects.NewResources("100m", "60Mi"),
 	}

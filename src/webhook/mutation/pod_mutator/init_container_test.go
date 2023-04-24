@@ -202,7 +202,7 @@ func TestInitContainerResources(t *testing.T) {
 		initResources := initContainerResources(*dynakube)
 
 		require.NotNil(t, initResources)
-		assert.Equal(t, *defaultInitContainerResources(), *initResources)
+		assert.Equal(t, defaultInitContainerResources(), initResources)
 	})
 
 	t.Run("should return custom if set in dynakube", func(t *testing.T) {
@@ -211,7 +211,7 @@ func TestInitContainerResources(t *testing.T) {
 		initResources := initContainerResources(*dynakube)
 
 		require.NotNil(t, initResources)
-		assert.Equal(t, testResourceRequirements, *initResources)
+		assert.Equal(t, testResourceRequirements, initResources)
 	})
 
 	t.Run("should ignore if csi not used", func(t *testing.T) {
@@ -219,6 +219,6 @@ func TestInitContainerResources(t *testing.T) {
 
 		initResources := initContainerResources(*dynakube)
 
-		require.Nil(t, initResources)
+		require.Empty(t, initResources)
 	})
 }
