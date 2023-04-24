@@ -30,8 +30,8 @@ const (
 	containerConfPath = "/var/lib/dynatrace/oneagent/agent/config/container.conf"
 
 	// readonly CSI
-	oneagentConfVolumeName    = "oneagent-agent-conf"
-	oneAgentConfMountPath     = "/opt/dynatrace/oneagent-paas/agent/conf"
+	oneagentConfVolumeName = "oneagent-agent-conf"
+	oneAgentConfMountPath  = "/opt/dynatrace/oneagent-paas/agent/conf"
 
 	oneagentDataStorageVolumeName = "oneagent-data-storage"
 	oneagentDataStorageMountPath  = "/opt/dynatrace/oneagent-paas/datastorage"

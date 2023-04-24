@@ -86,7 +86,6 @@ func TestAddInitVolumeMounts(t *testing.T) {
 		mount, err := kubeobjects.GetVolumeMountByName(container.VolumeMounts, oneagentConfVolumeName)
 		require.NoError(t, err)
 		assert.Equal(t, config.AgentConfDirMount, mount.MountPath)
-
 	})
 }
 
