@@ -21,6 +21,10 @@
       "matchManagers": ["github-actions"],
       "commitMessagePrefix": "Actions:",
       "enabled": true
+    },
+    {
+      "matchUpdateTypes": ["digest", "pin", "pinDigest"],
+      "enabled": false
     }
   ]
 }
