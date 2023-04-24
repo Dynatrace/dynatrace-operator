@@ -23,8 +23,8 @@ test/e2e/cloudnative/codemodules: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1 ./test/scenarios/cloudnative/codemodules $(SKIPCLEANUP)
 
 ## Runs CloudNative automatic injection disabled e2e test only
-test/e2e/cloudnative/excluded_webhook_injection: manifests/crd/helm
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1 ./test/scenarios/cloudnative/excluded_webhook_injection $(SKIPCLEANUP)
+test/e2e/cloudnative/disabled-auto-injection: manifests/crd/helm
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1 ./test/scenarios/cloudnative/disabled_auto_injection $(SKIPCLEANUP)
 
 ## Runs CloudNative install e2e test only
 test/e2e/cloudnative/install: manifests/crd/helm

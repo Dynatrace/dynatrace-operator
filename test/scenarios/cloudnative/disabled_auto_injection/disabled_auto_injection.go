@@ -1,6 +1,6 @@
 //go:build e2e
 
-package automatic_injection_disabled
+package disabled_auto_injection
 
 import (
 	"testing"
