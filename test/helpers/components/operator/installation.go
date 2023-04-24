@@ -71,7 +71,7 @@ func installViaHelm(t *testing.T, releaseTag string, withCsi bool, namespace str
 		helm.WithArgs("--create-namespace"),
 		helm.WithArgs("--install"),
 		helm.WithArgs("--set", "installCRD=true"),
-		helm.WithArgs("--set", fmt.Sprintf("csidriver.enabled=%s", withCsi)),
+		helm.WithArgs("--set", fmt.Sprintf("csidriver.enabled=%t", withCsi)),
 		helm.WithArgs("--set", "manifests=true"),
 	)
 	if err != nil {
