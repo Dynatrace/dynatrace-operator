@@ -23,3 +23,7 @@ func TestApplicationMonitoring(t *testing.T) {
 func TestLabelVersionDetection(t *testing.T) {
 	testEnvironment.Test(t, labelVersionDetection(t))
 }
+
+func TestAppOnlyWithoutCSI(t *testing.T) {
+	testEnvironment.Test(t, withoutCSIDriver(t))
+}
