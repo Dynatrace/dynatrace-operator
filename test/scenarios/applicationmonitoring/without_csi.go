@@ -80,7 +80,7 @@ func withoutCSIDriver(t *testing.T) features.Feature {
 	return builder.Feature()
 }
 
-func createAdditionalPodToCheckInjection() features.Func { //nolint:revive
+func createAdditionalPodToCheckInjection() features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resource := environmentConfig.Client().Resources()
 		samplePod := manifests.ObjectFromFile[*corev1.Pod](t, path.Join(project.TestDataDir(), "sample-app/pod-base.yaml"))
