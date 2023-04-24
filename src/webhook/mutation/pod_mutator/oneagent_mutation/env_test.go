@@ -113,6 +113,16 @@ func TestAddInstallerInitEnvs(t *testing.T) {
 		assert.Equal(t, "false", container.Env[6].Value)
 		assert.Equal(t, "true", container.Env[7].Value)
 	})
+
+	t.Run("Add readonly installer init env", func(t *testing.T) {
+		container := &corev1.Container{}
+		installerInfo := getTestInstallerInfo()
+		addInstallerInitEnvs(container, installerInfo, *getTestReadOnlyCSIDynakube())
+		require.Len(t, container.Env, expectedBaseInitContainerEnvCount)
+		env := kubeobjects.FindEnvVar(container.Env, config.AgentReadonlyCSI)
+		require.NotNil(t, env)
+		env.Value = "true"
+	})
 }
 
 func TestAddContainerInfoInitEnv(t *testing.T) {

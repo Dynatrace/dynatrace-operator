@@ -249,10 +249,7 @@ func createTestReinvocationRequest(dynakube *dynatracev1beta1.DynaKube, annotati
 
 func getTestCSIDynakube() *dynatracev1beta1.DynaKube {
 	return &dynatracev1beta1.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testDynakubeName,
-			Namespace: testNamespaceName,
-		},
+		ObjectMeta: getTestDynakubeMeta(),
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			OneAgent: dynatracev1beta1.OneAgentSpec{
 				CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
@@ -261,17 +258,28 @@ func getTestCSIDynakube() *dynatracev1beta1.DynaKube {
 	}
 }
 
+func getTestReadOnlyCSIDynakube() *dynatracev1beta1.DynaKube {
+	dk := getTestCSIDynakube()
+	dk.Annotations[dynatracev1beta1.AnnotationFeatureReadOnlyCsiVolume] = "true"
+	return dk
+}
+
 func getTestDynakube() *dynatracev1beta1.DynaKube {
 	return &dynatracev1beta1.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testDynakubeName,
-			Namespace: testNamespaceName,
-		},
+		ObjectMeta: getTestDynakubeMeta(),
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			OneAgent: dynatracev1beta1.OneAgentSpec{
 				ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{},
 			},
 		},
+	}
+}
+
+func getTestDynakubeMeta() metav1.ObjectMeta {
+	return metav1.ObjectMeta{
+		Name:      testDynakubeName,
+		Namespace: testNamespaceName,
+		Annotations: make(map[string]string),
 	}
 }
 

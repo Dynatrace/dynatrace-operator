@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/config"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -18,6 +18,34 @@ func TestAddOneAgentVolumeMounts(t *testing.T) {
 
 		addOneAgentVolumeMounts(container, installPath)
 		require.Len(t, container.VolumeMounts, 3)
+	})
+}
+
+func TestAddReadOnlyCSIVolumeMounts(t *testing.T) {
+	t.Run("default, shouldn't add extra volume mounts for readonly csi", func(t *testing.T) {
+		container := &corev1.Container{}
+		dynakube := getTestCSIDynakube()
+
+		addReadOnlyCSIVolumeMounts(container, *dynakube)
+		require.Len(t, container.VolumeMounts, 0)
+	})
+	t.Run("if enabled, should add extra volume mounts for readonly csi", func(t *testing.T) {
+		container := &corev1.Container{}
+		dynakube := getTestReadOnlyCSIDynakube()
+		expectedMounts := map[string]string{
+			oneagentConfVolumeName:        oneAgentConfMountPath,
+			oneagentDataStorageVolumeName: oneagentDataStorageMountPath,
+			oneagentLogVolumeName:         oneagentLogMountPath,
+		}
+
+		addReadOnlyCSIVolumeMounts(container, *dynakube)
+		require.Len(t, container.VolumeMounts, 3)
+		for expectedVolumeName, expectedMountPath := range expectedMounts {
+			mount, err := kubeobjects.GetVolumeMountByName(container.VolumeMounts, expectedVolumeName)
+			require.NoError(t, err)
+			require.NotNil(t, mount)
+			assert.Equal(t, expectedMountPath, mount.MountPath)
+		}
 	})
 }
 
@@ -49,36 +77,69 @@ func TestAddInitVolumeMounts(t *testing.T) {
 		addInitVolumeMounts(container, *getTestDynakube())
 		require.Len(t, container.VolumeMounts, 2)
 	})
+	t.Run("if readonly csi, should add extra init volume mounts for readonly csi", func(t *testing.T) {
+		container := &corev1.Container{}
+
+		addInitVolumeMounts(container, *getTestReadOnlyCSIDynakube())
+		require.Len(t, container.VolumeMounts, 3)
+
+		mount, err := kubeobjects.GetVolumeMountByName(container.VolumeMounts, oneagentConfVolumeName)
+		require.NoError(t, err)
+		assert.Equal(t, config.AgentConfDirMount, mount.MountPath)
+
+	})
 }
 
 func TestAddOneAgentVolumes(t *testing.T) {
 	t.Run("should add oneagent volumes, with csi", func(t *testing.T) {
 		pod := &corev1.Pod{}
-		dynakube := dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
-				},
-			},
-		}
+		dynakube := getTestCSIDynakube()
 
-		addOneAgentVolumes(pod, dynakube)
+		addOneAgentVolumes(pod, *dynakube)
 		require.Len(t, pod.Spec.Volumes, 2)
 		assert.NotNil(t, pod.Spec.Volumes[0].VolumeSource.CSI)
+		assert.False(t, *pod.Spec.Volumes[0].VolumeSource.CSI.ReadOnly)
+	})
+
+	t.Run("should add oneagent volumes, with readonly csi", func(t *testing.T) {
+		pod := &corev1.Pod{}
+		dynakube := getTestReadOnlyCSIDynakube()
+
+		addOneAgentVolumes(pod, *dynakube)
+		require.Len(t, pod.Spec.Volumes, 2)
+		assert.NotNil(t, pod.Spec.Volumes[0].VolumeSource.CSI)
+		assert.True(t, *pod.Spec.Volumes[0].VolumeSource.CSI.ReadOnly)
 	})
 
 	t.Run("should add oneagent volumes, without csi", func(t *testing.T) {
 		pod := &corev1.Pod{}
-		dynakube := dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{},
-				},
-			},
-		}
+		dynakube := getTestDynakube()
 
-		addOneAgentVolumes(pod, dynakube)
+		addOneAgentVolumes(pod, *dynakube)
 		require.Len(t, pod.Spec.Volumes, 2)
 		assert.NotNil(t, pod.Spec.Volumes[0].VolumeSource.EmptyDir)
+	})
+}
+
+func TestAddReadOnlyCSIVolumes(t *testing.T) {
+	t.Run("default, shouldn't add extra volumes for readonly csi", func(t *testing.T) {
+		pod := &corev1.Pod{}
+		dynakube := getTestCSIDynakube()
+
+		addReadOnlyCSIVolumes(pod, *dynakube)
+		require.Len(t, pod.Spec.Volumes, 0)
+	})
+	t.Run("if enabled, should add extra volumes for readonly csi", func(t *testing.T) {
+		pod := &corev1.Pod{}
+		dynakube := getTestReadOnlyCSIDynakube()
+		expectedVolumes := []string{oneagentConfVolumeName, oneagentDataStorageVolumeName, oneagentLogVolumeName}
+
+		addReadOnlyCSIVolumes(pod, *dynakube)
+		require.Len(t, pod.Spec.Volumes, 3)
+		for _, expectedVolumeName := range expectedVolumes {
+			mount, err := kubeobjects.GetVolumeByName(pod.Spec.Volumes, expectedVolumeName)
+			require.NoError(t, err)
+			require.NotNil(t, mount)
+		}
 	})
 }
