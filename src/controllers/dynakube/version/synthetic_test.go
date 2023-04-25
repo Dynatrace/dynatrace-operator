@@ -37,7 +37,7 @@ func TestSyntheticUseDefaults(t *testing.T) {
 
 		err := updater.UseDefaults(context.TODO(), &dockerconfig.DockerConfig{})
 		require.NoError(t, err, "default image set")
-		assertVersionStatusEquals(t, registry, getTaggedReference(t, expectedImage), dynakube.Status.Synthetic.VersionStatus)
+		assertStatusBasedOnTenantRegistry(t, expectedImage, "", dynakube.Status.Synthetic.VersionStatus)
 		require.Empty(t, dynakube.Status.Synthetic.Version, "zero version reported")
 	})
 }

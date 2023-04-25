@@ -73,12 +73,7 @@ func (updater *oneAgentUpdater) UseDefaults(ctx context.Context, dockerCfg *dock
 		return err
 	}
 
-	defaultImage := updater.dynakube.DefaultOneAgentImage()
-	err = updateVersionStatus(ctx, updater.Target(), defaultImage, updater.digestFunc, dockerCfg)
-	if err != nil {
-		return err
-	}
-
+	updater.Target().ImageID = updater.dynakube.DefaultOneAgentImage()
 	updater.Target().Version = latestVersion
 
 	return nil

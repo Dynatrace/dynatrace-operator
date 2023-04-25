@@ -81,8 +81,8 @@ func TestReconcile(t *testing.T) {
 		}
 		err := versionReconciler.Reconcile(ctx)
 		require.NoError(t, err)
-		assertVersionStatusEquals(t, registry, getTaggedReference(t, testActiveGateImage.String()), dkStatus.ActiveGate.VersionStatus)
-		assertVersionStatusEquals(t, registry, getTaggedReference(t, testOneAgentImage.String()), dkStatus.OneAgent.VersionStatus)
+		assertStatusBasedOnTenantRegistry(t, testActiveGateImage.String(), "", dkStatus.ActiveGate.VersionStatus)
+		assertStatusBasedOnTenantRegistry(t, testOneAgentImage.String(), "1.2.3.4-5", dkStatus.OneAgent.VersionStatus)
 		assert.Equal(t, latestAgentVersion, dkStatus.OneAgent.VersionStatus.Version)
 		assert.Equal(t, latestAgentVersion, dkStatus.CodeModules.VersionStatus.Version)
 

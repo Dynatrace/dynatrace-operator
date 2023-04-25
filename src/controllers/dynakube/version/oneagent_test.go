@@ -8,7 +8,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
-	"github.com/containers/image/v5/docker/reference"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -68,7 +67,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 		err := updater.UseDefaults(context.TODO(), &dockerconfig.DockerConfig{})
 
 		require.NoError(t, err)
-		assertDefaultOneAgentStatus(t, registry, getTaggedReference(t, expectedImage), testVersion, dynakube.Status.OneAgent.VersionStatus)
+		assertStatusBasedOnTenantRegistry(t, expectedImage, testVersion, dynakube.Status.OneAgent.VersionStatus)
 	})
 	t.Run("Set according to default", func(t *testing.T) {
 		dynakube := &dynatracev1beta1.DynaKube{
@@ -89,7 +88,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 		err := updater.UseDefaults(context.TODO(), &dockerconfig.DockerConfig{})
 
 		require.NoError(t, err)
-		assertDefaultOneAgentStatus(t, registry, getTaggedReference(t, expectedImage), testVersion, dynakube.Status.OneAgent.VersionStatus)
+		assertStatusBasedOnTenantRegistry(t, expectedImage, testVersion, dynakube.Status.OneAgent.VersionStatus)
 	})
 	t.Run("Don't allow downgrades", func(t *testing.T) {
 		dynakube := &dynatracev1beta1.DynaKube{
@@ -200,7 +199,7 @@ func TestCheckForDowngrade(t *testing.T) {
 	}
 }
 
-func assertDefaultOneAgentStatus(t *testing.T, registry *fakeRegistry, imageRef reference.NamedTagged, expectedVersion string, versionStatus dynatracev1beta1.VersionStatus) { //nolint:revive // argument-limit
-	assertVersionStatusEquals(t, registry, imageRef, versionStatus)
+func assertStatusBasedOnTenantRegistry(t *testing.T, expectedImage, expectedVersion string, versionStatus dynatracev1beta1.VersionStatus) { //nolint:revive // argument-limit
+	assert.Equal(t, expectedImage, versionStatus.ImageID)
 	assert.Equal(t, expectedVersion, versionStatus.Version)
 }

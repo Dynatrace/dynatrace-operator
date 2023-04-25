@@ -69,12 +69,11 @@ func TestActiveGateUseDefault(t *testing.T) {
 		}
 		expectedImage := dynakube.DefaultActiveGateImage()
 		mockClient := &dtclient.MockDynatraceClient{}
-		registry := newFakeRegistryForImages(expectedImage)
-		updater := newActiveGateUpdater(dynakube, mockClient, registry.ImageVersionExt)
+		updater := newActiveGateUpdater(dynakube, mockClient, nil)
 
 		err := updater.UseDefaults(context.TODO(), &dockerconfig.DockerConfig{})
 		require.NoError(t, err)
-		assertVersionStatusEquals(t, registry, getTaggedReference(t, expectedImage), dynakube.Status.ActiveGate.VersionStatus)
+		assert.Equal(t, expectedImage, dynakube.Status.ActiveGate.ImageID)
 		assert.Empty(t, dynakube.Status.ActiveGate.Version)
 	})
 }
