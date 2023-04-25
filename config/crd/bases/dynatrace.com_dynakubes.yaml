@@ -3379,8 +3379,6 @@ spec:
                       lastRequest:
                         format: date-time
                         type: string
-                      tenantToken:
-                        type: string
                       tenantUUID:
                         type: string
                     type: object
@@ -3512,8 +3510,6 @@ spec:
                         type: string
                       lastRequest:
                         format: date-time
-                        type: string
-                      tenantToken:
                         type: string
                       tenantUUID:
                         type: string

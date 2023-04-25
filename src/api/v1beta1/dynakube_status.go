@@ -50,7 +50,6 @@ func GetCacheValidMessage(functionName string, lastRequestTimestamp metav1.Time,
 
 type ConnectionInfoStatus struct {
 	TenantUUID  string      `json:"tenantUUID,omitempty"`
-	TenantToken string      `json:"tenantToken,omitempty"`
 	Endpoints   string      `json:"endpoints,omitempty"`
 	LastRequest metav1.Time `json:"lastRequest,omitempty"`
 }

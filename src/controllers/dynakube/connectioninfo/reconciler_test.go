@@ -3,6 +3,7 @@ package connectioninfo
 import (
 	"context"
 	"testing"
+	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
@@ -24,13 +25,165 @@ const (
 	testOutdated        = "outdated"
 )
 
+var testCommunicationHosts = []dynatracev1beta1.CommunicationHostStatus{
+	{
+		Protocol: "http",
+		Host:     "dummyhost",
+		Port:     42,
+	},
+	{
+		Protocol: "https",
+		Host:     "foobarhost",
+		Port:     84,
+	},
+}
+
+func TestReconcile_ConnectionInfo(t *testing.T) {
+	dynakube := dynatracev1beta1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: testNamespace,
+			Name:      testName,
+		}}
+
+	dtc := &dtclient.MockDynatraceClient{}
+	dtc.On("GetActiveGateConnectionInfo").Return(getTestActiveGateConnectionInfo(), nil)
+	dtc.On("GetOneAgentConnectionInfo").Return(getTestOneAgentConnectionInfo(), nil)
+
+	t.Run(`store OneAgent connection info to DynaKube status`, func(t *testing.T) {
+		fakeClient := fake.NewClientBuilder().Build()
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, &dynakube, dtc)
+		err := r.Reconcile()
+		require.NoError(t, err)
+
+		assert.Equal(t, testTenantUUID, dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID)
+		assert.Equal(t, testTenantEndpoints, dynakube.Status.OneAgent.ConnectionInfoStatus.Endpoints)
+		assert.Equal(t, testCommunicationHosts, dynakube.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts)
+	})
+	t.Run(`update OneAgent connection info`, func(t *testing.T) {
+		fakeClient := fake.NewClientBuilder().Build()
+		dynakube.Status.OneAgent.ConnectionInfoStatus = dynatracev1beta1.OneAgentConnectionInfoStatus{
+			ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
+				TenantUUID:  testOutdated,
+				Endpoints:   testOutdated,
+				LastRequest: metav1.NewTime(time.Now()),
+			},
+		}
+		resetCachedTimestamps(&dynakube.Status)
+
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, &dynakube, dtc)
+		err := r.Reconcile()
+		require.NoError(t, err)
+
+		assert.Equal(t, testTenantUUID, dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID)
+		assert.Equal(t, testTenantEndpoints, dynakube.Status.OneAgent.ConnectionInfoStatus.Endpoints)
+	})
+	t.Run(`do not update OneAgent connection info within timeout`, func(t *testing.T) {
+		fakeClient := fake.NewClientBuilder().Build()
+		dynakube.Status.OneAgent.ConnectionInfoStatus = dynatracev1beta1.OneAgentConnectionInfoStatus{
+			ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
+				TenantUUID:  testOutdated,
+				Endpoints:   testOutdated,
+				LastRequest: metav1.NewTime(time.Now()),
+			},
+		}
+
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, &dynakube, dtc)
+		err := r.Reconcile()
+		require.NoError(t, err)
+
+		assert.Equal(t, testOutdated, dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID)
+		assert.Equal(t, testOutdated, dynakube.Status.OneAgent.ConnectionInfoStatus.Endpoints)
+	})
+
+	t.Run(`store ActiveGate connection info to DynaKube status`, func(t *testing.T) {
+		fakeClient := fake.NewClientBuilder().Build()
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, &dynakube, dtc)
+		err := r.Reconcile()
+		require.NoError(t, err)
+
+		assert.Equal(t, testTenantUUID, dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID)
+		assert.Equal(t, testTenantEndpoints, dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints)
+	})
+	t.Run(`update ActiveGate connection info`, func(t *testing.T) {
+		fakeClient := fake.NewClientBuilder().Build()
+		dynakube.Status.ActiveGate.ConnectionInfoStatus = dynatracev1beta1.ActiveGateConnectionInfoStatus{
+			ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
+				TenantUUID:  testOutdated,
+				Endpoints:   testOutdated,
+				LastRequest: metav1.NewTime(time.Now()),
+			},
+		}
+		resetCachedTimestamps(&dynakube.Status)
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, &dynakube, dtc)
+		err := r.Reconcile()
+		require.NoError(t, err)
+
+		assert.Equal(t, testTenantUUID, dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID)
+		assert.Equal(t, testTenantEndpoints, dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints)
+	})
+	t.Run(`do not update ActiveGate connection info within timeout`, func(t *testing.T) {
+		fakeClient := fake.NewClientBuilder().Build()
+		dynakube.Status.ActiveGate.ConnectionInfoStatus = dynatracev1beta1.ActiveGateConnectionInfoStatus{
+			ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
+				TenantUUID:  testOutdated,
+				Endpoints:   testOutdated,
+				LastRequest: metav1.NewTime(time.Now()),
+			},
+		}
+
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, &dynakube, dtc)
+		err := r.Reconcile()
+		require.NoError(t, err)
+
+		assert.Equal(t, testOutdated, dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID)
+		assert.Equal(t, testOutdated, dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints)
+	})
+}
+
+func getTestOneAgentConnectionInfo() dtclient.OneAgentConnectionInfo {
+	return dtclient.OneAgentConnectionInfo{
+		ConnectionInfo: dtclient.ConnectionInfo{
+			TenantUUID:  testTenantUUID,
+			TenantToken: testTenantToken,
+			Endpoints:   testTenantEndpoints,
+		},
+		CommunicationHosts: []dtclient.CommunicationHost{
+			{
+				Protocol: testCommunicationHosts[0].Protocol,
+				Host:     testCommunicationHosts[0].Host,
+				Port:     testCommunicationHosts[0].Port,
+			},
+			{
+				Protocol: testCommunicationHosts[1].Protocol,
+				Host:     testCommunicationHosts[1].Host,
+				Port:     testCommunicationHosts[1].Port,
+			},
+		},
+	}
+}
+
+func getTestActiveGateConnectionInfo() *dtclient.ActiveGateConnectionInfo {
+	return &dtclient.ActiveGateConnectionInfo{
+		ConnectionInfo: dtclient.ConnectionInfo{
+			TenantUUID:  testTenantUUID,
+			TenantToken: testTenantToken,
+			Endpoints:   testTenantEndpoints,
+		},
+	}
+}
+
+func resetCachedTimestamps(dynakubeStatus *dynatracev1beta1.DynaKubeStatus) {
+	dynakubeStatus.DynatraceApi.LastTokenScopeRequest = metav1.Time{}
+	dynakubeStatus.OneAgent.ConnectionInfoStatus.LastRequest = metav1.Time{}
+	dynakubeStatus.ActiveGate.ConnectionInfoStatus.LastRequest = metav1.Time{}
+}
+
 func TestReconcile_ActivegateSecret(t *testing.T) {
 	dynakube := &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
 			Name:      testName,
 		}}
-
 	dtc := &dtclient.MockDynatraceClient{}
 	dtc.On("GetActiveGateConnectionInfo").Return(getTestActiveGateConnectionInfo(), nil)
 	dtc.On("GetOneAgentConnectionInfo").Return(getTestOneAgentConnectionInfo(), nil)
@@ -162,30 +315,4 @@ func buildOneAgentTenantSecret(dynakube dynatracev1beta1.DynaKube, token string)
 			TenantTokenName: []byte(token),
 		},
 	}
-}
-
-func getTestOneAgentConnectionInfo() dtclient.OneAgentConnectionInfo {
-	return dtclient.OneAgentConnectionInfo{
-		ConnectionInfo: dtclient.ConnectionInfo{
-			TenantUUID:  testTenantUUID,
-			TenantToken: testTenantToken,
-			Endpoints:   testTenantEndpoints,
-		},
-	}
-}
-
-func getTestActiveGateConnectionInfo() *dtclient.ActiveGateConnectionInfo {
-	return &dtclient.ActiveGateConnectionInfo{
-		ConnectionInfo: dtclient.ConnectionInfo{
-			TenantUUID:  testTenantUUID,
-			TenantToken: testTenantToken,
-			Endpoints:   testTenantEndpoints,
-		},
-	}
-}
-
-func resetCachedTimestamps(dynakubeStatus *dynatracev1beta1.DynaKubeStatus) {
-	dynakubeStatus.DynatraceApi.LastTokenScopeRequest = metav1.Time{}
-	dynakubeStatus.OneAgent.ConnectionInfoStatus.LastRequest = metav1.Time{}
-	dynakubeStatus.ActiveGate.ConnectionInfoStatus.LastRequest = metav1.Time{}
 }

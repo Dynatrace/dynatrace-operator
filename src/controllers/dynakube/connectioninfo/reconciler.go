@@ -80,12 +80,11 @@ func (r *Reconciler) reconcileOneAgentConnectionInfo() error {
 
 func (r *Reconciler) updateDynakubeOneAgentStatus(connectionInfo dtclient.OneAgentConnectionInfo) {
 	r.dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID = connectionInfo.TenantUUID
-	r.dynakube.Status.OneAgent.ConnectionInfoStatus.TenantToken = connectionInfo.TenantToken
 	r.dynakube.Status.OneAgent.ConnectionInfoStatus.Endpoints = connectionInfo.Endpoints
-	copyCommunicationHosts(r.dynakube.Status.OneAgent.ConnectionInfoStatus, connectionInfo.CommunicationHosts)
+	copyCommunicationHosts(&r.dynakube.Status.OneAgent.ConnectionInfoStatus, connectionInfo.CommunicationHosts)
 }
 
-func copyCommunicationHosts(dest dynatracev1beta1.OneAgentConnectionInfoStatus, src []dtclient.CommunicationHost) {
+func copyCommunicationHosts(dest *dynatracev1beta1.OneAgentConnectionInfoStatus, src []dtclient.CommunicationHost) {
 	if dest.CommunicationHosts == nil {
 		dest.CommunicationHosts = make([]dynatracev1beta1.CommunicationHostStatus, 0, len(src))
 	}
@@ -127,7 +126,6 @@ func (r *Reconciler) reconcileActiveGateConnectionInfo() error {
 
 func (r *Reconciler) updateDynakubeActiveGateStatus(connectionInfo dtclient.ActiveGateConnectionInfo) {
 	r.dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID = connectionInfo.TenantUUID
-	r.dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantToken = connectionInfo.TenantToken
 	r.dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints = connectionInfo.Endpoints
 }
 

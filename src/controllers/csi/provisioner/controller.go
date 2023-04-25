@@ -25,10 +25,12 @@ import (
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
 	csigc "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/gc"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/image"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -179,9 +181,16 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Cont
 		log.Error(err, "error when getting the latest ruxitagentproc.conf")
 		return nil, false, err
 	}
+
+	tenantToken, err := provisioner.getAgentTenantToken(ctx, dk)
+	if err != nil {
+		log.Error(err, "error reading OneAgent tenant token")
+		return nil, false, err
+	}
+
 	latestProcessModuleConfig = latestProcessModuleConfig.
 		AddHostGroup(dk.HostGroup()).
-		AddConnectionInfo(dk.Status.OneAgent.ConnectionInfoStatus)
+		AddConnectionInfo(dk.Status.OneAgent.ConnectionInfoStatus, tenantToken)
 
 	var agentUpdater *agentUpdater
 	if dk.CodeModulesImage() != "" {
@@ -216,6 +225,21 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Cont
 		}
 	}
 	return latestProcessModuleConfigCache, false, nil
+}
+
+func (provisioner *OneAgentProvisioner) getAgentTenantToken(ctx context.Context, dk *dynatracev1beta1.DynaKube) (string, error) {
+	query := kubeobjects.NewSecretQuery(ctx, provisioner.client, provisioner.apiReader, log)
+	secret, err := query.Get(types.NamespacedName{Namespace: dk.Namespace, Name: dk.OneagentTenantSecret()})
+	if err != nil {
+		return "", errors.Wrapf(err, "OneAgent tenant token secret %s/%s not found", dk.Namespace, dk.OneagentTenantSecret())
+	}
+
+	token, ok := secret.Data[connectioninfo.TenantTokenName]
+	if !ok {
+		return "", errors.Errorf("OneAgent tenant token not found in secret %s/%s", dk.Namespace, dk.OneagentTenantSecret())
+	}
+
+	return string(token), nil
 }
 
 func (provisioner *OneAgentProvisioner) handleMetadata(ctx context.Context, dk *dynatracev1beta1.DynaKube) (*metadata.Dynakube, metadata.Dynakube, error) {

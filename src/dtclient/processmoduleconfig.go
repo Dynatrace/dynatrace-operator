@@ -82,7 +82,7 @@ func (pmc *ProcessModuleConfig) removeProperty(index int) {
 	pmc.Properties = append(pmc.Properties[0:index], pmc.Properties[index+1:]...)
 }
 
-func (pmc *ProcessModuleConfig) AddConnectionInfo(oneAgentConnectionInfo v1beta1.OneAgentConnectionInfoStatus) *ProcessModuleConfig {
+func (pmc *ProcessModuleConfig) AddConnectionInfo(oneAgentConnectionInfo v1beta1.OneAgentConnectionInfoStatus, tenantToken string) *ProcessModuleConfig {
 	tenant := ProcessModuleProperty{
 		Section: generalSectionName,
 		Key:     "tenant",
@@ -93,7 +93,7 @@ func (pmc *ProcessModuleConfig) AddConnectionInfo(oneAgentConnectionInfo v1beta1
 	token := ProcessModuleProperty{
 		Section: generalSectionName,
 		Key:     "tenantToken",
-		Value:   oneAgentConnectionInfo.TenantToken,
+		Value:   tenantToken,
 	}
 	pmc.Add(token)
 
