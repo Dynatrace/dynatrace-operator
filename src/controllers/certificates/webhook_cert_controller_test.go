@@ -139,7 +139,7 @@ func TestReconcile(t *testing.T) {
 			},
 			&appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      operatorDeploymentName,
+					Name:      webhook.DeploymentName,
 					Namespace: testNamespace,
 				},
 			})
@@ -167,7 +167,7 @@ func TestReconcile(t *testing.T) {
 			},
 			&appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      operatorDeploymentName,
+					Name:      webhook.DeploymentName,
 					Namespace: testNamespace,
 				},
 			})
@@ -181,7 +181,7 @@ func TestReconcile(t *testing.T) {
 	t.Run(`update crd successfully with up-to-date secret`, func(t *testing.T) {
 		fakeClient := fake.NewClient(crd, &appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      operatorDeploymentName,
+				Name:      webhook.DeploymentName,
 				Namespace: testNamespace,
 			},
 		})
@@ -208,7 +208,7 @@ func TestReconcile(t *testing.T) {
 	t.Run(`do not skip certificates generation if no configuration exists`, func(t *testing.T) {
 		fakeClient := fake.NewClient(crd, &appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      operatorDeploymentName,
+				Name:      webhook.DeploymentName,
 				Namespace: testNamespace,
 			},
 		})
@@ -344,7 +344,7 @@ func newFakeClientBuilder() *fakeClientBuilder {
 		},
 		&appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      operatorDeploymentName,
+				Name:      webhook.DeploymentName,
 				Namespace: testNamespace,
 			},
 		},

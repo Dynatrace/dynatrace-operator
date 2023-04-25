@@ -10,12 +10,17 @@ endif
 
 IMAGE_URI ?= "$(IMAGE):$(TAG)"
 
-## Pushes an ALREADY BUILT Operator image with a given IMAGE and TAG
-images/build:
-	./hack/build/build_image.sh "${IMAGE}" "${TAG}"
+ensure-tag-not-snapshot:
+ifeq ($(TAG), snapshot)
+	$(error "Image tag is snapshot, please set TAG to a valid tag")
+endif
 
 ## Builds an Operator image with a given IMAGE and TAG
-images/push:
+images/build: ensure-tag-not-snapshot
+	./hack/build/build_image.sh "${IMAGE}" "${TAG}"
+
+## Pushes an ALREADY BUILT Operator image with a given IMAGE and TAG
+images/push: ensure-tag-not-snapshot
 	./hack/build/push_image.sh "${IMAGE}" "${TAG}"
 
 images/build/push: images/build images/push

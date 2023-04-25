@@ -7,7 +7,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/istio"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
-	"github.com/Dynatrace/dynatrace-operator/test/scenarios/cloudnative"
+	"github.com/Dynatrace/dynatrace-operator/test/scenarios/cloudnative/basic"
+	"github.com/Dynatrace/dynatrace-operator/test/scenarios/cloudnative/codemodules"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 )
 
@@ -22,6 +23,6 @@ func TestMain(m *testing.M) {
 }
 
 func TestCloudNative(t *testing.T) {
-	testEnvironment.Test(t, cloudnative.Install(t, true))
-	testEnvironment.Test(t, cloudnative.CodeModules(t, true))
+	testEnvironment.Test(t, basic.Install(t, true))
+	testEnvironment.Test(t, codemodules.CodeModules(t, true))
 }

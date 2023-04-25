@@ -1,6 +1,6 @@
 //go:build e2e
 
-package cloudnative
+package specific_agent_version
 
 import (
 	"context"
@@ -20,6 +20,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
+	"github.com/Dynatrace/dynatrace-operator/test/scenarios/cloudnative"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -30,7 +31,7 @@ import (
 
 const agentVersion = "VERSION"
 
-func SpecificAgentVersion(t *testing.T) features.Feature {
+func specificAgentVersion(t *testing.T) features.Feature {
 	builder := features.New("cloudnative with specific agent version")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
@@ -42,9 +43,11 @@ func SpecificAgentVersion(t *testing.T) features.Feature {
 		WithDefaultObjectMeta().
 		WithDynakubeNamespaceSelector().
 		ApiUrl(secretConfig.ApiUrl).
-		CloudNativeWithAgentVersion(defaultCloudNativeSpec(), oldVersion)
+		CloudNativeWithAgentVersion(cloudnative.DefaultCloudNativeSpec(), oldVersion)
 	testDynakube := dynakubeBuilder.Build()
 	sampleNamespace := namespace.NewBuilder("specific-agent-sample").WithLabels(testDynakube.NamespaceSelector().MatchLabels).Build()
+	builder.Assess("create sample namespace", namespace.Create(sampleNamespace))
+
 	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
 	sampleApp.WithNamespace(sampleNamespace)
 
@@ -78,7 +81,7 @@ func getAvailableVersions(secret tenant.Secret, t *testing.T) []string {
 
 func assessVersionChecks(builder *features.FeatureBuilder, version version.SemanticVersion, sampleApp sample.App) {
 	builder.Assess("restart sample apps", sampleApp.Restart)
-	builder.Assess("check init containers", checkInitContainers(sampleApp))
+	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 	builder.Assess("check env vars of init container", checkVersionInSampleApp(version, sampleApp))
 }
 
