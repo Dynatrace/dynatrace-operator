@@ -4,19 +4,17 @@ package applicationmonitoring
 
 import (
 	"context"
-	"path"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
+	sample "github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/base"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
-	"github.com/Dynatrace/dynatrace-operator/test/project"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -71,69 +69,60 @@ func withoutCSIDriver(t *testing.T) features.Feature {
 	assess.InstallDynakubeWithTeardown(builder, &secretConfig, appDynakube)
 	builder.Assess("install sample app", sampleApp.Install())
 
-	builder.Assess("create additional pod without ownerreference and check injection", createAdditionalPodToCheckInjection())
-	builder.Assess("create pod with already injected annotation and check injection", checkAlreadyInjected())
-	builder.Assess("create pod with random user and check injection", checkInjectionWithRandomUser())
+	podSample := sampleapps.NewSampleDeployment(t, appDynakube)
+	podSample.WithName("only-pod-sample")
+	podSample.WithNamespace(sampleNamespace)
+	builder.Assess("install additional pod", podSample.Install())
+	builder.Assess("check injection of additional pod", checkInjection(podSample))
+
+	alreadyInjectedSample := sampleapps.NewSampleDeployment(t, appDynakube)
+	alreadyInjectedSample.WithName("already-injected")
+	alreadyInjectedSample.WithNamespace(sampleNamespace)
+	alreadyInjectedSample.WithAnnotations(map[string]string{"oneagent.dynatrace.com/injected": "true"})
+	builder.Assess("install already injected sample app", alreadyInjectedSample.Install())
+	builder.Assess("check if pods with already injection annotation are not injected again", checkAlreadyInjected(alreadyInjectedSample))
+
+	randomUserSample := sampleapps.NewSampleDeployment(t, appDynakube)
+	randomUserSample.WithName("random-user")
+	randomUserSample.WithNamespace(sampleNamespace)
+	randomUserSample.WithSecurityContext(corev1.PodSecurityContext{
+		RunAsUser:  address.Of[int64](1234),
+		RunAsGroup: address.Of[int64](1234),
+	})
+	builder.Assess("install sample app with random users set", randomUserSample.Install())
+	builder.Assess("check injection of pods with random user", checkInjection(randomUserSample))
 
 	builder.Teardown(sampleApp.UninstallNamespace())
 	teardown.UninstallOperatorFromSource(builder, appOnlyDynakube)
 	return builder.Feature()
 }
 
-func createAdditionalPodToCheckInjection() features.Func {
+func checkInjection(deployment sample.App) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resource := environmentConfig.Client().Resources()
-		samplePod := manifests.ObjectFromFile[*corev1.Pod](t, path.Join(project.TestDataDir(), "sample-app/pod-base.yaml"))
-		samplePod.Namespace = sampleAppNamespace
-		require.NoError(t, resource.Create(ctx, samplePod))
+		samplePods := deployment.GetPods(ctx, t, resource)
 
-		require.NoError(t, resource.Get(ctx, "php-sample", sampleAppNamespace, samplePod))
+		require.NotNil(t, samplePods)
 
-		require.NotNil(t, samplePod.Spec.InitContainers)
-
-		for _, initContainer := range samplePod.Spec.InitContainers {
-			require.Equal(t, "install-oneagent", initContainer.Name)
+		for _, item := range samplePods.Items {
+			require.NotNil(t, item.Spec.InitContainers)
+			require.Equal(t, "install-oneagent", item.Spec.InitContainers[0].Name)
 		}
 		return ctx
 	}
 }
 
-func checkAlreadyInjected() features.Func {
+func checkAlreadyInjected(deployment sample.App) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resource := environmentConfig.Client().Resources()
-		samplePod := manifests.ObjectFromFile[*corev1.Pod](t, path.Join(project.TestDataDir(), "sample-app/pod-base.yaml"))
-		samplePod.Name = "php-sample-already-injected"
-		samplePod.Namespace = sampleAppNamespace
-		alreadyInjected := map[string]string{"oneagent.dynatrace.com/injected": "true"}
-		samplePod.Annotations = alreadyInjected
-		require.NoError(t, resource.Create(ctx, samplePod))
+		samplePods := deployment.GetPods(ctx, t, resource)
 
-		require.NoError(t, resource.Get(ctx, "php-sample-already-injected", sampleAppNamespace, samplePod))
+		require.NotNil(t, samplePods)
 
-		require.Nil(t, samplePod.Spec.InitContainers)
-
-		return ctx
-	}
-}
-
-func checkInjectionWithRandomUser() features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resource := environmentConfig.Client().Resources()
-		samplePod := manifests.ObjectFromFile[*corev1.Pod](t, path.Join(project.TestDataDir(), "sample-app/pod-base.yaml"))
-		samplePod.Name = "php-sample-random-user"
-		samplePod.Namespace = sampleAppNamespace
-		samplePod.Spec.SecurityContext.RunAsGroup = address.Of[int64](1234)
-		samplePod.Spec.SecurityContext.RunAsUser = address.Of[int64](1234)
-
-		require.NoError(t, resource.Create(ctx, samplePod))
-
-		require.NoError(t, resource.Get(ctx, "php-sample-random-user", sampleAppNamespace, samplePod))
-
-		require.NotNil(t, samplePod.Spec.InitContainers)
-
-		for _, initContainer := range samplePod.Spec.InitContainers {
-			require.Equal(t, "install-oneagent", initContainer.Name)
+		for _, item := range samplePods.Items {
+			require.Nil(t, item.Spec.InitContainers)
 		}
+
 		return ctx
 	}
 }

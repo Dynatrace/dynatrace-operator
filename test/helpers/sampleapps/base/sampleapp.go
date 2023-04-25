@@ -23,6 +23,7 @@ type App interface {
 	WithAnnotations(annotations map[string]string)
 	WithLabels(labels map[string]string)
 	WithEnvs(envs []corev1.EnvVar)
+	WithSecurityContext(securityContext corev1.PodSecurityContext)
 	Build() client.Object
 
 	Install() features.Func
