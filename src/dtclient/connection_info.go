@@ -28,27 +28,28 @@ type CommunicationHost struct {
 	Port     uint32 // nolint:unused
 }
 
-func (dtc *dynatraceClient) GetActiveGateConnectionInfo() (*ActiveGateConnectionInfo, error) {
+func (dtc *dynatraceClient) GetActiveGateConnectionInfo() (ActiveGateConnectionInfo, error) {
 	response, err := dtc.makeRequest(
 		dtc.getActiveGateConnectionInfoUrl(),
 		dynatracePaaSToken,
 	)
 
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return ActiveGateConnectionInfo{}, errors.WithStack(err)
 	}
 
 	defer CloseBodyAfterRequest(response)
 
 	data, err := dtc.getServerResponseData(response)
 	if err != nil {
-		return nil, dtc.handleErrorResponseFromAPI(data, response.StatusCode)
+		return ActiveGateConnectionInfo{}, dtc.handleErrorResponseFromAPI(data, response.StatusCode)
 	}
 
 	tenantInfo, err := dtc.readResponseForActiveGateTenantInfo(data)
 	if err != nil {
-		return nil, err
+		return ActiveGateConnectionInfo{}, err
 	}
+
 	if len(tenantInfo.Endpoints) == 0 {
 		log.Info("tenant has no endpoints")
 	}
@@ -62,15 +63,15 @@ type activeGateConnectionInfoJsonResponse struct {
 	CommunicationEndpoints string `json:"communicationEndpoints"`
 }
 
-func (dtc *dynatraceClient) readResponseForActiveGateTenantInfo(response []byte) (*ActiveGateConnectionInfo, error) {
+func (dtc *dynatraceClient) readResponseForActiveGateTenantInfo(response []byte) (ActiveGateConnectionInfo, error) {
 	resp := activeGateConnectionInfoJsonResponse{}
 	err := json.Unmarshal(response, &resp)
 	if err != nil {
 		log.Error(err, "error unmarshalling activegate tenant info", "response", string(response))
-		return nil, err
+		return ActiveGateConnectionInfo{}, err
 	}
 
-	agTenantInfo := &ActiveGateConnectionInfo{
+	agTenantInfo := ActiveGateConnectionInfo{
 		ConnectionInfo: ConnectionInfo{
 			TenantUUID:  resp.TenantUUID,
 			TenantToken: resp.TenantToken,
@@ -89,10 +90,18 @@ func (dtc *dynatraceClient) GetOneAgentConnectionInfo() (OneAgentConnectionInfo,
 
 	responseData, err := dtc.getServerResponseData(resp)
 	if err != nil {
+		return OneAgentConnectionInfo{}, dtc.handleErrorResponseFromAPI(responseData, resp.StatusCode)
+	}
+
+	connectionInfo, err := dtc.readResponseForOneAgentConnectionInfo(responseData)
+	if err != nil {
 		return OneAgentConnectionInfo{}, err
 	}
 
-	return dtc.readResponseForOneAgentConnectionInfo(responseData)
+	if len(connectionInfo.Endpoints) == 0 {
+		log.Info("tenant has no endpoints")
+	}
+	return connectionInfo, nil
 }
 
 func (dtc *dynatraceClient) readResponseForOneAgentConnectionInfo(response []byte) (OneAgentConnectionInfo, error) {
@@ -136,6 +145,5 @@ func (dtc *dynatraceClient) readResponseForOneAgentConnectionInfo(response []byt
 			Endpoints:   formattedCommunicationEndpoints,
 		},
 	}
-
 	return ci, nil
 }

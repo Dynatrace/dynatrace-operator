@@ -506,11 +506,11 @@ func (dk *DynaKube) GetOneAgentEnvironment() []corev1.EnvVar {
 }
 
 func (dk *DynaKube) IsOneAgentConnectionInfoUpdateAllowed(timeProvider *timeprovider.Provider) bool {
-	return timeProvider.IsOutdated(&dk.Status.DynatraceApi.LastOneAgentConnectionInfoRequest, dk.FeatureApiRequestThreshold())
+	return timeProvider.IsOutdated(&dk.Status.OneAgent.ConnectionInfoStatus.LastRequest, dk.FeatureApiRequestThreshold())
 }
 
 func (dk *DynaKube) IsActiveGateConnectionInfoUpdateAllowed(timeProvider *timeprovider.Provider) bool {
-	return timeProvider.IsOutdated(&dk.Status.DynatraceApi.LastActiveGateConnectionInfoRequest, dk.FeatureApiRequestThreshold())
+	return timeProvider.IsOutdated(&dk.Status.ActiveGate.ConnectionInfoStatus.LastRequest, dk.FeatureApiRequestThreshold())
 }
 
 func (dk *DynaKube) IsTokenScopeVerificationAllowed(timeProvider *timeprovider.Provider) bool {

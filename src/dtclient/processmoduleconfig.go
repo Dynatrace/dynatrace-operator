@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/pkg/errors"
 )
 
@@ -81,25 +82,25 @@ func (pmc *ProcessModuleConfig) removeProperty(index int) {
 	pmc.Properties = append(pmc.Properties[0:index], pmc.Properties[index+1:]...)
 }
 
-func (pmc *ProcessModuleConfig) AddConnectionInfo(connectionInfo OneAgentConnectionInfo) *ProcessModuleConfig {
+func (pmc *ProcessModuleConfig) AddConnectionInfo(oneAgentConnectionInfo v1beta1.OneAgentConnectionInfoStatus, tenantToken string) *ProcessModuleConfig {
 	tenant := ProcessModuleProperty{
 		Section: generalSectionName,
 		Key:     "tenant",
-		Value:   connectionInfo.TenantUUID,
+		Value:   oneAgentConnectionInfo.TenantUUID,
 	}
 	pmc.Add(tenant)
 
 	token := ProcessModuleProperty{
 		Section: generalSectionName,
 		Key:     "tenantToken",
-		Value:   connectionInfo.TenantToken,
+		Value:   tenantToken,
 	}
 	pmc.Add(token)
 
 	endpoints := ProcessModuleProperty{
 		Section: generalSectionName,
 		Key:     "serverAddress",
-		Value:   "{" + connectionInfo.Endpoints + "}",
+		Value:   "{" + oneAgentConnectionInfo.Endpoints + "}",
 	}
 	pmc.Add(endpoints)
 
