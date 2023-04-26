@@ -190,7 +190,7 @@ func TestRun(t *testing.T) {
 		Return(nil)
 
 	t.Run(`no install, just config generation`, func(t *testing.T) {
-		runner.fs = afero.NewMemMapFs()
+		runner.fs = prepReadOnlyCSIFilesystem(t, afero.NewMemMapFs())
 		runner.env.Mode = config.AgentCsiMode
 
 		err := runner.Run()
@@ -198,12 +198,13 @@ func TestRun(t *testing.T) {
 		require.NoError(t, err)
 		assertIfAgentFilesExists(t, *runner)
 		assertIfEnrichmentFilesExists(t, *runner)
+		assertIfReadOnlyCSIFilesExists(t, *runner)
 	})
 	t.Run(`install + config generation`, func(t *testing.T) {
 		runner.installer.(*installer.Mock).
 			On("InstallAgent", config.AgentBinDirMount).
 			Return(true, nil)
-		runner.fs = afero.NewMemMapFs()
+		runner.fs = prepReadOnlyCSIFilesystem(t, afero.NewMemMapFs())
 		runner.env.Mode = config.AgentInstallerMode
 
 		err := runner.Run()
@@ -211,6 +212,7 @@ func TestRun(t *testing.T) {
 		require.NoError(t, err)
 		assertIfAgentFilesExists(t, *runner)
 		assertIfEnrichmentFilesExists(t, *runner)
+		assertIfReadOnlyCSIFilesExists(t, *runner)
 	})
 }
 
