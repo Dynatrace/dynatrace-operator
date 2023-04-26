@@ -184,7 +184,6 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Cont
 
 	tenantToken, err := provisioner.getAgentTenantToken(ctx, dk)
 	if err != nil {
-		log.Error(err, "error reading OneAgent tenant token")
 		return nil, false, err
 	}
 
