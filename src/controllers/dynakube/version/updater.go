@@ -160,7 +160,7 @@ func updateVersionStatusForTenantRegistry(
 	if taggedRef, ok := ref.(reference.NamedTagged); ok {
 		imageVersion, err := imageVersionFunc(ctx, imageUri, dockerCfg)
 		if err != nil {
-			log.Error(err, "failed to get image digest, falling back to tag")
+			log.Error(err, "failed to determine image version, ignoring version")
 		}
 		target.ImageID = taggedRef.String()
 		target.Version = imageVersion.Version
