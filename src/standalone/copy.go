@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-
 	"path/filepath"
 
 	"github.com/pkg/errors"

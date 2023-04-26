@@ -11,6 +11,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+const trueStatement = "true"
+
 type containerInfo struct {
 	Name  string `json:"name"`
 	Image string `json:"image"`
@@ -287,17 +289,17 @@ func (env *environment) addInstallVersion() {
 
 func (env *environment) addOneAgentInjected() {
 	oneAgentInjected, _ := checkEnvVar(config.AgentInjectedEnv)
-	env.OneAgentInjected = oneAgentInjected == "true"
+	env.OneAgentInjected = oneAgentInjected == trueStatement
 }
 
 func (env *environment) addIsReadOnlyCSI() {
 	isReadOnlyCSI, _ := checkEnvVar(config.AgentReadonlyCSI)
-	env.IsReadOnlyCSI = isReadOnlyCSI == "true"
+	env.IsReadOnlyCSI = isReadOnlyCSI == trueStatement
 }
 
 func (env *environment) addDataIngestInjected() {
 	dataIngestInjected, _ := checkEnvVar(config.EnrichmentInjectedEnv)
-	env.DataIngestInjected = dataIngestInjected == "true"
+	env.DataIngestInjected = dataIngestInjected == trueStatement
 }
 
 func checkEnvVar(envvar string) (string, error) {
