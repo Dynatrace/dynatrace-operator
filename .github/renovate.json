@@ -34,6 +34,10 @@
     {
       "matchUpdateTypes": ["digest", "pin", "pinDigest"],
       "enabled": false
+    },
+    {
+      "matchPackageNames": ["k8s.io/client-go"],
+      "allowedVersions": "< 1.0"
     }
   ]
 }
