@@ -1,6 +1,6 @@
 //go:build e2e
 
-package basic
+package cloudnative
 
 import (
 	"testing"
@@ -17,5 +17,5 @@ func TestMain(m *testing.M) {
 }
 
 func TestCloudNative(t *testing.T) {
-	testEnvironment.Test(t, Install(t, false))
+	testEnvironment.Test(t, upgrade(t))
 }

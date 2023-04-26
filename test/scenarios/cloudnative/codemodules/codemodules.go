@@ -1,6 +1,6 @@
 //go:build e2e
 
-package cloudnative
+package codemodules
 
 import (
 	"context"
@@ -28,6 +28,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
+	"github.com/Dynatrace/dynatrace-operator/test/scenarios/cloudnative"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -84,6 +85,7 @@ func CodeModules(t *testing.T, istioEnabled bool) features.Feature {
 		namespaceBuilder = namespaceBuilder.WithLabels(istio.InjectionLabel)
 	}
 	sampleNamespace := namespaceBuilder.WithLabels(cloudNativeDynakube.NamespaceSelector().MatchLabels).Build()
+	builder.Assess("create sample namespace", namespace.Create(sampleNamespace))
 	sampleApp := sampleapps.NewSampleDeployment(t, cloudNativeDynakube)
 	sampleApp.WithNamespace(sampleNamespace)
 
@@ -101,7 +103,7 @@ func CodeModules(t *testing.T, istioEnabled bool) features.Feature {
 	builder.Assess("install sample app", sampleApp.Install())
 
 	// Register actual test
-	assessSampleInitContainers(builder, sampleApp)
+	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 	if istioEnabled {
 		istio.AssessIstio(builder, cloudNativeDynakube, sampleApp)
 	}
