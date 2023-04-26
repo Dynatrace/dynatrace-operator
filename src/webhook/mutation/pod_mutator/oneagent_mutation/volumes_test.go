@@ -22,23 +22,16 @@ func TestAddOneAgentVolumeMounts(t *testing.T) {
 }
 
 func TestAddReadOnlyCSIVolumeMounts(t *testing.T) {
-	t.Run("default, shouldn't add extra volume mounts for readonly csi", func(t *testing.T) {
+	t.Run("should add extra volume mounts for readonly csi", func(t *testing.T) {
 		container := &corev1.Container{}
-		dynakube := getTestCSIDynakube()
-
-		addVolumeMountsForReadOnlyCSI(container, *dynakube)
-		require.Len(t, container.VolumeMounts, 0)
-	})
-	t.Run("if enabled, should add extra volume mounts for readonly csi", func(t *testing.T) {
-		container := &corev1.Container{}
-		dynakube := getTestReadOnlyCSIDynakube()
 		expectedMounts := map[string]string{
 			oneagentConfVolumeName:        oneAgentConfMountPath,
 			oneagentDataStorageVolumeName: oneagentDataStorageMountPath,
 			oneagentLogVolumeName:         oneagentLogMountPath,
 		}
 
-		addVolumeMountsForReadOnlyCSI(container, *dynakube)
+		addVolumeMountsForReadOnlyCSI(container)
+
 		require.Len(t, container.VolumeMounts, 3)
 		for expectedVolumeName, expectedMountPath := range expectedMounts {
 			mount, err := kubeobjects.GetVolumeMountByName(container.VolumeMounts, expectedVolumeName)
@@ -121,19 +114,11 @@ func TestAddOneAgentVolumes(t *testing.T) {
 }
 
 func TestAddReadOnlyCSIVolumes(t *testing.T) {
-	t.Run("default, shouldn't add extra volumes for readonly csi", func(t *testing.T) {
-		pod := &corev1.Pod{}
-		dynakube := getTestCSIDynakube()
-
-		addVolumesForReadOnlyCSI(pod, *dynakube)
-		require.Len(t, pod.Spec.Volumes, 0)
-	})
 	t.Run("if enabled, should add extra volumes for readonly csi", func(t *testing.T) {
 		pod := &corev1.Pod{}
-		dynakube := getTestReadOnlyCSIDynakube()
 		expectedVolumes := []string{oneagentConfVolumeName, oneagentDataStorageVolumeName, oneagentLogVolumeName}
 
-		addVolumesForReadOnlyCSI(pod, *dynakube)
+		addVolumesForReadOnlyCSI(pod)
 		require.Len(t, pod.Spec.Volumes, 3)
 		for _, expectedVolumeName := range expectedVolumes {
 			mount, err := kubeobjects.GetVolumeByName(pod.Spec.Volumes, expectedVolumeName)

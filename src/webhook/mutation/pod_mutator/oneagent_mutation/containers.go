@@ -64,7 +64,6 @@ func (mutator *OneAgentPodMutator) addOneAgentToContainer(request *dtwebhook.Rei
 
 	dynakube := request.DynaKube
 	addOneAgentVolumeMounts(container, installPath)
-	addVolumeMountsForReadOnlyCSI(container, dynakube)
 	addDeploymentMetadataEnv(container, dynakube, mutator.clusterID)
 	addPreloadEnv(container, installPath)
 
@@ -86,6 +85,10 @@ func (mutator *OneAgentPodMutator) addOneAgentToContainer(request *dtwebhook.Rei
 
 	if dynakube.FeatureLabelVersionDetection() {
 		addVersionDetectionEnvs(container, newVersionLabelMapping(request.Namespace))
+	}
+
+	if dynakube.FeatureReadOnlyCsiVolume() {
+		addVolumeMountsForReadOnlyCSI(container)
 	}
 }
 
