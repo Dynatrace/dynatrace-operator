@@ -64,7 +64,7 @@ func (mutator *OneAgentPodMutator) addOneAgentToContainer(request *dtwebhook.Rei
 
 	dynakube := request.DynaKube
 	addOneAgentVolumeMounts(container, installPath)
-	addReadOnlyCSIVolumeMounts(container, dynakube)
+	addVolumeMountsForReadOnlyCSI(container, dynakube)
 	addDeploymentMetadataEnv(container, dynakube, mutator.clusterID)
 	addPreloadEnv(container, installPath)
 

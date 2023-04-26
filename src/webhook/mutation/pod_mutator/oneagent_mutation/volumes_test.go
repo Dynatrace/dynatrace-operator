@@ -26,7 +26,7 @@ func TestAddReadOnlyCSIVolumeMounts(t *testing.T) {
 		container := &corev1.Container{}
 		dynakube := getTestCSIDynakube()
 
-		addReadOnlyCSIVolumeMounts(container, *dynakube)
+		addVolumeMountsForReadOnlyCSI(container, *dynakube)
 		require.Len(t, container.VolumeMounts, 0)
 	})
 	t.Run("if enabled, should add extra volume mounts for readonly csi", func(t *testing.T) {
@@ -38,7 +38,7 @@ func TestAddReadOnlyCSIVolumeMounts(t *testing.T) {
 			oneagentLogVolumeName:         oneagentLogMountPath,
 		}
 
-		addReadOnlyCSIVolumeMounts(container, *dynakube)
+		addVolumeMountsForReadOnlyCSI(container, *dynakube)
 		require.Len(t, container.VolumeMounts, 3)
 		for expectedVolumeName, expectedMountPath := range expectedMounts {
 			mount, err := kubeobjects.GetVolumeMountByName(container.VolumeMounts, expectedVolumeName)
@@ -125,7 +125,7 @@ func TestAddReadOnlyCSIVolumes(t *testing.T) {
 		pod := &corev1.Pod{}
 		dynakube := getTestCSIDynakube()
 
-		addReadOnlyCSIVolumes(pod, *dynakube)
+		addVolumesForReadOnlyCSI(pod, *dynakube)
 		require.Len(t, pod.Spec.Volumes, 0)
 	})
 	t.Run("if enabled, should add extra volumes for readonly csi", func(t *testing.T) {
@@ -133,7 +133,7 @@ func TestAddReadOnlyCSIVolumes(t *testing.T) {
 		dynakube := getTestReadOnlyCSIDynakube()
 		expectedVolumes := []string{oneagentConfVolumeName, oneagentDataStorageVolumeName, oneagentLogVolumeName}
 
-		addReadOnlyCSIVolumes(pod, *dynakube)
+		addVolumesForReadOnlyCSI(pod, *dynakube)
 		require.Len(t, pod.Spec.Volumes, 3)
 		for _, expectedVolumeName := range expectedVolumes {
 			mount, err := kubeobjects.GetVolumeByName(pod.Spec.Volumes, expectedVolumeName)

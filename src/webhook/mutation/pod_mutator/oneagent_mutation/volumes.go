@@ -15,7 +15,7 @@ import (
 
 func (mutator *OneAgentPodMutator) addVolumes(pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) {
 	addInjectionConfigVolume(pod)
-	addReadOnlyCSIVolumes(pod, dynakube)
+	addVolumesForReadOnlyCSI(pod, dynakube)
 	addOneAgentVolumes(pod, dynakube)
 }
 
@@ -37,7 +37,7 @@ func addOneAgentVolumeMounts(container *corev1.Container, installPath string) {
 		})
 }
 
-func addReadOnlyCSIVolumeMounts(container *corev1.Container, dynakube dynatracev1beta1.DynaKube) {
+func addVolumeMountsForReadOnlyCSI(container *corev1.Container, dynakube dynatracev1beta1.DynaKube) {
 	if !dynakube.FeatureReadOnlyCsiVolume() {
 		return
 	}
@@ -123,7 +123,7 @@ func addOneAgentVolumes(pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) {
 	)
 }
 
-func addReadOnlyCSIVolumes(pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) {
+func addVolumesForReadOnlyCSI(pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) {
 	if !dynakube.FeatureReadOnlyCsiVolume() {
 		return
 	}

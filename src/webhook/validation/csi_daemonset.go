@@ -13,7 +13,7 @@ import (
 const (
 	errorCSIRequired = `The Dynakube's specification requires the CSI driver to work. Make sure you deployed the correct manifests.
 `
-	errorCSIEnabledRequired = `The Dynakube's specification specifies readonly-CSI volume, but the CSI driver is not enabled to be used.
+	errorCSIEnabledRequired = `The Dynakube's specification specifies readonly-CSI volume, but the CSI driver is not enabled.
 `
 )
 
