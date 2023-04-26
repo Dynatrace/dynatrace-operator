@@ -93,7 +93,7 @@ func (runner *Runner) createJsonEnrichmentFile() error {
 	)
 	jsonPath := filepath.Join(config.EnrichmentMountPath, fmt.Sprintf(config.EnrichmentFilenameTemplate, "json"))
 
-	return errors.WithStack(runner.createConfFile(jsonPath, jsonContent))
+	return runner.createConfFile(jsonPath, jsonContent)
 }
 
 func (runner *Runner) createPropsEnrichmentFile() error {
@@ -107,30 +107,30 @@ func (runner *Runner) createPropsEnrichmentFile() error {
 	)
 	propsPath := filepath.Join(config.EnrichmentMountPath, fmt.Sprintf(config.EnrichmentFilenameTemplate, "properties"))
 
-	return errors.WithStack(runner.createConfFile(propsPath, propsContent))
+	return runner.createConfFile(propsPath, propsContent)
 }
 
 func (runner *Runner) createCurlOptionsFile() error {
 	content := runner.getCurlOptionsContent()
 	path := filepath.Join(config.AgentShareDirMount, config.AgentCurlOptionsFileName)
 
-	return errors.WithStack(runner.createConfFile(path, content))
+	return runner.createConfFile(path, content)
 }
 
 func (runner *Runner) createConfFile(path string, content string) error {
 	err := runner.fs.MkdirAll(filepath.Dir(path), onlyReadAllFileMode)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	file, err := runner.fs.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, onlyReadAllFileMode)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	_, err = file.Write([]byte(content))
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	log.Info("created file", "filePath", path, "content", content)
