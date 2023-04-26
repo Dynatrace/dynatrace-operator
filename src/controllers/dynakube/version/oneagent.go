@@ -11,13 +11,13 @@ import (
 type oneAgentUpdater struct {
 	dynakube   *dynatracev1beta1.DynaKube
 	dtClient   dtclient.Client
-	digestFunc ImageDigestFunc
+	digestFunc ImageVersionFunc
 }
 
 func newOneAgentUpdater(
 	dynakube *dynatracev1beta1.DynaKube,
 	dtClient dtclient.Client,
-	digestFunc ImageDigestFunc,
+	digestFunc ImageVersionFunc,
 ) *oneAgentUpdater {
 	return &oneAgentUpdater{
 		dynakube:   dynakube,
@@ -58,7 +58,7 @@ func (updater oneAgentUpdater) LatestImageInfo() (*dtclient.LatestImageInfo, err
 	return updater.dtClient.GetLatestOneAgentImage()
 }
 
-func (updater *oneAgentUpdater) UseDefaults(ctx context.Context, dockerCfg *dockerconfig.DockerConfig) error {
+func (updater *oneAgentUpdater) UseTenantRegistry(ctx context.Context, dockerCfg *dockerconfig.DockerConfig) error {
 	var err error
 	latestVersion := updater.CustomVersion()
 	if latestVersion == "" {
@@ -73,10 +73,8 @@ func (updater *oneAgentUpdater) UseDefaults(ctx context.Context, dockerCfg *dock
 		return err
 	}
 
-	updater.Target().ImageID = updater.dynakube.DefaultOneAgentImage()
-	updater.Target().Version = latestVersion
-
-	return nil
+	defaultImage := updater.dynakube.DefaultOneAgentImage()
+	return updateVersionStatusForTenantRegistry(ctx, updater.Target(), defaultImage, updater.digestFunc, dockerCfg)
 }
 
 func (updater *oneAgentUpdater) CheckForDowngrade(latestVersion string) (bool, error) {

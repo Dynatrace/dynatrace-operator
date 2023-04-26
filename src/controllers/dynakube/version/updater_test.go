@@ -9,7 +9,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/containers/image/v5/docker/reference"
-	"github.com/opencontainers/go-digest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -51,7 +50,7 @@ func (m *mockUpdater) LatestImageInfo() (*dtclient.LatestImageInfo, error) {
 	args := m.Called()
 	return args.Get(0).(*dtclient.LatestImageInfo), args.Error(1)
 }
-func (m *mockUpdater) UseDefaults(_ context.Context, _ *dockerconfig.DockerConfig) error {
+func (m *mockUpdater) UseTenantRegistry(_ context.Context, _ *dockerconfig.DockerConfig) error {
 	args := m.Called()
 	return args.Error(0)
 }
@@ -71,7 +70,11 @@ func TestRun(t *testing.T) {
 	timeProvider := timeprovider.New()
 
 	t.Run("set source and probe at the end, if no error", func(t *testing.T) {
-		registry := newFakeRegistryForImages(testImage.String())
+		registry := newFakeRegistry(map[string]ImageVersion{
+			testImage.String(): {
+				Version: testImage.Tag,
+			},
+		})
 		target := &dynatracev1beta1.VersionStatus{}
 		versionReconciler := Reconciler{
 			dynakube:     &dynatracev1beta1.DynaKube{},
@@ -112,28 +115,32 @@ func TestRun(t *testing.T) {
 		// 1. call => status empty => should run
 		err := versionReconciler.run(ctx, updater, testDockerCfg)
 		require.NoError(t, err)
-		updater.AssertNumberOfCalls(t, "UseDefaults", 1)
+		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 1)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, dynatracev1beta1.TenantRegistryVersionSource, target.Source)
 
 		// 2. call => status NOT empty => should NOT run
 		err = versionReconciler.run(ctx, updater, testDockerCfg)
 		require.NoError(t, err)
-		updater.AssertNumberOfCalls(t, "UseDefaults", 1)
+		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 1)
 
 		// 3. call => source is different => should run
 		target.Source = dynatracev1beta1.CustomImageVersionSource
 		err = versionReconciler.run(ctx, updater, testDockerCfg)
 		require.NoError(t, err)
-		updater.AssertNumberOfCalls(t, "UseDefaults", 2)
+		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 2)
 
 		// 4. call => source is NOT different => should NOT run
 		err = versionReconciler.run(ctx, updater, testDockerCfg)
 		require.NoError(t, err)
-		updater.AssertNumberOfCalls(t, "UseDefaults", 2)
+		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 2)
 	})
 	t.Run("public registry", func(t *testing.T) {
-		registry := newFakeRegistryForImages(testImage.String())
+		registry := newFakeRegistry(map[string]ImageVersion{
+			testImage.String(): {
+				Version: testImage.Tag,
+			},
+		})
 		target := &dynatracev1beta1.VersionStatus{
 			Source: dynatracev1beta1.TenantRegistryVersionSource,
 		}
@@ -156,7 +163,11 @@ func TestRun(t *testing.T) {
 	})
 
 	t.Run("public registry, no downgrade allowed", func(t *testing.T) {
-		registry := newFakeRegistryForImages(testImage.String())
+		registry := newFakeRegistry(map[string]ImageVersion{
+			testImage.String(): {
+				Version: testImage.Tag,
+			},
+		})
 		target := &dynatracev1beta1.VersionStatus{
 			Source: dynatracev1beta1.TenantRegistryVersionSource,
 		}
@@ -178,7 +189,11 @@ func TestRun(t *testing.T) {
 		assert.Empty(t, target.ImageID)
 	})
 	t.Run("classicfullstack enabled, public registry is ignored", func(t *testing.T) {
-		registry := newFakeRegistryForImages(testImage.String())
+		registry := newFakeRegistry(map[string]ImageVersion{
+			testImage.String(): {
+				Version: testImage.Tag,
+			},
+		})
 		target := &dynatracev1beta1.VersionStatus{
 			Source: dynatracev1beta1.TenantRegistryVersionSource,
 		}
@@ -190,7 +205,7 @@ func TestRun(t *testing.T) {
 		updater := newClassicFullStackUpdater(target, false)
 		updater.On("CustomImage").Return("")
 		updater.On("CustomVersion").Return("")
-		updater.On("UseDefaults").Return(nil)
+		updater.On("UseTenantRegistry").Return(nil)
 
 		err := versionReconciler.run(ctx, updater, testDockerCfg)
 		require.NoError(t, err)
@@ -200,7 +215,11 @@ func TestRun(t *testing.T) {
 		assert.Equal(t, target.Version, target.Version)
 	})
 	t.Run("classicfullstack enabled, public registry is ignored, custom image is set", func(t *testing.T) {
-		registry := newFakeRegistryForImages(testImage.String())
+		registry := newFakeRegistry(map[string]ImageVersion{
+			testImage.String(): {
+				Version: testImage.Tag,
+			},
+		})
 		target := &dynatracev1beta1.VersionStatus{
 			Source: dynatracev1beta1.TenantRegistryVersionSource,
 		}
@@ -212,7 +231,7 @@ func TestRun(t *testing.T) {
 		updater := newClassicFullStackUpdater(target, false)
 		updater.On("CustomImage").Return(testImage.String())
 		updater.On("CustomVersion").Return(testImage.Tag)
-		updater.On("UseDefaults").Return(nil)
+		updater.On("UseTenantRegistry").Return(nil)
 
 		err := versionReconciler.run(ctx, updater, testDockerCfg)
 		require.NoError(t, err)
@@ -280,15 +299,19 @@ func TestUpdateVersionStatus(t *testing.T) {
 	t.Run("failing to get digest should not cause error, should fall back to using the tag", func(t *testing.T) {
 		registry := newEmptyFakeRegistry()
 		target := dynatracev1beta1.VersionStatus{}
-		err := updateVersionStatus(ctx, &target, testImage.String(), registry.ImageVersionExt, testDockerCfg)
+		err := setImageIDWithDigest(ctx, &target, testImage.String(), registry.ImageVersionExt, testDockerCfg)
 		assert.NoError(t, err)
 		assert.Equal(t, testImage.String(), target.ImageID)
 	})
 
 	t.Run("set status", func(t *testing.T) {
-		registry := newFakeRegistryForImages(testImage.String())
+		registry := newFakeRegistry(map[string]ImageVersion{
+			testImage.String(): {
+				Version: testImage.Tag,
+			},
+		})
 		target := dynatracev1beta1.VersionStatus{}
-		err := updateVersionStatus(ctx, &target, testImage.String(), registry.ImageVersionExt, testDockerCfg)
+		err := setImageIDWithDigest(ctx, &target, testImage.String(), registry.ImageVersionExt, testDockerCfg)
 		require.NoError(t, err)
 		assertVersionStatusEquals(t, registry, getTaggedReference(t, testImage.String()), target)
 	})
@@ -298,11 +321,11 @@ func TestUpdateVersionStatus(t *testing.T) {
 		expectedDigest := "sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
 		expectedID := expectedRepo + "@" + expectedDigest
 		target := dynatracev1beta1.VersionStatus{}
-		boomFunc := func(_ context.Context, imagePath string, _ *dockerconfig.DockerConfig) (digest.Digest, error) {
+		boomFunc := func(_ context.Context, imagePath string, _ *dockerconfig.DockerConfig) (ImageVersion, error) {
 			t.Error("digest function was called unexpectedly")
-			return "", nil
+			return ImageVersion{}, nil
 		}
-		err := updateVersionStatus(ctx, &target, expectedID, boomFunc, testDockerCfg)
+		err := setImageIDWithDigest(ctx, &target, expectedID, boomFunc, testDockerCfg)
 		require.NoError(t, err)
 		assert.Equal(t, expectedID, target.ImageID)
 	})
@@ -311,11 +334,11 @@ func TestUpdateVersionStatus(t *testing.T) {
 		expectedDigest := "sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
 		expectedID := expectedRepo + ":tag@" + expectedDigest
 		target := dynatracev1beta1.VersionStatus{}
-		boomFunc := func(_ context.Context, imagePath string, _ *dockerconfig.DockerConfig) (digest.Digest, error) {
+		boomFunc := func(_ context.Context, imagePath string, _ *dockerconfig.DockerConfig) (ImageVersion, error) {
 			t.Error("digest function was called unexpectedly")
-			return "", nil
+			return ImageVersion{}, nil
 		}
-		err := updateVersionStatus(ctx, &target, expectedID, boomFunc, testDockerCfg)
+		err := setImageIDWithDigest(ctx, &target, expectedID, boomFunc, testDockerCfg)
 		require.NoError(t, err)
 		assert.Equal(t, expectedID, target.ImageID)
 	})
@@ -366,7 +389,7 @@ func newDefaultUpdater(target *dynatracev1beta1.VersionStatus, autoUpdate bool) 
 	updater.On("CustomImage").Return("")
 	updater.On("IsPublicRegistryEnabled").Return(false)
 	updater.On("CustomVersion").Return("")
-	updater.On("UseDefaults").Return(nil)
+	updater.On("UseTenantRegistry").Return(nil)
 	return updater
 }
 
@@ -409,4 +432,9 @@ func getTaggedReference(t *testing.T, image string) reference.NamedTagged {
 	taggedRef, ok := ref.(reference.NamedTagged)
 	require.True(t, ok)
 	return taggedRef
+}
+
+func assertStatusBasedOnTenantRegistry(t *testing.T, expectedImage, expectedVersion string, versionStatus dynatracev1beta1.VersionStatus) { //nolint:revive // argument-limit
+	assert.Equal(t, expectedImage, versionStatus.ImageID)
+	assert.Equal(t, expectedVersion, versionStatus.Version)
 }

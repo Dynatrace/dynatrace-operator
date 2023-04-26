@@ -56,7 +56,7 @@ func (updater *codeModulesUpdater) CheckForDowngrade(latestVersion string) (bool
 	return false, nil
 }
 
-func (updater *codeModulesUpdater) UseDefaults(_ context.Context, _ *dockerconfig.DockerConfig) error {
+func (updater *codeModulesUpdater) UseTenantRegistry(_ context.Context, _ *dockerconfig.DockerConfig) error {
 	customVersion := updater.CustomVersion()
 	if customVersion != "" {
 		updater.dynakube.Status.CodeModules = dynatracev1beta1.CodeModulesStatus{

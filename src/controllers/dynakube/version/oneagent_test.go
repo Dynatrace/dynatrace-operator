@@ -47,6 +47,7 @@ func TestOneAgentUpdater(t *testing.T) {
 
 func TestOneAgentUseDefault(t *testing.T) {
 	testVersion := "1.2.3"
+	testHash := "sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
 	t.Run("Set according to version field", func(t *testing.T) {
 		dynakube := &dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
@@ -59,12 +60,17 @@ func TestOneAgentUseDefault(t *testing.T) {
 			},
 		}
 		expectedImage := dynakube.DefaultOneAgentImage()
-		registry := newFakeRegistryForImages(expectedImage)
+		registry := newFakeRegistry(map[string]ImageVersion{
+			expectedImage: {
+				Version: testVersion,
+				Hash:    testHash,
+			},
+		})
 
 		mockClient := &dtclient.MockDynatraceClient{}
 		updater := newOneAgentUpdater(dynakube, mockClient, registry.ImageVersionExt)
 
-		err := updater.UseDefaults(context.TODO(), &dockerconfig.DockerConfig{})
+		err := updater.UseTenantRegistry(context.TODO(), &dockerconfig.DockerConfig{})
 
 		require.NoError(t, err)
 		assertStatusBasedOnTenantRegistry(t, expectedImage, testVersion, dynakube.Status.OneAgent.VersionStatus)
@@ -79,13 +85,18 @@ func TestOneAgentUseDefault(t *testing.T) {
 			},
 		}
 		expectedImage := dynakube.DefaultOneAgentImage()
-		registry := newFakeRegistryForImages(expectedImage)
+		registry := newFakeRegistry(map[string]ImageVersion{
+			expectedImage: {
+				Version: testVersion,
+				Hash:    testHash,
+			},
+		})
 
 		mockClient := &dtclient.MockDynatraceClient{}
 		mockLatestAgentVersion(mockClient, testVersion)
 		updater := newOneAgentUpdater(dynakube, mockClient, registry.ImageVersionExt)
 
-		err := updater.UseDefaults(context.TODO(), &dockerconfig.DockerConfig{})
+		err := updater.UseTenantRegistry(context.TODO(), &dockerconfig.DockerConfig{})
 
 		require.NoError(t, err)
 		assertStatusBasedOnTenantRegistry(t, expectedImage, testVersion, dynakube.Status.OneAgent.VersionStatus)
@@ -110,19 +121,24 @@ func TestOneAgentUseDefault(t *testing.T) {
 		}
 
 		expectedImage := dynakube.DefaultOneAgentImage()
-		registry := newFakeRegistryForImages(expectedImage)
+		registry := newFakeRegistry(map[string]ImageVersion{
+			expectedImage: {
+				Version: testVersion,
+				Hash:    testHash,
+			},
+		})
 
 		mockClient := &dtclient.MockDynatraceClient{}
 		mockLatestAgentVersion(mockClient, testVersion)
 		updater := newOneAgentUpdater(dynakube, mockClient, registry.ImageVersionExt)
 
-		err := updater.UseDefaults(context.TODO(), &dockerconfig.DockerConfig{})
+		err := updater.UseTenantRegistry(context.TODO(), &dockerconfig.DockerConfig{})
 		require.Error(t, err)
 
 		dynakube.Status.OneAgent.Version = ""
 		dynakube.Status.OneAgent.Source = dynatracev1beta1.PublicRegistryVersionSource
 
-		err = updater.UseDefaults(context.TODO(), &dockerconfig.DockerConfig{})
+		err = updater.UseTenantRegistry(context.TODO(), &dockerconfig.DockerConfig{})
 		require.Error(t, err)
 	})
 }
@@ -197,9 +213,4 @@ func TestCheckForDowngrade(t *testing.T) {
 			assert.Equal(t, testCase.isDowngrade, isDowngrade)
 		})
 	}
-}
-
-func assertStatusBasedOnTenantRegistry(t *testing.T, expectedImage, expectedVersion string, versionStatus dynatracev1beta1.VersionStatus) { //nolint:revive // argument-limit
-	assert.Equal(t, expectedImage, versionStatus.ImageID)
-	assert.Equal(t, expectedVersion, versionStatus.Version)
 }

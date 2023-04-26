@@ -11,7 +11,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestSyntheticUseDefaults(t *testing.T) {
+func TestSyntheticUseTenantRegistry(t *testing.T) {
+	testVersion := "1.2.3"
+	testHash := "sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
 	t.Run("default image specified", func(t *testing.T) {
 		dynakube := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
@@ -32,12 +34,16 @@ func TestSyntheticUseDefaults(t *testing.T) {
 		}
 		expectedImage := dynakube.DefaultSyntheticImage()
 		mockClient := &dtclient.MockDynatraceClient{}
-		registry := newFakeRegistryForImages(expectedImage)
+		registry := newFakeRegistry(map[string]ImageVersion{
+			expectedImage: {
+				Version: testVersion,
+				Hash:    testHash,
+			},
+		})
 		updater := newSyntheticUpdater(dynakube, mockClient, registry.ImageVersionExt)
 
-		err := updater.UseDefaults(context.TODO(), &dockerconfig.DockerConfig{})
+		err := updater.UseTenantRegistry(context.TODO(), &dockerconfig.DockerConfig{})
 		require.NoError(t, err, "default image set")
-		assertStatusBasedOnTenantRegistry(t, expectedImage, "", dynakube.Status.Synthetic.VersionStatus)
-		require.Empty(t, dynakube.Status.Synthetic.Version, "zero version reported")
+		assertStatusBasedOnTenantRegistry(t, expectedImage, testVersion, dynakube.Status.Synthetic.VersionStatus)
 	})
 }

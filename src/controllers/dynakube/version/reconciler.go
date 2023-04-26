@@ -19,14 +19,14 @@ const (
 type Reconciler struct {
 	dynakube     *dynatracev1beta1.DynaKube
 	dtClient     dtclient.Client
-	digestFunc   ImageDigestFunc
+	digestFunc   ImageVersionFunc
 	timeProvider *timeprovider.Provider
 
 	fs        afero.Afero
 	apiReader client.Reader
 }
 
-func NewReconciler(dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader, dtClient dtclient.Client, fs afero.Afero, digestProvider ImageDigestFunc, timeProvider *timeprovider.Provider) *Reconciler { //nolint:revive
+func NewReconciler(dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader, dtClient dtclient.Client, fs afero.Afero, digestProvider ImageVersionFunc, timeProvider *timeprovider.Provider) *Reconciler { //nolint:revive
 	return &Reconciler{
 		dynakube:     dynakube,
 		apiReader:    apiReader,
