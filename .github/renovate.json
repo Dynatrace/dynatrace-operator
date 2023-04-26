@@ -23,7 +23,7 @@
     {
       "matchManagers": ["gomod"],
       "matchDepTypes": ["indirect"],
-      "enabled": true
+      "enabled": false
     },
     {
       "matchManagers": ["github-actions"],
