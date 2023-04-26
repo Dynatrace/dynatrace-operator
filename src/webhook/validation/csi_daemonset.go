@@ -13,6 +13,8 @@ import (
 const (
 	errorCSIRequired = `The Dynakube's specification requires the CSI driver to work. Make sure you deployed the correct manifests.
 `
+	errorCSIEnabledRequired = `The Dynakube's specification specifies readonly-CSI volume, but the CSI driver is not enabled.
+`
 )
 
 func missingCSIDaemonSet(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
@@ -26,6 +28,14 @@ func missingCSIDaemonSet(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaK
 		return errorCSIRequired
 	} else if err != nil {
 		log.Info("error occurred while listing dynakubes", "err", err.Error())
+	}
+	return ""
+}
+
+func disabledCSIForReadonlyCSIVolume(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+	if !dynakube.NeedsCSIDriver() && dynakube.FeatureReadOnlyCsiVolume() {
+		log.Info("requested dynakube uses readonly csi volume, but csi driver is not enabled", "name", dynakube.Name, "namespace", dynakube.Namespace)
+		return errorCSIEnabledRequired
 	}
 	return ""
 }
