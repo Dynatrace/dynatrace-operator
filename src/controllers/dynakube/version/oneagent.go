@@ -9,20 +9,20 @@ import (
 )
 
 type oneAgentUpdater struct {
-	dynakube   *dynatracev1beta1.DynaKube
-	dtClient   dtclient.Client
-	digestFunc ImageVersionFunc
+	dynakube    *dynatracev1beta1.DynaKube
+	dtClient    dtclient.Client
+	versionFunc ImageVersionFunc
 }
 
 func newOneAgentUpdater(
 	dynakube *dynatracev1beta1.DynaKube,
 	dtClient dtclient.Client,
-	digestFunc ImageVersionFunc,
+	versionFunc ImageVersionFunc,
 ) *oneAgentUpdater {
 	return &oneAgentUpdater{
-		dynakube:   dynakube,
-		dtClient:   dtClient,
-		digestFunc: digestFunc,
+		dynakube:    dynakube,
+		dtClient:    dtClient,
+		versionFunc: versionFunc,
 	}
 }
 
@@ -74,7 +74,7 @@ func (updater *oneAgentUpdater) UseTenantRegistry(ctx context.Context, dockerCfg
 	}
 
 	defaultImage := updater.dynakube.DefaultOneAgentImage()
-	return updateVersionStatusForTenantRegistry(ctx, updater.Target(), defaultImage, updater.digestFunc, dockerCfg)
+	return updateVersionStatusForTenantRegistry(ctx, updater.Target(), defaultImage, updater.versionFunc, dockerCfg)
 }
 
 func (updater *oneAgentUpdater) CheckForDowngrade(latestVersion string) (bool, error) {

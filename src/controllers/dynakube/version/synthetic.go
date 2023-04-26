@@ -10,20 +10,20 @@ import (
 )
 
 type syntheticUpdater struct {
-	dynakube   *dynatracev1beta1.DynaKube
-	dtClient   dtclient.Client
-	digestFunc ImageVersionFunc
+	dynakube    *dynatracev1beta1.DynaKube
+	dtClient    dtclient.Client
+	versionFunc ImageVersionFunc
 }
 
 func newSyntheticUpdater(
 	dynakube *dynatracev1beta1.DynaKube,
 	dtClient dtclient.Client,
-	digestFunc ImageVersionFunc,
+	versionFunc ImageVersionFunc,
 ) *syntheticUpdater {
 	return &syntheticUpdater{
-		dynakube:   dynakube,
-		dtClient:   dtClient,
-		digestFunc: digestFunc,
+		dynakube:    dynakube,
+		dtClient:    dtClient,
+		versionFunc: versionFunc,
 	}
 }
 
@@ -65,5 +65,5 @@ func (updater syntheticUpdater) CheckForDowngrade(latestVersion string) (bool, e
 
 func (updater *syntheticUpdater) UseTenantRegistry(ctx context.Context, dockerCfg *dockerconfig.DockerConfig) error {
 	defaultImage := updater.dynakube.DefaultSyntheticImage()
-	return updateVersionStatusForTenantRegistry(ctx, updater.Target(), defaultImage, updater.digestFunc, dockerCfg)
+	return updateVersionStatusForTenantRegistry(ctx, updater.Target(), defaultImage, updater.versionFunc, dockerCfg)
 }

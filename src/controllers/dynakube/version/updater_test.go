@@ -79,7 +79,7 @@ func TestRun(t *testing.T) {
 		versionReconciler := Reconciler{
 			dynakube:     &dynatracev1beta1.DynaKube{},
 			timeProvider: timeProvider,
-			digestFunc:   registry.ImageVersionExt,
+			versionFunc:  registry.ImageVersionExt,
 		}
 		updater := newCustomImageUpdater(target, testImage.String())
 		err := versionReconciler.run(ctx, updater, testDockerCfg)
@@ -94,7 +94,7 @@ func TestRun(t *testing.T) {
 		versionReconciler := Reconciler{
 			dynakube:     &dynatracev1beta1.DynaKube{},
 			timeProvider: timeProvider,
-			digestFunc:   registry.ImageVersionExt,
+			versionFunc:  registry.ImageVersionExt,
 		}
 		updater := newCustomImageUpdater(target, "incorrect-uri")
 		err := versionReconciler.run(ctx, updater, testDockerCfg)
@@ -108,7 +108,7 @@ func TestRun(t *testing.T) {
 		versionReconciler := Reconciler{
 			dynakube:     &dynatracev1beta1.DynaKube{},
 			timeProvider: timeProvider,
-			digestFunc:   registry.ImageVersionExt,
+			versionFunc:  registry.ImageVersionExt,
 		}
 		updater := newDefaultUpdater(target, false)
 
@@ -147,7 +147,7 @@ func TestRun(t *testing.T) {
 		versionReconciler := Reconciler{
 			dynakube:     enablePublicRegistry(&dynatracev1beta1.DynaKube{}),
 			timeProvider: timeProvider,
-			digestFunc:   registry.ImageVersionExt,
+			versionFunc:  registry.ImageVersionExt,
 		}
 		updater := newPublicRegistryUpdater(target, &testImage, false)
 		updater.On("IsClassicFullStackEnabled").Return(false)
@@ -174,7 +174,7 @@ func TestRun(t *testing.T) {
 		versionReconciler := Reconciler{
 			dynakube:     enablePublicRegistry(&dynatracev1beta1.DynaKube{}),
 			timeProvider: timeProvider,
-			digestFunc:   registry.ImageVersionExt,
+			versionFunc:  registry.ImageVersionExt,
 		}
 		updater := newPublicRegistryUpdater(target, &testImage, false)
 		updater.On("IsClassicFullStackEnabled").Return(false)
@@ -200,7 +200,7 @@ func TestRun(t *testing.T) {
 		versionReconciler := Reconciler{
 			dynakube:     enablePublicRegistry(newClassicFullStackDynakube()),
 			timeProvider: timeProvider,
-			digestFunc:   registry.ImageVersionExt,
+			versionFunc:  registry.ImageVersionExt,
 		}
 		updater := newClassicFullStackUpdater(target, false)
 		updater.On("CustomImage").Return("")
@@ -226,7 +226,7 @@ func TestRun(t *testing.T) {
 		versionReconciler := Reconciler{
 			dynakube:     enablePublicRegistry(newClassicFullStackDynakube()),
 			timeProvider: timeProvider,
-			digestFunc:   registry.ImageVersionExt,
+			versionFunc:  registry.ImageVersionExt,
 		}
 		updater := newClassicFullStackUpdater(target, false)
 		updater.On("CustomImage").Return(testImage.String())

@@ -54,7 +54,7 @@ func TestReconcile(t *testing.T) {
 			dynakube:     dynakubeTemplate.DeepCopy(),
 			apiReader:    fake.NewClient(),
 			fs:           afero.Afero{Fs: afero.NewMemMapFs()},
-			digestFunc:   faultyRegistry.ImageVersionExt,
+			versionFunc:  faultyRegistry.ImageVersionExt,
 			timeProvider: timeprovider.New(),
 		}
 		err := versionReconciler.Reconcile(ctx)
@@ -87,7 +87,7 @@ func TestReconcile(t *testing.T) {
 			dynakube:     dynakube,
 			apiReader:    fakeClient,
 			fs:           afero.Afero{Fs: afero.NewMemMapFs()},
-			digestFunc:   registry.ImageVersionExt,
+			versionFunc:  registry.ImageVersionExt,
 			timeProvider: timeProvider,
 			dtClient:     mockClient,
 		}
@@ -144,7 +144,7 @@ func TestReconcile(t *testing.T) {
 			dynakube:     dynakube,
 			apiReader:    fakeClient,
 			fs:           afero.Afero{Fs: afero.NewMemMapFs()},
-			digestFunc:   registry.ImageVersionExt,
+			versionFunc:  registry.ImageVersionExt,
 			timeProvider: timeprovider.New(),
 			dtClient:     mockClient,
 		}

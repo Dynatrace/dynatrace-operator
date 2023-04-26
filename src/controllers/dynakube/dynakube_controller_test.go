@@ -697,7 +697,7 @@ func createFakeClientAndReconciler(mockClient dtclient.Client, instance *dynatra
 		scheme:                 scheme.Scheme,
 		dynatraceClientBuilder: mockDtcBuilder,
 		fs:                     afero.Afero{Fs: afero.NewMemMapFs()},
-		digestProvider:         fakeDigestProvider,
+		versionProvider:        fakeDigestProvider,
 	}
 
 	return controller
