@@ -39,6 +39,7 @@ type environment struct {
 
 	OneAgentInjected   bool `json:"oneAgentInjected"`
 	DataIngestInjected bool `json:"dataIngestInjected"`
+	IsReadOnlyCSI      bool `json:"isReadOnlyCSI"`
 }
 
 func newEnv() (*environment, error) {
@@ -115,6 +116,7 @@ func (env *environment) setOptionalFields() {
 func (env *environment) setMutationTypeFields() {
 	env.addOneAgentInjected()
 	env.addDataIngestInjected()
+	env.addIsReadOnlyCSI()
 }
 
 func (env *environment) addMode() error {
@@ -286,6 +288,11 @@ func (env *environment) addInstallVersion() {
 func (env *environment) addOneAgentInjected() {
 	oneAgentInjected, _ := checkEnvVar(config.AgentInjectedEnv)
 	env.OneAgentInjected = oneAgentInjected == "true"
+}
+
+func (env *environment) addIsReadOnlyCSI() {
+	isReadOnlyCSI, _ := checkEnvVar(config.AgentReadonlyCSI)
+	env.IsReadOnlyCSI = isReadOnlyCSI == "true"
 }
 
 func (env *environment) addDataIngestInjected() {

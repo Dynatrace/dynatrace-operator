@@ -2,6 +2,7 @@ package standalone
 
 import (
 	"fmt"
+	"path"
 	"path/filepath"
 
 	"github.com/Dynatrace/dynatrace-operator/src/arch"
@@ -160,6 +161,13 @@ func (runner *Runner) configureInstallation() error {
 				return errors.WithStack(err)
 			}
 		}
+		if runner.env.IsReadOnlyCSI {
+			log.Info("readOnly CSI detected, copying agent conf to empty-dir")
+			err := copyFolder(runner.fs, getReadOnlyAgentConfMountPath(), config.AgentConfInitDirMount)
+			if err != nil {
+				return err
+			}
+		}
 	}
 	if runner.env.DataIngestInjected {
 		log.Info("creating enrichment files")
@@ -206,4 +214,8 @@ func (runner *Runner) enrichMetadata() error {
 
 func (runner *Runner) propagateTLSCert() error {
 	return runner.createConfFile(filepath.Join(config.AgentShareDirMount, "custom.pem"), runner.config.TlsCert)
+}
+
+func getReadOnlyAgentConfMountPath() string {
+	return path.Join(config.AgentBinDirMount, "agent/conf")
 }

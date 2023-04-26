@@ -219,20 +219,23 @@ func TestConfigureInstallation(t *testing.T) {
 	runner.config.HasHost = false
 
 	t.Run(`create all config files`, func(t *testing.T) {
-		runner.fs = afero.NewMemMapFs()
+		runner.fs = prepReadOnlyCSIFilesystem(t, afero.NewMemMapFs())
 		runner.env.OneAgentInjected = true
 		runner.env.DataIngestInjected = true
+		runner.env.IsReadOnlyCSI = true
 
 		err := runner.configureInstallation()
 
 		require.NoError(t, err)
 		assertIfAgentFilesExists(t, *runner)
 		assertIfEnrichmentFilesExists(t, *runner)
+		assertIfReadOnlyCSIFilesExists(t, *runner)
 	})
 	t.Run(`create only container confs`, func(t *testing.T) {
 		runner.fs = afero.NewMemMapFs()
 		runner.env.OneAgentInjected = true
 		runner.env.DataIngestInjected = false
+		runner.env.IsReadOnlyCSI = false
 
 		err := runner.configureInstallation()
 
@@ -240,10 +243,24 @@ func TestConfigureInstallation(t *testing.T) {
 		assertIfAgentFilesExists(t, *runner)
 		assertIfEnrichmentFilesNotExists(t, *runner)
 	})
+	t.Run(`create only container confs with readonly csi`, func(t *testing.T) {
+		runner.fs = prepReadOnlyCSIFilesystem(t, afero.NewMemMapFs())
+		runner.env.OneAgentInjected = true
+		runner.env.DataIngestInjected = false
+		runner.env.IsReadOnlyCSI = true
+
+		err := runner.configureInstallation()
+
+		require.NoError(t, err)
+		assertIfAgentFilesExists(t, *runner)
+		assertIfEnrichmentFilesNotExists(t, *runner)
+		assertIfReadOnlyCSIFilesExists(t, *runner)
+	})
 	t.Run(`create only enrichment file`, func(t *testing.T) {
 		runner.fs = afero.NewMemMapFs()
 		runner.env.OneAgentInjected = false
 		runner.env.DataIngestInjected = true
+		runner.env.IsReadOnlyCSI = false
 
 		err := runner.configureInstallation()
 
@@ -341,7 +358,7 @@ func TestWriteCurlOptions(t *testing.T) {
 	assert.True(t, exists)
 }
 
-func creatTestRunner(t *testing.T) *Runner {
+func createTestRunner(t *testing.T) *Runner {
 	fs := prepTestFs(t)
 	resetEnv := prepCombinedTestEnv(t)
 
@@ -353,7 +370,7 @@ func creatTestRunner(t *testing.T) *Runner {
 }
 
 func createMockedRunner(t *testing.T) *Runner {
-	runner := creatTestRunner(t)
+	runner := createTestRunner(t)
 	runner.installer = &installer.Mock{}
 	runner.dtclient = &dtclient.MockDynatraceClient{}
 	return runner
@@ -421,6 +438,16 @@ func assertIfEnrichmentFilesNotExists(t *testing.T, runner Runner) {
 		filepath.Join(
 			config.EnrichmentMountPath,
 			fmt.Sprintf(config.EnrichmentFilenameTemplate, "properties")))
+}
+
+func assertIfReadOnlyCSIFilesExists(t *testing.T, runner Runner) {
+	for i := 0; i < 10; i++ {
+		assertIfFileExists(t,
+			runner.fs,
+			filepath.Join(
+				config.AgentConfInitDirMount,
+				fmt.Sprintf("%d.conf", i)))
+	}
 }
 
 func assertIfFileExists(t *testing.T, fs afero.Fs, path string) {
