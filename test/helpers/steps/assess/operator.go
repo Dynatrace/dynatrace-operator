@@ -25,7 +25,7 @@ func InstallOperatorFromSourceWithCustomNamespace(builder *features.FeatureBuild
 
 func InstallOperatorFromRelease(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube, releaseTag string) {
 	builder.Assess("create operator namespace", namespace.Create(namespace.NewBuilder(testDynakube.Namespace).Build()))
-	builder.Assess("operator manifests installed", operator.InstallFromGithub(releaseTag, testDynakube.NeedsCSIDriver()))
+	builder.Assess("operator manifests installed", operator.InstallViaHelm(releaseTag, testDynakube.NeedsCSIDriver(), "dynatrace"))
 	verifyOperatorDeployment(builder, testDynakube)
 }
 

@@ -1,0 +1,19 @@
+ENABLE_CSI ?= true
+
+## Deploy the operator in a cluster configured in ~/.kube/config where platform and version are autodetected
+deploy/helm: manifests/crd/helm
+	helm upgrade dynatrace-operator config/helm/chart/default \
+			--namespace dynatrace \
+			--create-namespace \
+			--install \
+			--atomic \
+			--set installCRD=true \
+			--set csidriver.enabled=$(ENABLE_CSI) \
+			--set manifests=true \
+			--set image="$(IMAGE_URI)"
+
+## Undeploy the operator in a cluster configured in ~/.kube/config where platform and k8s version are autodetected
+undeploy/helm:
+	helm uninstall dynatrace-operator \
+			--namespace dynatrace
+	kubectl delete namespace dynatrace
