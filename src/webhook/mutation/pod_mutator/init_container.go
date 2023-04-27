@@ -54,6 +54,9 @@ func securityContextForInitContainer(pod *corev1.Pod) *corev1.SecurityContext {
 		ReadOnlyRootFilesystem:   address.Of(true),
 		AllowPrivilegeEscalation: address.Of(false),
 		Privileged:               address.Of(false),
+		SeccompProfile: &corev1.SeccompProfile{
+			Type: corev1.SeccompProfileTypeRuntimeDefault,
+		},
 		Capabilities: &corev1.Capabilities{
 			Drop: []corev1.Capability{
 				"ALL",
