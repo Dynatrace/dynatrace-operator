@@ -19,19 +19,19 @@ const (
 type Reconciler struct {
 	dynakube     *dynatracev1beta1.DynaKube
 	dtClient     dtclient.Client
-	digestFunc   ImageDigestFunc
+	versionFunc  ImageVersionFunc
 	timeProvider *timeprovider.Provider
 
 	fs        afero.Afero
 	apiReader client.Reader
 }
 
-func NewReconciler(dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader, dtClient dtclient.Client, fs afero.Afero, digestProvider ImageDigestFunc, timeProvider *timeprovider.Provider) *Reconciler { //nolint:revive
+func NewReconciler(dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader, dtClient dtclient.Client, fs afero.Afero, digestProvider ImageVersionFunc, timeProvider *timeprovider.Provider) *Reconciler { //nolint:revive
 	return &Reconciler{
 		dynakube:     dynakube,
 		apiReader:    apiReader,
 		fs:           fs,
-		digestFunc:   digestProvider,
+		versionFunc:  digestProvider,
 		timeProvider: timeProvider,
 		dtClient:     dtClient,
 	}
@@ -40,10 +40,10 @@ func NewReconciler(dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader,
 // Reconcile updates the version status used by the dynakube
 func (reconciler *Reconciler) Reconcile(ctx context.Context) error {
 	updaters := []versionStatusUpdater{
-		newActiveGateUpdater(reconciler.dynakube, reconciler.dtClient, reconciler.digestFunc),
-		newOneAgentUpdater(reconciler.dynakube, reconciler.dtClient, reconciler.digestFunc),
+		newActiveGateUpdater(reconciler.dynakube, reconciler.dtClient, reconciler.versionFunc),
+		newOneAgentUpdater(reconciler.dynakube, reconciler.dtClient, reconciler.versionFunc),
 		newCodeModulesUpdater(reconciler.dynakube, reconciler.dtClient),
-		newSyntheticUpdater(reconciler.dynakube, reconciler.dtClient, reconciler.digestFunc),
+		newSyntheticUpdater(reconciler.dynakube, reconciler.dtClient, reconciler.versionFunc),
 	}
 
 	neededUpdaters := reconciler.needsReconcile(updaters)

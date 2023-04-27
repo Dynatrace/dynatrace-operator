@@ -8,7 +8,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
-	"github.com/containers/image/v5/docker/reference"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -48,6 +47,7 @@ func TestOneAgentUpdater(t *testing.T) {
 
 func TestOneAgentUseDefault(t *testing.T) {
 	testVersion := "1.2.3"
+	testDigest := getTestDigest()
 	t.Run("Set according to version field", func(t *testing.T) {
 		dynakube := &dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
@@ -60,15 +60,20 @@ func TestOneAgentUseDefault(t *testing.T) {
 			},
 		}
 		expectedImage := dynakube.DefaultOneAgentImage()
-		registry := newFakeRegistryForImages(expectedImage)
+		registry := newFakeRegistry(map[string]ImageVersion{
+			expectedImage: {
+				Version: testVersion,
+				Digest:  testDigest,
+			},
+		})
 
 		mockClient := &dtclient.MockDynatraceClient{}
 		updater := newOneAgentUpdater(dynakube, mockClient, registry.ImageVersionExt)
 
-		err := updater.UseDefaults(context.TODO(), &dockerconfig.DockerConfig{})
+		err := updater.UseTenantRegistry(context.TODO(), &dockerconfig.DockerConfig{})
 
 		require.NoError(t, err)
-		assertDefaultOneAgentStatus(t, registry, getTaggedReference(t, expectedImage), testVersion, dynakube.Status.OneAgent.VersionStatus)
+		assertStatusBasedOnTenantRegistry(t, expectedImage, testVersion, dynakube.Status.OneAgent.VersionStatus)
 	})
 	t.Run("Set according to default", func(t *testing.T) {
 		dynakube := &dynatracev1beta1.DynaKube{
@@ -80,16 +85,21 @@ func TestOneAgentUseDefault(t *testing.T) {
 			},
 		}
 		expectedImage := dynakube.DefaultOneAgentImage()
-		registry := newFakeRegistryForImages(expectedImage)
+		registry := newFakeRegistry(map[string]ImageVersion{
+			expectedImage: {
+				Version: testVersion,
+				Digest:  testDigest,
+			},
+		})
 
 		mockClient := &dtclient.MockDynatraceClient{}
 		mockLatestAgentVersion(mockClient, testVersion)
 		updater := newOneAgentUpdater(dynakube, mockClient, registry.ImageVersionExt)
 
-		err := updater.UseDefaults(context.TODO(), &dockerconfig.DockerConfig{})
+		err := updater.UseTenantRegistry(context.TODO(), &dockerconfig.DockerConfig{})
 
 		require.NoError(t, err)
-		assertDefaultOneAgentStatus(t, registry, getTaggedReference(t, expectedImage), testVersion, dynakube.Status.OneAgent.VersionStatus)
+		assertStatusBasedOnTenantRegistry(t, expectedImage, testVersion, dynakube.Status.OneAgent.VersionStatus)
 	})
 	t.Run("Don't allow downgrades", func(t *testing.T) {
 		dynakube := &dynatracev1beta1.DynaKube{
@@ -111,19 +121,24 @@ func TestOneAgentUseDefault(t *testing.T) {
 		}
 
 		expectedImage := dynakube.DefaultOneAgentImage()
-		registry := newFakeRegistryForImages(expectedImage)
+		registry := newFakeRegistry(map[string]ImageVersion{
+			expectedImage: {
+				Version: testVersion,
+				Digest:  testDigest,
+			},
+		})
 
 		mockClient := &dtclient.MockDynatraceClient{}
 		mockLatestAgentVersion(mockClient, testVersion)
 		updater := newOneAgentUpdater(dynakube, mockClient, registry.ImageVersionExt)
 
-		err := updater.UseDefaults(context.TODO(), &dockerconfig.DockerConfig{})
+		err := updater.UseTenantRegistry(context.TODO(), &dockerconfig.DockerConfig{})
 		require.Error(t, err)
 
 		dynakube.Status.OneAgent.Version = ""
 		dynakube.Status.OneAgent.Source = dynatracev1beta1.PublicRegistryVersionSource
 
-		err = updater.UseDefaults(context.TODO(), &dockerconfig.DockerConfig{})
+		err = updater.UseTenantRegistry(context.TODO(), &dockerconfig.DockerConfig{})
 		require.Error(t, err)
 	})
 }
@@ -198,9 +213,4 @@ func TestCheckForDowngrade(t *testing.T) {
 			assert.Equal(t, testCase.isDowngrade, isDowngrade)
 		})
 	}
-}
-
-func assertDefaultOneAgentStatus(t *testing.T, registry *fakeRegistry, imageRef reference.NamedTagged, expectedVersion string, versionStatus dynatracev1beta1.VersionStatus) { //nolint:revive // argument-limit
-	assertVersionStatusEquals(t, registry, imageRef, versionStatus)
-	assert.Equal(t, expectedVersion, versionStatus.Version)
 }
