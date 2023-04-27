@@ -9,7 +9,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/containers/image/v5/docker/reference"
-	"github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
 )
 
@@ -119,7 +118,7 @@ func setImageIDWithDigest(
 			target.ImageID = taggedRef.String()
 			log.Error(err, "failed to get image digest, falling back to tag")
 		} else {
-			canonRef, err := reference.WithDigest(taggedRef, digest.Digest(imageVersion.Hash))
+			canonRef, err := reference.WithDigest(taggedRef, imageVersion.Digest)
 			if err != nil {
 				target.ImageID = taggedRef.String()
 				log.Error(err, "failed to create canonical image reference, falling back to tag")

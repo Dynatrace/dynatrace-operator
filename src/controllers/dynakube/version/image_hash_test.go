@@ -47,5 +47,5 @@ func assertVersionStatusEquals(t *testing.T, registry *fakeRegistry, imageRef re
 	expectedDigest, err := registry.ImageVersion(imageRef.String())
 
 	assert.NoError(t, err, "Image version is unexpectedly unknown for '%s'", imageRef.String())
-	assert.Contains(t, versionStatus.ImageID, expectedDigest.Hash)
+	assert.Contains(t, versionStatus.ImageID, expectedDigest.Digest)
 }

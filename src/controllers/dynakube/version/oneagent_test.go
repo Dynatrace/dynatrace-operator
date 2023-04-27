@@ -47,7 +47,7 @@ func TestOneAgentUpdater(t *testing.T) {
 
 func TestOneAgentUseDefault(t *testing.T) {
 	testVersion := "1.2.3"
-	testHash := "sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
+	testDigest := getTestDigest()
 	t.Run("Set according to version field", func(t *testing.T) {
 		dynakube := &dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
@@ -63,7 +63,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 		registry := newFakeRegistry(map[string]ImageVersion{
 			expectedImage: {
 				Version: testVersion,
-				Hash:    testHash,
+				Digest:  testDigest,
 			},
 		})
 
@@ -88,7 +88,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 		registry := newFakeRegistry(map[string]ImageVersion{
 			expectedImage: {
 				Version: testVersion,
-				Hash:    testHash,
+				Digest:  testDigest,
 			},
 		})
 
@@ -124,7 +124,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 		registry := newFakeRegistry(map[string]ImageVersion{
 			expectedImage: {
 				Version: testVersion,
-				Hash:    testHash,
+				Digest:  testDigest,
 			},
 		})
 

@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
+	"github.com/opencontainers/go-digest"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -28,9 +29,9 @@ const (
 func TestReconcile(t *testing.T) {
 	ctx := context.Background()
 	latestAgentVersion := "1.2.3.4-5"
-	testOneAgentHash := "sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
-	testActiveGateHash := "sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d72f"
-	testCodeModulesHash := "sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d82f"
+	testOneAgentHash := digest.FromString("sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f")
+	testActiveGateHash := digest.FromString("sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d72f")
+	testCodeModulesHash := digest.FromString("sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d82f")
 
 	dynakubeTemplate := dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace},
@@ -73,11 +74,11 @@ func TestReconcile(t *testing.T) {
 		registry := newFakeRegistry(map[string]ImageVersion{
 			dynakube.DefaultActiveGateImage(): {
 				Version: testActiveGateImage.Tag,
-				Hash:    testActiveGateHash,
+				Digest:  testActiveGateHash,
 			},
 			dynakube.DefaultOneAgentImage(): {
 				Version: testOneAgentImage.Tag,
-				Hash:    testOneAgentHash,
+				Digest:  testOneAgentHash,
 			},
 		})
 		mockClient := &dtclient.MockDynatraceClient{}
@@ -124,15 +125,15 @@ func TestReconcile(t *testing.T) {
 		registry := newFakeRegistry(map[string]ImageVersion{
 			testActiveGateImage.String(): {
 				Version: testActiveGateImage.Tag,
-				Hash:    testActiveGateHash,
+				Digest:  testActiveGateHash,
 			},
 			testOneAgentImage.String(): {
 				Version: testOneAgentImage.Tag,
-				Hash:    testOneAgentHash,
+				Digest:  testOneAgentHash,
 			},
 			testCodeModulesImage.String(): {
 				Version: testCodeModulesImage.Tag,
-				Hash:    testCodeModulesHash,
+				Digest:  testCodeModulesHash,
 			},
 		})
 		mockClient := &dtclient.MockDynatraceClient{}

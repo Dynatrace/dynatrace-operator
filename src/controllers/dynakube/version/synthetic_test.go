@@ -13,7 +13,7 @@ import (
 
 func TestSyntheticUseTenantRegistry(t *testing.T) {
 	testVersion := "1.2.3"
-	testHash := "sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
+	testHash := getTestDigest()
 	t.Run("default image specified", func(t *testing.T) {
 		dynakube := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
@@ -37,7 +37,7 @@ func TestSyntheticUseTenantRegistry(t *testing.T) {
 		registry := newFakeRegistry(map[string]ImageVersion{
 			expectedImage: {
 				Version: testVersion,
-				Hash:    testHash,
+				Digest:  testHash,
 			},
 		})
 		updater := newSyntheticUpdater(dynakube, mockClient, registry.ImageVersionExt)

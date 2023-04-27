@@ -9,6 +9,7 @@ import (
 	"github.com/containers/image/v5/manifest"
 	"github.com/containers/image/v5/transports/alltransports"
 	"github.com/containers/image/v5/types"
+	"github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
 )
 
@@ -19,7 +20,7 @@ const (
 
 type ImageVersion struct {
 	Version string
-	Hash    string
+	Digest  digest.Digest
 }
 
 // ImageVersionFunc can fetch image information from img
@@ -67,7 +68,7 @@ func GetImageVersion(ctx context.Context, imageName string, dockerConfig *docker
 	}
 
 	return ImageVersion{
-		Hash:    digest.Encoded(),
+		Digest:  digest,
 		Version: inspectedImage.Labels[VersionLabel], // empty if unset
 	}, nil
 }
