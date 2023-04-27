@@ -9,10 +9,12 @@ import (
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
+	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -59,7 +61,12 @@ type Reconciler struct {
 func (r *Reconciler) Reconcile(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
 	log.Info("reconciling OneAgent")
 
-	err := r.reconcileRollout(ctx, dynakube)
+	err := r.createOneAgentTenantConnectionInfoConfigMap(ctx, dynakube)
+	if err != nil {
+		return err
+	}
+
+	err = r.reconcileRollout(ctx, dynakube)
 	if err != nil {
 		return err
 	}
@@ -86,6 +93,38 @@ func (r *Reconciler) Reconcile(ctx context.Context, dynakube *dynatracev1beta1.D
 
 	log.Info("reconciled " + deploymentmetadata.GetOneAgentDeploymentType(*dynakube))
 	return nil
+}
+
+func (r *Reconciler) createOneAgentTenantConnectionInfoConfigMap(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
+	configMapData := extractPublicData(dynakube)
+	configMap, err := kubeobjects.CreateConfigMap(r.scheme, dynakube,
+		kubeobjects.NewConfigMapNameModifier(dynakube.OneAgentConnectionInfoConfigMapName()),
+		kubeobjects.NewConfigMapNamespaceModifier(dynakube.Namespace),
+		kubeobjects.NewConfigMapDataModifier(configMapData))
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	query := kubeobjects.NewConfigMapQuery(ctx, r.client, r.apiReader, log)
+	err = query.CreateOrUpdate(*configMap)
+	if err != nil {
+		log.Info("could not create or update configMap for connection info", "name", configMap.Name)
+		return err
+	}
+
+	return nil
+}
+
+func extractPublicData(dynakube *dynatracev1beta1.DynaKube) map[string]string {
+	data := map[string]string{}
+
+	if dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID != "" {
+		data[connectioninfo.TenantUUIDName] = dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID
+	}
+	if dynakube.Status.OneAgent.ConnectionInfoStatus.Endpoints != "" {
+		data[connectioninfo.CommunicationEndpointsName] = dynakube.Status.OneAgent.ConnectionInfoStatus.Endpoints
+	}
+	return data
 }
 
 func (r *Reconciler) reconcileRollout(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {

@@ -2,7 +2,6 @@ package connectioninfo
 
 import (
 	"context"
-	"encoding/json"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
@@ -56,121 +55,78 @@ func (r *Reconciler) reconcileOneAgentConnectionInfo() error {
 	if !r.dynakube.IsOneAgentConnectionInfoUpdateAllowed(r.timeProvider) {
 		log.Info(dynatracev1beta1.GetCacheValidMessage(
 			"oneagent connection info update",
-			r.dynakube.Status.DynatraceApi.LastOneAgentConnectionInfoRequest,
+			r.dynakube.Status.OneAgent.ConnectionInfoStatus.LastRequest,
 			r.dynakube.FeatureApiRequestThreshold()))
 		return nil
 	}
 
-	err := r.maintainOneAgentConnectionInfoObjects()
-	if err != nil {
-		return err
-	}
-
-	r.dynakube.Status.DynatraceApi.LastOneAgentConnectionInfoRequest = metav1.Now()
-	log.Info("oneagent connection info updated")
-	return nil
-}
-
-func (r *Reconciler) reconcileActiveGateConnectionInfo() error {
-	if !r.dynakube.IsActiveGateConnectionInfoUpdateAllowed(r.timeProvider) {
-		log.Info(dynatracev1beta1.GetCacheValidMessage(
-			"activegate connection info update",
-			r.dynakube.Status.DynatraceApi.LastActiveGateConnectionInfoRequest,
-			r.dynakube.FeatureApiRequestThreshold()))
-		return nil
-	}
-
-	err := r.maintainActiveGateConnectionInfoObjects()
-	if err != nil {
-		return err
-	}
-
-	r.dynakube.Status.DynatraceApi.LastActiveGateConnectionInfoRequest = metav1.Now()
-
-	log.Info("activegate connection info updated")
-	return nil
-}
-
-func (r *Reconciler) maintainActiveGateConnectionInfoObjects() error {
-	connectionInfo, err := r.dtc.GetActiveGateConnectionInfo()
-	if err != nil {
-		log.Info("failed to get activegate connection info")
-		return err
-	}
-
-	err = r.createTenantTokenSecret(r.dynakube.ActivegateTenantSecret(), connectionInfo.ConnectionInfo)
-	if err != nil {
-		return err
-	}
-
-	err = r.createActiveGateTenantConnectionInfoConfigMap(r.dynakube.ActiveGateConnectionInfoConfigMapName(), connectionInfo.ConnectionInfo)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (r *Reconciler) maintainOneAgentConnectionInfoObjects() error {
 	connectionInfo, err := r.dtc.GetOneAgentConnectionInfo()
 	if err != nil {
 		log.Info("failed to get oneagent connection info")
 		return err
 	}
 
+	r.updateDynakubeOneAgentStatus(connectionInfo)
+
 	err = r.createTenantTokenSecret(r.dynakube.OneagentTenantSecret(), connectionInfo.ConnectionInfo)
 	if err != nil {
 		return err
 	}
 
-	err = r.createOneAgentTenantConnectionInfoConfigMap(r.dynakube.OneAgentConnectionInfoConfigMapName(), connectionInfo)
-	if err != nil {
-		return err
-	}
-
+	log.Info("oneagent connection info updated")
+	r.dynakube.Status.OneAgent.ConnectionInfoStatus.LastRequest = metav1.Now()
 	return nil
 }
 
-func (r *Reconciler) createActiveGateTenantConnectionInfoConfigMap(secretName string, connectionInfo dtclient.ConnectionInfo) error {
-	configMapData := extractPublicData(connectionInfo, "")
-	configMap, err := kubeobjects.CreateConfigMap(r.scheme, r.dynakube,
-		kubeobjects.NewConfigMapNameModifier(secretName),
-		kubeobjects.NewConfigMapNamespaceModifier(r.dynakube.Namespace),
-		kubeobjects.NewConfigMapDataModifier(configMapData))
-	if err != nil {
-		return errors.WithStack(err)
+func (r *Reconciler) updateDynakubeOneAgentStatus(connectionInfo dtclient.OneAgentConnectionInfo) {
+	r.dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID = connectionInfo.TenantUUID
+	r.dynakube.Status.OneAgent.ConnectionInfoStatus.Endpoints = connectionInfo.Endpoints
+	copyCommunicationHosts(&r.dynakube.Status.OneAgent.ConnectionInfoStatus, connectionInfo.CommunicationHosts)
+}
+
+func copyCommunicationHosts(dest *dynatracev1beta1.OneAgentConnectionInfoStatus, src []dtclient.CommunicationHost) {
+	if dest.CommunicationHosts == nil {
+		dest.CommunicationHosts = make([]dynatracev1beta1.CommunicationHostStatus, 0, len(src))
+	}
+	for _, host := range src {
+		dest.CommunicationHosts = append(dest.CommunicationHosts, dynatracev1beta1.CommunicationHostStatus{
+			Protocol: host.Protocol,
+			Host:     host.Host,
+			Port:     host.Port,
+		})
+	}
+}
+
+func (r *Reconciler) reconcileActiveGateConnectionInfo() error {
+	if !r.dynakube.IsActiveGateConnectionInfoUpdateAllowed(r.timeProvider) {
+		log.Info(dynatracev1beta1.GetCacheValidMessage(
+			"activegate connection info update",
+			r.dynakube.Status.ActiveGate.ConnectionInfoStatus.LastRequest,
+			r.dynakube.FeatureApiRequestThreshold()))
+		return nil
 	}
 
-	query := kubeobjects.NewConfigMapQuery(r.context, r.client, r.apiReader, log)
-	err = query.CreateOrUpdate(*configMap)
+	connectionInfo, err := r.dtc.GetActiveGateConnectionInfo()
 	if err != nil {
-		log.Info("could not create or update configMap for connection info", "name", configMap.Name)
+		log.Info("failed to get activegate connection info")
 		return err
 	}
+
+	r.updateDynakubeActiveGateStatus(connectionInfo)
+
+	err = r.createTenantTokenSecret(r.dynakube.ActivegateTenantSecret(), connectionInfo.ConnectionInfo)
+	if err != nil {
+		return err
+	}
+
+	log.Info("activegate connection info updated")
+	r.dynakube.Status.ActiveGate.ConnectionInfoStatus.LastRequest = metav1.Now()
 	return nil
 }
 
-func (r *Reconciler) createOneAgentTenantConnectionInfoConfigMap(secretName string, connectionInfo dtclient.OneAgentConnectionInfo) error {
-	communicationHosts, err := encodeCommunicationHosts(connectionInfo)
-	if err != nil {
-		return err
-	}
-	configMapData := extractPublicData(connectionInfo.ConnectionInfo, communicationHosts)
-	configMap, err := kubeobjects.CreateConfigMap(r.scheme, r.dynakube,
-		kubeobjects.NewConfigMapNameModifier(secretName),
-		kubeobjects.NewConfigMapNamespaceModifier(r.dynakube.Namespace),
-		kubeobjects.NewConfigMapDataModifier(configMapData))
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	query := kubeobjects.NewConfigMapQuery(r.context, r.client, r.apiReader, log)
-	err = query.CreateOrUpdate(*configMap)
-	if err != nil {
-		log.Info("could not create or update configMap for connection info", "name", configMap.Name)
-		return err
-	}
-	return nil
+func (r *Reconciler) updateDynakubeActiveGateStatus(connectionInfo dtclient.ActiveGateConnectionInfo) {
+	r.dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID = connectionInfo.TenantUUID
+	r.dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints = connectionInfo.Endpoints
 }
 
 func (r *Reconciler) createTenantTokenSecret(secretName string, connectionInfo dtclient.ConnectionInfo) error {
@@ -196,33 +152,5 @@ func extractSensitiveData(connectionInfo dtclient.ConnectionInfo) map[string][]b
 	data := map[string][]byte{
 		TenantTokenName: []byte(connectionInfo.TenantToken),
 	}
-
 	return data
-}
-
-func extractPublicData(connectionInfo dtclient.ConnectionInfo, communicationHosts string) map[string]string {
-	data := map[string]string{}
-
-	if connectionInfo.TenantUUID != "" {
-		data[TenantUUIDName] = connectionInfo.TenantUUID
-	}
-	if connectionInfo.Endpoints != "" {
-		data[CommunicationEndpointsName] = connectionInfo.Endpoints
-	}
-
-	if communicationHosts != "" {
-		data[CommunicationHosts] = communicationHosts
-	}
-	return data
-}
-
-func encodeCommunicationHosts(connectionInfo dtclient.OneAgentConnectionInfo) (string, error) {
-	if len(connectionInfo.CommunicationHosts) > 0 {
-		communicationHostsBytes, err := json.Marshal(connectionInfo.CommunicationHosts)
-		if err != nil {
-			return "", errors.WithStack(err)
-		}
-		return string(communicationHostsBytes), nil
-	}
-	return "", nil
 }

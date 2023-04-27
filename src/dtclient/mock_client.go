@@ -26,9 +26,9 @@ func (o *MockDynatraceClient) GetLatestActiveGateImage() (*LatestImageInfo, erro
 	return args.Get(0).(*LatestImageInfo), args.Error(1)
 }
 
-func (o *MockDynatraceClient) GetActiveGateConnectionInfo() (*ActiveGateConnectionInfo, error) {
+func (o *MockDynatraceClient) GetActiveGateConnectionInfo() (ActiveGateConnectionInfo, error) {
 	args := o.Called()
-	return args.Get(0).(*ActiveGateConnectionInfo), args.Error(1)
+	return *args.Get(0).(*ActiveGateConnectionInfo), args.Error(1)
 }
 
 func (o *MockDynatraceClient) GetLatestAgentVersion(os, installerType string) (string, error) {
