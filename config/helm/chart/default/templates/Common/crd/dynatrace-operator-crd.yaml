@@ -3383,6 +3383,16 @@ spec:
             properties:
               activeGate:
                 properties:
+                  connectionInfoStatus:
+                    properties:
+                      endpoints:
+                        type: string
+                      lastRequest:
+                        format: date-time
+                        type: string
+                      tenantUUID:
+                        type: string
+                    type: object
                   imageID:
                     type: string
                   lastProbeTimestamp:
@@ -3477,12 +3487,6 @@ spec:
                 type: array
               dynatraceApi:
                 properties:
-                  lastActiveGateConnectionInfoRequest:
-                    format: date-time
-                    type: string
-                  lastOneAgentConnectionInfoRequest:
-                    format: date-time
-                    type: string
                   lastTokenScopeRequest:
                     format: date-time
                     type: string
@@ -3499,6 +3503,28 @@ spec:
                 type: string
               oneAgent:
                 properties:
+                  connectionInfoStatus:
+                    properties:
+                      communicationHosts:
+                        items:
+                          properties:
+                            host:
+                              type: string
+                            port:
+                              format: int32
+                              type: integer
+                            protocol:
+                              type: string
+                          type: object
+                        type: array
+                      endpoints:
+                        type: string
+                      lastRequest:
+                        format: date-time
+                        type: string
+                      tenantUUID:
+                        type: string
+                    type: object
                   imageID:
                     type: string
                   instances:

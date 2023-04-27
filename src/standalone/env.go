@@ -11,6 +11,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+const trueStatement = "true"
+
 type containerInfo struct {
 	Name  string `json:"name"`
 	Image string `json:"image"`
@@ -39,6 +41,7 @@ type environment struct {
 
 	OneAgentInjected   bool `json:"oneAgentInjected"`
 	DataIngestInjected bool `json:"dataIngestInjected"`
+	IsReadOnlyCSI      bool `json:"isReadOnlyCSI"`
 }
 
 func newEnv() (*environment, error) {
@@ -115,6 +118,7 @@ func (env *environment) setOptionalFields() {
 func (env *environment) setMutationTypeFields() {
 	env.addOneAgentInjected()
 	env.addDataIngestInjected()
+	env.addIsReadOnlyCSI()
 }
 
 func (env *environment) addMode() error {
@@ -285,12 +289,17 @@ func (env *environment) addInstallVersion() {
 
 func (env *environment) addOneAgentInjected() {
 	oneAgentInjected, _ := checkEnvVar(config.AgentInjectedEnv)
-	env.OneAgentInjected = oneAgentInjected == "true"
+	env.OneAgentInjected = oneAgentInjected == trueStatement
+}
+
+func (env *environment) addIsReadOnlyCSI() {
+	isReadOnlyCSI, _ := checkEnvVar(config.AgentReadonlyCSI)
+	env.IsReadOnlyCSI = isReadOnlyCSI == trueStatement
 }
 
 func (env *environment) addDataIngestInjected() {
 	dataIngestInjected, _ := checkEnvVar(config.EnrichmentInjectedEnv)
-	env.DataIngestInjected = dataIngestInjected == "true"
+	env.DataIngestInjected = dataIngestInjected == trueStatement
 }
 
 func checkEnvVar(envvar string) (string, error) {
