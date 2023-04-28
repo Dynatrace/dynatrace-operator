@@ -4,8 +4,43 @@
     "config:base"
   ],
   "labels": ["dependencies"],
-  "enabledManagers": ["gomod", "dockerfile", "github-actions"],
   "digest": { "enabled": false },
+  "enabledManagers": [ "regex", "dockerfile", "gomod", "github-actions" ],
+  "regexManagers": [
+    {
+      "fileMatch": "(^|/|\\.)prerequisites.mk$",
+      "matchStrings": [
+        "go install github\\.com\/(?<depName>.*?)@(?<currentValue>.*?)\\n"
+      ],
+      "datasourceTemplate": "github-releases",
+      "registryUrlTemplate": "https://github.com"
+    },
+    {
+      "fileMatch": "(^|/|\\.)prerequisites.mk$",
+      "matchStrings": [
+        "go install golang\\.org\/x\/(?<package>.*?)\/.*@(?<currentValue>.*?)\\n"
+      ],
+
+      "datasourceTemplate": "go",
+      "depNameTemplate": "golang.org/x/{{package}}"
+    },
+    {
+      "fileMatch": "(^|/|\\.)prerequisites.mk$",
+      "matchStrings": [
+        "\"sigs\\.k8s\\.io\/controller-tools\/cmd\/controller-gen@(?<currentValue>.*?)\"\\n"
+      ],
+      "datasourceTemplate": "go",
+      "depNameTemplate": "sigs.k8s.io/controller-tools"
+    },
+    {
+      "fileMatch": "(^|/|\\.)prerequisites.mk$",
+      "matchStrings": [
+        "\"sigs\\.k8s\\.io\/kustomize\/kustomize\/v4@(?<currentValue>.*?)\"\\n"
+      ],
+      "datasourceTemplate": "go",
+      "depNameTemplate": "sigs.k8s.io/kustomize/kustomize/v4"
+    }
+  ],
   "packageRules": [
     {
       "matchManagers": ["dockerfile"],
@@ -30,6 +65,11 @@
       "commitMessagePrefix": "Actions:",
       "enabled": true,
       "allowedVersions": "/^v[0-9]+\\.[0-9]+\\.[0-9]+(\\.[0-9]+)?$/"
+    },
+    {
+      "matchManagers": ["regex"],
+      "commitMessagePrefix": "Dev:",
+      "enabled": true
     },
     {
       "matchUpdateTypes": ["digest", "pin", "pinDigest"],
