@@ -2,7 +2,6 @@ package version
 
 import (
 	"context"
-	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
@@ -105,35 +104,9 @@ func (reconciler *Reconciler) needsUpdate(updater versionStatusUpdater) bool {
 		return true
 	}
 
-	if hasCustomFieldChanged(updater) {
-		return true
-	}
-
 	if !reconciler.timeProvider.IsOutdated(updater.Target().LastProbeTimestamp, reconciler.dynakube.FeatureApiRequestThreshold()) {
 		log.Info("status timestamp still valid, skipping version status updater", "updater", updater.Name())
 		return false
 	}
 	return true
-}
-
-func hasCustomFieldChanged(updater versionStatusUpdater) bool {
-	if updater.Target().Source == dynatracev1beta1.CustomImageVersionSource {
-		oldImage := updater.Target().ImageID
-		newImage := updater.CustomImage()
-		// The old image is can be the same as the new image (if only digest was given, or a tag was given but couldn't get the digest)
-		// or the old image is the same as the new image but with the digest added to the end of it (if a tag was provide, and we could append the digest to the end)
-		// or the 2 images are different
-		if !strings.Contains(oldImage, newImage) {
-			log.Info("custom image value changed, update for version status is needed", "updater", updater.Name(), "oldImage", oldImage, "newImage", newImage)
-			return true
-		}
-	} else if updater.Target().Source == dynatracev1beta1.CustomVersionVersionSource {
-		oldVersion := updater.Target().Version
-		newVersion := updater.CustomVersion()
-		if oldVersion != newVersion {
-			log.Info("custom version value changed, update for version status is needed", "updater", updater.Name(), "oldVersion", oldVersion, "newVersion", newVersion)
-			return true
-		}
-	}
-	return false
 }
