@@ -39,6 +39,14 @@
       ],
       "datasourceTemplate": "go",
       "depNameTemplate": "sigs.k8s.io/kustomize/kustomize/v4"
+    },
+    {
+      "fileMatch": "(^|/|\\.)third-party-licenses.sh$",
+      "matchStrings": [
+        "go install github\\.com\/(?<depName>.*?)@(?<currentValue>.*?) &&"
+      ],
+      "datasourceTemplate": "github-releases",
+      "registryUrlTemplate": "https://github.com"
     }
   ],
   "packageRules": [
