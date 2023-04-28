@@ -167,14 +167,22 @@ func TestNeedsUpdate(t *testing.T) {
 				ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
 			},
 		},
+		Status: dynatracev1beta1.DynaKubeStatus{
+			OneAgent: dynatracev1beta1.OneAgentStatus{
+				VersionStatus: dynatracev1beta1.VersionStatus{
+					Source: dynatracev1beta1.TenantRegistryVersionSource,
+				},
+			},
+		},
 	}
 
 	t.Run("needs", func(t *testing.T) {
+		updatedDynakube := dynakube.DeepCopy()
 		reconciler := Reconciler{
-			dynakube:     &dynakube,
+			dynakube:     updatedDynakube,
 			timeProvider: timeProvider,
 		}
-		assert.True(t, reconciler.needsUpdate(newOneAgentUpdater(&dynakube, nil, nil)))
+		assert.True(t, reconciler.needsUpdate(newOneAgentUpdater(updatedDynakube, nil, nil)))
 	})
 	t.Run("does not need", func(t *testing.T) {
 		reconciler := Reconciler{
@@ -184,8 +192,11 @@ func TestNeedsUpdate(t *testing.T) {
 		assert.False(t, reconciler.needsUpdate(newOneAgentUpdater(&dynatracev1beta1.DynaKube{}, nil, nil)))
 	})
 	t.Run("does not need, because not old enough", func(t *testing.T) {
+		oldImage := "repo.com:tag@sha256:123"
+		newImage := "repo.com:tag"
 		updatedDynakube := dynakube.DeepCopy()
-		updatedDynakube.Status.OneAgent.Source = dynatracev1beta1.TenantRegistryVersionSource
+		setOneAgentCustomImageStatus(updatedDynakube, oldImage)
+		updatedDynakube.Spec.OneAgent.ClassicFullStack.Image = newImage
 		updatedDynakube.Status.OneAgent.LastProbeTimestamp = timeProvider.Now()
 		reconciler := Reconciler{
 			dynakube:     updatedDynakube,
@@ -196,14 +207,94 @@ func TestNeedsUpdate(t *testing.T) {
 
 	t.Run("needs, because source changed", func(t *testing.T) {
 		updatedDynakube := dynakube.DeepCopy()
-		updatedDynakube.Status.OneAgent.Source = dynatracev1beta1.CustomImageVersionSource
-		updatedDynakube.Status.OneAgent.LastProbeTimestamp = timeProvider.Now()
+		setOneAgentCustomImageStatus(updatedDynakube, "")
 		reconciler := Reconciler{
 			dynakube:     updatedDynakube,
 			timeProvider: timeProvider,
 		}
 		assert.True(t, reconciler.needsUpdate(newOneAgentUpdater(updatedDynakube, nil, nil)))
 	})
+
+	t.Run("needs, because custom image changed", func(t *testing.T) {
+		oldImage := "repo.com:tag@sha256:123"
+		newImage := "repo.com:newTag"
+		updatedDynakube := dynakube.DeepCopy()
+		updatedDynakube.Spec.OneAgent.ClassicFullStack.Image = newImage
+		setOneAgentCustomImageStatus(updatedDynakube, oldImage)
+		reconciler := Reconciler{
+			dynakube:     updatedDynakube,
+			timeProvider: timeProvider,
+		}
+		assert.True(t, reconciler.needsUpdate(newOneAgentUpdater(updatedDynakube, nil, nil)))
+	})
+
+	t.Run("needs, because custom version changed", func(t *testing.T) {
+		oldVersion := "1.2.3"
+		newVersion := "2.4.5"
+		updatedDynakube := dynakube.DeepCopy()
+		updatedDynakube.Spec.OneAgent.ClassicFullStack.Version = newVersion
+		setOneAgentCustomVersionStatus(updatedDynakube, oldVersion)
+		reconciler := Reconciler{
+			dynakube:     updatedDynakube,
+			timeProvider: timeProvider,
+		}
+		assert.True(t, reconciler.needsUpdate(newOneAgentUpdater(updatedDynakube, nil, nil)))
+	})
+}
+
+func TestHasCustomFieldChanged(t *testing.T) {
+	dynakube := dynatracev1beta1.DynaKube{
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			OneAgent: dynatracev1beta1.OneAgentSpec{
+				ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
+			},
+		},
+	}
+
+	t.Run("version changed", func(t *testing.T) {
+		oldVersion := "1.2.3"
+		newVersion := "2.4.5"
+		updatedDynakube := dynakube.DeepCopy()
+		updatedDynakube.Spec.OneAgent.ClassicFullStack.Version = newVersion
+		setOneAgentCustomVersionStatus(updatedDynakube, oldVersion)
+		assert.True(t, hasCustomFieldChanged(newOneAgentUpdater(updatedDynakube, nil, nil)))
+	})
+
+	t.Run("no change; version", func(t *testing.T) {
+		version := "1.2.3"
+		updatedDynakube := dynakube.DeepCopy()
+		updatedDynakube.Spec.OneAgent.ClassicFullStack.Version = version
+		setOneAgentCustomVersionStatus(updatedDynakube, version)
+		assert.False(t, hasCustomFieldChanged(newOneAgentUpdater(updatedDynakube, nil, nil)))
+	})
+
+	t.Run("image changed", func(t *testing.T) {
+		oldImage := "repo.com:tag@sha256:123"
+		newImage := "repo.com:Tag"
+		updatedDynakube := dynakube.DeepCopy()
+		updatedDynakube.Spec.OneAgent.ClassicFullStack.Image = newImage
+		setOneAgentCustomImageStatus(updatedDynakube, oldImage)
+		assert.True(t, hasCustomFieldChanged(newOneAgentUpdater(updatedDynakube, nil, nil)))
+	})
+
+	t.Run("no change; image", func(t *testing.T) {
+		oldImage := "repo.com:tag@sha256:123"
+		newImage := "repo.com:tag"
+		updatedDynakube := dynakube.DeepCopy()
+		updatedDynakube.Spec.OneAgent.ClassicFullStack.Version = newImage
+		setOneAgentCustomImageStatus(updatedDynakube, oldImage)
+		assert.False(t, hasCustomFieldChanged(newOneAgentUpdater(updatedDynakube, nil, nil)))
+	})
+}
+
+func setOneAgentCustomVersionStatus(dynakube *dynatracev1beta1.DynaKube, version string) {
+	dynakube.Status.OneAgent.Source = dynatracev1beta1.CustomVersionVersionSource
+	dynakube.Status.OneAgent.Version = version
+}
+
+func setOneAgentCustomImageStatus(dynakube *dynatracev1beta1.DynaKube, image string) {
+	dynakube.Status.OneAgent.Source = dynatracev1beta1.CustomImageVersionSource
+	dynakube.Status.OneAgent.ImageID = image
 }
 
 func getTestOneAgentImageInfo() dtclient.LatestImageInfo {
