@@ -15,6 +15,6 @@ LABEL operators.operatorframework.io.metrics.project_layout=go.kubebuilder.io/v3
 # Copy files to locations specified by labels.
 COPY 0.11.1/manifests /manifests/
 COPY 0.11.1/metadata /metadata/
-LABEL com.redhat.openshift.versions="v4.9-v4.12"
+LABEL com.redhat.openshift.versions="v4.8-v4.12"
 LABEL com.redhat.delivery.operator.bundle=true
 LABEL com.redhat.delivery.backport=true
