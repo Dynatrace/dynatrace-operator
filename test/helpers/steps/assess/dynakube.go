@@ -40,7 +40,6 @@ func UpdateDynakube(builder *features.FeatureBuilder, testDynakube dynatracev1be
 func verifyDynakubeStartup(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube) {
 	if testDynakube.NeedsOneAgent() {
 		builder.Assess("oneagent started", oneagent.WaitForDaemonset(testDynakube))
-		builder.Assess("osAgent can connect", oneagent.OSAgentCanConnect(testDynakube))
 	}
 	builder.Assess(
 		fmt.Sprintf("'%s' dynakube phase changes to 'Running'", testDynakube.Name),

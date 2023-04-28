@@ -253,17 +253,45 @@ func createFailPodMutatorMock() dtwebhook.PodMutator {
 
 func getTestDynakube() *dynatracev1beta1.DynaKube {
 	return &dynatracev1beta1.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testDynakubeName,
-			Namespace: testNamespaceName,
+		ObjectMeta: getTestDynakubeMeta(),
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			OneAgent: getCloudNativeSpec(&testResourceRequirements),
 		},
+	}
+}
+
+func getTestDynakubeNoInitLimits() *dynatracev1beta1.DynaKube {
+	return &dynatracev1beta1.DynaKube{
+		ObjectMeta: getTestDynakubeMeta(),
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			OneAgent: getCloudNativeSpec(nil),
+		},
+	}
+}
+
+func getTestDynakubeDefaultAppMon() *dynatracev1beta1.DynaKube {
+	return &dynatracev1beta1.DynaKube{
+		ObjectMeta: getTestDynakubeMeta(),
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			OneAgent: dynatracev1beta1.OneAgentSpec{
-				CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
-					AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{
-						InitResources: testResourceRequirements,
-					},
-				},
+				ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{},
+			},
+		},
+	}
+}
+
+func getTestDynakubeMeta() metav1.ObjectMeta {
+	return metav1.ObjectMeta{
+		Name:      testDynakubeName,
+		Namespace: testNamespaceName,
+	}
+}
+
+func getCloudNativeSpec(initResources *corev1.ResourceRequirements) dynatracev1beta1.OneAgentSpec {
+	return dynatracev1beta1.OneAgentSpec{
+		CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
+			AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{
+				InitResources: initResources,
 			},
 		},
 	}

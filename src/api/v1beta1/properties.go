@@ -230,21 +230,9 @@ func (dk *DynaKube) NeedAppInjection() bool {
 
 func (dk *DynaKube) InitResources() *corev1.ResourceRequirements {
 	if dk.ApplicationMonitoringMode() {
-		return &dk.Spec.OneAgent.ApplicationMonitoring.InitResources
+		return dk.Spec.OneAgent.ApplicationMonitoring.InitResources
 	} else if dk.CloudNativeFullstackMode() {
-		return &dk.Spec.OneAgent.CloudNativeFullStack.InitResources
-	}
-	return nil
-}
-
-func (dk *DynaKube) OneAgentResources() *corev1.ResourceRequirements {
-	switch {
-	case dk.ClassicFullStackMode():
-		return &dk.Spec.OneAgent.ClassicFullStack.OneAgentResources
-	case dk.HostMonitoringMode():
-		return &dk.Spec.OneAgent.HostMonitoring.OneAgentResources
-	case dk.CloudNativeFullstackMode():
-		return &dk.Spec.OneAgent.CloudNativeFullStack.OneAgentResources
+		return dk.Spec.OneAgent.CloudNativeFullStack.InitResources
 	}
 	return nil
 }
@@ -518,11 +506,11 @@ func (dk *DynaKube) GetOneAgentEnvironment() []corev1.EnvVar {
 }
 
 func (dk *DynaKube) IsOneAgentConnectionInfoUpdateAllowed(timeProvider *timeprovider.Provider) bool {
-	return timeProvider.IsOutdated(&dk.Status.DynatraceApi.LastOneAgentConnectionInfoRequest, dk.FeatureApiRequestThreshold())
+	return timeProvider.IsOutdated(&dk.Status.OneAgent.ConnectionInfoStatus.LastRequest, dk.FeatureApiRequestThreshold())
 }
 
 func (dk *DynaKube) IsActiveGateConnectionInfoUpdateAllowed(timeProvider *timeprovider.Provider) bool {
-	return timeProvider.IsOutdated(&dk.Status.DynatraceApi.LastActiveGateConnectionInfoRequest, dk.FeatureApiRequestThreshold())
+	return timeProvider.IsOutdated(&dk.Status.ActiveGate.ConnectionInfoStatus.LastRequest, dk.FeatureApiRequestThreshold())
 }
 
 func (dk *DynaKube) IsTokenScopeVerificationAllowed(timeProvider *timeprovider.Provider) bool {

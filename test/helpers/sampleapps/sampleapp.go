@@ -95,7 +95,6 @@ func (app *sampleApp) WithEnvs(envs []corev1.EnvVar) {
 func (app sampleApp) install(object client.Object) features.Func {
 	return func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
 		resource := c.Client().Resources()
-		ctx = namespace.Create(*app.Namespace())(ctx, t, c)
 		ctx = app.installSCC(ctx, t, c)
 		require.NoError(t, resource.Create(ctx, object))
 		if dep, ok := object.(*appsv1.Deployment); ok {

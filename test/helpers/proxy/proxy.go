@@ -21,11 +21,15 @@ import (
 const (
 	proxyNamespaceName  = "proxy"
 	proxyDeploymentName = "squid"
+
+	curlPodNameDynatraceInboundTraffic  = "dynatrace-inbound-traffic"
+	curlPodNameDynatraceOutboundTraffic = "dynatrace-outbound-traffic"
+
+	internetUrl = "dynatrace.com"
 )
 
 var (
-	dynatraceNetworkPolicy       = path.Join(project.TestDataDir(), "network/dynatrace-denial.yaml")
-	sampleNamespaceNetworkPolicy = path.Join(project.TestDataDir(), "network/sample-ns-denial.yaml")
+	dynatraceNetworkPolicy = path.Join(project.TestDataDir(), "network/dynatrace-denial.yaml")
 
 	proxyDeploymentPath = path.Join(project.TestDataDir(), "network/proxy.yaml")
 	proxySCCPath        = path.Join(project.TestDataDir(), "network/proxy-scc.yaml")
@@ -68,8 +72,25 @@ func CutOffDynatraceNamespace(builder *features.FeatureBuilder, proxySpec *dynat
 	}
 }
 
-func CutOffSampleNamespace(builder *features.FeatureBuilder, proxySpec *dynatracev1beta1.DynaKubeProxy) {
+func ApproveConnectionsWithK8SAndProxy(builder *features.FeatureBuilder, proxySpec *dynatracev1beta1.DynaKubeProxy) {
 	if proxySpec != nil {
-		builder.Assess("cut off sample namespace", manifests.InstallFromFile(sampleNamespaceNetworkPolicy))
+		if kubeobjects.ResolvePlatformFromEnv() == kubeobjects.Openshift {
+			builder.Assess("approve dynatrace-openshift network traffic", manifests.InstallFromFile(path.Join(project.TestDataDir(), "network/dynatrace-openshift-approval.yaml")))
+		} else {
+			builder.Assess("approve dynatrace-kube-system network traffic", manifests.InstallFromFile(path.Join(project.TestDataDir(), "network/dynatrace-kube-system-approval.yaml")))
+		}
+		builder.Assess("approve dynatrace-proxy network traffic", manifests.InstallFromFile(path.Join(project.TestDataDir(), "network/proxy-approval.yaml")))
 	}
+}
+
+func IsDynatraceNamespaceCutOff(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube) {
+	if testDynakube.HasProxy() {
+		isNetworkTrafficCutOff(builder, "ingress", curlPodNameDynatraceInboundTraffic, proxyNamespaceName, sampleapps.GetWebhookServiceUrl(testDynakube))
+		isNetworkTrafficCutOff(builder, "egress", curlPodNameDynatraceOutboundTraffic, testDynakube.Namespace, internetUrl)
+	}
+}
+
+func isNetworkTrafficCutOff(builder *features.FeatureBuilder, directionName, podName, podNamespaceName, targetUrl string) {
+	builder.Assess(directionName+" - query namespace", sampleapps.InstallCutOffCurlPod(podName, podNamespaceName, targetUrl))
+	builder.Assess(directionName+" - namespace is cutoff", sampleapps.WaitForCutOffCurlPod(podName, podNamespaceName))
 }

@@ -29,17 +29,13 @@ func Get(ctx context.Context, resource *resources.Resources, namespace string) (
 	}).Get()
 }
 
-func ForEachPod(ctx context.Context, resource *resources.Resources, namespace string, actionFunc daemonset.PodConsumer) error {
-	return daemonset.NewQuery(ctx, resource, client.ObjectKey{
-		Name:      DaemonSetName,
-		Namespace: namespace,
-	}).ForEachPod(actionFunc)
-}
-
 func CleanUpEachPod(namespace string) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resource := environmentConfig.Client().Resources()
-		require.NoError(t, ForEachPod(ctx, resource, namespace, cleanUpPodConsumer(ctx, resource)))
+		require.NoError(t, daemonset.NewQuery(ctx, resource, client.ObjectKey{
+			Name:      DaemonSetName,
+			Namespace: namespace,
+		}).ForEachPod(cleanUpPodConsumer(ctx, resource)))
 		return ctx
 	}
 }

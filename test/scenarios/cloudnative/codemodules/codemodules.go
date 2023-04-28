@@ -1,6 +1,6 @@
 //go:build e2e
 
-package cloudnative
+package codemodules
 
 import (
 	"context"
@@ -17,6 +17,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/csi"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/istio"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
@@ -27,6 +28,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
+	"github.com/Dynatrace/dynatrace-operator/test/scenarios/cloudnative"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -83,6 +85,7 @@ func CodeModules(t *testing.T, istioEnabled bool) features.Feature {
 		namespaceBuilder = namespaceBuilder.WithLabels(istio.InjectionLabel)
 	}
 	sampleNamespace := namespaceBuilder.WithLabels(cloudNativeDynakube.NamespaceSelector().MatchLabels).Build()
+	builder.Assess("create sample namespace", namespace.Create(sampleNamespace))
 	sampleApp := sampleapps.NewSampleDeployment(t, cloudNativeDynakube)
 	sampleApp.WithNamespace(sampleNamespace)
 
@@ -93,10 +96,14 @@ func CodeModules(t *testing.T, istioEnabled bool) features.Feature {
 	}
 	assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), cloudNativeDynakube)
 
-	// Register actual test
+	// Register dynakube install
 	assess.InstallDynakube(builder, &secretConfigs[0], cloudNativeDynakube)
+
+	// Register sample app install
 	builder.Assess("install sample app", sampleApp.Install())
-	assessSampleInitContainers(builder, sampleApp)
+
+	// Register actual test
+	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 	if istioEnabled {
 		istio.AssessIstio(builder, cloudNativeDynakube, sampleApp)
 	}
@@ -134,7 +141,10 @@ func imageHasBeenDownloaded(namespace string) features.Func {
 		clientset, err := kubernetes.NewForConfig(resource.GetConfig())
 		require.NoError(t, err)
 
-		err = csi.ForEachPod(ctx, resource, namespace, func(podItem corev1.Pod) {
+		err = daemonset.NewQuery(ctx, resource, client.ObjectKey{
+			Name:      csi.DaemonSetName,
+			Namespace: namespace,
+		}).ForEachPod(func(podItem corev1.Pod) {
 			err = wait.For(func() (done bool, err error) {
 				logStream, err := clientset.CoreV1().Pods(podItem.Namespace).GetLogs(podItem.Name, &corev1.PodLogOptions{
 					Container: provisionerContainerName,
@@ -160,7 +170,10 @@ func imageHasBeenDownloaded(namespace string) features.Func {
 func measureDiskUsage(namespace string, storageMap map[string]int) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resource := environmentConfig.Client().Resources()
-		err := csi.ForEachPod(ctx, resource, namespace, func(podItem corev1.Pod) {
+		err := daemonset.NewQuery(ctx, resource, client.ObjectKey{
+			Name:      csi.DaemonSetName,
+			Namespace: namespace,
+		}).ForEachPod(func(podItem corev1.Pod) {
 			diskUsage := getDiskUsage(ctx, t, environmentConfig.Client().Resources(), podItem, provisionerContainerName, dataPath)
 			storageMap[podItem.Name] = diskUsage
 		})
@@ -172,7 +185,10 @@ func measureDiskUsage(namespace string, storageMap map[string]int) features.Func
 func diskUsageDoesNotIncrease(namespace string, storageMap map[string]int) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resource := environmentConfig.Client().Resources()
-		err := csi.ForEachPod(ctx, resource, namespace, func(podItem corev1.Pod) {
+		err := daemonset.NewQuery(ctx, resource, client.ObjectKey{
+			Name:      csi.DaemonSetName,
+			Namespace: namespace,
+		}).ForEachPod(func(podItem corev1.Pod) {
 			diskUsage := getDiskUsage(ctx, t, environmentConfig.Client().Resources(), podItem, provisionerContainerName, dataPath)
 			assert.InDelta(t, storageMap[podItem.Name], diskUsage, diskUsageKiBDelta)
 		})

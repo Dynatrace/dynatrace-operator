@@ -7,7 +7,6 @@ import (
 const (
 	TenantTokenName            = "tenant-token"
 	CommunicationEndpointsName = "communication-endpoints"
-	CommunicationHosts         = "communication-hosts"
 	TenantUUIDName             = "tenant-uuid"
 
 	TokenBasePath         = "/var/lib/dynatrace/secrets/tokens"

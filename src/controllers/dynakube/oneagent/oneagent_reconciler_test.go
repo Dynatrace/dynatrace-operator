@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
@@ -22,6 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -505,6 +507,7 @@ func TestInstanceStatus(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, instances, dynakube.Status.OneAgent.Instances)
 }
+
 func TestEmptyInstancesWithWrongLabels(t *testing.T) {
 	namespace := "dynatrace"
 	dkName := "dynakube"
@@ -551,4 +554,44 @@ func TestEmptyInstancesWithWrongLabels(t *testing.T) {
 	err := reconciler.reconcileInstanceStatuses(context.Background(), dynakube)
 	assert.NoError(t, err)
 	assert.Empty(t, dynakube.Status.OneAgent.Instances)
+}
+
+func TestReconcile_ActivegateConfigMap(t *testing.T) {
+	const (
+		testNamespace       = "test-namespace"
+		testTenantToken     = "test-token"
+		testTenantUUID      = "test-uuid"
+		testTenantEndpoints = "test-endpoints"
+	)
+
+	dynakube := newDynaKube()
+	dynakube.Status = dynatracev1beta1.DynaKubeStatus{
+		OneAgent: dynatracev1beta1.OneAgentStatus{
+			ConnectionInfoStatus: dynatracev1beta1.OneAgentConnectionInfoStatus{
+				ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
+					TenantUUID:  testTenantUUID,
+					Endpoints:   testTenantEndpoints,
+					LastRequest: metav1.Time{},
+				},
+			},
+		},
+	}
+
+	fakeClient := fake.NewClient(
+		dynakube,
+		NewSecret(dynakube.Name, dynakube.Namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}),
+		sampleKubeSystemNS)
+
+	t.Run(`create OneAgent connection info ConfigMap`, func(t *testing.T) {
+		reconciler := NewOneAgentReconciler(fakeClient, fakeClient, scheme.Scheme, "")
+
+		err := reconciler.Reconcile(context.TODO(), dynakube)
+		require.NoError(t, err)
+
+		var actual corev1.ConfigMap
+		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: dynakube.OneAgentConnectionInfoConfigMapName(), Namespace: dynakube.Namespace}, &actual)
+		require.NoError(t, err)
+		assert.Equal(t, testTenantUUID, actual.Data[connectioninfo.TenantUUIDName])
+		assert.Equal(t, testTenantEndpoints, actual.Data[connectioninfo.CommunicationEndpointsName])
+	})
 }

@@ -56,12 +56,16 @@ func withProxy(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features
 	// Register proxy create and delete
 	proxy.SetupProxyWithTeardown(builder, testDynakube)
 	proxy.CutOffDynatraceNamespace(builder, proxySpec)
-	proxy.CutOffSampleNamespace(builder, proxySpec)
+	proxy.IsDynatraceNamespaceCutOff(builder, testDynakube)
+	proxy.ApproveConnectionsWithK8SAndProxy(builder, proxySpec)
+
+	// Register dynakube install
+	assess.InstallDynakube(builder, &secretConfig, testDynakube)
+	// Register sample app install
+	builder.Assess("install sample app", sampleApp.Install())
 
 	// Register actual test
-	assess.InstallDynakube(builder, &secretConfig, testDynakube)
 	builder.Assess("check env variables of oneagent pods", checkOneAgentEnvVars(testDynakube))
-	builder.Assess("install sample app", sampleApp.Install())
 	builder.Assess("check existing init container and env var", checkSampleInitContainerEnvVars(sampleApp))
 
 	// Register operator and dynakube uninstall
