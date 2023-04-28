@@ -43,7 +43,7 @@ COPY --from=operator-build /app/build/_output/bin /usr/local/bin
 
 # csi binaries
 COPY --from=registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.7.0@sha256:4a4cae5118c4404e35d66059346b7fa0835d7e6319ff45ed73f4bba335cf5183 /csi-node-driver-registrar /usr/local/bin
-COPY --from=registry.k8s.io/sig-storage/livenessprobe:v2.9.0@sha256:2b10b24dafdc3ba94a03fc94d9df9941ca9d6a9207b927f5dfd21d59fbe05ba0 /livenessprobe /usr/local/bin
+COPY --from=registry.k8s.io/sig-storage/livenessprobe:v2.10.0@sha256:4dc0b87ccd69f9865b89234d8555d3a614ab0a16ed94a3016ffd27f8106132ce /livenessprobe /usr/local/bin
 
 COPY ./third_party_licenses /usr/share/dynatrace-operator/third_party_licenses
 COPY LICENSE /licenses/
