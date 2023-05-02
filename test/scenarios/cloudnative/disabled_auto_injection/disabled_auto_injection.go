@@ -43,10 +43,9 @@ func automaticInjectionDisabled(t *testing.T) features.Feature {
 	// Register sample app install
 	namespaceBuilder := namespace.NewBuilder("cloudnative-disabled-injection-sample")
 	sampleNamespace := namespaceBuilder.Build()
-	builder.Assess("create sample namespace", namespace.Create(sampleNamespace))
-
 	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
 	sampleApp.WithNamespace(sampleNamespace)
+	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
 	// Register dynakube install
 	assess.InstallDynakube(builder, &secretConfig, testDynakube)

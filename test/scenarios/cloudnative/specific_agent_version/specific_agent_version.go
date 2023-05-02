@@ -46,10 +46,9 @@ func specificAgentVersion(t *testing.T) features.Feature {
 		CloudNativeWithAgentVersion(cloudnative.DefaultCloudNativeSpec(), oldVersion)
 	testDynakube := dynakubeBuilder.Build()
 	sampleNamespace := namespace.NewBuilder("specific-agent-sample").WithLabels(testDynakube.NamespaceSelector().MatchLabels).Build()
-	builder.Assess("create sample namespace", namespace.Create(sampleNamespace))
-
 	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
 	sampleApp.WithNamespace(sampleNamespace)
+	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
 	// Register sample app install
 	builder.Assess("install sample", sampleApp.Install())

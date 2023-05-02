@@ -42,6 +42,8 @@ type sampleApp struct {
 	t            *testing.T
 	base         *corev1.Pod
 	testDynakube dynatracev1beta1.DynaKube
+
+	installedNamespace bool
 }
 
 func newSampleApp(t *testing.T, testDynakube dynatracev1beta1.DynaKube) *sampleApp {
@@ -95,6 +97,9 @@ func (app *sampleApp) WithEnvs(envs []corev1.EnvVar) {
 func (app sampleApp) install(object client.Object) features.Func {
 	return func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
 		resource := c.Client().Resources()
+		if !app.installedNamespace {
+			ctx = namespace.Create(*app.Namespace())(ctx, t, c)
+		}
 		ctx = app.installSCC(ctx, t, c)
 		require.NoError(t, resource.Create(ctx, object))
 		if dep, ok := object.(*appsv1.Deployment); ok {
@@ -112,6 +117,11 @@ func (app sampleApp) installSCC(ctx context.Context, t *testing.T, c *envconf.Co
 		ctx = manifests.InstallFromFile(sccPath)(ctx, t, c)
 	}
 	return ctx
+}
+
+func (app *sampleApp) InstallNamespace() features.Func {
+	app.installedNamespace = true
+	return namespace.Create(*app.Namespace())
 }
 
 func (app sampleApp) UninstallNamespace() features.Func {

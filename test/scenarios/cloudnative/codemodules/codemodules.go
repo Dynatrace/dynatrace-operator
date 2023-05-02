@@ -85,9 +85,9 @@ func CodeModules(t *testing.T, istioEnabled bool) features.Feature {
 		namespaceBuilder = namespaceBuilder.WithLabels(istio.InjectionLabel)
 	}
 	sampleNamespace := namespaceBuilder.WithLabels(cloudNativeDynakube.NamespaceSelector().MatchLabels).Build()
-	builder.Assess("create sample namespace", namespace.Create(sampleNamespace))
 	sampleApp := sampleapps.NewSampleDeployment(t, cloudNativeDynakube)
 	sampleApp.WithNamespace(sampleNamespace)
+	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
 	// Register operator install
 	operatorNamespaceBuilder := namespace.NewBuilder(cloudNativeDynakube.Namespace)

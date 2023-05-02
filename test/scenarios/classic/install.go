@@ -53,7 +53,7 @@ func isAgentInjected(sampleApp sample.App, assertCondition func(t assert.Testing
 		for _, podItem := range pods.Items {
 			require.NotNil(t, podItem)
 
-			listCommand := shell.ListDirectory("/var/lib/dynatrace")
+			listCommand := shell.ListDirectory("/var/lib")
 			executionResult, err := pod.Exec(ctx, resources, podItem, sampleApp.ContainerName(), listCommand...)
 
 			require.NoError(t, err)
@@ -63,7 +63,7 @@ func isAgentInjected(sampleApp sample.App, assertCondition func(t assert.Testing
 
 			assert.NotEmpty(t, stdOut)
 			assert.Empty(t, stdErr)
-			assertCondition(t, stdOut, "oneagent")
+			assertCondition(t, stdOut, "dynatrace")
 		}
 		return ctx
 	}
