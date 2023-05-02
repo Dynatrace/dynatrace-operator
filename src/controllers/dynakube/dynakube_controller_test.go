@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
+	dkVersion "github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
@@ -18,7 +19,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
-	"github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -661,8 +661,8 @@ func createDTMockClient(paasTokenScopes, apiTokenScopes dtclient.TokenScopes) *d
 	return mockClient
 }
 
-func fakeDigestProvider(context.Context, string, *dockerconfig.DockerConfig) (digest.Digest, error) {
-	return "", nil
+func fakeDigestProvider(context.Context, string, *dockerconfig.DockerConfig) (dkVersion.ImageVersion, error) {
+	return dkVersion.ImageVersion{}, nil
 }
 
 func createFakeClientAndReconciler(mockClient dtclient.Client, instance *dynatracev1beta1.DynaKube, paasToken, apiToken string) *Controller {
@@ -697,7 +697,7 @@ func createFakeClientAndReconciler(mockClient dtclient.Client, instance *dynatra
 		scheme:                 scheme.Scheme,
 		dynatraceClientBuilder: mockDtcBuilder,
 		fs:                     afero.Afero{Fs: afero.NewMemMapFs()},
-		digestProvider:         fakeDigestProvider,
+		versionProvider:        fakeDigestProvider,
 	}
 
 	return controller
