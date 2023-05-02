@@ -123,7 +123,7 @@ func hasCustomFieldChanged(updater versionStatusUpdater) bool {
 		// The old image is can be the same as the new image (if only digest was given, or a tag was given but couldn't get the digest)
 		// or the old image is the same as the new image but with the digest added to the end of it (if a tag was provide, and we could append the digest to the end)
 		// or the 2 images are different
-		if !strings.Contains(oldImage, newImage) {
+		if !strings.HasPrefix(oldImage, newImage) {
 			log.Info("custom image value changed, update for version status is needed", "updater", updater.Name(), "oldImage", oldImage, "newImage", newImage)
 			return true
 		}
