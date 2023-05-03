@@ -8,45 +8,14 @@
   "enabledManagers": [ "regex", "dockerfile", "gomod", "github-actions" ],
   "regexManagers": [
     {
-      "fileMatch": "(^|/|\\.)prerequisites.mk$",
+      "fileMatch": [ "(^|/|\\.)prerequisites.mk$", "(^|/|\\.)third-party-licenses.sh$" ],
       "matchStrings": [
-        "go install github\\.com\/(?<depName>.*?)@(?<currentValue>.*?)\\n"
-      ],
-      "datasourceTemplate": "github-releases",
-      "registryUrlTemplate": "https://github.com"
-    },
-    {
-      "fileMatch": "(^|/|\\.)prerequisites.mk$",
-      "matchStrings": [
-        "go install golang\\.org\/x\/(?<package>.*?)\/.*@(?<currentValue>.*?)\\n"
-      ],
-
-      "datasourceTemplate": "go",
-      "depNameTemplate": "golang.org/x/{{package}}"
-    },
-    {
-      "fileMatch": "(^|/|\\.)prerequisites.mk$",
-      "matchStrings": [
-        "\"sigs\\.k8s\\.io\/controller-tools\/cmd\/controller-gen@(?<currentValue>.*?)\"\\n"
+        "go install (?<repository>.*?)\/(?<package>[a-zA-Z0-9\\-]+\/.+?)(\/.*)?@(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+(\\.[0-9]+)?)",
+        "\"(?<repository>.*?)\/(?<package>[a-zA-Z0-9\\-]+\/.+?)(\/.*)?@(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+(\\.[0-9]+)?)\"",
+        "\"(?<repository>.*?)\/(?<package>.*?)@(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+(\\.[0-9]+)?)\""
       ],
       "datasourceTemplate": "go",
-      "depNameTemplate": "sigs.k8s.io/controller-tools"
-    },
-    {
-      "fileMatch": "(^|/|\\.)prerequisites.mk$",
-      "matchStrings": [
-        "\"sigs\\.k8s\\.io\/kustomize\/kustomize\/v4@(?<currentValue>.*?)\"\\n"
-      ],
-      "datasourceTemplate": "go",
-      "depNameTemplate": "sigs.k8s.io/kustomize/kustomize/v4"
-    },
-    {
-      "fileMatch": "(^|/|\\.)third-party-licenses.sh$",
-      "matchStrings": [
-        "go install github\\.com\/(?<depName>.*?)@(?<currentValue>.*?) &&"
-      ],
-      "datasourceTemplate": "github-releases",
-      "registryUrlTemplate": "https://github.com"
+      "depNameTemplate": "{{repository}}/{{package}}"
     }
   ],
   "packageRules": [
@@ -63,6 +32,7 @@
       "allowedVersions": "/^v[0-9]+\\.[0-9]+\\.[0-9]+(\\.[0-9]+)?$/",
       "postUpdateOptions": [ "gomodTidy" ]
     },
+    
     {
       "matchManagers": ["gomod"],
       "matchDepTypes": ["indirect"],
@@ -87,5 +57,5 @@
       "matchPackageNames": ["k8s.io/client-go"],
       "allowedVersions": "< 1.0"
     }
-  ]
+  ],
 }
