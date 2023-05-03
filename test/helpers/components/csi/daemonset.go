@@ -3,12 +3,13 @@
 package csi
 
 import (
-	"bytes"
+	// "bytes"
 	"context"
 	"testing"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/daemonset"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -45,7 +46,7 @@ func WaitForDaemonset(namespace string) features.Func {
 }
 
 func cleanUpPodConsumer(ctx context.Context, resource *resources.Resources) daemonset.PodConsumer {
-	return func(pod corev1.Pod) {
-		resource.ExecInPod(ctx, pod.Namespace, pod.Name, "server", []string{"rm", "-rf", dtcsi.DataPath}, bytes.NewBuffer([]byte{}), bytes.NewBuffer([]byte{}))
+	return func(p corev1.Pod) {
+		pod.Exec(ctx, resource, p, "server", "rm", "-rf", dtcsi.DataPath)
 	}
 }

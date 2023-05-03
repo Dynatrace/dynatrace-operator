@@ -34,5 +34,6 @@ func verifyOperatorDeployment(builder *features.FeatureBuilder, testDynakube dyn
 	builder.Assess("webhook started", webhook.WaitForDeployment(testDynakube.Namespace))
 	if testDynakube.NeedsCSIDriver() {
 		builder.Assess("csi driver started", csi.WaitForDaemonset(testDynakube.Namespace))
+		builder.Assess("csi driver file system reset", csi.CleanUpEachPod(testDynakube.Namespace))
 	}
 }
