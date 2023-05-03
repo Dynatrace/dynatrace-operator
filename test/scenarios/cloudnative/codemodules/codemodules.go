@@ -11,6 +11,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook/mutation/pod_mutator/oneagent_mutation"
@@ -81,10 +82,11 @@ func CodeModules(t *testing.T, istioEnabled bool) features.Feature {
 	appDynakube := dynakubeBuilder.Build()
 
 	namespaceBuilder := namespace.NewBuilder("codemodules-sample")
+	labels := cloudNativeDynakube.NamespaceSelector().MatchLabels
 	if istioEnabled {
-		namespaceBuilder = namespaceBuilder.WithLabels(istio.InjectionLabel)
+		labels = kubeobjects.MergeMap(labels, istio.InjectionLabel)
 	}
-	sampleNamespace := namespaceBuilder.WithLabels(cloudNativeDynakube.NamespaceSelector().MatchLabels).Build()
+	sampleNamespace := namespaceBuilder.WithLabels(labels).Build()
 	sampleApp := sampleapps.NewSampleDeployment(t, cloudNativeDynakube)
 	sampleApp.WithNamespace(sampleNamespace)
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
