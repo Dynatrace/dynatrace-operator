@@ -22,8 +22,6 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-const agentVersion = "VERSION"
-
 func specificAgentVersion(t *testing.T) features.Feature {
 	builder := features.New("cloudnative with specific agent version")
 	secretConfig := tenant.GetSingleTenantSecret(t)
@@ -44,14 +42,14 @@ func specificAgentVersion(t *testing.T) features.Feature {
 
 	// Register actual test
 	assess.InstallDynakube(builder, &secretConfig, testDynakube)
-	builder.Assess("checking version of oneagent", assessVersionChecks(builder, testDynakube))
+	builder.Assess("checking version of oneagent", assessVersionChecks(testDynakube))
 
 	updatedDynakube := testDynakube.DeepCopy()
 	updatedDynakube.Spec.OneAgent.CloudNativeFullStack.Version = newVersion.String()
 	builder.Assess("update dynakube with new agent version", dynakube.Update(*updatedDynakube))
 	builder.Assess("agents are redeploying", dynakube.WaitForDynakubePhase(*updatedDynakube, dynatracev1beta1.Deploying))
 	builder.Assess("agents redeployed successfully", dynakube.WaitForDynakubePhase(*updatedDynakube, dynatracev1beta1.Running))
-	builder.Assess("checking version of oneagent", assessVersionChecks(builder, testDynakube))
+	builder.Assess("checking version of oneagent", assessVersionChecks(testDynakube))
 
 	// Register sample, dynakube and operator uninstall
 	teardown.UninstallDynatrace(builder, testDynakube)
@@ -68,7 +66,7 @@ func getAvailableVersions(secret tenant.Secret, t *testing.T) []string {
 	return versions
 }
 
-func assessVersionChecks(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube) features.Func {
+func assessVersionChecks(testDynakube dynatracev1beta1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		daemonset, err := oneagent.Get(ctx, environmentConfig.Client().Resources(), testDynakube)
 		require.NoError(t, err)

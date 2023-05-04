@@ -53,7 +53,7 @@ func isAgentInjected(sampleApp sample.App) features.Func {
 	}
 }
 
-func classicInjected(ctx context.Context, resources *resources.Resources,sampleApp sample.App, pods []corev1.Pod) func() (done bool, err error) {
+func classicInjected(ctx context.Context, resources *resources.Resources, sampleApp sample.App, pods []corev1.Pod) func() (done bool, err error) {
 	return func() (done bool, err error) {
 		if pods == nil {
 			return false, nil

@@ -161,14 +161,14 @@ func restartHalf(t *testing.T, ctx context.Context, pods corev1.PodList, resourc
 		if i%2 == 1 {
 			continue // skip odd-indexed pods
 		}
-		require.NoError(t, resource.Delete(ctx, &podItem)) //nolint:gosec
+		require.NoError(t, resource.Delete(ctx, &podItem)) // nolint:gosec
 	}
 }
 
 func restart(t *testing.T, ctx context.Context, pods corev1.PodList, resource *resources.Resources) {
 	for _, podItem := range pods.Items {
-		require.NoError(t, resource.Delete(ctx, &podItem)) //nolint:gosec
+		require.NoError(t, resource.Delete(ctx, &podItem)) // nolint:gosec
 		require.NoError(t, wait.For(
-			conditions.New(resource).ResourceDeleted(&podItem))) //nolint:gosec
+			conditions.New(resource).ResourceDeleted(&podItem))) // nolint:gosec
 	}
 }
