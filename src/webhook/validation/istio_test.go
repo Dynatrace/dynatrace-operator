@@ -23,19 +23,7 @@ func TestNoResourcesAvailable(t *testing.T) {
 }
 
 func TestIstioEnabled(t *testing.T) {
-	// resource is enabled
-	list := &metav1.APIGroupList{
-		Groups: []metav1.APIGroup{
-			{
-				Name: "networking.istio.io",
-				Versions: []metav1.GroupVersionForDiscovery{
-					{GroupVersion: "v1alpha3", Version: "v1alpha3"},
-					{GroupVersion: "v1alpha3", Version: "v1alpha3"},
-				},
-			},
-		},
-	}
-	server := initMockServer(t, list)
+	server := initMockServer(t, true)
 	defer server.Close()
 	cfg := &restclient.Config{Host: server.URL}
 	r, e := CheckIstioInstalled(cfg)
@@ -45,19 +33,7 @@ func TestIstioEnabled(t *testing.T) {
 }
 
 func TestIstioDisabled(t *testing.T) {
-	// resource is not enabled
-	list := &metav1.APIGroupList{
-		Groups: []metav1.APIGroup{
-			{
-				Name: "not.istio.group",
-				Versions: []metav1.GroupVersionForDiscovery{
-					{GroupVersion: "v1alpha3", Version: "v1alpha3"},
-					{GroupVersion: "v1alpha3", Version: "v1alpha3"},
-				},
-			},
-		},
-	}
-	server := initMockServer(t, list)
+	server := initMockServer(t, false)
 	defer server.Close()
 	cfg := &restclient.Config{Host: server.URL}
 	r, e := CheckIstioInstalled(cfg)
@@ -67,9 +43,7 @@ func TestIstioDisabled(t *testing.T) {
 }
 
 func TestIstioWrongConfig(t *testing.T) {
-	// wrong config, we get error
-	list := &metav1.APIGroupList{}
-	server := initMockServer(t, list)
+	server := initMockServer(t, false)
 	defer server.Close()
 	cfg := &restclient.Config{Host: "localhost:1000"}
 
@@ -81,12 +55,22 @@ func TestIstioWrongConfig(t *testing.T) {
 	}
 }
 
-func initMockServer(t *testing.T, list *metav1.APIGroupList) *httptest.Server {
+func initMockServer(t *testing.T, enableIstioGVR bool) *httptest.Server {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		var resources interface{}
 		switch req.URL.Path {
-		case "/apis":
-			resources = list
+		case "/apis/networking.istio.io/v1alpha3":
+			if !enableIstioGVR {
+				w.WriteHeader(http.StatusNotFound)
+				return
+			}
+
+			resources = &metav1.APIGroup{
+				Name: "networking.istio.io",
+				Versions: []metav1.GroupVersionForDiscovery{
+					{GroupVersion: "v1alpha3", Version: "v1alpha3"},
+				},
+			}
 		default:
 			// t.Logf("unexpected request: %s", req.URL.Path)
 			w.WriteHeader(http.StatusNotFound)
