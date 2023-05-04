@@ -11,19 +11,21 @@ import (
 )
 
 var (
-	istioGVRName = "networking.istio.io"
+	IstioGVRName    = "networking.istio.io"
+	IstioGVRVersion = "v1alpha3"
+	IstioGVR        = fmt.Sprintf("%s/%s", IstioGVRName, IstioGVRVersion)
 
 	// VirtualServiceGVK => definition of virtual service GVK for oneagent
 	VirtualServiceGVK = schema.GroupVersionKind{
-		Group:   istioGVRName,
-		Version: "v1alpha3",
+		Group:   IstioGVRName,
+		Version: IstioGVRVersion,
 		Kind:    "VirtualService",
 	}
 
 	// ServiceEntryGVK => definition of virtual service GVK for oneagent
 	ServiceEntryGVK = schema.GroupVersionKind{
-		Group:   istioGVRName,
-		Version: "v1alpha3",
+		Group:   IstioGVRName,
+		Version: IstioGVRVersion,
 		Kind:    "ServiceEntry",
 	}
 )

@@ -121,7 +121,7 @@ func sendApiGroupList(w http.ResponseWriter) {
 	apiGroupList := metav1.APIGroupList{
 		Groups: []metav1.APIGroup{
 			{
-				Name: istioGVRName,
+				Name: IstioGVRName,
 			},
 		},
 	}

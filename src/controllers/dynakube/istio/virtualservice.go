@@ -83,6 +83,9 @@ func handleIstioConfigurationForVirtualService(istioConfig *configuration) (bool
 	} else if probe == kubeobjects.ProbeUnknown {
 		log.Error(err, "istio: failed to query VirtualService")
 		return false, err
+	} else if probe == kubeobjects.ProbeTypeNotFound {
+		log.Error(err, "istio: VirtualService type not found, skipping creation")
+		return false, nil
 	}
 
 	virtualService := buildVirtualService(metav1.ObjectMeta{Name: istioConfig.name, Namespace: istioConfig.instance.GetNamespace()}, istioConfig.commHost.Host, istioConfig.commHost.Protocol,

@@ -1,7 +1,6 @@
 package istio
 
 import (
-	"fmt"
 	"os"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -60,15 +59,7 @@ func (reconciler *Reconciler) initializeIstioClient(config *rest.Config) (istioc
 // Reconcile - runs the istio's reconcile workflow,
 // creating/deleting VS & SE for external communications
 func (reconciler *Reconciler) Reconcile(instance *dynatracev1beta1.DynaKube, communicationHosts []dtclient.CommunicationHost) (bool, error) {
-	enabled, err := CheckIstioEnabled(reconciler.config)
-	if err != nil {
-		return false, fmt.Errorf("istio: failed to verify Istio availability: %w", err)
-	}
-	log.Info("istio: status", "enabled", enabled)
-
-	if !enabled {
-		return false, nil
-	}
+	log.Info("istio: reconciling")
 
 	apiHost, err := dtclient.ParseEndpoint(instance.Spec.APIURL)
 	if err != nil {
@@ -139,11 +130,6 @@ func (reconciler *Reconciler) reconcileRemoveConfigurations(instance *dynatracev
 
 func (reconciler *Reconciler) reconcileCreateConfigurations(instance *dynatracev1beta1.DynaKube,
 	communicationHosts []dtclient.CommunicationHost, role string) (bool, error) {
-	crdProbe := verifyIstioCrdAvailability(instance, reconciler.config)
-	if crdProbe != kubeobjects.ProbeTypeFound {
-		log.Info("istio: failed to lookup CRD for ServiceEntry/VirtualService: Did you install Istio recently? Please restart the Operator.")
-		return false, nil
-	}
 
 	configurationUpdated := false
 	for _, commHost := range communicationHosts {
