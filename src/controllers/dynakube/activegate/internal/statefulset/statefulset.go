@@ -171,6 +171,7 @@ func (statefulSetBuilder Builder) buildBaseContainer() []corev1.Container {
 			InitialDelaySeconds: 90,
 			PeriodSeconds:       15,
 			FailureThreshold:    3,
+			TimeoutSeconds:      2,
 		},
 		SecurityContext: modifiers.GetSecurityContext(false),
 	}
