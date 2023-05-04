@@ -77,7 +77,7 @@ func handleIstioConfigurationForServiceEntry(istioConfig *configuration) (bool, 
 		log.Error(err, "istio: failed to query ServiceEntry")
 		return false, err
 	} else if probe == kubeobjects.ProbeTypeNotFound {
-		log.Error(err, "istio: service entry type not found, skipping creation")
+		log.Info("istio: service entry type not found, skipping creation")
 		return false, nil
 	}
 

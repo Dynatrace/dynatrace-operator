@@ -84,7 +84,7 @@ func handleIstioConfigurationForVirtualService(istioConfig *configuration) (bool
 		log.Error(err, "istio: failed to query VirtualService")
 		return false, err
 	} else if probe == kubeobjects.ProbeTypeNotFound {
-		log.Error(err, "istio: VirtualService type not found, skipping creation")
+		log.Info("istio: VirtualService type not found, skipping creation")
 		return false, nil
 	}
 
