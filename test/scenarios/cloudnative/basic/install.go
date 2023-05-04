@@ -43,10 +43,9 @@ func Install(t *testing.T, istioEnabled bool) features.Feature {
 		namespaceBuilder = namespaceBuilder.WithLabels(istio.InjectionLabel)
 	}
 	sampleNamespace := namespaceBuilder.Build()
-	builder.Assess("create sample namespace", namespace.Create(sampleNamespace))
-
 	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
 	sampleApp.WithNamespace(sampleNamespace)
+	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
 	// Register dynakube install
 	assess.InstallDynakube(builder, &secretConfig, testDynakube)

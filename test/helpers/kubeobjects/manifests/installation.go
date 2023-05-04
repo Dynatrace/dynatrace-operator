@@ -83,7 +83,7 @@ func uninstallFromSingleUrl(t *testing.T, ctx context.Context, environmentConfig
 }
 
 func httpGetResponseReader(url string) (io.Reader, error) {
-	response, err := http.Get(url) //nolint:gosec,bodyclose // G107: Potential HTTP request made with variable url - fine, same applies to naked `http.Get(url)`
+	response, err := http.Get(url) // nolint:gosec,bodyclose // G107: Potential HTTP request made with variable url - fine, same applies to naked `http.Get(url)`
 	if err != nil {
 		return nil, err
 	}

@@ -42,7 +42,7 @@ func (query *Query) ForEachPod(actionFunc PodConsumer) error {
 		return err
 	}
 
-	err = query.resource.List(query.ctx, &pods, resources.WithLabelSelector(labels.FormatLabels(daemonSet.Labels)))
+	err = query.resource.List(query.ctx, &pods, resources.WithLabelSelector(labels.FormatLabels(daemonSet.Spec.Selector.MatchLabels)))
 
 	if err != nil {
 		return err
