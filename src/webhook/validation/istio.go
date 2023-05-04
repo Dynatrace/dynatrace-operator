@@ -3,6 +3,7 @@ package validation
 import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/istio"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
 )
@@ -29,6 +30,9 @@ func CheckIstioInstalled(cfg *rest.Config) (bool, error) {
 	}
 
 	_, err = discoveryclient.ServerResourcesForGroupVersion(istio.IstioGVR)
+	if errors.IsNotFound(err) {
+		return false, nil
+	}
 	if err != nil {
 		return false, err
 	}
