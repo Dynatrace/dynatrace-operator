@@ -26,11 +26,11 @@ func upgrade(t *testing.T) features.Feature {
 	testDynakube := dynakubeBuilder.Build()
 
 	sampleNamespace := namespace.NewBuilder("upgrade-sample").Build()
-	builder.Assess("create sample namespace", namespace.Create(sampleNamespace))
 	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
 	sampleApp.WithNamespace(sampleNamespace)
+	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
-	assess.InstallOperatorFromRelease(builder, testDynakube, "v0.9.1")
+	assess.InstallOperatorFromRelease(builder, testDynakube, "v0.10.4")
 
 	// Register dynakube install
 	assess.InstallDynakube(builder, &secretConfig, testDynakube)

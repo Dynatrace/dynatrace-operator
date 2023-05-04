@@ -29,6 +29,7 @@ type App interface {
 	Uninstall() features.Func
 	Restart(ctx context.Context, t *testing.T, config *envconf.Config) context.Context
 	RestartHalf(ctx context.Context, t *testing.T, config *envconf.Config) context.Context
+	InstallNamespace() features.Func
 	UninstallNamespace() features.Func
 
 	Get(ctx context.Context, t *testing.T, resource *resources.Resources) client.Object
