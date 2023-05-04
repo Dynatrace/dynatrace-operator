@@ -91,7 +91,11 @@ func (statefulSetBuilder Builder) addLabels(sts *appsv1.StatefulSet) {
 }
 
 func (statefulSetBuilder Builder) buildAppLabels() *kubeobjects.AppLabels {
-	return kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, statefulSetBuilder.dynakube.Name, statefulSetBuilder.capability.ShortName(), "")
+	version := statefulSetBuilder.dynakube.Status.Synthetic.Version
+	if version == "" {
+		version = statefulSetBuilder.dynakube.Status.ActiveGate.Version
+	}
+	return kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, statefulSetBuilder.dynakube.Name, statefulSetBuilder.capability.ShortName(), version)
 }
 
 func (statefulSetBuilder Builder) addUserAnnotations(sts *appsv1.StatefulSet) {
@@ -167,6 +171,7 @@ func (statefulSetBuilder Builder) buildBaseContainer() []corev1.Container {
 			InitialDelaySeconds: 90,
 			PeriodSeconds:       15,
 			FailureThreshold:    3,
+			TimeoutSeconds:      2,
 		},
 		SecurityContext: modifiers.GetSecurityContext(false),
 	}

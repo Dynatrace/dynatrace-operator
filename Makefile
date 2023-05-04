@@ -57,8 +57,8 @@ deps: prerequisites/setup-pre-commit prerequisites/kustomize prerequisites/contr
 ## Builds the operator image and pushes it to quay with a snapshot tag
 build: images/build/push
 
-## Installs (deploys) the operator on a Kubernetes cluster
-install: deploy/kubernetes
+## Installs (deploys) the operator on a k8s/openshift cluster
+install: deploy/helm
 
 ## Installs dependencies, builds and pushes a tagged operator image, and deploys the operator on a cluster
 all: deps build install

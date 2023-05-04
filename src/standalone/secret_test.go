@@ -2,6 +2,7 @@ package standalone
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -92,5 +93,20 @@ func prepTestFs(t *testing.T) afero.Fs {
 	err = file.Close()
 	require.NoError(t, err)
 
+	return fs
+}
+
+func prepReadOnlyCSIFilesystem(t *testing.T, fs afero.Fs) afero.Fs {
+	require.NoError(t, fs.MkdirAll(getReadOnlyAgentConfMountPath(), 0770))
+
+	for i := 0; i < 10; i++ {
+		file, err := fs.OpenFile(filepath.Join(getReadOnlyAgentConfMountPath(), fmt.Sprintf("%d.conf", i)), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0444)
+		require.NoError(t, err)
+		err = file.Close()
+		require.NoError(t, err)
+	}
+	fs.Chmod(getReadOnlyAgentConfMountPath(), 0444)
+
+	require.NoError(t, fs.MkdirAll(config.AgentConfInitDirMount, 0770))
 	return fs
 }
