@@ -11,7 +11,7 @@ import (
 
 const AnnotationHash = dynatracev1beta1.InternalFlagPrefix + "template-hash"
 
-func GenerateHash(ds interface{}) (string, error) {
+func GenerateHash(ds any) (string, error) {
 	data, err := json.Marshal(ds)
 	if err != nil {
 		return "", err
@@ -26,7 +26,7 @@ func GenerateHash(ds interface{}) (string, error) {
 	return strconv.FormatUint(uint64(hasher.Sum32()), 10), nil
 }
 
-func IsDifferent(a, b interface{}) (bool, error) {
+func IsDifferent(a, b any) (bool, error) {
 	hashA, err := GenerateHash(a)
 	if err != nil {
 		return false, err

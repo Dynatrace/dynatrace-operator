@@ -93,7 +93,7 @@ func unmarshallImageIndex(fs afero.Fs, imageCacheDir string, manifestBlob []byte
 		Fs: fs,
 	}
 
-	var manifests []*manifest.OCI1 //nolint:prealloc
+	var manifests []*manifest.OCI1 // nolint:prealloc
 	for _, descriptor := range index.Manifests {
 		manifestFile, err := aferoFs.ReadFile(filepath.Join(imageCacheDir, "blobs", descriptor.Digest.Algorithm().String(), descriptor.Digest.Hex()))
 		if err != nil {

@@ -16,7 +16,7 @@ import (
 
 func initMockServer(t *testing.T, list *metav1.APIGroupList) *httptest.Server {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		var resources interface{}
+		var resources any
 		switch req.URL.Path {
 		case "/apis":
 			resources = list
