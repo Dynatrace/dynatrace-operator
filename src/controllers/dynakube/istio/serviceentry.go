@@ -71,12 +71,13 @@ func buildServiceEntryIP(meta metav1.ObjectMeta, host string, port uint32) *isti
 
 func handleIstioConfigurationForServiceEntry(istioConfig *configuration) (bool, error) {
 	probe, err := kubeobjects.KubernetesObjectProbe(ServiceEntryGVK, istioConfig.instance.GetNamespace(), istioConfig.name, istioConfig.reconciler.config)
-	if probe == kubeobjects.ProbeObjectFound {
+	switch probe {
+	case kubeobjects.ProbeObjectFound:
 		return false, nil
-	} else if probe == kubeobjects.ProbeUnknown {
+	case kubeobjects.ProbeUnknown:
 		log.Error(err, "istio: failed to query ServiceEntry")
 		return false, err
-	} else if probe == kubeobjects.ProbeTypeNotFound {
+	case kubeobjects.ProbeTypeNotFound:
 		log.Info("istio: service entry type not found, skipping creation")
 		return false, nil
 	}

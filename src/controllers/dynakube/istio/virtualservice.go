@@ -78,12 +78,13 @@ func buildVirtualServiceTLSRoute(host string, port uint32) []*istio.TLSRoute {
 
 func handleIstioConfigurationForVirtualService(istioConfig *configuration) (bool, error) {
 	probe, err := kubeobjects.KubernetesObjectProbe(VirtualServiceGVK, istioConfig.instance.GetNamespace(), istioConfig.name, istioConfig.reconciler.config)
-	if probe == kubeobjects.ProbeObjectFound {
+	switch probe {
+	case kubeobjects.ProbeObjectFound:
 		return false, nil
-	} else if probe == kubeobjects.ProbeUnknown {
+	case kubeobjects.ProbeUnknown:
 		log.Error(err, "istio: failed to query VirtualService")
 		return false, err
-	} else if probe == kubeobjects.ProbeTypeNotFound {
+	case kubeobjects.ProbeTypeNotFound:
 		log.Info("istio: VirtualService type not found, skipping creation")
 		return false, nil
 	}

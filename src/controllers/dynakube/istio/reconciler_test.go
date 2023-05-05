@@ -80,7 +80,7 @@ func TestController_ReconcileIstioGracefullyFail(t *testing.T) {
 }
 
 func testReconcileIstio(t *testing.T, enableIstioGVR bool) {
-	server := httptest.NewServer(createReconcileTestHandler(true))
+	server := httptest.NewServer(createReconcileTestHandler(enableIstioGVR))
 	defer server.Close()
 
 	serverUrl, err := url.Parse(server.URL)
