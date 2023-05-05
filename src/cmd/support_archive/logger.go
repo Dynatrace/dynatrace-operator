@@ -23,10 +23,10 @@ func newSupportArchiveLogger(out io.Writer) logr.Logger {
 	return ctrlzap.New(ctrlzap.WriteTo(out), ctrlzap.Encoder(zapcore.NewConsoleEncoder(config))).WithName(supportArchiveLoggerName)
 }
 
-func logInfof(log logr.Logger, format string, v ...interface{}) {
+func logInfof(log logr.Logger, format string, v ...any) {
 	log.Info(fmt.Sprintf(format, v...))
 }
 
-func logErrorf(log logr.Logger, err error, format string, v ...interface{}) {
+func logErrorf(log logr.Logger, err error, format string, v ...any) {
 	log.Error(err, fmt.Sprintf(format, v...))
 }

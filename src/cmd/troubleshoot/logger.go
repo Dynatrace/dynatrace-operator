@@ -47,27 +47,27 @@ func loggerNameEncoder(name string, encoder zapcore.PrimitiveArrayEncoder) {
 	encoder.AppendString(testName)
 }
 
-func logNewCheckf(log logr.Logger, format string, v ...interface{}) {
+func logNewCheckf(log logr.Logger, format string, v ...any) {
 	log.Info(prefixNewTest + fmt.Sprintf(format, v...))
 }
 
-func logNewDynakubef(log logr.Logger, format string, v ...interface{}) {
+func logNewDynakubef(log logr.Logger, format string, v ...any) {
 	log.Info(fmt.Sprintf(format, v...))
 }
 
-func logInfof(log logr.Logger, format string, v ...interface{}) {
+func logInfof(log logr.Logger, format string, v ...any) {
 	log.Info(prefixInfo + fmt.Sprintf(format, v...))
 }
 
-func logOkf(log logr.Logger, format string, v ...interface{}) {
+func logOkf(log logr.Logger, format string, v ...any) {
 	log.Info(withSuccessPrefix(fmt.Sprintf(format, v...)))
 }
 
-func logWarningf(log logr.Logger, format string, v ...interface{}) {
+func logWarningf(log logr.Logger, format string, v ...any) {
 	log.Info(withWarningPrefix(fmt.Sprintf(format, v...)))
 }
 
-func logErrorf(log logr.Logger, format string, v ...interface{}) {
+func logErrorf(log logr.Logger, format string, v ...any) {
 	log.Info(withErrorPrefix(fmt.Sprintf(format, v...)))
 }
 

@@ -603,7 +603,7 @@ func (access *SqliteAccess) GetTenantsToDynakubes(ctx context.Context) (map[stri
 
 // Executes the provided SQL statement on the database.
 // The `vars` are passed to the SQL statement (in-order), to fill in the SQL wildcards.
-func (access *SqliteAccess) executeStatement(ctx context.Context, statement string, vars ...interface{}) error {
+func (access *SqliteAccess) executeStatement(ctx context.Context, statement string, vars ...any) error {
 	_, err := access.conn.ExecContext(ctx, statement, vars...)
 	return errors.WithStack(err)
 }
@@ -612,7 +612,7 @@ func (access *SqliteAccess) executeStatement(ctx context.Context, statement stri
 // The SQL statement should always return a single row.
 // The `id` is passed to the SQL query to fill in an SQL wildcard
 // The `vars` are filled with the values of the return of the SELECT statement, so the `vars` need to be pointers.
-func (access *SqliteAccess) querySimpleStatement(ctx context.Context, statement, id string, vars ...interface{}) error {
+func (access *SqliteAccess) querySimpleStatement(ctx context.Context, statement, id string, vars ...any) error {
 	row := access.conn.QueryRowContext(ctx, statement, id)
 	err := row.Scan(vars...)
 	if err != nil && err != sql.ErrNoRows {
