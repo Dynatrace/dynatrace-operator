@@ -12,7 +12,7 @@ KUSTOMIZE=$(shell hack/build/command.sh kustomize)
 
 ## Install 'controller-gen' if it is missing
 prerequisites/controller-gen:
-	hack/build/command.sh controller-gen "sigs.k8s.io/controller-tools/cmd/controller-gen@v0.11.1"
+	hack/build/command.sh controller-gen "sigs.k8s.io/controller-tools/cmd/controller-gen@v0.12.0"
 CONTROLLER_GEN=$(shell hack/build/command.sh controller-gen)
 
 prerequisites/setup-pre-commit:
