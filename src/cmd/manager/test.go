@@ -36,7 +36,7 @@ func (mgr *TestManager) GetLogger() logr.Logger {
 	return logger.Factory.GetLogger("test-manager")
 }
 
-func (mgr *TestManager) SetFields(interface{}) error {
+func (mgr *TestManager) SetFields(any) error {
 	return nil
 }
 

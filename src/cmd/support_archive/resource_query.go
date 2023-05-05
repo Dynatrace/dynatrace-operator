@@ -88,7 +88,7 @@ func getDynakubesQueryGroup(namespace string) resourceQueryGroup {
 	}
 }
 
-func toGroupVersionKind(groupVersion schema.GroupVersion, resource interface{}) schema.GroupVersionKind {
+func toGroupVersionKind(groupVersion schema.GroupVersion, resource any) schema.GroupVersionKind {
 	typ := reflect.TypeOf(resource)
 	typ.Name()
 	gvk := schema.GroupVersionKind{

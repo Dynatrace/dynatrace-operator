@@ -128,7 +128,7 @@ func sendApiGroupList(w http.ResponseWriter) {
 	sendData(apiGroupList, w)
 }
 
-func sendData(i interface{}, w http.ResponseWriter) {
+func sendData(i any, w http.ResponseWriter) {
 	data, err := json.Marshal(i)
 
 	if err != nil {
