@@ -23,7 +23,7 @@ test/e2e/cloudnative/codemodules: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1 ./test/scenarios/cloudnative/codemodules $(SKIPCLEANUP)
 
 ## Runs CloudNative automatic injection disabled e2e test only
-test/e2e/cloudnative/disabled-auto-injection: manifests/crd/helm
+test/e2e/cloudnative/disabledautoinjection: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1 ./test/scenarios/cloudnative/disabled_auto_injection $(SKIPCLEANUP)
 
 ## Runs CloudNative install e2e test only
@@ -43,7 +43,7 @@ test/e2e/cloudnative/proxy: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1 ./test/scenarios/cloudnative/proxy $(SKIPCLEANUP)
 
 ## Runs CloudNative codemodules e2e test only
-test/e2e/cloudnative/specific_agent_version: manifests/crd/helm
+test/e2e/cloudnative/specificagentversion: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1 ./test/scenarios/cloudnative/specific_agent_version $(SKIPCLEANUP)
 
 ## Runs CloudNative upgrade e2e test only

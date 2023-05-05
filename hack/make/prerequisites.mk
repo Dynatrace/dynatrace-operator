@@ -12,13 +12,13 @@ KUSTOMIZE=$(shell hack/build/command.sh kustomize)
 
 ## Install 'controller-gen' if it is missing
 prerequisites/controller-gen:
-	hack/build/command.sh controller-gen "sigs.k8s.io/controller-tools/cmd/controller-gen@v0.11.1"
+	hack/build/command.sh controller-gen "sigs.k8s.io/controller-tools/cmd/controller-gen@v0.12.0"
 CONTROLLER_GEN=$(shell hack/build/command.sh controller-gen)
 
 prerequisites/setup-pre-commit:
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.51.1
-	go install github.com/daixiang0/gci@v0.9.1
-	go install golang.org/x/tools/cmd/goimports@v0.6.0
+	go install github.com/daixiang0/gci@v0.10.1
+	go install golang.org/x/tools/cmd/goimports@v0.8.0
 	cp ./.github/pre-commit ./.git/hooks/pre-commit
 	chmod +x ./.git/hooks/pre-commit
 

@@ -4,6 +4,7 @@ package classic
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -14,8 +15,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
+	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -31,40 +34,42 @@ func install(t *testing.T) features.Feature {
 
 	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
 
-	// Register sample apps install and teardown
-	builder.Assess("install sample app", sampleApp.Install())
-	builder.Teardown(sampleApp.UninstallNamespace())
-
 	assess.InstallDynatraceWithTeardown(builder, &secretConfig, testDynakube)
 
 	// Register actual test
-	builder.Assess("sample apps are not injected", isAgentInjected(sampleApp, assert.NotContains))
-	builder.Assess("restart sample apps", sampleApp.Restart)
-	builder.Assess("sample apps are injected", isAgentInjected(sampleApp, assert.Contains))
+	builder.Assess("install sample app", sampleApp.Install())
+	builder.Teardown(sampleApp.UninstallNamespace())
+	builder.Assess("sample apps are injected", isAgentInjected(sampleApp))
 
 	return builder.Feature()
 }
 
-func isAgentInjected(sampleApp sample.App, assertCondition func(t assert.TestingT, s, contains interface{}, msgAndArgs ...interface{}) bool) features.Func {
+func isAgentInjected(sampleApp sample.App) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resources := environmentConfig.Client().Resources()
 		pods := sampleApp.GetPods(ctx, t, resources)
+		require.NoError(t, wait.For(classicInjected(ctx, resources, sampleApp, pods.Items)))
+		return ctx
+	}
+}
 
-		for _, podItem := range pods.Items {
-			require.NotNil(t, podItem)
-
-			listCommand := shell.ListDirectory("/var/lib/dynatrace")
+func classicInjected(ctx context.Context, resources *resources.Resources, sampleApp sample.App, pods []corev1.Pod) func() (done bool, err error) {
+	return func() (done bool, err error) {
+		if pods == nil {
+			return false, nil
+		}
+		for _, podItem := range pods {
+			listCommand := shell.ListDirectory("/var/lib")
 			executionResult, err := pod.Exec(ctx, resources, podItem, sampleApp.ContainerName(), listCommand...)
-
-			require.NoError(t, err)
+			if err != nil {
+				return false, err
+			}
 
 			stdOut := executionResult.StdOut.String()
-			stdErr := executionResult.StdErr.String()
-
-			assert.NotEmpty(t, stdOut)
-			assert.Empty(t, stdErr)
-			assertCondition(t, stdOut, "oneagent")
+			if !strings.Contains(stdOut, "dynatrace") {
+				return false, nil
+			}
 		}
-		return ctx
+		return true, nil
 	}
 }

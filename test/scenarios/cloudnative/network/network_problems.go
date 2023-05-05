@@ -48,9 +48,9 @@ func networkProblems(t *testing.T) features.Feature {
 
 	namespaceBuilder := namespace.NewBuilder("network-problem-sample")
 	sampleNamespace := namespaceBuilder.Build()
-	builder.Assess("create sample namespace", namespace.Create(sampleNamespace))
 	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
 	sampleApp.WithNamespace(sampleNamespace)
+	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
 	// Register operator install
 	assess.InstallOperatorFromSource(builder, testDynakube)

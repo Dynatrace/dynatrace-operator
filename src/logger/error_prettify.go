@@ -36,7 +36,7 @@ func prettify(payload []byte) string {
 }
 
 func replaceDuplicatedStacktrace(payload []byte) ([]byte, error) {
-	var document map[string]interface{}
+	var document map[string]any
 	err := json.Unmarshal(payload, &document)
 	if err != nil {
 		// If message is not json, just Write without modification
@@ -47,7 +47,7 @@ func replaceDuplicatedStacktrace(payload []byte) ([]byte, error) {
 	return json.Marshal(document)
 }
 
-func setErrorVerboseAsStacktrace(document map[string]interface{}) map[string]interface{} {
+func setErrorVerboseAsStacktrace(document map[string]any) map[string]any {
 	errorVerbose, hasErrorVerbose := document[errorVerboseKey]
 	if hasErrorVerbose {
 		document[stacktraceKey] = errorVerbose

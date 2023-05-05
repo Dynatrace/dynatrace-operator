@@ -47,7 +47,7 @@ func checkInitContainers(sampleApp sample.App) features.Func {
 
 			for _, initContainer := range podItem.Spec.InitContainers {
 				if initContainer.Name == webhook.InstallContainerName {
-					oneAgentInstallContainer = &initContainer //nolint:gosec // loop breaks after assignment, memory aliasing is not a problem
+					oneAgentInstallContainer = &initContainer // nolint:gosec // loop breaks after assignment, memory aliasing is not a problem
 					break
 				}
 			}
