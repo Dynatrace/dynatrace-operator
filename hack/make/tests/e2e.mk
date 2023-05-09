@@ -52,7 +52,7 @@ test/e2e/cloudnative/upgrade: manifests/crd/helm
 
 ## Runs Application Monitoring e2e test only
 test/e2e/applicationmonitoring: manifests/crd/helm
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -count=1 ./test/scenarios/applicationmonitoring $(SKIPCLEANUP)
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1 ./test/scenarios/applicationmonitoring $(SKIPCLEANUP)
 
 ## Runs SupportArchive e2e test only
 test/e2e/supportarchive: manifests/crd/helm

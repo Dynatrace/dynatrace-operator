@@ -23,3 +23,7 @@ func TestApplicationMonitoring(t *testing.T) {
 func TestLabelVersionDetection(t *testing.T) {
 	testEnvironment.Test(t, labelVersionDetection(t))
 }
+
+func TestReadOnlyCSIVolume(t *testing.T) {
+	testEnvironment.Test(t, readOnlyCSIVolume(t))
+}
