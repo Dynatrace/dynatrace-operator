@@ -7,7 +7,7 @@ endif
 
 ## Installs 'kustomize' if it is missing
 prerequisites/kustomize:
-	hack/build/command.sh kustomize "sigs.k8s.io/kustomize/kustomize/v5@v5.0.2"
+	hack/build/command.sh kustomize "sigs.k8s.io/kustomize/kustomize/v5@v5.0.3"
 KUSTOMIZE=$(shell hack/build/command.sh kustomize)
 
 ## Install 'controller-gen' if it is missing
