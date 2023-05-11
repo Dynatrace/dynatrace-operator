@@ -97,6 +97,25 @@ func TestHandle(t *testing.T) {
 		// Logging newline so go test can parse the output correctly
 		log.Info("")
 	})
+	t.Run("oc debug pod", func(t *testing.T) {
+		mutator1 := createSimplePodMutatorMock()
+		dynakube := getTestDynakube()
+		ctx := context.TODO()
+		pod := getTestPod()
+		pod.Annotations = map[string]string{ocDebugAnnotationsContainer: "true", ocDebugAnnotationsResource: "true"}
+		namespace := getTestNamespace()
+		request := createTestAdmissionRequest(pod)
+		podWebhook := createTestWebhook(t, []dtwebhook.PodMutator{mutator1}, []client.Object{dynakube, pod, namespace})
+
+		response := podWebhook.Handle(ctx, *request)
+		require.NotNil(t, response)
+		assert.True(t, response.Allowed)
+		assert.NotNil(t, response.Result)
+		assert.Nil(t, response.Patches)
+		assert.Nil(t, response.Patch)
+		mutator1.(*dtwebhook.PodMutatorMock).AssertNumberOfCalls(t, "Enabled", 0)
+		mutator1.(*dtwebhook.PodMutatorMock).AssertNumberOfCalls(t, "Mutate", 0)
+	})
 }
 
 func TestHandlePodMutation(t *testing.T) {

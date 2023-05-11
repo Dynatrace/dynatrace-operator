@@ -14,6 +14,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
+const (
+	ocDebugAnnotationsContainer = "debug.openshift.io/source-container"
+	ocDebugAnnotationsResource  = "debug.openshift.io/source-resource"
+)
+
 // AddPodMutationWebhookToManager adds the Webhook server to the Manager
 func AddPodMutationWebhookToManager(mgr manager.Manager, ns string) error {
 	podName := os.Getenv(kubeobjects.EnvPodName)
@@ -55,7 +60,7 @@ func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.
 	if err != nil {
 		return silentErrorResponse(mutationRequest.Pod, err)
 	}
-	if !mutationRequired(mutationRequest) {
+	if !mutationRequired(mutationRequest) || webhook.isOcDebugPod(mutationRequest.Pod) {
 		return emptyPatch
 	}
 
@@ -100,6 +105,18 @@ func (webhook *podMutatorWebhook) isInjected(mutationRequest *dtwebhook.Mutation
 		}
 	}
 	return false
+}
+
+func (webhook *podMutatorWebhook) isOcDebugPod(pod *corev1.Pod) bool {
+	annotations := []string{ocDebugAnnotationsContainer, ocDebugAnnotationsResource}
+
+	for _, annotation := range annotations {
+		if _, ok := pod.Annotations[annotation]; !ok {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (webhook *podMutatorWebhook) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) error {
