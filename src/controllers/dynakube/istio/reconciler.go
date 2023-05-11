@@ -50,7 +50,7 @@ func NewReconciler(config *rest.Config, scheme *runtime.Scheme) *Reconciler {
 func (reconciler *Reconciler) initializeIstioClient(config *rest.Config) (istioclientset.Interface, error) {
 	ic, err := istioclientset.NewForConfig(config)
 	if err != nil {
-		log.Error(err, "istio: failed to initialize client")
+		log.Error(err, "failed to initialize client")
 	}
 
 	return ic, err
@@ -59,7 +59,7 @@ func (reconciler *Reconciler) initializeIstioClient(config *rest.Config) (istioc
 // Reconcile - runs the istio's reconcile workflow,
 // creating/deleting VS & SE for external communications
 func (reconciler *Reconciler) Reconcile(instance *dynatracev1beta1.DynaKube, communicationHosts []dtclient.CommunicationHost) (bool, error) {
-	log.Info("istio: reconciling")
+	log.Info("reconciling")
 
 	apiHost, err := dtclient.ParseEndpoint(instance.Spec.APIURL)
 	if err != nil {
@@ -68,7 +68,7 @@ func (reconciler *Reconciler) Reconcile(instance *dynatracev1beta1.DynaKube, com
 
 	upd, err := reconciler.reconcileIstioConfigurations(instance, []dtclient.CommunicationHost{apiHost}, "api-url")
 	if err != nil {
-		return false, errors.WithMessage(err, "istio: error reconciling config for Dynatrace API URL")
+		return false, errors.WithMessage(err, "error reconciling config for Dynatrace API URL")
 	} else if upd {
 		return true, nil
 	}
@@ -76,7 +76,7 @@ func (reconciler *Reconciler) Reconcile(instance *dynatracev1beta1.DynaKube, com
 	// Fetch endpoints via Dynatrace client
 	upd, err = reconciler.reconcileIstioConfigurations(instance, communicationHosts, "communication-endpoint")
 	if err != nil {
-		return false, errors.WithMessage(err, "istio: error reconciling config for Dynatrace communication endpoints:")
+		return false, errors.WithMessage(err, "error reconciling config for Dynatrace communication endpoints:")
 	} else if upd {
 		return true, nil
 	}

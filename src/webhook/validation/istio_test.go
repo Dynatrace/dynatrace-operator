@@ -26,7 +26,7 @@ func TestIstioEnabled(t *testing.T) {
 	server := initMockServer(t, true)
 	defer server.Close()
 	cfg := &restclient.Config{Host: server.URL}
-	r, e := CheckIstioInstalled(cfg)
+	r, e := checkIstioInstalled(cfg)
 	if r != true {
 		t.Error(e)
 	}
@@ -36,7 +36,7 @@ func TestIstioDisabled(t *testing.T) {
 	server := initMockServer(t, false)
 	defer server.Close()
 	cfg := &restclient.Config{Host: server.URL}
-	r, e := CheckIstioInstalled(cfg)
+	r, e := checkIstioInstalled(cfg)
 	if r != false && e == nil {
 		t.Errorf("expected false, got true, %v", e)
 	}
@@ -47,7 +47,7 @@ func TestIstioWrongConfig(t *testing.T) {
 	defer server.Close()
 	cfg := &restclient.Config{Host: "localhost:1000"}
 
-	r, e := CheckIstioInstalled(cfg)
+	r, e := checkIstioInstalled(cfg)
 	if r == false && e != nil { // only true success case
 		t.Logf("expected false and error %v", e)
 	} else {
@@ -72,7 +72,6 @@ func initMockServer(t *testing.T, enableIstioGVR bool) *httptest.Server {
 				},
 			}
 		default:
-			// t.Logf("unexpected request: %s", req.URL.Path)
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}

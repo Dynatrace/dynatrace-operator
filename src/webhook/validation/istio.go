@@ -14,7 +14,7 @@ const (
 
 func noResourcesAvailable(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	if dynakube.Spec.EnableIstio {
-		enabled, err := CheckIstioInstalled(dv.cfg)
+		enabled, err := checkIstioInstalled(dv.cfg)
 		if !enabled || err != nil {
 			return errorNoResources
 		}
@@ -23,7 +23,7 @@ func noResourcesAvailable(dv *dynakubeValidator, dynakube *dynatracev1beta1.Dyna
 	return ""
 }
 
-func CheckIstioInstalled(cfg *rest.Config) (bool, error) {
+func checkIstioInstalled(cfg *rest.Config) (bool, error) {
 	discoveryclient, err := discovery.NewDiscoveryClientForConfig(cfg)
 	if err != nil {
 		return false, err
@@ -33,9 +33,6 @@ func CheckIstioInstalled(cfg *rest.Config) (bool, error) {
 	if errors.IsNotFound(err) {
 		return false, nil
 	}
-	if err != nil {
-		return false, err
-	}
 
-	return true, nil
+	return err == nil, err
 }

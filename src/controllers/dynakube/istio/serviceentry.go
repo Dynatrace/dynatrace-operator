@@ -75,20 +75,20 @@ func handleIstioConfigurationForServiceEntry(istioConfig *configuration) (bool, 
 	case kubeobjects.ProbeObjectFound:
 		return false, nil
 	case kubeobjects.ProbeUnknown:
-		log.Error(err, "istio: failed to query ServiceEntry")
+		log.Error(err, "failed to query ServiceEntry")
 		return false, err
 	case kubeobjects.ProbeTypeNotFound:
-		log.Info("istio: service entry type not found, skipping creation")
+		log.Info("ServiceEntry type not found, skipping creation")
 		return false, nil
 	}
 
 	serviceEntry := buildServiceEntry(buildObjectMeta(istioConfig.name, istioConfig.instance.GetNamespace()), istioConfig.commHost.Host, istioConfig.commHost.Protocol, istioConfig.commHost.Port)
 	err = createIstioConfigurationForServiceEntry(istioConfig.instance, serviceEntry, istioConfig.role, istioConfig.reconciler.istioClient, istioConfig.reconciler.scheme)
 	if err != nil {
-		log.Error(err, "istio: failed to create ServiceEntry")
+		log.Error(err, "failed to create ServiceEntry")
 		return false, err
 	}
-	log.Info("istio: ServiceEntry created", "objectName", istioConfig.name, "host", istioConfig.commHost.Host, "port", istioConfig.commHost.Port)
+	log.Info("ServiceEntry created", "objectName", istioConfig.name, "host", istioConfig.commHost.Host, "port", istioConfig.commHost.Port)
 
 	return true, nil
 }
@@ -113,7 +113,7 @@ func createIstioConfigurationForServiceEntry(dynaKube *dynatracev1beta1.DynaKube
 func removeIstioConfigurationForServiceEntry(istioConfig *configuration, seen map[string]bool) (bool, error) {
 	list, err := istioConfig.reconciler.istioClient.NetworkingV1alpha3().ServiceEntries(istioConfig.instance.GetNamespace()).List(context.TODO(), *istioConfig.listOps)
 	if err != nil {
-		log.Error(err, "istio: error listing service entries")
+		log.Error(err, "error listing service entries")
 		return false, err
 	}
 
@@ -125,7 +125,7 @@ func removeIstioConfigurationForServiceEntry(istioConfig *configuration, seen ma
 				ServiceEntries(istioConfig.instance.GetNamespace()).
 				Delete(context.TODO(), se.GetName(), metav1.DeleteOptions{})
 			if err != nil {
-				log.Error(err, "istio: error deleting service entry", "name", se.GetName())
+				log.Error(err, "error deleting service entry", "name", se.GetName())
 				continue
 			}
 			del = true
