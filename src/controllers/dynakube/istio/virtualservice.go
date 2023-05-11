@@ -82,10 +82,10 @@ func handleIstioConfigurationForVirtualService(istioConfig *configuration) (bool
 	case kubeobjects.ProbeObjectFound:
 		return false, nil
 	case kubeobjects.ProbeUnknown:
-		log.Error(err, "istio: failed to query VirtualService")
+		log.Error(err, "failed to query VirtualService")
 		return false, err
 	case kubeobjects.ProbeTypeNotFound:
-		log.Info("istio: VirtualService type not found, skipping creation")
+		log.Info("VirtualService type not found, skipping creation")
 		return false, nil
 	}
 
@@ -97,10 +97,10 @@ func handleIstioConfigurationForVirtualService(istioConfig *configuration) (bool
 
 	err = createIstioConfigurationForVirtualService(istioConfig.instance, virtualService, istioConfig.role, istioConfig.reconciler.istioClient, istioConfig.reconciler.scheme)
 	if err != nil {
-		log.Error(err, "istio: failed to create VirtualService")
+		log.Error(err, "failed to create VirtualService")
 		return false, err
 	}
-	log.Info("istio: VirtualService created", "objectName", istioConfig.name, "host", istioConfig.commHost.Host,
+	log.Info("VirtualService created", "objectName", istioConfig.name, "host", istioConfig.commHost.Host,
 		"port", istioConfig.commHost.Port, "protocol", istioConfig.commHost.Protocol)
 
 	return true, nil
@@ -127,7 +127,7 @@ func createIstioConfigurationForVirtualService(dynaKube *dynatracev1beta1.DynaKu
 func removeIstioConfigurationForVirtualService(istioConfig *configuration, seen map[string]bool) (bool, error) {
 	list, err := istioConfig.reconciler.istioClient.NetworkingV1alpha3().VirtualServices(istioConfig.instance.GetNamespace()).List(context.TODO(), *istioConfig.listOps)
 	if err != nil {
-		log.Error(err, "istio: error listing virtual service")
+		log.Error(err, "error listing virtual service")
 		return false, err
 	}
 
@@ -139,7 +139,7 @@ func removeIstioConfigurationForVirtualService(istioConfig *configuration, seen 
 				VirtualServices(istioConfig.instance.GetNamespace()).
 				Delete(context.TODO(), vs.GetName(), metav1.DeleteOptions{})
 			if err != nil {
-				log.Error(err, "istio: error deleting virtual service", "name", vs.GetName())
+				log.Error(err, "error deleting virtual service", "name", vs.GetName())
 				continue
 			}
 			del = true
