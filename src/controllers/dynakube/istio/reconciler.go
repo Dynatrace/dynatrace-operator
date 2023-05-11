@@ -130,8 +130,8 @@ func (reconciler *Reconciler) reconcileRemoveConfigurations(instance *dynatracev
 
 func (reconciler *Reconciler) reconcileCreateConfigurations(instance *dynatracev1beta1.DynaKube,
 	communicationHosts []dtclient.CommunicationHost, role string) (bool, error) {
-
 	configurationUpdated := false
+
 	for _, commHost := range communicationHosts {
 		name := BuildNameForEndpoint(instance.GetName(), commHost.Protocol, commHost.Host, commHost.Port)
 		commHost := commHost
