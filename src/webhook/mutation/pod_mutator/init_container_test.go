@@ -44,6 +44,10 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 
 		require.NotNil(t, initContainer.SecurityContext.RunAsGroup)
 		assert.Equal(t, *initContainer.SecurityContext.RunAsGroup, defaultGroup)
+
+		require.NotNil(t, initContainer.SecurityContext.SeccompProfile)
+		require.NotNil(t, initContainer.SecurityContext.SeccompProfile.Type)
+		assert.Equal(t, initContainer.SecurityContext.SeccompProfile.Type, corev1.SeccompProfileTypeRuntimeDefault)
 	})
 	t.Run("should overwrite partially", func(t *testing.T) {
 		dynakube := getTestDynakube()
@@ -192,5 +196,16 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 
 		assert.False(t, kubeobjects.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "fail")
 		assert.True(t, kubeobjects.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "silent")
+	})
+	t.Run("has seccompprofile set to RuntimeDefault", func(t *testing.T) {
+		dynakube := getTestDynakube()
+		pod := getTestPod()
+		webhookImage := "test-image"
+		clusterID := "id"
+
+		initContainer := createInstallInitContainerBase(webhookImage, clusterID, pod, *dynakube)
+		require.NotNil(t, initContainer.SecurityContext.SeccompProfile)
+		require.NotNil(t, initContainer.SecurityContext.SeccompProfile.Type)
+		assert.Equal(t, initContainer.SecurityContext.SeccompProfile.Type, corev1.SeccompProfileTypeRuntimeDefault)
 	})
 }
