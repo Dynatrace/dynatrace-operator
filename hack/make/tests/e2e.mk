@@ -58,7 +58,7 @@ test/e2e/applicationmonitoring/default: manifests/crd/helm
 test/e2e/applicationmonitoring/labelversion: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)"  -count=1 ./test/scenarios/applicationmonitoring  -run ^TestLabelVersionDetection$  $(SKIPCLEANUP)
 
-## Runs Application Monitoring e2e test only
+## Runs Application Monitoring readonly csi-volume e2e test only
 test/e2e/applicationmonitoring/readonlycsivolume: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)"  -count=1 ./test/scenarios/applicationmonitoring  -run ^TestReadOnlyCSIVolume$  $(SKIPCLEANUP)
 
