@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	istio "istio.io/api/networking/v1alpha3"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	istioclientset "istio.io/client-go/pkg/clientset/versioned"
@@ -70,16 +69,9 @@ func buildServiceEntryIP(meta metav1.ObjectMeta, host string, port uint32) *isti
 }
 
 func handleIstioConfigurationForServiceEntry(istioConfig *configuration) (bool, error) {
-	probe, err := kubeobjects.KubernetesObjectProbe(ServiceEntryGVK, istioConfig.instance.GetNamespace(), istioConfig.name, istioConfig.reconciler.config)
-	switch probe {
-	case kubeobjects.ProbeObjectFound:
-		return false, nil
-	case kubeobjects.ProbeUnknown:
-		log.Error(err, "failed to query ServiceEntry")
+	needsUpdate, err := checkIstioObjectExists(istioConfig, ServiceEntryGVK)
+	if !needsUpdate {
 		return false, err
-	case kubeobjects.ProbeTypeNotFound:
-		log.Info("ServiceEntry type not found, skipping creation")
-		return false, nil
 	}
 
 	serviceEntry := buildServiceEntry(buildObjectMeta(istioConfig.name, istioConfig.instance.GetNamespace()), istioConfig.commHost.Host, istioConfig.commHost.Protocol, istioConfig.commHost.Port)
@@ -120,7 +112,7 @@ func removeIstioConfigurationForServiceEntry(istioConfig *configuration, seen ma
 	del := false
 	for _, se := range list.Items {
 		if _, inUse := seen[se.GetName()]; !inUse {
-			log.Info("istio: removing", "kind", se.Kind, "name", se.GetName())
+			log.Info("removing service entry", "kind", se.Kind, "name", se.GetName())
 			err = istioConfig.reconciler.istioClient.NetworkingV1alpha3().
 				ServiceEntries(istioConfig.instance.GetNamespace()).
 				Delete(context.TODO(), se.GetName(), metav1.DeleteOptions{})

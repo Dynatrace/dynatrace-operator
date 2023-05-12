@@ -110,37 +110,6 @@ func testReconcileIstio(t *testing.T, enableIstioGVR bool) {
 	assert.False(t, updated)
 }
 
-func TestController_ReconcileIstio2(t *testing.T) {
-	server := httptest.NewServer(createReconcileTestHandler(false))
-	defer server.Close()
-
-	serverUrl, err := url.Parse(server.URL)
-	require.NoError(t, err)
-
-	port, err := strconv.ParseUint(serverUrl.Port(), 10, 32)
-	require.NoError(t, err)
-
-	virtualService := buildVirtualService(buildObjectMeta(testVirtualServiceName, DefaultTestNamespace), "localhost", serverUrl.Scheme, uint32(port))
-	instance := &dynatracev1beta1.DynaKube{
-		Spec: dynatracev1beta1.DynaKubeSpec{
-			APIURL: serverUrl.String(),
-		},
-	}
-	reconciler := Reconciler{
-		istioClient: fakeistio.NewSimpleClientset(virtualService),
-		scheme:      scheme.Scheme,
-		config: &rest.Config{
-			Host:    server.URL,
-			APIPath: testApiPath,
-		},
-	}
-
-	updated, err := reconciler.Reconcile(instance, []dtclient.CommunicationHost{})
-
-	assert.NoError(t, err)
-	assert.False(t, updated)
-}
-
 func createReconcileTestHandler(enableIstioGVR bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/apis" {
