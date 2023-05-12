@@ -22,13 +22,10 @@ tests:
           path: metadata.name
           value: csi.oneagent.dynatrace.com
       - equal:
-          path: metadata.namespace
-          value: NAMESPACE
-      - equal:
           path: spec.attachRequired
           value: false
       - equal:
-          path: spec.podInfoMount
+          path: spec.podInfoOnMount
           value: true
       - equal:
           path: spec.volumeLifecycleModes
