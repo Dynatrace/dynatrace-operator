@@ -37,7 +37,8 @@ tests:
       platform: openshift
       csidriver.enabled: true
     asserts:
-      - equal:
-          path: metadata.labels.security.openshift.io/csi-ephemeral-volume-profile
-          value: "restricted"
+      - isSubset:
+          path: metadata.labels
+          content:
+            security.openshift.io/csi-ephemeral-volume-profile: "restricted"
 
