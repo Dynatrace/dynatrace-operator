@@ -43,7 +43,7 @@ func addVolumeMountsForReadOnlyCSI(container *corev1.Container) {
 	container.VolumeMounts = append(container.VolumeMounts,
 		corev1.VolumeMount{
 			Name:      oneagentConfVolumeName,
-			MountPath: oneAgentConfMountPath,
+			MountPath: OneAgentConfMountPath,
 		},
 		corev1.VolumeMount{
 			Name:      oneagentDataStorageVolumeName,

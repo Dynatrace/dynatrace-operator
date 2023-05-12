@@ -7,8 +7,11 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
+	"github.com/Dynatrace/dynatrace-operator/src/webhook"
+	"github.com/Dynatrace/dynatrace-operator/src/webhook/mutation/pod_mutator/oneagent_mutation"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
@@ -26,12 +29,7 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-const (
-	csiReadOnlyVolumeEnvVar = "CSI_VOLUME_READONLY"
-	initContainerName       = "install-oneagent"
-	configPath              = "/opt/dynatrace/oneagent-paas/agent/conf"
-	ruxitAgentProcFile      = "_ruxitagentproc.conf"
-)
+const ruxitAgentProcFile = "_ruxitagentproc.conf"
 
 var readOnlyInjection = map[string]string{dynatracev1beta1.AnnotationFeatureReadOnlyCsiVolume: "true"}
 
@@ -68,8 +66,8 @@ func checkInitContainerEnvVar(sampleApp sample.App) features.Func {
 		for _, podItem := range pods.Items {
 			for _, initContainer := range podItem.Spec.InitContainers {
 				require.NotEmpty(t, initContainer)
-				if initContainer.Name == initContainerName {
-					require.Equal(t, "true", kubeobjects.FindEnvVar(initContainer.Env, csiReadOnlyVolumeEnvVar).Value)
+				if initContainer.Name == webhook.InstallContainerName {
+					require.Equal(t, "true", kubeobjects.FindEnvVar(initContainer.Env, config.AgentReadonlyCSI).Value)
 				}
 			}
 		}
@@ -83,10 +81,10 @@ func checkMountedVolumes(sampleApp sample.App) features.Func {
 
 		err := deployment.NewQuery(ctx, resources, client.ObjectKey{
 			Name:      sampleApp.Name(),
-			Namespace: "sample-dynakube",
+			Namespace: sampleApp.Namespace().Name,
 		}).ForEachPod(func(podItem corev1.Pod) {
-			listCommand := shell.ListDirectory(configPath)
-			result, err := pod.Exec(ctx, resources, podItem, "sample-dynakube", listCommand...)
+			listCommand := shell.ListDirectory(oneagent_mutation.OneAgentConfMountPath)
+			result, err := pod.Exec(ctx, resources, podItem, sampleApp.Namespace().Name, listCommand...)
 
 			require.NoError(t, err)
 			assert.Contains(t, result.StdOut.String(), ruxitAgentProcFile)
