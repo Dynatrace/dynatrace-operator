@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/Dynatrace/dynatrace-operator/src/config"
+	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 )
 
@@ -52,19 +53,19 @@ func (secret SecretConfig) logContent() {
 func newSecretConfigViaFs(fs afero.Fs) (*SecretConfig, error) {
 	file, err := fs.Open(filepath.Join(config.AgentConfigDirMount, config.AgentInitSecretConfigField))
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	rawJson, err := io.ReadAll(file)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	var config SecretConfig
 
 	err = json.Unmarshal(rawJson, &config)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	log.Info("read secret from filesystem")

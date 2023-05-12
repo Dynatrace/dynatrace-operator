@@ -40,6 +40,7 @@ func TestNewEnv(t *testing.T) {
 
 		assert.True(t, env.OneAgentInjected)
 		assert.True(t, env.DataIngestInjected)
+		assert.True(t, env.IsReadOnlyCSI)
 	})
 	t.Run(`create new env for only data-ingest injection`, func(t *testing.T) {
 		resetEnv := prepDataIngestTestEnv(t, false)
@@ -116,6 +117,7 @@ func TestNewEnv(t *testing.T) {
 
 		assert.True(t, env.OneAgentInjected)
 		assert.False(t, env.DataIngestInjected)
+		assert.True(t, env.IsReadOnlyCSI)
 	})
 }
 
@@ -163,9 +165,12 @@ func prepOneAgentTestEnv(t *testing.T) func() {
 	require.NoError(t, err)
 
 	// Bool envs
-	err = os.Setenv(config.AgentInjectedEnv, "true")
+	err = os.Setenv(config.AgentInjectedEnv, trueStatement)
 	require.NoError(t, err)
 	envs = append(envs, config.AgentInjectedEnv)
+	err = os.Setenv(config.AgentReadonlyCSI, trueStatement)
+	require.NoError(t, err)
+	envs = append(envs, config.AgentReadonlyCSI)
 
 	return resetTestEnv(envs)
 }

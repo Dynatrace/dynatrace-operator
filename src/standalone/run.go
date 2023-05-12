@@ -2,6 +2,7 @@ package standalone
 
 import (
 	"fmt"
+	"path"
 	"path/filepath"
 
 	"github.com/Dynatrace/dynatrace-operator/src/arch"
@@ -137,34 +138,48 @@ func (runner *Runner) configureInstallation() error {
 	log.Info("configuring standalone OneAgent")
 
 	if runner.env.OneAgentInjected {
-		log.Info("setting ld.so.preload")
-		if err := runner.setLDPreload(); err != nil {
-			return errors.WithStack(err)
-		}
-
-		log.Info("creating container configuration files")
-		if err := runner.createContainerConfigurationFiles(); err != nil {
-			return errors.WithStack(err)
-		}
-
-		if runner.config.TlsCert != "" {
-			log.Info("propagating tls cert to agent")
-			if err := runner.propagateTLSCert(); err != nil {
-				return errors.WithStack(err)
-			}
-		}
-
-		if runner.config.InitialConnectRetry > -1 {
-			log.Info("creating curl options file")
-			if err := runner.createCurlOptionsFile(); err != nil {
-				return errors.WithStack(err)
-			}
+		if err := runner.configureOneAgent(); err != nil {
+			return err
 		}
 	}
 	if runner.env.DataIngestInjected {
 		log.Info("creating enrichment files")
 		if err := runner.enrichMetadata(); err != nil {
-			return errors.WithStack(err)
+			return err
+		}
+	}
+	return nil
+}
+
+func (runner *Runner) configureOneAgent() error {
+	log.Info("setting ld.so.preload")
+	if err := runner.setLDPreload(); err != nil {
+		return err
+	}
+
+	log.Info("creating container configuration files")
+	if err := runner.createContainerConfigurationFiles(); err != nil {
+		return err
+	}
+
+	if runner.config.TlsCert != "" {
+		log.Info("propagating tls cert to agent")
+		if err := runner.propagateTLSCert(); err != nil {
+			return err
+		}
+	}
+
+	if runner.config.InitialConnectRetry > -1 {
+		log.Info("creating curl options file")
+		if err := runner.createCurlOptionsFile(); err != nil {
+			return err
+		}
+	}
+	if runner.env.IsReadOnlyCSI {
+		log.Info("readOnly CSI detected, copying agent conf to empty-dir")
+		err := copyFolder(runner.fs, getReadOnlyAgentConfMountPath(), config.AgentConfInitDirMount)
+		if err != nil {
+			return err
 		}
 	}
 	return nil
@@ -206,4 +221,8 @@ func (runner *Runner) enrichMetadata() error {
 
 func (runner *Runner) propagateTLSCert() error {
 	return runner.createConfFile(filepath.Join(config.AgentShareDirMount, "custom.pem"), runner.config.TlsCert)
+}
+
+func getReadOnlyAgentConfMountPath() string {
+	return path.Join(config.AgentBinDirMount, "agent/conf")
 }

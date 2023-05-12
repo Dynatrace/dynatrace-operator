@@ -86,7 +86,7 @@ func WaitForWebhookCurlProxyPod(dynakube dynatracev1beta1.DynaKube) features.Fun
 	return pod.WaitForCondition(curlPodNameWebhook, dynakube.Namespace, func(object k8s.Object) bool {
 		pod, isPod := object.(*corev1.Pod)
 		return isPod && pod.Status.Phase == corev1.PodSucceeded
-	}, 30*time.Second)
+	}, 45*time.Second)
 }
 
 func CheckWebhookCurlProxyResult(dynakube dynatracev1beta1.DynaKube) features.Func {

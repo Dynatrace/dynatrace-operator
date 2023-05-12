@@ -10,6 +10,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/replicaset"
 	sample "github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/base"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -81,7 +82,9 @@ func (app SampleDeployment) Get(ctx context.Context, t *testing.T, resource *res
 }
 
 func (app SampleDeployment) GetPods(ctx context.Context, t *testing.T, resource *resources.Resources) corev1.PodList {
-	return pod.GetPodsForOwner(ctx, t, resource, app.Name(), app.Namespace().Name)
+	replicaset := replicaset.GetReplicaSetsForOwner(ctx, t, resource, app.Name(), app.Namespace().Name)
+	require.NotNil(t, replicaset)
+	return pod.GetPodsForOwner(ctx, t, resource, replicaset.Name, app.Namespace().Name)
 }
 
 func (app SampleDeployment) RestartHalf(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {

@@ -265,6 +265,15 @@ func TestAddTemplateSpec(t *testing.T) {
 
 		assert.Equal(t, testTopologyConstraint, sts.Spec.Template.Spec.TopologySpreadConstraints)
 	})
+	t.Run("default readinessProbe timeout is 2s", func(t *testing.T) {
+		dynakube := getTestDynakube()
+		multiCapability := capability.NewMultiCapability(&dynakube)
+		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dynakube, multiCapability)
+		sts, err := builder.CreateStatefulSet(nil)
+		require.NoError(t, err)
+
+		assert.Equal(t, int32(2), sts.Spec.Template.Spec.Containers[0].ReadinessProbe.TimeoutSeconds)
+	})
 }
 
 func TestBuildBaseContainer(t *testing.T) {

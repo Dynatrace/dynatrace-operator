@@ -19,8 +19,8 @@ RUN CGO_ENABLED=1 CGO_CFLAGS="-O2 -Wno-return-local-addr" \
     go build -tags "${GO_BUILD_TAGS}" -trimpath -ldflags="${GO_LINKER_ARGS}" \
     -o ./build/_output/bin/dynatrace-operator ./src/cmd/
 
-FROM registry.access.redhat.com/ubi9-micro:9.1.0 AS base
-FROM registry.access.redhat.com/ubi9:9.1.0 AS dependency
+FROM registry.access.redhat.com/ubi9-micro:9.1.0@sha256:9fc815c51e62b33e4ff3225242ca2236ca4d6fcc3474e3b7e3004fea8924f8fd AS base
+FROM registry.access.redhat.com/ubi9:9.1.0@sha256:49124e4acd09c98927882760476d617a85f155cb45759aea56b2ab020563c4b8 AS dependency
 RUN mkdir -p /tmp/rootfs-dependency
 COPY --from=base / /tmp/rootfs-dependency
 RUN dnf install --installroot /tmp/rootfs-dependency \
@@ -42,8 +42,8 @@ COPY --from=dependency /tmp/rootfs-dependency /
 COPY --from=operator-build /app/build/_output/bin /usr/local/bin
 
 # csi binaries
-COPY --from=registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.7.0@sha256:4a4cae5118c4404e35d66059346b7fa0835d7e6319ff45ed73f4bba335cf5183 /csi-node-driver-registrar /usr/local/bin
-COPY --from=registry.k8s.io/sig-storage/livenessprobe:v2.9.0@sha256:2b10b24dafdc3ba94a03fc94d9df9941ca9d6a9207b927f5dfd21d59fbe05ba0 /livenessprobe /usr/local/bin
+COPY --from=registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.8.0@sha256:f6717ce72a2615c7fbc746b4068f788e78579c54c43b8716e5ce650d97af2df1 /csi-node-driver-registrar /usr/local/bin
+COPY --from=registry.k8s.io/sig-storage/livenessprobe:v2.10.0@sha256:4dc0b87ccd69f9865b89234d8555d3a614ab0a16ed94a3016ffd27f8106132ce /livenessprobe /usr/local/bin
 
 COPY ./third_party_licenses /usr/share/dynatrace-operator/third_party_licenses
 COPY LICENSE /licenses/

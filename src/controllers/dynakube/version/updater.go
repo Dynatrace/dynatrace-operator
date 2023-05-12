@@ -24,7 +24,7 @@ type versionStatusUpdater interface {
 	CheckForDowngrade(latestVersion string) (bool, error)
 	LatestImageInfo() (*dtclient.LatestImageInfo, error)
 
-	UseDefaults(context.Context, *dockerconfig.DockerConfig) error
+	UseTenantRegistry(context.Context, *dockerconfig.DockerConfig) error
 }
 
 func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpdater, dockerCfg *dockerconfig.DockerConfig) error {
@@ -40,7 +40,7 @@ func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpda
 	customImage := updater.CustomImage()
 	if customImage != "" {
 		log.Info("updating version status according to custom image", "updater", updater.Name())
-		err = updateVersionStatus(ctx, updater.Target(), customImage, reconciler.digestFunc, dockerCfg)
+		err = setImageIDWithDigest(ctx, updater.Target(), customImage, reconciler.versionFunc, dockerCfg)
 		return err
 	}
 
@@ -68,7 +68,7 @@ func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpda
 			return err
 		}
 
-		err = updateVersionStatus(ctx, updater.Target(), publicImage.String(), reconciler.digestFunc, dockerCfg)
+		err = setImageIDWithDigest(ctx, updater.Target(), publicImage.String(), reconciler.versionFunc, dockerCfg)
 		if err != nil {
 			log.Info("could not update version status according to the public registry", "updater", updater.Name())
 			return err
@@ -77,7 +77,7 @@ func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpda
 	}
 
 	log.Info("updating version status according to the tenant registry", "updater", updater.Name())
-	err = updater.UseDefaults(ctx, dockerCfg)
+	err = updater.UseTenantRegistry(ctx, dockerCfg)
 	return err
 }
 
@@ -94,11 +94,11 @@ func determineSource(updater versionStatusUpdater) dynatracev1beta1.VersionSourc
 	return dynatracev1beta1.TenantRegistryVersionSource
 }
 
-func updateVersionStatus(
+func setImageIDWithDigest(
 	ctx context.Context,
 	target *dynatracev1beta1.VersionStatus,
 	imageUri string,
-	digestFunc ImageDigestFunc,
+	imageVersionFunc ImageVersionFunc,
 	dockerCfg *dockerconfig.DockerConfig,
 ) error {
 	ref, err := reference.Parse(imageUri)
@@ -113,12 +113,12 @@ func updateVersionStatus(
 	if canonRef, ok := ref.(reference.Canonical); ok {
 		target.ImageID = canonRef.String()
 	} else if taggedRef, ok := ref.(reference.NamedTagged); ok {
-		digest, err := digestFunc(ctx, imageUri, dockerCfg)
+		imageVersion, err := imageVersionFunc(ctx, imageUri, dockerCfg)
 		if err != nil {
 			target.ImageID = taggedRef.String()
 			log.Error(err, "failed to get image digest, falling back to tag")
 		} else {
-			canonRef, err := reference.WithDigest(taggedRef, digest)
+			canonRef, err := reference.WithDigest(taggedRef, imageVersion.Digest)
 			if err != nil {
 				target.ImageID = taggedRef.String()
 				log.Error(err, "failed to create canonical image reference, falling back to tag")
@@ -136,6 +136,39 @@ func updateVersionStatus(
 	// Version will be set elsewhere, as it differs between modes
 	// unset is necessary so we have a consistent status
 	target.Version = ""
+	return nil
+}
+
+func updateVersionStatusForTenantRegistry(
+	ctx context.Context,
+	target *dynatracev1beta1.VersionStatus,
+	imageUri string,
+	imageVersionFunc ImageVersionFunc,
+	dockerCfg *dockerconfig.DockerConfig,
+) error {
+	ref, err := reference.Parse(imageUri)
+	if err != nil {
+		return errors.WithMessage(err, "failed to parse image uri")
+	}
+
+	log.Info("updating image version info for tenant registry image",
+		"image", imageUri,
+		"oldImageID", target.ImageID,
+		"oldVersion", target.Version)
+
+	if taggedRef, ok := ref.(reference.NamedTagged); ok {
+		imageVersion, err := imageVersionFunc(ctx, imageUri, dockerCfg)
+		if err != nil {
+			log.Error(err, "failed to determine image version, ignoring version")
+		}
+		target.ImageID = taggedRef.String()
+		target.Version = imageVersion.Version
+	}
+
+	log.Info("updated image version info for tenant registry image",
+		"newImageID", target.ImageID,
+		"newVersion", target.Version)
+
 	return nil
 }
 

@@ -14,25 +14,41 @@ test/e2e/activegate: manifests/crd/helm
 test/e2e/activegate/proxy: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1 ./test/scenarios/activegate/proxy $(SKIPCLEANUP)
 
-## Runs CloudNative e2e test only
-test/e2e/cloudnative: manifests/crd/helm
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 30m -count=1 ./test/scenarios/cloudnative/basic $(SKIPCLEANUP)
-
 ## Runs ClassicFullStack e2e test only
 test/e2e/classic: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1 ./test/scenarios/classic $(SKIPCLEANUP)
+
+## Runs CloudNative codemodules e2e test only
+test/e2e/cloudnative/codemodules: manifests/crd/helm
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1 ./test/scenarios/cloudnative/codemodules $(SKIPCLEANUP)
+
+## Runs CloudNative automatic injection disabled e2e test only
+test/e2e/cloudnative/disabledautoinjection: manifests/crd/helm
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1 ./test/scenarios/cloudnative/disabled_auto_injection $(SKIPCLEANUP)
+
+## Runs CloudNative install e2e test only
+test/e2e/cloudnative/install: manifests/crd/helm
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1 ./test/scenarios/cloudnative/basic $(SKIPCLEANUP)
 
 ## Runs CloudNative istio e2e test only
 test/e2e/cloudnative/istio: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1 ./test/scenarios/cloudnative/istio $(SKIPCLEANUP)
 
+## Runs CloudNative network problem e2e test only
+test/e2e/cloudnative/network: manifests/crd/helm
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1 ./test/scenarios/cloudnative/network $(SKIPCLEANUP)
+
 ## Runs CloudNative proxy e2e test only
 test/e2e/cloudnative/proxy: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1 ./test/scenarios/cloudnative/proxy $(SKIPCLEANUP)
 
-## Runs CloudNative network problem e2e test only
-test/e2e/cloudnative/network: manifests/crd/helm
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1 ./test/scenarios/cloudnative/network $(SKIPCLEANUP)
+## Runs CloudNative codemodules e2e test only
+test/e2e/cloudnative/specificagentversion: manifests/crd/helm
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1 ./test/scenarios/cloudnative/specific_agent_version $(SKIPCLEANUP)
+
+## Runs CloudNative upgrade e2e test only
+test/e2e/cloudnative/upgrade: manifests/crd/helm
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1 ./test/scenarios/cloudnative/upgrade $(SKIPCLEANUP)
 
 ## Runs Application Monitoring default e2e test only
 test/e2e/applicationmonitoring/default: manifests/crd/helm

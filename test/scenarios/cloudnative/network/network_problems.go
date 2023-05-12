@@ -1,6 +1,6 @@
 //go:build e2e
 
-package cloudnative
+package network
 
 import (
 	"context"
@@ -17,6 +17,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/Dynatrace/dynatrace-operator/test/project"
+	"github.com/Dynatrace/dynatrace-operator/test/scenarios/cloudnative"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
@@ -32,14 +33,14 @@ var (
 	csiNetworkPolicy = path.Join(project.TestDataDir(), "network/csi-denial.yaml")
 )
 
-func NetworkProblems(t *testing.T) features.Feature {
+func networkProblems(t *testing.T) features.Feature {
 	builder := features.New("creating network problems")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
 	testDynakube := dynakube.NewBuilder().
 		WithDefaultObjectMeta().
 		ApiUrl(secretConfig.ApiUrl).
-		CloudNative(defaultCloudNativeSpec()).
+		CloudNative(cloudnative.DefaultCloudNativeSpec()).
 		WithAnnotations(map[string]string{
 			"feature.dynatrace.com/max-csi-mount-attempts": "2",
 		}).
@@ -49,6 +50,7 @@ func NetworkProblems(t *testing.T) features.Feature {
 	sampleNamespace := namespaceBuilder.Build()
 	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
 	sampleApp.WithNamespace(sampleNamespace)
+	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
 	// Register operator install
 	assess.InstallOperatorFromSource(builder, testDynakube)

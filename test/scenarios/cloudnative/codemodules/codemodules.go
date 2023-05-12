@@ -1,6 +1,6 @@
 //go:build e2e
 
-package cloudnative
+package codemodules
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook/mutation/pod_mutator/oneagent_mutation"
@@ -28,6 +29,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
+	"github.com/Dynatrace/dynatrace-operator/test/scenarios/cloudnative"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -80,12 +82,14 @@ func CodeModules(t *testing.T, istioEnabled bool) features.Feature {
 	appDynakube := dynakubeBuilder.Build()
 
 	namespaceBuilder := namespace.NewBuilder("codemodules-sample")
+	labels := cloudNativeDynakube.NamespaceSelector().MatchLabels
 	if istioEnabled {
-		namespaceBuilder = namespaceBuilder.WithLabels(istio.InjectionLabel)
+		labels = kubeobjects.MergeMap(labels, istio.InjectionLabel)
 	}
-	sampleNamespace := namespaceBuilder.WithLabels(cloudNativeDynakube.NamespaceSelector().MatchLabels).Build()
+	sampleNamespace := namespaceBuilder.WithLabels(labels).Build()
 	sampleApp := sampleapps.NewSampleDeployment(t, cloudNativeDynakube)
 	sampleApp.WithNamespace(sampleNamespace)
+	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
 	// Register operator install
 	operatorNamespaceBuilder := namespace.NewBuilder(cloudNativeDynakube.Namespace)
@@ -101,7 +105,7 @@ func CodeModules(t *testing.T, istioEnabled bool) features.Feature {
 	builder.Assess("install sample app", sampleApp.Install())
 
 	// Register actual test
-	assessSampleInitContainers(builder, sampleApp)
+	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 	if istioEnabled {
 		istio.AssessIstio(builder, cloudNativeDynakube, sampleApp)
 	}

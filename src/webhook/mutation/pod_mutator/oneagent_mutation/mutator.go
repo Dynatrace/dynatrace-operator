@@ -62,13 +62,6 @@ func (mutator *OneAgentPodMutator) Reinvoke(request *dtwebhook.ReinvocationReque
 	return mutator.reinvokeUserContainers(request)
 }
 
-func (mutator *OneAgentPodMutator) getVolumeMode(dynakube dynatracev1beta1.DynaKube) string {
-	if dynakube.NeedsCSIDriver() {
-		return string(config.AgentCsiMode)
-	}
-	return string(config.AgentInstallerMode)
-}
-
 func (mutator *OneAgentPodMutator) ensureInitSecret(request *dtwebhook.MutationRequest) error {
 	var initSecret corev1.Secret
 	secretObjectKey := client.ObjectKey{Name: config.AgentInitSecretName, Namespace: request.Namespace.Name}
@@ -94,4 +87,11 @@ func containerIsInjected(container *corev1.Container) bool {
 		}
 	}
 	return false
+}
+
+func getVolumeMode(dynakube dynatracev1beta1.DynaKube) string {
+	if dynakube.NeedsCSIDriver() {
+		return string(config.AgentCsiMode)
+	}
+	return string(config.AgentInstallerMode)
 }

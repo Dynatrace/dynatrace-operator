@@ -25,3 +25,12 @@ func ResolvePlatformFromEnv() Platform {
 		return Kubernetes
 	}
 }
+
+func GetPlatformFromEnv() string {
+	switch os.Getenv(platformEnvName) {
+	case openshiftPlatformEnvValue:
+		return openshiftPlatformEnvValue
+	default:
+		return kubernetesPlatformEnvValue
+	}
+}

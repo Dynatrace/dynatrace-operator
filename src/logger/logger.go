@@ -28,7 +28,7 @@ func newLogger() logr.Logger {
 
 func (dtl logSink) Init(logr.RuntimeInfo) {}
 
-func (dtl logSink) Info(_ int, msg string, keysAndValues ...interface{}) {
+func (dtl logSink) Info(_ int, msg string, keysAndValues ...any) {
 	dtl.infoLogger.Info(msg, keysAndValues...)
 }
 
@@ -36,11 +36,11 @@ func (dtl logSink) Enabled(int) bool {
 	return dtl.infoLogger.Enabled()
 }
 
-func (dtl logSink) Error(err error, msg string, keysAndValues ...interface{}) {
+func (dtl logSink) Error(err error, msg string, keysAndValues ...any) {
 	dtl.errorLogger.Error(err, msg, keysAndValues...)
 }
 
-func (dtl logSink) WithValues(keysAndValues ...interface{}) logr.LogSink {
+func (dtl logSink) WithValues(keysAndValues ...any) logr.LogSink {
 	return logSink{
 		infoLogger:  dtl.infoLogger.WithValues(keysAndValues...),
 		errorLogger: dtl.errorLogger.WithValues(keysAndValues...),

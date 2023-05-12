@@ -12,6 +12,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/arch"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
@@ -358,25 +359,34 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 		mockDtcBuilder := &dynatraceclient.StubBuilder{
 			DynatraceClient: mockClient,
 		}
+		dynakube := &dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: dkName,
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: testAPIURL,
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
+				},
+			},
+		}
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
-				&dynatracev1beta1.DynaKube{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: dkName,
-					},
-					Spec: dynatracev1beta1.DynaKubeSpec{
-						APIURL: testAPIURL,
-						OneAgent: dynatracev1beta1.OneAgentSpec{
-							ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
-						},
-					},
-				},
+				dynakube,
 				&v1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dkName,
 					},
 					Data: map[string][]byte{
 						dtclient.DynatraceApiToken: []byte("api-token"),
+					},
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: dynakube.OneagentTenantSecret(),
+					},
+					Data: map[string][]byte{
+						connectioninfo.TenantTokenName: []byte("tenant-token"),
 					},
 				},
 			),
@@ -480,25 +490,36 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 		mockDtcBuilder := &dynatraceclient.StubBuilder{
 			DynatraceClient: mockClient,
 		}
+
+		dynakube := &dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: dkName,
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: testAPIURL,
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
+				},
+			},
+		}
+
 		r := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
-				&dynatracev1beta1.DynaKube{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: dkName,
-					},
-					Spec: dynatracev1beta1.DynaKubeSpec{
-						APIURL: testAPIURL,
-						OneAgent: dynatracev1beta1.OneAgentSpec{
-							ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
-						},
-					},
-				},
+				dynakube,
 				&v1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dkName,
 					},
 					Data: map[string][]byte{
 						dtclient.DynatraceApiToken: []byte("api-token"),
+					},
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: dynakube.OneagentTenantSecret(),
+					},
+					Data: map[string][]byte{
+						connectioninfo.TenantTokenName: []byte("tenant-token"),
 					},
 				},
 			),

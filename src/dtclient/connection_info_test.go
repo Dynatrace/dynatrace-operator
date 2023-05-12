@@ -22,7 +22,7 @@ func Test_GetActiveGateConnectionInfo(t *testing.T) {
 		TenantToken:            testTenantToken,
 		CommunicationEndpoints: testEndpoint,
 	}
-	expectedActivegateConnectionInfo := &ActiveGateConnectionInfo{
+	expectedActivegateConnectionInfo := ActiveGateConnectionInfo{
 		ConnectionInfo: ConnectionInfo{
 			TenantUUID:  testTenantUUID,
 			TenantToken: testTenantToken,
@@ -65,9 +65,10 @@ func Test_GetActiveGateConnectionInfo(t *testing.T) {
 
 		connectionInfo, err := faultyDynatraceClient.GetActiveGateConnectionInfo()
 		assert.Error(t, err)
-		assert.Nil(t, connectionInfo)
-
 		assert.Equal(t, "invalid character 'h' in literal true (expecting 'r')", err.Error())
+
+		assert.NotNil(t, connectionInfo)
+		assert.Equal(t, ActiveGateConnectionInfo{}, connectionInfo)
 	})
 	t.Run("handle internal server error", func(t *testing.T) {
 		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceServer(t, tenantInternalServerError(activeGateConnectionInfoEndpoint), "")
@@ -75,7 +76,8 @@ func Test_GetActiveGateConnectionInfo(t *testing.T) {
 
 		connectionInfo, err := faultyDynatraceClient.GetActiveGateConnectionInfo()
 		assert.Error(t, err)
-		assert.Nil(t, connectionInfo)
+		assert.NotNil(t, connectionInfo)
+		assert.Equal(t, ActiveGateConnectionInfo{}, connectionInfo)
 
 		assert.Equal(t, "dynatrace server error 500: error retrieving tenant info", err.Error())
 	})

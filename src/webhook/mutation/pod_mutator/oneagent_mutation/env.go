@@ -3,6 +3,7 @@ package oneagent_mutation
 import (
 	"fmt"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -80,14 +81,15 @@ func addProxyEnv(container *corev1.Container) {
 		})
 }
 
-func addInstallerInitEnvs(initContainer *corev1.Container, installer installerInfo, volumeMode string) {
+func addInstallerInitEnvs(initContainer *corev1.Container, installer installerInfo, dynakube dynatracev1beta1.DynaKube) {
 	initContainer.Env = append(initContainer.Env,
 		corev1.EnvVar{Name: config.AgentInstallerFlavorEnv, Value: installer.flavor},
 		corev1.EnvVar{Name: config.AgentInstallerTechEnv, Value: installer.technologies},
 		corev1.EnvVar{Name: config.AgentInstallPathEnv, Value: installer.installPath},
 		corev1.EnvVar{Name: config.AgentInstallerUrlEnv, Value: installer.installerURL},
 		corev1.EnvVar{Name: config.AgentInstallerVersionEnv, Value: installer.version},
-		corev1.EnvVar{Name: config.AgentInstallModeEnv, Value: volumeMode},
+		corev1.EnvVar{Name: config.AgentInstallModeEnv, Value: getVolumeMode(dynakube)},
+		corev1.EnvVar{Name: config.AgentReadonlyCSI, Value: strconv.FormatBool(dynakube.FeatureReadOnlyCsiVolume())},
 		corev1.EnvVar{Name: config.AgentInjectedEnv, Value: "true"},
 	)
 }

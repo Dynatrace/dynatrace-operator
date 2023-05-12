@@ -62,7 +62,7 @@ type Client interface {
 	GetTokenScopes(token string) (TokenScopes, error)
 
 	// GetActiveGateConnectionInfo returns AgentTenantInfo for ActiveGate that holds UUID, Tenant Token and Endpoints
-	GetActiveGateConnectionInfo() (*ActiveGateConnectionInfo, error)
+	GetActiveGateConnectionInfo() (ActiveGateConnectionInfo, error)
 
 	// CreateOrUpdateKubernetesSetting returns the object id of the created k8s settings if successful, or an api error otherwise
 	CreateOrUpdateKubernetesSetting(name, kubeSystemUUID, scope string) (string, error)
