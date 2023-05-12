@@ -30,7 +30,7 @@ func NewImageInstaller(fs afero.Fs, props *Properties) (*Installer, error) {
 	}
 	canonRef, ok := ref.(reference.Canonical)
 	if !ok {
-		return nil, errors.New("unexpected type of image reference provided to image installer")
+		return nil, errors.Errorf("unexpected type of image reference provided to image installer, expected reference with digest but received %s", props.ImageUri)
 	}
 	return &Installer{
 		fs:          fs,
