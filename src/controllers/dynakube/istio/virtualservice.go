@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	istio "istio.io/api/networking/v1alpha3"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	istioclientset "istio.io/client-go/pkg/clientset/versioned"
@@ -77,16 +76,9 @@ func buildVirtualServiceTLSRoute(host string, port uint32) []*istio.TLSRoute {
 }
 
 func handleIstioConfigurationForVirtualService(istioConfig *configuration) (bool, error) {
-	probe, err := kubeobjects.KubernetesObjectProbe(VirtualServiceGVK, istioConfig.instance.GetNamespace(), istioConfig.name, istioConfig.reconciler.config)
-	switch probe {
-	case kubeobjects.ProbeObjectFound:
-		return false, nil
-	case kubeobjects.ProbeUnknown:
-		log.Error(err, "failed to query VirtualService")
+	needsUpdate, err := checkIstioObjectExists(istioConfig, VirtualServiceGVK)
+	if !needsUpdate {
 		return false, err
-	case kubeobjects.ProbeTypeNotFound:
-		log.Info("VirtualService type not found, skipping creation")
-		return false, nil
 	}
 
 	virtualService := buildVirtualService(metav1.ObjectMeta{Name: istioConfig.name, Namespace: istioConfig.instance.GetNamespace()}, istioConfig.commHost.Host, istioConfig.commHost.Protocol,
@@ -134,7 +126,7 @@ func removeIstioConfigurationForVirtualService(istioConfig *configuration, seen 
 	del := false
 	for _, vs := range list.Items {
 		if _, inUse := seen[vs.GetName()]; !inUse {
-			log.Info("istio: removing", "kind", vs.Kind, "name", vs.GetName())
+			log.Info("removing virtual service", "kind", vs.Kind, "name", vs.GetName())
 			err = istioConfig.reconciler.istioClient.NetworkingV1alpha3().
 				VirtualServices(istioConfig.instance.GetNamespace()).
 				Delete(context.TODO(), vs.GetName(), metav1.DeleteOptions{})

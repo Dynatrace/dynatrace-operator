@@ -3,8 +3,6 @@ package kubeobjects
 import (
 	"context"
 
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/rest"
@@ -22,7 +20,7 @@ const (
 )
 
 func KubernetesObjectProbe(gvk schema.GroupVersionKind,
-	namespace string, name string, config *rest.Config) (ProbeResult, error) {
+	namespace string, name string, config *rest.Config) error {
 	var objQuery unstructured.Unstructured
 	objQuery.Object = make(map[string]any)
 
@@ -30,7 +28,7 @@ func KubernetesObjectProbe(gvk schema.GroupVersionKind,
 
 	runtimeClient, err := client.New(config, client.Options{})
 	if err != nil {
-		return ProbeUnknown, err
+		return err
 	}
 	if name == "" {
 		err = runtimeClient.List(context.TODO(), &objQuery, client.InNamespace(namespace))
@@ -38,19 +36,5 @@ func KubernetesObjectProbe(gvk schema.GroupVersionKind,
 		err = runtimeClient.Get(context.TODO(), client.ObjectKey{Namespace: namespace, Name: name}, &objQuery)
 	}
 
-	return MapErrorToObjectProbeResult(err)
-}
-
-func MapErrorToObjectProbeResult(err error) (ProbeResult, error) {
-	if err != nil {
-		if errors.IsNotFound(err) {
-			return ProbeObjectNotFound, err
-		} else if meta.IsNoMatchError(err) {
-			return ProbeTypeNotFound, err
-		}
-
-		return ProbeUnknown, err
-	}
-
-	return ProbeObjectFound, nil
+	return err
 }
