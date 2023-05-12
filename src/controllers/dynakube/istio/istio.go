@@ -72,4 +72,3 @@ func checkIstioObjectExists(istioConfig *configuration, gvkName schema.GroupVers
 	}
 	return false, err
 }
-
