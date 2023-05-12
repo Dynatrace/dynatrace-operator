@@ -45,16 +45,6 @@ func withoutCSIDriver(t *testing.T) features.Feature {
 
 	appOnlyDynakube := dynakubeBuilder.Build()
 
-	dynakubeBuilder = dynakube.NewBuilder().
-		WithDefaultObjectMeta().
-		Name("appmon-sample").
-		WithDynakubeNamespaceSelector().
-		ApiUrl(secretConfig.ApiUrl).
-		ApplicationMonitoring(&dynatracev1beta1.ApplicationMonitoringSpec{
-			UseCSIDriver: address.Of(false),
-		})
-	appDynakube := dynakubeBuilder.Build()
-
 	namespaceBuilder := namespace.NewBuilder(sampleAppNamespace)
 
 	sampleNamespace := namespaceBuilder.WithLabels(appOnlyDynakube.NamespaceSelector().MatchLabels).Build()
@@ -66,23 +56,22 @@ func withoutCSIDriver(t *testing.T) features.Feature {
 	assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), appOnlyDynakube)
 
 	assess.InstallDynakubeWithTeardown(builder, &secretConfig, appOnlyDynakube)
-	assess.InstallDynakubeWithTeardown(builder, &secretConfig, appDynakube)
 	builder.Assess("install sample app", sampleApp.Install())
 
-	podSample := sampleapps.NewSampleDeployment(t, appDynakube)
+	podSample := sampleapps.NewSampleDeployment(t, appOnlyDynakube)
 	podSample.WithName("only-pod-sample")
 	podSample.WithNamespace(sampleNamespace)
 	builder.Assess("install additional pod", podSample.Install())
 	builder.Assess("check injection of additional pod", checkInjection(podSample))
 
-	alreadyInjectedSample := sampleapps.NewSampleDeployment(t, appDynakube)
+	alreadyInjectedSample := sampleapps.NewSampleDeployment(t, appOnlyDynakube)
 	alreadyInjectedSample.WithName("already-injected")
 	alreadyInjectedSample.WithNamespace(sampleNamespace)
 	alreadyInjectedSample.WithAnnotations(map[string]string{"oneagent.dynatrace.com/injected": "true"})
 	builder.Assess("install already injected sample app", alreadyInjectedSample.Install())
 	builder.Assess("check if pods with already injection annotation are not injected again", checkAlreadyInjected(alreadyInjectedSample))
 
-	randomUserSample := sampleapps.NewSampleDeployment(t, appDynakube)
+	randomUserSample := sampleapps.NewSampleDeployment(t, appOnlyDynakube)
 	randomUserSample.WithName("random-user")
 	randomUserSample.WithNamespace(sampleNamespace)
 	randomUserSample.WithSecurityContext(corev1.PodSecurityContext{
