@@ -27,3 +27,7 @@ func TestLabelVersionDetection(t *testing.T) {
 func TestReadOnlyCSIVolume(t *testing.T) {
 	testEnvironment.Test(t, readOnlyCSIVolume(t))
 }
+
+func TestAppOnlyWithoutCSI(t *testing.T) {
+	testEnvironment.Test(t, withoutCSIDriver(t))
+}
