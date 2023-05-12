@@ -25,7 +25,7 @@ func TestAddReadOnlyCSIVolumeMounts(t *testing.T) {
 	t.Run("should add extra volume mounts for readonly csi", func(t *testing.T) {
 		container := &corev1.Container{}
 		expectedMounts := map[string]string{
-			oneagentConfVolumeName:        oneAgentConfMountPath,
+			oneagentConfVolumeName:        OneAgentConfMountPath,
 			oneagentDataStorageVolumeName: oneagentDataStorageMountPath,
 			oneagentLogVolumeName:         oneagentLogMountPath,
 		}

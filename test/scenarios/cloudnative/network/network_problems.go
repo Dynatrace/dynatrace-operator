@@ -7,6 +7,7 @@ import (
 	"path"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
@@ -25,7 +26,6 @@ import (
 )
 
 const (
-	agentMountPath = "/opt/dynatrace/oneagent-paas"
 	ldPreloadError = "ERROR: ld.so: object '/opt/dynatrace/oneagent-paas/agent/lib64/liboneagentproc.so' from LD_PRELOAD cannot be preloaded"
 )
 
@@ -85,7 +85,7 @@ func checkForDummyVolume(sampleApp sample.App) features.Func {
 			require.NotNil(t, podItem.Spec)
 			require.NotEmpty(t, podItem.Spec.InitContainers)
 
-			listCommand := shell.ListDirectory(agentMountPath)
+			listCommand := shell.ListDirectory(webhook.DefaultInstallPath)
 			result, err := pod.Exec(ctx, resources, podItem, sampleApp.ContainerName(), listCommand...)
 
 			require.NoError(t, err)
