@@ -18,6 +18,9 @@ kind: CSIDriver
 metadata:
   name: csi.oneagent.dynatrace.com
   labels:
+    {{- if (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
+    security.openshift.io/csi-ephemeral-volume-profile: "restricted"
+    {{- end }}
     {{- include "dynatrace-operator.csiLabels" . | nindent 4 }}
 spec:
   attachRequired: false
