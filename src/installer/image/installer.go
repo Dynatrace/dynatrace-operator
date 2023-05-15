@@ -1,6 +1,7 @@
 package image
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -26,11 +27,11 @@ type Properties struct {
 func NewImageInstaller(fs afero.Fs, props *Properties) (*Installer, error) {
 	ref, err := reference.Parse(props.ImageUri)
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to parse image reference to create image installer")
+		return nil, errors.WithMessage(err, fmt.Sprintf("failed to parse image reference to create image installer, received imageUri: %s", props.ImageUri))
 	}
 	canonRef, ok := ref.(reference.Canonical)
 	if !ok {
-		return nil, errors.New("unexpected type of image reference provided to image installer")
+		return nil, errors.Errorf("unexpected type of image reference provided to image installer, expected reference with digest but received %s", props.ImageUri)
 	}
 	return &Installer{
 		fs:          fs,
