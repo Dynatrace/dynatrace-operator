@@ -26,12 +26,12 @@ func createInstallInitContainerBase(webhookImage, clusterID string, pod *corev1.
 			{Name: config.K8sNamespaceEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("metadata.namespace")},
 			{Name: config.K8sNodeNameEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("spec.nodeName")},
 		},
-		SecurityContext: securityContextForInitContainer(pod),
+		SecurityContext: securityContextForInitContainer(pod, dynakube),
 		Resources:       *dynakube.InitResources(),
 	}
 }
 
-func securityContextForInitContainer(pod *corev1.Pod) *corev1.SecurityContext {
+func securityContextForInitContainer(pod *corev1.Pod, dk dynatracev1beta1.DynaKube) *corev1.SecurityContext {
 	initSecurityCtx := corev1.SecurityContext{
 		ReadOnlyRootFilesystem:   address.Of(true),
 		AllowPrivilegeEscalation: address.Of(false),
@@ -42,6 +42,8 @@ func securityContextForInitContainer(pod *corev1.Pod) *corev1.SecurityContext {
 			},
 		},
 	}
+
+	addSeccompProfile(&initSecurityCtx, dk)
 
 	return combineSecurityContexts(initSecurityCtx, *pod)
 }
@@ -110,4 +112,10 @@ func getBasePodName(pod *corev1.Pod) string {
 
 func addInitContainerToPod(pod *corev1.Pod, initContainer *corev1.Container) {
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, *initContainer)
+}
+
+func addSeccompProfile(ctx *corev1.SecurityContext, dk dynatracev1beta1.DynaKube) {
+	if dk.FeatureInitContainerSeccomp() {
+		ctx.SeccompProfile = &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault}
+	}
 }

@@ -90,6 +90,7 @@ const (
 	AnnotationFeatureAutomaticInjection    = AnnotationFeaturePrefix + "automatic-injection"
 	AnnotationFeatureLabelVersionDetection = AnnotationFeaturePrefix + "label-version-detection"
 	AnnotationInjectionFailurePolicy       = AnnotationFeaturePrefix + "injection-failure-policy"
+	AnnotationFeatureInitContainerSeccomp  = AnnotationFeaturePrefix + "init-container-seccomp-profile"
 
 	// CSI
 	AnnotationFeatureMaxFailedCsiMountAttempts = AnnotationFeaturePrefix + "max-csi-mount-attempts"
@@ -352,4 +353,8 @@ func (dk *DynaKube) FeatureSyntheticReplicas() int32 {
 	}
 
 	return int32(parsed)
+}
+
+func (dk *DynaKube) FeatureInitContainerSeccomp() bool {
+	return dk.getFeatureFlagRaw(AnnotationFeatureInitContainerSeccomp) == truePhrase
 }
