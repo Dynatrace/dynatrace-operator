@@ -90,6 +90,7 @@ const (
 	AnnotationFeatureAutomaticInjection    = AnnotationFeaturePrefix + "automatic-injection"
 	AnnotationFeatureLabelVersionDetection = AnnotationFeaturePrefix + "label-version-detection"
 	AnnotationInjectionFailurePolicy       = AnnotationFeaturePrefix + "injection-failure-policy"
+	AnnotationFeatureInitContainerSeccomp  = AnnotationFeaturePrefix + "init-container-seccomp-profile"
 
 	// CSI
 	AnnotationFeatureMaxFailedCsiMountAttempts = AnnotationFeaturePrefix + "max-csi-mount-attempts"
@@ -129,6 +130,31 @@ var (
 func (dk *DynaKube) getDisableFlagWithDeprecatedAnnotation(annotation string, deprecatedAnnotation string) bool {
 	return dk.getFeatureFlagRaw(annotation) == falsePhrase ||
 		dk.getFeatureFlagRaw(deprecatedAnnotation) == truePhrase && dk.getFeatureFlagRaw(annotation) == ""
+}
+
+func (dk *DynaKube) getFeatureFlagRaw(annotation string) string {
+	if raw, ok := dk.Annotations[annotation]; ok {
+		return raw
+	}
+	split := strings.Split(annotation, "/")
+	postFix := split[1]
+	if raw, ok := dk.Annotations[DeprecatedFeatureFlagPrefix+postFix]; ok {
+		return raw
+	}
+	return ""
+}
+
+func (dk *DynaKube) getFeatureFlagInt(annotation string, defaultVal int) int {
+	raw := dk.getFeatureFlagRaw(annotation)
+	if raw == "" {
+		return defaultVal
+	}
+	val, err := strconv.Atoi(raw)
+	if err != nil {
+		return defaultVal
+	}
+
+	return val
 }
 
 // FeatureDisableActiveGateUpdates is a feature flag to disable ActiveGate updates.
@@ -305,31 +331,6 @@ func (dk *DynaKube) FeatureSyntheticNodeType() string {
 	return node
 }
 
-func (dk *DynaKube) getFeatureFlagRaw(annotation string) string {
-	if raw, ok := dk.Annotations[annotation]; ok {
-		return raw
-	}
-	split := strings.Split(annotation, "/")
-	postFix := split[1]
-	if raw, ok := dk.Annotations[DeprecatedFeatureFlagPrefix+postFix]; ok {
-		return raw
-	}
-	return ""
-}
-
-func (dk *DynaKube) getFeatureFlagInt(annotation string, defaultVal int) int {
-	raw := dk.getFeatureFlagRaw(annotation)
-	if raw == "" {
-		return defaultVal
-	}
-	val, err := strconv.Atoi(raw)
-	if err != nil {
-		return defaultVal
-	}
-
-	return val
-}
-
 func (dk *DynaKube) FeatureSyntheticLocationEntityId() string {
 	return dk.getFeatureFlagRaw(AnnotationFeatureSyntheticLocationEntityId)
 }
@@ -357,4 +358,8 @@ func (dk *DynaKube) FeatureSyntheticReplicas() int32 {
 	}
 
 	return int32(parsed)
+}
+
+func (dk *DynaKube) FeatureInitContainerSeccomp() bool {
+	return dk.getFeatureFlagRaw(AnnotationFeatureInitContainerSeccomp) == truePhrase
 }
