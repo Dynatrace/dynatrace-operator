@@ -7,7 +7,7 @@ os="$(uname -s)"
 
 if [[ "${architecture}" == "x86_64" ]]; then
   ARCH="amd64"
-elif [[ "${architecture}" == "aarch64" ]]; then
+elif [[ "${architecture}" == "arm64" ]]; then
   ARCH="arm64"
 else
   echo "Unsupported architecture '${architecture}'"
@@ -26,7 +26,7 @@ fi
 
 helm plugin uninstall unittest || true
 curl \
-  -L "https://github.com/quintush/helm-unittest/releases/download/v0.2.11/helm-unittest-${PLATFORM}-${ARCH}-0.2.11.tgz" \
+  -L "https://github.com/helm-unittest/helm-unittest/releases/download/v0.3.2/helm-unittest-${PLATFORM}-${ARCH}-0.3.2.tgz" \
   -o helm-unittest.tgz
 mkdir -p "${HELM_PLUGINS}/unittest"
 tar xzvf helm-unittest.tgz -C "${HELM_PLUGINS}/unittest"
