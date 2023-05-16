@@ -104,9 +104,7 @@ func (r *Reconciler) updateDynakubeOneAgentStatus(connectionInfo dtclient.OneAge
 }
 
 func copyCommunicationHosts(dest *dynatracev1beta1.OneAgentConnectionInfoStatus, src []dtclient.CommunicationHost) {
-	if dest.CommunicationHosts == nil {
-		dest.CommunicationHosts = make([]dynatracev1beta1.CommunicationHostStatus, 0, len(src))
-	}
+	dest.CommunicationHosts = make([]dynatracev1beta1.CommunicationHostStatus, 0, len(src))
 	for _, host := range src {
 		dest.CommunicationHosts = append(dest.CommunicationHosts, dynatracev1beta1.CommunicationHostStatus{
 			Protocol: host.Protocol,
