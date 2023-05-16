@@ -27,8 +27,8 @@ Check if default image or imageref is used
 {{- if .Values.image -}}
 	{{- printf "%s" .Values.image -}}
 {{- else -}}
-    {{- if .Values.imageref -}}
-        {{- .Values.imageref.tag | default .Chart.AppVersion | printf "%s:v%s" .Values.imageref.repository -}}
+    {{- if .Values.imageRef -}}
+        {{- .Values.imageRef.tag | default .Chart.AppVersion | printf "%s:v%s" .Values.imageRef.repository -}}
     {{- else if eq (include "dynatrace-operator.platform" .) "google-marketplace" -}}
     	{{- printf "%s:%s" "gcr.io/dynatrace-marketplace-prod/dynatrace-operator" .Chart.AppVersion }}
 	{{- else -}}
