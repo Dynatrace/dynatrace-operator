@@ -487,8 +487,7 @@ tests:
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
-          value:
-            "image-name"
+          value: "image-name"
 
   - it: it uses imageref if set
     set:
@@ -499,8 +498,7 @@ tests:
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
-          value:
-            "some-repo:vtag-name"
+          value: "some-repo:vtag-name"
 
   - it: image tag has precedence over imageref
     set:
@@ -512,8 +510,7 @@ tests:
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
-          value:
-            "image-name"
+          value: "image-name"
 
   - it: tag in imageref defaults to chart.version
     set:
@@ -524,5 +521,4 @@ tests:
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
-          value:
-            "some-repo:v1.0.1"
+          value: "some-repo:v1.0.1"
