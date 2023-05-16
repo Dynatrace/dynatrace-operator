@@ -8,8 +8,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/pkg/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -51,8 +53,25 @@ func (r *Reconciler) Reconcile() error {
 	return nil
 }
 
+func (r *Reconciler) needsUpdate(secretName string, isAllowedFunc dynatracev1beta1.RequestAllowedChecker) (bool, error) {
+	query := kubeobjects.NewSecretQuery(r.context, r.client, r.apiReader, log)
+	_, err := query.Get(types.NamespacedName{Name: secretName, Namespace: r.dynakube.Namespace})
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			log.Info("creating secret, because missing", "secretName", secretName)
+			return true, nil
+		}
+		return false, err
+	}
+	return isAllowedFunc(r.timeProvider), nil
+}
+
 func (r *Reconciler) reconcileOneAgentConnectionInfo() error {
-	if !r.dynakube.IsOneAgentConnectionInfoUpdateAllowed(r.timeProvider) {
+	needsUpdate, err := r.needsUpdate(r.dynakube.OneagentTenantSecret(), r.dynakube.IsOneAgentConnectionInfoUpdateAllowed)
+	if err != nil {
+		return err
+	}
+	if !needsUpdate {
 		log.Info(dynatracev1beta1.GetCacheValidMessage(
 			"oneagent connection info update",
 			r.dynakube.Status.OneAgent.ConnectionInfoStatus.LastRequest,
@@ -85,9 +104,7 @@ func (r *Reconciler) updateDynakubeOneAgentStatus(connectionInfo dtclient.OneAge
 }
 
 func copyCommunicationHosts(dest *dynatracev1beta1.OneAgentConnectionInfoStatus, src []dtclient.CommunicationHost) {
-	if dest.CommunicationHosts == nil {
-		dest.CommunicationHosts = make([]dynatracev1beta1.CommunicationHostStatus, 0, len(src))
-	}
+	dest.CommunicationHosts = make([]dynatracev1beta1.CommunicationHostStatus, 0, len(src))
 	for _, host := range src {
 		dest.CommunicationHosts = append(dest.CommunicationHosts, dynatracev1beta1.CommunicationHostStatus{
 			Protocol: host.Protocol,
@@ -98,7 +115,11 @@ func copyCommunicationHosts(dest *dynatracev1beta1.OneAgentConnectionInfoStatus,
 }
 
 func (r *Reconciler) reconcileActiveGateConnectionInfo() error {
-	if !r.dynakube.IsActiveGateConnectionInfoUpdateAllowed(r.timeProvider) {
+	needsUpdate, err := r.needsUpdate(r.dynakube.ActivegateTenantSecret(), r.dynakube.IsActiveGateConnectionInfoUpdateAllowed)
+	if err != nil {
+		return err
+	}
+	if !needsUpdate {
 		log.Info(dynatracev1beta1.GetCacheValidMessage(
 			"activegate connection info update",
 			r.dynakube.Status.ActiveGate.ConnectionInfoStatus.LastRequest,

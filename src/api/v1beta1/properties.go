@@ -505,6 +505,8 @@ func (dk *DynaKube) GetOneAgentEnvironment() []corev1.EnvVar {
 	return []corev1.EnvVar{}
 }
 
+type RequestAllowedChecker func(timeProvider *timeprovider.Provider) bool
+
 func (dk *DynaKube) IsOneAgentConnectionInfoUpdateAllowed(timeProvider *timeprovider.Provider) bool {
 	return timeProvider.IsOutdated(&dk.Status.OneAgent.ConnectionInfoStatus.LastRequest, dk.FeatureApiRequestThreshold())
 }
