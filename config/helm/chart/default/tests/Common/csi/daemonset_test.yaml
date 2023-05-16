@@ -1,4 +1,7 @@
 suite: test deployment for csi DaemonSet
+chart:
+  version: 1.0.0
+  appVersion: 1.0.1
 templates:
   - Common/csi/daemonset.yaml
 tests:
@@ -487,3 +490,51 @@ tests:
       - equal:
           path: spec.template.spec.priorityClassName
           value: "my-custom-priority-class"
+
+  ####################### imageref tests #######################
+  - it: should run the same if image is set
+    set:
+      platform: kubernetes
+      image: image-name
+      csidriver.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "image-name"
+
+  - it: it uses imageref if set
+    set:
+      platform: kubernetes
+      imageRef:
+        repository: some-repo
+        tag: tag-name
+      csidriver.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "some-repo:vtag-name"
+
+  - it: image tag has precedence over imageref
+    set:
+      csidriver.enabled: true
+      platform: kubernetes
+      image: image-name
+      imageRef:
+        repository: not-the-repo-you-are-looking-for
+        tag: tag-name
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "image-name"
+
+  - it: tag in imageref defaults to chart.version
+    set:
+      csidriver.enabled: true
+      platform: kubernetes
+      imageRef:
+        repository: some-repo
+
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "some-repo:v1.0.1"
