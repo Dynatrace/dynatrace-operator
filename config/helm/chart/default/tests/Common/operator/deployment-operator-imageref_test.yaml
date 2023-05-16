@@ -97,7 +97,7 @@ tests:
   - it: it uses imageref if set
     set:
       platform: kubernetes
-      imageref:
+      imageRef:
         repository: some-repo
         tag: tag-name
     asserts:
@@ -189,7 +189,7 @@ tests:
     set:
       platform: kubernetes
       image: image-name
-      imageref:
+      imageRef:
         repository: not-the-repo-you-are-looking-for
         tag: tag-name
     asserts:
@@ -280,12 +280,12 @@ tests:
   - it: tag in imageref defaults to chart.version
     set:
       platform: kubernetes
-      imageref:
+      imageRef:
         repository: some-repo
 
     asserts:
       - equal:
-          path: spec.template.spec
+          path: spec.template.spec≈
           value:
             containers:
               - name: RELEASE-NAME
