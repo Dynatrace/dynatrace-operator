@@ -285,7 +285,7 @@ tests:
 
     asserts:
       - equal:
-          path: spec.template.spec≈
+          path: spec.template.spec
           value:
             containers:
               - name: RELEASE-NAME
