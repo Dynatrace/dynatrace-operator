@@ -69,7 +69,7 @@ tests:
             - SYS_CHROOT
             - SYS_PTRACE
             - SYS_RESOURCE
-      - isNull:
+      - isEmpty:
           path: allowedFlexVolumes
       - isEmpty:
           path: defaultAddCapabilities

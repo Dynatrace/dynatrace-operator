@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+desired_version="0.3.2"
+
+
+### reintroduced curl due to github rate-limiting our downloads via api calls!   ####
+### -> unit tests failed as plugin could not be installed correctly              ####
+
 HELM_PLUGINS="$(helm env HELM_PLUGINS)"
 
 architecture="$(uname -m)"
@@ -8,6 +14,8 @@ os="$(uname -s)"
 if [[ "${architecture}" == "x86_64" ]]; then
   ARCH="amd64"
 elif [[ "${architecture}" == "aarch64" ]]; then
+  ARCH="arm64"
+elif [[ "${architecture}" == "arm64" ]]; then
   ARCH="arm64"
 else
   echo "Unsupported architecture '${architecture}'"
@@ -26,7 +34,7 @@ fi
 
 helm plugin uninstall unittest || true
 curl \
-  -L "https://github.com/quintush/helm-unittest/releases/download/v0.2.11/helm-unittest-${PLATFORM}-${ARCH}-0.2.11.tgz" \
+  -L "https://github.com/helm-unittest/helm-unittest/releases/download/v${desired_version}/helm-unittest-${PLATFORM}-${ARCH}-${desired_version}.tgz" \
   -o helm-unittest.tgz
 mkdir -p "${HELM_PLUGINS}/unittest"
 tar xzvf helm-unittest.tgz -C "${HELM_PLUGINS}/unittest"
