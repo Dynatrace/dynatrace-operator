@@ -18,7 +18,7 @@ runs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@4b4e9c3e2d4531116a6f8ba8e71fc6e2cb6e6c8c # v2.5.0
     - name: Set up Golang
-      uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4.0.0
+      uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4.0.1
       with:
         go-version-file: "${{ github.workspace }}/go.mod"
     - name: Prepare build parameters

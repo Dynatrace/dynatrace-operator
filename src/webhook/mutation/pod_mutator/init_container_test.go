@@ -44,6 +44,8 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 
 		require.NotNil(t, initContainer.SecurityContext.RunAsGroup)
 		assert.Equal(t, *initContainer.SecurityContext.RunAsGroup, defaultGroup)
+
+		assert.Nil(t, initContainer.SecurityContext.SeccompProfile)
 	})
 	t.Run("should overwrite partially", func(t *testing.T) {
 		dynakube := getTestDynakube()
@@ -192,6 +194,18 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 
 		assert.False(t, kubeobjects.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "fail")
 		assert.True(t, kubeobjects.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "silent")
+	})
+	t.Run("should set seccomp profile if feature flag is enabled", func(t *testing.T) {
+		dynakube := getTestDynakube()
+		dynakube.Annotations = map[string]string{v1beta1.AnnotationFeatureInitContainerSeccomp: "true"}
+		pod := getTestPod()
+		pod.Annotations = map[string]string{}
+		webhookImage := "test-image"
+		clusterID := "id"
+
+		initContainer := createInstallInitContainerBase(webhookImage, clusterID, pod, *dynakube)
+
+		assert.True(t, initContainer.SecurityContext.SeccompProfile.Type == corev1.SeccompProfileTypeRuntimeDefault)
 	})
 }
 
