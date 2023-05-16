@@ -1,4 +1,7 @@
 suite: test deployment of webhook
+chart:
+  version: 1.0.0
+  appVersion: 1.0.1
 templates:
   - Common/webhook/deployment-webhook.yaml
 tests:
@@ -475,3 +478,51 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].resources.requests.ephemeral-storage
           value: 320
+
+  ####################### imageref tests #######################
+  - it: should run the same if image is set
+    set:
+      platform: kubernetes
+      image: image-name
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value:
+            "image-name"
+
+  - it: it uses imageref if set
+    set:
+      platform: kubernetes
+      imageRef:
+        repository: some-repo
+        tag: tag-name
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value:
+            "some-repo:vtag-name"
+
+  - it: image tag has precedence over imageref
+    set:
+      platform: kubernetes
+      image: image-name
+      imageRef:
+        repository: not-the-repo-you-are-looking-for
+        tag: tag-name
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value:
+            "image-name"
+
+  - it: tag in imageref defaults to chart.version
+    set:
+      platform: kubernetes
+      imageRef:
+        repository: some-repo
+
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value:
+            "some-repo:v1.0.1"
