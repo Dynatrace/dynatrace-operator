@@ -20,7 +20,7 @@ platform: ""
 image: ""
 #image description using tags
 #resulting image will be named <repository>:v<tag>
-imageref:
+imageRef:
   repository: "" #path to repo
   tag: "" #defaults to chart version
 
