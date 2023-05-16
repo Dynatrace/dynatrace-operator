@@ -94,6 +94,10 @@ func (app *sampleApp) WithEnvs(envs []corev1.EnvVar) {
 	app.base.Spec.Containers[0].Env = envs
 }
 
+func (app *sampleApp) WithSecurityContext(securityContext corev1.PodSecurityContext) {
+	app.base.Spec.SecurityContext = &securityContext
+}
+
 func (app sampleApp) install(object client.Object) features.Func {
 	return func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
 		resource := c.Client().Resources()
