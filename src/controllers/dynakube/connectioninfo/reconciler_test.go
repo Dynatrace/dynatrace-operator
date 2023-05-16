@@ -78,7 +78,7 @@ func TestReconcile_ConnectionInfo(t *testing.T) {
 		assert.Equal(t, testTenantEndpoints, dynakube.Status.OneAgent.ConnectionInfoStatus.Endpoints)
 	})
 	t.Run(`do not update OneAgent connection info within timeout`, func(t *testing.T) {
-		fakeClient := fake.NewClientBuilder().Build()
+		fakeClient := fake.NewClientBuilder().WithObjects(buildOneAgentTenantSecret(dynakube, testOutdated)).Build()
 		dynakube.Status.OneAgent.ConnectionInfoStatus = dynatracev1beta1.OneAgentConnectionInfoStatus{
 			ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
 				TenantUUID:  testOutdated,
@@ -93,6 +93,23 @@ func TestReconcile_ConnectionInfo(t *testing.T) {
 
 		assert.Equal(t, testOutdated, dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID)
 		assert.Equal(t, testOutdated, dynakube.Status.OneAgent.ConnectionInfoStatus.Endpoints)
+	})
+	t.Run(`update OneAgent connection info if tenant secret is missing, ignore timestamp`, func(t *testing.T) {
+		fakeClient := fake.NewClientBuilder().Build()
+		dynakube.Status.OneAgent.ConnectionInfoStatus = dynatracev1beta1.OneAgentConnectionInfoStatus{
+			ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
+				TenantUUID:  testOutdated,
+				Endpoints:   testOutdated,
+				LastRequest: metav1.NewTime(time.Now()),
+			},
+		}
+
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, &dynakube, dtc)
+		err := r.Reconcile()
+		require.NoError(t, err)
+
+		assert.Equal(t, testTenantUUID, dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID)
+		assert.Equal(t, testTenantEndpoints, dynakube.Status.OneAgent.ConnectionInfoStatus.Endpoints)
 	})
 
 	t.Run(`store ActiveGate connection info to DynaKube status`, func(t *testing.T) {
@@ -122,7 +139,7 @@ func TestReconcile_ConnectionInfo(t *testing.T) {
 		assert.Equal(t, testTenantEndpoints, dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints)
 	})
 	t.Run(`do not update ActiveGate connection info within timeout`, func(t *testing.T) {
-		fakeClient := fake.NewClientBuilder().Build()
+		fakeClient := fake.NewClientBuilder().WithObjects(buildActiveGateSecret(dynakube, testOutdated)).Build()
 		dynakube.Status.ActiveGate.ConnectionInfoStatus = dynatracev1beta1.ActiveGateConnectionInfoStatus{
 			ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
 				TenantUUID:  testOutdated,
@@ -137,6 +154,23 @@ func TestReconcile_ConnectionInfo(t *testing.T) {
 
 		assert.Equal(t, testOutdated, dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID)
 		assert.Equal(t, testOutdated, dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints)
+	})
+	t.Run(`update ActiveGate connection info if tenant secret is missing, ignore timestamp`, func(t *testing.T) {
+		fakeClient := fake.NewClientBuilder().Build()
+		dynakube.Status.ActiveGate.ConnectionInfoStatus = dynatracev1beta1.ActiveGateConnectionInfoStatus{
+			ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
+				TenantUUID:  testOutdated,
+				Endpoints:   testOutdated,
+				LastRequest: metav1.NewTime(time.Now()),
+			},
+		}
+
+		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, &dynakube, dtc)
+		err := r.Reconcile()
+		require.NoError(t, err)
+
+		assert.Equal(t, testTenantUUID, dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID)
+		assert.Equal(t, testTenantEndpoints, dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints)
 	})
 }
 
