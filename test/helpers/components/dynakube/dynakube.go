@@ -4,6 +4,8 @@ package dynakube
 
 import (
 	"context"
+	"strconv"
+	"strings"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -137,6 +139,11 @@ func (dynakubeBuilder Builder) ApplicationMonitoring(applicationMonitoringSpec *
 	return dynakubeBuilder
 }
 
+func (builder Builder) WithSyntheticLocation(entityId string) Builder {
+	builder.dynakube.Annotations[dynatracev1beta1.AnnotationFeatureSyntheticLocationEntityId] = entityId
+	return builder
+}
+
 func (dynakubeBuilder Builder) Build() dynatracev1beta1.DynaKube {
 	return dynakubeBuilder.dynakube
 }
@@ -197,4 +204,19 @@ func WaitForDynakubePhase(dynakube dynatracev1beta1.DynaKube, phase dynatracev1b
 
 		return ctx
 	}
+}
+
+func SyntheticLocationOrdinal(dynakube dynatracev1beta1.DynaKube) uint64 {
+	const defaultOrd = uint64(0)
+	_, suffix, found := strings.Cut(dynakube.FeatureSyntheticLocationEntityId(), "-")
+	if !found {
+		return defaultOrd
+	}
+
+	parsed, err := strconv.ParseUint(suffix, 16, 64)
+	if err != nil {
+		return defaultOrd
+	}
+
+	return parsed
 }

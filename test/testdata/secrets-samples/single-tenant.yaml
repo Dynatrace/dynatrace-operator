@@ -1,3 +1,6 @@
 tenantUid: abc1234
 apiUrl: https://abc1234.dev.dynatracelabs.com/api
 apiToken: <apiToken>
+syntheticLocEntityId: syn-loc-id
+syntheticBrowserMonitorEntityId: syn-browser-mon-id
+
