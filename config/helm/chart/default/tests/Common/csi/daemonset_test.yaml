@@ -512,7 +512,7 @@ tests:
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
-          value: "some-repo:vtag-name"
+          value: "some-repo:tag-name"
 
   - it: image field has precedence over imageref section
     set:
