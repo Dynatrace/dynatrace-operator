@@ -12,7 +12,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -120,21 +119,6 @@ func TestReconcile_PhaseSetCorrectly(t *testing.T) {
 		Status:  metav1.ConditionTrue,
 		Reason:  dynatracev1beta1.ReasonTokenReady,
 		Message: "Ready",
-	})
-
-	t.Run("SetPhaseOnError called with different values, object and return value correctly modified", func(t *testing.T) {
-		dk := base.DeepCopy()
-
-		res := dk.Status.SetPhaseOnError(nil)
-		assert.False(t, res)
-		assert.Equal(t, dk.Status.Phase, dynatracev1beta1.DynaKubePhaseType(""))
-
-		res = dk.Status.SetPhaseOnError(errors.New("dummy error"))
-		assert.True(t, res)
-
-		if assert.NotNil(t, dk.Status.Phase) {
-			assert.Equal(t, dynatracev1beta1.Error, dk.Status.Phase)
-		}
 	})
 }
 
