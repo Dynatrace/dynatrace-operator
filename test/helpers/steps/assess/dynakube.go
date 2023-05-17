@@ -3,6 +3,8 @@
 package assess
 
 import (
+	"fmt"
+
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/oneagent"
@@ -26,7 +28,9 @@ func CreateDynakube(builder *features.FeatureBuilder, secretConfig *tenant.Secre
 	if secretConfig != nil {
 		builder.Assess("created tenant secret", tenant.CreateTenantSecret(*secretConfig, testDynakube))
 	}
-	builder.Assess("dynakube created", dynakube.Create(testDynakube))
+	builder.Assess(
+		fmt.Sprintf("'%s' dynakube created", testDynakube.Name),
+		dynakube.Create(testDynakube))
 }
 
 func UpdateDynakube(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube) {
@@ -37,5 +41,7 @@ func verifyDynakubeStartup(builder *features.FeatureBuilder, testDynakube dynatr
 	if testDynakube.NeedsOneAgent() {
 		builder.Assess("oneagent started", oneagent.WaitForDaemonset(testDynakube))
 	}
-	builder.Assess("dynakube phase changes to 'Running'", dynakube.WaitForDynakubePhase(testDynakube, dynatracev1beta1.Running))
+	builder.Assess(
+		fmt.Sprintf("'%s' dynakube phase changes to 'Running'", testDynakube.Name),
+		dynakube.WaitForDynakubePhase(testDynakube, dynatracev1beta1.Running))
 }

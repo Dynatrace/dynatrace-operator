@@ -3,18 +3,16 @@
 package activegate
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"strings"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/activegate"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/proxy"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
@@ -24,13 +22,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
 var (
+	agComponentName = "activegate"
+
 	agContainers = map[string]bool{
 		consts.ActiveGateContainerName: false,
 	}
@@ -82,7 +81,7 @@ func Install(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features.F
 }
 
 func assessActiveGate(builder *features.FeatureBuilder, testDynakube *dynatracev1beta1.DynaKube) {
-	builder.Assess("ActiveGate started", WaitForStatefulSet(testDynakube))
+	builder.Assess("ActiveGate started", activegate.WaitForStatefulSet(testDynakube, "activegate"))
 	builder.Assess("ActiveGate has required containers", checkIfAgHasContainers(testDynakube))
 	builder.Assess("ActiveGate modules are active", checkActiveModules(testDynakube))
 	if testDynakube.Spec.Proxy != nil {
@@ -99,7 +98,7 @@ func checkIfAgHasContainers(testDynakube *dynatracev1beta1.DynaKube) features.Fu
 		resources := environmentConfig.Client().Resources()
 
 		var activeGatePod corev1.Pod
-		require.NoError(t, resources.WithNamespace(testDynakube.Namespace).Get(ctx, getActiveGatePodName(testDynakube), testDynakube.Namespace, &activeGatePod))
+		require.NoError(t, resources.WithNamespace(testDynakube.Namespace).Get(ctx, activegate.GetActiveGatePodName(testDynakube, agComponentName), testDynakube.Namespace, &activeGatePod))
 
 		require.NotNil(t, activeGatePod.Spec)
 		require.NotEmpty(t, activeGatePod.Spec.InitContainers)
@@ -116,7 +115,7 @@ func checkIfAgHasContainers(testDynakube *dynatracev1beta1.DynaKube) features.Fu
 
 func checkActiveModules(testDynakube *dynatracev1beta1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		log := readActiveGateLog(ctx, t, environmentConfig, testDynakube)
+		log := activegate.ReadActiveGateLog(ctx, t, environmentConfig, testDynakube, agComponentName)
 		assertExpectedModulesAreActive(t, log)
 		return ctx
 	}
@@ -124,7 +123,7 @@ func checkActiveModules(testDynakube *dynatracev1beta1.DynaKube) features.Func {
 
 func checkIfProxyUsed(testDynakube *dynatracev1beta1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		log := readActiveGateLog(ctx, t, environmentConfig, testDynakube)
+		log := activegate.ReadActiveGateLog(ctx, t, environmentConfig, testDynakube, agComponentName)
 		assertProxyUsed(t, log, testDynakube.Spec.Proxy.Value)
 		return ctx
 	}
@@ -135,7 +134,7 @@ func checkMountPoints(testDynakube *dynatracev1beta1.DynaKube) features.Func {
 		resources := environmentConfig.Client().Resources()
 
 		var activeGatePod corev1.Pod
-		require.NoError(t, resources.Get(ctx, getActiveGatePodName(testDynakube), testDynakube.Namespace, &activeGatePod))
+		require.NoError(t, resources.Get(ctx, activegate.GetActiveGatePodName(testDynakube, agComponentName), testDynakube.Namespace, &activeGatePod))
 
 		for name, mountPoints := range agMounts {
 			assertMountPointsExist(ctx, t, resources, activeGatePod, name, mountPoints)
@@ -248,39 +247,6 @@ func initMap(srcMap *map[string]bool) map[string]bool {
 	return dstMap
 }
 
-func WaitForStatefulSet(testDynakube *dynatracev1beta1.DynaKube) features.Func {
-	return statefulset.WaitFor(getActiveGateStateFulSetName(testDynakube), testDynakube.Namespace)
-}
-
-func readActiveGateLog(ctx context.Context, t *testing.T, environmentConfig *envconf.Config, testDynakube *dynatracev1beta1.DynaKube) string {
-	resources := environmentConfig.Client().Resources()
-
-	var activeGatePod corev1.Pod
-	require.NoError(t, resources.WithNamespace(testDynakube.Namespace).Get(ctx, getActiveGatePodName(testDynakube), testDynakube.Namespace, &activeGatePod))
-
-	clientset, err := kubernetes.NewForConfig(resources.GetConfig())
-	require.NoError(t, err)
-
-	logStream, err := clientset.CoreV1().Pods(testDynakube.Namespace).GetLogs(getActiveGatePodName(testDynakube), &corev1.PodLogOptions{
-		Container: consts.ActiveGateContainerName,
-	}).Stream(ctx)
-	require.NoError(t, err)
-
-	buffer := new(bytes.Buffer)
-	_, err = io.Copy(buffer, logStream)
-	require.NoError(t, err, "ActiveGate log not found")
-
-	return buffer.String()
-}
-
-func getActiveGatePodName(testDynakube *dynatracev1beta1.DynaKube) string {
-	return fmt.Sprintf("%s-0", getActiveGateStateFulSetName(testDynakube))
-}
-
-func getActiveGateStateFulSetName(testDynakube *dynatracev1beta1.DynaKube) string {
-	return fmt.Sprintf("%s-activegate", testDynakube.Name)
-}
-
 func assessReadOnlyActiveGate(builder *features.FeatureBuilder, secretConfig tenant.Secret, proxySpec *dynatracev1beta1.DynaKubeProxy) {
 	if proxySpec == nil {
 		testDynakube := dynakube.NewBuilder().
@@ -305,7 +271,7 @@ func checkReadOnlySettings(testDynakube *dynatracev1beta1.DynaKube) features.Fun
 		resources := environmentConfig.Client().Resources()
 
 		var activeGatePod corev1.Pod
-		require.NoError(t, resources.WithNamespace(testDynakube.Namespace).Get(ctx, getActiveGatePodName(testDynakube), testDynakube.Namespace, &activeGatePod))
+		require.NoError(t, resources.WithNamespace(testDynakube.Namespace).Get(ctx, activegate.GetActiveGatePodName(testDynakube, agComponentName), testDynakube.Namespace, &activeGatePod))
 
 		require.NotNil(t, activeGatePod.Spec)
 		require.NotEmpty(t, activeGatePod.Spec.InitContainers)
