@@ -461,3 +461,21 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].image
           value: "some-repo:v1.0.1"
+
+  - it: not setting image or imageref but platform to kubernetes defaults to correct repo and version
+    set:
+      platform: kubernetes
+
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "docker.io/dynatrace/dynatrace-operator:v1.0.1"
+
+  - it: not setting image or imageref but platform to google-marketplace defaults to correct repo and version
+    set:
+      platform: google-marketplace
+
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "gcr.io/dynatrace-marketplace-prod/dynatrace-operator:1.0.1"
