@@ -94,7 +94,7 @@ func determineSource(updater versionStatusUpdater) dynatracev1beta1.VersionSourc
 	return dynatracev1beta1.TenantRegistryVersionSource
 }
 
-func setImageIDWithDigest(
+func setImageIDWithDigest( //nolint:revive
 	ctx context.Context,
 	target *dynatracev1beta1.VersionStatus,
 	imageUri string,
@@ -144,7 +144,7 @@ func setImageIDWithDigest(
 	return nil
 }
 
-func updateVersionStatusForTenantRegistry(
+func updateVersionStatusForTenantRegistry( //nolint:revive
 	ctx context.Context,
 	target *dynatracev1beta1.VersionStatus,
 	imageUri string,
