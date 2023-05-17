@@ -21,13 +21,15 @@ Create chart name and version as used by the chart label.
 {{- end }}
 
 {{/*
-Check if default image is used
+Check if default image or imageref is used
 */}}
 {{- define "dynatrace-operator.image" -}}
 {{- if .Values.image -}}
 	{{- printf "%s" .Values.image -}}
 {{- else -}}
-	{{- if eq (include "dynatrace-operator.platform" .) "google-marketplace" -}}
+    {{- if (.Values.imageRef).repository -}}
+        {{- .Values.imageRef.tag | default (printf "v%s" .Chart.AppVersion) | printf "%s:%s" .Values.imageRef.repository -}}
+    {{- else if eq (include "dynatrace-operator.platform" .) "google-marketplace" -}}
     	{{- printf "%s:%s" "gcr.io/dynatrace-marketplace-prod/dynatrace-operator" .Chart.AppVersion }}
 	{{- else -}}
 		{{- printf "%s:v%s" "docker.io/dynatrace/dynatrace-operator" .Chart.AppVersion }}
