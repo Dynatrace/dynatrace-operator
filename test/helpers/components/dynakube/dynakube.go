@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/stretchr/testify/require"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -27,16 +27,16 @@ const (
 )
 
 type Builder struct {
-	dynakube dynatracev1beta1.DynaKube
+	dynakube dynatracev1.DynaKube
 }
 
 func NewBuilder() Builder {
 	return Builder{
-		dynakube: dynatracev1beta1.DynaKube{
+		dynakube: dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{},
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{},
+			Spec: dynatracev1.DynaKubeSpec{},
 		},
 	}
 }
@@ -74,12 +74,12 @@ func (dynakubeBuilder Builder) ApiUrl(apiUrl string) Builder {
 }
 
 func (dynakubeBuilder Builder) WithActiveGate() Builder {
-	dynakubeBuilder.dynakube.Spec.ActiveGate = dynatracev1beta1.ActiveGateSpec{
-		Capabilities: []dynatracev1beta1.CapabilityDisplayName{
-			dynatracev1beta1.KubeMonCapability.DisplayName,
-			dynatracev1beta1.DynatraceApiCapability.DisplayName,
-			dynatracev1beta1.RoutingCapability.DisplayName,
-			dynatracev1beta1.MetricsIngestCapability.DisplayName,
+	dynakubeBuilder.dynakube.Spec.ActiveGate = dynatracev1.ActiveGateSpec{
+		Capabilities: []dynatracev1.CapabilityDisplayName{
+			dynatracev1.KubeMonCapability.DisplayName,
+			dynatracev1.DynatraceApiCapability.DisplayName,
+			dynatracev1.RoutingCapability.DisplayName,
+			dynatracev1.MetricsIngestCapability.DisplayName,
 		},
 	}
 	return dynakubeBuilder
@@ -103,7 +103,7 @@ func (dynakubeBuilder Builder) WithDynakubeNamespaceSelector() Builder {
 	})
 }
 
-func (dynakubeBuilder Builder) Proxy(proxy *dynatracev1beta1.DynaKubeProxy) Builder {
+func (dynakubeBuilder Builder) Proxy(proxy *dynatracev1.DynaKubeProxy) Builder {
 	dynakubeBuilder.dynakube.Spec.Proxy = proxy
 	return dynakubeBuilder
 }
@@ -114,52 +114,52 @@ func (dynakubeBuilder Builder) WithIstio() Builder {
 }
 
 func (dynakubeBuilder Builder) Privileged() Builder {
-	dynakubeBuilder.dynakube.Annotations[dynatracev1beta1.AnnotationFeatureRunOneAgentContainerPrivileged] = "true"
+	dynakubeBuilder.dynakube.Annotations[dynatracev1.AnnotationFeatureRunOneAgentContainerPrivileged] = "true"
 	return dynakubeBuilder
 }
 
-func (dynakubeBuilder Builder) ClassicFullstack(classicFullStackSpec *dynatracev1beta1.HostInjectSpec) Builder {
+func (dynakubeBuilder Builder) ClassicFullstack(classicFullStackSpec *dynatracev1.HostInjectSpec) Builder {
 	dynakubeBuilder.dynakube.Spec.OneAgent.ClassicFullStack = classicFullStackSpec
 	return dynakubeBuilder
 }
 
-func (dynakubeBuilder Builder) CloudNative(cloudNativeFullStackSpec *dynatracev1beta1.CloudNativeFullStackSpec) Builder {
+func (dynakubeBuilder Builder) CloudNative(cloudNativeFullStackSpec *dynatracev1.CloudNativeFullStackSpec) Builder {
 	dynakubeBuilder.dynakube.Spec.OneAgent.CloudNativeFullStack = cloudNativeFullStackSpec
 	return dynakubeBuilder
 }
 
-func (dynakubeBuilder Builder) CloudNativeWithAgentVersion(cloudNativeFullStackSpec *dynatracev1beta1.CloudNativeFullStackSpec, version version.SemanticVersion) Builder {
+func (dynakubeBuilder Builder) CloudNativeWithAgentVersion(cloudNativeFullStackSpec *dynatracev1.CloudNativeFullStackSpec, version version.SemanticVersion) Builder {
 	dynakubeBuilder.dynakube.Spec.OneAgent.CloudNativeFullStack = cloudNativeFullStackSpec
 	dynakubeBuilder.dynakube.Spec.OneAgent.CloudNativeFullStack.Version = version.String()
 	return dynakubeBuilder
 }
 
-func (dynakubeBuilder Builder) ApplicationMonitoring(applicationMonitoringSpec *dynatracev1beta1.ApplicationMonitoringSpec) Builder {
+func (dynakubeBuilder Builder) ApplicationMonitoring(applicationMonitoringSpec *dynatracev1.ApplicationMonitoringSpec) Builder {
 	dynakubeBuilder.dynakube.Spec.OneAgent.ApplicationMonitoring = applicationMonitoringSpec
 	return dynakubeBuilder
 }
 
 func (builder Builder) WithSyntheticLocation(entityId string) Builder {
-	builder.dynakube.Annotations[dynatracev1beta1.AnnotationFeatureSyntheticLocationEntityId] = entityId
+	builder.dynakube.Annotations[dynatracev1.AnnotationFeatureSyntheticLocationEntityId] = entityId
 	return builder
 }
 
-func (dynakubeBuilder Builder) Build() dynatracev1beta1.DynaKube {
+func (dynakubeBuilder Builder) Build() dynatracev1.DynaKube {
 	return dynakubeBuilder.dynakube
 }
 
-func Create(dynakube dynatracev1beta1.DynaKube) features.Func {
+func Create(dynakube dynatracev1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		require.NoError(t, dynatracev1beta1.AddToScheme(environmentConfig.Client().Resources().GetScheme()))
+		require.NoError(t, dynatracev1.AddToScheme(environmentConfig.Client().Resources().GetScheme()))
 		require.NoError(t, environmentConfig.Client().Resources().Create(ctx, &dynakube))
 		return ctx
 	}
 }
 
-func Update(dynakube dynatracev1beta1.DynaKube) features.Func {
+func Update(dynakube dynatracev1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		require.NoError(t, dynatracev1beta1.AddToScheme(environmentConfig.Client().Resources().GetScheme()))
-		var dk dynatracev1beta1.DynaKube
+		require.NoError(t, dynatracev1.AddToScheme(environmentConfig.Client().Resources().GetScheme()))
+		var dk dynatracev1.DynaKube
 		require.NoError(t, environmentConfig.Client().Resources().Get(ctx, dynakube.Name, dynakube.Namespace, &dk))
 		dynakube.ResourceVersion = dk.ResourceVersion
 		require.NoError(t, environmentConfig.Client().Resources().Update(ctx, &dynakube))
@@ -167,11 +167,11 @@ func Update(dynakube dynatracev1beta1.DynaKube) features.Func {
 	}
 }
 
-func Delete(dynakube dynatracev1beta1.DynaKube) features.Func {
+func Delete(dynakube dynatracev1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resources := environmentConfig.Client().Resources()
 
-		err := dynatracev1beta1.AddToScheme(resources.GetScheme())
+		err := dynatracev1.AddToScheme(resources.GetScheme())
 		require.NoError(t, err)
 
 		err = resources.Delete(ctx, &dynakube)
@@ -191,12 +191,12 @@ func Delete(dynakube dynatracev1beta1.DynaKube) features.Func {
 	}
 }
 
-func WaitForDynakubePhase(dynakube dynatracev1beta1.DynaKube, phase dynatracev1beta1.DynaKubePhaseType) features.Func {
+func WaitForDynakubePhase(dynakube dynatracev1.DynaKube, phase dynatracev1.DynaKubePhaseType) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resources := environmentConfig.Client().Resources()
 
 		err := wait.For(conditions.New(resources).ResourceMatch(&dynakube, func(object k8s.Object) bool {
-			dynakube, isDynakube := object.(*dynatracev1beta1.DynaKube)
+			dynakube, isDynakube := object.(*dynatracev1.DynaKube)
 			return isDynakube && dynakube.Status.Phase == phase
 		}))
 
@@ -206,7 +206,7 @@ func WaitForDynakubePhase(dynakube dynatracev1beta1.DynaKube, phase dynatracev1b
 	}
 }
 
-func SyntheticLocationOrdinal(dynakube dynatracev1beta1.DynaKube) uint64 {
+func SyntheticLocationOrdinal(dynakube dynatracev1.DynaKube) uint64 {
 	const defaultOrd = uint64(0)
 	_, suffix, found := strings.Cut(dynakube.FeatureSyntheticLocationEntityId(), "-")
 	if !found {

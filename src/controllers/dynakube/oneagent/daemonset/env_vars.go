@@ -3,7 +3,7 @@ package daemonset
 import (
 	"sort"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
@@ -85,7 +85,7 @@ func (dsInfo *builderInfo) addProxyEnv(envVarMap map[string]corev1.EnvVar) map[s
 		addDefaultValueSource(envVarMap, proxy, &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{Name: dsInfo.dynakube.Spec.Proxy.ValueFrom},
-				Key:                  dynatracev1beta1.ProxyKey,
+				Key:                  dynatracev1.ProxyKey,
 			},
 		})
 	} else {

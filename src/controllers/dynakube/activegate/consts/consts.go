@@ -1,7 +1,7 @@
 package consts
 
 import (
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
 )
 
@@ -24,7 +24,7 @@ const (
 	EnvDtGroup           = "DT_GROUP"
 	EnvDtDnsEntryPoint   = "DT_DNS_ENTRY_POINT"
 
-	AnnotationActiveGateConfigurationHash = dynatracev1beta1.InternalFlagPrefix + "activegate-configuration-hash"
+	AnnotationActiveGateConfigurationHash = dynatracev1.InternalFlagPrefix + "activegate-configuration-hash"
 	AnnotationActiveGateContainerAppArmor = "container.apparmor.security.beta.kubernetes.io/" + ActiveGateContainerName
 
 	InternalProxySecretMountPath = "/var/lib/dynatrace/secrets/internal-proxy"

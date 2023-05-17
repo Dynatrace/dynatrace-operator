@@ -1,7 +1,7 @@
 package modifiers
 
 import (
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	_ "github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder"
@@ -35,7 +35,7 @@ const (
 )
 
 type SyntheticModifier struct {
-	dynakube   dynatracev1beta1.DynaKube
+	dynakube   dynatracev1.DynaKube
 	capability capability.Capability
 }
 
@@ -57,7 +57,7 @@ type nodeRequirements struct {
 }
 
 var nodeRequirementsBySize = map[string]nodeRequirements{
-	dynatracev1beta1.SyntheticNodeXs: {
+	dynatracev1.SyntheticNodeXs: {
 		requestResources:     kubeobjects.NewResources("1", "2Gi"),
 		limitResources:       kubeobjects.NewResources("2", "3Gi"),
 		jvmHeap:              kubeobjects.NewQuantity("700M"),
@@ -66,7 +66,7 @@ var nodeRequirementsBySize = map[string]nodeRequirements{
 		supportArchiveVolume: kubeobjects.NewQuantity("3Gi"),
 	},
 
-	dynatracev1beta1.SyntheticNodeS: {
+	dynatracev1.SyntheticNodeS: {
 		requestResources:     kubeobjects.NewResources("2", "3Gi"),
 		limitResources:       kubeobjects.NewResources("4", "6Gi"),
 		jvmHeap:              kubeobjects.NewQuantity("1024M"),
@@ -75,7 +75,7 @@ var nodeRequirementsBySize = map[string]nodeRequirements{
 		supportArchiveVolume: kubeobjects.NewQuantity("6Gi"),
 	},
 
-	dynatracev1beta1.SyntheticNodeM: {
+	dynatracev1.SyntheticNodeM: {
 		requestResources:     kubeobjects.NewResources("4", "5Gi"),
 		limitResources:       kubeobjects.NewResources("8", "10Gi"),
 		jvmHeap:              kubeobjects.NewQuantity("2048M"),
@@ -98,7 +98,7 @@ var (
 )
 
 func newSyntheticModifier(
-	dynakube dynatracev1beta1.DynaKube,
+	dynakube dynatracev1.DynaKube,
 	capability capability.Capability,
 ) SyntheticModifier {
 	return SyntheticModifier{

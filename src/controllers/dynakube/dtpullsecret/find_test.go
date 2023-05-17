@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -23,7 +23,7 @@ const (
 
 func TestGetImagePullSecret(t *testing.T) {
 	fakeClient := fake.NewClient()
-	instance := &dynatracev1beta1.DynaKube{
+	instance := &dynatracev1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNamespace,

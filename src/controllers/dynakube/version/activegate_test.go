@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/stretchr/testify/assert"
@@ -18,16 +18,16 @@ func TestActiveGateUpdater(t *testing.T) {
 		Tag:    "1.2.3",
 	}
 	t.Run("Getters work as expected", func(t *testing.T) {
-		dynakube := &dynatracev1beta1.DynaKube{
+		dynakube := &dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dynatracev1beta1.AnnotationFeatureDisableActiveGateUpdates: "true",
+					dynatracev1.AnnotationFeatureDisableActiveGateUpdates: "true",
 				},
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				ActiveGate: dynatracev1beta1.ActiveGateSpec{
-					Capabilities: []dynatracev1beta1.CapabilityDisplayName{dynatracev1beta1.DynatraceApiCapability.DisplayName},
-					CapabilityProperties: dynatracev1beta1.CapabilityProperties{
+			Spec: dynatracev1.DynaKubeSpec{
+				ActiveGate: dynatracev1.ActiveGateSpec{
+					Capabilities: []dynatracev1.CapabilityDisplayName{dynatracev1.DynatraceApiCapability.DisplayName},
+					CapabilityProperties: dynatracev1.CapabilityProperties{
 						Image: testImage.String(),
 					},
 				},
@@ -52,16 +52,16 @@ func TestActiveGateUpdater(t *testing.T) {
 
 func TestActiveGateUseDefault(t *testing.T) {
 	t.Run("Set according to defaults, unset previous status", func(t *testing.T) {
-		dynakube := &dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
+		dynakube := &dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testApiUrl,
-				ActiveGate: dynatracev1beta1.ActiveGateSpec{
-					CapabilityProperties: dynatracev1beta1.CapabilityProperties{},
+				ActiveGate: dynatracev1.ActiveGateSpec{
+					CapabilityProperties: dynatracev1.CapabilityProperties{},
 				},
 			},
-			Status: dynatracev1beta1.DynaKubeStatus{
-				ActiveGate: dynatracev1beta1.ActiveGateStatus{
-					VersionStatus: dynatracev1beta1.VersionStatus{
+			Status: dynatracev1.DynaKubeStatus{
+				ActiveGate: dynatracev1.ActiveGateStatus{
+					VersionStatus: dynatracev1.VersionStatus{
 						Version: "prev",
 					},
 				},

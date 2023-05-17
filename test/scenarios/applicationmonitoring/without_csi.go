@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
@@ -39,7 +39,7 @@ func withoutCSIDriver(t *testing.T) features.Feature {
 				"inject": defaultDynakubeName,
 			},
 		}).
-		ApplicationMonitoring(&dynatracev1beta1.ApplicationMonitoringSpec{
+		ApplicationMonitoring(&dynatracev1.ApplicationMonitoringSpec{
 			UseCSIDriver: address.Of(false),
 		})
 

@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"time"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
 	csigc "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/gc"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
@@ -78,7 +78,7 @@ func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions, db metad
 
 func (provisioner *OneAgentProvisioner) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&dynatracev1beta1.DynaKube{}).
+		For(&dynatracev1.DynaKube{}).
 		Complete(provisioner)
 }
 
@@ -120,7 +120,7 @@ func (provisioner *OneAgentProvisioner) collectGarbage(ctx context.Context, requ
 	return err
 }
 
-func (provisioner *OneAgentProvisioner) provision(ctx context.Context, dk *dynatracev1beta1.DynaKube) error {
+func (provisioner *OneAgentProvisioner) provision(ctx context.Context, dk *dynatracev1.DynaKube) error {
 	dynakubeMetadata, oldDynakubeMetadata, err := provisioner.handleMetadata(ctx, dk)
 	if err != nil {
 		return err
@@ -171,7 +171,7 @@ func (provisioner *OneAgentProvisioner) provision(ctx context.Context, dk *dynat
 	return nil
 }
 
-func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Context, dtc dtclient.Client, dynakubeMetadata *metadata.Dynakube, dk *dynatracev1beta1.DynaKube) (
+func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Context, dtc dtclient.Client, dynakubeMetadata *metadata.Dynakube, dk *dynatracev1.DynaKube) (
 	latestProcessModuleConfigCache *processModuleConfigCache,
 	requeue bool,
 	err error,
@@ -226,7 +226,7 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Cont
 	return latestProcessModuleConfigCache, false, nil
 }
 
-func (provisioner *OneAgentProvisioner) getAgentTenantToken(ctx context.Context, dk *dynatracev1beta1.DynaKube) (string, error) {
+func (provisioner *OneAgentProvisioner) getAgentTenantToken(ctx context.Context, dk *dynatracev1.DynaKube) (string, error) {
 	query := kubeobjects.NewSecretQuery(ctx, provisioner.client, provisioner.apiReader, log)
 	secret, err := query.Get(types.NamespacedName{Namespace: dk.Namespace, Name: dk.OneagentTenantSecret()})
 	if err != nil {
@@ -241,7 +241,7 @@ func (provisioner *OneAgentProvisioner) getAgentTenantToken(ctx context.Context,
 	return string(token), nil
 }
 
-func (provisioner *OneAgentProvisioner) handleMetadata(ctx context.Context, dk *dynatracev1beta1.DynaKube) (*metadata.Dynakube, metadata.Dynakube, error) {
+func (provisioner *OneAgentProvisioner) handleMetadata(ctx context.Context, dk *dynatracev1.DynaKube) (*metadata.Dynakube, metadata.Dynakube, error) {
 	dynakubeMetadata, err := provisioner.db.GetDynakube(ctx, dk.Name)
 	if err != nil {
 		return nil, metadata.Dynakube{}, errors.WithStack(err)
@@ -288,7 +288,7 @@ func (provisioner *OneAgentProvisioner) createOrUpdateDynakubeMetadata(ctx conte
 	return nil
 }
 
-func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk *dynatracev1beta1.DynaKube) (dtclient.Client, error) {
+func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk *dynatracev1.DynaKube) (dtclient.Client, error) {
 	tokenReader := token.NewReader(provisioner.apiReader, dk)
 	tokens, err := tokenReader.ReadTokens(ctx)
 
@@ -309,8 +309,8 @@ func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk *dynatra
 	return dynatraceClient, nil
 }
 
-func (provisioner *OneAgentProvisioner) getDynaKube(ctx context.Context, name types.NamespacedName) (*dynatracev1beta1.DynaKube, error) {
-	var dk dynatracev1beta1.DynaKube
+func (provisioner *OneAgentProvisioner) getDynaKube(ctx context.Context, name types.NamespacedName) (*dynatracev1.DynaKube, error) {
+	var dk dynatracev1.DynaKube
 	err := provisioner.apiReader.Get(ctx, name, &dk)
 
 	return &dk, err

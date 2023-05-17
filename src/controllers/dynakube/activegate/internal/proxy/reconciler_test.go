@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/stretchr/testify/assert"
@@ -28,12 +28,12 @@ const (
 )
 
 func newTestReconcilerWithInstance(client client.Client) *Reconciler {
-	instance := &dynatracev1beta1.DynaKube{
+	instance := &dynatracev1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
 			Name:      testDynakubeName,
 		},
-		Spec: dynatracev1beta1.DynaKubeSpec{
+		Spec: dynatracev1.DynaKubeSpec{
 			APIURL: "https://testing.dev.dynatracelabs.com/api",
 		},
 	}
@@ -81,7 +81,7 @@ func TestReconcileProxyValue(t *testing.T) {
 	t.Run(`reconcile proxy Value`, func(t *testing.T) {
 		var proxyValue = buildProxyUrl(proxyUsername, proxyPassword, proxyHost, proxyPort)
 		r := newTestReconcilerWithInstance(fake.NewClientBuilder().Build())
-		r.dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: proxyValue}
+		r.dynakube.Spec.Proxy = &dynatracev1.DynaKubeProxy{Value: proxyValue}
 		err := r.Reconcile()
 		require.NoError(t, err)
 
@@ -95,7 +95,7 @@ func TestReconcileProxyValue(t *testing.T) {
 	})
 	t.Run(`reconcile empty proxy Value`, func(t *testing.T) {
 		r := newTestReconcilerWithInstance(fake.NewClientBuilder().Build())
-		r.dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: ""}
+		r.dynakube.Spec.Proxy = &dynatracev1.DynaKubeProxy{Value: ""}
 		err := r.Reconcile()
 		require.NoError(t, err)
 
@@ -115,7 +115,7 @@ func TestReconcileProxyValueFrom(t *testing.T) {
 	r := newTestReconcilerWithInstance(testClient)
 
 	t.Run(`reconcile proxy ValueFrom`, func(t *testing.T) {
-		r.dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{ValueFrom: customProxySecret}
+		r.dynakube.Spec.Proxy = &dynatracev1.DynaKubeProxy{ValueFrom: customProxySecret}
 		err := r.Reconcile()
 		require.NoError(t, err)
 
@@ -128,7 +128,7 @@ func TestReconcileProxyValueFrom(t *testing.T) {
 		assert.Equal(t, []byte(proxyUsername), proxySecret.Data[proxyUsernameField])
 	})
 	t.Run(`Change of Proxy ValueFrom to Value`, func(t *testing.T) {
-		r.dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{ValueFrom: customProxySecret}
+		r.dynakube.Spec.Proxy = &dynatracev1.DynaKubeProxy{ValueFrom: customProxySecret}
 		err := r.Reconcile()
 		require.NoError(t, err)
 
@@ -154,7 +154,7 @@ func TestReconcileProxyValueFrom(t *testing.T) {
 		assert.Equal(t, []byte(proxyDifferentUsername), proxySecret.Data[proxyUsernameField])
 	})
 	t.Run(`reconcile proxy ValueFrom with non existing secret`, func(t *testing.T) {
-		r.dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{ValueFrom: "secret"}
+		r.dynakube.Spec.Proxy = &dynatracev1.DynaKubeProxy{ValueFrom: "secret"}
 		err := r.Reconcile()
 
 		require.Error(t, err)
@@ -167,7 +167,7 @@ func createProxySecret(proxyUrl string) *corev1.Secret {
 			Name:      customProxySecret,
 			Namespace: testNamespace,
 		},
-		Data: map[string][]byte{dynatracev1beta1.ProxyKey: []byte(proxyUrl)},
+		Data: map[string][]byte{dynatracev1.ProxyKey: []byte(proxyUrl)},
 	}
 }
 

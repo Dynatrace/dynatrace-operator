@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
@@ -33,7 +33,7 @@ func TestEnabled(t *testing.T) {
 	t.Run("turned off via a feature-flag", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		request := createTestMutationRequest(nil, nil)
-		request.DynaKube.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureDisableMetadataEnrichment: "true"}
+		request.DynaKube.Annotations = map[string]string{dynatracev1.AnnotationFeatureDisableMetadataEnrichment: "true"}
 
 		enabled := mutator.Enabled(request.BaseRequest)
 
@@ -50,7 +50,7 @@ func TestEnabled(t *testing.T) {
 	t.Run("off by feature flag", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		request := createTestMutationRequest(nil, nil)
-		request.DynaKube.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureAutomaticInjection: "false"}
+		request.DynaKube.Annotations = map[string]string{dynatracev1.AnnotationFeatureAutomaticInjection: "false"}
 
 		enabled := mutator.Enabled(request.BaseRequest)
 
@@ -59,7 +59,7 @@ func TestEnabled(t *testing.T) {
 	t.Run("on with feature flag", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		request := createTestMutationRequest(nil, nil)
-		request.DynaKube.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureAutomaticInjection: "true"}
+		request.DynaKube.Annotations = map[string]string{dynatracev1.AnnotationFeatureAutomaticInjection: "true"}
 
 		enabled := mutator.Enabled(request.BaseRequest)
 
@@ -180,9 +180,9 @@ func TestContainerIsInjected(t *testing.T) {
 	})
 }
 
-func createTestMutationRequest(dynakube *dynatracev1beta1.DynaKube, annotations map[string]string) *dtwebhook.MutationRequest {
+func createTestMutationRequest(dynakube *dynatracev1.DynaKube, annotations map[string]string) *dtwebhook.MutationRequest {
 	if dynakube == nil {
-		dynakube = &dynatracev1beta1.DynaKube{}
+		dynakube = &dynatracev1.DynaKube{}
 	}
 	return dtwebhook.NewMutationRequest(
 		context.TODO(),
@@ -195,7 +195,7 @@ func createTestMutationRequest(dynakube *dynatracev1beta1.DynaKube, annotations 
 	)
 }
 
-func createTestReinvocationRequest(dynakube *dynatracev1beta1.DynaKube, annotations map[string]string) *dtwebhook.ReinvocationRequest {
+func createTestReinvocationRequest(dynakube *dynatracev1.DynaKube, annotations map[string]string) *dtwebhook.ReinvocationRequest {
 	request := createTestMutationRequest(dynakube, annotations).ToReinvocationRequest()
 	request.Pod.Spec.InitContainers = append(request.Pod.Spec.InitContainers, corev1.Container{Name: dtwebhook.InstallContainerName})
 	return request
@@ -257,18 +257,18 @@ func getTestInitSecret() *corev1.Secret {
 	}
 }
 
-func getTestDynakube() *dynatracev1beta1.DynaKube {
-	return &dynatracev1beta1.DynaKube{
+func getTestDynakube() *dynatracev1.DynaKube {
+	return &dynatracev1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testDynakubeName,
 			Namespace: testNamespaceName,
 		},
-		Spec: dynatracev1beta1.DynaKubeSpec{
-			OneAgent: dynatracev1beta1.OneAgentSpec{
-				ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{},
+		Spec: dynatracev1.DynaKubeSpec{
+			OneAgent: dynatracev1.OneAgentSpec{
+				ApplicationMonitoring: &dynatracev1.ApplicationMonitoringSpec{},
 			},
-			ActiveGate: dynatracev1beta1.ActiveGateSpec{
-				Capabilities: []dynatracev1beta1.CapabilityDisplayName{dynatracev1beta1.MetricsIngestCapability.DisplayName},
+			ActiveGate: dynatracev1.ActiveGateSpec{
+				Capabilities: []dynatracev1.CapabilityDisplayName{dynatracev1.MetricsIngestCapability.DisplayName},
 			},
 		},
 	}

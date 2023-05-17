@@ -3,7 +3,7 @@ package capability
 import (
 	"strings"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
@@ -18,11 +18,11 @@ const (
 type baseFunc func() *capabilityBase
 
 var (
-	activeGateCapabilities = map[dynatracev1beta1.CapabilityDisplayName]baseFunc{
-		dynatracev1beta1.KubeMonCapability.DisplayName:       kubeMonBase,
-		dynatracev1beta1.RoutingCapability.DisplayName:       routingBase,
-		dynatracev1beta1.MetricsIngestCapability.DisplayName: metricsIngestBase,
-		dynatracev1beta1.DynatraceApiCapability.DisplayName:  dynatraceApiBase,
+	activeGateCapabilities = map[dynatracev1.CapabilityDisplayName]baseFunc{
+		dynatracev1.KubeMonCapability.DisplayName:       kubeMonBase,
+		dynatracev1.RoutingCapability.DisplayName:       routingBase,
+		dynatracev1.MetricsIngestCapability.DisplayName: metricsIngestBase,
+		dynatracev1.DynatraceApiCapability.DisplayName:  dynatraceApiBase,
 	}
 
 	SyntheticActiveGateResourceRequirements = corev1.ResourceRequirements{
@@ -35,21 +35,21 @@ type Capability interface {
 	Enabled() bool
 	ShortName() string
 	ArgName() string
-	Properties() *dynatracev1beta1.CapabilityProperties
+	Properties() *dynatracev1.CapabilityProperties
 }
 
 type capabilityBase struct {
 	enabled    bool
 	shortName  string
 	argName    string
-	properties *dynatracev1beta1.CapabilityProperties
+	properties *dynatracev1.CapabilityProperties
 }
 
 func (capability *capabilityBase) Enabled() bool {
 	return capability.enabled
 }
 
-func (capability *capabilityBase) Properties() *dynatracev1beta1.CapabilityProperties {
+func (capability *capabilityBase) Properties() *dynatracev1.CapabilityProperties {
 	return capability.properties
 }
 
@@ -83,7 +83,7 @@ type SyntheticCapability struct {
 	capabilityBase
 }
 
-func NewMultiCapability(dk *dynatracev1beta1.DynaKube) *MultiCapability {
+func NewMultiCapability(dk *dynatracev1.DynaKube) *MultiCapability {
 	mc := MultiCapability{
 		capabilityBase{
 			shortName: consts.MultiActiveGateName,
@@ -107,33 +107,36 @@ func NewMultiCapability(dk *dynatracev1beta1.DynaKube) *MultiCapability {
 	return &mc
 }
 
+/*
 // Deprecated
-func NewKubeMonCapability(dk *dynatracev1beta1.DynaKube) *KubeMonCapability {
-	c := &KubeMonCapability{
-		*kubeMonBase(),
-	}
-	if dk == nil {
+
+	func NewKubeMonCapability(dk *dynatracev1.DynaKube) *KubeMonCapability {
+		c := &KubeMonCapability{
+			*kubeMonBase(),
+		}
+		if dk == nil {
+			return c
+		}
+		c.enabled = false // dk.Spec.KubernetesMonitoring.Enabled
+		c.properties = &dk.Spec.KubernetesMonitoring.CapabilityProperties
 		return c
 	}
-	c.enabled = dk.Spec.KubernetesMonitoring.Enabled
-	c.properties = &dk.Spec.KubernetesMonitoring.CapabilityProperties
-	return c
-}
 
 // Deprecated
-func NewRoutingCapability(dk *dynatracev1beta1.DynaKube) *RoutingCapability {
-	c := &RoutingCapability{
-		*routingBase(),
-	}
-	if dk == nil {
+
+	func NewRoutingCapability(dk *dynatracev1.DynaKube) *RoutingCapability {
+		c := &RoutingCapability{
+			*routingBase(),
+		}
+		if dk == nil {
+			return c
+		}
+		c.enabled = false // dk.Spec.Routing.Enabled
+		c.properties = &dk.Spec.Routing.CapabilityProperties
 		return c
 	}
-	c.enabled = dk.Spec.Routing.Enabled
-	c.properties = &dk.Spec.Routing.CapabilityProperties
-	return c
-}
-
-func NewSyntheticCapability(dk *dynatracev1beta1.DynaKube) *SyntheticCapability {
+*/
+func NewSyntheticCapability(dk *dynatracev1.DynaKube) *SyntheticCapability {
 	capability := &SyntheticCapability{
 		*syntheticBase(),
 	}
@@ -152,32 +155,32 @@ func NewSyntheticCapability(dk *dynatracev1beta1.DynaKube) *SyntheticCapability 
 
 func kubeMonBase() *capabilityBase {
 	c := capabilityBase{
-		shortName: dynatracev1beta1.KubeMonCapability.ShortName,
-		argName:   dynatracev1beta1.KubeMonCapability.ArgumentName,
+		shortName: dynatracev1.KubeMonCapability.ShortName,
+		argName:   dynatracev1.KubeMonCapability.ArgumentName,
 	}
 	return &c
 }
 
 func routingBase() *capabilityBase {
 	c := capabilityBase{
-		shortName: dynatracev1beta1.RoutingCapability.ShortName,
-		argName:   dynatracev1beta1.RoutingCapability.ArgumentName,
+		shortName: dynatracev1.RoutingCapability.ShortName,
+		argName:   dynatracev1.RoutingCapability.ArgumentName,
 	}
 	return &c
 }
 
 func metricsIngestBase() *capabilityBase {
 	c := capabilityBase{
-		shortName: dynatracev1beta1.MetricsIngestCapability.ShortName,
-		argName:   dynatracev1beta1.MetricsIngestCapability.ArgumentName,
+		shortName: dynatracev1.MetricsIngestCapability.ShortName,
+		argName:   dynatracev1.MetricsIngestCapability.ArgumentName,
 	}
 	return &c
 }
 
 func dynatraceApiBase() *capabilityBase {
 	c := capabilityBase{
-		shortName: dynatracev1beta1.DynatraceApiCapability.ShortName,
-		argName:   dynatracev1beta1.DynatraceApiCapability.ArgumentName,
+		shortName: dynatracev1.DynatraceApiCapability.ShortName,
+		argName:   dynatracev1.DynatraceApiCapability.ArgumentName,
 	}
 	return &c
 }
@@ -190,10 +193,10 @@ func syntheticBase() *capabilityBase {
 	return &c
 }
 
-func GenerateActiveGateCapabilities(dk *dynatracev1beta1.DynaKube) []Capability {
+func GenerateActiveGateCapabilities(dk *dynatracev1.DynaKube) []Capability {
 	return []Capability{
-		NewKubeMonCapability(dk),
-		NewRoutingCapability(dk),
+		// NewKubeMonCapability(dk),
+		// NewRoutingCapability(dk),
 		NewMultiCapability(dk),
 		NewSyntheticCapability(dk),
 	}

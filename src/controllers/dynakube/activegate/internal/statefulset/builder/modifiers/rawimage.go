@@ -1,7 +1,7 @@
 package modifiers
 
 import (
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
@@ -16,14 +16,14 @@ var _ volumeModifier = RawImageModifier{}
 var _ volumeMountModifier = RawImageModifier{}
 var _ builder.Modifier = RawImageModifier{}
 
-func NewRawImageModifier(dynakube dynatracev1beta1.DynaKube) RawImageModifier {
+func NewRawImageModifier(dynakube dynatracev1.DynaKube) RawImageModifier {
 	return RawImageModifier{
 		dynakube: dynakube,
 	}
 }
 
 type RawImageModifier struct {
-	dynakube dynatracev1beta1.DynaKube
+	dynakube dynatracev1.DynaKube
 }
 
 func (mod RawImageModifier) Enabled() bool {

@@ -3,7 +3,7 @@ package troubleshoot
 import (
 	"fmt"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
@@ -55,8 +55,8 @@ func checkDynakube(results ChecksResults, troubleshootCtx *troubleshootContext) 
 	return nil
 }
 
-func getSelectedDynakube(troubleshootCtx *troubleshootContext) (dynatracev1beta1.DynaKube, error) {
-	var dynaKube dynatracev1beta1.DynaKube
+func getSelectedDynakube(troubleshootCtx *troubleshootContext) (dynatracev1.DynaKube, error) {
+	var dynaKube dynatracev1.DynaKube
 	err := troubleshootCtx.apiReader.Get(
 		troubleshootCtx.context,
 		client.ObjectKey{
@@ -67,7 +67,7 @@ func getSelectedDynakube(troubleshootCtx *troubleshootContext) (dynatracev1beta1
 	)
 
 	if err != nil {
-		return dynatracev1beta1.DynaKube{}, determineSelectedDynakubeError(troubleshootCtx, err)
+		return dynatracev1.DynaKube{}, determineSelectedDynakubeError(troubleshootCtx, err)
 	}
 
 	return dynaKube, nil

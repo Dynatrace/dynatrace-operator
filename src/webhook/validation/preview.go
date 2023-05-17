@@ -3,7 +3,7 @@ package validation
 import (
 	"fmt"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 )
 
@@ -12,11 +12,11 @@ const (
 	basePreviewWarning           = "PREVIEW features are NOT production ready and you may run into bugs."
 )
 
-func metricIngestPreviewWarning(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
-	return warnOnCapabilityIfActive(dynatracev1beta1.MetricsIngestCapability.DisplayName, dynakube)
+func metricIngestPreviewWarning(dv *dynakubeValidator, dynakube *dynatracev1.DynaKube) string {
+	return warnOnCapabilityIfActive(dynatracev1.MetricsIngestCapability.DisplayName, dynakube)
 }
 
-func warnOnCapabilityIfActive(capability dynatracev1beta1.CapabilityDisplayName, dynakube *dynatracev1beta1.DynaKube) string {
+func warnOnCapabilityIfActive(capability dynatracev1.CapabilityDisplayName, dynakube *dynatracev1.DynaKube) string {
 	if dynakube.IsActiveGateMode(capability) {
 		log.Info(fmt.Sprintf("DynaKube with %s was applied, warning was provided.", capability))
 		return fmt.Sprintf(featurePreviewWarningMessage, capability)
@@ -24,7 +24,7 @@ func warnOnCapabilityIfActive(capability dynatracev1beta1.CapabilityDisplayName,
 	return ""
 }
 
-func syntheticPreviewWarning(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func syntheticPreviewWarning(dv *dynakubeValidator, dynakube *dynatracev1.DynaKube) string {
 	if dynakube.IsSyntheticMonitoringEnabled() {
 		log.Info(fmt.Sprintf("DynaKube with %s was applied, warning was provided.", capability.SyntheticName))
 		return fmt.Sprintf(featurePreviewWarningMessage, capability.SyntheticName)

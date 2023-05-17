@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
@@ -82,8 +82,8 @@ func TestController_ReconcileIstio(t *testing.T) {
 	require.NoError(t, err)
 
 	virtualService := buildVirtualService(buildObjectMeta(testVirtualServiceName, DefaultTestNamespace), "localhost", serverUrl.Scheme, uint32(port))
-	instance := &dynatracev1beta1.DynaKube{
-		Spec: dynatracev1beta1.DynaKubeSpec{
+	instance := &dynatracev1.DynaKube{
+		Spec: dynatracev1.DynaKubeSpec{
 			APIURL: serverUrl.String(),
 		},
 	}

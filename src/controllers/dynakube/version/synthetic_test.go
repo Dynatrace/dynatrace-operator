@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/stretchr/testify/require"
@@ -15,18 +15,18 @@ func TestSyntheticUseTenantRegistry(t *testing.T) {
 	testVersion := "1.2.3"
 	testHash := getTestDigest()
 	t.Run("default image specified", func(t *testing.T) {
-		dynakube := &dynatracev1beta1.DynaKube{
+		dynakube := &dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dynatracev1beta1.AnnotationFeatureSyntheticLocationEntityId: "non-existent",
+					dynatracev1.AnnotationFeatureSyntheticLocationEntityId: "non-existent",
 				},
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testApiUrl,
 			},
-			Status: dynatracev1beta1.DynaKubeStatus{
-				Synthetic: dynatracev1beta1.SyntheticStatus{
-					VersionStatus: dynatracev1beta1.VersionStatus{
+			Status: dynatracev1.DynaKubeStatus{
+				Synthetic: dynatracev1.SyntheticStatus{
+					VersionStatus: dynatracev1.VersionStatus{
 						Version: "non-empty",
 					},
 				},

@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/apimonitoring"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
@@ -74,7 +74,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, sc
 
 func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&dynatracev1beta1.DynaKube{}).
+		For(&dynatracev1.DynaKube{}).
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&appsv1.DaemonSet{}).
 		Owns(&corev1.ConfigMap{}).
@@ -132,7 +132,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 			log.Info("server is unavailable or request limit reached! trying again in one minute")
 			return reconcile.Result{RequeueAfter: requeueAfter}, nil
 		}
-		dynakube.Status.SetPhase(dynatracev1beta1.Error)
+		dynakube.Status.SetPhase(dynatracev1.Error)
 		log.Error(err, "error reconciling DynaKube", "namespace", dynakube.Namespace, "name", dynakube.Name)
 	} else {
 		dynakube.Status.SetPhase(controller.determineDynaKubePhase(dynakube))
@@ -150,8 +150,8 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	return reconcile.Result{RequeueAfter: requeueAfter}, err
 }
 
-func (controller *Controller) getDynakubeOrUnmap(ctx context.Context, dkName, dkNamespace string) (*dynatracev1beta1.DynaKube, error) {
-	dynakube := &dynatracev1beta1.DynaKube{
+func (controller *Controller) getDynakubeOrUnmap(ctx context.Context, dkName, dkNamespace string) (*dynatracev1.DynaKube, error) {
+	dynakube := &dynatracev1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      dkName,
 			Namespace: dkNamespace,
@@ -166,12 +166,12 @@ func (controller *Controller) getDynakubeOrUnmap(ctx context.Context, dkName, dk
 	return dynakube, nil
 }
 
-func (controller *Controller) createDynakubeMapper(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) *mapper.DynakubeMapper {
+func (controller *Controller) createDynakubeMapper(ctx context.Context, dynakube *dynatracev1.DynaKube) *mapper.DynakubeMapper {
 	dkMapper := mapper.NewDynakubeMapper(ctx, controller.client, controller.apiReader, controller.operatorNamespace, dynakube)
 	return &dkMapper
 }
 
-func (controller *Controller) reconcileIstio(dynakube *dynatracev1beta1.DynaKube) bool {
+func (controller *Controller) reconcileIstio(dynakube *dynatracev1.DynaKube) bool {
 	updated := false
 
 	if dynakube.Spec.EnableIstio {
@@ -187,7 +187,7 @@ func (controller *Controller) reconcileIstio(dynakube *dynatracev1beta1.DynaKube
 	return updated
 }
 
-func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
+func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *dynatracev1.DynaKube) error {
 	tokenReader := token.NewReader(controller.apiReader, dynakube)
 	tokens, err := tokenReader.ReadTokens(ctx)
 
@@ -267,7 +267,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 	return nil
 }
 
-func (controller *Controller) reconcileAppInjection(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
+func (controller *Controller) reconcileAppInjection(ctx context.Context, dynakube *dynatracev1.DynaKube) error {
 	if dynakube.NeedAppInjection() {
 		return controller.setupAppInjection(ctx, dynakube)
 	}
@@ -275,7 +275,7 @@ func (controller *Controller) reconcileAppInjection(ctx context.Context, dynakub
 	return controller.removeAppInjection(ctx, dynakube)
 }
 
-func (controller *Controller) setupAppInjection(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) (err error) {
+func (controller *Controller) setupAppInjection(ctx context.Context, dynakube *dynatracev1.DynaKube) (err error) {
 	endpointSecretGenerator := dtingestendpoint.NewEndpointSecretGenerator(controller.client, controller.apiReader, dynakube.Namespace)
 	dkMapper := controller.createDynakubeMapper(ctx, dynakube)
 
@@ -297,14 +297,14 @@ func (controller *Controller) setupAppInjection(ctx context.Context, dynakube *d
 	}
 
 	if dynakube.ApplicationMonitoringMode() {
-		dynakube.Status.SetPhase(dynatracev1beta1.Running)
+		dynakube.Status.SetPhase(dynatracev1.Running)
 	}
 
 	log.Info("app injection reconciled")
 	return nil
 }
 
-func (controller *Controller) removeAppInjection(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) (err error) {
+func (controller *Controller) removeAppInjection(ctx context.Context, dynakube *dynatracev1.DynaKube) (err error) {
 	endpointSecretGenerator := dtingestendpoint.NewEndpointSecretGenerator(controller.client, controller.apiReader, dynakube.Namespace)
 	dkMapper := controller.createDynakubeMapper(ctx, dynakube)
 
@@ -320,7 +320,7 @@ func (controller *Controller) removeAppInjection(ctx context.Context, dynakube *
 	return nil
 }
 
-func (controller *Controller) reconcileOneAgent(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
+func (controller *Controller) reconcileOneAgent(ctx context.Context, dynakube *dynatracev1.DynaKube) error {
 	if !dynakube.NeedsOneAgent() {
 		return controller.removeOneAgentDaemonSet(ctx, dynakube)
 	}
@@ -330,12 +330,12 @@ func (controller *Controller) reconcileOneAgent(ctx context.Context, dynakube *d
 	).Reconcile(ctx, dynakube)
 }
 
-func (controller *Controller) removeOneAgentDaemonSet(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
+func (controller *Controller) removeOneAgentDaemonSet(ctx context.Context, dynakube *dynatracev1.DynaKube) error {
 	oneAgentDaemonSet := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dynakube.OneAgentDaemonsetName(), Namespace: dynakube.Namespace}}
 	return kubeobjects.Delete(ctx, controller.client, &oneAgentDaemonSet)
 }
 
-func (controller *Controller) reconcileActiveGate(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) error {
+func (controller *Controller) reconcileActiveGate(ctx context.Context, dynakube *dynatracev1.DynaKube, dtc dtclient.Client) error {
 	reconciler := activegate.NewReconciler(ctx, controller.client, controller.apiReader, controller.scheme, dynakube, dtc)
 	err := reconciler.Reconcile()
 
@@ -347,7 +347,7 @@ func (controller *Controller) reconcileActiveGate(ctx context.Context, dynakube 
 	return nil
 }
 
-func (controller *Controller) setupAutomaticApiMonitoring(dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) {
+func (controller *Controller) setupAutomaticApiMonitoring(dynakube *dynatracev1.DynaKube, dtc dtclient.Client) {
 	if dynakube.Status.KubeSystemUUID != "" &&
 		dynakube.FeatureAutomaticKubernetesApiMonitoring() &&
 		dynakube.IsKubernetesMonitoringActiveGateEnabled() {
@@ -364,7 +364,7 @@ func (controller *Controller) setupAutomaticApiMonitoring(dynakube *dynatracev1b
 	}
 }
 
-func (controller *Controller) updateDynakubeStatus(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
+func (controller *Controller) updateDynakubeStatus(ctx context.Context, dynakube *dynatracev1.DynaKube) error {
 	dynakube.Status.UpdatedTimestamp = metav1.Now()
 	err := controller.client.Status().Update(ctx, dynakube)
 	if err != nil && k8serrors.IsConflict(err) {

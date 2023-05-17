@@ -5,7 +5,7 @@ import (
 	"path"
 	"path/filepath"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	corev1 "k8s.io/api/core/v1"
@@ -20,13 +20,13 @@ const (
 
 type DockerConfig struct {
 	ApiReader          client.Reader
-	Dynakube           *dynatracev1beta1.DynaKube
+	Dynakube           *dynatracev1.DynaKube
 	RegistryAuthPath   string
 	TrustedCertsPath   string
 	registryAuthSecret *corev1.Secret
 }
 
-func NewDockerConfig(apiReader client.Reader, dynakube dynatracev1beta1.DynaKube) *DockerConfig {
+func NewDockerConfig(apiReader client.Reader, dynakube dynatracev1.DynaKube) *DockerConfig {
 	trustedCertsPath := ""
 	if dynakube.Spec.TrustedCAs != "" {
 		trustedCertsPath = path.Join(TmpPath, CADir, dynakube.Name)

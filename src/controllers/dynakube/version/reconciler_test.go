@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
@@ -33,16 +33,16 @@ func TestReconcile(t *testing.T) {
 	testActiveGateHash := digest.FromString("sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d72f")
 	testCodeModulesHash := digest.FromString("sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d82f")
 
-	dynakubeTemplate := dynatracev1beta1.DynaKube{
+	dynakubeTemplate := dynatracev1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace},
-		Spec: dynatracev1beta1.DynaKubeSpec{
+		Spec: dynatracev1.DynaKubeSpec{
 			APIURL: testApiUrl,
-			OneAgent: dynatracev1beta1.OneAgentSpec{
-				CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
+			OneAgent: dynatracev1.OneAgentSpec{
+				CloudNativeFullStack: &dynatracev1.CloudNativeFullStackSpec{},
 			},
-			ActiveGate: dynatracev1beta1.ActiveGateSpec{
-				Capabilities: []dynatracev1beta1.CapabilityDisplayName{
-					dynatracev1beta1.CapabilityDisplayName(dynatracev1beta1.KubeMonCapability.ShortName),
+			ActiveGate: dynatracev1.ActiveGateSpec{
+				Capabilities: []dynatracev1.CapabilityDisplayName{
+					dynatracev1.CapabilityDisplayName(dynatracev1.KubeMonCapability.ShortName),
 				},
 			},
 		},
@@ -160,10 +160,10 @@ func TestReconcile(t *testing.T) {
 func TestNeedsReconcile(t *testing.T) {
 	timeProvider := timeprovider.New()
 
-	dynakube := dynatracev1beta1.DynaKube{
-		Spec: dynatracev1beta1.DynaKubeSpec{
-			OneAgent: dynatracev1beta1.OneAgentSpec{
-				ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
+	dynakube := dynatracev1.DynaKube{
+		Spec: dynatracev1.DynaKubeSpec{
+			OneAgent: dynatracev1.OneAgentSpec{
+				ClassicFullStack: &dynatracev1.HostInjectSpec{},
 			},
 		},
 	}
@@ -187,16 +187,16 @@ func TestNeedsReconcile(t *testing.T) {
 func TestNeedsUpdate(t *testing.T) {
 	timeProvider := timeprovider.New()
 
-	dynakube := dynatracev1beta1.DynaKube{
-		Spec: dynatracev1beta1.DynaKubeSpec{
-			OneAgent: dynatracev1beta1.OneAgentSpec{
-				ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
+	dynakube := dynatracev1.DynaKube{
+		Spec: dynatracev1.DynaKubeSpec{
+			OneAgent: dynatracev1.OneAgentSpec{
+				ClassicFullStack: &dynatracev1.HostInjectSpec{},
 			},
 		},
-		Status: dynatracev1beta1.DynaKubeStatus{
-			OneAgent: dynatracev1beta1.OneAgentStatus{
-				VersionStatus: dynatracev1beta1.VersionStatus{
-					Source: dynatracev1beta1.TenantRegistryVersionSource,
+		Status: dynatracev1.DynaKubeStatus{
+			OneAgent: dynatracev1.OneAgentStatus{
+				VersionStatus: dynatracev1.VersionStatus{
+					Source: dynatracev1.TenantRegistryVersionSource,
 				},
 			},
 		},
@@ -212,10 +212,10 @@ func TestNeedsUpdate(t *testing.T) {
 	})
 	t.Run("does not need", func(t *testing.T) {
 		reconciler := Reconciler{
-			dynakube:     &dynatracev1beta1.DynaKube{},
+			dynakube:     &dynatracev1.DynaKube{},
 			timeProvider: timeProvider,
 		}
-		assert.False(t, reconciler.needsUpdate(newOneAgentUpdater(&dynatracev1beta1.DynaKube{}, nil, nil)))
+		assert.False(t, reconciler.needsUpdate(newOneAgentUpdater(&dynatracev1.DynaKube{}, nil, nil)))
 	})
 	t.Run("does not need, because not old enough", func(t *testing.T) {
 		oldImage := "repo.com:tag@sha256:123"
@@ -269,10 +269,10 @@ func TestNeedsUpdate(t *testing.T) {
 }
 
 func TestHasCustomFieldChanged(t *testing.T) {
-	dynakube := dynatracev1beta1.DynaKube{
-		Spec: dynatracev1beta1.DynaKubeSpec{
-			OneAgent: dynatracev1beta1.OneAgentSpec{
-				ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
+	dynakube := dynatracev1.DynaKube{
+		Spec: dynatracev1.DynaKubeSpec{
+			OneAgent: dynatracev1.OneAgentSpec{
+				ClassicFullStack: &dynatracev1.HostInjectSpec{},
 			},
 		},
 	}
@@ -313,13 +313,13 @@ func TestHasCustomFieldChanged(t *testing.T) {
 	})
 }
 
-func setOneAgentCustomVersionStatus(dynakube *dynatracev1beta1.DynaKube, version string) {
-	dynakube.Status.OneAgent.Source = dynatracev1beta1.CustomVersionVersionSource
+func setOneAgentCustomVersionStatus(dynakube *dynatracev1.DynaKube, version string) {
+	dynakube.Status.OneAgent.Source = dynatracev1.CustomVersionVersionSource
 	dynakube.Status.OneAgent.Version = version
 }
 
-func setOneAgentCustomImageStatus(dynakube *dynatracev1beta1.DynaKube, image string) {
-	dynakube.Status.OneAgent.Source = dynatracev1beta1.CustomImageVersionSource
+func setOneAgentCustomImageStatus(dynakube *dynatracev1.DynaKube, image string) {
+	dynakube.Status.OneAgent.Source = dynatracev1.CustomImageVersionSource
 	dynakube.Status.OneAgent.ImageID = image
 }
 
@@ -344,7 +344,7 @@ func getTestCodeModulesImage() dtclient.LatestImageInfo {
 	}
 }
 
-func setupPullSecret(t *testing.T, fakeClient client.Client, dynakube dynatracev1beta1.DynaKube) {
+func setupPullSecret(t *testing.T, fakeClient client.Client, dynakube dynatracev1.DynaKube) {
 	err := createTestPullSecret(fakeClient, dynakube)
 	require.NoError(t, err)
 }
@@ -354,7 +354,7 @@ func changeTime(timeProvider *timeprovider.Provider, duration time.Duration) {
 	timeProvider.SetNow(&newTime)
 }
 
-func createTestPullSecret(fakeClient client.Client, dynakube dynatracev1beta1.DynaKube) error {
+func createTestPullSecret(fakeClient client.Client, dynakube dynatracev1.DynaKube) error {
 	return fakeClient.Create(context.TODO(), &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: dynakube.Namespace,

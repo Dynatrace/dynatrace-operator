@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
@@ -24,7 +24,7 @@ type Reconciler struct {
 }
 
 type configuration struct {
-	instance   *dynatracev1beta1.DynaKube
+	instance   *dynatracev1.DynaKube
 	reconciler *Reconciler
 	name       string
 	commHost   *dtclient.CommunicationHost
@@ -59,7 +59,7 @@ func (reconciler *Reconciler) initializeIstioClient(config *rest.Config) (istioc
 
 // Reconcile - runs the istio's reconcile workflow,
 // creating/deleting VS & SE for external communications
-func (reconciler *Reconciler) Reconcile(instance *dynatracev1beta1.DynaKube, communicationHosts []dtclient.CommunicationHost) (bool, error) {
+func (reconciler *Reconciler) Reconcile(instance *dynatracev1.DynaKube, communicationHosts []dtclient.CommunicationHost) (bool, error) {
 	enabled, err := CheckIstioEnabled(reconciler.config)
 	if err != nil {
 		return false, fmt.Errorf("istio: failed to verify Istio availability: %w", err)
@@ -93,7 +93,7 @@ func (reconciler *Reconciler) Reconcile(instance *dynatracev1beta1.DynaKube, com
 	return false, nil
 }
 
-func (reconciler *Reconciler) reconcileIstioConfigurations(instance *dynatracev1beta1.DynaKube,
+func (reconciler *Reconciler) reconcileIstioConfigurations(instance *dynatracev1.DynaKube,
 	comHosts []dtclient.CommunicationHost, role string) (bool, error) {
 	add, err := reconciler.reconcileCreateConfigurations(instance, comHosts, role)
 	if err != nil {
@@ -107,7 +107,7 @@ func (reconciler *Reconciler) reconcileIstioConfigurations(instance *dynatracev1
 	return add || rem, nil
 }
 
-func (reconciler *Reconciler) reconcileRemoveConfigurations(instance *dynatracev1beta1.DynaKube,
+func (reconciler *Reconciler) reconcileRemoveConfigurations(instance *dynatracev1.DynaKube,
 	comHosts []dtclient.CommunicationHost, role string) (bool, error) {
 	labelSelector := labels.SelectorFromSet(buildIstioLabels(instance.GetName(), role)).String()
 	listOps := &metav1.ListOptions{
@@ -137,7 +137,7 @@ func (reconciler *Reconciler) reconcileRemoveConfigurations(instance *dynatracev
 	return vsUpd || seUpd, nil
 }
 
-func (reconciler *Reconciler) reconcileCreateConfigurations(instance *dynatracev1beta1.DynaKube,
+func (reconciler *Reconciler) reconcileCreateConfigurations(instance *dynatracev1.DynaKube,
 	communicationHosts []dtclient.CommunicationHost, role string) (bool, error) {
 	crdProbe := verifyIstioCrdAvailability(instance, reconciler.config)
 	if crdProbe != kubeobjects.ProbeTypeFound {

@@ -4,13 +4,13 @@ import (
 	"strconv"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func setReadOnlyUsage(dynakube *dynatracev1beta1.DynaKube, isUsed bool) {
-	dynakube.Annotations[dynatracev1beta1.AnnotationFeatureActiveGateReadOnlyFilesystem] = strconv.FormatBool(isUsed)
+func setReadOnlyUsage(dynakube *dynatracev1.DynaKube, isUsed bool) {
+	dynakube.Annotations[dynatracev1.AnnotationFeatureActiveGateReadOnlyFilesystem] = strconv.FormatBool(isUsed)
 }
 
 func TestReadOnlyEnabled(t *testing.T) {

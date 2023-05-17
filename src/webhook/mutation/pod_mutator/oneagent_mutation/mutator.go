@@ -1,7 +1,7 @@
 package oneagent_mutation
 
 import (
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/Dynatrace/dynatrace-operator/src/initgeneration"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
@@ -89,7 +89,7 @@ func containerIsInjected(container *corev1.Container) bool {
 	return false
 }
 
-func getVolumeMode(dynakube dynatracev1beta1.DynaKube) string {
+func getVolumeMode(dynakube dynatracev1.DynaKube) string {
 	if dynakube.NeedsCSIDriver() {
 		return string(config.AgentCsiMode)
 	}

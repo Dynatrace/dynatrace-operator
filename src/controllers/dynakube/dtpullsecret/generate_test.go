@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/stretchr/testify/assert"
@@ -35,8 +35,8 @@ func TestGetImageRegistryFromAPIURL(t *testing.T) {
 }
 
 func TestReconciler_GenerateData(t *testing.T) {
-	dynakube := &dynatracev1beta1.DynaKube{
-		Spec: dynatracev1beta1.DynaKubeSpec{
+	dynakube := &dynatracev1.DynaKube{
+		Spec: dynatracev1.DynaKubeSpec{
 			APIURL: testApiUrl,
 		},
 	}

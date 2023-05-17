@@ -3,7 +3,7 @@ package daemonset
 import (
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
@@ -16,7 +16,7 @@ import (
 func TestEnvironmentVariables(t *testing.T) {
 	t.Run("returns default values when members are nil", func(t *testing.T) {
 		dsInfo := builderInfo{
-			dynakube: &dynatracev1beta1.DynaKube{},
+			dynakube: &dynatracev1.DynaKube{},
 		}
 		envVars := dsInfo.environmentVariables()
 
@@ -25,16 +25,16 @@ func TestEnvironmentVariables(t *testing.T) {
 	})
 	t.Run("returns all when everything is turned on", func(t *testing.T) {
 		clusterID := "test"
-		dynakube := &dynatracev1beta1.DynaKube{
+		dynakube := &dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test",
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				Proxy: &dynatracev1beta1.DynaKubeProxy{
+			Spec: dynatracev1.DynaKubeSpec{
+				Proxy: &dynatracev1.DynaKubeProxy{
 					Value: "test",
 				},
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
+				OneAgent: dynatracev1.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1.CloudNativeFullStackSpec{},
 				},
 			},
 		}
@@ -71,7 +71,7 @@ func TestAddClusterIDEnv(t *testing.T) {
 	t.Run("adds clusterID value from struct", func(t *testing.T) {
 		clusterID := "test"
 		dsInfo := builderInfo{
-			dynakube:  &dynatracev1beta1.DynaKube{},
+			dynakube:  &dynatracev1.DynaKube{},
 			clusterID: clusterID,
 		}
 		envVars := dsInfo.addClusterIDEnv(map[string]corev1.EnvVar{})
@@ -90,7 +90,7 @@ func TestAddDeploymentMetadataEnv(t *testing.T) {
 	t.Run("adds deployment metadata value via configmap ref", func(t *testing.T) {
 		dynakubeName := "test"
 		dsInfo := builderInfo{
-			dynakube: &dynatracev1beta1.DynaKube{
+			dynakube: &dynatracev1.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: dynakubeName,
 				},
@@ -117,7 +117,7 @@ func assertDeploymentMetadataEnv(t *testing.T, envs []corev1.EnvVar, dynakubeNam
 
 func TestAddConnectionInfoEnvs(t *testing.T) {
 	t.Run("adds connection info value via configmap ref", func(t *testing.T) {
-		dynakube := &dynatracev1beta1.DynaKube{
+		dynakube := &dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test",
 			},
@@ -131,7 +131,7 @@ func TestAddConnectionInfoEnvs(t *testing.T) {
 	})
 }
 
-func assertConnectionInfoEnv(t *testing.T, envs []corev1.EnvVar, dynakube *dynatracev1beta1.DynaKube) {
+func assertConnectionInfoEnv(t *testing.T, envs []corev1.EnvVar, dynakube *dynatracev1.DynaKube) {
 	env := kubeobjects.FindEnvVar(envs, connectioninfo.EnvDtTenant)
 	assert.Equal(t, env.Name, connectioninfo.EnvDtTenant)
 	assert.Equal(t,
@@ -157,12 +157,12 @@ func assertConnectionInfoEnv(t *testing.T, envs []corev1.EnvVar, dynakube *dynat
 
 func TestAddProxyEnvs(t *testing.T) {
 	t.Run("adds proxy value from dynakube", func(t *testing.T) {
-		dynakube := &dynatracev1beta1.DynaKube{
+		dynakube := &dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test",
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				Proxy: &dynatracev1beta1.DynaKubeProxy{
+			Spec: dynatracev1.DynaKubeSpec{
+				Proxy: &dynatracev1.DynaKubeProxy{
 					Value: "test",
 				},
 			},
@@ -176,12 +176,12 @@ func TestAddProxyEnvs(t *testing.T) {
 	})
 
 	t.Run("adds proxy value via secret ref from dynakube", func(t *testing.T) {
-		dynakube := &dynatracev1beta1.DynaKube{
+		dynakube := &dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test",
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				Proxy: &dynatracev1beta1.DynaKubeProxy{
+			Spec: dynatracev1.DynaKubeSpec{
+				Proxy: &dynatracev1.DynaKubeProxy{
 					ValueFrom: "test",
 				},
 			},
@@ -195,7 +195,7 @@ func TestAddProxyEnvs(t *testing.T) {
 	})
 }
 
-func assertProxyEnv(t *testing.T, envs []corev1.EnvVar, dynakube *dynatracev1beta1.DynaKube) {
+func assertProxyEnv(t *testing.T, envs []corev1.EnvVar, dynakube *dynatracev1.DynaKube) {
 	env := kubeobjects.FindEnvVar(envs, proxy)
 	assert.Equal(t, env.Name, proxy)
 	assert.Equal(t, dynakube.Spec.Proxy.Value, env.Value)
@@ -207,13 +207,13 @@ func assertProxyEnv(t *testing.T, envs []corev1.EnvVar, dynakube *dynatracev1bet
 
 func TestAddReadOnlyEnv(t *testing.T) {
 	t.Run("adds readonly value for supported oneagent mode", func(t *testing.T) {
-		dynakube := &dynatracev1beta1.DynaKube{
+		dynakube := &dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test",
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
+			Spec: dynatracev1.DynaKubeSpec{
+				OneAgent: dynatracev1.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1.CloudNativeFullStackSpec{},
 				},
 			},
 		}
@@ -226,7 +226,7 @@ func TestAddReadOnlyEnv(t *testing.T) {
 	})
 
 	t.Run("not adds readonly value for supported oneagent mode", func(t *testing.T) {
-		dynakube := &dynatracev1beta1.DynaKube{
+		dynakube := &dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test",
 			},

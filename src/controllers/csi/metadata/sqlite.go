@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/mattn/go-sqlite3"
 	"github.com/pkg/errors"
 )
@@ -14,7 +14,7 @@ import (
 var (
 	dynakubesAlterStatementMaxFailedMountAttempts = `
 	ALTER TABLE dynakubes
-	ADD COLUMN MaxFailedMountAttempts INT NOT NULL DEFAULT ` + strconv.FormatInt(dynatracev1beta1.DefaultMaxFailedCsiMountAttempts, 10) + ";"
+	ADD COLUMN MaxFailedMountAttempts INT NOT NULL DEFAULT ` + strconv.FormatInt(dynatracev1.DefaultMaxFailedCsiMountAttempts, 10) + ";"
 	// "Not null"-columns need a default value set
 )
 

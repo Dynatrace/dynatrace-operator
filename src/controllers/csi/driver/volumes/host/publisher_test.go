@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
@@ -110,13 +110,13 @@ func TestNodePublishAndUnpublishVolume(t *testing.T) {
 
 func newPublisherForTesting(mounter *mount.FakeMounter) HostVolumePublisher {
 	objects := []client.Object{
-		&dynatracev1beta1.DynaKube{
+		&dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: testDynakubeName,
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
+			Spec: dynatracev1.DynaKubeSpec{
+				OneAgent: dynatracev1.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1.CloudNativeFullStackSpec{},
 				},
 			},
 		},

@@ -13,8 +13,8 @@ resources:
   group: dynatrace
   domain: com
   kind: DynaKube
-  path: github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1
-  version: v1alpha1
+  path: github.com/Dynatrace/dynatrace-operator/src/api/v1
+  version: v1
   webhooks:
     conversion: true
     webhookVersion: v1

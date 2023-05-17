@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/arch"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
@@ -94,12 +94,12 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 		gc := &CSIGarbageCollectorMock{}
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
-				&dynatracev1beta1.DynaKube{
+				&dynatracev1.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dynakubeName,
 					},
-					Spec: dynatracev1beta1.DynaKubeSpec{
-						OneAgent: dynatracev1beta1.OneAgentSpec{},
+					Spec: dynatracev1.DynaKubeSpec{
+						OneAgent: dynatracev1.OneAgentSpec{},
 					},
 				},
 			),
@@ -116,14 +116,14 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 		gc := &CSIGarbageCollectorMock{}
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
-				&dynatracev1beta1.DynaKube{
+				&dynatracev1.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dynakubeName,
 					},
-					Spec: dynatracev1beta1.DynaKubeSpec{
-						OneAgent: dynatracev1beta1.OneAgentSpec{
-							ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{
-								AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{},
+					Spec: dynatracev1.DynaKubeSpec{
+						OneAgent: dynatracev1.OneAgentSpec{
+							ApplicationMonitoring: &dynatracev1.ApplicationMonitoringSpec{
+								AppInjectionSpec: dynatracev1.AppInjectionSpec{},
 							},
 						},
 					},
@@ -144,14 +144,14 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 		_ = db.InsertDynakube(ctx, &metadata.Dynakube{Name: dynakubeName})
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
-				&dynatracev1beta1.DynaKube{
+				&dynatracev1.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dynakubeName,
 					},
-					Spec: dynatracev1beta1.DynaKubeSpec{
-						OneAgent: dynatracev1beta1.OneAgentSpec{
-							ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{
-								AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{},
+					Spec: dynatracev1.DynaKubeSpec{
+						OneAgent: dynatracev1.OneAgentSpec{
+							ApplicationMonitoring: &dynatracev1.ApplicationMonitoringSpec{
+								AppInjectionSpec: dynatracev1.AppInjectionSpec{},
 							},
 						},
 					},
@@ -172,14 +172,14 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 	})
 	t.Run(`host monitoring used`, func(t *testing.T) {
 		fakeClient := fake.NewClient(
-			&dynatracev1beta1.DynaKube{
+			&dynatracev1.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: dkName,
 				},
-				Spec: dynatracev1beta1.DynaKubeSpec{
+				Spec: dynatracev1.DynaKubeSpec{
 					APIURL: testAPIURL,
-					OneAgent: dynatracev1beta1.OneAgentSpec{
-						HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
+					OneAgent: dynatracev1.OneAgentSpec{
+						HostMonitoring: &dynatracev1.HostInjectSpec{},
 					},
 				},
 			},
@@ -224,13 +224,13 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 		gc := &CSIGarbageCollectorMock{}
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
-				&dynatracev1beta1.DynaKube{
+				&dynatracev1.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dkName,
 					},
-					Spec: dynatracev1beta1.DynaKubeSpec{
+					Spec: dynatracev1.DynaKubeSpec{
 						APIURL: testAPIURL,
-						OneAgent: dynatracev1beta1.OneAgentSpec{
+						OneAgent: dynatracev1.OneAgentSpec{
 							ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
 						},
 					},
@@ -253,13 +253,13 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 		}
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
-				&dynatracev1beta1.DynaKube{
+				&dynatracev1.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dkName,
 					},
-					Spec: dynatracev1beta1.DynaKubeSpec{
+					Spec: dynatracev1.DynaKubeSpec{
 						APIURL: testAPIURL,
-						OneAgent: dynatracev1beta1.OneAgentSpec{
+						OneAgent: dynatracev1.OneAgentSpec{
 							ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
 						},
 					},
@@ -300,13 +300,13 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 		}
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
-				&dynatracev1beta1.DynaKube{
+				&dynatracev1.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dkName,
 					},
-					Spec: dynatracev1beta1.DynaKubeSpec{
+					Spec: dynatracev1.DynaKubeSpec{
 						APIURL: testAPIURL,
-						OneAgent: dynatracev1beta1.OneAgentSpec{
+						OneAgent: dynatracev1.OneAgentSpec{
 							ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
 						},
 					},
@@ -359,13 +359,13 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 		mockDtcBuilder := &dynatraceclient.StubBuilder{
 			DynatraceClient: mockClient,
 		}
-		dynakube := &dynatracev1beta1.DynaKube{
+		dynakube := &dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: dkName,
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testAPIURL,
-				OneAgent: dynatracev1beta1.OneAgentSpec{
+				OneAgent: dynatracev1.OneAgentSpec{
 					ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
 				},
 			},
@@ -428,13 +428,13 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 		}
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
-				&dynatracev1beta1.DynaKube{
+				&dynatracev1.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dkName,
 					},
-					Spec: dynatracev1beta1.DynaKubeSpec{
+					Spec: dynatracev1.DynaKubeSpec{
 						APIURL: testAPIURL,
-						OneAgent: dynatracev1beta1.OneAgentSpec{
+						OneAgent: dynatracev1.OneAgentSpec{
 							ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
 						},
 					},
@@ -491,13 +491,13 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 			DynatraceClient: mockClient,
 		}
 
-		dynakube := &dynatracev1beta1.DynaKube{
+		dynakube := &dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: dkName,
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testAPIURL,
-				OneAgent: dynatracev1beta1.OneAgentSpec{
+				OneAgent: dynatracev1.OneAgentSpec{
 					ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
 				},
 			},
@@ -550,7 +550,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 
 func TestHasCodeModulesWithCSIVolumeEnabled(t *testing.T) {
 	t.Run(`default DynaKube object returns false`, func(t *testing.T) {
-		dk := &dynatracev1beta1.DynaKube{}
+		dk := &dynatracev1.DynaKube{}
 
 		isEnabled := dk.NeedsCSIDriver()
 
@@ -558,9 +558,9 @@ func TestHasCodeModulesWithCSIVolumeEnabled(t *testing.T) {
 	})
 
 	t.Run(`application monitoring enabled`, func(t *testing.T) {
-		dk := &dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				OneAgent: dynatracev1beta1.OneAgentSpec{
+		dk := &dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
+				OneAgent: dynatracev1.OneAgentSpec{
 					ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
 				},
 			},
@@ -572,11 +572,11 @@ func TestHasCodeModulesWithCSIVolumeEnabled(t *testing.T) {
 	})
 
 	t.Run(`application monitoring enabled without csi driver`, func(t *testing.T) {
-		dk := &dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{
-						AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{},
+		dk := &dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
+				OneAgent: dynatracev1.OneAgentSpec{
+					ApplicationMonitoring: &dynatracev1.ApplicationMonitoringSpec{
+						AppInjectionSpec: dynatracev1.AppInjectionSpec{},
 					},
 				},
 			},
@@ -588,9 +588,9 @@ func TestHasCodeModulesWithCSIVolumeEnabled(t *testing.T) {
 	})
 }
 
-func buildValidApplicationMonitoringSpec(_ *testing.T) *dynatracev1beta1.ApplicationMonitoringSpec {
+func buildValidApplicationMonitoringSpec(_ *testing.T) *dynatracev1.ApplicationMonitoringSpec {
 	useCSIDriver := true
-	return &dynatracev1beta1.ApplicationMonitoringSpec{
+	return &dynatracev1.ApplicationMonitoringSpec{
 		UseCSIDriver: &useCSIDriver,
 	}
 }
@@ -669,11 +669,11 @@ func setupTestZip(t *testing.T, fs afero.Fs) afero.File {
 
 func TestHandleMetadata(t *testing.T) {
 	ctx := context.TODO()
-	instance := &dynatracev1beta1.DynaKube{
+	instance := &dynatracev1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: dkName,
 		},
-		Spec: dynatracev1beta1.DynaKubeSpec{
+		Spec: dynatracev1.DynaKubeSpec{
 			APIURL: testAPIURL,
 		},
 	}
@@ -685,9 +685,9 @@ func TestHandleMetadata(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, dynakubeMetadata)
 	require.NotNil(t, oldMetadata)
-	require.Equal(t, dynatracev1beta1.DefaultMaxFailedCsiMountAttempts, dynakubeMetadata.MaxFailedMountAttempts)
+	require.Equal(t, dynatracev1.DefaultMaxFailedCsiMountAttempts, dynakubeMetadata.MaxFailedMountAttempts)
 
-	instance.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureMaxFailedCsiMountAttempts: "5"}
+	instance.Annotations = map[string]string{dynatracev1.AnnotationFeatureMaxFailedCsiMountAttempts: "5"}
 	dynakubeMetadata, oldMetadata, err = provisioner.handleMetadata(ctx, instance)
 
 	require.NoError(t, err)

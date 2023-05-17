@@ -1,7 +1,7 @@
 package capability
 
 import (
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
@@ -10,7 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func CreateService(dynakube *dynatracev1beta1.DynaKube, feature string) *corev1.Service {
+func CreateService(dynakube *dynatracev1.DynaKube, feature string) *corev1.Service {
 	var ports []corev1.ServicePort
 
 	if dynakube.NeedsActiveGateServicePorts() {

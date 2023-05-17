@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/logs"
@@ -78,8 +78,8 @@ func checkInitContainers(sampleApp sample.App) features.Func {
 	}
 }
 
-func DefaultCloudNativeSpec() *dynatracev1beta1.CloudNativeFullStackSpec {
-	return &dynatracev1beta1.CloudNativeFullStackSpec{
-		HostInjectSpec: dynatracev1beta1.HostInjectSpec{},
+func DefaultCloudNativeSpec() *dynatracev1.CloudNativeFullStackSpec {
+	return &dynatracev1.CloudNativeFullStackSpec{
+		HostInjectSpec: dynatracev1.HostInjectSpec{},
 	}
 }

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/stretchr/testify/assert"
@@ -25,7 +25,7 @@ const (
 	testOutdated        = "outdated"
 )
 
-var testCommunicationHosts = []dynatracev1beta1.CommunicationHostStatus{
+var testCommunicationHosts = []dynatracev1.CommunicationHostStatus{
 	{
 		Protocol: "http",
 		Host:     "dummyhost",
@@ -39,7 +39,7 @@ var testCommunicationHosts = []dynatracev1beta1.CommunicationHostStatus{
 }
 
 func TestReconcile_ConnectionInfo(t *testing.T) {
-	dynakube := dynatracev1beta1.DynaKube{
+	dynakube := dynatracev1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
 			Name:      testName,
@@ -61,8 +61,8 @@ func TestReconcile_ConnectionInfo(t *testing.T) {
 	})
 	t.Run(`update OneAgent connection info`, func(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().Build()
-		dynakube.Status.OneAgent.ConnectionInfoStatus = dynatracev1beta1.OneAgentConnectionInfoStatus{
-			ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
+		dynakube.Status.OneAgent.ConnectionInfoStatus = dynatracev1.OneAgentConnectionInfoStatus{
+			ConnectionInfoStatus: dynatracev1.ConnectionInfoStatus{
 				TenantUUID:  testOutdated,
 				Endpoints:   testOutdated,
 				LastRequest: metav1.NewTime(time.Now()),
@@ -79,8 +79,8 @@ func TestReconcile_ConnectionInfo(t *testing.T) {
 	})
 	t.Run(`do not update OneAgent connection info within timeout`, func(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithObjects(buildOneAgentTenantSecret(dynakube, testOutdated)).Build()
-		dynakube.Status.OneAgent.ConnectionInfoStatus = dynatracev1beta1.OneAgentConnectionInfoStatus{
-			ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
+		dynakube.Status.OneAgent.ConnectionInfoStatus = dynatracev1.OneAgentConnectionInfoStatus{
+			ConnectionInfoStatus: dynatracev1.ConnectionInfoStatus{
 				TenantUUID:  testOutdated,
 				Endpoints:   testOutdated,
 				LastRequest: metav1.NewTime(time.Now()),
@@ -96,8 +96,8 @@ func TestReconcile_ConnectionInfo(t *testing.T) {
 	})
 	t.Run(`update OneAgent connection info if tenant secret is missing, ignore timestamp`, func(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().Build()
-		dynakube.Status.OneAgent.ConnectionInfoStatus = dynatracev1beta1.OneAgentConnectionInfoStatus{
-			ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
+		dynakube.Status.OneAgent.ConnectionInfoStatus = dynatracev1.OneAgentConnectionInfoStatus{
+			ConnectionInfoStatus: dynatracev1.ConnectionInfoStatus{
 				TenantUUID:  testOutdated,
 				Endpoints:   testOutdated,
 				LastRequest: metav1.NewTime(time.Now()),
@@ -123,8 +123,8 @@ func TestReconcile_ConnectionInfo(t *testing.T) {
 	})
 	t.Run(`update ActiveGate connection info`, func(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().Build()
-		dynakube.Status.ActiveGate.ConnectionInfoStatus = dynatracev1beta1.ActiveGateConnectionInfoStatus{
-			ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
+		dynakube.Status.ActiveGate.ConnectionInfoStatus = dynatracev1.ActiveGateConnectionInfoStatus{
+			ConnectionInfoStatus: dynatracev1.ConnectionInfoStatus{
 				TenantUUID:  testOutdated,
 				Endpoints:   testOutdated,
 				LastRequest: metav1.NewTime(time.Now()),
@@ -140,8 +140,8 @@ func TestReconcile_ConnectionInfo(t *testing.T) {
 	})
 	t.Run(`do not update ActiveGate connection info within timeout`, func(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithObjects(buildActiveGateSecret(dynakube, testOutdated)).Build()
-		dynakube.Status.ActiveGate.ConnectionInfoStatus = dynatracev1beta1.ActiveGateConnectionInfoStatus{
-			ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
+		dynakube.Status.ActiveGate.ConnectionInfoStatus = dynatracev1.ActiveGateConnectionInfoStatus{
+			ConnectionInfoStatus: dynatracev1.ConnectionInfoStatus{
 				TenantUUID:  testOutdated,
 				Endpoints:   testOutdated,
 				LastRequest: metav1.NewTime(time.Now()),
@@ -157,8 +157,8 @@ func TestReconcile_ConnectionInfo(t *testing.T) {
 	})
 	t.Run(`update ActiveGate connection info if tenant secret is missing, ignore timestamp`, func(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().Build()
-		dynakube.Status.ActiveGate.ConnectionInfoStatus = dynatracev1beta1.ActiveGateConnectionInfoStatus{
-			ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
+		dynakube.Status.ActiveGate.ConnectionInfoStatus = dynatracev1.ActiveGateConnectionInfoStatus{
+			ConnectionInfoStatus: dynatracev1.ConnectionInfoStatus{
 				TenantUUID:  testOutdated,
 				Endpoints:   testOutdated,
 				LastRequest: metav1.NewTime(time.Now()),
@@ -206,14 +206,14 @@ func getTestActiveGateConnectionInfo() *dtclient.ActiveGateConnectionInfo {
 	}
 }
 
-func resetCachedTimestamps(dynakubeStatus *dynatracev1beta1.DynaKubeStatus) {
+func resetCachedTimestamps(dynakubeStatus *dynatracev1.DynaKubeStatus) {
 	dynakubeStatus.DynatraceApi.LastTokenScopeRequest = metav1.Time{}
 	dynakubeStatus.OneAgent.ConnectionInfoStatus.LastRequest = metav1.Time{}
 	dynakubeStatus.ActiveGate.ConnectionInfoStatus.LastRequest = metav1.Time{}
 }
 
 func TestReconcile_ActivegateSecret(t *testing.T) {
-	dynakube := &dynatracev1beta1.DynaKube{
+	dynakube := &dynatracev1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
 			Name:      testName,
@@ -265,7 +265,7 @@ func TestReconcile_ActivegateSecret(t *testing.T) {
 	})
 }
 
-func buildActiveGateSecret(dynakube dynatracev1beta1.DynaKube, token string) *corev1.Secret {
+func buildActiveGateSecret(dynakube dynatracev1.DynaKube, token string) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      dynakube.ActivegateTenantSecret(),
@@ -278,12 +278,12 @@ func buildActiveGateSecret(dynakube dynatracev1beta1.DynaKube, token string) *co
 }
 
 func TestReconcile_OneagentSecret(t *testing.T) {
-	dynakube := &dynatracev1beta1.DynaKube{
+	dynakube := &dynatracev1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
 			Name:      testName,
 			Annotations: map[string]string{
-				dynatracev1beta1.AnnotationFeatureActiveGateRawImage: "false",
+				dynatracev1.AnnotationFeatureActiveGateRawImage: "false",
 			},
 		}}
 
@@ -339,7 +339,7 @@ func TestReconcile_OneagentSecret(t *testing.T) {
 	})
 }
 
-func buildOneAgentTenantSecret(dynakube dynatracev1beta1.DynaKube, token string) *corev1.Secret {
+func buildOneAgentTenantSecret(dynakube dynatracev1.DynaKube, token string) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      dynakube.OneagentTenantSecret(),

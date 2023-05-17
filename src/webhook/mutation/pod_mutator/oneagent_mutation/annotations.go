@@ -3,7 +3,7 @@ package oneagent_mutation
 import (
 	"net/url"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	corev1 "k8s.io/api/core/v1"
@@ -24,7 +24,7 @@ func setInjectedAnnotation(pod *corev1.Pod) {
 	pod.Annotations[dtwebhook.AnnotationOneAgentInjected] = "true"
 }
 
-func getInstallerInfo(pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) installerInfo {
+func getInstallerInfo(pod *corev1.Pod, dynakube dynatracev1.DynaKube) installerInfo {
 	return installerInfo{
 		flavor:       kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationFlavor, ""),
 		technologies: url.QueryEscape(kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationTechnologies, "all")),

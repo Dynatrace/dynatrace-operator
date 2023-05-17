@@ -7,7 +7,7 @@ import (
 	"path"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/manifests"
@@ -34,12 +34,12 @@ var (
 	proxyDeploymentPath = path.Join(project.TestDataDir(), "network/proxy.yaml")
 	proxySCCPath        = path.Join(project.TestDataDir(), "network/proxy-scc.yaml")
 
-	ProxySpec = &dynatracev1beta1.DynaKubeProxy{
+	ProxySpec = &dynatracev1.DynaKubeProxy{
 		Value: "http://squid.proxy.svc.cluster.local:3128",
 	}
 )
 
-func SetupProxyWithTeardown(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube) {
+func SetupProxyWithTeardown(builder *features.FeatureBuilder, testDynakube dynatracev1.DynaKube) {
 	if testDynakube.Spec.Proxy != nil {
 		installProxySCC(builder)
 		builder.Assess("create proxy namespace", namespace.Create(namespace.NewBuilder(proxyNamespaceName).Build()))
@@ -66,13 +66,13 @@ func DeleteProxy() features.Func {
 	}
 }
 
-func CutOffDynatraceNamespace(builder *features.FeatureBuilder, proxySpec *dynatracev1beta1.DynaKubeProxy) {
+func CutOffDynatraceNamespace(builder *features.FeatureBuilder, proxySpec *dynatracev1.DynaKubeProxy) {
 	if proxySpec != nil {
 		builder.Assess("cut off dynatrace namespace", manifests.InstallFromFile(dynatraceNetworkPolicy))
 	}
 }
 
-func ApproveConnectionsWithK8SAndProxy(builder *features.FeatureBuilder, proxySpec *dynatracev1beta1.DynaKubeProxy) {
+func ApproveConnectionsWithK8SAndProxy(builder *features.FeatureBuilder, proxySpec *dynatracev1.DynaKubeProxy) {
 	if proxySpec != nil {
 		if kubeobjects.ResolvePlatformFromEnv() == kubeobjects.Openshift {
 			builder.Assess("approve dynatrace-openshift network traffic", manifests.InstallFromFile(path.Join(project.TestDataDir(), "network/dynatrace-openshift-approval.yaml")))
@@ -83,7 +83,7 @@ func ApproveConnectionsWithK8SAndProxy(builder *features.FeatureBuilder, proxySp
 	}
 }
 
-func IsDynatraceNamespaceCutOff(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube) {
+func IsDynatraceNamespaceCutOff(builder *features.FeatureBuilder, testDynakube dynatracev1.DynaKube) {
 	if testDynakube.HasProxy() {
 		isNetworkTrafficCutOff(builder, "ingress", curlPodNameDynatraceInboundTraffic, proxyNamespaceName, sampleapps.GetWebhookServiceUrl(testDynakube))
 		isNetworkTrafficCutOff(builder, "egress", curlPodNameDynatraceOutboundTraffic, testDynakube.Namespace, internetUrl)

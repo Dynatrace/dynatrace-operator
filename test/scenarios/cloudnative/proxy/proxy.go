@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/daemonset"
@@ -29,7 +29,7 @@ const (
 	dtProxy    = "DT_PROXY"
 )
 
-func withProxy(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features.Feature {
+func withProxy(t *testing.T, proxySpec *dynatracev1.DynaKubeProxy) features.Feature {
 	builder := features.New("cloudNative with proxy")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
@@ -37,7 +37,7 @@ func withProxy(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features
 		WithDefaultObjectMeta().
 		WithDynakubeNamespaceSelector().
 		ApiUrl(secretConfig.ApiUrl).
-		CloudNative(&dynatracev1beta1.CloudNativeFullStackSpec{}).
+		CloudNative(&dynatracev1.CloudNativeFullStackSpec{}).
 		Proxy(proxySpec).
 		Build()
 
@@ -74,7 +74,7 @@ func withProxy(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features
 	return builder.Feature()
 }
 
-func checkOneAgentEnvVars(dynakube dynatracev1beta1.DynaKube) features.Func {
+func checkOneAgentEnvVars(dynakube dynatracev1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resources := environmentConfig.Client().Resources()
 		err := daemonset.NewQuery(ctx, resources, client.ObjectKey{

@@ -3,7 +3,7 @@ package dynatraceclient
 import (
 	"context"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -36,7 +36,7 @@ func (opts *options) appendDisableHostsRequests(disableHostsRequests bool) {
 	opts.Opts = append(opts.Opts, dtclient.DisableHostsRequests(disableHostsRequests))
 }
 
-func (opts *options) appendProxySettings(apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube) error {
+func (opts *options) appendProxySettings(apiReader client.Reader, dynakube *dynatracev1.DynaKube) error {
 	if dynakube == nil || !dynakube.HasProxy() {
 		return nil
 	}
@@ -50,7 +50,7 @@ func (opts *options) appendProxySettings(apiReader client.Reader, dynakube *dyna
 	return nil
 }
 
-func (opts *options) createProxyOption(apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube) (dtclient.Option, error) {
+func (opts *options) createProxyOption(apiReader client.Reader, dynakube *dynatracev1.DynaKube) (dtclient.Option, error) {
 	var proxyOption dtclient.Option
 
 	proxyUrl, err := dynakube.Proxy(opts.ctx, apiReader)
@@ -68,10 +68,10 @@ func (opts *options) appendTrustedCerts(apiReader client.Reader, trustedCerts st
 		if err := apiReader.Get(opts.ctx, client.ObjectKey{Namespace: namespace, Name: trustedCerts}, certs); err != nil {
 			return errors.WithMessage(err, "failed to get certificate configmap")
 		}
-		if certs.Data[dynatracev1beta1.TrustedCAKey] == "" {
+		if certs.Data[dynatracev1.TrustedCAKey] == "" {
 			return errors.New("failed to extract certificate configmap field: missing field certs")
 		}
-		opts.Opts = append(opts.Opts, dtclient.Certs([]byte(certs.Data[dynatracev1beta1.TrustedCAKey])))
+		opts.Opts = append(opts.Opts, dtclient.Certs([]byte(certs.Data[dynatracev1.TrustedCAKey])))
 	}
 	return nil
 }

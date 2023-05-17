@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"strconv"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/authtoken"
@@ -27,7 +27,7 @@ var _ controllers.Reconciler = &Reconciler{}
 
 type Reconciler struct {
 	client     client.Client
-	dynakube   *dynatracev1beta1.DynaKube
+	dynakube   *dynatracev1.DynaKube
 	apiReader  client.Reader
 	scheme     *runtime.Scheme
 	capability capability.Capability
@@ -41,7 +41,7 @@ func NewReconciler(
 	clt client.Client,
 	apiReader client.Reader,
 	scheme *runtime.Scheme,
-	dynakube *dynatracev1beta1.DynaKube,
+	dynakube *dynatracev1.DynaKube,
 	capability capability.Capability,
 ) *Reconciler {
 	return &Reconciler{
@@ -54,7 +54,7 @@ func NewReconciler(
 	}
 }
 
-type NewReconcilerFunc = func(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, capability capability.Capability) *Reconciler
+type NewReconcilerFunc = func(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1.DynaKube, capability capability.Capability) *Reconciler
 
 func (r *Reconciler) Reconcile() error {
 	err := r.manageStatefulSet()
@@ -235,7 +235,7 @@ func (r *Reconciler) getAuthTokenValue() (string, error) {
 	return authTokenData, nil
 }
 
-func (r *Reconciler) getDataFromCustomProperty(customProperties *dynatracev1beta1.DynaKubeValueSource) (string, error) {
+func (r *Reconciler) getDataFromCustomProperty(customProperties *dynatracev1.DynaKubeValueSource) (string, error) {
 	if customProperties.ValueFrom != "" {
 		return kubeobjects.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.dynakube.Namespace, Name: customProperties.ValueFrom}, customproperties.DataKey, log)
 	}
@@ -246,6 +246,6 @@ func (r *Reconciler) getDataFromAuthTokenSecret() (string, error) {
 	return kubeobjects.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.dynakube.Namespace, Name: r.dynakube.ActiveGateAuthTokenSecret()}, authtoken.ActiveGateAuthTokenName, log)
 }
 
-func needsCustomPropertyHash(customProperties *dynatracev1beta1.DynaKubeValueSource) bool {
+func needsCustomPropertyHash(customProperties *dynatracev1.DynaKubeValueSource) bool {
 	return customProperties != nil && (customProperties.Value != "" || customProperties.ValueFrom != "")
 }

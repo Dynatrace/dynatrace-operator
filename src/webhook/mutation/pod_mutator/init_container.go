@@ -3,7 +3,7 @@ package pod_mutator
 import (
 	"strings"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
@@ -11,7 +11,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func createInstallInitContainerBase(webhookImage, clusterID string, pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) *corev1.Container {
+func createInstallInitContainerBase(webhookImage, clusterID string, pod *corev1.Pod, dynakube dynatracev1.DynaKube) *corev1.Container {
 	return &corev1.Container{
 		Name:            dtwebhook.InstallContainerName,
 		Image:           webhookImage,
@@ -31,7 +31,7 @@ func createInstallInitContainerBase(webhookImage, clusterID string, pod *corev1.
 	}
 }
 
-func initContainerResources(dynakube dynatracev1beta1.DynaKube) corev1.ResourceRequirements {
+func initContainerResources(dynakube dynatracev1.DynaKube) corev1.ResourceRequirements {
 	customInitResources := dynakube.InitResources()
 	if customInitResources != nil {
 		return *customInitResources
@@ -49,7 +49,7 @@ func defaultInitContainerResources() corev1.ResourceRequirements {
 	}
 }
 
-func securityContextForInitContainer(pod *corev1.Pod, dk dynatracev1beta1.DynaKube) *corev1.SecurityContext {
+func securityContextForInitContainer(pod *corev1.Pod, dk dynatracev1.DynaKube) *corev1.SecurityContext {
 	initSecurityCtx := corev1.SecurityContext{
 		ReadOnlyRootFilesystem:   address.Of(true),
 		AllowPrivilegeEscalation: address.Of(false),
@@ -132,7 +132,7 @@ func addInitContainerToPod(pod *corev1.Pod, initContainer *corev1.Container) {
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, *initContainer)
 }
 
-func addSeccompProfile(ctx *corev1.SecurityContext, dk dynatracev1beta1.DynaKube) {
+func addSeccompProfile(ctx *corev1.SecurityContext, dk dynatracev1.DynaKube) {
 	if dk.FeatureInitContainerSeccomp() {
 		ctx.SeccompProfile = &corev1.SeccompProfile{Type: corev1.SeccompProfileTypeRuntimeDefault}
 	}

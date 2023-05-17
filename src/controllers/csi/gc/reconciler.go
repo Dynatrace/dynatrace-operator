@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
 	"github.com/pkg/errors"
@@ -103,8 +103,8 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 	return defaultReconcileResult, nil
 }
 
-func getDynakubeFromRequest(ctx context.Context, apiReader client.Reader, request reconcile.Request) (*dynatracev1beta1.DynaKube, error) {
-	var dynakube dynatracev1beta1.DynaKube
+func getDynakubeFromRequest(ctx context.Context, apiReader client.Reader, request reconcile.Request) (*dynatracev1.DynaKube, error) {
+	var dynakube dynatracev1.DynaKube
 	if err := apiReader.Get(ctx, request.NamespacedName, &dynakube); err != nil {
 		if k8serrors.IsNotFound(err) {
 			log.Info("given DynaKube object not found")
@@ -117,7 +117,7 @@ func getDynakubeFromRequest(ctx context.Context, apiReader client.Reader, reques
 	return &dynakube, nil
 }
 
-func collectGCInfo(dynakube dynatracev1beta1.DynaKube, dynakubeList *dynatracev1beta1.DynaKubeList) *garbageCollectionInfo {
+func collectGCInfo(dynakube dynatracev1.DynaKube, dynakubeList *dynatracev1.DynaKubeList) *garbageCollectionInfo {
 	tenantUUID, err := dynakube.TenantUUIDFromApiUrl()
 	if err != nil {
 		log.Info("failed to get tenantUUID of DynaKube, checking later")
@@ -136,7 +136,7 @@ func collectGCInfo(dynakube dynatracev1beta1.DynaKube, dynakubeList *dynatracev1
 // A pinned version is either:
 // - the image tag or digest set in the custom resource (this doesn't matter in context of the GC)
 // - the version set in the custom resource if applicationMonitoring is used
-func getAllPinnedVersionsForTenantUUID(dynakubeList *dynatracev1beta1.DynaKubeList, tenantUUID string) pinnedVersionSet {
+func getAllPinnedVersionsForTenantUUID(dynakubeList *dynatracev1.DynaKubeList, tenantUUID string) pinnedVersionSet {
 	pinnedVersions := make(pinnedVersionSet)
 	for _, dynakube := range dynakubeList.Items {
 		uuid, err := dynakube.TenantUUIDFromApiUrl()
@@ -155,8 +155,8 @@ func getAllPinnedVersionsForTenantUUID(dynakubeList *dynatracev1beta1.DynaKubeLi
 	return pinnedVersions
 }
 
-func getAllDynakubes(ctx context.Context, apiReader client.Reader, namespace string) (*dynatracev1beta1.DynaKubeList, error) {
-	var dynakubeList dynatracev1beta1.DynaKubeList
+func getAllDynakubes(ctx context.Context, apiReader client.Reader, namespace string) (*dynatracev1.DynaKubeList, error) {
+	var dynakubeList dynatracev1.DynaKubeList
 	if err := apiReader.List(ctx, &dynakubeList, client.InNamespace(namespace)); err != nil {
 		log.Info("failed to get all DynaKube objects")
 		return nil, errors.WithStack(err)

@@ -1,7 +1,7 @@
 package modifiers
 
 import (
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
@@ -14,14 +14,14 @@ var _ volumeModifier = ReadOnlyModifier{}
 var _ volumeMountModifier = ReadOnlyModifier{}
 var _ builder.Modifier = ReadOnlyModifier{}
 
-func NewReadOnlyModifier(dynakube dynatracev1beta1.DynaKube) ReadOnlyModifier {
+func NewReadOnlyModifier(dynakube dynatracev1.DynaKube) ReadOnlyModifier {
 	return ReadOnlyModifier{
 		dynakube: dynakube,
 	}
 }
 
 type ReadOnlyModifier struct {
-	dynakube       dynatracev1beta1.DynaKube
+	dynakube       dynatracev1.DynaKube
 	presentVolumes []corev1.Volume
 	presentMounts  []corev1.VolumeMount
 }

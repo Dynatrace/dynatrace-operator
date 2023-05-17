@@ -1,7 +1,7 @@
 package validation
 
 import (
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/logger"
 	"github.com/go-logr/logr"
 )
@@ -10,14 +10,14 @@ const oneagentEnableVolumeStorageEnvVarName = "ONEAGENT_ENABLE_VOLUME_STORAGE"
 
 var log = logger.Factory.GetLogger("validation")
 
-type validator func(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string
+type validator func(dv *dynakubeValidator, dynakube *dynatracev1.DynaKube) string
 
 var validators = []validator{
 	NoApiUrl,
 	IsInvalidApiUrl,
 	missingCSIDaemonSet,
 	disabledCSIForReadonlyCSIVolume,
-	conflictingActiveGateConfiguration,
+	// conflictingActiveGateConfiguration,
 	exclusiveSyntheticCapability,
 	invalidActiveGateCapabilities,
 	duplicateActiveGateCapabilities,

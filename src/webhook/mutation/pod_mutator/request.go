@@ -3,7 +3,7 @@ package pod_mutator
 import (
 	"context"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -67,8 +67,8 @@ func getDynakubeName(namespace corev1.Namespace) (string, error) {
 	return dynakubeName, nil
 }
 
-func (webhook *podMutatorWebhook) getDynakube(ctx context.Context, dynakubeName string) (*dynatracev1beta1.DynaKube, error) {
-	var dk dynatracev1beta1.DynaKube
+func (webhook *podMutatorWebhook) getDynakube(ctx context.Context, dynakubeName string) (*dynatracev1.DynaKube, error) {
+	var dk dynatracev1.DynaKube
 	err := webhook.apiReader.Get(ctx, client.ObjectKey{Name: dynakubeName, Namespace: webhook.webhookNamespace}, &dk)
 	if k8serrors.IsNotFound(err) {
 		webhook.recorder.sendMissingDynaKubeEvent(webhook.webhookNamespace, dynakubeName)

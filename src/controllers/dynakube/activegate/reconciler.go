@@ -3,7 +3,7 @@ package activegate
 import (
 	"context"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/authtoken"
@@ -25,22 +25,22 @@ import (
 type Reconciler struct {
 	context                           context.Context
 	client                            client.Client
-	dynakube                          *dynatracev1beta1.DynaKube
+	dynakube                          *dynatracev1.DynaKube
 	apiReader                         client.Reader
 	scheme                            *runtime.Scheme
 	authTokenReconciler               controllers.Reconciler
 	proxyReconciler                   controllers.Reconciler
 	newStatefulsetReconcilerFunc      statefulset.NewReconcilerFunc
 	newCapabilityReconcilerFunc       capabilityInternal.NewReconcilerFunc
-	newCustomPropertiesReconcilerFunc func(customPropertiesOwnerName string, customPropertiesSource *dynatracev1beta1.DynaKubeValueSource) controllers.Reconciler
+	newCustomPropertiesReconcilerFunc func(customPropertiesOwnerName string, customPropertiesSource *dynatracev1.DynaKubeValueSource) controllers.Reconciler
 }
 
 var _ controllers.Reconciler = (*Reconciler)(nil)
 
-func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) controllers.Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
+func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1.DynaKube, dtc dtclient.Client) controllers.Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
 	authTokenReconciler := authtoken.NewReconciler(clt, apiReader, scheme, dynakube, dtc)
 	proxyReconciler := proxy.NewReconciler(clt, apiReader, scheme, dynakube)
-	newCustomPropertiesReconcilerFunc := func(customPropertiesOwnerName string, customPropertiesSource *dynatracev1beta1.DynaKubeValueSource) controllers.Reconciler {
+	newCustomPropertiesReconcilerFunc := func(customPropertiesOwnerName string, customPropertiesSource *dynatracev1.DynaKubeValueSource) controllers.Reconciler {
 		return customproperties.NewReconciler(clt, dynakube, customPropertiesOwnerName, scheme, customPropertiesSource)
 	}
 
@@ -120,7 +120,7 @@ func (r *Reconciler) createActiveGateTenantConnectionInfoConfigMap() error {
 	return nil
 }
 
-func extractPublicData(dynakube *dynatracev1beta1.DynaKube) map[string]string {
+func extractPublicData(dynakube *dynatracev1.DynaKube) map[string]string {
 	data := map[string]string{}
 
 	if dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID != "" {

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
@@ -18,10 +18,10 @@ func TestOneAgentUpdater(t *testing.T) {
 		Tag:    "1.2.3",
 	}
 	t.Run("Getters work as expected", func(t *testing.T) {
-		dynakube := &dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{
+		dynakube := &dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
+				OneAgent: dynatracev1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1.HostInjectSpec{
 						AutoUpdate: address.Of(false),
 						Image:      testImage.String(),
 						Version:    testImage.Tag,
@@ -49,11 +49,11 @@ func TestOneAgentUseDefault(t *testing.T) {
 	testVersion := "1.2.3"
 	testDigest := getTestDigest()
 	t.Run("Set according to version field", func(t *testing.T) {
-		dynakube := &dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
+		dynakube := &dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{
+				OneAgent: dynatracev1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1.HostInjectSpec{
 						Version: testVersion,
 					},
 				},
@@ -76,11 +76,11 @@ func TestOneAgentUseDefault(t *testing.T) {
 		assertStatusBasedOnTenantRegistry(t, expectedImage, testVersion, dynakube.Status.OneAgent.VersionStatus)
 	})
 	t.Run("Set according to default", func(t *testing.T) {
-		dynakube := &dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
+		dynakube := &dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
+				OneAgent: dynatracev1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1.HostInjectSpec{},
 				},
 			},
 		}
@@ -102,19 +102,19 @@ func TestOneAgentUseDefault(t *testing.T) {
 		assertStatusBasedOnTenantRegistry(t, expectedImage, testVersion, dynakube.Status.OneAgent.VersionStatus)
 	})
 	t.Run("Don't allow downgrades", func(t *testing.T) {
-		dynakube := &dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
+		dynakube := &dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
+				OneAgent: dynatracev1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1.HostInjectSpec{},
 				},
 			},
-			Status: dynatracev1beta1.DynaKubeStatus{
-				OneAgent: dynatracev1beta1.OneAgentStatus{
-					VersionStatus: dynatracev1beta1.VersionStatus{
+			Status: dynatracev1.DynaKubeStatus{
+				OneAgent: dynatracev1.OneAgentStatus{
+					VersionStatus: dynatracev1.VersionStatus{
 						ImageID: "some.registry.com:999.999.999.999-999",
 						Version: "999.999.999.999-999",
-						Source:  dynatracev1beta1.TenantRegistryVersionSource,
+						Source:  dynatracev1.TenantRegistryVersionSource,
 					},
 				},
 			},
@@ -136,7 +136,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 		require.Error(t, err)
 
 		dynakube.Status.OneAgent.Version = ""
-		dynakube.Status.OneAgent.Source = dynatracev1beta1.PublicRegistryVersionSource
+		dynakube.Status.OneAgent.Source = dynatracev1.PublicRegistryVersionSource
 
 		err = updater.UseTenantRegistry(context.TODO(), &dockerconfig.DockerConfig{})
 		require.Error(t, err)
@@ -145,15 +145,15 @@ func TestOneAgentUseDefault(t *testing.T) {
 
 type CheckForDowngradeTestCase struct {
 	testName    string
-	dynakube    *dynatracev1beta1.DynaKube
+	dynakube    *dynatracev1.DynaKube
 	newVersion  string
 	isDowngrade bool
 }
 
-func newDynakubeWithOneAgentStatus(status dynatracev1beta1.VersionStatus) *dynatracev1beta1.DynaKube {
-	return &dynatracev1beta1.DynaKube{
-		Status: dynatracev1beta1.DynaKubeStatus{
-			OneAgent: dynatracev1beta1.OneAgentStatus{
+func newDynakubeWithOneAgentStatus(status dynatracev1.VersionStatus) *dynatracev1.DynaKube {
+	return &dynatracev1.DynaKube{
+		Status: dynatracev1.DynaKubeStatus{
+			OneAgent: dynatracev1.OneAgentStatus{
 				VersionStatus: status,
 			},
 		},
@@ -166,38 +166,38 @@ func TestCheckForDowngrade(t *testing.T) {
 	testCases := []CheckForDowngradeTestCase{
 		{
 			testName: "is downgrade, tenant registry",
-			dynakube: newDynakubeWithOneAgentStatus(dynatracev1beta1.VersionStatus{
+			dynakube: newDynakubeWithOneAgentStatus(dynatracev1.VersionStatus{
 				ImageID: "does-not-matter",
 				Version: newerVersion,
-				Source:  dynatracev1beta1.TenantRegistryVersionSource,
+				Source:  dynatracev1.TenantRegistryVersionSource,
 			}),
 			newVersion:  olderVersion,
 			isDowngrade: true,
 		},
 		{
 			testName: "is downgrade, public registry",
-			dynakube: newDynakubeWithOneAgentStatus(dynatracev1beta1.VersionStatus{
+			dynakube: newDynakubeWithOneAgentStatus(dynatracev1.VersionStatus{
 				ImageID: "some.registry.com:" + newerVersion,
-				Source:  dynatracev1beta1.PublicRegistryVersionSource,
+				Source:  dynatracev1.PublicRegistryVersionSource,
 			}),
 			newVersion:  olderVersion,
 			isDowngrade: true,
 		},
 		{
 			testName: "is NOT downgrade, tenant registry",
-			dynakube: newDynakubeWithOneAgentStatus(dynatracev1beta1.VersionStatus{
+			dynakube: newDynakubeWithOneAgentStatus(dynatracev1.VersionStatus{
 				ImageID: "does-not-matter",
 				Version: olderVersion,
-				Source:  dynatracev1beta1.TenantRegistryVersionSource,
+				Source:  dynatracev1.TenantRegistryVersionSource,
 			}),
 			newVersion:  newerVersion,
 			isDowngrade: false,
 		},
 		{
 			testName: "is NOT downgrade, public registry",
-			dynakube: newDynakubeWithOneAgentStatus(dynatracev1beta1.VersionStatus{
+			dynakube: newDynakubeWithOneAgentStatus(dynatracev1.VersionStatus{
 				ImageID: "some.registry.com:" + olderVersion,
-				Source:  dynatracev1beta1.PublicRegistryVersionSource,
+				Source:  dynatracev1.PublicRegistryVersionSource,
 			}),
 			newVersion:  newerVersion,
 			isDowngrade: false,

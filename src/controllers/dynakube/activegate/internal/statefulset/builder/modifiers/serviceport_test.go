@@ -3,16 +3,16 @@ package modifiers
 import (
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func setServicePortUsage(dynakube *dynatracev1beta1.DynaKube, isUsed bool) {
+func setServicePortUsage(dynakube *dynatracev1.DynaKube, isUsed bool) {
 	if isUsed {
-		dynakube.Spec.ActiveGate.Capabilities = append(dynakube.Spec.ActiveGate.Capabilities, dynatracev1beta1.MetricsIngestCapability.DisplayName)
+		dynakube.Spec.ActiveGate.Capabilities = append(dynakube.Spec.ActiveGate.Capabilities, dynatracev1.MetricsIngestCapability.DisplayName)
 	}
 }
 

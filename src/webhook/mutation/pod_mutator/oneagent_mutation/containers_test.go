@@ -3,7 +3,7 @@ package oneagent_mutation
 import (
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
@@ -65,7 +65,7 @@ func TestConfigureInitContainer(t *testing.T) {
 
 type mutateUserContainerTestCase struct {
 	name                               string
-	dynakube                           dynatracev1beta1.DynaKube
+	dynakube                           dynatracev1.DynaKube
 	expectedAdditionalEnvCount         int
 	expectedAdditionalVolumeMountCount int
 }

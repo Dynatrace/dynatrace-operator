@@ -5,7 +5,7 @@ package classic
 import (
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
@@ -18,7 +18,7 @@ func install(t *testing.T) features.Feature {
 	testDynakube := dynakube.NewBuilder().
 		WithDefaultObjectMeta().
 		ApiUrl(secretConfig.ApiUrl).
-		ClassicFullstack(&dynatracev1beta1.HostInjectSpec{}).
+		ClassicFullstack(&dynatracev1.HostInjectSpec{}).
 		Build()
 
 	// check if oneAgent pods startup and report as ready

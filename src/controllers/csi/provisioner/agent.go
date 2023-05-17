@@ -3,7 +3,7 @@ package csiprovisioner
 import (
 	"context"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/arch"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
@@ -26,7 +26,7 @@ type agentUpdater struct {
 	recorder      updaterEventRecorder
 }
 
-func newAgentUrlUpdater(fs afero.Fs, dtc dtclient.Client, previousVersion string, path metadata.PathResolver, recorder record.EventRecorder, dk *dynatracev1beta1.DynaKube) (*agentUpdater, error) { //nolint:revive // argument-limit doesn't apply to constructors
+func newAgentUrlUpdater(fs afero.Fs, dtc dtclient.Client, previousVersion string, path metadata.PathResolver, recorder record.EventRecorder, dk *dynatracev1.DynaKube) (*agentUpdater, error) { //nolint:revive // argument-limit doesn't apply to constructors
 	tenantUUID, err := dk.TenantUUIDFromApiUrl()
 	if err != nil {
 		return nil, err
@@ -56,7 +56,7 @@ func newAgentImageUpdater( //nolint:revive // argument-limit doesn't apply to co
 	path metadata.PathResolver,
 	db metadata.Access,
 	recorder record.EventRecorder,
-	dk *dynatracev1beta1.DynaKube) (*agentUpdater, error) {
+	dk *dynatracev1.DynaKube) (*agentUpdater, error) {
 	tenantUUID, err := dk.TenantUUIDFromApiUrl()
 	if err != nil {
 		return nil, err
@@ -96,7 +96,7 @@ func getUrlProperties(targetVersion, previousVersion string, pathResolver metada
 	}
 }
 
-func newImageInstaller(ctx context.Context, fs afero.Fs, apiReader client.Reader, pathResolver metadata.PathResolver, db metadata.Access, dynakube *dynatracev1beta1.DynaKube) (installer.Installer, error) { //nolint:revive // argument-limit doesn't apply to constructors
+func newImageInstaller(ctx context.Context, fs afero.Fs, apiReader client.Reader, pathResolver metadata.PathResolver, db metadata.Access, dynakube *dynatracev1.DynaKube) (installer.Installer, error) { //nolint:revive // argument-limit doesn't apply to constructors
 	dockerConfig := dockerconfig.NewDockerConfig(apiReader, *dynakube)
 	err := dockerConfig.StoreRequiredFiles(ctx, afero.Afero{Fs: fs})
 	if err != nil {

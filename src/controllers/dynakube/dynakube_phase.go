@@ -3,27 +3,27 @@ package dynakube
 import (
 	"context"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	appsv1 "k8s.io/api/apps/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func (controller *Controller) determineDynaKubePhase(dynakube *dynatracev1beta1.DynaKube) dynatracev1beta1.DynaKubePhaseType {
+func (controller *Controller) determineDynaKubePhase(dynakube *dynatracev1.DynaKube) dynatracev1.DynaKubePhaseType {
 	if dynakube.NeedsActiveGate() {
 		activeGatePods, err := controller.numberOfMissingActiveGatePods(dynakube)
 		if err != nil {
 			log.Error(err, "activegate statefulset could not be accessed", "dynakube", dynakube.Name)
-			return dynatracev1beta1.Error
+			return dynatracev1.Error
 		}
 		if activeGatePods > 0 {
 			log.Info("activegate statefulset is still deploying", "dynakube", dynakube.Name)
-			return dynatracev1beta1.Deploying
+			return dynatracev1.Deploying
 		}
 		if activeGatePods < 0 {
 			log.Info("activegate statefulset not yet available", "dynakube", dynakube.Name)
-			return dynatracev1beta1.Deploying
+			return dynatracev1.Deploying
 		}
 	}
 
@@ -31,22 +31,22 @@ func (controller *Controller) determineDynaKubePhase(dynakube *dynatracev1beta1.
 		oneAgentPods, err := controller.numberOfMissingOneagentPods(dynakube)
 		if k8serrors.IsNotFound(err) {
 			log.Info("oneagent daemonset not yet available", "dynakube", dynakube.Name)
-			return dynatracev1beta1.Deploying
+			return dynatracev1.Deploying
 		}
 		if err != nil {
 			log.Error(err, "oneagent daemonset could not be accessed", "dynakube", dynakube.Name)
-			return dynatracev1beta1.Error
+			return dynatracev1.Error
 		}
 		if oneAgentPods > 0 {
 			log.Info("oneagent daemonset is still deploying", "dynakube", dynakube.Name)
-			return dynatracev1beta1.Deploying
+			return dynatracev1.Deploying
 		}
 	}
 
-	return dynatracev1beta1.Running
+	return dynatracev1.Running
 }
 
-func (controller *Controller) numberOfMissingOneagentPods(dynakube *dynatracev1beta1.DynaKube) (int32, error) {
+func (controller *Controller) numberOfMissingOneagentPods(dynakube *dynatracev1.DynaKube) (int32, error) {
 	oneAgentDaemonSet := &appsv1.DaemonSet{}
 	instanceName := dynakube.OneAgentDaemonsetName()
 	err := controller.client.Get(context.TODO(), types.NamespacedName{Name: instanceName, Namespace: dynakube.Namespace}, oneAgentDaemonSet)
@@ -57,7 +57,7 @@ func (controller *Controller) numberOfMissingOneagentPods(dynakube *dynatracev1b
 	return oneAgentDaemonSet.Status.CurrentNumberScheduled - oneAgentDaemonSet.Status.NumberReady, nil
 }
 
-func (controller *Controller) numberOfMissingActiveGatePods(dynakube *dynatracev1beta1.DynaKube) (int32, error) {
+func (controller *Controller) numberOfMissingActiveGatePods(dynakube *dynatracev1.DynaKube) (int32, error) {
 	capabilities := capability.GenerateActiveGateCapabilities(dynakube)
 
 	sum := int32(0)

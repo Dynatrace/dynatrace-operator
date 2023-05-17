@@ -3,7 +3,7 @@ package dynatraceclient
 import (
 	"context"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,7 +19,7 @@ func (stubBuilder StubBuilder) SetContext(context.Context) Builder {
 	return stubBuilder
 }
 
-func (stubBuilder StubBuilder) SetDynakube(dynatracev1beta1.DynaKube) Builder {
+func (stubBuilder StubBuilder) SetDynakube(dynatracev1.DynaKube) Builder {
 	return stubBuilder
 }
 
@@ -35,6 +35,6 @@ func (stubBuilder StubBuilder) Build() (dtclient.Client, error) {
 	return stubBuilder.DynatraceClient, stubBuilder.Err
 }
 
-func (stubBuilder StubBuilder) BuildWithTokenVerification(*dynatracev1beta1.DynaKubeStatus) (dtclient.Client, error) {
+func (stubBuilder StubBuilder) BuildWithTokenVerification(*dynatracev1.DynaKubeStatus) (dtclient.Client, error) {
 	return stubBuilder.DynatraceClient, stubBuilder.Err
 }

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
@@ -40,8 +40,8 @@ var (
 		Namespace: testNamespace,
 		Name:      testName,
 		Annotations: map[string]string{
-			dynatracev1beta1.AnnotationFeatureSyntheticLocationEntityId: "imaginary",
-			dynatracev1beta1.AnnotationFeatureSyntheticNodeType:         dynatracev1beta1.SyntheticNodeXs,
+			dynatracev1.AnnotationFeatureSyntheticLocationEntityId: "imaginary",
+			dynatracev1.AnnotationFeatureSyntheticNodeType:         dynatracev1.SyntheticNodeXs,
 		},
 	}
 )
@@ -51,7 +51,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 	dtc.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
 
 	t.Run(`Create works with minimal setup`, func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{
+		instance := &dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 				Name:      testName,
@@ -62,13 +62,13 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 	})
 	t.Run(`Create AG proxy secret`, func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{
+		instance := &dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 				Name:      testName,
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				Proxy: &dynatracev1beta1.DynaKubeProxy{Value: testProxyName},
+			Spec: dynatracev1.DynaKubeSpec{
+				Proxy: &dynatracev1.DynaKubeProxy{Value: testProxyName},
 			},
 		}
 		fakeClient := fake.NewClient()
@@ -81,14 +81,14 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.NoError(t, err)
 	})
 	t.Run(`Create AG capability (creation and deletion)`, func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{
+		instance := &dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 				Name:      testName,
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				ActiveGate: dynatracev1beta1.ActiveGateSpec{
-					Capabilities: []dynatracev1beta1.CapabilityDisplayName{dynatracev1beta1.RoutingCapability.DisplayName},
+			Spec: dynatracev1.DynaKubeSpec{
+				ActiveGate: dynatracev1.ActiveGateSpec{
+					Capabilities: []dynatracev1.CapabilityDisplayName{dynatracev1.RoutingCapability.DisplayName},
 				},
 			},
 		}
@@ -102,7 +102,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		// remove AG from spec
-		instance.Spec.ActiveGate = dynatracev1beta1.ActiveGateSpec{}
+		instance.Spec.ActiveGate = dynatracev1.ActiveGateSpec{}
 		err = r.Reconcile()
 		require.NoError(t, err)
 
@@ -113,37 +113,37 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 func TestServiceCreation(t *testing.T) {
 	dynatraceClient := &dtclient.MockDynatraceClient{}
-	dynakube := &dynatracev1beta1.DynaKube{
+	dynakube := &dynatracev1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
 			Name:      testName,
 			Annotations: map[string]string{
-				dynatracev1beta1.AnnotationFeatureActiveGateAuthToken: "false",
+				dynatracev1.AnnotationFeatureActiveGateAuthToken: "false",
 			},
 		},
-		Spec: dynatracev1beta1.DynaKubeSpec{
-			ActiveGate: dynatracev1beta1.ActiveGateSpec{},
+		Spec: dynatracev1.DynaKubeSpec{
+			ActiveGate: dynatracev1.ActiveGateSpec{},
 		},
 	}
 
 	t.Run("service exposes correct ports for single capabilities", func(t *testing.T) {
-		expectedCapabilityPorts := map[dynatracev1beta1.CapabilityDisplayName][]string{
-			dynatracev1beta1.RoutingCapability.DisplayName: {
+		expectedCapabilityPorts := map[dynatracev1.CapabilityDisplayName][]string{
+			dynatracev1.RoutingCapability.DisplayName: {
 				consts.HttpsServicePortName,
 			},
-			dynatracev1beta1.MetricsIngestCapability.DisplayName: {
+			dynatracev1.MetricsIngestCapability.DisplayName: {
 				consts.HttpsServicePortName,
 			},
-			dynatracev1beta1.DynatraceApiCapability.DisplayName: {
+			dynatracev1.DynatraceApiCapability.DisplayName: {
 				consts.HttpsServicePortName,
 			},
-			dynatracev1beta1.KubeMonCapability.DisplayName: {},
+			dynatracev1.KubeMonCapability.DisplayName: {},
 		}
 
 		for capability, expectedPorts := range expectedCapabilityPorts {
 			fakeClient := fake.NewClient(testKubeSystemNamespace)
 			reconciler := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, dynatraceClient)
-			dynakube.Spec.ActiveGate.Capabilities = []dynatracev1beta1.CapabilityDisplayName{
+			dynakube.Spec.ActiveGate.Capabilities = []dynatracev1.CapabilityDisplayName{
 				capability,
 			}
 
@@ -165,8 +165,8 @@ func TestServiceCreation(t *testing.T) {
 	t.Run("service exposes correct ports for multiple capabilities", func(t *testing.T) {
 		fakeClient := fake.NewClient(testKubeSystemNamespace)
 		reconciler := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, dynatraceClient)
-		dynakube.Spec.ActiveGate.Capabilities = []dynatracev1beta1.CapabilityDisplayName{
-			dynatracev1beta1.RoutingCapability.DisplayName,
+		dynakube.Spec.ActiveGate.Capabilities = []dynatracev1.CapabilityDisplayName{
+			dynatracev1.RoutingCapability.DisplayName,
 		}
 		expectedPorts := []string{
 			consts.HttpsServicePortName,
@@ -206,7 +206,7 @@ func TestExclusiveSynMonitoring(t *testing.T) {
 	mockDtClient.On("GetActiveGateAuthToken", testName).
 		Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
 
-	dynakube := &dynatracev1beta1.DynaKube{
+	dynakube := &dynatracev1.DynaKube{
 		ObjectMeta: syntheticCapabilityObjectMeta,
 	}
 	fakeClient := fake.NewClient(testKubeSystemNamespace)
@@ -251,15 +251,15 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 		testTenantEndpoints = "test-endpoints"
 	)
 
-	dynakube := &dynatracev1beta1.DynaKube{
+	dynakube := &dynatracev1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
 			Name:      testName,
 		},
-		Status: dynatracev1beta1.DynaKubeStatus{
-			ActiveGate: dynatracev1beta1.ActiveGateStatus{
-				ConnectionInfoStatus: dynatracev1beta1.ActiveGateConnectionInfoStatus{
-					ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
+		Status: dynatracev1.DynaKubeStatus{
+			ActiveGate: dynatracev1.ActiveGateStatus{
+				ConnectionInfoStatus: dynatracev1.ActiveGateConnectionInfoStatus{
+					ConnectionInfoStatus: dynatracev1.ConnectionInfoStatus{
 						TenantUUID:  testTenantUUID,
 						Endpoints:   testTenantEndpoints,
 						LastRequest: metav1.Time{},

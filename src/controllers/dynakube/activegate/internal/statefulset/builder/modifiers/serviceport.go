@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder"
@@ -17,7 +17,7 @@ import (
 var _ envModifier = ServicePortModifier{}
 var _ builder.Modifier = ServicePortModifier{}
 
-func NewServicePortModifier(dynakube dynatracev1beta1.DynaKube, capability capability.Capability) ServicePortModifier {
+func NewServicePortModifier(dynakube dynatracev1.DynaKube, capability capability.Capability) ServicePortModifier {
 	return ServicePortModifier{
 		dynakube:   dynakube,
 		capability: capability,
@@ -25,7 +25,7 @@ func NewServicePortModifier(dynakube dynatracev1beta1.DynaKube, capability capab
 }
 
 type ServicePortModifier struct {
-	dynakube   dynatracev1beta1.DynaKube
+	dynakube   dynatracev1.DynaKube
 	capability capability.Capability
 }
 

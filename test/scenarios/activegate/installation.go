@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/activegate"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
@@ -47,7 +47,7 @@ var (
 	}
 )
 
-func Install(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features.Feature {
+func Install(t *testing.T, proxySpec *dynatracev1.DynaKubeProxy) features.Feature {
 	builder := features.New("activegate-capabilities")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	testDynakube := dynakube.NewBuilder().
@@ -80,7 +80,7 @@ func Install(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features.F
 	return builder.Feature()
 }
 
-func assessActiveGate(builder *features.FeatureBuilder, testDynakube *dynatracev1beta1.DynaKube) {
+func assessActiveGate(builder *features.FeatureBuilder, testDynakube *dynatracev1.DynaKube) {
 	builder.Assess("ActiveGate started", activegate.WaitForStatefulSet(testDynakube, "activegate"))
 	builder.Assess("ActiveGate has required containers", checkIfAgHasContainers(testDynakube))
 	builder.Assess("ActiveGate modules are active", checkActiveModules(testDynakube))
@@ -93,7 +93,7 @@ func assessActiveGate(builder *features.FeatureBuilder, testDynakube *dynatracev
 	builder.Assess("ActiveGate service is running", sampleapps.CheckActiveGateCurlResult(*testDynakube))
 }
 
-func checkIfAgHasContainers(testDynakube *dynatracev1beta1.DynaKube) features.Func {
+func checkIfAgHasContainers(testDynakube *dynatracev1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resources := environmentConfig.Client().Resources()
 
@@ -113,7 +113,7 @@ func checkIfAgHasContainers(testDynakube *dynatracev1beta1.DynaKube) features.Fu
 	}
 }
 
-func checkActiveModules(testDynakube *dynatracev1beta1.DynaKube) features.Func {
+func checkActiveModules(testDynakube *dynatracev1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		log := activegate.ReadActiveGateLog(ctx, t, environmentConfig, testDynakube, agComponentName)
 		assertExpectedModulesAreActive(t, log)
@@ -121,7 +121,7 @@ func checkActiveModules(testDynakube *dynatracev1beta1.DynaKube) features.Func {
 	}
 }
 
-func checkIfProxyUsed(testDynakube *dynatracev1beta1.DynaKube) features.Func {
+func checkIfProxyUsed(testDynakube *dynatracev1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		log := activegate.ReadActiveGateLog(ctx, t, environmentConfig, testDynakube, agComponentName)
 		assertProxyUsed(t, log, testDynakube.Spec.Proxy.Value)
@@ -129,7 +129,7 @@ func checkIfProxyUsed(testDynakube *dynatracev1beta1.DynaKube) features.Func {
 	}
 }
 
-func checkMountPoints(testDynakube *dynatracev1beta1.DynaKube) features.Func {
+func checkMountPoints(testDynakube *dynatracev1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resources := environmentConfig.Client().Resources()
 
@@ -247,7 +247,7 @@ func initMap(srcMap *map[string]bool) map[string]bool {
 	return dstMap
 }
 
-func assessReadOnlyActiveGate(builder *features.FeatureBuilder, secretConfig tenant.Secret, proxySpec *dynatracev1beta1.DynaKubeProxy) {
+func assessReadOnlyActiveGate(builder *features.FeatureBuilder, secretConfig tenant.Secret, proxySpec *dynatracev1.DynaKubeProxy) {
 	if proxySpec == nil {
 		testDynakube := dynakube.NewBuilder().
 			WithDefaultObjectMeta().
@@ -255,18 +255,18 @@ func assessReadOnlyActiveGate(builder *features.FeatureBuilder, secretConfig ten
 			WithDynakubeNamespaceSelector().
 			ApiUrl(secretConfig.ApiUrl).
 			WithAnnotations(map[string]string{
-				dynatracev1beta1.AnnotationFeatureActiveGateReadOnlyFilesystem: "true",
+				dynatracev1.AnnotationFeatureActiveGateReadOnlyFilesystem: "true",
 			}).
 			Build()
 		assess.UpdateDynakube(builder, testDynakube)
-		builder.Assess("dynakube phase changes to 'Deploying'", dynakube.WaitForDynakubePhase(testDynakube, dynatracev1beta1.Deploying))
-		builder.Assess("dynakube phase changes to 'Running'", dynakube.WaitForDynakubePhase(testDynakube, dynatracev1beta1.Running))
+		builder.Assess("dynakube phase changes to 'Deploying'", dynakube.WaitForDynakubePhase(testDynakube, dynatracev1.Deploying))
+		builder.Assess("dynakube phase changes to 'Running'", dynakube.WaitForDynakubePhase(testDynakube, dynatracev1.Running))
 
 		builder.Assess("ActiveGate ro filesystem", checkReadOnlySettings(&testDynakube))
 	}
 }
 
-func checkReadOnlySettings(testDynakube *dynatracev1beta1.DynaKube) features.Func {
+func checkReadOnlySettings(testDynakube *dynatracev1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resources := environmentConfig.Client().Resources()
 

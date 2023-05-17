@@ -8,7 +8,7 @@ import (
 	"path"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
@@ -30,22 +30,22 @@ var (
 	uninstallOneAgentDaemonSetPath = path.Join(project.TestDataDir(), "oneagent/uninstall-oneagent.yaml")
 )
 
-func WaitForDaemonset(dynakube dynatracev1beta1.DynaKube) features.Func {
+func WaitForDaemonset(dynakube dynatracev1.DynaKube) features.Func {
 	return daemonset.WaitFor(dynakube.OneAgentDaemonsetName(), dynakube.Namespace)
 }
 
-func WaitForDaemonSetPodsDeletion(dynakube dynatracev1beta1.DynaKube) features.Func {
+func WaitForDaemonSetPodsDeletion(dynakube dynatracev1.DynaKube) features.Func {
 	return pod.WaitForPodsDeletionWithOwner(dynakube.OneAgentDaemonsetName(), dynakube.Namespace)
 }
 
-func Get(ctx context.Context, resource *resources.Resources, dynakube dynatracev1beta1.DynaKube) (appsv1.DaemonSet, error) {
+func Get(ctx context.Context, resource *resources.Resources, dynakube dynatracev1.DynaKube) (appsv1.DaemonSet, error) {
 	return daemonset.NewQuery(ctx, resource, client.ObjectKey{
 		Name:      dynakube.OneAgentDaemonsetName(),
 		Namespace: dynakube.Namespace,
 	}).Get()
 }
 
-func CreateUninstallDaemonSet(dynakube dynatracev1beta1.DynaKube) features.Func {
+func CreateUninstallDaemonSet(dynakube dynatracev1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		uninstallDaemonSet := manifests.ObjectFromFile[*appsv1.DaemonSet](t, uninstallOneAgentDaemonSetPath)
 		uninstallDaemonSet.Namespace = dynakube.Namespace

@@ -3,7 +3,7 @@ package troubleshoot
 import (
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -45,8 +45,8 @@ func TestTroubleshootCommandBuilder(t *testing.T) {
 	})
 }
 
-func buildTestDynakube() dynatracev1beta1.DynaKube {
-	return dynatracev1beta1.DynaKube{
+func buildTestDynakube() dynatracev1.DynaKube {
+	return dynatracev1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testDynakube,
 			Namespace: testNamespace,

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
@@ -105,7 +105,7 @@ func TestHasTooManyMountAttempts(t *testing.T) {
 		publisher := newPublisherForTesting(nil)
 		bindCfg := &csivolumes.BindConfig{
 			TenantUUID:       testTenantUUID,
-			MaxMountAttempts: dynatracev1beta1.DefaultMaxFailedCsiMountAttempts,
+			MaxMountAttempts: dynatracev1.DefaultMaxFailedCsiMountAttempts,
 		}
 		volumeCfg := createTestVolumeConfig()
 
@@ -122,7 +122,7 @@ func TestHasTooManyMountAttempts(t *testing.T) {
 		publisher := newPublisherForTesting(nil)
 		mockFailedPublishedVolume(t, &publisher)
 		bindCfg := &csivolumes.BindConfig{
-			MaxMountAttempts: dynatracev1beta1.DefaultMaxFailedCsiMountAttempts,
+			MaxMountAttempts: dynatracev1.DefaultMaxFailedCsiMountAttempts,
 		}
 
 		hasTooManyAttempts, err := publisher.hasTooManyMountAttempts(context.TODO(), bindCfg, createTestVolumeConfig())
@@ -251,7 +251,7 @@ func TestMountIfDBHasError(t *testing.T) {
 
 	bindCfg := &csivolumes.BindConfig{
 		TenantUUID:       testTenantUUID,
-		MaxMountAttempts: dynatracev1beta1.DefaultMaxFailedCsiMountAttempts,
+		MaxMountAttempts: dynatracev1.DefaultMaxFailedCsiMountAttempts,
 	}
 
 	err := publisher.ensureMountSteps(context.TODO(), bindCfg, createTestVolumeConfig())
@@ -261,13 +261,13 @@ func TestMountIfDBHasError(t *testing.T) {
 
 func newPublisherForTesting(mounter *mount.FakeMounter) AppVolumePublisher {
 	objects := []client.Object{
-		&dynatracev1beta1.DynaKube{
+		&dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: testDynakubeName,
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{},
+			Spec: dynatracev1.DynaKubeSpec{
+				OneAgent: dynatracev1.OneAgentSpec{
+					ApplicationMonitoring: &dynatracev1.ApplicationMonitoringSpec{},
 				},
 			},
 		},
@@ -300,7 +300,7 @@ func mockPublishedVolume(t *testing.T, publisher *AppVolumePublisher) {
 
 func mockFailedPublishedVolume(t *testing.T, publisher *AppVolumePublisher) {
 	mockUrlDynakubeMetadata(t, publisher)
-	err := publisher.db.InsertVolume(context.TODO(), metadata.NewVolume(testVolumeId, testPodUID, testAgentVersion, testTenantUUID, dynatracev1beta1.DefaultMaxFailedCsiMountAttempts+1))
+	err := publisher.db.InsertVolume(context.TODO(), metadata.NewVolume(testVolumeId, testPodUID, testAgentVersion, testTenantUUID, dynatracev1.DefaultMaxFailedCsiMountAttempts+1))
 	require.NoError(t, err)
 }
 
@@ -310,7 +310,7 @@ func mockUrlDynakubeMetadata(t *testing.T, publisher *AppVolumePublisher) {
 }
 
 func mockImageDynakubeMetadata(t *testing.T, publisher *AppVolumePublisher) {
-	err := publisher.db.InsertDynakube(context.TODO(), metadata.NewDynakube(testDynakubeName, testTenantUUID, "", testImageDigest, dynatracev1beta1.DefaultMaxFailedCsiMountAttempts))
+	err := publisher.db.InsertDynakube(context.TODO(), metadata.NewDynakube(testDynakubeName, testTenantUUID, "", testImageDigest, dynatracev1.DefaultMaxFailedCsiMountAttempts))
 	require.NoError(t, err)
 }
 

@@ -1,7 +1,7 @@
 package token
 
 import (
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 )
 
@@ -10,7 +10,7 @@ type Token struct {
 	RequiredScopes []string
 }
 
-func (token Token) setApiTokenScopes(dynakube dynatracev1beta1.DynaKube, hasPaasToken bool) Token {
+func (token Token) setApiTokenScopes(dynakube dynatracev1.DynaKube, hasPaasToken bool) Token {
 	token.RequiredScopes = make([]string, 0)
 
 	if !hasPaasToken {

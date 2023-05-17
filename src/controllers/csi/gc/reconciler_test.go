@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/spf13/afero"
@@ -21,11 +21,11 @@ func TestReconcile(t *testing.T) {
 	apiUrl := fmt.Sprintf("https://%s.dev.dynatracelabs.com/api", tenantUUID)
 	namespace := "test-namespace"
 	t.Run(`no latest version in status`, func(t *testing.T) {
-		dynakube := dynatracev1beta1.DynaKube{
+		dynakube := dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: apiUrl,
 			},
 		}
@@ -49,39 +49,39 @@ func TestCollectGCInfo(t *testing.T) {
 
 	t.Run(`1 pinned version`, func(t *testing.T) {
 		oldVersion := "old-version"
-		newVersionDynakube := dynatracev1beta1.DynaKube{
+		newVersionDynakube := dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: apiUrl,
 			},
-			Status: dynatracev1beta1.DynaKubeStatus{
-				CodeModules: dynatracev1beta1.CodeModulesStatus{
-					VersionStatus: dynatracev1beta1.VersionStatus{
+			Status: dynatracev1.DynaKubeStatus{
+				CodeModules: dynatracev1.CodeModulesStatus{
+					VersionStatus: dynatracev1.VersionStatus{
 						Version: latestVersion,
 					},
 				},
 			},
 		}
 
-		oldVersionDynakube := dynatracev1beta1.DynaKube{
+		oldVersionDynakube := dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: apiUrl,
 			},
-			Status: dynatracev1beta1.DynaKubeStatus{
-				CodeModules: dynatracev1beta1.CodeModulesStatus{
-					VersionStatus: dynatracev1beta1.VersionStatus{
+			Status: dynatracev1.DynaKubeStatus{
+				CodeModules: dynatracev1.CodeModulesStatus{
+					VersionStatus: dynatracev1.VersionStatus{
 						Version: oldVersion,
 					},
 				},
 			},
 		}
-		dkList := dynatracev1beta1.DynaKubeList{
-			Items: []dynatracev1beta1.DynaKube{
+		dkList := dynatracev1.DynaKubeList{
+			Items: []dynatracev1.DynaKube{
 				newVersionDynakube,
 				oldVersionDynakube,
 			},
@@ -91,38 +91,38 @@ func TestCollectGCInfo(t *testing.T) {
 		assert.Len(t, gcInfo.pinnedVersions, 2)
 	})
 	t.Run("only consider version, not the tag", func(t *testing.T) {
-		versionDynakube := dynatracev1beta1.DynaKube{
+		versionDynakube := dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test1",
 				Namespace: namespace,
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: apiUrl,
 			},
-			Status: dynatracev1beta1.DynaKubeStatus{
-				CodeModules: dynatracev1beta1.CodeModulesStatus{
-					VersionStatus: dynatracev1beta1.VersionStatus{
+			Status: dynatracev1.DynaKubeStatus{
+				CodeModules: dynatracev1.CodeModulesStatus{
+					VersionStatus: dynatracev1.VersionStatus{
 						Version: latestVersion,
 					},
 				},
 			},
 		}
-		tagDynakube := dynatracev1beta1.DynaKube{
+		tagDynakube := dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test2",
 				Namespace: namespace,
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: apiUrl,
 			},
-			Status: dynatracev1beta1.DynaKubeStatus{
-				CodeModules: dynatracev1beta1.CodeModulesStatus{
-					VersionStatus: dynatracev1beta1.VersionStatus{},
+			Status: dynatracev1.DynaKubeStatus{
+				CodeModules: dynatracev1.CodeModulesStatus{
+					VersionStatus: dynatracev1.VersionStatus{},
 				},
 			},
 		}
-		dkList := dynatracev1beta1.DynaKubeList{
-			Items: []dynatracev1beta1.DynaKube{
+		dkList := dynatracev1.DynaKubeList{
+			Items: []dynatracev1.DynaKube{
 				versionDynakube,
 				tagDynakube,
 			},

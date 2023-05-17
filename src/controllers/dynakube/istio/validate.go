@@ -1,7 +1,7 @@
 package istio
 
 import (
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
@@ -26,7 +26,7 @@ func CheckIstioEnabled(cfg *rest.Config) (bool, error) {
 	return false, nil
 }
 
-func verifyIstioCrdAvailability(instance *dynatracev1beta1.DynaKube, config *rest.Config) kubeobjects.ProbeResult {
+func verifyIstioCrdAvailability(instance *dynatracev1.DynaKube, config *rest.Config) kubeobjects.ProbeResult {
 	var probe kubeobjects.ProbeResult
 
 	probe, _ = kubeobjects.KubernetesObjectProbe(ServiceEntryGVK, instance.GetNamespace(), "", config)

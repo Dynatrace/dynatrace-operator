@@ -3,7 +3,7 @@ package validation
 import (
 	"context"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/mapper"
 )
 
@@ -16,7 +16,7 @@ Make sure you have a namespaceSelector doesn't conflict with other Dynakubes nam
 `
 )
 
-func conflictingNamespaceSelector(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func conflictingNamespaceSelector(dv *dynakubeValidator, dynakube *dynatracev1.DynaKube) string {
 	if !dynakube.NeedAppInjection() {
 		return ""
 	}

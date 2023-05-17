@@ -4,13 +4,13 @@ import (
 	"strconv"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func setRawImageUsage(dynakube *dynatracev1beta1.DynaKube, isUsed bool) {
-	dynakube.Annotations[dynatracev1beta1.AnnotationFeatureActiveGateRawImage] = strconv.FormatBool(isUsed)
+func setRawImageUsage(dynakube *dynatracev1.DynaKube, isUsed bool) {
+	dynakube.Annotations[dynatracev1.AnnotationFeatureActiveGateRawImage] = strconv.FormatBool(isUsed)
 }
 
 func TestRawImageEnabled(t *testing.T) {

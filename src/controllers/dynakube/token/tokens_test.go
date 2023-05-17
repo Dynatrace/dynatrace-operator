@@ -3,7 +3,7 @@ package token
 import (
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -23,7 +23,7 @@ func testSetApiTokenScopes(t *testing.T) {
 		tokens := Tokens{
 			dtclient.DynatraceApiToken: {},
 		}
-		tokens = tokens.SetScopesForDynakube(dynatracev1beta1.DynaKube{})
+		tokens = tokens.SetScopesForDynakube(dynatracev1.DynaKube{})
 
 		assert.Equal(t,
 			[]string{
@@ -36,10 +36,10 @@ func testSetApiTokenScopes(t *testing.T) {
 		tokens := Tokens{
 			dtclient.DynatraceApiToken: {},
 		}
-		tokens = tokens.SetScopesForDynakube(dynatracev1beta1.DynaKube{
+		tokens = tokens.SetScopesForDynakube(dynatracev1.DynaKube{
 			ObjectMeta: v1.ObjectMeta{
 				Annotations: map[string]string{
-					dynatracev1beta1.AnnotationFeatureHostsRequests: "false",
+					dynatracev1.AnnotationFeatureHostsRequests: "false",
 				},
 			},
 		})
@@ -52,16 +52,16 @@ func testSetApiTokenScopes(t *testing.T) {
 		tokens := Tokens{
 			dtclient.DynatraceApiToken: {},
 		}
-		tokens = tokens.SetScopesForDynakube(dynatracev1beta1.DynaKube{
+		tokens = tokens.SetScopesForDynakube(dynatracev1.DynaKube{
 			ObjectMeta: v1.ObjectMeta{
 				Annotations: map[string]string{
-					dynatracev1beta1.AnnotationFeatureAutomaticK8sApiMonitoring: "true",
+					dynatracev1.AnnotationFeatureAutomaticK8sApiMonitoring: "true",
 				},
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				ActiveGate: dynatracev1beta1.ActiveGateSpec{
-					Capabilities: []dynatracev1beta1.CapabilityDisplayName{
-						dynatracev1beta1.KubeMonCapability.DisplayName,
+			Spec: dynatracev1.DynaKubeSpec{
+				ActiveGate: dynatracev1.ActiveGateSpec{
+					Capabilities: []dynatracev1.CapabilityDisplayName{
+						dynatracev1.KubeMonCapability.DisplayName,
 					},
 				},
 			},
@@ -84,7 +84,7 @@ func testPaasTokenScopes(t *testing.T) {
 	tokens := Tokens{
 		dtclient.DynatracePaasToken: {},
 	}
-	tokens = tokens.SetScopesForDynakube(dynatracev1beta1.DynaKube{})
+	tokens = tokens.SetScopesForDynakube(dynatracev1.DynaKube{})
 
 	assert.Equal(t,
 		[]string{dtclient.TokenScopeInstallerDownload},
@@ -95,7 +95,7 @@ func testDataIngestTokenScopes(t *testing.T) {
 	tokens := Tokens{
 		dtclient.DynatraceDataIngestToken: {},
 	}
-	tokens = tokens.SetScopesForDynakube(dynatracev1beta1.DynaKube{})
+	tokens = tokens.SetScopesForDynakube(dynatracev1.DynaKube{})
 
 	assert.Equal(t,
 		[]string{dtclient.TokenScopeMetricsIngest},

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/replicaset"
@@ -26,7 +26,7 @@ type SampleDeployment struct {
 	sampleApp
 }
 
-func NewSampleDeployment(t *testing.T, testDynakube dynatracev1beta1.DynaKube) sample.App {
+func NewSampleDeployment(t *testing.T, testDynakube dynatracev1.DynaKube) sample.App {
 	return &SampleDeployment{
 		sampleApp: *newSampleApp(t, testDynakube),
 	}
