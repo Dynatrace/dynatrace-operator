@@ -3,7 +3,7 @@ package webhook
 import (
 	"context"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -28,7 +28,7 @@ type PodMutator interface {
 // BaseRequest is the base request for all mutation requests
 type BaseRequest struct {
 	Pod       *corev1.Pod
-	DynaKube  dynatracev1beta1.DynaKube
+	DynaKube  dynatracev1.DynaKube
 	Namespace corev1.Namespace
 }
 
@@ -55,7 +55,7 @@ type ReinvocationRequest struct {
 	*BaseRequest
 }
 
-func newBaseRequest(pod *corev1.Pod, namespace corev1.Namespace, dynakube dynatracev1beta1.DynaKube) *BaseRequest {
+func newBaseRequest(pod *corev1.Pod, namespace corev1.Namespace, dynakube dynatracev1.DynaKube) *BaseRequest {
 	return &BaseRequest{
 		Pod:       pod,
 		DynaKube:  dynakube,
@@ -63,7 +63,7 @@ func newBaseRequest(pod *corev1.Pod, namespace corev1.Namespace, dynakube dynatr
 	}
 }
 
-func NewMutationRequest(ctx context.Context, namespace corev1.Namespace, installContainer *corev1.Container, pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) *MutationRequest { //nolint:revive // argument-limit doesn't apply to constructors
+func NewMutationRequest(ctx context.Context, namespace corev1.Namespace, installContainer *corev1.Container, pod *corev1.Pod, dynakube dynatracev1.DynaKube) *MutationRequest { //nolint:revive // argument-limit doesn't apply to constructors
 	return &MutationRequest{
 		BaseRequest:      newBaseRequest(pod, namespace, dynakube),
 		Context:          ctx,

@@ -3,7 +3,7 @@ package dynatraceclient
 import (
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
@@ -21,11 +21,11 @@ const (
 
 func TestBuildDynatraceClient(t *testing.T) {
 	t.Run(`BuildDynatraceClient works with minimal setup`, func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{
+		instance := &dynatracev1.DynaKube{
 			ObjectMeta: v1.ObjectMeta{
 				Namespace: testNamespace,
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testEndpoint,
 			}}
 		fakeClient := fake.NewClient(instance)
@@ -48,11 +48,11 @@ func TestBuildDynatraceClient(t *testing.T) {
 		assert.Error(t, err)
 	})
 	t.Run(`BuildDynatraceClient handles invalid token secret`, func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{
+		instance := &dynatracev1.DynaKube{
 			ObjectMeta: v1.ObjectMeta{
 				Namespace: testNamespace,
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testEndpoint,
 			}}
 		fakeClient := fake.NewClient(instance)
@@ -81,13 +81,13 @@ func TestBuildDynatraceClient(t *testing.T) {
 		assert.Error(t, err)
 	})
 	t.Run(`BuildDynatraceClient handles missing proxy secret`, func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{
+		instance := &dynatracev1.DynaKube{
 			ObjectMeta: v1.ObjectMeta{
 				Namespace: testNamespace,
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testEndpoint,
-				Proxy: &dynatracev1beta1.DynaKubeProxy{
+				Proxy: &dynatracev1.DynaKubeProxy{
 					ValueFrom: testKey,
 				}}}
 		fakeClient := fake.NewClient(instance)
@@ -105,11 +105,11 @@ func TestBuildDynatraceClient(t *testing.T) {
 		assert.Nil(t, dtc)
 	})
 	t.Run(`BuildDynatraceClient handles missing trusted certificate config map`, func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{
+		instance := &dynatracev1.DynaKube{
 			ObjectMeta: v1.ObjectMeta{
 				Namespace: testNamespace,
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL:     testEndpoint,
 				TrustedCAs: testKey,
 			}}

@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
@@ -31,7 +31,7 @@ import (
 
 const ruxitAgentProcFile = "_ruxitagentproc.conf"
 
-var readOnlyInjection = map[string]string{dynatracev1beta1.AnnotationFeatureReadOnlyCsiVolume: "true"}
+var readOnlyInjection = map[string]string{dynatracev1.AnnotationFeatureReadOnlyCsiVolume: "true"}
 
 func readOnlyCSIVolume(t *testing.T) features.Feature {
 	builder := features.New("read only csi volume")
@@ -40,7 +40,7 @@ func readOnlyCSIVolume(t *testing.T) features.Feature {
 		WithDefaultObjectMeta().
 		WithAnnotations(readOnlyInjection).
 		ApiUrl(secretConfig.ApiUrl).
-		ApplicationMonitoring(&dynatracev1beta1.ApplicationMonitoringSpec{
+		ApplicationMonitoring(&dynatracev1.ApplicationMonitoringSpec{
 			UseCSIDriver: address.Of(true),
 		}).Build()
 	sampleDeployment := sampleapps.NewSampleDeployment(t, testDynakube)

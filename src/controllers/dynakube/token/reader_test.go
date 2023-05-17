@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
@@ -34,7 +34,7 @@ func TestReader(t *testing.T) {
 func testReadTokens(t *testing.T) {
 	t.Run("error when tokens are not found", func(t *testing.T) {
 		clt := fake.NewClient()
-		dynakube := dynatracev1beta1.DynaKube{}
+		dynakube := dynatracev1.DynaKube{}
 		reader := NewReader(clt, &dynakube)
 
 		_, err := reader.readTokens(context.Background())
@@ -43,7 +43,7 @@ func testReadTokens(t *testing.T) {
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
 	t.Run("tokens are found if secret exists", func(t *testing.T) {
-		dynakube := dynatracev1beta1.DynaKube{
+		dynakube := dynatracev1.DynaKube{
 			ObjectMeta: v1.ObjectMeta{
 				Name:      "dynakube",
 				Namespace: "dynatrace",
@@ -77,7 +77,7 @@ func testReadTokens(t *testing.T) {
 
 func testVerifyTokens(t *testing.T) {
 	t.Run("error if api token is missing", func(t *testing.T) {
-		reader := NewReader(nil, &dynatracev1beta1.DynaKube{ObjectMeta: v1.ObjectMeta{
+		reader := NewReader(nil, &dynatracev1.DynaKube{ObjectMeta: v1.ObjectMeta{
 			Name:      dynakubeName,
 			Namespace: dynatraceNamespace,
 		}})

@@ -3,17 +3,17 @@ package version
 import (
 	"context"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 )
 
 type codeModulesUpdater struct {
-	dynakube *dynatracev1beta1.DynaKube
+	dynakube *dynatracev1.DynaKube
 	dtClient dtclient.Client
 }
 
-func newCodeModulesUpdater(dynakube *dynatracev1beta1.DynaKube, dtClient dtclient.Client) *codeModulesUpdater {
+func newCodeModulesUpdater(dynakube *dynatracev1.DynaKube, dtClient dtclient.Client) *codeModulesUpdater {
 	return &codeModulesUpdater{
 		dynakube: dynakube,
 		dtClient: dtClient,
@@ -28,7 +28,7 @@ func (updater codeModulesUpdater) IsEnabled() bool {
 	return updater.dynakube.NeedAppInjection()
 }
 
-func (updater *codeModulesUpdater) Target() *dynatracev1beta1.VersionStatus {
+func (updater *codeModulesUpdater) Target() *dynatracev1.VersionStatus {
 	return &updater.dynakube.Status.CodeModules.VersionStatus
 }
 
@@ -59,8 +59,8 @@ func (updater *codeModulesUpdater) CheckForDowngrade(latestVersion string) (bool
 func (updater *codeModulesUpdater) UseTenantRegistry(_ context.Context, _ *dockerconfig.DockerConfig) error {
 	customVersion := updater.CustomVersion()
 	if customVersion != "" {
-		updater.dynakube.Status.CodeModules = dynatracev1beta1.CodeModulesStatus{
-			VersionStatus: dynatracev1beta1.VersionStatus{
+		updater.dynakube.Status.CodeModules = dynatracev1.CodeModulesStatus{
+			VersionStatus: dynatracev1.VersionStatus{
 				Version: customVersion,
 			},
 		}
@@ -74,8 +74,8 @@ func (updater *codeModulesUpdater) UseTenantRegistry(_ context.Context, _ *docke
 		return err
 	}
 
-	updater.dynakube.Status.CodeModules = dynatracev1beta1.CodeModulesStatus{
-		VersionStatus: dynatracev1beta1.VersionStatus{
+	updater.dynakube.Status.CodeModules = dynatracev1.CodeModulesStatus{
+		VersionStatus: dynatracev1.VersionStatus{
 			Version: latestAgentVersionUnixPaas,
 		},
 	}

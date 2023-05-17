@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
@@ -45,7 +45,7 @@ func dataIngest(t *testing.T) features.Feature {
 	testDynakube := dynakube.NewBuilder().
 		WithDefaultObjectMeta().
 		ApiUrl(secretConfig.ApiUrl).
-		ApplicationMonitoring(&dynatracev1beta1.ApplicationMonitoringSpec{
+		ApplicationMonitoring(&dynatracev1.ApplicationMonitoringSpec{
 			UseCSIDriver: address.Of(false),
 		}).Build()
 

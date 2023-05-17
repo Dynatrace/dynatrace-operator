@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/support_archive"
 	"github.com/Dynatrace/dynatrace-operator/src/functional"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
@@ -50,7 +50,7 @@ func supportArchiveExecution(t *testing.T) features.Feature {
 			},
 		}).
 		ApiUrl(secretConfig.ApiUrl).
-		CloudNative(&dynatracev1beta1.CloudNativeFullStackSpec{})
+		CloudNative(&dynatracev1.CloudNativeFullStackSpec{})
 	testDynakube := dynakubeBuilder.Build()
 
 	// Register sample namespace creat and delete
@@ -68,7 +68,7 @@ func supportArchiveExecution(t *testing.T) features.Feature {
 	return builder.Feature()
 }
 
-func testSupportArchiveCommand(testDynakube dynatracev1beta1.DynaKube) features.Func {
+func testSupportArchiveCommand(testDynakube dynatracev1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		result := executeSupportArchiveCommand(ctx, t, environmentConfig, "--stdout", testDynakube.Namespace)
 		require.NotNil(t, result)
@@ -117,7 +117,7 @@ func executeSupportArchiveCommand(ctx context.Context, t *testing.T, environment
 	return executionResult
 }
 
-func collectRequiredFiles(t *testing.T, ctx context.Context, resources *resources.Resources, testDynakube dynatracev1beta1.DynaKube) []string {
+func collectRequiredFiles(t *testing.T, ctx context.Context, resources *resources.Resources, testDynakube dynatracev1.DynaKube) []string {
 	namespace := testDynakube.Namespace
 	requiredFiles := make([]string, 0)
 	requiredFiles = append(requiredFiles, support_archive.OperatorVersionFileName)
@@ -215,7 +215,7 @@ func getRequiredNamespaceFiles(namespace string) []string {
 	return requiredFiles
 }
 
-func getRequiredDynaKubeFiles(testDynakube dynatracev1beta1.DynaKube) []string {
+func getRequiredDynaKubeFiles(testDynakube dynatracev1.DynaKube) []string {
 	requiredFiles := make([]string, 0)
 	requiredFiles = append(requiredFiles,
 		fmt.Sprintf("%s/%s/%s/%s%s",

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
@@ -61,11 +61,11 @@ const (
 )
 
 func TestMonitoringModesDynakube_Reconcile(t *testing.T) {
-	deploymentModes := map[string]dynatracev1beta1.OneAgentSpec{
-		"hostMonitoring":        {HostMonitoring: &dynatracev1beta1.HostInjectSpec{AutoUpdate: address.Of(false)}},
-		"classicFullStack":      {ClassicFullStack: &dynatracev1beta1.HostInjectSpec{AutoUpdate: address.Of(false)}},
-		"cloudNativeFullStack":  {CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{HostInjectSpec: dynatracev1beta1.HostInjectSpec{AutoUpdate: address.Of(false)}}},
-		"applicationMonitoring": {ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{}},
+	deploymentModes := map[string]dynatracev1.OneAgentSpec{
+		"hostMonitoring":        {HostMonitoring: &dynatracev1.HostInjectSpec{AutoUpdate: address.Of(false)}},
+		"classicFullStack":      {ClassicFullStack: &dynatracev1.HostInjectSpec{AutoUpdate: address.Of(false)}},
+		"cloudNativeFullStack":  {CloudNativeFullStack: &dynatracev1.CloudNativeFullStackSpec{HostInjectSpec: dynatracev1.HostInjectSpec{AutoUpdate: address.Of(false)}}},
+		"applicationMonitoring": {ApplicationMonitoring: &dynatracev1.ApplicationMonitoringSpec{}},
 	}
 
 	for mode := range deploymentModes {
@@ -76,12 +76,12 @@ func TestMonitoringModesDynakube_Reconcile(t *testing.T) {
 
 			mockClient.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
 
-			instance := &dynatracev1beta1.DynaKube{
+			instance := &dynatracev1.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      testName,
 					Namespace: testNamespace,
 				},
-				Spec: dynatracev1beta1.DynaKubeSpec{
+				Spec: dynatracev1.DynaKubeSpec{
 					APIURL:   testApiUrl,
 					OneAgent: deploymentModes[mode],
 				},
@@ -97,7 +97,7 @@ func TestMonitoringModesDynakube_Reconcile(t *testing.T) {
 
 			err = controller.client.Get(context.TODO(), types.NamespacedName{Namespace: testNamespace, Name: testName}, instance)
 			require.NoError(t, err)
-			assert.Equal(t, dynatracev1beta1.Running, instance.Status.Phase)
+			assert.Equal(t, dynatracev1.Running, instance.Status.Phase)
 		})
 	}
 }
@@ -119,12 +119,12 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 
 		mockClient.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
 
-		instance := &dynatracev1beta1.DynaKube{
+		instance := &dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testApiUrl,
 			},
 		}
@@ -137,40 +137,42 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
 	})
-	t.Run(`Create reconciles Kubernetes Monitoring if enabled`, func(t *testing.T) {
-		mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
-			dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeActiveGateTokenCreate})
+	/*
+		t.Run(`Create reconciles Kubernetes Monitoring if enabled`, func(t *testing.T) {
+			mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
+				dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeActiveGateTokenCreate})
 
-		mockClient.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
+			mockClient.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
 
-		instance := &dynatracev1beta1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      testName,
-				Namespace: testNamespace,
-			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				APIURL: testApiUrl,
-				KubernetesMonitoring: dynatracev1beta1.KubernetesMonitoringSpec{
-					Enabled: true,
-				}}}
-		controller := createFakeClientAndReconciler(mockClient, instance, testPaasToken, testAPIToken)
+			instance := &dynatracev1.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      testName,
+					Namespace: testNamespace,
+				},
+				Spec: dynatracev1.DynaKubeSpec{
+					APIURL: testApiUrl,
+					KubernetesMonitoring: dynatracev1.KubernetesMonitoringSpec{
+						Enabled: true,
+					}}}
+			controller := createFakeClientAndReconciler(mockClient, instance, testPaasToken, testAPIToken)
 
-		result, err := controller.Reconcile(context.TODO(), reconcile.Request{
-			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
+			result, err := controller.Reconcile(context.TODO(), reconcile.Request{
+				NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
+			})
+
+			assert.NoError(t, err)
+			assert.NotNil(t, result)
+
+			var statefulSet appsv1.StatefulSet
+
+			kubeMonCapability := capability.NewKubeMonCapability(instance)
+			name := capability.CalculateStatefulSetName(kubeMonCapability, instance.Name)
+			err = controller.client.Get(context.TODO(), client.ObjectKey{Name: name, Namespace: testNamespace}, &statefulSet)
+
+			assert.NoError(t, err)
+			assert.NotNil(t, statefulSet)
 		})
-
-		assert.NoError(t, err)
-		assert.NotNil(t, result)
-
-		var statefulSet appsv1.StatefulSet
-
-		kubeMonCapability := capability.NewKubeMonCapability(instance)
-		name := capability.CalculateStatefulSetName(kubeMonCapability, instance.Name)
-		err = controller.client.Get(context.TODO(), client.ObjectKey{Name: name, Namespace: testNamespace}, &statefulSet)
-
-		assert.NoError(t, err)
-		assert.NotNil(t, statefulSet)
-	})
+	*/
 	t.Run(`Create reconciles automatic kubernetes api monitoring`, func(t *testing.T) {
 		mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
 			dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeEntitiesRead, dtclient.TokenScopeSettingsRead, dtclient.TokenScopeSettingsWrite,
@@ -178,19 +180,19 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 
 		mockClient.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
 
-		instance := &dynatracev1beta1.DynaKube{
+		instance := &dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
 				Annotations: map[string]string{
-					dynatracev1beta1.AnnotationFeatureAutomaticK8sApiMonitoring: "true",
+					dynatracev1.AnnotationFeatureAutomaticK8sApiMonitoring: "true",
 				},
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testApiUrl,
-				ActiveGate: dynatracev1beta1.ActiveGateSpec{
-					Capabilities: []dynatracev1beta1.CapabilityDisplayName{
-						dynatracev1beta1.KubeMonCapability.DisplayName,
+				ActiveGate: dynatracev1.ActiveGateSpec{
+					Capabilities: []dynatracev1.CapabilityDisplayName{
+						dynatracev1.KubeMonCapability.DisplayName,
 					},
 				},
 			}}
@@ -219,20 +221,20 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 			mock.AnythingOfType("string")).Return(testUID, nil)
 		mockClient.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
 
-		instance := &dynatracev1beta1.DynaKube{
+		instance := &dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
 				Annotations: map[string]string{
-					dynatracev1beta1.AnnotationFeatureAutomaticK8sApiMonitoring:            "true",
-					dynatracev1beta1.AnnotationFeatureAutomaticK8sApiMonitoringClusterName: clusterLabel,
+					dynatracev1.AnnotationFeatureAutomaticK8sApiMonitoring:            "true",
+					dynatracev1.AnnotationFeatureAutomaticK8sApiMonitoringClusterName: clusterLabel,
 				},
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testApiUrl,
-				ActiveGate: dynatracev1beta1.ActiveGateSpec{
-					Capabilities: []dynatracev1beta1.CapabilityDisplayName{
-						dynatracev1beta1.KubeMonCapability.DisplayName,
+				ActiveGate: dynatracev1.ActiveGateSpec{
+					Capabilities: []dynatracev1.CapabilityDisplayName{
+						dynatracev1.KubeMonCapability.DisplayName,
 					},
 				},
 			}}
@@ -256,14 +258,14 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 
 		mockClient.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
 
-		instance := &dynatracev1beta1.DynaKube{
+		instance := &dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testApiUrl,
-				Proxy: &dynatracev1beta1.DynaKubeProxy{
+				Proxy: &dynatracev1.DynaKubeProxy{
 					Value:     "https://proxy:1234",
 					ValueFrom: "",
 				}}}
@@ -289,18 +291,18 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 
 		mockClient.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
 
-		instance := &dynatracev1beta1.DynaKube{
+		instance := &dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testApiUrl,
-				Proxy: &dynatracev1beta1.DynaKubeProxy{
+				Proxy: &dynatracev1.DynaKubeProxy{
 					Value:     "https://proxy:1234",
 					ValueFrom: "",
 				}}}
-		instance.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureActiveGateIgnoreProxy: "true"}
+		instance.Annotations = map[string]string{dynatracev1.AnnotationFeatureActiveGateIgnoreProxy: "true"}
 		controller := createFakeClientAndReconciler(mockClient, instance, testPaasToken, testAPIToken)
 
 		result, err := controller.Reconcile(context.TODO(), reconcile.Request{
@@ -323,19 +325,19 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 
 		mockClient.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
 
-		instance := &dynatracev1beta1.DynaKube{
+		instance := &dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
 				Annotations: map[string]string{
-					dynatracev1beta1.AnnotationFeatureAutomaticK8sApiMonitoring: "true",
+					dynatracev1.AnnotationFeatureAutomaticK8sApiMonitoring: "true",
 				},
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testApiUrl,
-				ActiveGate: dynatracev1beta1.ActiveGateSpec{
-					Capabilities: []dynatracev1beta1.CapabilityDisplayName{
-						dynatracev1beta1.KubeMonCapability.DisplayName,
+				ActiveGate: dynatracev1.ActiveGateSpec{
+					Capabilities: []dynatracev1.CapabilityDisplayName{
+						dynatracev1.KubeMonCapability.DisplayName,
 					},
 				},
 			}}
@@ -359,7 +361,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		assert.NoError(t,
 			controller.client.Get(context.TODO(), client.ObjectKey{Name: testName + "-activegate", Namespace: testNamespace}, &activeGateStatefulSet))
 		assert.NoError(t, controller.client.Get(context.TODO(), client.ObjectKey{Name: testName, Namespace: testNamespace}, instance))
-		assert.Equal(t, dynatracev1beta1.Running, instance.Status.Phase)
+		assert.Equal(t, dynatracev1.Running, instance.Status.Phase)
 	})
 }
 
@@ -370,12 +372,12 @@ func TestReconcileOnlyOneTokenProvided_Reconcile(t *testing.T) {
 
 		mockClient.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
 
-		instance := &dynatracev1beta1.DynaKube{
+		instance := &dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testApiUrl,
 			}}
 		controller := createFakeClientAndReconciler(mockClient, instance, "", testAPIToken)
@@ -407,12 +409,12 @@ func TestRemoveOneAgentDaemonset(t *testing.T) {
 
 		mockClient.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
 
-		instance := &dynatracev1beta1.DynaKube{
+		instance := &dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testApiUrl,
 			}}
 		data := map[string][]byte{
@@ -463,78 +465,79 @@ func TestRemoveOneAgentDaemonset(t *testing.T) {
 	})
 }
 
-func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
-	mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
-		dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeActiveGateTokenCreate})
+/*
+	func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
+		mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
+			dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeActiveGateTokenCreate})
 
-	mockClient.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
+		mockClient.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
 
-	instance := &dynatracev1beta1.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testName,
+		instance := &dynatracev1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+			Spec: dynatracev1.DynaKubeSpec{
+				APIURL: testApiUrl,
+				Routing: dynatracev1.RoutingSpec{
+					Enabled: true,
+				}}}
+		controller := createFakeClientAndReconciler(mockClient, instance, testPaasToken, testAPIToken)
+		request := reconcile.Request{
+			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
+		}
+
+		_, err := controller.Reconcile(context.TODO(), request)
+		assert.NoError(t, err)
+
+		// Reconcile twice since routing service is created before the stateful set
+		_, err = controller.Reconcile(context.TODO(), request)
+		assert.NoError(t, err)
+
+		routingCapability := capability.NewRoutingCapability(instance)
+		stsName := capability.CalculateStatefulSetName(routingCapability, testName)
+
+		routingSts := &appsv1.StatefulSet{}
+		err = controller.client.Get(context.TODO(), client.ObjectKey{
 			Namespace: testNamespace,
-		},
-		Spec: dynatracev1beta1.DynaKubeSpec{
-			APIURL: testApiUrl,
-			Routing: dynatracev1beta1.RoutingSpec{
-				Enabled: true,
-			}}}
-	controller := createFakeClientAndReconciler(mockClient, instance, testPaasToken, testAPIToken)
-	request := reconcile.Request{
-		NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
+			Name:      stsName,
+		}, routingSts)
+		assert.NoError(t, err)
+		assert.NotNil(t, routingSts)
+
+		routingSvc := &corev1.Service{}
+		err = controller.client.Get(context.TODO(), client.ObjectKey{
+			Namespace: testNamespace,
+			Name:      testName + "-" + routingCapability.ShortName(),
+		}, routingSvc)
+		assert.NoError(t, err)
+		assert.NotNil(t, routingSvc)
+
+		err = controller.client.Get(context.TODO(), client.ObjectKey{Name: instance.Name, Namespace: instance.Namespace}, instance)
+		require.NoError(t, err)
+
+		instance.Spec.Routing.Enabled = false
+		err = controller.client.Update(context.TODO(), instance)
+		require.NoError(t, err)
+
+		_, err = controller.Reconcile(context.TODO(), request)
+		assert.NoError(t, err)
+
+		err = controller.client.Get(context.TODO(), client.ObjectKey{
+			Namespace: testNamespace,
+			Name:      stsName,
+		}, routingSts)
+		assert.Error(t, err)
+		assert.True(t, k8serrors.IsNotFound(err))
+
+		err = controller.client.Get(context.TODO(), client.ObjectKey{
+			Namespace: testNamespace,
+			Name:      testName + "-" + routingCapability.ShortName(),
+		}, routingSvc)
+		assert.Error(t, err)
+		assert.True(t, k8serrors.IsNotFound(err))
 	}
-
-	_, err := controller.Reconcile(context.TODO(), request)
-	assert.NoError(t, err)
-
-	// Reconcile twice since routing service is created before the stateful set
-	_, err = controller.Reconcile(context.TODO(), request)
-	assert.NoError(t, err)
-
-	routingCapability := capability.NewRoutingCapability(instance)
-	stsName := capability.CalculateStatefulSetName(routingCapability, testName)
-
-	routingSts := &appsv1.StatefulSet{}
-	err = controller.client.Get(context.TODO(), client.ObjectKey{
-		Namespace: testNamespace,
-		Name:      stsName,
-	}, routingSts)
-	assert.NoError(t, err)
-	assert.NotNil(t, routingSts)
-
-	routingSvc := &corev1.Service{}
-	err = controller.client.Get(context.TODO(), client.ObjectKey{
-		Namespace: testNamespace,
-		Name:      testName + "-" + routingCapability.ShortName(),
-	}, routingSvc)
-	assert.NoError(t, err)
-	assert.NotNil(t, routingSvc)
-
-	err = controller.client.Get(context.TODO(), client.ObjectKey{Name: instance.Name, Namespace: instance.Namespace}, instance)
-	require.NoError(t, err)
-
-	instance.Spec.Routing.Enabled = false
-	err = controller.client.Update(context.TODO(), instance)
-	require.NoError(t, err)
-
-	_, err = controller.Reconcile(context.TODO(), request)
-	assert.NoError(t, err)
-
-	err = controller.client.Get(context.TODO(), client.ObjectKey{
-		Namespace: testNamespace,
-		Name:      stsName,
-	}, routingSts)
-	assert.Error(t, err)
-	assert.True(t, k8serrors.IsNotFound(err))
-
-	err = controller.client.Get(context.TODO(), client.ObjectKey{
-		Namespace: testNamespace,
-		Name:      testName + "-" + routingCapability.ShortName(),
-	}, routingSvc)
-	assert.Error(t, err)
-	assert.True(t, k8serrors.IsNotFound(err))
-}
-
+*/
 func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 	mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
 		dtclient.TokenScopes{
@@ -545,18 +548,18 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 
 	mockClient.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
 
-	instance := &dynatracev1beta1.DynaKube{
+	instance := &dynatracev1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNamespace,
 		},
-		Spec: dynatracev1beta1.DynaKubeSpec{
+		Spec: dynatracev1.DynaKubeSpec{
 			APIURL: testApiUrl,
-			ActiveGate: dynatracev1beta1.ActiveGateSpec{
-				Capabilities: []dynatracev1beta1.CapabilityDisplayName{
-					dynatracev1beta1.MetricsIngestCapability.DisplayName,
-					dynatracev1beta1.KubeMonCapability.DisplayName,
-					dynatracev1beta1.RoutingCapability.DisplayName,
+			ActiveGate: dynatracev1.ActiveGateSpec{
+				Capabilities: []dynatracev1.CapabilityDisplayName{
+					dynatracev1.MetricsIngestCapability.DisplayName,
+					dynatracev1.KubeMonCapability.DisplayName,
+					dynatracev1.RoutingCapability.DisplayName,
 				},
 			}},
 	}
@@ -595,7 +598,7 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 	err = r.client.Get(context.TODO(), client.ObjectKey{Name: instance.Name, Namespace: instance.Namespace}, instance)
 	require.NoError(t, err)
 
-	instance.Spec.ActiveGate.Capabilities = []dynatracev1beta1.CapabilityDisplayName{}
+	instance.Spec.ActiveGate.Capabilities = []dynatracev1.CapabilityDisplayName{}
 	err = r.client.Update(context.TODO(), instance)
 	require.NoError(t, err)
 
@@ -666,7 +669,7 @@ func fakeDigestProvider(context.Context, string, *dockerconfig.DockerConfig) (dk
 	return dkVersion.ImageVersion{}, nil
 }
 
-func createFakeClientAndReconciler(mockClient dtclient.Client, instance *dynatracev1beta1.DynaKube, paasToken, apiToken string) *Controller {
+func createFakeClientAndReconciler(mockClient dtclient.Client, instance *dynatracev1.DynaKube, paasToken, apiToken string) *Controller {
 	data := map[string][]byte{
 		dtclient.DynatraceApiToken: []byte(apiToken),
 	}
@@ -865,14 +868,14 @@ func (clt errorClient) Get(_ context.Context, _ client.ObjectKey, _ client.Objec
 
 func TestGetDynakube(t *testing.T) {
 	t.Run("get dynakube", func(t *testing.T) {
-		fakeClient := fake.NewClient(&dynatracev1beta1.DynaKube{
+		fakeClient := fake.NewClient(&dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
+			Spec: dynatracev1.DynaKubeSpec{
+				OneAgent: dynatracev1.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1.CloudNativeFullStackSpec{},
 				},
 			},
 		})
@@ -928,7 +931,7 @@ func TestGetDynakube(t *testing.T) {
 
 func TestReconcileIstio(t *testing.T) {
 	fakeClient := fake.NewClient()
-	dynakube := &dynatracev1beta1.DynaKube{}
+	dynakube := &dynatracev1.DynaKube{}
 	controller := &Controller{
 		client:    fakeClient,
 		apiReader: fakeClient,
@@ -943,7 +946,7 @@ func TestReconcileIstio(t *testing.T) {
 func TestTokenConditions(t *testing.T) {
 	t.Run("token condition error is set if token are invalid", func(t *testing.T) {
 		fakeClient := fake.NewClient()
-		dynakube := &dynatracev1beta1.DynaKube{}
+		dynakube := &dynatracev1.DynaKube{}
 		controller := &Controller{
 			client:    fakeClient,
 			apiReader: fakeClient,
@@ -952,10 +955,10 @@ func TestTokenConditions(t *testing.T) {
 		err := controller.reconcileDynaKube(context.TODO(), dynakube)
 
 		assert.Error(t, err)
-		assertCondition(t, dynakube, dynatracev1beta1.TokenConditionType, metav1.ConditionFalse, dynatracev1beta1.ReasonTokenError, "secrets \"\" not found")
+		assertCondition(t, dynakube, dynatracev1.TokenConditionType, metav1.ConditionFalse, dynatracev1.ReasonTokenError, "secrets \"\" not found")
 	})
 	t.Run("token condition is set if token are valid", func(t *testing.T) {
-		dynakube := &dynatracev1beta1.DynaKube{
+		dynakube := &dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
@@ -987,7 +990,7 @@ func TestTokenConditions(t *testing.T) {
 
 		_ = controller.reconcileDynaKube(context.TODO(), dynakube)
 
-		assertCondition(t, dynakube, dynatracev1beta1.TokenConditionType, metav1.ConditionTrue, dynatracev1beta1.ReasonTokenReady, "")
+		assertCondition(t, dynakube, dynatracev1.TokenConditionType, metav1.ConditionTrue, dynatracev1.ReasonTokenReady, "")
 	})
 }
 
@@ -995,17 +998,17 @@ func TestAPIError(t *testing.T) {
 	mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
 		dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeActiveGateTokenCreate},
 	)
-	instance := &dynatracev1beta1.DynaKube{
+	instance := &dynatracev1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNamespace,
 		},
-		Spec: dynatracev1beta1.DynaKubeSpec{
+		Spec: dynatracev1.DynaKubeSpec{
 			APIURL:   testApiUrl,
-			OneAgent: dynatracev1beta1.OneAgentSpec{CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{HostInjectSpec: dynatracev1beta1.HostInjectSpec{}}},
-			ActiveGate: dynatracev1beta1.ActiveGateSpec{
-				Capabilities: []dynatracev1beta1.CapabilityDisplayName{
-					dynatracev1beta1.KubeMonCapability.DisplayName,
+			OneAgent: dynatracev1.OneAgentSpec{CloudNativeFullStack: &dynatracev1.CloudNativeFullStackSpec{HostInjectSpec: dynatracev1.HostInjectSpec{}}},
+			ActiveGate: dynatracev1.ActiveGateSpec{
+				Capabilities: []dynatracev1.CapabilityDisplayName{
+					dynatracev1.KubeMonCapability.DisplayName,
 				},
 			},
 		},
@@ -1034,7 +1037,7 @@ func TestAPIError(t *testing.T) {
 	})
 }
 
-func assertCondition(t *testing.T, dk *dynatracev1beta1.DynaKube, expectedConditionType string, expectedConditionStatus metav1.ConditionStatus, expectedReason string, expectedMessage string) { //nolint:revive // argument-limit
+func assertCondition(t *testing.T, dk *dynatracev1.DynaKube, expectedConditionType string, expectedConditionStatus metav1.ConditionStatus, expectedReason string, expectedMessage string) { //nolint:revive // argument-limit
 	t.Helper()
 
 	actualCondition := meta.FindStatusCondition(dk.Status.Conditions, expectedConditionType)

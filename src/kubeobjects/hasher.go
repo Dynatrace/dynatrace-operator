@@ -5,11 +5,11 @@ import (
 	"hash/fnv"
 	"strconv"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const AnnotationHash = dynatracev1beta1.InternalFlagPrefix + "template-hash"
+const AnnotationHash = dynatracev1.InternalFlagPrefix + "template-hash"
 
 func GenerateHash(ds any) (string, error) {
 	data, err := json.Marshal(ds)

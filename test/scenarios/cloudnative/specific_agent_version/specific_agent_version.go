@@ -7,7 +7,7 @@ import (
 	"sort"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/arch"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
@@ -47,8 +47,8 @@ func specificAgentVersion(t *testing.T) features.Feature {
 	updatedDynakube := testDynakube.DeepCopy()
 	updatedDynakube.Spec.OneAgent.CloudNativeFullStack.Version = newVersion.String()
 	builder.Assess("update dynakube with new agent version", dynakube.Update(*updatedDynakube))
-	builder.Assess("agents are redeploying", dynakube.WaitForDynakubePhase(*updatedDynakube, dynatracev1beta1.Deploying))
-	builder.Assess("agents redeployed successfully", dynakube.WaitForDynakubePhase(*updatedDynakube, dynatracev1beta1.Running))
+	builder.Assess("agents are redeploying", dynakube.WaitForDynakubePhase(*updatedDynakube, dynatracev1.Deploying))
+	builder.Assess("agents redeployed successfully", dynakube.WaitForDynakubePhase(*updatedDynakube, dynatracev1.Running))
 	builder.Assess("checking version of oneagent", assessVersionChecks(testDynakube))
 
 	// Register sample, dynakube and operator uninstall
@@ -66,7 +66,7 @@ func getAvailableVersions(secret tenant.Secret, t *testing.T) []string {
 	return versions
 }
 
-func assessVersionChecks(testDynakube dynatracev1beta1.DynaKube) features.Func {
+func assessVersionChecks(testDynakube dynatracev1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		daemonset, err := oneagent.Get(ctx, environmentConfig.Client().Resources(), testDynakube)
 		require.NoError(t, err)

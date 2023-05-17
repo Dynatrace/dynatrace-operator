@@ -3,19 +3,19 @@ package version
 import (
 	"context"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 )
 
 type oneAgentUpdater struct {
-	dynakube    *dynatracev1beta1.DynaKube
+	dynakube    *dynatracev1.DynaKube
 	dtClient    dtclient.Client
 	versionFunc ImageVersionFunc
 }
 
 func newOneAgentUpdater(
-	dynakube *dynatracev1beta1.DynaKube,
+	dynakube *dynatracev1.DynaKube,
 	dtClient dtclient.Client,
 	versionFunc ImageVersionFunc,
 ) *oneAgentUpdater {
@@ -34,7 +34,7 @@ func (updater oneAgentUpdater) IsEnabled() bool {
 	return updater.dynakube.NeedsOneAgent()
 }
 
-func (updater *oneAgentUpdater) Target() *dynatracev1beta1.VersionStatus {
+func (updater *oneAgentUpdater) Target() *dynatracev1.VersionStatus {
 	return &updater.dynakube.Status.OneAgent.VersionStatus
 }
 
@@ -86,9 +86,9 @@ func (updater *oneAgentUpdater) CheckForDowngrade(latestVersion string) (bool, e
 	var previousVersion string
 	var err error
 	switch updater.Target().Source {
-	case dynatracev1beta1.TenantRegistryVersionSource:
+	case dynatracev1.TenantRegistryVersionSource:
 		previousVersion = updater.Target().Version
-	case dynatracev1beta1.PublicRegistryVersionSource:
+	case dynatracev1.PublicRegistryVersionSource:
 		previousVersion, err = getTagFromImageID(imageID)
 		if err != nil {
 			return false, err

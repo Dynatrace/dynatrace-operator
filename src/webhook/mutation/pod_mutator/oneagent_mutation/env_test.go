@@ -3,7 +3,7 @@ package oneagent_mutation
 import (
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
@@ -136,10 +136,10 @@ func TestAddContainerInfoInitEnv(t *testing.T) {
 func TestAddDeploymentMetadataEnv(t *testing.T) {
 	t.Run("Add cloudNative deployment metadata env", func(t *testing.T) {
 		container := &corev1.Container{}
-		dynakube := dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
+		dynakube := dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
+				OneAgent: dynatracev1.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1.CloudNativeFullStackSpec{},
 				},
 			},
 		}
@@ -151,10 +151,10 @@ func TestAddDeploymentMetadataEnv(t *testing.T) {
 
 	t.Run("Add appMonitoring deployment metadata env", func(t *testing.T) {
 		container := &corev1.Container{}
-		dynakube := dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{},
+		dynakube := dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
+				OneAgent: dynatracev1.OneAgentSpec{
+					ApplicationMonitoring: &dynatracev1.ApplicationMonitoringSpec{},
 				},
 			},
 		}

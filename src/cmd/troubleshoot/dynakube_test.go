@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/pkg/errors"
@@ -291,7 +291,7 @@ func TestProxySecret(t *testing.T) {
 	})
 	t.Run("proxy secret has required tokens", func(t *testing.T) {
 		proxySecret := *testNewSecretBuilder(testNamespace, testSecretName).
-			dataAppend(dynatracev1beta1.ProxyKey, testCustomPullSecretToken).
+			dataAppend(dynatracev1.ProxyKey, testCustomPullSecretToken).
 			build()
 		dynakube := *testNewDynakubeBuilder(testNamespace, testDynakube).withProxySecret(testSecretName).build()
 		clt := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
@@ -321,12 +321,12 @@ func TestProxySecret(t *testing.T) {
 }
 
 type testDynaKubeBuilder struct {
-	dynakube *dynatracev1beta1.DynaKube
+	dynakube *dynatracev1.DynaKube
 }
 
 func testNewDynakubeBuilder(namespace string, dynakube string) *testDynaKubeBuilder {
 	return &testDynaKubeBuilder{
-		dynakube: &dynatracev1beta1.DynaKube{
+		dynakube: &dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      dynakube,
@@ -351,22 +351,22 @@ func (builder *testDynaKubeBuilder) withCustomPullSecret(secretName string) *tes
 }
 
 func (builder *testDynaKubeBuilder) withProxy(proxyURL string) *testDynaKubeBuilder {
-	builder.dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{
+	builder.dynakube.Spec.Proxy = &dynatracev1.DynaKubeProxy{
 		Value: proxyURL,
 	}
 	return builder
 }
 
 func (builder *testDynaKubeBuilder) withProxySecret(secretName string) *testDynaKubeBuilder {
-	builder.dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{
+	builder.dynakube.Spec.Proxy = &dynatracev1.DynaKubeProxy{
 		ValueFrom: secretName,
 	}
 	return builder
 }
 
-func (builder *testDynaKubeBuilder) withActiveGateCapability(capability dynatracev1beta1.CapabilityDisplayName) *testDynaKubeBuilder {
+func (builder *testDynaKubeBuilder) withActiveGateCapability(capability dynatracev1.CapabilityDisplayName) *testDynaKubeBuilder {
 	if builder.dynakube.Spec.ActiveGate.Capabilities == nil {
-		builder.dynakube.Spec.ActiveGate.Capabilities = make([]dynatracev1beta1.CapabilityDisplayName, 0)
+		builder.dynakube.Spec.ActiveGate.Capabilities = make([]dynatracev1.CapabilityDisplayName, 0)
 	}
 
 	builder.dynakube.Spec.ActiveGate.Capabilities = append(builder.dynakube.Spec.ActiveGate.Capabilities, capability)
@@ -379,19 +379,19 @@ func (builder *testDynaKubeBuilder) withActiveGateCustomImage(image string) *tes
 }
 
 func (builder *testDynaKubeBuilder) withCloudNativeFullStack() *testDynaKubeBuilder {
-	builder.dynakube.Spec.OneAgent.CloudNativeFullStack = &dynatracev1beta1.CloudNativeFullStackSpec{
-		HostInjectSpec: dynatracev1beta1.HostInjectSpec{},
+	builder.dynakube.Spec.OneAgent.CloudNativeFullStack = &dynatracev1.CloudNativeFullStackSpec{
+		HostInjectSpec: dynatracev1.HostInjectSpec{},
 	}
 	return builder
 }
 
 func (builder *testDynaKubeBuilder) withClassicFullStack() *testDynaKubeBuilder {
-	builder.dynakube.Spec.OneAgent.ClassicFullStack = &dynatracev1beta1.HostInjectSpec{}
+	builder.dynakube.Spec.OneAgent.ClassicFullStack = &dynatracev1.HostInjectSpec{}
 	return builder
 }
 
 func (builder *testDynaKubeBuilder) withHostMonitoring() *testDynaKubeBuilder {
-	builder.dynakube.Spec.OneAgent.HostMonitoring = &dynatracev1beta1.HostInjectSpec{}
+	builder.dynakube.Spec.OneAgent.HostMonitoring = &dynatracev1.HostInjectSpec{}
 	return builder
 }
 
@@ -399,7 +399,7 @@ func (builder *testDynaKubeBuilder) withClassicFullStackCustomImage(image string
 	if builder.dynakube.Spec.OneAgent.ClassicFullStack != nil {
 		builder.dynakube.Spec.OneAgent.ClassicFullStack.Image = image
 	} else {
-		builder.dynakube.Spec.OneAgent.ClassicFullStack = &dynatracev1beta1.HostInjectSpec{
+		builder.dynakube.Spec.OneAgent.ClassicFullStack = &dynatracev1.HostInjectSpec{
 			Image: image,
 		}
 	}
@@ -410,8 +410,8 @@ func (builder *testDynaKubeBuilder) withCloudNativeFullStackCustomImage(image st
 	if builder.dynakube.Spec.OneAgent.CloudNativeFullStack != nil {
 		builder.dynakube.Spec.OneAgent.CloudNativeFullStack.Image = image
 	} else {
-		builder.dynakube.Spec.OneAgent.CloudNativeFullStack = &dynatracev1beta1.CloudNativeFullStackSpec{
-			HostInjectSpec: dynatracev1beta1.HostInjectSpec{
+		builder.dynakube.Spec.OneAgent.CloudNativeFullStack = &dynatracev1.CloudNativeFullStackSpec{
+			HostInjectSpec: dynatracev1.HostInjectSpec{
 				Image: image,
 			},
 		}
@@ -423,7 +423,7 @@ func (builder *testDynaKubeBuilder) withHostMonitoringCustomImage(image string) 
 	if builder.dynakube.Spec.OneAgent.HostMonitoring != nil {
 		builder.dynakube.Spec.OneAgent.HostMonitoring.Image = image
 	} else {
-		builder.dynakube.Spec.OneAgent.HostMonitoring = &dynatracev1beta1.HostInjectSpec{
+		builder.dynakube.Spec.OneAgent.HostMonitoring = &dynatracev1.HostInjectSpec{
 			Image: image,
 		}
 	}
@@ -434,8 +434,8 @@ func (builder *testDynaKubeBuilder) withCloudNativeCodeModulesImage(image string
 	if builder.dynakube.Spec.OneAgent.CloudNativeFullStack != nil {
 		builder.dynakube.Spec.OneAgent.CloudNativeFullStack.CodeModulesImage = image
 	} else {
-		builder.dynakube.Spec.OneAgent.CloudNativeFullStack = &dynatracev1beta1.CloudNativeFullStackSpec{
-			AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{
+		builder.dynakube.Spec.OneAgent.CloudNativeFullStack = &dynatracev1.CloudNativeFullStackSpec{
+			AppInjectionSpec: dynatracev1.AppInjectionSpec{
 				InitResources:    &corev1.ResourceRequirements{},
 				CodeModulesImage: image,
 			},
@@ -449,8 +449,8 @@ func (builder *testDynaKubeBuilder) withApplicationMonitoringCodeModulesImage(im
 		builder.dynakube.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage = image
 		builder.dynakube.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver = address.Of(true)
 	} else {
-		builder.dynakube.Spec.OneAgent.ApplicationMonitoring = &dynatracev1beta1.ApplicationMonitoringSpec{
-			AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{
+		builder.dynakube.Spec.OneAgent.ApplicationMonitoring = &dynatracev1.ApplicationMonitoringSpec{
+			AppInjectionSpec: dynatracev1.AppInjectionSpec{
 				InitResources:    &corev1.ResourceRequirements{},
 				CodeModulesImage: image,
 			},
@@ -464,7 +464,7 @@ func (builder *testDynaKubeBuilder) withClassicFullStackImageVersion(version str
 	if builder.dynakube.Spec.OneAgent.ClassicFullStack != nil {
 		builder.dynakube.Spec.OneAgent.ClassicFullStack.Version = version
 	} else {
-		builder.dynakube.Spec.OneAgent.ClassicFullStack = &dynatracev1beta1.HostInjectSpec{
+		builder.dynakube.Spec.OneAgent.ClassicFullStack = &dynatracev1.HostInjectSpec{
 			Version: version,
 		}
 	}
@@ -475,8 +475,8 @@ func (builder *testDynaKubeBuilder) withCloudNativeFullStackImageVersion(version
 	if builder.dynakube.Spec.OneAgent.CloudNativeFullStack != nil {
 		builder.dynakube.Spec.OneAgent.CloudNativeFullStack.Version = version
 	} else {
-		builder.dynakube.Spec.OneAgent.CloudNativeFullStack = &dynatracev1beta1.CloudNativeFullStackSpec{
-			HostInjectSpec: dynatracev1beta1.HostInjectSpec{
+		builder.dynakube.Spec.OneAgent.CloudNativeFullStack = &dynatracev1.CloudNativeFullStackSpec{
+			HostInjectSpec: dynatracev1.HostInjectSpec{
 				Version: version,
 			},
 		}
@@ -488,14 +488,14 @@ func (builder *testDynaKubeBuilder) withHostMonitoringImageVersion(version strin
 	if builder.dynakube.Spec.OneAgent.HostMonitoring != nil {
 		builder.dynakube.Spec.OneAgent.HostMonitoring.Version = version
 	} else {
-		builder.dynakube.Spec.OneAgent.HostMonitoring = &dynatracev1beta1.HostInjectSpec{
+		builder.dynakube.Spec.OneAgent.HostMonitoring = &dynatracev1.HostInjectSpec{
 			Version: version,
 		}
 	}
 	return builder
 }
 
-func (builder *testDynaKubeBuilder) build() *dynatracev1beta1.DynaKube {
+func (builder *testDynaKubeBuilder) build() *dynatracev1.DynaKube {
 	return builder.dynakube
 }
 

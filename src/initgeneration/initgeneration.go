@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
@@ -42,7 +42,7 @@ func NewInitGenerator(client client.Client, apiReader client.Reader, namespace s
 
 // GenerateForNamespace creates the init secret for namespace while only having the name of the corresponding dynakube
 // Used by the podInjection webhook in case the namespace lacks the init secret.
-func (g *InitGenerator) GenerateForNamespace(ctx context.Context, dk dynatracev1beta1.DynaKube, targetNs string) error {
+func (g *InitGenerator) GenerateForNamespace(ctx context.Context, dk dynatracev1.DynaKube, targetNs string) error {
 	log.Info("reconciling namespace init secret for", "namespace", targetNs)
 	g.canWatchNodes = false
 	data, err := g.generate(ctx, &dk)
@@ -69,7 +69,7 @@ func (g *InitGenerator) GenerateForNamespace(ctx context.Context, dk dynatracev1
 
 // GenerateForDynakube creates/updates the init secret for EVERY namespace for the given dynakube.
 // Used by the dynakube controller during reconcile.
-func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1beta1.DynaKube) error {
+func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1.DynaKube) error {
 	log.Info("reconciling namespace init secret for", "dynakube", dk.Name)
 	g.canWatchNodes = true
 	data, err := g.generate(ctx, dk)
@@ -106,7 +106,7 @@ func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1
 }
 
 // generate gets the necessary info the create the init secret data
-func (g *InitGenerator) generate(ctx context.Context, dk *dynatracev1beta1.DynaKube) (map[string][]byte, error) {
+func (g *InitGenerator) generate(ctx context.Context, dk *dynatracev1.DynaKube) (map[string][]byte, error) {
 	kubeSystemUID, err := kubesystem.GetUID(g.apiReader)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -129,7 +129,7 @@ func (g *InitGenerator) generate(ctx context.Context, dk *dynatracev1beta1.DynaK
 	return data, nil
 }
 
-func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, kubeSystemUID types.UID, hostMonitoringNodes map[string]string) (*standalone.SecretConfig, error) {
+func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dynakube *dynatracev1.DynaKube, kubeSystemUID types.UID, hostMonitoringNodes map[string]string) (*standalone.SecretConfig, error) {
 	var tokens corev1.Secret
 	if err := g.client.Get(ctx, client.ObjectKey{Name: dynakube.Tokens(), Namespace: g.namespace}, &tokens); err != nil {
 		return nil, errors.WithMessage(err, "failed to query tokens")
@@ -192,7 +192,7 @@ func getAPIToken(tokens corev1.Secret) string {
 // - unknown: there SHOULD be a host-monitoring agent on the node, but dynakube has NO tenantUID set => user processes will restart until this is fixed (node.Name not present in the map)
 //
 // Checks all the dynakubes with host-monitoring against all the nodes (using the nodeSelector), creating the above mentioned mapping.
-func (g *InitGenerator) getHostMonitoringNodes(dk *dynatracev1beta1.DynaKube) (map[string]string, error) {
+func (g *InitGenerator) getHostMonitoringNodes(dk *dynatracev1.DynaKube) (map[string]string, error) {
 	tenantUUID, err := dk.TenantUUIDFromApiUrl()
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -215,7 +215,7 @@ func (g *InitGenerator) getHostMonitoringNodes(dk *dynatracev1beta1.DynaKube) (m
 	return imNodes, nil
 }
 
-func (g *InitGenerator) calculateImNodes(dk *dynatracev1beta1.DynaKube, tenantUUID string) (map[string]string, error) {
+func (g *InitGenerator) calculateImNodes(dk *dynatracev1.DynaKube, tenantUUID string) (map[string]string, error) {
 	nodeInf, err := g.initIMNodes()
 	if err != nil {
 		return nil, err
@@ -225,7 +225,7 @@ func (g *InitGenerator) calculateImNodes(dk *dynatracev1beta1.DynaKube, tenantUU
 	return nodeInf.imNodes, nil
 }
 
-func updateImNodes(dk *dynatracev1beta1.DynaKube, tenantUUID string, imNodes map[string]string) {
+func updateImNodes(dk *dynatracev1.DynaKube, tenantUUID string, imNodes map[string]string) {
 	for nodeName := range dk.Status.OneAgent.Instances {
 		if tenantUUID != "" {
 			imNodes[nodeName] = tenantUUID
@@ -235,7 +235,7 @@ func updateImNodes(dk *dynatracev1beta1.DynaKube, tenantUUID string, imNodes map
 	}
 }
 
-func updateNodeInfImNodes(dk *dynatracev1beta1.DynaKube, nodeInf nodeInfo, nodeSelector labels.Selector, tenantUUID string) {
+func updateNodeInfImNodes(dk *dynatracev1.DynaKube, nodeInf nodeInfo, nodeSelector labels.Selector, tenantUUID string) {
 	for _, node := range nodeInf.nodes {
 		nodeLabels := labels.Set(node.Labels)
 		if nodeSelector.Matches(nodeLabels) {
@@ -267,6 +267,6 @@ func (g *InitGenerator) createSecretData(secretConfig *standalone.SecretConfig) 
 	}
 	return map[string][]byte{
 		config.AgentInitSecretConfigField: jsonContent,
-		dynatracev1beta1.ProxyKey:         []byte(secretConfig.Proxy), // needed so that it can be mounted to the user's pod without directly reading the secret
+		dynatracev1.ProxyKey:              []byte(secretConfig.Proxy), // needed so that it can be mounted to the user's pod without directly reading the secret
 	}, nil
 }

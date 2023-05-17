@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/webhook"
@@ -39,7 +39,7 @@ const (
 	proxyNamespaceName = "proxy"
 )
 
-func InstallActiveGateCurlPod(dynakube dynatracev1beta1.DynaKube) features.Func {
+func InstallActiveGateCurlPod(dynakube dynatracev1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		serviceUrl := getActiveGateServiceUrl(dynakube)
 		curlTarget := fmt.Sprintf("%s/%s", serviceUrl, activeGateEndpoint)
@@ -50,11 +50,11 @@ func InstallActiveGateCurlPod(dynakube dynatracev1beta1.DynaKube) features.Func 
 	}
 }
 
-func WaitForActiveGateCurlPod(dynakube dynatracev1beta1.DynaKube) features.Func {
+func WaitForActiveGateCurlPod(dynakube dynatracev1.DynaKube) features.Func {
 	return pod.WaitFor(curlPodNameActivegate, curlNamespace(dynakube))
 }
 
-func CheckActiveGateCurlResult(dynakube dynatracev1beta1.DynaKube) features.Func {
+func CheckActiveGateCurlResult(dynakube dynatracev1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resources := environmentConfig.Client().Resources()
 
@@ -65,14 +65,14 @@ func CheckActiveGateCurlResult(dynakube dynatracev1beta1.DynaKube) features.Func
 	}
 }
 
-func curlNamespace(dynakube dynatracev1beta1.DynaKube) string {
+func curlNamespace(dynakube dynatracev1.DynaKube) string {
 	if dynakube.HasProxy() {
 		return proxyNamespaceName
 	}
 	return dynakube.Namespace
 }
 
-func InstallWebhookCurlProxyPod(dynakube dynatracev1beta1.DynaKube) features.Func {
+func InstallWebhookCurlProxyPod(dynakube dynatracev1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		curlTarget := fmt.Sprintf("https://%s/%s", GetWebhookServiceUrl(dynakube), livezEndpoint)
 		curlPod := NewCurlPodBuilder(curlPodNameWebhook, dynakube.Namespace, curlTarget).WithProxy(dynakube).Build()
@@ -82,14 +82,14 @@ func InstallWebhookCurlProxyPod(dynakube dynatracev1beta1.DynaKube) features.Fun
 	}
 }
 
-func WaitForWebhookCurlProxyPod(dynakube dynatracev1beta1.DynaKube) features.Func {
+func WaitForWebhookCurlProxyPod(dynakube dynatracev1.DynaKube) features.Func {
 	return pod.WaitForCondition(curlPodNameWebhook, dynakube.Namespace, func(object k8s.Object) bool {
 		pod, isPod := object.(*corev1.Pod)
 		return isPod && pod.Status.Phase == corev1.PodSucceeded
 	}, 45*time.Second)
 }
 
-func CheckWebhookCurlProxyResult(dynakube dynatracev1beta1.DynaKube) features.Func {
+func CheckWebhookCurlProxyResult(dynakube dynatracev1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resources := environmentConfig.Client().Resources()
 
@@ -102,12 +102,12 @@ func CheckWebhookCurlProxyResult(dynakube dynatracev1beta1.DynaKube) features.Fu
 	}
 }
 
-func getActiveGateServiceUrl(dynakube dynatracev1beta1.DynaKube) string {
+func getActiveGateServiceUrl(dynakube dynatracev1.DynaKube) string {
 	serviceName := capability.BuildServiceName(dynakube.Name, consts.MultiActiveGateName)
 	return fmt.Sprintf("https://%s.%s.svc.cluster.local", serviceName, dynakube.Namespace)
 }
 
-func GetWebhookServiceUrl(dynakube dynatracev1beta1.DynaKube) string {
+func GetWebhookServiceUrl(dynakube dynatracev1.DynaKube) string {
 	return fmt.Sprintf("%s.%s.svc.cluster.local", webhook.DeploymentName, dynakube.Namespace)
 }
 
@@ -174,7 +174,7 @@ func NewCurlPodBuilder(podName, namespaceName, targetUrl string) CurlPodBuilder 
 	}
 }
 
-func (curlPodBuilder CurlPodBuilder) WithProxy(dynakube dynatracev1beta1.DynaKube) CurlPodBuilder {
+func (curlPodBuilder CurlPodBuilder) WithProxy(dynakube dynatracev1.DynaKube) CurlPodBuilder {
 	if dynakube.HasProxy() {
 		proxyEnv := corev1.EnvVar{
 			Name:  "https_proxy",

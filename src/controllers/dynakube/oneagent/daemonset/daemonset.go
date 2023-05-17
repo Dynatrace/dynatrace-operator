@@ -1,7 +1,7 @@
 package daemonset
 
 import (
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
@@ -50,8 +50,8 @@ type ClassicFullStack struct {
 }
 
 type builderInfo struct {
-	dynakube       *dynatracev1beta1.DynaKube
-	hostInjectSpec *dynatracev1beta1.HostInjectSpec
+	dynakube       *dynatracev1.DynaKube
+	hostInjectSpec *dynatracev1.HostInjectSpec
 	clusterID      string
 	deploymentType string
 }
@@ -60,7 +60,7 @@ type Builder interface {
 	BuildDaemonSet() (*appsv1.DaemonSet, error)
 }
 
-func NewHostMonitoring(instance *dynatracev1beta1.DynaKube, clusterId string) Builder {
+func NewHostMonitoring(instance *dynatracev1.DynaKube, clusterId string) Builder {
 	return &HostMonitoring{
 		builderInfo{
 			dynakube:       instance,
@@ -71,7 +71,7 @@ func NewHostMonitoring(instance *dynatracev1beta1.DynaKube, clusterId string) Bu
 	}
 }
 
-func NewCloudNativeFullStack(instance *dynatracev1beta1.DynaKube, clusterId string) Builder {
+func NewCloudNativeFullStack(instance *dynatracev1.DynaKube, clusterId string) Builder {
 	return &HostMonitoring{
 		builderInfo{
 			dynakube:       instance,
@@ -82,7 +82,7 @@ func NewCloudNativeFullStack(instance *dynatracev1beta1.DynaKube, clusterId stri
 	}
 }
 
-func NewClassicFullStack(instance *dynatracev1beta1.DynaKube, clusterId string) Builder {
+func NewClassicFullStack(instance *dynatracev1.DynaKube, clusterId string) Builder {
 	return &ClassicFullStack{
 		builderInfo{
 			dynakube:       instance,

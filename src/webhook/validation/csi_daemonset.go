@@ -3,7 +3,7 @@ package validation
 import (
 	"context"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
 	appsv1 "k8s.io/api/apps/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -17,7 +17,7 @@ const (
 `
 )
 
-func missingCSIDaemonSet(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func missingCSIDaemonSet(dv *dynakubeValidator, dynakube *dynatracev1.DynaKube) string {
 	if !dynakube.NeedsCSIDriver() {
 		return ""
 	}
@@ -32,7 +32,7 @@ func missingCSIDaemonSet(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaK
 	return ""
 }
 
-func disabledCSIForReadonlyCSIVolume(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func disabledCSIForReadonlyCSIVolume(dv *dynakubeValidator, dynakube *dynatracev1.DynaKube) string {
 	if !dynakube.NeedsCSIDriver() && dynakube.FeatureReadOnlyCsiVolume() {
 		log.Info("requested dynakube uses readonly csi volume, but csi driver is not enabled", "name", dynakube.Name, "namespace", dynakube.Namespace)
 		return errorCSIEnabledRequired

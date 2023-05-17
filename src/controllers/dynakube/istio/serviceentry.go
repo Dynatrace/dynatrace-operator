@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	istio "istio.io/api/networking/v1alpha3"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
@@ -89,7 +89,7 @@ func handleIstioConfigurationForServiceEntry(istioConfig *configuration) (bool, 
 	return true, nil
 }
 
-func createIstioConfigurationForServiceEntry(dynaKube *dynatracev1beta1.DynaKube, //nolint:revive // argument-limit doesn't apply to constructors
+func createIstioConfigurationForServiceEntry(dynaKube *dynatracev1.DynaKube, //nolint:revive // argument-limit doesn't apply to constructors
 	serviceEntry *istiov1alpha3.ServiceEntry, role string,
 	istioClient istioclientset.Interface, scheme *runtime.Scheme) error {
 	serviceEntry.Labels = buildIstioLabels(dynaKube.GetName(), role)

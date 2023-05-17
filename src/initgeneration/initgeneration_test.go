@@ -5,7 +5,7 @@ import (
 	_ "embed"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/src/standalone"
@@ -39,74 +39,74 @@ const (
 
 var (
 	testSelectorLabels  = map[string]string{"test": "label"}
-	testDynakubeComplex = &dynatracev1beta1.DynaKube{
+	testDynakubeComplex = &dynatracev1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testDynakubeComplexName,
 			Namespace: operatorNamespace,
 			Annotations: map[string]string{
-				dynatracev1beta1.AnnotationFeatureNoProxy: testNoProxy,
+				dynatracev1.AnnotationFeatureNoProxy: testNoProxy,
 			},
 		},
-		Spec: dynatracev1beta1.DynaKubeSpec{
+		Spec: dynatracev1.DynaKubeSpec{
 			APIURL:     testApiUrl,
-			Proxy:      &dynatracev1beta1.DynaKubeProxy{Value: testProxy},
+			Proxy:      &dynatracev1.DynaKubeProxy{Value: testProxy},
 			TrustedCAs: testtrustCAsCM,
 			Tokens:     testTokensName,
-			OneAgent: dynatracev1beta1.OneAgentSpec{
-				CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
-					HostInjectSpec: dynatracev1beta1.HostInjectSpec{
+			OneAgent: dynatracev1.OneAgentSpec{
+				CloudNativeFullStack: &dynatracev1.CloudNativeFullStackSpec{
+					HostInjectSpec: dynatracev1.HostInjectSpec{
 						Args: []string{
 							"--something=else",
 							"",
 						},
 					},
 				}},
-			ActiveGate: dynatracev1beta1.ActiveGateSpec{
-				Capabilities: []dynatracev1beta1.CapabilityDisplayName{
-					dynatracev1beta1.KubeMonCapability.DisplayName,
+			ActiveGate: dynatracev1.ActiveGateSpec{
+				Capabilities: []dynatracev1.CapabilityDisplayName{
+					dynatracev1.KubeMonCapability.DisplayName,
 				},
 				TlsSecretName: "testing",
 			},
 		},
-		Status: dynatracev1beta1.DynaKubeStatus{
-			OneAgent: dynatracev1beta1.OneAgentStatus{
-				Instances: map[string]dynatracev1beta1.OneAgentInstance{
+		Status: dynatracev1.DynaKubeStatus{
+			OneAgent: dynatracev1.OneAgentStatus{
+				Instances: map[string]dynatracev1.OneAgentInstance{
 					testNode1Name: {},
 				},
 			},
 		},
 	}
 
-	testDynakubeSimple = &dynatracev1beta1.DynaKube{
+	testDynakubeSimple = &dynatracev1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: testDynakubeSimpleName, Namespace: operatorNamespace},
-		Spec: dynatracev1beta1.DynaKubeSpec{
+		Spec: dynatracev1.DynaKubeSpec{
 			APIURL:   testApiUrl,
-			OneAgent: dynatracev1beta1.OneAgentSpec{CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{}},
+			OneAgent: dynatracev1.OneAgentSpec{CloudNativeFullStack: &dynatracev1.CloudNativeFullStackSpec{}},
 		},
-		Status: dynatracev1beta1.DynaKubeStatus{
-			OneAgent: dynatracev1beta1.OneAgentStatus{
-				Instances: map[string]dynatracev1beta1.OneAgentInstance{
+		Status: dynatracev1.DynaKubeStatus{
+			OneAgent: dynatracev1.OneAgentStatus{
+				Instances: map[string]dynatracev1.OneAgentInstance{
 					testNode2Name: {},
 				},
 			},
 		},
 	}
 
-	testDynakubeWithSelector = &dynatracev1beta1.DynaKube{
+	testDynakubeWithSelector = &dynatracev1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: testDynakubeSimpleName, Namespace: operatorNamespace},
-		Spec: dynatracev1beta1.DynaKubeSpec{
+		Spec: dynatracev1.DynaKubeSpec{
 			APIURL: testApiUrl,
-			OneAgent: dynatracev1beta1.OneAgentSpec{
-				CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
-					HostInjectSpec: dynatracev1beta1.HostInjectSpec{
+			OneAgent: dynatracev1.OneAgentSpec{
+				CloudNativeFullStack: &dynatracev1.CloudNativeFullStackSpec{
+					HostInjectSpec: dynatracev1.HostInjectSpec{
 						NodeSelector: testSelectorLabels,
 					},
 				},
 			},
 		},
-		Status: dynatracev1beta1.DynaKubeStatus{
-			OneAgent: dynatracev1beta1.OneAgentStatus{
-				Instances: map[string]dynatracev1beta1.OneAgentInstance{
+		Status: dynatracev1.DynaKubeStatus{
+			OneAgent: dynatracev1.OneAgentStatus{
+				Instances: map[string]dynatracev1.OneAgentInstance{
 					testNodeWithSelectorName: {},
 				},
 			},
@@ -116,7 +116,7 @@ var (
 	caConfigMap = &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{Name: testtrustCAsCM, Namespace: operatorNamespace},
 		Data: map[string]string{
-			dynatracev1beta1.TrustedCAKey: testCAValue,
+			dynatracev1.TrustedCAKey: testCAValue,
 		},
 	}
 
@@ -132,7 +132,7 @@ var (
 
 	testTlsSecretDynakubeComplex = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{Name: "testing", Namespace: operatorNamespace},
-		Data:       map[string][]byte{dynatracev1beta1.TlsCertKey: []byte("testing")},
+		Data:       map[string][]byte{dynatracev1.TlsCertKey: []byte("testing")},
 	}
 
 	testSecretDynakubeSimple = &corev1.Secret{
@@ -181,7 +181,7 @@ func TestGenerateForNamespace(t *testing.T) {
 		secretConfig, ok := initSecret.Data[config.AgentInitSecretConfigField]
 		assert.True(t, ok)
 		assert.NotNil(t, secretConfig)
-		proxy, ok := initSecret.Data[dynatracev1beta1.ProxyKey]
+		proxy, ok := initSecret.Data[dynatracev1.ProxyKey]
 		assert.True(t, ok)
 		assert.NotNil(t, proxy)
 		assert.Equal(t, testProxy, string(proxy))
@@ -206,7 +206,7 @@ func TestGenerateForNamespace(t *testing.T) {
 		secretConfig, ok := initSecret.Data[config.AgentInitSecretConfigField]
 		assert.True(t, ok)
 		assert.NotNil(t, secretConfig)
-		proxy, ok := initSecret.Data[dynatracev1beta1.ProxyKey]
+		proxy, ok := initSecret.Data[dynatracev1.ProxyKey]
 		assert.True(t, ok)
 		assert.NotNil(t, proxy)
 		assert.Empty(t, proxy)
@@ -235,7 +235,7 @@ func TestGenerateForDynakube(t *testing.T) {
 		secretConfig, ok := initSecret.Data[config.AgentInitSecretConfigField]
 		assert.True(t, ok)
 		assert.NotNil(t, secretConfig)
-		proxy, ok := initSecret.Data[dynatracev1beta1.ProxyKey]
+		proxy, ok := initSecret.Data[dynatracev1.ProxyKey]
 		assert.True(t, ok)
 		assert.NotNil(t, proxy)
 		assert.Equal(t, testProxy, string(proxy))
@@ -261,7 +261,7 @@ func TestGenerateForDynakube(t *testing.T) {
 		secretConfig, ok := initSecret.Data[config.AgentInitSecretConfigField]
 		assert.True(t, ok)
 		assert.NotNil(t, secretConfig)
-		proxy, ok := initSecret.Data[dynatracev1beta1.ProxyKey]
+		proxy, ok := initSecret.Data[dynatracev1.ProxyKey]
 		assert.True(t, ok)
 		assert.NotNil(t, proxy)
 		assert.Empty(t, proxy)
@@ -293,7 +293,7 @@ func TestGenerateForDynakube(t *testing.T) {
 		secretConfig, ok := initSecret.Data[config.AgentInitSecretConfigField]
 		assert.True(t, ok)
 		assert.NotNil(t, secretConfig)
-		proxy, ok := initSecret.Data[dynatracev1beta1.ProxyKey]
+		proxy, ok := initSecret.Data[dynatracev1.ProxyKey]
 		assert.True(t, ok)
 		assert.NotNil(t, proxy)
 		assert.Empty(t, proxy)
@@ -304,7 +304,7 @@ func TestGenerateForDynakube(t *testing.T) {
 		secretConfig, ok = initSecret.Data[config.AgentInitSecretConfigField]
 		assert.True(t, ok)
 		assert.NotNil(t, secretConfig)
-		proxy, ok = initSecret.Data[dynatracev1beta1.ProxyKey]
+		proxy, ok = initSecret.Data[dynatracev1.ProxyKey]
 		assert.True(t, ok)
 		assert.NotNil(t, proxy)
 		assert.Empty(t, proxy)
@@ -354,12 +354,12 @@ func TestPrepareSecretConfigForDynaKube(t *testing.T) {
 }
 
 func testInitialConnectRetrySetCorrectly(t *testing.T) {
-	dynakube := &dynatracev1beta1.DynaKube{
+	dynakube := &dynatracev1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testDynakubeSimpleName,
 			Namespace: operatorNamespace,
 		},
-		Spec: dynatracev1beta1.DynaKubeSpec{
+		Spec: dynatracev1.DynaKubeSpec{
 			APIURL: testApiUrl,
 		},
 	}
@@ -374,7 +374,7 @@ func testInitialConnectRetrySetCorrectly(t *testing.T) {
 	assert.Equal(t, -1, secretConfig.InitialConnectRetry)
 
 	dynakube.Annotations = map[string]string{
-		dynatracev1beta1.AnnotationFeatureOneAgentInitialConnectRetry: "30",
+		dynatracev1.AnnotationFeatureOneAgentInitialConnectRetry: "30",
 	}
 	secretConfig, err = initGenerator.createSecretConfigForDynaKube(context.TODO(), dynakube, kubesystemUID, map[string]string{})
 

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/rest"
@@ -45,7 +45,7 @@ func (validator *dynakubeValidator) InjectClient(clt client.Client) error {
 func (validator *dynakubeValidator) Handle(_ context.Context, request admission.Request) admission.Response {
 	log.Info("validating request", "name", request.Name, "namespace", request.Namespace)
 
-	dynakube := &dynatracev1beta1.DynaKube{}
+	dynakube := &dynatracev1.DynaKube{}
 	err := decodeRequestToDynakube(request, dynakube)
 	if err != nil {
 		return admission.Errored(http.StatusInternalServerError, errors.WithStack(err))
@@ -65,7 +65,7 @@ func (validator *dynakubeValidator) Handle(_ context.Context, request admission.
 	return response
 }
 
-func (validator *dynakubeValidator) runValidators(validators []validator, dynakube *dynatracev1beta1.DynaKube) []string {
+func (validator *dynakubeValidator) runValidators(validators []validator, dynakube *dynatracev1.DynaKube) []string {
 	results := []string{}
 	for _, validate := range validators {
 		if errMsg := validate(validator, dynakube); errMsg != "" {
@@ -83,7 +83,7 @@ func sumErrors(validationErrors []string) string {
 	return summedErrors
 }
 
-func decodeRequestToDynakube(request admission.Request, dynakube *dynatracev1beta1.DynaKube) error {
+func decodeRequestToDynakube(request admission.Request, dynakube *dynatracev1.DynaKube) error {
 	decoder, err := admission.NewDecoder(scheme.Scheme)
 	if err != nil {
 		return errors.WithStack(err)

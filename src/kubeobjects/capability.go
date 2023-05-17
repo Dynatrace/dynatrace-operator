@@ -1,8 +1,8 @@
 package kubeobjects
 
-import dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+import dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 
-func SwitchCapability(instance *dynatracev1beta1.DynaKube, capability dynatracev1beta1.ActiveGateCapability, wantEnabled bool) {
+func SwitchCapability(instance *dynatracev1.DynaKube, capability dynatracev1.ActiveGateCapability, wantEnabled bool) {
 	hasEnabled := instance.IsActiveGateMode(capability.DisplayName)
 	capabilities := &instance.Spec.ActiveGate.Capabilities
 
@@ -15,7 +15,7 @@ func SwitchCapability(instance *dynatracev1beta1.DynaKube, capability dynatracev
 	}
 }
 
-func removeCapability(capabilities []dynatracev1beta1.CapabilityDisplayName, removeMe dynatracev1beta1.CapabilityDisplayName) []dynatracev1beta1.CapabilityDisplayName {
+func removeCapability(capabilities []dynatracev1.CapabilityDisplayName, removeMe dynatracev1.CapabilityDisplayName) []dynatracev1.CapabilityDisplayName {
 	for i, capability := range capabilities {
 		if capability == removeMe {
 			return append(capabilities[:i], capabilities[i+1:]...)

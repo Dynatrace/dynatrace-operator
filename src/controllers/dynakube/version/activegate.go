@@ -3,19 +3,19 @@ package version
 import (
 	"context"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 )
 
 type activeGateUpdater struct {
-	dynakube    *dynatracev1beta1.DynaKube
+	dynakube    *dynatracev1.DynaKube
 	dtClient    dtclient.Client
 	versionFunc ImageVersionFunc
 }
 
 func newActiveGateUpdater(
-	dynakube *dynatracev1beta1.DynaKube,
+	dynakube *dynatracev1.DynaKube,
 	dtClient dtclient.Client,
 	versionFunc ImageVersionFunc,
 ) *activeGateUpdater {
@@ -34,7 +34,7 @@ func (updater activeGateUpdater) IsEnabled() bool {
 	return updater.dynakube.NeedsActiveGate()
 }
 
-func (updater *activeGateUpdater) Target() *dynatracev1beta1.VersionStatus {
+func (updater *activeGateUpdater) Target() *dynatracev1.VersionStatus {
 	return &updater.dynakube.Status.ActiveGate.VersionStatus
 }
 

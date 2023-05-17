@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 )
 
@@ -13,7 +13,7 @@ type DeploymentMetadata struct {
 	DeploymentType string
 }
 
-func GetOneAgentDeploymentType(dynakube dynatracev1beta1.DynaKube) string {
+func GetOneAgentDeploymentType(dynakube dynatracev1.DynaKube) string {
 	switch {
 	case dynakube.HostMonitoringMode():
 		return HostMonitoringDeploymentType

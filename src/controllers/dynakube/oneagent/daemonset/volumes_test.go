@@ -3,7 +3,7 @@ package daemonset
 import (
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,10 +16,10 @@ func TestPrepareVolumes(t *testing.T) {
 		assert.Contains(t, volumes, getRootVolume())
 	})
 	t.Run(`has root volume`, func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
+		instance := &dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
+				OneAgent: dynatracev1.OneAgentSpec{
+					HostMonitoring: &dynatracev1.HostInjectSpec{},
 				},
 			},
 		}
@@ -29,7 +29,7 @@ func TestPrepareVolumes(t *testing.T) {
 		assert.NotContains(t, volumes, getCertificateVolume(instance))
 	})
 	t.Run(`has tenant secret volume`, func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{
+		instance := &dynatracev1.DynaKube{
 			ObjectMeta: corev1.ObjectMeta{
 				Name: testName,
 			},
@@ -39,11 +39,11 @@ func TestPrepareVolumes(t *testing.T) {
 		assert.Contains(t, volumes, getOneAgentSecretVolume(instance))
 	})
 	t.Run(`has certificate volume`, func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
+		instance := &dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
 				TrustedCAs: testName,
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
+				OneAgent: dynatracev1.OneAgentSpec{
+					HostMonitoring: &dynatracev1.HostInjectSpec{},
 				},
 			},
 		}
@@ -53,17 +53,17 @@ func TestPrepareVolumes(t *testing.T) {
 		assert.Contains(t, volumes, getCertificateVolume(instance))
 	})
 	t.Run(`has tls volume`, func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
+		instance := &dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
 				TrustedCAs: testName,
-				ActiveGate: dynatracev1beta1.ActiveGateSpec{
-					Capabilities: []dynatracev1beta1.CapabilityDisplayName{
-						dynatracev1beta1.KubeMonCapability.DisplayName,
+				ActiveGate: dynatracev1.ActiveGateSpec{
+					Capabilities: []dynatracev1.CapabilityDisplayName{
+						dynatracev1.KubeMonCapability.DisplayName,
 					},
 					TlsSecretName: "testing",
 				},
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
+				OneAgent: dynatracev1.OneAgentSpec{
+					HostMonitoring: &dynatracev1.HostInjectSpec{},
 				},
 			},
 		}
@@ -71,15 +71,15 @@ func TestPrepareVolumes(t *testing.T) {
 		assert.Contains(t, volumes, getActiveGateCaCertVolume(instance))
 	})
 	t.Run(`doesn't have csi volume`, func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{
+		instance := &dynatracev1.DynaKube{
 			ObjectMeta: corev1.ObjectMeta{
 				Annotations: map[string]string{
-					dynatracev1beta1.AnnotationFeatureDisableReadOnlyOneAgent: "true",
+					dynatracev1.AnnotationFeatureDisableReadOnlyOneAgent: "true",
 				},
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
+			Spec: dynatracev1.DynaKubeSpec{
+				OneAgent: dynatracev1.OneAgentSpec{
+					HostMonitoring: &dynatracev1.HostInjectSpec{},
 				},
 			},
 		}
@@ -87,10 +87,10 @@ func TestPrepareVolumes(t *testing.T) {
 		assert.NotContains(t, volumes, getCSIStorageVolume(instance))
 	})
 	t.Run(`csi volume not supported on classicFullStack`, func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
+		instance := &dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
+				OneAgent: dynatracev1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1.HostInjectSpec{},
 				},
 			},
 		}
@@ -98,15 +98,15 @@ func TestPrepareVolumes(t *testing.T) {
 		assert.NotContains(t, volumes, getCSIStorageVolume(instance))
 	})
 	t.Run(`has all volumes`, func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
+		instance := &dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
 				TrustedCAs: testName,
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
+				OneAgent: dynatracev1.OneAgentSpec{
+					HostMonitoring: &dynatracev1.HostInjectSpec{},
 				},
-				ActiveGate: dynatracev1beta1.ActiveGateSpec{
-					Capabilities: []dynatracev1beta1.CapabilityDisplayName{
-						dynatracev1beta1.KubeMonCapability.DisplayName,
+				ActiveGate: dynatracev1.ActiveGateSpec{
+					Capabilities: []dynatracev1.CapabilityDisplayName{
+						dynatracev1.KubeMonCapability.DisplayName,
 					},
 					TlsSecretName: "testing",
 				},
@@ -138,10 +138,10 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		assert.Contains(t, volumeMounts, getRootMount())
 	})
 	t.Run(`has root volume mount`, func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
+		instance := &dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
+				OneAgent: dynatracev1.OneAgentSpec{
+					HostMonitoring: &dynatracev1.HostInjectSpec{},
 				},
 			},
 		}
@@ -151,10 +151,10 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		assert.NotContains(t, volumeMounts, getActiveGateCaCertVolumeMount())
 	})
 	t.Run(`has cluster certificate volume mount`, func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
+		instance := &dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
+				OneAgent: dynatracev1.OneAgentSpec{
+					HostMonitoring: &dynatracev1.HostInjectSpec{},
 				},
 				TrustedCAs: testName,
 			},
@@ -166,15 +166,15 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		assert.NotContains(t, volumeMounts, getActiveGateCaCertVolumeMount())
 	})
 	t.Run(`has ActiveGate CA volume mount`, func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
+		instance := &dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
+				OneAgent: dynatracev1.OneAgentSpec{
+					HostMonitoring: &dynatracev1.HostInjectSpec{},
 				},
 				TrustedCAs: testName,
-				ActiveGate: dynatracev1beta1.ActiveGateSpec{
-					Capabilities: []dynatracev1beta1.CapabilityDisplayName{
-						dynatracev1beta1.KubeMonCapability.DisplayName,
+				ActiveGate: dynatracev1.ActiveGateSpec{
+					Capabilities: []dynatracev1.CapabilityDisplayName{
+						dynatracev1.KubeMonCapability.DisplayName,
 					},
 					TlsSecretName: "testing",
 				},
@@ -187,21 +187,21 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		assert.Contains(t, volumeMounts, getActiveGateCaCertVolumeMount())
 	})
 	t.Run(`doesn't have readonly volume mounts`, func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{
+		instance := &dynatracev1.DynaKube{
 			ObjectMeta: corev1.ObjectMeta{
 				Annotations: map[string]string{
-					dynatracev1beta1.AnnotationFeatureDisableReadOnlyOneAgent: "true",
+					dynatracev1.AnnotationFeatureDisableReadOnlyOneAgent: "true",
 				},
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				ActiveGate: dynatracev1beta1.ActiveGateSpec{
+			Spec: dynatracev1.DynaKubeSpec{
+				ActiveGate: dynatracev1.ActiveGateSpec{
 					TlsSecretName: testName,
-					Capabilities: []dynatracev1beta1.CapabilityDisplayName{
-						dynatracev1beta1.RoutingCapability.DisplayName,
+					Capabilities: []dynatracev1.CapabilityDisplayName{
+						dynatracev1.RoutingCapability.DisplayName,
 					},
 				},
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
+				OneAgent: dynatracev1.OneAgentSpec{
+					HostMonitoring: &dynatracev1.HostInjectSpec{},
 				},
 			},
 		}
@@ -213,10 +213,10 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		assert.NotContains(t, volumeMounts, getCSIStorageMount())
 	})
 	t.Run(`readonly volume not supported on classicFullStack`, func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
+		instance := &dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
+				OneAgent: dynatracev1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1.HostInjectSpec{},
 				},
 			},
 		}
@@ -226,15 +226,15 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		assert.NotContains(t, volumeMounts, getCSIStorageMount())
 	})
 	t.Run(`has all volume mounts`, func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
+		instance := &dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
 				TrustedCAs: testName,
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
+				OneAgent: dynatracev1.OneAgentSpec{
+					HostMonitoring: &dynatracev1.HostInjectSpec{},
 				},
-				ActiveGate: dynatracev1beta1.ActiveGateSpec{
-					Capabilities: []dynatracev1beta1.CapabilityDisplayName{
-						dynatracev1beta1.KubeMonCapability.DisplayName,
+				ActiveGate: dynatracev1.ActiveGateSpec{
+					Capabilities: []dynatracev1.CapabilityDisplayName{
+						dynatracev1.KubeMonCapability.DisplayName,
 					},
 					TlsSecretName: "testing",
 				},

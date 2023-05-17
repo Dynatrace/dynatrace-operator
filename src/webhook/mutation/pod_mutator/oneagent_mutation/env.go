@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
@@ -75,13 +75,13 @@ func addProxyEnv(container *corev1.Container) {
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: config.AgentInitSecretName,
 					},
-					Key: dynatracev1beta1.ProxyKey,
+					Key: dynatracev1.ProxyKey,
 				},
 			},
 		})
 }
 
-func addInstallerInitEnvs(initContainer *corev1.Container, installer installerInfo, dynakube dynatracev1beta1.DynaKube) {
+func addInstallerInitEnvs(initContainer *corev1.Container, installer installerInfo, dynakube dynatracev1.DynaKube) {
 	initContainer.Env = append(initContainer.Env,
 		corev1.EnvVar{Name: config.AgentInstallerFlavorEnv, Value: installer.flavor},
 		corev1.EnvVar{Name: config.AgentInstallerTechEnv, Value: installer.technologies},
@@ -109,7 +109,7 @@ func getContainerImageEnv(containerIndex int) string {
 	return fmt.Sprintf(config.AgentContainerImageEnvTemplate, containerIndex)
 }
 
-func addDeploymentMetadataEnv(container *corev1.Container, dynakube dynatracev1beta1.DynaKube, clusterID string) {
+func addDeploymentMetadataEnv(container *corev1.Container, dynakube dynatracev1.DynaKube, clusterID string) {
 	if kubeobjects.EnvVarIsIn(container.Env, dynatraceMetadataEnv) {
 		return
 	}

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
@@ -23,13 +23,13 @@ const (
 
 func TestReconciler_Reconcile(t *testing.T) {
 	t.Run(`Create works with minimal setup`, func(t *testing.T) {
-		r := NewReconciler(nil, nil, "", nil, &dynatracev1beta1.DynaKubeValueSource{})
+		r := NewReconciler(nil, nil, "", nil, &dynatracev1.DynaKubeValueSource{})
 		err := r.Reconcile()
 		assert.NoError(t, err)
 	})
 	t.Run(`Create creates custom properties secret`, func(t *testing.T) {
-		valueSource := dynatracev1beta1.DynaKubeValueSource{Value: testValue}
-		instance := &dynatracev1beta1.DynaKube{
+		valueSource := dynatracev1.DynaKubeValueSource{Value: testValue}
+		instance := &dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
@@ -50,8 +50,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.Equal(t, customPropertiesSecret.Data[DataKey], []byte(testValue))
 	})
 	t.Run(`Create updates custom properties only if data changed`, func(t *testing.T) {
-		valueSource := dynatracev1beta1.DynaKubeValueSource{Value: testValue}
-		instance := &dynatracev1beta1.DynaKube{
+		valueSource := dynatracev1.DynaKubeValueSource{Value: testValue}
+		instance := &dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -133,7 +133,7 @@ func TestCheckStorageCorrectness_DoNothing(t *testing.T) {
 	db.InsertVolume(ctx, &testVolume1)
 	client := fake.NewClient(
 		&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: testVolume1.PodName}},
-		&dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testDynakube1.Name}},
+		&dynatracev1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testDynakube1.Name}},
 	)
 
 	err := CorrectMetadata(ctx, client, db)
@@ -163,7 +163,7 @@ func TestCheckStorageCorrectness_PURGE(t *testing.T) {
 	db.InsertDynakube(ctx, &testDynakube3)
 	client := fake.NewClient(
 		&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: testVolume1.PodName}},
-		&dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testDynakube1.Name}},
+		&dynatracev1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testDynakube1.Name}},
 	)
 
 	err := CorrectMetadata(ctx, client, db)

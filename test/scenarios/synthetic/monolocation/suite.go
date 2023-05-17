@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/activegate"
@@ -69,7 +69,7 @@ func requireSyntheticBrowserMonitor(t *testing.T, secret tenant.Secret) {
 	}
 }
 
-func requireObservabilityFocusedActiveGate(testDynakube dynatracev1beta1.DynaKube) features.Func {
+func requireObservabilityFocusedActiveGate(testDynakube dynatracev1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 		const activatedModulesLogMsg = `Active:([
 [:blank:]]+(kubernetes_monitoring|odin_collector|metrics_ingest)){3}[
@@ -85,7 +85,7 @@ func requireObservabilityFocusedActiveGate(testDynakube dynatracev1beta1.DynaKub
 	}
 }
 
-func requireSyntheticFocusedActiveGate(testDynakube dynatracev1beta1.DynaKube) features.Func {
+func requireSyntheticFocusedActiveGate(testDynakube dynatracev1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 		const boundLocationLogMsg = `Setting synthetic private location id to %d
 Applying default config
@@ -106,7 +106,7 @@ Enabling selected features: %s`
 	}
 }
 
-func requireOperableVuc(testDynakube dynatracev1beta1.DynaKube) features.Func {
+func requireOperableVuc(testDynakube dynatracev1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 		const activeLogMsg = `VUC state changed to: Running(\\z|
 )`
@@ -121,7 +121,7 @@ func requireOperableVuc(testDynakube dynatracev1beta1.DynaKube) features.Func {
 	}
 }
 
-func requireSyntheticVisitCompleted(testDynakube dynatracev1beta1.DynaKube, secret tenant.Secret) features.Func {
+func requireSyntheticVisitCompleted(testDynakube dynatracev1.DynaKube, secret tenant.Secret) features.Func {
 	return func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 		const (
 			logReadSeriesDuration = 7 * time.Minute
@@ -149,7 +149,7 @@ func requireSyntheticVisitCompleted(testDynakube dynatracev1beta1.DynaKube, secr
 	}
 }
 
-func requireVucBrowserLog(ctx context.Context, t *testing.T, cfg *envconf.Config, testDynakube dynatracev1beta1.DynaKube) string {
+func requireVucBrowserLog(ctx context.Context, t *testing.T, cfg *envconf.Config, testDynakube dynatracev1.DynaKube) string {
 	const log = "/var/log/dynatrace/synthetic/vuc-browser.log"
 
 	agPod := corev1.Pod{

@@ -3,15 +3,15 @@ package modifiers
 import (
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 const testProxyName = "test-proxy"
 
-func setProxyUsage(dynakube *dynatracev1beta1.DynaKube, isUsed bool) {
-	dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{}
+func setProxyUsage(dynakube *dynatracev1.DynaKube, isUsed bool) {
+	dynakube.Spec.Proxy = &dynatracev1.DynaKubeProxy{}
 	if isUsed {
 		dynakube.Spec.Proxy.ValueFrom = testProxyName
 	} else {

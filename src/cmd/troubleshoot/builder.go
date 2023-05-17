@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
@@ -87,7 +87,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		err = dynatracev1beta1.AddToScheme(scheme.Scheme)
+		err = dynatracev1.AddToScheme(scheme.Scheme)
 		if err != nil {
 			return err
 		}
@@ -132,7 +132,7 @@ func RunTroubleshootCmd(ctx context.Context, log logr.Logger, apiReader client.R
 	runChecksForAllDynakubes(log, results, getDynakubeSpecificChecks(results), dynakubes, apiReader)
 }
 
-func runChecksForAllDynakubes(log logr.Logger, results ChecksResults, checks []*Check, dynakubes []dynatracev1beta1.DynaKube, apiReader client.Reader) {
+func runChecksForAllDynakubes(log logr.Logger, results ChecksResults, checks []*Check, dynakubes []dynatracev1.DynaKube, apiReader client.Reader) {
 	for _, dynakube := range dynakubes {
 		results.checkResultMap = map[*Check]Result{}
 		logNewDynakubef(log, dynakube.Name)
@@ -191,9 +191,9 @@ func getDynakubeSpecificChecks(results ChecksResults) []*Check {
 	return []*Check{dynakubeCheck, imagePullableCheck, proxySettingsCheck}
 }
 
-func getDynakubes(log logr.Logger, troubleshootCtx troubleshootContext, dynakubeName string) ([]dynatracev1beta1.DynaKube, error) {
+func getDynakubes(log logr.Logger, troubleshootCtx troubleshootContext, dynakubeName string) ([]dynatracev1.DynaKube, error) {
 	var err error
-	var dynakubes []dynatracev1beta1.DynaKube
+	var dynakubes []dynatracev1.DynaKube
 
 	if dynakubeName == "" {
 		logNewDynakubef(log, "no Dynakube specified - checking all Dynakubes in namespace '%s'", troubleshootCtx.namespaceName)
@@ -202,7 +202,7 @@ func getDynakubes(log logr.Logger, troubleshootCtx troubleshootContext, dynakube
 			return nil, err
 		}
 	} else {
-		dynakube := dynatracev1beta1.DynaKube{}
+		dynakube := dynatracev1.DynaKube{}
 		dynakube.Name = dynakubeName
 		dynakubes = append(dynakubes, dynakube)
 	}
@@ -210,8 +210,8 @@ func getDynakubes(log logr.Logger, troubleshootCtx troubleshootContext, dynakube
 	return dynakubes, nil
 }
 
-func getAllDynakubesInNamespace(log logr.Logger, troubleshootContext troubleshootContext) ([]dynatracev1beta1.DynaKube, error) {
-	var dynakubes dynatracev1beta1.DynaKubeList
+func getAllDynakubesInNamespace(log logr.Logger, troubleshootContext troubleshootContext) ([]dynatracev1.DynaKube, error) {
+	var dynakubes dynatracev1.DynaKubeList
 	err := troubleshootContext.apiReader.List(troubleshootContext.context, &dynakubes, client.InNamespace(troubleshootContext.namespaceName))
 
 	if err != nil {

@@ -3,7 +3,7 @@ package connectioninfo
 import (
 	"context"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
@@ -20,12 +20,12 @@ type Reconciler struct {
 	client       client.Client
 	apiReader    client.Reader
 	dtc          dtclient.Client
-	dynakube     *dynatracev1beta1.DynaKube
+	dynakube     *dynatracev1.DynaKube
 	scheme       *runtime.Scheme
 	timeProvider *timeprovider.Provider
 }
 
-func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
+func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1.DynaKube, dtc dtclient.Client) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
 	return &Reconciler{
 		context:      ctx,
 		client:       clt,
@@ -53,7 +53,7 @@ func (r *Reconciler) Reconcile() error {
 	return nil
 }
 
-func (r *Reconciler) needsUpdate(secretName string, isAllowedFunc dynatracev1beta1.RequestAllowedChecker) (bool, error) {
+func (r *Reconciler) needsUpdate(secretName string, isAllowedFunc dynatracev1.RequestAllowedChecker) (bool, error) {
 	query := kubeobjects.NewSecretQuery(r.context, r.client, r.apiReader, log)
 	_, err := query.Get(types.NamespacedName{Name: secretName, Namespace: r.dynakube.Namespace})
 	if err != nil {
@@ -72,7 +72,7 @@ func (r *Reconciler) reconcileOneAgentConnectionInfo() error {
 		return err
 	}
 	if !needsUpdate {
-		log.Info(dynatracev1beta1.GetCacheValidMessage(
+		log.Info(dynatracev1.GetCacheValidMessage(
 			"oneagent connection info update",
 			r.dynakube.Status.OneAgent.ConnectionInfoStatus.LastRequest,
 			r.dynakube.FeatureApiRequestThreshold()))
@@ -103,10 +103,10 @@ func (r *Reconciler) updateDynakubeOneAgentStatus(connectionInfo dtclient.OneAge
 	copyCommunicationHosts(&r.dynakube.Status.OneAgent.ConnectionInfoStatus, connectionInfo.CommunicationHosts)
 }
 
-func copyCommunicationHosts(dest *dynatracev1beta1.OneAgentConnectionInfoStatus, src []dtclient.CommunicationHost) {
-	dest.CommunicationHosts = make([]dynatracev1beta1.CommunicationHostStatus, 0, len(src))
+func copyCommunicationHosts(dest *dynatracev1.OneAgentConnectionInfoStatus, src []dtclient.CommunicationHost) {
+	dest.CommunicationHosts = make([]dynatracev1.CommunicationHostStatus, 0, len(src))
 	for _, host := range src {
-		dest.CommunicationHosts = append(dest.CommunicationHosts, dynatracev1beta1.CommunicationHostStatus{
+		dest.CommunicationHosts = append(dest.CommunicationHosts, dynatracev1.CommunicationHostStatus{
 			Protocol: host.Protocol,
 			Host:     host.Host,
 			Port:     host.Port,
@@ -120,7 +120,7 @@ func (r *Reconciler) reconcileActiveGateConnectionInfo() error {
 		return err
 	}
 	if !needsUpdate {
-		log.Info(dynatracev1beta1.GetCacheValidMessage(
+		log.Info(dynatracev1.GetCacheValidMessage(
 			"activegate connection info update",
 			r.dynakube.Status.ActiveGate.ConnectionInfoStatus.LastRequest,
 			r.dynakube.FeatureApiRequestThreshold()))

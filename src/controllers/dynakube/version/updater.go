@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
@@ -15,7 +15,7 @@ import (
 type versionStatusUpdater interface {
 	Name() string
 	IsEnabled() bool
-	Target() *dynatracev1beta1.VersionStatus
+	Target() *dynatracev1.VersionStatus
 
 	CustomImage() string
 	CustomVersion() string
@@ -46,7 +46,7 @@ func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpda
 
 	if !updater.IsAutoUpdateEnabled() {
 		previousSource := updater.Target().Source
-		emptyVersionStatus := dynatracev1beta1.VersionStatus{}
+		emptyVersionStatus := dynatracev1.VersionStatus{}
 		if updater.Target() == nil || *updater.Target() == emptyVersionStatus {
 			log.Info("initial status update in progress with no auto update", "updater", updater.Name())
 		} else if previousSource == currentSource {
@@ -81,26 +81,26 @@ func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpda
 	return err
 }
 
-func determineSource(updater versionStatusUpdater) dynatracev1beta1.VersionSource {
+func determineSource(updater versionStatusUpdater) dynatracev1.VersionSource {
 	if updater.CustomImage() != "" {
-		return dynatracev1beta1.CustomImageVersionSource
+		return dynatracev1.CustomImageVersionSource
 	}
 	if updater.IsPublicRegistryEnabled() {
-		return dynatracev1beta1.PublicRegistryVersionSource
+		return dynatracev1.PublicRegistryVersionSource
 	}
 	if updater.CustomVersion() != "" {
-		return dynatracev1beta1.CustomVersionVersionSource
+		return dynatracev1.CustomVersionVersionSource
 	}
-	return dynatracev1beta1.TenantRegistryVersionSource
+	return dynatracev1.TenantRegistryVersionSource
 }
 
 func setImageIDWithDigest( //nolint:revive
 	ctx context.Context,
-	target *dynatracev1beta1.VersionStatus,
+	target *dynatracev1.VersionStatus,
 	imageUri string,
 	imageVersionFunc ImageVersionFunc,
 	dockerCfg *dockerconfig.DockerConfig,
-	dynakube *dynatracev1beta1.DynaKube,
+	dynakube *dynatracev1.DynaKube,
 ) error {
 	ref, err := reference.Parse(imageUri)
 	if err != nil {
@@ -146,11 +146,11 @@ func setImageIDWithDigest( //nolint:revive
 
 func updateVersionStatusForTenantRegistry( //nolint:revive
 	ctx context.Context,
-	target *dynatracev1beta1.VersionStatus,
+	target *dynatracev1.VersionStatus,
 	imageUri string,
 	imageVersionFunc ImageVersionFunc,
 	dockerCfg *dockerconfig.DockerConfig,
-	dynakube *dynatracev1beta1.DynaKube,
+	dynakube *dynatracev1.DynaKube,
 ) error {
 	ref, err := reference.Parse(imageUri)
 	if err != nil {

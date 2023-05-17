@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/stretchr/testify/assert"
@@ -20,7 +20,7 @@ import (
 const (
 	testDynakubeName = "test-dynakube"
 	testNamespace    = "test-namespace"
-	secretName       = testDynakubeName + dynatracev1beta1.AuthTokenSecretSuffix
+	secretName       = testDynakubeName + dynatracev1.AuthTokenSecretSuffix
 	testToken        = "dt.testtoken.test"
 )
 
@@ -32,12 +32,12 @@ var (
 )
 
 func newTestReconcilerWithInstance(client client.Client) *Reconciler {
-	instance := &dynatracev1beta1.DynaKube{
+	instance := &dynatracev1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
 			Name:      testDynakubeName,
 		},
-		Spec: dynatracev1beta1.DynaKubeSpec{
+		Spec: dynatracev1.DynaKubeSpec{
 			APIURL: "https://testing.dev.dynatracelabs.com/api",
 		},
 	}

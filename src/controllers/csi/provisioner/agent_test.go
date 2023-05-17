@@ -7,7 +7,7 @@ import (
 	"path"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
@@ -30,8 +30,8 @@ const (
 func TestNewAgentUpdater(t *testing.T) {
 	t.Run(`create`, func(t *testing.T) {
 		createTestAgentUrlUpdater(t,
-			&dynatracev1beta1.DynaKube{
-				Spec: dynatracev1beta1.DynaKubeSpec{
+			&dynatracev1.DynaKube{
+				Spec: dynatracev1.DynaKubeSpec{
 					APIURL: "https://" + testTenantUUID + ".dynatrace.com",
 				},
 			})
@@ -40,13 +40,13 @@ func TestNewAgentUpdater(t *testing.T) {
 
 func TestUpdateAgent(t *testing.T) {
 	t.Run(`fresh install`, func(t *testing.T) {
-		dk := dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
+		dk := dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: "https://" + testTenantUUID + ".dynatrace.com",
 			},
-			Status: dynatracev1beta1.DynaKubeStatus{
-				CodeModules: dynatracev1beta1.CodeModulesStatus{
-					VersionStatus: dynatracev1beta1.VersionStatus{
+			Status: dynatracev1.DynaKubeStatus{
+				CodeModules: dynatracev1.CodeModulesStatus{
+					VersionStatus: dynatracev1.VersionStatus{
 						Version: testVersion,
 					},
 				},
@@ -87,13 +87,13 @@ func TestUpdateAgent(t *testing.T) {
 		testUpdateOneagent(t, true)
 	})
 	t.Run(`only process module config update`, func(t *testing.T) {
-		dk := dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
+		dk := dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: "https://" + testTenantUUID + ".dynatrace.com",
 			},
-			Status: dynatracev1beta1.DynaKubeStatus{
-				CodeModules: dynatracev1beta1.CodeModulesStatus{
-					VersionStatus: dynatracev1beta1.VersionStatus{
+			Status: dynatracev1.DynaKubeStatus{
+				CodeModules: dynatracev1.CodeModulesStatus{
+					VersionStatus: dynatracev1.VersionStatus{
 						Version: testVersion,
 					},
 				},
@@ -120,8 +120,8 @@ func TestUpdateAgent(t *testing.T) {
 		assert.Equal(t, testVersion, currentVersion)
 	})
 	t.Run(`failed install`, func(t *testing.T) {
-		dk := dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
+		dk := dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: "https://" + testTenantUUID + ".dynatrace.com",
 			},
 		}
@@ -168,19 +168,19 @@ func TestUpdateAgent(t *testing.T) {
 		dockerconfigjsonContent := `{"auths":{}}`
 
 		processModuleConfig := createTestProcessModuleConfigCache("1")
-		dk := dynatracev1beta1.DynaKube{
+		dk := dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-dk",
 				Namespace: testNamespace,
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL:           "https://" + testTenantUUID + ".dynatrace.com",
 				CustomPullSecret: pullSecretName,
 				TrustedCAs:       trustedCAName,
 			},
-			Status: dynatracev1beta1.DynaKubeStatus{
-				CodeModules: dynatracev1beta1.CodeModulesStatus{
-					VersionStatus: dynatracev1beta1.VersionStatus{
+			Status: dynatracev1.DynaKubeStatus{
+				CodeModules: dynatracev1.CodeModulesStatus{
+					VersionStatus: dynatracev1.VersionStatus{
 						ImageID: imageID,
 					},
 				},
@@ -202,7 +202,7 @@ func TestUpdateAgent(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Data: map[string]string{
-					dynatracev1beta1.TrustedCAKey: customCertContent,
+					dynatracev1.TrustedCAKey: customCertContent,
 				},
 			},
 		}
@@ -251,17 +251,17 @@ func testCodeModules(t *testing.T, customPullSecret bool) {
 	processModuleConfig := createTestProcessModuleConfigCache("1")
 	dockerconfigjsonContent := `{"auths":{}}`
 
-	dk := dynatracev1beta1.DynaKube{
+	dk := dynatracev1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-dk",
 			Namespace: testNamespace,
 		},
-		Spec: dynatracev1beta1.DynaKubeSpec{
+		Spec: dynatracev1.DynaKubeSpec{
 			APIURL: "https://" + testTenantUUID + ".dynatrace.com",
 		},
-		Status: dynatracev1beta1.DynaKubeStatus{
-			CodeModules: dynatracev1beta1.CodeModulesStatus{
-				VersionStatus: dynatracev1beta1.VersionStatus{
+		Status: dynatracev1.DynaKubeStatus{
+			CodeModules: dynatracev1.CodeModulesStatus{
+				VersionStatus: dynatracev1.VersionStatus{
 					ImageID: imageID,
 				},
 			},
@@ -303,13 +303,13 @@ func testCodeModules(t *testing.T, customPullSecret bool) {
 }
 
 func testUpdateOneagent(t *testing.T, alreadyInstalled bool) {
-	dk := dynatracev1beta1.DynaKube{
-		Spec: dynatracev1beta1.DynaKubeSpec{
+	dk := dynatracev1.DynaKube{
+		Spec: dynatracev1.DynaKubeSpec{
 			APIURL: "https://" + testTenantUUID + ".dynatrace.com",
 		},
-		Status: dynatracev1beta1.DynaKubeStatus{
-			CodeModules: dynatracev1beta1.CodeModulesStatus{
-				VersionStatus: dynatracev1beta1.VersionStatus{
+		Status: dynatracev1.DynaKubeStatus{
+			CodeModules: dynatracev1.CodeModulesStatus{
+				VersionStatus: dynatracev1.VersionStatus{
 					Version: testVersion,
 				},
 			},
@@ -342,7 +342,7 @@ func testUpdateOneagent(t *testing.T, alreadyInstalled bool) {
 	assert.Equal(t, testVersion, currentVersion)
 }
 
-func createTestAgentUrlUpdater(t *testing.T, dk *dynatracev1beta1.DynaKube) *agentUpdater {
+func createTestAgentUrlUpdater(t *testing.T, dk *dynatracev1.DynaKube) *agentUpdater {
 	mockedClient := dtclient.MockDynatraceClient{}
 	path := metadata.PathResolver{RootDir: "test"}
 	fs := afero.NewMemMapFs()
@@ -355,7 +355,7 @@ func createTestAgentUrlUpdater(t *testing.T, dk *dynatracev1beta1.DynaKube) *age
 	return updater
 }
 
-func createTestAgentImageUpdater(t *testing.T, dk *dynatracev1beta1.DynaKube, obj ...client.Object) *agentUpdater {
+func createTestAgentImageUpdater(t *testing.T, dk *dynatracev1.DynaKube, obj ...client.Object) *agentUpdater {
 	path := metadata.PathResolver{RootDir: "test"}
 	fs := afero.NewMemMapFs()
 	rec := record.NewFakeRecorder(10)

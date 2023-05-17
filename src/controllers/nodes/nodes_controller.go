@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
@@ -274,7 +274,7 @@ func (controller *Controller) isNodeDeletable(cachedNode CacheEntry) bool {
 	return false
 }
 
-func (controller *Controller) sendMarkedForTermination(dynakubeInstance *dynatracev1beta1.DynaKube, cachedNode CacheEntry) error {
+func (controller *Controller) sendMarkedForTermination(dynakubeInstance *dynatracev1.DynaKube, cachedNode CacheEntry) error {
 	tokenReader := token.NewReader(controller.apiReader, dynakubeInstance)
 	tokens, err := tokenReader.ReadTokens(context.TODO())
 
@@ -311,7 +311,7 @@ func (controller *Controller) sendMarkedForTermination(dynakubeInstance *dynatra
 	})
 }
 
-func (controller *Controller) markForTermination(dynakube *dynatracev1beta1.DynaKube, cachedNodeData CachedNodeInfo) error {
+func (controller *Controller) markForTermination(dynakube *dynatracev1.DynaKube, cachedNodeData CachedNodeInfo) error {
 	if !controller.isMarkableForTermination(&cachedNodeData.cachedNode) {
 		return nil
 	}

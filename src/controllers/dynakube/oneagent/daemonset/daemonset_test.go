@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
@@ -25,16 +25,16 @@ const (
 func TestUseImmutableImage(t *testing.T) {
 	t.Run(`use image from status`, func(t *testing.T) {
 		imageID := "my.repo.com/image:my-tag"
-		instance := dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
+		instance := dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testURL,
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
+				OneAgent: dynatracev1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1.HostInjectSpec{},
 				},
 			},
-			Status: dynatracev1beta1.DynaKubeStatus{
-				OneAgent: dynatracev1beta1.OneAgentStatus{
-					VersionStatus: dynatracev1beta1.VersionStatus{
+			Status: dynatracev1.DynaKubeStatus{
+				OneAgent: dynatracev1.OneAgentStatus{
+					VersionStatus: dynatracev1.VersionStatus{
 						ImageID: imageID,
 					},
 				},
@@ -53,16 +53,16 @@ func TestUseImmutableImage(t *testing.T) {
 func TestLabels(t *testing.T) {
 	feature := strings.ReplaceAll(deploymentmetadata.ClassicFullStackDeploymentType, "_", "")
 	t.Run("use version when set", func(t *testing.T) {
-		instance := dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
+		instance := dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testURL,
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
+				OneAgent: dynatracev1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1.HostInjectSpec{},
 				},
 			},
-			Status: dynatracev1beta1.DynaKubeStatus{
-				OneAgent: dynatracev1beta1.OneAgentStatus{
-					VersionStatus: dynatracev1beta1.VersionStatus{
+			Status: dynatracev1.DynaKubeStatus{
+				OneAgent: dynatracev1.OneAgentStatus{
+					VersionStatus: dynatracev1.VersionStatus{
 						Version: testImageTag,
 					},
 				},
@@ -91,11 +91,11 @@ func TestLabels(t *testing.T) {
 		assert.Equal(t, expectedLabels, ds.Spec.Template.Labels)
 	})
 	t.Run("if no version is set, no version label", func(t *testing.T) {
-		instance := dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
+		instance := dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testURL,
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
+				OneAgent: dynatracev1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1.HostInjectSpec{},
 				},
 			},
 		}
@@ -126,11 +126,11 @@ func TestLabels(t *testing.T) {
 }
 
 func TestCustomPullSecret(t *testing.T) {
-	instance := dynatracev1beta1.DynaKube{
-		Spec: dynatracev1beta1.DynaKubeSpec{
+	instance := dynatracev1.DynaKube{
+		Spec: dynatracev1.DynaKubeSpec{
 			APIURL: testURL,
-			OneAgent: dynatracev1beta1.OneAgentSpec{
-				ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
+			OneAgent: dynatracev1.OneAgentSpec{
+				ClassicFullStack: &dynatracev1.HostInjectSpec{},
 			},
 			CustomPullSecret: testName,
 		},
@@ -147,11 +147,11 @@ func TestCustomPullSecret(t *testing.T) {
 
 func TestResources(t *testing.T) {
 	t.Run(`minimal cpu request of 100mC is set if no resources specified`, func(t *testing.T) {
-		instance := dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
+		instance := dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testURL,
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
+				OneAgent: dynatracev1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1.HostInjectSpec{},
 				},
 			},
 		}
@@ -172,11 +172,11 @@ func TestResources(t *testing.T) {
 		memoryRequest := resource.NewScaledQuantity(1, 3)
 		memoryLimit := resource.NewScaledQuantity(2, 3)
 
-		instance := dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
+		instance := dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testURL,
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{
+				OneAgent: dynatracev1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1.HostInjectSpec{
 						OneAgentResources: corev1.ResourceRequirements{
 							Requests: corev1.ResourceList{
 								corev1.ResourceCPU:    *cpuRequest,
@@ -246,11 +246,11 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		assert.Equal(t, defaultSecurityContextCapabilities(), securityContext.Capabilities)
 	})
 	t.Run(`User and group id set when read only mode is enabled`, func(t *testing.T) {
-		instance := dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
+		instance := dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testURL,
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
+				OneAgent: dynatracev1.OneAgentSpec{
+					HostMonitoring: &dynatracev1.HostInjectSpec{},
 				},
 			},
 		}
@@ -271,16 +271,16 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 	})
 
 	t.Run(`No User and group id set when read only mode is disabled`, func(t *testing.T) {
-		instance := dynatracev1beta1.DynaKube{
+		instance := dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent: "false",
+					dynatracev1.AnnotationFeatureReadOnlyOneAgent: "false",
 				},
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testURL,
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
+				OneAgent: dynatracev1.OneAgentSpec{
+					HostMonitoring: &dynatracev1.HostInjectSpec{},
 				},
 			},
 		}
@@ -302,16 +302,16 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 	})
 
 	t.Run(`privileged security context when feature flag is enabled`, func(t *testing.T) {
-		instance := dynatracev1beta1.DynaKube{
+		instance := dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dynatracev1beta1.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
+					dynatracev1.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
 				},
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testURL,
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
+				OneAgent: dynatracev1.OneAgentSpec{
+					HostMonitoring: &dynatracev1.HostInjectSpec{},
 				},
 			},
 		}
@@ -333,16 +333,16 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 	})
 
 	t.Run(`privileged security context when feature flag is enabled for classic fullstack`, func(t *testing.T) {
-		instance := dynatracev1beta1.DynaKube{
+		instance := dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dynatracev1beta1.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
+					dynatracev1.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
 				},
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testURL,
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
+				OneAgent: dynatracev1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1.HostInjectSpec{},
 				},
 			},
 		}
@@ -365,16 +365,16 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 
 	t.Run(`localhost seccomp profile when feature flag is enabled`, func(t *testing.T) {
 		customSecCompProfile := "seccomp.json"
-		instance := dynatracev1beta1.DynaKube{
+		instance := dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dynatracev1beta1.AnnotationFeatureOneAgentSecCompProfile: customSecCompProfile,
+					dynatracev1.AnnotationFeatureOneAgentSecCompProfile: customSecCompProfile,
 				},
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testURL,
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
+				OneAgent: dynatracev1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1.HostInjectSpec{},
 				},
 			},
 		}
@@ -398,17 +398,17 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 
 	t.Run(`localhost seccomp profile disabled if privileged security context enabled`, func(t *testing.T) {
 		customSecCompProfile := "seccomp.json"
-		instance := dynatracev1beta1.DynaKube{
+		instance := dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dynatracev1beta1.AnnotationFeatureOneAgentSecCompProfile:         customSecCompProfile,
-					dynatracev1beta1.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
+					dynatracev1.AnnotationFeatureOneAgentSecCompProfile:         customSecCompProfile,
+					dynatracev1.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
 				},
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testURL,
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
+				OneAgent: dynatracev1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1.HostInjectSpec{},
 				},
 			},
 		}
@@ -433,7 +433,7 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 func TestPodSpecServiceAccountName(t *testing.T) {
 	t.Run("service account name is unprivileged + readonly by default", func(t *testing.T) {
 		builder := builderInfo{
-			dynakube: &dynatracev1beta1.DynaKube{},
+			dynakube: &dynatracev1.DynaKube{},
 		}
 		podSpec := builder.podSpec()
 
@@ -441,9 +441,9 @@ func TestPodSpecServiceAccountName(t *testing.T) {
 	})
 	t.Run("unprivileged and not readonly is recognized", func(t *testing.T) {
 		builder := builderInfo{
-			dynakube: &dynatracev1beta1.DynaKube{
+			dynakube: &dynatracev1.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent: "false"},
+					Annotations: map[string]string{dynatracev1.AnnotationFeatureReadOnlyOneAgent: "false"},
 				},
 			},
 		}
@@ -453,11 +453,11 @@ func TestPodSpecServiceAccountName(t *testing.T) {
 	})
 	t.Run("privileged and not readonly is recognized", func(t *testing.T) {
 		builder := builderInfo{
-			dynakube: &dynatracev1beta1.DynaKube{
+			dynakube: &dynatracev1.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent:               "false",
-						dynatracev1beta1.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
+						dynatracev1.AnnotationFeatureReadOnlyOneAgent:               "false",
+						dynatracev1.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
 					},
 				},
 			},
@@ -468,10 +468,10 @@ func TestPodSpecServiceAccountName(t *testing.T) {
 	})
 	t.Run("privileged and readonly is recognized", func(t *testing.T) {
 		builder := builderInfo{
-			dynakube: &dynatracev1beta1.DynaKube{
+			dynakube: &dynatracev1.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						dynatracev1beta1.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
+						dynatracev1.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
 					},
 				},
 			},
@@ -481,10 +481,10 @@ func TestPodSpecServiceAccountName(t *testing.T) {
 		assert.Equal(t, privilegedServiceAccountName, podSpec.ServiceAccountName)
 	})
 	t.Run("service account name is unprivileged if run as unprivileged", func(t *testing.T) {
-		dynakube := &dynatracev1beta1.DynaKube{
+		dynakube := &dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					dynatracev1beta1.AnnotationFeatureRunOneAgentContainerPrivileged: "false",
+					dynatracev1.AnnotationFeatureRunOneAgentContainerPrivileged: "false",
 				},
 			},
 		}
@@ -506,7 +506,7 @@ func TestOneAgentResources(t *testing.T) {
 	})
 	t.Run("get resources if hostInjection spec is set", func(t *testing.T) {
 		builder := builderInfo{
-			hostInjectSpec: &dynatracev1beta1.HostInjectSpec{
+			hostInjectSpec: &dynatracev1.HostInjectSpec{
 				OneAgentResources: corev1.ResourceRequirements{
 					Requests: map[corev1.ResourceName]resource.Quantity{
 						corev1.ResourceCPU: *resource.NewScaledQuantity(2, 1),
@@ -542,7 +542,7 @@ func TestNodeSelector(t *testing.T) {
 	})
 	t.Run("returns nodeselector", func(t *testing.T) {
 		dsInfo := builderInfo{
-			hostInjectSpec: &dynatracev1beta1.HostInjectSpec{
+			hostInjectSpec: &dynatracev1.HostInjectSpec{
 				NodeSelector: map[string]string{testKey: testValue},
 			},
 		}
@@ -561,7 +561,7 @@ func TestPriorityClass(t *testing.T) {
 	})
 	t.Run("returns nodeselector", func(t *testing.T) {
 		dsInfo := builderInfo{
-			hostInjectSpec: &dynatracev1beta1.HostInjectSpec{
+			hostInjectSpec: &dynatracev1.HostInjectSpec{
 				PriorityClassName: testName,
 			},
 		}
@@ -580,7 +580,7 @@ func TestTolerations(t *testing.T) {
 	})
 	t.Run("returns tolerations", func(t *testing.T) {
 		dsInfo := builderInfo{
-			hostInjectSpec: &dynatracev1beta1.HostInjectSpec{
+			hostInjectSpec: &dynatracev1.HostInjectSpec{
 				Tolerations: []corev1.Toleration{
 					{
 						Key:   testKey,
@@ -607,7 +607,7 @@ func TestImagePullSecrets(t *testing.T) {
 	})
 	t.Run("returns default instance pull secret", func(t *testing.T) {
 		dsInfo := builderInfo{
-			dynakube: &dynatracev1beta1.DynaKube{
+			dynakube: &dynatracev1.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: testName,
 				},
@@ -616,16 +616,16 @@ func TestImagePullSecrets(t *testing.T) {
 		pullSecrets := dsInfo.imagePullSecrets()
 
 		assert.Contains(t, pullSecrets, corev1.LocalObjectReference{
-			Name: testName + dynatracev1beta1.PullSecretSuffix,
+			Name: testName + dynatracev1.PullSecretSuffix,
 		})
 	})
 	t.Run("returns custom pull secret", func(t *testing.T) {
 		dsInfo := builderInfo{
-			dynakube: &dynatracev1beta1.DynaKube{
+			dynakube: &dynatracev1.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: testName,
 				},
-				Spec: dynatracev1beta1.DynaKubeSpec{
+				Spec: dynatracev1.DynaKubeSpec{
 					CustomPullSecret: testValue,
 				},
 			},
@@ -647,7 +647,7 @@ func TestImmutableOneAgentImage(t *testing.T) {
 	})
 	t.Run("returns instance image", func(t *testing.T) {
 		dsInfo := builderInfo{
-			dynakube: &dynatracev1beta1.DynaKube{},
+			dynakube: &dynatracev1.DynaKube{},
 		}
 		image := dsInfo.immutableOneAgentImage()
 
@@ -657,11 +657,11 @@ func TestImmutableOneAgentImage(t *testing.T) {
 
 func TestAnnotations(t *testing.T) {
 	t.Run("cloud native has apparmor annotation by default", func(t *testing.T) {
-		dynakube := dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
-						HostInjectSpec: dynatracev1beta1.HostInjectSpec{},
+		dynakube := dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
+				OneAgent: dynatracev1.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1.CloudNativeFullStackSpec{
+						HostInjectSpec: dynatracev1.HostInjectSpec{},
 					},
 				},
 			},
@@ -679,10 +679,10 @@ func TestAnnotations(t *testing.T) {
 		assert.Equal(t, expectedAnnotations, daemonset.Spec.Template.Annotations)
 	})
 	t.Run("host monitoring has apparmor annotation by default", func(t *testing.T) {
-		dynakube := dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
+		dynakube := dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
+				OneAgent: dynatracev1.OneAgentSpec{
+					HostMonitoring: &dynatracev1.HostInjectSpec{},
 				},
 			},
 		}
@@ -699,10 +699,10 @@ func TestAnnotations(t *testing.T) {
 		assert.Equal(t, expectedAnnotations, daemonset.Spec.Template.Annotations)
 	})
 	t.Run("classic fullstack has apparmor annotation by default", func(t *testing.T) {
-		dynakube := dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
+		dynakube := dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
+				OneAgent: dynatracev1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1.HostInjectSpec{},
 				},
 			},
 		}
@@ -719,11 +719,11 @@ func TestAnnotations(t *testing.T) {
 		assert.Equal(t, expectedAnnotations, daemonset.Spec.Template.Annotations)
 	})
 	t.Run("annotations are added with cloud native", func(t *testing.T) {
-		dynakube := dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
-						HostInjectSpec: dynatracev1beta1.HostInjectSpec{
+		dynakube := dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
+				OneAgent: dynatracev1.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1.CloudNativeFullStackSpec{
+						HostInjectSpec: dynatracev1.HostInjectSpec{
 							Annotations: map[string]string{
 								testKey: testName,
 							},
@@ -746,10 +746,10 @@ func TestAnnotations(t *testing.T) {
 		assert.Equal(t, expectedAnnotations, daemonset.Spec.Template.Annotations)
 	})
 	t.Run("annotations are added with host monitoring", func(t *testing.T) {
-		dynakube := dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					HostMonitoring: &dynatracev1beta1.HostInjectSpec{
+		dynakube := dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
+				OneAgent: dynatracev1.OneAgentSpec{
+					HostMonitoring: &dynatracev1.HostInjectSpec{
 						Annotations: map[string]string{
 							testKey: testName,
 						},
@@ -771,10 +771,10 @@ func TestAnnotations(t *testing.T) {
 		assert.Equal(t, expectedAnnotations, daemonset.Spec.Template.Annotations)
 	})
 	t.Run("annotations are added with classic fullstack", func(t *testing.T) {
-		dynakube := dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{
+		dynakube := dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
+				OneAgent: dynatracev1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1.HostInjectSpec{
 						Annotations: map[string]string{
 							testKey: testName,
 						},

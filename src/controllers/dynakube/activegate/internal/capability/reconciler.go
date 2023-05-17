@@ -4,7 +4,7 @@ import (
 	"context"
 	"reflect"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
@@ -22,10 +22,10 @@ type Reconciler struct {
 	capability                 capability.Capability
 	statefulsetReconciler      controllers.Reconciler
 	customPropertiesReconciler controllers.Reconciler
-	dynakube                   *dynatracev1beta1.DynaKube
+	dynakube                   *dynatracev1.DynaKube
 }
 
-func NewReconciler(clt client.Client, capability capability.Capability, dynakube *dynatracev1beta1.DynaKube, statefulsetReconciler controllers.Reconciler, customPropertiesReconciler controllers.Reconciler) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
+func NewReconciler(clt client.Client, capability capability.Capability, dynakube *dynatracev1.DynaKube, statefulsetReconciler controllers.Reconciler, customPropertiesReconciler controllers.Reconciler) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
 	return &Reconciler{
 		statefulsetReconciler:      statefulsetReconciler,
 		customPropertiesReconciler: customPropertiesReconciler,
@@ -35,7 +35,7 @@ func NewReconciler(clt client.Client, capability capability.Capability, dynakube
 	}
 }
 
-type NewReconcilerFunc = func(clt client.Client, capability capability.Capability, dynakube *dynatracev1beta1.DynaKube, statefulsetReconciler controllers.Reconciler, customPropertiesReconciler controllers.Reconciler) *Reconciler
+type NewReconcilerFunc = func(clt client.Client, capability capability.Capability, dynakube *dynatracev1.DynaKube, statefulsetReconciler controllers.Reconciler, customPropertiesReconciler controllers.Reconciler) *Reconciler
 
 func (r *Reconciler) Reconcile() error {
 	err := r.customPropertiesReconciler.Reconcile()

@@ -8,7 +8,7 @@ import (
 	"path"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/manifests"
@@ -41,12 +41,12 @@ type sampleApp struct {
 
 	t            *testing.T
 	base         *corev1.Pod
-	testDynakube dynatracev1beta1.DynaKube
+	testDynakube dynatracev1.DynaKube
 
 	installedNamespace bool
 }
 
-func newSampleApp(t *testing.T, testDynakube dynatracev1beta1.DynaKube) *sampleApp {
+func newSampleApp(t *testing.T, testDynakube dynatracev1.DynaKube) *sampleApp {
 	return &sampleApp{
 		name:         fmt.Sprintf(defaultNameTemplate, testDynakube.Name),
 		t:            t,

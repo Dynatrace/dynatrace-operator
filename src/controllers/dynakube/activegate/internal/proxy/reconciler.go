@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/url"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
@@ -30,7 +30,7 @@ type Reconciler struct {
 	client    client.Client
 	apiReader client.Reader
 	scheme    *runtime.Scheme
-	dynakube  *dynatracev1beta1.DynaKube
+	dynakube  *dynatracev1.DynaKube
 }
 
 func (r *Reconciler) Reconcile() error {
@@ -41,7 +41,7 @@ func (r *Reconciler) Reconcile() error {
 	return r.ensureDeleted(context.TODO(), r.dynakube)
 }
 
-func NewReconciler(client client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube) *Reconciler {
+func NewReconciler(client client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1.DynaKube) *Reconciler {
 	return &Reconciler{
 		client:    client,
 		apiReader: apiReader,
@@ -50,7 +50,7 @@ func NewReconciler(client client.Client, apiReader client.Reader, scheme *runtim
 	}
 }
 
-func (r *Reconciler) generateForDynakube(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
+func (r *Reconciler) generateForDynakube(ctx context.Context, dynakube *dynatracev1.DynaKube) error {
 	data, err := r.createProxyMap(ctx, dynakube)
 	if err != nil {
 		return errors.WithStack(err)
@@ -73,7 +73,7 @@ func (r *Reconciler) generateForDynakube(ctx context.Context, dynakube *dynatrac
 	return errors.WithStack(err)
 }
 
-func (r *Reconciler) ensureDeleted(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
+func (r *Reconciler) ensureDeleted(ctx context.Context, dynakube *dynatracev1.DynaKube) error {
 	secretName := capability.BuildProxySecretName()
 	secret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: secretName, Namespace: dynakube.Namespace}}
 	if err := r.client.Delete(ctx, &secret); err != nil && !k8serrors.IsNotFound(err) {
@@ -85,7 +85,7 @@ func (r *Reconciler) ensureDeleted(ctx context.Context, dynakube *dynatracev1bet
 	return nil
 }
 
-func (r *Reconciler) createProxyMap(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) (map[string][]byte, error) {
+func (r *Reconciler) createProxyMap(ctx context.Context, dynakube *dynatracev1.DynaKube) (map[string][]byte, error) {
 	if !dynakube.HasProxy() {
 		// the parsed-proxy secret is expected to exist and the entrypoint.sh script handles empty values properly
 		return map[string][]byte{

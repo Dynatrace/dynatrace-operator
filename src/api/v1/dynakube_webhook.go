@@ -1,8 +1,6 @@
-package v1alpha1
+package v1
 
-import (
-	ctrl "sigs.k8s.io/controller-runtime"
-)
+import ctrl "sigs.k8s.io/controller-runtime"
 
 func (r *DynaKube) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).

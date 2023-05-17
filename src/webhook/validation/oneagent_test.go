@@ -5,42 +5,42 @@ import (
 	"strconv"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestConflictingOneAgentConfiguration(t *testing.T) {
 	t.Run(`valid dynakube specs`, func(t *testing.T) {
-		assertAllowedResponseWithoutWarnings(t, &dynatracev1beta1.DynaKube{
+		assertAllowedResponseWithoutWarnings(t, &dynatracev1.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynatracev1beta1.OneAgentSpec{
+				OneAgent: dynatracev1.OneAgentSpec{
 					ClassicFullStack: nil,
 					HostMonitoring:   nil,
 				},
 			},
 		})
 
-		assertAllowedResponseWithoutWarnings(t, &dynatracev1beta1.DynaKube{
+		assertAllowedResponseWithoutWarnings(t, &dynatracev1.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
+				OneAgent: dynatracev1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1.HostInjectSpec{},
 					HostMonitoring:   nil,
 				},
 			},
 		})
 
-		assertAllowedResponseWithoutWarnings(t, &dynatracev1beta1.DynaKube{
+		assertAllowedResponseWithoutWarnings(t, &dynatracev1.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynatracev1beta1.OneAgentSpec{
+				OneAgent: dynatracev1.OneAgentSpec{
 					ClassicFullStack: nil,
-					HostMonitoring:   &dynatracev1beta1.HostInjectSpec{},
+					HostMonitoring:   &dynatracev1.HostInjectSpec{},
 				},
 			},
 		}, &defaultCSIDaemonSet)
@@ -48,26 +48,26 @@ func TestConflictingOneAgentConfiguration(t *testing.T) {
 	t.Run(`conflicting dynakube specs`, func(t *testing.T) {
 		assertDeniedResponse(t,
 			[]string{errorConflictingOneagentMode},
-			&dynatracev1beta1.DynaKube{
+			&dynatracev1.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynatracev1beta1.DynaKubeSpec{
+				Spec: dynatracev1.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynatracev1beta1.OneAgentSpec{
-						ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
-						HostMonitoring:   &dynatracev1beta1.HostInjectSpec{},
+					OneAgent: dynatracev1.OneAgentSpec{
+						ClassicFullStack: &dynatracev1.HostInjectSpec{},
+						HostMonitoring:   &dynatracev1.HostInjectSpec{},
 					},
 				},
 			}, &defaultCSIDaemonSet)
 
 		assertDeniedResponse(t,
 			[]string{errorConflictingOneagentMode},
-			&dynatracev1beta1.DynaKube{
+			&dynatracev1.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynatracev1beta1.DynaKubeSpec{
+				Spec: dynatracev1.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynatracev1beta1.OneAgentSpec{
-						ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{},
-						HostMonitoring:        &dynatracev1beta1.HostInjectSpec{},
+					OneAgent: dynatracev1.OneAgentSpec{
+						ApplicationMonitoring: &dynatracev1.ApplicationMonitoringSpec{},
+						HostMonitoring:        &dynatracev1.HostInjectSpec{},
 					},
 				},
 			}, &defaultCSIDaemonSet)
@@ -75,18 +75,18 @@ func TestConflictingOneAgentConfiguration(t *testing.T) {
 }
 
 func TestConflictingNodeSelector(t *testing.T) {
-	newCloudNativeDynakube := func(name string, annotations map[string]string, nodeSelectorValue string) *dynatracev1beta1.DynaKube {
-		return &dynatracev1beta1.DynaKube{
+	newCloudNativeDynakube := func(name string, annotations map[string]string, nodeSelectorValue string) *dynatracev1.DynaKube {
+		return &dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        name,
 				Namespace:   testNamespace,
 				Annotations: annotations,
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
-						HostInjectSpec: dynatracev1beta1.HostInjectSpec{
+				OneAgent: dynatracev1.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1.CloudNativeFullStackSpec{
+						HostInjectSpec: dynatracev1.HostInjectSpec{
 							NodeSelector: map[string]string{
 								"node": nodeSelectorValue,
 							},
@@ -99,12 +99,12 @@ func TestConflictingNodeSelector(t *testing.T) {
 
 	t.Run(`valid dynakube specs`, func(t *testing.T) {
 		assertAllowedResponseWithoutWarnings(t,
-			&dynatracev1beta1.DynaKube{
+			&dynatracev1.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynatracev1beta1.DynaKubeSpec{
+				Spec: dynatracev1.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynatracev1beta1.OneAgentSpec{
-						HostMonitoring: &dynatracev1beta1.HostInjectSpec{
+					OneAgent: dynatracev1.OneAgentSpec{
+						HostMonitoring: &dynatracev1.HostInjectSpec{
 							NodeSelector: map[string]string{
 								"node": "1",
 							},
@@ -112,15 +112,15 @@ func TestConflictingNodeSelector(t *testing.T) {
 					},
 				},
 			},
-			&dynatracev1beta1.DynaKube{
+			&dynatracev1.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "conflict1",
 					Namespace: testNamespace,
 				},
-				Spec: dynatracev1beta1.DynaKubeSpec{
+				Spec: dynatracev1.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynatracev1beta1.OneAgentSpec{
-						HostMonitoring: &dynatracev1beta1.HostInjectSpec{
+					OneAgent: dynatracev1.OneAgentSpec{
+						HostMonitoring: &dynatracev1.HostInjectSpec{
 							NodeSelector: map[string]string{
 								"node": "2",
 							},
@@ -130,16 +130,16 @@ func TestConflictingNodeSelector(t *testing.T) {
 			}, &defaultCSIDaemonSet)
 
 		assertAllowedResponseWithoutWarnings(t,
-			&dynatracev1beta1.DynaKube{
+			&dynatracev1.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "conflict2",
 					Namespace: testNamespace,
 				},
-				Spec: dynatracev1beta1.DynaKubeSpec{
+				Spec: dynatracev1.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynatracev1beta1.OneAgentSpec{
-						CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
-							HostInjectSpec: dynatracev1beta1.HostInjectSpec{
+					OneAgent: dynatracev1.OneAgentSpec{
+						CloudNativeFullStack: &dynatracev1.CloudNativeFullStackSpec{
+							HostInjectSpec: dynatracev1.HostInjectSpec{
 								NodeSelector: map[string]string{
 									"node": "1",
 								},
@@ -148,12 +148,12 @@ func TestConflictingNodeSelector(t *testing.T) {
 					},
 				},
 			},
-			&dynatracev1beta1.DynaKube{
+			&dynatracev1.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynatracev1beta1.DynaKubeSpec{
+				Spec: dynatracev1.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynatracev1beta1.OneAgentSpec{
-						HostMonitoring: &dynatracev1beta1.HostInjectSpec{
+					OneAgent: dynatracev1.OneAgentSpec{
+						HostMonitoring: &dynatracev1.HostInjectSpec{
 							NodeSelector: map[string]string{
 								"node": "2",
 							},
@@ -165,32 +165,32 @@ func TestConflictingNodeSelector(t *testing.T) {
 	t.Run(`valid dynakube specs with multitenant hostMonitoring`, func(t *testing.T) {
 		assertAllowedResponseWithWarnings(t, 0,
 			newCloudNativeDynakube("dk1", map[string]string{
-				dynatracev1beta1.AnnotationFeatureMultipleOsAgentsOnNode: "true",
+				dynatracev1.AnnotationFeatureMultipleOsAgentsOnNode: "true",
 			}, "1"),
 			newCloudNativeDynakube("dk2", map[string]string{
-				dynatracev1beta1.AnnotationFeatureMultipleOsAgentsOnNode: "true",
+				dynatracev1.AnnotationFeatureMultipleOsAgentsOnNode: "true",
 			}, "2"),
 			&defaultCSIDaemonSet)
 
 		assertAllowedResponseWithWarnings(t, 0,
 			newCloudNativeDynakube("dk1", map[string]string{
-				dynatracev1beta1.AnnotationFeatureMultipleOsAgentsOnNode: "true",
+				dynatracev1.AnnotationFeatureMultipleOsAgentsOnNode: "true",
 			}, "1"),
 			newCloudNativeDynakube("dk2", map[string]string{
-				dynatracev1beta1.AnnotationFeatureMultipleOsAgentsOnNode: "true",
+				dynatracev1.AnnotationFeatureMultipleOsAgentsOnNode: "true",
 			}, "1"),
 			&defaultCSIDaemonSet)
 	})
 	t.Run(`invalid dynakube specs`, func(t *testing.T) {
 		assertDeniedResponse(t,
 			[]string{fmt.Sprintf(errorNodeSelectorConflict, "conflicting-dk")},
-			&dynatracev1beta1.DynaKube{
+			&dynatracev1.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
-				Spec: dynatracev1beta1.DynaKubeSpec{
+				Spec: dynatracev1.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynatracev1beta1.OneAgentSpec{
-						CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
-							HostInjectSpec: dynatracev1beta1.HostInjectSpec{
+					OneAgent: dynatracev1.OneAgentSpec{
+						CloudNativeFullStack: &dynatracev1.CloudNativeFullStackSpec{
+							HostInjectSpec: dynatracev1.HostInjectSpec{
 								NodeSelector: map[string]string{
 									"node": "1",
 								},
@@ -199,15 +199,15 @@ func TestConflictingNodeSelector(t *testing.T) {
 					},
 				},
 			},
-			&dynatracev1beta1.DynaKube{
+			&dynatracev1.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "conflicting-dk",
 					Namespace: testNamespace,
 				},
-				Spec: dynatracev1beta1.DynaKubeSpec{
+				Spec: dynatracev1.DynaKubeSpec{
 					APIURL: testApiUrl,
-					OneAgent: dynatracev1beta1.OneAgentSpec{
-						HostMonitoring: &dynatracev1beta1.HostInjectSpec{
+					OneAgent: dynatracev1.OneAgentSpec{
+						HostMonitoring: &dynatracev1.HostInjectSpec{
 							NodeSelector: map[string]string{
 								"node": "1",
 							},
@@ -219,29 +219,29 @@ func TestConflictingNodeSelector(t *testing.T) {
 	t.Run(`invalid dynakube specs with multitenant hostMonitoring`, func(t *testing.T) {
 		assertDeniedResponse(t, nil,
 			newCloudNativeDynakube("dk1", map[string]string{
-				dynatracev1beta1.AnnotationFeatureMultipleOsAgentsOnNode:  "true",
-				dynatracev1beta1.AnnotationFeatureDisableReadOnlyOneAgent: "true",
+				dynatracev1.AnnotationFeatureMultipleOsAgentsOnNode:  "true",
+				dynatracev1.AnnotationFeatureDisableReadOnlyOneAgent: "true",
 			}, "1"),
 			newCloudNativeDynakube("dk2", map[string]string{
-				dynatracev1beta1.AnnotationFeatureMultipleOsAgentsOnNode: "true",
+				dynatracev1.AnnotationFeatureMultipleOsAgentsOnNode: "true",
 			}, "1"),
 			&defaultCSIDaemonSet)
 
 		assertDeniedResponse(t, nil,
 			newCloudNativeDynakube("dk1", map[string]string{
-				dynatracev1beta1.AnnotationFeatureMultipleOsAgentsOnNode: "false",
+				dynatracev1.AnnotationFeatureMultipleOsAgentsOnNode: "false",
 			}, "1"),
 			newCloudNativeDynakube("dk2", map[string]string{
-				dynatracev1beta1.AnnotationFeatureMultipleOsAgentsOnNode: "true",
+				dynatracev1.AnnotationFeatureMultipleOsAgentsOnNode: "true",
 			}, "1"),
 			&defaultCSIDaemonSet)
 
 		assertDeniedResponse(t, nil,
 			newCloudNativeDynakube("dk1", map[string]string{
-				dynatracev1beta1.AnnotationFeatureMultipleOsAgentsOnNode: "false",
+				dynatracev1.AnnotationFeatureMultipleOsAgentsOnNode: "false",
 			}, "1"),
 			newCloudNativeDynakube("dk2", map[string]string{
-				dynatracev1beta1.AnnotationFeatureMultipleOsAgentsOnNode: "false",
+				dynatracev1.AnnotationFeatureMultipleOsAgentsOnNode: "false",
 			}, "1"),
 			&defaultCSIDaemonSet)
 
@@ -256,13 +256,13 @@ func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
 	t.Run(`spec with appMon enabled and image name`, func(t *testing.T) {
 		useCSIDriver := true
 		testImage := "testImage"
-		assertAllowedResponseWithoutWarnings(t, &dynatracev1beta1.DynaKube{
+		assertAllowedResponseWithoutWarnings(t, &dynatracev1.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{
-						AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{
+				OneAgent: dynatracev1.OneAgentSpec{
+					ApplicationMonitoring: &dynatracev1.ApplicationMonitoringSpec{
+						AppInjectionSpec: dynatracev1.AppInjectionSpec{
 							CodeModulesImage: testImage,
 						},
 						UseCSIDriver: &useCSIDriver,
@@ -275,13 +275,13 @@ func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
 	t.Run(`spec with appMon enabled, useCSIDriver not enabled but image set`, func(t *testing.T) {
 		useCSIDriver := false
 		testImage := "testImage"
-		assertDeniedResponse(t, []string{errorImageFieldSetWithoutCSIFlag}, &dynatracev1beta1.DynaKube{
+		assertDeniedResponse(t, []string{errorImageFieldSetWithoutCSIFlag}, &dynatracev1.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{
-						AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{
+				OneAgent: dynatracev1.OneAgentSpec{
+					ApplicationMonitoring: &dynatracev1.ApplicationMonitoringSpec{
+						AppInjectionSpec: dynatracev1.AppInjectionSpec{
 							CodeModulesImage: testImage,
 						},
 						UseCSIDriver: &useCSIDriver,
@@ -295,7 +295,7 @@ func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
 func TestOneAgentVolumeStorageReadOnlyModeConflict(t *testing.T) {
 	type conflictingSettingsTestcase struct {
 		testName        string
-		dynakubeFactory func(featureFlag string, featureFlagValue bool, oaEnvVar string, oaEnvValue bool) *dynatracev1beta1.DynaKube
+		dynakubeFactory func(featureFlag string, featureFlagValue bool, oaEnvVar string, oaEnvValue bool) *dynatracev1.DynaKube
 		featureFlag     string
 		featureValue    bool
 	}
@@ -306,25 +306,25 @@ func TestOneAgentVolumeStorageReadOnlyModeConflict(t *testing.T) {
 		{
 			testName:        "disabled OneAgent volume storage by env var with OneAgent read only mode enabled by feature flag in cloudNative",
 			dynakubeFactory: createCloudNativeFullstackDynaKube,
-			featureFlag:     dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent,
+			featureFlag:     dynatracev1.AnnotationFeatureReadOnlyOneAgent,
 			featureValue:    true,
 		},
 		{
 			testName:        "disabled OneAgent volume storage by env var with OneAgent read only mode enabled by feature flag in hostMonitoring",
 			dynakubeFactory: createHostMonitoringDynaKube,
-			featureFlag:     dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent,
+			featureFlag:     dynatracev1.AnnotationFeatureReadOnlyOneAgent,
 			featureValue:    true,
 		},
 		{
 			testName:        "disabled OneAgent volume storage by env var with OneAgent read only mode enabled by deprecated feature flag in cloudNative",
 			dynakubeFactory: createCloudNativeFullstackDynaKube,
-			featureFlag:     dynatracev1beta1.AnnotationFeatureDisableReadOnlyOneAgent,
+			featureFlag:     dynatracev1.AnnotationFeatureDisableReadOnlyOneAgent,
 			featureValue:    false,
 		},
 		{
 			testName:        "disabled OneAgent volume storage by env var with OneAgent read only mode enabled by deprecated feature flag in hostMonitoring",
 			dynakubeFactory: createHostMonitoringDynaKube,
-			featureFlag:     dynatracev1beta1.AnnotationFeatureDisableReadOnlyOneAgent,
+			featureFlag:     dynatracev1.AnnotationFeatureDisableReadOnlyOneAgent,
 			featureValue:    false,
 		},
 		{
@@ -355,7 +355,7 @@ func TestOneAgentVolumeStorageReadOnlyModeConflict(t *testing.T) {
 
 type validOneAgentVolumeStorageReadOnlyModeSettingsTestcase struct {
 	testName             string
-	dynakubeFactory      func(featureFlag string, featureFlagValue bool, oaEnvVar string, oaEnvValue bool) *dynatracev1beta1.DynaKube
+	dynakubeFactory      func(featureFlag string, featureFlagValue bool, oaEnvVar string, oaEnvValue bool) *dynatracev1.DynaKube
 	featureFlag          string
 	featureValue         bool
 	oaVolumeStorageVar   string
@@ -368,7 +368,7 @@ func TestOneAgentVolumeStorageReadOnlyModeNoConflict(t *testing.T) {
 		{
 			testName:             "enabled OneAgent volume storage with OneAgent read only mode disabled by feature flag in cloudNative",
 			dynakubeFactory:      createCloudNativeFullstackDynaKube,
-			featureFlag:          dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent,
+			featureFlag:          dynatracev1.AnnotationFeatureReadOnlyOneAgent,
 			featureValue:         false,
 			oaVolumeStorageVar:   oneagentEnableVolumeStorageEnvVarName,
 			oaVolumeStorageValue: true,
@@ -377,7 +377,7 @@ func TestOneAgentVolumeStorageReadOnlyModeNoConflict(t *testing.T) {
 		{
 			testName:             "enabled OneAgent volume storage with OneAgent read only mode disabled by feature flag in hostMonitoring",
 			dynakubeFactory:      createHostMonitoringDynaKube,
-			featureFlag:          dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent,
+			featureFlag:          dynatracev1.AnnotationFeatureReadOnlyOneAgent,
 			featureValue:         false,
 			oaVolumeStorageVar:   oneagentEnableVolumeStorageEnvVarName,
 			oaVolumeStorageValue: true,
@@ -386,7 +386,7 @@ func TestOneAgentVolumeStorageReadOnlyModeNoConflict(t *testing.T) {
 		{
 			testName:             "enabled OneAgent volume storage with OneAgent read only mode disabled by deprecated feature flag in cloudNative",
 			dynakubeFactory:      createCloudNativeFullstackDynaKube,
-			featureFlag:          dynatracev1beta1.AnnotationFeatureDisableReadOnlyOneAgent,
+			featureFlag:          dynatracev1.AnnotationFeatureDisableReadOnlyOneAgent,
 			featureValue:         true,
 			oaVolumeStorageVar:   oneagentEnableVolumeStorageEnvVarName,
 			oaVolumeStorageValue: true,
@@ -395,7 +395,7 @@ func TestOneAgentVolumeStorageReadOnlyModeNoConflict(t *testing.T) {
 		{
 			testName:             "enabled OneAgent volume storage with OneAgent read only mode disabled by deprecated feature flag in hostMonitoring",
 			dynakubeFactory:      createHostMonitoringDynaKube,
-			featureFlag:          dynatracev1beta1.AnnotationFeatureDisableReadOnlyOneAgent,
+			featureFlag:          dynatracev1.AnnotationFeatureDisableReadOnlyOneAgent,
 			featureValue:         true,
 			oaVolumeStorageVar:   oneagentEnableVolumeStorageEnvVarName,
 			oaVolumeStorageValue: true,
@@ -404,7 +404,7 @@ func TestOneAgentVolumeStorageReadOnlyModeNoConflict(t *testing.T) {
 		{
 			testName:             "OneAgent volume storage default with OneAgent read only mode enabled by feature flag in cloudNative",
 			dynakubeFactory:      createCloudNativeFullstackDynaKube,
-			featureFlag:          dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent,
+			featureFlag:          dynatracev1.AnnotationFeatureReadOnlyOneAgent,
 			featureValue:         true,
 			oaVolumeStorageVar:   "",
 			acceptedWarningCount: 0,
@@ -412,7 +412,7 @@ func TestOneAgentVolumeStorageReadOnlyModeNoConflict(t *testing.T) {
 		{
 			testName:             "OneAgent volume storage default with OneAgent read only mode enabled by feature flag in hostMonitoring",
 			dynakubeFactory:      createHostMonitoringDynaKube,
-			featureFlag:          dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent,
+			featureFlag:          dynatracev1.AnnotationFeatureReadOnlyOneAgent,
 			featureValue:         true,
 			oaVolumeStorageVar:   "",
 			acceptedWarningCount: 0,
@@ -448,7 +448,7 @@ func TestReadOnlyModeClassicFullstackWarning(t *testing.T) {
 		{
 			testName:             "OneAgent volume storage disabled by env var and OneAgent read-only mode enabled by feature flag in classicFullstack",
 			dynakubeFactory:      createClassicFullstackDynaKube,
-			featureFlag:          dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent,
+			featureFlag:          dynatracev1.AnnotationFeatureReadOnlyOneAgent,
 			featureValue:         true,
 			oaVolumeStorageVar:   oneagentEnableVolumeStorageEnvVarName,
 			oaVolumeStorageValue: false,
@@ -457,7 +457,7 @@ func TestReadOnlyModeClassicFullstackWarning(t *testing.T) {
 		{
 			testName:             "OneAgent volume storage disabled by env var and OneAgent read-only mode enabled by deprecated feature flag in classicFullstack",
 			dynakubeFactory:      createClassicFullstackDynaKube,
-			featureFlag:          dynatracev1beta1.AnnotationFeatureDisableReadOnlyOneAgent,
+			featureFlag:          dynatracev1.AnnotationFeatureDisableReadOnlyOneAgent,
 			featureValue:         false,
 			oaVolumeStorageVar:   oneagentEnableVolumeStorageEnvVarName,
 			oaVolumeStorageValue: false,
@@ -466,7 +466,7 @@ func TestReadOnlyModeClassicFullstackWarning(t *testing.T) {
 		{
 			testName:             "OneAgent volume storage disabled by env var and OneAgent read-only mode disabled by feature flag in classicFullstack",
 			dynakubeFactory:      createClassicFullstackDynaKube,
-			featureFlag:          dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent,
+			featureFlag:          dynatracev1.AnnotationFeatureReadOnlyOneAgent,
 			featureValue:         false,
 			oaVolumeStorageVar:   oneagentEnableVolumeStorageEnvVarName,
 			oaVolumeStorageValue: false,
@@ -475,7 +475,7 @@ func TestReadOnlyModeClassicFullstackWarning(t *testing.T) {
 		{
 			testName:             "OneAgent volume storage disabled by env var and OneAgent read-only mode disabled by deprecated feature flag in classicFullstack",
 			dynakubeFactory:      createClassicFullstackDynaKube,
-			featureFlag:          dynatracev1beta1.AnnotationFeatureDisableReadOnlyOneAgent,
+			featureFlag:          dynatracev1.AnnotationFeatureDisableReadOnlyOneAgent,
 			featureValue:         true,
 			oaVolumeStorageVar:   oneagentEnableVolumeStorageEnvVarName,
 			oaVolumeStorageValue: false,
@@ -493,7 +493,7 @@ func TestReadOnlyModeClassicFullstackWarning(t *testing.T) {
 		{
 			testName:             "OneAgent volume storage enabled by env var and OneAgent read-only mode enabled by feature flag in classicFullstack",
 			dynakubeFactory:      createClassicFullstackDynaKube,
-			featureFlag:          dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent,
+			featureFlag:          dynatracev1.AnnotationFeatureReadOnlyOneAgent,
 			featureValue:         true,
 			oaVolumeStorageVar:   oneagentEnableVolumeStorageEnvVarName,
 			oaVolumeStorageValue: true,
@@ -502,7 +502,7 @@ func TestReadOnlyModeClassicFullstackWarning(t *testing.T) {
 		{
 			testName:             "OneAgent volume storage enabled by env var and OneAgent read-only mode enabled by deprecated feature flag in classicFullstack",
 			dynakubeFactory:      createClassicFullstackDynaKube,
-			featureFlag:          dynatracev1beta1.AnnotationFeatureDisableReadOnlyOneAgent,
+			featureFlag:          dynatracev1.AnnotationFeatureDisableReadOnlyOneAgent,
 			featureValue:         false,
 			oaVolumeStorageVar:   oneagentEnableVolumeStorageEnvVarName,
 			oaVolumeStorageValue: true,
@@ -511,7 +511,7 @@ func TestReadOnlyModeClassicFullstackWarning(t *testing.T) {
 		{
 			testName:             "OneAgent volume storage enabled by env var and OneAgent read-only mode disabled by feature flag in classicFullstack",
 			dynakubeFactory:      createClassicFullstackDynaKube,
-			featureFlag:          dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent,
+			featureFlag:          dynatracev1.AnnotationFeatureReadOnlyOneAgent,
 			featureValue:         false,
 			oaVolumeStorageVar:   oneagentEnableVolumeStorageEnvVarName,
 			oaVolumeStorageValue: true,
@@ -520,7 +520,7 @@ func TestReadOnlyModeClassicFullstackWarning(t *testing.T) {
 		{
 			testName:             "OneAgent volume storage enabled by env var and OneAgent read-only mode disabled by deprecated feature flag in classicFullstack",
 			dynakubeFactory:      createClassicFullstackDynaKube,
-			featureFlag:          dynatracev1beta1.AnnotationFeatureDisableReadOnlyOneAgent,
+			featureFlag:          dynatracev1.AnnotationFeatureDisableReadOnlyOneAgent,
 			featureValue:         true,
 			oaVolumeStorageVar:   oneagentEnableVolumeStorageEnvVarName,
 			oaVolumeStorageValue: true,
@@ -556,8 +556,8 @@ func TestReadOnlyModeClassicFullstackWarning(t *testing.T) {
 	}
 }
 
-func createHostInjectSpecWithOneAgentVolumeStorage(variable string, flag bool) *dynatracev1beta1.HostInjectSpec {
-	his := &dynatracev1beta1.HostInjectSpec{}
+func createHostInjectSpecWithOneAgentVolumeStorage(variable string, flag bool) *dynatracev1.HostInjectSpec {
+	his := &dynatracev1.HostInjectSpec{}
 
 	if len(variable) > 0 {
 		his.Env = []corev1.EnvVar{
@@ -584,13 +584,13 @@ func createFeatureFlaggedMetadata(featureFlag string, featureFlagValue bool) met
 	return meta
 }
 
-func createCloudNativeFullstackDynaKube(featureFlag string, featureFlagValue bool, oneAgentVolumeStorageVar string, oaEnvValue bool) *dynatracev1beta1.DynaKube {
-	return &dynatracev1beta1.DynaKube{
+func createCloudNativeFullstackDynaKube(featureFlag string, featureFlagValue bool, oneAgentVolumeStorageVar string, oaEnvValue bool) *dynatracev1.DynaKube {
+	return &dynatracev1.DynaKube{
 		ObjectMeta: createFeatureFlaggedMetadata(featureFlag, featureFlagValue),
-		Spec: dynatracev1beta1.DynaKubeSpec{
+		Spec: dynatracev1.DynaKubeSpec{
 			APIURL: testApiUrl,
-			OneAgent: dynatracev1beta1.OneAgentSpec{
-				CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
+			OneAgent: dynatracev1.OneAgentSpec{
+				CloudNativeFullStack: &dynatracev1.CloudNativeFullStackSpec{
 					HostInjectSpec: *createHostInjectSpecWithOneAgentVolumeStorage(oneAgentVolumeStorageVar, oaEnvValue),
 				},
 			},
@@ -598,24 +598,24 @@ func createCloudNativeFullstackDynaKube(featureFlag string, featureFlagValue boo
 	}
 }
 
-func createHostMonitoringDynaKube(featureFlag string, featureFlagValue bool, oneAgentVolumeStorageVar string, oaEnvValue bool) *dynatracev1beta1.DynaKube {
-	return &dynatracev1beta1.DynaKube{
+func createHostMonitoringDynaKube(featureFlag string, featureFlagValue bool, oneAgentVolumeStorageVar string, oaEnvValue bool) *dynatracev1.DynaKube {
+	return &dynatracev1.DynaKube{
 		ObjectMeta: createFeatureFlaggedMetadata(featureFlag, featureFlagValue),
-		Spec: dynatracev1beta1.DynaKubeSpec{
+		Spec: dynatracev1.DynaKubeSpec{
 			APIURL: testApiUrl,
-			OneAgent: dynatracev1beta1.OneAgentSpec{
+			OneAgent: dynatracev1.OneAgentSpec{
 				HostMonitoring: createHostInjectSpecWithOneAgentVolumeStorage(oneAgentVolumeStorageVar, oaEnvValue),
 			},
 		},
 	}
 }
 
-func createClassicFullstackDynaKube(featureFlag string, featureFlagValue bool, oneAgentVolumeStorageVar string, oaEnvValue bool) *dynatracev1beta1.DynaKube {
-	return &dynatracev1beta1.DynaKube{
+func createClassicFullstackDynaKube(featureFlag string, featureFlagValue bool, oneAgentVolumeStorageVar string, oaEnvValue bool) *dynatracev1.DynaKube {
+	return &dynatracev1.DynaKube{
 		ObjectMeta: createFeatureFlaggedMetadata(featureFlag, featureFlagValue),
-		Spec: dynatracev1beta1.DynaKubeSpec{
+		Spec: dynatracev1.DynaKubeSpec{
 			APIURL: testApiUrl,
-			OneAgent: dynatracev1beta1.OneAgentSpec{
+			OneAgent: dynatracev1.OneAgentSpec{
 				ClassicFullStack: createHostInjectSpecWithOneAgentVolumeStorage(oneAgentVolumeStorageVar, oaEnvValue),
 			},
 		},

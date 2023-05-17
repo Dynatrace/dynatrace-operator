@@ -3,7 +3,7 @@ package support_archive
 import (
 	"reflect"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	appsv1 "k8s.io/api/apps/v1"
@@ -80,7 +80,7 @@ func getOperatorComponentsQueryGroup(namespace string) resourceQueryGroup {
 func getDynakubesQueryGroup(namespace string) resourceQueryGroup {
 	return resourceQueryGroup{
 		resources: []schema.GroupVersionKind{
-			toGroupVersionKind(dynatracev1beta1.GroupVersion, dynatracev1beta1.DynaKube{}),
+			toGroupVersionKind(dynatracev1.GroupVersion, dynatracev1.DynaKube{}),
 		},
 		filters: []client.ListOption{
 			client.InNamespace(namespace),

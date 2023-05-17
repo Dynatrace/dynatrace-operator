@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
@@ -28,12 +28,12 @@ var _ controllers.Reconciler = &Reconciler{}
 type Reconciler struct {
 	client    client.Client
 	apiReader client.Reader
-	dynakube  *dynatracev1beta1.DynaKube
+	dynakube  *dynatracev1.DynaKube
 	scheme    *runtime.Scheme
 	dtc       dtclient.Client
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
+func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1.DynaKube, dtc dtclient.Client) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
 	return &Reconciler{
 		client:    clt,
 		apiReader: apiReader,

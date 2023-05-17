@@ -3,7 +3,7 @@ package capability
 import (
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
@@ -20,12 +20,12 @@ const (
 	testApiUrl           = "https://demo.dev.dynatracelabs.com/api"
 )
 
-func testCreateInstance() *dynatracev1beta1.DynaKube {
-	return &dynatracev1beta1.DynaKube{
+func testCreateInstance() *dynatracev1.DynaKube {
+	return &dynatracev1.DynaKube{
 		ObjectMeta: v1.ObjectMeta{
 			Namespace: testNamespace, Name: testName,
 		},
-		Spec: dynatracev1beta1.DynaKubeSpec{
+		Spec: dynatracev1.DynaKubeSpec{
 			APIURL: testApiUrl,
 		},
 	}
@@ -66,7 +66,7 @@ func TestCreateService(t *testing.T) {
 
 	t.Run("check AG service if metrics ingest enabled", func(t *testing.T) {
 		instance := testCreateInstance()
-		kubeobjects.SwitchCapability(instance, dynatracev1beta1.MetricsIngestCapability, true)
+		kubeobjects.SwitchCapability(instance, dynatracev1.MetricsIngestCapability, true)
 
 		service := CreateService(instance, testComponentFeature)
 		ports := service.Spec.Ports

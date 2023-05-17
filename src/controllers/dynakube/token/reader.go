@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
@@ -13,10 +13,10 @@ import (
 
 type Reader struct {
 	apiReader client.Reader
-	dynakube  *dynatracev1beta1.DynaKube
+	dynakube  *dynatracev1.DynaKube
 }
 
-func NewReader(apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube) Reader {
+func NewReader(apiReader client.Reader, dynakube *dynatracev1.DynaKube) Reader {
 	return Reader{
 		apiReader: apiReader,
 		dynakube:  dynakube,

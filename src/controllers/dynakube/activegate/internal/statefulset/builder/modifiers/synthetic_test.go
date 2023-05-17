@@ -3,7 +3,7 @@ package modifiers
 import (
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -13,7 +13,7 @@ func TestSyntheticContainer(t *testing.T) {
 	assertion := assert.New(t)
 
 	dynaKube := getBaseDynakube()
-	dynaKube.ObjectMeta.Annotations[dynatracev1beta1.AnnotationFeatureSyntheticNodeType] = dynatracev1beta1.SyntheticNodeXs
+	dynaKube.ObjectMeta.Annotations[dynatracev1.AnnotationFeatureSyntheticNodeType] = dynatracev1.SyntheticNodeXs
 
 	modifier := newSyntheticModifier(
 		dynaKube,
@@ -42,7 +42,7 @@ func TestSyntheticContainer(t *testing.T) {
 			container.Resources.Requests.Cpu().String(),
 			expectedRequestCpu,
 			"declared for %v node resource request CPU: %v",
-			dynatracev1beta1.SyntheticNodeXs,
+			dynatracev1.SyntheticNodeXs,
 			expectedRequestCpu)
 	})
 

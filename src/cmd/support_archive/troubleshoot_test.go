@@ -8,7 +8,7 @@ import (
 	"io"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -36,7 +36,7 @@ func TestTroubleshootCollector(t *testing.T) {
 				Name: "random",
 			},
 		},
-		&dynatracev1beta1.DynaKube{
+		&dynatracev1.DynaKube{
 			TypeMeta:   typeMeta("DynaKube"),
 			ObjectMeta: objectMeta("dynakube1"),
 		},

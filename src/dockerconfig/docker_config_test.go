@@ -8,7 +8,7 @@ import (
 	"path"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -26,7 +26,7 @@ const (
 func TestNewDockerConfig(t *testing.T) {
 	apiReader := fake.NewClient()
 	t.Run("empty dynakube", func(t *testing.T) {
-		dynakube := dynatracev1beta1.DynaKube{}
+		dynakube := dynatracev1.DynaKube{}
 		dockerConfig := NewDockerConfig(apiReader, dynakube)
 
 		require.NotNil(t, dockerConfig)
@@ -36,8 +36,8 @@ func TestNewDockerConfig(t *testing.T) {
 		assert.False(t, dockerConfig.SkipCertCheck())
 	})
 	t.Run("empty skipCertCheck", func(t *testing.T) {
-		dynakube := dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
+		dynakube := dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
 				SkipCertCheck: true,
 			},
 		}
@@ -50,12 +50,12 @@ func TestNewDockerConfig(t *testing.T) {
 		assert.True(t, dockerConfig.SkipCertCheck())
 	})
 	t.Run("regular dynakube", func(t *testing.T) {
-		dynakube := dynatracev1beta1.DynaKube{
+		dynakube := dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testName,
 			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
+			Spec: dynatracev1.DynaKubeSpec{
 				TrustedCAs: "secure-cert-here",
 			},
 		}
@@ -91,7 +91,7 @@ func TestSetupAuths(t *testing.T) {
 		testPullSecret(t, false, false, true)
 	})
 	t.Run("handles no secret", func(t *testing.T) {
-		dynakube := dynatracev1beta1.DynaKube{
+		dynakube := dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: testName,
 			},
@@ -139,14 +139,14 @@ func testPullSecret(t *testing.T, withCaCerts, customPullSecret, injectedPullSec
 	registryAuthContent := fmt.Sprintf(`{ "auths": { "%s": { "username": "%s", "password": "%s" } } }`, testKey, testName, testValue)
 	secureCertName := "secure-cert-name"
 
-	spec := dynatracev1beta1.DynaKubeSpec{}
+	spec := dynatracev1.DynaKubeSpec{}
 	if withCaCerts {
 		spec.TrustedCAs = secureCertName
 	}
 	if customPullSecret {
 		spec.CustomPullSecret = testName
 	}
-	dynakube := dynatracev1beta1.DynaKube{
+	dynakube := dynatracev1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: testName,
 		},
@@ -174,7 +174,7 @@ func testPullSecret(t *testing.T, withCaCerts, customPullSecret, injectedPullSec
 				Name: secureCertName,
 			},
 			Data: map[string]string{
-				dynatracev1beta1.TrustedCAKey: testValue,
+				dynatracev1.TrustedCAKey: testValue,
 			},
 		}
 		assert.NoError(t, apiReader.Create(context.Background(), caCertsConfigMap))

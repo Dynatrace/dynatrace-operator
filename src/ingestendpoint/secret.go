@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
@@ -45,7 +45,7 @@ func NewEndpointSecretGenerator(client client.Client, apiReader client.Reader, n
 // Used by the podInjection webhook in case the namespace lacks the secret.
 func (g *EndpointSecretGenerator) GenerateForNamespace(ctx context.Context, dkName, targetNs string) error {
 	log.Info("reconciling data-ingest endpoint secret for", "namespace", targetNs)
-	var dk dynatracev1beta1.DynaKube
+	var dk dynatracev1.DynaKube
 	if err := g.client.Get(ctx, client.ObjectKey{Name: dkName, Namespace: g.namespace}, &dk); err != nil {
 		return errors.WithStack(err)
 	}
@@ -74,7 +74,7 @@ func (g *EndpointSecretGenerator) GenerateForNamespace(ctx context.Context, dkNa
 
 // GenerateForDynakube creates/updates the data-ingest-endpoint secret for EVERY namespace for the given dynakube.
 // Used by the dynakube controller during reconcile.
-func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1beta1.DynaKube) error {
+func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1.DynaKube) error {
 	log.Info("reconciling data-ingest endpoint secret for", "dynakube", dk.Name)
 
 	data, err := g.prepare(ctx, dk)
@@ -109,7 +109,7 @@ func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *d
 	return nil
 }
 
-func (g *EndpointSecretGenerator) RemoveEndpointSecrets(ctx context.Context, dk *dynatracev1beta1.DynaKube) error {
+func (g *EndpointSecretGenerator) RemoveEndpointSecrets(ctx context.Context, dk *dynatracev1.DynaKube) error {
 	nsList, err := mapper.GetNamespacesForDynakube(ctx, g.apiReader, dk.Name)
 	if err != nil {
 		return err
@@ -129,7 +129,7 @@ func (g *EndpointSecretGenerator) RemoveEndpointSecrets(ctx context.Context, dk 
 	return nil
 }
 
-func (g *EndpointSecretGenerator) prepare(ctx context.Context, dk *dynatracev1beta1.DynaKube) (map[string][]byte, error) {
+func (g *EndpointSecretGenerator) prepare(ctx context.Context, dk *dynatracev1.DynaKube) (map[string][]byte, error) {
 	fields, err := g.PrepareFields(ctx, dk)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -152,7 +152,7 @@ func (g *EndpointSecretGenerator) prepare(ctx context.Context, dk *dynatracev1be
 	return data, nil
 }
 
-func (g *EndpointSecretGenerator) PrepareFields(ctx context.Context, dk *dynatracev1beta1.DynaKube) (map[string]string, error) {
+func (g *EndpointSecretGenerator) PrepareFields(ctx context.Context, dk *dynatracev1.DynaKube) (map[string]string, error) {
 	fields := make(map[string]string)
 
 	var tokens corev1.Secret
@@ -175,9 +175,9 @@ func (g *EndpointSecretGenerator) PrepareFields(ctx context.Context, dk *dynatra
 	return fields, nil
 }
 
-func dataIngestUrlFor(dk *dynatracev1beta1.DynaKube) (string, error) {
+func dataIngestUrlFor(dk *dynatracev1.DynaKube) (string, error) {
 	switch {
-	case dk.IsActiveGateMode(dynatracev1beta1.MetricsIngestCapability.DisplayName):
+	case dk.IsActiveGateMode(dynatracev1.MetricsIngestCapability.DisplayName):
 		return metricsIngestUrlForClusterActiveGate(dk)
 	case len(dk.Spec.APIURL) > 0:
 		return metricsIngestUrlForDynatraceActiveGate(dk)
@@ -186,11 +186,11 @@ func dataIngestUrlFor(dk *dynatracev1beta1.DynaKube) (string, error) {
 	}
 }
 
-func metricsIngestUrlForDynatraceActiveGate(dk *dynatracev1beta1.DynaKube) (string, error) {
+func metricsIngestUrlForDynatraceActiveGate(dk *dynatracev1.DynaKube) (string, error) {
 	return fmt.Sprintf("%s/v2/metrics/ingest", dk.Spec.APIURL), nil
 }
 
-func metricsIngestUrlForClusterActiveGate(dk *dynatracev1beta1.DynaKube) (string, error) {
+func metricsIngestUrlForClusterActiveGate(dk *dynatracev1.DynaKube) (string, error) {
 	tenant, err := dk.TenantUUIDFromApiUrl()
 	if err != nil {
 		return "", err

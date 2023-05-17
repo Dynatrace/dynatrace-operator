@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
@@ -106,7 +106,7 @@ func labelVersionDetection(t *testing.T) features.Feature {
 				"inject": defaultDynakubeName,
 			},
 		}).
-		ApplicationMonitoring(&dynatracev1beta1.ApplicationMonitoringSpec{
+		ApplicationMonitoring(&dynatracev1.ApplicationMonitoringSpec{
 			UseCSIDriver: address.Of(false),
 		}).Build()
 
@@ -114,14 +114,14 @@ func labelVersionDetection(t *testing.T) features.Feature {
 	labelVersionDynakube := dynakube.NewBuilder().
 		WithDefaultObjectMeta().
 		Name(labelVersionDynakubeName).
-		WithAnnotations(map[string]string{dynatracev1beta1.AnnotationFeatureLabelVersionDetection: "true"}).
+		WithAnnotations(map[string]string{dynatracev1.AnnotationFeatureLabelVersionDetection: "true"}).
 		ApiUrl(secretConfig.ApiUrl).
 		NamespaceSelector(metav1.LabelSelector{
 			MatchLabels: map[string]string{
 				"inject": labelVersionDynakubeName,
 			},
 		}).
-		ApplicationMonitoring(&dynatracev1beta1.ApplicationMonitoringSpec{
+		ApplicationMonitoring(&dynatracev1.ApplicationMonitoringSpec{
 			UseCSIDriver: address.Of(false),
 		}).Build()
 
@@ -236,21 +236,21 @@ func assertValue(ctx context.Context, t *testing.T, resource *resources.Resource
 	assert.Equal(t, expectedValue, stdOut, "%s:%s pod - %s variable has invalid value", podItem.Namespace, podItem.Name, variableName)
 }
 
-func buildDisabledBuildLabelNamespace(testDynakube dynatracev1beta1.DynaKube) corev1.Namespace {
+func buildDisabledBuildLabelNamespace(testDynakube dynatracev1.DynaKube) corev1.Namespace {
 	return namespace.NewBuilder(disabledBuildLabelsNamespace).WithLabels(testDynakube.NamespaceSelector().MatchLabels).Build()
 }
 
-func buildDisabledBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1beta1.DynaKube) sample.App {
+func buildDisabledBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1.DynaKube) sample.App {
 	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
 	sampleApp.WithNamespace(buildDisabledBuildLabelNamespace(testDynakube))
 	return sampleApp
 }
 
-func buildDefaultBuildLabelNamespace(testDynakube dynatracev1beta1.DynaKube) corev1.Namespace {
+func buildDefaultBuildLabelNamespace(testDynakube dynatracev1.DynaKube) corev1.Namespace {
 	return namespace.NewBuilder(defaultBuildLabelsNamespace).WithLabels(testDynakube.NamespaceSelector().MatchLabels).Build()
 }
 
-func buildDefaultBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1beta1.DynaKube) sample.App {
+func buildDefaultBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1.DynaKube) sample.App {
 	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
 	sampleApp.WithNamespace(buildDefaultBuildLabelNamespace(testDynakube))
 	sampleApp.WithLabels(map[string]string{
@@ -264,7 +264,7 @@ func buildDefaultBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1beta1
 	return sampleApp
 }
 
-func buildCustomBuildLabelNamespace(testDynakube dynatracev1beta1.DynaKube) corev1.Namespace {
+func buildCustomBuildLabelNamespace(testDynakube dynatracev1.DynaKube) corev1.Namespace {
 	return namespace.NewBuilder(customBuildLabelsNamespace).WithLabels(testDynakube.NamespaceSelector().MatchLabels).
 		WithAnnotation(map[string]string{
 			"mapping.release.dynatrace.com/version":       "metadata.labels['my.domain/version']",
@@ -274,7 +274,7 @@ func buildCustomBuildLabelNamespace(testDynakube dynatracev1beta1.DynaKube) core
 		}).Build()
 }
 
-func buildCustomBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1beta1.DynaKube) sample.App {
+func buildCustomBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1.DynaKube) sample.App {
 	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
 	sampleApp.WithNamespace(buildCustomBuildLabelNamespace(testDynakube))
 	sampleApp.WithLabels(map[string]string{
@@ -288,7 +288,7 @@ func buildCustomBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1beta1.
 	return sampleApp
 }
 
-func buildPreservedBuildLabelNamespace(testDynakube dynatracev1beta1.DynaKube) corev1.Namespace {
+func buildPreservedBuildLabelNamespace(testDynakube dynatracev1.DynaKube) corev1.Namespace {
 	return namespace.NewBuilder(preservedBuildLabelsNamespace).WithLabels(testDynakube.NamespaceSelector().MatchLabels).
 		WithAnnotation(map[string]string{
 			"mapping.release.dynatrace.com/version":       "metadata.labels['my.domain/version']",
@@ -298,7 +298,7 @@ func buildPreservedBuildLabelNamespace(testDynakube dynatracev1beta1.DynaKube) c
 		}).Build()
 }
 
-func buildPreservedBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1beta1.DynaKube) sample.App {
+func buildPreservedBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1.DynaKube) sample.App {
 	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
 	sampleApp.WithNamespace(buildPreservedBuildLabelNamespace(testDynakube))
 	sampleApp.WithLabels(map[string]string{
@@ -350,7 +350,7 @@ func buildPreservedBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1bet
 	return sampleApp
 }
 
-func buildInvalidBuildLabelNamespace(testDynakube dynatracev1beta1.DynaKube) corev1.Namespace {
+func buildInvalidBuildLabelNamespace(testDynakube dynatracev1.DynaKube) corev1.Namespace {
 	return namespace.NewBuilder(invalidBuildLabelsNamespace).WithLabels(testDynakube.NamespaceSelector().MatchLabels).
 		WithAnnotation(map[string]string{
 			"mapping.release.dynatrace.com/stage":         "metadata.labels['my.domain/invalid-stage']",
@@ -358,7 +358,7 @@ func buildInvalidBuildLabelNamespace(testDynakube dynatracev1beta1.DynaKube) cor
 		}).Build()
 }
 
-func buildInvalidBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1beta1.DynaKube) sample.App {
+func buildInvalidBuildLabelSampleApp(t *testing.T, testDynakube dynatracev1.DynaKube) sample.App {
 	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
 	sampleApp.WithNamespace(buildInvalidBuildLabelNamespace(testDynakube))
 	sampleApp.WithLabels(map[string]string{

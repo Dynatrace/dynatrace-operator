@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/containers/image/v5/docker/reference"
 	"github.com/stretchr/testify/assert"
@@ -38,12 +38,12 @@ func (registry *fakeRegistry) ImageVersionExt(_ context.Context, imagePath strin
 	return registry.ImageVersion(imagePath)
 }
 
-func assertPublicRegistryVersionStatusEquals(t *testing.T, registry *fakeRegistry, imageRef reference.NamedTagged, versionStatus dynatracev1beta1.VersionStatus) { //nolint:revive // argument-limit
+func assertPublicRegistryVersionStatusEquals(t *testing.T, registry *fakeRegistry, imageRef reference.NamedTagged, versionStatus dynatracev1.VersionStatus) { //nolint:revive // argument-limit
 	assertVersionStatusEquals(t, registry, imageRef, versionStatus)
 	assert.Empty(t, versionStatus.Version)
 }
 
-func assertVersionStatusEquals(t *testing.T, registry *fakeRegistry, imageRef reference.NamedTagged, versionStatus dynatracev1beta1.VersionStatus) { //nolint:revive // argument-limit
+func assertVersionStatusEquals(t *testing.T, registry *fakeRegistry, imageRef reference.NamedTagged, versionStatus dynatracev1.VersionStatus) { //nolint:revive // argument-limit
 	expectedDigest, err := registry.ImageVersion(imageRef.String())
 
 	assert.NoError(t, err, "Image version is unexpectedly unknown for '%s'", imageRef.String())

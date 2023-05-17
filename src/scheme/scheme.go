@@ -17,7 +17,7 @@ limitations under the License.
 package scheme
 
 import (
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	corev1 "k8s.io/api/core/v1"
@@ -32,8 +32,8 @@ var Scheme = k8sruntime.NewScheme()
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(Scheme))
-	utilruntime.Must(dynatracev1alpha1.AddToScheme(Scheme))
 	utilruntime.Must(dynatracev1beta1.AddToScheme(Scheme))
+	utilruntime.Must(dynatracev1.AddToScheme(Scheme))
 	utilruntime.Must(istiov1alpha3.AddToScheme(Scheme))
 	utilruntime.Must(corev1.AddToScheme(Scheme))
 	utilruntime.Must(apiv1.AddToScheme(Scheme))

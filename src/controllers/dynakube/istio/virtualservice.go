@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	istio "istio.io/api/networking/v1alpha3"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
@@ -102,7 +102,7 @@ func handleIstioConfigurationForVirtualService(istioConfig *configuration) (bool
 	return true, nil
 }
 
-func createIstioConfigurationForVirtualService(dynaKube *dynatracev1beta1.DynaKube, //nolint:revive // argument-limit doesn't apply to constructors
+func createIstioConfigurationForVirtualService(dynaKube *dynatracev1.DynaKube, //nolint:revive // argument-limit doesn't apply to constructors
 	virtualService *istiov1alpha3.VirtualService, role string,
 	istioClient istioclientset.Interface, scheme *runtime.Scheme) error {
 	virtualService.Labels = buildIstioLabels(dynaKube.GetName(), role)

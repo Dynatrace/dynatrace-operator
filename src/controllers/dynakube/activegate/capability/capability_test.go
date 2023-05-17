@@ -3,7 +3,7 @@ package capability
 import (
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,21 +17,21 @@ const (
 	expectedArgName   = "MSGrouter,kubernetes_monitoring,metrics_ingest,restInterface"
 )
 
-var capabilities = []dynatracev1beta1.CapabilityDisplayName{
-	dynatracev1beta1.RoutingCapability.DisplayName,
-	dynatracev1beta1.KubeMonCapability.DisplayName,
-	dynatracev1beta1.MetricsIngestCapability.DisplayName,
-	dynatracev1beta1.DynatraceApiCapability.DisplayName,
+var capabilities = []dynatracev1.CapabilityDisplayName{
+	dynatracev1.RoutingCapability.DisplayName,
+	dynatracev1.KubeMonCapability.DisplayName,
+	dynatracev1.MetricsIngestCapability.DisplayName,
+	dynatracev1.DynatraceApiCapability.DisplayName,
 }
 
-func buildDynakube(capabilities []dynatracev1beta1.CapabilityDisplayName) *dynatracev1beta1.DynaKube {
-	return &dynatracev1beta1.DynaKube{
+func buildDynakube(capabilities []dynatracev1.CapabilityDisplayName) *dynatracev1.DynaKube {
+	return &dynatracev1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace, Name: testName,
 		},
-		Spec: dynatracev1beta1.DynaKubeSpec{
+		Spec: dynatracev1.DynaKubeSpec{
 			APIURL: testApiUrl,
-			ActiveGate: dynatracev1beta1.ActiveGateSpec{
+			ActiveGate: dynatracev1.ActiveGateSpec{
 				Capabilities: capabilities,
 			},
 		},
@@ -66,7 +66,7 @@ func TestNewMultiCapability(t *testing.T) {
 		assert.Equal(t, expectedArgName, mc.ArgName())
 	})
 	t.Run(`creates new multicapability without capabilities set in dynakube`, func(t *testing.T) {
-		var emptyCapabilites []dynatracev1beta1.CapabilityDisplayName
+		var emptyCapabilites []dynatracev1.CapabilityDisplayName
 		dynakube := buildDynakube(emptyCapabilites)
 		mc := NewMultiCapability(dynakube)
 		require.NotNil(t, mc)

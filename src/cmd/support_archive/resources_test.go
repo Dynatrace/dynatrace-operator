@@ -8,7 +8,7 @@ import (
 	"io"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
@@ -81,7 +81,7 @@ func TestManifestCollector_Success(t *testing.T) {
 				Name: testOperatorNamespace,
 			},
 		},
-		&dynatracev1beta1.DynaKube{
+		&dynatracev1.DynaKube{
 			TypeMeta:   typeMeta("DynaKube"),
 			ObjectMeta: objectMeta("dynakube1"),
 		},
@@ -161,7 +161,7 @@ func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
 				},
 			},
 		},
-		&dynatracev1beta1.DynaKube{
+		&dynatracev1.DynaKube{
 			TypeMeta:   typeMeta("DynaKube"),
 			ObjectMeta: objectMeta("dynakube1"),
 		},

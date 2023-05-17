@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder"
@@ -32,26 +32,26 @@ var (
 	testReplicas int32 = 69
 )
 
-func getTestDynakube() dynatracev1beta1.DynaKube {
-	return dynatracev1beta1.DynaKube{
+func getTestDynakube() dynatracev1.DynaKube {
+	return dynatracev1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        testDynakubeName,
 			Namespace:   testNamespaceName,
 			Annotations: map[string]string{},
 		},
-		Spec: dynatracev1beta1.DynaKubeSpec{
-			ActiveGate: dynatracev1beta1.ActiveGateSpec{
-				Capabilities: []dynatracev1beta1.CapabilityDisplayName{
-					dynatracev1beta1.RoutingCapability.DisplayName,
+		Spec: dynatracev1.DynaKubeSpec{
+			ActiveGate: dynatracev1.ActiveGateSpec{
+				Capabilities: []dynatracev1.CapabilityDisplayName{
+					dynatracev1.RoutingCapability.DisplayName,
 				},
-				CapabilityProperties: dynatracev1beta1.CapabilityProperties{
+				CapabilityProperties: dynatracev1.CapabilityProperties{
 					Replicas: &testReplicas,
 				},
 			},
 		},
-		Status: dynatracev1beta1.DynaKubeStatus{
-			ActiveGate: dynatracev1beta1.ActiveGateStatus{
-				VersionStatus: dynatracev1beta1.VersionStatus{},
+		Status: dynatracev1.DynaKubeStatus{
+			ActiveGate: dynatracev1.ActiveGateStatus{
+				VersionStatus: dynatracev1.VersionStatus{},
 			},
 		},
 	}
@@ -167,7 +167,7 @@ func TestAddTemplateSpec(t *testing.T) {
 
 	t.Run("adds capability specific stuff", func(t *testing.T) {
 		dynakube := getTestDynakube()
-		dynakube.Spec.ActiveGate.Capabilities = append(dynakube.Spec.ActiveGate.Capabilities, dynatracev1beta1.KubeMonCapability.DisplayName)
+		dynakube.Spec.ActiveGate.Capabilities = append(dynakube.Spec.ActiveGate.Capabilities, dynatracev1.KubeMonCapability.DisplayName)
 		multiCapability := capability.NewMultiCapability(&dynakube)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dynakube, multiCapability)
 		sts := appsv1.StatefulSet{}
@@ -374,8 +374,8 @@ func TestBuildCommonEnvs(t *testing.T) {
 
 	t.Run("synthetic capability", func(t *testing.T) {
 		dynaKube := getTestDynakube()
-		dynaKube.ObjectMeta.Annotations[dynatracev1beta1.AnnotationFeatureSyntheticLocationEntityId] = "doctored"
-		dynaKube.ObjectMeta.Annotations[dynatracev1beta1.AnnotationFeatureSyntheticReplicas] = fmt.Sprint(testReplicas)
+		dynaKube.ObjectMeta.Annotations[dynatracev1.AnnotationFeatureSyntheticLocationEntityId] = "doctored"
+		dynaKube.ObjectMeta.Annotations[dynatracev1.AnnotationFeatureSyntheticReplicas] = fmt.Sprint(testReplicas)
 		synCapability := capability.NewSyntheticCapability(&dynaKube)
 
 		builder := NewStatefulSetBuilder(
@@ -446,10 +446,10 @@ func TestSecurityContexts(t *testing.T) {
 		dynakube := getTestDynakube()
 		if isReadOnlyFileSystem {
 			dynakube.Annotations = map[string]string{
-				dynatracev1beta1.AnnotationFeatureActiveGateReadOnlyFilesystem: "true",
+				dynatracev1.AnnotationFeatureActiveGateReadOnlyFilesystem: "true",
 			}
 		}
-		dynakube.Spec.ActiveGate.Capabilities = append(dynakube.Spec.ActiveGate.Capabilities, dynatracev1beta1.KubeMonCapability.DisplayName)
+		dynakube.Spec.ActiveGate.Capabilities = append(dynakube.Spec.ActiveGate.Capabilities, dynatracev1.KubeMonCapability.DisplayName)
 
 		multiCapability := capability.NewMultiCapability(&dynakube)
 

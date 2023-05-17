@@ -1,7 +1,7 @@
 package modifiers
 
 import (
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder"
 	corev1 "k8s.io/api/core/v1"
@@ -23,7 +23,7 @@ type initContainerModifier interface {
 	getInitContainers() []corev1.Container
 }
 
-func GenerateAllModifiers(dynakube dynatracev1beta1.DynaKube, capability capability.Capability) []builder.Modifier {
+func GenerateAllModifiers(dynakube dynatracev1.DynaKube, capability capability.Capability) []builder.Modifier {
 	return []builder.Modifier{
 		NewAuthTokenModifier(dynakube),
 		NewCertificatesModifier(dynakube),

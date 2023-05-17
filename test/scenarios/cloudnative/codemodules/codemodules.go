@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
@@ -72,7 +72,7 @@ func CodeModules(t *testing.T, istioEnabled bool) features.Feature {
 		Name("app-codemodules").
 		WithDynakubeNamespaceSelector().
 		ApiUrl(secretConfigs[1].ApiUrl).
-		ApplicationMonitoring(&dynatracev1beta1.ApplicationMonitoringSpec{
+		ApplicationMonitoring(&dynatracev1.ApplicationMonitoringSpec{
 			AppInjectionSpec: *codeModulesAppInjectSpec(),
 			UseCSIDriver:     address.Of(true),
 		})
@@ -122,17 +122,17 @@ func CodeModules(t *testing.T, istioEnabled bool) features.Feature {
 	return builder.Feature()
 }
 
-func codeModulesCloudNativeSpec() *dynatracev1beta1.CloudNativeFullStackSpec {
-	return &dynatracev1beta1.CloudNativeFullStackSpec{
-		HostInjectSpec: dynatracev1beta1.HostInjectSpec{
+func codeModulesCloudNativeSpec() *dynatracev1.CloudNativeFullStackSpec {
+	return &dynatracev1.CloudNativeFullStackSpec{
+		HostInjectSpec: dynatracev1.HostInjectSpec{
 			Args: []string{"INTERNAL_OVERRIDE_CHECKS=downgrade"},
 		},
 		AppInjectionSpec: *codeModulesAppInjectSpec(),
 	}
 }
 
-func codeModulesAppInjectSpec() *dynatracev1beta1.AppInjectionSpec {
-	return &dynatracev1beta1.AppInjectionSpec{
+func codeModulesAppInjectSpec() *dynatracev1.AppInjectionSpec {
+	return &dynatracev1.AppInjectionSpec{
 		CodeModulesImage: codeModulesImage,
 	}
 }

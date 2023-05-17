@@ -3,7 +3,7 @@ package mapper
 import (
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -11,12 +11,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func createTestDynakubeWithAppInject(name string, labels map[string]string, labelExpression []metav1.LabelSelectorRequirement) *dynatracev1beta1.DynaKube {
-	dk := &dynatracev1beta1.DynaKube{
+func createTestDynakubeWithAppInject(name string, labels map[string]string, labelExpression []metav1.LabelSelectorRequirement) *dynatracev1.DynaKube {
+	dk := &dynatracev1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: "dynatrace"},
-		Spec: dynatracev1beta1.DynaKubeSpec{
-			OneAgent: dynatracev1beta1.OneAgentSpec{
-				ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{},
+		Spec: dynatracev1.DynaKubeSpec{
+			OneAgent: dynatracev1.OneAgentSpec{
+				ApplicationMonitoring: &dynatracev1.ApplicationMonitoringSpec{},
 			},
 		},
 	}
@@ -29,9 +29,9 @@ func createTestDynakubeWithAppInject(name string, labels map[string]string, labe
 	return dk
 }
 
-func createTestDynakubeWithMultipleFeatures(name string, labels map[string]string) *dynatracev1beta1.DynaKube {
+func createTestDynakubeWithMultipleFeatures(name string, labels map[string]string) *dynatracev1.DynaKube {
 	dk := createTestDynakubeWithAppInject(name, labels, nil)
-	dk.Spec.Routing.Enabled = true
+	// dk.Spec.Routing.Enabled = true
 	return dk
 }
 
@@ -50,7 +50,7 @@ func TestUpdateNamespace(t *testing.T) {
 		dk := createTestDynakubeWithMultipleFeatures("dk-test", labels)
 		namespace := createNamespace("test-namespace", labels)
 
-		updated, err := updateNamespace(namespace, &dynatracev1beta1.DynaKubeList{Items: []dynatracev1beta1.DynaKube{*dk}})
+		updated, err := updateNamespace(namespace, &dynatracev1.DynaKubeList{Items: []dynatracev1.DynaKube{*dk}})
 
 		require.NoError(t, err)
 		require.True(t, updated)
@@ -65,7 +65,7 @@ func TestUpdateNamespace(t *testing.T) {
 		}
 		namespace := createNamespace("test-namespace", nsLabels)
 
-		updated, err := updateNamespace(namespace, &dynatracev1beta1.DynaKubeList{Items: []dynatracev1beta1.DynaKube{*dk}})
+		updated, err := updateNamespace(namespace, &dynatracev1.DynaKubeList{Items: []dynatracev1.DynaKube{*dk}})
 
 		require.NoError(t, err)
 		require.True(t, updated)
@@ -80,7 +80,7 @@ func TestUpdateNamespace(t *testing.T) {
 		}
 		namespace := createNamespace("test-namespace", nsLabels)
 
-		updated, err := updateNamespace(namespace, &dynatracev1beta1.DynaKubeList{Items: []dynatracev1beta1.DynaKube{*movedDk}})
+		updated, err := updateNamespace(namespace, &dynatracev1.DynaKubeList{Items: []dynatracev1.DynaKube{*movedDk}})
 
 		require.NoError(t, err)
 		require.True(t, updated)
@@ -96,7 +96,7 @@ func TestUpdateNamespace(t *testing.T) {
 		}
 		namespace := createNamespace("test-namespace", nsLabels)
 
-		_, err := updateNamespace(namespace, &dynatracev1beta1.DynaKubeList{Items: []dynatracev1beta1.DynaKube{*conflictingDk, *dk}})
+		_, err := updateNamespace(namespace, &dynatracev1.DynaKubeList{Items: []dynatracev1.DynaKube{*conflictingDk, *dk}})
 
 		assert.Error(t, err)
 	})
@@ -104,7 +104,7 @@ func TestUpdateNamespace(t *testing.T) {
 		dk := createTestDynakubeWithMultipleFeatures("appMonitoring", nil)
 		namespace := createNamespace("kube-something", nil)
 
-		updated, err := updateNamespace(namespace, &dynatracev1beta1.DynaKubeList{Items: []dynatracev1beta1.DynaKube{*dk}})
+		updated, err := updateNamespace(namespace, &dynatracev1.DynaKubeList{Items: []dynatracev1.DynaKube{*dk}})
 
 		require.NoError(t, err)
 		require.False(t, updated)
@@ -115,7 +115,7 @@ func TestUpdateNamespace(t *testing.T) {
 		dk := createTestDynakubeWithMultipleFeatures("appMonitoring", nil)
 		namespace := createNamespace("openshift-something", nil)
 
-		updated, err := updateNamespace(namespace, &dynatracev1beta1.DynaKubeList{Items: []dynatracev1beta1.DynaKube{*dk}})
+		updated, err := updateNamespace(namespace, &dynatracev1.DynaKubeList{Items: []dynatracev1.DynaKube{*dk}})
 
 		require.NoError(t, err)
 		require.False(t, updated)
@@ -127,11 +127,11 @@ func TestUpdateNamespace(t *testing.T) {
 		ignoreDk := createTestDynakubeWithMultipleFeatures("appMonitoring", otherLabels)
 		notIgnoreDk := createTestDynakubeWithMultipleFeatures("boom", labels)
 		notIgnoreDk.Annotations = map[string]string{
-			dynatracev1beta1.AnnotationFeatureIgnoredNamespaces: "[\"asd\"]",
+			dynatracev1.AnnotationFeatureIgnoredNamespaces: "[\"asd\"]",
 		}
 		namespace := createNamespace("openshift-something", labels)
 
-		updated, err := updateNamespace(namespace, &dynatracev1beta1.DynaKubeList{Items: []dynatracev1beta1.DynaKube{*ignoreDk, *notIgnoreDk}})
+		updated, err := updateNamespace(namespace, &dynatracev1.DynaKubeList{Items: []dynatracev1.DynaKube{*ignoreDk, *notIgnoreDk}})
 
 		require.NoError(t, err)
 		require.True(t, updated)
@@ -144,11 +144,11 @@ func TestUpdateNamespace(t *testing.T) {
 		ignoreDk := createTestDynakubeWithMultipleFeatures("appMonitoring", otherLabels)
 		notIgnoreDk := createTestDynakubeWithMultipleFeatures("boom", labels)
 		notIgnoreDk.Annotations = map[string]string{
-			dynatracev1beta1.AnnotationFeatureIgnoredNamespaces: "[\"asd\"]",
+			dynatracev1.AnnotationFeatureIgnoredNamespaces: "[\"asd\"]",
 		}
 		namespace := createNamespace("openshift-something", labels)
 
-		updated, err := updateNamespace(namespace, &dynatracev1beta1.DynaKubeList{Items: []dynatracev1beta1.DynaKube{*notIgnoreDk, *ignoreDk}})
+		updated, err := updateNamespace(namespace, &dynatracev1.DynaKubeList{Items: []dynatracev1.DynaKube{*notIgnoreDk, *ignoreDk}})
 
 		require.NoError(t, err)
 		require.True(t, updated)

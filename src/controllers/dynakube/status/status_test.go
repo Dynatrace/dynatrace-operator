@@ -3,7 +3,7 @@ package status
 import (
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
@@ -17,7 +17,7 @@ const (
 
 func TestSetDynakubeStatus(t *testing.T) {
 	t.Run(`set status`, func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{}
+		instance := &dynatracev1.DynaKube{}
 		clt := fake.NewClient(&v1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: kubesystem.Namespace,
@@ -30,7 +30,7 @@ func TestSetDynakubeStatus(t *testing.T) {
 		assert.Equal(t, testUUID, instance.Status.KubeSystemUUID)
 	})
 	t.Run(`error querying kube system uid`, func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{}
+		instance := &dynatracev1.DynaKube{}
 		clt := fake.NewClient()
 
 		err := SetDynakubeStatus(instance, clt)

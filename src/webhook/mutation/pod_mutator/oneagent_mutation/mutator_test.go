@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/src/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
@@ -43,7 +43,7 @@ func TestEnabled(t *testing.T) {
 	t.Run("off by feature flag", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		request := createTestMutationRequest(nil, nil, getTestNamespace(nil))
-		request.DynaKube.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureAutomaticInjection: "false"}
+		request.DynaKube.Annotations = map[string]string{dynatracev1.AnnotationFeatureAutomaticInjection: "false"}
 
 		enabled := mutator.Enabled(request.BaseRequest)
 
@@ -52,7 +52,7 @@ func TestEnabled(t *testing.T) {
 	t.Run("on with feature flag", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		request := createTestMutationRequest(nil, nil, getTestNamespace(nil))
-		request.DynaKube.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureAutomaticInjection: "true"}
+		request.DynaKube.Annotations = map[string]string{dynatracev1.AnnotationFeatureAutomaticInjection: "true"}
 
 		enabled := mutator.Enabled(request.BaseRequest)
 
@@ -100,7 +100,7 @@ func TestEnsureInitSecret(t *testing.T) {
 
 type mutateTestCase struct {
 	name                                   string
-	dynakube                               dynatracev1beta1.DynaKube
+	dynakube                               dynatracev1.DynaKube
 	expectedAdditionalEnvCount             int
 	expectedAdditionalVolumeCount          int
 	expectedAdditionalVolumeMountCount     int
@@ -167,7 +167,7 @@ func TestMutate(t *testing.T) {
 
 type reinvokeTestCase struct {
 	name                               string
-	dynakube                           dynatracev1beta1.DynaKube
+	dynakube                           dynatracev1.DynaKube
 	expectedAdditionalEnvCount         int
 	expectedAdditionalVolumeMountCount int
 }
@@ -252,9 +252,9 @@ func getTestInitSecret() *corev1.Secret {
 	}
 }
 
-func createTestMutationRequest(dynakube *dynatracev1beta1.DynaKube, podAnnotations map[string]string, namespace corev1.Namespace) *dtwebhook.MutationRequest {
+func createTestMutationRequest(dynakube *dynatracev1.DynaKube, podAnnotations map[string]string, namespace corev1.Namespace) *dtwebhook.MutationRequest {
 	if dynakube == nil {
-		dynakube = &dynatracev1beta1.DynaKube{}
+		dynakube = &dynatracev1.DynaKube{}
 	}
 	return dtwebhook.NewMutationRequest(
 		context.TODO(),
@@ -267,35 +267,35 @@ func createTestMutationRequest(dynakube *dynatracev1beta1.DynaKube, podAnnotatio
 	)
 }
 
-func createTestReinvocationRequest(dynakube *dynatracev1beta1.DynaKube, annotations map[string]string) *dtwebhook.ReinvocationRequest {
+func createTestReinvocationRequest(dynakube *dynatracev1.DynaKube, annotations map[string]string) *dtwebhook.ReinvocationRequest {
 	request := createTestMutationRequest(dynakube, annotations, getTestNamespace(nil)).ToReinvocationRequest()
 	request.Pod.Spec.InitContainers = append(request.Pod.Spec.InitContainers, corev1.Container{Name: dtwebhook.InstallContainerName})
 	return request
 }
 
-func getTestCSIDynakube() *dynatracev1beta1.DynaKube {
-	return &dynatracev1beta1.DynaKube{
+func getTestCSIDynakube() *dynatracev1.DynaKube {
+	return &dynatracev1.DynaKube{
 		ObjectMeta: getTestDynakubeMeta(),
-		Spec: dynatracev1beta1.DynaKubeSpec{
-			OneAgent: dynatracev1beta1.OneAgentSpec{
-				CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
+		Spec: dynatracev1.DynaKubeSpec{
+			OneAgent: dynatracev1.OneAgentSpec{
+				CloudNativeFullStack: &dynatracev1.CloudNativeFullStackSpec{},
 			},
 		},
 	}
 }
 
-func getTestReadOnlyCSIDynakube() *dynatracev1beta1.DynaKube {
+func getTestReadOnlyCSIDynakube() *dynatracev1.DynaKube {
 	dk := getTestCSIDynakube()
-	dk.Annotations[dynatracev1beta1.AnnotationFeatureReadOnlyCsiVolume] = "true"
+	dk.Annotations[dynatracev1.AnnotationFeatureReadOnlyCsiVolume] = "true"
 	return dk
 }
 
-func getTestDynakube() *dynatracev1beta1.DynaKube {
-	return &dynatracev1beta1.DynaKube{
+func getTestDynakube() *dynatracev1.DynaKube {
+	return &dynatracev1.DynaKube{
 		ObjectMeta: getTestDynakubeMeta(),
-		Spec: dynatracev1beta1.DynaKubeSpec{
-			OneAgent: dynatracev1beta1.OneAgentSpec{
-				ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{},
+		Spec: dynatracev1.DynaKubeSpec{
+			OneAgent: dynatracev1.OneAgentSpec{
+				ApplicationMonitoring: &dynatracev1.ApplicationMonitoringSpec{},
 			},
 		},
 	}
@@ -309,17 +309,17 @@ func getTestDynakubeMeta() metav1.ObjectMeta {
 	}
 }
 
-func getTestComplexDynakube() *dynatracev1beta1.DynaKube {
+func getTestComplexDynakube() *dynatracev1.DynaKube {
 	dynakube := getTestCSIDynakube()
-	dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: "test-proxy"}
+	dynakube.Spec.Proxy = &dynatracev1.DynaKubeProxy{Value: "test-proxy"}
 	dynakube.Spec.NetworkZone = "test-network-zone"
-	dynakube.Spec.ActiveGate = dynatracev1beta1.ActiveGateSpec{
-		Capabilities:  []dynatracev1beta1.CapabilityDisplayName{dynatracev1beta1.KubeMonCapability.DisplayName},
+	dynakube.Spec.ActiveGate = dynatracev1.ActiveGateSpec{
+		Capabilities:  []dynatracev1.CapabilityDisplayName{dynatracev1.KubeMonCapability.DisplayName},
 		TlsSecretName: "super-secret",
 	}
 	dynakube.Annotations = map[string]string{
-		dynatracev1beta1.AnnotationFeatureOneAgentInitialConnectRetry: "5",
-		dynatracev1beta1.AnnotationFeatureLabelVersionDetection:       "true",
+		dynatracev1.AnnotationFeatureOneAgentInitialConnectRetry: "5",
+		dynatracev1.AnnotationFeatureLabelVersionDetection:       "true",
 	}
 	return dynakube
 }
