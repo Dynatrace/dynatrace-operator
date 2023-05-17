@@ -3,6 +3,7 @@ package dynakube
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -987,6 +988,49 @@ func TestTokenConditions(t *testing.T) {
 		_ = controller.reconcileDynaKube(context.TODO(), dynakube)
 
 		assertCondition(t, dynakube, dynatracev1beta1.TokenConditionType, metav1.ConditionTrue, dynatracev1beta1.ReasonTokenReady, "")
+	})
+}
+
+func TestAPIError(t *testing.T) {
+	mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
+		dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeActiveGateTokenCreate},
+	)
+	instance := &dynatracev1beta1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testName,
+			Namespace: testNamespace,
+		},
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			APIURL:   testApiUrl,
+			OneAgent: dynatracev1beta1.OneAgentSpec{CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{HostInjectSpec: dynatracev1beta1.HostInjectSpec{}}},
+			ActiveGate: dynatracev1beta1.ActiveGateSpec{
+				Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+					dynatracev1beta1.KubeMonCapability.DisplayName,
+				},
+			},
+		},
+	}
+	t.Run("should return error result on 503", func(t *testing.T) {
+		mockClient.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, dtclient.ServerError{Code: http.StatusServiceUnavailable, Message: "Service unavailable"})
+		controller := createFakeClientAndReconciler(mockClient, instance, testPaasToken, testAPIToken)
+
+		result, err := controller.Reconcile(context.TODO(), reconcile.Request{
+			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
+		})
+
+		assert.NoError(t, err)
+		assert.Equal(t, errorUpdateInterval, result.RequeueAfter)
+	})
+	t.Run("should return error result on 429", func(t *testing.T) {
+		mockClient.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, dtclient.ServerError{Code: http.StatusTooManyRequests, Message: "Too many requests"})
+		controller := createFakeClientAndReconciler(mockClient, instance, testPaasToken, testAPIToken)
+
+		result, err := controller.Reconcile(context.TODO(), reconcile.Request{
+			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
+		})
+
+		assert.NoError(t, err)
+		assert.Equal(t, errorUpdateInterval, result.RequeueAfter)
 	})
 }
 
