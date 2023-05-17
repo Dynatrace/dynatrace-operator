@@ -514,7 +514,7 @@ tests:
           path: spec.template.spec.containers[0].image
           value: "some-repo:vtag-name"
 
-  - it: image tag has precedence over imageref
+  - it: image field has precedence over imageref section
     set:
       csidriver.enabled: true
       platform: kubernetes
