@@ -127,11 +127,3 @@ func (dk *DynaKubeStatus) SetPhase(phase DynaKubePhaseType) bool {
 	dk.Phase = phase
 	return upd
 }
-
-// SetPhaseOnError fills the phase with the Error value in case of any error
-func (dk *DynaKubeStatus) SetPhaseOnError(err error) bool {
-	if err != nil {
-		return dk.SetPhase(Error)
-	}
-	return false
-}
