@@ -74,7 +74,7 @@ func (updater *oneAgentUpdater) UseTenantRegistry(ctx context.Context, dockerCfg
 	}
 
 	defaultImage := updater.dynakube.DefaultOneAgentImage()
-	return updateVersionStatusForTenantRegistry(ctx, updater.Target(), defaultImage, updater.versionFunc, dockerCfg)
+	return updateVersionStatusForTenantRegistry(ctx, updater.Target(), defaultImage, updater.versionFunc, dockerCfg, updater.dynakube)
 }
 
 func (updater *oneAgentUpdater) CheckForDowngrade(latestVersion string) (bool, error) {

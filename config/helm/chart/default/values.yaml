@@ -15,7 +15,15 @@
 # may be set to "kubernetes", "openshift", or "gke-autopilot"
 platform: ""
 
+#image qualifier; OBSOLETE -> use imageref instead!
+# supply either image or imageref; if both supplied, imageref will be disregarded
 image: ""
+#image description using tags
+#resulting image will be named <repository>:v<tag>
+imageRef:
+  repository: "" #path to repo
+  tag: "" #defaults to chart version
+
 customPullSecret: ""
 installCRD: false
 
