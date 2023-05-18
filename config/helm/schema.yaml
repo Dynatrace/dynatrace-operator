@@ -15,14 +15,19 @@
 x-google-marketplace:
   schemaVersion: v2
   applicationApiVersion: v1beta1
-  publishedVersion: 0.11.1
+  publishedVersion: 0.11.2
   publishedVersionMetadata:
     releaseNote: "<!-- Release notes generated using configuration in .github/release.yml\
-      \ at v0.11.1 -->\n\n## What's Changed\n### Bugfixes \U0001FAB2\n* Revert digest\
-      \ usage for tenant-registry images by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/1741\n\
-      * Adds additional check for custom fields during version status creation by\
-      \ @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/1743\n\n\n\
-      **Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v0.11.0...v0.11.1"
+      \ at v0.11.2 -->\n\n## What's Changed\n### Bugfixes \U0001FAB2\n* Improves error\
+      \ for unexpected type for image ref in image installer by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/1779\n\
+      * Prevent update of dynakube image status incase of error during registry call\
+      \ by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/1791\n\
+      ### Core changes \U0001F389\n* Add OCP 4.13 as supported version for OLM by\
+      \ @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/1776\n* Add\
+      \ CSI Driver label for to support OCP 4.13 PodSecurityStandards by @luhi-DT\
+      \ in https://github.com/Dynatrace/dynatrace-operator/pull/1778\n* Adds feature\
+      \ flag to set seccomp profile for initContainer by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/1784\n\
+      \n\n**Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v0.11.1...v0.11.2"
     releaseTypes:
     - Feature
     recommended: true
