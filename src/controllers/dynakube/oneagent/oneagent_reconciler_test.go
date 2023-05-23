@@ -372,7 +372,7 @@ func TestNewDaemonset_Affinity(t *testing.T) {
 				{
 					Key:      "beta.kubernetes.io/arch",
 					Operator: corev1.NodeSelectorOpIn,
-					Values:   []string{"amd64", "arm64"},
+					Values:   []string{"amd64", "arm64", "ppc64le"},
 				},
 				{
 					Key:      "beta.kubernetes.io/os",
@@ -386,7 +386,7 @@ func TestNewDaemonset_Affinity(t *testing.T) {
 				{
 					Key:      "kubernetes.io/arch",
 					Operator: corev1.NodeSelectorOpIn,
-					Values:   []string{"amd64", "arm64"},
+					Values:   []string{"amd64", "arm64", "ppc64le"},
 				},
 				{
 					Key:      "kubernetes.io/os",
