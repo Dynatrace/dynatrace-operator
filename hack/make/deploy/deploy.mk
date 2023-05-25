@@ -1,4 +1,5 @@
 ENABLE_CSI ?= true
+PLATFORM ?= "kubernetes"
 
 deploy/%/no-csi:
 	@make ENABLE_CSI=false $(@D)
