@@ -163,7 +163,6 @@ func assertMountPointsExist(ctx context.Context, t *testing.T, resources *resour
 	}
 }
 
-
 func assertInitContainerExists(t *testing.T, podInitContainers []corev1.Container) {
 	containers := initMap(&agInitContainers)
 
