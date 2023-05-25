@@ -23,7 +23,7 @@ our [official help page](https://www.dynatrace.com/support/help/shortlink/kubern
 As the Dynatrace Operator is provided by Dynatrace Incorporated, support is provided by the Dynatrace Support team, as described on the [support page](https://support.dynatrace.com/).
 Github issues will also be considered on a case-by-case basis regardless of support contracts and commercial relationships with Dynatrace.
 
-A detailed support matrix for different versions of [Kubernetes](https://www.dynatrace.com/support/help/shortlink/support-model-k8s) and [Openshift](https://www.dynatrace.com/support/help/shortlink/support-model-ocp) can be found in the official technology support pages.
+The [Dynatrace support lifecycle for Kubernetes and Openshift](https://www.dynatrace.com/support/help/shortlink/support-model-kubernetes) can be found in the official technology support pages.
 
 ## Quick Start
 
