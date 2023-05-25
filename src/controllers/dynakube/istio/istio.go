@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/rest"
 )
 
 var (
@@ -39,6 +39,20 @@ func BuildNameForEndpoint(name string, protocol string, host string, port uint32
 	return hex.EncodeToString(sum[:])
 }
 
+func CheckIstioInstalled(cfg *rest.Config) (bool, error) {
+	discoveryclient, err := discovery.NewDiscoveryClientForConfig(cfg)
+	if err != nil {
+		return false, err
+	}
+
+	_, err = discoveryclient.ServerResourcesForGroupVersion(IstioGVR)
+	if errors.IsNotFound(err) {
+		return false, nil
+	}
+
+	return err == nil, err
+}
+
 func buildObjectMeta(name string, namespace string) metav1.ObjectMeta {
 	return metav1.ObjectMeta{
 		Name:      name,
@@ -56,19 +70,4 @@ func buildIstioLabels(name, role string) map[string]string {
 
 func isIp(host string) bool {
 	return net.ParseIP(host) != nil
-}
-
-func checkIstioObjectExists(istioConfig *configuration, gvkName schema.GroupVersionKind) (bool, error) {
-	err := kubeobjects.KubernetesObjectProbe(gvkName, istioConfig.instance.GetNamespace(), istioConfig.name, istioConfig.reconciler.config)
-	if err == nil {
-		return false, nil
-	}
-	if meta.IsNoMatchError(err) {
-		log.Info(fmt.Sprintf("%s type not found, skipping creation", gvkName.Kind))
-		return false, nil
-	}
-	if errors.IsNotFound(err) {
-		return true, nil
-	}
-	return false, err
 }

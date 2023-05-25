@@ -11,6 +11,7 @@ import (
 	istio "istio.io/api/networking/v1alpha3"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	istioclientset "istio.io/client-go/pkg/clientset/versioned"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -69,13 +70,12 @@ func buildServiceEntryIP(meta metav1.ObjectMeta, host string, port uint32) *isti
 }
 
 func handleIstioConfigurationForServiceEntry(istioConfig *configuration) (bool, error) {
-	needsUpdate, err := checkIstioObjectExists(istioConfig, ServiceEntryGVK)
-	if !needsUpdate {
-		return false, err
-	}
-
 	serviceEntry := buildServiceEntry(buildObjectMeta(istioConfig.name, istioConfig.instance.GetNamespace()), istioConfig.commHost.Host, istioConfig.commHost.Protocol, istioConfig.commHost.Port)
-	err = createIstioConfigurationForServiceEntry(istioConfig.instance, serviceEntry, istioConfig.role, istioConfig.reconciler.istioClient, istioConfig.reconciler.scheme)
+	err := createIstioConfigurationForServiceEntry(istioConfig.instance, serviceEntry, istioConfig.role, istioConfig.reconciler.istioClient, istioConfig.reconciler.scheme)
+	if errors.IsAlreadyExists(err) {
+		log.Info("ServiceEntry already exists", "objectName", istioConfig.name, "host", istioConfig.commHost.Host, "port", istioConfig.commHost.Port)
+		return false, nil
+	}
 	if err != nil {
 		log.Error(err, "failed to create ServiceEntry")
 		return false, err

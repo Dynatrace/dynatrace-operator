@@ -1,14 +1,9 @@
 package validation
 
 import (
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	restclient "k8s.io/client-go/rest"
 )
 
 func TestNoResourcesAvailable(t *testing.T) {
@@ -20,70 +15,4 @@ func TestNoResourcesAvailable(t *testing.T) {
 			},
 		})
 	})
-}
-
-func TestIstioEnabled(t *testing.T) {
-	server := initMockServer(t, true)
-	defer server.Close()
-	cfg := &restclient.Config{Host: server.URL}
-	r, e := checkIstioInstalled(cfg)
-	if r != true {
-		t.Error(e)
-	}
-}
-
-func TestIstioDisabled(t *testing.T) {
-	server := initMockServer(t, false)
-	defer server.Close()
-	cfg := &restclient.Config{Host: server.URL}
-	r, e := checkIstioInstalled(cfg)
-	if r != false && e == nil {
-		t.Errorf("expected false, got true, %v", e)
-	}
-}
-
-func TestIstioWrongConfig(t *testing.T) {
-	server := initMockServer(t, false)
-	defer server.Close()
-	cfg := &restclient.Config{Host: "localhost:1000"}
-
-	r, e := checkIstioInstalled(cfg)
-	if r == false && e != nil { // only true success case
-		t.Logf("expected false and error %v", e)
-	} else {
-		t.Error("got true, expected false with error")
-	}
-}
-
-func initMockServer(t *testing.T, enableIstioGVR bool) *httptest.Server {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		var resources interface{}
-		switch req.URL.Path {
-		case "/apis/networking.istio.io/v1alpha3":
-			if !enableIstioGVR {
-				w.WriteHeader(http.StatusNotFound)
-				return
-			}
-
-			resources = &metav1.APIGroup{
-				Name: "networking.istio.io",
-				Versions: []metav1.GroupVersionForDiscovery{
-					{GroupVersion: "v1alpha3", Version: "v1alpha3"},
-				},
-			}
-		default:
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-		output, err := json.Marshal(resources)
-		if err != nil {
-			t.Errorf("unexpected encoding error: %v", err)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write(output)
-	}))
-
-	return server
 }

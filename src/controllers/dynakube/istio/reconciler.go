@@ -61,6 +61,14 @@ func (reconciler *Reconciler) initializeIstioClient(config *rest.Config) (istioc
 func (reconciler *Reconciler) Reconcile(instance *dynatracev1beta1.DynaKube, communicationHosts []dtclient.CommunicationHost) (bool, error) {
 	log.Info("reconciling")
 
+	installed, err := CheckIstioInstalled(reconciler.config)
+	if err != nil {
+		return false, err
+	} else if !installed {
+		log.Info("istio not installed, skipping reconciliation")
+		return false, nil
+	}
+
 	apiHost, err := dtclient.ParseEndpoint(instance.Spec.APIURL)
 	if err != nil {
 		return false, err

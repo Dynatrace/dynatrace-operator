@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"net/http/httptest"
 	"net/url"
 	"os"
 	"strconv"
@@ -80,7 +79,7 @@ func TestController_ReconcileIstioGracefullyFail(t *testing.T) {
 }
 
 func testReconcileIstio(t *testing.T, enableIstioGVR bool) {
-	server := httptest.NewServer(createReconcileTestHandler(enableIstioGVR))
+	server := initMockServer(enableIstioGVR)
 	defer server.Close()
 
 	serverUrl, err := url.Parse(server.URL)
@@ -91,6 +90,10 @@ func testReconcileIstio(t *testing.T, enableIstioGVR bool) {
 
 	virtualService := buildVirtualService(buildObjectMeta(testVirtualServiceName, DefaultTestNamespace), "localhost", serverUrl.Scheme, uint32(port))
 	instance := &dynatracev1beta1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "dynakube",
+			Namespace: DefaultTestNamespace,
+		},
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			APIURL: serverUrl.String(),
 		},
@@ -107,37 +110,12 @@ func testReconcileIstio(t *testing.T, enableIstioGVR bool) {
 	updated, err := reconciler.Reconcile(instance, []dtclient.CommunicationHost{})
 
 	assert.NoError(t, err)
-	assert.False(t, updated)
-}
+	assert.Equal(t, enableIstioGVR, updated)
 
-func createReconcileTestHandler(enableIstioGVR bool) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/apis" {
-			apiGroupList := []metav1.APIGroup{}
+	update, err := reconciler.Reconcile(instance, []dtclient.CommunicationHost{})
 
-			if enableIstioGVR {
-				apiGroupList = append(apiGroupList, metav1.APIGroup{Name: IstioGVRName})
-			}
-
-			sendApiGroupList(w, apiGroupList)
-		} else {
-			sendApiVersions(w)
-		}
-	}
-}
-
-func sendApiVersions(w http.ResponseWriter) {
-	versions := metav1.APIVersions{
-		Versions: []string{testVersion},
-	}
-	sendData(versions, w)
-}
-
-func sendApiGroupList(w http.ResponseWriter, apiGroups []metav1.APIGroup) {
-	apiGroupList := metav1.APIGroupList{
-		Groups: apiGroups,
-	}
-	sendData(apiGroupList, w)
+	assert.NoError(t, err)
+	assert.False(t, update)
 }
 
 func sendData(i any, w http.ResponseWriter) {

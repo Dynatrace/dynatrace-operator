@@ -8,6 +8,7 @@ import (
 	istio "istio.io/api/networking/v1alpha3"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	istioclientset "istio.io/client-go/pkg/clientset/versioned"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -76,18 +77,16 @@ func buildVirtualServiceTLSRoute(host string, port uint32) []*istio.TLSRoute {
 }
 
 func handleIstioConfigurationForVirtualService(istioConfig *configuration) (bool, error) {
-	needsUpdate, err := checkIstioObjectExists(istioConfig, VirtualServiceGVK)
-	if !needsUpdate {
-		return false, err
-	}
-
 	virtualService := buildVirtualService(metav1.ObjectMeta{Name: istioConfig.name, Namespace: istioConfig.instance.GetNamespace()}, istioConfig.commHost.Host, istioConfig.commHost.Protocol,
 		istioConfig.commHost.Port)
 	if virtualService == nil {
 		return false, nil
 	}
 
-	err = createIstioConfigurationForVirtualService(istioConfig.instance, virtualService, istioConfig.role, istioConfig.reconciler.istioClient, istioConfig.reconciler.scheme)
+	err := createIstioConfigurationForVirtualService(istioConfig.instance, virtualService, istioConfig.role, istioConfig.reconciler.istioClient, istioConfig.reconciler.scheme)
+	if errors.IsAlreadyExists(err) {
+		return false, nil
+	}
 	if err != nil {
 		log.Error(err, "failed to create VirtualService")
 		return false, err
