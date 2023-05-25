@@ -89,6 +89,8 @@ func (reconciler *Reconciler) Reconcile(instance *dynatracev1beta1.DynaKube, com
 		return true, nil
 	}
 
+	log.Info("reconciled")
+
 	return false, nil
 }
 

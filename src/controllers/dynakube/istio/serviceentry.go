@@ -73,7 +73,6 @@ func handleIstioConfigurationForServiceEntry(istioConfig *configuration) (bool, 
 	serviceEntry := buildServiceEntry(buildObjectMeta(istioConfig.name, istioConfig.instance.GetNamespace()), istioConfig.commHost.Host, istioConfig.commHost.Protocol, istioConfig.commHost.Port)
 	err := createIstioConfigurationForServiceEntry(istioConfig.instance, serviceEntry, istioConfig.role, istioConfig.reconciler.istioClient, istioConfig.reconciler.scheme)
 	if errors.IsAlreadyExists(err) {
-		log.Info("ServiceEntry already exists", "objectName", istioConfig.name, "host", istioConfig.commHost.Host, "port", istioConfig.commHost.Port)
 		return false, nil
 	}
 	if err != nil {
