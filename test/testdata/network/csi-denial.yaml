@@ -1,13 +1,13 @@
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
+apiVersion: networking.istio.io/v1beta1
+kind: Sidecar
 metadata:
-  name: "csi-driver-deny-egress"
+  name: deny-csi
   namespace: dynatrace
 spec:
-  podSelector:
-    matchLabels:
+  workloadSelector:
+    labels:
       app.kubernetes.io/name: dynatrace-operator
       app.kubernetes.io/component: csi-driver
-  policyTypes:
-  - Egress
-  - Ingress
+  outboundTrafficPolicy:
+    mode: REGISTRY_ONLY
+

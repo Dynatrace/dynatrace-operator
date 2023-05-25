@@ -42,14 +42,8 @@ var (
 func SetupProxyWithTeardown(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube) {
 	if testDynakube.Spec.Proxy != nil {
 		installProxySCC(builder)
-		builder.Assess("create proxy namespace", namespace.Create(namespace.NewBuilder(proxyNamespaceName).Build()))
 		builder.Assess("install proxy", manifests.InstallFromFile(proxyDeploymentPath))
 		builder.Assess("proxy started", deployment.WaitFor(proxyDeploymentName, proxyNamespaceName))
-
-		builder.Assess("query webhook via proxy", sampleapps.InstallWebhookCurlProxyPod(testDynakube))
-		builder.Assess("query is completed", sampleapps.WaitForWebhookCurlProxyPod(testDynakube))
-		builder.Assess("proxy is running", sampleapps.CheckWebhookCurlProxyResult(testDynakube))
-
 		builder.WithTeardown("removing proxy", DeleteProxy())
 	}
 }
@@ -69,17 +63,6 @@ func DeleteProxy() features.Func {
 func CutOffDynatraceNamespace(builder *features.FeatureBuilder, proxySpec *dynatracev1beta1.DynaKubeProxy) {
 	if proxySpec != nil {
 		builder.Assess("cut off dynatrace namespace", manifests.InstallFromFile(dynatraceNetworkPolicy))
-	}
-}
-
-func ApproveConnectionsWithK8SAndProxy(builder *features.FeatureBuilder, proxySpec *dynatracev1beta1.DynaKubeProxy) {
-	if proxySpec != nil {
-		if kubeobjects.ResolvePlatformFromEnv() == kubeobjects.Openshift {
-			builder.Assess("approve dynatrace-openshift network traffic", manifests.InstallFromFile(path.Join(project.TestDataDir(), "network/dynatrace-openshift-approval.yaml")))
-		} else {
-			builder.Assess("approve dynatrace-kube-system network traffic", manifests.InstallFromFile(path.Join(project.TestDataDir(), "network/dynatrace-kube-system-approval.yaml")))
-		}
-		builder.Assess("approve dynatrace-proxy network traffic", manifests.InstallFromFile(path.Join(project.TestDataDir(), "network/proxy-approval.yaml")))
 	}
 }
 
