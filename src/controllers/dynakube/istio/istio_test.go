@@ -63,7 +63,6 @@ func initMockServer(enableIstioGVR bool) *httptest.Server {
 		}
 
 		w.WriteHeader(http.StatusNotFound)
-		return
 	}))
 
 	return server
