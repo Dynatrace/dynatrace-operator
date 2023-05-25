@@ -127,9 +127,9 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 
 		var serverErr dtclient.ServerError
 		isServerError := errors.As(err, &serverErr)
-		if isServerError && serverErr.Code == http.StatusTooManyRequests {
+		if isServerError && (serverErr.Code == http.StatusTooManyRequests || serverErr.Code == http.StatusServiceUnavailable) {
 			// should we set the phase to error ?
-			log.Info("request limit for Dynatrace API reached! Next reconcile in one minute")
+			log.Info("server is unavailable or request limit reached! trying again in one minute")
 			return reconcile.Result{RequeueAfter: requeueAfter}, nil
 		}
 		dynakube.Status.SetPhase(dynatracev1beta1.Error)

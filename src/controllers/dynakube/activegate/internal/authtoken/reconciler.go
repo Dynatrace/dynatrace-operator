@@ -46,7 +46,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 func (r *Reconciler) Reconcile() error {
 	err := r.reconcileAuthTokenSecret()
 	if err != nil {
-		return errors.Errorf("failed to create activeGateAuthToken secret: %v", err)
+		return errors.WithMessage(err, "failed to create activeGateAuthToken secret")
 	}
 	return nil
 }
@@ -77,7 +77,7 @@ func (r *Reconciler) reconcileAuthTokenSecret() error {
 func (r *Reconciler) ensureAuthTokenSecret() error {
 	agSecretData, err := r.getActiveGateAuthToken()
 	if err != nil {
-		return errors.Errorf("failed to create secret '%s': %v", r.dynakube.ActiveGateAuthTokenSecret(), err)
+		return errors.WithMessagef(err, "failed to create secret '%s'", r.dynakube.ActiveGateAuthTokenSecret())
 	}
 	return r.createSecret(agSecretData)
 }
