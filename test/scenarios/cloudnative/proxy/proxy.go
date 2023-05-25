@@ -9,6 +9,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/istio"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/proxy"
@@ -41,9 +42,10 @@ func withProxy(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features
 		Proxy(proxySpec).
 		Build()
 
-	sampleNamespace := namespace.NewBuilder("proxy-sample").WithLabels(testDynakube.NamespaceSelector().MatchLabels).Build()
+	sampleLabels := kubeobjects.MergeMap(testDynakube.NamespaceSelector().MatchLabels, istio.InjectionLabel)
+	sampleNamespace := namespace.NewBuilder("proxy-sample").WithLabels(sampleLabels).Build()
 	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
-	sampleApp.WithLabels(testDynakube.NamespaceSelector().MatchLabels)
+	sampleApp.WithLabels(sampleLabels)
 	sampleApp.WithNamespace(sampleNamespace)
 
 	// Register sample namespace create and delete
@@ -51,13 +53,16 @@ func withProxy(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features
 	builder.Teardown(sampleApp.UninstallNamespace())
 
 	// Register operator install
-	assess.InstallOperatorFromSource(builder, testDynakube)
+	operatorNamespaceBuilder := namespace.NewBuilder(testDynakube.Namespace)
+	if proxySpec != nil {
+		operatorNamespaceBuilder = operatorNamespaceBuilder.WithLabels(istio.InjectionLabel)
+	}
+	assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), testDynakube)
 
 	// Register proxy create and delete
 	proxy.SetupProxyWithTeardown(builder, testDynakube)
 	proxy.CutOffDynatraceNamespace(builder, proxySpec)
 	proxy.IsDynatraceNamespaceCutOff(builder, testDynakube)
-	proxy.ApproveConnectionsWithK8SAndProxy(builder, proxySpec)
 
 	// Register dynakube install
 	assess.InstallDynakube(builder, &secretConfig, testDynakube)

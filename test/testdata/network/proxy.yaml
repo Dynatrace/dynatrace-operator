@@ -98,3 +98,18 @@ spec:
   - port: 3128
     targetPort: 3128
 
+---
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: squid
+  namespace: dynatrace
+spec:
+  hosts:
+  - squid.proxy.svc.cluster.local
+  ports:
+    - number: 3128
+      name: tcp
+      protocol: TCP
+  resolution: DNS
+  location: MESH_EXTERNAL
