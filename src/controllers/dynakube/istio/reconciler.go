@@ -1,7 +1,6 @@
 package istio
 
 import (
-	"fmt"
 	"os"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -51,7 +50,7 @@ func NewReconciler(config *rest.Config, scheme *runtime.Scheme) *Reconciler {
 func (reconciler *Reconciler) initializeIstioClient(config *rest.Config) (istioclientset.Interface, error) {
 	ic, err := istioclientset.NewForConfig(config)
 	if err != nil {
-		log.Error(err, "istio: failed to initialize client")
+		log.Error(err, "failed to initialize client")
 	}
 
 	return ic, err
@@ -60,13 +59,13 @@ func (reconciler *Reconciler) initializeIstioClient(config *rest.Config) (istioc
 // Reconcile - runs the istio's reconcile workflow,
 // creating/deleting VS & SE for external communications
 func (reconciler *Reconciler) Reconcile(instance *dynatracev1beta1.DynaKube, communicationHosts []dtclient.CommunicationHost) (bool, error) {
-	enabled, err := CheckIstioEnabled(reconciler.config)
-	if err != nil {
-		return false, fmt.Errorf("istio: failed to verify Istio availability: %w", err)
-	}
-	log.Info("istio: status", "enabled", enabled)
+	log.Info("reconciling")
 
-	if !enabled {
+	isInstalled, err := CheckIstioInstalled(reconciler.config)
+	if err != nil {
+		return false, err
+	} else if !isInstalled {
+		log.Info("istio not installed, skipping reconciliation")
 		return false, nil
 	}
 
@@ -77,7 +76,7 @@ func (reconciler *Reconciler) Reconcile(instance *dynatracev1beta1.DynaKube, com
 
 	upd, err := reconciler.reconcileIstioConfigurations(instance, []dtclient.CommunicationHost{apiHost}, "api-url")
 	if err != nil {
-		return false, errors.WithMessage(err, "istio: error reconciling config for Dynatrace API URL")
+		return false, errors.WithMessage(err, "error reconciling config for Dynatrace API URL")
 	} else if upd {
 		return true, nil
 	}
@@ -85,7 +84,7 @@ func (reconciler *Reconciler) Reconcile(instance *dynatracev1beta1.DynaKube, com
 	// Fetch endpoints via Dynatrace client
 	upd, err = reconciler.reconcileIstioConfigurations(instance, communicationHosts, "communication-endpoint")
 	if err != nil {
-		return false, errors.WithMessage(err, "istio: error reconciling config for Dynatrace communication endpoints:")
+		return false, errors.WithMessage(err, "error reconciling config for Dynatrace communication endpoints:")
 	} else if upd {
 		return true, nil
 	}
@@ -139,13 +138,8 @@ func (reconciler *Reconciler) reconcileRemoveConfigurations(instance *dynatracev
 
 func (reconciler *Reconciler) reconcileCreateConfigurations(instance *dynatracev1beta1.DynaKube,
 	communicationHosts []dtclient.CommunicationHost, role string) (bool, error) {
-	crdProbe := verifyIstioCrdAvailability(instance, reconciler.config)
-	if crdProbe != kubeobjects.ProbeTypeFound {
-		log.Info("istio: failed to lookup CRD for ServiceEntry/VirtualService: Did you install Istio recently? Please restart the Operator.")
-		return false, nil
-	}
-
 	configurationUpdated := false
+
 	for _, commHost := range communicationHosts {
 		name := BuildNameForEndpoint(instance.GetName(), commHost.Protocol, commHost.Host, commHost.Port)
 		commHost := commHost
