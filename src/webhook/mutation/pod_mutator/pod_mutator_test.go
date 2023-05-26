@@ -35,27 +35,102 @@ var testResourceRequirements = corev1.ResourceRequirements{
 	},
 }
 
-func TestHandle(t *testing.T) {
-	t.Run("happy path", func(t *testing.T) {
-		mutator1 := createSimplePodMutatorMock()
-		mutator2 := createSimplePodMutatorMock()
-		dynakube := getTestDynakube()
-		ctx := context.TODO()
-		pod := getTestPod()
-		namespace := getTestNamespace()
-		request := createTestAdmissionRequest(pod)
-		podWebhook := createTestWebhook(t, []dtwebhook.PodMutator{mutator1, mutator2}, []client.Object{dynakube, pod, namespace})
+type mutatorTest struct {
+	name           string
+	mutators       []dtwebhook.PodMutator
+	testPod        *corev1.Pod
+	objects        []client.Object
+	expectedResult func(t *testing.T, response *admission.Response, mutators []dtwebhook.PodMutator)
+}
 
-		response := podWebhook.Handle(ctx, *request)
-		require.NotNil(t, response)
-		assert.True(t, response.Allowed)
-		assert.Nil(t, response.Result)
-		assert.NotNil(t, response.Patches)
-		mutator1.(*dtwebhook.PodMutatorMock).AssertNumberOfCalls(t, "Enabled", 1)
-		mutator1.(*dtwebhook.PodMutatorMock).AssertNumberOfCalls(t, "Mutate", 1)
-		mutator2.(*dtwebhook.PodMutatorMock).AssertNumberOfCalls(t, "Enabled", 1)
-		mutator2.(*dtwebhook.PodMutatorMock).AssertNumberOfCalls(t, "Mutate", 1)
-	})
+func TestMutator(t *testing.T) {
+	tests := []mutatorTest{
+		{
+			name:     "happy path",
+			mutators: []dtwebhook.PodMutator{createSimplePodMutatorMock(), createSimplePodMutatorMock()},
+			testPod:  getTestPod(),
+			objects:  []client.Object{getTestDynakube(), getTestNamespace()},
+			expectedResult: func(t *testing.T, response *admission.Response, mutators []dtwebhook.PodMutator) {
+				require.NotNil(t, response)
+				assert.True(t, response.Allowed)
+				assert.Nil(t, response.Result)
+				assert.NotNil(t, response.Patches)
+
+				for _, mutator := range mutators {
+					assertPodMutatorCalls(t, mutator, 1)
+				}
+			},
+		},
+		{
+			name:     "disable all mutators with dynatrace.com/inject",
+			mutators: []dtwebhook.PodMutator{createSimplePodMutatorMock(), createSimplePodMutatorMock()},
+			testPod:  getTestPodWithInjectionDisabled(),
+			objects:  []client.Object{getTestDynakube(), getTestNamespace()},
+			expectedResult: func(t *testing.T, response *admission.Response, mutators []dtwebhook.PodMutator) {
+				require.NotNil(t, response)
+				assert.True(t, response.Allowed)
+				assert.NotNil(t, response.Result)
+				assert.Nil(t, response.Patches)
+
+				for _, mutator := range mutators {
+					assertPodMutatorCalls(t, mutator, 0)
+				}
+			},
+		},
+		{
+			name:     "sad path",
+			mutators: []dtwebhook.PodMutator{createFailPodMutatorMock()},
+			testPod:  getTestPod(),
+			objects:  []client.Object{getTestDynakube(), getTestNamespace()},
+			expectedResult: func(t *testing.T, response *admission.Response, mutators []dtwebhook.PodMutator) {
+				require.NotNil(t, response)
+				assert.True(t, response.Allowed)
+				assert.Contains(t, response.Result.Message, "Failed")
+				assert.Nil(t, response.Patches)
+
+				for _, mutator := range mutators {
+					assertPodMutatorCalls(t, mutator, 1)
+				}
+
+				// Logging newline so go test can parse the output correctly
+				log.Info("")
+			},
+		},
+		{
+			name:     "oc debug pod",
+			mutators: []dtwebhook.PodMutator{createSimplePodMutatorMock()},
+			testPod:  getTestPodWithOcDebugPodAnnotations(),
+			objects:  []client.Object{getTestDynakube(), getTestNamespace()},
+			expectedResult: func(t *testing.T, response *admission.Response, mutators []dtwebhook.PodMutator) {
+				require.NotNil(t, response)
+				assert.True(t, response.Allowed)
+				assert.NotNil(t, response.Result)
+				assert.Nil(t, response.Patches)
+				assert.Nil(t, response.Patch)
+
+				for _, mutator := range mutators {
+					assertPodMutatorCalls(t, mutator, 0)
+				}
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ctx := context.TODO()
+			request := createTestAdmissionRequest(test.testPod)
+			// merge test objects with the test pod
+			objects := test.objects
+			objects = append(objects, test.testPod)
+			podWebhook := createTestWebhook(t, test.mutators, objects)
+
+			response := podWebhook.Handle(ctx, *request)
+			test.expectedResult(t, &response, test.mutators)
+		})
+	}
+}
+
+func TestHandleD(t *testing.T) {
 	t.Run("disable all mutators with dynatrace.com/inject", func(t *testing.T) {
 		mutator1 := createSimplePodMutatorMock()
 		mutator2 := createSimplePodMutatorMock()
@@ -76,45 +151,6 @@ func TestHandle(t *testing.T) {
 		mutator1.(*dtwebhook.PodMutatorMock).AssertNumberOfCalls(t, "Mutate", 0)
 		mutator2.(*dtwebhook.PodMutatorMock).AssertNumberOfCalls(t, "Enabled", 0)
 		mutator2.(*dtwebhook.PodMutatorMock).AssertNumberOfCalls(t, "Mutate", 0)
-	})
-	t.Run("sad path", func(t *testing.T) {
-		sadMutator := createFailPodMutatorMock()
-		dynakube := getTestDynakube()
-		ctx := context.TODO()
-		pod := getTestPod()
-		namespace := getTestNamespace()
-		request := createTestAdmissionRequest(pod)
-		podWebhook := createTestWebhook(t, []dtwebhook.PodMutator{sadMutator}, []client.Object{dynakube, pod, namespace})
-
-		response := podWebhook.Handle(ctx, *request)
-		require.NotNil(t, response)
-		assert.True(t, response.Allowed)
-		assert.Contains(t, response.Result.Message, "Failed")
-		assert.Nil(t, response.Patches)
-		sadMutator.(*dtwebhook.PodMutatorMock).AssertNumberOfCalls(t, "Enabled", 1)
-		sadMutator.(*dtwebhook.PodMutatorMock).AssertNumberOfCalls(t, "Mutate", 1)
-
-		// Logging newline so go test can parse the output correctly
-		log.Info("")
-	})
-	t.Run("oc debug pod", func(t *testing.T) {
-		mutator1 := createSimplePodMutatorMock()
-		dynakube := getTestDynakube()
-		ctx := context.TODO()
-		pod := getTestPod()
-		pod.Annotations = map[string]string{ocDebugAnnotationsContainer: "true", ocDebugAnnotationsResource: "true"}
-		namespace := getTestNamespace()
-		request := createTestAdmissionRequest(pod)
-		podWebhook := createTestWebhook(t, []dtwebhook.PodMutator{mutator1}, []client.Object{dynakube, pod, namespace})
-
-		response := podWebhook.Handle(ctx, *request)
-		require.NotNil(t, response)
-		assert.True(t, response.Allowed)
-		assert.NotNil(t, response.Result)
-		assert.Nil(t, response.Patches)
-		assert.Nil(t, response.Patch)
-		mutator1.(*dtwebhook.PodMutatorMock).AssertNumberOfCalls(t, "Enabled", 0)
-		mutator1.(*dtwebhook.PodMutatorMock).AssertNumberOfCalls(t, "Mutate", 0)
 	})
 }
 
@@ -226,6 +262,33 @@ func TestHandlePodReinvocation(t *testing.T) {
 		failingMutator.(*dtwebhook.PodMutatorMock).AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
 		failingMutator.(*dtwebhook.PodMutatorMock).AssertCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
 	})
+}
+
+func assertPodMutatorCalls(t *testing.T, mutator dtwebhook.PodMutator, expectedCalls int) {
+	mock, ok := mutator.(*dtwebhook.PodMutatorMock)
+	if !ok {
+		t.Fatalf("assertPodMutatorCalls: mutator is not a mock")
+	}
+
+	mock.AssertNumberOfCalls(t, "Enabled", expectedCalls)
+	mock.AssertNumberOfCalls(t, "Mutate", expectedCalls)
+}
+
+func getTestPodWithInjectionDisabled() *corev1.Pod {
+	pod := getTestPod()
+	pod.Annotations = map[string]string{
+		dtwebhook.AnnotationDynatraceInject: "false",
+	}
+	return pod
+}
+
+func getTestPodWithOcDebugPodAnnotations() *corev1.Pod {
+	pod := getTestPod()
+	pod.Annotations = map[string]string{
+		ocDebugAnnotationsContainer: "true",
+		ocDebugAnnotationsResource:  "true",
+	}
+	return pod
 }
 
 func createTestWebhook(t *testing.T, mutators []dtwebhook.PodMutator, objects []client.Object) *podMutatorWebhook {
