@@ -1,20 +1,10 @@
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
+apiVersion: networking.istio.io/v1beta1
+kind: Sidecar
 metadata:
-  name: "dynatrace-deny-egress-to-world"
+  name: deny-all
   namespace: dynatrace
 spec:
-  podSelector: {}
-  policyTypes:
-  - Egress
-  egress:
-  - to:
-    - ipBlock:
-        cidr: 10.0.0.0/8
-  - ports:
-    - port: 53
-      protocol: UDP
-    - port: 53
-      protocol: TCP
-    to:
-    - namespaceSelector: {}
+  outboundTrafficPolicy:
+    mode: REGISTRY_ONLY
+
+

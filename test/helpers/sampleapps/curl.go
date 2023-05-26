@@ -72,36 +72,6 @@ func curlNamespace(dynakube dynatracev1beta1.DynaKube) string {
 	return dynakube.Namespace
 }
 
-func InstallWebhookCurlProxyPod(dynakube dynatracev1beta1.DynaKube) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		curlTarget := fmt.Sprintf("https://%s/%s", GetWebhookServiceUrl(dynakube), livezEndpoint)
-		curlPod := NewCurlPodBuilder(curlPodNameWebhook, dynakube.Namespace, curlTarget).WithProxy(dynakube).Build()
-		require.NoError(t, environmentConfig.Client().Resources().Create(ctx, curlPod))
-
-		return ctx
-	}
-}
-
-func WaitForWebhookCurlProxyPod(dynakube dynatracev1beta1.DynaKube) features.Func {
-	return pod.WaitForCondition(curlPodNameWebhook, dynakube.Namespace, func(object k8s.Object) bool {
-		pod, isPod := object.(*corev1.Pod)
-		return isPod && pod.Status.Phase == corev1.PodSucceeded
-	}, 45*time.Second)
-}
-
-func CheckWebhookCurlProxyResult(dynakube dynatracev1beta1.DynaKube) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resources := environmentConfig.Client().Resources()
-
-		logStream := getCurlPodLogStream(ctx, t, resources, curlPodNameWebhook, dynakube.Namespace)
-
-		webhookServiceUrl := GetWebhookServiceUrl(dynakube)
-		logs.AssertContains(t, logStream, fmt.Sprintf("CONNECT %s:443", webhookServiceUrl))
-
-		return ctx
-	}
-}
-
 func getActiveGateServiceUrl(dynakube dynatracev1beta1.DynaKube) string {
 	serviceName := capability.BuildServiceName(dynakube.Name, consts.MultiActiveGateName)
 	return fmt.Sprintf("https://%s.%s.svc.cluster.local", serviceName, dynakube.Namespace)

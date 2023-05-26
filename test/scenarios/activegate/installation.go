@@ -12,6 +12,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/activegate"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/istio"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/proxy"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
@@ -59,13 +61,16 @@ func Install(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features.F
 		Build()
 
 	// Register operator install
-	assess.InstallOperatorFromSource(builder, testDynakube)
+	operatorNamespaceBuilder := namespace.NewBuilder(testDynakube.Namespace)
+	if proxySpec != nil {
+		operatorNamespaceBuilder = operatorNamespaceBuilder.WithLabels(istio.InjectionLabel)
+	}
+	assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), testDynakube)
 
 	// Register proxy install and uninstall
 	proxy.SetupProxyWithTeardown(builder, testDynakube)
 	proxy.CutOffDynatraceNamespace(builder, proxySpec)
 	proxy.IsDynatraceNamespaceCutOff(builder, testDynakube)
-	proxy.ApproveConnectionsWithK8SAndProxy(builder, proxySpec)
 
 	// Register actual test
 	assess.InstallDynakube(builder, &secretConfig, testDynakube)
@@ -104,9 +109,7 @@ func checkIfAgHasContainers(testDynakube *dynatracev1beta1.DynaKube) features.Fu
 		require.NotEmpty(t, activeGatePod.Spec.InitContainers)
 		require.NotEmpty(t, activeGatePod.Spec.Containers)
 
-		assertInitContainerKnown(t, activeGatePod.Spec.InitContainers)
 		assertInitContainerExists(t, activeGatePod.Spec.InitContainers)
-		assertContainersKnown(t, activeGatePod.Spec.Containers)
 		assertContainersExist(t, activeGatePod.Spec.Containers)
 
 		return ctx
@@ -160,15 +163,6 @@ func assertMountPointsExist(ctx context.Context, t *testing.T, resources *resour
 	}
 }
 
-func assertInitContainerKnown(t *testing.T, podInitContainers []corev1.Container) {
-	containers := initMap(&agInitContainers)
-
-	for _, container := range podInitContainers {
-		_, ok := containers[container.Name]
-		assert.True(t, ok, "unknown init container: '"+container.Name+"'")
-	}
-}
-
 func assertInitContainerExists(t *testing.T, podInitContainers []corev1.Container) {
 	containers := initMap(&agInitContainers)
 
@@ -176,15 +170,6 @@ func assertInitContainerExists(t *testing.T, podInitContainers []corev1.Containe
 
 	for name, container := range containers {
 		assert.True(t, container, "init container is missing: '"+name+"'")
-	}
-}
-
-func assertContainersKnown(t *testing.T, podContainers []corev1.Container) {
-	containers := initMap(&agContainers)
-
-	for _, container := range podContainers {
-		_, ok := containers[container.Name]
-		assert.True(t, ok, "unknown container: '"+container.Name+"'")
 	}
 }
 
