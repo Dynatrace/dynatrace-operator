@@ -61,10 +61,10 @@ func (reconciler *Reconciler) initializeIstioClient(config *rest.Config) (istioc
 func (reconciler *Reconciler) Reconcile(instance *dynatracev1beta1.DynaKube, communicationHosts []dtclient.CommunicationHost) (bool, error) {
 	log.Info("reconciling")
 
-	installed, err := CheckIstioInstalled(reconciler.config)
+	isInstalled, err := CheckIstioInstalled(reconciler.config)
 	if err != nil {
 		return false, err
-	} else if !installed {
+	} else if !isInstalled {
 		log.Info("istio not installed, skipping reconciliation")
 		return false, nil
 	}
@@ -88,8 +88,6 @@ func (reconciler *Reconciler) Reconcile(instance *dynatracev1beta1.DynaKube, com
 	} else if upd {
 		return true, nil
 	}
-
-	log.Info("reconciled")
 
 	return false, nil
 }

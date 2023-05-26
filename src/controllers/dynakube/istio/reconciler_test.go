@@ -70,12 +70,14 @@ func TestIstioClient_BuildDynatraceVirtualService(t *testing.T) {
 	t.Logf("list of istio object %v", vsList.Items)
 }
 
-func TestController_ReconcileIstio(t *testing.T) {
-	testReconcileIstio(t, true)
-}
+func TestReconcileIstio(t *testing.T) {
+	t.Run(`reconciles istio objects correctly`, func(t *testing.T) {
+		testReconcileIstio(t, true)
+	})
 
-func TestController_ReconcileIstioGracefullyFail(t *testing.T) {
-	testReconcileIstio(t, false)
+	t.Run(`gracefully fail if istio is not installed`, func(t *testing.T) {
+		testReconcileIstio(t, false)
+	})
 }
 
 func testReconcileIstio(t *testing.T, enableIstioGVR bool) {

@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	restclient "k8s.io/client-go/rest"
 )
@@ -12,34 +13,30 @@ import (
 func TestIstioEnabled(t *testing.T) {
 	server := initMockServer(true)
 	defer server.Close()
-	cfg := &restclient.Config{Host: server.URL}
-	r, e := CheckIstioInstalled(cfg)
-	if r != true {
-		t.Error(e)
-	}
+	config := &restclient.Config{Host: server.URL}
+
+	isInstalled, err := CheckIstioInstalled(config)
+	require.True(t, isInstalled, err)
 }
 
 func TestIstioDisabled(t *testing.T) {
 	server := initMockServer(false)
 	defer server.Close()
-	cfg := &restclient.Config{Host: server.URL}
-	r, e := CheckIstioInstalled(cfg)
-	if r != false && e == nil {
-		t.Errorf("expected false, got true, %v", e)
-	}
+	config := &restclient.Config{Host: server.URL}
+
+	isInstalled, err := CheckIstioInstalled(config)
+	require.False(t, isInstalled)
+	require.Nil(t, err)
 }
 
 func TestIstioWrongConfig(t *testing.T) {
 	server := initMockServer(false)
 	defer server.Close()
-	cfg := &restclient.Config{Host: "localhost:1000"}
+	config := &restclient.Config{Host: "localhost:1000"}
 
-	r, e := CheckIstioInstalled(cfg)
-	if r == false && e != nil { // only true success case
-		t.Logf("got false and error: %v", e)
-	} else {
-		t.Error("got true, expected false with error")
-	}
+	isInstalled, err := CheckIstioInstalled(config)
+	require.False(t, isInstalled)
+	require.NotNil(t, err)
 }
 
 func initMockServer(enableIstioGVR bool) *httptest.Server {
