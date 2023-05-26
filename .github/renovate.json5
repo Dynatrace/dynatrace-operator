@@ -12,7 +12,7 @@
       "matchStrings": [
         // dependencies like "go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.51.1", make sure to only use repository and ignore sub-packages
         "go install (?<repository>.*?)\/(?<package>[a-zA-Z0-9\\-]+\/.+?)(\/.*)?@(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+(\\.[0-9]+)?)",
-        // catches and handles "sigs.k8s.io/controller-tools/cmd/controller-gen@v0.11.1" 
+        // catches and handles "sigs.k8s.io/controller-tools/cmd/controller-gen@v0.11.1"
         "\"(?<repository>.*?)\/(?<package>[a-zA-Z0-9\\-]+\/.+?)(\/.*)?@(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+(\\.[0-9]+)?)\"",
         // catches and handles "sigs.k8s.io/kustomize/kustomize/v4@v4.5.7"
         "\"(?<repository>.*?)\/(?<package>.*?)@(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+(\\.[0-9]+)?)\""
@@ -26,7 +26,7 @@
       "matchManagers": ["dockerfile"],
       "commitMessagePrefix": "Docker:",
       "enabled": true,
-      "allowedVersions": "/^v[0-9]+\\.[0-9]+\\.[0-9]+(\\.[0-9]+)?$/"
+      "allowedVersions": "/^[0-9]+\\.[0-9]+\\.[0-9]+(\\.[0-9]+)?$/"
     },
     {
       "matchManagers": ["gomod"],
@@ -35,7 +35,7 @@
       "allowedVersions": "/^v[0-9]+\\.[0-9]+\\.[0-9]+(\\.[0-9]+)?$/",
       "postUpdateOptions": [ "gomodTidy" ]
     },
-    
+
     {
       "matchManagers": ["gomod"],
       "matchDepTypes": ["indirect"],
