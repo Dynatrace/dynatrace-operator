@@ -5,10 +5,10 @@ import (
 	"fmt"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	istio "istio.io/api/networking/v1alpha3"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	istioclientset "istio.io/client-go/pkg/clientset/versioned"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -77,26 +77,21 @@ func buildVirtualServiceTLSRoute(host string, port uint32) []*istio.TLSRoute {
 }
 
 func handleIstioConfigurationForVirtualService(istioConfig *configuration) (bool, error) {
-	probe, err := kubeobjects.KubernetesObjectProbe(VirtualServiceGVK, istioConfig.instance.GetNamespace(), istioConfig.name, istioConfig.reconciler.config)
-	if probe == kubeobjects.ProbeObjectFound {
-		return false, nil
-	} else if probe == kubeobjects.ProbeUnknown {
-		log.Error(err, "istio: failed to query VirtualService")
-		return false, err
-	}
-
 	virtualService := buildVirtualService(metav1.ObjectMeta{Name: istioConfig.name, Namespace: istioConfig.instance.GetNamespace()}, istioConfig.commHost.Host, istioConfig.commHost.Protocol,
 		istioConfig.commHost.Port)
 	if virtualService == nil {
 		return false, nil
 	}
 
-	err = createIstioConfigurationForVirtualService(istioConfig.instance, virtualService, istioConfig.role, istioConfig.reconciler.istioClient, istioConfig.reconciler.scheme)
+	err := createIstioConfigurationForVirtualService(istioConfig.instance, virtualService, istioConfig.role, istioConfig.reconciler.istioClient, istioConfig.reconciler.scheme)
+	if errors.IsAlreadyExists(err) {
+		return false, nil
+	}
 	if err != nil {
-		log.Error(err, "istio: failed to create VirtualService")
+		log.Error(err, "failed to create VirtualService")
 		return false, err
 	}
-	log.Info("istio: VirtualService created", "objectName", istioConfig.name, "host", istioConfig.commHost.Host,
+	log.Info("VirtualService created", "objectName", istioConfig.name, "host", istioConfig.commHost.Host,
 		"port", istioConfig.commHost.Port, "protocol", istioConfig.commHost.Protocol)
 
 	return true, nil
@@ -123,19 +118,19 @@ func createIstioConfigurationForVirtualService(dynaKube *dynatracev1beta1.DynaKu
 func removeIstioConfigurationForVirtualService(istioConfig *configuration, seen map[string]bool) (bool, error) {
 	list, err := istioConfig.reconciler.istioClient.NetworkingV1alpha3().VirtualServices(istioConfig.instance.GetNamespace()).List(context.TODO(), *istioConfig.listOps)
 	if err != nil {
-		log.Error(err, "istio: error listing virtual service")
+		log.Error(err, "error listing virtual service")
 		return false, err
 	}
 
 	del := false
 	for _, vs := range list.Items {
 		if _, inUse := seen[vs.GetName()]; !inUse {
-			log.Info("istio: removing", "kind", vs.Kind, "name", vs.GetName())
+			log.Info("removing virtual service", "kind", vs.Kind, "name", vs.GetName())
 			err = istioConfig.reconciler.istioClient.NetworkingV1alpha3().
 				VirtualServices(istioConfig.instance.GetNamespace()).
 				Delete(context.TODO(), vs.GetName(), metav1.DeleteOptions{})
 			if err != nil {
-				log.Error(err, "istio: error deleting virtual service", "name", vs.GetName())
+				log.Error(err, "error deleting virtual service", "name", vs.GetName())
 				continue
 			}
 			del = true
