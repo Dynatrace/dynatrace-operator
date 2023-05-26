@@ -14,9 +14,9 @@ import (
 var testEnvironment env.Environment
 
 func TestMain(m *testing.M) {
+	testEnvironment = environment.Get()
 	testEnvironment.BeforeEachTest(istio.AssertIstioNamespace())
 	testEnvironment.BeforeEachTest(istio.AssertIstiodDeployment())
-	testEnvironment = environment.Get()
 	testEnvironment.Run(m)
 }
 
