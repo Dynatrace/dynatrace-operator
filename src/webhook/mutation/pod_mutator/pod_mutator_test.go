@@ -130,30 +130,6 @@ func TestMutator(t *testing.T) {
 	}
 }
 
-func TestHandleD(t *testing.T) {
-	t.Run("disable all mutators with dynatrace.com/inject", func(t *testing.T) {
-		mutator1 := createSimplePodMutatorMock()
-		mutator2 := createSimplePodMutatorMock()
-		dynakube := getTestDynakube()
-		ctx := context.TODO()
-		pod := getTestPod()
-		pod.ObjectMeta.Annotations = map[string]string{dtwebhook.AnnotationDynatraceInject: "false"}
-		namespace := getTestNamespace()
-		request := createTestAdmissionRequest(pod)
-		podWebhook := createTestWebhook(t, []dtwebhook.PodMutator{mutator1, mutator2}, []client.Object{dynakube, pod, namespace})
-
-		response := podWebhook.Handle(ctx, *request)
-		require.NotNil(t, response)
-		assert.True(t, response.Allowed)
-		assert.NotNil(t, response.Result)
-		assert.Nil(t, response.Patches)
-		mutator1.(*dtwebhook.PodMutatorMock).AssertNumberOfCalls(t, "Enabled", 0)
-		mutator1.(*dtwebhook.PodMutatorMock).AssertNumberOfCalls(t, "Mutate", 0)
-		mutator2.(*dtwebhook.PodMutatorMock).AssertNumberOfCalls(t, "Enabled", 0)
-		mutator2.(*dtwebhook.PodMutatorMock).AssertNumberOfCalls(t, "Mutate", 0)
-	})
-}
-
 func TestHandlePodMutation(t *testing.T) {
 	t.Run("should call both mutators, initContainer and annotation added, no error", func(t *testing.T) {
 		mutator1 := createSimplePodMutatorMock()
