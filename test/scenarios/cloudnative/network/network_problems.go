@@ -9,6 +9,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/istio"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
@@ -53,7 +54,9 @@ func networkProblems(t *testing.T) features.Feature {
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
 	// Register operator install
-	assess.InstallOperatorFromSource(builder, testDynakube)
+	operatorNamespaceBuilder := namespace.NewBuilder(testDynakube.Namespace)
+	operatorNamespaceBuilder = operatorNamespaceBuilder.WithLabels(istio.InjectionLabel)
+	assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), testDynakube)
 
 	// Register network policy to block csi driver traffic
 	assess.InstallManifest(builder, csiNetworkPolicy)

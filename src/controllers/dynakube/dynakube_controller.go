@@ -115,11 +115,6 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	}
 
 	oldStatus := *dynakube.Status.DeepCopy()
-	updated := controller.reconcileIstio(dynakube)
-	if updated {
-		log.Info("istio: objects updated")
-	}
-
 	err = controller.reconcileDynaKube(ctx, dynakube)
 
 	if err != nil {
@@ -145,6 +140,11 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 		if errClient := controller.updateDynakubeStatus(ctx, dynakube); errClient != nil {
 			return reconcile.Result{}, errors.WithMessagef(errClient, "failed to update DynaKube after failure, original error: %s", err)
 		}
+	}
+
+	updated := controller.reconcileIstio(dynakube)
+	if updated {
+		log.Info("istio objects updated")
 	}
 
 	return reconcile.Result{RequeueAfter: requeueAfter}, err
@@ -181,7 +181,7 @@ func (controller *Controller) reconcileIstio(dynakube *dynatracev1beta1.DynaKube
 		updated, err = istio.NewReconciler(controller.config, controller.scheme).Reconcile(dynakube, communicationHosts)
 		if err != nil {
 			// If there are errors log them, but move on.
-			log.Info("istio: failed to reconcile objects", "error", err)
+			log.Info("istio failed to reconcile objects", "error", err)
 		}
 	}
 	return updated

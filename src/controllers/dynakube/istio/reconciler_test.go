@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"net/http/httptest"
 	"net/url"
 	"os"
 	"strconv"
@@ -71,8 +70,18 @@ func TestIstioClient_BuildDynatraceVirtualService(t *testing.T) {
 	t.Logf("list of istio object %v", vsList.Items)
 }
 
-func TestController_ReconcileIstio(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(reconcileTestHandler))
+func TestReconcileIstio(t *testing.T) {
+	t.Run(`reconciles istio objects correctly`, func(t *testing.T) {
+		testReconcileIstio(t, true)
+	})
+
+	t.Run(`gracefully fail if istio is not installed`, func(t *testing.T) {
+		testReconcileIstio(t, false)
+	})
+}
+
+func testReconcileIstio(t *testing.T, enableIstioGVR bool) {
+	server := initMockServer(enableIstioGVR)
 	defer server.Close()
 
 	serverUrl, err := url.Parse(server.URL)
@@ -83,6 +92,10 @@ func TestController_ReconcileIstio(t *testing.T) {
 
 	virtualService := buildVirtualService(buildObjectMeta(testVirtualServiceName, DefaultTestNamespace), "localhost", serverUrl.Scheme, uint32(port))
 	instance := &dynatracev1beta1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "dynakube",
+			Namespace: DefaultTestNamespace,
+		},
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			APIURL: serverUrl.String(),
 		},
@@ -99,33 +112,12 @@ func TestController_ReconcileIstio(t *testing.T) {
 	updated, err := reconciler.Reconcile(instance, []dtclient.CommunicationHost{})
 
 	assert.NoError(t, err)
-	assert.False(t, updated)
-}
+	assert.Equal(t, enableIstioGVR, updated)
 
-func reconcileTestHandler(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path == "/apis" {
-		sendApiGroupList(w)
-	} else {
-		sendApiVersions(w)
-	}
-}
+	update, err := reconciler.Reconcile(instance, []dtclient.CommunicationHost{})
 
-func sendApiVersions(w http.ResponseWriter) {
-	versions := metav1.APIVersions{
-		Versions: []string{testVersion},
-	}
-	sendData(versions, w)
-}
-
-func sendApiGroupList(w http.ResponseWriter) {
-	apiGroupList := metav1.APIGroupList{
-		Groups: []metav1.APIGroup{
-			{
-				Name: istioGVRName,
-			},
-		},
-	}
-	sendData(apiGroupList, w)
+	assert.NoError(t, err)
+	assert.False(t, update)
 }
 
 func sendData(i any, w http.ResponseWriter) {

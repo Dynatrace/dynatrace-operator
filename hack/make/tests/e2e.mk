@@ -70,6 +70,5 @@ test/e2e/applicationmonitoring/withoutcsi: manifests/crd/helm
 test/e2e/supportarchive: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -count=1 ./test/scenarios/support_archive $(SKIPCLEANUP)
 
-## synthetic monitoring
 test/e2e/synthetic: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 25m -count=1 ./test/scenarios/synthetic/monolocation $(SKIPCLEANUP)

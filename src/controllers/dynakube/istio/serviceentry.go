@@ -8,10 +8,10 @@ import (
 	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	istio "istio.io/api/networking/v1alpha3"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	istioclientset "istio.io/client-go/pkg/clientset/versioned"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -70,21 +70,16 @@ func buildServiceEntryIP(meta metav1.ObjectMeta, host string, port uint32) *isti
 }
 
 func handleIstioConfigurationForServiceEntry(istioConfig *configuration) (bool, error) {
-	probe, err := kubeobjects.KubernetesObjectProbe(ServiceEntryGVK, istioConfig.instance.GetNamespace(), istioConfig.name, istioConfig.reconciler.config)
-	if probe == kubeobjects.ProbeObjectFound {
-		return false, nil
-	} else if probe == kubeobjects.ProbeUnknown {
-		log.Error(err, "istio: failed to query ServiceEntry")
-		return false, err
-	}
-
 	serviceEntry := buildServiceEntry(buildObjectMeta(istioConfig.name, istioConfig.instance.GetNamespace()), istioConfig.commHost.Host, istioConfig.commHost.Protocol, istioConfig.commHost.Port)
-	err = createIstioConfigurationForServiceEntry(istioConfig.instance, serviceEntry, istioConfig.role, istioConfig.reconciler.istioClient, istioConfig.reconciler.scheme)
+	err := createIstioConfigurationForServiceEntry(istioConfig.instance, serviceEntry, istioConfig.role, istioConfig.reconciler.istioClient, istioConfig.reconciler.scheme)
+	if errors.IsAlreadyExists(err) {
+		return false, nil
+	}
 	if err != nil {
-		log.Error(err, "istio: failed to create ServiceEntry")
+		log.Error(err, "failed to create ServiceEntry")
 		return false, err
 	}
-	log.Info("istio: ServiceEntry created", "objectName", istioConfig.name, "host", istioConfig.commHost.Host, "port", istioConfig.commHost.Port)
+	log.Info("ServiceEntry created", "objectName", istioConfig.name, "host", istioConfig.commHost.Host, "port", istioConfig.commHost.Port)
 
 	return true, nil
 }
@@ -109,19 +104,19 @@ func createIstioConfigurationForServiceEntry(dynaKube *dynatracev1beta1.DynaKube
 func removeIstioConfigurationForServiceEntry(istioConfig *configuration, seen map[string]bool) (bool, error) {
 	list, err := istioConfig.reconciler.istioClient.NetworkingV1alpha3().ServiceEntries(istioConfig.instance.GetNamespace()).List(context.TODO(), *istioConfig.listOps)
 	if err != nil {
-		log.Error(err, "istio: error listing service entries")
+		log.Error(err, "error listing service entries")
 		return false, err
 	}
 
 	del := false
 	for _, se := range list.Items {
 		if _, inUse := seen[se.GetName()]; !inUse {
-			log.Info("istio: removing", "kind", se.Kind, "name", se.GetName())
+			log.Info("removing service entry", "kind", se.Kind, "name", se.GetName())
 			err = istioConfig.reconciler.istioClient.NetworkingV1alpha3().
 				ServiceEntries(istioConfig.instance.GetNamespace()).
 				Delete(context.TODO(), se.GetName(), metav1.DeleteOptions{})
 			if err != nil {
-				log.Error(err, "istio: error deleting service entry", "name", se.GetName())
+				log.Error(err, "error deleting service entry", "name", se.GetName())
 				continue
 			}
 			del = true
