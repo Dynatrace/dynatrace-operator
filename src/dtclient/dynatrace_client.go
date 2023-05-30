@@ -50,10 +50,11 @@ var defaultConnectionTimeout = 15 * time.Minute
 // makeRequest does an HTTP request by formatting the URL from the given arguments and returns the response.
 // The response body must be closed by the caller when no longer used.
 func (dtc *dynatraceClient) makeRequest(url string, tokenType tokenType) (*http.Response, error) {
-	req, err := createRequestWithDefaultTimeout(url, http.MethodGet, nil)
+	req, cancel, err := createRequestWithDefaultTimeout(url, http.MethodGet, nil)
 	if err != nil {
 		return nil, err
 	}
+	defer cancel()
 
 	var authHeader string
 
@@ -79,10 +80,10 @@ func (dtc *dynatraceClient) makeRequest(url string, tokenType tokenType) (*http.
 	return dtc.httpClient.Do(req)
 }
 
-func createBaseRequest(url, method, apiToken string, body io.Reader) (*http.Request, error) {
-	req, err := createRequestWithDefaultTimeout(url, method, body)
+func createBaseRequest(url, method, apiToken string, body io.Reader) (*http.Request, context.CancelFunc, error) {
+	req, cancel, err := createRequestWithDefaultTimeout(url, method, body)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Authorization", fmt.Sprintf("Api-Token %s", apiToken))
@@ -91,18 +92,19 @@ func createBaseRequest(url, method, apiToken string, body io.Reader) (*http.Requ
 		req.Header.Add("Content-Type", "application/json")
 	}
 
-	return req, nil
+	return req, cancel, nil
 }
 
-func createRequestWithDefaultTimeout(url, method string, body io.Reader) (*http.Request, error) {
-	ctx, _ := context.WithDeadline(context.Background(), time.Now().Add(defaultConnectionTimeout))
+func createRequestWithDefaultTimeout(url, method string, body io.Reader) (*http.Request, context.CancelFunc, error) {
+	ctx, cancel := context.WithTimeout(context.TODO(), defaultConnectionTimeout)
 
 	req, err := http.NewRequestWithContext(ctx, method, url, body)
 	if err != nil {
-		return nil, errors.WithMessage(err, "error initializing http request")
+		cancel()
+		return nil, nil, errors.WithMessage(err, "error initializing http request")
 	}
 
-	return req, nil
+	return req, cancel, nil
 }
 
 func (dtc *dynatraceClient) getServerResponseData(response *http.Response) ([]byte, error) {
