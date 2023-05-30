@@ -15,12 +15,13 @@ const (
 	ClassicFullStackDeploymentType      = "classic_fullstack"
 	CloudNativeDeploymentType           = "cloud_native_fullstack"
 	HostMonitoringDeploymentType        = "host_monitoring"
-	ActiveGateDeploymentType            = "active_gate"
 
 	EnvDtDeploymentMetadata = "DT_DEPLOYMENT_METADATA"
+	EnvDtOperatorVersion    = "DT_OPERATOR_VERSION"
 
 	OneAgentMetadataKey   = "oneagent"
 	ActiveGateMetadataKey = "activegate"
+	OperatorVersionKey    = "operator"
 )
 
 var (

@@ -34,6 +34,7 @@ func (dsInfo *builderInfo) environmentVariables() []corev1.EnvVar {
 
 	envVarMap = dsInfo.addClusterIDEnv(envVarMap)
 	envVarMap = dsInfo.addDeploymentMetadataEnv(envVarMap)
+	envVarMap = dsInfo.addOperatorVersionInfoEnv(envVarMap)
 	envVarMap = dsInfo.addConnectionInfoEnvs(envVarMap)
 	envVarMap = dsInfo.addProxyEnv(envVarMap)
 	envVarMap = dsInfo.addReadOnlyEnv(envVarMap)
@@ -55,6 +56,16 @@ func (dsInfo *builderInfo) addDeploymentMetadataEnv(envVarMap map[string]corev1.
 			Name: deploymentmetadata.GetDeploymentMetadataConfigMapName(dsInfo.dynakube.Name),
 		},
 		Key:      deploymentmetadata.OneAgentMetadataKey,
+		Optional: address.Of(false),
+	}})
+}
+
+func (dsInfo *builderInfo) addOperatorVersionInfoEnv(envVarMap map[string]corev1.EnvVar) map[string]corev1.EnvVar {
+	return addDefaultValueSource(envVarMap, deploymentmetadata.EnvDtOperatorVersion, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+		LocalObjectReference: corev1.LocalObjectReference{
+			Name: deploymentmetadata.GetDeploymentMetadataConfigMapName(dsInfo.dynakube.Name),
+		},
+		Key:      deploymentmetadata.OperatorVersionKey,
 		Optional: address.Of(false),
 	}})
 }
