@@ -11,7 +11,7 @@ const nodeSelectorRequirements = 2
 
 func TestAffinityNodeRequirement(t *testing.T) {
 	assert.Equal(t, AffinityNodeRequirement(), affinityNodeRequirementsForArches(amd64))
-	assert.Equal(t, AffinityNodeRequirementWithARM64(), affinityNodeRequirementsForArches(amd64, arm64))
+	assert.Equal(t, AffinityNodeRequirementWithARM64(), affinityNodeRequirementsForArches(amd64, arm64, ppc64le))
 	assert.Equal(t, len(AffinityNodeRequirement()), nodeSelectorRequirements)
 
 	assert.Contains(t, AffinityNodeRequirement(), linuxRequirement())

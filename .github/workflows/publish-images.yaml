@@ -39,7 +39,7 @@ jobs:
     needs: [prepare]
     strategy:
       matrix:
-        platform: [amd64, arm64]
+        platform: [amd64, arm64, ppc64le]
     steps:
       - name: Checkout
         uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
@@ -59,7 +59,7 @@ jobs:
       id-token: write
     strategy:
       matrix:
-        platform: [amd64, arm64]
+        platform: [amd64, arm64, ppc64le]
         registry: [gcr, dockerhub]
         include:
         - registry: gcr
