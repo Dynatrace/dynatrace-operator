@@ -259,12 +259,14 @@ func createTestDynatraceClientWithFunc(t *testing.T, handler http.HandlerFunc) (
 func TestRequestCreationWithDefaultTimeoutSetTo15Min(t *testing.T) {
 	shouldBeDoneByNow := time.Now().Add(15 * time.Minute).Add(time.Second)
 
-	request, err := createBaseRequest(
+	request, cancel, err := createBaseRequest(
 		"",
 		http.MethodGet,
 		"",
 		strings.NewReader(""))
 	assert.NoError(t, err)
+	defer cancel()
+
 	deadline, _ := request.Context().Deadline()
 	assert.Greater(t, shouldBeDoneByNow, deadline)
 }

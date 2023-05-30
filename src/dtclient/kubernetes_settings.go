@@ -99,10 +99,11 @@ func (dtc *dynatraceClient) CreateOrUpdateKubernetesSetting(clusterLabel, kubeSy
 		return "", err
 	}
 
-	req, err := createBaseRequest(dtc.getSettingsUrl(false), http.MethodPost, dtc.apiToken, bytes.NewReader(bodyData))
+	req, cancel, err := createBaseRequest(dtc.getSettingsUrl(false), http.MethodPost, dtc.apiToken, bytes.NewReader(bodyData))
 	if err != nil {
 		return "", err
 	}
+	defer cancel()
 
 	res, err := dtc.httpClient.Do(req)
 	if err != nil {
@@ -138,10 +139,11 @@ func (dtc *dynatraceClient) GetMonitoredEntitiesForKubeSystemUUID(kubeSystemUUID
 		return nil, errors.New("no kube-system namespace UUID given")
 	}
 
-	req, err := createBaseRequest(dtc.getEntitiesUrl(), http.MethodGet, dtc.apiToken, nil)
+	req, cancel, err := createBaseRequest(dtc.getEntitiesUrl(), http.MethodGet, dtc.apiToken, nil)
 	if err != nil {
 		return nil, err
 	}
+	defer cancel()
 
 	q := req.URL.Query()
 	q.Add("pageSize", "500")
@@ -178,10 +180,11 @@ func (dtc *dynatraceClient) GetSettingsForMonitoredEntities(monitoredEntities []
 		scopes = append(scopes, entity.EntityId)
 	}
 
-	req, err := createBaseRequest(dtc.getSettingsUrl(true), http.MethodGet, dtc.apiToken, nil)
+	req, cancel, err := createBaseRequest(dtc.getSettingsUrl(true), http.MethodGet, dtc.apiToken, nil)
 	if err != nil {
 		return GetSettingsResponse{}, err
 	}
+	defer cancel()
 
 	q := req.URL.Query()
 	q.Add("schemaIds", "builtin:cloud.kubernetes")
