@@ -291,11 +291,9 @@ func TestMakeRequestWithDefaultDeadline(t *testing.T) {
 
 	require.NotNil(t, dc)
 
-	{
-		url := fmt.Sprintf("%s/v1/deployment/installer/agent/connectioninfo", dc.url)
-		resp, err := dc.makeRequest(url, dynatraceApiToken)
+	url := fmt.Sprintf("%s/v1/deployment/installer/agent/connectioninfo", dc.url)
+	resp, err := dc.makeRequest(url, dynatraceApiToken) //nolint:bodyclose
 
-		assert.Error(t, err)
-		assert.Nil(t, resp)
-	}
+	assert.Error(t, err)
+	assert.Nil(t, resp)
 }
