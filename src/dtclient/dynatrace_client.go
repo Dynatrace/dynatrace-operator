@@ -1,6 +1,7 @@
 package dtclient
 
 import (
+	"context"
 	"crypto/md5" //nolint:gosec
 	"encoding/hex"
 	"encoding/json"
@@ -44,12 +45,14 @@ const (
 	installerUrlToken // in this case we don't care about the token
 )
 
+var defaultConnectionTimeout = 15 * time.Minute
+
 // makeRequest does an HTTP request by formatting the URL from the given arguments and returns the response.
 // The response body must be closed by the caller when no longer used.
 func (dtc *dynatraceClient) makeRequest(url string, tokenType tokenType) (*http.Response, error) {
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	req, err := createRequestWithDefaultTimeout(url, http.MethodGet, nil)
 	if err != nil {
-		return nil, errors.WithMessage(err, "error initializing http request")
+		return nil, err
 	}
 
 	var authHeader string
@@ -77,15 +80,26 @@ func (dtc *dynatraceClient) makeRequest(url string, tokenType tokenType) (*http.
 }
 
 func createBaseRequest(url, method, apiToken string, body io.Reader) (*http.Request, error) {
-	req, err := http.NewRequest(method, url, body)
+	req, err := createRequestWithDefaultTimeout(url, method, body)
 	if err != nil {
-		return nil, errors.WithMessage(err, "error initializing http request")
+		return nil, err
 	}
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Authorization", fmt.Sprintf("Api-Token %s", apiToken))
 
 	if method == http.MethodPost {
 		req.Header.Add("Content-Type", "application/json")
+	}
+
+	return req, nil
+}
+
+func createRequestWithDefaultTimeout(url, method string, body io.Reader) (*http.Request, error) {
+	ctx, _ := context.WithDeadline(context.Background(), time.Now().Add(defaultConnectionTimeout))
+
+	req, err := http.NewRequestWithContext(ctx, method, url, body)
+	if err != nil {
+		return nil, errors.WithMessage(err, "error initializing http request")
 	}
 
 	return req, nil
