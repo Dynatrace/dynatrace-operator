@@ -129,12 +129,12 @@ jobs:
     needs: [prepare, tests, linting]
     strategy:
       matrix:
-        platform: [amd64, arm64]
+        platform: [amd64, arm64, ppc64le]
     steps:
       - name: Checkout
         uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
       - name: Build image
-        if: matrix.platform != 'arm64' || github.ref_protected
+        if: matrix.platform == 'amd64' || github.ref_protected
         uses: ./.github/actions/build-image
         with:
           platform: ${{ matrix.platform }}
@@ -147,7 +147,7 @@ jobs:
     needs: [prepare, build]
     strategy:
       matrix:
-        platform: [amd64, arm64]
+        platform: [amd64, arm64, ppc64le]
     if: ${{ !github.event.pull_request.head.repo.fork }}
     steps:
       - name: Checkout
@@ -159,7 +159,7 @@ jobs:
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
       - name: Upload Image
-        if: matrix.platform != 'arm64' || github.ref_protected
+        if: matrix.platform == 'amd64' || github.ref_protected
         uses: ./.github/actions/upload-image
         with:
           platform: ${{ matrix.platform }}

@@ -11,7 +11,7 @@ const (
 
 func noResourcesAvailable(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	if dynakube.Spec.EnableIstio {
-		enabled, err := istio.CheckIstioEnabled(dv.cfg)
+		enabled, err := istio.CheckIstioInstalled(dv.cfg)
 		if !enabled || err != nil {
 			return errorNoResources
 		}
