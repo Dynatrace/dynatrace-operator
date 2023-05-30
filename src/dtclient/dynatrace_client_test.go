@@ -273,6 +273,10 @@ func TestRequestCreationWithDefaultTimeoutSetTo15Min(t *testing.T) {
 
 func TestMakeRequestWithDefaultDeadline(t *testing.T) {
 	defaultConnectionTimeout = 1
+	defer func() {
+		defaultConnectionTimeout = 15 * time.Minute
+	}()
+
 	dynatraceServer := httptest.NewServer(dynatraceServerHandler())
 	defer dynatraceServer.Close()
 
