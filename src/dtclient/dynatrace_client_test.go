@@ -272,6 +272,7 @@ func TestRequestCreationWithDefaultTimeoutSetTo15Min(t *testing.T) {
 }
 
 func TestMakeRequestWithDefaultDeadline(t *testing.T) {
+	defaultConnectionTimeout = 1
 	dynatraceServer := httptest.NewServer(dynatraceServerHandler())
 	defer dynatraceServer.Close()
 
@@ -290,8 +291,7 @@ func TestMakeRequestWithDefaultDeadline(t *testing.T) {
 		url := fmt.Sprintf("%s/v1/deployment/installer/agent/connectioninfo", dc.url)
 		resp, err := dc.makeRequest(url, dynatraceApiToken)
 
-		assert.NoError(t, err)
-		assert.NotNil(t, resp)
-		defer CloseBodyAfterRequest(resp)
+		assert.Error(t, err)
+		assert.Nil(t, resp)
 	}
 }
