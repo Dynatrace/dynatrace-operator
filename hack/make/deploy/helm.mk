@@ -1,4 +1,3 @@
-ENABLE_CSI ?= true
 
 ## Deploy the operator in a cluster configured in ~/.kube/config where platform and version are autodetected
 deploy/helm: manifests/crd/helm
