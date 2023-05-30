@@ -1,11 +1,11 @@
 package daemonset
 
 import (
+	"fmt"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
-	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -26,7 +26,7 @@ func TestArguments(t *testing.T) {
 			dynakube: &dynatracev1beta1.DynaKube{},
 		}
 		arguments := builder.arguments()
-		expectedDefaultArguments := builder.appendImmutableImageArgs(appendOperatorVersionArg([]string{}))
+		expectedDefaultArguments := appendImmutableImageArgs(appendOperatorVersionArg([]string{}))
 
 		assert.Equal(t, expectedDefaultArguments, arguments)
 	})
@@ -83,7 +83,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 	for _, arg := range hostInjectSpecs.Args {
 		assert.Contains(t, podSpecs.Containers[0].Args, arg)
 	}
-	assert.Contains(t, podSpecs.Containers[0].Args, "--set-host-property=OperatorVersion="+version.Version)
+	assert.Contains(t, podSpecs.Containers[0].Args, fmt.Sprintf("--set-host-property=OperatorVersion=$(%s)", deploymentmetadata.EnvDtOperatorVersion))
 
 	t.Run(`has proxy arg`, func(t *testing.T) {
 		instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
