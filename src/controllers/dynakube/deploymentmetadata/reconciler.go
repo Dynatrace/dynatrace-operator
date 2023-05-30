@@ -57,6 +57,9 @@ func (r *Reconciler) addActiveGateDeploymentMetadata(configMapData map[string]st
 }
 
 func (r *Reconciler) addOperatorVersionInfo(configMapData map[string]string) {
+	if !r.dynakube.NeedsOneAgent() { // Currently only used for oneAgent args
+		return
+	}
 	configMapData[OperatorVersionKey] = version.Version
 }
 
