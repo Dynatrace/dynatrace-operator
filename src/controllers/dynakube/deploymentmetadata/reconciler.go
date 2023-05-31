@@ -6,6 +6,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -36,6 +37,7 @@ func (r *Reconciler) Reconcile() error {
 
 	r.addOneAgentDeploymentMetadata(configMapData)
 	r.addActiveGateDeploymentMetadata(configMapData)
+	r.addOperatorVersionInfo(configMapData)
 
 	return r.maintainMetadataConfigMap(configMapData)
 }
@@ -52,6 +54,13 @@ func (r *Reconciler) addActiveGateDeploymentMetadata(configMapData map[string]st
 		return
 	}
 	configMapData[ActiveGateMetadataKey] = NewDeploymentMetadata(r.clusterID, ActiveGateMetadataKey).AsString()
+}
+
+func (r *Reconciler) addOperatorVersionInfo(configMapData map[string]string) {
+	if !r.dynakube.NeedsOneAgent() { // Currently only used for oneAgent args
+		return
+	}
+	configMapData[OperatorVersionKey] = version.Version
 }
 
 func (r *Reconciler) maintainMetadataConfigMap(configMapData map[string]string) error {
