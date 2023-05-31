@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
-	"github.com/Dynatrace/dynatrace-operator/src/version"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
 )
 
 func (dsInfo *builderInfo) arguments() []string {
@@ -14,12 +14,12 @@ func (dsInfo *builderInfo) arguments() []string {
 	args = dsInfo.appendProxyArg(args)
 	args = dsInfo.appendNetworkZoneArg(args)
 	args = appendOperatorVersionArg(args)
-	args = dsInfo.appendImmutableImageArgs(args)
+	args = appendImmutableImageArgs(args)
 
 	return args
 }
 
-func (dsInfo *builderInfo) appendImmutableImageArgs(args []string) []string {
+func appendImmutableImageArgs(args []string) []string {
 	args = append(args, fmt.Sprintf("--set-tenant=$(%s)", connectioninfo.EnvDtTenant))
 	args = append(args, fmt.Sprintf("--set-server={$(%s)}", connectioninfo.EnvDtServer))
 	return args
@@ -34,7 +34,7 @@ func (dsInfo *builderInfo) appendHostInjectArgs(args []string) []string {
 }
 
 func appendOperatorVersionArg(args []string) []string {
-	return append(args, "--set-host-property=OperatorVersion="+version.Version)
+	return append(args, fmt.Sprintf("--set-host-property=OperatorVersion=$(%s)", deploymentmetadata.EnvDtOperatorVersion))
 }
 
 func (dsInfo *builderInfo) appendNetworkZoneArg(args []string) []string {
