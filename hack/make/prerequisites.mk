@@ -28,7 +28,7 @@ CONTROLLER_GEN=$(shell hack/build/command.sh controller-gen)
 
 prerequisites/setup-pre-commit:
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@$(golang_ci_cmd_version)
-	go install github.com/daixiang0/gci@v$(gci_version)
+	go install github.com/daixiang0/gci@$(gci_version)
 	go install golang.org/x/tools/cmd/goimports@$(golang_tools_version)
 	cp ./.github/pre-commit ./.git/hooks/pre-commit
 	chmod +x ./.git/hooks/pre-commit
