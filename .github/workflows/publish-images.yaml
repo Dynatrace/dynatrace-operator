@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - v[0-9]+.[0-9]+.[0-9]+
+      - v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+ # include prerelease tags too
 
 permissions:
   contents: read
@@ -104,6 +105,7 @@ jobs:
 
   push-rhcc:
     name: Push amd64 image to RHCC
+    if: ${{ !contains(github.ref, '-rc') }}
     environment: Release
     needs: [prepare, build]
     runs-on: ubuntu-latest
