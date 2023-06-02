@@ -3,11 +3,11 @@ kustomize_version=v5.0.3
 #renovate depName=sigs.k8s.io/controller-tools/cmd
 controller_gen_version=v0.12.0
 # renovate depName=github.com/golangci/golangci-lint
-golang_ci_cmd_version=v1.52.2
+golang_ci_cmd_version=v1.53.1
 # renovate depName=github.com/daixiang0/gci
 gci_version=v0.10.1
 # renovate depName=golang.org/x/tools
-golang_tools_version=v0.9.1
+golang_tools_version=v0.9.3
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
