@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"golang.org/x/net/http/httpproxy"
@@ -141,6 +142,7 @@ func NewClient(url, apiToken, paasToken string, opts ...Option) (Client, error) 
 		hostCache: make(map[string]hostInfo),
 		httpClient: &http.Client{
 			Transport: http.DefaultTransport.(*http.Transport).Clone(),
+			Timeout:   15 * time.Minute,
 		},
 	}
 

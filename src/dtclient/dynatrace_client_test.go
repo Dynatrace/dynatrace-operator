@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 
@@ -254,46 +253,4 @@ func createTestDynatraceClientWithFunc(t *testing.T, handler http.HandlerFunc) (
 	require.NotNil(t, dynatraceClient)
 
 	return dynatraceServer, dynatraceClient
-}
-
-func TestRequestCreationWithDefaultTimeoutSetTo15Min(t *testing.T) {
-	shouldBeDoneByNow := time.Now().Add(15 * time.Minute).Add(time.Second)
-
-	request, cancel, err := createBaseRequest(
-		"",
-		http.MethodGet,
-		"",
-		strings.NewReader(""))
-	assert.NoError(t, err)
-	defer cancel()
-
-	deadline, _ := request.Context().Deadline()
-	assert.Greater(t, shouldBeDoneByNow, deadline)
-}
-
-func TestMakeRequestWithDefaultDeadline(t *testing.T) {
-	defaultConnectionTimeout = 1
-	defer func() {
-		defaultConnectionTimeout = 15 * time.Minute
-	}()
-
-	dynatraceServer := httptest.NewServer(dynatraceServerHandler())
-	defer dynatraceServer.Close()
-
-	dc := &dynatraceClient{
-		url:       dynatraceServer.URL,
-		apiToken:  apiToken,
-		paasToken: paasToken,
-
-		hostCache:  make(map[string]hostInfo),
-		httpClient: http.DefaultClient,
-	}
-
-	require.NotNil(t, dc)
-
-	url := fmt.Sprintf("%s/v1/deployment/installer/agent/connectioninfo", dc.url)
-	resp, err := dc.makeRequest(url, dynatraceApiToken) //nolint:bodyclose
-
-	assert.Error(t, err)
-	assert.Nil(t, resp)
 }
