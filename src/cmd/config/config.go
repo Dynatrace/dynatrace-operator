@@ -10,14 +10,14 @@ type Provider interface {
 	GetConfig() (*rest.Config, error)
 }
 
-type kubeConfigProvider struct {
+type KubeConfigProvider struct {
 }
 
 func NewKubeConfigProvider() Provider {
-	return kubeConfigProvider{}
+	return KubeConfigProvider{}
 }
 
-func (provider kubeConfigProvider) GetConfig() (*rest.Config, error) {
+func (provider KubeConfigProvider) GetConfig() (*rest.Config, error) {
 	cfg, err := config.GetConfig()
 	return cfg, errors.WithStack(err)
 }

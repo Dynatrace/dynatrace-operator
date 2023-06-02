@@ -39,17 +39,17 @@ var (
 	}
 )
 
-func SetupProxyWithTeardown(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube) {
+func SetupProxyWithTeardown(builder *features.FeatureBuilder, t *testing.T, testDynakube dynatracev1beta1.DynaKube) {
 	if testDynakube.Spec.Proxy != nil {
-		installProxySCC(builder)
+		installProxySCC(builder, t)
 		builder.Assess("install proxy", manifests.InstallFromFile(proxyDeploymentPath))
 		builder.Assess("proxy started", deployment.WaitFor(proxyDeploymentName, proxyNamespaceName))
 		builder.WithTeardown("removing proxy", DeleteProxy())
 	}
 }
 
-func installProxySCC(builder *features.FeatureBuilder) {
-	if kubeobjects.ResolvePlatformFromEnv() == kubeobjects.Openshift {
+func installProxySCC(builder *features.FeatureBuilder, t *testing.T) {
+	if kubeobjects.NewPlatformResolver().IsOpenshift(t) {
 		builder.Assess("install proxy scc", manifests.InstallFromFile(proxySCCPath))
 	}
 }

@@ -116,8 +116,7 @@ func (app sampleApp) install(object client.Object) features.Func {
 }
 
 func (app sampleApp) installSCC(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
-	platform := kubeobjects.ResolvePlatformFromEnv()
-	if platform == kubeobjects.Openshift {
+	if kubeobjects.NewPlatformResolver().IsOpenshift(t) {
 		ctx = manifests.InstallFromFile(sccPath)(ctx, t, c)
 	}
 	return ctx
@@ -146,8 +145,7 @@ func (app sampleApp) uninstallObject(object client.Object) features.Func {
 }
 
 func (app sampleApp) uninstallSCC(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
-	platform := kubeobjects.ResolvePlatformFromEnv()
-	if platform == kubeobjects.Openshift {
+	if kubeobjects.NewPlatformResolver().IsOpenshift(t) {
 		ctx = manifests.UninstallFromFile(sccPath)(ctx, t, c)
 	}
 	return ctx

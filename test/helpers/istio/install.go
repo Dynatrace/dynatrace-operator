@@ -49,7 +49,7 @@ func enforceIstio() bool {
 
 func AddIstioNetworkAttachment(namespace corev1.Namespace) func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
 	return func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
-		if kubeobjects.ResolvePlatformFromEnv() != kubeobjects.Openshift {
+		if !kubeobjects.NewPlatformResolver().IsOpenshift(t) {
 			return ctx, nil
 		}
 		for key, value := range InjectionLabel {
@@ -113,7 +113,8 @@ func checkOperatorIstioInitContainers(testDynakube dynatracev1beta1.DynaKube) fe
 }
 
 func assertIstioInitContainer(t *testing.T, pods corev1.PodList, testDynakube dynatracev1beta1.DynaKube) {
-	istioInitName := determineIstioInitContainerName()
+	istioInitName := determineIstioInitContainerName(t)
+
 	for _, podItem := range pods.Items {
 		if podItem.DeletionTimestamp != nil {
 			continue
@@ -140,9 +141,9 @@ func assertIstioInitContainer(t *testing.T, pods corev1.PodList, testDynakube dy
 	}
 }
 
-func determineIstioInitContainerName() string {
+func determineIstioInitContainerName(t *testing.T) string {
 	istioInitName := istioInitContainerName
-	if kubeobjects.ResolvePlatformFromEnv() == kubeobjects.Openshift {
+	if kubeobjects.NewPlatformResolver().IsOpenshift(t) {
 		istioInitName = openshiftIstioInitContainerName
 	}
 	return istioInitName

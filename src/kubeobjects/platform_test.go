@@ -1,25 +1,52 @@
 package kubeobjects
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/discovery/fake"
+	client_testing "k8s.io/client-go/testing"
 )
 
-func TestResolvePlatformFromEnv(t *testing.T) {
-	t.Run("openshift", func(t *testing.T) {
-		os.Setenv(platformEnvName, openshiftPlatformEnvValue)
-		assert.Equal(t, Openshift, ResolvePlatformFromEnv())
+type platformResolverTest struct {
+	enableOpenshiftGVR bool
+}
+
+func (p *platformResolverTest) getDiscoveryClient() (discovery.DiscoveryInterface, error) {
+	client := &fake.FakeDiscovery{
+		Fake: &client_testing.Fake{},
+	}
+
+	if p.enableOpenshiftGVR {
+		client.Fake.Resources = []*v1.APIResourceList{
+			{
+				GroupVersion: SccGVR,
+			},
+		}
+	}
+
+	return client, nil
+}
+
+func TestPlatformResolver(t *testing.T) {
+	t.Run("should detect openshift", func(t *testing.T) {
+		platformResolver := PlatformResolver{
+			discoveryClientCreation: &platformResolverTest{
+				enableOpenshiftGVR: true,
+			},
+		}
+
+		assert.True(t, platformResolver.IsOpenshift(t))
 	})
-	t.Run("kubernetes explicitly", func(t *testing.T) {
-		os.Setenv(platformEnvName, kubernetesPlatformEnvValue)
-		assert.Equal(t, Kubernetes, ResolvePlatformFromEnv())
-	})
-	t.Run("kubernetes default", func(t *testing.T) {
-		os.Setenv(platformEnvName, "asd")
-		assert.Equal(t, Kubernetes, ResolvePlatformFromEnv())
-		os.Setenv(platformEnvName, "")
-		assert.Equal(t, Kubernetes, ResolvePlatformFromEnv())
+	t.Run("should detect kubernetes", func(t *testing.T) {
+		platformResolver := PlatformResolver{
+			discoveryClientCreation: &platformResolverTest{
+				enableOpenshiftGVR: false,
+			},
+		}
+
+		assert.False(t, platformResolver.IsOpenshift(t))
 	})
 }
