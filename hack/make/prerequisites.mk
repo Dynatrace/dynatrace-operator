@@ -3,7 +3,7 @@ kustomize_version=v5.0.3
 #renovate depName=sigs.k8s.io/controller-tools/cmd
 controller_gen_version=v0.12.0
 # renovate depName=github.com/golangci/golangci-lint
-golang_ci_cmd_version=v1.52.2
+golang_ci_cmd_version=v1.53.0
 # renovate depName=github.com/daixiang0/gci
 gci_version=v0.10.1
 # renovate depName=golang.org/x/tools
@@ -28,7 +28,7 @@ CONTROLLER_GEN=$(shell hack/build/command.sh controller-gen)
 
 prerequisites/setup-pre-commit:
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@$(golang_ci_cmd_version)
-	go install github.com/daixiang0/gci@v$(gci_version)
+	go install github.com/daixiang0/gci@$(gci_version)
 	go install golang.org/x/tools/cmd/goimports@$(golang_tools_version)
 	cp ./.github/pre-commit ./.git/hooks/pre-commit
 	chmod +x ./.git/hooks/pre-commit
