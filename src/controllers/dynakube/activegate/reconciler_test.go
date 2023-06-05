@@ -77,7 +77,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		var proxySecret corev1.Secret
-		err = fakeClient.Get(context.TODO(), types.NamespacedName{Name: "dynatrace-activegate-internal-proxy", Namespace: testNamespace}, &proxySecret)
+		err = fakeClient.Get(context.TODO(), types.NamespacedName{Name: testName + "-activegate-internal-proxy", Namespace: testNamespace}, &proxySecret)
 		assert.NoError(t, err)
 	})
 	t.Run(`Create AG capability (creation and deletion)`, func(t *testing.T) {
@@ -108,6 +108,36 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		err = fakeClient.Get(context.TODO(), types.NamespacedName{Name: testServiceName, Namespace: testNamespace}, &service)
 		assert.True(t, k8serrors.IsNotFound(err))
+	})
+	t.Run("Reconcile DynaKube without Proxy after a DynaKube with proxy must not interfere with the second DKs Proxy Secret", func(t *testing.T) {
+		dynaKubeWithProxy := &dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: testNamespace,
+				Name:      "proxyDk",
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				Proxy: &dynatracev1beta1.DynaKubeProxy{Value: testProxyName},
+			},
+		}
+		dynaKubeNoProxy := &dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: testNamespace,
+				Name:      "noProxyDk",
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{},
+		}
+		fakeClient := fake.NewClient()
+		proxyReconciler := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynaKubeWithProxy, dtc)
+		err := proxyReconciler.Reconcile()
+		require.NoError(t, err)
+
+		noProxyReconciler := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynaKubeNoProxy, dtc)
+		err = noProxyReconciler.Reconcile()
+		require.NoError(t, err)
+
+		var proxySecret corev1.Secret
+		err = fakeClient.Get(context.TODO(), types.NamespacedName{Name: "proxyDk-activegate-internal-proxy", Namespace: testNamespace}, &proxySecret)
+		assert.NoError(t, err)
 	})
 }
 
