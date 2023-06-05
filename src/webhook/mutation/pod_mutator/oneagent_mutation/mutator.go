@@ -41,7 +41,7 @@ func (mutator *OneAgentPodMutator) Injected(request *dtwebhook.BaseRequest) bool
 func (mutator *OneAgentPodMutator) Mutate(request *dtwebhook.MutationRequest) error {
 	log.Info("injecting OneAgent into pod", "podName", request.PodName())
 	if err := mutator.ensureInitSecret(request); err != nil {
-		return errors.WithStack(err)
+		return err
 	}
 
 	installerInfo := getInstallerInfo(request.Pod, request.DynaKube)
@@ -68,13 +68,13 @@ func (mutator *OneAgentPodMutator) ensureInitSecret(request *dtwebhook.MutationR
 	if err := mutator.apiReader.Get(request.Context, secretObjectKey, &initSecret); k8serrors.IsNotFound(err) {
 		initGenerator := initgeneration.NewInitGenerator(mutator.client, mutator.apiReader, mutator.webhookNamespace)
 		err := initGenerator.GenerateForNamespace(request.Context, request.DynaKube, request.Namespace.Name)
-		if err != nil {
-			log.Error(err, "failed to create the init secret before oneagent pod injection")
-			return errors.WithStack(err)
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			log.Info("failed to create the init secret before oneagent pod injection")
+			return err
 		}
-		log.Info("created the init secret before oneagent pod injection")
+		log.Info("ensured that the init secret is present before oneagent pod injection")
 	} else if err != nil {
-		log.Error(err, "failed to query the init secret before oneagent pod injection")
+		log.Info("failed to query the init secret before oneagent pod injection")
 		return errors.WithStack(err)
 	}
 	return nil
