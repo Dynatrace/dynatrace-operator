@@ -2,7 +2,6 @@ package dtclient
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -28,11 +27,10 @@ type ActiveGateAuthTokenParams struct {
 }
 
 func (dtc *dynatraceClient) GetActiveGateAuthToken(dynakubeName string) (*ActiveGateAuthTokenInfo, error) {
-	request, cancel, err := dtc.createAuthTokenRequest(dynakubeName)
+	request, err := dtc.createAuthTokenRequest(dynakubeName)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	defer cancel()
 
 	response, err := dtc.httpClient.Do(request)
 
@@ -52,7 +50,7 @@ func (dtc *dynatraceClient) GetActiveGateAuthToken(dynakubeName string) (*Active
 	return authTokenInfo, nil
 }
 
-func (dtc *dynatraceClient) createAuthTokenRequest(dynakubeName string) (*http.Request, context.CancelFunc, error) {
+func (dtc *dynatraceClient) createAuthTokenRequest(dynakubeName string) (*http.Request, error) {
 	body := &ActiveGateAuthTokenParams{
 		Name:           dynakubeName,
 		SeedToken:      false,
@@ -61,19 +59,19 @@ func (dtc *dynatraceClient) createAuthTokenRequest(dynakubeName string) (*http.R
 	}
 	bodyData, err := json.Marshal(body)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	request, cancel, err := createBaseRequest(
+	request, err := createBaseRequest(
 		dtc.getActiveGateAuthTokenUrl(),
 		http.MethodPost,
 		dtc.apiToken,
 		bytes.NewReader(bodyData),
 	)
 	if err != nil {
-		return nil, nil, errors.WithStack(err)
+		return nil, errors.WithStack(err)
 	}
-	return request, cancel, nil
+	return request, nil
 }
 
 func (dtc *dynatraceClient) handleAuthTokenResponse(response *http.Response) (*ActiveGateAuthTokenInfo, error) {

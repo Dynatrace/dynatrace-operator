@@ -2,7 +2,6 @@ package dtclient
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"net/http"
 
@@ -52,11 +51,10 @@ func (dtc *dynatraceClient) GetLatestActiveGateImage() (*LatestImageInfo, error)
 }
 
 func (dtc *dynatraceClient) processLatestImageRequest(url string) (*LatestImageInfo, error) {
-	request, cancel, err := dtc.createLatestImageRequest(url)
+	request, err := dtc.createLatestImageRequest(url)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	defer cancel()
 
 	response, err := dtc.httpClient.Do(request)
 	if err != nil {
@@ -95,15 +93,15 @@ func (dtc *dynatraceClient) handleLatestImageResponse(response *http.Response) (
 	return latestImageInfo, err
 }
 
-func (dtc *dynatraceClient) createLatestImageRequest(url string) (*http.Request, context.CancelFunc, error) {
+func (dtc *dynatraceClient) createLatestImageRequest(url string) (*http.Request, error) {
 	body := &LatestImageInfo{}
 
 	bodyData, err := json.Marshal(body)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	request, cancel, err := createBaseRequest(
+	request, err := createBaseRequest(
 		url,
 		http.MethodGet,
 		dtc.apiToken,
@@ -111,10 +109,10 @@ func (dtc *dynatraceClient) createLatestImageRequest(url string) (*http.Request,
 	)
 
 	if err != nil {
-		return nil, nil, errors.WithStack(err)
+		return nil, errors.WithStack(err)
 	}
 
-	return request, cancel, nil
+	return request, nil
 }
 
 func (dtc *dynatraceClient) readResponseForLatestImage(response []byte) (*LatestImageInfo, error) {
