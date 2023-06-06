@@ -25,8 +25,6 @@ tests:
   - it: should have the correct rules
     documentIndex: 0
     set:
-      platform: kubernetes
-      image: image-nam
       csidriver.enabled: true
     asserts:
       - equal:
@@ -74,6 +72,30 @@ tests:
                 - get
                 - list
                 - watch
+  - it: ClusterRole should exist with extra permissions for openshift
+    documentIndex: 0
+    set:
+      platform: openshift
+      csidriver.enabled: true
+    asserts:
+      - isKind:
+          of: ClusterRole
+      - equal:
+          path: metadata.name
+          value: dynatrace-oneagent-csi-driver
+      - isNotEmpty:
+          path: metadata.labels
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - security.openshift.io
+            resourceNames:
+              - privileged
+            resources:
+              - securitycontextconstraints
+            verbs:
+              - use
 
   - it: ClusterRoleBinding should be built correctly with CSI enabled
     documentIndex: 1

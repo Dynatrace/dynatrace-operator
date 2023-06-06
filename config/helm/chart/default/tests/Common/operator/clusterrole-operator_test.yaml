@@ -24,3 +24,27 @@ tests:
             kind: ClusterRole
             name: RELEASE-NAME
             apiGroup: rbac.authorization.k8s.io
+  - it: ClusterRole should exist with extra permissions for openshift
+    documentIndex: 0
+    set:
+      platform: openshift
+    asserts:
+      - isKind:
+          of: ClusterRole
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME
+      - isNotEmpty:
+          path: metadata.labels
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - security.openshift.io
+            resourceNames:
+              - privileged
+              - nonroot-v2
+            resources:
+              - securitycontextconstraints
+            verbs:
+              - use
