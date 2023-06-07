@@ -274,7 +274,6 @@ func TestConfigureInstallation(t *testing.T) {
 }
 
 func TestGetProcessModuleConfig(t *testing.T) {
-
 	t.Run("add tenantUUID to process module config", func(t *testing.T) {
 		tenantAlias := "my-tenant"
 		runner := createMockedRunner(t)
