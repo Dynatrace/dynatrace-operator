@@ -15,6 +15,7 @@ import (
 const (
 	TmpPath         = "/tmp/dynatrace-operator"
 	CADir           = "ca"
+	TrustedCertFileName      = "custom.crt"
 	RegistryAuthDir = "dockerconf"
 )
 
@@ -113,7 +114,8 @@ func (config *DockerConfig) storeTrustedCAs(ctx context.Context, fs afero.Afero)
 		return err
 	}
 
-	if err := saveFile(customCAs, fs, config.TrustedCertsPath); err != nil {
+	tmpCertFilePath := path.Join(config.TrustedCertsPath, TrustedCertFileName)
+	if err := saveFile(customCAs, fs, tmpCertFilePath); err != nil {
 		log.Info("failed to store custom certificates", "dynakube", config.Dynakube.Name)
 		return err
 	}
