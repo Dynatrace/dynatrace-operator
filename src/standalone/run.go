@@ -128,6 +128,7 @@ func (runner *Runner) installOneAgent() error {
 	if err != nil {
 		return err
 	}
+	processModuleConfig = processModuleConfig.AddTenantUUID(runner.config.TenantUUID)
 	if err := runner.installer.UpdateProcessModuleConfig(config.AgentBinDirMount, processModuleConfig); err != nil {
 		return err
 	}
