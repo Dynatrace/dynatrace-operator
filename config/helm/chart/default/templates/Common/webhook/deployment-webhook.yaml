@@ -105,9 +105,16 @@ spec:
                   fieldPath: metadata.name
           readinessProbe:
             httpGet:
-              path: /livez
+              path: /readyz
               port: server-port
               scheme: HTTPS
+          livenessProbe:
+            httpGet:
+              path: /livez
+              port: server-port
+              scheme: HTTP
+            initialDelaySeconds: 15
+            periodSeconds: 10
           ports:
             - name: server-port
               containerPort: 8443

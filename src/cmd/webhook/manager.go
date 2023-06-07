@@ -2,6 +2,8 @@ package webhook
 
 import (
 	"crypto/tls"
+	"fmt"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
 
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/pkg/errors"
@@ -11,8 +13,12 @@ import (
 )
 
 const (
-	metricsBindAddress = ":8383"
-	port               = 8443
+	metricsBindAddress    = ":8383"
+	port                  = 8443
+	livezEndpointName     = "livez"
+	livenessEndpointName  = "/" + livezEndpointName
+	readyzEndpointName    = "readyz"
+	readinessEndpointName = "/" + readyzEndpointName
 )
 
 type Provider struct {
@@ -30,20 +36,33 @@ func NewProvider(certificateDirectory string, keyFileName string, certificateFil
 }
 
 func (provider Provider) CreateManager(namespace string, config *rest.Config) (manager.Manager, error) {
-	mgr, err := ctrl.NewManager(config, provider.createOptions(namespace))
+	controlManager, err := ctrl.NewManager(config, provider.createOptions(namespace))
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	return provider.setupWebhookServer(mgr), nil
+	err = controlManager.AddHealthzCheck(livezEndpointName, healthz.Ping)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	err = controlManager.AddReadyzCheck(readyzEndpointName, healthz.Ping)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return provider.setupWebhookServer(controlManager), nil
 }
 
 func (provider Provider) createOptions(namespace string) ctrl.Options {
 	return ctrl.Options{
-		Namespace:          namespace,
-		Scheme:             scheme.Scheme,
-		MetricsBindAddress: metricsBindAddress,
-		Port:               port,
+		Scheme:                 scheme.Scheme,
+		Namespace:              namespace,
+		MetricsBindAddress:     metricsBindAddress,
+		ReadinessEndpointName:  readinessEndpointName,
+		LivenessEndpointName:   livenessEndpointName,
+		HealthProbeBindAddress: fmt.Sprintf(":%d", port), //could that be omitted?
+		Port:                   port,
 	}
 }
 

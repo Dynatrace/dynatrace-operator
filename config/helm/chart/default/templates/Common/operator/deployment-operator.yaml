@@ -75,13 +75,6 @@ spec:
           volumeMounts:
             - name: tmp-cert-dir
               mountPath: /tmp/dynatrace-operator
-          readinessProbe:
-            httpGet:
-              path: /livez
-              port: server-port
-              scheme: HTTP
-            initialDelaySeconds: 15
-            periodSeconds: 10
           livenessProbe:
             httpGet:
               path: /livez
