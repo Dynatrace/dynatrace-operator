@@ -13,10 +13,10 @@ import (
 )
 
 const (
-	TmpPath         = "/tmp/dynatrace-operator"
-	CADir           = "ca"
-	TrustedCertFileName      = "custom.crt"
-	RegistryAuthDir = "dockerconf"
+	TmpPath             = "/tmp/dynatrace-operator"
+	CADir               = "ca"
+	TrustedCertFileName = "custom.crt"
+	RegistryAuthDir     = "dockerconf"
 )
 
 type DockerConfig struct {
