@@ -280,8 +280,8 @@ func TestGetProcessModuleConfig(t *testing.T) {
 		runner := createMockedRunner(t)
 		runner.config.TenantUUID = tenantAlias
 		runner.dtclient.(*dtclient.MockDynatraceClient).
-		On("GetProcessModuleConfig", uint(0)).
-		Return(&testProcessModuleConfig, nil)
+			On("GetProcessModuleConfig", uint(0)).
+			Return(&testProcessModuleConfig, nil)
 
 		config, err := runner.getProcessModuleConfig()
 		require.NoError(t, err)
@@ -297,8 +297,8 @@ func TestGetProcessModuleConfig(t *testing.T) {
 	t.Run("error if api call fails", func(t *testing.T) {
 		runner := createMockedRunner(t)
 		runner.dtclient.(*dtclient.MockDynatraceClient).
-		On("GetProcessModuleConfig", uint(0)).
-		Return(&dtclient.ProcessModuleConfig{}, fmt.Errorf("BOOM"))
+			On("GetProcessModuleConfig", uint(0)).
+			Return(&dtclient.ProcessModuleConfig{}, fmt.Errorf("BOOM"))
 
 		config, err := runner.getProcessModuleConfig()
 		require.Error(t, err)
