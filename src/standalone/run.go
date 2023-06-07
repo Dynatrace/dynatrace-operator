@@ -124,15 +124,22 @@ func (runner *Runner) installOneAgent() error {
 	if err != nil {
 		return err
 	}
-	processModuleConfig, err := runner.dtclient.GetProcessModuleConfig(0)
+	processModuleConfig, err := runner.getProcessModuleConfig()
 	if err != nil {
 		return err
 	}
-	processModuleConfig = processModuleConfig.AddTenantUUID(runner.config.TenantUUID)
 	if err := runner.installer.UpdateProcessModuleConfig(config.AgentBinDirMount, processModuleConfig); err != nil {
 		return err
 	}
 	return nil
+}
+
+func (runner *Runner) getProcessModuleConfig() (*dtclient.ProcessModuleConfig, error) {
+	processModuleConfig, err := runner.dtclient.GetProcessModuleConfig(0)
+	if err != nil {
+		return nil, err
+	}
+	return processModuleConfig.AddTenantUUID(runner.config.TenantUUID), nil
 }
 
 func (runner *Runner) configureInstallation() error {
