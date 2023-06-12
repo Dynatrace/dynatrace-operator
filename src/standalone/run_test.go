@@ -273,6 +273,38 @@ func TestConfigureInstallation(t *testing.T) {
 	})
 }
 
+func TestGetProcessModuleConfig(t *testing.T) {
+	t.Run("add tenantUUID to process module config", func(t *testing.T) {
+		tenantAlias := "my-tenant"
+		runner := createMockedRunner(t)
+		runner.config.TenantUUID = tenantAlias
+		runner.dtclient.(*dtclient.MockDynatraceClient).
+			On("GetProcessModuleConfig", uint(0)).
+			Return(&testProcessModuleConfig, nil)
+
+		config, err := runner.getProcessModuleConfig()
+		require.NoError(t, err)
+		require.NotNil(t, config)
+
+		generalSection, ok := config.ToMap()["general"]
+		require.True(t, ok)
+		tenantUUID, ok := generalSection["tenant"]
+		require.True(t, ok)
+		assert.Equal(t, tenantAlias, tenantUUID)
+	})
+
+	t.Run("error if api call fails", func(t *testing.T) {
+		runner := createMockedRunner(t)
+		runner.dtclient.(*dtclient.MockDynatraceClient).
+			On("GetProcessModuleConfig", uint(0)).
+			Return(&dtclient.ProcessModuleConfig{}, fmt.Errorf("BOOM"))
+
+		config, err := runner.getProcessModuleConfig()
+		require.Error(t, err)
+		require.Nil(t, config)
+	})
+}
+
 func TestCreateContainerConfigurationFiles(t *testing.T) {
 	runner := createMockedRunner(t)
 	runner.config.HasHost = false
