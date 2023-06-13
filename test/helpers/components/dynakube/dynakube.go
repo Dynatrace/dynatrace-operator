@@ -61,6 +61,11 @@ func (dynakubeBuilder Builder) WithDefaultObjectMeta() Builder {
 	return dynakubeBuilder
 }
 
+func (dynakubeBuilder Builder) WithCustomPullSecret(secretName string) Builder {
+	dynakubeBuilder.dynakube.Spec.CustomPullSecret = secretName
+	return dynakubeBuilder
+}
+
 func (dynakubeBuilder Builder) WithAnnotations(annotations map[string]string) Builder {
 	for key, value := range annotations {
 		dynakubeBuilder.dynakube.ObjectMeta.Annotations[key] = value
