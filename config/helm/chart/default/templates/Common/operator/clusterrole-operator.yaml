@@ -90,15 +90,30 @@ rules:
     verbs:
       - get
       - update
-  {{- if eq (default false .Values.olm) true}}
+  {{- if (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
   - apiGroups:
       - security.openshift.io
     resourceNames:
-      - host
       - privileged
+      - nonroot-v2
     resources:
       - securitycontextconstraints
     verbs:
       - use
   {{ end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    {{- include "dynatrace-operator.operatorLabels" . | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Release.Name }}
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: {{ .Release.Name }}
+  apiGroup: rbac.authorization.k8s.io
 {{ end }}
