@@ -108,14 +108,25 @@ tests:
                     valueFrom:
                       fieldRef:
                         fieldPath: metadata.name
-                readinessProbe:
+                livenessProbe:
                   httpGet:
                     path: /livez
-                    port: server-port
+                    port: livez
                     scheme: HTTP
+                  initialDelaySeconds: 15
+                  periodSeconds: 10
                 ports:
-                  - name: server-port
-                    containerPort: 8443
+                  - containerPort: 8443
+                    name: server-port
+                  - containerPort: 10080
+                    name: livez
+                readinessProbe:
+                  httpGet:
+                    path: /readyz
+                    port: livez
+                    scheme: HTTP
+                  initialDelaySeconds: 15
+                  periodSeconds: 10
                 resources:
                   requests:
                     cpu: 300m
@@ -263,14 +274,25 @@ tests:
                     valueFrom:
                       fieldRef:
                         fieldPath: metadata.name
-                readinessProbe:
+                livenessProbe:
                   httpGet:
                     path: /livez
-                    port: server-port
-                    scheme: HTTPS
+                    port: livez
+                    scheme: HTTP
+                  initialDelaySeconds: 15
+                  periodSeconds: 10
                 ports:
-                  - name: server-port
-                    containerPort: 8443
+                  - containerPort: 8443
+                    name: server-port
+                  - containerPort: 10080
+                    name: livez
+                readinessProbe:
+                  httpGet:
+                    path: /readyz
+                    port: livez
+                    scheme: HTTP
+                  initialDelaySeconds: 15
+                  periodSeconds: 10
                 resources:
                   requests:
                     cpu: 300m
@@ -385,14 +407,25 @@ tests:
                     valueFrom:
                       fieldRef:
                         fieldPath: metadata.name
-                readinessProbe:
+                livenessProbe:
                   httpGet:
                     path: /livez
-                    port: server-port
-                    scheme: HTTPS
+                    port: livez
+                    scheme: HTTP
+                  initialDelaySeconds: 15
+                  periodSeconds: 10
                 ports:
-                  - name: server-port
-                    containerPort: 8443
+                  - containerPort: 8443
+                    name: server-port
+                  - containerPort: 10080
+                    name: livez
+                readinessProbe:
+                  httpGet:
+                    path: /readyz
+                    port: livez
+                    scheme: HTTP
+                  initialDelaySeconds: 15
+                  periodSeconds: 10
                 resources:
                   requests:
                     cpu: 300m
