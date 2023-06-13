@@ -112,7 +112,7 @@ tests:
                   httpGet:
                     path: /livez
                     port: server-port
-                    scheme: HTTPS
+                    scheme: HTTP
                 ports:
                   - name: server-port
                     containerPort: 8443

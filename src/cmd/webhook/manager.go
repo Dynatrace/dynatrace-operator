@@ -2,23 +2,22 @@ package webhook
 
 import (
 	"crypto/tls"
-	"fmt"
-	"sigs.k8s.io/controller-runtime/pkg/healthz"
-
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 const (
-	metricsBindAddress    = ":8383"
-	port                  = 8443
-	livezEndpointName     = "livez"
-	livenessEndpointName  = "/" + livezEndpointName
-	readyzEndpointName    = "readyz"
-	readinessEndpointName = "/" + readyzEndpointName
+	metricsBindAddress     = ":8383"
+	healthProbeBindAddress = ":10080"
+	port                   = 8443
+	livezEndpointName      = "livez"
+	livenessEndpointName   = "/" + livezEndpointName
+	readyzEndpointName     = "readyz"
+	readinessEndpointName  = "/" + readyzEndpointName
 )
 
 type Provider struct {
@@ -61,7 +60,7 @@ func (provider Provider) createOptions(namespace string) ctrl.Options {
 		MetricsBindAddress:     metricsBindAddress,
 		ReadinessEndpointName:  readinessEndpointName,
 		LivenessEndpointName:   livenessEndpointName,
-		HealthProbeBindAddress: fmt.Sprintf(":%d", port), //could that be omitted?
+		HealthProbeBindAddress: healthProbeBindAddress,
 		Port:                   port,
 	}
 }
