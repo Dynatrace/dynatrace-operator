@@ -3,6 +3,9 @@ kind: DynaKube
 metadata:
   name: dynakube
   namespace: dynatrace
+  # Automatically connect the kubernetes api to the dynatrace tenant endpoint to enable kubernetes monitoring.
+  annotations:
+    feature.dynatrace.com/automatic-kubernetes-api-monitoring: "true"
 spec:
   # Dynatrace apiUrl including the `/api` path at the end.
   # For SaaS, set `ENVIRONMENTID` to your environment ID.
