@@ -666,6 +666,10 @@ func fakeDigestProvider(context.Context, string, *dockerconfig.DockerConfig) (dk
 	return dkVersion.ImageVersion{}, nil
 }
 
+func fakeDigestProviderProxy(context.Context, string, *dockerconfig.DockerConfig, *dynatracev1beta1.DynaKube) (dkVersion.ImageVersion, error) {
+	return dkVersion.ImageVersion{}, nil
+}
+
 func createFakeClientAndReconciler(mockClient dtclient.Client, instance *dynatracev1beta1.DynaKube, paasToken, apiToken string) *Controller {
 	data := map[string][]byte{
 		dtclient.DynatraceApiToken: []byte(apiToken),
@@ -699,6 +703,7 @@ func createFakeClientAndReconciler(mockClient dtclient.Client, instance *dynatra
 		dynatraceClientBuilder: mockDtcBuilder,
 		fs:                     afero.Afero{Fs: afero.NewMemMapFs()},
 		versionProvider:        fakeDigestProvider,
+		versionProxyProvider:   fakeDigestProviderProxy,
 	}
 
 	return controller

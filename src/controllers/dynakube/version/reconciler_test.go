@@ -85,12 +85,13 @@ func TestReconcile(t *testing.T) {
 		mockLatestAgentVersion(mockClient, latestAgentVersion)
 
 		versionReconciler := Reconciler{
-			dynakube:     dynakube,
-			apiReader:    fakeClient,
-			fs:           afero.Afero{Fs: afero.NewMemMapFs()},
-			versionFunc:  registry.ImageVersionExt,
-			timeProvider: timeProvider,
-			dtClient:     mockClient,
+			dynakube:         dynakube,
+			apiReader:        fakeClient,
+			fs:               afero.Afero{Fs: afero.NewMemMapFs()},
+			versionFunc:      registry.ImageVersionExt,
+			versionProxyFunc: registry.ImageVersionExtProxy,
+			timeProvider:     timeProvider,
+			dtClient:         mockClient,
 		}
 		err := versionReconciler.Reconcile(ctx)
 		require.NoError(t, err)

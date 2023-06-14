@@ -78,9 +78,10 @@ func TestRun(t *testing.T) {
 		})
 		target := &dynatracev1beta1.VersionStatus{}
 		versionReconciler := Reconciler{
-			dynakube:     &dynatracev1beta1.DynaKube{},
-			timeProvider: timeProvider,
-			versionFunc:  registry.ImageVersionExt,
+			dynakube:         &dynatracev1beta1.DynaKube{},
+			timeProvider:     timeProvider,
+			versionFunc:      registry.ImageVersionExt,
+			versionProxyFunc: registry.ImageVersionExtProxy,
 		}
 		updater := newCustomImageUpdater(target, testImage.String())
 		err := versionReconciler.run(ctx, updater, testDockerCfg)
@@ -199,9 +200,10 @@ func TestRun(t *testing.T) {
 			Source: dynatracev1beta1.TenantRegistryVersionSource,
 		}
 		versionReconciler := Reconciler{
-			dynakube:     enablePublicRegistry(newClassicFullStackDynakube()),
-			timeProvider: timeProvider,
-			versionFunc:  registry.ImageVersionExt,
+			dynakube:         enablePublicRegistry(newClassicFullStackDynakube()),
+			timeProvider:     timeProvider,
+			versionFunc:      registry.ImageVersionExt,
+			versionProxyFunc: registry.ImageVersionExtProxy,
 		}
 		updater := newClassicFullStackUpdater(target, false)
 		updater.On("CustomImage").Return("")
@@ -225,9 +227,10 @@ func TestRun(t *testing.T) {
 			Source: dynatracev1beta1.TenantRegistryVersionSource,
 		}
 		versionReconciler := Reconciler{
-			dynakube:     enablePublicRegistry(newClassicFullStackDynakube()),
-			timeProvider: timeProvider,
-			versionFunc:  registry.ImageVersionExt,
+			dynakube:         enablePublicRegistry(newClassicFullStackDynakube()),
+			timeProvider:     timeProvider,
+			versionFunc:      registry.ImageVersionExt,
+			versionProxyFunc: registry.ImageVersionExtProxy,
 		}
 		updater := newClassicFullStackUpdater(target, false)
 		updater.On("CustomImage").Return(testImage.String())
