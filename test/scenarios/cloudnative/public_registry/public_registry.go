@@ -120,6 +120,7 @@ func checkCSIProvisionerEvent(dynakube dynatracev1beta1.DynaKube) features.Func 
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resources := environmentConfig.Client().Resources()
 		clientset, err := kubernetes.NewForConfig(resources.GetConfig())
+		require.NoError(t, err)
 
 		err = wait.For(func() (done bool, err error) {
 			events, err := clientset.CoreV1().Events("dynatrace").List(ctx, v1.ListOptions{
