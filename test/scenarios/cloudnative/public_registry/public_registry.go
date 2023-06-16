@@ -4,32 +4,28 @@ package public_registry
 
 import (
 	"context"
+	"strings"
 	"testing"
-	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/csi"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/activegate"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/daemonset"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/logs"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
 const (
-	publicRegistrySource     = dynatracev1beta1.VersionSource("public-registry")
-	provisionerContainerName = "provisioner"
-	customPullSecretName     = "devregistry"
+	publicRegistrySource = dynatracev1beta1.VersionSource("public-registry")
+	customPullSecretName = "devregistry"
 )
 
 var publicRegistryFeatureFlag = map[string]string{dynatracev1beta1.AnnotationFeaturePublicRegistry: "true"}
@@ -53,7 +49,7 @@ func publicRegistry(t *testing.T) features.Feature {
 
 	builder.Assess("check dynakube status", checkDynakubeStatus(testDynakube))
 	builder.Assess("check whether public registry images are used", checkPublicRegistryUsage(testDynakube))
-	builder.Assess("check whether correct image has been downloaded", checkCSIDriver(testDynakube))
+	builder.Assess("check whether correct image has been downloaded", checkCSIProvisionerEvent(testDynakube))
 
 	// Register dynakube and operator uninstall
 	teardown.UninstallDynatrace(builder, testDynakube)
@@ -111,8 +107,8 @@ func checkPublicRegistryUsage(dynakube dynatracev1beta1.DynaKube) features.Func 
 
 		require.Equal(t, dk.Status.OneAgent.ImageID, oneAgentDaemonSet.Spec.Template.Spec.Containers[0].Image)
 
-		var activeGateStateFulSet v1.StatefulSet
-		require.NoError(t, resources.Get(ctx, dynakube.Name+"-activegate", dynakube.Namespace, &activeGateStateFulSet))
+		activeGateStateFulSet, err := activegate.Get(ctx, resources, dynakube)
+		require.NoError(t, err)
 
 		require.Equal(t, dk.Status.ActiveGate.ImageID, activeGateStateFulSet.Spec.Template.Spec.Containers[0].Image)
 
@@ -120,23 +116,24 @@ func checkPublicRegistryUsage(dynakube dynatracev1beta1.DynaKube) features.Func 
 	}
 }
 
-func checkCSIDriver(dynakube dynatracev1beta1.DynaKube) features.Func {
+func checkCSIProvisionerEvent(dynakube dynatracev1beta1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resources := environmentConfig.Client().Resources()
 		clientset, err := kubernetes.NewForConfig(resources.GetConfig())
 
-		err = daemonset.NewQuery(ctx, resources, client.ObjectKey{
-			Name:      csi.DaemonSetName,
-			Namespace: dynakube.Namespace,
-		}).ForEachPod(func(podItem corev1.Pod) {
-			err = wait.For(func() (done bool, err error) {
-				logStream, err := clientset.CoreV1().Pods(podItem.Namespace).GetLogs(podItem.Name, &corev1.PodLogOptions{
-					Container: provisionerContainerName,
-				}).Stream(ctx)
-				require.NoError(t, err)
-				return logs.Contains(t, logStream, "Installed agent version: "+dynakube.Status.CodeModules.ImageID), err
-			}, wait.WithTimeout(time.Minute*5))
+		err = wait.For(func() (done bool, err error) {
+			events, err := clientset.CoreV1().Events("dynatrace").List(ctx, v1.ListOptions{
+				TypeMeta: v1.TypeMeta{
+					Kind: "Pod",
+				},
+			})
 			require.NoError(t, err)
+			for _, event := range events.Items {
+				if strings.Contains(event.Message, "Installed agent version: "+dynakube.Status.CodeModules.ImageID) {
+					return true, nil
+				}
+			}
+			return false, errors.New("csi-provisioner event not found")
 		})
 
 		require.NoError(t, err)
