@@ -28,7 +28,12 @@ func specificAgentVersion(t *testing.T) features.Feature {
 
 	versions := getAvailableVersions(secretConfig, t)
 	sort.Strings(versions)
+
+	t.Logf("versions %v", versions)
+
 	oldVersion, newVersion := assignVersions(t, versions, version.SemanticVersion{}, version.SemanticVersion{})
+
+	t.Logf("oldversion %s -> %s", oldVersion, newVersion)
 
 	dynakubeBuilder := dynakube.NewBuilder().
 		WithDefaultObjectMeta().
