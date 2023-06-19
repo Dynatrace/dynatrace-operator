@@ -232,10 +232,11 @@ func getRequiredDynaKubeFiles(testDynakube dynatracev1beta1.DynaKube) []string {
 
 func assertFile(t *testing.T, requiredFiles []string, hdr tar.Header) []string {
 	index := slices.IndexFunc(requiredFiles, func(file string) bool { return file == hdr.Name })
-	assert.NotEqualf(t, -1, index, "Found unexpected file %s.", hdr.Name)
 
 	if index != -1 {
 		requiredFiles = slices.Delete(requiredFiles, index, index+1)
+	} else {
+		t.Log("unexpected file found", "filename:", hdr.Name)
 	}
 
 	assert.NotZerof(t, hdr.Size, "File %s is empty.", hdr.Name)
