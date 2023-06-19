@@ -42,19 +42,21 @@ func supportArchiveExecution(t *testing.T) features.Feature {
 	builder := features.New("support archive execution")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
+	injectLabels := map[string]string{
+		"inject": "me",
+	}
+
 	dynakubeBuilder := dynakube.NewBuilder().
 		WithDefaultObjectMeta().
 		NamespaceSelector(metav1.LabelSelector{
-			MatchLabels: map[string]string{
-				"kubernetes.io/metadata.name": testAppNameInjected,
-			},
+			MatchLabels: injectLabels,
 		}).
 		ApiUrl(secretConfig.ApiUrl).
 		CloudNative(&dynatracev1beta1.CloudNativeFullStackSpec{})
 	testDynakube := dynakubeBuilder.Build()
 
 	// Register sample namespace creat and delete
-	builder.Assess("create sample injected namespace", namespace.Create(namespace.NewBuilder(testAppNameInjected).Build()))
+	builder.Assess("create sample injected namespace", namespace.Create(namespace.NewBuilder(testAppNameInjected).WithLabels(injectLabels).Build()))
 	builder.Assess("create sample not injected namespace", namespace.Create(namespace.NewBuilder(testAppNameNotInjected).Build()))
 	builder.Teardown(namespace.Delete(testAppNameInjected))
 	builder.Teardown(namespace.Delete(testAppNameNotInjected))
