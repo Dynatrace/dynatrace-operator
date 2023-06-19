@@ -1,0 +1,28 @@
+name: Import image to Snyk
+description: Imports an image lying on docker-hub to Snyk for security scans
+inputs:
+  image:
+    description: full image tag that will be imported into Snyk
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Import image into Snyk
+      shell: bash
+      run: |
+        curl --include \
+             --request POST \
+             --header "Content-Type: application/json; charset=utf-8" \
+             --header "Authorization: token ${SNYK_API_TOKEN}" \
+             --data-binary "{
+          \"target\": {
+            \"name\": \"${IMAGE}\"
+          }
+        }" \
+        'https://api.snyk.io/v1/org/${SNYK_ORGANIZATION_ID}/integrations/${SNYK_INTEGRATION_ID}/import'
+
+      env:
+        IMAGE: ${{ inputs.image }}
+        SNYK_ORGANIZATION_ID: ${{ inputs.snyk-organization-id }}
+        SNYK_INTEGRATION_ID: ${{ inputs.snyk-integration-id }}
+        SNYK_API_TOKEN: ${{ inputs.snyk-api-token }}
