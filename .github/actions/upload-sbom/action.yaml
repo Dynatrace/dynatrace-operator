@@ -1,0 +1,18 @@
+name: Upload SBOM
+description: uploads a sbom for a given image to a registry
+inputs:
+  image:
+    description: full image tag that the sbom will be generated for
+    required: true
+  sbom:
+    description: the sbom to attach
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Install Cosign
+      uses: sigstore/cosign-installer@dd6b2e2b610a11fd73dd187a43d57cc1394e35f9 # v3.0.5
+    - name: Sign image with a key
+      shell: bash
+      run: |
+        cosign attach sbom --sbom "${{ inputs.sbom }}" "${{ inputs.image }}" --input-format json --type cyclonedx
