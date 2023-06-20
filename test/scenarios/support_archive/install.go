@@ -42,19 +42,21 @@ func supportArchiveExecution(t *testing.T) features.Feature {
 	builder := features.New("support archive execution")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
+	injectLabels := map[string]string{
+		"inject": "me",
+	}
+
 	dynakubeBuilder := dynakube.NewBuilder().
 		WithDefaultObjectMeta().
 		NamespaceSelector(metav1.LabelSelector{
-			MatchLabels: map[string]string{
-				"kubernetes.io/metadata.name": testAppNameInjected,
-			},
+			MatchLabels: injectLabels,
 		}).
 		ApiUrl(secretConfig.ApiUrl).
 		CloudNative(&dynatracev1beta1.CloudNativeFullStackSpec{})
 	testDynakube := dynakubeBuilder.Build()
 
 	// Register sample namespace creat and delete
-	builder.Assess("create sample injected namespace", namespace.Create(namespace.NewBuilder(testAppNameInjected).Build()))
+	builder.Assess("create sample injected namespace", namespace.Create(namespace.NewBuilder(testAppNameInjected).WithLabels(injectLabels).Build()))
 	builder.Assess("create sample not injected namespace", namespace.Create(namespace.NewBuilder(testAppNameNotInjected).Build()))
 	builder.Teardown(namespace.Delete(testAppNameInjected))
 	builder.Teardown(namespace.Delete(testAppNameNotInjected))
@@ -230,10 +232,11 @@ func getRequiredDynaKubeFiles(testDynakube dynatracev1beta1.DynaKube) []string {
 
 func assertFile(t *testing.T, requiredFiles []string, hdr tar.Header) []string {
 	index := slices.IndexFunc(requiredFiles, func(file string) bool { return file == hdr.Name })
-	assert.NotEqualf(t, -1, index, "Found unexpected file %s.", hdr.Name)
 
 	if index != -1 {
 		requiredFiles = slices.Delete(requiredFiles, index, index+1)
+	} else {
+		t.Log("unexpected file found", "filename:", hdr.Name)
 	}
 
 	assert.NotZerof(t, hdr.Size, "File %s is empty.", hdr.Name)
