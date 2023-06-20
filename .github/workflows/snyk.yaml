@@ -1,10 +1,16 @@
 name: Publish images
 
 on:
-  push:
-    tags:
-      - v[0-9]+.[0-9]+.[0-9]+
-      - v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+ # include prerelease tags too
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: 'Repository'
+        required: true
+        type: string
+      version:
+        description: 'Version'
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -20,63 +26,16 @@ jobs:
       id-token: write
     strategy:
       matrix:
-        platform: [amd64, arm64, ppc64le]
-        registry: [gcr, dockerhub]
+        platform: [amd64]
+        registry: [dockerhub]
         include:
           - registry: dockerhub
             url: docker.io
-            repository: DOCKERHUB_REPOSITORY
-            username: DOCKERHUB_USERNAME
-            password: DOCKERHUB_PASSWORD
     steps:
       - name: Push tag to snyk
         uses: ./.github/actions/snyk
         with:
-          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}-${{ matrix.platform }}@${{steps.digest.outputs.digest}}
+          image: ${{ inputs.repository }}:${{ inputs.version }}-${{ matrix.platform }}
           snyk-organization-id: ${{ secrets.SNYK_ORGANIZATION_ID }}
           snyk-integration-id: ${{ secrets.SNYK_INTEGRATION_ID }}
           snyk-api-token: $${{ secrets.SNYK_API_TOKEN }}
-
-  manifest:
-    name: Create manifest
-    environment: Release
-    needs: [prepare, push]
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-    strategy:
-      matrix:
-        registry: [gcr, dockerhub]
-        include:
-          - registry: gcr
-            url: gcr.io
-            repository: GCR_REPOSITORY
-            username: GCR_USERNAME
-            password: GCR_JSON_KEY
-          - registry: dockerhub
-            url: docker.io
-            repository: DOCKERHUB_REPOSITORY
-            username: DOCKERHUB_USERNAME
-            password: DOCKERHUB_PASSWORD
-    steps:
-      - name: Checkout
-        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
-      - name: Login to Registry
-        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a # v2.1.0
-        with:
-          registry: ${{ matrix.url }}
-          username: ${{ secrets[matrix.username] }}
-          password: ${{ secrets[matrix.password] }}
-      - name: Create manifests for ${{matrix.registry}}
-        uses: ./.github/actions/create-manifests
-        with:
-          version: ${{ needs.prepare.outputs.version }}
-          registry: ${{ matrix.url }}
-          repository: ${{ secrets[matrix.repository] }}
-          combined: true
-      - name: Sign manifests for ${{matrix.registry}}
-        uses: ./.github/actions/sign-image
-        with:
-          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}
-          signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
-          signing-password: ${{ secrets.COSIGN_PASSWORD }}
