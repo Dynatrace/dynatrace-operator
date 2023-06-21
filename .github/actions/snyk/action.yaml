@@ -1,0 +1,24 @@
+name: Import image to Snyk
+description: Imports an image lying on docker-hub to Snyk for security scans
+inputs:
+  image:
+    description: full image tag that will be imported into Snyk
+    required: true
+  snyk-organization-id:
+    description: organization ID for Snyk
+    required: trues
+  snyk-integration-id:
+    description: integration ID for Snyk
+    required: true
+  snyk-api-token:
+    description: API token to access Snyk API
+    required: true
+
+
+runs:
+  using: "composite"
+  steps:
+    - name: Import image into Snyk
+      shell: bash
+      run: |
+        hack/build/ci/snyk-image-import.sh "${{ inputs.snyk-organization-id }}" "${{ inputs.snyk-integration-id }}" "${{ inputs.snyk-api-token }}" "${{ inputs.image }}"
