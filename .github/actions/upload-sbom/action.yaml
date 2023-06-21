@@ -7,12 +7,25 @@ inputs:
   sbom:
     description: the sbom to attach
     required: true
+  signing-key:
+    description: private signing key
+    required: true
+  signing-password:
+    description: password for private signing key
+    required: true
 runs:
   using: "composite"
   steps:
     - name: Install Cosign
       uses: sigstore/cosign-installer@dd6b2e2b610a11fd73dd187a43d57cc1394e35f9 # v3.0.5
-    - name: Sign image with a key
+    - name: Attach sbom to image
       shell: bash
       run: |
         cosign attach sbom --sbom "${{ inputs.sbom }}" "${{ inputs.image }}" --input-format json --type cyclonedx
+    - name: Attach sbom attestation to image
+      shell: bash
+      run: |
+        cosign attest -y --key env://COSIGN_PRIVATE_KEY  --type cyclonedx --predicate ${{ inputs.sbom }} ${{ inputs.image }}
+      env:
+        COSIGN_PRIVATE_KEY: ${{ inputs.signing-key }}
+        COSIGN_PASSWORD: ${{ inputs.signing-password }}
