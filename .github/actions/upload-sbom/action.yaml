@@ -18,10 +18,6 @@ runs:
   steps:
     - name: Install Cosign
       uses: sigstore/cosign-installer@dd6b2e2b610a11fd73dd187a43d57cc1394e35f9 # v3.0.5
-    - name: Attach sbom to image
-      shell: bash
-      run: |
-        cosign attach sbom --sbom "${{ inputs.sbom }}" "${{ inputs.image }}" --input-format json --type cyclonedx
     - name: Attach sbom attestation to image
       shell: bash
       run: |
