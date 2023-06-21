@@ -84,3 +84,15 @@ func IsDowngrade(prev string, curr string) (bool, error) {
 	comp := CompareSemanticVersions(parsedPrev, parsedCurr)
 	return comp > 0, nil
 }
+
+// AreDevBuildsInTheSameSprint returns:
+//
+//	true:  if both versions describe the same sprint and DEV phase (release == 0)
+//	false: otherwise
+func AreDevBuildsInTheSameSprint(a SemanticVersion, b SemanticVersion) bool {
+	if a.major == b.major && a.minor == b.minor && a.release == 0 && b.release == 0 {
+		return true
+	}
+
+	return false
+}
