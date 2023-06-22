@@ -176,9 +176,66 @@ jobs:
           registry: ${{ matrix.url }}
           repository: ${{ secrets[matrix.repository] }}
           combined: true
+      - name: Get image digest
+        id: digest
+        env:
+          IMAGE: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}
+        run: |
+          hack/build/ci/get-image-digest.sh
       - name: Sign manifests for ${{matrix.registry}}
         uses: ./.github/actions/sign-image
         with:
-          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}
+          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{steps.digest.outputs.digest}}
+          signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          signing-password: ${{ secrets.COSIGN_PASSWORD }}
+  attach-sbom:
+    name: Attach sbom
+    environment: Release
+    needs: [ prepare, push, manifest ]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    strategy:
+      matrix:
+        registry: [gcr, dockerhub]
+        include:
+          - registry: gcr
+            url: gcr.io
+            repository: GCR_REPOSITORY
+            username: GCR_USERNAME
+            password: GCR_JSON_KEY
+          - registry: dockerhub
+            url: docker.io
+            repository: DOCKERHUB_REPOSITORY
+            username: DOCKERHUB_USERNAME
+            password: DOCKERHUB_PASSWORD
+    steps:
+      - name: Checkout
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      - name: Login to Registry
+        uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc # v2.2.0
+        with:
+          registry: ${{ matrix.url }}
+          username: ${{ secrets[matrix.username] }}
+          password: ${{ secrets[matrix.password] }}
+      - name: Get operator-image digest
+        id: operator-digest
+        env:
+          IMAGE: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}
+        run: |
+          hack/build/ci/get-image-digest.sh
+      - name: Create sbom for ${{matrix.registry}}
+        id: sbom
+        uses: aquasecurity/trivy-action@41f05d9ecffa2ed3f1580af306000f734b733e54 # v0.11.2
+        with:
+          image-ref: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{steps.operator-digest.outputs.digest}}
+          format: 'cyclonedx'
+          output: 'result.json'
+          skip-dirs: '/usr/share/dynatrace-operator/third_party_licenses'
+      - name: Upload sbom to ${{matrix.registry}}
+        uses: ./.github/actions/upload-sbom
+        with:
+          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{steps.operator-digest.outputs.digest}}
+          sbom: 'result.json'
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
