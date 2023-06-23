@@ -13,11 +13,13 @@ type OneAgent struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   OneAgentSpec      `json:"spec,omitempty"`
+	Spec   OneAgentSpec   `json:"spec,omitempty"`
 	Status OneAgentStatus `json:"status,omitempty"`
 }
 
 type OneAgentSpec struct {
+	Environment EnvironmentValueSource `json:"environment"`
+
 	// Optional: enable classic fullstack monitoring and change its settings
 	// Cannot be used in conjunction with cloud-native fullstack monitoring, application monitoring or host monitoring
 	// +nullable
@@ -101,6 +103,35 @@ type HostInjectSpec struct {
 	Version string `json:"version,omitempty"`
 }
 
+type OneAgentStatus struct {
+	VersionStatus `json:",inline"`
+
+	Instances map[string]OneAgentInstance `json:"instances,omitempty"`
+
+	LastInstanceStatusUpdate *metav1.Time `json:"lastInstanceStatusUpdate,omitempty"`
+
+	ConnectionInfoStatus OneAgentConnectionInfoStatus `json:"connectionInfoStatus,omitempty"`
+}
+
+type CodeModulesStatus struct {
+	VersionStatus `json:",inline"`
+}
+
+type OneAgentInstance struct {
+	PodName   string `json:"podName,omitempty"`
+	IPAddress string `json:"ipAddress,omitempty"`
+}
+
+type OneAgentConnectionInfoStatus struct {
+	ConnectionInfoStatus `json:",inline"`
+	CommunicationHosts   []CommunicationHostStatus `json:"communicationHosts,omitempty"`
+}
+type CommunicationHostStatus struct {
+	Protocol string `json:"protocol,omitempty"`
+	Host     string `json:"host,omitempty"`
+	Port     uint32 `json:"port,omitempty"`
+}
+
 type ApplicationMonitoringSpec struct {
 	AppInjectionSpec `json:",inline"`
 
@@ -122,4 +153,11 @@ type AppInjectionSpec struct {
 	// Optional: the Dynatrace installer container image
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="CodeModulesImage",order=12,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	CodeModulesImage string `json:"codeModulesImage,omitempty"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type OneAgentList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []OneAgent `json:"items"`
 }

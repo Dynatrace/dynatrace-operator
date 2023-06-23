@@ -27,12 +27,12 @@ var _ controllers.Reconciler = &Reconciler{}
 type Reconciler struct {
 	client                    client.Client
 	scheme                    *runtime.Scheme
-	customPropertiesSource    *dynatracev1beta1.ValueSource
+	customPropertiesSource    *dynatracev1beta1.StringValueSource
 	customPropertiesOwnerName string
 	instance                  *dynatracev1beta1.DynaKube
 }
 
-func NewReconciler(clt client.Client, instance *dynatracev1beta1.DynaKube, customPropertiesOwnerName string, scheme *runtime.Scheme, customPropertiesSource *dynatracev1beta1.ValueSource) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
+func NewReconciler(clt client.Client, instance *dynatracev1beta1.DynaKube, customPropertiesOwnerName string, scheme *runtime.Scheme, customPropertiesSource *dynatracev1beta1.StringValueSource) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
 	return &Reconciler{
 		client:                    clt,
 		instance:                  instance,

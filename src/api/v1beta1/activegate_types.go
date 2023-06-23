@@ -58,11 +58,12 @@ type ActiveGate struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ActiveGateSpec      `json:"spec,omitempty"`
-	Status ActiveGateStatus    `json:"status,omitempty"`
+	Spec   ActiveGateSpec   `json:"spec,omitempty"`
+	Status ActiveGateStatus `json:"status,omitempty"`
 }
 
 type ActiveGateSpec struct {
+	Environment EnvironmentValueSource `json:"environment"`
 
 	// Activegate capabilities enabled (routing, kubernetes-monitoring, metrics-ingest, dynatrace-api)
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Capabilities",order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
@@ -95,6 +96,10 @@ type ActiveGateStatus struct {
 	ConnectionInfoStatus ActiveGateConnectionInfoStatus `json:"connectionInfoStatus,omitempty"`
 }
 
+type ActiveGateConnectionInfoStatus struct {
+	ConnectionInfoStatus `json:",inline"`
+}
+
 // CapabilityProperties is a struct which can be embedded by ActiveGate capabilities
 // Such as KubernetesMonitoring or Routing
 // It encapsulates common properties
@@ -113,7 +118,7 @@ type CapabilityProperties struct {
 
 	// Optional: Add a custom properties file by providing it as a value or reference it from a secret
 	// If referenced from a secret, make sure the key is called 'customProperties'
-	CustomProperties *ValueSource `json:"customProperties,omitempty"`
+	CustomProperties *StringValueSource `json:"customProperties,omitempty"`
 
 	// Optional: define resources requests and limits for single ActiveGate pods
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Resource Requirements",order=34,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:resourceRequirements"}
@@ -144,7 +149,6 @@ type CapabilityProperties struct {
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
 
 type ActiveGateList struct {
 	metav1.TypeMeta `json:",inline"`

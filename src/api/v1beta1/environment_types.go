@@ -19,8 +19,14 @@ const (
 	ReasonTokenError string = "TokenError"
 )
 
-type ValueSource struct {
+type StringValueSource struct {
 	Value string `json:"value,omitempty"`
+
+	ValueFrom string `json:"valueFrom,omitempty"`
+}
+
+type EnvironmentValueSource struct {
+	Value *Environment `json:"value,omitempty"`
 
 	ValueFrom string `json:"valueFrom,omitempty"`
 }
@@ -57,7 +63,7 @@ type EnvironmentSpec struct {
 
 	// Optional: Set custom proxy settings either directly or from a secret with the field 'proxy'
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Proxy",order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
-	Proxy *ValueSource `json:"proxy,omitempty"`
+	Proxy *StringValueSource `json:"proxy,omitempty"`
 
 	// Optional: Adds custom RootCAs from a configmap
 	// This property only affects certificates used to communicate with the Dynatrace API.
@@ -82,21 +88,22 @@ type EnvironmentList struct {
 // EnvironmentStatus defines the observed state of DynaKube
 // +k8s:openapi-gen=true
 type EnvironmentStatus struct {
-	// UpdatedTimestamp indicates when the instance was last updated
-	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors=true
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Last Updated"
-	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors.x-descriptors="urn:alm:descriptor:text"
 	UpdatedTimestamp metav1.Time `json:"updatedTimestamp,omitempty"`
 
 	// Deprecated: use DynatraceApiStatus.LastTokenScopeRequest instead
 	// LastTokenProbeTimestamp tracks when the last request for the API token validity was sent
-	LastTokenProbeTimestamp *metav1.Time `json:"lastTokenProbeTimestamp,omitempty"`
+	ApiStatus DynatraceApiStatus `json:"apiStatus,omitempty"`
 
 	// KubeSystemUUID contains the UUID of the current Kubernetes cluster
 	KubeSystemUUID string `json:"kubeSystemUUID,omitempty"`
 }
 
+type DynatraceApiStatus struct {
+	LastTokenScopeRequest metav1.Time `json:"lastTokenScopeRequest,omitempty"`
+}
+
 func init() {
 	SchemeBuilder.Register(&Environment{}, &EnvironmentList{})
 	SchemeBuilder.Register(&ActiveGate{}, &ActiveGateList{})
+	SchemeBuilder.Register(&OneAgent{}, &OneAgentList{})
 }
