@@ -261,15 +261,9 @@ jobs:
         id: generate_notes
         run: |
           hack/build/ci/generate-release-notes.sh
-      - name: Login to Registry
-        uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc # v2.2.0
-        with:
-          registry: quay.io
-          username: ${{ secrets.QUAY_USERNAME }}
-          password: ${{ secrets.QUAY_PASSWORD }}
       - name: Generate manifests
         run: |
-          export IMAGE=docker.io/${{ secrets.DOCKER_REPOSITORY }}
+          export IMAGE=docker.io/${{ secrets[matrix.repository] }}
           export TAG=$(echo "${{ github.ref }}" | awk -F"/" '{print $3}')
           make manifests
       - name: Generate CRD
