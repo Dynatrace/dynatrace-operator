@@ -1,17 +1,16 @@
-name: Publish images
-
+name: Release
 on:
   push:
     tags:
       - v[0-9]+.[0-9]+.[0-9]+
       - v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+ # include prerelease tags too
 
-permissions:
-  contents: read
-  id-token: write
 
 jobs:
   prepare:
+    permissions:
+      contents: read
+      id-token: write
     name: Prepare properties
     runs-on: ubuntu-latest
     steps:
@@ -239,3 +238,53 @@ jobs:
           sbom: 'result.json'
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
+  pre-release:
+    if: ${{ contains(github.ref, '-rc.') }}
+    name: Create pre-release
+    needs: [prepare]
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        registry: [ dockerhub ]
+        include:
+          - registry: dockerhub
+            url: docker.io
+            repository: DOCKERHUB_REPOSITORY
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      - name: Setup Golang
+        uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4.0.1
+        with:
+          go-version-file: "${{ github.workspace }}/go.mod"
+      - name: Download dependencies
+        id: depdownload
+        run: |
+          hack/build/ci/install-cgo-dependencies.sh
+      - name: Generate release notes
+        id: generate_notes
+        run: |
+          hack/build/ci/generate-release-notes.sh
+      - name: Generate manifests
+        run: |
+          export IMAGE= ${{ matrix.url }}/${{ secrets[matrix.repository] }}
+          export TAG=$(echo "${{ github.ref }}" | awk -F"/" '{print $3}')
+          make manifests
+      - name: Generate CRD
+        run: make manifests/crd/release
+      - name: Pre-release
+        uses: softprops/action-gh-release@v1
+        with:
+          body_path: ./CHANGELOG.md
+          files: |
+            config/deploy/kubernetes/gke-autopilot.yaml
+            config/deploy/kubernetes/kubernetes-csi.yaml
+            config/deploy/kubernetes/kubernetes.yaml
+            config/deploy/openshift/openshift-csi.yaml
+            config/deploy/openshift/openshift.yaml
+            config/deploy/dynatrace-operator-crd.yaml
+          token: ${{ secrets.GITHUB_TOKEN }}
+          prerelease: true
+          draft: true
