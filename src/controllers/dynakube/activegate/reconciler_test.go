@@ -286,7 +286,7 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 			Namespace: testNamespace,
 			Name:      testName,
 		},
-		Status: dynatracev1beta1.DynaKubeStatus{
+		Status: dynatracev1beta1.EnvironmentStatus{
 			ActiveGate: dynatracev1beta1.ActiveGateStatus{
 				ConnectionInfoStatus: dynatracev1beta1.ActiveGateConnectionInfoStatus{
 					ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{

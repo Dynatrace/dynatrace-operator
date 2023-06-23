@@ -56,7 +56,7 @@ func TestCollectGCInfo(t *testing.T) {
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: apiUrl,
 			},
-			Status: dynatracev1beta1.DynaKubeStatus{
+			Status: dynatracev1beta1.EnvironmentStatus{
 				CodeModules: dynatracev1beta1.CodeModulesStatus{
 					VersionStatus: dynatracev1beta1.VersionStatus{
 						Version: latestVersion,
@@ -72,7 +72,7 @@ func TestCollectGCInfo(t *testing.T) {
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: apiUrl,
 			},
-			Status: dynatracev1beta1.DynaKubeStatus{
+			Status: dynatracev1beta1.EnvironmentStatus{
 				CodeModules: dynatracev1beta1.CodeModulesStatus{
 					VersionStatus: dynatracev1beta1.VersionStatus{
 						Version: oldVersion,
@@ -99,7 +99,7 @@ func TestCollectGCInfo(t *testing.T) {
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: apiUrl,
 			},
-			Status: dynatracev1beta1.DynaKubeStatus{
+			Status: dynatracev1beta1.EnvironmentStatus{
 				CodeModules: dynatracev1beta1.CodeModulesStatus{
 					VersionStatus: dynatracev1beta1.VersionStatus{
 						Version: latestVersion,
@@ -115,7 +115,7 @@ func TestCollectGCInfo(t *testing.T) {
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: apiUrl,
 			},
-			Status: dynatracev1beta1.DynaKubeStatus{
+			Status: dynatracev1beta1.EnvironmentStatus{
 				CodeModules: dynatracev1beta1.CodeModulesStatus{
 					VersionStatus: dynatracev1beta1.VersionStatus{},
 				},

@@ -23,12 +23,12 @@ const (
 
 func TestReconciler_Reconcile(t *testing.T) {
 	t.Run(`Create works with minimal setup`, func(t *testing.T) {
-		r := NewReconciler(nil, nil, "", nil, &dynatracev1beta1.DynaKubeValueSource{})
+		r := NewReconciler(nil, nil, "", nil, &dynatracev1beta1.ValueSource{})
 		err := r.Reconcile()
 		assert.NoError(t, err)
 	})
 	t.Run(`Create creates custom properties secret`, func(t *testing.T) {
-		valueSource := dynatracev1beta1.DynaKubeValueSource{Value: testValue}
+		valueSource := dynatracev1beta1.ValueSource{Value: testValue}
 		instance := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -50,7 +50,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.Equal(t, customPropertiesSecret.Data[DataKey], []byte(testValue))
 	})
 	t.Run(`Create updates custom properties only if data changed`, func(t *testing.T) {
-		valueSource := dynatracev1beta1.DynaKubeValueSource{Value: testValue}
+		valueSource := dynatracev1beta1.ValueSource{Value: testValue}
 		instance := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,

@@ -2,9 +2,20 @@ package v1beta1
 
 import (
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type OneAgentMode string
+
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+type OneAgent struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   OneAgentSpec      `json:"spec,omitempty"`
+	Status OneAgentStatus `json:"status,omitempty"`
+}
 
 type OneAgentSpec struct {
 	// Optional: enable classic fullstack monitoring and change its settings

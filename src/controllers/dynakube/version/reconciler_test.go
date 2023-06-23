@@ -193,7 +193,7 @@ func TestNeedsUpdate(t *testing.T) {
 				ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
 			},
 		},
-		Status: dynatracev1beta1.DynaKubeStatus{
+		Status: dynatracev1beta1.EnvironmentStatus{
 			OneAgent: dynatracev1beta1.OneAgentStatus{
 				VersionStatus: dynatracev1beta1.VersionStatus{
 					Source: dynatracev1beta1.TenantRegistryVersionSource,

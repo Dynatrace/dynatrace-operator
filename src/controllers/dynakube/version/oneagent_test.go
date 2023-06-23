@@ -109,7 +109,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
 				},
 			},
-			Status: dynatracev1beta1.DynaKubeStatus{
+			Status: dynatracev1beta1.EnvironmentStatus{
 				OneAgent: dynatracev1beta1.OneAgentStatus{
 					VersionStatus: dynatracev1beta1.VersionStatus{
 						ImageID: "some.registry.com:999.999.999.999-999",
@@ -152,7 +152,7 @@ type CheckForDowngradeTestCase struct {
 
 func newDynakubeWithOneAgentStatus(status dynatracev1beta1.VersionStatus) *dynatracev1beta1.DynaKube {
 	return &dynatracev1beta1.DynaKube{
-		Status: dynatracev1beta1.DynaKubeStatus{
+		Status: dynatracev1beta1.EnvironmentStatus{
 			OneAgent: dynatracev1beta1.OneAgentStatus{
 				VersionStatus: status,
 			},

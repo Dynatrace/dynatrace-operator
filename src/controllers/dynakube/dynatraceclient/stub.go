@@ -35,6 +35,6 @@ func (stubBuilder StubBuilder) Build() (dtclient.Client, error) {
 	return stubBuilder.DynatraceClient, stubBuilder.Err
 }
 
-func (stubBuilder StubBuilder) BuildWithTokenVerification(*dynatracev1beta1.DynaKubeStatus) (dtclient.Client, error) {
+func (stubBuilder StubBuilder) BuildWithTokenVerification(*dynatracev1beta1.EnvironmentStatus) (dtclient.Client, error) {
 	return stubBuilder.DynatraceClient, stubBuilder.Err
 }

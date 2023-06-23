@@ -30,34 +30,26 @@ const (
 	NoProxyKey = "noProxy"
 )
 
-func (dk *DynaKube) Proxy(ctx context.Context, kubeReader client.Reader) (string, error) {
-	if dk.Spec.Proxy == nil {
+func (env *Environment) Proxy(ctx context.Context, kubeReader client.Reader) (string, error) {
+	if env.Spec.Proxy == nil {
 		return "", nil
 	}
-	if dk.Spec.Proxy.Value != "" {
-		return dk.Spec.Proxy.Value, nil
-	} else if dk.Spec.Proxy.ValueFrom != "" {
-		return dk.proxyUrlFromUserSecret(ctx, kubeReader)
+	if env.Spec.Proxy.Value != "" {
+		return env.Spec.Proxy.Value, nil
+	} else if env.Spec.Proxy.ValueFrom != "" {
+		return env.proxyUrlFromUserSecret(ctx, kubeReader)
 	}
 	return "", nil
 }
 
-func (dk *DynaKube) HasProxy() bool {
-	return dk.Spec.Proxy != nil && (dk.Spec.Proxy.Value != "" || dk.Spec.Proxy.ValueFrom != "")
+func (env *Environment) HasProxy() bool {
+	return env.Spec.Proxy != nil && (env.Spec.Proxy.Value != "" || env.Spec.Proxy.ValueFrom != "")
 }
 
-func (dk *DynaKube) NeedsActiveGateProxy() bool {
-	return !dk.FeatureActiveGateIgnoreProxy() && dk.HasProxy()
-}
-
-func (dk *DynaKube) NeedsOneAgentProxy() bool {
-	return !dk.FeatureOneAgentIgnoreProxy() && dk.HasProxy()
-}
-
-func (dk *DynaKube) proxyUrlFromUserSecret(ctx context.Context, kubeReader client.Reader) (string, error) {
-	secretName := dk.Spec.Proxy.ValueFrom
+func (env *Environment) proxyUrlFromUserSecret(ctx context.Context, kubeReader client.Reader) (string, error) {
+	secretName := env.Spec.Proxy.ValueFrom
 	var proxySecret corev1.Secret
-	err := kubeReader.Get(ctx, client.ObjectKey{Name: secretName, Namespace: dk.Namespace}, &proxySecret)
+	err := kubeReader.Get(ctx, client.ObjectKey{Name: secretName, Namespace: env.Namespace}, &proxySecret)
 	if err != nil {
 		return "", errors.WithMessage(err, fmt.Sprintf("failed to get proxy from %s secret", secretName))
 	}

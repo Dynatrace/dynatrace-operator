@@ -18,7 +18,7 @@ type Builder interface {
 	SetDynakube(dynakube dynatracev1beta1.DynaKube) Builder
 	SetTokens(tokens token.Tokens) Builder
 	Build() (dtclient.Client, error)
-	BuildWithTokenVerification(dynaKubeStatus *dynatracev1beta1.DynaKubeStatus) (dtclient.Client, error)
+	BuildWithTokenVerification(dynaKubeStatus *dynatracev1beta1.EnvironmentStatus) (dtclient.Client, error)
 }
 
 type builder struct {
@@ -95,7 +95,7 @@ func (dynatraceClientBuilder builder) Build() (dtclient.Client, error) {
 	return dtclient.NewClient(dynatraceClientBuilder.dynakube.Spec.APIURL, apiToken, paasToken, opts.Opts...)
 }
 
-func (dynatraceClientBuilder builder) BuildWithTokenVerification(dynaKubeStatus *dynatracev1beta1.DynaKubeStatus) (dtclient.Client, error) {
+func (dynatraceClientBuilder builder) BuildWithTokenVerification(dynaKubeStatus *dynatracev1beta1.EnvironmentStatus) (dtclient.Client, error) {
 	dynatraceClient, err := dynatraceClientBuilder.Build()
 	if err != nil {
 		return nil, err
@@ -116,7 +116,7 @@ func (dynatraceClientBuilder builder) BuildWithTokenVerification(dynaKubeStatus 
 	return dynatraceClient, nil
 }
 
-func (dynatraceClientBuilder builder) verifyTokenScopes(dynatraceClient dtclient.Client, dynaKubeStatus *dynatracev1beta1.DynaKubeStatus) error {
+func (dynatraceClientBuilder builder) verifyTokenScopes(dynatraceClient dtclient.Client, dynaKubeStatus *dynatracev1beta1.EnvironmentStatus) error {
 	var err error
 
 	if dynatraceClientBuilder.dynakube.IsTokenScopeVerificationAllowed(timeprovider.New()) {
@@ -138,7 +138,7 @@ func (dynatraceClientBuilder builder) verifyTokenScopes(dynatraceClient dtclient
 	return nil
 }
 
-func lastErrorFromCondition(dynaKubeStatus *dynatracev1beta1.DynaKubeStatus) error {
+func lastErrorFromCondition(dynaKubeStatus *dynatracev1beta1.EnvironmentStatus) error {
 	oldCondition := meta.FindStatusCondition(dynaKubeStatus.Conditions, dynatracev1beta1.TokenConditionType)
 	if oldCondition != nil && oldCondition.Reason != dynatracev1beta1.ReasonTokenReady {
 		return errors.New(oldCondition.Message)

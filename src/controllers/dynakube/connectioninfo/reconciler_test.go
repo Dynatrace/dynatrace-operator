@@ -206,7 +206,7 @@ func getTestActiveGateConnectionInfo() *dtclient.ActiveGateConnectionInfo {
 	}
 }
 
-func resetCachedTimestamps(dynakubeStatus *dynatracev1beta1.DynaKubeStatus) {
+func resetCachedTimestamps(dynakubeStatus *dynatracev1beta1.EnvironmentStatus) {
 	dynakubeStatus.DynatraceApi.LastTokenScopeRequest = metav1.Time{}
 	dynakubeStatus.OneAgent.ConnectionInfoStatus.LastRequest = metav1.Time{}
 	dynakubeStatus.ActiveGate.ConnectionInfoStatus.LastRequest = metav1.Time{}

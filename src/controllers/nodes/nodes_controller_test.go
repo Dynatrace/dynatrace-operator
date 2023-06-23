@@ -182,7 +182,7 @@ func (builder mockDynatraceClientBuilder) Build() (dtclient.Client, error) {
 	return builder.dynatraceClient, nil
 }
 
-func (builder mockDynatraceClientBuilder) BuildWithTokenVerification(*dynatracev1beta1.DynaKubeStatus) (dtclient.Client, error) {
+func (builder mockDynatraceClientBuilder) BuildWithTokenVerification(*dynatracev1beta1.EnvironmentStatus) (dtclient.Client, error) {
 	return builder.dynatraceClient, nil
 }
 
@@ -227,7 +227,7 @@ func createDefaultFakeClient() client.Client {
 		&corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node2"}},
 		&dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{Name: "oneagent1", Namespace: testNamespace},
-			Status: dynatracev1beta1.DynaKubeStatus{
+			Status: dynatracev1beta1.EnvironmentStatus{
 				OneAgent: dynatracev1beta1.OneAgentStatus{
 					Instances: map[string]dynatracev1beta1.OneAgentInstance{"node1": {IPAddress: "1.2.3.4"}},
 				},
@@ -235,7 +235,7 @@ func createDefaultFakeClient() client.Client {
 		},
 		&dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{Name: "oneagent2", Namespace: testNamespace},
-			Status: dynatracev1beta1.DynaKubeStatus{
+			Status: dynatracev1beta1.EnvironmentStatus{
 				OneAgent: dynatracev1beta1.OneAgentStatus{
 					Instances: map[string]dynatracev1beta1.OneAgentInstance{"node2": {IPAddress: "5.6.7.8"}},
 				},

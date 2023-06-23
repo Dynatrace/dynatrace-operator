@@ -7,34 +7,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// DynaKubeStatus defines the observed state of DynaKube
-// +k8s:openapi-gen=true
-type DynaKubeStatus struct {
-	// Defines the current state (Running, Updating, Error, ...)
-	Phase DynaKubePhaseType `json:"phase,omitempty"`
-
-	// UpdatedTimestamp indicates when the instance was last updated
-	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors=true
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Last Updated"
-	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors.x-descriptors="urn:alm:descriptor:text"
-	UpdatedTimestamp metav1.Time `json:"updatedTimestamp,omitempty"`
-
-	// Deprecated: use DynatraceApiStatus.LastTokenScopeRequest instead
-	// LastTokenProbeTimestamp tracks when the last request for the API token validity was sent
-	LastTokenProbeTimestamp *metav1.Time `json:"lastTokenProbeTimestamp,omitempty"`
-
-	// KubeSystemUUID contains the UUID of the current Kubernetes cluster
-	KubeSystemUUID string `json:"kubeSystemUUID,omitempty"`
-
-	// Conditions includes status about the current state of the instance
-	Conditions []metav1.Condition `json:"conditions,omitempty"`
-
-	ActiveGate   ActiveGateStatus   `json:"activeGate,omitempty"`
-	OneAgent     OneAgentStatus     `json:"oneAgent,omitempty"`
-	CodeModules  CodeModulesStatus  `json:"codeModules,omitempty"`
-	Synthetic    SyntheticStatus    `json:"synthetic,omitempty"`
-	DynatraceApi DynatraceApiStatus `json:"dynatraceApi,omitempty"`
-}
 
 type DynatraceApiStatus struct {
 	LastTokenScopeRequest metav1.Time `json:"lastTokenScopeRequest,omitempty"`
@@ -85,11 +57,6 @@ type VersionStatus struct {
 	LastProbeTimestamp *metav1.Time  `json:"lastProbeTimestamp,omitempty"`
 }
 
-type ActiveGateStatus struct {
-	VersionStatus        `json:",inline"`
-	ConnectionInfoStatus ActiveGateConnectionInfoStatus `json:"connectionInfoStatus,omitempty"`
-}
-
 type CodeModulesStatus struct {
 	VersionStatus `json:",inline"`
 }
@@ -111,19 +78,4 @@ type OneAgentInstance struct {
 
 type SyntheticStatus struct {
 	VersionStatus `json:",inline"`
-}
-
-type DynaKubePhaseType string
-
-const (
-	Running   DynaKubePhaseType = "Running"
-	Deploying DynaKubePhaseType = "Deploying"
-	Error     DynaKubePhaseType = "Error"
-)
-
-// SetPhase sets the status phase on the DynaKube object
-func (dk *DynaKubeStatus) SetPhase(phase DynaKubePhaseType) bool {
-	upd := phase != dk.Phase
-	dk.Phase = phase
-	return upd
 }

@@ -24,7 +24,7 @@ func TestSyntheticUseTenantRegistry(t *testing.T) {
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,
 			},
-			Status: dynatracev1beta1.DynaKubeStatus{
+			Status: dynatracev1beta1.EnvironmentStatus{
 				Synthetic: dynatracev1beta1.SyntheticStatus{
 					VersionStatus: dynatracev1beta1.VersionStatus{
 						Version: "non-empty",

@@ -30,11 +30,11 @@ const (
 	TlsCertKey   = "server.crt"
 )
 
-func (dk *DynaKube) TrustedCAs(ctx context.Context, kubeReader client.Reader) ([]byte, error) {
-	configName := dk.Spec.TrustedCAs
+func (env *Environment) TrustedCAs(ctx context.Context, kubeReader client.Reader) ([]byte, error) {
+	configName := env.Spec.TrustedCAs
 	if configName != "" {
 		var caConfigMap corev1.ConfigMap
-		err := kubeReader.Get(ctx, client.ObjectKey{Name: configName, Namespace: dk.Namespace}, &caConfigMap)
+		err := kubeReader.Get(ctx, client.ObjectKey{Name: configName, Namespace: env.Namespace}, &caConfigMap)
 		if err != nil {
 			return nil, errors.WithMessage(err, fmt.Sprintf("failed to get trustedCa from %s configmap", configName))
 		}
@@ -44,11 +44,11 @@ func (dk *DynaKube) TrustedCAs(ctx context.Context, kubeReader client.Reader) ([
 	return nil, nil
 }
 
-func (dk *DynaKube) ActiveGateTlsCert(ctx context.Context, kubeReader client.Reader) (string, error) {
-	if dk.HasActiveGateCaCert() {
-		secretName := dk.Spec.ActiveGate.TlsSecretName
+func (ag *ActiveGate) ActiveGateTlsCert(ctx context.Context, kubeReader client.Reader) (string, error) {
+	if ag.Spec.TlsSecretName != "" {
+		secretName := ag.Spec.TlsSecretName
 		var tlsSecret corev1.Secret
-		err := kubeReader.Get(ctx, client.ObjectKey{Name: secretName, Namespace: dk.Namespace}, &tlsSecret)
+		err := kubeReader.Get(ctx, client.ObjectKey{Name: secretName, Namespace: ag.Namespace}, &tlsSecret)
 		if err != nil {
 			return "", errors.WithMessage(err, fmt.Sprintf("failed to get activeGate tlsCert from %s secret", secretName))
 		}

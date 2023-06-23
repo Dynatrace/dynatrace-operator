@@ -43,14 +43,14 @@ const (
 )
 
 // ApiUrl is a getter for dk.Spec.APIURL
-func (dk *DynaKube) ApiUrl() string {
+func (dk *Environment) ApiUrl() string {
 	return dk.Spec.APIURL
 }
 
 // ApiUrlHost returns the host of dk.Spec.APIURL
 // E.g. if the APIURL is set to "https://my-tenant.dynatrace.com/api", it returns "my-tenant.dynatrace.com"
 // If the URL cannot be parsed, it returns an empty string
-func (dk *DynaKube) ApiUrlHost() string {
+func (dk *Environment) ApiUrlHost() string {
 	parsedUrl, err := url.Parse(dk.ApiUrl())
 
 	if err != nil {
@@ -58,13 +58,6 @@ func (dk *DynaKube) ApiUrlHost() string {
 	}
 
 	return parsedUrl.Host
-}
-
-// NeedsActiveGate returns true when a feature requires ActiveGate instances.
-func (dk *DynaKube) NeedsActiveGate() bool {
-	return dk.DeprecatedActiveGateMode() ||
-		dk.ActiveGateMode() ||
-		dk.IsSyntheticMonitoringEnabled()
 }
 
 // ApplicationMonitoringMode returns true when application only section is used.

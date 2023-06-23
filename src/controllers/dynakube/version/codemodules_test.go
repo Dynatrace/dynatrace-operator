@@ -57,7 +57,7 @@ func TestCodeModulesUseDefault(t *testing.T) {
 					},
 				},
 			},
-			Status: dynatracev1beta1.DynaKubeStatus{
+			Status: dynatracev1beta1.EnvironmentStatus{
 				CodeModules: oldCodeModulesStatus(),
 			},
 		}
@@ -75,7 +75,7 @@ func TestCodeModulesUseDefault(t *testing.T) {
 					ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{},
 				},
 			},
-			Status: dynatracev1beta1.DynaKubeStatus{
+			Status: dynatracev1beta1.EnvironmentStatus{
 				CodeModules: oldCodeModulesStatus(),
 			},
 		}

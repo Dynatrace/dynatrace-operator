@@ -251,12 +251,12 @@ func TestReconcile_GetCustomPropertyHash(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, hash)
 
-	r.dynakube.Spec.Routing.CustomProperties = &dynatracev1beta1.DynaKubeValueSource{Value: testValue}
+	r.dynakube.Spec.Routing.CustomProperties = &dynatracev1beta1.ValueSource{Value: testValue}
 	hash, err = r.calculateActiveGateConfigurationHash()
 	assert.NoError(t, err)
 	assert.NotEmpty(t, hash)
 
-	r.dynakube.Spec.Routing.CustomProperties = &dynatracev1beta1.DynaKubeValueSource{ValueFrom: testName}
+	r.dynakube.Spec.Routing.CustomProperties = &dynatracev1beta1.ValueSource{ValueFrom: testName}
 	hash, err = r.calculateActiveGateConfigurationHash()
 	r.dynakube.Annotations[dynatracev1beta1.AnnotationFeatureActiveGateAuthToken] = "false"
 	assert.Error(t, err)

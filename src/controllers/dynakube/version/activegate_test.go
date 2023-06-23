@@ -59,7 +59,7 @@ func TestActiveGateUseDefault(t *testing.T) {
 					CapabilityProperties: dynatracev1beta1.CapabilityProperties{},
 				},
 			},
-			Status: dynatracev1beta1.DynaKubeStatus{
+			Status: dynatracev1beta1.EnvironmentStatus{
 				ActiveGate: dynatracev1beta1.ActiveGateStatus{
 					VersionStatus: dynatracev1beta1.VersionStatus{
 						Version: "prev",

@@ -68,7 +68,7 @@ var (
 				TlsSecretName: "testing",
 			},
 		},
-		Status: dynatracev1beta1.DynaKubeStatus{
+		Status: dynatracev1beta1.EnvironmentStatus{
 			OneAgent: dynatracev1beta1.OneAgentStatus{
 				Instances: map[string]dynatracev1beta1.OneAgentInstance{
 					testNode1Name: {},
@@ -83,7 +83,7 @@ var (
 			APIURL:   testApiUrl,
 			OneAgent: dynatracev1beta1.OneAgentSpec{CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{}},
 		},
-		Status: dynatracev1beta1.DynaKubeStatus{
+		Status: dynatracev1beta1.EnvironmentStatus{
 			OneAgent: dynatracev1beta1.OneAgentStatus{
 				Instances: map[string]dynatracev1beta1.OneAgentInstance{
 					testNode2Name: {},
@@ -104,7 +104,7 @@ var (
 				},
 			},
 		},
-		Status: dynatracev1beta1.DynaKubeStatus{
+		Status: dynatracev1beta1.EnvironmentStatus{
 			OneAgent: dynatracev1beta1.OneAgentStatus{
 				Instances: map[string]dynatracev1beta1.OneAgentInstance{
 					testNodeWithSelectorName: {},

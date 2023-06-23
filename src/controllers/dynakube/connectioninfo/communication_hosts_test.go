@@ -15,7 +15,7 @@ func TestGetCommunicationHosts(t *testing.T) {
 			Namespace: testNamespace,
 			Name:      testName,
 		},
-		Status: dynatracev1beta1.DynaKubeStatus{
+		Status: dynatracev1beta1.EnvironmentStatus{
 			OneAgent: dynatracev1beta1.OneAgentStatus{
 				ConnectionInfoStatus: dynatracev1beta1.OneAgentConnectionInfoStatus{
 					ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{},

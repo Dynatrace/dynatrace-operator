@@ -2,6 +2,7 @@ package v1beta1
 
 import (
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type CapabilityDisplayName string
@@ -51,6 +52,16 @@ var ActiveGateDisplayNames = map[CapabilityDisplayName]struct{}{
 	DynatraceApiCapability.DisplayName:  {},
 }
 
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+type ActiveGate struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   ActiveGateSpec      `json:"spec,omitempty"`
+	Status ActiveGateStatus    `json:"status,omitempty"`
+}
+
 type ActiveGateSpec struct {
 
 	// Activegate capabilities enabled (routing, kubernetes-monitoring, metrics-ingest, dynatrace-api)
@@ -79,6 +90,11 @@ type ActiveGateSpec struct {
 	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
+type ActiveGateStatus struct {
+	VersionStatus        `json:",inline"`
+	ConnectionInfoStatus ActiveGateConnectionInfoStatus `json:"connectionInfoStatus,omitempty"`
+}
+
 // CapabilityProperties is a struct which can be embedded by ActiveGate capabilities
 // Such as KubernetesMonitoring or Routing
 // It encapsulates common properties
@@ -97,7 +113,7 @@ type CapabilityProperties struct {
 
 	// Optional: Add a custom properties file by providing it as a value or reference it from a secret
 	// If referenced from a secret, make sure the key is called 'customProperties'
-	CustomProperties *DynaKubeValueSource `json:"customProperties,omitempty"`
+	CustomProperties *ValueSource `json:"customProperties,omitempty"`
 
 	// Optional: define resources requests and limits for single ActiveGate pods
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Resource Requirements",order=34,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:resourceRequirements"}
@@ -125,4 +141,13 @@ type CapabilityProperties struct {
 	// Optional: Adds TopologySpreadConstraints for the ActiveGate pods
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="topologySpreadConstraints",order=40,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:hidden"}
 	TopologySpreadConstraints []corev1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+
+type ActiveGateList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []ActiveGate `json:"items"`
 }

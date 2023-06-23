@@ -44,7 +44,7 @@ func TestUpdateAgent(t *testing.T) {
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: "https://" + testTenantUUID + ".dynatrace.com",
 			},
-			Status: dynatracev1beta1.DynaKubeStatus{
+			Status: dynatracev1beta1.EnvironmentStatus{
 				CodeModules: dynatracev1beta1.CodeModulesStatus{
 					VersionStatus: dynatracev1beta1.VersionStatus{
 						Version: testVersion,
@@ -91,7 +91,7 @@ func TestUpdateAgent(t *testing.T) {
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: "https://" + testTenantUUID + ".dynatrace.com",
 			},
-			Status: dynatracev1beta1.DynaKubeStatus{
+			Status: dynatracev1beta1.EnvironmentStatus{
 				CodeModules: dynatracev1beta1.CodeModulesStatus{
 					VersionStatus: dynatracev1beta1.VersionStatus{
 						Version: testVersion,
@@ -178,7 +178,7 @@ func TestUpdateAgent(t *testing.T) {
 				CustomPullSecret: pullSecretName,
 				TrustedCAs:       trustedCAName,
 			},
-			Status: dynatracev1beta1.DynaKubeStatus{
+			Status: dynatracev1beta1.EnvironmentStatus{
 				CodeModules: dynatracev1beta1.CodeModulesStatus{
 					VersionStatus: dynatracev1beta1.VersionStatus{
 						ImageID: imageID,
@@ -259,7 +259,7 @@ func testCodeModules(t *testing.T, customPullSecret bool) {
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			APIURL: "https://" + testTenantUUID + ".dynatrace.com",
 		},
-		Status: dynatracev1beta1.DynaKubeStatus{
+		Status: dynatracev1beta1.EnvironmentStatus{
 			CodeModules: dynatracev1beta1.CodeModulesStatus{
 				VersionStatus: dynatracev1beta1.VersionStatus{
 					ImageID: imageID,
@@ -307,7 +307,7 @@ func testUpdateOneagent(t *testing.T, alreadyInstalled bool) {
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			APIURL: "https://" + testTenantUUID + ".dynatrace.com",
 		},
-		Status: dynatracev1beta1.DynaKubeStatus{
+		Status: dynatracev1beta1.EnvironmentStatus{
 			CodeModules: dynatracev1beta1.CodeModulesStatus{
 				VersionStatus: dynatracev1beta1.VersionStatus{
 					Version: testVersion,

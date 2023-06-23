@@ -49,7 +49,7 @@ func getTestDynakube() dynatracev1beta1.DynaKube {
 				},
 			},
 		},
-		Status: dynatracev1beta1.DynaKubeStatus{
+		Status: dynatracev1beta1.EnvironmentStatus{
 			ActiveGate: dynatracev1beta1.ActiveGateStatus{
 				VersionStatus: dynatracev1beta1.VersionStatus{},
 			},

@@ -549,7 +549,7 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 	)
 
 	dynakube := newDynaKube()
-	dynakube.Status = dynatracev1beta1.DynaKubeStatus{
+	dynakube.Status = dynatracev1beta1.EnvironmentStatus{
 		OneAgent: dynatracev1beta1.OneAgentStatus{
 			ConnectionInfoStatus: dynatracev1beta1.OneAgentConnectionInfoStatus{
 				ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{

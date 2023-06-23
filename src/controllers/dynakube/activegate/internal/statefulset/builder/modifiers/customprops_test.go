@@ -13,7 +13,7 @@ const testCustomPropertyValue = "testing-property"
 
 func setCustomPropertyUsage(capability capability.Capability, isUsed bool) {
 	if isUsed {
-		capability.Properties().CustomProperties = &dynatracev1beta1.DynaKubeValueSource{
+		capability.Properties().CustomProperties = &dynatracev1beta1.ValueSource{
 			Value: testCustomPropertyValue,
 		}
 	} else {
