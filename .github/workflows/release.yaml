@@ -1,5 +1,4 @@
-name: Publish images
-
+name: Release
 on:
   push:
     tags:
