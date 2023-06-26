@@ -54,7 +54,7 @@ func (dk *DynaKube) ActiveGateImage() string {
 	}
 
 	registry := buildImageRegistry(dk.Spec.APIURL)
-	return fmt.Sprintf("%s/linux/activegate:latest", registry)
+	return fmt.Sprintf("%s/linux/activegate:raw", registry)
 }
 
 // ImmutableOneAgentImage returns the immutable OneAgent image to be used with the dk DynaKube instance.
@@ -67,9 +67,9 @@ func (dk *DynaKube) ImmutableOneAgentImage() string {
 		return ""
 	}
 
-	tag := api.LatestTag
+	tag := api.RawTag
 	if ver := dk.Spec.OneAgent.Version; ver != "" {
-		tag = ver
+		tag = ver + "-" + api.RawTag
 	}
 
 	registry := buildImageRegistry(dk.Spec.APIURL)

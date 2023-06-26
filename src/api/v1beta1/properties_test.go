@@ -38,7 +38,7 @@ func TestDefaultActiveGateImage(t *testing.T) {
 
 	t.Run(`ActiveGateImage with API URL`, func(t *testing.T) {
 		dk := DynaKube{Spec: DynaKubeSpec{APIURL: testAPIURL}}
-		assert.Equal(t, "test-endpoint/linux/activegate:latest", dk.DefaultActiveGateImage())
+		assert.Equal(t, "test-endpoint/linux/activegate:raw", dk.DefaultActiveGateImage())
 	})
 }
 
@@ -97,17 +97,17 @@ func TestDefaultOneAgentImage(t *testing.T) {
 
 	t.Run(`OneAgentImage with API URL`, func(t *testing.T) {
 		dk := DynaKube{Spec: DynaKubeSpec{APIURL: testAPIURL}}
-		assert.Equal(t, "test-endpoint/linux/oneagent:latest", dk.DefaultOneAgentImage())
+		assert.Equal(t, "test-endpoint/linux/oneagent:raw", dk.DefaultOneAgentImage())
 	})
 
 	t.Run(`OneAgentImage with API URL and custom version`, func(t *testing.T) {
 		dk := DynaKube{Spec: DynaKubeSpec{APIURL: testAPIURL, OneAgent: OneAgentSpec{ClassicFullStack: &HostInjectSpec{Version: "1.234.5"}}}}
-		assert.Equal(t, "test-endpoint/linux/oneagent:1.234.5", dk.DefaultOneAgentImage())
+		assert.Equal(t, "test-endpoint/linux/oneagent:1.234.5-raw", dk.DefaultOneAgentImage())
 	})
 
 	t.Run(`OneAgentImage with custom version truncates build date`, func(t *testing.T) {
 		version := "1.239.14.20220325-164521"
-		expectedImage := "test-endpoint/linux/oneagent:1.239.14"
+		expectedImage := "test-endpoint/linux/oneagent:1.239.14-raw"
 
 		dynakube := DynaKube{
 			Spec: DynaKubeSpec{
@@ -273,33 +273,6 @@ func TestCodeModulesVersion(t *testing.T) {
 		}
 		version := dk.CustomCodeModulesVersion()
 		assert.Equal(t, testVersion, version)
-	})
-}
-
-func TestGetRawImageTag(t *testing.T) {
-	t.Run(`with tag`, func(t *testing.T) {
-		expectedTag := "test"
-		rawTag := getRawImageTag("example.test:" + expectedTag)
-		require.Equal(t, expectedTag, rawTag)
-	})
-	t.Run(`without tag`, func(t *testing.T) {
-		expectedTag := "latest"
-		rawTag := getRawImageTag("example.test")
-		require.Equal(t, expectedTag, rawTag)
-	})
-	t.Run(`local URI with port`, func(t *testing.T) {
-		expectedTag := "test"
-		// based on https://docs.docker.com/engine/reference/commandline/tag/#tag-an-image-for-a-private-repository
-		rawTag := getRawImageTag("myregistryhost:5000/fedora/httpd:" + expectedTag)
-		require.Equal(t, expectedTag, rawTag)
-	})
-	t.Run(`wrong URI => no panic`, func(t *testing.T) {
-		rawTag := getRawImageTag("example.test:")
-		require.Equal(t, "", rawTag)
-	})
-	t.Run(`very wrong URI => no panic`, func(t *testing.T) {
-		rawTag := getRawImageTag(":")
-		require.Equal(t, "", rawTag)
 	})
 }
 

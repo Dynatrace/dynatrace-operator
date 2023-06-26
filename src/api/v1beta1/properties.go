@@ -38,7 +38,7 @@ const (
 	AuthTokenSecretSuffix                   = "-activegate-authtoken-secret"
 	PodNameOsAgent                          = "oneagent"
 
-	defaultActiveGateImage = "/linux/activegate:latest"
+	defaultActiveGateImage = "/linux/activegate:raw"
 	defaultSyntheticImage  = "linux/dynatrace-synthetic"
 )
 
@@ -389,10 +389,10 @@ func (dk *DynaKube) DefaultOneAgentImage() string {
 		return ""
 	}
 
-	tag := api.LatestTag
+	tag := api.RawTag
 	if version := dk.CustomOneAgentVersion(); version != "" {
 		truncatedVersion := truncateBuildDate(version)
-		tag = truncatedVersion
+		tag = truncatedVersion + "-" + api.RawTag
 	}
 
 	apiUrlHost := dk.ApiUrlHost()
@@ -483,14 +483,6 @@ func splitArg(arg string) (key, value string) {
 	key = split[0]
 	value = split[1]
 	return
-}
-
-func getRawImageTag(imageURI string) string {
-	if !strings.Contains(imageURI, ":") {
-		return api.LatestTag
-	}
-	splitURI := strings.Split(imageURI, ":")
-	return splitURI[len(splitURI)-1]
 }
 
 func (dk *DynaKube) GetOneAgentEnvironment() []corev1.EnvVar {

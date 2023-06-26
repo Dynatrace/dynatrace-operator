@@ -32,7 +32,7 @@ func TestActiveGateImage(t *testing.T) {
 
 	t.Run(`ActiveGateImage with API URL`, func(t *testing.T) {
 		dk := DynaKube{Spec: DynaKubeSpec{APIURL: testAPIURL}}
-		assert.Equal(t, "test-endpoint/linux/activegate:latest", dk.ActiveGateImage())
+		assert.Equal(t, "test-endpoint/linux/activegate:raw", dk.ActiveGateImage())
 	})
 
 	t.Run(`ActiveGateImage with custom image`, func(t *testing.T) {
@@ -50,12 +50,12 @@ func TestOneAgentImage(t *testing.T) {
 
 	t.Run(`OneAgentImage with API URL`, func(t *testing.T) {
 		dk := DynaKube{Spec: DynaKubeSpec{APIURL: testAPIURL}}
-		assert.Equal(t, "test-endpoint/linux/oneagent:latest", dk.ImmutableOneAgentImage())
+		assert.Equal(t, "test-endpoint/linux/oneagent:raw", dk.ImmutableOneAgentImage())
 	})
 
 	t.Run(`OneAgentImage with API URL and custom version`, func(t *testing.T) {
 		dk := DynaKube{Spec: DynaKubeSpec{APIURL: testAPIURL, OneAgent: OneAgentSpec{Version: "1.234.5"}}}
-		assert.Equal(t, "test-endpoint/linux/oneagent:1.234.5", dk.ImmutableOneAgentImage())
+		assert.Equal(t, "test-endpoint/linux/oneagent:1.234.5-raw", dk.ImmutableOneAgentImage())
 	})
 
 	t.Run(`OneAgentImage with custom image`, func(t *testing.T) {
