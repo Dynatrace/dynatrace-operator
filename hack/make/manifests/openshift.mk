@@ -6,7 +6,6 @@ manifests/openshift/csi:
 		--set partial="csi" \
 		--set platform="openshift" \
 		--set manifests=true \
-		--set olm="${OLM}" \
 		--set createSecurityContextConstraints="true" \
 		--set image="$(IMAGE_URI)" > "$(OPENSHIFT_CSIDRIVER_YAML)"
 
@@ -17,7 +16,6 @@ manifests/openshift/core: manifests/crd/helm
 		--set installCRD=true \
 		--set platform="openshift" \
 		--set manifests=true \
-		--set olm="${OLM}" \
 		--set createSecurityContextConstraints="true" \
 		--set image="$(IMAGE_URI)" > "$(OPENSHIFT_CORE_YAML)"
 

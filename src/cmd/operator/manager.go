@@ -29,9 +29,8 @@ const (
 	leaderElectionEnvVarRetryPeriod   = "LEADER_ELECTION_RETRY_PERIOD"
 	leaderElectionEnvVarLeaseDuration = "LEADER_ELECTION_LEASE_DURATION"
 
-	livenessEndpointName = "/livez"
-	readyzEndpointName   = "readyz"
 	livezEndpointName    = "livez"
+	livenessEndpointName = "/" + livezEndpointName
 )
 
 type bootstrapManagerProvider struct {
@@ -59,11 +58,6 @@ func (provider bootstrapManagerProvider) CreateManager(namespace string, config 
 		return nil, errors.WithStack(err)
 	}
 
-	err = controlManager.AddReadyzCheck(readyzEndpointName, healthz.Ping)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
 	return controlManager, errors.WithStack(err)
 }
 
@@ -86,11 +80,6 @@ func (provider operatorManagerProvider) CreateManager(namespace string, cfg *res
 	}
 
 	err = mgr.AddHealthzCheck(livezEndpointName, healthz.Ping)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	err = mgr.AddReadyzCheck(readyzEndpointName, healthz.Ping)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

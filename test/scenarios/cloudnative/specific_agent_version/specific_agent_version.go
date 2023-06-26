@@ -27,8 +27,10 @@ func specificAgentVersion(t *testing.T) features.Feature {
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
 	versions := getAvailableVersions(secretConfig, t)
-	sort.Strings(versions)
-	oldVersion, newVersion := assignVersions(t, versions, version.SemanticVersion{}, version.SemanticVersion{})
+
+	oldVersion, newVersion := assignVersions(t, versions)
+
+	t.Logf("update %s -> %s", oldVersion, newVersion)
 
 	dynakubeBuilder := dynakube.NewBuilder().
 		WithDefaultObjectMeta().
@@ -75,26 +77,38 @@ func assessVersionChecks(testDynakube dynatracev1beta1.DynaKube) features.Func {
 	}
 }
 
-// this method assigns the queried versions to the variables 'old' and 'new'.
-// it makes sure, that old gets an older version than new, in order to
-// be able to simulate the upgrade of version.
-func assignVersions(t *testing.T, versions []string, old version.SemanticVersion, new version.SemanticVersion) (version.SemanticVersion, version.SemanticVersion) {
-	require.GreaterOrEqual(t, len(versions), 4)
-	first := versions[len(versions)/2]
-	second := versions[len(versions)-1]
+// this method returns two different versions in order to be able to simulate the upgrade of version.
+// Different versions mean different enough to make an update happen (different sprints or different release
+// numbers in the same sprint).
+func assignVersions(t *testing.T, stringVersions []string) (version.SemanticVersion, version.SemanticVersion) {
+	require.GreaterOrEqual(t, len(stringVersions), 4)
 
-	firstVersion, err := version.ExtractSemanticVersion(first)
-	require.NoError(t, err)
-	secondVersion, err := version.ExtractSemanticVersion(second)
-	require.NoError(t, err)
+	versions := make([]version.SemanticVersion, len(stringVersions))
 
-	compare := version.CompareSemanticVersions(firstVersion, secondVersion)
-	if compare > 0 {
-		old = secondVersion
-		new = firstVersion
-	} else if compare < 0 {
-		old = firstVersion
-		new = secondVersion
+	for i, stringVersion := range stringVersions {
+		semanticVersion, err := version.ExtractSemanticVersion(stringVersion)
+		require.NoError(t, err)
+		versions[i] = semanticVersion
 	}
-	return old, new
+
+	sort.Slice(versions, func(i, j int) bool {
+		return version.CompareSemanticVersions(versions[i], versions[j]) < 0
+	})
+
+	secondVersion := versions[len(versions)-1]
+
+	firstIndex := len(versions) / 2
+
+	for firstIndex >= 0 {
+		firstVersion := versions[firstIndex]
+
+		if version.AreDevBuildsInTheSameSprint(firstVersion, secondVersion) {
+			firstIndex--
+			continue
+		}
+
+		return firstVersion, secondVersion
+	}
+	require.Fail(t, "two different versions not found (different sprint numbers or release numbers needed)", "versions", versions)
+	return version.SemanticVersion{}, version.SemanticVersion{}
 }

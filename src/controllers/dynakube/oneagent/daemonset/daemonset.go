@@ -17,8 +17,7 @@ const (
 	annotationUnprivileged      = "container.apparmor.security.beta.kubernetes.io/dynatrace-oneagent"
 	annotationUnprivilegedValue = "unconfined"
 
-	unprivilegedServiceAccountName = "dynatrace-dynakube-oneagent-unprivileged"
-	privilegedServiceAccountName   = "dynatrace-dynakube-oneagent-privileged"
+	serviceAccountName = "dynatrace-dynakube-oneagent"
 
 	// normal oneagent shutdown scenario with some extra time
 	defaultTerminationGracePeriod = int64(80)
@@ -216,21 +215,13 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 		HostIPC:                       false,
 		NodeSelector:                  dsInfo.nodeSelector(),
 		PriorityClassName:             dsInfo.priorityClassName(),
-		ServiceAccountName:            dsInfo.serviceAccountName(),
+		ServiceAccountName:            serviceAccountName,
 		Tolerations:                   dsInfo.tolerations(),
 		DNSPolicy:                     dnsPolicy,
 		Volumes:                       volumes,
 		Affinity:                      affinity,
 		TerminationGracePeriodSeconds: address.Of(defaultTerminationGracePeriod),
 	}
-}
-
-func (dsInfo *builderInfo) serviceAccountName() string {
-	if dsInfo.dynakube != nil && dsInfo.dynakube.NeedsOneAgentPrivileged() {
-		return privilegedServiceAccountName
-	}
-
-	return unprivilegedServiceAccountName
 }
 
 func (dsInfo *builderInfo) immutableOneAgentImage() string {
