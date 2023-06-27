@@ -25,8 +25,12 @@ tests:
       - equal:
           path: metadata.labels["app.kubernetes.io/component"]
           value: webhook
-      - isNotEmpty:
+      - equal:
           path: metadata.labels["helm.sh/chart"]
+          value: dynatrace-operator-1.0.0
+      - equal:
+          path: metadata.labels["app.kubernetes.io/version"]
+          value: 1.0.1
       - equal:
           path: spec.replicas
           value: 2
@@ -56,14 +60,20 @@ tests:
                 labelSelector:
                   matchLabels:
                     app.kubernetes.io/component: webhook
-                    app.kubernetes.io/name: dynatrace-operator
+                    app.kubernetes.io/name: RELEASE-NAME
+                    app.kubernetes.io/managed-by: Helm
+                    app.kubernetes.io/version: 1.0.1
+                    helm.sh/chart: dynatrace-operator-1.0.0
               - maxSkew: 1
                 topologyKey: "kubernetes.io/hostname"
                 whenUnsatisfiable: DoNotSchedule
                 labelSelector:
                   matchLabels:
                     app.kubernetes.io/component: webhook
-                    app.kubernetes.io/name: dynatrace-operator
+                    app.kubernetes.io/name: RELEASE-NAME
+                    app.kubernetes.io/managed-by: Helm
+                    app.kubernetes.io/version: 1.0.1
+                    helm.sh/chart: dynatrace-operator-1.0.0
             volumes:
               - emptyDir: { }
                 name: certs-dir
