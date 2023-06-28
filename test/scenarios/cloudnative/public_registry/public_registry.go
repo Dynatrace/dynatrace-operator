@@ -15,6 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -69,23 +70,19 @@ func checkDynakubeStatus(dynakube dynatracev1beta1.DynaKube) features.Func {
 		require.NoError(t, err)
 
 		require.NotNil(t, dk.Status.OneAgent)
-		require.NotEmpty(t, dk.Status.OneAgent.VersionStatus.ImageID)
-		require.NotEmpty(t, dk.Status.OneAgent.VersionStatus.Source)
-		require.NotNil(t, dk.Status.OneAgent.VersionStatus.LastProbeTimestamp)
+		assert.NotEmpty(t, dk.Status.OneAgent.VersionStatus.ImageID)
+		assert.Equal(t, publicRegistrySource, dk.Status.OneAgent.VersionStatus.Source)
+		assert.NotNil(t, dk.Status.OneAgent.VersionStatus.LastProbeTimestamp)
 
 		require.NotNil(t, dk.Status.CodeModules)
-		require.NotEmpty(t, dk.Status.CodeModules.VersionStatus.ImageID)
-		require.NotEmpty(t, dk.Status.CodeModules.VersionStatus.Source)
-		require.NotNil(t, dk.Status.CodeModules.VersionStatus.LastProbeTimestamp)
+		assert.NotEmpty(t, dk.Status.CodeModules.VersionStatus.ImageID)
+		assert.Equal(t, publicRegistrySource, dk.Status.CodeModules.VersionStatus.Source)
+		assert.NotNil(t, dk.Status.CodeModules.VersionStatus.LastProbeTimestamp)
 
 		require.NotNil(t, dk.Status.ActiveGate)
-		require.NotEmpty(t, dk.Status.ActiveGate.VersionStatus.ImageID)
-		require.NotEmpty(t, dk.Status.ActiveGate.VersionStatus.Source)
-		require.NotNil(t, dk.Status.ActiveGate.VersionStatus.LastProbeTimestamp)
-
-		require.Equal(t, dk.Status.OneAgent.VersionStatus.Source, publicRegistrySource)
-		require.Equal(t, dk.Status.CodeModules.VersionStatus.Source, publicRegistrySource)
-		require.Equal(t, dk.Status.ActiveGate.VersionStatus.Source, publicRegistrySource)
+		assert.NotEmpty(t, dk.Status.ActiveGate.VersionStatus.ImageID)
+		assert.Equal(t, publicRegistrySource, dk.Status.ActiveGate.VersionStatus.Source)
+		assert.NotNil(t, dk.Status.ActiveGate.VersionStatus.LastProbeTimestamp)
 
 		return ctx
 	}
