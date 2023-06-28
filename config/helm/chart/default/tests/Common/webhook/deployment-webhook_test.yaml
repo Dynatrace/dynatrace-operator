@@ -59,21 +59,15 @@ tests:
                 whenUnsatisfiable: ScheduleAnyway
                 labelSelector:
                   matchLabels:
-                    app.kubernetes.io/component: webhook
-                    app.kubernetes.io/name: RELEASE-NAME
-                    app.kubernetes.io/managed-by: Helm
-                    app.kubernetes.io/version: 1.0.1
-                    helm.sh/chart: dynatrace-operator-1.0.0
+                    internal.dynatrace.com/app: webhook
+                    internal.dynatrace.com/component: webhook
               - maxSkew: 1
                 topologyKey: "kubernetes.io/hostname"
                 whenUnsatisfiable: DoNotSchedule
                 labelSelector:
                   matchLabels:
-                    app.kubernetes.io/component: webhook
-                    app.kubernetes.io/name: RELEASE-NAME
-                    app.kubernetes.io/managed-by: Helm
-                    app.kubernetes.io/version: 1.0.1
-                    helm.sh/chart: dynatrace-operator-1.0.0
+                    internal.dynatrace.com/app: webhook
+                    internal.dynatrace.com/component: webhook
             volumes:
               - emptyDir: { }
                 name: certs-dir
