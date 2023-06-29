@@ -23,11 +23,11 @@ type resourceQuery struct {
 	filters          []client.ListOption
 }
 
-func getQueries(namespace string) []resourceQuery {
+func getQueries(namespace string, appName string) []resourceQuery {
 	allQueries := make([]resourceQuery, 0)
 	allQueries = append(allQueries, getInjectedNamespaceQueryGroup().getQueries()...)
 	allQueries = append(allQueries, getOperatorNamespaceQueryGroup(namespace).getQueries()...)
-	allQueries = append(allQueries, getOperatorComponentsQueryGroup(namespace).getQueries()...)
+	allQueries = append(allQueries, getOperatorComponentsQueryGroup(namespace, appName).getQueries()...)
 	allQueries = append(allQueries, getDynakubesQueryGroup(namespace).getQueries()...)
 	return allQueries
 }
@@ -58,7 +58,7 @@ func getOperatorNamespaceQueryGroup(namespace string) resourceQueryGroup {
 	}
 }
 
-func getOperatorComponentsQueryGroup(namespace string) resourceQueryGroup {
+func getOperatorComponentsQueryGroup(namespace string, appName string) resourceQueryGroup {
 	return resourceQueryGroup{
 		resources: []schema.GroupVersionKind{
 			toGroupVersionKind(appsv1.SchemeGroupVersion, appsv1.Deployment{}),
@@ -70,7 +70,7 @@ func getOperatorComponentsQueryGroup(namespace string) resourceQueryGroup {
 		},
 		filters: []client.ListOption{
 			client.MatchingLabels{
-				kubeobjects.AppNameLabel: "dynatrace-operator",
+				kubeobjects.AppNameLabel: appName,
 			},
 			client.InNamespace(namespace),
 		},

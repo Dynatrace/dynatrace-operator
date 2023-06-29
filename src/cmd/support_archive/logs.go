@@ -20,9 +20,10 @@ type logCollector struct {
 
 	context context.Context
 	pods    clientgocorev1.PodInterface
+	appName string
 }
 
-func newLogCollector(context context.Context, log logr.Logger, supportArchive tarball, pods clientgocorev1.PodInterface) collector { //nolint:revive // argument-limit doesn't apply to constructors
+func newLogCollector(context context.Context, log logr.Logger, supportArchive tarball, pods clientgocorev1.PodInterface, appName string) collector { //nolint:revive // argument-limit doesn't apply to constructors
 	return logCollector{
 		collectorCommon: collectorCommon{
 			log:            log,
@@ -30,6 +31,7 @@ func newLogCollector(context context.Context, log logr.Logger, supportArchive ta
 		},
 		context: context,
 		pods:    pods,
+		appName: appName,
 	}
 }
 
@@ -63,7 +65,7 @@ func (collector logCollector) getPodList() (*corev1.PodList, error) {
 		TypeMeta: metav1.TypeMeta{
 			Kind: "pod",
 		},
-		LabelSelector: fmt.Sprintf("%s=%s", kubeobjects.AppNameLabel, "dynatrace-operator"),
+		LabelSelector: fmt.Sprintf("%s=%s", kubeobjects.AppNameLabel, collector.appName),
 	}
 	podList, err := collector.pods.List(collector.context, listOptions)
 	if err != nil {

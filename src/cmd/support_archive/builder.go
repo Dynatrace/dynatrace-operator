@@ -14,7 +14,9 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	clientgocorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
@@ -25,6 +27,7 @@ const (
 	namespaceFlagName              = "namespace"
 	tarballToStdoutFlagName        = "stdout"
 	defaultSupportArchiveTargetDir = "/tmp/dynatrace-operator"
+	defaultOperatorAppName         = "dynatrace-operator"
 )
 
 var (
@@ -116,6 +119,19 @@ func getLogOutput(tarballToStdout bool, logBuffer *bytes.Buffer) io.Writer {
 	}
 }
 
+func getAppNameLabel(ctx context.Context, pods clientgocorev1.PodInterface) string {
+	podName := os.Getenv(kubeobjects.EnvPodName)
+	if podName != "" {
+		options := metav1.GetOptions{}
+		pod, err := pods.Get(ctx, podName, options)
+		if err != nil {
+			return defaultOperatorAppName
+		}
+		return pod.Labels[kubeobjects.AppNameLabel]
+	}
+	return defaultOperatorAppName
+}
+
 func (builder CommandBuilder) runCollectors(log logr.Logger, supportArchive tarball) error {
 	context := context.Background()
 
@@ -129,10 +145,15 @@ func (builder CommandBuilder) runCollectors(log logr.Logger, supportArchive tarb
 		return err
 	}
 
+	pods := clientSet.CoreV1().Pods(namespaceFlagValue)
+	appName := getAppNameLabel(context, pods)
+
+	logInfof(log, "%s=%s", kubeobjects.AppNameLabel, appName)
+
 	collectors := []collector{
 		newOperatorVersionCollector(log, supportArchive),
-		newLogCollector(context, log, supportArchive, clientSet.CoreV1().Pods(namespaceFlagValue)),
-		newK8sObjectCollector(context, log, supportArchive, namespaceFlagValue, apiReader),
+		newLogCollector(context, log, supportArchive, pods, appName),
+		newK8sObjectCollector(context, log, supportArchive, namespaceFlagValue, appName, apiReader),
 		newTroubleshootCollector(context, log, supportArchive, namespaceFlagValue, apiReader, *kubeConfig),
 	}
 
