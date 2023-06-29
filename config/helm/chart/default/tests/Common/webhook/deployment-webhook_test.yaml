@@ -25,8 +25,12 @@ tests:
       - equal:
           path: metadata.labels["app.kubernetes.io/component"]
           value: webhook
-      - isNotEmpty:
+      - equal:
           path: metadata.labels["helm.sh/chart"]
+          value: dynatrace-operator-1.0.0
+      - equal:
+          path: metadata.labels["app.kubernetes.io/version"]
+          value: 1.0.1
       - equal:
           path: spec.replicas
           value: 2
@@ -55,15 +59,15 @@ tests:
                 whenUnsatisfiable: ScheduleAnyway
                 labelSelector:
                   matchLabels:
-                    app.kubernetes.io/component: webhook
-                    app.kubernetes.io/name: dynatrace-operator
+                    internal.dynatrace.com/app: webhook
+                    internal.dynatrace.com/component: webhook
               - maxSkew: 1
                 topologyKey: "kubernetes.io/hostname"
                 whenUnsatisfiable: DoNotSchedule
                 labelSelector:
                   matchLabels:
-                    app.kubernetes.io/component: webhook
-                    app.kubernetes.io/name: dynatrace-operator
+                    internal.dynatrace.com/app: webhook
+                    internal.dynatrace.com/component: webhook
             volumes:
               - emptyDir: { }
                 name: certs-dir
