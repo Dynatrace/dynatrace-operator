@@ -38,7 +38,7 @@ const (
 	AuthTokenSecretSuffix                   = "-activegate-authtoken-secret"
 	PodNameOsAgent                          = "oneagent"
 
-	defaultActiveGateImage = "/linux/activegate:raw"
+	defaultActiveGateImage = "/linux/activegate"
 	defaultSyntheticImage  = "linux/dynatrace-synthetic"
 )
 
@@ -268,7 +268,7 @@ func (dk *DynaKube) DefaultActiveGateImage() string {
 		return ""
 	}
 
-	return apiUrlHost + defaultActiveGateImage
+	return apiUrlHost + defaultActiveGateImage + ":" + api.RawTag
 }
 
 func (dk *DynaKube) deprecatedActiveGateImage() string {
