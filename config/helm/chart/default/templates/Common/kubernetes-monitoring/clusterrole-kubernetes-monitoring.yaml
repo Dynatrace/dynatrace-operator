@@ -80,15 +80,30 @@ rules:
       - /livez
     verbs:
       - get
-  {{- if eq (default false .Values.olm) true}}
+  {{- if (eq (include "dynatrace-operator.platform" .) "openshift") }}
   - apiGroups:
       - security.openshift.io
     resourceNames:
-      - host
       - privileged
+      - nonroot-v2
     resources:
       - securitycontextconstraints
     verbs:
       - use
   {{ end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: dynatrace-kubernetes-monitoring
+  labels:
+    {{- include "dynatrace-operator.activegateLabels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: dynatrace-kubernetes-monitoring
+subjects:
+  - kind: ServiceAccount
+    name: dynatrace-kubernetes-monitoring
+    namespace: {{ .Release.Namespace }}
 {{ end }}

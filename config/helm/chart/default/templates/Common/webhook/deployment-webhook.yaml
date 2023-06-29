@@ -56,15 +56,13 @@ spec:
           whenUnsatisfiable: ScheduleAnyway
           labelSelector:
             matchLabels:
-              app.kubernetes.io/component: webhook
-              app.kubernetes.io/name: dynatrace-operator
+              {{- include "dynatrace-operator.webhookSelectorLabels" . | nindent 14 }}
         - maxSkew: 1
           topologyKey: "kubernetes.io/hostname"
           whenUnsatisfiable: DoNotSchedule
           labelSelector:
             matchLabels:
-              app.kubernetes.io/component: webhook
-              app.kubernetes.io/name: dynatrace-operator
+              {{- include "dynatrace-operator.webhookSelectorLabels" . | nindent 14 }}
       {{- end }}
       volumes:
       - emptyDir: {}
@@ -105,12 +103,23 @@ spec:
                   fieldPath: metadata.name
           readinessProbe:
             httpGet:
+              path: /readyz
+              port: livez
+              scheme: HTTP
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
               path: /livez
-              port: server-port
-              scheme: HTTPS
+              port: livez
+              scheme: HTTP
+            initialDelaySeconds: 15
+            periodSeconds: 10
           ports:
             - name: server-port
               containerPort: 8443
+            - name: livez
+              containerPort: 10080
           resources:
             requests:
               {{- toYaml (.Values.webhook).requests | nindent 14 }}

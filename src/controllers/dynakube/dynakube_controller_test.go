@@ -277,7 +277,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		assert.NotNil(t, result)
 
 		var proxySecret corev1.Secret
-		name := capability.BuildProxySecretName()
+		name := capability.BuildProxySecretName(testName)
 		err = controller.client.Get(context.TODO(), client.ObjectKey{Name: name, Namespace: testNamespace}, &proxySecret)
 
 		assert.NoError(t, err)
@@ -311,7 +311,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		assert.NotNil(t, result)
 
 		var proxySecret corev1.Secret
-		name := capability.BuildProxySecretName()
+		name := capability.BuildProxySecretName(testName)
 		err = controller.client.Get(context.TODO(), client.ObjectKey{Name: name, Namespace: testNamespace}, &proxySecret)
 
 		assert.Error(t, err)

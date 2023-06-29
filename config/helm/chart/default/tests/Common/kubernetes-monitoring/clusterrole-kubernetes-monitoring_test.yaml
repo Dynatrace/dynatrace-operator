@@ -2,9 +2,8 @@ suite: test clusterrole for kubernetes monitoring
 templates:
   - Common/kubernetes-monitoring/clusterrole-kubernetes-monitoring.yaml
 tests:
-  - it: should exist
-    set:
-      platform: kubernetes
+  - it: ClusterRole should exist
+    documentIndex: 0
     asserts:
       - isKind:
           of: ClusterRole
@@ -93,3 +92,49 @@ tests:
               - /livez
             verbs:
               - get
+  - it: ClusterRole should exist with extra permissions for openshift
+    documentIndex: 0
+    set:
+      platform: openshift
+    asserts:
+      - isKind:
+          of: ClusterRole
+      - equal:
+          path: metadata.name
+          value: dynatrace-kubernetes-monitoring
+      - isNotEmpty:
+          path: metadata.labels
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - security.openshift.io
+            resourceNames:
+              - privileged
+              - nonroot-v2
+            resources:
+              - securitycontextconstraints
+            verbs:
+              - use
+  - it: ClusterRoleBinding should exist
+    documentIndex: 1
+    asserts:
+      - isKind:
+          of: ClusterRoleBinding
+      - equal:
+          path: metadata.name
+          value: dynatrace-kubernetes-monitoring
+      - isNotEmpty:
+          path: metadata.labels
+      - equal:
+          path: roleRef
+          value:
+            apiGroup: rbac.authorization.k8s.io
+            kind: ClusterRole
+            name: dynatrace-kubernetes-monitoring
+      - contains:
+          path: subjects
+          content:
+            kind: ServiceAccount
+            name: dynatrace-kubernetes-monitoring
+            namespace: NAMESPACE

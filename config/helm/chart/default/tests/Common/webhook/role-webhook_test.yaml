@@ -2,9 +2,8 @@ suite: test role for webhook on kubernetes
 templates:
   - Common/webhook/role-webhook.yaml
 tests:
-  - it: should exist on kubernetes
-    set:
-      platform: kubernetes
+  - it: Role should exist
+    documentIndex: 0
     asserts:
       - isKind:
           of: Role
@@ -69,7 +68,8 @@ tests:
               verbs:
                 - list
                 - watch
-  - it: should exist on openshift
+  - it: Role should exist on openshift
+    documentIndex: 0
     set:
       platform: openshift
     asserts:
@@ -136,3 +136,26 @@ tests:
               verbs:
                 - list
                 - watch
+  - it: RoleBinding should exist
+    documentIndex: 1
+    asserts:
+      - isKind:
+          of: RoleBinding
+      - equal:
+          path: metadata.name
+          value: dynatrace-webhook
+      - equal:
+          path: metadata.namespace
+          value: NAMESPACE
+      - contains:
+          path: subjects
+          content:
+            kind: ServiceAccount
+            name: dynatrace-webhook
+            namespace: NAMESPACE
+      - equal:
+          path: roleRef
+          value:
+            kind: Role
+            name: dynatrace-webhook
+            apiGroup: rbac.authorization.k8s.io

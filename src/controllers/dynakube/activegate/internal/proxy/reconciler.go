@@ -58,7 +58,7 @@ func (r *Reconciler) generateForDynakube(ctx context.Context, dynakube *dynatrac
 
 	coreLabels := kubeobjects.NewCoreLabels(dynakube.Name, kubeobjects.ActiveGateComponentLabel)
 	secret, err := kubeobjects.CreateSecret(r.scheme, r.dynakube,
-		kubeobjects.NewSecretNameModifier(capability.BuildProxySecretName()),
+		kubeobjects.NewSecretNameModifier(capability.BuildProxySecretName(dynakube.Name)),
 		kubeobjects.NewSecretNamespaceModifier(r.dynakube.Namespace),
 		kubeobjects.NewSecretLabelsModifier(coreLabels.BuildMatchLabels()),
 		kubeobjects.NewSecretTypeModifier(corev1.SecretTypeOpaque),
@@ -74,7 +74,7 @@ func (r *Reconciler) generateForDynakube(ctx context.Context, dynakube *dynatrac
 }
 
 func (r *Reconciler) ensureDeleted(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
-	secretName := capability.BuildProxySecretName()
+	secretName := capability.BuildProxySecretName(dynakube.Name)
 	secret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: secretName, Namespace: dynakube.Namespace}}
 	if err := r.client.Delete(ctx, &secret); err != nil && !k8serrors.IsNotFound(err) {
 		return err

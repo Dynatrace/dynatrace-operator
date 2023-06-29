@@ -41,7 +41,7 @@ func (mod ProxyModifier) getVolumes() []corev1.Volume {
 			Name: consts.InternalProxySecretVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: capability.BuildProxySecretName(),
+					SecretName: capability.BuildProxySecretName(mod.dynakube.Name),
 				},
 			},
 		},

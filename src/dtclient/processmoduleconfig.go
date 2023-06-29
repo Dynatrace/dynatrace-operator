@@ -112,6 +112,11 @@ func (pmc *ProcessModuleConfig) AddHostGroup(hostGroup string) *ProcessModuleCon
 	return pmc.Add(property)
 }
 
+func (pmc *ProcessModuleConfig) AddTenantUUID(tenantUUID string) *ProcessModuleConfig {
+	property := ProcessModuleProperty{Section: generalSectionName, Key: "tenant", Value: tenantUUID}
+	return pmc.Add(property)
+}
+
 func (pmc ProcessModuleConfig) ToMap() ConfMap {
 	sections := map[string]map[string]string{}
 	for _, prop := range pmc.Properties {

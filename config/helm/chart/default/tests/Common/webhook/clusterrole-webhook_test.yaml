@@ -2,9 +2,8 @@ suite: test clusterrole for webhook
 templates:
   - Common/webhook/clusterrole-webhook.yaml
 tests:
-  - it: should exist
-    set:
-      platform: kubernetes
+  - it: ClusterRole should exist
+    documentIndex: 0
     asserts:
       - isKind:
           of: ClusterRole
@@ -99,3 +98,49 @@ tests:
               - deploymentconfigs
             verbs:
               - get
+  - it: ClusterRole should exist with extra permissions for openshift
+    documentIndex: 0
+    set:
+      platform: openshift
+    asserts:
+      - isKind:
+          of: ClusterRole
+      - equal:
+          path: metadata.name
+          value: dynatrace-webhook
+      - isNotEmpty:
+          path: metadata.labels
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - security.openshift.io
+            resourceNames:
+              - privileged
+              - nonroot-v2
+            resources:
+              - securitycontextconstraints
+            verbs:
+              - use
+  - it: ClusterRoleBinding should exist
+    documentIndex: 1
+    asserts:
+      - isKind:
+          of: ClusterRoleBinding
+      - equal:
+          path: metadata.name
+          value: dynatrace-webhook
+      - isNotEmpty:
+          path: metadata.labels
+      - equal:
+          path: subjects
+          value:
+            - kind: ServiceAccount
+              name: dynatrace-webhook
+              namespace: NAMESPACE
+      - equal:
+          path: roleRef
+          value:
+            kind: ClusterRole
+            name: dynatrace-webhook
+            apiGroup: rbac.authorization.k8s.io

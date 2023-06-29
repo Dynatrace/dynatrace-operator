@@ -78,7 +78,6 @@ func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.
 	}
 
 	if err := webhook.handlePodMutation(mutationRequest); err != nil {
-		log.Error(err, "failed to inject into pod")
 		return silentErrorResponse(mutationRequest.Pod, err)
 	}
 	log.Info("injection finished for pod", "podName", podName, "namespace", request.Namespace)

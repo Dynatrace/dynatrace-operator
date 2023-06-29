@@ -19,10 +19,11 @@ type k8sResourceCollector struct {
 	collectorCommon
 	context   context.Context
 	namespace string
+	appName   string
 	apiReader client.Reader
 }
 
-func newK8sObjectCollector(context context.Context, log logr.Logger, supportArchive tarball, namespace string, apiReader client.Reader) collector { //nolint:revive // argument-limit doesn't apply to constructors
+func newK8sObjectCollector(context context.Context, log logr.Logger, supportArchive tarball, namespace string, appName string, apiReader client.Reader) collector { //nolint:revive // argument-limit doesn't apply to constructors
 	return k8sResourceCollector{
 		collectorCommon: collectorCommon{
 			log:            log,
@@ -30,6 +31,7 @@ func newK8sObjectCollector(context context.Context, log logr.Logger, supportArch
 		},
 		context:   context,
 		namespace: namespace,
+		appName:   appName,
 		apiReader: apiReader,
 	}
 }
@@ -37,7 +39,7 @@ func newK8sObjectCollector(context context.Context, log logr.Logger, supportArch
 func (collector k8sResourceCollector) Do() error {
 	logInfof(collector.log, "Starting K8S resource collection")
 
-	for _, query := range getQueries(collector.namespace) {
+	for _, query := range getQueries(collector.namespace, collector.appName) {
 		resourceList, err := collector.readObjectsList(query.groupVersionKind, query.filters)
 		if err != nil {
 			logErrorf(collector.log, err, "could not get manifest for %s", query.groupVersionKind.String())

@@ -3,6 +3,9 @@ kind: DynaKube
 metadata:
   name: dynakube
   namespace: dynatrace
+  # Automatically connect the kubernetes api to the dynatrace tenant endpoint to enable kubernetes monitoring.
+  annotations:
+    feature.dynatrace.com/automatic-kubernetes-api-monitoring: "true"
 spec:
   # Dynatrace apiUrl including the `/api` path at the end.
   # For SaaS, set `ENVIRONMENTID` to your environment ID.
@@ -60,12 +63,12 @@ spec:
       # The version is expected to be provided in the semver format
       # Example: {major.minor.release}, e.g., "1.200.0"
       #
-      # version:
+      # version: ""
 
       # Optional: Sets the URI for the image containing the OneAgent installer used by the DaemonSet
       # Defaults to the latest OneAgent image on the tenant's registry
       #
-      image:
+      image: ""
 
       # Optional: Sets a node selector to control on which nodes the OneAgent will be deployed.
       # For more information on node selectors, see https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes/
