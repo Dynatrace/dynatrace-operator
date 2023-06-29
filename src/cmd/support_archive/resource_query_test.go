@@ -9,7 +9,7 @@ import (
 const namespace = "dynatrace"
 
 func TestObjectQuerySyntax(t *testing.T) {
-	queries := getQueries(namespace)
+	queries := getQueries(namespace, defaultOperatorAppName)
 	assert.Len(t, queries, 9)
 
 	for _, query := range queries {

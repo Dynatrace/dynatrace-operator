@@ -47,7 +47,11 @@ func TestLogCollector(t *testing.T) {
 		tarWriter: tar.NewWriter(&tarBuffer),
 	}
 
-	logCollector := newLogCollector(context.TODO(), newSupportArchiveLogger(&logBuffer), supportArchive, fakeClientSet.CoreV1().Pods("dynatrace"))
+	logCollector := newLogCollector(context.TODO(),
+		newSupportArchiveLogger(&logBuffer),
+		supportArchive,
+		fakeClientSet.CoreV1().Pods("dynatrace"),
+		defaultOperatorAppName)
 
 	require.NoError(t, logCollector.Do())
 
@@ -101,7 +105,11 @@ func TestLogCollectorPodListError(t *testing.T) {
 	mockedPods.EXPECT().
 		List(context, createPodListOptions()).
 		Return(nil, assert.AnError)
-	logCollector := newLogCollector(context, newSupportArchiveLogger(&logBuffer), supportArchive, mockedPods)
+	logCollector := newLogCollector(context,
+		newSupportArchiveLogger(&logBuffer),
+		supportArchive,
+		mockedPods,
+		defaultOperatorAppName)
 	require.Error(t, logCollector.Do())
 }
 
@@ -132,7 +140,7 @@ func TestLogCollectorGetPodFail(t *testing.T) {
 		Get(context, "pod2", metav1.GetOptions{}).
 		Return(nil, assert.AnError)
 
-	logCollector := newLogCollector(context, newSupportArchiveLogger(&logBuffer), supportArchive, mockedPods)
+	logCollector := newLogCollector(context, newSupportArchiveLogger(&logBuffer), supportArchive, mockedPods, defaultOperatorAppName)
 	require.NoError(t, logCollector.Do())
 }
 
@@ -199,7 +207,7 @@ func TestLogCollectorGetLogsFail(t *testing.T) {
 		NotBefore(getLogsPod2Container2Call).
 		Return(nil, assert.AnError)
 
-	logCollector := newLogCollector(context, newSupportArchiveLogger(&logBuffer), supportArchive, mockedPods)
+	logCollector := newLogCollector(context, newSupportArchiveLogger(&logBuffer), supportArchive, mockedPods, defaultOperatorAppName)
 	require.NoError(t, logCollector.Do())
 
 	assert.Contains(t, logBuffer.String(), "Unable to retrieve log stream for pod pod1, container container1")
@@ -257,7 +265,7 @@ func TestLogCollectorNoAbortOnError(t *testing.T) {
 		NotBefore(getLogsPod2Container2Call).
 		Return(nil, assert.AnError)
 
-	logCollector := newLogCollector(context, newSupportArchiveLogger(&logBuffer), supportArchive, mockedPods)
+	logCollector := newLogCollector(context, newSupportArchiveLogger(&logBuffer), supportArchive, mockedPods, defaultOperatorAppName)
 	require.NoError(t, logCollector.Do())
 
 	supportArchive.tarWriter.Close()
@@ -287,7 +295,7 @@ func createPod(name string) *corev1.Pod {
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
-				kubeobjects.AppNameLabel: "dynatrace-operator",
+				kubeobjects.AppNameLabel: defaultOperatorAppName,
 			},
 		},
 		Spec: corev1.PodSpec{
