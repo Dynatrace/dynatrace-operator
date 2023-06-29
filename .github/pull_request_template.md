@@ -1,6 +1,7 @@
 # Description
 
 Please include the following:
+- a meaningful PR title [guidelines](https://github.com/kubernetes/community/blob/master/contributors/guide/pull-requests.md#use-imperative-mood-in-your-commit-message-subject)
 - a summary of the change
 - which issue is fixed (if there is one)
 - relevant motivation and context
@@ -13,6 +14,6 @@ Please include some guiding steps on how to test this change during a review.
 
 ## Checklist
 - [ ] Unit tests have been updated/added
-- [ ] PR is labeled accordingly
+- [ ] PR is labeled accordingly with a single label
 - [ ] I have read and understood the [contribution guidelines](https://github.com/Dynatrace/dynatrace-operator/blob/main/CONTRIBUTING.md)
 

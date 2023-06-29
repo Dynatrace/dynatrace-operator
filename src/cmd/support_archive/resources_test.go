@@ -93,7 +93,7 @@ func TestManifestCollector_Success(t *testing.T) {
 	}
 
 	ctx := context.TODO()
-	require.NoError(t, newK8sObjectCollector(ctx, log, supportArchive, testOperatorNamespace, clt).Do())
+	require.NoError(t, newK8sObjectCollector(ctx, log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt).Do())
 
 	expectedFiles := []string{
 		fmt.Sprintf("%s/namespace-some-app-namespace%s", InjectedNamespacesManifestsDirectoryName, manifestExtension),
@@ -132,7 +132,7 @@ func TestManifestCollector_NoManifestsAvailable(t *testing.T) {
 
 	ctx := context.TODO()
 
-	err := newK8sObjectCollector(ctx, log, supportArchive, testOperatorNamespace, clt).Do()
+	err := newK8sObjectCollector(ctx, log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt).Do()
 	require.NoError(t, err)
 
 	tarReader := tar.NewReader(&tarBuffer)
@@ -144,7 +144,7 @@ func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
 	logBuffer := bytes.Buffer{}
 	log := newSupportArchiveLogger(&logBuffer)
 
-	queries := getQueries(testOperatorNamespace)
+	queries := getQueries(testOperatorNamespace, defaultOperatorAppName)
 	require.Len(t, queries, 9)
 
 	clt := fake.NewClientWithIndex(
@@ -174,7 +174,7 @@ func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
 		tarWriter: tar.NewWriter(&tarBuffer),
 	}
 
-	collector := newK8sObjectCollector(context, log, supportArchive, testOperatorNamespace, clt)
+	collector := newK8sObjectCollector(context, log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt)
 	require.NoError(t, collector.Do())
 
 	tarReader := tar.NewReader(&tarBuffer)
