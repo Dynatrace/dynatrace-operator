@@ -10,41 +10,35 @@ import (
 	client_testing "k8s.io/client-go/testing"
 )
 
-type platformResolverTest struct {
-	enableOpenshiftGVR bool
-}
-
-func (p *platformResolverTest) getDiscoveryClient() (discovery.DiscoveryInterface, error) {
-	client := &fake.FakeDiscovery{
-		Fake: &client_testing.Fake{},
-	}
-
-	if p.enableOpenshiftGVR {
-		client.Fake.Resources = []*v1.APIResourceList{
-			{
-				GroupVersion: SccGVR,
-			},
+func createDiscoveryClient(enableOpenshiftGVR bool) func() (discovery.DiscoveryInterface, error) {
+	return func() (discovery.DiscoveryInterface, error) {
+		client := &fake.FakeDiscovery{
+			Fake: &client_testing.Fake{},
 		}
-	}
 
-	return client, nil
+		if enableOpenshiftGVR {
+			client.Fake.Resources = []*v1.APIResourceList{
+				{
+					GroupVersion: openshiftSecurityGVR,
+				},
+			}
+		}
+
+		return client, nil
+	}
 }
 
 func TestPlatformResolver(t *testing.T) {
 	t.Run("should detect openshift", func(t *testing.T) {
 		platformResolver := PlatformResolver{
-			discoveryClientCreation: &platformResolverTest{
-				enableOpenshiftGVR: true,
-			},
+			discoveryProvider: createDiscoveryClient(true),
 		}
 
 		assert.True(t, platformResolver.IsOpenshift(t))
 	})
 	t.Run("should detect kubernetes", func(t *testing.T) {
 		platformResolver := PlatformResolver{
-			discoveryClientCreation: &platformResolverTest{
-				enableOpenshiftGVR: false,
-			},
+			discoveryProvider: createDiscoveryClient(false),
 		}
 
 		assert.False(t, platformResolver.IsOpenshift(t))

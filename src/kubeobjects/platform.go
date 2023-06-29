@@ -20,15 +20,38 @@ const (
 	Openshift
 )
 
-const SccGVR = "security.openshift.io/v1"
+const openshiftSecurityGVR = "security.openshift.io/v1"
 
-type discoveryClientCreation interface {
-	getDiscoveryClient() (discovery.DiscoveryInterface, error)
+type PlatformResolver struct {
+	discoveryProvider func() (discovery.DiscoveryInterface, error)
 }
 
-type DiscoveryClientResolver struct{}
+func NewPlatformResolver() *PlatformResolver {
+	return &PlatformResolver{
+		discoveryProvider: getDiscoveryClient,
+	}
+}
 
-func (p *DiscoveryClientResolver) getDiscoveryClient() (discovery.DiscoveryInterface, error) {
+func (p *PlatformResolver) IsOpenshift(t *testing.T) bool {
+	client, err := p.discoveryProvider()
+	if err != nil {
+		t.Fatal("failed to detect platform from cluster", err)
+		return false
+	}
+
+	_, err = client.ServerResourcesForGroupVersion(openshiftSecurityGVR)
+	return !k8serrors.IsNotFound(err)
+}
+
+func (p *PlatformResolver) GetPlatform(t *testing.T) string {
+	isOpenshift := p.IsOpenshift(t)
+	if isOpenshift {
+		return openshiftPlatformEnvValue
+	}
+	return kubernetesPlatformEnvValue
+}
+
+func getDiscoveryClient() (discovery.DiscoveryInterface, error) {
 	kubeconfigProvider := config.KubeConfigProvider{}
 	kubeconfig, err := kubeconfigProvider.GetConfig()
 	if err != nil {
@@ -41,33 +64,4 @@ func (p *DiscoveryClientResolver) getDiscoveryClient() (discovery.DiscoveryInter
 	}
 
 	return client, nil
-}
-
-type PlatformResolver struct {
-	discoveryClientCreation
-}
-
-func NewPlatformResolver() *PlatformResolver {
-	return &PlatformResolver{
-		discoveryClientCreation: &DiscoveryClientResolver{},
-	}
-}
-
-func (p *PlatformResolver) IsOpenshift(t *testing.T) bool {
-	client, err := p.getDiscoveryClient()
-	if err != nil {
-		t.Fatal("failed to detect platform from cluster", err)
-		return false
-	}
-
-	_, err = client.ServerResourcesForGroupVersion(SccGVR)
-	return !k8serrors.IsNotFound(err)
-}
-
-func (p *PlatformResolver) GetPlatform(t *testing.T) string {
-	isOpenshift := p.IsOpenshift(t)
-	if isOpenshift {
-		return openshiftPlatformEnvValue
-	}
-	return kubernetesPlatformEnvValue
 }

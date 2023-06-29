@@ -39,7 +39,7 @@ var (
 	}
 )
 
-func SetupProxyWithTeardown(builder *features.FeatureBuilder, t *testing.T, testDynakube dynatracev1beta1.DynaKube) {
+func SetupProxyWithTeardown(t *testing.T, builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube) {
 	if testDynakube.Spec.Proxy != nil {
 		installProxySCC(builder, t)
 		builder.Assess("install proxy", manifests.InstallFromFile(proxyDeploymentPath))
