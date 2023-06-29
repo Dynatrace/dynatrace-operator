@@ -46,8 +46,8 @@ spec:
         volumeMounts:
         - mountPath: /mnt/root
           name: host-root
-      serviceAccount: dynatrace-dynakube-oneagent-privileged
-      serviceAccountName: dynatrace-dynakube-oneagent-privileged
+      serviceAccount: dynatrace-dynakube-oneagent
+      serviceAccountName: dynatrace-dynakube-oneagent
       volumes:
       - hostPath:
           path: /

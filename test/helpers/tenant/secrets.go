@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
@@ -90,7 +91,14 @@ func CreateTenantSecret(secretConfig Secret, dynakube dynatracev1beta1.DynaKube)
 			},
 		}
 
-		require.NoError(t, environmentConfig.Client().Resources().Create(ctx, &defaultSecret))
+		err := environmentConfig.Client().Resources().Create(ctx, &defaultSecret)
+
+		if k8serrors.IsAlreadyExists(err) {
+			require.NoError(t, environmentConfig.Client().Resources().Update(ctx, &defaultSecret))
+			return ctx
+		}
+
+		require.NoError(t, err)
 
 		return ctx
 	}

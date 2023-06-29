@@ -42,6 +42,9 @@ test/e2e/cloudnative/network: manifests/crd/helm
 test/e2e/cloudnative/proxy: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1 ./test/scenarios/cloudnative/proxy $(SKIPCLEANUP)
 
+test/e2e/cloudnative/publicregistry: manifests/crd/helm
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1 ./test/scenarios/cloudnative/public_registry $(SKIPCLEANUP)
+
 ## Runs CloudNative codemodules e2e test only
 test/e2e/cloudnative/specificagentversion: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1 ./test/scenarios/cloudnative/specific_agent_version $(SKIPCLEANUP)

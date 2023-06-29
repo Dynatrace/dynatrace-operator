@@ -27,7 +27,7 @@ if [ -z "${OPERATOR_SDK}" ]; then
 fi
 
 SDK_PARAMS=(
---extra-service-accounts dynatrace-dynakube-oneagent-unprivileged
+--extra-service-accounts dynatrace-dynakube-oneagent
 --extra-service-accounts dynatrace-kubernetes-monitoring
 --extra-service-accounts dynatrace-activegate
 )
