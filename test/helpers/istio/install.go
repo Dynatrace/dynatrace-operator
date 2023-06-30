@@ -12,8 +12,8 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/manifests"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/platform"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/base"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/Dynatrace/dynatrace-operator/test/project"
@@ -49,7 +49,7 @@ func enforceIstio() bool {
 
 func AddIstioNetworkAttachment(namespace corev1.Namespace) func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
 	return func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
-		if !kubeobjects.NewPlatformResolver().IsOpenshift(t) {
+		if !platform.NewResolver().IsOpenshift(t) {
 			return ctx, nil
 		}
 		for key, value := range InjectionLabel {
@@ -143,7 +143,7 @@ func assertIstioInitContainer(t *testing.T, pods corev1.PodList, testDynakube dy
 
 func determineIstioInitContainerName(t *testing.T) string {
 	istioInitName := istioInitContainerName
-	if kubeobjects.NewPlatformResolver().IsOpenshift(t) {
+	if platform.NewResolver().IsOpenshift(t) {
 		istioInitName = openshiftIstioInitContainerName
 	}
 	return istioInitName

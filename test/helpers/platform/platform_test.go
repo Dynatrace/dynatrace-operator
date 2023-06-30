@@ -1,4 +1,4 @@
-package kubeobjects
+package platform
 
 import (
 	"testing"
@@ -30,14 +30,14 @@ func createDiscoveryClient(enableOpenshiftGVR bool) func() (discovery.DiscoveryI
 
 func TestPlatformResolver(t *testing.T) {
 	t.Run("should detect openshift", func(t *testing.T) {
-		platformResolver := PlatformResolver{
+		platformResolver := Resolver{
 			discoveryProvider: createDiscoveryClient(true),
 		}
 
 		assert.True(t, platformResolver.IsOpenshift(t))
 	})
 	t.Run("should detect kubernetes", func(t *testing.T) {
-		platformResolver := PlatformResolver{
+		platformResolver := Resolver{
 			discoveryProvider: createDiscoveryClient(false),
 		}
 

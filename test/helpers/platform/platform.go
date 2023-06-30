@@ -1,4 +1,4 @@
-package kubeobjects
+package platform
 
 import (
 	"testing"
@@ -22,17 +22,17 @@ const (
 
 const openshiftSecurityGVR = "security.openshift.io/v1"
 
-type PlatformResolver struct {
+type Resolver struct {
 	discoveryProvider func() (discovery.DiscoveryInterface, error)
 }
 
-func NewPlatformResolver() *PlatformResolver {
-	return &PlatformResolver{
+func NewResolver() *Resolver {
+	return &Resolver{
 		discoveryProvider: getDiscoveryClient,
 	}
 }
 
-func (p *PlatformResolver) IsOpenshift(t *testing.T) bool {
+func (p *Resolver) IsOpenshift(t *testing.T) bool {
 	client, err := p.discoveryProvider()
 	if err != nil {
 		t.Fatal("failed to detect platform from cluster", err)
@@ -43,7 +43,7 @@ func (p *PlatformResolver) IsOpenshift(t *testing.T) bool {
 	return !k8serrors.IsNotFound(err)
 }
 
-func (p *PlatformResolver) GetPlatform(t *testing.T) string {
+func (p *Resolver) GetPlatform(t *testing.T) string {
 	isOpenshift := p.IsOpenshift(t)
 	if isOpenshift {
 		return openshiftPlatformEnvValue
