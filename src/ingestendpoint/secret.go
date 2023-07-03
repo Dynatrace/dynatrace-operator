@@ -197,5 +197,5 @@ func metricsIngestUrlForClusterActiveGate(dk *dynatracev1beta1.DynaKube) (string
 	}
 
 	serviceName := capability.BuildServiceName(dk.Name, consts.MultiActiveGateName)
-	return fmt.Sprintf("https://%s.%s/e/%s/api/v2/metrics/ingest", serviceName, dk.Namespace, tenant), nil
+	return fmt.Sprintf("http://%s.%s/e/%s/api/v2/metrics/ingest", serviceName, dk.Namespace, tenant), nil
 }
