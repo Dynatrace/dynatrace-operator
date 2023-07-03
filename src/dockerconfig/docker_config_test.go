@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"path/filepath"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -190,6 +191,6 @@ func testPullSecret(t *testing.T, withCaCerts, customPullSecret, injectedPullSec
 
 	checkFileContents(t, fs, dockerConfig.RegistryAuthPath, registryAuthContent)
 	if withCaCerts {
-		checkFileContents(t, fs, dockerConfig.TrustedCertsPath, testValue)
+		checkFileContents(t, fs, filepath.Join(dockerConfig.TrustedCertsPath, TrustedCertFileName), testValue)
 	}
 }
