@@ -61,7 +61,7 @@ func (dsInfo *builderInfo) addDeploymentMetadataEnv(envVarMap map[string]corev1.
 }
 
 func (dsInfo *builderInfo) addOperatorVersionInfoEnv(envVarMap map[string]corev1.EnvVar) map[string]corev1.EnvVar {
-	return addDefaultValueSource(envVarMap, deploymentmetadata.EnvDtOperatorVersion, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+	return setDefaultValueSource(envVarMap, deploymentmetadata.EnvDtOperatorVersion, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 		LocalObjectReference: corev1.LocalObjectReference{
 			Name: deploymentmetadata.GetDeploymentMetadataConfigMapName(dsInfo.dynakube.Name),
 		},
