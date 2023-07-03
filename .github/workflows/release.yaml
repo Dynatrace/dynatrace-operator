@@ -299,12 +299,15 @@ jobs:
       id-token: write
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
-      - name: Push tag to snyk
-        uses: ./.github/actions/snyk
+      - name: Push tag to synk
+        id: pushToSnyk
+        uses: fjogeleit/http-request-action@v1
         with:
-          image: ${{ secrets.DOCKERHUB_REPOSITORY }}:${{ needs.prepare.outputs.version }}
-          snyk-organization-id: ${{ secrets.SNYK_ORGANIZATION_ID }}
-          snyk-integration-id: ${{ secrets.SNYK_INTEGRATION_ID }}
-          snyk-api-token: ${{ secrets.SNYK_API_TOKEN }}
+          url: 'https://api.snyk.io/v1/org/${{ secrets.SNYK_ORGANIZATION_ID }}/integrations/${{ secrets.SNYK_INTEGRATION_ID }}/import'
+          method: 'POST'
+          customHeaders: '{ "Content-Type": "application/json;charset=utf-8", "Authorization": "token ${{ secrets.SNYK_API_TOKEN }}" }'
+          data: '{ "target": { "name": "${{ secrets.DOCKERHUB_REPOSITORY }}:${{ needs.prepare.outputs.version }}" }}'
+      - name: Show Response
+        run: |
+          echo ${{ steps.pushToSnyk.outputs.response }}
+          echo ${{ steps.pushToSnyk.outputs.headers }}
