@@ -227,7 +227,7 @@ func TestUpdateAgent(t *testing.T) {
 		dockerJsonPath := path.Join(dockerconfig.TmpPath, dockerconfig.RegistryAuthDir, dk.Name)
 		checkFilesCreatedAndCleanedUp(t, updater, dockerJsonPath, dockerconfigjsonContent)
 
-		caFilePath := path.Join(dockerconfig.TmpPath, dockerconfig.CADir, dk.Name)
+		caFilePath := path.Join(dockerconfig.TmpPath, dockerconfig.CADir, dk.Name, dockerconfig.TrustedCertFileName)
 		checkFilesCreatedAndCleanedUp(t, updater, caFilePath, customCertContent)
 	})
 }
