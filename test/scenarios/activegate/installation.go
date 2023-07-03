@@ -68,7 +68,7 @@ func Install(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features.F
 	assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), testDynakube)
 
 	// Register proxy install and uninstall
-	proxy.SetupProxyWithTeardown(builder, testDynakube)
+	proxy.SetupProxyWithTeardown(t, builder, testDynakube)
 	proxy.CutOffDynatraceNamespace(builder, proxySpec)
 	proxy.IsDynatraceNamespaceCutOff(builder, testDynakube)
 

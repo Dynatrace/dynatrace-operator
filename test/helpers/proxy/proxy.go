@@ -8,10 +8,10 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/platform"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
 	"github.com/Dynatrace/dynatrace-operator/test/project"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
@@ -39,17 +39,17 @@ var (
 	}
 )
 
-func SetupProxyWithTeardown(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube) {
+func SetupProxyWithTeardown(t *testing.T, builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube) {
 	if testDynakube.Spec.Proxy != nil {
-		installProxySCC(builder)
+		installProxySCC(builder, t)
 		builder.Assess("install proxy", manifests.InstallFromFile(proxyDeploymentPath))
 		builder.Assess("proxy started", deployment.WaitFor(proxyDeploymentName, proxyNamespaceName))
 		builder.WithTeardown("removing proxy", DeleteProxy())
 	}
 }
 
-func installProxySCC(builder *features.FeatureBuilder) {
-	if kubeobjects.ResolvePlatformFromEnv() == kubeobjects.Openshift {
+func installProxySCC(builder *features.FeatureBuilder, t *testing.T) {
+	if platform.NewResolver().IsOpenshift(t) {
 		builder.Assess("install proxy scc", manifests.InstallFromFile(proxySCCPath))
 	}
 }
