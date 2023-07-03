@@ -9,11 +9,11 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/platform"
 	"github.com/Dynatrace/dynatrace-operator/test/project"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -116,8 +116,7 @@ func (app sampleApp) install(object client.Object) features.Func {
 }
 
 func (app sampleApp) installSCC(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
-	platform := kubeobjects.ResolvePlatformFromEnv()
-	if platform == kubeobjects.Openshift {
+	if platform.NewResolver().IsOpenshift(t) {
 		ctx = manifests.InstallFromFile(sccPath)(ctx, t, c)
 	}
 	return ctx
@@ -146,8 +145,7 @@ func (app sampleApp) uninstallObject(object client.Object) features.Func {
 }
 
 func (app sampleApp) uninstallSCC(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
-	platform := kubeobjects.ResolvePlatformFromEnv()
-	if platform == kubeobjects.Openshift {
+	if platform.NewResolver().IsOpenshift(t) {
 		ctx = manifests.UninstallFromFile(sccPath)(ctx, t, c)
 	}
 	return ctx
