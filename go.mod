@@ -7,23 +7,23 @@ require (
 	github.com/containers/image/v5 v5.25.0
 	github.com/evanphx/json-patch v5.6.0+incompatible
 	github.com/go-logr/logr v1.2.4
-	github.com/klauspost/compress v1.16.4
-	github.com/mattn/go-sqlite3 v1.14.16
+	github.com/klauspost/compress v1.16.6
+	github.com/mattn/go-sqlite3 v1.14.17
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0-rc2
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.15.0
+	github.com/prometheus/client_golang v1.15.1
 	github.com/prometheus/client_model v0.3.0
 	github.com/spf13/afero v1.9.5
 	github.com/spf13/cobra v1.7.0
-	github.com/stretchr/testify v1.8.2
+	github.com/stretchr/testify v1.8.4
 	go.uber.org/zap v1.24.0
 	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
 	golang.org/x/net v0.9.0
 	golang.org/x/sys v0.7.0
-	google.golang.org/grpc v1.54.0
-	istio.io/api v0.0.0-20230217221049-9d422bf48675
-	istio.io/client-go v1.17.1
+	google.golang.org/grpc v1.54.1
+	istio.io/api v0.0.0-20230523222408-21e7bb4b66a2
+	istio.io/client-go v1.17.3
 	k8s.io/api v0.26.3
 	k8s.io/apiextensions-apiserver v0.26.3
 	k8s.io/apimachinery v0.26.3
