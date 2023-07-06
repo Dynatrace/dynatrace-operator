@@ -160,7 +160,7 @@ spec:
     #
     # env: []
 
-    # Optional: Sets the activation group for ActiveGate instances
+    # Recommended: Sets the activation group for ActiveGate instances
     #
     # group: ""
 
