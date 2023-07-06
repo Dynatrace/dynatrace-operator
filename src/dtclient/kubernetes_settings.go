@@ -11,23 +11,31 @@ import (
 	"github.com/pkg/errors"
 )
 
-type postKubernetesSettings struct {
-	Label                           string `json:"label"`
-	ClusterIdEnabled                bool   `json:"clusterIdEnabled"`
-	ClusterId                       string `json:"clusterId"`
-	CloudApplicationPipelineEnabled bool   `json:"cloudApplicationPipelineEnabled"`
-	OpenMetricsPipelineEnabled      bool   `json:"openMetricsPipelineEnabled"`
-	Enabled                         bool   `json:"enabled"`
-	EventProcessingActive           bool   `json:"eventProcessingActive"`
-	EventProcessingV2Active         bool   `json:"eventProcessingV2Active"`
-	FilterEvents                    bool   `json:"filterEvents"`
+/*type postKubernetesSettings struct {
+	Enabled          bool   `json:"enabled"`
+	Label            string `json:"label"`
+	ClusterIdEnabled bool   `json:"clusterIdEnabled"`
+	ClusterId        string `json:"clusterId"`
+}*/
+
+type postKubernetesSettingsWithMonitoring struct {
+	Enabled          bool   `json:"enabled"`
+	Label            string `json:"label"`
+	ClusterIdEnabled bool   `json:"clusterIdEnabled"`
+	ClusterId        string `json:"clusterId"`
+
+	CloudApplicationPipelineEnabled bool `json:"cloudApplicationPipelineEnabled"`
+	OpenMetricsPipelineEnabled      bool `json:"openMetricsPipelineEnabled"`
+	EventProcessingActive           bool `json:"eventProcessingActive"`
+	EventProcessingV2Active         bool `json:"eventProcessingV2Active"`
+	FilterEvents                    bool `json:"filterEvents"`
 }
 
 type postKubernetesSettingsBody struct {
-	SchemaId      string                 `json:"schemaId"`
-	SchemaVersion string                 `json:"schemaVersion"`
-	Scope         string                 `json:"scope,omitempty"`
-	Value         postKubernetesSettings `json:"value"`
+	SchemaId      string                               `json:"schemaId"`
+	SchemaVersion string                               `json:"schemaVersion"`
+	Scope         string                               `json:"scope,omitempty"`
+	Value         postKubernetesSettingsWithMonitoring `json:"value"`
 }
 
 type monitoredEntitiesResponse struct {
@@ -50,6 +58,10 @@ type postSettingsResponse struct {
 	ObjectId string `json:"objectId"`
 }
 
+type getSchemasResponse struct {
+	Version string `json:"version"`
+}
+
 type getSettingsErrorResponse struct {
 	ErrorMessage getSettingsError `json:"error"`
 }
@@ -67,16 +79,44 @@ type constraintViolations []struct {
 	Path              string
 }
 
+func GetSchemasVersion(schemaId string) string {
+	defaultVersion := "1.0.27"
+	req, err := createBaseRequest(dtc.getSchemasUrl(schemaId), http.MethodGet, dtc.apiToken, nil)
+	if err != nil {
+		return defaultVersion
+	}
+	res, err := dtc.httpClient.Do(req)
+	if err != nil {
+		return defaultVersion
+	}
+	defer CloseBodyAfterRequest(res)
+
+	resData, err := io.ReadAll(res.Body)
+	if err != nil {
+		return defaultVersion
+	}
+
+	var resDataJson []getSchemasResponse
+	err = json.Unmarshal(resData, &resDataJson)
+	if err != nil {
+		return defaultVersion
+	}
+	return resDataJson[0].Version
+}
+
 func (dtc *dynatraceClient) CreateOrUpdateKubernetesSetting(clusterLabel, kubeSystemUUID, scope string) (string, error) {
 	if kubeSystemUUID == "" {
 		return "", errors.New("no kube-system namespace UUID given")
 	}
 
+	schemaId := "builtin:cloud.kubernetes"
+	schemaVersion := GetSchemasVersion(schemaId)
+
 	body := []postKubernetesSettingsBody{
 		{
-			SchemaId:      "builtin:cloud.kubernetes",
-			SchemaVersion: "1.0.27",
-			Value: postKubernetesSettings{
+			SchemaId:      schemaId,
+			SchemaVersion: schemaVersion,
+			Value: postKubernetesSettingsWithMonitoring{
 				Enabled:                         true,
 				Label:                           clusterLabel,
 				ClusterIdEnabled:                true,

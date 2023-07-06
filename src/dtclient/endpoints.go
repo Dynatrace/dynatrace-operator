@@ -48,6 +48,10 @@ func (dtc *dynatraceClient) getSettingsUrl(validate bool) string {
 	return fmt.Sprintf("%s/v2/settings/objects%s", dtc.url, validationQuery)
 }
 
+func (dtc *dynatraceClient) getSchemasUrl(schema string) string {
+	return fmt.Sprintf("%s/v2/settings/schemas/%s", dtc.url, schema)
+}
+
 func (dtc *dynatraceClient) getProcessModuleConfigUrl() string {
 	return fmt.Sprintf("%s/v1/deployment/installer/agent/processmoduleconfig", dtc.url)
 }
