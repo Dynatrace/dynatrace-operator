@@ -20,9 +20,11 @@ import (
 
 const testUser int64 = 420
 
-var testSecurityContext = &corev1.SecurityContext{
-	RunAsUser:  address.Of(testUser),
-	RunAsGroup: address.Of(testUser),
+func getTestSecurityContext() *corev1.SecurityContext {
+	return &corev1.SecurityContext{
+		RunAsUser:  address.Of(testUser),
+		RunAsGroup: address.Of(testUser),
+	}
 }
 
 func TestCreateMutationRequestBase(t *testing.T) {
@@ -128,7 +130,7 @@ func getTestPod() *corev1.Pod {
 				{
 					Name:            "container",
 					Image:           "alpine",
-					SecurityContext: testSecurityContext,
+					SecurityContext: getTestSecurityContext(),
 				},
 			},
 			InitContainers: []corev1.Container{

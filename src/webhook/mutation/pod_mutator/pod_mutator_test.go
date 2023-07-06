@@ -156,7 +156,7 @@ func TestHandlePodMutation(t *testing.T) {
 		assert.True(t, *initSecurityContext.ReadOnlyRootFilesystem)
 
 		assert.NotNil(t, initSecurityContext.RunAsNonRoot)
-		assert.False(t, *initSecurityContext.RunAsNonRoot)
+		assert.True(t, *initSecurityContext.RunAsNonRoot)
 
 		assert.Equal(t, mutationRequest.Pod.Spec.InitContainers[1].Resources, testResourceRequirements)
 		assert.Equal(t, "true", mutationRequest.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected])
