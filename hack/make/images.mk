@@ -8,7 +8,14 @@ else
 	TAG ?= snapshot
 endif
 
-IMAGE_URI ?= "$(IMAGE):$(TAG)"
+#use the digest if digest is set
+ifeq ($(DIGEST),)
+	IMAGE_URI ?= "$(IMAGE):$(TAG)"
+else
+	IMAGE_URI ?= "$(IMAGE):$(TAG)@$(DIGEST)"
+endif
+
+
 
 ensure-tag-not-snapshot:
 ifeq ($(TAG), snapshot)
