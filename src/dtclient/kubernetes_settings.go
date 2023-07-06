@@ -72,6 +72,8 @@ func (dtc *dynatraceClient) CreateOrUpdateKubernetesSetting(clusterLabel, kubeSy
 		return "", errors.New("no kube-system namespace UUID given")
 	}
 
+	log.Info("zai comment")
+
 	body := []postKubernetesSettingsBody{
 		{
 			SchemaId:      "builtin:cloud.kubernetes",
