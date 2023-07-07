@@ -3,6 +3,7 @@ package statefulset
 import (
 	"fmt"
 	"reflect"
+	"strconv"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -316,6 +317,10 @@ func TestBuildCommonEnvs(t *testing.T) {
 		assert.NotEmpty(t, metadataEnv.ValueFrom.ConfigMapKeyRef)
 		assert.Equal(t, deploymentmetadata.ActiveGateMetadataKey, metadataEnv.ValueFrom.ConfigMapKeyRef.Key)
 		assert.Equal(t, deploymentmetadata.GetDeploymentMetadataConfigMapName(dynakube.Name), metadataEnv.ValueFrom.ConfigMapKeyRef.Name)
+
+		// metrics-ingest disabled -> HTTP port disabled
+		dtHttpPortEnv := kubeobjects.FindEnvVar(envs, consts.EnvDtHttpPort)
+		require.Nil(t, dtHttpPortEnv)
 	})
 
 	t.Run("adds extra envs", func(t *testing.T) {
@@ -355,6 +360,23 @@ func TestBuildCommonEnvs(t *testing.T) {
 		groupEnv := kubeobjects.FindEnvVar(envs, consts.EnvDtGroup)
 		require.NotNil(t, groupEnv)
 		assert.Equal(t, multiCapability.Properties().Group, groupEnv.Value)
+	})
+
+	t.Run("metrics-ingest env", func(t *testing.T) {
+		dynakube := getTestDynakube()
+
+		kubeobjects.SwitchCapability(&dynakube, dynatracev1beta1.RoutingCapability, false)
+		kubeobjects.SwitchCapability(&dynakube, dynatracev1beta1.MetricsIngestCapability, true)
+
+		multiCapability := capability.NewMultiCapability(&dynakube)
+		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dynakube, multiCapability)
+
+		envs := builder.buildCommonEnvs()
+
+		require.NotEmpty(t, envs)
+		dtHttpPortEnv := kubeobjects.FindEnvVar(envs, consts.EnvDtHttpPort)
+		require.NotNil(t, dtHttpPortEnv)
+		assert.Equal(t, strconv.Itoa(consts.HttpContainerPort), dtHttpPortEnv.Value)
 	})
 
 	t.Run("adds group env", func(t *testing.T) {

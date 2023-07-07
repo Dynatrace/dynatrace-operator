@@ -42,12 +42,19 @@ func (mod ServicePortModifier) Modify(sts *appsv1.StatefulSet) error {
 }
 
 func (mod ServicePortModifier) getPorts() []corev1.ContainerPort {
-	return []corev1.ContainerPort{
+	ports := []corev1.ContainerPort{
 		{
 			Name:          consts.HttpsServicePortName,
 			ContainerPort: consts.HttpsContainerPort,
 		},
 	}
+	if mod.dynakube.IsMetricsIngestActiveGateEnabled() {
+		ports = append(ports, corev1.ContainerPort{
+			Name:          consts.HttpServicePortName,
+			ContainerPort: consts.HttpContainerPort,
+		})
+	}
+	return ports
 }
 
 func (mod ServicePortModifier) getEnvs() []corev1.EnvVar {
