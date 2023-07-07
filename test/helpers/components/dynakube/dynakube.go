@@ -149,6 +149,14 @@ func (builder Builder) WithSyntheticLocation(entityId string) Builder {
 	return builder
 }
 
+func (builder Builder) ResetOneAgent() Builder {
+	builder.dynakube.Spec.OneAgent.ClassicFullStack = nil
+	builder.dynakube.Spec.OneAgent.CloudNativeFullStack = nil
+	builder.dynakube.Spec.OneAgent.ApplicationMonitoring = nil
+	builder.dynakube.Spec.OneAgent.HostMonitoring = nil
+	return builder
+}
+
 func (dynakubeBuilder Builder) Build() dynatracev1beta1.DynaKube {
 	return dynakubeBuilder.dynakube
 }
@@ -203,6 +211,21 @@ func WaitForDynakubePhase(dynakube dynatracev1beta1.DynaKube, phase dynatracev1b
 		err := wait.For(conditions.New(resources).ResourceMatch(&dynakube, func(object k8s.Object) bool {
 			dynakube, isDynakube := object.(*dynatracev1beta1.DynaKube)
 			return isDynakube && dynakube.Status.Phase == phase
+		}))
+
+		require.NoError(t, err)
+
+		return ctx
+	}
+}
+
+func WaitForOneAgentInstances(dynakube dynatracev1beta1.DynaKube) features.Func {
+	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+		resources := environmentConfig.Client().Resources()
+
+		err := wait.For(conditions.New(resources).ResourceMatch(&dynakube, func(object k8s.Object) bool {
+			dynakube, isDynakube := object.(*dynatracev1beta1.DynaKube)
+			return isDynakube && len(dynakube.Status.OneAgent.Instances) > 0
 		}))
 
 		require.NoError(t, err)
