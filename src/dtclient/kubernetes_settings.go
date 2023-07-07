@@ -104,6 +104,41 @@ func GetSchemasVersion(schemaId string) string {
 	return resDataJson[0].Version
 }
 
+func (dtc *dynatraceClient) performCreateOrUpdateKubernetesSetting(bodyData []byte) (string, error) {
+	req, err := createBaseRequest(dtc.getSettingsUrl(false), http.MethodPost, dtc.apiToken, bytes.NewReader(bodyData))
+	if err != nil {
+		return "", err
+	}
+
+	res, err := dtc.httpClient.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("error making post request to dynatrace api: %w", err)
+	}
+	defer CloseBodyAfterRequest(res)
+
+	resData, err := io.ReadAll(res.Body)
+	if err != nil {
+		return "", fmt.Errorf("error reading response: %w", err)
+	}
+
+	if res.StatusCode != http.StatusOK &&
+		res.StatusCode != http.StatusCreated {
+		return "", handleErrorArrayResponseFromAPI(resData, res.StatusCode)
+	}
+
+	var resDataJson []postSettingsResponse
+	err = json.Unmarshal(resData, &resDataJson)
+	if err != nil {
+		return "", err
+	}
+
+	if len(resDataJson) != 1 {
+		return "", fmt.Errorf("response is not containing exactly one entry %s", resData)
+	}
+
+	return resDataJson[0].ObjectId, nil
+}
+
 func (dtc *dynatraceClient) CreateOrUpdateKubernetesSetting(clusterLabel, kubeSystemUUID, scope string) (string, error) {
 	if kubeSystemUUID == "" {
 		return "", errors.New("no kube-system namespace UUID given")
@@ -139,38 +174,9 @@ func (dtc *dynatraceClient) CreateOrUpdateKubernetesSetting(clusterLabel, kubeSy
 		return "", err
 	}
 
-	req, err := createBaseRequest(dtc.getSettingsUrl(false), http.MethodPost, dtc.apiToken, bytes.NewReader(bodyData))
-	if err != nil {
-		return "", err
-	}
+	objectId, err := dtc.performCreateOrUpdateKubernetesSetting(bodyData)
 
-	res, err := dtc.httpClient.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("error making post request to dynatrace api: %w", err)
-	}
-	defer CloseBodyAfterRequest(res)
-
-	resData, err := io.ReadAll(res.Body)
-	if err != nil {
-		return "", fmt.Errorf("error reading response: %w", err)
-	}
-
-	if res.StatusCode != http.StatusOK &&
-		res.StatusCode != http.StatusCreated {
-		return "", handleErrorArrayResponseFromAPI(resData, res.StatusCode)
-	}
-
-	var resDataJson []postSettingsResponse
-	err = json.Unmarshal(resData, &resDataJson)
-	if err != nil {
-		return "", err
-	}
-
-	if len(resDataJson) != 1 {
-		return "", fmt.Errorf("response is not containing exactly one entry %s", resData)
-	}
-
-	return resDataJson[0].ObjectId, nil
+	return objectId, nil
 }
 
 func (dtc *dynatraceClient) GetMonitoredEntitiesForKubeSystemUUID(kubeSystemUUID string) ([]MonitoredEntity, error) {
