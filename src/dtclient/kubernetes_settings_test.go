@@ -13,10 +13,12 @@ import (
 )
 
 const (
-	testUID      = "test-uid"
-	testName     = "test-name"
-	testObjectID = "test-objectid"
-	testScope    = "test-scope"
+	testUID                     = "test-uid"
+	testName                    = "test-name"
+	testObjectID                = "test-objectid"
+	testScope                   = "test-scope"
+	schemaVersion               = "3.0.1"
+	schemaVersionWithMonitoring = "2.1.0"
 )
 
 func TestDynatraceClient_GetMonitoredEntitiesForKubeSystemUUID(t *testing.T) {
@@ -113,7 +115,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 		expected := createMonitoredEntitiesForTesting()
 		totalCount := 2
 
-		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(totalCount, "", false))
+		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(totalCount, "", "", false))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -136,7 +138,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 		expected := createMonitoredEntitiesForTesting()
 		totalCount := 0
 
-		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(totalCount, "", false))
+		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(totalCount, "", "", false))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -160,7 +162,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 		// monitored entities is empty, therefore also no settings will be returned
 		totalCount := 999
 
-		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(totalCount, "", false))
+		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(totalCount, "", "", false))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -183,7 +185,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 		// it is immaterial what we put here since the http request is producing an error
 		totalCount := 999
 
-		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(totalCount, "", true))
+		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(totalCount, "", "", true))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -201,9 +203,29 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 }
 
 func TestDynatraceClient_CreateOrUpdateKubernetesSetting(t *testing.T) {
+	t.Run(`create settings with monitoring for the given monitored entity id`, func(t *testing.T) {
+		// arrange
+		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(1, testObjectID, schemaVersionWithMonitoring, false))
+		defer dynatraceServer.Close()
+
+		skipCert := SkipCertificateValidation(true)
+		dtc, err := NewClient(dynatraceServer.URL, apiToken, paasToken, skipCert)
+		require.NoError(t, err)
+		require.NotNil(t, dtc)
+
+		// act
+		actual, err := dtc.(*dynatraceClient).CreateOrUpdateKubernetesSetting(testName, testUID, testScope)
+
+		// assert
+		assert.NotNil(t, actual)
+		assert.NoError(t, err)
+		assert.Len(t, actual, len(testObjectID))
+		assert.EqualValues(t, testObjectID, actual)
+	})
+
 	t.Run(`create settings for the given monitored entity id`, func(t *testing.T) {
 		// arrange
-		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(1, testObjectID, false))
+		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(1, testObjectID, schemaVersion, false))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -223,7 +245,7 @@ func TestDynatraceClient_CreateOrUpdateKubernetesSetting(t *testing.T) {
 
 	t.Run(`don't create settings for the given monitored entity id because no kube-system uuid is provided`, func(t *testing.T) {
 		// arrange
-		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(1, testObjectID, false))
+		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(1, testObjectID, schemaVersionWithMonitoring, false))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -241,7 +263,7 @@ func TestDynatraceClient_CreateOrUpdateKubernetesSetting(t *testing.T) {
 
 	t.Run(`don't create settings for the given monitored entity id because of api error`, func(t *testing.T) {
 		// arrange
-		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(1, testObjectID, true))
+		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(1, testObjectID, schemaVersionWithMonitoring, true))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -333,6 +355,24 @@ func mockHandleSettingsRequest(request *http.Request, writer http.ResponseWriter
 	}
 }
 
+func mockHandleSettingsSchemasRequest(request *http.Request, writer http.ResponseWriter, version string) {
+	switch request.Method {
+	case http.MethodGet:
+		var settingsPostResponse []getSchemasResponse
+		settingsPostResponse = append(settingsPostResponse, getSchemasResponse{
+			Version: version,
+		})
+		settingsPostResponseBytes, err := json.Marshal(settingsPostResponse)
+		if err != nil {
+			return
+		}
+		writer.WriteHeader(http.StatusOK)
+		writer.Write(settingsPostResponseBytes)
+	default:
+		writeError(writer, http.StatusMethodNotAllowed)
+	}
+}
+
 func mockDynatraceServerEntitiesHandler(entities []MonitoredEntity, isError bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if isError {
@@ -355,7 +395,7 @@ func mockDynatraceServerEntitiesHandler(entities []MonitoredEntity, isError bool
 	}
 }
 
-func mockDynatraceServerSettingsHandler(totalCount int, objectId string, isError bool) http.HandlerFunc {
+func mockDynatraceServerSettingsHandler(totalCount int, objectId string, schemaVersion string, isError bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if isError {
 			writeError(w, http.StatusBadRequest)
@@ -370,6 +410,8 @@ func mockDynatraceServerSettingsHandler(totalCount int, objectId string, isError
 			switch r.URL.Path {
 			case "/v2/settings/objects":
 				mockHandleSettingsRequest(r, w, totalCount, objectId)
+			case "/v2/settings/schemas/builtin:cloud.kubernetes":
+				mockHandleSettingsSchemasRequest(r, w, schemaVersion)
 			default:
 				writeError(w, http.StatusBadRequest)
 			}
