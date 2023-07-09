@@ -150,7 +150,7 @@ func (dtc *dynatraceClient) performCreateOrUpdateKubernetesSetting(body any) (st
 	return resDataJson[0].ObjectId, nil
 }
 
-func (dtc *dynatraceClient) handleCreateOrUpdateKubernetesSetting(info schemaInfo, k8sSettings postKubernetesSettings, scope string) []postKubernetesSettingsBody {
+func getKubernetesSettingBody(info schemaInfo, k8sSettings postKubernetesSettings, scope string) []postKubernetesSettingsBody {
 	body := []postKubernetesSettingsBody{
 		{
 			schemaInfo: info,
@@ -165,7 +165,7 @@ func (dtc *dynatraceClient) handleCreateOrUpdateKubernetesSetting(info schemaInf
 	return body
 }
 
-func (dtc *dynatraceClient) handleCreateOrUpdateKubernetesSettingWithMonitoring(info schemaInfo, k8sSettings postKubernetesSettings, scope string) []postKubernetesSettingsBodyWithMonithoring {
+func getKubernetesSettingWithMonitoringBody(info schemaInfo, k8sSettings postKubernetesSettings, scope string) []postKubernetesSettingsBodyWithMonithoring {
 	body := []postKubernetesSettingsBodyWithMonithoring{
 		{
 			schemaInfo: info,
@@ -213,9 +213,9 @@ func (dtc *dynatraceClient) CreateOrUpdateKubernetesSetting(clusterLabel, kubeSy
 	}
 	var body any
 	if isKubernetesHierarchicalMonitoringSettings(schemaVersion) {
-		body = dtc.handleCreateOrUpdateKubernetesSetting(schemaInformation, k8sSettings, scope)
+		body = getKubernetesSettingBody(schemaInformation, k8sSettings, scope)
 	} else {
-		body = dtc.handleCreateOrUpdateKubernetesSettingWithMonitoring(schemaInformation, k8sSettings, scope)
+		body = getKubernetesSettingWithMonitoringBody(schemaInformation, k8sSettings, scope)
 	}
 	return dtc.performCreateOrUpdateKubernetesSetting(body)
 }
