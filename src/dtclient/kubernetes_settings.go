@@ -83,7 +83,7 @@ type constraintViolations []struct {
 const (
 	schemaId                                    = "builtin:cloud.kubernetes"
 	defaultSchemaVersion                        = "1.0.27"
-	hierarchicalMonitoringSettingsSchemaVersion = "3.0.1"
+	hierarchicalMonitoringSettingsSchemaVersion = "3.0.0"
 )
 
 func (dtc *dynatraceClient) GetSchemasVersion(schemaId string) (string, error) {
