@@ -38,6 +38,13 @@ func TestCreateService(t *testing.T) {
 		Port:       consts.HttpsServicePort,
 		TargetPort: intstr.FromString(consts.HttpsServicePortName),
 	}
+	agHttpPort := corev1.ServicePort{
+		Name:       consts.HttpServicePortName,
+		Protocol:   corev1.ProtocolTCP,
+		Port:       consts.HttpServicePort,
+		TargetPort: intstr.FromString(consts.HttpServicePortName),
+	}
+
 	t.Run("check service name, labels and selector", func(t *testing.T) {
 		instance := testCreateInstance()
 		service := CreateService(instance, testComponentFeature)
@@ -64,7 +71,17 @@ func TestCreateService(t *testing.T) {
 		assert.Equal(t, expectedSelector, serviceSpec.Selector)
 	})
 
-	t.Run("check AG service if metrics ingest enabled", func(t *testing.T) {
+	t.Run("check AG service if metrics-ingest disabled", func(t *testing.T) {
+		instance := testCreateInstance()
+		kubeobjects.SwitchCapability(instance, dynatracev1beta1.RoutingCapability, true)
+
+		service := CreateService(instance, testComponentFeature)
+		ports := service.Spec.Ports
+
+		assert.Contains(t, ports, agHttpsPort)
+		assert.NotContains(t, ports, agHttpPort)
+	})
+	t.Run("check AG service if metrics-ingest enabled", func(t *testing.T) {
 		instance := testCreateInstance()
 		kubeobjects.SwitchCapability(instance, dynatracev1beta1.MetricsIngestCapability, true)
 
@@ -72,5 +89,6 @@ func TestCreateService(t *testing.T) {
 		ports := service.Spec.Ports
 
 		assert.Contains(t, ports, agHttpsPort)
+		assert.Contains(t, ports, agHttpPort)
 	})
 }

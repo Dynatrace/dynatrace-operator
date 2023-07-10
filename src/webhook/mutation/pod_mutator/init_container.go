@@ -89,9 +89,7 @@ func combineSecurityContexts(baseSecurityCtx corev1.SecurityContext, pod corev1.
 		baseSecurityCtx.RunAsGroup = containerSecurityCtx.RunAsGroup
 	}
 
-	if isNonRoot(&baseSecurityCtx) {
-		baseSecurityCtx.RunAsNonRoot = address.Of(true)
-	}
+	baseSecurityCtx.RunAsNonRoot = address.Of(isNonRoot(&baseSecurityCtx))
 
 	return &baseSecurityCtx
 }

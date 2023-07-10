@@ -30,9 +30,9 @@ const (
 	activeGateEndpoint = "rest/state"
 	livezEndpoint      = "livez"
 
-	curlPodNameActivegate = "curl-activegate"
-	curlPodNameWebhook    = "curl-webhook"
-	curlContainerName     = "curl"
+	CurlPodNameActivegateHttps = "curl-activegate-https"
+	CurlPodNameActivegateHttp  = "curl-activegate-http"
+	curlContainerName          = "curl"
 
 	connectionTimeout = 5
 
@@ -44,21 +44,32 @@ func InstallActiveGateCurlPod(dynakube dynatracev1beta1.DynaKube) features.Func 
 		serviceUrl := getActiveGateServiceUrl(dynakube)
 		curlTarget := fmt.Sprintf("%s/%s", serviceUrl, activeGateEndpoint)
 
-		curlPod := NewCurlPodBuilder(curlPodNameActivegate, curlNamespace(dynakube), curlTarget).WithProxy(dynakube).Build()
+		curlPod := NewCurlPodBuilder(CurlPodNameActivegateHttps, curlNamespace(dynakube), curlTarget).WithProxy(dynakube).Build()
 		require.NoError(t, environmentConfig.Client().Resources().Create(ctx, curlPod))
 		return ctx
 	}
 }
 
-func WaitForActiveGateCurlPod(dynakube dynatracev1beta1.DynaKube) features.Func {
-	return pod.WaitFor(curlPodNameActivegate, curlNamespace(dynakube))
+func InstallActiveGateHttpCurlPod(dynakube dynatracev1beta1.DynaKube) features.Func {
+	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+		serviceUrl := getActiveGateHttpServiceUrl(dynakube)
+		curlTarget := fmt.Sprintf("%s/%s", serviceUrl, activeGateEndpoint)
+
+		curlPod := NewCurlPodBuilder(CurlPodNameActivegateHttp, curlNamespace(dynakube), curlTarget).WithProxy(dynakube).Build()
+		require.NoError(t, environmentConfig.Client().Resources().Create(ctx, curlPod))
+		return ctx
+	}
 }
 
-func CheckActiveGateCurlResult(dynakube dynatracev1beta1.DynaKube) features.Func {
+func WaitForActiveGateCurlPod(podName string, dynakube dynatracev1beta1.DynaKube) features.Func {
+	return pod.WaitFor(podName, curlNamespace(dynakube))
+}
+
+func CheckActiveGateCurlResult(podName string, dynakube dynatracev1beta1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resources := environmentConfig.Client().Resources()
 
-		logStream := getCurlPodLogStream(ctx, t, resources, curlPodNameActivegate, curlNamespace(dynakube))
+		logStream := getCurlPodLogStream(ctx, t, resources, podName, curlNamespace(dynakube))
 		logs.AssertContains(t, logStream, "RUNNING")
 
 		return ctx
@@ -75,6 +86,11 @@ func curlNamespace(dynakube dynatracev1beta1.DynaKube) string {
 func getActiveGateServiceUrl(dynakube dynatracev1beta1.DynaKube) string {
 	serviceName := capability.BuildServiceName(dynakube.Name, consts.MultiActiveGateName)
 	return fmt.Sprintf("https://%s.%s.svc.cluster.local", serviceName, dynakube.Namespace)
+}
+
+func getActiveGateHttpServiceUrl(dynakube dynatracev1beta1.DynaKube) string {
+	serviceName := capability.BuildServiceName(dynakube.Name, consts.MultiActiveGateName)
+	return fmt.Sprintf("http://%s.%s.svc.cluster.local", serviceName, dynakube.Namespace)
 }
 
 func GetWebhookServiceUrl(dynakube dynatracev1beta1.DynaKube) string {

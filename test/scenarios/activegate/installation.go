@@ -93,9 +93,21 @@ func assessActiveGate(builder *features.FeatureBuilder, testDynakube *dynatracev
 		builder.Assess("ActiveGate uses proxy", checkIfProxyUsed(testDynakube))
 	}
 	builder.Assess("ActiveGate containers have mount points", checkMountPoints(testDynakube))
-	builder.Assess("ActiveGate query via AG service", sampleapps.InstallActiveGateCurlPod(*testDynakube))
-	builder.Assess("ActiveGate query is completed", sampleapps.WaitForActiveGateCurlPod(*testDynakube))
-	builder.Assess("ActiveGate service is running", sampleapps.CheckActiveGateCurlResult(*testDynakube))
+
+	assessActiveGateHttpsEndpoint(builder, testDynakube)
+	assessActiveGateHttpEndpoint(builder, testDynakube)
+}
+
+func assessActiveGateHttpsEndpoint(builder *features.FeatureBuilder, testDynakube *dynatracev1beta1.DynaKube) {
+	builder.Assess("ActiveGate HTTPS query via AG service", sampleapps.InstallActiveGateCurlPod(*testDynakube))
+	builder.Assess("ActiveGate HTTPS query is completed", sampleapps.WaitForActiveGateCurlPod(sampleapps.CurlPodNameActivegateHttps, *testDynakube))
+	builder.Assess("ActiveGate HTTPS service is running", sampleapps.CheckActiveGateCurlResult(sampleapps.CurlPodNameActivegateHttps, *testDynakube))
+}
+
+func assessActiveGateHttpEndpoint(builder *features.FeatureBuilder, testDynakube *dynatracev1beta1.DynaKube) {
+	builder.Assess("ActiveGate HTTP query via AG service", sampleapps.InstallActiveGateHttpCurlPod(*testDynakube))
+	builder.Assess("ActiveGate HTTP query is completed", sampleapps.WaitForActiveGateCurlPod(sampleapps.CurlPodNameActivegateHttp, *testDynakube))
+	builder.Assess("ActiveGate HTTP service is running", sampleapps.CheckActiveGateCurlResult(sampleapps.CurlPodNameActivegateHttp, *testDynakube))
 }
 
 func checkIfAgHasContainers(testDynakube *dynatracev1beta1.DynaKube) features.Func {
