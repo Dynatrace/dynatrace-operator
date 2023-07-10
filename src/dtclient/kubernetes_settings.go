@@ -163,7 +163,7 @@ func (dtc *dynatraceClient) performCreateOrUpdateKubernetesSetting(body []postKu
 	return resDataJson[0].ObjectId, nil
 }
 
-func (dtc *dynatraceClient) getKubernetesSettingBody(clusterLabel, kubeSystemUUID, scope string, schemaId string) ([]postKubernetesSettingsBody, error) {
+func (dtc *dynatraceClient) getKubernetesSettingBody(clusterLabel, kubeSystemUUID, scope string, schemaId string) []postKubernetesSettingsBody {
 	isK8sHierarchicalMonitoringSettings, err := dtc.isKubernetesHierarchicalMonitoringSettings(schemaId)
 	if err != nil {
 		log.Info("error on GetSchemasVersion", "error", err)
@@ -198,17 +198,14 @@ func (dtc *dynatraceClient) getKubernetesSettingBody(clusterLabel, kubeSystemUUI
 
 		body[0].Value.monitoringSettings = &ms
 	}
-	return body, nil
+	return body
 }
 
 func (dtc *dynatraceClient) CreateOrUpdateKubernetesSetting(clusterLabel, kubeSystemUUID, scope string) (string, error) {
 	if kubeSystemUUID == "" {
 		return "", errors.New("no kube-system namespace UUID given")
 	}
-	body, err := dtc.getKubernetesSettingBody(clusterLabel, kubeSystemUUID, scope, schemaId)
-	if err != nil {
-		return "", err
-	}
+	body := dtc.getKubernetesSettingBody(clusterLabel, kubeSystemUUID, scope, schemaId)
 
 	return dtc.performCreateOrUpdateKubernetesSetting(body)
 }

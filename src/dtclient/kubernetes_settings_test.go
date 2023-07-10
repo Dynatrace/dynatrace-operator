@@ -336,7 +336,6 @@ func TestDynatraceClient_isKubernetesHierarchicalMonitoringSettings(t *testing.T
 		assert.NoError(t, err)
 		assert.EqualValues(t, true, actual)
 	})
-
 }
 
 func TestDynatraceClient_getKubernetesSettingBody(t *testing.T) {
@@ -351,11 +350,10 @@ func TestDynatraceClient_getKubernetesSettingBody(t *testing.T) {
 		require.NotNil(t, dtc)
 
 		// act
-		actual, err := dtc.(*dynatraceClient).getKubernetesSettingBody(testName, testUID, testScope, schemaId)
+		actual := dtc.(*dynatraceClient).getKubernetesSettingBody(testName, testUID, testScope, schemaId)
 
 		// assert
 		assert.NotNil(t, actual)
-		assert.NoError(t, err)
 		assert.Len(t, actual, 1)
 		assert.EqualValues(t, hierarchicalMonitoringSettingsSchemaVersion, actual[0].SchemaVersion)
 		assert.EqualValues(t, true, actual[0].Value.Enabled)
@@ -381,11 +379,10 @@ func TestDynatraceClient_getKubernetesSettingBody(t *testing.T) {
 		require.NotNil(t, dtc)
 
 		// act
-		actual, err := dtc.(*dynatraceClient).getKubernetesSettingBody(testName, testUID, testScope, schemaId)
+		actual := dtc.(*dynatraceClient).getKubernetesSettingBody(testName, testUID, testScope, schemaId)
 
 		// assert
 		assert.NotNil(t, actual)
-		assert.NoError(t, err)
 		assert.Len(t, actual, 1)
 		assert.EqualValues(t, defaultSchemaVersion, actual[0].SchemaVersion)
 		assert.EqualValues(t, true, actual[0].Value.Enabled)
