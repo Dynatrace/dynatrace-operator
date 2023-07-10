@@ -13,14 +13,11 @@ import (
 )
 
 type postKubernetesSettings struct {
-	Enabled          bool   `json:"enabled"`
 	Label            string `json:"label"`
 	ClusterIdEnabled bool   `json:"clusterIdEnabled"`
 	ClusterId        string `json:"clusterId"`
-}
+	Enabled          bool   `json:"enabled"`
 
-type postKubernetesSettingsWithMonitoring struct {
-	postKubernetesSettings
 	CloudApplicationPipelineEnabled bool `json:"cloudApplicationPipelineEnabled"`
 	OpenMetricsPipelineEnabled      bool `json:"openMetricsPipelineEnabled"`
 	EventProcessingActive           bool `json:"eventProcessingActive"`
@@ -28,20 +25,11 @@ type postKubernetesSettingsWithMonitoring struct {
 	FilterEvents                    bool `json:"filterEvents"`
 }
 
-type schemaInfo struct {
-	SchemaId      string `json:"schemaId"`
-	SchemaVersion string `json:"schemaVersion"`
-	Scope         string `json:"scope,omitempty"`
-}
-
-type postKubernetesSettingsBodyWithMonithoring struct {
-	schemaInfo
-	Value postKubernetesSettingsWithMonitoring `json:"value"`
-}
-
 type postKubernetesSettingsBody struct {
-	schemaInfo
-	Value postKubernetesSettings `json:"value"`
+	SchemaId      string                 `json:"schemaId"`
+	SchemaVersion string                 `json:"schemaVersion"`
+	Scope         string                 `json:"scope,omitempty"`
+	Value         postKubernetesSettings `json:"value"`
 }
 
 type monitoredEntitiesResponse struct {
@@ -110,12 +98,7 @@ func (dtc *dynatraceClient) GetSchemasVersion(schemaId string) string {
 	return resDataJson[0].Version
 }
 
-func (dtc *dynatraceClient) performCreateOrUpdateKubernetesSetting(body any) (string, error) {
-	bodyData, err := json.Marshal(body)
-	if err != nil {
-		return "", err
-	}
-
+func (dtc *dynatraceClient) performCreateOrUpdateKubernetesSetting(bodyData []byte) (string, error) {
 	req, err := createBaseRequest(dtc.getSettingsUrl(false), http.MethodPost, dtc.apiToken, bytes.NewReader(bodyData))
 	if err != nil {
 		return "", err
@@ -150,42 +133,6 @@ func (dtc *dynatraceClient) performCreateOrUpdateKubernetesSetting(body any) (st
 	return resDataJson[0].ObjectId, nil
 }
 
-func getKubernetesSettingBody(info schemaInfo, k8sSettings postKubernetesSettings, scope string) []postKubernetesSettingsBody {
-	body := []postKubernetesSettingsBody{
-		{
-			schemaInfo: info,
-			Value:      k8sSettings,
-		},
-	}
-
-	if scope != "" {
-		body[0].Scope = scope
-	}
-
-	return body
-}
-
-func getKubernetesSettingWithMonitoringBody(info schemaInfo, k8sSettings postKubernetesSettings, scope string) []postKubernetesSettingsBodyWithMonithoring {
-	body := []postKubernetesSettingsBodyWithMonithoring{
-		{
-			schemaInfo: info,
-			Value: postKubernetesSettingsWithMonitoring{
-				postKubernetesSettings:          k8sSettings,
-				CloudApplicationPipelineEnabled: true,
-				OpenMetricsPipelineEnabled:      false,
-				EventProcessingActive:           false,
-				FilterEvents:                    false,
-				EventProcessingV2Active:         false,
-			},
-		},
-	}
-
-	if scope != "" {
-		body[0].Scope = scope
-	}
-	return body
-}
-
 func isKubernetesHierarchicalMonitoringSettings(schemaVersion string) bool {
 	schemaSemVer := strings.Split(schemaVersion, ".")
 	major, err := strconv.Atoi(schemaSemVer[0])
@@ -195,29 +142,48 @@ func isKubernetesHierarchicalMonitoringSettings(schemaVersion string) bool {
 	return major >= 3
 }
 
+func getKubernetesSettingBody(clusterLabel, kubeSystemUUID, scope string, schemaId string, schemaVersion string) ([]byte, error) {
+	body := []postKubernetesSettingsBody{
+		{
+			SchemaId:      schemaId,
+			SchemaVersion: schemaVersion,
+			Value: postKubernetesSettings{
+				Enabled:          true,
+				Label:            clusterLabel,
+				ClusterIdEnabled: true,
+				ClusterId:        kubeSystemUUID,
+			},
+		},
+	}
+
+	if scope != "" {
+		body[0].Scope = scope
+	}
+
+	if !isKubernetesHierarchicalMonitoringSettings(schemaVersion) {
+		body[0].Value.CloudApplicationPipelineEnabled = true
+		body[0].Value.OpenMetricsPipelineEnabled = false
+		body[0].Value.EventProcessingActive = false
+		body[0].Value.FilterEvents = false
+		body[0].Value.EventProcessingV2Active = false
+	}
+
+	return json.Marshal(body)
+}
+
 func (dtc *dynatraceClient) CreateOrUpdateKubernetesSetting(clusterLabel, kubeSystemUUID, scope string) (string, error) {
 	if kubeSystemUUID == "" {
 		return "", errors.New("no kube-system namespace UUID given")
 	}
 	schemaId := "builtin:cloud.kubernetes"
 	schemaVersion := dtc.GetSchemasVersion(schemaId)
-	schemaInformation := schemaInfo{
-		SchemaId:      schemaId,
-		SchemaVersion: schemaVersion,
+
+	bodyData, err := getKubernetesSettingBody(clusterLabel, kubeSystemUUID, scope, schemaId, schemaVersion)
+	if err != nil {
+		return "", err
 	}
-	k8sSettings := postKubernetesSettings{
-		Enabled:          true,
-		Label:            clusterLabel,
-		ClusterIdEnabled: true,
-		ClusterId:        kubeSystemUUID,
-	}
-	var body any
-	if isKubernetesHierarchicalMonitoringSettings(schemaVersion) {
-		body = getKubernetesSettingBody(schemaInformation, k8sSettings, scope)
-	} else {
-		body = getKubernetesSettingWithMonitoringBody(schemaInformation, k8sSettings, scope)
-	}
-	return dtc.performCreateOrUpdateKubernetesSetting(body)
+
+	return dtc.performCreateOrUpdateKubernetesSetting(bodyData)
 }
 
 func (dtc *dynatraceClient) GetMonitoredEntitiesForKubeSystemUUID(kubeSystemUUID string) ([]MonitoredEntity, error) {

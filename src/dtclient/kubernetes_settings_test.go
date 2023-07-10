@@ -335,7 +335,7 @@ func mockHandleSettingsRequest(request *http.Request, writer http.ResponseWriter
 		if err != nil {
 			return
 		}
-		var parsedBody []postKubernetesSettingsBodyWithMonithoring
+		var parsedBody []postKubernetesSettingsBody
 		err = json.Unmarshal(body, &parsedBody)
 		if err != nil {
 			return
