@@ -2,6 +2,7 @@ package dtclient
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -13,12 +14,11 @@ import (
 )
 
 const (
-	testUID                     = "test-uid"
-	testName                    = "test-name"
-	testObjectID                = "test-objectid"
-	testScope                   = "test-scope"
-	schemaVersion               = "3.0.1"
-	schemaVersionWithMonitoring = "2.1.0"
+	testUID       = "test-uid"
+	testName      = "test-name"
+	testObjectID  = "test-objectid"
+	testScope     = "test-scope"
+	schemaVersion = "2.1.0"
 )
 
 func TestDynatraceClient_GetMonitoredEntitiesForKubeSystemUUID(t *testing.T) {
@@ -205,7 +205,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 func TestDynatraceClient_CreateOrUpdateKubernetesSetting(t *testing.T) {
 	t.Run(`create settings with monitoring for the given monitored entity id`, func(t *testing.T) {
 		// arrange
-		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(1, testObjectID, schemaVersionWithMonitoring, false))
+		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(1, testObjectID, schemaVersion, false))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -225,7 +225,7 @@ func TestDynatraceClient_CreateOrUpdateKubernetesSetting(t *testing.T) {
 
 	t.Run(`create settings for the given monitored entity id`, func(t *testing.T) {
 		// arrange
-		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(1, testObjectID, schemaVersion, false))
+		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(1, testObjectID, hierarchicalMonitoringSettingsSchemaVersion, false))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -245,7 +245,7 @@ func TestDynatraceClient_CreateOrUpdateKubernetesSetting(t *testing.T) {
 
 	t.Run(`don't create settings for the given monitored entity id because no kube-system uuid is provided`, func(t *testing.T) {
 		// arrange
-		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(1, testObjectID, schemaVersionWithMonitoring, false))
+		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(1, testObjectID, schemaVersion, false))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -263,7 +263,7 @@ func TestDynatraceClient_CreateOrUpdateKubernetesSetting(t *testing.T) {
 
 	t.Run(`don't create settings for the given monitored entity id because of api error`, func(t *testing.T) {
 		// arrange
-		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(1, testObjectID, schemaVersionWithMonitoring, true))
+		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(1, testObjectID, schemaVersion, true))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -277,6 +277,128 @@ func TestDynatraceClient_CreateOrUpdateKubernetesSetting(t *testing.T) {
 		// assert
 		assert.Error(t, err)
 		assert.Len(t, actual, 0)
+	})
+}
+func TestDynatraceClient_isKubernetesHierarchicalMonitoringSettings(t *testing.T) {
+	t.Run(`get schema version for given schema id with monitoring`, func(t *testing.T) {
+		// arrange
+		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(1, "", schemaVersion, false))
+		defer dynatraceServer.Close()
+
+		skipCert := SkipCertificateValidation(true)
+		dtc, err := NewClient(dynatraceServer.URL, apiToken, paasToken, skipCert)
+		require.NoError(t, err)
+		require.NotNil(t, dtc)
+
+		// act
+		actual, err := dtc.(*dynatraceClient).isKubernetesHierarchicalMonitoringSettings(schemaId)
+
+		// assert
+		assert.NotNil(t, actual)
+		assert.NoError(t, err)
+		assert.EqualValues(t, false, actual)
+	})
+
+	t.Run(`get schema version for given schema id, in case server returns error`, func(t *testing.T) {
+		// arrange
+		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(1, "", "xxxxx", true))
+		defer dynatraceServer.Close()
+
+		skipCert := SkipCertificateValidation(true)
+		dtc, err := NewClient(dynatraceServer.URL, apiToken, paasToken, skipCert)
+		require.NoError(t, err)
+		require.NotNil(t, dtc)
+
+		// act
+		actual, err := dtc.(*dynatraceClient).isKubernetesHierarchicalMonitoringSettings(schemaId)
+
+		// assert
+		assert.NotNil(t, actual)
+		assert.Error(t, err)
+		assert.EqualValues(t, false, actual)
+	})
+
+	t.Run(`get schema version for given schema id for Hierarchical Monitoring Settings`, func(t *testing.T) {
+		// arrange
+		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(1, "", hierarchicalMonitoringSettingsSchemaVersion, false))
+		defer dynatraceServer.Close()
+
+		skipCert := SkipCertificateValidation(true)
+		dtc, err := NewClient(dynatraceServer.URL, apiToken, paasToken, skipCert)
+		require.NoError(t, err)
+		require.NotNil(t, dtc)
+
+		// act
+		actual, err := dtc.(*dynatraceClient).isKubernetesHierarchicalMonitoringSettings(schemaId)
+
+		// assert
+		assert.NotNil(t, actual)
+		assert.NoError(t, err)
+		assert.EqualValues(t, true, actual)
+	})
+
+}
+
+func TestDynatraceClient_getKubernetesSettingBody(t *testing.T) {
+	t.Run(`get k8s settings request body for Hierarchical Monitoring Settings`, func(t *testing.T) {
+		// arrange
+		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(1, "", hierarchicalMonitoringSettingsSchemaVersion, false))
+		defer dynatraceServer.Close()
+
+		skipCert := SkipCertificateValidation(true)
+		dtc, err := NewClient(dynatraceServer.URL, apiToken, paasToken, skipCert)
+		require.NoError(t, err)
+		require.NotNil(t, dtc)
+
+		// act
+		actual, err := dtc.(*dynatraceClient).getKubernetesSettingBody(testName, testUID, testScope, schemaId)
+
+		// assert
+		assert.NotNil(t, actual)
+		assert.NoError(t, err)
+		assert.Len(t, actual, 1)
+		assert.EqualValues(t, hierarchicalMonitoringSettingsSchemaVersion, actual[0].SchemaVersion)
+		assert.EqualValues(t, true, actual[0].Value.Enabled)
+		bodyJson, err := json.Marshal(actual[0])
+		assert.NoError(t, err)
+		fmt.Println(string(bodyJson))
+		assert.NotContains(t, string(bodyJson), "cloudApplicationPipelineEnabled")
+		assert.NotContains(t, string(bodyJson), "openMetricsPipelineEnabled")
+		assert.NotContains(t, string(bodyJson), "eventProcessingActive")
+		assert.NotContains(t, string(bodyJson), "eventProcessingV2Active")
+		assert.NotContains(t, string(bodyJson), "filterEvents")
+		assert.Contains(t, string(bodyJson), "clusterIdEnabled")
+	})
+
+	t.Run(`get k8s settings request body`, func(t *testing.T) {
+		// arrange
+		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(1, "", defaultSchemaVersion, false))
+		defer dynatraceServer.Close()
+
+		skipCert := SkipCertificateValidation(true)
+		dtc, err := NewClient(dynatraceServer.URL, apiToken, paasToken, skipCert)
+		require.NoError(t, err)
+		require.NotNil(t, dtc)
+
+		// act
+		actual, err := dtc.(*dynatraceClient).getKubernetesSettingBody(testName, testUID, testScope, schemaId)
+
+		// assert
+		assert.NotNil(t, actual)
+		assert.NoError(t, err)
+		assert.Len(t, actual, 1)
+		assert.EqualValues(t, defaultSchemaVersion, actual[0].SchemaVersion)
+		assert.EqualValues(t, true, actual[0].Value.Enabled)
+		bodyJson, err := json.Marshal(actual[0])
+		assert.NoError(t, err)
+		fmt.Println(string(bodyJson))
+		assert.Contains(t, string(bodyJson), "cloudApplicationPipelineEnabled")
+		assert.Contains(t, string(bodyJson), "openMetricsPipelineEnabled")
+		assert.Contains(t, string(bodyJson), "eventProcessingActive")
+		assert.Contains(t, string(bodyJson), "eventProcessingV2Active")
+		assert.Contains(t, string(bodyJson), "filterEvents")
+
+		assert.Contains(t, string(bodyJson), "clusterIdEnabled")
 	})
 }
 
