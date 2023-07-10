@@ -17,12 +17,19 @@ type postKubernetesSettings struct {
 	ClusterIdEnabled bool   `json:"clusterIdEnabled"`
 	ClusterId        string `json:"clusterId"`
 	Enabled          bool   `json:"enabled"`
+	*monitoringSettings
+}
 
-	CloudApplicationPipelineEnabled *bool `json:"cloudApplicationPipelineEnabled,omitempty"`
-	OpenMetricsPipelineEnabled      *bool `json:"openMetricsPipelineEnabled,omitempty"`
-	EventProcessingActive           *bool `json:"eventProcessingActive,omitempty"`
-	EventProcessingV2Active         *bool `json:"eventProcessingV2Active,omitempty"`
-	FilterEvents                    *bool `json:"filterEvents,omitempty"`
+type monitoringSettings struct {
+	CloudApplicationPipelineEnabled bool `json:"cloudApplicationPipelineEnabled"`
+	OpenMetricsPipelineEnabled      bool `json:"openMetricsPipelineEnabled"`
+	EventProcessingActive           bool `json:"eventProcessingActive"`
+	EventProcessingV2Active         bool `json:"eventProcessingV2Active"`
+	FilterEvents                    bool `json:"filterEvents"`
+}
+
+func (d *postKubernetesSettings) UnmarshalJSON(b []byte) error {
+	return json.Unmarshal(b, &d.monitoringSettings)
 }
 
 type postKubernetesSettingsBody struct {
@@ -181,13 +188,15 @@ func (dtc *dynatraceClient) getKubernetesSettingBody(clusterLabel, kubeSystemUUI
 		body[0].Scope = scope
 	}
 	if !isK8sHierarchicalMonitoringSettings {
-		t := true
-		f := false
-		body[0].Value.CloudApplicationPipelineEnabled = &t
-		body[0].Value.OpenMetricsPipelineEnabled = &f
-		body[0].Value.EventProcessingActive = &f
-		body[0].Value.FilterEvents = &f
-		body[0].Value.EventProcessingV2Active = &f
+		ms := monitoringSettings{
+			CloudApplicationPipelineEnabled: true,
+			OpenMetricsPipelineEnabled:      false,
+			EventProcessingActive:           false,
+			FilterEvents:                    false,
+			EventProcessingV2Active:         false,
+		}
+
+		body[0].Value.monitoringSettings = &ms
 	}
 	return body, nil
 }
@@ -196,12 +205,12 @@ func (dtc *dynatraceClient) CreateOrUpdateKubernetesSetting(clusterLabel, kubeSy
 	if kubeSystemUUID == "" {
 		return "", errors.New("no kube-system namespace UUID given")
 	}
-	bodyData, err := dtc.getKubernetesSettingBody(clusterLabel, kubeSystemUUID, scope, schemaId)
+	body, err := dtc.getKubernetesSettingBody(clusterLabel, kubeSystemUUID, scope, schemaId)
 	if err != nil {
 		return "", err
 	}
 
-	return dtc.performCreateOrUpdateKubernetesSetting(bodyData)
+	return dtc.performCreateOrUpdateKubernetesSetting(body)
 }
 
 func (dtc *dynatraceClient) GetMonitoredEntitiesForKubeSystemUUID(kubeSystemUUID string) ([]MonitoredEntity, error) {
