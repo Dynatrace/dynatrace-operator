@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	uRL            = "kubernetes.default.svc.cluster.local"
+	hostname       = "kubernetes.default.svc.cluster.local"
 	use            = "startup-probe"
 	defaultTimeout = 5
 )
@@ -31,7 +31,7 @@ func NewCommandBuilder() CommandBuilder {
 func (builder CommandBuilder) Build() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:  use,
-		Long: "query DNS server about " + uRL,
+		Long: "query DNS server about " + hostname,
 		RunE: builder.buildRun(),
 	}
 
@@ -48,12 +48,12 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		f := func(_ *cobra.Command, _ []string) error {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutFlagValue)*time.Second)
 			defer cancel()
-			ips, err := net.DefaultResolver.LookupHost(ctx, uRL)
+			ips, err := net.DefaultResolver.LookupHost(ctx, hostname)
 			if err != nil {
 				return errors.WithMessagef(err, "DNS service not ready")
 			}
 			if len(ips) == 0 {
-				return errors.Errorf("no DNS record found for %s", uRL)
+				return errors.Errorf("no DNS record found for %s", hostname)
 			}
 			return nil
 		}
