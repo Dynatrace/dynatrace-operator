@@ -346,7 +346,7 @@ func TestDynatraceClient_getKubernetesSettingBody(t *testing.T) {
 		// assert
 		require.NotNil(t, actual)
 		assert.Len(t, actual, 1)
-		assert.EqualValues(t, defaultSchemaVersion, actual[0].SchemaVersion)
+		assert.EqualValues(t, schemaVersionV1, actual[0].SchemaVersion)
 		assert.EqualValues(t, true, actual[0].Value.Enabled)
 		bodyJson, err := json.Marshal(actual[0])
 		assert.NoError(t, err)

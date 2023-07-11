@@ -74,7 +74,7 @@ type constraintViolations []struct {
 
 const (
 	schemaId                                    = "builtin:cloud.kubernetes"
-	defaultSchemaVersion                        = "1.0.27"
+	schemaVersionV1                             = "1.0.27"
 	hierarchicalMonitoringSettingsSchemaVersion = "3.0.0"
 )
 
@@ -135,7 +135,7 @@ func createBaseKubernetesSettings(clusterLabel, kubeSystemUUID, scope string) po
 
 func createV1KubernetesSettingsBody(clusterLabel, kubeSystemUUID, scope string) []postKubernetesSettingsBody {
 	settings := createBaseKubernetesSettings(clusterLabel, kubeSystemUUID, scope)
-	settings.SchemaVersion = defaultSchemaVersion
+	settings.SchemaVersion = schemaVersionV1
 	ms := MonitoringSettings{
 		CloudApplicationPipelineEnabled: true,
 		OpenMetricsPipelineEnabled:      false,
