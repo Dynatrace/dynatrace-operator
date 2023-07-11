@@ -17,20 +17,20 @@ func TestAddFile(t *testing.T) {
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
 
-	tarFile, err := createTarFile(tmpDir)
+	archiveFile, err := createZipArchiveFile(tmpDir)
 	require.NoError(t, err)
-	tarball := newTarball(tarFile)
+	archive := newZipArchive(archiveFile)
 
-	fileName := tarFile.Name()
+	fileName := archiveFile.Name()
 
 	testString := []byte(`Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.`)
-	require.NoError(t, tarball.addFile("lorem-ipsum.txt", bytes.NewReader(testString)))
-	tarball.close()
-	tarFile.Close()
+	require.NoError(t, archive.addFile("lorem-ipsum.txt", bytes.NewReader(testString)))
+	archive.Close()
+	archiveFile.Close()
 
 	resultFile, err := os.OpenFile(fileName, os.O_RDONLY, os.ModeTemporary)
 	require.NoError(t, err)
-	defer tarFile.Close()
+	defer archiveFile.Close()
 
 	zipReader, err := gzip.NewReader(resultFile)
 	require.NoError(t, err)
