@@ -89,6 +89,17 @@ jobs:
           version: v1.51.1
           args: --build-tags containers_image_storage_stub,e2e --timeout 300s --out-${NO_FUTURE}format colored-line-number
 
+  markdown-lint:
+    name: Lint markdown files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      - name: Lint markdown files
+        uses: docker://avtodev/markdown-lint:v1
+        with:
+          args: './**.md'
+
   prepare:
     name: Prepare properties
     runs-on: ubuntu-latest
