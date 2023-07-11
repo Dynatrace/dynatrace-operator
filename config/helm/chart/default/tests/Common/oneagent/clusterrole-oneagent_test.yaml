@@ -42,3 +42,10 @@ tests:
           value: dynatrace-dynakube-oneagent
       - isNotEmpty:
           path: metadata.labels
+  - it: ClusterRole and ClusterRoleBinding are not rendered for csi
+    set:
+      platform: openshift
+      partial: csi
+    asserts:
+      - hasDocuments:
+          count: 0
