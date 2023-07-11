@@ -39,7 +39,7 @@ func TestDynatraceClient_GetMonitoredEntitiesForKubeSystemUUID(t *testing.T) {
 		actual, err := dtc.(*dynatraceClient).GetMonitoredEntitiesForKubeSystemUUID(testUID)
 
 		// assert
-		assert.NotNil(t, actual)
+		require.NotNil(t, actual)
 		assert.NoError(t, err)
 		assert.Len(t, actual, 2)
 		assert.EqualValues(t, expected, actual)
@@ -61,7 +61,7 @@ func TestDynatraceClient_GetMonitoredEntitiesForKubeSystemUUID(t *testing.T) {
 		actual, err := dtc.(*dynatraceClient).GetMonitoredEntitiesForKubeSystemUUID(testUID)
 
 		// assert
-		assert.NotNil(t, actual)
+		require.NotNil(t, actual)
 		assert.NoError(t, err)
 		assert.Len(t, actual, 0)
 		assert.EqualValues(t, expected, actual)
@@ -83,7 +83,7 @@ func TestDynatraceClient_GetMonitoredEntitiesForKubeSystemUUID(t *testing.T) {
 		actual, err := dtc.(*dynatraceClient).GetMonitoredEntitiesForKubeSystemUUID("")
 
 		// assert
-		assert.Nil(t, actual)
+		require.Nil(t, actual)
 		assert.Error(t, err)
 		assert.Len(t, actual, 0)
 	})
@@ -104,7 +104,7 @@ func TestDynatraceClient_GetMonitoredEntitiesForKubeSystemUUID(t *testing.T) {
 		actual, err := dtc.(*dynatraceClient).GetMonitoredEntitiesForKubeSystemUUID(testUID)
 
 		// assert
-		assert.Nil(t, actual)
+		require.Nil(t, actual)
 		assert.Error(t, err)
 		assert.Len(t, actual, 0)
 	})
@@ -129,7 +129,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 
 		// assert
 		assert.NoError(t, err)
-		assert.NotNil(t, actual)
+		require.NotNil(t, actual)
 		assert.True(t, actual.TotalCount > 0)
 		assert.Equal(t, len(expected), actual.TotalCount)
 	})
@@ -152,7 +152,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 
 		// assert
 		assert.NoError(t, err)
-		assert.NotNil(t, actual)
+		require.NotNil(t, actual)
 		assert.True(t, actual.TotalCount < 1)
 	})
 
@@ -176,7 +176,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 
 		// assert
 		assert.NoError(t, err)
-		assert.NotNil(t, actual)
+		require.NotNil(t, actual)
 		assert.True(t, actual.TotalCount == 0)
 	})
 
@@ -218,7 +218,7 @@ func TestDynatraceClient_CreateOrUpdateKubernetesSetting(t *testing.T) {
 		actual, err := dtc.(*dynatraceClient).CreateOrUpdateKubernetesSetting(testName, testUID, testScope)
 
 		// assert
-		assert.NotNil(t, actual)
+		require.NotNil(t, actual)
 		assert.NoError(t, err)
 		assert.Len(t, actual, len(testObjectID))
 		assert.EqualValues(t, testObjectID, actual)
@@ -238,7 +238,7 @@ func TestDynatraceClient_CreateOrUpdateKubernetesSetting(t *testing.T) {
 		actual, err := dtc.(*dynatraceClient).CreateOrUpdateKubernetesSetting(testName, testUID, testScope)
 
 		// assert
-		assert.NotNil(t, actual)
+		require.NotNil(t, actual)
 		assert.NoError(t, err)
 		assert.Len(t, actual, len(testObjectID))
 		assert.EqualValues(t, testObjectID, actual)
@@ -312,10 +312,10 @@ func TestDynatraceClient_getKubernetesSettingBody(t *testing.T) {
 		require.NotNil(t, dtc)
 
 		// act
-		actual := dtc.(*dynatraceClient).getKubernetesSettingBody(testName, testUID, testScope, schemaId, true)
+		actual := createV3KubernetesSettingsBody(testName, testUID, testScope)
 
 		// assert
-		assert.NotNil(t, actual)
+		require.NotNil(t, actual)
 		assert.Len(t, actual, 1)
 		assert.EqualValues(t, hierarchicalMonitoringSettingsSchemaVersion, actual[0].SchemaVersion)
 		assert.EqualValues(t, true, actual[0].Value.Enabled)
@@ -341,10 +341,10 @@ func TestDynatraceClient_getKubernetesSettingBody(t *testing.T) {
 		require.NotNil(t, dtc)
 
 		// act
-		actual := dtc.(*dynatraceClient).getKubernetesSettingBody(testName, testUID, testScope, schemaId, false)
+		actual := createV1KubernetesSettingsBody(testName, testUID, testScope)
 
 		// assert
-		assert.NotNil(t, actual)
+		require.NotNil(t, actual)
 		assert.Len(t, actual, 1)
 		assert.EqualValues(t, defaultSchemaVersion, actual[0].SchemaVersion)
 		assert.EqualValues(t, true, actual[0].Value.Enabled)
