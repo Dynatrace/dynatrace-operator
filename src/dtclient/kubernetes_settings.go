@@ -55,10 +55,6 @@ type postSettingsResponse struct {
 	ObjectId string `json:"objectId"`
 }
 
-type getSchemasResponse struct {
-	Version string `json:"version"`
-}
-
 type getSettingsErrorResponse struct {
 	ErrorMessage getSettingsError `json:"error"`
 }
@@ -81,43 +77,6 @@ const (
 	defaultSchemaVersion                        = "1.0.27"
 	hierarchicalMonitoringSettingsSchemaVersion = "3.0.0"
 )
-
-func (dtc *dynatraceClient) GetSchemasVersion(schemaId string) (string, error) {
-	req, err := createBaseRequest(dtc.getSchemasUrl(schemaId), http.MethodGet, dtc.apiToken, nil)
-	if err != nil {
-		return "", err
-	}
-	res, err := dtc.httpClient.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer CloseBodyAfterRequest(res)
-
-	resData, err := io.ReadAll(res.Body)
-	if err != nil {
-		return "", err
-	}
-
-	var resDataJson getSchemasResponse
-	err = json.Unmarshal(resData, &resDataJson)
-	if err != nil {
-		return "", err
-	}
-	return resDataJson.Version, nil
-}
-
-func (dtc *dynatraceClient) isKubernetesHierarchicalMonitoringSettings(schemaId string) (bool, error) {
-	schemaVersion, err := dtc.GetSchemasVersion(schemaId)
-	if err != nil {
-		return false, err
-	}
-	schemaSemVer := strings.Split(schemaVersion, ".")
-	major, err := strconv.Atoi(schemaSemVer[0])
-	if err != nil {
-		return false, err
-	}
-	return major >= 3, nil
-}
 
 func (dtc *dynatraceClient) performCreateOrUpdateKubernetesSetting(body []postKubernetesSettingsBody) (string, error) {
 	bodyData, err := json.Marshal(body)
@@ -159,11 +118,7 @@ func (dtc *dynatraceClient) performCreateOrUpdateKubernetesSetting(body []postKu
 	return resDataJson[0].ObjectId, nil
 }
 
-func (dtc *dynatraceClient) getKubernetesSettingBody(clusterLabel, kubeSystemUUID, scope string, schemaId string) []postKubernetesSettingsBody {
-	isK8sHierarchicalMonitoringSettings, err := dtc.isKubernetesHierarchicalMonitoringSettings(schemaId)
-	if err != nil {
-		log.Info("error on GetSchemasVersion", "error", err)
-	}
+func (dtc *dynatraceClient) getKubernetesSettingBody(clusterLabel, kubeSystemUUID, scope string, schemaId string, isK8sHierarchicalMonitoringSettings bool) []postKubernetesSettingsBody {
 	currentSchemaVersion := defaultSchemaVersion
 	if isK8sHierarchicalMonitoringSettings {
 		currentSchemaVersion = hierarchicalMonitoringSettingsSchemaVersion
@@ -201,9 +156,17 @@ func (dtc *dynatraceClient) CreateOrUpdateKubernetesSetting(clusterLabel, kubeSy
 	if kubeSystemUUID == "" {
 		return "", errors.New("no kube-system namespace UUID given")
 	}
-	body := dtc.getKubernetesSettingBody(clusterLabel, kubeSystemUUID, scope, schemaId)
-
-	return dtc.performCreateOrUpdateKubernetesSetting(body)
+	body := dtc.getKubernetesSettingBody(clusterLabel, kubeSystemUUID, scope, schemaId, true)
+	objectId, err := dtc.performCreateOrUpdateKubernetesSetting(body)
+	if err != nil {
+		if strings.Contains(err.Error(), strconv.Itoa(http.StatusNotFound)) {
+			body = dtc.getKubernetesSettingBody(clusterLabel, kubeSystemUUID, scope, schemaId, false)
+			return dtc.performCreateOrUpdateKubernetesSetting(body)
+		} else {
+			return "", err
+		}
+	}
+	return objectId, nil
 }
 
 func (dtc *dynatraceClient) GetMonitoredEntitiesForKubeSystemUUID(kubeSystemUUID string) ([]MonitoredEntity, error) {
