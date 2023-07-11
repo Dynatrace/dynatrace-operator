@@ -9,5 +9,5 @@ type collector interface {
 
 type collectorCommon struct {
 	log            logr.Logger
-	supportArchive tarball
+	supportArchive archiver
 }
