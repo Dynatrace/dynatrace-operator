@@ -17,19 +17,15 @@ type postKubernetesSettings struct {
 	ClusterIdEnabled bool   `json:"clusterIdEnabled"`
 	ClusterId        string `json:"clusterId"`
 	Enabled          bool   `json:"enabled"`
-	*monitoringSettings
+	*MonitoringSettings
 }
 
-type monitoringSettings struct {
+type MonitoringSettings struct {
 	CloudApplicationPipelineEnabled bool `json:"cloudApplicationPipelineEnabled"`
 	OpenMetricsPipelineEnabled      bool `json:"openMetricsPipelineEnabled"`
 	EventProcessingActive           bool `json:"eventProcessingActive"`
 	EventProcessingV2Active         bool `json:"eventProcessingV2Active"`
 	FilterEvents                    bool `json:"filterEvents"`
-}
-
-func (d *postKubernetesSettings) UnmarshalJSON(b []byte) error {
-	return json.Unmarshal(b, &d.monitoringSettings)
 }
 
 type postKubernetesSettingsBody struct {
@@ -102,12 +98,12 @@ func (dtc *dynatraceClient) GetSchemasVersion(schemaId string) (string, error) {
 		return "", err
 	}
 
-	var resDataJson []getSchemasResponse
+	var resDataJson getSchemasResponse
 	err = json.Unmarshal(resData, &resDataJson)
 	if err != nil {
 		return "", err
 	}
-	return resDataJson[0].Version, nil
+	return resDataJson.Version, nil
 }
 
 func (dtc *dynatraceClient) isKubernetesHierarchicalMonitoringSettings(schemaId string) (bool, error) {
@@ -188,7 +184,7 @@ func (dtc *dynatraceClient) getKubernetesSettingBody(clusterLabel, kubeSystemUUI
 		body[0].Scope = scope
 	}
 	if !isK8sHierarchicalMonitoringSettings {
-		ms := monitoringSettings{
+		ms := MonitoringSettings{
 			CloudApplicationPipelineEnabled: true,
 			OpenMetricsPipelineEnabled:      false,
 			EventProcessingActive:           false,
@@ -196,7 +192,7 @@ func (dtc *dynatraceClient) getKubernetesSettingBody(clusterLabel, kubeSystemUUI
 			EventProcessingV2Active:         false,
 		}
 
-		body[0].Value.monitoringSettings = &ms
+		body[0].Value.MonitoringSettings = &ms
 	}
 	return body
 }

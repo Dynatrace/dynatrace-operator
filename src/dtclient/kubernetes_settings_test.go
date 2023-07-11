@@ -477,10 +477,10 @@ func mockHandleSettingsRequest(request *http.Request, writer http.ResponseWriter
 func mockHandleSettingsSchemasRequest(request *http.Request, writer http.ResponseWriter, version string) {
 	switch request.Method {
 	case http.MethodGet:
-		var settingsPostResponse []getSchemasResponse
-		settingsPostResponse = append(settingsPostResponse, getSchemasResponse{
+		var settingsPostResponse getSchemasResponse
+		settingsPostResponse = getSchemasResponse{
 			Version: version,
-		})
+		}
 		settingsPostResponseBytes, err := json.Marshal(settingsPostResponse)
 		if err != nil {
 			return
