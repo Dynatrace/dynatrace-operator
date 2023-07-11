@@ -37,7 +37,7 @@ func TestConflictingActiveGateConfiguration(t *testing.T) {
 			},
 		})
 
-		assertAllowedResponseWithWarnings(t, 3, &dynatracev1beta1.DynaKube{
+		assertAllowedResponseWithWarnings(t, 1, &dynatracev1beta1.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,
