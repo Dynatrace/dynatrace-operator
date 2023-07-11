@@ -25,14 +25,14 @@ import (
 const (
 	use                            = "support-archive"
 	namespaceFlagName              = "namespace"
-	tarballToStdoutFlagName        = "stdout"
+	archiveToStdoutFlagName        = "stdout"
 	defaultSupportArchiveTargetDir = "/tmp/dynatrace-operator"
 	defaultOperatorAppName         = "dynatrace-operator"
 )
 
 var (
 	namespaceFlagValue       string
-	tarballToStdoutFlagValue bool
+	archiveToStdoutFlagValue bool
 )
 
 type CommandBuilder struct {
@@ -76,13 +76,13 @@ func (builder CommandBuilder) Build() *cobra.Command {
 
 func addFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&namespaceFlagValue, namespaceFlagName, kubeobjects.DefaultNamespace(), "Specify a different Namespace.")
-	cmd.PersistentFlags().BoolVar(&tarballToStdoutFlagValue, tarballToStdoutFlagName, false, "Write tarball to stdout.")
+	cmd.PersistentFlags().BoolVar(&archiveToStdoutFlagValue, archiveToStdoutFlagName, false, "Write tarball to stdout.")
 }
 
 func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		logBuffer := bytes.Buffer{}
-		log := newSupportArchiveLogger(getLogOutput(tarballToStdoutFlagValue, &logBuffer))
+		log := newSupportArchiveLogger(getLogOutput(archiveToStdoutFlagValue, &logBuffer))
 		version.LogVersionToLogger(log)
 
 		err := dynatracev1beta1.AddToScheme(scheme.Scheme)
@@ -90,19 +90,19 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return errors.WithStack(err)
 		}
 
-		tarFile, err := createTarballTargetFile(tarballToStdoutFlagValue, defaultSupportArchiveTargetDir)
+		archiveTargetFile, err := createZipArchiveTargetFile(archiveToStdoutFlagValue, defaultSupportArchiveTargetDir)
 		if err != nil {
 			return err
 		}
-		supportArchive := newTarball(tarFile)
-		defer tarFile.Close()
-		defer supportArchive.close()
+		supportArchive := newZipArchive(archiveTargetFile)
+		defer archiveTargetFile.Close()
+		defer supportArchive.Close()
 
 		err = builder.runCollectors(log, supportArchive)
 		if err != nil {
 			return err
 		}
-		printCopyCommand(log, tarballToStdoutFlagValue, tarFile.Name())
+		printCopyCommand(log, archiveToStdoutFlagValue, archiveTargetFile.Name())
 
 		// make sure to run this collector at the very end
 		newSupportArchiveOutputCollector(log, supportArchive, &logBuffer).Do()
@@ -132,7 +132,7 @@ func getAppNameLabel(ctx context.Context, pods clientgocorev1.PodInterface) stri
 	return defaultOperatorAppName
 }
 
-func (builder CommandBuilder) runCollectors(log logr.Logger, supportArchive tarball) error {
+func (builder CommandBuilder) runCollectors(log logr.Logger, supportArchive archiver) error {
 	context := context.Background()
 
 	kubeConfig, err := builder.configProvider.GetConfig()
