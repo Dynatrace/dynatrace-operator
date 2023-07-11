@@ -159,7 +159,7 @@ func (dtc *dynatraceClient) CreateOrUpdateKubernetesSetting(clusterLabel, kubeSy
 	body := dtc.getKubernetesSettingBody(clusterLabel, kubeSystemUUID, scope, schemaId, true)
 	objectId, err := dtc.performCreateOrUpdateKubernetesSetting(body)
 	if err != nil {
-		if strings.Contains(err.Error(), strconv.Itoa(http.StatusNotFound)) {
+		if k8serrors.IsNotFound(err) {
 			body = dtc.getKubernetesSettingBody(clusterLabel, kubeSystemUUID, scope, schemaId, false)
 			return dtc.performCreateOrUpdateKubernetesSetting(body)
 		} else {
