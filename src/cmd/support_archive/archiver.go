@@ -42,6 +42,11 @@ func (z zipArchive) addFile(fileName string, reader io.Reader) error {
 	if err != nil {
 		return errors.WithMessagef(err, "could not copy the file '%s' data to the zip archive", fileName)
 	}
+
+	err = z.writer.Flush()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
