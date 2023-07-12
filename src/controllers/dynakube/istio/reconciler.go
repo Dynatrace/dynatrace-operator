@@ -1,6 +1,7 @@
 package istio
 
 import (
+	"net"
 	"os"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -26,42 +27,27 @@ type configuration struct {
 	instance   *dynatracev1beta1.DynaKube
 	reconciler *Reconciler
 	name       string
-	commHost   *dtclient.CommunicationHost
+	commHosts  []dtclient.CommunicationHost
 	role       string
 	listOps    *metav1.ListOptions
 }
 
 // NewReconciler - creates new instance of istio controller
-func NewReconciler(config *rest.Config, scheme *runtime.Scheme) *Reconciler {
-	reconciler := &Reconciler{
-		config:    config,
-		scheme:    scheme,
-		namespace: os.Getenv(kubeobjects.EnvPodNamespace),
+func NewReconciler(config *rest.Config, scheme *runtime.Scheme, istio istioclientset.Interface) *Reconciler {
+	return &Reconciler{
+		istioClient: istio,
+		config:      config,
+		scheme:      scheme,
+		namespace:   os.Getenv(kubeobjects.EnvPodNamespace),
 	}
-	istioClient, err := reconciler.initializeIstioClient(config)
-	if err != nil {
-		return nil
-	}
-	reconciler.istioClient = istioClient
-
-	return reconciler
 }
 
-func (reconciler *Reconciler) initializeIstioClient(config *rest.Config) (istioclientset.Interface, error) {
-	ic, err := istioclientset.NewForConfig(config)
-	if err != nil {
-		log.Error(err, "failed to initialize client")
-	}
-
-	return ic, err
-}
-
-// Reconcile - runs the istio's reconcile workflow,
+// Reconcile runs the istio reconcile workflow:
 // creating/deleting VS & SE for external communications
-func (reconciler *Reconciler) Reconcile(instance *dynatracev1beta1.DynaKube, communicationHosts []dtclient.CommunicationHost) (bool, error) {
+func (r *Reconciler) Reconcile(instance *dynatracev1beta1.DynaKube, communicationHosts []dtclient.CommunicationHost) (bool, error) {
 	log.Info("reconciling")
 
-	isInstalled, err := CheckIstioInstalled(reconciler.config)
+	isInstalled, err := CheckIstioInstalled(r.istioClient.Discovery())
 	if err != nil {
 		return false, err
 	} else if !isInstalled {
@@ -74,7 +60,7 @@ func (reconciler *Reconciler) Reconcile(instance *dynatracev1beta1.DynaKube, com
 		return false, err
 	}
 
-	upd, err := reconciler.reconcileIstioConfigurations(instance, []dtclient.CommunicationHost{apiHost}, "api-url")
+	upd, err := r.reconcileIstioConfigurations(instance, []dtclient.CommunicationHost{apiHost}, "api-url")
 	if err != nil {
 		return false, errors.WithMessage(err, "error reconciling config for Dynatrace API URL")
 	} else if upd {
@@ -82,7 +68,7 @@ func (reconciler *Reconciler) Reconcile(instance *dynatracev1beta1.DynaKube, com
 	}
 
 	// Fetch endpoints via Dynatrace client
-	upd, err = reconciler.reconcileIstioConfigurations(instance, communicationHosts, "communication-endpoint")
+	upd, err = r.reconcileIstioConfigurations(instance, communicationHosts, "communication-endpoint")
 	if err != nil {
 		return false, errors.WithMessage(err, "error reconciling config for Dynatrace communication endpoints:")
 	} else if upd {
@@ -92,13 +78,13 @@ func (reconciler *Reconciler) Reconcile(instance *dynatracev1beta1.DynaKube, com
 	return false, nil
 }
 
-func (reconciler *Reconciler) reconcileIstioConfigurations(instance *dynatracev1beta1.DynaKube,
+func (r *Reconciler) reconcileIstioConfigurations(instance *dynatracev1beta1.DynaKube,
 	comHosts []dtclient.CommunicationHost, role string) (bool, error) {
-	add, err := reconciler.reconcileCreateConfigurations(instance, comHosts, role)
+	add, err := r.reconcileCreateConfigurations(instance, comHosts, role)
 	if err != nil {
 		return false, err
 	}
-	rem, err := reconciler.reconcileRemoveConfigurations(instance, comHosts, role)
+	rem, err := r.reconcileRemoveConfigurations(instance, comHosts, role)
 	if err != nil {
 		return false, err
 	}
@@ -106,7 +92,7 @@ func (reconciler *Reconciler) reconcileIstioConfigurations(instance *dynatracev1
 	return add || rem, nil
 }
 
-func (reconciler *Reconciler) reconcileRemoveConfigurations(instance *dynatracev1beta1.DynaKube,
+func (r *Reconciler) reconcileRemoveConfigurations(instance *dynatracev1beta1.DynaKube,
 	comHosts []dtclient.CommunicationHost, role string) (bool, error) {
 	labelSelector := labels.SelectorFromSet(buildIstioLabels(instance.GetName(), role)).String()
 	listOps := &metav1.ListOptions{
@@ -114,12 +100,10 @@ func (reconciler *Reconciler) reconcileRemoveConfigurations(instance *dynatracev
 	}
 
 	seenComHosts := map[string]bool{}
-	for _, comHost := range comHosts {
-		seenComHosts[BuildNameForEndpoint(instance.GetName(), comHost.Protocol, comHost.Host, comHost.Port)] = true
-	}
+	seenComHosts[BuildNameForEndpoint(instance.GetName(), comHosts)] = true
 
 	istioConfig := &configuration{
-		reconciler: reconciler,
+		reconciler: r,
 		listOps:    listOps,
 		instance:   instance,
 	}
@@ -136,32 +120,65 @@ func (reconciler *Reconciler) reconcileRemoveConfigurations(instance *dynatracev
 	return vsUpd || seUpd, nil
 }
 
-func (reconciler *Reconciler) reconcileCreateConfigurations(instance *dynatracev1beta1.DynaKube,
+func (r *Reconciler) reconcileCreateConfigurations(instance *dynatracev1beta1.DynaKube,
 	communicationHosts []dtclient.CommunicationHost, role string) (bool, error) {
 	configurationUpdated := false
+	var createdServiceEntryIP, createdServiceEntryFQNS bool
 
+	// split ips and hosts into two sets and then create
+	var ipHosts []dtclient.CommunicationHost
+	var hostHosts []dtclient.CommunicationHost
 	for _, commHost := range communicationHosts {
-		name := BuildNameForEndpoint(instance.GetName(), commHost.Protocol, commHost.Host, commHost.Port)
-		commHost := commHost
+		if net.ParseIP(commHost.Host) != nil {
+			ipHosts = append(ipHosts, commHost)
+		} else {
+			hostHosts = append(hostHosts, commHost)
+		}
+	}
+
+	if len(ipHosts) != 0 {
+		name := BuildNameForEndpoint(instance.GetName(), communicationHosts)
 		istioConfig := &configuration{
 			instance:   instance,
-			reconciler: reconciler,
+			reconciler: r,
 			name:       name,
-			commHost:   &commHost,
+			commHosts:  ipHosts,
 			role:       role,
 		}
+		serviceEntry := buildServiceEntryIPs(buildObjectMeta(istioConfig.name, istioConfig.instance.GetNamespace()), ipHosts)
 
-		createdServiceEntry, err := handleIstioConfigurationForServiceEntry(istioConfig)
+		var err error
+		createdServiceEntryIP, err = handleIstioConfigurationForServiceEntry(istioConfig, serviceEntry)
 		if err != nil {
 			return false, err
 		}
-		createdVirtualService, err := handleIstioConfigurationForVirtualService(istioConfig)
-		if err != nil {
-			return false, err
-		}
-
-		configurationUpdated = configurationUpdated || createdServiceEntry || createdVirtualService
 	}
+
+	if len(hostHosts) != 0 {
+		name := BuildNameForEndpoint(instance.GetName(), communicationHosts)
+		istioConfig := &configuration{
+			instance:   instance,
+			reconciler: r,
+			name:       name,
+			commHosts:  ipHosts,
+			role:       role,
+		}
+		serviceEntry := buildServiceEntryFQDNs(buildObjectMeta(istioConfig.name, istioConfig.instance.GetNamespace()), hostHosts)
+
+		var err error
+		createdServiceEntryFQNS, err = handleIstioConfigurationForServiceEntry(istioConfig, serviceEntry)
+		if err != nil {
+			return false, err
+		}
+	}
+
+	createdVirtualService, err := handleIstioConfigurationForVirtualService(istioConfig)
+	if err != nil {
+		return false, err
+	}
+
+	createdServiceEntry := createdServiceEntryIP || createdServiceEntryFQNS
+	configurationUpdated = configurationUpdated || createdServiceEntry || createdVirtualService
 
 	return configurationUpdated, nil
 }

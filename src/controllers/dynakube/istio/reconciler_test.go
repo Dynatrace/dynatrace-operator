@@ -1,13 +1,11 @@
 package istio
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
+	"k8s.io/client-go/rest"
 	"net/http"
-	"net/url"
 	"os"
-	"strconv"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -15,11 +13,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	fakeistio "istio.io/client-go/pkg/clientset/versioned/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/rest"
+	fakediscovery "k8s.io/client-go/discovery/fake"
 )
 
 const (
@@ -31,26 +27,7 @@ const (
 	testVirtualServicePort     = 443
 
 	testApiPath = "/path"
-	testVersion = "apps/v1"
 )
-
-func TestIstioClient_CreateIstioObjects(t *testing.T) {
-	buffer := bytes.NewBufferString("{\"apiVersion\":\"networking.istio.io/v1alpha3\",\"kind\":\"VirtualService\",\"metadata\":{\"clusterName\":\"\",\"creationTimestamp\":\"2018-11-26T03:19:57Z\",\"generation\":1,\"name\":\"test-virtual-service\",\"namespace\":\"istio-system\",\"resourceVersion\":\"1297970\",\"selfLink\":\"/apis/networking.istio.io/v1alpha3/namespaces/istio-system/virtualservices/test-virtual-service\",\"uid\":\"266fdacc-f12a-11e8-9e1d-42010a8000ff\"},\"spec\":{\"gateways\":[\"test-gateway\"],\"hosts\":[\"*\"],\"http\":[{\"match\":[{\"uri\":{\"prefix\":\"/\"}}],\"route\":[{\"destination\":{\"host\":\"test-service\",\"port\":{\"number\":8080}}}],\"timeout\":\"10s\"}]}}\n")
-
-	vs := istiov1alpha3.VirtualService{}
-	assert.NoError(t, json.Unmarshal(buffer.Bytes(), &vs))
-
-	ic := fakeistio.NewSimpleClientset(&vs)
-
-	vsList, err := ic.NetworkingV1alpha3().VirtualServices("istio-system").List(context.TODO(), metav1.ListOptions{})
-	if err != nil {
-		t.Errorf("Failed to create VirtualService in %s namespace: %s", DefaultTestNamespace, err)
-	}
-	if len(vsList.Items) == 0 {
-		t.Error("Expected items, got nil")
-	}
-	t.Logf("list of istio object %v", vsList.Items)
-}
 
 func TestIstioClient_BuildDynatraceVirtualService(t *testing.T) {
 	err := os.Setenv(kubeobjects.EnvPodNamespace, DefaultTestNamespace)
@@ -81,34 +58,41 @@ func TestReconcileIstio(t *testing.T) {
 }
 
 func testReconcileIstio(t *testing.T, enableIstioGVR bool) {
-	server := initMockServer(enableIstioGVR)
-	defer server.Close()
+	serverUrl := "http://127.0.0.1:59842"
+	port := 59842
 
-	serverUrl, err := url.Parse(server.URL)
-	require.NoError(t, err)
-
-	port, err := strconv.ParseUint(serverUrl.Port(), 10, 32)
-	require.NoError(t, err)
-
-	virtualService := buildVirtualService(buildObjectMeta(testVirtualServiceName, DefaultTestNamespace), "localhost", serverUrl.Scheme, uint32(port))
+	virtualService := buildVirtualService(buildObjectMeta(testVirtualServiceName, DefaultTestNamespace), "localhost", "http", uint32(port))
 	instance := &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "dynakube",
 			Namespace: DefaultTestNamespace,
 		},
 		Spec: dynatracev1beta1.DynaKubeSpec{
-			APIURL: serverUrl.String(),
-		},
-	}
-	reconciler := Reconciler{
-		istioClient: fakeistio.NewSimpleClientset(virtualService),
-		scheme:      scheme.Scheme,
-		config: &rest.Config{
-			Host:    server.URL,
-			APIPath: testApiPath,
+			APIURL: serverUrl,
 		},
 	}
 
+	ist := fakeistio.NewSimpleClientset(virtualService)
+
+	fakeDiscovery, ok := ist.Discovery().(*fakediscovery.FakeDiscovery)
+	if !ok {
+		t.Fatalf("couldn't convert Discovery() to *FakeDiscovery")
+	}
+
+	if enableIstioGVR {
+		fakeDiscovery.Resources = []*metav1.APIResourceList{{
+			GroupVersion: IstioGVR,
+		}}
+	}
+
+	reconciler := NewReconciler(
+		&rest.Config{
+			Host:    serverUrl,
+			APIPath: "v1alpha3",
+		},
+		scheme.Scheme,
+		ist,
+	)
 	updated, err := reconciler.Reconcile(instance, []dtclient.CommunicationHost{})
 
 	assert.NoError(t, err)

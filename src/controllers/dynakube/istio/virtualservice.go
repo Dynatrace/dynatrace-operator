@@ -3,6 +3,7 @@ package istio
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	istio "istio.io/api/networking/v1alpha3"
@@ -19,32 +20,55 @@ const (
 	protocolHttps = "https"
 )
 
-func buildVirtualService(meta metav1.ObjectMeta, host string, protocol string, port uint32) *istiov1alpha3.VirtualService {
-	if isIp(host) {
+func buildVirtualService(meta metav1.ObjectMeta, commHosts []dtclient.CommunicationHost) *istiov1alpha3.VirtualService {
+	var nonIPhosts []dtclient.CommunicationHost
+
+	for _, commHost := range commHosts {
+		if !isIp(commHost.Host) {
+			nonIPhosts = append(nonIPhosts, commHost)
+		}
+	}
+	if len(nonIPhosts) == 0 {
 		return nil
 	}
 
 	return &istiov1alpha3.VirtualService{
 		ObjectMeta: meta,
-		Spec:       buildVirtualServiceSpec(host, protocol, port),
+		Spec:       buildVirtualServiceSpec(nonIPhosts),
 	}
 }
 
-func buildVirtualServiceSpec(host, protocol string, port uint32) istio.VirtualService {
+func buildVirtualServiceSpec(commHosts []dtclient.CommunicationHost) istio.VirtualService {
 	virtualServiceSpec := istio.VirtualService{}
-	virtualServiceSpec.Hosts = []string{host}
-	switch protocol {
-	case protocolHttps:
-		virtualServiceSpec.Tls = buildVirtualServiceTLSRoute(host, port)
-	case protocolHttp:
-		virtualServiceSpec.Http = buildVirtualServiceHttpRoute(port, host)
+	var (
+		hosts  []string
+		tlses  []*istio.TLSRoute
+		routes []*istio.HTTPRoute
+	)
+
+	for _, commHost := range commHosts {
+		hosts = append(hosts, commHost.Host)
+		switch commHost.Protocol {
+		case protocolHttps:
+			tlses = append(tlses, buildVirtualServiceTLSRoute(commHost.Host, commHost.Port))
+		case protocolHttp:
+			routes = append(routes, buildVirtualServiceHttpRoute(commHost.Host, commHost.Port))
+		}
 	}
 
+	virtualServiceSpec.Hosts = hosts
+
+	if len(routes) != 0 {
+		virtualServiceSpec.Http = routes
+	}
+	if len(tlses) != 0 {
+		virtualServiceSpec.Tls = tlses
+	}
 	return virtualServiceSpec
 }
 
-func buildVirtualServiceHttpRoute(port uint32, host string) []*istio.HTTPRoute {
-	return []*istio.HTTPRoute{{
+func buildVirtualServiceHttpRoute(host string, port uint32) *istio.HTTPRoute {
+	return &istio.HTTPRoute{
 		Match: []*istio.HTTPMatchRequest{{
 			Port: port,
 		}},
@@ -56,11 +80,11 @@ func buildVirtualServiceHttpRoute(port uint32, host string) []*istio.HTTPRoute {
 				},
 			},
 		}},
-	}}
+	}
 }
 
-func buildVirtualServiceTLSRoute(host string, port uint32) []*istio.TLSRoute {
-	return []*istio.TLSRoute{{
+func buildVirtualServiceTLSRoute(host string, port uint32) *istio.TLSRoute {
+	return &istio.TLSRoute{
 		Match: []*istio.TLSMatchAttributes{{
 			SniHosts: []string{host},
 			Port:     port,
@@ -73,7 +97,7 @@ func buildVirtualServiceTLSRoute(host string, port uint32) []*istio.TLSRoute {
 				},
 			},
 		}},
-	}}
+	}
 }
 
 func handleIstioConfigurationForVirtualService(istioConfig *configuration) (bool, error) {

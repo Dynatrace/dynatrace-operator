@@ -3,7 +3,7 @@ package istio
 import (
 	"context"
 	"fmt"
-	"net"
+	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"strconv"
 	"strings"
 
@@ -23,54 +23,57 @@ const (
 	protocolTcp      = "TCP"
 )
 
-func buildServiceEntry(meta metav1.ObjectMeta, host, protocol string, port uint32) *istiov1alpha3.ServiceEntry {
-	if net.ParseIP(host) != nil { // It's an IP.
-		return buildServiceEntryIP(meta, host, port)
+func buildServiceEntryFQDNs(meta metav1.ObjectMeta, hostHosts []dtclient.CommunicationHost) *istiov1alpha3.ServiceEntry {
+	var hosts []string
+	var ports []*istio.ServicePort
+	for _, commHost := range hostHosts {
+		portStr := strconv.Itoa(int(commHost.Port))
+		protocolStr := strings.ToUpper(commHost.Protocol)
+		hosts = append(hosts, commHost.Host)
+		ports = append(ports, &istio.ServicePort{
+			Name:     commHost.Protocol + "-" + portStr,
+			Number:   commHost.Port,
+			Protocol: protocolStr,
+		})
 	}
-
-	return buildServiceEntryFQDN(meta, host, protocol, port)
-}
-
-func buildServiceEntryFQDN(meta metav1.ObjectMeta, host, protocol string, port uint32) *istiov1alpha3.ServiceEntry {
-	portStr := strconv.Itoa(int(port))
-	protocolStr := strings.ToUpper(protocol)
-
 	return &istiov1alpha3.ServiceEntry{
 		ObjectMeta: meta,
 		Spec: istio.ServiceEntry{
-			Hosts: []string{host},
-			Ports: []*istio.ServicePort{{
-				Name:     protocol + "-" + portStr,
-				Number:   port,
-				Protocol: protocolStr,
-			}},
+			Hosts:      hosts,
+			Ports:      ports,
 			Location:   istio.ServiceEntry_MESH_EXTERNAL,
 			Resolution: istio.ServiceEntry_DNS,
 		},
 	}
 }
 
-func buildServiceEntryIP(meta metav1.ObjectMeta, host string, port uint32) *istiov1alpha3.ServiceEntry {
-	portStr := strconv.Itoa(int(port))
+func buildServiceEntryIPs(meta metav1.ObjectMeta, commHosts []dtclient.CommunicationHost) *istiov1alpha3.ServiceEntry {
+	var ports []*istio.ServicePort
+	var addresses []string
+	for _, commHost := range commHosts {
+		portStr := strconv.Itoa(int(commHost.Port))
+		addresses = append(addresses, commHost.Host+subnetMask)
+		ports = append(ports, &istio.ServicePort{
+			Name:     protocolTcp + "-" + portStr,
+			Number:   commHost.Port,
+			Protocol: protocolTcp,
+		})
+
+	}
 
 	return &istiov1alpha3.ServiceEntry{
 		ObjectMeta: meta,
 		Spec: istio.ServiceEntry{
-			Hosts:     []string{ignoredSubdomain},
-			Addresses: []string{host + subnetMask},
-			Ports: []*istio.ServicePort{{
-				Name:     protocolTcp + "-" + portStr,
-				Number:   port,
-				Protocol: protocolTcp,
-			}},
+			Hosts:      []string{ignoredSubdomain},
+			Addresses:  addresses,
+			Ports:      ports,
 			Location:   istio.ServiceEntry_MESH_EXTERNAL,
 			Resolution: istio.ServiceEntry_NONE,
 		},
 	}
 }
 
-func handleIstioConfigurationForServiceEntry(istioConfig *configuration) (bool, error) {
-	serviceEntry := buildServiceEntry(buildObjectMeta(istioConfig.name, istioConfig.instance.GetNamespace()), istioConfig.commHost.Host, istioConfig.commHost.Protocol, istioConfig.commHost.Port)
+func handleIstioConfigurationForServiceEntry(istioConfig *configuration, serviceEntry *istiov1alpha3.ServiceEntry) (bool, error) {
 	err := createIstioConfigurationForServiceEntry(istioConfig.instance, serviceEntry, istioConfig.role, istioConfig.reconciler.istioClient, istioConfig.reconciler.scheme)
 	if errors.IsAlreadyExists(err) {
 		return false, nil
@@ -79,7 +82,8 @@ func handleIstioConfigurationForServiceEntry(istioConfig *configuration) (bool, 
 		log.Error(err, "failed to create ServiceEntry")
 		return false, err
 	}
-	log.Info("ServiceEntry created", "objectName", istioConfig.name, "host", istioConfig.commHost.Host, "port", istioConfig.commHost.Port)
+
+	log.Info("ServiceEntry created", "objectName", istioConfig.name, "hosts", getHosts(istioConfig.commHosts), "ports", getCommunicationPorts(istioConfig.commHosts))
 
 	return true, nil
 }
@@ -124,4 +128,20 @@ func removeIstioConfigurationForServiceEntry(istioConfig *configuration, seen ma
 	}
 
 	return del, nil
+}
+
+func getHosts(commHosts []dtclient.CommunicationHost) []string {
+	var hosts []string
+	for _, commHost := range commHosts {
+		hosts = append(hosts, commHost.Host)
+	}
+	return hosts
+}
+
+func getCommunicationPorts(commHosts []dtclient.CommunicationHost) []uint32 {
+	var ports []uint32
+	for _, commHost := range commHosts {
+		ports = append(ports, commHost.Port)
+	}
+	return ports
 }

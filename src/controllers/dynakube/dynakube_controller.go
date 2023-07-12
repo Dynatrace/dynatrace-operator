@@ -2,6 +2,7 @@ package dynakube
 
 import (
 	"context"
+	istioclientset "istio.io/client-go/pkg/clientset/versioned"
 	"net/http"
 	"os"
 	"time"
@@ -177,8 +178,15 @@ func (controller *Controller) reconcileIstio(dynakube *dynatracev1beta1.DynaKube
 	if dynakube.Spec.EnableIstio {
 		communicationHosts := connectioninfo.GetCommunicationHosts(dynakube)
 
-		var err error
-		updated, err = istio.NewReconciler(controller.config, controller.scheme).Reconcile(dynakube, communicationHosts)
+		log.Info("initializeIstioClient")
+		ic, err := istioclientset.NewForConfig(controller.config)
+
+		if err != nil {
+			log.Error(err, "failed to initialize istio client")
+			return false
+		}
+
+		updated, err = istio.NewReconciler(controller.config, controller.scheme, ic).Reconcile(dynakube, communicationHosts)
 		if err != nil {
 			// If there are errors log them, but move on.
 			log.Info("istio failed to reconcile objects", "error", err)
