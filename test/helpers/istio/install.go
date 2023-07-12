@@ -155,7 +155,7 @@ func checkVirtualServiceForApiUrl(dynakube dynatracev1beta1.DynaKube) features.F
 		serviceName := istio.BuildNameForEndpoint(dynakube.Name, []dtclient.CommunicationHost{apiHost})
 
 		virtualService, err := istioClient(t, environmentConfig.Client().RESTConfig()).NetworkingV1alpha3().VirtualServices(dynakube.Namespace).Get(ctx, serviceName, metav1.GetOptions{})
-		require.Nil(t, err, "istio: faild to get '%s' virtual service object", serviceName)
+		require.Nil(t, err, "istio: failed to get '%s' virtual service object", serviceName)
 
 		require.NotEmpty(t, virtualService.ObjectMeta.OwnerReferences)
 		assert.Equal(t, dynakube.Name, virtualService.ObjectMeta.OwnerReferences[0].Name)

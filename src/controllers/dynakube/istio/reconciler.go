@@ -175,8 +175,8 @@ func (r *Reconciler) reconcileCreateConfigurations(instance *dynatracev1beta1.Dy
 	istioConfig := &configuration{
 		instance:   instance,
 		reconciler: r,
-		name:       BuildNameForEndpoint(instance.GetName(), ipHosts),
-		commHosts:  ipHosts,
+		name:       BuildNameForEndpoint(instance.GetName(), hostHosts),
+		commHosts:  hostHosts,
 		role:       role,
 	}
 

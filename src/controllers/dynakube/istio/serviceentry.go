@@ -25,15 +25,20 @@ const (
 
 func buildServiceEntryFQDNs(meta metav1.ObjectMeta, hostHosts []dtclient.CommunicationHost) *istiov1alpha3.ServiceEntry {
 	hosts := make([]string, len(hostHosts))
-	ports := make([]*istio.ServicePort, len(hostHosts))
+	portSet := make(map[uint32]bool)
+	var ports []*istio.ServicePort
+
 	for i, commHost := range hostHosts {
 		portStr := strconv.Itoa(int(commHost.Port))
 		protocolStr := strings.ToUpper(commHost.Protocol)
 		hosts[i] = commHost.Host
-		ports[i] = &istio.ServicePort{
-			Name:     commHost.Protocol + "-" + portStr,
-			Number:   commHost.Port,
-			Protocol: protocolStr,
+		if !portSet[commHost.Port] {
+			ports = append(ports, &istio.ServicePort{
+				Name:     commHost.Protocol + "-" + portStr,
+				Number:   commHost.Port,
+				Protocol: protocolStr,
+			})
+			portSet[commHost.Port] = true
 		}
 	}
 	return &istiov1alpha3.ServiceEntry{
@@ -48,15 +53,19 @@ func buildServiceEntryFQDNs(meta metav1.ObjectMeta, hostHosts []dtclient.Communi
 }
 
 func buildServiceEntryIPs(meta metav1.ObjectMeta, commHosts []dtclient.CommunicationHost) *istiov1alpha3.ServiceEntry {
-	ports := make([]*istio.ServicePort, len(commHosts))
+	var ports []*istio.ServicePort
+	portSet := make(map[uint32]bool)
 	addresses := make([]string, len(commHosts))
 	for i, commHost := range commHosts {
 		portStr := strconv.Itoa(int(commHost.Port))
 		addresses[i] = commHost.Host + subnetMask
-		ports[i] = &istio.ServicePort{
-			Name:     protocolTcp + "-" + portStr,
-			Number:   commHost.Port,
-			Protocol: protocolTcp,
+		if !portSet[commHost.Port] {
+			ports = append(ports, &istio.ServicePort{
+				Name:     protocolTcp + "-" + portStr,
+				Number:   commHost.Port,
+				Protocol: protocolTcp,
+			})
+			portSet[commHost.Port] = true
 		}
 	}
 
