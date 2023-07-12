@@ -2,7 +2,6 @@ package dynakube
 
 import (
 	"context"
-	istioclientset "istio.io/client-go/pkg/clientset/versioned"
 	"net/http"
 	"os"
 	"time"
@@ -28,6 +27,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
+	istioclientset "istio.io/client-go/pkg/clientset/versioned"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"

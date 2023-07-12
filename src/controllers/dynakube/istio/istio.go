@@ -4,14 +4,13 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"k8s.io/client-go/discovery"
 	"net"
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"k8s.io/client-go/discovery"
 )
 
 var (

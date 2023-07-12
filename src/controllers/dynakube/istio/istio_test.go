@@ -1,12 +1,13 @@
 package istio
 
 import (
+	"testing"
+
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/stretchr/testify/assert"
 	fakeistio "istio.io/client-go/pkg/clientset/versioned/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	fakediscovery "k8s.io/client-go/discovery/fake"
-	"testing"
 )
 
 func TestIstio(t *testing.T) {

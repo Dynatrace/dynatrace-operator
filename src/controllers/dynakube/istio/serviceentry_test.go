@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/stretchr/testify/assert"
 	istio "istio.io/api/networking/v1alpha3"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
@@ -40,10 +41,20 @@ func TestServiceEntryGeneration(t *testing.T) {
 				Resolution: istio.ServiceEntry_DNS,
 			},
 		}
-		result := buildServiceEntry(buildObjectMeta(testName, testNamespace), testHost, protocolHttps, testPort)
+		commHosts1 := []dtclient.CommunicationHost{{
+			Host:     testHost,
+			Port:     testPort,
+			Protocol: protocolHttps,
+		}}
+		result := buildServiceEntryFQDNs(buildObjectMeta(testName, testNamespace), commHosts1)
 		assert.EqualValues(t, expected, result)
 
-		result = buildServiceEntry(buildObjectMeta(testName, testNamespace), testHost1, protocolHttps, testPort1)
+		commHosts2 := []dtclient.CommunicationHost{{
+			Host:     testHost1,
+			Port:     testPort1,
+			Protocol: protocolHttps,
+		}}
+		result = buildServiceEntryFQDNs(buildObjectMeta(testName, testNamespace), commHosts2)
 		assert.NotEqualValues(t, expected, result)
 	})
 	t.Run(`generate with Ip`, func(t *testing.T) {
@@ -65,29 +76,57 @@ func TestServiceEntryGeneration(t *testing.T) {
 				Resolution: istio.ServiceEntry_NONE,
 			},
 		}
-		result := buildServiceEntry(buildObjectMeta(testName, testNamespace), testIp, protocolHttps, testPort)
+		commHosts1 := []dtclient.CommunicationHost{{
+			Host:     testIp,
+			Port:     testPort,
+			Protocol: protocolHttps,
+		}}
+		result := buildServiceEntryIPs(buildObjectMeta(testName, testNamespace), commHosts1)
 		assert.EqualValues(t, expected, result)
 
-		result = buildServiceEntry(buildObjectMeta(testName, testNamespace), testIp, protocolHttps, testPort1)
+		commHosts2 := []dtclient.CommunicationHost{{
+			Host:     testIp,
+			Port:     testPort1,
+			Protocol: protocolHttps,
+		}}
+		result = buildServiceEntryIPs(buildObjectMeta(testName, testNamespace), commHosts2)
 		assert.NotEqualValues(t, expected, result)
 	})
 }
 
 func TestBuildServiceEntryForHostname(t *testing.T) {
 	expected := buildExpectedServiceEntryForHostname(t)
-	result := buildServiceEntryFQDN(buildObjectMeta(testName, testNamespace), testHost1, protocolHttp, testPort1)
+	commHosts1 := []dtclient.CommunicationHost{{
+		Host:     testHost1,
+		Port:     testPort1,
+		Protocol: protocolHttp,
+	}}
+	result := buildServiceEntryFQDNs(buildObjectMeta(testName, testNamespace), commHosts1)
 	assert.EqualValues(t, expected, result)
 
-	result = buildServiceEntryFQDN(buildObjectMeta(testName, testNamespace), testHost2, protocolHttp, testPort2)
+	commHosts2 := []dtclient.CommunicationHost{{
+		Host:     testHost2,
+		Port:     testPort2,
+		Protocol: protocolHttp,
+	}}
+	result = buildServiceEntryFQDNs(buildObjectMeta(testName, testNamespace), commHosts2)
 	assert.NotEqualValues(t, expected, result)
 }
 
 func TestBuildServiceEntryIp(t *testing.T) {
 	expected := buildExpectedServiceEntryForIp(t)
-	result := buildServiceEntryIP(buildObjectMeta(testName, testNamespace), testHost1, testPort1)
+	commHosts1 := []dtclient.CommunicationHost{{
+		Host: testIP1,
+		Port: testPort1,
+	}}
+	result := buildServiceEntryIPs(buildObjectMeta(testName, testNamespace), commHosts1)
 	assert.EqualValues(t, expected, result)
 
-	result = buildServiceEntryIP(buildObjectMeta(testName, testNamespace), testHost2, testPort2)
+	commHosts2 := []dtclient.CommunicationHost{{
+		Host: testIP2,
+		Port: testPort2,
+	}}
+	result = buildServiceEntryIPs(buildObjectMeta(testName, testNamespace), commHosts2)
 	assert.NotEqualValues(t, expected, result)
 }
 
@@ -118,7 +157,7 @@ func buildExpectedServiceEntryForIp(_ *testing.T) *istiov1alpha3.ServiceEntry {
 		},
 		Spec: istio.ServiceEntry{
 			Hosts:     []string{ignoredSubdomain},
-			Addresses: []string{testHost1 + subnetMask},
+			Addresses: []string{"42.42.42.42" + subnetMask},
 			Ports: []*istio.ServicePort{{
 				Name:     protocolTcp + "-" + testPort1String,
 				Number:   testPort1,

@@ -3,11 +3,11 @@ package istio
 import (
 	"context"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"strconv"
 	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	istio "istio.io/api/networking/v1alpha3"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	istioclientset "istio.io/client-go/pkg/clientset/versioned"
@@ -24,17 +24,17 @@ const (
 )
 
 func buildServiceEntryFQDNs(meta metav1.ObjectMeta, hostHosts []dtclient.CommunicationHost) *istiov1alpha3.ServiceEntry {
-	var hosts []string
-	var ports []*istio.ServicePort
-	for _, commHost := range hostHosts {
+	hosts := make([]string, len(hostHosts))
+	ports := make([]*istio.ServicePort, len(hostHosts))
+	for i, commHost := range hostHosts {
 		portStr := strconv.Itoa(int(commHost.Port))
 		protocolStr := strings.ToUpper(commHost.Protocol)
-		hosts = append(hosts, commHost.Host)
-		ports = append(ports, &istio.ServicePort{
+		hosts[i] = commHost.Host
+		ports[i] = &istio.ServicePort{
 			Name:     commHost.Protocol + "-" + portStr,
 			Number:   commHost.Port,
 			Protocol: protocolStr,
-		})
+		}
 	}
 	return &istiov1alpha3.ServiceEntry{
 		ObjectMeta: meta,
@@ -48,17 +48,16 @@ func buildServiceEntryFQDNs(meta metav1.ObjectMeta, hostHosts []dtclient.Communi
 }
 
 func buildServiceEntryIPs(meta metav1.ObjectMeta, commHosts []dtclient.CommunicationHost) *istiov1alpha3.ServiceEntry {
-	var ports []*istio.ServicePort
-	var addresses []string
-	for _, commHost := range commHosts {
+	ports := make([]*istio.ServicePort, len(commHosts))
+	addresses := make([]string, len(commHosts))
+	for i, commHost := range commHosts {
 		portStr := strconv.Itoa(int(commHost.Port))
-		addresses = append(addresses, commHost.Host+subnetMask)
-		ports = append(ports, &istio.ServicePort{
+		addresses[i] = commHost.Host + subnetMask
+		ports[i] = &istio.ServicePort{
 			Name:     protocolTcp + "-" + portStr,
 			Number:   commHost.Port,
 			Protocol: protocolTcp,
-		})
-
+		}
 	}
 
 	return &istiov1alpha3.ServiceEntry{
@@ -83,7 +82,7 @@ func handleIstioConfigurationForServiceEntry(istioConfig *configuration, service
 		return false, err
 	}
 
-	log.Info("ServiceEntry created", "objectName", istioConfig.name, "hosts", getHosts(istioConfig.commHosts), "ports", getCommunicationPorts(istioConfig.commHosts))
+	log.Info("ServiceEntry created", "objectName", istioConfig.name, "hosts", getHosts(istioConfig.commHosts), "ports", getPorts(istioConfig.commHosts))
 
 	return true, nil
 }
@@ -131,17 +130,25 @@ func removeIstioConfigurationForServiceEntry(istioConfig *configuration, seen ma
 }
 
 func getHosts(commHosts []dtclient.CommunicationHost) []string {
-	var hosts []string
-	for _, commHost := range commHosts {
-		hosts = append(hosts, commHost.Host)
+	hosts := make([]string, len(commHosts))
+	for i, commHost := range commHosts {
+		hosts[i] = commHost.Host
 	}
 	return hosts
 }
 
-func getCommunicationPorts(commHosts []dtclient.CommunicationHost) []uint32 {
-	var ports []uint32
-	for _, commHost := range commHosts {
-		ports = append(ports, commHost.Port)
+func getPorts(commHosts []dtclient.CommunicationHost) []uint32 {
+	ports := make([]uint32, len(commHosts))
+	for i, commHost := range commHosts {
+		ports[i] = commHost.Port
 	}
 	return ports
+}
+
+func getProtocols(commHosts []dtclient.CommunicationHost) []string {
+	protocols := make([]string, len(commHosts))
+	for i, commHost := range commHosts {
+		protocols[i] = commHost.Protocol
+	}
+	return protocols
 }

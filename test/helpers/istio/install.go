@@ -152,7 +152,7 @@ func determineIstioInitContainerName(t *testing.T) string {
 func checkVirtualServiceForApiUrl(dynakube dynatracev1beta1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		apiHost := apiUrlCommunicationHost(t)
-		serviceName := istio.BuildNameForEndpoint(dynakube.Name, apiHost.Protocol, apiHost.Host, apiHost.Port)
+		serviceName := istio.BuildNameForEndpoint(dynakube.Name, []dtclient.CommunicationHost{apiHost})
 
 		virtualService, err := istioClient(t, environmentConfig.Client().RESTConfig()).NetworkingV1alpha3().VirtualServices(dynakube.Namespace).Get(ctx, serviceName, metav1.GetOptions{})
 		require.Nil(t, err, "istio: faild to get '%s' virtual service object", serviceName)
@@ -170,7 +170,7 @@ func checkVirtualServiceForApiUrl(dynakube dynatracev1beta1.DynaKube) features.F
 func checkServiceEntryForApiUrl(dynakube dynatracev1beta1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		apiHost := apiUrlCommunicationHost(t)
-		serviceName := istio.BuildNameForEndpoint(dynakube.Name, apiHost.Protocol, apiHost.Host, apiHost.Port)
+		serviceName := istio.BuildNameForEndpoint(dynakube.Name, []dtclient.CommunicationHost{apiHost})
 
 		serviceEntry, err := istioClient(t, environmentConfig.Client().RESTConfig()).NetworkingV1alpha3().ServiceEntries(dynakube.Namespace).Get(ctx, serviceName, metav1.GetOptions{})
 		require.Nil(t, err, "istio: failed to get '%s' service entry object", serviceName)

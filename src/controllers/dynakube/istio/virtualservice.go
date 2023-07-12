@@ -3,9 +3,9 @@ package istio
 import (
 	"context"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	istio "istio.io/api/networking/v1alpha3"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	istioclientset "istio.io/client-go/pkg/clientset/versioned"
@@ -40,14 +40,14 @@ func buildVirtualService(meta metav1.ObjectMeta, commHosts []dtclient.Communicat
 
 func buildVirtualServiceSpec(commHosts []dtclient.CommunicationHost) istio.VirtualService {
 	virtualServiceSpec := istio.VirtualService{}
+	hosts := make([]string, len(commHosts))
 	var (
-		hosts  []string
 		tlses  []*istio.TLSRoute
 		routes []*istio.HTTPRoute
 	)
 
-	for _, commHost := range commHosts {
-		hosts = append(hosts, commHost.Host)
+	for i, commHost := range commHosts {
+		hosts[i] = commHost.Host
 		switch commHost.Protocol {
 		case protocolHttps:
 			tlses = append(tlses, buildVirtualServiceTLSRoute(commHost.Host, commHost.Port))
@@ -101,8 +101,7 @@ func buildVirtualServiceTLSRoute(host string, port uint32) *istio.TLSRoute {
 }
 
 func handleIstioConfigurationForVirtualService(istioConfig *configuration) (bool, error) {
-	virtualService := buildVirtualService(metav1.ObjectMeta{Name: istioConfig.name, Namespace: istioConfig.instance.GetNamespace()}, istioConfig.commHost.Host, istioConfig.commHost.Protocol,
-		istioConfig.commHost.Port)
+	virtualService := buildVirtualService(metav1.ObjectMeta{Name: istioConfig.name, Namespace: istioConfig.instance.GetNamespace()}, istioConfig.commHosts)
 	if virtualService == nil {
 		return false, nil
 	}
@@ -115,8 +114,8 @@ func handleIstioConfigurationForVirtualService(istioConfig *configuration) (bool
 		log.Error(err, "failed to create VirtualService")
 		return false, err
 	}
-	log.Info("VirtualService created", "objectName", istioConfig.name, "host", istioConfig.commHost.Host,
-		"port", istioConfig.commHost.Port, "protocol", istioConfig.commHost.Protocol)
+	log.Info("VirtualService created", "objectName", istioConfig.name, "hosts", getHosts(istioConfig.commHosts),
+		"ports", getPorts(istioConfig.commHosts), "protocol", getProtocols(istioConfig.commHosts))
 
 	return true, nil
 }

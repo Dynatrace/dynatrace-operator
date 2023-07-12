@@ -2,9 +2,6 @@ package istio
 
 import (
 	"context"
-	"encoding/json"
-	"k8s.io/client-go/rest"
-	"net/http"
 	"os"
 	"testing"
 
@@ -16,6 +13,7 @@ import (
 	fakeistio "istio.io/client-go/pkg/clientset/versioned/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	fakediscovery "k8s.io/client-go/discovery/fake"
+	"k8s.io/client-go/rest"
 )
 
 const (
@@ -25,8 +23,6 @@ const (
 	testVirtualServiceHost     = "ENVIRONMENTID.live.dynatrace.com"
 	testVirtualServiceProtocol = "https"
 	testVirtualServicePort     = 443
-
-	testApiPath = "/path"
 )
 
 func TestIstioClient_BuildDynatraceVirtualService(t *testing.T) {
@@ -35,7 +31,11 @@ func TestIstioClient_BuildDynatraceVirtualService(t *testing.T) {
 		t.Error("Failed to set environment variable")
 	}
 
-	vs := buildVirtualService(buildObjectMeta(testVirtualServiceName, DefaultTestNamespace), testVirtualServiceHost, testVirtualServiceProtocol, testVirtualServicePort)
+	commHosts := []dtclient.CommunicationHost{
+		{Host: testVirtualServiceHost, Port: testVirtualServicePort, Protocol: testVirtualServiceProtocol},
+	}
+
+	vs := buildVirtualService(buildObjectMeta(testVirtualServiceName, DefaultTestNamespace), commHosts)
 	ic := fakeistio.NewSimpleClientset(vs)
 	vsList, err := ic.NetworkingV1alpha3().VirtualServices(DefaultTestNamespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
@@ -61,7 +61,13 @@ func testReconcileIstio(t *testing.T, enableIstioGVR bool) {
 	serverUrl := "http://127.0.0.1:59842"
 	port := 59842
 
-	virtualService := buildVirtualService(buildObjectMeta(testVirtualServiceName, DefaultTestNamespace), "localhost", "http", uint32(port))
+	commHosts := []dtclient.CommunicationHost{{
+		Host:     "localhost",
+		Port:     uint32(port),
+		Protocol: "http",
+	},
+	}
+	virtualService := buildVirtualService(buildObjectMeta(testVirtualServiceName, DefaultTestNamespace), commHosts)
 	instance := &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "dynakube",
@@ -102,17 +108,4 @@ func testReconcileIstio(t *testing.T, enableIstioGVR bool) {
 
 	assert.NoError(t, err)
 	assert.False(t, update)
-}
-
-func sendData(i any, w http.ResponseWriter) {
-	data, err := json.Marshal(i)
-
-	if err != nil {
-		w.WriteHeader(500)
-		_, _ = w.Write([]byte(err.Error()))
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, _ = w.Write(data)
 }

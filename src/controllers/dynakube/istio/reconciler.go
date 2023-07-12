@@ -137,7 +137,7 @@ func (r *Reconciler) reconcileCreateConfigurations(instance *dynatracev1beta1.Dy
 	}
 
 	if len(ipHosts) != 0 {
-		name := BuildNameForEndpoint(instance.GetName(), communicationHosts)
+		name := BuildNameForEndpoint(instance.GetName(), ipHosts)
 		istioConfig := &configuration{
 			instance:   instance,
 			reconciler: r,
@@ -155,7 +155,7 @@ func (r *Reconciler) reconcileCreateConfigurations(instance *dynatracev1beta1.Dy
 	}
 
 	if len(hostHosts) != 0 {
-		name := BuildNameForEndpoint(instance.GetName(), communicationHosts)
+		name := BuildNameForEndpoint(instance.GetName(), hostHosts)
 		istioConfig := &configuration{
 			instance:   instance,
 			reconciler: r,
@@ -170,6 +170,14 @@ func (r *Reconciler) reconcileCreateConfigurations(instance *dynatracev1beta1.Dy
 		if err != nil {
 			return false, err
 		}
+	}
+
+	istioConfig := &configuration{
+		instance:   instance,
+		reconciler: r,
+		name:       BuildNameForEndpoint(instance.GetName(), ipHosts),
+		commHosts:  ipHosts,
+		role:       role,
 	}
 
 	createdVirtualService, err := handleIstioConfigurationForVirtualService(istioConfig)
