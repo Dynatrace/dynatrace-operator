@@ -43,10 +43,7 @@ func TestTroubleshootCollector(t *testing.T) {
 	)
 
 	tarBuffer := bytes.Buffer{}
-	supportArchive := tarball{
-		tarWriter: tar.NewWriter(&tarBuffer),
-	}
-
+	supportArchive := newZipArchive(tar.NewWriter(&tarBuffer))
 	ctx := context.TODO()
 	require.NoError(t, newTroubleshootCollector(ctx, log, supportArchive, testOperatorNamespace, clt, rest.Config{}).Do())
 

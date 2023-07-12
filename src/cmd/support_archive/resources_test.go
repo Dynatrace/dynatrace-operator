@@ -88,9 +88,7 @@ func TestManifestCollector_Success(t *testing.T) {
 	)
 
 	tarBuffer := bytes.Buffer{}
-	supportArchive := tarball{
-		tarWriter: tar.NewWriter(&tarBuffer),
-	}
+	supportArchive := newZipArchive(tar.NewWriter(&tarBuffer))
 
 	ctx := context.TODO()
 	require.NoError(t, newK8sObjectCollector(ctx, log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt).Do())
@@ -126,9 +124,7 @@ func TestManifestCollector_NoManifestsAvailable(t *testing.T) {
 	clt := fake.NewClientWithIndex()
 
 	tarBuffer := bytes.Buffer{}
-	supportArchive := tarball{
-		tarWriter: tar.NewWriter(&tarBuffer),
-	}
+	supportArchive := newZipArchive(tar.NewWriter(&tarBuffer))
 
 	ctx := context.TODO()
 
@@ -170,9 +166,7 @@ func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
 	context := context.TODO()
 
 	tarBuffer := bytes.Buffer{}
-	supportArchive := tarball{
-		tarWriter: tar.NewWriter(&tarBuffer),
-	}
+	supportArchive := newZipArchive(tar.NewWriter(&tarBuffer))
 
 	collector := newK8sObjectCollector(context, log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt)
 	require.NoError(t, collector.Do())

@@ -20,10 +20,8 @@ func TestSuppotrArchiveOutputCollector(t *testing.T) {
 
 	supportArchiveOutputCollector := supportArchiveOutputCollector{
 		collectorCommon: collectorCommon{
-			log: newSupportArchiveLogger(&logBuffer),
-			supportArchive: tarball{
-				tarWriter: tar.NewWriter(&tarBuffer),
-			},
+			log:            newSupportArchiveLogger(&logBuffer),
+			supportArchive: newZipArchive(tar.NewWriter(&tarBuffer)),
 		},
 
 		output: strings.NewReader(supportArchiveOutput),

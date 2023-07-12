@@ -1,12 +1,10 @@
 package support_archive
 
 import (
-	"archive/tar"
+	"archive/zip"
+	"bufio"
 	"bytes"
 	"context"
-	"io"
-	"testing"
-
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	corev1mocks "github.com/Dynatrace/dynatrace-operator/src/mocks/k8s.io/client-go/kubernetes/typed/core/v1"
 	"github.com/stretchr/testify/assert"
@@ -16,6 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	"testing"
 )
 
 func TestLogCollector(t *testing.T) {
@@ -42,10 +41,8 @@ func TestLogCollector(t *testing.T) {
 
 	logBuffer := bytes.Buffer{}
 
-	tarBuffer := bytes.Buffer{}
-	supportArchive := tarball{
-		tarWriter: tar.NewWriter(&tarBuffer),
-	}
+	buffer := bytes.Buffer{}
+	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
 
 	logCollector := newLogCollector(context.TODO(),
 		newSupportArchiveLogger(&logBuffer),
@@ -55,51 +52,35 @@ func TestLogCollector(t *testing.T) {
 
 	require.NoError(t, logCollector.Do())
 
-	supportArchive.tarWriter.Close()
+	supportArchive.Close()
 
-	tarReader := tar.NewReader(&tarBuffer)
-	tarHeader, err := tarReader.Next()
-	require.NoError(t, err)
-	assert.Equal(t, "logs/pod1/container1.log", tarHeader.Name)
+	zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(buffer.Len()))
+	assert.NoError(t, err)
+	assert.Equal(t, "logs/pod1/container1.log", zipReader.File[0].Name)
 
-	tarHeader, err = tarReader.Next()
-	require.NoError(t, err)
-	assert.Equal(t, "logs/pod1/container1_previous.log", tarHeader.Name)
+	assert.Equal(t, "logs/pod1/container1_previous.log", zipReader.File[1].Name)
 
-	tarHeader, err = tarReader.Next()
-	require.NoError(t, err)
-	assert.Equal(t, "logs/pod1/container2.log", tarHeader.Name)
+	assert.Equal(t, "logs/pod1/container2.log", zipReader.File[2].Name)
 
-	tarHeader, err = tarReader.Next()
-	require.NoError(t, err)
-	assert.Equal(t, "logs/pod1/container2_previous.log", tarHeader.Name)
+	assert.Equal(t, "logs/pod1/container2_previous.log", zipReader.File[3].Name)
 
-	tarHeader, err = tarReader.Next()
-	require.NoError(t, err)
-	assert.Equal(t, "logs/pod2/container1.log", tarHeader.Name)
+	assert.Equal(t, "logs/pod2/container1.log", zipReader.File[4].Name)
 
-	tarHeader, err = tarReader.Next()
-	require.NoError(t, err)
-	assert.Equal(t, "logs/pod2/container1_previous.log", tarHeader.Name)
+	assert.Equal(t, "logs/pod2/container1_previous.log", zipReader.File[5].Name)
 
-	tarHeader, err = tarReader.Next()
-	require.NoError(t, err)
-	assert.Equal(t, "logs/pod2/container2.log", tarHeader.Name)
+	assert.Equal(t, "logs/pod2/container2.log", zipReader.File[6].Name)
 
-	tarHeader, err = tarReader.Next()
-	require.NoError(t, err)
-	assert.Equal(t, "logs/pod2/container2_previous.log", tarHeader.Name)
+	assert.Equal(t, "logs/pod2/container2_previous.log", zipReader.File[7].Name)
 }
 
 //go:generate mockery --case=snake --srcpkg=k8s.io/client-go/kubernetes/typed/core/v1 --with-expecter --name=PodInterface --output ../../mocks/k8s.io/client-go/kubernetes/typed/core/v1
 func TestLogCollectorPodListError(t *testing.T) {
 	context := context.Background()
 	logBuffer := bytes.Buffer{}
-	tarBuffer := bytes.Buffer{}
-	supportArchive := tarball{
-		tarWriter: tar.NewWriter(&tarBuffer),
-	}
-	defer supportArchive.tarWriter.Close()
+	buffer := bytes.Buffer{}
+
+	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
+	defer supportArchive.Close()
 
 	mockedPods := corev1mocks.NewPodInterface(t)
 	mockedPods.EXPECT().
@@ -122,11 +103,9 @@ func TestLogCollectorGetPodFail(t *testing.T) {
 
 	logBuffer := bytes.Buffer{}
 
-	tarBuffer := bytes.Buffer{}
-	supportArchive := tarball{
-		tarWriter: tar.NewWriter(&tarBuffer),
-	}
-	defer supportArchive.tarWriter.Close()
+	buffer := bytes.Buffer{}
+	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
+	defer supportArchive.Close()
 
 	mockedPods := corev1mocks.NewPodInterface(t)
 	listOptions := createPodListOptions()
@@ -153,11 +132,9 @@ func TestLogCollectorGetLogsFail(t *testing.T) {
 
 	logBuffer := bytes.Buffer{}
 
-	tarBuffer := bytes.Buffer{}
-	supportArchive := tarball{
-		tarWriter: tar.NewWriter(&tarBuffer),
-	}
-	defer supportArchive.tarWriter.Close()
+	buffer := bytes.Buffer{}
+	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
+	defer supportArchive.Close()
 
 	mockedPods := corev1mocks.NewPodInterface(t)
 	listOptions := createPodListOptions()
@@ -225,11 +202,9 @@ func TestLogCollectorNoAbortOnError(t *testing.T) {
 
 	logBuffer := bytes.Buffer{}
 
-	tarBuffer := bytes.Buffer{}
-	supportArchive := tarball{
-		tarWriter: tar.NewWriter(&tarBuffer),
-	}
-	defer supportArchive.tarWriter.Close()
+	buffer := bytes.Buffer{}
+	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
+	defer supportArchive.Close()
 
 	mockedPods := corev1mocks.NewPodInterface(t)
 	listOptions := createPodListOptions()
@@ -268,20 +243,15 @@ func TestLogCollectorNoAbortOnError(t *testing.T) {
 	logCollector := newLogCollector(context, newSupportArchiveLogger(&logBuffer), supportArchive, mockedPods, defaultOperatorAppName)
 	require.NoError(t, logCollector.Do())
 
-	supportArchive.tarWriter.Close()
+	supportArchive.Close()
 
-	tarReader := tar.NewReader(&tarBuffer)
+	zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(buffer.Len()))
+	assert.NoError(t, err)
 
-	tarHeader, err := tarReader.Next()
-	require.NoError(t, err)
-	assert.Equal(t, "logs/pod2/container1_previous.log", tarHeader.Name)
+	assert.Equal(t, "logs/pod2/container1_previous.log", zipReader.File[0].Name)
 
-	tarHeader, err = tarReader.Next()
-	require.NoError(t, err)
-	assert.Equal(t, "logs/pod2/container2.log", tarHeader.Name)
+	assert.Equal(t, "logs/pod2/container2.log", zipReader.File[1].Name)
 
-	_, err = tarReader.Next()
-	require.ErrorIs(t, err, io.EOF)
 }
 
 func createPod(name string) *corev1.Pod {
