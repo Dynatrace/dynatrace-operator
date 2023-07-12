@@ -35,10 +35,10 @@ DT_METRICS_INGEST_API_TOKEN=updated-test-data-ingest-token
 DT_METRICS_INGEST_API_TOKEN=test-data-ingest-token
 `
 
-	testDataIngestSecretLocalAGWithMetrics = `DT_METRICS_INGEST_URL=https://dynakube-activegate.dynatrace/e/tenant/api/v2/metrics/ingest
+	testDataIngestSecretLocalAGWithMetrics = `DT_METRICS_INGEST_URL=http://dynakube-activegate.dynatrace/e/tenant/api/v2/metrics/ingest
 DT_METRICS_INGEST_API_TOKEN=test-data-ingest-token
 `
-	testUpdatedApiUrlDataIngestSecretLocalAgWithMetrics = `DT_METRICS_INGEST_URL=https://dynakube-activegate.dynatrace/e/tenant/api/v2/metrics/ingest
+	testUpdatedApiUrlDataIngestSecretLocalAgWithMetrics = `DT_METRICS_INGEST_URL=http://dynakube-activegate.dynatrace/e/tenant/api/v2/metrics/ingest
 DT_METRICS_INGEST_API_TOKEN=test-data-ingest-token
 `
 

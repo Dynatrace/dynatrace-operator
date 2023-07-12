@@ -34,7 +34,6 @@ var validators = []validator{
 
 var warnings = []validator{
 	deprecatedFeatureFlagFormat,
-	metricIngestPreviewWarning,
 	missingActiveGateMemoryLimit,
 	deprecatedFeatureFlagDisableActiveGateUpdates,
 	deprecatedFeatureFlagDisableActiveGateRawImage,
