@@ -1,11 +1,11 @@
 package support_archive
 
 import (
-	"archive/tar"
+	"archive/zip"
+	"bufio"
 	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -87,11 +87,12 @@ func TestManifestCollector_Success(t *testing.T) {
 		},
 	)
 
-	tarBuffer := bytes.Buffer{}
-	supportArchive := newZipArchive(tar.NewWriter(&tarBuffer))
+	buffer := bytes.Buffer{}
+	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
 
 	ctx := context.TODO()
 	require.NoError(t, newK8sObjectCollector(ctx, log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt).Do())
+	supportArchive.Close()
 
 	expectedFiles := []string{
 		fmt.Sprintf("%s/namespace-some-app-namespace%s", InjectedNamespacesManifestsDirectoryName, manifestExtension),
@@ -103,18 +104,15 @@ func TestManifestCollector_Success(t *testing.T) {
 		fmt.Sprintf("%s/dynakube/dynakube1%s", testOperatorNamespace, manifestExtension),
 	}
 
-	tarReader := tar.NewReader(&tarBuffer)
+	zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(buffer.Len()))
 
-	for _, expectedFile := range expectedFiles {
+	for i, expectedFile := range expectedFiles {
 		t.Run("expected "+expectedFile, func(t *testing.T) {
-			hdr, err := tarReader.Next()
 			require.NoError(t, err)
-			assert.Equal(t, expectedFilename(expectedFile), hdr.Name)
+			assert.Equal(t, expectedFilename(expectedFile), zipReader.File[i].Name)
 		})
 	}
 
-	_, err := tarReader.Next()
-	require.ErrorIs(t, err, io.EOF)
 }
 
 func TestManifestCollector_NoManifestsAvailable(t *testing.T) {
@@ -123,17 +121,17 @@ func TestManifestCollector_NoManifestsAvailable(t *testing.T) {
 
 	clt := fake.NewClientWithIndex()
 
-	tarBuffer := bytes.Buffer{}
-	supportArchive := newZipArchive(tar.NewWriter(&tarBuffer))
+	buffer := bytes.Buffer{}
+	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
 
 	ctx := context.TODO()
 
 	err := newK8sObjectCollector(ctx, log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt).Do()
 	require.NoError(t, err)
-
-	tarReader := tar.NewReader(&tarBuffer)
-	_, err = tarReader.Next()
-	require.ErrorIs(t, err, io.EOF)
+	supportArchive.Close()
+	zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(buffer.Len()))
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(zipReader.File))
 }
 
 func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
@@ -165,28 +163,20 @@ func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
 
 	context := context.TODO()
 
-	tarBuffer := bytes.Buffer{}
-	supportArchive := newZipArchive(tar.NewWriter(&tarBuffer))
+	buffer := bytes.Buffer{}
+	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
 
 	collector := newK8sObjectCollector(context, log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt)
 	require.NoError(t, collector.Do())
+	supportArchive.Close()
+	zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(buffer.Len()))
+	assert.NoError(t, err)
+	assert.Equal(t, 3, len(zipReader.File))
+	assert.Equal(t, expectedFilename(fmt.Sprintf("injected_namespaces/namespace-some-app-namespace%s", manifestExtension)), zipReader.File[0].Name)
 
-	tarReader := tar.NewReader(&tarBuffer)
+	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/statefulset/statefulset1%s", testOperatorNamespace, manifestExtension)), zipReader.File[1].Name)
 
-	hdr, err := tarReader.Next()
-	require.NoError(t, err)
-	assert.Equal(t, expectedFilename(fmt.Sprintf("injected_namespaces/namespace-some-app-namespace%s", manifestExtension)), hdr.Name)
-
-	hdr, err = tarReader.Next()
-	require.NoError(t, err)
-	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/statefulset/statefulset1%s", testOperatorNamespace, manifestExtension)), hdr.Name)
-
-	hdr, err = tarReader.Next()
-	require.NoError(t, err)
-	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/dynakube/dynakube1%s", testOperatorNamespace, manifestExtension)), hdr.Name)
-
-	_, err = tarReader.Next()
-	require.ErrorIs(t, err, io.EOF)
+	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/dynakube/dynakube1%s", testOperatorNamespace, manifestExtension)), zipReader.File[2].Name)
 }
 
 func typeMeta(kind string) metav1.TypeMeta {
