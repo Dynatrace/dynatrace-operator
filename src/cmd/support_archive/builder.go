@@ -3,6 +3,7 @@ package support_archive
 import (
 	"bytes"
 	"context"
+	"github.com/alecthomas/units"
 	"io"
 	"os"
 
@@ -28,11 +29,15 @@ const (
 	archiveToStdoutFlagName        = "stdout"
 	defaultSupportArchiveTargetDir = "/tmp/dynatrace-operator"
 	defaultOperatorAppName         = "dynatrace-operator"
+	loadsimFileSizeFlagName        = "loadsim-file-size"
+	loadsimFilesFlagName           = "loadsim-files"
 )
 
 var (
 	namespaceFlagValue       string
 	archiveToStdoutFlagValue bool
+	loadsimFilesFlagValue    int
+	loadsimFileSizeFlagValue int
 )
 
 type CommandBuilder struct {
@@ -77,6 +82,9 @@ func (builder CommandBuilder) Build() *cobra.Command {
 func addFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&namespaceFlagValue, namespaceFlagName, kubeobjects.DefaultNamespace(), "Specify a different Namespace.")
 	cmd.PersistentFlags().BoolVar(&archiveToStdoutFlagValue, archiveToStdoutFlagName, false, "Write tarball to stdout.")
+	cmd.PersistentFlags().IntVar(&loadsimFileSizeFlagValue, loadsimFileSizeFlagName, 10, "Simulated log files, size in MiB (default 10)")
+	cmd.PersistentFlags().IntVar(&loadsimFilesFlagValue, loadsimFilesFlagName, 0, "Number of simulated log files (default 0)")
+
 }
 
 func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
@@ -133,7 +141,7 @@ func getAppNameLabel(ctx context.Context, pods clientgocorev1.PodInterface) stri
 }
 
 func (builder CommandBuilder) runCollectors(log logr.Logger, supportArchive archiver) error {
-	context := context.Background()
+	ctx := context.Background()
 
 	kubeConfig, err := builder.configProvider.GetConfig()
 	if err != nil {
@@ -146,15 +154,16 @@ func (builder CommandBuilder) runCollectors(log logr.Logger, supportArchive arch
 	}
 
 	pods := clientSet.CoreV1().Pods(namespaceFlagValue)
-	appName := getAppNameLabel(context, pods)
+	appName := getAppNameLabel(ctx, pods)
 
 	logInfof(log, "%s=%s", kubeobjects.AppNameLabel, appName)
 
 	collectors := []collector{
 		newOperatorVersionCollector(log, supportArchive),
-		newLogCollector(context, log, supportArchive, pods, appName),
-		newK8sObjectCollector(context, log, supportArchive, namespaceFlagValue, appName, apiReader),
-		newTroubleshootCollector(context, log, supportArchive, namespaceFlagValue, apiReader, *kubeConfig),
+		newLogCollector(ctx, log, supportArchive, pods, appName),
+		newK8sObjectCollector(ctx, log, supportArchive, namespaceFlagValue, appName, apiReader),
+		newTroubleshootCollector(ctx, log, supportArchive, namespaceFlagValue, apiReader, *kubeConfig),
+		newLoadSimCollector(ctx, log, supportArchive, loadsimFileSizeFlagValue*int(units.MiB), loadsimFilesFlagValue, clientSet.CoreV1().Pods(namespaceFlagValue)),
 	}
 
 	for _, c := range collectors {
