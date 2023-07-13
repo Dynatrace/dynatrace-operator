@@ -17,7 +17,7 @@
     {
       "fileMatch": [ "(^|/|\\.)ci.yaml$" ],
       "matchStrings": [
-        "golangci\\/golangci-lint-action@(.+\\n+\\s+\\w+.?\\n\\s+)version\\:\\sv(?<currentValue>.*)"
+        "golangci\\/golangci-lint-action@((.|\\n)*)version\\:\\sv(?<currentValue>.*)"
       ],
       "depNameTemplate": "golangci-lint",
       "datasourceTemplate": "go"
