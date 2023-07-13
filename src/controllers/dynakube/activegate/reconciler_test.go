@@ -163,6 +163,7 @@ func TestServiceCreation(t *testing.T) {
 			},
 			dynatracev1beta1.MetricsIngestCapability.DisplayName: {
 				consts.HttpsServicePortName,
+				consts.HttpServicePortName,
 			},
 			dynatracev1beta1.DynatraceApiCapability.DisplayName: {
 				consts.HttpsServicePortName,
