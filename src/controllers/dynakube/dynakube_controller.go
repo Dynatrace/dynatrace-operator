@@ -178,7 +178,6 @@ func (controller *Controller) reconcileIstio(dynakube *dynatracev1beta1.DynaKube
 	if dynakube.Spec.EnableIstio {
 		communicationHosts := connectioninfo.GetCommunicationHosts(dynakube)
 
-		log.Info("initializeIstioClient")
 		ic, err := istioclientset.NewForConfig(controller.config)
 
 		if err != nil {
