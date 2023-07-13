@@ -113,7 +113,7 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 		require.NotNil(t, initContainer.SecurityContext.RunAsGroup)
 		assert.Equal(t, *testUser, *initContainer.SecurityContext.RunAsGroup)
 	})
-	t.Run("should not set RunAsNonRoot if root user is used", func(t *testing.T) {
+	t.Run("should set RunAsNonRoot if root user is used", func(t *testing.T) {
 		dynakube := getTestDynakube()
 		pod := getTestPod()
 		pod.Spec.Containers[0].SecurityContext.RunAsUser = address.Of(rootUserGroup)
@@ -123,7 +123,8 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 
 		initContainer := createInstallInitContainerBase(webhookImage, clusterID, pod, *dynakube)
 
-		assert.Nil(t, initContainer.SecurityContext.RunAsNonRoot)
+		assert.NotNil(t, initContainer.SecurityContext.RunAsNonRoot)
+		assert.False(t, *initContainer.SecurityContext.RunAsNonRoot)
 
 		require.NotNil(t, *initContainer.SecurityContext.RunAsUser)
 		assert.Equal(t, *initContainer.SecurityContext.RunAsUser, rootUserGroup)

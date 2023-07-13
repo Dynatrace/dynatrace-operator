@@ -1,6 +1,8 @@
 package statefulset
 
 import (
+	"strconv"
+
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
@@ -204,6 +206,10 @@ func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {
 	}
 	if statefulSetBuilder.dynakube.Spec.NetworkZone != "" {
 		envs = append(envs, corev1.EnvVar{Name: consts.EnvDtNetworkZone, Value: statefulSetBuilder.dynakube.Spec.NetworkZone})
+	}
+
+	if statefulSetBuilder.dynakube.IsMetricsIngestActiveGateEnabled() {
+		envs = append(envs, corev1.EnvVar{Name: consts.EnvDtHttpPort, Value: strconv.Itoa(consts.HttpContainerPort)})
 	}
 
 	return envs

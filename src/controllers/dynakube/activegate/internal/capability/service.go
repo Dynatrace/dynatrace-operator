@@ -22,6 +22,14 @@ func CreateService(dynakube *dynatracev1beta1.DynaKube, feature string) *corev1.
 				TargetPort: intstr.FromString(consts.HttpsServicePortName),
 			},
 		)
+		if dynakube.IsMetricsIngestActiveGateEnabled() {
+			ports = append(ports, corev1.ServicePort{
+				Name:       consts.HttpServicePortName,
+				Protocol:   corev1.ProtocolTCP,
+				Port:       consts.HttpServicePort,
+				TargetPort: intstr.FromString(consts.HttpServicePortName),
+			})
+		}
 	}
 
 	coreLabels := kubeobjects.NewCoreLabels(dynakube.Name, kubeobjects.ActiveGateComponentLabel)
