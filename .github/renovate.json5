@@ -13,7 +13,15 @@
         "depName=(?<depName>.*?)\\s.*?_version=(?<currentValue>.*)\\s"
       ],
       "datasourceTemplate": "go"
-    }
+    },
+    {
+      "fileMatch": [ "(^|/|\\.)ci.yaml$" ],
+      "matchStrings": [
+        "golangci\\/golangci-lint-action@(.+\\n+\\s+\\w+.?\\n\\s+)version\\:\\sv(?<currentValue>.*)"
+      ],
+      "depNameTemplate": "golangci-lint",
+      "datasourceTemplate": "go"
+    },
   ],
   "packageRules": [
     {
