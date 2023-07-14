@@ -86,6 +86,7 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@639cd343e1d3b897ff35927a75193d57cfcba299 # v3.6.0
         with:
+          # renovate depName=github.com/golangci/golangci-lint
           version: v1.51.1
           args: --build-tags containers_image_storage_stub,e2e --timeout 300s --out-${NO_FUTURE}format colored-line-number
 
