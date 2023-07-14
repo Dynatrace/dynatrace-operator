@@ -225,15 +225,16 @@ func getRequiredDynaKubeFiles(testDynakube dynatracev1beta1.DynaKube) []string {
 }
 
 func assertFile(t *testing.T, requiredFiles []string, zipFile zip.File) []string {
-	index := slices.IndexFunc(requiredFiles, func(file string) bool { return file == zipFile.Name })
+	zipFileName := zipFile.Name
+	index := slices.IndexFunc(requiredFiles, func(file string) bool { return file == zipFileName })
 
 	if index != -1 {
 		requiredFiles = slices.Delete(requiredFiles, index, index+1)
 	} else {
-		t.Log("unexpected file found", "filename:", zipFile.Name)
+		t.Log("unexpected file found", "filename:", zipFileName)
 	}
 
-	assert.NotZerof(t, zipFile.FileInfo().Size(), "File %s is empty.", zipFile.Name)
+	assert.NotZerof(t, zipFile.FileInfo().Size(), "File %s is empty.", zipFileName)
 
 	return requiredFiles
 }
