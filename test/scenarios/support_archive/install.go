@@ -137,12 +137,12 @@ func getRequiredPodFiles(t *testing.T, ctx context.Context, resources *resources
 		return ok && appNameLabel == "dynatrace-operator"
 	})
 
-	for _, pod := range operatorPods {
+	for _, operatorPod := range operatorPods {
 		requiredFiles = append(requiredFiles,
-			fmt.Sprintf("%s/%s/pod/%s%s", support_archive.ManifestsDirectoryName, pod.Namespace, pod.Name, support_archive.ManifestsFileExtension))
-		for _, container := range pod.Spec.Containers {
+			fmt.Sprintf("%s/%s/operatorPod/%s%s", support_archive.ManifestsDirectoryName, operatorPod.Namespace, operatorPod.Name, support_archive.ManifestsFileExtension))
+		for _, container := range operatorPod.Spec.Containers {
 			requiredFiles = append(requiredFiles,
-				fmt.Sprintf("%s/%s/%s.log", support_archive.LogsDirectoryName, pod.Name, container.Name))
+				fmt.Sprintf("%s/%s/%s.log", support_archive.LogsDirectoryName, operatorPod.Name, container.Name))
 		}
 	}
 	return requiredFiles
@@ -161,9 +161,9 @@ func getRequiredReplicaSetFiles(t *testing.T, ctx context.Context, resources *re
 func getRequiredServiceFiles(t *testing.T, ctx context.Context, resources *resources.Resources, namespace string) []string {
 	services := service.List(t, ctx, resources, namespace)
 	requiredFiles := make([]string, 0)
-	for _, service := range services.Items {
+	for _, requiredService := range services.Items {
 		requiredFiles = append(requiredFiles,
-			fmt.Sprintf("%s/%s/service/%s%s", support_archive.ManifestsDirectoryName, service.Namespace, service.Name, support_archive.ManifestsFileExtension))
+			fmt.Sprintf("%s/%s/requiredService/%s%s", support_archive.ManifestsDirectoryName, requiredService.Namespace, requiredService.Name, support_archive.ManifestsFileExtension))
 	}
 	return requiredFiles
 }

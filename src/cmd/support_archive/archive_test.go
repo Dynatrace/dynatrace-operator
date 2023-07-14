@@ -39,5 +39,6 @@ func TestAddFile(t *testing.T) {
 	assert.Equal(t, len(testString), bytesRead)
 	assert.Equal(t, testString, outputFile[:bytesRead])
 
-	zipReader.Close()
+	err = zipReader.Close()
+	assert.NoError(t, err)
 }
