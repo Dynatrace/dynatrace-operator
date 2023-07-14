@@ -15,6 +15,11 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
+const (
+	sampleAppsClassicName     = "sample-apps-classic"
+	sampleAppsCloudNativeName = "sample-apps-cloud-native"
+)
+
 func Install(t *testing.T, name string) features.Feature {
 	featureBuilder := features.New(name)
 
@@ -30,6 +35,7 @@ func Install(t *testing.T, name string) features.Feature {
 
 	// apply sample apps
 	sampleAppCloudNative := sampleapps.NewSampleDeployment(t, cloudNativeDynakubeBuilder.Build())
+	sampleAppCloudNative.WithName(sampleAppsCloudNativeName)
 	featureBuilder.Assess("install sample app", sampleAppCloudNative.Install())
 
 	// run cloud native test here
@@ -41,7 +47,7 @@ func Install(t *testing.T, name string) features.Feature {
 
 	// deploy sample apps
 	sampleAppClassicFullStack := sampleapps.NewSampleDeployment(t, classicDynakubeBuilder.Build())
-	sampleAppClassicFullStack.WithName("sample-app-classic-full-stack")
+	sampleAppClassicFullStack.WithName(sampleAppsClassicName)
 	featureBuilder.Assess("install sample app", sampleAppClassicFullStack.Install())
 
 	// tear down
