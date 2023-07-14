@@ -2,13 +2,25 @@
 
 This script can be used to create a table containing permissions needed by components of the Dynatrace Kubernetes Operator. The resulting tables can be used as input for SUS tickets to update our public documentation here: https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dt-component-permissions#dto
 
-## Usage
+Pre-requisites:
 ```
-# local dev repo
-make manifests/kubernetes
-python3 role-permissions2md.py <operator-repo>/config/deploy/kubernetes/kubernetes-all.yaml
+python3
+pip install pyyaml
+```
+
+## Usage
+
+It's best to use the `openshift-all.yaml` manifest to cover all our needs. OpenShift needs the most permissions.
+
+```
+# local dev repo - direct call
+make manifests
+python3 <operator-repo>/hack/doc/role-permissions2md.py <operator-repo>/config/deploy/openshift/openshift-all.yaml
+
+# local dev repo - using make, result will be locally in permissions.md
+make doc/permissions
 
 # manifests from web
-python3 role-permissions2md.py https://github.com/Dynatrace/dynatrace-operator/releases/download/v0.12.0/kubernetes.yaml
-python3 role-permissions2md.py https://github.com/Dynatrace/dynatrace-operator/releases/download/v0.12.0/kubernetes-csi.yaml
+python3 <operator-repo>/hack/doc/role-permissions2md.py https://github.com/Dynatrace/dynatrace-operator/releases/download/v0.12.0/openshift.yaml
+python3 <operator-repo>/hack/doc/role-permissions2md.py https://github.com/Dynatrace/dynatrace-operator/releases/download/v0.12.0/openshift-csi.yaml
 ```

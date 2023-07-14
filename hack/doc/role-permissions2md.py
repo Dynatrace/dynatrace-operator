@@ -12,30 +12,31 @@ apiTerms = {
     "update": "Update",
     "delete": "Delete",
     "patch": "Patch",
+    "use": "Use"
 }
 
 resourceTerms = {
-    "nodes": "Nodes", 
-    "pods": "Pods", 
-    "namespaces": "Namespaces", 
+    "nodes": "Nodes",
+    "pods": "Pods",
+    "namespaces": "Namespaces",
     "replicationcontrollers": "ReplicationControllers",
-    "events": "Events", 
+    "events": "Events",
     "resourcequotas": "ResourceQuotas",
-    "pods/proxy": "Pods/Proxy", 
+    "pods/proxy": "Pods/Proxy",
     "nodes/proxy": "Nodes/Proxy",
     "nodes/metrics": "Nodes/Metrics",
-    "services": "Services", 
-    "jobs": "Jobs", 
+    "services": "Services",
+    "jobs": "Jobs",
     "cronjobs": "CronJobs",
     "deployments": "Deployments",
-    "replicasets": "ReplicaSets", 
+    "replicasets": "ReplicaSets",
     "statefulsets": "StatefulSets",
-    "daemonsets": "DaemonSets", 
+    "daemonsets": "DaemonSets",
     "deploymentconfigs": "DeploymentConfigs",
     "clusterversions": "ClusterVersions",
-    "secrets": "Secrets", 
+    "secrets": "Secrets",
     "mutatingwebhookconfigurations": "MutatingWebhookConfigurations",
-    "validatingwebhookconfigurations": "ValidatingWebhookConfigurations", 
+    "validatingwebhookconfigurations": "ValidatingWebhookConfigurations",
     "customresourcedefinitions": "CustomResourceDefinitions",
     "csinodes": "CsiNodes",
     "dynakubes": "Dynakubes",
@@ -49,13 +50,16 @@ resourceTerms = {
     "virtualservices": "VirtualServices",
     "leases": "Leases",
     "endpoints": "EndPoints",
+    "securitycontextconstraints": "SecurityContextConstraints"
 }
 
 sectionTitles = {
     "dynatrace-operator": "Dynatrace Operator",
     "dynatrace-kubernetes-monitoring": "Dynatrace Kubernetes Monitoring (ActiveGate)",
     "dynatrace-webhook": "Dynatrace webhook server",
-    "dynatrace-oneagent-csi-driver": "Dynatrace CSI driver"
+    "dynatrace-oneagent-csi-driver": "Dynatrace CSI driver",
+    "dynatrace-activegate": "Dynatrace Kubernetes Monitoring (ActiveGate)",
+    "dynatrace-dynakube-oneagent": "Dynatrace OneAgent"
 }
 
 def get_apis(rule):
@@ -66,7 +70,7 @@ def get_apis(rule):
         if (len(api_string) > 0):
             api_string += "/"
         api_string += apiTerms[api]
-    
+
     return api_string
 
 def multiline_codestyle_block(stringList):
@@ -77,14 +81,14 @@ def multiline_codestyle_block(stringList):
         if len(entry) > 0:
             result_string += f"`{entry}`"
         else:
-            result_string += f"`core`"
+            result_string += f"`-`"
     return result_string
 
 def get_resource_names(rule):
     resource_names = rule.get('resourceNames')
     if resource_names == None:
         return ""
-    return multiline_codestyle_block(resource_names)        
+    return multiline_codestyle_block(resource_names)
 
 def get_api_groups(rule):
     api_groups = rule.get("apiGroups")
@@ -92,8 +96,7 @@ def get_api_groups(rule):
         return ""
     return multiline_codestyle_block(api_groups)
 
-def convert_roles_to_markdown(role):
-    print(f"\n## {sectionTitles[role['metadata']['name']]} ({role['kind']})\n")
+def create_role_table(role):
     print('|Resources accessed |API group |APIs used |Resource names |')
     print('|------------------ |--------- |--------- |-------------- |')
 
@@ -104,7 +107,15 @@ def convert_roles_to_markdown(role):
                 apis = get_apis(rule)
                 resource_names = get_resource_names(rule)
                 api_gropus = get_api_groups(rule)
-                print(f"|{resourceTerms[resource]} |{api_gropus} |{apis} |{resource_names} |")
+                print(f"|`{resourceTerms[resource]}` |{api_gropus} |{apis} |{resource_names} |")
+
+def convert_cluster_roles_to_markdown(role):
+    print(f"\n## {sectionTitles[role['metadata']['name']]} (cluster-wide)\n")
+    create_role_table(role)
+
+def convert_roles_to_markdown(role):
+    print(f"\n## {sectionTitles[role['metadata']['name']]} (namespace {role['metadata']['namespace']})\n")
+    create_role_table(role)
 
 def main():
     parser = argparse.ArgumentParser(description="Convert ClusterRoles and Roles to MD permission table",
@@ -112,19 +123,31 @@ def main():
     parser.add_argument("src", help="Source K8S manifest")
     args = parser.parse_args()
 
-    parsed_url = urlparse.urlparse(args.src)
+    parsed_url = urlparse(args.src)
     if bool(parsed_url.scheme):
-        file = urlopen(parsed_url)
+        file = urlopen(args.src)
     else:
         file = open(args.src, "r")
 
     docs = yaml.safe_load_all(file)
 
-    for manifest in docs:
-        kind = manifest['kind']
+    # for manifest in docs:
+    #     print(f"{manifest['metadata']['name']} {manifest['kind']}")
+    manifests = []
 
-        if kind == 'ClusterRole' or kind == 'Role':
+    for manifest in docs:
+        manifests.append(manifest)
+
+    for manifest in manifests:
+#        print(f"\n{manifest['metadata']['name']} {manifest['kind']}")
+        if manifest['kind'] == 'ClusterRole':
+            convert_cluster_roles_to_markdown(manifest)
+
+    for manifest in manifests:
+        #        print(f"\n ** {manifest['metadata']['name']} {manifest['kind']}")
+        if manifest['kind'] == 'Role':
             convert_roles_to_markdown(manifest)
 
+    file.close()
 if __name__ == "__main__":
     sys.exit(main())
