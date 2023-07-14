@@ -3,12 +3,9 @@ package oneagent_mutation
 import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/config"
-	"github.com/Dynatrace/dynatrace-operator/src/initgeneration"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
-	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -40,10 +37,6 @@ func (mutator *OneAgentPodMutator) Injected(request *dtwebhook.BaseRequest) bool
 
 func (mutator *OneAgentPodMutator) Mutate(request *dtwebhook.MutationRequest) error {
 	log.Info("injecting OneAgent into pod", "podName", request.PodName())
-	if err := mutator.ensureInitSecret(request); err != nil {
-		return err
-	}
-
 	installerInfo := getInstallerInfo(request.Pod, request.DynaKube)
 	mutator.addVolumes(request.Pod, request.DynaKube)
 	mutator.configureInitContainer(request, installerInfo)
@@ -60,24 +53,6 @@ func (mutator *OneAgentPodMutator) Reinvoke(request *dtwebhook.ReinvocationReque
 	}
 	log.Info("reinvoking", "podName", request.PodName())
 	return mutator.reinvokeUserContainers(request)
-}
-
-func (mutator *OneAgentPodMutator) ensureInitSecret(request *dtwebhook.MutationRequest) error {
-	var initSecret corev1.Secret
-	secretObjectKey := client.ObjectKey{Name: config.AgentInitSecretName, Namespace: request.Namespace.Name}
-	if err := mutator.apiReader.Get(request.Context, secretObjectKey, &initSecret); k8serrors.IsNotFound(err) {
-		initGenerator := initgeneration.NewInitGenerator(mutator.client, mutator.apiReader, mutator.webhookNamespace)
-		err := initGenerator.GenerateForNamespace(request.Context, request.DynaKube, request.Namespace.Name)
-		if err != nil && !k8serrors.IsAlreadyExists(err) {
-			log.Info("failed to create the init secret before oneagent pod injection")
-			return err
-		}
-		log.Info("ensured that the init secret is present before oneagent pod injection")
-	} else if err != nil {
-		log.Info("failed to query the init secret before oneagent pod injection")
-		return errors.WithStack(err)
-	}
-	return nil
 }
 
 func containerIsInjected(container *corev1.Container) bool {
