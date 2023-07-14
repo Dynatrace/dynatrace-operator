@@ -114,16 +114,16 @@ func executeSupportArchiveCommand(ctx context.Context, t *testing.T, environment
 }
 
 func collectRequiredFiles(t *testing.T, ctx context.Context, resources *resources.Resources, testDynakube dynatracev1beta1.DynaKube) []string {
-	n := testDynakube.Namespace
+	ns := testDynakube.Namespace
 	requiredFiles := make([]string, 0)
 	requiredFiles = append(requiredFiles, support_archive.OperatorVersionFileName)
 	requiredFiles = append(requiredFiles, support_archive.TroublshootOutputFileName)
 	requiredFiles = append(requiredFiles, support_archive.SupportArchiveOutputFileName)
-	requiredFiles = append(requiredFiles, getRequiredPodFiles(t, ctx, resources, n)...)
-	requiredFiles = append(requiredFiles, getRequiredReplicaSetFiles(t, ctx, resources, n)...)
-	requiredFiles = append(requiredFiles, getRequiredServiceFiles(t, ctx, resources, n)...)
-	requiredFiles = append(requiredFiles, getRequiredWorkloadFiles(n)...)
-	requiredFiles = append(requiredFiles, getRequiredNamespaceFiles(n)...)
+	requiredFiles = append(requiredFiles, getRequiredPodFiles(t, ctx, resources, ns)...)
+	requiredFiles = append(requiredFiles, getRequiredReplicaSetFiles(t, ctx, resources, ns)...)
+	requiredFiles = append(requiredFiles, getRequiredServiceFiles(t, ctx, resources, ns)...)
+	requiredFiles = append(requiredFiles, getRequiredWorkloadFiles(ns)...)
+	requiredFiles = append(requiredFiles, getRequiredNamespaceFiles(ns)...)
 	requiredFiles = append(requiredFiles, getRequiredDynaKubeFiles(testDynakube)...)
 	return requiredFiles
 }
