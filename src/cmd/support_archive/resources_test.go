@@ -112,7 +112,6 @@ func TestManifestCollector_Success(t *testing.T) {
 			assert.Equal(t, expectedFilename(expectedFile), zipReader.File[i].Name)
 		})
 	}
-
 }
 
 func TestManifestCollector_NoManifestsAvailable(t *testing.T) {

@@ -2,12 +2,13 @@ package support_archive
 
 import (
 	"fmt"
-	"github.com/klauspost/compress/zip"
-	"github.com/pkg/errors"
 	"io"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/klauspost/compress/zip"
+	"github.com/pkg/errors"
 )
 
 const zipArchiveFileName = "%s/operator-support-archive-%s.zip"
@@ -32,7 +33,6 @@ type zipArchive struct {
 }
 
 func (z zipArchive) addFile(fileName string, reader io.Reader) error {
-
 	w, err := z.writer.Create(fileName)
 	if err != nil {
 		return errors.WithMessagef(err, "could not write header for file '%s'", fileName)

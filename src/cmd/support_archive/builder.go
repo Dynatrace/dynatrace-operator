@@ -3,7 +3,6 @@ package support_archive
 import (
 	"bytes"
 	"context"
-	"github.com/alecthomas/units"
 	"io"
 	"os"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
+	"github.com/alecthomas/units"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -84,7 +84,6 @@ func addFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().BoolVar(&archiveToStdoutFlagValue, archiveToStdoutFlagName, false, "Write tarball to stdout.")
 	cmd.PersistentFlags().IntVar(&loadsimFileSizeFlagValue, loadsimFileSizeFlagName, 10, "Simulated log files, size in MiB (default 10)")
 	cmd.PersistentFlags().IntVar(&loadsimFilesFlagValue, loadsimFilesFlagName, 0, "Number of simulated log files (default 0)")
-
 }
 
 func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {

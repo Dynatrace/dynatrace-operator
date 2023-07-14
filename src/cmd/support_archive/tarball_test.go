@@ -35,7 +35,7 @@ func TestAddFile(t *testing.T) {
 	readCloser, err := zipReader.File[0].Open()
 	require.NoError(t, err)
 
-	bytesRead, err := readCloser.Read(outputFile)
+	bytesRead, _ := readCloser.Read(outputFile)
 	assert.Equal(t, len(testString), bytesRead)
 	assert.Equal(t, testString, outputFile[:bytesRead])
 

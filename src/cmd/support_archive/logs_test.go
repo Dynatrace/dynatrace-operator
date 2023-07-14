@@ -5,6 +5,8 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"testing"
+
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	corev1mocks "github.com/Dynatrace/dynatrace-operator/src/mocks/k8s.io/client-go/kubernetes/typed/core/v1"
 	"github.com/stretchr/testify/assert"
@@ -14,7 +16,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
-	"testing"
 )
 
 func TestLogCollector(t *testing.T) {
@@ -247,11 +248,8 @@ func TestLogCollectorNoAbortOnError(t *testing.T) {
 
 	zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(buffer.Len()))
 	assert.NoError(t, err)
-
 	assert.Equal(t, "logs/pod2/container1_previous.log", zipReader.File[0].Name)
-
 	assert.Equal(t, "logs/pod2/container2.log", zipReader.File[1].Name)
-
 }
 
 func createPod(name string) *corev1.Pod {
