@@ -33,7 +33,7 @@ func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Read
 		dynakube:     dynakube,
 		scheme:       scheme,
 		dtc:          dtc,
-		timeProvider: timeprovider.New(),
+		timeProvider: timeprovider.New().SetToNow(),
 	}
 }
 

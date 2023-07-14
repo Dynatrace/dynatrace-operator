@@ -119,7 +119,7 @@ func (dynatraceClientBuilder builder) BuildWithTokenVerification(dynaKubeStatus 
 func (dynatraceClientBuilder builder) verifyTokenScopes(dynatraceClient dtclient.Client, dynaKubeStatus *dynatracev1beta1.DynaKubeStatus) error {
 	var err error
 
-	if dynatraceClientBuilder.dynakube.IsTokenScopeVerificationAllowed(timeprovider.New()) {
+	if dynatraceClientBuilder.dynakube.IsTokenScopeVerificationAllowed(timeprovider.New().SetToNow()) {
 		dynaKubeStatus.DynatraceApi.LastTokenScopeRequest = metav1.Now()
 		err = dynatraceClientBuilder.tokens.VerifyScopes(dynatraceClient)
 		log.Info("token verified")

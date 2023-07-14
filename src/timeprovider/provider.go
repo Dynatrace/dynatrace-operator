@@ -6,10 +6,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// New time provider always returns the current time
 func New() *Provider {
-	now := metav1.Now()
 	return &Provider{
-		now: &now,
+		now: nil,
 	}
 }
 
@@ -18,16 +18,19 @@ type Provider struct {
 	now *metav1.Time
 }
 
-// Warning: This method should be never called twice on the same instance in production code where you need an accurate "now" timestamp,
-// because it returns the same timestamp on each call, even if the stored "now" is hours in the past
 func (timeProvider *Provider) Now() *metav1.Time {
-	if timeProvider.now == nil {
-		timeProvider.now = Now()
+	if timeProvider.now != nil {
+		return timeProvider.now
 	}
-	return timeProvider.now
+	return Now()
 }
 
-func (timeProvider *Provider) SetNow(now *metav1.Time) {
+func (timeProvider *Provider) SetToNow() *Provider {
+	timeProvider.now = Now()
+	return timeProvider
+}
+
+func (timeProvider *Provider) Set(now *metav1.Time) {
 	timeProvider.now = now
 }
 

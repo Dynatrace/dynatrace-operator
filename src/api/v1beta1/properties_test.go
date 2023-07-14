@@ -441,7 +441,7 @@ func TestDynaKube_ShallUpdateActiveGateConnectionInfo(t *testing.T) {
 		},
 	}
 
-	timeProvider := timeprovider.New()
+	timeProvider := timeprovider.New().SetToNow()
 	tests := map[string]struct {
 		lastRequestTimeDeltaMinutes int
 		updateExpected              bool
