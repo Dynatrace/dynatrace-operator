@@ -2,9 +2,11 @@ package dtclient
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -13,10 +15,11 @@ import (
 )
 
 const (
-	testUID      = "test-uid"
-	testName     = "test-name"
-	testObjectID = "test-objectid"
-	testScope    = "test-scope"
+	testUID       = "test-uid"
+	testName      = "test-name"
+	testObjectID  = "test-objectid"
+	testScope     = "test-scope"
+	schemaVersion = "2.1.0"
 )
 
 func TestDynatraceClient_GetMonitoredEntitiesForKubeSystemUUID(t *testing.T) {
@@ -36,7 +39,7 @@ func TestDynatraceClient_GetMonitoredEntitiesForKubeSystemUUID(t *testing.T) {
 		actual, err := dtc.(*dynatraceClient).GetMonitoredEntitiesForKubeSystemUUID(testUID)
 
 		// assert
-		assert.NotNil(t, actual)
+		require.NotNil(t, actual)
 		assert.NoError(t, err)
 		assert.Len(t, actual, 2)
 		assert.EqualValues(t, expected, actual)
@@ -58,7 +61,7 @@ func TestDynatraceClient_GetMonitoredEntitiesForKubeSystemUUID(t *testing.T) {
 		actual, err := dtc.(*dynatraceClient).GetMonitoredEntitiesForKubeSystemUUID(testUID)
 
 		// assert
-		assert.NotNil(t, actual)
+		require.NotNil(t, actual)
 		assert.NoError(t, err)
 		assert.Len(t, actual, 0)
 		assert.EqualValues(t, expected, actual)
@@ -80,7 +83,7 @@ func TestDynatraceClient_GetMonitoredEntitiesForKubeSystemUUID(t *testing.T) {
 		actual, err := dtc.(*dynatraceClient).GetMonitoredEntitiesForKubeSystemUUID("")
 
 		// assert
-		assert.Nil(t, actual)
+		require.Nil(t, actual)
 		assert.Error(t, err)
 		assert.Len(t, actual, 0)
 	})
@@ -101,7 +104,7 @@ func TestDynatraceClient_GetMonitoredEntitiesForKubeSystemUUID(t *testing.T) {
 		actual, err := dtc.(*dynatraceClient).GetMonitoredEntitiesForKubeSystemUUID(testUID)
 
 		// assert
-		assert.Nil(t, actual)
+		require.Nil(t, actual)
 		assert.Error(t, err)
 		assert.Len(t, actual, 0)
 	})
@@ -113,7 +116,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 		expected := createMonitoredEntitiesForTesting()
 		totalCount := 2
 
-		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(totalCount, "", false))
+		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(totalCount, "", http.StatusOK))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -126,7 +129,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 
 		// assert
 		assert.NoError(t, err)
-		assert.NotNil(t, actual)
+		require.NotNil(t, actual)
 		assert.True(t, actual.TotalCount > 0)
 		assert.Equal(t, len(expected), actual.TotalCount)
 	})
@@ -136,7 +139,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 		expected := createMonitoredEntitiesForTesting()
 		totalCount := 0
 
-		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(totalCount, "", false))
+		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(totalCount, "", http.StatusOK))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -149,7 +152,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 
 		// assert
 		assert.NoError(t, err)
-		assert.NotNil(t, actual)
+		require.NotNil(t, actual)
 		assert.True(t, actual.TotalCount < 1)
 	})
 
@@ -160,7 +163,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 		// monitored entities is empty, therefore also no settings will be returned
 		totalCount := 999
 
-		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(totalCount, "", false))
+		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(totalCount, "", http.StatusOK))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -173,7 +176,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 
 		// assert
 		assert.NoError(t, err)
-		assert.NotNil(t, actual)
+		require.NotNil(t, actual)
 		assert.True(t, actual.TotalCount == 0)
 	})
 
@@ -183,7 +186,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 		// it is immaterial what we put here since the http request is producing an error
 		totalCount := 999
 
-		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(totalCount, "", true))
+		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(totalCount, "", http.StatusBadRequest))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -201,9 +204,9 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 }
 
 func TestDynatraceClient_CreateOrUpdateKubernetesSetting(t *testing.T) {
-	t.Run(`create settings for the given monitored entity id`, func(t *testing.T) {
+	t.Run(`create settings with monitoring for the given monitored entity id`, func(t *testing.T) {
 		// arrange
-		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(1, testObjectID, false))
+		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(1, testObjectID, http.StatusOK))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -215,7 +218,27 @@ func TestDynatraceClient_CreateOrUpdateKubernetesSetting(t *testing.T) {
 		actual, err := dtc.(*dynatraceClient).CreateOrUpdateKubernetesSetting(testName, testUID, testScope)
 
 		// assert
-		assert.NotNil(t, actual)
+		require.NotNil(t, actual)
+		assert.NoError(t, err)
+		assert.Len(t, actual, len(testObjectID))
+		assert.EqualValues(t, testObjectID, actual)
+	})
+
+	t.Run(`create settings for the given monitored entity id`, func(t *testing.T) {
+		// arrange
+		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(1, testObjectID, http.StatusOK))
+		defer dynatraceServer.Close()
+
+		skipCert := SkipCertificateValidation(true)
+		dtc, err := NewClient(dynatraceServer.URL, apiToken, paasToken, skipCert)
+		require.NoError(t, err)
+		require.NotNil(t, dtc)
+
+		// act
+		actual, err := dtc.(*dynatraceClient).CreateOrUpdateKubernetesSetting(testName, testUID, testScope)
+
+		// assert
+		require.NotNil(t, actual)
 		assert.NoError(t, err)
 		assert.Len(t, actual, len(testObjectID))
 		assert.EqualValues(t, testObjectID, actual)
@@ -223,7 +246,7 @@ func TestDynatraceClient_CreateOrUpdateKubernetesSetting(t *testing.T) {
 
 	t.Run(`don't create settings for the given monitored entity id because no kube-system uuid is provided`, func(t *testing.T) {
 		// arrange
-		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(1, testObjectID, false))
+		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(1, testObjectID, http.StatusOK))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -241,7 +264,7 @@ func TestDynatraceClient_CreateOrUpdateKubernetesSetting(t *testing.T) {
 
 	t.Run(`don't create settings for the given monitored entity id because of api error`, func(t *testing.T) {
 		// arrange
-		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(1, testObjectID, true))
+		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(1, testObjectID, http.StatusBadRequest))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -254,7 +277,87 @@ func TestDynatraceClient_CreateOrUpdateKubernetesSetting(t *testing.T) {
 
 		// assert
 		assert.Error(t, err)
+		assert.Contains(t, err.Error(), strconv.Itoa(http.StatusBadRequest))
 		assert.Len(t, actual, 0)
+	})
+
+	t.Run(`don't create settings for the given monitored entity id because of api error`, func(t *testing.T) {
+		// arrange
+		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(1, testObjectID, http.StatusNotFound))
+		defer dynatraceServer.Close()
+
+		skipCert := SkipCertificateValidation(true)
+		dtc, err := NewClient(dynatraceServer.URL, apiToken, paasToken, skipCert)
+		require.NoError(t, err)
+		require.NotNil(t, dtc)
+
+		// act
+		actual, err := dtc.(*dynatraceClient).CreateOrUpdateKubernetesSetting(testName, testUID, testScope)
+
+		// assert
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), strconv.Itoa(http.StatusNotFound))
+		assert.Len(t, actual, 0)
+	})
+}
+func TestDynatraceClient_getKubernetesSettingBody(t *testing.T) {
+	t.Run(`get k8s settings request body for Hierarchical Monitoring Settings`, func(t *testing.T) {
+		// arrange
+		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(1, "", http.StatusBadRequest))
+		defer dynatraceServer.Close()
+
+		skipCert := SkipCertificateValidation(true)
+		dtc, err := NewClient(dynatraceServer.URL, apiToken, paasToken, skipCert)
+		require.NoError(t, err)
+		require.NotNil(t, dtc)
+
+		// act
+		actual := createV3KubernetesSettingsBody(testName, testUID, testScope)
+
+		// assert
+		require.NotNil(t, actual)
+		assert.Len(t, actual, 1)
+		assert.EqualValues(t, hierarchicalMonitoringSettingsSchemaVersion, actual[0].SchemaVersion)
+		assert.EqualValues(t, true, actual[0].Value.Enabled)
+		bodyJson, err := json.Marshal(actual[0])
+		assert.NoError(t, err)
+		fmt.Println(string(bodyJson))
+		assert.NotContains(t, string(bodyJson), "cloudApplicationPipelineEnabled")
+		assert.NotContains(t, string(bodyJson), "openMetricsPipelineEnabled")
+		assert.NotContains(t, string(bodyJson), "eventProcessingActive")
+		assert.NotContains(t, string(bodyJson), "eventProcessingV2Active")
+		assert.NotContains(t, string(bodyJson), "filterEvents")
+		assert.Contains(t, string(bodyJson), "clusterIdEnabled")
+	})
+
+	t.Run(`get k8s settings request body`, func(t *testing.T) {
+		// arrange
+		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(1, "", http.StatusBadRequest))
+		defer dynatraceServer.Close()
+
+		skipCert := SkipCertificateValidation(true)
+		dtc, err := NewClient(dynatraceServer.URL, apiToken, paasToken, skipCert)
+		require.NoError(t, err)
+		require.NotNil(t, dtc)
+
+		// act
+		actual := createV1KubernetesSettingsBody(testName, testUID, testScope)
+
+		// assert
+		require.NotNil(t, actual)
+		assert.Len(t, actual, 1)
+		assert.EqualValues(t, schemaVersionV1, actual[0].SchemaVersion)
+		assert.EqualValues(t, true, actual[0].Value.Enabled)
+		bodyJson, err := json.Marshal(actual[0])
+		assert.NoError(t, err)
+		fmt.Println(string(bodyJson))
+		assert.Contains(t, string(bodyJson), "cloudApplicationPipelineEnabled")
+		assert.Contains(t, string(bodyJson), "openMetricsPipelineEnabled")
+		assert.Contains(t, string(bodyJson), "eventProcessingActive")
+		assert.Contains(t, string(bodyJson), "eventProcessingV2Active")
+		assert.Contains(t, string(bodyJson), "filterEvents")
+
+		assert.Contains(t, string(bodyJson), "clusterIdEnabled")
 	})
 }
 
@@ -355,10 +458,10 @@ func mockDynatraceServerEntitiesHandler(entities []MonitoredEntity, isError bool
 	}
 }
 
-func mockDynatraceServerSettingsHandler(totalCount int, objectId string, isError bool) http.HandlerFunc {
+func mockDynatraceServerSettingsHandler(totalCount int, objectId string, status int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if isError {
-			writeError(w, http.StatusBadRequest)
+		if status != http.StatusOK {
+			writeError(w, status)
 			return
 		}
 
