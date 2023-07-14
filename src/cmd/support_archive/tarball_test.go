@@ -26,10 +26,6 @@ func TestAddFile(t *testing.T) {
 	archive.Close()
 	archiveFile.Close()
 
-	//resultFile, err := os.OpenFile(fileName, os.O_RDONLY, os.ModeTemporary)
-	//require.NoError(t, err)
-	//defer archiveFile.Close()
-
 	zipReader, err := zip.OpenReader(fileName)
 	require.NoError(t, err)
 
