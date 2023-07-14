@@ -11,7 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
-	"github.com/alecthomas/units"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -157,12 +156,13 @@ func (builder CommandBuilder) runCollectors(log logr.Logger, supportArchive arch
 
 	logInfof(log, "%s=%s", kubeobjects.AppNameLabel, appName)
 
+	fileSize := loadsimFileSizeFlagValue * 1024 * 1024
 	collectors := []collector{
 		newOperatorVersionCollector(log, supportArchive),
 		newLogCollector(ctx, log, supportArchive, pods, appName),
 		newK8sObjectCollector(ctx, log, supportArchive, namespaceFlagValue, appName, apiReader),
 		newTroubleshootCollector(ctx, log, supportArchive, namespaceFlagValue, apiReader, *kubeConfig),
-		newLoadSimCollector(ctx, log, supportArchive, loadsimFileSizeFlagValue*int(units.MiB), loadsimFilesFlagValue, clientSet.CoreV1().Pods(namespaceFlagValue)),
+		newLoadSimCollector(ctx, log, supportArchive, fileSize, loadsimFilesFlagValue, clientSet.CoreV1().Pods(namespaceFlagValue)),
 	}
 
 	for _, c := range collectors {
