@@ -13,6 +13,13 @@
         "depName=(?<depName>.*?)\\s.*?_version=(?<currentValue>.*)\\s"
       ],
       "datasourceTemplate": "go"
+    },
+    {
+      "fileMatch": [ "(^|/|\\.)ci.yaml$"],
+      "matchStrings": [
+        "depName=(?<depName>.*?)\\s.*?version\\:\\s(?<currentValue>.*)\\s",
+      ],
+      "datasourceTemplate": "go"
     }
   ],
   "packageRules": [
