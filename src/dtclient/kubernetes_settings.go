@@ -6,21 +6,26 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
 )
 
 type postKubernetesSettings struct {
-	Label                           string `json:"label"`
-	ClusterIdEnabled                bool   `json:"clusterIdEnabled"`
-	ClusterId                       string `json:"clusterId"`
-	CloudApplicationPipelineEnabled bool   `json:"cloudApplicationPipelineEnabled"`
-	OpenMetricsPipelineEnabled      bool   `json:"openMetricsPipelineEnabled"`
-	Enabled                         bool   `json:"enabled"`
-	EventProcessingActive           bool   `json:"eventProcessingActive"`
-	EventProcessingV2Active         bool   `json:"eventProcessingV2Active"`
-	FilterEvents                    bool   `json:"filterEvents"`
+	Label            string `json:"label"`
+	ClusterIdEnabled bool   `json:"clusterIdEnabled"`
+	ClusterId        string `json:"clusterId"`
+	Enabled          bool   `json:"enabled"`
+	*MonitoringSettings
+}
+
+type MonitoringSettings struct {
+	CloudApplicationPipelineEnabled bool `json:"cloudApplicationPipelineEnabled"`
+	OpenMetricsPipelineEnabled      bool `json:"openMetricsPipelineEnabled"`
+	EventProcessingActive           bool `json:"eventProcessingActive"`
+	EventProcessingV2Active         bool `json:"eventProcessingV2Active"`
+	FilterEvents                    bool `json:"filterEvents"`
 }
 
 type postKubernetesSettingsBody struct {
@@ -67,33 +72,13 @@ type constraintViolations []struct {
 	Path              string
 }
 
-func (dtc *dynatraceClient) CreateOrUpdateKubernetesSetting(clusterLabel, kubeSystemUUID, scope string) (string, error) {
-	if kubeSystemUUID == "" {
-		return "", errors.New("no kube-system namespace UUID given")
-	}
+const (
+	schemaId                                    = "builtin:cloud.kubernetes"
+	schemaVersionV1                             = "1.0.27"
+	hierarchicalMonitoringSettingsSchemaVersion = "3.0.0"
+)
 
-	body := []postKubernetesSettingsBody{
-		{
-			SchemaId:      "builtin:cloud.kubernetes",
-			SchemaVersion: "1.0.27",
-			Value: postKubernetesSettings{
-				Enabled:                         true,
-				Label:                           clusterLabel,
-				ClusterIdEnabled:                true,
-				ClusterId:                       kubeSystemUUID,
-				CloudApplicationPipelineEnabled: true,
-				OpenMetricsPipelineEnabled:      false,
-				EventProcessingActive:           false,
-				FilterEvents:                    false,
-				EventProcessingV2Active:         false,
-			},
-		},
-	}
-
-	if scope != "" {
-		body[0].Scope = scope
-	}
-
+func (dtc *dynatraceClient) performCreateOrUpdateKubernetesSetting(body []postKubernetesSettingsBody) (string, error) {
 	bodyData, err := json.Marshal(body)
 	if err != nil {
 		return "", err
@@ -131,6 +116,58 @@ func (dtc *dynatraceClient) CreateOrUpdateKubernetesSetting(clusterLabel, kubeSy
 	}
 
 	return resDataJson[0].ObjectId, nil
+}
+func createBaseKubernetesSettings(clusterLabel, kubeSystemUUID, scope string) postKubernetesSettingsBody {
+	base := postKubernetesSettingsBody{
+		SchemaId: schemaId,
+		Value: postKubernetesSettings{
+			Enabled:          true,
+			Label:            clusterLabel,
+			ClusterIdEnabled: true,
+			ClusterId:        kubeSystemUUID,
+		},
+	}
+	if scope != "" {
+		base.Scope = scope
+	}
+	return base
+}
+
+func createV1KubernetesSettingsBody(clusterLabel, kubeSystemUUID, scope string) []postKubernetesSettingsBody {
+	settings := createBaseKubernetesSettings(clusterLabel, kubeSystemUUID, scope)
+	settings.SchemaVersion = schemaVersionV1
+	ms := MonitoringSettings{
+		CloudApplicationPipelineEnabled: true,
+		OpenMetricsPipelineEnabled:      false,
+		EventProcessingActive:           false,
+		FilterEvents:                    false,
+		EventProcessingV2Active:         false,
+	}
+	settings.Value.MonitoringSettings = &ms
+	return []postKubernetesSettingsBody{settings}
+}
+
+func createV3KubernetesSettingsBody(clusterLabel, kubeSystemUUID, scope string) []postKubernetesSettingsBody {
+	settings := createBaseKubernetesSettings(clusterLabel, kubeSystemUUID, scope)
+	settings.SchemaVersion = hierarchicalMonitoringSettingsSchemaVersion
+	return []postKubernetesSettingsBody{settings}
+}
+
+func (dtc *dynatraceClient) CreateOrUpdateKubernetesSetting(clusterLabel, kubeSystemUUID, scope string) (string, error) {
+	if kubeSystemUUID == "" {
+		return "", errors.New("no kube-system namespace UUID given")
+	}
+	body := createV3KubernetesSettingsBody(clusterLabel, kubeSystemUUID, scope)
+	objectId, err := dtc.performCreateOrUpdateKubernetesSetting(body)
+	if err != nil {
+		if strings.Contains(err.Error(), strconv.Itoa(http.StatusNotFound)) {
+			body = createV1KubernetesSettingsBody(clusterLabel, kubeSystemUUID, scope)
+			return dtc.performCreateOrUpdateKubernetesSetting(body)
+		} else {
+			return "", err
+		}
+	}
+	return objectId, nil
 }
 
 func (dtc *dynatraceClient) GetMonitoredEntitiesForKubeSystemUUID(kubeSystemUUID string) ([]MonitoredEntity, error) {

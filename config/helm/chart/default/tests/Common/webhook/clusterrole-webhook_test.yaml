@@ -48,21 +48,6 @@ tests:
           content:
             apiGroups:
               - ""
-            resourceNames:
-              - dynatrace-dynakube-config
-              - dynatrace-data-ingest-endpoint
-            resources:
-              - secrets
-            verbs:
-              - get
-              - list
-              - watch
-              - update
-      - contains:
-          path: rules
-          content:
-            apiGroups:
-              - ""
             resources:
               - replicationcontrollers
             verbs:
