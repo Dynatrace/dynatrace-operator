@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/proxy"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -51,6 +52,18 @@ func TestPrepareVolumes(t *testing.T) {
 
 		assert.Contains(t, volumes, getRootVolume())
 		assert.Contains(t, volumes, getCertificateVolume(instance))
+	})
+	t.Run(`has http_proxy volume`, func(t *testing.T) {
+		instance := &dynatracev1beta1.DynaKube{}
+		instance.Spec =
+			dynatracev1beta1.DynaKubeSpec{
+				Proxy: &dynatracev1beta1.DynaKubeProxy{ValueFrom: proxy.BuildProxySecretName(instance.Name)},
+			}
+
+		volumes := prepareVolumes(instance)
+
+		assert.Contains(t, volumes, getRootVolume())
+		assert.Contains(t, volumes, getHttpProxyVolume(instance))
 	})
 	t.Run(`has tls volume`, func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{

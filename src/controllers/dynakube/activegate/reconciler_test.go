@@ -77,7 +77,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		var proxySecret corev1.Secret
-		err = fakeClient.Get(context.TODO(), types.NamespacedName{Name: testName + "-activegate-internal-proxy", Namespace: testNamespace}, &proxySecret)
+		err = fakeClient.Get(context.TODO(), types.NamespacedName{Name: testName + "-internal-proxy", Namespace: testNamespace}, &proxySecret)
 		assert.NoError(t, err)
 	})
 	t.Run(`Create AG capability (creation and deletion)`, func(t *testing.T) {
@@ -136,7 +136,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		var proxySecret corev1.Secret
-		err = fakeClient.Get(context.TODO(), types.NamespacedName{Name: "proxyDk-activegate-internal-proxy", Namespace: testNamespace}, &proxySecret)
+		err = fakeClient.Get(context.TODO(), types.NamespacedName{Name: "proxyDk-internal-proxy", Namespace: testNamespace}, &proxySecret)
 		assert.NoError(t, err)
 	})
 }

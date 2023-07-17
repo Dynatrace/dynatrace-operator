@@ -48,7 +48,6 @@ func TestEnvironmentVariables(t *testing.T) {
 		assertNodeNameEnv(t, envVars)
 		assertConnectionInfoEnv(t, envVars, dynakube)
 		assertDeploymentMetadataEnv(t, envVars, dynakube.Name)
-		assertProxyEnv(t, envVars, dynakube)
 		assertReadOnlyEnv(t, envVars)
 	})
 }
@@ -153,56 +152,6 @@ func assertConnectionInfoEnv(t *testing.T, envs []corev1.EnvVar, dynakube *dynat
 		connectioninfo.CommunicationEndpointsName,
 		env.ValueFrom.ConfigMapKeyRef.Key,
 	)
-}
-
-func TestAddProxyEnvs(t *testing.T) {
-	t.Run("adds proxy value from dynakube", func(t *testing.T) {
-		dynakube := &dynatracev1beta1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "test",
-			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				Proxy: &dynatracev1beta1.DynaKubeProxy{
-					Value: "test",
-				},
-			},
-		}
-		dsInfo := builderInfo{
-			dynakube: dynakube,
-		}
-		envVars := dsInfo.addProxyEnv(map[string]corev1.EnvVar{})
-
-		assertProxyEnv(t, mapToArray(envVars), dynakube)
-	})
-
-	t.Run("adds proxy value via secret ref from dynakube", func(t *testing.T) {
-		dynakube := &dynatracev1beta1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "test",
-			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				Proxy: &dynatracev1beta1.DynaKubeProxy{
-					ValueFrom: "test",
-				},
-			},
-		}
-		dsInfo := builderInfo{
-			dynakube: dynakube,
-		}
-		envVars := dsInfo.addProxyEnv(map[string]corev1.EnvVar{})
-
-		assertProxyEnv(t, mapToArray(envVars), dynakube)
-	})
-}
-
-func assertProxyEnv(t *testing.T, envs []corev1.EnvVar, dynakube *dynatracev1beta1.DynaKube) {
-	env := kubeobjects.FindEnvVar(envs, proxy)
-	assert.Equal(t, env.Name, proxy)
-	assert.Equal(t, dynakube.Spec.Proxy.Value, env.Value)
-	if dynakube.Spec.Proxy.ValueFrom != "" {
-		assert.Equal(t, dynakube.Spec.Proxy.ValueFrom, env.ValueFrom.SecretKeyRef.LocalObjectReference.Name)
-		assert.Equal(t, "proxy", env.ValueFrom.SecretKeyRef.Key)
-	}
 }
 
 func TestAddReadOnlyEnv(t *testing.T) {

@@ -6,7 +6,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -56,11 +56,9 @@ func (r *Reconciler) generateForDynakube(ctx context.Context, dynakube *dynatrac
 		return errors.WithStack(err)
 	}
 
-	coreLabels := kubeobjects.NewCoreLabels(dynakube.Name, kubeobjects.ActiveGateComponentLabel)
 	secret, err := kubeobjects.CreateSecret(r.scheme, r.dynakube,
-		kubeobjects.NewSecretNameModifier(capability.BuildProxySecretName(dynakube.Name)),
+		kubeobjects.NewSecretNameModifier(BuildProxySecretName(dynakube.Name)),
 		kubeobjects.NewSecretNamespaceModifier(r.dynakube.Namespace),
-		kubeobjects.NewSecretLabelsModifier(coreLabels.BuildMatchLabels()),
 		kubeobjects.NewSecretTypeModifier(corev1.SecretTypeOpaque),
 		kubeobjects.NewSecretDataModifier(data))
 	if err != nil {
@@ -74,7 +72,7 @@ func (r *Reconciler) generateForDynakube(ctx context.Context, dynakube *dynatrac
 }
 
 func (r *Reconciler) ensureDeleted(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
-	secretName := capability.BuildProxySecretName(dynakube.Name)
+	secretName := BuildProxySecretName(dynakube.Name)
 	secret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: secretName, Namespace: dynakube.Namespace}}
 	if err := r.client.Delete(ctx, &secret); err != nil && !k8serrors.IsNotFound(err) {
 		return err
@@ -122,4 +120,8 @@ func parseProxyUrl(proxy string) (host, port, username, password string, err err
 
 	passwd, _ := proxyUrl.User.Password()
 	return proxyUrl.Hostname(), proxyUrl.Port(), proxyUrl.User.Username(), passwd, nil
+}
+
+func BuildProxySecretName(dynakubeName string) string {
+	return dynakubeName + "-" + consts.ProxySecretSuffix
 }

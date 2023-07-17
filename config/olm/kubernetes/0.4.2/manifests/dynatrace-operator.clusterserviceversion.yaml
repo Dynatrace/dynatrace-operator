@@ -699,7 +699,7 @@ spec:
           resourceNames:
           - dynatrace-dynakube-config
           - dynatrace-data-ingest-endpoint
-          - dynatrace-activegate-internal-proxy
+          - dynatrace-internal-proxy
           resources:
           - secrets
           verbs:

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/proxy"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,8 +41,8 @@ func buildDynakube(capabilities []dynatracev1beta1.CapabilityDisplayName) *dynat
 
 func TestBuildProxySecretName(t *testing.T) {
 	t.Run(`correct secret name`, func(t *testing.T) {
-		expectedProxySecretName := "someDK-activegate-internal-proxy"
-		actualProxySecretName := BuildProxySecretName("someDK")
+		expectedProxySecretName := "someDK-internal-proxy"
+		actualProxySecretName := proxy.BuildProxySecretName("someDK")
 		require.NotEmpty(t, actualProxySecretName)
 		assert.Equal(t, expectedProxySecretName, actualProxySecretName)
 	})

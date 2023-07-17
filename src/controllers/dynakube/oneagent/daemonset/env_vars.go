@@ -3,7 +3,6 @@ package daemonset
 import (
 	"sort"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
@@ -18,8 +17,6 @@ const (
 
 	oneagentDisableContainerInjection = "ONEAGENT_DISABLE_CONTAINER_INJECTION"
 	oneagentReadOnlyMode              = "ONEAGENT_READ_ONLY_MODE"
-
-	proxy = "https_proxy"
 )
 
 func (dsInfo *builderInfo) environmentVariables() []corev1.EnvVar {
@@ -36,7 +33,6 @@ func (dsInfo *builderInfo) environmentVariables() []corev1.EnvVar {
 	envVarMap = dsInfo.addDeploymentMetadataEnv(envVarMap)
 	envVarMap = dsInfo.addOperatorVersionInfoEnv(envVarMap)
 	envVarMap = dsInfo.addConnectionInfoEnvs(envVarMap)
-	envVarMap = dsInfo.addProxyEnv(envVarMap)
 	envVarMap = dsInfo.addReadOnlyEnv(envVarMap)
 
 	return mapToArray(envVarMap)
@@ -85,23 +81,6 @@ func (dsInfo *builderInfo) addConnectionInfoEnvs(envVarMap map[string]corev1.Env
 		Key:      connectioninfo.CommunicationEndpointsName,
 		Optional: address.Of(false),
 	}})
-	return envVarMap
-}
-
-func (dsInfo *builderInfo) addProxyEnv(envVarMap map[string]corev1.EnvVar) map[string]corev1.EnvVar {
-	if !dsInfo.hasProxy() {
-		return envVarMap
-	}
-	if dsInfo.dynakube.Spec.Proxy.ValueFrom != "" {
-		addDefaultValueSource(envVarMap, proxy, &corev1.EnvVarSource{
-			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{Name: dsInfo.dynakube.Spec.Proxy.ValueFrom},
-				Key:                  dynatracev1beta1.ProxyKey,
-			},
-		})
-	} else {
-		addDefaultValue(envVarMap, proxy, dsInfo.dynakube.Spec.Proxy.Value)
-	}
 	return envVarMap
 }
 
