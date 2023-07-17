@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	fakeistio "istio.io/client-go/pkg/clientset/versioned/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	fakediscovery "k8s.io/client-go/discovery/fake"
@@ -108,4 +109,68 @@ func testReconcileIstio(t *testing.T, enableIstioGVR bool) {
 
 	assert.NoError(t, err)
 	assert.False(t, update)
+}
+
+func TestIstioClient_BuildDynatraceServiceEntry(t *testing.T) {
+	testIPhosts := dtclient.CommunicationHost{Host: testIP1, Port: uint32(testPort1)}
+	testHosthosts := dtclient.CommunicationHost{Host: testHost1, Port: uint32(testPort2), Protocol: protocolHttps}
+	serverUrl := "http://127.0.0.1:59842"
+
+	err := os.Setenv(kubeobjects.EnvPodNamespace, DefaultTestNamespace)
+	if err != nil {
+		t.Error("Failed to set environment variable")
+	}
+
+	commHosts := []dtclient.CommunicationHost{testIPhosts, testHosthosts}
+
+	ist := fakeistio.NewSimpleClientset()
+	fakeDiscovery, ok := ist.Discovery().(*fakediscovery.FakeDiscovery)
+	if !ok {
+		t.Fatalf("couldn't convert Discovery() to *FakeDiscovery")
+	}
+	fakeDiscovery.Resources = []*metav1.APIResourceList{{
+		GroupVersion: IstioGVR,
+	}}
+
+	instance := &dynatracev1beta1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "dynakube",
+			Namespace: DefaultTestNamespace,
+		},
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			APIURL: serverUrl,
+		},
+	}
+
+	reconciler := NewReconciler(
+		&rest.Config{
+			Host:    serverUrl,
+			APIPath: "v1alpha3",
+		},
+		scheme.Scheme,
+		ist,
+	)
+	updated, err := reconciler.Reconcile(instance, []dtclient.CommunicationHost{})
+
+	assert.NoError(t, err)
+	assert.True(t, updated)
+
+	updated, err = reconciler.Reconcile(instance, commHosts)
+
+	assert.NoError(t, err)
+	assert.True(t, updated)
+
+	listOps := &metav1.ListOptions{LabelSelector: "dynatrace-istio-role=communication-endpoint"}
+
+	list, err := ist.NetworkingV1alpha3().ServiceEntries(DefaultTestNamespace).List(context.TODO(), *listOps)
+
+	require.NoError(t, err)
+
+	// Assert we successfully created ServiceEntry for ip:
+	assert.Equal(t, list.Items[0].Spec.Addresses, []string{"42.42.42.42/32"})
+	assert.Equal(t, list.Items[0].Spec.Ports[0].Number, uint32(testPort1))
+
+	// Assert we successfully created ServiceEntry for host:
+	assert.Equal(t, list.Items[1].Spec.Hosts, []string{testHost1})
+	assert.Equal(t, list.Items[1].Spec.Ports[0].Number, uint32(testPort2))
 }

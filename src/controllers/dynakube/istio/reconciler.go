@@ -78,13 +78,24 @@ func (r *Reconciler) Reconcile(instance *dynatracev1beta1.DynaKube, communicatio
 	return false, nil
 }
 
-func (r *Reconciler) reconcileIstioConfigurations(instance *dynatracev1beta1.DynaKube,
-	comHosts []dtclient.CommunicationHost, role string) (bool, error) {
-	add, err := r.reconcileCreateConfigurations(instance, comHosts, role)
+func (r *Reconciler) reconcileIstioConfigurations(instance *dynatracev1beta1.DynaKube, comHosts []dtclient.CommunicationHost, role string) (bool, error) {
+	var ipHosts []dtclient.CommunicationHost
+	var hostHosts []dtclient.CommunicationHost
+
+	// Split ip hosts and host hosts
+	for _, commHost := range comHosts {
+		if net.ParseIP(commHost.Host) != nil {
+			ipHosts = append(ipHosts, commHost)
+		} else {
+			hostHosts = append(hostHosts, commHost)
+		}
+	}
+
+	add, err := r.reconcileCreateConfigurations(instance, ipHosts, hostHosts, role)
 	if err != nil {
 		return false, err
 	}
-	rem, err := r.reconcileRemoveConfigurations(instance, comHosts, role)
+	rem, err := r.reconcileRemoveConfigurations(instance, ipHosts, hostHosts, role)
 	if err != nil {
 		return false, err
 	}
@@ -93,14 +104,15 @@ func (r *Reconciler) reconcileIstioConfigurations(instance *dynatracev1beta1.Dyn
 }
 
 func (r *Reconciler) reconcileRemoveConfigurations(instance *dynatracev1beta1.DynaKube,
-	comHosts []dtclient.CommunicationHost, role string) (bool, error) {
+	ipHosts, hostHosts []dtclient.CommunicationHost, role string) (bool, error) {
 	labelSelector := labels.SelectorFromSet(buildIstioLabels(instance.GetName(), role)).String()
 	listOps := &metav1.ListOptions{
 		LabelSelector: labelSelector,
 	}
 
 	seenComHosts := map[string]bool{}
-	seenComHosts[BuildNameForEndpoint(instance.GetName(), comHosts)] = true
+	seenComHosts[BuildNameForEndpoint(instance.GetName(), ipHosts)] = true
+	seenComHosts[BuildNameForEndpoint(instance.GetName(), hostHosts)] = true
 
 	istioConfig := &configuration{
 		reconciler: r,
@@ -121,20 +133,9 @@ func (r *Reconciler) reconcileRemoveConfigurations(instance *dynatracev1beta1.Dy
 }
 
 func (r *Reconciler) reconcileCreateConfigurations(instance *dynatracev1beta1.DynaKube,
-	communicationHosts []dtclient.CommunicationHost, role string) (bool, error) {
+	ipHosts, hostHosts []dtclient.CommunicationHost, role string) (bool, error) {
 	configurationUpdated := false
 	var createdServiceEntryIP, createdServiceEntryFQNS bool
-
-	// split ips and hosts into two sets and then create
-	var ipHosts []dtclient.CommunicationHost
-	var hostHosts []dtclient.CommunicationHost
-	for _, commHost := range communicationHosts {
-		if net.ParseIP(commHost.Host) != nil {
-			ipHosts = append(ipHosts, commHost)
-		} else {
-			hostHosts = append(hostHosts, commHost)
-		}
-	}
 
 	if len(ipHosts) != 0 {
 		name := BuildNameForEndpoint(instance.GetName(), ipHosts)
@@ -160,7 +161,7 @@ func (r *Reconciler) reconcileCreateConfigurations(instance *dynatracev1beta1.Dy
 			instance:   instance,
 			reconciler: r,
 			name:       name,
-			commHosts:  ipHosts,
+			commHosts:  hostHosts,
 			role:       role,
 		}
 		serviceEntry := buildServiceEntryFQDNs(buildObjectMeta(istioConfig.name, istioConfig.instance.GetNamespace()), hostHosts)
