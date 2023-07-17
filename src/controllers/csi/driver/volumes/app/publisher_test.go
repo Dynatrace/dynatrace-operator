@@ -31,7 +31,7 @@ const (
 )
 
 func TestPublishVolume(t *testing.T) {
-	t.Run(`using url`, func(t *testing.T) {
+	t.Run("using url", func(t *testing.T) {
 		mounter := mount.NewFakeMounter([]mount.MountPoint{})
 		publisher := newPublisherForTesting(mounter)
 		mockUrlDynakubeMetadata(t, &publisher)
@@ -45,7 +45,7 @@ func TestPublishVolume(t *testing.T) {
 		assert.Equal(t, "overlay", mounter.MountPoints[0].Device)
 		assert.Equal(t, "overlay", mounter.MountPoints[0].Type)
 		assert.Equal(t, []string{
-			"lowerdir=/a-tenant-uuid/bin/1.2-3",
+			"lowerdir=/a-tenant-uuid/config:/codemodules/1.2-3",
 			"upperdir=/a-tenant-uuid/run/a-volume/var",
 			"workdir=/a-tenant-uuid/run/a-volume/work"},
 			mounter.MountPoints[0].Opts)
@@ -59,7 +59,7 @@ func TestPublishVolume(t *testing.T) {
 		assertReferencesForPublishedVolume(t, &publisher, mounter)
 	})
 
-	t.Run(`using code modules image`, func(t *testing.T) {
+	t.Run("using code modules image", func(t *testing.T) {
 		mounter := mount.NewFakeMounter([]mount.MountPoint{})
 		publisher := newPublisherForTesting(mounter)
 		mockImageDynakubeMetadata(t, &publisher)
@@ -87,7 +87,7 @@ func TestPublishVolume(t *testing.T) {
 		assertReferencesForPublishedVolumeWithCodeModulesImage(t, &publisher, mounter)
 	})
 
-	t.Run(`too many mount attempts`, func(t *testing.T) {
+	t.Run("too many mount attempts", func(t *testing.T) {
 		mounter := mount.NewFakeMounter([]mount.MountPoint{})
 		publisher := newPublisherForTesting(mounter)
 		mockFailedPublishedVolume(t, &publisher)

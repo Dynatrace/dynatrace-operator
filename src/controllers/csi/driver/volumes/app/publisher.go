@@ -140,18 +140,16 @@ func (publisher *AppVolumePublisher) fireVolumeUnpublishedMetric(volume metadata
 }
 
 func (publisher *AppVolumePublisher) buildLowerDir(bindCfg *csivolumes.BindConfig) string {
-	var directories []string
+	var binFolderName string
 	if bindCfg.ImageDigest == "" {
-		directories = []string{
-			publisher.path.AgentBinaryDirForVersion(bindCfg.TenantUUID, bindCfg.Version),
-		}
+		binFolderName = bindCfg.Version
 	} else {
-		directories = []string{
-			publisher.path.AgentConfigDir(bindCfg.TenantUUID),
-			publisher.path.AgentSharedBinaryDirForImage(bindCfg.ImageDigest),
-		}
+		binFolderName = bindCfg.ImageDigest
 	}
-
+	directories := []string{
+		publisher.path.AgentConfigDir(bindCfg.TenantUUID),
+		publisher.path.AgentSharedBinaryDirForAgent(binFolderName),
+	}
 	return strings.Join(directories, ":")
 }
 
