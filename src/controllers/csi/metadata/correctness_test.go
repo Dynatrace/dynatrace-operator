@@ -129,8 +129,4 @@ func TestCorrectCSI(t *testing.T) {
 		require.NoError(t, err)
 		assert.Nil(t, ten)
 	})
-	t.Run("no error on empty db", func(t *testing.T) {
-
-	})
-
 }
