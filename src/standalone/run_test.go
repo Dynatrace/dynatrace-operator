@@ -26,7 +26,7 @@ var testProcessModuleConfig = dtclient.ProcessModuleConfig{
 
 func TestNewRunner(t *testing.T) {
 	fs := prepTestFs(t)
-	t.Run(`create runner with oneagent and data-ingest injection`, func(t *testing.T) {
+	t.Run("create runner with oneagent and data-ingest injection", func(t *testing.T) {
 		resetEnv := prepCombinedTestEnv(t)
 		runner, err := NewRunner(fs)
 		resetEnv()
@@ -40,7 +40,7 @@ func TestNewRunner(t *testing.T) {
 		assert.NotNil(t, runner.installer)
 		assert.Empty(t, runner.hostTenant)
 	})
-	t.Run(`create runner with only oneagent`, func(t *testing.T) {
+	t.Run("create runner with only oneagent", func(t *testing.T) {
 		resetEnv := prepOneAgentTestEnv(t)
 		runner, err := NewRunner(fs)
 		resetEnv()
@@ -53,7 +53,7 @@ func TestNewRunner(t *testing.T) {
 		assert.NotNil(t, runner.installer)
 		assert.Empty(t, runner.hostTenant)
 	})
-	t.Run(`create runner with only data-ingest injection`, func(t *testing.T) {
+	t.Run("create runner with only data-ingest injection", func(t *testing.T) {
 		resetEnv := prepDataIngestTestEnv(t, false)
 		runner, err := NewRunner(fs)
 		resetEnv()
@@ -70,18 +70,18 @@ func TestNewRunner(t *testing.T) {
 
 func TestConsumeErrorIfNecessary(t *testing.T) {
 	runner := createMockedRunner(t)
-	t.Run(`no error thrown`, func(t *testing.T) {
+	t.Run("no error thrown", func(t *testing.T) {
 		runner.env.FailurePolicy = false
 		err := runner.Run()
 		assert.Nil(t, err)
 	})
-	t.Run(`error thrown, but consume error`, func(t *testing.T) {
+	t.Run("error thrown, but consume error", func(t *testing.T) {
 		runner.env.K8NodeName = "" // create artificial error
 		runner.env.FailurePolicy = false
 		err := runner.Run()
 		assert.Nil(t, err)
 	})
-	t.Run(`error thrown, but don't consume error`, func(t *testing.T) {
+	t.Run("error thrown, but don't consume error", func(t *testing.T) {
 		runner.env.K8NodeName = "" // create artificial error
 		runner.env.FailurePolicy = true
 		err := runner.Run()
@@ -91,14 +91,14 @@ func TestConsumeErrorIfNecessary(t *testing.T) {
 
 func TestSetHostTenant(t *testing.T) {
 	runner := createMockedRunner(t)
-	t.Run(`fail due to missing node`, func(t *testing.T) {
+	t.Run("fail due to missing node", func(t *testing.T) {
 		runner.config.HasHost = true
 
 		err := runner.setHostTenant()
 
 		require.Error(t, err)
 	})
-	t.Run(`set hostTenant to node`, func(t *testing.T) {
+	t.Run("set hostTenant to node", func(t *testing.T) {
 		runner.config.HasHost = true
 		runner.env.K8NodeName = testNodeName
 
@@ -107,7 +107,7 @@ func TestSetHostTenant(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, testTenantUUID, runner.hostTenant)
 	})
-	t.Run(`set hostTenant to empty`, func(t *testing.T) {
+	t.Run("set hostTenant to empty", func(t *testing.T) {
 		runner.config.HasHost = false
 
 		err := runner.setHostTenant()
@@ -118,23 +118,21 @@ func TestSetHostTenant(t *testing.T) {
 }
 
 func TestInstallOneAgent(t *testing.T) {
-	runner := createMockedRunner(t)
-	t.Run(`happy install`, func(t *testing.T) {
+	t.Run("happy install", func(t *testing.T) {
+		runner := createMockedRunner(t)
+		runner.fs.Create(filepath.Join(config.AgentBinDirMount, "agent/conf/ruxitagentproc.conf"))
 		runner.dtclient.(*dtclient.MockDynatraceClient).
 			On("GetProcessModuleConfig", uint(0)).
 			Return(&testProcessModuleConfig, nil)
-		runner.installer.(*installer.Mock).
-			On("UpdateProcessModuleConfig", config.AgentBinDirMount, &testProcessModuleConfig).
-			Return(nil)
 		runner.installer.(*installer.Mock).
 			On("InstallAgent", config.AgentBinDirMount).
 			Return(true, nil)
 
 		err := runner.installOneAgent()
 
-		require.NoError(t, err)
+		require.NoError(t, err) //this
 	})
-	t.Run(`sad install -> install fail`, func(t *testing.T) {
+	t.Run("sad install -> install fail", func(t *testing.T) {
 		runner := createMockedRunner(t)
 		runner.installer.(*installer.Mock).
 			On("InstallAgent", config.AgentBinDirMount).
@@ -144,14 +142,11 @@ func TestInstallOneAgent(t *testing.T) {
 
 		require.Error(t, err)
 	})
-	t.Run(`sad install -> ruxitagent update fail`, func(t *testing.T) {
+	t.Run("sad install -> ruxitagent update fail", func(t *testing.T) {
 		runner := createMockedRunner(t)
 		runner.dtclient.(*dtclient.MockDynatraceClient).
 			On("GetProcessModuleConfig", uint(0)).
 			Return(&testProcessModuleConfig, nil)
-		runner.installer.(*installer.Mock).
-			On("UpdateProcessModuleConfig", config.AgentBinDirMount, &testProcessModuleConfig).
-			Return(fmt.Errorf("BOOM"))
 		runner.installer.(*installer.Mock).
 			On("InstallAgent", config.AgentBinDirMount).
 			Return(true, nil)
@@ -160,14 +155,11 @@ func TestInstallOneAgent(t *testing.T) {
 
 		require.Error(t, err)
 	})
-	t.Run(`sad install -> ruxitagent endpoint fail`, func(t *testing.T) {
+	t.Run("sad install -> ruxitagent endpoint fail", func(t *testing.T) {
 		runner := createMockedRunner(t)
 		runner.dtclient.(*dtclient.MockDynatraceClient).
 			On("GetProcessModuleConfig", uint(0)).
 			Return(&dtclient.ProcessModuleConfig{}, fmt.Errorf("BOOM"))
-		runner.installer.(*installer.Mock).
-			On("UpdateProcessModuleConfig", config.AgentBinDirMount, &testProcessModuleConfig).
-			Return(nil)
 		runner.installer.(*installer.Mock).
 			On("InstallAgent", config.AgentBinDirMount).
 			Return(true, nil)
@@ -185,11 +177,8 @@ func TestRun(t *testing.T) {
 	runner.dtclient.(*dtclient.MockDynatraceClient).
 		On("GetProcessModuleConfig", uint(0)).
 		Return(&testProcessModuleConfig, nil)
-	runner.installer.(*installer.Mock).
-		On("UpdateProcessModuleConfig", config.AgentBinDirMount, &testProcessModuleConfig).
-		Return(nil)
 
-	t.Run(`no install, just config generation`, func(t *testing.T) {
+	t.Run("no install, just config generation", func(t *testing.T) {
 		runner.fs = prepReadOnlyCSIFilesystem(t, afero.NewMemMapFs())
 		runner.env.Mode = config.AgentCsiMode
 
@@ -200,12 +189,13 @@ func TestRun(t *testing.T) {
 		assertIfEnrichmentFilesExists(t, *runner)
 		assertIfReadOnlyCSIFilesExists(t, *runner)
 	})
-	t.Run(`install + config generation`, func(t *testing.T) {
+	t.Run("install + config generation", func(t *testing.T) {
 		runner.installer.(*installer.Mock).
 			On("InstallAgent", config.AgentBinDirMount).
 			Return(true, nil)
 		runner.fs = prepReadOnlyCSIFilesystem(t, afero.NewMemMapFs())
 		runner.env.Mode = config.AgentInstallerMode
+		runner.fs.Create(filepath.Join(config.AgentBinDirMount, "agent/conf/ruxitagentproc.conf"))
 
 		err := runner.Run()
 
@@ -220,7 +210,7 @@ func TestConfigureInstallation(t *testing.T) {
 	runner := createMockedRunner(t)
 	runner.config.HasHost = false
 
-	t.Run(`create all config files`, func(t *testing.T) {
+	t.Run("create all config files", func(t *testing.T) {
 		runner.fs = prepReadOnlyCSIFilesystem(t, afero.NewMemMapFs())
 		runner.env.OneAgentInjected = true
 		runner.env.DataIngestInjected = true
@@ -233,7 +223,7 @@ func TestConfigureInstallation(t *testing.T) {
 		assertIfEnrichmentFilesExists(t, *runner)
 		assertIfReadOnlyCSIFilesExists(t, *runner)
 	})
-	t.Run(`create only container confs`, func(t *testing.T) {
+	t.Run("create only container confs", func(t *testing.T) {
 		runner.fs = afero.NewMemMapFs()
 		runner.env.OneAgentInjected = true
 		runner.env.DataIngestInjected = false
@@ -245,7 +235,7 @@ func TestConfigureInstallation(t *testing.T) {
 		assertIfAgentFilesExists(t, *runner)
 		assertIfEnrichmentFilesNotExists(t, *runner)
 	})
-	t.Run(`create only container confs with readonly csi`, func(t *testing.T) {
+	t.Run("create only container confs with readonly csi", func(t *testing.T) {
 		runner.fs = prepReadOnlyCSIFilesystem(t, afero.NewMemMapFs())
 		runner.env.OneAgentInjected = true
 		runner.env.DataIngestInjected = false
@@ -258,7 +248,7 @@ func TestConfigureInstallation(t *testing.T) {
 		assertIfEnrichmentFilesNotExists(t, *runner)
 		assertIfReadOnlyCSIFilesExists(t, *runner)
 	})
-	t.Run(`create only enrichment file`, func(t *testing.T) {
+	t.Run("create only enrichment file", func(t *testing.T) {
 		runner.fs = afero.NewMemMapFs()
 		runner.env.OneAgentInjected = false
 		runner.env.DataIngestInjected = true
@@ -309,7 +299,7 @@ func TestCreateContainerConfigurationFiles(t *testing.T) {
 	runner := createMockedRunner(t)
 	runner.config.HasHost = false
 
-	t.Run(`create config files`, func(t *testing.T) {
+	t.Run("create config files", func(t *testing.T) {
 		runner.fs = afero.NewMemMapFs()
 
 		err := runner.createContainerConfigurationFiles()
@@ -328,7 +318,7 @@ func TestCreateContainerConfigurationFiles(t *testing.T) {
 
 func TestSetLDPreload(t *testing.T) {
 	runner := createMockedRunner(t)
-	t.Run(`create ld preload file`, func(t *testing.T) {
+	t.Run("create ld preload file", func(t *testing.T) {
 		runner.fs = afero.NewMemMapFs()
 
 		err := runner.setLDPreload()
@@ -347,7 +337,7 @@ func TestEnrichMetadata(t *testing.T) {
 	runner := createMockedRunner(t)
 	runner.config.HasHost = false
 
-	t.Run(`create enrichment files`, func(t *testing.T) {
+	t.Run("create enrichment files", func(t *testing.T) {
 		runner.fs = afero.NewMemMapFs()
 
 		err := runner.enrichMetadata()
@@ -362,7 +352,7 @@ func TestPropagateTLSCert(t *testing.T) {
 	runner := createMockedRunner(t)
 	runner.config.HasHost = false
 
-	t.Run(`create tls custom.pem`, func(t *testing.T) {
+	t.Run("create tls custom.pem", func(t *testing.T) {
 		runner.fs = afero.NewMemMapFs()
 
 		err := runner.propagateTLSCert()
