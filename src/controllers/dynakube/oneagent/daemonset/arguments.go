@@ -11,7 +11,6 @@ func (dsInfo *builderInfo) arguments() []string {
 	args := make([]string, 0)
 
 	args = dsInfo.appendHostInjectArgs(args)
-	args = dsInfo.appendProxyArg(args)
 	args = dsInfo.appendNetworkZoneArg(args)
 	args = appendOperatorVersionArg(args)
 	args = appendImmutableImageArgs(args)
@@ -42,15 +41,4 @@ func (dsInfo *builderInfo) appendNetworkZoneArg(args []string) []string {
 		return append(args, fmt.Sprintf("--set-network-zone=%s", dsInfo.dynakube.Spec.NetworkZone))
 	}
 	return args
-}
-
-func (dsInfo *builderInfo) appendProxyArg(args []string) []string {
-	if dsInfo.hasProxy() {
-		return append(args, "--set-proxy=$(https_proxy)")
-	}
-	return args
-}
-
-func (dsInfo *builderInfo) hasProxy() bool {
-	return dsInfo.dynakube != nil && dsInfo.dynakube.NeedsOneAgentProxy()
 }

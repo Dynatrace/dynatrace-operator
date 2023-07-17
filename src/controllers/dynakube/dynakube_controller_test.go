@@ -9,6 +9,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	dkVersion "github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
@@ -277,7 +278,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		assert.NotNil(t, result)
 
 		var proxySecret corev1.Secret
-		name := capability.BuildProxySecretName(testName)
+		name := proxy.BuildProxySecretName(testName)
 		err = controller.client.Get(context.TODO(), client.ObjectKey{Name: name, Namespace: testNamespace}, &proxySecret)
 
 		assert.NoError(t, err)
@@ -311,7 +312,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		assert.NotNil(t, result)
 
 		var proxySecret corev1.Secret
-		name := capability.BuildProxySecretName(testName)
+		name := proxy.BuildProxySecretName(testName)
 		err = controller.client.Get(context.TODO(), client.ObjectKey{Name: name, Namespace: testNamespace}, &proxySecret)
 
 		assert.Error(t, err)

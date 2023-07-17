@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent/daemonset"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
@@ -75,13 +76,15 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 		dynakube,
 		NewSecret(dkName, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}),
 		sampleKubeSystemNS)
+	proxyReconciler := proxy.NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube)
 
 	dtClient := &dtclient.MockDynatraceClient{}
 
 	reconciler := &Reconciler{
-		client:    fakeClient,
-		apiReader: fakeClient,
-		scheme:    scheme.Scheme,
+		client:          fakeClient,
+		apiReader:       fakeClient,
+		scheme:          scheme.Scheme,
+		proxyReconciler: proxyReconciler,
 	}
 
 	err := reconciler.Reconcile(context.TODO(), dynakube)
@@ -150,10 +153,13 @@ func TestReconcile_InstancesSet(t *testing.T) {
 	dtcMock.On("GetTokenScopes", "42").Return(dtclient.TokenScopes{dtclient.DynatracePaasToken}, nil)
 	dtcMock.On("GetTokenScopes", "84").Return(dtclient.TokenScopes{dtclient.DynatraceApiToken}, nil)
 
+	proxyReconciler := proxy.NewReconciler(c, c, scheme.Scheme, &base)
+
 	reconciler := &Reconciler{
-		client:    c,
-		apiReader: c,
-		scheme:    scheme.Scheme,
+		client:          c,
+		apiReader:       c,
+		scheme:          scheme.Scheme,
+		proxyReconciler: proxyReconciler,
 	}
 
 	expectedLabels := map[string]string{
@@ -164,7 +170,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		kubeobjects.AppManagedByLabel: version.AppName,
 	}
 
-	t.Run("reconileImp Instances set, if autoUpdate is true", func(t *testing.T) {
+	t.Run("reconcileImp Instances set, if autoUpdate is true", func(t *testing.T) {
 		dk := base.DeepCopy()
 		dk.Status.OneAgent.Version = oldComponentVersion
 		dsInfo := daemonset.NewClassicFullStack(dk, testClusterID)
@@ -567,7 +573,7 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 		sampleKubeSystemNS)
 
 	t.Run(`create OneAgent connection info ConfigMap`, func(t *testing.T) {
-		reconciler := NewOneAgentReconciler(fakeClient, fakeClient, scheme.Scheme, "")
+		reconciler := NewOneAgentReconciler(fakeClient, fakeClient, scheme.Scheme, "", dynakube)
 
 		err := reconciler.Reconcile(context.TODO(), dynakube)
 		require.NoError(t, err)
