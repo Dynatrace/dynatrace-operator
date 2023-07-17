@@ -8,29 +8,29 @@ import (
 	"github.com/spf13/afero"
 )
 
-func (gc *CSIGarbageCollector) runSharedImagesGarbageCollection(ctx context.Context) error {
-	imageDirs, err := gc.getSharedImageDirs()
+func (gc *CSIGarbageCollector) runSharedBinaryGarbageCollection(ctx context.Context) error {
+	imageDirs, err := gc.getSharedBinDirs()
 	if err != nil {
 		return err
 	}
 	if len(imageDirs) == 0 {
-		log.Info("no shared image dirs on node")
+		log.Info("no shared binary dirs on node")
 		return nil
 	}
 
-	imagesToDelete, err := gc.collectUnusedImageDirs(ctx, imageDirs)
+	binsToDelete, err := gc.collectUnusedAgentBins(ctx, imageDirs)
 	if err != nil {
 		return err
 	}
-	if len(imagesToDelete) == 0 {
-		log.Info("no shared image dirs to delete on the node")
+	if len(binsToDelete) == 0 {
+		log.Info("no shared binary dirs to delete on the node")
 		return nil
 	}
 
-	return deleteImageDirs(gc.fs, imagesToDelete)
+	return deleteSharedBinDirs(gc.fs, binsToDelete)
 }
 
-func (gc *CSIGarbageCollector) getSharedImageDirs() ([]os.FileInfo, error) {
+func (gc *CSIGarbageCollector) getSharedBinDirs() ([]os.FileInfo, error) {
 	imageDirs, err := afero.Afero{Fs: gc.fs}.ReadDir(gc.path.AgentSharedBinaryDirBase())
 	if os.IsNotExist(err) {
 		return nil, nil
@@ -42,47 +42,40 @@ func (gc *CSIGarbageCollector) getSharedImageDirs() ([]os.FileInfo, error) {
 	return imageDirs, nil
 }
 
-func (gc *CSIGarbageCollector) collectUnusedImageDirs(ctx context.Context, imageDirs []os.FileInfo) ([]string, error) {
+func (gc *CSIGarbageCollector) collectUnusedAgentBins(ctx context.Context, imageDirs []os.FileInfo) ([]string, error) {
 	var toDelete []string
-	usedImageDigests, err := gc.getUsedImageDigests(ctx)
+	setAgentVersions, err := gc.db.GetLatestVersions(ctx)
 	if err != nil {
-		log.Info("failed to get the used image digests")
+		log.Info("failed to get the set image versions")
 		return nil, err
 	}
-	for _, imageDir := range imageDirs {
-		if !imageDir.IsDir() {
-			continue
-		}
-		imageDigest := imageDir.Name()
-		if !usedImageDigests[imageDigest] {
-			toDelete = append(toDelete, gc.path.AgentSharedBinaryDirForImage(imageDigest))
-		}
-	}
-	return toDelete, nil
-}
-
-func (gc *CSIGarbageCollector) getUsedImageDigests(ctx context.Context) (map[string]bool, error) {
-	usedImageDigests, err := gc.db.GetUsedImageDigests(ctx)
+	setAgentImages, err := gc.db.GetUsedImageDigests(ctx)
 	if err != nil {
-		log.Info("failed to get the used image digests")
+		log.Info("failed to get the set image digests")
 		return nil, err
 	}
 
 	// If a shared image was used during mount, the version of a Volume is the imageDigest.
 	// A Volume can still reference versions that are not imageDigests.
 	// However, this shouldn't cause issues as those versions don't matter in this context.
-	usedVersions, err := gc.db.GetAllUsedVersions(ctx)
+	mountedAgentBins, err := gc.db.GetAllUsedVersions(ctx)
 	if err != nil {
-		log.Info("failed to get all used versions")
+		log.Info("failed to get all mounted versions")
 		return nil, err
 	}
-	for version := range usedVersions {
-		usedImageDigests[version] = true
+	for _, imageDir := range imageDirs {
+		if !imageDir.IsDir() {
+			continue
+		}
+		agentBin := imageDir.Name()
+		if !mountedAgentBins[agentBin] && !setAgentVersions[agentBin] && !setAgentImages[agentBin] {
+			toDelete = append(toDelete, gc.path.AgentSharedBinaryDirForAgent(agentBin))
+		}
 	}
-	return usedImageDigests, nil
+	return toDelete, nil
 }
 
-func deleteImageDirs(fs afero.Fs, imageDirs []string) error {
+func deleteSharedBinDirs(fs afero.Fs, imageDirs []string) error {
 	for _, dir := range imageDirs {
 		log.Info("deleting shared image dir", "dir", dir)
 		err := fs.RemoveAll(dir)
