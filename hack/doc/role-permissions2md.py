@@ -73,9 +73,9 @@ def get_apis(rule):
 
     return api_string
 
-def multiline_codestyle_block(stringList):
+def multiline_codestyle_block(entries):
     result_string = ""
-    for entry in stringList:
+    for entry in entries:
         if (len(result_string) > 0):
             result_string += "<br />"
         if len(entry) > 0:
@@ -129,25 +129,22 @@ def main():
     else:
         file = open(args.src, "r")
 
-    docs = yaml.safe_load_all(file)
+    try:
+        docs = yaml.safe_load_all(file)
 
-    # for manifest in docs:
-    #     print(f"{manifest['metadata']['name']} {manifest['kind']}")
-    manifests = []
+        manifests = []
+        for manifest in docs:
+            manifests.append(manifest)
 
-    for manifest in docs:
-        manifests.append(manifest)
+        for manifest in manifests:
+            if manifest['kind'] == 'ClusterRole':
+                convert_cluster_roles_to_markdown(manifest)
 
-    for manifest in manifests:
-#        print(f"\n{manifest['metadata']['name']} {manifest['kind']}")
-        if manifest['kind'] == 'ClusterRole':
-            convert_cluster_roles_to_markdown(manifest)
+        for manifest in manifests:
+            if manifest['kind'] == 'Role':
+                convert_roles_to_markdown(manifest)
+    finally:
+        file.close()
 
-    for manifest in manifests:
-        #        print(f"\n ** {manifest['metadata']['name']} {manifest['kind']}")
-        if manifest['kind'] == 'Role':
-            convert_roles_to_markdown(manifest)
-
-    file.close()
 if __name__ == "__main__":
     sys.exit(main())
