@@ -40,7 +40,7 @@ func TestTimeoutReached(t *testing.T) {
 }
 
 func TestIsOutdated(t *testing.T) {
-	provider := New().SetToNow()
+	provider := New().Freeze()
 	now := provider.Now()
 
 	t.Run(`returns true if the previous timestamp is too far in the past`, func(t *testing.T) {
@@ -69,7 +69,7 @@ func TestTimeProvider(t *testing.T) {
 	})
 
 	t.Run("timestamp is set", func(t *testing.T) {
-		provider := New().SetToNow()
+		provider := New().Freeze()
 		earlier := provider.Now()
 		later := provider.Now()
 		assert.True(t, earlier.Equal(later))

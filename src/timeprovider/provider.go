@@ -25,7 +25,7 @@ func (timeProvider *Provider) Now() *metav1.Time {
 	return Now()
 }
 
-func (timeProvider *Provider) SetToNow() *Provider {
+func (timeProvider *Provider) Freeze() *Provider {
 	timeProvider.now = Now()
 	return timeProvider
 }
