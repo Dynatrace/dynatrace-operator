@@ -93,6 +93,27 @@ tests:
       - equal:
           path: spec.template.spec
           value:
+            initContainers:
+            - name: csi-init
+              image: image-name
+              imagePullPolicy: Always
+              args:
+              - csi-init
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: File
+              securityContext:
+                runAsUser: 0
+                privileged: false
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                runAsNonRoot: false
+                seccompProfile:
+                  type: RuntimeDefault
+                seLinuxOptions:
+                  level: s0
+              volumeMounts:
+              - mountPath: /data
+                name: data-dir
             priorityClassName: dynatrace-high-priority
             tolerations:
                 - effect: NoSchedule
