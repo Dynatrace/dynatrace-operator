@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	testTenantUUID          = "zib123"
+	testTenantUUID = "zib123"
 )
 
 func createTestProcessModuleConfig(revision uint) *dtclient.ProcessModuleConfig {
@@ -33,7 +33,7 @@ func createTestProcessModuleConfig(revision uint) *dtclient.ProcessModuleConfig 
 func createTestProcessModuleConfigCache(revision uint) processModuleConfigCache {
 	return processModuleConfigCache{
 		ProcessModuleConfig: createTestProcessModuleConfig(revision),
-		Hash: fmt.Sprintf("%d", revision),
+		Hash:                fmt.Sprintf("%d", revision),
 	}
 }
 

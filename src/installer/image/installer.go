@@ -38,9 +38,9 @@ func GetDigest(uri string) (string, error) {
 
 func NewImageInstaller(fs afero.Fs, props *Properties) installer.Installer {
 	return &Installer{
-		fs:          fs,
-		extractor:   zip.NewOneAgentExtractor(fs, props.PathResolver),
-		props:       props,
+		fs:        fs,
+		extractor: zip.NewOneAgentExtractor(fs, props.PathResolver),
+		props:     props,
 	}
 }
 

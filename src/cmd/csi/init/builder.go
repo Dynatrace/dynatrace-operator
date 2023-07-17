@@ -20,8 +20,8 @@ var (
 )
 
 type CommandBuilder struct {
-	configProvider  config.Provider
-	namespace       string
+	configProvider config.Provider
+	namespace      string
 }
 
 func NewCsiInitCommandBuilder() CommandBuilder {

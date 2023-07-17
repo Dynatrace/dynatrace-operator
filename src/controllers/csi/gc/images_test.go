@@ -209,7 +209,6 @@ func TestDeleteImageDirs(t *testing.T) {
 	})
 }
 
-
 func createTestDirs(t *testing.T, paths ...string) afero.Fs {
 	fs := afero.NewMemMapFs()
 	for _, path := range paths {
