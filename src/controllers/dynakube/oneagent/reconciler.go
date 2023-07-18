@@ -9,11 +9,9 @@ import (
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent/daemonset"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/pkg/errors"
@@ -38,26 +36,22 @@ func NewOneAgentReconciler( //nolint:revive // maximum number of return results 
 	apiReader client.Reader,
 	scheme *runtime.Scheme,
 	clusterID string,
-	dynakube *dynatracev1beta1.DynaKube) *Reconciler {
-	proxyReconciler := proxy.NewReconciler(client, apiReader, scheme, dynakube)
-
+) *Reconciler {
 	return &Reconciler{
-		client:          client,
-		apiReader:       apiReader,
-		scheme:          scheme,
-		clusterID:       clusterID,
-		proxyReconciler: proxyReconciler,
+		client:    client,
+		apiReader: apiReader,
+		scheme:    scheme,
+		clusterID: clusterID,
 	}
 }
 
 type Reconciler struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
-	client          client.Client
-	apiReader       client.Reader
-	scheme          *runtime.Scheme
-	clusterID       string
-	proxyReconciler controllers.Reconciler
+	client    client.Client
+	apiReader client.Reader
+	scheme    *runtime.Scheme
+	clusterID string
 }
 
 // Reconcile reads that state of the cluster for a OneAgent object and makes changes based on the state read
@@ -69,11 +63,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, dynakube *dynatracev1beta1.D
 	log.Info("reconciling OneAgent")
 
 	err := r.createOneAgentTenantConnectionInfoConfigMap(ctx, dynakube)
-	if err != nil {
-		return err
-	}
-
-	err = r.proxyReconciler.Reconcile()
 	if err != nil {
 		return err
 	}

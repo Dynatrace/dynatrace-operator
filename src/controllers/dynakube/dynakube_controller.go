@@ -15,6 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/status"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/version"
@@ -253,6 +254,12 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		return err
 	}
 
+	proxyReconciler := proxy.NewReconciler(controller.client, controller.apiReader, controller.scheme, dynakube)
+	err = proxyReconciler.Reconcile()
+	if err != nil {
+		return err
+	}
+
 	err = controller.reconcileActiveGate(ctx, dynakube, dynatraceClient)
 	if err != nil {
 		log.Info("could not reconcile ActiveGate")
@@ -333,7 +340,7 @@ func (controller *Controller) reconcileOneAgent(ctx context.Context, dynakube *d
 	}
 
 	return oneagent.NewOneAgentReconciler(
-		controller.client, controller.apiReader, controller.scheme, controller.clusterID, dynakube,
+		controller.client, controller.apiReader, controller.scheme, controller.clusterID,
 	).Reconcile(ctx, dynakube)
 }
 
