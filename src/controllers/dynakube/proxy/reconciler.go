@@ -25,7 +25,7 @@ const (
 
 var _ controllers.Reconciler = &Reconciler{}
 
-// Reconciler manages the ActiveGate proxy secret generation for the dynatrace namespace.
+// Reconciler manages the proxy secret generation for the dynatrace namespace.
 type Reconciler struct {
 	client    client.Client
 	apiReader client.Reader
@@ -34,7 +34,7 @@ type Reconciler struct {
 }
 
 func (r *Reconciler) Reconcile() error {
-	if r.dynakube.NeedsActiveGateProxy() {
+	if r.dynakube.NeedsActiveGateProxy() || r.dynakube.NeedsOneAgentProxy() {
 		return r.generateForDynakube(context.TODO(), r.dynakube)
 	}
 
