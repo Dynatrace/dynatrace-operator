@@ -18,7 +18,6 @@ const (
 	ActiveGateComponentLabel = "activegate"
 	WebhookComponentLabel    = "webhook"
 	SyntheticComponentLabel  = "synthetic"
-	ProxyComponentLabel      = "proxy"
 )
 
 type appMatchLabels struct {
