@@ -88,6 +88,16 @@ func TestGetVolumeMode(t *testing.T) {
 	})
 }
 
+func TestEnsureInitSecret(t *testing.T) {
+	t.Run("shouldn't create init secret if already there", func(t *testing.T) {
+		mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
+		request := createTestMutationRequest(getTestDynakube(), nil, getTestNamespace(nil))
+
+		err := mutator.ensureInitSecret(request)
+		require.NoError(t, err)
+	})
+}
+
 type mutateTestCase struct {
 	name                                   string
 	dynakube                               dynatracev1beta1.DynaKube
