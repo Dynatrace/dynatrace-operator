@@ -8,7 +8,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent/daemonset"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/proxy"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
@@ -76,15 +75,13 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 		dynakube,
 		NewSecret(dkName, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}),
 		sampleKubeSystemNS)
-	proxyReconciler := proxy.NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube)
 
 	dtClient := &dtclient.MockDynatraceClient{}
 
 	reconciler := &Reconciler{
-		client:          fakeClient,
-		apiReader:       fakeClient,
-		scheme:          scheme.Scheme,
-		proxyReconciler: proxyReconciler,
+		client:    fakeClient,
+		apiReader: fakeClient,
+		scheme:    scheme.Scheme,
 	}
 
 	err := reconciler.Reconcile(context.TODO(), dynakube)
@@ -153,13 +150,10 @@ func TestReconcile_InstancesSet(t *testing.T) {
 	dtcMock.On("GetTokenScopes", "42").Return(dtclient.TokenScopes{dtclient.DynatracePaasToken}, nil)
 	dtcMock.On("GetTokenScopes", "84").Return(dtclient.TokenScopes{dtclient.DynatraceApiToken}, nil)
 
-	proxyReconciler := proxy.NewReconciler(c, c, scheme.Scheme, &base)
-
 	reconciler := &Reconciler{
-		client:          c,
-		apiReader:       c,
-		scheme:          scheme.Scheme,
-		proxyReconciler: proxyReconciler,
+		client:    c,
+		apiReader: c,
+		scheme:    scheme.Scheme,
 	}
 
 	expectedLabels := map[string]string{
@@ -573,7 +567,7 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 		sampleKubeSystemNS)
 
 	t.Run(`create OneAgent connection info ConfigMap`, func(t *testing.T) {
-		reconciler := NewOneAgentReconciler(fakeClient, fakeClient, scheme.Scheme, "", dynakube)
+		reconciler := NewOneAgentReconciler(fakeClient, fakeClient, scheme.Scheme, "")
 
 		err := reconciler.Reconcile(context.TODO(), dynakube)
 		require.NoError(t, err)
