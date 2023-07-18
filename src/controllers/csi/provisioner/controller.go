@@ -215,7 +215,7 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Cont
 			dynakubeMetadata.ImageDigest = updatedDigest
 		}
 	} else {
-		updateVersion, err := provisioner.installAgentZip(ctx, *dk, dtc, latestProcessModuleConfigCache)
+		updateVersion, err := provisioner.installAgentZip(*dk, dtc, latestProcessModuleConfigCache)
 		if err != nil {
 			log.Info("error when updating agent from zip", "error", err.Error())
 			// reporting error but not returning it to avoid immediate requeue and subsequently calling the API every few seconds

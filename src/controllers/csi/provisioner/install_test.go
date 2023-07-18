@@ -46,7 +46,7 @@ func TestUpdateAgent(t *testing.T) {
 			Return(nil)
 		provisioner.urlInstallerBuilder = mockUrlInstallerBuilder(installerMock)
 
-		currentVersion, err := provisioner.installAgentZip(context.TODO(), dk, &dtclient.MockDynatraceClient{}, &processModuleCache)
+		currentVersion, err := provisioner.installAgentZip(dk, &dtclient.MockDynatraceClient{}, &processModuleCache)
 		require.NoError(t, err)
 		assert.Equal(t, testVersion, currentVersion)
 		t_utils.AssertEvents(t,
@@ -82,7 +82,7 @@ func TestUpdateAgent(t *testing.T) {
 			Return(nil)
 		provisioner.urlInstallerBuilder = mockUrlInstallerBuilder(installerMock)
 
-		currentVersion, err := provisioner.installAgentZip(context.TODO(), dk, &dtclient.MockDynatraceClient{}, &processModuleCache)
+		currentVersion, err := provisioner.installAgentZip(dk, &dtclient.MockDynatraceClient{}, &processModuleCache)
 		require.NoError(t, err)
 		assert.Equal(t, newVersion, currentVersion)
 	})
@@ -104,7 +104,7 @@ func TestUpdateAgent(t *testing.T) {
 			Return(nil)
 
 		provisioner.urlInstallerBuilder = mockUrlInstallerBuilder(installerMock)
-		currentVersion, err := provisioner.installAgentZip(context.TODO(), dk, &dtclient.MockDynatraceClient{}, &processModuleCache)
+		currentVersion, err := provisioner.installAgentZip(dk, &dtclient.MockDynatraceClient{}, &processModuleCache)
 
 		require.NoError(t, err)
 		assert.Equal(t, testVersion, currentVersion)
