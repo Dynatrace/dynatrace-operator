@@ -50,30 +50,5 @@ func (mod ProxyModifier) getVolumes() []corev1.Volume {
 }
 
 func (mod ProxyModifier) getVolumeMounts() []corev1.VolumeMount {
-	return []corev1.VolumeMount{
-		{
-			ReadOnly:  true,
-			Name:      config.ProxySecretVolumeName,
-			MountPath: config.ProxySecretHostMountPath,
-			SubPath:   config.ProxySecretHost,
-		},
-		{
-			ReadOnly:  true,
-			Name:      config.ProxySecretVolumeName,
-			MountPath: config.ProxySecretPortMountPath,
-			SubPath:   config.ProxySecretPort,
-		},
-		{
-			ReadOnly:  true,
-			Name:      config.ProxySecretVolumeName,
-			MountPath: config.ProxySecretUsernameMountPath,
-			SubPath:   config.ProxySecretUsername,
-		},
-		{
-			ReadOnly:  true,
-			Name:      config.ProxySecretVolumeName,
-			MountPath: config.ProxySecretPasswordMountPath,
-			SubPath:   config.ProxySecretPassword,
-		},
-	}
+	return []corev1.VolumeMount{proxy.PrepareVolumeMount()}
 }
