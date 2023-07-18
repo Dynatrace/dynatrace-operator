@@ -284,7 +284,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, proxySecret)
 	})
-	t.Run(`has proxy secret but feature flag disables proxy`, func(t *testing.T) {
+	t.Run(`has proxy secret but feature flags disables proxy`, func(t *testing.T) {
 		mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
 			dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeActiveGateTokenCreate})
 
@@ -301,7 +301,10 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 					Value:     "https://proxy:1234",
 					ValueFrom: "",
 				}}}
-		instance.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureActiveGateIgnoreProxy: "true"}
+		instance.Annotations = map[string]string{
+			dynatracev1beta1.AnnotationFeatureActiveGateIgnoreProxy: "true",
+			dynatracev1beta1.AnnotationFeatureOneAgentIgnoreProxy:   "true",
+		}
 		controller := createFakeClientAndReconciler(mockClient, instance, testPaasToken, testAPIToken)
 
 		result, err := controller.Reconcile(context.TODO(), reconcile.Request{
