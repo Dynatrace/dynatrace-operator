@@ -44,10 +44,12 @@ func (mutator *DataIngestPodMutator) Mutate(request *dtwebhook.MutationRequest) 
 	if err != nil {
 		return err
 	}
-	err = mutator.ensureDataIngestSecret(request)
-	if err != nil {
-		return err
-	}
+	/*
+		err = mutator.ensureDataIngestSecret(request)
+		if err != nil {
+			return err
+		}
+	*/
 	setupVolumes(request.Pod)
 	mutateUserContainers(request.Pod)
 	updateInstallContainer(request.InstallContainer, workload)

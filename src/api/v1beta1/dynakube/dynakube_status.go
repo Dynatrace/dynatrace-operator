@@ -12,6 +12,9 @@ import (
 // +k8s:openapi-gen=true
 type DynaKubeStatus struct { // nolint:revive
 	// Defines the current state (Running, Updating, Error, ...)
+	NamespaceSecretsPhase status.DeploymentPhase `json:"namespaceSecretsPhase,omitempty"`
+
+	// Defines the current state (Running, Updating, Error, ...)
 	Phase status.DeploymentPhase `json:"phase,omitempty"`
 
 	// UpdatedTimestamp indicates when the instance was last updated
@@ -134,5 +137,12 @@ type SyntheticStatus struct {
 func (dk *DynaKubeStatus) SetPhase(phase status.DeploymentPhase) bool {
 	upd := phase != dk.Phase
 	dk.Phase = phase
+	return upd
+}
+
+// SetPhase sets the status phase on the DynaKube object
+func (dk *DynaKubeStatus) SetNamespaceSecretsPhase(phase status.DeploymentPhase) bool {
+	upd := phase != dk.NamespaceSecretsPhase
+	dk.NamespaceSecretsPhase = phase
 	return upd
 }

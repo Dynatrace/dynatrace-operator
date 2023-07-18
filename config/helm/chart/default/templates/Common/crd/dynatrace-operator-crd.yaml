@@ -3540,6 +3540,10 @@ spec:
                   for the API token validity was sent
                 format: date-time
                 type: string
+              namespaceSecretsPhase:
+                description: Defines the current state (Running, Updating, Error,
+                  ...)
+                type: string
               oneAgent:
                 description: Observed state of OneAgent
                 properties:

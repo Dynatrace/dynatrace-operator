@@ -2,6 +2,7 @@ package mapper
 
 import (
 	"context"
+	"fmt"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
@@ -50,6 +51,7 @@ func (dm DynakubeMapper) MatchingNamespaces() ([]*corev1.Namespace, error) {
 func (dm DynakubeMapper) UnmapFromDynaKube() error {
 	var nsList []corev1.Namespace
 	var err error
+	log.Info("UnmapFromDynaKube", "dynakube", dm.dk.Name, "stack", errors.WithStack(fmt.Errorf("call stack")))
 	nsList, err = GetNamespacesForDynakube(dm.ctx, dm.apiReader, dm.dk.Name)
 	if err != nil {
 		return errors.WithMessagef(err, "failed to list namespaces for dynakube %s", dm.dk.Name)

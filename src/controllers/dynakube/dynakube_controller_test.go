@@ -19,7 +19,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
-	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -881,7 +880,7 @@ func TestGetDynakube(t *testing.T) {
 			apiReader: fakeClient,
 		}
 		ctx := context.TODO()
-		dynakube, err := controller.getDynakubeOrUnmap(ctx, testName, testNamespace)
+		dynakube, err := controller.getDynakube(ctx, testName, testNamespace)
 
 		assert.NotNil(t, dynakube)
 		assert.NoError(t, err)
@@ -890,28 +889,30 @@ func TestGetDynakube(t *testing.T) {
 		assert.Equal(t, testNamespace, dynakube.Namespace)
 		assert.NotNil(t, dynakube.Spec.OneAgent.CloudNativeFullStack)
 	})
-	t.Run("unmap if not not found", func(t *testing.T) {
-		namespace := &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:   testNamespace,
-				Labels: map[string]string{dtwebhook.InjectionInstanceLabel: testName},
-			},
-		}
-		fakeClient := fake.NewClient(namespace)
-		controller := &Controller{
-			client:    fakeClient,
-			apiReader: fakeClient,
-		}
-		ctx := context.TODO()
-		dynakube, err := controller.getDynakubeOrUnmap(ctx, testName, testNamespace)
+	/*
+		t.Run("unmap if not not found", func(t *testing.T) {
+				namespace := &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:   testNamespace,
+					Labels: map[string]string{dtwebhook.InjectionInstanceLabel: testName},
+				},
+			}
+			fakeClient := fake.NewClient(namespace)
+			controller := &Controller{
+				client:    fakeClient,
+				apiReader: fakeClient,
+			}
+			ctx := context.TODO()
+			dynakube, err := controller.getDynakubeOrUnmap(ctx, testName, testNamespace)
 
-		assert.Nil(t, dynakube)
-		assert.NoError(t, err)
+			assert.Nil(t, dynakube)
+			assert.NoError(t, err)
 
-		err = fakeClient.Get(ctx, client.ObjectKey{Name: testNamespace}, namespace)
-		require.NoError(t, err)
-		assert.NotContains(t, namespace.Labels, dtwebhook.InjectionInstanceLabel)
-	})
+			err = fakeClient.Get(ctx, client.ObjectKey{Name: testNamespace}, namespace)
+			require.NoError(t, err)
+			assert.NotContains(t, namespace.Labels, dtwebhook.InjectionInstanceLabel)
+		})
+	*/
 	t.Run("return unknown error", func(t *testing.T) {
 		controller := &Controller{
 			client:    errorClient{},
@@ -919,7 +920,7 @@ func TestGetDynakube(t *testing.T) {
 		}
 
 		ctx := context.TODO()
-		dynakube, err := controller.getDynakubeOrUnmap(ctx, testName, testNamespace)
+		dynakube, err := controller.getDynakube(ctx, testName, testNamespace)
 
 		assert.Nil(t, dynakube)
 		assert.EqualError(t, err, "fake error")

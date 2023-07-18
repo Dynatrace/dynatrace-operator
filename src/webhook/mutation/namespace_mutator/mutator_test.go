@@ -18,6 +18,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
+const (
+	testPaasToken       = "test-paas-token"
+	testApiToken        = "test-api-token"
+	testDataIngestToken = "test-data-ingest-token"
+)
+
 func TestInjection(t *testing.T) {
 	dk := &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: "codeModules-1", Namespace: "dynatrace"},
@@ -27,6 +33,7 @@ func TestInjection(t *testing.T) {
 					"inject": "true",
 				},
 			},
+			APIURL: "https://tenantUUID.dev.dynatracelabs.com/api",
 			OneAgent: dynatracev1beta1.OneAgentSpec{
 				ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{
 					AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{},
@@ -34,6 +41,24 @@ func TestInjection(t *testing.T) {
 			},
 		},
 	}
+	tokensSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      dk.Tokens(),
+			Namespace: dk.Namespace,
+		},
+		Data: map[string][]byte{
+			"apiToken":        []byte(testApiToken),
+			"paasToken":       []byte(testPaasToken),
+			"dataIngestToken": []byte(testDataIngestToken),
+		},
+	}
+	kubeSystemNs := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "kube-system",
+			UID:  "kube-system-uid",
+		},
+	}
+
 	baseNs := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-namespace",
@@ -42,7 +67,7 @@ func TestInjection(t *testing.T) {
 			},
 		},
 	}
-	clt := fake.NewClient(dk)
+	clt := fake.NewClient(dk, tokensSecret, kubeSystemNs)
 	inj := &namespaceMutator{
 		client:    clt,
 		apiReader: clt,

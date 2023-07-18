@@ -20,11 +20,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/src/ingestendpoint"
-	"github.com/Dynatrace/dynatrace-operator/src/initgeneration"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
-	"github.com/Dynatrace/dynatrace-operator/src/mapper"
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
@@ -42,9 +39,11 @@ import (
 )
 
 const (
-	errorUpdateInterval   = 1 * time.Minute
-	changesUpdateInterval = 5 * time.Minute
-	defaultUpdateInterval = 30 * time.Minute
+	errorUpdateInterval = 1 * time.Minute
+	// changesUpdateInterval = 5 * time.Minute
+	changesUpdateInterval = 3 * time.Minute
+	// defaultUpdateInterval = 30 * time.Minute
+	defaultUpdateInterval = 5 * time.Minute
 )
 
 func Add(mgr manager.Manager, _ string) error {
@@ -109,10 +108,12 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	log.Info("reconciling DynaKube", "namespace", request.Namespace, "name", request.Name)
 	requeueAfter := defaultUpdateInterval
 
-	dynakube, err := controller.getDynakubeOrUnmap(ctx, request.Name, request.Namespace)
+	// dynakube, err := controller.getDynakubeOrUnmap(ctx, request.Name, request.Namespace)
+	dynakube, err := controller.getDynakube(ctx, request.Name, request.Namespace)
 	if err != nil {
 		return reconcile.Result{}, err
 	} else if dynakube == nil {
+		log.Info("reconciling DynaKube - not found", "namespace", request.Namespace, "name", request.Name)
 		return reconcile.Result{}, nil
 	}
 
@@ -149,10 +150,11 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 		log.Info("istio objects updated")
 	}
 
+	log.Info("reconciling DynaKube - done", "namespace", request.Namespace, "name", request.Name, "requeueAfter", requeueAfter)
 	return reconcile.Result{RequeueAfter: requeueAfter}, err
 }
 
-func (controller *Controller) getDynakubeOrUnmap(ctx context.Context, dkName, dkNamespace string) (*dynatracev1beta1.DynaKube, error) {
+func (controller *Controller) getDynakube(ctx context.Context, dkName, dkNamespace string) (*dynatracev1beta1.DynaKube, error) {
 	dynakube := &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      dkName,
@@ -161,16 +163,11 @@ func (controller *Controller) getDynakubeOrUnmap(ctx context.Context, dkName, dk
 	}
 	err := controller.apiReader.Get(ctx, client.ObjectKey{Name: dynakube.Name, Namespace: dynakube.Namespace}, dynakube)
 	if k8serrors.IsNotFound(err) {
-		return nil, controller.createDynakubeMapper(ctx, dynakube).UnmapFromDynaKube()
+		return nil, nil
 	} else if err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return dynakube, nil
-}
-
-func (controller *Controller) createDynakubeMapper(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) *mapper.DynakubeMapper {
-	dkMapper := mapper.NewDynakubeMapper(ctx, controller.client, controller.apiReader, controller.operatorNamespace, dynakube)
-	return &dkMapper
 }
 
 func (controller *Controller) reconcileIstio(dynakube *dynatracev1beta1.DynaKube) bool {
@@ -266,65 +263,10 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		return err
 	}
 
-	err = controller.reconcileAppInjection(ctx, dynakube)
-	if err != nil {
-		log.Info("could not reconcile app injection")
-		return err
-	}
-
-	return nil
-}
-
-func (controller *Controller) reconcileAppInjection(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
-	if dynakube.NeedAppInjection() {
-		return controller.setupAppInjection(ctx, dynakube)
-	}
-
-	return controller.removeAppInjection(ctx, dynakube)
-}
-
-func (controller *Controller) setupAppInjection(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) (err error) {
-	endpointSecretGenerator := dtingestendpoint.NewEndpointSecretGenerator(controller.client, controller.apiReader, dynakube.Namespace)
-	dkMapper := controller.createDynakubeMapper(ctx, dynakube)
-
-	if err = dkMapper.MapFromDynakube(); err != nil {
-		log.Info("update of a map of namespaces failed")
-		return err
-	}
-
-	err = initgeneration.NewInitGenerator(controller.client, controller.apiReader, dynakube.Namespace).GenerateForDynakube(ctx, dynakube)
-	if err != nil {
-		log.Info("failed to generate init secret")
-		return err
-	}
-
-	err = endpointSecretGenerator.GenerateForDynakube(ctx, dynakube)
-	if err != nil {
-		log.Info("failed to generate data-ingest secret")
-		return err
-	}
-
 	if dynakube.ApplicationMonitoringMode() {
 		dynakube.Status.SetPhase(dynatracestatus.Running)
 	}
 
-	log.Info("app injection reconciled")
-	return nil
-}
-
-func (controller *Controller) removeAppInjection(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) (err error) {
-	endpointSecretGenerator := dtingestendpoint.NewEndpointSecretGenerator(controller.client, controller.apiReader, dynakube.Namespace)
-	dkMapper := controller.createDynakubeMapper(ctx, dynakube)
-
-	if err := dkMapper.UnmapFromDynaKube(); err != nil {
-		log.Info("could not unmap dynakube from namespace")
-		return err
-	}
-	err = endpointSecretGenerator.RemoveEndpointSecrets(ctx, dynakube)
-	if err != nil {
-		log.Info("could not remove data-ingest secret")
-		return err
-	}
 	return nil
 }
 
