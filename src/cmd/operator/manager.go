@@ -8,6 +8,7 @@ import (
 	cmdManager "github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/certificates"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/namespaces"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/nodes"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/pkg/errors"
@@ -90,6 +91,11 @@ func (provider operatorManagerProvider) CreateManager(namespace string, cfg *res
 	}
 
 	err = nodes.Add(mgr, namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	err = namespaces.Add(mgr, namespace)
 	if err != nil {
 		return nil, err
 	}

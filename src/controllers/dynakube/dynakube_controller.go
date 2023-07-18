@@ -147,6 +147,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 		log.Info("istio objects updated")
 	}
 
+	log.Info("reconciling DynaKube - done", "namespace", request.Namespace, "name", request.Name, "requeueAfter", requeueAfter)
 	return reconcile.Result{RequeueAfter: requeueAfter}, err
 }
 

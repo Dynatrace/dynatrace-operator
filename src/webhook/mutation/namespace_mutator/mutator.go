@@ -48,6 +48,7 @@ func (nm *namespaceMutator) Handle(ctx context.Context, request admission.Reques
 	}
 
 	log.Info("namespace request", "namespace", request.Name, "operation", request.Operation)
+
 	ns := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: request.Namespace}}
 	nsMapper := mapper.NewNamespaceMapper(ctx, nm.client, nm.apiReader, nm.namespace, &ns)
 	if err := decodeRequestToNamespace(request, &ns); err != nil {
@@ -59,7 +60,15 @@ func (nm *namespaceMutator) Handle(ctx context.Context, request admission.Reques
 		delete(ns.Annotations, mapper.UpdatedViaDynakubeAnnotation)
 		return getResponseForNamespace(&ns, &request)
 	}
-
+	/*
+		if request.Operation == admv1.Update {
+			log.Info("namespace request UPDATE")
+			if err := nm.ensureSecrets(ctx, &ns); err != nil {
+				log.Error(err, "failed to ensure secrets")
+				return admission.Errored(http.StatusBadRequest, err)
+			}
+		}
+	*/
 	log.Info("checking namespace labels", "namespace", request.Name)
 	updatedNamespace, err := nsMapper.MapFromNamespace()
 	if err != nil {
@@ -99,3 +108,69 @@ func getResponseForNamespace(ns *corev1.Namespace, req *admission.Request) admis
 	}
 	return admission.PatchResponseFromRaw(req.Object.Raw, marshaledNamespace)
 }
+
+/*
+func (nm *namespaceMutator) ensureSecrets(ctx context.Context, namespace *corev1.Namespace) error {
+	dynakube, err := mapper.GetDynakubeForNamespace(ctx, nm.client, namespace)
+	if err != nil {
+		return err
+	}
+
+	if dynakube != nil {
+		err = nm.ensureInitSecret(ctx, dynakube, namespace.Name)
+		if err != nil {
+			return err
+		}
+
+		err = nm.ensureDataIngestSecret(ctx, dynakube, namespace.Name)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (nm *namespaceMutator) ensureInitSecret(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, namespaceName string) error {
+	var initSecret corev1.Secret
+	secretObjectKey := client.ObjectKey{Name: config.AgentInitSecretName, Namespace: namespaceName}
+	if err := nm.apiReader.Get(ctx, secretObjectKey, &initSecret); k8serrors.IsNotFound(err) {
+		initGenerator := initgeneration.NewInitGenerator(nm.client, nm.apiReader, dynakube.Namespace)
+		err := initGenerator.GenerateForNamespace(context.TODO(), *dynakube, namespaceName)
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			log.Info("failed to create the init secret before oneagent pod injection")
+			return err
+		}
+		log.Info("ensured that the init secret is present before oneagent pod injection")
+	} else if err != nil {
+		log.Info("failed to query the init secret before oneagent pod injection")
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (nm *namespaceMutator) ensureDataIngestSecret(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, namespaceName string) error {
+	endpointGenerator := dtingestendpoint.NewEndpointSecretGenerator(nm.client, nm.apiReader, dynakube.Namespace)
+
+	var endpointSecret corev1.Secret
+	err := nm.apiReader.Get(
+		ctx,
+		client.ObjectKey{
+			Name:      config.EnrichmentEndpointSecretName,
+			Namespace: namespaceName,
+		},
+		&endpointSecret)
+	if k8serrors.IsNotFound(err) {
+		err := endpointGenerator.GenerateForNamespace(ctx, dynakube.Name, namespaceName)
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			log.Info("failed to create the data-ingest endpoint secret before pod injection")
+			return err
+		}
+		log.Info("ensured that the data-ingest endpoint secret is present before pod injection")
+	} else if err != nil {
+		log.Info("failed to query the data-ingest endpoint secret before pod injection")
+		return err
+	}
+
+	return nil
+}
+*/

@@ -126,3 +126,34 @@ func isIgnoredNamespace(dk *dynatracev1beta1.DynaKube, namespaceName string) boo
 	}
 	return false
 }
+
+func GetDynakubeForNamespace(ctx context.Context, clt client.Reader, namespace *corev1.Namespace) (*dynatracev1beta1.DynaKube, error) {
+	deployedDynakubes := &dynatracev1beta1.DynaKubeList{}
+	err := clt.List(ctx, deployedDynakubes)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var dynakubeForNamespace *dynatracev1beta1.DynaKube
+
+	for i := range deployedDynakubes.Items {
+		dynakube := &deployedDynakubes.Items[i]
+		if isIgnoredNamespace(dynakube, namespace.Name) {
+			continue
+		}
+
+		matches, err := match(dynakube, namespace)
+		if err != nil {
+			return nil, err
+		}
+
+		if matches {
+			if dynakubeForNamespace != nil {
+				return nil, errors.New(ErrorConflictingNamespace)
+			}
+			dynakubeForNamespace = dynakube
+		}
+	}
+	return dynakubeForNamespace, nil
+}
