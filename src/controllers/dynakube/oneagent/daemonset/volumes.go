@@ -82,10 +82,7 @@ func getCSIStorageMount() corev1.VolumeMount {
 }
 
 func getHttpProxyMount() corev1.VolumeMount {
-	return corev1.VolumeMount{
-		Name:      config.ProxySecretVolumeName,
-		MountPath: config.ProxySecretMountPath,
-	}
+	return proxy.PrepareVolumeMount()
 }
 
 func prepareVolumes(instance *dynatracev1beta1.DynaKube) []corev1.Volume {

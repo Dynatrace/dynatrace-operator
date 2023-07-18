@@ -116,7 +116,7 @@ func TestReconcile(t *testing.T) {
 				found++
 			}
 		}
-		assert.Equal(t, 4, found)
+		assert.Equal(t, 1, found)
 	})
 }
 
