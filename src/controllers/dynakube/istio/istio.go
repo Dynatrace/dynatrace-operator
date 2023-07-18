@@ -5,47 +5,33 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net"
+	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/discovery"
-	"k8s.io/client-go/rest"
 )
 
 var (
 	IstioGVRName    = "networking.istio.io"
 	IstioGVRVersion = "v1alpha3"
 	IstioGVR        = fmt.Sprintf("%s/%s", IstioGVRName, IstioGVRVersion)
-
-	// VirtualServiceGVK => definition of virtual service GVK for oneagent
-	VirtualServiceGVK = schema.GroupVersionKind{
-		Group:   IstioGVRName,
-		Version: IstioGVRVersion,
-		Kind:    "VirtualService",
-	}
-
-	// ServiceEntryGVK => definition of virtual service GVK for oneagent
-	ServiceEntryGVK = schema.GroupVersionKind{
-		Group:   IstioGVRName,
-		Version: IstioGVRVersion,
-		Kind:    "ServiceEntry",
-	}
 )
 
 // BuildNameForEndpoint returns a name to be used as a base to identify Istio objects.
-func BuildNameForEndpoint(name string, protocol string, host string, port uint32) string {
-	sum := sha256.Sum256([]byte(fmt.Sprintf("%s-%s-%s-%d", name, protocol, host, port)))
+func BuildNameForEndpoint(name string, commHosts []dtclient.CommunicationHost) string {
+	result := make([]string, len(commHosts))
+	for index, commHost := range commHosts {
+		result[index] = fmt.Sprintf("%s-%s-%s-%d", name, commHost.Protocol, commHost.Host, commHost.Port)
+	}
+	sum := sha256.Sum256([]byte(strings.Join(result, "\n")))
 	return hex.EncodeToString(sum[:])
 }
 
-func CheckIstioInstalled(cfg *rest.Config) (bool, error) {
-	discoveryclient, err := discovery.NewDiscoveryClientForConfig(cfg)
-	if err != nil {
-		return false, err
-	}
-
-	_, err = discoveryclient.ServerResourcesForGroupVersion(IstioGVR)
+// CheckIstioInstalled run discovery query for server resource for group version
+func CheckIstioInstalled(discoveryclient discovery.DiscoveryInterface) (bool, error) {
+	_, err := discoveryclient.ServerResourcesForGroupVersion(IstioGVR)
 	if errors.IsNotFound(err) {
 		return false, nil
 	}
