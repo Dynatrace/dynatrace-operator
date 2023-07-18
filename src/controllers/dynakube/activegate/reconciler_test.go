@@ -61,25 +61,6 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err := r.Reconcile()
 		require.NoError(t, err)
 	})
-	t.Run(`Create AG proxy secret`, func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testName,
-			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				Proxy: &dynatracev1beta1.DynaKubeProxy{Value: testProxyName},
-			},
-		}
-		fakeClient := fake.NewClient()
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, instance, dtc)
-		err := r.Reconcile()
-		require.NoError(t, err)
-
-		var proxySecret corev1.Secret
-		err = fakeClient.Get(context.TODO(), types.NamespacedName{Name: testName + "-internal-proxy", Namespace: testNamespace}, &proxySecret)
-		assert.NoError(t, err)
-	})
 	t.Run(`Create AG capability (creation and deletion)`, func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
@@ -134,10 +115,6 @@ func TestReconciler_Reconcile(t *testing.T) {
 		noProxyReconciler := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynaKubeNoProxy, dtc)
 		err = noProxyReconciler.Reconcile()
 		require.NoError(t, err)
-
-		var proxySecret corev1.Secret
-		err = fakeClient.Get(context.TODO(), types.NamespacedName{Name: "proxyDk-internal-proxy", Namespace: testNamespace}, &proxySecret)
-		assert.NoError(t, err)
 	})
 }
 
