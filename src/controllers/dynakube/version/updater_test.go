@@ -68,7 +68,7 @@ func TestRun(t *testing.T) {
 		Tag:    "1.2.3",
 	}
 	testDockerCfg := &dockerconfig.DockerConfig{}
-	timeProvider := timeprovider.New()
+	timeProvider := timeprovider.New().Freeze()
 
 	t.Run("set source and probe at the end, if no error", func(t *testing.T) {
 		registry := newFakeRegistry(map[string]ImageVersion{

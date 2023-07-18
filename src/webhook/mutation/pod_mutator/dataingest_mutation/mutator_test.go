@@ -135,6 +135,16 @@ func TestReinvoke(t *testing.T) {
 	})
 }
 
+func TestEnsureDataIngestSecret(t *testing.T) {
+	t.Run("shouldn't create init secret if already there", func(t *testing.T) {
+		mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
+		request := createTestMutationRequest(getTestDynakube(), nil)
+
+		err := mutator.ensureDataIngestSecret(request)
+		require.NoError(t, err)
+	})
+}
+
 func TestSetInjectedAnnotation(t *testing.T) {
 	t.Run("should add annotation to nil map", func(t *testing.T) {
 		request := createTestMutationRequest(nil, nil)

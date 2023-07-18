@@ -245,7 +245,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		dynatraceClient,
 		controller.fs,
 		controller.versionProvider,
-		timeprovider.New(),
+		timeprovider.New().Freeze(),
 	)
 	err = versionReconciler.Reconcile(ctx)
 	if err != nil {
