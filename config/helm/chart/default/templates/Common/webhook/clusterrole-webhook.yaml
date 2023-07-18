@@ -71,7 +71,7 @@ rules:
       - deploymentconfigs
     verbs:
       - get
-  {{- if (eq (include "dynatrace-operator.platform" .) "openshift") }}
+  {{- if (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
   - apiGroups:
       - security.openshift.io
     resourceNames:
