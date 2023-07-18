@@ -3,6 +3,7 @@ package metadata
 import (
 	"context"
 	"os"
+	"path/filepath"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
@@ -125,6 +126,11 @@ func (checker *CorrectnessChecker) safelyLinkCodeModule(deprecatedBin, currentBi
 			return false, nil
 		}
 
+		err := checker.fs.MkdirAll(filepath.Dir(currentBin), 0755)
+		if err != nil {
+			log.Info("failed to create parent dir for new path", "path", currentBin)
+			return false, errors.WithStack(err)
+		}
 		log.Info("creating symlink", "from", deprecatedBin, "to", currentBin)
 		if err := linker.SymlinkIfPossible(deprecatedBin, currentBin); err != nil {
 			log.Info("symlinking failed", "path", deprecatedBin)
