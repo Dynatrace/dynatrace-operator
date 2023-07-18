@@ -55,7 +55,6 @@ func (provisioner *OneAgentProvisioner) installAgentImage(ctx context.Context, d
 		return "", err
 	}
 	return imageDigest, err
-
 }
 
 func (provisioner *OneAgentProvisioner) installAgentZip(ctx context.Context, dynakube dynatracev1beta1.DynaKube, dtc dtclient.Client, latestProcessModuleConfigCache *processModuleConfigCache) (string, error) {

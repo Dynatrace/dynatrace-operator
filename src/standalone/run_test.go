@@ -130,7 +130,7 @@ func TestInstallOneAgent(t *testing.T) {
 
 		err := runner.installOneAgent()
 
-		require.NoError(t, err) //this
+		require.NoError(t, err)
 	})
 	t.Run("sad install -> install fail", func(t *testing.T) {
 		runner := createMockedRunner(t)

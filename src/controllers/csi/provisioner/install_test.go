@@ -33,7 +33,7 @@ func TestUpdateAgent(t *testing.T) {
 	testImageDigest := "7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
 	t.Run("zip install", func(t *testing.T) {
 		dk := createTestDynaKubeWithZip(testVersion)
-		provisioner := createTestProvisioner(t)
+		provisioner := createTestProvisioner()
 		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(dk.CodeModulesVersion())
 		var revision uint = 3
 		processModuleCache := createTestProcessModuleConfigCache(revision)
@@ -61,7 +61,7 @@ func TestUpdateAgent(t *testing.T) {
 	})
 	t.Run("zip update", func(t *testing.T) {
 		dk := createTestDynaKubeWithZip(testVersion)
-		provisioner := createTestProvisioner(t)
+		provisioner := createTestProvisioner()
 		previousTargetDir := provisioner.path.AgentSharedBinaryDirForAgent(dk.CodeModulesVersion())
 		previousSourceConfigPath := filepath.Join(previousTargetDir, processmoduleconfig.RuxitAgentProcPath)
 		_ = provisioner.fs.MkdirAll(previousTargetDir, 0755)
@@ -88,7 +88,7 @@ func TestUpdateAgent(t *testing.T) {
 	})
 	t.Run("only process module config update", func(t *testing.T) {
 		dk := createTestDynaKubeWithZip(testVersion)
-		provisioner := createTestProvisioner(t)
+		provisioner := createTestProvisioner()
 		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(dk.CodeModulesVersion())
 		sourceConfigPath := filepath.Join(targetDir, processmoduleconfig.RuxitAgentProcPath)
 		_ = provisioner.fs.MkdirAll(targetDir, 0755)
@@ -112,7 +112,7 @@ func TestUpdateAgent(t *testing.T) {
 	t.Run("failed install", func(t *testing.T) {
 		dockerconfigjsonContent := `{"auths":{}}`
 		dk := createTestDynaKubeWithImage(testImageDigest)
-		provisioner := createTestProvisioner(t, createMockedPullSecret(dk, dockerconfigjsonContent))
+		provisioner := createTestProvisioner(createMockedPullSecret(dk, dockerconfigjsonContent))
 		var revision uint = 3
 		processModuleCache := createTestProcessModuleConfigCache(revision)
 		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(testImageDigest)
@@ -145,7 +145,7 @@ func TestUpdateAgent(t *testing.T) {
 		processModuleCache := createTestProcessModuleConfigCache(revision)
 
 		dk := createTestDynaKubeWithImage(testImageDigest)
-		provisioner := createTestProvisioner(t, createMockedPullSecret(dk, dockerconfigjsonContent))
+		provisioner := createTestProvisioner(createMockedPullSecret(dk, dockerconfigjsonContent))
 		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(testImageDigest)
 		installerMock := &installer.Mock{}
 		installerMock.
@@ -162,7 +162,6 @@ func TestUpdateAgent(t *testing.T) {
 
 		dockerJsonPath := path.Join(dockerconfig.TmpPath, dockerconfig.RegistryAuthDir, dk.Name)
 		checkFilesCreatedAndCleanedUp(t, installerMock, provisioner.fs, dockerJsonPath, dockerconfigjsonContent)
-
 	})
 	t.Run("codeModulesImage set with custom pull secret", func(t *testing.T) {
 		pullSecretName := "test-pull-secret"
@@ -173,7 +172,7 @@ func TestUpdateAgent(t *testing.T) {
 		dk := createTestDynaKubeWithImage(testImageDigest)
 		dk.Spec.CustomPullSecret = pullSecretName
 
-		provisioner := createTestProvisioner(t, createMockedPullSecret(dk, dockerconfigjsonContent))
+		provisioner := createTestProvisioner(createMockedPullSecret(dk, dockerconfigjsonContent))
 		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(testImageDigest)
 		installerMock := &installer.Mock{}
 		installerMock.
@@ -203,7 +202,7 @@ func TestUpdateAgent(t *testing.T) {
 		dk.Spec.CustomPullSecret = pullSecretName
 		dk.Spec.TrustedCAs = trustedCAName
 
-		provisioner := createTestProvisioner(t, createMockedPullSecret(dk, dockerconfigjsonContent), createMockedCAConfigMap(dk, customCertContent))
+		provisioner := createTestProvisioner(createMockedPullSecret(dk, dockerconfigjsonContent), createMockedCAConfigMap(dk, customCertContent))
 		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(testImageDigest)
 		installerMock := &installer.Mock{}
 		installerMock.
@@ -310,7 +309,7 @@ func createTestDynaKubeWithZip(version string) dynatracev1beta1.DynaKube {
 	}
 }
 
-func createTestProvisioner(t *testing.T, obj ...client.Object) *OneAgentProvisioner {
+func createTestProvisioner(obj ...client.Object) *OneAgentProvisioner {
 	path := metadata.PathResolver{RootDir: "test"}
 	fs := afero.NewMemMapFs()
 	rec := record.NewFakeRecorder(10)
