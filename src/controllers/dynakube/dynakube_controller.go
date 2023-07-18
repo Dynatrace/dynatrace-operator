@@ -27,6 +27,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
+	istioclientset "istio.io/client-go/pkg/clientset/versioned"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -177,8 +178,14 @@ func (controller *Controller) reconcileIstio(dynakube *dynatracev1beta1.DynaKube
 	if dynakube.Spec.EnableIstio {
 		communicationHosts := connectioninfo.GetCommunicationHosts(dynakube)
 
-		var err error
-		updated, err = istio.NewReconciler(controller.config, controller.scheme).Reconcile(dynakube, communicationHosts)
+		ic, err := istioclientset.NewForConfig(controller.config)
+
+		if err != nil {
+			log.Error(err, "failed to initialize istio client")
+			return false
+		}
+
+		updated, err = istio.NewReconciler(controller.config, controller.scheme, ic).Reconcile(dynakube, communicationHosts)
 		if err != nil {
 			// If there are errors log them, but move on.
 			log.Info("istio failed to reconcile objects", "error", err)
