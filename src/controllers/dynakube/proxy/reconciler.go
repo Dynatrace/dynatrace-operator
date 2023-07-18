@@ -34,10 +34,10 @@ type Reconciler struct {
 }
 
 func (r *Reconciler) Reconcile() error {
-	if r.dynakube.NeedsActiveGateProxy() || r.dynakube.NeedsOneAgentProxy() {
+	if !r.dynakube.FeatureOneAgentIgnoreProxy() && !r.dynakube.FeatureActiveGateIgnoreProxy() &&
+		r.dynakube.NeedsActiveGateProxy() || r.dynakube.NeedsOneAgentProxy() {
 		return r.generateForDynakube(context.TODO(), r.dynakube)
 	}
-
 	return r.ensureDeleted(context.TODO(), r.dynakube)
 }
 
