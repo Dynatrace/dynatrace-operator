@@ -44,14 +44,14 @@ func (gc *CSIGarbageCollector) getSharedBinDirs() ([]os.FileInfo, error) {
 
 func (gc *CSIGarbageCollector) collectUnusedAgentBins(ctx context.Context, imageDirs []os.FileInfo) ([]string, error) {
 	var toDelete []string
-	setAgentVersions, err := gc.db.GetLatestVersions(ctx)
+	usedAgentVersions, err := gc.db.GetLatestVersions(ctx)
 	if err != nil {
-		log.Info("failed to get the set image versions")
+		log.Info("failed to get the used image versions")
 		return nil, err
 	}
-	setAgentImages, err := gc.db.GetUsedImageDigests(ctx)
+	usedAgentDigest, err := gc.db.GetUsedImageDigests(ctx)
 	if err != nil {
-		log.Info("failed to get the set image digests")
+		log.Info("failed to get the used image digests")
 		return nil, err
 	}
 
@@ -68,7 +68,7 @@ func (gc *CSIGarbageCollector) collectUnusedAgentBins(ctx context.Context, image
 			continue
 		}
 		agentBin := imageDir.Name()
-		if !mountedAgentBins[agentBin] && !setAgentVersions[agentBin] && !setAgentImages[agentBin] {
+		if !mountedAgentBins[agentBin] && !usedAgentVersions[agentBin] && !usedAgentDigest[agentBin] {
 			toDelete = append(toDelete, gc.path.AgentSharedBinaryDirForAgent(agentBin))
 		}
 	}

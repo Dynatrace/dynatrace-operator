@@ -14,10 +14,7 @@ import (
 
 const use = "csi-init"
 
-var (
-	nodeId   = ""
-	endpoint = ""
-)
+var nodeId, endpoint string
 
 type CommandBuilder struct {
 	configProvider config.Provider
@@ -49,7 +46,7 @@ func (builder CommandBuilder) Build() *cobra.Command {
 
 func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-		unix.Umask(0000)
+		unix.Umask(dtcsi.UnixUmask)
 		version.LogVersion()
 
 		kubeConfig, err := builder.configProvider.GetConfig()
