@@ -7,10 +7,8 @@ import (
 	"io"
 	"os"
 	"testing"
-	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/arch"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
@@ -215,11 +213,11 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
-		require.Equal(t, reconcile.Result{RequeueAfter: defaultRequeueDuration}, result)
+		require.Equal(t, reconcile.Result{RequeueAfter: longRequeueDuration}, result)
 
 		dynakubeMetadatas, err := db.GetAllDynakubes(ctx)
 		require.NoError(t, err)
-		require.Len(t, dynakubeMetadatas, 1)
+		require.Len(t, dynakubeMetadatas, 0)
 	})
 	t.Run("no tokens", func(t *testing.T) {
 		gc := &CSIGarbageCollectorMock{}
@@ -233,6 +231,13 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 						APIURL: testAPIURL,
 						OneAgent: dynatracev1beta1.OneAgentSpec{
 							ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
+						},
+					},
+					Status: dynatracev1beta1.DynaKubeStatus{
+						CodeModules: dynatracev1beta1.CodeModulesStatus{
+							VersionStatus: dynatracev1beta1.VersionStatus{
+								Version: "1.2.3",
+							},
 						},
 					},
 				},
@@ -262,6 +267,13 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 						APIURL: testAPIURL,
 						OneAgent: dynatracev1beta1.OneAgentSpec{
 							ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
+						},
+					},
+					Status: dynatracev1beta1.DynaKubeStatus{
+						CodeModules: dynatracev1beta1.CodeModulesStatus{
+							VersionStatus: dynatracev1beta1.VersionStatus{
+								Version: "1.2.3",
+							},
 						},
 					},
 				},
@@ -439,6 +451,13 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 							ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
 						},
 					},
+					Status: dynatracev1beta1.DynaKubeStatus{
+						CodeModules: dynatracev1beta1.CodeModulesStatus{
+							VersionStatus: dynatracev1beta1.VersionStatus{
+								Version: "1.2.3",
+							},
+						},
+					},
 				},
 				&v1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
@@ -458,42 +477,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 		require.Empty(t, result)
 	})
 	t.Run("correct directories are created", func(t *testing.T) {
-		var revision uint = 3
-		testProcessModuleConfig := createTestProcessModuleConfig(revision)
 		gc := &CSIGarbageCollectorMock{}
-		gc.On("Reconcile").Return(reconcile.Result{}, nil)
 		memFs := afero.NewMemMapFs()
 		memDB := metadata.FakeMemoryDB()
-		err := memDB.InsertDynakube(ctx, metadata.NewDynakube(dkName, tenantUUID, agentVersion, "", 0))
-		require.NoError(t, err)
-
-		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{
-			ConnectionInfo: dtclient.ConnectionInfo{
-				TenantUUID: tenantUUID,
-			},
-		}, nil)
-		mockClient.On("GetLatestAgentVersion",
-			mock.AnythingOfType("string"),
-			mock.AnythingOfType("string")).Return(agentVersion, nil)
-		mockClient.
-			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.Flavor,
-				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("[]string"), mock.AnythingOfType("*mem.File")).
-			Run(func(args mock.Arguments) {
-				writer := args.Get(6).(io.Writer)
-
-				zipFile := setupTestZip(t, memFs)
-				defer func() { _ = zipFile.Close() }()
-
-				_, err := io.Copy(writer, zipFile)
-				require.NoError(t, err)
-			}).
-			Return(nil)
-		mockClient.On("GetProcessModuleConfig", mock.AnythingOfType("uint")).Return(testProcessModuleConfig, nil)
-		mockDtcBuilder := &dynatraceclient.StubBuilder{
-			DynatraceClient: mockClient,
-		}
-
 		dynakube := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: dkName,
@@ -501,7 +487,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testAPIURL,
 				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
+					HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
 				},
 			},
 		}
@@ -515,38 +501,16 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 			Return(nil)
 
 		r := &OneAgentProvisioner{
-			apiReader: fake.NewClient(
-				dynakube,
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: dkName,
-					},
-					Data: map[string][]byte{
-						dtclient.DynatraceApiToken: []byte("api-token"),
-					},
-				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: dynakube.OneagentTenantSecret(),
-					},
-					Data: map[string][]byte{
-						connectioninfo.TenantTokenName: []byte("tenant-token"),
-					},
-				},
-			),
-			dynatraceClientBuilder: mockDtcBuilder,
+			apiReader: fake.NewClient(dynakube),
 			fs:                     memFs,
 			db:                     memDB,
-			recorder:               &record.FakeRecorder{},
 			gc:                     gc,
-			urlInstallerBuilder:    mockUrlInstallerBuilder(installerMock),
 		}
 
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
-		require.Equal(t, reconcile.Result{RequeueAfter: 5 * time.Minute}, result)
 
 		exists, err := afero.Exists(memFs, tenantUUID)
 
