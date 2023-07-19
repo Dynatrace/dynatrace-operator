@@ -16,9 +16,7 @@ import (
 
 const use = "csi-provisioner"
 
-var (
-	probeAddress = ""
-)
+var probeAddress string
 
 type CommandBuilder struct {
 	configProvider  config.Provider
@@ -100,7 +98,7 @@ func addFlags(cmd *cobra.Command) {
 
 func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-		unix.Umask(0000)
+		unix.Umask(dtcsi.UnixUmask)
 		version.LogVersion()
 
 		kubeConfig, err := builder.configProvider.GetConfig()
