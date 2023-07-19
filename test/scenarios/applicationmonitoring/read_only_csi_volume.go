@@ -29,7 +29,7 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-const ruxitAgentProcFile = "_ruxitagentproc.conf"
+const ruxitAgentProcFile = "ruxitagentproc.conf"
 
 var readOnlyInjection = map[string]string{dynatracev1beta1.AnnotationFeatureReadOnlyCsiVolume: "true"}
 
