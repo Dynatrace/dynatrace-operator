@@ -2,9 +2,7 @@ package csiprovisioner
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
-	"io"
 	"os"
 	"testing"
 
@@ -502,9 +500,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 
 		r := &OneAgentProvisioner{
 			apiReader: fake.NewClient(dynakube),
-			fs:                     memFs,
-			db:                     memDB,
-			gc:                     gc,
+			fs:        memFs,
+			db:        memDB,
+			gc:        gc,
 		}
 
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
@@ -622,25 +620,6 @@ func TestProvisioner_UpdateDynakube(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, dynakube)
 	require.Equal(t, *expectedOtherDynakube, *otherDynakube)
-}
-
-func setupTestZip(t *testing.T, fs afero.Fs) afero.File {
-	zipf, err := base64.StdEncoding.DecodeString(testZip)
-	require.NoError(t, err)
-
-	zipFile, err := afero.TempFile(fs, "", "")
-	require.NoError(t, err)
-
-	_, err = zipFile.Write(zipf)
-	require.NoError(t, err)
-
-	err = zipFile.Sync()
-	require.NoError(t, err)
-
-	_, err = zipFile.Seek(0, io.SeekStart)
-	require.NoError(t, err)
-
-	return zipFile
 }
 
 func TestHandleMetadata(t *testing.T) {
