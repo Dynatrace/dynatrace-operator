@@ -84,7 +84,7 @@ spec:
             periodSeconds: 10
           securityContext:
             seccompProfile:
-              type: RuntimeDefault
+            {{- toYaml .Values.operator.securityContext.seccompProfile | nindent 14 }}
             privileged: false
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true

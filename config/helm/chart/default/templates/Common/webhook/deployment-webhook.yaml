@@ -130,7 +130,7 @@ spec:
               mountPath: /tmp/k8s-webhook-server/serving-certs/
           securityContext:
             seccompProfile:
-              type: RuntimeDefault
+            {{- toYaml .Values.webhook.securityContext.seccompProfile | nindent 14 }}
             privileged: false
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true

@@ -33,6 +33,9 @@ operator:
   labels: []
   annotations: []
   apparmor: false
+  securityContext:
+    seccompProfile:
+      type: RuntimeDefault
   requests:
     cpu: 50m
     memory: 64Mi
@@ -47,6 +50,9 @@ webhook:
   labels: []
   annotations: []
   apparmor: false
+  securityContext:
+    seccompProfile:
+      type: RuntimeDefault
   requests:
     cpu: 300m
     memory: 128Mi
@@ -71,7 +77,14 @@ csidriver:
       operator: Exists
   labels: []
   annotations: []
+  csi_init:
+    securityContext:
+      seccompProfile:
+        type: RuntimeDefault
   server:
+    securityContext:
+      seccompProfile:
+        type: RuntimeDefault
     resources:
       requests:
         cpu: 50m
@@ -80,6 +93,9 @@ csidriver:
         cpu: 50m
         memory: 100Mi
   provisioner:
+    securityContext:
+      seccompProfile:
+        type: RuntimeDefault
     resources:
       requests:
         cpu: 300m
@@ -88,6 +104,9 @@ csidriver:
         cpu: 300m
         memory: 100Mi
   registrar:
+    securityContext:
+      seccompProfile:
+        type: RuntimeDefault
     resources:
       requests:
         cpu: 20m
@@ -96,6 +115,9 @@ csidriver:
         cpu: 20m
         memory: 30Mi
   livenessprobe:
+    securityContext:
+      seccompProfile:
+        type: RuntimeDefault
     resources:
       requests:
         cpu: 20m
