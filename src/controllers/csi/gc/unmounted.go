@@ -26,8 +26,13 @@ func (gc *CSIGarbageCollector) runUnmountedVolumeGarbageCollection(tenantUUID st
 func (gc *CSIGarbageCollector) getUnmountedVolumes(tenantUUID string) ([]os.FileInfo, error) {
 	var unusedVolumeIDs []os.FileInfo
 
-	volumeIDs, err := afero.ReadDir(gc.fs, gc.path.AgentRunDir(tenantUUID))
+	mountsDirectoryPath := gc.path.AgentRunDir(tenantUUID)
+	volumeIDs, err := afero.ReadDir(gc.fs, mountsDirectoryPath)
 	if err != nil {
+		if os.IsNotExist(err) {
+			log.Info("no mount directories found for this tenant, moving on", "tenantUUID", tenantUUID, "path", mountsDirectoryPath)
+			return nil, nil
+		}
 		return nil, err
 	}
 
