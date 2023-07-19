@@ -107,12 +107,27 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		return reconcile.Result{RequeueAfter: longRequeueDuration}, provisioner.db.DeleteDynakube(ctx, request.Name)
 	}
 
-	if dk.CodeModulesImage() != "" && dk.CodeModulesVersion() != "" {
+	err = provisioner.setupFileSystem(dk)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	if !dk.NeedAppInjection() {
+		log.Info("app injection not necessary, skip agent codemodule download", "dynakube", dk.Name)
+		return reconcile.Result{RequeueAfter: longRequeueDuration}, nil
+	}
+
+	dynakubeMetadata, err := provisioner.setupDynakubeMetadata(ctx, dk) // needed for the CSI-resilience feature
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	if dk.CodeModulesImage() == "" && dk.CodeModulesVersion() == "" {
 		log.Info("dynakube status is not yet ready, requeuing", "dynakube", dk.Name)
 		return reconcile.Result{RequeueAfter: shortRequeueDuration}, err
 	}
 
-	err = provisioner.provision(ctx, dk)
+	err = provisioner.provisionCodeModules(ctx, dk, dynakubeMetadata)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -125,37 +140,37 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
 }
 
+func (provisioner *OneAgentProvisioner) setupFileSystem(dk *dynatracev1beta1.DynaKube) error {
+	tenantUUID, err := dk.TenantUUIDFromApiUrl()
+	if err != nil {
+		return err
+	}
+	if err := provisioner.createCSIDirectories(tenantUUID); err != nil {
+		log.Error(err, "error when creating csi directories", "path", provisioner.path.TenantDir(tenantUUID))
+		return errors.WithStack(err)
+	}
+	log.Info("csi directories exist", "path", provisioner.path.TenantDir(tenantUUID))
+	return nil
+}
+
+func (provisioner *OneAgentProvisioner) setupDynakubeMetadata(ctx context.Context, dk *dynatracev1beta1.DynaKube) (*metadata.Dynakube, error) {
+	dynakubeMetadata, oldDynakubeMetadata, err := provisioner.handleMetadata(ctx, dk)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create/update the dynakubeMetadata entry while `LatestVersion` is not necessarily set
+	// so the host oneagent-storages can be mounted before the standalone agent binaries are ready to be mounted
+	return dynakubeMetadata, provisioner.createOrUpdateDynakubeMetadata(ctx, oldDynakubeMetadata, dynakubeMetadata)
+}
+
 func (provisioner *OneAgentProvisioner) collectGarbage(ctx context.Context, request reconcile.Request) error {
 	_, err := provisioner.gc.Reconcile(ctx, request)
 	return err
 }
 
-func (provisioner *OneAgentProvisioner) provision(ctx context.Context, dk *dynatracev1beta1.DynaKube) error {
-	dynakubeMetadata, oldDynakubeMetadata, err := provisioner.handleMetadata(ctx, dk)
-	if err != nil {
-		return err
-	}
-
-	log.Info("checking dynakube", "tenantUUID", dynakubeMetadata.TenantUUID, "version", dynakubeMetadata.LatestVersion)
-
-	// Create/update the dynakubeMetadata entry while `LatestVersion` is not necessarily set
-	// so the host oneagent-storages can be mounted before the standalone agent binaries are ready to be mounted
-	err = provisioner.createOrUpdateDynakubeMetadata(ctx, oldDynakubeMetadata, dynakubeMetadata)
-	if err != nil {
-		return err
-	}
-	oldDynakubeMetadata = *dynakubeMetadata
-
-	if err = provisioner.createCSIDirectories(dynakubeMetadata.TenantUUID); err != nil {
-		log.Error(err, "error when creating csi directories", "path", provisioner.path.TenantDir(dynakubeMetadata.TenantUUID))
-		return errors.WithStack(err)
-	}
-	log.Info("csi directories exist", "path", provisioner.path.TenantDir(dynakubeMetadata.TenantUUID))
-
-	if !dk.NeedAppInjection() {
-		log.Info("app injection not necessary, skip agent download", "dynakube", dk.Name)
-		return nil
-	}
+func (provisioner *OneAgentProvisioner) provisionCodeModules(ctx context.Context, dk *dynatracev1beta1.DynaKube, dynakubeMetadata *metadata.Dynakube) error {
+	oldDynakubeMetadata := *dynakubeMetadata
 	// creates a dt client and checks tokens exist for the given dynakube
 	dtc, err := buildDtc(provisioner, ctx, dk)
 	if err != nil {

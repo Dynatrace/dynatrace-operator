@@ -64,9 +64,6 @@ func (gc *CSIGarbageCollector) collectUnusedAgentBins(ctx context.Context, image
 		return nil, err
 	}
 	for _, imageDir := range imageDirs {
-		if !imageDir.IsDir() {
-			continue
-		}
 		agentBin := imageDir.Name()
 		if !mountedAgentBins[agentBin] && !usedAgentVersions[agentBin] && !usedAgentDigest[agentBin] {
 			toDelete = append(toDelete, gc.path.AgentSharedBinaryDirForAgent(agentBin))
