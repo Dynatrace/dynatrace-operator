@@ -33,6 +33,18 @@ operator:
   labels: []
   annotations: []
   apparmor: false
+  securityContext:
+    privileged: false
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    runAsUser: 1001
+    runAsGroup: 1001
+    capabilities:
+      drop:
+        - ALL
+    seccompProfile:
+      type: RuntimeDefault
   requests:
     cpu: 50m
     memory: 64Mi
@@ -47,6 +59,18 @@ webhook:
   labels: []
   annotations: []
   apparmor: false
+  securityContext:
+    privileged: false
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    runAsUser: 1001
+    runAsGroup: 1001
+    capabilities:
+      drop:
+        - ALL
+    seccompProfile:
+      type: RuntimeDefault
   requests:
     cpu: 300m
     memory: 128Mi
@@ -71,7 +95,28 @@ csidriver:
       operator: Exists
   labels: []
   annotations: []
+  csiInit:
+    securityContext:
+      runAsUser: 0
+      privileged: false
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: false
+      seLinuxOptions:
+        level: s0
+      seccompProfile:
+        type: RuntimeDefault
   server:
+    securityContext:
+      runAsUser: 0
+      privileged: true # Needed for mountPropagation
+      allowPrivilegeEscalation: true # Needed for privileged
+      readOnlyRootFilesystem: true
+      runAsNonRoot: false
+      seLinuxOptions:
+        level: s0
+      seccompProfile:
+        type: RuntimeDefault
     resources:
       requests:
         cpu: 50m
@@ -80,6 +125,16 @@ csidriver:
         cpu: 50m
         memory: 100Mi
   provisioner:
+    securityContext:
+      runAsUser: 0
+      privileged: true # Needed for mountPropagation
+      allowPrivilegeEscalation: true # Needed for privileged
+      readOnlyRootFilesystem: true
+      runAsNonRoot: false
+      seLinuxOptions:
+        level: s0
+      seccompProfile:
+        type: RuntimeDefault
     resources:
       requests:
         cpu: 300m
@@ -88,6 +143,13 @@ csidriver:
         cpu: 300m
         memory: 100Mi
   registrar:
+    securityContext:
+      runAsUser: 0
+      privileged: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: false
+      seccompProfile:
+        type: RuntimeDefault
     resources:
       requests:
         cpu: 20m
@@ -96,6 +158,14 @@ csidriver:
         cpu: 20m
         memory: 30Mi
   livenessprobe:
+    securityContext:
+      runAsUser: 0
+      privileged: false
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: false
+      seccompProfile:
+        type: RuntimeDefault
     resources:
       requests:
         cpu: 20m
@@ -103,6 +173,3 @@ csidriver:
       limits:
         cpu: 20m
         memory: 30Mi
-
-securityContextConstraints:
-  enabled: true # Only applicable for Openshift
