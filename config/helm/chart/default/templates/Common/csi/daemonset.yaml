@@ -60,15 +60,7 @@ spec:
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         securityContext:
-          runAsUser: 0
-          privileged: false
-          allowPrivilegeEscalation: false
-          readOnlyRootFilesystem: true
-          runAsNonRoot: false
-          seccompProfile:
-          {{- toYaml .Values.csidriver.csi_init.securityContext.seccompProfile | nindent 12 }}
-          seLinuxOptions:
-            level: s0
+        {{- toYaml .Values.csidriver.csiInit.securityContext| nindent 10 }}
         volumeMounts:
         - mountPath: /data
           name: data-dir
@@ -115,15 +107,7 @@ spec:
           {{- toYaml .Values.csidriver.server.resources | nindent 10 }}
           {{- end }}
         securityContext:
-          runAsUser: 0
-          privileged: true # Needed for mountPropagation
-          allowPrivilegeEscalation: true # Needed for privileged
-          readOnlyRootFilesystem: true
-          runAsNonRoot: false
-          seccompProfile:
-          {{- toYaml .Values.csidriver.server.securityContext.seccompProfile | nindent 12 }}
-          seLinuxOptions:
-            level: s0
+        {{- toYaml .Values.csidriver.server.securityContext | nindent 10 }}
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:
@@ -172,15 +156,7 @@ spec:
           {{- toYaml .Values.csidriver.provisioner.resources | nindent 10 }}
           {{- end }}
         securityContext:
-          runAsUser: 0
-          privileged: true # Needed for mountPropagation
-          allowPrivilegeEscalation: true # Needed for privileged
-          readOnlyRootFilesystem: true
-          runAsNonRoot: false
-          seccompProfile:
-          {{- toYaml .Values.csidriver.provisioner.securityContext.seccompProfile | nindent 12 }}
-          seLinuxOptions:
-            level: s0
+        {{- toYaml .Values.csidriver.provisioner.securityContext | nindent 10 }}
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:
@@ -210,12 +186,7 @@ spec:
           {{- toYaml .Values.csidriver.registrar.resources | nindent 10 }}
           {{- end }}
         securityContext:
-          runAsUser: 0
-          privileged: false
-          readOnlyRootFilesystem: true
-          runAsNonRoot: false
-          seccompProfile:
-          {{- toYaml .Values.csidriver.registrar.securityContext.seccompProfile | nindent 12 }}
+        {{- toYaml .Values.csidriver.registrar.securityContext | nindent 10 }}
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:
@@ -242,13 +213,7 @@ spec:
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         securityContext:
-          runAsUser: 0
-          privileged: false
-          allowPrivilegeEscalation: false
-          readOnlyRootFilesystem: true
-          runAsNonRoot: false
-          seccompProfile:
-          {{- toYaml .Values.csidriver.livenessprobe.securityContext.seccompProfile | nindent 12 }}
+        {{- toYaml .Values.csidriver.livenessprobe.securityContext| nindent 10 }}
         volumeMounts:
         - mountPath: /csi
           name: plugin-dir

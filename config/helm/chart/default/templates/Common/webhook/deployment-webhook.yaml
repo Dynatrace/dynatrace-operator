@@ -129,17 +129,7 @@ spec:
             - name: certs-dir
               mountPath: /tmp/k8s-webhook-server/serving-certs/
           securityContext:
-            seccompProfile:
-            {{- toYaml .Values.webhook.securityContext.seccompProfile | nindent 14 }}
-            privileged: false
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
-            runAsNonRoot: true
-            runAsUser: 1001
-            runAsGroup: 1001
-            capabilities:
-              drop:
-                - ALL
+          {{- toYaml .Values.webhook.securityContext | nindent 12 }}
       serviceAccountName: dynatrace-webhook
       {{- if (.Values.webhook).hostNetwork }}
       hostNetwork: true
