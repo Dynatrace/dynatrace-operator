@@ -3,13 +3,13 @@ package dtclient
 import "fmt"
 
 func (dtc *dynatraceClient) getAgentUrl(os, installerType, flavor, arch, version string, technologies []string) string {
-	url := fmt.Sprintf("%s/v1/deployment/installer/agent/%s/%s/version/%s?flavor=%s&arch=%s&bitness=64",
+	url := fmt.Sprintf("%s/v1/deployment/installer/agent/%s/%s/version/%s?flavor=%s&arch=%s&bitness=64&skipMetadata=true",
 		dtc.url, os, installerType, version, flavor, arch)
 	return appendTechnologies(url, technologies)
 }
 
 func (dtc *dynatraceClient) getLatestAgentUrl(os, installerType, flavor, arch string, technologies []string) string {
-	url := fmt.Sprintf("%s/v1/deployment/installer/agent/%s/%s/latest?bitness=64&flavor=%s&arch=%s",
+	url := fmt.Sprintf("%s/v1/deployment/installer/agent/%s/%s/latest?bitness=64&flavor=%s&arch=%s&skipMetadata=true",
 		dtc.url, os, installerType, flavor, arch)
 	return appendTechnologies(url, technologies)
 }
