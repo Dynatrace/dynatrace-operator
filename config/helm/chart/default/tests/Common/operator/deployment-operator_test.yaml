@@ -101,6 +101,14 @@ tests:
                     scheme: HTTP
                   initialDelaySeconds: 15
                   periodSeconds: 10
+                startupProbe:
+                  exec:
+                    command:
+                      - /usr/local/bin/dynatrace-operator
+                      - startup-probe
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 1
                 securityContext:
                   seccompProfile:
                     type: RuntimeDefault
@@ -256,6 +264,14 @@ tests:
                     scheme: HTTP
                   initialDelaySeconds: 15
                   periodSeconds: 10
+                startupProbe:
+                  exec:
+                    command:
+                      - /usr/local/bin/dynatrace-operator
+                      - startup-probe
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 1
                 securityContext:
                   seccompProfile:
                     type: RuntimeDefault
