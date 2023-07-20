@@ -95,7 +95,7 @@ csidriver:
       operator: Exists
   labels: []
   annotations: []
-  csi_init:
+  csiInit:
     securityContext:
       runAsUser: 0
       privileged: false
