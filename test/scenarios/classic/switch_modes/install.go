@@ -31,28 +31,29 @@ func Install(t *testing.T, name string) features.Feature {
 		WithDefaultObjectMeta().
 		ApiUrl(secretConfig.ApiUrl).
 		ClassicFullstack(&dynatracev1beta1.HostInjectSpec{})
+	dynakubeClassicFullstack := dynakubeBuilder.Build()
 
 	// install operator and dynakube
-	assess.InstallDynatrace(featureBuilder, &secretConfig, dynakubeBuilder.Build())
+	assess.InstallDynatrace(featureBuilder, &secretConfig, dynakubeClassicFullstack)
 
-	sampleAppClassic := sampleapps.NewSampleDeployment(t, dynakubeBuilder.Build())
+	sampleAppClassic := sampleapps.NewSampleDeployment(t, dynakubeClassicFullstack)
 	sampleAppClassic.WithName(sampleAppsClassicName)
-
-	// cleanup oneagent as otherwise we would have to wait for the oneagent daemonset to be updated
-	featureBuilder.Assess("clean up OneAgent files from nodes", oneagent.CreateUninstallDaemonSet(dynakubeBuilder.Build()))
-	featureBuilder.Assess("wait for daemonset", oneagent.WaitForUninstallOneAgentDaemonset(dynakubeBuilder.Build().Namespace))
-	featureBuilder.Assess("OneAgent files removed from nodes", oneagent.CleanUpEachNode(dynakubeBuilder.Build().Namespace))
 
 	featureBuilder.Assess("install sample app", sampleAppClassic.Install())
 
 	// change dynakube to cloud native
 	dynakubeBuilder = dynakubeBuilder.ResetOneAgent().CloudNative(cloudnative.DefaultCloudNativeSpec())
+	dynakubeCloudNative := dynakubeBuilder.Build()
 
-	assess.InstallOperatorFromSource(featureBuilder, dynakubeBuilder.Build())
-	assess.UpdateDynakube(featureBuilder, dynakubeBuilder.Build())
+	assess.InstallOperatorFromSource(featureBuilder, dynakubeCloudNative)
+	assess.UpdateDynakube(featureBuilder, dynakubeCloudNative)
+
+	// wait for oneagent daemonset to be ready
+	featureBuilder.Assess("wait for dynakube to be reconciled", dynakube.WaitForDynakubePhase(dynakubeCloudNative, dynatracev1beta1.Deploying))
+	featureBuilder.Assess("wait for daemonset to be ready", oneagent.WaitForDaemonset(dynakubeCloudNative))
 
 	// apply sample apps
-	sampleAppCloudNative := sampleapps.NewSampleDeployment(t, dynakubeBuilder.Build())
+	sampleAppCloudNative := sampleapps.NewSampleDeployment(t, dynakubeCloudNative)
 	sampleAppCloudNative.WithName(sampleAppsCloudNativeName)
 	sampleAppCloudNative.WithAnnotations(map[string]string{dtwebhook.AnnotationFailurePolicy: "fail"})
 	featureBuilder.Assess("install sample app", sampleAppCloudNative.Install())
@@ -63,7 +64,7 @@ func Install(t *testing.T, name string) features.Feature {
 	// teardown
 	featureBuilder.Teardown(sampleAppCloudNative.Uninstall())
 	featureBuilder.Teardown(sampleAppClassic.Uninstall())
-	teardown.UninstallDynatrace(featureBuilder, dynakubeBuilder.Build())
+	teardown.UninstallDynatrace(featureBuilder, dynakubeCloudNative)
 
 	return featureBuilder.Feature()
 }
