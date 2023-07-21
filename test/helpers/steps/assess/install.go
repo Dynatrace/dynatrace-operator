@@ -15,7 +15,7 @@ func InstallManifest(builder *features.FeatureBuilder, deploymentPath string) {
 }
 
 func InstallDynatrace(builder *features.FeatureBuilder, secretConfig *tenant.Secret, testDynakube dynatracev1beta1.DynaKube) {
-	InstallOperatorFromSource(builder, testDynakube)
+	InstallOperatorFromSource(builder, testDynakube.Namespace, testDynakube.NeedsCSIDriver())
 	InstallDynakube(builder, secretConfig, testDynakube)
 }
 

@@ -46,7 +46,7 @@ func Install(t *testing.T, name string) features.Feature {
 
 	assess.DeleteDynakube(featureBuilder, dynakubeClassicFullStack)
 	assess.AddClassicCleanUp(featureBuilder, dynakubeClassicFullStack)
-	assess.InstallOperatorFromSource(featureBuilder, dynakubeCloudNative)
+	assess.InstallOperatorFromSource(featureBuilder, dynakubeCloudNative.Namespace, dynakubeCloudNative.NeedsCSIDriver())
 	assess.InstallDynakube(featureBuilder, &secretConfig, dynakubeCloudNative)
 
 	// apply sample apps

@@ -10,5 +10,5 @@ import (
 
 func UpgradeOperatorFromSource(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube) {
 	builder.Assess("upgrading operator from source", operator.InstallViaMake(testDynakube.NeedsCSIDriver()))
-	verifyOperatorDeployment(builder, testDynakube)
+	verifyOperatorDeployment(builder, testDynakube.Namespace, testDynakube.NeedsCSIDriver())
 }

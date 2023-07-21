@@ -33,3 +33,7 @@ func AddClassicCleanUp(builder *features.FeatureBuilder, testDynakube dynatracev
 func UninstallOperatorFromSource(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube) {
 	builder.WithTeardown("operator manifests uninstalled", operator.UninstallViaMake(testDynakube.NeedsCSIDriver()))
 }
+
+func UninstallOperatorWithEdgeConnectFromSource(builder *features.FeatureBuilder, useCsi bool) {
+	builder.WithTeardown("operator manifests uninstalled", operator.UninstallViaMake(useCsi))
+}
