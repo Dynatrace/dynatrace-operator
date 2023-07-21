@@ -7,22 +7,22 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/src/installer"
+	"github.com/Dynatrace/dynatrace-operator/src/installer/common"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/symlink"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/zip"
-	"github.com/Dynatrace/dynatrace-operator/src/processmoduleconfig"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 )
 
 type Properties struct {
-	Os              string
-	Arch            string
-	Type            string
-	Flavor          string
-	TargetVersion   string
-	PreviousVersion string
-	Technologies    []string
-	Url             string // if this is set all settings before it will be ignored
+	Os            string
+	Arch          string
+	Type          string
+	Flavor        string
+	TargetVersion string
+	Technologies  []string
+	Url           string // if this is set all settings before it will be ignored
 
 	PathResolver metadata.PathResolver
 }
@@ -40,7 +40,7 @@ type Installer struct {
 	props     *Properties
 }
 
-func NewInstaller(fs afero.Fs, dtc dtclient.Client, props *Properties) *Installer {
+func NewUrlInstaller(fs afero.Fs, dtc dtclient.Client, props *Properties) installer.Installer {
 	return &Installer{
 		fs:        fs,
 		dtc:       dtc,
@@ -50,10 +50,19 @@ func NewInstaller(fs afero.Fs, dtc dtclient.Client, props *Properties) *Installe
 }
 
 func (installer Installer) InstallAgent(targetDir string) (bool, error) {
+	log.Info("installing agent from url")
+
 	if installer.isAlreadyDownloaded(targetDir) {
 		log.Info("agent already installed", "target dir", targetDir)
 		return false, nil
 	}
+
+	err := installer.fs.MkdirAll(installer.props.PathResolver.AgentSharedBinaryDirBase(), common.MkDirFileMode)
+	if err != nil {
+		log.Info("failed to create the base shared agent directory", "err", err)
+		return false, errors.WithStack(err)
+	}
+
 	log.Info("installing agent", "target dir", targetDir)
 	installer.props.fillEmptyWithDefaults()
 	if err := installer.installAgent(targetDir); err != nil {
@@ -68,10 +77,6 @@ func (installer Installer) InstallAgent(targetDir string) (bool, error) {
 		return false, err
 	}
 	return true, nil
-}
-
-func (installer Installer) UpdateProcessModuleConfig(targetDir string, processModuleConfig *dtclient.ProcessModuleConfig) error {
-	return processmoduleconfig.UpdateProcessModuleConfigInPlace(installer.fs, targetDir, processModuleConfig)
 }
 
 func (installer Installer) Cleanup() error {
@@ -113,9 +118,13 @@ func (installer Installer) isInitContainerMode() bool {
 }
 
 func (installer Installer) isAlreadyDownloaded(targetDir string) bool {
-	if config.AgentBinDirMount == targetDir {
+	if isStandaloneInstall(targetDir) {
 		return false
 	}
 	_, err := installer.fs.Stat(targetDir)
 	return !os.IsNotExist(err)
+}
+
+func isStandaloneInstall(targetDir string) bool {
+	return config.AgentBinDirMount == targetDir
 }

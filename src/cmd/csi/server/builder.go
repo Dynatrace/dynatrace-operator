@@ -16,11 +16,7 @@ import (
 
 const use = "csi-server"
 
-var (
-	nodeId       = ""
-	probeAddress = ""
-	endpoint     = ""
-)
+var nodeId, probeAddress, endpoint string
 
 type CommandBuilder struct {
 	configProvider  config.Provider
@@ -101,12 +97,12 @@ func (builder CommandBuilder) Build() *cobra.Command {
 func addFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&nodeId, "node-id", "", "node id")
 	cmd.PersistentFlags().StringVar(&endpoint, "endpoint", "unix:///tmp/csi.sock", "CSI endpoint")
-	cmd.PersistentFlags().StringVar(&probeAddress, "health-probe-bind-address", ":10080", "The address the probe endpoint binds to.")
+	cmd.PersistentFlags().StringVar(&probeAddress, "health-probe-bind-address", defaultProbeAddress, "The address the probe endpoint binds to.")
 }
 
 func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-		unix.Umask(0000)
+		unix.Umask(dtcsi.UnixUmask)
 		version.LogVersion()
 
 		kubeConfig, err := builder.configProvider.GetConfig()
@@ -126,11 +122,6 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 
 		signalHandler := ctrl.SetupSignalHandler()
 		access, err := metadata.NewAccess(signalHandler, dtcsi.MetadataAccessPath)
-		if err != nil {
-			return err
-		}
-
-		err = metadata.CorrectMetadata(signalHandler, csiManager.GetClient(), access)
 		if err != nil {
 			return err
 		}

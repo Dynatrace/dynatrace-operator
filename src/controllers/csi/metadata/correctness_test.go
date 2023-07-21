@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -33,167 +34,99 @@ func createTestVolume(index int) Volume {
 	}
 }
 
-func TestCreateTestDynakube(t *testing.T) {
-	// Check instantiation
-	dynakube0 := createTestDynakube(0)
+func TestCorrectCSI(t *testing.T) {
+	t.Run("error on no db or missing tables", func(t *testing.T) {
+		db := emptyMemoryDB()
 
-	assert.Equal(t, "asc0", dynakube0.TenantUUID)
-	assert.Equal(t, "0", dynakube0.LatestVersion)
-	assert.Equal(t, "dk0", dynakube0.Name)
-	assert.Equal(t, "sha256:0", dynakube0.ImageDigest)
+		checker := NewCorrectnessChecker(nil, db, dtcsi.CSIOptions{})
 
-	dynakube1 := createTestDynakube(1)
+		err := checker.CorrectCSI(context.TODO())
 
-	assert.Equal(t, "asc1", dynakube1.TenantUUID)
-	assert.Equal(t, "123", dynakube1.LatestVersion)
-	assert.Equal(t, "dk1", dynakube1.Name)
-	assert.Equal(t, "sha256:123", dynakube1.ImageDigest)
+		assert.Error(t, err)
+	})
+	t.Run("no error on empty db", func(t *testing.T) {
+		db := FakeMemoryDB()
 
-	dynakube2 := createTestDynakube(2)
+		checker := NewCorrectnessChecker(nil, db, dtcsi.CSIOptions{})
 
-	assert.Equal(t, "asc2", dynakube2.TenantUUID)
-	assert.Equal(t, "246", dynakube2.LatestVersion)
-	assert.Equal(t, "dk2", dynakube2.Name)
-	assert.Equal(t, "sha256:246", dynakube2.ImageDigest)
+		err := checker.CorrectCSI(context.TODO())
 
-	// Check that they are not references of each other
-	dynakube0.Name = "new-name" // nolint:goconst
-	newDynakube0 := createTestDynakube(0)
+		assert.NoError(t, err)
+	})
 
-	assert.NotEqual(t, dynakube0.Name, newDynakube0.Name)
-	assert.Equal(t, "dk0", newDynakube0.Name)
+	t.Run("nothing to remove, everything is still correct", func(t *testing.T) {
+		ctx := context.TODO()
+		testVolume1 := createTestVolume(1)
+		testDynakube1 := createTestDynakube(1)
+		db := FakeMemoryDB()
+		db.InsertVolume(ctx, &testVolume1)
+		client := fake.NewClient(
+			&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: testVolume1.PodName}},
+			&dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testDynakube1.Name}},
+		)
 
-	newDynakube0 = createTestDynakube(0)
-	dynakube0.Name = "new-name"
+		checker := NewCorrectnessChecker(client, db, dtcsi.CSIOptions{})
 
-	assert.NotEqual(t, dynakube0.Name, newDynakube0.Name)
-	assert.Equal(t, "dk0", newDynakube0.Name)
-}
+		err := checker.CorrectCSI(ctx)
 
-func TestCreateTestVolume(t *testing.T) {
-	// Check instantiation
-	volume0 := createTestVolume(0)
+		assert.NoError(t, err)
+		vol, err := db.GetVolume(ctx, testVolume1.VolumeID)
+		assert.NoError(t, err)
+		assert.Equal(t, &testVolume1, vol)
+	})
+	t.Run("remove unnecessary entries in the filesystem", func(t *testing.T) {
+		ctx := context.TODO()
+		testVolume1 := createTestVolume(1)
+		testVolume2 := createTestVolume(2)
+		testVolume3 := createTestVolume(3)
 
-	assert.Equal(t, "vol-0", volume0.VolumeID)
-	assert.Equal(t, "pod0", volume0.PodName)
-	assert.Equal(t, "0", volume0.Version)
-	assert.Equal(t, "asc0", volume0.TenantUUID)
+		testDynakube1 := createTestDynakube(1)
+		testDynakube2 := createTestDynakube(2)
+		testDynakube3 := createTestDynakube(3)
 
-	volume1 := createTestVolume(1)
+		db := FakeMemoryDB()
+		db.InsertVolume(ctx, &testVolume1)
+		db.InsertVolume(ctx, &testVolume2)
+		db.InsertVolume(ctx, &testVolume3)
+		db.InsertDynakube(ctx, &testDynakube1)
+		db.InsertDynakube(ctx, &testDynakube2)
+		db.InsertDynakube(ctx, &testDynakube3)
+		client := fake.NewClient(
+			&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: testVolume1.PodName}},
+			&dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testDynakube1.Name}},
+		)
 
-	assert.Equal(t, "vol-1", volume1.VolumeID)
-	assert.Equal(t, "pod1", volume1.PodName)
-	assert.Equal(t, "123", volume1.Version)
-	assert.Equal(t, "asc1", volume1.TenantUUID)
+		checker := NewCorrectnessChecker(client, db, dtcsi.CSIOptions{})
 
-	volume2 := createTestVolume(2)
+		err := checker.CorrectCSI(ctx)
+		require.NoError(t, err)
 
-	assert.Equal(t, "vol-2", volume2.VolumeID)
-	assert.Equal(t, "pod2", volume2.PodName)
-	assert.Equal(t, "246", volume2.Version)
-	assert.Equal(t, "asc2", volume2.TenantUUID)
+		vol, err := db.GetVolume(ctx, testVolume1.VolumeID)
+		require.NoError(t, err)
+		assert.Equal(t, &testVolume1, vol)
 
-	// Check that they are not references of each other
-	volume0.PodName = "new-name"
-	newVolume0 := createTestVolume(0)
+		ten, err := db.GetDynakube(ctx, testDynakube1.Name)
+		require.NoError(t, err)
+		assert.Equal(t, &testDynakube1, ten)
 
-	assert.NotEqual(t, volume0.PodName, newVolume0.PodName)
-	assert.Equal(t, "pod0", newVolume0.PodName)
+		// PURGED
+		vol, err = db.GetVolume(ctx, testVolume2.VolumeID)
+		require.NoError(t, err)
+		assert.Nil(t, vol)
 
-	newVolume0 = createTestVolume(0)
-	volume0.PodName = "new-name"
+		// PURGED
+		vol, err = db.GetVolume(ctx, testVolume3.VolumeID)
+		require.NoError(t, err)
+		assert.Nil(t, vol)
 
-	assert.NotEqual(t, volume0.PodName, newVolume0.PodName)
-	assert.Equal(t, "pod0", newVolume0.PodName)
-}
+		// PURGED
+		ten, err = db.GetDynakube(ctx, testDynakube2.TenantUUID)
+		require.NoError(t, err)
+		assert.Nil(t, ten)
 
-func TestCheckStorageCorrectness_FreshDB(t *testing.T) {
-	// db without tables
-	db := emptyMemoryDB()
-
-	err := CorrectMetadata(context.TODO(), nil, db)
-
-	assert.Error(t, err)
-}
-
-func TestCheckStorageCorrectness_EmptyDB(t *testing.T) {
-	// db with tables but empty
-	db := FakeMemoryDB()
-
-	err := CorrectMetadata(context.TODO(), nil, db)
-
-	assert.NoError(t, err)
-}
-
-func TestCheckStorageCorrectness_DoNothing(t *testing.T) {
-	ctx := context.TODO()
-	testVolume1 := createTestVolume(1)
-	testDynakube1 := createTestDynakube(1)
-	db := FakeMemoryDB()
-	db.InsertVolume(ctx, &testVolume1)
-	client := fake.NewClient(
-		&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: testVolume1.PodName}},
-		&dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testDynakube1.Name}},
-	)
-
-	err := CorrectMetadata(ctx, client, db)
-
-	assert.NoError(t, err)
-	vol, err := db.GetVolume(ctx, testVolume1.VolumeID)
-	assert.NoError(t, err)
-	assert.Equal(t, &testVolume1, vol)
-}
-
-func TestCheckStorageCorrectness_PURGE(t *testing.T) {
-	ctx := context.TODO()
-	testVolume1 := createTestVolume(1)
-	testVolume2 := createTestVolume(2)
-	testVolume3 := createTestVolume(3)
-
-	testDynakube1 := createTestDynakube(1)
-	testDynakube2 := createTestDynakube(2)
-	testDynakube3 := createTestDynakube(3)
-
-	db := FakeMemoryDB()
-	db.InsertVolume(ctx, &testVolume1)
-	db.InsertVolume(ctx, &testVolume2)
-	db.InsertVolume(ctx, &testVolume3)
-	db.InsertDynakube(ctx, &testDynakube1)
-	db.InsertDynakube(ctx, &testDynakube2)
-	db.InsertDynakube(ctx, &testDynakube3)
-	client := fake.NewClient(
-		&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: testVolume1.PodName}},
-		&dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testDynakube1.Name}},
-	)
-
-	err := CorrectMetadata(ctx, client, db)
-	require.NoError(t, err)
-
-	vol, err := db.GetVolume(ctx, testVolume1.VolumeID)
-	require.NoError(t, err)
-	assert.Equal(t, &testVolume1, vol)
-
-	ten, err := db.GetDynakube(ctx, testDynakube1.Name)
-	require.NoError(t, err)
-	assert.Equal(t, &testDynakube1, ten)
-
-	// PURGED
-	vol, err = db.GetVolume(ctx, testVolume2.VolumeID)
-	require.NoError(t, err)
-	assert.Nil(t, vol)
-
-	// PURGED
-	vol, err = db.GetVolume(ctx, testVolume3.VolumeID)
-	require.NoError(t, err)
-	assert.Nil(t, vol)
-
-	// PURGED
-	ten, err = db.GetDynakube(ctx, testDynakube2.TenantUUID)
-	require.NoError(t, err)
-	assert.Nil(t, ten)
-
-	// PURGED
-	ten, err = db.GetDynakube(ctx, testDynakube3.TenantUUID)
-	require.NoError(t, err)
-	assert.Nil(t, ten)
+		// PURGED
+		ten, err = db.GetDynakube(ctx, testDynakube3.TenantUUID)
+		require.NoError(t, err)
+		assert.Nil(t, ten)
+	})
 }
