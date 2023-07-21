@@ -11,7 +11,6 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/stretchr/testify/require"
-	appsv1 "k8s.io/api/apps/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -212,25 +211,6 @@ func WaitForDynakubePhase(dynakube dynatracev1beta1.DynaKube, phase dynatracev1b
 		err := wait.For(conditions.New(resources).ResourceMatch(&dynakube, func(object k8s.Object) bool {
 			dynakube, isDynakube := object.(*dynatracev1beta1.DynaKube)
 			return isDynakube && dynakube.Status.Phase == phase
-		}))
-
-		require.NoError(t, err)
-
-		return ctx
-	}
-}
-
-func WaitForOneAgentInstances(dynakube dynatracev1beta1.DynaKube) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resources := environmentConfig.Client().Resources()
-
-		oneAgentDaemonset := &appsv1.DaemonSet{}
-		err := resources.Get(ctx, dynakube.OneAgentDaemonsetName(), dynakube.Namespace, oneAgentDaemonset)
-		require.NoError(t, err)
-
-		err = wait.For(conditions.New(resources).ResourceMatch(&dynakube, func(object k8s.Object) bool {
-			dynakube, isDynakube := object.(*dynatracev1beta1.DynaKube)
-			return isDynakube && int32(len(dynakube.Status.OneAgent.Instances)) == oneAgentDaemonset.Status.DesiredNumberScheduled
 		}))
 
 		require.NoError(t, err)

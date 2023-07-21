@@ -6,7 +6,9 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
@@ -36,6 +38,11 @@ func Install(t *testing.T, name string) features.Feature {
 	sampleAppClassic := sampleapps.NewSampleDeployment(t, dynakubeBuilder.Build())
 	sampleAppClassic.WithName(sampleAppsClassicName)
 
+	// cleanup oneagent as otherwise we would have to wait for the oneagent daemonset to be updated
+	featureBuilder.Assess("clean up OneAgent files from nodes", oneagent.CreateUninstallDaemonSet(dynakubeBuilder.Build()))
+	featureBuilder.Assess("wait for daemonset", oneagent.WaitForUninstallOneAgentDaemonset(dynakubeBuilder.Build().Namespace))
+	featureBuilder.Assess("OneAgent files removed from nodes", oneagent.CleanUpEachNode(dynakubeBuilder.Build().Namespace))
+
 	featureBuilder.Assess("install sample app", sampleAppClassic.Install())
 
 	// change dynakube to cloud native
@@ -44,11 +51,10 @@ func Install(t *testing.T, name string) features.Feature {
 	assess.InstallOperatorFromSource(featureBuilder, dynakubeBuilder.Build())
 	assess.UpdateDynakube(featureBuilder, dynakubeBuilder.Build())
 
-	featureBuilder.Assess("oneagent status instances are ready", dynakube.WaitForOneAgentInstances(dynakubeBuilder.Build()))
-
 	// apply sample apps
 	sampleAppCloudNative := sampleapps.NewSampleDeployment(t, dynakubeBuilder.Build())
 	sampleAppCloudNative.WithName(sampleAppsCloudNativeName)
+	sampleAppCloudNative.WithAnnotations(map[string]string{dtwebhook.AnnotationFailurePolicy: "fail"})
 	featureBuilder.Assess("install sample app", sampleAppCloudNative.Install())
 
 	// run cloud native test here
