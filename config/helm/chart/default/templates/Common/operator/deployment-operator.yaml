@@ -82,6 +82,7 @@ spec:
               scheme: HTTP
             initialDelaySeconds: 15
             periodSeconds: 10
+          {{- include "dynatrace-operator.startupProbe" . | nindent 10 }}
           securityContext:
           {{- toYaml .Values.operator.securityContext | nindent 12 }}
       affinity:
