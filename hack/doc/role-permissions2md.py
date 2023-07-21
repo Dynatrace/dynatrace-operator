@@ -4,17 +4,6 @@ import yaml
 import argparse
 from urllib.request import urlopen
 
-apiTerms = {
-    "create": "Create",
-    "get": "Get",
-    "list": "List",
-    "watch": "Watch",
-    "update": "Update",
-    "delete": "Delete",
-    "patch": "Patch",
-    "use": "Use"
-}
-
 resourceTerms = {
     "nodes": "Nodes",
     "pods": "Pods",
@@ -69,7 +58,7 @@ def get_apis(rule):
     for api in apis:
         if (len(api_string) > 0):
             api_string += "/"
-        api_string += apiTerms[api]
+        api_string += api.title()
 
     return api_string
 
