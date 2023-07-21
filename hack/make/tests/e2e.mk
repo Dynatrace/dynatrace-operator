@@ -19,7 +19,7 @@ test/e2e/classic: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1 ./test/scenarios/classic $(SKIPCLEANUP)
 
 ## Runs ClassicFullStack switch mode e2e test only
-test/e2e/classic/switchmode: manifests/crd/helm
+test/e2e/classic/switchmodes: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1 ./test/scenarios/classic/switch_modes $(SKIPCLEANUP)
 
 ## Runs CloudNative codemodules e2e test only
