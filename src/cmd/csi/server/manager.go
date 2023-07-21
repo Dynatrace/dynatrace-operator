@@ -12,7 +12,7 @@ import (
 
 const (
 	metricsBindAddress   = ":8080"
-	defaultProbeAddress  = ":8081"
+	defaultProbeAddress  = ":10080"
 	port                 = 8383
 	livenessEndpointName = "/livez"
 	livezEndpointName    = "livez"

@@ -50,7 +50,7 @@ test test3
 
 		err := UpdateProcessModuleConfigInPlace(memFs, "", &testProcessModuleConfig)
 		require.NoError(t, err)
-		assertTestConf(t, memFs, ruxitAgentProcPath, expectedUsed)
+		assertTestConf(t, memFs, RuxitAgentProcPath, expectedUsed)
 		assertTestConf(t, memFs, sourceRuxitAgentProcPath, testRuxitConf)
 	})
 }
@@ -78,8 +78,8 @@ test test3
 
 		err := CreateAgentConfigDir(memFs, targetDir, sourceDir, &testProcessModuleConfig)
 		require.NoError(t, err)
-		assertTestConf(t, memFs, filepath.Join(targetDir, ruxitAgentProcPath), expectedUsed)
-		assertTestConf(t, memFs, filepath.Join(sourceDir, ruxitAgentProcPath), testRuxitConf)
+		assertTestConf(t, memFs, filepath.Join(targetDir, RuxitAgentProcPath), expectedUsed)
+		assertTestConf(t, memFs, filepath.Join(sourceDir, RuxitAgentProcPath), testRuxitConf)
 	})
 }
 
@@ -87,7 +87,7 @@ func TestCheckProcessModuleConfigCopy(t *testing.T) {
 	memFs := afero.NewMemMapFs()
 	prepTestConfFs(memFs)
 	sourcePath := sourceRuxitAgentProcPath
-	destPath := ruxitAgentProcPath
+	destPath := RuxitAgentProcPath
 
 	err := checkProcessModuleConfigCopy(memFs, sourcePath, destPath)
 	require.NoError(t, err)
@@ -96,8 +96,8 @@ func TestCheckProcessModuleConfigCopy(t *testing.T) {
 
 func prepTestConfFs(fs afero.Fs) {
 	_ = fs.MkdirAll(filepath.Base(sourceRuxitAgentProcPath), 0755)
-	_ = fs.MkdirAll(filepath.Base(ruxitAgentProcPath), 0755)
-	usedConf, _ := fs.OpenFile(ruxitAgentProcPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	_ = fs.MkdirAll(filepath.Base(RuxitAgentProcPath), 0755)
+	usedConf, _ := fs.OpenFile(RuxitAgentProcPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	_, _ = usedConf.WriteString(testRuxitConf)
 }
 

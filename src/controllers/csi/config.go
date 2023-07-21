@@ -33,6 +33,8 @@ const (
 	SharedAgentConfigDir = "config"
 
 	DaemonSetName = "dynatrace-oneagent-csi-driver"
+
+	UnixUmask = 0000
 )
 
 var MetadataAccessPath = filepath.Join(DataPath, "csi.db")

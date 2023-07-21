@@ -1,66 +1,73 @@
 package istio
 
 import (
-	"net/http"
-	"net/http/httptest"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/stretchr/testify/assert"
+	fakeistio "istio.io/client-go/pkg/clientset/versioned/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	restclient "k8s.io/client-go/rest"
+	fakediscovery "k8s.io/client-go/discovery/fake"
 )
 
-func TestIstioEnabled(t *testing.T) {
-	server := initMockServer(true)
-	defer server.Close()
-	config := &restclient.Config{Host: server.URL}
+func TestIstio(t *testing.T) {
+	type test struct {
+		name    string
+		input   []*metav1.APIResourceList
+		wantErr error
+		want    bool
+	}
 
-	isInstalled, err := CheckIstioInstalled(config)
-	require.True(t, isInstalled, err)
+	tests := []test{
+		{name: "enabled", input: []*metav1.APIResourceList{{GroupVersion: IstioGVR}}, wantErr: nil, want: true},
+		{name: "disabled", input: []*metav1.APIResourceList{}, wantErr: nil, want: false},
+	}
+
+	ist := fakeistio.NewSimpleClientset()
+
+	fakeDiscovery, ok := ist.Discovery().(*fakediscovery.FakeDiscovery)
+	if !ok {
+		t.Fatalf("couldn't convert Discovery() to *FakeDiscovery")
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			fakeDiscovery.Resources = tc.input
+			isInstalled, err := CheckIstioInstalled(fakeDiscovery)
+			assert.Equal(t, tc.want, isInstalled)
+			assert.ErrorIs(t, tc.wantErr, err)
+		})
+	}
 }
 
-func TestIstioDisabled(t *testing.T) {
-	server := initMockServer(false)
-	defer server.Close()
-	config := &restclient.Config{Host: server.URL}
+func TestBuildNameForEndpoint(t *testing.T) {
+	type args struct {
+		name      string
+		commHosts []dtclient.CommunicationHost
+	}
 
-	isInstalled, err := CheckIstioInstalled(config)
-	require.False(t, isInstalled)
-	require.Nil(t, err)
-}
+	type test struct {
+		name string
+		args args
+		want string
+	}
 
-func TestIstioWrongConfig(t *testing.T) {
-	server := initMockServer(false)
-	defer server.Close()
-	config := &restclient.Config{Host: "localhost:1000"}
-
-	isInstalled, err := CheckIstioInstalled(config)
-	require.False(t, isInstalled)
-	require.NotNil(t, err)
-}
-
-func initMockServer(enableIstioGVR bool) *httptest.Server {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		if req.URL.Path == "/apis/networking.istio.io/v1alpha3" {
-			if !enableIstioGVR {
-				w.WriteHeader(http.StatusNotFound)
-				return
-			}
-
-			apiResourceList := metav1.APIResourceList{
-				GroupVersion: "networking.istio.io/v1alpha3",
-				APIResources: []metav1.APIResource{
-					{Name: "serviceentries", Namespaced: true, Kind: "ServiceEntry", Verbs: []string{"get", "list", "watch", "create", "update", "patch", "delete"}},
-					{Name: "virtualservices", Namespaced: true, Kind: "VirtualService", Verbs: []string{"get", "list", "watch", "create", "update", "patch", "delete"}},
-				},
-			}
-
-			sendData(apiResourceList, w)
-			return
-		}
-
-		w.WriteHeader(http.StatusNotFound)
-	}))
-
-	return server
+	tests := []test{
+		{
+			name: "empty host list",
+			args: args{name: "test", commHosts: []dtclient.CommunicationHost{}},
+			want: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+		},
+		{
+			name: "single host in list",
+			args: args{name: "test", commHosts: []dtclient.CommunicationHost{{Protocol: "http", Host: "mydynatrace.somedomain", Port: 27018}}},
+			want: "f694c984dc5db78631ca837b529d044e46a8594607156d4a2a8b93e7d488e47c",
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result := BuildNameForEndpoint(tc.args.name, tc.args.commHosts)
+			assert.Equal(t, tc.want, result)
+		})
+	}
 }

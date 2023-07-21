@@ -56,7 +56,7 @@ func TestReconcile(t *testing.T) {
 			apiReader:    fake.NewClient(),
 			fs:           afero.Afero{Fs: afero.NewMemMapFs()},
 			versionFunc:  faultyRegistry.ImageVersionExt,
-			timeProvider: timeprovider.New(),
+			timeProvider: timeprovider.New().Freeze(),
 		}
 		err := versionReconciler.Reconcile(ctx)
 		assert.Error(t, err)
@@ -67,7 +67,7 @@ func TestReconcile(t *testing.T) {
 		testOneAgentImage := getTestOneAgentImageInfo()
 		dynakube := dynakubeTemplate.DeepCopy()
 		fakeClient := fake.NewClient()
-		timeProvider := timeprovider.New()
+		timeProvider := timeprovider.New().Freeze()
 		setupPullSecret(t, fakeClient, *dynakube)
 
 		dkStatus := &dynakube.Status
@@ -146,7 +146,7 @@ func TestReconcile(t *testing.T) {
 			apiReader:    fakeClient,
 			fs:           afero.Afero{Fs: afero.NewMemMapFs()},
 			versionFunc:  registry.ImageVersionExt,
-			timeProvider: timeprovider.New(),
+			timeProvider: timeprovider.New().Freeze(),
 			dtClient:     mockClient,
 		}
 		err := versionReconciler.Reconcile(ctx)
@@ -158,7 +158,7 @@ func TestReconcile(t *testing.T) {
 }
 
 func TestNeedsReconcile(t *testing.T) {
-	timeProvider := timeprovider.New()
+	timeProvider := timeprovider.New().Freeze()
 
 	dynakube := dynatracev1beta1.DynaKube{
 		Spec: dynatracev1beta1.DynaKubeSpec{
@@ -185,7 +185,7 @@ func TestNeedsReconcile(t *testing.T) {
 }
 
 func TestNeedsUpdate(t *testing.T) {
-	timeProvider := timeprovider.New()
+	timeProvider := timeprovider.New().Freeze()
 
 	dynakube := dynatracev1beta1.DynaKube{
 		Spec: dynatracev1beta1.DynaKubeSpec{
@@ -351,7 +351,7 @@ func setupPullSecret(t *testing.T, fakeClient client.Client, dynakube dynatracev
 
 func changeTime(timeProvider *timeprovider.Provider, duration time.Duration) {
 	newTime := metav1.NewTime(timeProvider.Now().Add(duration))
-	timeProvider.SetNow(&newTime)
+	timeProvider.Set(&newTime)
 }
 
 func createTestPullSecret(fakeClient client.Client, dynakube dynatracev1beta1.DynaKube) error {

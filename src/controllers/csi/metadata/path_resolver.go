@@ -22,10 +22,12 @@ func (pr PathResolver) AgentBinaryDir(tenantUUID string) string {
 	return filepath.Join(pr.TenantDir(tenantUUID), dtcsi.AgentBinaryDir)
 }
 
+// Deprecated
 func (pr PathResolver) AgentProcessModuleConfigForVersion(tenantUUID string, version string) string {
 	return filepath.Join(pr.AgentBinaryDirForVersion(tenantUUID, version), "agent", "conf", "ruxitagentproc.conf")
 }
 
+// Deprecated
 func (pr PathResolver) SourceAgentProcessModuleConfigForVersion(tenantUUID string, version string) string {
 	return filepath.Join(pr.AgentBinaryDirForVersion(tenantUUID, version), "agent", "conf", "_ruxitagentproc.conf")
 }
@@ -34,6 +36,7 @@ func (pr PathResolver) AgentRuxitProcResponseCache(tenantUUID string) string {
 	return filepath.Join(pr.TenantDir(tenantUUID), "revision.json")
 }
 
+// Deprecated
 func (pr PathResolver) AgentBinaryDirForVersion(tenantUUID string, version string) string {
 	return filepath.Join(pr.AgentBinaryDir(tenantUUID), version)
 }
@@ -50,14 +53,15 @@ func (pr PathResolver) AgentTempUnzipDir() string {
 	return filepath.Join(pr.AgentTempUnzipRootDir(), "opt", "dynatrace", "oneagent")
 }
 
-func (pr PathResolver) AgentSharedBinaryDirForImage(digest string) string {
-	return filepath.Join(pr.AgentSharedBinaryDirBase(), digest)
+func (pr PathResolver) AgentSharedBinaryDirForAgent(versionOrDigest string) string {
+	return filepath.Join(pr.AgentSharedBinaryDirBase(), versionOrDigest)
 }
 
 func (pr PathResolver) AgentConfigDir(tenantUUID string) string {
 	return filepath.Join(pr.TenantDir(tenantUUID), dtcsi.SharedAgentConfigDir)
 }
 
+// Deprecated
 func (pr PathResolver) InnerAgentBinaryDirForSymlinkForVersion(tenantUUID string, version string) string {
 	return filepath.Join(pr.AgentBinaryDirForVersion(tenantUUID, version), "agent", "bin", "current")
 }

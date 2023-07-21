@@ -91,6 +91,9 @@ func (f *FakeFailDB) GetUsedVersions(ctx context.Context, tenantUUID string) (ma
 func (f *FakeFailDB) GetAllUsedVersions(ctx context.Context) (map[string]bool, error) {
 	return nil, sql.ErrTxDone
 }
+func (f *FakeFailDB) GetLatestVersions(ctx context.Context) (map[string]bool, error) {
+	return nil, sql.ErrTxDone
+}
 
 func (f *FakeFailDB) GetUsedImageDigests(ctx context.Context) (map[string]bool, error) {
 	return nil, sql.ErrTxDone
