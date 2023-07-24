@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -28,11 +28,11 @@ func trustedCAsTester(t *testing.T) {
 	kubeReader := fake.NewClient(&corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{Name: testConfigMapName},
 		Data: map[string]string{
-			dynatracev1beta1.TrustedCAKey: testConfigMapValue,
+			dynakube.TrustedCAKey: testConfigMapValue,
 		},
 	})
-	dk := dynatracev1beta1.DynaKube{
-		Spec: dynatracev1beta1.DynaKubeSpec{
+	dk := dynakube.DynaKube{
+		Spec: dynakube.DynaKubeSpec{
 			TrustedCAs: testConfigMapName,
 		},
 	}
@@ -46,7 +46,7 @@ func trustedCAsTester(t *testing.T) {
 	assert.Error(t, err)
 	assert.Empty(t, trustedCAs)
 
-	emptyDk := dynatracev1beta1.DynaKube{}
+	emptyDk := dynakube.DynaKube{}
 	trustedCAs, err = emptyDk.TrustedCAs(context.TODO(), kubeReader)
 	assert.NoError(t, err)
 	assert.Empty(t, trustedCAs)
@@ -56,13 +56,13 @@ func activeGateTlsCertTester(t *testing.T) {
 	kubeReader := fake.NewClient(&corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{Name: testSecretName},
 		Data: map[string][]byte{
-			dynatracev1beta1.TlsCertKey: []byte(testSecretValue),
+			dynakube.TlsCertKey: []byte(testSecretValue),
 		}})
 
-	dk := dynatracev1beta1.DynaKube{
-		Spec: dynatracev1beta1.DynaKubeSpec{
-			ActiveGate: dynatracev1beta1.ActiveGateSpec{
-				Capabilities:  []dynatracev1beta1.CapabilityDisplayName{dynatracev1beta1.KubeMonCapability.DisplayName},
+	dk := dynakube.DynaKube{
+		Spec: dynakube.DynaKubeSpec{
+			ActiveGate: dynakube.ActiveGateSpec{
+				Capabilities:  []dynakube.CapabilityDisplayName{dynakube.KubeMonCapability.DisplayName},
 				TlsSecretName: testSecretName,
 			},
 		},
@@ -78,7 +78,7 @@ func activeGateTlsCertTester(t *testing.T) {
 	assert.Error(t, err)
 	assert.Empty(t, tlsCert)
 
-	emptyDk := dynatracev1beta1.DynaKube{}
+	emptyDk := dynakube.DynaKube{}
 	tlsCert, err = emptyDk.ActiveGateTlsCert(context.TODO(), kubeReader)
 
 	assert.NoError(t, err)

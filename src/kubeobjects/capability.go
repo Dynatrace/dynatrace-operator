@@ -1,6 +1,6 @@
 package kubeobjects
 
-import dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+import dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 
 func SwitchCapability(instance *dynatracev1beta1.DynaKube, capability dynatracev1beta1.ActiveGateCapability, wantEnabled bool) {
 	hasEnabled := instance.IsActiveGateMode(capability.DisplayName)

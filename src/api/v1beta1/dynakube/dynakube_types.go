@@ -1,4 +1,4 @@
-package v1beta1
+package dynakube
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,7 +27,7 @@ const (
 	ReasonTokenError string = "TokenError"
 )
 
-type DynaKubeProxy struct {
+type DynaKubeProxy struct { // nolint:revive
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Proxy value",order=32,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	Value string `json:"value,omitempty"`
 
@@ -35,7 +35,7 @@ type DynaKubeProxy struct {
 	ValueFrom string `json:"valueFrom,omitempty"`
 }
 
-type DynaKubeValueSource struct {
+type DynaKubeValueSource struct { // nolint:revive
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Custom properties value",order=32,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	Value string `json:"value,omitempty"`
 
@@ -65,7 +65,7 @@ type DynaKube struct {
 
 // DynaKubeSpec defines the desired state of DynaKube
 // +k8s:openapi-gen=true
-type DynaKubeSpec struct {
+type DynaKubeSpec struct { // nolint:revive
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
 
 	// Location of the Dynatrace API to connect to, including your specific environment UUID
@@ -133,7 +133,7 @@ type DynaKubeSpec struct {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // DynaKubeList contains a list of DynaKube
-type DynaKubeList struct {
+type DynaKubeList struct { // nolint:revive
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []DynaKube `json:"items"`

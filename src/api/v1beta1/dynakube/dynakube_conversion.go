@@ -1,14 +1,14 @@
-package v1beta1
+package dynakube
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/dynakube"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
 // ConvertTo converts v1beta1 to v1alpha1
 func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
-	dst := dstRaw.(*v1alpha1.DynaKube)
+	dst := dstRaw.(*dynakube.DynaKube)
 
 	dst.ObjectMeta = src.ObjectMeta
 
@@ -17,7 +17,7 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 	dst.Spec.Tokens = src.Spec.Tokens
 	dst.Spec.CustomPullSecret = src.Spec.CustomPullSecret
 	dst.Spec.SkipCertCheck = src.Spec.SkipCertCheck
-	dst.Spec.Proxy = (*v1alpha1.DynaKubeProxy)(src.Spec.Proxy)
+	dst.Spec.Proxy = (*dynakube.DynaKubeProxy)(src.Spec.Proxy)
 	dst.Spec.TrustedCAs = src.Spec.TrustedCAs
 	dst.Spec.NetworkZone = src.Spec.NetworkZone
 	dst.Spec.EnableIstio = src.Spec.EnableIstio
@@ -69,9 +69,9 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 	dst.Status.LastPaaSTokenProbeTimestamp = &timeNow
 
 	dst.Status.OneAgent.UseImmutableImage = true
-	dst.Status.OneAgent.Instances = map[string]v1alpha1.OneAgentInstance{}
+	dst.Status.OneAgent.Instances = map[string]dynakube.OneAgentInstance{}
 	for key, value := range src.Status.OneAgent.Instances {
-		tmp := v1alpha1.OneAgentInstance{
+		tmp := dynakube.OneAgentInstance{
 			Version:   src.Status.OneAgent.Version,
 			PodName:   value.PodName,
 			IPAddress: value.IPAddress,
@@ -81,20 +81,20 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 	dst.Status.OneAgent.LastUpdateProbeTimestamp = src.Status.OneAgent.LastProbeTimestamp
 	dst.Status.OneAgent.Version = src.Status.OneAgent.Version
 
-	dst.Status.Phase = v1alpha1.DynaKubePhaseType(src.Status.Phase)
+	dst.Status.Phase = dynakube.DynaKubePhaseType(src.Status.Phase)
 	dst.Status.Tokens = ""
 	dst.Status.UpdatedTimestamp = src.Status.UpdatedTimestamp
 
 	return nil
 }
 
-func convertToDeprecatedActiveGateCapability(dst *v1alpha1.CapabilityProperties, src *CapabilityProperties) {
+func convertToDeprecatedActiveGateCapability(dst *dynakube.CapabilityProperties, src *CapabilityProperties) {
 	dst.Enabled = true
 
 	dst.Replicas = src.Replicas
 	dst.Group = src.Group
 	if src.CustomProperties != nil {
-		dst.CustomProperties = &v1alpha1.DynaKubeValueSource{
+		dst.CustomProperties = &dynakube.DynaKubeValueSource{
 			Value:     src.CustomProperties.Value,
 			ValueFrom: src.CustomProperties.ValueFrom,
 		}
@@ -108,7 +108,7 @@ func convertToDeprecatedActiveGateCapability(dst *v1alpha1.CapabilityProperties,
 
 // ConvertFrom converts v1alpha1 to v1beta1
 func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
-	src := srcRaw.(*v1alpha1.DynaKube)
+	src := srcRaw.(*dynakube.DynaKube)
 	dst.ObjectMeta = src.ObjectMeta
 
 	// DynakubeSpec
@@ -182,7 +182,7 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	return nil
 }
 
-func convertFromDeprecatedActiveGateCapability(dst *CapabilityProperties, src *v1alpha1.CapabilityProperties) {
+func convertFromDeprecatedActiveGateCapability(dst *CapabilityProperties, src *dynakube.CapabilityProperties) {
 	dst.Replicas = src.Replicas
 	dst.Group = src.Group
 	if src.CustomProperties != nil {

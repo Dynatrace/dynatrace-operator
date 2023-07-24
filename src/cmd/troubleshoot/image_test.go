@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
 	"github.com/go-logr/logr"
 	"github.com/spf13/afero"
@@ -99,7 +99,7 @@ func TestImagePullable(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		dynaKube     *v1beta1.DynaKube
+		dynaKube     *dynatracev1beta1.DynaKube
 		component    component
 		proxyWarning bool
 	}{
@@ -305,7 +305,7 @@ func TestImageNotPullable(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		dynaKube  *v1beta1.DynaKube
+		dynaKube  *dynatracev1beta1.DynaKube
 		component component
 	}{
 		{
@@ -352,7 +352,7 @@ func TestImageNotPullable(t *testing.T) {
 			name: "ActiveGate custom image",
 			dynaKube: dynakubeBuilder(dockerServer.URL).
 				withActiveGateCustomImage(server + "/" + testActiveGateCustomImage).
-				withActiveGateCapability(v1beta1.RoutingCapability.DisplayName).
+				withActiveGateCapability(dynatracev1beta1.RoutingCapability.DisplayName).
 				build(),
 			component: componentActiveGate,
 		},
@@ -360,7 +360,7 @@ func TestImageNotPullable(t *testing.T) {
 			name: "ActiveGate custom image non-existing server",
 			dynaKube: dynakubeBuilder(dockerServer.URL).
 				withActiveGateCustomImage("myunknownserver.com/foobar/image").
-				withActiveGateCapability(v1beta1.RoutingCapability.DisplayName).
+				withActiveGateCapability(dynatracev1beta1.RoutingCapability.DisplayName).
 				build(),
 			component: componentActiveGate,
 		},

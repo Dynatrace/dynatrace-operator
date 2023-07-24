@@ -3,8 +3,8 @@ package webhook
 import (
 	"context"
 
-	"github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1"
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/dynakube"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/certificates"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 	cmdManager "github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
@@ -124,7 +124,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		err = (&v1alpha1.DynaKube{}).SetupWebhookWithManager(webhookManager)
+		err = (&dynatracev1alpha1.DynaKube{}).SetupWebhookWithManager(webhookManager)
 		if err != nil {
 			return err
 		}

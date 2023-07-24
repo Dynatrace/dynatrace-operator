@@ -1,4 +1,4 @@
-package v1beta1
+package dynakube
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 
 // DynaKubeStatus defines the observed state of DynaKube
 // +k8s:openapi-gen=true
-type DynaKubeStatus struct {
+type DynaKubeStatus struct { // nolint:revive
 	// Defines the current state (Running, Updating, Error, ...)
 	Phase DynaKubePhaseType `json:"phase,omitempty"`
 
@@ -113,7 +113,7 @@ type SyntheticStatus struct {
 	VersionStatus `json:",inline"`
 }
 
-type DynaKubePhaseType string
+type DynaKubePhaseType string // nolint:revive
 
 const (
 	Running   DynaKubePhaseType = "Running"

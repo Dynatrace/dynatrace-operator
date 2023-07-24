@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -22,16 +22,16 @@ func TestProxy(t *testing.T) {
 }
 
 func proxyValueTester(t *testing.T) {
-	dk := dynatracev1beta1.DynaKube{
-		Spec: dynatracev1beta1.DynaKubeSpec{
-			Proxy: &dynatracev1beta1.DynaKubeProxy{Value: testProxyData},
+	dk := dynakube.DynaKube{
+		Spec: dynakube.DynaKubeSpec{
+			Proxy: &dynakube.DynaKubeProxy{Value: testProxyData},
 		},
 	}
 	proxy, err := dk.Proxy(context.TODO(), nil)
 	assert.NoError(t, err)
 	assert.Equal(t, testProxyData, proxy)
 
-	emptyDk := dynatracev1beta1.DynaKube{}
+	emptyDk := dynakube.DynaKube{}
 	proxy, err = emptyDk.Proxy(context.TODO(), nil)
 	assert.NoError(t, err)
 	assert.Equal(t, "", proxy)
@@ -41,11 +41,11 @@ func proxyValueFromTester(t *testing.T) {
 	kubeReader := fake.NewClient(&corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{Name: testProxyName},
 		Data: map[string][]byte{
-			dynatracev1beta1.ProxyKey: []byte(testProxyData),
+			dynakube.ProxyKey: []byte(testProxyData),
 		}})
-	dk := dynatracev1beta1.DynaKube{
-		Spec: dynatracev1beta1.DynaKubeSpec{
-			Proxy: &dynatracev1beta1.DynaKubeProxy{ValueFrom: testProxyName},
+	dk := dynakube.DynaKube{
+		Spec: dynakube.DynaKubeSpec{
+			Proxy: &dynakube.DynaKubeProxy{ValueFrom: testProxyName},
 		},
 	}
 	proxy, err := dk.Proxy(context.TODO(), kubeReader)

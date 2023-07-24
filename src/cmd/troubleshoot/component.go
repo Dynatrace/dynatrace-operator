@@ -1,6 +1,6 @@
 package troubleshoot
 
-import "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+import dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 
 type component string
 
@@ -27,7 +27,7 @@ func (c component) SkipImageCheck(image string) bool {
 	return image == "" && c != componentCodeModules
 }
 
-func (c component) getImage(dynakube *v1beta1.DynaKube) (string, bool) {
+func (c component) getImage(dynakube *dynatracev1beta1.DynaKube) (string, bool) {
 	if dynakube == nil {
 		return "", false
 	}

@@ -1,4 +1,4 @@
-package v1beta1
+package dynakube
 
 // Deprecated: Use ActiveGateSpec instead
 type RoutingSpec struct {

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1beta1
+package dynakube
 
 import (
 	"fmt"
@@ -505,6 +505,7 @@ func (dk *DynaKube) GetOneAgentEnvironment() []corev1.EnvVar {
 	return []corev1.EnvVar{}
 }
 
+// +kubebuilder:object:generate=false
 type RequestAllowedChecker func(timeProvider *timeprovider.Provider) bool
 
 func (dk *DynaKube) IsOneAgentConnectionInfoUpdateAllowed(timeProvider *timeprovider.Provider) bool {

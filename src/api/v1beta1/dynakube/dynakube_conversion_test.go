@@ -1,10 +1,10 @@
-package v1beta1
+package dynakube
 
 import (
 	"testing"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/dynakube"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -31,21 +31,21 @@ const (
 
 func TestConversion_ConvertTFrom_Create(t *testing.T) {
 	autoUpdate := true
-	oldDynakube := &v1alpha1.DynaKube{
+	oldDynakube := &dynakube.DynaKube{
 		ObjectMeta: prepareObjectMeta(),
-		Spec: v1alpha1.DynaKubeSpec{
+		Spec: dynakube.DynaKubeSpec{
 			APIURL: testAPIURL,
 			Tokens: testToken,
 
-			OneAgent: v1alpha1.OneAgentSpec{
+			OneAgent: dynakube.OneAgentSpec{
 				AutoUpdate: &autoUpdate,
 			},
 
-			ClassicFullStack: v1alpha1.FullStackSpec{
+			ClassicFullStack: dynakube.FullStackSpec{
 				Enabled: true,
 			},
-			KubernetesMonitoringSpec: v1alpha1.KubernetesMonitoringSpec{
-				CapabilityProperties: v1alpha1.CapabilityProperties{
+			KubernetesMonitoringSpec: dynakube.KubernetesMonitoringSpec{
+				CapabilityProperties: dynakube.CapabilityProperties{
 					Enabled: true,
 				},
 			},
@@ -68,27 +68,27 @@ func TestConversion_ConvertTFrom_Create(t *testing.T) {
 func TestConversion_ConvertFrom(t *testing.T) {
 	trueVal := true
 	time := metav1.Now()
-	oldDynakube := &v1alpha1.DynaKube{
+	oldDynakube := &dynakube.DynaKube{
 		ObjectMeta: prepareObjectMeta(),
-		Spec: v1alpha1.DynaKubeSpec{
+		Spec: dynakube.DynaKubeSpec{
 			APIURL:           testUrl,
 			Tokens:           testToken,
 			CustomPullSecret: testCustomPullSecret,
 			SkipCertCheck:    true,
-			Proxy: &v1alpha1.DynaKubeProxy{
+			Proxy: &dynakube.DynaKubeProxy{
 				Value: testProxyValue,
 			},
 			TrustedCAs:  testTrustedCAs,
 			NetworkZone: testNetworkZone,
 			EnableIstio: true,
 
-			OneAgent: v1alpha1.OneAgentSpec{
+			OneAgent: dynakube.OneAgentSpec{
 				Version:    testOneAgentVersion,
 				Image:      testOneAgentImage,
 				AutoUpdate: &trueVal,
 			},
 
-			ClassicFullStack: v1alpha1.FullStackSpec{
+			ClassicFullStack: dynakube.FullStackSpec{
 				Enabled: true,
 				NodeSelector: map[string]string{
 					"key": "value",
@@ -128,19 +128,19 @@ func TestConversion_ConvertFrom(t *testing.T) {
 				UseImmutableImage:   true,
 			},
 
-			ActiveGate: v1alpha1.ActiveGateSpec{
+			ActiveGate: dynakube.ActiveGateSpec{
 				Image:      testActiveGateImage,
 				AutoUpdate: &trueVal,
 			},
 
-			RoutingSpec: v1alpha1.RoutingSpec{
+			RoutingSpec: dynakube.RoutingSpec{
 				CapabilityProperties: prepareAlphaCapability(),
 			},
-			KubernetesMonitoringSpec: v1alpha1.KubernetesMonitoringSpec{
+			KubernetesMonitoringSpec: dynakube.KubernetesMonitoringSpec{
 				CapabilityProperties: prepareAlphaCapability(),
 			},
 		},
-		Status: v1alpha1.DynaKubeStatus{
+		Status: dynakube.DynaKubeStatus{
 			Phase:                            "test-phase",
 			UpdatedTimestamp:                 time,
 			LastAPITokenProbeTimestamp:       &time,
@@ -158,22 +158,22 @@ func TestConversion_ConvertFrom(t *testing.T) {
 					Message:            "message",
 				},
 			},
-			ActiveGate: v1alpha1.ActiveGateStatus{
-				ImageStatus: v1alpha1.ImageStatus{
+			ActiveGate: dynakube.ActiveGateStatus{
+				ImageStatus: dynakube.ImageStatus{
 					ImageHash:               "test-activegate-imagehash",
 					ImageVersion:            "test-activegate-imageversion",
 					LastImageProbeTimestamp: &time,
 				},
 			},
-			OneAgent: v1alpha1.OneAgentStatus{
-				ImageStatus: v1alpha1.ImageStatus{
+			OneAgent: dynakube.OneAgentStatus{
+				ImageStatus: dynakube.ImageStatus{
 					ImageHash:               "test-oneagent-imagehash",
 					ImageVersion:            "test-oneagent-imageversion",
 					LastImageProbeTimestamp: &time,
 				},
 				UseImmutableImage: true,
 				Version:           "test-oneagent-version",
-				Instances: map[string]v1alpha1.OneAgentInstance{
+				Instances: map[string]dynakube.OneAgentInstance{
 					testStatusOneAgentInstanceKey: {
 						PodName:   "test-instance-podname",
 						Version:   "test-instance-version",
@@ -251,13 +251,13 @@ func prepareObjectMeta() metav1.ObjectMeta {
 	}
 }
 
-func prepareAlphaCapability() v1alpha1.CapabilityProperties {
+func prepareAlphaCapability() dynakube.CapabilityProperties {
 	intVal := int32(3)
-	return v1alpha1.CapabilityProperties{
+	return dynakube.CapabilityProperties{
 		Enabled:  true,
 		Replicas: &intVal,
 		Group:    "test-activegate-group",
-		CustomProperties: &v1alpha1.DynaKubeValueSource{
+		CustomProperties: &dynakube.DynaKubeValueSource{
 			Value: "test-routing-value",
 		},
 		Resources: corev1.ResourceRequirements{
@@ -294,7 +294,7 @@ func prepareAlphaCapability() v1alpha1.CapabilityProperties {
 	}
 }
 
-func compareAlphaCapability(t *testing.T, expectedCapability v1alpha1.CapabilityProperties, actualCapability CapabilityProperties) {
+func compareAlphaCapability(t *testing.T, expectedCapability dynakube.CapabilityProperties, actualCapability CapabilityProperties) {
 	assert.Equal(t, expectedCapability.Replicas, actualCapability.Replicas)
 	assert.Equal(t, expectedCapability.Group, actualCapability.Group)
 	assert.Equal(t, expectedCapability.CustomProperties.ValueFrom, actualCapability.CustomProperties.ValueFrom)
@@ -399,7 +399,7 @@ func TestConversion_ConvertTo(t *testing.T) {
 		},
 	}
 
-	convertedDynakube := &v1alpha1.DynaKube{}
+	convertedDynakube := &dynakube.DynaKube{}
 	err := oldDynakube.ConvertTo(convertedDynakube)
 	require.NoError(t, err)
 
@@ -459,7 +459,7 @@ func TestConversion_ConvertTo(t *testing.T) {
 	assert.Equal(t, oldDynakube.Status.UpdatedTimestamp, convertedDynakube.Status.UpdatedTimestamp)
 }
 
-func compareBetaCapability(t *testing.T, expectedCapability CapabilityProperties, actualCapability v1alpha1.CapabilityProperties) {
+func compareBetaCapability(t *testing.T, expectedCapability CapabilityProperties, actualCapability dynakube.CapabilityProperties) {
 	assert.Equal(t, expectedCapability.Replicas, actualCapability.Replicas)
 	assert.Equal(t, expectedCapability.Group, actualCapability.Group)
 	assert.Equal(t, expectedCapability.CustomProperties.ValueFrom, actualCapability.CustomProperties.ValueFrom)

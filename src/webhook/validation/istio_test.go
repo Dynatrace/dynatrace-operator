@@ -3,7 +3,7 @@ package validation
 import (
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 )
 
 func TestNoResourcesAvailable(t *testing.T) {
