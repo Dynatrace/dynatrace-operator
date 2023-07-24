@@ -38,7 +38,7 @@ func (collector loadSimCollector) Do() error {
 		return nil
 	}
 
-	logInfof(collector.log, "Starting load simulation")
+	logInfof(collector.log, "Starting load simulation (%d files, %d MB/file)", collector.fileCount, collector.fileSize)
 	collector.createSimulatedLogFiles()
 	return nil
 }
