@@ -210,7 +210,6 @@ func TestLogCollectorNoAbortOnError(t *testing.T) {
 
 	buffer := bytes.Buffer{}
 	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
-	defer assertClosed(t, supportArchive)
 
 	mockedPods := corev1mocks.NewPodInterface(t)
 	listOptions := createPodListOptions()
@@ -249,7 +248,7 @@ func TestLogCollectorNoAbortOnError(t *testing.T) {
 	logCollector := newLogCollector(ctx, newSupportArchiveLogger(&logBuffer), supportArchive, mockedPods, defaultOperatorAppName)
 	require.NoError(t, logCollector.Do())
 
-	_ = supportArchive.Close()
+	assertClosed(t, supportArchive)
 
 	zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(buffer.Len()))
 	require.NoError(t, err)
