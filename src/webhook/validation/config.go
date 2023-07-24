@@ -43,18 +43,7 @@ var warnings = []validator{
 	deprecatedFeatureFlagDisableMetadataEnrichment,
 	ineffectiveReadOnlyHostFsFeatureFlag,
 	syntheticPreviewWarning,
-	deprecatedFeatureFlagActiveGateReadOnlyFilesystem,
-	deprecatedFeatureFlagActiveGateRawImage,
-	deprecatedFeatureFlagActiveGateAuthToken,
-	deprecatedFeatureFlagActiveGateUpdates,
-	deprecatedFeatureFlagActiveGateAutomaticK8SMonitoring,
-	deprecatedFeatureFlagHostsRequest,
-	deprecatedFeatureFlagOneAgentReadOnlyFileSystem,
-	deprecatedFeatureFlagWebhookReinvocationPolicy,
-	deprecatedFeatureFlagMetadataEnrichment,
-	deprecatedFeatureFlagAutomaticInjection,
-	deprecatedFeatureFlagLabelVersionDetection,
-	deprecatedFeatureFlagInjectionFailurePolicy,
+	deprecatedFeatureFlag,
 }
 
 func SetLogger(logger logr.Logger) {

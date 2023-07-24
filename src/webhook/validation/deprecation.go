@@ -10,6 +10,23 @@ const (
 	featureDeprecatedWarningMessage = `DEPRECATED: %s`
 )
 
+func getDeprecatedFeatureFlags() []string {
+	return []string{
+		dynatracev1beta1.AnnotationInjectionFailurePolicy,
+		dynatracev1beta1.AnnotationFeatureLabelVersionDetection,
+		dynatracev1beta1.AnnotationFeatureAutomaticInjection,
+		dynatracev1beta1.AnnotationFeatureMetadataEnrichment,
+		dynatracev1beta1.AnnotationFeatureWebhookReinvocationPolicy,
+		dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent,
+		dynatracev1beta1.AnnotationFeatureHostsRequests,
+		dynatracev1beta1.AnnotationFeatureAutomaticK8sApiMonitoring,
+		dynatracev1beta1.AnnotationFeatureActiveGateUpdates,
+		dynatracev1beta1.AnnotationFeatureActiveGateAuthToken,
+		dynatracev1beta1.AnnotationFeatureActiveGateRawImage,
+		dynatracev1beta1.AnnotationFeatureActiveGateReadOnlyFilesystem,
+	}
+}
+
 func deprecatedFeatureFlagFormat(_ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	if dynakube.Annotations == nil {
 		return ""
@@ -47,52 +64,12 @@ func deprecatedFeatureFlagDisableMetadataEnrichment(_ *dynakubeValidator, dynaku
 	return warnIfDeprecatedIsUsed(dynakube, dynatracev1beta1.AnnotationFeatureMetadataEnrichment, dynatracev1beta1.AnnotationFeatureDisableMetadataEnrichment)
 }
 
-func deprecatedFeatureFlagActiveGateReadOnlyFilesystem(_ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
-	return warnIfDeprecatedFFisUsed(dynakube, dynatracev1beta1.AnnotationFeatureActiveGateReadOnlyFilesystem)
-}
-
-func deprecatedFeatureFlagActiveGateRawImage(_ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
-	return warnIfDeprecatedFFisUsed(dynakube, dynatracev1beta1.AnnotationFeatureActiveGateRawImage)
-}
-
-func deprecatedFeatureFlagActiveGateAuthToken(_ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
-	return warnIfDeprecatedFFisUsed(dynakube, dynatracev1beta1.AnnotationFeatureActiveGateAuthToken)
-}
-
-func deprecatedFeatureFlagActiveGateUpdates(_ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
-	return warnIfDeprecatedFFisUsed(dynakube, dynatracev1beta1.AnnotationFeatureActiveGateUpdates)
-}
-
-func deprecatedFeatureFlagActiveGateAutomaticK8SMonitoring(_ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
-	return warnIfDeprecatedFFisUsed(dynakube, dynatracev1beta1.AnnotationFeatureAutomaticK8sApiMonitoring)
-}
-
-func deprecatedFeatureFlagHostsRequest(_ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
-	return warnIfDeprecatedFFisUsed(dynakube, dynatracev1beta1.AnnotationFeatureHostsRequests)
-}
-
-func deprecatedFeatureFlagOneAgentReadOnlyFileSystem(_ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
-	return warnIfDeprecatedFFisUsed(dynakube, dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent)
-}
-
-func deprecatedFeatureFlagWebhookReinvocationPolicy(_ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
-	return warnIfDeprecatedFFisUsed(dynakube, dynatracev1beta1.AnnotationFeatureWebhookReinvocationPolicy)
-}
-
-func deprecatedFeatureFlagMetadataEnrichment(_ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
-	return warnIfDeprecatedFFisUsed(dynakube, dynatracev1beta1.AnnotationFeatureMetadataEnrichment)
-}
-
-func deprecatedFeatureFlagAutomaticInjection(_ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
-	return warnIfDeprecatedFFisUsed(dynakube, dynatracev1beta1.AnnotationFeatureAutomaticInjection)
-}
-
-func deprecatedFeatureFlagLabelVersionDetection(_ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
-	return warnIfDeprecatedFFisUsed(dynakube, dynatracev1beta1.AnnotationFeatureLabelVersionDetection)
-}
-
-func deprecatedFeatureFlagInjectionFailurePolicy(_ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
-	return warnIfDeprecatedFFisUsed(dynakube, dynatracev1beta1.AnnotationInjectionFailurePolicy)
+func deprecatedFeatureFlag(_ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+	warnings := ""
+	for _, ff := range getDeprecatedFeatureFlags() {
+		warnings += warnIfDeprecatedFFisUsed(dynakube, ff)
+	}
+	return warnings
 }
 
 func warnIfDeprecatedIsUsed(dynakube *dynatracev1beta1.DynaKube, newAnnotation string, deprecatedAnnotation string) string {
@@ -105,8 +82,7 @@ func warnIfDeprecatedIsUsed(dynakube *dynatracev1beta1.DynaKube, newAnnotation s
 }
 
 func warnIfDeprecatedFFisUsed(dynakube *dynatracev1beta1.DynaKube, annotation string) string {
-	_, hasDeprecatedFlag := dynakube.Annotations[annotation]
-	if hasDeprecatedFlag {
+	if _, ok := dynakube.Annotations[annotation]; ok {
 		return deprecationWarning(annotation)
 	}
 
@@ -118,5 +94,5 @@ func deprecatedAnnotationWarning(newAnnotation string, deprecatedAnnotation stri
 }
 
 func deprecationWarning(annotation string) string {
-	return fmt.Sprintf("feature flag '%s' is deprecated and will be removed in the future as the feature will be enabled by default", annotation)
+	return fmt.Sprintf("feature flag '%s' is deprecated and will be removed in the future", annotation)
 }
