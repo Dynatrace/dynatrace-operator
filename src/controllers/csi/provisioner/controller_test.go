@@ -20,6 +20,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -649,4 +650,86 @@ func TestHandleMetadata(t *testing.T) {
 	require.NotNil(t, dynakubeMetadata)
 	require.NotNil(t, oldMetadata)
 	require.Equal(t, 5, dynakubeMetadata.MaxFailedMountAttempts)
+}
+
+func TestOneAgentProvisioner_getAgentProxy(t *testing.T) {
+	const proxy = "dummy-proxy"
+	const proxySecret = "proxy-secret"
+	type fields struct {
+		client    client.Client
+		apiReader client.Reader
+	}
+	type args struct {
+		ctx context.Context
+		dk  *dynatracev1beta1.DynaKube
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			name: "get proxy from value",
+			fields: fields{
+				client:    fake.NewClient(),
+				apiReader: fake.NewClient(),
+			},
+			args: args{
+				ctx: context.TODO(),
+				dk: &dynatracev1beta1.DynaKube{
+					Spec: dynatracev1beta1.DynaKubeSpec{
+						Proxy: &dynatracev1beta1.DynaKubeProxy{
+							Value: proxy,
+						},
+					},
+				},
+			},
+			want:    proxy,
+			wantErr: false,
+		},
+		{
+			name: "get proxy from secret",
+			fields: fields{
+				client: fake.NewClient(),
+				apiReader: fake.NewClient(&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: proxySecret,
+					},
+					Data: map[string][]byte{
+						dynatracev1beta1.ProxyKey: []byte(proxy),
+					},
+				}),
+			},
+			args: args{
+				ctx: context.TODO(),
+				dk: &dynatracev1beta1.DynaKube{
+					Spec: dynatracev1beta1.DynaKubeSpec{
+						Proxy: &dynatracev1beta1.DynaKubeProxy{
+							ValueFrom: proxySecret,
+						},
+					},
+				},
+			},
+			want:    proxy,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			provisioner := &OneAgentProvisioner{
+				client:    tt.fields.client,
+				apiReader: tt.fields.apiReader,
+			}
+			got, err := provisioner.getAgentProxy(tt.args.ctx, tt.args.dk)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("OneAgentProvisioner.getAgentProxy() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("OneAgentProvisioner.getAgentProxy() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

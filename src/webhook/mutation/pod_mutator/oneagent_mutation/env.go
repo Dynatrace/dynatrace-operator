@@ -66,21 +66,6 @@ func addVersionDetectionEnvs(container *corev1.Container, labelMapping VersionLa
 	}
 }
 
-func addProxyEnv(container *corev1.Container) {
-	container.Env = append(container.Env,
-		corev1.EnvVar{
-			Name: proxyEnv,
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: config.AgentInitSecretName,
-					},
-					Key: dynatracev1beta1.ProxyKey,
-				},
-			},
-		})
-}
-
 func addInstallerInitEnvs(initContainer *corev1.Container, installer installerInfo, dynakube dynatracev1beta1.DynaKube) {
 	initContainer.Env = append(initContainer.Env,
 		corev1.EnvVar{Name: config.AgentInstallerFlavorEnv, Value: installer.flavor},

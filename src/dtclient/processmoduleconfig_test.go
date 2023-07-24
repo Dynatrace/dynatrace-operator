@@ -3,6 +3,7 @@ package dtclient
 import (
 	"fmt"
 	"net/http"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -283,4 +284,53 @@ func TestAdd(t *testing.T) {
 			Value:   testValue,
 		})
 	})
+}
+
+func TestProcessModuleConfig_AddProxy(t *testing.T) {
+	const proxy = "dummy-proxy"
+	type fields struct {
+		Revision   uint
+		Properties []ProcessModuleProperty
+	}
+	type args struct {
+		proxy string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   *ProcessModuleConfig
+	}{
+		{
+			name: "add proxy to process module config",
+			fields: fields{
+				Revision:   0,
+				Properties: []ProcessModuleProperty{},
+			},
+			args: args{
+				proxy: proxy,
+			},
+			want: &ProcessModuleConfig{
+				Revision: 0,
+				Properties: []ProcessModuleProperty{
+					{
+						Section: generalSectionName,
+						Key:     "proxy",
+						Value:   proxy,
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pmc := &ProcessModuleConfig{
+				Revision:   tt.fields.Revision,
+				Properties: tt.fields.Properties,
+			}
+			if got := pmc.AddProxy(tt.args.proxy); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ProcessModuleConfig.AddProxy() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

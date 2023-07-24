@@ -219,6 +219,14 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Cont
 
 	latestProcessModuleConfigCache = newProcessModuleConfigCache(latestProcessModuleConfig)
 
+	if dk.NeedsOneAgentProxy() {
+		proxy, err := provisioner.getAgentProxy(ctx, dk)
+		if err != nil {
+			return nil, false, err
+		}
+		latestProcessModuleConfig.AddProxy(proxy)
+	}
+
 	if dk.CodeModulesImage() != "" {
 		updatedDigest, err := provisioner.installAgentImage(ctx, *dk, latestProcessModuleConfigCache)
 		if err != nil {
@@ -256,6 +264,24 @@ func (provisioner *OneAgentProvisioner) getAgentTenantToken(ctx context.Context,
 	}
 
 	return string(token), nil
+}
+
+func (provisioner *OneAgentProvisioner) getAgentProxy(ctx context.Context, dk *dynatracev1beta1.DynaKube) (string, error) {
+	if dk.Spec.Proxy.Value != "" {
+		return dk.Spec.Proxy.Value, nil
+	}
+	query := kubeobjects.NewSecretQuery(ctx, provisioner.client, provisioner.apiReader, log)
+	secret, err := query.Get(types.NamespacedName{Namespace: dk.Namespace, Name: dk.Spec.Proxy.ValueFrom})
+	if err != nil {
+		return "", errors.Wrapf(err, "Proxy secret %s/%s not found", dk.Namespace, dk.Spec.Proxy.ValueFrom)
+	}
+
+	proxy, ok := secret.Data[dynatracev1beta1.ProxyKey]
+	if !ok {
+		return "", errors.Errorf("Proxy not found in secret %s/%s", dk.Namespace, dk.Spec.Proxy.ValueFrom)
+	}
+
+	return string(proxy), nil
 }
 
 func (provisioner *OneAgentProvisioner) handleMetadata(ctx context.Context, dk *dynatracev1beta1.DynaKube) (*metadata.Dynakube, metadata.Dynakube, error) {
