@@ -273,12 +273,12 @@ func (provisioner *OneAgentProvisioner) getAgentProxy(ctx context.Context, dk *d
 	query := kubeobjects.NewSecretQuery(ctx, provisioner.client, provisioner.apiReader, log)
 	secret, err := query.Get(types.NamespacedName{Namespace: dk.Namespace, Name: dk.Spec.Proxy.ValueFrom})
 	if err != nil {
-		return "", errors.Wrapf(err, "Proxy secret %s/%s not found", dk.Namespace, dk.Spec.Proxy.ValueFrom)
+		return "", errors.Wrapf(err, "proxy secret %s/%s not found", dk.Namespace, dk.Spec.Proxy.ValueFrom)
 	}
 
 	proxy, ok := secret.Data[dynatracev1beta1.ProxyKey]
 	if !ok {
-		return "", errors.Errorf("Proxy not found in secret %s/%s", dk.Namespace, dk.Spec.Proxy.ValueFrom)
+		return "", errors.Errorf("proxy not found in secret %s/%s", dk.Namespace, dk.Spec.Proxy.ValueFrom)
 	}
 
 	return string(proxy), nil
