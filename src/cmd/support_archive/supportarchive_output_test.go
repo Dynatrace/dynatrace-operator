@@ -37,6 +37,7 @@ func TestSuppotrArchiveOutputCollector(t *testing.T) {
 	assert.Contains(t, logBuffer.String(), "Storing support archive output")
 
 	require.NoError(t, err)
+	require.Len(t, zipReader.File, 1)
 	assert.Equal(t, SupportArchiveOutputFileName, zipReader.File[0].Name)
 
 	size := zipReader.File[0].FileInfo().Size()
