@@ -51,7 +51,7 @@ func TestMissingCSIDaemonSet(t *testing.T) {
 		objectMeta.Annotations = map[string]string{
 			dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent: "false",
 		}
-		assertAllowedResponseWithoutWarnings(t, &dynatracev1beta1.DynaKube{
+		assertAllowedResponseWithWarnings(t, 1, &dynatracev1beta1.DynaKube{
 			ObjectMeta: *objectMeta,
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,
