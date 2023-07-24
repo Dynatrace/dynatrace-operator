@@ -90,9 +90,9 @@ func testSupportArchiveCommand(testDynakube dynatracev1beta1.DynaKube) features.
 }
 
 func executeSupportArchiveCommand(ctx context.Context, t *testing.T, environmentConfig *envconf.Config, cmdLineArguments, namespace string) *pod.ExecutionResult { //nolint:revive
-	r := environmentConfig.Client().Resources()
+	environmentResources := environmentConfig.Client().Resources()
 
-	pods := pod.List(t, ctx, r, namespace)
+	pods := pod.List(t, ctx, environmentResources, namespace)
 	require.NotNil(t, pods.Items)
 
 	operatorPods := functional.Filter(pods.Items, func(podItem corev1.Pod) bool {
