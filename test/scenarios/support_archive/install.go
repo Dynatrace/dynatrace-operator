@@ -163,7 +163,7 @@ func getRequiredServiceFiles(t *testing.T, ctx context.Context, resources *resou
 	requiredFiles := make([]string, 0)
 	for _, requiredService := range services.Items {
 		requiredFiles = append(requiredFiles,
-			fmt.Sprintf("%s/%s/requiredService/%s%s", support_archive.ManifestsDirectoryName, requiredService.Namespace, requiredService.Name, support_archive.ManifestsFileExtension))
+			fmt.Sprintf("%s/%s/service/%s%s", support_archive.ManifestsDirectoryName, requiredService.Namespace, requiredService.Name, support_archive.ManifestsFileExtension))
 	}
 	return requiredFiles
 }
