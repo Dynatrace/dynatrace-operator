@@ -65,11 +65,22 @@ func deprecatedFeatureFlagDisableMetadataEnrichment(_ *dynakubeValidator, dynaku
 }
 
 func deprecatedFeatureFlag(_ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
-	warnings := ""
+	warningMessage := ""
 	for _, ff := range getDeprecatedFeatureFlags() {
-		warnings += checkDeprecatedFeatureFlag(dynakube, ff)
+		if checkDeprecatedFeatureFlag(dynakube, ff) {
+			warningMessage += fmt.Sprintf("'%s'", ff) + " "
+		}
 	}
-	return warnings
+
+	if warningMessage == "" {
+		return ""
+	}
+	return "Some feature flags are deprecated and will be removed in the future: " + warningMessage
+}
+
+func checkDeprecatedFeatureFlag(dynakube *dynatracev1beta1.DynaKube, annotation string) bool {
+	_, ok := dynakube.Annotations[annotation]
+	return ok
 }
 
 func warnIfDeprecatedIsUsed(dynakube *dynatracev1beta1.DynaKube, newAnnotation string, deprecatedAnnotation string) string {
@@ -83,16 +94,4 @@ func warnIfDeprecatedIsUsed(dynakube *dynatracev1beta1.DynaKube, newAnnotation s
 
 func deprecatedAnnotationWarning(newAnnotation string, deprecatedAnnotation string) string {
 	return fmt.Sprintf("annotation '%s' is deprecated, use '%s' instead", deprecatedAnnotation, newAnnotation)
-}
-
-func checkDeprecatedFeatureFlag(dynakube *dynatracev1beta1.DynaKube, annotation string) string {
-	if _, ok := dynakube.Annotations[annotation]; ok {
-		return deprecationWarning(annotation)
-	}
-
-	return ""
-}
-
-func deprecationWarning(annotation string) string {
-	return fmt.Sprintf("feature flag '%s' is deprecated and will be removed in the future\n", annotation)
 }
