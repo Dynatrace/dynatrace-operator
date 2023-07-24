@@ -3,6 +3,7 @@ package version
 import (
 	"context"
 
+	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
@@ -34,7 +35,7 @@ func (updater activeGateUpdater) IsEnabled() bool {
 	return updater.dynakube.NeedsActiveGate()
 }
 
-func (updater *activeGateUpdater) Target() *dynatracev1beta1.VersionStatus {
+func (updater *activeGateUpdater) Target() *status.VersionStatus {
 	return &updater.dynakube.Status.ActiveGate.VersionStatus
 }
 

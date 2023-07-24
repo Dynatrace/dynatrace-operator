@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/stretchr/testify/require"
@@ -204,7 +205,7 @@ func Delete(dynakube dynatracev1beta1.DynaKube) features.Func {
 	}
 }
 
-func WaitForDynakubePhase(dynakube dynatracev1beta1.DynaKube, phase dynatracev1beta1.DynaKubePhaseType) features.Func {
+func WaitForDynakubePhase(dynakube dynatracev1beta1.DynaKube, phase status.PhaseType) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resources := environmentConfig.Client().Resources()
 

@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
@@ -195,8 +196,8 @@ func TestNeedsUpdate(t *testing.T) {
 		},
 		Status: dynatracev1beta1.DynaKubeStatus{
 			OneAgent: dynatracev1beta1.OneAgentStatus{
-				VersionStatus: dynatracev1beta1.VersionStatus{
-					Source: dynatracev1beta1.TenantRegistryVersionSource,
+				VersionStatus: status.VersionStatus{
+					Source: status.TenantRegistryVersionSource,
 				},
 			},
 		},
@@ -314,12 +315,12 @@ func TestHasCustomFieldChanged(t *testing.T) {
 }
 
 func setOneAgentCustomVersionStatus(dynakube *dynatracev1beta1.DynaKube, version string) {
-	dynakube.Status.OneAgent.Source = dynatracev1beta1.CustomVersionVersionSource
+	dynakube.Status.OneAgent.Source = status.CustomVersionVersionSource
 	dynakube.Status.OneAgent.Version = version
 }
 
 func setOneAgentCustomImageStatus(dynakube *dynatracev1beta1.DynaKube, image string) {
-	dynakube.Status.OneAgent.Source = dynatracev1beta1.CustomImageVersionSource
+	dynakube.Status.OneAgent.Source = status.CustomImageVersionSource
 	dynakube.Status.OneAgent.ImageID = image
 }
 

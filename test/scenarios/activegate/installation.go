@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/activegate"
@@ -256,8 +257,8 @@ func assessReadOnlyActiveGate(builder *features.FeatureBuilder, secretConfig ten
 			}).
 			Build()
 		assess.UpdateDynakube(builder, testDynakube)
-		builder.Assess("dynakube phase changes to 'Deploying'", dynakube.WaitForDynakubePhase(testDynakube, dynatracev1beta1.Deploying))
-		builder.Assess("dynakube phase changes to 'Running'", dynakube.WaitForDynakubePhase(testDynakube, dynatracev1beta1.Running))
+		builder.Assess("dynakube phase changes to 'Deploying'", dynakube.WaitForDynakubePhase(testDynakube, status.Deploying))
+		builder.Assess("dynakube phase changes to 'Running'", dynakube.WaitForDynakubePhase(testDynakube, status.Running))
 
 		builder.Assess("ActiveGate ro filesystem", checkReadOnlySettings(&testDynakube))
 	}

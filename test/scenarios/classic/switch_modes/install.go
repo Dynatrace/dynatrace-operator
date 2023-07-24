@@ -5,6 +5,7 @@ package switch_modes
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
@@ -49,7 +50,7 @@ func Install(t *testing.T, name string) features.Feature {
 	assess.UpdateDynakube(featureBuilder, dynakubeCloudNative)
 
 	// wait for oneagent daemonset to be ready
-	featureBuilder.Assess("wait for dynakube to be reconciled", dynakube.WaitForDynakubePhase(dynakubeCloudNative, dynatracev1beta1.Deploying))
+	featureBuilder.Assess("wait for dynakube to be reconciled", dynakube.WaitForDynakubePhase(dynakubeCloudNative, status.Deploying))
 	featureBuilder.Assess("wait for daemonset to be ready", oneagent.WaitForDaemonset(dynakubeCloudNative))
 
 	// apply sample apps

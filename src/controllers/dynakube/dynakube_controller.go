@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	dynatracestatus "github.com/Dynatrace/dynatrace-operator/src/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/apimonitoring"
@@ -128,7 +129,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 			log.Info("server is unavailable or request limit reached! trying again in one minute")
 			return reconcile.Result{RequeueAfter: requeueAfter}, nil
 		}
-		dynakube.Status.SetPhase(dynatracev1beta1.Error)
+		dynakube.Status.SetPhase(dynatracestatus.Error)
 		log.Error(err, "error reconciling DynaKube", "namespace", dynakube.Namespace, "name", dynakube.Name)
 	} else {
 		dynakube.Status.SetPhase(controller.determineDynaKubePhase(dynakube))
@@ -304,7 +305,7 @@ func (controller *Controller) setupAppInjection(ctx context.Context, dynakube *d
 	}
 
 	if dynakube.ApplicationMonitoringMode() {
-		dynakube.Status.SetPhase(dynatracev1beta1.Running)
+		dynakube.Status.SetPhase(dynatracestatus.Running)
 	}
 
 	log.Info("app injection reconciled")

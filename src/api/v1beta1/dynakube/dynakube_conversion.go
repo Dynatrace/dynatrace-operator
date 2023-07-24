@@ -81,7 +81,7 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 	dst.Status.OneAgent.LastUpdateProbeTimestamp = src.Status.OneAgent.LastProbeTimestamp
 	dst.Status.OneAgent.Version = src.Status.OneAgent.Version
 
-	dst.Status.Phase = dynakube.DynaKubePhaseType(src.Status.Phase)
+	dst.Status.Phase = src.Status.Phase
 	dst.Status.Tokens = ""
 	dst.Status.UpdatedTimestamp = src.Status.UpdatedTimestamp
 
@@ -176,7 +176,7 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	dst.Status.OneAgent.Version = src.Status.OneAgent.Version
 	dst.Status.OneAgent.LastProbeTimestamp = src.Status.OneAgent.LastUpdateProbeTimestamp
 
-	dst.Status.Phase = DynaKubePhaseType(src.Status.Phase)
+	dst.Status.Phase = src.Status.Phase
 	dst.Status.UpdatedTimestamp = src.Status.UpdatedTimestamp
 
 	return nil

@@ -1,6 +1,10 @@
+// +kubebuilder:object:generate=true
+// +groupName=dynatrace.com
+// +versionName=v1alpha1
 package v1alpha1
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -10,31 +14,37 @@ import (
 type EdgeConnectSpec struct {
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
 
-	// Location of the Dynatrace API to connect to, including your specific environment UUID
+	// ApiServer location of the Dynatrace API to connect to, including your specific environment UUID
 	// +kubebuilder:validation:Required
 	ApiServer string `json:"apiServer"`
 
-	// Authorization configuration
+	// Oauth authorization configuration
+	// +kubebuilder:validation:Required
 	Oauth OAuthSpec `json:"oauth,omitempty"`
 
+	// Optional: set host restrictions
+	// +kubebuilder:validation:Optional
 	HostRestrictions string `json:"hostRestrictions"`
 
-	// Image reference
+	// ImageRef image reference
 	ImageRef ImageRefSpec `json:"imageRef,omitempty"`
 
-	// AutoUpdate
+	// AutoUpdate auto update
 	AutoUpdate bool `json:"autoUpdate,omitempty"`
 
 	// Optional: Pull secret for your private registry
 	CustomPullSecret string `json:"customPullSecret,omitempty"`
 
 	// Optional: Adds additional annotations for the EdgeConnect pods
+	// +kubebuilder:validation:Optional
 	Annotations map[string]string `json:"annotations,omitempty"`
 
 	// Optional: Adds additional labels for the EdgeConnect pods
+	// +kubebuilder:validation:Optional
 	Labels map[string]string `json:"labels,omitempty"`
 
 	// Optional: List of environment variables to set for the EdgeConnect
+	// +kubebuilder:validation:Optional
 	Env []corev1.EnvVar `json:"env,omitempty"`
 
 	// Amount of replicas for your DynaKube
@@ -44,31 +54,39 @@ type EdgeConnectSpec struct {
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 
 	// Node selector to control the selection of nodes (optional)
+	// +kubebuilder:validation:Optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
 	// Optional: set tolerations for the EdgeConnect pods
+	// +kubebuilder:validation:Optional
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 
 	// Optional: set topology spread constraints for the EdgeConnect pods
+	// +kubebuilder:validation:Optional
 	TopologySpreadConstraints []corev1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 }
 
+// +k8s:openapi-gen=true
 type OAuthSpec struct {
 	// Credentials for the EdgeConnect to connect back to Dynatrace.
+	// +kubebuilder:validation:Required
 	ClientSecret string `json:"clientSecret,omitempty"`
-	// Optional: the ActiveGate container image. Defaults to the latest ActiveGate image provided by the Docker Registry
-	// implementation from the Dynatrace environment set as API URL.
+	// Optional: endpoint for the EdgeConnect to connect to
+	// +kubebuilder:validation:Required
 	Endpoint string `json:"endpoint,omitempty"`
-	// Optional: the ActiveGate container image. Defaults to the latest ActiveGate image provided by the Docker Registry
-	// implementation from the Dynatrace environment set as API URL.
+	// Optional: resource
+	// +kubebuilder:validation:Optional
 	Resource string `json:"resource,omitempty"`
 }
 
+// +k8s:openapi-gen=true
 type ImageRefSpec struct {
 	// Optional: If specified, indicates the EdgeConnect repository to use
+	// +kubebuilder:validation:Optional
 	Repository string `json:"repository,omitempty"`
 
 	// Optional: tag
+	// +kubebuilder:validation:Optional
 	Tag string `json:"tag,omitempty"`
 }
 
@@ -76,8 +94,8 @@ type ImageRefSpec struct {
 // +k8s:openapi-gen=true
 type EdgeConnectStatus struct {
 	// Defines the current state (Running, Updating, Error, ...)
-	Phase   EdgeConnectPhaseType `json:"phase,omitempty"`
-	Version VersionStatus        `json:"version,omitempty"`
+	Phase   status.PhaseType     `json:"phase,omitempty"`
+	Version status.VersionStatus `json:"version,omitempty"`
 
 	// UpdatedTimestamp indicates when the instance was last updated
 	UpdatedTimestamp metav1.Time `json:"updatedTimestamp,omitempty"`
@@ -86,43 +104,11 @@ type EdgeConnectStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
-type VersionSource string
-
-const (
-	TenantRegistryVersionSource VersionSource = "tenant-registry"
-	CustomImageVersionSource    VersionSource = "custom-image"
-	CustomVersionVersionSource  VersionSource = "custom-version"
-	PublicRegistryVersionSource VersionSource = "public-registry"
-)
-
-type VersionStatus struct {
-	Source             VersionSource `json:"source,omitempty"`
-	ImageID            string        `json:"imageID,omitempty"`
-	Version            string        `json:"version,omitempty"`
-	LastProbeTimestamp *metav1.Time  `json:"lastProbeTimestamp,omitempty"`
-}
-
-type EdgeConnectPhaseType string
-
-const (
-	Running   EdgeConnectPhaseType = "Running"
-	Deploying EdgeConnectPhaseType = "Deploying"
-	Error     EdgeConnectPhaseType = "Error"
-)
-
 // SetPhase sets the status phase on the DynaKube object
-func (dk *EdgeConnectStatus) SetPhase(phase EdgeConnectPhaseType) bool {
+func (dk *EdgeConnectStatus) SetPhase(phase status.PhaseType) bool {
 	upd := phase != dk.Phase
 	dk.Phase = phase
 	return upd
-}
-
-// SetPhaseOnError fills the phase with the Error value in case of any error
-func (dk *EdgeConnectStatus) SetPhaseOnError(err error) bool {
-	if err != nil {
-		return dk.SetPhase(Error)
-	}
-	return false
 }
 
 const (
@@ -133,38 +119,16 @@ const (
 	PaaSTokenConditionType string = "PaaSToken"
 )
 
-// Possible reasons for ApiToken and PaaSToken conditions
-const (
-	// ReasonTokenReady is set when a token has passed verifications
-	ReasonTokenReady string = "TokenReady"
-
-	// ReasonTokenSecretNotFound is set when the referenced secret can't be found
-	ReasonTokenSecretNotFound string = "TokenSecretNotFound"
-
-	// ReasonTokenMissing is set when the field is missing on the secret
-	ReasonTokenMissing string = "TokenMissing"
-
-	// ReasonTokenUnauthorized is set when a token is unauthorized to query the Dynatrace API
-	ReasonTokenUnauthorized string = "TokenUnauthorized"
-
-	// ReasonTokenScopeMissing is set when the token is missing the required scope for the Dynatrace API
-	ReasonTokenScopeMissing string = "TokenScopeMissing"
-
-	// ReasonTokenError is set when an unknown error has been found when verifying the token
-	ReasonTokenError string = "TokenError"
-)
-
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // EdgeConnect is the Schema for the EdgeConnect API
+// +kubebuilder:object:root=true
 // +k8s:openapi-gen=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=edgeconnets,scope=Namespaced,categories=dynatrace
 // +kubebuilder:printcolumn:name="ApiServer",type=string,JSONPath=`.spec.apiServer`
-// +kubebuilder:printcolumn:name="Tokens",type=string,JSONPath=`.status.tokens`
+// +kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.phase`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
-// +operator-sdk:csv:customresourcedefinitions:displayName="Dynatrace EdgeConnect"
-// +operator-sdk:csv:customresourcedefinitions:resources={{StatefulSet,v1,},{DaemonSet,v1,},{Pod,v1,}}
 // +kubebuilder:storageversion
 type EdgeConnect struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -177,6 +141,7 @@ type EdgeConnect struct {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // EdgeConnectList contains a list of DynaKube
+// +kubebuilder:object:root=true
 type EdgeConnectList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

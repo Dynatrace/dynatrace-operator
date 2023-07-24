@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
@@ -97,7 +98,7 @@ func TestMonitoringModesDynakube_Reconcile(t *testing.T) {
 
 			err = controller.client.Get(context.TODO(), types.NamespacedName{Namespace: testNamespace, Name: testName}, instance)
 			require.NoError(t, err)
-			assert.Equal(t, dynatracev1beta1.Running, instance.Status.Phase)
+			assert.Equal(t, status.Running, instance.Status.Phase)
 		})
 	}
 }
@@ -359,7 +360,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		assert.NoError(t,
 			controller.client.Get(context.TODO(), client.ObjectKey{Name: testName + "-activegate", Namespace: testNamespace}, &activeGateStatefulSet))
 		assert.NoError(t, controller.client.Get(context.TODO(), client.ObjectKey{Name: testName, Namespace: testNamespace}, instance))
-		assert.Equal(t, dynatracev1beta1.Running, instance.Status.Phase)
+		assert.Equal(t, status.Running, instance.Status.Phase)
 	})
 }
 

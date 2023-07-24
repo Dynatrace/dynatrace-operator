@@ -1,6 +1,7 @@
 package dynakube
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -229,7 +230,7 @@ type DynaKubeProxy struct {
 // +k8s:openapi-gen=true
 type DynaKubeStatus struct {
 	// Defines the current state (Running, Updating, Error, ...)
-	Phase DynaKubePhaseType `json:"phase,omitempty"`
+	Phase status.PhaseType `json:"phase,omitempty"`
 
 	// UpdatedTimestamp indicates when the instance was last updated
 	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors=true
@@ -300,16 +301,8 @@ type OneAgentInstance struct {
 	IPAddress string `json:"ipAddress,omitempty"`
 }
 
-type DynaKubePhaseType string
-
-const (
-	Running   DynaKubePhaseType = "Running"
-	Deploying DynaKubePhaseType = "Deploying"
-	Error     DynaKubePhaseType = "Error"
-)
-
 // SetPhase sets the status phase on the DynaKube object
-func (dk *DynaKubeStatus) SetPhase(phase DynaKubePhaseType) bool {
+func (dk *DynaKubeStatus) SetPhase(phase status.PhaseType) bool {
 	upd := phase != dk.Phase
 	dk.Phase = phase
 	return upd
@@ -318,7 +311,7 @@ func (dk *DynaKubeStatus) SetPhase(phase DynaKubePhaseType) bool {
 // SetPhaseOnError fills the phase with the Error value in case of any error
 func (dk *DynaKubeStatus) SetPhaseOnError(err error) bool {
 	if err != nil {
-		return dk.SetPhase(Error)
+		return dk.SetPhase(status.Error)
 	}
 	return false
 }

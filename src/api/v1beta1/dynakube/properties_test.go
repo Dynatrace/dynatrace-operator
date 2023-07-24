@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -245,7 +246,7 @@ func TestCodeModulesVersion(t *testing.T) {
 			},
 			Status: DynaKubeStatus{
 				CodeModules: CodeModulesStatus{
-					VersionStatus: VersionStatus{
+					VersionStatus: status.VersionStatus{
 						Version: testVersion,
 					},
 				},
@@ -265,7 +266,7 @@ func TestCodeModulesVersion(t *testing.T) {
 			},
 			Status: DynaKubeStatus{
 				CodeModules: CodeModulesStatus{
-					VersionStatus: VersionStatus{
+					VersionStatus: status.VersionStatus{
 						Version: "other",
 					},
 				},

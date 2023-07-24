@@ -29,8 +29,8 @@ spec:
     - jsonPath: .spec.apiServer
       name: ApiServer
       type: string
-    - jsonPath: .status.tokens
-      name: Tokens
+    - jsonPath: .status.phase
+      name: Status
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
@@ -615,11 +615,11 @@ spec:
                   pods'
                 type: object
               apiServer:
-                description: Location of the Dynatrace API to connect to, including
-                  your specific environment UUID
+                description: ApiServer location of the Dynatrace API to connect to,
+                  including your specific environment UUID
                 type: string
               autoUpdate:
-                description: AutoUpdate
+                description: AutoUpdate auto update
                 type: boolean
               customPullSecret:
                 description: 'Optional: Pull secret for your private registry'
@@ -735,9 +735,10 @@ spec:
                   type: object
                 type: array
               hostRestrictions:
+                description: 'Optional: set host restrictions'
                 type: string
               imageRef:
-                description: Image reference
+                description: ImageRef image reference
                 properties:
                   repository:
                     description: 'Optional: If specified, indicates the EdgeConnect
@@ -759,21 +760,18 @@ spec:
                 description: Node selector to control the selection of nodes (optional)
                 type: object
               oauth:
-                description: Authorization configuration
+                description: Oauth authorization configuration
                 properties:
                   clientSecret:
                     description: Credentials for the EdgeConnect to connect back to
                       Dynatrace.
                     type: string
                   endpoint:
-                    description: 'Optional: the ActiveGate container image. Defaults
-                      to the latest ActiveGate image provided by the Docker Registry
-                      implementation from the Dynatrace environment set as API URL.'
+                    description: 'Optional: endpoint for the EdgeConnect to connect
+                      to'
                     type: string
                   resource:
-                    description: 'Optional: the ActiveGate container image. Defaults
-                      to the latest ActiveGate image provided by the Docker Registry
-                      implementation from the Dynatrace environment set as API URL.'
+                    description: 'Optional: resource'
                     type: string
                 type: object
               replicas:
@@ -1039,7 +1037,6 @@ spec:
                 type: array
             required:
             - apiServer
-            - hostRestrictions
             type: object
           status:
             description: EdgeConnectStatus defines the observed state of DynaKube

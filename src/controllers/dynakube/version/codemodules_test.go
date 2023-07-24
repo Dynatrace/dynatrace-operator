@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
@@ -91,7 +92,7 @@ func TestCodeModulesUseDefault(t *testing.T) {
 
 func oldCodeModulesStatus() dynatracev1beta1.CodeModulesStatus {
 	return dynatracev1beta1.CodeModulesStatus{
-		VersionStatus: dynatracev1beta1.VersionStatus{
+		VersionStatus: status.VersionStatus{
 			ImageID: "prev",
 		},
 	}

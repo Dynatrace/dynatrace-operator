@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -11,7 +12,7 @@ import (
 // +k8s:openapi-gen=true
 type DynaKubeStatus struct { // nolint:revive
 	// Defines the current state (Running, Updating, Error, ...)
-	Phase DynaKubePhaseType `json:"phase,omitempty"`
+	Phase status.PhaseType `json:"phase,omitempty"`
 
 	// UpdatedTimestamp indicates when the instance was last updated
 	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors=true
@@ -69,33 +70,17 @@ type CommunicationHostStatus struct {
 	Port     uint32 `json:"port,omitempty"`
 }
 
-type VersionSource string
-
-const (
-	TenantRegistryVersionSource VersionSource = "tenant-registry"
-	CustomImageVersionSource    VersionSource = "custom-image"
-	CustomVersionVersionSource  VersionSource = "custom-version"
-	PublicRegistryVersionSource VersionSource = "public-registry"
-)
-
-type VersionStatus struct {
-	Source             VersionSource `json:"source,omitempty"`
-	ImageID            string        `json:"imageID,omitempty"`
-	Version            string        `json:"version,omitempty"`
-	LastProbeTimestamp *metav1.Time  `json:"lastProbeTimestamp,omitempty"`
-}
-
 type ActiveGateStatus struct {
-	VersionStatus        `json:",inline"`
+	status.VersionStatus `json:",inline"`
 	ConnectionInfoStatus ActiveGateConnectionInfoStatus `json:"connectionInfoStatus,omitempty"`
 }
 
 type CodeModulesStatus struct {
-	VersionStatus `json:",inline"`
+	status.VersionStatus `json:",inline"`
 }
 
 type OneAgentStatus struct {
-	VersionStatus `json:",inline"`
+	status.VersionStatus `json:",inline"`
 
 	Instances map[string]OneAgentInstance `json:"instances,omitempty"`
 
@@ -110,19 +95,11 @@ type OneAgentInstance struct {
 }
 
 type SyntheticStatus struct {
-	VersionStatus `json:",inline"`
+	status.VersionStatus `json:",inline"`
 }
 
-type DynaKubePhaseType string // nolint:revive
-
-const (
-	Running   DynaKubePhaseType = "Running"
-	Deploying DynaKubePhaseType = "Deploying"
-	Error     DynaKubePhaseType = "Error"
-)
-
 // SetPhase sets the status phase on the DynaKube object
-func (dk *DynaKubeStatus) SetPhase(phase DynaKubePhaseType) bool {
+func (dk *DynaKubeStatus) SetPhase(phase status.PhaseType) bool {
 	upd := phase != dk.Phase
 	dk.Phase = phase
 	return upd
