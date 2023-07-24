@@ -65,11 +65,11 @@ func deprecatedFeatureFlagDisableMetadataEnrichment(_ *dynakubeValidator, dynaku
 }
 
 func deprecatedFeatureFlag(_ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
-	warning := ""
+	warnings := ""
 	for _, ff := range getDeprecatedFeatureFlags() {
-		warning += checkDeprecatedFeatureFlag(dynakube, ff)
+		warnings += checkDeprecatedFeatureFlag(dynakube, ff)
 	}
-	return warning
+	return warnings
 }
 
 func warnIfDeprecatedIsUsed(dynakube *dynatracev1beta1.DynaKube, newAnnotation string, deprecatedAnnotation string) string {
