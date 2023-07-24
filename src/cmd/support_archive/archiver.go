@@ -35,7 +35,7 @@ type zipArchive struct {
 func (z zipArchive) addFile(fileName string, reader io.Reader) error {
 	w, err := z.writer.Create(fileName)
 	if err != nil {
-		return errors.WithMessagef(err, "could not write header for file '%s'", fileName)
+		return errors.WithMessagef(err, "could not create file '%s' in zip archive", fileName)
 	}
 
 	_, err = io.Copy(w, reader)
