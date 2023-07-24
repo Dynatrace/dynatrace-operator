@@ -149,6 +149,14 @@ func (builder Builder) WithSyntheticLocation(entityId string) Builder {
 	return builder
 }
 
+func (builder Builder) ResetOneAgent() Builder {
+	builder.dynakube.Spec.OneAgent.ClassicFullStack = nil
+	builder.dynakube.Spec.OneAgent.CloudNativeFullStack = nil
+	builder.dynakube.Spec.OneAgent.ApplicationMonitoring = nil
+	builder.dynakube.Spec.OneAgent.HostMonitoring = nil
+	return builder
+}
+
 func (dynakubeBuilder Builder) Build() dynatracev1beta1.DynaKube {
 	return dynakubeBuilder.dynakube
 }

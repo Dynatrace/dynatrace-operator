@@ -26,7 +26,8 @@ func WaitFor(name string, namespace string) features.Func {
 			},
 		}, func(object k8s.Object) bool {
 			daemonset, isDaemonset := object.(*appsv1.DaemonSet)
-			return isDaemonset && daemonset.Status.DesiredNumberScheduled == daemonset.Status.NumberReady
+			return isDaemonset && daemonset.Status.DesiredNumberScheduled == daemonset.Status.UpdatedNumberScheduled &&
+				daemonset.Status.DesiredNumberScheduled == daemonset.Status.NumberReady
 		}))
 
 		require.NoError(t, err)
