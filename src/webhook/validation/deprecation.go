@@ -67,7 +67,7 @@ func deprecatedFeatureFlagDisableMetadataEnrichment(_ *dynakubeValidator, dynaku
 func deprecatedFeatureFlag(_ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	warningMessage := ""
 	for _, ff := range getDeprecatedFeatureFlags() {
-		if checkDeprecatedFeatureFlag(dynakube, ff) {
+		if isDeprecatedFeatureFlagUsed(dynakube, ff) {
 			warningMessage += fmt.Sprintf("'%s'", ff) + " "
 		}
 	}
@@ -78,7 +78,7 @@ func deprecatedFeatureFlag(_ *dynakubeValidator, dynakube *dynatracev1beta1.Dyna
 	return "Some feature flags are deprecated and will be removed in the future: " + warningMessage
 }
 
-func checkDeprecatedFeatureFlag(dynakube *dynatracev1beta1.DynaKube, annotation string) bool {
+func isDeprecatedFeatureFlagUsed(dynakube *dynatracev1beta1.DynaKube, annotation string) bool {
 	_, ok := dynakube.Annotations[annotation]
 	return ok
 }
