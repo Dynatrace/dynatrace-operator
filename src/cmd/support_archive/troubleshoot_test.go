@@ -53,7 +53,8 @@ func TestTroubleshootCollector(t *testing.T) {
 	zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(buffer.Len()))
 
 	require.NoError(t, err)
-	assert.Equal(t, 1, len(zipReader.File))
+	assert.Len(t, zipReader.File, 1)
+
 	file := zipReader.File[0]
 	assert.Equal(t, TroublshootOutputFileName, file.Name)
 
