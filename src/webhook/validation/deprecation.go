@@ -67,7 +67,6 @@ func deprecatedFeatureFlag(_ *dynakubeValidator, dynakube *dynatracev1beta1.Dyna
 	warning := ""
 	for _, ff := range getDeprecatedFeatureFlags() {
 		warning += checkDeprecatedFeatureFlag(dynakube, ff)
-
 	}
 	return warning
 }
