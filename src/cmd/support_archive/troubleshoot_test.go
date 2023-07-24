@@ -48,7 +48,7 @@ func TestTroubleshootCollector(t *testing.T) {
 	ctx := context.TODO()
 	require.NoError(t, newTroubleshootCollector(ctx, log, supportArchive, testOperatorNamespace, clt, rest.Config{}).Do())
 
-	supportArchive.Close()
+	assertNoErrorOnClose(t, supportArchive)
 
 	zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(buffer.Len()))
 
