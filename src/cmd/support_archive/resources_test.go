@@ -130,7 +130,7 @@ func TestManifestCollector_NoManifestsAvailable(t *testing.T) {
 	assertNoErrorOnClose(t, supportArchive)
 	zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(buffer.Len()))
 	assert.NoError(t, err)
-	assert.Equal(t, 0, len(zipReader.File))
+	assert.Len(t, zipReader.File, 0)
 }
 
 func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
@@ -170,7 +170,7 @@ func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
 	assertNoErrorOnClose(t, supportArchive)
 	zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(buffer.Len()))
 	require.NoError(t, err)
-	require.Equal(t, 3, len(zipReader.File))
+	require.Len(t, zipReader.File, 3)
 	assert.Equal(t, expectedFilename(fmt.Sprintf("injected_namespaces/namespace-some-app-namespace%s", manifestExtension)), zipReader.File[0].Name)
 
 	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/statefulset/statefulset1%s", testOperatorNamespace, manifestExtension)), zipReader.File[1].Name)
