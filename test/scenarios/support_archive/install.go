@@ -139,7 +139,7 @@ func getRequiredPodFiles(t *testing.T, ctx context.Context, resources *resources
 
 	for _, operatorPod := range operatorPods {
 		requiredFiles = append(requiredFiles,
-			fmt.Sprintf("%s/%s/operatorPod/%s%s", support_archive.ManifestsDirectoryName, operatorPod.Namespace, operatorPod.Name, support_archive.ManifestsFileExtension))
+			fmt.Sprintf("%s/%s/pod/%s%s", support_archive.ManifestsDirectoryName, operatorPod.Namespace, operatorPod.Name, support_archive.ManifestsFileExtension))
 		for _, container := range operatorPod.Spec.Containers {
 			requiredFiles = append(requiredFiles,
 				fmt.Sprintf("%s/%s/%s.log", support_archive.LogsDirectoryName, operatorPod.Name, container.Name))
