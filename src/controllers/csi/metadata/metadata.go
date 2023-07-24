@@ -94,6 +94,7 @@ type Access interface {
 	GetPodNames(ctx context.Context) (map[string]string, error)
 	GetUsedVersions(ctx context.Context, tenantUUID string) (map[string]bool, error)
 	GetAllUsedVersions(ctx context.Context) (map[string]bool, error)
+	GetLatestVersions(ctx context.Context) (map[string]bool, error)
 	GetUsedImageDigests(ctx context.Context) (map[string]bool, error)
 	IsImageDigestUsed(ctx context.Context, imageDigest string) (bool, error)
 }

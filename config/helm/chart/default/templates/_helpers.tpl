@@ -47,3 +47,15 @@ Check if we are generating only a part of the yamls
 	    {{- printf "false" -}}
 	{{- end -}}
 {{- end -}}
+
+{{- define "dynatrace-operator.startupProbe" -}}
+startupProbe:
+  exec:
+    command:
+    - /usr/local/bin/dynatrace-operator
+    - startup-probe
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 1
+{{- println }}
+{{- end -}}

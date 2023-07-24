@@ -2,66 +2,149 @@ package metadata
 
 import (
 	"context"
+	"os"
+	"path/filepath"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
+	"github.com/pkg/errors"
+	"github.com/spf13/afero"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+type CorrectnessChecker struct {
+	cl     client.Client
+	fs     afero.Fs
+	path   PathResolver
+	access Access
+}
+
+func NewCorrectnessChecker(cl client.Client, access Access, opts dtcsi.CSIOptions) *CorrectnessChecker {
+	return &CorrectnessChecker{
+		cl:     cl,
+		fs:     afero.NewOsFs(),
+		path:   PathResolver{RootDir: opts.RootDir},
+		access: access,
+	}
+}
+
 // CorrectMetadata checks if the entries in the storage are actually valid
 // Removes not valid entries
-func CorrectMetadata(ctx context.Context, cl client.Client, access Access) error {
-	defer LogAccessOverview(access)
-	if err := correctVolumes(ctx, cl, access); err != nil {
+// "Moves" agent bins from deprecated location. (just creates a symlink)
+func (checker *CorrectnessChecker) CorrectCSI(ctx context.Context) error {
+	defer LogAccessOverview(checker.access)
+	if err := checker.removeVolumesForMissingPods(ctx); err != nil {
 		return err
 	}
-	if err := correctDynakubes(ctx, cl, access); err != nil {
+	if err := checker.removeMissingDynakubes(ctx); err != nil {
+		return err
+	}
+	if err := checker.copyCodeModulesFromDeprecatedBin(ctx); err != nil {
 		return err
 	}
 	return nil
 }
 
 // Removes volume entries if their pod is no longer exists
-func correctVolumes(ctx context.Context, cl client.Client, access Access) error {
-	podNames, err := access.GetPodNames(ctx)
+func (checker *CorrectnessChecker) removeVolumesForMissingPods(ctx context.Context) error {
+	podNames, err := checker.access.GetPodNames(ctx)
 	if err != nil {
 		return err
 	}
 	pruned := []string{}
 	for podName := range podNames {
 		var pod corev1.Pod
-		if err := cl.Get(context.TODO(), client.ObjectKey{Name: podName}, &pod); !k8serrors.IsNotFound(err) {
+		if err := checker.cl.Get(context.TODO(), client.ObjectKey{Name: podName}, &pod); !k8serrors.IsNotFound(err) {
 			continue
 		}
 		volumeID := podNames[podName]
-		if err := access.DeleteVolume(ctx, volumeID); err != nil {
+		if err := checker.access.DeleteVolume(ctx, volumeID); err != nil {
 			return err
 		}
 		pruned = append(pruned, volumeID+"|"+podName)
 	}
-	log.Info("CSI volumes database is corrected (volume|pod)", "prunedRows", pruned)
+	log.Info("CSI volumes database is corrected for missing pods (volume|pod)", "prunedRows", pruned)
 	return nil
 }
 
 // Removes dynakube entries if their Dynakube instance no longer exists in the cluster
-func correctDynakubes(ctx context.Context, cl client.Client, access Access) error {
-	dynakubes, err := access.GetTenantsToDynakubes(ctx)
+func (checker *CorrectnessChecker) removeMissingDynakubes(ctx context.Context) error {
+	dynakubes, err := checker.access.GetTenantsToDynakubes(ctx)
 	if err != nil {
 		return err
 	}
 	pruned := []string{}
 	for dynakubeName := range dynakubes {
 		var dynakube dynatracev1beta1.DynaKube
-		if err := cl.Get(context.TODO(), client.ObjectKey{Name: dynakubeName}, &dynakube); !k8serrors.IsNotFound(err) {
+		if err := checker.cl.Get(context.TODO(), client.ObjectKey{Name: dynakubeName}, &dynakube); !k8serrors.IsNotFound(err) {
 			continue
 		}
-		if err := access.DeleteDynakube(ctx, dynakubeName); err != nil {
+		if err := checker.access.DeleteDynakube(ctx, dynakubeName); err != nil {
 			return err
 		}
 		tenantUUID := dynakubes[dynakubeName]
 		pruned = append(pruned, tenantUUID+"|"+dynakubeName)
 	}
-	log.Info("CSI tenants database is corrected (tenant|dynakube)", "prunedRows", pruned)
+	log.Info("CSI tenants database is corrected for missing dynakubes (tenant|dynakube)", "prunedRows", pruned)
 	return nil
+}
+
+func (checker *CorrectnessChecker) copyCodeModulesFromDeprecatedBin(ctx context.Context) error {
+	dynakubes, err := checker.access.GetAllDynakubes(ctx)
+	if err != nil {
+		return err
+	}
+	moved := []string{}
+	for _, dynakube := range dynakubes {
+		if dynakube.TenantUUID == "" || dynakube.LatestVersion == "" {
+			continue
+		}
+		deprecatedBin := checker.path.AgentBinaryDirForVersion(dynakube.TenantUUID, dynakube.LatestVersion)
+		currentBin := checker.path.AgentSharedBinaryDirForAgent(dynakube.LatestVersion)
+
+		linked, err := checker.safelyLinkCodeModule(deprecatedBin, currentBin)
+		if err != nil {
+			return err
+		}
+		if linked {
+			moved = append(moved, dynakube.TenantUUID+"|"+dynakube.LatestVersion)
+		}
+	}
+	log.Info("CSI filesystem corrected, linked deprecated agent binary to current location (tenant|version-bin)", "movedBins", moved)
+	return nil
+}
+
+func (checker *CorrectnessChecker) safelyLinkCodeModule(deprecatedBin, currentBin string) (bool, error) {
+	if folderExists(checker.fs, deprecatedBin) && !folderExists(checker.fs, currentBin) {
+		log.Info("linking codemodule from deprecated location", "path", deprecatedBin)
+		// MemMapFs (used for testing) doesn't comply with the Linker interface
+		linker, ok := checker.fs.(afero.Linker)
+		if !ok {
+			log.Info("symlinking not possible", "path", deprecatedBin)
+			return false, nil
+		}
+
+		err := checker.fs.MkdirAll(filepath.Dir(currentBin), 0755)
+		if err != nil {
+			log.Info("failed to create parent dir for new path", "path", currentBin)
+			return false, errors.WithStack(err)
+		}
+		log.Info("creating symlink", "from", deprecatedBin, "to", currentBin)
+		if err := linker.SymlinkIfPossible(deprecatedBin, currentBin); err != nil {
+			log.Info("symlinking failed", "path", deprecatedBin)
+			return false, errors.WithStack(err)
+		}
+		return true, nil
+	}
+	return false, nil
+}
+
+func folderExists(fs afero.Fs, filename string) bool {
+	info, err := fs.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return info.IsDir()
 }

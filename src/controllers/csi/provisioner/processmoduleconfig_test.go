@@ -2,6 +2,7 @@ package csiprovisioner
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"testing"
 
@@ -12,10 +13,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	testTenantUUID          = "zib123"
-	testProcessModuleConfig = dtclient.ProcessModuleConfig{
-		Revision: 3,
+const (
+	testTenantUUID = "zib123"
+)
+
+func createTestProcessModuleConfig(revision uint) *dtclient.ProcessModuleConfig {
+	return &dtclient.ProcessModuleConfig{
+		Revision: revision,
 		Properties: []dtclient.ProcessModuleProperty{
 			{
 				Section: "test",
@@ -24,20 +28,14 @@ var (
 			},
 		},
 	}
-	testProcessModuleConfigCache = processModuleConfigCache{
-		ProcessModuleConfig: &dtclient.ProcessModuleConfig{
-			Revision: 1,
-			Properties: []dtclient.ProcessModuleProperty{
-				{
-					Section: "test",
-					Key:     "test",
-					Value:   "test1",
-				},
-			},
-		},
-		Hash: "asd",
+}
+
+func createTestProcessModuleConfigCache(revision uint) processModuleConfigCache {
+	return processModuleConfigCache{
+		ProcessModuleConfig: createTestProcessModuleConfig(revision),
+		Hash:                fmt.Sprintf("%d", revision),
 	}
-)
+}
 
 func prepTestFsCache(fs afero.Fs, content []byte) {
 	path := metadata.PathResolver{}
@@ -55,10 +53,11 @@ func TestGetProcessModuleConfig(t *testing.T) {
 	var emptyResponse *dtclient.ProcessModuleConfig
 	t.Run(`no cache + no revision (dry run)`, func(t *testing.T) {
 		var defaultHash string
+		testProcessModuleConfig := createTestProcessModuleConfig(3)
 		memFs := afero.NewMemMapFs()
 		mockClient := &dtclient.MockDynatraceClient{}
 		mockClient.On("GetProcessModuleConfig", uint(0)).
-			Return(&testProcessModuleConfig, nil)
+			Return(testProcessModuleConfig, nil)
 		provisioner := &OneAgentProvisioner{
 			fs: memFs,
 		}
@@ -66,10 +65,12 @@ func TestGetProcessModuleConfig(t *testing.T) {
 		response, storedHash, err := provisioner.getProcessModuleConfig(mockClient, testTenantUUID)
 
 		require.Nil(t, err)
-		assert.Equal(t, testProcessModuleConfig, *response)
+		assert.Equal(t, *testProcessModuleConfig, *response)
 		assert.Equal(t, defaultHash, storedHash)
 	})
 	t.Run(`cache + latest revision (cached run)`, func(t *testing.T) {
+		var revision uint = 3
+		testProcessModuleConfigCache := createTestProcessModuleConfigCache(revision)
 		memFs := afero.NewMemMapFs()
 		content, _ := json.Marshal(testProcessModuleConfigCache)
 		prepTestFsCache(memFs, content)
@@ -87,12 +88,16 @@ func TestGetProcessModuleConfig(t *testing.T) {
 		assert.Equal(t, testProcessModuleConfigCache.Hash, storedHash)
 	})
 	t.Run(`cache + old revision (outdated cache should be ignored)`, func(t *testing.T) {
+		var revision uint = 3
+		testProcessModuleConfig := createTestProcessModuleConfig(revision)
+		testProcessModuleConfigCache := createTestProcessModuleConfigCache(revision)
+
 		memFs := afero.NewMemMapFs()
 		content, _ := json.Marshal(testProcessModuleConfigCache)
 		prepTestFsCache(memFs, content)
 		mockClient := &dtclient.MockDynatraceClient{}
 		mockClient.On("GetProcessModuleConfig", testProcessModuleConfigCache.Revision).
-			Return(&testProcessModuleConfig, nil)
+			Return(testProcessModuleConfig, nil)
 		provisioner := &OneAgentProvisioner{
 			fs: memFs,
 		}
@@ -100,13 +105,15 @@ func TestGetProcessModuleConfig(t *testing.T) {
 		response, storedHash, err := provisioner.getProcessModuleConfig(mockClient, testTenantUUID)
 
 		require.Nil(t, err)
-		assert.Equal(t, testProcessModuleConfig, *response)
+		assert.Equal(t, *testProcessModuleConfig, *response)
 		assert.Equal(t, testProcessModuleConfigCache.Hash, storedHash)
 	})
 }
 
 func TestReadProcessModuleConfigCache(t *testing.T) {
 	t.Run(`read cache successful`, func(t *testing.T) {
+		var revision uint = 3
+		testProcessModuleConfigCache := createTestProcessModuleConfigCache(revision)
 		memFs := afero.NewMemMapFs()
 		content, _ := json.Marshal(testProcessModuleConfigCache)
 		prepTestFsCache(memFs, content)
@@ -131,6 +138,8 @@ func TestReadProcessModuleConfigCache(t *testing.T) {
 		assert.Error(t, err)
 	})
 	t.Run(`write cache successful`, func(t *testing.T) {
+		var revision uint = 3
+		testProcessModuleConfigCache := createTestProcessModuleConfigCache(revision)
 		memFs := afero.NewMemMapFs()
 		provisioner := &OneAgentProvisioner{
 			fs: memFs,

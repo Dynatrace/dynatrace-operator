@@ -101,6 +101,54 @@ linters-settings:
         disabled: true
       - name: range-val-address
         disabled: true
+  depguard:
+    rules:
+      all:
+        files:
+          - $all
+        allow:
+          - $gostd
+          # Approved orgs.
+          - "github.com/Dynatrace"
+          - "github.com/container-storage-interface"
+          - "github.com/containers"
+          - "github.com/klauspost"
+          - "github.com/opencontainers"
+          - "github.com/prometheus"
+          - "istio.io"
+          - "k8s.io"
+          - "sigs.k8s.io"
+
+          # Approved packages.
+          - "github.com/mattn/go-sqlite3"
+          - "github.com/pkg/errors"
+          - "github.com/spf13/afero"
+          - "github.com/spf13/cobra" # For CLI
+          - "github.com/evanphx/json-patch"
+          - "github.com/go-logr/logr"
+          - "github.com/stretchr/testify"
+
+          # Allowed packages in container-based builder.
+        deny:
+          # TODO: (andrii) Potentially uncomment it in future, but requires some refactoring
+          # - pkg: "reflect"
+          #   desc: Please don't use reflect package
+          - pkg: "unsafe"
+            desc: Please don't use unsafe package
+
+      main:
+        files:
+          - $all
+          # Don't allow go-cmp in non-test code.
+          # NOTE: test code is allowed to use github.com/google/go-cmp (there is no
+          #       deny for it) but non-test code is not.
+          - "!$test"
+          - "!test/**/*.go"
+          - "!**/testing/**"
+          - "!**/*mock*/**/.go"
+        deny:
+          - pkg: "github.com/google/go-cmp"
+            desc: Please don't use go-cmp for non-test code.
 
 linters:
   disable-all: true
