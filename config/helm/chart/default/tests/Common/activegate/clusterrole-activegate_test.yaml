@@ -1,0 +1,11 @@
+suite: test clusterrole for activegate
+templates:
+  - Common/activegate/clusterrole-activegate.yaml
+tests:
+  - it: ClusterRole and ClusterRoleBinding are not rendered for csi
+    set:
+      platform: openshift
+      partial: csi
+    asserts:
+      - hasDocuments:
+          count: 0
