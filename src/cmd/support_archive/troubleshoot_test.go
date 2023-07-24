@@ -1,7 +1,8 @@
 package support_archive
 
 import (
-	"archive/tar"
+	"archive/zip"
+	"bufio"
 	"bytes"
 	"context"
 	"errors"
@@ -42,26 +43,28 @@ func TestTroubleshootCollector(t *testing.T) {
 		},
 	)
 
-	tarBuffer := bytes.Buffer{}
-	supportArchive := tarball{
-		tarWriter: tar.NewWriter(&tarBuffer),
-	}
-
+	buffer := bytes.Buffer{}
+	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
 	ctx := context.TODO()
 	require.NoError(t, newTroubleshootCollector(ctx, log, supportArchive, testOperatorNamespace, clt, rest.Config{}).Do())
 
-	tarReader := tar.NewReader(&tarBuffer)
+	assertNoErrorOnClose(t, supportArchive)
 
-	hdr, err := tarReader.Next()
+	zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(buffer.Len()))
+
 	require.NoError(t, err)
-	assert.Equal(t, TroublshootOutputFileName, hdr.Name)
+	assert.Len(t, zipReader.File, 1)
 
-	troubleshootFile := make([]byte, hdr.Size)
-	bytesRead, err := tarReader.Read(troubleshootFile)
+	file := zipReader.File[0]
+	assert.Equal(t, TroublshootOutputFileName, file.Name)
+
+	size := file.FileInfo().Size()
+	troubleshootFile := make([]byte, size)
+	reader, err := file.Open()
+	bytesRead, _ := reader.Read(troubleshootFile)
+
 	if !errors.Is(err, io.EOF) {
 		require.NoError(t, err)
 	}
-	assert.Equal(t, hdr.Size, int64(bytesRead))
-	_, err = tarReader.Next()
-	require.ErrorIs(t, err, io.EOF)
+	assert.Equal(t, size, int64(bytesRead))
 }

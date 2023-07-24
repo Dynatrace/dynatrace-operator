@@ -3,11 +3,10 @@
 package support_archive
 
 import (
-	"archive/tar"
-	"compress/gzip"
+	"archive/zip"
+	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"strings"
 	"testing"
 
@@ -75,19 +74,14 @@ func testSupportArchiveCommand(testDynakube dynatracev1beta1.DynaKube) features.
 		result := executeSupportArchiveCommand(ctx, t, environmentConfig, "--stdout", testDynakube.Namespace)
 		require.NotNil(t, result)
 
-		zipReader, err := gzip.NewReader(result.StdOut)
+		zipReader, err := zip.NewReader(bytes.NewReader(result.StdOut.Bytes()), int64(result.StdOut.Len()))
+
 		require.NoError(t, err)
-		tarReader := tar.NewReader(zipReader)
 
 		requiredFiles := collectRequiredFiles(t, ctx, environmentConfig.Client().Resources(), testDynakube)
-
-		hdr, err := tarReader.Next()
-		for err == nil {
-			requiredFiles = assertFile(t, requiredFiles, *hdr)
-			hdr, err = tarReader.Next()
+		for _, file := range zipReader.File {
+			requiredFiles = assertFile(t, requiredFiles, *file)
 		}
-
-		require.Equal(t, io.EOF, err)
 
 		assert.Emptyf(t, requiredFiles, "Support archive does not contain all expected files.")
 		logMissingFiles(t, requiredFiles)
@@ -96,9 +90,9 @@ func testSupportArchiveCommand(testDynakube dynatracev1beta1.DynaKube) features.
 }
 
 func executeSupportArchiveCommand(ctx context.Context, t *testing.T, environmentConfig *envconf.Config, cmdLineArguments, namespace string) *pod.ExecutionResult { //nolint:revive
-	resources := environmentConfig.Client().Resources()
+	environmentResources := environmentConfig.Client().Resources()
 
-	pods := pod.List(t, ctx, resources, namespace)
+	pods := pod.List(t, ctx, environmentResources, namespace)
 	require.NotNil(t, pods.Items)
 
 	operatorPods := functional.Filter(pods.Items, func(podItem corev1.Pod) bool {
@@ -120,16 +114,16 @@ func executeSupportArchiveCommand(ctx context.Context, t *testing.T, environment
 }
 
 func collectRequiredFiles(t *testing.T, ctx context.Context, resources *resources.Resources, testDynakube dynatracev1beta1.DynaKube) []string {
-	namespace := testDynakube.Namespace
+	ns := testDynakube.Namespace
 	requiredFiles := make([]string, 0)
 	requiredFiles = append(requiredFiles, support_archive.OperatorVersionFileName)
 	requiredFiles = append(requiredFiles, support_archive.TroublshootOutputFileName)
 	requiredFiles = append(requiredFiles, support_archive.SupportArchiveOutputFileName)
-	requiredFiles = append(requiredFiles, getRequiredPodFiles(t, ctx, resources, namespace)...)
-	requiredFiles = append(requiredFiles, getRequiredReplicaSetFiles(t, ctx, resources, namespace)...)
-	requiredFiles = append(requiredFiles, getRequiredServiceFiles(t, ctx, resources, namespace)...)
-	requiredFiles = append(requiredFiles, getRequiredWorkloadFiles(namespace)...)
-	requiredFiles = append(requiredFiles, getRequiredNamespaceFiles(namespace)...)
+	requiredFiles = append(requiredFiles, getRequiredPodFiles(t, ctx, resources, ns)...)
+	requiredFiles = append(requiredFiles, getRequiredReplicaSetFiles(t, ctx, resources, ns)...)
+	requiredFiles = append(requiredFiles, getRequiredServiceFiles(t, ctx, resources, ns)...)
+	requiredFiles = append(requiredFiles, getRequiredWorkloadFiles(ns)...)
+	requiredFiles = append(requiredFiles, getRequiredNamespaceFiles(ns)...)
 	requiredFiles = append(requiredFiles, getRequiredDynaKubeFiles(testDynakube)...)
 	return requiredFiles
 }
@@ -143,12 +137,12 @@ func getRequiredPodFiles(t *testing.T, ctx context.Context, resources *resources
 		return ok && appNameLabel == "dynatrace-operator"
 	})
 
-	for _, pod := range operatorPods {
+	for _, operatorPod := range operatorPods {
 		requiredFiles = append(requiredFiles,
-			fmt.Sprintf("%s/%s/pod/%s%s", support_archive.ManifestsDirectoryName, pod.Namespace, pod.Name, support_archive.ManifestsFileExtension))
-		for _, container := range pod.Spec.Containers {
+			fmt.Sprintf("%s/%s/pod/%s%s", support_archive.ManifestsDirectoryName, operatorPod.Namespace, operatorPod.Name, support_archive.ManifestsFileExtension))
+		for _, container := range operatorPod.Spec.Containers {
 			requiredFiles = append(requiredFiles,
-				fmt.Sprintf("%s/%s/%s.log", support_archive.LogsDirectoryName, pod.Name, container.Name))
+				fmt.Sprintf("%s/%s/%s.log", support_archive.LogsDirectoryName, operatorPod.Name, container.Name))
 		}
 	}
 	return requiredFiles
@@ -167,9 +161,9 @@ func getRequiredReplicaSetFiles(t *testing.T, ctx context.Context, resources *re
 func getRequiredServiceFiles(t *testing.T, ctx context.Context, resources *resources.Resources, namespace string) []string {
 	services := service.List(t, ctx, resources, namespace)
 	requiredFiles := make([]string, 0)
-	for _, service := range services.Items {
+	for _, requiredService := range services.Items {
 		requiredFiles = append(requiredFiles,
-			fmt.Sprintf("%s/%s/service/%s%s", support_archive.ManifestsDirectoryName, service.Namespace, service.Name, support_archive.ManifestsFileExtension))
+			fmt.Sprintf("%s/%s/service/%s%s", support_archive.ManifestsDirectoryName, requiredService.Namespace, requiredService.Name, support_archive.ManifestsFileExtension))
 	}
 	return requiredFiles
 }
@@ -230,16 +224,17 @@ func getRequiredDynaKubeFiles(testDynakube dynatracev1beta1.DynaKube) []string {
 	return requiredFiles
 }
 
-func assertFile(t *testing.T, requiredFiles []string, hdr tar.Header) []string {
-	index := slices.IndexFunc(requiredFiles, func(file string) bool { return file == hdr.Name })
+func assertFile(t *testing.T, requiredFiles []string, zipFile zip.File) []string {
+	zipFileName := zipFile.Name
+	index := slices.IndexFunc(requiredFiles, func(file string) bool { return file == zipFileName })
 
 	if index != -1 {
 		requiredFiles = slices.Delete(requiredFiles, index, index+1)
 	} else {
-		t.Log("unexpected file found", "filename:", hdr.Name)
+		t.Log("unexpected file found", "filename:", zipFileName)
 	}
 
-	assert.NotZerof(t, hdr.Size, "File %s is empty.", hdr.Name)
+	assert.NotZerof(t, zipFile.FileInfo().Size(), "File %s is empty.", zipFileName)
 
 	return requiredFiles
 }

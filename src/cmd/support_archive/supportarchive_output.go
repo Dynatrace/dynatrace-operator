@@ -15,7 +15,7 @@ type supportArchiveOutputCollector struct {
 	output io.Reader
 }
 
-func newSupportArchiveOutputCollector(log logr.Logger, supportArchive tarball, logBuffer io.Reader) collector {
+func newSupportArchiveOutputCollector(log logr.Logger, supportArchive archiver, logBuffer io.Reader) collector {
 	return supportArchiveOutputCollector{
 		collectorCommon: collectorCommon{
 			log:            log,

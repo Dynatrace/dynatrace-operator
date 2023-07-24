@@ -1,7 +1,8 @@
 package support_archive
 
 import (
-	"archive/tar"
+	"archive/zip"
+	"bufio"
 	"bytes"
 	"io"
 	"strings"
@@ -14,16 +15,15 @@ import (
 
 func TestSuppotrArchiveOutputCollector(t *testing.T) {
 	logBuffer := bytes.Buffer{}
-	tarBuffer := bytes.Buffer{}
+	buffer := bytes.Buffer{}
 
 	supportArchiveOutput := "sample output"
 
+	archive := newZipArchive(bufio.NewWriter(&buffer))
 	supportArchiveOutputCollector := supportArchiveOutputCollector{
 		collectorCommon: collectorCommon{
-			log: newSupportArchiveLogger(&logBuffer),
-			supportArchive: tarball{
-				tarWriter: tar.NewWriter(&tarBuffer),
-			},
+			log:            newSupportArchiveLogger(&logBuffer),
+			supportArchive: archive,
 		},
 
 		output: strings.NewReader(supportArchiveOutput),
@@ -31,20 +31,25 @@ func TestSuppotrArchiveOutputCollector(t *testing.T) {
 	assert.Equal(t, supportArchiveCollectorName, supportArchiveOutputCollector.Name())
 
 	require.NoError(t, supportArchiveOutputCollector.Do())
-	tarReader := tar.NewReader(&tarBuffer)
+	assertNoErrorOnClose(t, archive)
+	zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(buffer.Len()))
 
 	assert.Contains(t, logBuffer.String(), "Storing support archive output")
 
-	hdr, err := tarReader.Next()
 	require.NoError(t, err)
-	assert.Equal(t, SupportArchiveOutputFileName, hdr.Name)
+	require.Len(t, zipReader.File, 1)
+	assert.Equal(t, SupportArchiveOutputFileName, zipReader.File[0].Name)
 
-	outputFile := make([]byte, hdr.Size)
+	size := zipReader.File[0].FileInfo().Size()
+	outputFile := make([]byte, size)
 
-	bytesRead, err := tarReader.Read(outputFile)
+	readCloser, err := zipReader.File[0].Open()
+	require.NoError(t, err)
+
+	bytesRead, err := readCloser.Read(outputFile)
 	if !errors.Is(err, io.EOF) {
 		require.NoError(t, err)
 	}
-	assert.Equal(t, hdr.Size, int64(bytesRead))
+	assert.Equal(t, size, int64(bytesRead))
 	assert.Equal(t, supportArchiveOutput, string(outputFile))
 }
