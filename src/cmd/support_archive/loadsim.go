@@ -20,13 +20,13 @@ type loadSimCollector struct {
 	pods      clientgocorev1.PodInterface
 }
 
-func newLoadSimCollector(context context.Context, log logr.Logger, supportArchive archiver, fileSize int, fileCount int, pods clientgocorev1.PodInterface) collector { //nolint:revive // argument-limit doesn't apply to constructors
+func newLoadSimCollector(ctx context.Context, log logr.Logger, supportArchive archiver, fileSize int, fileCount int, pods clientgocorev1.PodInterface) collector { //nolint:revive // argument-limit doesn't apply to constructors
 	return loadSimCollector{
 		collectorCommon: collectorCommon{
 			log:            log,
 			supportArchive: supportArchive,
 		},
-		context:   context,
+		context:   ctx,
 		fileSize:  fileSize,
 		fileCount: fileCount,
 		pods:      pods,
