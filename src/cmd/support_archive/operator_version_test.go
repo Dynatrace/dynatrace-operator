@@ -33,6 +33,7 @@ func TestVersionCollector(t *testing.T) {
 
 	zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(buffer.Len()))
 	require.NoError(t, err)
+	assert.Len(t, zipReader.File, 1)
 	file := zipReader.File[0]
 	assert.Equal(t, "operator-version.txt", file.Name)
 
