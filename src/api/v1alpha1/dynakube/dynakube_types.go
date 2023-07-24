@@ -1,13 +1,17 @@
+// +kubebuilder:object:generate=true
+// +groupName=dynatrace.com
+// +versionName=v1alpha1
 package dynakube
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
+	"github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // DynaKubeSpec defines the desired state of DynaKube
-// +k8s:openapi-gen=true
+// +-  k8s:openapi-gen=true
 type DynaKubeSpec struct {
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
 
@@ -227,7 +231,7 @@ type DynaKubeProxy struct {
 }
 
 // DynaKubeStatus defines the observed state of DynaKube
-// +k8s:openapi-gen=true
+// +- k8s:openapi-gen=true
 type DynaKubeStatus struct {
 	// Defines the current state (Running, Updating, Error, ...)
 	Phase status.PhaseType `json:"phase,omitempty"`
@@ -349,6 +353,7 @@ const (
 
 // DynaKube is the Schema for the DynaKube API
 // +k8s:openapi-gen=true
+// +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=dynakubes,scope=Namespaced,categories=dynatrace
 // +kubebuilder:printcolumn:name="ApiUrl",type=string,JSONPath=`.spec.apiUrl`
@@ -367,6 +372,7 @@ type DynaKube struct {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // DynaKubeList contains a list of DynaKube
+// +kubebuilder:object:root=true
 type DynaKubeList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
@@ -374,5 +380,5 @@ type DynaKubeList struct {
 }
 
 func init() {
-	SchemeBuilder.Register(&DynaKube{}, &DynaKubeList{})
+	v1alpha1.SchemeBuilder.Register(&DynaKube{}, &DynaKubeList{})
 }

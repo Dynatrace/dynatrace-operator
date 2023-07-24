@@ -1,3 +1,6 @@
+// +kubebuilder:object:generate=true
+// +groupName=dynatrace.com
+// +versionName=v1beta1
 package dynakube
 
 import (
@@ -48,6 +51,7 @@ type DynaKubeValueSource struct { // nolint:revive
 
 // DynaKube is the Schema for the DynaKube API
 // +k8s:openapi-gen=true
+// +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=dynakubes,scope=Namespaced,categories=dynatrace
 // +kubebuilder:printcolumn:name="ApiUrl",type=string,JSONPath=`.spec.apiUrl`
@@ -133,6 +137,7 @@ type DynaKubeSpec struct { // nolint:revive
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // DynaKubeList contains a list of DynaKube
+// +kubebuilder:object:root=true
 type DynaKubeList struct { // nolint:revive
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

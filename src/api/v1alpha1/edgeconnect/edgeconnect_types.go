@@ -5,12 +5,12 @@ package v1alpha1
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
+	"github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // EdgeConnectSpec defines the desired state of EdgeConnect
-// +k8s:openapi-gen=true
 type EdgeConnectSpec struct {
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
 
@@ -66,7 +66,6 @@ type EdgeConnectSpec struct {
 	TopologySpreadConstraints []corev1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 }
 
-// +k8s:openapi-gen=true
 type OAuthSpec struct {
 	// Credentials for the EdgeConnect to connect back to Dynatrace.
 	// +kubebuilder:validation:Required
@@ -79,7 +78,6 @@ type OAuthSpec struct {
 	Resource string `json:"resource,omitempty"`
 }
 
-// +k8s:openapi-gen=true
 type ImageRefSpec struct {
 	// Optional: If specified, indicates the EdgeConnect repository to use
 	// +kubebuilder:validation:Optional
@@ -91,7 +89,6 @@ type ImageRefSpec struct {
 }
 
 // EdgeConnectStatus defines the observed state of DynaKube
-// +k8s:openapi-gen=true
 type EdgeConnectStatus struct {
 	// Defines the current state (Running, Updating, Error, ...)
 	Phase   status.PhaseType     `json:"phase,omitempty"`
@@ -111,21 +108,13 @@ func (dk *EdgeConnectStatus) SetPhase(phase status.PhaseType) bool {
 	return upd
 }
 
-const (
-	// APITokenConditionType identifies the API Token validity condition
-	APITokenConditionType string = "APIToken"
-
-	// PaaSTokenConditionType identifies the PaaS Token validity condition
-	PaaSTokenConditionType string = "PaaSToken"
-)
-
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // EdgeConnect is the Schema for the EdgeConnect API
-// +kubebuilder:object:root=true
 // +k8s:openapi-gen=true
+// +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:path=edgeconnets,scope=Namespaced,categories=dynatrace
+// +kubebuilder:resource:path=edgeconnects,scope=Namespaced,categories=dynatrace
 // +kubebuilder:printcolumn:name="ApiServer",type=string,JSONPath=`.spec.apiServer`
 // +kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.phase`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
@@ -140,7 +129,8 @@ type EdgeConnect struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// EdgeConnectList contains a list of DynaKube
+// EdgeConnectList contains a list of EdgeConnect
+// +k8s:openapi-gen=true
 // +kubebuilder:object:root=true
 type EdgeConnectList struct {
 	metav1.TypeMeta `json:",inline"`
@@ -149,5 +139,5 @@ type EdgeConnectList struct {
 }
 
 func init() {
-	SchemeBuilder.Register(&EdgeConnect{}, &EdgeConnectList{})
+	v1alpha1.SchemeBuilder.Register(&EdgeConnect{}, &EdgeConnectList{})
 }

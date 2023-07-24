@@ -26,16 +26,7 @@ spec:
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
-    - jsonPath: .spec.apiUrl
-      name: ApiUrl
-      type: string
-    - jsonPath: .status.phase
-      name: Status
-      type: string
-    - jsonPath: .metadata.creationTimestamp
-      name: Age
-      type: date
-    name: dynakube
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: DynaKube is the Schema for the DynaKube API
@@ -1042,10 +1033,20 @@ spec:
             type: object
         type: object
     served: true
-    storage: true
+    storage: false
     subresources:
       status: {}
-  - name: dynakube
+  - additionalPrinterColumns:
+    - jsonPath: .spec.apiUrl
+      name: ApiUrl
+      type: string
+    - jsonPath: .status.phase
+      name: Status
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1beta1
     schema:
       openAPIV3Schema:
         description: DynaKube is the Schema for the DynaKube API
@@ -3558,4 +3559,6 @@ spec:
             type: object
         type: object
     served: true
-    storage: false
+    storage: true
+    subresources:
+      status: {}
