@@ -3,7 +3,6 @@ package dtclient
 import (
 	"fmt"
 	"net/http"
-	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -328,7 +327,7 @@ func TestProcessModuleConfig_AddProxy(t *testing.T) {
 				Revision:   tt.fields.Revision,
 				Properties: tt.fields.Properties,
 			}
-			if got := pmc.AddProxy(tt.args.proxy); !reflect.DeepEqual(got, tt.want) {
+			if got := pmc.AddProxy(tt.args.proxy); !assert.Equal(t, got, tt.want) {
 				t.Errorf("ProcessModuleConfig.AddProxy() = %v, want %v", got, tt.want)
 			}
 		})
