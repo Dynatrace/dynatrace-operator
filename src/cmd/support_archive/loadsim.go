@@ -58,7 +58,7 @@ func (collector loadSimCollector) createSimulatedLogFiles() {
 		err := collector.supportArchive.addFile(fileName, &lg)
 
 		if err != nil {
-			logErrorf(collector.log, err, "error writing simulated load to tarball")
+			logErrorf(collector.log, err, "error writing simulated load to zip")
 			return
 		}
 		logInfof(collector.log, "Successfully collected logs %s", fileName)
