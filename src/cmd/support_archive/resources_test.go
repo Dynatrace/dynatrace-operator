@@ -169,8 +169,8 @@ func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
 	require.NoError(t, collector.Do())
 	assertClosed(t, supportArchive)
 	zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(buffer.Len()))
-	assert.NoError(t, err)
-	assert.Equal(t, 3, len(zipReader.File))
+	require.NoError(t, err)
+	require.Equal(t, 3, len(zipReader.File))
 	assert.Equal(t, expectedFilename(fmt.Sprintf("injected_namespaces/namespace-some-app-namespace%s", manifestExtension)), zipReader.File[0].Name)
 
 	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/statefulset/statefulset1%s", testOperatorNamespace, manifestExtension)), zipReader.File[1].Name)
