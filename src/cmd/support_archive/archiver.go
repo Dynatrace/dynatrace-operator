@@ -73,10 +73,10 @@ func createZipArchiveTargetFile(useStdout bool, targetDir string) (*os.File, err
 }
 
 func createZipArchiveFile(targetDir string) (*os.File, error) {
-	tarballFilePath := fmt.Sprintf(zipArchiveFileName, targetDir, time.Now().Format(time.RFC3339))
-	tarballFilePath = strings.ReplaceAll(tarballFilePath, ":", "_")
+	archiveFilePath := fmt.Sprintf(zipArchiveFileName, targetDir, time.Now().Format(time.RFC3339))
+	archiveFilePath = strings.ReplaceAll(archiveFilePath, ":", "_")
 
-	tarFile, err := os.Create(tarballFilePath)
+	tarFile, err := os.Create(archiveFilePath)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
