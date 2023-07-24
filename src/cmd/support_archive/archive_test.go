@@ -23,8 +23,9 @@ func TestAddFile(t *testing.T) {
 
 	testString := []byte(`Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.`)
 	require.NoError(t, archive.addFile("lorem-ipsum.txt", bytes.NewReader(testString)))
-	archive.Close()
-	archiveFile.Close()
+	assert.NoError(t, archive.Close())
+
+	assert.NoError(t, archiveFile.Close())
 
 	zipReader, err := zip.OpenReader(fileName)
 	require.NoError(t, err)

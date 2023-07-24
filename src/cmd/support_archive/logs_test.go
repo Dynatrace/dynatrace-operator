@@ -5,6 +5,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"io"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
@@ -53,10 +54,10 @@ func TestLogCollector(t *testing.T) {
 
 	require.NoError(t, logCollector.Do())
 
-	supportArchive.Close()
+	assert.NoError(t, supportArchive.Close())
 
 	zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(buffer.Len()))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "logs/pod1/container1.log", zipReader.File[0].Name)
 
 	assert.Equal(t, "logs/pod1/container1_previous.log", zipReader.File[1].Name)
@@ -76,18 +77,18 @@ func TestLogCollector(t *testing.T) {
 
 //go:generate mockery --case=snake --srcpkg=k8s.io/client-go/kubernetes/typed/core/v1 --with-expecter --name=PodInterface --output ../../mocks/k8s.io/client-go/kubernetes/typed/core/v1
 func TestLogCollectorPodListError(t *testing.T) {
-	context := context.Background()
+	ctx := context.Background()
 	logBuffer := bytes.Buffer{}
 	buffer := bytes.Buffer{}
 
 	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
-	defer supportArchive.Close()
+	defer assertClosed(t, supportArchive)
 
 	mockedPods := corev1mocks.NewPodInterface(t)
 	mockedPods.EXPECT().
-		List(context, createPodListOptions()).
+		List(ctx, createPodListOptions()).
 		Return(nil, assert.AnError)
-	logCollector := newLogCollector(context,
+	logCollector := newLogCollector(ctx,
 		newSupportArchiveLogger(&logBuffer),
 		supportArchive,
 		mockedPods,
@@ -95,8 +96,12 @@ func TestLogCollectorPodListError(t *testing.T) {
 	require.Error(t, logCollector.Do())
 }
 
+func assertClosed(t *testing.T, closer io.Closer) {
+	assert.NoError(t, closer.Close())
+}
+
 func TestLogCollectorGetPodFail(t *testing.T) {
-	context := context.Background()
+	ctx := context.Background()
 
 	fakeClientSet := fake.NewSimpleClientset(
 		createPod("pod1"),
@@ -106,26 +111,26 @@ func TestLogCollectorGetPodFail(t *testing.T) {
 
 	buffer := bytes.Buffer{}
 	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
-	defer supportArchive.Close()
+	defer assertClosed(t, supportArchive)
 
 	mockedPods := corev1mocks.NewPodInterface(t)
 	listOptions := createPodListOptions()
 	mockedPods.EXPECT().
-		List(context, listOptions).
-		Return(fakeClientSet.CoreV1().Pods("dynatrace").List(context, listOptions))
+		List(ctx, listOptions).
+		Return(fakeClientSet.CoreV1().Pods("dynatrace").List(ctx, listOptions))
 	mockedPods.EXPECT().
-		Get(context, "pod1", metav1.GetOptions{}).
+		Get(ctx, "pod1", metav1.GetOptions{}).
 		Return(nil, assert.AnError)
 	mockedPods.EXPECT().
-		Get(context, "pod2", metav1.GetOptions{}).
+		Get(ctx, "pod2", metav1.GetOptions{}).
 		Return(nil, assert.AnError)
 
-	logCollector := newLogCollector(context, newSupportArchiveLogger(&logBuffer), supportArchive, mockedPods, defaultOperatorAppName)
+	logCollector := newLogCollector(ctx, newSupportArchiveLogger(&logBuffer), supportArchive, mockedPods, defaultOperatorAppName)
 	require.NoError(t, logCollector.Do())
 }
 
 func TestLogCollectorGetLogsFail(t *testing.T) {
-	context := context.Background()
+	ctx := context.Background()
 
 	fakeClientSet := fake.NewSimpleClientset(
 		createPod("pod1"),
@@ -135,19 +140,19 @@ func TestLogCollectorGetLogsFail(t *testing.T) {
 
 	buffer := bytes.Buffer{}
 	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
-	defer supportArchive.Close()
+	defer assertClosed(t, supportArchive)
 
 	mockedPods := corev1mocks.NewPodInterface(t)
 	listOptions := createPodListOptions()
 	getOptions := metav1.GetOptions{}
 
 	listCall := mockedPods.EXPECT().
-		List(context, listOptions).
-		Return(fakeClientSet.CoreV1().Pods("dynatrace").List(context, listOptions))
+		List(ctx, listOptions).
+		Return(fakeClientSet.CoreV1().Pods("dynatrace").List(ctx, listOptions))
 	getPod1Call := mockedPods.EXPECT().
-		Get(context, "pod1", getOptions).
+		Get(ctx, "pod1", getOptions).
 		NotBefore(listCall.Call).
-		Return(fakeClientSet.CoreV1().Pods("dynatrace").Get(context, "pod1", getOptions))
+		Return(fakeClientSet.CoreV1().Pods("dynatrace").Get(ctx, "pod1", getOptions))
 	getLogsPod1Container1Call := mockedPods.EXPECT().
 		GetLogs("pod1", createGetPodLogOptions("container1", false)).
 		NotBefore(getPod1Call).
@@ -165,9 +170,9 @@ func TestLogCollectorGetLogsFail(t *testing.T) {
 		NotBefore(getLogsPod1Container2Call).
 		Return(nil, assert.AnError)
 	getPod2Call := mockedPods.EXPECT().
-		Get(context, "pod2", getOptions).
+		Get(ctx, "pod2", getOptions).
 		NotBefore(getPreviousLogsPod1Container2Call).
-		Return(fakeClientSet.CoreV1().Pods("dynatrace").Get(context, "pod2", getOptions))
+		Return(fakeClientSet.CoreV1().Pods("dynatrace").Get(ctx, "pod2", getOptions))
 	getLogsPod2Container1Call := mockedPods.EXPECT().
 		GetLogs("pod2", createGetPodLogOptions("container1", false)).
 		NotBefore(getPod2Call).
@@ -185,7 +190,7 @@ func TestLogCollectorGetLogsFail(t *testing.T) {
 		NotBefore(getLogsPod2Container2Call).
 		Return(nil, assert.AnError)
 
-	logCollector := newLogCollector(context, newSupportArchiveLogger(&logBuffer), supportArchive, mockedPods, defaultOperatorAppName)
+	logCollector := newLogCollector(ctx, newSupportArchiveLogger(&logBuffer), supportArchive, mockedPods, defaultOperatorAppName)
 	require.NoError(t, logCollector.Do())
 
 	assert.Contains(t, logBuffer.String(), "Unable to retrieve log stream for pod pod1, container container1")
@@ -195,7 +200,7 @@ func TestLogCollectorGetLogsFail(t *testing.T) {
 }
 
 func TestLogCollectorNoAbortOnError(t *testing.T) {
-	context := context.Background()
+	ctx := context.Background()
 
 	fakeClientSet := fake.NewSimpleClientset(
 		createPod("pod1"),
@@ -205,24 +210,24 @@ func TestLogCollectorNoAbortOnError(t *testing.T) {
 
 	buffer := bytes.Buffer{}
 	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
-	defer supportArchive.Close()
+	defer assertClosed(t, supportArchive)
 
 	mockedPods := corev1mocks.NewPodInterface(t)
 	listOptions := createPodListOptions()
 	getOptions := metav1.GetOptions{}
 
 	listCall := mockedPods.EXPECT().
-		List(context, listOptions).
-		Return(fakeClientSet.CoreV1().Pods("dynatrace").List(context, listOptions))
+		List(ctx, listOptions).
+		Return(fakeClientSet.CoreV1().Pods("dynatrace").List(ctx, listOptions))
 	getPod1Call := mockedPods.EXPECT().
-		Get(context, "pod1", getOptions).
+		Get(ctx, "pod1", getOptions).
 		NotBefore(listCall.Call).
 		Return(nil, assert.AnError)
 
 	getPod2Call := mockedPods.EXPECT().
-		Get(context, "pod2", mock.Anything).
+		Get(ctx, "pod2", mock.Anything).
 		NotBefore(getPod1Call).
-		Return(fakeClientSet.CoreV1().Pods("dynatrace").Get(context, "pod2", getOptions))
+		Return(fakeClientSet.CoreV1().Pods("dynatrace").Get(ctx, "pod2", getOptions))
 
 	getLogsPod2Container1Call := mockedPods.EXPECT().
 		GetLogs("pod2", createGetPodLogOptions("container1", false)).
@@ -241,10 +246,10 @@ func TestLogCollectorNoAbortOnError(t *testing.T) {
 		NotBefore(getLogsPod2Container2Call).
 		Return(nil, assert.AnError)
 
-	logCollector := newLogCollector(context, newSupportArchiveLogger(&logBuffer), supportArchive, mockedPods, defaultOperatorAppName)
+	logCollector := newLogCollector(ctx, newSupportArchiveLogger(&logBuffer), supportArchive, mockedPods, defaultOperatorAppName)
 	require.NoError(t, logCollector.Do())
 
-	supportArchive.Close()
+	_ = supportArchive.Close()
 
 	zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(buffer.Len()))
 	assert.NoError(t, err)
