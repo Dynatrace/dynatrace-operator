@@ -1,5 +1,5 @@
 {{- include "dynatrace-operator.platformRequired" . }}
-{{- if (eq (include "dynatrace-operator.platform" .) "openshift") }}
+{{- if (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
 {{- if ne (include "dynatrace-operator.partial" .) "csi" }}
 # Copyright 2021 Dynatrace LLC
 
