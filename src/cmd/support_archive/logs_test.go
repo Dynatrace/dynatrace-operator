@@ -252,7 +252,7 @@ func TestLogCollectorNoAbortOnError(t *testing.T) {
 	_ = supportArchive.Close()
 
 	zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(buffer.Len()))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "logs/pod2/container1_previous.log", zipReader.File[0].Name)
 	assert.Equal(t, "logs/pod2/container2.log", zipReader.File[1].Name)
 }
