@@ -92,7 +92,7 @@ func TestManifestCollector_Success(t *testing.T) {
 
 	ctx := context.TODO()
 	require.NoError(t, newK8sObjectCollector(ctx, log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt).Do())
-	assertClosed(t, supportArchive)
+	assertNoErrorOnClose(t, supportArchive)
 
 	expectedFiles := []string{
 		fmt.Sprintf("%s/namespace-some-app-namespace%s", InjectedNamespacesManifestsDirectoryName, manifestExtension),
@@ -127,7 +127,7 @@ func TestManifestCollector_NoManifestsAvailable(t *testing.T) {
 
 	err := newK8sObjectCollector(ctx, log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt).Do()
 	require.NoError(t, err)
-	assertClosed(t, supportArchive)
+	assertNoErrorOnClose(t, supportArchive)
 	zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(buffer.Len()))
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(zipReader.File))
@@ -167,7 +167,7 @@ func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
 
 	collector := newK8sObjectCollector(ctx, log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt)
 	require.NoError(t, collector.Do())
-	assertClosed(t, supportArchive)
+	assertNoErrorOnClose(t, supportArchive)
 	zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(buffer.Len()))
 	require.NoError(t, err)
 	require.Equal(t, 3, len(zipReader.File))
