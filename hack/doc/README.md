@@ -14,6 +14,12 @@ It's best to use the `openshift-all.yaml` manifest to cover all our needs. OpenS
 
 ```
 # local dev repo - direct call
+# Create python virtual env
+python3 -m venv venv
+# activate virtual env
+source venv/bin/activate
+pip install pyyaml
+
 make manifests
 python3 <operator-repo>/hack/doc/role-permissions2md.py <operator-repo>/config/deploy/openshift/openshift-all.yaml
 
