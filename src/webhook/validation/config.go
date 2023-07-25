@@ -43,6 +43,7 @@ var warnings = []validator{
 	deprecatedFeatureFlagDisableMetadataEnrichment,
 	ineffectiveReadOnlyHostFsFeatureFlag,
 	syntheticPreviewWarning,
+	deprecatedFeatureFlag,
 }
 
 func SetLogger(logger logr.Logger) {

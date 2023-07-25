@@ -23,7 +23,7 @@ type logCollector struct {
 	appName string
 }
 
-func newLogCollector(context context.Context, log logr.Logger, supportArchive tarball, pods clientgocorev1.PodInterface, appName string) collector { //nolint:revive // argument-limit doesn't apply to constructors
+func newLogCollector(context context.Context, log logr.Logger, supportArchive archiver, pods clientgocorev1.PodInterface, appName string) collector { //nolint:revive // argument-limit doesn't apply to constructors
 	return logCollector{
 		collectorCommon: collectorCommon{
 			log:            log,

@@ -24,6 +24,16 @@ func createDynakubeWithAnnotation(keyValues ...string) DynaKube {
 	return dynakube
 }
 
+func createDynakubeEmptyDynakube() DynaKube {
+	dynakube := DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{},
+		},
+	}
+
+	return dynakube
+}
+
 func TestCreateDynakubeWithAnnotation(t *testing.T) {
 	dynakube := createDynakubeWithAnnotation("test", "true")
 
@@ -271,4 +281,21 @@ func TestSyntheticMonitoringFlags(t *testing.T) {
 			"declared replicas: %s",
 			replicas)
 	})
+}
+
+func TestDefaultEnabledFeatureFlags(t *testing.T) {
+	dynakube := createDynakubeEmptyDynakube()
+
+	assert.True(t, dynakube.FeatureActiveGateAuthToken())
+	assert.True(t, dynakube.FeatureActiveGateReadOnlyFilesystem())
+	assert.True(t, dynakube.FeatureAutomaticKubernetesApiMonitoring())
+	assert.True(t, dynakube.FeatureAutomaticInjection())
+	assert.True(t, dynakube.FeatureLabelVersionDetection())
+	assert.True(t, dynakube.FeatureInjectionFailurePolicy() == "silent")
+
+	assert.False(t, dynakube.FeatureDisableActiveGateUpdates())
+	assert.False(t, dynakube.FeatureDisableHostsRequests())
+	assert.False(t, dynakube.FeatureDisableReadOnlyOneAgent())
+	assert.False(t, dynakube.FeatureDisableWebhookReinvocationPolicy())
+	assert.False(t, dynakube.FeatureDisableMetadataEnrichment())
 }
