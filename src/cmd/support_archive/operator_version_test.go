@@ -1,7 +1,8 @@
 package support_archive
 
 import (
-	"archive/tar"
+	"archive/zip"
+	"bufio"
 	"bytes"
 	"io"
 	"testing"
@@ -14,31 +15,34 @@ import (
 func TestVersionCollector(t *testing.T) {
 	logBuffer := bytes.Buffer{}
 
-	tarBuffer := bytes.Buffer{}
+	buffer := bytes.Buffer{}
 
+	archive := newZipArchive(bufio.NewWriter(&buffer))
 	versionCollector := operatorVersionCollector{
 		collectorCommon{
-			log: newSupportArchiveLogger(&logBuffer),
-			supportArchive: tarball{
-				tarWriter: tar.NewWriter(&tarBuffer),
-			},
+			log:            newSupportArchiveLogger(&logBuffer),
+			supportArchive: archive,
 		},
 	}
 	assert.Equal(t, operatorVersionCollectorName, versionCollector.Name())
 
 	require.NoError(t, versionCollector.Do())
-
+	err := archive.Close()
+	assert.NoError(t, err)
 	assert.Contains(t, logBuffer.String(), "Storing operator version")
 
-	tarReader := tar.NewReader(&tarBuffer)
-	hdr, err := tarReader.Next()
+	zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(buffer.Len()))
 	require.NoError(t, err)
-	assert.Equal(t, "operator-version.txt", hdr.Name)
+	assert.Len(t, zipReader.File, 1)
+	file := zipReader.File[0]
+	assert.Equal(t, "operator-version.txt", file.Name)
 
-	versionFile := make([]byte, hdr.Size)
-	bytesRead, err := tarReader.Read(versionFile)
+	size := file.FileInfo().Size()
+	versionFile := make([]byte, size)
+	reader, err := file.Open()
+	bytesRead, _ := reader.Read(versionFile)
 	if !errors.Is(err, io.EOF) {
 		require.NoError(t, err)
 	}
-	assert.Equal(t, hdr.Size, int64(bytesRead))
+	assert.Equal(t, size, int64(bytesRead))
 }
