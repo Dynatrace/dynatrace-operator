@@ -117,6 +117,11 @@ func (pmc *ProcessModuleConfig) AddTenantUUID(tenantUUID string) *ProcessModuleC
 	return pmc.Add(property)
 }
 
+func (pmc *ProcessModuleConfig) AddProxy(proxy string) *ProcessModuleConfig {
+	property := ProcessModuleProperty{Section: generalSectionName, Key: "proxy", Value: proxy}
+	return pmc.Add(property)
+}
+
 func (pmc ProcessModuleConfig) ToMap() ConfMap {
 	sections := map[string]map[string]string{}
 	for _, prop := range pmc.Properties {
