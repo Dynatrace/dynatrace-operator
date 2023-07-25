@@ -23,7 +23,6 @@ type SecretConfig struct {
 	SkipCertCheck bool   `json:"skipCertCheck"`
 
 	// For the injection
-	TenantUUID          string                                        `json:"tenantUUID"`
 	TenantToken         string                                        `json:"tenantToken"`
 	HasHost             bool                                          `json:"hasHost"`
 	MonitoringNodes     map[string]string                             `json:"monitoringNodes"`

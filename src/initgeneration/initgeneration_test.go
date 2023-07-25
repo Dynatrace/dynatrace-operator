@@ -403,7 +403,6 @@ func testForCorrectContent(t *testing.T, secret *corev1.Secret) {
 		NoProxy:             testNoProxy,
 		TrustedCAs:          testCAValue,
 		ClusterID:           string(kubesystemUID),
-		TenantUUID:          testTenantUUID,
 		MonitoringNodes:     imNodes,
 		HasHost:             true,
 		TlsCert:             "testing",
