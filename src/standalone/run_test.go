@@ -308,7 +308,7 @@ func TestGetProcessModuleConfig(t *testing.T) {
 		runner.config.Proxy = proxy
 		runner.dtclient.(*dtclient.MockDynatraceClient).
 			On("GetProcessModuleConfig", uint(0)).
-			Return(&testProcessModuleConfig, nil)
+			Return(getTestProcessModuleConfig(), nil)
 
 		config, err := runner.getProcessModuleConfig()
 		require.NoError(t, err)
