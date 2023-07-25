@@ -372,7 +372,7 @@ func TestOneAgentVolumeStorageReadOnlyModeNoConflict(t *testing.T) {
 			featureValue:         false,
 			oaVolumeStorageVar:   oneagentEnableVolumeStorageEnvVarName,
 			oaVolumeStorageValue: true,
-			acceptedWarningCount: 0,
+			acceptedWarningCount: 1, // because of usage of dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent
 		},
 		{
 			testName:             "enabled OneAgent volume storage with OneAgent read only mode disabled by feature flag in hostMonitoring",
@@ -381,7 +381,7 @@ func TestOneAgentVolumeStorageReadOnlyModeNoConflict(t *testing.T) {
 			featureValue:         false,
 			oaVolumeStorageVar:   oneagentEnableVolumeStorageEnvVarName,
 			oaVolumeStorageValue: true,
-			acceptedWarningCount: 0,
+			acceptedWarningCount: 1, // because of usage of dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent
 		},
 		{
 			testName:             "enabled OneAgent volume storage with OneAgent read only mode disabled by deprecated feature flag in cloudNative",
@@ -407,7 +407,7 @@ func TestOneAgentVolumeStorageReadOnlyModeNoConflict(t *testing.T) {
 			featureFlag:          dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent,
 			featureValue:         true,
 			oaVolumeStorageVar:   "",
-			acceptedWarningCount: 0,
+			acceptedWarningCount: 1, // because of usage of dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent
 		},
 		{
 			testName:             "OneAgent volume storage default with OneAgent read only mode enabled by feature flag in hostMonitoring",
@@ -415,7 +415,7 @@ func TestOneAgentVolumeStorageReadOnlyModeNoConflict(t *testing.T) {
 			featureFlag:          dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent,
 			featureValue:         true,
 			oaVolumeStorageVar:   "",
-			acceptedWarningCount: 0,
+			acceptedWarningCount: 1, // because of usage of dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent
 		},
 		{
 			testName:             "OneAgent volume storage default with OneAgent read only mode enabled by default in cloudNative",
@@ -452,7 +452,7 @@ func TestReadOnlyModeClassicFullstackWarning(t *testing.T) {
 			featureValue:         true,
 			oaVolumeStorageVar:   oneagentEnableVolumeStorageEnvVarName,
 			oaVolumeStorageValue: false,
-			acceptedWarningCount: 1,
+			acceptedWarningCount: 2, // because of usage of dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent
 		},
 		{
 			testName:             "OneAgent volume storage disabled by env var and OneAgent read-only mode enabled by deprecated feature flag in classicFullstack",
@@ -470,7 +470,7 @@ func TestReadOnlyModeClassicFullstackWarning(t *testing.T) {
 			featureValue:         false,
 			oaVolumeStorageVar:   oneagentEnableVolumeStorageEnvVarName,
 			oaVolumeStorageValue: false,
-			acceptedWarningCount: 1,
+			acceptedWarningCount: 2, // because of usage of dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent
 		},
 		{
 			testName:             "OneAgent volume storage disabled by env var and OneAgent read-only mode disabled by deprecated feature flag in classicFullstack",
@@ -497,7 +497,7 @@ func TestReadOnlyModeClassicFullstackWarning(t *testing.T) {
 			featureValue:         true,
 			oaVolumeStorageVar:   oneagentEnableVolumeStorageEnvVarName,
 			oaVolumeStorageValue: true,
-			acceptedWarningCount: 1,
+			acceptedWarningCount: 2, // because of usage of dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent
 		},
 		{
 			testName:             "OneAgent volume storage enabled by env var and OneAgent read-only mode enabled by deprecated feature flag in classicFullstack",
@@ -515,7 +515,7 @@ func TestReadOnlyModeClassicFullstackWarning(t *testing.T) {
 			featureValue:         false,
 			oaVolumeStorageVar:   oneagentEnableVolumeStorageEnvVarName,
 			oaVolumeStorageValue: true,
-			acceptedWarningCount: 1,
+			acceptedWarningCount: 2, // because of usage of dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent
 		},
 		{
 			testName:             "OneAgent volume storage enabled by env var and OneAgent read-only mode disabled by deprecated feature flag in classicFullstack",
