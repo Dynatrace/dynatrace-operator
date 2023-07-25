@@ -26,7 +26,7 @@ func NewDockerKeychain(dockerconfigFile string, filesystem afero.Fs) authn.Keych
 
 // Resolve implements Keychain interface by interpreting the docker config file.
 // It is based on the 'defaultKeychain' type from the go-gontainerregistry library
-// https://github.com/google/go-containerregistry/blob/main/pkg/authn/keychain.go
+// https://github.com/google/go-containerregistry/blob/27a6ad6/pkg/authn/keychain.go
 // dockerKeychain implementation can read a docker config file of any name and from any directory.
 func (dk *dockerKeychain) Resolve(target authn.Resource) (authn.Authenticator, error) {
 	dk.mutex.Lock()
