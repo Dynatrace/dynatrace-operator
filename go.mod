@@ -7,7 +7,7 @@ require (
 	github.com/containers/image/v5 v5.25.0
 	github.com/evanphx/json-patch v5.6.0+incompatible
 	github.com/go-logr/logr v1.2.4
-	github.com/klauspost/compress v1.16.6
+	github.com/klauspost/compress v1.16.7
 	github.com/mattn/go-sqlite3 v1.14.17
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0-rc2
@@ -21,14 +21,14 @@ require (
 	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
 	golang.org/x/net v0.11.0
 	golang.org/x/sys v0.9.0
-	google.golang.org/grpc v1.55.0
+	google.golang.org/grpc v1.55.1
 	istio.io/api v0.0.0-20230523222408-21e7bb4b66a2
 	istio.io/client-go v1.17.3
 	k8s.io/api v0.26.3
 	k8s.io/apiextensions-apiserver v0.26.3
 	k8s.io/apimachinery v0.26.3
 	k8s.io/client-go v0.26.3
-	k8s.io/utils v0.0.0-20230115233650-391b47cb4029
+	k8s.io/utils v0.0.0-20230711102312-30195339c3c7
 	sigs.k8s.io/controller-runtime v0.14.6
 	sigs.k8s.io/e2e-framework v0.2.0
 	sigs.k8s.io/yaml v1.3.0
