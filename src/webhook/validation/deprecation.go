@@ -2,6 +2,7 @@ package validation
 
 import (
 	"fmt"
+	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 )
@@ -65,17 +66,17 @@ func deprecatedFeatureFlagDisableMetadataEnrichment(_ *dynakubeValidator, dynaku
 }
 
 func deprecatedFeatureFlag(_ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
-	warningMessage := ""
+	var featureFlags []string
 	for _, ff := range getDeprecatedFeatureFlags() {
 		if isDeprecatedFeatureFlagUsed(dynakube, ff) {
-			warningMessage += fmt.Sprintf("'%s'", ff) + " "
+			featureFlags = append(featureFlags, fmt.Sprintf("'%s'", ff))
 		}
 	}
 
-	if warningMessage == "" {
+	if len(featureFlags) == 0 {
 		return ""
 	}
-	return "Some feature flags are deprecated and will be removed in the future: " + warningMessage
+	return "Some feature flags are deprecated and will be removed in the future: " + strings.Join(featureFlags, ", ")
 }
 
 func isDeprecatedFeatureFlagUsed(dynakube *dynatracev1beta1.DynaKube, annotation string) bool {
