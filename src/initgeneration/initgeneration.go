@@ -6,6 +6,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/config"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
@@ -155,10 +156,17 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dynak
 		return nil, errors.WithStack(err)
 	}
 
+	tenantToken, err := g.getTenantToken(ctx, dynakube)
+	if err != nil {
+		return nil, err
+	}
+
 	return &standalone.SecretConfig{
 		ApiUrl:              dynakube.Spec.APIURL,
 		ApiToken:            getAPIToken(tokens),
 		PaasToken:           getPaasToken(tokens),
+		TenantToken:         tenantToken,
+		ConnectionInfo:      dynakube.Status.OneAgent.ConnectionInfoStatus,
 		Proxy:               proxy,
 		NoProxy:             dynakube.FeatureNoProxy(),
 		NetworkZone:         dynakube.Spec.NetworkZone,
@@ -172,6 +180,15 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dynak
 		ClusterID:           string(kubeSystemUID),
 		InitialConnectRetry: dynakube.FeatureAgentInitialConnectRetry(),
 	}, nil
+}
+
+func (g *InitGenerator) getTenantToken(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) (string, error) {
+	secretQuery := kubeobjects.NewSecretQuery(ctx, g.client, g.apiReader, log)
+	secret, err := secretQuery.Get(types.NamespacedName{Name: dynakube.OneagentTenantSecret(), Namespace: dynakube.Namespace})
+	if err != nil {
+		return "", err
+	}
+	return secret.StringData[connectioninfo.TenantTokenName], err
 }
 
 func getPaasToken(tokens corev1.Secret) string {

@@ -5,6 +5,7 @@ import (
 	"io"
 	"path/filepath"
 
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
@@ -22,12 +23,14 @@ type SecretConfig struct {
 	SkipCertCheck bool   `json:"skipCertCheck"`
 
 	// For the injection
-	TenantUUID          string            `json:"tenantUUID"`
-	HasHost             bool              `json:"hasHost"`
-	MonitoringNodes     map[string]string `json:"monitoringNodes"`
-	TlsCert             string            `json:"tlsCert"`
-	HostGroup           string            `json:"hostGroup"`
-	InitialConnectRetry int               `json:"initialConnectRetry"`
+	TenantUUID          string                                        `json:"tenantUUID"`
+	TenantToken         string                                        `json:"tenantToken"`
+	HasHost             bool                                          `json:"hasHost"`
+	MonitoringNodes     map[string]string                             `json:"monitoringNodes"`
+	TlsCert             string                                        `json:"tlsCert"`
+	HostGroup           string                                        `json:"hostGroup"`
+	InitialConnectRetry int                                           `json:"initialConnectRetry"`
+	ConnectionInfo      dynatracev1beta1.OneAgentConnectionInfoStatus `json:"connectionInfo"`
 
 	// For the enrichment
 	ClusterID string `json:"clusterID"`
