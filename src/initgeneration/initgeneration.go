@@ -182,7 +182,7 @@ func (g *InitGenerator) getTenantToken(ctx context.Context, dynakube *dynatracev
 	if err != nil {
 		return "", err
 	}
-	return secret.StringData[connectioninfo.TenantTokenName], err
+	return string(secret.Data[connectioninfo.TenantTokenName]), err
 }
 
 func getPaasToken(tokens corev1.Secret) string {

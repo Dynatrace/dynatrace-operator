@@ -26,30 +26,30 @@ const (
 	testNetworkZone = "zone"
 	testTrustedCA   = "secret"
 
-	testNodeName   = "node1"
-	testTlsCert    = "tls"
-	testHostGroup  = "group"
-	testClusterID  = "id"
+	testNodeName  = "node1"
+	testTlsCert   = "tls"
+	testHostGroup = "group"
+	testClusterID = "id"
 
 	testTenantUUID = "test"
-	testEndpoints = "beep.com;bop.com"
+	testEndpoints  = "beep.com;bop.com"
 
 	testInitialConnectRetry = 30
 )
 
 func getTestSecretConfig() *SecretConfig {
 	return &SecretConfig{
-		ApiUrl:        testApiUrl,
-		ApiToken:      testApiToken,
-		PaasToken:     testPaasToken,
-		TenantToken:   testTenantToken,
+		ApiUrl:         testApiUrl,
+		ApiToken:       testApiToken,
+		PaasToken:      testPaasToken,
+		TenantToken:    testTenantToken,
 		ConnectionInfo: getTestConnectionInfo(),
-		Proxy:         testProxy,
-		NoProxy:       testNoProxy,
-		NetworkZone:   testNetworkZone,
-		TrustedCAs:    testTrustedCA,
-		SkipCertCheck: true,
-		HasHost:       true,
+		Proxy:          testProxy,
+		NoProxy:        testNoProxy,
+		NetworkZone:    testNetworkZone,
+		TrustedCAs:     testTrustedCA,
+		SkipCertCheck:  true,
+		HasHost:        true,
 		MonitoringNodes: map[string]string{
 			testNodeName: testTenantUUID,
 		},
@@ -63,8 +63,8 @@ func getTestSecretConfig() *SecretConfig {
 func getTestConnectionInfo() dynatracev1beta1.OneAgentConnectionInfoStatus {
 	return dynatracev1beta1.OneAgentConnectionInfoStatus{
 		ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
-			TenantUUID: testTenantUUID,
-			Endpoints: testEndpoints,
+			TenantUUID:  testTenantUUID,
+			Endpoints:   testEndpoints,
 			LastRequest: metav1.Time{},
 		},
 	}

@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func getTestProcessModuleConfig() *dtclient.ProcessModuleConfig{
+func getTestProcessModuleConfig() *dtclient.ProcessModuleConfig {
 	return &dtclient.ProcessModuleConfig{
 		Revision: 0,
 		Properties: []dtclient.ProcessModuleProperty{
@@ -289,7 +289,6 @@ func TestGetProcessModuleConfig(t *testing.T) {
 		serverAddress, ok := generalSection["serverAddress"]
 		require.True(t, ok)
 		assert.Contains(t, serverAddress, runner.config.ConnectionInfo.Endpoints)
-
 	})
 
 	t.Run("error if api call fails", func(t *testing.T) {
