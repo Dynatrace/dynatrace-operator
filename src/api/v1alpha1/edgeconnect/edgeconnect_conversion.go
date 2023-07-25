@@ -1,1 +1,1 @@
-package v1alpha1
+package edgeconnect

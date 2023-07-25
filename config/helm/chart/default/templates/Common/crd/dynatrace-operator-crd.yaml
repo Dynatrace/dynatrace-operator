@@ -3394,25 +3394,37 @@ spec:
                         type: string
                     type: object
                   imageID:
+                    description: Image ID
                     type: string
                   lastProbeTimestamp:
+                    description: Indicates when the last check for a new version was
+                      performed
                     format: date-time
                     type: string
                   source:
+                    description: Source of the image (tenant-registry, public-registry,
+                      ...)
                     type: string
                   version:
+                    description: Image version
                     type: string
                 type: object
               codeModules:
                 properties:
                   imageID:
+                    description: Image ID
                     type: string
                   lastProbeTimestamp:
+                    description: Indicates when the last check for a new version was
+                      performed
                     format: date-time
                     type: string
                   source:
+                    description: Source of the image (tenant-registry, public-registry,
+                      ...)
                     type: string
                   version:
+                    description: Image version
                     type: string
                 type: object
               conditions:
@@ -3526,6 +3538,7 @@ spec:
                         type: string
                     type: object
                   imageID:
+                    description: Image ID
                     type: string
                   instances:
                     additionalProperties:
@@ -3540,11 +3553,16 @@ spec:
                     format: date-time
                     type: string
                   lastProbeTimestamp:
+                    description: Indicates when the last check for a new version was
+                      performed
                     format: date-time
                     type: string
                   source:
+                    description: Source of the image (tenant-registry, public-registry,
+                      ...)
                     type: string
                   version:
+                    description: Image version
                     type: string
                 type: object
               phase:
@@ -3554,13 +3572,19 @@ spec:
               synthetic:
                 properties:
                   imageID:
+                    description: Image ID
                     type: string
                   lastProbeTimestamp:
+                    description: Indicates when the last check for a new version was
+                      performed
                     format: date-time
                     type: string
                   source:
+                    description: Source of the image (tenant-registry, public-registry,
+                      ...)
                     type: string
                   version:
+                    description: Image version
                     type: string
                 type: object
               updatedTimestamp:
@@ -3625,22 +3649,24 @@ spec:
               annotations:
                 additionalProperties:
                   type: string
-                description: 'Optional: Adds additional annotations for the EdgeConnect
+                description: 'Optional: adds additional annotations for the EdgeConnect
                   pods'
                 type: object
               apiServer:
-                description: ApiServer location of the Dynatrace API to connect to,
-                  including your specific environment UUID
+                description: Location of the Dynatrace API to connect to, including
+                  your specific environment UUID
                 type: string
               autoUpdate:
-                description: AutoUpdate auto update
+                default: true
+                description: 'Optional: enables automatic restarts of EdgeConnect
+                  pods in case a new version is available (the default value is: true)'
                 type: boolean
               customPullSecret:
-                description: 'Optional: Pull secret for your private registry'
+                description: 'Optional: pull secret for your private registry'
                 type: string
               env:
-                description: 'Optional: List of environment variables to set for the
-                  EdgeConnect'
+                description: 'Optional: adds additional environment variables for
+                  the EdgeConnect pods'
                 items:
                   description: EnvVar represents an environment variable present in
                     a Container.
@@ -3749,47 +3775,56 @@ spec:
                   type: object
                 type: array
               hostRestrictions:
-                description: 'Optional: set host restrictions'
+                description: 'Optional: restrict outgoing HTTP requests to your internal
+                  resources to specified hosts'
                 type: string
               imageRef:
-                description: ImageRef image reference
+                description: 'Optional: image reference'
                 properties:
                   repository:
-                    description: 'Optional: If specified, indicates the EdgeConnect
+                    description: 'Optional: if specified, indicates the EdgeConnect
                       repository to use'
                     type: string
                   tag:
-                    description: 'Optional: tag'
+                    description: 'Optional: indicates version of the EdgeConnect image
+                      to use'
                     type: string
                 type: object
               labels:
                 additionalProperties:
                   type: string
-                description: 'Optional: Adds additional labels for the EdgeConnect
+                description: 'Optional: adds additional labels for the EdgeConnect
                   pods'
                 type: object
               nodeSelector:
                 additionalProperties:
                   type: string
-                description: Node selector to control the selection of nodes (optional)
+                description: 'Optional: node selector to control the selection of
+                  nodes for the EdgeConnect pods'
                 type: object
               oauth:
-                description: Oauth authorization configuration
+                description: EdgeConnect uses the OAuth client to authenticate itself
+                  with the Dynatrace platform.
                 properties:
                   clientSecret:
-                    description: Credentials for the EdgeConnect to connect back to
-                      Dynatrace.
+                    description: The secret from your Oauth client generation
                     type: string
                   endpoint:
-                    description: 'Optional: endpoint for the EdgeConnect to connect
-                      to'
+                    description: The token endpoint URL
                     type: string
                   resource:
-                    description: 'Optional: resource'
+                    description: URN identifying your account. You get the URN when
+                      creating the OAuth client
                     type: string
+                required:
+                - clientSecret
+                - endpoint
+                - resource
                 type: object
               replicas:
-                description: Amount of replicas for your DynaKube
+                default: 1
+                description: 'Amount of replicas for your EdgeConnect (the default
+                  value is: 1)'
                 format: int32
                 type: integer
               resources:
@@ -4051,9 +4086,10 @@ spec:
                 type: array
             required:
             - apiServer
+            - oauth
             type: object
           status:
-            description: EdgeConnectStatus defines the observed state of DynaKube
+            description: EdgeConnectStatus defines the observed state of EdgeConnect
             properties:
               conditions:
                 description: Conditions includes status about the current state of
@@ -4130,20 +4166,26 @@ spec:
                   ...)
                 type: string
               updatedTimestamp:
-                description: UpdatedTimestamp indicates when the instance was last
-                  updated
+                description: Indicates when the instance was last updated
                 format: date-time
                 type: string
               version:
+                description: State of the current image
                 properties:
                   imageID:
+                    description: Image ID
                     type: string
                   lastProbeTimestamp:
+                    description: Indicates when the last check for a new version was
+                      performed
                     format: date-time
                     type: string
                   source:
+                    description: Source of the image (tenant-registry, public-registry,
+                      ...)
                     type: string
                   version:
+                    description: Image version
                     type: string
                 type: object
             type: object

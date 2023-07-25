@@ -3382,25 +3382,37 @@ spec:
                         type: string
                     type: object
                   imageID:
+                    description: Image ID
                     type: string
                   lastProbeTimestamp:
+                    description: Indicates when the last check for a new version was
+                      performed
                     format: date-time
                     type: string
                   source:
+                    description: Source of the image (tenant-registry, public-registry,
+                      ...)
                     type: string
                   version:
+                    description: Image version
                     type: string
                 type: object
               codeModules:
                 properties:
                   imageID:
+                    description: Image ID
                     type: string
                   lastProbeTimestamp:
+                    description: Indicates when the last check for a new version was
+                      performed
                     format: date-time
                     type: string
                   source:
+                    description: Source of the image (tenant-registry, public-registry,
+                      ...)
                     type: string
                   version:
+                    description: Image version
                     type: string
                 type: object
               conditions:
@@ -3514,6 +3526,7 @@ spec:
                         type: string
                     type: object
                   imageID:
+                    description: Image ID
                     type: string
                   instances:
                     additionalProperties:
@@ -3528,11 +3541,16 @@ spec:
                     format: date-time
                     type: string
                   lastProbeTimestamp:
+                    description: Indicates when the last check for a new version was
+                      performed
                     format: date-time
                     type: string
                   source:
+                    description: Source of the image (tenant-registry, public-registry,
+                      ...)
                     type: string
                   version:
+                    description: Image version
                     type: string
                 type: object
               phase:
@@ -3542,13 +3560,19 @@ spec:
               synthetic:
                 properties:
                   imageID:
+                    description: Image ID
                     type: string
                   lastProbeTimestamp:
+                    description: Indicates when the last check for a new version was
+                      performed
                     format: date-time
                     type: string
                   source:
+                    description: Source of the image (tenant-registry, public-registry,
+                      ...)
                     type: string
                   version:
+                    description: Image version
                     type: string
                 type: object
               updatedTimestamp:

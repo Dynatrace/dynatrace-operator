@@ -1,7 +1,7 @@
 // +kubebuilder:object:generate=true
 // +groupName=dynatrace.com
 // +versionName=v1alpha1
-package v1alpha1
+package edgeconnect
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
@@ -14,46 +14,55 @@ import (
 type EdgeConnectSpec struct {
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
 
-	// ApiServer location of the Dynatrace API to connect to, including your specific environment UUID
+	// Location of the Dynatrace API to connect to, including your specific environment UUID
+	// +required
 	// +kubebuilder:validation:Required
 	ApiServer string `json:"apiServer"`
 
-	// Oauth authorization configuration
+	// EdgeConnect uses the OAuth client to authenticate itself with the Dynatrace platform.
+	// +required
 	// +kubebuilder:validation:Required
-	Oauth OAuthSpec `json:"oauth,omitempty"`
+	Oauth OAuthSpec `json:"oauth"`
 
-	// Optional: set host restrictions
+	// Optional: restrict outgoing HTTP requests to your internal resources to specified hosts
 	// +kubebuilder:validation:Optional
-	HostRestrictions string `json:"hostRestrictions"`
+	HostRestrictions string `json:"hostRestrictions,omitempty"`
 
-	// ImageRef image reference
+	// Optional: image reference
+	// +kubebuilder:validation:Optional
 	ImageRef ImageRefSpec `json:"imageRef,omitempty"`
 
-	// AutoUpdate auto update
-	AutoUpdate bool `json:"autoUpdate,omitempty"`
+	// Optional: enables automatic restarts of EdgeConnect pods in case a new version is available (the default value is: true)
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default:=true
+	AutoUpdate bool `json:"autoUpdate"`
 
-	// Optional: Pull secret for your private registry
+	// Optional: pull secret for your private registry
+	// +kubebuilder:validation:Optional
 	CustomPullSecret string `json:"customPullSecret,omitempty"`
 
-	// Optional: Adds additional annotations for the EdgeConnect pods
+	// Optional: adds additional annotations for the EdgeConnect pods
 	// +kubebuilder:validation:Optional
 	Annotations map[string]string `json:"annotations,omitempty"`
 
-	// Optional: Adds additional labels for the EdgeConnect pods
+	// Optional: adds additional labels for the EdgeConnect pods
 	// +kubebuilder:validation:Optional
 	Labels map[string]string `json:"labels,omitempty"`
 
-	// Optional: List of environment variables to set for the EdgeConnect
+	// Optional: adds additional environment variables for the EdgeConnect pods
 	// +kubebuilder:validation:Optional
 	Env []corev1.EnvVar `json:"env,omitempty"`
 
-	// Amount of replicas for your DynaKube
-	Replicas *int32 `json:"replicas,omitempty"`
+	// Amount of replicas for your EdgeConnect (the default value is: 1)
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default:=1
+	Replicas *int32 `json:"replicas"`
 
 	// Optional: define resources requests and limits for single pods
+	// +kubebuilder:validation:Optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 
-	// Node selector to control the selection of nodes (optional)
+	// Optional: node selector to control the selection of nodes for the EdgeConnect pods
 	// +kubebuilder:validation:Optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
@@ -67,41 +76,46 @@ type EdgeConnectSpec struct {
 }
 
 type OAuthSpec struct {
-	// Credentials for the EdgeConnect to connect back to Dynatrace.
+	// The secret from your Oauth client generation
+	// +required
 	// +kubebuilder:validation:Required
-	ClientSecret string `json:"clientSecret,omitempty"`
-	// Optional: endpoint for the EdgeConnect to connect to
+	ClientSecret string `json:"clientSecret"`
+	// The token endpoint URL
+	// +required
 	// +kubebuilder:validation:Required
-	Endpoint string `json:"endpoint,omitempty"`
-	// Optional: resource
-	// +kubebuilder:validation:Optional
-	Resource string `json:"resource,omitempty"`
+	Endpoint string `json:"endpoint"`
+	// URN identifying your account. You get the URN when creating the OAuth client
+	// +required
+	// +kubebuilder:validation:Required
+	Resource string `json:"resource"`
 }
 
 type ImageRefSpec struct {
-	// Optional: If specified, indicates the EdgeConnect repository to use
+	// Optional: if specified, indicates the EdgeConnect repository to use
 	// +kubebuilder:validation:Optional
 	Repository string `json:"repository,omitempty"`
 
-	// Optional: tag
+	// Optional: indicates version of the EdgeConnect image to use
 	// +kubebuilder:validation:Optional
 	Tag string `json:"tag,omitempty"`
 }
 
-// EdgeConnectStatus defines the observed state of DynaKube
+// EdgeConnectStatus defines the observed state of EdgeConnect
 type EdgeConnectStatus struct {
 	// Defines the current state (Running, Updating, Error, ...)
-	Phase   status.PhaseType     `json:"phase,omitempty"`
+	Phase status.PhaseType `json:"phase,omitempty"`
+
+	// State of the current image
 	Version status.VersionStatus `json:"version,omitempty"`
 
-	// UpdatedTimestamp indicates when the instance was last updated
+	// Indicates when the instance was last updated
 	UpdatedTimestamp metav1.Time `json:"updatedTimestamp,omitempty"`
 
 	// Conditions includes status about the current state of the instance
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
-// SetPhase sets the status phase on the DynaKube object
+// SetPhase sets the status phase on the EdgeConnect object
 func (dk *EdgeConnectStatus) SetPhase(phase status.PhaseType) bool {
 	upd := phase != dk.Phase
 	dk.Phase = phase
