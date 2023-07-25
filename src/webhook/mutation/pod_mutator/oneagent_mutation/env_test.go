@@ -87,17 +87,6 @@ func TestAddNetworkZoneEnv(t *testing.T) {
 	})
 }
 
-func TestAddProxyEnv(t *testing.T) {
-	t.Run("Add proxy env", func(t *testing.T) {
-		container := &corev1.Container{}
-
-		addProxyEnv(container)
-
-		require.Len(t, container.Env, 1)
-		assert.IsType(t, container.Env[0].ValueFrom, &corev1.EnvVarSource{})
-	})
-}
-
 func TestAddInstallerInitEnvs(t *testing.T) {
 	t.Run("Add installer init env", func(t *testing.T) {
 		container := &corev1.Container{}
