@@ -15,7 +15,7 @@ type operatorVersionCollector struct {
 	collectorCommon
 }
 
-func newOperatorVersionCollector(log logr.Logger, supportArchive tarball) collector {
+func newOperatorVersionCollector(log logr.Logger, supportArchive archiver) collector {
 	return operatorVersionCollector{
 		collectorCommon{
 			log:            log,
@@ -33,7 +33,10 @@ func (vc operatorVersionCollector) Do() error {
 		version.BuildDate,
 		runtime.Version(),
 		runtime.GOOS, runtime.GOARCH)
-	vc.supportArchive.addFile(OperatorVersionFileName, strings.NewReader(versionString))
+	err := vc.supportArchive.addFile(OperatorVersionFileName, strings.NewReader(versionString))
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

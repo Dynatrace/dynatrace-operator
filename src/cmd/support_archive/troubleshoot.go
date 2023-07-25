@@ -22,7 +22,7 @@ type troubleshootCollector struct {
 	namespace  string
 }
 
-func newTroubleshootCollector(context context.Context, log logr.Logger, supportArchive tarball, namespace string, apiReader client.Reader, kubeConfig rest.Config) collector { //nolint:revive // argument-limit doesn't apply to constructors
+func newTroubleshootCollector(context context.Context, log logr.Logger, supportArchive archiver, namespace string, apiReader client.Reader, kubeConfig rest.Config) collector { //nolint:revive // argument-limit doesn't apply to constructors
 	return troubleshootCollector{
 		collectorCommon: collectorCommon{
 			log:            log,
