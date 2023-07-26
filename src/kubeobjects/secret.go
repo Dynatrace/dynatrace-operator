@@ -157,8 +157,8 @@ func ExtractToken(secret *corev1.Secret, key string) (string, error) {
 	return strings.TrimSpace(string(value)), nil
 }
 
-func GetDataFromSecretName(apiReader client.Reader, namespacedName types.NamespacedName, dataKey string, log logr.Logger) (string, error) {
-	query := NewSecretQuery(context.TODO(), nil, apiReader, log)
+func GetDataFromSecretNameWithContext(ctx context.Context, apiReader client.Reader, namespacedName types.NamespacedName, dataKey string, log logr.Logger) (string, error) {
+	query := NewSecretQuery(ctx, nil, apiReader, log)
 	secret, err := query.Get(namespacedName)
 	if err != nil {
 		return "", errors.WithStack(err)
@@ -169,6 +169,11 @@ func GetDataFromSecretName(apiReader client.Reader, namespacedName types.Namespa
 		return "", errors.WithStack(err)
 	}
 	return value, nil
+}
+
+// Deprecated: GetDataFromSecretNameWithContext should be used instead
+func GetDataFromSecretName(apiReader client.Reader, namespacedName types.NamespacedName, dataKey string, log logr.Logger) (string, error) {
+	return GetDataFromSecretNameWithContext(context.TODO(), apiReader, namespacedName, dataKey, log)
 }
 
 type secretBuilderData = corev1.Secret

@@ -180,7 +180,7 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dynak
 }
 
 func (g *InitGenerator) getTenantToken(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) (string, error) {
-	return kubeobjects.GetDataFromSecretName(g.apiReader, types.NamespacedName{Name: dynakube.OneagentTenantSecret(), Namespace: dynakube.Namespace}, connectioninfo.TenantTokenName, log)
+	return kubeobjects.GetDataFromSecretNameWithContext(ctx, g.apiReader, types.NamespacedName{Name: dynakube.OneagentTenantSecret(), Namespace: dynakube.Namespace}, connectioninfo.TenantTokenName, log)
 }
 
 func getPaasToken(tokens corev1.Secret) string {
