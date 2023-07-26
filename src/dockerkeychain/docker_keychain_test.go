@@ -1,4 +1,4 @@
-package containerregistry
+package dockerkeychain
 
 import (
 	"encoding/json"
