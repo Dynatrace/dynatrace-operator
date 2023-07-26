@@ -104,6 +104,7 @@ func getUrlProperties(targetVersion string, pathResolver metadata.PathResolver) 
 		Flavor:        arch.Flavor,
 		Technologies:  []string{"all"},
 		TargetVersion: targetVersion,
+		SkipMetadata:  true,
 		PathResolver:  pathResolver,
 	}
 }
