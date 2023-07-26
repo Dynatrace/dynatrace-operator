@@ -43,6 +43,9 @@ func (secret SecretConfig) logContent() {
 	if secret.PaasToken != "" {
 		secret.PaasToken = asterisks
 	}
+	if secret.TenantToken != "" {
+		secret.TenantToken = asterisks
+	}
 	if secret.TrustedCAs != "" {
 		secret.TrustedCAs = asterisks
 	}
