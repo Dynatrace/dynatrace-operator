@@ -219,6 +219,14 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Cont
 
 	latestProcessModuleConfigCache = newProcessModuleConfigCache(latestProcessModuleConfig)
 
+	if dk.NeedsOneAgentProxy() {
+		proxy, err := dk.Proxy(ctx, provisioner.apiReader)
+		if err != nil {
+			return nil, false, err
+		}
+		latestProcessModuleConfig.AddProxy(proxy)
+	}
+
 	if dk.CodeModulesImage() != "" {
 		updatedDigest, err := provisioner.installAgentImage(ctx, *dk, latestProcessModuleConfigCache)
 		if err != nil {

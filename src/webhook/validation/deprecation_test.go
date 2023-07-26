@@ -22,7 +22,7 @@ func TestDeprecationWarning(t *testing.T) {
 				APIURL: testApiUrl,
 			},
 		}
-		assertAllowedResponseWithoutWarnings(t, dynakube)
+		assertAllowedResponseWithWarnings(t, 1, dynakube)
 		assert.True(t, dynakube.FeatureDisableWebhookReinvocationPolicy())
 	})
 
