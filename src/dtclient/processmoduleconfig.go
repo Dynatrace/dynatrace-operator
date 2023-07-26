@@ -112,11 +112,6 @@ func (pmc *ProcessModuleConfig) AddHostGroup(hostGroup string) *ProcessModuleCon
 	return pmc.Add(property)
 }
 
-func (pmc *ProcessModuleConfig) AddTenantUUID(tenantUUID string) *ProcessModuleConfig {
-	property := ProcessModuleProperty{Section: generalSectionName, Key: "tenant", Value: tenantUUID}
-	return pmc.Add(property)
-}
-
 func (pmc *ProcessModuleConfig) AddProxy(proxy string) *ProcessModuleConfig {
 	property := ProcessModuleProperty{Section: generalSectionName, Key: "proxy", Value: proxy}
 	return pmc.Add(property)
