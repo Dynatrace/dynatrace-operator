@@ -2,6 +2,7 @@ package validation
 
 import (
 	"fmt"
+	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 )
@@ -9,6 +10,23 @@ import (
 const (
 	featureDeprecatedWarningMessage = `DEPRECATED: %s`
 )
+
+func getDeprecatedFeatureFlags() []string {
+	return []string{
+		dynatracev1beta1.AnnotationInjectionFailurePolicy,
+		dynatracev1beta1.AnnotationFeatureLabelVersionDetection,
+		dynatracev1beta1.AnnotationFeatureAutomaticInjection,
+		dynatracev1beta1.AnnotationFeatureMetadataEnrichment,
+		dynatracev1beta1.AnnotationFeatureWebhookReinvocationPolicy,
+		dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent,
+		dynatracev1beta1.AnnotationFeatureHostsRequests,
+		dynatracev1beta1.AnnotationFeatureAutomaticK8sApiMonitoring,
+		dynatracev1beta1.AnnotationFeatureActiveGateUpdates,
+		dynatracev1beta1.AnnotationFeatureActiveGateAuthToken,
+		dynatracev1beta1.AnnotationFeatureActiveGateRawImage,
+		dynatracev1beta1.AnnotationFeatureActiveGateReadOnlyFilesystem,
+	}
+}
 
 func deprecatedFeatureFlagFormat(_ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	if dynakube.Annotations == nil {
@@ -45,6 +63,25 @@ func deprecatedFeatureFlagDisableWebhookReinvocationPolicy(_ *dynakubeValidator,
 
 func deprecatedFeatureFlagDisableMetadataEnrichment(_ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	return warnIfDeprecatedIsUsed(dynakube, dynatracev1beta1.AnnotationFeatureMetadataEnrichment, dynatracev1beta1.AnnotationFeatureDisableMetadataEnrichment)
+}
+
+func deprecatedFeatureFlag(_ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+	var featureFlags []string
+	for _, ff := range getDeprecatedFeatureFlags() {
+		if isDeprecatedFeatureFlagUsed(dynakube, ff) {
+			featureFlags = append(featureFlags, fmt.Sprintf("'%s'", ff))
+		}
+	}
+
+	if len(featureFlags) == 0 {
+		return ""
+	}
+	return "Some feature flags are deprecated and will be removed in the future: " + strings.Join(featureFlags, ", ")
+}
+
+func isDeprecatedFeatureFlagUsed(dynakube *dynatracev1beta1.DynaKube, annotation string) bool {
+	_, ok := dynakube.Annotations[annotation]
+	return ok
 }
 
 func warnIfDeprecatedIsUsed(dynakube *dynatracev1beta1.DynaKube, newAnnotation string, deprecatedAnnotation string) string {

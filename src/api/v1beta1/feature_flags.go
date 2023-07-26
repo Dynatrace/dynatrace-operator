@@ -225,7 +225,7 @@ func (dk *DynaKube) getDefaultIgnoredNamespaces() []string {
 // FeatureAutomaticKubernetesApiMonitoring is a feature flag to enable automatic kubernetes api monitoring,
 // which ensures that settings for this kubernetes cluster exist in Dynatrace
 func (dk *DynaKube) FeatureAutomaticKubernetesApiMonitoring() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureAutomaticK8sApiMonitoring) == truePhrase
+	return dk.getFeatureFlagRaw(AnnotationFeatureAutomaticK8sApiMonitoring) != falsePhrase
 }
 
 // FeatureAutomaticKubernetesApiMonitoringClusterName is a feature flag to set custom cluster name for automatic-kubernetes-api-monitoring
@@ -270,7 +270,7 @@ func (dk *DynaKube) FeatureEnableMultipleOsAgentsOnNode() bool {
 
 // FeatureActiveGateReadOnlyFilesystem is a feature flag to enable RO mounted filesystem in ActiveGate container
 func (dk *DynaKube) FeatureActiveGateReadOnlyFilesystem() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateReadOnlyFilesystem) == truePhrase
+	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateReadOnlyFilesystem) != falsePhrase
 }
 
 // FeatureActiveGateAppArmor is a feature flag to enable AppArmor in ActiveGate container
@@ -295,7 +295,7 @@ func (dk *DynaKube) FeatureActiveGateAuthToken() bool {
 
 // FeatureLabelVersionDetection is a feature flag to enable injecting additional environment variables based on user labels
 func (dk *DynaKube) FeatureLabelVersionDetection() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureLabelVersionDetection) == truePhrase
+	return dk.getFeatureFlagRaw(AnnotationFeatureLabelVersionDetection) != falsePhrase
 }
 
 // FeatureAgentInitialConnectRetry is a feature flag to configure startup delay of standalone agents

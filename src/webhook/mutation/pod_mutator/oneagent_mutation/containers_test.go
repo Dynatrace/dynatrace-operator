@@ -75,19 +75,19 @@ func TestMutateUserContainers(t *testing.T) {
 		{
 			name:                               "add envs and volume mounts (simple dynakube)",
 			dynakube:                           *getTestDynakube(),
-			expectedAdditionalEnvCount:         2, // 1 deployment-metadata + 1 preload
+			expectedAdditionalEnvCount:         4, // 1 deployment-metadata + 1 preload + 1 dt_release_version + 1 dt_release_product
 			expectedAdditionalVolumeMountCount: 3, // 3 oneagent mounts(preload,bin,conf)
 		},
 		{
 			name:                               "add envs and volume mounts (complex dynakube)",
 			dynakube:                           *getTestComplexDynakube(),
-			expectedAdditionalEnvCount:         6, //  1 proxy + 1 deployment-metadata + 1 network-zone + 1 preload + 2 version-detection
+			expectedAdditionalEnvCount:         5, // 1 deployment-metadata + 1 network-zone + 1 preload + 2 version-detection
 			expectedAdditionalVolumeMountCount: 5, // 3 oneagent mounts(preload,bin,conf) + 1 cert mount + 1 curl-options
 		},
 		{
 			name:                               "add envs and volume mounts (readonly-csi)",
 			dynakube:                           *getTestReadOnlyCSIDynakube(),
-			expectedAdditionalEnvCount:         2, // 1 deployment-metadata + 1 preload
+			expectedAdditionalEnvCount:         4, // 1 deployment-metadata + 1 preload + 1 dt_release_version + 1 dt_release_product
 			expectedAdditionalVolumeMountCount: 6, // 3 oneagent mounts(preload,bin,conf) +3 oneagent mounts for readonly csi (agent-conf,data-storage,agent-log)
 		},
 	}
@@ -114,19 +114,19 @@ func TestReinvokeUserContainers(t *testing.T) {
 		{
 			name:                               "add envs and volume mounts (simple dynakube)",
 			dynakube:                           *getTestDynakube(),
-			expectedAdditionalEnvCount:         2, // 1 deployment-metadata + 1 preload
+			expectedAdditionalEnvCount:         4, // 1 deployment-metadata + 1 preload + 1 dt_release_version + 1 dt_release_product
 			expectedAdditionalVolumeMountCount: 3, // 3 oneagent mounts(preload,bin,conf)
 		},
 		{
 			name:                               "add envs and volume mounts (complex dynakube)",
 			dynakube:                           *getTestComplexDynakube(),
-			expectedAdditionalEnvCount:         6, //  1 proxy + 1 deployment-metadata + 1 network-zone + 1 preload + 2 version-detection
+			expectedAdditionalEnvCount:         5, // 1 deployment-metadata + 1 network-zone + 1 preload + 2 version-detection
 			expectedAdditionalVolumeMountCount: 5, // 3 oneagent mounts(preload,bin,conf) + 1 cert mount + 1 curl-options
 		},
 		{
 			name:                               "add envs and volume mounts (readonly-csi)",
 			dynakube:                           *getTestReadOnlyCSIDynakube(),
-			expectedAdditionalEnvCount:         2, // 1 deployment-metadata + 1 preload
+			expectedAdditionalEnvCount:         4, // 1 deployment-metadata + 1 preload + 1 dt_release_version + 1 dt_release_product
 			expectedAdditionalVolumeMountCount: 6, // 3 oneagent mounts(preload,bin,conf) +3 oneagent mounts for readonly csi (agent-conf,data-storage,agent-log)
 		},
 	}

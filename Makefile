@@ -50,6 +50,7 @@ SHELL ?= bash
 -include hack/make/tests/*.mk
 -include hack/make/deploy/*.mk
 -include hack/make/helm/*.mk
+-include hack/make/doc/*.mk
 
 ## Installs dependencies
 deps: prerequisites/setup-pre-commit prerequisites/kustomize prerequisites/controller-gen
@@ -62,5 +63,3 @@ install: deploy/helm
 
 ## Installs dependencies, builds and pushes a tagged operator image, and deploys the operator on a cluster
 all: deps build install
-
-

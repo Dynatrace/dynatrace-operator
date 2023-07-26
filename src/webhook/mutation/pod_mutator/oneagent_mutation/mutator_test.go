@@ -112,7 +112,7 @@ func TestMutate(t *testing.T) {
 		{
 			name:                                   "basic, should mutate the pod and init container in the request",
 			dynakube:                               *getTestDynakube(),
-			expectedAdditionalEnvCount:             2, // 1 deployment-metadata + 1 preload
+			expectedAdditionalEnvCount:             4, // 1 deployment-metadata + 1 preload + 1 dt_release_version + 1 dt_release_product
 			expectedAdditionalVolumeCount:          3, // bin, share, injection-config
 			expectedAdditionalVolumeMountCount:     3, // 3 oneagent mounts(preload,bin,conf)
 			expectedAdditionalInitVolumeMountCount: 3, // bin, share, injection-config
@@ -120,7 +120,7 @@ func TestMutate(t *testing.T) {
 		{
 			name:                                   "everything turned on, should mutate the pod and init container in the request",
 			dynakube:                               *getTestComplexDynakube(),
-			expectedAdditionalEnvCount:             6, // 1 proxy + 1 deployment-metadata + 1 network-zone + 1 preload + 2 version-detection
+			expectedAdditionalEnvCount:             5, // 1 deployment-metadata + 1 network-zone + 1 preload + 2 version-detection
 			expectedAdditionalVolumeCount:          3, // bin, share, injection-config
 			expectedAdditionalVolumeMountCount:     5, // 3 oneagent mounts(preload,bin,conf) + 1 cert mount + 1 curl-options
 			expectedAdditionalInitVolumeMountCount: 3, // bin, share, injection-config
@@ -128,7 +128,7 @@ func TestMutate(t *testing.T) {
 		{
 			name:                                   "basic + readonly-csi, should mutate the pod and init container in the request",
 			dynakube:                               *getTestReadOnlyCSIDynakube(),
-			expectedAdditionalEnvCount:             2, // 1 deployment-metadata + 1 preload
+			expectedAdditionalEnvCount:             4, // 1 deployment-metadata + 1 preload + 1 dt_release_version + 1 dt_release_product
 			expectedAdditionalVolumeCount:          6, // bin, share, injection-config +  agent-conf, data-storage, agent-log
 			expectedAdditionalVolumeMountCount:     6, // 3 oneagent mounts(preload,bin,conf) +3 oneagent mounts for readonly csi (agent-conf,data-storage,agent-log)
 			expectedAdditionalInitVolumeMountCount: 4, // bin, share, injection-config, agent-conf
@@ -177,19 +177,19 @@ func TestReinvoke(t *testing.T) {
 		{
 			name:                               "basic, should mutate the pod and init container in the request",
 			dynakube:                           *getTestDynakube(),
-			expectedAdditionalEnvCount:         2, // 1 deployment-metadata + 1 preload
+			expectedAdditionalEnvCount:         4, // 1 deployment-metadata + 1 preload + 1 dt_release_version + 1 dt_release_product
 			expectedAdditionalVolumeMountCount: 3, // 3 oneagent mounts(preload,bin,conf)
 		},
 		{
 			name:                               "everything turned on, should mutate the pod and init container in the request",
 			dynakube:                           *getTestComplexDynakube(),
-			expectedAdditionalEnvCount:         6, // 1 proxy + 1 deployment-metadata + 1 network-zone + 1 preload + 2 version-detection
+			expectedAdditionalEnvCount:         5, // 1 deployment-metadata + 1 network-zone + 1 preload + 2 version-detection
 			expectedAdditionalVolumeMountCount: 5, // 3 oneagent mounts(preload,bin,conf) + 1 cert mount + 1 curl-options
 		},
 		{
 			name:                               "basic + readonly-csi, should mutate the pod and init container in the request",
 			dynakube:                           *getTestReadOnlyCSIDynakube(),
-			expectedAdditionalEnvCount:         2, // 1 deployment-metadata + 1 preload
+			expectedAdditionalEnvCount:         4, // 1 deployment-metadata + 1 preload + 1 dt_release_version + 1 dt_release_product
 			expectedAdditionalVolumeMountCount: 6, // 3 oneagent mounts(preload,bin,conf) +3 oneagent mounts for readonly csi (agent-conf,data-storage,agent-log)
 		},
 	}
