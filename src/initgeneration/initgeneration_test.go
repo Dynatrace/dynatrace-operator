@@ -228,7 +228,7 @@ func TestCreateSecretConfigForDynaKube(t *testing.T) {
 		ApiToken:            apiToken,
 		PaasToken:           paasToken,
 		TenantToken:         "",
-		ConnectionInfo:      dynatracev1beta1.OneAgentConnectionInfoStatus{},
+		ConnectionInfo:      baseDynakube.Status.OneAgent.ConnectionInfoStatus,
 		ClusterID:           string(kubesystemUID),
 		Proxy:               "",
 		NoProxy:             "",
@@ -391,7 +391,6 @@ func TestCreateSecretConfigForDynaKube(t *testing.T) {
 		dynakube.Spec.OneAgent.CloudNativeFullStack = nil
 		dynakube.Spec.OneAgent.ApplicationMonitoring = &dynatracev1beta1.ApplicationMonitoringSpec{}
 		expectedSecretConfig := *baseExpectedSecretConfig
-		expectedSecretConfig.ConnectionInfo = dynakube.Status.OneAgent.ConnectionInfoStatus
 		expectedSecretConfig.TenantToken = tenantToken
 		expectedSecretConfig.HasHost = false
 

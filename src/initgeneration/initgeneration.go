@@ -152,13 +152,11 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dynak
 	}
 
 	var tenantToken string
-	var connectionInfo dynatracev1beta1.OneAgentConnectionInfoStatus
 	if !dynakube.NeedsCSIDriver() {
 		tenantToken, err = g.getTenantToken(ctx, dynakube)
 		if err != nil {
 			return nil, err
 		}
-		connectionInfo = dynakube.Status.OneAgent.ConnectionInfoStatus
 	}
 
 	return &standalone.SecretConfig{
@@ -166,7 +164,7 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dynak
 		ApiToken:            getAPIToken(tokens),
 		PaasToken:           getPaasToken(tokens),
 		TenantToken:         tenantToken,
-		ConnectionInfo:      connectionInfo,
+		ConnectionInfo:      dynakube.Status.OneAgent.ConnectionInfoStatus,
 		Proxy:               proxy,
 		NoProxy:             dynakube.FeatureNoProxy(),
 		NetworkZone:         dynakube.Spec.NetworkZone,
