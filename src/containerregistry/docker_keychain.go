@@ -28,13 +28,13 @@ func NewDockerKeychain(dockerconfigFile string, filesystem afero.Fs) authn.Keych
 // It is based on the 'defaultKeychain' type from the go-gontainerregistry library
 // https://github.com/google/go-containerregistry/blob/27a6ad6/pkg/authn/keychain.go
 // dockerKeychain implementation can read a docker config file of any name and from any directory.
-func (dk *dockerKeychain) Resolve(target authn.Resource) (authn.Authenticator, error) {
-	dk.mutex.Lock()
-	defer dk.mutex.Unlock()
+func (keychain *dockerKeychain) Resolve(target authn.Resource) (authn.Authenticator, error) {
+	keychain.mutex.Lock()
+	defer keychain.mutex.Unlock()
 
 	var cf *configfile.ConfigFile
 
-	f, err := dk.filesystem.Open(dk.dockerConfigFile)
+	f, err := keychain.filesystem.Open(keychain.dockerConfigFile)
 	if err != nil {
 		return nil, err
 	}
