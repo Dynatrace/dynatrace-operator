@@ -2,10 +2,10 @@
 // +k8s:openapi-gen=true
 package status
 
-type PhaseType string
+type DeploymentPhase string
 
 const (
-	Running   PhaseType = "Running"
-	Deploying PhaseType = "Deploying"
-	Error     PhaseType = "Error"
+	Running   DeploymentPhase = "Running"
+	Deploying DeploymentPhase = "Deploying"
+	Error     DeploymentPhase = "Error"
 )

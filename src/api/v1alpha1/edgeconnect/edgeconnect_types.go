@@ -22,7 +22,7 @@ type EdgeConnectSpec struct {
 	// EdgeConnect uses the OAuth client to authenticate itself with the Dynatrace platform.
 	// +required
 	// +kubebuilder:validation:Required
-	Oauth OAuthSpec `json:"oauth"`
+	OAuth OAuthSpec `json:"oauth"`
 
 	// Optional: restrict outgoing HTTP requests to your internal resources to specified hosts
 	// +kubebuilder:validation:Optional
@@ -76,7 +76,7 @@ type EdgeConnectSpec struct {
 }
 
 type OAuthSpec struct {
-	// The secret from your Oauth client generation
+	// The secret from your OAuth client generation
 	// +required
 	// +kubebuilder:validation:Required
 	ClientSecret string `json:"clientSecret"`
@@ -103,7 +103,7 @@ type ImageRefSpec struct {
 // EdgeConnectStatus defines the observed state of EdgeConnect
 type EdgeConnectStatus struct {
 	// Defines the current state (Running, Updating, Error, ...)
-	Phase status.PhaseType `json:"phase,omitempty"`
+	DeploymentPhase status.DeploymentPhase `json:"phase,omitempty"`
 
 	// State of the current image
 	Version status.VersionStatus `json:"version,omitempty"`
@@ -116,9 +116,9 @@ type EdgeConnectStatus struct {
 }
 
 // SetPhase sets the status phase on the EdgeConnect object
-func (dk *EdgeConnectStatus) SetPhase(phase status.PhaseType) bool {
-	upd := phase != dk.Phase
-	dk.Phase = phase
+func (dk *EdgeConnectStatus) SetPhase(phase status.DeploymentPhase) bool {
+	upd := phase != dk.DeploymentPhase
+	dk.DeploymentPhase = phase
 	return upd
 }
 

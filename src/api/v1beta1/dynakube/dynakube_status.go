@@ -12,7 +12,7 @@ import (
 // +k8s:openapi-gen=true
 type DynaKubeStatus struct { // nolint:revive
 	// Defines the current state (Running, Updating, Error, ...)
-	Phase status.PhaseType `json:"phase,omitempty"`
+	Phase status.DeploymentPhase `json:"phase,omitempty"`
 
 	// UpdatedTimestamp indicates when the instance was last updated
 	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors=true
@@ -99,7 +99,7 @@ type SyntheticStatus struct {
 }
 
 // SetPhase sets the status phase on the DynaKube object
-func (dk *DynaKubeStatus) SetPhase(phase status.PhaseType) bool {
+func (dk *DynaKubeStatus) SetPhase(phase status.DeploymentPhase) bool {
 	upd := phase != dk.Phase
 	dk.Phase = phase
 	return upd

@@ -11,7 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func (controller *Controller) determineDynaKubePhase(dynakube *dynatracev1beta1.DynaKube) status.PhaseType {
+func (controller *Controller) determineDynaKubePhase(dynakube *dynatracev1beta1.DynaKube) status.DeploymentPhase {
 	if dynakube.NeedsActiveGate() {
 		activeGatePods, err := controller.numberOfMissingActiveGatePods(dynakube)
 		if err != nil {

@@ -205,7 +205,7 @@ func Delete(dynakube dynatracev1beta1.DynaKube) features.Func {
 	}
 }
 
-func WaitForDynakubePhase(dynakube dynatracev1beta1.DynaKube, phase status.PhaseType) features.Func {
+func WaitForDynakubePhase(dynakube dynatracev1beta1.DynaKube, phase status.DeploymentPhase) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
 		resources := environmentConfig.Client().Resources()
 

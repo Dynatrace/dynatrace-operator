@@ -3807,7 +3807,7 @@ spec:
                   with the Dynatrace platform.
                 properties:
                   clientSecret:
-                    description: The secret from your Oauth client generation
+                    description: The secret from your OAuth client generation
                     type: string
                   endpoint:
                     description: The token endpoint URL
