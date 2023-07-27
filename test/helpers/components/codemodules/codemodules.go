@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/csi"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
@@ -20,8 +21,7 @@ import (
 )
 
 const (
-	RuxitAgentProcFile     = "ruxitagentproc.conf"
-	DaemonSetCSIdriverName = "dynatrace-oneagent-csi-driver"
+	RuxitAgentProcFile = "ruxitagentproc.conf"
 )
 
 func CheckRuxitAgentProcFileHasNoConnInfo(testDynakube dynatracev1beta1.DynaKube) features.Func {
@@ -32,7 +32,7 @@ func CheckRuxitAgentProcFileHasNoConnInfo(testDynakube dynatracev1beta1.DynaKube
 		require.NoError(t, e.Client().Resources().Get(ctx, testDynakube.Name, testDynakube.Namespace, &dk))
 
 		err := daemonset.NewQuery(ctx, resources, client.ObjectKey{
-			Name:      DaemonSetCSIdriverName,
+			Name:      csi.DaemonSetName,
 			Namespace: testDynakube.Namespace,
 		}).ForEachPod(func(podItem corev1.Pod) {
 			// /data/codemodules/1.273.0.20230719-145632/agent/conf/ruxitagentproc.conf
