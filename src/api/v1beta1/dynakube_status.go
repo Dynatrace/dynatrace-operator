@@ -70,7 +70,7 @@ type ConnectionInfoStatus struct {
 }
 
 type OneAgentConnectionInfoStatus struct {
-	// Information about the connected tenant
+	// Information for communicating with the tenant
 	ConnectionInfoStatus `json:",inline"`
 
 	// List of communication hosts
