@@ -30,7 +30,6 @@ func InstallOperatorFromRelease(builder *features.FeatureBuilder, testDynakube d
 	verifyOperatorDeployment(builder, testDynakube)
 }
 
-
 func AddClassicCleanUp(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube) {
 	builder.Assess("clean up OneAgent files from nodes", oneagent.CreateUninstallDaemonSet(testDynakube))
 	builder.Assess("wait for daemonset", oneagent.WaitForUninstallOneAgentDaemonset(testDynakube.Namespace))
