@@ -127,6 +127,8 @@ linters-settings:
           - "github.com/evanphx/json-patch"
           - "github.com/go-logr/logr"
           - "github.com/stretchr/testify"
+          - "github.com/google/go-containerregistry"
+          - "github.com/docker/cli"
 
           # Allowed packages in container-based builder.
         deny:
