@@ -32,10 +32,10 @@ type Client interface {
 	GetLatestAgentVersion(os, installerType string) (string, error)
 
 	// GetLatestAgent returns a reader with the contents of the download. Must be closed by caller.
-	GetLatestAgent(os, installerType, flavor, arch string, technologies []string, writer io.Writer) error
+	GetLatestAgent(os, installerType, flavor, arch string, technologies []string, skipMetadata bool, writer io.Writer) error
 
 	// GetAgent downloads a specific agent version and writes it to the given io.Writer
-	GetAgent(os, installerType, flavor, arch, version string, technologies []string, writer io.Writer) error
+	GetAgent(os, installerType, flavor, arch, version string, technologies []string, skipMetadata bool, writer io.Writer) error
 
 	// GetAgentViaInstallerUrl downloads the agent from the user specified URL and writes it to the given io.Writer
 	GetAgentViaInstallerUrl(url string, writer io.Writer) error
