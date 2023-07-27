@@ -60,6 +60,7 @@ func NewRunner(fs afero.Fs) (*Runner, error) {
 				Technologies:  env.InstallerTech,
 				TargetVersion: targetVersion,
 				Url:           env.InstallerUrl,
+				SkipMetadata:  false,
 				PathResolver:  metadata.PathResolver{RootDir: config.AgentBinDirMount},
 			},
 		)

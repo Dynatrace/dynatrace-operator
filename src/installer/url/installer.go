@@ -23,6 +23,7 @@ type Properties struct {
 	TargetVersion string
 	Technologies  []string
 	Url           string // if this is set all settings before it will be ignored
+	SkipMetadata  bool
 
 	PathResolver metadata.PathResolver
 }

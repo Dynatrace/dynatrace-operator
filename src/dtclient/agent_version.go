@@ -24,12 +24,12 @@ func (dtc *dynatraceClient) GetEntityIDForIP(ip string) (string, error) {
 }
 
 // GetLatestAgent gets the latest agent package for the given OS and installer type.
-func (dtc *dynatraceClient) GetLatestAgent(os, installerType, flavor, arch string, technologies []string, writer io.Writer) error {
+func (dtc *dynatraceClient) GetLatestAgent(os, installerType, flavor, arch string, technologies []string, skipMetadata bool, writer io.Writer) error {
 	if len(os) == 0 || len(installerType) == 0 {
 		return errors.New("os or installerType is empty")
 	}
 
-	url := dtc.getLatestAgentUrl(os, installerType, flavor, arch, technologies)
+	url := dtc.getLatestAgentUrl(os, installerType, flavor, arch, technologies, skipMetadata)
 	md5, err := dtc.makeRequestForBinary(url, dynatracePaaSToken, writer)
 	if err == nil {
 		log.Info("downloaded agent file", "os", os, "type", installerType, "flavor", flavor, "arch", arch, "technologies", technologies, "md5", md5)
@@ -76,12 +76,12 @@ func (dtc *dynatraceClient) GetAgentVersions(os, installerType, flavor, arch str
 	return response.AvailableVersions, errors.WithStack(err)
 }
 
-func (dtc *dynatraceClient) GetAgent(os, installerType, flavor, arch, version string, technologies []string, writer io.Writer) error {
+func (dtc *dynatraceClient) GetAgent(os, installerType, flavor, arch, version string, technologies []string, skipMetadata bool, writer io.Writer) error {
 	if len(os) == 0 || len(installerType) == 0 {
 		return errors.New("os or installerType is empty")
 	}
 
-	url := dtc.getAgentUrl(os, installerType, flavor, arch, version, technologies)
+	url := dtc.getAgentUrl(os, installerType, flavor, arch, version, technologies, skipMetadata)
 	md5, err := dtc.makeRequestForBinary(url, dynatracePaaSToken, writer)
 	if err == nil {
 		log.Info("downloaded agent file", "os", os, "type", installerType, "flavor", flavor, "arch", arch, "technologies", technologies, "md5", md5)
