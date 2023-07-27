@@ -59,7 +59,7 @@ func GetCacheValidMessage(functionName string, lastRequestTimestamp metav1.Time,
 }
 
 type ConnectionInfoStatus struct {
-	// UUID from the tenant
+	// UUID of the tenant, received from the tenant
 	TenantUUID string `json:"tenantUUID,omitempty"`
 
 	// Available tenant endpoints
