@@ -100,7 +100,7 @@ type DynaKubeSpec struct {
 	Proxy *DynaKubeProxy `json:"proxy,omitempty"`
 
 	// Adds custom RootCAs from a configmap. Put the certificate under certs within your configmap.
-	// Note: Applies only to Dynatrace Operator, not to ActiveGate.
+	// Note: Applies only to Dynatrace Operator and OneAgent, not to ActiveGate.
 	// +optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Trusted CAs",order=6,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:ConfigMap"}
 	TrustedCAs string `json:"trustedCAs,omitempty"`
