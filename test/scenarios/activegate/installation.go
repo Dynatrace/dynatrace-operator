@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/activegate"
@@ -77,7 +76,7 @@ func Install(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features.F
 	assess.InstallDynakube(builder, &secretConfig, testDynakube)
 	assessActiveGate(builder, &testDynakube)
 
-	assessReadOnlyActiveGate(builder, secretConfig, proxySpec)
+	assessReadOnlyActiveGate(builder, &testDynakube)
 
 	// Register operator + dynakube uninstall
 	teardown.DeleteDynakube(builder, testDynakube)
@@ -245,23 +244,8 @@ func initMap(srcMap *map[string]bool) map[string]bool {
 	return dstMap
 }
 
-func assessReadOnlyActiveGate(builder *features.FeatureBuilder, secretConfig tenant.Secret, proxySpec *dynatracev1beta1.DynaKubeProxy) {
-	if proxySpec == nil {
-		testDynakube := dynakube.NewBuilder().
-			WithDefaultObjectMeta().
-			WithActiveGate().
-			WithDynakubeNamespaceSelector().
-			ApiUrl(secretConfig.ApiUrl).
-			WithAnnotations(map[string]string{
-				dynatracev1beta1.AnnotationFeatureActiveGateReadOnlyFilesystem: "true",
-			}).
-			Build()
-		assess.UpdateDynakube(builder, testDynakube)
-		builder.Assess("dynakube phase changes to 'Deploying'", dynakube.WaitForDynakubePhase(testDynakube, status.Deploying))
-		builder.Assess("dynakube phase changes to 'Running'", dynakube.WaitForDynakubePhase(testDynakube, status.Running))
-
-		builder.Assess("ActiveGate ro filesystem", checkReadOnlySettings(&testDynakube))
-	}
+func assessReadOnlyActiveGate(builder *features.FeatureBuilder, testDynakube *dynatracev1beta1.DynaKube) {
+	builder.Assess("ActiveGate ro filesystem", checkReadOnlySettings(testDynakube))
 }
 
 func checkReadOnlySettings(testDynakube *dynatracev1beta1.DynaKube) features.Func {
