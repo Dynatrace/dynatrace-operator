@@ -59,22 +59,26 @@ type ActiveGateSpec struct {
 
 	CapabilityProperties `json:",inline"`
 
-	// Optional: the name of a secret containing ActiveGate TLS cert+key and password. If not set, self-signed certificate is used.
+	// The name of a secret containing ActiveGate TLS cert+key and password. If not set, self-signed certificate is used.
 	// server.p12: certificate+key pair in pkcs12 format
 	// password: passphrase to read server.p12
+	// +optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="TlsSecretName",order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	TlsSecretName string `json:"tlsSecretName,omitempty"`
 
-	// Optional: Sets DNS Policy for the ActiveGate pods
+	// Sets DNS Policy for the ActiveGate pods
+	// +optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="DNS Policy",order=24,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	DNSPolicy corev1.DNSPolicy `json:"dnsPolicy,omitempty"`
 
-	// Optional: If specified, indicates the pod's priority. Name must be defined by creating a PriorityClass object with that
+	// If specified, indicates the pod's priority. Name must be defined by creating a PriorityClass object with that
 	// name. If not specified the setting will be removed from the StatefulSet.
+	// +optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Priority Class name",order=23,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:PriorityClass"}
 	PriorityClassName string `json:"priorityClassName,omitempty"`
 
-	// Optional: Adds additional annotations to the ActiveGate pods
+	// Adds additional annotations to the ActiveGate pods
+	// +optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Annotations",order=27,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	Annotations map[string]string `json:"annotations,omitempty"`
 }
@@ -87,42 +91,51 @@ type CapabilityProperties struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Replicas",order=30,xDescriptors="urn:alm:descriptor:com.tectonic.ui:podCount"
 	Replicas *int32 `json:"replicas,omitempty"`
 
-	// Optional: the ActiveGate container image. Defaults to the latest ActiveGate image provided by the registry on the tenant
+	// The ActiveGate container image. Defaults to the latest ActiveGate image provided by the registry on the tenant
+	// +optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image",order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	Image string `json:"image,omitempty"`
 
-	// Optional: Set activation group for ActiveGate
+	// Set activation group for ActiveGate
+	// +optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Activation group",order=31,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	Group string `json:"group,omitempty"`
 
-	// Optional: Add a custom properties file by providing it as a value or reference it from a secret
+	// Add a custom properties file by providing it as a value or reference it from a secret
+	// +optional
 	// If referenced from a secret, make sure the key is called 'customProperties'
 	CustomProperties *DynaKubeValueSource `json:"customProperties,omitempty"`
 
-	// Optional: define resources requests and limits for single ActiveGate pods
+	// Define resources requests and limits for single ActiveGate pods
+	// +optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Resource Requirements",order=34,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:resourceRequirements"}
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 
-	// Optional: Node selector to control the selection of nodes
+	// Node selector to control the selection of nodes
+	// +optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Node Selector",order=35,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:Node"
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
-	// Optional: set tolerations for the ActiveGatePods pods
+	// Set tolerations for the ActiveGate pods
+	// +optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Tolerations",order=36,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 
-	// Optional: Adds additional labels for the ActiveGate pods
+	// Adds additional labels for the ActiveGate pods
+	// +optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Labels",order=37,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	Labels map[string]string `json:"labels,omitempty"`
 
-	// Optional: List of environment variables to set for the ActiveGate
+	// List of environment variables to set for the ActiveGate
+	// +optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Environment variables",order=39,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:hidden"}
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Environment variables"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:text"
 	Env []corev1.EnvVar `json:"env,omitempty"`
 
-	// Optional: Adds TopologySpreadConstraints for the ActiveGate pods
+	// Adds TopologySpreadConstraints for the ActiveGate pods
+	// +optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="topologySpreadConstraints",order=40,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:hidden"}
 	TopologySpreadConstraints []corev1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 }
