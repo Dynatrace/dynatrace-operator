@@ -1306,7 +1306,7 @@ spec:
                       read server.p12'
                     type: string
                   tolerations:
-                    description: Set tolerations for the ActiveGatePods pods
+                    description: Set tolerations for the ActiveGate pods
                     items:
                       description: The pod this Toleration is attached to tolerates
                         any taint that matches the triple <key,value,effect> using
@@ -1746,7 +1746,7 @@ spec:
                         type: object
                     type: object
                   tolerations:
-                    description: Set tolerations for the ActiveGatePods pods
+                    description: Set tolerations for the ActiveGate pods
                     items:
                       description: The pod this Toleration is attached to tolerates
                         any taint that matches the triple <key,value,effect> using
@@ -3165,7 +3165,7 @@ spec:
                         type: object
                     type: object
                   tolerations:
-                    description: Set tolerations for the ActiveGatePods pods
+                    description: Set tolerations for the ActiveGate pods
                     items:
                       description: The pod this Toleration is attached to tolerates
                         any taint that matches the triple <key,value,effect> using
