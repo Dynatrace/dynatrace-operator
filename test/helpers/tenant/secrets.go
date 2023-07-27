@@ -80,7 +80,7 @@ func GetMultiTenantSecret(t *testing.T) []Secret {
 }
 
 func CreateTenantSecret(secretConfig Secret, dynakube dynatracev1beta1.DynaKube) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		defaultSecret := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      dynakube.Name,
@@ -91,10 +91,10 @@ func CreateTenantSecret(secretConfig Secret, dynakube dynatracev1beta1.DynaKube)
 			},
 		}
 
-		err := environmentConfig.Client().Resources().Create(ctx, &defaultSecret)
+		err := envConfig.Client().Resources().Create(ctx, &defaultSecret)
 
 		if k8serrors.IsAlreadyExists(err) {
-			require.NoError(t, environmentConfig.Client().Resources().Update(ctx, &defaultSecret))
+			require.NoError(t, envConfig.Client().Resources().Update(ctx, &defaultSecret))
 			return ctx
 		}
 

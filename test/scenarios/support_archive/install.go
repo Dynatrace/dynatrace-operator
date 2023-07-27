@@ -70,15 +70,15 @@ func supportArchiveExecution(t *testing.T) features.Feature {
 }
 
 func testSupportArchiveCommand(testDynakube dynatracev1beta1.DynaKube) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		result := executeSupportArchiveCommand(ctx, t, environmentConfig, "--stdout", testDynakube.Namespace)
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		result := executeSupportArchiveCommand(ctx, t, envConfig, "--stdout", testDynakube.Namespace)
 		require.NotNil(t, result)
 
 		zipReader, err := zip.NewReader(bytes.NewReader(result.StdOut.Bytes()), int64(result.StdOut.Len()))
 
 		require.NoError(t, err)
 
-		requiredFiles := collectRequiredFiles(t, ctx, environmentConfig.Client().Resources(), testDynakube)
+		requiredFiles := collectRequiredFiles(t, ctx, envConfig.Client().Resources(), testDynakube)
 		for _, file := range zipReader.File {
 			requiredFiles = assertFile(t, requiredFiles, *file)
 		}
@@ -89,8 +89,8 @@ func testSupportArchiveCommand(testDynakube dynatracev1beta1.DynaKube) features.
 	}
 }
 
-func executeSupportArchiveCommand(ctx context.Context, t *testing.T, environmentConfig *envconf.Config, cmdLineArguments, namespace string) *pod.ExecutionResult { //nolint:revive
-	environmentResources := environmentConfig.Client().Resources()
+func executeSupportArchiveCommand(ctx context.Context, t *testing.T, envConfig *envconf.Config, cmdLineArguments, namespace string) *pod.ExecutionResult { //nolint:revive
+	environmentResources := envConfig.Client().Resources()
 
 	pods := pod.List(t, ctx, environmentResources, namespace)
 	require.NotNil(t, pods.Items)
@@ -101,7 +101,7 @@ func executeSupportArchiveCommand(ctx context.Context, t *testing.T, environment
 
 	require.Len(t, operatorPods, 1)
 
-	executionResult, err := pod.Exec(ctx, environmentConfig.Client().Resources(),
+	executionResult, err := pod.Exec(ctx, envConfig.Client().Resources(),
 		operatorPods[0],
 		operator.DeploymentName,
 		"/usr/local/bin/dynatrace-operator",

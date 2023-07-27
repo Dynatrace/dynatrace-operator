@@ -55,8 +55,8 @@ func installProxySCC(builder *features.FeatureBuilder, t *testing.T) {
 }
 
 func DeleteProxy() features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		return namespace.Delete(proxyNamespaceName)(ctx, t, environmentConfig)
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		return namespace.Delete(proxyNamespaceName)(ctx, t, envConfig)
 	}
 }
 

@@ -59,8 +59,8 @@ func readOnlyCSIVolume(t *testing.T) features.Feature {
 }
 
 func checkInitContainerEnvVar(sampleApp sample.App) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resources := environmentConfig.Client().Resources()
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
 		pods := sampleApp.GetPods(ctx, t, resources)
 
 		for _, podItem := range pods.Items {
@@ -76,8 +76,8 @@ func checkInitContainerEnvVar(sampleApp sample.App) features.Func {
 }
 
 func checkMountedVolumes(sampleApp sample.App) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resources := environmentConfig.Client().Resources()
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
 
 		err := deployment.NewQuery(ctx, resources, client.ObjectKey{
 			Name:      sampleApp.Name(),
