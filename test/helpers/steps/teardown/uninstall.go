@@ -14,5 +14,5 @@ func UninstallManifest(builder *features.FeatureBuilder, deploymentPath string) 
 
 func UninstallDynatrace(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube) {
 	DeleteDynakube(builder, testDynakube)
-	UninstallOperatorFromSource(builder, testDynakube)
+	UninstallOperator(builder, testDynakube)
 }

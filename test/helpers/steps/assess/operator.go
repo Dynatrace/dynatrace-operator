@@ -5,6 +5,7 @@ package assess
 import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/csi"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/webhook"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
@@ -27,6 +28,13 @@ func InstallOperatorFromRelease(builder *features.FeatureBuilder, testDynakube d
 	builder.Assess("create operator namespace", namespace.Create(namespace.NewBuilder(testDynakube.Namespace).Build()))
 	builder.Assess("operator manifests installed", operator.InstallViaHelm(releaseTag, testDynakube.NeedsCSIDriver(), "dynatrace"))
 	verifyOperatorDeployment(builder, testDynakube)
+}
+
+
+func AddClassicCleanUp(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube) {
+	builder.Assess("clean up OneAgent files from nodes", oneagent.CreateUninstallDaemonSet(testDynakube))
+	builder.Assess("wait for daemonset", oneagent.WaitForUninstallOneAgentDaemonset(testDynakube.Namespace))
+	builder.Assess("OneAgent files removed from nodes", oneagent.CleanUpEachNode(testDynakube.Namespace))
 }
 
 func verifyOperatorDeployment(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube) {
