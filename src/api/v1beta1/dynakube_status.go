@@ -62,7 +62,7 @@ type ConnectionInfoStatus struct {
 	// UUID of the tenant, received from the tenant
 	TenantUUID string `json:"tenantUUID,omitempty"`
 
-	// Available tenant endpoints
+	// Available connection endpoints
 	Endpoints string `json:"endpoints,omitempty"`
 
 	// Time of the last connection request
