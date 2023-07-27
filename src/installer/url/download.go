@@ -31,6 +31,7 @@ func (installer Installer) downloadLatestOneAgent(tmpFile afero.File) error {
 		installer.props.Flavor,
 		installer.props.Arch,
 		installer.props.Technologies,
+		installer.props.SkipMetadata,
 		tmpFile,
 	)
 }
@@ -44,6 +45,7 @@ func (installer Installer) downloadOneAgentWithVersion(tmpFile afero.File) error
 		installer.props.Arch,
 		installer.props.TargetVersion,
 		installer.props.Technologies,
+		installer.props.SkipMetadata,
 		tmpFile,
 	)
 
