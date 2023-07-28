@@ -28,17 +28,25 @@ const (
 )
 
 type DynaKubeProxy struct {
+	// Proxy URL. It has preference over ValueFrom.
+	// +nullable
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Proxy value",order=32,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	Value string `json:"value,omitempty"`
 
+	// Secret containing proxy URL.
+	// +nullable
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Proxy secret",order=33,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:Secret"}
 	ValueFrom string `json:"valueFrom,omitempty"`
 }
 
 type DynaKubeValueSource struct {
+	// Custom properties value.
+	// +nullable
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Custom properties value",order=32,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	Value string `json:"value,omitempty"`
 
+	// Custom properties secret.
+	// +nullable
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Custom properties secret",order=33,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:Secret"}
 	ValueFrom string `json:"valueFrom,omitempty"`
 }
@@ -68,62 +76,77 @@ type DynaKube struct {
 type DynaKubeSpec struct {
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
 
-	// Location of the Dynatrace API to connect to, including your specific environment UUID
+	// Dynatrace apiUrl, including the /api path at the end. For SaaS, set YOUR_ENVIRONMENT_ID to your environment ID. For Managed, change the apiUrl address.
+	// For instructions on how to determine the environment ID and how to configure the apiUrl address, see Environment ID (https://www.dynatrace.com/support/help/get-started/monitoring-environment/environment-id).
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="API URL",order=1,xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	APIURL string `json:"apiUrl"`
 
-	// Credentials for the DynaKube to connect back to Dynatrace.
+	// Name of the secret holding the tokens used for connecting to Dynatrace.
+	// +optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Tenant specific secrets",order=2,xDescriptors="urn:alm:descriptor:io.kubernetes:Secret"
 	Tokens string `json:"tokens,omitempty"`
 
-	// Optional: Pull secret for your private registry
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Custom PullSecret",order=8,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:Secret"}
-	CustomPullSecret string `json:"customPullSecret,omitempty"`
-
-	// Disable certificate validation checks for installer download and API communication
+	// Disable certificate check for the connection between Dynatrace Operator and the Dynatrace Cluster.
+	// Set to true if you want to skip certification validation checks.
+	// +optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Skip Certificate Check",order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
 	SkipCertCheck bool `json:"skipCertCheck,omitempty"`
 
-	// Optional: Set custom proxy settings either directly or from a secret with the field 'proxy'
+	// Set custom proxy settings either directly or from a secret with the field proxy.
+	// Note: Applies to Dynatrace Operator, ActiveGate, and OneAgents.
+	// +optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Proxy",order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
 	Proxy *DynaKubeProxy `json:"proxy,omitempty"`
 
-	// Optional: Adds custom RootCAs from a configmap
-	// This property only affects certificates used to communicate with the Dynatrace API.
-	// The property is not applied to the ActiveGate
+	// Adds custom RootCAs from a configmap. Put the certificate under certs within your configmap.
+	// Note: Applies only to Dynatrace Operator and OneAgent, not to ActiveGate.
+	// +optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Trusted CAs",order=6,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:ConfigMap"}
 	TrustedCAs string `json:"trustedCAs,omitempty"`
 
-	// Optional: Sets Network Zone for OneAgent and ActiveGate pods
+	// Sets a network zone for the OneAgent and ActiveGate pods.
+	// +optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Network Zone",order=7,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	NetworkZone string `json:"networkZone,omitempty"`
 
-	// If enabled, Istio on the cluster will be configured automatically to allow access to the Dynatrace environment
+	// Defines a custom pull secret in case you use a private registry when pulling images from the Dynatrace environment.
+	// To define a custom pull secret and learn about the expected behavior, see Configure customPullSecret
+	// (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dto-config-options-k8s#custompullsecret).
+	// +optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Custom PullSecret",order=8,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:Secret"}
+	CustomPullSecret string `json:"customPullSecret,omitempty"`
+
+	// When enabled, and if Istio is installed on the Kubernetes environment, Dynatrace Operator will create the corresponding
+	// VirtualService and ServiceEntry objects to allow access to the Dynatrace Cluster from the OneAgent or ActiveGate.
+	// Disabled by default.
+	// +optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enable Istio automatic management",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
 	EnableIstio bool `json:"enableIstio,omitempty"`
 
-	// Optional: set a namespace selector to limit which namespaces are monitored
-	// By default, all namespaces will be monitored
-	// Has no effect during classicFullStack and hostMonitoring mode
+	// Applicable only for applicationMonitoring or cloudNativeFullStack configuration types. The namespaces where you want Dynatrace Operator to inject.
+	// For more information, see Configure monitoring for namespaces and pods (https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dto-config-options-k8s#annotate).
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Namespace Selector",order=17,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace"
 	NamespaceSelector metav1.LabelSelector `json:"namespaceSelector,omitempty"`
 
-	// General configuration about OneAgent instances
+	// General configuration about OneAgent instances.
+	// You can't enable more than one module (classicFullStack, cloudNativeFullStack, hostMonitoring, or applicationMonitoring).
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	OneAgent OneAgentSpec `json:"oneAgent,omitempty"`
 
-	// General configuration about ActiveGate instances
+	// General configuration about ActiveGate instances.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="ActiveGate",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	ActiveGate ActiveGateSpec `json:"activeGate,omitempty"`
 
-	//  Deprecated: Configuration for Routing
+	// Configuration for Routing
+	// +kubebuilder:deprecatedversion:warning="Deprecated property"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Routing"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	Routing RoutingSpec `json:"routing,omitempty"`
 
-	//  Deprecated: Configuration for Kubernetes Monitoring
+	// Configuration for Kubernetes Monitoring
+	// +kubebuilder:deprecatedversion:warning="Deprecated property"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Kubernetes Monitoring"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
