@@ -214,9 +214,7 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Cont
 
 	latestProcessModuleConfig = latestProcessModuleConfig.
 		AddHostGroup(dk.HostGroup()).
-		AddConnectionInfo(dk.Status.OneAgent.ConnectionInfoStatus, tenantToken).
-		AddTenantUUID(dynakubeMetadata.TenantUUID)
-
+		AddConnectionInfo(dk.Status.OneAgent.ConnectionInfoStatus, tenantToken)
 	latestProcessModuleConfigCache = newProcessModuleConfigCache(latestProcessModuleConfig)
 
 	if dk.CodeModulesImage() != "" {
