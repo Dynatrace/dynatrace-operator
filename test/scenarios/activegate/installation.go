@@ -111,8 +111,8 @@ func assessActiveGateHttpEndpoint(builder *features.FeatureBuilder, testDynakube
 }
 
 func checkIfAgHasContainers(testDynakube *dynatracev1beta1.DynaKube) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resources := environmentConfig.Client().Resources()
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
 
 		var activeGatePod corev1.Pod
 		require.NoError(t, resources.WithNamespace(testDynakube.Namespace).Get(ctx, activegate.GetActiveGatePodName(testDynakube, agComponentName), testDynakube.Namespace, &activeGatePod))
@@ -129,24 +129,24 @@ func checkIfAgHasContainers(testDynakube *dynatracev1beta1.DynaKube) features.Fu
 }
 
 func checkActiveModules(testDynakube *dynatracev1beta1.DynaKube) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		log := activegate.ReadActiveGateLog(ctx, t, environmentConfig, testDynakube, agComponentName)
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		log := activegate.ReadActiveGateLog(ctx, t, envConfig, testDynakube, agComponentName)
 		assertExpectedModulesAreActive(t, log)
 		return ctx
 	}
 }
 
 func checkIfProxyUsed(testDynakube *dynatracev1beta1.DynaKube) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		log := activegate.ReadActiveGateLog(ctx, t, environmentConfig, testDynakube, agComponentName)
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		log := activegate.ReadActiveGateLog(ctx, t, envConfig, testDynakube, agComponentName)
 		assertProxyUsed(t, log, testDynakube.Spec.Proxy.Value)
 		return ctx
 	}
 }
 
 func checkMountPoints(testDynakube *dynatracev1beta1.DynaKube) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resources := environmentConfig.Client().Resources()
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
 
 		var activeGatePod corev1.Pod
 		require.NoError(t, resources.Get(ctx, activegate.GetActiveGatePodName(testDynakube, agComponentName), testDynakube.Namespace, &activeGatePod))
@@ -249,8 +249,8 @@ func assessReadOnlyActiveGate(builder *features.FeatureBuilder, testDynakube *dy
 }
 
 func checkReadOnlySettings(testDynakube *dynatracev1beta1.DynaKube) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resources := environmentConfig.Client().Resources()
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
 
 		var activeGatePod corev1.Pod
 		require.NoError(t, resources.WithNamespace(testDynakube.Namespace).Get(ctx, activegate.GetActiveGatePodName(testDynakube, agComponentName), testDynakube.Namespace, &activeGatePod))

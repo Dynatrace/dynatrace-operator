@@ -62,16 +62,16 @@ func (app SamplePod) GetPods(ctx context.Context, t *testing.T, resource *resour
 	return corev1.PodList{Items: []corev1.Pod{*pod}}
 }
 
-func (app SamplePod) RestartHalf(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
-	return app.doRestart(ctx, t, config, restartHalf)
+func (app SamplePod) RestartHalf(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+	return app.doRestart(ctx, t, envConfig, restartHalf)
 }
 
-func (app SamplePod) Restart(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
-	return app.doRestart(ctx, t, config, restart)
+func (app SamplePod) Restart(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+	return app.doRestart(ctx, t, envConfig, restart)
 }
 
-func (app SamplePod) doRestart(ctx context.Context, t *testing.T, config *envconf.Config, restartFunc restartFunc) context.Context {
-	resource := config.Client().Resources()
+func (app SamplePod) doRestart(ctx context.Context, t *testing.T, envConfig *envconf.Config, restartFunc restartFunc) context.Context {
+	resource := envConfig.Client().Resources()
 	restartFunc(t, ctx, app.GetPods(ctx, t, resource), resource)
 
 	pod := app.Build().(*corev1.Pod)

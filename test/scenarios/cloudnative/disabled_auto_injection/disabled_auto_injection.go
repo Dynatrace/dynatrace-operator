@@ -68,8 +68,8 @@ func assessSampleInitContainersDisabled(builder *features.FeatureBuilder, sample
 }
 
 func checkInitContainersNotInjected(sampleApp sample.App) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resources := environmentConfig.Client().Resources()
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
 
 		pods := sampleApp.GetPods(ctx, t, resources)
 		require.NotEmpty(t, pods.Items)

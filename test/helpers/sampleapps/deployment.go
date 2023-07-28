@@ -87,16 +87,16 @@ func (app SampleDeployment) GetPods(ctx context.Context, t *testing.T, resource 
 	return pod.GetPodsForOwner(ctx, t, resource, replicaset.Name, app.Namespace().Name)
 }
 
-func (app SampleDeployment) RestartHalf(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
-	return app.doRestart(ctx, t, config, restartHalf)
+func (app SampleDeployment) RestartHalf(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+	return app.doRestart(ctx, t, envConfig, restartHalf)
 }
 
-func (app SampleDeployment) Restart(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
-	return app.doRestart(ctx, t, config, restart)
+func (app SampleDeployment) Restart(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+	return app.doRestart(ctx, t, envConfig, restart)
 }
 
-func (app SampleDeployment) doRestart(ctx context.Context, t *testing.T, config *envconf.Config, restartFunc restartFunc) context.Context {
-	resource := config.Client().Resources()
+func (app SampleDeployment) doRestart(ctx context.Context, t *testing.T, envConfig *envconf.Config, restartFunc restartFunc) context.Context {
+	resource := envConfig.Client().Resources()
 	pods := app.GetPods(ctx, t, resource)
 
 	restartFunc(t, ctx, pods, resource)

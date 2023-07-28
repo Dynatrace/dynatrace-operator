@@ -40,23 +40,23 @@ const (
 )
 
 func InstallActiveGateCurlPod(dynakube dynatracev1beta1.DynaKube) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		serviceUrl := getActiveGateServiceUrl(dynakube)
 		curlTarget := fmt.Sprintf("%s/%s", serviceUrl, activeGateEndpoint)
 
 		curlPod := NewCurlPodBuilder(CurlPodNameActivegateHttps, curlNamespace(dynakube), curlTarget).WithProxy(dynakube).Build()
-		require.NoError(t, environmentConfig.Client().Resources().Create(ctx, curlPod))
+		require.NoError(t, envConfig.Client().Resources().Create(ctx, curlPod))
 		return ctx
 	}
 }
 
 func InstallActiveGateHttpCurlPod(dynakube dynatracev1beta1.DynaKube) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		serviceUrl := getActiveGateHttpServiceUrl(dynakube)
 		curlTarget := fmt.Sprintf("%s/%s", serviceUrl, activeGateEndpoint)
 
 		curlPod := NewCurlPodBuilder(CurlPodNameActivegateHttp, curlNamespace(dynakube), curlTarget).WithProxy(dynakube).Build()
-		require.NoError(t, environmentConfig.Client().Resources().Create(ctx, curlPod))
+		require.NoError(t, envConfig.Client().Resources().Create(ctx, curlPod))
 		return ctx
 	}
 }
@@ -66,8 +66,8 @@ func WaitForActiveGateCurlPod(podName string, dynakube dynatracev1beta1.DynaKube
 }
 
 func CheckActiveGateCurlResult(podName string, dynakube dynatracev1beta1.DynaKube) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resources := environmentConfig.Client().Resources()
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
 
 		logStream := getCurlPodLogStream(ctx, t, resources, podName, curlNamespace(dynakube))
 		logs.AssertContains(t, logStream, "RUNNING")
@@ -111,10 +111,10 @@ func getCurlPodLogStream(ctx context.Context, t *testing.T, resources *resources
 }
 
 func InstallCutOffCurlPod(podName, namespaceName, curlTarget string) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		// if curl command can't connect to the host, returns 28 after 131[s] by default
 		curlPod := NewCurlPodBuilder(podName, namespaceName, curlTarget).WithRestartPolicy(corev1.RestartPolicyNever).WithParameters("--connect-timeout", strconv.Itoa(connectionTimeout)).Build()
-		require.NoError(t, environmentConfig.Client().Resources().Create(ctx, curlPod))
+		require.NoError(t, envConfig.Client().Resources().Create(ctx, curlPod))
 		return ctx
 	}
 }

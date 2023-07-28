@@ -3,8 +3,10 @@
 package basic
 
 import (
+	"fmt"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/codemodules"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/istio"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
@@ -58,6 +60,8 @@ func Install(t *testing.T, istioEnabled bool) features.Feature {
 	if istioEnabled {
 		istio.AssessIstio(builder, testDynakube, sampleApp)
 	}
+
+	builder.Assess(fmt.Sprintf("check %s has no conn info", codemodules.RuxitAgentProcFile), codemodules.CheckRuxitAgentProcFileHasNoConnInfo(testDynakube))
 
 	// Register sample, dynakube and operator uninstall
 	builder.Teardown(sampleApp.UninstallNamespace())

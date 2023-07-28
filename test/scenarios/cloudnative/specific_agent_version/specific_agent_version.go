@@ -70,8 +70,8 @@ func getAvailableVersions(secret tenant.Secret, t *testing.T) []string {
 }
 
 func assessVersionChecks(testDynakube dynatracev1beta1.DynaKube) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		daemonset, err := oneagent.Get(ctx, environmentConfig.Client().Resources(), testDynakube)
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		daemonset, err := oneagent.Get(ctx, envConfig.Client().Resources(), testDynakube)
 		require.NoError(t, err)
 		require.Contains(t, daemonset.Spec.Template.Spec.Containers[0].Image, testDynakube.OneAgentVersion())
 		return ctx

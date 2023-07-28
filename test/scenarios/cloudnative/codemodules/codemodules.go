@@ -109,6 +109,7 @@ func CodeModules(t *testing.T, istioEnabled bool) features.Feature {
 	if istioEnabled {
 		istio.AssessIstio(builder, cloudNativeDynakube, sampleApp)
 	}
+
 	builder.Assess("codemodules have been downloaded", imageHasBeenDownloaded(cloudNativeDynakube.Namespace))
 	builder.Assess("checking storage used", measureDiskUsage(appDynakube.Namespace, storageMap))
 	assess.InstallDynakube(builder, &secretConfigs[1], appDynakube)
@@ -138,8 +139,8 @@ func codeModulesAppInjectSpec() *dynatracev1beta1.AppInjectionSpec {
 }
 
 func imageHasBeenDownloaded(namespace string) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resource := environmentConfig.Client().Resources()
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resource := envConfig.Client().Resources()
 		clientset, err := kubernetes.NewForConfig(resource.GetConfig())
 		require.NoError(t, err)
 
@@ -170,13 +171,13 @@ func imageHasBeenDownloaded(namespace string) features.Func {
 }
 
 func measureDiskUsage(namespace string, storageMap map[string]int) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resource := environmentConfig.Client().Resources()
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resource := envConfig.Client().Resources()
 		err := daemonset.NewQuery(ctx, resource, client.ObjectKey{
 			Name:      csi.DaemonSetName,
 			Namespace: namespace,
 		}).ForEachPod(func(podItem corev1.Pod) {
-			diskUsage := getDiskUsage(ctx, t, environmentConfig.Client().Resources(), podItem, provisionerContainerName, dataPath)
+			diskUsage := getDiskUsage(ctx, t, envConfig.Client().Resources(), podItem, provisionerContainerName, dataPath)
 			storageMap[podItem.Name] = diskUsage
 		})
 		require.NoError(t, err)
@@ -185,13 +186,13 @@ func measureDiskUsage(namespace string, storageMap map[string]int) features.Func
 }
 
 func diskUsageDoesNotIncrease(namespace string, storageMap map[string]int) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resource := environmentConfig.Client().Resources()
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resource := envConfig.Client().Resources()
 		err := daemonset.NewQuery(ctx, resource, client.ObjectKey{
 			Name:      csi.DaemonSetName,
 			Namespace: namespace,
 		}).ForEachPod(func(podItem corev1.Pod) {
-			diskUsage := getDiskUsage(ctx, t, environmentConfig.Client().Resources(), podItem, provisionerContainerName, dataPath)
+			diskUsage := getDiskUsage(ctx, t, envConfig.Client().Resources(), podItem, provisionerContainerName, dataPath)
 			assert.InDelta(t, storageMap[podItem.Name], diskUsage, diskUsageKiBDelta)
 		})
 		require.NoError(t, err)
@@ -217,8 +218,8 @@ func getDiskUsage(ctx context.Context, t *testing.T, resource *resources.Resourc
 }
 
 func volumesAreMountedCorrectly(sampleApp sample.App) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resource := environmentConfig.Client().Resources()
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resource := envConfig.Client().Resources()
 		err := deployment.NewQuery(ctx, resource, client.ObjectKey{
 			Name:      sampleApp.Name(),
 			Namespace: sampleApp.Namespace().Name,
@@ -235,7 +236,7 @@ func volumesAreMountedCorrectly(sampleApp sample.App) features.Func {
 			require.NoError(t, err)
 			assert.NotEmpty(t, executionResult.StdOut.String())
 
-			diskUsage := getDiskUsage(ctx, t, environmentConfig.Client().Resources(), podItem, sampleApp.ContainerName(), webhook.DefaultInstallPath)
+			diskUsage := getDiskUsage(ctx, t, envConfig.Client().Resources(), podItem, sampleApp.ContainerName(), webhook.DefaultInstallPath)
 			assert.Greater(t, diskUsage, 0)
 		})
 

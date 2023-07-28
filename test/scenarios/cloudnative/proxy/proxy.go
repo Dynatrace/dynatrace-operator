@@ -80,8 +80,8 @@ func withProxy(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features
 }
 
 func checkOneAgentEnvVars(dynakube dynatracev1beta1.DynaKube) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resources := environmentConfig.Client().Resources()
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
 		err := daemonset.NewQuery(ctx, resources, client.ObjectKey{
 			Name:      dynakube.OneAgentDaemonsetName(),
 			Namespace: dynakube.Namespace,
@@ -98,8 +98,8 @@ func checkOneAgentEnvVars(dynakube dynatracev1beta1.DynaKube) features.Func {
 }
 
 func checkSampleInitContainerEnvVars(sampleApp sample.App) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resources := environmentConfig.Client().Resources()
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
 		pods := sampleApp.GetPods(ctx, t, resources)
 
 		for _, podItem := range pods.Items {

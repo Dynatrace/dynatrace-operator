@@ -163,27 +163,27 @@ func (dynakubeBuilder Builder) Build() dynatracev1beta1.DynaKube {
 }
 
 func Create(dynakube dynatracev1beta1.DynaKube) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		require.NoError(t, dynatracev1beta1.AddToScheme(environmentConfig.Client().Resources().GetScheme()))
-		require.NoError(t, environmentConfig.Client().Resources().Create(ctx, &dynakube))
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		require.NoError(t, dynatracev1beta1.AddToScheme(envConfig.Client().Resources().GetScheme()))
+		require.NoError(t, envConfig.Client().Resources().Create(ctx, &dynakube))
 		return ctx
 	}
 }
 
 func Update(dynakube dynatracev1beta1.DynaKube) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		require.NoError(t, dynatracev1beta1.AddToScheme(environmentConfig.Client().Resources().GetScheme()))
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		require.NoError(t, dynatracev1beta1.AddToScheme(envConfig.Client().Resources().GetScheme()))
 		var dk dynatracev1beta1.DynaKube
-		require.NoError(t, environmentConfig.Client().Resources().Get(ctx, dynakube.Name, dynakube.Namespace, &dk))
+		require.NoError(t, envConfig.Client().Resources().Get(ctx, dynakube.Name, dynakube.Namespace, &dk))
 		dynakube.ResourceVersion = dk.ResourceVersion
-		require.NoError(t, environmentConfig.Client().Resources().Update(ctx, &dynakube))
+		require.NoError(t, envConfig.Client().Resources().Update(ctx, &dynakube))
 		return ctx
 	}
 }
 
 func Delete(dynakube dynatracev1beta1.DynaKube) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resources := environmentConfig.Client().Resources()
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
 
 		err := dynatracev1beta1.AddToScheme(resources.GetScheme())
 		require.NoError(t, err)
@@ -206,8 +206,8 @@ func Delete(dynakube dynatracev1beta1.DynaKube) features.Func {
 }
 
 func WaitForDynakubePhase(dynakube dynatracev1beta1.DynaKube, phase status.DeploymentPhase) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resources := environmentConfig.Client().Resources()
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
 
 		err := wait.For(conditions.New(resources).ResourceMatch(&dynakube, func(object k8s.Object) bool {
 			dynakube, isDynakube := object.(*dynatracev1beta1.DynaKube)

@@ -60,8 +60,8 @@ func publicRegistry(t *testing.T) features.Feature {
 }
 
 func checkDynakubeStatus(dynakube dynatracev1beta1.DynaKube) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resources := environmentConfig.Client().Resources()
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
 		var dk dynatracev1beta1.DynaKube
 
 		err := dynatracev1beta1.AddToScheme(resources.GetScheme())
@@ -90,8 +90,8 @@ func checkDynakubeStatus(dynakube dynatracev1beta1.DynaKube) features.Func {
 }
 
 func checkPublicRegistryUsage(dynakube dynatracev1beta1.DynaKube) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resources := environmentConfig.Client().Resources()
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
 		var dk dynatracev1beta1.DynaKube
 
 		err := dynatracev1beta1.AddToScheme(resources.GetScheme())
@@ -115,8 +115,8 @@ func checkPublicRegistryUsage(dynakube dynatracev1beta1.DynaKube) features.Func 
 }
 
 func checkCSIProvisionerEvent(dynakube dynatracev1beta1.DynaKube) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resources := environmentConfig.Client().Resources()
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
 		clientset, err := kubernetes.NewForConfig(resources.GetConfig())
 		require.NoError(t, err)
 
