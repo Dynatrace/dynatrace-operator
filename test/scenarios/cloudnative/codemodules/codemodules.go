@@ -109,6 +109,7 @@ func CodeModules(t *testing.T, istioEnabled bool) features.Feature {
 	if istioEnabled {
 		istio.AssessIstio(builder, cloudNativeDynakube, sampleApp)
 	}
+
 	builder.Assess("codemodules have been downloaded", imageHasBeenDownloaded(cloudNativeDynakube.Namespace))
 	builder.Assess("checking storage used", measureDiskUsage(appDynakube.Namespace, storageMap))
 	assess.InstallDynakube(builder, &secretConfigs[1], appDynakube)

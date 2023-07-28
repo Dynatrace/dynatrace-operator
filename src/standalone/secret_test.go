@@ -23,33 +23,36 @@ const (
 	testNetworkZone = "zone"
 	testTrustedCA   = "secret"
 
+	testNodeName  = "node1"
+	testTlsCert   = "tls"
+	testHostGroup = "group"
+	testClusterID = "id"
+
 	testTenantUUID = "test"
-	testNodeName   = "node1"
-	testTlsCert    = "tls"
-	testHostGroup  = "group"
-	testClusterID  = "id"
 
 	testInitialConnectRetry = 30
 )
 
-var testSecretConfig = SecretConfig{
-	ApiUrl:        testApiUrl,
-	ApiToken:      testApiToken,
-	PaasToken:     testPaasToken,
-	Proxy:         testProxy,
-	NoProxy:       testNoProxy,
-	NetworkZone:   testNetworkZone,
-	TrustedCAs:    testTrustedCA,
-	SkipCertCheck: true,
-	TenantUUID:    testTenantUUID,
-	HasHost:       true,
-	MonitoringNodes: map[string]string{
-		testNodeName: testTenantUUID,
-	},
-	TlsCert:             testTlsCert,
-	HostGroup:           testHostGroup,
-	ClusterID:           testClusterID,
-	InitialConnectRetry: testInitialConnectRetry,
+func getTestSecretConfig() *SecretConfig {
+	return &SecretConfig{
+		ApiUrl:        testApiUrl,
+		ApiToken:      testApiToken,
+		PaasToken:     testPaasToken,
+		Proxy:         testProxy,
+		NoProxy:       testNoProxy,
+		TenantUUID:    testTenantUUID,
+		NetworkZone:   testNetworkZone,
+		TrustedCAs:    testTrustedCA,
+		SkipCertCheck: true,
+		HasHost:       true,
+		MonitoringNodes: map[string]string{
+			testNodeName: testTenantUUID,
+		},
+		TlsCert:             testTlsCert,
+		HostGroup:           testHostGroup,
+		ClusterID:           testClusterID,
+		InitialConnectRetry: testInitialConnectRetry,
+	}
 }
 
 func TestNewSecretConfigViaFs(t *testing.T) {
@@ -63,11 +66,11 @@ func TestNewSecretConfigViaFs(t *testing.T) {
 	assert.Equal(t, testApiUrl, config.ApiUrl)
 	assert.Equal(t, testApiToken, config.ApiToken)
 	assert.Equal(t, testPaasToken, config.PaasToken)
+	assert.Equal(t, testTenantUUID, config.TenantUUID)
 	assert.Equal(t, testProxy, config.Proxy)
 	assert.Equal(t, testNetworkZone, config.NetworkZone)
 	assert.Equal(t, testTrustedCA, config.TrustedCAs)
 	assert.True(t, config.SkipCertCheck)
-	assert.Equal(t, testTenantUUID, config.TenantUUID)
 	assert.True(t, config.HasHost)
 	assert.Equal(t, testTlsCert, config.TlsCert)
 	assert.Equal(t, testHostGroup, config.HostGroup)
@@ -84,7 +87,7 @@ func prepTestFs(t *testing.T) afero.Fs {
 	require.NoError(t, err)
 	require.NotNil(t, file)
 
-	rawJson, err := json.Marshal(testSecretConfig)
+	rawJson, err := json.Marshal(getTestSecretConfig())
 	require.NoError(t, err)
 
 	_, err = file.Write(rawJson)
