@@ -16,8 +16,8 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
 
-func ReadLog(ctx context.Context, t *testing.T, environmentConfig *envconf.Config, namespace, podName, containerName string) string { //nolint:revive
-	resources := environmentConfig.Client().Resources()
+func ReadLog(ctx context.Context, t *testing.T, envConfig *envconf.Config, namespace, podName, containerName string) string { //nolint:revive
+	resources := envConfig.Client().Resources()
 
 	var pod corev1.Pod
 	require.NoError(t, resources.WithNamespace(namespace).Get(ctx, podName, namespace, &pod))

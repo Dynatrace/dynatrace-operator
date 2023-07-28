@@ -28,8 +28,8 @@ type App interface {
 
 	Install() features.Func
 	Uninstall() features.Func
-	Restart(ctx context.Context, t *testing.T, config *envconf.Config) context.Context
-	RestartHalf(ctx context.Context, t *testing.T, config *envconf.Config) context.Context
+	Restart(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context
+	RestartHalf(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context
 	InstallNamespace() features.Func
 	UninstallNamespace() features.Func
 

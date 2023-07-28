@@ -4,6 +4,7 @@ package applicationmonitoring
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -12,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook/mutation/pod_mutator/oneagent_mutation"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/codemodules"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
@@ -28,8 +30,6 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
-
-const ruxitAgentProcFile = "ruxitagentproc.conf"
 
 var readOnlyInjection = map[string]string{dynatracev1beta1.AnnotationFeatureReadOnlyCsiVolume: "true"}
 
@@ -50,6 +50,7 @@ func readOnlyCSIVolume(t *testing.T) features.Feature {
 	builder.Assess("install sample deployment and wait till ready", sampleDeployment.Install())
 	builder.Assess("check init container env var", checkInitContainerEnvVar(sampleDeployment))
 	builder.Assess("check mounted volumes", checkMountedVolumes(sampleDeployment))
+	builder.Assess(fmt.Sprintf("check %s has no conn info", codemodules.RuxitAgentProcFile), codemodules.CheckRuxitAgentProcFileHasNoConnInfo(testDynakube))
 
 	builder.WithTeardown("removing sample namespace", sampleDeployment.UninstallNamespace())
 
@@ -59,8 +60,8 @@ func readOnlyCSIVolume(t *testing.T) features.Feature {
 }
 
 func checkInitContainerEnvVar(sampleApp sample.App) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resources := environmentConfig.Client().Resources()
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
 		pods := sampleApp.GetPods(ctx, t, resources)
 
 		for _, podItem := range pods.Items {
@@ -76,8 +77,8 @@ func checkInitContainerEnvVar(sampleApp sample.App) features.Func {
 }
 
 func checkMountedVolumes(sampleApp sample.App) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resources := environmentConfig.Client().Resources()
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
 
 		err := deployment.NewQuery(ctx, resources, client.ObjectKey{
 			Name:      sampleApp.Name(),
@@ -87,7 +88,7 @@ func checkMountedVolumes(sampleApp sample.App) features.Func {
 			result, err := pod.Exec(ctx, resources, podItem, sampleApp.Namespace().Name, listCommand...)
 
 			require.NoError(t, err)
-			assert.Contains(t, result.StdOut.String(), ruxitAgentProcFile)
+			assert.Contains(t, result.StdOut.String(), codemodules.RuxitAgentProcFile)
 		})
 		require.NoError(t, err)
 		return ctx

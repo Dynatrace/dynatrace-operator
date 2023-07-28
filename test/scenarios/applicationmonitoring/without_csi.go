@@ -87,8 +87,8 @@ func withoutCSIDriver(t *testing.T) features.Feature {
 }
 
 func checkInjection(deployment sample.App) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resource := environmentConfig.Client().Resources()
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resource := envConfig.Client().Resources()
 		samplePods := deployment.GetPods(ctx, t, resource)
 
 		require.NotNil(t, samplePods)
@@ -102,8 +102,8 @@ func checkInjection(deployment sample.App) features.Func {
 }
 
 func checkAlreadyInjected(deployment sample.App) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resource := environmentConfig.Client().Resources()
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resource := envConfig.Client().Resources()
 		samplePods := deployment.GetPods(ctx, t, resource)
 
 		require.NotNil(t, samplePods)
