@@ -47,14 +47,14 @@ func (namespaceBuilder Builder) Build() corev1.Namespace {
 }
 
 func Delete(namespaceName string) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		namespace := corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: namespaceName,
 			},
 		}
 
-		err := environmentConfig.Client().Resources().Delete(ctx, &namespace, func(options *metav1.DeleteOptions) {
+		err := envConfig.Client().Resources().Delete(ctx, &namespace, func(options *metav1.DeleteOptions) {
 			options.GracePeriodSeconds = address.Of[int64](0)
 		})
 
@@ -66,7 +66,7 @@ func Delete(namespaceName string) features.Func {
 			return ctx
 		}
 
-		resources := environmentConfig.Client().Resources()
+		resources := envConfig.Client().Resources()
 		err = wait.For(conditions.New(resources).ResourceDeleted(&namespace))
 		require.NoError(t, err)
 
@@ -75,8 +75,8 @@ func Delete(namespaceName string) features.Func {
 }
 
 func Create(namespace corev1.Namespace) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		err := environmentConfig.Client().Resources().Create(ctx, &namespace)
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		err := envConfig.Client().Resources().Create(ctx, &namespace)
 		if err != nil {
 			if k8serrors.IsAlreadyExists(err) {
 				err = nil
@@ -84,7 +84,7 @@ func Create(namespace corev1.Namespace) features.Func {
 			require.NoError(t, err)
 		}
 
-		ctx, _ = istio.AddIstioNetworkAttachment(namespace)(ctx, environmentConfig, t)
+		ctx, _ = istio.AddIstioNetworkAttachment(namespace)(ctx, envConfig, t)
 		return ctx
 	}
 }

@@ -30,8 +30,8 @@ func GetActiveGatePodName(testDynakube *dynatracev1beta1.DynaKube, component str
 	return fmt.Sprintf("%s-0", GetActiveGateStateFulSetName(testDynakube, component))
 }
 
-func ReadActiveGateLog(ctx context.Context, t *testing.T, environmentConfig *envconf.Config, testDynakube *dynatracev1beta1.DynaKube, component string) string {
-	return logs.ReadLog(ctx, t, environmentConfig, testDynakube.Namespace, GetActiveGatePodName(testDynakube, component), consts.ActiveGateContainerName)
+func ReadActiveGateLog(ctx context.Context, t *testing.T, envConfig *envconf.Config, testDynakube *dynatracev1beta1.DynaKube, component string) string {
+	return logs.ReadLog(ctx, t, envConfig, testDynakube.Namespace, GetActiveGatePodName(testDynakube, component), consts.ActiveGateContainerName)
 }
 
 func Get(ctx context.Context, resource *resources.Resources, dynakube dynatracev1beta1.DynaKube) (appsv1.StatefulSet, error) {

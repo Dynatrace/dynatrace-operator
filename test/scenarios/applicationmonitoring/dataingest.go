@@ -78,11 +78,11 @@ func dataIngest(t *testing.T) features.Feature {
 }
 
 func podHasOnlyDataIngestInitContainer(samplePod sample.App) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		testPod := samplePod.Get(ctx, t, environmentConfig.Client().Resources()).(*corev1.Pod)
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		testPod := samplePod.Get(ctx, t, envConfig.Client().Resources()).(*corev1.Pod)
 
 		assessOnlyDataIngestIsInjected(t)(*testPod)
-		assessPodHasDataIngestFile(ctx, t, environmentConfig.Client().Resources(), *testPod)
+		assessPodHasDataIngestFile(ctx, t, envConfig.Client().Resources(), *testPod)
 
 		return ctx
 	}
@@ -96,8 +96,8 @@ func assessPodHasDataIngestFile(ctx context.Context, t *testing.T, resource *res
 }
 
 func deploymentPodsHaveOnlyDataIngestInitContainer(sampleApp sample.App) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		query := deployment.NewQuery(ctx, environmentConfig.Client().Resources(), client.ObjectKey{
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		query := deployment.NewQuery(ctx, envConfig.Client().Resources(), client.ObjectKey{
 			Name:      sampleApp.Name(),
 			Namespace: sampleApp.Namespace().Name,
 		})
@@ -105,7 +105,7 @@ func deploymentPodsHaveOnlyDataIngestInitContainer(sampleApp sample.App) feature
 
 		require.NoError(t, err)
 
-		err = query.ForEachPod(assessDeploymentHasDataIngestFile(ctx, t, environmentConfig.Client().Resources(), sampleApp.Name()))
+		err = query.ForEachPod(assessDeploymentHasDataIngestFile(ctx, t, envConfig.Client().Resources(), sampleApp.Name()))
 
 		require.NoError(t, err)
 
