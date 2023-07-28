@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.12.0
+    controller-gen.kubebuilder.io/version: v0.12.1
   name: edgeconnects.dynatrace.com
 spec:
   group: dynatrace.com
@@ -49,8 +49,7 @@ spec:
               annotations:
                 additionalProperties:
                   type: string
-                description: 'Optional: adds additional annotations for the EdgeConnect
-                  pods'
+                description: Adds additional annotations to the EdgeConnect pods
                 type: object
               apiServer:
                 description: Location of the Dynatrace API to connect to, including
@@ -58,15 +57,15 @@ spec:
                 type: string
               autoUpdate:
                 default: true
-                description: 'Optional: enables automatic restarts of EdgeConnect
-                  pods in case a new version is available (the default value is: true)'
+                description: 'Enables automatic restarts of EdgeConnect pods in case
+                  a new version is available (the default value is: true)'
                 type: boolean
               customPullSecret:
-                description: 'Optional: pull secret for your private registry'
+                description: Pull secret for your private registry
                 type: string
               env:
-                description: 'Optional: adds additional environment variables for
-                  the EdgeConnect pods'
+                description: Adds additional environment variables to the EdgeConnect
+                  pods
                 items:
                   description: EnvVar represents an environment variable present in
                     a Container.
@@ -175,42 +174,41 @@ spec:
                   type: object
                 type: array
               hostRestrictions:
-                description: 'Optional: restrict outgoing HTTP requests to your internal
-                  resources to specified hosts'
+                description: Restrict outgoing HTTP requests to your internal resources
+                  to specified hosts
+                example: internal.example.org,*.dev.example.org
                 type: string
               imageRef:
-                description: 'Optional: image reference'
+                description: Overrides image
                 properties:
                   repository:
-                    description: 'Optional: if specified, indicates the EdgeConnect
-                      repository to use'
+                    description: Custom EdgeConnect image repository
+                    example: docker.io/edgeconnect
                     type: string
                   tag:
-                    description: 'Optional: indicates version of the EdgeConnect image
-                      to use'
+                    description: Indicates version of the EdgeConnect image to use
                     type: string
                 type: object
               labels:
                 additionalProperties:
                   type: string
-                description: 'Optional: adds additional labels for the EdgeConnect
-                  pods'
+                description: Adds additional labels to the EdgeConnect pods
                 type: object
               nodeSelector:
                 additionalProperties:
                   type: string
-                description: 'Optional: node selector to control the selection of
-                  nodes for the EdgeConnect pods'
+                description: Node selector to control the selection of nodes for the
+                  EdgeConnect pods
                 type: object
               oauth:
                 description: EdgeConnect uses the OAuth client to authenticate itself
                   with the Dynatrace platform.
                 properties:
                   clientSecret:
-                    description: The secret from your OAuth client generation
+                    description: Secret from your OAuth client generation
                     type: string
                   endpoint:
-                    description: The token endpoint URL
+                    description: Token endpoint URL of Dynatrace SSO
                     type: string
                   resource:
                     description: URN identifying your account. You get the URN when
@@ -228,8 +226,7 @@ spec:
                 format: int32
                 type: integer
               resources:
-                description: 'Optional: define resources requests and limits for single
-                  pods'
+                description: Defines resources requests and limits for single pods
                 properties:
                   claims:
                     description: "Claims lists the names of resources, defined in
@@ -276,7 +273,7 @@ spec:
                     type: object
                 type: object
               tolerations:
-                description: 'Optional: set tolerations for the EdgeConnect pods'
+                description: Sets tolerations for the EdgeConnect pods
                 items:
                   description: The pod this Toleration is attached to tolerates any
                     taint that matches the triple <key,value,effect> using the matching
@@ -316,8 +313,8 @@ spec:
                   type: object
                 type: array
               topologySpreadConstraints:
-                description: 'Optional: set topology spread constraints for the EdgeConnect
-                  pods'
+                description: Sets topology spread constraints for the EdgeConnect
+                  pods
                 items:
                   description: TopologySpreadConstraint specifies how to spread matching
                     pods among the given topology.
@@ -566,11 +563,11 @@ spec:
                   ...)
                 type: string
               updatedTimestamp:
-                description: Indicates when the instance was last updated
+                description: Indicates when the resource was last updated
                 format: date-time
                 type: string
               version:
-                description: State of the current image
+                description: Version used for the Edgeconnect image
                 properties:
                   imageID:
                     description: Image ID

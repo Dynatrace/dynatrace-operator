@@ -11,7 +11,7 @@ import (
 )
 
 // DynaKubeSpec defines the desired state of DynaKube
-// +-  k8s:openapi-gen=true
+// +k8s:openapi-gen=true
 type DynaKubeSpec struct {
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
 
