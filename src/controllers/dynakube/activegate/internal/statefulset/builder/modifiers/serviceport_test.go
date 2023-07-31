@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func setServicePortUsage(dynakube *dynatracev1beta1.DynaKube, isUsed bool) {
@@ -58,7 +59,122 @@ func TestServicePortModify(t *testing.T) {
 	})
 }
 
-func TestBuildServiceNameForDNSEntryPoint(t *testing.T) {
+func TestBuildDNSEntryPoint(t *testing.T) {
+	t.Run("DNSEntryPoint for ActiveGate routing capability", func(t *testing.T) {
+		dynakubeActiveGateCapability := dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "dynakube",
+				Namespace: "dynatrace",
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				ActiveGate: dynatracev1beta1.ActiveGateSpec{
+					Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+						dynatracev1beta1.RoutingCapability.DisplayName,
+					},
+				},
+			},
+		}
+		cap := capability.NewMultiCapability(&dynakubeActiveGateCapability)
+		portModifier := NewServicePortModifier(dynakubeActiveGateCapability, cap)
+		dnsEntryPoint := portModifier.buildDNSEntryPoint()
+		assert.Equal(t, "https://$(DYNAKUBE_ACTIVEGATE_SERVICE_HOST):$(DYNAKUBE_ACTIVEGATE_SERVICE_PORT)/communication,https://dynakube-activegate.dynatrace:$(DYNAKUBE_ACTIVEGATE_SERVICE_PORT)/communication", dnsEntryPoint)
+	})
+
+	t.Run("DNSEntryPoint for ActiveGate k8s monitoring capability", func(t *testing.T) {
+		dynakubeActiveGateCapability := dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "dynakube",
+				Namespace: "dynatrace",
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				ActiveGate: dynatracev1beta1.ActiveGateSpec{
+					Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+						dynatracev1beta1.KubeMonCapability.DisplayName,
+					},
+				},
+			},
+		}
+		cap := capability.NewMultiCapability(&dynakubeActiveGateCapability)
+		portModifier := NewServicePortModifier(dynakubeActiveGateCapability, cap)
+		dnsEntryPoint := portModifier.buildDNSEntryPoint()
+		assert.Equal(t, "https://$(DYNAKUBE_ACTIVEGATE_SERVICE_HOST):$(DYNAKUBE_ACTIVEGATE_SERVICE_PORT)/communication", dnsEntryPoint)
+	})
+
+	t.Run("DNSEntryPoint for ActiveGate routing+kubemon capabilities", func(t *testing.T) {
+		dynakubeActiveGateCapability := dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "dynakube",
+				Namespace: "dynatrace",
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				ActiveGate: dynatracev1beta1.ActiveGateSpec{
+					Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+						dynatracev1beta1.KubeMonCapability.DisplayName,
+						dynatracev1beta1.RoutingCapability.DisplayName,
+					},
+				},
+			},
+		}
+		cap := capability.NewMultiCapability(&dynakubeActiveGateCapability)
+		portModifier := NewServicePortModifier(dynakubeActiveGateCapability, cap)
+		dnsEntryPoint := portModifier.buildDNSEntryPoint()
+		assert.Equal(t, "https://$(DYNAKUBE_ACTIVEGATE_SERVICE_HOST):$(DYNAKUBE_ACTIVEGATE_SERVICE_PORT)/communication,https://dynakube-activegate.dynatrace:$(DYNAKUBE_ACTIVEGATE_SERVICE_PORT)/communication", dnsEntryPoint)
+	})
+
+	t.Run("DNSEntryPoint for deprecated routing ActiveGate", func(t *testing.T) {
+		dynakubeRoutingActiveGate := dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "dynakube",
+				Namespace: "dynatrace",
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				Routing: dynatracev1beta1.RoutingSpec{
+					Enabled: true,
+				},
+			},
+		}
+		cap := capability.NewRoutingCapability(&dynakubeRoutingActiveGate)
+		portModifier := NewServicePortModifier(dynakubeRoutingActiveGate, cap)
+		dnsEntryPoint := portModifier.buildDNSEntryPoint()
+		assert.Equal(t, "https://$(DYNAKUBE_ROUTING_SERVICE_HOST):$(DYNAKUBE_ROUTING_SERVICE_PORT)/communication,https://dynakube-routing.dynatrace:$(DYNAKUBE_ROUTING_SERVICE_PORT)/communication", dnsEntryPoint)
+	})
+
+	t.Run("DNSEntryPoint for deprecated kubernetes monitoring ActiveGate", func(t *testing.T) {
+		dynakubeKubeMonActiveGate := dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "dynakube",
+				Namespace: "dynatrace",
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				KubernetesMonitoring: dynatracev1beta1.KubernetesMonitoringSpec{
+					Enabled: true,
+				},
+			},
+		}
+		cap := capability.NewKubeMonCapability(&dynakubeKubeMonActiveGate)
+		portModifier := NewServicePortModifier(dynakubeKubeMonActiveGate, cap)
+		dnsEntryPoint := portModifier.buildDNSEntryPoint()
+		assert.Equal(t, "https://$(DYNAKUBE_KUBEMON_SERVICE_HOST):$(DYNAKUBE_KUBEMON_SERVICE_PORT)/communication", dnsEntryPoint)
+	})
+
+	t.Run("DNSEntryPoint for Synthetic capability", func(t *testing.T) {
+		dynakubeSyntheticCapability := dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "dynakube",
+				Namespace: "dynatrace",
+				Annotations: map[string]string{
+					dynatracev1beta1.AnnotationFeatureSyntheticLocationEntityId: "test",
+				},
+			},
+		}
+		cap := capability.NewSyntheticCapability(&dynakubeSyntheticCapability)
+		portModifier := NewServicePortModifier(dynakubeSyntheticCapability, cap)
+		dnsEntryPoint := portModifier.buildDNSEntryPoint()
+		assert.Equal(t, "https://$(DYNAKUBE_SYNTHETIC_SERVICE_HOST):$(DYNAKUBE_SYNTHETIC_SERVICE_PORT)/communication", dnsEntryPoint)
+	})
+}
+
+func TestBuildServiceHostNameForDNSEntryPoint(t *testing.T) {
 	actual := buildServiceHostName("test-name", "test-component-feature")
 	assert.NotEmpty(t, actual)
 
@@ -69,5 +185,20 @@ func TestBuildServiceNameForDNSEntryPoint(t *testing.T) {
 	testStringFeature := "SHOULD--_--PaRsEcORrEcTlY"
 	expected = "$(THIS___TEST_STRING_SHOULD_____PARSECORRECTLY_SERVICE_HOST):$(THIS___TEST_STRING_SHOULD_____PARSECORRECTLY_SERVICE_PORT)"
 	actual = buildServiceHostName(testStringName, testStringFeature)
+	assert.Equal(t, expected, actual)
+}
+
+func TestBuildServiceDomainNameForDNSEntryPoint(t *testing.T) {
+	actual := buildServiceDomainName("test-name", "test-namespace", "test-component-feature")
+	assert.NotEmpty(t, actual)
+
+	expected := "test-name-test-component-feature.test-namespace:$(TEST_NAME_TEST_COMPONENT_FEATURE_SERVICE_PORT)"
+	assert.Equal(t, expected, actual)
+
+	testStringName := "this---dynakube_string"
+	testNamespace := "this_is---namespace_string"
+	testStringFeature := "SHOULD--_--PaRsEcORrEcTlY"
+	expected = "this---dynakube_string-SHOULD--_--PaRsEcORrEcTlY.this_is---namespace_string:$(THIS___DYNAKUBE_STRING_SHOULD_____PARSECORRECTLY_SERVICE_PORT)"
+	actual = buildServiceDomainName(testStringName, testNamespace, testStringFeature)
 	assert.Equal(t, expected, actual)
 }
