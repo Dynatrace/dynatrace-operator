@@ -82,7 +82,7 @@ func withoutCSIDriver(t *testing.T) features.Feature {
 	builder.Assess("check injection of pods with random user", checkInjection(randomUserSample))
 
 	builder.Teardown(sampleApp.UninstallNamespace())
-	teardown.UninstallOperatorFromSource(builder, appOnlyDynakube)
+	teardown.UninstallOperator(builder, appOnlyDynakube)
 	return builder.Feature()
 }
 

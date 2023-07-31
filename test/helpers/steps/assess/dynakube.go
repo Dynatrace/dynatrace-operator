@@ -38,6 +38,13 @@ func UpdateDynakube(builder *features.FeatureBuilder, testDynakube dynatracev1be
 	builder.Assess("dynakube updated", dynakube.Update(testDynakube))
 }
 
+func DeleteDynakube(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube) {
+	builder.Assess("dynakube deleted", dynakube.Delete(testDynakube))
+	if testDynakube.NeedsOneAgent() {
+		builder.Assess("oneagent pods stopped", oneagent.WaitForDaemonSetPodsDeletion(testDynakube))
+	}
+}
+
 func verifyDynakubeStartup(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube) {
 	if testDynakube.NeedsOneAgent() {
 		builder.Assess("oneagent started", oneagent.WaitForDaemonset(testDynakube))
