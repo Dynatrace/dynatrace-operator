@@ -80,7 +80,7 @@ func Install(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features.F
 
 	// Register operator + dynakube uninstall
 	teardown.DeleteDynakube(builder, testDynakube)
-	teardown.UninstallOperatorFromSource(builder, testDynakube)
+	teardown.UninstallOperator(builder, testDynakube)
 
 	return builder.Feature()
 }
