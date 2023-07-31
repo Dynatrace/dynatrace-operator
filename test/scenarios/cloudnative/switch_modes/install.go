@@ -55,7 +55,10 @@ func Install(t *testing.T, name string) features.Feature {
 	// tear down
 	featureBuilder.Teardown(sampleAppCloudNative.Uninstall())
 	featureBuilder.Teardown(sampleAppClassicFullStack.Uninstall())
-	teardown.UninstallDynatrace(featureBuilder, dynakubeCloudNative)
+	teardown.DeleteDynakube(featureBuilder, dynakubeCloudNative)
+	teardown.AddCsiCleanUp(featureBuilder, dynakubeCloudNative)
+	teardown.AddClassicCleanUp(featureBuilder, dynakubeClassicFullStack)
+	teardown.UninstallOperatorFromSource(featureBuilder, dynakubeCloudNative)
 
 	return featureBuilder.Feature()
 }
