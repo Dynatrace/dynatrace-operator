@@ -144,10 +144,9 @@ func (runner *Runner) getProcessModuleConfig() (*dtclient.ProcessModuleConfig, e
 	}
 
 	if runner.config.Proxy != "" {
-		processModuleConfig.AddProxy(runner.config.Proxy)
+		processModuleConfig = processModuleConfig.AddProxy(runner.config.Proxy)
 	}
-
-	return processModuleConfig.AddTenantUUID(runner.config.TenantUUID), nil
+	return processModuleConfig, nil
 }
 
 func (runner *Runner) configureInstallation() error {

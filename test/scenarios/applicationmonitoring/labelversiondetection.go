@@ -144,7 +144,7 @@ func labelVersionDetection(t *testing.T) features.Feature {
 	checkBuildLabels(builder, sampleApps)
 	teardownSampleApplications(builder, sampleApps)
 	// Register operator uninstall
-	teardown.UninstallOperatorFromSource(builder, labelVersionDynakube)
+	teardown.UninstallOperator(builder, labelVersionDynakube)
 
 	return builder.Feature()
 }
@@ -168,8 +168,8 @@ func checkBuildLabels(builder *features.FeatureBuilder, sampleApps []sample.App)
 }
 
 func assertBuildLabels(sampleApp sample.App, expectedBuildLabels map[string]buildLabel) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resources := environmentConfig.Client().Resources()
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
 		pods := sampleApp.GetPods(ctx, t, resources)
 
 		for _, podItem := range pods.Items {
@@ -183,7 +183,7 @@ func assertBuildLabels(sampleApp sample.App, expectedBuildLabels map[string]buil
 
 			assertReferences(t, &podItem, sampleApp, expectedBuildLabels)
 
-			assertValues(ctx, t, environmentConfig.Client().Resources(), podItem, sampleApp, expectedBuildLabels)
+			assertValues(ctx, t, envConfig.Client().Resources(), podItem, sampleApp, expectedBuildLabels)
 		}
 
 		return ctx

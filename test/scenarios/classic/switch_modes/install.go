@@ -8,7 +8,6 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
@@ -31,12 +30,12 @@ func Install(t *testing.T, name string) features.Feature {
 		WithDefaultObjectMeta().
 		ApiUrl(secretConfig.ApiUrl).
 		ClassicFullstack(&dynatracev1beta1.HostInjectSpec{})
-	dynakubeClassicFullstack := dynakubeBuilder.Build()
+	dynakubeClassicFullStack := dynakubeBuilder.Build()
 
 	// install operator and dynakube
-	assess.InstallDynatrace(featureBuilder, &secretConfig, dynakubeClassicFullstack)
+	assess.InstallDynatrace(featureBuilder, &secretConfig, dynakubeClassicFullStack)
 
-	sampleAppClassic := sampleapps.NewSampleDeployment(t, dynakubeClassicFullstack)
+	sampleAppClassic := sampleapps.NewSampleDeployment(t, dynakubeClassicFullStack)
 	sampleAppClassic.WithName(sampleAppsClassicName)
 
 	featureBuilder.Assess("install sample app", sampleAppClassic.Install())
@@ -45,12 +44,10 @@ func Install(t *testing.T, name string) features.Feature {
 	dynakubeBuilder = dynakubeBuilder.ResetOneAgent().CloudNative(cloudnative.DefaultCloudNativeSpec())
 	dynakubeCloudNative := dynakubeBuilder.Build()
 
+	assess.DeleteDynakube(featureBuilder, dynakubeClassicFullStack)
+	assess.AddClassicCleanUp(featureBuilder, dynakubeClassicFullStack)
 	assess.InstallOperatorFromSource(featureBuilder, dynakubeCloudNative)
-	assess.UpdateDynakube(featureBuilder, dynakubeCloudNative)
-
-	// wait for oneagent daemonset to be ready
-	featureBuilder.Assess("wait for dynakube to be reconciled", dynakube.WaitForDynakubePhase(dynakubeCloudNative, dynatracev1beta1.Deploying))
-	featureBuilder.Assess("wait for daemonset to be ready", oneagent.WaitForDaemonset(dynakubeCloudNative))
+	assess.InstallDynakube(featureBuilder, &secretConfig, dynakubeCloudNative)
 
 	// apply sample apps
 	sampleAppCloudNative := sampleapps.NewSampleDeployment(t, dynakubeCloudNative)
@@ -64,7 +61,8 @@ func Install(t *testing.T, name string) features.Feature {
 	// teardown
 	featureBuilder.Teardown(sampleAppCloudNative.Uninstall())
 	featureBuilder.Teardown(sampleAppClassic.Uninstall())
-	teardown.UninstallDynatrace(featureBuilder, dynakubeCloudNative)
+	teardown.DeleteDynakube(featureBuilder, dynakubeCloudNative)
+	teardown.UninstallOperator(featureBuilder, dynakubeCloudNative)
 
 	return featureBuilder.Feature()
 }

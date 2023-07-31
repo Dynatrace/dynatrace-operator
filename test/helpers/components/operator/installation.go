@@ -21,7 +21,7 @@ const (
 )
 
 func InstallViaMake(withCSI bool) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		rootDir := project.RootDir()
 		execMakeCommand(t, rootDir, "install", fmt.Sprintf("ENABLE_CSI=%t", withCSI))
 		return ctx
@@ -29,14 +29,14 @@ func InstallViaMake(withCSI bool) features.Func {
 }
 
 func InstallViaHelm(releaseTag string, withCsi bool, namespace string) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		installViaHelm(t, releaseTag, withCsi, namespace)
 		return ctx
 	}
 }
 
 func UninstallViaMake(withCSI bool) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		rootDir := project.RootDir()
 		execMakeCommand(t, rootDir, "undeploy/helm", fmt.Sprintf("ENABLE_CSI=%t", withCSI))
 		return ctx
