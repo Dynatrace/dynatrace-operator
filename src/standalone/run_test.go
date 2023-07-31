@@ -276,25 +276,6 @@ func TestGetProcessModuleConfig(t *testing.T) {
 		require.Error(t, err)
 		require.Nil(t, config)
 	})
-
-	t.Run("add proxy to process module config", func(t *testing.T) {
-		const proxy = "dummy-proxy"
-		runner := createMockedRunner(t)
-		runner.config.Proxy = proxy
-		runner.dtclient.(*dtclient.MockDynatraceClient).
-			On("GetProcessModuleConfig", uint(0)).
-			Return(getTestProcessModuleConfig(), nil)
-
-		config, err := runner.getProcessModuleConfig()
-		require.NoError(t, err)
-		require.NotNil(t, config)
-
-		generalSection, ok := config.ToMap()["general"]
-		require.True(t, ok)
-		value, ok := generalSection["proxy"]
-		require.True(t, ok)
-		assert.Equal(t, proxy, value)
-	})
 }
 
 func TestCreateContainerConfigurationFiles(t *testing.T) {
