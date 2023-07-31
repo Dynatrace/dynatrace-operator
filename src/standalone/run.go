@@ -142,7 +142,8 @@ func (runner *Runner) getProcessModuleConfig() (*dtclient.ProcessModuleConfig, e
 	if err != nil {
 		return nil, err
 	}
-	return processModuleConfig.AddTenantUUID(runner.config.TenantUUID), nil
+
+	return processModuleConfig, nil
 }
 
 func (runner *Runner) configureInstallation() error {

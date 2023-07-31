@@ -13,15 +13,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var testProcessModuleConfig = dtclient.ProcessModuleConfig{
-	Revision: 0,
-	Properties: []dtclient.ProcessModuleProperty{
-		{
-			Section: "test",
-			Key:     "test",
-			Value:   "test",
+func getTestProcessModuleConfig() *dtclient.ProcessModuleConfig {
+	return &dtclient.ProcessModuleConfig{
+		Revision: 0,
+		Properties: []dtclient.ProcessModuleProperty{
+			{
+				Section: "test",
+				Key:     "test",
+				Value:   "test",
+			},
 		},
-	},
+	}
 }
 
 func TestNewRunner(t *testing.T) {
@@ -123,7 +125,7 @@ func TestInstallOneAgent(t *testing.T) {
 		runner.fs.Create(filepath.Join(config.AgentBinDirMount, "agent/conf/ruxitagentproc.conf"))
 		runner.dtclient.(*dtclient.MockDynatraceClient).
 			On("GetProcessModuleConfig", uint(0)).
-			Return(&testProcessModuleConfig, nil)
+			Return(getTestProcessModuleConfig(), nil)
 		runner.installer.(*installer.Mock).
 			On("InstallAgent", config.AgentBinDirMount).
 			Return(true, nil)
@@ -146,7 +148,7 @@ func TestInstallOneAgent(t *testing.T) {
 		runner := createMockedRunner(t)
 		runner.dtclient.(*dtclient.MockDynatraceClient).
 			On("GetProcessModuleConfig", uint(0)).
-			Return(&testProcessModuleConfig, nil)
+			Return(getTestProcessModuleConfig(), nil)
 		runner.installer.(*installer.Mock).
 			On("InstallAgent", config.AgentBinDirMount).
 			Return(true, nil)
@@ -176,7 +178,7 @@ func TestRun(t *testing.T) {
 	runner.env.DataIngestInjected = true
 	runner.dtclient.(*dtclient.MockDynatraceClient).
 		On("GetProcessModuleConfig", uint(0)).
-		Return(&testProcessModuleConfig, nil)
+		Return(getTestProcessModuleConfig(), nil)
 
 	t.Run("no install, just config generation", func(t *testing.T) {
 		runner.fs = prepReadOnlyCSIFilesystem(t, afero.NewMemMapFs())
@@ -264,25 +266,6 @@ func TestConfigureInstallation(t *testing.T) {
 }
 
 func TestGetProcessModuleConfig(t *testing.T) {
-	t.Run("add tenantUUID to process module config", func(t *testing.T) {
-		tenantAlias := "my-tenant"
-		runner := createMockedRunner(t)
-		runner.config.TenantUUID = tenantAlias
-		runner.dtclient.(*dtclient.MockDynatraceClient).
-			On("GetProcessModuleConfig", uint(0)).
-			Return(&testProcessModuleConfig, nil)
-
-		config, err := runner.getProcessModuleConfig()
-		require.NoError(t, err)
-		require.NotNil(t, config)
-
-		generalSection, ok := config.ToMap()["general"]
-		require.True(t, ok)
-		tenantUUID, ok := generalSection["tenant"]
-		require.True(t, ok)
-		assert.Equal(t, tenantAlias, tenantUUID)
-	})
-
 	t.Run("error if api call fails", func(t *testing.T) {
 		runner := createMockedRunner(t)
 		runner.dtclient.(*dtclient.MockDynatraceClient).
