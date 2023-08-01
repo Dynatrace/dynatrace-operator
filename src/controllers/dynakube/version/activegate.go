@@ -10,20 +10,20 @@ import (
 )
 
 type activeGateUpdater struct {
-	dynakube    *dynatracev1beta1.DynaKube
-	dtClient    dtclient.Client
-	versionFunc ImageVersionFunc
+	dynakube         *dynatracev1beta1.DynaKube
+	dtClient         dtclient.Client
+	versionProxyFunc ImageVersionProxyFunc
 }
 
 func newActiveGateUpdater(
 	dynakube *dynatracev1beta1.DynaKube,
 	dtClient dtclient.Client,
-	versionFunc ImageVersionFunc,
+	versionProxyFunc ImageVersionProxyFunc,
 ) *activeGateUpdater {
 	return &activeGateUpdater{
-		dynakube:    dynakube,
-		dtClient:    dtClient,
-		versionFunc: versionFunc,
+		dynakube:         dynakube,
+		dtClient:         dtClient,
+		versionProxyFunc: versionProxyFunc,
 	}
 }
 
@@ -65,5 +65,5 @@ func (updater *activeGateUpdater) CheckForDowngrade(latestVersion string) (bool,
 
 func (updater *activeGateUpdater) UseTenantRegistry(ctx context.Context, dockerCfg *dockerconfig.DockerConfig) error {
 	defaultImage := updater.dynakube.DefaultActiveGateImage()
-	return updateVersionStatusForTenantRegistry(ctx, updater.Target(), defaultImage, updater.versionFunc, dockerCfg, updater.dynakube)
+	return updateVersionStatusForTenantRegistryViaProxy(ctx, updater.Target(), defaultImage, updater.versionProxyFunc, dockerCfg, updater.dynakube)
 }
