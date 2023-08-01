@@ -41,7 +41,7 @@ func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpda
 	customImage := updater.CustomImage()
 	if customImage != "" {
 		log.Info("updating version status according to custom image", "updater", updater.Name())
-		err = setImageIDWithDigestViaProxy(ctx, updater.Target(), customImage, reconciler.versionProxyFunc, dockerCfg, reconciler.dynakube)
+		err = setImageIDWithDigest(ctx, updater.Target(), customImage, reconciler.versionFunc, dockerCfg, reconciler.dynakube)
 		return err
 	}
 
@@ -145,56 +145,6 @@ func setImageIDWithDigest( //nolint:revive
 	return nil
 }
 
-func setImageIDWithDigestViaProxy( //nolint:revive
-	ctx context.Context,
-	target *dynatracev1beta1.VersionStatus,
-	imageUri string,
-	imageVersionProxyFunc ImageVersionProxyFunc,
-	dockerCfg *dockerconfig.DockerConfig,
-	dynakube *dynatracev1beta1.DynaKube,
-) error {
-	ref, err := reference.Parse(imageUri)
-	if err != nil {
-		return errors.WithMessage(err, "failed to parse image uri")
-	}
-
-	log.Info("updating image version info",
-		"image", imageUri,
-		"oldImageID", target.ImageID)
-
-	if canonRef, ok := ref.(reference.Canonical); ok {
-		target.ImageID = canonRef.String()
-	} else if taggedRef, ok := ref.(reference.NamedTagged); ok {
-		imageVersion, err := imageVersionProxyFunc(ctx, imageUri, dockerCfg, dynakube)
-		if err != nil {
-			if !dynakube.HasProxy() {
-				log.Info("failed to determine image version")
-				return err
-			}
-			target.ImageID = taggedRef.String()
-			log.Info("failed to determine image version because of proxy, falling back to tag")
-		} else {
-			canonRef, err := reference.WithDigest(taggedRef, imageVersion.Digest)
-			if err != nil {
-				target.ImageID = taggedRef.String()
-				log.Error(err, "failed to create canonical image reference, falling back to tag")
-			} else {
-				target.ImageID = canonRef.String()
-			}
-		}
-	} else {
-		return errors.New(fmt.Sprintf("unsupported image reference: %s", imageUri))
-	}
-
-	log.Info("updated image version info",
-		"newImageID", target.ImageID)
-
-	// Version will be set elsewhere, as it differs between modes
-	// unset is necessary so we have a consistent status
-	target.Version = ""
-	return nil
-}
-
 func updateVersionStatusForTenantRegistry( //nolint:revive
 	ctx context.Context,
 	target *status.VersionStatus,
@@ -215,44 +165,6 @@ func updateVersionStatusForTenantRegistry( //nolint:revive
 
 	if taggedRef, ok := ref.(reference.NamedTagged); ok {
 		imageVersion, err := imageVersionFunc(ctx, imageUri, dockerCfg)
-		if err != nil {
-			if !dynakube.HasProxy() {
-				log.Info("failed to determine image version")
-				return err
-			}
-			log.Info("failed to determine image version because of proxy, ignoring version")
-		}
-		target.ImageID = taggedRef.String()
-		target.Version = imageVersion.Version
-	}
-
-	log.Info("updated image version info for tenant registry image",
-		"newImageID", target.ImageID,
-		"newVersion", target.Version)
-
-	return nil
-}
-
-func updateVersionStatusForTenantRegistryViaProxy( //nolint:revive
-	ctx context.Context,
-	target *dynatracev1beta1.VersionStatus,
-	imageUri string,
-	imageVersionProxyFunc ImageVersionProxyFunc,
-	dockerCfg *dockerconfig.DockerConfig,
-	dynakube *dynatracev1beta1.DynaKube,
-) error {
-	ref, err := reference.Parse(imageUri)
-	if err != nil {
-		return errors.WithMessage(err, "failed to parse image uri")
-	}
-
-	log.Info("updating image version info for tenant registry image",
-		"image", imageUri,
-		"oldImageID", target.ImageID,
-		"oldVersion", target.Version)
-
-	if taggedRef, ok := ref.(reference.NamedTagged); ok {
-		imageVersion, err := imageVersionProxyFunc(ctx, imageUri, dockerCfg, dynakube)
 		if err != nil {
 			if !dynakube.HasProxy() {
 				log.Info("failed to determine image version")

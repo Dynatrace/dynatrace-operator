@@ -34,10 +34,6 @@ func (registry *fakeRegistry) ImageVersion(imagePath string) (ImageVersion, erro
 	}
 }
 
-func (registry *fakeRegistry) ImageVersionExtProxy(_ context.Context, imagePath string, _ *dockerconfig.DockerConfig, _ *dynatracev1beta1.DynaKube) (ImageVersion, error) {
-	return registry.ImageVersion(imagePath)
-}
-
 func (registry *fakeRegistry) ImageVersionExt(_ context.Context, imagePath string, _ *dockerconfig.DockerConfig) (ImageVersion, error) {
 	return registry.ImageVersion(imagePath)
 }

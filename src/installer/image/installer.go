@@ -113,10 +113,11 @@ func (installer *Installer) installAgentFromImage(targetDir string) error {
 			sourceRef:      sourceRef,
 			destinationRef: destinationRef,
 		},
+		&installer.props.DockerConfig,
+		installer.props.ImageUri,
 	)
 	if err != nil {
-		log.Info("failed to extract agent binaries from image", "image", image, "imageCacheDir", imageCacheDir)
-		return errors.WithStack(err)
+		log.Info("failed to extract agent binaries from image via proxy", "image", image, "imageCacheDir", imageCacheDir, "err", err)
 	}
 	return nil
 }
