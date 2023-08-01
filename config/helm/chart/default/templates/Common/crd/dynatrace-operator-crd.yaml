@@ -3824,7 +3824,7 @@ spec:
                 properties:
                   repository:
                     description: Custom EdgeConnect image repository
-                    example: docker.io/edgeconnect
+                    example: docker.io/dynatrace/edgeconnect
                     type: string
                   tag:
                     description: Indicates version of the EdgeConnect image to use
