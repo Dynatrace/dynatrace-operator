@@ -2,14 +2,15 @@ package image
 
 import (
 	"context"
+	"crypto/x509"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/src/dockerkeychain"
 	"net/http"
 	"net/url"
 	"path"
 	"path/filepath"
 
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
+	"github.com/Dynatrace/dynatrace-operator/src/dockerkeychain"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/common"
 	"github.com/containers/image/v5/manifest"
 	"github.com/containers/image/v5/signature"
@@ -69,13 +70,7 @@ func (installer Installer) extractAgentBinariesFromImage(pullInfo imagePullInfo,
 	for _, layer := range manifest.Layers {
 		log.Info("layers", "digest", layer.Digest.Hex, "type", layer.MediaType)
 	}
-	/*
-		err = installer.pullTarImage(image, imageName, manifest, pullInfo.imageCacheDir, pullInfo.targetDir)
-		if err != nil {
-			log.Info("pullTarImage", "err", err)
-			return err
-		}
-	*/
+
 	err = installer.pullOCIimage(image, imageName, manifest, pullInfo.imageCacheDir, pullInfo.targetDir)
 	if err != nil {
 		log.Info("pullOCIimage", "err", err)
@@ -119,7 +114,25 @@ func (installer Installer) pullImageInfo(dockerConfig *dockerconfig.DockerConfig
 		return nil
 	}
 
-	image, err := remote.Image(ref, remote.WithContext(context.TODO()), remote.WithAuthFromKeychain(&keyChain), remote.WithTransport(transport), remote.WithUserAgent("ao"))
+	if dockerConfig.Dynakube.Spec.TrustedCAs != "" {
+		err = dockerConfig.StoreRequiredFiles(context.TODO(), afero.Afero{Fs: installer.fs})
+		if err != nil {
+			return nil, err
+		}
+
+		trustedCAs, err := dockerConfig.Dynakube.TrustedCAs(context.TODO(), dockerConfig.ApiReader)
+		if err != nil {
+			return nil, err
+		}
+
+		rootCAs := x509.NewCertPool()
+		if ok := rootCAs.AppendCertsFromPEM(trustedCAs); !ok {
+			log.Info("failed to append custom certs!")
+		}
+		transport.TLSClientConfig.RootCAs = rootCAs
+	}
+
+	image, err := remote.Image(ref, remote.WithContext(context.TODO()), remote.WithAuthFromKeychain(keyChain), remote.WithTransport(transport), remote.WithUserAgent("ao"))
 	if err != nil {
 		return nil, fmt.Errorf("getting image %q: %w", imageName, err)
 	}
