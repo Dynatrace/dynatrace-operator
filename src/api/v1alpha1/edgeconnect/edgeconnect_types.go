@@ -77,7 +77,7 @@ type OAuthSpec struct {
 
 type ImageRefSpec struct {
 	// Custom EdgeConnect image repository
-	// +kubebuilder:example:="docker.io/edgeconnect"
+	// +kubebuilder:example:="docker.io/dynatrace/edgeconnect"
 	Repository string `json:"repository,omitempty"`
 
 	// Indicates version of the EdgeConnect image to use

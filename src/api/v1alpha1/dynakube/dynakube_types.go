@@ -231,7 +231,7 @@ type DynaKubeProxy struct {
 }
 
 // DynaKubeStatus defines the observed state of DynaKube
-// +- k8s:openapi-gen=true
+// +k8s:openapi-gen=true
 type DynaKubeStatus struct {
 	// Defines the current state (Running, Updating, Error, ...)
 	Phase status.DeploymentPhase `json:"phase,omitempty"`
