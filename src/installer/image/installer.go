@@ -1,7 +1,11 @@
 package image
 
 import (
+	"context"
+	"crypto/x509"
 	"fmt"
+	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 
@@ -36,18 +40,63 @@ func GetDigest(uri string) (string, error) {
 	return canonRef.Digest().Encoded(), nil
 }
 
-func NewImageInstaller(fs afero.Fs, props *Properties) installer.Installer {
+func NewImageInstaller(fs afero.Fs, props *Properties, transport *http.Transport) installer.Installer {
+	if transport == nil {
+		transport = &http.Transport{}
+	}
+	if props.DockerConfig.Dynakube.HasProxy() {
+		proxyUrl, err := url.Parse(props.DockerConfig.Dynakube.Spec.Proxy.Value)
+		if err != nil {
+			log.Info("invalid proxy spec", "proxy", props.DockerConfig.Dynakube.Spec.Proxy.Value)
+			return nil
+		}
+		log.Info("proxy spec", "proxy", props.DockerConfig.Dynakube.Spec.Proxy.Value, "proxyURL", proxyUrl.String(), "proxyURL.Host", proxyUrl.Host, "proxyURL.Port()", proxyUrl.Port())
+
+		transport.Proxy = func(req *http.Request) (*url.URL, error) {
+			proxyUrlName := ""
+			if proxyUrl != nil {
+				proxyUrlName = proxyUrl.String()
+			}
+			log.Info("via proxy", "proxyURL", proxyUrlName, "req.URL", req.URL.String(), "req.url.Scheme", req.URL.Scheme, "req.url.Host", req.URL.Host, "req.url.Port", req.URL.Port(), "req.User-Agent", req.Header.Get("User-Agent"))
+			return proxyUrl, nil
+		}
+		transport.OnProxyConnectResponse = func(ctx context.Context, proxyURL *url.URL, connectReq *http.Request, connectRes *http.Response) error {
+			log.Info("OnProxyConnectResponse", "proxyURL", proxyURL, "connectReq.URL", connectReq.URL.String(), "connectReq.User-Agent", connectReq.Header.Get("User-Agent"), "connectRes", connectRes.Status, "connectRes.Request.URL", connectRes.Request.URL.String())
+			return nil
+		}
+	}
+
+	if props.DockerConfig.Dynakube.Spec.TrustedCAs != "" {
+		err := props.DockerConfig.StoreRequiredFiles(context.TODO(), afero.Afero{Fs: fs})
+		if err != nil {
+			return nil
+		}
+
+		trustedCAs, err := props.DockerConfig.Dynakube.TrustedCAs(context.TODO(), props.DockerConfig.ApiReader)
+		if err != nil {
+			return nil
+		}
+
+		rootCAs := x509.NewCertPool()
+		if ok := rootCAs.AppendCertsFromPEM(trustedCAs); !ok {
+			log.Info("failed to append custom certs!")
+		}
+		transport.TLSClientConfig.RootCAs = rootCAs
+	}
+
 	return &Installer{
-		fs:        fs,
-		extractor: zip.NewOneAgentExtractor(fs, props.PathResolver),
-		props:     props,
+		fs:         fs,
+		extractor:  zip.NewOneAgentExtractor(fs, props.PathResolver),
+		props:      props,
+		httpClient: &http.Client{Transport: transport},
 	}
 }
 
 type Installer struct {
-	fs        afero.Fs
-	extractor zip.Extractor
-	props     *Properties
+	fs         afero.Fs
+	extractor  zip.Extractor
+	props      *Properties
+	httpClient *http.Client
 }
 
 func (installer *Installer) InstallAgent(targetDir string) (bool, error) {
@@ -92,13 +141,11 @@ func (installer *Installer) installAgentFromImage(targetDir string) error {
 	}
 	image := installer.props.ImageUri
 
-	sourceCtx, sourceRef, err := getSourceInfo(CacheDir, *installer.props)
 	if err != nil {
 		log.Info("failed to get source information", "image", image)
 		return errors.WithStack(err)
 	}
 	imageCacheDir := getCacheDirPath(installer.props.ImageDigest)
-	destinationCtx, destinationRef, err := getDestinationInfo(imageCacheDir)
 	if err != nil {
 		log.Info("failed to get destination information", "image", image, "imageCacheDir", imageCacheDir)
 		return errors.WithStack(err)
@@ -106,12 +153,8 @@ func (installer *Installer) installAgentFromImage(targetDir string) error {
 
 	err = installer.extractAgentBinariesFromImage(
 		imagePullInfo{
-			imageCacheDir:  imageCacheDir,
-			targetDir:      targetDir,
-			sourceCtx:      sourceCtx,
-			destinationCtx: destinationCtx,
-			sourceRef:      sourceRef,
-			destinationRef: destinationRef,
+			imageCacheDir: imageCacheDir,
+			targetDir:     targetDir,
 		},
 		&installer.props.DockerConfig,
 		installer.props.ImageUri,

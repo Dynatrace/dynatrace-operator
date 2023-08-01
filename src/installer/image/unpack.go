@@ -2,10 +2,7 @@ package image
 
 import (
 	"context"
-	"crypto/x509"
 	"fmt"
-	"net/http"
-	"net/url"
 	"path"
 	"path/filepath"
 
@@ -14,7 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/installer/common"
 	"github.com/containers/image/v5/manifest"
 	"github.com/containers/image/v5/signature"
-	"github.com/containers/image/v5/types"
 	"github.com/google/go-containerregistry/pkg/crane"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
@@ -36,12 +32,8 @@ const (
 )
 
 type imagePullInfo struct {
-	imageCacheDir  string
-	targetDir      string
-	sourceCtx      *types.SystemContext
-	destinationCtx *types.SystemContext
-	sourceRef      *types.ImageReference
-	destinationRef *types.ImageReference
+	imageCacheDir string
+	targetDir     string
 }
 
 func (installer Installer) extractAgentBinariesFromImage(pullInfo imagePullInfo, dockerConfig *dockerconfig.DockerConfig, imageName string) error { //nolint
@@ -90,49 +82,7 @@ func (installer Installer) pullImageInfo(dockerConfig *dockerconfig.DockerConfig
 
 	keyChain := dockerkeychain.NewDockerKeychain(dockerConfig.RegistryAuthPath, installer.fs)
 
-	var proxyUrl *url.URL
-	if dockerConfig.Dynakube.HasProxy() {
-		proxyUrl, err = url.Parse(dockerConfig.Dynakube.Spec.Proxy.Value)
-		if err != nil {
-			log.Info("invalid proxy spec", "proxy", dockerConfig.Dynakube.Spec.Proxy.Value)
-			return nil, err
-		}
-		log.Info("proxy spec", "proxy", dockerConfig.Dynakube.Spec.Proxy.Value, "proxyURL", proxyUrl.String(), "proxyURL.Host", proxyUrl.Host, "proxyURL.Port()", proxyUrl.Port())
-	}
-
-	transport := http.DefaultTransport.(*http.Transport).Clone()
-	transport.Proxy = func(req *http.Request) (*url.URL, error) {
-		proxyUrlName := ""
-		if proxyUrl != nil {
-			proxyUrlName = proxyUrl.String()
-		}
-		log.Info("via proxy", "proxyURL", proxyUrlName, "req.URL", req.URL.String(), "req.url.Scheme", req.URL.Scheme, "req.url.Host", req.URL.Host, "req.url.Port", req.URL.Port(), "req.User-Agent", req.Header.Get("User-Agent"))
-		return proxyUrl, nil
-	}
-	transport.OnProxyConnectResponse = func(ctx context.Context, proxyURL *url.URL, connectReq *http.Request, connectRes *http.Response) error {
-		log.Info("OnProxyConnectResponse", "proxyURL", proxyURL, "connectReq.URL", connectReq.URL.String(), "connectReq.User-Agent", connectReq.Header.Get("User-Agent"), "connectRes", connectRes.Status, "connectRes.Request.URL", connectRes.Request.URL.String())
-		return nil
-	}
-
-	if dockerConfig.Dynakube.Spec.TrustedCAs != "" {
-		err = dockerConfig.StoreRequiredFiles(context.TODO(), afero.Afero{Fs: installer.fs})
-		if err != nil {
-			return nil, err
-		}
-
-		trustedCAs, err := dockerConfig.Dynakube.TrustedCAs(context.TODO(), dockerConfig.ApiReader)
-		if err != nil {
-			return nil, err
-		}
-
-		rootCAs := x509.NewCertPool()
-		if ok := rootCAs.AppendCertsFromPEM(trustedCAs); !ok {
-			log.Info("failed to append custom certs!")
-		}
-		transport.TLSClientConfig.RootCAs = rootCAs
-	}
-
-	image, err := remote.Image(ref, remote.WithContext(context.TODO()), remote.WithAuthFromKeychain(keyChain), remote.WithTransport(transport), remote.WithUserAgent("ao"))
+	image, err := remote.Image(ref, remote.WithContext(context.TODO()), remote.WithAuthFromKeychain(keyChain), remote.WithTransport(installer.httpClient.Transport), remote.WithUserAgent("ao"))
 	if err != nil {
 		return nil, fmt.Errorf("getting image %q: %w", imageName, err)
 	}
