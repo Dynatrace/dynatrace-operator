@@ -7,7 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/api/status"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/activegate"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/oneagent"
@@ -25,7 +26,7 @@ import (
 )
 
 const (
-	publicRegistrySource = dynatracev1beta1.VersionSource("public-registry")
+	publicRegistrySource = status.VersionSource("public-registry")
 	customPullSecretName = "devregistry"
 )
 

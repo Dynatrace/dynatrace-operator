@@ -4,7 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/api/status"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
@@ -34,7 +35,7 @@ func TestUseImmutableImage(t *testing.T) {
 			},
 			Status: dynatracev1beta1.DynaKubeStatus{
 				OneAgent: dynatracev1beta1.OneAgentStatus{
-					VersionStatus: dynatracev1beta1.VersionStatus{
+					VersionStatus: status.VersionStatus{
 						ImageID: imageID,
 					},
 				},
@@ -62,7 +63,7 @@ func TestLabels(t *testing.T) {
 			},
 			Status: dynatracev1beta1.DynaKubeStatus{
 				OneAgent: dynatracev1beta1.OneAgentStatus{
-					VersionStatus: dynatracev1beta1.VersionStatus{
+					VersionStatus: status.VersionStatus{
 						Version: testImageTag,
 					},
 				},

@@ -3,7 +3,8 @@ package version
 import (
 	"context"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/api/status"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 )
@@ -28,7 +29,7 @@ func (updater codeModulesUpdater) IsEnabled() bool {
 	return updater.dynakube.NeedAppInjection()
 }
 
-func (updater *codeModulesUpdater) Target() *dynatracev1beta1.VersionStatus {
+func (updater *codeModulesUpdater) Target() *status.VersionStatus {
 	return &updater.dynakube.Status.CodeModules.VersionStatus
 }
 
@@ -60,7 +61,7 @@ func (updater *codeModulesUpdater) UseTenantRegistry(_ context.Context, _ *docke
 	customVersion := updater.CustomVersion()
 	if customVersion != "" {
 		updater.dynakube.Status.CodeModules = dynatracev1beta1.CodeModulesStatus{
-			VersionStatus: dynatracev1beta1.VersionStatus{
+			VersionStatus: status.VersionStatus{
 				Version: customVersion,
 			},
 		}
@@ -75,7 +76,7 @@ func (updater *codeModulesUpdater) UseTenantRegistry(_ context.Context, _ *docke
 	}
 
 	updater.dynakube.Status.CodeModules = dynatracev1beta1.CodeModulesStatus{
-		VersionStatus: dynatracev1beta1.VersionStatus{
+		VersionStatus: status.VersionStatus{
 			Version: latestAgentVersionUnixPaas,
 		},
 	}

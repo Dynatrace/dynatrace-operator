@@ -3,7 +3,7 @@ package validation
 import (
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

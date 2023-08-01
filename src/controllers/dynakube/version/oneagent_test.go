@@ -4,7 +4,8 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/api/status"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
@@ -111,10 +112,10 @@ func TestOneAgentUseDefault(t *testing.T) {
 			},
 			Status: dynatracev1beta1.DynaKubeStatus{
 				OneAgent: dynatracev1beta1.OneAgentStatus{
-					VersionStatus: dynatracev1beta1.VersionStatus{
+					VersionStatus: status.VersionStatus{
 						ImageID: "some.registry.com:999.999.999.999-999",
 						Version: "999.999.999.999-999",
-						Source:  dynatracev1beta1.TenantRegistryVersionSource,
+						Source:  status.TenantRegistryVersionSource,
 					},
 				},
 			},
@@ -136,7 +137,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 		require.Error(t, err)
 
 		dynakube.Status.OneAgent.Version = ""
-		dynakube.Status.OneAgent.Source = dynatracev1beta1.PublicRegistryVersionSource
+		dynakube.Status.OneAgent.Source = status.PublicRegistryVersionSource
 
 		err = updater.UseTenantRegistry(context.TODO(), &dockerconfig.DockerConfig{})
 		require.Error(t, err)
@@ -150,7 +151,7 @@ type CheckForDowngradeTestCase struct {
 	isDowngrade bool
 }
 
-func newDynakubeWithOneAgentStatus(status dynatracev1beta1.VersionStatus) *dynatracev1beta1.DynaKube {
+func newDynakubeWithOneAgentStatus(status status.VersionStatus) *dynatracev1beta1.DynaKube {
 	return &dynatracev1beta1.DynaKube{
 		Status: dynatracev1beta1.DynaKubeStatus{
 			OneAgent: dynatracev1beta1.OneAgentStatus{
@@ -166,38 +167,38 @@ func TestCheckForDowngrade(t *testing.T) {
 	testCases := []CheckForDowngradeTestCase{
 		{
 			testName: "is downgrade, tenant registry",
-			dynakube: newDynakubeWithOneAgentStatus(dynatracev1beta1.VersionStatus{
+			dynakube: newDynakubeWithOneAgentStatus(status.VersionStatus{
 				ImageID: "does-not-matter",
 				Version: newerVersion,
-				Source:  dynatracev1beta1.TenantRegistryVersionSource,
+				Source:  status.TenantRegistryVersionSource,
 			}),
 			newVersion:  olderVersion,
 			isDowngrade: true,
 		},
 		{
 			testName: "is downgrade, public registry",
-			dynakube: newDynakubeWithOneAgentStatus(dynatracev1beta1.VersionStatus{
+			dynakube: newDynakubeWithOneAgentStatus(status.VersionStatus{
 				ImageID: "some.registry.com:" + newerVersion,
-				Source:  dynatracev1beta1.PublicRegistryVersionSource,
+				Source:  status.PublicRegistryVersionSource,
 			}),
 			newVersion:  olderVersion,
 			isDowngrade: true,
 		},
 		{
 			testName: "is NOT downgrade, tenant registry",
-			dynakube: newDynakubeWithOneAgentStatus(dynatracev1beta1.VersionStatus{
+			dynakube: newDynakubeWithOneAgentStatus(status.VersionStatus{
 				ImageID: "does-not-matter",
 				Version: olderVersion,
-				Source:  dynatracev1beta1.TenantRegistryVersionSource,
+				Source:  status.TenantRegistryVersionSource,
 			}),
 			newVersion:  newerVersion,
 			isDowngrade: false,
 		},
 		{
 			testName: "is NOT downgrade, public registry",
-			dynakube: newDynakubeWithOneAgentStatus(dynatracev1beta1.VersionStatus{
+			dynakube: newDynakubeWithOneAgentStatus(status.VersionStatus{
 				ImageID: "some.registry.com:" + olderVersion,
-				Source:  dynatracev1beta1.PublicRegistryVersionSource,
+				Source:  status.PublicRegistryVersionSource,
 			}),
 			newVersion:  newerVersion,
 			isDowngrade: false,

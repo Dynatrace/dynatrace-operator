@@ -7,7 +7,8 @@ import (
 	"sort"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/api/status"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/arch"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
@@ -49,8 +50,8 @@ func specificAgentVersion(t *testing.T) features.Feature {
 	updatedDynakube := testDynakube.DeepCopy()
 	updatedDynakube.Spec.OneAgent.CloudNativeFullStack.Version = newVersion.String()
 	builder.Assess("update dynakube with new agent version", dynakube.Update(*updatedDynakube))
-	builder.Assess("agents are redeploying", dynakube.WaitForDynakubePhase(*updatedDynakube, dynatracev1beta1.Deploying))
-	builder.Assess("agents redeployed successfully", dynakube.WaitForDynakubePhase(*updatedDynakube, dynatracev1beta1.Running))
+	builder.Assess("agents are redeploying", dynakube.WaitForDynakubePhase(*updatedDynakube, status.Deploying))
+	builder.Assess("agents redeployed successfully", dynakube.WaitForDynakubePhase(*updatedDynakube, status.Running))
 	builder.Assess("checking version of oneagent", assessVersionChecks(testDynakube))
 
 	// Register sample, dynakube and operator uninstall

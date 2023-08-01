@@ -3,7 +3,8 @@ package version
 import (
 	"context"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/api/status"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/pkg/errors"
@@ -35,7 +36,7 @@ func (updater syntheticUpdater) IsEnabled() bool {
 	return updater.dynakube.IsSyntheticMonitoringEnabled()
 }
 
-func (updater *syntheticUpdater) Target() *dynatracev1beta1.VersionStatus {
+func (updater *syntheticUpdater) Target() *status.VersionStatus {
 	return &updater.dynakube.Status.Synthetic.VersionStatus
 }
 

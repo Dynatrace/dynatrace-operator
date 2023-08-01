@@ -4,7 +4,8 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/api/status"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/stretchr/testify/assert"
@@ -61,7 +62,7 @@ func TestActiveGateUseDefault(t *testing.T) {
 			},
 			Status: dynatracev1beta1.DynaKubeStatus{
 				ActiveGate: dynatracev1beta1.ActiveGateStatus{
-					VersionStatus: dynatracev1beta1.VersionStatus{
+					VersionStatus: status.VersionStatus{
 						Version: "prev",
 					},
 				},

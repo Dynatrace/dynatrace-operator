@@ -5,7 +5,8 @@ package assess
 import (
 	"fmt"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/api/status"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
@@ -50,5 +51,5 @@ func verifyDynakubeStartup(builder *features.FeatureBuilder, testDynakube dynatr
 	}
 	builder.Assess(
 		fmt.Sprintf("'%s' dynakube phase changes to 'Running'", testDynakube.Name),
-		dynakube.WaitForDynakubePhase(testDynakube, dynatracev1beta1.Running))
+		dynakube.WaitForDynakubePhase(testDynakube, status.Running))
 }

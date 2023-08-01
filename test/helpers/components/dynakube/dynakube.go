@@ -8,7 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/api/status"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/stretchr/testify/require"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -204,7 +205,7 @@ func Delete(dynakube dynatracev1beta1.DynaKube) features.Func {
 	}
 }
 
-func WaitForDynakubePhase(dynakube dynatracev1beta1.DynaKube, phase dynatracev1beta1.DynaKubePhaseType) features.Func {
+func WaitForDynakubePhase(dynakube dynatracev1beta1.DynaKube, phase status.DeploymentPhase) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -20,7 +20,7 @@ type troubleshootContext struct {
 	apiReader                client.Reader
 	httpClient               *http.Client
 	namespaceName            string // the default namespace ("dynatrace") or provided in the command line
-	dynakube                 v1beta1.DynaKube
+	dynakube                 dynatracev1beta1.DynaKube
 	dynatraceApiSecretTokens token.Tokens
 	pullSecret               corev1.Secret
 	kubeConfig               rest.Config

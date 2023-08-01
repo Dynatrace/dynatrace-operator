@@ -8,7 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/api/status"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
@@ -282,7 +283,7 @@ func createTestDynaKubeWithImage(imageDigest string) dynatracev1beta1.DynaKube {
 		},
 		Status: dynatracev1beta1.DynaKubeStatus{
 			CodeModules: dynatracev1beta1.CodeModulesStatus{
-				VersionStatus: dynatracev1beta1.VersionStatus{
+				VersionStatus: status.VersionStatus{
 					ImageID: imageID,
 				},
 			},
@@ -301,7 +302,7 @@ func createTestDynaKubeWithZip(version string) dynatracev1beta1.DynaKube {
 		},
 		Status: dynatracev1beta1.DynaKubeStatus{
 			CodeModules: dynatracev1beta1.CodeModulesStatus{
-				VersionStatus: dynatracev1beta1.VersionStatus{
+				VersionStatus: status.VersionStatus{
 					Version: version,
 				},
 			},

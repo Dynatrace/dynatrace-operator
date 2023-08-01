@@ -3,7 +3,8 @@ package version
 import (
 	"context"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/api/status"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 )
@@ -34,7 +35,7 @@ func (updater oneAgentUpdater) IsEnabled() bool {
 	return updater.dynakube.NeedsOneAgent()
 }
 
-func (updater *oneAgentUpdater) Target() *dynatracev1beta1.VersionStatus {
+func (updater *oneAgentUpdater) Target() *status.VersionStatus {
 	return &updater.dynakube.Status.OneAgent.VersionStatus
 }
 
@@ -86,9 +87,9 @@ func (updater *oneAgentUpdater) CheckForDowngrade(latestVersion string) (bool, e
 	var previousVersion string
 	var err error
 	switch updater.Target().Source {
-	case dynatracev1beta1.TenantRegistryVersionSource:
+	case status.TenantRegistryVersionSource:
 		previousVersion = updater.Target().Version
-	case dynatracev1beta1.PublicRegistryVersionSource:
+	case status.PublicRegistryVersionSource:
 		previousVersion, err = getTagFromImageID(imageID)
 		if err != nil {
 			return false, err

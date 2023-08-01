@@ -4,7 +4,8 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/api/status"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/stretchr/testify/require"
@@ -26,7 +27,7 @@ func TestSyntheticUseTenantRegistry(t *testing.T) {
 			},
 			Status: dynatracev1beta1.DynaKubeStatus{
 				Synthetic: dynatracev1beta1.SyntheticStatus{
-					VersionStatus: dynatracev1beta1.VersionStatus{
+					VersionStatus: status.VersionStatus{
 						Version: "non-empty",
 					},
 				},

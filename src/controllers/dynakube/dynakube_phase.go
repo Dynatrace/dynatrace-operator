@@ -3,27 +3,28 @@ package dynakube
 import (
 	"context"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/api/status"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	appsv1 "k8s.io/api/apps/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func (controller *Controller) determineDynaKubePhase(dynakube *dynatracev1beta1.DynaKube) dynatracev1beta1.DynaKubePhaseType {
+func (controller *Controller) determineDynaKubePhase(dynakube *dynatracev1beta1.DynaKube) status.DeploymentPhase {
 	if dynakube.NeedsActiveGate() {
 		activeGatePods, err := controller.numberOfMissingActiveGatePods(dynakube)
 		if err != nil {
 			log.Error(err, "activegate statefulset could not be accessed", "dynakube", dynakube.Name)
-			return dynatracev1beta1.Error
+			return status.Error
 		}
 		if activeGatePods > 0 {
 			log.Info("activegate statefulset is still deploying", "dynakube", dynakube.Name)
-			return dynatracev1beta1.Deploying
+			return status.Deploying
 		}
 		if activeGatePods < 0 {
 			log.Info("activegate statefulset not yet available", "dynakube", dynakube.Name)
-			return dynatracev1beta1.Deploying
+			return status.Deploying
 		}
 	}
 
@@ -31,19 +32,19 @@ func (controller *Controller) determineDynaKubePhase(dynakube *dynatracev1beta1.
 		oneAgentPods, err := controller.numberOfMissingOneagentPods(dynakube)
 		if k8serrors.IsNotFound(err) {
 			log.Info("oneagent daemonset not yet available", "dynakube", dynakube.Name)
-			return dynatracev1beta1.Deploying
+			return status.Deploying
 		}
 		if err != nil {
 			log.Error(err, "oneagent daemonset could not be accessed", "dynakube", dynakube.Name)
-			return dynatracev1beta1.Error
+			return status.Error
 		}
 		if oneAgentPods > 0 {
 			log.Info("oneagent daemonset is still deploying", "dynakube", dynakube.Name)
-			return dynatracev1beta1.Deploying
+			return status.Deploying
 		}
 	}
 
-	return dynatracev1beta1.Running
+	return status.Running
 }
 
 func (controller *Controller) numberOfMissingOneagentPods(dynakube *dynatracev1beta1.DynaKube) (int32, error) {
