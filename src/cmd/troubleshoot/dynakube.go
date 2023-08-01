@@ -9,7 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/src/webhook/validation"
+	dynakubevalidation "github.com/Dynatrace/dynatrace-operator/src/webhook/validation/dynakube"
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -161,11 +161,11 @@ func checkApiUrlSyntax(troubleshootCtx *troubleshootContext) error {
 
 	logInfof(log, "checking if syntax of API URL is valid")
 
-	validation.SetLogger(log)
-	if validation.NoApiUrl(nil, &troubleshootCtx.dynakube) != "" {
+	dynakubevalidation.SetLogger(log)
+	if dynakubevalidation.NoApiUrl(nil, &troubleshootCtx.dynakube) != "" {
 		return errors.New("API URL is invalid")
 	}
-	if validation.IsInvalidApiUrl(nil, &troubleshootCtx.dynakube) != "" {
+	if dynakubevalidation.IsInvalidApiUrl(nil, &troubleshootCtx.dynakube) != "" {
 		return errors.New("API URL is invalid")
 	}
 
