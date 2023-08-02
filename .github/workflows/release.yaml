@@ -270,8 +270,8 @@ jobs:
           hack/build/ci/generate-release-notes.sh
       - name: Generate manifests
         run: |
-          export IMAGE= ${{ matrix.url }}/${{ secrets[matrix.repository] }}
-          export TAG=$(echo "${{ github.ref }}" | awk -F"/" '{print $3}')
+          export "IMAGE=${{ matrix.url }}/${{ secrets[matrix.repository] }}"
+          export "TAG=$(echo "${{ github.ref }}" | awk -F"/" '{print $3}')"
           make manifests
       - name: Generate CRD
         run: make manifests/crd/release
