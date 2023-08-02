@@ -34,18 +34,13 @@ var _ ImageVersionFunc = GetImageVersion
 
 // GetImageVersion fetches image information for imageName
 func GetImageVersion(ctx context.Context, imageName string, dockerConfig *dockerconfig.DockerConfig) (ImageVersion, error) {
-	log.Info("GetImageVersion")
+	keychain := dockerkeychain.NewDockerKeychain(dockerConfig.RegistryAuthPath, afero.NewOsFs())
+	transport := http.DefaultTransport.(*http.Transport).Clone()
 
 	ref, err := name.ParseReference(imageName)
 	if err != nil {
 		return ImageVersion{}, fmt.Errorf("parsing reference %q: %w", imageName, err)
 	}
-
-	log.Info("ref", "refName", ref.Name(), "refString", ref.String(), "refIdentifier", ref.Identifier(), "Context().RegistryStr()", ref.Context().RegistryStr(), "Context().Name()", ref.Context().Name(), "Context().Scheme()", ref.Context().Scheme())
-
-	keychain := dockerkeychain.NewDockerKeychain(dockerConfig.RegistryAuthPath, afero.NewOsFs())
-
-	transport := http.DefaultTransport.(*http.Transport).Clone()
 
 	if dockerConfig.Dynakube.HasProxy() {
 		proxyUrl, err := url.Parse(dockerConfig.Dynakube.Spec.Proxy.Value)
@@ -80,15 +75,10 @@ func GetImageVersion(ctx context.Context, imageName string, dockerConfig *docker
 	if err != nil {
 		return ImageVersion{}, fmt.Errorf("img.Digest(): %w", err)
 	}
-
-	log.Info("go-containerregistry", "digest", dig)
-
 	cf, err := img.ConfigFile()
 	if err != nil {
 		return ImageVersion{}, fmt.Errorf("img.ConfigFile: %w", err)
 	}
-
-	log.Info("go-containerregistry", "labels", cf.Config.Labels, "architecture", cf.Architecture, "author", cf.Author)
 
 	return ImageVersion{
 		Digest:  digest.Digest(dig.String()),
