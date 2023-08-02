@@ -100,8 +100,7 @@ func TestNewImageInstaller(t *testing.T) {
 			},
 		},
 	}
-	transport := &http.Transport{}
-	in := NewImageInstaller(testFS, props, transport)
+	in := NewImageInstaller(testFS, props)
 	assert.NotNil(t, in)
 	assert.NotNil(t, in)
 }
@@ -114,22 +113,22 @@ func (f RoundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 
 func TestInstaller_InstallAgent(t *testing.T) {
 	type fields struct {
-		fs         afero.Fs
-		extractor  zip.Extractor
-		props      *Properties
-		httpClient *http.Client
+		fs        afero.Fs
+		extractor zip.Extractor
+		props     *Properties
+		transport http.RoundTripper
 	}
 	type args struct {
 		targetDir string
 	}
 
 	testFS := afero.NewMemMapFs()
-	hclient := &http.Client{Transport: RoundTripFunc(func(req *http.Request) *http.Response {
+	transport := RoundTripFunc(func(req *http.Request) *http.Response {
 		return &http.Response{
 			StatusCode: http.StatusInternalServerError,
 			Body:       ioutil.NopCloser(strings.NewReader(`Internal server error`)),
 		}
-	})}
+	})
 	tests := []struct {
 		name    string
 		fields  fields
@@ -155,17 +154,17 @@ func TestInstaller_InstallAgent(t *testing.T) {
 					},
 				},
 			},
-			httpClient: hclient,
+			transport: transport,
 		}, args: args{targetDir: config.AgentBinDirMount}, want: true, wantErr: assert.NoError,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			installer := &Installer{
-				fs:         tt.fields.fs,
-				extractor:  tt.fields.extractor,
-				props:      tt.fields.props,
-				httpClient: tt.fields.httpClient,
+				fs:        tt.fields.fs,
+				extractor: tt.fields.extractor,
+				props:     tt.fields.props,
+				transport: tt.fields.transport,
 			}
 			got, err := installer.InstallAgent(tt.args.targetDir)
 			if !tt.wantErr(t, err, fmt.Sprintf("InstallAgent(%v)", tt.args.targetDir)) {

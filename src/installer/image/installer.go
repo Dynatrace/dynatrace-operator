@@ -40,10 +40,9 @@ func GetDigest(uri string) (string, error) {
 	return canonRef.Digest().Encoded(), nil
 }
 
-func NewImageInstaller(fs afero.Fs, props *Properties, transport *http.Transport) installer.Installer {
-	if transport == nil {
-		transport = &http.Transport{}
-	}
+func NewImageInstaller(fs afero.Fs, props *Properties) installer.Installer {
+	transport := &http.Transport{}
+
 	if props.DockerConfig.Dynakube.HasProxy() {
 		proxyUrl, err := url.Parse(props.DockerConfig.Dynakube.Spec.Proxy.Value)
 		if err != nil {
@@ -85,18 +84,18 @@ func NewImageInstaller(fs afero.Fs, props *Properties, transport *http.Transport
 	}
 
 	return &Installer{
-		fs:         fs,
-		extractor:  zip.NewOneAgentExtractor(fs, props.PathResolver),
-		props:      props,
-		httpClient: &http.Client{Transport: transport},
+		fs:        fs,
+		extractor: zip.NewOneAgentExtractor(fs, props.PathResolver),
+		props:     props,
+		transport: transport,
 	}
 }
 
 type Installer struct {
-	fs         afero.Fs
-	extractor  zip.Extractor
-	props      *Properties
-	httpClient *http.Client
+	fs        afero.Fs
+	extractor zip.Extractor
+	props     *Properties
+	transport http.RoundTripper
 }
 
 func (installer *Installer) InstallAgent(targetDir string) (bool, error) {

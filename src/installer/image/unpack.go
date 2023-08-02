@@ -82,7 +82,7 @@ func (installer Installer) pullImageInfo(dockerConfig *dockerconfig.DockerConfig
 
 	keyChain := dockerkeychain.NewDockerKeychain(dockerConfig.RegistryAuthPath, installer.fs)
 
-	image, err := remote.Image(ref, remote.WithContext(context.TODO()), remote.WithAuthFromKeychain(keyChain), remote.WithTransport(installer.httpClient.Transport), remote.WithUserAgent("ao"))
+	image, err := remote.Image(ref, remote.WithContext(context.TODO()), remote.WithAuthFromKeychain(keyChain), remote.WithTransport(installer.transport), remote.WithUserAgent("ao"))
 	if err != nil {
 		return nil, fmt.Errorf("getting image %q: %w", imageName, err)
 	}
@@ -106,8 +106,8 @@ func (installer Installer) pullOCIimage(image v1.Image, imageName string, _ *v1.
 	}
 
 	if err := crane.SaveOCI(image, path.Join(imageCacheDir, ref.Identifier())); err != nil {
-		log.Info("saving tarball", imageCacheDir, err)
-		return fmt.Errorf("saving tarball %s: %w", imageCacheDir, err)
+		log.Info("saving v1.Image img as an OCI Image Layout at path", imageCacheDir, err)
+		return fmt.Errorf("saving v1.Image img as an OCI Image Layout at path %s: %w", imageCacheDir, err)
 	}
 
 	/*
@@ -187,7 +187,6 @@ func (installer Installer) unpackOciImage(manifests []*manifest.OCI1, imageCache
 				return fmt.Errorf("MediaTypeImageLayerGzip is not implemented")
 			case mediaTypeImageLayerZstd:
 				return fmt.Errorf("MediaTypeImageLayerZstd is not implemented")
-
 			default:
 				return fmt.Errorf("unknown media type: %s", layer.MediaType)
 			}
