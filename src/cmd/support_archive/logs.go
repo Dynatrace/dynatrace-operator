@@ -38,10 +38,19 @@ func newLogCollector(context context.Context, log logr.Logger, supportArchive ar
 func (collector logCollector) Do() error {
 	logInfof(collector.log, "Starting log collection")
 
-	podList, err := collector.getPodList()
+	var podList *corev1.PodList
+
+	deployedPodList, err := collector.getPodList(kubeobjects.AppNameLabel)
 	if err != nil {
 		return err
 	}
+	podList = deployedPodList
+
+	managedByOperatorPodList, err := collector.getPodList(kubeobjects.AppManagedByLabel)
+	if err != nil {
+		return err
+	}
+	podList.Items = append(podList.Items, managedByOperatorPodList.Items...)
 
 	podGetOptions := metav1.GetOptions{}
 
@@ -60,12 +69,12 @@ func (collector logCollector) Name() string {
 	return logCollectorName
 }
 
-func (collector logCollector) getPodList() (*corev1.PodList, error) {
+func (collector logCollector) getPodList(labelKey string) (*corev1.PodList, error) {
 	listOptions := metav1.ListOptions{
 		TypeMeta: metav1.TypeMeta{
 			Kind: "pod",
 		},
-		LabelSelector: fmt.Sprintf("%s=%s", kubeobjects.AppNameLabel, collector.appName),
+		LabelSelector: fmt.Sprintf("%s=%s", labelKey, collector.appName),
 	}
 	podList, err := collector.pods.List(collector.context, listOptions)
 	if err != nil {
