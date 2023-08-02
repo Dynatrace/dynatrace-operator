@@ -56,7 +56,7 @@ func networkProblems(t *testing.T) features.Feature {
 	// Register operator install
 	operatorNamespaceBuilder := namespace.NewBuilder(testDynakube.Namespace)
 	operatorNamespaceBuilder = operatorNamespaceBuilder.WithLabels(istio.InjectionLabel)
-	assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), testDynakube.NeedsCSIDriver())
+	assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), testDynakube)
 
 	// Register network policy to block csi driver traffic
 	assess.InstallManifest(builder, csiNetworkPolicy)

@@ -53,7 +53,7 @@ func withoutCSIDriver(t *testing.T) features.Feature {
 
 	operatorNamespaceBuilder := namespace.NewBuilder(appOnlyDynakube.Namespace)
 
-	assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), appOnlyDynakube.NeedsCSIDriver())
+	assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), appOnlyDynakube)
 
 	assess.InstallDynakubeWithTeardown(builder, &secretConfig, appOnlyDynakube)
 	builder.Assess("install sample app", sampleApp.Install())

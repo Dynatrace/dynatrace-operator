@@ -134,7 +134,7 @@ func labelVersionDetection(t *testing.T) features.Feature {
 	}
 
 	// Register operator install
-	assess.InstallOperatorFromSource(builder, defaultDynakube.Namespace, defaultDynakube.NeedsCSIDriver())
+	assess.InstallOperatorFromSource(builder, defaultDynakube)
 	// Register dynakubes install and uninstall
 	assess.InstallDynakubeWithTeardown(builder, &secretConfig, defaultDynakube)
 	assess.InstallDynakubeWithTeardown(builder, &secretConfig, labelVersionDynakube)

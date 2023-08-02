@@ -41,7 +41,7 @@ func specificAgentVersion(t *testing.T) features.Feature {
 	testDynakube := dynakubeBuilder.Build()
 
 	// Register operator install
-	assess.InstallOperatorFromSource(builder, testDynakube.Namespace, testDynakube.NeedsCSIDriver())
+	assess.InstallOperatorFromSource(builder, testDynakube)
 
 	// Register actual test
 	assess.InstallDynakube(builder, &secretConfig, testDynakube)

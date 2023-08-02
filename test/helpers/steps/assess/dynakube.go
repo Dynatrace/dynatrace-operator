@@ -27,7 +27,7 @@ func InstallDynakubeWithTeardown(builder *features.FeatureBuilder, secretConfig 
 
 func CreateDynakube(builder *features.FeatureBuilder, secretConfig *tenant.Secret, testDynakube dynatracev1beta1.DynaKube) {
 	if secretConfig != nil {
-		builder.Assess("created tenant secret", tenant.CreateTenantSecret(*secretConfig, testDynakube.Name, testDynakube.Namespace))
+		builder.Assess("created tenant secret", tenant.CreateTenantSecret(*secretConfig, testDynakube))
 	}
 	builder.Assess(
 		fmt.Sprintf("'%s' dynakube created", testDynakube.Name),

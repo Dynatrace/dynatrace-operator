@@ -23,10 +23,7 @@ const (
 func InstallViaMake(withCSI bool) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		rootDir := project.RootDir()
-		err := execMakeCommand(t, rootDir, "install", fmt.Sprintf("ENABLE_CSI=%t", withCSI))
-		if err != nil {
-			t.Fatal("failed to execute make command for installing the operator", err)
-		}
+		execMakeCommand(t, rootDir, "install", fmt.Sprintf("ENABLE_CSI=%t", withCSI))
 		return ctx
 	}
 }
@@ -41,26 +38,20 @@ func InstallViaHelm(releaseTag string, withCsi bool, namespace string) features.
 func UninstallViaMake(withCSI bool) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		rootDir := project.RootDir()
-		err := execMakeCommand(t, rootDir, "undeploy/helm", fmt.Sprintf("ENABLE_CSI=%t", withCSI))
-		if err != nil {
-			t.Fatal("failed to execute make command for uninstalling the operator", err)
-		}
+		execMakeCommand(t, rootDir, "undeploy/helm", fmt.Sprintf("ENABLE_CSI=%t", withCSI))
 		return ctx
 	}
 }
 
-func execMakeCommand(t *testing.T, rootDir, makeTarget string, envVariables ...string) error {
+func execMakeCommand(t *testing.T, rootDir, makeTarget string, envVariables ...string) {
 	command := exec.Command("make", "-C", rootDir, makeTarget)
 	command.Env = os.Environ()
 	command.Env = append(command.Env, envVariables...)
 
-	output, err := command.CombinedOutput()
-
+	err := command.Run()
 	if err != nil {
-		t.Log(string(output))
+		t.Fatal("failed to install the operator via the make command", err)
 	}
-
-	return err
 }
 
 func installViaHelm(t *testing.T, releaseTag string, withCsi bool, namespace string) {

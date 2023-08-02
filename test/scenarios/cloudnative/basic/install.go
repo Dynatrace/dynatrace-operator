@@ -37,7 +37,7 @@ func Install(t *testing.T, istioEnabled bool) features.Feature {
 	if istioEnabled {
 		operatorNamespaceBuilder = operatorNamespaceBuilder.WithLabels(istio.InjectionLabel)
 	}
-	assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), testDynakube.NeedsCSIDriver())
+	assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), testDynakube)
 
 	// Register sample app install
 	namespaceBuilder := namespace.NewBuilder("cloudnative-sample")

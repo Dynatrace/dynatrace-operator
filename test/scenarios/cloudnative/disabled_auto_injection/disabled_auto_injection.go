@@ -38,7 +38,7 @@ func automaticInjectionDisabled(t *testing.T) features.Feature {
 	// Register operator install
 	operatorNamespaceBuilder := namespace.NewBuilder(testDynakube.Namespace)
 
-	assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), testDynakube.NeedsCSIDriver())
+	assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), testDynakube)
 
 	// Register sample app install
 	namespaceBuilder := namespace.NewBuilder("cloudnative-disabled-injection-sample")

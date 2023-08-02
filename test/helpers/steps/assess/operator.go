@@ -13,21 +13,21 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func InstallOperatorFromSource(builder *features.FeatureBuilder, operatorNamespace string, useCsi bool) {
-	namespaceBuilder := namespace.NewBuilder(operatorNamespace)
-	InstallOperatorFromSourceWithCustomNamespace(builder, namespaceBuilder.Build(), useCsi)
+func InstallOperatorFromSource(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube) {
+	namespaceBuilder := namespace.NewBuilder(testDynakube.Namespace)
+	InstallOperatorFromSourceWithCustomNamespace(builder, namespaceBuilder.Build(), testDynakube)
 }
 
-func InstallOperatorFromSourceWithCustomNamespace(builder *features.FeatureBuilder, operatorNamespace corev1.Namespace, useCsi bool) {
+func InstallOperatorFromSourceWithCustomNamespace(builder *features.FeatureBuilder, operatorNamespace corev1.Namespace, testDynakube dynatracev1beta1.DynaKube) {
 	builder.Assess("create operator namespace", namespace.Create(operatorNamespace))
-	builder.Assess("operator manifests installed", operator.InstallViaMake(useCsi))
-	verifyOperatorDeployment(builder, operatorNamespace.Name, useCsi)
+	builder.Assess("operator manifests installed", operator.InstallViaMake(testDynakube.NeedsCSIDriver()))
+	verifyOperatorDeployment(builder, testDynakube)
 }
 
-func InstallOperatorFromRelease(builder *features.FeatureBuilder, operatorNamespace string, useCsi bool, releaseTag string) {
-	builder.Assess("create operator namespace", namespace.Create(namespace.NewBuilder(operatorNamespace).Build()))
-	builder.Assess("operator manifests installed", operator.InstallViaHelm(releaseTag, useCsi, "dynatrace"))
-	verifyOperatorDeployment(builder, operatorNamespace, useCsi)
+func InstallOperatorFromRelease(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube, releaseTag string) {
+	builder.Assess("create operator namespace", namespace.Create(namespace.NewBuilder(testDynakube.Namespace).Build()))
+	builder.Assess("operator manifests installed", operator.InstallViaHelm(releaseTag, testDynakube.NeedsCSIDriver(), "dynatrace"))
+	verifyOperatorDeployment(builder, testDynakube)
 }
 
 func AddClassicCleanUp(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube) {
@@ -36,10 +36,10 @@ func AddClassicCleanUp(builder *features.FeatureBuilder, testDynakube dynatracev
 	builder.Assess("OneAgent files removed from nodes", oneagent.CleanUpEachNode(testDynakube.Namespace))
 }
 
-func verifyOperatorDeployment(builder *features.FeatureBuilder, namespace string, useCsi bool) {
-	builder.Assess("operator started", operator.WaitForDeployment(namespace))
-	builder.Assess("webhook started", webhook.WaitForDeployment(namespace))
-	if useCsi {
-		builder.Assess("csi driver started", csi.WaitForDaemonset(namespace))
+func verifyOperatorDeployment(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube) {
+	builder.Assess("operator started", operator.WaitForDeployment(testDynakube.Namespace))
+	builder.Assess("webhook started", webhook.WaitForDeployment(testDynakube.Namespace))
+	if testDynakube.NeedsCSIDriver() {
+		builder.Assess("csi driver started", csi.WaitForDaemonset(testDynakube.Namespace))
 	}
 }
