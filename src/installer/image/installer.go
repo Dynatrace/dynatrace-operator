@@ -66,11 +66,6 @@ func NewImageInstaller(fs afero.Fs, props *Properties) installer.Installer {
 	}
 
 	if props.DockerConfig.Dynakube.Spec.TrustedCAs != "" {
-		err := props.DockerConfig.StoreRequiredFiles(context.TODO(), afero.Afero{Fs: fs})
-		if err != nil {
-			return nil
-		}
-
 		trustedCAs, err := props.DockerConfig.Dynakube.TrustedCAs(context.TODO(), props.DockerConfig.ApiReader)
 		if err != nil {
 			return nil
