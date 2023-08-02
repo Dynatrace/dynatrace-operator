@@ -45,16 +45,25 @@ func GetImageVersion(ctx context.Context, imageName string, dockerConfig *docker
 
 	keychain := dockerkeychain.NewDockerKeychain(dockerConfig.RegistryAuthPath, afero.NewOsFs())
 
-	proxyURL, err := prepareProxyURL(dockerConfig.Dynakube)
-	if err != nil {
-		return ImageVersion{}, fmt.Errorf("prepareProxyURL(): %w", err)
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+
+	if dockerConfig.Dynakube.HasProxy() {
+		proxyUrl, err := url.Parse(dockerConfig.Dynakube.Spec.Proxy.Value)
+		if err != nil {
+			log.Info("invalid proxy spec", "proxy", dockerConfig.Dynakube.Spec.Proxy.Value)
+			return ImageVersion{}, err
+		}
+
+		transport.Proxy = func(req *http.Request) (*url.URL, error) {
+			return proxyUrl, nil
+		}
 	}
 
-	transport := prepareTransport(proxyURL)
-
-	transport, err = prepareCertificates(transport, dockerConfig.Dynakube, dockerConfig.ApiReader)
-	if err != nil {
-		return ImageVersion{}, fmt.Errorf("prepareCertificates(): %w", err)
+	if dockerConfig.Dynakube.Spec.TrustedCAs != "" {
+		transport, err = addCertificates(transport, dockerConfig.Dynakube, dockerConfig.ApiReader)
+		if err != nil {
+			return ImageVersion{}, fmt.Errorf("prepareCertificates(): %w", err)
+		}
 	}
 
 	descriptor, err := remote.Get(ref, remote.WithContext(ctx), remote.WithAuthFromKeychain(keychain), remote.WithTransport(transport), remote.WithUserAgent("ao"))
@@ -87,56 +96,17 @@ func GetImageVersion(ctx context.Context, imageName string, dockerConfig *docker
 	}, nil
 }
 
-func prepareProxyURL(dynakube *dynakube.DynaKube) (*url.URL, error) {
-	if !dynakube.HasProxy() {
-		log.Info("proxy not defined")
-		return nil, nil
-	}
-
-	proxyUrl, err := url.Parse(dynakube.Spec.Proxy.Value)
+func addCertificates(transport *http.Transport, dynakube *dynakube.DynaKube, apiReader client.Reader) (*http.Transport, error) {
+	trustedCAs, err := dynakube.TrustedCAs(context.TODO(), apiReader)
 	if err != nil {
-		log.Info("invalid proxy spec", "proxy", dynakube.Spec.Proxy.Value)
-		return nil, err
+		return transport, err
 	}
 
-	log.Info("proxy spec", "proxy", dynakube.Spec.Proxy.Value, "proxyURL", proxyUrl.String(), "proxyURL.Host", proxyUrl.Host, "proxyURL.Port()", proxyUrl.Port())
-
-	return proxyUrl, nil
-}
-
-func prepareTransport(proxyURL *url.URL) *http.Transport {
-	transport := http.DefaultTransport.(*http.Transport).Clone()
-
-	transport.Proxy = func(req *http.Request) (*url.URL, error) {
-		proxyUrlName := ""
-		if proxyURL != nil {
-			proxyUrlName = proxyURL.String()
-		}
-		log.Info("via proxy", "proxyURL", proxyUrlName, "req.URL", req.URL.String(), "req.url.Scheme", req.URL.Scheme, "req.url.Host", req.URL.Host, "req.url.Port", req.URL.Port(), "req.User-Agent", req.Header.Get("User-Agent"))
-		return proxyURL, nil
+	rootCAs := x509.NewCertPool()
+	if ok := rootCAs.AppendCertsFromPEM(trustedCAs); !ok {
+		log.Info("failed to append custom certs!")
 	}
-
-	transport.OnProxyConnectResponse = func(ctx context.Context, proxyURL *url.URL, connectReq *http.Request, connectRes *http.Response) error {
-		log.Info("OnProxyConnectResponse", "proxyURL", proxyURL, "connectReq.URL", connectReq.URL.String(), "connectReq.User-Agent", connectReq.Header.Get("User-Agent"), "connectRes", connectRes.Status, "connectRes.Request.URL", connectRes.Request.URL.String())
-		return nil
-	}
-
-	return transport
-}
-
-func prepareCertificates(transport *http.Transport, dynakube *dynakube.DynaKube, apiReader client.Reader) (*http.Transport, error) {
-	if dynakube.Spec.TrustedCAs != "" {
-		trustedCAs, err := dynakube.TrustedCAs(context.TODO(), apiReader)
-		if err != nil {
-			return transport, err
-		}
-
-		rootCAs := x509.NewCertPool()
-		if ok := rootCAs.AppendCertsFromPEM(trustedCAs); !ok {
-			log.Info("failed to append custom certs!")
-		}
-		transport.TLSClientConfig.RootCAs = rootCAs
-	}
+	transport.TLSClientConfig.RootCAs = rootCAs
 
 	return transport, nil
 }
