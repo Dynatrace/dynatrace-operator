@@ -65,5 +65,5 @@ func (updater *activeGateUpdater) CheckForDowngrade(latestVersion string) (bool,
 
 func (updater *activeGateUpdater) UseTenantRegistry(ctx context.Context, dockerCfg *dockerconfig.DockerConfig) error {
 	defaultImage := updater.dynakube.DefaultActiveGateImage()
-	return updateVersionStatusForTenantRegistry(ctx, updater.Target(), defaultImage, updater.versionFunc, dockerCfg, updater.dynakube)
+	return updateVersionStatusForTenantRegistry(ctx, updater.Target(), defaultImage, updater.versionFunc, dockerCfg)
 }
