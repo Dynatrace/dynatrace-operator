@@ -29,7 +29,7 @@ func TestIsError(t *testing.T) {
 	assert.False(t, k8serrors.IsConflict(nil))
 }
 
-func TestEdgeConnectController_Reconcile(t *testing.T) {
+func TestReconcile(t *testing.T) {
 	t.Run(`Create works with minimal setup`, func(t *testing.T) {
 		controller := &Controller{
 			client:    fake.NewClient(),
@@ -37,7 +37,7 @@ func TestEdgeConnectController_Reconcile(t *testing.T) {
 		}
 		result, err := controller.Reconcile(context.TODO(), reconcile.Request{})
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, result)
 	})
 	t.Run(`Timestamp update in EdgeConnect status works`, func(t *testing.T) {
