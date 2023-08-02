@@ -2,12 +2,12 @@ package image
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
@@ -125,8 +125,8 @@ func TestInstaller_InstallAgent(t *testing.T) {
 	testFS := afero.NewMemMapFs()
 	transport := RoundTripFunc(func(req *http.Request) *http.Response {
 		return &http.Response{
-			StatusCode: http.StatusInternalServerError,
-			Body:       ioutil.NopCloser(strings.NewReader(`Internal server error`)),
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(strings.NewReader(`OK`)),
 		}
 	})
 	tests := []struct {
