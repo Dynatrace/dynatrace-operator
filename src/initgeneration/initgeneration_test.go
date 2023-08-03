@@ -275,6 +275,24 @@ func TestCreateSecretConfigForDynaKube(t *testing.T) {
 		assert.Equal(t, expectedSecretConfig, *secretConfig)
 	})
 
+	t.Run("Create SecretConfig without proxy if feature-flag is set", func(t *testing.T) {
+		dynakube := baseDynakube.DeepCopy()
+		expectedSecretConfig := *baseExpectedSecretConfig
+		proxyValue := "proxy-test-value"
+		setProxy(dynakube, proxyValue)
+		setAnnotation(dynakube, map[string]string{
+			dynatracev1beta1.AnnotationFeatureOneAgentIgnoreProxy:"true",
+		})
+
+		testNamespace := createTestInjectedNamespace(dynakube, "test")
+		clt := fake.NewClientWithIndex(testNamespace, apiTokenSecret.DeepCopy(), getKubeNamespace().DeepCopy())
+		ig := NewInitGenerator(clt, clt, dynakube.Namespace)
+
+		secretConfig, err := ig.createSecretConfigForDynaKube(context.TODO(), dynakube, kubesystemUID, nil)
+		require.NoError(t, err)
+		assert.Equal(t, expectedSecretConfig, *secretConfig)
+	})
+
 	t.Run("Create SecretConfig with no-proxy", func(t *testing.T) {
 		dynakube := baseDynakube.DeepCopy()
 		expectedSecretConfig := *baseExpectedSecretConfig
@@ -408,6 +426,10 @@ func createDynakube() *dynatracev1beta1.DynaKube {
 
 func setProxy(dynakube *dynatracev1beta1.DynaKube, value string) {
 	dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: value}
+}
+
+func setAnnotation(dynakube *dynatracev1beta1.DynaKube, value map[string]string) {
+	dynakube.ObjectMeta.Annotations = value
 }
 
 func setTrustedCA(dynakube *dynatracev1beta1.DynaKube, value string) {
