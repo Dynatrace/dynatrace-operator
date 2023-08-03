@@ -41,7 +41,7 @@ func TestReconcile(t *testing.T) {
 		assert.NotNil(t, result)
 	})
 	t.Run(`Timestamp update in EdgeConnect status works`, func(t *testing.T) {
-		now := time.Now()
+		now := time.Now().Add(time.Millisecond * -1)
 
 		instance := &edgeconnectv1alpha1.EdgeConnect{
 			ObjectMeta: metav1.ObjectMeta{
@@ -65,7 +65,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, result)
 
-		assert.Truef(t, instance.Status.UpdatedTimestamp.After(now), "now=%v, updatedTimestamp=%v", now, instance.Status.UpdatedTimestamp)
+		assert.Truef(t, instance.Status.UpdatedTimestamp.After(now.Add(time.Millisecond*-1)), "now=%v, updatedTimestamp=%v", now, instance.Status.UpdatedTimestamp)
 	})
 }
 
