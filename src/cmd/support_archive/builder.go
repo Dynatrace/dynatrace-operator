@@ -30,13 +30,15 @@ const (
 	defaultOperatorAppName         = "dynatrace-operator"
 	loadsimFileSizeFlagName        = "loadsim-file-size"
 	loadsimFilesFlagName           = "loadsim-files"
+	collectManagedLogsFlagName     = "managed-logs"
 )
 
 var (
-	namespaceFlagValue       string
-	archiveToStdoutFlagValue bool
-	loadsimFilesFlagValue    int
-	loadsimFileSizeFlagValue int
+	namespaceFlagValue          string
+	archiveToStdoutFlagValue    bool
+	loadsimFilesFlagValue       int
+	loadsimFileSizeFlagValue    int
+	collectManagedLogsFlagValue bool
 )
 
 type CommandBuilder struct {
@@ -83,6 +85,7 @@ func addFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().BoolVar(&archiveToStdoutFlagValue, archiveToStdoutFlagName, false, "Write tarball to stdout.")
 	cmd.PersistentFlags().IntVar(&loadsimFileSizeFlagValue, loadsimFileSizeFlagName, 10, "Simulated log files, size in MiB (default 10)")
 	cmd.PersistentFlags().IntVar(&loadsimFilesFlagValue, loadsimFilesFlagName, 0, "Number of simulated log files (default 0)")
+	cmd.PersistentFlags().BoolVar(&collectManagedLogsFlagValue, collectManagedLogsFlagName, true, "Add logs from rolled out pods to the support archive.")
 }
 
 func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
@@ -159,7 +162,7 @@ func (builder CommandBuilder) runCollectors(log logr.Logger, supportArchive arch
 	fileSize := loadsimFileSizeFlagValue * 1024 * 1024
 	collectors := []collector{
 		newOperatorVersionCollector(log, supportArchive),
-		newLogCollector(ctx, log, supportArchive, pods, appName),
+		newLogCollector(ctx, log, supportArchive, pods, appName, collectManagedLogsFlagValue),
 		newK8sObjectCollector(ctx, log, supportArchive, namespaceFlagValue, appName, apiReader),
 		newTroubleshootCollector(ctx, log, supportArchive, namespaceFlagValue, apiReader, *kubeConfig),
 		newLoadSimCollector(ctx, log, supportArchive, fileSize, loadsimFilesFlagValue, clientSet.CoreV1().Pods(namespaceFlagValue)),

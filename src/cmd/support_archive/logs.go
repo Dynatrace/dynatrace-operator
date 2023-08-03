@@ -18,20 +18,22 @@ const logCollectorName = "logCollector"
 type logCollector struct {
 	collectorCommon
 
-	context context.Context
-	pods    clientgocorev1.PodInterface
-	appName string
+	context            context.Context
+	pods               clientgocorev1.PodInterface
+	appName            string
+	collectManagedLogs bool
 }
 
-func newLogCollector(context context.Context, log logr.Logger, supportArchive archiver, pods clientgocorev1.PodInterface, appName string) collector { //nolint:revive // argument-limit doesn't apply to constructors
+func newLogCollector(context context.Context, log logr.Logger, supportArchive archiver, pods clientgocorev1.PodInterface, appName string, collectManagedLogs bool) collector { //nolint:revive // argument-limit doesn't apply to constructors
 	return logCollector{
 		collectorCommon: collectorCommon{
 			log:            log,
 			supportArchive: supportArchive,
 		},
-		context: context,
-		pods:    pods,
-		appName: appName,
+		context:            context,
+		pods:               pods,
+		appName:            appName,
+		collectManagedLogs: collectManagedLogs,
 	}
 }
 
@@ -46,11 +48,13 @@ func (collector logCollector) Do() error {
 	}
 	podList = deployedPodList
 
-	managedByOperatorPodList, err := collector.getPodList(kubeobjects.AppManagedByLabel)
-	if err != nil {
-		return err
+	if collector.collectManagedLogs {
+		managedByOperatorPodList, err := collector.getPodList(kubeobjects.AppManagedByLabel)
+		if err != nil {
+			return err
+		}
+		podList.Items = append(podList.Items, managedByOperatorPodList.Items...)
 	}
-	podList.Items = append(podList.Items, managedByOperatorPodList.Items...)
 
 	podGetOptions := metav1.GetOptions{}
 
