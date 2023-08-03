@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
+	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/activegate"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
@@ -64,7 +65,7 @@ func checkDynakubeStatus(dynakube dynatracev1beta1.DynaKube) features.Func {
 		resources := envConfig.Client().Resources()
 		var dk dynatracev1beta1.DynaKube
 
-		err := dynatracev1beta1.AddToScheme(resources.GetScheme())
+		err := v1beta1.AddToScheme(resources.GetScheme())
 		require.NoError(t, err)
 
 		err = resources.Get(ctx, dynakube.Name, dynakube.Namespace, &dk)
@@ -94,7 +95,7 @@ func checkPublicRegistryUsage(dynakube dynatracev1beta1.DynaKube) features.Func 
 		resources := envConfig.Client().Resources()
 		var dk dynatracev1beta1.DynaKube
 
-		err := dynatracev1beta1.AddToScheme(resources.GetScheme())
+		err := v1beta1.AddToScheme(resources.GetScheme())
 		require.NoError(t, err)
 
 		err = resources.Get(ctx, dynakube.Name, dynakube.Namespace, &dk)

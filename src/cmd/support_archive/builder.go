@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
@@ -91,7 +91,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		log := newSupportArchiveLogger(getLogOutput(archiveToStdoutFlagValue, &logBuffer))
 		version.LogVersionToLogger(log)
 
-		err := dynatracev1beta1.AddToScheme(scheme.Scheme)
+		err := v1beta1.AddToScheme(scheme.Scheme)
 		if err != nil {
 			return errors.WithStack(err)
 		}
