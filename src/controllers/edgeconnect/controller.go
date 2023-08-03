@@ -5,6 +5,7 @@ import (
 	"time"
 
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -26,10 +27,11 @@ const (
 type Controller struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the api-server
-	client    client.Client
-	apiReader client.Reader
-	scheme    *runtime.Scheme
-	config    *rest.Config
+	client       client.Client
+	apiReader    client.Reader
+	scheme       *runtime.Scheme
+	config       *rest.Config
+	timeProvider *timeprovider.Provider
 }
 
 func Add(mgr manager.Manager, _ string) error {
@@ -37,15 +39,16 @@ func Add(mgr manager.Manager, _ string) error {
 }
 
 func NewController(mgr manager.Manager) *Controller {
-	return newEdgeConnectController(mgr.GetClient(), mgr.GetAPIReader(), mgr.GetScheme(), mgr.GetConfig())
+	return newEdgeConnectController(mgr.GetClient(), mgr.GetAPIReader(), mgr.GetScheme(), mgr.GetConfig(), timeprovider.New())
 }
 
-func newEdgeConnectController(kubeClient client.Client, apiReader client.Reader, scheme *runtime.Scheme, config *rest.Config) *Controller { //nolint:revive
+func newEdgeConnectController(kubeClient client.Client, apiReader client.Reader, scheme *runtime.Scheme, config *rest.Config, timeProvider *timeprovider.Provider) *Controller { //nolint:revive
 	return &Controller{
-		client:    kubeClient,
-		apiReader: apiReader,
-		scheme:    scheme,
-		config:    config,
+		client:       kubeClient,
+		apiReader:    apiReader,
+		scheme:       scheme,
+		config:       config,
+		timeProvider: timeProvider,
 	}
 }
 
@@ -96,7 +99,7 @@ func (controller *Controller) getEdgeConnect(ctx context.Context, name, namespac
 }
 
 func (controller *Controller) updateEdgeConnectStatus(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) error {
-	edgeConnect.Status.UpdatedTimestamp = metav1.Now()
+	edgeConnect.Status.UpdatedTimestamp = *controller.timeProvider.Now()
 
 	err := controller.client.Status().Update(ctx, edgeConnect)
 	if k8serrors.IsConflict(err) {

@@ -9,12 +9,14 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -52,24 +54,29 @@ func TestReconcile(t *testing.T) {
 				ApiServer: "abc12345.dynatrace.com",
 			},
 			Status: edgeconnectv1alpha1.EdgeConnectStatus{
-				UpdatedTimestamp: metav1.Now(),
+				UpdatedTimestamp: metav1.NewTime(time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)),
 			},
 		}
 
-		controller := createFakeClientAndReconciler(instance)
+		// miliseconds are set to zero somewhere on the way thru the faked client, truncate to make equal check work later on
+		expectedTimestamp := metav1.NewTime(now.Add(time.Hour).Truncate(time.Second))
+		controller := createFakeClientAndReconciler(instance, expectedTimestamp)
 
 		result, err := controller.Reconcile(context.TODO(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
 		})
-
 		require.NoError(t, err)
 		require.NotNil(t, result)
 
-		assert.Truef(t, instance.Status.UpdatedTimestamp.After(now.Add(time.Millisecond*-1)), "now=%v, updatedTimestamp=%v", now, instance.Status.UpdatedTimestamp)
+		// need to re-read instance to see changes done by reconciler
+		err = controller.apiReader.Get(context.TODO(), client.ObjectKey{Name: instance.Name, Namespace: instance.Namespace}, instance)
+		require.NoError(t, err)
+
+		assert.Equal(t, expectedTimestamp, instance.Status.UpdatedTimestamp)
 	})
 }
 
-func createFakeClientAndReconciler(instance *edgeconnectv1alpha1.EdgeConnect) *Controller {
+func createFakeClientAndReconciler(instance *edgeconnectv1alpha1.EdgeConnect, fakedNow metav1.Time) *Controller {
 	fakeClient := fake.NewClientWithIndex(instance,
 		&corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
@@ -80,10 +87,13 @@ func createFakeClientAndReconciler(instance *edgeconnectv1alpha1.EdgeConnect) *C
 	)
 
 	controller := &Controller{
-		client:    fakeClient,
-		apiReader: fakeClient,
-		scheme:    scheme.Scheme,
+		client:       fakeClient,
+		apiReader:    fakeClient,
+		scheme:       scheme.Scheme,
+		timeProvider: timeprovider.New(),
 	}
+
+	controller.timeProvider.Set(&fakedNow)
 
 	return controller
 }
