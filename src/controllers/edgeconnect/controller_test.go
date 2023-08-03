@@ -65,7 +65,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, result)
 
-		assert.True(t, instance.Status.UpdatedTimestamp.After(now))
+		assert.Truef(t, instance.Status.UpdatedTimestamp.After(now), "now=%v, updatedTimestamp=%v", now, instance.Status.UpdatedTimestamp)
 	})
 }
 
