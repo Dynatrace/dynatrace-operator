@@ -41,7 +41,8 @@ func GetDigest(uri string) (string, error) {
 }
 
 func NewImageInstaller(fs afero.Fs, props *Properties) installer.Installer {
-	transport := &http.Transport{}
+	// Create default transport
+	transport := http.DefaultTransport.(*http.Transport).Clone()
 
 	if props.DockerConfig.Dynakube.HasProxy() {
 		proxyUrl, err := url.Parse(props.DockerConfig.Dynakube.Spec.Proxy.Value)
@@ -52,16 +53,7 @@ func NewImageInstaller(fs afero.Fs, props *Properties) installer.Installer {
 		log.Info("proxy spec", "proxy", props.DockerConfig.Dynakube.Spec.Proxy.Value, "proxyURL", proxyUrl.String(), "proxyURL.Host", proxyUrl.Host, "proxyURL.Port()", proxyUrl.Port())
 
 		transport.Proxy = func(req *http.Request) (*url.URL, error) {
-			proxyUrlName := ""
-			if proxyUrl != nil {
-				proxyUrlName = proxyUrl.String()
-			}
-			log.Info("via proxy", "proxyURL", proxyUrlName, "req.URL", req.URL.String(), "req.url.Scheme", req.URL.Scheme, "req.url.Host", req.URL.Host, "req.url.Port", req.URL.Port(), "req.User-Agent", req.Header.Get("User-Agent"))
 			return proxyUrl, nil
-		}
-		transport.OnProxyConnectResponse = func(ctx context.Context, proxyURL *url.URL, connectReq *http.Request, connectRes *http.Response) error {
-			log.Info("OnProxyConnectResponse", "proxyURL", proxyURL, "connectReq.URL", connectReq.URL.String(), "connectReq.User-Agent", connectReq.Header.Get("User-Agent"), "connectRes", connectRes.Status, "connectRes.Request.URL", connectRes.Request.URL.String())
-			return nil
 		}
 	}
 
