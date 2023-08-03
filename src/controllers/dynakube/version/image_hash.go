@@ -57,7 +57,7 @@ func GetImageVersion(ctx context.Context, imageName string, dockerConfig *docker
 	if dockerConfig.Dynakube.Spec.TrustedCAs != "" {
 		transport, err = addCertificates(transport, dockerConfig.Dynakube, dockerConfig.ApiReader)
 		if err != nil {
-			return ImageVersion{}, fmt.Errorf("prepareCertificates(): %w", err)
+			return ImageVersion{}, fmt.Errorf("addCertificates(): %w", err)
 		}
 	}
 
