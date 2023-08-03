@@ -281,7 +281,7 @@ func TestCreateSecretConfigForDynaKube(t *testing.T) {
 		proxyValue := "proxy-test-value"
 		setProxy(dynakube, proxyValue)
 		setAnnotation(dynakube, map[string]string{
-			dynatracev1beta1.AnnotationFeatureOneAgentIgnoreProxy:"true",
+			dynatracev1beta1.AnnotationFeatureOneAgentIgnoreProxy: "true",
 		})
 
 		testNamespace := createTestInjectedNamespace(dynakube, "test")
