@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/src/registry"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/containers/image/v5/docker/reference"
 	"github.com/pkg/errors"
@@ -113,7 +114,7 @@ func setImageIDWithDigest( //nolint:revive
 	if canonRef, ok := ref.(reference.Canonical); ok {
 		target.ImageID = canonRef.String()
 	} else if taggedRef, ok := ref.(reference.NamedTagged); ok {
-		imageVersion, err := imageVersionFunc(ctx, imageUri, dockerCfg)
+		imageVersion, err := imageVersionFunc(ctx, &registry.GoContainerRegistryClient{}, imageUri, dockerCfg)
 		if err != nil {
 			log.Info("failed to determine image version")
 			return err
@@ -157,7 +158,7 @@ func updateVersionStatusForTenantRegistry( //nolint:revive
 		"oldVersion", target.Version)
 
 	if taggedRef, ok := ref.(reference.NamedTagged); ok {
-		imageVersion, err := imageVersionFunc(ctx, imageUri, dockerCfg)
+		imageVersion, err := imageVersionFunc(ctx, &registry.GoContainerRegistryClient{}, imageUri, dockerCfg)
 		if err != nil {
 			log.Info("failed to determine image version")
 			return err
