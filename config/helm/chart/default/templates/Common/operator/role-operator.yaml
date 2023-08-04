@@ -25,6 +25,7 @@ rules:
       - dynatrace.com
     resources:
       - dynakubes
+      - edgeconnects
     verbs:
       - get
       - list
@@ -36,6 +37,8 @@ rules:
     resources:
       - dynakubes/finalizers
       - dynakubes/status
+      - edgeconnects/finalizers
+      - edgeconnects/status
     verbs:
       - update
 

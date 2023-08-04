@@ -4,6 +4,7 @@
 package dynakube
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -168,5 +169,5 @@ type DynaKubeList struct { // nolint:revive
 }
 
 func init() {
-	SchemeBuilder.Register(&DynaKube{}, &DynaKubeList{})
+	v1beta1.SchemeBuilder.Register(&DynaKube{}, &DynaKubeList{})
 }
