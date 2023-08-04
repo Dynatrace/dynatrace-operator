@@ -18,7 +18,7 @@ kind: CSIDriver
 metadata:
   name: csi.oneagent.dynatrace.com
   labels:
-    {{- if (eq (include "dynatrace-operator.openshiftOrOlm" .) "true") }}
+    {{- if eq (include "dynatrace-operator.platform" .) "openshift" }}
     security.openshift.io/csi-ephemeral-volume-profile: "restricted"
     {{- end }}
     {{- include "dynatrace-operator.csiLabels" . | nindent 4 }}
