@@ -9,6 +9,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/src/registry"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/opencontainers/go-digest"
@@ -72,7 +73,7 @@ func TestReconcile(t *testing.T) {
 		setupPullSecret(t, fakeClient, *dynakube)
 
 		dkStatus := &dynakube.Status
-		registry := newFakeRegistry(map[string]ImageVersion{
+		registry := newFakeRegistry(map[string]registry.ImageVersion{
 			dynakube.DefaultActiveGateImage(): {
 				Version: testActiveGateImage.Tag,
 				Digest:  testActiveGateHash,
@@ -123,7 +124,7 @@ func TestReconcile(t *testing.T) {
 
 		dkStatus := &dynakube.Status
 
-		registry := newFakeRegistry(map[string]ImageVersion{
+		registry := newFakeRegistry(map[string]registry.ImageVersion{
 			testActiveGateImage.String(): {
 				Version: testActiveGateImage.Tag,
 				Digest:  testActiveGateHash,

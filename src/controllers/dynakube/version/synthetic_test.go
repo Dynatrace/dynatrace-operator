@@ -8,6 +8,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/src/registry"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -35,7 +36,7 @@ func TestSyntheticUseTenantRegistry(t *testing.T) {
 		}
 		expectedImage := dynakube.DefaultSyntheticImage()
 		mockClient := &dtclient.MockDynatraceClient{}
-		registry := newFakeRegistry(map[string]ImageVersion{
+		registry := newFakeRegistry(map[string]registry.ImageVersion{
 			expectedImage: {
 				Version: testVersion,
 				Digest:  testHash,

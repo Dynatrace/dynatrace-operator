@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
+	"github.com/Dynatrace/dynatrace-operator/src/registry"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -61,7 +62,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 			},
 		}
 		expectedImage := dynakube.DefaultOneAgentImage()
-		registry := newFakeRegistry(map[string]ImageVersion{
+		registry := newFakeRegistry(map[string]registry.ImageVersion{
 			expectedImage: {
 				Version: testVersion,
 				Digest:  testDigest,
@@ -86,7 +87,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 			},
 		}
 		expectedImage := dynakube.DefaultOneAgentImage()
-		registry := newFakeRegistry(map[string]ImageVersion{
+		registry := newFakeRegistry(map[string]registry.ImageVersion{
 			expectedImage: {
 				Version: testVersion,
 				Digest:  testDigest,
@@ -122,7 +123,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 		}
 
 		expectedImage := dynakube.DefaultOneAgentImage()
-		registry := newFakeRegistry(map[string]ImageVersion{
+		registry := newFakeRegistry(map[string]registry.ImageVersion{
 			expectedImage: {
 				Version: testVersion,
 				Digest:  testDigest,
