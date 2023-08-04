@@ -295,7 +295,7 @@ func (dk *DynaKube) FeatureActiveGateAuthToken() bool {
 
 // FeatureLabelVersionDetection is a feature flag to enable injecting additional environment variables based on user labels
 func (dk *DynaKube) FeatureLabelVersionDetection() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureLabelVersionDetection) != falsePhrase
+	return dk.getFeatureFlagRaw(AnnotationFeatureLabelVersionDetection) == truePhrase
 }
 
 // FeatureAgentInitialConnectRetry is a feature flag to configure startup delay of standalone agents
