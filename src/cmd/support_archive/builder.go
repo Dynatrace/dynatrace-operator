@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 
-	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
@@ -90,11 +89,6 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		logBuffer := bytes.Buffer{}
 		log := newSupportArchiveLogger(getLogOutput(archiveToStdoutFlagValue, &logBuffer))
 		version.LogVersionToLogger(log)
-
-		err := v1beta1.AddToScheme(scheme.Scheme)
-		if err != nil {
-			return errors.WithStack(err)
-		}
 
 		archiveTargetFile, err := createZipArchiveTargetFile(archiveToStdoutFlagValue, defaultSupportArchiveTargetDir)
 		if err != nil {
