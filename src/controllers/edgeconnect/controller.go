@@ -39,16 +39,12 @@ func Add(mgr manager.Manager, _ string) error {
 }
 
 func NewController(mgr manager.Manager) *Controller {
-	return newEdgeConnectController(mgr.GetClient(), mgr.GetAPIReader(), mgr.GetScheme(), mgr.GetConfig(), timeprovider.New())
-}
-
-func newEdgeConnectController(kubeClient client.Client, apiReader client.Reader, scheme *runtime.Scheme, config *rest.Config, timeProvider *timeprovider.Provider) *Controller { //nolint:revive
 	return &Controller{
-		client:       kubeClient,
-		apiReader:    apiReader,
-		scheme:       scheme,
-		config:       config,
-		timeProvider: timeProvider,
+		client:       mgr.GetClient(),
+		apiReader:    mgr.GetAPIReader(),
+		scheme:       mgr.GetScheme(),
+		config:       mgr.GetConfig(),
+		timeProvider: timeprovider.New(),
 	}
 }
 

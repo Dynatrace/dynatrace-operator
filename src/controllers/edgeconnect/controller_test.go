@@ -6,13 +6,11 @@ import (
 	"time"
 
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/edgeconnect"
-	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -23,8 +21,6 @@ import (
 const (
 	testName      = "test-name-edgeconnectv1alpha1"
 	testNamespace = "test-namespace"
-
-	testUID = "testUID"
 )
 
 func TestIsError(t *testing.T) {
@@ -32,7 +28,7 @@ func TestIsError(t *testing.T) {
 }
 
 func TestReconcile(t *testing.T) {
-	t.Run(`Create works with minimal setup`, func(t *testing.T) {
+	t.Run("Create works with minimal setup", func(t *testing.T) {
 		controller := &Controller{
 			client:    fake.NewClient(),
 			apiReader: fake.NewClient(),
@@ -42,9 +38,7 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, result)
 	})
-	t.Run(`Timestamp update in EdgeConnect status works`, func(t *testing.T) {
-		now := time.Now().Add(time.Millisecond * -1)
-
+	t.Run("Timestamp update in EdgeConnect status works", func(t *testing.T) {
 		instance := &edgeconnectv1alpha1.EdgeConnect{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -58,9 +52,8 @@ func TestReconcile(t *testing.T) {
 			},
 		}
 
-		// miliseconds are set to zero somewhere on the way thru the faked client, truncate to make equal check work later on
-		expectedTimestamp := metav1.NewTime(now.Add(time.Hour).Truncate(time.Second))
-		controller := createFakeClientAndReconciler(instance, expectedTimestamp)
+		controller := createFakeClientAndReconciler(instance)
+		controller.timeProvider.Freeze()
 
 		result, err := controller.Reconcile(context.TODO(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -68,23 +61,16 @@ func TestReconcile(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, result)
 
-		// need to re-read instance to see changes done by reconciler
 		err = controller.apiReader.Get(context.TODO(), client.ObjectKey{Name: instance.Name, Namespace: instance.Namespace}, instance)
 		require.NoError(t, err)
-
-		assert.Equal(t, expectedTimestamp, instance.Status.UpdatedTimestamp)
+		// Fake client drops seconds, so we have to do the same
+		expectedTimestamp := controller.timeProvider.Now().Truncate(time.Second)
+		assert.Equal(t, expectedTimestamp, instance.Status.UpdatedTimestamp.Time)
 	})
 }
 
-func createFakeClientAndReconciler(instance *edgeconnectv1alpha1.EdgeConnect, fakedNow metav1.Time) *Controller {
-	fakeClient := fake.NewClientWithIndex(instance,
-		&corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: kubesystem.Namespace,
-				UID:  testUID,
-			},
-		},
-	)
+func createFakeClientAndReconciler(instance *edgeconnectv1alpha1.EdgeConnect) *Controller {
+	fakeClient := fake.NewClientWithIndex(instance)
 
 	controller := &Controller{
 		client:       fakeClient,
@@ -92,8 +78,5 @@ func createFakeClientAndReconciler(instance *edgeconnectv1alpha1.EdgeConnect, fa
 		scheme:       scheme.Scheme,
 		timeProvider: timeprovider.New(),
 	}
-
-	controller.timeProvider.Set(&fakedNow)
-
 	return controller
 }
