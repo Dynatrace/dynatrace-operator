@@ -135,9 +135,13 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dynak
 		return nil, errors.WithMessage(err, "failed to query tokens")
 	}
 
-	proxy, err := dynakube.Proxy(ctx, g.apiReader)
-	if err != nil {
-		return nil, errors.WithStack(err)
+	var proxy string
+	var err error
+	if dynakube.NeedsOneAgentProxy() {
+		proxy, err = dynakube.Proxy(ctx, g.apiReader)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
 	}
 
 	trustedCAs, err := dynakube.TrustedCAs(ctx, g.apiReader)
