@@ -290,7 +290,6 @@ func TestDefaultEnabledFeatureFlags(t *testing.T) {
 	assert.True(t, dynakube.FeatureActiveGateReadOnlyFilesystem())
 	assert.True(t, dynakube.FeatureAutomaticKubernetesApiMonitoring())
 	assert.True(t, dynakube.FeatureAutomaticInjection())
-	assert.True(t, dynakube.FeatureLabelVersionDetection())
 	assert.True(t, dynakube.FeatureInjectionFailurePolicy() == "silent")
 
 	assert.False(t, dynakube.FeatureDisableActiveGateUpdates())
@@ -298,4 +297,5 @@ func TestDefaultEnabledFeatureFlags(t *testing.T) {
 	assert.False(t, dynakube.FeatureDisableReadOnlyOneAgent())
 	assert.False(t, dynakube.FeatureDisableWebhookReinvocationPolicy())
 	assert.False(t, dynakube.FeatureDisableMetadataEnrichment())
+	assert.False(t, dynakube.FeatureLabelVersionDetection())
 }
