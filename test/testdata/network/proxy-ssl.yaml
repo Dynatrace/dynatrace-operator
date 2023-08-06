@@ -1,0 +1,132 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: proxy
+  annotations:
+    dynatrace.com/inject: "false"
+  labels:
+    app: squid
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: proxy
+  namespace: proxy
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: proxy-ca
+  namespace: proxy
+data:
+  myCA.pem: |
+    LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JSUV2Z0lCQURBTkJna3Foa2lHOXcwQkFRRUZBQVNDQktnd2dnU2tBZ0VBQW9JQkFRRFRPUFMybERTaFBaeWwKVE84dGFULzZUTUJtRUhKWElmbThVY3k1QnV1b2FJdXhxZTJXNE1oQk1hcVNwdUhhK09BbVJyL2daMkZwY2JqSAorOGMxVkFuZWs2cTl1emhERktYcEtOL2dWZDBXMGpWUXdiNXJ0SGc0OFdORkhiNHRoNkZNV2l1QUhZSm9hOHdrCkhYNWxTbmJqNWFLRmV4dkZCYzFsVkFYaW1LaXRZK2dOWnMzb3hNbGM2eDBIRHY0Ris3MVdzcmFTV1llWWFibUYKcCtCR1VzUzFVb0NOY2d1N2pYQ0ZSbmZ2Njg3MGNyQWZPNVlmNVBFY0dHczRDQUlyd2EyWG50V2djMm9PUVVzTApVUDljejdWQ3YwM0thOGJlM3lORHJXS3p2TjJCZTBIQXE4TkxDMGdDZmc5K3I5aFZncnNBU1Y3S21HK040V0xkClNabUJ4Z2wxQWdNQkFBRUNnZ0VBQ0hpU24rRTd2SEpnYzQ5WC9FWHAvSnQ5WlMvVEFNUS91VzludXMxRFFEZ2UKZWh2cTNRL2JiWG5xSEZnNFcwbDdPOWhwM2p4bktnMFhNR0N4bkRyb1FSYVhxZytnY2EyWit5QXZoNnRmT0ROcQpxS0xNaEpIeW9iTlVuRE5WZ0RWSW9SWkdBNjBBb09MSjNNZVlzbTZWRnJpMmx1SFpaWmZBK3JKWm9MMG5RL291CkdtUVF6YWtLSFVLbm82c2JoeG9LVXhtcy8vM3VrRDFmNWVNOGxPVXpEYjRhWTVJRC9NWW16UXFLQjRwbXFIUmIKcDNSWnpac3RmanVxZExCS2drNURhS0xoYVNwWHVuSDJnajYvYlVONGV2TGRSb0hwQlIyUkRXRGtFVGR1MFNKQQpSb3d2ZWxjRHY4eGxDbFd6TThnRHZuZ3hzLzlXVlQ4VW1KcUxTTUY0SVFLQmdRRHBiUVVVOE03cWpPRDFiZmZDClNpOW85OVVGQ1lXdFBSZWliRGVxNkIxOUJnWDE3YUNxeUVaTGNraDZZZkl3REtMZ3pCTkE1OWptMFZEYjc4R0QKeWxXWlBXTGs1d0ZHa3RqM2ZORGlSZ3puV2l5UlNuUTBmemtDNVpMZzRJVVFOQ0hpRndMaWZBWVhaYU1MelJqMwpxNThzbUorckhIcERYZ0x4YzFmTjJlMlhMUUtCZ1FEbnBqM2trTXZwc1RnQjU3ZWgybjBpVzY4b3IreVNLcUJyClFvOStQaTlQcFE2RWJDZ0svN3RKZy9uRFRUSE5IcVYrd3I3Q0xuQlIrSmMvUC9UQmRxMTJlZ1g1NENOQlBnSzEKeDlnWkQ5c0VXTWJyeElUSWRlM0w3VkhhRjNKZVg0WWErNWZjOVhwU001V2R4a3ZESXhEa3dHN1NxczFsVGRQdwpiQUk4RHdRb2FRS0JnQVZNeEdERlZ1MWNaWDh0RUFNSlRDcEY5a0EzQnlIMzBTR084M1NkOEkxMkpZeC82TFgzCjlpQ2daNlRmdEhBQzJXL2hNazYyOU9YSXV0MURoRkZKdHNmVDdQcmxnOUhtWTZhNjNzTkVjK2FNMVpZMjZveUcKbHZUSjRadlpmU3Z4QXhQdkVkR3luekRJemZybW5UcUNXd3JZTEVmbVRhQlo4aGNwVjBVRlBhL0JBb0dCQU5BOQpUM0pEQUN3S0ZkRVFuckV2R2tKaXJTa2tUTVJ3OFZpNnN3Zkhtdnc3NHJzRUIxTXI1UThIUnVWY1phS0JKRUM1CmpJWSsvTldUWlZPRWlOL0pjZElKaTRtL0JiSkdybVQvUzdIcjRQVWRZV1RjZW9sQ0NnekNRRXlQdTA0L0RPMEEKc3RuOUNvTU93RGJlNVloNzQxbmY2MEFTTHlZY09xUHNWRzN0Q2MzUkFvR0JBTFNUWVdzNm5Hamd2dndPU2w1eApkWjBJRk0rNTVLU2V3TzlBWm1tcVFNM2czbnQ5ZUROU0RsM291YlR4NjMxQ0F5RDcrdHBQcjY1RlVYR1EzL09VCnhnaW11TEd4VU83dHRndDVxUXdOY1ZVNXI2ZHNUUEZLL1VBQ0xxTUlzSHRKbndwTG40YnVoZ2U4TktPcDViekoKMXNSNU1pUjJvTkQ4ZkRUb3JaeHlaakJRCi0tLS0tRU5EIFBSSVZBVEUgS0VZLS0tLS0KLS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURhekNDQWxPZ0F3SUJBZ0lVQm9adWlVbitCcjEzZUZOUTdRZUpuV0xUME5jd0RRWUpLb1pJaHZjTkFRRUwKQlFBd1JURUxNQWtHQTFVRUJoTUNRVlV4RXpBUkJnTlZCQWdNQ2xOdmJXVXRVM1JoZEdVeElUQWZCZ05WQkFvTQpHRWx1ZEdWeWJtVjBJRmRwWkdkcGRITWdVSFI1SUV4MFpEQWVGdzB5TXpBNE1EUXdOelF4TURKYUZ3MHlOREE0Ck1ETXdOelF4TURKYU1FVXhDekFKQmdOVkJBWVRBa0ZWTVJNd0VRWURWUVFJREFwVGIyMWxMVk4wWVhSbE1TRXcKSHdZRFZRUUtEQmhKYm5SbGNtNWxkQ0JYYVdSbmFYUnpJRkIwZVNCTWRHUXdnZ0VpTUEwR0NTcUdTSWIzRFFFQgpBUVVBQTRJQkR3QXdnZ0VLQW9JQkFRRFRPUFMybERTaFBaeWxUTzh0YVQvNlRNQm1FSEpYSWZtOFVjeTVCdXVvCmFJdXhxZTJXNE1oQk1hcVNwdUhhK09BbVJyL2daMkZwY2JqSCs4YzFWQW5lazZxOXV6aERGS1hwS04vZ1ZkMFcKMGpWUXdiNXJ0SGc0OFdORkhiNHRoNkZNV2l1QUhZSm9hOHdrSFg1bFNuYmo1YUtGZXh2RkJjMWxWQVhpbUtpdApZK2dOWnMzb3hNbGM2eDBIRHY0Ris3MVdzcmFTV1llWWFibUZwK0JHVXNTMVVvQ05jZ3U3alhDRlJuZnY2ODcwCmNyQWZPNVlmNVBFY0dHczRDQUlyd2EyWG50V2djMm9PUVVzTFVQOWN6N1ZDdjAzS2E4YmUzeU5EcldLenZOMkIKZTBIQXE4TkxDMGdDZmc5K3I5aFZncnNBU1Y3S21HK040V0xkU1ptQnhnbDFBZ01CQUFHalV6QlJNQjBHQTFVZApEZ1FXQkJTZFIxY3RvV2ZkKzVkU2FnNER0M3Bhb1pFTmZUQWZCZ05WSFNNRUdEQVdnQlNkUjFjdG9XZmQrNWRTCmFnNER0M3Bhb1pFTmZUQVBCZ05WSFJNQkFmOEVCVEFEQVFIL01BMEdDU3FHU0liM0RRRUJDd1VBQTRJQkFRQ24KZWVhUUNZUTExeFB3aHhuUFBVWkUwdXZlZUdMYXhjaVdvNUpXOURoeWN4eVduVmgxbHE0Zm9uOXRoM2ZPZWlnZgpNaFQwSnAxZnRmMEFFenRSZ3dHMGI0cHVLYVVmYXk0U3NZYWpmWDF1OVZqSnN6Y1Jadmp6UnR3R0VmODRCZkhGCnJXWjJHVFVrUFRYOHdNaXlVdlpSUlpQb1lyYTFsZlVJNUtrTnZrb01ydWhmVEsrRlpoWUdVV3dyblpIRy9oNGsKTnp0OU1RY0p2RysyUWZ4YVlUQ3NRNnBuamtEcXlUWVRRcWp1T2JzUjNTYjk2d3VqK3VBQnVwWktHbmllYmFOcQo0SmozL0dhZFQ4bHVWTkx6U0hrd3BsT1o2MVNpTTlzY21ubXhLS2RjMHUwVXRTNXBFcEprS3J1WCs4c2wvT2VqCmZ6WG1XUU95bjVBaWZQWG11bXdZCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: configfile
+  namespace: proxy
+data:
+  squid.conf: |
+    acl localnet src 0.0.0.1-0.255.255.255	# RFC 1122 "this" network (LAN)
+    acl localnet src 10.0.0.0/8		# RFC 1918 local private network (LAN)
+    acl localnet src 100.64.0.0/10		# RFC 6598 shared address space (CGN)
+    acl localnet src 169.254.0.0/16 	# RFC 3927 link-local (directly plugged) machines
+    acl localnet src 172.16.0.0/12		# RFC 1918 local private network (LAN)
+    acl localnet src 192.168.0.0/16		# RFC 1918 local private network (LAN)
+    acl localnet src fc00::/7       	# RFC 4193 local private network range
+    acl localnet src fe80::/10      	# RFC 4291 link-local (directly plugged) machines
+    acl SSL_ports port 443
+    acl Safe_ports port 80		# http
+    acl Safe_ports port 21		# ftp
+    acl Safe_ports port 443		# https
+    acl Safe_ports port 70		# gopher
+    acl Safe_ports port 210		# wais
+    acl Safe_ports port 1025-65535	# unregistered ports
+    acl Safe_ports port 280		# http-mgmt
+    acl Safe_ports port 488		# gss-http
+    acl Safe_ports port 591		# filemaker
+    acl Safe_ports port 777		# multiling http
+    acl CONNECT method CONNECT
+    http_access deny !Safe_ports
+    http_access deny CONNECT !SSL_ports
+    http_access allow localhost manager
+    http_access deny manager
+    http_access allow localhost
+    http_access allow localnet
+    http_access deny all
+    http_port 3128 ssl-bump generate-host-certificates=on dynamic_cert_mem_cache_size=4MB cert=/etc/squid/ssl/myCA.pem
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: squid
+  name: squid
+  namespace: proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: squid
+  template:
+    metadata:
+      annotations:
+        dynatrace.com/inject: "false"
+      labels:
+        app: squid
+    spec:
+      serviceAccountName: proxy
+      containers:
+      - image: quay.io/andrii_soldatenko/docker-squid-proxy
+        name: squid
+        volumeMounts:
+          - mountPath: /etc/squid/
+            name: config-volume
+          - mountPath: /etc/squid/ssl/
+            name: proxy-ca-volume
+        securityContext:
+          privileged: true
+          capabilities:
+            add:
+             - CAP_NET_RAW
+
+      volumes:
+        - name: config-volume
+          configMap:
+            name: configfile
+        - name: proxy-ca-volume
+          secret:
+            secretName: proxy-ca
+            items:
+            - key: myCA.pem
+              path: myCA.pem
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: squid
+  namespace: proxy
+spec:
+  selector:
+    app: squid
+  ports:
+  - port: 3128
+    targetPort: 3128
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: squid
+  namespace: dynatrace
+spec:
+  hosts:
+  - squid.proxy.svc.cluster.local
+  ports:
+    - number: 3128
+      name: tcp
+      protocol: TCP
+  resolution: DNS
+  location: MESH_EXTERNAL

@@ -127,13 +127,14 @@ func CodeModules(t *testing.T, istioEnabled bool) features.Feature {
 
 func withProxy(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features.Feature {
 	builder := features.New("codemodules injection with proxy")
-	secretConfig := tenant.GetSingleTenantSecret(t)
+	secretConfigs := tenant.GetMultiTenantSecret(t)
+	require.Len(t, secretConfigs, 2)
 
 	dynakubeBuilder := dynakube.NewBuilder().
 		WithDefaultObjectMeta().
 		Name("cloudnative-codemodules-with-proxy").
 		WithDynakubeNamespaceSelector().
-		ApiUrl(secretConfig.ApiUrl).
+		ApiUrl(secretConfigs[0].ApiUrl).
 		CloudNative(codeModulesCloudNativeSpec()).
 		WithIstio().
 		Proxy(proxySpec)
@@ -147,7 +148,6 @@ func withProxy(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features
 	sampleNamespace := namespaceBuilder.WithLabels(labels).Build()
 	sampleApp := sampleapps.NewSampleDeployment(t, cloudNativeDynakube)
 	sampleApp.WithNamespace(sampleNamespace)
-	sampleApp.WithLabels(labels)
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
 	// Register operator install
@@ -162,7 +162,7 @@ func withProxy(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features
 	proxy.IsDynatraceNamespaceCutOff(builder, cloudNativeDynakube)
 
 	// Register dynakube install
-	assess.InstallDynakube(builder, &secretConfig, cloudNativeDynakube)
+	assess.InstallDynakube(builder, &secretConfigs[0], cloudNativeDynakube)
 
 	// Register sample app install
 	builder.Assess("install sample app", sampleApp.Install())

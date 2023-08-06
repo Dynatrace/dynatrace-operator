@@ -42,8 +42,9 @@ const (
 var (
 	dynatraceNetworkPolicy = path.Join(project.TestDataDir(), "network/dynatrace-denial.yaml")
 
-	proxyDeploymentPath = path.Join(project.TestDataDir(), "network/proxy.yaml")
-	proxySCCPath        = path.Join(project.TestDataDir(), "network/proxy-scc.yaml")
+	proxyDeploymentPath             = path.Join(project.TestDataDir(), "network/proxy.yaml")
+	proxyWithCustomCADeploymentPath = path.Join(project.TestDataDir(), "network/proxy_ssl.yaml")
+	proxySCCPath                    = path.Join(project.TestDataDir(), "network/proxy-scc.yaml")
 
 	ProxySpec = &dynatracev1beta1.DynaKubeProxy{
 		Value: "http://squid.proxy.svc.cluster.local:3128",
@@ -54,6 +55,15 @@ func SetupProxyWithTeardown(t *testing.T, builder *features.FeatureBuilder, test
 	if testDynakube.Spec.Proxy != nil {
 		installProxySCC(builder, t)
 		builder.Assess("install proxy", manifests.InstallFromFile(proxyDeploymentPath))
+		builder.Assess("proxy started", deployment.WaitFor(proxyDeploymentName, proxyNamespaceName))
+		builder.WithTeardown("removing proxy", DeleteProxy())
+	}
+}
+
+func SetupProxyWithCustomCAandTeardown(t *testing.T, builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube) {
+	if testDynakube.Spec.Proxy != nil {
+		installProxySCC(builder, t)
+		builder.Assess("install proxy", manifests.InstallFromFile(proxyWithCustomCADeploymentPath))
 		builder.Assess("proxy started", deployment.WaitFor(proxyDeploymentName, proxyNamespaceName))
 		builder.WithTeardown("removing proxy", DeleteProxy())
 	}
