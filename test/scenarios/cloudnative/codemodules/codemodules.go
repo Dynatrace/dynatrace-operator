@@ -49,9 +49,7 @@ const (
 
 	dataPath                 = "/data/"
 	provisionerContainerName = "provisioner"
-
-	httpsProxy = "https_proxy"
-	dtProxy    = "DT_PROXY"
+	httpsProxy               = "https_proxy"
 )
 
 func CodeModules(t *testing.T, istioEnabled bool) features.Feature {
@@ -128,50 +126,56 @@ func CodeModules(t *testing.T, istioEnabled bool) features.Feature {
 }
 
 func withProxy(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features.Feature {
-	builder := features.New("cloudNative with proxy")
+	builder := features.New("codemodules injection with proxy")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
-	testDynakube := dynakube.NewBuilder().
+	dynakubeBuilder := dynakube.NewBuilder().
 		WithDefaultObjectMeta().
+		Name("cloudnative-codemodules-with-proxy").
 		WithDynakubeNamespaceSelector().
 		ApiUrl(secretConfig.ApiUrl).
-		CloudNative(&dynatracev1beta1.CloudNativeFullStackSpec{}).
-		Proxy(proxySpec).
-		Build()
+		CloudNative(codeModulesCloudNativeSpec()).
+		WithIstio().
+		Proxy(proxySpec)
 
-	sampleLabels := kubeobjects.MergeMap(testDynakube.NamespaceSelector().MatchLabels, istio.InjectionLabel)
-	sampleNamespace := namespace.NewBuilder("proxy-sample").WithLabels(sampleLabels).Build()
-	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
-	sampleApp.WithLabels(sampleLabels)
+	cloudNativeDynakube := dynakubeBuilder.Build()
+
+	namespaceBuilder := namespace.NewBuilder("codemodules-sample-with-proxy")
+	labels := cloudNativeDynakube.NamespaceSelector().MatchLabels
+	labels = kubeobjects.MergeMap(labels, istio.InjectionLabel)
+
+	sampleNamespace := namespaceBuilder.WithLabels(labels).Build()
+	sampleApp := sampleapps.NewSampleDeployment(t, cloudNativeDynakube)
 	sampleApp.WithNamespace(sampleNamespace)
-
-	// Register sample namespace create and delete
-	builder.Assess("create sample namespace", namespace.Create(sampleNamespace))
-	builder.Teardown(sampleApp.UninstallNamespace())
+	sampleApp.WithLabels(labels)
+	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
 	// Register operator install
-	operatorNamespaceBuilder := namespace.NewBuilder(testDynakube.Namespace)
-	if proxySpec != nil {
-		operatorNamespaceBuilder = operatorNamespaceBuilder.WithLabels(istio.InjectionLabel)
-	}
-	assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), testDynakube)
+	operatorNamespaceBuilder := namespace.NewBuilder(cloudNativeDynakube.Namespace)
+	operatorNamespaceBuilder = operatorNamespaceBuilder.WithLabels(istio.InjectionLabel)
+
+	assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), cloudNativeDynakube)
 
 	// Register proxy create and delete
-	proxy.SetupProxyWithTeardown(t, builder, testDynakube)
+	proxy.SetupProxyWithTeardown(t, builder, cloudNativeDynakube)
 	proxy.CutOffDynatraceNamespace(builder, proxySpec)
-	proxy.IsDynatraceNamespaceCutOff(builder, testDynakube)
+	proxy.IsDynatraceNamespaceCutOff(builder, cloudNativeDynakube)
 
 	// Register dynakube install
-	assess.InstallDynakube(builder, &secretConfig, testDynakube)
+	assess.InstallDynakube(builder, &secretConfig, cloudNativeDynakube)
+
 	// Register sample app install
 	builder.Assess("install sample app", sampleApp.Install())
 
 	// Register actual test
-	builder.Assess("check env variables of oneagent pods", checkOneAgentEnvVars(testDynakube))
-	builder.Assess("check existing init container and env var", checkSampleInitContainerEnvVars(sampleApp))
+	cloudnative.AssessSampleInitContainers(builder, sampleApp)
+	istio.AssessIstio(builder, cloudNativeDynakube, sampleApp)
 
-	// Register operator and dynakube uninstall
-	teardown.UninstallDynatrace(builder, testDynakube)
+	builder.Assess("codemodules have been downloaded", imageHasBeenDownloaded(cloudNativeDynakube.Namespace))
+
+	// Register sample, dynakube and operator uninstall
+	builder.Teardown(sampleApp.UninstallNamespace())
+	teardown.UninstallDynatrace(builder, cloudNativeDynakube)
 
 	return builder.Feature()
 }
@@ -328,52 +332,4 @@ func isVolumeAttached(t *testing.T, volumes []corev1.Volume, volumeName string) 
 		}
 	}
 	return result
-}
-
-func checkOneAgentEnvVars(dynakube dynatracev1beta1.DynaKube) features.Func {
-	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		resources := envConfig.Client().Resources()
-		err := daemonset.NewQuery(ctx, resources, client.ObjectKey{
-			Name:      dynakube.OneAgentDaemonsetName(),
-			Namespace: dynakube.Namespace,
-		}).ForEachPod(func(podItem corev1.Pod) {
-			require.NotNil(t, podItem)
-			require.NotNil(t, podItem.Spec)
-
-			checkEnvVarsInContainer(t, podItem, dynakube.OneAgentDaemonsetName(), httpsProxy)
-		})
-
-		require.NoError(t, err)
-		return ctx
-	}
-}
-
-func checkSampleInitContainerEnvVars(sampleApp sample.App) features.Func {
-	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		resources := envConfig.Client().Resources()
-		pods := sampleApp.GetPods(ctx, t, resources)
-
-		for _, podItem := range pods.Items {
-			require.NotNil(t, podItem)
-			require.NotNil(t, podItem.Spec)
-			require.NotNil(t, podItem.Spec.InitContainers)
-
-			checkEnvVarsInContainer(t, podItem, sampleApp.ContainerName(), dtProxy)
-		}
-		return ctx
-	}
-}
-
-func checkEnvVarsInContainer(t *testing.T, podItem corev1.Pod, containerName string, envVar string) {
-	for _, container := range podItem.Spec.Containers {
-		if container.Name == containerName {
-			require.NotNil(t, container.Env)
-			require.True(t, kubeobjects.EnvVarIsIn(container.Env, envVar))
-			for _, env := range container.Env {
-				if env.Name == envVar {
-					require.NotNil(t, env.Value)
-				}
-			}
-		}
-	}
 }

@@ -4,16 +4,27 @@ package proxy
 
 import (
 	"context"
+	"fmt"
 	"path"
+	"path/filepath"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/src/installer/common"
+	"github.com/Dynatrace/dynatrace-operator/src/webhook/mutation/pod_mutator/oneagent_mutation"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/platform"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
+	sample "github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/base"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
 	"github.com/Dynatrace/dynatrace-operator/test/project"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -76,4 +87,24 @@ func IsDynatraceNamespaceCutOff(builder *features.FeatureBuilder, testDynakube d
 func isNetworkTrafficCutOff(builder *features.FeatureBuilder, directionName, podName, podNamespaceName, targetUrl string) {
 	builder.Assess(directionName+" - query namespace", sampleapps.InstallCutOffCurlPod(podName, podNamespaceName, targetUrl))
 	builder.Assess(directionName+" - namespace is cutoff", sampleapps.WaitForCutOffCurlPod(podName, podNamespaceName))
+}
+
+func CheckRuxitAgentProcFileHasProxySetting(sampleApp sample.App, proxySpec *dynatracev1beta1.DynaKubeProxy) features.Func {
+	return func(ctx context.Context, t *testing.T, e *envconf.Config) context.Context {
+		resources := e.Client().Resources()
+
+		err := deployment.NewQuery(ctx, resources, client.ObjectKey{
+			Name:      sampleApp.Name(),
+			Namespace: sampleApp.Namespace().Name,
+		}).ForEachPod(func(podItem corev1.Pod) {
+			dir := filepath.Join(oneagent_mutation.OneAgentConfMountPath, common.RuxitConfFileName)
+			readFileCommand := shell.ReadFile(dir)
+			result, err := pod.Exec(ctx, resources, podItem, "sample-dynakube", readFileCommand...)
+			assert.Contains(t, result.StdOut.String(), fmt.Sprintf("proxy %s", proxySpec.Value))
+			require.NoError(t, err)
+		})
+
+		require.NoError(t, err)
+		return ctx
+	}
 }

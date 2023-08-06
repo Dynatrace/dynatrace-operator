@@ -4,28 +4,19 @@ package cloudnativeproxy
 
 import (
 	"context"
-	"fmt"
-	"path/filepath"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/src/installer/common"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/src/webhook/mutation/pod_mutator/oneagent_mutation"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/istio"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/daemonset"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/proxy"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
-	sample "github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/base"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -78,7 +69,7 @@ func withProxy(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features
 
 	// Register actual test
 	builder.Assess("check env variables of oneagent pods", checkOneAgentEnvVars(testDynakube))
-	builder.Assess("check proxy settings in ruxitagentproc.conf", checkRuxitAgentProcFileHasProxySetting(sampleApp, proxySpec))
+	builder.Assess("check proxy settings in ruxitagentproc.conf", proxy.CheckRuxitAgentProcFileHasProxySetting(sampleApp, proxySpec))
 
 	// Register operator and dynakube uninstall
 	teardown.UninstallDynatrace(builder, testDynakube)
@@ -115,25 +106,5 @@ func checkEnvVarsInContainer(t *testing.T, podItem corev1.Pod, containerName str
 				}
 			}
 		}
-	}
-}
-
-func checkRuxitAgentProcFileHasProxySetting(sampleApp sample.App, proxySpec *dynatracev1beta1.DynaKubeProxy) features.Func {
-	return func(ctx context.Context, t *testing.T, e *envconf.Config) context.Context {
-		resources := e.Client().Resources()
-
-		err := deployment.NewQuery(ctx, resources, client.ObjectKey{
-			Name:      sampleApp.Name(),
-			Namespace: sampleApp.Namespace().Name,
-		}).ForEachPod(func(podItem corev1.Pod) {
-			dir := filepath.Join(oneagent_mutation.OneAgentConfMountPath, common.RuxitConfFileName)
-			readFileCommand := shell.ReadFile(dir)
-			result, err := pod.Exec(ctx, resources, podItem, "sample-dynakube", readFileCommand...)
-			assert.Contains(t, result.StdOut.String(), fmt.Sprintf("proxy %s", proxySpec.Value))
-			require.NoError(t, err)
-		})
-
-		require.NoError(t, err)
-		return ctx
 	}
 }
