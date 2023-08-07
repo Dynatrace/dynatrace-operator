@@ -68,21 +68,27 @@ func supportArchiveExecution(t *testing.T) features.Feature {
 	assess.InstallDynatraceWithTeardown(builder, &secretConfig, testDynakube)
 
 	// Register actual test
-	builder.Assess("support archive subcommand can be executed correctly", testSupportArchiveCommand(testDynakube))
+	builder.Assess("support archive subcommand can be executed correctly with managed logs", testSupportArchiveCommand(testDynakube, true))
+	builder.Assess("support archive subcommand can be executed correctly without managed logs", testSupportArchiveCommand(testDynakube, false))
 
 	return builder.Feature()
 }
 
-func testSupportArchiveCommand(testDynakube dynatracev1beta1.DynaKube) features.Func {
+func testSupportArchiveCommand(testDynakube dynatracev1beta1.DynaKube, collectManaged bool) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		result := executeSupportArchiveCommand(ctx, t, envConfig, "--stdout", testDynakube.Namespace)
+		commandLineArguments := []string{"--stdout"}
+		if !collectManaged {
+			commandLineArguments = append(commandLineArguments, "--managed-logs=false")
+		}
+
+		result := executeSupportArchiveCommand(ctx, t, envConfig, commandLineArguments, testDynakube.Namespace)
 		require.NotNil(t, result)
 
 		zipReader, err := zip.NewReader(bytes.NewReader(result.StdOut.Bytes()), int64(result.StdOut.Len()))
 
 		require.NoError(t, err)
 
-		requiredFiles := collectRequiredFiles(t, ctx, envConfig.Client().Resources(), testDynakube)
+		requiredFiles := collectRequiredFiles(t, ctx, envConfig.Client().Resources(), testDynakube, collectManaged)
 		for _, file := range zipReader.File {
 			requiredFiles = assertFile(t, requiredFiles, *file)
 		}
@@ -93,7 +99,7 @@ func testSupportArchiveCommand(testDynakube dynatracev1beta1.DynaKube) features.
 	}
 }
 
-func executeSupportArchiveCommand(ctx context.Context, t *testing.T, envConfig *envconf.Config, cmdLineArguments, namespace string) *pod.ExecutionResult { //nolint:revive
+func executeSupportArchiveCommand(ctx context.Context, t *testing.T, envConfig *envconf.Config, cmdLineArguments []string, namespace string) *pod.ExecutionResult { //nolint:revive
 	environmentResources := envConfig.Client().Resources()
 
 	pods := pod.List(t, ctx, environmentResources, namespace)
@@ -104,27 +110,27 @@ func executeSupportArchiveCommand(ctx context.Context, t *testing.T, envConfig *
 	})
 
 	require.Len(t, operatorPods, 1)
+	command := []string{"/usr/local/bin/dynatrace-operator", "support-archive"}
+	command = append(command, cmdLineArguments...)
 
 	executionResult, err := pod.Exec(ctx, envConfig.Client().Resources(),
 		operatorPods[0],
 		operator.DeploymentName,
-		"/usr/local/bin/dynatrace-operator",
-		"support-archive",
-		cmdLineArguments,
+		command...,
 	)
 	require.NoError(t, err)
 
 	return executionResult
 }
 
-func collectRequiredFiles(t *testing.T, ctx context.Context, resources *resources.Resources, testDynakube dynatracev1beta1.DynaKube) []string {
+func collectRequiredFiles(t *testing.T, ctx context.Context, resources *resources.Resources, testDynakube dynatracev1beta1.DynaKube, collectManaged bool) []string {
 	ns := testDynakube.Namespace
 	requiredFiles := make([]string, 0)
 	requiredFiles = append(requiredFiles, support_archive.OperatorVersionFileName)
 	requiredFiles = append(requiredFiles, support_archive.TroublshootOutputFileName)
 	requiredFiles = append(requiredFiles, support_archive.SupportArchiveOutputFileName)
-	requiredFiles = append(requiredFiles, getRequiredPodFiles(t, ctx, resources, ns, kubeobjects.AppNameLabel)...)
-	requiredFiles = append(requiredFiles, getRequiredPodFiles(t, ctx, resources, ns, kubeobjects.AppManagedByLabel)...)
+	requiredFiles = append(requiredFiles, getRequiredPodFiles(t, ctx, resources, ns, kubeobjects.AppNameLabel, true)...)
+	requiredFiles = append(requiredFiles, getRequiredPodFiles(t, ctx, resources, ns, kubeobjects.AppManagedByLabel, collectManaged)...)
 	requiredFiles = append(requiredFiles, getRequiredReplicaSetFiles(t, ctx, resources, ns)...)
 	requiredFiles = append(requiredFiles, getRequiredServiceFiles(t, ctx, resources, ns)...)
 	requiredFiles = append(requiredFiles, getRequiredWorkloadFiles(ns)...)
@@ -135,7 +141,7 @@ func collectRequiredFiles(t *testing.T, ctx context.Context, resources *resource
 	return requiredFiles
 }
 
-func getRequiredPodFiles(t *testing.T, ctx context.Context, resources *resources.Resources, namespace string, labelKey string) []string {
+func getRequiredPodFiles(t *testing.T, ctx context.Context, resources *resources.Resources, namespace string, labelKey string, collectManaged bool) []string {
 	pods := pod.List(t, ctx, resources, namespace)
 	requiredFiles := make([]string, 0)
 
@@ -147,9 +153,11 @@ func getRequiredPodFiles(t *testing.T, ctx context.Context, resources *resources
 	for _, operatorPod := range podList {
 		requiredFiles = append(requiredFiles,
 			fmt.Sprintf("%s/%s/pod/%s%s", support_archive.ManifestsDirectoryName, operatorPod.Namespace, operatorPod.Name, support_archive.ManifestsFileExtension))
-		for _, container := range operatorPod.Spec.Containers {
-			requiredFiles = append(requiredFiles,
-				fmt.Sprintf("%s/%s/%s.log", support_archive.LogsDirectoryName, operatorPod.Name, container.Name))
+		if collectManaged && (labelKey == "app.kubernetes.io/managed-by" || labelKey == "app.kubernetes.io/name") {
+			for _, container := range operatorPod.Spec.Containers {
+				requiredFiles = append(requiredFiles,
+					fmt.Sprintf("%s/%s/%s.log", support_archive.LogsDirectoryName, operatorPod.Name, container.Name))
+			}
 		}
 	}
 	return requiredFiles
