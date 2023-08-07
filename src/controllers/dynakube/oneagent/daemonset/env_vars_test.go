@@ -74,14 +74,13 @@ func TestEnvironmentVariables(t *testing.T) {
 		assertEnvVarNameAndValue(t, envVars, connectioninfo.EnvDtTenant, testValue)
 		assertEnvVarNameAndValue(t, envVars, proxy, testValue)
 		assertEnvVarNameAndValue(t, envVars, oneagentReadOnlyMode, testValue)
-
 	})
 }
 
 func assertEnvVarNameAndValue(t *testing.T, envVars []corev1.EnvVar, name, value string) {
 	env := kubeobjects.FindEnvVar(envVars, name)
 	assert.Equal(t, name, env.Name)
-	assert.Equal(t, value, (*env).Value)
+	assert.Equal(t, value, env.Value)
 }
 
 func TestAddNodeNameEnv(t *testing.T) {
