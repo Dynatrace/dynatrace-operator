@@ -33,17 +33,23 @@ func Install(t *testing.T, name string) features.Feature {
 		ClassicFullstack(&dynatracev1beta1.HostInjectSpec{})
 	dynakubeClassicFullstack := dynakubeBuilder.Build()
 
-	// install operator and dynakube
-	assess.InstallDynatrace(featureBuilder, &secretConfig, dynakubeClassicFullstack)
-
 	sampleAppClassic := sampleapps.NewSampleDeployment(t, dynakubeClassicFullstack)
 	sampleAppClassic.WithName(sampleAppsClassicName)
+	featureBuilder.Assess("create sample app namespace", 	sampleAppClassic.InstallNamespace())
+
+	// install operator and dynakube
+	assess.InstallDynatrace(featureBuilder, &secretConfig, dynakubeClassicFullstack)
 
 	featureBuilder.Assess("install sample app", sampleAppClassic.Install())
 
 	// change dynakube to cloud native
 	dynakubeBuilder = dynakubeBuilder.ResetOneAgent().CloudNative(cloudnative.DefaultCloudNativeSpec())
 	dynakubeCloudNative := dynakubeBuilder.Build()
+
+	sampleAppCloudNative := sampleapps.NewSampleDeployment(t, dynakubeCloudNative)
+	sampleAppCloudNative.WithName(sampleAppsCloudNativeName)
+	sampleAppCloudNative.WithAnnotations(map[string]string{dtwebhook.AnnotationFailurePolicy: "fail"})
+	featureBuilder.Assess("create sample app namespace", 	sampleAppCloudNative.InstallNamespace())
 
 	assess.InstallOperatorFromSource(featureBuilder, dynakubeCloudNative)
 	assess.UpdateDynakube(featureBuilder, dynakubeCloudNative)
@@ -53,9 +59,6 @@ func Install(t *testing.T, name string) features.Feature {
 	featureBuilder.Assess("wait for daemonset to be ready", oneagent.WaitForDaemonset(dynakubeCloudNative))
 
 	// apply sample apps
-	sampleAppCloudNative := sampleapps.NewSampleDeployment(t, dynakubeCloudNative)
-	sampleAppCloudNative.WithName(sampleAppsCloudNativeName)
-	sampleAppCloudNative.WithAnnotations(map[string]string{dtwebhook.AnnotationFailurePolicy: "fail"})
 	featureBuilder.Assess("install sample app", sampleAppCloudNative.Install())
 
 	// run cloud native test here
