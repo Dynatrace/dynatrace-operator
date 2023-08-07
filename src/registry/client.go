@@ -11,7 +11,7 @@ import (
 	"github.com/opencontainers/go-digest"
 )
 
-type Client interface {
+type ImageGetter interface {
 	GetImageVersion(ctx context.Context, ref name.Reference, keychain authn.Keychain, transport *http.Transport) (ImageVersion, error)
 }
 
