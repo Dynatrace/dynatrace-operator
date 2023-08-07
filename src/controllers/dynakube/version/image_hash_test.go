@@ -7,13 +7,17 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/version/testdata"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/registry"
 	"github.com/Dynatrace/dynatrace-operator/src/registry/mocks"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/containers/image/v5/docker/reference"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 type fakeRegistry struct {
@@ -60,7 +64,7 @@ func TestGetImageVersion(t *testing.T) {
 		registryMockClient := &mocks.MockClient{}
 		registryMockClient.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(registry.ImageVersion{}, nil)
 		imageName := "dynatrace-operator:1.0.0"
-		dockerConfig := dockerconfig.NewDockerConfig(fake.NewClient(), dynakube.DynaKube{})
+		dockerConfig := dockerconfig.NewDockerConfig(fake.NewClientBuilder().Build(), dynakube.DynaKube{})
 
 		got, err := GetImageVersion(context.TODO(), registryMockClient, imageName, dockerConfig)
 		assert.NotNil(t, got)
@@ -70,20 +74,34 @@ func TestGetImageVersion(t *testing.T) {
 		registryMockClient := &mocks.MockClient{}
 		registryMockClient.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(registry.ImageVersion{}, nil)
 		imageName := "dynatrace-operator:1.0.0"
-		dockerConfig := dockerconfig.NewDockerConfig(fake.NewClient(), dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{Proxy: &dynakube.DynaKubeProxy{Value: "dummy-proxy"}}})
+		dockerConfig := dockerconfig.NewDockerConfig(fake.NewClientBuilder().Build(), dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{Proxy: &dynakube.DynaKubeProxy{Value: "dummy-proxy"}}})
 
 		got, err := GetImageVersion(context.TODO(), registryMockClient, imageName, dockerConfig)
 		assert.NotNil(t, got)
 		assert.Nil(t, err)
 	})
-	// t.Run("with trustedCAs", func(t *testing.T) {
-	// 	registryMockClient := &mocks.MockClient{}
-	// 	registryMockClient.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(registry.ImageVersion{}, nil)
-	// 	imageName := "dynatrace-operator:1.0.0"
-	// 	dockerConfig := dockerconfig.NewDockerConfig(fake.NewClient(), dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{TrustedCAs: "dummy-certs-configmap"}})
+	t.Run("with trustedCAs", func(t *testing.T) {
+		registryMockClient := &mocks.MockClient{}
+		registryMockClient.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(registry.ImageVersion{}, nil)
+		imageName := "dynatrace-operator:1.0.0"
 
-	// 	got, err := GetImageVersion(context.TODO(), registryMockClient, imageName, dockerConfig)
-	// 	assert.NotNil(t, got)
-	// 	assert.Nil(t, err)
-	// })
+		configMapName := "dummy-certs-configmap"
+		fakeClient := fake.NewClientBuilder().
+			WithScheme(scheme.Scheme).
+			WithObjects(
+				&corev1.ConfigMap{
+					ObjectMeta: v1.ObjectMeta{Name: configMapName},
+					Data: map[string]string{
+						"certs": testdata.Certs,
+					},
+				},
+			).
+			Build()
+
+		dockerConfig := dockerconfig.NewDockerConfig(fakeClient, dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{TrustedCAs: configMapName}})
+
+		got, err := GetImageVersion(context.TODO(), registryMockClient, imageName, dockerConfig)
+		assert.NotNil(t, got)
+		assert.Nil(t, err)
+	})
 }
