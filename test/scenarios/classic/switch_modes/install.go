@@ -35,7 +35,7 @@ func Install(t *testing.T, name string) features.Feature {
 
 	sampleAppClassic := sampleapps.NewSampleDeployment(t, dynakubeClassicFullstack)
 	sampleAppClassic.WithName(sampleAppsClassicName)
-	featureBuilder.Assess("create sample app namespace", 	sampleAppClassic.InstallNamespace())
+	featureBuilder.Assess("create sample app namespace", sampleAppClassic.InstallNamespace())
 
 	// install operator and dynakube
 	assess.InstallDynatrace(featureBuilder, &secretConfig, dynakubeClassicFullstack)
@@ -49,7 +49,7 @@ func Install(t *testing.T, name string) features.Feature {
 	sampleAppCloudNative := sampleapps.NewSampleDeployment(t, dynakubeCloudNative)
 	sampleAppCloudNative.WithName(sampleAppsCloudNativeName)
 	sampleAppCloudNative.WithAnnotations(map[string]string{dtwebhook.AnnotationFailurePolicy: "fail"})
-	featureBuilder.Assess("create sample app namespace", 	sampleAppCloudNative.InstallNamespace())
+	featureBuilder.Assess("create sample app namespace", sampleAppCloudNative.InstallNamespace())
 
 	assess.InstallOperatorFromSource(featureBuilder, dynakubeCloudNative)
 	assess.UpdateDynakube(featureBuilder, dynakubeCloudNative)
