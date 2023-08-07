@@ -54,7 +54,6 @@ func TestArguments(t *testing.T) {
 		assert.Contains(t, podSpecs.Containers[0].Args, testValue)
 	})
 	t.Run("when injected arguments are provided then they are appended at the end of the arguments", func(t *testing.T) {
-
 		args := []string{testValue}
 		builder := builderInfo{
 			dynakube:       &dynatracev1beta1.DynaKube{},
