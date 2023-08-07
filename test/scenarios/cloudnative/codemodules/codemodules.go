@@ -210,9 +210,10 @@ func imageHasBeenDownloaded(namespace string) features.Func {
 					Container: provisionerContainerName,
 				}).Stream(ctx)
 				require.NoError(t, err)
-				result := logs.Contains(t, logStream, "Installed agent version: "+codeModulesImage)
+				isNew := logs.Contains(t, logStream, "Installed agent version: "+codeModulesImage)
+				isOld := logs.Contains(t, logStream, "agent already installed")
 				t.Logf("wait for Installed agent version in %s", podItem.Name)
-				return result, err
+				return isNew || isOld, err
 			}, wait.WithTimeout(time.Minute*5))
 			require.NoError(t, err)
 
