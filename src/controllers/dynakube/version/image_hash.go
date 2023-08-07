@@ -17,12 +17,12 @@ import (
 )
 
 // ImageVersionFunc can fetch image information from img
-type ImageVersionFunc func(ctx context.Context, registryClient registry.Client, imageName string, dockerConfig *dockerconfig.DockerConfig) (registry.ImageVersion, error)
+type ImageVersionFunc func(ctx context.Context, registryClient registry.ImageGetter, imageName string, dockerConfig *dockerconfig.DockerConfig) (registry.ImageVersion, error)
 
 var _ ImageVersionFunc = GetImageVersion
 
 // GetImageVersion fetches image information for imageName
-func GetImageVersion(ctx context.Context, registryClient registry.Client, imageName string, dockerConfig *dockerconfig.DockerConfig) (registry.ImageVersion, error) {
+func GetImageVersion(ctx context.Context, registryClient registry.ImageGetter, imageName string, dockerConfig *dockerconfig.DockerConfig) (registry.ImageVersion, error) {
 	keychain := dockerkeychain.NewDockerKeychain(dockerConfig.RegistryAuthPath, afero.NewOsFs())
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 

@@ -43,7 +43,7 @@ func (fakeRegistry *fakeRegistry) ImageVersion(imagePath string) (registry.Image
 	}
 }
 
-func (fakeRegistry *fakeRegistry) ImageVersionExt(_ context.Context, _ registry.Client, imagePath string, _ *dockerconfig.DockerConfig) (registry.ImageVersion, error) {
+func (fakeRegistry *fakeRegistry) ImageVersionExt(_ context.Context, _ registry.ImageGetter, imagePath string, _ *dockerconfig.DockerConfig) (registry.ImageVersion, error) {
 	return fakeRegistry.ImageVersion(imagePath)
 }
 
@@ -62,26 +62,26 @@ func assertVersionStatusEquals(t *testing.T, registry *fakeRegistry, imageRef re
 func TestGetImageVersion(t *testing.T) {
 	imageName := "dynatrace-operator:1.0.0"
 	t.Run("without proxy or trustedCAs", func(t *testing.T) {
-		registryMockClient := &mocks.MockClient{}
-		registryMockClient.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(registry.ImageVersion{}, nil)
+		mockImageGetter := &mocks.MockImageGetter{}
+		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(registry.ImageVersion{}, nil)
 		dockerConfig := dockerconfig.NewDockerConfig(fake.NewClientBuilder().Build(), dynakube.DynaKube{})
 
-		got, err := GetImageVersion(context.TODO(), registryMockClient, imageName, dockerConfig)
+		got, err := GetImageVersion(context.TODO(), mockImageGetter, imageName, dockerConfig)
 		assert.NotNil(t, got)
 		assert.Nil(t, err)
 	})
 	t.Run("with proxy", func(t *testing.T) {
-		registryMockClient := &mocks.MockClient{}
-		registryMockClient.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(registry.ImageVersion{}, nil)
+		mockImageGetter := &mocks.MockImageGetter{}
+		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(registry.ImageVersion{}, nil)
 		dockerConfig := dockerconfig.NewDockerConfig(fake.NewClientBuilder().Build(), dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{Proxy: &dynakube.DynaKubeProxy{Value: "dummy-proxy"}}})
 
-		got, err := GetImageVersion(context.TODO(), registryMockClient, imageName, dockerConfig)
+		got, err := GetImageVersion(context.TODO(), mockImageGetter, imageName, dockerConfig)
 		assert.NotNil(t, got)
 		assert.Nil(t, err)
 	})
 	t.Run("with trustedCAs", func(t *testing.T) {
-		registryMockClient := &mocks.MockClient{}
-		registryMockClient.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(registry.ImageVersion{}, nil)
+		mockImageGetter := &mocks.MockImageGetter{}
+		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(registry.ImageVersion{}, nil)
 
 		configMapName := "dummy-certs-configmap"
 		fakeClient := fake.NewClientBuilder().
@@ -90,7 +90,7 @@ func TestGetImageVersion(t *testing.T) {
 				&corev1.ConfigMap{
 					ObjectMeta: v1.ObjectMeta{Name: configMapName},
 					Data: map[string]string{
-						"certs": testdata.Certs,
+						"certs": testdata.CertsContent,
 					},
 				},
 			).
@@ -98,7 +98,7 @@ func TestGetImageVersion(t *testing.T) {
 
 		dockerConfig := dockerconfig.NewDockerConfig(fakeClient, dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{TrustedCAs: configMapName}})
 
-		got, err := GetImageVersion(context.TODO(), registryMockClient, imageName, dockerConfig)
+		got, err := GetImageVersion(context.TODO(), mockImageGetter, imageName, dockerConfig)
 		assert.NotNil(t, got)
 		assert.Nil(t, err)
 	})

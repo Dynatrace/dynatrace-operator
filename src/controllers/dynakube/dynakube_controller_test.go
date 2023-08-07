@@ -663,7 +663,7 @@ func createDTMockClient(paasTokenScopes, apiTokenScopes dtclient.TokenScopes) *d
 	return mockClient
 }
 
-func fakeDigestProvider(context.Context, registry.Client, string, *dockerconfig.DockerConfig) (registry.ImageVersion, error) {
+func fakeDigestProvider(context.Context, registry.ImageGetter, string, *dockerconfig.DockerConfig) (registry.ImageVersion, error) {
 	return registry.ImageVersion{}, nil
 }
 

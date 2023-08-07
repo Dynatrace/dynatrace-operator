@@ -332,7 +332,7 @@ func TestUpdateVersionStatus(t *testing.T) {
 		expectedDigest := "sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
 		expectedID := expectedRepo + "@" + expectedDigest
 		target := status.VersionStatus{}
-		boomFunc := func(_ context.Context, _ registry.Client, imagePath string, _ *dockerconfig.DockerConfig) (registry.ImageVersion, error) {
+		boomFunc := func(_ context.Context, _ registry.ImageGetter, imagePath string, _ *dockerconfig.DockerConfig) (registry.ImageVersion, error) {
 			t.Error("digest function was called unexpectedly")
 			return registry.ImageVersion{}, nil
 		}
