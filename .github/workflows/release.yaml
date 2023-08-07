@@ -272,6 +272,11 @@ jobs:
         run: |
           export "IMAGE=${{ matrix.url }}/${{ secrets[matrix.repository] }}"
           export "TAG=$(echo "${{ github.ref }}" | awk -F"/" '{print $3}')"
+          export "CHART_VERSION=$(echo "${{ github.ref_name }}" | sed 's/^v//')"
+          sed "s/^version: .*/version: $CHART_VERSION/" config/helm/chart/default/Chart.yaml >  config/helm/chart/default/Chart.yaml.output
+          mv config/helm/chart/default/Chart.yaml.output config/helm/chart/default/Chart.yaml
+          sed "s/^appVersion: .*/appVersion: $CHART_VERSION/" config/helm/chart/default/Chart.yaml >  config/helm/chart/default/Chart.yaml.output
+          mv config/helm/chart/default/Chart.yaml.output config/helm/chart/default/Chart.yaml
           make manifests
       - name: Generate CRD
         run: make manifests/crd/release
@@ -280,12 +285,8 @@ jobs:
         with:
           body_path: ./CHANGELOG.md
           files: |
-            config/deploy/kubernetes/gke-autopilot.yaml
-            config/deploy/kubernetes/kubernetes-csi.yaml
-            config/deploy/kubernetes/kubernetes.yaml
-            config/deploy/openshift/openshift-csi.yaml
-            config/deploy/openshift/openshift.yaml
-            config/deploy/dynatrace-operator-crd.yaml
+            config/deploy/kubernetes/kubernetes-all.yaml
+            config/deploy/openshift/openshift-all.yaml
           token: ${{ secrets.GITHUB_TOKEN }}
           prerelease: true
           draft: true
