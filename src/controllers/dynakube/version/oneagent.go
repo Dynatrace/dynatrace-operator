@@ -4,19 +4,19 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
+	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type oneAgentUpdater struct {
-	dynakube    *dynatracev1beta1.DynaKube
+	dynakube    *dynakube.DynaKube
 	dtClient    dtclient.Client
 	versionFunc ImageVersionFunc
 }
 
 func newOneAgentUpdater(
-	dynakube *dynatracev1beta1.DynaKube,
+	dynakube *dynakube.DynaKube,
 	dtClient dtclient.Client,
 	versionFunc ImageVersionFunc,
 ) *oneAgentUpdater {
@@ -59,7 +59,7 @@ func (updater oneAgentUpdater) LatestImageInfo() (*dtclient.LatestImageInfo, err
 	return updater.dtClient.GetLatestOneAgentImage()
 }
 
-func (updater *oneAgentUpdater) UseTenantRegistry(ctx context.Context, dockerCfg *dockerconfig.DockerConfig) error {
+func (updater *oneAgentUpdater) UseTenantRegistry(ctx context.Context, registryAuthPath string, dynakube *dynakube.DynaKube, apiReader client.Reader) error {
 	var err error
 	latestVersion := updater.CustomVersion()
 	if latestVersion == "" {
@@ -75,7 +75,7 @@ func (updater *oneAgentUpdater) UseTenantRegistry(ctx context.Context, dockerCfg
 	}
 
 	defaultImage := updater.dynakube.DefaultOneAgentImage()
-	return updateVersionStatusForTenantRegistry(ctx, updater.Target(), defaultImage, updater.versionFunc, dockerCfg)
+	return updateVersionStatusForTenantRegistry(ctx, updater.Target(), defaultImage, updater.versionFunc, registryAuthPath, dynakube, apiReader)
 }
 
 func (updater *oneAgentUpdater) CheckForDowngrade(latestVersion string) (bool, error) {

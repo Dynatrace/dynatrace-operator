@@ -5,12 +5,13 @@ import (
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
-	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
+	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/registry"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/containers/image/v5/docker/reference"
 	"github.com/pkg/errors"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type versionStatusUpdater interface {
@@ -25,10 +26,10 @@ type versionStatusUpdater interface {
 	CheckForDowngrade(latestVersion string) (bool, error)
 	LatestImageInfo() (*dtclient.LatestImageInfo, error)
 
-	UseTenantRegistry(context.Context, *dockerconfig.DockerConfig) error
+	UseTenantRegistry(context.Context, string, *dynakube.DynaKube, client.Reader) error
 }
 
-func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpdater, dockerCfg *dockerconfig.DockerConfig) error {
+func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpdater, registryAuthPath string, dynakube *dynakube.DynaKube, apiReader client.Reader) error {
 	currentSource := determineSource(updater)
 	var err error
 	defer func() {
@@ -41,7 +42,7 @@ func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpda
 	customImage := updater.CustomImage()
 	if customImage != "" {
 		log.Info("updating version status according to custom image", "updater", updater.Name())
-		err = setImageIDWithDigest(ctx, updater.Target(), customImage, reconciler.versionFunc, dockerCfg)
+		err = setImageIDWithDigest(ctx, updater.Target(), customImage, reconciler.versionFunc, registryAuthPath, dynakube, apiReader)
 		return err
 	}
 
@@ -69,7 +70,7 @@ func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpda
 			return err
 		}
 
-		err = setImageIDWithDigest(ctx, updater.Target(), publicImage.String(), reconciler.versionFunc, dockerCfg)
+		err = setImageIDWithDigest(ctx, updater.Target(), publicImage.String(), reconciler.versionFunc, registryAuthPath, dynakube, apiReader)
 		if err != nil {
 			log.Info("could not update version status according to the public registry", "updater", updater.Name())
 			return err
@@ -78,7 +79,7 @@ func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpda
 	}
 
 	log.Info("updating version status according to the tenant registry", "updater", updater.Name())
-	err = updater.UseTenantRegistry(ctx, dockerCfg)
+	err = updater.UseTenantRegistry(ctx, registryAuthPath, dynakube, apiReader)
 	return err
 }
 
@@ -100,7 +101,9 @@ func setImageIDWithDigest( //nolint:revive
 	target *status.VersionStatus,
 	imageUri string,
 	imageVersionFunc ImageVersionFunc,
-	dockerCfg *dockerconfig.DockerConfig,
+	registryAuthPath string,
+	dynakube *dynakube.DynaKube,
+	apiReader client.Reader,
 ) error {
 	ref, err := reference.Parse(imageUri)
 	if err != nil {
@@ -115,7 +118,7 @@ func setImageIDWithDigest( //nolint:revive
 		target.ImageID = canonRef.String()
 	} else if taggedRef, ok := ref.(reference.NamedTagged); ok {
 		registryClient := registry.NewClient()
-		imageVersion, err := imageVersionFunc(ctx, registryClient, imageUri, dockerCfg.RegistryAuthPath, dockerCfg.Dynakube, dockerCfg.ApiReader)
+		imageVersion, err := imageVersionFunc(ctx, registryClient, imageUri, registryAuthPath, dynakube, apiReader)
 		if err != nil {
 			log.Info("failed to determine image version")
 			return err
@@ -146,7 +149,9 @@ func updateVersionStatusForTenantRegistry( //nolint:revive
 	target *status.VersionStatus,
 	imageUri string,
 	imageVersionFunc ImageVersionFunc,
-	dockerCfg *dockerconfig.DockerConfig,
+	registryAuthPath string,
+	dynakube *dynakube.DynaKube,
+	apiReader client.Reader,
 ) error {
 	ref, err := reference.Parse(imageUri)
 	if err != nil {
@@ -160,7 +165,7 @@ func updateVersionStatusForTenantRegistry( //nolint:revive
 
 	if taggedRef, ok := ref.(reference.NamedTagged); ok {
 		registryClient := registry.NewClient()
-		imageVersion, err := imageVersionFunc(ctx, registryClient, imageUri, dockerCfg.RegistryAuthPath, dockerCfg.Dynakube, dockerCfg.ApiReader)
+		imageVersion, err := imageVersionFunc(ctx, registryClient, imageUri, registryAuthPath, dynakube, apiReader)
 		if err != nil {
 			log.Info("failed to determine image version")
 			return err

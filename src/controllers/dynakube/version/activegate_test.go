@@ -6,9 +6,9 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/registry"
+	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -79,7 +79,7 @@ func TestActiveGateUseDefault(t *testing.T) {
 		})
 		updater := newActiveGateUpdater(dynakube, mockClient, registry.ImageVersionExt)
 
-		err := updater.UseTenantRegistry(context.TODO(), &dockerconfig.DockerConfig{})
+		err := updater.UseTenantRegistry(context.TODO(), "", &dynatracev1beta1.DynaKube{}, fake.NewClient())
 		require.NoError(t, err)
 		assert.Equal(t, expectedImage, dynakube.Status.ActiveGate.ImageID)
 		assert.Equal(t, expectedVersion, dynakube.Status.ActiveGate.Version)

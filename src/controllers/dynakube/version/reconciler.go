@@ -67,7 +67,7 @@ func (reconciler *Reconciler) updateVersionStatuses(ctx context.Context, updater
 
 	for _, updater := range updaters {
 		log.Info("updating version status", "updater", updater.Name())
-		err := reconciler.run(ctx, updater, dockerConfig)
+		err := reconciler.run(ctx, updater, dockerConfig.RegistryAuthPath, dockerConfig.Dynakube, dockerConfig.ApiReader)
 		if err != nil {
 			return err
 		}

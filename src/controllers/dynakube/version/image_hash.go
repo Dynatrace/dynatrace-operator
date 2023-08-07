@@ -16,12 +16,32 @@ import (
 )
 
 // ImageVersionFunc can fetch image information from img
-type ImageVersionFunc func(ctx context.Context, registryClient registry.ImageGetter, imageName string, registryAuthPath string, dynakube *dynakube.DynaKube, apiReader client.Reader) (registry.ImageVersion, error)
+type ImageVersionFunc func(
+	ctx context.Context,
+	registryClient registry.ImageGetter,
+	imageName string,
+	registryAuthPath string,
+	dynakube *dynakube.DynaKube,
+	apiReader client.Reader,
+) (
+	registry.ImageVersion,
+	error,
+)
 
 var _ ImageVersionFunc = GetImageVersion
 
 // GetImageVersion fetches image information for imageName
-func GetImageVersion(ctx context.Context, registryClient registry.ImageGetter, imageName string, registryAuthPath string, dynakube *dynakube.DynaKube, apiReader client.Reader) (registry.ImageVersion, error) { //nolint:revive // argument-limit
+func GetImageVersion( //nolint:revive // argument-limit
+	ctx context.Context,
+	registryClient registry.ImageGetter,
+	imageName string,
+	registryAuthPath string,
+	dynakube *dynakube.DynaKube,
+	apiReader client.Reader,
+) (
+	registry.ImageVersion,
+	error,
+) {
 	var err error
 	var proxy string
 
