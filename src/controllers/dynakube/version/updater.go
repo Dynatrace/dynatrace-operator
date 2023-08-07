@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
-	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/registry"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
@@ -26,10 +26,10 @@ type versionStatusUpdater interface {
 	CheckForDowngrade(latestVersion string) (bool, error)
 	LatestImageInfo() (*dtclient.LatestImageInfo, error)
 
-	UseTenantRegistry(context.Context, string, *dynakube.DynaKube, client.Reader) error
+	UseTenantRegistry(context.Context, string, *dynatracev1beta1.DynaKube, client.Reader) error
 }
 
-func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpdater, registryAuthPath string, dynakube *dynakube.DynaKube, apiReader client.Reader) error {
+func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpdater, registryAuthPath string, dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader) error {
 	currentSource := determineSource(updater)
 	var err error
 	defer func() {
@@ -102,7 +102,7 @@ func setImageIDWithDigest( //nolint:revive
 	imageUri string,
 	imageVersionFunc ImageVersionFunc,
 	registryAuthPath string,
-	dynakube *dynakube.DynaKube,
+	dynakube *dynatracev1beta1.DynaKube,
 	apiReader client.Reader,
 ) error {
 	ref, err := reference.Parse(imageUri)
@@ -150,7 +150,7 @@ func updateVersionStatusForTenantRegistry( //nolint:revive
 	imageUri string,
 	imageVersionFunc ImageVersionFunc,
 	registryAuthPath string,
-	dynakube *dynakube.DynaKube,
+	dynakube *dynatracev1beta1.DynaKube,
 	apiReader client.Reader,
 ) error {
 	ref, err := reference.Parse(imageUri)

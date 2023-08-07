@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerkeychain"
 	"github.com/Dynatrace/dynatrace-operator/src/registry"
 	"github.com/spf13/afero"
@@ -21,7 +21,7 @@ type ImageVersionFunc func(
 	registryClient registry.ImageGetter,
 	imageName string,
 	registryAuthPath string,
-	dynakube *dynakube.DynaKube,
+	dynakube *dynatracev1beta1.DynaKube,
 	apiReader client.Reader,
 ) (
 	registry.ImageVersion,
@@ -36,7 +36,7 @@ func GetImageVersion( //nolint:revive // argument-limit
 	registryClient registry.ImageGetter,
 	imageName string,
 	registryAuthPath string,
-	dynakube *dynakube.DynaKube,
+	dynakube *dynatracev1beta1.DynaKube,
 	apiReader client.Reader,
 ) (
 	registry.ImageVersion,
@@ -74,7 +74,7 @@ func GetImageVersion( //nolint:revive // argument-limit
 	return registryClient.GetImageVersion(ctx, imageName, keychain, transport)
 }
 
-func addCertificates(transport *http.Transport, dynakube *dynakube.DynaKube, apiReader client.Reader) (*http.Transport, error) {
+func addCertificates(transport *http.Transport, dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader) (*http.Transport, error) {
 	trustedCAs, err := dynakube.TrustedCAs(context.TODO(), apiReader)
 	if err != nil {
 		return transport, err

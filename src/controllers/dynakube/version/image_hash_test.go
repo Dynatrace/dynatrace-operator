@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
-	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/version/testdata"
 	"github.com/Dynatrace/dynatrace-operator/src/registry"
 	"github.com/Dynatrace/dynatrace-operator/src/registry/mocks"
@@ -43,7 +43,7 @@ func (fakeRegistry *fakeRegistry) ImageVersion(imagePath string) (registry.Image
 	}
 }
 
-func (fakeRegistry *fakeRegistry) ImageVersionExt(_ context.Context, _ registry.ImageGetter, imagePath string, _ string, _ *dynakube.DynaKube, _ client.Reader) (registry.ImageVersion, error) { //nolint:revive // argument-limit
+func (fakeRegistry *fakeRegistry) ImageVersionExt(_ context.Context, _ registry.ImageGetter, imagePath string, _ string, _ *dynatracev1beta1.DynaKube, _ client.Reader) (registry.ImageVersion, error) { //nolint:revive // argument-limit
 	return fakeRegistry.ImageVersion(imagePath)
 }
 
@@ -64,7 +64,7 @@ func TestGetImageVersion(t *testing.T) {
 		mockImageGetter := &mocks.MockImageGetter{}
 		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(registry.ImageVersion{}, nil)
 
-		dynakube := dynakube.DynaKube{}
+		dynakube := dynatracev1beta1.DynaKube{}
 		imageName := "dynatrace-operator:1.0.0"
 		registryAuthPath := "dummy-registry-auth-path"
 		apiReader := fake.NewClientBuilder().Build()
@@ -77,7 +77,7 @@ func TestGetImageVersion(t *testing.T) {
 		mockImageGetter := &mocks.MockImageGetter{}
 		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(registry.ImageVersion{}, nil)
 
-		dynakube := dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{Proxy: &dynakube.DynaKubeProxy{Value: "dummy-proxy"}}}
+		dynakube := dynatracev1beta1.DynaKube{Spec: dynatracev1beta1.DynaKubeSpec{Proxy: &dynatracev1beta1.DynaKubeProxy{Value: "dummy-proxy"}}}
 		imageName := "dynatrace-operator:1.0.0"
 		registryAuthPath := "dummy-registry-auth-path"
 		apiReader := fake.NewClientBuilder().Build()
@@ -91,7 +91,7 @@ func TestGetImageVersion(t *testing.T) {
 		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(registry.ImageVersion{}, nil)
 		configMapName := "dummy-certs-configmap"
 
-		dynakube := dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{TrustedCAs: configMapName}}
+		dynakube := dynatracev1beta1.DynaKube{Spec: dynatracev1beta1.DynaKubeSpec{TrustedCAs: configMapName}}
 		imageName := "dynatrace-operator:1.0.0"
 		registryAuthPath := "dummy-registry-auth-path"
 		apiReader := fake.NewClientBuilder().

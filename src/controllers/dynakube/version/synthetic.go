@@ -4,20 +4,20 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
-	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type syntheticUpdater struct {
-	dynakube    *dynakube.DynaKube
+	dynakube    *dynatracev1beta1.DynaKube
 	dtClient    dtclient.Client
 	versionFunc ImageVersionFunc
 }
 
 func newSyntheticUpdater(
-	dynakube *dynakube.DynaKube,
+	dynakube *dynatracev1beta1.DynaKube,
 	dtClient dtclient.Client,
 	versionFunc ImageVersionFunc,
 ) *syntheticUpdater {
@@ -64,7 +64,7 @@ func (updater syntheticUpdater) CheckForDowngrade(latestVersion string) (bool, e
 	return false, nil
 }
 
-func (updater *syntheticUpdater) UseTenantRegistry(ctx context.Context, registryAuthPath string, dynakube *dynakube.DynaKube, apiReader client.Reader) error {
+func (updater *syntheticUpdater) UseTenantRegistry(ctx context.Context, registryAuthPath string, dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader) error {
 	defaultImage := updater.dynakube.DefaultSyntheticImage()
 	return updateVersionStatusForTenantRegistry(ctx, updater.Target(), defaultImage, updater.versionFunc, registryAuthPath, dynakube, apiReader)
 }

@@ -4,19 +4,19 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
-	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type oneAgentUpdater struct {
-	dynakube    *dynakube.DynaKube
+	dynakube    *dynatracev1beta1.DynaKube
 	dtClient    dtclient.Client
 	versionFunc ImageVersionFunc
 }
 
 func newOneAgentUpdater(
-	dynakube *dynakube.DynaKube,
+	dynakube *dynatracev1beta1.DynaKube,
 	dtClient dtclient.Client,
 	versionFunc ImageVersionFunc,
 ) *oneAgentUpdater {
@@ -59,7 +59,7 @@ func (updater oneAgentUpdater) LatestImageInfo() (*dtclient.LatestImageInfo, err
 	return updater.dtClient.GetLatestOneAgentImage()
 }
 
-func (updater *oneAgentUpdater) UseTenantRegistry(ctx context.Context, registryAuthPath string, dynakube *dynakube.DynaKube, apiReader client.Reader) error {
+func (updater *oneAgentUpdater) UseTenantRegistry(ctx context.Context, registryAuthPath string, dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader) error {
 	var err error
 	latestVersion := updater.CustomVersion()
 	if latestVersion == "" {
