@@ -144,7 +144,7 @@ func labelVersionDetection(t *testing.T) features.Feature {
 	checkBuildLabels(builder, sampleApps)
 	teardownSampleApplications(builder, sampleApps)
 	// Register operator uninstall
-	teardown.UninstallOperatorFromSource(builder, labelVersionDynakube)
+	teardown.UninstallOperator(builder, labelVersionDynakube)
 
 	return builder.Feature()
 }
