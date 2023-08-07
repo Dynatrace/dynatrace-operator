@@ -51,6 +51,37 @@ func TestEnvironmentVariables(t *testing.T) {
 		assertProxyEnv(t, envVars, dynakube)
 		assertReadOnlyEnv(t, envVars)
 	})
+	t.Run("when injected envvars are provided then they will not be overridden", func(t *testing.T) {
+		potentiallyOverriddenEnvVars := []corev1.EnvVar{
+			{Name: dtNodeName, Value: testValue},
+			{Name: dtClusterId, Value: testValue},
+			{Name: deploymentmetadata.EnvDtDeploymentMetadata, Value: testValue},
+			{Name: deploymentmetadata.EnvDtOperatorVersion, Value: testValue},
+			{Name: connectioninfo.EnvDtTenant, Value: testValue},
+			{Name: proxy, Value: testValue},
+			{Name: oneagentReadOnlyMode, Value: testValue},
+		}
+		builder := builderInfo{
+			dynakube:       &dynatracev1beta1.DynaKube{},
+			hostInjectSpec: &dynatracev1beta1.HostInjectSpec{Env: potentiallyOverriddenEnvVars},
+		}
+		envVars := builder.environmentVariables()
+
+		assertEnvVarNameAndValue(t, envVars, dtNodeName, testValue)
+		assertEnvVarNameAndValue(t, envVars, dtClusterId, testValue)
+		assertEnvVarNameAndValue(t, envVars, deploymentmetadata.EnvDtDeploymentMetadata, testValue)
+		assertEnvVarNameAndValue(t, envVars, deploymentmetadata.EnvDtOperatorVersion, testValue)
+		assertEnvVarNameAndValue(t, envVars, connectioninfo.EnvDtTenant, testValue)
+		assertEnvVarNameAndValue(t, envVars, proxy, testValue)
+		assertEnvVarNameAndValue(t, envVars, oneagentReadOnlyMode, testValue)
+
+	})
+}
+
+func assertEnvVarNameAndValue(t *testing.T, envVars []corev1.EnvVar, name, value string) {
+	env := kubeobjects.FindEnvVar(envVars, name)
+	assert.Equal(t, name, env.Name)
+	assert.Equal(t, value, (*env).Value)
 }
 
 func TestAddNodeNameEnv(t *testing.T) {
