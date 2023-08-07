@@ -2,6 +2,7 @@ package version
 
 import (
 	"context"
+	"crypto/tls"
 	"crypto/x509"
 	"fmt"
 	"net/http"
@@ -66,6 +67,9 @@ func addCertificates(transport *http.Transport, dynakube *dynakube.DynaKube, api
 	rootCAs := x509.NewCertPool()
 	if ok := rootCAs.AppendCertsFromPEM(trustedCAs); !ok {
 		log.Info("failed to append custom certs!")
+	}
+	if transport.TLSClientConfig == nil {
+		transport.TLSClientConfig = &tls.Config{} //nolint:gosec
 	}
 	transport.TLSClientConfig.RootCAs = rootCAs
 
