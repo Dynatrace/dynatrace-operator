@@ -53,6 +53,19 @@ func TestArguments(t *testing.T) {
 		assert.NotEmpty(t, podSpecs.Containers)
 		assert.Contains(t, podSpecs.Containers[0].Args, testValue)
 	})
+	t.Run("when injected arguments are provided then they are appended at the end of the arguments", func(t *testing.T) {
+
+		args := []string{testValue}
+		builder := builderInfo{
+			dynakube:       &dynatracev1beta1.DynaKube{},
+			hostInjectSpec: &dynatracev1beta1.HostInjectSpec{Args: args},
+		}
+
+		arguments := builder.arguments()
+		expectedDefaultArguments := appendImmutableImageArgs(appendOperatorVersionArg([]string{}))
+		expectedDefaultArguments = append(expectedDefaultArguments, testValue)
+		assert.Equal(t, expectedDefaultArguments, arguments)
+	})
 }
 
 func TestPodSpec_Arguments(t *testing.T) {
