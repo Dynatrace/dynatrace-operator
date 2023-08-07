@@ -30,14 +30,15 @@ func Install(t *testing.T, name string) features.Feature {
 		ApiUrl(secretConfig.ApiUrl).
 		CloudNative(&dynatracev1beta1.CloudNativeFullStackSpec{})
 	dynakubeCloudNative := cloudNativeDynakubeBuilder.Build()
+	sampleAppCloudNative := sampleapps.NewSampleDeployment(t, dynakubeCloudNative)
+	sampleAppCloudNative.WithName(sampleAppsCloudNativeName)
+	featureBuilder.Assess("(cloudnative) create sample app namespace", sampleAppCloudNative.InstallNamespace())
 
 	// install operator and dynakube
 	assess.InstallDynatrace(featureBuilder, &secretConfig, dynakubeCloudNative)
 
 	// apply sample apps
-	sampleAppCloudNative := sampleapps.NewSampleDeployment(t, dynakubeCloudNative)
-	sampleAppCloudNative.WithName(sampleAppsCloudNativeName)
-	featureBuilder.Assess("install sample app", sampleAppCloudNative.Install())
+	featureBuilder.Assess("(cloudnative) install sample app", sampleAppCloudNative.Install())
 
 	// run cloud native test here
 	cloudnative.AssessSampleInitContainers(featureBuilder, sampleAppCloudNative)
@@ -45,17 +46,21 @@ func Install(t *testing.T, name string) features.Feature {
 	// switch to classic full stack
 	classicDynakubeBuilder := cloudNativeDynakubeBuilder.ResetOneAgent().ClassicFullstack(&dynatracev1beta1.HostInjectSpec{})
 	dynakubeClassicFullStack := classicDynakubeBuilder.Build()
+	sampleAppClassicFullStack := sampleapps.NewSampleDeployment(t, dynakubeClassicFullStack)
+	sampleAppClassicFullStack.WithName(sampleAppsClassicName)
+	featureBuilder.Assess("(classic) create sample app namespace", sampleAppClassicFullStack.InstallNamespace())
 	assess.UpdateDynakube(featureBuilder, dynakubeClassicFullStack)
 
 	// deploy sample apps
-	sampleAppClassicFullStack := sampleapps.NewSampleDeployment(t, dynakubeClassicFullStack)
-	sampleAppClassicFullStack.WithName(sampleAppsClassicName)
-	featureBuilder.Assess("install sample app", sampleAppClassicFullStack.Install())
+	featureBuilder.Assess("(classic) install sample app", sampleAppClassicFullStack.Install())
 
 	// tear down
 	featureBuilder.Teardown(sampleAppCloudNative.Uninstall())
 	featureBuilder.Teardown(sampleAppClassicFullStack.Uninstall())
-	teardown.UninstallDynatrace(featureBuilder, dynakubeCloudNative)
+	teardown.DeleteDynakube(featureBuilder, dynakubeCloudNative)
+	teardown.AddCsiCleanUp(featureBuilder, dynakubeCloudNative)
+	teardown.AddClassicCleanUp(featureBuilder, dynakubeClassicFullStack)
+	teardown.UninstallOperatorFromSource(featureBuilder, dynakubeCloudNative)
 
 	return featureBuilder.Feature()
 }
