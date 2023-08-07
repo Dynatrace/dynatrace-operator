@@ -50,7 +50,7 @@ webhooks:
       service:
         name: dynatrace-webhook
         namespace: {{ .Release.Namespace }}
-        path: /validate-edgeconnect
+        path: /validate/edgeconnect
     rules:
       - operations:
           - CREATE

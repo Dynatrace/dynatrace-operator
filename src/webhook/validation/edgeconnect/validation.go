@@ -29,7 +29,7 @@ func newEdgeConnectValidator(apiReader client.Reader, cfg *rest.Config) admissio
 }
 
 func AddEdgeConnectValidationWebhookToManager(manager ctrl.Manager) error {
-	manager.GetWebhookServer().Register("/validate-edgeconnect", &webhook.Admission{
+	manager.GetWebhookServer().Register("/validate/edgeconnect", &webhook.Admission{
 		Handler: newEdgeConnectValidator(manager.GetAPIReader(), manager.GetConfig()),
 	})
 	return nil
