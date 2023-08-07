@@ -20,7 +20,7 @@ type ImageVersion struct {
 	Digest  digest.Digest
 }
 
-type GoContainerRegistryClient struct{}
+type Client struct{}
 
 const (
 	// VersionLabel is the name of the label used on ActiveGate-provided images.
