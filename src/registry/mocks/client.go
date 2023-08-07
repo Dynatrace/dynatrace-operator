@@ -8,7 +8,6 @@ import (
 
 	registry "github.com/Dynatrace/dynatrace-operator/src/registry"
 	authn "github.com/google/go-containerregistry/pkg/authn"
-	name "github.com/google/go-containerregistry/pkg/name"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -17,23 +16,23 @@ type MockImageGetter struct {
 	mock.Mock
 }
 
-// GetImageVersion provides a mock function with given fields: ctx, ref, keychain, transport
-func (_m *MockImageGetter) GetImageVersion(ctx context.Context, ref name.Reference, keychain authn.Keychain, transport *http.Transport) (registry.ImageVersion, error) {
-	ret := _m.Called(ctx, ref, keychain, transport)
+// GetImageVersion provides a mock function with given fields: ctx, imageName, keychain, transport
+func (_m *MockImageGetter) GetImageVersion(ctx context.Context, imageName string, keychain authn.Keychain, transport *http.Transport) (registry.ImageVersion, error) {
+	ret := _m.Called(ctx, imageName, keychain, transport)
 
 	var r0 registry.ImageVersion
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, name.Reference, authn.Keychain, *http.Transport) (registry.ImageVersion, error)); ok {
-		return rf(ctx, ref, keychain, transport)
+	if rf, ok := ret.Get(0).(func(context.Context, string, authn.Keychain, *http.Transport) (registry.ImageVersion, error)); ok {
+		return rf(ctx, imageName, keychain, transport)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, name.Reference, authn.Keychain, *http.Transport) registry.ImageVersion); ok {
-		r0 = rf(ctx, ref, keychain, transport)
+	if rf, ok := ret.Get(0).(func(context.Context, string, authn.Keychain, *http.Transport) registry.ImageVersion); ok {
+		r0 = rf(ctx, imageName, keychain, transport)
 	} else {
 		r0 = ret.Get(0).(registry.ImageVersion)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, name.Reference, authn.Keychain, *http.Transport) error); ok {
-		r1 = rf(ctx, ref, keychain, transport)
+	if rf, ok := ret.Get(1).(func(context.Context, string, authn.Keychain, *http.Transport) error); ok {
+		r1 = rf(ctx, imageName, keychain, transport)
 	} else {
 		r1 = ret.Error(1)
 	}

@@ -11,7 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
-	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
@@ -663,7 +662,7 @@ func createDTMockClient(paasTokenScopes, apiTokenScopes dtclient.TokenScopes) *d
 	return mockClient
 }
 
-func fakeDigestProvider(context.Context, registry.ImageGetter, string, *dockerconfig.DockerConfig) (registry.ImageVersion, error) {
+func fakeDigestProvider(context.Context, registry.ImageGetter, string, string, *dynatracev1beta1.DynaKube, client.Reader) (registry.ImageVersion, error) {
 	return registry.ImageVersion{}, nil
 }
 

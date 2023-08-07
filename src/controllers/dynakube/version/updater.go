@@ -114,7 +114,8 @@ func setImageIDWithDigest( //nolint:revive
 	if canonRef, ok := ref.(reference.Canonical); ok {
 		target.ImageID = canonRef.String()
 	} else if taggedRef, ok := ref.(reference.NamedTagged); ok {
-		imageVersion, err := imageVersionFunc(ctx, &registry.Client{}, imageUri, dockerCfg)
+		registryClient := registry.NewClientBuilder().Build()
+		imageVersion, err := imageVersionFunc(ctx, &registryClient, imageUri, dockerCfg.RegistryAuthPath, dockerCfg.Dynakube, dockerCfg.ApiReader)
 		if err != nil {
 			log.Info("failed to determine image version")
 			return err
@@ -158,7 +159,8 @@ func updateVersionStatusForTenantRegistry( //nolint:revive
 		"oldVersion", target.Version)
 
 	if taggedRef, ok := ref.(reference.NamedTagged); ok {
-		imageVersion, err := imageVersionFunc(ctx, &registry.Client{}, imageUri, dockerCfg)
+		registryClient := registry.NewClientBuilder().Build()
+		imageVersion, err := imageVersionFunc(ctx, &registryClient, imageUri, dockerCfg.RegistryAuthPath, dockerCfg.Dynakube, dockerCfg.ApiReader)
 		if err != nil {
 			log.Info("failed to determine image version")
 			return err

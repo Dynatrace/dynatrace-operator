@@ -12,7 +12,7 @@ import (
 )
 
 type ImageGetter interface {
-	GetImageVersion(ctx context.Context, ref name.Reference, keychain authn.Keychain, transport *http.Transport) (ImageVersion, error)
+	GetImageVersion(ctx context.Context, imageName string, keychain authn.Keychain, transport *http.Transport) (ImageVersion, error)
 }
 
 type ImageVersion struct {
@@ -27,7 +27,26 @@ const (
 	VersionLabel = "com.dynatrace.build-version"
 )
 
-func (r *Client) GetImageVersion(ctx context.Context, ref name.Reference, keychain authn.Keychain, transport *http.Transport) (ImageVersion, error) {
+type Builder struct {
+	client Client
+}
+
+func NewClientBuilder() Builder {
+	return Builder{
+		client: Client{},
+	}
+}
+
+func (builder Builder) Build() Client {
+	return builder.client
+}
+
+func (r *Client) GetImageVersion(ctx context.Context, imageName string, keychain authn.Keychain, transport *http.Transport) (ImageVersion, error) {
+	ref, err := name.ParseReference(imageName)
+	if err != nil {
+		return ImageVersion{}, fmt.Errorf("parsing reference %q: %w", imageName, err)
+	}
+
 	descriptor, err := remote.Get(ref, remote.WithContext(ctx), remote.WithAuthFromKeychain(keychain), remote.WithTransport(transport))
 	if err != nil {
 		return ImageVersion{}, fmt.Errorf("getting reference %q: %w", ref, err)

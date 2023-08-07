@@ -8,7 +8,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/version/testdata"
-	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/registry"
 	"github.com/Dynatrace/dynatrace-operator/src/registry/mocks"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
@@ -17,6 +16,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -43,7 +43,7 @@ func (fakeRegistry *fakeRegistry) ImageVersion(imagePath string) (registry.Image
 	}
 }
 
-func (fakeRegistry *fakeRegistry) ImageVersionExt(_ context.Context, _ registry.ImageGetter, imagePath string, _ *dockerconfig.DockerConfig) (registry.ImageVersion, error) {
+func (fakeRegistry *fakeRegistry) ImageVersionExt(_ context.Context, _ registry.ImageGetter, imagePath string, _ string, _ *dynakube.DynaKube, _ client.Reader) (registry.ImageVersion, error) { //nolint:revive // argument-limit
 	return fakeRegistry.ImageVersion(imagePath)
 }
 
@@ -60,31 +60,41 @@ func assertVersionStatusEquals(t *testing.T, registry *fakeRegistry, imageRef re
 }
 
 func TestGetImageVersion(t *testing.T) {
-	imageName := "dynatrace-operator:1.0.0"
 	t.Run("without proxy or trustedCAs", func(t *testing.T) {
 		mockImageGetter := &mocks.MockImageGetter{}
 		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(registry.ImageVersion{}, nil)
-		dockerConfig := dockerconfig.NewDockerConfig(fake.NewClientBuilder().Build(), dynakube.DynaKube{})
 
-		got, err := GetImageVersion(context.TODO(), mockImageGetter, imageName, dockerConfig)
+		dynakube := dynakube.DynaKube{}
+		imageName := "dynatrace-operator:1.0.0"
+		registryAuthPath := "dummy-registry-auth-path"
+		apiReader := fake.NewClientBuilder().Build()
+
+		got, err := GetImageVersion(context.TODO(), mockImageGetter, imageName, registryAuthPath, &dynakube, apiReader)
 		assert.NotNil(t, got)
 		assert.Nil(t, err)
 	})
 	t.Run("with proxy", func(t *testing.T) {
 		mockImageGetter := &mocks.MockImageGetter{}
 		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(registry.ImageVersion{}, nil)
-		dockerConfig := dockerconfig.NewDockerConfig(fake.NewClientBuilder().Build(), dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{Proxy: &dynakube.DynaKubeProxy{Value: "dummy-proxy"}}})
 
-		got, err := GetImageVersion(context.TODO(), mockImageGetter, imageName, dockerConfig)
+		dynakube := dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{Proxy: &dynakube.DynaKubeProxy{Value: "dummy-proxy"}}}
+		imageName := "dynatrace-operator:1.0.0"
+		registryAuthPath := "dummy-registry-auth-path"
+		apiReader := fake.NewClientBuilder().Build()
+
+		got, err := GetImageVersion(context.TODO(), mockImageGetter, imageName, registryAuthPath, &dynakube, apiReader)
 		assert.NotNil(t, got)
 		assert.Nil(t, err)
 	})
 	t.Run("with trustedCAs", func(t *testing.T) {
 		mockImageGetter := &mocks.MockImageGetter{}
 		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(registry.ImageVersion{}, nil)
-
 		configMapName := "dummy-certs-configmap"
-		fakeClient := fake.NewClientBuilder().
+
+		dynakube := dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{TrustedCAs: configMapName}}
+		imageName := "dynatrace-operator:1.0.0"
+		registryAuthPath := "dummy-registry-auth-path"
+		apiReader := fake.NewClientBuilder().
 			WithScheme(scheme.Scheme).
 			WithObjects(
 				&corev1.ConfigMap{
@@ -96,9 +106,7 @@ func TestGetImageVersion(t *testing.T) {
 			).
 			Build()
 
-		dockerConfig := dockerconfig.NewDockerConfig(fakeClient, dynakube.DynaKube{Spec: dynakube.DynaKubeSpec{TrustedCAs: configMapName}})
-
-		got, err := GetImageVersion(context.TODO(), mockImageGetter, imageName, dockerConfig)
+		got, err := GetImageVersion(context.TODO(), mockImageGetter, imageName, registryAuthPath, &dynakube, apiReader)
 		assert.NotNil(t, got)
 		assert.Nil(t, err)
 	})
