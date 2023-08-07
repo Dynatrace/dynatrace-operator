@@ -27,18 +27,8 @@ const (
 	VersionLabel = "com.dynatrace.build-version"
 )
 
-type Builder struct {
-	client Client
-}
-
-func NewClientBuilder() Builder {
-	return Builder{
-		client: Client{},
-	}
-}
-
-func (builder Builder) Build() Client {
-	return builder.client
+func NewClient() *Client {
+	return &Client{}
 }
 
 func (r *Client) GetImageVersion(ctx context.Context, imageName string, keychain authn.Keychain, transport *http.Transport) (ImageVersion, error) {
