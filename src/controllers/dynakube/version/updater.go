@@ -114,7 +114,7 @@ func setImageIDWithDigest( //nolint:revive
 	if canonRef, ok := ref.(reference.Canonical); ok {
 		target.ImageID = canonRef.String()
 	} else if taggedRef, ok := ref.(reference.NamedTagged); ok {
-		imageVersion, err := imageVersionFunc(ctx, &registry.GoContainerRegistryClient{}, imageUri, dockerCfg)
+		imageVersion, err := imageVersionFunc(ctx, &registry.Client{}, imageUri, dockerCfg)
 		if err != nil {
 			log.Info("failed to determine image version")
 			return err
