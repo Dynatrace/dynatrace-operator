@@ -32,9 +32,13 @@ func GetImageVersion(ctx context.Context, registryClient registry.ImageGetter, i
 	}
 
 	if dockerConfig.Dynakube.HasProxy() {
-		proxyUrl, err := url.Parse(dockerConfig.Dynakube.Spec.Proxy.Value)
+		proxy, err := dockerConfig.Dynakube.Proxy(ctx, dockerConfig.ApiReader)
 		if err != nil {
-			log.Info("invalid proxy spec", "proxy", dockerConfig.Dynakube.Spec.Proxy.Value)
+			return registry.ImageVersion{}, err
+		}
+		proxyUrl, err := url.Parse(proxy)
+		if err != nil {
+			log.Info("invalid proxy spec", "proxy", proxy)
 			return registry.ImageVersion{}, err
 		}
 
