@@ -138,7 +138,7 @@ func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
 	log := newSupportArchiveLogger(&logBuffer)
 
 	queries := getQueries(testOperatorNamespace, defaultOperatorAppName)
-	require.Len(t, queries, 9)
+	require.Len(t, queries, 15)
 
 	clt := fake.NewClientWithIndex(
 		&appsv1.StatefulSet{
