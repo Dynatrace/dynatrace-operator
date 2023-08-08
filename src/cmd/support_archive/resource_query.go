@@ -59,7 +59,7 @@ func getOperatorNamespaceQueryGroup(namespace string) resourceQueryGroup {
 	}
 }
 
-func getComponentsQueryGroup(namespace string, appName string, filterKey string) resourceQueryGroup {
+func getComponentsQueryGroup(namespace string, appName string, labelKey string) resourceQueryGroup {
 	return resourceQueryGroup{
 		resources: []schema.GroupVersionKind{
 			toGroupVersionKind(appsv1.SchemeGroupVersion, appsv1.Deployment{}),
@@ -71,7 +71,7 @@ func getComponentsQueryGroup(namespace string, appName string, filterKey string)
 		},
 		filters: []client.ListOption{
 			client.MatchingLabels{
-				filterKey: appName,
+				labelKey: appName,
 			},
 			client.InNamespace(namespace),
 		},

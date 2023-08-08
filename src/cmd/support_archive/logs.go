@@ -18,7 +18,7 @@ const logCollectorName = "logCollector"
 type logCollector struct {
 	collectorCommon
 
-	context            context.Context
+	ctx                context.Context
 	pods               clientgocorev1.PodInterface
 	appName            string
 	collectManagedLogs bool
@@ -30,7 +30,7 @@ func newLogCollector(context context.Context, log logr.Logger, supportArchive ar
 			log:            log,
 			supportArchive: supportArchive,
 		},
-		context:            context,
+		ctx:                context,
 		pods:               pods,
 		appName:            appName,
 		collectManagedLogs: collectManagedLogs,
@@ -40,13 +40,10 @@ func newLogCollector(context context.Context, log logr.Logger, supportArchive ar
 func (collector logCollector) Do() error {
 	logInfof(collector.log, "Starting log collection")
 
-	var podList *corev1.PodList
-
-	deployedPodList, err := collector.getPodList(kubeobjects.AppNameLabel)
+	podList, err := collector.getPodList(kubeobjects.AppNameLabel)
 	if err != nil {
 		return err
 	}
-	podList = deployedPodList
 
 	if collector.collectManagedLogs {
 		managedByOperatorPodList, err := collector.getPodList(kubeobjects.AppManagedByLabel)
@@ -59,7 +56,7 @@ func (collector logCollector) Do() error {
 	podGetOptions := metav1.GetOptions{}
 
 	for _, podItem := range podList.Items {
-		pod, err := collector.pods.Get(collector.context, podItem.Name, podGetOptions)
+		pod, err := collector.pods.Get(collector.ctx, podItem.Name, podGetOptions)
 		if err != nil {
 			logErrorf(collector.log, err, "Unable to get pod info for %s", podItem.Name)
 		} else {
@@ -80,7 +77,7 @@ func (collector logCollector) getPodList(labelKey string) (*corev1.PodList, erro
 		},
 		LabelSelector: fmt.Sprintf("%s=%s", labelKey, collector.appName),
 	}
-	podList, err := collector.pods.List(collector.context, listOptions)
+	podList, err := collector.pods.List(collector.ctx, listOptions)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -108,7 +105,7 @@ func (collector logCollector) collectContainerLogs(pod *corev1.Pod, container co
 		return
 	}
 
-	podLogs, err := req.Stream(collector.context)
+	podLogs, err := req.Stream(collector.ctx)
 
 	if logOptions.Previous && err != nil {
 		if k8serrors.IsBadRequest(err) { // Prevent logging of "previous terminated container not found" error
