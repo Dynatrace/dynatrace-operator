@@ -63,7 +63,7 @@ func (installer Installer) pullImageInfo(registryAuthPath string, imageName stri
 
 	keyChain := dockerkeychain.NewDockerKeychain(registryAuthPath, installer.fs)
 
-	image, err := remote.Image(ref, remote.WithContext(context.TODO()), remote.WithAuthFromKeychain(keyChain), remote.WithTransport(installer.transport), remote.WithUserAgent("ao"))
+	image, err := remote.Image(ref, remote.WithContext(context.TODO()), remote.WithAuthFromKeychain(keyChain), remote.WithTransport(installer.transport))
 	if err != nil {
 		return nil, fmt.Errorf("getting image %q: %w", imageName, err)
 	}
