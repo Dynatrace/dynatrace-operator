@@ -42,4 +42,26 @@ webhooks:
     name: webhook.dynatrace.com
     timeoutSeconds: 10
     sideEffects: None
+  - admissionReviewVersions:
+      - v1
+      - v1beta1
+      - v1alpha1
+    clientConfig:
+      service:
+        name: dynatrace-webhook
+        namespace: {{ .Release.Namespace }}
+        path: /validate/edgeconnect
+    rules:
+      - operations:
+          - CREATE
+          - UPDATE
+        apiGroups:
+          - dynatrace.com
+        apiVersions:
+          - v1alpha1
+        resources:
+          - edgeconnects
+    name: edgeconnect.webhook.dynatrace.com
+    timeoutSeconds: 10
+    sideEffects: None
 {{ end }}
