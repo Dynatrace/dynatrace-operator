@@ -19,17 +19,19 @@ OPENSHIFT_CSIDRIVER_YAML=$(MANIFESTS_DIR)openshift/openshift-csi.yaml
 OPENSHIFT_OLM_YAML=$(MANIFESTS_DIR)openshift/openshift-olm.yaml
 OPENSHIFT_ALL_YAML=$(MANIFESTS_DIR)openshift/openshift-all.yaml
 
-ifneq ($(shell git branch --show-current | grep "^release-"),)
-	# if the current branch is a release branch
-	ifneq ($(shell grep "^version:" $(HELM_CHART_DEFAULT_DIR)/Chart.yaml | grep snapshot),)
-		CHART_VERSION=$(shell git branch --show-current | cut -d'-' -f2-).0
+ifeq ($(shell echo $CHART_VERSION),)
+	ifneq ($(shell git branch --show-current | grep "^release-"),)
+		# if the current branch is a release branch
+		ifneq ($(shell grep "^version:" $(HELM_CHART_DEFAULT_DIR)/Chart.yaml | grep snapshot),)
+			CHART_VERSION=$(shell git branch --show-current | cut -d'-' -f2-).0
+		else
+			CHART_VERSION=
+		endif
+	else ifeq ($(shell git branch --show-current), main)
+		# if the current branch is the main branch
+		CHART_VERSION=0.0.0-snapshot
 	else
+		# otherwise do not change Chart.yaml
 		CHART_VERSION=
 	endif
-else ifeq ($(shell git branch --show-current), main)
-	# if the current branch is the main branch
-	CHART_VERSION=0.0.0-snapshot
-else
-	# otherwise do not change Chart.yaml
-    CHART_VERSION=
 endif

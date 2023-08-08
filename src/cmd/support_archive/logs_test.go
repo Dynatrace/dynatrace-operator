@@ -5,6 +5,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"testing"
 
@@ -20,11 +21,19 @@ import (
 )
 
 func TestLogCollector(t *testing.T) {
+	testLogCollection(t, true)
+}
+
+func TestManagedByLogsIgnored(t *testing.T) {
+	testLogCollection(t, false)
+}
+
+func testLogCollection(t *testing.T, collectManagedLogs bool) {
 	fakeClientSet := fake.NewSimpleClientset(
-		createPod("pod1"),
-		createPod("pod2"),
-		createPod("pod3"),
-		createPod("pod4"),
+		createPod("pod1", kubeobjects.AppNameLabel),
+		createPod("pod2", kubeobjects.AppNameLabel),
+		createPod("pod3", kubeobjects.AppManagedByLabel),
+		createPod("pod4", kubeobjects.AppManagedByLabel),
 		&corev1.Pod{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Pod",
@@ -50,7 +59,8 @@ func TestLogCollector(t *testing.T) {
 		newSupportArchiveLogger(&logBuffer),
 		supportArchive,
 		fakeClientSet.CoreV1().Pods("dynatrace"),
-		defaultOperatorAppName)
+		defaultOperatorAppName,
+		collectManagedLogs)
 
 	require.NoError(t, logCollector.Do())
 
@@ -58,21 +68,31 @@ func TestLogCollector(t *testing.T) {
 
 	zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(buffer.Len()))
 	require.NoError(t, err)
-	assert.Equal(t, "logs/pod1/container1.log", zipReader.File[0].Name)
 
-	assert.Equal(t, "logs/pod1/container1_previous.log", zipReader.File[1].Name)
+	podNumbers := []int{1, 2}
+	if collectManagedLogs {
+		podNumbers = []int{1, 2, 3, 4}
+	}
 
-	assert.Equal(t, "logs/pod1/container2.log", zipReader.File[2].Name)
+	containerNumber := []int{1, 2}
+	fileIndex := 0
 
-	assert.Equal(t, "logs/pod1/container2_previous.log", zipReader.File[3].Name)
+	for _, podNumber := range podNumbers {
+		for _, containerNumber := range containerNumber {
+			assert.Equal(t, fmt.Sprintf("logs/pod%d/container%d.log", podNumber, containerNumber),
+				zipReader.File[fileIndex].Name)
+			fileIndex++
+			assert.Equal(t, fmt.Sprintf("logs/pod%d/container%d_previous.log", podNumber, containerNumber),
+				zipReader.File[fileIndex].Name)
+			fileIndex++
+		}
+	}
 
-	assert.Equal(t, "logs/pod2/container1.log", zipReader.File[4].Name)
-
-	assert.Equal(t, "logs/pod2/container1_previous.log", zipReader.File[5].Name)
-
-	assert.Equal(t, "logs/pod2/container2.log", zipReader.File[6].Name)
-
-	assert.Equal(t, "logs/pod2/container2_previous.log", zipReader.File[7].Name)
+	if collectManagedLogs {
+		assert.Equal(t, 16, len(zipReader.File))
+	} else {
+		assert.Equal(t, 8, len(zipReader.File))
+	}
 }
 
 //go:generate mockery --case=snake --srcpkg=k8s.io/client-go/kubernetes/typed/core/v1 --with-expecter --name=PodInterface --output ../../mocks/k8s.io/client-go/kubernetes/typed/core/v1
@@ -86,13 +106,14 @@ func TestLogCollectorPodListError(t *testing.T) {
 
 	mockedPods := corev1mocks.NewPodInterface(t)
 	mockedPods.EXPECT().
-		List(ctx, createPodListOptions()).
+		List(ctx, createPodListOptions(kubeobjects.AppNameLabel)).
 		Return(nil, assert.AnError)
 	logCollector := newLogCollector(ctx,
 		newSupportArchiveLogger(&logBuffer),
 		supportArchive,
 		mockedPods,
-		defaultOperatorAppName)
+		defaultOperatorAppName,
+		true)
 	require.Error(t, logCollector.Do())
 }
 
@@ -104,8 +125,9 @@ func TestLogCollectorGetPodFail(t *testing.T) {
 	ctx := context.Background()
 
 	fakeClientSet := fake.NewSimpleClientset(
-		createPod("pod1"),
-		createPod("pod2"))
+		createPod("pod1", kubeobjects.AppNameLabel),
+		createPod("pod2", kubeobjects.AppNameLabel),
+		createPod("oneagent", kubeobjects.AppManagedByLabel))
 
 	logBuffer := bytes.Buffer{}
 
@@ -114,18 +136,25 @@ func TestLogCollectorGetPodFail(t *testing.T) {
 	defer assertNoErrorOnClose(t, supportArchive)
 
 	mockedPods := corev1mocks.NewPodInterface(t)
-	listOptions := createPodListOptions()
+	listOptionsAppName := createPodListOptions(kubeobjects.AppNameLabel)
+	listOptionsManagedByOperator := createPodListOptions(kubeobjects.AppManagedByLabel)
 	mockedPods.EXPECT().
-		List(ctx, listOptions).
-		Return(fakeClientSet.CoreV1().Pods("dynatrace").List(ctx, listOptions))
+		List(ctx, listOptionsAppName).
+		Return(fakeClientSet.CoreV1().Pods("dynatrace").List(ctx, listOptionsAppName))
+	mockedPods.EXPECT().
+		List(ctx, listOptionsManagedByOperator).
+		Return(fakeClientSet.CoreV1().Pods("dynatrace").List(ctx, listOptionsManagedByOperator))
 	mockedPods.EXPECT().
 		Get(ctx, "pod1", metav1.GetOptions{}).
 		Return(nil, assert.AnError)
 	mockedPods.EXPECT().
 		Get(ctx, "pod2", metav1.GetOptions{}).
 		Return(nil, assert.AnError)
+	mockedPods.EXPECT().
+		Get(ctx, "oneagent", metav1.GetOptions{}).
+		Return(nil, assert.AnError)
 
-	logCollector := newLogCollector(ctx, newSupportArchiveLogger(&logBuffer), supportArchive, mockedPods, defaultOperatorAppName)
+	logCollector := newLogCollector(ctx, newSupportArchiveLogger(&logBuffer), supportArchive, mockedPods, defaultOperatorAppName, true)
 	require.NoError(t, logCollector.Do())
 }
 
@@ -133,8 +162,8 @@ func TestLogCollectorGetLogsFail(t *testing.T) {
 	ctx := context.Background()
 
 	fakeClientSet := fake.NewSimpleClientset(
-		createPod("pod1"),
-		createPod("pod2"))
+		createPod("pod1", kubeobjects.AppNameLabel),
+		createPod("pod2", kubeobjects.AppNameLabel))
 
 	logBuffer := bytes.Buffer{}
 
@@ -143,15 +172,21 @@ func TestLogCollectorGetLogsFail(t *testing.T) {
 	defer assertNoErrorOnClose(t, supportArchive)
 
 	mockedPods := corev1mocks.NewPodInterface(t)
-	listOptions := createPodListOptions()
+	listOptionsAppName := createPodListOptions(kubeobjects.AppNameLabel)
+	listOptionsManagedByOperator := createPodListOptions(kubeobjects.AppManagedByLabel)
+
 	getOptions := metav1.GetOptions{}
 
-	listCall := mockedPods.EXPECT().
-		List(ctx, listOptions).
-		Return(fakeClientSet.CoreV1().Pods("dynatrace").List(ctx, listOptions))
+	listAppNameCall := mockedPods.EXPECT().
+		List(ctx, listOptionsAppName).
+		Return(fakeClientSet.CoreV1().Pods("dynatrace").List(ctx, listOptionsAppName))
+	mockedPods.EXPECT().
+		List(ctx, listOptionsManagedByOperator).
+		NotBefore(listAppNameCall.Call).
+		Return(fakeClientSet.CoreV1().Pods("dynatrace").List(ctx, listOptionsManagedByOperator))
 	getPod1Call := mockedPods.EXPECT().
 		Get(ctx, "pod1", getOptions).
-		NotBefore(listCall.Call).
+		NotBefore(listAppNameCall.Call).
 		Return(fakeClientSet.CoreV1().Pods("dynatrace").Get(ctx, "pod1", getOptions))
 	getLogsPod1Container1Call := mockedPods.EXPECT().
 		GetLogs("pod1", createGetPodLogOptions("container1", false)).
@@ -190,7 +225,7 @@ func TestLogCollectorGetLogsFail(t *testing.T) {
 		NotBefore(getLogsPod2Container2Call).
 		Return(nil, assert.AnError)
 
-	logCollector := newLogCollector(ctx, newSupportArchiveLogger(&logBuffer), supportArchive, mockedPods, defaultOperatorAppName)
+	logCollector := newLogCollector(ctx, newSupportArchiveLogger(&logBuffer), supportArchive, mockedPods, defaultOperatorAppName, true)
 	require.NoError(t, logCollector.Do())
 
 	assert.Contains(t, logBuffer.String(), "Unable to retrieve log stream for pod pod1, container container1")
@@ -203,8 +238,8 @@ func TestLogCollectorNoAbortOnError(t *testing.T) {
 	ctx := context.Background()
 
 	fakeClientSet := fake.NewSimpleClientset(
-		createPod("pod1"),
-		createPod("pod2"))
+		createPod("pod1", kubeobjects.AppNameLabel),
+		createPod("pod2", kubeobjects.AppNameLabel))
 
 	logBuffer := bytes.Buffer{}
 
@@ -212,12 +247,17 @@ func TestLogCollectorNoAbortOnError(t *testing.T) {
 	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
 
 	mockedPods := corev1mocks.NewPodInterface(t)
-	listOptions := createPodListOptions()
+	listOptionsAppName := createPodListOptions(kubeobjects.AppNameLabel)
+	listOptionsManagedByOperator := createPodListOptions(kubeobjects.AppManagedByLabel)
 	getOptions := metav1.GetOptions{}
 
 	listCall := mockedPods.EXPECT().
-		List(ctx, listOptions).
-		Return(fakeClientSet.CoreV1().Pods("dynatrace").List(ctx, listOptions))
+		List(ctx, listOptionsAppName).
+		Return(fakeClientSet.CoreV1().Pods("dynatrace").List(ctx, listOptionsAppName))
+	mockedPods.EXPECT().
+		List(ctx, listOptionsManagedByOperator).
+		NotBefore(listCall.Call).
+		Return(fakeClientSet.CoreV1().Pods("dynatrace").List(ctx, listOptionsManagedByOperator))
 	getPod1Call := mockedPods.EXPECT().
 		Get(ctx, "pod1", getOptions).
 		NotBefore(listCall.Call).
@@ -245,7 +285,7 @@ func TestLogCollectorNoAbortOnError(t *testing.T) {
 		NotBefore(getLogsPod2Container2Call).
 		Return(nil, assert.AnError)
 
-	logCollector := newLogCollector(ctx, newSupportArchiveLogger(&logBuffer), supportArchive, mockedPods, defaultOperatorAppName)
+	logCollector := newLogCollector(ctx, newSupportArchiveLogger(&logBuffer), supportArchive, mockedPods, defaultOperatorAppName, true)
 	require.NoError(t, logCollector.Do())
 
 	assertNoErrorOnClose(t, supportArchive)
@@ -256,7 +296,7 @@ func TestLogCollectorNoAbortOnError(t *testing.T) {
 	assert.Equal(t, "logs/pod2/container2.log", zipReader.File[1].Name)
 }
 
-func createPod(name string) *corev1.Pod {
+func createPod(name string, labelKey string) *corev1.Pod {
 	const namespace = "dynatrace"
 	return &corev1.Pod{
 		TypeMeta: metav1.TypeMeta{
@@ -267,7 +307,7 @@ func createPod(name string) *corev1.Pod {
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
-				kubeobjects.AppNameLabel: defaultOperatorAppName,
+				labelKey: defaultOperatorAppName,
 			},
 		},
 		Spec: corev1.PodSpec{
@@ -279,12 +319,12 @@ func createPod(name string) *corev1.Pod {
 	}
 }
 
-func createPodListOptions() metav1.ListOptions {
+func createPodListOptions(labelKey string) metav1.ListOptions {
 	return metav1.ListOptions{
 		TypeMeta: metav1.TypeMeta{
 			Kind: "pod",
 		},
-		LabelSelector: "app.kubernetes.io/name=dynatrace-operator",
+		LabelSelector: fmt.Sprintf("%s=dynatrace-operator", labelKey),
 	}
 }
 
