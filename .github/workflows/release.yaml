@@ -7,242 +7,8 @@ on:
 
 
 jobs:
-  prepare:
-    permissions:
-      contents: read
-      id-token: write
-    name: Prepare properties
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
-      - name: Prepare build parameters
-        id: prep
-        run: |
-          hack/build/ci/prepare-build-variables.sh
-      - name: Docker metadata
-        uses: docker/metadata-action@818d4b7b91585d195f67373fd9cb0332e31a7175 # v4.6.0
-        id: meta
-        with:
-          images: dynatrace/dynatrace-operator
-          tags: ${{ steps.prep.outputs.docker_image_tag }}
-          labels: |
-            ${{ steps.prep.outputs.docker_image_labels }}
-            vcs-ref=${{ github.sha }}
-    outputs:
-      labels: ${{ steps.meta.outputs.labels }}
-      version: ${{ steps.prep.outputs.docker_image_tag }}
-
-  build:
-    name: Build images
-    runs-on: ubuntu-latest
-    needs: [prepare]
-    strategy:
-      matrix:
-        platform: [amd64, arm64, ppc64le]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
-      - name: Build image
-        uses: ./.github/actions/build-image
-        with:
-          platform: ${{ matrix.platform }}
-          labels: ${{ needs.prepare.outputs.labels }}
-          image-tag: ${{ needs.prepare.outputs.version }}
-
-  push:
-    name: Push images
-    environment: Release
-    needs: [prepare, build]
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-    strategy:
-      matrix:
-        platform: [amd64, arm64, ppc64le]
-        registry: [gcr, dockerhub]
-        include:
-        - registry: gcr
-          url: gcr.io
-          repository: GCR_REPOSITORY
-          username: GCR_USERNAME
-          password: GCR_JSON_KEY
-        - registry: dockerhub
-          url: docker.io
-          repository: DOCKERHUB_REPOSITORY
-          username: DOCKERHUB_USERNAME
-          password: DOCKERHUB_PASSWORD
-    steps:
-      - name: Checkout
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
-      - name: Login to Registry
-        uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc # v2.2.0
-        with:
-          registry: ${{ matrix.url }}
-          username: ${{ secrets[matrix.username] }}
-          password: ${{ secrets[matrix.password] }}
-      - name: Push ${{matrix.platform}} to ${{matrix.registry}}
-        uses: ./.github/actions/upload-image
-        with:
-          platform: ${{ matrix.platform }}
-          labels: ${{ needs.prepare.outputs.labels }}
-          version: ${{ needs.prepare.outputs.version }}
-          registry: ${{ matrix.url }}
-          repository: ${{ secrets[matrix.repository] }}
-      - name: Get image digest
-        id: digest
-        env:
-          IMAGE: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}-${{ matrix.platform }}
-        run: |
-          hack/build/ci/get-image-digest.sh
-      - name: Sign image for ${{matrix.registry}}
-        uses: ./.github/actions/sign-image
-        with:
-          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}-${{ matrix.platform }}@${{steps.digest.outputs.digest}}
-          signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
-          signing-password: ${{ secrets.COSIGN_PASSWORD }}
-
-  push-rhcc:
-    name: Push amd64 image to RHCC
-    if: ${{ !contains(github.ref, '-rc') }}
-    environment: Release
-    needs: [prepare, build]
-    runs-on: ubuntu-latest
-    env:
-      SCAN_REGISTRY: "quay.io"
-    steps:
-      - name: Checkout
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
-      - name: Login to Registry
-        uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc # v2.2.0
-        with:
-          registry: ${{ env.SCAN_REGISTRY }}
-          username: ${{ secrets.RHCC_USERNAME }}
-          password: ${{ secrets.RHCC_PASSWORD }}
-      - name: Push amd64 image to scan registry
-        uses: ./.github/actions/upload-image
-        with:
-          platform: "amd64"
-          labels: ${{ needs.prepare.outputs.labels }}
-          version: ${{ needs.prepare.outputs.version }}
-          registry: ${{ env.SCAN_REGISTRY }}
-          repository: ${{ secrets.RHCC_REPOSITORY }}
-          skip-platform-suffix: true
-      - name: Run preflight
-        uses: ./.github/actions/preflight
-        with:
-          version: ${{ needs.prepare.outputs.version }}
-          registry: ${{ env.SCAN_REGISTRY }}
-          repository: ${{ secrets.RHCC_REPOSITORY }}
-          report-name: "preflight.json"
-          redhat-project-id: ${{ secrets.REDHAT_PROJECT_ID }}
-          pyxis-api-token: ${{ secrets.PYXIS_API_TOKEN }}
-
-  manifest:
-    name: Create manifest
-    environment: Release
-    needs: [prepare, push]
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-    strategy:
-      matrix:
-        registry: [gcr, dockerhub]
-        include:
-          - registry: gcr
-            url: gcr.io
-            repository: GCR_REPOSITORY
-            username: GCR_USERNAME
-            password: GCR_JSON_KEY
-          - registry: dockerhub
-            url: docker.io
-            repository: DOCKERHUB_REPOSITORY
-            username: DOCKERHUB_USERNAME
-            password: DOCKERHUB_PASSWORD
-    steps:
-      - name: Checkout
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
-      - name: Login to Registry
-        uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc # v2.2.0
-        with:
-          registry: ${{ matrix.url }}
-          username: ${{ secrets[matrix.username] }}
-          password: ${{ secrets[matrix.password] }}
-      - name: Create manifests for ${{matrix.registry}}
-        uses: ./.github/actions/create-manifests
-        with:
-          version: ${{ needs.prepare.outputs.version }}
-          registry: ${{ matrix.url }}
-          repository: ${{ secrets[matrix.repository] }}
-          combined: true
-      - name: Get image digest
-        id: digest
-        env:
-          IMAGE: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}
-        run: |
-          hack/build/ci/get-image-digest.sh
-      - name: Sign manifests for ${{matrix.registry}}
-        uses: ./.github/actions/sign-image
-        with:
-          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{steps.digest.outputs.digest}}
-          signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
-          signing-password: ${{ secrets.COSIGN_PASSWORD }}
-
-  attach-sbom:
-    name: Attach sbom
-    environment: Release
-    needs: [ prepare, push, manifest ]
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-    strategy:
-      matrix:
-        registry: [gcr, dockerhub]
-        include:
-          - registry: gcr
-            url: gcr.io
-            repository: GCR_REPOSITORY
-            username: GCR_USERNAME
-            password: GCR_JSON_KEY
-          - registry: dockerhub
-            url: docker.io
-            repository: DOCKERHUB_REPOSITORY
-            username: DOCKERHUB_USERNAME
-            password: DOCKERHUB_PASSWORD
-    steps:
-      - name: Checkout
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
-      - name: Login to Registry
-        uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc # v2.2.0
-        with:
-          registry: ${{ matrix.url }}
-          username: ${{ secrets[matrix.username] }}
-          password: ${{ secrets[matrix.password] }}
-      - name: Get operator-image digest
-        id: operator-digest
-        env:
-          IMAGE: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}
-        run: |
-          hack/build/ci/get-image-digest.sh
-      - name: Create sbom for ${{matrix.registry}}
-        id: sbom
-        uses: aquasecurity/trivy-action@41f05d9ecffa2ed3f1580af306000f734b733e54 # 0.11.2
-        with:
-          image-ref: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{steps.operator-digest.outputs.digest}}
-          format: 'cyclonedx'
-          output: 'result.json'
-          skip-dirs: '/usr/share/dynatrace-operator/third_party_licenses'
-      - name: Upload sbom to ${{matrix.registry}}
-        uses: ./.github/actions/upload-sbom
-        with:
-          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{steps.operator-digest.outputs.digest}}
-          sbom: 'result.json'
-          signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
-          signing-password: ${{ secrets.COSIGN_PASSWORD }}
   pre-release:
-    if: ${{ contains(github.ref, '-rc.') }}
     name: Create pre-release
-    needs: [prepare]
     permissions:
       contents: write
     runs-on: ubuntu-latest
@@ -264,6 +30,8 @@ jobs:
         id: depdownload
         run: |
           hack/build/ci/install-cgo-dependencies.sh
+      - name: Set up Helm
+        uses: azure/setup-helm@5119fcb9089d432beecbf79bb2c7915207344b78 # v3.5
       - name: Generate release notes
         id: generate_notes
         run: |
@@ -272,11 +40,7 @@ jobs:
         run: |
           export "IMAGE=${{ matrix.url }}/${{ secrets[matrix.repository] }}"
           export "TAG=$(echo "${{ github.ref }}" | awk -F"/" '{print $3}')"
-          export "CHART_VERSION=$(echo "${{ github.ref_name }}" | sed 's/^v//')"
-          sed "s/^version: .*/version: $CHART_VERSION/" config/helm/chart/default/Chart.yaml >  config/helm/chart/default/Chart.yaml.output
-          mv config/helm/chart/default/Chart.yaml.output config/helm/chart/default/Chart.yaml
-          sed "s/^appVersion: .*/appVersion: $CHART_VERSION/" config/helm/chart/default/Chart.yaml >  config/helm/chart/default/Chart.yaml.output
-          mv config/helm/chart/default/Chart.yaml.output config/helm/chart/default/Chart.yaml
+          export "CHART_VERSION_VAR=$(echo "${{ github.ref_name }}")"
           make manifests
       - name: Generate CRD
         run: make manifests/crd/release
@@ -291,24 +55,4 @@ jobs:
           prerelease: true
           draft: true
 
-  snyk:
-    name: Push tag to snyk
-    environment: Release
-    needs: [prepare, push]
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
 
-    steps:
-      - name: Push tag to synk
-        id: pushToSnyk
-        uses: fjogeleit/http-request-action@v1
-        with:
-          url: 'https://api.snyk.io/v1/org/${{ secrets.SNYK_ORGANIZATION_ID }}/integrations/${{ secrets.SNYK_INTEGRATION_ID }}/import'
-          method: 'POST'
-          customHeaders: '{ "Content-Type": "application/json;charset=utf-8", "Authorization": "token ${{ secrets.SNYK_API_TOKEN }}" }'
-          data: '{ "target": { "name": "${{ secrets.DOCKERHUB_REPOSITORY }}:${{ needs.prepare.outputs.version }}" }}'
-      - name: Show Response
-        run: |
-          echo ${{ steps.pushToSnyk.outputs.response }}
-          echo ${{ steps.pushToSnyk.outputs.headers }}
