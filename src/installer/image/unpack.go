@@ -6,7 +6,6 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerkeychain"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/common"
 	"github.com/containers/image/v5/manifest"
@@ -36,8 +35,8 @@ type imagePullInfo struct {
 	targetDir     string
 }
 
-func (installer Installer) extractAgentBinariesFromImage(pullInfo imagePullInfo, dockerConfig *dockerconfig.DockerConfig, imageName string) error { //nolint
-	img, err := installer.pullImageInfo(dockerConfig, imageName)
+func (installer Installer) extractAgentBinariesFromImage(pullInfo imagePullInfo, registryAuthPath string, imageName string) error { //nolint
+	img, err := installer.pullImageInfo(registryAuthPath, imageName)
 	if err != nil {
 		log.Info("pullImageInfo", "error", err)
 		return err
@@ -45,25 +44,19 @@ func (installer Installer) extractAgentBinariesFromImage(pullInfo imagePullInfo,
 
 	image := *img
 
-	manifest, err := image.Manifest()
+	imgManifest, err := image.Manifest()
 	if err != nil {
-		log.Info("manifest", "error", err)
+		log.Info("imgManifest", "error", err)
 		return err
 	}
 
-	if manifest.MediaType.IsIndex() {
-		log.Info("manifest is index")
-	}
-	if manifest.MediaType.IsImage() {
-		log.Info("manifest is image")
-	}
-	log.Info("manifest", "MediaType", manifest.MediaType)
+	log.Info("imgManifest", "MediaType", imgManifest.MediaType)
 
-	for _, layer := range manifest.Layers {
+	for _, layer := range imgManifest.Layers {
 		log.Info("layers", "digest", layer.Digest.Hex, "type", layer.MediaType)
 	}
 
-	err = installer.pullOCIimage(image, imageName, manifest, pullInfo.imageCacheDir, pullInfo.targetDir)
+	err = installer.pullOCIimage(image, imageName, pullInfo.imageCacheDir, pullInfo.targetDir)
 	if err != nil {
 		log.Info("pullOCIimage", "err", err)
 		return err
@@ -72,7 +65,7 @@ func (installer Installer) extractAgentBinariesFromImage(pullInfo imagePullInfo,
 	return nil
 }
 
-func (installer Installer) pullImageInfo(dockerConfig *dockerconfig.DockerConfig, imageName string) (*v1.Image, error) {
+func (installer Installer) pullImageInfo(registryAuthPath string, imageName string) (*v1.Image, error) {
 	ref, err := name.ParseReference(imageName)
 	if err != nil {
 		return nil, fmt.Errorf("parsing reference %q: %w", imageName, err)
@@ -80,7 +73,7 @@ func (installer Installer) pullImageInfo(dockerConfig *dockerconfig.DockerConfig
 
 	log.Info("ref", "refName", ref.Name(), "refString", ref.String(), "refIdentifier", ref.Identifier(), "Context().RegistryStr()", ref.Context().RegistryStr(), "Context().Name()", ref.Context().Name(), "Context().Scheme()", ref.Context().Scheme())
 
-	keyChain := dockerkeychain.NewDockerKeychain(dockerConfig.RegistryAuthPath, installer.fs)
+	keyChain := dockerkeychain.NewDockerKeychain(registryAuthPath, installer.fs)
 
 	image, err := remote.Image(ref, remote.WithContext(context.TODO()), remote.WithAuthFromKeychain(keyChain), remote.WithTransport(installer.transport), remote.WithUserAgent("ao"))
 	if err != nil {
@@ -89,7 +82,7 @@ func (installer Installer) pullImageInfo(dockerConfig *dockerconfig.DockerConfig
 	return &image, nil
 }
 
-func (installer Installer) pullOCIimage(image v1.Image, imageName string, _ *v1.Manifest, imageCacheDir string, targetDir string) error {
+func (installer Installer) pullOCIimage(image v1.Image, imageName string, imageCacheDir string, targetDir string) error {
 	log.Info("pullOciImage")
 
 	ref, err := name.ParseReference(imageName)
@@ -109,41 +102,6 @@ func (installer Installer) pullOCIimage(image v1.Image, imageName string, _ *v1.
 		log.Info("saving v1.Image img as an OCI Image Layout at path", imageCacheDir, err)
 		return fmt.Errorf("saving v1.Image img as an OCI Image Layout at path %s: %w", imageCacheDir, err)
 	}
-
-	/*
-		cacheDir/ref/index.json
-		{
-		   "schemaVersion": 2,
-		   "mediaType": "application/vnd.oci.image.index.v1+json",
-		   "manifests": [
-			  {
-				 "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
-				 "size": 530,
-				 "digest": "sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
-			  }
-		   ]
-		}
-
-		cacheDir/ref/blobs/sha256/7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f
-		{
-		   "schemaVersion": 2,
-		   "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
-		   "config": {
-		      "mediaType": "application/vnd.docker.container.image.v1+json",
-		      "size": 1177,
-		      "digest": "sha256:8230a0268e11c04ab875d426c35e81f7654482e2bd5901fdb7eda90bd35469df"
-		   },
-		   "layers": [
-		      {
-		         "mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
-		         "size": 282834356,
-		         "digest": "sha256:e7f3c606f5adf01f0480a96f74e78074b343f0760eca065b4cf7d46a9472ac37"
-		      }
-		   ]
-		}
-
-		cacheDir/ref/blobs/sha256/e7f3c606f5adf01f0480a96f74e78074b343f0760eca065b4cf7d46a9472ac37
-	*/
 
 	aferoFs := afero.Afero{
 		Fs: installer.fs,

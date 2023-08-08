@@ -10,7 +10,6 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
-	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/zip"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -88,17 +87,15 @@ func TestNewImageInstaller(t *testing.T) {
 	props := &Properties{
 		PathResolver: metadata.PathResolver{RootDir: "/tmp"},
 		ImageUri:     testImageURL,
-		ImageDigest:  testImageDigest,
-		DockerConfig: dockerconfig.DockerConfig{
-			RegistryAuthPath: testRegistryAuthPath,
-			TrustedCertsPath: testCAPath,
-			Dynakube: &dynatracev1beta1.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-name",
-				},
-				Spec: dynatracev1beta1.DynaKubeSpec{},
+		Dynakube: &dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test",
+				Namespace: "dynakube",
 			},
+			Spec: dynatracev1beta1.DynaKubeSpec{},
 		},
+		ImageDigest:      testImageDigest,
+		RegistryAuthPath: "/dummy",
 	}
 	in := NewImageInstaller(testFS, props)
 	assert.NotNil(t, in)
@@ -123,6 +120,7 @@ func TestInstaller_InstallAgent(t *testing.T) {
 	}
 
 	testFS := afero.NewMemMapFs()
+	_, _ = afero.TempFile(testFS, "/dummy", "ioutil-test")
 	transport := RoundTripFunc(func(req *http.Request) *http.Response {
 		return &http.Response{
 			StatusCode: http.StatusOK,
@@ -142,17 +140,15 @@ func TestInstaller_InstallAgent(t *testing.T) {
 			props: &Properties{
 				PathResolver: metadata.PathResolver{RootDir: "/tmp"},
 				ImageUri:     testImageURL,
-				ImageDigest:  testImageDigest,
-				DockerConfig: dockerconfig.DockerConfig{
-					RegistryAuthPath: testRegistryAuthPath,
-					TrustedCertsPath: testCAPath,
-					Dynakube: &dynatracev1beta1.DynaKube{
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "test-name",
-						},
-						Spec: dynatracev1beta1.DynaKubeSpec{},
+				Dynakube: &dynatracev1beta1.DynaKube{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test",
+						Namespace: "dynakube",
 					},
+					Spec: dynatracev1beta1.DynaKubeSpec{},
 				},
+				ImageDigest:      testImageDigest,
+				RegistryAuthPath: "/dummy",
 			},
 			transport: transport,
 		}, args: args{targetDir: config.AgentBinDirMount}, want: true, wantErr: assert.NoError,

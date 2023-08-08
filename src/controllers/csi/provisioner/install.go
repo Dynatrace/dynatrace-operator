@@ -20,8 +20,10 @@ func (provisioner *OneAgentProvisioner) installAgentImage(ctx context.Context, d
 	if err != nil {
 		return "", err
 	}
+	// TODO: remove dockerconfig and use only dockerkeychain
 	dockerConfig := dockerconfig.NewDockerConfig(provisioner.apiReader, dynakube)
 	err = dockerConfig.StoreRequiredFiles(ctx, afero.Afero{Fs: provisioner.fs})
+
 	if err != nil {
 		return "", err
 	}
@@ -34,10 +36,13 @@ func (provisioner *OneAgentProvisioner) installAgentImage(ctx context.Context, d
 
 	imageInstaller := provisioner.imageInstallerBuilder(provisioner.fs, &image.Properties{
 		ImageUri:     targetImage,
+		ApiReader:    provisioner.apiReader,
+		Dynakube:     &dynakube,
 		PathResolver: provisioner.path,
 		Metadata:     provisioner.db,
-		DockerConfig: *dockerConfig,
 		ImageDigest:  imageDigest,
+		// TODO: remove it with dockerConfig
+		RegistryAuthPath: dockerconfig.RegistryAuthDir,
 	})
 	if err != nil {
 		return "", err
