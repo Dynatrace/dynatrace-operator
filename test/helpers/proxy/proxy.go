@@ -43,7 +43,7 @@ var (
 	dynatraceNetworkPolicy = path.Join(project.TestDataDir(), "network/dynatrace-denial.yaml")
 
 	proxyDeploymentPath             = path.Join(project.TestDataDir(), "network/proxy.yaml")
-	proxyWithCustomCADeploymentPath = path.Join(project.TestDataDir(), "network/proxy_ssl.yaml")
+	proxyWithCustomCADeploymentPath = path.Join(project.TestDataDir(), "network/proxy-ssl.yaml")
 	proxySCCPath                    = path.Join(project.TestDataDir(), "network/proxy-scc.yaml")
 
 	ProxySpec = &dynatracev1beta1.DynaKubeProxy{

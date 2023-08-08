@@ -27,3 +27,9 @@ func TestCloudNativeWithProxy(t *testing.T) {
 	testEnvironment.BeforeEachTest(istio.AssertIstiodDeployment())
 	testEnvironment.Test(t, withProxy(t, proxy.ProxySpec))
 }
+
+func TestCloudNativeWithProxyCustomCA(t *testing.T) {
+	testEnvironment.BeforeEachTest(istio.AssertIstioNamespace())
+	testEnvironment.BeforeEachTest(istio.AssertIstiodDeployment())
+	testEnvironment.Test(t, withProxyCA(t, proxy.ProxySpec))
+}
