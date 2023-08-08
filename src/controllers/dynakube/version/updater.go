@@ -42,7 +42,7 @@ func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpda
 	customImage := updater.CustomImage()
 	if customImage != "" {
 		log.Info("updating version status according to custom image", "updater", updater.Name())
-		err = setImageIDWithDigest(ctx, updater.Target(), customImage, reconciler.versionFunc, registryAuthPath, reconciler.dynakube, reconciler.apiReader)
+		err = setImageIDWithDigest(ctx, reconciler.apiReader, reconciler.dynakube, updater.Target(), reconciler.versionFunc, customImage, registryAuthPath)
 		return err
 	}
 
@@ -70,7 +70,7 @@ func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpda
 			return err
 		}
 
-		err = setImageIDWithDigest(ctx, updater.Target(), publicImage.String(), reconciler.versionFunc, registryAuthPath, reconciler.dynakube, reconciler.apiReader)
+		err = setImageIDWithDigest(ctx, reconciler.apiReader, reconciler.dynakube, updater.Target(), reconciler.versionFunc, publicImage.String(), registryAuthPath)
 		if err != nil {
 			log.Info("could not update version status according to the public registry", "updater", updater.Name())
 			return err
@@ -98,12 +98,12 @@ func determineSource(updater versionStatusUpdater) status.VersionSource {
 
 func setImageIDWithDigest( //nolint:revive
 	ctx context.Context,
-	target *status.VersionStatus,
-	imageUri string,
-	imageVersionFunc ImageVersionFunc,
-	registryAuthPath string,
-	dynakube *dynatracev1beta1.DynaKube,
 	apiReader client.Reader,
+	dynakube *dynatracev1beta1.DynaKube,
+	target *status.VersionStatus,
+	imageVersionFunc ImageVersionFunc,
+	imageUri string,
+	registryAuthPath string,
 ) error {
 	ref, err := reference.Parse(imageUri)
 	if err != nil {

@@ -301,7 +301,7 @@ func TestUpdateVersionStatus(t *testing.T) {
 	t.Run("failing to get digest should cause error", func(t *testing.T) {
 		registry := newEmptyFakeRegistry()
 		target := status.VersionStatus{}
-		err := setImageIDWithDigest(ctx, &target, testImage.String(), registry.ImageVersionExt, "", &dynatracev1beta1.DynaKube{}, fake.NewClient())
+		err := setImageIDWithDigest(ctx, fake.NewClient(), &dynatracev1beta1.DynaKube{}, &target, registry.ImageVersionExt, testImage.String(), "")
 		assert.Error(t, err)
 	})
 
@@ -310,7 +310,7 @@ func TestUpdateVersionStatus(t *testing.T) {
 		target := status.VersionStatus{}
 		dynakube := newClassicFullStackDynakube()
 		dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: "http://username:password@host:port"}
-		err := setImageIDWithDigest(ctx, &target, testImage.String(), registry.ImageVersionExt, "", &dynatracev1beta1.DynaKube{}, fake.NewClient())
+		err := setImageIDWithDigest(ctx, fake.NewClient(), &dynatracev1beta1.DynaKube{}, &target, registry.ImageVersionExt, testImage.String(), "")
 		assert.Error(t, err)
 	})
 
@@ -321,7 +321,7 @@ func TestUpdateVersionStatus(t *testing.T) {
 			},
 		})
 		target := status.VersionStatus{}
-		err := setImageIDWithDigest(ctx, &target, testImage.String(), registry.ImageVersionExt, "", &dynatracev1beta1.DynaKube{}, fake.NewClient())
+		err := setImageIDWithDigest(ctx, fake.NewClient(), &dynatracev1beta1.DynaKube{}, &target, registry.ImageVersionExt, testImage.String(), "")
 		require.NoError(t, err)
 		assertVersionStatusEquals(t, registry, getTaggedReference(t, testImage.String()), target)
 	})
@@ -335,7 +335,7 @@ func TestUpdateVersionStatus(t *testing.T) {
 			t.Error("digest function was called unexpectedly")
 			return registry.ImageVersion{}, nil
 		}
-		err := setImageIDWithDigest(ctx, &target, expectedID, boomFunc, "", &dynatracev1beta1.DynaKube{}, fake.NewClient())
+		err := setImageIDWithDigest(ctx, fake.NewClient(), &dynatracev1beta1.DynaKube{}, &target, boomFunc, expectedID, "")
 		require.NoError(t, err)
 		assert.Equal(t, expectedID, target.ImageID)
 	})
@@ -348,7 +348,7 @@ func TestUpdateVersionStatus(t *testing.T) {
 			t.Error("digest function was called unexpectedly")
 			return registry.ImageVersion{}, nil
 		}
-		err := setImageIDWithDigest(ctx, &target, expectedID, boomFunc, "", &dynatracev1beta1.DynaKube{}, fake.NewClient())
+		err := setImageIDWithDigest(ctx, fake.NewClient(), &dynatracev1beta1.DynaKube{}, &target, boomFunc, expectedID, "")
 		require.NoError(t, err)
 		assert.Equal(t, expectedID, target.ImageID)
 	})
