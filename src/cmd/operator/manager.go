@@ -8,6 +8,7 @@ import (
 	cmdManager "github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/certificates"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/nodes"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/pkg/errors"
@@ -95,6 +96,11 @@ func (provider operatorManagerProvider) CreateManager(namespace string, cfg *res
 	}
 
 	err = provider.addCertificateController(mgr, namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	err = edgeconnect.Add(mgr, namespace)
 	if err != nil {
 		return nil, err
 	}
