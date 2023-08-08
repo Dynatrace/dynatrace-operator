@@ -199,7 +199,6 @@ func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {
 			},
 		}},
 	}
-	envs = append(envs, statefulSetBuilder.capability.Properties().Env...)
 
 	if statefulSetBuilder.capability.Properties().Group != "" {
 		envs = append(envs, corev1.EnvVar{Name: consts.EnvDtGroup, Value: statefulSetBuilder.capability.Properties().Group})
@@ -211,6 +210,8 @@ func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {
 	if statefulSetBuilder.dynakube.IsMetricsIngestActiveGateEnabled() {
 		envs = append(envs, corev1.EnvVar{Name: consts.EnvDtHttpPort, Value: strconv.Itoa(consts.HttpContainerPort)})
 	}
+
+	envs = append(envs, statefulSetBuilder.capability.Properties().Env...)
 
 	return envs
 }

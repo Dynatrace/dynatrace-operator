@@ -10,11 +10,11 @@ import (
 func (dsInfo *builderInfo) arguments() []string {
 	args := make([]string, 0)
 
-	args = dsInfo.appendHostInjectArgs(args)
 	args = dsInfo.appendProxyArg(args)
 	args = dsInfo.appendNetworkZoneArg(args)
 	args = appendOperatorVersionArg(args)
 	args = appendImmutableImageArgs(args)
+	args = dsInfo.appendHostInjectArgs(args)
 
 	return args
 }
