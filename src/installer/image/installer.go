@@ -113,7 +113,7 @@ func (installer *Installer) InstallAgent(targetDir string) (bool, error) {
 	}
 
 	log.Info("installing agent", "target dir", targetDir)
-	if err := installer.installAgentFromImage(installer.props.RegistryAuthPath, targetDir); err != nil {
+	if err := installer.installAgentFromImage(targetDir); err != nil {
 		_ = installer.fs.RemoveAll(targetDir)
 		log.Info("failed to install agent from image", "err", err)
 		return false, errors.WithStack(err)
@@ -131,7 +131,7 @@ func (installer Installer) Cleanup() error {
 	return nil
 }
 
-func (installer *Installer) installAgentFromImage(registryAuthPath, targetDir string) error {
+func (installer *Installer) installAgentFromImage(targetDir string) error {
 	defer installer.fs.RemoveAll(CacheDir)
 	err := installer.fs.MkdirAll(CacheDir, common.MkDirFileMode)
 	if err != nil {
@@ -155,7 +155,7 @@ func (installer *Installer) installAgentFromImage(registryAuthPath, targetDir st
 			imageCacheDir: imageCacheDir,
 			targetDir:     targetDir,
 		},
-		registryAuthPath,
+		installer.props.RegistryAuthPath,
 		installer.props.ImageUri,
 	)
 	if err != nil {
