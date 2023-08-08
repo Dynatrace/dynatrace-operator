@@ -14,7 +14,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook/mutation/namespace_mutator"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook/mutation/pod_mutator"
-	validationhook "github.com/Dynatrace/dynatrace-operator/src/webhook/validation"
+	dynakubevalidationhook "github.com/Dynatrace/dynatrace-operator/src/webhook/validation/dynakube"
+	edgeconnectvalidationhook "github.com/Dynatrace/dynatrace-operator/src/webhook/validation/edgeconnect"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -134,7 +135,12 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		err = validationhook.AddDynakubeValidationWebhookToManager(webhookManager)
+		err = dynakubevalidationhook.AddDynakubeValidationWebhookToManager(webhookManager)
+		if err != nil {
+			return err
+		}
+
+		err = edgeconnectvalidationhook.AddEdgeConnectValidationWebhookToManager(webhookManager)
 		if err != nil {
 			return err
 		}

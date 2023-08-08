@@ -1,13 +1,13 @@
-package validation
+package dynakube
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
+	"github.com/Dynatrace/dynatrace-operator/src/webhook/validation"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -53,7 +53,7 @@ func (validator *dynakubeValidator) Handle(_ context.Context, request admission.
 	validationErrors := validator.runValidators(validators, dynakube)
 	response := admission.Allowed("")
 	if len(validationErrors) > 0 {
-		response = admission.Denied(sumErrors(validationErrors))
+		response = admission.Denied(validation.SumErrors(validationErrors, "Dynakube"))
 	}
 	warningMessages := validator.runValidators(warnings, dynakube)
 	if len(warningMessages) > 0 {
@@ -73,14 +73,6 @@ func (validator *dynakubeValidator) runValidators(validators []validator, dynaku
 		}
 	}
 	return results
-}
-
-func sumErrors(validationErrors []string) string {
-	summedErrors := fmt.Sprintf("\n%d error(s) found in the Dynakube", len(validationErrors))
-	for i, errMsg := range validationErrors {
-		summedErrors += fmt.Sprintf("\n %d. %s", i+1, errMsg)
-	}
-	return summedErrors
 }
 
 func decodeRequestToDynakube(request admission.Request, dynakube *dynatracev1beta1.DynaKube) error {
