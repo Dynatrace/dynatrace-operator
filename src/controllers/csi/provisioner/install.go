@@ -42,7 +42,7 @@ func (provisioner *OneAgentProvisioner) installAgentImage(ctx context.Context, d
 		Metadata:     provisioner.db,
 		ImageDigest:  imageDigest,
 		// TODO: remove it with dockerConfig
-		RegistryAuthPath: dockerconfig.RegistryAuthDir,
+		RegistryAuthPath: dockerConfig.RegistryAuthPath,
 	})
 	if err != nil {
 		return "", err
