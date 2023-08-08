@@ -6,14 +6,16 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/src/registry"
+	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/containers/image/v5/docker/reference"
 	"github.com/opencontainers/go-digest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type mockUpdater struct {
@@ -52,7 +54,7 @@ func (m *mockUpdater) LatestImageInfo() (*dtclient.LatestImageInfo, error) {
 	args := m.Called()
 	return args.Get(0).(*dtclient.LatestImageInfo), args.Error(1)
 }
-func (m *mockUpdater) UseTenantRegistry(_ context.Context, _ *dockerconfig.DockerConfig) error {
+func (m *mockUpdater) UseTenantRegistry(_ context.Context, _ string) error {
 	args := m.Called()
 	return args.Error(0)
 }
@@ -68,11 +70,10 @@ func TestRun(t *testing.T) {
 		Source: "some.registry.com",
 		Tag:    "1.2.3",
 	}
-	testDockerCfg := &dockerconfig.DockerConfig{}
 	timeProvider := timeprovider.New().Freeze()
 
 	t.Run("set source and probe at the end, if no error", func(t *testing.T) {
-		registry := newFakeRegistry(map[string]ImageVersion{
+		registry := newFakeRegistry(map[string]registry.ImageVersion{
 			testImage.String(): {
 				Version: testImage.Tag,
 			},
@@ -84,7 +85,7 @@ func TestRun(t *testing.T) {
 			versionFunc:  registry.ImageVersionExt,
 		}
 		updater := newCustomImageUpdater(target, testImage.String())
-		err := versionReconciler.run(ctx, updater, testDockerCfg)
+		err := versionReconciler.run(ctx, updater, "")
 		require.NoError(t, err)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.CustomImageVersionSource, target.Source)
@@ -99,7 +100,7 @@ func TestRun(t *testing.T) {
 			versionFunc:  registry.ImageVersionExt,
 		}
 		updater := newCustomImageUpdater(target, "incorrect-uri")
-		err := versionReconciler.run(ctx, updater, testDockerCfg)
+		err := versionReconciler.run(ctx, updater, "")
 		require.Error(t, err)
 		assert.Nil(t, target.LastProbeTimestamp)
 		assert.Empty(t, target.Source)
@@ -115,30 +116,30 @@ func TestRun(t *testing.T) {
 		updater := newDefaultUpdater(target, false)
 
 		// 1. call => status empty => should run
-		err := versionReconciler.run(ctx, updater, testDockerCfg)
+		err := versionReconciler.run(ctx, updater, "")
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 1)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.TenantRegistryVersionSource, target.Source)
 
 		// 2. call => status NOT empty => should NOT run
-		err = versionReconciler.run(ctx, updater, testDockerCfg)
+		err = versionReconciler.run(ctx, updater, "")
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 1)
 
 		// 3. call => source is different => should run
 		target.Source = status.CustomImageVersionSource
-		err = versionReconciler.run(ctx, updater, testDockerCfg)
+		err = versionReconciler.run(ctx, updater, "")
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 2)
 
 		// 4. call => source is NOT different => should NOT run
-		err = versionReconciler.run(ctx, updater, testDockerCfg)
+		err = versionReconciler.run(ctx, updater, "")
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 2)
 	})
 	t.Run("public registry", func(t *testing.T) {
-		registry := newFakeRegistry(map[string]ImageVersion{
+		registry := newFakeRegistry(map[string]registry.ImageVersion{
 			testImage.String(): {
 				Version: testImage.Tag,
 			},
@@ -155,7 +156,7 @@ func TestRun(t *testing.T) {
 		updater.On("IsClassicFullStackEnabled").Return(false)
 		updater.On("CheckForDowngrade").Return(false, nil)
 
-		err := versionReconciler.run(ctx, updater, testDockerCfg)
+		err := versionReconciler.run(ctx, updater, "")
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "LatestImageInfo", 1)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
@@ -165,7 +166,7 @@ func TestRun(t *testing.T) {
 	})
 
 	t.Run("public registry, no downgrade allowed", func(t *testing.T) {
-		registry := newFakeRegistry(map[string]ImageVersion{
+		registry := newFakeRegistry(map[string]registry.ImageVersion{
 			testImage.String(): {
 				Version: testImage.Tag,
 			},
@@ -182,7 +183,7 @@ func TestRun(t *testing.T) {
 		updater.On("IsClassicFullStackEnabled").Return(false)
 		updater.On("CheckForDowngrade").Return(true, nil)
 
-		err := versionReconciler.run(ctx, updater, testDockerCfg)
+		err := versionReconciler.run(ctx, updater, "")
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "LatestImageInfo", 1)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
@@ -191,7 +192,7 @@ func TestRun(t *testing.T) {
 		assert.Empty(t, target.ImageID)
 	})
 	t.Run("classicfullstack enabled, public registry is ignored", func(t *testing.T) {
-		registry := newFakeRegistry(map[string]ImageVersion{
+		registry := newFakeRegistry(map[string]registry.ImageVersion{
 			testImage.String(): {
 				Version: testImage.Tag,
 			},
@@ -209,7 +210,7 @@ func TestRun(t *testing.T) {
 		updater.On("CustomVersion").Return("")
 		updater.On("UseTenantRegistry").Return(nil)
 
-		err := versionReconciler.run(ctx, updater, testDockerCfg)
+		err := versionReconciler.run(ctx, updater, "")
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "LatestImageInfo", 0)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
@@ -217,7 +218,7 @@ func TestRun(t *testing.T) {
 		assert.Equal(t, target.Version, target.Version)
 	})
 	t.Run("classicfullstack enabled, public registry is ignored, custom image is set", func(t *testing.T) {
-		registry := newFakeRegistry(map[string]ImageVersion{
+		registry := newFakeRegistry(map[string]registry.ImageVersion{
 			testImage.String(): {
 				Version: testImage.Tag,
 			},
@@ -235,7 +236,7 @@ func TestRun(t *testing.T) {
 		updater.On("CustomVersion").Return(testImage.Tag)
 		updater.On("UseTenantRegistry").Return(nil)
 
-		err := versionReconciler.run(ctx, updater, testDockerCfg)
+		err := versionReconciler.run(ctx, updater, "")
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "LatestImageInfo", 0)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
@@ -296,32 +297,31 @@ func TestUpdateVersionStatus(t *testing.T) {
 		Source: "some.registry.com",
 		Tag:    "1.2.3",
 	}
-	testDockerCfg := &dockerconfig.DockerConfig{}
 
 	t.Run("failing to get digest should cause error", func(t *testing.T) {
 		registry := newEmptyFakeRegistry()
 		target := status.VersionStatus{}
-		err := setImageIDWithDigest(ctx, &target, testImage.String(), registry.ImageVersionExt, testDockerCfg, newClassicFullStackDynakube())
+		err := setImageIDWithDigest(ctx, fake.NewClient(), &dynatracev1beta1.DynaKube{}, &target, registry.ImageVersionExt, testImage.String(), "")
 		assert.Error(t, err)
 	})
 
-	t.Run("failing to get digest should not cause error if proxy is set", func(t *testing.T) {
+	t.Run("failing to get digest should cause error if proxy is set", func(t *testing.T) {
 		registry := newEmptyFakeRegistry()
 		target := status.VersionStatus{}
 		dynakube := newClassicFullStackDynakube()
 		dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: "http://username:password@host:port"}
-		err := setImageIDWithDigest(ctx, &target, testImage.String(), registry.ImageVersionExt, testDockerCfg, dynakube)
-		assert.NoError(t, err)
+		err := setImageIDWithDigest(ctx, fake.NewClient(), &dynatracev1beta1.DynaKube{}, &target, registry.ImageVersionExt, testImage.String(), "")
+		assert.Error(t, err)
 	})
 
 	t.Run("set status", func(t *testing.T) {
-		registry := newFakeRegistry(map[string]ImageVersion{
+		registry := newFakeRegistry(map[string]registry.ImageVersion{
 			testImage.String(): {
 				Version: testImage.Tag,
 			},
 		})
 		target := status.VersionStatus{}
-		err := setImageIDWithDigest(ctx, &target, testImage.String(), registry.ImageVersionExt, testDockerCfg, newClassicFullStackDynakube())
+		err := setImageIDWithDigest(ctx, fake.NewClient(), &dynatracev1beta1.DynaKube{}, &target, registry.ImageVersionExt, testImage.String(), "")
 		require.NoError(t, err)
 		assertVersionStatusEquals(t, registry, getTaggedReference(t, testImage.String()), target)
 	})
@@ -331,11 +331,11 @@ func TestUpdateVersionStatus(t *testing.T) {
 		expectedDigest := "sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
 		expectedID := expectedRepo + "@" + expectedDigest
 		target := status.VersionStatus{}
-		boomFunc := func(_ context.Context, imagePath string, _ *dockerconfig.DockerConfig) (ImageVersion, error) {
+		boomFunc := func(context.Context, client.Reader, registry.ImageGetter, *dynatracev1beta1.DynaKube, string, string) (registry.ImageVersion, error) {
 			t.Error("digest function was called unexpectedly")
-			return ImageVersion{}, nil
+			return registry.ImageVersion{}, nil
 		}
-		err := setImageIDWithDigest(ctx, &target, expectedID, boomFunc, testDockerCfg, newClassicFullStackDynakube())
+		err := setImageIDWithDigest(ctx, fake.NewClient(), &dynatracev1beta1.DynaKube{}, &target, boomFunc, expectedID, "")
 		require.NoError(t, err)
 		assert.Equal(t, expectedID, target.ImageID)
 	})
@@ -344,11 +344,11 @@ func TestUpdateVersionStatus(t *testing.T) {
 		expectedDigest := "sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
 		expectedID := expectedRepo + ":tag@" + expectedDigest
 		target := status.VersionStatus{}
-		boomFunc := func(_ context.Context, imagePath string, _ *dockerconfig.DockerConfig) (ImageVersion, error) {
+		boomFunc := func(context.Context, client.Reader, registry.ImageGetter, *dynatracev1beta1.DynaKube, string, string) (registry.ImageVersion, error) {
 			t.Error("digest function was called unexpectedly")
-			return ImageVersion{}, nil
+			return registry.ImageVersion{}, nil
 		}
-		err := setImageIDWithDigest(ctx, &target, expectedID, boomFunc, testDockerCfg, newClassicFullStackDynakube())
+		err := setImageIDWithDigest(ctx, fake.NewClient(), &dynatracev1beta1.DynaKube{}, &target, boomFunc, expectedID, "")
 		require.NoError(t, err)
 		assert.Equal(t, expectedID, target.ImageID)
 	})

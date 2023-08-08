@@ -42,10 +42,10 @@ func NewReconciler(dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader,
 // Reconcile updates the version status used by the dynakube
 func (reconciler *Reconciler) Reconcile(ctx context.Context) error {
 	updaters := []versionStatusUpdater{
-		newActiveGateUpdater(reconciler.dynakube, reconciler.dtClient, reconciler.versionFunc),
-		newOneAgentUpdater(reconciler.dynakube, reconciler.dtClient, reconciler.versionFunc),
+		newActiveGateUpdater(reconciler.dynakube, reconciler.apiReader, reconciler.dtClient, reconciler.versionFunc),
+		newOneAgentUpdater(reconciler.dynakube, reconciler.apiReader, reconciler.dtClient, reconciler.versionFunc),
 		newCodeModulesUpdater(reconciler.dynakube, reconciler.dtClient),
-		newSyntheticUpdater(reconciler.dynakube, reconciler.dtClient, reconciler.versionFunc),
+		newSyntheticUpdater(reconciler.dynakube, reconciler.apiReader, reconciler.dtClient, reconciler.versionFunc),
 	}
 
 	neededUpdaters := reconciler.needsReconcile(updaters)
@@ -67,7 +67,7 @@ func (reconciler *Reconciler) updateVersionStatuses(ctx context.Context, updater
 
 	for _, updater := range updaters {
 		log.Info("updating version status", "updater", updater.Name())
-		err := reconciler.run(ctx, updater, dockerConfig)
+		err := reconciler.run(ctx, updater, dockerConfig.RegistryAuthPath)
 		if err != nil {
 			return err
 		}

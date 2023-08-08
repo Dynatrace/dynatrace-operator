@@ -6,36 +6,45 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
-	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/version/testdata"
+	"github.com/Dynatrace/dynatrace-operator/src/registry"
+	"github.com/Dynatrace/dynatrace-operator/src/registry/mocks"
+	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/containers/image/v5/docker/reference"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 type fakeRegistry struct {
-	imageVersions map[string]ImageVersion
+	imageVersions map[string]registry.ImageVersion
 }
 
 func newEmptyFakeRegistry() *fakeRegistry {
-	return newFakeRegistry(make(map[string]ImageVersion))
+	return newFakeRegistry(make(map[string]registry.ImageVersion))
 }
 
-func newFakeRegistry(src map[string]ImageVersion) *fakeRegistry {
+func newFakeRegistry(src map[string]registry.ImageVersion) *fakeRegistry {
 	reg := fakeRegistry{
 		imageVersions: src,
 	}
 	return &reg
 }
 
-func (registry *fakeRegistry) ImageVersion(imagePath string) (ImageVersion, error) {
-	if version, exists := registry.imageVersions[imagePath]; !exists {
-		return ImageVersion{}, fmt.Errorf(`cannot provide version for image: "%s"`, imagePath)
+func (fakeRegistry *fakeRegistry) ImageVersion(imagePath string) (registry.ImageVersion, error) {
+	if version, exists := fakeRegistry.imageVersions[imagePath]; !exists {
+		return registry.ImageVersion{}, fmt.Errorf(`cannot provide version for image: "%s"`, imagePath)
 	} else {
 		return version, nil
 	}
 }
 
-func (registry *fakeRegistry) ImageVersionExt(_ context.Context, imagePath string, _ *dockerconfig.DockerConfig) (ImageVersion, error) {
-	return registry.ImageVersion(imagePath)
+func (fakeRegistry *fakeRegistry) ImageVersionExt(_ context.Context, _ client.Reader, _ registry.ImageGetter, _ *dynatracev1beta1.DynaKube, imagePath string, _ string) (registry.ImageVersion, error) { //nolint:revive // argument-limit
+	return fakeRegistry.ImageVersion(imagePath)
 }
 
 func assertPublicRegistryVersionStatusEquals(t *testing.T, registry *fakeRegistry, imageRef reference.NamedTagged, versionStatus status.VersionStatus) { //nolint:revive // argument-limit
@@ -48,4 +57,57 @@ func assertVersionStatusEquals(t *testing.T, registry *fakeRegistry, imageRef re
 
 	assert.NoError(t, err, "Image version is unexpectedly unknown for '%s'", imageRef.String())
 	assert.Contains(t, versionStatus.ImageID, expectedDigest.Digest)
+}
+
+func TestGetImageVersion(t *testing.T) {
+	t.Run("without proxy or trustedCAs", func(t *testing.T) {
+		mockImageGetter := &mocks.MockImageGetter{}
+		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(registry.ImageVersion{}, nil)
+
+		dynakube := dynatracev1beta1.DynaKube{}
+		imageName := "dynatrace-operator:1.0.0"
+		registryAuthPath := "dummy-registry-auth-path"
+		apiReader := fake.NewClientBuilder().Build()
+
+		got, err := GetImageVersion(context.TODO(), apiReader, mockImageGetter, &dynakube, imageName, registryAuthPath)
+		assert.NotNil(t, got)
+		assert.Nil(t, err)
+	})
+	t.Run("with proxy", func(t *testing.T) {
+		mockImageGetter := &mocks.MockImageGetter{}
+		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(registry.ImageVersion{}, nil)
+
+		dynakube := dynatracev1beta1.DynaKube{Spec: dynatracev1beta1.DynaKubeSpec{Proxy: &dynatracev1beta1.DynaKubeProxy{Value: "dummy-proxy"}}}
+		imageName := "dynatrace-operator:1.0.0"
+		registryAuthPath := "dummy-registry-auth-path"
+		apiReader := fake.NewClientBuilder().Build()
+
+		got, err := GetImageVersion(context.TODO(), apiReader, mockImageGetter, &dynakube, imageName, registryAuthPath)
+		assert.NotNil(t, got)
+		assert.Nil(t, err)
+	})
+	t.Run("with trustedCAs", func(t *testing.T) {
+		mockImageGetter := &mocks.MockImageGetter{}
+		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(registry.ImageVersion{}, nil)
+		configMapName := "dummy-certs-configmap"
+
+		dynakube := dynatracev1beta1.DynaKube{Spec: dynatracev1beta1.DynaKubeSpec{TrustedCAs: configMapName}}
+		imageName := "dynatrace-operator:1.0.0"
+		registryAuthPath := "dummy-registry-auth-path"
+		apiReader := fake.NewClientBuilder().
+			WithScheme(scheme.Scheme).
+			WithObjects(
+				&corev1.ConfigMap{
+					ObjectMeta: v1.ObjectMeta{Name: configMapName},
+					Data: map[string]string{
+						"certs": testdata.CertsContent,
+					},
+				},
+			).
+			Build()
+
+		got, err := GetImageVersion(context.TODO(), apiReader, mockImageGetter, &dynakube, imageName, registryAuthPath)
+		assert.NotNil(t, got)
+		assert.Nil(t, err)
+	})
 }

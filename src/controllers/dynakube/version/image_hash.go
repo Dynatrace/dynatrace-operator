@@ -2,80 +2,92 @@ package version
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	"net/http"
+	"net/url"
 
-	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
-	"github.com/containers/image/v5/image"
-	"github.com/containers/image/v5/manifest"
-	"github.com/containers/image/v5/transports/alltransports"
-	"github.com/containers/image/v5/types"
-	"github.com/opencontainers/go-digest"
-	"github.com/pkg/errors"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/src/dockerkeychain"
+	"github.com/Dynatrace/dynatrace-operator/src/registry"
+	"github.com/spf13/afero"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-const (
-	// VersionLabel is the name of the label used on ActiveGate-provided images.
-	VersionLabel = "com.dynatrace.build-version"
-)
-
-type ImageVersion struct {
-	Version string
-	Digest  digest.Digest
-}
 
 // ImageVersionFunc can fetch image information from img
-type ImageVersionFunc func(ctx context.Context, imageName string, dockerConfig *dockerconfig.DockerConfig) (ImageVersion, error)
+type ImageVersionFunc func(
+	ctx context.Context,
+	apiReader client.Reader,
+	registryClient registry.ImageGetter,
+	dynakube *dynatracev1beta1.DynaKube,
+	imageName string,
+	registryAuthPath string,
+) (
+	registry.ImageVersion,
+	error,
+)
 
 var _ ImageVersionFunc = GetImageVersion
 
 // GetImageVersion fetches image information for imageName
-func GetImageVersion(ctx context.Context, imageName string, dockerConfig *dockerconfig.DockerConfig) (ImageVersion, error) {
-	transportImageName := fmt.Sprintf("docker://%s", imageName)
+func GetImageVersion( //nolint:revive // argument-limit
+	ctx context.Context,
+	apiReader client.Reader,
+	registryClient registry.ImageGetter,
+	dynakube *dynatracev1beta1.DynaKube,
+	imageName string,
+	registryAuthPath string,
+) (
+	registry.ImageVersion,
+	error,
+) {
+	var err error
+	var proxy string
 
-	imageReference, err := alltransports.ParseImageName(transportImageName)
-	if err != nil {
-		return ImageVersion{}, errors.WithStack(err)
+	keychain := dockerkeychain.NewDockerKeychain(registryAuthPath, afero.NewOsFs())
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+
+	if dynakube.HasProxy() {
+		proxy, err = dynakube.Proxy(ctx, apiReader)
+		if err != nil {
+			return registry.ImageVersion{}, err
+		}
+		proxyUrl, err := url.Parse(proxy)
+		if err != nil {
+			log.Info("invalid proxy spec", "proxy", proxy)
+			return registry.ImageVersion{}, err
+		}
+
+		transport.Proxy = func(req *http.Request) (*url.URL, error) {
+			return proxyUrl, nil
+		}
 	}
 
-	systemContext := dockerconfig.MakeSystemContext(imageReference.DockerReference(), dockerConfig)
-
-	imageSource, err := imageReference.NewImageSource(context.TODO(), systemContext)
-	if err != nil {
-		return ImageVersion{}, errors.WithStack(err)
-	}
-	defer closeImageSource(imageSource)
-
-	imageManifest, _, err := imageSource.GetManifest(context.TODO(), nil)
-	if err != nil {
-		return ImageVersion{}, errors.WithStack(err)
+	if dynakube.Spec.TrustedCAs != "" {
+		transport, err = addCertificates(transport, dynakube, apiReader)
+		if err != nil {
+			return registry.ImageVersion{}, fmt.Errorf("addCertificates(): %w", err)
+		}
 	}
 
-	digest, err := manifest.Digest(imageManifest)
-	if err != nil {
-		return ImageVersion{}, errors.WithStack(err)
-	}
-
-	sourceImage, err := image.FromUnparsedImage(context.TODO(), systemContext, image.UnparsedInstance(imageSource, nil))
-	if err != nil {
-		return ImageVersion{}, errors.WithStack(err)
-	}
-
-	inspectedImage, err := sourceImage.Inspect(context.TODO())
-	if err != nil {
-		return ImageVersion{}, errors.WithStack(err)
-	} else if inspectedImage == nil {
-		return ImageVersion{}, errors.Errorf("could not inspect image: '%s'", transportImageName)
-	}
-
-	return ImageVersion{
-		Digest:  digest,
-		Version: inspectedImage.Labels[VersionLabel], // empty if unset
-	}, nil
+	return registryClient.GetImageVersion(ctx, keychain, transport, imageName)
 }
 
-func closeImageSource(source types.ImageSource) {
-	if source != nil {
-		// Swallow error
-		_ = source.Close()
+func addCertificates(transport *http.Transport, dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader) (*http.Transport, error) {
+	trustedCAs, err := dynakube.TrustedCAs(context.TODO(), apiReader)
+	if err != nil {
+		return transport, err
 	}
+
+	rootCAs := x509.NewCertPool()
+	if ok := rootCAs.AppendCertsFromPEM(trustedCAs); !ok {
+		log.Info("failed to append custom certs!")
+	}
+	if transport.TLSClientConfig == nil {
+		transport.TLSClientConfig = &tls.Config{} //nolint:gosec
+	}
+	transport.TLSClientConfig.RootCAs = rootCAs
+
+	return transport, nil
 }
