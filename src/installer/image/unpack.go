@@ -65,7 +65,7 @@ func (installer Installer) pullImageInfo(registryAuthPath string, imageName stri
 
 	image, err := remote.Image(ref, remote.WithContext(context.TODO()), remote.WithAuthFromKeychain(keyChain), remote.WithTransport(installer.transport))
 	if err != nil {
-		return nil, fmt.Errorf("getting image %q: %w", imageName, err)
+		return nil, errors.WithMessagef(err, "getting image %q", imageName)
 	}
 	return &image, nil
 }
@@ -73,7 +73,7 @@ func (installer Installer) pullImageInfo(registryAuthPath string, imageName stri
 func (installer Installer) pullOCIimage(image v1.Image, imageName string, imageCacheDir string, targetDir string) error {
 	ref, err := name.ParseReference(imageName)
 	if err != nil {
-		return fmt.Errorf("parsing reference %q: %w", imageName, err)
+		return errors.WithMessagef(err, "parsing reference %q", imageName)
 	}
 
 	log.Info("pullOciImage", "ref_identifier", ref.Identifier(), "ref.Name", ref.Name(), "ref.String", ref.String())
@@ -86,7 +86,7 @@ func (installer Installer) pullOCIimage(image v1.Image, imageName string, imageC
 
 	if err := crane.SaveOCI(image, path.Join(imageCacheDir, ref.Identifier())); err != nil {
 		log.Info("saving v1.Image img as an OCI Image Layout at path", imageCacheDir, err)
-		return fmt.Errorf("saving v1.Image img as an OCI Image Layout at path %s: %w", imageCacheDir, err)
+		return errors.WithMessagef(err, "saving v1.Image img as an OCI Image Layout at path %s", imageCacheDir)
 	}
 
 	aferoFs := afero.Afero{
@@ -128,9 +128,9 @@ func (installer Installer) unpackOciImage(manifests []*manifest.OCI1, imageCache
 					return err
 				}
 			case mediaTypeImageLayerGzip:
-				return fmt.Errorf("MediaTypeImageLayerGzip is not implemented")
+				return errors.New("MediaTypeImageLayerGzip is not implemented")
 			case mediaTypeImageLayerZstd:
-				return fmt.Errorf("MediaTypeImageLayerZstd is not implemented")
+				return errors.New("MediaTypeImageLayerZstd is not implemented")
 			default:
 				return fmt.Errorf("unknown media type: %s", layer.MediaType)
 			}
