@@ -66,7 +66,7 @@ func TestCodeModulesUseDefault(t *testing.T) {
 		mockClient := &dtclient.MockDynatraceClient{}
 		updater := newCodeModulesUpdater(dynakube, mockClient)
 
-		err := updater.UseTenantRegistry(ctx, "", &dynatracev1beta1.DynaKube{}, fake.NewClient())
+		err := updater.UseTenantRegistry(ctx, fake.NewClient(), "")
 		require.NoError(t, err)
 		assertDefaultCodeModulesStatus(t, testVersion, dynakube.Status.CodeModules)
 	})
@@ -85,7 +85,7 @@ func TestCodeModulesUseDefault(t *testing.T) {
 		mockLatestAgentVersion(mockClient, testVersion)
 		updater := newCodeModulesUpdater(dynakube, mockClient)
 
-		err := updater.UseTenantRegistry(ctx, "", &dynatracev1beta1.DynaKube{}, fake.NewClient())
+		err := updater.UseTenantRegistry(ctx, fake.NewClient(), "")
 		require.NoError(t, err)
 		assertDefaultCodeModulesStatus(t, testVersion, dynakube.Status.CodeModules)
 	})

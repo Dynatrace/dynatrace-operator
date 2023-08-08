@@ -44,7 +44,7 @@ func TestSyntheticUseTenantRegistry(t *testing.T) {
 		})
 		updater := newSyntheticUpdater(dynakube, mockClient, registry.ImageVersionExt)
 
-		err := updater.UseTenantRegistry(context.TODO(), "", &dynatracev1beta1.DynaKube{}, fake.NewClient())
+		err := updater.UseTenantRegistry(context.TODO(), fake.NewClient(), "")
 		require.NoError(t, err, "default image set")
 		assertStatusBasedOnTenantRegistry(t, expectedImage, testVersion, dynakube.Status.Synthetic.VersionStatus)
 	})

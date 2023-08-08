@@ -54,7 +54,7 @@ func (m *mockUpdater) LatestImageInfo() (*dtclient.LatestImageInfo, error) {
 	args := m.Called()
 	return args.Get(0).(*dtclient.LatestImageInfo), args.Error(1)
 }
-func (m *mockUpdater) UseTenantRegistry(_ context.Context, _ string, _ *dynatracev1beta1.DynaKube, _ client.Reader) error {
+func (m *mockUpdater) UseTenantRegistry(_ context.Context, _ client.Reader, _ string) error {
 	args := m.Called()
 	return args.Error(0)
 }
@@ -331,7 +331,7 @@ func TestUpdateVersionStatus(t *testing.T) {
 		expectedDigest := "sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
 		expectedID := expectedRepo + "@" + expectedDigest
 		target := status.VersionStatus{}
-		boomFunc := func(context.Context, registry.ImageGetter, string, string, *dynatracev1beta1.DynaKube, client.Reader) (registry.ImageVersion, error) {
+		boomFunc := func(context.Context, client.Reader, registry.ImageGetter, *dynatracev1beta1.DynaKube, string, string) (registry.ImageVersion, error) {
 			t.Error("digest function was called unexpectedly")
 			return registry.ImageVersion{}, nil
 		}
@@ -344,7 +344,7 @@ func TestUpdateVersionStatus(t *testing.T) {
 		expectedDigest := "sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
 		expectedID := expectedRepo + ":tag@" + expectedDigest
 		target := status.VersionStatus{}
-		boomFunc := func(context.Context, registry.ImageGetter, string, string, *dynatracev1beta1.DynaKube, client.Reader) (registry.ImageVersion, error) {
+		boomFunc := func(context.Context, client.Reader, registry.ImageGetter, *dynatracev1beta1.DynaKube, string, string) (registry.ImageVersion, error) {
 			t.Error("digest function was called unexpectedly")
 			return registry.ImageVersion{}, nil
 		}

@@ -59,7 +59,7 @@ func (updater oneAgentUpdater) LatestImageInfo() (*dtclient.LatestImageInfo, err
 	return updater.dtClient.GetLatestOneAgentImage()
 }
 
-func (updater *oneAgentUpdater) UseTenantRegistry(ctx context.Context, registryAuthPath string, dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader) error {
+func (updater *oneAgentUpdater) UseTenantRegistry(ctx context.Context, apiReader client.Reader, registryAuthPath string) error {
 	var err error
 	latestVersion := updater.CustomVersion()
 	if latestVersion == "" {
@@ -75,7 +75,7 @@ func (updater *oneAgentUpdater) UseTenantRegistry(ctx context.Context, registryA
 	}
 
 	defaultImage := updater.dynakube.DefaultOneAgentImage()
-	return updateVersionStatusForTenantRegistry(ctx, updater.Target(), defaultImage, updater.versionFunc, registryAuthPath, dynakube, apiReader)
+	return updateVersionStatusForTenantRegistry(ctx, apiReader, updater.dynakube, updater.Target(), updater.versionFunc, defaultImage, registryAuthPath)
 }
 
 func (updater *oneAgentUpdater) CheckForDowngrade(latestVersion string) (bool, error) {

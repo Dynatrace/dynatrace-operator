@@ -12,7 +12,7 @@ import (
 )
 
 type ImageGetter interface {
-	GetImageVersion(ctx context.Context, imageName string, keychain authn.Keychain, transport *http.Transport) (ImageVersion, error)
+	GetImageVersion(ctx context.Context, keychain authn.Keychain, transport *http.Transport, imageName string) (ImageVersion, error)
 }
 
 type ImageVersion struct {
@@ -31,7 +31,7 @@ func NewClient() *Client {
 	return &Client{}
 }
 
-func (r *Client) GetImageVersion(ctx context.Context, imageName string, keychain authn.Keychain, transport *http.Transport) (ImageVersion, error) {
+func (c *Client) GetImageVersion(ctx context.Context, keychain authn.Keychain, transport *http.Transport, imageName string) (ImageVersion, error) {
 	ref, err := name.ParseReference(imageName)
 	if err != nil {
 		return ImageVersion{}, fmt.Errorf("parsing reference %q: %w", imageName, err)

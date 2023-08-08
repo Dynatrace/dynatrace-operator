@@ -26,7 +26,7 @@ type versionStatusUpdater interface {
 	CheckForDowngrade(latestVersion string) (bool, error)
 	LatestImageInfo() (*dtclient.LatestImageInfo, error)
 
-	UseTenantRegistry(context.Context, string, *dynatracev1beta1.DynaKube, client.Reader) error
+	UseTenantRegistry(context.Context, client.Reader, string) error
 }
 
 func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpdater, registryAuthPath string, dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader) error {
@@ -79,7 +79,7 @@ func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpda
 	}
 
 	log.Info("updating version status according to the tenant registry", "updater", updater.Name())
-	err = updater.UseTenantRegistry(ctx, registryAuthPath, dynakube, apiReader)
+	err = updater.UseTenantRegistry(ctx, apiReader, registryAuthPath)
 	return err
 }
 
@@ -118,7 +118,7 @@ func setImageIDWithDigest( //nolint:revive
 		target.ImageID = canonRef.String()
 	} else if taggedRef, ok := ref.(reference.NamedTagged); ok {
 		registryClient := registry.NewClient()
-		imageVersion, err := imageVersionFunc(ctx, registryClient, imageUri, registryAuthPath, dynakube, apiReader)
+		imageVersion, err := imageVersionFunc(ctx, apiReader, registryClient, dynakube, imageUri, registryAuthPath)
 		if err != nil {
 			log.Info("failed to determine image version")
 			return err
@@ -146,12 +146,12 @@ func setImageIDWithDigest( //nolint:revive
 
 func updateVersionStatusForTenantRegistry( //nolint:revive
 	ctx context.Context,
-	target *status.VersionStatus,
-	imageUri string,
-	imageVersionFunc ImageVersionFunc,
-	registryAuthPath string,
-	dynakube *dynatracev1beta1.DynaKube,
 	apiReader client.Reader,
+	dynakube *dynatracev1beta1.DynaKube,
+	target *status.VersionStatus,
+	imageVersionFunc ImageVersionFunc,
+	imageUri string,
+	registryAuthPath string,
 ) error {
 	ref, err := reference.Parse(imageUri)
 	if err != nil {
@@ -165,7 +165,7 @@ func updateVersionStatusForTenantRegistry( //nolint:revive
 
 	if taggedRef, ok := ref.(reference.NamedTagged); ok {
 		registryClient := registry.NewClient()
-		imageVersion, err := imageVersionFunc(ctx, registryClient, imageUri, registryAuthPath, dynakube, apiReader)
+		imageVersion, err := imageVersionFunc(ctx, apiReader, registryClient, dynakube, imageUri, registryAuthPath)
 		if err != nil {
 			log.Info("failed to determine image version")
 			return err

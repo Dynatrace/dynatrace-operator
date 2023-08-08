@@ -43,7 +43,7 @@ func (fakeRegistry *fakeRegistry) ImageVersion(imagePath string) (registry.Image
 	}
 }
 
-func (fakeRegistry *fakeRegistry) ImageVersionExt(_ context.Context, _ registry.ImageGetter, imagePath string, _ string, _ *dynatracev1beta1.DynaKube, _ client.Reader) (registry.ImageVersion, error) { //nolint:revive // argument-limit
+func (fakeRegistry *fakeRegistry) ImageVersionExt(_ context.Context, _ client.Reader, _ registry.ImageGetter, _ *dynatracev1beta1.DynaKube, imagePath string, _ string) (registry.ImageVersion, error) { //nolint:revive // argument-limit
 	return fakeRegistry.ImageVersion(imagePath)
 }
 
@@ -69,7 +69,7 @@ func TestGetImageVersion(t *testing.T) {
 		registryAuthPath := "dummy-registry-auth-path"
 		apiReader := fake.NewClientBuilder().Build()
 
-		got, err := GetImageVersion(context.TODO(), mockImageGetter, imageName, registryAuthPath, &dynakube, apiReader)
+		got, err := GetImageVersion(context.TODO(), apiReader, mockImageGetter, &dynakube, imageName, registryAuthPath)
 		assert.NotNil(t, got)
 		assert.Nil(t, err)
 	})
@@ -82,7 +82,7 @@ func TestGetImageVersion(t *testing.T) {
 		registryAuthPath := "dummy-registry-auth-path"
 		apiReader := fake.NewClientBuilder().Build()
 
-		got, err := GetImageVersion(context.TODO(), mockImageGetter, imageName, registryAuthPath, &dynakube, apiReader)
+		got, err := GetImageVersion(context.TODO(), apiReader, mockImageGetter, &dynakube, imageName, registryAuthPath)
 		assert.NotNil(t, got)
 		assert.Nil(t, err)
 	})
@@ -106,7 +106,7 @@ func TestGetImageVersion(t *testing.T) {
 			).
 			Build()
 
-		got, err := GetImageVersion(context.TODO(), mockImageGetter, imageName, registryAuthPath, &dynakube, apiReader)
+		got, err := GetImageVersion(context.TODO(), apiReader, mockImageGetter, &dynakube, imageName, registryAuthPath)
 		assert.NotNil(t, got)
 		assert.Nil(t, err)
 	})

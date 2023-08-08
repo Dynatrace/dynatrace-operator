@@ -57,7 +57,7 @@ func (updater *codeModulesUpdater) CheckForDowngrade(latestVersion string) (bool
 	return false, nil
 }
 
-func (updater *codeModulesUpdater) UseTenantRegistry(_ context.Context, _ string, _ *dynatracev1beta1.DynaKube, _ client.Reader) error {
+func (updater *codeModulesUpdater) UseTenantRegistry(_ context.Context, _ client.Reader, _ string) error {
 	customVersion := updater.CustomVersion()
 	if customVersion != "" {
 		updater.dynakube.Status.CodeModules = dynatracev1beta1.CodeModulesStatus{

@@ -18,11 +18,11 @@ import (
 // ImageVersionFunc can fetch image information from img
 type ImageVersionFunc func(
 	ctx context.Context,
+	apiReader client.Reader,
 	registryClient registry.ImageGetter,
+	dynakube *dynatracev1beta1.DynaKube,
 	imageName string,
 	registryAuthPath string,
-	dynakube *dynatracev1beta1.DynaKube,
-	apiReader client.Reader,
 ) (
 	registry.ImageVersion,
 	error,
@@ -33,11 +33,11 @@ var _ ImageVersionFunc = GetImageVersion
 // GetImageVersion fetches image information for imageName
 func GetImageVersion( //nolint:revive // argument-limit
 	ctx context.Context,
+	apiReader client.Reader,
 	registryClient registry.ImageGetter,
+	dynakube *dynatracev1beta1.DynaKube,
 	imageName string,
 	registryAuthPath string,
-	dynakube *dynatracev1beta1.DynaKube,
-	apiReader client.Reader,
 ) (
 	registry.ImageVersion,
 	error,
@@ -71,7 +71,7 @@ func GetImageVersion( //nolint:revive // argument-limit
 		}
 	}
 
-	return registryClient.GetImageVersion(ctx, imageName, keychain, transport)
+	return registryClient.GetImageVersion(ctx, keychain, transport, imageName)
 }
 
 func addCertificates(transport *http.Transport, dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader) (*http.Transport, error) {

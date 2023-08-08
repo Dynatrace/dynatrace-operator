@@ -16,23 +16,23 @@ type MockImageGetter struct {
 	mock.Mock
 }
 
-// GetImageVersion provides a mock function with given fields: ctx, imageName, keychain, transport
-func (_m *MockImageGetter) GetImageVersion(ctx context.Context, imageName string, keychain authn.Keychain, transport *http.Transport) (registry.ImageVersion, error) {
-	ret := _m.Called(ctx, imageName, keychain, transport)
+// GetImageVersion provides a mock function with given fields: ctx, keychain, transport, imageName
+func (_m *MockImageGetter) GetImageVersion(ctx context.Context, keychain authn.Keychain, transport *http.Transport, imageName string) (registry.ImageVersion, error) {
+	ret := _m.Called(ctx, keychain, transport, imageName)
 
 	var r0 registry.ImageVersion
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, authn.Keychain, *http.Transport) (registry.ImageVersion, error)); ok {
-		return rf(ctx, imageName, keychain, transport)
+	if rf, ok := ret.Get(0).(func(context.Context, authn.Keychain, *http.Transport, string) (registry.ImageVersion, error)); ok {
+		return rf(ctx, keychain, transport, imageName)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, authn.Keychain, *http.Transport) registry.ImageVersion); ok {
-		r0 = rf(ctx, imageName, keychain, transport)
+	if rf, ok := ret.Get(0).(func(context.Context, authn.Keychain, *http.Transport, string) registry.ImageVersion); ok {
+		r0 = rf(ctx, keychain, transport, imageName)
 	} else {
 		r0 = ret.Get(0).(registry.ImageVersion)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, authn.Keychain, *http.Transport) error); ok {
-		r1 = rf(ctx, imageName, keychain, transport)
+	if rf, ok := ret.Get(1).(func(context.Context, authn.Keychain, *http.Transport, string) error); ok {
+		r1 = rf(ctx, keychain, transport, imageName)
 	} else {
 		r1 = ret.Error(1)
 	}
