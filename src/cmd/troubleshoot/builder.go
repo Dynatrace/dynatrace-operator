@@ -87,11 +87,6 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		err = dynatracev1beta1.AddToScheme(scheme.Scheme)
-		if err != nil {
-			return err
-		}
-
 		k8scluster, err := builder.GetCluster(kubeConfig)
 		if err != nil {
 			return err

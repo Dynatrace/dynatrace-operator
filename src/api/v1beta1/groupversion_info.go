@@ -15,7 +15,7 @@ limitations under the License.
 // Package v1 contains API Schema definitions for the dynatrace v1 API group
 // +kubebuilder:object:generate=true
 // +groupName=dynatrace.com
-package dynakube
+package v1beta1
 
 import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
