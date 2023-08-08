@@ -6,7 +6,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type codeModulesUpdater struct {
@@ -57,7 +56,7 @@ func (updater *codeModulesUpdater) CheckForDowngrade(latestVersion string) (bool
 	return false, nil
 }
 
-func (updater *codeModulesUpdater) UseTenantRegistry(_ context.Context, _ client.Reader, _ string) error {
+func (updater *codeModulesUpdater) UseTenantRegistry(_ context.Context, _ string) error {
 	customVersion := updater.CustomVersion()
 	if customVersion != "" {
 		updater.dynakube.Status.CodeModules = dynatracev1beta1.CodeModulesStatus{

@@ -11,17 +11,20 @@ import (
 
 type activeGateUpdater struct {
 	dynakube    *dynatracev1beta1.DynaKube
+	apiReader   client.Reader
 	dtClient    dtclient.Client
 	versionFunc ImageVersionFunc
 }
 
 func newActiveGateUpdater(
 	dynakube *dynatracev1beta1.DynaKube,
+	apiReader client.Reader,
 	dtClient dtclient.Client,
 	versionFunc ImageVersionFunc,
 ) *activeGateUpdater {
 	return &activeGateUpdater{
 		dynakube:    dynakube,
+		apiReader:   apiReader,
 		dtClient:    dtClient,
 		versionFunc: versionFunc,
 	}
@@ -63,7 +66,7 @@ func (updater *activeGateUpdater) CheckForDowngrade(latestVersion string) (bool,
 	return false, nil
 }
 
-func (updater *activeGateUpdater) UseTenantRegistry(ctx context.Context, apiReader client.Reader, registryAuthPath string) error {
+func (updater *activeGateUpdater) UseTenantRegistry(ctx context.Context, registryAuthPath string) error {
 	defaultImage := updater.dynakube.DefaultActiveGateImage()
-	return updateVersionStatusForTenantRegistry(ctx, apiReader, updater.dynakube, updater.Target(), updater.versionFunc, defaultImage, registryAuthPath)
+	return updateVersionStatusForTenantRegistry(ctx, updater.apiReader, updater.dynakube, updater.Target(), updater.versionFunc, defaultImage, registryAuthPath)
 }

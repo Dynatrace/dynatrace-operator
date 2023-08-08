@@ -39,7 +39,7 @@ func TestActiveGateUpdater(t *testing.T) {
 		mockActiveGateImageInfo(mockClient, testImage)
 		registry := newEmptyFakeRegistry()
 
-		updater := newActiveGateUpdater(dynakube, mockClient, registry.ImageVersionExt)
+		updater := newActiveGateUpdater(dynakube, fake.NewClient(), mockClient, registry.ImageVersionExt)
 
 		assert.Equal(t, "activegate", updater.Name())
 		assert.True(t, updater.IsEnabled())
@@ -77,9 +77,9 @@ func TestActiveGateUseDefault(t *testing.T) {
 				Version: expectedVersion,
 			},
 		})
-		updater := newActiveGateUpdater(dynakube, mockClient, registry.ImageVersionExt)
+		updater := newActiveGateUpdater(dynakube, fake.NewClient(), mockClient, registry.ImageVersionExt)
 
-		err := updater.UseTenantRegistry(context.TODO(), fake.NewClient(), "")
+		err := updater.UseTenantRegistry(context.TODO(), "")
 		require.NoError(t, err)
 		assert.Equal(t, expectedImage, dynakube.Status.ActiveGate.ImageID)
 		assert.Equal(t, expectedVersion, dynakube.Status.ActiveGate.Version)

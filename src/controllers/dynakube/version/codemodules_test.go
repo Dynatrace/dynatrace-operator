@@ -8,7 +8,6 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -66,7 +65,7 @@ func TestCodeModulesUseDefault(t *testing.T) {
 		mockClient := &dtclient.MockDynatraceClient{}
 		updater := newCodeModulesUpdater(dynakube, mockClient)
 
-		err := updater.UseTenantRegistry(ctx, fake.NewClient(), "")
+		err := updater.UseTenantRegistry(ctx, "")
 		require.NoError(t, err)
 		assertDefaultCodeModulesStatus(t, testVersion, dynakube.Status.CodeModules)
 	})
@@ -85,7 +84,7 @@ func TestCodeModulesUseDefault(t *testing.T) {
 		mockLatestAgentVersion(mockClient, testVersion)
 		updater := newCodeModulesUpdater(dynakube, mockClient)
 
-		err := updater.UseTenantRegistry(ctx, fake.NewClient(), "")
+		err := updater.UseTenantRegistry(ctx, "")
 		require.NoError(t, err)
 		assertDefaultCodeModulesStatus(t, testVersion, dynakube.Status.CodeModules)
 	})

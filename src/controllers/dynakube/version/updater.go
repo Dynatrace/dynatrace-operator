@@ -26,10 +26,10 @@ type versionStatusUpdater interface {
 	CheckForDowngrade(latestVersion string) (bool, error)
 	LatestImageInfo() (*dtclient.LatestImageInfo, error)
 
-	UseTenantRegistry(context.Context, client.Reader, string) error
+	UseTenantRegistry(context.Context, string) error
 }
 
-func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpdater, registryAuthPath string, dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader) error {
+func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpdater, registryAuthPath string) error {
 	currentSource := determineSource(updater)
 	var err error
 	defer func() {
@@ -42,7 +42,7 @@ func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpda
 	customImage := updater.CustomImage()
 	if customImage != "" {
 		log.Info("updating version status according to custom image", "updater", updater.Name())
-		err = setImageIDWithDigest(ctx, updater.Target(), customImage, reconciler.versionFunc, registryAuthPath, dynakube, apiReader)
+		err = setImageIDWithDigest(ctx, updater.Target(), customImage, reconciler.versionFunc, registryAuthPath, reconciler.dynakube, reconciler.apiReader)
 		return err
 	}
 
@@ -70,7 +70,7 @@ func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpda
 			return err
 		}
 
-		err = setImageIDWithDigest(ctx, updater.Target(), publicImage.String(), reconciler.versionFunc, registryAuthPath, dynakube, apiReader)
+		err = setImageIDWithDigest(ctx, updater.Target(), publicImage.String(), reconciler.versionFunc, registryAuthPath, reconciler.dynakube, reconciler.apiReader)
 		if err != nil {
 			log.Info("could not update version status according to the public registry", "updater", updater.Name())
 			return err
@@ -79,7 +79,7 @@ func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpda
 	}
 
 	log.Info("updating version status according to the tenant registry", "updater", updater.Name())
-	err = updater.UseTenantRegistry(ctx, apiReader, registryAuthPath)
+	err = updater.UseTenantRegistry(ctx, registryAuthPath)
 	return err
 }
 

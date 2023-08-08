@@ -54,7 +54,7 @@ func (m *mockUpdater) LatestImageInfo() (*dtclient.LatestImageInfo, error) {
 	args := m.Called()
 	return args.Get(0).(*dtclient.LatestImageInfo), args.Error(1)
 }
-func (m *mockUpdater) UseTenantRegistry(_ context.Context, _ client.Reader, _ string) error {
+func (m *mockUpdater) UseTenantRegistry(_ context.Context, _ string) error {
 	args := m.Called()
 	return args.Error(0)
 }
@@ -85,7 +85,7 @@ func TestRun(t *testing.T) {
 			versionFunc:  registry.ImageVersionExt,
 		}
 		updater := newCustomImageUpdater(target, testImage.String())
-		err := versionReconciler.run(ctx, updater, "", &dynatracev1beta1.DynaKube{}, fake.NewClient())
+		err := versionReconciler.run(ctx, updater, "")
 		require.NoError(t, err)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.CustomImageVersionSource, target.Source)
@@ -100,7 +100,7 @@ func TestRun(t *testing.T) {
 			versionFunc:  registry.ImageVersionExt,
 		}
 		updater := newCustomImageUpdater(target, "incorrect-uri")
-		err := versionReconciler.run(ctx, updater, "", &dynatracev1beta1.DynaKube{}, fake.NewClient())
+		err := versionReconciler.run(ctx, updater, "")
 		require.Error(t, err)
 		assert.Nil(t, target.LastProbeTimestamp)
 		assert.Empty(t, target.Source)
@@ -116,25 +116,25 @@ func TestRun(t *testing.T) {
 		updater := newDefaultUpdater(target, false)
 
 		// 1. call => status empty => should run
-		err := versionReconciler.run(ctx, updater, "", &dynatracev1beta1.DynaKube{}, fake.NewClient())
+		err := versionReconciler.run(ctx, updater, "")
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 1)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.TenantRegistryVersionSource, target.Source)
 
 		// 2. call => status NOT empty => should NOT run
-		err = versionReconciler.run(ctx, updater, "", &dynatracev1beta1.DynaKube{}, fake.NewClient())
+		err = versionReconciler.run(ctx, updater, "")
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 1)
 
 		// 3. call => source is different => should run
 		target.Source = status.CustomImageVersionSource
-		err = versionReconciler.run(ctx, updater, "", &dynatracev1beta1.DynaKube{}, fake.NewClient())
+		err = versionReconciler.run(ctx, updater, "")
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 2)
 
 		// 4. call => source is NOT different => should NOT run
-		err = versionReconciler.run(ctx, updater, "", &dynatracev1beta1.DynaKube{}, fake.NewClient())
+		err = versionReconciler.run(ctx, updater, "")
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 2)
 	})
@@ -156,7 +156,7 @@ func TestRun(t *testing.T) {
 		updater.On("IsClassicFullStackEnabled").Return(false)
 		updater.On("CheckForDowngrade").Return(false, nil)
 
-		err := versionReconciler.run(ctx, updater, "", &dynatracev1beta1.DynaKube{}, fake.NewClient())
+		err := versionReconciler.run(ctx, updater, "")
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "LatestImageInfo", 1)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
@@ -183,7 +183,7 @@ func TestRun(t *testing.T) {
 		updater.On("IsClassicFullStackEnabled").Return(false)
 		updater.On("CheckForDowngrade").Return(true, nil)
 
-		err := versionReconciler.run(ctx, updater, "", &dynatracev1beta1.DynaKube{}, fake.NewClient())
+		err := versionReconciler.run(ctx, updater, "")
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "LatestImageInfo", 1)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
@@ -210,7 +210,7 @@ func TestRun(t *testing.T) {
 		updater.On("CustomVersion").Return("")
 		updater.On("UseTenantRegistry").Return(nil)
 
-		err := versionReconciler.run(ctx, updater, "", &dynatracev1beta1.DynaKube{}, fake.NewClient())
+		err := versionReconciler.run(ctx, updater, "")
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "LatestImageInfo", 0)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
@@ -236,7 +236,7 @@ func TestRun(t *testing.T) {
 		updater.On("CustomVersion").Return(testImage.Tag)
 		updater.On("UseTenantRegistry").Return(nil)
 
-		err := versionReconciler.run(ctx, updater, "", &dynatracev1beta1.DynaKube{}, fake.NewClient())
+		err := versionReconciler.run(ctx, updater, "")
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "LatestImageInfo", 0)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
