@@ -44,18 +44,6 @@ func (installer Installer) extractAgentBinariesFromImage(pullInfo imagePullInfo,
 
 	image := *img
 
-	imgManifest, err := image.Manifest()
-	if err != nil {
-		log.Info("imgManifest", "error", err)
-		return err
-	}
-
-	log.Info("imgManifest", "MediaType", imgManifest.MediaType)
-
-	for _, layer := range imgManifest.Layers {
-		log.Info("layers", "digest", layer.Digest.Hex, "type", layer.MediaType)
-	}
-
 	err = installer.pullOCIimage(image, imageName, pullInfo.imageCacheDir, pullInfo.targetDir)
 	if err != nil {
 		log.Info("pullOCIimage", "err", err)
@@ -68,7 +56,7 @@ func (installer Installer) extractAgentBinariesFromImage(pullInfo imagePullInfo,
 func (installer Installer) pullImageInfo(registryAuthPath string, imageName string) (*v1.Image, error) {
 	ref, err := name.ParseReference(imageName)
 	if err != nil {
-		return nil, fmt.Errorf("parsing reference %q: %w", imageName, err)
+		return nil, errors.WithMessagef(err, "parsing reference %q:", imageName)
 	}
 
 	log.Info("ref", "refName", ref.Name(), "refString", ref.String(), "refIdentifier", ref.Identifier(), "Context().RegistryStr()", ref.Context().RegistryStr(), "Context().Name()", ref.Context().Name(), "Context().Scheme()", ref.Context().Scheme())
@@ -83,8 +71,6 @@ func (installer Installer) pullImageInfo(registryAuthPath string, imageName stri
 }
 
 func (installer Installer) pullOCIimage(image v1.Image, imageName string, imageCacheDir string, targetDir string) error {
-	log.Info("pullOciImage")
-
 	ref, err := name.ParseReference(imageName)
 	if err != nil {
 		return fmt.Errorf("parsing reference %q: %w", imageName, err)

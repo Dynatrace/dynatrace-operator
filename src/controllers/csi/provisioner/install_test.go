@@ -162,7 +162,7 @@ func TestUpdateAgent(t *testing.T) {
 		assert.Equal(t, testImageDigest, currentVersion)
 
 		dockerJsonPath := path.Join(dockerconfig.TmpPath, dockerconfig.RegistryAuthDir, dk.Name)
-		checkFilesCreatedAndCleanedUp(t, installerMock, provisioner.fs, dockerJsonPath, dockerconfigjsonContent)
+		checkFilesCreated(t, provisioner.fs, dockerJsonPath, dockerconfigjsonContent)
 	})
 	t.Run("codeModulesImage set with custom pull secret", func(t *testing.T) {
 		pullSecretName := "test-pull-secret"
@@ -189,7 +189,7 @@ func TestUpdateAgent(t *testing.T) {
 		assert.Equal(t, testImageDigest, currentVersion)
 
 		dockerJsonPath := path.Join(dockerconfig.TmpPath, dockerconfig.RegistryAuthDir, dk.Name)
-		checkFilesCreatedAndCleanedUp(t, installerMock, provisioner.fs, dockerJsonPath, dockerconfigjsonContent)
+		checkFilesCreated(t, provisioner.fs, dockerJsonPath, dockerconfigjsonContent)
 	})
 	t.Run("codeModulesImage + trustedCA set", func(t *testing.T) {
 		pullSecretName := "test-pull-secret"
@@ -219,10 +219,10 @@ func TestUpdateAgent(t *testing.T) {
 		assert.Equal(t, testImageDigest, currentVersion)
 
 		dockerJsonPath := path.Join(dockerconfig.TmpPath, dockerconfig.RegistryAuthDir, dk.Name)
-		checkFilesCreatedAndCleanedUp(t, installerMock, provisioner.fs, dockerJsonPath, dockerconfigjsonContent)
+		checkFilesCreated(t, provisioner.fs, dockerJsonPath, dockerconfigjsonContent)
 
 		caFilePath := path.Join(dockerconfig.TmpPath, dockerconfig.CADir, dk.Name, dockerconfig.TrustedCertFileName)
-		checkFilesCreatedAndCleanedUp(t, installerMock, provisioner.fs, caFilePath, customCertContent)
+		checkFilesCreated(t, provisioner.fs, caFilePath, customCertContent)
 	})
 }
 
@@ -236,9 +236,7 @@ func mockFsAfterInstall(provisioner *OneAgentProvisioner, version string) func(m
 	}
 }
 
-func checkFilesCreatedAndCleanedUp(t *testing.T, installerMock *installer.Mock, fs afero.Fs, caFilePath string, certContent string) {
-	installerMock.AssertCalled(t, "Cleanup")
-
+func checkFilesCreated(t *testing.T, fs afero.Fs, caFilePath string, certContent string) {
 	caFile, err := fs.Open(caFilePath)
 	require.NoError(t, err)
 

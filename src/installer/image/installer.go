@@ -59,7 +59,7 @@ func NewImageInstaller(fs afero.Fs, props *Properties) installer.Installer {
 		if err != nil {
 			log.Info("invalid proxy url", "proxy", proxy)
 		}
-		log.Info("proxy spec", "proxy", proxy, "proxyURL", proxyUrl.String(), "proxyURL.Host", proxyUrl.Host, "proxyURL.Port()", proxyUrl.Port())
+		log.Info("proxy spec", "proxy", proxy, "proxyURL.Host", proxyUrl.Host, "proxyURL.Port()", proxyUrl.Port())
 
 		transport.Proxy = func(req *http.Request) (*url.URL, error) {
 			return proxyUrl, nil
@@ -125,10 +125,6 @@ func (installer *Installer) InstallAgent(targetDir string) (bool, error) {
 		return false, errors.WithStack(err)
 	}
 	return true, nil
-}
-
-func (installer Installer) Cleanup() error {
-	return nil
 }
 
 func (installer *Installer) installAgentFromImage(targetDir string) error {

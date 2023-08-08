@@ -85,7 +85,6 @@ func (provisioner *OneAgentProvisioner) installAgentZip(dynakube dynatracev1beta
 }
 
 func (provisioner *OneAgentProvisioner) installAgent(agentInstaller installer.Installer, dynakube dynatracev1beta1.DynaKube, targetDir, targetVersion, tenantUUID string) error {
-	defer agentInstaller.Cleanup()
 	eventRecorder := updaterEventRecorder{
 		recorder: provisioner.recorder,
 		dynakube: &dynakube,

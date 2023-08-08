@@ -134,24 +134,28 @@ func TestInstaller_InstallAgent(t *testing.T) {
 		want    bool
 		wantErr assert.ErrorAssertionFunc
 	}{
-		{name: "Successfully install agent", fields: fields{
-			fs:        testFS,
-			extractor: nil,
-			props: &Properties{
-				PathResolver: metadata.PathResolver{RootDir: "/tmp"},
-				ImageUri:     testImageURL,
-				Dynakube: &dynatracev1beta1.DynaKube{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test",
-						Namespace: "dynakube",
+		{
+			name: "Successfully install agent",
+			fields: fields{
+				fs:        testFS,
+				extractor: nil,
+				props: &Properties{
+					PathResolver: metadata.PathResolver{RootDir: "/tmp"},
+					ImageUri:     testImageURL,
+					Dynakube: &dynatracev1beta1.DynaKube{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "test",
+							Namespace: "dynakube",
+						},
+						Spec: dynatracev1beta1.DynaKubeSpec{},
 					},
-					Spec: dynatracev1beta1.DynaKubeSpec{},
+					ImageDigest:      testImageDigest,
+					RegistryAuthPath: "/dummy",
 				},
-				ImageDigest:      testImageDigest,
-				RegistryAuthPath: "/dummy",
+				transport: transport,
 			},
-			transport: transport,
-		}, args: args{targetDir: config.AgentBinDirMount}, want: true, wantErr: assert.NoError,
+			args: args{targetDir: config.AgentBinDirMount},
+			want: true, wantErr: assert.NoError,
 		},
 	}
 	for _, tt := range tests {
