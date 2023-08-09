@@ -1,12 +1,17 @@
 package image
 
 import (
+	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
-	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/installer"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/common"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/symlink"
@@ -14,14 +19,17 @@ import (
 	"github.com/containers/image/v5/docker/reference"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Properties struct {
-	ImageUri     string
-	DockerConfig dockerconfig.DockerConfig
-	PathResolver metadata.PathResolver
-	Metadata     metadata.Access
-	ImageDigest  string
+	ImageUri         string
+	ApiReader        client.Reader
+	Dynakube         *dynatracev1beta1.DynaKube
+	PathResolver     metadata.PathResolver
+	Metadata         metadata.Access
+	ImageDigest      string
+	RegistryAuthPath string
 }
 
 func GetDigest(uri string) (string, error) {
@@ -37,10 +45,49 @@ func GetDigest(uri string) (string, error) {
 }
 
 func NewImageInstaller(fs afero.Fs, props *Properties) installer.Installer {
+	// Create default transport
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+
+	if props.Dynakube.HasProxy() {
+		proxy, err := props.Dynakube.Proxy(context.TODO(), props.ApiReader)
+		if err != nil {
+			log.Info("failed to get proxy from dynakube", "proxy", proxy)
+			return nil
+		}
+
+		proxyUrl, err := url.Parse(proxy)
+		if err != nil {
+			log.Info("invalid proxy url", "proxy", proxy)
+		}
+		log.Info("proxy spec", "proxyURL.Host", proxyUrl.Host, "proxyURL.Port()", proxyUrl.Port())
+
+		transport.Proxy = func(req *http.Request) (*url.URL, error) {
+			return proxyUrl, nil
+		}
+	}
+
+	if props.Dynakube.Spec.TrustedCAs != "" {
+		trustedCAs, err := props.Dynakube.TrustedCAs(context.TODO(), props.ApiReader)
+		if err != nil {
+			return nil
+		}
+
+		rootCAs := x509.NewCertPool()
+		if ok := rootCAs.AppendCertsFromPEM(trustedCAs); !ok {
+			log.Info("failed to append custom certs!")
+		}
+
+		if transport.TLSClientConfig == nil {
+			transport.TLSClientConfig = &tls.Config{} //nolint:gosec
+		}
+		transport.TLSClientConfig.RootCAs = rootCAs
+	}
+
 	return &Installer{
 		fs:        fs,
 		extractor: zip.NewOneAgentExtractor(fs, props.PathResolver),
 		props:     props,
+		transport: transport,
 	}
 }
 
@@ -48,6 +95,7 @@ type Installer struct {
 	fs        afero.Fs
 	extractor zip.Extractor
 	props     *Properties
+	transport http.RoundTripper
 }
 
 func (installer *Installer) InstallAgent(targetDir string) (bool, error) {
@@ -79,10 +127,6 @@ func (installer *Installer) InstallAgent(targetDir string) (bool, error) {
 	return true, nil
 }
 
-func (installer Installer) Cleanup() error {
-	return installer.props.DockerConfig.Cleanup(afero.Afero{Fs: installer.fs})
-}
-
 func (installer *Installer) installAgentFromImage(targetDir string) error {
 	defer installer.fs.RemoveAll(CacheDir)
 	err := installer.fs.MkdirAll(CacheDir, common.MkDirFileMode)
@@ -92,13 +136,11 @@ func (installer *Installer) installAgentFromImage(targetDir string) error {
 	}
 	image := installer.props.ImageUri
 
-	sourceCtx, sourceRef, err := getSourceInfo(CacheDir, *installer.props)
 	if err != nil {
 		log.Info("failed to get source information", "image", image)
 		return errors.WithStack(err)
 	}
 	imageCacheDir := getCacheDirPath(installer.props.ImageDigest)
-	destinationCtx, destinationRef, err := getDestinationInfo(imageCacheDir)
 	if err != nil {
 		log.Info("failed to get destination information", "image", image, "imageCacheDir", imageCacheDir)
 		return errors.WithStack(err)
@@ -106,17 +148,14 @@ func (installer *Installer) installAgentFromImage(targetDir string) error {
 
 	err = installer.extractAgentBinariesFromImage(
 		imagePullInfo{
-			imageCacheDir:  imageCacheDir,
-			targetDir:      targetDir,
-			sourceCtx:      sourceCtx,
-			destinationCtx: destinationCtx,
-			sourceRef:      sourceRef,
-			destinationRef: destinationRef,
+			imageCacheDir: imageCacheDir,
+			targetDir:     targetDir,
 		},
+		installer.props.RegistryAuthPath,
+		installer.props.ImageUri,
 	)
 	if err != nil {
-		log.Info("failed to extract agent binaries from image", "image", image, "imageCacheDir", imageCacheDir)
-		return errors.WithStack(err)
+		log.Info("failed to extract agent binaries from image via proxy", "image", image, "imageCacheDir", imageCacheDir, "err", err)
 	}
 	return nil
 }
