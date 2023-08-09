@@ -3,7 +3,9 @@
 package codemodules
 
 import (
+	"bytes"
 	"context"
+	"io"
 	"os"
 	"path"
 	"strconv"
@@ -25,7 +27,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/logs"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/proxy"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
 	sample "github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/base"
@@ -278,8 +279,10 @@ func imageHasBeenDownloaded(namespace string) features.Func {
 					Container: provisionerContainerName,
 				}).Stream(ctx)
 				require.NoError(t, err)
-				isNew := logs.Contains(t, logStream, "Installed agent version: "+codeModulesImage)
-				isOld := logs.Contains(t, logStream, "agent already installed")
+				buffer := new(bytes.Buffer)
+				_, err = io.Copy(buffer, logStream)
+				isNew := strings.Contains(buffer.String(), "Installed agent version: "+codeModulesImage)
+				isOld := strings.Contains(buffer.String(), "agent already installed")
 				t.Logf("wait for Installed agent version in %s", podItem.Name)
 				return isNew || isOld, err
 			}, wait.WithTimeout(time.Minute*5))
