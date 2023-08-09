@@ -59,8 +59,6 @@ func (installer Installer) pullImageInfo(registryAuthPath string, imageName stri
 		return nil, errors.WithMessagef(err, "parsing reference %q:", imageName)
 	}
 
-	log.Info("ref", "refName", ref.Name(), "refString", ref.String(), "refIdentifier", ref.Identifier(), "Context().RegistryStr()", ref.Context().RegistryStr(), "Context().Name()", ref.Context().Name(), "Context().Scheme()", ref.Context().Scheme())
-
 	keyChain := dockerkeychain.NewDockerKeychain(registryAuthPath, installer.fs)
 
 	image, err := remote.Image(ref, remote.WithContext(context.TODO()), remote.WithAuthFromKeychain(keyChain), remote.WithTransport(installer.transport))
