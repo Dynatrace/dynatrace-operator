@@ -273,8 +273,8 @@ jobs:
       - name: Generate manifests
         env:
           IMAGE: ${{ matrix.url }}/${{ secrets[matrix.repository] }}
-          TAG: $(echo "${{ github.ref }}" | awk -F"/" '{print $3}')
-          CHART_VERSION: $(echo "${{ github.ref_name }}")
+          TAG: ${{ needs.prepare.outputs.version }}
+          CHART_VERSION: ${{ needs.prepare.outputs.version }}
         run: make manifests
       - name: Generate CRD
         run: make manifests/crd/release
