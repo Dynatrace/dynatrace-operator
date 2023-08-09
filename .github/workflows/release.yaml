@@ -247,7 +247,6 @@ jobs:
     environment: Release
     permissions:
       contents: write
-      id-token: write
     runs-on: ubuntu-latest
     strategy:
       matrix:
