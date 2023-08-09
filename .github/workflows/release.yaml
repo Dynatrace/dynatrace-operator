@@ -244,6 +244,7 @@ jobs:
     if: ${{ contains(github.ref, '-rc.') }}
     name: Create pre-release
     needs: [prepare]
+    environment: Release
     permissions:
       contents: write
       id-token: write
