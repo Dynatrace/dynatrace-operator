@@ -5,6 +5,7 @@
   ],
   "labels": ["dependencies"],
   "digest": { "enabled": false },
+  "baseBranches": ["$default", "release-0.11", "release-0.12", "release-0.13"],
   "enabledManagers": [ "regex", "dockerfile", "gomod", "github-actions" ],
   "regexManagers": [
     {
@@ -54,8 +55,9 @@
       "enabled": true
     },
     {
-      "matchUpdateTypes": ["digest", "pin", "pinDigest"],
-      "enabled": false
+      "matchUpdateTypes": ["patch"],
+      "baseBranchList": [ "release-0.11", "release-0.12", "release-0.13" ],
+      "enabled": true
     },
     {
       "matchPackageNames": ["k8s.io/client-go"],
