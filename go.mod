@@ -8,7 +8,7 @@ require (
 	github.com/docker/cli v23.0.5+incompatible
 	github.com/evanphx/json-patch v5.6.0+incompatible
 	github.com/go-logr/logr v1.2.4
-	github.com/google/go-containerregistry v0.15.2
+	github.com/google/go-containerregistry v0.16.1
 	github.com/klauspost/compress v1.16.7
 	github.com/mattn/go-sqlite3 v1.14.17
 	github.com/opencontainers/go-digest v1.0.0
