@@ -246,6 +246,7 @@ jobs:
     needs: [prepare]
     permissions:
       contents: write
+      id-token: write
     runs-on: ubuntu-latest
     strategy:
       matrix:
