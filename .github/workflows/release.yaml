@@ -276,6 +276,10 @@ jobs:
           TAG: ${{ needs.prepare.outputs.version }}
           CHART_VERSION: ${{ needs.prepare.outputs.version }}
         run: make manifests
+      - name: Rename manifests
+        run: |
+          mv config/deploy/kubernetes/kubernetes-all.yaml config/deploy/kubernetes/kubernetes.yaml
+          mv config/deploy/openshift/openshift-all.yaml config/deploy/openshift/openshift.yaml
       - name: Generate CRD
         run: make manifests/crd/release
       - name: Pre-release
@@ -283,8 +287,8 @@ jobs:
         with:
           body_path: ./CHANGELOG.md
           files: |
-            config/deploy/kubernetes/kubernetes-all.yaml
-            config/deploy/openshift/openshift-all.yaml
+            config/deploy/kubernetes/kubernetes.yaml
+            config/deploy/openshift/openshift.yaml
           token: ${{ secrets.GITHUB_TOKEN }}
           prerelease: true
           draft: true
