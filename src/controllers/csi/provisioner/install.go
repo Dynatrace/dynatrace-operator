@@ -23,6 +23,7 @@ func (provisioner *OneAgentProvisioner) installAgentImage(ctx context.Context, d
 	// TODO: remove dockerconfig and use only dockerkeychain
 	dockerConfig := dockerconfig.NewDockerConfig(provisioner.apiReader, dynakube)
 	err = dockerConfig.StoreRequiredFiles(ctx, afero.Afero{Fs: provisioner.fs})
+	defer dockerConfig.Cleanup(afero.Afero{Fs: provisioner.fs})
 
 	if err != nil {
 		return "", err

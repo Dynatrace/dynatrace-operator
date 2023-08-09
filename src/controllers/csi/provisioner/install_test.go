@@ -3,7 +3,7 @@ package csiprovisioner
 import (
 	"context"
 	"fmt"
-	"io"
+	"os"
 	"path"
 	"path/filepath"
 	"testing"
@@ -42,9 +42,6 @@ func TestUpdateAgent(t *testing.T) {
 		installerMock.
 			On("InstallAgent", targetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testVersion))
-		installerMock.
-			On("Cleanup").
-			Return(nil)
 		provisioner.urlInstallerBuilder = mockUrlInstallerBuilder(installerMock)
 
 		currentVersion, err := provisioner.installAgentZip(dk, &dtclient.MockDynatraceClient{}, &processModuleCache)
@@ -78,9 +75,6 @@ func TestUpdateAgent(t *testing.T) {
 		installerMock.
 			On("InstallAgent", newTargetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, newVersion))
-		installerMock.
-			On("Cleanup").
-			Return(nil)
 		provisioner.urlInstallerBuilder = mockUrlInstallerBuilder(installerMock)
 
 		currentVersion, err := provisioner.installAgentZip(dk, &dtclient.MockDynatraceClient{}, &processModuleCache)
@@ -100,9 +94,6 @@ func TestUpdateAgent(t *testing.T) {
 		installerMock.
 			On("InstallAgent", targetDir).
 			Return(false, nil)
-		installerMock.
-			On("Cleanup").
-			Return(nil)
 
 		provisioner.urlInstallerBuilder = mockUrlInstallerBuilder(installerMock)
 		currentVersion, err := provisioner.installAgentZip(dk, &dtclient.MockDynatraceClient{}, &processModuleCache)
@@ -152,9 +143,6 @@ func TestUpdateAgent(t *testing.T) {
 		installerMock.
 			On("InstallAgent", targetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testImageDigest))
-		installerMock.
-			On("Cleanup").
-			Return(nil)
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
 		currentVersion, err := provisioner.installAgentImage(context.TODO(), dk, &processModuleCache)
@@ -162,7 +150,7 @@ func TestUpdateAgent(t *testing.T) {
 		assert.Equal(t, testImageDigest, currentVersion)
 
 		dockerJsonPath := path.Join(dockerconfig.TmpPath, dockerconfig.RegistryAuthDir, dk.Name)
-		checkFilesCreated(t, provisioner.fs, dockerJsonPath, dockerconfigjsonContent)
+		checkFilesDeleted(t, provisioner.fs, dockerJsonPath)
 	})
 	t.Run("codeModulesImage set with custom pull secret", func(t *testing.T) {
 		pullSecretName := "test-pull-secret"
@@ -179,9 +167,6 @@ func TestUpdateAgent(t *testing.T) {
 		installerMock.
 			On("InstallAgent", targetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testImageDigest))
-		installerMock.
-			On("Cleanup").
-			Return(nil)
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
 		currentVersion, err := provisioner.installAgentImage(context.TODO(), dk, &processModuleCache)
@@ -189,7 +174,7 @@ func TestUpdateAgent(t *testing.T) {
 		assert.Equal(t, testImageDigest, currentVersion)
 
 		dockerJsonPath := path.Join(dockerconfig.TmpPath, dockerconfig.RegistryAuthDir, dk.Name)
-		checkFilesCreated(t, provisioner.fs, dockerJsonPath, dockerconfigjsonContent)
+		checkFilesDeleted(t, provisioner.fs, dockerJsonPath)
 	})
 	t.Run("codeModulesImage + trustedCA set", func(t *testing.T) {
 		pullSecretName := "test-pull-secret"
@@ -209,9 +194,6 @@ func TestUpdateAgent(t *testing.T) {
 		installerMock.
 			On("InstallAgent", targetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testImageDigest))
-		installerMock.
-			On("Cleanup").
-			Return(nil)
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
 		currentVersion, err := provisioner.installAgentImage(context.TODO(), dk, &processModuleCache)
@@ -219,10 +201,10 @@ func TestUpdateAgent(t *testing.T) {
 		assert.Equal(t, testImageDigest, currentVersion)
 
 		dockerJsonPath := path.Join(dockerconfig.TmpPath, dockerconfig.RegistryAuthDir, dk.Name)
-		checkFilesCreated(t, provisioner.fs, dockerJsonPath, dockerconfigjsonContent)
+		checkFilesDeleted(t, provisioner.fs, dockerJsonPath)
 
 		caFilePath := path.Join(dockerconfig.TmpPath, dockerconfig.CADir, dk.Name, dockerconfig.TrustedCertFileName)
-		checkFilesCreated(t, provisioner.fs, caFilePath, customCertContent)
+		checkFilesDeleted(t, provisioner.fs, caFilePath)
 	})
 }
 
@@ -236,13 +218,9 @@ func mockFsAfterInstall(provisioner *OneAgentProvisioner, version string) func(m
 	}
 }
 
-func checkFilesCreated(t *testing.T, fs afero.Fs, caFilePath string, certContent string) {
-	caFile, err := fs.Open(caFilePath)
-	require.NoError(t, err)
-
-	caFileContent, err := io.ReadAll(caFile)
-	require.NoError(t, err)
-	require.Equal(t, certContent, string(caFileContent))
+func checkFilesDeleted(t *testing.T, fs afero.Fs, filePath string) {
+	_, err := fs.Stat(filePath)
+	require.Error(t, err, os.ErrNotExist)
 }
 
 func createMockedPullSecret(dynakube dynatracev1beta1.DynaKube, pullSecretContent string) *corev1.Secret {
