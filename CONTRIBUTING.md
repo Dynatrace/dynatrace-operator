@@ -1,3 +1,28 @@
+- [Contributing](#contributing)
+  - [How to run unit tests](#how-to-run-unit-tests)
+  - [How to run E2E tests](#how-to-run-e2e-tests)
+  - [Coding style guide](#coding-style-guide)
+    - [General](#general)
+    - [Cuddling of statements](#cuddling-of-statements)
+    - [Reconciler vs Controller](#reconciler-vs-controller)
+      - [A **Controller** is a struct that **DIRECTLY** handles the reconcile Requests](#a-controller-is-a-struct-that-directly-handles-the-reconcile-requests)
+      - [A **Reconciler** is a struct that **INDIRECTLY** handles the reconcile Requests](#a-reconciler-is-a-struct-that-indirectly-handles-the-reconcile-requests)
+    - [Errors](#errors)
+      - [Do's](#dos)
+      - [Don'ts](#donts)
+    - [Logging](#logging)
+      - [Do's](#dos-1)
+      - [Don'ts](#donts-1)
+    - [Testing](#testing)
+      - [Do's](#dos-2)
+      - [Don'ts](#donts-2)
+  - [E2E testing guide](#e2e-testing-guide)
+  - [Useful commands](#useful-commands)
+    - [Remove all Dynatrace pods in force mode (useful debugging E2E tests)](#remove-all-dynatrace-pods-in-force-mode-useful-debugging-e2e-tests)
+    - [Copy CSI driver database to localhost for introspection via sqlite command](#copy-csi-driver-database-to-localhost-for-introspection-via-sqlite-command)
+    - [Add debug suffix on E2E tests to avoid removing pods](#add-debug-suffix-on-e2e-tests-to-avoid-removing-pods)
+    - [Debug cluster nodes by opening a shell prompt (details here)](#debug-cluster-nodes-by-opening-a-shell-prompt-details-here)
+
 # Contributing
 
 1. Fork the dynatrace-operator repository and get the source code:
