@@ -46,11 +46,11 @@ help:
 SHELL ?= bash
 
 -include hack/make/*.mk
+-include hack/make/deploy/*.mk
+-include hack/make/doc/*.mk
+-include hack/make/helm/*.mk
 -include hack/make/manifests/*.mk
 -include hack/make/tests/*.mk
--include hack/make/deploy/*.mk
--include hack/make/helm/*.mk
--include hack/make/doc/*.mk
 
 ## Installs dependencies
 deps: prerequisites/setup-pre-commit prerequisites/kustomize prerequisites/controller-gen

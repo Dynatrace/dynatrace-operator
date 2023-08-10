@@ -16,6 +16,10 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
+## Install all prerequisites
+prerequisites:
+	./hack/prerequisites/run_all.sh
+
 ## Installs 'kustomize' if it is missing
 prerequisites/kustomize:
 	hack/build/command.sh kustomize "sigs.k8s.io/kustomize/kustomize/v5@$(kustomize_version)"
@@ -26,6 +30,7 @@ prerequisites/controller-gen:
 	hack/build/command.sh controller-gen "sigs.k8s.io/controller-tools/cmd/controller-gen@$(controller_gen_version)"
 CONTROLLER_GEN=$(shell hack/build/command.sh controller-gen)
 
+## Install 'pre-commit' if it is missing
 prerequisites/setup-pre-commit:
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@$(golang_ci_cmd_version)
 	go install github.com/daixiang0/gci@$(gci_version)
@@ -33,5 +38,6 @@ prerequisites/setup-pre-commit:
 	cp ./.github/pre-commit ./.git/hooks/pre-commit
 	chmod +x ./.git/hooks/pre-commit
 
+## Install 'helm' if it is missing
 prerequisites/helm:
 	hack/helm/install-unittest-plugin.sh
