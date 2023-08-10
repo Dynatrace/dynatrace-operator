@@ -249,3 +249,9 @@ kubectl cp dynatrace/dynatrace-oneagent-csi-driver-<something>:/data/csi.db csi.
 ```sh
 make test/e2e/cloudnative/proxy/debug
 ```
+
+### Debug cluster nodes by opening a shell prompt ([details here](https://www.psaggu.com/upstream-contribution/2021/05/04/notes.html))
+
+```sh
+oc debug node/<node-name>
+```
