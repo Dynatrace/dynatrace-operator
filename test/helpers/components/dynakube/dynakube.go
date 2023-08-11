@@ -68,6 +68,11 @@ func (dynakubeBuilder Builder) WithCustomPullSecret(secretName string) Builder {
 	return dynakubeBuilder
 }
 
+func (dynakubeBuilder Builder) WithCustomCAs(configMapName string) Builder {
+	dynakubeBuilder.dynakube.Spec.TrustedCAs = configMapName
+	return dynakubeBuilder
+}
+
 func (dynakubeBuilder Builder) WithAnnotations(annotations map[string]string) Builder {
 	for key, value := range annotations {
 		dynakubeBuilder.dynakube.ObjectMeta.Annotations[key] = value

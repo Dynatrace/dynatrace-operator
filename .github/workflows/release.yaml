@@ -239,10 +239,12 @@ jobs:
           sbom: 'result.json'
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
+
   pre-release:
     if: ${{ contains(github.ref, '-rc.') }}
     name: Create pre-release
     needs: [prepare]
+    environment: Release
     permissions:
       contents: write
     runs-on: ubuntu-latest
@@ -257,7 +259,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
       - name: Setup Golang
-        uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4.0.1
+        uses: actions/setup-go@93397bea11091df50f3d7e59dc26a7711a8bcfbe # v4.1.0
         with:
           go-version-file: "${{ github.workspace }}/go.mod"
       - name: Download dependencies
@@ -269,11 +271,15 @@ jobs:
         run: |
           hack/build/ci/generate-release-notes.sh
       - name: Generate manifests
+        env:
+          IMAGE: ${{ matrix.url }}/${{ secrets[matrix.repository] }}
+          TAG: ${{ needs.prepare.outputs.version }}
+          CHART_VERSION: ${{ needs.prepare.outputs.version }}
+        run: make manifests
+      - name: Rename manifests
         run: |
-          export "IMAGE=${{ matrix.url }}/${{ secrets[matrix.repository] }}"
-          export "TAG=$(echo "${{ github.ref }}" | awk -F"/" '{print $3}')"
-          export "CHART_VERSION=$(echo "${{ github.ref_name }}")"
-          make manifests
+          mv config/deploy/kubernetes/kubernetes-all.yaml config/deploy/kubernetes/kubernetes.yaml
+          mv config/deploy/openshift/openshift-all.yaml config/deploy/openshift/openshift.yaml
       - name: Generate CRD
         run: make manifests/crd/release
       - name: Pre-release
@@ -281,8 +287,8 @@ jobs:
         with:
           body_path: ./CHANGELOG.md
           files: |
-            config/deploy/kubernetes/kubernetes-all.yaml
-            config/deploy/openshift/openshift-all.yaml
+            config/deploy/kubernetes/kubernetes.yaml
+            config/deploy/openshift/openshift.yaml
           token: ${{ secrets.GITHUB_TOKEN }}
           prerelease: true
           draft: true

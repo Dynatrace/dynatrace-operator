@@ -80,10 +80,6 @@ func (installer Installer) InstallAgent(targetDir string) (bool, error) {
 	return true, nil
 }
 
-func (installer Installer) Cleanup() error {
-	return nil
-}
-
 func (installer Installer) installAgent(targetDir string) error {
 	fs := installer.fs
 	path := ""
