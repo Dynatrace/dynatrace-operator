@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/sys/unix"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const use = "csi-init"
@@ -56,7 +57,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 
 		csiManager, err := createManager(builder.namespace, kubeConfig)
 		if err != nil {
-			return err
+			log.Info("failed to create/configure kubernetes client, will only run non-network related corrections and checks", "err", err.Error())
 		}
 
 		err = createCsiDataPath(afero.NewOsFs())
@@ -76,7 +77,11 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			RootDir:  dtcsi.DataPath,
 		}
 
-		err = metadata.NewCorrectnessChecker(csiManager.GetClient(), access, csiOptions).CorrectCSI(signalHandler)
+		var apiReader client.Reader
+		if csiManager != nil {
+			apiReader = csiManager.GetAPIReader()
+		}
+		err = metadata.NewCorrectnessChecker(apiReader, access, csiOptions).CorrectCSI(signalHandler)
 		if err != nil {
 			return err
 		}
