@@ -54,12 +54,36 @@ func TestCorrectCSI(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
+	t.Run("no error on nil apiReader, database is not cleaned", func(t *testing.T) {
+		ctx := context.TODO()
+		testVolume1 := createTestVolume(1)
+		testDynakube1 := createTestDynakube(1)
+		db := FakeMemoryDB()
+		db.InsertVolume(ctx, &testVolume1)
+		db.InsertDynakube(ctx, &testDynakube1)
+
+		checker := NewCorrectnessChecker(nil, db, dtcsi.CSIOptions{})
+
+		err := checker.CorrectCSI(context.TODO())
+
+		assert.NoError(t, err)
+		vol, err := db.GetVolume(ctx, testVolume1.VolumeID)
+		assert.NoError(t, err)
+		assert.Equal(t, &testVolume1, vol)
+
+		assert.NoError(t, err)
+		dk, err := db.GetDynakube(ctx, testDynakube1.Name)
+		assert.NoError(t, err)
+		assert.Equal(t, &testDynakube1, dk)
+	})
+
 	t.Run("nothing to remove, everything is still correct", func(t *testing.T) {
 		ctx := context.TODO()
 		testVolume1 := createTestVolume(1)
 		testDynakube1 := createTestDynakube(1)
 		db := FakeMemoryDB()
 		db.InsertVolume(ctx, &testVolume1)
+		db.InsertDynakube(ctx, &testDynakube1)
 		client := fake.NewClient(
 			&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: testVolume1.PodName}},
 			&dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testDynakube1.Name}},
@@ -73,6 +97,11 @@ func TestCorrectCSI(t *testing.T) {
 		vol, err := db.GetVolume(ctx, testVolume1.VolumeID)
 		assert.NoError(t, err)
 		assert.Equal(t, &testVolume1, vol)
+
+		assert.NoError(t, err)
+		dk, err := db.GetDynakube(ctx, testDynakube1.Name)
+		assert.NoError(t, err)
+		assert.Equal(t, &testDynakube1, dk)
 	})
 	t.Run("remove unnecessary entries in the filesystem", func(t *testing.T) {
 		ctx := context.TODO()

@@ -15,18 +15,18 @@ import (
 )
 
 type CorrectnessChecker struct {
-	cl     client.Client
-	fs     afero.Fs
-	path   PathResolver
-	access Access
+	apiReader client.Reader
+	fs        afero.Fs
+	path      PathResolver
+	access    Access
 }
 
-func NewCorrectnessChecker(cl client.Client, access Access, opts dtcsi.CSIOptions) *CorrectnessChecker {
+func NewCorrectnessChecker(cl client.Reader, access Access, opts dtcsi.CSIOptions) *CorrectnessChecker {
 	return &CorrectnessChecker{
-		cl:     cl,
-		fs:     afero.NewOsFs(),
-		path:   PathResolver{RootDir: opts.RootDir},
-		access: access,
+		apiReader: cl,
+		fs:        afero.NewOsFs(),
+		path:      PathResolver{RootDir: opts.RootDir},
+		access:    access,
 	}
 }
 
@@ -49,6 +49,10 @@ func (checker *CorrectnessChecker) CorrectCSI(ctx context.Context) error {
 
 // Removes volume entries if their pod is no longer exists
 func (checker *CorrectnessChecker) removeVolumesForMissingPods(ctx context.Context) error {
+	if checker.apiReader == nil {
+		log.Info("no kubernetes client configured, skipping orphaned volume metadata cleanup")
+		return nil
+	}
 	podNames, err := checker.access.GetPodNames(ctx)
 	if err != nil {
 		return err
@@ -56,7 +60,7 @@ func (checker *CorrectnessChecker) removeVolumesForMissingPods(ctx context.Conte
 	pruned := []string{}
 	for podName := range podNames {
 		var pod corev1.Pod
-		if err := checker.cl.Get(context.TODO(), client.ObjectKey{Name: podName}, &pod); !k8serrors.IsNotFound(err) {
+		if err := checker.apiReader.Get(ctx, client.ObjectKey{Name: podName}, &pod); !k8serrors.IsNotFound(err) {
 			continue
 		}
 		volumeID := podNames[podName]
@@ -71,6 +75,10 @@ func (checker *CorrectnessChecker) removeVolumesForMissingPods(ctx context.Conte
 
 // Removes dynakube entries if their Dynakube instance no longer exists in the cluster
 func (checker *CorrectnessChecker) removeMissingDynakubes(ctx context.Context) error {
+	if checker.apiReader == nil {
+		log.Info("no kubernetes client configured, skipping orphaned dynakube metadata cleanup")
+		return nil
+	}
 	dynakubes, err := checker.access.GetTenantsToDynakubes(ctx)
 	if err != nil {
 		return err
@@ -78,7 +86,7 @@ func (checker *CorrectnessChecker) removeMissingDynakubes(ctx context.Context) e
 	pruned := []string{}
 	for dynakubeName := range dynakubes {
 		var dynakube dynatracev1beta1.DynaKube
-		if err := checker.cl.Get(context.TODO(), client.ObjectKey{Name: dynakubeName}, &dynakube); !k8serrors.IsNotFound(err) {
+		if err := checker.apiReader.Get(ctx, client.ObjectKey{Name: dynakubeName}, &dynakube); !k8serrors.IsNotFound(err) {
 			continue
 		}
 		if err := checker.access.DeleteDynakube(ctx, dynakubeName); err != nil {
