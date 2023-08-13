@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"strconv"
 	"testing"
 	"time"
 
@@ -112,8 +111,24 @@ func getCurlPodLogStream(ctx context.Context, t *testing.T, resources *resources
 
 func InstallCutOffCurlPod(podName, namespaceName, curlTarget string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		// if curl command can't connect to the host, returns 28 after 131[s] by default
-		curlPod := NewCurlPodBuilder(podName, namespaceName, curlTarget).WithRestartPolicy(corev1.RestartPolicyNever).WithParameters("--connect-timeout", strconv.Itoa(connectionTimeout)).Build()
+		probe := corev1.Probe{
+			ProbeHandler: corev1.ProbeHandler{
+				Exec: &corev1.ExecAction{
+					Command: []string{"curl", curlTarget, "--insecure", "--verbose", "--head", "--fail"},
+				},
+			},
+			InitialDelaySeconds: 30,
+			PeriodSeconds:       30,
+			FailureThreshold:    2,
+			SuccessThreshold:    3,
+			TimeoutSeconds:      3,
+		}
+		curlPod := NewCurlPodBuilder(podName, namespaceName, curlTarget).
+			WithCommand([]string{"sleep"}).
+			WithArgs([]string{"120"}).
+			WithReadinessProbe(&probe).
+			WithRestartPolicy(corev1.RestartPolicyNever).
+			Build()
 		require.NoError(t, envConfig.Client().Resources().Create(ctx, curlPod))
 		return ctx
 	}
@@ -122,9 +137,8 @@ func InstallCutOffCurlPod(podName, namespaceName, curlTarget string) features.Fu
 func WaitForCutOffCurlPod(podName, namespaceName string) features.Func {
 	return pod.WaitForCondition(podName, namespaceName, func(object k8s.Object) bool {
 		pod, isPod := object.(*corev1.Pod)
-		// kubernetes 28
-		// openshift 7
-		return isPod && pod.Status.ContainerStatuses[0].State.Terminated != nil && (pod.Status.ContainerStatuses[0].State.Terminated.ExitCode == 28 || pod.Status.ContainerStatuses[0].State.Terminated.ExitCode == 7)
+		// If probe fails we don't have internet, so we achieve waiting condition
+		return isPod && !pod.Status.ContainerStatuses[0].Ready
 	}, connectionTimeout*2*time.Second)
 }
 
@@ -158,6 +172,21 @@ func NewCurlPodBuilder(podName, namespaceName, targetUrl string) CurlPodBuilder 
 			},
 		},
 	}
+}
+
+func (curlPodBuilder CurlPodBuilder) WithCommand(command []string) CurlPodBuilder {
+	curlPodBuilder.curlPod.Spec.Containers[0].Command = command
+	return curlPodBuilder
+}
+
+func (curlPodBuilder CurlPodBuilder) WithArgs(args []string) CurlPodBuilder {
+	curlPodBuilder.curlPod.Spec.Containers[0].Args = args
+	return curlPodBuilder
+}
+
+func (curlPodBuilder CurlPodBuilder) WithReadinessProbe(probe *corev1.Probe) CurlPodBuilder {
+	curlPodBuilder.curlPod.Spec.Containers[0].ReadinessProbe = probe
+	return curlPodBuilder
 }
 
 func (curlPodBuilder CurlPodBuilder) WithProxy(dynakube dynatracev1beta1.DynaKube) CurlPodBuilder {
