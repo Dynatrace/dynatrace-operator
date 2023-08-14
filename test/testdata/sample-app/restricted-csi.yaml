@@ -1,7 +1,7 @@
 apiVersion: security.openshift.io/v1
 kind: SecurityContextConstraints
 metadata:
-  name: restricted-csi
+  name: operator-e2e-restricted-csi
 runAsUser:
   type: RunAsAny
 seLinuxContext:
@@ -30,3 +30,5 @@ volumes:
 - emptyDir
 - secret
 - csi
+- projected
+- downwardAPI
