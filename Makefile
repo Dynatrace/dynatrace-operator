@@ -52,14 +52,11 @@ SHELL ?= bash
 -include hack/make/manifests/*.mk
 -include hack/make/tests/*.mk
 
-## Installs dependencies
-deps: prerequisites/setup-pre-commit prerequisites/kustomize prerequisites/controller-gen
-
 ## Builds the operator image and pushes it to quay with a snapshot tag
 build: images/build/push
 
 ## Installs (deploys) the operator on a k8s/openshift cluster
 install: deploy/helm
 
-## Installs dependencies, builds and pushes a tagged operator image, and deploys the operator on a cluster
-all: deps build install
+## Installs prerequisites, builds and pushes a tagged operator image, and deploys the operator on a cluster
+all: prerequisites build install

@@ -17,8 +17,7 @@ GOBIN=$(shell go env GOBIN)
 endif
 
 ## Install all prerequisites
-prerequisites:
-	./hack/prerequisites/run_all.sh
+prerequisites: prerequisites/kustomize prerequisites/controller-gen prerequisites/setup-pre-commit prerequisites/helm
 
 ## Installs 'kustomize' if it is missing
 prerequisites/kustomize:
