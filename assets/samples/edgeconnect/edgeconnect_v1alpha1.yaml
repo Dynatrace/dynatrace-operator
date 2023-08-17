@@ -1,0 +1,11 @@
+apiVersion: dynatrace.com/v1alpha1
+kind: EdgeConnect
+metadata:
+  name: edge-connect-sample
+  namespace: sample
+spec:
+  apiServer: "https://example.dev.apps.dynatracelabs.com"
+  oauth:
+    clientSecret: test2
+    endpoint: test
+    resource: test

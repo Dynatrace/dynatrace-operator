@@ -5,6 +5,7 @@ import (
 	"time"
 
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/edgeconnect/deployment"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/edgeconnect/version"
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/pkg/errors"
@@ -115,3 +116,37 @@ func (controller *Controller) updateEdgeConnectStatus(ctx context.Context, edgeC
 	log.Info("EdgeConnect status updated", "name", edgeConnect.Name, "timestamp", edgeConnect.Status.UpdatedTimestamp)
 	return nil
 }
+
+func (controller *Controller) reconcileEdgeConnect(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) error {
+	return controller.createEdgeConnectDeployment(ctx, edgeConnect)
+}
+
+func (controller *Controller) createEdgeConnectDeployment(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) error {
+	// build desired deployment
+	desiredDeployment := deployment.New(edgeConnect)
+	_ = desiredDeployment
+
+	// get or create deployment
+	return nil
+}
+
+// TODO: remove when done
+//Make sure configurable fields are read and update correctly when changing the Custom resource.
+//
+//security context (with default)
+//topoloy spread constraints (same default as activegate/webhook)
+//tolerations
+//affinity for compatible architectures
+//...
+
+//  service account with corresponding role/rolebinding has to exist, no actual permissions required.
+//
+//need permission for nonroot-v2 and nonroot SCC in case of openshift
+//verify on openshift <4.10 and >4.10
+
+// phase: correct value depending on the state of the deployment/pods
+
+// Acceptance Criteria
+// Edgeconnect deployment is created and updated on Custom resource creation/change
+// Default values are taken from the sample and if fields are configured in the custom resource they take priority and are used instead
+// Make sure code to create deployment is future proof
