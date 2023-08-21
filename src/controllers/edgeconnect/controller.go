@@ -65,7 +65,8 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 		log.Error(errors.WithStack(err), "reconciliation of EdgeConnect failed", "name", request.Name, "namespace", request.Namespace)
 		return reconcile.Result{RequeueAfter: errorUpdateInterval}, err
 	} else if edgeConnect == nil {
-		return reconcile.Result{RequeueAfter: errorUpdateInterval}, nil
+		err := controller.reconcileEdgeConnect(ctx, edgeConnect)
+		return reconcile.Result{RequeueAfter: errorUpdateInterval}, err
 	}
 
 	log.Info("updating version info", "name", request.Name, "namespace", request.Namespace)
@@ -121,7 +122,7 @@ func (controller *Controller) reconcileEdgeConnect(ctx context.Context, edgeConn
 	return controller.createEdgeConnectDeployment(ctx, edgeConnect)
 }
 
-func (controller *Controller) createEdgeConnectDeployment(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) error {
+func (controller *Controller) createEdgeConnectDeployment(_ context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) error {
 	// build desired deployment
 	desiredDeployment := deployment.New(edgeConnect)
 	_ = desiredDeployment
@@ -129,24 +130,3 @@ func (controller *Controller) createEdgeConnectDeployment(ctx context.Context, e
 	// get or create deployment
 	return nil
 }
-
-// TODO: remove when done
-//Make sure configurable fields are read and update correctly when changing the Custom resource.
-//
-//security context (with default)
-//topoloy spread constraints (same default as activegate/webhook)
-//tolerations
-//affinity for compatible architectures
-//...
-
-//  service account with corresponding role/rolebinding has to exist, no actual permissions required.
-//
-//need permission for nonroot-v2 and nonroot SCC in case of openshift
-//verify on openshift <4.10 and >4.10
-
-// phase: correct value depending on the state of the deployment/pods
-
-// Acceptance Criteria
-// Edgeconnect deployment is created and updated on Custom resource creation/change
-// Default values are taken from the sample and if fields are configured in the custom resource they take priority and are used instead
-// Make sure code to create deployment is future proof

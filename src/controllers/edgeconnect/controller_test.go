@@ -30,11 +30,20 @@ func TestIsError(t *testing.T) {
 
 func TestReconcile(t *testing.T) {
 	t.Run("Create works with minimal setup", func(t *testing.T) {
-		controller := &Controller{
-			client:    fake.NewClient(),
-			apiReader: fake.NewClient(),
+		instance := &edgeconnectv1alpha1.EdgeConnect{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+			Spec: edgeconnectv1alpha1.EdgeConnectSpec{
+				ApiServer: "abc12345.dynatrace.com",
+			},
 		}
-		result, err := controller.Reconcile(context.TODO(), reconcile.Request{})
+		controller := createFakeClientAndReconciler(instance)
+
+		result, err := controller.Reconcile(context.TODO(), reconcile.Request{
+			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
+		})
 
 		require.NoError(t, err)
 		assert.NotNil(t, result)

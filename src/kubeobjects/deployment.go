@@ -60,7 +60,7 @@ func CreateOrUpdateDeployment(c client.Client, logger logr.Logger, desiredDeploy
 	}
 
 	if LabelsNotEqual(currentDeployment.Spec.Selector.MatchLabels, desiredDeployment.Spec.Selector.MatchLabels) {
-		logger.Info("immutable section changed on daemonset, deleting and recreating", "name", desiredDeployment.Name)
+		logger.Info("immutable section changed on deployment, deleting and recreating", "name", desiredDeployment.Name)
 		return recreateDeployment(c, logger, currentDeployment, desiredDeployment)
 	}
 
@@ -69,7 +69,6 @@ func CreateOrUpdateDeployment(c client.Client, logger logr.Logger, desiredDeploy
 		return false, err
 	}
 	return true, err
-
 }
 
 func getDeployment(c client.Client, desiredDeployment *appsv1.Deployment) (*appsv1.Deployment, error) {

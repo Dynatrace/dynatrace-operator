@@ -2,7 +2,9 @@ package deployment
 
 import (
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/edgeconnect/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -24,12 +26,11 @@ func New(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
 
 	// prepare annotations
 	annotations := map[string]string{
-		// TODO: <apparmour>
-		webhook.AnnotationDynatraceInject: "false",
+		consts.AnnotationEdgeConnectContainerAppArmor: "runtime/default",
+		webhook.AnnotationDynatraceInject:             "false",
 	}
 
 	replicas := int32(2)
-	//defaultRollingUpdate := "25%"
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        instance.Name,
@@ -39,33 +40,52 @@ func New(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
-			Selector: nil, // TOOD:
+			Selector: nil,
 			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{},
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: nil,
+				},
 				Spec: corev1.PodSpec{
-					Volumes:        nil,
-					InitContainers: nil,
 					Containers: []corev1.Container{
 						{
-							Name:            "edge-connect",
-							Image:           "test",
-							ImagePullPolicy: "Always",
-							Command:         nil,
-							Args:            nil,
-							EnvFrom:         nil,
-							Env: []corev1.EnvVar{
-								{
-									Name:  "EDGE_CONNECT_NAME",
-									Value: "",
+							Name:            consts.EdgeConnectContainerName,
+							Image:           instance.Status.Version.ImageID,
+							ImagePullPolicy: corev1.PullAlways,
+							Env:             prepareContainerEnvVars(instance),
+							Resources: corev1.ResourceRequirements{
+								Requests: kubeobjects.NewResources("100m", "128Mi"),
+								Limits:   kubeobjects.NewResources("100m", "128Mi"),
+							},
+							SecurityContext: &corev1.SecurityContext{
+								AllowPrivilegeEscalation: address.Of(false),
+								Privileged:               address.Of(false),
+								ReadOnlyRootFilesystem:   address.Of(true),
+								RunAsGroup:               address.Of(kubeobjects.UnprivilegedGroup),
+								RunAsUser:                address.Of(kubeobjects.UnprivilegedUser),
+								RunAsNonRoot:             address.Of(true),
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{MountPath: "/etc/edge_connect", Name: "secrets", ReadOnly: true},
+							},
+						},
+					},
+					ImagePullSecrets: []corev1.LocalObjectReference{
+						{Name: instance.Spec.CustomPullSecret},
+					},
+					ServiceAccountName:            "edgeconnect-dynatrace",
+					TerminationGracePeriodSeconds: address.Of(int64(30)),
+					Volumes: []corev1.Volume{
+						{
+							Name: "oauth-secret",
+							VolumeSource: corev1.VolumeSource{
+								Secret: &corev1.SecretVolumeSource{
+									SecretName: instance.Spec.OAuth.ClientSecret,
+									Items: []corev1.KeyToPath{
+										{Key: "oauth-client-id", Path: "oauth/client_id"},
+										{Key: "oauth-client-secret", Path: "oauth/client_secret"},
+									},
 								},
 							},
-							Resources:       corev1.ResourceRequirements{},
-							VolumeMounts:    nil,
-							LivenessProbe:   nil,
-							ReadinessProbe:  nil,
-							StartupProbe:    nil,
-							Lifecycle:       nil,
-							SecurityContext: nil,
 						},
 					},
 				},
@@ -78,6 +98,27 @@ func New(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
 			RevisionHistoryLimit:    nil,
 			Paused:                  false,
 			ProgressDeadlineSeconds: nil,
+		},
+	}
+}
+
+func prepareContainerEnvVars(instance *edgeconnectv1alpha1.EdgeConnect) []corev1.EnvVar {
+	return []corev1.EnvVar{
+		{
+			Name:  "EDGE_CONNECT_NAME",
+			Value: instance.ObjectMeta.Name,
+		},
+		{
+			Name:  "EDGE_CONNECT_RESTRICT_HOSTS_TO",
+			Value: instance.Spec.HostRestrictions,
+		},
+		{
+			Name:  "EDGE_CONNECT_OAUTH__ENDPOINT",
+			Value: instance.Spec.OAuth.Endpoint,
+		},
+		{
+			Name:  "EDGE_CONNECT_OAUTH__RESOURCE",
+			Value: instance.Spec.OAuth.Resource,
 		},
 	}
 }
