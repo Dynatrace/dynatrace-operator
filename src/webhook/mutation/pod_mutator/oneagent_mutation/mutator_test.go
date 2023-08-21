@@ -135,10 +135,10 @@ func TestMutate(t *testing.T) {
 		},
 	}
 
-	for _, testCase := range testCases {
+	for index, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
-			request := createTestMutationRequest(&testCase.dynakube, nil, getTestNamespace(nil))
+			request := createTestMutationRequest(&testCases[index].dynakube, nil, getTestNamespace(nil))
 
 			initialNumberOfContainerEnvsLen := len(request.Pod.Spec.Containers[0].Env)
 			initialNumberOfVolumesLen := len(request.Pod.Spec.Volumes)
@@ -194,10 +194,10 @@ func TestReinvoke(t *testing.T) {
 		},
 	}
 
-	for _, testCase := range testCases {
+	for index, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
-			request := createTestReinvocationRequest(&testCase.dynakube, map[string]string{dtwebhook.AnnotationOneAgentInjected: "true"})
+			request := createTestReinvocationRequest(&testCases[index].dynakube, map[string]string{dtwebhook.AnnotationOneAgentInjected: "true"})
 
 			initialNumberOfContainerEnvsLen := len(request.Pod.Spec.Containers[0].Env)
 			initialNumberOfVolumesLen := len(request.Pod.Spec.Volumes)
