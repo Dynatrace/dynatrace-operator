@@ -13,6 +13,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/installer/url"
 	"github.com/Dynatrace/dynatrace-operator/src/processmoduleconfig"
 	"github.com/spf13/afero"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func (provisioner *OneAgentProvisioner) installAgentImage(ctx context.Context, dynakube dynatracev1beta1.DynaKube, latestProcessModuleConfigCache *processModuleConfigCache) (string, error) {
@@ -35,16 +37,20 @@ func (provisioner *OneAgentProvisioner) installAgentImage(ctx context.Context, d
 		return "", err
 	}
 
-	imageInstaller := provisioner.imageInstallerBuilder(provisioner.fs, &image.Properties{
+	pullSecret := v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      dynakube.PullSecret(),
+			Namespace: dynakube.Namespace,
+		},
+	}
+	imageInstaller, err := provisioner.imageInstallerBuilder(provisioner.fs, &image.Properties{
 		ImageUri:     targetImage,
 		ApiReader:    provisioner.apiReader,
 		Dynakube:     &dynakube,
 		PathResolver: provisioner.path,
 		Metadata:     provisioner.db,
 		ImageDigest:  imageDigest,
-		// TODO: remove it with dockerConfig
-		RegistryAuthPath: dockerConfig.RegistryAuthPath,
-	})
+	}, provisioner.apiReader, pullSecret)
 	if err != nil {
 		return "", err
 	}
