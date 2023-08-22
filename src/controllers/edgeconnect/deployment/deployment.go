@@ -14,12 +14,18 @@ import (
 func New(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
 	// prepare app labels
 	appLabels := kubeobjects.NewAppLabels(
+		// appName =
 		kubeobjects.EdgeConnectComponentLabel,
+		// name =
 		kubeobjects.EdgeConnectComponentLabel,
+		// component =
 		kubeobjects.EdgeConnectComponentLabel,
-		instance.Name)
+		// version =
+		// NB: as of now edgeConnect doesn't have any version
+		"latest")
 	// build labels
 	labels := kubeobjects.MergeMap(
+		instance.Labels,
 		appLabels.BuildLabels(),
 		map[string]string{kubeobjects.AppInstanceLabel: instance.ObjectMeta.Name},
 	)
@@ -29,8 +35,8 @@ func New(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
 		consts.AnnotationEdgeConnectContainerAppArmor: "runtime/default",
 		webhook.AnnotationDynatraceInject:             "false",
 	}
+	annotations = kubeobjects.MergeMap(instance.Annotations, annotations)
 
-	replicas := int32(2)
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        instance.Name,
@@ -39,8 +45,10 @@ func New(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
 			Annotations: annotations,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: &replicas,
-			Selector: nil,
+			Replicas: instance.Spec.Replicas,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: appLabels.BuildMatchLabels(),
+			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: nil,
