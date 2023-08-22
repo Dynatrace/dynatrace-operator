@@ -4,9 +4,11 @@ import (
 	"context"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/edgeconnect/deployment"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/edgeconnect/version"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -65,10 +67,12 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 		log.Error(errors.WithStack(err), "reconciliation of EdgeConnect failed", "name", request.Name, "namespace", request.Namespace)
 		return reconcile.Result{RequeueAfter: errorUpdateInterval}, err
 	} else if edgeConnect == nil {
-		err := controller.reconcileEdgeConnect(ctx, edgeConnect)
-		return reconcile.Result{RequeueAfter: errorUpdateInterval}, err
+		return reconcile.Result{RequeueAfter: errorUpdateInterval}, nil
 	}
 
+	oldStatus := *edgeConnect.Status.DeepCopy()
+
+	err = controller.reconcileEdgeConnect(ctx, edgeConnect)
 	log.Info("updating version info", "name", request.Name, "namespace", request.Namespace)
 	versionReconciler := version.NewReconciler(edgeConnect, controller.apiReader, timeprovider.New())
 	if err = versionReconciler.Reconcile(ctx); err != nil {
@@ -78,13 +82,24 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 
 	err = controller.updateEdgeConnectStatus(ctx, edgeConnect)
 	if err != nil {
-		log.Error(errors.WithStack(err), "updating status of EdgeConnect failed", "name", request.Name, "namespace", request.Namespace)
-		return reconcile.Result{RequeueAfter: errorUpdateInterval}, err
+		edgeConnect.Status.SetPhase(status.Error)
+		log.Error(err, "error reconciling EdgeConnect", "namespace", edgeConnect.Namespace, "name", edgeConnect.Name)
+	} else {
+		edgeConnect.Status.SetPhase(status.Running)
+	}
+
+	if isDifferentStatus, err := kubeobjects.IsDifferent(oldStatus, edgeConnect.Status); err != nil {
+		log.Error(errors.WithStack(err), "failed to generate hash for the status section")
+	} else if isDifferentStatus {
+		log.Info("status changed, updating DynaKube")
+		if errClient := controller.updateEdgeConnectStatus(ctx, edgeConnect); errClient != nil {
+			return reconcile.Result{RequeueAfter: errorUpdateInterval}, errors.WithMessagef(errClient, "failed to update EdgeConnect after failure, original error: %s", err)
+		}
 	}
 
 	log.Info("reconciling EdgeConnect done", "name", request.Name, "namespace", request.Namespace)
 
-	return reconcile.Result{RequeueAfter: defaultUpdateInterval}, nil
+	return reconcile.Result{RequeueAfter: defaultUpdateInterval}, err
 }
 
 func (controller *Controller) getEdgeConnect(ctx context.Context, name, namespace string) (*edgeconnectv1alpha1.EdgeConnect, error) {
@@ -123,10 +138,18 @@ func (controller *Controller) reconcileEdgeConnect(ctx context.Context, edgeConn
 }
 
 func (controller *Controller) createEdgeConnectDeployment(_ context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) error {
-	// build desired deployment
 	desiredDeployment := deployment.New(edgeConnect)
-	_ = desiredDeployment
+	ddHash, err := kubeobjects.GenerateHash(desiredDeployment)
+	if err != nil {
+		return err
+	}
+	desiredDeployment.Annotations[kubeobjects.AnnotationHash] = ddHash
 
-	// get or create deployment
+	_, err = kubeobjects.CreateOrUpdateDeployment(controller.client, log, desiredDeployment)
+
+	if err != nil {
+		log.Info("could not create or update deployment for EdgeConnect", "name", desiredDeployment.Name)
+		return err
+	}
 	return nil
 }

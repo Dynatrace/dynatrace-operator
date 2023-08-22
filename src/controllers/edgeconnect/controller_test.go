@@ -82,6 +82,32 @@ func TestReconcile(t *testing.T) {
 		expectedTimestamp := controller.timeProvider.Now().Truncate(time.Second)
 		assert.Equal(t, expectedTimestamp, instance.Status.UpdatedTimestamp.Time)
 	})
+
+	t.Run(`reconciles phase change correctly`, func(t *testing.T) {
+		instance := &edgeconnectv1alpha1.EdgeConnect{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+			Spec: edgeconnectv1alpha1.EdgeConnectSpec{
+				ApiServer: "abc12345.dynatrace.com",
+			},
+		}
+		controller := createFakeClientAndReconciler(instance)
+
+		result, err := controller.Reconcile(context.TODO(), reconcile.Request{
+			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
+		})
+
+		assert.NoError(t, err)
+		assert.Equal(t, false, result.Requeue)
+
+		var edgeConnectDeployment edgeconnectv1alpha1.EdgeConnect
+		assert.NoError(t,
+			controller.client.Get(context.TODO(), client.ObjectKey{Name: testName, Namespace: testNamespace}, &edgeConnectDeployment))
+		assert.NoError(t, controller.client.Get(context.TODO(), client.ObjectKey{Name: testName, Namespace: testNamespace}, instance))
+		assert.Equal(t, status.Running, instance.Status.DeploymentPhase)
+	})
 }
 
 func createFakeClientAndReconciler(instance *edgeconnectv1alpha1.EdgeConnect) *Controller {
