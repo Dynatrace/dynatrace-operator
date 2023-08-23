@@ -108,9 +108,30 @@ func TestNewImageInstaller(t *testing.T) {
 	props := &Properties{
 		PathResolver: metadata.PathResolver{RootDir: "/tmp"},
 		ImageUri:     testImageURL,
+<<<<<<< HEAD
 		Dynakube:     dynakube,
 		ImageDigest:  testImageDigest,
 		ApiReader:    fakeClient,
+||||||| parent of 18776d7e (Remove no longer required field)
+		Dynakube: &dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test",
+				Namespace: "dynakube",
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{},
+		},
+		ImageDigest:      testImageDigest,
+		RegistryAuthPath: "/dummy",
+=======
+		Dynakube: &dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test",
+				Namespace: "dynakube",
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{},
+		},
+		ImageDigest: testImageDigest,
+>>>>>>> 18776d7e (Remove no longer required field)
 	}
 <<<<<<< HEAD
 	in, err := NewImageInstaller(testFS, props)
