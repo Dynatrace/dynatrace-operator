@@ -1,6 +1,8 @@
 package troubleshoot
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"context"
 	"crypto/tls"
 	"crypto/x509"
@@ -80,7 +82,7 @@ func verifyImageIsAvailable(log logr.Logger, troubleshootCtx *troubleshootContex
 }
 
 func tryImagePull(troubleshootCtx *troubleshootContext, image string) error {
-	ref, err := name.ParseReference(image)
+	imageReference, err := docker.ParseReference(normalizeDockerReference(image))
 	if err != nil {
 		return err
 	}
@@ -109,6 +111,9 @@ func tryImagePull(troubleshootCtx *troubleshootContext, image string) error {
 		return err
 	}
 	return nil
+}
+func normalizeDockerReference(image string) string {
+	return "//" + image
 }
 
 func createTransport(kube dynakube.DynaKube, ctx context.Context, apiReader client.Reader, troubleShootHttpClient *http.Client) (*http.Transport, error) {
