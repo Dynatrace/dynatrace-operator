@@ -91,10 +91,10 @@ func TestMutateUserContainers(t *testing.T) {
 			expectedAdditionalVolumeMountCount: 6, // 3 oneagent mounts(preload,bin,conf) +3 oneagent mounts for readonly csi (agent-conf,data-storage,agent-log)
 		},
 	}
-	for _, testCase := range testCases {
+	for index, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
-			request := createTestMutationRequest(&testCase.dynakube, nil, getTestNamespace(nil))
+			request := createTestMutationRequest(&testCases[index].dynakube, nil, getTestNamespace(nil))
 			initialNumberOfContainerEnvsLen := len(request.Pod.Spec.Containers[0].Env)
 			initialContainerVolumeMountsLen := len(request.Pod.Spec.Containers[0].VolumeMounts)
 
@@ -130,10 +130,10 @@ func TestReinvokeUserContainers(t *testing.T) {
 			expectedAdditionalVolumeMountCount: 6, // 3 oneagent mounts(preload,bin,conf) +3 oneagent mounts for readonly csi (agent-conf,data-storage,agent-log)
 		},
 	}
-	for _, testCase := range testCases {
+	for index, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
-			request := createTestMutationRequest(&testCase.dynakube, nil, getTestNamespace(nil)).ToReinvocationRequest()
+			request := createTestMutationRequest(&testCases[index].dynakube, nil, getTestNamespace(nil)).ToReinvocationRequest()
 			initialNumberOfContainerEnvsLen := len(request.Pod.Spec.Containers[0].Env)
 			initialContainerVolumeMountsLen := len(request.Pod.Spec.Containers[0].VolumeMounts)
 			request.Pod.Spec.InitContainers = append(request.Pod.Spec.InitContainers, corev1.Container{
