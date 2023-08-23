@@ -26,13 +26,12 @@ import (
 )
 
 type Properties struct {
-	ImageUri         string
-	ApiReader        client.Reader
-	Dynakube         *dynatracev1beta1.DynaKube
-	PathResolver     metadata.PathResolver
-	Metadata         metadata.Access
-	ImageDigest      string
-	RegistryAuthPath string
+	ImageUri     string
+	ApiReader    client.Reader
+	Dynakube     *dynatracev1beta1.DynaKube
+	PathResolver metadata.PathResolver
+	Metadata     metadata.Access
+	ImageDigest  string
 }
 
 func GetDigest(uri string) (string, error) {

@@ -97,8 +97,7 @@ func TestNewImageInstaller(t *testing.T) {
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{},
 		},
-		ImageDigest:      testImageDigest,
-		RegistryAuthPath: "/dummy",
+		ImageDigest: testImageDigest,
 	}
 	in, err := NewImageInstaller(testFS, props, nil, pullSecret)
 	require.NoError(t, err)
@@ -153,8 +152,7 @@ func TestInstaller_InstallAgent(t *testing.T) {
 						},
 						Spec: dynatracev1beta1.DynaKubeSpec{},
 					},
-					ImageDigest:      testImageDigest,
-					RegistryAuthPath: "/dummy",
+					ImageDigest: testImageDigest,
 				},
 				transport: transport,
 			},
