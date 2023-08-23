@@ -1,13 +1,19 @@
 package troubleshoot
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	"net/http"
+	"net/url"
 
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
-	"github.com/containers/image/v5/docker"
-	"github.com/containers/image/v5/types"
+	"github.com/Dynatrace/dynatrace-operator/src/dockerkeychain"
 	"github.com/go-logr/logr"
+	"github.com/google/go-containerregistry/pkg/name"
+	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 )
 
@@ -71,7 +77,7 @@ func verifyImageIsAvailable(log logr.Logger, troubleshootCtx *troubleshootContex
 }
 
 func tryImagePull(troubleshootCtx *troubleshootContext, image string) error {
-	imageReference, err := docker.ParseReference(normalizeDockerReference(image))
+	ref, err := name.ParseReference(image)
 	if err != nil {
 		return err
 	}
@@ -80,33 +86,60 @@ func tryImagePull(troubleshootCtx *troubleshootContext, image string) error {
 	defer func(dockerCfg *dockerconfig.DockerConfig, fs afero.Afero) {
 		_ = dockerCfg.Cleanup(fs)
 	}(dockerCfg, troubleshootCtx.fs)
-
-	systemCtx, err := makeSysContext(troubleshootCtx, imageReference, dockerCfg)
-	if err != nil {
-		return err
-	}
-	systemCtx.DockerInsecureSkipTLSVerify = types.OptionalBoolTrue
-
-	imageSource, err := imageReference.NewImageSource(troubleshootCtx.context, systemCtx)
+	dockerCfg.SetRegistryAuthSecret(&troubleshootCtx.pullSecret)
+	err = dockerCfg.StoreRequiredFiles(troubleshootCtx.context, troubleshootCtx.fs)
 	if err != nil {
 		return err
 	}
 
-	_ = imageSource.Close()
+	keychain := dockerkeychain.NewDockerKeychain(dockerCfg.RegistryAuthPath, troubleshootCtx.fs)
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+
+	var proxy string
+	if troubleshootCtx.dynakube.HasProxy() {
+		proxy, err = troubleshootCtx.dynakube.Proxy(troubleshootCtx.context, troubleshootCtx.apiReader)
+		if err != nil {
+			return err
+		}
+		proxyUrl, err := url.Parse(proxy)
+		if err != nil {
+			return err
+		}
+
+		transport.Proxy = func(req *http.Request) (*url.URL, error) {
+			return proxyUrl, nil
+		}
+	}
+
+	if troubleshootCtx.dynakube.Spec.TrustedCAs != "" {
+		trustedCAs, err := troubleshootCtx.dynakube.TrustedCAs(troubleshootCtx.context, troubleshootCtx.apiReader)
+		if err != nil {
+			return err
+		}
+		transport, err = addCertificates(transport, trustedCAs)
+		if err != nil {
+			return err
+		}
+	}
+
+	_, err = remote.Get(ref, remote.WithContext(troubleshootCtx.context), remote.WithAuthFromKeychain(keychain), remote.WithTransport(transport))
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
-func normalizeDockerReference(image string) string {
-	return "//" + image
-}
-
-func makeSysContext(troubleshootCtx *troubleshootContext, imageReference types.ImageReference, dockerCfg *dockerconfig.DockerConfig) (*types.SystemContext, error) {
-	dockerCfg.SetRegistryAuthSecret(&troubleshootCtx.pullSecret)
-	err := dockerCfg.StoreRequiredFiles(troubleshootCtx.context, troubleshootCtx.fs)
-	if err != nil {
-		return nil, err
+func addCertificates(transport *http.Transport, trustedCAs []byte) (*http.Transport, error) {
+	rootCAs := x509.NewCertPool()
+	if ok := rootCAs.AppendCertsFromPEM(trustedCAs); !ok {
+		return nil, errors.New("failed to append custom certs!")
 	}
-	return dockerconfig.MakeSystemContext(imageReference.DockerReference(), dockerCfg), nil
+	if transport.TLSClientConfig == nil {
+		transport.TLSClientConfig = &tls.Config{} //nolint:gosec
+	}
+	transport.TLSClientConfig.RootCAs = rootCAs
+
+	return transport, nil
 }
 
 func getPullSecretToken(troubleshootCtx *troubleshootContext) (string, error) {
