@@ -8,6 +8,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 func TestCsiDriverManagerProvider(t *testing.T) {
@@ -24,10 +26,13 @@ func TestCsiDriverManagerProvider(t *testing.T) {
 		options := csiManagerProvider.createOptions("namespace")
 
 		assert.NotNil(t, options)
-		assert.Equal(t, "namespace", options.Namespace)
+		assert.Contains(t, "namespace", options.Cache.DefaultNamespaces)
 		assert.Equal(t, scheme.Scheme, options.Scheme)
-		assert.Equal(t, metricsBindAddress, options.MetricsBindAddress)
-		assert.Equal(t, port, options.Port)
+		assert.Equal(t, metricsBindAddress, options.Metrics.BindAddress)
+
+		defaultServer, ok := options.WebhookServer.(*webhook.DefaultServer)
+		require.True(t, ok)
+		assert.Equal(t, port, defaultServer.Options.Port)
 		assert.Equal(t, "", options.HealthProbeBindAddress)
 		assert.Equal(t, livenessEndpointName, options.LivenessEndpointName)
 	})

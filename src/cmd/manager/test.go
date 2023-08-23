@@ -8,7 +8,7 @@ import (
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/config/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -24,8 +24,8 @@ func (mgr *TestManager) GetAPIReader() client.Reader {
 	return struct{ client.Reader }{}
 }
 
-func (mgr *TestManager) GetControllerOptions() v1alpha1.ControllerConfigurationSpec {
-	return v1alpha1.ControllerConfigurationSpec{}
+func (mgr *TestManager) GetControllerOptions() config.Controller {
+	return config.Controller{}
 }
 
 func (mgr *TestManager) GetScheme() *runtime.Scheme {

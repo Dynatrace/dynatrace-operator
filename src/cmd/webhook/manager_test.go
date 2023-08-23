@@ -6,6 +6,7 @@ import (
 	cmdManager "github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
@@ -25,27 +26,28 @@ func TestCreateOptions(t *testing.T) {
 		options := provider.createOptions("test-namespace")
 
 		assert.NotNil(t, options)
-		assert.Equal(t, "test-namespace", options.Namespace)
+		assert.Contains(t, "test-namespace", options.Cache.DefaultNamespaces)
 		assert.Equal(t, scheme.Scheme, options.Scheme)
-		assert.Equal(t, metricsBindAddress, options.MetricsBindAddress)
-		assert.Equal(t, port, options.Port)
+		assert.Equal(t, metricsBindAddress, options.Metrics.BindAddress)
+
+		webhookServer, ok := options.WebhookServer.(*webhook.DefaultServer)
+		require.True(t, ok)
+		assert.Equal(t, port, webhookServer.Options.Port)
 	})
 	t.Run("configures webhooks server", func(t *testing.T) {
 		provider := NewProvider("certs-dir", "key-file", "cert-file")
-		expectedWebhookServer := &webhook.Server{}
+		expectedWebhookServer := &webhook.DefaultServer{}
 
-		mgr := &cmdManager.MockManager{}
-		mgr.On("GetWebhookServer").Return(expectedWebhookServer)
+		mockedMgr := &cmdManager.MockManager{}
+		mockedMgr.On("GetWebhookServer").Return(expectedWebhookServer)
 
-		mgrWithWebhookServer := provider.setupWebhookServer(mgr)
+		mgrWithWebhookServer, err := provider.setupWebhookServer(mockedMgr)
+		require.NoError(t, err)
 
-		assert.Equal(t, "certs-dir", expectedWebhookServer.CertDir)
-		assert.Equal(t, "key-file", expectedWebhookServer.KeyName)
-		assert.Equal(t, "cert-file", expectedWebhookServer.CertName)
-
-		mgrWebhookServer := mgrWithWebhookServer.GetWebhookServer()
-		assert.Equal(t, "certs-dir", mgrWebhookServer.CertDir)
-		assert.Equal(t, "key-file", mgrWebhookServer.KeyName)
-		assert.Equal(t, "cert-file", mgrWebhookServer.CertName)
+		mgrWebhookServer, ok := mgrWithWebhookServer.GetWebhookServer().(*webhook.DefaultServer)
+		require.True(t, ok)
+		assert.Equal(t, "certs-dir", mgrWebhookServer.Options.CertDir)
+		assert.Equal(t, "key-file", mgrWebhookServer.Options.KeyName)
+		assert.Equal(t, "cert-file", mgrWebhookServer.Options.CertName)
 	})
 }

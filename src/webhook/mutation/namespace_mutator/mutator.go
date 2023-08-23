@@ -73,12 +73,9 @@ func (nm *namespaceMutator) Handle(ctx context.Context, request admission.Reques
 }
 
 func decodeRequestToNamespace(request admission.Request, namespace *corev1.Namespace) error {
-	decoder, err := admission.NewDecoder(scheme.Scheme)
-	if err != nil {
-		return errors.WithStack(err)
-	}
+	decoder := admission.NewDecoder(scheme.Scheme)
 
-	err = decoder.Decode(request, namespace)
+	err := decoder.Decode(request, namespace)
 	if err != nil {
 		return errors.WithStack(err)
 	}

@@ -7,8 +7,11 @@ import (
 	"github.com/pkg/errors"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 const (
@@ -51,31 +54,41 @@ func (provider Provider) CreateManager(namespace string, config *rest.Config) (m
 		return nil, errors.WithStack(err)
 	}
 
-	return provider.setupWebhookServer(controlManager), nil
+	return provider.setupWebhookServer(controlManager)
 }
 
 func (provider Provider) createOptions(namespace string) ctrl.Options {
 	return ctrl.Options{
 		Scheme:                 scheme.Scheme,
-		Namespace:              namespace,
-		MetricsBindAddress:     metricsBindAddress,
 		ReadinessEndpointName:  readinessEndpointName,
 		LivenessEndpointName:   livenessEndpointName,
 		HealthProbeBindAddress: healthProbeBindAddress,
-		Port:                   port,
+		Cache: cache.Options{
+			DefaultNamespaces: map[string]cache.Config{
+				namespace: {},
+			},
+		},
+		WebhookServer: webhook.NewServer(webhook.Options{
+			Port: port,
+		}),
+		Metrics: server.Options{
+			BindAddress: metricsBindAddress,
+		},
 	}
 }
 
-func (provider Provider) setupWebhookServer(mgr manager.Manager) manager.Manager {
+func (provider Provider) setupWebhookServer(mgr manager.Manager) (manager.Manager, error) {
 	tlsConfig := func(config *tls.Config) {
 		config.MinVersion = tls.VersionTLS13
 	}
 
-	webhookServer := mgr.GetWebhookServer()
-	webhookServer.CertDir = provider.certificateDirectory
-	webhookServer.KeyName = provider.keyFileName
-	webhookServer.CertName = provider.certificateFileName
-	webhookServer.TLSOpts = []func(*tls.Config){tlsConfig}
-
-	return mgr
+	webhookServer, ok := mgr.GetWebhookServer().(*webhook.DefaultServer)
+	if !ok {
+		return nil, errors.WithStack(errors.New("Unable to cast webhook server"))
+	}
+	webhookServer.Options.CertDir = provider.certificateDirectory
+	webhookServer.Options.KeyName = provider.keyFileName
+	webhookServer.Options.CertName = provider.certificateFileName
+	webhookServer.Options.TLSOpts = []func(*tls.Config){tlsConfig}
+	return mgr, nil
 }

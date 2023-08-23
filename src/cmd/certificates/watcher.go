@@ -10,11 +10,13 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/certificates"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 // TODO: refactor code below to be testable and also tested
@@ -28,14 +30,19 @@ type CertificateWatcher struct {
 	certificateSecretName string
 }
 
-func NewCertificateWatcher(mgr manager.Manager, namespace string, secretName string) *CertificateWatcher {
+func NewCertificateWatcher(mgr manager.Manager, namespace string, secretName string) (*CertificateWatcher, error) {
+	webhookServer, ok := mgr.GetWebhookServer().(*webhook.DefaultServer)
+	if !ok {
+		return nil, errors.WithStack(errors.New("could not cast webhook server"))
+	}
+
 	return &CertificateWatcher{
 		apiReader:             mgr.GetAPIReader(),
 		fs:                    afero.NewOsFs(),
-		certificateDirectory:  mgr.GetWebhookServer().CertDir,
+		certificateDirectory:  webhookServer.Options.CertDir,
 		namespace:             namespace,
 		certificateSecretName: secretName,
-	}
+	}, nil
 }
 
 func (watcher *CertificateWatcher) watchForCertificatesSecret() {
