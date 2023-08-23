@@ -90,7 +90,6 @@ func (updater edgeConnectUpdater) Update(ctx context.Context) error {
 	}
 
 	target := updater.Target()
-	target.Version = imageVersion.Version
 	target.ImageID = imageID
 
 	if updater.edgeConnect.IsCustomImage() {
