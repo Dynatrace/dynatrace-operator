@@ -48,7 +48,8 @@ func (dsInfo *builderInfo) appendProxyArg(args []string) []string {
 	if dsInfo.hasProxy() {
 		return append(args, "--set-proxy=$(https_proxy)")
 	}
-	return args
+	// if no proxy is set, we still have to set it as empty to clear proxy settings the OA might have cached
+	return append(args, "--set-proxy=")
 }
 
 func (dsInfo *builderInfo) hasProxy() bool {
