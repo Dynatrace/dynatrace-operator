@@ -306,8 +306,16 @@ func createTestProvisioner(obj ...client.Object) *OneAgentProvisioner {
 }
 
 func mockImageInstallerBuilder(mock *installer.Mock) imageInstallerBuilder {
+<<<<<<< HEAD
 	return func(f afero.Fs, p *image.Properties) (installer.Installer, error) {
 		return mock, nil
+||||||| parent of 4c7e4959 (Update unit tests)
+	return func(f afero.Fs, p *image.Properties) installer.Installer {
+		return mock
+=======
+	return func(f afero.Fs, p *image.Properties, apiClient client.Reader, secret corev1.Secret) (installer.Installer, error) {
+		return mock, nil
+>>>>>>> 4c7e4959 (Update unit tests)
 	}
 }
 

@@ -84,7 +84,14 @@ func NewImageInstaller(fs afero.Fs, props *Properties) (installer.Installer, err
 		transport.TLSClientConfig.RootCAs = rootCAs
 	}
 
+<<<<<<< HEAD
 	keychain, err := dockerkeychain.NewDockerKeychain(context.TODO(), props.ApiReader, props.Dynakube.PullSecretWithoutData())
+||||||| parent of 4c7e4959 (Update unit tests)
+	keychain, err := dockerkeychain.NewDockerKeychain(context.TODO(), apiReader, pullSecret)
+=======
+	keychain := dockerkeychain.NewDockerKeychain()
+	err := keychain.LoadDockerConfigFromSecret(context.TODO(), apiReader, pullSecret)
+>>>>>>> 4c7e4959 (Update unit tests)
 	if err != nil {
 		return nil, err
 	}

@@ -87,6 +87,7 @@ func TestGetDigest(t *testing.T) {
 
 func TestNewImageInstaller(t *testing.T) {
 	testFS := afero.NewMemMapFs()
+<<<<<<< HEAD
 	dynakube := &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
@@ -99,6 +100,10 @@ func TestNewImageInstaller(t *testing.T) {
 		corev1.DockerConfigJsonKey: []byte(emptyDockerConfig),
 	}
 	fakeClient := fake.NewClientWithIndex(&pullSecret)
+||||||| parent of 4c7e4959 (Update unit tests)
+=======
+	pullSecret := corev1.Secret{}
+>>>>>>> 4c7e4959 (Update unit tests)
 
 	props := &Properties{
 		PathResolver: metadata.PathResolver{RootDir: "/tmp"},
@@ -107,8 +112,15 @@ func TestNewImageInstaller(t *testing.T) {
 		ImageDigest:  testImageDigest,
 		ApiReader:    fakeClient,
 	}
+<<<<<<< HEAD
 	in, err := NewImageInstaller(testFS, props)
 	require.NoError(t, err)
+||||||| parent of 4c7e4959 (Update unit tests)
+	in := NewImageInstaller(testFS, props)
+=======
+	in, err := NewImageInstaller(testFS, props, nil, pullSecret)
+	require.NoError(t, err)
+>>>>>>> 4c7e4959 (Update unit tests)
 	assert.NotNil(t, in)
 	assert.NotNil(t, in)
 }
