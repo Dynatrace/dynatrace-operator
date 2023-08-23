@@ -23,10 +23,14 @@ import (
 const DefaultMinRequestThreshold = 15 * time.Minute
 
 type edgeConnectUpdater struct {
-	edgeConnect  *edgeconnectv1alpha1.EdgeConnect
-	apiReader    client.Reader
-	timeProvider *timeprovider.Provider
+	edgeConnect    *edgeconnectv1alpha1.EdgeConnect
+	apiReader      client.Reader
+	timeProvider   *timeprovider.Provider
+	dockerKeyChain *dockerkeychain.DockerKeychain
+	registryClient registry.ImageGetter
 }
+
+var _ versionStatusUpdater = edgeConnectUpdater{}
 
 func newEdgeConnectUpdater(
 	edgeConnect *edgeconnectv1alpha1.EdgeConnect,
@@ -34,23 +38,27 @@ func newEdgeConnectUpdater(
 	timeprovider *timeprovider.Provider,
 ) *edgeConnectUpdater {
 	return &edgeConnectUpdater{
-		edgeConnect:  edgeConnect,
-		apiReader:    apiReader,
-		timeProvider: timeprovider,
+		edgeConnect:    edgeConnect,
+		apiReader:      apiReader,
+		timeProvider:   timeprovider,
+		dockerKeyChain: dockerkeychain.NewDockerKeychain(),
+		registryClient: registry.NewClient(),
 	}
 }
 
 func (updater edgeConnectUpdater) RequiresReconcile() bool {
-	isRequestOutdated := updater.timeProvider.IsOutdated(updater.edgeConnect.Status.Version.LastProbeTimestamp, DefaultMinRequestThreshold)
-	didCustomImageChange := !strings.HasPrefix(updater.edgeConnect.Status.Version.ImageID, updater.edgeConnect.Image())
+	version := updater.edgeConnect.Status.Version
 
-	if didCustomImageChange || updater.edgeConnect.Status.Version.ImageID == "" {
+	isRequestOutdated := updater.timeProvider.IsOutdated(version.LastProbeTimestamp, DefaultMinRequestThreshold)
+	didCustomImageChange := !strings.HasPrefix(version.ImageID, updater.edgeConnect.Image())
+
+	if didCustomImageChange || version.ImageID == "" {
 		return true
 	}
 	return isRequestOutdated && updater.IsAutoUpdateEnabled()
 }
 
-func (updater edgeConnectUpdater) Run(ctx context.Context) error {
+func (updater edgeConnectUpdater) Update(ctx context.Context) error {
 	var err error
 	defer func() {
 		if err == nil {
@@ -58,20 +66,11 @@ func (updater edgeConnectUpdater) Run(ctx context.Context) error {
 		}
 	}()
 
-	if updater.RequiresReconcile() {
-		return updater.update(ctx)
-	}
-
-	log.Info("no reconcile required", "updater", updater.Name())
-	return nil
-}
-
-func (updater edgeConnectUpdater) update(ctx context.Context) error {
 	image := updater.edgeConnect.Image()
 
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 
-	dockerKeyChain, err := dockerkeychain.NewDockerKeychain(ctx, updater.apiReader, corev1.Secret{
+	err = updater.dockerKeyChain.LoadDockerConfigFromSecret(ctx, updater.apiReader, corev1.Secret{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      updater.edgeConnect.Spec.CustomPullSecret,
 			Namespace: updater.edgeConnect.Namespace,
@@ -81,7 +80,7 @@ func (updater edgeConnectUpdater) update(ctx context.Context) error {
 		return err
 	}
 
-	imageVersion, err := registry.NewClient().GetImageVersion(ctx, dockerKeyChain, transport, image)
+	imageVersion, err := updater.registryClient.GetImageVersion(ctx, updater.dockerKeyChain, transport, image)
 	if err != nil {
 		return err
 	}

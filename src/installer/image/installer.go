@@ -81,12 +81,13 @@ func NewImageInstaller(fs afero.Fs, props *Properties, apiReader client.Reader, 
 		}
 
 		if transport.TLSClientConfig == nil {
-			transport.TLSClientConfig = &tls.Config{} //nolint:gosec
+			transport.TLSClientConfig = &tls.Config{} // nolint:gosec
 		}
 		transport.TLSClientConfig.RootCAs = rootCAs
 	}
 
-	keychain, err := dockerkeychain.NewDockerKeychain(context.TODO(), apiReader, pullSecret)
+	keychain := dockerkeychain.NewDockerKeychain()
+	err := keychain.LoadDockerConfigFromSecret(context.TODO(), apiReader, pullSecret)
 	if err != nil {
 		return nil, err
 	}

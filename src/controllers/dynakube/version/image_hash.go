@@ -47,7 +47,8 @@ func GetImageVersion( //nolint:revive // argument-limit
 	var proxy string
 
 	transport := http.DefaultTransport.(*http.Transport).Clone()
-	keychain, err := dockerkeychain.NewDockerKeychain(ctx, apiReader, v1.Secret{
+	keychain := dockerkeychain.NewDockerKeychain()
+	err = keychain.LoadDockerConfigFromSecret(ctx, apiReader, v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      dynakube.PullSecret(),
 			Namespace: dynakube.Namespace,
@@ -94,7 +95,7 @@ func addCertificates(transport *http.Transport, dynakube *dynatracev1beta1.DynaK
 		log.Info("failed to append custom certs!")
 	}
 	if transport.TLSClientConfig == nil {
-		transport.TLSClientConfig = &tls.Config{} //nolint:gosec
+		transport.TLSClientConfig = &tls.Config{} // nolint:gosec
 	}
 	transport.TLSClientConfig.RootCAs = rootCAs
 

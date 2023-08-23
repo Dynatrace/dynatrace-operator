@@ -13,6 +13,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/installer/zip"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -83,6 +85,7 @@ func TestGetDigest(t *testing.T) {
 
 func TestNewImageInstaller(t *testing.T) {
 	testFS := afero.NewMemMapFs()
+	pullSecret := corev1.Secret{}
 
 	props := &Properties{
 		PathResolver: metadata.PathResolver{RootDir: "/tmp"},
@@ -97,7 +100,8 @@ func TestNewImageInstaller(t *testing.T) {
 		ImageDigest:      testImageDigest,
 		RegistryAuthPath: "/dummy",
 	}
-	in := NewImageInstaller(testFS, props)
+	in, err := NewImageInstaller(testFS, props, nil, pullSecret)
+	require.NoError(t, err)
 	assert.NotNil(t, in)
 	assert.NotNil(t, in)
 }

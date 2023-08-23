@@ -24,17 +24,18 @@ func NewReconciler(edgeConnect *edgeconnectv1alpha1.EdgeConnect, apiReader clien
 }
 
 func (reconciler *Reconciler) Reconcile(ctx context.Context) error {
-	// TODO replace with interface
-	updaters := []*edgeConnectUpdater{
+	updaters := []versionStatusUpdater{
 		newEdgeConnectUpdater(reconciler.edgeConnect, reconciler.apiReader, reconciler.timeProvider),
 	}
 
 	for _, updater := range updaters {
 		log.Info("updating version status", "updater", updater.Name())
-		err := updater.Run(ctx)
-		if err != nil {
-			return err
+
+		if updater.RequiresReconcile() {
+			return updater.Update(ctx)
 		}
+
+		log.Info("no reconcile required", "updater", updater.Name())
 	}
 
 	return nil

@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
@@ -39,6 +40,7 @@ func TestReconcile(t *testing.T) {
 		assert.NotNil(t, result)
 	})
 	t.Run("Timestamp update in EdgeConnect status works", func(t *testing.T) {
+		now := metav1.Now()
 		instance := &edgeconnectv1alpha1.EdgeConnect{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -49,6 +51,10 @@ func TestReconcile(t *testing.T) {
 			},
 			Status: edgeconnectv1alpha1.EdgeConnectStatus{
 				UpdatedTimestamp: metav1.NewTime(time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)),
+				Version: status.VersionStatus{
+					LastProbeTimestamp: &now,
+					ImageID:            "docker.io/dynatrace/edgeconnect:latest",
+				},
 			},
 		}
 
