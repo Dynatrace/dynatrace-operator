@@ -17,6 +17,10 @@ A bit more specifically:
 The `Dynatrace Operator` is not a single Pod, it consists of multiple components, encompassing several Kubernetes concepts.
 
 #### Operator
+This component/pod is the one that _reacts to_ our`CustomResource(s)`.
+If one of our `CustomResource` is created/updated/deleted, the `Operator` is called, which cause a reconcile to happen.
+
+A _reconcile_ just means that it will check what is in the `CR` and according to that creates/updates/deletes resources in the Kubernetes environment. (So the state of the Kubernetes Environment matches the state described in the `CR`)
 
 #### Webhook
 
