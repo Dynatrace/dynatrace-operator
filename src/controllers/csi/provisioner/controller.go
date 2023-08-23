@@ -214,7 +214,9 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Cont
 
 	latestProcessModuleConfig = latestProcessModuleConfig.
 		AddHostGroup(dk.HostGroup()).
-		AddConnectionInfo(dk.Status.OneAgent.ConnectionInfoStatus, tenantToken)
+		AddConnectionInfo(dk.Status.OneAgent.ConnectionInfoStatus, tenantToken).
+		// set proxy explicitly empty, so old proxy settings get deleted where necessary
+		AddProxy("")
 	latestProcessModuleConfigCache = newProcessModuleConfigCache(latestProcessModuleConfig)
 
 	if dk.NeedsOneAgentProxy() {

@@ -26,7 +26,10 @@ func TestArguments(t *testing.T) {
 			dynakube: &dynatracev1beta1.DynaKube{},
 		}
 		arguments := builder.arguments()
-		expectedDefaultArguments := appendImmutableImageArgs(appendOperatorVersionArg([]string{}))
+		expectedDefaultArguments := make([]string, 0)
+		expectedDefaultArguments = builder.appendProxyArg(expectedDefaultArguments)
+		expectedDefaultArguments = appendOperatorVersionArg(expectedDefaultArguments)
+		expectedDefaultArguments = appendImmutableImageArgs(expectedDefaultArguments)
 
 		assert.Equal(t, expectedDefaultArguments, arguments)
 	})
@@ -61,7 +64,10 @@ func TestArguments(t *testing.T) {
 		}
 
 		arguments := builder.arguments()
-		expectedDefaultArguments := appendImmutableImageArgs(appendOperatorVersionArg([]string{}))
+		expectedDefaultArguments := make([]string, 0)
+		expectedDefaultArguments = builder.appendProxyArg(expectedDefaultArguments)
+		expectedDefaultArguments = appendOperatorVersionArg(expectedDefaultArguments)
+		expectedDefaultArguments = appendImmutableImageArgs(expectedDefaultArguments)
 		expectedDefaultArguments = append(expectedDefaultArguments, testValue)
 		assert.Equal(t, expectedDefaultArguments, arguments)
 	})
