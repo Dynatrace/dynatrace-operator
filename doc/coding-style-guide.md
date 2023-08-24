@@ -2,7 +2,7 @@
 
 - [Coding style guide](#coding-style-guide)
   - [General](#general)
-  - [Parameter Order](#parameter-order)
+  - [Function Parameter and Return-Value Order](#function-parameter-and-return-value-order)
   - [Cuddling of statements](#cuddling-of-statements)
   - [Reconciler vs Controller](#reconciler-vs-controller)
     - [A **Controller** is a struct that **DIRECTLY** handles the reconcile Requests](#a-controller-is-a-struct-that-directly-handles-the-reconcile-requests)
@@ -27,7 +27,7 @@
 - Do not create methods with more than two parameters (in extremely rare occasions maybe three) except constructors and factory functions. Structs and interfaces exist for a reason.
 - Avoid returning responses (e.g., reconcile.Result, admission.Patched) in anything but Reconcile or Handle functions.
 
-## Function Parameter/Return-Value Order
+## Function Parameter and Return-Value Order
 Ordering of **function parameters** should be:
 1. Convention
    - example: `ctx context.Context`
