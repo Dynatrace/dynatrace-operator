@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -17,7 +17,7 @@ func TestGetUID(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().
 		WithScheme(scheme.Scheme).
 		WithObjects(
-			&v1.Namespace{
+			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: Namespace,
 					UID:  testUID,
@@ -35,7 +35,7 @@ func TestIsDeployedViaOLM(t *testing.T) {
 	testPodName := "test-pod"
 	testNamespaceName := "test-namespace"
 
-	pod := v1.Pod{
+	pod := corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testPodName,
 			Namespace: testNamespaceName,

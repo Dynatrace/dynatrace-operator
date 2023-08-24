@@ -13,7 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/installer/url"
 	"github.com/Dynatrace/dynatrace-operator/src/processmoduleconfig"
 	"github.com/spf13/afero"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -37,7 +37,7 @@ func (provisioner *OneAgentProvisioner) installAgentImage(ctx context.Context, d
 		return "", err
 	}
 
-	pullSecret := v1.Secret{
+	pullSecret := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      dynakube.PullSecret(),
 			Namespace: dynakube.Namespace,

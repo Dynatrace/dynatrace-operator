@@ -17,7 +17,7 @@ import (
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -181,7 +181,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 					},
 				},
 			},
-			&v1.Secret{
+			&corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: dkName,
 				},
@@ -276,7 +276,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 						},
 					},
 				},
-				&v1.Secret{
+				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dkName,
 					},
@@ -323,7 +323,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 						},
 					},
 				},
-				&v1.Secret{
+				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dkName,
 					},
@@ -384,7 +384,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				dynakube,
-				&v1.Secret{
+				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dkName,
 					},
@@ -392,7 +392,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 						dtclient.DynatraceApiToken: []byte("api-token"),
 					},
 				},
-				&v1.Secret{
+				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dynakube.OneagentTenantSecret(),
 					},
@@ -458,7 +458,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 						},
 					},
 				},
-				&v1.Secret{
+				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dkName,
 					},
