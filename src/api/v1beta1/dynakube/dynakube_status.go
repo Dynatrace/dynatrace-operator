@@ -116,6 +116,17 @@ type OneAgentStatus struct {
 
 	// Information about OneAgent's connections
 	ConnectionInfoStatus OneAgentConnectionInfoStatus `json:"connectionInfoStatus,omitempty"`
+
+	// Commands used for OneAgent's readiness probe
+	Healthcheck Healthcheck `json:"Healthcheck,omitempty"`
+}
+
+type Healthcheck struct {
+	Test        []string      `json:"Test,omitempty"`
+	Interval    time.Duration `json:"Interval,omitempty"`
+	Timeout     time.Duration `json:"Timeout,omitempty"`
+	StartPeriod time.Duration `json:"StartPeriod,omitempty"`
+	Retries     int           `json:"Retries,omitempty"`
 }
 
 type OneAgentInstance struct {

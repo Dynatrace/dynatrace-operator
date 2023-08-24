@@ -54,6 +54,10 @@ func (dk *DynaKube) NeedsOneAgentProxy() bool {
 	return !dk.FeatureOneAgentIgnoreProxy() && dk.HasProxy()
 }
 
+func (dk *DynaKube) NeedsOneAgentReadinessProbe() bool {
+	return dk.Status.OneAgent.Healthcheck.Test != nil
+}
+
 func (dk *DynaKube) proxyUrlFromUserSecret(ctx context.Context, kubeReader client.Reader) (string, error) {
 	secretName := dk.Spec.Proxy.ValueFrom
 	var proxySecret corev1.Secret

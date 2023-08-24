@@ -2,12 +2,14 @@ package version
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/src/registry"
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/spf13/afero"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -70,6 +72,37 @@ func (reconciler *Reconciler) updateVersionStatuses(ctx context.Context, updater
 		err := reconciler.run(ctx, updater, dockerConfig.RegistryAuthPath)
 		if err != nil {
 			return err
+		}
+	}
+
+	err = SetOneAgentHealthcheck(ctx, reconciler.apiReader, registry.NewClient(), reconciler.dynakube, reconciler.dynakube.OneAgentImage(), dockerConfig.RegistryAuthPath)
+	if err != nil {
+		log.Info("could not set OneAgent healthcheck")
+		log.Info(err.Error())
+	}
+
+	return nil
+}
+
+func SetOneAgentHealthcheck(ctx context.Context, apiReader client.Reader, registryClient registry.ImageGetter, dynakube *dynatracev1beta1.DynaKube, imageUri string, registryAuthPath string) error { // nolint:revive
+	imageInfo, err := PullImageInfo(ctx, apiReader, registryClient, dynakube, imageUri, registryAuthPath)
+	if err != nil {
+		log.Info(err.Error())
+		return fmt.Errorf("error pulling image info")
+	}
+
+	configFile, err := (*imageInfo).ConfigFile()
+	if err != nil {
+		return fmt.Errorf("error reading image config file")
+	}
+
+	if configFile.Config.Healthcheck != nil && len(configFile.Config.Healthcheck.Test) > 0 {
+		if configFile.Config.Healthcheck.Test[0] == "CMD" || configFile.Config.Healthcheck.Test[0] == "CMD-SHELL" {
+			dynakube.Status.OneAgent.Healthcheck.Test = configFile.Config.Healthcheck.Test[1:]
+			dynakube.Status.OneAgent.Healthcheck.Interval = configFile.Config.Healthcheck.Interval
+			dynakube.Status.OneAgent.Healthcheck.StartPeriod = configFile.Config.Healthcheck.StartPeriod
+			dynakube.Status.OneAgent.Healthcheck.Timeout = configFile.Config.Healthcheck.Timeout
+			dynakube.Status.OneAgent.Healthcheck.Retries = configFile.Config.Healthcheck.Retries
 		}
 	}
 	return nil

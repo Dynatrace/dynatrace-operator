@@ -11,6 +11,8 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerkeychain"
 	"github.com/Dynatrace/dynatrace-operator/src/registry"
+	"github.com/google/go-containerregistry/pkg/authn"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -41,6 +43,36 @@ func GetImageVersion( //nolint:revive // argument-limit
 	registry.ImageVersion,
 	error,
 ) {
+	keychain, transport, err := prepareKeychainAndTransport(ctx, apiReader, dynakube, registryAuthPath)
+	if err != nil {
+		return registry.ImageVersion{}, err
+	}
+
+	return registryClient.GetImageVersion(ctx, keychain, transport, imageName)
+}
+
+func PullImageInfo( //nolint:revive // argument-limit
+	ctx context.Context,
+	apiReader client.Reader,
+	registryClient registry.ImageGetter,
+	dynakube *dynatracev1beta1.DynaKube,
+	imageName string,
+	registryAuthPath string,
+) (*v1.Image, error) {
+	keychain, transport, err := prepareKeychainAndTransport(ctx, apiReader, dynakube, registryAuthPath)
+	if err != nil {
+		return nil, err
+	}
+
+	imageInfo, err := registryClient.PullImageInfo(ctx, keychain, transport, imageName)
+	if err != nil {
+		return nil, err
+	}
+
+	return imageInfo, nil
+}
+
+func prepareKeychainAndTransport(ctx context.Context, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube, registryAuthPath string) (authn.Keychain, *http.Transport, error) {
 	var err error
 	var proxy string
 
@@ -53,12 +85,12 @@ func GetImageVersion( //nolint:revive // argument-limit
 	if dynakube.HasProxy() {
 		proxy, err = dynakube.Proxy(ctx, apiReader)
 		if err != nil {
-			return registry.ImageVersion{}, err
+			return nil, nil, err
 		}
 		proxyUrl, err := url.Parse(proxy)
 		if err != nil {
 			log.Info("invalid proxy spec", "proxy", proxy)
-			return registry.ImageVersion{}, err
+			return nil, nil, err
 		}
 
 		transport.Proxy = func(req *http.Request) (*url.URL, error) {
@@ -69,11 +101,10 @@ func GetImageVersion( //nolint:revive // argument-limit
 	if dynakube.Spec.TrustedCAs != "" {
 		transport, err = addCertificates(transport, dynakube, apiReader)
 		if err != nil {
-			return registry.ImageVersion{}, fmt.Errorf("addCertificates(): %w", err)
+			return nil, nil, fmt.Errorf("addCertificates(): %w", err)
 		}
 	}
-
-	return registryClient.GetImageVersion(ctx, keychain, transport, imageName)
+	return keychain, transport, nil
 }
 
 func addCertificates(transport *http.Transport, dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader) (*http.Transport, error) {
