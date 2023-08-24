@@ -42,19 +42,19 @@ func defaultAuths(server string) Auths {
 func setupDockerMocker(handleUrls []string) (*httptest.Server, *corev1.Secret, string, error) { //nolint:revive // maximum number of return results per function exceeded; max 3 but got 4
 	dockerServer := httptest.NewTLSServer(testDockerServerHandler(http.MethodGet, handleUrls))
 
-	url, err := url.Parse(dockerServer.URL)
+	parsedServerUrl, err := url.Parse(dockerServer.URL)
 	if err != nil {
 		dockerServer.Close()
 		return nil, nil, "", err
 	}
 
-	secret, err := createSecret(defaultAuths(url.Host))
+	secret, err := createSecret(defaultAuths(parsedServerUrl.Host))
 	if err != nil {
 		dockerServer.Close()
 		return nil, nil, "", err
 	}
 
-	return dockerServer, secret, url.Host, nil
+	return dockerServer, secret, parsedServerUrl.Host, nil
 }
 
 func createSecret(auths Auths) (*corev1.Secret, error) {
@@ -434,10 +434,10 @@ func TestOneAgentCodeModulesImageNotPullable(t *testing.T) {
 	})
 }
 
-func testDockerServerHandler(method string, urls []string) http.HandlerFunc {
+func testDockerServerHandler(method string, serverUrls []string) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		for _, url := range urls {
-			if request.Method == method && request.URL.Path == url {
+		for _, serverUrl := range serverUrls {
+			if request.Method == method && request.URL.Path == serverUrl {
 				writer.WriteHeader(http.StatusOK)
 				return
 			}
