@@ -89,7 +89,9 @@ func tryImagePull(troubleshootCtx *troubleshootContext, image string) error {
 	defer func(dockerCfg *dockerconfig.DockerConfig, fs afero.Afero) {
 		_ = dockerCfg.Cleanup(fs)
 	}(dockerCfg, troubleshootCtx.fs)
+
 	dockerCfg.SetRegistryAuthSecret(&troubleshootCtx.pullSecret)
+
 	err = dockerCfg.StoreRequiredFiles(troubleshootCtx.context, troubleshootCtx.fs)
 	if err != nil {
 		return err
@@ -98,7 +100,6 @@ func tryImagePull(troubleshootCtx *troubleshootContext, image string) error {
 	keychain := dockerkeychain.NewDockerKeychain(dockerCfg.RegistryAuthPath, troubleshootCtx.fs)
 
 	transport, err := createTransport(troubleshootCtx.dynakube, troubleshootCtx.context, troubleshootCtx.apiReader, troubleshootCtx.httpClient)
-
 	if err != nil {
 		return err
 	}
@@ -111,8 +112,6 @@ func tryImagePull(troubleshootCtx *troubleshootContext, image string) error {
 }
 
 func createTransport(kube dynakube.DynaKube, ctx context.Context, apiReader client.Reader, troubleShootHttpClient *http.Client) (*http.Transport, error) {
-	// transport := http.DefaultTransport.(*http.Transport).Clone() // troubleshootCtx.httpClient.Transport.(*http.Transport).Clone()
-	// transport.TLSClientConfig.InsecureSkipVerify = true
 	var transport *http.Transport
 	if troubleShootHttpClient != nil && troubleShootHttpClient.Transport != nil {
 		transport = troubleShootHttpClient.Transport.(*http.Transport).Clone()
