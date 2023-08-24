@@ -1,12 +1,14 @@
 package troubleshoot
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
 	"net/http"
 	"net/url"
 
+	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerkeychain"
@@ -15,6 +17,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -93,33 +96,11 @@ func tryImagePull(troubleshootCtx *troubleshootContext, image string) error {
 	}
 
 	keychain := dockerkeychain.NewDockerKeychain(dockerCfg.RegistryAuthPath, troubleshootCtx.fs)
-	transport := troubleshootCtx.httpClient.Transport.(*http.Transport).Clone()
 
-	var proxy string
-	if troubleshootCtx.dynakube.HasProxy() {
-		proxy, err = troubleshootCtx.dynakube.Proxy(troubleshootCtx.context, troubleshootCtx.apiReader)
-		if err != nil {
-			return err
-		}
-		proxyUrl, err := url.Parse(proxy)
-		if err != nil {
-			return err
-		}
+	transport, err := createTransport(troubleshootCtx.dynakube, troubleshootCtx.context, troubleshootCtx.apiReader, troubleshootCtx.httpClient)
 
-		transport.Proxy = func(req *http.Request) (*url.URL, error) {
-			return proxyUrl, nil
-		}
-	}
-
-	if troubleshootCtx.dynakube.Spec.TrustedCAs != "" {
-		trustedCAs, err := troubleshootCtx.dynakube.TrustedCAs(troubleshootCtx.context, troubleshootCtx.apiReader)
-		if err != nil {
-			return err
-		}
-		transport, err = addCertificates(transport, trustedCAs)
-		if err != nil {
-			return err
-		}
+	if err != nil {
+		return err
 	}
 
 	_, err = remote.Get(ref, remote.WithContext(troubleshootCtx.context), remote.WithAuthFromKeychain(keychain), remote.WithTransport(transport))
@@ -127,6 +108,43 @@ func tryImagePull(troubleshootCtx *troubleshootContext, image string) error {
 		return err
 	}
 	return nil
+}
+
+func createTransport(kube dynakube.DynaKube, ctx context.Context, apiReader client.Reader, troubleShootHttpClient *http.Client) (*http.Transport, error) {
+	// transport := http.DefaultTransport.(*http.Transport).Clone() // troubleshootCtx.httpClient.Transport.(*http.Transport).Clone()
+	// transport.TLSClientConfig.InsecureSkipVerify = true
+	var transport *http.Transport
+	if troubleShootHttpClient != nil && troubleShootHttpClient.Transport != nil {
+		transport = troubleShootHttpClient.Transport.(*http.Transport).Clone()
+	} else {
+		transport = http.DefaultTransport.(*http.Transport).Clone()
+	}
+	if kube.HasProxy() {
+		proxy, err := kube.Proxy(ctx, apiReader)
+		if err != nil {
+			return nil, err
+		}
+		proxyUrl, err := url.Parse(proxy)
+		if err != nil {
+			return nil, err
+		}
+
+		transport.Proxy = func(req *http.Request) (*url.URL, error) {
+			return proxyUrl, nil
+		}
+	}
+
+	if kube.Spec.TrustedCAs != "" {
+		trustedCAs, err := kube.TrustedCAs(ctx, apiReader)
+		if err != nil {
+			return nil, err
+		}
+		transport, err = addCertificates(transport, trustedCAs)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return transport, nil
 }
 
 func addCertificates(transport *http.Transport, trustedCAs []byte) (*http.Transport, error) {
