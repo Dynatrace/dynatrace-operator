@@ -26,7 +26,7 @@ func TestCreateOptions(t *testing.T) {
 		options := provider.createOptions("test-namespace")
 
 		assert.NotNil(t, options)
-		assert.Contains(t, "test-namespace", options.Cache.DefaultNamespaces)
+		assert.Contains(t, options.Cache.DefaultNamespaces, "test-namespace")
 		assert.Equal(t, scheme.Scheme, options.Scheme)
 		assert.Equal(t, metricsBindAddress, options.Metrics.BindAddress)
 

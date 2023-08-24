@@ -2,11 +2,12 @@ package manager
 
 import (
 	"context"
-
 	"github.com/Dynatrace/dynatrace-operator/src/logger"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -32,8 +33,16 @@ func (mgr *TestManager) GetScheme() *runtime.Scheme {
 	return scheme.Scheme
 }
 
+func (mgr *TestManager) GetCache() cache.Cache {
+	return nil
+}
+
 func (mgr *TestManager) GetLogger() logr.Logger {
 	return logger.Factory.GetLogger("test-manager")
+}
+
+func (mgr *TestManager) GetRESTMapper() meta.RESTMapper {
+	return nil
 }
 
 func (mgr *TestManager) SetFields(any) error {
