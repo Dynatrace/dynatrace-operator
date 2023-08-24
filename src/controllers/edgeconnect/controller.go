@@ -65,14 +65,23 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	edgeConnect, err := controller.getEdgeConnect(ctx, request.Name, request.Namespace)
 	if err != nil {
 		log.Error(errors.WithStack(err), "reconciliation of EdgeConnect failed", "name", request.Name, "namespace", request.Namespace)
-		return reconcile.Result{RequeueAfter: errorUpdateInterval}, err
+		return reconcile.Result{}, err
 	} else if edgeConnect == nil {
-		return reconcile.Result{RequeueAfter: errorUpdateInterval}, nil
+		return reconcile.Result{}, nil
 	}
+
+<<<<<<< HEAD
+	oldStatus := *edgeConnect.Status.DeepCopy()
+
+	err = controller.reconcileEdgeConnect(ctx, edgeConnect)
+||||||| parent of b4e64d99 (fixup!)
 
 	oldStatus := *edgeConnect.Status.DeepCopy()
 
 	err = controller.reconcileEdgeConnect(ctx, edgeConnect)
+
+=======
+>>>>>>> b4e64d99 (fixup!)
 	log.Info("updating version info", "name", request.Name, "namespace", request.Namespace)
 	versionReconciler := version.NewReconciler(edgeConnect, controller.apiReader, timeprovider.New())
 	if err = versionReconciler.Reconcile(ctx); err != nil {
@@ -80,13 +89,29 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{RequeueAfter: errorUpdateInterval}, nil
 	}
 
+<<<<<<< HEAD
 	err = controller.updateEdgeConnectStatus(ctx, edgeConnect)
+||||||| parent of b4e64d99 (fixup!)
+	err = controller.updateEdgeConnectStatus(ctx, edgeConnect)
+
+=======
+	oldStatus := *edgeConnect.Status.DeepCopy()
+
+	err = controller.reconcileEdgeConnect(ctx, edgeConnect)
+	if err != nil {
+		log.Error(errors.WithStack(err), "could not reconcile EdgeConnect versions")
+		return reconcile.Result{RequeueAfter: errorUpdateInterval}, err
+	}
+
+>>>>>>> b4e64d99 (fixup!)
 	if err != nil {
 		edgeConnect.Status.SetPhase(status.Error)
 		log.Error(err, "error reconciling EdgeConnect", "namespace", edgeConnect.Namespace, "name", edgeConnect.Name)
 	} else {
 		edgeConnect.Status.SetPhase(status.Running)
 	}
+
+	err = controller.updateEdgeConnectStatus(ctx, edgeConnect)
 
 	if isDifferentStatus, err := kubeobjects.IsDifferent(oldStatus, edgeConnect.Status); err != nil {
 		log.Error(errors.WithStack(err), "failed to generate hash for the status section")

@@ -51,7 +51,7 @@ func New(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: nil,
+					Labels: labels,
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -73,14 +73,14 @@ func New(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
 								RunAsNonRoot:             address.Of(true),
 							},
 							VolumeMounts: []corev1.VolumeMount{
-								{MountPath: "/etc/edge_connect", Name: "secrets", ReadOnly: true},
+								{MountPath: "/etc/edge_connect", Name: "oauth-secret", ReadOnly: true},
 							},
 						},
 					},
 					ImagePullSecrets: []corev1.LocalObjectReference{
 						{Name: instance.Spec.CustomPullSecret},
 					},
-					ServiceAccountName:            "edgeconnect-dynatrace",
+					ServiceAccountName:            "dynatrace-edgeconnect",
 					TerminationGracePeriodSeconds: address.Of(int64(30)),
 					Volumes: []corev1.Volume{
 						{
@@ -111,15 +111,16 @@ func New(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
 }
 
 func prepareContainerEnvVars(instance *edgeconnectv1alpha1.EdgeConnect) []corev1.EnvVar {
-	return []corev1.EnvVar{
+	envVars := []corev1.EnvVar{
 		{
 			Name:  "EDGE_CONNECT_NAME",
 			Value: instance.ObjectMeta.Name,
 		},
 		{
-			Name:  "EDGE_CONNECT_RESTRICT_HOSTS_TO",
-			Value: instance.Spec.HostRestrictions,
+			Name:  "EDGE_CONNECT_API_ENDPOINT_HOST",
+			Value: instance.Spec.ApiServer,
 		},
+
 		{
 			Name:  "EDGE_CONNECT_OAUTH__ENDPOINT",
 			Value: instance.Spec.OAuth.Endpoint,
@@ -129,4 +130,13 @@ func prepareContainerEnvVars(instance *edgeconnectv1alpha1.EdgeConnect) []corev1
 			Value: instance.Spec.OAuth.Resource,
 		},
 	}
+	// Since HostRestrictions is optional we should not pass empty env var
+	// otherwise edge-connect will fail
+	if instance.Spec.HostRestrictions != "" {
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  "EDGE_CONNECT_RESTRICT_HOSTS_TO",
+			Value: instance.Spec.HostRestrictions,
+		})
+	}
+	return envVars
 }
