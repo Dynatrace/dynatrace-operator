@@ -38,7 +38,7 @@ Ordering of **function parameters** should be:
 4. Simple/base types
    - example: `data string`
 
-Ordering of **return values** is simpler, the `err error` should always be the last, and AVOID returning more than 2 values. If more than 2 return values are needed try splitting the logic up or collecting the return values in a `struct`.
+Ordering of **return values** is more straightforward; the `err error` should always be the last, and AVOID returning more than two values. If more than two return values are needed, try splitting the logic or collecting the return values in a `struct`.
 
 So a full example: `func ExampleFunc(ctx context.Context, kubeClient client.Client, pod corev1.Pod, data string) (corev1.Pod, error) {...}`
 
