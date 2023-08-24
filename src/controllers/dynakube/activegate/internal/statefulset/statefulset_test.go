@@ -164,7 +164,7 @@ func TestAddTemplateSpec(t *testing.T) {
 
 		assert.NotEmpty(t, spec.Containers)
 		assert.NotEmpty(t, spec.Affinity)
-		assert.Equal(t, dynakube.PullSecret(), spec.ImagePullSecrets[0].Name)
+		assert.Equal(t, dynakube.PullSecretName(), spec.ImagePullSecrets[0].Name)
 	})
 
 	t.Run("adds capability specific stuff", func(t *testing.T) {

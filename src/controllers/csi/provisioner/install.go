@@ -39,7 +39,7 @@ func (provisioner *OneAgentProvisioner) installAgentImage(ctx context.Context, d
 
 	pullSecret := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      dynakube.PullSecret(),
+			Name:      dynakube.PullSecretName(),
 			Namespace: dynakube.Namespace,
 		},
 	}
@@ -50,7 +50,7 @@ func (provisioner *OneAgentProvisioner) installAgentImage(ctx context.Context, d
 		PathResolver: provisioner.path,
 		Metadata:     provisioner.db,
 		ImageDigest:  imageDigest,
-	}, provisioner.apiReader, pullSecret)
+	}, pullSecret)
 	if err != nil {
 		return "", err
 	}

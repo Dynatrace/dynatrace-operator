@@ -33,8 +33,7 @@ func TestNewDockerKeychain(t *testing.T) {
 		}
 		client := fake.NewClient()
 
-		keychain := NewDockerKeychain()
-		err := keychain.LoadDockerConfigFromSecret(context.TODO(), client, pullSecret)
+		_, err := NewDockerKeychain(context.TODO(), client, pullSecret)
 		require.Error(t, err)
 		require.True(t, errors2.IsNotFound(err))
 	})
@@ -51,8 +50,7 @@ func TestNewDockerKeychain(t *testing.T) {
 		}
 		client := fake.NewClientWithIndex(&pullSecret)
 
-		keychain := NewDockerKeychain()
-		err := keychain.LoadDockerConfigFromSecret(context.TODO(), client, pullSecret)
+		_, err := NewDockerKeychain(context.TODO(), client, pullSecret)
 		require.Error(t, err)
 
 		var syntaxError *json.SyntaxError
@@ -74,8 +72,7 @@ func TestNewDockerKeychain(t *testing.T) {
 		}
 		client := fake.NewClientWithIndex(&pullSecret)
 
-		keychain := NewDockerKeychain()
-		err := keychain.LoadDockerConfigFromSecret(context.TODO(), client, pullSecret)
+		keychain, err := NewDockerKeychain(context.TODO(), client, pullSecret)
 		require.NoError(t, err)
 		registry, err := name.NewRegistry(registryName, name.StrictValidation)
 		require.NoError(t, err)

@@ -46,7 +46,7 @@ func GetDigest(uri string) (string, error) {
 	return canonRef.Digest().Encoded(), nil
 }
 
-func NewImageInstaller(fs afero.Fs, props *Properties, apiReader client.Reader, pullSecret corev1.Secret) (installer.Installer, error) {
+func NewImageInstaller(fs afero.Fs, props *Properties, pullSecret corev1.Secret) (installer.Installer, error) {
 	// Create default transport
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 
@@ -85,8 +85,7 @@ func NewImageInstaller(fs afero.Fs, props *Properties, apiReader client.Reader, 
 		transport.TLSClientConfig.RootCAs = rootCAs
 	}
 
-	keychain := dockerkeychain.NewDockerKeychain()
-	err := keychain.LoadDockerConfigFromSecret(context.TODO(), apiReader, pullSecret)
+	keychain, err := dockerkeychain.NewDockerKeychain(context.TODO(), props.ApiReader, pullSecret)
 	if err != nil {
 		return nil, err
 	}

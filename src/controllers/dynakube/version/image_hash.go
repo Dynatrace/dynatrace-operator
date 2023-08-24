@@ -11,8 +11,6 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerkeychain"
 	"github.com/Dynatrace/dynatrace-operator/src/registry"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -47,13 +45,7 @@ func GetImageVersion( //nolint:revive // argument-limit
 	var proxy string
 
 	transport := http.DefaultTransport.(*http.Transport).Clone()
-	keychain := dockerkeychain.NewDockerKeychain()
-	err = keychain.LoadDockerConfigFromSecret(ctx, apiReader, v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      dynakube.PullSecret(),
-			Namespace: dynakube.Namespace,
-		},
-	})
+	keychain, err := dockerkeychain.NewDockerKeychain(ctx, apiReader, dynakube.PullSecretWithoutData())
 	if err != nil {
 		log.Info("failed to fetch pull secret", "error", err)
 	}

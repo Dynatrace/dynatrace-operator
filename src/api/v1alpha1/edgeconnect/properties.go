@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const defaultEdgeConnectRepository = "docker.io/dynatrace/edgeconnect"
@@ -24,4 +26,13 @@ func (edgeConnect *EdgeConnect) Image() string {
 
 func (edgeConnect *EdgeConnect) IsCustomImage() bool {
 	return edgeConnect.Spec.ImageRef.Repository != ""
+}
+
+func (edgeConnect *EdgeConnect) PullSecretWithoutData() corev1.Secret {
+	return corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      edgeConnect.Spec.CustomPullSecret,
+			Namespace: edgeConnect.Namespace,
+		},
+	}
 }

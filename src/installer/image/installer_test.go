@@ -99,7 +99,7 @@ func TestNewImageInstaller(t *testing.T) {
 		},
 		ImageDigest: testImageDigest,
 	}
-	in, err := NewImageInstaller(testFS, props, nil, pullSecret)
+	in, err := NewImageInstaller(testFS, props, pullSecret)
 	require.NoError(t, err)
 	assert.NotNil(t, in)
 	assert.NotNil(t, in)

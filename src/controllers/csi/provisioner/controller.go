@@ -52,7 +52,7 @@ const (
 )
 
 type urlInstallerBuilder func(afero.Fs, dtclient.Client, *url.Properties) installer.Installer
-type imageInstallerBuilder func(afero.Fs, *image.Properties, client.Reader, corev1.Secret) (installer.Installer, error)
+type imageInstallerBuilder func(afero.Fs, *image.Properties, corev1.Secret) (installer.Installer, error)
 
 // OneAgentProvisioner reconciles a DynaKube object
 type OneAgentProvisioner struct {

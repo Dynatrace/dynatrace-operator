@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/edgeconnect"
@@ -15,18 +14,13 @@ import (
 	"github.com/containers/image/v5/docker/reference"
 	"github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-const DefaultMinRequestThreshold = 15 * time.Minute
 
 type edgeConnectUpdater struct {
 	edgeConnect    *edgeconnectv1alpha1.EdgeConnect
 	apiReader      client.Reader
 	timeProvider   *timeprovider.Provider
-	dockerKeyChain *dockerkeychain.DockerKeychain
 	registryClient registry.ImageGetter
 }
 
@@ -41,7 +35,6 @@ func newEdgeConnectUpdater(
 		edgeConnect:    edgeConnect,
 		apiReader:      apiReader,
 		timeProvider:   timeprovider,
-		dockerKeyChain: dockerkeychain.NewDockerKeychain(),
 		registryClient: registry.NewClient(),
 	}
 }
@@ -49,7 +42,7 @@ func newEdgeConnectUpdater(
 func (updater edgeConnectUpdater) RequiresReconcile() bool {
 	version := updater.edgeConnect.Status.Version
 
-	isRequestOutdated := updater.timeProvider.IsOutdated(version.LastProbeTimestamp, DefaultMinRequestThreshold)
+	isRequestOutdated := updater.timeProvider.IsOutdated(version.LastProbeTimestamp, edgeconnectv1alpha1.DefaultMinRequestThreshold)
 	didCustomImageChange := !strings.HasPrefix(version.ImageID, updater.edgeConnect.Image())
 
 	if didCustomImageChange || version.ImageID == "" {
@@ -70,17 +63,12 @@ func (updater edgeConnectUpdater) Update(ctx context.Context) error {
 
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 
-	err = updater.dockerKeyChain.LoadDockerConfigFromSecret(ctx, updater.apiReader, corev1.Secret{
-		ObjectMeta: v1.ObjectMeta{
-			Name:      updater.edgeConnect.Spec.CustomPullSecret,
-			Namespace: updater.edgeConnect.Namespace,
-		},
-	})
+	keychain, err := dockerkeychain.NewDockerKeychain(ctx, updater.apiReader, updater.edgeConnect.PullSecretWithoutData())
 	if err != nil {
 		return err
 	}
 
-	imageVersion, err := updater.registryClient.GetImageVersion(ctx, updater.dockerKeyChain, transport, image)
+	imageVersion, err := updater.registryClient.GetImageVersion(ctx, keychain, transport, image)
 	if err != nil {
 		return err
 	}

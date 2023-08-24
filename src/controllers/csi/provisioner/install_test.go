@@ -226,7 +226,7 @@ func checkFilesDeleted(t *testing.T, fs afero.Fs, filePath string) {
 func createMockedPullSecret(dynakube dynatracev1beta1.DynaKube, pullSecretContent string) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      dynakube.PullSecret(),
+			Name:      dynakube.PullSecretName(),
 			Namespace: dynakube.Namespace,
 		},
 		Data: map[string][]byte{
@@ -306,7 +306,7 @@ func createTestProvisioner(obj ...client.Object) *OneAgentProvisioner {
 }
 
 func mockImageInstallerBuilder(mock *installer.Mock) imageInstallerBuilder {
-	return func(f afero.Fs, p *image.Properties, apiClient client.Reader, secret corev1.Secret) (installer.Installer, error) {
+	return func(f afero.Fs, p *image.Properties, secret corev1.Secret) (installer.Installer, error) {
 		return mock, nil
 	}
 }

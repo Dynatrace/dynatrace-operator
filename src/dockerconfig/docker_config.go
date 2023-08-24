@@ -81,7 +81,7 @@ func (config *DockerConfig) getRegistryCredentials(ctx context.Context) ([]byte,
 	if config.registryAuthSecret != nil {
 		pullSecret = *config.registryAuthSecret
 	} else {
-		if err := config.ApiReader.Get(ctx, client.ObjectKey{Namespace: config.Dynakube.Namespace, Name: config.Dynakube.PullSecret()}, &pullSecret); err != nil {
+		if err := config.ApiReader.Get(ctx, client.ObjectKey{Namespace: config.Dynakube.Namespace, Name: config.Dynakube.PullSecretName()}, &pullSecret); err != nil {
 			log.Info("failed to load registry pull secret")
 			return nil, errors.WithStack(err)
 		}

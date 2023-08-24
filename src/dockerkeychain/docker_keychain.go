@@ -20,12 +20,13 @@ type DockerKeychain struct {
 	dockerConfig *configfile.ConfigFile
 }
 
-func NewDockerKeychain() *DockerKeychain {
+func NewDockerKeychain(ctx context.Context, apiReader client.Reader, pullSecret corev1.Secret) (authn.Keychain, error) {
 	keychain := &DockerKeychain{}
-	return keychain
+	err := keychain.loadDockerConfigFromSecret(ctx, apiReader, pullSecret)
+	return keychain, err
 }
 
-func (keychain *DockerKeychain) LoadDockerConfigFromSecret(ctx context.Context, apiReader client.Reader, pullSecret corev1.Secret) error {
+func (keychain *DockerKeychain) loadDockerConfigFromSecret(ctx context.Context, apiReader client.Reader, pullSecret corev1.Secret) error {
 	if pullSecret.Name == "" {
 		return nil
 	}
