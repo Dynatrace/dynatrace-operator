@@ -306,7 +306,7 @@ func createTestProvisioner(obj ...client.Object) *OneAgentProvisioner {
 }
 
 func mockImageInstallerBuilder(mock *installer.Mock) imageInstallerBuilder {
-	return func(f afero.Fs, p *image.Properties, secret corev1.Secret) (installer.Installer, error) {
+	return func(f afero.Fs, p *image.Properties) (installer.Installer, error) {
 		return mock, nil
 	}
 }

@@ -35,7 +35,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
-	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -52,7 +51,7 @@ const (
 )
 
 type urlInstallerBuilder func(afero.Fs, dtclient.Client, *url.Properties) installer.Installer
-type imageInstallerBuilder func(afero.Fs, *image.Properties, corev1.Secret) (installer.Installer, error)
+type imageInstallerBuilder func(afero.Fs, *image.Properties) (installer.Installer, error)
 
 // OneAgentProvisioner reconciles a DynaKube object
 type OneAgentProvisioner struct {

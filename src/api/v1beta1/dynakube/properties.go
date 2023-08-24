@@ -208,6 +208,7 @@ func (dk *DynaKube) PullSecretName() string {
 	return dk.Name + PullSecretSuffix
 }
 
+// PullSecretWithoutData returns a secret which can be used to query the actual secrets data from the cluster
 func (dk *DynaKube) PullSecretWithoutData() corev1.Secret {
 	return corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{

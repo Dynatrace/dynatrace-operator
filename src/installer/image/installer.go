@@ -21,7 +21,6 @@ import (
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
-	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -46,7 +45,7 @@ func GetDigest(uri string) (string, error) {
 	return canonRef.Digest().Encoded(), nil
 }
 
-func NewImageInstaller(fs afero.Fs, props *Properties, pullSecret corev1.Secret) (installer.Installer, error) {
+func NewImageInstaller(fs afero.Fs, props *Properties) (installer.Installer, error) {
 	// Create default transport
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 
@@ -85,7 +84,7 @@ func NewImageInstaller(fs afero.Fs, props *Properties, pullSecret corev1.Secret)
 		transport.TLSClientConfig.RootCAs = rootCAs
 	}
 
-	keychain, err := dockerkeychain.NewDockerKeychain(context.TODO(), props.ApiReader, pullSecret)
+	keychain, err := dockerkeychain.NewDockerKeychain(context.TODO(), props.ApiReader, props.Dynakube.PullSecretWithoutData())
 	if err != nil {
 		return nil, err
 	}
