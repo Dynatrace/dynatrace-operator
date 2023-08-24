@@ -1,8 +1,6 @@
 package troubleshoot
 
 import (
-	"crypto/tls"
-	"crypto/x509"
 	"context"
 	"crypto/tls"
 	"crypto/x509"
