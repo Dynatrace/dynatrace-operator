@@ -33,7 +33,7 @@ func defaultAuths(server string) Auths {
 			server: Credentials{
 				Username: "ac",
 				Password: "dt",
-				Auth:     "ZW",
+				Auth:     "dGVzdC10b2tlbjp0ZXN0LXBhc3N3b3Jk",
 			},
 		},
 	}
@@ -380,7 +380,7 @@ func TestImageNotPullable(t *testing.T) {
 			if strings.Contains(test.name, "non-existing server") {
 				assert.Contains(t, logOutput, "no such host")
 			} else {
-				assert.Contains(t, logOutput, "reading manifest")
+				assert.Contains(t, logOutput, "Bad Request")
 			}
 
 			assert.NotContains(t, logOutput, "can be successfully pulled")
