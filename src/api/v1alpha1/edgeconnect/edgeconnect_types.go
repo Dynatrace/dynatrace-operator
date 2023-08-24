@@ -117,13 +117,6 @@ func (dk *EdgeConnectStatus) SetPhase(phase status.DeploymentPhase) bool {
 // +kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.phase`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 // +kubebuilder:storageversion
-
-//+kubebuilder:rbac:groups=apps.tutorial.kubebuilder.io,resources=simpledeployments,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=apps.tutorial.kubebuilder.io,resources=simpledeployments/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=apps.tutorial.kubebuilder.io,resources=simpledeployments/finalizers,verbs=update
-//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=apps,resources=deployments/status,verbs=get
-
 type EdgeConnect struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

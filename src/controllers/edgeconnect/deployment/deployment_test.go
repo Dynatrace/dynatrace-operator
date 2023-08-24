@@ -45,6 +45,11 @@ func Test_prepareContainerEnvVars(t *testing.T) {
 			},
 			Spec: edgeconnectv1alpha1.EdgeConnectSpec{
 				ApiServer: "abc12345.dynatrace.com",
+				OAuth: edgeconnectv1alpha1.OAuthSpec{
+					ClientSecret: "secret-name",
+					Endpoint:     "https://sso-dev.dynatracelabs.com/sso/oauth2/token",
+					Resource:     "urn:dtenvironment:test12345",
+				},
 			},
 			Status: edgeconnectv1alpha1.EdgeConnectStatus{
 				UpdatedTimestamp: metav1.NewTime(time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)),
@@ -53,12 +58,11 @@ func Test_prepareContainerEnvVars(t *testing.T) {
 
 		envVars := prepareContainerEnvVars(instance)
 
-		// Expected :[]v1.EnvVar{v1.EnvVar{Name:"EDGE_CONNECT_NAME", Value:"test-name-edgeconnectv1alpha1", ValueFrom:(*v1.EnvVarSource)(nil)}, v1.EnvVar{Name:"EDGE_CONNECT_RESTRICT_HOSTS_TO", Value:"", ValueFrom:(*v1.EnvVarSource)(nil)}, v1.EnvVar{Name:"EDGE_CONNECT_OAU ...
 		assert.Equal(t, envVars, []corev1.EnvVar{
 			{Name: "EDGE_CONNECT_NAME", Value: testName},
-			{Name: "EDGE_CONNECT_RESTRICT_HOSTS_TO", Value: ""},
-			{Name: "EDGE_CONNECT_OAUTH__ENDPOINT", Value: ""},
-			{Name: "EDGE_CONNECT_OAUTH__RESOURCE", Value: ""},
+			{Name: "EDGE_CONNECT_API_ENDPOINT_HOST", Value: "abc12345.dynatrace.com"},
+			{Name: "EDGE_CONNECT_OAUTH__ENDPOINT", Value: "https://sso-dev.dynatracelabs.com/sso/oauth2/token"},
+			{Name: "EDGE_CONNECT_OAUTH__RESOURCE", Value: "urn:dtenvironment:test12345"},
 		})
 	})
 }
