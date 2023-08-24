@@ -11,15 +11,18 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/config"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/zip"
+	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
-	testImageURL    = "test:5000/repo@sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
-	testImageDigest = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+	testImageURL      = "test:5000/repo@sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+	testImageDigest   = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+	emptyDockerConfig = "{\"auths\":{}}"
 )
 
 func TestIsAlreadyPresent(t *testing.T) {
@@ -84,18 +87,25 @@ func TestGetDigest(t *testing.T) {
 
 func TestNewImageInstaller(t *testing.T) {
 	testFS := afero.NewMemMapFs()
+	dynakube := &dynatracev1beta1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "dynakube",
+		},
+		Spec: dynatracev1beta1.DynaKubeSpec{},
+	}
+	pullSecret := dynakube.PullSecretWithoutData()
+	pullSecret.Data = map[string][]byte{
+		corev1.DockerConfigJsonKey: []byte(emptyDockerConfig),
+	}
+	fakeClient := fake.NewClientWithIndex(&pullSecret)
 
 	props := &Properties{
 		PathResolver: metadata.PathResolver{RootDir: "/tmp"},
 		ImageUri:     testImageURL,
-		Dynakube: &dynatracev1beta1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test",
-				Namespace: "dynakube",
-			},
-			Spec: dynatracev1beta1.DynaKubeSpec{},
-		},
-		ImageDigest: testImageDigest,
+		Dynakube:     dynakube,
+		ImageDigest:  testImageDigest,
+		ApiReader:    fakeClient,
 	}
 	in, err := NewImageInstaller(testFS, props)
 	require.NoError(t, err)
