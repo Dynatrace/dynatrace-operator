@@ -93,7 +93,7 @@ func tryImagePull(troubleshootCtx *troubleshootContext, image string) error {
 	}
 
 	keychain := dockerkeychain.NewDockerKeychain(dockerCfg.RegistryAuthPath, troubleshootCtx.fs)
-	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport := troubleshootCtx.httpClient.Transport.(*http.Transport).Clone()
 
 	var proxy string
 	if troubleshootCtx.dynakube.HasProxy() {
