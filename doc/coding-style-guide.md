@@ -2,6 +2,7 @@
 
 - [Coding style guide](#coding-style-guide)
   - [General](#general)
+  - [Parameter Order](#parameter-order)
   - [Cuddling of statements](#cuddling-of-statements)
   - [Reconciler vs Controller](#reconciler-vs-controller)
     - [A **Controller** is a struct that **DIRECTLY** handles the reconcile Requests](#a-controller-is-a-struct-that-directly-handles-the-reconcile-requests)
@@ -25,6 +26,21 @@
   - `client.Client` uses a cache (or tries to) that requires more permissions than normally, and can also give you outdated results.
 - Do not create methods with more than two parameters (in extremely rare occasions maybe three) except constructors and factory functions. Structs and interfaces exist for a reason.
 - Avoid returning responses (e.g., reconcile.Result, admission.Patched) in anything but Reconcile or Handle functions.
+
+## Function Parameter/Return-Value Order
+Ordering of **function parameters** should be:
+1. Convention
+   - example: `ctx context.Context`
+2. Interfaces
+   - example: `kubeClient client.Client`
+3. Data Structs
+   - example: `pod corev1.Pod`
+4. Simple/base types
+   - example: `data string`
+
+Ordering of **return values** is simpler, the `err error` should always be the last, and AVOID returning more then 2 values. If more then 2 return values are needed try splitting the logic up or collecting the return values in a `struct`.
+
+So a full example: `func ExampleFunc(ctx context.Context, kubeClient client.Client, pod corev1.Pod, data string) (corev1.Pod, error) {...}`
 
 ## Cuddling of statements
 
