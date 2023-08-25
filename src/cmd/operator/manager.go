@@ -19,13 +19,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 const (
 	metricsBindAddress     = ":8080"
 	healthProbeBindAddress = ":10080"
-	operatorManagerPort    = 8383
 
 	leaderElectionId                  = "dynatrace-operator-lock"
 	leaderElectionResourceLock        = "leases"
@@ -130,9 +128,6 @@ func (provider operatorManagerProvider) createOptions(namespace string) ctrl.Opt
 			},
 		},
 		Scheme: scheme.Scheme,
-		WebhookServer: webhook.NewServer(webhook.Options{
-			Port: operatorManagerPort,
-		}),
 		Metrics: server.Options{
 			BindAddress: metricsBindAddress,
 		},

@@ -9,11 +9,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 func TestOperatorManagerProvider(t *testing.T) {
@@ -32,9 +30,6 @@ func TestOperatorManagerProvider(t *testing.T) {
 		assert.Equal(t, scheme.Scheme, options.Scheme)
 		assert.Equal(t, metricsBindAddress, options.Metrics.BindAddress)
 
-		defaultServer, ok := options.WebhookServer.(*webhook.DefaultServer)
-		require.True(t, ok)
-		assert.Equal(t, operatorManagerPort, defaultServer.Options.Port)
 		assert.True(t, options.LeaderElection)
 		assert.Equal(t, leaderElectionId, options.LeaderElectionID)
 		assert.Equal(t, leaderElectionResourceLock, options.LeaderElectionResourceLock)

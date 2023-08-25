@@ -10,13 +10,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 const (
 	metricsBindAddress   = ":8080"
 	defaultProbeAddress  = ":10080"
-	port                 = 8383
 	livenessEndpointName = "/livez"
 	livezEndpointName    = "livez"
 )
@@ -62,9 +60,6 @@ func (provider csiDriverManagerProvider) createOptions(namespace string) ctrl.Op
 				namespace: {},
 			},
 		},
-		WebhookServer: webhook.NewServer(webhook.Options{
-			Port: port,
-		}),
 		Metrics: server.Options{
 			BindAddress: metricsBindAddress,
 		},
