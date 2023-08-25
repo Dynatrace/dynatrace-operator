@@ -7,7 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -18,7 +18,7 @@ const (
 func TestSetDynakubeStatus(t *testing.T) {
 	t.Run(`set status`, func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{}
-		clt := fake.NewClient(&v1.Namespace{
+		clt := fake.NewClient(&corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: kubesystem.Namespace,
 				UID:  testUUID,

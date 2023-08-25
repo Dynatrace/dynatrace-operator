@@ -11,7 +11,6 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerkeychain"
 	"github.com/Dynatrace/dynatrace-operator/src/registry"
-	"github.com/spf13/afero"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -45,8 +44,11 @@ func GetImageVersion( //nolint:revive // argument-limit
 	var err error
 	var proxy string
 
-	keychain := dockerkeychain.NewDockerKeychain(registryAuthPath, afero.NewOsFs())
 	transport := http.DefaultTransport.(*http.Transport).Clone()
+	keychain, err := dockerkeychain.NewDockerKeychain(ctx, apiReader, dynakube.PullSecretWithoutData())
+	if err != nil {
+		log.Info("failed to fetch pull secret", "error", err)
+	}
 
 	if dynakube.HasProxy() {
 		proxy, err = dynakube.Proxy(ctx, apiReader)
@@ -85,7 +87,7 @@ func addCertificates(transport *http.Transport, dynakube *dynatracev1beta1.DynaK
 		log.Info("failed to append custom certs!")
 	}
 	if transport.TLSClientConfig == nil {
-		transport.TLSClientConfig = &tls.Config{} //nolint:gosec
+		transport.TLSClientConfig = &tls.Config{} // nolint:gosec
 	}
 	transport.TLSClientConfig.RootCAs = rootCAs
 

@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -232,12 +232,12 @@ func createFakeClient(isDeployedViaOlm bool) client.WithWatch {
 	return fake.NewClientBuilder().
 		WithScheme(scheme.Scheme).
 		WithObjects(
-			&v1.Namespace{
+			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: testNamespace,
 				},
 			},
-			&v1.Pod{
+			&corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        testPod,
 					Namespace:   testNamespace,

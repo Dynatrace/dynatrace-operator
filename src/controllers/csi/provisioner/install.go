@@ -35,15 +35,13 @@ func (provisioner *OneAgentProvisioner) installAgentImage(ctx context.Context, d
 		return "", err
 	}
 
-	imageInstaller := provisioner.imageInstallerBuilder(provisioner.fs, &image.Properties{
+	imageInstaller, err := provisioner.imageInstallerBuilder(provisioner.fs, &image.Properties{
 		ImageUri:     targetImage,
 		ApiReader:    provisioner.apiReader,
 		Dynakube:     &dynakube,
 		PathResolver: provisioner.path,
 		Metadata:     provisioner.db,
 		ImageDigest:  imageDigest,
-		// TODO: remove it with dockerConfig
-		RegistryAuthPath: dockerConfig.RegistryAuthPath,
 	})
 	if err != nil {
 		return "", err

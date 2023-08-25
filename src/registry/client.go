@@ -37,7 +37,15 @@ func (c *Client) GetImageVersion(ctx context.Context, keychain authn.Keychain, t
 		return ImageVersion{}, fmt.Errorf("parsing reference %q: %w", imageName, err)
 	}
 
-	descriptor, err := remote.Get(ref, remote.WithContext(ctx), remote.WithAuthFromKeychain(keychain), remote.WithTransport(transport))
+	options := []remote.Option{
+		remote.WithContext(ctx),
+		remote.WithTransport(transport),
+	}
+	if keychain != nil {
+		options = append(options, remote.WithAuthFromKeychain(keychain))
+	}
+
+	descriptor, err := remote.Get(ref, options...)
 	if err != nil {
 		return ImageVersion{}, fmt.Errorf("getting reference %q: %w", ref, err)
 	}

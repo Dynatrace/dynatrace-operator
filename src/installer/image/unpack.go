@@ -6,7 +6,6 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/Dynatrace/dynatrace-operator/src/dockerkeychain"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/common"
 	"github.com/containers/image/v5/manifest"
 	"github.com/containers/image/v5/signature"
@@ -35,8 +34,8 @@ type imagePullInfo struct {
 	targetDir     string
 }
 
-func (installer Installer) extractAgentBinariesFromImage(pullInfo imagePullInfo, registryAuthPath string, imageName string) error { //nolint
-	img, err := installer.pullImageInfo(registryAuthPath, imageName)
+func (installer Installer) extractAgentBinariesFromImage(pullInfo imagePullInfo, imageName string) error { //nolint
+	img, err := installer.pullImageInfo(imageName)
 	if err != nil {
 		log.Info("pullImageInfo", "error", err)
 		return err
@@ -53,15 +52,13 @@ func (installer Installer) extractAgentBinariesFromImage(pullInfo imagePullInfo,
 	return nil
 }
 
-func (installer Installer) pullImageInfo(registryAuthPath string, imageName string) (*v1.Image, error) {
+func (installer Installer) pullImageInfo(imageName string) (*v1.Image, error) {
 	ref, err := name.ParseReference(imageName)
 	if err != nil {
 		return nil, errors.WithMessagef(err, "parsing reference %q:", imageName)
 	}
 
-	keyChain := dockerkeychain.NewDockerKeychain(registryAuthPath, installer.fs)
-
-	image, err := remote.Image(ref, remote.WithContext(context.TODO()), remote.WithAuthFromKeychain(keyChain), remote.WithTransport(installer.transport))
+	image, err := remote.Image(ref, remote.WithContext(context.TODO()), remote.WithAuthFromKeychain(installer.keychain), remote.WithTransport(installer.transport))
 	if err != nil {
 		return nil, errors.WithMessagef(err, "getting image %q", imageName)
 	}
