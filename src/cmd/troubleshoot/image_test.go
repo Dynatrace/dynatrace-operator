@@ -16,6 +16,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -90,11 +92,13 @@ func TestImagePullable(t *testing.T) {
 	require.NoError(t, err)
 	defer dockerServer.Close()
 
+	mockApiReader := setupMockApiReader(secret)
 	troubleshootCtx := troubleshootContext{
 		context:       context.TODO(),
 		namespaceName: testNamespace,
 		pullSecret:    *secret,
 		httpClient:    dockerServer.Client(),
+		apiReader:     mockApiReader,
 	}
 
 	tests := []struct {
@@ -288,6 +292,14 @@ func TestImagePullable(t *testing.T) {
 	}
 }
 
+func setupMockApiReader(pullSecret *corev1.Secret) client.Reader {
+	objectMap := make(map[string]runtime.Object)
+	objectMap[client.ObjectKey{Namespace: pullSecret.Namespace, Name: pullSecret.Name}.String()] = pullSecret
+	return &HashMapReader{
+		Objects: objectMap,
+	}
+}
+
 func TestImageNotPullable(t *testing.T) {
 	dockerServer, secret, server, err := setupDockerMocker(
 		[]string{
@@ -301,6 +313,7 @@ func TestImageNotPullable(t *testing.T) {
 		namespaceName: testNamespace,
 		pullSecret:    *secret,
 		httpClient:    dockerServer.Client(),
+		apiReader:     setupMockApiReader(secret),
 	}
 
 	tests := []struct {
@@ -403,6 +416,7 @@ func TestOneAgentCodeModulesImageNotPullable(t *testing.T) {
 		httpClient:    dockerServer.Client(),
 		namespaceName: testNamespace,
 		pullSecret:    *secret,
+		apiReader:     setupMockApiReader(secret),
 	}
 
 	t.Run("OneAgent code modules unreachable server", func(t *testing.T) {
