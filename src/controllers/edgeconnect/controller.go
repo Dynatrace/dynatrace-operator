@@ -5,6 +5,7 @@ import (
 	"time"
 
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/edgeconnect/version"
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -63,6 +64,13 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 		log.Error(errors.WithStack(err), "reconciliation of EdgeConnect failed", "name", request.Name, "namespace", request.Namespace)
 		return reconcile.Result{RequeueAfter: errorUpdateInterval}, err
 	} else if edgeConnect == nil {
+		return reconcile.Result{RequeueAfter: errorUpdateInterval}, nil
+	}
+
+	log.Info("updating version info", "name", request.Name, "namespace", request.Namespace)
+	versionReconciler := version.NewReconciler(edgeConnect, controller.apiReader, timeprovider.New())
+	if err = versionReconciler.Reconcile(ctx); err != nil {
+		log.Error(err, "reconciliation of EdgeConnect failed", "name", request.Name, "namespace", request.Namespace)
 		return reconcile.Result{RequeueAfter: errorUpdateInterval}, nil
 	}
 

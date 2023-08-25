@@ -295,7 +295,7 @@ func (dsInfo *builderInfo) imagePullSecrets() []corev1.LocalObjectReference {
 		return []corev1.LocalObjectReference{}
 	}
 
-	return []corev1.LocalObjectReference{{Name: dsInfo.dynakube.PullSecret()}}
+	return []corev1.LocalObjectReference{{Name: dsInfo.dynakube.PullSecretName()}}
 }
 
 func (dsInfo *builderInfo) securityContext() *corev1.SecurityContext {

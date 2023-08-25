@@ -113,7 +113,7 @@ func (statefulSetBuilder Builder) addTemplateSpec(sts *appsv1.StatefulSet) {
 		Affinity:           nodeAffinity(),
 		Tolerations:        buildTolerations(statefulSetBuilder.capability),
 		ImagePullSecrets: []corev1.LocalObjectReference{
-			{Name: statefulSetBuilder.dynakube.PullSecret()},
+			{Name: statefulSetBuilder.dynakube.PullSecretName()},
 		},
 		PriorityClassName: statefulSetBuilder.dynakube.Spec.ActiveGate.PriorityClassName,
 		DNSPolicy:         statefulSetBuilder.dynakube.Spec.ActiveGate.DNSPolicy,

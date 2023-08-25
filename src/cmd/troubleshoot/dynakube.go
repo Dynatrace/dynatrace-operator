@@ -229,15 +229,15 @@ func checkPullSecretExists(troubleshootCtx *troubleshootContext) error {
 	log := troubleshootCtx.baseLog.WithName(dynakubeCheckLoggerName)
 
 	query := kubeobjects.NewSecretQuery(troubleshootCtx.context, nil, troubleshootCtx.apiReader, log)
-	secret, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.dynakube.PullSecret()})
+	secret, err := query.Get(types.NamespacedName{Namespace: troubleshootCtx.namespaceName, Name: troubleshootCtx.dynakube.PullSecretName()})
 
 	if err != nil {
-		return errors.Wrapf(err, "'%s:%s' pull secret is missing", troubleshootCtx.namespaceName, troubleshootCtx.dynakube.PullSecret())
+		return errors.Wrapf(err, "'%s:%s' pull secret is missing", troubleshootCtx.namespaceName, troubleshootCtx.dynakube.PullSecretName())
 	} else {
 		troubleshootCtx.pullSecret = secret
 	}
 
-	logInfof(log, "pull secret '%s:%s' exists", troubleshootCtx.namespaceName, troubleshootCtx.dynakube.PullSecret())
+	logInfof(log, "pull secret '%s:%s' exists", troubleshootCtx.namespaceName, troubleshootCtx.dynakube.PullSecretName())
 	return nil
 }
 
@@ -245,7 +245,7 @@ func checkPullSecretHasRequiredTokens(troubleshootCtx *troubleshootContext) erro
 	log := troubleshootCtx.baseLog.WithName(dynakubeCheckLoggerName)
 
 	if _, err := kubeobjects.ExtractToken(&troubleshootCtx.pullSecret, dtpullsecret.DockerConfigJson); err != nil {
-		return errors.Wrapf(err, "invalid '%s:%s' secret", troubleshootCtx.namespaceName, troubleshootCtx.dynakube.PullSecret())
+		return errors.Wrapf(err, "invalid '%s:%s' secret", troubleshootCtx.namespaceName, troubleshootCtx.dynakube.PullSecretName())
 	}
 
 	logInfof(log, "secret token '%s' exists", dtpullsecret.DockerConfigJson)

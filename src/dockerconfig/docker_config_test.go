@@ -155,7 +155,7 @@ func testPullSecret(t *testing.T, withCaCerts, customPullSecret, injectedPullSec
 	}
 	pullSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: dynakube.PullSecret(),
+			Name: dynakube.PullSecretName(),
 		},
 		Data: map[string][]byte{
 			".dockerconfigjson": []byte(registryAuthContent),

@@ -12,24 +12,25 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
+	"github.com/Dynatrace/dynatrace-operator/src/dockerkeychain"
 	"github.com/Dynatrace/dynatrace-operator/src/installer"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/common"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/symlink"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/zip"
 	"github.com/containers/image/v5/docker/reference"
+	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Properties struct {
-	ImageUri         string
-	ApiReader        client.Reader
-	Dynakube         *dynatracev1beta1.DynaKube
-	PathResolver     metadata.PathResolver
-	Metadata         metadata.Access
-	ImageDigest      string
-	RegistryAuthPath string
+	ImageUri     string
+	ApiReader    client.Reader
+	Dynakube     *dynatracev1beta1.DynaKube
+	PathResolver metadata.PathResolver
+	Metadata     metadata.Access
+	ImageDigest  string
 }
 
 func GetDigest(uri string) (string, error) {
@@ -44,7 +45,7 @@ func GetDigest(uri string) (string, error) {
 	return canonRef.Digest().Encoded(), nil
 }
 
-func NewImageInstaller(fs afero.Fs, props *Properties) installer.Installer {
+func NewImageInstaller(fs afero.Fs, props *Properties) (installer.Installer, error) {
 	// Create default transport
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 
@@ -52,7 +53,7 @@ func NewImageInstaller(fs afero.Fs, props *Properties) installer.Installer {
 		proxy, err := props.Dynakube.Proxy(context.TODO(), props.ApiReader)
 		if err != nil {
 			log.Info("failed to get proxy from dynakube", "proxy", proxy)
-			return nil
+			return nil, err
 		}
 
 		proxyUrl, err := url.Parse(proxy)
@@ -69,7 +70,7 @@ func NewImageInstaller(fs afero.Fs, props *Properties) installer.Installer {
 	if props.Dynakube.Spec.TrustedCAs != "" {
 		trustedCAs, err := props.Dynakube.TrustedCAs(context.TODO(), props.ApiReader)
 		if err != nil {
-			return nil
+			return nil, err
 		}
 
 		rootCAs := x509.NewCertPool()
@@ -78,9 +79,14 @@ func NewImageInstaller(fs afero.Fs, props *Properties) installer.Installer {
 		}
 
 		if transport.TLSClientConfig == nil {
-			transport.TLSClientConfig = &tls.Config{} //nolint:gosec
+			transport.TLSClientConfig = &tls.Config{} // nolint:gosec
 		}
 		transport.TLSClientConfig.RootCAs = rootCAs
+	}
+
+	keychain, err := dockerkeychain.NewDockerKeychain(context.TODO(), props.ApiReader, props.Dynakube.PullSecretWithoutData())
+	if err != nil {
+		return nil, err
 	}
 
 	return &Installer{
@@ -88,7 +94,8 @@ func NewImageInstaller(fs afero.Fs, props *Properties) installer.Installer {
 		extractor: zip.NewOneAgentExtractor(fs, props.PathResolver),
 		props:     props,
 		transport: transport,
-	}
+		keychain:  keychain,
+	}, nil
 }
 
 type Installer struct {
@@ -96,6 +103,7 @@ type Installer struct {
 	extractor zip.Extractor
 	props     *Properties
 	transport http.RoundTripper
+	keychain  authn.Keychain
 }
 
 func (installer *Installer) InstallAgent(targetDir string) (bool, error) {
@@ -151,7 +159,6 @@ func (installer *Installer) installAgentFromImage(targetDir string) error {
 			imageCacheDir: imageCacheDir,
 			targetDir:     targetDir,
 		},
-		installer.props.RegistryAuthPath,
 		installer.props.ImageUri,
 	)
 	if err != nil {
