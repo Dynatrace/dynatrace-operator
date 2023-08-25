@@ -34,7 +34,7 @@ func (mgr *MockManager) AddReadyzCheck(name string, check healthz.Checker) error
 
 func (mgr *MockManager) GetWebhookServer() webhook.Server {
 	args := mgr.Called()
-	return *args.Get(0).(*webhook.Server)
+	return args.Get(0).(*webhook.DefaultServer)
 }
 
 func (mgr *MockManager) GetConfig() *rest.Config {
