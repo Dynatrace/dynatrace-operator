@@ -181,9 +181,9 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 func assertDeniedResponse(t *testing.T, errMessages []string, dynakube *dynatracev1beta1.DynaKube, other ...client.Object) {
 	response := handleRequest(t, dynakube, other...)
 	assert.False(t, response.Allowed)
-	message := response.Result.Message
+	reason := string(response.Result.Reason)
 	for _, errMsg := range errMessages {
-		assert.Contains(t, message, errMsg)
+		assert.Contains(t, reason, errMsg)
 	}
 }
 

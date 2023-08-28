@@ -30,7 +30,7 @@ func getTestSecurityContext() *corev1.SecurityContext {
 func TestCreateMutationRequestBase(t *testing.T) {
 	t.Run("should create a mutation request", func(t *testing.T) {
 		dynakube := getTestDynakube()
-		podWebhook := createTestWebhook(
+		podWebhook := createTestWebhook(t,
 			[]dtwebhook.PodMutator{},
 			[]client.Object{
 				getTestNamespace(),
@@ -53,7 +53,7 @@ func TestCreateMutationRequestBase(t *testing.T) {
 
 func TestGetPodFromRequest(t *testing.T) {
 	t.Run("should return the pod struct", func(t *testing.T) {
-		podWebhook := createTestWebhook(
+		podWebhook := createTestWebhook(t,
 			[]dtwebhook.PodMutator{},
 			[]client.Object{},
 		)
@@ -68,7 +68,7 @@ func TestGetPodFromRequest(t *testing.T) {
 func TestGetNamespaceFromRequest(t *testing.T) {
 	t.Run("should return the namespace struct", func(t *testing.T) {
 		expected := getTestNamespace()
-		podWebhook := createTestWebhook(
+		podWebhook := createTestWebhook(t,
 			[]dtwebhook.PodMutator{},
 			[]client.Object{expected},
 		)
@@ -91,7 +91,7 @@ func TestGetDynakubeName(t *testing.T) {
 func TestGetDynakube(t *testing.T) {
 	t.Run("should return the dynakube struct", func(t *testing.T) {
 		expected := getTestDynakube()
-		podWebhook := createTestWebhook(
+		podWebhook := createTestWebhook(t,
 			[]dtwebhook.PodMutator{},
 			[]client.Object{expected},
 		)

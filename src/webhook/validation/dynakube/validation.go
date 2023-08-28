@@ -76,9 +76,12 @@ func (validator *dynakubeValidator) runValidators(validators []validator, dynaku
 }
 
 func decodeRequestToDynakube(request admission.Request, dynakube *dynatracev1beta1.DynaKube) error {
-	decoder := admission.NewDecoder(scheme.Scheme)
+	decoder, err := admission.NewDecoder(scheme.Scheme)
+	if err != nil {
+		return errors.WithStack(err)
+	}
 
-	err := decoder.Decode(request, dynakube)
+	err = decoder.Decode(request, dynakube)
 	if err != nil {
 		return errors.WithStack(err)
 	}

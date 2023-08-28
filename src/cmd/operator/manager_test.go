@@ -25,11 +25,10 @@ func TestOperatorManagerProvider(t *testing.T) {
 		options := operatorMgrProvider.createOptions("namespace")
 
 		assert.NotNil(t, options)
-
-		assert.Contains(t, options.Cache.DefaultNamespaces, "namespace")
+		assert.Equal(t, "namespace", options.Namespace)
 		assert.Equal(t, scheme.Scheme, options.Scheme)
-		assert.Equal(t, metricsBindAddress, options.Metrics.BindAddress)
-
+		assert.Equal(t, metricsBindAddress, options.MetricsBindAddress)
+		assert.Equal(t, operatorManagerPort, options.Port)
 		assert.True(t, options.LeaderElection)
 		assert.Equal(t, leaderElectionId, options.LeaderElectionID)
 		assert.Equal(t, leaderElectionResourceLock, options.LeaderElectionResourceLock)
