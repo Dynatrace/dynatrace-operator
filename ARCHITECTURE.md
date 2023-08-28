@@ -80,7 +80,7 @@ The `Operator` creates and maintains certificates that are meant to be used by t
 ### `src/controllers/csi/driver`
 Main logic for the CSI-Driver's `server` container. Implements the CSI gRPC interface, and handles each mount request.
 
-### `src/controllers/csi/provision`
+### `src/controllers/csi/provisioner`
 Main logic for the CSI-Driver's `provisioner` container. Handles the setting up the environment(filesystem) on the node, so the `server` container can complete its task quickly without making any external requests.
 
 ### `src/controllers/dynakube` and `src/controllers/edgeconnect`
