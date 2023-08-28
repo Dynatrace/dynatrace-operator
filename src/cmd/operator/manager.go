@@ -15,14 +15,15 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth" // important for running operator locally
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 const (
 	metricsBindAddress     = ":8080"
 	healthProbeBindAddress = ":10080"
-	operatorManagerPort    = 8383
 
 	leaderElectionId                  = "dynatrace-operator-lock"
 	leaderElectionResourceLock        = "leases"
@@ -44,8 +45,12 @@ func NewBootstrapManagerProvider() cmdManager.Provider {
 
 func (provider bootstrapManagerProvider) CreateManager(namespace string, config *rest.Config) (manager.Manager, error) {
 	controlManager, err := provider.getManager(config, ctrl.Options{
-		Scheme:                 scheme.Scheme,
-		Namespace:              namespace,
+		Scheme: scheme.Scheme,
+		Cache: cache.Options{
+			DefaultNamespaces: map[string]cache.Config{
+				namespace: {},
+			},
+		},
 		HealthProbeBindAddress: healthProbeBindAddress,
 		LivenessEndpointName:   livenessEndpointName,
 	})
@@ -117,10 +122,15 @@ func (provider operatorManagerProvider) addCertificateController(mgr manager.Man
 
 func (provider operatorManagerProvider) createOptions(namespace string) ctrl.Options {
 	return ctrl.Options{
-		Namespace:                  namespace,
-		Scheme:                     scheme.Scheme,
-		MetricsBindAddress:         metricsBindAddress,
-		Port:                       operatorManagerPort,
+		Cache: cache.Options{
+			DefaultNamespaces: map[string]cache.Config{
+				namespace: {},
+			},
+		},
+		Scheme: scheme.Scheme,
+		Metrics: server.Options{
+			BindAddress: metricsBindAddress,
+		},
 		LeaderElection:             true,
 		LeaderElectionID:           leaderElectionId,
 		LeaderElectionResourceLock: leaderElectionResourceLock,

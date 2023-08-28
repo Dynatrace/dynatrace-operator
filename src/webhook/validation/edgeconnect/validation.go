@@ -68,12 +68,9 @@ func (validator *edgeconnectValidator) runValidators(validators []validator, edg
 }
 
 func decodeRequestToEdgeConnect(request admission.Request, edgeConnect *edgeconnect.EdgeConnect) error {
-	decoder, err := admission.NewDecoder(scheme.Scheme)
-	if err != nil {
-		return errors.WithStack(err)
-	}
+	decoder := admission.NewDecoder(scheme.Scheme)
 
-	err = decoder.Decode(request, edgeConnect)
+	err := decoder.Decode(request, edgeConnect)
 	if err != nil {
 		return errors.WithStack(err)
 	}

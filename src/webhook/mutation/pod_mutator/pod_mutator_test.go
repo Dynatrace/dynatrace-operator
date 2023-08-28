@@ -122,7 +122,7 @@ func TestMutator(t *testing.T) {
 			// merge test objects with the test pod
 			objects := test.objects
 			objects = append(objects, test.testPod)
-			podWebhook := createTestWebhook(t, test.mutators, objects)
+			podWebhook := createTestWebhook(test.mutators, objects)
 
 			response := podWebhook.Handle(ctx, *request)
 			test.expectedResult(t, &response, test.mutators)
@@ -135,7 +135,7 @@ func TestHandlePodMutation(t *testing.T) {
 		mutator1 := createSimplePodMutatorMock()
 		mutator2 := createSimplePodMutatorMock()
 		dynakube := getTestDynakube()
-		podWebhook := createTestWebhook(t, []dtwebhook.PodMutator{mutator1, mutator2}, nil)
+		podWebhook := createTestWebhook([]dtwebhook.PodMutator{mutator1, mutator2}, nil)
 		mutationRequest := createTestMutationRequest(dynakube)
 
 		err := podWebhook.handlePodMutation(mutationRequest)
@@ -169,7 +169,7 @@ func TestHandlePodMutation(t *testing.T) {
 		sadMutator := createFailPodMutatorMock()
 		happyMutator := createSimplePodMutatorMock()
 		dynakube := getTestDynakube()
-		podWebhook := createTestWebhook(t, []dtwebhook.PodMutator{sadMutator, happyMutator}, nil)
+		podWebhook := createTestWebhook([]dtwebhook.PodMutator{sadMutator, happyMutator}, nil)
 		mutationRequest := createTestMutationRequest(dynakube)
 
 		err := podWebhook.handlePodMutation(mutationRequest)
@@ -190,7 +190,7 @@ func TestHandlePodReinvocation(t *testing.T) {
 		mutator2 := createAlreadyInjectedPodMutatorMock()
 		dynakube := getTestDynakube()
 		dynakube.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureWebhookReinvocationPolicy: "false"}
-		podWebhook := createTestWebhook(t, []dtwebhook.PodMutator{mutator1, mutator2}, nil)
+		podWebhook := createTestWebhook([]dtwebhook.PodMutator{mutator1, mutator2}, nil)
 		mutationRequest := createTestMutationRequest(dynakube)
 
 		updated := podWebhook.handlePodReinvocation(mutationRequest)
@@ -204,7 +204,7 @@ func TestHandlePodReinvocation(t *testing.T) {
 		mutator1 := createAlreadyInjectedPodMutatorMock()
 		mutator2 := createAlreadyInjectedPodMutatorMock()
 		dynakube := getTestDynakube()
-		podWebhook := createTestWebhook(t, []dtwebhook.PodMutator{mutator1, mutator2}, nil)
+		podWebhook := createTestWebhook([]dtwebhook.PodMutator{mutator1, mutator2}, nil)
 		mutationRequest := createTestMutationRequest(dynakube)
 
 		updated := podWebhook.handlePodReinvocation(mutationRequest)
@@ -218,7 +218,7 @@ func TestHandlePodReinvocation(t *testing.T) {
 		failingMutator := createFailPodMutatorMock()
 		workingMutator := createAlreadyInjectedPodMutatorMock()
 		dynakube := getTestDynakube()
-		podWebhook := createTestWebhook(t, []dtwebhook.PodMutator{failingMutator, workingMutator}, nil)
+		podWebhook := createTestWebhook([]dtwebhook.PodMutator{failingMutator, workingMutator}, nil)
 		mutationRequest := createTestMutationRequest(dynakube)
 
 		updated := podWebhook.handlePodReinvocation(mutationRequest)
@@ -231,7 +231,7 @@ func TestHandlePodReinvocation(t *testing.T) {
 	t.Run("should call mutator, no update", func(t *testing.T) {
 		failingMutator := createFailPodMutatorMock()
 		dynakube := getTestDynakube()
-		podWebhook := createTestWebhook(t, []dtwebhook.PodMutator{failingMutator}, nil)
+		podWebhook := createTestWebhook([]dtwebhook.PodMutator{failingMutator}, nil)
 		mutationRequest := createTestMutationRequest(dynakube)
 
 		updated := podWebhook.handlePodReinvocation(mutationRequest)
@@ -268,9 +268,8 @@ func getTestPodWithOcDebugPodAnnotations() *corev1.Pod {
 	return pod
 }
 
-func createTestWebhook(t *testing.T, mutators []dtwebhook.PodMutator, objects []client.Object) *podMutatorWebhook {
-	decoder, err := admission.NewDecoder(scheme.Scheme)
-	require.NoError(t, err)
+func createTestWebhook(mutators []dtwebhook.PodMutator, objects []client.Object) *podMutatorWebhook {
+	decoder := admission.NewDecoder(scheme.Scheme)
 	return &podMutatorWebhook{
 		apiReader:        fake.NewClient(objects...),
 		decoder:          *decoder,

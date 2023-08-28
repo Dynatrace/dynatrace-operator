@@ -5,6 +5,7 @@ import (
 	"github.com/pkg/errors"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -23,7 +24,11 @@ func createManager(namespace string, config *rest.Config) (manager.Manager, erro
 
 func createManagerOptions(namespace string) ctrl.Options {
 	return ctrl.Options{
-		Namespace: namespace,
-		Scheme:    scheme.Scheme,
+		Cache: cache.Options{
+			DefaultNamespaces: map[string]cache.Config{
+				namespace: {},
+			},
+		},
+		Scheme: scheme.Scheme,
 	}
 }
