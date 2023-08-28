@@ -21,23 +21,18 @@ type edgeconnectValidator struct {
 	cfg       *rest.Config
 }
 
-func newEdgeConnectValidator(apiReader client.Reader, cfg *rest.Config) admission.Handler {
+func newEdgeConnectValidator(apiReader client.Reader, cfg *rest.Config, clt client.Client) admission.Handler {
 	return &edgeconnectValidator{
 		apiReader: apiReader,
 		cfg:       cfg,
+		clt:       clt,
 	}
 }
 
 func AddEdgeConnectValidationWebhookToManager(manager ctrl.Manager) error {
 	manager.GetWebhookServer().Register("/validate/edgeconnect", &webhook.Admission{
-		Handler: newEdgeConnectValidator(manager.GetAPIReader(), manager.GetConfig()),
+		Handler: newEdgeConnectValidator(manager.GetAPIReader(), manager.GetConfig(), manager.GetClient()),
 	})
-	return nil
-}
-
-// InjectClient implements the inject.Client interface which allows the manager to inject a kubernetes client into this handler
-func (validator *edgeconnectValidator) InjectClient(clt client.Client) error {
-	validator.clt = clt
 	return nil
 }
 

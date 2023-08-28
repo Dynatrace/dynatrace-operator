@@ -18,7 +18,7 @@ import (
 
 func AddNamespaceMutationWebhookToManager(manager ctrl.Manager, ns string) error {
 	manager.GetWebhookServer().Register("/label-ns", &webhook.Admission{
-		Handler: newNamespaceMutator(ns, manager.GetAPIReader()),
+		Handler: newNamespaceMutator(ns, manager.GetAPIReader(), manager.GetClient()),
 	})
 	return nil
 }
@@ -28,12 +28,6 @@ type namespaceMutator struct {
 	client    client.Client
 	apiReader client.Reader
 	namespace string
-}
-
-// InjectClient implements the inject.Client interface which allows the manager to inject a kubernetes client into this handler
-func (nm *namespaceMutator) InjectClient(clt client.Client) error {
-	nm.client = clt
-	return nil
 }
 
 // Handle does the mapping between the namespace and dynakube from the namespace's side.
@@ -82,10 +76,11 @@ func decodeRequestToNamespace(request admission.Request, namespace *corev1.Names
 	return nil
 }
 
-func newNamespaceMutator(ns string, apiReader client.Reader) admission.Handler {
+func newNamespaceMutator(ns string, apiReader client.Reader, client client.Client) admission.Handler {
 	return &namespaceMutator{
 		apiReader: apiReader,
 		namespace: ns,
+		client:    client,
 	}
 }
 
