@@ -43,7 +43,7 @@ func GetImageVersion( //nolint:revive // argument-limit
 	registry.ImageVersion,
 	error,
 ) {
-	keychain, transport, err := prepareKeychainAndTransport(ctx, apiReader, dynakube, registryAuthPath)
+	keychain, transport, err := prepareKeychainAndTransport(ctx, apiReader, dynakube)
 	if err != nil {
 		return registry.ImageVersion{}, err
 	}
@@ -59,7 +59,7 @@ func PullImageInfo( //nolint:revive // argument-limit
 	imageName string,
 	registryAuthPath string,
 ) (*v1.Image, error) {
-	keychain, transport, err := prepareKeychainAndTransport(ctx, apiReader, dynakube, registryAuthPath)
+	keychain, transport, err := prepareKeychainAndTransport(ctx, apiReader, dynakube)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +72,7 @@ func PullImageInfo( //nolint:revive // argument-limit
 	return imageInfo, nil
 }
 
-func prepareKeychainAndTransport(ctx context.Context, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube, registryAuthPath string) (authn.Keychain, *http.Transport, error) {
+func prepareKeychainAndTransport(ctx context.Context, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube) (authn.Keychain, *http.Transport, error) {
 	var err error
 	var proxy string
 
