@@ -59,6 +59,9 @@ Collection of scripts used for:
 - CI tasks
 - Development (build,push,deploy,test, etc...)
 
+### `hack/make`
+Where the `make` targets are defined. We don't have a single makefile with all the targets as it would be quite large.
+
 ### `test`
 E2E testing code. Unit tests are NOT found here, they are in the same module that they are testing, as that is the Golang convention.
 
