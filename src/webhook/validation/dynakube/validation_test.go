@@ -225,13 +225,3 @@ func handleRequest(t *testing.T, dynakube *dynatracev1beta1.DynaKube, other ...c
 		},
 	})
 }
-
-func TestDynakubeValidator_InjectClient(t *testing.T) {
-	validator := &dynakubeValidator{}
-	clt := fake.NewClient()
-	err := validator.InjectClient(clt)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, validator.clt)
-	assert.Equal(t, clt, validator.clt)
-}
