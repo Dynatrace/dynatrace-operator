@@ -3,6 +3,7 @@ package daemonset
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
@@ -11,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
+	containerv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -495,6 +497,48 @@ func TestPodSpecServiceAccountName(t *testing.T) {
 		podSpec := builder.podSpec()
 
 		assert.Equal(t, serviceAccountName, podSpec.ServiceAccountName)
+	})
+}
+
+func TestPodSpecReadinessProbe(t *testing.T) {
+	testCommands := []string{"echo", "super pod"}
+	interval := time.Second * 10
+	timeout := time.Second * 30
+	startPeriod := time.Second * 1200
+	retries := 3
+
+	t.Run("set readiness probe when dynakube oneagent status has healthcheck", func(t *testing.T) {
+		builder := builderInfo{
+			dynakube: &dynatracev1beta1.DynaKube{
+				Status: dynatracev1beta1.DynaKubeStatus{
+					OneAgent: dynatracev1beta1.OneAgentStatus{
+						Healthcheck: &containerv1.HealthConfig{
+							Test:        testCommands,
+							Interval:    interval,
+							Timeout:     timeout,
+							StartPeriod: startPeriod,
+							Retries:     retries,
+						},
+					},
+				},
+			},
+		}
+		podSpec := builder.podSpec()
+
+		assert.NotNil(t, podSpec.Containers[0].ReadinessProbe)
+		assert.Equal(t, testCommands, podSpec.Containers[0].ReadinessProbe.Exec.Command)
+		assert.Equal(t, int32(interval.Seconds()), podSpec.Containers[0].ReadinessProbe.PeriodSeconds)
+		assert.Equal(t, int32(timeout.Seconds()), podSpec.Containers[0].ReadinessProbe.TimeoutSeconds)
+		assert.Equal(t, int32(startPeriod.Seconds()), podSpec.Containers[0].ReadinessProbe.InitialDelaySeconds)
+		assert.Equal(t, int32(retries), podSpec.Containers[0].ReadinessProbe.FailureThreshold)
+	})
+	t.Run("nil readiness probe when dynakube oneagent status has no healthcheck", func(t *testing.T) {
+		builder := builderInfo{
+			dynakube: &dynatracev1beta1.DynaKube{},
+		}
+		podSpec := builder.podSpec()
+
+		assert.Nil(t, podSpec.Containers[0].ReadinessProbe)
 	})
 }
 

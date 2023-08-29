@@ -2,7 +2,6 @@ package version
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
@@ -12,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/registry"
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	containerv1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -78,8 +78,7 @@ func (reconciler *Reconciler) updateVersionStatuses(ctx context.Context, updater
 
 	err = SetOneAgentHealthcheck(ctx, reconciler.apiReader, registry.NewClient(), reconciler.dynakube, reconciler.dynakube.OneAgentImage())
 	if err != nil {
-		log.Info("could not set OneAgent healthcheck")
-		log.Info(err.Error())
+		log.Error(err, "could not set OneAgent healthcheck")
 	}
 
 	return nil
@@ -88,13 +87,12 @@ func (reconciler *Reconciler) updateVersionStatuses(ctx context.Context, updater
 func SetOneAgentHealthcheck(ctx context.Context, apiReader client.Reader, registryClient registry.ImageGetter, dynakube *dynatracev1beta1.DynaKube, imageUri string) error {
 	imageInfo, err := PullImageInfo(ctx, apiReader, registryClient, dynakube, imageUri)
 	if err != nil {
-		log.Info(err.Error())
-		return fmt.Errorf("error pulling image info")
+		return errors.WithMessage(err, "error pulling image info")
 	}
 
 	configFile, err := (*imageInfo).ConfigFile()
 	if err != nil {
-		return fmt.Errorf("error reading image config file")
+		return errors.WithMessage(err, "error reading image config file")
 	}
 
 	// Healthcheck.Test values from go-containerregistry documentation:

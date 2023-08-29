@@ -84,6 +84,7 @@ func TestGetImageVersion(t *testing.T) {
 	t.Run("with proxy", func(t *testing.T) {
 		mockImageGetter := &mocks.MockImageGetter{}
 		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(registry.ImageVersion{}, nil)
+		dynakube.Spec = dynatracev1beta1.DynaKubeSpec{Proxy: &dynatracev1beta1.DynaKubeProxy{Value: "dummy-proxy"}}
 
 		got, err := GetImageVersion(context.Background(), apiReader, mockImageGetter, &dynakube, imageName)
 		assert.NotNil(t, got)

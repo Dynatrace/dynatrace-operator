@@ -221,6 +221,7 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 			InitialDelaySeconds: int32(dsInfo.dynakube.Status.OneAgent.Healthcheck.StartPeriod.Seconds()),
 			PeriodSeconds:       int32(dsInfo.dynakube.Status.OneAgent.Healthcheck.Interval.Seconds()),
 			TimeoutSeconds:      int32(dsInfo.dynakube.Status.OneAgent.Healthcheck.Timeout.Seconds()),
+			FailureThreshold:    int32(dsInfo.dynakube.Status.OneAgent.Healthcheck.Retries),
 		}
 	}
 
