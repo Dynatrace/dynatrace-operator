@@ -10,7 +10,6 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerkeychain"
 	"github.com/Dynatrace/dynatrace-operator/src/registry"
-	"github.com/google/go-containerregistry/pkg/authn"
 	containerv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -41,9 +40,14 @@ func GetImageVersion(
 	registry.ImageVersion,
 	error,
 ) {
-	keychain, transport, err := prepareKeychainAndTransport(ctx, apiReader, dynakube)
+	keychain, err := dockerkeychain.NewDockerKeychain(ctx, apiReader, dynakube.PullSecretWithoutData())
 	if err != nil {
-		return registry.ImageVersion{}, err
+		log.Info("failed to fetch pull secret", err)
+	}
+
+	transport, err := prepareTransport(ctx, apiReader, dynakube)
+	if err != nil {
+		return registry.ImageVersion{}, errors.WithMessage(err, "failed to prepare transport")
 	}
 
 	return registryClient.GetImageVersion(ctx, keychain, transport, imageName)
@@ -56,38 +60,34 @@ func PullImageInfo(
 	dynakube *dynatracev1beta1.DynaKube,
 	imageName string,
 ) (*containerv1.Image, error) {
-	keychain, transport, err := prepareKeychainAndTransport(ctx, apiReader, dynakube)
+	keychain, err := dockerkeychain.NewDockerKeychain(ctx, apiReader, dynakube.PullSecretWithoutData())
 	if err != nil {
-		return nil, err
+		log.Info("failed to fetch pull secret", err)
 	}
 
-	imageInfo, err := registryClient.PullImageInfo(ctx, keychain, transport, imageName)
+	transport, err := prepareTransport(ctx, apiReader, dynakube)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithMessage(err, "failed to prepare transport")
 	}
 
-	return imageInfo, nil
+	return registryClient.PullImageInfo(ctx, keychain, transport, imageName)
 }
 
-func prepareKeychainAndTransport(ctx context.Context, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube) (authn.Keychain, *http.Transport, error) {
+func prepareTransport(ctx context.Context, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube) (*http.Transport, error) {
 	var err error
 	var proxy string
 
 	transport := http.DefaultTransport.(*http.Transport).Clone()
-	keychain, err := dockerkeychain.NewDockerKeychain(ctx, apiReader, dynakube.PullSecretWithoutData())
-	if err != nil {
-		log.Info("failed to fetch pull secret", "error", err)
-	}
 
 	if dynakube.HasProxy() {
 		proxy, err = dynakube.Proxy(ctx, apiReader)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 		proxyUrl, err := url.Parse(proxy)
 		if err != nil {
 			log.Info("invalid proxy spec", "proxy", proxy)
-			return nil, nil, errors.WithStack(err)
+			return nil, errors.WithStack(err)
 		}
 
 		transport.Proxy = func(req *http.Request) (*url.URL, error) {
@@ -98,10 +98,10 @@ func prepareKeychainAndTransport(ctx context.Context, apiReader client.Reader, d
 	if dynakube.Spec.TrustedCAs != "" {
 		transport, err = addCertificates(transport, dynakube, apiReader)
 		if err != nil {
-			return nil, nil, errors.WithMessage(err, "failed adding trusted CAs to transport")
+			return nil, errors.WithMessage(err, "failed adding trusted CAs to transport")
 		}
 	}
-	return keychain, transport, nil
+	return transport, nil
 }
 
 func addCertificates(transport *http.Transport, dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader) (*http.Transport, error) {
