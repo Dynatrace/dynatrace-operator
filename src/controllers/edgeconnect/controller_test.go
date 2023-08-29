@@ -7,10 +7,13 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/src/registry"
+	"github.com/Dynatrace/dynatrace-operator/src/registry/mocks"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -112,12 +115,17 @@ func TestReconcile(t *testing.T) {
 
 func createFakeClientAndReconciler(instance *edgeconnectv1alpha1.EdgeConnect) *Controller {
 	fakeClient := fake.NewClientWithIndex(instance)
+	mockImageGetter := &mocks.MockImageGetter{}
+	const fakeDigest = "sha256:7173b809ca12ec5dee4506cd86be934c4596dd234ee82c0662eac04a8c2c71dc"
+	fakeImageVersion := registry.ImageVersion{Digest: fakeDigest}
+	mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fakeImageVersion, nil)
 
 	controller := &Controller{
-		client:       fakeClient,
-		apiReader:    fakeClient,
-		scheme:       scheme.Scheme,
-		timeProvider: timeprovider.New(),
+		client:         fakeClient,
+		apiReader:      fakeClient,
+		scheme:         scheme.Scheme,
+		timeProvider:   timeprovider.New(),
+		registryClient: mockImageGetter,
 	}
 	return controller
 }

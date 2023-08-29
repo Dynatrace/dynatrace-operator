@@ -4,6 +4,7 @@ import (
 	"context"
 
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/src/registry"
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -12,20 +13,22 @@ type Reconciler struct {
 	edgeConnect  *edgeconnectv1alpha1.EdgeConnect
 	timeProvider *timeprovider.Provider
 
-	apiReader client.Reader
+	apiReader      client.Reader
+	registryClient registry.ImageGetter
 }
 
-func NewReconciler(edgeConnect *edgeconnectv1alpha1.EdgeConnect, apiReader client.Reader, timeProvider *timeprovider.Provider) *Reconciler { //nolint:revive
+func NewReconciler(edgeConnect *edgeconnectv1alpha1.EdgeConnect, apiReader client.Reader, timeProvider *timeprovider.Provider, registryClient registry.ImageGetter) *Reconciler { //nolint:revive
 	return &Reconciler{
-		edgeConnect:  edgeConnect,
-		apiReader:    apiReader,
-		timeProvider: timeProvider,
+		edgeConnect:    edgeConnect,
+		apiReader:      apiReader,
+		timeProvider:   timeProvider,
+		registryClient: registryClient,
 	}
 }
 
 func (reconciler *Reconciler) Reconcile(ctx context.Context) error {
 	updaters := []versionStatusUpdater{
-		newEdgeConnectUpdater(reconciler.edgeConnect, reconciler.apiReader, reconciler.timeProvider),
+		newUpdater(reconciler.edgeConnect, reconciler.apiReader, reconciler.timeProvider, reconciler.registryClient),
 	}
 
 	for _, updater := range updaters {

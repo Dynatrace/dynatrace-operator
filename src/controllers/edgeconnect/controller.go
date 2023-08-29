@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/edgeconnect/deployment"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/edgeconnect/version"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/registry"
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -32,11 +33,12 @@ const (
 type Controller struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the api-server
-	client       client.Client
-	apiReader    client.Reader
-	scheme       *runtime.Scheme
-	config       *rest.Config
-	timeProvider *timeprovider.Provider
+	client         client.Client
+	apiReader      client.Reader
+	scheme         *runtime.Scheme
+	config         *rest.Config
+	registryClient registry.ImageGetter
+	timeProvider   *timeprovider.Provider
 }
 
 func Add(mgr manager.Manager, _ string) error {
@@ -45,11 +47,12 @@ func Add(mgr manager.Manager, _ string) error {
 
 func NewController(mgr manager.Manager) *Controller {
 	return &Controller{
-		client:       mgr.GetClient(),
-		apiReader:    mgr.GetAPIReader(),
-		scheme:       mgr.GetScheme(),
-		config:       mgr.GetConfig(),
-		timeProvider: timeprovider.New(),
+		client:         mgr.GetClient(),
+		apiReader:      mgr.GetAPIReader(),
+		scheme:         mgr.GetScheme(),
+		config:         mgr.GetConfig(),
+		registryClient: registry.NewClient(),
+		timeProvider:   timeprovider.New(),
 	}
 }
 
@@ -72,7 +75,8 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	}
 
 	log.Info("updating version info", "name", request.Name, "namespace", request.Namespace)
-	versionReconciler := version.NewReconciler(edgeConnect, controller.apiReader, timeprovider.New())
+
+	versionReconciler := version.NewReconciler(edgeConnect, controller.apiReader, timeprovider.New(), controller.registryClient)
 	if err = versionReconciler.Reconcile(ctx); err != nil {
 		log.Error(err, "reconciliation of EdgeConnect failed", "name", request.Name, "namespace", request.Namespace)
 		return reconcile.Result{RequeueAfter: errorUpdateInterval}, nil
