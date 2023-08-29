@@ -72,6 +72,33 @@ tests:
                 - get
                 - list
                 - watch
+
+  - it: ClusterRole should exist with extra permissions for openshift-csi.yaml
+    documentIndex: 0
+    set:
+      platform: openshift
+      csidriver.enabled: true
+      partial: csi
+    asserts:
+      - isKind:
+          of: ClusterRole
+      - equal:
+          path: metadata.name
+          value: dynatrace-oneagent-csi-driver
+      - isNotEmpty:
+          path: metadata.labels
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - security.openshift.io
+            resourceNames:
+              - privileged
+            resources:
+              - securitycontextconstraints
+            verbs:
+              - use
+
   - it: ClusterRole should exist with extra permissions for openshift
     documentIndex: 0
     set:
