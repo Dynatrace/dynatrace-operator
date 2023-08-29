@@ -65,4 +65,34 @@ func Test_prepareContainerEnvVars(t *testing.T) {
 			{Name: "EDGE_CONNECT_OAUTH__RESOURCE", Value: "urn:dtenvironment:test12345"},
 		})
 	})
+	t.Run("Create all env vars for simple edgeconnect deployment", func(t *testing.T) {
+		instance := &edgeconnectv1alpha1.EdgeConnect{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+			Spec: edgeconnectv1alpha1.EdgeConnectSpec{
+				ApiServer: "abc12345.dynatrace.com",
+				OAuth: edgeconnectv1alpha1.OAuthSpec{
+					ClientSecret: "secret-name",
+					Endpoint:     "https://sso-dev.dynatracelabs.com/sso/oauth2/token",
+					Resource:     "urn:dtenvironment:test12345",
+				},
+				HostRestrictions: "*.test.com",
+			},
+			Status: edgeconnectv1alpha1.EdgeConnectStatus{
+				UpdatedTimestamp: metav1.NewTime(time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)),
+			},
+		}
+
+		envVars := prepareContainerEnvVars(instance)
+
+		assert.Equal(t, envVars, []corev1.EnvVar{
+			{Name: "EDGE_CONNECT_NAME", Value: testName},
+			{Name: "EDGE_CONNECT_API_ENDPOINT_HOST", Value: "abc12345.dynatrace.com"},
+			{Name: "EDGE_CONNECT_OAUTH__ENDPOINT", Value: "https://sso-dev.dynatracelabs.com/sso/oauth2/token"},
+			{Name: "EDGE_CONNECT_OAUTH__RESOURCE", Value: "urn:dtenvironment:test12345"},
+			{Name: "EDGE_CONNECT_RESTRICT_HOSTS_TO", Value: "*.test.com"},
+		})
+	})
 }

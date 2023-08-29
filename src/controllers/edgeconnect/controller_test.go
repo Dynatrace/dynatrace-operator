@@ -85,8 +85,7 @@ func TestReconcile(t *testing.T) {
 		expectedTimestamp := controller.timeProvider.Now().Truncate(time.Second)
 		assert.Equal(t, expectedTimestamp, instance.Status.UpdatedTimestamp.Time)
 	})
-
-	t.Run(`reconciles phase change correctly`, func(t *testing.T) {
+	t.Run(`Reconciles phase change correctly`, func(t *testing.T) {
 		instance := &edgeconnectv1alpha1.EdgeConnect{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -111,10 +110,22 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, controller.client.Get(context.TODO(), client.ObjectKey{Name: testName, Namespace: testNamespace}, instance))
 		assert.Equal(t, status.Running, instance.Status.DeploymentPhase)
 	})
+	t.Run(`Reconciles doesn't fail if edgeconnect not found`, func(t *testing.T) {
+		controller := createFakeClientAndReconciler(nil)
+
+		_, err := controller.Reconcile(context.TODO(), reconcile.Request{
+			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
+		})
+
+		assert.NoError(t, err)
+	})
 }
 
 func createFakeClientAndReconciler(instance *edgeconnectv1alpha1.EdgeConnect) *Controller {
-	fakeClient := fake.NewClientWithIndex(instance)
+	fakeClient := fake.NewClientWithIndex()
+	if instance != nil {
+		fakeClient = fake.NewClientWithIndex(instance)
+	}
 	mockImageGetter := &mocks.MockImageGetter{}
 	const fakeDigest = "sha256:7173b809ca12ec5dee4506cd86be934c4596dd234ee82c0662eac04a8c2c71dc"
 	fakeImageVersion := registry.ImageVersion{Digest: fakeDigest}
