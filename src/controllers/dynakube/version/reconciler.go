@@ -76,7 +76,7 @@ func (reconciler *Reconciler) updateVersionStatuses(ctx context.Context, updater
 		}
 	}
 
-	err = SetOneAgentHealthcheck(ctx, reconciler.apiReader, registry.NewClient(), reconciler.dynakube, reconciler.dynakube.OneAgentImage(), dockerConfig.RegistryAuthPath)
+	err = SetOneAgentHealthcheck(ctx, reconciler.apiReader, registry.NewClient(), reconciler.dynakube, reconciler.dynakube.OneAgentImage())
 	if err != nil {
 		log.Info("could not set OneAgent healthcheck")
 		log.Info(err.Error())
@@ -85,7 +85,7 @@ func (reconciler *Reconciler) updateVersionStatuses(ctx context.Context, updater
 	return nil
 }
 
-func SetOneAgentHealthcheck(ctx context.Context, apiReader client.Reader, registryClient registry.ImageGetter, dynakube *dynatracev1beta1.DynaKube, imageUri string, registryAuthPath string) error { // nolint:revive
+func SetOneAgentHealthcheck(ctx context.Context, apiReader client.Reader, registryClient registry.ImageGetter, dynakube *dynatracev1beta1.DynaKube, imageUri string) error {
 	imageInfo, err := PullImageInfo(ctx, apiReader, registryClient, dynakube, imageUri)
 	if err != nil {
 		log.Info(err.Error())
