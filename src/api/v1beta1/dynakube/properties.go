@@ -164,7 +164,7 @@ func (dk *DynaKube) NeedsOneAgentPrivileged() bool {
 }
 
 func (dk *DynaKube) NeedsOneAgentReadinessProbe() bool {
-	return dk.Status.OneAgent.Healthcheck.Test != nil
+	return dk.Status.OneAgent.Healthcheck != nil
 }
 
 // ShouldAutoUpdateOneAgent returns true if the Operator should update OneAgent instances automatically.

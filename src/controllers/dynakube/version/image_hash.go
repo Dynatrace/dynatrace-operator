@@ -98,7 +98,7 @@ func prepareKeychainAndTransport(ctx context.Context, apiReader client.Reader, d
 	if dynakube.Spec.TrustedCAs != "" {
 		transport, err = addCertificates(transport, dynakube, apiReader)
 		if err != nil {
-			return nil, nil, errors.Wrap(err, "failed adding trusted CAs to transport")
+			return nil, nil, errors.WithMessage(err, "failed adding trusted CAs to transport")
 		}
 	}
 	return keychain, transport, nil

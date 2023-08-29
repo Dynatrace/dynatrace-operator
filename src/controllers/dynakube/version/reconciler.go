@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/registry"
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
+	containerv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/spf13/afero"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -98,6 +99,7 @@ func SetOneAgentHealthcheck(ctx context.Context, apiReader client.Reader, regist
 
 	if configFile.Config.Healthcheck != nil && len(configFile.Config.Healthcheck.Test) > 0 {
 		if configFile.Config.Healthcheck.Test[0] == "CMD" || configFile.Config.Healthcheck.Test[0] == "CMD-SHELL" {
+			dynakube.Status.OneAgent.Healthcheck = &containerv1.HealthConfig{}
 			dynakube.Status.OneAgent.Healthcheck.Test = configFile.Config.Healthcheck.Test[1:]
 			dynakube.Status.OneAgent.Healthcheck.Interval = configFile.Config.Healthcheck.Interval
 			dynakube.Status.OneAgent.Healthcheck.StartPeriod = configFile.Config.Healthcheck.StartPeriod
