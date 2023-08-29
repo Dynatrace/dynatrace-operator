@@ -101,13 +101,24 @@ func SetOneAgentHealthcheck(ctx context.Context, apiReader client.Reader, regist
 	// {"CMD", args...} : exec arguments directly
 	// {"CMD-SHELL", command} : run command with system's default shell
 	if configFile.Config.Healthcheck != nil && len(configFile.Config.Healthcheck.Test) > 0 {
-		if configFile.Config.Healthcheck.Test[0] == "CMD" || configFile.Config.Healthcheck.Test[0] == "CMD-SHELL" {
-			dynakube.Status.OneAgent.Healthcheck = &containerv1.HealthConfig{}
-			dynakube.Status.OneAgent.Healthcheck.Test = configFile.Config.Healthcheck.Test[1:]
-			dynakube.Status.OneAgent.Healthcheck.Interval = configFile.Config.Healthcheck.Interval
-			dynakube.Status.OneAgent.Healthcheck.StartPeriod = configFile.Config.Healthcheck.StartPeriod
-			dynakube.Status.OneAgent.Healthcheck.Timeout = configFile.Config.Healthcheck.Timeout
-			dynakube.Status.OneAgent.Healthcheck.Retries = configFile.Config.Healthcheck.Retries
+		healthConfig := &containerv1.HealthConfig{}
+
+		if configFile.Config.Healthcheck.Test[0] == "CMD-SHELL" {
+			healthConfig.Test = []string{"/bin/sh", "-c"}
+			healthConfig.Test = append(
+				healthConfig.Test,
+				configFile.Config.Healthcheck.Test[1:]...,
+			)
+		} else if configFile.Config.Healthcheck.Test[0] == "CMD" {
+			healthConfig.Test = configFile.Config.Healthcheck.Test[1:]
+		}
+
+		if healthConfig.Test != nil && len(healthConfig.Test) > 0 {
+			healthConfig.Interval = configFile.Config.Healthcheck.Interval
+			healthConfig.StartPeriod = configFile.Config.Healthcheck.StartPeriod
+			healthConfig.Timeout = configFile.Config.Healthcheck.Timeout
+			healthConfig.Retries = configFile.Config.Healthcheck.Retries
+			dynakube.Status.OneAgent.Healthcheck = healthConfig
 		}
 	}
 	return nil

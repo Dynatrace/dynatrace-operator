@@ -529,7 +529,7 @@ func TestPodSpecReadinessProbe(t *testing.T) {
 		assert.Equal(t, testCommands, podSpec.Containers[0].ReadinessProbe.Exec.Command)
 		assert.Equal(t, int32(interval.Seconds()), podSpec.Containers[0].ReadinessProbe.PeriodSeconds)
 		assert.Equal(t, int32(timeout.Seconds()), podSpec.Containers[0].ReadinessProbe.TimeoutSeconds)
-		assert.Equal(t, int32(startPeriod.Seconds()), podSpec.Containers[0].ReadinessProbe.InitialDelaySeconds)
+		assert.Equal(t, DefaultReadinessProbeInitialDelay, podSpec.Containers[0].ReadinessProbe.InitialDelaySeconds)
 		assert.Equal(t, int32(retries), podSpec.Containers[0].ReadinessProbe.FailureThreshold)
 	})
 	t.Run("nil readiness probe when dynakube oneagent status has no healthcheck", func(t *testing.T) {

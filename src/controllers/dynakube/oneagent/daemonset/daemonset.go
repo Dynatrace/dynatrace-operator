@@ -176,6 +176,8 @@ func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	return result, nil
 }
 
+const DefaultReadinessProbeInitialDelay = int32(30)
+
 func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 	resources := dsInfo.resources()
 	dnsPolicy := dsInfo.dnsPolicy()
@@ -218,7 +220,7 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 					Command: dsInfo.dynakube.Status.OneAgent.Healthcheck.Test,
 				},
 			},
-			InitialDelaySeconds: int32(dsInfo.dynakube.Status.OneAgent.Healthcheck.StartPeriod.Seconds()),
+			InitialDelaySeconds: DefaultReadinessProbeInitialDelay,
 			PeriodSeconds:       int32(dsInfo.dynakube.Status.OneAgent.Healthcheck.Interval.Seconds()),
 			TimeoutSeconds:      int32(dsInfo.dynakube.Status.OneAgent.Healthcheck.Timeout.Seconds()),
 			FailureThreshold:    int32(dsInfo.dynakube.Status.OneAgent.Healthcheck.Retries),
