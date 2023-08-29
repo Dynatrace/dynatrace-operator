@@ -48,6 +48,11 @@ func (nm *namespaceMutator) Handle(ctx context.Context, request admission.Reques
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
+	if _, ok := ns.Annotations[mapper.UpdatedViaCommandAnnotation]; ok {
+		log.Info("updated-via-command annotation deleted", "namespace", request.Name)
+		delete(ns.Annotations, mapper.UpdatedViaCommandAnnotation)
+	}
+
 	if _, ok := ns.Annotations[mapper.UpdatedViaDynakubeAnnotation]; ok {
 		log.Info("checking namespace labels not necessary", "namespace", request.Name)
 		delete(ns.Annotations, mapper.UpdatedViaDynakubeAnnotation)
@@ -62,7 +67,13 @@ func (nm *namespaceMutator) Handle(ctx context.Context, request admission.Reques
 	if !updatedNamespace {
 		return admission.Patched("")
 	}
-	log.Info("namespace", "labels", ns.Labels)
+
+	if ns.Annotations == nil {
+		ns.Annotations = make(map[string]string)
+	}
+	ns.Annotations[mapper.UpdatedViaCommandAnnotation] = "true"
+
+	log.Info("namespace", "labels", ns.Labels, "annotations", ns.Annotations)
 	return getResponseForNamespace(&ns, &request)
 }
 

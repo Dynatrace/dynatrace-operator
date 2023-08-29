@@ -16,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/requestmapper"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/status"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/version"
@@ -41,9 +42,11 @@ import (
 )
 
 const (
-	fastUpdateInterval    = 1 * time.Minute
-	changesUpdateInterval = 5 * time.Minute
-	defaultUpdateInterval = 30 * time.Minute
+	fastUpdateInterval = 1 * time.Minute
+	// changesUpdateInterval = 5 * time.Minute
+	changesUpdateInterval = 3 * time.Minute
+	// defaultUpdateInterval = 30 * time.Minute
+	defaultUpdateInterval = 9 * time.Minute
 )
 
 func Add(mgr manager.Manager, _ string) error {
@@ -77,6 +80,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, sc
 func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&dynatracev1beta1.DynaKube{}).
+		Watches(&corev1.Namespace{}, requestmapper.EnqueueDynakubeRequests(controller.operatorNamespace, &log)).
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&appsv1.DaemonSet{}).
 		Owns(&corev1.ConfigMap{}).
@@ -110,6 +114,7 @@ type Controller struct {
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (controller *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log.Info("reconciling DynaKube", "namespace", request.Namespace, "name", request.Name)
+	defer func(interval *time.Duration) { log.Info("requeueAfter", "interval", interval) }(&controller.requeueAfter)
 
 	dynaKube, err := controller.getDynakubeOrUnmap(ctx, request.Name, request.Namespace)
 	if err != nil {

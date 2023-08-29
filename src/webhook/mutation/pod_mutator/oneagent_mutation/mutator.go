@@ -46,9 +46,11 @@ func (mutator *OneAgentPodMutator) Mutate(request *dtwebhook.MutationRequest) er
 	}
 
 	log.Info("injecting OneAgent into pod", "podName", request.PodName())
-	if err := mutator.ensureInitSecret(request); err != nil {
-		return err
-	}
+	/*
+		if err := mutator.ensureInitSecret(request); err != nil {
+			return err
+		}
+	*/
 
 	installerInfo := getInstallerInfo(request.Pod, request.DynaKube)
 	mutator.addVolumes(request.Pod, request.DynaKube)

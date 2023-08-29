@@ -6,6 +6,7 @@ import (
 
 const (
 	UpdatedViaDynakubeAnnotation = "dynatrace.com/updated-via-operator"
+	UpdatedViaCommandAnnotation  = "dynatrace.com/updated-via-command"
 	ErrorConflictingNamespace    = "namespace matches two or more DynaKubes which is unsupported. " +
 		"refine the labels on your namespace metadata or DynaKube/CodeModules specification"
 )

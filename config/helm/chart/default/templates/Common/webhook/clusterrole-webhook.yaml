@@ -42,18 +42,18 @@ rules:
       - secrets
     verbs:
       - create
-  - apiGroups:
-      - ""
-    resources:
-      - secrets
-    resourceNames:
-      - dynatrace-dynakube-config
-      - dynatrace-data-ingest-endpoint
-    verbs:
-      - get
-      - list
-      - watch
-      - update
+  #- apiGroups:
+  #    - ""
+  #  resources:
+  #    - secrets
+  #  resourceNames:
+  #    - dynatrace-dynakube-config
+  #    - dynatrace-data-ingest-endpoint
+  #  verbs:
+  #    - get
+  #    - list
+  #    - watch
+  #    - update
   # data-ingest workload owner lookup
   - apiGroups:
       - ""
