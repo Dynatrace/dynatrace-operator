@@ -69,7 +69,7 @@ func (reconciler *Reconciler) updateVersionStatuses(ctx context.Context, updater
 
 	for _, updater := range updaters {
 		log.Info("updating version status", "updater", updater.Name())
-		err := reconciler.run(ctx, updater, dockerConfig.RegistryAuthPath)
+		err := reconciler.run(ctx, updater)
 		if err != nil {
 			return err
 		}
@@ -85,7 +85,7 @@ func (reconciler *Reconciler) updateVersionStatuses(ctx context.Context, updater
 }
 
 func SetOneAgentHealthcheck(ctx context.Context, apiReader client.Reader, registryClient registry.ImageGetter, dynakube *dynatracev1beta1.DynaKube, imageUri string, registryAuthPath string) error { // nolint:revive
-	imageInfo, err := PullImageInfo(ctx, apiReader, registryClient, dynakube, imageUri, registryAuthPath)
+	imageInfo, err := PullImageInfo(ctx, apiReader, registryClient, dynakube, imageUri)
 	if err != nil {
 		log.Info(err.Error())
 		return fmt.Errorf("error pulling image info")

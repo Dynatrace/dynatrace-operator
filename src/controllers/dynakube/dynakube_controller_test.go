@@ -662,7 +662,7 @@ func createDTMockClient(paasTokenScopes, apiTokenScopes dtclient.TokenScopes) *d
 	return mockClient
 }
 
-func fakeDigestProvider(context.Context, client.Reader, registry.ImageGetter, *dynatracev1beta1.DynaKube, string, string) (registry.ImageVersion, error) {
+func fakeDigestProvider(context.Context, client.Reader, registry.ImageGetter, *dynatracev1beta1.DynaKube, string) (registry.ImageVersion, error) {
 	return registry.ImageVersion{}, nil
 }
 

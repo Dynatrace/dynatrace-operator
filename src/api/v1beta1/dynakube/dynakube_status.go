@@ -122,11 +122,11 @@ type OneAgentStatus struct {
 }
 
 type Healthcheck struct {
-	Test        []string      `json:"Test,omitempty"`
-	Interval    time.Duration `json:"Interval,omitempty"`
-	Timeout     time.Duration `json:"Timeout,omitempty"`
-	StartPeriod time.Duration `json:"StartPeriod,omitempty"`
-	Retries     int           `json:"Retries,omitempty"`
+	Test        []string      `json:"test,omitempty"`
+	Interval    time.Duration `json:"interval,omitempty"`
+	Timeout     time.Duration `json:"timeout,omitempty"`
+	StartPeriod time.Duration `json:"startPeriod,omitempty"`
+	Retries     int           `json:"retries,omitempty"`
 }
 
 type OneAgentInstance struct {
