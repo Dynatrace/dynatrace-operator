@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
-	v1 "github.com/google/go-containerregistry/pkg/v1"
+	containerv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
@@ -15,7 +15,7 @@ import (
 
 type ImageGetter interface {
 	GetImageVersion(ctx context.Context, keychain authn.Keychain, transport *http.Transport, imageName string) (ImageVersion, error)
-	PullImageInfo(ctx context.Context, keychain authn.Keychain, transport *http.Transport, imageName string) (*v1.Image, error)
+	PullImageInfo(ctx context.Context, keychain authn.Keychain, transport *http.Transport, imageName string) (*containerv1.Image, error)
 }
 
 type ImageVersion struct {
@@ -73,7 +73,7 @@ func (c *Client) GetImageVersion(ctx context.Context, keychain authn.Keychain, t
 	}, nil
 }
 
-func (c *Client) PullImageInfo(ctx context.Context, keychain authn.Keychain, transport *http.Transport, imageName string) (*v1.Image, error) {
+func (c *Client) PullImageInfo(ctx context.Context, keychain authn.Keychain, transport *http.Transport, imageName string) (*containerv1.Image, error) {
 	ref, err := name.ParseReference(imageName)
 	if err != nil {
 		return nil, errors.WithMessagef(err, "parsing reference %q:", imageName)

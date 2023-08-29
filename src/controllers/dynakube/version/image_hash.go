@@ -11,7 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/dockerkeychain"
 	"github.com/Dynatrace/dynatrace-operator/src/registry"
 	"github.com/google/go-containerregistry/pkg/authn"
-	registryv1 "github.com/google/go-containerregistry/pkg/v1"
+	containerv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -55,7 +55,7 @@ func PullImageInfo(
 	registryClient registry.ImageGetter,
 	dynakube *dynatracev1beta1.DynaKube,
 	imageName string,
-) (*registryv1.Image, error) {
+) (*containerv1.Image, error) {
 	keychain, transport, err := prepareKeychainAndTransport(ctx, apiReader, dynakube)
 	if err != nil {
 		return nil, err

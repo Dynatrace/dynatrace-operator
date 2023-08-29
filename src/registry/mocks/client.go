@@ -8,7 +8,7 @@ import (
 
 	registry "github.com/Dynatrace/dynatrace-operator/src/registry"
 	authn "github.com/google/go-containerregistry/pkg/authn"
-	v1 "github.com/google/go-containerregistry/pkg/v1"
+	containerv1 "github.com/google/go-containerregistry/pkg/v1"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -42,19 +42,19 @@ func (_m *MockImageGetter) GetImageVersion(ctx context.Context, keychain authn.K
 }
 
 // PullImageInfo provides a mock function with given fields: ctx, keychain, transport, imageName
-func (_m *MockImageGetter) PullImageInfo(ctx context.Context, keychain authn.Keychain, transport *http.Transport, imageName string) (*v1.Image, error) {
+func (_m *MockImageGetter) PullImageInfo(ctx context.Context, keychain authn.Keychain, transport *http.Transport, imageName string) (*containerv1.Image, error) {
 	ret := _m.Called(ctx, keychain, transport, imageName)
 
-	var r0 *v1.Image
+	var r0 *containerv1.Image
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, authn.Keychain, *http.Transport, string) (*v1.Image, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, authn.Keychain, *http.Transport, string) (*containerv1.Image, error)); ok {
 		return rf(ctx, keychain, transport, imageName)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, authn.Keychain, *http.Transport, string) *v1.Image); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, authn.Keychain, *http.Transport, string) *containerv1.Image); ok {
 		r0 = rf(ctx, keychain, transport, imageName)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*v1.Image)
+			r0 = ret.Get(0).(*containerv1.Image)
 		}
 	}
 
