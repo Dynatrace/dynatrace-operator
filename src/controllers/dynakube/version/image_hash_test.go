@@ -10,12 +10,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/version/testdata"
 	"github.com/Dynatrace/dynatrace-operator/src/registry"
 	"github.com/Dynatrace/dynatrace-operator/src/registry/mocks"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/containers/image/v5/docker/reference"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -60,15 +59,25 @@ func assertVersionStatusEquals(t *testing.T, registry *fakeRegistry, imageRef re
 }
 
 func TestGetImageVersion(t *testing.T) {
+	dynakube := dynatracev1beta1.DynaKube{}
+	imageName := "dynatrace-operator:1.0.0"
+	apiReader := fake.NewClientBuilder().Build()
+
+	pullSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: dynakube.PullSecretName(),
+		},
+		Data: map[string][]byte{
+			".dockerconfigjson": []byte(""),
+		},
+	}
+	apiReader.Create(context.Background(), pullSecret)
+
 	t.Run("without proxy or trustedCAs", func(t *testing.T) {
 		mockImageGetter := &mocks.MockImageGetter{}
 		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(registry.ImageVersion{}, nil)
 
-		dynakube := dynatracev1beta1.DynaKube{}
-		imageName := "dynatrace-operator:1.0.0"
-		apiReader := fake.NewClientBuilder().Build()
-
-		got, err := GetImageVersion(context.TODO(), apiReader, mockImageGetter, &dynakube, imageName)
+		got, err := GetImageVersion(context.Background(), apiReader, mockImageGetter, &dynakube, imageName)
 		assert.NotNil(t, got)
 		assert.Nil(t, err)
 	})
@@ -76,11 +85,7 @@ func TestGetImageVersion(t *testing.T) {
 		mockImageGetter := &mocks.MockImageGetter{}
 		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(registry.ImageVersion{}, nil)
 
-		dynakube := dynatracev1beta1.DynaKube{Spec: dynatracev1beta1.DynaKubeSpec{Proxy: &dynatracev1beta1.DynaKubeProxy{Value: "dummy-proxy"}}}
-		imageName := "dynatrace-operator:1.0.0"
-		apiReader := fake.NewClientBuilder().Build()
-
-		got, err := GetImageVersion(context.TODO(), apiReader, mockImageGetter, &dynakube, imageName)
+		got, err := GetImageVersion(context.Background(), apiReader, mockImageGetter, &dynakube, imageName)
 		assert.NotNil(t, got)
 		assert.Nil(t, err)
 	})
@@ -91,19 +96,16 @@ func TestGetImageVersion(t *testing.T) {
 
 		dynakube := dynatracev1beta1.DynaKube{Spec: dynatracev1beta1.DynaKubeSpec{TrustedCAs: configMapName}}
 		imageName := "dynatrace-operator:1.0.0"
-		apiReader := fake.NewClientBuilder().
-			WithScheme(scheme.Scheme).
-			WithObjects(
-				&corev1.ConfigMap{
-					ObjectMeta: v1.ObjectMeta{Name: configMapName},
-					Data: map[string]string{
-						"certs": testdata.CertsContent,
-					},
-				},
-			).
-			Build()
 
-		got, err := GetImageVersion(context.TODO(), apiReader, mockImageGetter, &dynakube, imageName)
+		apiReader.Create(context.Background(),
+			&corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{Name: configMapName},
+				Data: map[string]string{
+					"certs": testdata.CertsContent,
+				},
+			})
+
+		got, err := GetImageVersion(context.Background(), apiReader, mockImageGetter, &dynakube, imageName)
 		assert.NotNil(t, got)
 		assert.Nil(t, err)
 	})

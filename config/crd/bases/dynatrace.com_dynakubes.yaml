@@ -3563,35 +3563,8 @@ spec:
                     type: object
                   healthcheck:
                     description: Commands used for OneAgent's readiness probe
-                    properties:
-                      interval:
-                        description: A Duration represents the elapsed time between
-                          two instants as an int64 nanosecond count. The representation
-                          limits the largest representable duration to approximately
-                          290 years.
-                        format: int64
-                        type: integer
-                      retries:
-                        type: integer
-                      startPeriod:
-                        description: A Duration represents the elapsed time between
-                          two instants as an int64 nanosecond count. The representation
-                          limits the largest representable duration to approximately
-                          290 years.
-                        format: int64
-                        type: integer
-                      test:
-                        items:
-                          type: string
-                        type: array
-                      timeout:
-                        description: A Duration represents the elapsed time between
-                          two instants as an int64 nanosecond count. The representation
-                          limits the largest representable duration to approximately
-                          290 years.
-                        format: int64
-                        type: integer
                     type: object
+                    x-kubernetes-preserve-unknown-fields: true
                   imageID:
                     description: Image ID
                     type: string

@@ -42,8 +42,7 @@ func GetImageVersion(
 ) {
 	keychain, err := dockerkeychain.NewDockerKeychain(ctx, apiReader, dynakube.PullSecretWithoutData())
 	if err != nil {
-		// TODO: return err - not done because dockerkeychain can't be mocked on unit tests
-		log.Info("failed to fetch pull secret", err)
+		return registry.ImageVersion{}, errors.WithMessage(err, "failed to fetch pull secret")
 	}
 
 	transport, err := prepareTransport(ctx, apiReader, dynakube)
@@ -63,8 +62,7 @@ func PullImageInfo(
 ) (*containerv1.Image, error) {
 	keychain, err := dockerkeychain.NewDockerKeychain(ctx, apiReader, dynakube.PullSecretWithoutData())
 	if err != nil {
-		// TODO: return err - not done because dockerkeychain can't be mocked on unit tests
-		log.Info("failed to fetch pull secret", err)
+		return nil, errors.WithMessage(err, "failed to fetch pull secret")
 	}
 
 	transport, err := prepareTransport(ctx, apiReader, dynakube)
