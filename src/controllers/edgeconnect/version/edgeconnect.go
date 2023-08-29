@@ -18,22 +18,10 @@ import (
 )
 
 type edgeConnectUpdater struct {
-<<<<<<< HEAD
 	edgeConnect    *edgeconnectv1alpha1.EdgeConnect
 	apiReader      client.Reader
 	timeProvider   *timeprovider.Provider
 	registryClient registry.ImageGetter
-||||||| parent of 4c7e4959 (Update unit tests)
-	edgeConnect  *edgeconnectv1alpha1.EdgeConnect
-	apiReader    client.Reader
-	timeProvider *timeprovider.Provider
-=======
-	edgeConnect    *edgeconnectv1alpha1.EdgeConnect
-	apiReader      client.Reader
-	timeProvider   *timeprovider.Provider
-	dockerKeyChain *dockerkeychain.DockerKeychain
-	registryClient registry.ImageGetter
->>>>>>> 4c7e4959 (Update unit tests)
 }
 
 var _ versionStatusUpdater = edgeConnectUpdater{}
@@ -44,41 +32,20 @@ func newEdgeConnectUpdater(
 	timeprovider *timeprovider.Provider,
 ) *edgeConnectUpdater {
 	return &edgeConnectUpdater{
-<<<<<<< HEAD
 		edgeConnect:    edgeConnect,
 		apiReader:      apiReader,
 		timeProvider:   timeprovider,
 		registryClient: registry.NewClient(),
-||||||| parent of 4c7e4959 (Update unit tests)
-		edgeConnect:  edgeConnect,
-		apiReader:    apiReader,
-		timeProvider: timeprovider,
-=======
-		edgeConnect:    edgeConnect,
-		apiReader:      apiReader,
-		timeProvider:   timeprovider,
-		dockerKeyChain: dockerkeychain.NewDockerKeychain(),
-		registryClient: registry.NewClient(),
->>>>>>> 4c7e4959 (Update unit tests)
 	}
 }
 
 func (updater edgeConnectUpdater) RequiresReconcile() bool {
 	version := updater.edgeConnect.Status.Version
 
-<<<<<<< HEAD
 	isRequestOutdated := updater.timeProvider.IsOutdated(version.LastProbeTimestamp, edgeconnectv1alpha1.DefaultMinRequestThreshold)
 	didCustomImageChange := !strings.HasPrefix(version.ImageID, updater.edgeConnect.Image())
 
 	if didCustomImageChange || version.ImageID == "" {
-||||||| parent of 4c7e4959 (Update unit tests)
-	if didCustomImageChange || updater.edgeConnect.Status.Version.ImageID == "" {
-=======
-	isRequestOutdated := updater.timeProvider.IsOutdated(version.LastProbeTimestamp, DefaultMinRequestThreshold)
-	didCustomImageChange := !strings.HasPrefix(version.ImageID, updater.edgeConnect.Image())
-
-	if didCustomImageChange || version.ImageID == "" {
->>>>>>> 4c7e4959 (Update unit tests)
 		return true
 	}
 	return isRequestOutdated && updater.IsAutoUpdateEnabled()
@@ -96,34 +63,12 @@ func (updater edgeConnectUpdater) Update(ctx context.Context) error {
 
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 
-<<<<<<< HEAD
 	keychain, err := dockerkeychain.NewDockerKeychain(ctx, updater.apiReader, updater.edgeConnect.PullSecretWithoutData())
-||||||| parent of 4c7e4959 (Update unit tests)
-	dockerKeyChain, err := dockerkeychain.NewDockerKeychain(ctx, updater.apiReader, corev1.Secret{
-		ObjectMeta: v1.ObjectMeta{
-			Name:      updater.edgeConnect.Spec.CustomPullSecret,
-			Namespace: updater.edgeConnect.Namespace,
-		},
-	})
-=======
-	err = updater.dockerKeyChain.LoadDockerConfigFromSecret(ctx, updater.apiReader, corev1.Secret{
-		ObjectMeta: v1.ObjectMeta{
-			Name:      updater.edgeConnect.Spec.CustomPullSecret,
-			Namespace: updater.edgeConnect.Namespace,
-		},
-	})
->>>>>>> 4c7e4959 (Update unit tests)
 	if err != nil {
 		return err
 	}
 
-<<<<<<< HEAD
 	imageVersion, err := updater.registryClient.GetImageVersion(ctx, keychain, transport, image)
-||||||| parent of 4c7e4959 (Update unit tests)
-	imageVersion, err := registry.NewClient().GetImageVersion(ctx, dockerKeyChain, transport, image)
-=======
-	imageVersion, err := updater.registryClient.GetImageVersion(ctx, updater.dockerKeyChain, transport, image)
->>>>>>> 4c7e4959 (Update unit tests)
 	if err != nil {
 		return err
 	}

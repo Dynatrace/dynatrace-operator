@@ -33,13 +33,7 @@ func TestNewDockerKeychain(t *testing.T) {
 		}
 		client := fake.NewClient()
 
-<<<<<<< HEAD
 		_, err := NewDockerKeychain(context.TODO(), client, pullSecret)
-||||||| parent of 4c7e4959 (Update unit tests)
-=======
-		keychain := NewDockerKeychain()
-		err := keychain.LoadDockerConfigFromSecret(context.TODO(), client, pullSecret)
->>>>>>> 4c7e4959 (Update unit tests)
 		require.Error(t, err)
 		require.True(t, errors2.IsNotFound(err))
 	})
@@ -56,13 +50,7 @@ func TestNewDockerKeychain(t *testing.T) {
 		}
 		client := fake.NewClientWithIndex(&pullSecret)
 
-<<<<<<< HEAD
 		_, err := NewDockerKeychain(context.TODO(), client, pullSecret)
-||||||| parent of 4c7e4959 (Update unit tests)
-=======
-		keychain := NewDockerKeychain()
-		err := keychain.LoadDockerConfigFromSecret(context.TODO(), client, pullSecret)
->>>>>>> 4c7e4959 (Update unit tests)
 		require.Error(t, err)
 
 		var syntaxError *json.SyntaxError
@@ -84,16 +72,8 @@ func TestNewDockerKeychain(t *testing.T) {
 		}
 		client := fake.NewClientWithIndex(&pullSecret)
 
-<<<<<<< HEAD
 		keychain, err := NewDockerKeychain(context.TODO(), client, pullSecret)
 		require.NoError(t, err)
-||||||| parent of 4c7e4959 (Update unit tests)
-		keychain := NewDockerKeychain(dockerConfigFilename, memFs)
-=======
-		keychain := NewDockerKeychain()
-		err := keychain.LoadDockerConfigFromSecret(context.TODO(), client, pullSecret)
-		require.NoError(t, err)
->>>>>>> 4c7e4959 (Update unit tests)
 		registry, err := name.NewRegistry(registryName, name.StrictValidation)
 		require.NoError(t, err)
 
