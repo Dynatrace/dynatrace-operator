@@ -312,43 +312,6 @@ func (dk *DynaKubeStatus) SetPhase(phase status.DeploymentPhase) bool {
 	return upd
 }
 
-// SetPhaseOnError fills the phase with the Error value in case of any error
-func (dk *DynaKubeStatus) SetPhaseOnError(err error) bool {
-	if err != nil {
-		return dk.SetPhase(status.Error)
-	}
-	return false
-}
-
-const (
-	// APITokenConditionType identifies the API Token validity condition
-	APITokenConditionType string = "APIToken"
-
-	// PaaSTokenConditionType identifies the PaaS Token validity condition
-	PaaSTokenConditionType string = "PaaSToken"
-)
-
-// Possible reasons for ApiToken and PaaSToken conditions
-const (
-	// ReasonTokenReady is set when a token has passed verifications
-	ReasonTokenReady string = "TokenReady"
-
-	// ReasonTokenSecretNotFound is set when the referenced secret can't be found
-	ReasonTokenSecretNotFound string = "TokenSecretNotFound"
-
-	// ReasonTokenMissing is set when the field is missing on the secret
-	ReasonTokenMissing string = "TokenMissing"
-
-	// ReasonTokenUnauthorized is set when a token is unauthorized to query the Dynatrace API
-	ReasonTokenUnauthorized string = "TokenUnauthorized"
-
-	// ReasonTokenScopeMissing is set when the token is missing the required scope for the Dynatrace API
-	ReasonTokenScopeMissing string = "TokenScopeMissing"
-
-	// ReasonTokenError is set when an unknown error has been found when verifying the token
-	ReasonTokenError string = "TokenError"
-)
-
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // DynaKube is the Schema for the DynaKube API
