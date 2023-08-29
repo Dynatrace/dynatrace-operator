@@ -18,6 +18,7 @@ import (
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -79,7 +80,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 
 	oldStatus := *edgeConnect.Status.DeepCopy()
 
-	err = controller.reconcileEdgeConnect(ctx, edgeConnect)
+	err = controller.reconcileEdgeConnect(edgeConnect)
 
 	if err != nil {
 		edgeConnect.Status.SetPhase(status.Error)
@@ -134,12 +135,13 @@ func (controller *Controller) updateEdgeConnectStatus(ctx context.Context, edgeC
 	return nil
 }
 
-func (controller *Controller) reconcileEdgeConnect(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) error {
-	return controller.createEdgeConnectDeployment(ctx, edgeConnect)
-}
-
-func (controller *Controller) createEdgeConnectDeployment(_ context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) error {
+func (controller *Controller) reconcileEdgeConnect(edgeConnect *edgeconnectv1alpha1.EdgeConnect) error {
 	desiredDeployment := deployment.New(edgeConnect)
+
+	if err := controllerutil.SetControllerReference(edgeConnect, desiredDeployment, controller.scheme); err != nil {
+		return errors.WithStack(err)
+	}
+
 	ddHash, err := kubeobjects.GenerateHash(desiredDeployment)
 	if err != nil {
 		return err
