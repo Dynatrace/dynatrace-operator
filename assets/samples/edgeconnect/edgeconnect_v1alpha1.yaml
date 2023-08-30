@@ -6,6 +6,6 @@ metadata:
 spec:
   apiServer: "https://example.dev.apps.dynatracelabs.com"
   oauth:
-    clientSecret: test2
-    endpoint: test
-    resource: test
+    clientSecret: my-secret-name
+    endpoint: https://sso.sample.com/sso/oauth2/token
+    resource: urn:sample-env:sample-res
