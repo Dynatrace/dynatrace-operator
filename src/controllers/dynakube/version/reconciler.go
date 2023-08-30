@@ -74,10 +74,11 @@ func (reconciler *Reconciler) updateVersionStatuses(ctx context.Context, updater
 		}
 	}
 
-	err = SetOneAgentHealthcheck(ctx, reconciler.apiReader, registry.NewClient(), reconciler.dynakube, reconciler.dynakube.OneAgentImage())
+	healthConfig, err := GetOneAgentHealthConfig(ctx, reconciler.apiReader, registry.NewClient(), reconciler.dynakube, reconciler.dynakube.OneAgentImage())
 	if err != nil {
 		log.Error(err, "could not set OneAgent healthcheck")
 	}
+	reconciler.dynakube.Status.OneAgent.Healthcheck = healthConfig
 
 	return nil
 }

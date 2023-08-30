@@ -29,16 +29,18 @@ func newHealthConfig() *containerv1.HealthConfig {
 	}
 }
 
-func SetOneAgentHealthcheck(ctx context.Context, apiReader client.Reader, registryClient registry.ImageGetter, dynakube *dynatracev1beta1.DynaKube, imageUri string) error {
+func GetOneAgentHealthConfig(ctx context.Context, apiReader client.Reader, registryClient registry.ImageGetter, dynakube *dynatracev1beta1.DynaKube, imageUri string) (*containerv1.HealthConfig, error) {
 	imageInfo, err := PullImageInfo(ctx, apiReader, registryClient, dynakube, imageUri)
 	if err != nil {
-		return errors.WithMessage(err, "error pulling image info")
+		return nil, errors.WithMessage(err, "error pulling image info")
 	}
 
 	configFile, err := (*imageInfo).ConfigFile()
 	if err != nil {
-		return errors.WithMessage(err, "error reading image config file")
+		return nil, errors.WithMessage(err, "error reading image config file")
 	}
+
+	var healthConfig *containerv1.HealthConfig
 
 	// Healthcheck.Test values from go-containerregistry documentation:
 	// {} : inherit healthcheck
@@ -57,7 +59,7 @@ func SetOneAgentHealthcheck(ctx context.Context, apiReader client.Reader, regist
 		}
 
 		if len(testCommand) > 0 {
-			healthConfig := newHealthConfig()
+			healthConfig = newHealthConfig()
 			healthConfig.Test = testCommand
 			if configFile.Config.Healthcheck.Interval != 0 {
 				healthConfig.Interval = configFile.Config.Healthcheck.Interval
@@ -71,8 +73,7 @@ func SetOneAgentHealthcheck(ctx context.Context, apiReader client.Reader, regist
 			if configFile.Config.Healthcheck.Retries != 0 {
 				healthConfig.Retries = configFile.Config.Healthcheck.Retries
 			}
-			dynakube.Status.OneAgent.Healthcheck = healthConfig
 		}
 	}
-	return nil
+	return healthConfig, nil
 }

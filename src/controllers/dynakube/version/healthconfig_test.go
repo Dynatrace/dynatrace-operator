@@ -16,7 +16,7 @@ import (
 	fakek8s "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-func TestSetOneAgentHealthcheck(t *testing.T) {
+func TestGetOneAgentHealthConfig(t *testing.T) {
 	dynakube := &dynatracev1beta1.DynaKube{}
 	apiReader := fakek8s.NewClientBuilder().Build()
 	pullSecret := &corev1.Secret{
@@ -35,7 +35,7 @@ func TestSetOneAgentHealthcheck(t *testing.T) {
 	startPeriod := time.Second * 1200
 	retries := 3
 
-	t.Run("docker image contains healthcheck property as CMD", func(t *testing.T) {
+	t.Run("get healthConfig with test as CMD", func(t *testing.T) {
 		testCommands := []string{"CMD", "echo", "test"}
 		dynakube := &dynatracev1beta1.DynaKube{}
 		fakeImage := &fakecontainer.FakeImage{}
@@ -58,17 +58,17 @@ func TestSetOneAgentHealthcheck(t *testing.T) {
 
 		registryClient := &mocks.MockImageGetter{}
 		registryClient.On("PullImageInfo", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(&image, nil)
-		err := SetOneAgentHealthcheck(context.Background(), apiReader, registryClient, dynakube, imageUri)
+		healthConfig, err := GetOneAgentHealthConfig(context.Background(), apiReader, registryClient, dynakube, imageUri)
 
 		assert.Nil(t, err)
-		assert.NotNil(t, dynakube.Status.OneAgent.Healthcheck)
-		assert.Equal(t, testCommands[1:], dynakube.Status.OneAgent.Healthcheck.Test)
-		assert.Equal(t, interval, dynakube.Status.OneAgent.Healthcheck.Interval)
-		assert.Equal(t, timeout, dynakube.Status.OneAgent.Healthcheck.Timeout)
-		assert.Equal(t, startPeriod, dynakube.Status.OneAgent.Healthcheck.StartPeriod)
-		assert.Equal(t, retries, dynakube.Status.OneAgent.Healthcheck.Retries)
+		assert.NotNil(t, healthConfig)
+		assert.Equal(t, testCommands[1:], healthConfig.Test)
+		assert.Equal(t, interval, healthConfig.Interval)
+		assert.Equal(t, timeout, healthConfig.Timeout)
+		assert.Equal(t, startPeriod, healthConfig.StartPeriod)
+		assert.Equal(t, retries, healthConfig.Retries)
 	})
-	t.Run("docker image contains healthcheck property as CMD-SHELL", func(t *testing.T) {
+	t.Run("get healthConfig with test as CMD-SHELL", func(t *testing.T) {
 		testCommands := []string{"CMD-SHELL", "echo", "test"}
 		dynakube := &dynatracev1beta1.DynaKube{}
 		fakeImage := &fakecontainer.FakeImage{}
@@ -91,19 +91,19 @@ func TestSetOneAgentHealthcheck(t *testing.T) {
 
 		registryClient := &mocks.MockImageGetter{}
 		registryClient.On("PullImageInfo", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(&image, nil)
-		err := SetOneAgentHealthcheck(context.Background(), apiReader, registryClient, dynakube, imageUri)
+		healthConfig, err := GetOneAgentHealthConfig(context.Background(), apiReader, registryClient, dynakube, imageUri)
 
 		expectedTestCommands := append([]string{"/bin/sh", "-c"}, testCommands[1:]...)
 
 		assert.Nil(t, err)
-		assert.NotNil(t, dynakube.Status.OneAgent.Healthcheck)
-		assert.Equal(t, expectedTestCommands, dynakube.Status.OneAgent.Healthcheck.Test)
-		assert.Equal(t, interval, dynakube.Status.OneAgent.Healthcheck.Interval)
-		assert.Equal(t, timeout, dynakube.Status.OneAgent.Healthcheck.Timeout)
-		assert.Equal(t, startPeriod, dynakube.Status.OneAgent.Healthcheck.StartPeriod)
-		assert.Equal(t, retries, dynakube.Status.OneAgent.Healthcheck.Retries)
+		assert.NotNil(t, healthConfig)
+		assert.Equal(t, expectedTestCommands, healthConfig.Test)
+		assert.Equal(t, interval, healthConfig.Interval)
+		assert.Equal(t, timeout, healthConfig.Timeout)
+		assert.Equal(t, startPeriod, healthConfig.StartPeriod)
+		assert.Equal(t, retries, healthConfig.Retries)
 	})
-	t.Run("docker image contains healthcheck test but no interval-timeout-etc", func(t *testing.T) {
+	t.Run("get healthConfig with default values", func(t *testing.T) {
 		testCommands := []string{"CMD", "echo", "test"}
 		dynakube := &dynatracev1beta1.DynaKube{}
 		fakeImage := &fakecontainer.FakeImage{}
@@ -122,17 +122,17 @@ func TestSetOneAgentHealthcheck(t *testing.T) {
 
 		registryClient := &mocks.MockImageGetter{}
 		registryClient.On("PullImageInfo", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(&image, nil)
-		err := SetOneAgentHealthcheck(context.Background(), apiReader, registryClient, dynakube, imageUri)
+		healthConfig, err := GetOneAgentHealthConfig(context.Background(), apiReader, registryClient, dynakube, imageUri)
 
 		assert.Nil(t, err)
-		assert.NotNil(t, dynakube.Status.OneAgent.Healthcheck)
-		assert.Equal(t, testCommands[1:], dynakube.Status.OneAgent.Healthcheck.Test)
-		assert.Equal(t, DefaultHealthConfigInterval, dynakube.Status.OneAgent.Healthcheck.Interval)
-		assert.Equal(t, DefaultHealthConfigTimeout, dynakube.Status.OneAgent.Healthcheck.Timeout)
-		assert.Equal(t, DefaultHealthConfigStartPeriod, dynakube.Status.OneAgent.Healthcheck.StartPeriod)
-		assert.Equal(t, DefaultHealthConfigRetries, dynakube.Status.OneAgent.Healthcheck.Retries)
+		assert.NotNil(t, healthConfig)
+		assert.Equal(t, testCommands[1:], healthConfig.Test)
+		assert.Equal(t, DefaultHealthConfigInterval, healthConfig.Interval)
+		assert.Equal(t, DefaultHealthConfigTimeout, healthConfig.Timeout)
+		assert.Equal(t, DefaultHealthConfigStartPeriod, healthConfig.StartPeriod)
+		assert.Equal(t, DefaultHealthConfigRetries, healthConfig.Retries)
 	})
-	t.Run("docker image doesn't contain healthcheck property", func(t *testing.T) {
+	t.Run("healthConfig is not existent in OneAgent image", func(t *testing.T) {
 		dynakube := &dynatracev1beta1.DynaKube{}
 		fakeImage := &fakecontainer.FakeImage{}
 		fakeImage.ConfigFileStub = func() (*containerv1.ConfigFile, error) {
@@ -146,9 +146,9 @@ func TestSetOneAgentHealthcheck(t *testing.T) {
 
 		registryClient := &mocks.MockImageGetter{}
 		registryClient.On("PullImageInfo", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(&image, nil)
-		err := SetOneAgentHealthcheck(context.Background(), apiReader, registryClient, dynakube, imageUri)
+		healthConfig, err := GetOneAgentHealthConfig(context.Background(), apiReader, registryClient, dynakube, imageUri)
 
 		assert.Nil(t, err)
-		assert.Nil(t, dynakube.Status.OneAgent.Healthcheck)
+		assert.Nil(t, healthConfig)
 	})
 }
