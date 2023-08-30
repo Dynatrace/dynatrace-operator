@@ -111,7 +111,7 @@ func tryImagePull(troubleshootCtx *troubleshootContext, image string) error {
 	return nil
 }
 
-func createTransport(kube dynakube.DynaKube, ctx context.Context, apiReader client.Reader, troubleShootHttpClient *http.Client) (*http.Transport, error) {
+func createTransport(ctx context.Context, apiReader client.Reader, troubleShootHttpClient *http.Client, dynakube dynakubev1beta1.DynaKube) (*http.Transport, error) {
 	var transport *http.Transport
 	if troubleShootHttpClient != nil && troubleShootHttpClient.Transport != nil {
 		transport = troubleShootHttpClient.Transport.(*http.Transport).Clone()
