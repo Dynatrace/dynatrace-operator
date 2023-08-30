@@ -12,22 +12,21 @@ import (
 )
 
 const (
-	DefaultHealthConfigInterval    = time.Second * 10
-	DefaultHealthConfigStartPeriod = time.Second * 1200
-	DefaultHealthConfigTimeout     = time.Second * 30
+	DefaultHealthConfigInterval    = 10 * time.Second
+	DefaultHealthConfigStartPeriod = 1200 * time.Second
+	DefaultHealthConfigTimeout     = 30 * time.Second
 	DefaultHealthConfigRetries     = 3
 )
 
 // Constructor setting default values for docker image HealthConfig
 func newHealthConfig() *containerv1.HealthConfig {
-	healthConfig := &containerv1.HealthConfig{}
-	healthConfig.Test = []string{}
-	healthConfig.Interval = DefaultHealthConfigInterval
-	healthConfig.StartPeriod = DefaultHealthConfigStartPeriod
-	healthConfig.Timeout = DefaultHealthConfigTimeout
-	healthConfig.Retries = DefaultHealthConfigRetries
-
-	return healthConfig
+	return &containerv1.HealthConfig{
+		Test:        []string{},
+		Interval:    DefaultHealthConfigInterval,
+		StartPeriod: DefaultHealthConfigStartPeriod,
+		Timeout:     DefaultHealthConfigTimeout,
+		Retries:     DefaultHealthConfigRetries,
+	}
 }
 
 func SetOneAgentHealthcheck(ctx context.Context, apiReader client.Reader, registryClient registry.ImageGetter, dynakube *dynatracev1beta1.DynaKube, imageUri string) error {
