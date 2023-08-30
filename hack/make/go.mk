@@ -30,5 +30,5 @@ go/lint: go/format go/vet go/golangci
 
 ## Runs all go unit tests and writes the coverprofile to cover.out
 go/test:
-	go test ./... -coverprofile cover.out -tags "$(shell ./hack/build/create_go_build_tags.sh false)"
+	go test ./... -coverprofile=coverage.txt -covermode=atomic -tags "$(shell ./hack/build/create_go_build_tags.sh false)"
 
