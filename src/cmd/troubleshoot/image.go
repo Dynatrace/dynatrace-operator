@@ -10,13 +10,11 @@ import (
 
 	dynakubev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
-	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerkeychain"
 	"github.com/go-logr/logr"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/pkg/errors"
-	"github.com/spf13/afero"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -80,38 +78,29 @@ func verifyImageIsAvailable(log logr.Logger, troubleshootCtx *troubleshootContex
 }
 
 func tryImagePull(troubleshootCtx *troubleshootContext, image string) error {
-	ref, err := name.ParseReference(image)
+	imageReference, err := name.ParseReference(image)
 	if err != nil {
 		return err
 	}
 
-	dockerCfg := dockerconfig.NewDockerConfig(troubleshootCtx.apiReader, troubleshootCtx.dynakube)
-	defer func(dockerCfg *dockerconfig.DockerConfig, fs afero.Afero) {
-		_ = dockerCfg.Cleanup(fs)
-	}(dockerCfg, troubleshootCtx.fs)
-
-	dockerCfg.SetRegistryAuthSecret(&troubleshootCtx.pullSecret)
-
-	err = dockerCfg.StoreRequiredFiles(troubleshootCtx.context, troubleshootCtx.fs)
+	keychain, err := dockerkeychain.NewDockerKeychain(troubleshootCtx.context, troubleshootCtx.apiReader, troubleshootCtx.pullSecret)
 	if err != nil {
 		return err
 	}
 
-	keychain := dockerkeychain.NewDockerKeychain(dockerCfg.RegistryAuthPath, troubleshootCtx.fs)
-
-	transport, err := createTransport(troubleshootCtx.dynakube, troubleshootCtx.context, troubleshootCtx.apiReader, troubleshootCtx.httpClient)
+	transport, err := createTransport(troubleshootCtx.context, troubleshootCtx.apiReader, troubleshootCtx.httpClient, troubleshootCtx.dynakube)
 	if err != nil {
 		return err
 	}
 
-	_, err = remote.Get(ref, remote.WithContext(troubleshootCtx.context), remote.WithAuthFromKeychain(keychain), remote.WithTransport(transport))
+	_, err = remote.Get(imageReference, remote.WithContext(troubleshootCtx.context), remote.WithAuthFromKeychain(keychain), remote.WithTransport(transport))
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func createTransport(ctx context.Context, apiReader client.Reader, troubleShootHttpClient *http.Client, dynakube dynakubev1beta1.DynaKube) (*http.Transport, error) {
+func createTransport(ctx context.Context, apiReader client.Reader, troubleShootHttpClient *http.Client, kube dynakubev1beta1.DynaKube) (*http.Transport, error) {
 	var transport *http.Transport
 	if troubleShootHttpClient != nil && troubleShootHttpClient.Transport != nil {
 		transport = troubleShootHttpClient.Transport.(*http.Transport).Clone()
