@@ -76,7 +76,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 
 	log.Info("updating version info", "name", request.Name, "namespace", request.Namespace)
 
-	versionReconciler := version.NewReconciler(edgeConnect, controller.apiReader, timeprovider.New(), controller.registryClient)
+	versionReconciler := version.NewReconciler(controller.apiReader, controller.registryClient, timeprovider.New(), edgeConnect)
 	if err = versionReconciler.Reconcile(ctx); err != nil {
 		log.Error(err, "reconciliation of EdgeConnect failed", "name", request.Name, "namespace", request.Namespace)
 		return reconcile.Result{RequeueAfter: errorUpdateInterval}, nil

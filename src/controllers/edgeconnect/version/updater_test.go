@@ -26,7 +26,7 @@ func TestReconcile(t *testing.T) {
 	fakeImageVersion := registry.ImageVersion{Digest: fakeDigest}
 	fakeRegistryClient.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fakeImageVersion, nil)
 
-	updater := newUpdater(edgeConnect, fake.NewClient(), timeprovider.New(), fakeRegistryClient)
+	updater := newUpdater(fake.NewClient(), timeprovider.New(), fakeRegistryClient, edgeConnect)
 
 	err := updater.Update(context.TODO())
 	require.NoError(t, err)
@@ -38,7 +38,7 @@ func TestReconcile(t *testing.T) {
 	invalidImageVersion := registry.ImageVersion{Digest: "invaliddigest"}
 	fakeRegistryClient.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(invalidImageVersion, nil)
 
-	updater = newUpdater(edgeConnect, fake.NewClient(), timeprovider.New(), fakeRegistryClient)
+	updater = newUpdater(fake.NewClient(), timeprovider.New(), fakeRegistryClient, edgeConnect)
 
 	err = updater.Update(context.TODO())
 	require.NoError(t, err)
@@ -53,7 +53,7 @@ func TestCombineImagesWithDigest(t *testing.T) {
 	fakeImageVersion := registry.ImageVersion{Digest: fakeDigest}
 	fakeRegistryClient.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fakeImageVersion, nil)
 
-	updater := newUpdater(edgeConnect, fake.NewClient(), nil, fakeRegistryClient)
+	updater := newUpdater(fake.NewClient(), nil, fakeRegistryClient, edgeConnect)
 
 	t.Run("image and digest should be combined", func(t *testing.T) {
 		combined, err := updater.combineImageWithDigest(fakeDigest)
@@ -77,14 +77,14 @@ func TestReconcileRequired(t *testing.T) {
 
 	t.Run("initial reconcile always required", func(t *testing.T) {
 		edgeConnect := createBasicEdgeConnect()
-		updater := newUpdater(edgeConnect, fake.NewClient(), currentTime, mockImageGetter)
+		updater := newUpdater(fake.NewClient(), currentTime, mockImageGetter, edgeConnect)
 
 		assert.True(t, updater.RequiresReconcile(), "initial reconcile always required")
 	})
 
 	t.Run("only reconcile every threshold minutes", func(t *testing.T) {
 		edgeConnect := createBasicEdgeConnect()
-		updater := newUpdater(edgeConnect, fake.NewClient(), currentTime, mockImageGetter)
+		updater := newUpdater(fake.NewClient(), currentTime, mockImageGetter, edgeConnect)
 
 		edgeConnectTime := metav1.Now()
 		edgeConnect.Status.Version.LastProbeTimestamp = &edgeConnectTime
@@ -96,7 +96,7 @@ func TestReconcileRequired(t *testing.T) {
 
 	t.Run("reconcile as auto update was enabled and time is up", func(t *testing.T) {
 		edgeConnect := createBasicEdgeConnect()
-		updater := newUpdater(edgeConnect, fake.NewClient(), currentTime, mockImageGetter)
+		updater := newUpdater(fake.NewClient(), currentTime, mockImageGetter, edgeConnect)
 
 		edgeConnectTime := metav1.NewTime(currentTime.Now().Add(-time.Hour))
 		edgeConnect.Status.Version.LastProbeTimestamp = &edgeConnectTime
@@ -108,7 +108,7 @@ func TestReconcileRequired(t *testing.T) {
 
 	t.Run("reconcile if image field changed", func(t *testing.T) {
 		edgeConnect := createBasicEdgeConnect()
-		updater := newUpdater(edgeConnect, fake.NewClient(), currentTime, mockImageGetter)
+		updater := newUpdater(fake.NewClient(), currentTime, mockImageGetter, edgeConnect)
 
 		edgeConnectTime := metav1.Now()
 		edgeConnect.Status.Version.LastProbeTimestamp = &edgeConnectTime

@@ -28,7 +28,7 @@ func NewReconciler(apiReader client.Reader, registryClient registry.ImageGetter,
 
 func (reconciler *Reconciler) Reconcile(ctx context.Context) error {
 	updaters := []versionStatusUpdater{
-		newUpdater(reconciler.edgeConnect, reconciler.apiReader, reconciler.timeProvider, reconciler.registryClient),
+		newUpdater(reconciler.apiReader, reconciler.timeProvider, reconciler.registryClient, reconciler.edgeConnect),
 	}
 
 	for _, updater := range updaters {
