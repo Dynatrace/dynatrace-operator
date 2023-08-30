@@ -96,7 +96,7 @@ func prepareTransport(ctx context.Context, apiReader client.Reader, dynakube *dy
 	}
 
 	if dynakube.Spec.TrustedCAs != "" {
-		transport, err = addCertificates(ctx, transport, dynakube, apiReader)
+		transport, err = AddCertificates(ctx, transport, dynakube, apiReader)
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed adding trusted CAs to transport")
 		}
@@ -104,7 +104,7 @@ func prepareTransport(ctx context.Context, apiReader client.Reader, dynakube *dy
 	return transport, nil
 }
 
-func addCertificates(ctx context.Context, transport *http.Transport, dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader) (*http.Transport, error) {
+func AddCertificates(ctx context.Context, transport *http.Transport, dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader) (*http.Transport, error) {
 	trustedCAs, err := dynakube.TrustedCAs(ctx, apiReader)
 	if err != nil {
 		return transport, err
