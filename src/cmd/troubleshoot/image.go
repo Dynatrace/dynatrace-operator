@@ -1,10 +1,8 @@
 package troubleshoot
 
 import (
-	"fmt"
 	"net/http"
 
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerkeychain"
 	"github.com/go-logr/logr"
@@ -98,14 +96,4 @@ func tryImagePull(troubleshootCtx *troubleshootContext, image string) error {
 		return err
 	}
 	return nil
-}
-
-func getPullSecretToken(troubleshootCtx *troubleshootContext) (string, error) {
-	secretBytes, hasPullSecret := troubleshootCtx.pullSecret.Data[dtpullsecret.DockerConfigJson]
-	if !hasPullSecret {
-		return "", fmt.Errorf("token .dockerconfigjson does not exist in secret '%s'", troubleshootCtx.pullSecret.Name)
-	}
-
-	secretStr := string(secretBytes)
-	return secretStr, nil
 }

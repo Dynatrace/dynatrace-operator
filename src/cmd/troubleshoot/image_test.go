@@ -3,6 +3,7 @@ package troubleshoot
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -474,4 +475,14 @@ func TestImagePullablePullSecret(t *testing.T) {
 
 func resetFileSystem(troubleshootCtx *troubleshootContext) {
 	troubleshootCtx.fs = afero.Afero{Fs: afero.NewMemMapFs()}
+}
+
+func getPullSecretToken(troubleshootCtx *troubleshootContext) (string, error) {
+	secretBytes, hasPullSecret := troubleshootCtx.pullSecret.Data[dtpullsecret.DockerConfigJson]
+	if !hasPullSecret {
+		return "", fmt.Errorf("token .dockerconfigjson does not exist in secret '%s'", troubleshootCtx.pullSecret.Name)
+	}
+
+	secretStr := string(secretBytes)
+	return secretStr, nil
 }
