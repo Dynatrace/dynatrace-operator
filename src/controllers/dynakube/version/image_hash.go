@@ -67,7 +67,7 @@ func GetImageVersion( //nolint:revive // argument-limit
 	}
 
 	if dynakube.Spec.TrustedCAs != "" {
-		transport, err = AddCertificates(ctx, transport, dynakube, apiReader)
+		transport, err = AddCertificates(ctx, apiReader, transport, dynakube)
 		if err != nil {
 			return registry.ImageVersion{}, fmt.Errorf("addCertificates(): %w", err)
 		}
@@ -76,7 +76,7 @@ func GetImageVersion( //nolint:revive // argument-limit
 	return registryClient.GetImageVersion(ctx, keychain, transport, imageName)
 }
 
-func AddCertificates(ctx context.Context, transport *http.Transport, dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader) (*http.Transport, error) {
+func AddCertificates(ctx context.Context, apiReader client.Reader, transport *http.Transport, dynakube *dynatracev1beta1.DynaKube) (*http.Transport, error) {
 	trustedCAs, err := dynakube.TrustedCAs(ctx, apiReader)
 	if err != nil {
 		return transport, err
