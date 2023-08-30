@@ -66,7 +66,7 @@ func (updater *activeGateUpdater) CheckForDowngrade(latestVersion string) (bool,
 	return false, nil
 }
 
-func (updater *activeGateUpdater) UseTenantRegistry(ctx context.Context, registryAuthPath string) error {
+func (updater *activeGateUpdater) UseTenantRegistry(ctx context.Context) error {
 	defaultImage := updater.dynakube.DefaultActiveGateImage()
-	return updateVersionStatusForTenantRegistry(ctx, updater.apiReader, updater.dynakube, updater.Target(), updater.versionFunc, defaultImage, registryAuthPath)
+	return updateVersionStatusForTenantRegistry(ctx, updater.apiReader, updater.dynakube, updater.Target(), updater.versionFunc, defaultImage)
 }

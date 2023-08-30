@@ -8,6 +8,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/src/registry"
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/spf13/afero"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -67,11 +68,19 @@ func (reconciler *Reconciler) updateVersionStatuses(ctx context.Context, updater
 
 	for _, updater := range updaters {
 		log.Info("updating version status", "updater", updater.Name())
-		err := reconciler.run(ctx, updater, dockerConfig.RegistryAuthPath)
+		err := reconciler.run(ctx, updater)
 		if err != nil {
 			return err
 		}
 	}
+
+	healthConfig, err := GetOneAgentHealthConfig(ctx, reconciler.apiReader, registry.NewClient(), reconciler.dynakube, reconciler.dynakube.OneAgentImage())
+	if err != nil {
+		log.Error(err, "could not set OneAgent healthcheck")
+	} else {
+		reconciler.dynakube.Status.OneAgent.Healthcheck = healthConfig
+	}
+
 	return nil
 }
 

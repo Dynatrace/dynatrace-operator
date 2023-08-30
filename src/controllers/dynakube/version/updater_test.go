@@ -54,7 +54,7 @@ func (m *mockUpdater) LatestImageInfo() (*dtclient.LatestImageInfo, error) {
 	args := m.Called()
 	return args.Get(0).(*dtclient.LatestImageInfo), args.Error(1)
 }
-func (m *mockUpdater) UseTenantRegistry(_ context.Context, _ string) error {
+func (m *mockUpdater) UseTenantRegistry(_ context.Context) error {
 	args := m.Called()
 	return args.Error(0)
 }
@@ -85,7 +85,7 @@ func TestRun(t *testing.T) {
 			versionFunc:  registry.ImageVersionExt,
 		}
 		updater := newCustomImageUpdater(target, testImage.String())
-		err := versionReconciler.run(ctx, updater, "")
+		err := versionReconciler.run(ctx, updater)
 		require.NoError(t, err)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.CustomImageVersionSource, target.Source)
@@ -100,7 +100,7 @@ func TestRun(t *testing.T) {
 			versionFunc:  registry.ImageVersionExt,
 		}
 		updater := newCustomImageUpdater(target, "incorrect-uri")
-		err := versionReconciler.run(ctx, updater, "")
+		err := versionReconciler.run(ctx, updater)
 		require.Error(t, err)
 		assert.Nil(t, target.LastProbeTimestamp)
 		assert.Empty(t, target.Source)
@@ -116,25 +116,25 @@ func TestRun(t *testing.T) {
 		updater := newDefaultUpdater(target, false)
 
 		// 1. call => status empty => should run
-		err := versionReconciler.run(ctx, updater, "")
+		err := versionReconciler.run(ctx, updater)
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 1)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.TenantRegistryVersionSource, target.Source)
 
 		// 2. call => status NOT empty => should NOT run
-		err = versionReconciler.run(ctx, updater, "")
+		err = versionReconciler.run(ctx, updater)
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 1)
 
 		// 3. call => source is different => should run
 		target.Source = status.CustomImageVersionSource
-		err = versionReconciler.run(ctx, updater, "")
+		err = versionReconciler.run(ctx, updater)
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 2)
 
 		// 4. call => source is NOT different => should NOT run
-		err = versionReconciler.run(ctx, updater, "")
+		err = versionReconciler.run(ctx, updater)
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 2)
 	})
@@ -156,7 +156,7 @@ func TestRun(t *testing.T) {
 		updater.On("IsClassicFullStackEnabled").Return(false)
 		updater.On("CheckForDowngrade").Return(false, nil)
 
-		err := versionReconciler.run(ctx, updater, "")
+		err := versionReconciler.run(ctx, updater)
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "LatestImageInfo", 1)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
@@ -183,7 +183,7 @@ func TestRun(t *testing.T) {
 		updater.On("IsClassicFullStackEnabled").Return(false)
 		updater.On("CheckForDowngrade").Return(true, nil)
 
-		err := versionReconciler.run(ctx, updater, "")
+		err := versionReconciler.run(ctx, updater)
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "LatestImageInfo", 1)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
@@ -210,7 +210,7 @@ func TestRun(t *testing.T) {
 		updater.On("CustomVersion").Return("")
 		updater.On("UseTenantRegistry").Return(nil)
 
-		err := versionReconciler.run(ctx, updater, "")
+		err := versionReconciler.run(ctx, updater)
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "LatestImageInfo", 0)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
@@ -236,7 +236,7 @@ func TestRun(t *testing.T) {
 		updater.On("CustomVersion").Return(testImage.Tag)
 		updater.On("UseTenantRegistry").Return(nil)
 
-		err := versionReconciler.run(ctx, updater, "")
+		err := versionReconciler.run(ctx, updater)
 		require.NoError(t, err)
 		updater.AssertNumberOfCalls(t, "LatestImageInfo", 0)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
@@ -301,7 +301,7 @@ func TestUpdateVersionStatus(t *testing.T) {
 	t.Run("failing to get digest should cause error", func(t *testing.T) {
 		registry := newEmptyFakeRegistry()
 		target := status.VersionStatus{}
-		err := setImageIDWithDigest(ctx, fake.NewClient(), &dynatracev1beta1.DynaKube{}, &target, registry.ImageVersionExt, testImage.String(), "")
+		err := setImageIDWithDigest(ctx, fake.NewClient(), &dynatracev1beta1.DynaKube{}, &target, registry.ImageVersionExt, testImage.String())
 		assert.Error(t, err)
 	})
 
@@ -310,7 +310,7 @@ func TestUpdateVersionStatus(t *testing.T) {
 		target := status.VersionStatus{}
 		dynakube := newClassicFullStackDynakube()
 		dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: "http://username:password@host:port"}
-		err := setImageIDWithDigest(ctx, fake.NewClient(), &dynatracev1beta1.DynaKube{}, &target, registry.ImageVersionExt, testImage.String(), "")
+		err := setImageIDWithDigest(ctx, fake.NewClient(), &dynatracev1beta1.DynaKube{}, &target, registry.ImageVersionExt, testImage.String())
 		assert.Error(t, err)
 	})
 
@@ -321,7 +321,7 @@ func TestUpdateVersionStatus(t *testing.T) {
 			},
 		})
 		target := status.VersionStatus{}
-		err := setImageIDWithDigest(ctx, fake.NewClient(), &dynatracev1beta1.DynaKube{}, &target, registry.ImageVersionExt, testImage.String(), "")
+		err := setImageIDWithDigest(ctx, fake.NewClient(), &dynatracev1beta1.DynaKube{}, &target, registry.ImageVersionExt, testImage.String())
 		require.NoError(t, err)
 		assertVersionStatusEquals(t, registry, getTaggedReference(t, testImage.String()), target)
 	})
@@ -331,11 +331,11 @@ func TestUpdateVersionStatus(t *testing.T) {
 		expectedDigest := "sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
 		expectedID := expectedRepo + "@" + expectedDigest
 		target := status.VersionStatus{}
-		boomFunc := func(context.Context, client.Reader, registry.ImageGetter, *dynatracev1beta1.DynaKube, string, string) (registry.ImageVersion, error) {
+		boomFunc := func(context.Context, client.Reader, registry.ImageGetter, *dynatracev1beta1.DynaKube, string) (registry.ImageVersion, error) {
 			t.Error("digest function was called unexpectedly")
 			return registry.ImageVersion{}, nil
 		}
-		err := setImageIDWithDigest(ctx, fake.NewClient(), &dynatracev1beta1.DynaKube{}, &target, boomFunc, expectedID, "")
+		err := setImageIDWithDigest(ctx, fake.NewClient(), &dynatracev1beta1.DynaKube{}, &target, boomFunc, expectedID)
 		require.NoError(t, err)
 		assert.Equal(t, expectedID, target.ImageID)
 	})
@@ -344,11 +344,11 @@ func TestUpdateVersionStatus(t *testing.T) {
 		expectedDigest := "sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
 		expectedID := expectedRepo + ":tag@" + expectedDigest
 		target := status.VersionStatus{}
-		boomFunc := func(context.Context, client.Reader, registry.ImageGetter, *dynatracev1beta1.DynaKube, string, string) (registry.ImageVersion, error) {
+		boomFunc := func(context.Context, client.Reader, registry.ImageGetter, *dynatracev1beta1.DynaKube, string) (registry.ImageVersion, error) {
 			t.Error("digest function was called unexpectedly")
 			return registry.ImageVersion{}, nil
 		}
-		err := setImageIDWithDigest(ctx, fake.NewClient(), &dynatracev1beta1.DynaKube{}, &target, boomFunc, expectedID, "")
+		err := setImageIDWithDigest(ctx, fake.NewClient(), &dynatracev1beta1.DynaKube{}, &target, boomFunc, expectedID)
 		require.NoError(t, err)
 		assert.Equal(t, expectedID, target.ImageID)
 	})

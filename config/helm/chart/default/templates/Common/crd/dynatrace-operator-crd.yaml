@@ -3573,6 +3573,10 @@ spec:
                         description: UUID of the tenant, received from the tenant
                         type: string
                     type: object
+                  healthcheck:
+                    description: Commands used for OneAgent's readiness probe
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
                   imageID:
                     description: Image ID
                     type: string
