@@ -27,10 +27,10 @@ type updater struct {
 var _ versionStatusUpdater = updater{}
 
 func newUpdater(
-	edgeConnect *edgeconnectv1alpha1.EdgeConnect,
 	apiReader client.Reader,
 	timeprovider *timeprovider.Provider,
 	registryClient registry.ImageGetter,
+	edgeConnect *edgeconnectv1alpha1.EdgeConnect,
 ) *updater {
 	return &updater{
 		edgeConnect:    edgeConnect,
