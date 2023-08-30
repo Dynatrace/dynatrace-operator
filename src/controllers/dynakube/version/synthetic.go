@@ -67,7 +67,7 @@ func (updater syntheticUpdater) CheckForDowngrade(latestVersion string) (bool, e
 	return false, nil
 }
 
-func (updater *syntheticUpdater) UseTenantRegistry(ctx context.Context, registryAuthPath string) error {
+func (updater *syntheticUpdater) UseTenantRegistry(ctx context.Context) error {
 	defaultImage := updater.dynakube.DefaultSyntheticImage()
-	return updateVersionStatusForTenantRegistry(ctx, updater.apiReader, updater.dynakube, updater.Target(), updater.versionFunc, defaultImage, registryAuthPath)
+	return updateVersionStatusForTenantRegistry(ctx, updater.apiReader, updater.dynakube, updater.Target(), updater.versionFunc, defaultImage)
 }

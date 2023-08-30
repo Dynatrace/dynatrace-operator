@@ -8,7 +8,10 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/src/registry"
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
+	containerv1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -67,9 +70,55 @@ func (reconciler *Reconciler) updateVersionStatuses(ctx context.Context, updater
 
 	for _, updater := range updaters {
 		log.Info("updating version status", "updater", updater.Name())
-		err := reconciler.run(ctx, updater, dockerConfig.RegistryAuthPath)
+		err := reconciler.run(ctx, updater)
 		if err != nil {
 			return err
+		}
+	}
+
+	err = SetOneAgentHealthcheck(ctx, reconciler.apiReader, registry.NewClient(), reconciler.dynakube, reconciler.dynakube.OneAgentImage())
+	if err != nil {
+		log.Error(err, "could not set OneAgent healthcheck")
+	}
+
+	return nil
+}
+
+func SetOneAgentHealthcheck(ctx context.Context, apiReader client.Reader, registryClient registry.ImageGetter, dynakube *dynatracev1beta1.DynaKube, imageUri string) error {
+	imageInfo, err := PullImageInfo(ctx, apiReader, registryClient, dynakube, imageUri)
+	if err != nil {
+		return errors.WithMessage(err, "error pulling image info")
+	}
+
+	configFile, err := (*imageInfo).ConfigFile()
+	if err != nil {
+		return errors.WithMessage(err, "error reading image config file")
+	}
+
+	// Healthcheck.Test values from go-containerregistry documentation:
+	// {} : inherit healthcheck
+	// {"NONE"} : disable healthcheck
+	// {"CMD", args...} : exec arguments directly
+	// {"CMD-SHELL", command} : run command with system's default shell
+	if configFile.Config.Healthcheck != nil && len(configFile.Config.Healthcheck.Test) > 0 {
+		healthConfig := &containerv1.HealthConfig{}
+
+		if configFile.Config.Healthcheck.Test[0] == "CMD-SHELL" {
+			healthConfig.Test = []string{"/bin/sh", "-c"}
+			healthConfig.Test = append(
+				healthConfig.Test,
+				configFile.Config.Healthcheck.Test[1:]...,
+			)
+		} else if configFile.Config.Healthcheck.Test[0] == "CMD" {
+			healthConfig.Test = configFile.Config.Healthcheck.Test[1:]
+		}
+
+		if healthConfig.Test != nil && len(healthConfig.Test) > 0 {
+			healthConfig.Interval = configFile.Config.Healthcheck.Interval
+			healthConfig.StartPeriod = configFile.Config.Healthcheck.StartPeriod
+			healthConfig.Timeout = configFile.Config.Healthcheck.Timeout
+			healthConfig.Retries = configFile.Config.Healthcheck.Retries
+			dynakube.Status.OneAgent.Healthcheck = healthConfig
 		}
 	}
 	return nil

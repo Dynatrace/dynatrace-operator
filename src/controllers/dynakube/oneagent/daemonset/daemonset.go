@@ -176,6 +176,8 @@ func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	return result, nil
 }
 
+const DefaultReadinessProbeInitialDelay = int32(30)
+
 func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 	resources := dsInfo.resources()
 	dnsPolicy := dsInfo.dnsPolicy()
@@ -186,25 +188,13 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 	imagePullSecrets := dsInfo.imagePullSecrets()
 	affinity := dsInfo.affinity()
 
-	return corev1.PodSpec{
+	podSpec := corev1.PodSpec{
 		Containers: []corev1.Container{{
 			Args:            arguments,
 			Env:             environmentVariables,
 			Image:           dsInfo.immutableOneAgentImage(),
 			ImagePullPolicy: corev1.PullAlways,
 			Name:            podName,
-			ReadinessProbe: &corev1.Probe{
-				ProbeHandler: corev1.ProbeHandler{
-					Exec: &corev1.ExecAction{
-						Command: []string{
-							"/bin/sh", "-c", "grep -q oneagentwatchdo /proc/[0-9]*/stat",
-						},
-					},
-				},
-				InitialDelaySeconds: 30,
-				PeriodSeconds:       30,
-				TimeoutSeconds:      1,
-			},
 			Resources:       resources,
 			SecurityContext: dsInfo.securityContext(),
 			VolumeMounts:    volumeMounts,
@@ -222,6 +212,22 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 		Affinity:                      affinity,
 		TerminationGracePeriodSeconds: address.Of(defaultTerminationGracePeriod),
 	}
+
+	if dsInfo.dynakube.NeedsOneAgentReadinessProbe() {
+		podSpec.Containers[0].ReadinessProbe = &corev1.Probe{
+			ProbeHandler: corev1.ProbeHandler{
+				Exec: &corev1.ExecAction{
+					Command: dsInfo.dynakube.Status.OneAgent.Healthcheck.Test,
+				},
+			},
+			InitialDelaySeconds: DefaultReadinessProbeInitialDelay,
+			PeriodSeconds:       int32(dsInfo.dynakube.Status.OneAgent.Healthcheck.Interval.Seconds()),
+			TimeoutSeconds:      int32(dsInfo.dynakube.Status.OneAgent.Healthcheck.Timeout.Seconds()),
+			FailureThreshold:    int32(dsInfo.dynakube.Status.OneAgent.Healthcheck.Retries),
+		}
+	}
+
+	return podSpec
 }
 
 func (dsInfo *builderInfo) immutableOneAgentImage() string {
