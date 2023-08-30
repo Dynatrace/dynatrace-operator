@@ -72,7 +72,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 		mockClient := &dtclient.MockDynatraceClient{}
 		updater := newOneAgentUpdater(dynakube, fake.NewClient(), mockClient, registry.ImageVersionExt)
 
-		err := updater.UseTenantRegistry(context.TODO(), "")
+		err := updater.UseTenantRegistry(context.TODO())
 
 		require.NoError(t, err)
 		assertStatusBasedOnTenantRegistry(t, expectedImage, testVersion, dynakube.Status.OneAgent.VersionStatus)
@@ -98,7 +98,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 		mockLatestAgentVersion(mockClient, testVersion)
 		updater := newOneAgentUpdater(dynakube, fake.NewClient(), mockClient, registry.ImageVersionExt)
 
-		err := updater.UseTenantRegistry(context.TODO(), "")
+		err := updater.UseTenantRegistry(context.TODO())
 
 		require.NoError(t, err)
 		assertStatusBasedOnTenantRegistry(t, expectedImage, testVersion, dynakube.Status.OneAgent.VersionStatus)
@@ -134,13 +134,13 @@ func TestOneAgentUseDefault(t *testing.T) {
 		mockLatestAgentVersion(mockClient, testVersion)
 		updater := newOneAgentUpdater(dynakube, fake.NewClient(), mockClient, registry.ImageVersionExt)
 
-		err := updater.UseTenantRegistry(context.TODO(), "")
+		err := updater.UseTenantRegistry(context.TODO())
 		require.Error(t, err)
 
 		dynakube.Status.OneAgent.Version = ""
 		dynakube.Status.OneAgent.Source = status.PublicRegistryVersionSource
 
-		err = updater.UseTenantRegistry(context.TODO(), "")
+		err = updater.UseTenantRegistry(context.TODO())
 		require.Error(t, err)
 	})
 }
