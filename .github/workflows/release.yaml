@@ -282,6 +282,14 @@ jobs:
           mv config/deploy/openshift/openshift-all.yaml config/deploy/openshift/openshift.yaml
       - name: Generate CRD
         run: make manifests/crd/release
+      - name: Build helm packages
+        uses: ./.github/actions/build-helm
+        with:
+          version: ${{ needs.prepare.outputs.version }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          secring: ${{ secrets.SECRING }}
+          passphrase: ${{ secrets.PASSPHRASE }}
+          output-dir: "./helm-pkg"
       - name: Pre-release
         uses: softprops/action-gh-release@v1
         with:
@@ -289,6 +297,8 @@ jobs:
           files: |
             config/deploy/kubernetes/kubernetes.yaml
             config/deploy/openshift/openshift.yaml
+            helm-pkg/dynatrace-operator-${{ needs.prepare.outputs.version }}.tgz
+            helm-pkg/dynatrace-operator-${{ needs.prepare.outputs.version }}.tgz.prov
           token: ${{ secrets.GITHUB_TOKEN }}
           prerelease: true
           draft: true
