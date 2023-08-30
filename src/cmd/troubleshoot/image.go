@@ -1,19 +1,15 @@
 package troubleshoot
 
 import (
-	"context"
 	"fmt"
 	"net/http"
-	"net/url"
 
-	dynakubev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerkeychain"
 	"github.com/go-logr/logr"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -86,7 +82,13 @@ func tryImagePull(troubleshootCtx *troubleshootContext, image string) error {
 		return err
 	}
 
-	transport, err := createTransport(troubleshootCtx.context, troubleshootCtx.apiReader, troubleshootCtx.httpClient, &troubleshootCtx.dynakube)
+	var transport *http.Transport
+	if troubleshootCtx.httpClient != nil && troubleshootCtx.httpClient.Transport != nil {
+		transport = troubleshootCtx.httpClient.Transport.(*http.Transport).Clone()
+	} else {
+		transport = http.DefaultTransport.(*http.Transport).Clone()
+	}
+	transport, err = version.PrepareTransport(troubleshootCtx.context, troubleshootCtx.apiReader, transport, &troubleshootCtx.dynakube)
 	if err != nil {
 		return err
 	}
@@ -96,38 +98,6 @@ func tryImagePull(troubleshootCtx *troubleshootContext, image string) error {
 		return err
 	}
 	return nil
-}
-
-func createTransport(ctx context.Context, apiReader client.Reader, troubleShootHttpClient *http.Client, kube *dynakubev1beta1.DynaKube) (*http.Transport, error) {
-	var transport *http.Transport
-	if troubleShootHttpClient != nil && troubleShootHttpClient.Transport != nil {
-		transport = troubleShootHttpClient.Transport.(*http.Transport).Clone()
-	} else {
-		transport = http.DefaultTransport.(*http.Transport).Clone()
-	}
-	if kube.HasProxy() {
-		proxy, err := kube.Proxy(ctx, apiReader)
-		if err != nil {
-			return nil, err
-		}
-		proxyUrl, err := url.Parse(proxy)
-		if err != nil {
-			return nil, err
-		}
-
-		transport.Proxy = func(req *http.Request) (*url.URL, error) {
-			return proxyUrl, nil
-		}
-	}
-
-	if kube.Spec.TrustedCAs != "" {
-		var err error
-		transport, err = version.AddCertificates(ctx, apiReader, transport, kube)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return transport, nil
 }
 
 func getPullSecretToken(troubleshootCtx *troubleshootContext) (string, error) {

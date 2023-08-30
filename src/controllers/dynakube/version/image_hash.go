@@ -44,8 +44,8 @@ func GetImageVersion(
 	if err != nil {
 		return registry.ImageVersion{}, errors.WithMessage(err, "failed to fetch pull secret")
 	}
-
-	transport, err := prepareTransport(ctx, apiReader, dynakube)
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport, err = PrepareTransport(ctx, apiReader, transport, dynakube)
 	if err != nil {
 		return registry.ImageVersion{}, errors.WithMessage(err, "failed to prepare transport")
 	}
@@ -64,8 +64,8 @@ func PullImageInfo(
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to fetch pull secret")
 	}
-
-	transport, err := prepareTransport(ctx, apiReader, dynakube)
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport, err = PrepareTransport(ctx, apiReader, transport, dynakube)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to prepare transport")
 	}
@@ -73,11 +73,9 @@ func PullImageInfo(
 	return registryClient.PullImageInfo(ctx, keychain, transport, imageName)
 }
 
-func prepareTransport(ctx context.Context, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube) (*http.Transport, error) {
+func PrepareTransport(ctx context.Context, apiReader client.Reader, transport *http.Transport, dynakube *dynatracev1beta1.DynaKube) (*http.Transport, error) {
 	var err error
 	var proxy string
-
-	transport := http.DefaultTransport.(*http.Transport).Clone()
 
 	if dynakube.HasProxy() {
 		proxy, err = dynakube.Proxy(ctx, apiReader)
