@@ -17,7 +17,7 @@ type Reconciler struct {
 	registryClient registry.ImageGetter
 }
 
-func NewReconciler(edgeConnect *edgeconnectv1alpha1.EdgeConnect, apiReader client.Reader, timeProvider *timeprovider.Provider, registryClient registry.ImageGetter) *Reconciler { //nolint:revive
+func NewReconciler(apiReader client.Reader, registryClient registry.ImageGetter, timeProvider *timeprovider.Provider, edgeConnect *edgeconnectv1alpha1.EdgeConnect) *Reconciler { //nolint:revive
 	return &Reconciler{
 		edgeConnect:    edgeConnect,
 		apiReader:      apiReader,
