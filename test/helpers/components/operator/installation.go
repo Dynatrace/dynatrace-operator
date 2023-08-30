@@ -61,9 +61,9 @@ func installViaHelm(t *testing.T, releaseTag string, withCsi bool, namespace str
 		t.Log("failed to add dynatrace helm chart repo", err)
 	}
 
-	err = manager.RunRepo(helm.WithArgs("update"))
+	err = manager.RunRepo(helm.WithArgs("install"))
 	if err != nil {
-		t.Fatal("failed to upgrade helm repo")
+		t.Fatal("failed to install helm repo")
 	}
 
 	err = manager.RunUpgrade(helm.WithName("dynatrace-operator"), helm.WithNamespace(namespace),
