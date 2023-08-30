@@ -78,10 +78,6 @@ func prepareTransport(ctx context.Context, apiReader client.Reader, dynakube *dy
 	var proxy string
 
 	transport := http.DefaultTransport.(*http.Transport).Clone()
-	keychain, err := dockerkeychain.NewDockerKeychain(ctx, apiReader, dynakube.PullSecretWithoutData())
-	if err != nil {
-		log.Info("failed to fetch pull secret", "error", err)
-	}
 
 	if dynakube.HasProxy() {
 		proxy, err = dynakube.Proxy(ctx, apiReader)
