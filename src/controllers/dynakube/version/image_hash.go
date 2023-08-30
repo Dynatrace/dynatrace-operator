@@ -44,8 +44,8 @@ func GetImageVersion(
 	if err != nil {
 		return registry.ImageVersion{}, errors.WithMessage(err, "failed to fetch pull secret")
 	}
-
-	transport, err := prepareTransport(ctx, apiReader, dynakube)
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport, err = PrepareTransport(ctx, apiReader, transport, dynakube)
 	if err != nil {
 		return registry.ImageVersion{}, errors.WithMessage(err, "failed to prepare transport")
 	}
@@ -64,8 +64,8 @@ func PullImageInfo(
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to fetch pull secret")
 	}
-
-	transport, err := prepareTransport(ctx, apiReader, dynakube)
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport, err = PrepareTransport(ctx, apiReader, transport, dynakube)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to prepare transport")
 	}
@@ -73,11 +73,9 @@ func PullImageInfo(
 	return registryClient.PullImageInfo(ctx, keychain, transport, imageName)
 }
 
-func prepareTransport(ctx context.Context, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube) (*http.Transport, error) {
+func PrepareTransport(ctx context.Context, apiReader client.Reader, transport *http.Transport, dynakube *dynatracev1beta1.DynaKube) (*http.Transport, error) {
 	var err error
 	var proxy string
-
-	transport := http.DefaultTransport.(*http.Transport).Clone()
 
 	if dynakube.HasProxy() {
 		proxy, err = dynakube.Proxy(ctx, apiReader)
@@ -96,7 +94,7 @@ func prepareTransport(ctx context.Context, apiReader client.Reader, dynakube *dy
 	}
 
 	if dynakube.Spec.TrustedCAs != "" {
-		transport, err = addCertificates(transport, dynakube, apiReader)
+		transport, err = AddCertificates(ctx, apiReader, transport, dynakube)
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed adding trusted CAs to transport")
 		}
@@ -104,8 +102,8 @@ func prepareTransport(ctx context.Context, apiReader client.Reader, dynakube *dy
 	return transport, nil
 }
 
-func addCertificates(transport *http.Transport, dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader) (*http.Transport, error) {
-	trustedCAs, err := dynakube.TrustedCAs(context.TODO(), apiReader)
+func AddCertificates(ctx context.Context, apiReader client.Reader, transport *http.Transport, dynakube *dynatracev1beta1.DynaKube) (*http.Transport, error) {
+	trustedCAs, err := dynakube.TrustedCAs(ctx, apiReader)
 	if err != nil {
 		return transport, err
 	}
