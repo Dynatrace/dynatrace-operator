@@ -12,37 +12,19 @@ import (
 )
 
 func New(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
-	// prepare app labels
-	appLabels := kubeobjects.NewAppLabels(
-		// appName =
-		kubeobjects.EdgeConnectComponentLabel,
-		// name =
-		kubeobjects.EdgeConnectComponentLabel,
-		// component =
-		kubeobjects.EdgeConnectComponentLabel,
-		// version =
-		// NB: as of now edgeConnect doesn't have any version
-		"latest")
-	// build labels
+	appLabels := buildAppLabels()
 	labels := kubeobjects.MergeMap(
 		instance.Labels,
 		appLabels.BuildLabels(),
 		map[string]string{kubeobjects.AppInstanceLabel: instance.ObjectMeta.Name},
 	)
 
-	// prepare annotations
-	annotations := map[string]string{
-		consts.AnnotationEdgeConnectContainerAppArmor: "runtime/default",
-		webhook.AnnotationDynatraceInject:             "false",
-	}
-	annotations = kubeobjects.MergeMap(instance.Annotations, annotations)
-
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        instance.Name,
 			Namespace:   instance.Namespace,
 			Labels:      labels,
-			Annotations: annotations,
+			Annotations: buildAnnotations(instance),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: instance.Spec.Replicas,
@@ -54,48 +36,13 @@ func New(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
 					Labels: labels,
 				},
 				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name:            consts.EdgeConnectContainerName,
-							Image:           instance.Status.Version.ImageID,
-							ImagePullPolicy: corev1.PullAlways,
-							Env:             prepareContainerEnvVars(instance),
-							Resources: corev1.ResourceRequirements{
-								Requests: kubeobjects.NewResources("100m", "128Mi"),
-								Limits:   kubeobjects.NewResources("100m", "128Mi"),
-							},
-							SecurityContext: &corev1.SecurityContext{
-								AllowPrivilegeEscalation: address.Of(false),
-								Privileged:               address.Of(false),
-								ReadOnlyRootFilesystem:   address.Of(true),
-								RunAsGroup:               address.Of(kubeobjects.UnprivilegedGroup),
-								RunAsUser:                address.Of(kubeobjects.UnprivilegedUser),
-								RunAsNonRoot:             address.Of(true),
-							},
-							VolumeMounts: []corev1.VolumeMount{
-								{MountPath: "/etc/edge_connect", Name: "oauth-secret", ReadOnly: true},
-							},
-						},
-					},
+					Containers: []corev1.Container{edgeConnectContainer(instance)},
 					ImagePullSecrets: []corev1.LocalObjectReference{
 						{Name: instance.Spec.CustomPullSecret},
 					},
-					ServiceAccountName:            "dynatrace-edgeconnect",
+					ServiceAccountName:            consts.EdgeConnectServiceAccountName,
 					TerminationGracePeriodSeconds: address.Of(int64(30)),
-					Volumes: []corev1.Volume{
-						{
-							Name: "oauth-secret",
-							VolumeSource: corev1.VolumeSource{
-								Secret: &corev1.SecretVolumeSource{
-									SecretName: instance.Spec.OAuth.ClientSecret,
-									Items: []corev1.KeyToPath{
-										{Key: "oauth-client-id", Path: "oauth/client_id"},
-										{Key: "oauth-client-secret", Path: "oauth/client_secret"},
-									},
-								},
-							},
-						},
-					},
+					Volumes:                       []corev1.Volume{prepareVolume(instance)},
 				},
 			},
 			Strategy: appsv1.DeploymentStrategy{
@@ -139,4 +86,65 @@ func prepareContainerEnvVars(instance *edgeconnectv1alpha1.EdgeConnect) []corev1
 		})
 	}
 	return envVars
+}
+
+func buildAppLabels() *kubeobjects.AppLabels {
+	return kubeobjects.NewAppLabels(
+		// appName =
+		kubeobjects.EdgeConnectComponentLabel,
+		// name =
+		kubeobjects.EdgeConnectComponentLabel,
+		// component =
+		kubeobjects.EdgeConnectComponentLabel,
+		// version =
+		// NB: as of now edgeConnect doesn't have any version
+		"latest")
+}
+
+func buildAnnotations(instance *edgeconnectv1alpha1.EdgeConnect) map[string]string {
+	annotations := map[string]string{
+		consts.AnnotationEdgeConnectContainerAppArmor: "runtime/default",
+		webhook.AnnotationDynatraceInject:             "false",
+	}
+	annotations = kubeobjects.MergeMap(instance.Annotations, annotations)
+	return annotations
+}
+
+func edgeConnectContainer(instance *edgeconnectv1alpha1.EdgeConnect) corev1.Container {
+	return corev1.Container{
+		Name:            consts.EdgeConnectContainerName,
+		Image:           instance.Status.Version.ImageID,
+		ImagePullPolicy: corev1.PullAlways,
+		Env:             prepareContainerEnvVars(instance),
+		Resources: corev1.ResourceRequirements{
+			Requests: kubeobjects.NewResources("100m", "128Mi"),
+			Limits:   kubeobjects.NewResources("100m", "128Mi"),
+		},
+		SecurityContext: &corev1.SecurityContext{
+			AllowPrivilegeEscalation: address.Of(false),
+			Privileged:               address.Of(false),
+			ReadOnlyRootFilesystem:   address.Of(true),
+			RunAsGroup:               address.Of(kubeobjects.UnprivilegedGroup),
+			RunAsUser:                address.Of(kubeobjects.UnprivilegedUser),
+			RunAsNonRoot:             address.Of(true),
+		},
+		VolumeMounts: []corev1.VolumeMount{
+			{MountPath: consts.EdgeConnectMountPath, Name: consts.EdgeConnectVolumeMountName, ReadOnly: true},
+		},
+	}
+}
+
+func prepareVolume(instance *edgeconnectv1alpha1.EdgeConnect) corev1.Volume {
+	return corev1.Volume{
+		Name: consts.EdgeConnectVolumeMountName,
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: instance.Spec.OAuth.ClientSecret,
+				Items: []corev1.KeyToPath{
+					{Key: "oauth-client-id", Path: "oauth/client_id"},
+					{Key: "oauth-client-secret", Path: "oauth/client_secret"},
+				},
+			},
+		},
+	}
 }
