@@ -26,10 +26,10 @@ type versionStatusUpdater interface {
 	CheckForDowngrade(latestVersion string) (bool, error)
 	LatestImageInfo() (*dtclient.LatestImageInfo, error)
 
-	UseTenantRegistry(context.Context, string) error
+	UseTenantRegistry(context.Context) error
 }
 
-func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpdater, registryAuthPath string) error {
+func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpdater) error {
 	currentSource := determineSource(updater)
 	var err error
 	defer func() {
@@ -42,7 +42,7 @@ func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpda
 	customImage := updater.CustomImage()
 	if customImage != "" {
 		log.Info("updating version status according to custom image", "updater", updater.Name())
-		err = setImageIDWithDigest(ctx, reconciler.apiReader, reconciler.dynakube, updater.Target(), reconciler.versionFunc, customImage, registryAuthPath)
+		err = setImageIDWithDigest(ctx, reconciler.apiReader, reconciler.dynakube, updater.Target(), reconciler.versionFunc, customImage)
 		return err
 	}
 
@@ -70,7 +70,7 @@ func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpda
 			return err
 		}
 
-		err = setImageIDWithDigest(ctx, reconciler.apiReader, reconciler.dynakube, updater.Target(), reconciler.versionFunc, publicImage.String(), registryAuthPath)
+		err = setImageIDWithDigest(ctx, reconciler.apiReader, reconciler.dynakube, updater.Target(), reconciler.versionFunc, publicImage.String())
 		if err != nil {
 			log.Info("could not update version status according to the public registry", "updater", updater.Name())
 			return err
@@ -79,7 +79,7 @@ func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpda
 	}
 
 	log.Info("updating version status according to the tenant registry", "updater", updater.Name())
-	err = updater.UseTenantRegistry(ctx, registryAuthPath)
+	err = updater.UseTenantRegistry(ctx)
 	return err
 }
 
@@ -103,7 +103,6 @@ func setImageIDWithDigest( //nolint:revive
 	target *status.VersionStatus,
 	imageVersionFunc ImageVersionFunc,
 	imageUri string,
-	registryAuthPath string,
 ) error {
 	ref, err := reference.Parse(imageUri)
 	if err != nil {
@@ -118,7 +117,7 @@ func setImageIDWithDigest( //nolint:revive
 		target.ImageID = canonRef.String()
 	} else if taggedRef, ok := ref.(reference.NamedTagged); ok {
 		registryClient := registry.NewClient()
-		imageVersion, err := imageVersionFunc(ctx, apiReader, registryClient, dynakube, imageUri, registryAuthPath)
+		imageVersion, err := imageVersionFunc(ctx, apiReader, registryClient, dynakube, imageUri)
 		if err != nil {
 			log.Info("failed to determine image version")
 			return err
@@ -151,7 +150,6 @@ func updateVersionStatusForTenantRegistry( //nolint:revive
 	target *status.VersionStatus,
 	imageVersionFunc ImageVersionFunc,
 	imageUri string,
-	registryAuthPath string,
 ) error {
 	ref, err := reference.Parse(imageUri)
 	if err != nil {
@@ -165,7 +163,7 @@ func updateVersionStatusForTenantRegistry( //nolint:revive
 
 	if taggedRef, ok := ref.(reference.NamedTagged); ok {
 		registryClient := registry.NewClient()
-		imageVersion, err := imageVersionFunc(ctx, apiReader, registryClient, dynakube, imageUri, registryAuthPath)
+		imageVersion, err := imageVersionFunc(ctx, apiReader, registryClient, dynakube, imageUri)
 		if err != nil {
 			log.Info("failed to determine image version")
 			return err

@@ -11,7 +11,7 @@ import (
 	"github.com/containers/image/v5/signature"
 	"github.com/google/go-containerregistry/pkg/crane"
 	"github.com/google/go-containerregistry/pkg/name"
-	v1 "github.com/google/go-containerregistry/pkg/v1"
+	containerv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
@@ -52,7 +52,7 @@ func (installer Installer) extractAgentBinariesFromImage(pullInfo imagePullInfo,
 	return nil
 }
 
-func (installer Installer) pullImageInfo(imageName string) (*v1.Image, error) {
+func (installer Installer) pullImageInfo(imageName string) (*containerv1.Image, error) {
 	ref, err := name.ParseReference(imageName)
 	if err != nil {
 		return nil, errors.WithMessagef(err, "parsing reference %q:", imageName)
@@ -65,7 +65,7 @@ func (installer Installer) pullImageInfo(imageName string) (*v1.Image, error) {
 	return &image, nil
 }
 
-func (installer Installer) pullOCIimage(image v1.Image, imageName string, imageCacheDir string, targetDir string) error {
+func (installer Installer) pullOCIimage(image containerv1.Image, imageName string, imageCacheDir string, targetDir string) error {
 	ref, err := name.ParseReference(imageName)
 	if err != nil {
 		return errors.WithMessagef(err, "parsing reference %q", imageName)
