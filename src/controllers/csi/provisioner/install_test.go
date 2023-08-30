@@ -1,7 +1,6 @@
 package csiprovisioner
 
 import (
-	"context"
 	"fmt"
 	"path/filepath"
 	"testing"
@@ -114,7 +113,7 @@ func TestUpdateAgent(t *testing.T) {
 			Return(nil)
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
-		currentVersion, err := provisioner.installAgentImage(context.TODO(), dk, &processModuleCache)
+		currentVersion, err := provisioner.installAgentImage(dk, &processModuleCache)
 
 		require.Error(t, err)
 		assert.Equal(t, "", currentVersion)
@@ -142,7 +141,7 @@ func TestUpdateAgent(t *testing.T) {
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testImageDigest))
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
-		currentVersion, err := provisioner.installAgentImage(context.TODO(), dk, &processModuleCache)
+		currentVersion, err := provisioner.installAgentImage(dk, &processModuleCache)
 		require.NoError(t, err)
 		assert.Equal(t, testImageDigest, currentVersion)
 	})
@@ -163,7 +162,7 @@ func TestUpdateAgent(t *testing.T) {
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testImageDigest))
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
-		currentVersion, err := provisioner.installAgentImage(context.TODO(), dk, &processModuleCache)
+		currentVersion, err := provisioner.installAgentImage(dk, &processModuleCache)
 		require.NoError(t, err)
 		assert.Equal(t, testImageDigest, currentVersion)
 	})
@@ -187,7 +186,7 @@ func TestUpdateAgent(t *testing.T) {
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testImageDigest))
 		provisioner.imageInstallerBuilder = mockImageInstallerBuilder(installerMock)
 
-		currentVersion, err := provisioner.installAgentImage(context.TODO(), dk, &processModuleCache)
+		currentVersion, err := provisioner.installAgentImage(dk, &processModuleCache)
 		require.NoError(t, err)
 		assert.Equal(t, testImageDigest, currentVersion)
 	})
