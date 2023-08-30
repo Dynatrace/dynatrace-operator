@@ -1,14 +1,13 @@
 package troubleshoot
 
 import (
-	"fmt"
+	"net/http"
 
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
-	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
-	"github.com/containers/image/v5/docker"
-	"github.com/containers/image/v5/types"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/version"
+	"github.com/Dynatrace/dynatrace-operator/src/dockerkeychain"
 	"github.com/go-logr/logr"
-	"github.com/spf13/afero"
+	"github.com/google/go-containerregistry/pkg/name"
+	"github.com/google/go-containerregistry/pkg/v1/remote"
 )
 
 const (
@@ -71,50 +70,30 @@ func verifyImageIsAvailable(log logr.Logger, troubleshootCtx *troubleshootContex
 }
 
 func tryImagePull(troubleshootCtx *troubleshootContext, image string) error {
-	imageReference, err := docker.ParseReference(normalizeDockerReference(image))
+	imageReference, err := name.ParseReference(image)
 	if err != nil {
 		return err
 	}
 
-	dockerCfg := dockerconfig.NewDockerConfig(troubleshootCtx.apiReader, troubleshootCtx.dynakube)
-	defer func(dockerCfg *dockerconfig.DockerConfig, fs afero.Afero) {
-		_ = dockerCfg.Cleanup(fs)
-	}(dockerCfg, troubleshootCtx.fs)
-
-	systemCtx, err := makeSysContext(troubleshootCtx, imageReference, dockerCfg)
-	if err != nil {
-		return err
-	}
-	systemCtx.DockerInsecureSkipTLSVerify = types.OptionalBoolTrue
-
-	imageSource, err := imageReference.NewImageSource(troubleshootCtx.context, systemCtx)
+	keychain, err := dockerkeychain.NewDockerKeychain(troubleshootCtx.context, troubleshootCtx.apiReader, troubleshootCtx.pullSecret)
 	if err != nil {
 		return err
 	}
 
-	_ = imageSource.Close()
+	var transport *http.Transport
+	if troubleshootCtx.httpClient != nil && troubleshootCtx.httpClient.Transport != nil {
+		transport = troubleshootCtx.httpClient.Transport.(*http.Transport).Clone()
+	} else {
+		transport = http.DefaultTransport.(*http.Transport).Clone()
+	}
+	transport, err = version.PrepareTransport(troubleshootCtx.context, troubleshootCtx.apiReader, transport, &troubleshootCtx.dynakube)
+	if err != nil {
+		return err
+	}
+
+	_, err = remote.Get(imageReference, remote.WithContext(troubleshootCtx.context), remote.WithAuthFromKeychain(keychain), remote.WithTransport(transport))
+	if err != nil {
+		return err
+	}
 	return nil
-}
-
-func normalizeDockerReference(image string) string {
-	return "//" + image
-}
-
-func makeSysContext(troubleshootCtx *troubleshootContext, imageReference types.ImageReference, dockerCfg *dockerconfig.DockerConfig) (*types.SystemContext, error) {
-	dockerCfg.SetRegistryAuthSecret(&troubleshootCtx.pullSecret)
-	err := dockerCfg.StoreRequiredFiles(troubleshootCtx.context, troubleshootCtx.fs)
-	if err != nil {
-		return nil, err
-	}
-	return dockerconfig.MakeSystemContext(imageReference.DockerReference(), dockerCfg), nil
-}
-
-func getPullSecretToken(troubleshootCtx *troubleshootContext) (string, error) {
-	secretBytes, hasPullSecret := troubleshootCtx.pullSecret.Data[dtpullsecret.DockerConfigJson]
-	if !hasPullSecret {
-		return "", fmt.Errorf("token .dockerconfigjson does not exist in secret '%s'", troubleshootCtx.pullSecret.Name)
-	}
-
-	secretStr := string(secretBytes)
-	return secretStr, nil
 }
