@@ -177,14 +177,13 @@ func TestSetOneAgentHealthcheck(t *testing.T) {
 	apiReader.Create(context.Background(), pullSecret)
 
 	imageUri := "testImage"
-
-	testCommands := []string{"CMD", "echo", "test"}
 	interval := time.Second * 10
 	timeout := time.Second * 30
 	startPeriod := time.Second * 1200
 	retries := 3
 
-	t.Run("set dynakube oneagent healthcheck when image contains healthcheck property", func(t *testing.T) {
+	t.Run("docker image contains healthcheck property as CMD", func(t *testing.T) {
+		testCommands := []string{"CMD", "echo", "test"}
 		dynakube := &dynatracev1beta1.DynaKube{}
 		fakeImage := &fakecontainer.FakeImage{}
 		fakeImage.ConfigFileStub = func() (*containerv1.ConfigFile, error) {
@@ -216,7 +215,42 @@ func TestSetOneAgentHealthcheck(t *testing.T) {
 		assert.Equal(t, startPeriod, dynakube.Status.OneAgent.Healthcheck.StartPeriod)
 		assert.Equal(t, retries, dynakube.Status.OneAgent.Healthcheck.Retries)
 	})
-	t.Run("nil dynakube oneagent healthcheck when image doesn't contain healthcheck property", func(t *testing.T) {
+	t.Run("docker image contains healthcheck property as CMD-SHELL", func(t *testing.T) {
+		testCommands := []string{"CMD-SHELL", "echo", "test"}
+		dynakube := &dynatracev1beta1.DynaKube{}
+		fakeImage := &fakecontainer.FakeImage{}
+		fakeImage.ConfigFileStub = func() (*containerv1.ConfigFile, error) {
+			return &containerv1.ConfigFile{
+				Config: containerv1.Config{
+					Healthcheck: &containerv1.HealthConfig{
+						Test:        testCommands,
+						Interval:    interval,
+						Timeout:     timeout,
+						StartPeriod: startPeriod,
+						Retries:     retries,
+					},
+				},
+			}, nil
+		}
+
+		fakeImage.ConfigFile()
+		image := containerv1.Image(fakeImage)
+
+		registryClient := &mocks.MockImageGetter{}
+		registryClient.On("PullImageInfo", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(&image, nil)
+		err := SetOneAgentHealthcheck(context.Background(), apiReader, registryClient, dynakube, imageUri)
+
+		expectedTestCommands := append([]string{"/bin/sh", "-c"}, testCommands[1:]...)
+
+		assert.Nil(t, err)
+		assert.NotNil(t, dynakube.Status.OneAgent.Healthcheck)
+		assert.Equal(t, expectedTestCommands, dynakube.Status.OneAgent.Healthcheck.Test)
+		assert.Equal(t, interval, dynakube.Status.OneAgent.Healthcheck.Interval)
+		assert.Equal(t, timeout, dynakube.Status.OneAgent.Healthcheck.Timeout)
+		assert.Equal(t, startPeriod, dynakube.Status.OneAgent.Healthcheck.StartPeriod)
+		assert.Equal(t, retries, dynakube.Status.OneAgent.Healthcheck.Retries)
+	})
+	t.Run("docker image doesn't contain healthcheck property", func(t *testing.T) {
 		dynakube := &dynatracev1beta1.DynaKube{}
 		fakeImage := &fakecontainer.FakeImage{}
 		fakeImage.ConfigFileStub = func() (*containerv1.ConfigFile, error) {
