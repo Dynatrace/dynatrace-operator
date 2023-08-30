@@ -2,19 +2,17 @@ package troubleshoot
 
 import (
 	"context"
-	"crypto/tls"
-	"crypto/x509"
 	"fmt"
 	"net/http"
 	"net/url"
 
 	dynakubev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerkeychain"
 	"github.com/go-logr/logr"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
-	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -88,7 +86,7 @@ func tryImagePull(troubleshootCtx *troubleshootContext, image string) error {
 		return err
 	}
 
-	transport, err := createTransport(troubleshootCtx.context, troubleshootCtx.apiReader, troubleshootCtx.httpClient, troubleshootCtx.dynakube)
+	transport, err := createTransport(troubleshootCtx.context, troubleshootCtx.apiReader, troubleshootCtx.httpClient, &troubleshootCtx.dynakube)
 	if err != nil {
 		return err
 	}
@@ -100,7 +98,7 @@ func tryImagePull(troubleshootCtx *troubleshootContext, image string) error {
 	return nil
 }
 
-func createTransport(ctx context.Context, apiReader client.Reader, troubleShootHttpClient *http.Client, kube dynakubev1beta1.DynaKube) (*http.Transport, error) {
+func createTransport(ctx context.Context, apiReader client.Reader, troubleShootHttpClient *http.Client, kube *dynakubev1beta1.DynaKube) (*http.Transport, error) {
 	var transport *http.Transport
 	if troubleShootHttpClient != nil && troubleShootHttpClient.Transport != nil {
 		transport = troubleShootHttpClient.Transport.(*http.Transport).Clone()
@@ -123,28 +121,12 @@ func createTransport(ctx context.Context, apiReader client.Reader, troubleShootH
 	}
 
 	if kube.Spec.TrustedCAs != "" {
-		trustedCAs, err := kube.TrustedCAs(ctx, apiReader)
+		var err error
+		transport, err = version.AddCertificates(ctx, apiReader, transport, kube)
 		if err != nil {
 			return nil, err
 		}
-		transport, err = addCertificates(transport, trustedCAs)
-		if err != nil {
-			return nil, err
-		}
 	}
-	return transport, nil
-}
-
-func addCertificates(transport *http.Transport, trustedCAs []byte) (*http.Transport, error) {
-	rootCAs := x509.NewCertPool()
-	if ok := rootCAs.AppendCertsFromPEM(trustedCAs); !ok {
-		return nil, errors.New("failed to append custom certs!")
-	}
-	if transport.TLSClientConfig == nil {
-		transport.TLSClientConfig = &tls.Config{} //nolint:gosec
-	}
-	transport.TLSClientConfig.RootCAs = rootCAs
-
 	return transport, nil
 }
 
