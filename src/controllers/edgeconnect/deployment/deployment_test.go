@@ -5,6 +5,7 @@ import (
 	"time"
 
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/edgeconnect/consts"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -59,10 +60,10 @@ func Test_prepareContainerEnvVars(t *testing.T) {
 		envVars := prepareContainerEnvVars(instance)
 
 		assert.Equal(t, envVars, []corev1.EnvVar{
-			{Name: "EDGE_CONNECT_NAME", Value: testName},
-			{Name: "EDGE_CONNECT_API_ENDPOINT_HOST", Value: "abc12345.dynatrace.com"},
-			{Name: "EDGE_CONNECT_OAUTH__ENDPOINT", Value: "https://sso-dev.dynatracelabs.com/sso/oauth2/token"},
-			{Name: "EDGE_CONNECT_OAUTH__RESOURCE", Value: "urn:dtenvironment:test12345"},
+			{Name: consts.EnvEdgeConnectName, Value: testName},
+			{Name: consts.EnvEdgeConnectApiEndpointHost, Value: "abc12345.dynatrace.com"},
+			{Name: consts.EnvEdgeConnectOauthEndpoint, Value: "https://sso-dev.dynatracelabs.com/sso/oauth2/token"},
+			{Name: consts.EnvEdgeConnectOauthResource, Value: "urn:dtenvironment:test12345"},
 		})
 	})
 	t.Run("Create all env vars for simple edgeconnect deployment", func(t *testing.T) {
@@ -88,11 +89,11 @@ func Test_prepareContainerEnvVars(t *testing.T) {
 		envVars := prepareContainerEnvVars(instance)
 
 		assert.Equal(t, envVars, []corev1.EnvVar{
-			{Name: "EDGE_CONNECT_NAME", Value: testName},
-			{Name: "EDGE_CONNECT_API_ENDPOINT_HOST", Value: "abc12345.dynatrace.com"},
-			{Name: "EDGE_CONNECT_OAUTH__ENDPOINT", Value: "https://sso-dev.dynatracelabs.com/sso/oauth2/token"},
-			{Name: "EDGE_CONNECT_OAUTH__RESOURCE", Value: "urn:dtenvironment:test12345"},
-			{Name: "EDGE_CONNECT_RESTRICT_HOSTS_TO", Value: "*.test.com"},
+			{Name: consts.EnvEdgeConnectName, Value: testName},
+			{Name: consts.EnvEdgeConnectApiEndpointHost, Value: "abc12345.dynatrace.com"},
+			{Name: consts.EnvEdgeConnectOauthEndpoint, Value: "https://sso-dev.dynatracelabs.com/sso/oauth2/token"},
+			{Name: consts.EnvEdgeConnectOauthResource, Value: "urn:dtenvironment:test12345"},
+			{Name: consts.EnvEdgeConnectRestrictHostsTo, Value: "*.test.com"},
 		})
 	})
 }
