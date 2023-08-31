@@ -90,14 +90,9 @@ func prepareContainerEnvVars(instance *edgeconnectv1alpha1.EdgeConnect) []corev1
 
 func buildAppLabels() *kubeobjects.AppLabels {
 	return kubeobjects.NewAppLabels(
-		// appName =
 		kubeobjects.EdgeConnectComponentLabel,
-		// name =
 		kubeobjects.EdgeConnectComponentLabel,
-		// component =
-		kubeobjects.EdgeConnectComponentLabel,
-		// version =
-		// NB: as of now edgeConnect doesn't have any version
+		consts.EdgeConnectUserProvisioned,
 		"latest")
 }
 

@@ -1,6 +1,7 @@
 package consts
 
 const (
+	EdgeConnectUserProvisioned    = "user-provisioned"
 	EdgeConnectContainerName      = "edge-connect"
 	EdgeConnectServiceAccountName = "dynatrace-edgeconnect"
 	EdgeConnectMountPath          = "/etc/edge_connect"
