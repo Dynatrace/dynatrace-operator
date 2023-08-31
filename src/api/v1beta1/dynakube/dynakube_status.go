@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
+	containerv1 "github.com/google/go-containerregistry/pkg/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -116,6 +117,12 @@ type OneAgentStatus struct {
 
 	// Information about OneAgent's connections
 	ConnectionInfoStatus OneAgentConnectionInfoStatus `json:"connectionInfoStatus,omitempty"`
+
+	// Commands used for OneAgent's readiness probe
+	// +kubebuilder:validation:Type=object
+	// +kubebuilder:validation:Schemaless
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Healthcheck *containerv1.HealthConfig `json:"healthcheck,omitempty"`
 }
 
 type OneAgentInstance struct {

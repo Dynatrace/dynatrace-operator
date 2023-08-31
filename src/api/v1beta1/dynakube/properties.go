@@ -163,6 +163,10 @@ func (dk *DynaKube) NeedsOneAgentPrivileged() bool {
 	return dk.FeatureOneAgentPrivileged()
 }
 
+func (dk *DynaKube) NeedsOneAgentReadinessProbe() bool {
+	return dk.Status.OneAgent.Healthcheck != nil
+}
+
 // ShouldAutoUpdateOneAgent returns true if the Operator should update OneAgent instances automatically.
 func (dk *DynaKube) ShouldAutoUpdateOneAgent() bool {
 	switch {

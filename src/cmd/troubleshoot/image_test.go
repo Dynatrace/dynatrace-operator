@@ -3,6 +3,7 @@ package troubleshoot
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -11,6 +12,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
+	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/go-logr/logr"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -33,7 +35,7 @@ func defaultAuths(server string) Auths {
 			server: Credentials{
 				Username: "ac",
 				Password: "dt",
-				Auth:     "ZW",
+				Auth:     "dGVzdC10b2tlbjp0ZXN0LXBhc3N3b3Jk",
 			},
 		},
 	}
@@ -42,19 +44,19 @@ func defaultAuths(server string) Auths {
 func setupDockerMocker(handleUrls []string) (*httptest.Server, *corev1.Secret, string, error) { //nolint:revive // maximum number of return results per function exceeded; max 3 but got 4
 	dockerServer := httptest.NewTLSServer(testDockerServerHandler(http.MethodGet, handleUrls))
 
-	url, err := url.Parse(dockerServer.URL)
+	parsedServerUrl, err := url.Parse(dockerServer.URL)
 	if err != nil {
 		dockerServer.Close()
 		return nil, nil, "", err
 	}
 
-	secret, err := createSecret(defaultAuths(url.Host))
+	secret, err := createSecret(defaultAuths(parsedServerUrl.Host))
 	if err != nil {
 		dockerServer.Close()
 		return nil, nil, "", err
 	}
 
-	return dockerServer, secret, url.Host, nil
+	return dockerServer, secret, parsedServerUrl.Host, nil
 }
 
 func createSecret(auths Auths) (*corev1.Secret, error) {
@@ -95,6 +97,7 @@ func TestImagePullable(t *testing.T) {
 		namespaceName: testNamespace,
 		pullSecret:    *secret,
 		httpClient:    dockerServer.Client(),
+		apiReader:     fake.NewClient(secret),
 	}
 
 	tests := []struct {
@@ -301,6 +304,7 @@ func TestImageNotPullable(t *testing.T) {
 		namespaceName: testNamespace,
 		pullSecret:    *secret,
 		httpClient:    dockerServer.Client(),
+		apiReader:     fake.NewClient(secret),
 	}
 
 	tests := []struct {
@@ -380,7 +384,7 @@ func TestImageNotPullable(t *testing.T) {
 			if strings.Contains(test.name, "non-existing server") {
 				assert.Contains(t, logOutput, "no such host")
 			} else {
-				assert.Contains(t, logOutput, "reading manifest")
+				assert.Contains(t, logOutput, "Bad Request")
 			}
 
 			assert.NotContains(t, logOutput, "can be successfully pulled")
@@ -403,6 +407,7 @@ func TestOneAgentCodeModulesImageNotPullable(t *testing.T) {
 		httpClient:    dockerServer.Client(),
 		namespaceName: testNamespace,
 		pullSecret:    *secret,
+		apiReader:     fake.NewClient(secret),
 	}
 
 	t.Run("OneAgent code modules unreachable server", func(t *testing.T) {
@@ -434,10 +439,10 @@ func TestOneAgentCodeModulesImageNotPullable(t *testing.T) {
 	})
 }
 
-func testDockerServerHandler(method string, urls []string) http.HandlerFunc {
+func testDockerServerHandler(method string, serverUrls []string) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		for _, url := range urls {
-			if request.Method == method && request.URL.Path == url {
+		for _, serverUrl := range serverUrls {
+			if request.Method == method && request.URL.Path == serverUrl {
 				writer.WriteHeader(http.StatusOK)
 				return
 			}
@@ -470,4 +475,14 @@ func TestImagePullablePullSecret(t *testing.T) {
 
 func resetFileSystem(troubleshootCtx *troubleshootContext) {
 	troubleshootCtx.fs = afero.Afero{Fs: afero.NewMemMapFs()}
+}
+
+func getPullSecretToken(troubleshootCtx *troubleshootContext) (string, error) {
+	secretBytes, hasPullSecret := troubleshootCtx.pullSecret.Data[dtpullsecret.DockerConfigJson]
+	if !hasPullSecret {
+		return "", fmt.Errorf("token .dockerconfigjson does not exist in secret '%s'", troubleshootCtx.pullSecret.Name)
+	}
+
+	secretStr := string(secretBytes)
+	return secretStr, nil
 }

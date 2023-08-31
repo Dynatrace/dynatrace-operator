@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/google/go-containerregistry/pkg/authn"
+	containerv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/opencontainers/go-digest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -33,6 +34,10 @@ func (client *registryClientMock) GetImageVersion(ctx context.Context, keychain 
 	}
 
 	return registry.ImageVersion{}, fmt.Errorf("This should not happen")
+}
+
+func (client *registryClientMock) PullImageInfo(ctx context.Context, keychain authn.Keychain, transport *http.Transport, imageName string) (*containerv1.Image, error) {
+	return nil, nil
 }
 
 func TestReconcile(t *testing.T) {
