@@ -6,7 +6,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/registry"
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
@@ -57,15 +56,6 @@ func (reconciler *Reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (reconciler *Reconciler) updateVersionStatuses(ctx context.Context, updaters []versionStatusUpdater) error {
-	dockerConfig, err := reconciler.createDockerConfigWithCustomCAs(ctx)
-	if err != nil {
-		return err
-	}
-
-	defer func(dockerConfig *dockerconfig.DockerConfig, fs afero.Afero) {
-		_ = dockerConfig.Cleanup(fs)
-	}(dockerConfig, reconciler.fs)
-
 	for _, updater := range updaters {
 		log.Info("updating version status", "updater", updater.Name())
 		err := reconciler.run(ctx, updater)
@@ -82,16 +72,6 @@ func (reconciler *Reconciler) updateVersionStatuses(ctx context.Context, updater
 	}
 
 	return nil
-}
-
-func (reconciler *Reconciler) createDockerConfigWithCustomCAs(ctx context.Context) (*dockerconfig.DockerConfig, error) {
-	dockerConfig := dockerconfig.NewDockerConfig(reconciler.apiReader, *reconciler.dynakube)
-	err := dockerConfig.StoreRequiredFiles(ctx, reconciler.fs)
-	if err != nil {
-		log.Info("failed to store required files for docker config")
-		return nil, err
-	}
-	return dockerConfig, nil
 }
 
 func (reconciler *Reconciler) needsReconcile(updaters []versionStatusUpdater) []versionStatusUpdater {
