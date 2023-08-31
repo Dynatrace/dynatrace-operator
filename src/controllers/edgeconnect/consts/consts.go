@@ -12,5 +12,10 @@ const (
 	EnvEdgeConnectOauthResource   = "EDGE_CONNECT_OAUTH__RESOURCE"
 	EnvEdgeConnectRestrictHostsTo = "EDGE_CONNECT_RESTRICT_HOSTS_TO"
 
+	KeyEdgeConnectOauthClientID      = "oauth-client-id"
+	PathEdgeConnectOauthClientID     = "oauth/client_id"
+	KeyEdgeConnectOauthClientSecret  = "oauth-client-secret"
+	PathEdgeConnectOauthClientSecret = "oauth/client_secret"
+
 	AnnotationEdgeConnectContainerAppArmor = "container.apparmor.security.beta.kubernetes.io/" + EdgeConnectContainerName
 )

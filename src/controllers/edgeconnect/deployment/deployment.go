@@ -141,8 +141,8 @@ func prepareVolume(instance *edgeconnectv1alpha1.EdgeConnect) corev1.Volume {
 			Secret: &corev1.SecretVolumeSource{
 				SecretName: instance.Spec.OAuth.ClientSecret,
 				Items: []corev1.KeyToPath{
-					{Key: "oauth-client-id", Path: "oauth/client_id"},
-					{Key: "oauth-client-secret", Path: "oauth/client_secret"},
+					{Key: consts.KeyEdgeConnectOauthClientID, Path: consts.PathEdgeConnectOauthClientID},
+					{Key: consts.KeyEdgeConnectOauthClientSecret, Path: consts.PathEdgeConnectOauthClientSecret},
 				},
 			},
 		},
