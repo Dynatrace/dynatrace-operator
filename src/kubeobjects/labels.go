@@ -13,7 +13,6 @@ const (
 	AppManagedByLabel = "app.kubernetes.io/managed-by"
 	AppComponentLabel = "app.kubernetes.io/component"
 	AppVersionLabel   = "app.kubernetes.io/version"
-	AppInstanceLabel  = "app.kubernetes.io/instance"
 
 	OneAgentComponentLabel    = "oneagent"
 	ActiveGateComponentLabel  = "activegate"

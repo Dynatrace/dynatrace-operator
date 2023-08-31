@@ -12,11 +12,10 @@ import (
 )
 
 func New(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
-	appLabels := buildAppLabels()
+	appLabels := buildAppLabels(instance)
 	labels := kubeobjects.MergeMap(
 		instance.Labels,
 		appLabels.BuildLabels(),
-		map[string]string{kubeobjects.AppInstanceLabel: instance.ObjectMeta.Name},
 	)
 
 	return &appsv1.Deployment{
@@ -88,10 +87,10 @@ func prepareContainerEnvVars(instance *edgeconnectv1alpha1.EdgeConnect) []corev1
 	return envVars
 }
 
-func buildAppLabels() *kubeobjects.AppLabels {
+func buildAppLabels(instance *edgeconnectv1alpha1.EdgeConnect) *kubeobjects.AppLabels {
 	return kubeobjects.NewAppLabels(
 		kubeobjects.EdgeConnectComponentLabel,
-		kubeobjects.EdgeConnectComponentLabel,
+		instance.Name,
 		consts.EdgeConnectUserProvisioned,
 		"latest")
 }
