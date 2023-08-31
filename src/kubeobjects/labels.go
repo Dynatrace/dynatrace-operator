@@ -14,10 +14,11 @@ const (
 	AppComponentLabel = "app.kubernetes.io/component"
 	AppVersionLabel   = "app.kubernetes.io/version"
 
-	OneAgentComponentLabel   = "oneagent"
-	ActiveGateComponentLabel = "activegate"
-	WebhookComponentLabel    = "webhook"
-	SyntheticComponentLabel  = "synthetic"
+	OneAgentComponentLabel    = "oneagent"
+	ActiveGateComponentLabel  = "activegate"
+	WebhookComponentLabel     = "webhook"
+	SyntheticComponentLabel   = "synthetic"
+	EdgeConnectComponentLabel = "edgeconnect"
 )
 
 type appMatchLabels struct {
@@ -46,15 +47,15 @@ type CoreLabels struct {
 // NewAppLabels abstracts labels that are specific to an application managed by the operator
 // which have their own version separate from the operator version.
 // Follows the recommended label pattern: https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels
-func NewAppLabels(appName, dynakubeName, feature, featureVersion string) *AppLabels {
+func NewAppLabels(appName, name, component, ver string) *AppLabels {
 	return &AppLabels{
 		appMatchLabels: appMatchLabels{
 			Name:      appName,
-			CreatedBy: dynakubeName,
+			CreatedBy: name,
 			ManagedBy: version.AppName,
 		},
-		Component: strings.ReplaceAll(feature, "_", ""),
-		Version:   featureVersion,
+		Component: strings.ReplaceAll(component, "_", ""),
+		Version:   ver,
 	}
 }
 
