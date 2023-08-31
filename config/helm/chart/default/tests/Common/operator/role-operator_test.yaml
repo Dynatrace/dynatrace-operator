@@ -68,6 +68,9 @@ tests:
                 - get
                 - list
                 - watch
+                - create
+                - update
+                - delete
             - apiGroups:
                 - apps
               resources:
