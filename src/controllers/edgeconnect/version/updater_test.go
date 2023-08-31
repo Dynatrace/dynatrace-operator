@@ -3,51 +3,30 @@ package version
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strings"
 	"testing"
 	"time"
 
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/src/registry"
+	"github.com/Dynatrace/dynatrace-operator/src/registry/mocks"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
-	"github.com/google/go-containerregistry/pkg/authn"
-	containerv1 "github.com/google/go-containerregistry/pkg/v1"
-	"github.com/opencontainers/go-digest"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const fakeDigest = "sha256:7173b809ca12ec5dee4506cd86be934c4596dd234ee82c0662eac04a8c2c71dc"
 
-type registryClientMock struct {
-	digest string
-}
-
-func (client *registryClientMock) GetImageVersion(ctx context.Context, keychain authn.Keychain, transport *http.Transport, imageName string) (registry.ImageVersion, error) {
-	if imageName == "docker.io/dynatrace/edgeconnect:latest" {
-		return registry.ImageVersion{
-			Digest: fakeDigest,
-		}, nil
-	}
-
-	return registry.ImageVersion{}, fmt.Errorf("This should not happen")
-}
-
-func (client *registryClientMock) PullImageInfo(ctx context.Context, keychain authn.Keychain, transport *http.Transport, imageName string) (*containerv1.Image, error) {
-	return nil, nil
-}
-
 func TestReconcile(t *testing.T) {
 	edgeConnect := createBasicEdgeConnect()
-	updater := newEdgeConnectUpdater(edgeConnect, fake.NewClient(), timeprovider.New())
+	fakeRegistryClient := &mocks.MockImageGetter{}
+	fakeImageVersion := registry.ImageVersion{Digest: fakeDigest}
+	fakeRegistryClient.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fakeImageVersion, nil)
 
-	fakeRegistryClient := registryClientMock{
-		digest: fakeDigest,
-	}
-	updater.registryClient = &fakeRegistryClient
+	updater := newUpdater(fake.NewClient(), timeprovider.New(), fakeRegistryClient, edgeConnect)
 
 	err := updater.Update(context.TODO())
 	require.NoError(t, err)
@@ -55,7 +34,11 @@ func TestReconcile(t *testing.T) {
 	require.Equal(t, fmt.Sprintf("docker.io/dynatrace/edgeconnect:latest@%s", fakeDigest), edgeConnect.Status.Version.ImageID)
 	require.NotNil(t, edgeConnect.Status.Version.LastProbeTimestamp)
 
-	fakeRegistryClient.digest = "invaliddigest"
+	// check invalid digest
+	invalidImageVersion := registry.ImageVersion{Digest: "invaliddigest"}
+	fakeRegistryClient.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(invalidImageVersion, nil)
+
+	updater = newUpdater(fake.NewClient(), timeprovider.New(), fakeRegistryClient, edgeConnect)
 
 	err = updater.Update(context.TODO())
 	require.NoError(t, err)
@@ -66,10 +49,14 @@ func TestReconcile(t *testing.T) {
 
 func TestCombineImagesWithDigest(t *testing.T) {
 	edgeConnect := createBasicEdgeConnect()
-	updater := newEdgeConnectUpdater(edgeConnect, fake.NewClient(), nil)
+	fakeRegistryClient := &mocks.MockImageGetter{}
+	fakeImageVersion := registry.ImageVersion{Digest: fakeDigest}
+	fakeRegistryClient.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fakeImageVersion, nil)
+
+	updater := newUpdater(fake.NewClient(), nil, fakeRegistryClient, edgeConnect)
 
 	t.Run("image and digest should be combined", func(t *testing.T) {
-		combined, err := updater.combineImageWithDigest(digest.Digest(fakeDigest))
+		combined, err := updater.combineImageWithDigest(fakeDigest)
 
 		require.NoError(t, err)
 		require.Equal(t, fmt.Sprintf("docker.io/dynatrace/edgeconnect:latest@%s", fakeDigest), combined)
@@ -78,24 +65,26 @@ func TestCombineImagesWithDigest(t *testing.T) {
 	t.Run("malformed image should fail", func(t *testing.T) {
 		edgeConnect.Spec.ImageRef.Repository = "not a correct repo"
 
-		_, err := updater.combineImageWithDigest(digest.Digest(fakeDigest))
+		_, err := updater.combineImageWithDigest(fakeDigest)
 		require.Error(t, err)
 	})
 }
 
 func TestReconcileRequired(t *testing.T) {
 	currentTime := timeprovider.New().Freeze()
+	mockImageGetter := &mocks.MockImageGetter{}
+	mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(registry.ImageVersion{}, nil)
 
 	t.Run("initial reconcile always required", func(t *testing.T) {
 		edgeConnect := createBasicEdgeConnect()
-		updater := newEdgeConnectUpdater(edgeConnect, fake.NewClient(), currentTime)
+		updater := newUpdater(fake.NewClient(), currentTime, mockImageGetter, edgeConnect)
 
 		assert.True(t, updater.RequiresReconcile(), "initial reconcile always required")
 	})
 
 	t.Run("only reconcile every threshold minutes", func(t *testing.T) {
 		edgeConnect := createBasicEdgeConnect()
-		updater := newEdgeConnectUpdater(edgeConnect, fake.NewClient(), currentTime)
+		updater := newUpdater(fake.NewClient(), currentTime, mockImageGetter, edgeConnect)
 
 		edgeConnectTime := metav1.Now()
 		edgeConnect.Status.Version.LastProbeTimestamp = &edgeConnectTime
@@ -107,7 +96,7 @@ func TestReconcileRequired(t *testing.T) {
 
 	t.Run("reconcile as auto update was enabled and time is up", func(t *testing.T) {
 		edgeConnect := createBasicEdgeConnect()
-		updater := newEdgeConnectUpdater(edgeConnect, fake.NewClient(), currentTime)
+		updater := newUpdater(fake.NewClient(), currentTime, mockImageGetter, edgeConnect)
 
 		edgeConnectTime := metav1.NewTime(currentTime.Now().Add(-time.Hour))
 		edgeConnect.Status.Version.LastProbeTimestamp = &edgeConnectTime
@@ -119,7 +108,7 @@ func TestReconcileRequired(t *testing.T) {
 
 	t.Run("reconcile if image field changed", func(t *testing.T) {
 		edgeConnect := createBasicEdgeConnect()
-		updater := newEdgeConnectUpdater(edgeConnect, fake.NewClient(), currentTime)
+		updater := newUpdater(fake.NewClient(), currentTime, mockImageGetter, edgeConnect)
 
 		edgeConnectTime := metav1.Now()
 		edgeConnect.Status.Version.LastProbeTimestamp = &edgeConnectTime

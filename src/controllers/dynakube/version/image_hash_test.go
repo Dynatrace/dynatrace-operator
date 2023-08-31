@@ -77,7 +77,7 @@ func TestGetImageVersion(t *testing.T) {
 		mockImageGetter := &mocks.MockImageGetter{}
 		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(registry.ImageVersion{}, nil)
 
-		got, err := GetImageVersion(context.Background(), apiReader, mockImageGetter, &dynakube, imageName)
+		got, err := GetImageVersion(context.TODO(), apiReader, mockImageGetter, &dynakube, imageName)
 		assert.NotNil(t, got)
 		assert.Nil(t, err)
 	})
