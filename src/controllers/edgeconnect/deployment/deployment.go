@@ -60,20 +60,20 @@ func New(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
 func prepareContainerEnvVars(instance *edgeconnectv1alpha1.EdgeConnect) []corev1.EnvVar {
 	envVars := []corev1.EnvVar{
 		{
-			Name:  "EDGE_CONNECT_NAME",
+			Name:  consts.EnvEdgeConnectName,
 			Value: instance.ObjectMeta.Name,
 		},
 		{
-			Name:  "EDGE_CONNECT_API_ENDPOINT_HOST",
+			Name:  consts.EnvEdgeConnectApiEndpointHost,
 			Value: instance.Spec.ApiServer,
 		},
 
 		{
-			Name:  "EDGE_CONNECT_OAUTH__ENDPOINT",
+			Name:  consts.EnvEdgeConnectOauthEndpoint,
 			Value: instance.Spec.OAuth.Endpoint,
 		},
 		{
-			Name:  "EDGE_CONNECT_OAUTH__RESOURCE",
+			Name:  consts.EnvEdgeConnectOauthResource,
 			Value: instance.Spec.OAuth.Resource,
 		},
 	}
@@ -81,7 +81,7 @@ func prepareContainerEnvVars(instance *edgeconnectv1alpha1.EdgeConnect) []corev1
 	// otherwise edge-connect will fail
 	if instance.Spec.HostRestrictions != "" {
 		envVars = append(envVars, corev1.EnvVar{
-			Name:  "EDGE_CONNECT_RESTRICT_HOSTS_TO",
+			Name:  consts.EnvEdgeConnectRestrictHostsTo,
 			Value: instance.Spec.HostRestrictions,
 		})
 	}
