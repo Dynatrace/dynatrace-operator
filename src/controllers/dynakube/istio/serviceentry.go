@@ -1,20 +1,13 @@
 package istio
 
 import (
-	"context"
 	"strconv"
 	"strings"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/pkg/errors"
 	istio "istio.io/api/networking/v1alpha3"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
-	istioclientset "istio.io/client-go/pkg/clientset/versioned"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 const (
@@ -22,6 +15,15 @@ const (
 	subnetMask       = "/32"
 	protocolTcp      = "TCP"
 )
+
+func BuildNameForIPServiceEntry(ownerName string) string {
+	return "ip-" + ownerName
+}
+
+func BuildNameForFQDNServiceEntry(ownerName string) string {
+	return "fqdn-" + ownerName
+}
+
 
 func buildServiceEntryFQDNs(meta metav1.ObjectMeta, hostHosts []dtclient.CommunicationHost) *istiov1alpha3.ServiceEntry {
 	hosts := make([]string, len(hostHosts))
@@ -79,84 +81,4 @@ func buildServiceEntryIPs(meta metav1.ObjectMeta, commHosts []dtclient.Communica
 			Resolution: istio.ServiceEntry_NONE,
 		},
 	}
-}
-
-func handleIstioConfigurationForServiceEntry(ctx context.Context, istioConfig *configuration, serviceEntry *istiov1alpha3.ServiceEntry) (bool, error) {
-	err := createIstioConfigurationForServiceEntry(ctx, istioConfig.reconciler.istioClient, istioConfig.reconciler.scheme, istioConfig.instance, serviceEntry, istioConfig.role)
-	if k8serrors.IsAlreadyExists(err) {
-		return false, nil
-	}
-	if err != nil {
-		log.Info("failed to create ServiceEntry", "error", err.Error())
-		return false, errors.WithStack(err)
-	}
-
-	log.Info("ServiceEntry created", "objectName", istioConfig.name, "hosts", getHosts(istioConfig.commHosts), "ports", getPorts(istioConfig.commHosts))
-
-	return true, nil
-}
-
-func createIstioConfigurationForServiceEntry(ctx context.Context, istioClient istioclientset.Interface, scheme *runtime.Scheme,  dynaKube *dynatracev1beta1.DynaKube, //nolint:revive // argument-limit doesn't apply to constructors
-	serviceEntry *istiov1alpha3.ServiceEntry, role string) error {
-	serviceEntry.Labels = buildIstioLabels(dynaKube.GetName(), role)
-	if err := controllerutil.SetControllerReference(dynaKube, serviceEntry, scheme); err != nil {
-		return errors.WithStack(err)
-	}
-	sve, err := istioClient.NetworkingV1alpha3().ServiceEntries(dynaKube.GetNamespace()).Create(ctx, serviceEntry, metav1.CreateOptions{})
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	if sve == nil {
-		return errors.Errorf("could not create service entry with spec %v", serviceEntry.Spec.DeepCopy())
-	}
-	return nil
-}
-
-func removeIstioConfigurationForServiceEntry(ctx context.Context, istioConfig *configuration, seen map[string]bool) (bool, error) {
-	list, err := istioConfig.reconciler.istioClient.NetworkingV1alpha3().ServiceEntries(istioConfig.instance.GetNamespace()).List(ctx, *istioConfig.listOps)
-	if err != nil {
-		log.Info("error listing service entries")
-		return false, errors.WithStack(err)
-	}
-
-	del := false
-	for _, se := range list.Items {
-		if _, inUse := seen[se.GetName()]; !inUse {
-			log.Info("removing service entry", "kind", se.Kind, "name", se.GetName())
-			err = istioConfig.reconciler.istioClient.NetworkingV1alpha3().
-				ServiceEntries(istioConfig.instance.GetNamespace()).
-				Delete(ctx, se.GetName(), metav1.DeleteOptions{})
-			if err != nil {
-				log.Error(err, "error deleting service entry", "name", se.GetName())
-				continue
-			}
-			del = true
-		}
-	}
-
-	return del, nil
-}
-
-func getHosts(commHosts []dtclient.CommunicationHost) []string {
-	hosts := make([]string, len(commHosts))
-	for i, commHost := range commHosts {
-		hosts[i] = commHost.Host
-	}
-	return hosts
-}
-
-func getPorts(commHosts []dtclient.CommunicationHost) []uint32 {
-	ports := make([]uint32, len(commHosts))
-	for i, commHost := range commHosts {
-		ports[i] = commHost.Port
-	}
-	return ports
-}
-
-func getProtocols(commHosts []dtclient.CommunicationHost) []string {
-	protocols := make([]string, len(commHosts))
-	for i, commHost := range commHosts {
-		protocols[i] = commHost.Protocol
-	}
-	return protocols
 }

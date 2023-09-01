@@ -926,20 +926,6 @@ func TestGetDynakube(t *testing.T) {
 	})
 }
 
-func TestReconcileIstio(t *testing.T) {
-	fakeClient := fake.NewClient()
-	dynakube := &dynatracev1beta1.DynaKube{}
-	controller := &Controller{
-		client:    fakeClient,
-		apiReader: fakeClient,
-	}
-	updated := controller.reconcileIstio(context.TODO(),dynakube)
-
-	assert.False(t, updated)
-
-	// Testing what happens if the flag is enabled is implemented as an e2e test
-}
-
 func TestTokenConditions(t *testing.T) {
 	t.Run("token condition error is set if token are invalid", func(t *testing.T) {
 		fakeClient := fake.NewClient()

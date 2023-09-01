@@ -19,6 +19,7 @@ var (
 	IstioGVR        = fmt.Sprintf("%s/%s", IstioGVRName, IstioGVRVersion)
 )
 
+// TODO: Remove (e2e)
 // BuildNameForEndpoint returns a name to be used as a base to identify Istio objects.
 func BuildNameForEndpoint(commHosts []dtclient.CommunicationHost, name string) string {
 	result := make([]string, len(commHosts))
@@ -29,6 +30,7 @@ func BuildNameForEndpoint(commHosts []dtclient.CommunicationHost, name string) s
 	return hex.EncodeToString(sum[:])
 }
 
+// TODO: Maybe move to Client
 // CheckIstioInstalled run discovery query for server resource for group version
 func CheckIstioInstalled(discoveryClient discovery.DiscoveryInterface) (bool, error) {
 	_, err := discoveryClient.ServerResourcesForGroupVersion(IstioGVR)
@@ -46,6 +48,7 @@ func buildObjectMeta(name string, namespace string) metav1.ObjectMeta {
 	}
 }
 
+// TODO: Add labels
 func buildIstioLabels(name, role string) map[string]string {
 	return map[string]string{
 		"dynatrace":            "oneagent",

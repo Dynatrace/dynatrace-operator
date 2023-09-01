@@ -28,7 +28,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
-	istioclientset "istio.io/client-go/pkg/clientset/versioned"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -144,10 +143,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 		}
 	}
 
-	updated := controller.reconcileIstio(ctx, dynakube)
-	if updated {
-		log.Info("istio objects updated")
-	}
+	controller.reconcileIstio(ctx, dynakube)
 
 	return reconcile.Result{RequeueAfter: requeueAfter}, err
 }
@@ -173,26 +169,24 @@ func (controller *Controller) createDynakubeMapper(ctx context.Context, dynakube
 	return &dkMapper
 }
 
-func (controller *Controller) reconcileIstio(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) bool {
-	updated := false
-
+func (controller *Controller) reconcileIstio(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) {
 	if dynakube.Spec.EnableIstio {
 		communicationHosts := connectioninfo.GetCommunicationHosts(dynakube)
 
-		ic, err := istioclientset.NewForConfig(controller.config)
+		ic, err := istio.NewClient(controller.config, controller.scheme, controller.operatorNamespace)
 
 		if err != nil {
 			log.Error(err, "failed to initialize istio client")
-			return false
 		}
 
-		updated, err = istio.NewReconciler(controller.config, controller.scheme, ic).Reconcile(ctx, dynakube, communicationHosts)
+		err = istio.NewReconciler(ic).Reconcile(ctx, dynakube, communicationHosts)
 		if err != nil {
 			// If there are errors log them, but move on.
-			log.Info("istio failed to reconcile objects", "error", err)
+			log.Info("failed to reconcile istio objects", "error", err)
+		} else {
+			log.Info("reconciled istio objects")
 		}
 	}
-	return updated
 }
 
 func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
