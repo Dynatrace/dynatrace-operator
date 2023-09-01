@@ -1,6 +1,7 @@
 package istio
 
 import (
+	"context"
 	"net"
 	"os"
 
@@ -44,7 +45,7 @@ func NewReconciler(config *rest.Config, scheme *runtime.Scheme, istio istioclien
 
 // Reconcile runs the istio reconcile workflow:
 // creating/deleting VS & SE for external communications
-func (r *Reconciler) Reconcile(instance *dynatracev1beta1.DynaKube, communicationHosts []dtclient.CommunicationHost) (bool, error) {
+func (r *Reconciler) Reconcile(ctx context.Context, instance *dynatracev1beta1.DynaKube, communicationHosts []dtclient.CommunicationHost) (bool, error) {
 	log.Info("reconciling")
 
 	isInstalled, err := CheckIstioInstalled(r.istioClient.Discovery())
@@ -60,7 +61,7 @@ func (r *Reconciler) Reconcile(instance *dynatracev1beta1.DynaKube, communicatio
 		return false, err
 	}
 
-	upd, err := r.reconcileIstioConfigurations(instance, []dtclient.CommunicationHost{apiHost}, "api-url")
+	upd, err := r.reconcileIstioConfigurations(ctx, instance, []dtclient.CommunicationHost{apiHost}, "api-url")
 	if err != nil {
 		return false, errors.WithMessage(err, "error reconciling config for Dynatrace API URL")
 	} else if upd {
@@ -68,7 +69,7 @@ func (r *Reconciler) Reconcile(instance *dynatracev1beta1.DynaKube, communicatio
 	}
 
 	// Fetch endpoints via Dynatrace client
-	upd, err = r.reconcileIstioConfigurations(instance, communicationHosts, "communication-endpoint")
+	upd, err = r.reconcileIstioConfigurations(ctx, instance, communicationHosts, "communication-endpoint")
 	if err != nil {
 		return false, errors.WithMessage(err, "error reconciling config for Dynatrace communication endpoints:")
 	} else if upd {
@@ -78,7 +79,7 @@ func (r *Reconciler) Reconcile(instance *dynatracev1beta1.DynaKube, communicatio
 	return false, nil
 }
 
-func (r *Reconciler) reconcileIstioConfigurations(instance *dynatracev1beta1.DynaKube, comHosts []dtclient.CommunicationHost, role string) (bool, error) {
+func (r *Reconciler) reconcileIstioConfigurations(ctx context.Context, instance *dynatracev1beta1.DynaKube, comHosts []dtclient.CommunicationHost, role string) (bool, error) {
 	var ipHosts []dtclient.CommunicationHost
 	var hostHosts []dtclient.CommunicationHost
 
@@ -91,11 +92,11 @@ func (r *Reconciler) reconcileIstioConfigurations(instance *dynatracev1beta1.Dyn
 		}
 	}
 
-	add, err := r.reconcileCreateConfigurations(instance, ipHosts, hostHosts, role)
+	add, err := r.reconcileCreateConfigurations(ctx, instance, ipHosts, hostHosts, role)
 	if err != nil {
 		return false, err
 	}
-	rem, err := r.reconcileRemoveConfigurations(instance, ipHosts, hostHosts, role)
+	rem, err := r.reconcileRemoveConfigurations(ctx, instance, ipHosts, hostHosts, role)
 	if err != nil {
 		return false, err
 	}
@@ -103,7 +104,7 @@ func (r *Reconciler) reconcileIstioConfigurations(instance *dynatracev1beta1.Dyn
 	return add || rem, nil
 }
 
-func (r *Reconciler) reconcileRemoveConfigurations(instance *dynatracev1beta1.DynaKube,
+func (r *Reconciler) reconcileRemoveConfigurations(ctx context.Context, instance *dynatracev1beta1.DynaKube,
 	ipHosts, hostHosts []dtclient.CommunicationHost, role string) (bool, error) {
 	labelSelector := labels.SelectorFromSet(buildIstioLabels(instance.GetName(), role)).String()
 	listOps := &metav1.ListOptions{
@@ -111,8 +112,8 @@ func (r *Reconciler) reconcileRemoveConfigurations(instance *dynatracev1beta1.Dy
 	}
 
 	seenComHosts := map[string]bool{}
-	seenComHosts[BuildNameForEndpoint(instance.GetName(), ipHosts)] = true
-	seenComHosts[BuildNameForEndpoint(instance.GetName(), hostHosts)] = true
+	seenComHosts[BuildNameForEndpoint(ipHosts, instance.GetName())] = true
+	seenComHosts[BuildNameForEndpoint(hostHosts, instance.GetName())] = true
 
 	istioConfig := &configuration{
 		reconciler: r,
@@ -120,11 +121,11 @@ func (r *Reconciler) reconcileRemoveConfigurations(instance *dynatracev1beta1.Dy
 		instance:   instance,
 	}
 
-	vsUpd, err := removeIstioConfigurationForVirtualService(istioConfig, seenComHosts)
+	vsUpd, err := removeIstioConfigurationForVirtualService(ctx, istioConfig, seenComHosts)
 	if err != nil {
 		return false, err
 	}
-	seUpd, err := removeIstioConfigurationForServiceEntry(istioConfig, seenComHosts)
+	seUpd, err := removeIstioConfigurationForServiceEntry(ctx, istioConfig, seenComHosts)
 	if err != nil {
 		return false, err
 	}
@@ -132,13 +133,13 @@ func (r *Reconciler) reconcileRemoveConfigurations(instance *dynatracev1beta1.Dy
 	return vsUpd || seUpd, nil
 }
 
-func (r *Reconciler) reconcileCreateConfigurations(instance *dynatracev1beta1.DynaKube,
+func (r *Reconciler) reconcileCreateConfigurations(ctx context.Context, instance *dynatracev1beta1.DynaKube,
 	ipHosts, hostHosts []dtclient.CommunicationHost, role string) (bool, error) {
 	configurationUpdated := false
 	var createdServiceEntryIP, createdServiceEntryFQNS bool
 
 	if len(ipHosts) != 0 {
-		name := BuildNameForEndpoint(instance.GetName(), ipHosts)
+		name := BuildNameForEndpoint(ipHosts, instance.GetName())
 		istioConfig := &configuration{
 			instance:   instance,
 			reconciler: r,
@@ -149,14 +150,14 @@ func (r *Reconciler) reconcileCreateConfigurations(instance *dynatracev1beta1.Dy
 		serviceEntry := buildServiceEntryIPs(buildObjectMeta(istioConfig.name, istioConfig.instance.GetNamespace()), ipHosts)
 
 		var err error
-		createdServiceEntryIP, err = handleIstioConfigurationForServiceEntry(istioConfig, serviceEntry)
+		createdServiceEntryIP, err = handleIstioConfigurationForServiceEntry(ctx, istioConfig, serviceEntry)
 		if err != nil {
 			return false, err
 		}
 	}
 
 	if len(hostHosts) != 0 {
-		name := BuildNameForEndpoint(instance.GetName(), hostHosts)
+		name := BuildNameForEndpoint(hostHosts, instance.GetName())
 		istioConfig := &configuration{
 			instance:   instance,
 			reconciler: r,
@@ -167,7 +168,7 @@ func (r *Reconciler) reconcileCreateConfigurations(instance *dynatracev1beta1.Dy
 		serviceEntry := buildServiceEntryFQDNs(buildObjectMeta(istioConfig.name, istioConfig.instance.GetNamespace()), hostHosts)
 
 		var err error
-		createdServiceEntryFQNS, err = handleIstioConfigurationForServiceEntry(istioConfig, serviceEntry)
+		createdServiceEntryFQNS, err = handleIstioConfigurationForServiceEntry(ctx, istioConfig, serviceEntry)
 		if err != nil {
 			return false, err
 		}
@@ -176,12 +177,12 @@ func (r *Reconciler) reconcileCreateConfigurations(instance *dynatracev1beta1.Dy
 	istioConfig := &configuration{
 		instance:   instance,
 		reconciler: r,
-		name:       BuildNameForEndpoint(instance.GetName(), hostHosts),
+		name:       BuildNameForEndpoint(hostHosts, instance.GetName()),
 		commHosts:  hostHosts,
 		role:       role,
 	}
 
-	createdVirtualService, err := handleIstioConfigurationForVirtualService(istioConfig)
+	createdVirtualService, err := handleIstioConfigurationForVirtualService(ctx, istioConfig)
 	if err != nil {
 		return false, err
 	}

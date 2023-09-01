@@ -66,7 +66,7 @@ func TestBuildNameForEndpoint(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			result := BuildNameForEndpoint(tc.args.name, tc.args.commHosts)
+			result := BuildNameForEndpoint(tc.args.commHosts, tc.args.name)
 			assert.Equal(t, tc.want, result)
 		})
 	}

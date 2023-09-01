@@ -144,7 +144,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 		}
 	}
 
-	updated := controller.reconcileIstio(dynakube)
+	updated := controller.reconcileIstio(ctx, dynakube)
 	if updated {
 		log.Info("istio objects updated")
 	}
@@ -173,7 +173,7 @@ func (controller *Controller) createDynakubeMapper(ctx context.Context, dynakube
 	return &dkMapper
 }
 
-func (controller *Controller) reconcileIstio(dynakube *dynatracev1beta1.DynaKube) bool {
+func (controller *Controller) reconcileIstio(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) bool {
 	updated := false
 
 	if dynakube.Spec.EnableIstio {
@@ -186,7 +186,7 @@ func (controller *Controller) reconcileIstio(dynakube *dynatracev1beta1.DynaKube
 			return false
 		}
 
-		updated, err = istio.NewReconciler(controller.config, controller.scheme, ic).Reconcile(dynakube, communicationHosts)
+		updated, err = istio.NewReconciler(controller.config, controller.scheme, ic).Reconcile(ctx, dynakube, communicationHosts)
 		if err != nil {
 			// If there are errors log them, but move on.
 			log.Info("istio failed to reconcile objects", "error", err)

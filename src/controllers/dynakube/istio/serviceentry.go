@@ -81,8 +81,8 @@ func buildServiceEntryIPs(meta metav1.ObjectMeta, commHosts []dtclient.Communica
 	}
 }
 
-func handleIstioConfigurationForServiceEntry(istioConfig *configuration, serviceEntry *istiov1alpha3.ServiceEntry) (bool, error) {
-	err := createIstioConfigurationForServiceEntry(istioConfig.instance, serviceEntry, istioConfig.role, istioConfig.reconciler.istioClient, istioConfig.reconciler.scheme)
+func handleIstioConfigurationForServiceEntry(ctx context.Context, istioConfig *configuration, serviceEntry *istiov1alpha3.ServiceEntry) (bool, error) {
+	err := createIstioConfigurationForServiceEntry(ctx, istioConfig.reconciler.istioClient, istioConfig.reconciler.scheme, istioConfig.instance, serviceEntry, istioConfig.role)
 	if k8serrors.IsAlreadyExists(err) {
 		return false, nil
 	}
@@ -96,14 +96,13 @@ func handleIstioConfigurationForServiceEntry(istioConfig *configuration, service
 	return true, nil
 }
 
-func createIstioConfigurationForServiceEntry(dynaKube *dynatracev1beta1.DynaKube, //nolint:revive // argument-limit doesn't apply to constructors
-	serviceEntry *istiov1alpha3.ServiceEntry, role string,
-	istioClient istioclientset.Interface, scheme *runtime.Scheme) error {
+func createIstioConfigurationForServiceEntry(ctx context.Context, istioClient istioclientset.Interface, scheme *runtime.Scheme,  dynaKube *dynatracev1beta1.DynaKube, //nolint:revive // argument-limit doesn't apply to constructors
+	serviceEntry *istiov1alpha3.ServiceEntry, role string) error {
 	serviceEntry.Labels = buildIstioLabels(dynaKube.GetName(), role)
 	if err := controllerutil.SetControllerReference(dynaKube, serviceEntry, scheme); err != nil {
 		return errors.WithStack(err)
 	}
-	sve, err := istioClient.NetworkingV1alpha3().ServiceEntries(dynaKube.GetNamespace()).Create(context.TODO(), serviceEntry, metav1.CreateOptions{})
+	sve, err := istioClient.NetworkingV1alpha3().ServiceEntries(dynaKube.GetNamespace()).Create(ctx, serviceEntry, metav1.CreateOptions{})
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -113,8 +112,8 @@ func createIstioConfigurationForServiceEntry(dynaKube *dynatracev1beta1.DynaKube
 	return nil
 }
 
-func removeIstioConfigurationForServiceEntry(istioConfig *configuration, seen map[string]bool) (bool, error) {
-	list, err := istioConfig.reconciler.istioClient.NetworkingV1alpha3().ServiceEntries(istioConfig.instance.GetNamespace()).List(context.TODO(), *istioConfig.listOps)
+func removeIstioConfigurationForServiceEntry(ctx context.Context, istioConfig *configuration, seen map[string]bool) (bool, error) {
+	list, err := istioConfig.reconciler.istioClient.NetworkingV1alpha3().ServiceEntries(istioConfig.instance.GetNamespace()).List(ctx, *istioConfig.listOps)
 	if err != nil {
 		log.Info("error listing service entries")
 		return false, errors.WithStack(err)
@@ -126,7 +125,7 @@ func removeIstioConfigurationForServiceEntry(istioConfig *configuration, seen ma
 			log.Info("removing service entry", "kind", se.Kind, "name", se.GetName())
 			err = istioConfig.reconciler.istioClient.NetworkingV1alpha3().
 				ServiceEntries(istioConfig.instance.GetNamespace()).
-				Delete(context.TODO(), se.GetName(), metav1.DeleteOptions{})
+				Delete(ctx, se.GetName(), metav1.DeleteOptions{})
 			if err != nil {
 				log.Error(err, "error deleting service entry", "name", se.GetName())
 				continue

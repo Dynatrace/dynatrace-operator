@@ -933,7 +933,7 @@ func TestReconcileIstio(t *testing.T) {
 		client:    fakeClient,
 		apiReader: fakeClient,
 	}
-	updated := controller.reconcileIstio(dynakube)
+	updated := controller.reconcileIstio(context.TODO(),dynakube)
 
 	assert.False(t, updated)
 

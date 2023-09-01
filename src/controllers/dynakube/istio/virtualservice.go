@@ -94,13 +94,13 @@ func buildVirtualServiceTLSRoute(host string, port uint32) *istio.TLSRoute {
 	}
 }
 
-func handleIstioConfigurationForVirtualService(istioConfig *configuration) (bool, error) {
+func handleIstioConfigurationForVirtualService(ctx context.Context, istioConfig *configuration) (bool, error) {
 	virtualService := buildVirtualService(metav1.ObjectMeta{Name: istioConfig.name, Namespace: istioConfig.instance.GetNamespace()}, istioConfig.commHosts)
 	if virtualService == nil {
 		return false, nil
 	}
 
-	err := createIstioConfigurationForVirtualService(istioConfig.instance, virtualService, istioConfig.role, istioConfig.reconciler.istioClient, istioConfig.reconciler.scheme)
+	err := createIstioConfigurationForVirtualService(ctx, istioConfig.reconciler.istioClient, istioConfig.reconciler.scheme, istioConfig.instance, virtualService, istioConfig.role)
 	if k8serrors.IsAlreadyExists(err) {
 		return false, nil
 	}
@@ -114,14 +114,13 @@ func handleIstioConfigurationForVirtualService(istioConfig *configuration) (bool
 	return true, nil
 }
 
-func createIstioConfigurationForVirtualService(dynaKube *dynatracev1beta1.DynaKube, //nolint:revive // argument-limit doesn't apply to constructors
-	virtualService *istiov1alpha3.VirtualService, role string,
-	istioClient istioclientset.Interface, scheme *runtime.Scheme) error {
+func createIstioConfigurationForVirtualService(ctx context.Context, istioClient istioclientset.Interface, scheme *runtime.Scheme, dynaKube *dynatracev1beta1.DynaKube, //nolint:revive // argument-limit doesn't apply to constructors
+	virtualService *istiov1alpha3.VirtualService, role string) error {
 	virtualService.Labels = buildIstioLabels(dynaKube.GetName(), role)
 	if err := controllerutil.SetControllerReference(dynaKube, virtualService, scheme); err != nil {
 		return err
 	}
-	createdVirtualService, err := istioClient.NetworkingV1alpha3().VirtualServices(dynaKube.GetNamespace()).Create(context.TODO(), virtualService, metav1.CreateOptions{})
+	createdVirtualService, err := istioClient.NetworkingV1alpha3().VirtualServices(dynaKube.GetNamespace()).Create(ctx, virtualService, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
@@ -132,8 +131,8 @@ func createIstioConfigurationForVirtualService(dynaKube *dynatracev1beta1.DynaKu
 	return nil
 }
 
-func removeIstioConfigurationForVirtualService(istioConfig *configuration, seen map[string]bool) (bool, error) {
-	list, err := istioConfig.reconciler.istioClient.NetworkingV1alpha3().VirtualServices(istioConfig.instance.GetNamespace()).List(context.TODO(), *istioConfig.listOps)
+func removeIstioConfigurationForVirtualService(ctx context.Context, istioConfig *configuration, seen map[string]bool) (bool, error) {
+	list, err := istioConfig.reconciler.istioClient.NetworkingV1alpha3().VirtualServices(istioConfig.instance.GetNamespace()).List(ctx, *istioConfig.listOps)
 	if err != nil {
 		log.Error(err, "error listing virtual service")
 		return false, err
@@ -145,7 +144,7 @@ func removeIstioConfigurationForVirtualService(istioConfig *configuration, seen 
 			log.Info("removing virtual service", "kind", vs.Kind, "name", vs.GetName())
 			err = istioConfig.reconciler.istioClient.NetworkingV1alpha3().
 				VirtualServices(istioConfig.instance.GetNamespace()).
-				Delete(context.TODO(), vs.GetName(), metav1.DeleteOptions{})
+				Delete(ctx, vs.GetName(), metav1.DeleteOptions{})
 			if err != nil {
 				log.Error(err, "error deleting virtual service", "name", vs.GetName())
 				continue

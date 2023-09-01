@@ -20,7 +20,7 @@ var (
 )
 
 // BuildNameForEndpoint returns a name to be used as a base to identify Istio objects.
-func BuildNameForEndpoint(name string, commHosts []dtclient.CommunicationHost) string {
+func BuildNameForEndpoint(commHosts []dtclient.CommunicationHost, name string) string {
 	result := make([]string, len(commHosts))
 	for index, commHost := range commHosts {
 		result[index] = fmt.Sprintf("%s-%s-%s-%d", name, commHost.Protocol, commHost.Host, commHost.Port)

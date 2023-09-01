@@ -100,12 +100,12 @@ func testReconcileIstio(t *testing.T, enableIstioGVR bool) {
 		scheme.Scheme,
 		ist,
 	)
-	updated, err := reconciler.Reconcile(instance, []dtclient.CommunicationHost{})
+	updated, err := reconciler.Reconcile(context.TODO(), instance, []dtclient.CommunicationHost{})
 
 	assert.NoError(t, err)
 	assert.Equal(t, enableIstioGVR, updated)
 
-	update, err := reconciler.Reconcile(instance, []dtclient.CommunicationHost{})
+	update, err := reconciler.Reconcile(context.TODO(), instance, []dtclient.CommunicationHost{})
 
 	assert.NoError(t, err)
 	assert.False(t, update)
@@ -150,12 +150,12 @@ func TestIstioClient_BuildDynatraceServiceEntry(t *testing.T) {
 		scheme.Scheme,
 		ist,
 	)
-	updated, err := reconciler.Reconcile(instance, []dtclient.CommunicationHost{})
+	updated, err := reconciler.Reconcile(context.TODO(), instance, []dtclient.CommunicationHost{})
 
 	assert.NoError(t, err)
 	assert.True(t, updated)
 
-	updated, err = reconciler.Reconcile(instance, commHosts)
+	updated, err = reconciler.Reconcile(context.TODO(), instance, commHosts)
 
 	assert.NoError(t, err)
 	assert.True(t, updated)

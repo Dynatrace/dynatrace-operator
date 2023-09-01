@@ -126,13 +126,13 @@ func TestBuildVirtualServiceSpec(t *testing.T) {
 			{Host: testHost1, Port: testPort1, Protocol: protocolHttp},
 		})
 
-		assert.True(t, reflect.DeepEqual(expected, result))
+		assert.True(t, reflect.DeepEqual(expected.DeepCopy(), result.DeepCopy()))
 
 		result = buildVirtualServiceSpec([]dtclient.CommunicationHost{
 			{Host: testHost2, Port: testPort2, Protocol: protocolHttp},
 		})
 
-		assert.False(t, reflect.DeepEqual(expected, result))
+		assert.False(t, reflect.DeepEqual(expected.DeepCopy(), result.DeepCopy()))
 	})
 	t.Run(`is TLS route correctly set if protocol is "https"`, func(t *testing.T) {
 		expected := buildExpectedVirtualServiceSpecTls(t)
@@ -140,13 +140,13 @@ func TestBuildVirtualServiceSpec(t *testing.T) {
 			{Host: testHost1, Port: testPort1, Protocol: protocolHttps},
 		})
 
-		assert.True(t, reflect.DeepEqual(expected, result))
+		assert.True(t, reflect.DeepEqual(expected.DeepCopy(), result.DeepCopy()))
 
 		result = buildVirtualServiceSpec([]dtclient.CommunicationHost{
 			{Host: testHost2, Port: testPort2, Protocol: protocolHttps},
 		})
 
-		assert.False(t, reflect.DeepEqual(expected, result))
+		assert.False(t, reflect.DeepEqual(expected.DeepCopy(), result.DeepCopy()))
 	})
 }
 
