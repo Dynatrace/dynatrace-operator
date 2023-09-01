@@ -35,7 +35,7 @@ func newDynakubeValidator(clt client.Client, apiReader client.Reader, cfg *rest.
 func AddDynakubeValidationWebhookToManager(manager ctrl.Manager) error {
 	log.Info("Register Validator to /validate")
 	manager.GetWebhookServer().Register("/validate", &webhook.Admission{
-		Handler: newDynakubeValidator(manager.GetAPIReader(), manager.GetConfig(), manager.GetClient()),
+		Handler: newDynakubeValidator(manager.GetClient(), manager.GetAPIReader(), manager.GetConfig()),
 	})
 	return nil
 }

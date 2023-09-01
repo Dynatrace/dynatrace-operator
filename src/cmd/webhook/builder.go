@@ -123,7 +123,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		err = startCertificateWatcher(builder.podName, webhookManager, builder.namespace)
+		err = startCertificateWatcher(webhookManager, builder.namespace, builder.podName)
 		if err != nil {
 			return err
 		}

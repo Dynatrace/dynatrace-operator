@@ -16,9 +16,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-func AddNamespaceMutationWebhookToManager(manager ctrl.Manager, ns string) error {
+func AddNamespaceMutationWebhookToManager(manager ctrl.Manager, namespace string) error {
 	manager.GetWebhookServer().Register("/label-ns", &webhook.Admission{
-		Handler: newNamespaceMutator(ns, manager.GetAPIReader(), manager.GetClient()),
+		Handler: newNamespaceMutator(manager.GetClient(), manager.GetAPIReader(), namespace),
 	})
 	return nil
 }
@@ -79,7 +79,7 @@ func decodeRequestToNamespace(request admission.Request, namespace *corev1.Names
 func newNamespaceMutator(client client.Client, apiReader client.Reader, namespace string) admission.Handler {
 	return &namespaceMutator{
 		apiReader: apiReader,
-		namespace: ns,
+		namespace: namespace,
 		client:    client,
 	}
 }
