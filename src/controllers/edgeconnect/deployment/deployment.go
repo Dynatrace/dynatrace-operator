@@ -92,7 +92,7 @@ func buildAppLabels(instance *edgeconnectv1alpha1.EdgeConnect) *kubeobjects.AppL
 		kubeobjects.EdgeConnectComponentLabel,
 		instance.Name,
 		consts.EdgeConnectUserProvisioned,
-		"latest")
+		instance.Spec.ImageRef.Tag)
 }
 
 func buildAnnotations(instance *edgeconnectv1alpha1.EdgeConnect) map[string]string {
