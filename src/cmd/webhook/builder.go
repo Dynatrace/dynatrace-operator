@@ -91,7 +91,7 @@ func addFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&certificateKeyFileName, FlagCertificateKeyFileName, "tls.key", "File name for the private key.")
 }
 
-func startCertificateWatcher(podName string, webhookManager manager.Manager, namespace string) error {
+func startCertificateWatcher(webhookManager manager.Manager, namespace string, podName string) error {
 	webhookPod, err := kubeobjects.GetPod(context.TODO(), webhookManager.GetAPIReader(), podName, namespace)
 	if err != nil {
 		return err
