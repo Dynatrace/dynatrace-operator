@@ -9,6 +9,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/validation"
 )
 
 func New(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
@@ -88,11 +89,18 @@ func prepareContainerEnvVars(instance *edgeconnectv1alpha1.EdgeConnect) []corev1
 }
 
 func buildAppLabels(instance *edgeconnectv1alpha1.EdgeConnect) *kubeobjects.AppLabels {
+	version := "latest"
+	statusVersion := instance.Status.Version.Version
+
+	if statusVersion != "" && len(validation.IsQualifiedName(statusVersion)) == 0 {
+		version = statusVersion
+	}
+
 	return kubeobjects.NewAppLabels(
 		kubeobjects.EdgeConnectComponentLabel,
 		instance.Name,
 		consts.EdgeConnectUserProvisioned,
-		instance.Spec.ImageRef.Tag)
+		version)
 }
 
 func buildAnnotations(instance *edgeconnectv1alpha1.EdgeConnect) map[string]string {
