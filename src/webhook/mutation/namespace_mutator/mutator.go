@@ -76,7 +76,7 @@ func decodeRequestToNamespace(request admission.Request, namespace *corev1.Names
 	return nil
 }
 
-func newNamespaceMutator(ns string, apiReader client.Reader, client client.Client) admission.Handler {
+func newNamespaceMutator(client client.Client, apiReader client.Reader, namespace string) admission.Handler {
 	return &namespaceMutator{
 		apiReader: apiReader,
 		namespace: ns,
