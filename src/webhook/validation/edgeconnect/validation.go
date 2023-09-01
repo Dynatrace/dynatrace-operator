@@ -21,23 +21,18 @@ type edgeconnectValidator struct {
 	cfg       *rest.Config
 }
 
-func newEdgeConnectValidator(apiReader client.Reader, cfg *rest.Config) admission.Handler {
+func newEdgeConnectValidator(clt client.Client, apiReader client.Reader, cfg *rest.Config) admission.Handler {
 	return &edgeconnectValidator{
 		apiReader: apiReader,
 		cfg:       cfg,
+		clt:       clt,
 	}
 }
 
 func AddEdgeConnectValidationWebhookToManager(manager ctrl.Manager) error {
 	manager.GetWebhookServer().Register("/validate/edgeconnect", &webhook.Admission{
-		Handler: newEdgeConnectValidator(manager.GetAPIReader(), manager.GetConfig()),
+		Handler: newEdgeConnectValidator(manager.GetClient(), manager.GetAPIReader(), manager.GetConfig()),
 	})
-	return nil
-}
-
-// InjectClient implements the inject.Client interface which allows the manager to inject a kubernetes client into this handler
-func (validator *edgeconnectValidator) InjectClient(clt client.Client) error {
-	validator.clt = clt
 	return nil
 }
 
@@ -68,12 +63,9 @@ func (validator *edgeconnectValidator) runValidators(validators []validator, edg
 }
 
 func decodeRequestToEdgeConnect(request admission.Request, edgeConnect *edgeconnect.EdgeConnect) error {
-	decoder, err := admission.NewDecoder(scheme.Scheme)
-	if err != nil {
-		return errors.WithStack(err)
-	}
+	decoder := admission.NewDecoder(scheme.Scheme)
 
-	err = decoder.Decode(request, edgeConnect)
+	err := decoder.Decode(request, edgeConnect)
 	if err != nil {
 		return errors.WithStack(err)
 	}

@@ -48,12 +48,6 @@ type podMutatorWebhook struct {
 	mutators []dtwebhook.PodMutator
 }
 
-// InjectDecoder injects the decoder
-func (webhook *podMutatorWebhook) InjectDecoder(d *admission.Decoder) error {
-	webhook.decoder = *d
-	return nil
-}
-
 func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.Request) admission.Response {
 	emptyPatch := admission.Patched("")
 	mutationRequest, err := webhook.createMutationRequestBase(ctx, request)

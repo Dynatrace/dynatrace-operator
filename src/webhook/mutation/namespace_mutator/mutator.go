@@ -16,9 +16,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-func AddNamespaceMutationWebhookToManager(manager ctrl.Manager, ns string) error {
+func AddNamespaceMutationWebhookToManager(manager ctrl.Manager, namespace string) error {
 	manager.GetWebhookServer().Register("/label-ns", &webhook.Admission{
-		Handler: newNamespaceMutator(ns, manager.GetAPIReader()),
+		Handler: newNamespaceMutator(manager.GetClient(), manager.GetAPIReader(), namespace),
 	})
 	return nil
 }
@@ -28,12 +28,6 @@ type namespaceMutator struct {
 	client    client.Client
 	apiReader client.Reader
 	namespace string
-}
-
-// InjectClient implements the inject.Client interface which allows the manager to inject a kubernetes client into this handler
-func (nm *namespaceMutator) InjectClient(clt client.Client) error {
-	nm.client = clt
-	return nil
 }
 
 // Handle does the mapping between the namespace and dynakube from the namespace's side.
@@ -73,22 +67,20 @@ func (nm *namespaceMutator) Handle(ctx context.Context, request admission.Reques
 }
 
 func decodeRequestToNamespace(request admission.Request, namespace *corev1.Namespace) error {
-	decoder, err := admission.NewDecoder(scheme.Scheme)
-	if err != nil {
-		return errors.WithStack(err)
-	}
+	decoder := admission.NewDecoder(scheme.Scheme)
 
-	err = decoder.Decode(request, namespace)
+	err := decoder.Decode(request, namespace)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 	return nil
 }
 
-func newNamespaceMutator(ns string, apiReader client.Reader) admission.Handler {
+func newNamespaceMutator(client client.Client, apiReader client.Reader, namespace string) admission.Handler {
 	return &namespaceMutator{
 		apiReader: apiReader,
-		namespace: ns,
+		namespace: namespace,
+		client:    client,
 	}
 }
 
