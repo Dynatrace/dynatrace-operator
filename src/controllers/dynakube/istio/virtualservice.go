@@ -2,14 +2,14 @@ package istio
 
 import (
 	"context"
-	"fmt"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/pkg/errors"
 	istio "istio.io/api/networking/v1alpha3"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	istioclientset "istio.io/client-go/pkg/clientset/versioned"
-	"k8s.io/apimachinery/pkg/api/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -39,7 +39,6 @@ func buildVirtualService(meta metav1.ObjectMeta, commHosts []dtclient.Communicat
 }
 
 func buildVirtualServiceSpec(commHosts []dtclient.CommunicationHost) istio.VirtualService {
-	virtualServiceSpec := istio.VirtualService{}
 	hosts := make([]string, len(commHosts))
 	var (
 		tlses  []*istio.TLSRoute
@@ -55,16 +54,11 @@ func buildVirtualServiceSpec(commHosts []dtclient.CommunicationHost) istio.Virtu
 			routes = append(routes, buildVirtualServiceHttpRoute(commHost.Host, commHost.Port))
 		}
 	}
-
-	virtualServiceSpec.Hosts = hosts
-
-	if len(routes) != 0 {
-		virtualServiceSpec.Http = routes
+	return istio.VirtualService{
+		Hosts: hosts,
+		Http: routes,
+		Tls: tlses,
 	}
-	if len(tlses) != 0 {
-		virtualServiceSpec.Tls = tlses
-	}
-	return virtualServiceSpec
 }
 
 func buildVirtualServiceHttpRoute(host string, port uint32) *istio.HTTPRoute {
@@ -107,11 +101,11 @@ func handleIstioConfigurationForVirtualService(istioConfig *configuration) (bool
 	}
 
 	err := createIstioConfigurationForVirtualService(istioConfig.instance, virtualService, istioConfig.role, istioConfig.reconciler.istioClient, istioConfig.reconciler.scheme)
-	if errors.IsAlreadyExists(err) {
+	if k8serrors.IsAlreadyExists(err) {
 		return false, nil
 	}
 	if err != nil {
-		log.Error(err, "failed to create VirtualService")
+		log.Info("failed to create VirtualService", "error", err.Error())
 		return false, err
 	}
 	log.Info("VirtualService created", "objectName", istioConfig.name, "hosts", getHosts(istioConfig.commHosts),
@@ -132,7 +126,7 @@ func createIstioConfigurationForVirtualService(dynaKube *dynatracev1beta1.DynaKu
 		return err
 	}
 	if createdVirtualService == nil {
-		return fmt.Errorf("could not create virtual service with spec %v", virtualService.Spec)
+		return errors.Errorf("could not create virtual service with spec %v", virtualService.Spec.DeepCopy())
 	}
 
 	return nil

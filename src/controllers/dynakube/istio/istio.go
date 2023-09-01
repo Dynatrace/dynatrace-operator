@@ -30,8 +30,8 @@ func BuildNameForEndpoint(name string, commHosts []dtclient.CommunicationHost) s
 }
 
 // CheckIstioInstalled run discovery query for server resource for group version
-func CheckIstioInstalled(discoveryclient discovery.DiscoveryInterface) (bool, error) {
-	_, err := discoveryclient.ServerResourcesForGroupVersion(IstioGVR)
+func CheckIstioInstalled(discoveryClient discovery.DiscoveryInterface) (bool, error) {
+	_, err := discoveryClient.ServerResourcesForGroupVersion(IstioGVR)
 	if errors.IsNotFound(err) {
 		return false, nil
 	}

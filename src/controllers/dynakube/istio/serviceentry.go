@@ -2,16 +2,16 @@ package istio
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/pkg/errors"
 	istio "istio.io/api/networking/v1alpha3"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	istioclientset "istio.io/client-go/pkg/clientset/versioned"
-	"k8s.io/apimachinery/pkg/api/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -83,12 +83,12 @@ func buildServiceEntryIPs(meta metav1.ObjectMeta, commHosts []dtclient.Communica
 
 func handleIstioConfigurationForServiceEntry(istioConfig *configuration, serviceEntry *istiov1alpha3.ServiceEntry) (bool, error) {
 	err := createIstioConfigurationForServiceEntry(istioConfig.instance, serviceEntry, istioConfig.role, istioConfig.reconciler.istioClient, istioConfig.reconciler.scheme)
-	if errors.IsAlreadyExists(err) {
+	if k8serrors.IsAlreadyExists(err) {
 		return false, nil
 	}
 	if err != nil {
-		log.Error(err, "failed to create ServiceEntry")
-		return false, err
+		log.Info("failed to create ServiceEntry", "error", err.Error())
+		return false, errors.WithStack(err)
 	}
 
 	log.Info("ServiceEntry created", "objectName", istioConfig.name, "hosts", getHosts(istioConfig.commHosts), "ports", getPorts(istioConfig.commHosts))
@@ -101,14 +101,14 @@ func createIstioConfigurationForServiceEntry(dynaKube *dynatracev1beta1.DynaKube
 	istioClient istioclientset.Interface, scheme *runtime.Scheme) error {
 	serviceEntry.Labels = buildIstioLabels(dynaKube.GetName(), role)
 	if err := controllerutil.SetControllerReference(dynaKube, serviceEntry, scheme); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	sve, err := istioClient.NetworkingV1alpha3().ServiceEntries(dynaKube.GetNamespace()).Create(context.TODO(), serviceEntry, metav1.CreateOptions{})
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	if sve == nil {
-		return fmt.Errorf("could not create service entry with spec %v", serviceEntry.Spec)
+		return errors.Errorf("could not create service entry with spec %v", serviceEntry.Spec.DeepCopy())
 	}
 	return nil
 }
@@ -116,8 +116,8 @@ func createIstioConfigurationForServiceEntry(dynaKube *dynatracev1beta1.DynaKube
 func removeIstioConfigurationForServiceEntry(istioConfig *configuration, seen map[string]bool) (bool, error) {
 	list, err := istioConfig.reconciler.istioClient.NetworkingV1alpha3().ServiceEntries(istioConfig.instance.GetNamespace()).List(context.TODO(), *istioConfig.listOps)
 	if err != nil {
-		log.Error(err, "error listing service entries")
-		return false, err
+		log.Info("error listing service entries")
+		return false, errors.WithStack(err)
 	}
 
 	del := false
