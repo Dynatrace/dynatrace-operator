@@ -24,7 +24,7 @@ type dynakubeValidator struct {
 
 var _ admission.Handler = &dynakubeValidator{}
 
-func newDynakubeValidator(apiReader client.Reader, cfg *rest.Config, clt client.Client) admission.Handler {
+func newDynakubeValidator(clt client.Client, apiReader client.Reader, cfg *rest.Config) admission.Handler {
 	return &dynakubeValidator{
 		apiReader: apiReader,
 		cfg:       cfg,
