@@ -21,7 +21,7 @@ type edgeconnectValidator struct {
 	cfg       *rest.Config
 }
 
-func newEdgeConnectValidator(apiReader client.Reader, cfg *rest.Config, clt client.Client) admission.Handler {
+func newEdgeConnectValidator(clt client.Client, apiReader client.Reader, cfg *rest.Config) admission.Handler {
 	return &edgeconnectValidator{
 		apiReader: apiReader,
 		cfg:       cfg,
