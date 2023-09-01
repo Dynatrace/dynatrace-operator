@@ -287,8 +287,8 @@ jobs:
         with:
           version_without_prefix: ${{ needs.prepare.outputs.version_without_prefix }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          secring: ${{ secrets.SECRING }}
-          passphrase: ${{ secrets.PASSPHRASE }}
+          secring: ${{ secrets.HELM_SECRING }}
+          passphrase: ${{ secrets.HELM_PASSPHRASE }}
           output-dir: "./helm-pkg"
       - name: Create pre-release
         uses: softprops/action-gh-release@v1
