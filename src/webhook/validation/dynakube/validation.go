@@ -22,23 +22,21 @@ type dynakubeValidator struct {
 	cfg       *rest.Config
 }
 
-func newDynakubeValidator(apiReader client.Reader, cfg *rest.Config) admission.Handler {
+var _ admission.Handler = &dynakubeValidator{}
+
+func newDynakubeValidator(clt client.Client, apiReader client.Reader, cfg *rest.Config) admission.Handler {
 	return &dynakubeValidator{
 		apiReader: apiReader,
 		cfg:       cfg,
+		clt:       clt,
 	}
 }
 
 func AddDynakubeValidationWebhookToManager(manager ctrl.Manager) error {
+	log.Info("Register Validator to /validate")
 	manager.GetWebhookServer().Register("/validate", &webhook.Admission{
-		Handler: newDynakubeValidator(manager.GetAPIReader(), manager.GetConfig()),
+		Handler: newDynakubeValidator(manager.GetClient(), manager.GetAPIReader(), manager.GetConfig()),
 	})
-	return nil
-}
-
-// InjectClient implements the inject.Client interface which allows the manager to inject a kubernetes client into this handler
-func (validator *dynakubeValidator) InjectClient(clt client.Client) error {
-	validator.clt = clt
 	return nil
 }
 
@@ -76,12 +74,9 @@ func (validator *dynakubeValidator) runValidators(validators []validator, dynaku
 }
 
 func decodeRequestToDynakube(request admission.Request, dynakube *dynatracev1beta1.DynaKube) error {
-	decoder, err := admission.NewDecoder(scheme.Scheme)
-	if err != nil {
-		return errors.WithStack(err)
-	}
+	decoder := admission.NewDecoder(scheme.Scheme)
 
-	err = decoder.Decode(request, dynakube)
+	err := decoder.Decode(request, dynakube)
 	if err != nil {
 		return errors.WithStack(err)
 	}

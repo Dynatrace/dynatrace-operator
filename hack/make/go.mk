@@ -28,7 +28,7 @@ go/golangci:
 ## Runs all the linting tools
 go/lint: go/format go/vet go/golangci
 
-## Runs all go unit tests and writes the coverprofile to cover.out
+## Runs all go unit tests and writes the coverprofile to coverage.txt
 go/test:
 	go test ./... -coverprofile=coverage.txt -covermode=atomic -tags "$(shell ./hack/build/create_go_build_tags.sh false)"
 

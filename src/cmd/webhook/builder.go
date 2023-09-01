@@ -19,6 +19,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 const (
@@ -90,6 +91,24 @@ func addFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&certificateKeyFileName, FlagCertificateKeyFileName, "tls.key", "File name for the private key.")
 }
 
+func startCertificateWatcher(webhookManager manager.Manager, namespace string, podName string) error {
+	webhookPod, err := kubeobjects.GetPod(context.TODO(), webhookManager.GetAPIReader(), podName, namespace)
+	if err != nil {
+		return err
+	}
+
+	isDeployedViaOLM := kubesystem.IsDeployedViaOlm(*webhookPod)
+	if !isDeployedViaOLM {
+		watcher, err := certificates.
+			NewCertificateWatcher(webhookManager, namespace, webhook.SecretCertsName)
+		if err != nil {
+			return err
+		}
+		watcher.WaitForCertificates()
+	}
+	return nil
+}
+
 func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		version.LogVersion()
@@ -103,16 +122,10 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		if err != nil {
 			return err
 		}
-		webhookPod, err := kubeobjects.GetPod(context.TODO(), webhookManager.GetAPIReader(), builder.podName, builder.namespace)
+
+		err = startCertificateWatcher(webhookManager, builder.namespace, builder.podName)
 		if err != nil {
 			return err
-		}
-		isDeployedViaOLM := kubesystem.IsDeployedViaOlm(*webhookPod)
-
-		if !isDeployedViaOLM {
-			certificates.
-				NewCertificateWatcher(webhookManager, builder.namespace, webhook.SecretCertsName).
-				WaitForCertificates()
 		}
 
 		err = namespace_mutator.AddNamespaceMutationWebhookToManager(webhookManager, builder.namespace)

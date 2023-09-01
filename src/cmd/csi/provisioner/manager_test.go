@@ -24,9 +24,9 @@ func TestCsiDriverManagerProvider(t *testing.T) {
 		options := csiManagerProvider.createOptions("namespace")
 
 		assert.NotNil(t, options)
-		assert.Equal(t, "namespace", options.Namespace)
+		assert.Contains(t, options.Cache.DefaultNamespaces, "namespace")
 		assert.Equal(t, scheme.Scheme, options.Scheme)
-		assert.Equal(t, metricsBindAddress, options.MetricsBindAddress)
+		assert.Equal(t, metricsBindAddress, options.Metrics.BindAddress)
 		assert.Equal(t, "", options.HealthProbeBindAddress)
 		assert.Equal(t, livenessEndpointName, options.LivenessEndpointName)
 	})
