@@ -4,7 +4,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"net"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
@@ -41,22 +40,11 @@ func CheckIstioInstalled(discoveryClient discovery.DiscoveryInterface) (bool, er
 	return err == nil, err
 }
 
-func buildObjectMeta(name string, namespace string) metav1.ObjectMeta {
+func buildObjectMeta(name, namespace string, labels map[string]string) metav1.ObjectMeta {
 	return metav1.ObjectMeta{
 		Name:      name,
 		Namespace: namespace,
+		Labels:    labels,
 	}
 }
 
-// TODO: Add labels
-func buildIstioLabels(name, role string) map[string]string {
-	return map[string]string{
-		"dynatrace":            "oneagent",
-		"oneagent":             name,
-		"dynatrace-istio-role": role,
-	}
-}
-
-func isIp(host string) bool {
-	return net.ParseIP(host) != nil
-}

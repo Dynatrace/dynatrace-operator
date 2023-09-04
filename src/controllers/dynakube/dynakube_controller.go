@@ -143,8 +143,6 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 		}
 	}
 
-	controller.reconcileIstio(ctx, dynakube)
-
 	return reconcile.Result{RequeueAfter: requeueAfter}, err
 }
 
@@ -169,27 +167,31 @@ func (controller *Controller) createDynakubeMapper(ctx context.Context, dynakube
 	return &dkMapper
 }
 
-func (controller *Controller) reconcileIstio(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) {
+func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
+
+	var istioReconciler *istio.Reconciler
 	if dynakube.Spec.EnableIstio {
-		communicationHosts := connectioninfo.GetCommunicationHosts(dynakube)
-
-		ic, err := istio.NewClient(controller.config, controller.scheme, controller.operatorNamespace)
-
+		istioClient, err := istio.NewClient(controller.config, controller.scheme, controller.operatorNamespace)
 		if err != nil {
-			log.Error(err, "failed to initialize istio client")
+			return errors.WithMessage(err, "failed to initialize istio client")
 		}
 
-		err = istio.NewReconciler(ic).Reconcile(ctx, dynakube, communicationHosts)
+		isInstalled, err := istio.CheckIstioInstalled(istioClient.Discovery())
 		if err != nil {
-			// If there are errors log them, but move on.
-			log.Info("failed to reconcile istio objects", "error", err)
+			return errors.WithMessage(err, "failed to initialize istio client")
+		} else if !isInstalled {
+			return errors.New("istio not installed yet is enabled, aborting reconciliation, check configuration")
+		}
+
+		istioReconciler = istio.NewReconciler(istioClient)
+		err = istioReconciler.ReconcileAPIUrl(ctx, dynakube)
+		if err != nil {
+			return errors.WithMessage(err, "failed to reconcile istio objects for API url")
 		} else {
-			log.Info("reconciled istio objects")
+			log.Info("reconciled istio objects for API url")
 		}
 	}
-}
 
-func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
 	tokenReader := token.NewReader(controller.apiReader, dynakube)
 	tokens, err := tokenReader.ReadTokens(ctx)
 
@@ -260,7 +262,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		return err
 	}
 
-	err = controller.reconcileAppInjection(ctx, dynakube)
+	err = controller.reconcileAppInjection(ctx, dynakube, istioReconciler)
 	if err != nil {
 		log.Info("could not reconcile app injection")
 		return err
@@ -269,8 +271,14 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 	return nil
 }
 
-func (controller *Controller) reconcileAppInjection(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
+func (controller *Controller) reconcileAppInjection(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, istioReconciler *istio.Reconciler) error {
 	if dynakube.NeedAppInjection() {
+		if istioReconciler != nil {
+			err := istioReconciler.ReconcileOneAgentCommunicationHosts(ctx, dynakube)
+			if err != nil {
+				return err
+			}
+		}
 		return controller.setupAppInjection(ctx, dynakube)
 	}
 

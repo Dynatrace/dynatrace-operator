@@ -16,12 +16,12 @@ const (
 	protocolTcp      = "TCP"
 )
 
-func BuildNameForIPServiceEntry(ownerName string) string {
-	return "ip-" + ownerName
+func BuildNameForIPServiceEntry(ownerName, role string) string {
+	return ownerName + "-ip-" + role
 }
 
-func BuildNameForFQDNServiceEntry(ownerName string) string {
-	return "fqdn-" + ownerName
+func BuildNameForFQDNServiceEntry(ownerName, role string) string {
+	return ownerName + "-fqdn-" + role
 }
 
 

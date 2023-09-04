@@ -7,3 +7,8 @@ import (
 var (
 	log = logger.Factory.GetLogger("dynakube-istio")
 )
+
+const (
+	operatorComponent = "operator"
+	oneAgentComponent = "oneagent"
+)

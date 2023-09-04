@@ -1,6 +1,7 @@
 package istio
 
 import (
+	"net"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	istio "istio.io/api/networking/v1alpha3"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
@@ -84,4 +85,8 @@ func buildVirtualServiceTLSRoute(host string, port uint32) *istio.TLSRoute {
 			},
 		}},
 	}
+}
+
+func isIp(host string) bool {
+	return net.ParseIP(host) != nil
 }
