@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/edgeconnect/consts"
 	"github.com/stretchr/testify/assert"
@@ -95,5 +96,33 @@ func Test_prepareContainerEnvVars(t *testing.T) {
 			{Name: consts.EnvEdgeConnectOauthResource, Value: "urn:dtenvironment:test12345"},
 			{Name: consts.EnvEdgeConnectRestrictHostsTo, Value: "*.test.com"},
 		})
+	})
+}
+
+func Test_buildAppLabels(t *testing.T) {
+	testEdgeConnect := &edgeconnectv1alpha1.EdgeConnect{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testName,
+			Namespace: testNamespace,
+		},
+		Spec: edgeconnectv1alpha1.EdgeConnectSpec{
+			ApiServer: "abc12345.dynatrace.com",
+			OAuth: edgeconnectv1alpha1.OAuthSpec{
+				ClientSecret: "secret-name",
+				Endpoint:     "https://sso-dev.dynatracelabs.com/sso/oauth2/token",
+				Resource:     "urn:dtenvironment:test12345",
+			},
+		},
+		Status: edgeconnectv1alpha1.EdgeConnectStatus{
+			Version: status.VersionStatus{
+				Version: "",
+			},
+			UpdatedTimestamp: metav1.NewTime(time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)),
+		},
+	}
+
+	t.Run("Check version label set correctly", func(t *testing.T) {
+		labels := buildAppLabels(testEdgeConnect)
+		assert.Equal(t, "", labels.Version)
 	})
 }
