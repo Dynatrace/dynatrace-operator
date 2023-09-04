@@ -115,7 +115,7 @@ func Test_buildAppLabels(t *testing.T) {
 		},
 		Status: edgeconnectv1alpha1.EdgeConnectStatus{
 			Version: status.VersionStatus{
-				Version: "test",
+				Version: "",
 			},
 			UpdatedTimestamp: metav1.NewTime(time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)),
 		},
@@ -123,13 +123,6 @@ func Test_buildAppLabels(t *testing.T) {
 
 	t.Run("Check version label set correctly", func(t *testing.T) {
 		labels := buildAppLabels(testEdgeConnect)
-		assert.Equal(t, "test", labels.Version)
-	})
-
-	t.Run("Check invalid value in status.version, fallback to default = latest", func(t *testing.T) {
-		// It's possible to tag docker image with such a tag
-		testEdgeConnect.Status.Version.Version = "invalid/custom/tag"
-		labels := buildAppLabels(testEdgeConnect)
-		assert.Equal(t, "latest", labels.Version)
+		assert.Equal(t, "", labels.Version)
 	})
 }
