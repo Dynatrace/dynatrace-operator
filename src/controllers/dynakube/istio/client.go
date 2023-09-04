@@ -63,11 +63,11 @@ func (cl *Client) ApplyVirtualService(ctx context.Context, owner metav1.Object, 
 }
 
 func (cl *Client) DeleteVirtualService(ctx context.Context, name string) error {
-	log.Info("removing virtual service", "name", name)
 	err := cl.istioClient.NetworkingV1alpha3().
 		VirtualServices(cl.namespace).
 		Delete(ctx, name, metav1.DeleteOptions{})
 	if !k8serrors.IsNotFound(err) {
+		log.Info("failed to remove virtual service", "name", name)
 		return err
 	}
 	return nil
@@ -96,11 +96,11 @@ func (cl *Client) ApplyServiceEntry(ctx context.Context, owner metav1.Object, se
 }
 
 func (cl *Client) DeleteServiceEntry(ctx context.Context, name string) error {
-	log.Info("removing service entry", "name", name)
 	err := cl.istioClient.NetworkingV1alpha3().
 		ServiceEntries(cl.namespace).
 		Delete(ctx, name, metav1.DeleteOptions{})
 	if !k8serrors.IsNotFound(err) {
+		log.Info("failed to remove service entry", "name", name)
 		return err
 	}
 	return nil
