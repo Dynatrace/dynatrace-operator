@@ -121,7 +121,7 @@ func checkCSIProvisionerEvent(dynakube dynakubev1beta1.DynaKube) features.Func {
 		clientset, err := kubernetes.NewForConfig(resources.GetConfig())
 		require.NoError(t, err)
 
-		err = wait.For(func() (done bool, err error) {
+		err = wait.For(func(ctx context.Context) (done bool, err error) {
 			events, err := clientset.CoreV1().Events("dynatrace").List(ctx, v1.ListOptions{
 				TypeMeta: v1.TypeMeta{
 					Kind: "Pod",
