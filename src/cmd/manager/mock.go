@@ -32,9 +32,9 @@ func (mgr *MockManager) AddReadyzCheck(name string, check healthz.Checker) error
 	return args.Error(0)
 }
 
-func (mgr *MockManager) GetWebhookServer() *webhook.Server {
+func (mgr *MockManager) GetWebhookServer() webhook.Server {
 	args := mgr.Called()
-	return args.Get(0).(*webhook.Server)
+	return args.Get(0).(*webhook.DefaultServer)
 }
 
 func (mgr *MockManager) GetConfig() *rest.Config {

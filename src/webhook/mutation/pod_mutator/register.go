@@ -15,6 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhookPodName string) error {
@@ -79,6 +80,7 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 				metaClient,
 			),
 		},
+		decoder: *admission.NewDecoder(mgr.GetScheme()),
 	}})
 	log.Info("registered /inject endpoint")
 	return nil

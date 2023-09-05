@@ -6,14 +6,15 @@ import (
 	"github.com/pkg/errors"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 const (
 	metricsBindAddress   = ":8080"
 	defaultProbeAddress  = ":10080"
-	port                 = 8383
 	livenessEndpointName = "/livez"
 	livezEndpointName    = "livez"
 )
@@ -53,12 +54,19 @@ func (provider csiDriverManagerProvider) addHealthzCheck(mgr manager.Manager) er
 }
 
 func (provider csiDriverManagerProvider) createOptions(namespace string) ctrl.Options {
-	return ctrl.Options{
-		Namespace:              namespace,
+	options := ctrl.Options{
+		Cache: cache.Options{
+			DefaultNamespaces: map[string]cache.Config{
+				namespace: {},
+			},
+		},
+		Metrics: server.Options{
+			BindAddress: metricsBindAddress,
+		},
 		Scheme:                 scheme.Scheme,
-		MetricsBindAddress:     metricsBindAddress,
-		Port:                   port,
 		HealthProbeBindAddress: provider.probeAddress,
 		LivenessEndpointName:   livenessEndpointName,
 	}
+
+	return options
 }

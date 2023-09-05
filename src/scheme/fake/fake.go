@@ -26,14 +26,15 @@ import (
 
 // NewClient returns a new controller-runtime fake Client configured with the Operator's scheme, and initialized with objs.
 func NewClient(objs ...client.Object) client.Client {
-	return fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(objs...).Build()
+	return fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(objs...).WithStatusSubresource(objs...).Build()
 }
 
 // NewClientWithIndex returns a fake client with common indexes already configured
 func NewClientWithIndex(objs ...client.Object) client.Client {
 	clientBuilder := fake.NewClientBuilder().
 		WithScheme(scheme.Scheme).
-		WithObjects(objs...)
+		WithObjects(objs...).
+		WithStatusSubresource(objs...)
 
 	objects := []runtime.Object{
 		&corev1.Namespace{},
