@@ -48,3 +48,18 @@ func getHash(a metav1.Object) string {
 	}
 	return ""
 }
+
+
+func AddHashAnnotation(object metav1.Object) error {
+	annotations := object.GetAnnotations()
+	if annotations == nil {
+		annotations = map[string]string{}
+	}
+	objectHash, err := GenerateHash(object)
+	if err != nil {
+		return err
+	}
+	annotations[AnnotationHash] = objectHash
+	object.SetAnnotations(annotations)
+	return nil
+}

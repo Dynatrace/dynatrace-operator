@@ -24,7 +24,6 @@ func BuildNameForFQDNServiceEntry(ownerName, role string) string {
 	return ownerName + "-fqdn-" + role
 }
 
-
 func buildServiceEntryFQDNs(meta metav1.ObjectMeta, hostHosts []dtclient.CommunicationHost) *istiov1alpha3.ServiceEntry {
 	hosts := make([]string, len(hostHosts))
 	portSet := make(map[uint32]bool)

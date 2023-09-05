@@ -38,7 +38,7 @@ func (r *Reconciler) ReconcileAPIUrl(ctx context.Context, dynakube *dynatracev1b
 
 func (r *Reconciler) ReconcileOneAgentCommunicationHosts(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
 	log.Info("reconciling istio components for oneagent communication hosts")
-	communicationHosts := connectioninfo.GetCommunicationHosts(dynakube)
+	communicationHosts := connectioninfo.GetOneAgentCommunicationHosts(dynakube)
 
 	err := r.reconcileCommunicationHosts(ctx, dynakube, communicationHosts, oneAgentComponent)
 	if err != nil {
@@ -75,9 +75,10 @@ func splitCommunicationHost(comHosts []dtclient.CommunicationHost) (ipHosts, fqd
 }
 
 func (r *Reconciler) reconcileIPServiceEntry(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, ipHosts []dtclient.CommunicationHost, component string) error {
+	entryName := BuildNameForIPServiceEntry(dynakube.GetName(), component)
 	if len(ipHosts) != 0 {
 		meta := buildObjectMeta(
-			BuildNameForIPServiceEntry(dynakube.GetName(), component),
+			entryName,
 			dynakube.GetNamespace(),
 			kubeobjects.NewCoreLabels(dynakube.GetName(), component).BuildLabels(),
 		)
@@ -88,7 +89,7 @@ func (r *Reconciler) reconcileIPServiceEntry(ctx context.Context, dynakube *dyna
 			return err
 		}
 	} else {
-		err := r.client.DeleteServiceEntry(ctx, component)
+		err := r.client.DeleteServiceEntry(ctx, entryName)
 		if err != nil {
 			return err
 		}
@@ -98,9 +99,10 @@ func (r *Reconciler) reconcileIPServiceEntry(ctx context.Context, dynakube *dyna
 }
 
 func (r *Reconciler) reconcileFQDNServiceEntry(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, fqdnHosts []dtclient.CommunicationHost, component string) error {
+	entryName := BuildNameForFQDNServiceEntry(dynakube.GetName(), component)
 	if len(fqdnHosts) != 0 {
 		meta := buildObjectMeta(
-			BuildNameForFQDNServiceEntry(dynakube.GetName(), component),
+			entryName,
 			dynakube.GetNamespace(),
 			kubeobjects.NewCoreLabels(dynakube.GetName(), component).BuildLabels(),
 		)
@@ -117,12 +119,12 @@ func (r *Reconciler) reconcileFQDNServiceEntry(ctx context.Context, dynakube *dy
 			return err
 		}
 	} else {
-		err := r.client.DeleteServiceEntry(ctx, component)
+		err := r.client.DeleteServiceEntry(ctx, entryName)
 		if err != nil {
 			return err
 		}
 
-		err = r.client.DeleteVirtualService(ctx, dynakube.GetName())
+		err = r.client.DeleteVirtualService(ctx, entryName)
 		if err != nil {
 			return err
 		}
