@@ -323,7 +323,7 @@ jobs:
         shell: bash
         run: |
           echo "Updating Helm repo index"
-          ./hack/build/ci/generate-new-helm-index-yaml.sh
+          ./hack/build/ci/generate-new-helm-index-yaml.sh "./helm-pkg" ${{ needs.prepare.outputs.version_without_prefix }}
       - name: Create pull request for adding helm index to main branch
         uses: peter-evans/create-pull-request@v5
         with:
@@ -332,7 +332,7 @@ jobs:
           add-paths: |
             ./config/helm/repos/stable/index.yaml
             ./config/helm/repos/stable/index.yaml.previous
-          title: '[Automatic] Update index for {{ github.ref }} release'
+          title: '[Automatic] Update index for ${{ github.ref }} release'
           commit-message: Update index.yaml
           committer: GitHub <noreply@github.com>
           author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
@@ -341,7 +341,7 @@ jobs:
             Upgrade `index.yaml` to include latest version of the helm chart.
 
             ## How can this be tested?
-            Helm upgrade to and install of `{{ github.ref }}` works.
+            Helm upgrade to and install of `${{ github.ref }}` works.
 
             ## Checklist
             - [x] PR is labeled accordingly
