@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/edgeconnect/consts"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -61,6 +62,36 @@ func Test_prepareContainerEnvVars(t *testing.T) {
 		envVars := prepareContainerEnvVars(instance)
 
 		assert.Equal(t, envVars, []corev1.EnvVar{
+			{Name: consts.EnvEdgeConnectName, Value: testName},
+			{Name: consts.EnvEdgeConnectApiEndpointHost, Value: "abc12345.dynatrace.com"},
+			{Name: consts.EnvEdgeConnectOauthEndpoint, Value: "https://sso-dev.dynatracelabs.com/sso/oauth2/token"},
+			{Name: consts.EnvEdgeConnectOauthResource, Value: "urn:dtenvironment:test12345"},
+		})
+	})
+	t.Run("Create env vars for simple edgeconnect deployment with Envs in spec", func(t *testing.T) {
+		instance := &edgeconnectv1alpha1.EdgeConnect{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+			Spec: edgeconnectv1alpha1.EdgeConnectSpec{
+				ApiServer: "abc12345.dynatrace.com",
+				OAuth: edgeconnectv1alpha1.OAuthSpec{
+					ClientSecret: "secret-name",
+					Endpoint:     "https://sso-dev.dynatracelabs.com/sso/oauth2/token",
+					Resource:     "urn:dtenvironment:test12345",
+				},
+				Env: []corev1.EnvVar{{Name: "DEBUG", Value: "true"}},
+			},
+			Status: edgeconnectv1alpha1.EdgeConnectStatus{
+				UpdatedTimestamp: metav1.NewTime(time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)),
+			},
+		}
+
+		envVars := prepareContainerEnvVars(instance)
+
+		assert.Equal(t, envVars, []corev1.EnvVar{
+			{Name: "DEBUG", Value: "true"},
 			{Name: consts.EnvEdgeConnectName, Value: testName},
 			{Name: consts.EnvEdgeConnectApiEndpointHost, Value: "abc12345.dynatrace.com"},
 			{Name: consts.EnvEdgeConnectOauthEndpoint, Value: "https://sso-dev.dynatracelabs.com/sso/oauth2/token"},
@@ -124,5 +155,39 @@ func Test_buildAppLabels(t *testing.T) {
 	t.Run("Check version label set correctly", func(t *testing.T) {
 		labels := buildAppLabels(testEdgeConnect)
 		assert.Equal(t, "", labels.Version)
+	})
+}
+
+func Test_prepareResourceRequirements(t *testing.T) {
+	testEdgeConnect := &edgeconnectv1alpha1.EdgeConnect{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testName,
+			Namespace: testNamespace,
+		},
+		Spec: edgeconnectv1alpha1.EdgeConnectSpec{
+			ApiServer: "abc12345.dynatrace.com",
+			OAuth: edgeconnectv1alpha1.OAuthSpec{
+				ClientSecret: "secret-name",
+				Endpoint:     "https://sso-dev.dynatracelabs.com/sso/oauth2/token",
+				Resource:     "urn:dtenvironment:test12345",
+			},
+		},
+		Status: edgeconnectv1alpha1.EdgeConnectStatus{
+			Version: status.VersionStatus{
+				Version: "",
+			},
+			UpdatedTimestamp: metav1.NewTime(time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)),
+		},
+	}
+
+	t.Run("Check limits requirements set correctly", func(t *testing.T) {
+		customResources := corev1.ResourceRequirements{
+			Limits: kubeobjects.NewResources("500m", "256Mi"),
+		}
+		testEdgeConnect.Spec.Resources = customResources
+		resourceRequirements := prepareResourceRequirements(testEdgeConnect)
+		assert.Equal(t, customResources.Limits, resourceRequirements.Limits)
+		// check that we use default requests when not provided
+		assert.Equal(t, kubeobjects.NewResources("100m", "128Mi"), resourceRequirements.Requests)
 	})
 }

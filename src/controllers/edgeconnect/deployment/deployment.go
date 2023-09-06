@@ -42,6 +42,9 @@ func New(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
 					ServiceAccountName:            consts.EdgeConnectServiceAccountName,
 					TerminationGracePeriodSeconds: address.Of(int64(30)),
 					Volumes:                       []corev1.Volume{prepareVolume(instance)},
+					NodeSelector:                  instance.Spec.NodeSelector,
+					Tolerations:                   instance.Spec.Tolerations,
+					TopologySpreadConstraints:     instance.Spec.TopologySpreadConstraints,
 				},
 			},
 			Strategy: appsv1.DeploymentStrategy{
@@ -57,7 +60,13 @@ func New(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
 }
 
 func prepareContainerEnvVars(instance *edgeconnectv1alpha1.EdgeConnect) []corev1.EnvVar {
-	envVars := []corev1.EnvVar{
+	var envVars []corev1.EnvVar
+
+	if len(instance.Spec.Env) > 0 {
+		envVars = instance.Spec.Env
+	}
+
+	mandatoryEnvVars := []corev1.EnvVar{
 		{
 			Name:  consts.EnvEdgeConnectName,
 			Value: instance.ObjectMeta.Name,
@@ -79,10 +88,14 @@ func prepareContainerEnvVars(instance *edgeconnectv1alpha1.EdgeConnect) []corev1
 	// Since HostRestrictions is optional we should not pass empty env var
 	// otherwise edge-connect will fail
 	if instance.Spec.HostRestrictions != "" {
-		envVars = append(envVars, corev1.EnvVar{
+		mandatoryEnvVars = append(mandatoryEnvVars, corev1.EnvVar{
 			Name:  consts.EnvEdgeConnectRestrictHostsTo,
 			Value: instance.Spec.HostRestrictions,
 		})
+	}
+
+	for _, envVar := range mandatoryEnvVars {
+		envVars = kubeobjects.AddOrUpdate(envVars, envVar)
 	}
 	return envVars
 }
@@ -110,10 +123,7 @@ func edgeConnectContainer(instance *edgeconnectv1alpha1.EdgeConnect) corev1.Cont
 		Image:           instance.Status.Version.ImageID,
 		ImagePullPolicy: corev1.PullAlways,
 		Env:             prepareContainerEnvVars(instance),
-		Resources: corev1.ResourceRequirements{
-			Requests: kubeobjects.NewResources("100m", "128Mi"),
-			Limits:   kubeobjects.NewResources("100m", "128Mi"),
-		},
+		Resources:       prepareResourceRequirements(instance),
 		SecurityContext: &corev1.SecurityContext{
 			AllowPrivilegeEscalation: address.Of(false),
 			Privileged:               address.Of(false),
@@ -140,5 +150,23 @@ func prepareVolume(instance *edgeconnectv1alpha1.EdgeConnect) corev1.Volume {
 				},
 			},
 		},
+	}
+}
+
+func prepareResourceRequirements(instance *edgeconnectv1alpha1.EdgeConnect) corev1.ResourceRequirements {
+	limits := kubeobjects.NewResources("100m", "128Mi")
+	requests := kubeobjects.NewResources("100m", "128Mi")
+
+	if instance.Spec.Resources.Limits != nil {
+		limits = instance.Spec.Resources.Limits
+	}
+
+	if instance.Spec.Resources.Requests != nil {
+		limits = instance.Spec.Resources.Requests
+	}
+
+	return corev1.ResourceRequirements{
+		Requests: requests,
+		Limits:   limits,
 	}
 }
