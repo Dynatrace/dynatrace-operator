@@ -23,7 +23,7 @@ require (
 	golang.org/x/net v0.15.0
 	golang.org/x/sys v0.12.0
 	google.golang.org/grpc v1.57.0
-	istio.io/api v0.0.0-20230713061407-06047cce866f
+	istio.io/api v1.19.0
 	istio.io/client-go v1.18.1
 	k8s.io/api v0.28.1
 	k8s.io/apiextensions-apiserver v0.28.1
@@ -118,7 +118,7 @@ require (
 	google.golang.org/genproto v0.0.0-20230526161137-0005af68ea54 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20230525234035-dd9d682886f9 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230525234030-28d5490b6b19 // indirect
-	google.golang.org/protobuf v1.30.0 // indirect
+	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/go-jose/go-jose.v2 v2.6.1 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
