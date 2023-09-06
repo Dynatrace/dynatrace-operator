@@ -162,7 +162,7 @@ func prepareResourceRequirements(instance *edgeconnectv1alpha1.EdgeConnect) core
 	}
 
 	if instance.Spec.Resources.Requests != nil {
-		limits = instance.Spec.Resources.Requests
+		requests = instance.Spec.Resources.Requests
 	}
 
 	return corev1.ResourceRequirements{

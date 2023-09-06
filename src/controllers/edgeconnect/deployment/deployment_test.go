@@ -180,7 +180,7 @@ func Test_prepareResourceRequirements(t *testing.T) {
 		},
 	}
 
-	t.Run("Check limits requirements set correctly", func(t *testing.T) {
+	t.Run("Check limits requirements are set correctly", func(t *testing.T) {
 		customResources := corev1.ResourceRequirements{
 			Limits: kubeobjects.NewResources("500m", "256Mi"),
 		}
@@ -189,5 +189,16 @@ func Test_prepareResourceRequirements(t *testing.T) {
 		assert.Equal(t, customResources.Limits, resourceRequirements.Limits)
 		// check that we use default requests when not provided
 		assert.Equal(t, kubeobjects.NewResources("100m", "128Mi"), resourceRequirements.Requests)
+	})
+
+	t.Run("Check requests in requirements are set correctly", func(t *testing.T) {
+		customResources := corev1.ResourceRequirements{
+			Requests: kubeobjects.NewResources("500m", "256Mi"),
+		}
+		testEdgeConnect.Spec.Resources = customResources
+		resourceRequirements := prepareResourceRequirements(testEdgeConnect)
+		assert.Equal(t, customResources.Requests, resourceRequirements.Requests)
+		// check that we use default requests when not provided
+		assert.Equal(t, kubeobjects.NewResources("100m", "128Mi"), resourceRequirements.Limits)
 	})
 }
