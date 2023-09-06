@@ -176,6 +176,7 @@ spec:
               hostRestrictions:
                 description: Restrict outgoing HTTP requests to your internal resources
                   to specified hosts
+                example: internal.example.org,*.dev.example.org
                 type: string
               imageRef:
                 description: Overrides the default image
