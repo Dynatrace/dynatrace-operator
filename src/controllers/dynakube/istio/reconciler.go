@@ -5,6 +5,7 @@ import (
 	"net"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
@@ -48,15 +49,15 @@ func (r *Reconciler) ReconcileOneAgentCommunicationHosts(ctx context.Context, dy
 	return nil
 }
 
-func (r *Reconciler) reconcileCommunicationHosts(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, comHosts []dtclient.CommunicationHost, component string) error {
+func (r *Reconciler) reconcileCommunicationHosts(ctx context.Context, owner metav1.Object, comHosts []dtclient.CommunicationHost, component string) error {
 	ipHosts, fqdnHosts := splitCommunicationHost(comHosts)
 
-	err := r.reconcileIPServiceEntry(ctx, dynakube, ipHosts, component)
+	err := r.reconcileIPServiceEntry(ctx, owner, ipHosts, component)
 	if err != nil {
 		return err
 	}
 
-	err = r.reconcileFQDNServiceEntry(ctx, dynakube, fqdnHosts, component)
+	err = r.reconcileFQDNServiceEntry(ctx, owner, fqdnHosts, component)
 	if err != nil {
 		return err
 	}
@@ -74,17 +75,17 @@ func splitCommunicationHost(comHosts []dtclient.CommunicationHost) (ipHosts, fqd
 	return
 }
 
-func (r *Reconciler) reconcileIPServiceEntry(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, ipHosts []dtclient.CommunicationHost, component string) error {
-	entryName := BuildNameForIPServiceEntry(dynakube.GetName(), component)
+func (r *Reconciler) reconcileIPServiceEntry(ctx context.Context, owner metav1.Object, ipHosts []dtclient.CommunicationHost, component string) error {
+	entryName := BuildNameForIPServiceEntry(owner.GetName(), component)
 	if len(ipHosts) != 0 {
 		meta := buildObjectMeta(
 			entryName,
-			dynakube.GetNamespace(),
-			kubeobjects.NewCoreLabels(dynakube.GetName(), component).BuildLabels(),
+			owner.GetNamespace(),
+			kubeobjects.NewCoreLabels(owner.GetName(), component).BuildLabels(),
 		)
 
 		serviceEntry := buildServiceEntryIPs(meta, ipHosts)
-		err := r.client.ApplyServiceEntry(ctx, dynakube, serviceEntry)
+		err := r.client.ApplyServiceEntry(ctx, owner, serviceEntry)
 		if err != nil {
 			return err
 		}
@@ -98,23 +99,23 @@ func (r *Reconciler) reconcileIPServiceEntry(ctx context.Context, dynakube *dyna
 	return nil
 }
 
-func (r *Reconciler) reconcileFQDNServiceEntry(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, fqdnHosts []dtclient.CommunicationHost, component string) error {
-	entryName := BuildNameForFQDNServiceEntry(dynakube.GetName(), component)
+func (r *Reconciler) reconcileFQDNServiceEntry(ctx context.Context, owner metav1.Object, fqdnHosts []dtclient.CommunicationHost, component string) error {
+	entryName := BuildNameForFQDNServiceEntry(owner.GetName(), component)
 	if len(fqdnHosts) != 0 {
 		meta := buildObjectMeta(
 			entryName,
-			dynakube.GetNamespace(),
-			kubeobjects.NewCoreLabels(dynakube.GetName(), component).BuildLabels(),
+			owner.GetNamespace(),
+			kubeobjects.NewCoreLabels(owner.GetName(), component).BuildLabels(),
 		)
 
 		serviceEntry := buildServiceEntryFQDNs(meta, fqdnHosts)
-		err := r.client.ApplyServiceEntry(ctx, dynakube, serviceEntry)
+		err := r.client.ApplyServiceEntry(ctx, owner, serviceEntry)
 		if err != nil {
 			return err
 		}
 
 		virtualService := buildVirtualService(meta, fqdnHosts)
-		err = r.client.ApplyVirtualService(ctx, dynakube, virtualService)
+		err = r.client.ApplyVirtualService(ctx, owner, virtualService)
 		if err != nil {
 			return err
 		}
