@@ -176,14 +176,12 @@ spec:
               hostRestrictions:
                 description: Restrict outgoing HTTP requests to your internal resources
                   to specified hosts
-                example: internal.example.org,*.dev.example.org
                 type: string
               imageRef:
-                description: Overrides image
+                description: Overrides the default image
                 properties:
                   repository:
                     description: Custom EdgeConnect image repository
-                    example: docker.io/dynatrace/edgeconnect
                     type: string
                   tag:
                     description: Indicates version of the EdgeConnect image to use
@@ -205,7 +203,7 @@ spec:
                   with the Dynatrace platform.
                 properties:
                   clientSecret:
-                    description: Secret from your OAuth client generation
+                    description: Name of the secret that holds oauth clientId/secret
                     type: string
                   endpoint:
                     description: Token endpoint URL of Dynatrace SSO
