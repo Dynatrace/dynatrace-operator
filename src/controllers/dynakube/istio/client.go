@@ -46,7 +46,7 @@ func (cl *Client) GetVirtualService(ctx context.Context, name string) (*istiov1a
 	if k8serrors.IsNotFound(err) {
 		return nil, nil
 	} else if err != nil {
-		log.Info("failed to get current virtual service", "name", virtualService.GetName(), "error", err.Error())
+		log.Info("failed to get current virtual service", "name", name, "error", err.Error())
 		return nil, errors.WithStack(err)
 	}
 	return virtualService, nil
@@ -55,7 +55,7 @@ func (cl *Client) GetVirtualService(ctx context.Context, name string) (*istiov1a
 func (cl *Client) ApplyVirtualService(ctx context.Context, owner metav1.Object, newVirtualService *istiov1alpha3.VirtualService) error {
 	err := kubeobjects.AddHashAnnotation(newVirtualService)
 	if err != nil {
-		return errors.WithMessagef(err, "failed to generate and hash annotation for virtual service %s", newVirtualService.Name)
+		return errors.WithMessage(err, "failed to generate and hash annotation for virtual service")
 	}
 	oldVirtualService, err := cl.GetVirtualService(ctx, newVirtualService.Name)
 	if err != nil {
@@ -85,6 +85,9 @@ func (cl *Client) createVirtualService(ctx context.Context, owner metav1.Object,
 }
 
 func (cl *Client) updateVirtualService(ctx context.Context, oldVirtualService, newVirtualService *istiov1alpha3.VirtualService) error {
+	if oldVirtualService == nil || newVirtualService == nil {
+		return errors.New("can't update service entry based on nil object")
+	}
 	newVirtualService.ObjectMeta.ResourceVersion = oldVirtualService.ObjectMeta.ResourceVersion
 	_, err := cl.istioClient.NetworkingV1alpha3().VirtualServices(cl.namespace).Update(ctx, newVirtualService, metav1.UpdateOptions{})
 	if err != nil {
@@ -110,7 +113,7 @@ func (cl *Client) GetServiceEntry(ctx context.Context, name string) (*istiov1alp
 	if k8serrors.IsNotFound(err) {
 		return nil, nil
 	} else if err != nil {
-		log.Info("failed to get current service entry", "name", serviceEntry.GetName(), "error", err.Error())
+		log.Info("failed to get current service entry", "name", name, "error", err.Error())
 		return nil, errors.WithStack(err)
 	}
 	return serviceEntry, nil
@@ -119,7 +122,7 @@ func (cl *Client) GetServiceEntry(ctx context.Context, name string) (*istiov1alp
 func (cl *Client) ApplyServiceEntry(ctx context.Context, owner metav1.Object, newServiceEntry *istiov1alpha3.ServiceEntry) error {
 	err := kubeobjects.AddHashAnnotation(newServiceEntry)
 	if err != nil {
-		return errors.WithMessagef(err, "failed to generate and hash annotation for service entry %s", newServiceEntry.Name)
+		return errors.WithMessage(err, "failed to generate and hash annotation for service entry")
 	}
 	oldServiceEntry, err := cl.GetServiceEntry(ctx, newServiceEntry.Name)
 	if err != nil {
@@ -149,6 +152,9 @@ func (cl *Client) createServiceEntry(ctx context.Context, owner metav1.Object, s
 }
 
 func (cl *Client) updateServiceEntry(ctx context.Context, oldServiceEntry, newServiceEntry *istiov1alpha3.ServiceEntry) error {
+	if oldServiceEntry == nil || newServiceEntry == nil {
+		return errors.New("can't update service entry based on nil object")
+	}
 	newServiceEntry.ObjectMeta.ResourceVersion = oldServiceEntry.ObjectMeta.ResourceVersion
 	_, err := cl.istioClient.NetworkingV1alpha3().ServiceEntries(cl.namespace).Update(ctx, newServiceEntry, metav1.UpdateOptions{})
 	if err != nil {
