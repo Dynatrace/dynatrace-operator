@@ -44,3 +44,19 @@ func GetStandardKubeClusterEnvironment() env.Environment {
 	envConfig := cfg.WithKubeconfigFile(kubeConfigPath)
 	return env.NewWithConfig(envConfig)
 }
+
+// let's decide here which config we really need to run on. use minimal required config.
+func CreateKindClusterEnvironment() env.Environment {
+	kindClusterEnvironment := env.New()
+	randomClusterName := envconf.RandomName("operator-test", 10)
+	kindCluster := envfuncs.CreateCluster(kind.NewProvider(), randomClusterName)
+	kindClusterEnvironment.Setup(kindCluster)
+	return kindClusterEnvironment
+}
+
+func GetStandardKubeClusterEnvironment() env.Environment {
+	kubeConfigPath := conf.ResolveKubeConfigFile()
+	cfg, _ := envconf.NewFromFlags()
+	envConfig := cfg.WithKubeconfigFile(kubeConfigPath)
+	return env.NewWithConfig(envConfig)
+}
