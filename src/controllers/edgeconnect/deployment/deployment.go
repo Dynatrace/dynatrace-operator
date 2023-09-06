@@ -88,10 +88,8 @@ func prepareContainerEnvVars(instance *edgeconnectv1alpha1.EdgeConnect) []corev1
 		})
 	}
 
-	if len(instance.Spec.Env) > 0 {
-		for _, envVar := range instance.Spec.Env {
-			defaultEnvVars = kubeobjects.AddOrUpdate(defaultEnvVars, envVar)
-		}
+	for _, envVar := range instance.Spec.Env {
+		defaultEnvVars = kubeobjects.AddOrUpdate(defaultEnvVars, envVar)
 	}
 
 	return defaultEnvVars
