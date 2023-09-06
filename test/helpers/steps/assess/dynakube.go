@@ -16,12 +16,12 @@ import (
 
 func InstallDynakube(builder *features.FeatureBuilder, secretConfig *tenant.Secret, testDynakube dynatracev1beta1.DynaKube) {
 	CreateDynakube(builder, secretConfig, testDynakube)
-	verifyDynakubeStartup(builder, testDynakube)
+	VerifyDynakubeStartup(builder, testDynakube)
 }
 
 func InstallDynakubeWithTeardown(builder *features.FeatureBuilder, secretConfig *tenant.Secret, testDynakube dynatracev1beta1.DynaKube) {
 	CreateDynakube(builder, secretConfig, testDynakube)
-	verifyDynakubeStartup(builder, testDynakube)
+	VerifyDynakubeStartup(builder, testDynakube)
 	teardown.DeleteDynakube(builder, testDynakube)
 }
 
@@ -45,7 +45,7 @@ func DeleteDynakube(builder *features.FeatureBuilder, testDynakube dynatracev1be
 	}
 }
 
-func verifyDynakubeStartup(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube) {
+func VerifyDynakubeStartup(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube) {
 	if testDynakube.NeedsOneAgent() {
 		builder.Assess("oneagent started", oneagent.WaitForDaemonset(testDynakube))
 	}
