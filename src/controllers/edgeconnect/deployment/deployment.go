@@ -60,13 +60,7 @@ func New(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
 }
 
 func prepareContainerEnvVars(instance *edgeconnectv1alpha1.EdgeConnect) []corev1.EnvVar {
-	var envVars []corev1.EnvVar
-
-	if len(instance.Spec.Env) > 0 {
-		envVars = instance.Spec.Env
-	}
-
-	mandatoryEnvVars := []corev1.EnvVar{
+	defaultEnvVars := []corev1.EnvVar{
 		{
 			Name:  consts.EnvEdgeConnectName,
 			Value: instance.ObjectMeta.Name,
@@ -88,16 +82,19 @@ func prepareContainerEnvVars(instance *edgeconnectv1alpha1.EdgeConnect) []corev1
 	// Since HostRestrictions is optional we should not pass empty env var
 	// otherwise edge-connect will fail
 	if instance.Spec.HostRestrictions != "" {
-		mandatoryEnvVars = append(mandatoryEnvVars, corev1.EnvVar{
+		defaultEnvVars = append(defaultEnvVars, corev1.EnvVar{
 			Name:  consts.EnvEdgeConnectRestrictHostsTo,
 			Value: instance.Spec.HostRestrictions,
 		})
 	}
 
-	for _, envVar := range mandatoryEnvVars {
-		envVars = kubeobjects.AddOrUpdate(envVars, envVar)
+	if len(instance.Spec.Env) > 0 {
+		for _, envVar := range instance.Spec.Env {
+			defaultEnvVars = kubeobjects.AddOrUpdate(defaultEnvVars, envVar)
+		}
 	}
-	return envVars
+
+	return defaultEnvVars
 }
 
 func buildAppLabels(instance *edgeconnectv1alpha1.EdgeConnect) *kubeobjects.AppLabels {
