@@ -7,6 +7,7 @@ spec:
   podSelector:
     matchLabels:
       app.kubernetes.io/name: dynatrace-operator
+      app.kubernetes.io/managed-by: dynatrace-operator
   policyTypes:
     - Ingress
     - Egress
@@ -18,51 +19,38 @@ spec:
     ports:
     # from webhook ports
     - protocol: TCP
-      port: 8383   
+      port: 8383
     - protocol: TCP
       port: 8384
     - protocol: TCP
       port: 8443
-    - protocol: TCP
-      port: 443
     # from operator ports
     - protocol: TCP
       port: 8080
     - protocol: TCP
       port: 10080
-    - protocol: TCP
-      port: 80
-    # from oneagent ports
-    - protocol: TCP
-      port: 50000
-      endPort: 50005
   egress:
   - to:
     # to any ip
     - ipBlock:
         cidr: 0.0.0.0/0
     ports:
+    # to external via HTTPS
+    - protocol: TCP
+      port: 443
     # to webhook ports
     - protocol: TCP
-      port: 8383   
+      port: 8383
     - protocol: TCP
       port: 8384
     - protocol: TCP
       port: 8443
-    - protocol: TCP
-      port: 443    
     # to operator ports
     - protocol: TCP
       port: 8080
     - protocol: TCP
       port: 10080
-    - protocol: TCP
-      port: 80
-    # to oneagent ports
-    - protocol: TCP
-      port: 50000
-      endPort: 50005
-  # Allow DNS lookup 
+  # Allow DNS lookup
   - to:
     - namespaceSelector:
         matchLabels:
