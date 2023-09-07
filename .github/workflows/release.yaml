@@ -248,6 +248,7 @@ jobs:
     environment: Release
     permissions:
       contents: write
+      pull-requests: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -319,15 +320,10 @@ jobs:
           prerelease: false
           draft: true
           fail_on_unmatched_files: true
-      - name: Update index helm file
-        shell: bash
-        run: |
-          echo "Updating Helm repo index"
-          ./hack/build/ci/generate-new-helm-index-yaml.sh "./helm-pkg" ${{ needs.prepare.outputs.version_without_prefix }}
       - name: Create pull request for adding helm index to main branch
         uses: peter-evans/create-pull-request@v5
         with:
-          branch: main
+          base: main
           delete-branch: true
           add-paths: |
             ./config/helm/repos/stable/index.yaml
@@ -339,10 +335,8 @@ jobs:
           body: |
             # Description
             Upgrade `index.yaml` to include latest version of the helm chart.
-
             ## How can this be tested?
             Helm upgrade to and install of `${{ github.ref }}` works.
-
             ## Checklist
             - [x] PR is labeled accordingly
   snyk:

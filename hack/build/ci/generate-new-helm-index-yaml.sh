@@ -21,7 +21,7 @@ helm repo index "${output_dir}" \
     --url "https://github.com/Dynatrace/dynatrace-operator/releases/download/v${version_without_prefix}" \
     --merge "./config/helm/repos/stable/index.yaml"
 
-mv -v "${output_dir}"/* ./config/helm/repos/stable
+mv -v "${output_dir}"/index.yaml ./config/helm/repos/stable/index.yaml
 
 # Fix quotes in place to minimize the diff
 sed -i'' -e "s/\"/'/g" ./config/helm/repos/stable/index.yaml
