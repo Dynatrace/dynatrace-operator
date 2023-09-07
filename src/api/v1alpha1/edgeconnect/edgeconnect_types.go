@@ -27,7 +27,7 @@ type EdgeConnectSpec struct {
 	// +kubebuilder:example:="internal.example.org,*.dev.example.org"
 	HostRestrictions string `json:"hostRestrictions,omitempty"`
 
-	// Overrides image
+	// Overrides the default image
 	ImageRef ImageRefSpec `json:"imageRef,omitempty"`
 
 	// Enables automatic restarts of EdgeConnect pods in case a new version is available (the default value is: true)
@@ -64,7 +64,7 @@ type EdgeConnectSpec struct {
 }
 
 type OAuthSpec struct {
-	// Secret from your OAuth client generation
+	// Name of the secret that holds oauth clientId/secret
 	// +kubebuilder:validation:Required
 	ClientSecret string `json:"clientSecret"`
 	// Token endpoint URL of Dynatrace SSO
