@@ -81,3 +81,22 @@ test/e2e/applicationmonitoring/withoutcsi: manifests/crd/helm
 test/e2e/supportarchive: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -count=1 ./test/scenarios/support_archive $(SKIPCLEANUP)
 
+## Runs e2e tests on gke-autopilot
+test/e2e/gke-autopilot: manifests/kubernetes/gke-autopilot
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 30m -count=1 ./test/scenarios/applicationmonitoring $(SKIPCLEANUP)
+
+## Runs Application Monitoring default e2e test only on gke-autopilot
+test/e2e/gke-autopilot/applicationmonitoring/default: manifests/kubernetes/gke-autopilot
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -count=1 ./test/scenarios/applicationmonitoring  -run ^TestApplicationMonitoring$  $(SKIPCLEANUP)
+
+## Runs Application Monitoring label versio detection e2e test only on gke-autopilot
+test/e2e/gke-autopilot/applicationmonitoring/labelversion: manifests/kubernetes/gke-autopilot
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 25m -count=1 ./test/scenarios/applicationmonitoring  -run ^TestLabelVersionDetection$  $(SKIPCLEANUP)
+
+## Runs Application Monitoring readonly csi-volume e2e test only on gke-autopilot
+test/e2e/gke-autopilot/applicationmonitoring/readonlycsivolume: manifests/kubernetes/gke-autopilot
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1 ./test/scenarios/applicationmonitoring  -run ^TestReadOnlyCSIVolume$  $(SKIPCLEANUP)
+
+## Runs Application Monitoring without CSI e2e test only on gke-autopilot
+test/e2e/gke-autopilot/applicationmonitoring/withoutcsi: manifests/kubernetes/gke-autopilot
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1 ./test/scenarios/applicationmonitoring  -run ^TestAppOnlyWithoutCSI$  $(SKIPCLEANUP)
