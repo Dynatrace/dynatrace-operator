@@ -16,11 +16,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/codemodules"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
 	sample "github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/base"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/stretchr/testify/assert"
@@ -45,7 +46,11 @@ func readOnlyCSIVolume(t *testing.T) features.Feature {
 		}).Build()
 	sampleDeployment := sampleapps.NewSampleDeployment(t, testDynakube)
 
-	assess.InstallDynatrace(builder, &secretConfig, testDynakube)
+	steps.CreateFeatureEnvironment(builder,
+		steps.CreateNamespaceWithoutTeardown(namespace.NewBuilder(testDynakube.Namespace).Build()),
+		steps.DeployOperatorViaMake(testDynakube.Namespace, testDynakube.NeedsCSIDriver()),
+		steps.CreateDynakube(secretConfig, testDynakube),
+	)
 
 	builder.Assess("install sample deployment and wait till ready", sampleDeployment.Install())
 	builder.Assess("check init container env var", checkInitContainerEnvVar(sampleDeployment))
