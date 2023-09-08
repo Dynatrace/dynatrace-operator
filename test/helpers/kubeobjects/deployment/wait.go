@@ -18,7 +18,7 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-const timeout = time.Minute * 15
+const DeploymentAvailableTimeout = 15 * time.Minute
 
 func WaitFor(name string, namespace string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
@@ -37,5 +37,5 @@ func WaitFor(name string, namespace string) features.Func {
 }
 
 func WaitUntilReady(resource *resources.Resources, deployment *appsv1.Deployment) error {
-	return wait.For(conditions.New(resource).DeploymentConditionMatch(deployment, appsv1.DeploymentAvailable, corev1.ConditionTrue), wait.WithTimeout(timeout))
+	return wait.For(conditions.New(resource).DeploymentConditionMatch(deployment, appsv1.DeploymentAvailable, corev1.ConditionTrue), wait.WithTimeout(DeploymentAvailableTimeout))
 }
