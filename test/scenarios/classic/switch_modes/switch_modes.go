@@ -8,7 +8,9 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
@@ -37,7 +39,11 @@ func SwitchModes(t *testing.T, name string) features.Feature {
 	featureBuilder.Assess("create sample app namespace", sampleAppClassic.InstallNamespace())
 
 	// install operator and dynakube
-	assess.InstallDynatrace(featureBuilder, &secretConfig, dynakubeClassicFullStack)
+	steps.CreateFeatureEnvironment(featureBuilder,
+		steps.CreateNamespaceWithoutTeardown(namespace.NewBuilder(dynakubeClassicFullStack.Namespace).Build()),
+		steps.DeployOperatorViaMake(dynakubeClassicFullStack.Namespace, dynakubeClassicFullStack.NeedsCSIDriver()),
+		steps.CreateDynakube(secretConfig, dynakubeClassicFullStack),
+	)
 
 	featureBuilder.Assess("install sample app", sampleAppClassic.Install())
 
