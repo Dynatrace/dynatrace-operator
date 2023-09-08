@@ -17,7 +17,7 @@ import (
 	"time"
 )
 
-const timeout = time.Minute * 15
+const DeploymentAvailableTimeout = 15 * time.Minute
 
 func WaitFor(name string, namespace string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
