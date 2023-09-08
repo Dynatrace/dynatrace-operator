@@ -12,14 +12,11 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/functional"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/csi"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/webhook"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -41,28 +38,21 @@ func supportArchiveExecution(t *testing.T) features.Feature {
 		"inject": "me",
 	}
 
-	dynakubeBuilder := dynakube.NewBuilder().
+	testDynakube := dynakube.NewBuilder().
 		WithDefaultObjectMeta().
 		NamespaceSelector(metav1.LabelSelector{
 			MatchLabels: injectLabels,
 		}).
 		ApiUrl(secretConfig.ApiUrl).
 		CloudNative(&dynatracev1beta1.CloudNativeFullStackSpec{}).
-		WithActiveGate()
-	testDynakube := dynakubeBuilder.Build()
+		WithActiveGate().Build()
 
-	// Register sample namespace creat and delete
-	builder.Assess("create sample injected namespace", namespace.Create(namespace.NewBuilder(testAppNameInjected).WithLabels(injectLabels).Build()))
-	builder.Assess("create sample not injected namespace", namespace.Create(namespace.NewBuilder(testAppNameNotInjected).Build()))
-	builder.Teardown(namespace.Delete(testAppNameInjected))
-	builder.Teardown(namespace.Delete(testAppNameNotInjected))
-
-	// Register operator + dynakube install and teardown
-	// assess.InstallDynatraceWithTeardown(builder, &secretConfig, testDynakube)
-	CreateEnvironment(builder,
-		CreateNamespace(testDynakube.Namespace),
-		DeployOperator(testDynakube.Namespace, testDynakube.NeedsCSIDriver()),
-		CreateDynakube(secretConfig, testDynakube),
+	steps.CreateFeatureEnvironment(builder,
+		steps.CreateNamespace(namespace.NewBuilder(testAppNameInjected).WithLabels(injectLabels).Build()),
+		steps.CreateNamespace(namespace.NewBuilder(testAppNameNotInjected).Build()),
+		steps.CreateNamespaceWithoutTeardown(namespace.NewBuilder(testDynakube.Namespace).Build()),
+		steps.DeployOperatorViaMake(testDynakube.Namespace, testDynakube.NeedsCSIDriver()),
+		steps.CreateDynakube(secretConfig, testDynakube),
 	)
 	// Register actual test
 	builder.Assess("support archive subcommand can be executed correctly with managed logs", testSupportArchiveCommand(testDynakube, true))
@@ -143,73 +133,5 @@ func logMissingFiles(t *testing.T, requiredFiles []string) {
 			missingFilesLog = fmt.Sprintf("%s\n%s", missingFilesLog, file)
 		}
 		t.Log(missingFilesLog)
-	}
-}
-
-type BuilderFunc func(builder *features.FeatureBuilder) *features.FeatureBuilder
-type EnvironmentOptionFunc func() (setupFunc, teardownFunc BuilderFunc)
-
-func CreateNamespace(namespaceName string) EnvironmentOptionFunc {
-	return func() (setupFunc, teardownFunc BuilderFunc) {
-		return func(builder *features.FeatureBuilder) *features.FeatureBuilder {
-				namespaceBuilder := namespace.NewBuilder(namespaceName)
-				builder.Assess("create operator namespace", namespace.Create(namespaceBuilder.Build()))
-				return builder
-			},
-			func(builder *features.FeatureBuilder) *features.FeatureBuilder {
-				return builder
-			}
-	}
-}
-
-func DeployOperator(namespaceName string, withCSIDriver bool) EnvironmentOptionFunc {
-	return func() (setupFunc, teardownFunc BuilderFunc) {
-		return func(builder *features.FeatureBuilder) *features.FeatureBuilder {
-				builder.Assess("operator manifests installed", operator.InstallViaMake(withCSIDriver))
-				builder.Assess("operator started", operator.WaitForDeployment(namespaceName))
-				builder.Assess("webhook started", webhook.WaitForDeployment(namespaceName))
-				if withCSIDriver {
-					builder.Assess("csi driver started", csi.WaitForDaemonset(namespaceName))
-				}
-				return builder
-			},
-			func(builder *features.FeatureBuilder) *features.FeatureBuilder {
-				if withCSIDriver {
-					builder.WithTeardown("clean up csi driver files", csi.CleanUpEachPod(namespaceName))
-				}
-
-				builder.WithTeardown("operator manifests uninstalled", operator.UninstallViaMake(withCSIDriver))
-				return builder
-			}
-	}
-}
-
-func CreateDynakube(secret tenant.Secret, dk dynatracev1beta1.DynaKube) EnvironmentOptionFunc {
-	return func() (setupFunc, teardownFunc BuilderFunc) {
-		return func(builder *features.FeatureBuilder) *features.FeatureBuilder {
-				assess.CreateDynakube(builder, &secret, dk)
-				assess.VerifyDynakubeStartup(builder, dk)
-				return builder
-			},
-			func(builder *features.FeatureBuilder) *features.FeatureBuilder {
-				if dk.NeedsCSIDriver() {
-					teardown.AddCsiCleanUp(builder, dk)
-				}
-				if dk.ClassicFullStackMode() {
-					teardown.AddClassicCleanUp(builder, dk)
-				}
-				teardown.UninstallOperatorFromSource(builder, dk)
-				return builder
-			}
-	}
-}
-func CreateEnvironment(builder *features.FeatureBuilder, opts ...EnvironmentOptionFunc) {
-	for _, opt := range opts {
-		setup, _ := opt()
-		setup(builder)
-	}
-	for i := len(opts) - 1; i > 0; i-- {
-		_, td := opts[i]()
-		td(builder)
 	}
 }
