@@ -1,14 +1,13 @@
-- [Operator network](#operator-network)
-  - [Kubernetes network policies](#kubernetes-network-policies)
-  - [Used ports](#used-ports)
-    - [Ingress](#ingress)
-      - [dynatrace-operator](#dynatrace-operator)
-      - [activegate](#activegate)
-    - [Egress](#egress)
-      - [dynatrace-operator](#dynatrace-operator-1)
-      - [kube-system](#kube-system)
-
 # Operator network
+
+- [Kubernetes network policies](#kubernetes-network-policies)
+- [Used ports](#used-ports)
+  - [Ingress](#ingress)
+    - [dynatrace-operator](#dynatrace-operator)
+    - [activegate](#activegate)
+  - [Egress](#egress)
+    - [dynatrace-operator](#dynatrace-operator-1)
+    - [kube-system](#kube-system)
 
 ## Kubernetes network policies
 
