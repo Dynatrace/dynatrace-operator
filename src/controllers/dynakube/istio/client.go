@@ -15,11 +15,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
+type ClientBuilder func(config *rest.Config, scheme *runtime.Scheme, namespace string) (*Client, error)
+
 // Client - an adapter for the external istioclientset library
 type Client struct {
-	istioClient istioclientset.Interface
-	scheme      *runtime.Scheme
-	namespace   string
+	IstioClient istioclientset.Interface
+	Scheme      *runtime.Scheme
+	Namespace   string
 }
 
 func NewClient(config *rest.Config, scheme *runtime.Scheme, namespace string) (*Client, error) {
@@ -30,19 +32,21 @@ func NewClient(config *rest.Config, scheme *runtime.Scheme, namespace string) (*
 		return nil, errors.WithStack(err)
 	}
 	return &Client{
-		istioClient: istioClient,
-		scheme:      scheme,
-		namespace:   namespace,
+		IstioClient: istioClient,
+		Scheme:      scheme,
+		Namespace:   namespace,
 	}, nil
 }
 
+var _ ClientBuilder = NewClient
+
 // TODO: Maybe move whole check here
 func (cl *Client) Discovery() discovery.DiscoveryInterface {
-	return cl.istioClient.Discovery()
+	return cl.IstioClient.Discovery()
 }
 
 func (cl *Client) GetVirtualService(ctx context.Context, name string) (*istiov1alpha3.VirtualService, error) {
-	virtualService, err := cl.istioClient.NetworkingV1alpha3().VirtualServices(cl.namespace).Get(ctx, name, metav1.GetOptions{})
+	virtualService, err := cl.IstioClient.NetworkingV1alpha3().VirtualServices(cl.Namespace).Get(ctx, name, metav1.GetOptions{})
 	if k8serrors.IsNotFound(err) {
 		return nil, nil
 	} else if err != nil {
@@ -73,10 +77,10 @@ func (cl *Client) ApplyVirtualService(ctx context.Context, owner metav1.Object, 
 }
 
 func (cl *Client) createVirtualService(ctx context.Context, owner metav1.Object, virtualService *istiov1alpha3.VirtualService) error {
-	if err := controllerutil.SetControllerReference(owner, virtualService, cl.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(owner, virtualService, cl.Scheme); err != nil {
 		return errors.WithStack(err)
 	}
-	_, err := cl.istioClient.NetworkingV1alpha3().VirtualServices(cl.namespace).Create(ctx, virtualService, metav1.CreateOptions{})
+	_, err := cl.IstioClient.NetworkingV1alpha3().VirtualServices(cl.Namespace).Create(ctx, virtualService, metav1.CreateOptions{})
 	if err != nil {
 		log.Info("failed to create virtual service", "name", virtualService.GetName(), "error", err.Error())
 		return errors.WithStack(err)
@@ -89,7 +93,7 @@ func (cl *Client) updateVirtualService(ctx context.Context, oldVirtualService, n
 		return errors.New("can't update service entry based on nil object")
 	}
 	newVirtualService.ObjectMeta.ResourceVersion = oldVirtualService.ObjectMeta.ResourceVersion
-	_, err := cl.istioClient.NetworkingV1alpha3().VirtualServices(cl.namespace).Update(ctx, newVirtualService, metav1.UpdateOptions{})
+	_, err := cl.IstioClient.NetworkingV1alpha3().VirtualServices(cl.Namespace).Update(ctx, newVirtualService, metav1.UpdateOptions{})
 	if err != nil {
 		log.Info("failed to update virtual service", "name", newVirtualService.GetName(), "error", err.Error())
 		return errors.WithStack(err)
@@ -98,8 +102,8 @@ func (cl *Client) updateVirtualService(ctx context.Context, oldVirtualService, n
 }
 
 func (cl *Client) DeleteVirtualService(ctx context.Context, name string) error {
-	err := cl.istioClient.NetworkingV1alpha3().
-		VirtualServices(cl.namespace).
+	err := cl.IstioClient.NetworkingV1alpha3().
+		VirtualServices(cl.Namespace).
 		Delete(ctx, name, metav1.DeleteOptions{})
 	if !k8serrors.IsNotFound(err) {
 		log.Info("failed to remove virtual service", "name", name)
@@ -109,7 +113,7 @@ func (cl *Client) DeleteVirtualService(ctx context.Context, name string) error {
 }
 
 func (cl *Client) GetServiceEntry(ctx context.Context, name string) (*istiov1alpha3.ServiceEntry, error) {
-	serviceEntry, err := cl.istioClient.NetworkingV1alpha3().ServiceEntries(cl.namespace).Get(ctx, name, metav1.GetOptions{})
+	serviceEntry, err := cl.IstioClient.NetworkingV1alpha3().ServiceEntries(cl.Namespace).Get(ctx, name, metav1.GetOptions{})
 	if k8serrors.IsNotFound(err) {
 		return nil, nil
 	} else if err != nil {
@@ -140,10 +144,10 @@ func (cl *Client) ApplyServiceEntry(ctx context.Context, owner metav1.Object, ne
 }
 
 func (cl *Client) createServiceEntry(ctx context.Context, owner metav1.Object, serviceEntry *istiov1alpha3.ServiceEntry) error {
-	if err := controllerutil.SetControllerReference(owner, serviceEntry, cl.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(owner, serviceEntry, cl.Scheme); err != nil {
 		return errors.WithStack(err)
 	}
-	_, err := cl.istioClient.NetworkingV1alpha3().ServiceEntries(cl.namespace).Create(ctx, serviceEntry, metav1.CreateOptions{})
+	_, err := cl.IstioClient.NetworkingV1alpha3().ServiceEntries(cl.Namespace).Create(ctx, serviceEntry, metav1.CreateOptions{})
 	if err != nil {
 		log.Info("failed to create service entry", "name", serviceEntry.GetName(), "error", err.Error())
 		return errors.WithStack(err)
@@ -156,7 +160,7 @@ func (cl *Client) updateServiceEntry(ctx context.Context, oldServiceEntry, newSe
 		return errors.New("can't update service entry based on nil object")
 	}
 	newServiceEntry.ObjectMeta.ResourceVersion = oldServiceEntry.ObjectMeta.ResourceVersion
-	_, err := cl.istioClient.NetworkingV1alpha3().ServiceEntries(cl.namespace).Update(ctx, newServiceEntry, metav1.UpdateOptions{})
+	_, err := cl.IstioClient.NetworkingV1alpha3().ServiceEntries(cl.Namespace).Update(ctx, newServiceEntry, metav1.UpdateOptions{})
 	if err != nil {
 		log.Info("failed to update service entry", "name", newServiceEntry.GetName(), "error", err.Error())
 		return errors.WithStack(err)
@@ -165,8 +169,8 @@ func (cl *Client) updateServiceEntry(ctx context.Context, oldServiceEntry, newSe
 }
 
 func (cl *Client) DeleteServiceEntry(ctx context.Context, name string) error {
-	err := cl.istioClient.NetworkingV1alpha3().
-		ServiceEntries(cl.namespace).
+	err := cl.IstioClient.NetworkingV1alpha3().
+		ServiceEntries(cl.Namespace).
 		Delete(ctx, name, metav1.DeleteOptions{})
 	if !k8serrors.IsNotFound(err) {
 		log.Info("failed to remove service entry", "name", name)

@@ -9,6 +9,6 @@ var (
 )
 
 const (
-	operatorComponent = "operator"
-	oneAgentComponent = "oneagent"
+	OperatorComponent = "operator"
+	OneAgentComponent = "oneagent"
 )

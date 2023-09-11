@@ -66,6 +66,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, sc
 		scheme:                 scheme,
 		fs:                     afero.Afero{Fs: afero.NewOsFs()},
 		dynatraceClientBuilder: dynatraceclient.NewBuilder(apiReader),
+		istioClientBuilder:     istio.NewClient,
 		config:                 config,
 		operatorNamespace:      os.Getenv(kubeobjects.EnvPodNamespace),
 		clusterID:              clusterID,
@@ -92,6 +93,7 @@ type Controller struct {
 	scheme                 *runtime.Scheme
 	fs                     afero.Afero
 	dynatraceClientBuilder dynatraceclient.Builder
+	istioClientBuilder     istio.ClientBuilder
 	config                 *rest.Config
 	operatorNamespace      string
 	clusterID              string
@@ -171,7 +173,7 @@ func (controller *Controller) setupIstio(ctx context.Context, dynakube *dynatrac
 	if !dynakube.Spec.EnableIstio {
 		return nil, nil
 	}
-	istioClient, err := istio.NewClient(controller.config, controller.scheme, controller.operatorNamespace)
+	istioClient, err := controller.istioClientBuilder(controller.config, controller.scheme, dynakube.Namespace)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize istio client")
 	}
@@ -186,9 +188,9 @@ func (controller *Controller) setupIstio(ctx context.Context, dynakube *dynatrac
 	err = istioReconciler.ReconcileAPIUrl(ctx, dynakube)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to reconcile istio objects for API url")
-	} else {
-		log.Info("reconciled istio objects for API url")
 	}
+	log.Info("reconciled istio objects for API url")
+
 	return istioReconciler, nil
 }
 

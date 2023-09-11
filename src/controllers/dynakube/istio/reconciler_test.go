@@ -48,7 +48,7 @@ func TestReconcileIPServiceEntry(t *testing.T) {
 	component := "best-component"
 	owner := createTestOwner()
 	t.Run("nil => error", func(t *testing.T) {
-		istioClient := NewTestingClient(nil, owner.GetNamespace())
+		istioClient := newTestingClient(nil, owner.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 
 		err := reconciler.reconcileIPServiceEntry(ctx, nil, nil, component)
@@ -63,7 +63,7 @@ func TestReconcileIPServiceEntry(t *testing.T) {
 			},
 		}
 		fakeClient := fakeistio.NewSimpleClientset(serviceEntry)
-		istioClient := NewTestingClient(fakeClient, owner.GetNamespace())
+		istioClient := newTestingClient(fakeClient, owner.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 
 		err := reconciler.reconcileIPServiceEntry(ctx, owner, nil, component)
@@ -73,7 +73,7 @@ func TestReconcileIPServiceEntry(t *testing.T) {
 	})
 	t.Run("success", func(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
-		istioClient := NewTestingClient(fakeClient, owner.GetNamespace())
+		istioClient := newTestingClient(fakeClient, owner.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 		commHosts := []dtclient.CommunicationHost{
 			createTestIPCommunicationHost(),
@@ -90,7 +90,7 @@ func TestReconcileIPServiceEntry(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
 		fakeClient.PrependReactor("*", "*", boomReaction)
 
-		istioClient := NewTestingClient(fakeClient, owner.GetNamespace())
+		istioClient := newTestingClient(fakeClient, owner.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 		commHosts := []dtclient.CommunicationHost{
 			createTestIPCommunicationHost(),
@@ -106,7 +106,7 @@ func TestReconcileFQDNServiceEntry(t *testing.T) {
 	component := "best-component"
 	owner := createTestOwner()
 	t.Run("nil => error", func(t *testing.T) {
-		istioClient := NewTestingClient(nil, owner.GetNamespace())
+		istioClient := newTestingClient(nil, owner.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 
 		err := reconciler.reconcileFQDNServiceEntry(ctx, nil, nil, component)
@@ -127,7 +127,7 @@ func TestReconcileFQDNServiceEntry(t *testing.T) {
 			},
 		}
 		fakeClient := fakeistio.NewSimpleClientset(serviceEntry, virtualService)
-		istioClient := NewTestingClient(fakeClient, owner.GetNamespace())
+		istioClient := newTestingClient(fakeClient, owner.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 
 		err := reconciler.reconcileFQDNServiceEntry(ctx, owner, nil, component)
@@ -139,7 +139,7 @@ func TestReconcileFQDNServiceEntry(t *testing.T) {
 	})
 	t.Run("success", func(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
-		istioClient := NewTestingClient(fakeClient, owner.GetNamespace())
+		istioClient := newTestingClient(fakeClient, owner.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 		commHosts := []dtclient.CommunicationHost{
 			createTestFQDNCommunicationHost(),
@@ -159,7 +159,7 @@ func TestReconcileFQDNServiceEntry(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
 		fakeClient.PrependReactor("*", "*", boomReaction)
 
-		istioClient := NewTestingClient(fakeClient, owner.GetNamespace())
+		istioClient := newTestingClient(fakeClient, owner.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 		commHosts := []dtclient.CommunicationHost{
 			createTestFQDNCommunicationHost(),
@@ -174,7 +174,7 @@ func TestReconcileAPIUrl(t *testing.T) {
 	ctx := context.Background()
 	dynakube := createTestDynaKube()
 	t.Run("nil => error", func(t *testing.T) {
-		istioClient := NewTestingClient(nil, dynakube.GetNamespace())
+		istioClient := newTestingClient(nil, dynakube.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 
 		err := reconciler.ReconcileAPIUrl(ctx, nil)
@@ -183,7 +183,7 @@ func TestReconcileAPIUrl(t *testing.T) {
 	t.Run("malformed api-url => error", func(t *testing.T) {
 		dynakube := createTestDynaKube()
 		dynakube.Spec.APIURL = "something-random"
-		istioClient := NewTestingClient(nil, dynakube.GetNamespace())
+		istioClient := newTestingClient(nil, dynakube.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 
 		err := reconciler.ReconcileAPIUrl(ctx, dynakube)
@@ -191,12 +191,12 @@ func TestReconcileAPIUrl(t *testing.T) {
 	})
 	t.Run("success", func(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
-		istioClient := NewTestingClient(fakeClient, dynakube.GetNamespace())
+		istioClient := newTestingClient(fakeClient, dynakube.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 
 		err := reconciler.ReconcileAPIUrl(ctx, dynakube)
 		require.NoError(t, err)
-		expectedName := BuildNameForFQDNServiceEntry(dynakube.GetName(), operatorComponent)
+		expectedName := BuildNameForFQDNServiceEntry(dynakube.GetName(), OperatorComponent)
 		serviceEntry, err := fakeClient.NetworkingV1alpha3().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.NotNil(t, serviceEntry)
@@ -208,7 +208,7 @@ func TestReconcileAPIUrl(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
 		fakeClient.PrependReactor("*", "*", boomReaction)
 
-		istioClient := NewTestingClient(fakeClient, dynakube.GetNamespace())
+		istioClient := newTestingClient(fakeClient, dynakube.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 
 		err := reconciler.ReconcileAPIUrl(ctx, dynakube)
@@ -220,7 +220,7 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 	ctx := context.Background()
 	dynakube := createTestDynaKube()
 	t.Run("nil => error", func(t *testing.T) {
-		istioClient := NewTestingClient(nil, dynakube.GetNamespace())
+		istioClient := newTestingClient(nil, dynakube.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 
 		err := reconciler.ReconcileOneAgentCommunicationHosts(ctx, nil)
@@ -228,12 +228,12 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 	})
 	t.Run("success", func(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
-		istioClient := NewTestingClient(fakeClient, dynakube.GetNamespace())
+		istioClient := newTestingClient(fakeClient, dynakube.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 
 		err := reconciler.ReconcileOneAgentCommunicationHosts(ctx, dynakube)
 		require.NoError(t, err)
-		expectedFQDNName := BuildNameForFQDNServiceEntry(dynakube.GetName(), oneAgentComponent)
+		expectedFQDNName := BuildNameForFQDNServiceEntry(dynakube.GetName(), OneAgentComponent)
 		serviceEntry, err := fakeClient.NetworkingV1alpha3().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.NotNil(t, serviceEntry)
@@ -241,7 +241,7 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, virtualService)
 
-		expectedIPName := BuildNameForIPServiceEntry(dynakube.GetName(), oneAgentComponent)
+		expectedIPName := BuildNameForIPServiceEntry(dynakube.GetName(), OneAgentComponent)
 		serviceEntry, err = fakeClient.NetworkingV1alpha3().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedIPName, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.NotNil(t, serviceEntry)
@@ -250,7 +250,7 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
 		fakeClient.PrependReactor("*", "*", boomReaction)
 
-		istioClient := NewTestingClient(fakeClient, dynakube.GetNamespace())
+		istioClient := newTestingClient(fakeClient, dynakube.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 
 		err := reconciler.ReconcileOneAgentCommunicationHosts(ctx, dynakube)

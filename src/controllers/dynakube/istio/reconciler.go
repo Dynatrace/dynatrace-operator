@@ -32,7 +32,7 @@ func (r *Reconciler) ReconcileAPIUrl(ctx context.Context, dynakube *dynatracev1b
 		return err
 	}
 
-	err = r.reconcileCommunicationHosts(ctx, dynakube, []dtclient.CommunicationHost{apiHost}, operatorComponent)
+	err = r.reconcileCommunicationHosts(ctx, dynakube, []dtclient.CommunicationHost{apiHost}, OperatorComponent)
 	if err != nil {
 		return errors.WithMessage(err, "error reconciling config for Dynatrace API URL")
 	}
@@ -47,7 +47,7 @@ func (r *Reconciler) ReconcileOneAgentCommunicationHosts(ctx context.Context, dy
 	}
 	communicationHosts := connectioninfo.GetOneAgentCommunicationHosts(dynakube)
 
-	err := r.reconcileCommunicationHosts(ctx, dynakube, communicationHosts, oneAgentComponent)
+	err := r.reconcileCommunicationHosts(ctx, dynakube, communicationHosts, OneAgentComponent)
 	if err != nil {
 		return errors.WithMessage(err, "error reconciling config for Dynatrace communication hosts")
 	}

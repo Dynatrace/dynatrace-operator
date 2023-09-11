@@ -17,11 +17,11 @@ import (
 	clienttest "k8s.io/client-go/testing"
 )
 
-func NewTestingClient(fakeClient *fakeistio.Clientset, namespace string) *Client {
+func newTestingClient(fakeClient *fakeistio.Clientset, namespace string) *Client {
 	return &Client{
-		istioClient: fakeClient,
-		namespace:   namespace,
-		scheme:      scheme.Scheme,
+		IstioClient: fakeClient,
+		Namespace:   namespace,
+		Scheme:      scheme.Scheme,
 	}
 }
 
@@ -34,7 +34,7 @@ func TestGetVirtualService(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		expectedVirtualService := createTestEmptyVirtualService()
 		fakeClient := fakeistio.NewSimpleClientset(expectedVirtualService)
-		client := NewTestingClient(fakeClient, expectedVirtualService.Namespace)
+		client := newTestingClient(fakeClient, expectedVirtualService.Namespace)
 
 		virtualService, err := client.GetVirtualService(ctx, expectedVirtualService.Name)
 
@@ -44,7 +44,7 @@ func TestGetVirtualService(t *testing.T) {
 	t.Run("does not exist => no error", func(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
 		testVirtualService := createTestEmptyVirtualService()
-		client := NewTestingClient(fakeClient, testVirtualService.Namespace)
+		client := newTestingClient(fakeClient, testVirtualService.Namespace)
 
 		virtualService, err := client.GetVirtualService(ctx, testVirtualService.Name)
 
@@ -54,7 +54,7 @@ func TestGetVirtualService(t *testing.T) {
 	t.Run("unknown error => return error", func(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
 		fakeClient.PrependReactor("*", "*", boomReaction)
-		client := NewTestingClient(fakeClient, "something")
+		client := newTestingClient(fakeClient, "something")
 
 		virtualService, err := client.GetVirtualService(ctx, "random")
 
@@ -70,7 +70,7 @@ func TestCreateVirtualService(t *testing.T) {
 		owner := createTestOwner()
 		expectedVirtualService := createTestEmptyVirtualService()
 		fakeClient := fakeistio.NewSimpleClientset()
-		client := NewTestingClient(fakeClient, expectedVirtualService.Namespace)
+		client := newTestingClient(fakeClient, expectedVirtualService.Namespace)
 
 		err := client.createVirtualService(ctx, owner, expectedVirtualService)
 
@@ -86,7 +86,7 @@ func TestCreateVirtualService(t *testing.T) {
 		owner := createTestOwner()
 		expectedVirtualService := createTestEmptyVirtualService()
 		fakeClient := fakeistio.NewSimpleClientset(expectedVirtualService)
-		client := NewTestingClient(fakeClient, expectedVirtualService.Namespace)
+		client := newTestingClient(fakeClient, expectedVirtualService.Namespace)
 
 		err := client.createVirtualService(ctx, owner, expectedVirtualService)
 
@@ -98,7 +98,7 @@ func TestCreateVirtualService(t *testing.T) {
 		expectedVirtualService := createTestEmptyVirtualService()
 		fakeClient := fakeistio.NewSimpleClientset()
 		fakeClient.PrependReactor("*", "*", boomReaction)
-		client := NewTestingClient(fakeClient, expectedVirtualService.Namespace)
+		client := newTestingClient(fakeClient, expectedVirtualService.Namespace)
 
 		err := client.createVirtualService(ctx, owner, expectedVirtualService)
 
@@ -108,7 +108,7 @@ func TestCreateVirtualService(t *testing.T) {
 
 	t.Run("nil => error", func(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
-		client := NewTestingClient(fakeClient, "something")
+		client := newTestingClient(fakeClient, "something")
 
 		err := client.createVirtualService(ctx, nil, nil)
 
@@ -123,7 +123,7 @@ func TestUpdateVirtualService(t *testing.T) {
 		oldVirtualService := createTestEmptyVirtualService()
 		oldVirtualService.ResourceVersion = expectedResourceVersion
 		fakeClient := fakeistio.NewSimpleClientset(oldVirtualService)
-		client := NewTestingClient(fakeClient, oldVirtualService.Namespace)
+		client := newTestingClient(fakeClient, oldVirtualService.Namespace)
 
 		newVirtualService := createTestEmptyVirtualService()
 		addedLabels := map[string]string{
@@ -143,7 +143,7 @@ func TestUpdateVirtualService(t *testing.T) {
 	t.Run("doesn't exist => return error", func(t *testing.T) {
 		newVirtualService := createTestEmptyVirtualService()
 		fakeClient := fakeistio.NewSimpleClientset()
-		client := NewTestingClient(fakeClient, newVirtualService.Namespace)
+		client := newTestingClient(fakeClient, newVirtualService.Namespace)
 
 		err := client.updateVirtualService(ctx, newVirtualService, newVirtualService)
 
@@ -156,7 +156,7 @@ func TestUpdateVirtualService(t *testing.T) {
 		oldVirtualService.ResourceVersion = expectedResourceVersion
 		fakeClient := fakeistio.NewSimpleClientset()
 		fakeClient.PrependReactor("*", "*", boomReaction)
-		client := NewTestingClient(fakeClient, oldVirtualService.Namespace)
+		client := newTestingClient(fakeClient, oldVirtualService.Namespace)
 
 		newVirtualService := createTestEmptyVirtualService()
 		addedLabels := map[string]string{
@@ -170,7 +170,7 @@ func TestUpdateVirtualService(t *testing.T) {
 	})
 	t.Run("nil => error", func(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
-		client := NewTestingClient(fakeClient, "something")
+		client := newTestingClient(fakeClient, "something")
 
 		err := client.updateVirtualService(ctx, nil, nil)
 
@@ -184,7 +184,7 @@ func TestApplyVirtualService(t *testing.T) {
 		owner := createTestOwner()
 		expectedVirtualService := createTestEmptyVirtualService()
 		fakeClient := fakeistio.NewSimpleClientset()
-		client := NewTestingClient(fakeClient, expectedVirtualService.Namespace)
+		client := newTestingClient(fakeClient, expectedVirtualService.Namespace)
 
 		err := client.ApplyVirtualService(ctx, owner, expectedVirtualService)
 
@@ -205,7 +205,7 @@ func TestApplyVirtualService(t *testing.T) {
 		oldVirtualService := createTestEmptyVirtualService()
 		oldVirtualService.ResourceVersion = expectedResourceVersion
 		fakeClient := fakeistio.NewSimpleClientset(oldVirtualService)
-		client := NewTestingClient(fakeClient, oldVirtualService.Namespace)
+		client := newTestingClient(fakeClient, oldVirtualService.Namespace)
 
 		newVirtualService := createTestEmptyVirtualService()
 		addedLabels := map[string]string{
@@ -233,7 +233,7 @@ func TestApplyVirtualService(t *testing.T) {
 		require.NoError(t, err)
 
 		fakeClient := fakeistio.NewSimpleClientset(oldVirtualService)
-		client := NewTestingClient(fakeClient, oldVirtualService.Namespace)
+		client := newTestingClient(fakeClient, oldVirtualService.Namespace)
 
 		err = client.ApplyVirtualService(ctx, owner, newVirtualService)
 		require.NoError(t, err)
@@ -244,7 +244,7 @@ func TestApplyVirtualService(t *testing.T) {
 		owner := createTestOwner()
 		fakeClient := fakeistio.NewSimpleClientset()
 		fakeClient.PrependReactor("*", "*", boomReaction)
-		client := NewTestingClient(fakeClient, owner.GetNamespace())
+		client := newTestingClient(fakeClient, owner.GetNamespace())
 		newVirtualService := createTestEmptyVirtualService()
 
 		err := client.ApplyVirtualService(ctx, owner, newVirtualService)
@@ -254,7 +254,7 @@ func TestApplyVirtualService(t *testing.T) {
 	})
 	t.Run("nil => error", func(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
-		client := NewTestingClient(fakeClient, "something")
+		client := newTestingClient(fakeClient, "something")
 
 		err := client.ApplyVirtualService(ctx, nil, nil)
 
@@ -267,7 +267,7 @@ func TestDeleteVirtualService(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		virtualService := createTestEmptyVirtualService()
 		fakeClient := fakeistio.NewSimpleClientset(virtualService)
-		client := NewTestingClient(fakeClient, virtualService.Namespace)
+		client := newTestingClient(fakeClient, virtualService.Namespace)
 
 		err := client.DeleteVirtualService(ctx, virtualService.Name)
 
@@ -277,7 +277,7 @@ func TestDeleteVirtualService(t *testing.T) {
 	})
 	t.Run("does not exist => no error", func(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
-		client := NewTestingClient(fakeClient, "something")
+		client := newTestingClient(fakeClient, "something")
 
 		err := client.DeleteVirtualService(ctx, "random")
 
@@ -286,7 +286,7 @@ func TestDeleteVirtualService(t *testing.T) {
 	t.Run("unknown error => return error", func(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
 		fakeClient.PrependReactor("*", "*", boomReaction)
-		client := NewTestingClient(fakeClient, "something")
+		client := newTestingClient(fakeClient, "something")
 
 		err := client.DeleteVirtualService(ctx, "random")
 
@@ -300,7 +300,7 @@ func TestGetServiceEntry(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		expectedServiceEntry := createTestEmptyServiceEntry()
 		fakeClient := fakeistio.NewSimpleClientset(expectedServiceEntry)
-		client := NewTestingClient(fakeClient, expectedServiceEntry.Namespace)
+		client := newTestingClient(fakeClient, expectedServiceEntry.Namespace)
 
 		serviceEntry, err := client.GetServiceEntry(ctx, expectedServiceEntry.Name)
 
@@ -310,7 +310,7 @@ func TestGetServiceEntry(t *testing.T) {
 	t.Run("does not exist => no error", func(t *testing.T) {
 		testServiceEntry := createTestEmptyServiceEntry()
 		fakeClient := fakeistio.NewSimpleClientset()
-		client := NewTestingClient(fakeClient, testServiceEntry.Namespace)
+		client := newTestingClient(fakeClient, testServiceEntry.Namespace)
 
 		serviceEntry, err := client.GetServiceEntry(ctx, testServiceEntry.Name)
 
@@ -320,7 +320,7 @@ func TestGetServiceEntry(t *testing.T) {
 	t.Run("unknown error => return error", func(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
 		fakeClient.PrependReactor("*", "*", boomReaction)
-		client := NewTestingClient(fakeClient, "doesn't")
+		client := newTestingClient(fakeClient, "doesn't")
 
 		serviceEntry, err := client.GetServiceEntry(ctx, "matter")
 
@@ -336,7 +336,7 @@ func TestCreateServiceEntry(t *testing.T) {
 		owner := createTestOwner()
 		expectedServiceEntry := createTestEmptyServiceEntry()
 		fakeClient := fakeistio.NewSimpleClientset()
-		client := NewTestingClient(fakeClient, expectedServiceEntry.Namespace)
+		client := newTestingClient(fakeClient, expectedServiceEntry.Namespace)
 
 		err := client.createServiceEntry(ctx, owner, expectedServiceEntry)
 
@@ -352,7 +352,7 @@ func TestCreateServiceEntry(t *testing.T) {
 		owner := createTestOwner()
 		serviceEntry := createTestEmptyServiceEntry()
 		fakeClient := fakeistio.NewSimpleClientset(serviceEntry)
-		client := NewTestingClient(fakeClient, serviceEntry.Namespace)
+		client := newTestingClient(fakeClient, serviceEntry.Namespace)
 
 		err := client.createServiceEntry(ctx, owner, serviceEntry)
 
@@ -364,7 +364,7 @@ func TestCreateServiceEntry(t *testing.T) {
 		serviceEntry := createTestEmptyServiceEntry()
 		fakeClient := fakeistio.NewSimpleClientset()
 		fakeClient.PrependReactor("*", "*", boomReaction)
-		client := NewTestingClient(fakeClient, serviceEntry.Namespace)
+		client := newTestingClient(fakeClient, serviceEntry.Namespace)
 
 		err := client.createServiceEntry(ctx, owner, serviceEntry)
 
@@ -374,7 +374,7 @@ func TestCreateServiceEntry(t *testing.T) {
 
 	t.Run("nil => error", func(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
-		client := NewTestingClient(fakeClient, "something")
+		client := newTestingClient(fakeClient, "something")
 
 		err := client.createServiceEntry(ctx, nil, nil)
 
@@ -389,7 +389,7 @@ func TestUpdateServiceEntry(t *testing.T) {
 		oldServiceEntry := createTestEmptyServiceEntry()
 		oldServiceEntry.ResourceVersion = expectedResourceVersion
 		fakeClient := fakeistio.NewSimpleClientset(oldServiceEntry)
-		client := NewTestingClient(fakeClient, oldServiceEntry.Namespace)
+		client := newTestingClient(fakeClient, oldServiceEntry.Namespace)
 
 		newServiceEntry := createTestEmptyServiceEntry()
 		addedLabels := map[string]string{
@@ -409,7 +409,7 @@ func TestUpdateServiceEntry(t *testing.T) {
 	t.Run("doesn't exist => return error", func(t *testing.T) {
 		newServiceEntry := createTestEmptyServiceEntry()
 		fakeClient := fakeistio.NewSimpleClientset()
-		client := NewTestingClient(fakeClient, newServiceEntry.Namespace)
+		client := newTestingClient(fakeClient, newServiceEntry.Namespace)
 
 		err := client.updateServiceEntry(ctx, newServiceEntry, newServiceEntry)
 
@@ -422,7 +422,7 @@ func TestUpdateServiceEntry(t *testing.T) {
 		oldServiceEntry.ResourceVersion = expectedResourceVersion
 		fakeClient := fakeistio.NewSimpleClientset()
 		fakeClient.PrependReactor("*", "*", boomReaction)
-		client := NewTestingClient(fakeClient, oldServiceEntry.Namespace)
+		client := newTestingClient(fakeClient, oldServiceEntry.Namespace)
 
 		newServiceEntry := createTestEmptyServiceEntry()
 		addedLabels := map[string]string{
@@ -436,7 +436,7 @@ func TestUpdateServiceEntry(t *testing.T) {
 	})
 	t.Run("nil => error", func(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
-		client := NewTestingClient(fakeClient, "something")
+		client := newTestingClient(fakeClient, "something")
 
 		err := client.updateServiceEntry(ctx, nil, nil)
 
@@ -450,7 +450,7 @@ func TestApplyServiceEntry(t *testing.T) {
 		owner := createTestOwner()
 		expectedServiceEntry := createTestEmptyServiceEntry()
 		fakeClient := fakeistio.NewSimpleClientset()
-		client := NewTestingClient(fakeClient, expectedServiceEntry.Namespace)
+		client := newTestingClient(fakeClient, expectedServiceEntry.Namespace)
 
 		err := client.ApplyServiceEntry(ctx, owner, expectedServiceEntry)
 
@@ -471,7 +471,7 @@ func TestApplyServiceEntry(t *testing.T) {
 		oldServiceEntry := createTestEmptyServiceEntry()
 		oldServiceEntry.ResourceVersion = expectedResourceVersion
 		fakeClient := fakeistio.NewSimpleClientset(oldServiceEntry)
-		client := NewTestingClient(fakeClient, oldServiceEntry.Namespace)
+		client := newTestingClient(fakeClient, oldServiceEntry.Namespace)
 
 		newServiceEntry := createTestEmptyServiceEntry()
 		addedLabels := map[string]string{
@@ -499,7 +499,7 @@ func TestApplyServiceEntry(t *testing.T) {
 		require.NoError(t, err)
 
 		fakeClient := fakeistio.NewSimpleClientset(oldServiceEntry)
-		client := NewTestingClient(fakeClient, oldServiceEntry.Namespace)
+		client := newTestingClient(fakeClient, oldServiceEntry.Namespace)
 
 		err = client.ApplyServiceEntry(ctx, owner, newServiceEntry)
 		require.NoError(t, err)
@@ -510,7 +510,7 @@ func TestApplyServiceEntry(t *testing.T) {
 		owner := createTestOwner()
 		fakeClient := fakeistio.NewSimpleClientset()
 		fakeClient.PrependReactor("*", "*", boomReaction)
-		client := NewTestingClient(fakeClient, owner.GetNamespace())
+		client := newTestingClient(fakeClient, owner.GetNamespace())
 		newServiceEntry := createTestEmptyServiceEntry()
 
 		err := client.ApplyServiceEntry(ctx, owner, newServiceEntry)
@@ -520,7 +520,7 @@ func TestApplyServiceEntry(t *testing.T) {
 	})
 	t.Run("nil => error", func(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
-		client := NewTestingClient(fakeClient, "something")
+		client := newTestingClient(fakeClient, "something")
 
 		err := client.ApplyServiceEntry(ctx, nil, nil)
 
@@ -533,7 +533,7 @@ func TestDeleteServiceEntry(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		serviceEntry := createTestEmptyServiceEntry()
 		fakeClient := fakeistio.NewSimpleClientset(serviceEntry)
-		client := NewTestingClient(fakeClient, serviceEntry.Namespace)
+		client := newTestingClient(fakeClient, serviceEntry.Namespace)
 
 		err := client.DeleteServiceEntry(ctx, serviceEntry.Name)
 
@@ -543,7 +543,7 @@ func TestDeleteServiceEntry(t *testing.T) {
 	})
 	t.Run("does not exist => no error", func(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
-		client := NewTestingClient(fakeClient, "something")
+		client := newTestingClient(fakeClient, "something")
 
 		err := client.DeleteServiceEntry(ctx, "random")
 
@@ -552,7 +552,7 @@ func TestDeleteServiceEntry(t *testing.T) {
 	t.Run("unknown error => return error", func(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
 		fakeClient.PrependReactor("*", "*", boomReaction)
-		client := NewTestingClient(fakeClient, "something")
+		client := newTestingClient(fakeClient, "something")
 
 		err := client.DeleteServiceEntry(ctx, "random")
 

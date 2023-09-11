@@ -10,6 +10,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
@@ -25,13 +26,17 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	fakeistio "istio.io/client-go/pkg/clientset/versioned/fake"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	fakediscovery "k8s.io/client-go/discovery/fake"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -1018,6 +1023,77 @@ func TestAPIError(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, errorUpdateInterval, result.RequeueAfter)
 	})
+}
+
+func TestSetupIstio(t *testing.T) {
+	ctx := context.Background()
+	dynakubeBase := &dynatracev1beta1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testName,
+			Namespace: testNamespace,
+		},
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			APIURL:      testApiUrl,
+			EnableIstio: true,
+		},
+	}
+	t.Run("EnableIstio: false => do nothing + nil", func(t *testing.T) {
+		dynakube := dynakubeBase.DeepCopy()
+		dynakube.Spec.EnableIstio = false
+		controller := &Controller{}
+		istioReconciler, err := controller.setupIstio(ctx, dynakube)
+		require.NoError(t, err)
+		assert.Nil(t, istioReconciler)
+	})
+	t.Run("no istio installed + EnableIstio: true => error", func(t *testing.T) {
+		dynakube := dynakubeBase.DeepCopy()
+		fakeIstio := fakeistio.NewSimpleClientset()
+		isIstioInstalled := false
+		controller := &Controller{
+			istioClientBuilder: fakeIstioClientBuilder(t, fakeIstio, isIstioInstalled),
+			scheme:             scheme.Scheme,
+		}
+		istioReconciler, err := controller.setupIstio(ctx, dynakube)
+		require.Error(t, err)
+		assert.Nil(t, istioReconciler)
+	})
+	t.Run("success", func(t *testing.T) {
+		dynakube := dynakubeBase.DeepCopy()
+		fakeIstio := fakeistio.NewSimpleClientset()
+		isIstioInstalled := true
+		controller := &Controller{
+			istioClientBuilder: fakeIstioClientBuilder(t, fakeIstio, isIstioInstalled),
+			scheme:             scheme.Scheme,
+		}
+		istioReconciler, err := controller.setupIstio(ctx, dynakube)
+		require.NoError(t, err)
+		assert.NotNil(t, istioReconciler)
+
+		expectedName := istio.BuildNameForFQDNServiceEntry(dynakube.GetName(), istio.OperatorComponent)
+		serviceEntry, err := fakeIstio.NetworkingV1alpha3().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
+		require.NoError(t, err)
+		assert.NotNil(t, serviceEntry)
+		virtualService, err := fakeIstio.NetworkingV1alpha3().VirtualServices(dynakube.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
+		require.NoError(t, err)
+		assert.NotNil(t, virtualService)
+	})
+}
+
+func fakeIstioClientBuilder(t *testing.T, fakeIstio *fakeistio.Clientset, isIstioInstalled bool) istio.ClientBuilder {
+	return func(_ *rest.Config, scheme *runtime.Scheme, namespace string) (*istio.Client, error) {
+		if isIstioInstalled == true {
+			fakeDiscovery, ok := fakeIstio.Discovery().(*fakediscovery.FakeDiscovery)
+			fakeDiscovery.Resources = []*metav1.APIResourceList{{GroupVersion: istio.IstioGVR}}
+			if !ok {
+				t.Fatalf("couldn't convert Discovery() to *FakeDiscovery")
+			}
+		}
+		return &istio.Client{
+			IstioClient: fakeIstio,
+			Scheme:      scheme,
+			Namespace:   namespace,
+		}, nil
+	}
 }
 
 func assertCondition(t *testing.T, dk *dynatracev1beta1.DynaKube, expectedConditionType string, expectedConditionStatus metav1.ConditionStatus, expectedReason string, expectedMessage string) { //nolint:revive // argument-limit
