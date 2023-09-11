@@ -8,9 +8,9 @@ graph LR
     A[fa:fa-user User] -->|Creates| B(fa:fa-file CR)
     subgraph kubernetes
     B --> |triggers| C(fa:fa-wrench Operator)
-    C -->|deploys| D[Dynatrace-Compontent-1]:::dk1
-    C -->|deploys| E[Dynatrace-Compontent-2]:::dk2
-    C -->|deploys| F[Dynatrace-Compontent-3]:::dk3
+    C -->|deploys| D[Dynatrace-Component-1]:::dk1
+    C -->|deploys| E[Dynatrace-Component-2]:::dk2
+    C -->|deploys| F[Dynatrace-Component-3]:::dk3
     end
 
     classDef dk1 stroke:#f00
