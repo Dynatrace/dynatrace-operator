@@ -3,15 +3,16 @@
 package switch_modes
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
+	"github.com/Dynatrace/dynatrace-operator/test/scenarios/cloudnative"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
-	"github.com/Dynatrace/dynatrace-operator/test/scenarios/cloudnative"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
@@ -33,17 +34,22 @@ func switchModes(t *testing.T, name string) features.Feature {
 	sampleAppCloudNative := sampleapps.NewSampleDeployment(t, dynakubeCloudNative)
 	sampleAppCloudNative.WithName(sampleAppsCloudNativeName)
 	featureBuilder.Assess("(cloudnative) create sample app namespace", sampleAppCloudNative.InstallNamespace())
+	featureBuilder.Teardown(sampleAppCloudNative.Uninstall())
 
 	// install operator and dynakube
-	assess.InstallDynatrace(featureBuilder, &secretConfig, dynakubeCloudNative)
-
+	initSteps := []steps.EnvironmentOptionFunc{
+		steps.CreateNamespaceWithoutTeardown(namespace.NewBuilder(dynakubeCloudNative.Namespace).Build()),
+		steps.DeployOperatorViaMake(dynakubeCloudNative.NeedsCSIDriver()),
+		steps.CreateDynakube(secretConfig, dynakubeCloudNative),
+	}
+	steps.CreateSetupSteps(featureBuilder, initSteps)
 	// apply sample apps
 	featureBuilder.Assess("(cloudnative) install sample app", sampleAppCloudNative.Install())
 
-	// run cloud native test here
+	// // run cloud native test here
 	cloudnative.AssessSampleInitContainers(featureBuilder, sampleAppCloudNative)
 
-	// switch to classic full stack
+	// // switch to classic full stack
 	classicDynakubeBuilder := cloudNativeDynakubeBuilder.ResetOneAgent().ClassicFullstack(&dynatracev1beta1.HostInjectSpec{})
 	dynakubeClassicFullStack := classicDynakubeBuilder.Build()
 	sampleAppClassicFullStack := sampleapps.NewSampleDeployment(t, dynakubeClassicFullStack)
@@ -53,14 +59,8 @@ func switchModes(t *testing.T, name string) features.Feature {
 
 	// deploy sample apps
 	featureBuilder.Assess("(classic) install sample app", sampleAppClassicFullStack.Install())
-
-	// tear down
-	featureBuilder.Teardown(sampleAppCloudNative.Uninstall())
 	featureBuilder.Teardown(sampleAppClassicFullStack.Uninstall())
-	teardown.DeleteDynakube(featureBuilder, dynakubeCloudNative)
-	teardown.AddCsiCleanUp(featureBuilder, dynakubeCloudNative)
-	teardown.AddClassicCleanUp(featureBuilder, dynakubeClassicFullStack)
-	teardown.UninstallOperatorFromSource(featureBuilder, dynakubeCloudNative)
-
+	// tear down
+	steps.CreateTeardownSteps(featureBuilder, initSteps)
 	return featureBuilder.Feature()
 }

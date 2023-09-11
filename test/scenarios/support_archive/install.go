@@ -51,7 +51,7 @@ func supportArchiveExecution(t *testing.T) features.Feature {
 		steps.CreateNamespace(namespace.NewBuilder(testAppNameInjected).WithLabels(injectLabels).Build()),
 		steps.CreateNamespace(namespace.NewBuilder(testAppNameNotInjected).Build()),
 		steps.CreateNamespaceWithoutTeardown(namespace.NewBuilder(testDynakube.Namespace).Build()),
-		steps.DeployOperatorViaMake(testDynakube.Namespace, testDynakube.NeedsCSIDriver()),
+		steps.DeployOperatorViaMake(testDynakube.NeedsCSIDriver()),
 		steps.CreateDynakube(secretConfig, testDynakube),
 	)
 	// Register actual test

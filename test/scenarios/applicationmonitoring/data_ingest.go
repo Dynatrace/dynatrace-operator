@@ -20,7 +20,6 @@ import (
 	sample "github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/base"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -62,11 +61,13 @@ func dataIngest(t *testing.T) features.Feature {
 	})
 
 	// Register operator + dynakube install
-	steps.CreateFeatureEnvironment(builder,
+	setup := steps.NewEnvrionmentSetup(
 		steps.CreateNamespaceWithoutTeardown(namespace.NewBuilder(testDynakube.Namespace).Build()),
-		steps.DeployOperatorViaMake(testDynakube.Namespace, testDynakube.NeedsCSIDriver()),
+		steps.DeployOperatorViaMake(testDynakube.NeedsCSIDriver()),
 		steps.CreateDynakube(secretConfig, testDynakube),
 	)
+	setup.CreateSetupSteps(builder)
+
 	// Register actual test (+sample cleanup)
 	builder.Assess("install sample deployment and wait till ready", sampleDeployment.Install())
 	builder.Assess("install sample pod  and wait till ready", samplePod.Install())
@@ -75,8 +76,7 @@ func dataIngest(t *testing.T) features.Feature {
 
 	builder.WithTeardown("removing samples", sampleDeployment.UninstallNamespace())
 
-	// Register operator + dynakube uninstall
-	teardown.UninstallDynatrace(builder, testDynakube)
+	setup.CreateTeardownSteps(builder)
 
 	return builder.Feature()
 }
