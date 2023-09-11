@@ -47,4 +47,3 @@ func buildObjectMeta(name, namespace string, labels map[string]string) metav1.Ob
 		Labels:    labels,
 	}
 }
-

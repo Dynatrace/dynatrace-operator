@@ -6,17 +6,12 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	// "github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	// "github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	fakeistio "istio.io/client-go/pkg/clientset/versioned/fake"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	// metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	// fakediscovery "k8s.io/client-go/discovery/fake"
-	// "k8s.io/client-go/rest"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestSplitCommunicationHost(t *testing.T) {
@@ -63,7 +58,7 @@ func TestReconcileIPServiceEntry(t *testing.T) {
 	t.Run("empty communication host => delete if previously created", func(t *testing.T) {
 		serviceEntry := &istiov1alpha3.ServiceEntry{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: BuildNameForIPServiceEntry(owner.GetName(), component),
+				Name:      BuildNameForIPServiceEntry(owner.GetName(), component),
 				Namespace: owner.GetNamespace(),
 			},
 		}
@@ -75,7 +70,6 @@ func TestReconcileIPServiceEntry(t *testing.T) {
 		require.NoError(t, err)
 		_, err = fakeClient.NetworkingV1alpha3().ServiceEntries(serviceEntry.Namespace).Get(ctx, serviceEntry.Name, metav1.GetOptions{})
 		require.True(t, k8serrors.IsNotFound(err))
-
 	})
 	t.Run("success", func(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
@@ -122,13 +116,13 @@ func TestReconcileFQDNServiceEntry(t *testing.T) {
 	t.Run("empty communication host => delete if previously created", func(t *testing.T) {
 		serviceEntry := &istiov1alpha3.ServiceEntry{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: BuildNameForFQDNServiceEntry(owner.GetName(), component),
+				Name:      BuildNameForFQDNServiceEntry(owner.GetName(), component),
 				Namespace: owner.GetNamespace(),
 			},
 		}
 		virtualService := &istiov1alpha3.VirtualService{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: BuildNameForFQDNServiceEntry(owner.GetName(), component),
+				Name:      BuildNameForFQDNServiceEntry(owner.GetName(), component),
 				Namespace: owner.GetNamespace(),
 			},
 		}
@@ -142,7 +136,6 @@ func TestReconcileFQDNServiceEntry(t *testing.T) {
 		require.True(t, k8serrors.IsNotFound(err))
 		_, err = fakeClient.NetworkingV1alpha3().VirtualServices(serviceEntry.Namespace).Get(ctx, virtualService.Name, metav1.GetOptions{})
 		require.True(t, k8serrors.IsNotFound(err))
-
 	})
 	t.Run("success", func(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
@@ -265,23 +258,21 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 	})
 }
 
-
 func createTestIPCommunicationHost() dtclient.CommunicationHost {
 	return dtclient.CommunicationHost{
 		Protocol: "http",
-		Host: "42.42.42.42",
-		Port: 620,
+		Host:     "42.42.42.42",
+		Port:     620,
 	}
 }
 
 func createTestFQDNCommunicationHost() dtclient.CommunicationHost {
 	return dtclient.CommunicationHost{
 		Protocol: "http",
-		Host: "something.test.io",
-		Port: 620,
+		Host:     "something.test.io",
+		Port:     620,
 	}
 }
-
 
 func createTestDynaKube() *dynatracev1beta1.DynaKube {
 	fqdnHost := createTestFQDNCommunicationHost()
@@ -317,4 +308,3 @@ func createTestDynaKube() *dynatracev1beta1.DynaKube {
 		},
 	}
 }
-

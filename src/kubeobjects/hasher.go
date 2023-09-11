@@ -51,7 +51,6 @@ func getHash(a metav1.Object) string {
 	return ""
 }
 
-
 func AddHashAnnotation(object metav1.Object) error {
 	if object == nil || reflect.ValueOf(object).IsNil() {
 		return errors.New("nil objects can't have a hash annotation")

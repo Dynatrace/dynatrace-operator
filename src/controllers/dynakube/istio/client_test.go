@@ -167,7 +167,6 @@ func TestUpdateVirtualService(t *testing.T) {
 
 		require.Error(t, err)
 		assert.Len(t, fakeClient.Actions(), 1)
-
 	})
 	t.Run("nil => error", func(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
@@ -252,7 +251,6 @@ func TestApplyVirtualService(t *testing.T) {
 
 		require.Error(t, err)
 		assert.Len(t, fakeClient.Actions(), 1)
-
 	})
 	t.Run("nil => error", func(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
@@ -435,7 +433,6 @@ func TestUpdateServiceEntry(t *testing.T) {
 
 		require.Error(t, err)
 		assert.Len(t, fakeClient.Actions(), 1)
-
 	})
 	t.Run("nil => error", func(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
@@ -520,7 +517,6 @@ func TestApplyServiceEntry(t *testing.T) {
 
 		require.Error(t, err)
 		assert.Len(t, fakeClient.Actions(), 1)
-
 	})
 	t.Run("nil => error", func(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()

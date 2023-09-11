@@ -2,6 +2,7 @@ package istio
 
 import (
 	"net"
+
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	istio "istio.io/api/networking/v1alpha3"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
@@ -49,8 +50,8 @@ func buildVirtualServiceSpec(commHosts []dtclient.CommunicationHost) istio.Virtu
 	}
 	return istio.VirtualService{
 		Hosts: hosts,
-		Http: routes,
-		Tls: tlses,
+		Http:  routes,
+		Tls:   tlses,
 	}
 }
 

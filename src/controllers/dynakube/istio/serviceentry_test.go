@@ -31,7 +31,7 @@ func TestServiceEntryGeneration(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
-				Labels: buildTestLabels(),
+				Labels:    buildTestLabels(),
 			},
 			Spec: istio.ServiceEntry{
 				Hosts:    []string{testHost},
@@ -65,7 +65,7 @@ func TestServiceEntryGeneration(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
-				Labels: buildTestLabels(),
+				Labels:    buildTestLabels(),
 			},
 			Spec: istio.ServiceEntry{
 				Hosts:    []string{testHost, testHost1},
@@ -97,7 +97,7 @@ func TestServiceEntryGeneration(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
-				Labels: buildTestLabels(),
+				Labels:    buildTestLabels(),
 			},
 			Spec: istio.ServiceEntry{
 				Hosts:     []string{ignoredSubdomain},
@@ -136,7 +136,7 @@ func TestServiceEntryGeneration(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
-				Labels: buildTestLabels(),
+				Labels:    buildTestLabels(),
 			},
 			Spec: istio.ServiceEntry{
 				Hosts:     []string{ignoredSubdomain},
@@ -206,7 +206,7 @@ func buildExpectedServiceEntryForHostname(_ *testing.T) *istiov1alpha3.ServiceEn
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNamespace,
-			Labels: buildTestLabels(),
+			Labels:    buildTestLabels(),
 		},
 		Spec: istio.ServiceEntry{
 			Hosts: []string{testHost1},
@@ -226,7 +226,7 @@ func buildExpectedServiceEntryForIp(_ *testing.T) *istiov1alpha3.ServiceEntry {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNamespace,
-			Labels: buildTestLabels(),
+			Labels:    buildTestLabels(),
 		},
 		Spec: istio.ServiceEntry{
 			Hosts:     []string{ignoredSubdomain},

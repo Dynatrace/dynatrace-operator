@@ -33,7 +33,7 @@ func TestVirtualServiceGeneration(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
-				Labels: buildTestLabels(),
+				Labels:    buildTestLabels(),
 			},
 			Spec: istio.VirtualService{
 				Hosts: []string{testHost},
@@ -64,7 +64,7 @@ func TestVirtualServiceGeneration(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
-				Labels: buildTestLabels(),
+				Labels:    buildTestLabels(),
 			},
 			Spec: istio.VirtualService{
 				Hosts: []string{testHost},
@@ -199,7 +199,7 @@ func buildExpectedVirtualServiceSpecTls(t *testing.T) istio.VirtualService {
 	}
 }
 
-func buildTestLabels() map[string]string{
+func buildTestLabels() map[string]string {
 	return map[string]string{
 		"test": "test",
 	}
