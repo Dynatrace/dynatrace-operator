@@ -1,176 +1,320 @@
 package istio
 
-// import (
-// 	"context"
-// 	"os"
-// 	"testing"
+import (
+	"context"
+	"testing"
 
-// 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
-// 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-// 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-// 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
-// 	"github.com/stretchr/testify/assert"
-// 	"github.com/stretchr/testify/require"
-// 	fakeistio "istio.io/client-go/pkg/clientset/versioned/fake"
-// 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-// 	fakediscovery "k8s.io/client-go/discovery/fake"
-// 	"k8s.io/client-go/rest"
-// )
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	// "github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	// "github.com/Dynatrace/dynatrace-operator/src/scheme"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
+	fakeistio "istio.io/client-go/pkg/clientset/versioned/fake"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	// metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	// fakediscovery "k8s.io/client-go/discovery/fake"
+	// "k8s.io/client-go/rest"
+)
 
-// const (
-// 	DefaultTestNamespace = "dynatrace"
+func TestSplitCommunicationHost(t *testing.T) {
+	t.Run("empty => no fail", func(t *testing.T) {
+		ipHosts, fqdnHosts := splitCommunicationHost([]dtclient.CommunicationHost{})
+		require.Nil(t, ipHosts)
+		require.Nil(t, fqdnHosts)
+	})
+	t.Run("nil => no fail", func(t *testing.T) {
+		ipHosts, fqdnHosts := splitCommunicationHost(nil)
+		require.Nil(t, ipHosts)
+		require.Nil(t, fqdnHosts)
+	})
+	t.Run("success", func(t *testing.T) {
+		comHosts := []dtclient.CommunicationHost{
+			createTestIPCommunicationHost(),
+			createTestFQDNCommunicationHost(),
+			createTestIPCommunicationHost(),
+			createTestFQDNCommunicationHost(),
+			createTestIPCommunicationHost(),
+			createTestFQDNCommunicationHost(),
+		}
 
-// 	testVirtualServiceName     = "dt-vs"
-// 	testVirtualServiceHost     = "ENVIRONMENTID.live.dynatrace.com"
-// 	testVirtualServiceProtocol = "https"
-// 	testVirtualServicePort     = 443
-// )
+		ipHosts, fqdnHosts := splitCommunicationHost(comHosts)
+		require.NotNil(t, ipHosts)
+		require.NotNil(t, fqdnHosts)
+		assert.Len(t, ipHosts, 3)
+		assert.Len(t, fqdnHosts, 3)
+	})
+}
 
-// func TestIstioClient_BuildDynatraceVirtualService(t *testing.T) {
-// 	err := os.Setenv(kubeobjects.EnvPodNamespace, DefaultTestNamespace)
-// 	if err != nil {
-// 		t.Error("Failed to set environment variable")
-// 	}
+func TestReconcileIPServiceEntry(t *testing.T) {
+	ctx := context.Background()
+	component := "best-component"
+	owner := createTestOwner()
+	t.Run("nil => error", func(t *testing.T) {
+		istioClient := NewTestingClient(nil, owner.GetNamespace())
+		reconciler := NewReconciler(istioClient)
 
-// 	commHosts := []dtclient.CommunicationHost{
-// 		{Host: testVirtualServiceHost, Port: testVirtualServicePort, Protocol: testVirtualServiceProtocol},
-// 	}
+		err := reconciler.reconcileIPServiceEntry(ctx, nil, nil, component)
+		require.Error(t, err)
+	})
 
-// 	vs := buildVirtualService(buildObjectMeta(testVirtualServiceName, DefaultTestNamespace), commHosts)
-// 	ic := fakeistio.NewSimpleClientset(vs)
-// 	vsList, err := ic.NetworkingV1alpha3().VirtualServices(DefaultTestNamespace).List(context.TODO(), metav1.ListOptions{})
-// 	if err != nil {
-// 		t.Errorf("Failed to create VirtualService in %s namespace: %s", DefaultTestNamespace, err)
-// 	}
-// 	if len(vsList.Items) == 0 {
-// 		t.Error("Expected items, got nil")
-// 	}
-// 	t.Logf("list of istio object %v", vsList.Items)
-// }
+	t.Run("empty communication host => delete if previously created", func(t *testing.T) {
+		serviceEntry := &istiov1alpha3.ServiceEntry{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: BuildNameForIPServiceEntry(owner.GetName(), component),
+				Namespace: owner.GetNamespace(),
+			},
+		}
+		fakeClient := fakeistio.NewSimpleClientset(serviceEntry)
+		istioClient := NewTestingClient(fakeClient, owner.GetNamespace())
+		reconciler := NewReconciler(istioClient)
 
-// func TestReconcileIstio(t *testing.T) {
-// 	t.Run(`reconciles istio objects correctly`, func(t *testing.T) {
-// 		testReconcileIstio(t, true)
-// 	})
+		err := reconciler.reconcileIPServiceEntry(ctx, owner, nil, component)
+		require.NoError(t, err)
+		_, err = fakeClient.NetworkingV1alpha3().ServiceEntries(serviceEntry.Namespace).Get(ctx, serviceEntry.Name, metav1.GetOptions{})
+		require.True(t, k8serrors.IsNotFound(err))
 
-// 	t.Run(`gracefully fail if istio is not installed`, func(t *testing.T) {
-// 		testReconcileIstio(t, false)
-// 	})
-// }
+	})
+	t.Run("success", func(t *testing.T) {
+		fakeClient := fakeistio.NewSimpleClientset()
+		istioClient := NewTestingClient(fakeClient, owner.GetNamespace())
+		reconciler := NewReconciler(istioClient)
+		commHosts := []dtclient.CommunicationHost{
+			createTestIPCommunicationHost(),
+		}
 
-// func testReconcileIstio(t *testing.T, enableIstioGVR bool) {
-// 	serverUrl := "http://127.0.0.1:59842"
-// 	port := 59842
+		err := reconciler.reconcileIPServiceEntry(ctx, owner, commHosts, component)
+		require.NoError(t, err)
+		expectedName := BuildNameForIPServiceEntry(owner.GetName(), component)
+		serviceEntry, err := fakeClient.NetworkingV1alpha3().ServiceEntries(owner.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
+		require.NoError(t, err)
+		assert.NotNil(t, serviceEntry)
+	})
+	t.Run("unknown k8s client error => error", func(t *testing.T) {
+		fakeClient := fakeistio.NewSimpleClientset()
+		fakeClient.PrependReactor("*", "*", boomReaction)
 
-// 	commHosts := []dtclient.CommunicationHost{{
-// 		Host:     "localhost",
-// 		Port:     uint32(port),
-// 		Protocol: "http",
-// 	},
-// 	}
-// 	virtualService := buildVirtualService(buildObjectMeta(testVirtualServiceName, DefaultTestNamespace), commHosts)
-// 	instance := &dynatracev1beta1.DynaKube{
-// 		ObjectMeta: metav1.ObjectMeta{
-// 			Name:      "dynakube",
-// 			Namespace: DefaultTestNamespace,
-// 		},
-// 		Spec: dynatracev1beta1.DynaKubeSpec{
-// 			APIURL: serverUrl,
-// 		},
-// 	}
+		istioClient := NewTestingClient(fakeClient, owner.GetNamespace())
+		reconciler := NewReconciler(istioClient)
+		commHosts := []dtclient.CommunicationHost{
+			createTestIPCommunicationHost(),
+		}
 
-// 	ist := fakeistio.NewSimpleClientset(virtualService)
+		err := reconciler.reconcileIPServiceEntry(ctx, owner, commHosts, component)
+		require.Error(t, err)
+	})
+}
 
-// 	fakeDiscovery, ok := ist.Discovery().(*fakediscovery.FakeDiscovery)
-// 	if !ok {
-// 		t.Fatalf("couldn't convert Discovery() to *FakeDiscovery")
-// 	}
+func TestReconcileFQDNServiceEntry(t *testing.T) {
+	ctx := context.Background()
+	component := "best-component"
+	owner := createTestOwner()
+	t.Run("nil => error", func(t *testing.T) {
+		istioClient := NewTestingClient(nil, owner.GetNamespace())
+		reconciler := NewReconciler(istioClient)
 
-// 	if enableIstioGVR {
-// 		fakeDiscovery.Resources = []*metav1.APIResourceList{{
-// 			GroupVersion: IstioGVR,
-// 		}}
-// 	}
+		err := reconciler.reconcileFQDNServiceEntry(ctx, nil, nil, component)
+		require.Error(t, err)
+	})
 
-// 	reconciler := NewReconciler(
-// 		&rest.Config{
-// 			Host:    serverUrl,
-// 			APIPath: "v1alpha3",
-// 		},
-// 		scheme.Scheme,
-// 		ist,
-// 	)
-// 	updated, err := reconciler.Reconcile(context.TODO(), instance, []dtclient.CommunicationHost{})
+	t.Run("empty communication host => delete if previously created", func(t *testing.T) {
+		serviceEntry := &istiov1alpha3.ServiceEntry{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: BuildNameForFQDNServiceEntry(owner.GetName(), component),
+				Namespace: owner.GetNamespace(),
+			},
+		}
+		virtualService := &istiov1alpha3.VirtualService{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: BuildNameForFQDNServiceEntry(owner.GetName(), component),
+				Namespace: owner.GetNamespace(),
+			},
+		}
+		fakeClient := fakeistio.NewSimpleClientset(serviceEntry, virtualService)
+		istioClient := NewTestingClient(fakeClient, owner.GetNamespace())
+		reconciler := NewReconciler(istioClient)
 
-// 	assert.NoError(t, err)
-// 	assert.Equal(t, enableIstioGVR, updated)
+		err := reconciler.reconcileFQDNServiceEntry(ctx, owner, nil, component)
+		require.NoError(t, err)
+		_, err = fakeClient.NetworkingV1alpha3().ServiceEntries(serviceEntry.Namespace).Get(ctx, serviceEntry.Name, metav1.GetOptions{})
+		require.True(t, k8serrors.IsNotFound(err))
+		_, err = fakeClient.NetworkingV1alpha3().VirtualServices(serviceEntry.Namespace).Get(ctx, virtualService.Name, metav1.GetOptions{})
+		require.True(t, k8serrors.IsNotFound(err))
 
-// 	update, err := reconciler.Reconcile(context.TODO(), instance, []dtclient.CommunicationHost{})
+	})
+	t.Run("success", func(t *testing.T) {
+		fakeClient := fakeistio.NewSimpleClientset()
+		istioClient := NewTestingClient(fakeClient, owner.GetNamespace())
+		reconciler := NewReconciler(istioClient)
+		commHosts := []dtclient.CommunicationHost{
+			createTestFQDNCommunicationHost(),
+		}
 
-// 	assert.NoError(t, err)
-// 	assert.False(t, update)
-// }
+		err := reconciler.reconcileFQDNServiceEntry(ctx, owner, commHosts, component)
+		require.NoError(t, err)
+		expectedName := BuildNameForFQDNServiceEntry(owner.GetName(), component)
+		serviceEntry, err := fakeClient.NetworkingV1alpha3().ServiceEntries(owner.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
+		require.NoError(t, err)
+		assert.NotNil(t, serviceEntry)
+		virtualService, err := fakeClient.NetworkingV1alpha3().VirtualServices(owner.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
+		require.NoError(t, err)
+		assert.NotNil(t, virtualService)
+	})
+	t.Run("unknown k8s client error => error", func(t *testing.T) {
+		fakeClient := fakeistio.NewSimpleClientset()
+		fakeClient.PrependReactor("*", "*", boomReaction)
 
-// func TestIstioClient_BuildDynatraceServiceEntry(t *testing.T) {
-// 	testIPhosts := dtclient.CommunicationHost{Host: testIP1, Port: uint32(testPort1)}
-// 	testHosthosts := dtclient.CommunicationHost{Host: testHost1, Port: uint32(testPort2), Protocol: protocolHttps}
-// 	serverUrl := "http://127.0.0.1:59842"
+		istioClient := NewTestingClient(fakeClient, owner.GetNamespace())
+		reconciler := NewReconciler(istioClient)
+		commHosts := []dtclient.CommunicationHost{
+			createTestFQDNCommunicationHost(),
+		}
 
-// 	err := os.Setenv(kubeobjects.EnvPodNamespace, DefaultTestNamespace)
-// 	if err != nil {
-// 		t.Error("Failed to set environment variable")
-// 	}
+		err := reconciler.reconcileFQDNServiceEntry(ctx, owner, commHosts, component)
+		require.Error(t, err)
+	})
+}
 
-// 	commHosts := []dtclient.CommunicationHost{testIPhosts, testHosthosts}
+func TestReconcileAPIUrl(t *testing.T) {
+	ctx := context.Background()
+	dynakube := createTestDynaKube()
+	t.Run("nil => error", func(t *testing.T) {
+		istioClient := NewTestingClient(nil, dynakube.GetNamespace())
+		reconciler := NewReconciler(istioClient)
 
-// 	ist := fakeistio.NewSimpleClientset()
-// 	fakeDiscovery, ok := ist.Discovery().(*fakediscovery.FakeDiscovery)
-// 	if !ok {
-// 		t.Fatalf("couldn't convert Discovery() to *FakeDiscovery")
-// 	}
-// 	fakeDiscovery.Resources = []*metav1.APIResourceList{{
-// 		GroupVersion: IstioGVR,
-// 	}}
+		err := reconciler.ReconcileAPIUrl(ctx, nil)
+		require.Error(t, err)
+	})
+	t.Run("malformed api-url => error", func(t *testing.T) {
+		dynakube := createTestDynaKube()
+		dynakube.Spec.APIURL = "something-random"
+		istioClient := NewTestingClient(nil, dynakube.GetNamespace())
+		reconciler := NewReconciler(istioClient)
 
-// 	instance := &dynatracev1beta1.DynaKube{
-// 		ObjectMeta: metav1.ObjectMeta{
-// 			Name:      "dynakube",
-// 			Namespace: DefaultTestNamespace,
-// 		},
-// 		Spec: dynatracev1beta1.DynaKubeSpec{
-// 			APIURL: serverUrl,
-// 		},
-// 	}
+		err := reconciler.ReconcileAPIUrl(ctx, dynakube)
+		require.Error(t, err)
+	})
+	t.Run("success", func(t *testing.T) {
+		fakeClient := fakeistio.NewSimpleClientset()
+		istioClient := NewTestingClient(fakeClient, dynakube.GetNamespace())
+		reconciler := NewReconciler(istioClient)
 
-// 	reconciler := NewReconciler(
-// 		&rest.Config{
-// 			Host:    serverUrl,
-// 			APIPath: "v1alpha3",
-// 		},
-// 		scheme.Scheme,
-// 		ist,
-// 	)
-// 	updated, err := reconciler.Reconcile(context.TODO(), instance, []dtclient.CommunicationHost{})
+		err := reconciler.ReconcileAPIUrl(ctx, dynakube)
+		require.NoError(t, err)
+		expectedName := BuildNameForFQDNServiceEntry(dynakube.GetName(), operatorComponent)
+		serviceEntry, err := fakeClient.NetworkingV1alpha3().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
+		require.NoError(t, err)
+		assert.NotNil(t, serviceEntry)
+		virtualService, err := fakeClient.NetworkingV1alpha3().VirtualServices(dynakube.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
+		require.NoError(t, err)
+		assert.NotNil(t, virtualService)
+	})
+	t.Run("unknown k8s client error => error", func(t *testing.T) {
+		fakeClient := fakeistio.NewSimpleClientset()
+		fakeClient.PrependReactor("*", "*", boomReaction)
 
-// 	assert.NoError(t, err)
-// 	assert.True(t, updated)
+		istioClient := NewTestingClient(fakeClient, dynakube.GetNamespace())
+		reconciler := NewReconciler(istioClient)
 
-// 	updated, err = reconciler.Reconcile(context.TODO(), instance, commHosts)
+		err := reconciler.ReconcileAPIUrl(ctx, dynakube)
+		require.Error(t, err)
+	})
+}
 
-// 	assert.NoError(t, err)
-// 	assert.True(t, updated)
+func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
+	ctx := context.Background()
+	dynakube := createTestDynaKube()
+	t.Run("nil => error", func(t *testing.T) {
+		istioClient := NewTestingClient(nil, dynakube.GetNamespace())
+		reconciler := NewReconciler(istioClient)
 
-// 	listOps := &metav1.ListOptions{LabelSelector: "dynatrace-istio-role=communication-endpoint"}
+		err := reconciler.ReconcileOneAgentCommunicationHosts(ctx, nil)
+		require.Error(t, err)
+	})
+	t.Run("success", func(t *testing.T) {
+		fakeClient := fakeistio.NewSimpleClientset()
+		istioClient := NewTestingClient(fakeClient, dynakube.GetNamespace())
+		reconciler := NewReconciler(istioClient)
 
-// 	list, err := ist.NetworkingV1alpha3().ServiceEntries(DefaultTestNamespace).List(context.TODO(), *listOps)
+		err := reconciler.ReconcileOneAgentCommunicationHosts(ctx, dynakube)
+		require.NoError(t, err)
+		expectedFQDNName := BuildNameForFQDNServiceEntry(dynakube.GetName(), oneAgentComponent)
+		serviceEntry, err := fakeClient.NetworkingV1alpha3().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
+		require.NoError(t, err)
+		assert.NotNil(t, serviceEntry)
+		virtualService, err := fakeClient.NetworkingV1alpha3().VirtualServices(dynakube.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
+		require.NoError(t, err)
+		assert.NotNil(t, virtualService)
 
-// 	require.NoError(t, err)
+		expectedIPName := BuildNameForIPServiceEntry(dynakube.GetName(), oneAgentComponent)
+		serviceEntry, err = fakeClient.NetworkingV1alpha3().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedIPName, metav1.GetOptions{})
+		require.NoError(t, err)
+		assert.NotNil(t, serviceEntry)
+	})
+	t.Run("unknown k8s client error => error", func(t *testing.T) {
+		fakeClient := fakeistio.NewSimpleClientset()
+		fakeClient.PrependReactor("*", "*", boomReaction)
 
-// 	// Assert we successfully created ServiceEntry for ip:
-// 	assert.Equal(t, list.Items[0].Spec.Addresses, []string{"42.42.42.42/32"})
-// 	assert.Equal(t, list.Items[0].Spec.Ports[0].Number, uint32(testPort1))
+		istioClient := NewTestingClient(fakeClient, dynakube.GetNamespace())
+		reconciler := NewReconciler(istioClient)
 
-// 	// Assert we successfully created ServiceEntry for host:
-// 	assert.Equal(t, list.Items[1].Spec.Hosts, []string{testHost1})
-// 	assert.Equal(t, list.Items[1].Spec.Ports[0].Number, uint32(testPort2))
-// }
+		err := reconciler.ReconcileOneAgentCommunicationHosts(ctx, dynakube)
+		require.Error(t, err)
+	})
+}
+
+
+func createTestIPCommunicationHost() dtclient.CommunicationHost {
+	return dtclient.CommunicationHost{
+		Protocol: "http",
+		Host: "42.42.42.42",
+		Port: 620,
+	}
+}
+
+func createTestFQDNCommunicationHost() dtclient.CommunicationHost {
+	return dtclient.CommunicationHost{
+		Protocol: "http",
+		Host: "something.test.io",
+		Port: 620,
+	}
+}
+
+
+func createTestDynaKube() *dynatracev1beta1.DynaKube {
+	fqdnHost := createTestFQDNCommunicationHost()
+	ipHost := createTestIPCommunicationHost()
+	return &dynatracev1beta1.DynaKube{
+		TypeMeta: metav1.TypeMeta{
+			Kind: "DynaKube",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "owner",
+			Namespace: "test",
+		},
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			APIURL: "https://test.dev.dynatracelabs.com/api",
+		},
+		Status: dynatracev1beta1.DynaKubeStatus{
+			OneAgent: dynatracev1beta1.OneAgentStatus{
+				ConnectionInfoStatus: dynatracev1beta1.OneAgentConnectionInfoStatus{
+					CommunicationHosts: []dynatracev1beta1.CommunicationHostStatus{
+						{
+							Protocol: fqdnHost.Protocol,
+							Host:     fqdnHost.Host,
+							Port:     fqdnHost.Port,
+						},
+						{
+							Protocol: ipHost.Protocol,
+							Host:     ipHost.Host,
+							Port:     ipHost.Port,
+						},
+					},
+				},
+			},
+		},
+	}
+}
+

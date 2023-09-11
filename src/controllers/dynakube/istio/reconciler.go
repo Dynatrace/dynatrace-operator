@@ -24,6 +24,9 @@ func NewReconciler(istio *Client) *Reconciler {
 
 func (r *Reconciler) ReconcileAPIUrl(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
 	log.Info("reconciling istio components for the Dynatrace API url")
+	if dynakube == nil {
+		return errors.New("can't reconcile api url of nil dynakube")
+	}
 	apiHost, err := dtclient.ParseEndpoint(dynakube.Spec.APIURL)
 	if err != nil {
 		return err
@@ -39,6 +42,9 @@ func (r *Reconciler) ReconcileAPIUrl(ctx context.Context, dynakube *dynatracev1b
 
 func (r *Reconciler) ReconcileOneAgentCommunicationHosts(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
 	log.Info("reconciling istio components for oneagent communication hosts")
+	if dynakube == nil {
+		return errors.New("can't reconcile oneagent communication hosts of nil dynakube")
+	}
 	communicationHosts := connectioninfo.GetOneAgentCommunicationHosts(dynakube)
 
 	err := r.reconcileCommunicationHosts(ctx, dynakube, communicationHosts, oneAgentComponent)
@@ -76,6 +82,9 @@ func splitCommunicationHost(comHosts []dtclient.CommunicationHost) (ipHosts, fqd
 }
 
 func (r *Reconciler) reconcileIPServiceEntry(ctx context.Context, owner metav1.Object, ipHosts []dtclient.CommunicationHost, component string) error {
+	if owner == nil {
+		return errors.New("unable to create service entry for IPs if owner is nil")
+	}
 	entryName := BuildNameForIPServiceEntry(owner.GetName(), component)
 	if len(ipHosts) != 0 {
 		meta := buildObjectMeta(
@@ -100,6 +109,9 @@ func (r *Reconciler) reconcileIPServiceEntry(ctx context.Context, owner metav1.O
 }
 
 func (r *Reconciler) reconcileFQDNServiceEntry(ctx context.Context, owner metav1.Object, fqdnHosts []dtclient.CommunicationHost, component string) error {
+	if owner == nil {
+		return errors.New("unable to create service entry and virtual service for Hosts if owner is nil")
+	}
 	entryName := BuildNameForFQDNServiceEntry(owner.GetName(), component)
 	if len(fqdnHosts) != 0 {
 		meta := buildObjectMeta(

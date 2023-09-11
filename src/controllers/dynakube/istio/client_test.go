@@ -5,7 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/stretchr/testify/assert"
@@ -264,7 +263,6 @@ func TestApplyVirtualService(t *testing.T) {
 		require.Error(t, err)
 	})
 }
-
 
 func TestDeleteVirtualService(t *testing.T) {
 	ctx := context.Background()
@@ -586,13 +584,5 @@ func createTestEmptyVirtualService() *istiov1alpha3.VirtualService {
 }
 
 func createTestOwner() metav1.Object {
-	return &dynatracev1beta1.DynaKube{
-		TypeMeta: metav1.TypeMeta{
-			Kind: "DynaKube",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "owner",
-			Namespace: "test",
-		},
-	}
+	return createTestDynaKube()
 }

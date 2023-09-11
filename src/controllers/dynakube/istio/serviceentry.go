@@ -16,12 +16,12 @@ const (
 	protocolTcp      = "TCP"
 )
 
-func BuildNameForIPServiceEntry(ownerName, role string) string {
-	return ownerName + "-ip-" + role
+func BuildNameForIPServiceEntry(ownerName, component string) string {
+	return ownerName + "-ip-" + component
 }
 
-func BuildNameForFQDNServiceEntry(ownerName, role string) string {
-	return ownerName + "-fqdn-" + role
+func BuildNameForFQDNServiceEntry(ownerName, component string) string {
+	return ownerName + "-fqdn-" + component
 }
 
 func buildServiceEntryFQDNs(meta metav1.ObjectMeta, hostHosts []dtclient.CommunicationHost) *istiov1alpha3.ServiceEntry {
