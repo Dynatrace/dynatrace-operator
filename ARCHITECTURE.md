@@ -3,7 +3,20 @@ This document describes the high-level architecture of `Dynatrace Operator`.
 If you want to familiarize yourself with the code base, you are just in the right place!
 
 ## Bird's Eye View
-<picture-here>
+```mermaid
+graph LR
+    A[fa:fa-user User] -->|creates| B(fa:fa-file CR)
+    subgraph kubernetes
+    B --> |triggers| C(fa:fa-wrench Operator)
+    C -->|deploys| D[Dynatrace-Component-1]:::dk1
+    C -->|deploys| E[Dynatrace-Component-2]:::dk2
+    C -->|deploys| F[Dynatrace-Component-3]:::dk3
+    end
+
+    classDef dk1 stroke:#f00
+    classDef dk2 stroke:#0f0
+    classDef dk3 stroke:#00f
+```
 
 On a very high level, what the operator does is for a given `CustomResource`(CR) provided by the user, the `Operator` will deploy _one or several_ Dynatrace components into the Kubernetes Environment.
 
