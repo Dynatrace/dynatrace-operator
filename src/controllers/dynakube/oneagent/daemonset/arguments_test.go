@@ -118,14 +118,14 @@ func TestPodSpec_Arguments(t *testing.T) {
 		podSpecs = dsInfo.podSpec()
 		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
 	})
-	t.Run(`has network zone arg`, func(t *testing.T) {
+	t.Run(`has network_problems zone arg`, func(t *testing.T) {
 		instance.Spec.NetworkZone = testValue
 		podSpecs = dsInfo.podSpec()
-		assert.Contains(t, podSpecs.Containers[0].Args, "--set-network-zone="+testValue)
+		assert.Contains(t, podSpecs.Containers[0].Args, "--set-network_problems-zone="+testValue)
 
 		instance.Spec.NetworkZone = ""
 		podSpecs = dsInfo.podSpec()
-		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-network-zone="+testValue)
+		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-network_problems-zone="+testValue)
 	})
 	t.Run(`has webhook injection arg`, func(t *testing.T) {
 		daemonset, _ := dsInfo.BuildDaemonSet()

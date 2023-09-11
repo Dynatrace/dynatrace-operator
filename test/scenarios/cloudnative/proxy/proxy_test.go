@@ -1,6 +1,6 @@
 //go:build e2e
 
-package activegateproxy
+package cloudnativeproxy
 
 import (
 	"testing"
@@ -9,7 +9,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/istio"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/proxy"
-	"github.com/Dynatrace/dynatrace-operator/test/scenarios/activegate"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 )
@@ -17,7 +16,7 @@ import (
 var testEnvironment env.Environment
 
 func TestMain(m *testing.M) {
-	log.SetLogger(logger.Factory.GetLogger("e2e-activegate-proxy"))
+	log.SetLogger(logger.Factory.GetLogger("e2e-cloudnative-proxy"))
 
 	testEnvironment = environment.Get()
 	testEnvironment.BeforeEachTest(istio.AssertIstioNamespace())
@@ -25,6 +24,6 @@ func TestMain(m *testing.M) {
 	testEnvironment.Run(m)
 }
 
-func TestActiveGateProxy(t *testing.T) {
-	testEnvironment.Test(t, activegate.Install(t, proxy.ProxySpec))
+func TestWithProxy(t *testing.T) {
+	testEnvironment.Test(t, withProxy(t, proxy.ProxySpec))
 }

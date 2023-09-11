@@ -1,6 +1,6 @@
 //go:build e2e
 
-package basic
+package _default
 
 import (
 	"testing"
@@ -14,11 +14,11 @@ import (
 var testEnvironment env.Environment
 
 func TestMain(m *testing.M) {
-	log.SetLogger(logger.Factory.GetLogger("e2e-cloudnative-basic"))
+	log.SetLogger(logger.Factory.GetLogger("e2e-cloudnative-default"))
 	testEnvironment = environment.Get()
 	testEnvironment.Run(m)
 }
 
-func TestCloudNative(t *testing.T) {
-	testEnvironment.Test(t, Install(t, false))
+func TestDefault(t *testing.T) {
+	testEnvironment.Test(t, Default(t, false))
 }

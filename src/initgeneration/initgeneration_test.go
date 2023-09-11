@@ -345,7 +345,7 @@ func TestCreateSecretConfigForDynaKube(t *testing.T) {
 	t.Run("Create SecretConfig with networkZone", func(t *testing.T) {
 		dynakube := baseDynakube.DeepCopy()
 		expectedSecretConfig := *baseExpectedSecretConfig
-		networkZone := "test-network"
+		networkZone := "test-network_problems"
 		dynakube.Spec.NetworkZone = networkZone
 		expectedSecretConfig.NetworkZone = networkZone
 

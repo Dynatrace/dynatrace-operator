@@ -20,6 +20,6 @@ func TestMain(m *testing.M) {
 	testEnvironment.Run(m)
 }
 
-func TestCloudNative(t *testing.T) {
-	testEnvironment.Test(t, Install(t, "classic to cloud native upgrade"))
+func TestSwitchModes(t *testing.T) {
+	testEnvironment.Test(t, SwitchModes(t, "classic to cloud native upgrade"))
 }

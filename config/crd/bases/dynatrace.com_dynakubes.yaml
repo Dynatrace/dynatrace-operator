@@ -2014,7 +2014,7 @@ spec:
                 type: object
                 x-kubernetes-map-type: atomic
               networkZone:
-                description: Sets a network zone for the OneAgent and ActiveGate pods.
+                description: Sets a network_problems zone for the OneAgent and ActiveGate pods.
                 type: string
               oneAgent:
                 description: General configuration about OneAgent instances. You can't

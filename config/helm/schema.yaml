@@ -232,7 +232,7 @@ properties:
 
   webhook.hostNetwork:
     type: boolean
-    title: Webhook uses Host network
+    title: Webhook uses Host network_problems
     description: |
       Allows the webhook to connect with and use the same network as the node.
       May alleviate issues with container network interfaces (CNI).

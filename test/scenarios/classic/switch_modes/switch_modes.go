@@ -21,7 +21,7 @@ const (
 	sampleAppsCloudNativeName = "sample-apps-cloud-native"
 )
 
-func Install(t *testing.T, name string) features.Feature {
+func SwitchModes(t *testing.T, name string) features.Feature {
 	featureBuilder := features.New(name)
 
 	// build classic full stack dynakube

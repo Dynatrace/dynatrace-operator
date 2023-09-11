@@ -20,6 +20,6 @@ func TestMain(m *testing.M) {
 	testEnvironment.Run(m)
 }
 
-func TestCloudNative(t *testing.T) {
+func TestSpecificAgentVersion(t *testing.T) {
 	testEnvironment.Test(t, specificAgentVersion(t))
 }

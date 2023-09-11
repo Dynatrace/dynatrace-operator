@@ -26,7 +26,7 @@ const (
 	sampleAppNamespace = "appmon-sample"
 )
 
-func withoutCSIDriver(t *testing.T) features.Feature {
+func appOnlyWithoutCSI(t *testing.T) features.Feature {
 	builder := features.New("application monitoring without csi driver enabled")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	defaultDynakubeName := "dynakube"

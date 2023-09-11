@@ -110,7 +110,7 @@ type DynaKubeSpec struct { // nolint:revive
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Trusted CAs",order=6,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:ConfigMap"}
 	TrustedCAs string `json:"trustedCAs,omitempty"`
 
-	// Sets a network zone for the OneAgent and ActiveGate pods.
+	// Sets a network_problems zone for the OneAgent and ActiveGate pods.
 	// +optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Network Zone",order=7,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	NetworkZone string `json:"networkZone,omitempty"`

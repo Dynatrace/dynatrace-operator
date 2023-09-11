@@ -19,7 +19,7 @@ func TestMain(m *testing.M) {
 	testEnvironment.Run(m)
 }
 
-func TestApplicationMonitoring(t *testing.T) {
+func TestDataIngest(t *testing.T) {
 	testEnvironment.Test(t, dataIngest(t))
 }
 
@@ -32,5 +32,5 @@ func TestReadOnlyCSIVolume(t *testing.T) {
 }
 
 func TestAppOnlyWithoutCSI(t *testing.T) {
-	testEnvironment.Test(t, withoutCSIDriver(t))
+	testEnvironment.Test(t, appOnlyWithoutCSI(t))
 }

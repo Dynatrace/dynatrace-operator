@@ -29,7 +29,7 @@ func Test_GetActiveGateConnectionInfo(t *testing.T) {
 			Endpoints:   testEndpoint,
 		},
 	}
-	t.Run("no network zone", func(t *testing.T) {
+	t.Run("no network_problems zone", func(t *testing.T) {
 		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(activeGateConnectionInfoEndpoint, activegateJsonResponse), "")
 		defer dynatraceServer.Close()
 
@@ -39,7 +39,7 @@ func Test_GetActiveGateConnectionInfo(t *testing.T) {
 
 		assert.Equal(t, expectedActivegateConnectionInfo, connectionInfo)
 	})
-	t.Run("with network zone", func(t *testing.T) {
+	t.Run("with network_problems zone", func(t *testing.T) {
 		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(activeGateConnectionInfoEndpoint, activegateJsonResponse), "nz")
 		defer dynatraceServer.Close()
 
@@ -49,7 +49,7 @@ func Test_GetActiveGateConnectionInfo(t *testing.T) {
 
 		assert.Equal(t, expectedActivegateConnectionInfo, connectionInfo)
 	})
-	t.Run("with non-existent network zone", func(t *testing.T) {
+	t.Run("with non-existent network_problems zone", func(t *testing.T) {
 		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(activeGateConnectionInfoEndpoint, activegateJsonResponse), "")
 		defer dynatraceServer.Close()
 

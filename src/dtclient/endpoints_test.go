@@ -13,12 +13,12 @@ func Test_dynatraceClient_getOneAgentConnectionInfoUrl(t *testing.T) {
 		want        string
 	}{
 		{
-			name:        "with network zone",
+			name:        "with network_problems zone",
 			networkZone: "mynetworkzone",
 			want:        "https://testenvironment.live.dynatrace.com/api/v1/deployment/installer/agent/connectioninfo?networkZone=mynetworkzone&defaultZoneFallback=true",
 		},
 		{
-			name:        "without network zone",
+			name:        "without network_problems zone",
 			networkZone: "",
 			want:        "https://testenvironment.live.dynatrace.com/api/v1/deployment/installer/agent/connectioninfo",
 		},
@@ -44,12 +44,12 @@ func Test_dynatraceClient_getActiveGateConnectionInfoUrl(t *testing.T) {
 		want        string
 	}{
 		{
-			name:        "with network zone",
+			name:        "with network_problems zone",
 			networkZone: "mynetworkzone",
 			want:        "https://testenvironment.live.dynatrace.com/api/v1/deployment/installer/gateway/connectioninfo?networkZone=mynetworkzone",
 		},
 		{
-			name:        "without network zone",
+			name:        "without network_problems zone",
 			networkZone: "",
 			want:        "https://testenvironment.live.dynatrace.com/api/v1/deployment/installer/gateway/connectioninfo",
 		},

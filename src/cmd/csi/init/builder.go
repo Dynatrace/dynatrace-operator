@@ -57,7 +57,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 
 		csiManager, err := createManager(builder.namespace, kubeConfig)
 		if err != nil {
-			log.Info("failed to create/configure kubernetes client, will only run non-network related corrections and checks", "err", err.Error())
+			log.Info("failed to create/configure kubernetes client, will only run non-network_problems related corrections and checks", "err", err.Error())
 		}
 
 		err = createCsiDataPath(afero.NewOsFs())

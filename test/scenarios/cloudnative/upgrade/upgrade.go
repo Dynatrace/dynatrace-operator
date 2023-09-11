@@ -1,6 +1,6 @@
 //go:build e2e
 
-package cloudnative
+package upgrade
 
 import (
 	"testing"
