@@ -23,6 +23,9 @@ All network policies in compliance with the operator can be found in `assets/cal
 
 ### Ingress
 
+- `TCP 80`: Default HTTP
+- `TCP 443`: Default HTTPS
+
 #### dynatrace-operator
 
 - `TCP 8383`: Webhook server metrics
@@ -36,7 +39,14 @@ All network policies in compliance with the operator can be found in `assets/cal
 - `TCP 9999`: HTTPS container port
 - `TCP 9998`: HTTP container port
 
+#### csi-driver
+
+- `TCP 10090`: CSI-Driver provisioner
+
 ### Egress
+
+- `TCP 80`: Default HTTP
+- `TCP 443`: Default HTTPS
 
 #### dynatrace-operator
 
@@ -45,7 +55,6 @@ All network policies in compliance with the operator can be found in `assets/cal
 - `TCP 8443`: Webhook server port
 - `TCP 8080`: CSI-Driver server metrics
 - `TCP 10080`: CSI-Driver probe
-- `TCP 443`: External via HTTPS
 
 #### kube-system
 

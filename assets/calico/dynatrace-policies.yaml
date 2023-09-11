@@ -17,6 +17,11 @@ spec:
     - ipBlock:
         cidr: 0.0.0.0/0
     ports:
+    # default HTTP/HTTPS
+    - protocol: TCP
+      port: 80
+    - protocol: TCP
+      port: 443
     # from webhook ports
     - protocol: TCP
       port: 8383
@@ -29,13 +34,18 @@ spec:
       port: 8080
     - protocol: TCP
       port: 10080
+    # csi driver provisioner port
+    - protocol: TCP
+      port: 10090
   egress:
   - to:
     # to any ip
     - ipBlock:
         cidr: 0.0.0.0/0
     ports:
-    # to external via HTTPS
+    # default HTTP/HTTPS
+    - protocol: TCP
+      port: 80
     - protocol: TCP
       port: 443
     # to webhook ports
