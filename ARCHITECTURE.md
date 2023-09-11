@@ -16,6 +16,7 @@ graph LR
     classDef dk1 stroke:#f00
     classDef dk2 stroke:#0f0
     classDef dk3 stroke:#00f
+```
 
 On a very high level, what the operator does is for a given `CustomResource`(CR) provided by the user, the `Operator` will deploy _one or several_ Dynatrace components into the Kubernetes Environment.
 
