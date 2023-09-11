@@ -3,7 +3,7 @@ This document describes the high-level architecture of `Dynatrace Operator`.
 If you want to familiarize yourself with the code base, you are just in the right place!
 
 ## Bird's Eye View
-<picture-here>
+![image](https://github.com/Dynatrace/dynatrace-operator/assets/31651557/ebc8973d-2c2c-4f9a-af32-0503b65e47af)
 
 On a very high level, what the operator does is for a given `CustomResource`(CR) provided by the user, the `Operator` will deploy _one or several_ Dynatrace components into the Kubernetes Environment.
 
