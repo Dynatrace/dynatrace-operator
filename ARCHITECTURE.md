@@ -5,7 +5,7 @@ If you want to familiarize yourself with the code base, you are just in the righ
 ## Bird's Eye View
 ```mermaid
 graph LR
-    A[fa:fa-user User] -->|Creates| B(fa:fa-file CR)
+    A[fa:fa-user User] -->|creates| B(fa:fa-file CR)
     subgraph kubernetes
     B --> |triggers| C(fa:fa-wrench Operator)
     C -->|deploys| D[Dynatrace-Component-1]:::dk1
