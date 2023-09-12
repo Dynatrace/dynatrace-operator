@@ -19,9 +19,9 @@ type ClientBuilder func(config *rest.Config, scheme *runtime.Scheme, namespace s
 
 // Client - an adapter for the external istioclientset library
 type Client struct {
-	IstioClient istioclientset.Interface
-	Scheme      *runtime.Scheme
-	Namespace   string
+	IstioClientset istioclientset.Interface
+	Scheme         *runtime.Scheme
+	Namespace      string
 }
 
 func NewClient(config *rest.Config, scheme *runtime.Scheme, namespace string) (*Client, error) {
@@ -32,9 +32,9 @@ func NewClient(config *rest.Config, scheme *runtime.Scheme, namespace string) (*
 		return nil, errors.WithStack(err)
 	}
 	return &Client{
-		IstioClient: istioClient,
-		Scheme:      scheme,
-		Namespace:   namespace,
+		IstioClientset: istioClient,
+		Scheme:         scheme,
+		Namespace:      namespace,
 	}, nil
 }
 
@@ -42,11 +42,11 @@ var _ ClientBuilder = NewClient
 
 // TODO: Maybe move whole check here
 func (cl *Client) Discovery() discovery.DiscoveryInterface {
-	return cl.IstioClient.Discovery()
+	return cl.IstioClientset.Discovery()
 }
 
 func (cl *Client) GetVirtualService(ctx context.Context, name string) (*istiov1alpha3.VirtualService, error) {
-	virtualService, err := cl.IstioClient.NetworkingV1alpha3().VirtualServices(cl.Namespace).Get(ctx, name, metav1.GetOptions{})
+	virtualService, err := cl.IstioClientset.NetworkingV1alpha3().VirtualServices(cl.Namespace).Get(ctx, name, metav1.GetOptions{})
 	if k8serrors.IsNotFound(err) {
 		return nil, nil
 	} else if err != nil {
@@ -56,7 +56,7 @@ func (cl *Client) GetVirtualService(ctx context.Context, name string) (*istiov1a
 	return virtualService, nil
 }
 
-func (cl *Client) ApplyVirtualService(ctx context.Context, owner metav1.Object, newVirtualService *istiov1alpha3.VirtualService) error {
+func (cl *Client) CreateOrUpdateVirtualService(ctx context.Context, owner metav1.Object, newVirtualService *istiov1alpha3.VirtualService) error {
 	err := kubeobjects.AddHashAnnotation(newVirtualService)
 	if err != nil {
 		return errors.WithMessage(err, "failed to generate and hash annotation for virtual service")
@@ -80,7 +80,7 @@ func (cl *Client) createVirtualService(ctx context.Context, owner metav1.Object,
 	if err := controllerutil.SetControllerReference(owner, virtualService, cl.Scheme); err != nil {
 		return errors.WithStack(err)
 	}
-	_, err := cl.IstioClient.NetworkingV1alpha3().VirtualServices(cl.Namespace).Create(ctx, virtualService, metav1.CreateOptions{})
+	_, err := cl.IstioClientset.NetworkingV1alpha3().VirtualServices(cl.Namespace).Create(ctx, virtualService, metav1.CreateOptions{})
 	if err != nil {
 		log.Info("failed to create virtual service", "name", virtualService.GetName(), "error", err.Error())
 		return errors.WithStack(err)
@@ -93,7 +93,7 @@ func (cl *Client) updateVirtualService(ctx context.Context, oldVirtualService, n
 		return errors.New("can't update service entry based on nil object")
 	}
 	newVirtualService.ObjectMeta.ResourceVersion = oldVirtualService.ObjectMeta.ResourceVersion
-	_, err := cl.IstioClient.NetworkingV1alpha3().VirtualServices(cl.Namespace).Update(ctx, newVirtualService, metav1.UpdateOptions{})
+	_, err := cl.IstioClientset.NetworkingV1alpha3().VirtualServices(cl.Namespace).Update(ctx, newVirtualService, metav1.UpdateOptions{})
 	if err != nil {
 		log.Info("failed to update virtual service", "name", newVirtualService.GetName(), "error", err.Error())
 		return errors.WithStack(err)
@@ -102,7 +102,7 @@ func (cl *Client) updateVirtualService(ctx context.Context, oldVirtualService, n
 }
 
 func (cl *Client) DeleteVirtualService(ctx context.Context, name string) error {
-	err := cl.IstioClient.NetworkingV1alpha3().
+	err := cl.IstioClientset.NetworkingV1alpha3().
 		VirtualServices(cl.Namespace).
 		Delete(ctx, name, metav1.DeleteOptions{})
 	if !k8serrors.IsNotFound(err) {
@@ -113,7 +113,7 @@ func (cl *Client) DeleteVirtualService(ctx context.Context, name string) error {
 }
 
 func (cl *Client) GetServiceEntry(ctx context.Context, name string) (*istiov1alpha3.ServiceEntry, error) {
-	serviceEntry, err := cl.IstioClient.NetworkingV1alpha3().ServiceEntries(cl.Namespace).Get(ctx, name, metav1.GetOptions{})
+	serviceEntry, err := cl.IstioClientset.NetworkingV1alpha3().ServiceEntries(cl.Namespace).Get(ctx, name, metav1.GetOptions{})
 	if k8serrors.IsNotFound(err) {
 		return nil, nil
 	} else if err != nil {
@@ -123,7 +123,7 @@ func (cl *Client) GetServiceEntry(ctx context.Context, name string) (*istiov1alp
 	return serviceEntry, nil
 }
 
-func (cl *Client) ApplyServiceEntry(ctx context.Context, owner metav1.Object, newServiceEntry *istiov1alpha3.ServiceEntry) error {
+func (cl *Client) CreateOrUpdateServiceEntry(ctx context.Context, owner metav1.Object, newServiceEntry *istiov1alpha3.ServiceEntry) error {
 	err := kubeobjects.AddHashAnnotation(newServiceEntry)
 	if err != nil {
 		return errors.WithMessage(err, "failed to generate and hash annotation for service entry")
@@ -147,7 +147,7 @@ func (cl *Client) createServiceEntry(ctx context.Context, owner metav1.Object, s
 	if err := controllerutil.SetControllerReference(owner, serviceEntry, cl.Scheme); err != nil {
 		return errors.WithStack(err)
 	}
-	_, err := cl.IstioClient.NetworkingV1alpha3().ServiceEntries(cl.Namespace).Create(ctx, serviceEntry, metav1.CreateOptions{})
+	_, err := cl.IstioClientset.NetworkingV1alpha3().ServiceEntries(cl.Namespace).Create(ctx, serviceEntry, metav1.CreateOptions{})
 	if err != nil {
 		log.Info("failed to create service entry", "name", serviceEntry.GetName(), "error", err.Error())
 		return errors.WithStack(err)
@@ -160,7 +160,7 @@ func (cl *Client) updateServiceEntry(ctx context.Context, oldServiceEntry, newSe
 		return errors.New("can't update service entry based on nil object")
 	}
 	newServiceEntry.ObjectMeta.ResourceVersion = oldServiceEntry.ObjectMeta.ResourceVersion
-	_, err := cl.IstioClient.NetworkingV1alpha3().ServiceEntries(cl.Namespace).Update(ctx, newServiceEntry, metav1.UpdateOptions{})
+	_, err := cl.IstioClientset.NetworkingV1alpha3().ServiceEntries(cl.Namespace).Update(ctx, newServiceEntry, metav1.UpdateOptions{})
 	if err != nil {
 		log.Info("failed to update service entry", "name", newServiceEntry.GetName(), "error", err.Error())
 		return errors.WithStack(err)
@@ -169,7 +169,7 @@ func (cl *Client) updateServiceEntry(ctx context.Context, oldServiceEntry, newSe
 }
 
 func (cl *Client) DeleteServiceEntry(ctx context.Context, name string) error {
-	err := cl.IstioClient.NetworkingV1alpha3().
+	err := cl.IstioClientset.NetworkingV1alpha3().
 		ServiceEntries(cl.Namespace).
 		Delete(ctx, name, metav1.DeleteOptions{})
 	if !k8serrors.IsNotFound(err) {

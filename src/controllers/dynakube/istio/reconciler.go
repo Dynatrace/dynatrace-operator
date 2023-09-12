@@ -94,7 +94,7 @@ func (r *Reconciler) reconcileIPServiceEntry(ctx context.Context, owner metav1.O
 		)
 
 		serviceEntry := buildServiceEntryIPs(meta, ipHosts)
-		err := r.client.ApplyServiceEntry(ctx, owner, serviceEntry)
+		err := r.client.CreateOrUpdateServiceEntry(ctx, owner, serviceEntry)
 		if err != nil {
 			return err
 		}
@@ -121,13 +121,13 @@ func (r *Reconciler) reconcileFQDNServiceEntry(ctx context.Context, owner metav1
 		)
 
 		serviceEntry := buildServiceEntryFQDNs(meta, fqdnHosts)
-		err := r.client.ApplyServiceEntry(ctx, owner, serviceEntry)
+		err := r.client.CreateOrUpdateServiceEntry(ctx, owner, serviceEntry)
 		if err != nil {
 			return err
 		}
 
 		virtualService := buildVirtualService(meta, fqdnHosts)
-		err = r.client.ApplyVirtualService(ctx, owner, virtualService)
+		err = r.client.CreateOrUpdateVirtualService(ctx, owner, virtualService)
 		if err != nil {
 			return err
 		}

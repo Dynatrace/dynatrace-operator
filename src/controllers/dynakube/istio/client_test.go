@@ -19,9 +19,9 @@ import (
 
 func newTestingClient(fakeClient *fakeistio.Clientset, namespace string) *Client {
 	return &Client{
-		IstioClient: fakeClient,
-		Namespace:   namespace,
-		Scheme:      scheme.Scheme,
+		IstioClientset: fakeClient,
+		Namespace:      namespace,
+		Scheme:         scheme.Scheme,
 	}
 }
 
@@ -178,7 +178,7 @@ func TestUpdateVirtualService(t *testing.T) {
 	})
 }
 
-func TestApplyVirtualService(t *testing.T) {
+func TestCreateOrUpdateVirtualService(t *testing.T) {
 	ctx := context.Background()
 	t.Run("create", func(t *testing.T) {
 		owner := createTestOwner()
@@ -186,7 +186,7 @@ func TestApplyVirtualService(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
 		client := newTestingClient(fakeClient, expectedVirtualService.Namespace)
 
-		err := client.ApplyVirtualService(ctx, owner, expectedVirtualService)
+		err := client.CreateOrUpdateVirtualService(ctx, owner, expectedVirtualService)
 
 		require.NoError(t, err)
 		// Get, Create
@@ -212,7 +212,7 @@ func TestApplyVirtualService(t *testing.T) {
 			"test": "test",
 		}
 		newVirtualService.Labels = addedLabels
-		err := client.ApplyVirtualService(ctx, owner, newVirtualService)
+		err := client.CreateOrUpdateVirtualService(ctx, owner, newVirtualService)
 
 		require.NoError(t, err)
 		// Get, Update
@@ -235,7 +235,7 @@ func TestApplyVirtualService(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset(oldVirtualService)
 		client := newTestingClient(fakeClient, oldVirtualService.Namespace)
 
-		err = client.ApplyVirtualService(ctx, owner, newVirtualService)
+		err = client.CreateOrUpdateVirtualService(ctx, owner, newVirtualService)
 		require.NoError(t, err)
 		// Get
 		assert.Len(t, fakeClient.Actions(), 1)
@@ -247,7 +247,7 @@ func TestApplyVirtualService(t *testing.T) {
 		client := newTestingClient(fakeClient, owner.GetNamespace())
 		newVirtualService := createTestEmptyVirtualService()
 
-		err := client.ApplyVirtualService(ctx, owner, newVirtualService)
+		err := client.CreateOrUpdateVirtualService(ctx, owner, newVirtualService)
 
 		require.Error(t, err)
 		assert.Len(t, fakeClient.Actions(), 1)
@@ -256,7 +256,7 @@ func TestApplyVirtualService(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
 		client := newTestingClient(fakeClient, "something")
 
-		err := client.ApplyVirtualService(ctx, nil, nil)
+		err := client.CreateOrUpdateVirtualService(ctx, nil, nil)
 
 		require.Error(t, err)
 	})
@@ -444,7 +444,7 @@ func TestUpdateServiceEntry(t *testing.T) {
 	})
 }
 
-func TestApplyServiceEntry(t *testing.T) {
+func TestCreateOrUpdateServiceEntry(t *testing.T) {
 	ctx := context.Background()
 	t.Run("create", func(t *testing.T) {
 		owner := createTestOwner()
@@ -452,7 +452,7 @@ func TestApplyServiceEntry(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
 		client := newTestingClient(fakeClient, expectedServiceEntry.Namespace)
 
-		err := client.ApplyServiceEntry(ctx, owner, expectedServiceEntry)
+		err := client.CreateOrUpdateServiceEntry(ctx, owner, expectedServiceEntry)
 
 		require.NoError(t, err)
 		// Get, Create
@@ -478,7 +478,7 @@ func TestApplyServiceEntry(t *testing.T) {
 			"test": "test",
 		}
 		newServiceEntry.Labels = addedLabels
-		err := client.ApplyServiceEntry(ctx, owner, newServiceEntry)
+		err := client.CreateOrUpdateServiceEntry(ctx, owner, newServiceEntry)
 
 		require.NoError(t, err)
 		// Get, Update
@@ -501,7 +501,7 @@ func TestApplyServiceEntry(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset(oldServiceEntry)
 		client := newTestingClient(fakeClient, oldServiceEntry.Namespace)
 
-		err = client.ApplyServiceEntry(ctx, owner, newServiceEntry)
+		err = client.CreateOrUpdateServiceEntry(ctx, owner, newServiceEntry)
 		require.NoError(t, err)
 		// Get
 		assert.Len(t, fakeClient.Actions(), 1)
@@ -513,7 +513,7 @@ func TestApplyServiceEntry(t *testing.T) {
 		client := newTestingClient(fakeClient, owner.GetNamespace())
 		newServiceEntry := createTestEmptyServiceEntry()
 
-		err := client.ApplyServiceEntry(ctx, owner, newServiceEntry)
+		err := client.CreateOrUpdateServiceEntry(ctx, owner, newServiceEntry)
 
 		require.Error(t, err)
 		assert.Len(t, fakeClient.Actions(), 1)
@@ -522,7 +522,7 @@ func TestApplyServiceEntry(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
 		client := newTestingClient(fakeClient, "something")
 
-		err := client.ApplyServiceEntry(ctx, nil, nil)
+		err := client.CreateOrUpdateServiceEntry(ctx, nil, nil)
 
 		require.Error(t, err)
 	})

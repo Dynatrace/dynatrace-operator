@@ -1089,9 +1089,9 @@ func fakeIstioClientBuilder(t *testing.T, fakeIstio *fakeistio.Clientset, isIsti
 			}
 		}
 		return &istio.Client{
-			IstioClient: fakeIstio,
-			Scheme:      scheme,
-			Namespace:   namespace,
+			IstioClientset: fakeIstio,
+			Scheme:         scheme,
+			Namespace:      namespace,
 		}, nil
 	}
 }
