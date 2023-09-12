@@ -39,7 +39,7 @@ func appendOperatorVersionArg(args []string) []string {
 
 func (dsInfo *builderInfo) appendNetworkZoneArg(args []string) []string {
 	if dsInfo.dynakube != nil && dsInfo.dynakube.Spec.NetworkZone != "" {
-		return append(args, fmt.Sprintf("--set-network_problems-zone=%s", dsInfo.dynakube.Spec.NetworkZone))
+		return append(args, fmt.Sprintf("--set-network-zone=%s", dsInfo.dynakube.Spec.NetworkZone))
 	}
 	return args
 }

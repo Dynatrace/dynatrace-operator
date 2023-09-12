@@ -68,7 +68,7 @@ func TestGetDigest(t *testing.T) {
 		wantErr assert.ErrorAssertionFunc
 	}{
 		{
-			name:    "default digest from url",
+			name:    "basic digest from url",
 			args:    args{uri: "test:5000/repo@sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"},
 			want:    "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
 			wantErr: assert.NoError,

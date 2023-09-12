@@ -110,7 +110,7 @@ type mutateTestCase struct {
 func TestMutate(t *testing.T) {
 	testCases := []mutateTestCase{
 		{
-			name:                                   "default, should mutate the pod and init container in the request",
+			name:                                   "basic, should mutate the pod and init container in the request",
 			dynakube:                               *getTestDynakube(),
 			expectedAdditionalEnvCount:             2, // 1 deployment-metadata + 1 preload
 			expectedAdditionalVolumeCount:          3, // bin, share, injection-config
@@ -120,13 +120,13 @@ func TestMutate(t *testing.T) {
 		{
 			name:                                   "everything turned on, should mutate the pod and init container in the request",
 			dynakube:                               *getTestComplexDynakube(),
-			expectedAdditionalEnvCount:             5, // 1 deployment-metadata + 1 network_problems-zone + 1 preload + 2 version-detection
+			expectedAdditionalEnvCount:             5, // 1 deployment-metadata + 1 network-zone + 1 preload + 2 version-detection
 			expectedAdditionalVolumeCount:          3, // bin, share, injection-config
 			expectedAdditionalVolumeMountCount:     5, // 3 oneagent mounts(preload,bin,conf) + 1 cert mount + 1 curl-options
 			expectedAdditionalInitVolumeMountCount: 3, // bin, share, injection-config
 		},
 		{
-			name:                                   "default + readonly-csi, should mutate the pod and init container in the request",
+			name:                                   "basic + readonly-csi, should mutate the pod and init container in the request",
 			dynakube:                               *getTestReadOnlyCSIDynakube(),
 			expectedAdditionalEnvCount:             2, // 1 deployment-metadata + 1 preload
 			expectedAdditionalVolumeCount:          6, // bin, share, injection-config +  agent-conf, data-storage, agent-log
@@ -175,7 +175,7 @@ type reinvokeTestCase struct {
 func TestReinvoke(t *testing.T) {
 	testCases := []reinvokeTestCase{
 		{
-			name:                               "default, should mutate the pod and init container in the request",
+			name:                               "basic, should mutate the pod and init container in the request",
 			dynakube:                           *getTestDynakube(),
 			expectedAdditionalEnvCount:         2, // 1 deployment-metadata + 1 preload
 			expectedAdditionalVolumeMountCount: 3, // 3 oneagent mounts(preload,bin,conf)
@@ -183,11 +183,11 @@ func TestReinvoke(t *testing.T) {
 		{
 			name:                               "everything turned on, should mutate the pod and init container in the request",
 			dynakube:                           *getTestComplexDynakube(),
-			expectedAdditionalEnvCount:         5, // 1 deployment-metadata + 1 network_problems-zone + 1 preload + 2 version-detection
+			expectedAdditionalEnvCount:         5, // 1 deployment-metadata + 1 network-zone + 1 preload + 2 version-detection
 			expectedAdditionalVolumeMountCount: 5, // 3 oneagent mounts(preload,bin,conf) + 1 cert mount + 1 curl-options
 		},
 		{
-			name:                               "default + readonly-csi, should mutate the pod and init container in the request",
+			name:                               "basic + readonly-csi, should mutate the pod and init container in the request",
 			dynakube:                           *getTestReadOnlyCSIDynakube(),
 			expectedAdditionalEnvCount:         2, // 1 deployment-metadata + 1 preload
 			expectedAdditionalVolumeMountCount: 6, // 3 oneagent mounts(preload,bin,conf) +3 oneagent mounts for readonly csi (agent-conf,data-storage,agent-log)
@@ -312,7 +312,7 @@ func getTestDynakubeMeta() metav1.ObjectMeta {
 func getTestComplexDynakube() *dynatracev1beta1.DynaKube {
 	dynakube := getTestCSIDynakube()
 	dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: "test-proxy"}
-	dynakube.Spec.NetworkZone = "test-network_problems-zone"
+	dynakube.Spec.NetworkZone = "test-network-zone"
 	dynakube.Spec.ActiveGate = dynatracev1beta1.ActiveGateSpec{
 		Capabilities:  []dynatracev1beta1.CapabilityDisplayName{dynatracev1beta1.KubeMonCapability.DisplayName},
 		TlsSecretName: "super-secret",

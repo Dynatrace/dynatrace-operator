@@ -27,7 +27,7 @@ func createTestDynakubeWithProxy(proxy dynatracev1beta1.DynaKubeProxy) *dynatrac
 }
 
 func TestOptions(t *testing.T) {
-	t.Run(`Test append network_problems zone`, func(t *testing.T) {
+	t.Run(`Test append network zone`, func(t *testing.T) {
 		opts := newOptions(context.Background())
 
 		assert.NotNil(t, opts)

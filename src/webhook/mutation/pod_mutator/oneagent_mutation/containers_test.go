@@ -81,7 +81,7 @@ func TestMutateUserContainers(t *testing.T) {
 		{
 			name:                               "add envs and volume mounts (complex dynakube)",
 			dynakube:                           *getTestComplexDynakube(),
-			expectedAdditionalEnvCount:         5, // 1 deployment-metadata + 1 network_problems-zone + 1 preload + 2 version-detection
+			expectedAdditionalEnvCount:         5, // 1 deployment-metadata + 1 network-zone + 1 preload + 2 version-detection
 			expectedAdditionalVolumeMountCount: 5, // 3 oneagent mounts(preload,bin,conf) + 1 cert mount + 1 curl-options
 		},
 		{
@@ -120,7 +120,7 @@ func TestReinvokeUserContainers(t *testing.T) {
 		{
 			name:                               "add envs and volume mounts (complex dynakube)",
 			dynakube:                           *getTestComplexDynakube(),
-			expectedAdditionalEnvCount:         5, // 1 deployment-metadata + 1 network_problems-zone + 1 preload + 2 version-detection
+			expectedAdditionalEnvCount:         5, // 1 deployment-metadata + 1 network-zone + 1 preload + 2 version-detection
 			expectedAdditionalVolumeMountCount: 5, // 3 oneagent mounts(preload,bin,conf) + 1 cert mount + 1 curl-options
 		},
 		{

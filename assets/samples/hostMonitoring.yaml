@@ -38,7 +38,7 @@ spec:
   # Optional: Sets Network Zone for OneAgent and ActiveGate pods
   # Make sure networkZones are enabled on your cluster before (see https://www.dynatrace.com/support/help/setup-and-configuration/network-zones/network-zones-basic-info/)
   #
-  # networkZone: name-of-my-network_problems-zone
+  # networkZone: name-of-my-network-zone
 
   # Optional: Defines a custom pull secret in case you use a private registry when pulling images from the Dynatrace environment
   # The secret has to be of type 'kubernetes.io/dockerconfigjson' (see https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/)

@@ -14,7 +14,7 @@ const (
 	CSIVolumeAttributeDynakubeField = "dynakube"
 )
 
-// Represents the default information about a volume
+// Represents the basic information about a volume
 type VolumeInfo struct {
 	VolumeID   string
 	TargetPath string
