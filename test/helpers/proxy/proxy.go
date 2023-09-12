@@ -40,11 +40,11 @@ const (
 )
 
 var (
-	dynatraceNetworkPolicy = path.Join(project.TestDataDir(), "network_problems/dynatrace-denial.yaml")
+	dynatraceNetworkPolicy = path.Join(project.TestDataDir(), "network/dynatrace-denial.yaml")
 
-	proxyDeploymentPath             = path.Join(project.TestDataDir(), "network_problems/proxy.yaml")
-	proxyWithCustomCADeploymentPath = path.Join(project.TestDataDir(), "network_problems/proxy-ssl.yaml")
-	proxySCCPath                    = path.Join(project.TestDataDir(), "network_problems/proxy-scc.yaml")
+	proxyDeploymentPath             = path.Join(project.TestDataDir(), "network/proxy.yaml")
+	proxyWithCustomCADeploymentPath = path.Join(project.TestDataDir(), "network/proxy-ssl.yaml")
+	proxySCCPath                    = path.Join(project.TestDataDir(), "network/proxy-scc.yaml")
 
 	ProxySpec = &dynatracev1beta1.DynaKubeProxy{
 		Value: "http://squid.proxy.svc.cluster.local:3128",

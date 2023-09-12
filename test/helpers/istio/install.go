@@ -41,7 +41,7 @@ var InjectionLabel = map[string]string{
 	"istio-injection": "enabled",
 }
 
-var networkAttachmentPath = path.Join(project.TestDataDir(), "network_problems/ocp-istio-cni.yaml")
+var networkAttachmentPath = path.Join(project.TestDataDir(), "network/ocp-istio-cni.yaml")
 
 func enforceIstio() bool {
 	return os.Getenv(enforceIstioEnv) == "true"
