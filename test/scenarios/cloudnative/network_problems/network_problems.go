@@ -31,7 +31,7 @@ const (
 )
 
 var (
-	csiNetworkPolicy = path.Join(project.TestDataDir(), "network_problems/csi-denial.yaml")
+	csiNetworkPolicy = path.Join(project.TestDataDir(), "network/csi-denial.yaml")
 )
 
 func networkProblems(t *testing.T) features.Feature {

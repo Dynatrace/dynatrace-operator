@@ -32,5 +32,5 @@ func TestReadOnlyCSIVolume(t *testing.T) {
 }
 
 func TestAppOnlyWithoutCSI(t *testing.T) {
-	testEnvironment.Test(t, appOnlyWithoutCSI(t))
+	testEnvironment.Test(t, applicationMonitoringWithoutCSI(t))
 }
