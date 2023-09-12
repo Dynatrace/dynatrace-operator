@@ -35,7 +35,7 @@ var (
 )
 
 func networkProblems(t *testing.T) features.Feature {
-	builder := features.New("creating network_problems problems")
+	builder := features.New("creating network problems")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
 	testDynakube := dynakube.NewBuilder().
@@ -47,7 +47,7 @@ func networkProblems(t *testing.T) features.Feature {
 		}).
 		Build()
 
-	namespaceBuilder := namespace.NewBuilder("network_problems-problem-sample")
+	namespaceBuilder := namespace.NewBuilder("network-problem-sample")
 	sampleNamespace := namespaceBuilder.Build()
 	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
 	sampleApp.WithNamespace(sampleNamespace)
@@ -58,7 +58,7 @@ func networkProblems(t *testing.T) features.Feature {
 	operatorNamespaceBuilder = operatorNamespaceBuilder.WithLabels(istio.InjectionLabel)
 	assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), testDynakube)
 
-	// Register network_problems policy to block csi driver traffic
+	// Register network policy to block csi driver traffic
 	assess.InstallManifest(builder, csiNetworkPolicy)
 
 	// Register dynakube install
@@ -70,7 +70,7 @@ func networkProblems(t *testing.T) features.Feature {
 	// Register actual test
 	builder.Assess("check for dummy volume", checkForDummyVolume(sampleApp))
 
-	// Register network_problems-policy, sample, dynakube and operator uninstall
+	// Register network-policy, sample, dynakube and operator uninstall
 	teardown.UninstallManifest(builder, csiNetworkPolicy)
 	builder.Teardown(sampleApp.UninstallNamespace())
 	teardown.UninstallDynatrace(builder, testDynakube)
