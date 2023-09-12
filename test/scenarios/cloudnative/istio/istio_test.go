@@ -26,7 +26,7 @@ func TestMain(m *testing.M) {
 	testEnvironment.Run(m)
 }
 
-func TestIstioCodeModules(t *testing.T) {
+func TestIstioIntegration(t *testing.T) {
 	testEnvironment.Test(t, _default.Default(t, true))
 	testEnvironment.Test(t, codemodules.CodeModules(t, true))
 }

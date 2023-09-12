@@ -21,7 +21,7 @@ func TestMain(m *testing.M) {
 	testEnvironment.Run(m)
 }
 
-func TestCodeModules(t *testing.T) {
+func TestCodeModulesImages(t *testing.T) {
 	testEnvironment.Test(t, CodeModules(t, false))
 }
 
