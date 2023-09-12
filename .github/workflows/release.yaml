@@ -32,6 +32,7 @@ jobs:
     outputs:
       labels: ${{ steps.meta.outputs.labels }}
       version: ${{ steps.prep.outputs.docker_image_tag }}
+      version_without_prefix: ${{ steps.prep.outputs.docker_image_tag_without_prefix }}
 
   build:
     name: Build images
@@ -181,7 +182,7 @@ jobs:
           IMAGE: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}
         run: |
           hack/build/ci/get-image-digest.sh
-      - name: Sign manifests for ${{matrix.registry}}
+      - name: Sign images for ${{matrix.registry}}
         uses: ./.github/actions/sign-image
         with:
           image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{steps.digest.outputs.digest}}
@@ -248,13 +249,6 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        registry: [ dockerhub ]
-        include:
-          - registry: dockerhub
-            url: docker.io
-            repository: DOCKERHUB_REPOSITORY
     steps:
       - name: Checkout code
         uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
@@ -267,23 +261,38 @@ jobs:
         run: |
           hack/build/ci/install-cgo-dependencies.sh
       - name: Generate release notes
-        id: generate_notes
+        shell: bash
+        env:
+          PRE_RELEASE: ${{ contains(github.ref, '-rc.') }}
         run: |
           hack/build/ci/generate-release-notes.sh
       - name: Generate manifests
+        shell: bash
         env:
-          IMAGE: ${{ matrix.url }}/${{ secrets[matrix.repository] }}
-          TAG: ${{ needs.prepare.outputs.version }}
-          CHART_VERSION: ${{ needs.prepare.outputs.version }}
-        run: make manifests
-      - name: Rename manifests
+          VERSION_WITHOUT_PREFIX: ${{ needs.prepare.outputs.version_without_prefix }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          make manifests/crd/release CHART_VERSION="${VERSION_WITHOUT_PREFIX}"
+
+          make manifests/kubernetes IMAGE="docker.io/dynatrace/dynatrace-operator" TAG="${VERSION}"
+          make manifests/openshift IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator" TAG="${VERSION}"
+      - name: Rename manifests if pre-release
+        if: ${{ contains(github.ref, '-rc.') }}
         run: |
           mv config/deploy/kubernetes/kubernetes-all.yaml config/deploy/kubernetes/kubernetes.yaml
           mv config/deploy/openshift/openshift-all.yaml config/deploy/openshift/openshift.yaml
-      - name: Generate CRD
-        run: make manifests/crd/release
-      - name: Pre-release
+      - name: Build helm packages
+        if: ${{ contains(github.ref, '-rc.') }}
+        uses: ./.github/actions/build-helm
+        with:
+          version_without_prefix: ${{ needs.prepare.outputs.version_without_prefix }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          secring: ${{ secrets.HELM_SECRING }}
+          passphrase: ${{ secrets.HELM_PASSPHRASE }}
+          output-dir: "./helm-pkg"
+      - name: Create pre-release
         uses: softprops/action-gh-release@v1
+        if: ${{ contains(github.ref, '-rc.') }}
         with:
           body_path: ./CHANGELOG.md
           files: |
@@ -292,6 +301,24 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           prerelease: true
           draft: true
+          fail_on_unmatched_files: true
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        if: ${{ !contains(github.ref, '-rc.') }}
+        with:
+          body_path: ./CHANGELOG.md
+          files: |
+            config/deploy/kubernetes/kubernetes.yaml
+            config/deploy/kubernetes/kubernetes-csi.yaml
+            config/deploy/kubernetes/gke-autopilot.yaml
+            config/deploy/openshift/openshift.yaml
+            config/deploy/openshift/openshift-csi.yaml
+            helm-pkg/dynatrace-operator-${{ needs.prepare.outputs.version_without_prefix }}.tgz
+            helm-pkg/dynatrace-operator-${{ needs.prepare.outputs.version_without_prefix }}.tgz.prov
+          token: ${{ secrets.GITHUB_TOKEN }}
+          prerelease: false
+          draft: true
+          fail_on_unmatched_files: true
 
   snyk:
     name: Push tag to snyk
