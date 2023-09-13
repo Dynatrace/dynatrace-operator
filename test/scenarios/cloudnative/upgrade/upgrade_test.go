@@ -1,13 +1,12 @@
 //go:build e2e
 
-package activegatebasic
+package upgrade
 
 import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/logger"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
-	"github.com/Dynatrace/dynatrace-operator/test/scenarios/activegate"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 )
@@ -15,11 +14,12 @@ import (
 var testEnvironment env.Environment
 
 func TestMain(m *testing.M) {
-	log.SetLogger(logger.Factory.GetLogger("e2e-activegate-basic"))
+	log.SetLogger(logger.Factory.GetLogger("e2e-cloudnative-upgrade"))
+
 	testEnvironment = environment.Get()
 	testEnvironment.Run(m)
 }
 
-func TestActiveGate(t *testing.T) {
-	testEnvironment.Test(t, activegate.Install(t, nil))
+func TestUpgrade(t *testing.T) {
+	testEnvironment.Test(t, upgrade(t))
 }

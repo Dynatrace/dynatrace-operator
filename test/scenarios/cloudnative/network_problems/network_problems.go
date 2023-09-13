@@ -1,6 +1,6 @@
 //go:build e2e
 
-package network
+package network_problems
 
 import (
 	"context"

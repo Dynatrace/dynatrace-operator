@@ -1,6 +1,6 @@
 //go:build e2e
 
-package switch_modes
+package _default
 
 import (
 	"testing"
@@ -14,12 +14,11 @@ import (
 var testEnvironment env.Environment
 
 func TestMain(m *testing.M) {
-	log.SetLogger(logger.Factory.GetLogger("e2e-cloudnative-switch-modes"))
-
+	log.SetLogger(logger.Factory.GetLogger("e2e-cloudnative-default"))
 	testEnvironment = environment.Get()
 	testEnvironment.Run(m)
 }
 
-func TestSwitchModes(t *testing.T) {
-	testEnvironment.Test(t, switchModes(t, "switch mode from cloud native to classic"))
+func TestDefault(t *testing.T) {
+	testEnvironment.Test(t, Default(t, false))
 }

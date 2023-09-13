@@ -1,6 +1,6 @@
 //go:build e2e
 
-package cloudnative
+package specific_agent_version
 
 import (
 	"testing"
@@ -14,12 +14,12 @@ import (
 var testEnvironment env.Environment
 
 func TestMain(m *testing.M) {
-	log.SetLogger(logger.Factory.GetLogger("e2e-cloudnative-upgrade"))
+	log.SetLogger(logger.Factory.GetLogger("e2e-cloudnative-agent-version"))
 
 	testEnvironment = environment.Get()
 	testEnvironment.Run(m)
 }
 
-func TestCloudNative(t *testing.T) {
-	testEnvironment.Test(t, upgrade(t))
+func TestSpecificAgentVersion(t *testing.T) {
+	testEnvironment.Test(t, specificAgentVersion(t))
 }

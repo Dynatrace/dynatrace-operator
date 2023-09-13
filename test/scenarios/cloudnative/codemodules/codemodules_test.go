@@ -21,17 +21,17 @@ func TestMain(m *testing.M) {
 	testEnvironment.Run(m)
 }
 
-func TestCloudNative(t *testing.T) {
-	testEnvironment.Test(t, CodeModules(t, false))
+func TestCodeModulesImage(t *testing.T) {
+	testEnvironment.Test(t, InstallFromImage(t, false))
 }
 
-func TestCloudNativeWithProxy(t *testing.T) {
+func TestCodeModulesWithProxy(t *testing.T) {
 	testEnvironment.BeforeEachTest(istio.AssertIstioNamespace())
 	testEnvironment.BeforeEachTest(istio.AssertIstiodDeployment())
 	testEnvironment.Test(t, withProxy(t, proxy.ProxySpec))
 }
 
-func TestCloudNativeWithProxyCustomCA(t *testing.T) {
+func TestCodeModulesWithProxyCustomCA(t *testing.T) {
 	testEnvironment.BeforeEachTest(istio.AssertIstioNamespace())
 	testEnvironment.BeforeEachTest(istio.AssertIstiodDeployment())
 	testEnvironment.Test(t, withProxyCA(t, proxy.ProxySpec))
