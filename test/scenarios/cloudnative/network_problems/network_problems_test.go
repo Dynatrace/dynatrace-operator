@@ -1,11 +1,12 @@
 //go:build e2e
 
-package public_registry
+package network_problems
 
 import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/logger"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/istio"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/e2e-framework/pkg/env"
@@ -14,12 +15,14 @@ import (
 var testEnvironment env.Environment
 
 func TestMain(m *testing.M) {
-	log.SetLogger(logger.Factory.GetLogger("e2e-cloudnative-public-registry"))
+	log.SetLogger(logger.Factory.GetLogger("e2e-cloudnative-network_problems"))
 
 	testEnvironment = environment.Get()
+	testEnvironment.BeforeEachTest(istio.AssertIstioNamespace())
+	testEnvironment.BeforeEachTest(istio.AssertIstiodDeployment())
 	testEnvironment.Run(m)
 }
 
-func TestCloudNative(t *testing.T) {
-	testEnvironment.Test(t, publicRegistry(t))
+func TestNetworkProblems(t *testing.T) {
+	testEnvironment.Test(t, networkProblems(t))
 }

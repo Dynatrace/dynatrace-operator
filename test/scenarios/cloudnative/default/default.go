@@ -1,6 +1,6 @@
 //go:build e2e
 
-package basic
+package _default
 
 import (
 	"fmt"
@@ -18,7 +18,7 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func Install(t *testing.T, istioEnabled bool) features.Feature {
+func Default(t *testing.T, istioEnabled bool) features.Feature {
 	builder := features.New("default installation")
 	t.Logf("istio enabled: %v", istioEnabled)
 	secretConfig := tenant.GetSingleTenantSecret(t)

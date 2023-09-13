@@ -1,6 +1,6 @@
 //go:build e2e
 
-package specific_agent_version
+package public_registry
 
 import (
 	"testing"
@@ -14,12 +14,12 @@ import (
 var testEnvironment env.Environment
 
 func TestMain(m *testing.M) {
-	log.SetLogger(logger.Factory.GetLogger("e2e-cloudnative-agent-version"))
+	log.SetLogger(logger.Factory.GetLogger("e2e-cloudnative-public-registry"))
 
 	testEnvironment = environment.Get()
 	testEnvironment.Run(m)
 }
 
-func TestCloudNative(t *testing.T) {
-	testEnvironment.Test(t, specificAgentVersion(t))
+func TestPublicRegistry(t *testing.T) {
+	testEnvironment.Test(t, publicRegistry(t))
 }
