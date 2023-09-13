@@ -36,6 +36,7 @@ func (r *Reconciler) ReconcileAPIUrl(ctx context.Context, dynakube *dynatracev1b
 	if err != nil {
 		return errors.WithMessage(err, "error reconciling config for Dynatrace API URL")
 	}
+	log.Info("reconciled istio objects for API url")
 
 	return nil
 }
@@ -51,6 +52,7 @@ func (r *Reconciler) ReconcileOneAgentCommunicationHosts(ctx context.Context, dy
 	if err != nil {
 		return errors.WithMessage(err, "error reconciling config for Dynatrace communication hosts")
 	}
+	log.Info("reconciled istio objects for oneagent communication hosts")
 
 	return nil
 }
