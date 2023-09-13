@@ -12,8 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
 	sample "github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/base"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/setup"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -53,9 +52,14 @@ func applicationMonitoringWithoutCSI(t *testing.T) features.Feature {
 
 	operatorNamespaceBuilder := namespace.NewBuilder(appOnlyDynakube.Namespace)
 
-	assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), appOnlyDynakube)
+	// assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), appOnlyDynakube)
+	setup := setup.NewEnvironmentSetup(
+		setup.CreateNamespaceWithoutTeardown(operatorNamespaceBuilder.Build()),
+		setup.DeployOperatorViaMake(appOnlyDynakube.NeedsCSIDriver()),
+		setup.CreateDynakube(secretConfig, appOnlyDynakube))
+	setup.CreateSetupSteps(builder)
 
-	assess.InstallDynakubeWithTeardown(builder, &secretConfig, appOnlyDynakube)
+	// assess.InstallDynakubeWithTeardown(builder, &secretConfig, appOnlyDynakube)
 	builder.Assess("install sample app", sampleApp.Install())
 
 	podSample := sampleapps.NewSampleDeployment(t, appOnlyDynakube)
@@ -82,7 +86,8 @@ func applicationMonitoringWithoutCSI(t *testing.T) features.Feature {
 	builder.Assess("check injection of pods with random user", checkInjection(randomUserSample))
 
 	builder.Teardown(sampleApp.UninstallNamespace())
-	teardown.UninstallOperator(builder, appOnlyDynakube)
+	setup.CreateTeardownSteps(builder)
+
 	return builder.Feature()
 }
 

@@ -4,7 +4,6 @@ package _default
 
 import (
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/codemodules"
@@ -12,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/istio"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/setup"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
@@ -39,9 +39,9 @@ func Default(t *testing.T, istioEnabled bool) features.Feature {
 		operatorNamespaceBuilder = operatorNamespaceBuilder.WithLabels(istio.InjectionLabel)
 	}
 	// assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), testDynakube)
-	setup := steps.NewEnvironmentSetup(
-		steps.CreateNamespaceWithoutTeardown(operatorNamespaceBuilder.Build()),
-		steps.DeployOperatorViaMake(testDynakube.NeedsCSIDriver()))
+	setup := setup.NewEnvironmentSetup(
+		setup.CreateNamespaceWithoutTeardown(operatorNamespaceBuilder.Build()),
+		setup.DeployOperatorViaMake(testDynakube.NeedsCSIDriver()))
 	setup.CreateSetupSteps(builder)
 
 	// Register sample app install

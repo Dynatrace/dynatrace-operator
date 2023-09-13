@@ -15,9 +15,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
 	sample "github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/base"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/setup"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -132,19 +131,25 @@ func labelVersionDetection(t *testing.T) features.Feature {
 		buildPreservedBuildLabelSampleApp(t, labelVersionDynakube),
 		buildInvalidBuildLabelSampleApp(t, labelVersionDynakube),
 	}
-
+	setup := setup.NewEnvironmentSetup(
+		setup.CreateDefaultDynatraceNamespace(),
+		setup.DeployOperatorViaMake(defaultDynakube.NeedsCSIDriver()),
+		setup.CreateDynakube(secretConfig, defaultDynakube),
+		setup.CreateDynakube(secretConfig, labelVersionDynakube))
+	setup.CreateSetupSteps(builder)
 	// Register operator install
-	assess.InstallOperatorFromSource(builder, defaultDynakube)
+	// assess.InstallOperatorFromSource(builder, defaultDynakube)
 	// Register dynakubes install and uninstall
-	assess.InstallDynakubeWithTeardown(builder, &secretConfig, defaultDynakube)
-	assess.InstallDynakubeWithTeardown(builder, &secretConfig, labelVersionDynakube)
+	// assess.InstallDynakubeWithTeardown(builder, &secretConfig, defaultDynakube)
+	// assess.InstallDynakubeWithTeardown(builder, &secretConfig, labelVersionDynakube)
 
 	// Register actual test (+sample cleanup)
 	installSampleApplications(builder, sampleApps)
 	checkBuildLabels(builder, sampleApps)
 	teardownSampleApplications(builder, sampleApps)
 	// Register operator uninstall
-	teardown.UninstallOperator(builder, labelVersionDynakube)
+	// teardown.UninstallOperator(builder, labelVersionDynakube)
+	setup.CreateTeardownSteps(builder)
 
 	return builder.Feature()
 }

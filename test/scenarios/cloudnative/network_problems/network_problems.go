@@ -14,8 +14,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
 	sample "github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/base"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/setup"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/Dynatrace/dynatrace-operator/test/project"
 	"github.com/Dynatrace/dynatrace-operator/test/scenarios/cloudnative"
@@ -52,12 +52,11 @@ func networkProblems(t *testing.T) features.Feature {
 	sampleApp.WithNamespace(sampleNamespace)
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
-	operatorNamespace := namespace.NewBuilder(testDynakube.Namespace).WithLabels(istio.InjectionLabel).Build()
-	steps.CreateFeatureEnvironment(builder,
-		steps.CreateNamespaceWithoutTeardown(operatorNamespace),
-		steps.InstallManifestFromFile(csiNetworkPolicy),
-		steps.DeployOperatorViaMake(operatorNamespace.Name, testDynakube.NeedsCSIDriver()),
-		steps.CreateDynakube(secretConfig, testDynakube),
+	setup.CreateFeatureEnvironment(builder,
+		setup.CreateNamespaceWithoutTeardown(namespace.NewBuilder(testDynakube.Namespace).WithLabels(istio.InjectionLabel).Build()),
+		setup.InstallManifestFromFile(csiNetworkPolicy),
+		setup.DeployOperatorViaMake(testDynakube.NeedsCSIDriver()),
+		setup.CreateDynakube(secretConfig, testDynakube),
 	)
 	// Register sample app install
 	builder.Assess("install sample-apps", sampleApp.Install())

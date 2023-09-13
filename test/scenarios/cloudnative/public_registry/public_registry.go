@@ -14,7 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/setup"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -47,10 +47,10 @@ func publicRegistry(t *testing.T) features.Feature {
 		CloudNative(&dynakubev1beta1.CloudNativeFullStackSpec{})
 	testDynakube := dynakubeBuilder.Build()
 
-	steps.CreateFeatureEnvironment(builder,
-		steps.CreateNamespaceWithoutTeardown(namespace.NewBuilder(testDynakube.Namespace).Build()),
-		steps.DeployOperatorViaMake(testDynakube.Namespace, testDynakube.NeedsCSIDriver()),
-		steps.CreateDynakube(secretConfig, testDynakube),
+	setup.CreateFeatureEnvironment(builder,
+		setup.CreateNamespaceWithoutTeardown(namespace.NewBuilder(testDynakube.Namespace).Build()),
+		setup.DeployOperatorViaMake(testDynakube.NeedsCSIDriver()),
+		setup.CreateDynakube(secretConfig, testDynakube),
 	)
 	builder.Assess("check dynakube status", checkDynakubeStatus(testDynakube))
 	builder.Assess("check whether public registry images are used", checkPublicRegistryUsage(testDynakube))

@@ -16,7 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/setup"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -47,12 +47,12 @@ func supportArchiveExecution(t *testing.T) features.Feature {
 		CloudNative(&dynatracev1beta1.CloudNativeFullStackSpec{}).
 		WithActiveGate().Build()
 
-	steps.CreateFeatureEnvironment(builder,
-		steps.CreateNamespace(namespace.NewBuilder(testAppNameInjected).WithLabels(injectLabels).Build()),
-		steps.CreateNamespace(namespace.NewBuilder(testAppNameNotInjected).Build()),
-		steps.CreateNamespaceWithoutTeardown(namespace.NewBuilder(testDynakube.Namespace).Build()),
-		steps.DeployOperatorViaMake(testDynakube.NeedsCSIDriver()),
-		steps.CreateDynakube(secretConfig, testDynakube),
+	setup.CreateFeatureEnvironment(builder,
+		setup.CreateNamespace(namespace.NewBuilder(testAppNameInjected).WithLabels(injectLabels).Build()),
+		setup.CreateNamespace(namespace.NewBuilder(testAppNameNotInjected).Build()),
+		setup.CreateNamespaceWithoutTeardown(namespace.NewBuilder(testDynakube.Namespace).Build()),
+		setup.DeployOperatorViaMake(testDynakube.NeedsCSIDriver()),
+		setup.CreateDynakube(secretConfig, testDynakube),
 	)
 	// Register actual test
 	builder.Assess("support archive subcommand can be executed correctly with managed logs", testSupportArchiveCommand(testDynakube, true))

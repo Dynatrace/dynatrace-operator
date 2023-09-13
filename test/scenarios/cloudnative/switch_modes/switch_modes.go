@@ -3,16 +3,16 @@
 package switch_modes
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
-	"github.com/Dynatrace/dynatrace-operator/test/scenarios/cloudnative"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/setup"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
+	"github.com/Dynatrace/dynatrace-operator/test/scenarios/cloudnative"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
@@ -37,12 +37,12 @@ func switchModes(t *testing.T, name string) features.Feature {
 	featureBuilder.Teardown(sampleAppCloudNative.Uninstall())
 
 	// install operator and dynakube
-	initSteps := []steps.EnvironmentOptionFunc{
-		steps.CreateNamespaceWithoutTeardown(namespace.NewBuilder(dynakubeCloudNative.Namespace).Build()),
-		steps.DeployOperatorViaMake(dynakubeCloudNative.NeedsCSIDriver()),
-		steps.CreateDynakube(secretConfig, dynakubeCloudNative),
-	}
-	steps.CreateSetupSteps(featureBuilder, initSteps)
+	setup := setup.NewEnvironmentSetup(
+		setup.CreateNamespaceWithoutTeardown(namespace.NewBuilder(dynakubeCloudNative.Namespace).Build()),
+		setup.DeployOperatorViaMake(dynakubeCloudNative.NeedsCSIDriver()),
+		setup.CreateDynakube(secretConfig, dynakubeCloudNative),
+	)
+	setup.CreateSetupSteps(featureBuilder)
 	// apply sample apps
 	featureBuilder.Assess("(cloudnative) install sample app", sampleAppCloudNative.Install())
 
@@ -61,6 +61,6 @@ func switchModes(t *testing.T, name string) features.Feature {
 	featureBuilder.Assess("(classic) install sample app", sampleAppClassicFullStack.Install())
 	featureBuilder.Teardown(sampleAppClassicFullStack.Uninstall())
 	// tear down
-	steps.CreateTeardownSteps(featureBuilder, initSteps)
+	setup.CreateTeardownSteps(featureBuilder)
 	return featureBuilder.Feature()
 }

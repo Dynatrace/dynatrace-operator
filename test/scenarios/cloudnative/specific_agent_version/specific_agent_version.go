@@ -14,8 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/setup"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/Dynatrace/dynatrace-operator/test/scenarios/cloudnative"
 	"github.com/stretchr/testify/require"
@@ -40,11 +39,15 @@ func specificAgentVersion(t *testing.T) features.Feature {
 		CloudNativeWithAgentVersion(cloudnative.DefaultCloudNativeSpec(), oldVersion)
 	testDynakube := dynakubeBuilder.Build()
 
-	// Register operator install
-	assess.InstallOperatorFromSource(builder, testDynakube)
-
-	// Register actual test
-	assess.InstallDynakube(builder, &secretConfig, testDynakube)
+	// // Register operator install
+	// assess.InstallOperatorFromSource(builder, testDynakube)
+	// // Register actual test
+	// assess.InstallDynakube(builder, &secretConfig, testDynakube)
+	setup := setup.NewEnvironmentSetup(
+		setup.CreateDefaultDynatraceNamespace(),
+		setup.DeployOperatorViaMake(testDynakube.NeedsCSIDriver()),
+		setup.CreateDynakube(secretConfig, testDynakube))
+	setup.CreateSetupSteps(builder)
 	builder.Assess("checking version of oneagent", assessVersionChecks(testDynakube))
 
 	updatedDynakube := testDynakube.DeepCopy()
@@ -55,8 +58,8 @@ func specificAgentVersion(t *testing.T) features.Feature {
 	builder.Assess("checking version of oneagent", assessVersionChecks(testDynakube))
 
 	// Register sample, dynakube and operator uninstall
-	teardown.UninstallDynatrace(builder, testDynakube)
-
+	// teardown.UninstallDynatrace(builder, testDynakube)
+	setup.CreateTeardownSteps(builder)
 	return builder.Feature()
 }
 

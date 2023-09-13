@@ -30,6 +30,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/proxy"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
 	sample "github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/base"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/setup"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
@@ -102,10 +103,13 @@ func InstallFromImage(t *testing.T, istioEnabled bool) features.Feature {
 	if istioEnabled {
 		operatorNamespaceBuilder = operatorNamespaceBuilder.WithLabels(istio.InjectionLabel)
 	}
-	assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), cloudNativeDynakube)
+	// assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), cloudNativeDynakube)
 
 	// Register dynakube install
-	assess.InstallDynakube(builder, &secretConfigs[0], cloudNativeDynakube)
+	setup := setup.NewEnvironmentSetup(
+		setup.CreateNamespaceWithoutTeardown(operatorNamespaceBuilder.Build()),
+		setup.DeployOperatorViaMake(cloudNativeDynakube.NeedsCSIDriver()))
+	setup.CreateSetupSteps(builder)
 
 	// Register sample app install
 	builder.Assess("install sample app", sampleApp.Install())
@@ -124,7 +128,8 @@ func InstallFromImage(t *testing.T, istioEnabled bool) features.Feature {
 
 	// Register sample, dynakube and operator uninstall
 	builder.Teardown(sampleApp.UninstallNamespace())
-	teardown.UninstallDynatrace(builder, cloudNativeDynakube)
+	teardown.DeleteDynakube(builder, cloudNativeDynakube)
+	setup.CreateTeardownSteps(builder)
 
 	return builder.Feature()
 }
@@ -158,7 +163,11 @@ func withProxy(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features
 	operatorNamespaceBuilder := namespace.NewBuilder(cloudNativeDynakube.Namespace)
 	operatorNamespaceBuilder = operatorNamespaceBuilder.WithLabels(istio.InjectionLabel)
 
-	assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), cloudNativeDynakube)
+	// assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), cloudNativeDynakube)
+	setup := setup.NewEnvironmentSetup(
+		setup.CreateNamespaceWithoutTeardown(operatorNamespaceBuilder.Build()),
+		setup.DeployOperatorViaMake(cloudNativeDynakube.NeedsCSIDriver()))
+	setup.CreateSetupSteps(builder)
 
 	// Register proxy create and delete
 	proxy.SetupProxyWithTeardown(t, builder, cloudNativeDynakube)
@@ -179,7 +188,9 @@ func withProxy(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features
 
 	// Register sample, dynakube and operator uninstall
 	builder.Teardown(sampleApp.UninstallNamespace())
-	teardown.UninstallDynatrace(builder, cloudNativeDynakube)
+	teardown.DeleteDynakube(builder, cloudNativeDynakube)
+	// teardown.UninstallOperator(builder, cloudNativeDynakube)
+	setup.CreateTeardownSteps(builder)
 
 	return builder.Feature()
 }
@@ -223,7 +234,10 @@ func withProxyCA(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) featur
 		map[string]string{dynatracev1beta1.TrustedCAKey: string(trustedCa)})
 	builder.Assess("create trusted CAs config map", configmap.Create(configmapBuilder.Build()))
 
-	assess.InstallOperatorFromSource(builder, cloudNativeDynakube)
+	setup := setup.NewEnvironmentSetup(
+		setup.CreateNamespaceWithoutTeardown(operatorNamespaceBuilder.Build()),
+		setup.DeployOperatorViaMake(cloudNativeDynakube.NeedsCSIDriver()))
+	setup.CreateSetupSteps(builder)
 
 	// Register proxy create and delete
 	proxy.SetupProxyWithCustomCAandTeardown(t, builder, cloudNativeDynakube)
@@ -244,7 +258,9 @@ func withProxyCA(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) featur
 
 	// Register sample, dynakube and operator uninstall
 	builder.Teardown(sampleApp.UninstallNamespace())
-	teardown.UninstallDynatrace(builder, cloudNativeDynakube)
+	teardown.DeleteDynakube(builder, cloudNativeDynakube)
+	// teardown.UninstallOperator(builder, cloudNativeDynakube)
+	setup.CreateTeardownSteps(builder)
 
 	return builder.Feature()
 }

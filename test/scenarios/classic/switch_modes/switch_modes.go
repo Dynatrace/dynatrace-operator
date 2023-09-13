@@ -10,9 +10,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/setup"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/Dynatrace/dynatrace-operator/test/scenarios/cloudnative"
 	"sigs.k8s.io/e2e-framework/pkg/features"
@@ -39,12 +38,12 @@ func SwitchModes(t *testing.T, name string) features.Feature {
 	featureBuilder.Assess("create sample app namespace", sampleAppClassic.InstallNamespace())
 
 	// install operator and dynakube
-	steps.CreateFeatureEnvironment(featureBuilder,
-		steps.CreateNamespaceWithoutTeardown(namespace.NewBuilder(dynakubeClassicFullStack.Namespace).Build()),
-		steps.DeployOperatorViaMake(dynakubeClassicFullStack.Namespace, dynakubeClassicFullStack.NeedsCSIDriver()),
-		steps.CreateDynakube(secretConfig, dynakubeClassicFullStack),
+	setup := setup.NewEnvironmentSetup(
+		setup.CreateNamespaceWithoutTeardown(namespace.NewBuilder(dynakubeClassicFullStack.Namespace).Build()),
+		setup.DeployOperatorViaMake(dynakubeClassicFullStack.NeedsCSIDriver()),
+		setup.CreateDynakube(secretConfig, dynakubeClassicFullStack),
 	)
-
+	setup.CreateSetupSteps(featureBuilder)
 	featureBuilder.Assess("install sample app", sampleAppClassic.Install())
 
 	// change dynakube to cloud native
@@ -58,7 +57,6 @@ func SwitchModes(t *testing.T, name string) features.Feature {
 	sampleAppCloudNative.WithAnnotations(map[string]string{dtwebhook.AnnotationFailurePolicy: "fail"})
 	featureBuilder.Assess("create sample app namespace", sampleAppCloudNative.InstallNamespace())
 
-	assess.InstallOperatorFromSource(featureBuilder, dynakubeCloudNative)
 	assess.InstallDynakube(featureBuilder, &secretConfig, dynakubeCloudNative)
 
 	// apply sample apps
@@ -70,8 +68,7 @@ func SwitchModes(t *testing.T, name string) features.Feature {
 	// teardown
 	featureBuilder.Teardown(sampleAppCloudNative.Uninstall())
 	featureBuilder.Teardown(sampleAppClassic.Uninstall())
-	teardown.DeleteDynakube(featureBuilder, dynakubeCloudNative)
-	teardown.UninstallOperator(featureBuilder, dynakubeCloudNative)
+	setup.CreateTeardownSteps(featureBuilder)
 
 	return featureBuilder.Feature()
 }

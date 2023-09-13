@@ -1,6 +1,6 @@
 //go:build e2e
 
-package _default
+package activegatebasic
 
 import (
 	"testing"
@@ -16,7 +16,7 @@ var testEnvironment env.Environment
 
 func TestMain(m *testing.M) {
 	log.SetLogger(logger.Factory.GetLogger("e2e-activegate-default"))
-	testEnvironment = environment.Get()
+	testEnvironment = environment.GetStandardKubeClusterEnvironment()
 	testEnvironment.Run(m)
 }
 
