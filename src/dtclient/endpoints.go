@@ -32,9 +32,6 @@ func (dtc *dynatraceClient) getOneAgentConnectionInfoUrl() string {
 }
 
 func (dtc *dynatraceClient) getActiveGateConnectionInfoUrl() string {
-	if dtc.networkZone != "" {
-		return fmt.Sprintf("%s/v1/deployment/installer/gateway/connectioninfo?networkZone=%s", dtc.url, dtc.networkZone)
-	}
 	return fmt.Sprintf("%s/v1/deployment/installer/gateway/connectioninfo", dtc.url)
 }
 
