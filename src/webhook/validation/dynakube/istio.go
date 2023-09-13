@@ -13,7 +13,7 @@ const (
 
 func noResourcesAvailable(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	if dynakube.Spec.EnableIstio {
-		istioClient, err:= istio.NewClient(dv.cfg, scheme.Scheme, dynakube.Namespace)
+		istioClient, err := istio.NewClient(dv.cfg, scheme.Scheme, dynakube.Namespace)
 		if err != nil {
 			return errorFailToInitIstioClient
 		}

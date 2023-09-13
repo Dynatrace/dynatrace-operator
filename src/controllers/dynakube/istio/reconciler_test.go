@@ -9,10 +9,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
-	fakediscovery "k8s.io/client-go/discovery/fake"
 	fakeistio "istio.io/client-go/pkg/clientset/versioned/fake"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	fakediscovery "k8s.io/client-go/discovery/fake"
 )
 
 func TestSplitCommunicationHost(t *testing.T) {

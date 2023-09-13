@@ -5,10 +5,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
 	appsv1 "k8s.io/api/apps/v1"
 )
-
 
 func TestGenerateHash(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
@@ -73,7 +71,7 @@ func TestAddHashAnnotation(t *testing.T) {
 		assert.Len(t, testDaemonSet.Annotations, 2)
 		assert.NotEmpty(t, testDaemonSet.Annotations[AnnotationHash])
 	})
-	t.Run("create to annotation map, if not there", func(t *testing.T) {
+	t.Run("create annotation map, if not there", func(t *testing.T) {
 		testDaemonSet := appsv1.DaemonSet{}
 		err := AddHashAnnotation(&testDaemonSet)
 		require.NoError(t, err)
@@ -81,4 +79,3 @@ func TestAddHashAnnotation(t *testing.T) {
 		assert.NotEmpty(t, testDaemonSet.Annotations[AnnotationHash])
 	})
 }
-
