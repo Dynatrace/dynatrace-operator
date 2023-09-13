@@ -21,8 +21,8 @@ func TestMain(m *testing.M) {
 	testEnvironment.Run(m)
 }
 
-func TestCodeModulesImages(t *testing.T) {
-	testEnvironment.Test(t, CodeModules(t, false))
+func TestCodeModulesImage(t *testing.T) {
+	testEnvironment.Test(t, InstallFromImage(t, false))
 }
 
 func TestCodeModulesWithProxy(t *testing.T) {

@@ -56,7 +56,7 @@ const (
 	provisionerContainerName = "provisioner"
 )
 
-func CodeModules(t *testing.T, istioEnabled bool) features.Feature {
+func InstallFromImage(t *testing.T, istioEnabled bool) features.Feature {
 	builder := features.New("codemodules injection")
 	storageMap := make(map[string]int)
 	secretConfigs := tenant.GetMultiTenantSecret(t)

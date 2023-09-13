@@ -28,5 +28,5 @@ func TestMain(m *testing.M) {
 
 func TestIstioIntegration(t *testing.T) {
 	testEnvironment.Test(t, _default.Default(t, true))
-	testEnvironment.Test(t, codemodules.CodeModules(t, true))
+	testEnvironment.Test(t, codemodules.InstallFromImage(t, true))
 }
