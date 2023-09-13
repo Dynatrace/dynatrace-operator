@@ -46,7 +46,7 @@ func Test_dynatraceClient_getActiveGateConnectionInfoUrl(t *testing.T) {
 		{
 			name:        "with network zone",
 			networkZone: "mynetworkzone",
-			want:        "https://testenvironment.live.dynatrace.com/api/v1/deployment/installer/gateway/connectioninfo?networkZone=mynetworkzone",
+			want:        "https://testenvironment.live.dynatrace.com/api/v1/deployment/installer/gateway/connectioninfo",
 		},
 		{
 			name:        "without network zone",
