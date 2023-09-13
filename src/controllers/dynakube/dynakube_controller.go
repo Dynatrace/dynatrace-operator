@@ -178,7 +178,7 @@ func (controller *Controller) setupIstio(ctx context.Context, dynakube *dynatrac
 		return nil, errors.WithMessage(err, "failed to initialize istio client")
 	}
 
-	isInstalled, err := istio.CheckIstioInstalled(istioClient.Discovery())
+	isInstalled, err := istioClient.CheckIstioInstalled()
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize istio client")
 	} else if !isInstalled {

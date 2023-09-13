@@ -144,3 +144,11 @@ func (r *Reconciler) reconcileFQDNServiceEntry(ctx context.Context, owner metav1
 	}
 	return nil
 }
+
+func buildObjectMeta(name, namespace string, labels map[string]string) metav1.ObjectMeta {
+	return metav1.ObjectMeta{
+		Name:      name,
+		Namespace: namespace,
+		Labels:    labels,
+	}
+}

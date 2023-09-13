@@ -10,7 +10,6 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -40,9 +39,13 @@ func NewClient(config *rest.Config, scheme *runtime.Scheme, namespace string) (*
 
 var _ ClientBuilder = NewClient
 
-// TODO: Maybe move whole check here
-func (cl *Client) Discovery() discovery.DiscoveryInterface {
-	return cl.IstioClientset.Discovery()
+func (cl *Client) CheckIstioInstalled() (bool, error) {
+	_, err := cl.IstioClientset.Discovery().ServerResourcesForGroupVersion(IstioGVR)
+	if k8serrors.IsNotFound(err) {
+		return false, nil
+	}
+
+	return err == nil, err
 }
 
 func (cl *Client) GetVirtualService(ctx context.Context, name string) (*istiov1alpha3.VirtualService, error) {

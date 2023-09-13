@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
+	fakediscovery "k8s.io/client-go/discovery/fake"
 	fakeistio "istio.io/client-go/pkg/clientset/versioned/fake"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -306,5 +307,36 @@ func createTestDynaKube() *dynatracev1beta1.DynaKube {
 				},
 			},
 		},
+	}
+}
+
+func TestIstio(t *testing.T) {
+	type test struct {
+		name    string
+		input   []*metav1.APIResourceList
+		wantErr error
+		want    bool
+	}
+
+	tests := []test{
+		{name: "enabled", input: []*metav1.APIResourceList{{GroupVersion: IstioGVR}}, wantErr: nil, want: true},
+		{name: "disabled", input: []*metav1.APIResourceList{}, wantErr: nil, want: false},
+	}
+
+	ist := fakeistio.NewSimpleClientset()
+
+	fakeDiscovery, ok := ist.Discovery().(*fakediscovery.FakeDiscovery)
+	if !ok {
+		t.Fatalf("couldn't convert Discovery() to *FakeDiscovery")
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			fakeDiscovery.Resources = tc.input
+			istioClient := newTestingClient(ist, "")
+			isInstalled, err := istioClient.CheckIstioInstalled()
+			assert.Equal(t, tc.want, isInstalled)
+			assert.ErrorIs(t, tc.wantErr, err)
+		})
 	}
 }

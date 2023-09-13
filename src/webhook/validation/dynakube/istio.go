@@ -3,7 +3,7 @@ package dynakube
 import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/istio"
-	istioclientset "istio.io/client-go/pkg/clientset/versioned"
+	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 )
 
 const (
@@ -13,12 +13,11 @@ const (
 
 func noResourcesAvailable(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	if dynakube.Spec.EnableIstio {
-		ic, err := istioclientset.NewForConfig(dv.cfg)
-
+		istioClient, err:= istio.NewClient(dv.cfg, scheme.Scheme, dynakube.Namespace)
 		if err != nil {
 			return errorFailToInitIstioClient
 		}
-		enabled, err := istio.CheckIstioInstalled(ic.Discovery())
+		enabled, err := istioClient.CheckIstioInstalled()
 		if !enabled || err != nil {
 			return errorNoResources
 		}
