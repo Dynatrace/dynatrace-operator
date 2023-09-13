@@ -11,11 +11,11 @@ import (
 	"sigs.k8s.io/e2e-framework/support/kind"
 )
 
-//const (
+// const (
 //	useKind = "TEST_ENV_USE_KIND"
-//)
+// )
 
-//func Get() env.Environment {
+// func Get() env.Environment {
 //	if os.Getenv(useKind) == "true" {
 //		environment := env.New()
 //		environment.Setup(envfuncs.CreateKindCluster(envconf.RandomName("operator-test", 10)))
@@ -27,7 +27,7 @@ import (
 //	cfg, _ := envconf.NewFromFlags()
 //	envConfig := cfg.WithKubeconfigFile(kubeConfigPath)
 //	return env.NewWithConfig(envConfig)
-//}
+// }
 
 // let's decide here which config we really need to run on. use minimal required config.
 func CreateKindClusterEnvironment() env.Environment {
