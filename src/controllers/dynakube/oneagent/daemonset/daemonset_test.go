@@ -529,8 +529,48 @@ func TestPodSpecReadinessProbe(t *testing.T) {
 		assert.Equal(t, testCommands, podSpec.Containers[0].ReadinessProbe.Exec.Command)
 		assert.Equal(t, int32(interval.Seconds()), podSpec.Containers[0].ReadinessProbe.PeriodSeconds)
 		assert.Equal(t, int32(timeout.Seconds()), podSpec.Containers[0].ReadinessProbe.TimeoutSeconds)
-		assert.Equal(t, DefaultReadinessProbeInitialDelay, podSpec.Containers[0].ReadinessProbe.InitialDelaySeconds)
+		assert.Equal(t, DefaultProbeInitialDelay, podSpec.Containers[0].ReadinessProbe.InitialDelaySeconds)
 		assert.Equal(t, int32(retries), podSpec.Containers[0].ReadinessProbe.FailureThreshold)
+	})
+	t.Run("check livenessprobe if readiness probe is set", func(t *testing.T) {
+		builder := builderInfo{
+			dynakube: &dynatracev1beta1.DynaKube{
+				Status: dynatracev1beta1.DynaKubeStatus{
+					OneAgent: dynatracev1beta1.OneAgentStatus{
+						Healthcheck: &containerv1.HealthConfig{
+							Test:        testCommands,
+							Interval:    interval,
+							Timeout:     timeout,
+							StartPeriod: startPeriod,
+							Retries:     retries,
+						},
+					},
+				},
+			},
+		}
+		podSpec := builder.podSpec()
+
+		assert.NotNil(t, podSpec.Containers[0].LivenessProbe)
+		assert.Equal(t, testCommands, podSpec.Containers[0].LivenessProbe.Exec.Command)
+		assert.Equal(t, int32(interval.Seconds()), podSpec.Containers[0].LivenessProbe.PeriodSeconds)
+		assert.Equal(t, int32(timeout.Seconds()), podSpec.Containers[0].LivenessProbe.TimeoutSeconds)
+		assert.Equal(t, DefaultProbeInitialDelay, podSpec.Containers[0].LivenessProbe.InitialDelaySeconds)
+		assert.Equal(t, int32(retries), podSpec.Containers[0].LivenessProbe.FailureThreshold)
+	})
+	t.Run("check livenessprobe is not set when readiness probe is not set", func(t *testing.T) {
+		builder := builderInfo{
+			dynakube: &dynatracev1beta1.DynaKube{
+				Status: dynatracev1beta1.DynaKubeStatus{
+					OneAgent: dynatracev1beta1.OneAgentStatus{
+						Healthcheck: nil,
+					},
+				},
+			},
+		}
+		podSpec := builder.podSpec()
+
+		assert.Nil(t, podSpec.Containers[0].ReadinessProbe)
+		assert.Nil(t, podSpec.Containers[0].LivenessProbe)
 	})
 	t.Run("nil readiness probe when dynakube oneagent status has no healthcheck", func(t *testing.T) {
 		builder := builderInfo{
