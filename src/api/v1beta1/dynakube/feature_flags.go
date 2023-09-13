@@ -218,6 +218,8 @@ func (dk *DynaKube) getDefaultIgnoredNamespaces() []string {
 		fmt.Sprintf("^%s$", dk.Namespace),
 		"^kube-.*",
 		"^openshift(-.*)?",
+		"^gke-.*",
+		"^gmp-.*",
 	}
 	return defaultIgnoredNamespaces
 }

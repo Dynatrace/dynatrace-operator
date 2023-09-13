@@ -274,7 +274,7 @@ func imageHasBeenDownloaded(namespace string) features.Func {
 			Name:      csi.DaemonSetName,
 			Namespace: namespace,
 		}).ForEachPod(func(podItem corev1.Pod) {
-			err = wait.For(func() (done bool, err error) {
+			err = wait.For(func(ctx context.Context) (done bool, err error) {
 				logStream, err := clientset.CoreV1().Pods(podItem.Namespace).GetLogs(podItem.Name, &corev1.PodLogOptions{
 					Container: provisionerContainerName,
 				}).Stream(ctx)

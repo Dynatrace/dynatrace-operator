@@ -25,6 +25,9 @@ func (dtc *dynatraceClient) getAgentVersionsUrl(os, installerType, flavor, arch 
 }
 
 func (dtc *dynatraceClient) getOneAgentConnectionInfoUrl() string {
+	if dtc.networkZone != "" {
+		return fmt.Sprintf("%s/v1/deployment/installer/agent/connectioninfo?networkZone=%s&defaultZoneFallback=true", dtc.url, dtc.networkZone)
+	}
 	return fmt.Sprintf("%s/v1/deployment/installer/agent/connectioninfo", dtc.url)
 }
 
