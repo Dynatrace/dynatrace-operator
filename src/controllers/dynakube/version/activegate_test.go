@@ -17,7 +17,7 @@ import (
 func TestActiveGateUpdater(t *testing.T) {
 	testImage := dtclient.LatestImageInfo{
 		Source: "some.registry.com",
-		Tag:    "1.2.3",
+		Tag:    "1.2.3.4-5",
 	}
 	t.Run("Getters work as expected", func(t *testing.T) {
 		dynakube := &dynatracev1beta1.DynaKube{
@@ -70,7 +70,7 @@ func TestActiveGateUseDefault(t *testing.T) {
 			},
 		}
 		expectedImage := dynakube.DefaultActiveGateImage()
-		expectedVersion := "1.2.3"
+		expectedVersion := "1.2.3.4-5"
 		mockClient := &dtclient.MockDynatraceClient{}
 		registry := newFakeRegistry(map[string]registry.ImageVersion{
 			expectedImage: {

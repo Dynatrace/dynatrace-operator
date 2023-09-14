@@ -14,7 +14,7 @@ import (
 )
 
 func TestSyntheticUseTenantRegistry(t *testing.T) {
-	testVersion := "1.2.3"
+	testVersion := "1.2.3.4-5"
 	testHash := getTestDigest()
 	t.Run("default image specified", func(t *testing.T) {
 		dynakube := &dynatracev1beta1.DynaKube{
