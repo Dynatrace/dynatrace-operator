@@ -68,7 +68,7 @@ func TestRun(t *testing.T) {
 	ctx := context.TODO()
 	testImage := dtclient.LatestImageInfo{
 		Source: "some.registry.com",
-		Tag:    "1.2.3",
+		Tag:    "1.2.3.4-5",
 	}
 	timeProvider := timeprovider.New().Freeze()
 
@@ -246,7 +246,7 @@ func TestRun(t *testing.T) {
 
 func TestDetermineSource(t *testing.T) {
 	customImage := "my.special.image"
-	customVersion := "3.2.1"
+	customVersion := "3.2.1.4-5"
 	t.Run("custom-image", func(t *testing.T) {
 		updater := newCustomImageUpdater(nil, customImage)
 		source := determineSource(updater)
@@ -281,7 +281,7 @@ func TestDetermineSource(t *testing.T) {
 	t.Run("classicfullstack ignores public registry feature flag and sets custom image if set", func(t *testing.T) {
 		testImage := dtclient.LatestImageInfo{
 			Source: "some.registry.com",
-			Tag:    "1.2.3",
+			Tag:    "1.2.3.4-5",
 		}
 		updater := newClassicFullStackUpdater(nil, false)
 		updater.On("CustomImage").Return("")
@@ -295,7 +295,7 @@ func TestUpdateVersionStatus(t *testing.T) {
 	ctx := context.TODO()
 	testImage := dtclient.LatestImageInfo{
 		Source: "some.registry.com",
-		Tag:    "1.2.3",
+		Tag:    "1.2.3.4-5",
 	}
 
 	t.Run("failing to get digest should cause error", func(t *testing.T) {

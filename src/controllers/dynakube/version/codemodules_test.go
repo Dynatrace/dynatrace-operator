@@ -15,7 +15,7 @@ import (
 func TestCodeModulesUpdater(t *testing.T) {
 	testImage := dtclient.LatestImageInfo{
 		Source: "some.registry.com",
-		Tag:    "1.2.3",
+		Tag:    "1.2.3.4-5",
 	}
 	t.Run("Getters work as expected", func(t *testing.T) {
 		dynakube := &dynatracev1beta1.DynaKube{
@@ -48,7 +48,7 @@ func TestCodeModulesUpdater(t *testing.T) {
 
 func TestCodeModulesUseDefault(t *testing.T) {
 	ctx := context.TODO()
-	testVersion := "1.2.3"
+	testVersion := "1.2.3.4-5"
 	t.Run("Set according to version field, unset previous status", func(t *testing.T) {
 		dynakube := &dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{

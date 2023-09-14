@@ -257,8 +257,8 @@ func TestNeedsUpdate(t *testing.T) {
 	})
 
 	t.Run("needs, because custom version changed", func(t *testing.T) {
-		oldVersion := "1.2.3"
-		newVersion := "2.4.5"
+		oldVersion := "1.2.3.4-5"
+		newVersion := "2.4.5.6-7"
 		updatedDynakube := dynakube.DeepCopy()
 		updatedDynakube.Spec.OneAgent.ClassicFullStack.Version = newVersion
 		setOneAgentCustomVersionStatus(updatedDynakube, oldVersion)
@@ -280,8 +280,8 @@ func TestHasCustomFieldChanged(t *testing.T) {
 	}
 
 	t.Run("version changed", func(t *testing.T) {
-		oldVersion := "1.2.3"
-		newVersion := "2.4.5"
+		oldVersion := "1.2.3.4-5"
+		newVersion := "2.4.5.6-7"
 		updatedDynakube := dynakube.DeepCopy()
 		updatedDynakube.Spec.OneAgent.ClassicFullStack.Version = newVersion
 		setOneAgentCustomVersionStatus(updatedDynakube, oldVersion)
@@ -289,7 +289,7 @@ func TestHasCustomFieldChanged(t *testing.T) {
 	})
 
 	t.Run("no change; version", func(t *testing.T) {
-		version := "1.2.3"
+		version := "1.2.3.4-5"
 		updatedDynakube := dynakube.DeepCopy()
 		updatedDynakube.Spec.OneAgent.ClassicFullStack.Version = version
 		setOneAgentCustomVersionStatus(updatedDynakube, version)
