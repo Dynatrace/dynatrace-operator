@@ -1,18 +1,12 @@
 package istio
 
 import (
-	"context"
-	"fmt"
+	"net"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	istio "istio.io/api/networking/v1alpha3"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
-	istioclientset "istio.io/client-go/pkg/clientset/versioned"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 const (
@@ -39,7 +33,6 @@ func buildVirtualService(meta metav1.ObjectMeta, commHosts []dtclient.Communicat
 }
 
 func buildVirtualServiceSpec(commHosts []dtclient.CommunicationHost) istio.VirtualService {
-	virtualServiceSpec := istio.VirtualService{}
 	hosts := make([]string, len(commHosts))
 	var (
 		tlses  []*istio.TLSRoute
@@ -55,16 +48,11 @@ func buildVirtualServiceSpec(commHosts []dtclient.CommunicationHost) istio.Virtu
 			routes = append(routes, buildVirtualServiceHttpRoute(commHost.Host, commHost.Port))
 		}
 	}
-
-	virtualServiceSpec.Hosts = hosts
-
-	if len(routes) != 0 {
-		virtualServiceSpec.Http = routes
+	return istio.VirtualService{
+		Hosts: hosts,
+		Http:  routes,
+		Tls:   tlses,
 	}
-	if len(tlses) != 0 {
-		virtualServiceSpec.Tls = tlses
-	}
-	return virtualServiceSpec
 }
 
 func buildVirtualServiceHttpRoute(host string, port uint32) *istio.HTTPRoute {
@@ -100,65 +88,6 @@ func buildVirtualServiceTLSRoute(host string, port uint32) *istio.TLSRoute {
 	}
 }
 
-func handleIstioConfigurationForVirtualService(istioConfig *configuration) (bool, error) {
-	virtualService := buildVirtualService(metav1.ObjectMeta{Name: istioConfig.name, Namespace: istioConfig.instance.GetNamespace()}, istioConfig.commHosts)
-	if virtualService == nil {
-		return false, nil
-	}
-
-	err := createIstioConfigurationForVirtualService(istioConfig.instance, virtualService, istioConfig.role, istioConfig.reconciler.istioClient, istioConfig.reconciler.scheme)
-	if errors.IsAlreadyExists(err) {
-		return false, nil
-	}
-	if err != nil {
-		log.Error(err, "failed to create VirtualService")
-		return false, err
-	}
-	log.Info("VirtualService created", "objectName", istioConfig.name, "hosts", getHosts(istioConfig.commHosts),
-		"ports", getPorts(istioConfig.commHosts), "protocol", getProtocols(istioConfig.commHosts))
-
-	return true, nil
-}
-
-func createIstioConfigurationForVirtualService(dynaKube *dynatracev1beta1.DynaKube, //nolint:revive // argument-limit doesn't apply to constructors
-	virtualService *istiov1alpha3.VirtualService, role string,
-	istioClient istioclientset.Interface, scheme *runtime.Scheme) error {
-	virtualService.Labels = buildIstioLabels(dynaKube.GetName(), role)
-	if err := controllerutil.SetControllerReference(dynaKube, virtualService, scheme); err != nil {
-		return err
-	}
-	createdVirtualService, err := istioClient.NetworkingV1alpha3().VirtualServices(dynaKube.GetNamespace()).Create(context.TODO(), virtualService, metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-	if createdVirtualService == nil {
-		return fmt.Errorf("could not create virtual service with spec %v", virtualService.Spec)
-	}
-
-	return nil
-}
-
-func removeIstioConfigurationForVirtualService(istioConfig *configuration, seen map[string]bool) (bool, error) {
-	list, err := istioConfig.reconciler.istioClient.NetworkingV1alpha3().VirtualServices(istioConfig.instance.GetNamespace()).List(context.TODO(), *istioConfig.listOps)
-	if err != nil {
-		log.Error(err, "error listing virtual service")
-		return false, err
-	}
-
-	del := false
-	for _, vs := range list.Items {
-		if _, inUse := seen[vs.GetName()]; !inUse {
-			log.Info("removing virtual service", "kind", vs.Kind, "name", vs.GetName())
-			err = istioConfig.reconciler.istioClient.NetworkingV1alpha3().
-				VirtualServices(istioConfig.instance.GetNamespace()).
-				Delete(context.TODO(), vs.GetName(), metav1.DeleteOptions{})
-			if err != nil {
-				log.Error(err, "error deleting virtual service", "name", vs.GetName())
-				continue
-			}
-			del = true
-		}
-	}
-
-	return del, nil
+func isIp(host string) bool {
+	return net.ParseIP(host) != nil
 }

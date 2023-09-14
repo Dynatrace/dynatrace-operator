@@ -33,7 +33,7 @@ func TestGetCommunicationHosts(t *testing.T) {
 	}
 
 	t.Run(`communications host empty`, func(t *testing.T) {
-		hosts := GetCommunicationHosts(dynakube)
+		hosts := GetOneAgentCommunicationHosts(dynakube)
 		assert.Len(t, hosts, 0)
 	})
 
@@ -46,7 +46,7 @@ func TestGetCommunicationHosts(t *testing.T) {
 			},
 		}
 
-		hosts := GetCommunicationHosts(dynakube)
+		hosts := GetOneAgentCommunicationHosts(dynakube)
 		assert.NotNil(t, hosts)
 		assert.Equal(t, expectedCommunicationHosts[0].Host, hosts[0].Host)
 		assert.Equal(t, expectedCommunicationHosts[0].Protocol, hosts[0].Protocol)
