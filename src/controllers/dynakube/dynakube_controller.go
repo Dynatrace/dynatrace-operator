@@ -28,7 +28,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
-	istioclientset "istio.io/client-go/pkg/clientset/versioned"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -67,6 +66,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, sc
 		scheme:                 scheme,
 		fs:                     afero.Afero{Fs: afero.NewOsFs()},
 		dynatraceClientBuilder: dynatraceclient.NewBuilder(apiReader),
+		istioClientBuilder:     istio.NewClient,
 		config:                 config,
 		operatorNamespace:      os.Getenv(kubeobjects.EnvPodNamespace),
 		clusterID:              clusterID,
@@ -93,6 +93,7 @@ type Controller struct {
 	scheme                 *runtime.Scheme
 	fs                     afero.Afero
 	dynatraceClientBuilder dynatraceclient.Builder
+	istioClientBuilder     istio.ClientBuilder
 	config                 *rest.Config
 	operatorNamespace      string
 	clusterID              string
@@ -144,11 +145,6 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 		}
 	}
 
-	updated := controller.reconcileIstio(dynakube)
-	if updated {
-		log.Info("istio objects updated")
-	}
-
 	return reconcile.Result{RequeueAfter: requeueAfter}, err
 }
 
@@ -173,29 +169,36 @@ func (controller *Controller) createDynakubeMapper(ctx context.Context, dynakube
 	return &dkMapper
 }
 
-func (controller *Controller) reconcileIstio(dynakube *dynatracev1beta1.DynaKube) bool {
-	updated := false
-
-	if dynakube.Spec.EnableIstio {
-		communicationHosts := connectioninfo.GetCommunicationHosts(dynakube)
-
-		ic, err := istioclientset.NewForConfig(controller.config)
-
-		if err != nil {
-			log.Error(err, "failed to initialize istio client")
-			return false
-		}
-
-		updated, err = istio.NewReconciler(controller.config, controller.scheme, ic).Reconcile(dynakube, communicationHosts)
-		if err != nil {
-			// If there are errors log them, but move on.
-			log.Info("istio failed to reconcile objects", "error", err)
-		}
+func (controller *Controller) setupIstio(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) (*istio.Reconciler, error) {
+	if !dynakube.Spec.EnableIstio {
+		return nil, nil
 	}
-	return updated
+	istioClient, err := controller.istioClientBuilder(controller.config, controller.scheme, dynakube.Namespace)
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to initialize istio client")
+	}
+
+	isInstalled, err := istioClient.CheckIstioInstalled()
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to initialize istio client")
+	} else if !isInstalled {
+		return nil, errors.New("istio not installed, yet is enabled, aborting reconciliation, check configuration")
+	}
+	istioReconciler := istio.NewReconciler(istioClient)
+	err = istioReconciler.ReconcileAPIUrl(ctx, dynakube)
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to reconcile istio objects for API url")
+	}
+
+	return istioReconciler, nil
 }
 
 func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
+	istioReconciler, err := controller.setupIstio(ctx, dynakube)
+	if err != nil {
+		return err
+	}
+
 	tokenReader := token.NewReader(controller.apiReader, dynakube)
 	tokens, err := tokenReader.ReadTokens(ctx)
 
@@ -227,6 +230,15 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		return err
 	}
 
+	// TODO: Improve logic so we do this only in case of codemodules
+	// Kept it like this for now to keep compatibility
+	if istioReconciler != nil {
+		err := istioReconciler.ReconcileOneAgentCommunicationHosts(ctx, dynakube)
+		if err != nil {
+			return err
+		}
+	}
+
 	err = dtpullsecret.
 		NewReconciler(ctx, controller.client, controller.apiReader, controller.scheme, dynakube, tokens).
 		Reconcile()
@@ -254,7 +266,11 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		return err
 	}
 
-	err = controller.reconcileActiveGate(ctx, dynakube, dynatraceClient)
+	return controller.reconcileComponents(ctx, dynatraceClient, dynakube)
+}
+
+func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient dtclient.Client, dynakube *dynatracev1beta1.DynaKube) error {
+	err := controller.reconcileActiveGate(ctx, dynakube, dynatraceClient)
 	if err != nil {
 		log.Info("could not reconcile ActiveGate")
 		return err
@@ -271,7 +287,6 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		log.Info("could not reconcile app injection")
 		return err
 	}
-
 	return nil
 }
 

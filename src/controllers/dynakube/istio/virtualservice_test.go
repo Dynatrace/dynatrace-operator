@@ -33,6 +33,7 @@ func TestVirtualServiceGeneration(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
+				Labels:    buildTestLabels(),
 			},
 			Spec: istio.VirtualService{
 				Hosts: []string{testHost},
@@ -54,7 +55,7 @@ func TestVirtualServiceGeneration(t *testing.T) {
 			Port:     testPort,
 			Protocol: protocolHttps,
 		}}
-		result := buildVirtualService(buildObjectMeta(testName, testNamespace), commHosts)
+		result := buildVirtualService(buildObjectMeta(testName, testNamespace, buildTestLabels()), commHosts)
 
 		assert.EqualValues(t, expected, result)
 	})
@@ -63,6 +64,7 @@ func TestVirtualServiceGeneration(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
+				Labels:    buildTestLabels(),
 			},
 			Spec: istio.VirtualService{
 				Hosts: []string{testHost},
@@ -83,7 +85,7 @@ func TestVirtualServiceGeneration(t *testing.T) {
 			Port:     testPort,
 			Protocol: protocolHttp,
 		}}
-		result := buildVirtualService(buildObjectMeta(testName, testNamespace), commHosts)
+		result := buildVirtualService(buildObjectMeta(testName, testNamespace, buildTestLabels()), commHosts)
 
 		assert.EqualValues(t, expected, result)
 	})
@@ -93,7 +95,7 @@ func TestVirtualServiceGeneration(t *testing.T) {
 			Port:     testPort,
 			Protocol: protocolHttp,
 		}}
-		assert.Nil(t, buildVirtualService(buildObjectMeta(testName, testNamespace), commHosts))
+		assert.Nil(t, buildVirtualService(buildObjectMeta(testName, testNamespace, buildTestLabels()), commHosts))
 	})
 }
 
@@ -126,13 +128,13 @@ func TestBuildVirtualServiceSpec(t *testing.T) {
 			{Host: testHost1, Port: testPort1, Protocol: protocolHttp},
 		})
 
-		assert.True(t, reflect.DeepEqual(expected, result))
+		assert.True(t, reflect.DeepEqual(expected.DeepCopy(), result.DeepCopy()))
 
 		result = buildVirtualServiceSpec([]dtclient.CommunicationHost{
 			{Host: testHost2, Port: testPort2, Protocol: protocolHttp},
 		})
 
-		assert.False(t, reflect.DeepEqual(expected, result))
+		assert.False(t, reflect.DeepEqual(expected.DeepCopy(), result.DeepCopy()))
 	})
 	t.Run(`is TLS route correctly set if protocol is "https"`, func(t *testing.T) {
 		expected := buildExpectedVirtualServiceSpecTls(t)
@@ -140,13 +142,13 @@ func TestBuildVirtualServiceSpec(t *testing.T) {
 			{Host: testHost1, Port: testPort1, Protocol: protocolHttps},
 		})
 
-		assert.True(t, reflect.DeepEqual(expected, result))
+		assert.True(t, reflect.DeepEqual(expected.DeepCopy(), result.DeepCopy()))
 
 		result = buildVirtualServiceSpec([]dtclient.CommunicationHost{
 			{Host: testHost2, Port: testPort2, Protocol: protocolHttps},
 		})
 
-		assert.False(t, reflect.DeepEqual(expected, result))
+		assert.False(t, reflect.DeepEqual(expected.DeepCopy(), result.DeepCopy()))
 	})
 }
 
@@ -194,5 +196,11 @@ func buildExpectedVirtualServiceSpecTls(t *testing.T) istio.VirtualService {
 	return istio.VirtualService{
 		Hosts: []string{testHost1},
 		Tls:   []*istio.TLSRoute{buildExpectedVirtualServiceTLSRoute(t)},
+	}
+}
+
+func buildTestLabels() map[string]string {
+	return map[string]string{
+		"test": "test",
 	}
 }
