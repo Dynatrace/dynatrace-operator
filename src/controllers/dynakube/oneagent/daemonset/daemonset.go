@@ -215,9 +215,6 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 
 	if dsInfo.dynakube.NeedsOneAgentProbe() {
 		podSpec.Containers[0].ReadinessProbe = dsInfo.getProbe()
-	}
-
-	if podSpec.Containers[0].ReadinessProbe != nil {
 		podSpec.Containers[0].LivenessProbe = dsInfo.getProbe()
 	}
 

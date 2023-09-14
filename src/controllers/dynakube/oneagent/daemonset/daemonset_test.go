@@ -532,7 +532,7 @@ func TestPodSpecReadinessProbe(t *testing.T) {
 		assert.Equal(t, DefaultProbeInitialDelay, podSpec.Containers[0].ReadinessProbe.InitialDelaySeconds)
 		assert.Equal(t, int32(retries), podSpec.Containers[0].ReadinessProbe.FailureThreshold)
 	})
-	t.Run("check livenessprobe if readiness probe is set", func(t *testing.T) {
+	t.Run("check liveness probe if readiness probe is set", func(t *testing.T) {
 		builder := builderInfo{
 			dynakube: &dynatracev1beta1.DynaKube{
 				Status: dynatracev1beta1.DynaKubeStatus{
@@ -557,7 +557,7 @@ func TestPodSpecReadinessProbe(t *testing.T) {
 		assert.Equal(t, DefaultProbeInitialDelay, podSpec.Containers[0].LivenessProbe.InitialDelaySeconds)
 		assert.Equal(t, int32(retries), podSpec.Containers[0].LivenessProbe.FailureThreshold)
 	})
-	t.Run("check livenessprobe is not set when readiness probe is not set", func(t *testing.T) {
+	t.Run("check liveness probe is not set when readiness probe is not set", func(t *testing.T) {
 		builder := builderInfo{
 			dynakube: &dynatracev1beta1.DynaKube{
 				Status: dynatracev1beta1.DynaKubeStatus{
