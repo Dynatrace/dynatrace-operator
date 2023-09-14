@@ -7,18 +7,7 @@ import (
 	"sigs.k8s.io/e2e-framework/klient/conf"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
-	"sigs.k8s.io/e2e-framework/pkg/envfuncs"
-	"sigs.k8s.io/e2e-framework/support/kind"
 )
-
-// let's decide here which config we really need to run on. use minimal required config.
-func CreateKindClusterEnvironment() env.Environment {
-	kindClusterEnvironment := env.New()
-	randomClusterName := envconf.RandomName("operator-test", 10)
-	kindCluster := envfuncs.CreateCluster(kind.NewProvider(), randomClusterName)
-	kindClusterEnvironment.Setup(kindCluster)
-	return kindClusterEnvironment
-}
 
 func GetStandardKubeClusterEnvironment() env.Environment {
 	kubeConfigPath := conf.ResolveKubeConfigFile()
