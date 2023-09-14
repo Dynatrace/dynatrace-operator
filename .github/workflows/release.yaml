@@ -321,7 +321,6 @@ jobs:
           draft: true
           fail_on_unmatched_files: true
       - name: Update index helm file
-        uses: actions/checkout@v3
         run: |
           echo "Updating Helm repo index"
           ./hack/build/ci/generate-new-helm-index-yaml.sh
