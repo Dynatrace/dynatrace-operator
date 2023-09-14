@@ -1,4 +1,8 @@
 # Dynatrace Operator
+[![GoDoc](http://img.shields.io/badge/go-documentation-blue.svg?style=flat-square)](http://godoc.org/github.com/Dynatrace/dynatrace-operator)
+[![CI](https://github.com/Dynatrace/dynatrace-operator/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/Dynatrace/dynatrace-operator/actions/workflows/ci.yaml)
+[![codecov](https://codecov.io/gh/Dynatrace/dynatrace-operator/parse/branch/main/graph/badge.svg)](https://codecov.io/gh/Dynatrace/dynatrace-operator)
+![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/Dynatrace/dynatrace-operator?color=blue&sort=semver)
 
 The Dynatrace Operator supports rollout and lifecycle management of various Dynatrace components in Kubernetes and OpenShift.
 
