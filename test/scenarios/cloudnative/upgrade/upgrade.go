@@ -10,7 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
 	sample "github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/base"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/setup"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/Dynatrace/dynatrace-operator/test/scenarios/cloudnative"
 	"sigs.k8s.io/e2e-framework/pkg/features"
@@ -42,7 +41,7 @@ func upgrade(t *testing.T) features.Feature {
 	// Register actual test
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 	// update to snapshot
-	assess.UpgradeOperatorFromSource(builder, testDynakube.NeedsCSIDriver())
+	setup.DeployOperatorViaMake(testDynakube.NeedsCSIDriver()).AddSetupSetup(builder)
 	assessSampleAppsRestartHalf(builder, sampleApp)
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 	builder.Teardown(sampleApp.UninstallNamespace())

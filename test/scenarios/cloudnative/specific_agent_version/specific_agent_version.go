@@ -39,10 +39,6 @@ func specificAgentVersion(t *testing.T) features.Feature {
 		CloudNativeWithAgentVersion(cloudnative.DefaultCloudNativeSpec(), oldVersion)
 	testDynakube := dynakubeBuilder.Build()
 
-	// // Register operator install
-	// assess.InstallOperatorFromSource(builder, testDynakube)
-	// // Register actual test
-	// assess.InstallDynakube(builder, &secretConfig, testDynakube)
 	steps := setup.NewEnvironmentSetup(
 		setup.CreateDefaultDynatraceNamespace(),
 		setup.DeployOperatorViaMake(testDynakube.NeedsCSIDriver()),
@@ -58,7 +54,6 @@ func specificAgentVersion(t *testing.T) features.Feature {
 	builder.Assess("checking version of oneagent", assessVersionChecks(testDynakube))
 
 	// Register sample, dynakube and operator uninstall
-	// teardown.UninstallDynatrace(builder, testDynakube)
 	steps.CreateTeardownSteps(builder)
 	return builder.Feature()
 }

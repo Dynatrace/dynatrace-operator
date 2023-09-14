@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/setup"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/Dynatrace/dynatrace-operator/test/scenarios/cloudnative"
 	"sigs.k8s.io/e2e-framework/pkg/features"
@@ -51,7 +52,7 @@ func SwitchModes(t *testing.T, name string) features.Feature {
 	dynakubeCloudNative := dynakubeBuilder.Build()
 
 	assess.DeleteDynakube(featureBuilder, dynakubeClassicFullStack)
-	assess.AddClassicCleanUp(featureBuilder, dynakubeClassicFullStack)
+	teardown.AddClassicCleanUp(featureBuilder, dynakubeClassicFullStack)
 	sampleAppCloudNative := sampleapps.NewSampleDeployment(t, dynakubeCloudNative)
 	sampleAppCloudNative.WithName(sampleAppsCloudNativeName)
 	sampleAppCloudNative.WithAnnotations(map[string]string{dtwebhook.AnnotationFailurePolicy: "fail"})

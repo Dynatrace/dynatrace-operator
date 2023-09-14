@@ -8,7 +8,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/webhook"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
@@ -20,6 +19,12 @@ import (
 
 type BuilderFunc func(builder *features.FeatureBuilder)
 type BuilderStep func() (setupFunc, teardownFunc BuilderFunc)
+
+func (step BuilderStep) AddSetupSetup(builder *features.FeatureBuilder) {
+	setupFunc, _ := step()
+	setupFunc(builder)
+}
+
 type BuilderSteps []BuilderStep
 
 func CreateDefault() BuilderSteps {
@@ -58,11 +63,7 @@ func DeployOperatorViaMake(withCSIDriver bool) BuilderStep {
 	return func() (_, _ BuilderFunc) {
 		return func(builder *features.FeatureBuilder) {
 				builder.Assess("operator manifests installed", operator.InstallViaMake(withCSIDriver))
-				builder.Assess("operator started", operator.WaitForDeployment(dynakube.DefaultNamespace))
-				builder.Assess("webhook started", webhook.WaitForDeployment(dynakube.DefaultNamespace))
-				if withCSIDriver {
-					builder.Assess("csi driver started", csi.WaitForDaemonset(dynakube.DefaultNamespace))
-				}
+				assess.VerifyOperatorDeployment(builder, withCSIDriver)
 			},
 			func(builder *features.FeatureBuilder) {
 				if withCSIDriver {
@@ -78,11 +79,7 @@ func DeployOperatorViaHelm(releaseTag string, withCSIDriver bool) BuilderStep {
 	return func() (_, _ BuilderFunc) {
 		return func(builder *features.FeatureBuilder) {
 				builder.Assess("operator manifests installed", operator.InstallViaHelm(releaseTag, withCSIDriver, "dynatrace"))
-				builder.Assess("operator started", operator.WaitForDeployment(dynakube.DefaultNamespace))
-				builder.Assess("webhook started", webhook.WaitForDeployment(dynakube.DefaultNamespace))
-				if withCSIDriver {
-					builder.Assess("csi driver started", csi.WaitForDaemonset(dynakube.DefaultNamespace))
-				}
+				assess.VerifyOperatorDeployment(builder, withCSIDriver)
 			},
 			func(builder *features.FeatureBuilder) {
 				if withCSIDriver {
