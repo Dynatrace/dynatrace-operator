@@ -103,7 +103,6 @@ func InstallFromImage(t *testing.T, istioEnabled bool) features.Feature {
 	if istioEnabled {
 		operatorNamespaceBuilder = operatorNamespaceBuilder.WithLabels(istio.InjectionLabel)
 	}
-	// assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), cloudNativeDynakube)
 
 	// Register dynakube install
 	steps := setup.NewEnvironmentSetup(

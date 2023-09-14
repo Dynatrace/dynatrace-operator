@@ -1,6 +1,6 @@
 //go:build e2e
 
-package activegatebasic
+package _default
 
 import (
 	"testing"
