@@ -163,7 +163,7 @@ func (dk *DynaKube) NeedsOneAgentPrivileged() bool {
 	return dk.FeatureOneAgentPrivileged()
 }
 
-func (dk *DynaKube) NeedsOneAgentReadinessProbe() bool {
+func (dk *DynaKube) NeedsOneAgentProbe() bool {
 	return dk.Status.OneAgent.Healthcheck != nil
 }
 
