@@ -176,7 +176,7 @@ func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	return result, nil
 }
 
-const DefaultReadinessProbeInitialDelay = int32(30)
+const DefaultProbeInitialDelay = int32(30)
 
 func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 	resources := dsInfo.resources()
@@ -213,18 +213,9 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 		TerminationGracePeriodSeconds: address.Of(defaultTerminationGracePeriod),
 	}
 
-	if dsInfo.dynakube.NeedsOneAgentReadinessProbe() {
-		podSpec.Containers[0].ReadinessProbe = &corev1.Probe{
-			ProbeHandler: corev1.ProbeHandler{
-				Exec: &corev1.ExecAction{
-					Command: dsInfo.dynakube.Status.OneAgent.Healthcheck.Test,
-				},
-			},
-			InitialDelaySeconds: DefaultReadinessProbeInitialDelay,
-			PeriodSeconds:       int32(dsInfo.dynakube.Status.OneAgent.Healthcheck.Interval.Seconds()),
-			TimeoutSeconds:      int32(dsInfo.dynakube.Status.OneAgent.Healthcheck.Timeout.Seconds()),
-			FailureThreshold:    int32(dsInfo.dynakube.Status.OneAgent.Healthcheck.Retries),
-		}
+	if dsInfo.dynakube.NeedsOneAgentProbe() {
+		podSpec.Containers[0].ReadinessProbe = dsInfo.getProbe()
+		podSpec.Containers[0].LivenessProbe = dsInfo.getProbe()
 	}
 
 	return podSpec
@@ -350,5 +341,19 @@ func defaultSecurityContextCapabilities() *corev1.Capabilities {
 			"SYS_PTRACE",
 			"SYS_RESOURCE",
 		},
+	}
+}
+
+func (dsInfo *builderInfo) getProbe() *corev1.Probe {
+	return &corev1.Probe{
+		ProbeHandler: corev1.ProbeHandler{
+			Exec: &corev1.ExecAction{
+				Command: dsInfo.dynakube.Status.OneAgent.Healthcheck.Test,
+			},
+		},
+		InitialDelaySeconds: DefaultProbeInitialDelay,
+		PeriodSeconds:       int32(dsInfo.dynakube.Status.OneAgent.Healthcheck.Interval.Seconds()),
+		TimeoutSeconds:      int32(dsInfo.dynakube.Status.OneAgent.Healthcheck.Timeout.Seconds()),
+		FailureThreshold:    int32(dsInfo.dynakube.Status.OneAgent.Healthcheck.Retries),
 	}
 }

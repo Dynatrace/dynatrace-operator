@@ -5,7 +5,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 )
 
-func GetCommunicationHosts(dynakube *dynatracev1beta1.DynaKube) []dtclient.CommunicationHost {
+func GetOneAgentCommunicationHosts(dynakube *dynatracev1beta1.DynaKube) []dtclient.CommunicationHost {
 	communicationHosts := make([]dtclient.CommunicationHost, 0, len(dynakube.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts))
 	for _, host := range dynakube.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts {
 		communicationHosts = append(communicationHosts, dtclient.CommunicationHost{
