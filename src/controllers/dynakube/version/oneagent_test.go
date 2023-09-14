@@ -17,7 +17,7 @@ import (
 func TestOneAgentUpdater(t *testing.T) {
 	testImage := dtclient.LatestImageInfo{
 		Source: "some.registry.com",
-		Tag:    "1.2.3",
+		Tag:    "1.2.3.4-5",
 	}
 	t.Run("Getters work as expected", func(t *testing.T) {
 		dynakube := &dynatracev1beta1.DynaKube{
@@ -48,7 +48,7 @@ func TestOneAgentUpdater(t *testing.T) {
 }
 
 func TestOneAgentUseDefault(t *testing.T) {
-	testVersion := "1.2.3"
+	testVersion := "1.2.3.4-5"
 	testDigest := getTestDigest()
 	t.Run("Set according to version field", func(t *testing.T) {
 		dynakube := &dynatracev1beta1.DynaKube{
@@ -104,6 +104,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 		assertStatusBasedOnTenantRegistry(t, expectedImage, testVersion, dynakube.Status.OneAgent.VersionStatus)
 	})
 	t.Run("Don't allow downgrades", func(t *testing.T) {
+		previousVersion := "999.999.999.999-999"
 		dynakube := &dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,
@@ -114,8 +115,8 @@ func TestOneAgentUseDefault(t *testing.T) {
 			Status: dynatracev1beta1.DynaKubeStatus{
 				OneAgent: dynatracev1beta1.OneAgentStatus{
 					VersionStatus: status.VersionStatus{
-						ImageID: "some.registry.com:999.999.999.999-999",
-						Version: "999.999.999.999-999",
+						ImageID: "some.registry.com:" + previousVersion,
+						Version: previousVersion,
 						Source:  status.TenantRegistryVersionSource,
 					},
 				},
@@ -135,13 +136,8 @@ func TestOneAgentUseDefault(t *testing.T) {
 		updater := newOneAgentUpdater(dynakube, fake.NewClient(), mockClient, registry.ImageVersionExt)
 
 		err := updater.UseTenantRegistry(context.TODO())
-		require.Error(t, err)
-
-		dynakube.Status.OneAgent.Version = ""
-		dynakube.Status.OneAgent.Source = status.PublicRegistryVersionSource
-
-		err = updater.UseTenantRegistry(context.TODO())
-		require.Error(t, err)
+		require.NoError(t, err) // we only log the downgrade problem, not fail the reconcile
+		assert.Equal(t, previousVersion, dynakube.Status.OneAgent.Version)
 	})
 }
 
