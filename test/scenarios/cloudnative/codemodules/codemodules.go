@@ -106,10 +106,10 @@ func InstallFromImage(t *testing.T, istioEnabled bool) features.Feature {
 	// assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), cloudNativeDynakube)
 
 	// Register dynakube install
-	setup := setup.NewEnvironmentSetup(
+	steps := setup.NewEnvironmentSetup(
 		setup.CreateNamespaceWithoutTeardown(operatorNamespaceBuilder.Build()),
 		setup.DeployOperatorViaMake(cloudNativeDynakube.NeedsCSIDriver()))
-	setup.CreateSetupSteps(builder)
+	steps.CreateSetupSteps(builder)
 
 	// Register sample app install
 	builder.Assess("install sample app", sampleApp.Install())
@@ -129,7 +129,7 @@ func InstallFromImage(t *testing.T, istioEnabled bool) features.Feature {
 	// Register sample, dynakube and operator uninstall
 	builder.Teardown(sampleApp.UninstallNamespace())
 	teardown.DeleteDynakube(builder, cloudNativeDynakube)
-	setup.CreateTeardownSteps(builder)
+	steps.CreateTeardownSteps(builder)
 
 	return builder.Feature()
 }
@@ -163,11 +163,10 @@ func withProxy(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features
 	operatorNamespaceBuilder := namespace.NewBuilder(cloudNativeDynakube.Namespace)
 	operatorNamespaceBuilder = operatorNamespaceBuilder.WithLabels(istio.InjectionLabel)
 
-	// assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), cloudNativeDynakube)
-	setup := setup.NewEnvironmentSetup(
+	steps := setup.NewEnvironmentSetup(
 		setup.CreateNamespaceWithoutTeardown(operatorNamespaceBuilder.Build()),
 		setup.DeployOperatorViaMake(cloudNativeDynakube.NeedsCSIDriver()))
-	setup.CreateSetupSteps(builder)
+	steps.CreateSetupSteps(builder)
 
 	// Register proxy create and delete
 	proxy.SetupProxyWithTeardown(t, builder, cloudNativeDynakube)
@@ -189,8 +188,7 @@ func withProxy(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features
 	// Register sample, dynakube and operator uninstall
 	builder.Teardown(sampleApp.UninstallNamespace())
 	teardown.DeleteDynakube(builder, cloudNativeDynakube)
-	// teardown.UninstallOperator(builder, cloudNativeDynakube)
-	setup.CreateTeardownSteps(builder)
+	steps.CreateTeardownSteps(builder)
 
 	return builder.Feature()
 }
@@ -234,10 +232,10 @@ func withProxyCA(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) featur
 		map[string]string{dynatracev1beta1.TrustedCAKey: string(trustedCa)})
 	builder.Assess("create trusted CAs config map", configmap.Create(configmapBuilder.Build()))
 
-	setup := setup.NewEnvironmentSetup(
+	steps := setup.NewEnvironmentSetup(
 		setup.CreateNamespaceWithoutTeardown(operatorNamespaceBuilder.Build()),
 		setup.DeployOperatorViaMake(cloudNativeDynakube.NeedsCSIDriver()))
-	setup.CreateSetupSteps(builder)
+	steps.CreateSetupSteps(builder)
 
 	// Register proxy create and delete
 	proxy.SetupProxyWithCustomCAandTeardown(t, builder, cloudNativeDynakube)
@@ -259,8 +257,7 @@ func withProxyCA(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) featur
 	// Register sample, dynakube and operator uninstall
 	builder.Teardown(sampleApp.UninstallNamespace())
 	teardown.DeleteDynakube(builder, cloudNativeDynakube)
-	// teardown.UninstallOperator(builder, cloudNativeDynakube)
-	setup.CreateTeardownSteps(builder)
+	steps.CreateTeardownSteps(builder)
 
 	return builder.Feature()
 }

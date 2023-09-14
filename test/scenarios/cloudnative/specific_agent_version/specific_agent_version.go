@@ -43,11 +43,11 @@ func specificAgentVersion(t *testing.T) features.Feature {
 	// assess.InstallOperatorFromSource(builder, testDynakube)
 	// // Register actual test
 	// assess.InstallDynakube(builder, &secretConfig, testDynakube)
-	setup := setup.NewEnvironmentSetup(
+	steps := setup.NewEnvironmentSetup(
 		setup.CreateDefaultDynatraceNamespace(),
 		setup.DeployOperatorViaMake(testDynakube.NeedsCSIDriver()),
 		setup.CreateDynakube(secretConfig, testDynakube))
-	setup.CreateSetupSteps(builder)
+	steps.CreateSetupSteps(builder)
 	builder.Assess("checking version of oneagent", assessVersionChecks(testDynakube))
 
 	updatedDynakube := testDynakube.DeepCopy()
@@ -59,7 +59,7 @@ func specificAgentVersion(t *testing.T) features.Feature {
 
 	// Register sample, dynakube and operator uninstall
 	// teardown.UninstallDynatrace(builder, testDynakube)
-	setup.CreateTeardownSteps(builder)
+	steps.CreateTeardownSteps(builder)
 	return builder.Feature()
 }
 

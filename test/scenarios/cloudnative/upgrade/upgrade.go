@@ -30,14 +30,11 @@ func upgrade(t *testing.T) features.Feature {
 	sampleApp.WithNamespace(sampleNamespace)
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
-	// assess.InstallOperatorFromRelease(builder, testDynakube, "v0.10.4")
-	// Register dynakube install
-	// assess.InstallDynakube(builder, &secretConfig, testDynakube)
-	s := setup.NewEnvironmentSetup(
+	steps := setup.NewEnvironmentSetup(
 		setup.CreateDefaultDynatraceNamespace(),
 		setup.DeployOperatorViaHelm("v0.10.4", true),
 		setup.CreateDynakube(secretConfig, testDynakube))
-	s.CreateSetupSteps(builder)
+	steps.CreateSetupSteps(builder)
 
 	// Register sample app install
 	builder.Assess("install sample app", sampleApp.Install())
@@ -49,8 +46,7 @@ func upgrade(t *testing.T) features.Feature {
 	assessSampleAppsRestartHalf(builder, sampleApp)
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 	builder.Teardown(sampleApp.UninstallNamespace())
-	// teardown.UninstallDynatrace(builder, testDynakube)
-	s.CreateTeardownSteps(builder)
+	steps.CreateTeardownSteps(builder)
 	return builder.Feature()
 }
 

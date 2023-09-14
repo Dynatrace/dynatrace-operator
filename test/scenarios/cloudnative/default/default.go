@@ -38,11 +38,11 @@ func Default(t *testing.T, istioEnabled bool) features.Feature {
 	if istioEnabled {
 		operatorNamespaceBuilder = operatorNamespaceBuilder.WithLabels(istio.InjectionLabel)
 	}
-	// assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), testDynakube)
-	setup := setup.NewEnvironmentSetup(
+
+	steps := setup.NewEnvironmentSetup(
 		setup.CreateNamespaceWithoutTeardown(operatorNamespaceBuilder.Build()),
 		setup.DeployOperatorViaMake(testDynakube.NeedsCSIDriver()))
-	setup.CreateSetupSteps(builder)
+	steps.CreateSetupSteps(builder)
 
 	// Register sample app install
 	namespaceBuilder := namespace.NewBuilder("cloudnative-sample")
@@ -71,7 +71,7 @@ func Default(t *testing.T, istioEnabled bool) features.Feature {
 	// Register sample, dynakube and operator uninstall
 	builder.Teardown(sampleApp.UninstallNamespace())
 	teardown.DeleteDynakube(builder, testDynakube)
-	setup.CreateTeardownSteps(builder)
+	steps.CreateTeardownSteps(builder)
 
 	return builder.Feature()
 }

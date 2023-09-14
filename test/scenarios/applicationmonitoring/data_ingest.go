@@ -61,12 +61,12 @@ func dataIngest(t *testing.T) features.Feature {
 	})
 
 	// Register operator + dynakube install
-	setup := setup.NewEnvironmentSetup(
+	steps := setup.NewEnvironmentSetup(
 		setup.CreateNamespaceWithoutTeardown(namespace.NewBuilder(testDynakube.Namespace).Build()),
 		setup.DeployOperatorViaMake(testDynakube.NeedsCSIDriver()),
 		setup.CreateDynakube(secretConfig, testDynakube),
 	)
-	setup.CreateSetupSteps(builder)
+	steps.CreateSetupSteps(builder)
 
 	// Register actual test (+sample cleanup)
 	builder.Assess("install sample deployment and wait till ready", sampleDeployment.Install())
@@ -76,7 +76,7 @@ func dataIngest(t *testing.T) features.Feature {
 
 	builder.WithTeardown("removing samples", sampleDeployment.UninstallNamespace())
 
-	setup.CreateTeardownSteps(builder)
+	steps.CreateTeardownSteps(builder)
 
 	return builder.Feature()
 }

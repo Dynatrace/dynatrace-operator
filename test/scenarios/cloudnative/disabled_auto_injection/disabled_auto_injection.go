@@ -36,12 +36,8 @@ func automaticInjectionDisabled(t *testing.T) features.Feature {
 
 	testDynakube := dynakubeBuilder.Build()
 
-	// Register operator install
-	// operatorNamespaceBuilder := namespace.NewBuilder(testDynakube.Namespace)
-
-	// assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), testDynakube)
-	s := setup.CreateDefault()
-	s.CreateSetupSteps(builder)
+	steps := setup.CreateDefault()
+	steps.CreateSetupSteps(builder)
 
 	// Register sample app install
 	namespaceBuilder := namespace.NewBuilder("cloudnative-disabled-injection-sample")
@@ -62,8 +58,7 @@ func automaticInjectionDisabled(t *testing.T) features.Feature {
 	// Register sample, dynakube and operator uninstall
 	builder.Teardown(sampleApp.UninstallNamespace())
 	teardown.DeleteDynakube(builder, testDynakube)
-	// teardown.UninstallOperator(builder, testDynakube)
-	s.CreateTeardownSteps(builder)
+	steps.CreateTeardownSteps(builder)
 	return builder.Feature()
 }
 

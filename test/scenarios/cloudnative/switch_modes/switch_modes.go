@@ -37,12 +37,12 @@ func switchModes(t *testing.T, name string) features.Feature {
 	featureBuilder.Teardown(sampleAppCloudNative.Uninstall())
 
 	// install operator and dynakube
-	setup := setup.NewEnvironmentSetup(
+	steps := setup.NewEnvironmentSetup(
 		setup.CreateNamespaceWithoutTeardown(namespace.NewBuilder(dynakubeCloudNative.Namespace).Build()),
 		setup.DeployOperatorViaMake(dynakubeCloudNative.NeedsCSIDriver()),
 		setup.CreateDynakube(secretConfig, dynakubeCloudNative),
 	)
-	setup.CreateSetupSteps(featureBuilder)
+	steps.CreateSetupSteps(featureBuilder)
 	// apply sample apps
 	featureBuilder.Assess("(cloudnative) install sample app", sampleAppCloudNative.Install())
 
@@ -61,6 +61,6 @@ func switchModes(t *testing.T, name string) features.Feature {
 	featureBuilder.Assess("(classic) install sample app", sampleAppClassicFullStack.Install())
 	featureBuilder.Teardown(sampleAppClassicFullStack.Uninstall())
 	// tear down
-	setup.CreateTeardownSteps(featureBuilder)
+	steps.CreateTeardownSteps(featureBuilder)
 	return featureBuilder.Feature()
 }

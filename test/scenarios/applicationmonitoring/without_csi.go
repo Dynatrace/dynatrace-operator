@@ -52,14 +52,12 @@ func applicationMonitoringWithoutCSI(t *testing.T) features.Feature {
 
 	operatorNamespaceBuilder := namespace.NewBuilder(appOnlyDynakube.Namespace)
 
-	// assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), appOnlyDynakube)
-	setup := setup.NewEnvironmentSetup(
+	steps := setup.NewEnvironmentSetup(
 		setup.CreateNamespaceWithoutTeardown(operatorNamespaceBuilder.Build()),
 		setup.DeployOperatorViaMake(appOnlyDynakube.NeedsCSIDriver()),
 		setup.CreateDynakube(secretConfig, appOnlyDynakube))
-	setup.CreateSetupSteps(builder)
+	steps.CreateSetupSteps(builder)
 
-	// assess.InstallDynakubeWithTeardown(builder, &secretConfig, appOnlyDynakube)
 	builder.Assess("install sample app", sampleApp.Install())
 
 	podSample := sampleapps.NewSampleDeployment(t, appOnlyDynakube)
@@ -86,7 +84,7 @@ func applicationMonitoringWithoutCSI(t *testing.T) features.Feature {
 	builder.Assess("check injection of pods with random user", checkInjection(randomUserSample))
 
 	builder.Teardown(sampleApp.UninstallNamespace())
-	setup.CreateTeardownSteps(builder)
+	steps.CreateTeardownSteps(builder)
 
 	return builder.Feature()
 }

@@ -131,25 +131,19 @@ func labelVersionDetection(t *testing.T) features.Feature {
 		buildPreservedBuildLabelSampleApp(t, labelVersionDynakube),
 		buildInvalidBuildLabelSampleApp(t, labelVersionDynakube),
 	}
-	setup := setup.NewEnvironmentSetup(
+	steps := setup.NewEnvironmentSetup(
 		setup.CreateDefaultDynatraceNamespace(),
 		setup.DeployOperatorViaMake(defaultDynakube.NeedsCSIDriver()),
 		setup.CreateDynakube(secretConfig, defaultDynakube),
 		setup.CreateDynakube(secretConfig, labelVersionDynakube))
-	setup.CreateSetupSteps(builder)
-	// Register operator install
-	// assess.InstallOperatorFromSource(builder, defaultDynakube)
-	// Register dynakubes install and uninstall
-	// assess.InstallDynakubeWithTeardown(builder, &secretConfig, defaultDynakube)
-	// assess.InstallDynakubeWithTeardown(builder, &secretConfig, labelVersionDynakube)
+	steps.CreateSetupSteps(builder)
 
 	// Register actual test (+sample cleanup)
 	installSampleApplications(builder, sampleApps)
 	checkBuildLabels(builder, sampleApps)
 	teardownSampleApplications(builder, sampleApps)
 	// Register operator uninstall
-	// teardown.UninstallOperator(builder, labelVersionDynakube)
-	setup.CreateTeardownSteps(builder)
+	steps.CreateTeardownSteps(builder)
 
 	return builder.Feature()
 }
@@ -174,8 +168,8 @@ func checkBuildLabels(builder *features.FeatureBuilder, sampleApps []sample.App)
 
 func assertBuildLabels(sampleApp sample.App, expectedBuildLabels map[string]buildLabel) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		resources := envConfig.Client().Resources()
-		pods := sampleApp.GetPods(ctx, t, resources)
+		kubeResources := envConfig.Client().Resources()
+		pods := sampleApp.GetPods(ctx, t, kubeResources)
 
 		for _, podItem := range pods.Items {
 			podItem := podItem

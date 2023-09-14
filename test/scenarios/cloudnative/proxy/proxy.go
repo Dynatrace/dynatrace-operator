@@ -56,12 +56,12 @@ func withProxy(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features
 	if proxySpec != nil {
 		operatorNamespaceBuilder = operatorNamespaceBuilder.WithLabels(istio.InjectionLabel)
 	}
-	// assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), testDynakube)
-	s := setup.NewEnvironmentSetup(
+
+	steps := setup.NewEnvironmentSetup(
 		setup.CreateNamespaceWithoutTeardown(operatorNamespaceBuilder.Build()),
 		setup.DeployOperatorViaMake(testDynakube.NeedsCSIDriver()),
 	)
-	s.CreateSetupSteps(builder)
+	steps.CreateSetupSteps(builder)
 
 	// Register proxy create and delete
 	proxy.SetupProxyWithTeardown(t, builder, testDynakube)
@@ -79,8 +79,7 @@ func withProxy(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features
 
 	// Register operator and dynakube uninstall
 	teardown.DeleteDynakube(builder, testDynakube)
-	// teardown.UninstallOperator(builder, testDynakube)
-	s.CreateTeardownSteps(builder)
+	steps.CreateTeardownSteps(builder)
 
 	return builder.Feature()
 }

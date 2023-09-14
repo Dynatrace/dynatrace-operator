@@ -59,7 +59,6 @@ func readOnlyCSIVolume(t *testing.T) features.Feature {
 
 	builder.WithTeardown("removing sample namespace", sampleDeployment.UninstallNamespace())
 
-	// teardown.UninstallDynatrace(builder, testDynakube)
 	steps.CreateTeardownSteps(builder)
 
 	return builder.Feature()
