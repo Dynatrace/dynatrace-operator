@@ -17,7 +17,7 @@ var testEnvironment env.Environment
 func TestMain(m *testing.M) {
 	log.SetLogger(logger.Factory.GetLogger("e2e-cloudnative-network_problems"))
 
-	testEnvironment = environment.Get()
+	testEnvironment = environment.GetStandardKubeClusterEnvironment()
 	testEnvironment.BeforeEachTest(istio.AssertIstioNamespace())
 	testEnvironment.BeforeEachTest(istio.AssertIstiodDeployment())
 	testEnvironment.Run(m)

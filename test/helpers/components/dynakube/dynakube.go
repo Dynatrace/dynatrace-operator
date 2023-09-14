@@ -12,6 +12,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	dynakubev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	"github.com/stretchr/testify/require"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -24,8 +25,7 @@ import (
 )
 
 const (
-	defaultName      = "dynakube"
-	defaultNamespace = "dynatrace"
+	defaultName = "dynakube"
 )
 
 type Builder struct {
@@ -56,7 +56,7 @@ func (dynakubeBuilder Builder) Namespace(namespace string) Builder {
 func (dynakubeBuilder Builder) WithDefaultObjectMeta() Builder {
 	dynakubeBuilder.dynakube.ObjectMeta = metav1.ObjectMeta{
 		Name:        defaultName,
-		Namespace:   defaultNamespace,
+		Namespace:   operator.DefaultNamespace,
 		Annotations: map[string]string{},
 	}
 

@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/proxy"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/setup"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
@@ -55,7 +56,12 @@ func withProxy(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features
 	if proxySpec != nil {
 		operatorNamespaceBuilder = operatorNamespaceBuilder.WithLabels(istio.InjectionLabel)
 	}
-	assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), testDynakube)
+
+	steps := setup.NewEnvironmentSetup(
+		setup.CreateNamespaceWithoutTeardown(operatorNamespaceBuilder.Build()),
+		setup.DeployOperatorViaMake(testDynakube.NeedsCSIDriver()),
+	)
+	steps.CreateSetupSteps(builder)
 
 	// Register proxy create and delete
 	proxy.SetupProxyWithTeardown(t, builder, testDynakube)
@@ -72,7 +78,8 @@ func withProxy(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features
 	builder.Assess("check proxy settings in ruxitagentproc.conf", proxy.CheckRuxitAgentProcFileHasProxySetting(sampleApp, proxySpec))
 
 	// Register operator and dynakube uninstall
-	teardown.UninstallDynatrace(builder, testDynakube)
+	teardown.DeleteDynakube(builder, testDynakube)
+	steps.CreateTeardownSteps(builder)
 
 	return builder.Feature()
 }

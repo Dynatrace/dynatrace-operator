@@ -14,12 +14,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
 	sample "github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/base"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/setup"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -61,7 +61,12 @@ func dataIngest(t *testing.T) features.Feature {
 	})
 
 	// Register operator + dynakube install
-	assess.InstallDynatrace(builder, &secretConfig, testDynakube)
+	steps := setup.NewEnvironmentSetup(
+		setup.CreateNamespaceWithoutTeardown(namespace.NewBuilder(testDynakube.Namespace).Build()),
+		setup.DeployOperatorViaMake(testDynakube.NeedsCSIDriver()),
+		setup.CreateDynakube(secretConfig, testDynakube),
+	)
+	steps.CreateSetupSteps(builder)
 
 	// Register actual test (+sample cleanup)
 	builder.Assess("install sample deployment and wait till ready", sampleDeployment.Install())
@@ -71,8 +76,7 @@ func dataIngest(t *testing.T) features.Feature {
 
 	builder.WithTeardown("removing samples", sampleDeployment.UninstallNamespace())
 
-	// Register operator + dynakube uninstall
-	teardown.UninstallDynatrace(builder, testDynakube)
+	steps.CreateTeardownSteps(builder)
 
 	return builder.Feature()
 }
