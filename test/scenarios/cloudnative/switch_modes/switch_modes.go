@@ -46,10 +46,10 @@ func switchModes(t *testing.T, name string) features.Feature {
 	// apply sample apps
 	featureBuilder.Assess("(cloudnative) install sample app", sampleAppCloudNative.Install())
 
-	// // run cloud native test here
+	// run cloud native test here
 	cloudnative.AssessSampleInitContainers(featureBuilder, sampleAppCloudNative)
 
-	// // switch to classic full stack
+	// switch to classic full stack
 	classicDynakubeBuilder := cloudNativeDynakubeBuilder.ResetOneAgent().ClassicFullstack(&dynatracev1beta1.HostInjectSpec{})
 	dynakubeClassicFullStack := classicDynakubeBuilder.Build()
 	sampleAppClassicFullStack := sampleapps.NewSampleDeployment(t, dynakubeClassicFullStack)

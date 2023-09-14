@@ -55,7 +55,7 @@ func CreateNamespace(n corev1.Namespace) BuilderStep {
 }
 
 func CreateDefaultDynatraceNamespace() BuilderStep {
-	namespaceBuilder := namespace.NewBuilder(dynakube.DefaultNamespace)
+	namespaceBuilder := namespace.NewBuilder(operator.DefaultNamespace)
 	return CreateNamespaceWithoutTeardown(namespaceBuilder.Build())
 }
 
@@ -67,7 +67,7 @@ func DeployOperatorViaMake(withCSIDriver bool) BuilderStep {
 			},
 			func(builder *features.FeatureBuilder) {
 				if withCSIDriver {
-					builder.WithTeardown("clean up csi driver files", csi.CleanUpEachPod(dynakube.DefaultNamespace))
+					builder.WithTeardown("clean up csi driver files", csi.CleanUpEachPod(operator.DefaultNamespace))
 				}
 
 				builder.WithTeardown("operator manifests uninstalled", operator.UninstallViaMake(withCSIDriver))
@@ -83,7 +83,7 @@ func DeployOperatorViaHelm(releaseTag string, withCSIDriver bool) BuilderStep {
 			},
 			func(builder *features.FeatureBuilder) {
 				if withCSIDriver {
-					builder.WithTeardown("clean up csi driver files", csi.CleanUpEachPod(dynakube.DefaultNamespace))
+					builder.WithTeardown("clean up csi driver files", csi.CleanUpEachPod(operator.DefaultNamespace))
 				}
 
 				builder.WithTeardown("operator manifests uninstalled", operator.UninstallViaMake(withCSIDriver))
