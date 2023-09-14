@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/istio"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/setup"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
@@ -37,7 +38,11 @@ func Default(t *testing.T, istioEnabled bool) features.Feature {
 	if istioEnabled {
 		operatorNamespaceBuilder = operatorNamespaceBuilder.WithLabels(istio.InjectionLabel)
 	}
-	assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), testDynakube)
+
+	steps := setup.NewEnvironmentSetup(
+		setup.CreateNamespaceWithoutTeardown(operatorNamespaceBuilder.Build()),
+		setup.DeployOperatorViaMake(testDynakube.NeedsCSIDriver()))
+	steps.CreateSetupSteps(builder)
 
 	// Register sample app install
 	namespaceBuilder := namespace.NewBuilder("cloudnative-sample")
@@ -65,7 +70,8 @@ func Default(t *testing.T, istioEnabled bool) features.Feature {
 
 	// Register sample, dynakube and operator uninstall
 	builder.Teardown(sampleApp.UninstallNamespace())
-	teardown.UninstallDynatrace(builder, testDynakube)
+	teardown.DeleteDynakube(builder, testDynakube)
+	steps.CreateTeardownSteps(builder)
 
 	return builder.Feature()
 }

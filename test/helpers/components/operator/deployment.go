@@ -13,7 +13,8 @@ import (
 )
 
 const (
-	DeploymentName = "dynatrace-operator"
+	DeploymentName   = "dynatrace-operator"
+	DefaultNamespace = "dynatrace"
 )
 
 func Get(ctx context.Context, resource *resources.Resources, namespace string) (appsv1.Deployment, error) {

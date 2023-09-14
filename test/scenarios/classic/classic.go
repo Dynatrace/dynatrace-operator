@@ -7,7 +7,8 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/setup"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -22,7 +23,10 @@ func install(t *testing.T) features.Feature {
 		Build()
 
 	// check if oneAgent pods startup and report as ready
-	assess.InstallDynatraceWithTeardown(builder, &secretConfig, testDynakube)
-
+	setup.CreateFeatureEnvironment(builder,
+		setup.CreateNamespaceWithoutTeardown(namespace.NewBuilder(testDynakube.Namespace).Build()),
+		setup.DeployOperatorViaMake(testDynakube.NeedsCSIDriver()),
+		setup.CreateDynakube(secretConfig, testDynakube),
+	)
 	return builder.Feature()
 }

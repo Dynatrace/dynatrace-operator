@@ -15,7 +15,7 @@ var testEnvironment env.Environment
 
 func TestMain(m *testing.M) {
 	log.SetLogger(logger.Factory.GetLogger("e2e-cloudnative-default"))
-	testEnvironment = environment.Get()
+	testEnvironment = environment.GetStandardKubeClusterEnvironment()
 	testEnvironment.Run(m)
 }
 

@@ -16,7 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/setup"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -38,25 +38,22 @@ func supportArchiveExecution(t *testing.T) features.Feature {
 		"inject": "me",
 	}
 
-	dynakubeBuilder := dynakube.NewBuilder().
+	testDynakube := dynakube.NewBuilder().
 		WithDefaultObjectMeta().
 		NamespaceSelector(metav1.LabelSelector{
 			MatchLabels: injectLabels,
 		}).
 		ApiUrl(secretConfig.ApiUrl).
 		CloudNative(&dynatracev1beta1.CloudNativeFullStackSpec{}).
-		WithActiveGate()
-	testDynakube := dynakubeBuilder.Build()
+		WithActiveGate().Build()
 
-	// Register sample namespace creat and delete
-	builder.Assess("create sample injected namespace", namespace.Create(namespace.NewBuilder(testAppNameInjected).WithLabels(injectLabels).Build()))
-	builder.Assess("create sample not injected namespace", namespace.Create(namespace.NewBuilder(testAppNameNotInjected).Build()))
-	builder.Teardown(namespace.Delete(testAppNameInjected))
-	builder.Teardown(namespace.Delete(testAppNameNotInjected))
-
-	// Register operator + dynakube install and teardown
-	assess.InstallDynatraceWithTeardown(builder, &secretConfig, testDynakube)
-
+	setup.CreateFeatureEnvironment(builder,
+		setup.CreateNamespace(namespace.NewBuilder(testAppNameInjected).WithLabels(injectLabels).Build()),
+		setup.CreateNamespace(namespace.NewBuilder(testAppNameNotInjected).Build()),
+		setup.CreateNamespaceWithoutTeardown(namespace.NewBuilder(testDynakube.Namespace).Build()),
+		setup.DeployOperatorViaMake(testDynakube.NeedsCSIDriver()),
+		setup.CreateDynakube(secretConfig, testDynakube),
+	)
 	// Register actual test
 	builder.Assess("support archive subcommand can be executed correctly with managed logs", testSupportArchiveCommand(testDynakube, true))
 	builder.Assess("support archive subcommand can be executed correctly without managed logs", testSupportArchiveCommand(testDynakube, false))

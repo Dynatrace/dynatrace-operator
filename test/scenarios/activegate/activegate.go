@@ -17,6 +17,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/proxy"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/setup"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
@@ -65,8 +66,10 @@ func Install(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features.F
 	if proxySpec != nil {
 		operatorNamespaceBuilder = operatorNamespaceBuilder.WithLabels(istio.InjectionLabel)
 	}
-	assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), testDynakube)
-
+	steps := setup.NewEnvironmentSetup(
+		setup.CreateNamespaceWithoutTeardown(operatorNamespaceBuilder.Build()),
+		setup.DeployOperatorViaMake(testDynakube.NeedsCSIDriver()))
+	steps.CreateSetupSteps(builder)
 	// Register proxy install and uninstall
 	proxy.SetupProxyWithTeardown(t, builder, testDynakube)
 	proxy.CutOffDynatraceNamespace(builder, proxySpec)
@@ -80,8 +83,7 @@ func Install(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features.F
 
 	// Register operator + dynakube uninstall
 	teardown.DeleteDynakube(builder, testDynakube)
-	teardown.UninstallOperator(builder, testDynakube)
-
+	steps.CreateTeardownSteps(builder)
 	return builder.Feature()
 }
 
@@ -112,10 +114,10 @@ func assessActiveGateHttpEndpoint(builder *features.FeatureBuilder, testDynakube
 
 func checkIfAgHasContainers(testDynakube *dynatracev1beta1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		resources := envConfig.Client().Resources()
+		kubeResources := envConfig.Client().Resources()
 
 		var activeGatePod corev1.Pod
-		require.NoError(t, resources.WithNamespace(testDynakube.Namespace).Get(ctx, activegate.GetActiveGatePodName(testDynakube, agComponentName), testDynakube.Namespace, &activeGatePod))
+		require.NoError(t, kubeResources.WithNamespace(testDynakube.Namespace).Get(ctx, activegate.GetActiveGatePodName(testDynakube, agComponentName), testDynakube.Namespace, &activeGatePod))
 
 		require.NotNil(t, activeGatePod.Spec)
 		require.NotEmpty(t, activeGatePod.Spec.InitContainers)
@@ -146,13 +148,13 @@ func checkIfProxyUsed(testDynakube *dynatracev1beta1.DynaKube) features.Func {
 
 func checkMountPoints(testDynakube *dynatracev1beta1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		resources := envConfig.Client().Resources()
+		kubeResources := envConfig.Client().Resources()
 
 		var activeGatePod corev1.Pod
-		require.NoError(t, resources.Get(ctx, activegate.GetActiveGatePodName(testDynakube, agComponentName), testDynakube.Namespace, &activeGatePod))
+		require.NoError(t, kubeResources.Get(ctx, activegate.GetActiveGatePodName(testDynakube, agComponentName), testDynakube.Namespace, &activeGatePod))
 
 		for name, mountPoints := range agMounts {
-			assertMountPointsExist(ctx, t, resources, activeGatePod, name, mountPoints)
+			assertMountPointsExist(ctx, t, kubeResources, activeGatePod, name, mountPoints)
 		}
 
 		return ctx
@@ -250,10 +252,10 @@ func assessReadOnlyActiveGate(builder *features.FeatureBuilder, testDynakube *dy
 
 func checkReadOnlySettings(testDynakube *dynatracev1beta1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		resources := envConfig.Client().Resources()
+		kubeResources := envConfig.Client().Resources()
 
 		var activeGatePod corev1.Pod
-		require.NoError(t, resources.WithNamespace(testDynakube.Namespace).Get(ctx, activegate.GetActiveGatePodName(testDynakube, agComponentName), testDynakube.Namespace, &activeGatePod))
+		require.NoError(t, kubeResources.WithNamespace(testDynakube.Namespace).Get(ctx, activegate.GetActiveGatePodName(testDynakube, agComponentName), testDynakube.Namespace, &activeGatePod))
 
 		require.NotNil(t, activeGatePod.Spec)
 		require.NotEmpty(t, activeGatePod.Spec.InitContainers)

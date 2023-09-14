@@ -15,9 +15,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
 	sample "github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/base"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/setup"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -132,19 +131,19 @@ func labelVersionDetection(t *testing.T) features.Feature {
 		buildPreservedBuildLabelSampleApp(t, labelVersionDynakube),
 		buildInvalidBuildLabelSampleApp(t, labelVersionDynakube),
 	}
-
-	// Register operator install
-	assess.InstallOperatorFromSource(builder, defaultDynakube)
-	// Register dynakubes install and uninstall
-	assess.InstallDynakubeWithTeardown(builder, &secretConfig, defaultDynakube)
-	assess.InstallDynakubeWithTeardown(builder, &secretConfig, labelVersionDynakube)
+	steps := setup.NewEnvironmentSetup(
+		setup.CreateDefaultDynatraceNamespace(),
+		setup.DeployOperatorViaMake(defaultDynakube.NeedsCSIDriver()),
+		setup.CreateDynakube(secretConfig, defaultDynakube),
+		setup.CreateDynakube(secretConfig, labelVersionDynakube))
+	steps.CreateSetupSteps(builder)
 
 	// Register actual test (+sample cleanup)
 	installSampleApplications(builder, sampleApps)
 	checkBuildLabels(builder, sampleApps)
 	teardownSampleApplications(builder, sampleApps)
 	// Register operator uninstall
-	teardown.UninstallOperator(builder, labelVersionDynakube)
+	steps.CreateTeardownSteps(builder)
 
 	return builder.Feature()
 }
@@ -169,8 +168,8 @@ func checkBuildLabels(builder *features.FeatureBuilder, sampleApps []sample.App)
 
 func assertBuildLabels(sampleApp sample.App, expectedBuildLabels map[string]buildLabel) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		resources := envConfig.Client().Resources()
-		pods := sampleApp.GetPods(ctx, t, resources)
+		kubeResources := envConfig.Client().Resources()
+		pods := sampleApp.GetPods(ctx, t, kubeResources)
 
 		for _, podItem := range pods.Items {
 			podItem := podItem
