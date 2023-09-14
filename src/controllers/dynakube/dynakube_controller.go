@@ -98,6 +98,8 @@ type Controller struct {
 	operatorNamespace      string
 	clusterID              string
 	versionProvider        version.ImageVersionFunc
+
+	requeueAfter time.Duration
 }
 
 // Reconcile reads that state of the cluster for a DynaKube object and makes changes based on the state read
@@ -108,44 +110,50 @@ type Controller struct {
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (controller *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log.Info("reconciling DynaKube", "namespace", request.Namespace, "name", request.Name)
-	requeueAfter := defaultUpdateInterval
 
-	dynakube, err := controller.getDynakubeOrUnmap(ctx, request.Name, request.Namespace)
+	dynaKube, err := controller.getDynakubeOrUnmap(ctx, request.Name, request.Namespace)
 	if err != nil {
 		return reconcile.Result{}, err
-	} else if dynakube == nil {
+	} else if dynaKube == nil {
 		return reconcile.Result{}, nil
 	}
 
-	oldStatus := *dynakube.Status.DeepCopy()
-	err = controller.reconcileDynaKube(ctx, dynakube)
+	return controller.reconcile(ctx, dynaKube)
+}
 
-	if err != nil {
-		requeueAfter = errorUpdateInterval
+func (controller *Controller) reconcile(ctx context.Context, dynaKube *dynatracev1beta1.DynaKube) (reconcile.Result, error) {
+	oldStatus := *dynaKube.Status.DeepCopy()
+	err := controller.reconcileDynaKube(ctx, dynaKube)
 
-		var serverErr dtclient.ServerError
-		isServerError := errors.As(err, &serverErr)
-		if isServerError && (serverErr.Code == http.StatusTooManyRequests || serverErr.Code == http.StatusServiceUnavailable) {
-			// should we set the phase to error ?
-			log.Info("server is unavailable or request limit reached! trying again in one minute")
-			return reconcile.Result{RequeueAfter: requeueAfter}, nil
-		}
-		dynakube.Status.SetPhase(dynatracestatus.Error)
-		log.Error(err, "error reconciling DynaKube", "namespace", dynakube.Namespace, "name", dynakube.Name)
-	} else {
-		dynakube.Status.SetPhase(controller.determineDynaKubePhase(dynakube))
+	controller.requeueAfter = defaultUpdateInterval
+
+	var serverErr dtclient.ServerError
+	switch {
+	case errors.As(err, &serverErr) && (serverErr.Code == http.StatusTooManyRequests || serverErr.Code == http.StatusServiceUnavailable):
+		// should we set the phase to error ?
+		log.Info("dynaTrace API server is unavailable or request limit reached! trying again in one minute",
+			"errorCode", serverErr.Code, "errorMessage", serverErr.Message)
+		return reconcile.Result{RequeueAfter: errorUpdateInterval}, nil
+
+	case err != nil:
+		controller.requeueAfter = errorUpdateInterval
+		dynaKube.Status.SetPhase(dynatracestatus.Error)
+		log.Error(err, "error reconciling DynaKube", "namespace", dynaKube.Namespace, "name", dynaKube.Name)
 	}
-	if isStatusDifferent, err := kubeobjects.IsDifferent(oldStatus, dynakube.Status); err != nil {
+
+	dynaKube.Status.SetPhase(controller.determineDynaKubePhase(dynaKube))
+
+	if isStatusDifferent, err := kubeobjects.IsDifferent(oldStatus, dynaKube.Status); err != nil {
 		log.Error(err, "failed to generate hash for the status section")
 	} else if isStatusDifferent {
 		log.Info("status changed, updating DynaKube")
-		requeueAfter = changesUpdateInterval
-		if errClient := controller.updateDynakubeStatus(ctx, dynakube); errClient != nil {
+		controller.requeueAfter = changesUpdateInterval
+		if errClient := controller.updateDynakubeStatus(ctx, dynaKube); errClient != nil {
 			return reconcile.Result{}, errors.WithMessagef(errClient, "failed to update DynaKube after failure, original error: %s", err)
 		}
 	}
 
-	return reconcile.Result{RequeueAfter: requeueAfter}, err
+	return reconcile.Result{RequeueAfter: controller.requeueAfter}, err
 }
 
 func (controller *Controller) getDynakubeOrUnmap(ctx context.Context, dkName, dkNamespace string) (*dynatracev1beta1.DynaKube, error) {
@@ -225,7 +233,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		return err
 	}
 
-	err = connectioninfo.NewReconciler(ctx, controller.client, controller.apiReader, controller.scheme, dynakube, dynatraceClient).Reconcile()
+	err = controller.reconcileConnectionInfo(ctx, dynakube, dynatraceClient)
 	if err != nil {
 		return err
 	}
@@ -266,7 +274,21 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		return err
 	}
 
-	return controller.reconcileComponents(ctx, dynatraceClient, dynakube)
+	err = controller.reconcileComponents(ctx, dynatraceClient, dynakube)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (controller *Controller) reconcileConnectionInfo(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, dynatraceClient dtclient.Client) error {
+	err := connectioninfo.NewReconciler(ctx, controller.client, controller.apiReader, controller.scheme, dynakube, dynatraceClient).Reconcile()
+	if errors.Is(err, connectioninfo.NoOneAgentCommunicationHostsError) {
+		controller.requeueAfter = errorUpdateInterval
+		return nil
+	}
+
+	return err
 }
 
 func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient dtclient.Client, dynakube *dynatracev1beta1.DynaKube) error {
@@ -332,7 +354,7 @@ func (controller *Controller) removeAppInjection(ctx context.Context, dynakube *
 	dkMapper := controller.createDynakubeMapper(ctx, dynakube)
 
 	if err := dkMapper.UnmapFromDynaKube(); err != nil {
-		log.Info("could not unmap dynakube from namespace")
+		log.Info("could not unmap DynaKube from namespace")
 		return err
 	}
 	err = endpointSecretGenerator.RemoveEndpointSecrets(ctx, dynakube)

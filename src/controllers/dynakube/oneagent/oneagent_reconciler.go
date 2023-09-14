@@ -61,6 +61,16 @@ type Reconciler struct {
 func (r *Reconciler) Reconcile(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
 	log.Info("reconciling OneAgent")
 
+	if !dynakube.IsOneAgentCommunicationRouteClear() {
+		log.Info("OneAgent were not yet able to communicate with tenant, no direct route or ready ActiveGate available, postponing OneAgent deployment")
+
+		if len(dynakube.Spec.NetworkZone) > 0 {
+			log.Info("A network zone has been configured for DynaKube, check that there a working ActiveGate ready for that network zone", "network zone", dynakube.Spec.NetworkZone, "dynakube", dynakube.Name)
+		}
+		return nil
+	}
+	log.Info("At least one ActiveGate is operational, deploying OneAgent")
+
 	err := r.createOneAgentTenantConnectionInfoConfigMap(ctx, dynakube)
 	if err != nil {
 		return err

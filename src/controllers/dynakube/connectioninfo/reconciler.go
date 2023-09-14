@@ -15,6 +15,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+var NoOneAgentCommunicationHostsError = errors.New("no communication hosts for OneAgent are available")
+
 type Reconciler struct {
 	context      context.Context
 	client       client.Client
@@ -73,7 +75,7 @@ func (r *Reconciler) reconcileOneAgentConnectionInfo() error {
 	}
 	if !needsUpdate {
 		log.Info(dynatracev1beta1.GetCacheValidMessage(
-			"oneagent connection info update",
+			"OneAgent connection info update",
 			r.dynakube.Status.OneAgent.ConnectionInfoStatus.LastRequest,
 			r.dynakube.FeatureApiRequestThreshold()))
 		return nil
@@ -81,7 +83,7 @@ func (r *Reconciler) reconcileOneAgentConnectionInfo() error {
 
 	connectionInfo, err := r.dtc.GetOneAgentConnectionInfo()
 	if err != nil {
-		log.Info("failed to get oneagent connection info")
+		log.Info("failed to get OneAgent connection info")
 		return err
 	}
 
@@ -92,7 +94,13 @@ func (r *Reconciler) reconcileOneAgentConnectionInfo() error {
 		return err
 	}
 
-	log.Info("oneagent connection info updated")
+	log.Info("OneAgent connection info updated")
+
+	if len(connectionInfo.CommunicationHosts) == 0 {
+		log.Info("No OneAgent communication hosts received, tenant API requests not yet throttled")
+		return NoOneAgentCommunicationHostsError
+	}
+
 	r.dynakube.Status.OneAgent.ConnectionInfoStatus.LastRequest = metav1.Now()
 	return nil
 }

@@ -6,6 +6,13 @@ import (
 	"github.com/pkg/errors"
 )
 
+// CommunicationHost => struct of connection endpoint
+type CommunicationHost struct {
+	Protocol string // nolint:unused
+	Host     string // nolint:unused
+	Port     uint32 // nolint:unused
+}
+
 type ConnectionInfo struct {
 	TenantUUID  string
 	TenantToken string
@@ -16,16 +23,10 @@ type ActiveGateConnectionInfo struct {
 	ConnectionInfo
 }
 
-type OneAgentConnectionInfo struct {
-	ConnectionInfo
-	CommunicationHosts []CommunicationHost
-}
-
-// CommunicationHost => struct of connection endpoint
-type CommunicationHost struct {
-	Protocol string // nolint:unused
-	Host     string // nolint:unused
-	Port     uint32 // nolint:unused
+type activeGateConnectionInfoJsonResponse struct {
+	TenantUUID             string `json:"tenantUUID"`
+	TenantToken            string `json:"tenantToken"`
+	CommunicationEndpoints string `json:"communicationEndpoints"`
 }
 
 func (dtc *dynatraceClient) GetActiveGateConnectionInfo() (ActiveGateConnectionInfo, error) {
@@ -57,12 +58,6 @@ func (dtc *dynatraceClient) GetActiveGateConnectionInfo() (ActiveGateConnectionI
 	return tenantInfo, nil
 }
 
-type activeGateConnectionInfoJsonResponse struct {
-	TenantUUID             string `json:"tenantUUID"`
-	TenantToken            string `json:"tenantToken"`
-	CommunicationEndpoints string `json:"communicationEndpoints"`
-}
-
 func (dtc *dynatraceClient) readResponseForActiveGateTenantInfo(response []byte) (ActiveGateConnectionInfo, error) {
 	resp := activeGateConnectionInfoJsonResponse{}
 	err := json.Unmarshal(response, &resp)
@@ -79,71 +74,4 @@ func (dtc *dynatraceClient) readResponseForActiveGateTenantInfo(response []byte)
 		},
 	}
 	return agTenantInfo, nil
-}
-
-func (dtc *dynatraceClient) GetOneAgentConnectionInfo() (OneAgentConnectionInfo, error) {
-	resp, err := dtc.makeRequest(dtc.getOneAgentConnectionInfoUrl(), dynatracePaaSToken)
-	if err != nil {
-		return OneAgentConnectionInfo{}, err
-	}
-	defer CloseBodyAfterRequest(resp)
-
-	responseData, err := dtc.getServerResponseData(resp)
-	if err != nil {
-		return OneAgentConnectionInfo{}, dtc.handleErrorResponseFromAPI(responseData, resp.StatusCode)
-	}
-
-	connectionInfo, err := dtc.readResponseForOneAgentConnectionInfo(responseData)
-	if err != nil {
-		return OneAgentConnectionInfo{}, err
-	}
-
-	if len(connectionInfo.Endpoints) == 0 {
-		log.Info("tenant has no endpoints")
-	}
-	return connectionInfo, nil
-}
-
-func (dtc *dynatraceClient) readResponseForOneAgentConnectionInfo(response []byte) (OneAgentConnectionInfo, error) {
-	type jsonResponse struct {
-		TenantUUID                      string   `json:"tenantUUID"`
-		TenantToken                     string   `json:"tenantToken"`
-		CommunicationEndpoints          []string `json:"communicationEndpoints"`
-		FormattedCommunicationEndpoints string   `json:"formattedCommunicationEndpoints"`
-	}
-
-	resp := jsonResponse{}
-	err := json.Unmarshal(response, &resp)
-	if err != nil {
-		log.Error(err, "error unmarshalling connection info response", "response", string(response))
-		return OneAgentConnectionInfo{}, err
-	}
-
-	tenantUUID := resp.TenantUUID
-	tenantToken := resp.TenantToken
-	communicationHosts := make([]CommunicationHost, 0, len(resp.CommunicationEndpoints))
-	formattedCommunicationEndpoints := resp.FormattedCommunicationEndpoints
-
-	for _, s := range resp.CommunicationEndpoints {
-		e, err := ParseEndpoint(s)
-		if err != nil {
-			log.Info("failed to parse communication endpoint", "url", s)
-			continue
-		}
-		communicationHosts = append(communicationHosts, e)
-	}
-
-	if len(communicationHosts) == 0 {
-		return OneAgentConnectionInfo{}, errors.New("no communication hosts available")
-	}
-
-	ci := OneAgentConnectionInfo{
-		CommunicationHosts: communicationHosts,
-		ConnectionInfo: ConnectionInfo{
-			TenantUUID:  tenantUUID,
-			TenantToken: tenantToken,
-			Endpoints:   formattedCommunicationEndpoints,
-		},
-	}
-	return ci, nil
 }
