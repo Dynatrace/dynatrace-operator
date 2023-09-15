@@ -1,9 +1,10 @@
 # role-permissions2md - YAML to Markdown converter for operator permissions
 
-This script can be used to create a table containing permissions needed by components of the Dynatrace Kubernetes Operator. The resulting tables can be used as input for our public documentation here: https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dt-component-permissions#dto
+This script can be used to create a table containing permissions needed by components of the Dynatrace Kubernetes Operator. The resulting tables can be used as input for our public documentation [here](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring/dt-component-permissions#dto)
 
 Pre-requisites:
-```
+
+```sh
 python3
 pip install pyyaml
 ```
@@ -12,7 +13,7 @@ pip install pyyaml
 
 It's best to use the `openshift-all.yaml` manifest to cover all our needs. OpenShift needs the most permissions.
 
-```
+```sh
 # local dev repo - direct call
 # Create python virtual env
 python3 -m venv venv
