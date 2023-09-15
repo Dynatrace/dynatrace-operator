@@ -139,9 +139,10 @@ func (controller *Controller) reconcile(ctx context.Context, dynaKube *dynatrace
 		controller.requeueAfter = errorUpdateInterval
 		dynaKube.Status.SetPhase(dynatracestatus.Error)
 		log.Error(err, "error reconciling DynaKube", "namespace", dynaKube.Namespace, "name", dynaKube.Name)
-	}
 
-	dynaKube.Status.SetPhase(controller.determineDynaKubePhase(dynaKube))
+	default:
+		dynaKube.Status.SetPhase(controller.determineDynaKubePhase(dynaKube))
+	}
 
 	if isStatusDifferent, err := kubeobjects.IsDifferent(oldStatus, dynaKube.Status); err != nil {
 		log.Error(err, "failed to generate hash for the status section")
@@ -274,11 +275,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		return err
 	}
 
-	err = controller.reconcileComponents(ctx, dynatraceClient, dynakube)
-	if err != nil {
-		return err
-	}
-	return nil
+	return controller.reconcileComponents(ctx, dynatraceClient, dynakube)
 }
 
 func (controller *Controller) reconcileConnectionInfo(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, dynatraceClient dtclient.Client) error {
