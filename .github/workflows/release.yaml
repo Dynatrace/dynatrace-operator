@@ -331,7 +331,7 @@ jobs:
           VERSION_WITHOUT_PREFIX: ${{ needs.prepare.outputs.version_without_prefix }}
         run: |
           echo "Updating Helm repo index"
-          hack/build/ci/generate-new-helm-index-yaml.sh "tmp-helm" "${VERSION_WITHOUT_PREFIX}"
+          hack/build/ci/generate-new-helm-index-yaml.sh "helm-pkg" ${{ needs.prepare.outputs.version_without_prefix }}
       - name: Create pull request for adding helm index to main branch
         uses: peter-evans/create-pull-request@v5
         with:
