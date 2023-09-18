@@ -140,7 +140,7 @@ jobs:
           pyxis-api-token: ${{ secrets.PYXIS_API_TOKEN }}
 
   manifest:
-    name: Create manifest
+    name: Create Docker manifests
     environment: Release
     needs: [prepare, push]
     runs-on: ubuntu-latest
@@ -241,10 +241,9 @@ jobs:
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
 
-  pre-release:
-    if: ${{ contains(github.ref, '-rc.') }}
-    name: Create pre-release
-    needs: [prepare]
+  release:
+    name: Create release
+    needs: [prepare, build, attach-sbom]
     environment: Release
     permissions:
       contents: write
@@ -267,7 +266,7 @@ jobs:
           PRE_RELEASE: ${{ contains(github.ref, '-rc.') }}
         run: |
           hack/build/ci/generate-release-notes.sh
-      - name: Generate manifests
+      - name: Generate K8s manifests
         shell: bash
         env:
           VERSION_WITHOUT_PREFIX: ${{ needs.prepare.outputs.version_without_prefix }}
@@ -283,7 +282,7 @@ jobs:
           mv config/deploy/kubernetes/kubernetes-all.yaml config/deploy/kubernetes/kubernetes.yaml
           mv config/deploy/openshift/openshift-all.yaml config/deploy/openshift/openshift.yaml
       - name: Build helm packages
-        if: ${{ contains(github.ref, '-rc.') }}
+        if: ${{ !contains(github.ref, '-rc.') }}
         uses: ./.github/actions/build-helm
         with:
           version_without_prefix: ${{ needs.prepare.outputs.version_without_prefix }}
@@ -291,6 +290,12 @@ jobs:
           secring: ${{ secrets.HELM_SECRING }}
           passphrase: ${{ secrets.HELM_PASSPHRASE }}
           output-dir: "./helm-pkg"
+      - name: Prepare cosign.pub artifact
+        env:
+          COSIGN_PUBLIC_KEY: ${{ secrets.COSIGN_PUBLIC_KEY }}
+        run: |
+          mkdir -p tmp
+          echo ${COSIGN_PUBLIC_KEY} > tmp/cosign.pub
       - name: Create pre-release
         uses: softprops/action-gh-release@v1
         if: ${{ contains(github.ref, '-rc.') }}
@@ -309,6 +314,7 @@ jobs:
         with:
           body_path: ./CHANGELOG.md
           files: |
+            tmp/cosign.pub
             config/deploy/kubernetes/kubernetes.yaml
             config/deploy/kubernetes/kubernetes-csi.yaml
             config/deploy/kubernetes/gke-autopilot.yaml
@@ -321,10 +327,11 @@ jobs:
           draft: true
           fail_on_unmatched_files: true
       - name: Update index helm file
-        uses: actions/checkout@v3
+        env:
+          VERSION_WITHOUT_PREFIX: ${{ needs.prepare.outputs.version_without_prefix }}
         run: |
           echo "Updating Helm repo index"
-          ./hack/build/ci/generate-new-helm-index-yaml.sh
+          hack/build/ci/generate-new-helm-index-yaml.sh "helm-pkg" ${{ needs.prepare.outputs.version_without_prefix }}
       - name: Create pull request for adding helm index to main branch
         uses: peter-evans/create-pull-request@v5
         with:
