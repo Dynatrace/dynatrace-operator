@@ -281,6 +281,8 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 func (controller *Controller) reconcileConnectionInfo(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, dynatraceClient dtclient.Client) error {
 	err := connectioninfo.NewReconciler(ctx, controller.client, controller.apiReader, controller.scheme, dynakube, dynatraceClient).Reconcile()
 	if errors.Is(err, connectioninfo.NoOneAgentCommunicationHostsError) {
+		// missing communication hosts is not an error per se and shall not stop reconciliation, just make sure next reconciliation is happening ASAP
+		// this situation will clear itself after AG has been started
 		controller.requeueAfter = errorUpdateInterval
 		return nil
 	}

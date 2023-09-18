@@ -96,10 +96,16 @@ func (r *Reconciler) reconcileOneAgentConnectionInfo() error {
 
 	log.Info("OneAgent connection info updated")
 
+	if len(connectionInfo.Endpoints) == 0 {
+		log.Info("tenant has no endpoints", "tenant", connectionInfo.TenantUUID)
+	}
+
 	if len(connectionInfo.CommunicationHosts) == 0 {
-		log.Info("No OneAgent communication hosts received, tenant API requests not yet throttled")
+		log.Info("no OneAgent communication hosts received, tenant API requests not yet throttled")
 		return NoOneAgentCommunicationHostsError
 	}
+
+	log.Info("received OneAgent communication hosts", "communication hosts", connectionInfo.CommunicationHosts, "tenant", connectionInfo.TenantUUID)
 
 	r.dynakube.Status.OneAgent.ConnectionInfoStatus.LastRequest = metav1.Now()
 	return nil

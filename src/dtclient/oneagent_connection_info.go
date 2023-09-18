@@ -21,27 +21,21 @@ func (dtc *dynatraceClient) GetOneAgentConnectionInfo() (OneAgentConnectionInfo,
 	}
 	defer CloseBodyAfterRequest(resp)
 
+	if resp.StatusCode == 400 {
+		log.Info("server could not find the network zone or deliver default fallback config, is there an ActiveGate configured for the network zone?")
+		return OneAgentConnectionInfo{}, nil
+	}
+
 	responseData, err := dtc.getServerResponseData(resp)
 	if err != nil {
 		return OneAgentConnectionInfo{}, dtc.handleErrorResponseFromAPI(responseData, resp.StatusCode)
 	}
-
-	log.Info("OneAgent connection info", "payload", string(responseData))
 
 	connectionInfo, err := dtc.readResponseForOneAgentConnectionInfo(responseData)
 	if err != nil {
 		return OneAgentConnectionInfo{}, err
 	}
 
-	if len(connectionInfo.CommunicationHosts) == 0 {
-		log.Info("no OneAgent communication hosts are available yet", "tenant", connectionInfo.TenantUUID)
-	} else {
-		log.Info("received OneAgent communication hosts", "communication hosts", connectionInfo.CommunicationHosts, "tenant", connectionInfo.TenantUUID)
-	}
-
-	if len(connectionInfo.Endpoints) == 0 {
-		log.Info("tenant has no endpoints", "tenant", connectionInfo.TenantUUID)
-	}
 	return connectionInfo, nil
 }
 
