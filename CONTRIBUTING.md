@@ -7,7 +7,7 @@
   - [Remove all Dynatrace pods in force mode (useful debugging E2E tests)](#remove-all-dynatrace-pods-in-force-mode-useful-debugging-e2e-tests)
   - [Copy CSI driver database to localhost for introspection via sqlite command](#copy-csi-driver-database-to-localhost-for-introspection-via-sqlite-command)
   - [Add debug suffix on E2E tests to avoid removing pods](#add-debug-suffix-on-e2e-tests-to-avoid-removing-pods)
-  - [Debug cluster nodes by opening a shell prompt (details here)](#debug-cluster-nodes-by-opening-a-shell-prompt-details-here)
+  - [Debug cluster nodes by opening a shell prompt (details here)](#debug-cluster-nodes-by-opening-a-shell-prompt)
 
 ## Steps
 
@@ -90,7 +90,9 @@ kubectl cp dynatrace/dynatrace-oneagent-csi-driver-<something>:/data/csi.db csi.
 make test/e2e/cloudnative/proxy/debug
 ```
 
-### Debug cluster nodes by opening a shell prompt ([details here](https://www.psaggu.com/upstream-contribution/2021/05/04/notes.html))
+### Debug cluster nodes by opening a shell prompt
+
+[Details here](https://www.psaggu.com/upstream-contribution/2021/05/04/notes.html)
 
 ```sh
 oc debug node/<node-name>
