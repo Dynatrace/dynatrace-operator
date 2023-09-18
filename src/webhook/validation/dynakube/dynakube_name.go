@@ -13,7 +13,10 @@ const (
 
 func nameStartsWithDigit(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	dynakubeName := dynakube.Name
-	firstChar := rune(dynakubeName[0])
+	var firstChar rune
+	if dynakubeName != "" {
+		firstChar = rune(dynakubeName[0])
+	}
 
 	if unicode.IsDigit(firstChar) {
 		return errorDigitInName
