@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	errorNoDNS1053Label = `The DynaKube's specification has an invalid name: It violates DNS-1035.
+	errorNoDNS1053Label = `The DynaKube's specification violates DNS-1035.
     [a DNS-1035 label must consist of lower case alphanumeric characters or '-', start with an alphabetic character, and end with an alphanumeric character (e.g. 'my-name',  or 'abc-123', regex used for validation is '[a-z]([-a-z0-9]*[a-z0-9])?')]
 	`
 )
