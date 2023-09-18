@@ -30,6 +30,7 @@ var validators = []validator{
 	imageFieldSetWithoutCSIFlag,
 	conflictingOneAgentVolumeStorageSettings,
 	invalidSyntheticNodeType,
+	nameStartsWithDigit,
 }
 
 var warnings = []validator{
