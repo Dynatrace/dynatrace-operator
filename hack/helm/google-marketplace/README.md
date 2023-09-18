@@ -5,6 +5,7 @@ It grabs your current selected gcloud project, an application name and a version
 Afterwards it applies the application CRD (from Google) and uses mpdev (needs to be part of $PATH) to deploy that new deployer image to your current Kubernetes cluster.
 
 The following environment variables needs to be provided:
+
 * gcloud project (REGISTRY bases on this)
 * APP_NAME (defaults to "dynatrace-operator")
 * VERSION (tag of the docker image - defaults to "test")

@@ -1,12 +1,15 @@
 #!/bin/bash
 
 # Check linting and unit tests before commiting
-# if linting failes the commit will be aborted and the linting will start auto fixing
+# if linting fails the commit will be aborted and the linting will start auto fixing
 # if unit tests fail the commit will be aborted
 
 # Linting
 
 echo Shell: "${SHELL}"
+
+echo Linting markdown files...
+make markdown/lint
 
 ## this will retrieve all of the .go files that have been
 ## changed since the last commit
@@ -25,6 +28,7 @@ else
         git add "${file}"
     done
 fi
+
 
 make go/golangci
 res=${?}
