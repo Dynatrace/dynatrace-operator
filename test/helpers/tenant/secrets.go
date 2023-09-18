@@ -7,7 +7,6 @@ import (
 	"path"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/project"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
@@ -79,12 +78,12 @@ func GetMultiTenantSecret(t *testing.T) []Secret {
 	return secrets
 }
 
-func CreateTenantSecret(secretConfig Secret, dynakube dynatracev1beta1.DynaKube) features.Func {
+func CreateTenantSecret(secretConfig Secret, name, namespace string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		defaultSecret := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      dynakube.Name,
-				Namespace: dynakube.Namespace,
+				Name:      name,
+				Namespace: namespace,
 			},
 			Data: map[string][]byte{
 				"apiToken": []byte(secretConfig.ApiToken),
