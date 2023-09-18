@@ -6,11 +6,12 @@ import (
 )
 
 const (
-	errorDigitInName = `The DynaKube's specification has an invalid name: It starts with a digit.
+	errorNoDNS1053Label = `The DynaKube's specification has an invalid name: It violates DNS-1035.
+    [a DNS-1035 label must consist of lower case alphanumeric characters or '-', start with an alphabetic character, and end with an alphanumeric character (e.g. 'my-name',  or 'abc-123', regex used for validation is '[a-z]([-a-z0-9]*[a-z0-9])?')]
 	`
 )
 
-func nameStartsWithDigit(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func nameViolatesDNS1035(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	dynakubeName := dynakube.Name
 	var errs []string
 	if dynakubeName != "" {
@@ -20,5 +21,5 @@ func nameStartsWithDigit(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaK
 	if len(errs) == 0 {
 		return ""
 	}
-	return errorDigitInName
+	return errorNoDNS1053Label
 }
