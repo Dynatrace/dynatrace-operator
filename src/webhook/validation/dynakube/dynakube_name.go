@@ -1,9 +1,8 @@
 package dynakube
 
 import (
-	"unicode"
-
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
+	"k8s.io/apimachinery/pkg/util/validation"
 )
 
 const (
@@ -13,14 +12,13 @@ const (
 
 func nameStartsWithDigit(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	dynakubeName := dynakube.Name
-	var firstChar rune
+	var errs []string
 	if dynakubeName != "" {
-		firstChar = rune(dynakubeName[0])
+		errs = validation.IsDNS1035Label(dynakubeName)
 	}
 
-	if unicode.IsDigit(firstChar) {
-		return errorDigitInName
+	if len(errs) == 0 {
+		return ""
 	}
-
-	return ""
+	return errorDigitInName
 }
