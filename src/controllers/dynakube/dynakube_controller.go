@@ -121,11 +121,18 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	return controller.reconcile(ctx, dynaKube)
 }
 
+func (controller *Controller) setRequeueAfterIfNewIsShorter(requeueAfter time.Duration) {
+	if controller.requeueAfter > requeueAfter {
+		controller.requeueAfter = requeueAfter
+	}
+}
+
 func (controller *Controller) reconcile(ctx context.Context, dynaKube *dynatracev1beta1.DynaKube) (reconcile.Result, error) {
 	oldStatus := *dynaKube.Status.DeepCopy()
-	err := controller.reconcileDynaKube(ctx, dynaKube)
 
 	controller.requeueAfter = defaultUpdateInterval
+
+	err := controller.reconcileDynaKube(ctx, dynaKube)
 
 	var serverErr dtclient.ServerError
 	switch {
@@ -136,7 +143,7 @@ func (controller *Controller) reconcile(ctx context.Context, dynaKube *dynatrace
 		return reconcile.Result{RequeueAfter: errorUpdateInterval}, nil
 
 	case err != nil:
-		controller.requeueAfter = errorUpdateInterval
+		controller.setRequeueAfterIfNewIsShorter(errorUpdateInterval)
 		dynaKube.Status.SetPhase(dynatracestatus.Error)
 		log.Error(err, "error reconciling DynaKube", "namespace", dynaKube.Namespace, "name", dynaKube.Name)
 
@@ -148,7 +155,7 @@ func (controller *Controller) reconcile(ctx context.Context, dynaKube *dynatrace
 		log.Error(err, "failed to generate hash for the status section")
 	} else if isStatusDifferent {
 		log.Info("status changed, updating DynaKube")
-		controller.requeueAfter = changesUpdateInterval
+		controller.setRequeueAfterIfNewIsShorter(changesUpdateInterval)
 		if errClient := controller.updateDynakubeStatus(ctx, dynaKube); errClient != nil {
 			return reconcile.Result{}, errors.WithMessagef(errClient, "failed to update DynaKube after failure, original error: %s", err)
 		}
@@ -283,7 +290,7 @@ func (controller *Controller) reconcileConnectionInfo(ctx context.Context, dynak
 	if errors.Is(err, connectioninfo.NoOneAgentCommunicationHostsError) {
 		// missing communication hosts is not an error per se and shall not stop reconciliation, just make sure next reconciliation is happening ASAP
 		// this situation will clear itself after AG has been started
-		controller.requeueAfter = errorUpdateInterval
+		controller.setRequeueAfterIfNewIsShorter(errorUpdateInterval)
 		return nil
 	}
 
