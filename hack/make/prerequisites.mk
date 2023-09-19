@@ -17,7 +17,7 @@ GOBIN=$(shell go env GOBIN)
 endif
 
 ## Install all prerequisites
-prerequisites: prerequisites/kustomize prerequisites/controller-gen prerequisites/setup-pre-commit prerequisites/helm
+prerequisites: prerequisites/kustomize prerequisites/controller-gen prerequisites/setup-pre-commit prerequisites/helm prerequisites/markdownlint
 
 ## Installs 'kustomize' if it is missing
 prerequisites/kustomize:
@@ -40,3 +40,7 @@ prerequisites/setup-pre-commit:
 ## Install 'helm' if it is missing
 prerequisites/helm:
 	hack/helm/install-unittest-plugin.sh
+
+## Install 'markdownlint' if it is missing
+prerequisites/markdownlint:
+	brew install markdownlint-cli --quiet

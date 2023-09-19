@@ -27,7 +27,9 @@
 - Avoid returning responses (e.g., reconcile.Result, admission.Patched) in anything but Reconcile or Handle functions.
 
 ## Function Parameter and Return-Value Order
+
 Ordering of **function parameters** should be:
+
 1. Convention
    - example: `ctx context.Context`
 2. Interfaces
@@ -211,4 +213,4 @@ So here are some basic guidelines:
 
 [Common guidelines](https://github.com/golang/go/wiki/CodeReview)
 
-*// TODO*
+// TODO

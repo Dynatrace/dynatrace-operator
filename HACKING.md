@@ -10,14 +10,15 @@
 There are automatic builds from the master branch. The latest development build can be installed as follows:
 
 #### Kubernetes
+
 ```sh
-$ make deploy/kubernetes
+make deploy/kubernetes
 ```
 
 #### OpenShift
 
 ```sh
-$ make deploy/openshift
+make deploy/openshift
 ```
 
 #### Tests
@@ -25,5 +26,5 @@ $ make deploy/openshift
 The unit tests can be executed as follows:
 
 ```sh
-$ make go/test
+make go/test
 ```
