@@ -130,11 +130,21 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	// check node cache for outdated nodes and remove them, to keep cache clean
 	if nodeCache.IsCacheOutdated() {
 		if err := controller.handleOutdatedCache(ctx, nodeCache); err != nil {
+			if k8serrors.IsConflict(err) {
+				return reconcile.Result{RequeueAfter: 1 * time.Second}, nil
+			}
 			return reconcile.Result{}, err
 		}
 		nodeCache.UpdateTimestamp()
 	}
-	return reconcile.Result{}, controller.updateCache(ctx, nodeCache)
+
+	if err := controller.updateCache(ctx, nodeCache); err != nil {
+		if k8serrors.IsConflict(err) {
+			return reconcile.Result{RequeueAfter: 1 * time.Second}, nil
+		}
+	}
+
+	return reconcile.Result{}, err
 }
 
 func (controller *Controller) reconcileNodeDeletion(ctx context.Context, nodeName string) error {

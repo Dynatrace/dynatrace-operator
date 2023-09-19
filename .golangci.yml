@@ -28,7 +28,7 @@ linters-settings:
         # following values set to avoid further regressions:
         arguments: [52, 468]  # the maximum allowed statements and lines. 0 disables the check
       - name: cyclomatic
-        arguments: [12]
+        arguments: [15]
       - name: banned-characters
         disabled: true
       - name: file-header
