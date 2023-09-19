@@ -38,7 +38,6 @@ func SwitchModes(t *testing.T, name string) features.Feature {
 	featureBuilder.Assess("create sample app namespace", sampleAppClassic.InstallNamespace())
 
 	// install operator and dynakube
-	// assess.InstallDynatrace(featureBuilder, &secretConfig, dynakubeClassicFullStack)
 	steps := setup.NewEnvironmentSetup(
 		setup.CreateDefaultDynatraceNamespace(),
 		setup.DeployOperatorViaMake(dynakubeClassicFullStack.NeedsCSIDriver()))
@@ -57,7 +56,6 @@ func SwitchModes(t *testing.T, name string) features.Feature {
 	featureBuilder.Assess("create sample app namespace", sampleAppCloudNative.InstallNamespace())
 	op := setup.DeployOperatorViaMake(dynakubeCloudNative.NeedsCSIDriver())
 	op.AddSetupSetup(featureBuilder)
-	// assess.InstallOperatorFromSource(featureBuilder, dynakubeCloudNative)
 	assess.InstallDynakube(featureBuilder, &secretConfig, dynakubeCloudNative)
 
 	// apply sample apps
@@ -72,8 +70,6 @@ func SwitchModes(t *testing.T, name string) features.Feature {
 	featureBuilder.Teardown(sampleAppCloudNative.UninstallNamespace())
 	featureBuilder.Teardown(sampleAppClassic.UninstallNamespace())
 	teardown.DeleteDynakube(featureBuilder, dynakubeCloudNative)
-	// teardown.UninstallOperator(featureBuilder, dynakubeCloudNative)
 	op.AddTeardownStep(featureBuilder)
-	// steps.CreateTeardownSteps(featureBuilder)
 	return featureBuilder.Feature()
 }
