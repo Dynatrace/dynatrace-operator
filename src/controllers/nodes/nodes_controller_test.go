@@ -2,7 +2,6 @@ package nodes
 
 import (
 	"context"
-	"errors"
 	"testing"
 	"time"
 
@@ -16,9 +15,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -30,21 +27,6 @@ const (
 )
 
 var testCacheKey = client.ObjectKey{Name: cacheName, Namespace: testNamespace}
-
-type possiblyErroringFakeCtrlRuntimeClient struct {
-	client.Client
-	shouldError bool
-}
-
-func (p *possiblyErroringFakeCtrlRuntimeClient) Update(
-	ctx context.Context,
-	acc client.Object,
-	opts ...client.UpdateOption) error {
-	if p.shouldError {
-		return k8serrors.NewConflict(schema.GroupResource{Group: "", Resource: "configmaps"}, "2", errors.New("message"))
-	}
-	return p.Client.Update(ctx, acc)
-}
 
 func TestReconcile(t *testing.T) {
 	ctx := context.TODO()
@@ -166,36 +148,29 @@ func TestReconcile(t *testing.T) {
 
 		reconcileAllNodes(t, ctrl, fakeClient)
 
-		assert.Error(t, ctrl.reconcileNodeDeletion(ctx, "node1"))
+		assert.Error(t, ctrl.reconcileNodeDeletion(ctx, "node1"), ErrNotFound)
 	})
 
-	t.Run("Operation cannot be fulfilled on configmaps", func(t *testing.T) {
-		defaultClient := createDefaultFakeClient()
-		fakeClient := &possiblyErroringFakeCtrlRuntimeClient{
-			defaultClient,
-			true,
-		}
+	t.Run("Remove host from cache even if server error: host not found", func(t *testing.T) {
+		fakeClient := createDefaultFakeClient()
 
-		dtClient := createDTMockClient("1.2.3.4", "HOST-42")
-		ctrl := &Controller{
-			client:    fakeClient,
-			apiReader: fakeClient,
-			scheme:    scheme.Scheme,
-			dynatraceClientBuilder: &mockDynatraceClientBuilder{
-				dynatraceClient: dtClient,
-			},
-			podNamespace: testNamespace,
-			runLocal:     true,
-		}
+		dtClient := &dtclient.MockDynatraceClient{}
+		dtClient.On("GetEntityIDForIP", mock.Anything).Return("", dtclient.ErrHostNotFound)
 
-		result, err := ctrl.Reconcile(context.TODO(), createReconcileRequest("node1"))
-		require.Equal(t, result, reconcile.Result{Requeue: false, RequeueAfter: 0})
-		require.NoError(t, err)
+		ctrl := createDefaultReconciler(fakeClient, dtClient)
 
-		// we want retry on conflict
-		result, err = ctrl.Reconcile(context.TODO(), createReconcileRequest("node1"))
-		require.Equal(t, result, reconcile.Result{Requeue: false, RequeueAfter: 1 * time.Second})
-		require.NoError(t, err)
+		reconcileAllNodes(t, ctrl, fakeClient)
+
+		assert.NoError(t, ctrl.reconcileNodeDeletion(ctx, "node1"))
+
+		// Get node from cache
+		c, err := ctrl.getCache(ctx)
+		assert.NoError(t, err)
+		assert.NotNil(t, c)
+
+		// should return not found for key inside configmap
+		_, err = c.Get("node1")
+		assert.Error(t, err, ErrNotFound)
 	})
 }
 

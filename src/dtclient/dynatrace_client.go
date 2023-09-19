@@ -13,6 +13,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+var ErrHostNotFound = errors.New("host not found")
+
 type hostInfo struct {
 	version  string
 	entityID string
@@ -160,7 +162,7 @@ func (dtc *dynatraceClient) getHostInfoForIP(ip string) (*hostInfo, error) {
 
 	switch hostInfo, ok := dtc.hostCache[ip]; {
 	case !ok:
-		return nil, errors.New("host not found")
+		return nil, ErrHostNotFound
 	default:
 		return &hostInfo, nil
 	}

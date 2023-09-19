@@ -54,6 +54,7 @@ func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 func nodeDeletionPredicate(controller *Controller) predicate.Predicate {
 	return predicate.Funcs{
 		DeleteFunc: func(deleteEvent event.DeleteEvent) bool {
+			log.Info("nodeDeletionPredicate")
 			node := deleteEvent.Object.GetName()
 			err := controller.reconcileNodeDeletion(context.TODO(), node)
 			if err != nil {
@@ -98,7 +99,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 
 	// Node is found in the cluster, add or update to cache
 	if dynakube != nil {
-		var ipAddress = dynakube.Status.OneAgent.Instances[nodeName].IPAddress
+		ipAddress := dynakube.Status.OneAgent.Instances[nodeName].IPAddress
 		cacheEntry := CacheEntry{
 			Instance:  dynakube.Name,
 			IPAddress: ipAddress,
@@ -130,21 +131,12 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	// check node cache for outdated nodes and remove them, to keep cache clean
 	if nodeCache.IsCacheOutdated() {
 		if err := controller.handleOutdatedCache(ctx, nodeCache); err != nil {
-			if k8serrors.IsConflict(err) {
-				return reconcile.Result{RequeueAfter: 1 * time.Second}, nil
-			}
 			return reconcile.Result{}, err
 		}
 		nodeCache.UpdateTimestamp()
 	}
 
-	if err := controller.updateCache(ctx, nodeCache); err != nil {
-		if k8serrors.IsConflict(err) {
-			return reconcile.Result{RequeueAfter: 1 * time.Second}, nil
-		}
-	}
-
-	return reconcile.Result{}, err
+	return reconcile.Result{}, controller.updateCache(ctx, nodeCache)
 }
 
 func (controller *Controller) reconcileNodeDeletion(ctx context.Context, nodeName string) error {
@@ -302,6 +294,10 @@ func (controller *Controller) sendMarkedForTermination(dynakubeInstance *dynatra
 
 	entityID, err := dynatraceClient.GetEntityIDForIP(cachedNode.IPAddress)
 	if err != nil {
+		if errors.Is(err, dtclient.ErrHostNotFound) {
+			log.Info("skipping to send mark for termination event", "dynakube", dynakubeInstance.Name, "nodeIP", cachedNode.IPAddress, "reason", dtclient.ErrHostNotFound)
+			return nil
+		}
 		log.Info("failed to send mark for termination event",
 			"reason", "failed to determine entity id", "dynakube", dynakubeInstance.Name, "nodeIP", cachedNode.IPAddress, "cause", err)
 

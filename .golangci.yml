@@ -21,14 +21,14 @@ linters-settings:
     enable-all-rules: true
     rules:
       - name: cognitive-complexity
-        arguments: [24] # max allowed cognitive complexity factor
+        arguments: [20] # max allowed cognitive complexity factor
       - name: function-result-limit
         arguments: [3]
       - name: function-length
         # following values set to avoid further regressions:
         arguments: [52, 468]  # the maximum allowed statements and lines. 0 disables the check
       - name: cyclomatic
-        arguments: [15]
+        arguments: [12]
       - name: banned-characters
         disabled: true
       - name: file-header
