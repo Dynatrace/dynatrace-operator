@@ -4,10 +4,12 @@ package edgeconnect
 
 import (
 	"context"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"testing"
 	"time"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1"
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/edgeconnect"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,8 +48,32 @@ func (edgeConnectBuilder Builder) Build() edgeconnectv1alpha1.EdgeConnect {
 
 func Create(edgeConnect edgeconnectv1alpha1.EdgeConnect) features.Func {
 	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		require.NoError(t, dynatracev1alpha1.AddToScheme(environmentConfig.Client().Resources().GetScheme()))
+		require.NoError(t, v1alpha1.AddToScheme(environmentConfig.Client().Resources().GetScheme()))
 		require.NoError(t, environmentConfig.Client().Resources().Create(ctx, &edgeConnect))
+		return ctx
+	}
+}
+
+func Delete(edgeConnect edgeconnectv1alpha1.EdgeConnect) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
+
+		err := v1alpha1.AddToScheme(resources.GetScheme())
+		require.NoError(t, err)
+
+		err = resources.Delete(ctx, &dynakube)
+		isNoKindMatchErr := meta.IsNoMatchError(err)
+
+		if err != nil {
+			if k8serrors.IsNotFound(err) || isNoKindMatchErr {
+				// If the dynakube itself or the crd does not exist, everything is fine
+				err = nil
+			}
+			require.NoError(t, err)
+		}
+
+		err = wait.For(conditions.New(resources).ResourceDeleted(&dynakube))
+		require.NoError(t, err)
 		return ctx
 	}
 }
