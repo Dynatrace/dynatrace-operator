@@ -155,7 +155,7 @@ func TestReconcile(t *testing.T) {
 		fakeClient := createDefaultFakeClient()
 
 		dtClient := &dtclient.MockDynatraceClient{}
-		dtClient.On("GetEntityIDForIP", mock.Anything).Return("", dtclient.ErrHostNotFound)
+		dtClient.On("GetEntityIDForIP", mock.Anything).Return("", dtclient.HostNotFoundErr{IP: "1.2.3.4"})
 
 		ctrl := createDefaultReconciler(fakeClient, dtClient)
 

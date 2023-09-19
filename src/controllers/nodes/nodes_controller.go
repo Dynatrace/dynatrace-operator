@@ -54,7 +54,6 @@ func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 func nodeDeletionPredicate(controller *Controller) predicate.Predicate {
 	return predicate.Funcs{
 		DeleteFunc: func(deleteEvent event.DeleteEvent) bool {
-			log.Info("nodeDeletionPredicate")
 			node := deleteEvent.Object.GetName()
 			err := controller.reconcileNodeDeletion(context.TODO(), node)
 			if err != nil {
@@ -194,8 +193,8 @@ func (controller *Controller) getCache(ctx context.Context) (*Cache, error) {
 			},
 			Data: map[string]string{},
 		}
-
-		if !controller.runLocal { // If running locally, don't set the controller.
+		// If running locally, don't set the controller.
+		if !controller.runLocal {
 			deploy, err := kubeobjects.GetDeployment(controller.client, os.Getenv(kubeobjects.EnvPodName), controller.podNamespace)
 			if err != nil {
 				return nil, err
@@ -294,8 +293,8 @@ func (controller *Controller) sendMarkedForTermination(dynakubeInstance *dynatra
 
 	entityID, err := dynatraceClient.GetEntityIDForIP(cachedNode.IPAddress)
 	if err != nil {
-		if errors.Is(err, dtclient.ErrHostNotFound) {
-			log.Info("skipping to send mark for termination event", "dynakube", dynakubeInstance.Name, "nodeIP", cachedNode.IPAddress, "reason", dtclient.ErrHostNotFound)
+		if errors.As(err, &dtclient.HostNotFoundErr{}) {
+			log.Info("skipping to send mark for termination event", "dynakube", dynakubeInstance.Name, "nodeIP", cachedNode.IPAddress, "reason", err.Error())
 			return nil
 		}
 		log.Info("failed to send mark for termination event",
