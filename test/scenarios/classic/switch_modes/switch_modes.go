@@ -74,6 +74,6 @@ func SwitchModes(t *testing.T, name string) features.Feature {
 	teardown.DeleteDynakube(featureBuilder, dynakubeCloudNative)
 	// teardown.UninstallOperator(featureBuilder, dynakubeCloudNative)
 	op.AddTeardownStep(featureBuilder)
-	steps.CreateTeardownSteps(featureBuilder)
+	// steps.CreateTeardownSteps(featureBuilder)
 	return featureBuilder.Feature()
 }
