@@ -5,7 +5,7 @@ controller_gen_version=v0.13.0
 # renovate depName=github.com/golangci/golangci-lint
 golang_ci_cmd_version=v1.54.2
 # renovate depName=github.com/daixiang0/gci
-gci_version=v0.11.1
+gci_version=v0.11.2
 # renovate depName=golang.org/x/tools
 golang_tools_version=v0.13.0
 
@@ -17,7 +17,7 @@ GOBIN=$(shell go env GOBIN)
 endif
 
 ## Install all prerequisites
-prerequisites: prerequisites/kustomize prerequisites/controller-gen prerequisites/setup-pre-commit prerequisites/helm
+prerequisites: prerequisites/kustomize prerequisites/controller-gen prerequisites/setup-pre-commit prerequisites/helm prerequisites/markdownlint
 
 ## Installs 'kustomize' if it is missing
 prerequisites/kustomize:
@@ -40,3 +40,7 @@ prerequisites/setup-pre-commit:
 ## Install 'helm' if it is missing
 prerequisites/helm:
 	hack/helm/install-unittest-plugin.sh
+
+## Install 'markdownlint' if it is missing
+prerequisites/markdownlint:
+	brew install markdownlint-cli --quiet

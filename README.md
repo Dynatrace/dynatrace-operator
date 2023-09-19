@@ -1,4 +1,5 @@
 # Dynatrace Operator
+
 [![GoDoc](http://img.shields.io/badge/go-documentation-blue.svg?style=flat-square)](http://godoc.org/github.com/Dynatrace/dynatrace-operator)
 [![CI](https://github.com/Dynatrace/dynatrace-operator/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/Dynatrace/dynatrace-operator/actions/workflows/ci.yaml)
 [![codecov](https://codecov.io/gh/Dynatrace/dynatrace-operator/parse/branch/main/graph/badge.svg)](https://codecov.io/gh/Dynatrace/dynatrace-operator)
@@ -42,13 +43,14 @@ objects like permissions, custom resources and corresponding StatefulSets.
 To create the namespace and apply the operator run the following commands
 
 ```sh
-$ kubectl create namespace dynatrace
-$ kubectl apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/kubernetes.yaml
+kubectl create namespace dynatrace
+kubectl apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/kubernetes.yaml
 ```
 
 If using `cloudNativeFullStack` or `applicationMonitoring` with CSI driver, the following command is required as well:
+
 ```sh
-$ kubectl apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/kubernetes-csi.yaml
+kubectl apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/kubernetes-csi.yaml
 ```
 
 A secret holding tokens for authenticating to the Dynatrace cluster needs to be created upfront. Create access tokens of
@@ -59,7 +61,7 @@ to [Create user-generated access tokens](https://www.dynatrace.com/support/help/
 The token scopes required by the Dynatrace Operator are documented on our [official help page](https://www.dynatrace.com/support/help/shortlink/full-stack-dto-k8#tokens)
 
 ```sh
-$ kubectl -n dynatrace create secret generic dynakube --from-literal="apiToken=DYNATRACE_API_TOKEN" --from-literal="dataIngestToken=DATA_INGEST_TOKEN"
+kubectl -n dynatrace create secret generic dynakube --from-literal="apiToken=DYNATRACE_API_TOKEN" --from-literal="dataIngestToken=DATA_INGEST_TOKEN"
 ```
 
 #### Create `DynaKube` custom resource for ActiveGate and OneAgent rollout
@@ -75,13 +77,13 @@ The recommended approach is using classic Fullstack injection to roll out Dynatr
 In case you want to have adjustments please have a look at [our DynaKube Custom Resource examples](assets/samples).
 
 Save one of the sample configurations, change the API url to your environment and apply it to your cluster.
+
 ```sh
-$ kubectl apply -f cr.yaml
+kubectl apply -f cr.yaml
 ```
 
 For detailed instructions see
 our [official help page](https://www.dynatrace.com/support/help/shortlink/full-stack-dto-k8).
-
 
 ## Uninstall dynatrace-operator
 
@@ -89,13 +91,15 @@ our [official help page](https://www.dynatrace.com/support/help/shortlink/full-s
 > head to the [official help page](https://www.dynatrace.com/support/help/shortlink/full-stack-dto-k8#uninstall-dynatrace-operator)
 
 Clean-up all Dynatrace Operator specific objects:
+
 ```sh
-$ kubectl delete -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/kubernetes.yaml
+kubectl delete -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/kubernetes.yaml
 ```
 
 If the CSI driver was installed, the following command is required as well:
+
 ```sh
-$ kubectl delete -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/kubernetes-csi.yaml
+kubectl delete -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/kubernetes-csi.yaml
 ```
 
 ## Hacking
