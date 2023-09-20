@@ -1010,7 +1010,7 @@ func TestAPIError(t *testing.T) {
 		})
 
 		assert.NoError(t, err)
-		assert.Equal(t, errorUpdateInterval, result.RequeueAfter)
+		assert.Equal(t, fastUpdateInterval, result.RequeueAfter)
 	})
 	t.Run("should return error result on 429", func(t *testing.T) {
 		mockClient.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, dtclient.ServerError{Code: http.StatusTooManyRequests, Message: "Too many requests"})
@@ -1021,7 +1021,7 @@ func TestAPIError(t *testing.T) {
 		})
 
 		assert.NoError(t, err)
-		assert.Equal(t, errorUpdateInterval, result.RequeueAfter)
+		assert.Equal(t, fastUpdateInterval, result.RequeueAfter)
 	})
 }
 

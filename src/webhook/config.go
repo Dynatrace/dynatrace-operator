@@ -14,6 +14,9 @@ const (
 	// AnnotationOneAgentInject can be set at pod level to enable/disable OneAgent injection.
 	AnnotationOneAgentInject   = OneAgentPrefix + ".dynatrace.com/inject"
 	AnnotationOneAgentInjected = OneAgentPrefix + ".dynatrace.com/injected"
+	AnnotationOneAgentReason   = OneAgentPrefix + ".dynatrace.com/reason"
+
+	EmptyConnectionInfoReason = "EmptyConnectionInfo"
 
 	DataIngestPrefix = "data-ingest"
 	// AnnotationDataIngestInject can be set at pod level to enable/disable data-ingest injection.

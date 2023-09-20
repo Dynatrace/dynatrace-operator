@@ -174,6 +174,34 @@ func TestReconcile_ConnectionInfo(t *testing.T) {
 	})
 }
 
+func TestReconcile_NoOneAgentCommunicationHosts(t *testing.T) {
+	dynakube := dynatracev1beta1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: testNamespace,
+			Name:      testName,
+		}}
+
+	dtc := &dtclient.MockDynatraceClient{}
+	dtc.On("GetActiveGateConnectionInfo").Return(getTestActiveGateConnectionInfo(), nil)
+	dtc.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{
+		ConnectionInfo: dtclient.ConnectionInfo{
+			TenantUUID:  testTenantUUID,
+			TenantToken: testTenantToken,
+			Endpoints:   "",
+		},
+		CommunicationHosts: nil,
+	}, nil)
+
+	fakeClient := fake.NewClientBuilder().Build()
+	r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, &dynakube, dtc)
+	err := r.Reconcile()
+	assert.ErrorIs(t, err, NoOneAgentCommunicationHostsError)
+
+	assert.Equal(t, testTenantUUID, dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID)
+	assert.Empty(t, dynakube.Status.OneAgent.ConnectionInfoStatus.Endpoints)
+	assert.Empty(t, dynakube.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts)
+}
+
 func getTestOneAgentConnectionInfo() dtclient.OneAgentConnectionInfo {
 	return dtclient.OneAgentConnectionInfo{
 		ConnectionInfo: dtclient.ConnectionInfo{

@@ -24,6 +24,14 @@ func setInjectedAnnotation(pod *corev1.Pod) {
 	pod.Annotations[dtwebhook.AnnotationOneAgentInjected] = "true"
 }
 
+func setNotInjectedAnnotations(pod *corev1.Pod, reason string) {
+	if pod.Annotations == nil {
+		pod.Annotations = make(map[string]string)
+	}
+	pod.Annotations[dtwebhook.AnnotationOneAgentInjected] = "false"
+	pod.Annotations[dtwebhook.AnnotationOneAgentReason] = reason
+}
+
 func getInstallerInfo(pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) installerInfo {
 	return installerInfo{
 		flavor:       kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationFlavor, ""),

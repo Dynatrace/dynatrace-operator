@@ -39,6 +39,12 @@ func (mutator *OneAgentPodMutator) Injected(request *dtwebhook.BaseRequest) bool
 }
 
 func (mutator *OneAgentPodMutator) Mutate(request *dtwebhook.MutationRequest) error {
+	if !request.DynaKube.IsOneAgentCommunicationRouteClear() {
+		log.Info("OneAgent were not yet able to communicate with tenant, no direct route or ready ActiveGate available, code modules have not been injected.")
+		setNotInjectedAnnotations(request.Pod, dtwebhook.EmptyConnectionInfoReason)
+		return nil
+	}
+
 	log.Info("injecting OneAgent into pod", "podName", request.PodName())
 	if err := mutator.ensureInitSecret(request); err != nil {
 		return err
