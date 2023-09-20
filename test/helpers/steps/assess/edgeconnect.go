@@ -12,13 +12,10 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func InstallEdgeConnect(builder *features.FeatureBuilder, secretConfig *tenant.Secret, testEdgeConnect edgeconnectv1beta1.EdgeConnect) {
-	CreateEdgeConnect(builder, secretConfig, testEdgeConnect)
-}
-
-func CreateEdgeConnect(builder *features.FeatureBuilder, secretConfig *tenant.Secret, testEdgeConnect edgeconnectv1beta1.EdgeConnect) {
+func CreateEdgeConnect(builder *features.FeatureBuilder, secretConfig *tenant.EdgeConnectSecret, testEdgeConnect edgeconnectv1beta1.EdgeConnect) {
 	if secretConfig != nil {
-		builder.Assess("created tenant secret", tenant.CreateTenantSecret(*secretConfig, testEdgeConnect.Name, testEdgeConnect.Namespace))
+		builder.Assess("create edgeconnect client secret", tenant.CreateClientSecret(*secretConfig, fmt.Sprintf("%s-client-secret", testEdgeConnect.Name), testEdgeConnect.Namespace))
+		builder.Assess("create edgeconnect docker pull secret", tenant.CreateDockerPullSecret(*secretConfig, fmt.Sprintf("%s-docker-pull-secret", testEdgeConnect.Name), testEdgeConnect.Namespace))
 	}
 	builder.Assess(
 		fmt.Sprintf("'%s' edgeconnect created", testEdgeConnect.Name),

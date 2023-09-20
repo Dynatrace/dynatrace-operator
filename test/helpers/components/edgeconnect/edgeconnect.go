@@ -42,6 +42,36 @@ func NewBuilder() Builder {
 	}
 }
 
+func (edgeConnectBuilder Builder) Name(name string) Builder {
+	edgeConnectBuilder.edgeConnect.ObjectMeta.Name = name
+	return edgeConnectBuilder
+}
+
+func (edgeConnectBuilder Builder) ApiServer(apiURL string) Builder {
+	edgeConnectBuilder.edgeConnect.Spec.ApiServer = apiURL
+	return edgeConnectBuilder
+}
+
+func (edgeConnectBuilder Builder) OAuthClientSecret(clientSecretName string) Builder {
+	edgeConnectBuilder.edgeConnect.Spec.OAuth.ClientSecret = clientSecretName
+	return edgeConnectBuilder
+}
+
+func (edgeConnectBuilder Builder) OAuthResource(resource string) Builder {
+	edgeConnectBuilder.edgeConnect.Spec.OAuth.Resource = resource
+	return edgeConnectBuilder
+}
+
+func (edgeConnectBuilder Builder) OAuthEndpoint(endpoint string) Builder {
+	edgeConnectBuilder.edgeConnect.Spec.OAuth.Endpoint = endpoint
+	return edgeConnectBuilder
+}
+
+func (edgeConnectBuilder Builder) CustomPullSecret(secretName string) Builder {
+	edgeConnectBuilder.edgeConnect.Spec.CustomPullSecret = secretName
+	return edgeConnectBuilder
+}
+
 func (edgeConnectBuilder Builder) Build() edgeconnectv1alpha1.EdgeConnect {
 	return edgeConnectBuilder.edgeConnect
 }

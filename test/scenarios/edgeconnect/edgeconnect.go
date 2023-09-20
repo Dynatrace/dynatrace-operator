@@ -3,6 +3,7 @@
 package edgeconnect
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/edgeconnect"
@@ -15,9 +16,16 @@ import (
 func install(t *testing.T) features.Feature {
 	builder := features.New("install edgeconnect")
 
-	secretConfig := tenant.GetSingleTenantSecret(t)
+	secretConfig := tenant.GetEdgeConnectTenantSecret(t)
 
 	testEdgeConnect := edgeconnect.NewBuilder().
+		// this name should match with tenant edge connect name
+		Name(secretConfig.Name).
+		ApiServer(secretConfig.ApiServer).
+		OAuthClientSecret("edgeconnect-client-secret").
+		OAuthEndpoint("https://sso-dev.dynatracelabs.com/sso/oauth2/token").
+		OAuthResource(fmt.Sprintf("urn:dtenvironment:%s", secretConfig.TenantUid)).
+		CustomPullSecret("edgeconnect-docker-pull-secret").
 		Build()
 
 	// Register operator install

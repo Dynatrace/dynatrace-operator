@@ -111,7 +111,7 @@ func CreateDynakube(secret tenant.Secret, dk dynatracev1beta1.DynaKube) BuilderS
 	}
 }
 
-func CreateEdgeConnect(secret tenant.Secret, ec edgeconnectv1alpha1.EdgeConnect) BuilderStep {
+func CreateEdgeConnect(secret tenant.EdgeConnectSecret, ec edgeconnectv1alpha1.EdgeConnect) BuilderStep {
 	return func() (setupFunc, teardownFunc BuilderFunc) {
 		return func(builder *features.FeatureBuilder) {
 				assess.CreateEdgeConnect(builder, &secret, ec)

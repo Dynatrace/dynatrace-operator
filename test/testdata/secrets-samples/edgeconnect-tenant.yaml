@@ -1,0 +1,7 @@
+name: name-of-your-edge-connect
+tenantUid: abc1234
+apiServer: abc1234.dev.dynatracelabs.com
+authClientId: test
+oauthClientSecret: test
+dockerUsername: test
+dockerPassword: test
