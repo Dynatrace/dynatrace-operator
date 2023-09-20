@@ -5,6 +5,7 @@ package assess
 import (
 	"fmt"
 
+	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	edgeconnectv1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
@@ -22,4 +23,10 @@ func CreateEdgeConnect(builder *features.FeatureBuilder, secretConfig *tenant.Se
 	builder.Assess(
 		fmt.Sprintf("'%s' edgeconnect created", testEdgeConnect.Name),
 		edgeconnect.Create(testEdgeConnect))
+}
+
+func VerifyEdgeConnectStartup(builder *features.FeatureBuilder, testEdgeConnect edgeconnectv1beta1.EdgeConnect) {
+	builder.Assess(
+		fmt.Sprintf("'%s' edgeconnect phase changes to 'Running'", testEdgeConnect.Name),
+		edgeconnect.WaitForEdgeConnectPhase(testEdgeConnect, status.Running))
 }

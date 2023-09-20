@@ -21,5 +21,5 @@ func DeleteDynakube(builder *features.FeatureBuilder, testDynakube dynatracev1be
 
 func DeleteEdgeConnect(builder *features.FeatureBuilder, testEdgeConnect edgeconnectv1alpha1.EdgeConnect) {
 	builder.WithTeardown("edgeconnect deleted", edgeconnect.Delete(testEdgeConnect))
-	builder.WithTeardown("operator manifests uninstalled", operator.UninstallViaMake())
+	builder.WithTeardown("operator manifests uninstalled", operator.UninstallViaMake(false))
 }

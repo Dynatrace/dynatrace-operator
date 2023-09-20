@@ -4,39 +4,27 @@ package edgeconnect
 
 import (
 	"testing"
-	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/setup"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-var (
-	ecComponentName = "edgeconnect"
-)
-
-func Install(t *testing.T) features.Feature {
-	startTimestamp := time.Now()
-	testEdgeConnect := edgeconnect.NewBuilder().
-		Build()
+func install(t *testing.T) features.Feature {
+	builder := features.New("install edgeconnect")
 
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
-	builder := features.New(ecComponentName)
+	testEdgeConnect := edgeconnect.NewBuilder().
+		Build()
 
 	// Register operator install
-	operatorNamespaceBuilder := namespace.NewBuilder(testEdgeConnect.Namespace)
-
-	useCsi := false
-	assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), useCsi)
-	assess.InstallEdgeConnect(builder, &secretConfig, testEdgeConnect)
-
-	builder.Assess("status update", edgeconnect.WaitForTimestampUpdate(testEdgeConnect, startTimestamp))
-
-	teardown.UninstallOperatorWithEdgeConnectFromSource(builder, useCsi)
-
+	setup.CreateFeatureEnvironment(builder,
+		setup.CreateNamespaceWithoutTeardown(namespace.NewBuilder(testEdgeConnect.Namespace).Build()),
+		setup.DeployOperatorViaMake(false),
+		setup.CreateEdgeConnect(secretConfig, testEdgeConnect),
+	)
 	return builder.Feature()
 }

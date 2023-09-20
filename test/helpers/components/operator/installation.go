@@ -38,20 +38,25 @@ func InstallViaHelm(releaseTag string, withCsi bool, namespace string) features.
 func UninstallViaMake(withCSI bool) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		rootDir := project.RootDir()
-		execMakeCommand(t, rootDir, "undeploy/helm", fmt.Sprintf("ENABLE_CSI=%t", withCSI))
+		err := execMakeCommand(t, rootDir, "install", fmt.Sprintf("ENABLE_CSI=%t", withCSI))
+		if err != nil {
+			t.Fatal("failed to execute make command for installing the operator", err)
+		}
 		return ctx
 	}
 }
 
-func execMakeCommand(t *testing.T, rootDir, makeTarget string, envVariables ...string) {
+func execMakeCommand(t *testing.T, rootDir, makeTarget string, envVariables ...string) error {
 	command := exec.Command("make", "-C", rootDir, makeTarget)
 	command.Env = os.Environ()
 	command.Env = append(command.Env, envVariables...)
 
-	err := command.Run()
+	output, err := command.CombinedOutput()
 	if err != nil {
-		t.Fatal("failed to install the operator via the make command", err)
+		t.Log(string(output))
 	}
+
+	return err
 }
 
 func installViaHelm(t *testing.T, releaseTag string, withCsi bool, namespace string) {

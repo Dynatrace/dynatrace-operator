@@ -12,10 +12,10 @@ import (
 var testEnvironment env.Environment
 
 func TestMain(m *testing.M) {
-	testEnvironment = environment.Get()
+	testEnvironment = environment.GetStandardKubeClusterEnvironment()
 	testEnvironment.Run(m)
 }
 
 func TestEdgeConnect(t *testing.T) {
-	testEnvironment.Test(t, Install(t))
+	testEnvironment.Test(t, install(t))
 }
