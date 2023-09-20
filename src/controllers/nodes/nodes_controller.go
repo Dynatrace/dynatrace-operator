@@ -98,7 +98,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 
 	// Node is found in the cluster, add or update to cache
 	if dynakube != nil {
-		var ipAddress = dynakube.Status.OneAgent.Instances[nodeName].IPAddress
+		ipAddress := dynakube.Status.OneAgent.Instances[nodeName].IPAddress
 		cacheEntry := CacheEntry{
 			Instance:  dynakube.Name,
 			IPAddress: ipAddress,
@@ -134,6 +134,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 		}
 		nodeCache.UpdateTimestamp()
 	}
+
 	return reconcile.Result{}, controller.updateCache(ctx, nodeCache)
 }
 
@@ -192,8 +193,8 @@ func (controller *Controller) getCache(ctx context.Context) (*Cache, error) {
 			},
 			Data: map[string]string{},
 		}
-
-		if !controller.runLocal { // If running locally, don't set the controller.
+		// If running locally, don't set the controller.
+		if !controller.runLocal {
 			deploy, err := kubeobjects.GetDeployment(controller.client, os.Getenv(kubeobjects.EnvPodName), controller.podNamespace)
 			if err != nil {
 				return nil, err
@@ -292,6 +293,10 @@ func (controller *Controller) sendMarkedForTermination(dynakubeInstance *dynatra
 
 	entityID, err := dynatraceClient.GetEntityIDForIP(cachedNode.IPAddress)
 	if err != nil {
+		if errors.As(err, &dtclient.HostNotFoundErr{}) {
+			log.Info("skipping to send mark for termination event", "dynakube", dynakubeInstance.Name, "nodeIP", cachedNode.IPAddress, "reason", err.Error())
+			return nil
+		}
 		log.Info("failed to send mark for termination event",
 			"reason", "failed to determine entity id", "dynakube", dynakubeInstance.Name, "nodeIP", cachedNode.IPAddress, "cause", err)
 
