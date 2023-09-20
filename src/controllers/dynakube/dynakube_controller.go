@@ -41,7 +41,7 @@ import (
 )
 
 const (
-	errorUpdateInterval   = 1 * time.Minute
+	fastUpdateInterval    = 1 * time.Minute
 	changesUpdateInterval = 5 * time.Minute
 	defaultUpdateInterval = 30 * time.Minute
 )
@@ -127,6 +127,16 @@ func (controller *Controller) setRequeueAfterIfNewIsShorter(requeueAfter time.Du
 	}
 }
 
+func isDynatraceAPIUnreachable(err error) bool {
+	var serverErr dtclient.ServerError
+	if errors.As(err, &serverErr) && (serverErr.Code == http.StatusTooManyRequests || serverErr.Code == http.StatusServiceUnavailable) {
+		log.Info("dynaTrace API server is unavailable or request limit reached! trying again in one minute",
+			"errorCode", serverErr.Code, "errorMessage", serverErr.Message)
+		return true
+	}
+	return false
+}
+
 func (controller *Controller) reconcile(ctx context.Context, dynaKube *dynatracev1beta1.DynaKube) (reconcile.Result, error) {
 	oldStatus := *dynaKube.Status.DeepCopy()
 
@@ -134,16 +144,13 @@ func (controller *Controller) reconcile(ctx context.Context, dynaKube *dynatrace
 
 	err := controller.reconcileDynaKube(ctx, dynaKube)
 
-	var serverErr dtclient.ServerError
 	switch {
-	case errors.As(err, &serverErr) && (serverErr.Code == http.StatusTooManyRequests || serverErr.Code == http.StatusServiceUnavailable):
+	case isDynatraceAPIUnreachable(err):
 		// should we set the phase to error ?
-		log.Info("dynaTrace API server is unavailable or request limit reached! trying again in one minute",
-			"errorCode", serverErr.Code, "errorMessage", serverErr.Message)
-		return reconcile.Result{RequeueAfter: errorUpdateInterval}, nil
+		return reconcile.Result{RequeueAfter: fastUpdateInterval}, nil
 
 	case err != nil:
-		controller.setRequeueAfterIfNewIsShorter(errorUpdateInterval)
+		controller.setRequeueAfterIfNewIsShorter(fastUpdateInterval)
 		dynaKube.Status.SetPhase(dynatracestatus.Error)
 		log.Error(err, "error reconciling DynaKube", "namespace", dynaKube.Namespace, "name", dynaKube.Name)
 
@@ -287,13 +294,13 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 
 func (controller *Controller) reconcileConnectionInfo(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, dynatraceClient dtclient.Client) error {
 	err := connectioninfo.NewReconciler(ctx, controller.client, controller.apiReader, controller.scheme, dynakube, dynatraceClient).Reconcile()
+
 	if errors.Is(err, connectioninfo.NoOneAgentCommunicationHostsError) {
 		// missing communication hosts is not an error per se and shall not stop reconciliation, just make sure next reconciliation is happening ASAP
 		// this situation will clear itself after AG has been started
-		controller.setRequeueAfterIfNewIsShorter(errorUpdateInterval)
+		controller.setRequeueAfterIfNewIsShorter(fastUpdateInterval)
 		return nil
 	}
-
 	return err
 }
 
