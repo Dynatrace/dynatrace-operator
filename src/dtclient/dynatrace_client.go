@@ -13,6 +13,14 @@ import (
 	"github.com/pkg/errors"
 )
 
+type HostNotFoundErr struct {
+	IP string
+}
+
+func (e HostNotFoundErr) Error() string {
+	return fmt.Sprintf("host not found for ip: %v", e.IP)
+}
+
 type hostInfo struct {
 	version  string
 	entityID string
@@ -68,7 +76,7 @@ func (dtc *dynatraceClient) makeRequest(url string, tokenType tokenType) (*http.
 	case installerUrlToken:
 		return dtc.httpClient.Do(req)
 	default:
-		return nil, errors.New("unable to determine token to set in headers")
+		return nil, errors.Errorf("unknown token type (%d), unable to determine token to set in headers", tokenType)
 	}
 
 	req.Header.Add("Authorization", authHeader)
@@ -160,7 +168,7 @@ func (dtc *dynatraceClient) getHostInfoForIP(ip string) (*hostInfo, error) {
 
 	switch hostInfo, ok := dtc.hostCache[ip]; {
 	case !ok:
-		return nil, errors.New("host not found")
+		return nil, HostNotFoundErr{IP: ip}
 	default:
 		return &hostInfo, nil
 	}

@@ -66,7 +66,7 @@ func TestReadCommunicationHosts(t *testing.T) {
 	}
 	{
 		_, err := readFromString(`{"communicationEndpoints": ["shouldnotbeparsed"]}`)
-		assert.Error(t, err, "no hosts available")
+		assert.NoError(t, err)
 	}
 }
 

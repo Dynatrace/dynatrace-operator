@@ -104,6 +104,13 @@ Important characteristics:
 
 ### Do's
 
+- Follow on how to [working with Errors in Go 1.13](https://go.dev/blog/go1.13-errors)
+- Expected errors should be designed as error values (sentinel errors): `var ErrFoo = errors. New ("foo")`.
+
+>[Sentinel errors](https://stackoverflow.com/questions/73433300/what-is-the-difference-between-errors-and-sentinel-errors) are user defined errors that indicated very specific events that you, as a developer, anticipate & identify as adequately important to define and specify.
+As such, you declare them at the package level and, in doing so, imply that your package functions may return these errors (thereby committing you in the future to maintain these errors as others depending on your package will be checking for them).
+
+- Unexpected errors should be designed as error types: `type BarError struct { ...}`, with `BarError` implementing the error interface.
 - If an error is returned by an external function from an external package, it must be wrapped with `errors.WithStack()`.
 - If an error is instantiated by internal code, it must be instantiated with `errors.New()`
 - If an error is returned by an internal function and propagated, it must be propagated as is and must **not** be wrapped with `errors.WithStack()`.

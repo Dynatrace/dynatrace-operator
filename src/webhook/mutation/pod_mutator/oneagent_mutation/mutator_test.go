@@ -165,6 +165,39 @@ func TestMutate(t *testing.T) {
 	}
 }
 
+func TestNoCommunicationHostsMutate(t *testing.T) {
+	dynaKube := getTestNoCommunicationHostDynakube()
+
+	mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
+	request := createTestMutationRequest(dynaKube, nil, getTestNamespace(nil))
+
+	initialNumberOfContainerEnvsLen := len(request.Pod.Spec.Containers[0].Env)
+	initialNumberOfVolumesLen := len(request.Pod.Spec.Volumes)
+	initialContainerVolumeMountsLen := len(request.Pod.Spec.Containers[0].VolumeMounts)
+	initialAnnotationsLen := len(request.Pod.Annotations)
+	initialInitContainers := request.Pod.Spec.InitContainers
+
+	err := mutator.Mutate(request)
+	require.NoError(t, err)
+
+	assert.Len(t, request.Pod.Spec.Containers[0].Env, initialNumberOfContainerEnvsLen)
+	assert.Len(t, request.Pod.Spec.Volumes, initialNumberOfVolumesLen)
+	assert.Len(t, request.Pod.Spec.Containers[0].VolumeMounts, initialContainerVolumeMountsLen)
+
+	assert.Len(t, initialInitContainers, len(request.Pod.Spec.InitContainers)) // the init container should be added when in the PodMutator
+	assert.Equal(t, initialInitContainers, request.Pod.Spec.InitContainers)
+
+	assert.Len(t, request.Pod.Annotations, initialAnnotationsLen+2) // +2 == injected-annotation, reason-annotation
+	require.Contains(t, request.Pod.Annotations, dtwebhook.AnnotationOneAgentInjected)
+	require.Contains(t, request.Pod.Annotations, dtwebhook.AnnotationOneAgentReason)
+
+	assert.Equal(t, "false", request.Pod.Annotations[dtwebhook.AnnotationOneAgentInjected])
+	assert.Equal(t, dtwebhook.EmptyConnectionInfoReason, request.Pod.Annotations[dtwebhook.AnnotationOneAgentReason])
+
+	assert.Len(t, request.InstallContainer.Env, 0)
+	assert.Len(t, request.InstallContainer.VolumeMounts, 0)
+}
+
 type reinvokeTestCase struct {
 	name                               string
 	dynakube                           dynatracev1beta1.DynaKube
@@ -281,6 +314,7 @@ func getTestCSIDynakube() *dynatracev1beta1.DynaKube {
 				CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
 			},
 		},
+		Status: getTestDynakubeCommunicationHostStatus(),
 	}
 }
 
@@ -290,12 +324,35 @@ func getTestReadOnlyCSIDynakube() *dynatracev1beta1.DynaKube {
 	return dk
 }
 
+func getTestNoCommunicationHostDynakube() *dynatracev1beta1.DynaKube {
+	dk := getTestCSIDynakube()
+	dk.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []dynatracev1beta1.CommunicationHostStatus{}
+	return dk
+}
+
 func getTestDynakube() *dynatracev1beta1.DynaKube {
 	return &dynatracev1beta1.DynaKube{
 		ObjectMeta: getTestDynakubeMeta(),
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			OneAgent: dynatracev1beta1.OneAgentSpec{
 				ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{},
+			},
+		},
+		Status: getTestDynakubeCommunicationHostStatus(),
+	}
+}
+
+func getTestDynakubeCommunicationHostStatus() dynatracev1beta1.DynaKubeStatus {
+	return dynatracev1beta1.DynaKubeStatus{
+		OneAgent: dynatracev1beta1.OneAgentStatus{
+			ConnectionInfoStatus: dynatracev1beta1.OneAgentConnectionInfoStatus{
+				CommunicationHosts: []dynatracev1beta1.CommunicationHostStatus{
+					{
+						Protocol: "http",
+						Host:     "dummyhost",
+						Port:     666,
+					},
+				},
 			},
 		},
 	}

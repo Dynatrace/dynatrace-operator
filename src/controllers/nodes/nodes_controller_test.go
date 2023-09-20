@@ -148,7 +148,29 @@ func TestReconcile(t *testing.T) {
 
 		reconcileAllNodes(t, ctrl, fakeClient)
 
-		assert.Error(t, ctrl.reconcileNodeDeletion(ctx, "node1"))
+		assert.Error(t, ctrl.reconcileNodeDeletion(ctx, "node1"), ErrNotFound)
+	})
+
+	t.Run("Remove host from cache even if server error: host not found", func(t *testing.T) {
+		fakeClient := createDefaultFakeClient()
+
+		dtClient := &dtclient.MockDynatraceClient{}
+		dtClient.On("GetEntityIDForIP", mock.Anything).Return("", dtclient.HostNotFoundErr{IP: "1.2.3.4"})
+
+		ctrl := createDefaultReconciler(fakeClient, dtClient)
+
+		reconcileAllNodes(t, ctrl, fakeClient)
+
+		assert.NoError(t, ctrl.reconcileNodeDeletion(ctx, "node1"))
+
+		// Get node from cache
+		c, err := ctrl.getCache(ctx)
+		assert.NoError(t, err)
+		assert.NotNil(t, c)
+
+		// should return not found for key inside configmap
+		_, err = c.Get("node1")
+		assert.Error(t, err, ErrNotFound)
 	})
 }
 
