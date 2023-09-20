@@ -8,7 +8,6 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/setup"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
@@ -39,11 +38,7 @@ func SwitchModes(t *testing.T, name string) features.Feature {
 	featureBuilder.Assess("create sample app namespace", sampleAppClassic.InstallNamespace())
 
 	// install operator and dynakube
-	steps := setup.NewEnvironmentSetup(
-		setup.CreateNamespaceWithoutTeardown(namespace.NewBuilder(dynakubeClassicFullStack.Namespace).Build()),
-		setup.DeployOperatorViaMake(dynakubeClassicFullStack.NeedsCSIDriver()),
-		setup.CreateDynakube(secretConfig, dynakubeClassicFullStack),
-	)
+	steps := setup.CreateDefault()
 	steps.CreateSetupSteps(featureBuilder)
 	featureBuilder.Assess("install sample app", sampleAppClassic.Install())
 
@@ -69,7 +64,9 @@ func SwitchModes(t *testing.T, name string) features.Feature {
 	// teardown
 	featureBuilder.Teardown(sampleAppCloudNative.Uninstall())
 	featureBuilder.Teardown(sampleAppClassic.Uninstall())
+	featureBuilder.Teardown(sampleAppCloudNative.UninstallNamespace())
+	featureBuilder.Teardown(sampleAppClassic.UninstallNamespace())
+	teardown.DeleteDynakube(featureBuilder, dynakubeCloudNative)
 	steps.CreateTeardownSteps(featureBuilder)
-
 	return featureBuilder.Feature()
 }
