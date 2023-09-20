@@ -533,3 +533,7 @@ func (dk *DynaKube) IsActiveGateConnectionInfoUpdateAllowed(timeProvider *timepr
 func (dk *DynaKube) IsTokenScopeVerificationAllowed(timeProvider *timeprovider.Provider) bool {
 	return timeProvider.IsOutdated(&dk.Status.DynatraceApi.LastTokenScopeRequest, dk.FeatureApiRequestThreshold())
 }
+
+func (dk *DynaKube) IsOneAgentCommunicationRouteClear() bool {
+	return len(dk.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts) > 0
+}

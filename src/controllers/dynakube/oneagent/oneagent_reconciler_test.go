@@ -71,6 +71,15 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 		ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace},
 		Spec:       dkSpec,
 	}
+
+	dynakube.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []dynatracev1beta1.CommunicationHostStatus{
+		{
+			Protocol: "http",
+			Host:     "dummyhost",
+			Port:     666,
+		},
+	}
+
 	fakeClient := fake.NewClient(
 		dynakube,
 		NewSecret(dkName, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}),
@@ -124,6 +133,43 @@ func TestReconcile_PhaseSetCorrectly(t *testing.T) {
 	})
 }
 
+func TestReconcile_PostponeOnEmptyCommunicationHosts(t *testing.T) {
+	const (
+		namespace = "dynatrace"
+		name      = "dynakube"
+	)
+
+	dynaKube := dynatracev1beta1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
+			Tokens: name,
+			OneAgent: dynatracev1beta1.OneAgentSpec{
+				CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
+					HostInjectSpec:   dynatracev1beta1.HostInjectSpec{},
+					AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{},
+				},
+			},
+		},
+	}
+
+	c := fake.NewClient(
+		NewSecret(name, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}),
+		sampleKubeSystemNS)
+
+	reconciler := &Reconciler{
+		client:    c,
+		apiReader: c,
+		scheme:    scheme.Scheme,
+	}
+
+	err := reconciler.Reconcile(context.TODO(), &dynaKube)
+
+	assert.NoError(t, err)
+	assert.Nil(t, dynaKube.Status.OneAgent.Instances)
+	assert.Empty(t, dynaKube.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts)
+}
+
 func TestReconcile_InstancesSet(t *testing.T) {
 	const (
 		namespace = "dynatrace"
@@ -139,6 +185,14 @@ func TestReconcile_InstancesSet(t *testing.T) {
 			},
 		},
 	}
+	base.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts = []dynatracev1beta1.CommunicationHostStatus{
+		{
+			Protocol: "http",
+			Host:     "dummyhost",
+			Port:     666,
+		},
+	}
+
 	c := fake.NewClient(
 		NewSecret(name, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}),
 		sampleKubeSystemNS)
@@ -556,6 +610,13 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 					TenantUUID:  testTenantUUID,
 					Endpoints:   testTenantEndpoints,
 					LastRequest: metav1.Time{},
+				},
+				CommunicationHosts: []dynatracev1beta1.CommunicationHostStatus{
+					{
+						Protocol: "http",
+						Host:     "dummyhost",
+						Port:     666,
+					},
 				},
 			},
 		},

@@ -76,7 +76,7 @@ func (dtc *dynatraceClient) makeRequest(url string, tokenType tokenType) (*http.
 	case installerUrlToken:
 		return dtc.httpClient.Do(req)
 	default:
-		return nil, errors.New("unable to determine token to set in headers")
+		return nil, errors.Errorf("unknown token type (%d), unable to determine token to set in headers", tokenType)
 	}
 
 	req.Header.Add("Authorization", authHeader)
