@@ -51,6 +51,7 @@ func networkProblems(t *testing.T) features.Feature {
 	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
 	sampleApp.WithNamespace(sampleNamespace)
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
+	builder.Teardown(sampleApp.UninstallNamespace())
 
 	setup.CreateFeatureEnvironment(builder,
 		setup.CreateNamespaceWithoutTeardown(namespace.NewBuilder(testDynakube.Namespace).WithLabels(istio.InjectionLabel).Build()),
@@ -63,8 +64,6 @@ func networkProblems(t *testing.T) features.Feature {
 
 	// Register actual test
 	builder.Assess("check for dummy volume", checkForDummyVolume(sampleApp))
-
-	builder.Teardown(sampleApp.UninstallNamespace())
 
 	return builder.Feature()
 }
