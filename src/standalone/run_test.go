@@ -297,7 +297,22 @@ func TestGetProcessModuleConfig(t *testing.T) {
 	})
 }
 
-func TestCreateContainerConfigurationFiles(t *testing.T) {
+func TestCreateContainerConfiguratnesporionFiles(t *testing.T) {
+	const expectedContainerConfContent = `[container]
+containerName TEST_CONTAINER_%d_NAME
+imageName TEST_CONTAINER_%d_IMAGE
+k8s_fullpodname TEST_K8S_PODNAME
+k8s_poduid TEST_K8S_PODUID
+k8s_containername TEST_CONTAINER_%d_NAME
+k8s_basepodname TEST_K8S_BASEPODNAME
+k8s_namespace TEST_K8S_NAMESPACE
+k8s_node_name TEST_K8S_NODE_NAME
+k8s_cluster_id id
+[host]
+tenant 
+isCloudNativeFullStack true
+`
+
 	runner := createMockedRunner(t)
 	runner.config.HasHost = false
 
@@ -307,14 +322,27 @@ func TestCreateContainerConfigurationFiles(t *testing.T) {
 		err := runner.createContainerConfigurationFiles()
 
 		require.NoError(t, err)
-		for _, container := range runner.env.Containers {
-			assertIfFileExists(t,
-				runner.fs,
-				filepath.Join(
-					config.AgentShareDirMount,
-					fmt.Sprintf(config.AgentContainerConfFilenameTemplate, container.Name)))
+		for i, container := range runner.env.Containers {
+			filePath := filepath.Join(
+				config.AgentShareDirMount,
+				fmt.Sprintf(config.AgentContainerConfFilenameTemplate, container.Name))
+
+			assertIfFileExists(t, runner.fs, filePath)
+
+			file, err := runner.fs.Open(filePath)
+			require.NoError(t, err)
+
+			info, err := file.Stat()
+			require.NoError(t, err)
+
+			content := make([]byte, info.Size())
+			n, err := file.Read(content)
+
+			require.Equal(t, info.Size(), int64(n))
+			require.NoError(t, err)
+
+			assert.Equal(t, fmt.Sprintf(expectedContainerConfContent, i+1, i+1, i+1), string(content))
 		}
-		// TODO: Check content ?
 	})
 }
 
