@@ -4,7 +4,7 @@ package tenant
 
 import (
 	"context"
-	b64 "encoding/base64"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"path"
@@ -184,7 +184,7 @@ func CreateClientSecret(secretConfig EdgeConnectSecret, name, namespace string) 
 func CreateDockerPullSecret(secretConfig EdgeConnectSecret, name, namespace string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		registry := "https://index.docker.io/v1/"
-		auth := b64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", secretConfig.DockerUsername, secretConfig.DockerPassword)))
+		auth := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", secretConfig.DockerUsername, secretConfig.DockerPassword)))
 		dockerConfig := newDockerConfigWithAuth(secretConfig.DockerUsername, secretConfig.DockerPassword, registry, auth)
 		dockerConfJson, err := json.Marshal(dockerConfig)
 		require.NoError(t, err)
