@@ -22,10 +22,10 @@ func install(t *testing.T) features.Feature {
 		// this name should match with tenant edge connect name
 		Name(secretConfig.Name).
 		ApiServer(secretConfig.ApiServer).
-		OAuthClientSecret("edgeconnect-client-secret").
+		OAuthClientSecret(fmt.Sprintf("%s-client-secret", secretConfig.Name)).
 		OAuthEndpoint("https://sso-dev.dynatracelabs.com/sso/oauth2/token").
 		OAuthResource(fmt.Sprintf("urn:dtenvironment:%s", secretConfig.TenantUid)).
-		CustomPullSecret("edgeconnect-docker-pull-secret").
+		CustomPullSecret(fmt.Sprintf("%s-docker-pull-secret", secretConfig.Name)).
 		Build()
 
 	// Register operator install
