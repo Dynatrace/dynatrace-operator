@@ -38,9 +38,9 @@ func InstallViaHelm(releaseTag string, withCsi bool, namespace string) features.
 func UninstallViaMake(withCSI bool) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		rootDir := project.RootDir()
-		err := execMakeCommand(t, rootDir, "install", fmt.Sprintf("ENABLE_CSI=%t", withCSI))
+		err := execMakeCommand(t, rootDir, "undeploy/helm", fmt.Sprintf("ENABLE_CSI=%t", withCSI))
 		if err != nil {
-			t.Fatal("failed to execute make command for installing the operator", err)
+			t.Fatal("failed to execute make command for undeploy the operator", err)
 		}
 		return ctx
 	}
