@@ -25,6 +25,11 @@ func (step BuilderStep) AddSetupSetup(builder *features.FeatureBuilder) {
 	setupFunc(builder)
 }
 
+func (step BuilderStep) AddTeardownStep(builder *features.FeatureBuilder) {
+	_, teardownFunc := step()
+	teardownFunc(builder)
+}
+
 type BuilderSteps []BuilderStep
 
 func CreateDefault() BuilderSteps {
@@ -133,9 +138,9 @@ func CreateFeatureEnvironment(builder *features.FeatureBuilder, opts ...BuilderS
 }
 
 func (opts BuilderSteps) CreateTeardownSteps(builder *features.FeatureBuilder) {
-	for i := len(opts) - 1; i > 0; i-- {
-		_, td := opts[i]()
-		td(builder)
+	for i := len(opts) - 1; i >= 0; i-- {
+		_, tearDown := opts[i]()
+		tearDown(builder)
 	}
 }
 

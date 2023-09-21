@@ -107,7 +107,9 @@ func InstallFromImage(t *testing.T, istioEnabled bool) features.Feature {
 	// Register dynakube install
 	steps := setup.NewEnvironmentSetup(
 		setup.CreateNamespaceWithoutTeardown(operatorNamespaceBuilder.Build()),
-		setup.DeployOperatorViaMake(cloudNativeDynakube.NeedsCSIDriver()))
+		setup.DeployOperatorViaMake(cloudNativeDynakube.NeedsCSIDriver()),
+		setup.CreateDynakube(secretConfigs[0], cloudNativeDynakube),
+	)
 	steps.CreateSetupSteps(builder)
 
 	// Register sample app install
@@ -127,7 +129,6 @@ func InstallFromImage(t *testing.T, istioEnabled bool) features.Feature {
 
 	// Register sample, dynakube and operator uninstall
 	builder.Teardown(sampleApp.UninstallNamespace())
-	teardown.DeleteDynakube(builder, cloudNativeDynakube)
 	steps.CreateTeardownSteps(builder)
 
 	return builder.Feature()
@@ -263,9 +264,6 @@ func withProxyCA(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) featur
 
 func codeModulesCloudNativeSpec() *dynatracev1beta1.CloudNativeFullStackSpec {
 	return &dynatracev1beta1.CloudNativeFullStackSpec{
-		HostInjectSpec: dynatracev1beta1.HostInjectSpec{
-			Args: []string{"INTERNAL_OVERRIDE_CHECKS=downgrade"},
-		},
 		AppInjectionSpec: *codeModulesAppInjectSpec(),
 	}
 }
