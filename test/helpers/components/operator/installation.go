@@ -40,7 +40,7 @@ func UninstallViaMake(withCSI bool) features.Func {
 		rootDir := project.RootDir()
 		err := execMakeCommand(t, rootDir, "undeploy/helm", fmt.Sprintf("ENABLE_CSI=%t", withCSI))
 		if err != nil {
-			t.Fatal("failed to execute make command for undeploy the operator", err)
+			t.Fatal("failed to execute make command to undeploy the operator", err)
 		}
 		return ctx
 	}
