@@ -54,6 +54,7 @@ func execMakeCommand(t *testing.T, rootDir, makeTarget string, envVariables ...s
 	output, err := command.CombinedOutput()
 	if err != nil {
 		t.Log(string(output))
+		t.Fatal("failed to install the operator via the make command", err)
 	}
 
 	return err
