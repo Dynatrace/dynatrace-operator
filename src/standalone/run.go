@@ -209,11 +209,11 @@ func (runner *Runner) createContainerConfigurationFiles() error {
 		log.Info("creating conf file for container", "container", container)
 		confFilePath := filepath.Join(config.AgentShareDirMount, fmt.Sprintf(config.AgentContainerConfFilenameTemplate, container.Name))
 		content := runner.getBaseConfContent(container)
+
+		log.Info("adding k8s fields")
+		content += runner.getK8ConfContent()
+
 		if runner.hostTenant != config.AgentNoHostTenant {
-			if runner.config.TenantUUID == runner.hostTenant {
-				log.Info("adding k8s fields")
-				content += runner.getK8ConfContent()
-			}
 			log.Info("adding hostTenant field")
 			content += runner.getHostConfContent()
 		}
