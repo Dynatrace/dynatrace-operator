@@ -7,6 +7,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	edgeconnectv1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/edgeconnect"
 	"strings"
 	"testing"
 
@@ -33,6 +35,7 @@ const testAppNameInjected = "application2"
 func supportArchiveExecution(t *testing.T) features.Feature {
 	builder := features.New("support archive execution")
 	secretConfig := tenant.GetSingleTenantSecret(t)
+	edgeconnectSecretConfig := tenant.GetEdgeConnectTenantSecret(t)
 
 	injectLabels := map[string]string{
 		"inject": "me",
@@ -47,21 +50,32 @@ func supportArchiveExecution(t *testing.T) features.Feature {
 		CloudNative(&dynatracev1beta1.CloudNativeFullStackSpec{}).
 		WithActiveGate().Build()
 
+	testEdgeConnect := edgeconnect.NewBuilder().
+		// this name should match with tenant edge connect name
+		Name(edgeconnectSecretConfig.Name).
+		ApiServer(edgeconnectSecretConfig.ApiServer).
+		OAuthClientSecret(fmt.Sprintf("%s-client-secret", edgeconnectSecretConfig.Name)).
+		OAuthEndpoint("https://sso-dev.dynatracelabs.com/sso/oauth2/token").
+		OAuthResource(fmt.Sprintf("urn:dtenvironment:%s", edgeconnectSecretConfig.TenantUid)).
+		CustomPullSecret(fmt.Sprintf("%s-docker-pull-secret", edgeconnectSecretConfig.Name)).
+		Build()
+
 	setup.CreateFeatureEnvironment(builder,
 		setup.CreateNamespace(namespace.NewBuilder(testAppNameInjected).WithLabels(injectLabels).Build()),
 		setup.CreateNamespace(namespace.NewBuilder(testAppNameNotInjected).Build()),
 		setup.CreateNamespaceWithoutTeardown(namespace.NewBuilder(testDynakube.Namespace).Build()),
 		setup.DeployOperatorViaMake(testDynakube.NeedsCSIDriver()),
 		setup.CreateDynakube(secretConfig, testDynakube),
+		setup.CreateEdgeConnect(edgeconnectSecretConfig, testEdgeConnect),
 	)
 	// Register actual test
-	builder.Assess("support archive subcommand can be executed correctly with managed logs", testSupportArchiveCommand(testDynakube, true))
-	builder.Assess("support archive subcommand can be executed correctly without managed logs", testSupportArchiveCommand(testDynakube, false))
+	builder.Assess("support archive subcommand can be executed correctly with managed logs", testSupportArchiveCommand(testDynakube, testEdgeConnect, true))
+	builder.Assess("support archive subcommand can be executed correctly without managed logs", testSupportArchiveCommand(testDynakube, testEdgeConnect, false))
 
 	return builder.Feature()
 }
 
-func testSupportArchiveCommand(testDynakube dynatracev1beta1.DynaKube, collectManaged bool) features.Func {
+func testSupportArchiveCommand(testDynakube dynatracev1beta1.DynaKube, testEdgeConnect edgeconnectv1beta1.EdgeConnect, collectManaged bool) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		commandLineArguments := []string{"--stdout"}
 		if !collectManaged {
@@ -75,7 +89,7 @@ func testSupportArchiveCommand(testDynakube dynatracev1beta1.DynaKube, collectMa
 
 		require.NoError(t, err)
 
-		requiredFiles := newRequiredFiles(t, ctx, envConfig.Client().Resources(), testDynakube, collectManaged).
+		requiredFiles := newRequiredFiles(t, ctx, envConfig.Client().Resources(), testDynakube, testEdgeConnect, collectManaged).
 			collectRequiredFiles()
 		for _, file := range zipReader.File {
 			requiredFiles = assertFile(t, requiredFiles, *file)

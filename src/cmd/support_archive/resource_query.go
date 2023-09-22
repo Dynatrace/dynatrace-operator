@@ -1,6 +1,8 @@
 package support_archive
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/edgeconnect"
 	"reflect"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -30,7 +32,7 @@ func getQueries(namespace string, appName string) []resourceQuery {
 	allQueries = append(allQueries, getOperatorNamespaceQueryGroup(namespace).getQueries()...)
 	allQueries = append(allQueries, getComponentsQueryGroup(namespace, appName, kubeobjects.AppNameLabel).getQueries()...)
 	allQueries = append(allQueries, getComponentsQueryGroup(namespace, appName, kubeobjects.AppManagedByLabel).getQueries()...)
-	allQueries = append(allQueries, getDynakubesQueryGroup(namespace).getQueries()...)
+	allQueries = append(allQueries, getCustomResourcesQueryGroup(namespace).getQueries()...)
 	return allQueries
 }
 
@@ -79,10 +81,11 @@ func getComponentsQueryGroup(namespace string, appName string, labelKey string) 
 	}
 }
 
-func getDynakubesQueryGroup(namespace string) resourceQueryGroup {
+func getCustomResourcesQueryGroup(namespace string) resourceQueryGroup {
 	return resourceQueryGroup{
 		resources: []schema.GroupVersionKind{
 			toGroupVersionKind(dynatracev1beta1.GroupVersion, dynakubev1beta1.DynaKube{}),
+			toGroupVersionKind(v1alpha1.GroupVersion, edgeconnect.EdgeConnect{}),
 		},
 		filters: []client.ListOption{
 			client.InNamespace(namespace),
