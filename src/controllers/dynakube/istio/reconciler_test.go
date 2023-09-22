@@ -252,6 +252,7 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, serviceEntry)
 	})
+	// TODO: test overlapping, one sided empty, slightly different endpoints (is that valid?)
 	t.Run("unknown k8s client error => error", func(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
 		fakeClient.PrependReactor("*", "*", boomReaction)
