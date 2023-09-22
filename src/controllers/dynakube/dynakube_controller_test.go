@@ -17,10 +17,13 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/registry"
+	"github.com/Dynatrace/dynatrace-operator/src/registry/mocks"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
+	containerv1 "github.com/google/go-containerregistry/pkg/v1"
+	fakecontainer "github.com/google/go-containerregistry/pkg/v1/fake"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -667,10 +670,6 @@ func createDTMockClient(paasTokenScopes, apiTokenScopes dtclient.TokenScopes) *d
 	return mockClient
 }
 
-func fakeDigestProvider(context.Context, client.Reader, registry.ImageGetter, *dynatracev1beta1.DynaKube, string) (registry.ImageVersion, error) {
-	return registry.ImageVersion{}, nil
-}
-
 func createFakeClientAndReconciler(mockClient dtclient.Client, instance *dynatracev1beta1.DynaKube, paasToken, apiToken string) *Controller {
 	data := map[string][]byte{
 		dtclient.DynatraceApiToken: []byte(apiToken),
@@ -697,13 +696,32 @@ func createFakeClientAndReconciler(mockClient dtclient.Client, instance *dynatra
 	mockDtcBuilder := &dynatraceclient.StubBuilder{
 		DynatraceClient: mockClient,
 	}
+
+	fakeImage := &fakecontainer.FakeImage{}
+	fakeImage.ConfigFileStub = func() (*containerv1.ConfigFile, error) {
+		return &containerv1.ConfigFile{
+			Config: containerv1.Config{
+				Healthcheck: &containerv1.HealthConfig{
+					Test: []string{},
+				},
+			},
+		}, nil
+	}
+
+	mockRegistryClientBuilder := mocks.MockClientBuilder{}
+	mockRegistryClientBuilderInstance, _ := registry.NewClientBuilder().SetApiReader(fakeClient).SetContext(context.TODO()).SetDynakube(instance).Build()
+	mockRegistryClientBuilder.On("SetContext", mock.Anything).Return(&mockRegistryClientBuilder)
+	mockRegistryClientBuilder.On("SetApiReader", mock.Anything).Return(&mockRegistryClientBuilder)
+	mockRegistryClientBuilder.On("SetDynakube", mock.Anything).Return(&mockRegistryClientBuilder)
+	mockRegistryClientBuilder.On("Build").Return(mockRegistryClientBuilderInstance, nil)
+
 	controller := &Controller{
 		client:                 fakeClient,
 		apiReader:              fakeClient,
+		registryClientBuilder:  &mockRegistryClientBuilder,
 		scheme:                 scheme.Scheme,
 		dynatraceClientBuilder: mockDtcBuilder,
 		fs:                     afero.Afero{Fs: afero.NewMemMapFs()},
-		versionProvider:        fakeDigestProvider,
 	}
 
 	return controller

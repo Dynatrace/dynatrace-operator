@@ -35,9 +35,9 @@ type Controller struct {
 	// that reads objects from the cache and writes to the api-server
 	client         client.Client
 	apiReader      client.Reader
+	registryClient registry.ImageGetter
 	scheme         *runtime.Scheme
 	config         *rest.Config
-	registryClient registry.ImageGetter
 	timeProvider   *timeprovider.Provider
 }
 
@@ -47,12 +47,11 @@ func Add(mgr manager.Manager, _ string) error {
 
 func NewController(mgr manager.Manager) *Controller {
 	return &Controller{
-		client:         mgr.GetClient(),
-		apiReader:      mgr.GetAPIReader(),
-		scheme:         mgr.GetScheme(),
-		config:         mgr.GetConfig(),
-		registryClient: registry.NewClient(),
-		timeProvider:   timeprovider.New(),
+		client:       mgr.GetClient(),
+		apiReader:    mgr.GetAPIReader(),
+		scheme:       mgr.GetScheme(),
+		config:       mgr.GetConfig(),
+		timeProvider: timeprovider.New(),
 	}
 }
 

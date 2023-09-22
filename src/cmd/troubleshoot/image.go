@@ -5,6 +5,8 @@ import (
 	"net/http"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/src/dockerkeychain"
+	"github.com/Dynatrace/dynatrace-operator/src/registry"
 	"github.com/go-logr/logr"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -87,7 +89,17 @@ func tryImagePull(ctx context.Context, keychain authn.Keychain, transport *http.
 		return err
 	}
 
-	_, err = remote.Get(imageReference, remote.WithContext(ctx), remote.WithAuthFromKeychain(keychain), remote.WithTransport(transport))
+	keychain, err := dockerkeychain.NewDockerKeychain(troubleshootCtx.context, troubleshootCtx.apiReader, troubleshootCtx.pullSecret)
+	if err != nil {
+		return err
+	}
+
+	transport, err = registry.PrepareTransport(ctx, apiReader, transport, dynakube)
+	if err != nil {
+		return err
+	}
+
+	_, err = remote.Get(imageReference, remote.WithContext(troubleshootCtx.context), remote.WithAuthFromKeychain(keychain), remote.WithTransport(transport))
 	if err != nil {
 		return err
 	}

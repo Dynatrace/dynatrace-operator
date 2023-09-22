@@ -6,27 +6,28 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/src/registry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type activeGateUpdater struct {
-	dynakube    *dynatracev1beta1.DynaKube
-	apiReader   client.Reader
-	dtClient    dtclient.Client
-	versionFunc ImageVersionFunc
+	dynakube       *dynatracev1beta1.DynaKube
+	apiReader      client.Reader
+	dtClient       dtclient.Client
+	registryClient registry.ImageGetter
 }
 
 func newActiveGateUpdater(
 	dynakube *dynatracev1beta1.DynaKube,
 	apiReader client.Reader,
 	dtClient dtclient.Client,
-	versionFunc ImageVersionFunc,
+	registryClient registry.ImageGetter,
 ) *activeGateUpdater {
 	return &activeGateUpdater{
-		dynakube:    dynakube,
-		apiReader:   apiReader,
-		dtClient:    dtClient,
-		versionFunc: versionFunc,
+		dynakube:       dynakube,
+		apiReader:      apiReader,
+		dtClient:       dtClient,
+		registryClient: registryClient,
 	}
 }
 
@@ -68,5 +69,5 @@ func (updater *activeGateUpdater) CheckForDowngrade(latestVersion string) (bool,
 
 func (updater *activeGateUpdater) UseTenantRegistry(ctx context.Context) error {
 	defaultImage := updater.dynakube.DefaultActiveGateImage()
-	return updateVersionStatusForTenantRegistry(ctx, updater.apiReader, updater.dynakube, updater.Target(), updater.versionFunc, defaultImage)
+	return updateVersionStatusForTenantRegistry(ctx, updater.Target(), updater.registryClient, defaultImage)
 }

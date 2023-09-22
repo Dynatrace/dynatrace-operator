@@ -25,6 +25,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/mapper"
+	"github.com/Dynatrace/dynatrace-operator/src/registry"
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
@@ -67,10 +68,10 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, sc
 		fs:                     afero.Afero{Fs: afero.NewOsFs()},
 		dynatraceClientBuilder: dynatraceclient.NewBuilder(apiReader),
 		istioClientBuilder:     istio.NewClient,
+		registryClientBuilder:  registry.NewClientBuilder(),
 		config:                 config,
 		operatorNamespace:      os.Getenv(kubeobjects.EnvPodNamespace),
 		clusterID:              clusterID,
-		versionProvider:        version.GetImageVersion,
 	}
 }
 
@@ -94,10 +95,11 @@ type Controller struct {
 	fs                     afero.Afero
 	dynatraceClientBuilder dynatraceclient.Builder
 	istioClientBuilder     istio.ClientBuilder
-	config                 *rest.Config
-	operatorNamespace      string
-	clusterID              string
-	versionProvider        version.ImageVersionFunc
+	registryClientBuilder  registry.ClientBuilder
+
+	config            *rest.Config
+	operatorNamespace string
+	clusterID         string
 
 	requeueAfter time.Duration
 }
@@ -230,9 +232,17 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		SetDynakube(*dynakube).
 		SetTokens(tokens)
 	dynatraceClient, err := dynatraceClientBuilder.BuildWithTokenVerification(&dynakube.Status)
-
 	if err != nil {
 		controller.setConditionTokenError(dynakube, err)
+		return err
+	}
+
+	registryClientBuilder := controller.registryClientBuilder.
+		SetContext(ctx).
+		SetApiReader(controller.apiReader).
+		SetDynakube(dynakube)
+	registryClient, err := registryClientBuilder.Build()
+	if err != nil {
 		return err
 	}
 
@@ -274,8 +284,8 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		dynakube,
 		controller.apiReader,
 		dynatraceClient,
+		registryClient,
 		controller.fs,
-		controller.versionProvider,
 		timeprovider.New().Freeze(),
 	)
 	err = versionReconciler.Reconcile(ctx)

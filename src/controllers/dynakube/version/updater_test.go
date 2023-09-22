@@ -2,20 +2,20 @@ package version
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/registry"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/src/registry/mocks"
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/opencontainers/go-digest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type mockUpdater struct {
@@ -73,31 +73,35 @@ func TestRun(t *testing.T) {
 	timeProvider := timeprovider.New().Freeze()
 
 	t.Run("set source and probe at the end, if no error", func(t *testing.T) {
-		registry := newFakeRegistry(map[string]registry.ImageVersion{
+		fakeRegistry := newFakeRegistry(map[string]registry.ImageVersion{
 			testImage.String(): {
 				Version: testImage.Tag,
 			},
 		})
+
+		mockImageGetter := mocks.MockImageGetter{}
+		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{Version: testImage.Tag}, nil)
+
 		target := &status.VersionStatus{}
 		versionReconciler := Reconciler{
-			dynakube:     &dynatracev1beta1.DynaKube{},
-			timeProvider: timeProvider,
-			versionFunc:  registry.ImageVersionExt,
+			dynakube:       &dynatracev1beta1.DynaKube{},
+			timeProvider:   timeProvider,
+			registryClient: &mockImageGetter,
 		}
 		updater := newCustomImageUpdater(target, testImage.String())
 		err := versionReconciler.run(ctx, updater)
 		require.NoError(t, err)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.CustomImageVersionSource, target.Source)
-		assertVersionStatusEquals(t, registry, getTaggedReference(t, testImage.String()), *target)
+		assertVersionStatusEquals(t, fakeRegistry, getTaggedReference(t, testImage.String()), *target)
 	})
+
 	t.Run("DON'T set source and probe at the end, if error", func(t *testing.T) {
-		registry := newEmptyFakeRegistry()
 		target := &status.VersionStatus{}
 		versionReconciler := Reconciler{
-			dynakube:     &dynatracev1beta1.DynaKube{},
-			timeProvider: timeProvider,
-			versionFunc:  registry.ImageVersionExt,
+			dynakube:       &dynatracev1beta1.DynaKube{},
+			timeProvider:   timeProvider,
+			registryClient: &mocks.MockImageGetter{},
 		}
 		updater := newCustomImageUpdater(target, "incorrect-uri")
 		err := versionReconciler.run(ctx, updater)
@@ -106,12 +110,11 @@ func TestRun(t *testing.T) {
 		assert.Empty(t, target.Source)
 	})
 	t.Run("autoUpdate disabled, runs if status is empty or source changes", func(t *testing.T) {
-		registry := newEmptyFakeRegistry()
 		target := &status.VersionStatus{}
 		versionReconciler := Reconciler{
-			dynakube:     &dynatracev1beta1.DynaKube{},
-			timeProvider: timeProvider,
-			versionFunc:  registry.ImageVersionExt,
+			dynakube:       &dynatracev1beta1.DynaKube{},
+			timeProvider:   timeProvider,
+			registryClient: &mocks.MockImageGetter{},
 		}
 		updater := newDefaultUpdater(target, false)
 
@@ -139,7 +142,7 @@ func TestRun(t *testing.T) {
 		updater.AssertNumberOfCalls(t, "UseTenantRegistry", 2)
 	})
 	t.Run("public registry", func(t *testing.T) {
-		registry := newFakeRegistry(map[string]registry.ImageVersion{
+		fakeRegistry := newFakeRegistry(map[string]registry.ImageVersion{
 			testImage.String(): {
 				Version: testImage.Tag,
 			},
@@ -147,10 +150,13 @@ func TestRun(t *testing.T) {
 		target := &status.VersionStatus{
 			Source: status.TenantRegistryVersionSource,
 		}
+		mockImageGetter := mocks.MockImageGetter{}
+		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{Version: testImage.Tag}, nil)
+
 		versionReconciler := Reconciler{
-			dynakube:     enablePublicRegistry(&dynatracev1beta1.DynaKube{}),
-			timeProvider: timeProvider,
-			versionFunc:  registry.ImageVersionExt,
+			dynakube:       enablePublicRegistry(&dynatracev1beta1.DynaKube{}),
+			timeProvider:   timeProvider,
+			registryClient: &mockImageGetter,
 		}
 		updater := newPublicRegistryUpdater(target, &testImage, false)
 		updater.On("IsClassicFullStackEnabled").Return(false)
@@ -161,23 +167,21 @@ func TestRun(t *testing.T) {
 		updater.AssertNumberOfCalls(t, "LatestImageInfo", 1)
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.PublicRegistryVersionSource, target.Source)
-		assertVersionStatusEquals(t, registry, getTaggedReference(t, testImage.String()), *target)
+		assertVersionStatusEquals(t, fakeRegistry, getTaggedReference(t, testImage.String()), *target)
 		assert.Empty(t, target.Version)
 	})
 
 	t.Run("public registry, no downgrade allowed", func(t *testing.T) {
-		registry := newFakeRegistry(map[string]registry.ImageVersion{
-			testImage.String(): {
-				Version: testImage.Tag,
-			},
-		})
+		mockImageGetter := mocks.MockImageGetter{}
+		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{Version: testImage.Tag}, nil)
+
 		target := &status.VersionStatus{
 			Source: status.TenantRegistryVersionSource,
 		}
 		versionReconciler := Reconciler{
-			dynakube:     enablePublicRegistry(&dynatracev1beta1.DynaKube{}),
-			timeProvider: timeProvider,
-			versionFunc:  registry.ImageVersionExt,
+			dynakube:       enablePublicRegistry(&dynatracev1beta1.DynaKube{}),
+			timeProvider:   timeProvider,
+			registryClient: &mockImageGetter,
 		}
 		updater := newPublicRegistryUpdater(target, &testImage, false)
 		updater.On("IsClassicFullStackEnabled").Return(false)
@@ -192,18 +196,16 @@ func TestRun(t *testing.T) {
 		assert.Empty(t, target.ImageID)
 	})
 	t.Run("classicfullstack enabled, public registry is ignored", func(t *testing.T) {
-		registry := newFakeRegistry(map[string]registry.ImageVersion{
-			testImage.String(): {
-				Version: testImage.Tag,
-			},
-		})
+		mockImageGetter := mocks.MockImageGetter{}
+		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{Version: testImage.Tag}, nil)
+
 		target := &status.VersionStatus{
 			Source: status.TenantRegistryVersionSource,
 		}
 		versionReconciler := Reconciler{
-			dynakube:     enablePublicRegistry(newClassicFullStackDynakube()),
-			timeProvider: timeProvider,
-			versionFunc:  registry.ImageVersionExt,
+			dynakube:       enablePublicRegistry(newClassicFullStackDynakube()),
+			timeProvider:   timeProvider,
+			registryClient: &mockImageGetter,
 		}
 		updater := newClassicFullStackUpdater(target, false)
 		updater.On("CustomImage").Return("")
@@ -218,18 +220,16 @@ func TestRun(t *testing.T) {
 		assert.Equal(t, target.Version, target.Version)
 	})
 	t.Run("classicfullstack enabled, public registry is ignored, custom image is set", func(t *testing.T) {
-		registry := newFakeRegistry(map[string]registry.ImageVersion{
-			testImage.String(): {
-				Version: testImage.Tag,
-			},
-		})
+		mockImageGetter := mocks.MockImageGetter{}
+		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{Version: testImage.Tag}, nil)
+
 		target := &status.VersionStatus{
 			Source: status.TenantRegistryVersionSource,
 		}
 		versionReconciler := Reconciler{
-			dynakube:     enablePublicRegistry(newClassicFullStackDynakube()),
-			timeProvider: timeProvider,
-			versionFunc:  registry.ImageVersionExt,
+			dynakube:       enablePublicRegistry(newClassicFullStackDynakube()),
+			timeProvider:   timeProvider,
+			registryClient: &mockImageGetter,
 		}
 		updater := newClassicFullStackUpdater(target, false)
 		updater.On("CustomImage").Return(testImage.String())
@@ -299,31 +299,35 @@ func TestUpdateVersionStatus(t *testing.T) {
 	}
 
 	t.Run("failing to get digest should cause error", func(t *testing.T) {
-		registry := newEmptyFakeRegistry()
 		target := status.VersionStatus{}
-		err := setImageIDWithDigest(ctx, fake.NewClient(), &dynatracev1beta1.DynaKube{}, &target, registry.ImageVersionExt, testImage.String())
+		mockImageGetter := mocks.MockImageGetter{}
+		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{}, errors.New("something went wrong"))
+		err := setImageIDWithDigest(ctx, &target, &mockImageGetter, testImage.String())
 		assert.Error(t, err)
 	})
 
 	t.Run("failing to get digest should cause error if proxy is set", func(t *testing.T) {
-		registry := newEmptyFakeRegistry()
 		target := status.VersionStatus{}
 		dynakube := newClassicFullStackDynakube()
 		dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: "http://username:password@host:port"}
-		err := setImageIDWithDigest(ctx, fake.NewClient(), &dynatracev1beta1.DynaKube{}, &target, registry.ImageVersionExt, testImage.String())
+		mockImageGetter := mocks.MockImageGetter{}
+		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{}, errors.New("something went wrong"))
+		err := setImageIDWithDigest(ctx, &target, &mockImageGetter, testImage.String())
 		assert.Error(t, err)
 	})
 
 	t.Run("set status", func(t *testing.T) {
-		registry := newFakeRegistry(map[string]registry.ImageVersion{
+		fakeRegistry := newFakeRegistry(map[string]registry.ImageVersion{
 			testImage.String(): {
 				Version: testImage.Tag,
 			},
 		})
 		target := status.VersionStatus{}
-		err := setImageIDWithDigest(ctx, fake.NewClient(), &dynatracev1beta1.DynaKube{}, &target, registry.ImageVersionExt, testImage.String())
+		mockImageGetter := mocks.MockImageGetter{}
+		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{Version: testImage.Tag}, nil)
+		err := setImageIDWithDigest(ctx, &target, &mockImageGetter, testImage.String())
 		require.NoError(t, err)
-		assertVersionStatusEquals(t, registry, getTaggedReference(t, testImage.String()), target)
+		assertVersionStatusEquals(t, fakeRegistry, getTaggedReference(t, testImage.String()), target)
 	})
 
 	t.Run("set status, not call digest func", func(t *testing.T) {
@@ -331,11 +335,10 @@ func TestUpdateVersionStatus(t *testing.T) {
 		expectedDigest := "sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
 		expectedID := expectedRepo + "@" + expectedDigest
 		target := status.VersionStatus{}
-		boomFunc := func(context.Context, client.Reader, registry.ImageGetter, *dynatracev1beta1.DynaKube, string) (registry.ImageVersion, error) {
-			t.Error("digest function was called unexpectedly")
-			return registry.ImageVersion{}, nil
-		}
-		err := setImageIDWithDigest(ctx, fake.NewClient(), &dynatracev1beta1.DynaKube{}, &target, boomFunc, expectedID)
+
+		mockImageGetter := mocks.MockImageGetter{}
+		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{}, nil)
+		err := setImageIDWithDigest(ctx, &target, &mockImageGetter, expectedID)
 		require.NoError(t, err)
 		assert.Equal(t, expectedID, target.ImageID)
 	})
@@ -344,11 +347,9 @@ func TestUpdateVersionStatus(t *testing.T) {
 		expectedDigest := "sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
 		expectedID := expectedRepo + ":tag@" + expectedDigest
 		target := status.VersionStatus{}
-		boomFunc := func(context.Context, client.Reader, registry.ImageGetter, *dynatracev1beta1.DynaKube, string) (registry.ImageVersion, error) {
-			t.Error("digest function was called unexpectedly")
-			return registry.ImageVersion{}, nil
-		}
-		err := setImageIDWithDigest(ctx, fake.NewClient(), &dynatracev1beta1.DynaKube{}, &target, boomFunc, expectedID)
+		mockImageGetter := mocks.MockImageGetter{}
+		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{}, nil)
+		err := setImageIDWithDigest(ctx, &target, &mockImageGetter, expectedID)
 		require.NoError(t, err)
 		assert.Equal(t, expectedID, target.ImageID)
 	})

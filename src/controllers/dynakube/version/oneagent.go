@@ -6,27 +6,28 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/src/registry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type oneAgentUpdater struct {
-	dynakube    *dynatracev1beta1.DynaKube
-	apiReader   client.Reader
-	dtClient    dtclient.Client
-	versionFunc ImageVersionFunc
+	dynakube       *dynatracev1beta1.DynaKube
+	apiReader      client.Reader
+	dtClient       dtclient.Client
+	registryClient registry.ImageGetter
 }
 
 func newOneAgentUpdater(
 	dynakube *dynatracev1beta1.DynaKube,
 	apiReader client.Reader,
 	dtClient dtclient.Client,
-	versionFunc ImageVersionFunc,
+	registryClient registry.ImageGetter,
 ) *oneAgentUpdater {
 	return &oneAgentUpdater{
-		dynakube:    dynakube,
-		apiReader:   apiReader,
-		dtClient:    dtClient,
-		versionFunc: versionFunc,
+		dynakube:       dynakube,
+		apiReader:      apiReader,
+		dtClient:       dtClient,
+		registryClient: registryClient,
 	}
 }
 
@@ -78,7 +79,7 @@ func (updater *oneAgentUpdater) UseTenantRegistry(ctx context.Context) error {
 	}
 
 	defaultImage := updater.dynakube.DefaultOneAgentImage()
-	return updateVersionStatusForTenantRegistry(ctx, updater.apiReader, updater.dynakube, updater.Target(), updater.versionFunc, defaultImage)
+	return updateVersionStatusForTenantRegistry(ctx, updater.Target(), updater.registryClient, defaultImage)
 }
 
 func (updater *oneAgentUpdater) CheckForDowngrade(latestVersion string) (bool, error) {
