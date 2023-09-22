@@ -41,14 +41,16 @@ func (r *Reconciler) ReconcileAPIUrl(ctx context.Context, dynakube *dynatracev1b
 	return nil
 }
 
-func (r *Reconciler) ReconcileOneAgentCommunicationHosts(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
+func (r *Reconciler) ReconcileCommunicationHosts(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
 	log.Info("reconciling istio components for oneagent communication hosts")
 	if dynakube == nil {
 		return errors.New("can't reconcile oneagent communication hosts of nil dynakube")
 	}
-	communicationHosts := connectioninfo.GetOneAgentCommunicationHosts(dynakube)
+	oneAgentCommunicationHosts := connectioninfo.GetOneAgentCommunicationHosts(dynakube)
+	// activeGateEntpoints := connectioninfo.GetActiveGateEndpoints(dynakube)
+	// get activegate endpoints and merge set here
 
-	err := r.reconcileCommunicationHosts(ctx, dynakube, communicationHosts, OneAgentComponent)
+	err := r.reconcileCommunicationHosts(ctx, dynakube, oneAgentCommunicationHosts, OneAgentComponent)
 	if err != nil {
 		return errors.WithMessage(err, "error reconciling config for Dynatrace communication hosts")
 	}
