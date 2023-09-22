@@ -1,10 +1,10 @@
 package support_archive
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/edgeconnect"
 	"reflect"
 
+	"github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/edgeconnect"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	dynakubev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"

@@ -6,9 +6,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/edgeconnect"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/edgeconnect"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"

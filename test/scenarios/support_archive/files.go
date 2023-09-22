@@ -5,9 +5,9 @@ package support_archive
 import (
 	"context"
 	"fmt"
-	edgeconnectv1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/edgeconnect"
 	"testing"
 
+	edgeconnectv1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/edgeconnect"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/support_archive"
 	"github.com/Dynatrace/dynatrace-operator/src/functional"
