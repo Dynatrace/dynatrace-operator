@@ -256,7 +256,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 	// TODO: Improve logic so we do this only in case of codemodules
 	// Kept it like this for now to keep compatibility
 	if istioReconciler != nil {
-		err := istioReconciler.ReconcileOneAgentCommunicationHosts(ctx, dynakube)
+		err := istioReconciler.ReconcileCommunicationHosts(ctx, dynakube)
 		if err != nil {
 			return err
 		}
