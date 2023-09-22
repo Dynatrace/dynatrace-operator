@@ -53,3 +53,34 @@ func TestGetCommunicationHosts(t *testing.T) {
 		assert.Equal(t, expectedCommunicationHosts[0].Port, hosts[0].Port)
 	})
 }
+
+func TestParseCommunicationHostsFromActiveGateEndpoints(t *testing.T) {
+	dynakube := &dynatracev1beta1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: testNamespace,
+			Name:      testName,
+		},
+		Status: dynatracev1beta1.DynaKubeStatus{
+			OneAgent: dynatracev1beta1.OneAgentStatus{
+				ConnectionInfoStatus: dynatracev1beta1.OneAgentConnectionInfoStatus{
+					ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{},
+				},
+			},
+		},
+	}
+
+	t.Run(`endpoints empty`, func(t *testing.T) {
+		hosts := parseCommunicationHostFromActiveGateEndpoints("")
+		assert.Len(t, hosts, 0)
+	})
+
+	t.Run(`activegate endpoint set`, func(t *testing.T) {
+		dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints = "endpoints: https://abcd123.some.activegate.endpointurl.com:443"
+
+		hosts := GetActiveGateEndpointsAsCommunicationHosts(dynakube)
+		assert.Equal(t, 1, len(hosts))
+		assert.Equal(t, "abcd123.some.activegate.endpointurl.com", hosts[0].Host)
+		assert.Equal(t, "https", hosts[0].Protocol)
+		assert.Equal(t, uint32(443), hosts[0].Port)
+	})
+}
