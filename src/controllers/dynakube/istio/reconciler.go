@@ -60,31 +60,6 @@ func (r *Reconciler) ReconcileCommunicationHosts(ctx context.Context, dynakube *
 	return nil
 }
 
-func mergeCommunicationHosts(oneAgentCommunicationHosts, activeGateEndpoints []dtclient.CommunicationHost) []dtclient.CommunicationHost {
-	if oneAgentCommunicationHosts == nil {
-		return activeGateEndpoints
-	}
-	if activeGateEndpoints == nil {
-		return oneAgentCommunicationHosts
-	}
-
-	setOfComHosts := make(map[dtclient.CommunicationHost]bool)
-	for _, host := range oneAgentCommunicationHosts {
-		setOfComHosts[host] = true
-	}
-
-	for _, endpoint := range activeGateEndpoints {
-		setOfComHosts[endpoint] = true
-	}
-
-	comHosts := make([]dtclient.CommunicationHost, 0, len(oneAgentCommunicationHosts)+len(activeGateEndpoints))
-	for ch := range setOfComHosts {
-		comHosts = append(comHosts, ch)
-	}
-
-	return comHosts
-}
-
 func (r *Reconciler) reconcileCommunicationHosts(ctx context.Context, owner metav1.Object, comHosts []dtclient.CommunicationHost, component string) error {
 	ipHosts, fqdnHosts := splitCommunicationHost(comHosts)
 
