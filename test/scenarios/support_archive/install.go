@@ -32,6 +32,11 @@ import (
 const testAppNameNotInjected = "application1"
 const testAppNameInjected = "application2"
 
+type CustomResources struct {
+	dynakube    dynatracev1beta1.DynaKube
+	edgeconnect edgeconnectv1beta1.EdgeConnect
+}
+
 func supportArchiveExecution(t *testing.T) features.Feature {
 	builder := features.New("support archive execution")
 	secretConfig := tenant.GetSingleTenantSecret(t)
@@ -89,7 +94,11 @@ func testSupportArchiveCommand(testDynakube dynatracev1beta1.DynaKube, testEdgeC
 
 		require.NoError(t, err)
 
-		requiredFiles := newRequiredFiles(t, ctx, envConfig.Client().Resources(), testDynakube, testEdgeConnect, collectManaged).
+		customResources := CustomResources{
+			dynakube:    testDynakube,
+			edgeconnect: testEdgeConnect,
+		}
+		requiredFiles := newRequiredFiles(t, ctx, envConfig.Client().Resources(), customResources, collectManaged).
 			collectRequiredFiles()
 		for _, file := range zipReader.File {
 			requiredFiles = assertFile(t, requiredFiles, *file)

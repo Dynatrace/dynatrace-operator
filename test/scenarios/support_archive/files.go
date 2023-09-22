@@ -35,13 +35,13 @@ type requiredFiles struct {
 	collectManaged bool
 }
 
-func newRequiredFiles(t *testing.T, ctx context.Context, resources *resources.Resources, dynakube dynatracev1beta1.DynaKube, edgeconnect edgeconnectv1beta1.EdgeConnect, collectManaged bool) requiredFiles {
+func newRequiredFiles(t *testing.T, ctx context.Context, resources *resources.Resources, customResources CustomResources, collectManaged bool) requiredFiles {
 	return requiredFiles{
 		t:              t,
 		ctx:            ctx,
 		resources:      resources,
-		dynakube:       dynakube,
-		edgeconnect:    edgeconnect,
+		dynakube:       customResources.dynakube,
+		edgeconnect:    customResources.edgeconnect,
 		collectManaged: collectManaged,
 	}
 }
