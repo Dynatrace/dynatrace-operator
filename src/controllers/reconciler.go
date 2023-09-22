@@ -1,5 +1,7 @@
 package controllers
 
+import "golang.org/x/net/context"
+
 type Reconciler interface {
-	Reconcile() error
+	Reconcile(ctx context.Context) error
 }

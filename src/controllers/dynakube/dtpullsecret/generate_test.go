@@ -1,7 +1,6 @@
 package dtpullsecret
 
 import (
-	"context"
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -41,7 +40,6 @@ func TestReconciler_GenerateData(t *testing.T) {
 		},
 	}
 	r := &Reconciler{
-		ctx:      context.Background(),
 		dynakube: dynakube,
 		tokens: token.Tokens{
 			dtclient.DynatracePaasToken: token.Token{Value: testPaasToken},

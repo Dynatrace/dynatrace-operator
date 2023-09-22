@@ -1,8 +1,6 @@
 package activegate
 
 import (
-	"context"
-
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
@@ -15,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
+	"golang.org/x/net/context"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,7 +22,6 @@ import (
 )
 
 type Reconciler struct {
-	context                           context.Context
 	client                            client.Client
 	dynakube                          *dynatracev1beta1.DynaKube
 	apiReader                         client.Reader
@@ -37,7 +35,7 @@ type Reconciler struct {
 
 var _ controllers.Reconciler = (*Reconciler)(nil)
 
-func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) controllers.Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
+func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) controllers.Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
 	authTokenReconciler := authtoken.NewReconciler(clt, apiReader, scheme, dynakube, dtc)
 	proxyReconciler := proxy.NewReconciler(clt, apiReader, scheme, dynakube)
 	newCustomPropertiesReconcilerFunc := func(customPropertiesOwnerName string, customPropertiesSource *dynatracev1beta1.DynaKubeValueSource) controllers.Reconciler {
@@ -45,7 +43,6 @@ func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Read
 	}
 
 	return &Reconciler{
-		context:                           ctx,
 		client:                            clt,
 		apiReader:                         apiReader,
 		scheme:                            scheme,
@@ -58,20 +55,20 @@ func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Read
 	}
 }
 
-func (r *Reconciler) Reconcile() error {
-	err := r.createActiveGateTenantConnectionInfoConfigMap()
+func (r *Reconciler) Reconcile(ctx context.Context) error {
+	err := r.createActiveGateTenantConnectionInfoConfigMap(ctx)
 	if err != nil {
 		return err
 	}
 
 	if r.dynakube.UseActiveGateAuthToken() {
-		err := r.authTokenReconciler.Reconcile()
+		err := r.authTokenReconciler.Reconcile(ctx)
 		if err != nil {
 			return errors.WithMessage(err, "could not reconcile Dynatrace ActiveGateAuthToken secrets")
 		}
 	}
 
-	err = r.proxyReconciler.Reconcile()
+	err = r.proxyReconciler.Reconcile(ctx)
 	if err != nil {
 		return err
 	}
@@ -88,9 +85,9 @@ func (r *Reconciler) Reconcile() error {
 
 	for _, agCapability := range caps {
 		if agCapability.Enabled() {
-			return r.createCapability(agCapability)
+			return r.createCapability(ctx, agCapability)
 		} else {
-			err = r.deleteCapability(agCapability)
+			err = r.deleteCapability(ctx, agCapability)
 			if err != nil {
 				return err
 			}
@@ -100,7 +97,7 @@ func (r *Reconciler) Reconcile() error {
 	return err
 }
 
-func (r *Reconciler) createActiveGateTenantConnectionInfoConfigMap() error {
+func (r *Reconciler) createActiveGateTenantConnectionInfoConfigMap(ctx context.Context) error {
 	configMapData := extractPublicData(r.dynakube)
 
 	configMap, err := kubeobjects.CreateConfigMap(r.scheme, r.dynakube,
@@ -111,7 +108,7 @@ func (r *Reconciler) createActiveGateTenantConnectionInfoConfigMap() error {
 		return errors.WithStack(err)
 	}
 
-	query := kubeobjects.NewConfigMapQuery(r.context, r.client, r.apiReader, log)
+	query := kubeobjects.NewConfigMapQuery(ctx, r.client, r.apiReader, log)
 	err = query.CreateOrUpdate(*configMap)
 	if err != nil {
 		log.Info("could not create or update configMap for connection info", "name", configMap.Name)
@@ -132,27 +129,27 @@ func extractPublicData(dynakube *dynatracev1beta1.DynaKube) map[string]string {
 	return data
 }
 
-func (r *Reconciler) createCapability(agCapability capability.Capability) error {
+func (r *Reconciler) createCapability(ctx context.Context, agCapability capability.Capability) error {
 	customPropertiesReconciler := r.newCustomPropertiesReconcilerFunc(r.dynakube.ActiveGateServiceAccountOwner(), agCapability.Properties().CustomProperties) // nolint:typeCheck
 	statefulsetReconciler := r.newStatefulsetReconcilerFunc(r.client, r.apiReader, r.scheme, r.dynakube, agCapability)                                        // nolint:typeCheck
 
 	capabilityReconciler := r.newCapabilityReconcilerFunc(r.client, agCapability, r.dynakube, statefulsetReconciler, customPropertiesReconciler)
-	return capabilityReconciler.Reconcile()
+	return capabilityReconciler.Reconcile(ctx)
 }
 
-func (r *Reconciler) deleteCapability(agCapability capability.Capability) error {
-	if err := r.deleteStatefulset(agCapability); err != nil {
+func (r *Reconciler) deleteCapability(ctx context.Context, agCapability capability.Capability) error {
+	if err := r.deleteStatefulset(ctx, agCapability); err != nil {
 		return err
 	}
 
-	if err := r.deleteService(agCapability); err != nil {
+	if err := r.deleteService(ctx, agCapability); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (r *Reconciler) deleteService(agCapability capability.Capability) error {
+func (r *Reconciler) deleteService(ctx context.Context, agCapability capability.Capability) error {
 	if r.dynakube.NeedsActiveGateService() {
 		return nil
 	}
@@ -163,15 +160,15 @@ func (r *Reconciler) deleteService(agCapability capability.Capability) error {
 			Namespace: r.dynakube.Namespace,
 		},
 	}
-	return kubeobjects.Delete(r.context, r.client, &svc)
+	return kubeobjects.Delete(ctx, r.client, &svc)
 }
 
-func (r *Reconciler) deleteStatefulset(agCapability capability.Capability) error {
+func (r *Reconciler) deleteStatefulset(ctx context.Context, agCapability capability.Capability) error {
 	sts := appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      capability.CalculateStatefulSetName(agCapability, r.dynakube.Name),
 			Namespace: r.dynakube.Namespace,
 		},
 	}
-	return kubeobjects.Delete(r.context, r.client, &sts)
+	return kubeobjects.Delete(ctx, r.client, &sts)
 }

@@ -51,7 +51,7 @@ func newTestReconcilerWithInstance(client client.Client) *Reconciler {
 func TestReconcile(t *testing.T) {
 	t.Run(`reconcile auth token for first time`, func(t *testing.T) {
 		r := newTestReconcilerWithInstance(fake.NewClientBuilder().Build())
-		err := r.Reconcile()
+		err := r.Reconcile(context.TODO())
 		require.NoError(t, err)
 
 		var authToken corev1.Secret
@@ -73,7 +73,7 @@ func TestReconcile(t *testing.T) {
 			Build()
 
 		r := newTestReconcilerWithInstance(clt)
-		err := r.Reconcile()
+		err := r.Reconcile(context.TODO())
 		require.NoError(t, err)
 
 		var authToken corev1.Secret
@@ -95,7 +95,7 @@ func TestReconcile(t *testing.T) {
 			Build()
 		r := newTestReconcilerWithInstance(clt)
 
-		err := r.Reconcile()
+		err := r.Reconcile(context.TODO())
 		require.NoError(t, err)
 
 		var authToken corev1.Secret

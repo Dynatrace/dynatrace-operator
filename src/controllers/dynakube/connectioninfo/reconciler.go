@@ -1,13 +1,12 @@
 package connectioninfo
 
 import (
-	"context"
-
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/pkg/errors"
+	"golang.org/x/net/context"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -18,7 +17,6 @@ import (
 var NoOneAgentCommunicationHostsError = errors.New("no communication hosts for OneAgent are available")
 
 type Reconciler struct {
-	context      context.Context
 	client       client.Client
 	apiReader    client.Reader
 	dtc          dtclient.Client
@@ -27,9 +25,8 @@ type Reconciler struct {
 	timeProvider *timeprovider.Provider
 }
 
-func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
+func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
 	return &Reconciler{
-		context:      ctx,
 		client:       clt,
 		apiReader:    apiReader,
 		dynakube:     dynakube,
@@ -39,15 +36,15 @@ func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Read
 	}
 }
 
-func (r *Reconciler) Reconcile() error {
+func (r *Reconciler) Reconcile(ctx context.Context) error {
 	if !r.dynakube.FeatureDisableActivegateRawImage() {
-		err := r.reconcileActiveGateConnectionInfo()
+		err := r.reconcileActiveGateConnectionInfo(ctx)
 		if err != nil {
 			return err
 		}
 	}
 
-	err := r.reconcileOneAgentConnectionInfo()
+	err := r.reconcileOneAgentConnectionInfo(ctx)
 	if err != nil {
 		return err
 	}
@@ -55,8 +52,8 @@ func (r *Reconciler) Reconcile() error {
 	return nil
 }
 
-func (r *Reconciler) needsUpdate(secretName string, isAllowedFunc dynatracev1beta1.RequestAllowedChecker) (bool, error) {
-	query := kubeobjects.NewSecretQuery(r.context, r.client, r.apiReader, log)
+func (r *Reconciler) needsUpdate(ctx context.Context, secretName string, isAllowedFunc dynatracev1beta1.RequestAllowedChecker) (bool, error) {
+	query := kubeobjects.NewSecretQuery(ctx, r.client, r.apiReader, log)
 	_, err := query.Get(types.NamespacedName{Name: secretName, Namespace: r.dynakube.Namespace})
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
@@ -68,8 +65,8 @@ func (r *Reconciler) needsUpdate(secretName string, isAllowedFunc dynatracev1bet
 	return isAllowedFunc(r.timeProvider), nil
 }
 
-func (r *Reconciler) reconcileOneAgentConnectionInfo() error {
-	needsUpdate, err := r.needsUpdate(r.dynakube.OneagentTenantSecret(), r.dynakube.IsOneAgentConnectionInfoUpdateAllowed)
+func (r *Reconciler) reconcileOneAgentConnectionInfo(ctx context.Context) error {
+	needsUpdate, err := r.needsUpdate(ctx, r.dynakube.OneagentTenantSecret(), r.dynakube.IsOneAgentConnectionInfoUpdateAllowed)
 	if err != nil {
 		return err
 	}
@@ -89,7 +86,7 @@ func (r *Reconciler) reconcileOneAgentConnectionInfo() error {
 
 	r.updateDynakubeOneAgentStatus(connectionInfo)
 
-	err = r.createTenantTokenSecret(r.dynakube.OneagentTenantSecret(), connectionInfo.ConnectionInfo)
+	err = r.createTenantTokenSecret(ctx, r.dynakube.OneagentTenantSecret(), connectionInfo.ConnectionInfo)
 	if err != nil {
 		return err
 	}
@@ -128,8 +125,8 @@ func copyCommunicationHosts(dest *dynatracev1beta1.OneAgentConnectionInfoStatus,
 	}
 }
 
-func (r *Reconciler) reconcileActiveGateConnectionInfo() error {
-	needsUpdate, err := r.needsUpdate(r.dynakube.ActivegateTenantSecret(), r.dynakube.IsActiveGateConnectionInfoUpdateAllowed)
+func (r *Reconciler) reconcileActiveGateConnectionInfo(ctx context.Context) error {
+	needsUpdate, err := r.needsUpdate(ctx, r.dynakube.ActivegateTenantSecret(), r.dynakube.IsActiveGateConnectionInfoUpdateAllowed)
 	if err != nil {
 		return err
 	}
@@ -149,7 +146,7 @@ func (r *Reconciler) reconcileActiveGateConnectionInfo() error {
 
 	r.updateDynakubeActiveGateStatus(connectionInfo)
 
-	err = r.createTenantTokenSecret(r.dynakube.ActivegateTenantSecret(), connectionInfo.ConnectionInfo)
+	err = r.createTenantTokenSecret(ctx, r.dynakube.ActivegateTenantSecret(), connectionInfo.ConnectionInfo)
 	if err != nil {
 		return err
 	}
@@ -164,7 +161,7 @@ func (r *Reconciler) updateDynakubeActiveGateStatus(connectionInfo dtclient.Acti
 	r.dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints = connectionInfo.Endpoints
 }
 
-func (r *Reconciler) createTenantTokenSecret(secretName string, connectionInfo dtclient.ConnectionInfo) error {
+func (r *Reconciler) createTenantTokenSecret(ctx context.Context, secretName string, connectionInfo dtclient.ConnectionInfo) error {
 	secretData := extractSensitiveData(connectionInfo)
 	secret, err := kubeobjects.CreateSecret(r.scheme, r.dynakube,
 		kubeobjects.NewSecretNameModifier(secretName),
@@ -174,7 +171,7 @@ func (r *Reconciler) createTenantTokenSecret(secretName string, connectionInfo d
 		return errors.WithStack(err)
 	}
 
-	query := kubeobjects.NewSecretQuery(r.context, r.client, r.apiReader, log)
+	query := kubeobjects.NewSecretQuery(ctx, r.client, r.apiReader, log)
 	err = query.CreateOrUpdate(*secret)
 	if err != nil {
 		log.Info("could not create or update secret for connection info", "name", secret.Name)

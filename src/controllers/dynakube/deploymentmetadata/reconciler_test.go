@@ -42,8 +42,8 @@ func TestReconcile(t *testing.T) {
 	t.Run(`don't create anything, if no mode is configured`, func(t *testing.T) {
 		dynakube := createTestDynakube(nil)
 		fakeClient := fake.NewClientBuilder().Build()
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, *dynakube, clusterID)
-		err := r.Reconcile()
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, *dynakube, clusterID)
+		err := r.Reconcile(context.TODO())
 		require.NoError(t, err)
 
 		var actualConfigMap corev1.ConfigMap
@@ -60,8 +60,8 @@ func TestReconcile(t *testing.T) {
 				},
 			},
 		).Build()
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, *dynakube, clusterID)
-		err := r.Reconcile()
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, *dynakube, clusterID)
+		err := r.Reconcile(context.TODO())
 		require.NoError(t, err)
 
 		var actualConfigMap corev1.ConfigMap
@@ -78,8 +78,8 @@ func TestReconcile(t *testing.T) {
 			})
 
 		fakeClient := fake.NewClientBuilder().Build()
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, *dynakube, clusterID)
-		err := r.Reconcile()
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, *dynakube, clusterID)
+		err := r.Reconcile(context.TODO())
 		require.NoError(t, err)
 
 		var actualConfigMap corev1.ConfigMap
@@ -100,8 +100,8 @@ func TestReconcile(t *testing.T) {
 			})
 
 		fakeClient := fake.NewClientBuilder().Build()
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, *dynakube, clusterID)
-		err := r.Reconcile()
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, *dynakube, clusterID)
+		err := r.Reconcile(context.TODO())
 		require.NoError(t, err)
 
 		var actualConfigMap corev1.ConfigMap
@@ -124,8 +124,8 @@ func TestReconcile(t *testing.T) {
 			})
 
 		fakeClient := fake.NewClientBuilder().Build()
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, *dynakube, clusterID)
-		err := r.Reconcile()
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, *dynakube, clusterID)
+		err := r.Reconcile(context.TODO())
 		require.NoError(t, err)
 
 		var actualConfigMap corev1.ConfigMap

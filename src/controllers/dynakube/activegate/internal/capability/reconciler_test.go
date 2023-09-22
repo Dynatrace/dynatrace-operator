@@ -93,7 +93,7 @@ func TestReconcile(t *testing.T) {
 		r := NewReconciler(clt, capability.NewMultiCapability(dynakube), dynakube, mockStatefulSetReconciler, mockCustompropertiesReconciler)
 		verifyReconciler(t, r)
 
-		err := r.Reconcile()
+		err := r.Reconcile(context.TODO())
 		mockStatefulSetReconciler.AssertCalled(t, "Reconcile")
 		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile")
 		require.NoError(t, err)
@@ -107,7 +107,7 @@ func TestReconcile(t *testing.T) {
 		r := NewReconciler(clt, capability.NewMultiCapability(dynakube), dynakube, mockStatefulSetReconciler, mockCustompropertiesReconciler)
 		verifyReconciler(t, r)
 
-		err := r.Reconcile()
+		err := r.Reconcile(context.TODO())
 		mockStatefulSetReconciler.AssertCalled(t, "Reconcile")
 		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile")
 		require.Error(t, err)
@@ -121,7 +121,7 @@ func TestReconcile(t *testing.T) {
 		r := NewReconciler(clt, capability.NewMultiCapability(dynakube), dynakube, mockStatefulSetReconciler, mockCustompropertiesReconciler)
 		verifyReconciler(t, r)
 
-		err := r.Reconcile()
+		err := r.Reconcile(context.TODO())
 		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile")
 		require.Error(t, err)
 	})
@@ -135,7 +135,7 @@ func TestReconcile(t *testing.T) {
 		r := NewReconciler(clt, capability.NewMultiCapability(dynakube), dynakube, mockStatefulSetReconciler, mockCustompropertiesReconciler)
 		verifyReconciler(t, r)
 
-		err := r.Reconcile()
+		err := r.Reconcile(context.TODO())
 		require.Error(t, err)
 	})
 	t.Run(`service gets created`, func(t *testing.T) {
@@ -146,7 +146,7 @@ func TestReconcile(t *testing.T) {
 		r := NewReconciler(clt, capability.NewMultiCapability(dynakube), dynakube, mockStatefulSetReconciler, mockCustompropertiesReconciler)
 		verifyReconciler(t, r)
 
-		err := r.Reconcile()
+		err := r.Reconcile(context.TODO())
 		mockStatefulSetReconciler.AssertCalled(t, "Reconcile")
 		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile")
 		require.NoError(t, err)
@@ -166,7 +166,7 @@ func TestReconcile(t *testing.T) {
 		r := NewReconciler(clt, capability.NewMultiCapability(dynakube), dynakube, mockStatefulSetReconciler, mockCustompropertiesReconciler)
 		verifyReconciler(t, r)
 
-		err := r.Reconcile()
+		err := r.Reconcile(context.TODO())
 		mockStatefulSetReconciler.AssertCalled(t, "Reconcile")
 		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile")
 		require.NoError(t, err)
@@ -194,7 +194,7 @@ func TestCreateOrUpdateService(t *testing.T) {
 		require.Error(t, err)
 		assert.NotNil(t, service)
 
-		err = r.createOrUpdateService()
+		err = r.createOrUpdateService(context.TODO())
 		require.NoError(t, err)
 
 		service = &corev1.Service{}
@@ -206,7 +206,7 @@ func TestCreateOrUpdateService(t *testing.T) {
 		r := NewReconciler(clt, capability.NewMultiCapability(dynakube), dynakube, mockStatefulSetReconciler, mockCustompropertiesReconciler)
 		verifyReconciler(t, r)
 
-		err := r.createOrUpdateService()
+		err := r.createOrUpdateService(context.TODO())
 		require.NoError(t, err)
 
 		service := &corev1.Service{}
@@ -216,7 +216,7 @@ func TestCreateOrUpdateService(t *testing.T) {
 
 		service.Spec.Ports = []corev1.ServicePort{}
 
-		err = r.createOrUpdateService()
+		err = r.createOrUpdateService(context.TODO())
 		require.NoError(t, err)
 
 		actualService := &corev1.Service{}
@@ -234,7 +234,7 @@ func TestCreateOrUpdateService(t *testing.T) {
 		r := NewReconciler(clt, capability.NewMultiCapability(dynakube), dynakube, mockStatefulSetReconciler, mockCustompropertiesReconciler)
 		verifyReconciler(t, r)
 
-		err := r.createOrUpdateService()
+		err := r.createOrUpdateService(context.TODO())
 		require.NoError(t, err)
 
 		service := &corev1.Service{}
@@ -244,7 +244,7 @@ func TestCreateOrUpdateService(t *testing.T) {
 
 		service.Labels = map[string]string{}
 
-		err = r.createOrUpdateService()
+		err = r.createOrUpdateService(context.TODO())
 		require.NoError(t, err)
 
 		actualService := &corev1.Service{}
@@ -269,7 +269,7 @@ func TestPortsAreOutdated(t *testing.T) {
 
 	desiredService := CreateService(r.dynakube, r.capability.ShortName())
 
-	err := r.Reconcile()
+	err := r.Reconcile(context.TODO())
 	require.NoError(t, err)
 
 	t.Run(`ports are detected as outdated`, func(t *testing.T) {
@@ -296,7 +296,7 @@ func TestLabelsAreOutdated(t *testing.T) {
 
 	desiredService := CreateService(r.dynakube, r.capability.ShortName())
 
-	err := r.Reconcile()
+	err := r.Reconcile(context.TODO())
 	require.NoError(t, err)
 
 	t.Run(`labels are detected as outdated`, func(t *testing.T) {
