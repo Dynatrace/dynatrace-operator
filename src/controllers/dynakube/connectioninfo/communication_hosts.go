@@ -59,7 +59,7 @@ func parseEndpointToCommunicationHost(endpointString string) (dtclient.Communica
 	host := parsedEndpoint.Host
 	parts := strings.Split(host, ":")
 	var port uint32
-
+	// TODO: refactor port handling
 	if len(parts) > 1 {
 		intPort, err := strconv.ParseUint(parts[1], 10, 32)
 		if err != nil {

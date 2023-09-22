@@ -240,7 +240,7 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, serviceEntry)
 		assert.Contains(t, fmt.Sprintf("%v", serviceEntry), "something.test.io")
-		// assert.Contains(t, fmt.Sprintf("%v", serviceEntry), "abcd123.some.activegate.endpointurl.com") TODO
+		assert.Contains(t, fmt.Sprintf("%v", serviceEntry), "abcd123.some.activegate.endpointurl.com")
 
 		virtualService, err := fakeClient.NetworkingV1alpha3().VirtualServices(dynakube.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
 		require.NoError(t, err)
@@ -252,6 +252,7 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, serviceEntry)
 	})
+	// TODO: test overlapping, one sided empty, slightly different endpoints (is that valid?)
 	t.Run("unknown k8s client error => error", func(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
 		fakeClient.PrependReactor("*", "*", boomReaction)
