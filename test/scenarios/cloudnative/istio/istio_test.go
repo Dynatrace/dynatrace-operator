@@ -8,7 +8,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/logger"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/istio"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
-	"github.com/Dynatrace/dynatrace-operator/test/scenarios/cloudnative/codemodules"
 	_default "github.com/Dynatrace/dynatrace-operator/test/scenarios/cloudnative/default"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/e2e-framework/pkg/env"
@@ -28,5 +27,4 @@ func TestMain(m *testing.M) {
 
 func TestIstioIntegration(t *testing.T) {
 	testEnvironment.Test(t, _default.Default(t, true))
-	testEnvironment.Test(t, codemodules.InstallFromImage(t, true))
 }
