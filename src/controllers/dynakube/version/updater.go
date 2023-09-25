@@ -3,13 +3,15 @@ package version
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/registry"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
-	"github.com/containers/image/v5/docker/reference"
+	"github.com/google/go-containerregistry/pkg/name"
+	"github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -28,6 +30,10 @@ type versionStatusUpdater interface {
 
 	UseTenantRegistry(context.Context) error
 }
+
+const (
+	digestDelimiter = "@"
+)
 
 func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpdater) error {
 	currentSource := determineSource(updater)
@@ -104,7 +110,7 @@ func setImageIDWithDigest( //nolint:revive
 	imageVersionFunc ImageVersionFunc,
 	imageUri string,
 ) error {
-	ref, err := reference.Parse(imageUri)
+	ref, err := name.ParseReference(imageUri)
 	if err != nil {
 		return errors.WithMessage(err, "failed to parse image uri")
 	}
@@ -113,23 +119,21 @@ func setImageIDWithDigest( //nolint:revive
 		"image", imageUri,
 		"oldImageID", target.ImageID)
 
-	if canonRef, ok := ref.(reference.Canonical); ok {
-		target.ImageID = canonRef.String()
-	} else if taggedRef, ok := ref.(reference.NamedTagged); ok {
+	if digestRef, ok := ref.(name.Digest); ok {
+		target.ImageID = digestRef.String()
+	} else if taggedRef, ok := ref.(name.Tag); ok {
+		if taggedRef.TagStr() == name.DefaultTag {
+			return errors.New(fmt.Sprintf("unsupported image reference: %s", imageUri))
+		}
+
 		registryClient := registry.NewClient()
 		imageVersion, err := imageVersionFunc(ctx, apiReader, registryClient, dynakube, imageUri)
 		if err != nil {
 			log.Info("failed to determine image version")
 			return err
-		} else {
-			canonRef, err := reference.WithDigest(taggedRef, imageVersion.Digest)
-			if err != nil {
-				target.ImageID = taggedRef.String()
-				log.Error(err, "failed to create canonical image reference, falling back to tag")
-			} else {
-				target.ImageID = canonRef.String()
-			}
 		}
+
+		target.ImageID = AppendDigest(taggedRef, imageVersion.Digest)
 	} else {
 		return errors.New(fmt.Sprintf("unsupported image reference: %s", imageUri))
 	}
@@ -143,6 +147,11 @@ func setImageIDWithDigest( //nolint:revive
 	return nil
 }
 
+// TODO: this should be in a more general place
+func AppendDigest(taggedRef name.Tag, digest digest.Digest) string {
+	return fmt.Sprintf("%s%s%s", taggedRef.String(), digestDelimiter, digest.String())
+}
+
 func updateVersionStatusForTenantRegistry( //nolint:revive
 	ctx context.Context,
 	apiReader client.Reader,
@@ -151,7 +160,7 @@ func updateVersionStatusForTenantRegistry( //nolint:revive
 	imageVersionFunc ImageVersionFunc,
 	imageUri string,
 ) error {
-	ref, err := reference.Parse(imageUri)
+	ref, err := name.ParseReference(imageUri)
 	if err != nil {
 		return errors.WithMessage(err, "failed to parse image uri")
 	}
@@ -161,7 +170,7 @@ func updateVersionStatusForTenantRegistry( //nolint:revive
 		"oldImageID", target.ImageID,
 		"oldVersion", target.Version)
 
-	if taggedRef, ok := ref.(reference.NamedTagged); ok {
+	if taggedRef, ok := ref.(name.Tag); ok {
 		registryClient := registry.NewClient()
 		imageVersion, err := imageVersionFunc(ctx, apiReader, registryClient, dynakube, imageUri)
 		if err != nil {
@@ -180,15 +189,24 @@ func updateVersionStatusForTenantRegistry( //nolint:revive
 }
 
 func getTagFromImageID(imageID string) (string, error) {
-	ref, err := reference.Parse(imageID)
+	ref, err := name.ParseReference(imageID)
 	if err != nil {
 		return "", err
 	}
-	taggedRef, ok := ref.(reference.NamedTagged)
-	if !ok {
-		return "", errors.New("no tag found to check for downgrade")
+
+	var taggedRef name.Tag
+	var ok bool
+
+	if taggedRef, ok = ref.(name.Tag); ok {
+		return taggedRef.TagStr(), nil
+	} else if digestRef, ok := ref.(name.Digest); ok {
+		taggedStr := strings.TrimSuffix(digestRef.String(), digestDelimiter+digestRef.DigestStr())
+
+		if taggedRef, err = name.NewTag(taggedStr); err == nil {
+			return taggedRef.TagStr(), nil
+		}
 	}
-	return taggedRef.Tag(), nil
+	return "", errors.New("no tag found to check for downgrade")
 }
 
 func isDowngrade(updaterName, previousVersion, latestVersion string) (bool, error) {
