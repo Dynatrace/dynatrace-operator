@@ -22,7 +22,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestCodeModulesImage(t *testing.T) {
-	testEnvironment.Test(t, InstallFromImage(t, false))
+	testEnvironment.Test(t, InstallFromImage(t))
 }
 
 func TestCodeModulesWithProxy(t *testing.T) {
