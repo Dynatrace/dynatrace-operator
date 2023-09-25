@@ -168,6 +168,13 @@ func (r requiredFiles) getRequiredWorkloadFiles() []string {
 			"daemonset",
 			csi.DaemonSetName,
 			support_archive.ManifestsFileExtension))
+	requiredFiles = append(requiredFiles,
+		fmt.Sprintf("%s/%s/%s/%s%s",
+			support_archive.ManifestsDirectoryName,
+			r.edgeconnect.Namespace,
+			"deployment",
+			r.edgeconnect.Name,
+			support_archive.ManifestsFileExtension))
 
 	return requiredFiles
 }
