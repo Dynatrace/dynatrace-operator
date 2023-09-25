@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/edgeconnect"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
@@ -85,6 +86,10 @@ func TestManifestCollector_Success(t *testing.T) {
 			TypeMeta:   typeMeta("DynaKube"),
 			ObjectMeta: objectMeta("dynakube1"),
 		},
+		&edgeconnect.EdgeConnect{
+			TypeMeta:   typeMeta("EdgeConnect"),
+			ObjectMeta: objectMeta("edgeconnect1"),
+		},
 	)
 
 	buffer := bytes.Buffer{}
@@ -102,6 +107,7 @@ func TestManifestCollector_Success(t *testing.T) {
 		fmt.Sprintf("%s/statefulset/statefulset1%s", testOperatorNamespace, manifestExtension),
 		fmt.Sprintf("%s/daemonset/daemonset1%s", testOperatorNamespace, manifestExtension),
 		fmt.Sprintf("%s/dynakube/dynakube1%s", testOperatorNamespace, manifestExtension),
+		fmt.Sprintf("%s/edgeconnect/edgeconnect1%s", testOperatorNamespace, manifestExtension),
 	}
 
 	zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(buffer.Len()))
@@ -138,7 +144,7 @@ func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
 	log := newSupportArchiveLogger(&logBuffer)
 
 	queries := getQueries(testOperatorNamespace, defaultOperatorAppName)
-	require.Len(t, queries, 15)
+	require.Len(t, queries, 16)
 
 	clt := fake.NewClientWithIndex(
 		&appsv1.StatefulSet{
@@ -158,6 +164,10 @@ func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
 			TypeMeta:   typeMeta("DynaKube"),
 			ObjectMeta: objectMeta("dynakube1"),
 		},
+		&edgeconnect.EdgeConnect{
+			TypeMeta:   typeMeta("EdgeConnect"),
+			ObjectMeta: objectMeta("edgeconnect1"),
+		},
 	)
 
 	ctx := context.TODO()
@@ -170,12 +180,14 @@ func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
 	assertNoErrorOnClose(t, supportArchive)
 	zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(buffer.Len()))
 	require.NoError(t, err)
-	require.Len(t, zipReader.File, 3)
+	require.Len(t, zipReader.File, 4)
 	assert.Equal(t, expectedFilename(fmt.Sprintf("injected_namespaces/namespace-some-app-namespace%s", manifestExtension)), zipReader.File[0].Name)
 
 	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/statefulset/statefulset1%s", testOperatorNamespace, manifestExtension)), zipReader.File[1].Name)
 
 	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/dynakube/dynakube1%s", testOperatorNamespace, manifestExtension)), zipReader.File[2].Name)
+
+	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/edgeconnect/edgeconnect1%s", testOperatorNamespace, manifestExtension)), zipReader.File[3].Name)
 }
 
 func typeMeta(kind string) metav1.TypeMeta {

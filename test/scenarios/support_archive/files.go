@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"testing"
 
+	edgeconnectv1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/edgeconnect"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/support_archive"
 	"github.com/Dynatrace/dynatrace-operator/src/functional"
@@ -30,15 +31,17 @@ type requiredFiles struct {
 	ctx            context.Context
 	resources      *resources.Resources
 	dynakube       dynatracev1beta1.DynaKube
+	edgeconnect    edgeconnectv1beta1.EdgeConnect
 	collectManaged bool
 }
 
-func newRequiredFiles(t *testing.T, ctx context.Context, resources *resources.Resources, dynakube dynatracev1beta1.DynaKube, collectManaged bool) requiredFiles {
+func newRequiredFiles(t *testing.T, ctx context.Context, resources *resources.Resources, customResources CustomResources, collectManaged bool) requiredFiles {
 	return requiredFiles{
 		t:              t,
 		ctx:            ctx,
 		resources:      resources,
-		dynakube:       dynakube,
+		dynakube:       customResources.dynakube,
+		edgeconnect:    customResources.edgeconnect,
 		collectManaged: collectManaged,
 	}
 }
@@ -55,6 +58,7 @@ func (r requiredFiles) collectRequiredFiles() []string {
 	requiredFiles = append(requiredFiles, r.getRequiredWorkloadFiles()...)
 	requiredFiles = append(requiredFiles, r.getRequiredNamespaceFiles()...)
 	requiredFiles = append(requiredFiles, r.getRequiredDynaKubeFiles()...)
+	requiredFiles = append(requiredFiles, r.getRequiredEdgeConnectFiles()...)
 	requiredFiles = append(requiredFiles, r.getRequiredStatefulSetFiles()...)
 	requiredFiles = append(requiredFiles, r.getRequiredDaemonSetFiles()...)
 	return requiredFiles
@@ -164,6 +168,13 @@ func (r requiredFiles) getRequiredWorkloadFiles() []string {
 			"daemonset",
 			csi.DaemonSetName,
 			support_archive.ManifestsFileExtension))
+	requiredFiles = append(requiredFiles,
+		fmt.Sprintf("%s/%s/%s/%s%s",
+			support_archive.ManifestsDirectoryName,
+			r.edgeconnect.Namespace,
+			"deployment",
+			r.edgeconnect.Name,
+			support_archive.ManifestsFileExtension))
 
 	return requiredFiles
 }
@@ -193,6 +204,19 @@ func (r requiredFiles) getRequiredDynaKubeFiles() []string {
 			r.dynakube.Namespace,
 			"dynakube",
 			r.dynakube.Name,
+			support_archive.ManifestsFileExtension))
+
+	return requiredFiles
+}
+
+func (r requiredFiles) getRequiredEdgeConnectFiles() []string {
+	requiredFiles := make([]string, 0)
+	requiredFiles = append(requiredFiles,
+		fmt.Sprintf("%s/%s/%s/%s%s",
+			support_archive.ManifestsDirectoryName,
+			r.edgeconnect.Namespace,
+			"edgeconnect",
+			r.edgeconnect.Name,
 			support_archive.ManifestsFileExtension))
 
 	return requiredFiles
