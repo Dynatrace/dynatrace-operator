@@ -3,9 +3,11 @@
 package setup
 
 import (
+	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/edgeconnect"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/csi"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/manifests"
@@ -110,6 +112,18 @@ func CreateDynakube(secret tenant.Secret, dk dynatracev1beta1.DynaKube) BuilderS
 				if dk.ClassicFullStackMode() {
 					teardown.AddClassicCleanUp(builder, dk)
 				}
+			}
+	}
+}
+
+func CreateEdgeConnect(secret tenant.EdgeConnectSecret, ec edgeconnectv1alpha1.EdgeConnect) BuilderStep {
+	return func() (setupFunc, teardownFunc BuilderFunc) {
+		return func(builder *features.FeatureBuilder) {
+				assess.CreateEdgeConnect(builder, &secret, ec)
+				assess.VerifyEdgeConnectStartup(builder, ec)
+			},
+			func(builder *features.FeatureBuilder) {
+				builder.WithTeardown("edgeconnect deleted", edgeconnect.Delete(ec))
 			}
 	}
 }

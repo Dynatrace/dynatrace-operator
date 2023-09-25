@@ -96,3 +96,7 @@ test/e2e/gke-autopilot/applicationmonitoring/readonlycsivolume: manifests/kubern
 ## Runs Application Monitoring without CSI e2e test only on gke-autopilot
 test/e2e/gke-autopilot/applicationmonitoring/withoutcsi: manifests/kubernetes/gke-autopilot
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1 ./test/scenarios/applicationmonitoring  -run ^TestAppOnlyWithoutCSI$  $(SKIPCLEANUP)
+
+## Run EdgeConnect e2e test only
+test/e2e/edgeconnect: manifests/crd/helm
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -count=1 ./test/scenarios/edgeconnect $(SKIPCLEANUP)
