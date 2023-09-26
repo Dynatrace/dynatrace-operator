@@ -306,11 +306,7 @@ k8s_poduid TEST_K8S_PODUID
 k8s_containername TEST_CONTAINER_%d_NAME
 k8s_basepodname TEST_K8S_BASEPODNAME
 k8s_namespace TEST_K8S_NAMESPACE
-k8s_node_name TEST_K8S_NODE_NAME
-k8s_cluster_id id
-[host]
-tenant 
-isCloudNativeFullStack true
+k8s_cluster_id TEST_K8S_CLUSTER_ID
 `
 
 	runner := createMockedRunner(t)
