@@ -48,18 +48,9 @@ func (r *Reconciler) ReconcileCommunicationHosts(ctx context.Context, dynakube *
 	}
 	oneAgentCommunicationHosts := connectioninfo.GetOneAgentCommunicationHosts(dynakube)
 	activeGateEndpoints := connectioninfo.GetActiveGateEndpointsAsCommunicationHosts(dynakube)
-	// TODO refactor merging
-	setOfComHosts := make(map[dtclient.CommunicationHost]bool)
-	for _, host := range oneAgentCommunicationHosts {
-		setOfComHosts[host] = true
-	}
-	for _, endpoint := range activeGateEndpoints {
-		setOfComHosts[endpoint] = true
-	}
-	comHosts := make([]dtclient.CommunicationHost, len(oneAgentCommunicationHosts)+len(activeGateEndpoints))
-	for ch := range setOfComHosts {
-		comHosts = append(comHosts, ch)
-	}
+
+	comHosts := mergeCommunicationHosts(oneAgentCommunicationHosts, activeGateEndpoints)
+
 	err := r.reconcileCommunicationHosts(ctx, dynakube, comHosts, OneAgentComponent)
 	if err != nil {
 		return errors.WithMessage(err, "error reconciling config for Dynatrace communication hosts")
@@ -67,6 +58,31 @@ func (r *Reconciler) ReconcileCommunicationHosts(ctx context.Context, dynakube *
 	log.Info("reconciled istio objects for oneagent communication hosts")
 
 	return nil
+}
+
+func mergeCommunicationHosts(oneAgentCommunicationHosts, activeGateEndpoints []dtclient.CommunicationHost) []dtclient.CommunicationHost {
+	if oneAgentCommunicationHosts == nil {
+		return activeGateEndpoints
+	}
+	if activeGateEndpoints == nil {
+		return oneAgentCommunicationHosts
+	}
+
+	setOfComHosts := make(map[dtclient.CommunicationHost]bool)
+	for _, host := range oneAgentCommunicationHosts {
+		setOfComHosts[host] = true
+	}
+
+	for _, endpoint := range activeGateEndpoints {
+		setOfComHosts[endpoint] = true
+	}
+
+	comHosts := make([]dtclient.CommunicationHost, 0, len(oneAgentCommunicationHosts)+len(activeGateEndpoints))
+	for ch := range setOfComHosts {
+		comHosts = append(comHosts, ch)
+	}
+
+	return comHosts
 }
 
 func (r *Reconciler) reconcileCommunicationHosts(ctx context.Context, owner metav1.Object, comHosts []dtclient.CommunicationHost, component string) error {
