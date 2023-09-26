@@ -214,8 +214,8 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 	}
 
 	if dsInfo.dynakube.NeedsOneAgentProbe() {
-		podSpec.Containers[0].ReadinessProbe = dsInfo.getProbe()
-		podSpec.Containers[0].LivenessProbe = dsInfo.getProbe()
+		podSpec.Containers[0].ReadinessProbe = dsInfo.getReadinessProbe()
+		podSpec.Containers[0].LivenessProbe = dsInfo.getDefaultProbeFromStatus()
 	}
 
 	return podSpec
@@ -344,16 +344,24 @@ func defaultSecurityContextCapabilities() *corev1.Capabilities {
 	}
 }
 
-func (dsInfo *builderInfo) getProbe() *corev1.Probe {
+// getDefaultProbeFromStatus uses the exact docker HEALTHCHECK
+func (dsInfo *builderInfo) getDefaultProbeFromStatus() *corev1.Probe {
 	return &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
 			Exec: &corev1.ExecAction{
 				Command: dsInfo.dynakube.Status.OneAgent.Healthcheck.Test,
 			},
 		},
-		InitialDelaySeconds: DefaultProbeInitialDelay,
+		InitialDelaySeconds: int32(dsInfo.dynakube.Status.OneAgent.Healthcheck.StartPeriod.Seconds()),
 		PeriodSeconds:       int32(dsInfo.dynakube.Status.OneAgent.Healthcheck.Interval.Seconds()),
 		TimeoutSeconds:      int32(dsInfo.dynakube.Status.OneAgent.Healthcheck.Timeout.Seconds()),
 		FailureThreshold:    int32(dsInfo.dynakube.Status.OneAgent.Healthcheck.Retries),
 	}
+}
+
+// getReadinessProbe overrides the default HEALTHCHECK to allow sooner ready
+func (dsInfo *builderInfo) getReadinessProbe() *corev1.Probe {
+	defaultProbe := dsInfo.getDefaultProbeFromStatus()
+	defaultProbe.InitialDelaySeconds = DefaultProbeInitialDelay
+	return defaultProbe
 }
