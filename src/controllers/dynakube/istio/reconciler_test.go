@@ -252,7 +252,6 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, serviceEntry)
 	})
-	// TODO: test overlapping, one sided empty, slightly different endpoints (is that valid?)
 	t.Run("unknown k8s client error => error", func(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
 		fakeClient.PrependReactor("*", "*", boomReaction)
@@ -262,6 +261,104 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 
 		err := reconciler.ReconcileCommunicationHosts(ctx, dynakube)
 		require.Error(t, err)
+	})
+}
+
+func TestMergeCommunicationHosts(t *testing.T) {
+	t.Run("empty lists", func(t *testing.T) {
+		list := mergeCommunicationHosts([]dtclient.CommunicationHost{}, []dtclient.CommunicationHost{})
+		assert.Emptyf(t, list, "when providing empty lists the result should be empty too.")
+	})
+	t.Run("oneagent list is nil", func(t *testing.T) {
+		hosts := []dtclient.CommunicationHost{
+			{
+				Protocol: protocolHttp,
+				Host:     testName,
+				Port:     testPort1,
+			},
+		}
+		list := mergeCommunicationHosts(nil, hosts)
+		assert.NotEmptyf(t, list, "when passing nil the result should be the other list.")
+		assert.Len(t, list, 1)
+	})
+	t.Run("activeGate list is nil", func(t *testing.T) {
+		hosts := []dtclient.CommunicationHost{
+			{
+				Protocol: protocolHttp,
+				Host:     testName,
+				Port:     testPort1,
+			},
+		}
+		list := mergeCommunicationHosts(hosts, nil)
+		assert.NotEmptyf(t, list, "when passing nil the result should be the other list.")
+		assert.Len(t, list, 1)
+	})
+	t.Run("identical entries are merged", func(t *testing.T) {
+		host := dtclient.CommunicationHost{
+			Protocol: protocolHttp,
+			Host:     testName,
+			Port:     testPort1,
+		}
+		oneAgentHosts := []dtclient.CommunicationHost{
+			{
+				Protocol: protocolHttp,
+				Host:     testName,
+				Port:     testPort1,
+			},
+		}
+		activeGateHosts := []dtclient.CommunicationHost{
+			{
+				Protocol: protocolHttp,
+				Host:     testName,
+				Port:     testPort1,
+			},
+		}
+		list := mergeCommunicationHosts(oneAgentHosts, activeGateHosts)
+		assert.Len(t, list, 1)
+		assert.Equal(t, host, list[0])
+	})
+	t.Run("merging reduces overlapping entries while keeping others", func(t *testing.T) {
+		oneAgentHosts := []dtclient.CommunicationHost{
+			{
+				Protocol: protocolHttp,
+				Host:     testName,
+				Port:     testPort1,
+			},
+			{
+				Protocol: protocolTcp,
+				Host:     testIP1,
+				Port:     testPort2,
+			},
+		}
+		activeGateHosts := []dtclient.CommunicationHost{
+			{
+				Protocol: protocolHttp,
+				Host:     testName,
+				Port:     testPort1,
+			},
+			{
+				Protocol: "udp",
+				Host:     "some.other",
+				Port:     567,
+			},
+		}
+		list := mergeCommunicationHosts(oneAgentHosts, activeGateHosts)
+		assert.Len(t, list, 3)
+		assert.Contains(t, list, dtclient.CommunicationHost{
+			Protocol: protocolHttp,
+			Host:     testName,
+			Port:     testPort1,
+		})
+		assert.Contains(t, list, dtclient.CommunicationHost{
+			Protocol: protocolTcp,
+			Host:     testIP1,
+			Port:     testPort2,
+		})
+		assert.Contains(t, list, dtclient.CommunicationHost{
+			Protocol: "udp",
+			Host:     "some.other",
+			Port:     567,
+		})
 	})
 }
 
