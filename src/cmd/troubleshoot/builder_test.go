@@ -31,13 +31,7 @@ func TestTroubleshootCommandBuilder(t *testing.T) {
 	})
 
 	t.Run("getDynakube - only check one dynakube if set", func(t *testing.T) {
-		dynakube := buildTestDynakube()
-		troubleshootCtx := troubleshootContext{
-			dynakube:      dynakube,
-			namespaceName: testNamespace,
-		}
-
-		dynakubes, err := getDynakubes(getNullLogger(t), troubleshootCtx, dynakube.Name)
+		dynakubes, err := getDynakubes(context.Background(), getNullLogger(t), nil, testNamespace, testDynakube)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(dynakubes))
 		assert.Equal(t, testDynakube, dynakubes[0].Name)

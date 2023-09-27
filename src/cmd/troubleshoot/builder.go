@@ -119,7 +119,7 @@ func RunTroubleshootCmd(ctx context.Context, log logr.Logger, apiReader client.R
 		return
 	}
 
-	dynakubes, err := getDynakubes(log, troubleshootCtx, dynakubeFlagValue)
+	dynakubes, err := getDynakubes(ctx, log, apiReader, namespace, dynakubeFlagValue)
 	if err != nil {
 		return
 	}
@@ -186,13 +186,19 @@ func getDynakubeSpecificChecks(results ChecksResults) []*Check {
 	return []*Check{dynakubeCheck, imagePullableCheck, proxySettingsCheck}
 }
 
-func getDynakubes(log logr.Logger, troubleshootCtx troubleshootContext, dynakubeName string) ([]dynatracev1beta1.DynaKube, error) {
+func getDynakubes(
+	ctx context.Context,
+	log logr.Logger,
+	reader client.Reader,
+	namespaceName string,
+	dynakubeName string,
+) ([]dynatracev1beta1.DynaKube, error) {
 	var err error
 	var dynakubes []dynatracev1beta1.DynaKube
 
 	if dynakubeName == "" {
-		logNewDynakubef(log, "no Dynakube specified - checking all Dynakubes in namespace '%s'", troubleshootCtx.namespaceName)
-		dynakubes, err = getAllDynakubesInNamespace(troubleshootCtx.context, log, troubleshootCtx.apiReader, troubleshootCtx.namespaceName)
+		logNewDynakubef(log, "no Dynakube specified - checking all Dynakubes in namespace '%s'", namespaceName)
+		dynakubes, err = getAllDynakubesInNamespace(ctx, log, reader, namespaceName)
 		if err != nil {
 			return nil, err
 		}
