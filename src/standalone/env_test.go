@@ -21,7 +21,7 @@ func TestNewEnv(t *testing.T) {
 		require.NotNil(t, env)
 
 		assert.Equal(t, config.AgentCsiMode, env.Mode)
-		assert.True(t, env.FailurePolicy)
+		assert.Equal(t, failPhrase, env.FailurePolicy)
 		assert.NotEmpty(t, env.InstallerFlavor)
 		assert.NotEmpty(t, env.InstallerTech)
 		assert.NotEmpty(t, env.InstallPath)
@@ -52,7 +52,7 @@ func TestNewEnv(t *testing.T) {
 		require.NotNil(t, env)
 
 		assert.Empty(t, env.Mode)
-		assert.True(t, env.FailurePolicy)
+		assert.Equal(t, failPhrase, env.FailurePolicy)
 		assert.NotEmpty(t, env.InstallerFlavor) // set to what is defined in arch.Flavor
 		assert.Empty(t, env.InstallerTech)
 		assert.Empty(t, env.InstallVersion)
@@ -98,7 +98,7 @@ func TestNewEnv(t *testing.T) {
 		require.NotNil(t, env)
 
 		assert.Equal(t, config.AgentCsiMode, env.Mode)
-		assert.True(t, env.FailurePolicy)
+		assert.Equal(t, failPhrase, env.FailurePolicy)
 		assert.NotEmpty(t, env.InstallerFlavor)
 		assert.NotEmpty(t, env.InstallerTech)
 		assert.NotEmpty(t, env.InstallVersion)
@@ -119,6 +119,32 @@ func TestNewEnv(t *testing.T) {
 		assert.False(t, env.DataIngestInjected)
 		assert.True(t, env.IsReadOnlyCSI)
 	})
+}
+
+func TestFailurePolicyModes(t *testing.T) {
+	modes := map[string]string{
+		failPhrase:   failPhrase,
+		silentPhrase: silentPhrase,
+		forcePhrase:  forcePhrase,
+		"Fail":       silentPhrase,
+		"other":      silentPhrase,
+	}
+	for configuredMode, expectedMode := range modes {
+		t.Run(`injection failure policy: `+configuredMode, func(t *testing.T) {
+			resetEnv := prepDataIngestTestEnv(t, true)
+
+			err := os.Setenv(config.InjectionFailurePolicyEnv, configuredMode)
+			require.NoError(t, err)
+
+			env, err := newEnv()
+			resetEnv()
+
+			require.NoError(t, err)
+			require.NotNil(t, env)
+
+			assert.Equal(t, expectedMode, env.FailurePolicy)
+		})
+	}
 }
 
 func prepCombinedTestEnv(t *testing.T) func() {

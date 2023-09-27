@@ -11,7 +11,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-const trueStatement = "true"
+const (
+	trueStatement = "true"
+	silentPhrase  = "silent"
+	failPhrase    = "fail"
+	forcePhrase   = "force"
+)
 
 type containerInfo struct {
 	Name  string `json:"name"`
@@ -20,7 +25,7 @@ type containerInfo struct {
 
 type environment struct {
 	Mode          config.InstallMode `json:"mode"`
-	FailurePolicy bool               `json:"failurePolicy"`
+	FailurePolicy string             `json:"failurePolicy"`
 	InstallerUrl  string             `json:"installerUrl"`
 
 	InstallerFlavor string          `json:"installerFlavor"`
@@ -135,7 +140,14 @@ func (env *environment) addFailurePolicy() error {
 	if err != nil {
 		return err
 	}
-	env.FailurePolicy = failurePolicy == "fail"
+	switch failurePolicy {
+	case failPhrase:
+		env.FailurePolicy = failPhrase
+	case forcePhrase:
+		env.FailurePolicy = forcePhrase
+	default:
+		env.FailurePolicy = silentPhrase
+	}
 	return nil
 }
 
