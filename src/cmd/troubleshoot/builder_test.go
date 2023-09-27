@@ -1,6 +1,7 @@
 package troubleshoot
 
 import (
+	"context"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
@@ -23,9 +24,7 @@ func TestTroubleshootCommandBuilder(t *testing.T) {
 		dynakube := buildTestDynakube()
 		clt := fake.NewClient(&dynakube)
 
-		troubleshootCtx := troubleshootContext{apiReader: clt, namespaceName: testNamespace}
-
-		dynakubes, err := getAllDynakubesInNamespace(getNullLogger(t), troubleshootCtx)
+		dynakubes, err := getAllDynakubesInNamespace(context.Background(), getNullLogger(t), clt, testNamespace)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(dynakubes))
 		assert.Equal(t, dynakube.Name, dynakubes[0].Name)

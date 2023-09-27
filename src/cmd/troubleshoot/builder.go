@@ -192,7 +192,7 @@ func getDynakubes(log logr.Logger, troubleshootCtx troubleshootContext, dynakube
 
 	if dynakubeName == "" {
 		logNewDynakubef(log, "no Dynakube specified - checking all Dynakubes in namespace '%s'", troubleshootCtx.namespaceName)
-		dynakubes, err = getAllDynakubesInNamespace(log, troubleshootCtx)
+		dynakubes, err = getAllDynakubesInNamespace(troubleshootCtx.context, log, troubleshootCtx.apiReader, troubleshootCtx.namespaceName)
 		if err != nil {
 			return nil, err
 		}
@@ -205,9 +205,9 @@ func getDynakubes(log logr.Logger, troubleshootCtx troubleshootContext, dynakube
 	return dynakubes, nil
 }
 
-func getAllDynakubesInNamespace(log logr.Logger, troubleshootContext troubleshootContext) ([]dynatracev1beta1.DynaKube, error) {
+func getAllDynakubesInNamespace(ctx context.Context, log logr.Logger, reader client.Reader, namespaceName string) ([]dynatracev1beta1.DynaKube, error) {
 	var dynakubes dynatracev1beta1.DynaKubeList
-	err := troubleshootContext.apiReader.List(troubleshootContext.context, &dynakubes, client.InNamespace(troubleshootContext.namespaceName))
+	err := reader.List(ctx, &dynakubes, client.InNamespace(namespaceName))
 
 	if err != nil {
 		logErrorf(log, "failed to list Dynakubes: %v", err)
@@ -215,7 +215,7 @@ func getAllDynakubesInNamespace(log logr.Logger, troubleshootContext troubleshoo
 	}
 
 	if len(dynakubes.Items) == 0 {
-		err = fmt.Errorf("no Dynakubes found in namespace '%s'", troubleshootContext.namespaceName)
+		err = fmt.Errorf("no Dynakubes found in namespace '%s'", namespaceName)
 		logErrorf(log, err.Error())
 		return nil, err
 	}
