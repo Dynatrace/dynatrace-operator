@@ -1,19 +1,21 @@
 package troubleshoot
 
 import (
+	"context"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
+	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func checkCRD(troubleshootCtx *troubleshootContext) error {
-	log := troubleshootCtx.baseLog.WithName("crd")
+func checkCRD(ctx context.Context, baseLog logr.Logger, apiReader client.Reader, namespaceName string) error {
+	log := baseLog.WithName("crd")
 
 	logNewCheckf(log, "checking if CRD for Dynakube exists ...")
 
 	dynakubeList := &dynatracev1beta1.DynaKubeList{}
-	err := troubleshootCtx.apiReader.List(troubleshootCtx.context, dynakubeList, &client.ListOptions{Namespace: troubleshootCtx.namespaceName})
+	err := apiReader.List(ctx, dynakubeList, &client.ListOptions{Namespace: namespaceName})
 
 	if err != nil {
 		return determineDynakubeError(err)
