@@ -2,15 +2,17 @@ package troubleshoot
 
 import (
 	"errors"
+	"github.com/go-logr/logr"
+	"k8s.io/client-go/rest"
 
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 )
 
-func checkOneAgentAPM(ctx *troubleshootContext) error {
-	log := ctx.baseLog.WithName("oneAgentAPM")
+func checkOneAgentAPM(baseLog logr.Logger, kubeConfig *rest.Config) error {
+	log := baseLog.WithName("oneAgentAPM")
 
 	logNewCheckf(log, "checking if OneAgentAPM object exists ...")
-	exists, err := kubeobjects.CheckIfOneAgentAPMExists(&ctx.kubeConfig)
+	exists, err := kubeobjects.CheckIfOneAgentAPMExists(kubeConfig)
 
 	if err != nil {
 		return err

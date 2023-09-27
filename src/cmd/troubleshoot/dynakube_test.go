@@ -39,20 +39,10 @@ func (errorClt *errorClient) List(_ context.Context, _ client.ObjectList, _ ...c
 func TestDynakubeCRD(t *testing.T) {
 	t.Run("crd does not exist", func(t *testing.T) {
 		clt := fake.NewClientBuilder().Build()
-		troubleshootCtx := troubleshootContext{
-			apiReader:     clt,
-			namespaceName: testNamespace,
-			baseLog:       getNullLogger(t),
-		}
-		assert.ErrorContains(t, checkCRD(&troubleshootCtx), "CRD for Dynakube missing")
+		assert.ErrorContains(t, checkCRD(context.Background(), getNullLogger(t), clt, testNamespace), "CRD for Dynakube missing")
 	})
 	t.Run("unrelated error", func(t *testing.T) {
-		troubleshootCtx := troubleshootContext{
-			apiReader:     &errorClient{},
-			namespaceName: testNamespace,
-			baseLog:       getNullLogger(t),
-		}
-		assert.ErrorContains(t, checkCRD(&troubleshootCtx), "could not list Dynakube")
+		assert.ErrorContains(t, checkCRD(context.Background(), getNullLogger(t), &errorClient{}, testNamespace), "could not list Dynakube")
 	})
 }
 

@@ -96,7 +96,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 
 		log := NewTroubleshootLoggerToWriter(os.Stdout)
 
-		RunTroubleshootCmd(context.Background(), log, apiReader, namespaceFlagValue, *kubeConfig)
+		RunTroubleshootCmd(cmd.Context(), log, apiReader, namespaceFlagValue, kubeConfig)
 		return nil
 	}
 }
@@ -127,8 +127,8 @@ func RunTroubleshootCmdOld(ctx context.Context, log logr.Logger, apiReader clien
 	runChecksForAllDynakubes(log, results, getDynakubeSpecificChecks(results), dynakubes, apiReader)
 }
 
-func RunTroubleshootCmd(ctx context.Context, log logr.Logger, apiReader client.Reader, namespace string, kubeConfig rest.Config) {
-	err := runPrerequisiteChecks(ctx, log, apiReader, namespace) // ignore error to avoid polluting pretty logs
+func RunTroubleshootCmd(ctx context.Context, log logr.Logger, apiReader client.Reader, namespace string, kubeConfig *rest.Config) {
+	err := runPrerequisiteChecks(ctx, log, apiReader, namespace, kubeConfig) // ignore error to avoid polluting pretty logs
 
 	if err != nil {
 		logErrorf(log, "prerequisite checks failed, aborting")
@@ -141,16 +141,16 @@ func RunTroubleshootCmd(ctx context.Context, log logr.Logger, apiReader client.R
 	}
 }
 
-func runPrerequisiteChecks(ctx context.Context, log logr.Logger, reader client.Reader, namespaceName string) error {
+func runPrerequisiteChecks(ctx context.Context, log logr.Logger, reader client.Reader, namespaceName string, kubeConfig *rest.Config) error {
 	err := checkNamespace(ctx, log, reader, namespaceName)
 	if err != nil {
 		return err
 	}
-	err = checkCRD(nil)
+	err = checkCRD(ctx, log, reader, namespaceName)
 	if err != nil {
 		return err
 	}
-	err = checkOneAgentAPM(nil)
+	err = checkOneAgentAPM(log, kubeConfig)
 	if err != nil {
 		return err
 	}
