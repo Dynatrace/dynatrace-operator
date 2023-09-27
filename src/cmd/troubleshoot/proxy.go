@@ -6,10 +6,6 @@ import (
 	"golang.org/x/net/http/httpproxy"
 )
 
-func checkProxySettings(troubleshootCtx *troubleshootContext) error {
-	return checkProxySettingsWithLog(troubleshootCtx, troubleshootCtx.baseLog.WithName("proxy"))
-}
-
 func checkProxySettingsWithLog(troubleshootCtx *troubleshootContext, log logr.Logger) error {
 	var proxyURL string
 	logNewCheckf(log, "Analyzing proxy settings ...")
