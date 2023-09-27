@@ -38,6 +38,9 @@ const (
 
 	inframonHostIdSource = "--set-host-id-source=k8s-node-name"
 	classicHostIdSource  = "--set-host-id-source=auto"
+
+	probeMaxInitialDelay         = int32(90)
+	probeDefaultSuccessThreshold = int32(1)
 )
 
 type HostMonitoring struct {
@@ -175,8 +178,6 @@ func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 
 	return result, nil
 }
-
-const DefaultProbeInitialDelay = int32(30)
 
 func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 	resources := dsInfo.resources()
@@ -344,7 +345,7 @@ func defaultSecurityContextCapabilities() *corev1.Capabilities {
 	}
 }
 
-// getDefaultProbeFromStatus uses the exact docker HEALTHCHECK
+// getDefaultProbeFromStatus uses the docker HEALTHCHECK from status
 func (dsInfo *builderInfo) getDefaultProbeFromStatus() *corev1.Probe {
 	return &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
@@ -356,12 +357,15 @@ func (dsInfo *builderInfo) getDefaultProbeFromStatus() *corev1.Probe {
 		PeriodSeconds:       int32(dsInfo.dynakube.Status.OneAgent.Healthcheck.Interval.Seconds()),
 		TimeoutSeconds:      int32(dsInfo.dynakube.Status.OneAgent.Healthcheck.Timeout.Seconds()),
 		FailureThreshold:    int32(dsInfo.dynakube.Status.OneAgent.Healthcheck.Retries),
+		SuccessThreshold:    probeDefaultSuccessThreshold,
 	}
 }
 
-// getReadinessProbe overrides the default HEALTHCHECK to allow sooner ready
+// getReadinessProbe overrides the default HEALTHCHECK to ensure early readiness
 func (dsInfo *builderInfo) getReadinessProbe() *corev1.Probe {
 	defaultProbe := dsInfo.getDefaultProbeFromStatus()
-	defaultProbe.InitialDelaySeconds = DefaultProbeInitialDelay
+	if defaultProbe.InitialDelaySeconds > probeMaxInitialDelay {
+		defaultProbe.InitialDelaySeconds = probeMaxInitialDelay
+	}
 	return defaultProbe
 }
