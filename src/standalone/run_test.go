@@ -310,6 +310,9 @@ k8s_cluster_id TEST_K8S_CLUSTER_ID
 `
 
 	const expectedContainerConfContentCloudNative = expectedContainerConfContentAppMon + `k8s_node_name TEST_K8S_NODE_NAME
+[host]
+tenant
+isCloudNativeFullStack true
 `
 	runner := createMockedRunner(t)
 

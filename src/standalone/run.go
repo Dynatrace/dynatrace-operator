@@ -216,7 +216,7 @@ func (runner *Runner) createContainerConfigurationFiles() error {
 		if runner.hostTenant != config.AgentNoHostTenant {
 			if runner.config.TenantUUID == runner.hostTenant {
 				log.Info("adding k8s node name")
-				content += runner.getK8SNodeName()
+				content += runner.getK8SHostInfo()
 			}
 		}
 		if err := runner.createConfFile(confFilePath, content); err != nil {
