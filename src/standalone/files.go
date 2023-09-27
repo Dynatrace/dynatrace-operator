@@ -26,7 +26,7 @@ k8s_namespace %s
 
 	k8HostInfoFormatString = `k8s_node_name %s
 [host]
-tenant
+tenant %s
 isCloudNativeFullStack true
 `
 
@@ -70,6 +70,7 @@ func (runner *Runner) getBaseConfContent(container containerInfo) string {
 func (runner *Runner) getK8SHostInfo() string {
 	return fmt.Sprintf(k8HostInfoFormatString,
 		runner.env.K8NodeName,
+		runner.hostTenant,
 	)
 }
 
