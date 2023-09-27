@@ -503,9 +503,9 @@ func TestPodSpecServiceAccountName(t *testing.T) {
 func TestPodSpecProbes(t *testing.T) {
 	expectedHealthcheck := containerv1.HealthConfig{
 		Test:        []string{"echo", "super pod"},
-		Interval:    time.Second * 10,
-		Timeout:     time.Second * 30,
-		StartPeriod: time.Second * 60,
+		Interval:    10 * time.Second,
+		Timeout:     30 * time.Second,
+		StartPeriod: 60 * time.Second,
 		Retries:     3,
 	}
 
@@ -541,7 +541,7 @@ func TestPodSpecProbes(t *testing.T) {
 	})
 	t.Run("check probes with 1200s start period", func(t *testing.T) {
 		updatedHealthCheck := expectedHealthcheck.DeepCopy()
-		updatedHealthCheck.StartPeriod = time.Second * 1200
+		updatedHealthCheck.StartPeriod = 1200 * time.Second
 
 		builder := builderInfo{
 			dynakube: &dynatracev1beta1.DynaKube{
