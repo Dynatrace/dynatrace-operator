@@ -297,8 +297,8 @@ func TestGetProcessModuleConfig(t *testing.T) {
 	})
 }
 
-func TestCreateContainerConfiguratnesporionFiles(t *testing.T) {
-	const expectedContainerConfContent = `[container]
+func TestCreateContainerConfigurationsFiles(t *testing.T) {
+	const expectedContainerConfContentAppMon = `[container]
 containerName TEST_CONTAINER_%d_NAME
 imageName TEST_CONTAINER_%d_IMAGE
 k8s_fullpodname TEST_K8S_PODNAME
@@ -309,10 +309,12 @@ k8s_namespace TEST_K8S_NAMESPACE
 k8s_cluster_id TEST_K8S_CLUSTER_ID
 `
 
+	const expectedContainerConfContentCloudNative = expectedContainerConfContentAppMon + `k8s_node_name TEST_K8S_NODE_NAME
+`
 	runner := createMockedRunner(t)
-	runner.config.HasHost = false
 
-	t.Run("create config files", func(t *testing.T) {
+	t.Run("create config files in case of application monitoring", func(t *testing.T) {
+		runner.config.HasHost = false
 		runner.fs = afero.NewMemMapFs()
 
 		err := runner.createContainerConfigurationFiles()
@@ -337,7 +339,37 @@ k8s_cluster_id TEST_K8S_CLUSTER_ID
 			require.Equal(t, info.Size(), int64(n))
 			require.NoError(t, err)
 
-			assert.Equal(t, fmt.Sprintf(expectedContainerConfContent, i+1, i+1, i+1), string(content))
+			assert.Equal(t, fmt.Sprintf(expectedContainerConfContentAppMon, i+1, i+1, i+1), string(content))
+		}
+	})
+	t.Run("create config files in case of cloud native fullstack", func(t *testing.T) {
+		runner.config.HasHost = true
+		runner.hostTenant = testTenantUUID
+		runner.fs = afero.NewMemMapFs()
+
+		err := runner.createContainerConfigurationFiles()
+
+		require.NoError(t, err)
+		for i, container := range runner.env.Containers {
+			filePath := filepath.Join(
+				config.AgentShareDirMount,
+				fmt.Sprintf(config.AgentContainerConfFilenameTemplate, container.Name))
+
+			assertIfFileExists(t, runner.fs, filePath)
+
+			file, err := runner.fs.Open(filePath)
+			require.NoError(t, err)
+
+			info, err := file.Stat()
+			require.NoError(t, err)
+
+			content := make([]byte, info.Size())
+			n, err := file.Read(content)
+
+			require.Equal(t, info.Size(), int64(n))
+			require.NoError(t, err)
+
+			assert.Equal(t, fmt.Sprintf(expectedContainerConfContentCloudNative, i+1, i+1, i+1), string(content))
 		}
 	})
 }
