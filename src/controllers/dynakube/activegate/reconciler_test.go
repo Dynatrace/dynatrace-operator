@@ -58,7 +58,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			}}
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, dtc)
-		err := r.Reconcile(context.TODO())
+		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 	})
 	t.Run(`Create AG proxy secret`, func(t *testing.T) {
@@ -73,11 +73,11 @@ func TestReconciler_Reconcile(t *testing.T) {
 		}
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, dtc)
-		err := r.Reconcile(context.TODO())
+		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
 		var proxySecret corev1.Secret
-		err = fakeClient.Get(context.TODO(), types.NamespacedName{Name: testName + "-activegate-internal-proxy", Namespace: testNamespace}, &proxySecret)
+		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: testName + "-activegate-internal-proxy", Namespace: testNamespace}, &proxySecret)
 		assert.NoError(t, err)
 	})
 	t.Run(`Create AG capability (creation and deletion)`, func(t *testing.T) {
@@ -94,19 +94,19 @@ func TestReconciler_Reconcile(t *testing.T) {
 		}
 		fakeClient := fake.NewClient(testKubeSystemNamespace)
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, dtc)
-		err := r.Reconcile(context.TODO())
+		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
 		var service corev1.Service
-		err = fakeClient.Get(context.TODO(), types.NamespacedName{Name: testServiceName, Namespace: testNamespace}, &service)
+		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: testServiceName, Namespace: testNamespace}, &service)
 		require.NoError(t, err)
 
 		// remove AG from spec
 		instance.Spec.ActiveGate = dynatracev1beta1.ActiveGateSpec{}
-		err = r.Reconcile(context.TODO())
+		err = r.Reconcile(context.Background())
 		require.NoError(t, err)
 
-		err = fakeClient.Get(context.TODO(), types.NamespacedName{Name: testServiceName, Namespace: testNamespace}, &service)
+		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: testServiceName, Namespace: testNamespace}, &service)
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
 	t.Run("Reconcile DynaKube without Proxy after a DynaKube with proxy must not interfere with the second DKs Proxy Secret", func(t *testing.T) {
@@ -128,15 +128,15 @@ func TestReconciler_Reconcile(t *testing.T) {
 		}
 		fakeClient := fake.NewClient()
 		proxyReconciler := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynaKubeWithProxy, dtc)
-		err := proxyReconciler.Reconcile(context.TODO())
+		err := proxyReconciler.Reconcile(context.Background())
 		require.NoError(t, err)
 
 		noProxyReconciler := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynaKubeNoProxy, dtc)
-		err = noProxyReconciler.Reconcile(context.TODO())
+		err = noProxyReconciler.Reconcile(context.Background())
 		require.NoError(t, err)
 
 		var proxySecret corev1.Secret
-		err = fakeClient.Get(context.TODO(), types.NamespacedName{Name: "proxyDk-activegate-internal-proxy", Namespace: testNamespace}, &proxySecret)
+		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: "proxyDk-activegate-internal-proxy", Namespace: testNamespace}, &proxySecret)
 		assert.NoError(t, err)
 	})
 }
@@ -178,11 +178,11 @@ func TestServiceCreation(t *testing.T) {
 				capability,
 			}
 
-			err := reconciler.Reconcile(context.TODO())
+			err := reconciler.Reconcile(context.Background())
 			require.NoError(t, err)
 
 			if len(expectedPorts) == 0 {
-				err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: testServiceName, Namespace: testNamespace}, &corev1.Service{})
+				err = fakeClient.Get(context.Background(), client.ObjectKey{Name: testServiceName, Namespace: testNamespace}, &corev1.Service{})
 
 				assert.True(t, k8serrors.IsNotFound(err))
 				continue
@@ -203,7 +203,7 @@ func TestServiceCreation(t *testing.T) {
 			consts.HttpsServicePortName,
 		}
 
-		err := reconciler.Reconcile(context.TODO())
+		err := reconciler.Reconcile(context.Background())
 		require.NoError(t, err)
 
 		activegateService := getTestActiveGateService(t, fakeClient)
@@ -225,7 +225,7 @@ func assertContainsAllPorts(t *testing.T, expectedPorts []string, servicePorts [
 
 func getTestActiveGateService(t *testing.T, fakeClient client.Client) corev1.Service {
 	var activegateService corev1.Service
-	err := fakeClient.Get(context.TODO(), client.ObjectKey{Name: testServiceName, Namespace: testNamespace}, &activegateService)
+	err := fakeClient.Get(context.Background(), client.ObjectKey{Name: testServiceName, Namespace: testNamespace}, &activegateService)
 
 	require.NoError(t, err)
 
@@ -242,13 +242,13 @@ func TestExclusiveSynMonitoring(t *testing.T) {
 	}
 	fakeClient := fake.NewClient(testKubeSystemNamespace)
 	reconciler := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube, mockDtClient)
-	err := reconciler.Reconcile(context.TODO())
+	err := reconciler.Reconcile(context.Background())
 
 	require.NoError(t, err, "successfully reconciled for syn-mon")
 
 	var statefulSets appsv1.StatefulSetList
 	err = fakeClient.List(
-		context.TODO(),
+		context.Background(),
 		&statefulSets,
 		client.InNamespace(testNamespace))
 	require.NoError(t, err)
@@ -266,7 +266,7 @@ func TestExclusiveSynMonitoring(t *testing.T) {
 
 	var services corev1.ServiceList
 	err = fakeClient.List(
-		context.TODO(),
+		context.Background(),
 		&services,
 		client.InNamespace(testNamespace))
 	require.NoError(t, err)
@@ -305,7 +305,7 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 	t.Run(`create activegate ConfigMap`, func(t *testing.T) {
 		fakeClient := fake.NewClient(testKubeSystemNamespace)
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube, mockDtClient)
-		err := r.Reconcile(context.TODO())
+		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
 		var actual corev1.ConfigMap

@@ -51,11 +51,11 @@ func newTestReconcilerWithInstance(client client.Client) *Reconciler {
 func TestReconcile(t *testing.T) {
 	t.Run(`reconcile auth token for first time`, func(t *testing.T) {
 		r := newTestReconcilerWithInstance(fake.NewClientBuilder().Build())
-		err := r.Reconcile(context.TODO())
+		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
 		var authToken corev1.Secret
-		_ = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.ActiveGateAuthTokenSecret(), Namespace: testNamespace}, &authToken)
+		_ = r.client.Get(context.Background(), client.ObjectKey{Name: r.dynakube.ActiveGateAuthTokenSecret(), Namespace: testNamespace}, &authToken)
 
 		assert.NotEmpty(t, authToken.Data[ActiveGateAuthTokenName])
 	})
@@ -73,11 +73,11 @@ func TestReconcile(t *testing.T) {
 			Build()
 
 		r := newTestReconcilerWithInstance(clt)
-		err := r.Reconcile(context.TODO())
+		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
 		var authToken corev1.Secret
-		_ = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.ActiveGateAuthTokenSecret(), Namespace: testNamespace}, &authToken)
+		_ = r.client.Get(context.Background(), client.ObjectKey{Name: r.dynakube.ActiveGateAuthTokenSecret(), Namespace: testNamespace}, &authToken)
 
 		assert.NotEqual(t, authToken.Data[ActiveGateAuthTokenName], []byte(testToken))
 	})
@@ -95,11 +95,11 @@ func TestReconcile(t *testing.T) {
 			Build()
 		r := newTestReconcilerWithInstance(clt)
 
-		err := r.Reconcile(context.TODO())
+		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
 		var authToken corev1.Secret
-		_ = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.ActiveGateAuthTokenSecret(), Namespace: testNamespace}, &authToken)
+		_ = r.client.Get(context.Background(), client.ObjectKey{Name: r.dynakube.ActiveGateAuthTokenSecret(), Namespace: testNamespace}, &authToken)
 
 		assert.Equal(t, authToken.Data[ActiveGateAuthTokenName], []byte(testToken))
 	})

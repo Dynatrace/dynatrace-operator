@@ -43,11 +43,11 @@ func TestReconcile(t *testing.T) {
 		dynakube := createTestDynakube(nil)
 		fakeClient := fake.NewClientBuilder().Build()
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, *dynakube, clusterID)
-		err := r.Reconcile(context.TODO())
+		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
 		var actualConfigMap corev1.ConfigMap
-		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: GetDeploymentMetadataConfigMapName(testName), Namespace: testNamespace}, &actualConfigMap)
+		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: GetDeploymentMetadataConfigMapName(testName), Namespace: testNamespace}, &actualConfigMap)
 		require.Error(t, err)
 	})
 	t.Run(`delete configmap, if no mode is configured`, func(t *testing.T) {
@@ -61,11 +61,11 @@ func TestReconcile(t *testing.T) {
 			},
 		).Build()
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, *dynakube, clusterID)
-		err := r.Reconcile(context.TODO())
+		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
 		var actualConfigMap corev1.ConfigMap
-		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: GetDeploymentMetadataConfigMapName(testName), Namespace: testNamespace}, &actualConfigMap)
+		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: GetDeploymentMetadataConfigMapName(testName), Namespace: testNamespace}, &actualConfigMap)
 		require.Error(t, err)
 	})
 
@@ -79,11 +79,11 @@ func TestReconcile(t *testing.T) {
 
 		fakeClient := fake.NewClientBuilder().Build()
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, *dynakube, clusterID)
-		err := r.Reconcile(context.TODO())
+		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
 		var actualConfigMap corev1.ConfigMap
-		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: GetDeploymentMetadataConfigMapName(testName), Namespace: testNamespace}, &actualConfigMap)
+		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: GetDeploymentMetadataConfigMapName(testName), Namespace: testNamespace}, &actualConfigMap)
 		require.NoError(t, err)
 		require.NotEmpty(t, actualConfigMap.Data)
 		assert.NotEmpty(t, actualConfigMap.Data[OneAgentMetadataKey])
@@ -101,11 +101,11 @@ func TestReconcile(t *testing.T) {
 
 		fakeClient := fake.NewClientBuilder().Build()
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, *dynakube, clusterID)
-		err := r.Reconcile(context.TODO())
+		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
 		var actualConfigMap corev1.ConfigMap
-		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: GetDeploymentMetadataConfigMapName(testName), Namespace: testNamespace}, &actualConfigMap)
+		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: GetDeploymentMetadataConfigMapName(testName), Namespace: testNamespace}, &actualConfigMap)
 		require.NoError(t, err)
 		require.NotEmpty(t, actualConfigMap.Data)
 		assert.NotEmpty(t, actualConfigMap.Data[ActiveGateMetadataKey])
@@ -125,11 +125,11 @@ func TestReconcile(t *testing.T) {
 
 		fakeClient := fake.NewClientBuilder().Build()
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, *dynakube, clusterID)
-		err := r.Reconcile(context.TODO())
+		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
 		var actualConfigMap corev1.ConfigMap
-		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: GetDeploymentMetadataConfigMapName(testName), Namespace: testNamespace}, &actualConfigMap)
+		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: GetDeploymentMetadataConfigMapName(testName), Namespace: testNamespace}, &actualConfigMap)
 		require.NoError(t, err)
 		require.NotEmpty(t, actualConfigMap.Data)
 		assert.NotEmpty(t, actualConfigMap.Data[OneAgentMetadataKey])
