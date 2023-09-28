@@ -11,7 +11,7 @@ type ClientBuilder interface {
 	SetContext(context.Context) ClientBuilder
 	SetApiReader(client.Reader) ClientBuilder
 	SetDynakube(*dynatracev1beta1.DynaKube) ClientBuilder
-	Build() (*Client, error)
+	Build() (ImageGetter, error)
 }
 
 type builder struct {
@@ -39,6 +39,6 @@ func (builder builder) SetDynakube(dynakube *dynatracev1beta1.DynaKube) ClientBu
 	return builder
 }
 
-func (builder builder) Build() (*Client, error) {
+func (builder builder) Build() (ImageGetter, error) {
 	return NewClient(builder.ctx, builder.apiReader, builder.dynakube)
 }

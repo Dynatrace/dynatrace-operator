@@ -9,7 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// StubBuilder can be used for unit tests where a full builder implementation is not needed
+// StubBuilder can be used for unit tests where a full builder.go implementation is not needed
 type StubBuilder struct {
 	DynatraceClient dtclient.Client
 	Err             error

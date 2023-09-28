@@ -63,7 +63,7 @@ func (updater oneAgentUpdater) LatestImageInfo() (*dtclient.LatestImageInfo, err
 	return updater.dtClient.GetLatestOneAgentImage()
 }
 
-func (updater *oneAgentUpdater) UseTenantRegistry(ctx context.Context) error {
+func (updater oneAgentUpdater) UseTenantRegistry(ctx context.Context) error {
 	var err error
 	latestVersion := updater.CustomVersion()
 	if latestVersion == "" {
