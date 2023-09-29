@@ -19,14 +19,14 @@ func checkCRD(ctx context.Context, baseLog logr.Logger, apiReader client.Reader,
 	err := apiReader.List(ctx, dynakubeList, &client.ListOptions{Namespace: namespaceName})
 
 	if err != nil {
-		return determineDynakubeError(err)
+		return DetermineDynakubeError(err)
 	}
 
 	logOkf(log, "CRD for Dynakube exists")
 	return nil
 }
 
-func determineDynakubeError(err error) error {
+func DetermineDynakubeError(err error) error {
 	if runtime.IsNotRegisteredError(err) {
 		err = errors.Wrap(err, "CRD for Dynakube missing")
 	} else {

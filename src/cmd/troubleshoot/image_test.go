@@ -270,7 +270,7 @@ func TestImagePullable(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			logOutput := runWithTestLogger(func(log logr.Logger) {
-				verifyImageIsAvailable(context.Background(), log, fake.NewClient(secret), dockerServer.Client(), *secret, test.dynaKube, test.component, test.proxyWarning)
+				verifyImageIsAvailableOld(context.Background(), log, fake.NewClient(secret), dockerServer.Client(), *secret, test.dynaKube, test.component, test.proxyWarning)
 			})
 
 			require.NotContains(t, logOutput, "failed")
@@ -353,7 +353,7 @@ func TestImageNotPullable(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			logOutput := runWithTestLogger(func(log logr.Logger) {
-				verifyImageIsAvailable(context.Background(), log, fake.NewClient(secret), dockerServer.Client(), *secret, test.dynaKube, test.component, false)
+				verifyImageIsAvailableOld(context.Background(), log, fake.NewClient(secret), dockerServer.Client(), *secret, test.dynaKube, test.component, false)
 			})
 
 			require.Contains(t, logOutput, "failed")
@@ -385,7 +385,7 @@ func TestOneAgentCodeModulesImageNotPullable(t *testing.T) {
 			withCloudNativeCodeModulesImage("myunknownserver.com/myrepo/mymissingcodemodules").
 			build()
 		logOutput := runWithTestLogger(func(log logr.Logger) {
-			verifyImageIsAvailable(context.Background(), log, fake.NewClient(secret), dockerServer.Client(), *secret, &dynakube, componentCodeModules, true)
+			verifyImageIsAvailableOld(context.Background(), log, fake.NewClient(secret), dockerServer.Client(), *secret, &dynakube, componentCodeModules, true)
 		})
 		assert.Contains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "no such host")
@@ -399,7 +399,7 @@ func TestOneAgentCodeModulesImageNotPullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(func(log logr.Logger) {
-			verifyImageIsAvailable(context.Background(), log, fake.NewClient(secret), dockerServer.Client(), *secret, &dynakube, componentCodeModules, false)
+			verifyImageIsAvailableOld(context.Background(), log, fake.NewClient(secret), dockerServer.Client(), *secret, &dynakube, componentCodeModules, false)
 		})
 		assert.NotContains(t, logOutput, "Unknown OneAgentCodeModules image")
 	})
