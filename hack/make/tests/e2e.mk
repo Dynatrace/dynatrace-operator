@@ -46,6 +46,7 @@ test/e2e/cloudnative/network: manifests/crd/helm
 test/e2e/cloudnative/proxy: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1 ./test/scenarios/cloudnative/proxy $(SKIPCLEANUP)
 
+## Runs public registry test only
 test/e2e/cloudnative/publicregistry: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1 ./test/scenarios/cloudnative/public_registry $(SKIPCLEANUP)
 
