@@ -9,6 +9,8 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
+	dynakubeversion "github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/version"
+	"github.com/Dynatrace/dynatrace-operator/src/dockerkeychain"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
@@ -122,62 +124,70 @@ func GetK8SClusterAPIReader(kubeConfig *rest.Config) (client.Reader, error) {
 	return k8scluster.GetAPIReader(), nil
 }
 
-func RunTroubleshootCmdOld(ctx context.Context, log logr.Logger, apiReader client.Reader, namespaceName string, kubeConfig *rest.Config) {
-	err := runPrerequisiteChecks(ctx, log, apiReader, namespaceName, kubeConfig) // ignore error to avoid polluting pretty logs
-
-	if err != nil {
-		logErrorf(log, "prerequisite checks failed, aborting")
-		return
-	}
-
-	dynakubes, err := getDynakubes(ctx, log, apiReader, namespaceName, dynakubeFlagValue)
-	if err != nil {
-		logErrorf(log, "error reading Dynakubes")
-		return
-	}
-	runChecksForAllDynakubes(ctx, log, apiReader, &http.Client{}, dynakubes)
-}
-
 func runChecksForAllDynakubes(ctx context.Context, baseLog logr.Logger, apiReader client.Reader, httpClient *http.Client, dynakubes []dynatracev1beta1.DynaKube) {
 	for _, dynakube := range dynakubes {
-		err := runChecksForDynakube(ctx, baseLog, apiReader, httpClient, &dynakube)
+		err := runChecksForDynakube(ctx, baseLog, apiReader, httpClient, dynakube)
 		if err != nil {
 			logErrorf(baseLog, "Error in DynaKube %s/%s", dynakube.Namespace, dynakube.Name)
 		}
 	}
 }
 
-func runChecksForDynakube(ctx context.Context, baseLog logr.Logger, apiReader client.Reader, httpClient *http.Client, dynakube *dynatracev1beta1.DynaKube) error {
+func runChecksForDynakube(ctx context.Context, baseLog logr.Logger, apiReader client.Reader, httpClient *http.Client, dynakube dynatracev1beta1.DynaKube) error {
 	log := baseLog.WithName(dynakubeCheckLoggerName)
 
 	logNewCheckf(log, "checking if '%s:%s' Dynakube is configured correctly", dynakube.Namespace, dynakube.Name)
 	logInfof(baseLog, "using '%s:%s' Dynakube", dynakube.Namespace, dynakube.Name)
 
-	pullSecret, err := checkDynakube(ctx, baseLog, apiReader, dynakube)
+	pullSecret, err := checkDynakube(ctx, baseLog, apiReader, &dynakube)
 	if err != nil {
 		return errors.Wrapf(err, "'%s:%s' Dynakube isn't valid. %s",
 			dynakube.Namespace, dynakube.Name, dynakubeNotValidMessage())
 	}
 	logOkf(log, "'%s:%s' Dynakube is valid", dynakube.Namespace, dynakube.Name)
 
-	proxy, err := getProxyURL(ctx, apiReader, dynakube)
-	if err != nil {
-		return err
-	}
-	err = applyProxy(log, httpClient, proxy)
+	keychain, err := dockerkeychain.NewDockerKeychain(ctx, apiReader, pullSecret)
 	if err != nil {
 		return err
 	}
 
-	err = verifyAllImagesAvailable(ctx, baseLog, apiReader, httpClient, pullSecret, dynakube)
+	transport, err := createTransport(ctx, apiReader, &dynakube, log, httpClient)
 	if err != nil {
 		return err
 	}
-	err = checkProxySettingsWithLog(ctx, baseLog, apiReader, dynakube)
+
+	err = verifyAllImagesAvailable(ctx, baseLog, keychain, transport, &dynakube)
+	if err != nil {
+		return err
+	}
+	err = checkProxySettingsWithLog(ctx, baseLog, apiReader, &dynakube)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func createTransport(ctx context.Context, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube, log logr.Logger, httpClient *http.Client) (*http.Transport, error) {
+	proxy, err := getProxyURL(ctx, apiReader, dynakube)
+	if err != nil {
+		return nil, err
+	}
+	err = applyProxy(log, httpClient, proxy)
+	if err != nil {
+		return nil, err
+	}
+	var transport *http.Transport
+	if httpClient != nil && httpClient.Transport != nil {
+		transport = httpClient.Transport.(*http.Transport).Clone()
+	} else {
+		transport = http.DefaultTransport.(*http.Transport).Clone()
+	}
+
+	transport, err = dynakubeversion.PrepareTransport(ctx, apiReader, transport, dynakube)
+	if err != nil {
+		return nil, err
+	}
+	return transport, nil
 }
 
 func applyProxy(log logr.Logger, httpClient *http.Client, proxy string) error {
@@ -198,40 +208,18 @@ func applyProxy(log logr.Logger, httpClient *http.Client, proxy string) error {
 	return nil
 }
 
-func runPrerequisiteChecks(ctx context.Context, log logr.Logger, apiReader client.Reader, namespaceName string, kubeConfig *rest.Config) error {
-	err := checkNamespace(ctx, log, apiReader, namespaceName)
-	if err != nil {
-		return err
-	}
-	err = checkCRD(ctx, log, apiReader, namespaceName)
-	if err != nil {
-		return err
-	}
-	err = checkOneAgentAPM(log, kubeConfig)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func getDynakubes(
-	ctx context.Context,
-	log logr.Logger,
-	reader client.Reader,
-	namespaceName string,
-	dynakubeName string,
-) ([]dynatracev1beta1.DynaKube, error) {
+func getDynakubes(ctx context.Context, log logr.Logger, apiReader client.Reader, namespaceName string, dynakubeName string) ([]dynatracev1beta1.DynaKube, error) {
 	var err error
 	var dynakubes []dynatracev1beta1.DynaKube
 
 	if dynakubeName == "" {
 		logNewDynakubef(log, "no Dynakube specified - checking all Dynakubes in namespace '%s'", namespaceName)
-		dynakubes, err = getAllDynakubesInNamespace(ctx, log, reader, namespaceName)
+		dynakubes, err = getAllDynakubesInNamespace(ctx, log, apiReader, namespaceName)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		dynakube, err := getSelectedDynakube(ctx, reader, namespaceName, dynakubeName)
+		dynakube, err := getSelectedDynakube(ctx, apiReader, namespaceName, dynakubeName)
 		if err != nil {
 			return nil, err
 		}
