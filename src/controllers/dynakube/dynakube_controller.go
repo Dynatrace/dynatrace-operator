@@ -2,7 +2,6 @@ package dynakube
 
 import (
 	"context"
-	"net/http"
 	"os"
 	"time"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceapi"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent"
@@ -129,7 +129,7 @@ func (controller *Controller) setRequeueAfterIfNewIsShorter(requeueAfter time.Du
 
 func isDynatraceAPIUnreachable(err error) bool {
 	var serverErr dtclient.ServerError
-	if errors.As(err, &serverErr) && (serverErr.Code == http.StatusTooManyRequests || serverErr.Code == http.StatusServiceUnavailable) {
+	if dynatraceapi.IsUnreachable(err) {
 		log.Info("dynaTrace API server is unavailable or request limit reached! trying again in one minute",
 			"errorCode", serverErr.Code, "errorMessage", serverErr.Message)
 		return true
