@@ -7,6 +7,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	NoError = 0
+)
+
 func IsUnreachable(err error) bool {
 	var serverErr dtclient.ServerError
 	if errors.As(err, &serverErr) && (serverErr.Code == http.StatusTooManyRequests || serverErr.Code == http.StatusServiceUnavailable) {

@@ -99,7 +99,7 @@ func (tokens Tokens) VerifyValues() error {
 
 func concatErrors(errs []error) error {
 	concatenatedError := ""
-	apiError := 0
+	apiStatus := dynatraceapi.NoError
 
 	for index, err := range errs {
 		concatenatedError += err.Error()
@@ -108,14 +108,14 @@ func concatErrors(errs []error) error {
 			concatenatedError += "\n\t"
 		}
 
-		if apiError == 0 && dynatraceapi.IsUnreachable(err) {
-			apiError = dynatraceapi.StatusCode(err)
+		if apiStatus == dynatraceapi.NoError && dynatraceapi.IsUnreachable(err) {
+			apiStatus = dynatraceapi.StatusCode(err)
 		}
 	}
 
-	if apiError != 0 {
+	if apiStatus != dynatraceapi.NoError {
 		return dtclient.ServerError{
-			Code:    apiError,
+			Code:    apiStatus,
 			Message: concatenatedError,
 		}
 	}

@@ -163,6 +163,12 @@ func testVerifyTokenValues(t *testing.T) {
 	assert.EqualError(t, invalidTokens.VerifyValues(), "value of token 'whitespaces' contains whitespaces at the beginning or end of the value")
 }
 
+type concatErrorsTestCase struct {
+	name              string
+	encounteredErrors []error
+	message           string
+}
+
 func TestConcatErrors(t *testing.T) {
 	stringError1 := errors.New("error 1")
 	stringError2 := errors.New("error 2")
@@ -175,46 +181,55 @@ func TestConcatErrors(t *testing.T) {
 		Message: "TooManyRequests",
 	}
 
-	t.Run("string errors", func(t *testing.T) {
-		valueErrors := []error{
-			stringError1,
-			stringError2,
-		}
-		err := concatErrors(valueErrors)
-		assert.EqualError(t, err, "error 1\n\terror 2")
-	})
-	t.Run("string + ServiceUnavailable errors", func(t *testing.T) {
-		valueErrors := []error{
-			stringError1,
-			serviceUnavailableError,
-		}
-		err := concatErrors(valueErrors)
-		assert.EqualError(t, err, "dynatrace server error 503: error 1\n\tdynatrace server error 503: ServiceUnavailable")
-	})
-	t.Run("string + TooManyRequests errors", func(t *testing.T) {
-		valueErrors := []error{
-			stringError1,
-			tooManyRequestsError,
-		}
-		err := concatErrors(valueErrors)
-		assert.EqualError(t, err, "dynatrace server error 429: error 1\n\tdynatrace server error 429: TooManyRequests")
-	})
-	t.Run("string + ServiceUnavailable + TooManyRequests errors", func(t *testing.T) {
-		valueErrors := []error{
-			stringError1,
-			serviceUnavailableError,
-			tooManyRequestsError,
-		}
-		err := concatErrors(valueErrors)
-		assert.EqualError(t, err, "dynatrace server error 503: error 1\n\tdynatrace server error 503: ServiceUnavailable\n\tdynatrace server error 429: TooManyRequests")
-	})
-	t.Run("string + TooManyRequests + ServiceUnavailable errors", func(t *testing.T) {
-		valueErrors := []error{
-			stringError1,
-			tooManyRequestsError,
-			serviceUnavailableError,
-		}
-		err := concatErrors(valueErrors)
-		assert.EqualError(t, err, "dynatrace server error 429: error 1\n\tdynatrace server error 429: TooManyRequests\n\tdynatrace server error 503: ServiceUnavailable")
-	})
+	testCases := []concatErrorsTestCase{
+		{
+			name: "string errors",
+			encounteredErrors: []error{
+				stringError1,
+				stringError2,
+			},
+			message: "error 1\n\terror 2",
+		},
+		{
+			name: "string + ServiceUnavailable errors",
+			encounteredErrors: []error{
+				stringError1,
+				serviceUnavailableError,
+			},
+			message: "dynatrace server error 503: error 1\n\tdynatrace server error 503: ServiceUnavailable",
+		},
+		{
+			name: "string + TooManyRequests errors",
+			encounteredErrors: []error{
+				stringError1,
+				tooManyRequestsError,
+			},
+			message: "dynatrace server error 429: error 1\n\tdynatrace server error 429: TooManyRequests",
+		},
+		{
+			name: "string + ServiceUnavailable + TooManyRequests errors",
+			encounteredErrors: []error{
+				stringError1,
+				serviceUnavailableError,
+				tooManyRequestsError,
+			},
+			message: "dynatrace server error 503: error 1\n\tdynatrace server error 503: ServiceUnavailable\n\tdynatrace server error 429: TooManyRequests",
+		},
+		{
+			name: "string + TooManyRequests + ServiceUnavailable errors",
+			encounteredErrors: []error{
+				stringError1,
+				tooManyRequestsError,
+				serviceUnavailableError,
+			},
+			message: "dynatrace server error 429: error 1\n\tdynatrace server error 429: TooManyRequests\n\tdynatrace server error 503: ServiceUnavailable",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			err := concatErrors(testCase.encounteredErrors)
+			assert.EqualError(t, err, testCase.message)
+		})
+	}
 }
