@@ -94,7 +94,41 @@ func tryImagePull(ctx context.Context, keychain authn.Keychain, transport *http.
 		return err
 	}
 
+<<<<<<< HEAD
 	transport, err = registry.PrepareTransport(ctx, apiReader, transport, dynakube)
+||||||| parent of 8ab81b93 (fixup! tests)
+	var transport *http.Transport
+	if troubleshootCtx.httpClient != nil && troubleshootCtx.httpClient.Transport != nil {
+		transport = troubleshootCtx.httpClient.Transport.(*http.Transport).Clone()
+	} else {
+		transport = http.DefaultTransport.(*http.Transport).Clone()
+	}
+	transport, err = registry.PrepareTransport(troubleshootCtx.context, troubleshootCtx.apiReader, transport, &troubleshootCtx.dynakube)
+=======
+	var transport *http.Transport
+	if troubleshootCtx.httpClient != nil && troubleshootCtx.httpClient.Transport != nil {
+		transport = troubleshootCtx.httpClient.Transport.(*http.Transport).Clone()
+	} else {
+		transport = http.DefaultTransport.(*http.Transport).Clone()
+	}
+
+	var proxy string
+	if troubleshootCtx.dynakube.HasProxy() {
+		proxy, err = troubleshootCtx.dynakube.Proxy(troubleshootCtx.context, troubleshootCtx.apiReader)
+		if err != nil {
+			return err
+		}
+	}
+
+	var trustedCAs []byte
+	if troubleshootCtx.dynakube.Spec.TrustedCAs != "" {
+		trustedCAs, err = troubleshootCtx.dynakube.TrustedCAs(troubleshootCtx.context, troubleshootCtx.apiReader)
+		if err != nil {
+			return err
+		}
+	}
+	transport, err = registry.PrepareTransport(transport, proxy, trustedCAs)
+>>>>>>> 8ab81b93 (fixup! tests)
 	if err != nil {
 		return err
 	}

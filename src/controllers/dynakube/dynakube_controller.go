@@ -213,6 +213,37 @@ func (controller *Controller) setupIstio(ctx context.Context, dynakube *dynatrac
 	return istioReconciler, nil
 }
 
+func (controller *Controller) createDynatraceClient(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) (registry.ImageGetter, error) {
+	registryClientBuilder := controller.registryClientBuilder.
+		SetContext(ctx).
+		SetApiReader(controller.apiReader)
+
+	keychain := dynakube.PullSecretWithoutData()
+	registryClientBuilder.SetKeyChainSecret(&keychain)
+
+	if dynakube.HasProxy() {
+		proxy, err := dynakube.Proxy(ctx, controller.apiReader)
+		if err != nil {
+			return nil, err
+		}
+		registryClientBuilder.SetProxy(proxy)
+	}
+
+	if dynakube.Spec.TrustedCAs != "" {
+		trustedCAs, err := dynakube.TrustedCAs(ctx, controller.apiReader)
+		if err != nil {
+			return nil, err
+		}
+		registryClientBuilder.SetTrustedCAs(trustedCAs)
+	}
+
+	registryClient, err := registryClientBuilder.Build()
+	if err != nil {
+		return nil, err
+	}
+	return registryClient, nil
+}
+
 func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
 	istioReconciler, err := controller.setupIstio(ctx, dynakube)
 	if err != nil {
@@ -237,11 +268,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		return err
 	}
 
-	registryClientBuilder := controller.registryClientBuilder.
-		SetContext(ctx).
-		SetApiReader(controller.apiReader).
-		SetDynakube(dynakube)
-	registryClient, err := registryClientBuilder.Build()
+	registryClient, err := controller.createDynatraceClient(ctx, dynakube)
 	if err != nil {
 		return err
 	}

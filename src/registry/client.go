@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerkeychain"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -16,6 +15,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -40,16 +40,21 @@ const (
 	DigestDelimiter = "@"
 )
 
-func NewClient(ctx context.Context, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube) (*Client, error) {
-	keychain, err := dockerkeychain.NewDockerKeychain(ctx, apiReader, dynakube.PullSecretWithoutData())
-	if err != nil {
-		return nil, errors.WithMessage(err, "failed to fetch pull secret")
+func NewClient(ctx context.Context, apiReader client.Reader, keyChainSecret *corev1.Secret, proxy string, trustedCAs []byte) (*Client, error) {
+	var keychain authn.Keychain
+	var err error
+	if keyChainSecret != nil {
+		keychain, err = dockerkeychain.NewDockerKeychain(ctx, apiReader, *keyChainSecret)
+		if err != nil {
+			return nil, errors.WithMessage(err, "failed to fetch pull secret")
+		}
 	}
 	transport := http.DefaultTransport.(*http.Transport).Clone()
-	transport, err = PrepareTransport(ctx, apiReader, transport, dynakube)
+	transport, err = PrepareTransport(transport, proxy, trustedCAs)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to prepare transport")
 	}
+
 	return &Client{keychain: keychain, transport: transport}, nil
 }
 
@@ -106,6 +111,7 @@ func (c *Client) PullImageInfo(ctx context.Context, imageName string) (*containe
 	return &image, nil
 }
 
+<<<<<<< HEAD
 func BuildImageIDWithTagAndDigest(taggedRef name.Tag, digest digest.Digest) string {
 	return fmt.Sprintf("%s%s%s", taggedRef.String(), DigestDelimiter, digest.String())
 }
@@ -127,23 +133,39 @@ func PrepareTransport(ctx context.Context, apiReader client.Reader, transport *h
 		transport.Proxy = func(req *http.Request) (*url.URL, error) {
 			return proxyUrl, nil
 		}
+||||||| parent of 9ecb6aba (fixup! tests)
+func PrepareTransport(ctx context.Context, apiReader client.Reader, transport *http.Transport, dynakube *dynatracev1beta1.DynaKube) (*http.Transport, error) {
+	var err error
+	var proxy string
+
+	if dynakube.HasProxy() {
+		proxy, err = dynakube.Proxy(ctx, apiReader)
+		if err != nil {
+			return nil, err
+		}
+		proxyUrl, err := url.Parse(proxy)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		transport.Proxy = func(req *http.Request) (*url.URL, error) {
+			return proxyUrl, nil
+		}
+=======
+func addProxy(transport *http.Transport, proxy string) (*http.Transport, error) {
+	proxyUrl, err := url.Parse(proxy)
+	if err != nil {
+		return nil, errors.WithStack(err)
+>>>>>>> 9ecb6aba (fixup! tests)
 	}
 
-	if dynakube.Spec.TrustedCAs != "" {
-		transport, err = addCertificates(ctx, apiReader, transport, dynakube)
-		if err != nil {
-			return nil, errors.WithMessage(err, "failed adding trusted CAs to transport")
-		}
+	transport.Proxy = func(req *http.Request) (*url.URL, error) {
+		return proxyUrl, nil
 	}
 	return transport, nil
 }
 
-func addCertificates(ctx context.Context, apiReader client.Reader, transport *http.Transport, dynakube *dynatracev1beta1.DynaKube) (*http.Transport, error) {
-	trustedCAs, err := dynakube.TrustedCAs(ctx, apiReader)
-	if err != nil {
-		return transport, err
-	}
-
+func addCertificates(transport *http.Transport, trustedCAs []byte) (*http.Transport, error) {
 	rootCAs := x509.NewCertPool()
 	if ok := rootCAs.AppendCertsFromPEM(trustedCAs); !ok {
 		return nil, errors.New("failed to append custom certs")
@@ -152,6 +174,27 @@ func addCertificates(ctx context.Context, apiReader client.Reader, transport *ht
 		transport.TLSClientConfig = &tls.Config{} // nolint:gosec
 	}
 	transport.TLSClientConfig.RootCAs = rootCAs
+
+	return transport, nil
+}
+
+// PrepareTransport creates default http transport and add proxy or trustedCAs if any
+func PrepareTransport(transport *http.Transport, proxy string, trustedCAs []byte) (*http.Transport, error) {
+	var err error
+
+	if proxy != "" {
+		transport, err = addProxy(transport, proxy)
+		if err != nil {
+			return nil, errors.WithMessage(err, "failed to add proxy to default transport")
+		}
+	}
+
+	if len(trustedCAs) > 0 {
+		transport, err = addCertificates(transport, trustedCAs)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	return transport, nil
 }

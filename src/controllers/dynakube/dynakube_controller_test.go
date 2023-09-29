@@ -686,7 +686,9 @@ func createFakeRegistryClientBuilder() registry.ClientBuilder {
 
 	mockRegistryClientBuilder.On("SetContext", mock.Anything).Return(&mockRegistryClientBuilder)
 	mockRegistryClientBuilder.On("SetApiReader", mock.Anything).Return(&mockRegistryClientBuilder)
-	mockRegistryClientBuilder.On("SetDynakube", mock.Anything).Return(&mockRegistryClientBuilder)
+	mockRegistryClientBuilder.On("SetKeyChainSecret", mock.Anything).Return(&mockRegistryClientBuilder)
+	mockRegistryClientBuilder.On("SetProxy", mock.Anything).Return(&mockRegistryClientBuilder)
+	mockRegistryClientBuilder.On("SetTrustedCAs", mock.Anything).Return(&mockRegistryClientBuilder)
 	mockRegistryClientBuilder.On("Build").Return(fakeRegistryClient, nil)
 	return &mockRegistryClientBuilder
 }
