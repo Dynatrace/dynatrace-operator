@@ -33,12 +33,12 @@ type Reconciler struct {
 	dynakube  *dynatracev1beta1.DynaKube
 }
 
-func (r *Reconciler) Reconcile() error {
+func (r *Reconciler) Reconcile(ctx context.Context) error {
 	if r.dynakube.NeedsActiveGateProxy() {
-		return r.generateForDynakube(context.TODO(), r.dynakube)
+		return r.generateForDynakube(ctx, r.dynakube)
 	}
 
-	return r.ensureDeleted(context.TODO(), r.dynakube)
+	return r.ensureDeleted(ctx, r.dynakube)
 }
 
 func NewReconciler(client client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube) *Reconciler {

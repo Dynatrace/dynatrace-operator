@@ -263,14 +263,14 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 	}
 
 	err = dtpullsecret.
-		NewReconciler(ctx, controller.client, controller.apiReader, controller.scheme, dynakube, tokens).
-		Reconcile()
+		NewReconciler(controller.client, controller.apiReader, controller.scheme, dynakube, tokens).
+		Reconcile(ctx)
 	if err != nil {
 		log.Info("could not reconcile Dynatrace pull secret")
 		return err
 	}
 
-	err = deploymentmetadata.NewReconciler(ctx, controller.client, controller.apiReader, controller.scheme, *dynakube, controller.clusterID).Reconcile()
+	err = deploymentmetadata.NewReconciler(controller.client, controller.apiReader, controller.scheme, *dynakube, controller.clusterID).Reconcile(ctx)
 	if err != nil {
 		return err
 	}
@@ -293,7 +293,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 }
 
 func (controller *Controller) reconcileConnectionInfo(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, dynatraceClient dtclient.Client) error {
-	err := connectioninfo.NewReconciler(ctx, controller.client, controller.apiReader, controller.scheme, dynakube, dynatraceClient).Reconcile()
+	err := connectioninfo.NewReconciler(controller.client, controller.apiReader, controller.scheme, dynakube, dynatraceClient).Reconcile(ctx)
 
 	if errors.Is(err, connectioninfo.NoOneAgentCommunicationHostsError) {
 		// missing communication hosts is not an error per se and shall not stop reconciliation, just make sure next reconciliation is happening ASAP
@@ -394,8 +394,8 @@ func (controller *Controller) removeOneAgentDaemonSet(ctx context.Context, dynak
 }
 
 func (controller *Controller) reconcileActiveGate(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) error {
-	reconciler := activegate.NewReconciler(ctx, controller.client, controller.apiReader, controller.scheme, dynakube, dtc)
-	err := reconciler.Reconcile()
+	reconciler := activegate.NewReconciler(controller.client, controller.apiReader, controller.scheme, dynakube, dtc)
+	err := reconciler.Reconcile(ctx)
 
 	if err != nil {
 		return errors.WithMessage(err, "failed to reconcile ActiveGate")

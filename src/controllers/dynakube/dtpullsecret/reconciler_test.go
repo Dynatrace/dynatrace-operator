@@ -32,7 +32,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 		}
 		fakeClient := fake.NewClient()
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, token.Tokens{
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube, token.Tokens{
 			dtclient.DynatraceApiToken: token.Token{Value: testValue},
 		})
 
@@ -40,12 +40,12 @@ func TestReconciler_Reconcile(t *testing.T) {
 			On("GetOneAgentConnectionInfo").
 			Return(dtclient.OneAgentConnectionInfo{}, nil)
 
-		err := r.Reconcile()
+		err := r.Reconcile(context.Background())
 
 		assert.NoError(t, err)
 
 		var pullSecret corev1.Secret
-		err = fakeClient.Get(context.TODO(),
+		err = fakeClient.Get(context.Background(),
 			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
 			&pullSecret)
 
@@ -64,8 +64,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				CustomPullSecret: testValue,
 			}}
-		r := NewReconciler(context.TODO(), nil, nil, nil, dynakube, nil)
-		err := r.Reconcile()
+		r := NewReconciler(nil, nil, nil, dynakube, nil)
+		err := r.Reconcile(context.Background())
 
 		assert.NoError(t, err)
 	})
@@ -81,16 +81,16 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 		}
 		fakeClient := fake.NewClient()
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, token.Tokens{
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube, token.Tokens{
 			dtclient.DynatraceApiToken: token.Token{Value: testValue},
 		})
 
-		err := r.Reconcile()
+		err := r.Reconcile(context.Background())
 
 		assert.NoError(t, err)
 
 		var pullSecret corev1.Secret
-		err = fakeClient.Get(context.TODO(),
+		err = fakeClient.Get(context.Background(),
 			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
 			&pullSecret)
 
@@ -113,31 +113,31 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 		}
 		fakeClient := fake.NewClient()
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, token.Tokens{
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube, token.Tokens{
 			dtclient.DynatraceApiToken: token.Token{Value: testValue},
 		})
 
-		err := r.Reconcile()
+		err := r.Reconcile(context.Background())
 
 		assert.NoError(t, err)
 
 		var pullSecret corev1.Secret
-		err = fakeClient.Get(context.TODO(),
+		err = fakeClient.Get(context.Background(),
 			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
 			&pullSecret)
 
 		assert.NoError(t, err)
 
 		pullSecret.Data = nil
-		err = fakeClient.Update(context.TODO(), &pullSecret)
+		err = fakeClient.Update(context.Background(), &pullSecret)
 
 		assert.NoError(t, err)
 
-		err = r.Reconcile()
+		err = r.Reconcile(context.Background())
 
 		assert.NoError(t, err)
 
-		err = fakeClient.Get(context.TODO(),
+		err = fakeClient.Get(context.Background(),
 			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
 			&pullSecret)
 

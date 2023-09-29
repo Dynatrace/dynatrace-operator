@@ -52,7 +52,6 @@ func newWebhookCertificateController(mgr manager.Manager, cancelMgr context.Canc
 }
 
 type WebhookCertificateController struct {
-	ctx           context.Context
 	client        client.Client
 	apiReader     client.Reader
 	namespace     string
@@ -64,10 +63,9 @@ func (controller *WebhookCertificateController) Reconcile(ctx context.Context, r
 	log.Info("reconciling webhook certificates",
 		"namespace", request.Namespace, "name", request.Name)
 	controller.namespace = request.Namespace
-	controller.ctx = ctx
 
 	webhookDeployment := appsv1.Deployment{}
-	err := controller.apiReader.Get(controller.ctx, types.NamespacedName{Name: webhook.DeploymentName, Namespace: controller.namespace}, &webhookDeployment)
+	err := controller.apiReader.Get(ctx, types.NamespacedName{Name: webhook.DeploymentName, Namespace: controller.namespace}, &webhookDeployment)
 	if k8serrors.IsNotFound(err) {
 		log.Info("no webhook deployment found, skipping webhook certificate generation")
 		return reconcile.Result{}, nil
@@ -75,9 +73,9 @@ func (controller *WebhookCertificateController) Reconcile(ctx context.Context, r
 		return reconcile.Result{}, errors.WithStack(err)
 	}
 
-	mutatingWebhookConfiguration, validatingWebhookConfiguration := controller.getWebhooksConfigurations()
+	mutatingWebhookConfiguration, validatingWebhookConfiguration := controller.getWebhooksConfigurations(ctx)
 
-	crd, err := controller.getCrd()
+	crd, err := controller.getCrd(ctx)
 	if err != nil {
 		log.Info("could not find CRD configuration")
 		return reconcile.Result{}, errors.WithStack(err)
@@ -85,7 +83,7 @@ func (controller *WebhookCertificateController) Reconcile(ctx context.Context, r
 
 	certSecret := newCertificateSecret(controller.scheme, &webhookDeployment)
 
-	err = certSecret.setSecretFromReader(controller.ctx, controller.apiReader, controller.namespace)
+	err = certSecret.setSecretFromReader(ctx, controller.apiReader, controller.namespace)
 	if err != nil {
 		return reconcile.Result{}, errors.WithStack(err)
 	}
@@ -104,7 +102,7 @@ func (controller *WebhookCertificateController) Reconcile(ctx context.Context, r
 		return reconcile.Result{RequeueAfter: SuccessDuration}, nil
 	}
 
-	if err = certSecret.createOrUpdateIfNecessary(controller.ctx, controller.client); err != nil {
+	if err = certSecret.createOrUpdateIfNecessary(ctx, controller.client); err != nil {
 		return reconcile.Result{}, errors.WithStack(err)
 	}
 
@@ -113,17 +111,17 @@ func (controller *WebhookCertificateController) Reconcile(ctx context.Context, r
 		return reconcile.Result{}, errors.WithStack(err)
 	}
 
-	err = controller.updateClientConfigurations(bundle, mutatingWebhookClientConfigs, mutatingWebhookConfiguration)
+	err = controller.updateClientConfigurations(ctx, bundle, mutatingWebhookClientConfigs, mutatingWebhookConfiguration)
 	if err != nil {
 		return reconcile.Result{}, errors.WithStack(err)
 	}
 
-	err = controller.updateClientConfigurations(bundle, validatingWebhookConfigConfigs, validatingWebhookConfiguration)
+	err = controller.updateClientConfigurations(ctx, bundle, validatingWebhookConfigConfigs, validatingWebhookConfiguration)
 	if err != nil {
 		return reconcile.Result{}, errors.WithStack(err)
 	}
 
-	if err = controller.updateCRDConfiguration(bundle); err != nil {
+	if err = controller.updateCRDConfiguration(ctx, bundle); err != nil {
 		return reconcile.Result{}, errors.WithStack(err)
 	}
 
@@ -143,15 +141,15 @@ func (controller *WebhookCertificateController) isUpToDate(certSecret *certifica
 	return isUpToDate
 }
 
-func (controller *WebhookCertificateController) getWebhooksConfigurations() (*admissionregistrationv1.MutatingWebhookConfiguration, *admissionregistrationv1.ValidatingWebhookConfiguration) {
-	mutatingWebhookConfiguration, err := controller.getMutatingWebhookConfiguration()
+func (controller *WebhookCertificateController) getWebhooksConfigurations(ctx context.Context) (*admissionregistrationv1.MutatingWebhookConfiguration, *admissionregistrationv1.ValidatingWebhookConfiguration) {
+	mutatingWebhookConfiguration, err := controller.getMutatingWebhookConfiguration(ctx)
 	if err != nil {
 		// Generation must not be skipped because webhook startup routine listens for the secret
 		// See cmd/operator/manager.go and cmd/operator/watcher.go
 		log.Info("could not find mutating webhook configuration, this is normal when deployed using OLM")
 	}
 
-	validatingWebhookConfiguration, err := controller.getValidatingWebhookConfiguration()
+	validatingWebhookConfiguration, err := controller.getValidatingWebhookConfiguration(ctx)
 	if err != nil {
 		// Generation must not be skipped because webhook startup routine listens for the secret
 		// See cmd/operator/manager.go and cmd/operator/watcher.go
@@ -167,9 +165,9 @@ func (controller *WebhookCertificateController) cancelMgr() {
 	}
 }
 
-func (controller *WebhookCertificateController) getMutatingWebhookConfiguration() (*admissionregistrationv1.MutatingWebhookConfiguration, error) {
+func (controller *WebhookCertificateController) getMutatingWebhookConfiguration(ctx context.Context) (*admissionregistrationv1.MutatingWebhookConfiguration, error) {
 	var mutatingWebhook admissionregistrationv1.MutatingWebhookConfiguration
-	err := controller.apiReader.Get(controller.ctx, client.ObjectKey{
+	err := controller.apiReader.Get(ctx, client.ObjectKey{
 		Name: webhook.DeploymentName,
 	}, &mutatingWebhook)
 	if err != nil {
@@ -182,9 +180,9 @@ func (controller *WebhookCertificateController) getMutatingWebhookConfiguration(
 	return &mutatingWebhook, nil
 }
 
-func (controller *WebhookCertificateController) getValidatingWebhookConfiguration() (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
+func (controller *WebhookCertificateController) getValidatingWebhookConfiguration(ctx context.Context) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 	var mutatingWebhook admissionregistrationv1.ValidatingWebhookConfiguration
-	err := controller.apiReader.Get(controller.ctx, client.ObjectKey{
+	err := controller.apiReader.Get(ctx, client.ObjectKey{
 		Name: webhook.DeploymentName,
 	}, &mutatingWebhook)
 	if err != nil {
@@ -197,16 +195,16 @@ func (controller *WebhookCertificateController) getValidatingWebhookConfiguratio
 	return &mutatingWebhook, nil
 }
 
-func (controller *WebhookCertificateController) getCrd() (*apiv1.CustomResourceDefinition, error) {
+func (controller *WebhookCertificateController) getCrd(ctx context.Context) (*apiv1.CustomResourceDefinition, error) {
 	var crd apiv1.CustomResourceDefinition
-	if err := controller.apiReader.Get(controller.ctx, types.NamespacedName{Name: crdName}, &crd); err != nil {
+	if err := controller.apiReader.Get(ctx, types.NamespacedName{Name: crdName}, &crd); err != nil {
 		return nil, err
 	}
 
 	return &crd, nil
 }
 
-func (controller *WebhookCertificateController) updateClientConfigurations(bundle []byte,
+func (controller *WebhookCertificateController) updateClientConfigurations(ctx context.Context, bundle []byte,
 	webhookClientConfigs []*admissionregistrationv1.WebhookClientConfig, webhookConfig client.Object) error {
 	if webhookConfig == nil || reflect.ValueOf(webhookConfig).IsNil() {
 		return nil
@@ -216,15 +214,15 @@ func (controller *WebhookCertificateController) updateClientConfigurations(bundl
 		webhookClientConfigs[i].CABundle = bundle
 	}
 
-	if err := controller.client.Update(controller.ctx, webhookConfig); err != nil {
+	if err := controller.client.Update(ctx, webhookConfig); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (controller *WebhookCertificateController) updateCRDConfiguration(bundle []byte) error {
+func (controller *WebhookCertificateController) updateCRDConfiguration(ctx context.Context, bundle []byte) error {
 	var crd apiv1.CustomResourceDefinition
-	if err := controller.apiReader.Get(controller.ctx, types.NamespacedName{Name: crdName}, &crd); err != nil {
+	if err := controller.apiReader.Get(ctx, types.NamespacedName{Name: crdName}, &crd); err != nil {
 		return err
 	}
 
@@ -235,7 +233,7 @@ func (controller *WebhookCertificateController) updateCRDConfiguration(bundle []
 
 	// update crd
 	crd.Spec.Conversion.Webhook.ClientConfig.CABundle = bundle
-	if err := controller.client.Update(controller.ctx, &crd); err != nil {
+	if err := controller.client.Update(ctx, &crd); err != nil {
 		return err
 	}
 	return nil

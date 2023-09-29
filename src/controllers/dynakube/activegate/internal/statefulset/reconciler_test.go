@@ -77,35 +77,35 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 func TestReconcile(t *testing.T) {
 	t.Run(`create stateful set`, func(t *testing.T) {
 		r := createDefaultReconciler(t)
-		err := r.Reconcile()
+		err := r.Reconcile(context.Background())
 
 		assert.NoError(t, err)
 
 		statefulSet := &appsv1.StatefulSet{}
-		err = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, statefulSet)
+		err = r.client.Get(context.Background(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, statefulSet)
 
 		assert.NotNil(t, statefulSet)
 		assert.NoError(t, err)
 	})
 	t.Run(`update stateful set`, func(t *testing.T) {
 		r := createDefaultReconciler(t)
-		err := r.Reconcile()
+		err := r.Reconcile(context.Background())
 
 		assert.NoError(t, err)
 
 		statefulSet := &appsv1.StatefulSet{}
-		err = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, statefulSet)
+		err = r.client.Get(context.Background(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, statefulSet)
 
 		assert.NotNil(t, statefulSet)
 		assert.NoError(t, err)
 
 		r.dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
-		err = r.Reconcile()
+		err = r.Reconcile(context.Background())
 
 		assert.NoError(t, err)
 
 		newStatefulSet := &appsv1.StatefulSet{}
-		err = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, newStatefulSet)
+		err = r.client.Get(context.Background(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, newStatefulSet)
 
 		assert.NotNil(t, statefulSet)
 		assert.NoError(t, err)
@@ -122,7 +122,7 @@ func TestReconcile(t *testing.T) {
 
 func TestReconcile_GetStatefulSet(t *testing.T) {
 	r := createDefaultReconciler(t)
-	err := r.Reconcile()
+	err := r.Reconcile(context.Background())
 	assert.NoError(t, err)
 
 	desiredSts, err := r.buildDesiredStatefulSet()
@@ -135,7 +135,7 @@ func TestReconcile_GetStatefulSet(t *testing.T) {
 	err = controllerutil.SetControllerReference(r.dynakube, desiredSts, r.scheme)
 	require.NoError(t, err)
 
-	sts, err := r.getStatefulSet(desiredSts)
+	sts, err := r.getStatefulSet(context.Background(), desiredSts)
 	assert.NoError(t, err)
 	assert.Equal(t, *desiredSts, *sts)
 }
@@ -146,11 +146,11 @@ func TestReconcile_CreateStatefulSetIfNotExists(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, desiredSts)
 
-	created, err := r.createStatefulSetIfNotExists(desiredSts)
+	created, err := r.createStatefulSetIfNotExists(context.Background(), desiredSts)
 	assert.NoError(t, err)
 	assert.True(t, created)
 
-	created, err = r.createStatefulSetIfNotExists(desiredSts)
+	created, err = r.createStatefulSetIfNotExists(context.Background(), desiredSts)
 	assert.NoError(t, err)
 	assert.False(t, created)
 }
@@ -161,16 +161,16 @@ func TestReconcile_UpdateStatefulSetIfOutdated(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, desiredSts)
 
-	updated, err := r.updateStatefulSetIfOutdated(desiredSts)
+	updated, err := r.updateStatefulSetIfOutdated(context.Background(), desiredSts)
 	assert.Error(t, err)
 	assert.False(t, updated)
 	assert.True(t, k8serrors.IsNotFound(errors.Cause(err)))
 
-	created, err := r.createStatefulSetIfNotExists(desiredSts)
+	created, err := r.createStatefulSetIfNotExists(context.Background(), desiredSts)
 	require.True(t, created)
 	require.NoError(t, err)
 
-	updated, err = r.updateStatefulSetIfOutdated(desiredSts)
+	updated, err = r.updateStatefulSetIfOutdated(context.Background(), desiredSts)
 	assert.NoError(t, err)
 	assert.False(t, updated)
 
@@ -178,7 +178,7 @@ func TestReconcile_UpdateStatefulSetIfOutdated(t *testing.T) {
 	desiredSts, err = r.buildDesiredStatefulSet()
 	require.NoError(t, err)
 
-	updated, err = r.updateStatefulSetIfOutdated(desiredSts)
+	updated, err = r.updateStatefulSetIfOutdated(context.Background(), desiredSts)
 	assert.NoError(t, err)
 	assert.True(t, updated)
 }
@@ -190,16 +190,16 @@ func TestReconcile_DeleteStatefulSetIfOldLabelsAreUsed(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, desiredSts)
 
-		deleted, err := r.deleteStatefulSetIfSelectorChanged(desiredSts)
+		deleted, err := r.deleteStatefulSetIfSelectorChanged(context.Background(), desiredSts)
 		assert.Error(t, err)
 		assert.False(t, deleted)
 		assert.True(t, k8serrors.IsNotFound(errors.Cause(err)))
 
-		created, err := r.createStatefulSetIfNotExists(desiredSts)
+		created, err := r.createStatefulSetIfNotExists(context.Background(), desiredSts)
 		require.True(t, created)
 		require.NoError(t, err)
 
-		deleted, err = r.deleteStatefulSetIfSelectorChanged(desiredSts)
+		deleted, err = r.deleteStatefulSetIfSelectorChanged(context.Background(), desiredSts)
 		assert.NoError(t, err)
 		assert.False(t, deleted)
 
@@ -209,11 +209,11 @@ func TestReconcile_DeleteStatefulSetIfOldLabelsAreUsed(t *testing.T) {
 
 		correctLabels := desiredSts.Spec.Selector.MatchLabels
 		desiredSts.Spec.Selector.MatchLabels = map[string]string{"activegate": "dynakube"}
-		err = r.client.Update(context.TODO(), desiredSts)
+		err = r.client.Update(context.Background(), desiredSts)
 		assert.NoError(t, err)
 
 		desiredSts.Spec.Selector.MatchLabels = correctLabels
-		deleted, err = r.deleteStatefulSetIfSelectorChanged(desiredSts)
+		deleted, err = r.deleteStatefulSetIfSelectorChanged(context.Background(), desiredSts)
 		assert.NoError(t, err)
 		assert.True(t, deleted)
 	})
@@ -224,13 +224,13 @@ func TestReconcile_DeleteStatefulSetIfOldLabelsAreUsed(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, appliedStatefulset)
 
-		created, err := r.createStatefulSetIfNotExists(appliedStatefulset)
+		created, err := r.createStatefulSetIfNotExists(context.Background(), appliedStatefulset)
 
 		require.True(t, created)
 		require.NoError(t, err)
 
 		appliedStatefulset.Labels[testName] = testValue
-		err = r.client.Update(context.TODO(), appliedStatefulset)
+		err = r.client.Update(context.Background(), appliedStatefulset)
 
 		require.NoError(t, err)
 
@@ -238,7 +238,7 @@ func TestReconcile_DeleteStatefulSetIfOldLabelsAreUsed(t *testing.T) {
 
 		require.NoError(t, err)
 
-		deleted, err := r.deleteStatefulSetIfSelectorChanged(desiredStatefulset)
+		deleted, err := r.deleteStatefulSetIfSelectorChanged(context.Background(), desiredStatefulset)
 
 		assert.NoError(t, err)
 		assert.False(t, deleted)
@@ -262,7 +262,7 @@ func TestReconcile_GetCustomPropertyHash(t *testing.T) {
 	assert.Error(t, err)
 	assert.Empty(t, hash)
 
-	err = r.client.Create(context.TODO(), &corev1.Secret{
+	err = r.client.Create(context.Background(), &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNamespace,
@@ -284,7 +284,7 @@ func TestReconcile_GetActiveGateAuthTokenHash(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, hash)
 
-	err = r.client.Create(context.TODO(), &corev1.Secret{
+	err = r.client.Create(context.Background(), &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      r.dynakube.ActiveGateAuthTokenSecret(),
 			Namespace: r.dynakube.Namespace,
@@ -309,22 +309,22 @@ func TestManageStatefulSet(t *testing.T) {
 
 		require.NoError(t, err)
 
-		err = r.manageStatefulSet()
+		err = r.manageStatefulSet(context.Background())
 		assert.NoError(t, err)
 
-		actualStatefulSet, err := r.getStatefulSet(desiredStatefulSet)
+		actualStatefulSet, err := r.getStatefulSet(context.Background(), desiredStatefulSet)
 		assert.NoError(t, err)
 		assert.NotNil(t, actualStatefulSet)
 
 		actualStatefulSet.Labels[testName] = testValue
-		err = r.client.Update(context.TODO(), actualStatefulSet)
+		err = r.client.Update(context.Background(), actualStatefulSet)
 
 		require.NoError(t, err)
 
-		err = r.manageStatefulSet()
+		err = r.manageStatefulSet(context.Background())
 		assert.NoError(t, err)
 
-		actualStatefulSet, err = r.getStatefulSet(desiredStatefulSet)
+		actualStatefulSet, err = r.getStatefulSet(context.Background(), desiredStatefulSet)
 		assert.NoError(t, err)
 		assert.NotNil(t, actualStatefulSet)
 		assert.Contains(t, actualStatefulSet.Labels, testName)
@@ -335,22 +335,22 @@ func TestManageStatefulSet(t *testing.T) {
 
 		require.NoError(t, err)
 
-		err = r.manageStatefulSet()
+		err = r.manageStatefulSet(context.Background())
 		assert.NoError(t, err)
 
-		actualStatefulSet, err := r.getStatefulSet(desiredStatefulSet)
+		actualStatefulSet, err := r.getStatefulSet(context.Background(), desiredStatefulSet)
 		assert.NoError(t, err)
 		assert.NotNil(t, actualStatefulSet)
 
 		actualStatefulSet.Spec.Selector.MatchLabels["activegate"] = testValue
-		err = r.client.Update(context.TODO(), actualStatefulSet)
+		err = r.client.Update(context.Background(), actualStatefulSet)
 
 		require.NoError(t, err)
 
-		err = r.manageStatefulSet()
+		err = r.manageStatefulSet(context.Background())
 		assert.NoError(t, err)
 
-		actualStatefulSet, err = r.getStatefulSet(desiredStatefulSet)
+		actualStatefulSet, err = r.getStatefulSet(context.Background(), desiredStatefulSet)
 		assert.Error(t, err)
 		assert.Nil(t, actualStatefulSet)
 		assert.True(t, k8serrors.IsNotFound(err))
