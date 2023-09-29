@@ -24,7 +24,7 @@ const (
 func TestReconciler_Reconcile(t *testing.T) {
 	t.Run(`Create works with minimal setup`, func(t *testing.T) {
 		r := NewReconciler(nil, nil, "", nil, &dynatracev1beta1.DynaKubeValueSource{})
-		err := r.Reconcile()
+		err := r.Reconcile(context.Background())
 		assert.NoError(t, err)
 	})
 	t.Run(`Create creates custom properties secret`, func(t *testing.T) {
@@ -36,12 +36,12 @@ func TestReconciler_Reconcile(t *testing.T) {
 			}}
 		fakeClient := fake.NewClient(instance)
 		r := NewReconciler(fakeClient, instance, testOwner, scheme.Scheme, &valueSource)
-		err := r.Reconcile()
+		err := r.Reconcile(context.Background())
 
 		assert.NoError(t, err)
 
 		var customPropertiesSecret corev1.Secret
-		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: r.buildCustomPropertiesName(testName), Namespace: testNamespace}, &customPropertiesSecret)
+		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: r.buildCustomPropertiesName(testName), Namespace: testNamespace}, &customPropertiesSecret)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, customPropertiesSecret)
@@ -58,12 +58,12 @@ func TestReconciler_Reconcile(t *testing.T) {
 			}}
 		fakeClient := fake.NewClient(instance)
 		r := NewReconciler(fakeClient, instance, testOwner, scheme.Scheme, &valueSource)
-		err := r.Reconcile()
+		err := r.Reconcile(context.Background())
 
 		assert.NoError(t, err)
 
 		var customPropertiesSecret corev1.Secret
-		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: r.buildCustomPropertiesName(testName), Namespace: testNamespace}, &customPropertiesSecret)
+		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: r.buildCustomPropertiesName(testName), Namespace: testNamespace}, &customPropertiesSecret)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, customPropertiesSecret)
@@ -71,11 +71,11 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.Contains(t, customPropertiesSecret.Data, DataKey)
 		assert.Equal(t, customPropertiesSecret.Data[DataKey], []byte(testValue))
 
-		err = r.Reconcile()
+		err = r.Reconcile(context.Background())
 
 		assert.NoError(t, err)
 
-		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: r.buildCustomPropertiesName(testName), Namespace: testNamespace}, &customPropertiesSecret)
+		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: r.buildCustomPropertiesName(testName), Namespace: testNamespace}, &customPropertiesSecret)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, customPropertiesSecret)
@@ -84,11 +84,11 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.Equal(t, customPropertiesSecret.Data[DataKey], []byte(testValue))
 
 		r.customPropertiesSource.Value = testKey
-		err = r.Reconcile()
+		err = r.Reconcile(context.Background())
 
 		assert.NoError(t, err)
 
-		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: r.buildCustomPropertiesName(testName), Namespace: testNamespace}, &customPropertiesSecret)
+		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: r.buildCustomPropertiesName(testName), Namespace: testNamespace}, &customPropertiesSecret)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, customPropertiesSecret)

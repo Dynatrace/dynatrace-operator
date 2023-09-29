@@ -37,26 +37,26 @@ func NewReconciler(clt client.Client, capability capability.Capability, dynakube
 
 type NewReconcilerFunc = func(clt client.Client, capability capability.Capability, dynakube *dynatracev1beta1.DynaKube, statefulsetReconciler controllers.Reconciler, customPropertiesReconciler controllers.Reconciler) *Reconciler
 
-func (r *Reconciler) Reconcile() error {
-	err := r.customPropertiesReconciler.Reconcile()
+func (r *Reconciler) Reconcile(ctx context.Context) error {
+	err := r.customPropertiesReconciler.Reconcile(ctx)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 	if r.dynakube.NeedsActiveGateService() {
-		err = r.createOrUpdateService()
+		err = r.createOrUpdateService(ctx)
 		if err != nil {
 			return errors.WithStack(err)
 		}
 	}
 
-	err = r.statefulsetReconciler.Reconcile()
+	err = r.statefulsetReconciler.Reconcile(ctx)
 	return errors.WithStack(err)
 }
 
-func (r *Reconciler) createOrUpdateService() error {
+func (r *Reconciler) createOrUpdateService(ctx context.Context) error {
 	desired := CreateService(r.dynakube, r.capability.ShortName())
 	installed := &corev1.Service{}
-	err := r.client.Get(context.TODO(), kubeobjects.Key(desired), installed)
+	err := r.client.Get(ctx, kubeobjects.Key(desired), installed)
 
 	if k8serrors.IsNotFound(err) {
 		log.Info("creating AG service", "module", r.capability.ShortName())
@@ -66,7 +66,7 @@ func (r *Reconciler) createOrUpdateService() error {
 			return errors.WithStack(err)
 		}
 
-		err = r.client.Create(context.TODO(), desired)
+		err = r.client.Create(ctx, desired)
 		return errors.WithStack(err)
 	}
 
@@ -77,7 +77,7 @@ func (r *Reconciler) createOrUpdateService() error {
 	if r.portsAreOutdated(installed, desired) || r.labelsAreOutdated(installed, desired) {
 		desired.Spec.ClusterIP = installed.Spec.ClusterIP
 		desired.ObjectMeta.ResourceVersion = installed.ObjectMeta.ResourceVersion
-		err = r.client.Update(context.TODO(), desired)
+		err = r.client.Update(ctx, desired)
 
 		if err != nil {
 			return err

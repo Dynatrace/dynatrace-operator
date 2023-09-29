@@ -93,7 +93,7 @@ func TestReconcile(t *testing.T) {
 		r := NewReconciler(clt, capability.NewMultiCapability(dynakube), dynakube, mockStatefulSetReconciler, mockCustompropertiesReconciler)
 		verifyReconciler(t, r)
 
-		err := r.Reconcile()
+		err := r.Reconcile(context.Background())
 		mockStatefulSetReconciler.AssertCalled(t, "Reconcile")
 		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile")
 		require.NoError(t, err)
@@ -107,7 +107,7 @@ func TestReconcile(t *testing.T) {
 		r := NewReconciler(clt, capability.NewMultiCapability(dynakube), dynakube, mockStatefulSetReconciler, mockCustompropertiesReconciler)
 		verifyReconciler(t, r)
 
-		err := r.Reconcile()
+		err := r.Reconcile(context.Background())
 		mockStatefulSetReconciler.AssertCalled(t, "Reconcile")
 		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile")
 		require.Error(t, err)
@@ -121,7 +121,7 @@ func TestReconcile(t *testing.T) {
 		r := NewReconciler(clt, capability.NewMultiCapability(dynakube), dynakube, mockStatefulSetReconciler, mockCustompropertiesReconciler)
 		verifyReconciler(t, r)
 
-		err := r.Reconcile()
+		err := r.Reconcile(context.Background())
 		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile")
 		require.Error(t, err)
 	})
@@ -135,7 +135,7 @@ func TestReconcile(t *testing.T) {
 		r := NewReconciler(clt, capability.NewMultiCapability(dynakube), dynakube, mockStatefulSetReconciler, mockCustompropertiesReconciler)
 		verifyReconciler(t, r)
 
-		err := r.Reconcile()
+		err := r.Reconcile(context.Background())
 		require.Error(t, err)
 	})
 	t.Run(`service gets created`, func(t *testing.T) {
@@ -146,13 +146,13 @@ func TestReconcile(t *testing.T) {
 		r := NewReconciler(clt, capability.NewMultiCapability(dynakube), dynakube, mockStatefulSetReconciler, mockCustompropertiesReconciler)
 		verifyReconciler(t, r)
 
-		err := r.Reconcile()
+		err := r.Reconcile(context.Background())
 		mockStatefulSetReconciler.AssertCalled(t, "Reconcile")
 		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile")
 		require.NoError(t, err)
 
 		service := corev1.Service{}
-		err = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, &service)
+		err = r.client.Get(context.Background(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, &service)
 
 		assert.NotNil(t, service)
 		assert.NoError(t, err)
@@ -166,13 +166,13 @@ func TestReconcile(t *testing.T) {
 		r := NewReconciler(clt, capability.NewMultiCapability(dynakube), dynakube, mockStatefulSetReconciler, mockCustompropertiesReconciler)
 		verifyReconciler(t, r)
 
-		err := r.Reconcile()
+		err := r.Reconcile(context.Background())
 		mockStatefulSetReconciler.AssertCalled(t, "Reconcile")
 		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile")
 		require.NoError(t, err)
 
 		service := corev1.Service{}
-		err = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, &service)
+		err = r.client.Get(context.Background(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, &service)
 
 		assert.Empty(t, service)
 		assert.Error(t, err)
@@ -190,15 +190,15 @@ func TestCreateOrUpdateService(t *testing.T) {
 		verifyReconciler(t, r)
 
 		service := &corev1.Service{}
-		err := r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, service)
+		err := r.client.Get(context.Background(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, service)
 		require.Error(t, err)
 		assert.NotNil(t, service)
 
-		err = r.createOrUpdateService()
+		err = r.createOrUpdateService(context.Background())
 		require.NoError(t, err)
 
 		service = &corev1.Service{}
-		err = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, service)
+		err = r.client.Get(context.Background(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, service)
 		require.NoError(t, err)
 		assert.NotNil(t, service)
 	})
@@ -206,22 +206,22 @@ func TestCreateOrUpdateService(t *testing.T) {
 		r := NewReconciler(clt, capability.NewMultiCapability(dynakube), dynakube, mockStatefulSetReconciler, mockCustompropertiesReconciler)
 		verifyReconciler(t, r)
 
-		err := r.createOrUpdateService()
+		err := r.createOrUpdateService(context.Background())
 		require.NoError(t, err)
 
 		service := &corev1.Service{}
-		err = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, service)
+		err = r.client.Get(context.Background(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, service)
 		require.NoError(t, err)
 		assert.NotNil(t, service)
 
 		service.Spec.Ports = []corev1.ServicePort{}
 
-		err = r.createOrUpdateService()
+		err = r.createOrUpdateService(context.Background())
 		require.NoError(t, err)
 
 		actualService := &corev1.Service{}
 
-		err = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, actualService)
+		err = r.client.Get(context.Background(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, actualService)
 		require.NoError(t, err)
 		assert.NotNil(t, actualService)
 
@@ -234,22 +234,22 @@ func TestCreateOrUpdateService(t *testing.T) {
 		r := NewReconciler(clt, capability.NewMultiCapability(dynakube), dynakube, mockStatefulSetReconciler, mockCustompropertiesReconciler)
 		verifyReconciler(t, r)
 
-		err := r.createOrUpdateService()
+		err := r.createOrUpdateService(context.Background())
 		require.NoError(t, err)
 
 		service := &corev1.Service{}
-		err = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, service)
+		err = r.client.Get(context.Background(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, service)
 		require.NoError(t, err)
 		assert.NotNil(t, service)
 
 		service.Labels = map[string]string{}
 
-		err = r.createOrUpdateService()
+		err = r.createOrUpdateService(context.Background())
 		require.NoError(t, err)
 
 		actualService := &corev1.Service{}
 
-		err = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, actualService)
+		err = r.client.Get(context.Background(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, actualService)
 		require.NoError(t, err)
 		assert.NotNil(t, service)
 
@@ -269,12 +269,12 @@ func TestPortsAreOutdated(t *testing.T) {
 
 	desiredService := CreateService(r.dynakube, r.capability.ShortName())
 
-	err := r.Reconcile()
+	err := r.Reconcile(context.Background())
 	require.NoError(t, err)
 
 	t.Run(`ports are detected as outdated`, func(t *testing.T) {
 		service := &corev1.Service{}
-		err = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, service)
+		err = r.client.Get(context.Background(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, service)
 		require.NoError(t, err)
 		assert.NotNil(t, service)
 
@@ -296,12 +296,12 @@ func TestLabelsAreOutdated(t *testing.T) {
 
 	desiredService := CreateService(r.dynakube, r.capability.ShortName())
 
-	err := r.Reconcile()
+	err := r.Reconcile(context.Background())
 	require.NoError(t, err)
 
 	t.Run(`labels are detected as outdated`, func(t *testing.T) {
 		service := &corev1.Service{}
-		err = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, service)
+		err = r.client.Get(context.Background(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, service)
 		require.NoError(t, err)
 		assert.NotNil(t, service)
 
@@ -313,7 +313,7 @@ func TestLabelsAreOutdated(t *testing.T) {
 	})
 	t.Run(`labelSelectors are detected as outdated`, func(t *testing.T) {
 		service := &corev1.Service{}
-		err = r.client.Get(context.TODO(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, service)
+		err = r.client.Get(context.Background(), client.ObjectKey{Name: r.dynakube.Name + "-" + r.capability.ShortName(), Namespace: r.dynakube.Namespace}, service)
 		require.NoError(t, err)
 		assert.NotNil(t, service)
 

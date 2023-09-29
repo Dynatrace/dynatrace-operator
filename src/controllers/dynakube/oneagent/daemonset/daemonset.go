@@ -38,6 +38,9 @@ const (
 
 	inframonHostIdSource = "--set-host-id-source=k8s-node-name"
 	classicHostIdSource  = "--set-host-id-source=auto"
+
+	probeMaxInitialDelay         = int32(90)
+	probeDefaultSuccessThreshold = int32(1)
 )
 
 type HostMonitoring struct {
@@ -176,8 +179,6 @@ func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	return result, nil
 }
 
-const DefaultProbeInitialDelay = int32(30)
-
 func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 	resources := dsInfo.resources()
 	dnsPolicy := dsInfo.dnsPolicy()
@@ -214,8 +215,8 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 	}
 
 	if dsInfo.dynakube.NeedsOneAgentProbe() {
-		podSpec.Containers[0].ReadinessProbe = dsInfo.getProbe()
-		podSpec.Containers[0].LivenessProbe = dsInfo.getProbe()
+		podSpec.Containers[0].ReadinessProbe = dsInfo.getReadinessProbe()
+		podSpec.Containers[0].LivenessProbe = dsInfo.getDefaultProbeFromStatus()
 	}
 
 	return podSpec
@@ -344,16 +345,27 @@ func defaultSecurityContextCapabilities() *corev1.Capabilities {
 	}
 }
 
-func (dsInfo *builderInfo) getProbe() *corev1.Probe {
+// getDefaultProbeFromStatus uses the docker HEALTHCHECK from status
+func (dsInfo *builderInfo) getDefaultProbeFromStatus() *corev1.Probe {
 	return &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
 			Exec: &corev1.ExecAction{
 				Command: dsInfo.dynakube.Status.OneAgent.Healthcheck.Test,
 			},
 		},
-		InitialDelaySeconds: DefaultProbeInitialDelay,
+		InitialDelaySeconds: int32(dsInfo.dynakube.Status.OneAgent.Healthcheck.StartPeriod.Seconds()),
 		PeriodSeconds:       int32(dsInfo.dynakube.Status.OneAgent.Healthcheck.Interval.Seconds()),
 		TimeoutSeconds:      int32(dsInfo.dynakube.Status.OneAgent.Healthcheck.Timeout.Seconds()),
 		FailureThreshold:    int32(dsInfo.dynakube.Status.OneAgent.Healthcheck.Retries),
+		SuccessThreshold:    probeDefaultSuccessThreshold,
 	}
+}
+
+// getReadinessProbe overrides the default HEALTHCHECK to ensure early readiness
+func (dsInfo *builderInfo) getReadinessProbe() *corev1.Probe {
+	defaultProbe := dsInfo.getDefaultProbeFromStatus()
+	if defaultProbe.InitialDelaySeconds > probeMaxInitialDelay {
+		defaultProbe.InitialDelaySeconds = probeMaxInitialDelay
+	}
+	return defaultProbe
 }

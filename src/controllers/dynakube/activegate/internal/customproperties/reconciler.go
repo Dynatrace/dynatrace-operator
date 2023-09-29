@@ -42,20 +42,20 @@ func NewReconciler(clt client.Client, instance *dynatracev1beta1.DynaKube, custo
 	}
 }
 
-func (r *Reconciler) Reconcile() error {
+func (r *Reconciler) Reconcile(ctx context.Context) error {
 	if r.customPropertiesSource == nil {
 		return nil
 	}
 
 	if r.hasCustomPropertiesValueOnly() {
-		mustNotUpdate, err := r.createCustomPropertiesIfNotExists()
+		mustNotUpdate, err := r.createCustomPropertiesIfNotExists(ctx)
 		if err != nil {
 			log.Error(err, "could not create custom properties", "owner", r.customPropertiesOwnerName)
 			return errors.WithStack(err)
 		}
 
 		if !mustNotUpdate {
-			err = r.updateCustomPropertiesIfOutdated()
+			err = r.updateCustomPropertiesIfOutdated(ctx)
 			if err != nil {
 				log.Error(err, "could not update custom properties", "owner", r.customPropertiesOwnerName)
 				return errors.WithStack(err)
@@ -66,9 +66,9 @@ func (r *Reconciler) Reconcile() error {
 	return nil
 }
 
-func (r *Reconciler) createCustomPropertiesIfNotExists() (bool, error) {
+func (r *Reconciler) createCustomPropertiesIfNotExists(ctx context.Context) (bool, error) {
 	var customPropertiesSecret corev1.Secret
-	err := r.client.Get(context.TODO(),
+	err := r.client.Get(ctx,
 		client.ObjectKey{Name: r.buildCustomPropertiesName(r.instance.Name), Namespace: r.instance.Namespace}, &customPropertiesSecret)
 	if err != nil && k8serrors.IsNotFound(err) {
 		return true, r.createCustomProperties()
@@ -76,16 +76,16 @@ func (r *Reconciler) createCustomPropertiesIfNotExists() (bool, error) {
 	return false, errors.WithStack(err)
 }
 
-func (r *Reconciler) updateCustomPropertiesIfOutdated() error {
+func (r *Reconciler) updateCustomPropertiesIfOutdated(ctx context.Context) error {
 	var customPropertiesSecret corev1.Secret
-	err := r.client.Get(context.TODO(),
+	err := r.client.Get(ctx,
 		client.ObjectKey{Name: r.buildCustomPropertiesName(r.instance.Name), Namespace: r.instance.Namespace},
 		&customPropertiesSecret)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 	if r.isOutdated(&customPropertiesSecret) {
-		return r.updateCustomProperties(&customPropertiesSecret)
+		return r.updateCustomProperties(ctx, &customPropertiesSecret)
 	}
 	return nil
 }
@@ -94,9 +94,9 @@ func (r *Reconciler) isOutdated(customProperties *corev1.Secret) bool {
 	return r.customPropertiesSource.Value != string(customProperties.Data[DataKey])
 }
 
-func (r *Reconciler) updateCustomProperties(customProperties *corev1.Secret) error {
+func (r *Reconciler) updateCustomProperties(ctx context.Context, customProperties *corev1.Secret) error {
 	customProperties.Data[DataKey] = []byte(r.customPropertiesSource.Value)
-	return r.client.Update(context.TODO(), customProperties)
+	return r.client.Update(ctx, customProperties)
 }
 
 func (r *Reconciler) createCustomProperties() error {

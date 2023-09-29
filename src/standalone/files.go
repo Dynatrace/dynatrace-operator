@@ -23,12 +23,14 @@ k8s_containername %s
 k8s_basepodname %s
 k8s_namespace %s
 `
-	k8ConfContentFormatString = `k8s_node_name %s
-k8s_cluster_id %s
-`
-	hostConfContentFormatString = `[host]
+
+	k8HostInfoFormatString = `k8s_node_name %s
+[host]
 tenant %s
 isCloudNativeFullStack true
+`
+
+	k8ClusterIDFormatString = `k8s_cluster_id %s
 `
 
 	jsonEnrichmentContentFormatString = `{
@@ -65,16 +67,16 @@ func (runner *Runner) getBaseConfContent(container containerInfo) string {
 	)
 }
 
-func (runner *Runner) getK8ConfContent() string {
-	return fmt.Sprintf(k8ConfContentFormatString,
+func (runner *Runner) getK8SHostInfo() string {
+	return fmt.Sprintf(k8HostInfoFormatString,
 		runner.env.K8NodeName,
-		runner.config.ClusterID,
+		runner.hostTenant,
 	)
 }
 
-func (runner *Runner) getHostConfContent() string {
-	return fmt.Sprintf(hostConfContentFormatString,
-		runner.hostTenant,
+func (runner *Runner) getK8SClusterID() string {
+	return fmt.Sprintf(k8ClusterIDFormatString,
+		runner.env.K8ClusterID,
 	)
 }
 

@@ -57,7 +57,7 @@ const (
 	provisionerContainerName = "provisioner"
 )
 
-func InstallFromImage(t *testing.T, istioEnabled bool) features.Feature {
+func InstallFromImage(t *testing.T) features.Feature {
 	builder := features.New("codemodules injection")
 	storageMap := make(map[string]int)
 	secretConfigs := tenant.GetMultiTenantSecret(t)
@@ -69,9 +69,6 @@ func InstallFromImage(t *testing.T, istioEnabled bool) features.Feature {
 		WithDynakubeNamespaceSelector().
 		ApiUrl(secretConfigs[0].ApiUrl).
 		CloudNative(codeModulesCloudNativeSpec())
-	if istioEnabled {
-		dynakubeBuilder = dynakubeBuilder.WithIstio()
-	}
 	cloudNativeDynakube := dynakubeBuilder.Build()
 
 	dynakubeBuilder = dynakube.NewBuilder().
@@ -83,16 +80,10 @@ func InstallFromImage(t *testing.T, istioEnabled bool) features.Feature {
 			AppInjectionSpec: *codeModulesAppInjectSpec(),
 			UseCSIDriver:     address.Of(true),
 		})
-	if istioEnabled {
-		dynakubeBuilder = dynakubeBuilder.WithIstio()
-	}
 	appDynakube := dynakubeBuilder.Build()
 
 	namespaceBuilder := namespace.NewBuilder("codemodules-sample")
 	labels := cloudNativeDynakube.NamespaceSelector().MatchLabels
-	if istioEnabled {
-		labels = kubeobjects.MergeMap(labels, istio.InjectionLabel)
-	}
 	sampleNamespace := namespaceBuilder.WithLabels(labels).Build()
 	sampleApp := sampleapps.NewSampleDeployment(t, cloudNativeDynakube)
 	sampleApp.WithNamespace(sampleNamespace)
@@ -100,10 +91,6 @@ func InstallFromImage(t *testing.T, istioEnabled bool) features.Feature {
 
 	// Register operator install
 	operatorNamespaceBuilder := namespace.NewBuilder(cloudNativeDynakube.Namespace)
-	if istioEnabled {
-		operatorNamespaceBuilder = operatorNamespaceBuilder.WithLabels(istio.InjectionLabel)
-	}
-
 	// Register dynakube install
 	steps := setup.NewEnvironmentSetup(
 		setup.CreateNamespaceWithoutTeardown(operatorNamespaceBuilder.Build()),
@@ -117,9 +104,6 @@ func InstallFromImage(t *testing.T, istioEnabled bool) features.Feature {
 
 	// Register actual test
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
-	if istioEnabled {
-		istio.AssessIstio(builder, cloudNativeDynakube, sampleApp)
-	}
 
 	builder.Assess("codemodules have been downloaded", imageHasBeenDownloaded(cloudNativeDynakube.Namespace))
 	builder.Assess("checking storage used", measureDiskUsage(appDynakube.Namespace, storageMap))

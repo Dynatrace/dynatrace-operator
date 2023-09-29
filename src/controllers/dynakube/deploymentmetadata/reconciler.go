@@ -13,7 +13,6 @@ import (
 )
 
 type Reconciler struct {
-	context   context.Context
 	client    client.Client
 	apiReader client.Reader
 	dynakube  dynatracev1beta1.DynaKube
@@ -21,9 +20,8 @@ type Reconciler struct {
 	scheme    *runtime.Scheme
 }
 
-func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube dynatracev1beta1.DynaKube, clusterID string) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
+func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube dynatracev1beta1.DynaKube, clusterID string) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
 	return &Reconciler{
-		context:   ctx,
 		client:    clt,
 		apiReader: apiReader,
 		dynakube:  dynakube,
@@ -32,14 +30,14 @@ func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Read
 	}
 }
 
-func (r *Reconciler) Reconcile() error {
+func (r *Reconciler) Reconcile(ctx context.Context) error {
 	configMapData := map[string]string{}
 
 	r.addOneAgentDeploymentMetadata(configMapData)
 	r.addActiveGateDeploymentMetadata(configMapData)
 	r.addOperatorVersionInfo(configMapData)
 
-	return r.maintainMetadataConfigMap(configMapData)
+	return r.maintainMetadataConfigMap(ctx, configMapData)
 }
 
 func (r *Reconciler) addOneAgentDeploymentMetadata(configMapData map[string]string) {
@@ -63,8 +61,8 @@ func (r *Reconciler) addOperatorVersionInfo(configMapData map[string]string) {
 	configMapData[OperatorVersionKey] = version.Version
 }
 
-func (r *Reconciler) maintainMetadataConfigMap(configMapData map[string]string) error {
-	configMapQuery := kubeobjects.NewConfigMapQuery(r.context, r.client, r.apiReader, log)
+func (r *Reconciler) maintainMetadataConfigMap(ctx context.Context, configMapData map[string]string) error {
+	configMapQuery := kubeobjects.NewConfigMapQuery(ctx, r.client, r.apiReader, log)
 	configMap, err := kubeobjects.CreateConfigMap(r.scheme, &r.dynakube,
 		kubeobjects.NewConfigMapNameModifier(GetDeploymentMetadataConfigMapName(r.dynakube.Name)),
 		kubeobjects.NewConfigMapNamespaceModifier(r.dynakube.Namespace),

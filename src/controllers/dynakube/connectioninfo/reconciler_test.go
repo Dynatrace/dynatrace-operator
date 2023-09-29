@@ -51,8 +51,8 @@ func TestReconcile_ConnectionInfo(t *testing.T) {
 
 	t.Run(`store OneAgent connection info to DynaKube status`, func(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().Build()
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, &dynakube, dtc)
-		err := r.Reconcile()
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, &dynakube, dtc)
+		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
 		assert.Equal(t, testTenantUUID, dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID)
@@ -70,8 +70,8 @@ func TestReconcile_ConnectionInfo(t *testing.T) {
 		}
 		resetCachedTimestamps(&dynakube.Status)
 
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, &dynakube, dtc)
-		err := r.Reconcile()
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, &dynakube, dtc)
+		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
 		assert.Equal(t, testTenantUUID, dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID)
@@ -87,8 +87,8 @@ func TestReconcile_ConnectionInfo(t *testing.T) {
 			},
 		}
 
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, &dynakube, dtc)
-		err := r.Reconcile()
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, &dynakube, dtc)
+		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
 		assert.Equal(t, testOutdated, dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID)
@@ -104,8 +104,8 @@ func TestReconcile_ConnectionInfo(t *testing.T) {
 			},
 		}
 
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, &dynakube, dtc)
-		err := r.Reconcile()
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, &dynakube, dtc)
+		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
 		assert.Equal(t, testTenantUUID, dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID)
@@ -114,8 +114,8 @@ func TestReconcile_ConnectionInfo(t *testing.T) {
 
 	t.Run(`store ActiveGate connection info to DynaKube status`, func(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().Build()
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, &dynakube, dtc)
-		err := r.Reconcile()
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, &dynakube, dtc)
+		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
 		assert.Equal(t, testTenantUUID, dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID)
@@ -131,8 +131,8 @@ func TestReconcile_ConnectionInfo(t *testing.T) {
 			},
 		}
 		resetCachedTimestamps(&dynakube.Status)
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, &dynakube, dtc)
-		err := r.Reconcile()
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, &dynakube, dtc)
+		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
 		assert.Equal(t, testTenantUUID, dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID)
@@ -148,8 +148,8 @@ func TestReconcile_ConnectionInfo(t *testing.T) {
 			},
 		}
 
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, &dynakube, dtc)
-		err := r.Reconcile()
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, &dynakube, dtc)
+		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
 		assert.Equal(t, testOutdated, dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID)
@@ -165,8 +165,8 @@ func TestReconcile_ConnectionInfo(t *testing.T) {
 			},
 		}
 
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, &dynakube, dtc)
-		err := r.Reconcile()
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, &dynakube, dtc)
+		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
 		assert.Equal(t, testTenantUUID, dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID)
@@ -193,8 +193,8 @@ func TestReconcile_NoOneAgentCommunicationHosts(t *testing.T) {
 	}, nil)
 
 	fakeClient := fake.NewClientBuilder().Build()
-	r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, &dynakube, dtc)
-	err := r.Reconcile()
+	r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, &dynakube, dtc)
+	err := r.Reconcile(context.Background())
 	assert.ErrorIs(t, err, NoOneAgentCommunicationHostsError)
 
 	assert.Equal(t, testTenantUUID, dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID)
@@ -252,43 +252,43 @@ func TestReconcile_ActivegateSecret(t *testing.T) {
 
 	t.Run(`create activegate secret`, func(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().Build()
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
-		err := r.Reconcile()
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
+		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
 		var actualSecret corev1.Secret
-		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: dynakube.ActivegateTenantSecret(), Namespace: testNamespace}, &actualSecret)
+		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: dynakube.ActivegateTenantSecret(), Namespace: testNamespace}, &actualSecret)
 		require.NoError(t, err)
 		assert.Equal(t, []byte(testTenantToken), actualSecret.Data[TenantTokenName])
 	})
 	t.Run(`update activegate secret`, func(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithObjects(buildActiveGateSecret(*dynakube, testOutdated)).Build()
 		resetCachedTimestamps(&dynakube.Status)
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
-		err := r.Reconcile()
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
+		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
 		var actualSecret corev1.Secret
-		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: dynakube.ActivegateTenantSecret(), Namespace: testNamespace}, &actualSecret)
+		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: dynakube.ActivegateTenantSecret(), Namespace: testNamespace}, &actualSecret)
 		require.NoError(t, err)
 		assert.Equal(t, []byte(testTenantToken), actualSecret.Data[TenantTokenName])
 	})
 	t.Run(`check activegate secret caches`, func(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithObjects(buildActiveGateSecret(*dynakube, testOutdated)).Build()
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
-		err := r.Reconcile()
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
+		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
 		var actualSecret corev1.Secret
-		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: dynakube.ActivegateTenantSecret(), Namespace: testNamespace}, &actualSecret)
+		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: dynakube.ActivegateTenantSecret(), Namespace: testNamespace}, &actualSecret)
 		require.NoError(t, err)
 		assert.Equal(t, []byte(testOutdated), actualSecret.Data[TenantTokenName])
 	})
 	t.Run(`up to date activegate secret`, func(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithObjects(buildActiveGateSecret(*dynakube, testTenantToken)).Build()
 
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
-		err := r.Reconcile()
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
+		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 	})
 }
@@ -321,12 +321,12 @@ func TestReconcile_OneagentSecret(t *testing.T) {
 	t.Run(`create oneagent secret`, func(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().Build()
 
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
-		err := r.Reconcile()
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
+		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
 		var actualSecret corev1.Secret
-		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: dynakube.OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
+		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: dynakube.OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
 		require.NoError(t, err)
 		assert.Equal(t, []byte(testTenantToken), actualSecret.Data[TenantTokenName])
 	})
@@ -337,32 +337,32 @@ func TestReconcile_OneagentSecret(t *testing.T) {
 		// we traveled 15 minutes into the future
 		resetCachedTimestamps(&dynakube.Status)
 
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
-		err := r.Reconcile()
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
+		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
 		var actualSecret corev1.Secret
-		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: dynakube.OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
+		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: dynakube.OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
 		require.NoError(t, err)
 		assert.Equal(t, []byte(testTenantToken), actualSecret.Data[TenantTokenName])
 	})
 	t.Run(`update oneagent secret, check if caches are used`, func(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithObjects(buildOneAgentTenantSecret(*dynakube, testOutdated)).Build()
 
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
-		err := r.Reconcile()
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
+		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
 		var actualSecret corev1.Secret
-		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: dynakube.OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
+		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: dynakube.OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
 		require.NoError(t, err)
 		assert.Equal(t, []byte(testOutdated), actualSecret.Data[TenantTokenName])
 	})
 	t.Run(`up to date oneagent secret`, func(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithObjects(buildOneAgentTenantSecret(*dynakube, testTenantToken)).Build()
 
-		r := NewReconciler(context.TODO(), fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
-		err := r.Reconcile()
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
+		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 	})
 }
