@@ -3,6 +3,8 @@ package troubleshoot
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/url"
 	"os"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
@@ -105,37 +107,71 @@ func RunTroubleshootCmd(ctx context.Context, log logr.Logger, apiReader client.R
 		logErrorf(log, "error reading Dynakubes")
 		return
 	}
-	runChecksForAllDynakubes(ctx, log, apiReader, namespaceName, dynakubes)
+	runChecksForAllDynakubes(ctx, log, apiReader, &http.Client{}, namespaceName, dynakubes)
 }
 
-func runChecksForAllDynakubes(ctx context.Context, baseLog logr.Logger, apiReader client.Reader, namespaceName string, dynakubes []dynatracev1beta1.DynaKube) {
+func runChecksForAllDynakubes(ctx context.Context, baseLog logr.Logger, apiReader client.Reader, httpClient *http.Client, namespaceName string, dynakubes []dynatracev1beta1.DynaKube) {
 	for _, dynakube := range dynakubes {
 		dynakube, err := getSelectedDynakube(ctx, apiReader, namespaceName, dynakube.Name)
 		if err != nil {
 			logErrorf(baseLog, "Could not get DynaKube %s/%s", dynakube.Namespace, dynakube.Name)
 		}
 
-		err = runChecksForDynakube(ctx, baseLog, apiReader, namespaceName, &dynakube)
+		err = runChecksForDynakube(ctx, baseLog, apiReader, httpClient, namespaceName, &dynakube)
 		if err != nil {
 			logErrorf(baseLog, "Error in DynaKube %s/%s", dynakube.Namespace, dynakube.Name)
 		}
 	}
 }
 
-func runChecksForDynakube(ctx context.Context, baseLog logr.Logger, apiReader client.Reader, namespaceName string, dynakube *dynatracev1beta1.DynaKube) error {
+func runChecksForDynakube(ctx context.Context, baseLog logr.Logger, apiReader client.Reader, httpClient *http.Client, namespaceName string, dynakube *dynatracev1beta1.DynaKube) error {
 	log := baseLog.WithName(dynakubeCheckLoggerName)
 
 	logNewCheckf(log, "checking if '%s:%s' Dynakube is configured correctly", namespaceName, dynakube.Name)
-	logInfof(baseLog, "using '%s:%s' Dynakube", namespaceName, dynakube.Name)
+	logInfof(baseLog, "using '%s:%s' Dynakube", dynakube.Namespace, dynakube.Name)
 
-	err := checkDynakube(ctx, baseLog, apiReader, namespaceName, dynakube)
+	pullSecret, err := checkDynakube(ctx, baseLog, apiReader, dynakube)
 	if err != nil {
 		return errors.Wrapf(err, "'%s:%s' Dynakube isn't valid. %s",
 			namespaceName, dynakube.Name, dynakubeNotValidMessage())
 	}
 	logOkf(log, "'%s:%s' Dynakube is valid", namespaceName, dynakube.Name)
-	// TODO: verifyAllImagesAvailable
-	// TODO: checkProxySettings
+
+	proxy, err := getProxyURL(ctx, apiReader, dynakube)
+	if err != nil {
+		return err
+	}
+	err = applyProxy(log, httpClient, proxy)
+	if err != nil {
+		return err
+	}
+
+	err = verifyAllImagesAvailable(ctx, baseLog, apiReader, httpClient, pullSecret, dynakube)
+	if err != nil {
+		return err
+	}
+	err = checkProxySettingsWithLog(ctx, baseLog, apiReader, dynakube)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func applyProxy(log logr.Logger, httpClient *http.Client, proxy string) error {
+	if proxy != "" {
+		proxyUrl, err := url.Parse(proxy)
+		if err != nil {
+			return errors.Wrap(err, "could not parse proxy URL!")
+		}
+
+		if httpClient.Transport == nil {
+			httpClient.Transport = http.DefaultTransport
+		}
+
+		httpClient.Transport.(*http.Transport).Proxy = http.ProxyURL(proxyUrl)
+		logInfof(log, "using '%s' proxy to connect to the registry", proxyUrl.Host)
+	}
+
 	return nil
 }
 
@@ -174,15 +210,16 @@ func getDynakubes(
 	} else {
 		dynakube := dynatracev1beta1.DynaKube{}
 		dynakube.Name = dynakubeName
+		dynakube.Namespace = namespaceName
 		dynakubes = append(dynakubes, dynakube)
 	}
 
 	return dynakubes, nil
 }
 
-func getAllDynakubesInNamespace(ctx context.Context, log logr.Logger, reader client.Reader, namespaceName string) ([]dynatracev1beta1.DynaKube, error) {
+func getAllDynakubesInNamespace(ctx context.Context, log logr.Logger, apiReader client.Reader, namespaceName string) ([]dynatracev1beta1.DynaKube, error) {
 	var dynakubes dynatracev1beta1.DynaKubeList
-	err := reader.List(ctx, &dynakubes, client.InNamespace(namespaceName))
+	err := apiReader.List(ctx, &dynakubes, client.InNamespace(namespaceName))
 
 	if err != nil {
 		logErrorf(log, "failed to list Dynakubes: %v", err)

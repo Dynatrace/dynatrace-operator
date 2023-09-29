@@ -40,6 +40,7 @@ func TestTroubleshootCommandBuilder(t *testing.T) {
 
 func buildTestDynakube() dynatracev1beta1.DynaKube {
 	return dynatracev1beta1.DynaKube{
+		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testDynakube,
 			Namespace: testNamespace,

@@ -2,10 +2,10 @@ package troubleshoot
 
 import (
 	"errors"
-	"github.com/go-logr/logr"
-	"k8s.io/client-go/rest"
 
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/go-logr/logr"
+	"k8s.io/client-go/rest"
 )
 
 func checkOneAgentAPM(baseLog logr.Logger, kubeConfig *rest.Config) error {
