@@ -12,6 +12,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
+	"github.com/Dynatrace/dynatrace-operator/src/dockerkeychain"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
@@ -270,7 +271,14 @@ func TestImagePullable(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			logOutput := runWithTestLogger(func(log logr.Logger) {
-				verifyImageIsAvailableOld(context.Background(), log, fake.NewClient(secret), dockerServer.Client(), *secret, test.dynaKube, test.component, test.proxyWarning)
+				ctx := context.Background()
+				clt := fake.NewClient(secret)
+				pullSecret, _ := checkDynakube(ctx, log, clt, test.dynaKube)
+				keychain, _ := dockerkeychain.NewDockerKeychain(context.Background(), fake.NewClient(secret), pullSecret)
+
+				transport, _ := createTransport(ctx, clt, test.dynaKube, log, dockerServer.Client())
+				pullImage := CreateImagePullFunc(ctx, keychain, transport)
+				verifyImageIsAvailable(log, pullImage, test.dynaKube, test.component, test.proxyWarning)
 			})
 
 			require.NotContains(t, logOutput, "failed")
@@ -353,7 +361,14 @@ func TestImageNotPullable(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			logOutput := runWithTestLogger(func(log logr.Logger) {
-				verifyImageIsAvailableOld(context.Background(), log, fake.NewClient(secret), dockerServer.Client(), *secret, test.dynaKube, test.component, false)
+				ctx := context.Background()
+				clt := fake.NewClient(secret)
+				pullSecret, _ := checkDynakube(ctx, log, clt, test.dynaKube)
+				keychain, _ := dockerkeychain.NewDockerKeychain(context.Background(), fake.NewClient(secret), pullSecret)
+
+				transport, _ := createTransport(ctx, clt, test.dynaKube, log, dockerServer.Client())
+				pullImage := CreateImagePullFunc(ctx, keychain, transport)
+				verifyImageIsAvailable(log, pullImage, test.dynaKube, test.component, false)
 			})
 
 			require.Contains(t, logOutput, "failed")
@@ -385,7 +400,14 @@ func TestOneAgentCodeModulesImageNotPullable(t *testing.T) {
 			withCloudNativeCodeModulesImage("myunknownserver.com/myrepo/mymissingcodemodules").
 			build()
 		logOutput := runWithTestLogger(func(log logr.Logger) {
-			verifyImageIsAvailableOld(context.Background(), log, fake.NewClient(secret), dockerServer.Client(), *secret, &dynakube, componentCodeModules, true)
+			ctx := context.Background()
+			clt := fake.NewClient(secret)
+			pullSecret, _ := checkDynakube(ctx, log, clt, &dynakube)
+			keychain, _ := dockerkeychain.NewDockerKeychain(context.Background(), fake.NewClient(secret), pullSecret)
+
+			transport, _ := createTransport(ctx, clt, &dynakube, log, dockerServer.Client())
+			pullImage := CreateImagePullFunc(ctx, keychain, transport)
+			verifyImageIsAvailable(log, pullImage, &dynakube, componentCodeModules, true)
 		})
 		assert.Contains(t, logOutput, "failed")
 		assert.Contains(t, logOutput, "no such host")
@@ -399,7 +421,13 @@ func TestOneAgentCodeModulesImageNotPullable(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(func(log logr.Logger) {
-			verifyImageIsAvailableOld(context.Background(), log, fake.NewClient(secret), dockerServer.Client(), *secret, &dynakube, componentCodeModules, false)
+			ctx := context.Background()
+			clt := fake.NewClient(secret)
+			pullSecret, _ := checkDynakube(ctx, log, clt, &dynakube)
+			keychain, _ := dockerkeychain.NewDockerKeychain(context.Background(), fake.NewClient(secret), pullSecret)
+			transport, _ := createTransport(ctx, clt, &dynakube, log, dockerServer.Client())
+			pullImage := CreateImagePullFunc(ctx, keychain, transport)
+			verifyImageIsAvailable(log, pullImage, &dynakube, componentCodeModules, false)
 		})
 		assert.NotContains(t, logOutput, "Unknown OneAgentCodeModules image")
 	})
