@@ -123,7 +123,7 @@ func setImageIDWithDigest( //nolint:revive
 		target.ImageID = digestRef.String()
 	} else if taggedRef, ok := ref.(name.Tag); ok {
 		if taggedRef.TagStr() == name.DefaultTag {
-			return errors.New(fmt.Sprintf("unsupported image reference: %s", imageUri))
+			return errors.Errorf("unsupported image reference: %s", imageUri)
 		}
 
 		registryClient := registry.NewClient()
@@ -135,7 +135,7 @@ func setImageIDWithDigest( //nolint:revive
 
 		target.ImageID = BuildImageIDWithTagAndDigest(taggedRef, imageVersion.Digest)
 	} else {
-		return errors.New(fmt.Sprintf("unsupported image reference: %s", imageUri))
+		return errors.Errorf("unsupported image reference: %s", imageUri)
 	}
 
 	log.Info("updated image version info",
