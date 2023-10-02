@@ -133,7 +133,7 @@ func setImageIDWithDigest( //nolint:revive
 			return err
 		}
 
-		target.ImageID = AppendDigest(taggedRef, imageVersion.Digest)
+		target.ImageID = BuildImageIDWithTagAndDigest(taggedRef, imageVersion.Digest)
 	} else {
 		return errors.New(fmt.Sprintf("unsupported image reference: %s", imageUri))
 	}
@@ -148,7 +148,7 @@ func setImageIDWithDigest( //nolint:revive
 }
 
 // TODO: this should be in a more general place
-func AppendDigest(taggedRef name.Tag, digest digest.Digest) string {
+func BuildImageIDWithTagAndDigest(taggedRef name.Tag, digest digest.Digest) string {
 	return fmt.Sprintf("%s%s%s", taggedRef.String(), digestDelimiter, digest.String())
 }
 
@@ -194,10 +194,7 @@ func getTagFromImageID(imageID string) (string, error) {
 		return "", err
 	}
 
-	var taggedRef name.Tag
-	var ok bool
-
-	if taggedRef, ok = ref.(name.Tag); ok {
+	if taggedRef, ok := ref.(name.Tag); ok {
 		return taggedRef.TagStr(), nil
 	} else if digestRef, ok := ref.(name.Digest); ok {
 		taggedStr := strings.TrimSuffix(digestRef.String(), digestDelimiter+digestRef.DigestStr())

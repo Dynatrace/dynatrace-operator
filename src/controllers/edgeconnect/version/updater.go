@@ -97,7 +97,7 @@ func (u updater) combineImageWithDigest(digest digest.Digest) (string, error) {
 		return "", errors.WithStack(err)
 	}
 	if taggedRef, ok := imageRef.(name.Tag); ok {
-		canonRef := version.AppendDigest(taggedRef, digest)
+		canonRef := version.BuildImageIDWithTagAndDigest(taggedRef, digest)
 		if err != nil {
 			return "", errors.WithStack(err)
 		}
