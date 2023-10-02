@@ -2,7 +2,6 @@ package dynakube
 
 import (
 	"context"
-	"net/http"
 	"os"
 	"time"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceapi"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent"
@@ -127,16 +127,6 @@ func (controller *Controller) setRequeueAfterIfNewIsShorter(requeueAfter time.Du
 	}
 }
 
-func isDynatraceAPIUnreachable(err error) bool {
-	var serverErr dtclient.ServerError
-	if errors.As(err, &serverErr) && (serverErr.Code == http.StatusTooManyRequests || serverErr.Code == http.StatusServiceUnavailable) {
-		log.Info("dynaTrace API server is unavailable or request limit reached! trying again in one minute",
-			"errorCode", serverErr.Code, "errorMessage", serverErr.Message)
-		return true
-	}
-	return false
-}
-
 func (controller *Controller) reconcile(ctx context.Context, dynaKube *dynatracev1beta1.DynaKube) (reconcile.Result, error) {
 	oldStatus := *dynaKube.Status.DeepCopy()
 
@@ -145,7 +135,9 @@ func (controller *Controller) reconcile(ctx context.Context, dynaKube *dynatrace
 	err := controller.reconcileDynaKube(ctx, dynaKube)
 
 	switch {
-	case isDynatraceAPIUnreachable(err):
+	case dynatraceapi.IsUnreachable(err):
+		log.Info("dynaTrace API server is unavailable or request limit reached! trying again in one minute",
+			"errorCode", dynatraceapi.StatusCode(err), "errorMessage", dynatraceapi.Message(err))
 		// should we set the phase to error ?
 		return reconcile.Result{RequeueAfter: fastUpdateInterval}, nil
 
@@ -168,7 +160,10 @@ func (controller *Controller) reconcile(ctx context.Context, dynaKube *dynatrace
 		}
 	}
 
-	return reconcile.Result{RequeueAfter: controller.requeueAfter}, err
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	return reconcile.Result{RequeueAfter: controller.requeueAfter}, nil
 }
 
 func (controller *Controller) getDynakubeOrUnmap(ctx context.Context, dkName, dkNamespace string) (*dynatracev1beta1.DynaKube, error) {
