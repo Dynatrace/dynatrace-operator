@@ -160,7 +160,10 @@ func (controller *Controller) reconcile(ctx context.Context, dynaKube *dynatrace
 		}
 	}
 
-	return reconcile.Result{RequeueAfter: controller.requeueAfter}, err
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	return reconcile.Result{RequeueAfter: controller.requeueAfter}, nil
 }
 
 func (controller *Controller) getDynakubeOrUnmap(ctx context.Context, dkName, dkNamespace string) (*dynatracev1beta1.DynaKube, error) {
