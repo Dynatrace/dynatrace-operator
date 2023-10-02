@@ -26,3 +26,11 @@ func StatusCode(err error) int {
 	}
 	return 0
 }
+
+func Message(err error) string {
+	var serverErr dtclient.ServerError
+	if errors.As(err, &serverErr) {
+		return serverErr.Message
+	}
+	return ""
+}

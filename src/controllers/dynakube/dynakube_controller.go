@@ -127,16 +127,6 @@ func (controller *Controller) setRequeueAfterIfNewIsShorter(requeueAfter time.Du
 	}
 }
 
-func isDynatraceAPIUnreachable(err error) bool {
-	var serverErr dtclient.ServerError
-	if dynatraceapi.IsUnreachable(err) {
-		log.Info("dynaTrace API server is unavailable or request limit reached! trying again in one minute",
-			"errorCode", serverErr.Code, "errorMessage", serverErr.Message)
-		return true
-	}
-	return false
-}
-
 func (controller *Controller) reconcile(ctx context.Context, dynaKube *dynatracev1beta1.DynaKube) (reconcile.Result, error) {
 	oldStatus := *dynaKube.Status.DeepCopy()
 
@@ -145,7 +135,9 @@ func (controller *Controller) reconcile(ctx context.Context, dynaKube *dynatrace
 	err := controller.reconcileDynaKube(ctx, dynaKube)
 
 	switch {
-	case isDynatraceAPIUnreachable(err):
+	case dynatraceapi.IsUnreachable(err):
+		log.Info("dynaTrace API server is unavailable or request limit reached! trying again in one minute",
+			"errorCode", dynatraceapi.StatusCode(err), "errorMessage", dynatraceapi.Message(err))
 		// should we set the phase to error ?
 		return reconcile.Result{RequeueAfter: fastUpdateInterval}, nil
 
