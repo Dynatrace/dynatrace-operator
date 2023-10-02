@@ -302,6 +302,7 @@ jobs:
         with:
           body_path: ./CHANGELOG.md
           files: |
+            tmp/cosign.pub
             config/deploy/kubernetes/kubernetes.yaml
             config/deploy/openshift/openshift.yaml
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -327,12 +328,14 @@ jobs:
           draft: true
           fail_on_unmatched_files: true
       - name: Update index helm file
+        if: ${{ !contains(github.ref, '-rc.') }}
         env:
           VERSION_WITHOUT_PREFIX: ${{ needs.prepare.outputs.version_without_prefix }}
         run: |
           echo "Updating Helm repo index"
           hack/build/ci/generate-new-helm-index-yaml.sh "helm-pkg" ${{ needs.prepare.outputs.version_without_prefix }}
       - name: Create pull request for adding helm index to main branch
+        if: ${{ !contains(github.ref, '-rc.') }}
         uses: peter-evans/create-pull-request@v5
         with:
           base: main
