@@ -19,7 +19,7 @@ func TestCheckProxySettings(t *testing.T) {
 		os.Setenv("HTTPS_PROXY", "")
 
 		logOutput := runWithTestLogger(func(logger logr.Logger) {
-			checkProxySettingsWithLog(context.Background(), logger, nil, &dynatracev1beta1.DynaKube{})
+			checkProxySettings(context.Background(), logger, nil, &dynatracev1beta1.DynaKube{})
 		})
 
 		require.NotContains(t, logOutput, "Unexpected error")
@@ -33,7 +33,7 @@ func TestCheckProxySettings(t *testing.T) {
 		os.Setenv("HTTPS_PROXY", "")
 
 		logOutput := runWithTestLogger(func(logger logr.Logger) {
-			checkProxySettingsWithLog(context.Background(), logger, nil, &dynatracev1beta1.DynaKube{})
+			checkProxySettings(context.Background(), logger, nil, &dynatracev1beta1.DynaKube{})
 		})
 
 		require.NotContains(t, logOutput, "Unexpected error")
@@ -47,7 +47,7 @@ func TestCheckProxySettings(t *testing.T) {
 		os.Setenv("HTTPS_PROXY", "foobar:1234")
 
 		logOutput := runWithTestLogger(func(logger logr.Logger) {
-			checkProxySettingsWithLog(context.Background(), logger, nil, &dynatracev1beta1.DynaKube{})
+			checkProxySettings(context.Background(), logger, nil, &dynatracev1beta1.DynaKube{})
 		})
 
 		require.NotContains(t, logOutput, "Unexpected error")
@@ -65,7 +65,7 @@ func TestCheckProxySettings(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(func(logger logr.Logger) {
-			checkProxySettingsWithLog(context.Background(), logger, nil, &dynakube)
+			checkProxySettings(context.Background(), logger, nil, &dynakube)
 		})
 
 		require.NotContains(t, logOutput, "Unexpected error")
@@ -95,7 +95,7 @@ func TestCheckProxySettings(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(func(logger logr.Logger) {
-			checkProxySettingsWithLog(context.Background(), logger, clt, &dynakube)
+			checkProxySettings(context.Background(), logger, clt, &dynakube)
 		})
 
 		require.NotContains(t, logOutput, "Unexpected error")
@@ -113,7 +113,7 @@ func TestCheckProxySettings(t *testing.T) {
 			build()
 
 		logOutput := runWithTestLogger(func(logger logr.Logger) {
-			checkProxySettingsWithLog(context.Background(), logger, nil, &dynakube)
+			checkProxySettings(context.Background(), logger, nil, &dynakube)
 		})
 
 		require.NotContains(t, logOutput, "Unexpected error")

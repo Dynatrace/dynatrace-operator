@@ -9,7 +9,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func checkProxySettingsWithLog(ctx context.Context, log logr.Logger, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube) error {
+func checkProxySettings(ctx context.Context, baseLog logr.Logger, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube) error {
+	log := baseLog.WithName("proxy")
 	var proxyURL string
 	logNewCheckf(log, "Analyzing proxy settings ...")
 
