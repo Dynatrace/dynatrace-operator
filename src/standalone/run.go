@@ -210,12 +210,14 @@ func (runner *Runner) createContainerConfigurationFiles() error {
 		confFilePath := filepath.Join(config.AgentShareDirMount, fmt.Sprintf(config.AgentContainerConfFilenameTemplate, container.Name))
 		content := runner.getBaseConfContent(container)
 
-		log.Info("adding k8s fields")
-		content += runner.getK8ConfContent()
+		log.Info("adding k8s cluster id")
+		content += runner.getK8SClusterID()
 
 		if runner.hostTenant != config.AgentNoHostTenant {
-			log.Info("adding hostTenant field")
-			content += runner.getHostConfContent()
+			if runner.config.TenantUUID == runner.hostTenant {
+				log.Info("adding k8s node name")
+				content += runner.getK8SHostInfo()
+			}
 		}
 		if err := runner.createConfFile(confFilePath, content); err != nil {
 			return err

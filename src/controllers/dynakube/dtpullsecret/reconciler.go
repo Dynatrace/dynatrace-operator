@@ -19,7 +19,6 @@ const (
 )
 
 type Reconciler struct {
-	ctx       context.Context
 	client    client.Client
 	apiReader client.Reader
 	dynakube  *dynatracev1beta1.DynaKube
@@ -27,9 +26,8 @@ type Reconciler struct {
 	tokens    token.Tokens
 }
 
-func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, tokens token.Tokens) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
+func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, tokens token.Tokens) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
 	return &Reconciler{
-		ctx:       ctx,
 		client:    clt,
 		apiReader: apiReader,
 		scheme:    scheme,
@@ -38,9 +36,9 @@ func NewReconciler(ctx context.Context, clt client.Client, apiReader client.Read
 	}
 }
 
-func (r *Reconciler) Reconcile() error {
+func (r *Reconciler) Reconcile(ctx context.Context) error {
 	if r.dynakube.Spec.CustomPullSecret == "" {
-		err := r.reconcilePullSecret()
+		err := r.reconcilePullSecret(ctx)
 		if err != nil {
 			log.Info("could not reconcile pull secret")
 			return errors.WithStack(err)
@@ -50,38 +48,38 @@ func (r *Reconciler) Reconcile() error {
 	return nil
 }
 
-func (r *Reconciler) reconcilePullSecret() error {
+func (r *Reconciler) reconcilePullSecret(ctx context.Context) error {
 	pullSecretData, err := r.GenerateData()
 	if err != nil {
 		return errors.WithMessage(err, "could not generate pull secret data")
 	}
 
-	pullSecret, err := r.createPullSecretIfNotExists(pullSecretData)
+	pullSecret, err := r.createPullSecretIfNotExists(ctx, pullSecretData)
 	if err != nil {
 		return errors.WithMessage(err, "failed to create or update secret")
 	}
 
-	return r.updatePullSecretIfOutdated(pullSecret, pullSecretData)
+	return r.updatePullSecretIfOutdated(ctx, pullSecret, pullSecretData)
 }
 
-func (r *Reconciler) createPullSecretIfNotExists(pullSecretData map[string][]byte) (*corev1.Secret, error) {
+func (r *Reconciler) createPullSecretIfNotExists(ctx context.Context, pullSecretData map[string][]byte) (*corev1.Secret, error) {
 	var config corev1.Secret
-	err := r.apiReader.Get(r.ctx, client.ObjectKey{Name: extendWithPullSecretSuffix(r.dynakube.Name), Namespace: r.dynakube.Namespace}, &config)
+	err := r.apiReader.Get(ctx, client.ObjectKey{Name: extendWithPullSecretSuffix(r.dynakube.Name), Namespace: r.dynakube.Namespace}, &config)
 	if k8serrors.IsNotFound(err) {
 		log.Info("creating pull secret")
-		return r.createPullSecret(pullSecretData)
+		return r.createPullSecret(ctx, pullSecretData)
 	}
 	return &config, err
 }
 
-func (r *Reconciler) updatePullSecretIfOutdated(pullSecret *corev1.Secret, desiredPullSecretData map[string][]byte) error {
+func (r *Reconciler) updatePullSecretIfOutdated(ctx context.Context, pullSecret *corev1.Secret, desiredPullSecretData map[string][]byte) error {
 	if !isPullSecretEqual(pullSecret, desiredPullSecretData) {
-		return r.updatePullSecret(pullSecret, desiredPullSecretData)
+		return r.updatePullSecret(ctx, pullSecret, desiredPullSecretData)
 	}
 	return nil
 }
 
-func (r *Reconciler) createPullSecret(pullSecretData map[string][]byte) (*corev1.Secret, error) {
+func (r *Reconciler) createPullSecret(ctx context.Context, pullSecretData map[string][]byte) (*corev1.Secret, error) {
 	pullSecret, err := kubeobjects.CreateSecret(r.scheme, r.dynakube,
 		kubeobjects.NewSecretNameModifier(extendWithPullSecretSuffix(r.dynakube.Name)),
 		kubeobjects.NewSecretNamespaceModifier(r.dynakube.Namespace),
@@ -91,17 +89,17 @@ func (r *Reconciler) createPullSecret(pullSecretData map[string][]byte) (*corev1
 		return nil, errors.WithStack(err)
 	}
 
-	err = r.client.Create(r.ctx, pullSecret)
+	err = r.client.Create(ctx, pullSecret)
 	if err != nil {
 		return nil, errors.WithMessagef(err, "failed to create secret %s", extendWithPullSecretSuffix(r.dynakube.Name))
 	}
 	return pullSecret, nil
 }
 
-func (r *Reconciler) updatePullSecret(pullSecret *corev1.Secret, desiredPullSecretData map[string][]byte) error {
+func (r *Reconciler) updatePullSecret(ctx context.Context, pullSecret *corev1.Secret, desiredPullSecretData map[string][]byte) error {
 	log.Info("updating secret", "name", pullSecret.Name)
 	pullSecret.Data = desiredPullSecretData
-	if err := r.client.Update(r.ctx, pullSecret); err != nil {
+	if err := r.client.Update(ctx, pullSecret); err != nil {
 		return errors.WithMessagef(err, "failed to update secret %s", pullSecret.Name)
 	}
 	return nil

@@ -1,7 +1,6 @@
 package statefulset
 
 import (
-	"context"
 	"hash/fnv"
 	"reflect"
 	"strconv"
@@ -15,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/pkg/errors"
+	"golang.org/x/net/context"
 	appsv1 "k8s.io/api/apps/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -56,8 +56,8 @@ func NewReconciler(
 
 type NewReconcilerFunc = func(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, capability capability.Capability) *Reconciler
 
-func (r *Reconciler) Reconcile() error {
-	err := r.manageStatefulSet()
+func (r *Reconciler) Reconcile(ctx context.Context) error {
+	err := r.manageStatefulSet(ctx)
 	if err != nil {
 		log.Error(err, "could not reconcile stateful set")
 		return errors.WithStack(err)
@@ -66,7 +66,7 @@ func (r *Reconciler) Reconcile() error {
 	return nil
 }
 
-func (r *Reconciler) manageStatefulSet() error {
+func (r *Reconciler) manageStatefulSet(ctx context.Context) error {
 	desiredSts, err := r.buildDesiredStatefulSet()
 	if err != nil {
 		return errors.WithStack(err)
@@ -76,17 +76,17 @@ func (r *Reconciler) manageStatefulSet() error {
 		return errors.WithStack(err)
 	}
 
-	created, err := r.createStatefulSetIfNotExists(desiredSts)
+	created, err := r.createStatefulSetIfNotExists(ctx, desiredSts)
 	if created || err != nil {
 		return errors.WithStack(err)
 	}
 
-	deleted, err := r.deleteStatefulSetIfSelectorChanged(desiredSts)
+	deleted, err := r.deleteStatefulSetIfSelectorChanged(ctx, desiredSts)
 	if deleted || err != nil {
 		return errors.WithStack(err)
 	}
 
-	updated, err := r.updateStatefulSetIfOutdated(desiredSts)
+	updated, err := r.updateStatefulSetIfOutdated(ctx, desiredSts)
 	if updated || err != nil {
 		return errors.WithStack(err)
 	}
@@ -111,26 +111,26 @@ func (r *Reconciler) buildDesiredStatefulSet() (*appsv1.StatefulSet, error) {
 	return desiredSts, errors.WithStack(err)
 }
 
-func (r *Reconciler) getStatefulSet(desiredSts *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
+func (r *Reconciler) getStatefulSet(ctx context.Context, desiredSts *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
 	var sts appsv1.StatefulSet
-	err := r.client.Get(context.TODO(), client.ObjectKey{Name: desiredSts.Name, Namespace: desiredSts.Namespace}, &sts)
+	err := r.client.Get(ctx, client.ObjectKey{Name: desiredSts.Name, Namespace: desiredSts.Namespace}, &sts)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return &sts, nil
 }
 
-func (r *Reconciler) createStatefulSetIfNotExists(desiredSts *appsv1.StatefulSet) (bool, error) {
-	_, err := r.getStatefulSet(desiredSts)
+func (r *Reconciler) createStatefulSetIfNotExists(ctx context.Context, desiredSts *appsv1.StatefulSet) (bool, error) {
+	_, err := r.getStatefulSet(ctx, desiredSts)
 	if err != nil && k8serrors.IsNotFound(errors.Cause(err)) {
 		log.Info("creating new stateful set for " + r.capability.ShortName())
-		return true, r.client.Create(context.TODO(), desiredSts)
+		return true, r.client.Create(ctx, desiredSts)
 	}
 	return false, err
 }
 
-func (r *Reconciler) updateStatefulSetIfOutdated(desiredSts *appsv1.StatefulSet) (bool, error) {
-	currentSts, err := r.getStatefulSet(desiredSts)
+func (r *Reconciler) updateStatefulSetIfOutdated(ctx context.Context, desiredSts *appsv1.StatefulSet) (bool, error) {
+	currentSts, err := r.getStatefulSet(ctx, desiredSts)
 	if err != nil {
 		return false, err
 	}
@@ -139,20 +139,20 @@ func (r *Reconciler) updateStatefulSetIfOutdated(desiredSts *appsv1.StatefulSet)
 	}
 
 	if kubeobjects.LabelsNotEqual(currentSts.Spec.Selector.MatchLabels, desiredSts.Spec.Selector.MatchLabels) {
-		return r.recreateStatefulSet(currentSts, desiredSts)
+		return r.recreateStatefulSet(ctx, currentSts, desiredSts)
 	}
 
 	log.Info("updating existing stateful set")
-	if err = r.client.Update(context.TODO(), desiredSts); err != nil {
+	if err = r.client.Update(ctx, desiredSts); err != nil {
 		return false, err
 	}
 	return true, err
 }
 
-func (r *Reconciler) recreateStatefulSet(currentSts, desiredSts *appsv1.StatefulSet) (bool, error) {
+func (r *Reconciler) recreateStatefulSet(ctx context.Context, currentSts, desiredSts *appsv1.StatefulSet) (bool, error) {
 	log.Info("immutable section changed on statefulset, deleting and recreating", "name", desiredSts.Name)
 
-	err := r.client.Delete(context.TODO(), currentSts)
+	err := r.client.Delete(ctx, currentSts)
 	if err != nil {
 		return false, err
 	}
@@ -160,21 +160,21 @@ func (r *Reconciler) recreateStatefulSet(currentSts, desiredSts *appsv1.Stateful
 	log.Info("deleted statefulset")
 	log.Info("recreating statefulset", "name", desiredSts.Name)
 
-	return true, r.client.Create(context.TODO(), desiredSts)
+	return true, r.client.Create(ctx, desiredSts)
 }
 
 // the selector, e.g. MatchLabels, of a stateful set is immutable.
 // if it changed, for example due to a new operator version, deleteStatefulSetIfSelectorChanged deletes the stateful set
 // so it can be updated correctly afterwards.
-func (r *Reconciler) deleteStatefulSetIfSelectorChanged(desiredSts *appsv1.StatefulSet) (bool, error) {
-	currentSts, err := r.getStatefulSet(desiredSts)
+func (r *Reconciler) deleteStatefulSetIfSelectorChanged(ctx context.Context, desiredSts *appsv1.StatefulSet) (bool, error) {
+	currentSts, err := r.getStatefulSet(ctx, desiredSts)
 	if err != nil {
 		return false, err
 	}
 
 	if hasSelectorChanged(desiredSts, currentSts) {
 		log.Info("deleting existing stateful set because selector changed")
-		if err = r.client.Delete(context.TODO(), desiredSts); err != nil {
+		if err = r.client.Delete(ctx, desiredSts); err != nil {
 			return false, err
 		}
 
