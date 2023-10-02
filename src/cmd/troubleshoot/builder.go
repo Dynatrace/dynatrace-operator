@@ -156,7 +156,7 @@ func runChecksForDynakube(ctx context.Context, baseLog logr.Logger, apiReader cl
 	if err != nil {
 		return err
 	}
-	err = checkProxySettings(ctx, log.WithName("proxy"), apiReader, &dynakube)
+	err = checkProxySettings(ctx, log, apiReader, &dynakube)
 	if err != nil {
 		return err
 	}
