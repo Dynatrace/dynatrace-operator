@@ -11,7 +11,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -27,21 +28,14 @@ const (
 	testCustomPullSecretToken = "secretTokenValue"
 )
 
-type errorClient struct {
-	client.Client
-}
-
-func (errorClt *errorClient) List(_ context.Context, _ client.ObjectList, _ ...client.ListOption) error {
-	return errors.New("fake error")
-}
-
 func TestDynakubeCRD(t *testing.T) {
 	t.Run("crd does not exist", func(t *testing.T) {
-		clt := fake.NewClientBuilder().Build()
-		assert.ErrorContains(t, checkCRD(context.Background(), getNullLogger(t), clt, testNamespace), "CRD for Dynakube missing")
+		err := runtime.NewNotRegisteredErrForKind("dynakube", schema.GroupVersionKind{})
+		assert.ErrorContains(t, checkCRD(getNullLogger(t), err), "CRD for Dynakube missing")
 	})
 	t.Run("unrelated error", func(t *testing.T) {
-		assert.ErrorContains(t, checkCRD(context.Background(), getNullLogger(t), &errorClient{}, testNamespace), "could not list Dynakube")
+		err := errors.New("fake error")
+		assert.ErrorContains(t, checkCRD(getNullLogger(t), err), "could not list Dynakube")
 	})
 }
 

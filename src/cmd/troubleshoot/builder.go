@@ -105,13 +105,9 @@ func RunTroubleshootCmd(ctx context.Context, log logr.Logger, namespaceName stri
 	}
 	dynakubes := &dynatracev1beta1.DynaKubeList{}
 	err = apiReader.List(ctx, dynakubes, &client.ListOptions{Namespace: namespaceName})
-
-	if err != nil {
-		err := DetermineDynakubeError(err)
-		logErrorf(log, "prerequisite checks failed, aborting (%v)", err)
+	if checkCRD(log, err) != nil {
 		return
 	}
-	logOkf(log, "CRD for Dynakube exists")
 
 	runChecksForAllDynakubes(ctx, log, apiReader, &http.Client{}, dynakubes.Items)
 }
@@ -137,7 +133,7 @@ func runChecksForDynakube(ctx context.Context, baseLog logr.Logger, apiReader cl
 	log := baseLog.WithName(dynakubeCheckLoggerName)
 
 	logNewCheckf(log, "checking if '%s:%s' Dynakube is configured correctly", dynakube.Namespace, dynakube.Name)
-	logInfof(baseLog, "using '%s:%s' Dynakube", dynakube.Namespace, dynakube.Name)
+	logInfof(log, "using '%s:%s' Dynakube", dynakube.Namespace, dynakube.Name)
 
 	pullSecret, err := checkDynakube(ctx, baseLog, apiReader, &dynakube)
 	if err != nil {
@@ -151,23 +147,23 @@ func runChecksForDynakube(ctx context.Context, baseLog logr.Logger, apiReader cl
 		return err
 	}
 
-	transport, err := createTransport(ctx, apiReader, &dynakube, log, httpClient)
+	transport, err := createTransport(ctx, log, apiReader, &dynakube, httpClient)
 	if err != nil {
 		return err
 	}
 
-	err = verifyAllImagesAvailable(ctx, baseLog, keychain, transport, &dynakube)
+	err = verifyAllImagesAvailable(ctx, log, keychain, transport, &dynakube)
 	if err != nil {
 		return err
 	}
-	err = checkProxySettingsWithLog(ctx, baseLog, apiReader, &dynakube)
+	err = checkProxySettingsWithLog(ctx, log, apiReader, &dynakube)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func createTransport(ctx context.Context, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube, log logr.Logger, httpClient *http.Client) (*http.Transport, error) {
+func createTransport(ctx context.Context, log logr.Logger, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube, httpClient *http.Client) (*http.Transport, error) {
 	proxy, err := getProxyURL(ctx, apiReader, dynakube)
 	if err != nil {
 		return nil, err
