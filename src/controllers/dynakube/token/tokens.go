@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceapi"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/pkg/errors"
 )
@@ -98,6 +99,7 @@ func (tokens Tokens) VerifyValues() error {
 
 func concatErrors(errs []error) error {
 	concatenatedError := ""
+	apiStatus := dynatraceapi.NoError
 
 	for index, err := range errs {
 		concatenatedError += err.Error()
@@ -105,7 +107,17 @@ func concatErrors(errs []error) error {
 		if index < len(errs)-1 {
 			concatenatedError += "\n\t"
 		}
+
+		if apiStatus == dynatraceapi.NoError && dynatraceapi.IsUnreachable(err) {
+			apiStatus = dynatraceapi.StatusCode(err)
+		}
 	}
 
+	if apiStatus != dynatraceapi.NoError {
+		return dtclient.ServerError{
+			Code:    apiStatus,
+			Message: concatenatedError,
+		}
+	}
 	return errors.New(concatenatedError)
 }
