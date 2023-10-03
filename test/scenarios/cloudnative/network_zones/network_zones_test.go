@@ -1,3 +1,5 @@
+//go:build e2e
+
 package network_zones
 
 import (
@@ -17,7 +19,6 @@ func TestMain(m *testing.M) {
 	testEnvironment.Run(m)
 }
 
-func TestDefault(t *testing.T) {
-
+func TestNetworkZones(t *testing.T) {
 	testEnvironment.Test(t, networkZones(t))
 }

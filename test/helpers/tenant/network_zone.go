@@ -22,9 +22,9 @@ const (
 )
 
 type networkZoneRequestBody struct {
-	AlternativeZones []string `json:"alternativeZones"`
-	FallbackMode     string   `json:"fallbackMode"`
-	Id               string   `json:"id"`
+	AlternativeZones []string `json:"alternativeZones,omitempty"`
+	FallbackMode     string   `json:"fallbackMode,omitempty"`
+	Id               string   `json:"id,omitempty"`
 }
 
 func CreateNetworkZone(secret Secret, networkZone string, alternativeZones []string, fallbackMode FallbackMode) features.Func {
@@ -46,8 +46,36 @@ func CreateNetworkZone(secret Secret, networkZone string, alternativeZones []str
 		req, err := http.NewRequest(http.MethodPut, nzApiUrl, bytes.NewReader(body))
 		require.NoError(t, err)
 
-		_, err = client.Do(req)
+		req.Header.Add("Authorization", "Api-Token "+secret.ApiToken)
+		req.Header.Add("Content-Type", "application/json")
+
+		resp, err := client.Do(req)
 		require.NoError(t, err)
+		require.True(t, resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusNoContent)
+
+		return ctx
+	}
+}
+
+func DeleteNetworkZone(secret Secret, networkZone string) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		// API documentation
+		// https://www.dynatrace.com/support/help/dynatrace-api/environment-api/network-zones/del-network-zone
+
+		nzApiUrl := fmt.Sprintf("%s/v2/networkZones/%s", secret.ApiUrl, networkZone)
+
+		client := &http.Client{}
+		req, err := http.NewRequest(http.MethodDelete, nzApiUrl, nil)
+		require.NoError(t, err)
+
+		req.Header.Add("Authorization", "Api-Token "+secret.ApiToken)
+		req.Header.Add("Content-Type", "application/json")
+
+		resp, err := client.Do(req)
+		defer func() { _ = resp.Body.Close() }()
+
+		require.NoError(t, err)
+		require.Truef(t, resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusNoContent, "delete network request failed, status = %d (%s)", resp.StatusCode, resp.Status)
 
 		return ctx
 	}
