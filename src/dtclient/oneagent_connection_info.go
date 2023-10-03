@@ -72,10 +72,8 @@ func (dtc *dynatraceClient) readResponseForOneAgentConnectionInfo(response []byt
 			continue
 		}
 		hash := fnv.New32a()
-		if _, err := hash.Write([]byte(fmt.Sprintf("%s-%s-%d", e.Protocol, e.Host, e.Port))); err != nil {
-			log.Info("failed to write hash of communication host", "url", s)
-			continue
-		}
+		// Hash write implements Write interface, but never return err, so let's ignore it
+		_, _ = hash.Write([]byte(fmt.Sprintf("%s-%s-%d", e.Protocol, e.Host, e.Port)))
 		communicationHosts[hash.Sum32()] = e
 	}
 
