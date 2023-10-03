@@ -248,6 +248,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      id-token: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -290,6 +291,28 @@ jobs:
           secring: ${{ secrets.HELM_SECRING }}
           passphrase: ${{ secrets.HELM_PASSPHRASE }}
           output-dir: "./helm-pkg"
+      - name: Upload helm package to OCI registry
+        id: pushHelmChart
+        if: ${{ !contains(github.ref, '-rc.') }}
+        shell: bash
+        run: |
+          helm registry login -u "${{ secrets.DOCKERHUB_USERNAME }}" -p "${{ secrets.DOCKERHUB_PASSWORD }}" registry.hub.docker.com
+          hack/build/ci/push-helm-chart.sh \
+            "./helm-pkg/dynatrace-operator-${{ needs.prepare.outputs.version_without_prefix }}.tgz" \
+            "oci://registry.hub.docker.com/dynatrace"
+      - name: Login to Registry
+        uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
+        with:
+          registry: docker.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+      - name: Sign package with cosign
+        if: ${{ !contains(github.ref, '-rc.') }}
+        uses: ./.github/actions/sign-image
+        with:
+          image: "docker.io/dynatrace/dynatrace-operator:${{ needs.prepare.outputs.version }}@${{ steps.pushHelmChart.outputs.digest }}"
+          signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          signing-password: ${{ secrets.COSIGN_PASSWORD }}
       - name: Prepare cosign.pub artifact
         env:
           COSIGN_PUBLIC_KEY: ${{ secrets.COSIGN_PUBLIC_KEY }}
