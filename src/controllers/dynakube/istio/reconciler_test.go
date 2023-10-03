@@ -240,6 +240,11 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotNil(t, serviceEntry)
 		assert.Contains(t, fmt.Sprintf("%v", serviceEntry), "something.test.io")
+
+		expectedFQDNName = BuildNameForFQDNServiceEntry(dynakube.GetName(), ActiveGateComponent)
+		serviceEntry, err = fakeClient.NetworkingV1alpha3().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
+		require.NoError(t, err)
+		assert.NotNil(t, serviceEntry)
 		assert.Contains(t, fmt.Sprintf("%v", serviceEntry), "abcd123.some.activegate.endpointurl.com")
 
 		virtualService, err := fakeClient.NetworkingV1alpha3().VirtualServices(dynakube.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
@@ -381,7 +386,7 @@ func createTestFQDNCommunicationHost() dtclient.CommunicationHost {
 func createTestDynaKube() *dynatracev1beta1.DynaKube {
 	fqdnHost := createTestFQDNCommunicationHost()
 	ipHost := createTestIPCommunicationHost()
-	endpoints := "endpoints: https://abcd123.some.activegate.endpointurl.com:443"
+	endpoints := "https://abcd123.some.activegate.endpointurl.com:443"
 	return &dynatracev1beta1.DynaKube{
 		TypeMeta: metav1.TypeMeta{
 			Kind: "DynaKube",

@@ -10,10 +10,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-const (
-	ActivegateEndpointPrefix = "endpoints: "
-)
-
 func GetOneAgentCommunicationHosts(dynakube *dynatracev1beta1.DynaKube) []dtclient.CommunicationHost {
 	communicationHosts := make([]dtclient.CommunicationHost, 0, len(dynakube.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts))
 	for _, host := range dynakube.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts {
@@ -28,10 +24,10 @@ func GetOneAgentCommunicationHosts(dynakube *dynatracev1beta1.DynaKube) []dtclie
 
 func GetActiveGateEndpointsAsCommunicationHosts(dynakube *dynatracev1beta1.DynaKube) []dtclient.CommunicationHost {
 	activegateEndpointsString := dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints
-	if activegateEndpointsString == "" || !strings.HasPrefix(activegateEndpointsString, ActivegateEndpointPrefix) {
+	if activegateEndpointsString == "" {
 		return []dtclient.CommunicationHost{}
 	}
-	return parseCommunicationHostFromActiveGateEndpoints(activegateEndpointsString[len(ActivegateEndpointPrefix):])
+	return parseCommunicationHostFromActiveGateEndpoints(activegateEndpointsString)
 }
 
 func parseCommunicationHostFromActiveGateEndpoints(activegateEndpointsString string) []dtclient.CommunicationHost {
