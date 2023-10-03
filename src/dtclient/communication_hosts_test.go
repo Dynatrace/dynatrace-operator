@@ -2,6 +2,7 @@ package dtclient
 
 import (
 	"net/http"
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -43,11 +44,14 @@ func TestReadCommunicationHosts(t *testing.T) {
 		m, err := readFromString(goodCommunicationEndpointsResponse)
 		if assert.NoError(t, err) {
 			expected := []CommunicationHost{
-				{Protocol: "https", Host: "example.live.dynatrace.com", Port: 443},
-				{Protocol: "https", Host: "managedhost.com", Port: 9999},
 				{Protocol: "https", Host: "10.0.0.1", Port: 8000},
+				{Protocol: "https", Host: "example.live.dynatrace.com", Port: 443},
 				{Protocol: "http", Host: "insecurehost", Port: 80},
+				{Protocol: "https", Host: "managedhost.com", Port: 9999},
 			}
+			sort.Slice(m.CommunicationHosts, func(i, j int) bool {
+				return m.CommunicationHosts[i].Host < m.CommunicationHosts[j].Host
+			})
 			assert.Equal(t, expected, m.CommunicationHosts)
 		}
 	}

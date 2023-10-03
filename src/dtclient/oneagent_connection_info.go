@@ -1,6 +1,12 @@
 package dtclient
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+	"hash/fnv"
+
+	"golang.org/x/exp/maps"
+)
 
 // CommunicationHost => struct of connection endpoint
 type CommunicationHost struct {
@@ -56,7 +62,7 @@ func (dtc *dynatraceClient) readResponseForOneAgentConnectionInfo(response []byt
 
 	tenantUUID := resp.TenantUUID
 	tenantToken := resp.TenantToken
-	communicationHosts := make([]CommunicationHost, 0, len(resp.CommunicationEndpoints))
+	communicationHosts := make(map[uint32]CommunicationHost, 0)
 	formattedCommunicationEndpoints := resp.FormattedCommunicationEndpoints
 
 	for _, s := range resp.CommunicationEndpoints {
@@ -65,11 +71,14 @@ func (dtc *dynatraceClient) readResponseForOneAgentConnectionInfo(response []byt
 			log.Info("failed to parse communication endpoint", "url", s)
 			continue
 		}
-		communicationHosts = append(communicationHosts, e)
+		hash := fnv.New32a()
+		// Hash write implements Write interface, but never return err, so let's ignore it
+		_, _ = hash.Write([]byte(fmt.Sprintf("%s-%s-%d", e.Protocol, e.Host, e.Port)))
+		communicationHosts[hash.Sum32()] = e
 	}
 
 	ci := OneAgentConnectionInfo{
-		CommunicationHosts: communicationHosts,
+		CommunicationHosts: maps.Values(communicationHosts),
 		ConnectionInfo: ConnectionInfo{
 			TenantUUID:  tenantUUID,
 			TenantToken: tenantToken,
