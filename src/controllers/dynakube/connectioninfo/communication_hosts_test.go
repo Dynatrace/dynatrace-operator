@@ -75,7 +75,7 @@ func TestParseCommunicationHostsFromActiveGateEndpoints(t *testing.T) {
 	})
 
 	t.Run(`activegate endpoint set`, func(t *testing.T) {
-		dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints = "endpoints: https://abcd123.some.activegate.endpointurl.com:443"
+		dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints = "https://abcd123.some.activegate.endpointurl.com:443"
 
 		hosts := GetActiveGateEndpointsAsCommunicationHosts(dynakube)
 		assert.Equal(t, 1, len(hosts))
