@@ -88,6 +88,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		return nil
 	}
 }
+
 func RunTroubleshootCmd(ctx context.Context, log logr.Logger, namespaceName string, kubeConfig *rest.Config) {
 	err := checkOneAgentAPM(log, kubeConfig)
 	if err != nil {
@@ -156,11 +157,8 @@ func runChecksForDynakube(ctx context.Context, baseLog logr.Logger, apiReader cl
 	if err != nil {
 		return err
 	}
-	err = checkProxySettings(ctx, log, apiReader, &dynakube)
-	if err != nil {
-		return err
-	}
-	return nil
+
+	return checkProxySettings(ctx, log, apiReader, &dynakube)
 }
 
 func createTransport(ctx context.Context, log logr.Logger, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube, httpClient *http.Client) (*http.Transport, error) {
@@ -179,11 +177,7 @@ func createTransport(ctx context.Context, log logr.Logger, apiReader client.Read
 		transport = http.DefaultTransport.(*http.Transport).Clone()
 	}
 
-	transport, err = dynakubeversion.PrepareTransport(ctx, apiReader, transport, dynakube)
-	if err != nil {
-		return nil, err
-	}
-	return transport, nil
+	return dynakubeversion.PrepareTransport(ctx, apiReader, transport, dynakube)
 }
 
 func applyProxy(log logr.Logger, httpClient *http.Client, proxy string) error {
