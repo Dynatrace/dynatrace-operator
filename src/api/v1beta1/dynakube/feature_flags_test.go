@@ -299,3 +299,22 @@ func TestDefaultEnabledFeatureFlags(t *testing.T) {
 	assert.False(t, dynakube.FeatureDisableMetadataEnrichment())
 	assert.False(t, dynakube.FeatureLabelVersionDetection())
 }
+
+func TestInjectionFailurePolicy(t *testing.T) {
+	dynakube := createDynakubeEmptyDynakube()
+
+	modes := map[string]string{
+		failPhrase:   failPhrase,
+		silentPhrase: silentPhrase,
+		forcePhrase:  forcePhrase,
+		"Fail":       silentPhrase,
+		"other":      silentPhrase,
+	}
+	for configuredMode, expectedMode := range modes {
+		t.Run(`injection failure policy: `+configuredMode, func(t *testing.T) {
+			dynakube.Annotations[AnnotationInjectionFailurePolicy] = configuredMode
+
+			assert.Equal(t, expectedMode, dynakube.FeatureInjectionFailurePolicy())
+		})
+	}
+}

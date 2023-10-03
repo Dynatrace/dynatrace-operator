@@ -100,7 +100,7 @@ func (runner *Runner) Run() (resultedError error) {
 }
 
 func (runner *Runner) consumeErrorIfNecessary(resultedError *error) {
-	if !runner.env.FailurePolicy && *resultedError != nil {
+	if runner.env.FailurePolicy == silentPhrase && *resultedError != nil {
 		log.Error(*resultedError, "This error has been masked to not fail the container.")
 		*resultedError = nil
 	}
@@ -110,11 +110,16 @@ func (runner *Runner) setHostTenant() error {
 	log.Info("setting host tenant")
 	runner.hostTenant = config.AgentNoHostTenant
 	if runner.config.HasHost {
-		hostTenant, ok := runner.config.MonitoringNodes[runner.env.K8NodeName]
-		if !ok {
-			return errors.Errorf("host tenant info is missing for %s", runner.env.K8NodeName)
+		if runner.env.FailurePolicy == forcePhrase {
+			runner.hostTenant = runner.config.TenantUUID
+			log.Info("host tenant set to TenantUUID")
+		} else {
+			hostTenant, ok := runner.config.MonitoringNodes[runner.env.K8NodeName]
+			if !ok {
+				return errors.Errorf("host tenant info is missing for %s", runner.env.K8NodeName)
+			}
+			runner.hostTenant = hostTenant
 		}
-		runner.hostTenant = hostTenant
 	}
 	log.Info("successfully set host tenant", "hostTenant", runner.hostTenant)
 	return nil

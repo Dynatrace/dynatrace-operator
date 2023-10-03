@@ -73,19 +73,19 @@ func TestNewRunner(t *testing.T) {
 func TestConsumeErrorIfNecessary(t *testing.T) {
 	runner := createMockedRunner(t)
 	t.Run("no error thrown", func(t *testing.T) {
-		runner.env.FailurePolicy = false
+		runner.env.FailurePolicy = silentPhrase
 		err := runner.Run()
 		assert.Nil(t, err)
 	})
 	t.Run("error thrown, but consume error", func(t *testing.T) {
 		runner.env.K8NodeName = "" // create artificial error
-		runner.env.FailurePolicy = false
+		runner.env.FailurePolicy = silentPhrase
 		err := runner.Run()
 		assert.Nil(t, err)
 	})
 	t.Run("error thrown, but don't consume error", func(t *testing.T) {
 		runner.env.K8NodeName = "" // create artificial error
-		runner.env.FailurePolicy = true
+		runner.env.FailurePolicy = failPhrase
 		err := runner.Run()
 		assert.NotNil(t, err)
 	})
@@ -116,6 +116,16 @@ func TestSetHostTenant(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.Equal(t, config.AgentNoHostTenant, runner.hostTenant)
+	})
+	t.Run("set hostTenant to TenantUUID", func(t *testing.T) {
+		runner.env.FailurePolicy = forcePhrase
+		runner.config.HasHost = true
+		runner.config.TenantUUID = testTenantUUID
+
+		err := runner.setHostTenant()
+
+		require.NoError(t, err)
+		assert.Equal(t, testTenantUUID, runner.hostTenant)
 	})
 }
 
