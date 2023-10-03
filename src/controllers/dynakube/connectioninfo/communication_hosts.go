@@ -32,15 +32,20 @@ func GetActiveGateEndpointsAsCommunicationHosts(dynakube *dynatracev1beta1.DynaK
 
 func parseCommunicationHostFromActiveGateEndpoints(activegateEndpointsString string) []dtclient.CommunicationHost {
 	endpointStrings := strings.Split(activegateEndpointsString, ";")
-	endpointCommunicationHosts := make([]dtclient.CommunicationHost, 0)
+	endpointCommunicationHosts := make(map[dtclient.CommunicationHost]bool)
 	for _, endpointString := range endpointStrings {
 		endpoint, err := parseEndpointToCommunicationHost(endpointString)
 		if err == nil {
-			endpointCommunicationHosts = append(endpointCommunicationHosts, endpoint)
+			endpointCommunicationHosts[endpoint] = true
 		}
 	}
 
-	return endpointCommunicationHosts
+	comHosts := make([]dtclient.CommunicationHost, 0, len(endpointCommunicationHosts))
+	for ch := range endpointCommunicationHosts {
+		comHosts = append(comHosts, ch)
+	}
+
+	return comHosts
 }
 
 func parseEndpointToCommunicationHost(endpointString string) (dtclient.CommunicationHost, error) {
