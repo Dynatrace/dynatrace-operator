@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerkeychain"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -18,6 +19,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+type ClientBuilder func(options ...func(*Client)) (ImageGetter, error)
 
 type ImageGetter interface {
 	GetImageVersion(ctx context.Context, imageName string) (ImageVersion, error)
@@ -30,8 +33,11 @@ type ImageVersion struct {
 }
 
 type Client struct {
-	keychain  authn.Keychain
-	transport *http.Transport
+	ctx            context.Context
+	apiReader      client.Reader
+	keychain       authn.Keychain
+	keyChainSecret *corev1.Secret
+	transport      *http.Transport
 }
 
 const (
@@ -40,23 +46,51 @@ const (
 	DigestDelimiter = "@"
 )
 
-func NewClient(ctx context.Context, apiReader client.Reader, keyChainSecret *corev1.Secret, proxy string, trustedCAs []byte) (*Client, error) {
-	var keychain authn.Keychain
+func WithContext(ctx context.Context) func(*Client) {
+	return func(c *Client) {
+		c.ctx = ctx
+	}
+}
+
+func WithApiReader(apiReader client.Reader) func(*Client) {
+	return func(c *Client) {
+		c.apiReader = apiReader
+	}
+}
+
+func WithKeyChainSecret(keyChainSecret *corev1.Secret) func(*Client) {
+	return func(c *Client) {
+		c.keyChainSecret = keyChainSecret
+	}
+}
+
+func WithTransport(transport *http.Transport) func(*Client) {
+	return func(c *Client) {
+		c.transport = transport
+	}
+}
+
+func NewClient(options ...func(*Client)) (ImageGetter, error) {
 	var err error
-	if keyChainSecret != nil {
-		keychain, err = dockerkeychain.NewDockerKeychain(ctx, apiReader, *keyChainSecret)
+	c := &Client{}
+	for _, opt := range options {
+		opt(c)
+	}
+	if c.keyChainSecret != nil {
+		keychain, err := dockerkeychain.NewDockerKeychain(c.ctx, c.apiReader, *c.keyChainSecret)
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed to fetch pull secret")
 		}
+		c.keychain = keychain
 	}
-	transport := http.DefaultTransport.(*http.Transport).Clone()
-	transport, err = PrepareTransport(transport, proxy, trustedCAs)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to prepare transport")
 	}
 
-	return &Client{keychain: keychain, transport: transport}, nil
+	return c, nil
 }
+
+var _ ClientBuilder = NewClient
 
 func (c *Client) GetImageVersion(ctx context.Context, imageName string) (ImageVersion, error) {
 	ref, err := name.ParseReference(imageName)
@@ -181,6 +215,44 @@ func addCertificates(transport *http.Transport, trustedCAs []byte) (*http.Transp
 // PrepareTransport creates default http transport and add proxy or trustedCAs if any
 func PrepareTransport(transport *http.Transport, proxy string, trustedCAs []byte) (*http.Transport, error) {
 	var err error
+
+	if proxy != "" {
+		transport, err = addProxy(transport, proxy)
+		if err != nil {
+			return nil, errors.WithMessage(err, "failed to add proxy to default transport")
+		}
+	}
+
+	if len(trustedCAs) > 0 {
+		transport, err = addCertificates(transport, trustedCAs)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return transport, nil
+}
+
+// PrepareTransportForDynaKube creates default http transport and add proxy or trustedCAs if any
+func PrepareTransportForDynaKube(ctx context.Context, apiReader client.Reader, transport *http.Transport, dynakube *dynatracev1beta1.DynaKube) (*http.Transport, error) {
+	var (
+		proxy      string
+		trustedCAs []byte
+		err        error
+	)
+	if dynakube.HasProxy() {
+		proxy, err = dynakube.Proxy(ctx, apiReader)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if dynakube.Spec.TrustedCAs != "" {
+		trustedCAs, err = dynakube.TrustedCAs(ctx, apiReader)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	if proxy != "" {
 		transport, err = addProxy(transport, proxy)

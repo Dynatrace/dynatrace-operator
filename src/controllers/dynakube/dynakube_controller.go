@@ -2,6 +2,7 @@ package dynakube
 
 import (
 	"context"
+	"net/http"
 	"os"
 	"time"
 
@@ -68,7 +69,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, sc
 		fs:                     afero.Afero{Fs: afero.NewOsFs()},
 		dynatraceClientBuilder: dynatraceclient.NewBuilder(apiReader),
 		istioClientBuilder:     istio.NewClient,
-		registryClientBuilder:  registry.NewClientBuilder(),
+		registryClientBuilder:  registry.NewClient,
 		config:                 config,
 		operatorNamespace:      os.Getenv(kubeobjects.EnvPodNamespace),
 		clusterID:              clusterID,
@@ -213,31 +214,22 @@ func (controller *Controller) setupIstio(ctx context.Context, dynakube *dynatrac
 	return istioReconciler, nil
 }
 
-func (controller *Controller) createDynatraceClient(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) (registry.ImageGetter, error) {
-	registryClientBuilder := controller.registryClientBuilder.
-		SetContext(ctx).
-		SetApiReader(controller.apiReader)
-
+func (controller *Controller) createDynatraceRegistryClient(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) (registry.ImageGetter, error) {
 	keychain := dynakube.PullSecretWithoutData()
-	registryClientBuilder.SetKeyChainSecret(&keychain)
+	transport := http.DefaultTransport.(*http.Transport).Clone()
 
-	if dynakube.HasProxy() {
-		proxy, err := dynakube.Proxy(ctx, controller.apiReader)
-		if err != nil {
-			return nil, err
-		}
-		registryClientBuilder.SetProxy(proxy)
+	transport, err := registry.PrepareTransportForDynaKube(ctx, controller.apiReader, transport, dynakube)
+	if err != nil {
+		return nil, err
 	}
 
-	if dynakube.Spec.TrustedCAs != "" {
-		trustedCAs, err := dynakube.TrustedCAs(ctx, controller.apiReader)
-		if err != nil {
-			return nil, err
-		}
-		registryClientBuilder.SetTrustedCAs(trustedCAs)
-	}
+	registryClient, err := controller.registryClientBuilder(
+		registry.WithContext(ctx),
+		registry.WithApiReader(controller.apiReader),
+		registry.WithKeyChainSecret(&keychain),
+		registry.WithTransport(transport),
+	)
 
-	registryClient, err := registryClientBuilder.Build()
 	if err != nil {
 		return nil, err
 	}
@@ -268,7 +260,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		return err
 	}
 
-	registryClient, err := controller.createDynatraceClient(ctx, dynakube)
+	registryClient, err := controller.createDynatraceRegistryClient(ctx, dynakube)
 	if err != nil {
 		return err
 	}

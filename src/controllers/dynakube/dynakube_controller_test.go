@@ -66,6 +66,12 @@ const (
 	testNamespace = "test-namespace"
 
 	testApiUrl = "https://" + testHost + "/e/" + testUUID + "/api"
+
+	registryName = "docker.test.com"
+	testToken    = "test-token"
+	testPassword = "test-password"
+	testAuth     = "dGVzdC10b2tlbjp0ZXN0LXBhc3N3b3Jk" // echo -n "test-token:test-password" | base64
+	dockerConfig = "{\"auths\":{\"" + registryName + "\":{\"username\":\"" + testToken + "\",\"password\":\"" + testPassword + "\",\"auth\":\"" + testAuth + "\"}}}"
 )
 
 func TestMonitoringModesDynakube_Reconcile(t *testing.T) {
@@ -672,8 +678,7 @@ func createDTMockClient(paasTokenScopes, apiTokenScopes dtclient.TokenScopes) *d
 	return mockClient
 }
 
-func createFakeRegistryClientBuilder() registry.ClientBuilder {
-	mockRegistryClientBuilder := mocks.MockClientBuilder{}
+func createFakeRegistryClientBuilder() func(options ...func(*registry.Client)) (registry.ImageGetter, error) {
 	fakeRegistryClient := &mocks.MockImageGetter{}
 	fakeImage := &fakecontainer.FakeImage{}
 	fakeImage.ConfigFileStub = func() (*containerv1.ConfigFile, error) {
@@ -684,13 +689,9 @@ func createFakeRegistryClientBuilder() registry.ClientBuilder {
 	fakeRegistryClient.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{Version: "1.2.3.4-5"}, nil)
 	fakeRegistryClient.On("PullImageInfo", mock.Anything, mock.Anything).Return(&image, nil)
 
-	mockRegistryClientBuilder.On("SetContext", mock.Anything).Return(&mockRegistryClientBuilder)
-	mockRegistryClientBuilder.On("SetApiReader", mock.Anything).Return(&mockRegistryClientBuilder)
-	mockRegistryClientBuilder.On("SetKeyChainSecret", mock.Anything).Return(&mockRegistryClientBuilder)
-	mockRegistryClientBuilder.On("SetProxy", mock.Anything).Return(&mockRegistryClientBuilder)
-	mockRegistryClientBuilder.On("SetTrustedCAs", mock.Anything).Return(&mockRegistryClientBuilder)
-	mockRegistryClientBuilder.On("Build").Return(fakeRegistryClient, nil)
-	return &mockRegistryClientBuilder
+	return func(options ...func(*registry.Client)) (registry.ImageGetter, error) {
+		return fakeRegistryClient, nil
+	}
 }
 
 func createFakeClientAndReconciler(mockClient dtclient.Client, instance *dynatracev1beta1.DynaKube, paasToken, apiToken string) *Controller {
@@ -708,6 +709,16 @@ func createFakeClientAndReconciler(mockClient dtclient.Client, instance *dynatra
 				Namespace: testNamespace,
 			},
 			Data: data},
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-name-pull-secret",
+				Namespace: testNamespace,
+			},
+			Data: map[string][]byte{
+				corev1.DockerConfigJsonKey: []byte(dockerConfig),
+			},
+			Type: corev1.SecretTypeDockerConfigJson,
+		},
 		&corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: kubesystem.Namespace,

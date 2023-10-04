@@ -50,7 +50,7 @@ func NewController(mgr manager.Manager) *Controller {
 		client:                mgr.GetClient(),
 		apiReader:             mgr.GetAPIReader(),
 		scheme:                mgr.GetScheme(),
-		registryClientBuilder: registry.NewClientBuilder(),
+		registryClientBuilder: registry.NewClient,
 		config:                mgr.GetConfig(),
 		timeProvider:          timeprovider.New(),
 	}
@@ -76,10 +76,10 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 
 	log.Info("updating version info", "name", request.Name, "namespace", request.Namespace)
 
-	registryClientBuilder := controller.registryClientBuilder.
-		SetContext(ctx).
-		SetApiReader(controller.apiReader)
-	registryClient, err := registryClientBuilder.Build()
+	registryClient, err := controller.registryClientBuilder(
+		registry.WithContext(ctx),
+		registry.WithApiReader(controller.apiReader),
+	)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
