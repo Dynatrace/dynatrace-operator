@@ -5,13 +5,11 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/registry"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/pkg/errors"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type versionStatusUpdater interface {

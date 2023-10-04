@@ -145,52 +145,14 @@ func (c *Client) PullImageInfo(ctx context.Context, imageName string) (*containe
 	return &image, nil
 }
 
-<<<<<<< HEAD
 func BuildImageIDWithTagAndDigest(taggedRef name.Tag, digest digest.Digest) string {
 	return fmt.Sprintf("%s%s%s", taggedRef.String(), DigestDelimiter, digest.String())
 }
 
-func PrepareTransport(ctx context.Context, apiReader client.Reader, transport *http.Transport, dynakube *dynatracev1beta1.DynaKube) (*http.Transport, error) {
-	var err error
-	var proxy string
-
-	if dynakube.HasProxy() {
-		proxy, err = dynakube.Proxy(ctx, apiReader)
-		if err != nil {
-			return nil, err
-		}
-		proxyUrl, err := url.Parse(proxy)
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
-
-		transport.Proxy = func(req *http.Request) (*url.URL, error) {
-			return proxyUrl, nil
-		}
-||||||| parent of 9ecb6aba (fixup! tests)
-func PrepareTransport(ctx context.Context, apiReader client.Reader, transport *http.Transport, dynakube *dynatracev1beta1.DynaKube) (*http.Transport, error) {
-	var err error
-	var proxy string
-
-	if dynakube.HasProxy() {
-		proxy, err = dynakube.Proxy(ctx, apiReader)
-		if err != nil {
-			return nil, err
-		}
-		proxyUrl, err := url.Parse(proxy)
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
-
-		transport.Proxy = func(req *http.Request) (*url.URL, error) {
-			return proxyUrl, nil
-		}
-=======
 func addProxy(transport *http.Transport, proxy string) (*http.Transport, error) {
 	proxyUrl, err := url.Parse(proxy)
 	if err != nil {
 		return nil, errors.WithStack(err)
->>>>>>> 9ecb6aba (fixup! tests)
 	}
 
 	transport.Proxy = func(req *http.Request) (*url.URL, error) {
@@ -208,27 +170,6 @@ func addCertificates(transport *http.Transport, trustedCAs []byte) (*http.Transp
 		transport.TLSClientConfig = &tls.Config{} // nolint:gosec
 	}
 	transport.TLSClientConfig.RootCAs = rootCAs
-
-	return transport, nil
-}
-
-// PrepareTransport creates default http transport and add proxy or trustedCAs if any
-func PrepareTransport(transport *http.Transport, proxy string, trustedCAs []byte) (*http.Transport, error) {
-	var err error
-
-	if proxy != "" {
-		transport, err = addProxy(transport, proxy)
-		if err != nil {
-			return nil, errors.WithMessage(err, "failed to add proxy to default transport")
-		}
-	}
-
-	if len(trustedCAs) > 0 {
-		transport, err = addCertificates(transport, trustedCAs)
-		if err != nil {
-			return nil, err
-		}
-	}
 
 	return transport, nil
 }

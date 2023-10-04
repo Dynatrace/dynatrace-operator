@@ -356,15 +356,10 @@ func TestUpdateVersionStatus(t *testing.T) {
 }
 
 func TestNewImageLib(t *testing.T) {
-	imageVersionFunc := func(context.Context, client.Reader, registry.ImageGetter, *dynatracev1beta1.DynaKube, string) (registry.ImageVersion, error) { // nolint:unparam
-		return registry.ImageVersion{
-			Digest: func() digest.Digest {
-				d, e := digest.Parse("sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f")
-				require.NoError(t, e)
-				return d
-			}(),
-		}, nil
-	}
+	mockImageGetter := &mocks.MockImageGetter{}
+	const fakeDigest = "sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
+	fakeImageVersion := registry.ImageVersion{Digest: fakeDigest}
+	mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fakeImageVersion, nil)
 
 	tests := []struct {
 		input    string
@@ -396,7 +391,7 @@ func TestNewImageLib(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.input, func(t *testing.T) {
 			targetNew := status.VersionStatus{}
-			err := setImageIDWithDigest(context.TODO(), fake.NewClient(), &dynatracev1beta1.DynaKube{}, &targetNew, imageVersionFunc, test.input)
+			err := setImageIDWithDigest(context.TODO(), &targetNew, mockImageGetter, test.input)
 			test.wantErr(t, err)
 			assert.Equal(t, test.expected, targetNew.ImageID)
 		})

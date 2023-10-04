@@ -8,7 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/registry"
-	"github.com/containers/image/v5/docker/reference"
+	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/stretchr/testify/assert"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -36,12 +36,12 @@ func (fakeRegistry *fakeRegistry) ImageVersionExt(_ context.Context, _ client.Re
 	return fakeRegistry.ImageVersion(imagePath)
 }
 
-func assertPublicRegistryVersionStatusEquals(t *testing.T, registry *fakeRegistry, imageRef reference.NamedTagged, versionStatus status.VersionStatus) { //nolint:revive // argument-limit
+func assertPublicRegistryVersionStatusEquals(t *testing.T, registry *fakeRegistry, imageRef name.Tag, versionStatus status.VersionStatus) { //nolint:revive // argument-limit
 	assertVersionStatusEquals(t, registry, imageRef, versionStatus)
 	assert.Empty(t, versionStatus.Version)
 }
 
-func assertVersionStatusEquals(t *testing.T, registry *fakeRegistry, imageRef reference.NamedTagged, versionStatus status.VersionStatus) { //nolint:revive // argument-limit
+func assertVersionStatusEquals(t *testing.T, registry *fakeRegistry, imageRef name.Tag, versionStatus status.VersionStatus) { //nolint:revive // argument-limit
 	expectedDigest, err := registry.ImageVersion(imageRef.String())
 
 	assert.NoError(t, err, "Image version is unexpectedly unknown for '%s'", imageRef.String())
