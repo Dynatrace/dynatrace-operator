@@ -8,6 +8,8 @@ golang_ci_cmd_version=v1.54.2
 gci_version=v0.11.2
 # renovate depName=golang.org/x/tools
 golang_tools_version=v0.14.0
+# renovate depName=github.com/vektra/mockery
+mockery_version=v2.33.2
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -44,3 +46,8 @@ prerequisites/helm:
 ## Install 'markdownlint' if it is missing
 prerequisites/markdownlint:
 	brew install markdownlint-cli --quiet
+
+## Install verktra/mockery
+prerequisites/mockery:
+	go install github.com/vektra/mockery/v2@$(mockery_version)
+
