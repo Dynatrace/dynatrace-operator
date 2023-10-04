@@ -8,7 +8,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/edgeconnect"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerkeychain"
 	"github.com/Dynatrace/dynatrace-operator/src/registry"
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
@@ -97,7 +96,7 @@ func (u updater) combineImageWithDigest(digest digest.Digest) (string, error) {
 		return "", errors.WithStack(err)
 	}
 	if taggedRef, ok := imageRef.(name.Tag); ok {
-		canonRef := version.BuildImageIDWithTagAndDigest(taggedRef, digest)
+		canonRef := registry.BuildImageIDWithTagAndDigest(taggedRef, digest)
 		if err != nil {
 			return "", errors.WithStack(err)
 		}

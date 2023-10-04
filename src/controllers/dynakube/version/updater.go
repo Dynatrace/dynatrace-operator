@@ -2,7 +2,6 @@ package version
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
@@ -11,7 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/registry"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -30,10 +28,6 @@ type versionStatusUpdater interface {
 
 	UseTenantRegistry(context.Context) error
 }
-
-const (
-	digestDelimiter = "@"
-)
 
 func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpdater) error {
 	currentSource := determineSource(updater)
@@ -133,7 +127,7 @@ func setImageIDWithDigest( //nolint:revive
 			return err
 		}
 
-		target.ImageID = BuildImageIDWithTagAndDigest(taggedRef, imageVersion.Digest)
+		target.ImageID = registry.BuildImageIDWithTagAndDigest(taggedRef, imageVersion.Digest)
 	} else {
 		return errors.Errorf("unsupported image reference: %s", imageUri)
 	}
@@ -145,11 +139,6 @@ func setImageIDWithDigest( //nolint:revive
 	// unset is necessary so we have a consistent status
 	target.Version = ""
 	return nil
-}
-
-// TODO: this should be in a more general place
-func BuildImageIDWithTagAndDigest(taggedRef name.Tag, digest digest.Digest) string {
-	return fmt.Sprintf("%s%s%s", taggedRef.String(), digestDelimiter, digest.String())
 }
 
 func updateVersionStatusForTenantRegistry( //nolint:revive
@@ -197,7 +186,7 @@ func getTagFromImageID(imageID string) (string, error) {
 	var taggedRef name.Tag
 
 	if digestRef, ok := ref.(name.Digest); ok {
-		taggedStr := strings.TrimSuffix(digestRef.String(), digestDelimiter+digestRef.DigestStr())
+		taggedStr := strings.TrimSuffix(digestRef.String(), registry.DigestDelimiter+digestRef.DigestStr())
 		if taggedRef, err = name.NewTag(taggedStr, name.WithDefaultTag("")); err != nil {
 			return "", err
 		}
