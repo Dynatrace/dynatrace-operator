@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
@@ -37,8 +38,6 @@ func CreateNetworkZone(secret Secret, networkZone string, alternativeZones []str
 		// API documentation
 		// https://www.dynatrace.com/support/help/dynatrace-api/environment-api/network-zones/put-network-zone
 
-		nzApiUrl := fmt.Sprintf("%s/v2/networkZones/%s", secret.ApiUrl, networkZone)
-
 		request := networkZoneRequestBody{
 			AlternativeZones: alternativeZones,
 			FallbackMode:     string(fallbackMode),
@@ -47,17 +46,9 @@ func CreateNetworkZone(secret Secret, networkZone string, alternativeZones []str
 		body, err := json.Marshal(request)
 		require.NoError(t, err)
 
-		client := &http.Client{}
-		req, err := http.NewRequest(http.MethodPut, nzApiUrl, bytes.NewReader(body))
+		statusCode, statusMsg, err := executeNetworkZoneRequest(secret, networkZone, http.MethodPut, bytes.NewReader(body))
 		require.NoError(t, err)
-
-		req.Header.Add("Authorization", "Api-Token "+secret.ApiToken)
-		req.Header.Add("Content-Type", "application/json")
-
-		resp, err := client.Do(req)
-		defer func() { _ = resp.Body.Close() }()
-		require.NoError(t, err)
-		require.True(t, resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusNoContent)
+		assert.Truef(t, statusCode == http.StatusCreated || statusCode == http.StatusNoContent, statusMsg)
 
 		return ctx
 	}
@@ -71,38 +62,69 @@ func WaitForNetworkZoneDeletion(secret Secret, networkZone string) features.Func
 	}
 }
 
+func createNetworkZoneRequest(secret Secret, networkZone string, method string, body io.Reader) (*http.Request, error) {
+	nzApiUrl := fmt.Sprintf("%s/v2/networkZones/%s", secret.ApiUrl, networkZone)
+
+	req, err := http.NewRequest(method, nzApiUrl, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Authorization", "Api-Token "+secret.ApiToken)
+	req.Header.Add("Content-Type", "application/json")
+
+	return req, nil
+}
+
+func executeNetworkZoneRequest(secret Secret, networkZone string, method string, body io.Reader) (statusCode int, nsg string, err error) {
+	client := &http.Client{}
+
+	req, err := createNetworkZoneRequest(secret, networkZone, method, body)
+	if err != nil {
+		return 0, "", err
+	}
+
+	resp, err := client.Do(req)
+	defer func() {
+		if resp != nil && resp.Body != nil {
+			_ = resp.Body.Close()
+		}
+	}()
+
+	if err != nil {
+		return 0, "", err
+	}
+	if resp == nil {
+		return 0, "", errors.Errorf("response was nil")
+	}
+
+	var respBody []byte
+	if resp.Body != nil {
+		respBody, err = io.ReadAll(resp.Body)
+		if err != nil {
+			return resp.StatusCode, resp.Status, err
+		}
+	}
+
+	return resp.StatusCode, resp.Status + " " + string(respBody), nil
+}
+
 func deleteNetworkZone(secret Secret, networkZone string) func(ctx context.Context) (done bool, err error) {
 	return func(ctx context.Context) (done bool, err error) {
 		// API documentation
 		// https://www.dynatrace.com/support/help/dynatrace-api/environment-api/network-zones/del-network-zone
 
-		nzApiUrl := fmt.Sprintf("%s/v2/networkZones/%s", secret.ApiUrl, networkZone)
-
-		client := &http.Client{}
-		req, err := http.NewRequest(http.MethodDelete, nzApiUrl, nil)
+		statusCode, statusMsg, err := executeNetworkZoneRequest(secret, networkZone, http.MethodDelete, nil)
 		if err != nil {
 			return false, err
 		}
 
-		req.Header.Add("Authorization", "Api-Token "+secret.ApiToken)
-		req.Header.Add("Content-Type", "application/json")
-
-		resp, err := client.Do(req)
-		defer func() { _ = resp.Body.Close() }()
-
-		if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusNoContent {
+		if statusCode == http.StatusOK || statusCode == http.StatusNoContent {
 			return true, nil
-		}
-
-		if resp.StatusCode == http.StatusBadRequest {
+		} else if statusCode == http.StatusBadRequest {
 			// this error can indicate, that the networkzone is still used by an ActiveGate, just try again later
 			return false, nil
 		}
 
-		respBody, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return false, err
-		}
-		return false, errors.Errorf("delete network zone request failed, status = %d (%s): %s", resp.StatusCode, resp.Status, string(respBody))
+		return false, errors.Errorf("delete network zone request returned status = %d (%s)", statusCode, statusMsg)
 	}
 }
