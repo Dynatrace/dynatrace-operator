@@ -5,16 +5,12 @@ package network_zones
 import (
 	"context"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/src/api/status"
-	dynakubev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
-	appsv1 "k8s.io/api/apps/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/e2e-framework/klient/k8s"
-	"sigs.k8s.io/e2e-framework/klient/wait"
-	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/src/api/status"
+	dynakubev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/activegate"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
@@ -26,6 +22,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/scenarios/cloudnative"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/e2e-framework/klient/k8s"
+	"sigs.k8s.io/e2e-framework/klient/wait"
+	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -76,9 +77,7 @@ func networkZones(t *testing.T) features.Feature {
 
 	// Register actual tests
 	builder.Assess("check injection annotations on sample app pods", checkInjectionAnnotations(sampleApp, "false", "EmptyConnectionInfo"))
-	//	builder.Assess("check that OneAgent rollout is postponed", checkOneAgentRollout())
-
-	builder.Assess("make sure that OneAgent pods do not start up", checkOneAgentPodsDoNotStart(testDynakube, 2*time.Minute))
+	builder.Assess("make sure that OneAgent pods do not yet start up", checkOneAgentPodsDoNotStart(testDynakube, 2*time.Minute))
 
 	// update DynaKube to start AG, which should than enable OA rollout
 	testDynaKubeWithAG := dynakubeBuilder.WithActiveGate().Build()
@@ -93,15 +92,10 @@ func networkZones(t *testing.T) features.Feature {
 	teardown.DeleteDynakube(builder, testDynakube)
 	steps.CreateTeardownSteps(builder)
 
-	builder.Teardown(tenant.DeleteNetworkZone(secretConfig, testNetworkZone))
+	builder.Teardown(activegate.WaitForStatefulSetPodsDeletion(&testDynakube, "activegate"))
+	builder.Teardown(tenant.WaitForNetworkZoneDeletion(secretConfig, testNetworkZone))
 
 	return builder.Feature()
-}
-
-func checkOneAgentRollout() features.Func {
-	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		return ctx
-	}
 }
 
 func checkInjectionAnnotations(sampleApp sample.App, injected string, reason string) features.Func {
