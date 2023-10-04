@@ -189,21 +189,27 @@ func updateVersionStatusForTenantRegistry( //nolint:revive
 }
 
 func getTagFromImageID(imageID string) (string, error) {
-	ref, err := name.ParseReference(imageID)
+	ref, err := name.ParseReference(imageID, name.WithDefaultTag(""))
 	if err != nil {
 		return "", err
 	}
 
-	if taggedRef, ok := ref.(name.Tag); ok {
-		return taggedRef.TagStr(), nil
-	} else if digestRef, ok := ref.(name.Digest); ok {
-		taggedStr := strings.TrimSuffix(digestRef.String(), digestDelimiter+digestRef.DigestStr())
+	var taggedRef name.Tag
 
-		if taggedRef, err = name.NewTag(taggedStr); err == nil {
-			return taggedRef.TagStr(), nil
+	if digestRef, ok := ref.(name.Digest); ok {
+		taggedStr := strings.TrimSuffix(digestRef.String(), digestDelimiter+digestRef.DigestStr())
+		if taggedRef, err = name.NewTag(taggedStr, name.WithDefaultTag("")); err != nil {
+			return "", err
 		}
+	} else if taggedRef, ok = ref.(name.Tag); !ok {
+		return "", errors.New("no tag found to check for downgrade")
 	}
-	return "", errors.New("no tag found to check for downgrade")
+
+	if taggedRef.TagStr() == "" {
+		return "", errors.New("no tag found to check for downgrade")
+	}
+
+	return taggedRef.TagStr(), nil
 }
 
 func isDowngrade(updaterName, previousVersion, latestVersion string) (bool, error) {

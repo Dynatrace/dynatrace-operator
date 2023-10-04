@@ -407,38 +407,44 @@ func TestGetTagFromImageID(t *testing.T) {
 		name        string
 		imageID     string
 		expectedTag string
+		wantErr     require.ErrorAssertionFunc
 	}{
 		{
 			name:        "get tag from imageID",
 			imageID:     "some.registry.com:1.2.3",
 			expectedTag: "1.2.3",
+			wantErr:     require.NoError,
 		},
 		{
 			name:        "get tag from imageID with tag and digest",
 			imageID:     "some.registry.com:1.2.3@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f",
 			expectedTag: "1.2.3",
+			wantErr:     require.NoError,
 		},
 		{
 			name:        "get tag from imageID without tag",
 			imageID:     "some.registry.com",
-			expectedTag: "latest",
+			expectedTag: "",
+			wantErr:     require.Error,
 		},
 		{
 			name:        "get tag from imageID with latest tag",
 			imageID:     "some.registry.com:latest",
 			expectedTag: "latest",
+			wantErr:     require.NoError,
 		},
 		{
-			name:        "get tag from imageID with digest",
+			name:        "get tag from imageID without tag but digest",
 			imageID:     "some.registry.com@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f",
-			expectedTag: "latest",
+			expectedTag: "",
+			wantErr:     require.Error,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			tag, err := getTagFromImageID(test.imageID)
-			require.NoError(t, err)
+			test.wantErr(t, err)
 			assert.Equal(t, test.expectedTag, tag)
 		})
 	}
