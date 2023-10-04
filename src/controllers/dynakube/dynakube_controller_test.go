@@ -66,12 +66,6 @@ const (
 	testNamespace = "test-namespace"
 
 	testApiUrl = "https://" + testHost + "/e/" + testUUID + "/api"
-
-	registryName = "docker.test.com"
-	testToken    = "test-token"
-	testPassword = "test-password"
-	testAuth     = "dGVzdC10b2tlbjp0ZXN0LXBhc3N3b3Jk" // echo -n "test-token:test-password" | base64
-	dockerConfig = "{\"auths\":{\"" + registryName + "\":{\"username\":\"" + testToken + "\",\"password\":\"" + testPassword + "\",\"auth\":\"" + testAuth + "\"}}}"
 )
 
 func TestMonitoringModesDynakube_Reconcile(t *testing.T) {
@@ -709,16 +703,6 @@ func createFakeClientAndReconciler(mockClient dtclient.Client, instance *dynatra
 				Namespace: testNamespace,
 			},
 			Data: data},
-		&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-name-pull-secret",
-				Namespace: testNamespace,
-			},
-			Data: map[string][]byte{
-				corev1.DockerConfigJsonKey: []byte(dockerConfig),
-			},
-			Type: corev1.SecretTypeDockerConfigJson,
-		},
 		&corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: kubesystem.Namespace,
