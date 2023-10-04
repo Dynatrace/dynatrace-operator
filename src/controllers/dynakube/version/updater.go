@@ -2,14 +2,14 @@ package version
 
 import (
 	"context"
-	"fmt"
+	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/registry"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
-	"github.com/containers/image/v5/docker/reference"
+	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -104,7 +104,7 @@ func setImageIDWithDigest( //nolint:revive
 	imageVersionFunc ImageVersionFunc,
 	imageUri string,
 ) error {
-	ref, err := reference.Parse(imageUri)
+	ref, err := name.ParseReference(imageUri)
 	if err != nil {
 		return errors.WithMessage(err, "failed to parse image uri")
 	}
@@ -113,25 +113,23 @@ func setImageIDWithDigest( //nolint:revive
 		"image", imageUri,
 		"oldImageID", target.ImageID)
 
-	if canonRef, ok := ref.(reference.Canonical); ok {
-		target.ImageID = canonRef.String()
-	} else if taggedRef, ok := ref.(reference.NamedTagged); ok {
+	if digestRef, ok := ref.(name.Digest); ok {
+		target.ImageID = digestRef.String()
+	} else if taggedRef, ok := ref.(name.Tag); ok {
+		if taggedRef.TagStr() == name.DefaultTag {
+			return errors.Errorf("unsupported image reference: %s", imageUri)
+		}
+
 		registryClient := registry.NewClient()
 		imageVersion, err := imageVersionFunc(ctx, apiReader, registryClient, dynakube, imageUri)
 		if err != nil {
 			log.Info("failed to determine image version")
 			return err
-		} else {
-			canonRef, err := reference.WithDigest(taggedRef, imageVersion.Digest)
-			if err != nil {
-				target.ImageID = taggedRef.String()
-				log.Error(err, "failed to create canonical image reference, falling back to tag")
-			} else {
-				target.ImageID = canonRef.String()
-			}
 		}
+
+		target.ImageID = registry.BuildImageIDWithTagAndDigest(taggedRef, imageVersion.Digest)
 	} else {
-		return errors.New(fmt.Sprintf("unsupported image reference: %s", imageUri))
+		return errors.Errorf("unsupported image reference: %s", imageUri)
 	}
 
 	log.Info("updated image version info",
@@ -151,7 +149,7 @@ func updateVersionStatusForTenantRegistry( //nolint:revive
 	imageVersionFunc ImageVersionFunc,
 	imageUri string,
 ) error {
-	ref, err := reference.Parse(imageUri)
+	ref, err := name.ParseReference(imageUri)
 	if err != nil {
 		return errors.WithMessage(err, "failed to parse image uri")
 	}
@@ -161,7 +159,7 @@ func updateVersionStatusForTenantRegistry( //nolint:revive
 		"oldImageID", target.ImageID,
 		"oldVersion", target.Version)
 
-	if taggedRef, ok := ref.(reference.NamedTagged); ok {
+	if taggedRef, ok := ref.(name.Tag); ok {
 		registryClient := registry.NewClient()
 		imageVersion, err := imageVersionFunc(ctx, apiReader, registryClient, dynakube, imageUri)
 		if err != nil {
@@ -180,15 +178,27 @@ func updateVersionStatusForTenantRegistry( //nolint:revive
 }
 
 func getTagFromImageID(imageID string) (string, error) {
-	ref, err := reference.Parse(imageID)
+	ref, err := name.ParseReference(imageID, name.WithDefaultTag(""))
 	if err != nil {
 		return "", err
 	}
-	taggedRef, ok := ref.(reference.NamedTagged)
-	if !ok {
+
+	var taggedRef name.Tag
+
+	if digestRef, ok := ref.(name.Digest); ok {
+		taggedStr := strings.TrimSuffix(digestRef.String(), registry.DigestDelimiter+digestRef.DigestStr())
+		if taggedRef, err = name.NewTag(taggedStr, name.WithDefaultTag("")); err != nil {
+			return "", err
+		}
+	} else if taggedRef, ok = ref.(name.Tag); !ok {
 		return "", errors.New("no tag found to check for downgrade")
 	}
-	return taggedRef.Tag(), nil
+
+	if taggedRef.TagStr() == "" {
+		return "", errors.New("no tag found to check for downgrade")
+	}
+
+	return taggedRef.TagStr(), nil
 }
 
 func isDowngrade(updaterName, previousVersion, latestVersion string) (bool, error) {
