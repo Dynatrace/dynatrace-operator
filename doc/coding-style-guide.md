@@ -147,7 +147,8 @@ As such, you declare them at the package level and, in doing so, imply that your
 - `require` is your friend, use it for checking errors (`require.NoError(t, err)`) or anywhere where executing the rest of the `assert`s in case of the check failing would just be noise in the output.
 - Abstract the setup/assert phase as much as possible so it can be reused in other tests in the package.
 - Use `t.Run` and give a title that describes what you are testing in that run.
-- Use this structure:
+- Use `context.Background` when a context is needed, use `context.TODO` ONLY for actual TODOs. (example: you want to create a special context here later to test something specific)
+- Use this structure: (or table-tests)
 
 ```go
 func TestMyFunction(t *testing.T) {
@@ -220,4 +221,12 @@ So here are some basic guidelines:
 
 [Common guidelines](https://github.com/golang/go/wiki/CodeReview)
 
-// TODO
+- (🧑‍🤝‍🧑) 2 approvals per PR is preferred
+- (✅) Resolving a comment is the duty of the commenter. (after the comment was addressed)
+- (😬) When nitpicking/complaining always provide possible solutions, otherwise avoid commenting about it.
+- (🧑‍💻) Run the PR locally/on-your-environment if possible.
+   - (🚨) If testing steps not-clear/not-provided notify the creator to improve them
+   - (🚦) After running it "locally" notify the creator by commenting `Ran it, LGTM` (or something similar) or `Found possible issue ...`
+- (📝) Enforce the coding-style-guide, by linking to it. (to the specific line)
+   - (🙋) If you feel something is missing/wrong in the style-guide, discuss it with the team, and create PR for it if it was accepted.
+
