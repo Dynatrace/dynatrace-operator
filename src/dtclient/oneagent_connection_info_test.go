@@ -19,6 +19,12 @@ func Test_GetOneAgentConnectionInfo(t *testing.T) {
 		CommunicationEndpoints:          []string{testCommunicationEndpoint},
 		FormattedCommunicationEndpoints: testCommunicationEndpoint,
 	}
+	oneAgentJsonResponseWithDups := &oneAgentConnectionInfoJsonResponse{
+		TenantUUID:                      testTenantUUID,
+		TenantToken:                     testTenantToken,
+		CommunicationEndpoints:          []string{testCommunicationEndpoint, testCommunicationEndpoint},
+		FormattedCommunicationEndpoints: testCommunicationEndpoint,
+	}
 
 	expectedOneAgentConnectionInfo := OneAgentConnectionInfo{
 		ConnectionInfo: ConnectionInfo{
@@ -37,6 +43,17 @@ func Test_GetOneAgentConnectionInfo(t *testing.T) {
 
 	t.Run("no network zone", func(t *testing.T) {
 		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(oneAgentConnectionInfoEndpoint, oneAgentJsonResponse), "")
+		defer dynatraceServer.Close()
+
+		connectionInfo, err := dynatraceClient.GetOneAgentConnectionInfo()
+		assert.NoError(t, err)
+		assert.NotNil(t, connectionInfo)
+
+		assert.Equal(t, expectedOneAgentConnectionInfo, connectionInfo)
+	})
+
+	t.Run("with duplicates", func(t *testing.T) {
+		dynatraceServer, dynatraceClient := createTestDynatraceServer(t, connectionInfoServerHandler(oneAgentConnectionInfoEndpoint, oneAgentJsonResponseWithDups), "")
 		defer dynatraceServer.Close()
 
 		connectionInfo, err := dynatraceClient.GetOneAgentConnectionInfo()
