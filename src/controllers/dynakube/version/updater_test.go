@@ -10,7 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/registry"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
-	"github.com/containers/image/v5/docker/reference"
+	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/opencontainers/go-digest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -354,15 +354,101 @@ func TestUpdateVersionStatus(t *testing.T) {
 	})
 }
 
+func TestNewImageLib(t *testing.T) {
+	imageVersionFunc := func(context.Context, client.Reader, registry.ImageGetter, *dynatracev1beta1.DynaKube, string) (registry.ImageVersion, error) { // nolint:unparam
+		return registry.ImageVersion{
+			Digest: func() digest.Digest {
+				d, e := digest.Parse("sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f")
+				require.NoError(t, e)
+				return d
+			}(),
+		}, nil
+	}
+
+	tests := []struct {
+		input    string
+		expected string
+		wantErr  require.ErrorAssertionFunc
+	}{
+		{
+			input:    "some.registry.com/image",
+			expected: "",
+			wantErr:  require.Error,
+		},
+		{
+			input:    "some.registry.com/image@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f",
+			expected: "some.registry.com/image@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f",
+			wantErr:  require.NoError,
+		},
+		{
+			input:    "some.registry.com/image:0.1.2.3",
+			expected: "some.registry.com/image:0.1.2.3@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f",
+			wantErr:  require.NoError,
+		},
+		{
+			input:    "some.registry.com/image:0.1.2.3@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f",
+			expected: "some.registry.com/image:0.1.2.3@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f",
+			wantErr:  require.NoError,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.input, func(t *testing.T) {
+			targetNew := status.VersionStatus{}
+			err := setImageIDWithDigest(context.TODO(), fake.NewClient(), &dynatracev1beta1.DynaKube{}, &targetNew, imageVersionFunc, test.input)
+			test.wantErr(t, err)
+			assert.Equal(t, test.expected, targetNew.ImageID)
+		})
+	}
+}
+
 func TestGetTagFromImageID(t *testing.T) {
-	t.Run("get tag from imageID", func(t *testing.T) {
-		imageID := "some.registry.com:1.2.3@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
+	tests := []struct {
+		name        string
+		imageID     string
+		expectedTag string
+		wantErr     require.ErrorAssertionFunc
+	}{
+		{
+			name:        "get tag from imageID",
+			imageID:     "some.registry.com:1.2.3",
+			expectedTag: "1.2.3",
+			wantErr:     require.NoError,
+		},
+		{
+			name:        "get tag from imageID with tag and digest",
+			imageID:     "some.registry.com:1.2.3@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f",
+			expectedTag: "1.2.3",
+			wantErr:     require.NoError,
+		},
+		{
+			name:        "get tag from imageID without tag",
+			imageID:     "some.registry.com",
+			expectedTag: "",
+			wantErr:     require.Error,
+		},
+		{
+			name:        "get tag from imageID with latest tag",
+			imageID:     "some.registry.com:latest",
+			expectedTag: "latest",
+			wantErr:     require.NoError,
+		},
+		{
+			name:        "get tag from imageID without tag but digest",
+			imageID:     "some.registry.com@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f",
+			expectedTag: "",
+			wantErr:     require.Error,
+		},
+	}
 
-		tag, err := getTagFromImageID(imageID)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			tag, err := getTagFromImageID(test.imageID)
+			test.wantErr(t, err)
+			assert.Equal(t, test.expectedTag, tag)
+		})
+	}
 
-		require.NoError(t, err)
-		assert.Equal(t, "1.2.3", tag)
-	})
 	t.Run("error for malformed imageID", func(t *testing.T) {
 		imageID := "some.registry.com@1.2.3"
 
@@ -436,10 +522,10 @@ func newClassicFullStackDynakube() *dynatracev1beta1.DynaKube {
 	}
 }
 
-func getTaggedReference(t *testing.T, image string) reference.NamedTagged {
-	ref, err := reference.Parse(image)
+func getTaggedReference(t *testing.T, image string) name.Tag {
+	ref, err := name.ParseReference(image)
 	require.NoError(t, err)
-	taggedRef, ok := ref.(reference.NamedTagged)
+	taggedRef, ok := ref.(name.Tag)
 	require.True(t, ok)
 	return taggedRef
 }
