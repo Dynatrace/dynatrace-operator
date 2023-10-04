@@ -260,11 +260,6 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		return err
 	}
 
-	registryClient, err := controller.createDynatraceRegistryClient(ctx, dynakube)
-	if err != nil {
-		return err
-	}
-
 	controller.setConditionTokenReady(dynakube)
 	err = status.SetDynakubeStatus(dynakube, controller.apiReader)
 	if err != nil {
@@ -295,6 +290,12 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 	}
 
 	err = deploymentmetadata.NewReconciler(controller.client, controller.apiReader, controller.scheme, *dynakube, controller.clusterID).Reconcile(ctx)
+	if err != nil {
+		return err
+	}
+
+	// NB: we create registryClient after we finish reconciling of dt pull secret
+	registryClient, err := controller.createDynatraceRegistryClient(ctx, dynakube)
 	if err != nil {
 		return err
 	}

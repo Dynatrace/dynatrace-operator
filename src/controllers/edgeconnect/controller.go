@@ -2,6 +2,7 @@ package edgeconnect
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
@@ -76,9 +77,13 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 
 	log.Info("updating version info", "name", request.Name, "namespace", request.Namespace)
 
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	keyChainSecret := edgeConnect.PullSecretWithoutData()
 	registryClient, err := controller.registryClientBuilder(
 		registry.WithContext(ctx),
 		registry.WithApiReader(controller.apiReader),
+		registry.WithTransport(transport),
+		registry.WithKeyChainSecret(&keyChainSecret),
 	)
 	if err != nil {
 		return reconcile.Result{}, err
