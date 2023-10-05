@@ -10,6 +10,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	DefaultHostPort = uint32(80)
+)
+
 func GetOneAgentCommunicationHosts(dynakube *dynatracev1beta1.DynaKube) []dtclient.CommunicationHost {
 	communicationHosts := make([]dtclient.CommunicationHost, 0, len(dynakube.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts))
 	for _, host := range dynakube.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts {
@@ -79,6 +83,6 @@ func parsePort(hostParts []string) (uint32, error) {
 		}
 		return uint32(intPort), nil
 	} else {
-		return uint32(80), nil
+		return DefaultHostPort, nil
 	}
 }
