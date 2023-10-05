@@ -325,8 +325,6 @@ jobs:
             tmp/cosign.pub
             config/deploy/kubernetes/kubernetes.yaml
             config/deploy/openshift/openshift.yaml
-            helm-pkg/dynatrace-operator-${{ needs.prepare.outputs.version_without_prefix }}.tgz
-            helm-pkg/dynatrace-operator-${{ needs.prepare.outputs.version_without_prefix }}.tgz.prov
           token: ${{ secrets.GITHUB_TOKEN }}
           prerelease: true
           draft: true
