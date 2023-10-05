@@ -87,10 +87,6 @@ func tryImagePull(ctx context.Context, keychain authn.Keychain, transport *http.
 		return err
 	}
 
-	if err != nil {
-		return err
-	}
-
 	_, err = remote.Get(imageReference, remote.WithContext(ctx), remote.WithAuthFromKeychain(keychain), remote.WithTransport(transport))
 	if err != nil {
 		return err
