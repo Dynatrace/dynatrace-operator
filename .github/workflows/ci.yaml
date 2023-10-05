@@ -104,7 +104,7 @@ jobs:
         uses: articulate/actions-markdownlint@v1
         with:
           config: .markdownlint.json
-          files: '*.md'
+          files: './**/*.md'
           version: 0.36.0
 
   prepare:
