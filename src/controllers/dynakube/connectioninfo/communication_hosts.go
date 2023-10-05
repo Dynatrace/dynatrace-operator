@@ -38,8 +38,7 @@ func parseCommunicationHostFromActiveGateEndpoints(activegateEndpointsString str
 	endpointStrings := strings.Split(activegateEndpointsString, ",")
 	endpointCommunicationHosts := make(map[dtclient.CommunicationHost]bool, len(endpointStrings))
 	for _, endpointString := range endpointStrings {
-		endpoint, err := parseEndpointToCommunicationHost(endpointString)
-		if err == nil {
+		if endpoint, err := parseEndpointToCommunicationHost(endpointString); err == nil {
 			endpointCommunicationHosts[endpoint] = true
 		}
 	}
