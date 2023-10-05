@@ -113,10 +113,3 @@ See [CONTRIBUTING](CONTRIBUTING.md) for details on submitting changes.
 ## License
 
 Dynatrace Operator is under Apache 2.0 license. See [LICENSE](LICENSE) for details.
-asd
-
-
-
-asd
-
--dasd ad 
