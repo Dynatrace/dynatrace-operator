@@ -82,6 +82,6 @@ func parsePort(hostParts []string) (uint32, error) {
 		}
 		return uint32(intPort), nil
 	} else {
-		return DefaultHostPort, nil
+		return DefaultHttpPort, nil
 	}
 }
