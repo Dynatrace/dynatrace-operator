@@ -225,8 +225,7 @@ So here are some basic guidelines:
 - (✅) Resolving a comment is the duty of the commenter. (after the comment was addressed)
 - (😬) When nitpicking/complaining always provide possible solutions, otherwise avoid commenting about it.
 - (🧑‍💻) Run the PR locally/on-your-environment if possible.
-   - (🚨) If testing steps not-clear/not-provided notify the creator to improve them
-   - (🚦) After running it "locally" notify the creator by commenting `Ran it, practically LGTM` (or something similar) or `Found possible issue ...`
+  - (🚨) If testing steps not-clear/not-provided notify the creator to improve them
+  - (🚦) After running it "locally" notify the creator by commenting `Ran it, practically LGTM` (or something similar) or `Found possible issue ...`
 - (📝) Enforce the coding-style-guide, by linking to it. (to the specific line)
-   - (🙋) If you feel something is missing/wrong in the style-guide, discuss it with the team, and create PR for it if it was accepted.
-
+  - (🙋) If you feel something is missing/wrong in the style-guide, discuss it with the team, and create PR for it if it was accepted.
