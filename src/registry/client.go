@@ -27,7 +27,8 @@ type Client struct{}
 
 const (
 	// VersionLabel is the name of the label used on ActiveGate-provided images.
-	VersionLabel = "com.dynatrace.build-version"
+	VersionLabel    = "com.dynatrace.build-version"
+	DigestDelimiter = "@"
 )
 
 func NewClient() *Client {
@@ -85,4 +86,8 @@ func (c *Client) PullImageInfo(ctx context.Context, keychain authn.Keychain, tra
 	}
 
 	return &image, nil
+}
+
+func BuildImageIDWithTagAndDigest(taggedRef name.Tag, digest digest.Digest) string {
+	return fmt.Sprintf("%s%s%s", taggedRef.String(), DigestDelimiter, digest.String())
 }

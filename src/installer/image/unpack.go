@@ -7,26 +7,12 @@ import (
 	"path/filepath"
 
 	"github.com/Dynatrace/dynatrace-operator/src/installer/common"
-	"github.com/containers/image/v5/manifest"
-	"github.com/containers/image/v5/signature"
 	"github.com/google/go-containerregistry/pkg/crane"
 	"github.com/google/go-containerregistry/pkg/name"
 	containerv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/google/go-containerregistry/pkg/v1/types"
 	"github.com/pkg/errors"
-	"github.com/spf13/afero"
-)
-
-const (
-	// MediaTypeImageLayerGzip is the media type used for gzipped layers
-	// referenced by the manifest.
-	mediaTypeImageLayerGzip = "application/vnd.oci.image.layer.v1.tar+gzip"
-
-	// MediaTypeImageLayerZstd is the media type used for zstd compressed
-	// layers referenced by the manifest.
-	mediaTypeImageLayerZstd = "application/vnd.oci.image.layer.v1.tar+zstd"
-
-	mediaTypeImageLayerDockerRootFs = "application/vnd.docker.image.rootfs.diff.tar.gzip"
 )
 
 type imagePullInfo struct {
@@ -84,27 +70,13 @@ func (installer Installer) pullOCIimage(image containerv1.Image, imageName strin
 		return errors.WithMessagef(err, "saving v1.Image img as an OCI Image Layout at path %s", imageCacheDir)
 	}
 
-	aferoFs := afero.Afero{
-		Fs: installer.fs,
-	}
-
-	manifestFile, err := aferoFs.ReadFile(filepath.Join(imageCacheDir, ref.Identifier(), "index.json"))
+	layers, err := image.Layers()
 	if err != nil {
-		log.Info("failed to read index.json", "error", err)
+		log.Info("failed to get image layers", "err", err)
 		return errors.WithStack(err)
 	}
 
-	manifests, err := unmarshallImageIndex(aferoFs, filepath.Join(imageCacheDir, ref.Identifier()), manifestFile)
-	if err != nil {
-		log.Info("failed to unmarshal manifests",
-			"image", installer.props.ImageUri,
-			"manifestBlob", manifestFile,
-			"imageCacheDir", imageCacheDir,
-		)
-		return errors.WithStack(err)
-	}
-
-	err = installer.unpackOciImage(manifests, filepath.Join(imageCacheDir, ref.Identifier()), targetDir)
+	err = installer.unpackOciImage(layers, filepath.Join(imageCacheDir, ref.Identifier()), targetDir)
 	if err != nil {
 		log.Info("failed to unpackOciImage", "error", err)
 		return errors.WithStack(err)
@@ -112,57 +84,25 @@ func (installer Installer) pullOCIimage(image containerv1.Image, imageName strin
 	return nil
 }
 
-func (installer Installer) unpackOciImage(manifests []*manifest.OCI1, imageCacheDir string, targetDir string) error {
-	for _, entry := range manifests {
-		for _, layer := range entry.LayerInfos() {
-			switch layer.MediaType {
-			case mediaTypeImageLayerDockerRootFs:
-				sourcePath := filepath.Join(imageCacheDir, "blobs", layer.Digest.Algorithm().String(), layer.Digest.Hex())
-				log.Info("unpackOciImage", "sourcePath", sourcePath)
-				if err := installer.extractor.ExtractGzip(sourcePath, targetDir); err != nil {
-					return err
-				}
-			case mediaTypeImageLayerGzip:
-				return errors.New("MediaTypeImageLayerGzip is not implemented")
-			case mediaTypeImageLayerZstd:
-				return errors.New("MediaTypeImageLayerZstd is not implemented")
-			default:
-				return fmt.Errorf("unknown media type: %s", layer.MediaType)
+func (installer Installer) unpackOciImage(layers []containerv1.Layer, imageCacheDir string, targetDir string) error {
+	for _, layer := range layers {
+		mediaType, _ := layer.MediaType()
+		switch mediaType {
+		case types.DockerLayer:
+			digest, _ := layer.Digest()
+			sourcePath := filepath.Join(imageCacheDir, "blobs", digest.Algorithm, digest.Hex)
+			log.Info("unpackOciImage", "sourcePath", sourcePath)
+			if err := installer.extractor.ExtractGzip(sourcePath, targetDir); err != nil {
+				return err
 			}
+		case types.OCILayer:
+			return errors.New("OCILayer is not implemented")
+		case types.OCILayerZStd:
+			return errors.New("OCILayerZStd is not implemented")
+		default:
+			return fmt.Errorf("media type %s is not implemented", mediaType)
 		}
 	}
 	log.Info("unpackOciImage", "targetDir", targetDir)
 	return nil
-}
-
-func unmarshallImageIndex(fs afero.Fs, imageCacheDir string, manifestBlob []byte) ([]*manifest.OCI1, error) {
-	index, err := manifest.OCI1IndexFromManifest(manifestBlob)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	aferoFs := afero.Afero{
-		Fs: fs,
-	}
-
-	var manifests []*manifest.OCI1 // nolint:prealloc
-	for _, descriptor := range index.Manifests {
-		manifestFile, err := aferoFs.ReadFile(filepath.Join(imageCacheDir, "blobs", descriptor.Digest.Algorithm().String(), descriptor.Digest.Hex()))
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
-		ociManifest, err := manifest.OCI1FromManifest(manifestFile)
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
-		manifests = append(manifests, ociManifest)
-	}
-	return manifests, nil
-}
-
-func buildPolicyContext() (*signature.PolicyContext, error) {
-	policy, err := signature.NewPolicyFromBytes([]byte(rawPolicy))
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	return signature.NewPolicyContext(policy)
 }
