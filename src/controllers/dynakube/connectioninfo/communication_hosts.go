@@ -1,7 +1,6 @@
 package connectioninfo
 
 import (
-	"net"
 	"net/url"
 	"strconv"
 	"strings"
@@ -9,6 +8,10 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/pkg/errors"
+)
+
+const (
+	DefaultHttpPort = uint32(80)
 )
 
 func GetOneAgentCommunicationHosts(dynakube *dynatracev1beta1.DynaKube) []dtclient.CommunicationHost {
@@ -52,26 +55,34 @@ func parseEndpointToCommunicationHost(endpointString string) (dtclient.Communica
 	if endpointString == "" {
 		return dtclient.CommunicationHost{}, errors.New("empty endpoint string not allowed")
 	}
+
 	parsedEndpoint, err := url.Parse(endpointString)
-
-	if err != nil {
-		return dtclient.CommunicationHost{}, err
-	}
-	host := parsedEndpoint.Host
-	hostPart, portPart, err := net.SplitHostPort(host)
-
 	if err != nil {
 		return dtclient.CommunicationHost{}, err
 	}
 
-	intPort, err := strconv.ParseUint(portPart, 10, 32)
+	port, err := GetPortOrDefault(parsedEndpoint, DefaultHttpPort)
 	if err != nil {
 		return dtclient.CommunicationHost{}, err
 	}
 
 	return dtclient.CommunicationHost{
 		Protocol: parsedEndpoint.Scheme,
-		Host:     hostPart,
-		Port:     uint32(intPort),
+		Host:     parsedEndpoint.Hostname(),
+		Port:     port,
 	}, nil
+}
+
+func GetPortOrDefault(u *url.URL, defaultPort uint32) (uint32, error) {
+	portString := u.Port()
+
+	if portString == "" {
+		return defaultPort, nil
+	}
+
+	if p, err := strconv.ParseUint(portString, 10, 32); err == nil {
+		return uint32(p), nil
+	} else {
+		return 0, err
+	}
 }
