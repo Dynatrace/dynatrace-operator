@@ -215,7 +215,7 @@ func (controller *Controller) setupIstio(ctx context.Context, dynakube *dynatrac
 }
 
 func (controller *Controller) createDynatraceRegistryClient(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) (registry.ImageGetter, error) {
-	keychain := dynakube.PullSecretWithoutData()
+	pullSecret := dynakube.PullSecretWithoutData()
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 
 	transport, err := registry.PrepareTransportForDynaKube(ctx, controller.apiReader, transport, dynakube)
@@ -226,7 +226,7 @@ func (controller *Controller) createDynatraceRegistryClient(ctx context.Context,
 	registryClient, err := controller.registryClientBuilder(
 		registry.WithContext(ctx),
 		registry.WithApiReader(controller.apiReader),
-		registry.WithKeyChainSecret(&keychain),
+		registry.WithKeyChainSecret(&pullSecret),
 		registry.WithTransport(transport),
 	)
 
