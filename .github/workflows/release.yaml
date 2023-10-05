@@ -283,7 +283,6 @@ jobs:
           mv config/deploy/kubernetes/kubernetes-all.yaml config/deploy/kubernetes/kubernetes.yaml
           mv config/deploy/openshift/openshift-all.yaml config/deploy/openshift/openshift.yaml
       - name: Build helm packages
-        if: ${{ !contains(github.ref, '-rc.') }}
         uses: ./.github/actions/build-helm
         with:
           version_without_prefix: ${{ needs.prepare.outputs.version_without_prefix }}
@@ -293,7 +292,6 @@ jobs:
           output-dir: "./helm-pkg"
       - name: Upload helm package to OCI registry
         id: pushHelmChart
-        if: ${{ !contains(github.ref, '-rc.') }}
         shell: bash
         run: |
           helm registry login -u "${{ secrets.DOCKERHUB_USERNAME }}" -p "${{ secrets.DOCKERHUB_PASSWORD }}" registry.hub.docker.com
@@ -306,8 +304,7 @@ jobs:
           registry: docker.io
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
-      - name: Sign package with cosign
-        if: ${{ !contains(github.ref, '-rc.') }}
+      - name: Sign OCI package with cosign
         uses: ./.github/actions/sign-image
         with:
           image: "docker.io/dynatrace/dynatrace-operator:${{ needs.prepare.outputs.version }}@${{ steps.pushHelmChart.outputs.digest }}"
@@ -328,6 +325,8 @@ jobs:
             tmp/cosign.pub
             config/deploy/kubernetes/kubernetes.yaml
             config/deploy/openshift/openshift.yaml
+            helm-pkg/dynatrace-operator-${{ needs.prepare.outputs.version_without_prefix }}.tgz
+            helm-pkg/dynatrace-operator-${{ needs.prepare.outputs.version_without_prefix }}.tgz.prov
           token: ${{ secrets.GITHUB_TOKEN }}
           prerelease: true
           draft: true
