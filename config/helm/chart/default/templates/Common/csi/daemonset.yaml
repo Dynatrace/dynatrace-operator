@@ -59,6 +59,10 @@ spec:
         - csi-init
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
+        resources:
+          {{- if .Values.csidriver.csiInit.resources }}
+          {{- toYaml .Values.csidriver.csiInit.resources | nindent 10 }}
+          {{- end }}
         securityContext:
         {{- toYaml .Values.csidriver.csiInit.securityContext| nindent 10 }}
         volumeMounts:
