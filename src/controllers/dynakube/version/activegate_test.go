@@ -8,8 +8,10 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/registry"
+	"github.com/Dynatrace/dynatrace-operator/src/registry/mocks"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -37,9 +39,9 @@ func TestActiveGateUpdater(t *testing.T) {
 		}
 		mockClient := &dtclient.MockDynatraceClient{}
 		mockActiveGateImageInfo(mockClient, testImage)
-		registry := newEmptyFakeRegistry()
+		mockImageGetter := mocks.MockImageGetter{}
 
-		updater := newActiveGateUpdater(dynakube, fake.NewClient(), mockClient, registry.ImageVersionExt)
+		updater := newActiveGateUpdater(dynakube, fake.NewClient(), mockClient, &mockImageGetter)
 
 		assert.Equal(t, "activegate", updater.Name())
 		assert.True(t, updater.IsEnabled())
@@ -72,12 +74,11 @@ func TestActiveGateUseDefault(t *testing.T) {
 		expectedImage := dynakube.DefaultActiveGateImage()
 		expectedVersion := "1.2.3.4-5"
 		mockClient := &dtclient.MockDynatraceClient{}
-		registry := newFakeRegistry(map[string]registry.ImageVersion{
-			expectedImage: {
-				Version: expectedVersion,
-			},
-		})
-		updater := newActiveGateUpdater(dynakube, fake.NewClient(), mockClient, registry.ImageVersionExt)
+		mockImageGetter := mocks.MockImageGetter{}
+
+		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{Version: expectedVersion}, nil)
+
+		updater := newActiveGateUpdater(dynakube, fake.NewClient(), mockClient, &mockImageGetter)
 
 		err := updater.UseTenantRegistry(context.TODO())
 		require.NoError(t, err)

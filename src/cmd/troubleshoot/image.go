@@ -27,22 +27,24 @@ type Auths struct {
 	Auths Endpoints `json:"auths"`
 }
 
+type ImagePullFunc func(image string) error
+
 func verifyAllImagesAvailable(ctx context.Context, baseLog logr.Logger, keychain authn.Keychain, transport *http.Transport, dynakube *dynatracev1beta1.DynaKube) error {
 	log := baseLog.WithName("imagepull")
 
-	imagePullFuncImpl := CreateImagePullFunc(ctx, keychain, transport)
+	imagePullFunc := CreateImagePullFunc(ctx, keychain, transport)
 
 	if dynakube.NeedsOneAgent() {
-		verifyImageIsAvailable(log, imagePullFuncImpl, dynakube, componentOneAgent, false)
-		verifyImageIsAvailable(log, imagePullFuncImpl, dynakube, componentCodeModules, true)
+		verifyImageIsAvailable(log, imagePullFunc, dynakube, componentOneAgent, false)
+		verifyImageIsAvailable(log, imagePullFunc, dynakube, componentCodeModules, true)
 	}
 	if dynakube.NeedsActiveGate() {
-		verifyImageIsAvailable(log, imagePullFuncImpl, dynakube, componentActiveGate, false)
+		verifyImageIsAvailable(log, imagePullFunc, dynakube, componentActiveGate, false)
 	}
 	return nil
 }
 
-func verifyImageIsAvailable(log logr.Logger, pullImage imagePullFunc, dynakube *dynatracev1beta1.DynaKube, comp component, proxyWarning bool) {
+func verifyImageIsAvailable(log logr.Logger, pullImage ImagePullFunc, dynakube *dynatracev1beta1.DynaKube, comp component, proxyWarning bool) {
 	image, isCustomImage := comp.getImage(dynakube)
 	if comp.SkipImageCheck(image) {
 		logErrorf(log, "Unknown %s image", comp.String())
@@ -73,9 +75,7 @@ func verifyImageIsAvailable(log logr.Logger, pullImage imagePullFunc, dynakube *
 	}
 }
 
-type imagePullFunc func(image string) error
-
-func CreateImagePullFunc(ctx context.Context, keychain authn.Keychain, transport *http.Transport) imagePullFunc {
+func CreateImagePullFunc(ctx context.Context, keychain authn.Keychain, transport *http.Transport) ImagePullFunc {
 	return func(image string) error {
 		return tryImagePull(ctx, keychain, transport, image)
 	}

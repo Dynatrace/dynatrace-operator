@@ -4,14 +4,13 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"net/url"
 	"os"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
-	dynakubeversion "github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerkeychain"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/registry"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/go-logr/logr"
@@ -148,7 +147,7 @@ func runChecksForDynakube(ctx context.Context, baseLog logr.Logger, apiReader cl
 		return err
 	}
 
-	transport, err := createTransport(ctx, log, apiReader, &dynakube, httpClient)
+	transport, err := createTransport(ctx, apiReader, &dynakube, httpClient)
 	if err != nil {
 		return err
 	}
@@ -161,15 +160,7 @@ func runChecksForDynakube(ctx context.Context, baseLog logr.Logger, apiReader cl
 	return checkProxySettings(ctx, log, apiReader, &dynakube)
 }
 
-func createTransport(ctx context.Context, log logr.Logger, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube, httpClient *http.Client) (*http.Transport, error) {
-	proxy, err := getProxyURL(ctx, apiReader, dynakube)
-	if err != nil {
-		return nil, err
-	}
-	err = applyProxy(log, httpClient, proxy)
-	if err != nil {
-		return nil, err
-	}
+func createTransport(ctx context.Context, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube, httpClient *http.Client) (*http.Transport, error) {
 	var transport *http.Transport
 	if httpClient != nil && httpClient.Transport != nil {
 		transport = httpClient.Transport.(*http.Transport).Clone()
@@ -177,25 +168,7 @@ func createTransport(ctx context.Context, log logr.Logger, apiReader client.Read
 		transport = http.DefaultTransport.(*http.Transport).Clone()
 	}
 
-	return dynakubeversion.PrepareTransport(ctx, apiReader, transport, dynakube)
-}
-
-func applyProxy(log logr.Logger, httpClient *http.Client, proxy string) error {
-	if proxy != "" {
-		proxyUrl, err := url.Parse(proxy)
-		if err != nil {
-			return errors.Wrap(err, "could not parse proxy URL!")
-		}
-
-		if httpClient.Transport == nil {
-			httpClient.Transport = http.DefaultTransport
-		}
-
-		httpClient.Transport.(*http.Transport).Proxy = http.ProxyURL(proxyUrl)
-		logInfof(log, "using '%s' proxy to connect to the registry", proxyUrl.Host)
-	}
-
-	return nil
+	return registry.PrepareTransportForDynaKube(ctx, apiReader, transport, dynakube)
 }
 
 func getDynakubes(ctx context.Context, log logr.Logger, apiReader client.Reader, namespaceName string, dynakubeName string) ([]dynatracev1beta1.DynaKube, error) {

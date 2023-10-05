@@ -9,8 +9,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/src/registry"
+	"github.com/Dynatrace/dynatrace-operator/src/registry/mocks"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -31,10 +33,11 @@ func TestOneAgentUpdater(t *testing.T) {
 				},
 			},
 		}
-		registry := newEmptyFakeRegistry()
 		mockClient := &dtclient.MockDynatraceClient{}
 		mockOneAgentImageInfo(mockClient, testImage)
-		updater := newOneAgentUpdater(dynakube, fake.NewClient(), mockClient, registry.ImageVersionExt)
+		mockImageGetter := mocks.MockImageGetter{}
+
+		updater := newOneAgentUpdater(dynakube, fake.NewClient(), mockClient, &mockImageGetter)
 
 		assert.Equal(t, "oneagent", updater.Name())
 		assert.True(t, updater.IsEnabled())
@@ -62,15 +65,12 @@ func TestOneAgentUseDefault(t *testing.T) {
 			},
 		}
 		expectedImage := dynakube.DefaultOneAgentImage()
-		registry := newFakeRegistry(map[string]registry.ImageVersion{
-			expectedImage: {
-				Version: testVersion,
-				Digest:  testDigest,
-			},
-		})
 
 		mockClient := &dtclient.MockDynatraceClient{}
-		updater := newOneAgentUpdater(dynakube, fake.NewClient(), mockClient, registry.ImageVersionExt)
+		mockImageGetter := mocks.MockImageGetter{}
+		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{Version: testVersion, Digest: testDigest}, nil)
+
+		updater := newOneAgentUpdater(dynakube, fake.NewClient(), mockClient, &mockImageGetter)
 
 		err := updater.UseTenantRegistry(context.TODO())
 
@@ -87,16 +87,14 @@ func TestOneAgentUseDefault(t *testing.T) {
 			},
 		}
 		expectedImage := dynakube.DefaultOneAgentImage()
-		registry := newFakeRegistry(map[string]registry.ImageVersion{
-			expectedImage: {
-				Version: testVersion,
-				Digest:  testDigest,
-			},
-		})
 
 		mockClient := &dtclient.MockDynatraceClient{}
 		mockLatestAgentVersion(mockClient, testVersion)
-		updater := newOneAgentUpdater(dynakube, fake.NewClient(), mockClient, registry.ImageVersionExt)
+		mockImageGetter := mocks.MockImageGetter{}
+
+		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{Version: testVersion, Digest: testDigest}, nil)
+
+		updater := newOneAgentUpdater(dynakube, fake.NewClient(), mockClient, &mockImageGetter)
 
 		err := updater.UseTenantRegistry(context.TODO())
 
@@ -123,17 +121,13 @@ func TestOneAgentUseDefault(t *testing.T) {
 			},
 		}
 
-		expectedImage := dynakube.DefaultOneAgentImage()
-		registry := newFakeRegistry(map[string]registry.ImageVersion{
-			expectedImage: {
-				Version: testVersion,
-				Digest:  testDigest,
-			},
-		})
-
 		mockClient := &dtclient.MockDynatraceClient{}
 		mockLatestAgentVersion(mockClient, testVersion)
-		updater := newOneAgentUpdater(dynakube, fake.NewClient(), mockClient, registry.ImageVersionExt)
+		mockImageGetter := mocks.MockImageGetter{}
+
+		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{Version: testVersion, Digest: testDigest}, nil)
+
+		updater := newOneAgentUpdater(dynakube, fake.NewClient(), mockClient, &mockImageGetter)
 
 		err := updater.UseTenantRegistry(context.TODO())
 		require.NoError(t, err) // we only log the downgrade problem, not fail the reconcile

@@ -2,6 +2,7 @@ package edgeconnect
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
@@ -33,12 +34,12 @@ const (
 type Controller struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the api-server
-	client         client.Client
-	apiReader      client.Reader
-	scheme         *runtime.Scheme
-	config         *rest.Config
-	registryClient registry.ImageGetter
-	timeProvider   *timeprovider.Provider
+	client                client.Client
+	apiReader             client.Reader
+	registryClientBuilder registry.ClientBuilder
+	scheme                *runtime.Scheme
+	config                *rest.Config
+	timeProvider          *timeprovider.Provider
 }
 
 func Add(mgr manager.Manager, _ string) error {
@@ -47,12 +48,12 @@ func Add(mgr manager.Manager, _ string) error {
 
 func NewController(mgr manager.Manager) *Controller {
 	return &Controller{
-		client:         mgr.GetClient(),
-		apiReader:      mgr.GetAPIReader(),
-		scheme:         mgr.GetScheme(),
-		config:         mgr.GetConfig(),
-		registryClient: registry.NewClient(),
-		timeProvider:   timeprovider.New(),
+		client:                mgr.GetClient(),
+		apiReader:             mgr.GetAPIReader(),
+		scheme:                mgr.GetScheme(),
+		registryClientBuilder: registry.NewClient,
+		config:                mgr.GetConfig(),
+		timeProvider:          timeprovider.New(),
 	}
 }
 
@@ -76,7 +77,19 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 
 	log.Info("updating version info", "name", request.Name, "namespace", request.Namespace)
 
-	versionReconciler := version.NewReconciler(controller.apiReader, controller.registryClient, timeprovider.New(), edgeConnect)
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	keyChainSecret := edgeConnect.PullSecretWithoutData()
+	registryClient, err := controller.registryClientBuilder(
+		registry.WithContext(ctx),
+		registry.WithApiReader(controller.apiReader),
+		registry.WithTransport(transport),
+		registry.WithKeyChainSecret(&keyChainSecret),
+	)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	versionReconciler := version.NewReconciler(controller.apiReader, registryClient, timeprovider.New(), edgeConnect)
 	if err = versionReconciler.Reconcile(ctx); err != nil {
 		log.Error(err, "reconciliation of EdgeConnect failed", "name", request.Name, "namespace", request.Namespace)
 		return reconcile.Result{RequeueAfter: errorUpdateInterval}, nil
