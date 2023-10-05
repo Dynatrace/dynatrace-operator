@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	DefaultHostPort = uint32(80)
+	DefaultHttpPort = uint32(80)
 )
 
 func GetOneAgentCommunicationHosts(dynakube *dynatracev1beta1.DynaKube) []dtclient.CommunicationHost {
