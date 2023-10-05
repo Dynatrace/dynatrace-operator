@@ -11,7 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/dockerkeychain"
 	"github.com/Dynatrace/dynatrace-operator/src/registry"
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
-	"github.com/containers/image/v5/docker/reference"
+	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -91,18 +91,18 @@ func (u updater) Update(ctx context.Context) error {
 }
 
 func (u updater) combineImageWithDigest(digest digest.Digest) (string, error) {
-	imageRef, err := reference.Parse(u.edgeConnect.Image())
+	imageRef, err := name.ParseReference(u.edgeConnect.Image())
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
-	if taggedRef, ok := imageRef.(reference.NamedTagged); ok {
-		canonRef, err := reference.WithDigest(taggedRef, digest)
+	if taggedRef, ok := imageRef.(name.Tag); ok {
+		canonRef := registry.BuildImageIDWithTagAndDigest(taggedRef, digest)
 		if err != nil {
 			return "", errors.WithStack(err)
 		}
-		return canonRef.String(), nil
+		return canonRef, nil
 	}
-	return "", fmt.Errorf("image reference wrongly formatted")
+	return "", fmt.Errorf("wrong image reference format")
 }
 
 func (u updater) Name() string {

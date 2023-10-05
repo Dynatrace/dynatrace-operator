@@ -45,7 +45,7 @@ func (t troubleshootCollector) Do() error {
 	troubleshootCmdOutput := bytes.Buffer{}
 	log := troubleshoot.NewTroubleshootLoggerToWriter(&troubleshootCmdOutput)
 
-	troubleshoot.RunTroubleshootCmd(context.Background(), log, t.apiReader, t.namespace, t.kubeConfig)
+	troubleshoot.RunTroubleshootCmd(context.Background(), log, t.namespace, &t.kubeConfig)
 
 	t.supportArchive.addFile(TroublshootOutputFileName, &troubleshootCmdOutput)
 	return nil

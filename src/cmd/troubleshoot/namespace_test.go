@@ -1,6 +1,7 @@
 package troubleshoot
 
 import (
+	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
@@ -29,12 +30,7 @@ func TestTroubleshootNamespace(t *testing.T) {
 			}).
 			Build()
 
-		troubleshootCtx := troubleshootContext{
-			apiReader:     clt,
-			namespaceName: testNamespace,
-			baseLog:       getNullLogger(t),
-		}
-		assert.NoErrorf(t, checkNamespace(&troubleshootCtx), "'%s' namespace not found", troubleshootCtx.namespaceName)
+		assert.NoErrorf(t, checkNamespace(context.Background(), getNullLogger(t), clt, testNamespace), "'%s' namespace not found", testNamespace)
 	})
 	t.Run("namespace does not exist in cluster", func(t *testing.T) {
 		clt := fake.NewClientBuilder().
@@ -47,12 +43,7 @@ func TestTroubleshootNamespace(t *testing.T) {
 			}).
 			Build()
 
-		troubleshootCtx := troubleshootContext{
-			apiReader:     clt,
-			namespaceName: testNamespace,
-			baseLog:       getNullLogger(t),
-		}
-		assert.Errorf(t, checkNamespace(&troubleshootCtx), "'%s' namespace found", troubleshootCtx.namespaceName)
+		assert.Errorf(t, checkNamespace(context.Background(), getNullLogger(t), clt, testNamespace), "'%s' namespace found", testNamespace)
 	})
 	t.Run("invalid namespace selected", func(t *testing.T) {
 		clt := fake.NewClientBuilder().
@@ -65,11 +56,6 @@ func TestTroubleshootNamespace(t *testing.T) {
 			}).
 			Build()
 
-		troubleshootCtx := troubleshootContext{
-			apiReader:     clt,
-			namespaceName: testOtherNamespace,
-			baseLog:       getNullLogger(t),
-		}
-		assert.Errorf(t, checkNamespace(&troubleshootCtx), "'%s' namespace found", troubleshootCtx.namespaceName)
+		assert.Errorf(t, checkNamespace(context.Background(), getNullLogger(t), clt, testOtherNamespace), "'%s' namespace found", testNamespace)
 	})
 }

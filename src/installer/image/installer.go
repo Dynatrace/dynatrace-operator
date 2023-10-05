@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
@@ -17,8 +18,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/installer/common"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/symlink"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/zip"
-	"github.com/containers/image/v5/docker/reference"
 	"github.com/google/go-containerregistry/pkg/authn"
+	"github.com/google/go-containerregistry/pkg/name"
+	"github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,15 +36,17 @@ type Properties struct {
 }
 
 func GetDigest(uri string) (string, error) {
-	ref, err := reference.Parse(uri)
+	ref, err := name.ParseReference(uri)
 	if err != nil {
 		return "", errors.WithMessage(err, fmt.Sprintf("failed to parse image reference to create image installer, received imageUri: %s", uri))
 	}
-	canonRef, ok := ref.(reference.Canonical)
+
+	refDigest, ok := ref.(name.Digest)
 	if !ok {
 		return "", errors.Errorf("unexpected type of image reference provided to image installer, expected reference with digest but received %s", uri)
 	}
-	return canonRef.Digest().Encoded(), nil
+
+	return strings.TrimLeft(refDigest.DigestStr(), digest.Canonical.String()+":"), nil
 }
 
 func NewImageInstaller(fs afero.Fs, props *Properties) (installer.Installer, error) {
