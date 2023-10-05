@@ -1,27 +1,27 @@
 package troubleshoot
 
 import (
+	"context"
+
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 	"golang.org/x/net/http/httpproxy"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func checkProxySettings(troubleshootCtx *troubleshootContext) error {
-	return checkProxySettingsWithLog(troubleshootCtx, troubleshootCtx.baseLog.WithName("proxy"))
-}
-
-func checkProxySettingsWithLog(troubleshootCtx *troubleshootContext, log logr.Logger) error {
+func checkProxySettings(ctx context.Context, baseLog logr.Logger, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube) error {
+	log := baseLog.WithName("proxy")
 	var proxyURL string
 	logNewCheckf(log, "Analyzing proxy settings ...")
 
 	proxySettingsAvailable := false
-	if troubleshootCtx.dynakube.HasProxy() {
+	if dynakube.HasProxy() {
 		proxySettingsAvailable = true
 		logInfof(log, "Reminder: Proxy settings in the Dynakube do not apply to pulling of pod images. Please set your proxy on accordingly on node level.")
 		logWarningf(log, "Proxy settings in the Dynakube are ignored for codeModules images due to technical limitations.")
 
 		var err error
-		proxyURL, err = getProxyURL(troubleshootCtx)
+		proxyURL, err = getProxyURL(ctx, apiReader, dynakube)
 		if err != nil {
 			logErrorf(log, "Unexpected error when reading proxy settings from Dynakube: %v", err)
 			return nil
@@ -72,25 +72,9 @@ func getEnvProxySettings() *httpproxy.Config {
 	return nil
 }
 
-func applyProxySettings(log logr.Logger, troubleshootCtx *troubleshootContext) error {
-	proxyURL, err := getProxyURL(troubleshootCtx)
-	if err != nil {
-		return err
-	}
-
-	if proxyURL != "" {
-		err := troubleshootCtx.SetTransportProxy(log, proxyURL)
-		if err != nil {
-			return errors.Wrapf(err, "error parsing proxy value")
-		}
-	}
-
-	return nil
-}
-
-func getProxyURL(troubleshootCtx *troubleshootContext) (string, error) {
-	if !troubleshootCtx.dynakube.HasProxy() {
+func getProxyURL(ctx context.Context, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube) (string, error) {
+	if !dynakube.HasProxy() {
 		return "", nil
 	}
-	return troubleshootCtx.dynakube.Proxy(troubleshootCtx.context, troubleshootCtx.apiReader)
+	return dynakube.Proxy(ctx, apiReader)
 }
