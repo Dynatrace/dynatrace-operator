@@ -109,6 +109,7 @@ const (
 	truePhrase   = "true"
 	silentPhrase = "silent"
 	failPhrase   = "fail"
+	forcePhrase  = "force"
 
 	// synthetic node types
 	SyntheticNodeXs = "XS"
@@ -340,6 +341,9 @@ func (dk *DynaKube) FeatureSyntheticLocationEntityId() string {
 func (dk *DynaKube) FeatureInjectionFailurePolicy() string {
 	if dk.getFeatureFlagRaw(AnnotationInjectionFailurePolicy) == failPhrase {
 		return failPhrase
+	}
+	if dk.getFeatureFlagRaw(AnnotationInjectionFailurePolicy) == forcePhrase {
+		return forcePhrase
 	}
 	return silentPhrase
 }
