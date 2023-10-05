@@ -5,8 +5,6 @@ import (
 	"net/http"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/src/dockerkeychain"
-	"github.com/Dynatrace/dynatrace-operator/src/registry"
 	"github.com/go-logr/logr"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -29,22 +27,24 @@ type Auths struct {
 	Auths Endpoints `json:"auths"`
 }
 
+type ImagePullFunc func(image string) error
+
 func verifyAllImagesAvailable(ctx context.Context, baseLog logr.Logger, keychain authn.Keychain, transport *http.Transport, dynakube *dynatracev1beta1.DynaKube) error {
 	log := baseLog.WithName("imagepull")
 
-	imagePullFuncImpl := CreateImagePullFunc(ctx, keychain, transport)
+	imagePullFunc := CreateImagePullFunc(ctx, keychain, transport)
 
 	if dynakube.NeedsOneAgent() {
-		verifyImageIsAvailable(log, imagePullFuncImpl, dynakube, componentOneAgent, false)
-		verifyImageIsAvailable(log, imagePullFuncImpl, dynakube, componentCodeModules, true)
+		verifyImageIsAvailable(log, imagePullFunc, dynakube, componentOneAgent, false)
+		verifyImageIsAvailable(log, imagePullFunc, dynakube, componentCodeModules, true)
 	}
 	if dynakube.NeedsActiveGate() {
-		verifyImageIsAvailable(log, imagePullFuncImpl, dynakube, componentActiveGate, false)
+		verifyImageIsAvailable(log, imagePullFunc, dynakube, componentActiveGate, false)
 	}
 	return nil
 }
 
-func verifyImageIsAvailable(log logr.Logger, pullImage imagePullFunc, dynakube *dynatracev1beta1.DynaKube, comp component, proxyWarning bool) {
+func verifyImageIsAvailable(log logr.Logger, pullImage ImagePullFunc, dynakube *dynatracev1beta1.DynaKube, comp component, proxyWarning bool) {
 	image, isCustomImage := comp.getImage(dynakube)
 	if comp.SkipImageCheck(image) {
 		logErrorf(log, "Unknown %s image", comp.String())
@@ -75,9 +75,7 @@ func verifyImageIsAvailable(log logr.Logger, pullImage imagePullFunc, dynakube *
 	}
 }
 
-type imagePullFunc func(image string) error
-
-func CreateImagePullFunc(ctx context.Context, keychain authn.Keychain, transport *http.Transport) imagePullFunc {
+func CreateImagePullFunc(ctx context.Context, keychain authn.Keychain, transport *http.Transport) ImagePullFunc {
 	return func(image string) error {
 		return tryImagePull(ctx, keychain, transport, image)
 	}
@@ -89,51 +87,11 @@ func tryImagePull(ctx context.Context, keychain authn.Keychain, transport *http.
 		return err
 	}
 
-	keychain, err := dockerkeychain.NewDockerKeychain(troubleshootCtx.context, troubleshootCtx.apiReader, troubleshootCtx.pullSecret)
 	if err != nil {
 		return err
 	}
 
-<<<<<<< HEAD
-	transport, err = registry.PrepareTransport(ctx, apiReader, transport, dynakube)
-||||||| parent of 8ab81b93 (fixup! tests)
-	var transport *http.Transport
-	if troubleshootCtx.httpClient != nil && troubleshootCtx.httpClient.Transport != nil {
-		transport = troubleshootCtx.httpClient.Transport.(*http.Transport).Clone()
-	} else {
-		transport = http.DefaultTransport.(*http.Transport).Clone()
-	}
-	transport, err = registry.PrepareTransport(troubleshootCtx.context, troubleshootCtx.apiReader, transport, &troubleshootCtx.dynakube)
-=======
-	var transport *http.Transport
-	if troubleshootCtx.httpClient != nil && troubleshootCtx.httpClient.Transport != nil {
-		transport = troubleshootCtx.httpClient.Transport.(*http.Transport).Clone()
-	} else {
-		transport = http.DefaultTransport.(*http.Transport).Clone()
-	}
-
-	var proxy string
-	if troubleshootCtx.dynakube.HasProxy() {
-		proxy, err = troubleshootCtx.dynakube.Proxy(troubleshootCtx.context, troubleshootCtx.apiReader)
-		if err != nil {
-			return err
-		}
-	}
-
-	var trustedCAs []byte
-	if troubleshootCtx.dynakube.Spec.TrustedCAs != "" {
-		trustedCAs, err = troubleshootCtx.dynakube.TrustedCAs(troubleshootCtx.context, troubleshootCtx.apiReader)
-		if err != nil {
-			return err
-		}
-	}
-	transport, err = registry.PrepareTransport(transport, proxy, trustedCAs)
->>>>>>> 8ab81b93 (fixup! tests)
-	if err != nil {
-		return err
-	}
-
-	_, err = remote.Get(imageReference, remote.WithContext(troubleshootCtx.context), remote.WithAuthFromKeychain(keychain), remote.WithTransport(transport))
+	_, err = remote.Get(imageReference, remote.WithContext(ctx), remote.WithAuthFromKeychain(keychain), remote.WithTransport(transport))
 	if err != nil {
 		return err
 	}
