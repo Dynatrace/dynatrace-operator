@@ -101,9 +101,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
       - name: Lint markdown files
-        uses: docker://avtodev/markdown-lint:v1
+        uses: articulate/actions-markdownlint@v1
         with:
-          args: './**.md'
+          config: .markdownlint.json
+          files: '*.md'
+          version: 0.36.0
 
   prepare:
     name: Prepare properties
