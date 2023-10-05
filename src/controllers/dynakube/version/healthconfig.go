@@ -30,7 +30,7 @@ func newHealthConfig() *containerv1.HealthConfig {
 }
 
 func GetOneAgentHealthConfig(ctx context.Context, apiReader client.Reader, registryClient registry.ImageGetter, dynakube *dynatracev1beta1.DynaKube, imageUri string) (*containerv1.HealthConfig, error) {
-	imageInfo, err := PullImageInfo(ctx, apiReader, registryClient, dynakube, imageUri)
+	imageInfo, err := registryClient.PullImageInfo(ctx, imageUri)
 	if err != nil {
 		return nil, errors.WithMessage(err, "error pulling image info")
 	}

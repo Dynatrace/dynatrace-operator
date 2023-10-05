@@ -276,7 +276,7 @@ func TestImagePullable(t *testing.T) {
 				pullSecret, _ := checkDynakube(ctx, log, clt, test.dynaKube)
 				keychain, _ := dockerkeychain.NewDockerKeychain(context.Background(), fake.NewClient(secret), pullSecret)
 
-				transport, _ := createTransport(ctx, log, clt, test.dynaKube, dockerServer.Client())
+				transport, _ := createTransport(ctx, clt, test.dynaKube, dockerServer.Client())
 				pullImage := CreateImagePullFunc(ctx, keychain, transport)
 				verifyImageIsAvailable(log, pullImage, test.dynaKube, test.component, test.proxyWarning)
 			})
@@ -366,7 +366,7 @@ func TestImageNotPullable(t *testing.T) {
 				pullSecret, _ := checkDynakube(ctx, log, clt, test.dynaKube)
 				keychain, _ := dockerkeychain.NewDockerKeychain(context.Background(), fake.NewClient(secret), pullSecret)
 
-				transport, _ := createTransport(ctx, log, clt, test.dynaKube, dockerServer.Client())
+				transport, _ := createTransport(ctx, clt, test.dynaKube, dockerServer.Client())
 				pullImage := CreateImagePullFunc(ctx, keychain, transport)
 				verifyImageIsAvailable(log, pullImage, test.dynaKube, test.component, false)
 			})
@@ -405,7 +405,7 @@ func TestOneAgentCodeModulesImageNotPullable(t *testing.T) {
 			pullSecret, _ := checkDynakube(ctx, log, clt, &dynakube)
 			keychain, _ := dockerkeychain.NewDockerKeychain(context.Background(), fake.NewClient(secret), pullSecret)
 
-			transport, _ := createTransport(ctx, log, clt, &dynakube, dockerServer.Client())
+			transport, _ := createTransport(ctx, clt, &dynakube, dockerServer.Client())
 			pullImage := CreateImagePullFunc(ctx, keychain, transport)
 			verifyImageIsAvailable(log, pullImage, &dynakube, componentCodeModules, true)
 		})
@@ -425,7 +425,7 @@ func TestOneAgentCodeModulesImageNotPullable(t *testing.T) {
 			clt := fake.NewClient(secret)
 			pullSecret, _ := checkDynakube(ctx, log, clt, &dynakube)
 			keychain, _ := dockerkeychain.NewDockerKeychain(context.Background(), fake.NewClient(secret), pullSecret)
-			transport, _ := createTransport(ctx, log, clt, &dynakube, dockerServer.Client())
+			transport, _ := createTransport(ctx, clt, &dynakube, dockerServer.Client())
 			pullImage := CreateImagePullFunc(ctx, keychain, transport)
 			verifyImageIsAvailable(log, pullImage, &dynakube, componentCodeModules, false)
 		})

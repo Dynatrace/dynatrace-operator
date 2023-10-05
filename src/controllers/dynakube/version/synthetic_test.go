@@ -8,7 +8,9 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/registry"
+	"github.com/Dynatrace/dynatrace-operator/src/registry/mocks"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -36,13 +38,11 @@ func TestSyntheticUseTenantRegistry(t *testing.T) {
 		}
 		expectedImage := dynakube.DefaultSyntheticImage()
 		mockClient := &dtclient.MockDynatraceClient{}
-		registry := newFakeRegistry(map[string]registry.ImageVersion{
-			expectedImage: {
-				Version: testVersion,
-				Digest:  testHash,
-			},
-		})
-		updater := newSyntheticUpdater(dynakube, fake.NewClient(), mockClient, registry.ImageVersionExt)
+
+		mockImageGetter := mocks.MockImageGetter{}
+		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{Version: testVersion, Digest: testHash}, nil)
+
+		updater := newSyntheticUpdater(dynakube, fake.NewClient(), mockClient, &mockImageGetter)
 
 		err := updater.UseTenantRegistry(context.TODO())
 		require.NoError(t, err, "default image set")
