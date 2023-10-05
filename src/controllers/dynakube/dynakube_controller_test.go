@@ -17,10 +17,13 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/registry"
+	"github.com/Dynatrace/dynatrace-operator/src/registry/mocks"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
+	containerv1 "github.com/google/go-containerregistry/pkg/v1"
+	fakecontainer "github.com/google/go-containerregistry/pkg/v1/fake"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -446,11 +449,13 @@ func TestRemoveOneAgentDaemonset(t *testing.T) {
 		mockDtcBuilder := &dynatraceclient.StubBuilder{
 			DynatraceClient: mockClient,
 		}
+
 		controller := &Controller{
 			client:                 fakeClient,
 			apiReader:              fakeClient,
 			scheme:                 scheme.Scheme,
 			dynatraceClientBuilder: mockDtcBuilder,
+			registryClientBuilder:  createFakeRegistryClientBuilder(),
 		}
 
 		result, err := controller.Reconcile(context.TODO(), reconcile.Request{
@@ -667,8 +672,20 @@ func createDTMockClient(paasTokenScopes, apiTokenScopes dtclient.TokenScopes) *d
 	return mockClient
 }
 
-func fakeDigestProvider(context.Context, client.Reader, registry.ImageGetter, *dynatracev1beta1.DynaKube, string) (registry.ImageVersion, error) {
-	return registry.ImageVersion{}, nil
+func createFakeRegistryClientBuilder() func(options ...func(*registry.Client)) (registry.ImageGetter, error) {
+	fakeRegistryClient := &mocks.MockImageGetter{}
+	fakeImage := &fakecontainer.FakeImage{}
+	fakeImage.ConfigFileStub = func() (*containerv1.ConfigFile, error) {
+		return &containerv1.ConfigFile{}, nil
+	}
+	fakeImage.ConfigFile()
+	image := containerv1.Image(fakeImage)
+	fakeRegistryClient.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{Version: "1.2.3.4-5"}, nil)
+	fakeRegistryClient.On("PullImageInfo", mock.Anything, mock.Anything).Return(&image, nil)
+
+	return func(options ...func(*registry.Client)) (registry.ImageGetter, error) {
+		return fakeRegistryClient, nil
+	}
 }
 
 func createFakeClientAndReconciler(mockClient dtclient.Client, instance *dynatracev1beta1.DynaKube, paasToken, apiToken string) *Controller {
@@ -697,13 +714,14 @@ func createFakeClientAndReconciler(mockClient dtclient.Client, instance *dynatra
 	mockDtcBuilder := &dynatraceclient.StubBuilder{
 		DynatraceClient: mockClient,
 	}
+
 	controller := &Controller{
 		client:                 fakeClient,
 		apiReader:              fakeClient,
+		registryClientBuilder:  createFakeRegistryClientBuilder(),
 		scheme:                 scheme.Scheme,
 		dynatraceClientBuilder: mockDtcBuilder,
 		fs:                     afero.Afero{Fs: afero.NewMemMapFs()},
-		versionProvider:        fakeDigestProvider,
 	}
 
 	return controller
@@ -965,10 +983,12 @@ func TestTokenConditions(t *testing.T) {
 		mockDtcBuilder := &dynatraceclient.StubBuilder{
 			DynatraceClient: mockClient,
 		}
+
 		controller := &Controller{
 			client:                 fakeClient,
 			apiReader:              fakeClient,
 			dynatraceClientBuilder: mockDtcBuilder,
+			registryClientBuilder:  createFakeRegistryClientBuilder(),
 		}
 		requiredScopes := token.Tokens{
 			dtclient.DynatraceApiToken: {Value: testAPIToken},

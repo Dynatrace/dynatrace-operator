@@ -3,12 +3,10 @@ package version
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/edgeconnect"
-	"github.com/Dynatrace/dynatrace-operator/src/dockerkeychain"
 	"github.com/Dynatrace/dynatrace-operator/src/registry"
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -62,14 +60,7 @@ func (u updater) Update(ctx context.Context) error {
 
 	image := u.edgeConnect.Image()
 
-	transport := http.DefaultTransport.(*http.Transport).Clone()
-
-	keychain, err := dockerkeychain.NewDockerKeychain(ctx, u.apiReader, u.edgeConnect.PullSecretWithoutData())
-	if err != nil {
-		return err
-	}
-
-	imageVersion, err := u.registryClient.GetImageVersion(ctx, keychain, transport, image)
+	imageVersion, err := u.registryClient.GetImageVersion(ctx, image)
 	if err != nil {
 		return err
 	}
