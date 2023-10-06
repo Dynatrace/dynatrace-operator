@@ -3,9 +3,9 @@ package token
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -62,7 +62,7 @@ func (reader Reader) readTokens(ctx context.Context) (Tokens, error) {
 }
 
 func (reader Reader) verifyApiTokenExists(tokens Tokens) error {
-	apiToken, hasApiToken := tokens[dtclient.DynatraceApiToken]
+	apiToken, hasApiToken := tokens[dynatrace.DynatraceApiToken]
 
 	if !hasApiToken || len(apiToken.Value) == 0 {
 		return errors.New(fmt.Sprintf("the API token is missing from the token secret '%s:%s'", reader.dynakube.Namespace, reader.dynakube.Tokens()))

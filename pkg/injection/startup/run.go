@@ -2,6 +2,7 @@ package startup
 
 import (
 	"fmt"
+	dtclient2 "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/processmoduleconfig"
@@ -11,7 +12,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 )
@@ -20,7 +20,7 @@ type Runner struct {
 	fs         afero.Fs
 	env        *environment
 	config     *SecretConfig
-	dtclient   dtclient.Client
+	dtclient   dtclient2.Client
 	installer  installer.Installer
 	hostTenant string
 }
@@ -33,7 +33,7 @@ func NewRunner(fs afero.Fs) (*Runner, error) {
 	}
 
 	var secretConfig *SecretConfig
-	var client dtclient.Client
+	var client dtclient2.Client
 	var oneAgentInstaller installer.Installer
 	if env.OneAgentInjected {
 		secretConfig, err = newSecretConfigViaFs(fs)
@@ -53,8 +53,8 @@ func NewRunner(fs afero.Fs) (*Runner, error) {
 			fs,
 			client,
 			&url.Properties{
-				Os:            dtclient.OsUnix,
-				Type:          dtclient.InstallerTypePaaS,
+				Os:            dtclient2.OsUnix,
+				Type:          dtclient2.InstallerTypePaaS,
 				Flavor:        env.InstallerFlavor,
 				Arch:          arch.Arch,
 				Technologies:  env.InstallerTech,
@@ -142,7 +142,7 @@ func (runner *Runner) installOneAgent() error {
 	return nil
 }
 
-func (runner *Runner) getProcessModuleConfig() (*dtclient.ProcessModuleConfig, error) {
+func (runner *Runner) getProcessModuleConfig() (*dtclient2.ProcessModuleConfig, error) {
 	processModuleConfig, err := runner.dtclient.GetProcessModuleConfig(0)
 	if err != nil {
 		return nil, err

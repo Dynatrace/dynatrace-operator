@@ -4,13 +4,13 @@ import (
 	"context"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	dtclient2 "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"testing"
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
-	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -33,7 +33,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("Create cache", func(t *testing.T) {
 		fakeClient := createDefaultFakeClient()
 
-		dtClient := &dtclient.MockDynatraceClient{}
+		dtClient := &dtclient2.MockDynatraceClient{}
 		defer mock.AssertExpectationsForObjects(t, dtClient)
 
 		ctrl := createDefaultReconciler(fakeClient, dtClient)
@@ -141,7 +141,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("Server error when removing node", func(t *testing.T) {
 		fakeClient := createDefaultFakeClient()
 
-		dtClient := &dtclient.MockDynatraceClient{}
+		dtClient := &dtclient2.MockDynatraceClient{}
 		dtClient.On("GetEntityIDForIP", mock.Anything).Return("", ErrNotFound)
 
 		ctrl := createDefaultReconciler(fakeClient, dtClient)
@@ -154,8 +154,8 @@ func TestReconcile(t *testing.T) {
 	t.Run("Remove host from cache even if server error: host not found", func(t *testing.T) {
 		fakeClient := createDefaultFakeClient()
 
-		dtClient := &dtclient.MockDynatraceClient{}
-		dtClient.On("GetEntityIDForIP", mock.Anything).Return("", dtclient.HostNotFoundErr{IP: "1.2.3.4"})
+		dtClient := &dtclient2.MockDynatraceClient{}
+		dtClient.On("GetEntityIDForIP", mock.Anything).Return("", dtclient2.HostNotFoundErr{IP: "1.2.3.4"})
 
 		ctrl := createDefaultReconciler(fakeClient, dtClient)
 
@@ -181,7 +181,7 @@ func createReconcileRequest(nodeName string) reconcile.Request {
 }
 
 type mockDynatraceClientBuilder struct {
-	dynatraceClient dtclient.Client
+	dynatraceClient dtclient2.Client
 }
 
 func (builder mockDynatraceClientBuilder) SetContext(context.Context) dynatraceclient.Builder {
@@ -200,15 +200,15 @@ func (builder mockDynatraceClientBuilder) LastApiProbeTimestamp() *metav1.Time {
 	return nil
 }
 
-func (builder mockDynatraceClientBuilder) Build() (dtclient.Client, error) {
+func (builder mockDynatraceClientBuilder) Build() (dtclient2.Client, error) {
 	return builder.dynatraceClient, nil
 }
 
-func (builder mockDynatraceClientBuilder) BuildWithTokenVerification(*dynatracev1beta1.DynaKubeStatus) (dtclient.Client, error) {
+func (builder mockDynatraceClientBuilder) BuildWithTokenVerification(*dynatracev1beta1.DynaKubeStatus) (dtclient2.Client, error) {
 	return builder.dynatraceClient, nil
 }
 
-func createDefaultReconciler(fakeClient client.Client, dtClient *dtclient.MockDynatraceClient) *Controller {
+func createDefaultReconciler(fakeClient client.Client, dtClient *dtclient2.MockDynatraceClient) *Controller {
 	return &Controller{
 		client:    fakeClient,
 		apiReader: fakeClient,
@@ -221,10 +221,10 @@ func createDefaultReconciler(fakeClient client.Client, dtClient *dtclient.MockDy
 	}
 }
 
-func createDTMockClient(ip, host string) *dtclient.MockDynatraceClient {
-	dtClient := &dtclient.MockDynatraceClient{}
+func createDTMockClient(ip, host string) *dtclient2.MockDynatraceClient {
+	dtClient := &dtclient2.MockDynatraceClient{}
 	dtClient.On("GetEntityIDForIP", ip).Return(host, nil)
-	dtClient.On("SendEvent", mock.MatchedBy(func(e *dtclient.EventData) bool {
+	dtClient.On("SendEvent", mock.MatchedBy(func(e *dtclient2.EventData) bool {
 		return e.EventType == "MARKED_FOR_TERMINATION"
 	})).Return(nil)
 	return dtClient
@@ -269,7 +269,7 @@ func createDefaultFakeClient() client.Client {
 				Namespace: testNamespace,
 			},
 			Data: map[string][]byte{
-				dtclient.DynatraceApiToken: []byte(testApiToken),
+				dtclient2.DynatraceApiToken: []byte(testApiToken),
 			},
 		},
 		&corev1.Secret{
@@ -278,7 +278,7 @@ func createDefaultFakeClient() client.Client {
 				Namespace: testNamespace,
 			},
 			Data: map[string][]byte{
-				dtclient.DynatraceApiToken: []byte(testApiToken),
+				dtclient2.DynatraceApiToken: []byte(testApiToken),
 			},
 		})
 }

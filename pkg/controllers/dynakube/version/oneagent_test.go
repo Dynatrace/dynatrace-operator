@@ -3,13 +3,13 @@ package version
 import (
 	"context"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	dtclient2 "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry/mocks"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -17,7 +17,7 @@ import (
 )
 
 func TestOneAgentUpdater(t *testing.T) {
-	testImage := dtclient.LatestImageInfo{
+	testImage := dtclient2.LatestImageInfo{
 		Source: "some.registry.com",
 		Tag:    "1.2.3.4-5",
 	}
@@ -33,7 +33,7 @@ func TestOneAgentUpdater(t *testing.T) {
 				},
 			},
 		}
-		mockClient := &dtclient.MockDynatraceClient{}
+		mockClient := &dtclient2.MockDynatraceClient{}
 		mockOneAgentImageInfo(mockClient, testImage)
 		mockImageGetter := mocks.MockImageGetter{}
 
@@ -66,7 +66,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 		}
 		expectedImage := dynakube.DefaultOneAgentImage()
 
-		mockClient := &dtclient.MockDynatraceClient{}
+		mockClient := &dtclient2.MockDynatraceClient{}
 		mockImageGetter := mocks.MockImageGetter{}
 		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{Version: testVersion, Digest: testDigest}, nil)
 
@@ -88,7 +88,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 		}
 		expectedImage := dynakube.DefaultOneAgentImage()
 
-		mockClient := &dtclient.MockDynatraceClient{}
+		mockClient := &dtclient2.MockDynatraceClient{}
 		mockLatestAgentVersion(mockClient, testVersion)
 		mockImageGetter := mocks.MockImageGetter{}
 
@@ -121,7 +121,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 			},
 		}
 
-		mockClient := &dtclient.MockDynatraceClient{}
+		mockClient := &dtclient2.MockDynatraceClient{}
 		mockLatestAgentVersion(mockClient, testVersion)
 		mockImageGetter := mocks.MockImageGetter{}
 

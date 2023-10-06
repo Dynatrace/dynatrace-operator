@@ -1,6 +1,7 @@
 package url
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/symlink"
@@ -10,7 +11,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 )
@@ -36,12 +36,12 @@ func (props *Properties) fillEmptyWithDefaults() {
 
 type Installer struct {
 	fs        afero.Fs
-	dtc       dtclient.Client
+	dtc       dynatrace.Client
 	extractor zip.Extractor
 	props     *Properties
 }
 
-func NewUrlInstaller(fs afero.Fs, dtc dtclient.Client, props *Properties) installer.Installer {
+func NewUrlInstaller(fs afero.Fs, dtc dynatrace.Client, props *Properties) installer.Installer {
 	return &Installer{
 		fs:        fs,
 		dtc:       dtc,

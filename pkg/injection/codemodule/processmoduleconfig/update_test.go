@@ -1,12 +1,12 @@
 package processmoduleconfig
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -19,9 +19,9 @@ key value
 `
 )
 
-var testProcessModuleConfig = dtclient.ProcessModuleConfig{
+var testProcessModuleConfig = dynatrace.ProcessModuleConfig{
 	Revision: 3,
-	Properties: []dtclient.ProcessModuleProperty{
+	Properties: []dynatrace.ProcessModuleProperty{
 		{
 			Section: "test",
 			Key:     "test",

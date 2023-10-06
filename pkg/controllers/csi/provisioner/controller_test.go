@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	dtclient2 "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
 	"os"
 	"testing"
@@ -13,7 +14,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
-	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -186,11 +186,11 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 					Name: dkName,
 				},
 				Data: map[string][]byte{
-					dtclient.DynatraceApiToken: []byte("api-token"),
+					dtclient2.DynatraceApiToken: []byte("api-token"),
 				},
 			},
 		)
-		mockClient := &dtclient.MockDynatraceClient{}
+		mockClient := &dtclient2.MockDynatraceClient{}
 		mockDtcBuilder := &dynatraceclient.StubBuilder{
 			DynatraceClient: mockClient,
 		}
@@ -281,7 +281,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 						Name: dkName,
 					},
 					Data: map[string][]byte{
-						dtclient.DynatraceApiToken: []byte("test-value"),
+						dtclient2.DynatraceApiToken: []byte("test-value"),
 					},
 				},
 			),
@@ -301,9 +301,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 		errorfs := &mkDirAllErrorFs{
 			Fs: afero.NewMemMapFs(),
 		}
-		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{
-			ConnectionInfo: dtclient.ConnectionInfo{
+		mockClient := &dtclient2.MockDynatraceClient{}
+		mockClient.On("GetOneAgentConnectionInfo").Return(dtclient2.OneAgentConnectionInfo{
+			ConnectionInfo: dtclient2.ConnectionInfo{
 				TenantUUID: tenantUUID,
 			},
 		}, nil)
@@ -328,7 +328,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 						Name: dkName,
 					},
 					Data: map[string][]byte{
-						dtclient.DynatraceApiToken: []byte("api-token"),
+						dtclient2.DynatraceApiToken: []byte("api-token"),
 					},
 				},
 			),
@@ -352,9 +352,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 		var revision uint = 3
 		testProcessModuleConfig := createTestProcessModuleConfig(revision)
 		memFs := afero.NewMemMapFs()
-		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{
-			ConnectionInfo: dtclient.ConnectionInfo{
+		mockClient := &dtclient2.MockDynatraceClient{}
+		mockClient.On("GetOneAgentConnectionInfo").Return(dtclient2.OneAgentConnectionInfo{
+			ConnectionInfo: dtclient2.ConnectionInfo{
 				TenantUUID: tenantUUID,
 			},
 		}, nil)
@@ -389,7 +389,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 						Name: dkName,
 					},
 					Data: map[string][]byte{
-						dtclient.DynatraceApiToken: []byte("api-token"),
+						dtclient2.DynatraceApiToken: []byte("api-token"),
 					},
 				},
 				&corev1.Secret{
@@ -426,9 +426,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 	t.Run("error getting dynakube from db", func(t *testing.T) {
 		gc := &CSIGarbageCollectorMock{}
 		memFs := afero.NewMemMapFs()
-		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{
-			ConnectionInfo: dtclient.ConnectionInfo{
+		mockClient := &dtclient2.MockDynatraceClient{}
+		mockClient.On("GetOneAgentConnectionInfo").Return(dtclient2.OneAgentConnectionInfo{
+			ConnectionInfo: dtclient2.ConnectionInfo{
 				TenantUUID: tenantUUID,
 			},
 		}, nil)

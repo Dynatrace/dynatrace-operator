@@ -1,4 +1,4 @@
-package dtclient
+package dynatrace
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"

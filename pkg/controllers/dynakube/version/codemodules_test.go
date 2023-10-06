@@ -2,18 +2,18 @@ package version
 
 import (
 	"context"
+	dtclient2 "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestCodeModulesUpdater(t *testing.T) {
-	testImage := dtclient.LatestImageInfo{
+	testImage := dtclient2.LatestImageInfo{
 		Source: "some.registry.com",
 		Tag:    "1.2.3.4-5",
 	}
@@ -31,7 +31,7 @@ func TestCodeModulesUpdater(t *testing.T) {
 				},
 			},
 		}
-		mockClient := &dtclient.MockDynatraceClient{}
+		mockClient := &dtclient2.MockDynatraceClient{}
 		mockCodeModulesImageInfo(mockClient, testImage)
 		updater := newCodeModulesUpdater(dynakube, mockClient)
 
@@ -62,7 +62,7 @@ func TestCodeModulesUseDefault(t *testing.T) {
 				CodeModules: oldCodeModulesStatus(),
 			},
 		}
-		mockClient := &dtclient.MockDynatraceClient{}
+		mockClient := &dtclient2.MockDynatraceClient{}
 		updater := newCodeModulesUpdater(dynakube, mockClient)
 
 		err := updater.UseTenantRegistry(ctx)
@@ -80,7 +80,7 @@ func TestCodeModulesUseDefault(t *testing.T) {
 				CodeModules: oldCodeModulesStatus(),
 			},
 		}
-		mockClient := &dtclient.MockDynatraceClient{}
+		mockClient := &dtclient2.MockDynatraceClient{}
 		mockLatestAgentVersion(mockClient, testVersion)
 		updater := newCodeModulesUpdater(dynakube, mockClient)
 

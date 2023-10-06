@@ -2,25 +2,25 @@ package version
 
 import (
 	"context"
+	dtclient2 "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type activeGateUpdater struct {
 	dynakube       *dynatracev1beta1.DynaKube
 	apiReader      client.Reader
-	dtClient       dtclient.Client
+	dtClient       dtclient2.Client
 	registryClient registry.ImageGetter
 }
 
 func newActiveGateUpdater(
 	dynakube *dynatracev1beta1.DynaKube,
 	apiReader client.Reader,
-	dtClient dtclient.Client,
+	dtClient dtclient2.Client,
 	registryClient registry.ImageGetter,
 ) *activeGateUpdater {
 	return &activeGateUpdater{
@@ -59,7 +59,7 @@ func (updater activeGateUpdater) IsPublicRegistryEnabled() bool {
 	return updater.dynakube.FeaturePublicRegistry()
 }
 
-func (updater activeGateUpdater) LatestImageInfo() (*dtclient.LatestImageInfo, error) {
+func (updater activeGateUpdater) LatestImageInfo() (*dtclient2.LatestImageInfo, error) {
 	return updater.dtClient.GetLatestActiveGateImage()
 }
 

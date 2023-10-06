@@ -1,11 +1,11 @@
 package token
 
 import (
+	dtclient2 "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"net/http"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,20 +22,20 @@ func TestTokens(t *testing.T) {
 func testSetApiTokenScopes(t *testing.T) {
 	t.Run("empty dynakube", func(t *testing.T) {
 		tokens := Tokens{
-			dtclient.DynatraceApiToken: {},
+			dtclient2.DynatraceApiToken: {},
 		}
 		tokens = tokens.SetScopesForDynakube(dynatracev1beta1.DynaKube{})
 
 		assert.Equal(t,
 			[]string{
-				dtclient.TokenScopeInstallerDownload,
-				dtclient.TokenScopeDataExport,
+				dtclient2.TokenScopeInstallerDownload,
+				dtclient2.TokenScopeDataExport,
 			},
 			tokens.ApiToken().RequiredScopes)
 	})
 	t.Run("disabled host requests", func(t *testing.T) {
 		tokens := Tokens{
-			dtclient.DynatraceApiToken: {},
+			dtclient2.DynatraceApiToken: {},
 		}
 		tokens = tokens.SetScopesForDynakube(dynatracev1beta1.DynaKube{
 			ObjectMeta: v1.ObjectMeta{
@@ -46,12 +46,12 @@ func testSetApiTokenScopes(t *testing.T) {
 		})
 
 		assert.Equal(t,
-			[]string{dtclient.TokenScopeInstallerDownload},
+			[]string{dtclient2.TokenScopeInstallerDownload},
 			tokens.ApiToken().RequiredScopes)
 	})
 	t.Run("kubernetes monitoring with auth token", func(t *testing.T) {
 		tokens := Tokens{
-			dtclient.DynatraceApiToken: {},
+			dtclient2.DynatraceApiToken: {},
 		}
 		tokens = tokens.SetScopesForDynakube(dynatracev1beta1.DynaKube{
 			ObjectMeta: v1.ObjectMeta{
@@ -70,12 +70,12 @@ func testSetApiTokenScopes(t *testing.T) {
 
 		assert.Equal(t,
 			[]string{
-				dtclient.TokenScopeInstallerDownload,
-				dtclient.TokenScopeDataExport,
-				dtclient.TokenScopeEntitiesRead,
-				dtclient.TokenScopeSettingsRead,
-				dtclient.TokenScopeSettingsWrite,
-				dtclient.TokenScopeActiveGateTokenCreate,
+				dtclient2.TokenScopeInstallerDownload,
+				dtclient2.TokenScopeDataExport,
+				dtclient2.TokenScopeEntitiesRead,
+				dtclient2.TokenScopeSettingsRead,
+				dtclient2.TokenScopeSettingsWrite,
+				dtclient2.TokenScopeActiveGateTokenCreate,
 			},
 			tokens.ApiToken().RequiredScopes)
 	})
@@ -83,23 +83,23 @@ func testSetApiTokenScopes(t *testing.T) {
 
 func testPaasTokenScopes(t *testing.T) {
 	tokens := Tokens{
-		dtclient.DynatracePaasToken: {},
+		dtclient2.DynatracePaasToken: {},
 	}
 	tokens = tokens.SetScopesForDynakube(dynatracev1beta1.DynaKube{})
 
 	assert.Equal(t,
-		[]string{dtclient.TokenScopeInstallerDownload},
+		[]string{dtclient2.TokenScopeInstallerDownload},
 		tokens.PaasToken().RequiredScopes)
 }
 
 func testDataIngestTokenScopes(t *testing.T) {
 	tokens := Tokens{
-		dtclient.DynatraceDataIngestToken: {},
+		dtclient2.DynatraceDataIngestToken: {},
 	}
 	tokens = tokens.SetScopesForDynakube(dynatracev1beta1.DynaKube{})
 
 	assert.Equal(t,
-		[]string{dtclient.TokenScopeMetricsIngest},
+		[]string{dtclient2.TokenScopeMetricsIngest},
 		tokens.DataIngestToken().RequiredScopes)
 }
 
@@ -126,20 +126,20 @@ func testVerifyTokenScopes(t *testing.T) {
 			RequiredScopes: []string{"a", "c"},
 		},
 	}
-	fakeDynatraceClient := &dtclient.MockDynatraceClient{}
+	fakeDynatraceClient := &dtclient2.MockDynatraceClient{}
 
 	fakeDynatraceClient.
 		On("GetTokenScopes", "empty-scopes").
-		Return(dtclient.TokenScopes{"a", "c"}, nil)
+		Return(dtclient2.TokenScopes{"a", "c"}, nil)
 	fakeDynatraceClient.
 		On("GetTokenScopes", "valid-scopes").
-		Return(dtclient.TokenScopes{"a", "c"}, nil)
+		Return(dtclient2.TokenScopes{"a", "c"}, nil)
 	fakeDynatraceClient.
 		On("GetTokenScopes", "invalid-scopes").
-		Return(dtclient.TokenScopes{"a", "c"}, nil)
+		Return(dtclient2.TokenScopes{"a", "c"}, nil)
 	fakeDynatraceClient.
 		On("GetTokenScopes", "api-error").
-		Return(dtclient.TokenScopes{}, errors.New("test api-error"))
+		Return(dtclient2.TokenScopes{}, errors.New("test api-error"))
 
 	fakeDynatraceClient.AssertNotCalled(t, "GetTokenScopes", "empty-scopes")
 	assert.NoError(t, validTokens.VerifyScopes(fakeDynatraceClient))
@@ -172,11 +172,11 @@ type concatErrorsTestCase struct {
 func TestConcatErrors(t *testing.T) {
 	stringError1 := errors.New("error 1")
 	stringError2 := errors.New("error 2")
-	serviceUnavailableError := dtclient.ServerError{
+	serviceUnavailableError := dtclient2.ServerError{
 		Code:    http.StatusServiceUnavailable,
 		Message: "ServiceUnavailable",
 	}
-	tooManyRequestsError := dtclient.ServerError{
+	tooManyRequestsError := dtclient2.ServerError{
 		Code:    http.StatusTooManyRequests,
 		Message: "TooManyRequests",
 	}

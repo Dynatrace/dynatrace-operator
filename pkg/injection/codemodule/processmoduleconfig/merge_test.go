@@ -1,18 +1,18 @@
 package processmoduleconfig
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"io/ioutil"
 	"os"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestMergeLine(t *testing.T) {
-	testConfMap := dtclient.ConfMap{
+	testConfMap := dynatrace.ConfMap{
 		"general": {
 			"prop1": "val1",
 		},
@@ -32,7 +32,7 @@ func TestMergeLine(t *testing.T) {
 
 func TestAddLeftoversForSection(t *testing.T) {
 	t.Run(`multiple sections`, func(t *testing.T) {
-		testConfMap := dtclient.ConfMap{
+		testConfMap := dynatrace.ConfMap{
 			"general": {
 				"prop1": "val1",
 				"prop2": "val2",
@@ -49,7 +49,7 @@ func TestAddLeftoversForSection(t *testing.T) {
 		assert.Contains(t, leftovers, "prop2 val2")
 	})
 	t.Run(`1 section`, func(t *testing.T) {
-		testConfMap := dtclient.ConfMap{
+		testConfMap := dynatrace.ConfMap{
 			"general": {
 				"prop1": "val1",
 			},
@@ -60,7 +60,7 @@ func TestAddLeftoversForSection(t *testing.T) {
 		assert.Equal(t, []string{"prop1 val1"}, leftovers)
 	})
 	t.Run(`0 section`, func(t *testing.T) {
-		testConfMap := dtclient.ConfMap{}
+		testConfMap := dynatrace.ConfMap{}
 		leftovers := addLeftoversForSection("general", testConfMap)
 		assert.Len(t, testConfMap, 0)
 		assert.Len(t, leftovers, 0)
@@ -69,7 +69,7 @@ func TestAddLeftoversForSection(t *testing.T) {
 
 func TestAddLeftovers(t *testing.T) {
 	t.Run(`multiple sections`, func(t *testing.T) {
-		testConfMap := dtclient.ConfMap{
+		testConfMap := dynatrace.ConfMap{
 			"general": {
 				"prop1": "val1",
 			},
@@ -124,7 +124,7 @@ prop4 new
 [new]
 prop5 new
 `
-	testConfMap := dtclient.ConfMap{
+	testConfMap := dynatrace.ConfMap{
 		"general": {
 			"prop1": "upd",
 			"prop2": "new",
@@ -161,7 +161,7 @@ prop1 old
 [other]
 prop3 old
 `
-	testConfMap := dtclient.ConfMap{}
+	testConfMap := dynatrace.ConfMap{}
 
 	source, _ := memFs.OpenFile("/source", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0776)
 	source.WriteString(sourceContent)
@@ -181,7 +181,7 @@ prop3 old
 func TestUpdateConfFileEmptySource(t *testing.T) {
 	memFs := afero.NewMemMapFs()
 	sourceContent := ``
-	testConfMap := dtclient.ConfMap{}
+	testConfMap := dynatrace.ConfMap{}
 
 	source, _ := memFs.OpenFile("/source", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0776)
 	source.WriteString(sourceContent)

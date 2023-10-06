@@ -2,6 +2,7 @@ package dynakube
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/ingestendpoint"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/initgeneration"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
@@ -27,7 +28,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
-	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	appsv1 "k8s.io/api/apps/v1"
@@ -317,7 +317,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 	return controller.reconcileComponents(ctx, dynatraceClient, dynakube)
 }
 
-func (controller *Controller) reconcileConnectionInfo(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, dynatraceClient dtclient.Client) error {
+func (controller *Controller) reconcileConnectionInfo(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, dynatraceClient dynatrace.Client) error {
 	err := connectioninfo.NewReconciler(controller.client, controller.apiReader, controller.scheme, dynakube, dynatraceClient).Reconcile(ctx)
 
 	if errors.Is(err, connectioninfo.NoOneAgentCommunicationHostsError) {
@@ -329,7 +329,7 @@ func (controller *Controller) reconcileConnectionInfo(ctx context.Context, dynak
 	return err
 }
 
-func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient dtclient.Client, dynakube *dynatracev1beta1.DynaKube) error {
+func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient dynatrace.Client, dynakube *dynatracev1beta1.DynaKube) error {
 	err := controller.reconcileActiveGate(ctx, dynakube, dynatraceClient)
 	if err != nil {
 		log.Info("could not reconcile ActiveGate")
@@ -418,7 +418,7 @@ func (controller *Controller) removeOneAgentDaemonSet(ctx context.Context, dynak
 	return kubeobjects2.Delete(ctx, controller.client, &oneAgentDaemonSet)
 }
 
-func (controller *Controller) reconcileActiveGate(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) error {
+func (controller *Controller) reconcileActiveGate(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, dtc dynatrace.Client) error {
 	reconciler := activegate.NewReconciler(controller.client, controller.apiReader, controller.scheme, dynakube, dtc)
 	err := reconciler.Reconcile(ctx)
 
@@ -430,7 +430,7 @@ func (controller *Controller) reconcileActiveGate(ctx context.Context, dynakube 
 	return nil
 }
 
-func (controller *Controller) setupAutomaticApiMonitoring(dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) {
+func (controller *Controller) setupAutomaticApiMonitoring(dynakube *dynatracev1beta1.DynaKube, dtc dynatrace.Client) {
 	if dynakube.Status.KubeSystemUUID != "" &&
 		dynakube.FeatureAutomaticKubernetesApiMonitoring() &&
 		dynakube.IsKubernetesMonitoringActiveGateEnabled() {

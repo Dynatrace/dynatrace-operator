@@ -2,26 +2,26 @@ package token
 
 import (
 	"fmt"
+	dtclient2 "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceapi"
-	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"github.com/pkg/errors"
 )
 
 type Tokens map[string]Token
 
 func (tokens Tokens) ApiToken() Token {
-	return tokens.getToken(dtclient.DynatraceApiToken)
+	return tokens.getToken(dtclient2.DynatraceApiToken)
 }
 
 func (tokens Tokens) PaasToken() Token {
-	return tokens.getToken(dtclient.DynatracePaasToken)
+	return tokens.getToken(dtclient2.DynatracePaasToken)
 }
 
 func (tokens Tokens) DataIngestToken() Token {
-	return tokens.getToken(dtclient.DynatraceDataIngestToken)
+	return tokens.getToken(dtclient2.DynatraceDataIngestToken)
 }
 
 func (tokens Tokens) getToken(tokenName string) Token {
@@ -34,23 +34,23 @@ func (tokens Tokens) getToken(tokenName string) Token {
 }
 
 func (tokens Tokens) SetScopesForDynakube(dynakube dynatracev1beta1.DynaKube) Tokens {
-	_, hasPaasToken := tokens[dtclient.DynatracePaasToken]
+	_, hasPaasToken := tokens[dtclient2.DynatracePaasToken]
 
 	for tokenType, token := range tokens {
 		switch tokenType {
-		case dtclient.DynatraceApiToken:
-			tokens[dtclient.DynatraceApiToken] = token.setApiTokenScopes(dynakube, hasPaasToken)
-		case dtclient.DynatracePaasToken:
-			tokens[dtclient.DynatracePaasToken] = token.setPaasTokenScopes()
-		case dtclient.DynatraceDataIngestToken:
-			tokens[dtclient.DynatraceDataIngestToken] = token.setDataIngestScopes()
+		case dtclient2.DynatraceApiToken:
+			tokens[dtclient2.DynatraceApiToken] = token.setApiTokenScopes(dynakube, hasPaasToken)
+		case dtclient2.DynatracePaasToken:
+			tokens[dtclient2.DynatracePaasToken] = token.setPaasTokenScopes()
+		case dtclient2.DynatraceDataIngestToken:
+			tokens[dtclient2.DynatraceDataIngestToken] = token.setDataIngestScopes()
 		}
 	}
 
 	return tokens
 }
 
-func (tokens Tokens) VerifyScopes(dtc dtclient.Client) error {
+func (tokens Tokens) VerifyScopes(dtc dtclient2.Client) error {
 	scopeErrors := make([]error, 0)
 
 	for tokenType, token := range tokens {
@@ -114,7 +114,7 @@ func concatErrors(errs []error) error {
 	}
 
 	if apiStatus != dynatraceapi.NoError {
-		return dtclient.ServerError{
+		return dtclient2.ServerError{
 			Code:    apiStatus,
 			Message: concatenatedError,
 		}

@@ -1,4 +1,4 @@
-package dtclient
+package dynatrace
 
 import (
 	"net/http"

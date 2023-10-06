@@ -3,6 +3,7 @@ package initgeneration
 import (
 	"context"
 	"encoding/json"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
 	kubeobjects2 "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
@@ -10,7 +11,6 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -174,14 +174,14 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dynak
 }
 
 func getPaasToken(tokens corev1.Secret) string {
-	if len(tokens.Data[dtclient.DynatracePaasToken]) != 0 {
-		return string(tokens.Data[dtclient.DynatracePaasToken])
+	if len(tokens.Data[dynatrace.DynatracePaasToken]) != 0 {
+		return string(tokens.Data[dynatrace.DynatracePaasToken])
 	}
-	return string(tokens.Data[dtclient.DynatraceApiToken])
+	return string(tokens.Data[dynatrace.DynatraceApiToken])
 }
 
 func getAPIToken(tokens corev1.Secret) string {
-	return string(tokens.Data[dtclient.DynatraceApiToken])
+	return string(tokens.Data[dynatrace.DynatraceApiToken])
 }
 
 // getHostMonitoringNodes creates a mapping between all the nodes and the tenantUID for the host-monitoring dynakube on that node.

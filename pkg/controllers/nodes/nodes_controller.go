@@ -2,6 +2,7 @@ package nodes
 
 import (
 	"context"
+	dtclient2 "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	kubeobjects2 "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"os"
@@ -10,7 +11,6 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
-	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -293,7 +293,7 @@ func (controller *Controller) sendMarkedForTermination(dynakubeInstance *dynatra
 
 	entityID, err := dynatraceClient.GetEntityIDForIP(cachedNode.IPAddress)
 	if err != nil {
-		if errors.As(err, &dtclient.HostNotFoundErr{}) {
+		if errors.As(err, &dtclient2.HostNotFoundErr{}) {
 			log.Info("skipping to send mark for termination event", "dynakube", dynakubeInstance.Name, "nodeIP", cachedNode.IPAddress, "reason", err.Error())
 			return nil
 		}
@@ -304,13 +304,13 @@ func (controller *Controller) sendMarkedForTermination(dynakubeInstance *dynatra
 	}
 
 	ts := uint64(cachedNode.LastSeen.Add(-10*time.Minute).UnixNano()) / uint64(time.Millisecond)
-	return dynatraceClient.SendEvent(&dtclient.EventData{
-		EventType:     dtclient.MarkedForTerminationEvent,
+	return dynatraceClient.SendEvent(&dtclient2.EventData{
+		EventType:     dtclient2.MarkedForTerminationEvent,
 		Source:        "Dynatrace Operator",
 		Description:   "Kubernetes node cordoned. Node might be drained or terminated.",
 		StartInMillis: ts,
 		EndInMillis:   ts,
-		AttachRules: dtclient.EventDataAttachRules{
+		AttachRules: dtclient2.EventDataAttachRules{
 			EntityIDs: []string{entityID},
 		},
 	})

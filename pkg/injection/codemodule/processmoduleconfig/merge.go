@@ -3,12 +3,12 @@ package processmoduleconfig
 import (
 	"bufio"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"io/fs"
 	"os"
 	"regexp"
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"github.com/spf13/afero"
 )
 
@@ -17,7 +17,7 @@ var sectionRegexp = regexp.MustCompile(`\[(.*)\]`)
 
 // Update opens the file at `sourcePath` and merges it with the ConfMap provided
 // then writes the results into a file at `destPath`
-func Update(fs afero.Fs, sourcePath, destPath string, conf dtclient.ConfMap) error {
+func Update(fs afero.Fs, sourcePath, destPath string, conf dynatrace.ConfMap) error {
 	fileInfo, err := fs.Stat(sourcePath)
 	if err != nil {
 		return err
@@ -105,7 +105,7 @@ func confSectionHeader(confLine string) string {
 	return ""
 }
 
-func addLeftovers(conf dtclient.ConfMap) []string {
+func addLeftovers(conf dynatrace.ConfMap) []string {
 	lines := []string{}
 	for section, props := range conf {
 		lines = append(lines, fmt.Sprintf("[%s]", section))
@@ -116,7 +116,7 @@ func addLeftovers(conf dtclient.ConfMap) []string {
 	return lines
 }
 
-func addLeftoversForSection(currentSection string, conf dtclient.ConfMap) []string {
+func addLeftoversForSection(currentSection string, conf dynatrace.ConfMap) []string {
 	lines := []string{}
 	if currentSection != "" {
 		section, ok := conf[currentSection]
@@ -130,7 +130,7 @@ func addLeftoversForSection(currentSection string, conf dtclient.ConfMap) []stri
 	return lines
 }
 
-func mergeLine(line, currentSection string, conf dtclient.ConfMap) string {
+func mergeLine(line, currentSection string, conf dynatrace.ConfMap) string {
 	splitLine := strings.Split(line, " ")
 	key := splitLine[0]
 

@@ -3,6 +3,7 @@ package csiprovisioner
 import (
 	"fmt"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	dtclient2 "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
@@ -14,7 +15,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -40,7 +40,7 @@ func TestUpdateAgent(t *testing.T) {
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testVersion))
 		provisioner.urlInstallerBuilder = mockUrlInstallerBuilder(installerMock)
 
-		currentVersion, err := provisioner.installAgentZip(dk, &dtclient.MockDynatraceClient{}, &processModuleCache)
+		currentVersion, err := provisioner.installAgentZip(dk, &dtclient2.MockDynatraceClient{}, &processModuleCache)
 		require.NoError(t, err)
 		assert.Equal(t, testVersion, currentVersion)
 		t_utils.AssertEvents(t,
@@ -73,7 +73,7 @@ func TestUpdateAgent(t *testing.T) {
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, newVersion))
 		provisioner.urlInstallerBuilder = mockUrlInstallerBuilder(installerMock)
 
-		currentVersion, err := provisioner.installAgentZip(dk, &dtclient.MockDynatraceClient{}, &processModuleCache)
+		currentVersion, err := provisioner.installAgentZip(dk, &dtclient2.MockDynatraceClient{}, &processModuleCache)
 		require.NoError(t, err)
 		assert.Equal(t, newVersion, currentVersion)
 	})
@@ -92,7 +92,7 @@ func TestUpdateAgent(t *testing.T) {
 			Return(false, nil)
 
 		provisioner.urlInstallerBuilder = mockUrlInstallerBuilder(installerMock)
-		currentVersion, err := provisioner.installAgentZip(dk, &dtclient.MockDynatraceClient{}, &processModuleCache)
+		currentVersion, err := provisioner.installAgentZip(dk, &dtclient2.MockDynatraceClient{}, &processModuleCache)
 
 		require.NoError(t, err)
 		assert.Equal(t, testVersion, currentVersion)
@@ -291,7 +291,7 @@ func mockImageInstallerBuilder(mock *installer.Mock) imageInstallerBuilder {
 }
 
 func mockUrlInstallerBuilder(mock *installer.Mock) urlInstallerBuilder {
-	return func(f afero.Fs, c dtclient.Client, p *url.Properties) installer.Installer {
+	return func(f afero.Fs, c dtclient2.Client, p *url.Properties) installer.Installer {
 		return mock
 	}
 }

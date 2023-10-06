@@ -2,11 +2,11 @@ package version
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
-	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/pkg/errors"
@@ -22,7 +22,7 @@ type versionStatusUpdater interface {
 	IsAutoUpdateEnabled() bool
 	IsPublicRegistryEnabled() bool
 	CheckForDowngrade(latestVersion string) (bool, error)
-	LatestImageInfo() (*dtclient.LatestImageInfo, error)
+	LatestImageInfo() (*dynatrace.LatestImageInfo, error)
 
 	UseTenantRegistry(context.Context) error
 }
@@ -57,7 +57,7 @@ func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpda
 
 	if updater.IsPublicRegistryEnabled() {
 		log.Info("updating version status according to public registry", "updater", updater.Name())
-		var publicImage *dtclient.LatestImageInfo
+		var publicImage *dynatrace.LatestImageInfo
 		publicImage, err = updater.LatestImageInfo()
 		if err != nil {
 			log.Info("could not get public image", "updater", updater.Name())

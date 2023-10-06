@@ -2,7 +2,7 @@ package connectioninfo
 
 import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
+	dtclient2 "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
@@ -19,13 +19,13 @@ var NoOneAgentCommunicationHostsError = errors.New("no communication hosts for O
 type Reconciler struct {
 	client       client.Client
 	apiReader    client.Reader
-	dtc          dtclient.Client
+	dtc          dtclient2.Client
 	dynakube     *dynatracev1beta1.DynaKube
 	scheme       *runtime.Scheme
 	timeProvider *timeprovider.Provider
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
+func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient2.Client) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
 	return &Reconciler{
 		client:       clt,
 		apiReader:    apiReader,
@@ -108,13 +108,13 @@ func (r *Reconciler) reconcileOneAgentConnectionInfo(ctx context.Context) error 
 	return nil
 }
 
-func (r *Reconciler) updateDynakubeOneAgentStatus(connectionInfo dtclient.OneAgentConnectionInfo) {
+func (r *Reconciler) updateDynakubeOneAgentStatus(connectionInfo dtclient2.OneAgentConnectionInfo) {
 	r.dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID = connectionInfo.TenantUUID
 	r.dynakube.Status.OneAgent.ConnectionInfoStatus.Endpoints = connectionInfo.Endpoints
 	copyCommunicationHosts(&r.dynakube.Status.OneAgent.ConnectionInfoStatus, connectionInfo.CommunicationHosts)
 }
 
-func copyCommunicationHosts(dest *dynatracev1beta1.OneAgentConnectionInfoStatus, src []dtclient.CommunicationHost) {
+func copyCommunicationHosts(dest *dynatracev1beta1.OneAgentConnectionInfoStatus, src []dtclient2.CommunicationHost) {
 	dest.CommunicationHosts = make([]dynatracev1beta1.CommunicationHostStatus, 0, len(src))
 	for _, host := range src {
 		dest.CommunicationHosts = append(dest.CommunicationHosts, dynatracev1beta1.CommunicationHostStatus{
@@ -156,12 +156,12 @@ func (r *Reconciler) reconcileActiveGateConnectionInfo(ctx context.Context) erro
 	return nil
 }
 
-func (r *Reconciler) updateDynakubeActiveGateStatus(connectionInfo dtclient.ActiveGateConnectionInfo) {
+func (r *Reconciler) updateDynakubeActiveGateStatus(connectionInfo dtclient2.ActiveGateConnectionInfo) {
 	r.dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID = connectionInfo.TenantUUID
 	r.dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints = connectionInfo.Endpoints
 }
 
-func (r *Reconciler) createTenantTokenSecret(ctx context.Context, secretName string, connectionInfo dtclient.ConnectionInfo) error {
+func (r *Reconciler) createTenantTokenSecret(ctx context.Context, secretName string, connectionInfo dtclient2.ConnectionInfo) error {
 	secretData := extractSensitiveData(connectionInfo)
 	secret, err := kubeobjects.CreateSecret(r.scheme, r.dynakube,
 		kubeobjects.NewSecretNameModifier(secretName),
@@ -180,7 +180,7 @@ func (r *Reconciler) createTenantTokenSecret(ctx context.Context, secretName str
 	return nil
 }
 
-func extractSensitiveData(connectionInfo dtclient.ConnectionInfo) map[string][]byte {
+func extractSensitiveData(connectionInfo dtclient2.ConnectionInfo) map[string][]byte {
 	data := map[string][]byte{
 		TenantTokenName: []byte(connectionInfo.TenantToken),
 	}

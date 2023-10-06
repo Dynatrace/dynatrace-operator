@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	dtclient2 "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	kubeobjects2 "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	"testing"
 
@@ -11,7 +12,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent/daemonset"
-	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -82,10 +82,10 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 
 	fakeClient := fake.NewClient(
 		dynakube,
-		NewSecret(dkName, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}),
+		NewSecret(dkName, namespace, map[string]string{dtclient2.DynatracePaasToken: "42", dtclient2.DynatraceApiToken: "84"}),
 		sampleKubeSystemNS)
 
-	dtClient := &dtclient.MockDynatraceClient{}
+	dtClient := &dtclient2.MockDynatraceClient{}
 
 	reconciler := &Reconciler{
 		client:    fakeClient,
@@ -154,7 +154,7 @@ func TestReconcile_PostponeOnEmptyCommunicationHosts(t *testing.T) {
 	}
 
 	c := fake.NewClient(
-		NewSecret(name, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}),
+		NewSecret(name, namespace, map[string]string{dtclient2.DynatracePaasToken: "42", dtclient2.DynatraceApiToken: "84"}),
 		sampleKubeSystemNS)
 
 	reconciler := &Reconciler{
@@ -194,15 +194,15 @@ func TestReconcile_InstancesSet(t *testing.T) {
 	}
 
 	c := fake.NewClient(
-		NewSecret(name, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}),
+		NewSecret(name, namespace, map[string]string{dtclient2.DynatracePaasToken: "42", dtclient2.DynatraceApiToken: "84"}),
 		sampleKubeSystemNS)
-	dtcMock := &dtclient.MockDynatraceClient{}
+	dtcMock := &dtclient2.MockDynatraceClient{}
 	componentVersion := "1.187"
 	oldComponentVersion := "1.186"
 	hostIP := "1.2.3.4"
-	dtcMock.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(componentVersion, nil)
-	dtcMock.On("GetTokenScopes", "42").Return(dtclient.TokenScopes{dtclient.DynatracePaasToken}, nil)
-	dtcMock.On("GetTokenScopes", "84").Return(dtclient.TokenScopes{dtclient.DynatraceApiToken}, nil)
+	dtcMock.On("GetLatestAgentVersion", dtclient2.OsUnix, dtclient2.InstallerTypeDefault).Return(componentVersion, nil)
+	dtcMock.On("GetTokenScopes", "42").Return(dtclient2.TokenScopes{dtclient2.DynatracePaasToken}, nil)
+	dtcMock.On("GetTokenScopes", "84").Return(dtclient2.TokenScopes{dtclient2.DynatraceApiToken}, nil)
 
 	reconciler := &Reconciler{
 		client:    c,
@@ -527,7 +527,7 @@ func TestInstanceStatus(t *testing.T) {
 	fakeClient := fake.NewClient(
 		dynakube,
 		pod,
-		NewSecret(dkName, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}),
+		NewSecret(dkName, namespace, map[string]string{dtclient2.DynatracePaasToken: "42", dtclient2.DynatraceApiToken: "84"}),
 		sampleKubeSystemNS)
 
 	reconciler := &Reconciler{
@@ -580,7 +580,7 @@ func TestEmptyInstancesWithWrongLabels(t *testing.T) {
 	fakeClient := fake.NewClient(
 		dynakube,
 		pod,
-		NewSecret(dkName, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}),
+		NewSecret(dkName, namespace, map[string]string{dtclient2.DynatracePaasToken: "42", dtclient2.DynatraceApiToken: "84"}),
 		sampleKubeSystemNS)
 
 	reconciler := &Reconciler{
@@ -624,7 +624,7 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 
 	fakeClient := fake.NewClient(
 		dynakube,
-		NewSecret(dynakube.Name, dynakube.Namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}),
+		NewSecret(dynakube.Name, dynakube.Namespace, map[string]string{dtclient2.DynatracePaasToken: "42", dtclient2.DynatraceApiToken: "84"}),
 		sampleKubeSystemNS)
 
 	t.Run(`create OneAgent connection info ConfigMap`, func(t *testing.T) {

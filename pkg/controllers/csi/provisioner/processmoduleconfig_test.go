@@ -3,11 +3,11 @@ package csiprovisioner
 import (
 	"encoding/json"
 	"fmt"
+	dtclient2 "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"os"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -17,10 +17,10 @@ const (
 	testTenantUUID = "zib123"
 )
 
-func createTestProcessModuleConfig(revision uint) *dtclient.ProcessModuleConfig {
-	return &dtclient.ProcessModuleConfig{
+func createTestProcessModuleConfig(revision uint) *dtclient2.ProcessModuleConfig {
+	return &dtclient2.ProcessModuleConfig{
 		Revision: revision,
-		Properties: []dtclient.ProcessModuleProperty{
+		Properties: []dtclient2.ProcessModuleProperty{
 			{
 				Section: "test",
 				Key:     "test",
@@ -50,12 +50,12 @@ func isCacheExisting(fs afero.Fs) bool {
 }
 
 func TestGetProcessModuleConfig(t *testing.T) {
-	var emptyResponse *dtclient.ProcessModuleConfig
+	var emptyResponse *dtclient2.ProcessModuleConfig
 	t.Run(`no cache + no revision (dry run)`, func(t *testing.T) {
 		var defaultHash string
 		testProcessModuleConfig := createTestProcessModuleConfig(3)
 		memFs := afero.NewMemMapFs()
-		mockClient := &dtclient.MockDynatraceClient{}
+		mockClient := &dtclient2.MockDynatraceClient{}
 		mockClient.On("GetProcessModuleConfig", uint(0)).
 			Return(testProcessModuleConfig, nil)
 		provisioner := &OneAgentProvisioner{
@@ -74,7 +74,7 @@ func TestGetProcessModuleConfig(t *testing.T) {
 		memFs := afero.NewMemMapFs()
 		content, _ := json.Marshal(testProcessModuleConfigCache)
 		prepTestFsCache(memFs, content)
-		mockClient := &dtclient.MockDynatraceClient{}
+		mockClient := &dtclient2.MockDynatraceClient{}
 		mockClient.On("GetProcessModuleConfig", testProcessModuleConfigCache.Revision).
 			Return(emptyResponse, nil)
 		provisioner := &OneAgentProvisioner{
@@ -95,7 +95,7 @@ func TestGetProcessModuleConfig(t *testing.T) {
 		memFs := afero.NewMemMapFs()
 		content, _ := json.Marshal(testProcessModuleConfigCache)
 		prepTestFsCache(memFs, content)
-		mockClient := &dtclient.MockDynatraceClient{}
+		mockClient := &dtclient2.MockDynatraceClient{}
 		mockClient.On("GetProcessModuleConfig", testProcessModuleConfigCache.Revision).
 			Return(testProcessModuleConfig, nil)
 		provisioner := &OneAgentProvisioner{
