@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/parametermap"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -85,9 +86,10 @@ func assertEnvVarNameAndValue(t *testing.T, envVars []corev1.EnvVar, name, value
 
 func TestAddNodeNameEnv(t *testing.T) {
 	t.Run("adds nodeName value from via fieldPath", func(t *testing.T) {
-		envVars := addNodeNameEnv(map[string]corev1.EnvVar{})
+		envVars := parametermap.NewMap()
+		addNodeNameEnv(envVars)
 
-		assertNodeNameEnv(t, mapToArray(envVars))
+		assertNodeNameEnv(t, envVars.AsEnvVars())
 	})
 }
 
@@ -104,9 +106,10 @@ func TestAddClusterIDEnv(t *testing.T) {
 			dynakube:  &dynatracev1beta1.DynaKube{},
 			clusterID: clusterID,
 		}
-		envVars := dsInfo.addClusterIDEnv(map[string]corev1.EnvVar{})
+		envVars := parametermap.NewMap()
+		dsInfo.addClusterIDEnv(envVars)
 
-		assertClusterIDEnv(t, mapToArray(envVars), clusterID)
+		assertClusterIDEnv(t, envVars.AsEnvVars(), clusterID)
 	})
 }
 
@@ -126,9 +129,10 @@ func TestAddDeploymentMetadataEnv(t *testing.T) {
 				},
 			},
 		}
-		envVars := dsInfo.addDeploymentMetadataEnv(map[string]corev1.EnvVar{})
+		envVars := parametermap.NewMap()
+		dsInfo.addDeploymentMetadataEnv(envVars)
 
-		assertDeploymentMetadataEnv(t, mapToArray(envVars), dynakubeName)
+		assertDeploymentMetadataEnv(t, envVars.AsEnvVars(), dynakubeName)
 	})
 }
 
@@ -155,9 +159,10 @@ func TestAddConnectionInfoEnvs(t *testing.T) {
 		dsInfo := builderInfo{
 			dynakube: dynakube,
 		}
-		envVars := dsInfo.addConnectionInfoEnvs(map[string]corev1.EnvVar{})
+		envVars := parametermap.NewMap()
+		dsInfo.addConnectionInfoEnvs(envVars)
 
-		assertConnectionInfoEnv(t, mapToArray(envVars), dynakube)
+		assertConnectionInfoEnv(t, envVars.AsEnvVars(), dynakube)
 	})
 }
 
@@ -200,9 +205,10 @@ func TestAddProxyEnvs(t *testing.T) {
 		dsInfo := builderInfo{
 			dynakube: dynakube,
 		}
-		envVars := dsInfo.addProxyEnv(map[string]corev1.EnvVar{})
+		envVars := parametermap.NewMap()
+		dsInfo.addProxyEnv(envVars)
 
-		assertProxyEnv(t, mapToArray(envVars), dynakube)
+		assertProxyEnv(t, envVars.AsEnvVars(), dynakube)
 	})
 
 	t.Run("adds proxy value via secret ref from dynakube", func(t *testing.T) {
@@ -219,9 +225,10 @@ func TestAddProxyEnvs(t *testing.T) {
 		dsInfo := builderInfo{
 			dynakube: dynakube,
 		}
-		envVars := dsInfo.addProxyEnv(map[string]corev1.EnvVar{})
+		envVars := parametermap.NewMap()
+		dsInfo.addProxyEnv(envVars)
 
-		assertProxyEnv(t, mapToArray(envVars), dynakube)
+		assertProxyEnv(t, envVars.AsEnvVars(), dynakube)
 	})
 }
 
@@ -250,9 +257,10 @@ func TestAddReadOnlyEnv(t *testing.T) {
 		dsInfo := builderInfo{
 			dynakube: dynakube,
 		}
-		envVars := dsInfo.addReadOnlyEnv(map[string]corev1.EnvVar{})
+		envVars := parametermap.NewMap()
+		dsInfo.addReadOnlyEnv(envVars)
 
-		assertReadOnlyEnv(t, mapToArray(envVars))
+		assertReadOnlyEnv(t, envVars.AsEnvVars())
 	})
 
 	t.Run("not adds readonly value for supported oneagent mode", func(t *testing.T) {
@@ -264,9 +272,10 @@ func TestAddReadOnlyEnv(t *testing.T) {
 		dsInfo := builderInfo{
 			dynakube: dynakube,
 		}
-		envVars := dsInfo.addReadOnlyEnv(map[string]corev1.EnvVar{})
+		envVars := parametermap.NewMap()
+		dsInfo.addReadOnlyEnv(envVars)
 
-		require.Empty(t, envVars)
+		require.Empty(t, envVars.AsEnvVars())
 	})
 }
 

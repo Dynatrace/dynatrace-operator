@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/parametermap"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -183,7 +184,9 @@ func (statefulSetBuilder Builder) buildResources() corev1.ResourceRequirements {
 }
 
 func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {
-	envs := []corev1.EnvVar{
+	envMap := parametermap.NewMap()
+
+	parametermap.Append(envMap, []corev1.EnvVar{
 		{Name: consts.EnvDtCapabilities, Value: statefulSetBuilder.capability.ArgName()},
 		{Name: consts.EnvDtIdSeedNamespace, Value: statefulSetBuilder.dynakube.Namespace},
 		{Name: consts.EnvDtIdSeedClusterId, Value: string(statefulSetBuilder.kubeUID)},
@@ -196,22 +199,22 @@ func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {
 				Optional: address.Of(false),
 			},
 		}},
-	}
+	})
 
 	if statefulSetBuilder.capability.Properties().Group != "" {
-		envs = append(envs, corev1.EnvVar{Name: consts.EnvDtGroup, Value: statefulSetBuilder.capability.Properties().Group})
+		parametermap.Append(envMap, corev1.EnvVar{Name: consts.EnvDtGroup, Value: statefulSetBuilder.capability.Properties().Group})
 	}
 	if statefulSetBuilder.dynakube.Spec.NetworkZone != "" {
-		envs = append(envs, corev1.EnvVar{Name: consts.EnvDtNetworkZone, Value: statefulSetBuilder.dynakube.Spec.NetworkZone})
+		parametermap.Append(envMap, corev1.EnvVar{Name: consts.EnvDtNetworkZone, Value: statefulSetBuilder.dynakube.Spec.NetworkZone})
 	}
 
 	if statefulSetBuilder.dynakube.IsMetricsIngestActiveGateEnabled() {
-		envs = append(envs, corev1.EnvVar{Name: consts.EnvDtHttpPort, Value: strconv.Itoa(consts.HttpContainerPort)})
+		parametermap.Append(envMap, corev1.EnvVar{Name: consts.EnvDtHttpPort, Value: strconv.Itoa(consts.HttpContainerPort)})
 	}
 
-	envs = append(envs, statefulSetBuilder.capability.Properties().Env...)
+	parametermap.Append(envMap, statefulSetBuilder.capability.Properties().Env, parametermap.WithPriority(2))
 
-	return envs
+	return envMap.AsEnvVars()
 }
 
 func nodeAffinity() *corev1.Affinity {
