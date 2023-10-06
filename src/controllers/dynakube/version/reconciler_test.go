@@ -3,6 +3,10 @@ package version
 import (
 	"context"
 	"errors"
+	"github.com/Dynatrace/dynatrace-operator/src/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/src/oci/registry"
+	"github.com/Dynatrace/dynatrace-operator/src/oci/registry/mocks"
+	"github.com/Dynatrace/dynatrace-operator/src/util/timeprovider"
 	"testing"
 	"time"
 
@@ -10,10 +14,6 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/registry"
-	"github.com/Dynatrace/dynatrace-operator/src/registry/mocks"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	containerv1 "github.com/google/go-containerregistry/pkg/v1"
 	fakecontainer "github.com/google/go-containerregistry/pkg/v1/fake"
 	"github.com/opencontainers/go-digest"

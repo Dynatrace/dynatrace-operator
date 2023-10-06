@@ -1,9 +1,9 @@
 package dynakube
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/src/api/scheme"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/istio"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 )
 
 const (

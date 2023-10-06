@@ -4,9 +4,9 @@ package namespace
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects/address"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/istio"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"

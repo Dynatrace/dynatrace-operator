@@ -1,10 +1,10 @@
 package server
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/src/api/scheme"
 	"testing"
 
 	cmdManager "github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

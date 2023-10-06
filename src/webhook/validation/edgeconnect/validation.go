@@ -2,10 +2,10 @@ package edgeconnect
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/api/scheme"
 	"net/http"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/edgeconnect"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook/validation"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/rest"

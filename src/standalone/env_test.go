@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/src/config"
+	"github.com/Dynatrace/dynatrace-operator/src/consts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -20,7 +20,7 @@ func TestNewEnv(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, env)
 
-		assert.Equal(t, config.AgentCsiMode, env.Mode)
+		assert.Equal(t, consts.AgentCsiMode, env.Mode)
 		assert.Equal(t, failPhrase, env.FailurePolicy)
 		assert.NotEmpty(t, env.InstallerFlavor)
 		assert.NotEmpty(t, env.InstallerTech)
@@ -97,7 +97,7 @@ func TestNewEnv(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, env)
 
-		assert.Equal(t, config.AgentCsiMode, env.Mode)
+		assert.Equal(t, consts.AgentCsiMode, env.Mode)
 		assert.Equal(t, failPhrase, env.FailurePolicy)
 		assert.NotEmpty(t, env.InstallerFlavor)
 		assert.NotEmpty(t, env.InstallerTech)
@@ -133,7 +133,7 @@ func TestFailurePolicyModes(t *testing.T) {
 		t.Run(`injection failure policy: `+configuredMode, func(t *testing.T) {
 			resetEnv := prepDataIngestTestEnv(t, true)
 
-			err := os.Setenv(config.InjectionFailurePolicyEnv, configuredMode)
+			err := os.Setenv(consts.InjectionFailurePolicyEnv, configuredMode)
 			require.NoError(t, err)
 
 			env, err := newEnv()
@@ -158,19 +158,19 @@ func prepCombinedTestEnv(t *testing.T) func() {
 
 func prepOneAgentTestEnv(t *testing.T) func() {
 	envs := []string{
-		config.AgentInstallerFlavorEnv,
-		config.AgentInstallerTechEnv,
-		config.AgentInstallerVersionEnv,
-		config.K8sNodeNameEnv,
-		config.K8sPodNameEnv,
-		config.K8sPodUIDEnv,
-		config.K8sBasePodNameEnv,
-		config.K8sNamespaceEnv,
-		config.AgentInstallPathEnv,
+		consts.AgentInstallerFlavorEnv,
+		consts.AgentInstallerTechEnv,
+		consts.AgentInstallerVersionEnv,
+		consts.K8sNodeNameEnv,
+		consts.K8sPodNameEnv,
+		consts.K8sPodUIDEnv,
+		consts.K8sBasePodNameEnv,
+		consts.K8sNamespaceEnv,
+		consts.AgentInstallPathEnv,
 	}
 	for i := 1; i <= 5; i++ {
-		envs = append(envs, fmt.Sprintf(config.AgentContainerNameEnvTemplate, i))
-		envs = append(envs, fmt.Sprintf(config.AgentContainerImageEnvTemplate, i))
+		envs = append(envs, fmt.Sprintf(consts.AgentContainerNameEnvTemplate, i))
+		envs = append(envs, fmt.Sprintf(consts.AgentContainerImageEnvTemplate, i))
 	}
 	for _, envvar := range envs {
 		err := os.Setenv(envvar, fmt.Sprintf("TEST_%s", envvar))
@@ -178,41 +178,41 @@ func prepOneAgentTestEnv(t *testing.T) func() {
 	}
 
 	// Int env
-	envs = append(envs, config.AgentContainerCountEnv)
-	err := os.Setenv(config.AgentContainerCountEnv, "5")
+	envs = append(envs, consts.AgentContainerCountEnv)
+	err := os.Setenv(consts.AgentContainerCountEnv, "5")
 	require.NoError(t, err)
 
 	// Mode Env
-	envs = append(envs, config.InjectionFailurePolicyEnv)
-	err = os.Setenv(config.InjectionFailurePolicyEnv, "fail")
+	envs = append(envs, consts.InjectionFailurePolicyEnv)
+	err = os.Setenv(consts.InjectionFailurePolicyEnv, "fail")
 	require.NoError(t, err)
-	envs = append(envs, config.AgentInstallModeEnv)
-	err = os.Setenv(config.AgentInstallModeEnv, string(config.AgentCsiMode))
+	envs = append(envs, consts.AgentInstallModeEnv)
+	err = os.Setenv(consts.AgentInstallModeEnv, string(consts.AgentCsiMode))
 	require.NoError(t, err)
 
 	// Bool envs
-	err = os.Setenv(config.AgentInjectedEnv, trueStatement)
+	err = os.Setenv(consts.AgentInjectedEnv, trueStatement)
 	require.NoError(t, err)
-	envs = append(envs, config.AgentInjectedEnv)
-	err = os.Setenv(config.AgentReadonlyCSI, trueStatement)
+	envs = append(envs, consts.AgentInjectedEnv)
+	err = os.Setenv(consts.AgentReadonlyCSI, trueStatement)
 	require.NoError(t, err)
-	envs = append(envs, config.AgentReadonlyCSI)
+	envs = append(envs, consts.AgentReadonlyCSI)
 
 	return resetTestEnv(envs)
 }
 
 func prepDataIngestTestEnv(t *testing.T, isUnknownWorkload bool) func() {
 	envs := []string{
-		config.EnrichmentWorkloadKindEnv,
-		config.EnrichmentWorkloadNameEnv,
-		config.K8sClusterIDEnv,
-		config.K8sPodNameEnv,
-		config.K8sPodUIDEnv,
-		config.K8sNamespaceEnv,
+		consts.EnrichmentWorkloadKindEnv,
+		consts.EnrichmentWorkloadNameEnv,
+		consts.K8sClusterIDEnv,
+		consts.K8sPodNameEnv,
+		consts.K8sPodUIDEnv,
+		consts.K8sNamespaceEnv,
 	}
 	for _, envvar := range envs {
 		if isUnknownWorkload &&
-			(envvar == config.EnrichmentWorkloadKindEnv || envvar == config.EnrichmentWorkloadNameEnv) {
+			(envvar == consts.EnrichmentWorkloadKindEnv || envvar == consts.EnrichmentWorkloadNameEnv) {
 			err := os.Setenv(envvar, "UNKNOWN")
 			require.NoError(t, err)
 		} else {
@@ -222,14 +222,14 @@ func prepDataIngestTestEnv(t *testing.T, isUnknownWorkload bool) func() {
 	}
 
 	// Mode Env
-	envs = append(envs, config.InjectionFailurePolicyEnv)
-	err := os.Setenv(config.InjectionFailurePolicyEnv, "fail")
+	envs = append(envs, consts.InjectionFailurePolicyEnv)
+	err := os.Setenv(consts.InjectionFailurePolicyEnv, "fail")
 	require.NoError(t, err)
 
 	// Bool envs
-	err = os.Setenv(config.EnrichmentInjectedEnv, "true")
+	err = os.Setenv(consts.EnrichmentInjectedEnv, "true")
 	require.NoError(t, err)
-	envs = append(envs, config.EnrichmentInjectedEnv)
+	envs = append(envs, consts.EnrichmentInjectedEnv)
 
 	return resetTestEnv(envs)
 }

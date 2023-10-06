@@ -2,9 +2,9 @@ package manager
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/api/scheme"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/stretchr/testify/assert"
 )
 

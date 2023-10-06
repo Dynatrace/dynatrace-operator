@@ -1,12 +1,12 @@
 package daemonset
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"

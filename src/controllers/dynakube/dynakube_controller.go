@@ -2,6 +2,13 @@ package dynakube
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/oci/registry"
+	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/src/usernamespace/ingestendpoint"
+	"github.com/Dynatrace/dynatrace-operator/src/usernamespace/initgeneration"
+	"github.com/Dynatrace/dynatrace-operator/src/usernamespace/mapper"
+	kubeobjects2 "github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubesystem"
+	"github.com/Dynatrace/dynatrace-operator/src/util/timeprovider"
 	"net/http"
 	"os"
 	"time"
@@ -21,13 +28,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/src/ingestendpoint"
-	"github.com/Dynatrace/dynatrace-operator/src/initgeneration"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
-	"github.com/Dynatrace/dynatrace-operator/src/mapper"
-	"github.com/Dynatrace/dynatrace-operator/src/registry"
-	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	appsv1 "k8s.io/api/apps/v1"
@@ -71,7 +71,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, sc
 		istioClientBuilder:     istio.NewClient,
 		registryClientBuilder:  registry.NewClient,
 		config:                 config,
-		operatorNamespace:      os.Getenv(kubeobjects.EnvPodNamespace),
+		operatorNamespace:      os.Getenv(kubeobjects2.EnvPodNamespace),
 		clusterID:              clusterID,
 	}
 }
@@ -153,7 +153,7 @@ func (controller *Controller) reconcile(ctx context.Context, dynaKube *dynatrace
 		dynaKube.Status.SetPhase(controller.determineDynaKubePhase(dynaKube))
 	}
 
-	if isStatusDifferent, err := kubeobjects.IsDifferent(oldStatus, dynaKube.Status); err != nil {
+	if isStatusDifferent, err := kubeobjects2.IsDifferent(oldStatus, dynaKube.Status); err != nil {
 		log.Error(err, "failed to generate hash for the status section")
 	} else if isStatusDifferent {
 		log.Info("status changed, updating DynaKube")
@@ -415,7 +415,7 @@ func (controller *Controller) reconcileOneAgent(ctx context.Context, dynakube *d
 
 func (controller *Controller) removeOneAgentDaemonSet(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
 	oneAgentDaemonSet := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dynakube.OneAgentDaemonsetName(), Namespace: dynakube.Namespace}}
-	return kubeobjects.Delete(ctx, controller.client, &oneAgentDaemonSet)
+	return kubeobjects2.Delete(ctx, controller.client, &oneAgentDaemonSet)
 }
 
 func (controller *Controller) reconcileActiveGate(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) error {

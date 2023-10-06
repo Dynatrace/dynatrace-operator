@@ -5,12 +5,12 @@ package applicationmonitoring
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects/address"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/src/config"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
+	"github.com/Dynatrace/dynatrace-operator/src/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook/mutation/pod_mutator/oneagent_mutation"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/codemodules"
@@ -73,7 +73,7 @@ func checkInitContainerEnvVar(sampleApp sample.App) features.Func {
 			for _, initContainer := range podItem.Spec.InitContainers {
 				require.NotEmpty(t, initContainer)
 				if initContainer.Name == webhook.InstallContainerName {
-					require.Equal(t, "true", kubeobjects.FindEnvVar(initContainer.Env, config.AgentReadonlyCSI).Value)
+					require.Equal(t, "true", kubeobjects.FindEnvVar(initContainer.Env, consts.AgentReadonlyCSI).Value)
 				}
 			}
 		}

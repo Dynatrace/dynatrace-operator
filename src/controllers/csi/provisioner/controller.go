@@ -19,6 +19,10 @@ package csiprovisioner
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/codemodule/installer"
+	"github.com/Dynatrace/dynatrace-operator/src/codemodule/installer/image"
+	"github.com/Dynatrace/dynatrace-operator/src/codemodule/installer/url"
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects"
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
@@ -29,10 +33,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/installer"
-	"github.com/Dynatrace/dynatrace-operator/src/installer/image"
-	"github.com/Dynatrace/dynatrace-operator/src/installer/url"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"

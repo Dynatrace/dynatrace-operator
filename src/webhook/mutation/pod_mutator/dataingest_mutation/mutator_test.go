@@ -2,11 +2,11 @@ package dataingest_mutation
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/api/scheme/fake"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/src/config"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/src/consts"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -251,7 +251,7 @@ func getTestPod(annotations map[string]string) *corev1.Pod {
 func getTestInitSecret() *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      config.EnrichmentEndpointSecretName,
+			Name:      consts.EnrichmentEndpointSecretName,
 			Namespace: testNamespaceName,
 		},
 	}

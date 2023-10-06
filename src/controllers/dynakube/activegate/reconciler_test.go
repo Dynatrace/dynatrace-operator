@@ -2,6 +2,8 @@ package activegate
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/api/scheme"
+	"github.com/Dynatrace/dynatrace-operator/src/api/scheme/fake"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
@@ -9,8 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"

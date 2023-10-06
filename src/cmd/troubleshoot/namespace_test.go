@@ -2,9 +2,9 @@ package troubleshoot
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/api/scheme"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

@@ -5,12 +5,12 @@ package applicationmonitoring
 import (
 	"context"
 	"encoding/json"
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects/address"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/src/config"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
+	"github.com/Dynatrace/dynatrace-operator/src/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
@@ -154,10 +154,10 @@ func assessOnlyDataIngestIsInjected(t *testing.T) deployment.PodConsumer {
 		installOneAgentContainer := initContainers[0]
 		envVars := installOneAgentContainer.Env
 
-		assert.True(t, kubeobjects.EnvVarIsIn(envVars, config.EnrichmentWorkloadKindEnv))
-		assert.True(t, kubeobjects.EnvVarIsIn(envVars, config.EnrichmentWorkloadNameEnv))
-		assert.True(t, kubeobjects.EnvVarIsIn(envVars, config.EnrichmentInjectedEnv))
+		assert.True(t, kubeobjects.EnvVarIsIn(envVars, consts.EnrichmentWorkloadKindEnv))
+		assert.True(t, kubeobjects.EnvVarIsIn(envVars, consts.EnrichmentWorkloadNameEnv))
+		assert.True(t, kubeobjects.EnvVarIsIn(envVars, consts.EnrichmentInjectedEnv))
 
-		assert.False(t, kubeobjects.EnvVarIsIn(envVars, config.AgentInjectedEnv))
+		assert.False(t, kubeobjects.EnvVarIsIn(envVars, consts.AgentInjectedEnv))
 	}
 }

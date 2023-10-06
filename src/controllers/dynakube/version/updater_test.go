@@ -3,14 +3,14 @@ package version
 import (
 	"context"
 	"errors"
+	"github.com/Dynatrace/dynatrace-operator/src/oci/registry"
+	"github.com/Dynatrace/dynatrace-operator/src/oci/registry/mocks"
+	"github.com/Dynatrace/dynatrace-operator/src/util/timeprovider"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/registry"
-	"github.com/Dynatrace/dynatrace-operator/src/registry/mocks"
-	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/opencontainers/go-digest"
 	"github.com/stretchr/testify/assert"

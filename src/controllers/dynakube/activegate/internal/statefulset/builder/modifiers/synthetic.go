@@ -5,8 +5,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
 	_ "github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
+	kubeobjects2 "github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects/address"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -58,30 +58,30 @@ type nodeRequirements struct {
 
 var nodeRequirementsBySize = map[string]nodeRequirements{
 	dynatracev1beta1.SyntheticNodeXs: {
-		requestResources:     kubeobjects.NewResources("1", "2Gi"),
-		limitResources:       kubeobjects.NewResources("2", "3Gi"),
-		jvmHeap:              kubeobjects.NewQuantity("700M"),
-		chromiumCacheVolume:  kubeobjects.NewQuantity("256Mi"),
-		tmpStorageVolume:     kubeobjects.NewQuantity("8Mi"),
-		supportArchiveVolume: kubeobjects.NewQuantity("3Gi"),
+		requestResources:     kubeobjects2.NewResources("1", "2Gi"),
+		limitResources:       kubeobjects2.NewResources("2", "3Gi"),
+		jvmHeap:              kubeobjects2.NewQuantity("700M"),
+		chromiumCacheVolume:  kubeobjects2.NewQuantity("256Mi"),
+		tmpStorageVolume:     kubeobjects2.NewQuantity("8Mi"),
+		supportArchiveVolume: kubeobjects2.NewQuantity("3Gi"),
 	},
 
 	dynatracev1beta1.SyntheticNodeS: {
-		requestResources:     kubeobjects.NewResources("2", "3Gi"),
-		limitResources:       kubeobjects.NewResources("4", "6Gi"),
-		jvmHeap:              kubeobjects.NewQuantity("1024M"),
-		chromiumCacheVolume:  kubeobjects.NewQuantity("512Mi"),
-		tmpStorageVolume:     kubeobjects.NewQuantity("10Mi"),
-		supportArchiveVolume: kubeobjects.NewQuantity("6Gi"),
+		requestResources:     kubeobjects2.NewResources("2", "3Gi"),
+		limitResources:       kubeobjects2.NewResources("4", "6Gi"),
+		jvmHeap:              kubeobjects2.NewQuantity("1024M"),
+		chromiumCacheVolume:  kubeobjects2.NewQuantity("512Mi"),
+		tmpStorageVolume:     kubeobjects2.NewQuantity("10Mi"),
+		supportArchiveVolume: kubeobjects2.NewQuantity("6Gi"),
 	},
 
 	dynatracev1beta1.SyntheticNodeM: {
-		requestResources:     kubeobjects.NewResources("4", "5Gi"),
-		limitResources:       kubeobjects.NewResources("8", "10Gi"),
-		jvmHeap:              kubeobjects.NewQuantity("2048M"),
-		chromiumCacheVolume:  kubeobjects.NewQuantity("1Gi"),
-		tmpStorageVolume:     kubeobjects.NewQuantity("12Mi"),
-		supportArchiveVolume: kubeobjects.NewQuantity("12Gi"),
+		requestResources:     kubeobjects2.NewResources("4", "5Gi"),
+		limitResources:       kubeobjects2.NewResources("8", "10Gi"),
+		jvmHeap:              kubeobjects2.NewQuantity("2048M"),
+		chromiumCacheVolume:  kubeobjects2.NewQuantity("1Gi"),
+		tmpStorageVolume:     kubeobjects2.NewQuantity("12Mi"),
+		supportArchiveVolume: kubeobjects2.NewQuantity("12Gi"),
 	},
 }
 
@@ -113,8 +113,8 @@ func (modifier SyntheticModifier) Enabled() bool {
 
 func (modifier SyntheticModifier) Modify(sts *appsv1.StatefulSet) error {
 	version := modifier.dynakube.Status.Synthetic.Version
-	sts.Labels[kubeobjects.AppVersionLabel] = version
-	sts.Labels[kubeobjects.AppComponentLabel] = kubeobjects.SyntheticComponentLabel
+	sts.Labels[kubeobjects2.AppVersionLabel] = version
+	sts.Labels[kubeobjects2.AppComponentLabel] = kubeobjects2.SyntheticComponentLabel
 
 	sts.Spec.Template.Spec.Containers = append(
 		sts.Spec.Template.Spec.Containers,
@@ -125,7 +125,7 @@ func (modifier SyntheticModifier) Modify(sts *appsv1.StatefulSet) error {
 	sts.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{}
 	sts.Spec.Template.Spec.SecurityContext.FSGroup = address.Of[int64](1001)
 
-	baseContainer := kubeobjects.FindContainerInPodSpec(
+	baseContainer := kubeobjects2.FindContainerInPodSpec(
 		&sts.Spec.Template.Spec,
 		consts.ActiveGateContainerName)
 	baseContainer.VolumeMounts = append(

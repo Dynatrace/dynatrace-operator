@@ -2,6 +2,9 @@ package oneagent
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/api/scheme"
+	"github.com/Dynatrace/dynatrace-operator/src/api/scheme/fake"
+	kubeobjects2 "github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
@@ -9,9 +12,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -211,11 +211,11 @@ func TestReconcile_InstancesSet(t *testing.T) {
 	}
 
 	expectedLabels := map[string]string{
-		kubeobjects.AppNameLabel:      kubeobjects.OneAgentComponentLabel,
-		kubeobjects.AppComponentLabel: "classicfullstack",
-		kubeobjects.AppCreatedByLabel: name,
-		kubeobjects.AppVersionLabel:   oldComponentVersion,
-		kubeobjects.AppManagedByLabel: version.AppName,
+		kubeobjects2.AppNameLabel:      kubeobjects2.OneAgentComponentLabel,
+		kubeobjects2.AppComponentLabel: "classicfullstack",
+		kubeobjects2.AppCreatedByLabel: name,
+		kubeobjects2.AppVersionLabel:   oldComponentVersion,
+		kubeobjects2.AppManagedByLabel: version.AppName,
 	}
 
 	t.Run("reconileImp Instances set, if autoUpdate is true", func(t *testing.T) {
@@ -302,9 +302,9 @@ func TestMigrationForDaemonSetWithoutAnnotation(t *testing.T) {
 
 	ds2, err := r.buildDesiredDaemonSet(dynakube)
 	assert.NoError(t, err)
-	assert.NotEmpty(t, ds2.Annotations[kubeobjects.AnnotationHash])
+	assert.NotEmpty(t, ds2.Annotations[kubeobjects2.AnnotationHash])
 
-	assert.True(t, kubeobjects.IsHashAnnotationDifferent(ds1, ds2))
+	assert.True(t, kubeobjects2.IsHashAnnotationDifferent(ds1, ds2))
 }
 
 func TestHasSpecChanged(t *testing.T) {
@@ -335,10 +335,10 @@ func TestHasSpecChanged(t *testing.T) {
 			ds2, err := r.buildDesiredDaemonSet(&newInstance)
 			assert.NoError(t, err)
 
-			assert.NotEmpty(t, ds1.Annotations[kubeobjects.AnnotationHash])
-			assert.NotEmpty(t, ds2.Annotations[kubeobjects.AnnotationHash])
+			assert.NotEmpty(t, ds1.Annotations[kubeobjects2.AnnotationHash])
+			assert.NotEmpty(t, ds2.Annotations[kubeobjects2.AnnotationHash])
 
-			assert.Equal(t, exp, kubeobjects.IsHashAnnotationDifferent(ds1, ds2))
+			assert.Equal(t, exp, kubeobjects2.IsHashAnnotationDifferent(ds1, ds2))
 		})
 	}
 

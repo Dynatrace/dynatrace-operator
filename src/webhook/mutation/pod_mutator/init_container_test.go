@@ -1,11 +1,11 @@
 package pod_mutator
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects/address"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

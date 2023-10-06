@@ -2,10 +2,10 @@ package version
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/oci/registry"
+	"github.com/Dynatrace/dynatrace-operator/src/util/timeprovider"
 
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/edgeconnect"
-	"github.com/Dynatrace/dynatrace-operator/src/registry"
-	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 

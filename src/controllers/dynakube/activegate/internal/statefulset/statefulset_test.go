@@ -2,6 +2,7 @@ package statefulset
 
 import (
 	"fmt"
+	kubeobjects2 "github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects"
 	"reflect"
 	"strconv"
 	"testing"
@@ -13,7 +14,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder/modifiers"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -121,7 +121,7 @@ func TestAddLabels(t *testing.T) {
 		multiCapability := capability.NewMultiCapability(&dynakube)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dynakube, multiCapability)
 		sts := appsv1.StatefulSet{}
-		appLabels := kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, builder.dynakube.Name, builder.capability.ShortName(), "")
+		appLabels := kubeobjects2.NewAppLabels(kubeobjects2.ActiveGateComponentLabel, builder.dynakube.Name, builder.capability.ShortName(), "")
 		expectedLabels := appLabels.BuildLabels()
 		expectedSelectorLabels := metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()}
 
@@ -141,7 +141,7 @@ func TestAddLabels(t *testing.T) {
 		multiCapability := capability.NewMultiCapability(&dynakube)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dynakube, multiCapability)
 		sts := appsv1.StatefulSet{}
-		appLabels := kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, builder.dynakube.Name, builder.capability.ShortName(), "")
+		appLabels := kubeobjects2.NewAppLabels(kubeobjects2.ActiveGateComponentLabel, builder.dynakube.Name, builder.capability.ShortName(), "")
 		expectedTemplateLabels := appLabels.BuildLabels()
 		expectedTemplateLabels["test"] = "test"
 
@@ -304,23 +304,23 @@ func TestBuildCommonEnvs(t *testing.T) {
 		envs := builder.buildCommonEnvs()
 
 		require.NotEmpty(t, envs)
-		capEnv := kubeobjects.FindEnvVar(envs, consts.EnvDtCapabilities)
+		capEnv := kubeobjects2.FindEnvVar(envs, consts.EnvDtCapabilities)
 		require.NotNil(t, capEnv)
 		assert.Equal(t, multiCapability.ArgName(), capEnv.Value)
-		namespaceEnv := kubeobjects.FindEnvVar(envs, consts.EnvDtIdSeedNamespace)
+		namespaceEnv := kubeobjects2.FindEnvVar(envs, consts.EnvDtIdSeedNamespace)
 		require.NotNil(t, namespaceEnv)
 		assert.Equal(t, dynakube.Namespace, namespaceEnv.Value)
-		idEnv := kubeobjects.FindEnvVar(envs, consts.EnvDtIdSeedClusterId)
+		idEnv := kubeobjects2.FindEnvVar(envs, consts.EnvDtIdSeedClusterId)
 		require.NotNil(t, idEnv)
 		assert.Equal(t, testKubeUID, idEnv.Value)
-		metadataEnv := kubeobjects.FindEnvVar(envs, deploymentmetadata.EnvDtDeploymentMetadata)
+		metadataEnv := kubeobjects2.FindEnvVar(envs, deploymentmetadata.EnvDtDeploymentMetadata)
 		require.NotNil(t, metadataEnv)
 		assert.NotEmpty(t, metadataEnv.ValueFrom.ConfigMapKeyRef)
 		assert.Equal(t, deploymentmetadata.ActiveGateMetadataKey, metadataEnv.ValueFrom.ConfigMapKeyRef.Key)
 		assert.Equal(t, deploymentmetadata.GetDeploymentMetadataConfigMapName(dynakube.Name), metadataEnv.ValueFrom.ConfigMapKeyRef.Name)
 
 		// metrics-ingest disabled -> HTTP port disabled
-		dtHttpPortEnv := kubeobjects.FindEnvVar(envs, consts.EnvDtHttpPort)
+		dtHttpPortEnv := kubeobjects2.FindEnvVar(envs, consts.EnvDtHttpPort)
 		require.Nil(t, dtHttpPortEnv)
 	})
 
@@ -358,7 +358,7 @@ func TestBuildCommonEnvs(t *testing.T) {
 		envs := builder.buildCommonEnvs()
 
 		require.NotEmpty(t, envs)
-		groupEnv := kubeobjects.FindEnvVar(envs, consts.EnvDtGroup)
+		groupEnv := kubeobjects2.FindEnvVar(envs, consts.EnvDtGroup)
 		require.NotNil(t, groupEnv)
 		assert.Equal(t, multiCapability.Properties().Group, groupEnv.Value)
 	})
@@ -366,8 +366,8 @@ func TestBuildCommonEnvs(t *testing.T) {
 	t.Run("metrics-ingest env", func(t *testing.T) {
 		dynakube := getTestDynakube()
 
-		kubeobjects.SwitchCapability(&dynakube, dynatracev1beta1.RoutingCapability, false)
-		kubeobjects.SwitchCapability(&dynakube, dynatracev1beta1.MetricsIngestCapability, true)
+		kubeobjects2.SwitchCapability(&dynakube, dynatracev1beta1.RoutingCapability, false)
+		kubeobjects2.SwitchCapability(&dynakube, dynatracev1beta1.MetricsIngestCapability, true)
 
 		multiCapability := capability.NewMultiCapability(&dynakube)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dynakube, multiCapability)
@@ -375,7 +375,7 @@ func TestBuildCommonEnvs(t *testing.T) {
 		envs := builder.buildCommonEnvs()
 
 		require.NotEmpty(t, envs)
-		dtHttpPortEnv := kubeobjects.FindEnvVar(envs, consts.EnvDtHttpPort)
+		dtHttpPortEnv := kubeobjects2.FindEnvVar(envs, consts.EnvDtHttpPort)
 		require.NotNil(t, dtHttpPortEnv)
 		assert.Equal(t, strconv.Itoa(consts.HttpContainerPort), dtHttpPortEnv.Value)
 	})
@@ -390,7 +390,7 @@ func TestBuildCommonEnvs(t *testing.T) {
 		envs := builder.buildCommonEnvs()
 
 		require.NotEmpty(t, envs)
-		zoneEnv := kubeobjects.FindEnvVar(envs, consts.EnvDtNetworkZone)
+		zoneEnv := kubeobjects2.FindEnvVar(envs, consts.EnvDtNetworkZone)
 		require.NotNil(t, zoneEnv)
 		assert.Equal(t, dynakube.Spec.NetworkZone, zoneEnv.Value)
 	})
@@ -436,7 +436,7 @@ func TestBuildCommonEnvs(t *testing.T) {
 				VolumeSource: corev1.VolumeSource{
 					EmptyDir: &corev1.EmptyDirVolumeSource{
 						Medium:    "Memory",
-						SizeLimit: kubeobjects.NewQuantity("512Mi"),
+						SizeLimit: kubeobjects2.NewQuantity("512Mi"),
 					},
 				},
 			},
@@ -444,7 +444,7 @@ func TestBuildCommonEnvs(t *testing.T) {
 				Name: modifiers.TmpStorageMountName,
 				VolumeSource: corev1.VolumeSource{
 					EmptyDir: &corev1.EmptyDirVolumeSource{
-						SizeLimit: kubeobjects.NewQuantity("10Mi"),
+						SizeLimit: kubeobjects2.NewQuantity("10Mi"),
 					},
 				},
 			},
@@ -452,7 +452,7 @@ func TestBuildCommonEnvs(t *testing.T) {
 				Name: modifiers.ArchiveStorageMountName,
 				VolumeSource: corev1.VolumeSource{
 					EmptyDir: &corev1.EmptyDirVolumeSource{
-						SizeLimit: kubeobjects.NewQuantity("6Gi"),
+						SizeLimit: kubeobjects2.NewQuantity("6Gi"),
 					},
 				},
 			},

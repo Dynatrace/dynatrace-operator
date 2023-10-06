@@ -2,6 +2,8 @@ package nodes
 
 import (
 	"context"
+	kubeobjects2 "github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubesystem"
 	"os"
 	"time"
 
@@ -9,8 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -71,7 +71,7 @@ func NewController(mgr manager.Manager) *Controller {
 		scheme:                 mgr.GetScheme(),
 		dynatraceClientBuilder: dynatraceclient.NewBuilder(mgr.GetAPIReader()),
 		runLocal:               kubesystem.IsRunLocally(),
-		podNamespace:           os.Getenv(kubeobjects.EnvPodNamespace),
+		podNamespace:           os.Getenv(kubeobjects2.EnvPodNamespace),
 	}
 }
 
@@ -195,7 +195,7 @@ func (controller *Controller) getCache(ctx context.Context) (*Cache, error) {
 		}
 		// If running locally, don't set the controller.
 		if !controller.runLocal {
-			deploy, err := kubeobjects.GetDeployment(controller.client, os.Getenv(kubeobjects.EnvPodName), controller.podNamespace)
+			deploy, err := kubeobjects2.GetDeployment(controller.client, os.Getenv(kubeobjects2.EnvPodName), controller.podNamespace)
 			if err != nil {
 				return nil, err
 			}

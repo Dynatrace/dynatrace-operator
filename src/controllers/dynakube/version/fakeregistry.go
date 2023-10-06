@@ -3,11 +3,11 @@ package version
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/oci/registry"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/src/registry"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/stretchr/testify/assert"
 	"sigs.k8s.io/controller-runtime/pkg/client"

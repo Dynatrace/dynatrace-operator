@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/src/oci/dockerkeychain"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -12,8 +14,6 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
-	"github.com/Dynatrace/dynatrace-operator/src/dockerkeychain"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

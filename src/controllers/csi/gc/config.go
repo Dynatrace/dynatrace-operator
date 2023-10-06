@@ -1,7 +1,7 @@
 package csigc
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/src/logger"
+	"github.com/Dynatrace/dynatrace-operator/src/util/logger"
 	"github.com/prometheus/client_golang/prometheus"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 )

@@ -5,13 +5,13 @@ package support_archive
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/util/functional"
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects"
 	"testing"
 
 	edgeconnectv1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/edgeconnect"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/support_archive"
-	"github.com/Dynatrace/dynatrace-operator/src/functional"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/csi"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"

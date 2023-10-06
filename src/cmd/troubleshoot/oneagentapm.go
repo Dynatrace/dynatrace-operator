@@ -2,8 +2,8 @@ package troubleshoot
 
 import (
 	"errors"
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects"
 
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/go-logr/logr"
 	"k8s.io/client-go/rest"
 )

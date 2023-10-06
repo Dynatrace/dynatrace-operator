@@ -3,8 +3,8 @@ package support_archive
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects"
 
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"

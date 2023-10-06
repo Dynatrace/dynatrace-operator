@@ -2,12 +2,12 @@ package version
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects/address"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

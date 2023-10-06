@@ -3,9 +3,9 @@ package dynakube
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"k8s.io/apimachinery/pkg/labels"
 )
 

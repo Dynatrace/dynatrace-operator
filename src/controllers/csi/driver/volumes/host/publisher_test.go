@@ -2,6 +2,7 @@ package hostvolumes
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/api/scheme/fake"
 	"testing"
 	"time"
 
@@ -9,7 +10,6 @@ import (
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

@@ -11,7 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	kubeobjects2 "github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 	appsv1 "k8s.io/api/apps/v1"
@@ -100,15 +100,15 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 func (r *Reconciler) createActiveGateTenantConnectionInfoConfigMap(ctx context.Context) error {
 	configMapData := extractPublicData(r.dynakube)
 
-	configMap, err := kubeobjects.CreateConfigMap(r.scheme, r.dynakube,
-		kubeobjects.NewConfigMapNameModifier(r.dynakube.ActiveGateConnectionInfoConfigMapName()),
-		kubeobjects.NewConfigMapNamespaceModifier(r.dynakube.Namespace),
-		kubeobjects.NewConfigMapDataModifier(configMapData))
+	configMap, err := kubeobjects2.CreateConfigMap(r.scheme, r.dynakube,
+		kubeobjects2.NewConfigMapNameModifier(r.dynakube.ActiveGateConnectionInfoConfigMapName()),
+		kubeobjects2.NewConfigMapNamespaceModifier(r.dynakube.Namespace),
+		kubeobjects2.NewConfigMapDataModifier(configMapData))
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	query := kubeobjects.NewConfigMapQuery(ctx, r.client, r.apiReader, log)
+	query := kubeobjects2.NewConfigMapQuery(ctx, r.client, r.apiReader, log)
 	err = query.CreateOrUpdate(*configMap)
 	if err != nil {
 		log.Info("could not create or update configMap for connection info", "name", configMap.Name)
@@ -160,7 +160,7 @@ func (r *Reconciler) deleteService(ctx context.Context, agCapability capability.
 			Namespace: r.dynakube.Namespace,
 		},
 	}
-	return kubeobjects.Delete(ctx, r.client, &svc)
+	return kubeobjects2.Delete(ctx, r.client, &svc)
 }
 
 func (r *Reconciler) deleteStatefulset(ctx context.Context, agCapability capability.Capability) error {
@@ -170,5 +170,5 @@ func (r *Reconciler) deleteStatefulset(ctx context.Context, agCapability capabil
 			Namespace: r.dynakube.Namespace,
 		},
 	}
-	return kubeobjects.Delete(ctx, r.client, &sts)
+	return kubeobjects2.Delete(ctx, r.client, &sts)
 }

@@ -3,12 +3,12 @@ package csiprovisioner
 import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/arch"
+	"github.com/Dynatrace/dynatrace-operator/src/codemodule/installer"
+	"github.com/Dynatrace/dynatrace-operator/src/codemodule/installer/image"
+	"github.com/Dynatrace/dynatrace-operator/src/codemodule/installer/url"
+	"github.com/Dynatrace/dynatrace-operator/src/codemodule/processmoduleconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/installer"
-	"github.com/Dynatrace/dynatrace-operator/src/installer/image"
-	"github.com/Dynatrace/dynatrace-operator/src/installer/url"
-	"github.com/Dynatrace/dynatrace-operator/src/processmoduleconfig"
 )
 
 func (provisioner *OneAgentProvisioner) installAgentImage(dynakube dynatracev1beta1.DynaKube, latestProcessModuleConfigCache *processModuleConfigCache) (string, error) {

@@ -8,10 +8,9 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects"
 	"math/big"
 	"time"
-
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 )
 
 var serialNumberLimit = new(big.Int).Lsh(big.NewInt(1), 128)

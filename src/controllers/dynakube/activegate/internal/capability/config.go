@@ -1,7 +1,7 @@
 package capability
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/src/logger"
+	"github.com/Dynatrace/dynatrace-operator/src/util/logger"
 )
 
 var log = logger.Factory.GetLogger("dynakube-activegate-capability")

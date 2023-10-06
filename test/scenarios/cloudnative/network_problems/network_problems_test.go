@@ -3,9 +3,9 @@
 package network_problems
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/src/util/logger"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/src/logger"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/istio"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
 	"sigs.k8s.io/controller-runtime/pkg/log"

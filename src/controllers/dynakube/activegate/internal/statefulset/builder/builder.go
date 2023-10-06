@@ -1,7 +1,7 @@
 package builder
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/src/builder"
+	"github.com/Dynatrace/dynatrace-operator/src/util/builder"
 	appsv1 "k8s.io/api/apps/v1"
 )
 

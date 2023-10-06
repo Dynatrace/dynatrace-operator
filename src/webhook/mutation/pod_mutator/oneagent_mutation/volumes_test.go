@@ -1,11 +1,11 @@
 package oneagent_mutation
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects"
 	"path/filepath"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/src/config"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/consts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -58,8 +58,8 @@ func TestAddCurlOptionsVolumeMount(t *testing.T) {
 
 		addCurlOptionsVolumeMount(container)
 		require.Len(t, container.VolumeMounts, 1)
-		assert.Equal(t, filepath.Join(oneAgentCustomKeysPath, config.AgentCurlOptionsFileName), container.VolumeMounts[0].MountPath)
-		assert.Equal(t, config.AgentCurlOptionsFileName, container.VolumeMounts[0].SubPath)
+		assert.Equal(t, filepath.Join(oneAgentCustomKeysPath, consts.AgentCurlOptionsFileName), container.VolumeMounts[0].MountPath)
+		assert.Equal(t, consts.AgentCurlOptionsFileName, container.VolumeMounts[0].SubPath)
 	})
 }
 
@@ -78,7 +78,7 @@ func TestAddInitVolumeMounts(t *testing.T) {
 
 		mount, err := kubeobjects.GetVolumeMountByName(container.VolumeMounts, oneagentConfVolumeName)
 		require.NoError(t, err)
-		assert.Equal(t, config.AgentConfInitDirMount, mount.MountPath)
+		assert.Equal(t, consts.AgentConfInitDirMount, mount.MountPath)
 	})
 }
 

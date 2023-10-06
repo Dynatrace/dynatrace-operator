@@ -2,14 +2,14 @@ package webhook
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubesystem"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/dynakube"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/certificates"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 	cmdManager "github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook/mutation/namespace_mutator"

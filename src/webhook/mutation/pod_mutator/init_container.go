@@ -1,12 +1,12 @@
 package pod_mutator
 
 import (
+	kubeobjects2 "github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects/address"
 	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/src/config"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
+	"github.com/Dynatrace/dynatrace-operator/src/consts"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -18,13 +18,13 @@ func createInstallInitContainerBase(webhookImage, clusterID string, pod *corev1.
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		Args:            []string{"init"},
 		Env: []corev1.EnvVar{
-			{Name: config.InjectionFailurePolicyEnv, Value: kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationFailurePolicy, dynakube.FeatureInjectionFailurePolicy())},
-			{Name: config.K8sPodNameEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("metadata.name")},
-			{Name: config.K8sPodUIDEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("metadata.uid")},
-			{Name: config.K8sBasePodNameEnv, Value: getBasePodName(pod)},
-			{Name: config.K8sClusterIDEnv, Value: clusterID},
-			{Name: config.K8sNamespaceEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("metadata.namespace")},
-			{Name: config.K8sNodeNameEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("spec.nodeName")},
+			{Name: consts.InjectionFailurePolicyEnv, Value: kubeobjects2.GetField(pod.Annotations, dtwebhook.AnnotationFailurePolicy, dynakube.FeatureInjectionFailurePolicy())},
+			{Name: consts.K8sPodNameEnv, ValueFrom: kubeobjects2.NewEnvVarSourceForField("metadata.name")},
+			{Name: consts.K8sPodUIDEnv, ValueFrom: kubeobjects2.NewEnvVarSourceForField("metadata.uid")},
+			{Name: consts.K8sBasePodNameEnv, Value: getBasePodName(pod)},
+			{Name: consts.K8sClusterIDEnv, Value: clusterID},
+			{Name: consts.K8sNamespaceEnv, ValueFrom: kubeobjects2.NewEnvVarSourceForField("metadata.namespace")},
+			{Name: consts.K8sNodeNameEnv, ValueFrom: kubeobjects2.NewEnvVarSourceForField("spec.nodeName")},
 		},
 		SecurityContext: securityContextForInitContainer(pod, dynakube),
 		Resources:       initContainerResources(dynakube),
@@ -44,8 +44,8 @@ func initContainerResources(dynakube dynatracev1beta1.DynaKube) corev1.ResourceR
 
 func defaultInitContainerResources() corev1.ResourceRequirements {
 	return corev1.ResourceRequirements{
-		Requests: kubeobjects.NewResources("30m", "30Mi"),
-		Limits:   kubeobjects.NewResources("100m", "60Mi"),
+		Requests: kubeobjects2.NewResources("30m", "30Mi"),
+		Limits:   kubeobjects2.NewResources("100m", "60Mi"),
 	}
 }
 
@@ -117,7 +117,7 @@ func isNonRoot(ctx *corev1.SecurityContext) bool {
 }
 
 func getBasePodName(pod *corev1.Pod) string {
-	basePodName := kubeobjects.GetPodName(*pod)
+	basePodName := kubeobjects2.GetPodName(*pod)
 
 	// Only include up to the last dash character, exclusive.
 	if lastDashIndex := strings.LastIndex(basePodName, "-"); lastDashIndex != -1 {

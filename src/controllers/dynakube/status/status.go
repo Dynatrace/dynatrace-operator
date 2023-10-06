@@ -2,7 +2,7 @@ package status
 
 import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubesystem"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 

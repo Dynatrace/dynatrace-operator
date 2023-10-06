@@ -1,9 +1,9 @@
 package dataingest_mutation
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/src/config"
-	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/src/ingestendpoint"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/consts"
+	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/src/usernamespace/ingestendpoint"
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -70,7 +70,7 @@ func (mutator *DataIngestPodMutator) ensureDataIngestSecret(request *dtwebhook.M
 	err := mutator.apiReader.Get(
 		request.Context,
 		client.ObjectKey{
-			Name:      config.EnrichmentEndpointSecretName,
+			Name:      consts.EnrichmentEndpointSecretName,
 			Namespace: request.Namespace.Name,
 		},
 		&endpointSecret)

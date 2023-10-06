@@ -2,9 +2,9 @@ package version
 
 import (
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/util/logger"
 	"runtime"
 
-	"github.com/Dynatrace/dynatrace-operator/src/logger"
 	"github.com/go-logr/logr"
 )
 

@@ -2,11 +2,11 @@ package operator
 
 import (
 	"context"
+	dtfake "github.com/Dynatrace/dynatrace-operator/src/api/scheme/fake"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 	cmdManager "github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
-	dtfake "github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

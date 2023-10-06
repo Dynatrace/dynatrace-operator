@@ -2,11 +2,11 @@ package version
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/oci/registry"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/registry"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/pkg/errors"

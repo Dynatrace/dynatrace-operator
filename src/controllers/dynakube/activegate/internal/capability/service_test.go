@@ -1,11 +1,11 @@
 package capability
 
 import (
+	kubeobjects2 "github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -54,17 +54,17 @@ func TestCreateService(t *testing.T) {
 		assert.Equal(t, instance.Namespace, service.Namespace)
 
 		expectedLabels := map[string]string{
-			kubeobjects.AppCreatedByLabel: testName,
-			kubeobjects.AppComponentLabel: kubeobjects.ActiveGateComponentLabel,
-			kubeobjects.AppNameLabel:      version.AppName,
-			kubeobjects.AppVersionLabel:   version.Version,
+			kubeobjects2.AppCreatedByLabel: testName,
+			kubeobjects2.AppComponentLabel: kubeobjects2.ActiveGateComponentLabel,
+			kubeobjects2.AppNameLabel:      version.AppName,
+			kubeobjects2.AppVersionLabel:   version.Version,
 		}
 		assert.Equal(t, expectedLabels, service.Labels)
 
 		expectedSelector := map[string]string{
-			kubeobjects.AppCreatedByLabel: testName,
-			kubeobjects.AppManagedByLabel: version.AppName,
-			kubeobjects.AppNameLabel:      kubeobjects.ActiveGateComponentLabel,
+			kubeobjects2.AppCreatedByLabel: testName,
+			kubeobjects2.AppManagedByLabel: version.AppName,
+			kubeobjects2.AppNameLabel:      kubeobjects2.ActiveGateComponentLabel,
 		}
 		serviceSpec := service.Spec
 		assert.Equal(t, corev1.ServiceTypeClusterIP, serviceSpec.Type)
@@ -73,7 +73,7 @@ func TestCreateService(t *testing.T) {
 
 	t.Run("check AG service if metrics-ingest disabled", func(t *testing.T) {
 		instance := testCreateInstance()
-		kubeobjects.SwitchCapability(instance, dynatracev1beta1.RoutingCapability, true)
+		kubeobjects2.SwitchCapability(instance, dynatracev1beta1.RoutingCapability, true)
 
 		service := CreateService(instance, testComponentFeature)
 		ports := service.Spec.Ports
@@ -83,7 +83,7 @@ func TestCreateService(t *testing.T) {
 	})
 	t.Run("check AG service if metrics-ingest enabled", func(t *testing.T) {
 		instance := testCreateInstance()
-		kubeobjects.SwitchCapability(instance, dynatracev1beta1.MetricsIngestCapability, true)
+		kubeobjects2.SwitchCapability(instance, dynatracev1beta1.MetricsIngestCapability, true)
 
 		service := CreateService(instance, testComponentFeature)
 		ports := service.Spec.Ports

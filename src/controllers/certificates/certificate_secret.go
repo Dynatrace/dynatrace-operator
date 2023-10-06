@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects"
 	"reflect"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/pkg/errors"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"

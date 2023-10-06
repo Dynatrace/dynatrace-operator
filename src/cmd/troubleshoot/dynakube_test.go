@@ -2,11 +2,11 @@ package troubleshoot
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/api/scheme"
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects/address"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"

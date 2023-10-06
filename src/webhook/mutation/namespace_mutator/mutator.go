@@ -3,10 +3,10 @@ package namespace_mutator
 import (
 	"context"
 	"encoding/json"
+	"github.com/Dynatrace/dynatrace-operator/src/api/scheme"
+	mapper2 "github.com/Dynatrace/dynatrace-operator/src/usernamespace/mapper"
 	"net/http"
 
-	"github.com/Dynatrace/dynatrace-operator/src/mapper"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,14 +43,14 @@ func (nm *namespaceMutator) Handle(ctx context.Context, request admission.Reques
 
 	log.Info("namespace request", "namespace", request.Name, "operation", request.Operation)
 	ns := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: request.Namespace}}
-	nsMapper := mapper.NewNamespaceMapper(ctx, nm.client, nm.apiReader, nm.namespace, &ns)
+	nsMapper := mapper2.NewNamespaceMapper(ctx, nm.client, nm.apiReader, nm.namespace, &ns)
 	if err := decodeRequestToNamespace(request, &ns); err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	if _, ok := ns.Annotations[mapper.UpdatedViaDynakubeAnnotation]; ok {
+	if _, ok := ns.Annotations[mapper2.UpdatedViaDynakubeAnnotation]; ok {
 		log.Info("checking namespace labels not necessary", "namespace", request.Name)
-		delete(ns.Annotations, mapper.UpdatedViaDynakubeAnnotation)
+		delete(ns.Annotations, mapper2.UpdatedViaDynakubeAnnotation)
 		return getResponseForNamespace(&ns, &request)
 	}
 

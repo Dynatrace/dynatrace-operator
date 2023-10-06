@@ -2,10 +2,10 @@ package dynatraceclient
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/api/scheme/fake"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

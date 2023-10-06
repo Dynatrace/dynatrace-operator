@@ -2,11 +2,11 @@ package certificates
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/api/scheme"
+	"github.com/Dynatrace/dynatrace-operator/src/api/scheme/fake"
 	"testing"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/src/scheme"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

@@ -2,12 +2,12 @@ package proxy
 
 import (
 	"context"
+	kubeobjects2 "github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects"
 	"net/url"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -56,18 +56,18 @@ func (r *Reconciler) generateForDynakube(ctx context.Context, dynakube *dynatrac
 		return errors.WithStack(err)
 	}
 
-	coreLabels := kubeobjects.NewCoreLabels(dynakube.Name, kubeobjects.ActiveGateComponentLabel)
-	secret, err := kubeobjects.CreateSecret(r.scheme, r.dynakube,
-		kubeobjects.NewSecretNameModifier(capability.BuildProxySecretName(dynakube.Name)),
-		kubeobjects.NewSecretNamespaceModifier(r.dynakube.Namespace),
-		kubeobjects.NewSecretLabelsModifier(coreLabels.BuildMatchLabels()),
-		kubeobjects.NewSecretTypeModifier(corev1.SecretTypeOpaque),
-		kubeobjects.NewSecretDataModifier(data))
+	coreLabels := kubeobjects2.NewCoreLabels(dynakube.Name, kubeobjects2.ActiveGateComponentLabel)
+	secret, err := kubeobjects2.CreateSecret(r.scheme, r.dynakube,
+		kubeobjects2.NewSecretNameModifier(capability.BuildProxySecretName(dynakube.Name)),
+		kubeobjects2.NewSecretNamespaceModifier(r.dynakube.Namespace),
+		kubeobjects2.NewSecretLabelsModifier(coreLabels.BuildMatchLabels()),
+		kubeobjects2.NewSecretTypeModifier(corev1.SecretTypeOpaque),
+		kubeobjects2.NewSecretDataModifier(data))
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	secretQuery := kubeobjects.NewSecretQuery(ctx, r.client, r.apiReader, log)
+	secretQuery := kubeobjects2.NewSecretQuery(ctx, r.client, r.apiReader, log)
 
 	err = secretQuery.CreateOrUpdate(*secret)
 	return errors.WithStack(err)

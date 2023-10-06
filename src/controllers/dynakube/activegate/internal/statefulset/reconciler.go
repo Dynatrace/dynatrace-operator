@@ -1,6 +1,8 @@
 package statefulset
 
 import (
+	kubeobjects2 "github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubesystem"
 	"hash/fnv"
 	"reflect"
 	"strconv"
@@ -11,8 +13,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/internal/statefulset/builder"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 	appsv1 "k8s.io/api/apps/v1"
@@ -134,11 +134,11 @@ func (r *Reconciler) updateStatefulSetIfOutdated(ctx context.Context, desiredSts
 	if err != nil {
 		return false, err
 	}
-	if !kubeobjects.IsHashAnnotationDifferent(currentSts, desiredSts) {
+	if !kubeobjects2.IsHashAnnotationDifferent(currentSts, desiredSts) {
 		return false, nil
 	}
 
-	if kubeobjects.LabelsNotEqual(currentSts.Spec.Selector.MatchLabels, desiredSts.Spec.Selector.MatchLabels) {
+	if kubeobjects2.LabelsNotEqual(currentSts.Spec.Selector.MatchLabels, desiredSts.Spec.Selector.MatchLabels) {
 		return r.recreateStatefulSet(ctx, currentSts, desiredSts)
 	}
 
@@ -237,13 +237,13 @@ func (r *Reconciler) getAuthTokenValue() (string, error) {
 
 func (r *Reconciler) getDataFromCustomProperty(customProperties *dynatracev1beta1.DynaKubeValueSource) (string, error) {
 	if customProperties.ValueFrom != "" {
-		return kubeobjects.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.dynakube.Namespace, Name: customProperties.ValueFrom}, customproperties.DataKey, log)
+		return kubeobjects2.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.dynakube.Namespace, Name: customProperties.ValueFrom}, customproperties.DataKey, log)
 	}
 	return customProperties.Value, nil
 }
 
 func (r *Reconciler) getDataFromAuthTokenSecret() (string, error) {
-	return kubeobjects.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.dynakube.Namespace, Name: r.dynakube.ActiveGateAuthTokenSecret()}, authtoken.ActiveGateAuthTokenName, log)
+	return kubeobjects2.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.dynakube.Namespace, Name: r.dynakube.ActiveGateAuthTokenSecret()}, authtoken.ActiveGateAuthTokenName, log)
 }
 
 func needsCustomPropertyHash(customProperties *dynatracev1beta1.DynaKubeValueSource) bool {

@@ -2,6 +2,8 @@ package nodes
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/api/scheme"
+	"github.com/Dynatrace/dynatrace-operator/src/api/scheme/fake"
 	"testing"
 	"time"
 
@@ -9,8 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"

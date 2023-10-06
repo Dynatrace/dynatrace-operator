@@ -3,10 +3,10 @@ package istio
 import (
 	"context"
 	"errors"
+	"github.com/Dynatrace/dynatrace-operator/src/api/scheme"
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"

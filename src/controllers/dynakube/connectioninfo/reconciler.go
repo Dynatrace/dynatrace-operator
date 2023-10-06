@@ -3,8 +3,8 @@ package connectioninfo
 import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/util/timeprovider"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"

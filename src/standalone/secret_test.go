@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/src/config"
+	"github.com/Dynatrace/dynatrace-operator/src/consts"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -81,9 +81,9 @@ func TestNewSecretConfigViaFs(t *testing.T) {
 
 func prepTestFs(t *testing.T) afero.Fs {
 	fs := afero.NewMemMapFs()
-	require.NoError(t, fs.MkdirAll(config.AgentConfigDirMount, 0770))
+	require.NoError(t, fs.MkdirAll(consts.AgentConfigDirMount, 0770))
 
-	file, err := fs.OpenFile(filepath.Join(config.AgentConfigDirMount, config.AgentInitSecretConfigField), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0770)
+	file, err := fs.OpenFile(filepath.Join(consts.AgentConfigDirMount, consts.AgentInitSecretConfigField), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0770)
 	require.NoError(t, err)
 	require.NotNil(t, file)
 
@@ -110,6 +110,6 @@ func prepReadOnlyCSIFilesystem(t *testing.T, fs afero.Fs) afero.Fs {
 	}
 	fs.Chmod(getReadOnlyAgentConfMountPath(), 0444)
 
-	require.NoError(t, fs.MkdirAll(config.AgentConfInitDirMount, 0770))
+	require.NoError(t, fs.MkdirAll(consts.AgentConfInitDirMount, 0770))
 	return fs
 }

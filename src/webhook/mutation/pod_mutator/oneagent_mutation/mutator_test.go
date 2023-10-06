@@ -2,11 +2,11 @@ package oneagent_mutation
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/api/scheme/fake"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/src/config"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/src/consts"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -81,10 +81,10 @@ func TestInjected(t *testing.T) {
 
 func TestGetVolumeMode(t *testing.T) {
 	t.Run("should return csi volume mode", func(t *testing.T) {
-		assert.Equal(t, string(config.AgentCsiMode), getVolumeMode(*getTestCSIDynakube()))
+		assert.Equal(t, string(consts.AgentCsiMode), getVolumeMode(*getTestCSIDynakube()))
 	})
 	t.Run("should return empty volume mode", func(t *testing.T) {
-		assert.Equal(t, string(config.AgentInstallerMode), getVolumeMode(*getTestDynakube()))
+		assert.Equal(t, string(consts.AgentInstallerMode), getVolumeMode(*getTestDynakube()))
 	})
 }
 
@@ -279,7 +279,7 @@ func createTestPodMutator(objects []client.Object) *OneAgentPodMutator {
 func getTestInitSecret() *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      config.AgentInitSecretName,
+			Name:      consts.AgentInitSecretName,
 			Namespace: testNamespaceName,
 		},
 	}

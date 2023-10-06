@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/Dynatrace/dynatrace-operator/src/config"
+	"github.com/Dynatrace/dynatrace-operator/src/consts"
 	"github.com/pkg/errors"
 )
 
@@ -93,7 +93,7 @@ func (runner *Runner) createJsonEnrichmentFile() error {
 		runner.env.WorkloadName,
 		runner.env.K8ClusterID,
 	)
-	jsonPath := filepath.Join(config.EnrichmentMountPath, fmt.Sprintf(config.EnrichmentFilenameTemplate, "json"))
+	jsonPath := filepath.Join(consts.EnrichmentMountPath, fmt.Sprintf(consts.EnrichmentFilenameTemplate, "json"))
 
 	return runner.createConfFile(jsonPath, jsonContent)
 }
@@ -107,14 +107,14 @@ func (runner *Runner) createPropsEnrichmentFile() error {
 		runner.env.WorkloadName,
 		runner.env.K8ClusterID,
 	)
-	propsPath := filepath.Join(config.EnrichmentMountPath, fmt.Sprintf(config.EnrichmentFilenameTemplate, "properties"))
+	propsPath := filepath.Join(consts.EnrichmentMountPath, fmt.Sprintf(consts.EnrichmentFilenameTemplate, "properties"))
 
 	return runner.createConfFile(propsPath, propsContent)
 }
 
 func (runner *Runner) createCurlOptionsFile() error {
 	content := runner.getCurlOptionsContent()
-	path := filepath.Join(config.AgentShareDirMount, config.AgentCurlOptionsFileName)
+	path := filepath.Join(consts.AgentShareDirMount, consts.AgentCurlOptionsFileName)
 
 	return runner.createConfFile(path, content)
 }

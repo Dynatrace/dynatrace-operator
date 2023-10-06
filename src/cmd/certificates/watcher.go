@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects"
 	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/certificates"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	corev1 "k8s.io/api/core/v1"

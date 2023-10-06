@@ -2,6 +2,9 @@ package edgeconnect
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/oci/registry"
+	kubeobjects2 "github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/util/timeprovider"
 	"net/http"
 	"time"
 
@@ -9,9 +12,6 @@ import (
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/edgeconnect/deployment"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/edgeconnect/version"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/src/registry"
-	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -107,7 +107,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	}
 	err = controller.updateEdgeConnectStatus(ctx, edgeConnect)
 
-	if isDifferentStatus, err := kubeobjects.IsDifferent(oldStatus, edgeConnect.Status); err != nil {
+	if isDifferentStatus, err := kubeobjects2.IsDifferent(oldStatus, edgeConnect.Status); err != nil {
 		log.Error(errors.WithStack(err), "failed to generate hash for the status section")
 	} else if isDifferentStatus {
 		log.Info("status changed, updating DynaKube")
@@ -159,13 +159,13 @@ func (controller *Controller) reconcileEdgeConnect(edgeConnect *edgeconnectv1alp
 		return errors.WithStack(err)
 	}
 
-	ddHash, err := kubeobjects.GenerateHash(desiredDeployment)
+	ddHash, err := kubeobjects2.GenerateHash(desiredDeployment)
 	if err != nil {
 		return err
 	}
-	desiredDeployment.Annotations[kubeobjects.AnnotationHash] = ddHash
+	desiredDeployment.Annotations[kubeobjects2.AnnotationHash] = ddHash
 
-	_, err = kubeobjects.CreateOrUpdateDeployment(controller.client, log, desiredDeployment)
+	_, err = kubeobjects2.CreateOrUpdateDeployment(controller.client, log, desiredDeployment)
 
 	if err != nil {
 		log.Info("could not create or update deployment for EdgeConnect", "name", desiredDeployment.Name)

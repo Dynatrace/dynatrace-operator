@@ -3,13 +3,13 @@ package appvolumes
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/api/scheme/fake"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"

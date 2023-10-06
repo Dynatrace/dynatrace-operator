@@ -18,11 +18,11 @@ package dynakube
 
 import (
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/util/timeprovider"
 	"net/url"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api"
-	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

@@ -2,12 +2,12 @@ package version
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/src/oci/registry"
+	"github.com/Dynatrace/dynatrace-operator/src/oci/registry/mocks"
+	"github.com/Dynatrace/dynatrace-operator/src/util/timeprovider"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/src/registry"
-	"github.com/Dynatrace/dynatrace-operator/src/registry/mocks"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )

@@ -1,7 +1,7 @@
 package dtpullsecret
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/src/logger"
+	"github.com/Dynatrace/dynatrace-operator/src/util/logger"
 )
 
 var (

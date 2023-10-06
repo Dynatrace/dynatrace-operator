@@ -2,9 +2,9 @@ package manager
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/api/scheme"
+	"github.com/Dynatrace/dynatrace-operator/src/util/logger"
 
-	"github.com/Dynatrace/dynatrace-operator/src/logger"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"

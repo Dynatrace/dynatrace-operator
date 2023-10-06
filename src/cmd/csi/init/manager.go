@@ -1,7 +1,7 @@
 package init
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/src/scheme"
+	"github.com/Dynatrace/dynatrace-operator/src/api/scheme"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"

@@ -3,11 +3,11 @@ package csigc
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/api/scheme/fake"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

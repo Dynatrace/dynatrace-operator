@@ -1,11 +1,11 @@
 package oneagent_mutation
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/src/config"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/consts"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -25,9 +25,9 @@ func TestConfigureInitContainer(t *testing.T) {
 
 		require.Len(t, request.InstallContainer.Env, expectedBaseInitContainerEnvCount)
 		assert.Len(t, request.InstallContainer.VolumeMounts, 2)
-		envvar := kubeobjects.FindEnvVar(request.InstallContainer.Env, config.AgentInstallModeEnv)
+		envvar := kubeobjects.FindEnvVar(request.InstallContainer.Env, consts.AgentInstallModeEnv)
 		require.NotNil(t, envvar)
-		assert.Equal(t, string(config.AgentInstallerMode), envvar.Value)
+		assert.Equal(t, string(consts.AgentInstallerMode), envvar.Value)
 	})
 
 	t.Run("add envs and volume mounts (csi)", func(t *testing.T) {
@@ -39,9 +39,9 @@ func TestConfigureInitContainer(t *testing.T) {
 
 		require.Len(t, request.InstallContainer.Env, expectedBaseInitContainerEnvCount)
 		assert.Len(t, request.InstallContainer.VolumeMounts, 2)
-		envvar := kubeobjects.FindEnvVar(request.InstallContainer.Env, config.AgentInstallModeEnv)
+		envvar := kubeobjects.FindEnvVar(request.InstallContainer.Env, consts.AgentInstallModeEnv)
 		require.NotNil(t, envvar)
-		assert.Equal(t, string(config.AgentCsiMode), envvar.Value)
+		assert.Equal(t, string(consts.AgentCsiMode), envvar.Value)
 	})
 
 	t.Run("add envs and volume mounts (readonly-csi)", func(t *testing.T) {
@@ -53,11 +53,11 @@ func TestConfigureInitContainer(t *testing.T) {
 
 		require.Len(t, request.InstallContainer.Env, expectedBaseInitContainerEnvCount)
 		assert.Len(t, request.InstallContainer.VolumeMounts, 3)
-		envvar := kubeobjects.FindEnvVar(request.InstallContainer.Env, config.AgentInstallModeEnv)
+		envvar := kubeobjects.FindEnvVar(request.InstallContainer.Env, consts.AgentInstallModeEnv)
 		require.NotNil(t, envvar)
-		assert.Equal(t, string(config.AgentCsiMode), envvar.Value)
+		assert.Equal(t, string(consts.AgentCsiMode), envvar.Value)
 
-		readOnlyEnvvar := kubeobjects.FindEnvVar(request.InstallContainer.Env, config.AgentReadonlyCSI)
+		readOnlyEnvvar := kubeobjects.FindEnvVar(request.InstallContainer.Env, consts.AgentReadonlyCSI)
 		require.NotNil(t, readOnlyEnvvar)
 		assert.Equal(t, "true", readOnlyEnvvar.Value)
 	})

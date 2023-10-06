@@ -3,9 +3,9 @@ package deploymentmetadata
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"

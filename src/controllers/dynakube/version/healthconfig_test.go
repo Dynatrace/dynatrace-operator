@@ -2,11 +2,11 @@ package version
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/oci/registry/mocks"
 	"testing"
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/src/registry/mocks"
 	containerv1 "github.com/google/go-containerregistry/pkg/v1"
 	fakecontainer "github.com/google/go-containerregistry/pkg/v1/fake"
 	"github.com/stretchr/testify/assert"

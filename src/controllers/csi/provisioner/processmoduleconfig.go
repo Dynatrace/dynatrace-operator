@@ -2,11 +2,11 @@ package csiprovisioner
 
 import (
 	"encoding/json"
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects"
 	"io"
 	"os"
 
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
 )
 

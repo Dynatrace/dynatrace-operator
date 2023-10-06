@@ -1,7 +1,7 @@
 package daemonset
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects"
 	corev1 "k8s.io/api/core/v1"
 )
 

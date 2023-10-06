@@ -2,11 +2,11 @@ package operator
 
 import (
 	"errors"
+	"github.com/Dynatrace/dynatrace-operator/src/api/scheme"
+	"github.com/Dynatrace/dynatrace-operator/src/api/scheme/fake"
 	"testing"
 
 	cmdManager "github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	corev1 "k8s.io/api/core/v1"

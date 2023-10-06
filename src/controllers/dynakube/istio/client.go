@@ -2,8 +2,8 @@ package istio
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects"
 
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	istioclientset "istio.io/client-go/pkg/clientset/versioned"

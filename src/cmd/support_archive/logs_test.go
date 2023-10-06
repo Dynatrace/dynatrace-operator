@@ -6,11 +6,11 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects"
+	corev1mocks "github.com/Dynatrace/dynatrace-operator/src/util/testing/mocks/k8s.io/client-go/kubernetes/typed/core/v1"
 	"io"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	corev1mocks "github.com/Dynatrace/dynatrace-operator/src/mocks/k8s.io/client-go/kubernetes/typed/core/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"

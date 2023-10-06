@@ -2,9 +2,9 @@ package dynakube
 
 import (
 	"context"
+	mapper2 "github.com/Dynatrace/dynatrace-operator/src/usernamespace/mapper"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/src/mapper"
 )
 
 const (
@@ -20,9 +20,9 @@ func conflictingNamespaceSelector(dv *dynakubeValidator, dynakube *dynatracev1be
 	if !dynakube.NeedAppInjection() {
 		return ""
 	}
-	dkMapper := mapper.NewDynakubeMapper(context.TODO(), dv.clt, dv.apiReader, dynakube.Namespace, dynakube)
+	dkMapper := mapper2.NewDynakubeMapper(context.TODO(), dv.clt, dv.apiReader, dynakube.Namespace, dynakube)
 	_, err := dkMapper.MatchingNamespaces()
-	if err != nil && err.Error() == mapper.ErrorConflictingNamespace {
+	if err != nil && err.Error() == mapper2.ErrorConflictingNamespace {
 		if dynakube.NamespaceSelector().MatchExpressions == nil && dynakube.NamespaceSelector().MatchLabels == nil {
 			log.Info("requested dynakube has conflicting namespaceSelector", "name", dynakube.Name, "namespace", dynakube.Namespace)
 			return errorConflictingNamespaceSelectorNoSelector

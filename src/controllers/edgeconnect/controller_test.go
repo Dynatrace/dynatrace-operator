@@ -2,16 +2,16 @@ package edgeconnect
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/api/scheme"
+	"github.com/Dynatrace/dynatrace-operator/src/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/src/oci/registry"
+	"github.com/Dynatrace/dynatrace-operator/src/oci/registry/mocks"
+	"github.com/Dynatrace/dynatrace-operator/src/util/timeprovider"
 	"testing"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/edgeconnect"
-	"github.com/Dynatrace/dynatrace-operator/src/registry"
-	"github.com/Dynatrace/dynatrace-operator/src/registry/mocks"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"

@@ -15,6 +15,8 @@ limitations under the License.
 package main
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/util/logger"
 	"os"
 
 	cmdConfig "github.com/Dynatrace/dynatrace-operator/src/cmd/config"
@@ -27,8 +29,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/support_archive"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/troubleshoot"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/webhook"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/src/logger"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	ctrl "sigs.k8s.io/controller-runtime"

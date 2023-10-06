@@ -2,13 +2,13 @@ package version
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/oci/registry"
+	"github.com/Dynatrace/dynatrace-operator/src/util/timeprovider"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/registry"
-	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/spf13/afero"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )

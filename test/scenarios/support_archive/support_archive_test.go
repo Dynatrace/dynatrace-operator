@@ -3,9 +3,9 @@
 package support_archive
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/src/util/logger"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/src/logger"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/e2e-framework/pkg/env"

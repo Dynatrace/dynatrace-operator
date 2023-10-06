@@ -1,10 +1,10 @@
 package oneagent_mutation
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects"
 	"net/url"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	corev1 "k8s.io/api/core/v1"
 )

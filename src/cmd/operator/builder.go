@@ -2,12 +2,12 @@ package operator
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects"
+	kubesystem2 "github.com/Dynatrace/dynatrace-operator/src/util/kubesystem"
 
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 	cmdManager "github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/certificates"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -124,7 +124,7 @@ func (builder CommandBuilder) buildRun() func(cmd *cobra.Command, args []string)
 			return err
 		}
 
-		if kubesystem.IsRunLocally() {
+		if kubesystem2.IsRunLocally() {
 			log.Info("running locally in debug mode")
 			return builder.runLocally(kubeCfg)
 		}
@@ -139,7 +139,7 @@ func (builder CommandBuilder) runInPod(kubeCfg *rest.Config) error {
 		return err
 	}
 
-	isDeployedViaOlm := kubesystem.IsDeployedViaOlm(*operatorPod)
+	isDeployedViaOlm := kubesystem2.IsDeployedViaOlm(*operatorPod)
 	if !isDeployedViaOlm {
 		err = builder.runBootstrapper(kubeCfg)
 

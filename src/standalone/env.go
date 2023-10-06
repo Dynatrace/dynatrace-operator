@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/src/arch"
-	"github.com/Dynatrace/dynatrace-operator/src/config"
+	"github.com/Dynatrace/dynatrace-operator/src/consts"
 	"github.com/pkg/errors"
 )
 
@@ -24,7 +24,7 @@ type containerInfo struct {
 }
 
 type environment struct {
-	Mode          config.InstallMode `json:"mode"`
+	Mode          consts.InstallMode `json:"mode"`
 	FailurePolicy string             `json:"failurePolicy"`
 	InstallerUrl  string             `json:"installerUrl"`
 
@@ -127,16 +127,16 @@ func (env *environment) setMutationTypeFields() {
 }
 
 func (env *environment) addMode() error {
-	mode, err := checkEnvVar(config.AgentInstallModeEnv)
+	mode, err := checkEnvVar(consts.AgentInstallModeEnv)
 	if err != nil {
 		return err
 	}
-	env.Mode = config.InstallMode(mode)
+	env.Mode = consts.InstallMode(mode)
 	return nil
 }
 
 func (env *environment) addFailurePolicy() error {
-	failurePolicy, err := checkEnvVar(config.InjectionFailurePolicyEnv)
+	failurePolicy, err := checkEnvVar(consts.InjectionFailurePolicyEnv)
 	if err != nil {
 		return err
 	}
@@ -152,7 +152,7 @@ func (env *environment) addFailurePolicy() error {
 }
 
 func (env *environment) addInstallerFlavor() {
-	flavor, _ := checkEnvVar(config.AgentInstallerFlavorEnv)
+	flavor, _ := checkEnvVar(consts.AgentInstallerFlavorEnv)
 	if flavor == "" {
 		env.InstallerFlavor = arch.Flavor
 	} else {
@@ -161,7 +161,7 @@ func (env *environment) addInstallerFlavor() {
 }
 
 func (env *environment) addInstallerTech() error {
-	technologies, err := checkEnvVar(config.AgentInstallerTechEnv)
+	technologies, err := checkEnvVar(consts.AgentInstallerTechEnv)
 	if err != nil {
 		return err
 	}
@@ -170,7 +170,7 @@ func (env *environment) addInstallerTech() error {
 }
 
 func (env *environment) addInstallPath() error {
-	installPath, err := checkEnvVar(config.AgentInstallPathEnv)
+	installPath, err := checkEnvVar(consts.AgentInstallPathEnv)
 	if err != nil {
 		return err
 	}
@@ -180,7 +180,7 @@ func (env *environment) addInstallPath() error {
 
 func (env *environment) addContainers() error {
 	containers := []containerInfo{}
-	containerCountStr, err := checkEnvVar(config.AgentContainerCountEnv)
+	containerCountStr, err := checkEnvVar(consts.AgentContainerCountEnv)
 	if err != nil {
 		return err
 	}
@@ -189,8 +189,8 @@ func (env *environment) addContainers() error {
 		return err
 	}
 	for i := 1; i <= countCount; i++ {
-		nameEnv := fmt.Sprintf(config.AgentContainerNameEnvTemplate, i)
-		imageEnv := fmt.Sprintf(config.AgentContainerImageEnvTemplate, i)
+		nameEnv := fmt.Sprintf(consts.AgentContainerNameEnvTemplate, i)
+		imageEnv := fmt.Sprintf(consts.AgentContainerImageEnvTemplate, i)
 
 		containerName, err := checkEnvVar(nameEnv)
 		if err != nil {
@@ -210,7 +210,7 @@ func (env *environment) addContainers() error {
 }
 
 func (env *environment) addK8NodeName() error {
-	nodeName, err := checkEnvVar(config.K8sNodeNameEnv)
+	nodeName, err := checkEnvVar(consts.K8sNodeNameEnv)
 	if err != nil {
 		return err
 	}
@@ -219,7 +219,7 @@ func (env *environment) addK8NodeName() error {
 }
 
 func (env *environment) addK8PodName() error {
-	podName, err := checkEnvVar(config.K8sPodNameEnv)
+	podName, err := checkEnvVar(consts.K8sPodNameEnv)
 	if err != nil {
 		return err
 	}
@@ -228,7 +228,7 @@ func (env *environment) addK8PodName() error {
 }
 
 func (env *environment) addK8PodUID() error {
-	podUID, err := checkEnvVar(config.K8sPodUIDEnv)
+	podUID, err := checkEnvVar(consts.K8sPodUIDEnv)
 	if err != nil {
 		return err
 	}
@@ -237,7 +237,7 @@ func (env *environment) addK8PodUID() error {
 }
 
 func (env *environment) addK8ClusterID() error {
-	clusterID, err := checkEnvVar(config.K8sClusterIDEnv)
+	clusterID, err := checkEnvVar(consts.K8sClusterIDEnv)
 	if err != nil {
 		return err
 	}
@@ -246,7 +246,7 @@ func (env *environment) addK8ClusterID() error {
 }
 
 func (env *environment) addK8BasePodName() error {
-	basePodName, err := checkEnvVar(config.K8sBasePodNameEnv)
+	basePodName, err := checkEnvVar(consts.K8sBasePodNameEnv)
 	if err != nil {
 		return err
 	}
@@ -255,7 +255,7 @@ func (env *environment) addK8BasePodName() error {
 }
 
 func (env *environment) addK8Namespace() error {
-	namespace, err := checkEnvVar(config.K8sNamespaceEnv)
+	namespace, err := checkEnvVar(consts.K8sNamespaceEnv)
 	if err != nil {
 		return err
 	}
@@ -264,11 +264,11 @@ func (env *environment) addK8Namespace() error {
 }
 
 func (env *environment) addWorkloadKind() error {
-	workloadKind, err := checkEnvVar(config.EnrichmentWorkloadKindEnv)
+	workloadKind, err := checkEnvVar(consts.EnrichmentWorkloadKindEnv)
 	if err != nil {
 		return err
 	}
-	if workloadKind == config.EnrichmentUnknownWorkload {
+	if workloadKind == consts.EnrichmentUnknownWorkload {
 		env.WorkloadKind = ""
 	} else {
 		env.WorkloadKind = workloadKind
@@ -277,11 +277,11 @@ func (env *environment) addWorkloadKind() error {
 }
 
 func (env *environment) addWorkloadName() error {
-	workloadName, err := checkEnvVar(config.EnrichmentWorkloadNameEnv)
+	workloadName, err := checkEnvVar(consts.EnrichmentWorkloadNameEnv)
 	if err != nil {
 		return err
 	}
-	if workloadName == config.EnrichmentUnknownWorkload {
+	if workloadName == consts.EnrichmentUnknownWorkload {
 		env.WorkloadName = ""
 	} else {
 		env.WorkloadName = workloadName
@@ -290,27 +290,27 @@ func (env *environment) addWorkloadName() error {
 }
 
 func (env *environment) addInstallerUrl() {
-	url, _ := checkEnvVar(config.AgentInstallerUrlEnv)
+	url, _ := checkEnvVar(consts.AgentInstallerUrlEnv)
 	env.InstallerUrl = url
 }
 
 func (env *environment) addInstallVersion() {
-	version, _ := checkEnvVar(config.AgentInstallerVersionEnv)
+	version, _ := checkEnvVar(consts.AgentInstallerVersionEnv)
 	env.InstallVersion = version
 }
 
 func (env *environment) addOneAgentInjected() {
-	oneAgentInjected, _ := checkEnvVar(config.AgentInjectedEnv)
+	oneAgentInjected, _ := checkEnvVar(consts.AgentInjectedEnv)
 	env.OneAgentInjected = oneAgentInjected == trueStatement
 }
 
 func (env *environment) addIsReadOnlyCSI() {
-	isReadOnlyCSI, _ := checkEnvVar(config.AgentReadonlyCSI)
+	isReadOnlyCSI, _ := checkEnvVar(consts.AgentReadonlyCSI)
 	env.IsReadOnlyCSI = isReadOnlyCSI == trueStatement
 }
 
 func (env *environment) addDataIngestInjected() {
-	dataIngestInjected, _ := checkEnvVar(config.EnrichmentInjectedEnv)
+	dataIngestInjected, _ := checkEnvVar(consts.EnrichmentInjectedEnv)
 	env.DataIngestInjected = dataIngestInjected == trueStatement
 }
 

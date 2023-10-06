@@ -1,6 +1,7 @@
 package operator
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/src/api/scheme"
 	"os"
 	"strconv"
 	"time"
@@ -10,7 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/nodes"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/pkg/errors"
 	_ "k8s.io/client-go/plugin/pkg/client/auth" // important for running operator locally
 	"k8s.io/client-go/rest"

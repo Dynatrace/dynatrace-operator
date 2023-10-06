@@ -3,9 +3,9 @@
 package cloudnativeistio
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/src/util/logger"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/src/logger"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/istio"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
 	_default "github.com/Dynatrace/dynatrace-operator/test/scenarios/cloudnative/default"

@@ -2,11 +2,11 @@ package dynakube
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/api/scheme"
 	"net/http"
 	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook/validation"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/rest"

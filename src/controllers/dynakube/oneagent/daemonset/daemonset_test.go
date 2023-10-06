@@ -1,6 +1,8 @@
 package daemonset
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects/address"
 	"strings"
 	"testing"
 	"time"
@@ -8,8 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/deploymentmetadata"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	containerv1 "github.com/google/go-containerregistry/pkg/v1"

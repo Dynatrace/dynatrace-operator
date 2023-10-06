@@ -2,12 +2,12 @@ package standalone
 
 import (
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/codemodule/installer"
 	"path/filepath"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/src/config"
+	"github.com/Dynatrace/dynatrace-operator/src/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/installer"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -115,7 +115,7 @@ func TestSetHostTenant(t *testing.T) {
 		err := runner.setHostTenant()
 
 		require.NoError(t, err)
-		assert.Equal(t, config.AgentNoHostTenant, runner.hostTenant)
+		assert.Equal(t, consts.AgentNoHostTenant, runner.hostTenant)
 	})
 	t.Run("set hostTenant to TenantUUID", func(t *testing.T) {
 		runner.env.FailurePolicy = forcePhrase
@@ -132,12 +132,12 @@ func TestSetHostTenant(t *testing.T) {
 func TestInstallOneAgent(t *testing.T) {
 	t.Run("happy install", func(t *testing.T) {
 		runner := createMockedRunner(t)
-		runner.fs.Create(filepath.Join(config.AgentBinDirMount, "agent/conf/ruxitagentproc.conf"))
+		runner.fs.Create(filepath.Join(consts.AgentBinDirMount, "agent/conf/ruxitagentproc.conf"))
 		runner.dtclient.(*dtclient.MockDynatraceClient).
 			On("GetProcessModuleConfig", uint(0)).
 			Return(getTestProcessModuleConfig(), nil)
 		runner.installer.(*installer.Mock).
-			On("InstallAgent", config.AgentBinDirMount).
+			On("InstallAgent", consts.AgentBinDirMount).
 			Return(true, nil)
 
 		err := runner.installOneAgent()
@@ -147,7 +147,7 @@ func TestInstallOneAgent(t *testing.T) {
 	t.Run("sad install -> install fail", func(t *testing.T) {
 		runner := createMockedRunner(t)
 		runner.installer.(*installer.Mock).
-			On("InstallAgent", config.AgentBinDirMount).
+			On("InstallAgent", consts.AgentBinDirMount).
 			Return(false, fmt.Errorf("BOOM"))
 
 		err := runner.installOneAgent()
@@ -160,7 +160,7 @@ func TestInstallOneAgent(t *testing.T) {
 			On("GetProcessModuleConfig", uint(0)).
 			Return(getTestProcessModuleConfig(), nil)
 		runner.installer.(*installer.Mock).
-			On("InstallAgent", config.AgentBinDirMount).
+			On("InstallAgent", consts.AgentBinDirMount).
 			Return(true, nil)
 
 		err := runner.installOneAgent()
@@ -173,7 +173,7 @@ func TestInstallOneAgent(t *testing.T) {
 			On("GetProcessModuleConfig", uint(0)).
 			Return(&dtclient.ProcessModuleConfig{}, fmt.Errorf("BOOM"))
 		runner.installer.(*installer.Mock).
-			On("InstallAgent", config.AgentBinDirMount).
+			On("InstallAgent", consts.AgentBinDirMount).
 			Return(true, nil)
 
 		err := runner.installOneAgent()
@@ -192,7 +192,7 @@ func TestRun(t *testing.T) {
 
 	t.Run("no install, just config generation", func(t *testing.T) {
 		runner.fs = prepReadOnlyCSIFilesystem(t, afero.NewMemMapFs())
-		runner.env.Mode = config.AgentCsiMode
+		runner.env.Mode = consts.AgentCsiMode
 
 		err := runner.Run()
 
@@ -203,11 +203,11 @@ func TestRun(t *testing.T) {
 	})
 	t.Run("install + config generation", func(t *testing.T) {
 		runner.installer.(*installer.Mock).
-			On("InstallAgent", config.AgentBinDirMount).
+			On("InstallAgent", consts.AgentBinDirMount).
 			Return(true, nil)
 		runner.fs = prepReadOnlyCSIFilesystem(t, afero.NewMemMapFs())
-		runner.env.Mode = config.AgentInstallerMode
-		runner.fs.Create(filepath.Join(config.AgentBinDirMount, "agent/conf/ruxitagentproc.conf"))
+		runner.env.Mode = consts.AgentInstallerMode
+		runner.fs.Create(filepath.Join(consts.AgentBinDirMount, "agent/conf/ruxitagentproc.conf"))
 
 		err := runner.Run()
 
@@ -335,8 +335,8 @@ isCloudNativeFullStack true
 		require.NoError(t, err)
 		for i, container := range runner.env.Containers {
 			filePath := filepath.Join(
-				config.AgentShareDirMount,
-				fmt.Sprintf(config.AgentContainerConfFilenameTemplate, container.Name))
+				consts.AgentShareDirMount,
+				fmt.Sprintf(consts.AgentContainerConfFilenameTemplate, container.Name))
 
 			assertIfFileExists(t, runner.fs, filePath)
 
@@ -365,8 +365,8 @@ isCloudNativeFullStack true
 		require.NoError(t, err)
 		for i, container := range runner.env.Containers {
 			filePath := filepath.Join(
-				config.AgentShareDirMount,
-				fmt.Sprintf(config.AgentContainerConfFilenameTemplate, container.Name))
+				consts.AgentShareDirMount,
+				fmt.Sprintf(consts.AgentContainerConfFilenameTemplate, container.Name))
 
 			assertIfFileExists(t, runner.fs, filePath)
 
@@ -398,8 +398,8 @@ func TestSetLDPreload(t *testing.T) {
 		assertIfFileExists(t,
 			runner.fs,
 			filepath.Join(
-				config.AgentShareDirMount,
-				config.LdPreloadFilename))
+				consts.AgentShareDirMount,
+				consts.LdPreloadFilename))
 		// TODO: Check content ?
 	})
 }
@@ -431,7 +431,7 @@ func TestPropagateTLSCert(t *testing.T) {
 		require.NoError(t, err)
 		assertIfFileExists(t,
 			runner.fs,
-			filepath.Join(config.AgentShareDirMount, "custom.pem"))
+			filepath.Join(consts.AgentShareDirMount, "custom.pem"))
 	})
 }
 
@@ -477,30 +477,30 @@ func assertIfAgentFilesExists(t *testing.T, runner Runner) {
 		assertIfFileExists(t,
 			runner.fs,
 			filepath.Join(
-				config.AgentShareDirMount,
-				fmt.Sprintf(config.AgentContainerConfFilenameTemplate, container.Name)))
+				consts.AgentShareDirMount,
+				fmt.Sprintf(consts.AgentContainerConfFilenameTemplate, container.Name)))
 	}
 	// ld.so.preload
 	assertIfFileExists(t,
 		runner.fs,
-		filepath.Join(config.AgentShareDirMount, config.LdPreloadFilename))
+		filepath.Join(consts.AgentShareDirMount, consts.LdPreloadFilename))
 	// tls cert
 	assertIfFileExists(t,
 		runner.fs,
-		filepath.Join(config.AgentShareDirMount, "custom.pem"))
+		filepath.Join(consts.AgentShareDirMount, "custom.pem"))
 }
 
 func assertIfEnrichmentFilesExists(t *testing.T, runner Runner) {
 	assertIfFileExists(t,
 		runner.fs,
 		filepath.Join(
-			config.EnrichmentMountPath,
-			fmt.Sprintf(config.EnrichmentFilenameTemplate, "json")))
+			consts.EnrichmentMountPath,
+			fmt.Sprintf(consts.EnrichmentFilenameTemplate, "json")))
 	assertIfFileExists(t,
 		runner.fs,
 		filepath.Join(
-			config.EnrichmentMountPath,
-			fmt.Sprintf(config.EnrichmentFilenameTemplate, "properties")))
+			consts.EnrichmentMountPath,
+			fmt.Sprintf(consts.EnrichmentFilenameTemplate, "properties")))
 }
 
 func assertIfAgentFilesNotExists(t *testing.T, runner Runner) {
@@ -509,30 +509,30 @@ func assertIfAgentFilesNotExists(t *testing.T, runner Runner) {
 		assertIfFileNotExists(t,
 			runner.fs,
 			filepath.Join(
-				config.AgentShareDirMount,
-				fmt.Sprintf(config.AgentContainerConfFilenameTemplate, container.Name)))
+				consts.AgentShareDirMount,
+				fmt.Sprintf(consts.AgentContainerConfFilenameTemplate, container.Name)))
 	}
 	// ld.so.preload
 	assertIfFileNotExists(t,
 		runner.fs,
-		filepath.Join(config.AgentShareDirMount, config.LdPreloadFilename))
+		filepath.Join(consts.AgentShareDirMount, consts.LdPreloadFilename))
 	// tls cert
 	assertIfFileNotExists(t,
 		runner.fs,
-		filepath.Join(config.AgentShareDirMount, "custom.pem"))
+		filepath.Join(consts.AgentShareDirMount, "custom.pem"))
 }
 
 func assertIfEnrichmentFilesNotExists(t *testing.T, runner Runner) {
 	assertIfFileNotExists(t,
 		runner.fs,
 		filepath.Join(
-			config.EnrichmentMountPath,
-			fmt.Sprintf(config.EnrichmentFilenameTemplate, "json")))
+			consts.EnrichmentMountPath,
+			fmt.Sprintf(consts.EnrichmentFilenameTemplate, "json")))
 	assertIfFileNotExists(t,
 		runner.fs,
 		filepath.Join(
-			config.EnrichmentMountPath,
-			fmt.Sprintf(config.EnrichmentFilenameTemplate, "properties")))
+			consts.EnrichmentMountPath,
+			fmt.Sprintf(consts.EnrichmentFilenameTemplate, "properties")))
 }
 
 func assertIfReadOnlyCSIFilesExists(t *testing.T, runner Runner) {
@@ -540,7 +540,7 @@ func assertIfReadOnlyCSIFilesExists(t *testing.T, runner Runner) {
 		assertIfFileExists(t,
 			runner.fs,
 			filepath.Join(
-				config.AgentConfInitDirMount,
+				consts.AgentConfInitDirMount,
 				fmt.Sprintf("%d.conf", i)))
 	}
 }

@@ -3,6 +3,8 @@ package csiprovisioner
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/src/codemodule/installer"
 	"os"
 	"testing"
 
@@ -12,8 +14,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/installer"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"

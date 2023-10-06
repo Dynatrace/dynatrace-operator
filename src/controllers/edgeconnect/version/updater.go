@@ -3,12 +3,12 @@ package version
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/oci/registry"
+	"github.com/Dynatrace/dynatrace-operator/src/util/timeprovider"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/src/api/status"
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1/edgeconnect"
-	"github.com/Dynatrace/dynatrace-operator/src/registry"
-	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"

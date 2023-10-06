@@ -2,6 +2,12 @@ package csiprovisioner
 
 import (
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/api/scheme/fake"
+	installer2 "github.com/Dynatrace/dynatrace-operator/src/codemodule/installer"
+	"github.com/Dynatrace/dynatrace-operator/src/codemodule/installer/image"
+	"github.com/Dynatrace/dynatrace-operator/src/codemodule/installer/url"
+	"github.com/Dynatrace/dynatrace-operator/src/codemodule/processmoduleconfig"
+	t_utils "github.com/Dynatrace/dynatrace-operator/src/util/testing"
 	"path/filepath"
 	"testing"
 
@@ -9,12 +15,6 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/installer"
-	"github.com/Dynatrace/dynatrace-operator/src/installer/image"
-	"github.com/Dynatrace/dynatrace-operator/src/installer/url"
-	"github.com/Dynatrace/dynatrace-operator/src/processmoduleconfig"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
-	t_utils "github.com/Dynatrace/dynatrace-operator/src/testing"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -34,7 +34,7 @@ func TestUpdateAgent(t *testing.T) {
 		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(dk.CodeModulesVersion())
 		var revision uint = 3
 		processModuleCache := createTestProcessModuleConfigCache(revision)
-		installerMock := &installer.Mock{}
+		installerMock := &installer2.Mock{}
 		installerMock.
 			On("InstallAgent", targetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testVersion))
@@ -67,7 +67,7 @@ func TestUpdateAgent(t *testing.T) {
 
 		var revision uint = 3
 		processModuleCache := createTestProcessModuleConfigCache(revision)
-		installerMock := &installer.Mock{}
+		installerMock := &installer2.Mock{}
 		installerMock.
 			On("InstallAgent", newTargetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, newVersion))
@@ -86,7 +86,7 @@ func TestUpdateAgent(t *testing.T) {
 		_, _ = provisioner.fs.Create(sourceConfigPath)
 		var revision uint = 3
 		processModuleCache := createTestProcessModuleConfigCache(revision)
-		installerMock := &installer.Mock{}
+		installerMock := &installer2.Mock{}
 		installerMock.
 			On("InstallAgent", targetDir).
 			Return(false, nil)
@@ -104,7 +104,7 @@ func TestUpdateAgent(t *testing.T) {
 		var revision uint = 3
 		processModuleCache := createTestProcessModuleConfigCache(revision)
 		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(testImageDigest)
-		installerMock := &installer.Mock{}
+		installerMock := &installer2.Mock{}
 		installerMock.
 			On("InstallAgent", targetDir).
 			Return(false, fmt.Errorf("BOOM"))
@@ -135,7 +135,7 @@ func TestUpdateAgent(t *testing.T) {
 		dk := createTestDynaKubeWithImage(testImageDigest)
 		provisioner := createTestProvisioner(createMockedPullSecret(dk, dockerconfigjsonContent))
 		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(testImageDigest)
-		installerMock := &installer.Mock{}
+		installerMock := &installer2.Mock{}
 		installerMock.
 			On("InstallAgent", targetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testImageDigest))
@@ -156,7 +156,7 @@ func TestUpdateAgent(t *testing.T) {
 
 		provisioner := createTestProvisioner(createMockedPullSecret(dk, dockerconfigjsonContent))
 		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(testImageDigest)
-		installerMock := &installer.Mock{}
+		installerMock := &installer2.Mock{}
 		installerMock.
 			On("InstallAgent", targetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testImageDigest))
@@ -180,7 +180,7 @@ func TestUpdateAgent(t *testing.T) {
 
 		provisioner := createTestProvisioner(createMockedPullSecret(dk, dockerconfigjsonContent), createMockedCAConfigMap(dk, customCertContent))
 		targetDir := provisioner.path.AgentSharedBinaryDirForAgent(testImageDigest)
-		installerMock := &installer.Mock{}
+		installerMock := &installer2.Mock{}
 		installerMock.
 			On("InstallAgent", targetDir).
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testImageDigest))
@@ -284,14 +284,14 @@ func createTestProvisioner(obj ...client.Object) *OneAgentProvisioner {
 	return provisioner
 }
 
-func mockImageInstallerBuilder(mock *installer.Mock) imageInstallerBuilder {
-	return func(f afero.Fs, p *image.Properties) (installer.Installer, error) {
+func mockImageInstallerBuilder(mock *installer2.Mock) imageInstallerBuilder {
+	return func(f afero.Fs, p *image.Properties) (installer2.Installer, error) {
 		return mock, nil
 	}
 }
 
-func mockUrlInstallerBuilder(mock *installer.Mock) urlInstallerBuilder {
-	return func(f afero.Fs, c dtclient.Client, p *url.Properties) installer.Installer {
+func mockUrlInstallerBuilder(mock *installer2.Mock) urlInstallerBuilder {
+	return func(f afero.Fs, c dtclient.Client, p *url.Properties) installer2.Installer {
 		return mock
 	}
 }
