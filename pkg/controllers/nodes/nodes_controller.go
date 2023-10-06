@@ -47,7 +47,6 @@ func Add(mgr manager.Manager, _ string) error {
 func (controller *Controller) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.Node{}).
-		WithEventFilter(nodeDeletionPredicate(controller)).
 		Complete(controller)
 }
 
@@ -90,7 +89,11 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	var node corev1.Node
 	if err := controller.apiReader.Get(ctx, client.ObjectKey{Name: nodeName}, &node); err != nil {
 		if k8serrors.IsNotFound(err) {
-			log.Info("node was not found in cluster", "node", nodeName)
+			// if there is no node it means it get deleted or cordon or evicted
+			err := controller.reconcileNodeDeletion(context.TODO(), nodeName)
+			if err != nil {
+				log.Error(err, "error while deleting node", "node", nodeName)
+			}
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err

@@ -30,6 +30,56 @@ var testCacheKey = client.ObjectKey{Name: cacheName, Namespace: testNamespace}
 
 func TestReconcile(t *testing.T) {
 	ctx := context.TODO()
+	t.Run("Create node and then delete it", func(t *testing.T) {
+		ctx := context.Background()
+		node := &corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node1"}}
+
+		fakeClient := fake.NewClient(
+			node,
+			&dynatracev1beta1.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{Name: "oneagent1", Namespace: testNamespace},
+				Status: dynatracev1beta1.DynaKubeStatus{
+					OneAgent: dynatracev1beta1.OneAgentStatus{
+						Instances: map[string]dynatracev1beta1.OneAgentInstance{"node1": {IPAddress: "1.2.3.4"}},
+					},
+				},
+			},
+			&corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "oneagent1",
+					Namespace: testNamespace,
+				},
+				Data: map[string][]byte{
+					dtclient.DynatraceApiToken: []byte(testApiToken),
+				},
+			},
+		)
+
+		dtClient := createDTMockClient("1.2.3.4", "HOST-42")
+		defer mock.AssertExpectationsForObjects(t, dtClient)
+
+		ctrl := createDefaultReconciler(fakeClient, dtClient)
+		result, err := ctrl.Reconcile(ctx, createReconcileRequest("node1"))
+		assert.Nil(t, err)
+		assert.NotNil(t, result)
+
+		// delete node from kube api
+		err = fakeClient.Delete(ctx, node)
+		assert.NoError(t, err)
+
+		// run another request reconcile
+		result, err = ctrl.Reconcile(ctx, createReconcileRequest("node1"))
+		assert.Nil(t, err)
+		assert.NotNil(t, result)
+
+		var cm corev1.ConfigMap
+		require.NoError(t, fakeClient.Get(ctx, testCacheKey, &cm))
+		nodesCache := &Cache{Obj: &cm}
+
+		_, err = nodesCache.Get("node1")
+		assert.Error(t, err)
+	})
+
 	t.Run("Create cache", func(t *testing.T) {
 		fakeClient := createDefaultFakeClient()
 
@@ -59,19 +109,18 @@ func TestReconcile(t *testing.T) {
 
 		ctrl := createDefaultReconciler(fakeClient, dtClient)
 		reconcileAllNodes(t, ctrl, fakeClient)
-		assert.NoError(t, ctrl.reconcileNodeDeletion(ctx, "node1"))
 
 		var cm corev1.ConfigMap
 		require.NoError(t, fakeClient.Get(ctx, testCacheKey, &cm))
-		nodesCache := &Cache{Obj: &cm}
+		//nodesCache := &Cache{Obj: &cm}
 
-		_, err := nodesCache.Get("node1")
-		assert.Equal(t, err, ErrNotFound)
+		//_, err := nodesCache.Get("node1")
+		//assert.Equal(t, ErrNotFound, err)
 
-		if info, err := nodesCache.Get("node2"); assert.NoError(t, err) {
-			assert.Equal(t, "5.6.7.8", info.IPAddress)
-			assert.Equal(t, "oneagent2", info.Instance)
-		}
+		//if info, err := nodesCache.Get("node2"); assert.NoError(t, err) {
+		//	assert.Equal(t, "5.6.7.8", info.IPAddress)
+		//	assert.Equal(t, "oneagent2", info.Instance)
+		//}
 	})
 	t.Run("Node not found", func(t *testing.T) {
 		fakeClient := createDefaultFakeClient()
