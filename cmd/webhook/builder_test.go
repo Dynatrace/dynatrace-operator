@@ -1,10 +1,10 @@
 package webhook
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/cmd/config"
+	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/cmd/config"
-	cmdManager "github.com/Dynatrace/dynatrace-operator/pkg/cmd/manager"
 	"github.com/stretchr/testify/assert"
 )
 

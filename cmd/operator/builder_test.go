@@ -2,11 +2,11 @@ package operator
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/cmd/config"
+	"github.com/Dynatrace/dynatrace-operator/cmd/manager"
 	dtfake "github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/cmd/config"
-	cmdManager "github.com/Dynatrace/dynatrace-operator/pkg/cmd/manager"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -43,13 +43,13 @@ func TestCommandBuilder(t *testing.T) {
 		assert.Equal(t, expectedProvider, builder.configProvider)
 	})
 	t.Run("set operator manager provider", func(t *testing.T) {
-		expectedProvider := &cmdManager.MockProvider{}
+		expectedProvider := &manager.MockProvider{}
 		builder := NewOperatorCommandBuilder().setOperatorManagerProvider(expectedProvider)
 
 		assert.Equal(t, expectedProvider, builder.operatorManagerProvider)
 	})
 	t.Run("set bootstrap manager provider", func(t *testing.T) {
-		expectedProvider := &cmdManager.MockProvider{}
+		expectedProvider := &manager.MockProvider{}
 		builder := NewOperatorCommandBuilder().setBootstrapManagerProvider(expectedProvider)
 
 		assert.Equal(t, expectedProvider, builder.bootstrapManagerProvider)
@@ -80,10 +80,10 @@ func TestOperatorCommand(t *testing.T) {
 		mockCfgProvider := &config.MockProvider{}
 		mockCfgProvider.On("GetConfig").Return(&rest.Config{}, nil)
 
-		mockMgrProvider := &cmdManager.MockProvider{}
+		mockMgrProvider := &manager.MockProvider{}
 		mockMgrProvider.
 			On("CreateManager", mock.AnythingOfType("string"), &rest.Config{}).
-			Return(&cmdManager.TestManager{}, nil)
+			Return(&manager.TestManager{}, nil)
 
 		builder := NewOperatorCommandBuilder().
 			SetNamespace(testNamespace).
@@ -111,10 +111,10 @@ func TestOperatorCommand(t *testing.T) {
 		mockCfgProvider := &config.MockProvider{}
 		mockCfgProvider.On("GetConfig").Return(&rest.Config{}, nil)
 
-		mockMgrProvider := &cmdManager.MockProvider{}
+		mockMgrProvider := &manager.MockProvider{}
 		mockMgrProvider.
 			On("CreateManager", mock.AnythingOfType("string"), &rest.Config{}).
-			Return(&cmdManager.TestManager{}, nil)
+			Return(&manager.TestManager{}, nil)
 
 		builder := NewOperatorCommandBuilder().
 			SetNamespace(testNamespace).
@@ -134,10 +134,10 @@ func TestOperatorCommand(t *testing.T) {
 		mockCfgProvider := &config.MockProvider{}
 		mockCfgProvider.On("GetConfig").Return(&rest.Config{}, nil)
 
-		mockMgrProvider := &cmdManager.MockProvider{}
+		mockMgrProvider := &manager.MockProvider{}
 		mockMgrProvider.
 			On("CreateManager", mock.AnythingOfType("string"), &rest.Config{}).
-			Return(&cmdManager.TestManager{}, errors.New("create manager error"))
+			Return(&manager.TestManager{}, errors.New("create manager error"))
 
 		builder := NewOperatorCommandBuilder().
 			SetNamespace(testNamespace).
@@ -155,7 +155,7 @@ func TestOperatorCommand(t *testing.T) {
 		mockCfgProvider := &config.MockProvider{}
 		mockCfgProvider.On("GetConfig").Return(&rest.Config{}, nil)
 
-		mockMgr := &cmdManager.MockManager{}
+		mockMgr := &manager.MockManager{}
 		mockMgr.On("Start", mock.Anything).Return(nil)
 		clt := dtfake.NewClient()
 		mockMgr.On("GetConfig").Return(&rest.Config{})
@@ -163,7 +163,7 @@ func TestOperatorCommand(t *testing.T) {
 		mockMgr.On("GetClient").Return(clt)
 		mockMgr.On("GetAPIReader").Return(clt)
 
-		mockMgrProvider := &cmdManager.MockProvider{}
+		mockMgrProvider := &manager.MockProvider{}
 		mockMgrProvider.
 			On("CreateManager", mock.AnythingOfType("string"), &rest.Config{}).
 			Return(mockMgr, nil)
@@ -187,18 +187,18 @@ func TestOperatorCommand(t *testing.T) {
 		mockCfgProvider := &config.MockProvider{}
 		mockCfgProvider.On("GetConfig").Return(&rest.Config{}, nil)
 
-		bootstrapMockMgr := &cmdManager.MockManager{}
+		bootstrapMockMgr := &manager.MockManager{}
 		bootstrapMockMgr.On("Start", mock.Anything).Return(nil)
 
-		mockBootstrapMgrProvider := &cmdManager.MockProvider{}
+		mockBootstrapMgrProvider := &manager.MockProvider{}
 		mockBootstrapMgrProvider.
 			On("CreateManager", mock.AnythingOfType("string"), &rest.Config{}).
 			Return(bootstrapMockMgr, nil)
 
-		operatorMockMgr := &cmdManager.MockManager{}
+		operatorMockMgr := &manager.MockManager{}
 		operatorMockMgr.On("Start", mock.Anything).Return(nil)
 
-		mockOperatorMgrProvider := &cmdManager.MockProvider{}
+		mockOperatorMgrProvider := &manager.MockProvider{}
 		mockOperatorMgrProvider.
 			On("CreateManager", mock.AnythingOfType("string"), &rest.Config{}).
 			Return(operatorMockMgr, nil)

@@ -1,7 +1,7 @@
 package init
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/cmd/config"
+	"github.com/Dynatrace/dynatrace-operator/cmd/config"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"

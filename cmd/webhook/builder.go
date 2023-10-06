@@ -2,14 +2,14 @@ package webhook
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/cmd/certificates"
+	"github.com/Dynatrace/dynatrace-operator/cmd/config"
+	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dynakube"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/cmd/certificates"
-	"github.com/Dynatrace/dynatrace-operator/pkg/cmd/config"
-	cmdManager "github.com/Dynatrace/dynatrace-operator/pkg/cmd/manager"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/namespace_mutator"
@@ -99,8 +99,7 @@ func startCertificateWatcher(webhookManager manager.Manager, namespace string, p
 
 	isDeployedViaOLM := kubesystem.IsDeployedViaOlm(*webhookPod)
 	if !isDeployedViaOLM {
-		watcher, err := certificates.
-			NewCertificateWatcher(webhookManager, namespace, webhook.SecretCertsName)
+		watcher, err := certificates.NewCertificateWatcher(webhookManager, namespace, webhook.SecretCertsName)
 		if err != nil {
 			return err
 		}

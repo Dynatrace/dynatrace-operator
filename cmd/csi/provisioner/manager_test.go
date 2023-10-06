@@ -1,10 +1,10 @@
-package server
+package provisioner
 
 import (
+	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"testing"
 
-	cmdManager "github.com/Dynatrace/dynatrace-operator/pkg/cmd/manager"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -27,7 +27,6 @@ func TestCsiDriverManagerProvider(t *testing.T) {
 		assert.Contains(t, options.Cache.DefaultNamespaces, "namespace")
 		assert.Equal(t, scheme.Scheme, options.Scheme)
 		assert.Equal(t, metricsBindAddress, options.Metrics.BindAddress)
-
 		assert.Equal(t, "", options.HealthProbeBindAddress)
 		assert.Equal(t, livenessEndpointName, options.LivenessEndpointName)
 	})

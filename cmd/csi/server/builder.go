@@ -1,8 +1,8 @@
 package server
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/cmd/config"
-	cmdManager "github.com/Dynatrace/dynatrace-operator/pkg/cmd/manager"
+	"github.com/Dynatrace/dynatrace-operator/cmd/config"
+	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csidriver "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"

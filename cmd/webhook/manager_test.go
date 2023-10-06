@@ -1,10 +1,10 @@
 package webhook
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/cmd/manager"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"testing"
 
-	cmdManager "github.com/Dynatrace/dynatrace-operator/pkg/cmd/manager"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/client-go/rest"
@@ -13,7 +13,7 @@ import (
 
 func TestCreateOptions(t *testing.T) {
 	t.Run("implements interface", func(t *testing.T) {
-		var provider cmdManager.Provider = NewProvider("certs-dir", "key-file", "cert-file")
+		var provider manager.Provider = NewProvider("certs-dir", "key-file", "cert-file")
 		_, _ = provider.CreateManager("namespace", &rest.Config{})
 
 		providerImpl := provider.(Provider)
@@ -38,7 +38,7 @@ func TestCreateOptions(t *testing.T) {
 		provider := NewProvider("certs-dir", "key-file", "cert-file")
 		expectedWebhookServer := &webhook.DefaultServer{}
 
-		mockedMgr := &cmdManager.MockManager{}
+		mockedMgr := &manager.MockManager{}
 		mockedMgr.On("GetWebhookServer").Return(expectedWebhookServer)
 
 		mgrWithWebhookServer, err := provider.setupWebhookServer(mockedMgr)

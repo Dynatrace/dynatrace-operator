@@ -1,11 +1,11 @@
-package provisioner
+package server
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/cmd/config"
+	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
 	"io/fs"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/cmd/config"
-	cmdManager "github.com/Dynatrace/dynatrace-operator/pkg/cmd/manager"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -13,7 +13,7 @@ import (
 
 func TestCsiCommandBuilder(t *testing.T) {
 	t.Run("build command", func(t *testing.T) {
-		builder := NewCsiProvisionerCommandBuilder()
+		builder := NewCsiServerCommandBuilder()
 		csiCommand := builder.Build()
 
 		assert.NotNil(t, csiCommand)
@@ -21,7 +21,7 @@ func TestCsiCommandBuilder(t *testing.T) {
 		assert.NotNil(t, csiCommand.RunE)
 	})
 	t.Run("set config provider", func(t *testing.T) {
-		builder := NewCsiProvisionerCommandBuilder()
+		builder := NewCsiServerCommandBuilder()
 
 		assert.NotNil(t, builder)
 
@@ -32,18 +32,18 @@ func TestCsiCommandBuilder(t *testing.T) {
 	})
 	t.Run("set manager provider", func(t *testing.T) {
 		expectedProvider := &cmdManager.MockProvider{}
-		builder := NewCsiProvisionerCommandBuilder().setManagerProvider(expectedProvider)
+		builder := NewCsiServerCommandBuilder().setManagerProvider(expectedProvider)
 
 		assert.Equal(t, expectedProvider, builder.managerProvider)
 	})
 	t.Run("set namespace", func(t *testing.T) {
-		builder := NewCsiProvisionerCommandBuilder().SetNamespace("namespace")
+		builder := NewCsiServerCommandBuilder().SetNamespace("namespace")
 
 		assert.Equal(t, "namespace", builder.namespace)
 	})
 	t.Run("set filesystem", func(t *testing.T) {
 		expectedFs := afero.NewMemMapFs()
-		builder := NewCsiProvisionerCommandBuilder()
+		builder := NewCsiServerCommandBuilder()
 
 		assert.Equal(t, afero.NewOsFs(), builder.getFilesystem())
 
@@ -53,9 +53,11 @@ func TestCsiCommandBuilder(t *testing.T) {
 	})
 	t.Run("set csi options", func(t *testing.T) {
 		expectedOptions := dtcsi.CSIOptions{
-			RootDir: dtcsi.DataPath,
+			NodeId:   "test-node-id",
+			Endpoint: "test-endpoint",
+			RootDir:  dtcsi.DataPath,
 		}
-		builder := NewCsiProvisionerCommandBuilder().
+		builder := NewCsiServerCommandBuilder().
 			setCsiOptions(expectedOptions)
 
 		assert.Equal(t, expectedOptions, builder.getCsiOptions())

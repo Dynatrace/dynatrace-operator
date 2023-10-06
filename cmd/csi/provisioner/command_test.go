@@ -1,11 +1,11 @@
-package server
+package provisioner
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/cmd/config"
+	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/cmd/config"
-	cmdManager "github.com/Dynatrace/dynatrace-operator/pkg/cmd/manager"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -23,7 +23,7 @@ func TestCsiCommand(t *testing.T) {
 	managerProvider.On("CreateManager", mock.Anything, mock.Anything).Return(cmdMgr, nil)
 
 	memFs := afero.NewMemMapFs()
-	builder := NewCsiServerCommandBuilder().
+	builder := NewCsiProvisionerCommandBuilder().
 		SetConfigProvider(configProvider).
 		setManagerProvider(managerProvider).
 		SetNamespace("test-namespace").
