@@ -101,6 +101,13 @@ tests:
               - csi-init
               terminationMessagePath: /dev/termination-log
               terminationMessagePolicy: File
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 100Mi
+                limits:
+                  cpu: 50m
+                  memory: 100Mi
               securityContext:
                 runAsUser: 0
                 privileged: false
@@ -398,6 +405,29 @@ tests:
           path: spec.template.metadata.labels.testKey
           value: testValue
 
+  - it: should take resource limits from values file for init container
+    set:
+      csidriver.enabled: true
+      csidriver.csiInit.resources.requests.cpu: 123m
+      csidriver.csiInit.resources.requests.memory: 456Mi
+      csidriver.csiInit.resources.limits.cpu: 789m
+      csidriver.csiInit.resources.limits.memory: 122Mi
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: csi-init
+      - equal:
+          path: spec.template.spec.initContainers[0].resources.requests.cpu
+          value: 123m
+      - equal:
+          path: spec.template.spec.initContainers[0].resources.requests.memory
+          value: 456Mi
+      - equal:
+          path: spec.template.spec.initContainers[0].resources.limits.cpu
+          value: 789m
+      - equal:
+          path: spec.template.spec.initContainers[0].resources.limits.memory
+          value: 122Mi
   - it: should take resource limits from values file for provisioner
     set:
       csidriver.enabled: true
