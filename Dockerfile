@@ -14,7 +14,8 @@ RUN go mod download && go mod verify
 FROM go-mod AS operator-build
 ARG GO_LINKER_ARGS
 ARG GO_BUILD_TAGS
-COPY src ./src
+COPY pkg ./pkg
+COPY cmd ./cmd
 RUN CGO_ENABLED=1 CGO_CFLAGS="-O2 -Wno-return-local-addr" \
     go build -tags "${GO_BUILD_TAGS}" -trimpath -ldflags="${GO_LINKER_ARGS}" \
     -o ./build/_output/bin/dynatrace-operator ./cmd/
