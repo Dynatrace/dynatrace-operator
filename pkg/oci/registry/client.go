@@ -116,10 +116,21 @@ func (c *Client) GetImageVersion(ctx context.Context, imageName string) (ImageVe
 	if err != nil {
 		return ImageVersion{}, fmt.Errorf("descriptor.Image(): %w", err)
 	}
-	dig, err := img.Digest()
+
+	// use image digest as a fallback
+	digestFn := img.Digest
+
+	// try to get image manifest to cover multi arch images
+	digestSrc, err := descriptor.ImageIndex()
+	if err == nil {
+		digestFn = digestSrc.Digest
+	}
+
+	dig, err := digestFn()
 	if err != nil {
 		return ImageVersion{}, fmt.Errorf("img.Digest(): %w", err)
 	}
+
 	cf, err := img.ConfigFile()
 	if err != nil {
 		return ImageVersion{}, fmt.Errorf("img.ConfigFile: %w", err)
