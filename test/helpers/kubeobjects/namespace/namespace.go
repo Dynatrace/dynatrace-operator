@@ -4,7 +4,7 @@ package namespace
 
 import (
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects/address"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/istio"

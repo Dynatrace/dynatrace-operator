@@ -1,0 +1,53 @@
+package webhook
+
+import (
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
+	"testing"
+
+	cmdManager "github.com/Dynatrace/dynatrace-operator/pkg/cmd/manager"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
+)
+
+func TestCreateOptions(t *testing.T) {
+	t.Run("implements interface", func(t *testing.T) {
+		var provider cmdManager.Provider = NewProvider("certs-dir", "key-file", "cert-file")
+		_, _ = provider.CreateManager("namespace", &rest.Config{})
+
+		providerImpl := provider.(Provider)
+		assert.Equal(t, "certs-dir", providerImpl.certificateDirectory)
+		assert.Equal(t, "key-file", providerImpl.keyFileName)
+		assert.Equal(t, "cert-file", providerImpl.certificateFileName)
+	})
+	t.Run("creates options", func(t *testing.T) {
+		provider := Provider{}
+		options := provider.createOptions("test-namespace")
+
+		assert.NotNil(t, options)
+		assert.Contains(t, options.Cache.DefaultNamespaces, "test-namespace")
+		assert.Equal(t, scheme.Scheme, options.Scheme)
+		assert.Equal(t, metricsBindAddress, options.Metrics.BindAddress)
+
+		webhookServer, ok := options.WebhookServer.(*webhook.DefaultServer)
+		require.True(t, ok)
+		assert.Equal(t, port, webhookServer.Options.Port)
+	})
+	t.Run("configures webhooks server", func(t *testing.T) {
+		provider := NewProvider("certs-dir", "key-file", "cert-file")
+		expectedWebhookServer := &webhook.DefaultServer{}
+
+		mockedMgr := &cmdManager.MockManager{}
+		mockedMgr.On("GetWebhookServer").Return(expectedWebhookServer)
+
+		mgrWithWebhookServer, err := provider.setupWebhookServer(mockedMgr)
+		require.NoError(t, err)
+
+		mgrWebhookServer, ok := mgrWithWebhookServer.GetWebhookServer().(*webhook.DefaultServer)
+		require.True(t, ok)
+		assert.Equal(t, "certs-dir", mgrWebhookServer.Options.CertDir)
+		assert.Equal(t, "key-file", mgrWebhookServer.Options.KeyName)
+		assert.Equal(t, "cert-file", mgrWebhookServer.Options.CertName)
+	})
+}

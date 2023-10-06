@@ -3,7 +3,7 @@
 package disabled_auto_injection
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/src/util/logger"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"

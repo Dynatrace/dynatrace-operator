@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"

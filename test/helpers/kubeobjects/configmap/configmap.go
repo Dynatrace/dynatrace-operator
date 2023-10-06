@@ -4,7 +4,7 @@ package configmap
 
 import (
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/src/util/kubeobjects/address"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"testing"
 
 	"github.com/stretchr/testify/require"

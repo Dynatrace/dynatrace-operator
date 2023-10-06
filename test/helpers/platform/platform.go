@@ -3,7 +3,7 @@ package platform
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
+	"github.com/Dynatrace/dynatrace-operator/pkg/cmd/config"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/discovery"
 )
