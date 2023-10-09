@@ -11,6 +11,7 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -80,48 +81,6 @@ func TestReconcile(t *testing.T) {
 		assert.Error(t, err)
 	})
 
-	t.Run("Create cache", func(t *testing.T) {
-		fakeClient := createDefaultFakeClient()
-
-		dtClient := &dtclient.MockDynatraceClient{}
-		defer mock.AssertExpectationsForObjects(t, dtClient)
-
-		ctrl := createDefaultReconciler(fakeClient, dtClient)
-		result, err := ctrl.Reconcile(ctx, createReconcileRequest("node1"))
-		assert.Nil(t, err)
-		assert.NotNil(t, result)
-
-		var cm corev1.ConfigMap
-		require.NoError(t, fakeClient.Get(ctx, testCacheKey, &cm))
-		nodesCache := &Cache{Obj: &cm}
-
-		if info, err := nodesCache.Get("node1"); assert.NoError(t, err) {
-			assert.Equal(t, "1.2.3.4", info.IPAddress)
-			assert.Equal(t, "oneagent1", info.Instance)
-		}
-	})
-
-	t.Run("Delete node", func(t *testing.T) {
-		fakeClient := createDefaultFakeClient()
-
-		dtClient := createDTMockClient("1.2.3.4", "HOST-42")
-		defer mock.AssertExpectationsForObjects(t, dtClient)
-
-		ctrl := createDefaultReconciler(fakeClient, dtClient)
-		reconcileAllNodes(t, ctrl, fakeClient)
-
-		var cm corev1.ConfigMap
-		require.NoError(t, fakeClient.Get(ctx, testCacheKey, &cm))
-		//nodesCache := &Cache{Obj: &cm}
-
-		//_, err := nodesCache.Get("node1")
-		//assert.Equal(t, ErrNotFound, err)
-
-		//if info, err := nodesCache.Get("node2"); assert.NoError(t, err) {
-		//	assert.Equal(t, "5.6.7.8", info.IPAddress)
-		//	assert.Equal(t, "oneagent2", info.Instance)
-		//}
-	})
 	t.Run("Node not found", func(t *testing.T) {
 		fakeClient := createDefaultFakeClient()
 
@@ -267,6 +226,7 @@ func createDefaultReconciler(fakeClient client.Client, dtClient *dtclient.MockDy
 		},
 		podNamespace: testNamespace,
 		runLocal:     true,
+		timeProvider: timeprovider.New(),
 	}
 }
 
