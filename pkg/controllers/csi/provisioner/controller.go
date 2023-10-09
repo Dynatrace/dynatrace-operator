@@ -22,7 +22,7 @@ import (
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csigc "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/gc"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
@@ -50,7 +50,7 @@ const (
 	longRequeueDuration    = 30 * time.Minute
 )
 
-type urlInstallerBuilder func(afero.Fs, dynatrace.Client, *url.Properties) installer.Installer
+type urlInstallerBuilder func(afero.Fs, dtclient.Client, *url.Properties) installer.Installer
 type imageInstallerBuilder func(afero.Fs, *image.Properties) (installer.Installer, error)
 
 // OneAgentProvisioner reconciles a DynaKube object
@@ -196,7 +196,7 @@ func (provisioner *OneAgentProvisioner) provisionCodeModules(ctx context.Context
 	return nil
 }
 
-func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Context, dtc dynatrace.Client, dynakubeMetadata *metadata.Dynakube, dk *dynatracev1beta1.DynaKube) (
+func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Context, dtc dtclient.Client, dynakubeMetadata *metadata.Dynakube, dk *dynatracev1beta1.DynaKube) (
 	latestProcessModuleConfigCache *processModuleConfigCache,
 	requeue bool,
 	err error,
@@ -313,7 +313,7 @@ func (provisioner *OneAgentProvisioner) createOrUpdateDynakubeMetadata(ctx conte
 	return nil
 }
 
-func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk *dynatracev1beta1.DynaKube) (dynatrace.Client, error) {
+func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk *dynatracev1beta1.DynaKube) (dtclient.Client, error) {
 	tokenReader := token.NewReader(provisioner.apiReader, dk)
 	tokens, err := tokenReader.ReadTokens(ctx)
 

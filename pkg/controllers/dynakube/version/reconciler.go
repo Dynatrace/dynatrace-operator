@@ -6,7 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/spf13/afero"
@@ -20,7 +20,7 @@ const (
 
 type Reconciler struct {
 	dynakube       *dynatracev1beta1.DynaKube
-	dtClient       dynatrace.Client
+	dtClient       dtclient.Client
 	registryClient registry.ImageGetter
 	timeProvider   *timeprovider.Provider
 
@@ -28,7 +28,7 @@ type Reconciler struct {
 	apiReader client.Reader
 }
 
-func NewReconciler(dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader, dtClient dynatrace.Client, registryClient registry.ImageGetter, fs afero.Afero, timeProvider *timeprovider.Provider) *Reconciler { //nolint:revive
+func NewReconciler(dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader, dtClient dtclient.Client, registryClient registry.ImageGetter, fs afero.Afero, timeProvider *timeprovider.Provider) *Reconciler { //nolint:revive
 	return &Reconciler{
 		dynakube:       dynakube,
 		apiReader:      apiReader,

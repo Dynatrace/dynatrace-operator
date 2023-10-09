@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
@@ -104,9 +104,9 @@ func checkIfDynatraceApiSecretHasApiToken(ctx context.Context, baseLog logr.Logg
 		return nil, errors.Wrapf(err, "'%s:%s' secret is missing or invalid", dynakube.Namespace, dynakube.Tokens())
 	}
 
-	_, hasApiToken := tokens[dynatrace.DynatraceApiToken]
+	_, hasApiToken := tokens[dtclient.DynatraceApiToken]
 	if !hasApiToken {
-		return nil, errors.New(fmt.Sprintf("'%s' token is missing in '%s:%s' secret", dynatrace.DynatraceApiToken, dynakube.Namespace, dynakube.Tokens()))
+		return nil, errors.New(fmt.Sprintf("'%s' token is missing in '%s:%s' secret", dtclient.DynatraceApiToken, dynakube.Namespace, dynakube.Tokens()))
 	}
 
 	logInfof(log, "secret token 'apiToken' exists")
@@ -173,7 +173,7 @@ func checkApiUrlForLatestAgentVersion(ctx context.Context, baseLog logr.Logger, 
 		return errors.Wrap(err, "failed to build DynatraceAPI client")
 	}
 
-	_, err = dtc.GetLatestAgentVersion(dynatrace.OsUnix, dynatrace.InstallerTypeDefault)
+	_, err = dtc.GetLatestAgentVersion(dtclient.OsUnix, dtclient.InstallerTypeDefault)
 	if err != nil {
 		return errors.Wrap(err, "failed to connect to DynatraceAPI")
 	}

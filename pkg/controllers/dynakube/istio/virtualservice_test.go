@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	istio "istio.io/api/networking/v1alpha3"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
@@ -50,7 +50,7 @@ func TestVirtualServiceGeneration(t *testing.T) {
 					},
 				}}},
 		}
-		commHosts := []dynatrace.CommunicationHost{{
+		commHosts := []dtclient.CommunicationHost{{
 			Host:     testHost,
 			Port:     testPort,
 			Protocol: protocolHttps,
@@ -80,7 +80,7 @@ func TestVirtualServiceGeneration(t *testing.T) {
 					},
 				}}},
 		}
-		commHosts := []dynatrace.CommunicationHost{{
+		commHosts := []dtclient.CommunicationHost{{
 			Host:     testHost,
 			Port:     testPort,
 			Protocol: protocolHttp,
@@ -90,7 +90,7 @@ func TestVirtualServiceGeneration(t *testing.T) {
 		assert.EqualValues(t, expected, result)
 	})
 	t.Run("generate for invalid protocol", func(t *testing.T) {
-		commHosts := []dynatrace.CommunicationHost{{
+		commHosts := []dtclient.CommunicationHost{{
 			Host:     "42.42.42.42",
 			Port:     testPort,
 			Protocol: protocolHttp,
@@ -124,13 +124,13 @@ func TestVirtualServiceTLSRoute(t *testing.T) {
 func TestBuildVirtualServiceSpec(t *testing.T) {
 	t.Run(`is http route correctly set if protocol is "http"`, func(t *testing.T) {
 		expected := buildExpectedVirtualServiceSpecHttp(t)
-		result := buildVirtualServiceSpec([]dynatrace.CommunicationHost{
+		result := buildVirtualServiceSpec([]dtclient.CommunicationHost{
 			{Host: testHost1, Port: testPort1, Protocol: protocolHttp},
 		})
 
 		assert.True(t, reflect.DeepEqual(expected.DeepCopy(), result.DeepCopy()))
 
-		result = buildVirtualServiceSpec([]dynatrace.CommunicationHost{
+		result = buildVirtualServiceSpec([]dtclient.CommunicationHost{
 			{Host: testHost2, Port: testPort2, Protocol: protocolHttp},
 		})
 
@@ -138,13 +138,13 @@ func TestBuildVirtualServiceSpec(t *testing.T) {
 	})
 	t.Run(`is TLS route correctly set if protocol is "https"`, func(t *testing.T) {
 		expected := buildExpectedVirtualServiceSpecTls(t)
-		result := buildVirtualServiceSpec([]dynatrace.CommunicationHost{
+		result := buildVirtualServiceSpec([]dtclient.CommunicationHost{
 			{Host: testHost1, Port: testPort1, Protocol: protocolHttps},
 		})
 
 		assert.True(t, reflect.DeepEqual(expected.DeepCopy(), result.DeepCopy()))
 
-		result = buildVirtualServiceSpec([]dynatrace.CommunicationHost{
+		result = buildVirtualServiceSpec([]dtclient.CommunicationHost{
 			{Host: testHost2, Port: testPort2, Protocol: protocolHttps},
 		})
 

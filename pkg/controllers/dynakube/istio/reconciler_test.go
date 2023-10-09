@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
@@ -18,7 +18,7 @@ import (
 
 func TestSplitCommunicationHost(t *testing.T) {
 	t.Run("empty => no fail", func(t *testing.T) {
-		ipHosts, fqdnHosts := splitCommunicationHost([]dynatrace.CommunicationHost{})
+		ipHosts, fqdnHosts := splitCommunicationHost([]dtclient.CommunicationHost{})
 		require.Nil(t, ipHosts)
 		require.Nil(t, fqdnHosts)
 	})
@@ -28,7 +28,7 @@ func TestSplitCommunicationHost(t *testing.T) {
 		require.Nil(t, fqdnHosts)
 	})
 	t.Run("success", func(t *testing.T) {
-		comHosts := []dynatrace.CommunicationHost{
+		comHosts := []dtclient.CommunicationHost{
 			createTestIPCommunicationHost(),
 			createTestFQDNCommunicationHost(),
 			createTestIPCommunicationHost(),
@@ -77,7 +77,7 @@ func TestReconcileIPServiceEntry(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
 		istioClient := newTestingClient(fakeClient, owner.GetNamespace())
 		reconciler := NewReconciler(istioClient)
-		commHosts := []dynatrace.CommunicationHost{
+		commHosts := []dtclient.CommunicationHost{
 			createTestIPCommunicationHost(),
 		}
 
@@ -94,7 +94,7 @@ func TestReconcileIPServiceEntry(t *testing.T) {
 
 		istioClient := newTestingClient(fakeClient, owner.GetNamespace())
 		reconciler := NewReconciler(istioClient)
-		commHosts := []dynatrace.CommunicationHost{
+		commHosts := []dtclient.CommunicationHost{
 			createTestIPCommunicationHost(),
 		}
 
@@ -143,7 +143,7 @@ func TestReconcileFQDNServiceEntry(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
 		istioClient := newTestingClient(fakeClient, owner.GetNamespace())
 		reconciler := NewReconciler(istioClient)
-		commHosts := []dynatrace.CommunicationHost{
+		commHosts := []dtclient.CommunicationHost{
 			createTestFQDNCommunicationHost(),
 		}
 
@@ -163,7 +163,7 @@ func TestReconcileFQDNServiceEntry(t *testing.T) {
 
 		istioClient := newTestingClient(fakeClient, owner.GetNamespace())
 		reconciler := NewReconciler(istioClient)
-		commHosts := []dynatrace.CommunicationHost{
+		commHosts := []dtclient.CommunicationHost{
 			createTestFQDNCommunicationHost(),
 		}
 
@@ -269,16 +269,16 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 	})
 }
 
-func createTestIPCommunicationHost() dynatrace.CommunicationHost {
-	return dynatrace.CommunicationHost{
+func createTestIPCommunicationHost() dtclient.CommunicationHost {
+	return dtclient.CommunicationHost{
 		Protocol: "http",
 		Host:     "42.42.42.42",
 		Port:     620,
 	}
 }
 
-func createTestFQDNCommunicationHost() dynatrace.CommunicationHost {
-	return dynatrace.CommunicationHost{
+func createTestFQDNCommunicationHost() dtclient.CommunicationHost {
+	return dtclient.CommunicationHost{
 		Protocol: "http",
 		Host:     "something.test.io",
 		Port:     620,

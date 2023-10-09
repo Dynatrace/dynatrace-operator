@@ -4,14 +4,14 @@ import (
 	"context"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // StubBuilder can be used for unit tests where a full builder implementation is not needed
 type StubBuilder struct {
-	DynatraceClient dynatrace.Client
+	DynatraceClient dtclient.Client
 	Err             error
 }
 
@@ -31,10 +31,10 @@ func (stubBuilder StubBuilder) LastApiProbeTimestamp() *metav1.Time {
 	return nil
 }
 
-func (stubBuilder StubBuilder) Build() (dynatrace.Client, error) {
+func (stubBuilder StubBuilder) Build() (dtclient.Client, error) {
 	return stubBuilder.DynatraceClient, stubBuilder.Err
 }
 
-func (stubBuilder StubBuilder) BuildWithTokenVerification(*dynatracev1beta1.DynaKubeStatus) (dynatrace.Client, error) {
+func (stubBuilder StubBuilder) BuildWithTokenVerification(*dynatracev1beta1.DynaKubeStatus) (dtclient.Client, error) {
 	return stubBuilder.DynatraceClient, stubBuilder.Err
 }

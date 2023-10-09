@@ -7,7 +7,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry/mocks"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
@@ -50,9 +50,9 @@ func (m *mockUpdater) IsPublicRegistryEnabled() bool {
 	args := m.Called()
 	return args.Get(0).(bool)
 }
-func (m *mockUpdater) LatestImageInfo() (*dynatrace.LatestImageInfo, error) {
+func (m *mockUpdater) LatestImageInfo() (*dtclient.LatestImageInfo, error) {
 	args := m.Called()
-	return args.Get(0).(*dynatrace.LatestImageInfo), args.Error(1)
+	return args.Get(0).(*dtclient.LatestImageInfo), args.Error(1)
 }
 func (m *mockUpdater) UseTenantRegistry(_ context.Context) error {
 	args := m.Called()
@@ -66,7 +66,7 @@ func (m *mockUpdater) CheckForDowngrade(latestVersion string) (bool, error) {
 
 func TestRun(t *testing.T) {
 	ctx := context.TODO()
-	testImage := dynatrace.LatestImageInfo{
+	testImage := dtclient.LatestImageInfo{
 		Source: "some.registry.com",
 		Tag:    "1.2.3.4-5",
 	}
@@ -279,7 +279,7 @@ func TestDetermineSource(t *testing.T) {
 	})
 
 	t.Run("classicfullstack ignores public registry feature flag and sets custom image if set", func(t *testing.T) {
-		testImage := dynatrace.LatestImageInfo{
+		testImage := dtclient.LatestImageInfo{
 			Source: "some.registry.com",
 			Tag:    "1.2.3.4-5",
 		}
@@ -293,7 +293,7 @@ func TestDetermineSource(t *testing.T) {
 
 func TestUpdateVersionStatus(t *testing.T) {
 	ctx := context.TODO()
-	testImage := dynatrace.LatestImageInfo{
+	testImage := dtclient.LatestImageInfo{
 		Source: "some.registry.com",
 		Tag:    "1.2.3.4-5",
 	}
@@ -485,7 +485,7 @@ func newDefaultUpdater(target *status.VersionStatus, autoUpdate bool) *mockUpdat
 	return updater
 }
 
-func newPublicRegistryUpdater(target *status.VersionStatus, imageInfo *dynatrace.LatestImageInfo, autoUpdate bool) *mockUpdater {
+func newPublicRegistryUpdater(target *status.VersionStatus, imageInfo *dtclient.LatestImageInfo, autoUpdate bool) *mockUpdater {
 	updater := newBaseUpdater(target, autoUpdate)
 	updater.On("CustomImage").Return("")
 	updater.On("IsPublicRegistryEnabled").Return(true)

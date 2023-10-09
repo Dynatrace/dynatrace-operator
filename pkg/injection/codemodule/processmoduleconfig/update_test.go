@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -19,9 +19,9 @@ key value
 `
 )
 
-var testProcessModuleConfig = dynatrace.ProcessModuleConfig{
+var testProcessModuleConfig = dtclient.ProcessModuleConfig{
 	Revision: 3,
-	Properties: []dynatrace.ProcessModuleProperty{
+	Properties: []dtclient.ProcessModuleProperty{
 		{
 			Section: "test",
 			Key:     "test",

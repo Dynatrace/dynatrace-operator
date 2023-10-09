@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
@@ -174,14 +174,14 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dynak
 }
 
 func getPaasToken(tokens corev1.Secret) string {
-	if len(tokens.Data[dynatrace.DynatracePaasToken]) != 0 {
-		return string(tokens.Data[dynatrace.DynatracePaasToken])
+	if len(tokens.Data[dtclient.DynatracePaasToken]) != 0 {
+		return string(tokens.Data[dtclient.DynatracePaasToken])
 	}
-	return string(tokens.Data[dynatrace.DynatraceApiToken])
+	return string(tokens.Data[dtclient.DynatraceApiToken])
 }
 
 func getAPIToken(tokens corev1.Secret) string {
-	return string(tokens.Data[dynatrace.DynatraceApiToken])
+	return string(tokens.Data[dtclient.DynatraceApiToken])
 }
 
 // getHostMonitoringNodes creates a mapping between all the nodes and the tenantUID for the host-monitoring dynakube on that node.

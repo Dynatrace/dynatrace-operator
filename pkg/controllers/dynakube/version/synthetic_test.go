@@ -7,7 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry/mocks"
 	"github.com/stretchr/testify/mock"
@@ -37,7 +37,7 @@ func TestSyntheticUseTenantRegistry(t *testing.T) {
 			},
 		}
 		expectedImage := dynakube.DefaultSyntheticImage()
-		mockClient := &dynatrace.MockDynatraceClient{}
+		mockClient := &dtclient.MockDynatraceClient{}
 
 		mockImageGetter := mocks.MockImageGetter{}
 		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{Version: testVersion, Digest: testHash}, nil)

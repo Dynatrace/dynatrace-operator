@@ -4,7 +4,7 @@ import (
 	"context"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
@@ -17,8 +17,8 @@ type Builder interface {
 	SetContext(ctx context.Context) Builder
 	SetDynakube(dynakube dynatracev1beta1.DynaKube) Builder
 	SetTokens(tokens token.Tokens) Builder
-	Build() (dynatrace.Client, error)
-	BuildWithTokenVerification(dynaKubeStatus *dynatracev1beta1.DynaKubeStatus) (dynatrace.Client, error)
+	Build() (dtclient.Client, error)
+	BuildWithTokenVerification(dynaKubeStatus *dynatracev1beta1.DynaKubeStatus) (dtclient.Client, error)
 }
 
 type builder struct {
@@ -66,7 +66,7 @@ func (dynatraceClientBuilder builder) getTokens() token.Tokens {
 }
 
 // Build creates a new Dynatrace client using the settings configured on the given instance.
-func (dynatraceClientBuilder builder) Build() (dynatrace.Client, error) {
+func (dynatraceClientBuilder builder) Build() (dtclient.Client, error) {
 	namespace := dynatraceClientBuilder.dynakube.Namespace
 	apiReader := dynatraceClientBuilder.apiReader
 
@@ -92,10 +92,10 @@ func (dynatraceClientBuilder builder) Build() (dynatrace.Client, error) {
 		paasToken = apiToken
 	}
 
-	return dynatrace.NewClient(dynatraceClientBuilder.dynakube.Spec.APIURL, apiToken, paasToken, opts.Opts...)
+	return dtclient.NewClient(dynatraceClientBuilder.dynakube.Spec.APIURL, apiToken, paasToken, opts.Opts...)
 }
 
-func (dynatraceClientBuilder builder) BuildWithTokenVerification(dynaKubeStatus *dynatracev1beta1.DynaKubeStatus) (dynatrace.Client, error) {
+func (dynatraceClientBuilder builder) BuildWithTokenVerification(dynaKubeStatus *dynatracev1beta1.DynaKubeStatus) (dtclient.Client, error) {
 	dynatraceClient, err := dynatraceClientBuilder.Build()
 	if err != nil {
 		return nil, err
@@ -116,7 +116,7 @@ func (dynatraceClientBuilder builder) BuildWithTokenVerification(dynaKubeStatus 
 	return dynatraceClient, nil
 }
 
-func (dynatraceClientBuilder builder) verifyTokenScopes(dynatraceClient dynatrace.Client, dynaKubeStatus *dynatracev1beta1.DynaKubeStatus) error {
+func (dynatraceClientBuilder builder) verifyTokenScopes(dynatraceClient dtclient.Client, dynaKubeStatus *dynatracev1beta1.DynaKubeStatus) error {
 	var err error
 
 	if dynatraceClientBuilder.dynakube.IsTokenScopeVerificationAllowed(timeprovider.New()) {

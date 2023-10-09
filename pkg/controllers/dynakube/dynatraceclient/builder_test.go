@@ -5,7 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,8 +32,8 @@ func TestBuildDynatraceClient(t *testing.T) {
 		dynatraceClientBuilder := builder{
 			apiReader: fakeClient,
 			tokens: map[string]token.Token{
-				dynatrace.DynatraceApiToken:  {Value: testValue},
-				dynatrace.DynatracePaasToken: {Value: testValueAlternative},
+				dtclient.DynatraceApiToken:  {Value: testValue},
+				dtclient.DynatracePaasToken: {Value: testValueAlternative},
 			},
 			dynakube: *instance,
 		}
@@ -60,8 +60,8 @@ func TestBuildDynatraceClient(t *testing.T) {
 			apiReader: fakeClient,
 			tokens: map[string]token.Token{
 				// Simulate missing values
-				dynatrace.DynatraceApiToken:  {Value: ""},
-				dynatrace.DynatracePaasToken: {Value: ""},
+				dtclient.DynatraceApiToken:  {Value: ""},
+				dtclient.DynatracePaasToken: {Value: ""},
 			},
 			dynakube: *instance,
 		}
@@ -94,8 +94,8 @@ func TestBuildDynatraceClient(t *testing.T) {
 		dynatraceClientBuilder := builder{
 			apiReader: fakeClient,
 			tokens: map[string]token.Token{
-				dynatrace.DynatraceApiToken:  {Value: testValue},
-				dynatrace.DynatracePaasToken: {Value: testValueAlternative},
+				dtclient.DynatraceApiToken:  {Value: testValue},
+				dtclient.DynatracePaasToken: {Value: testValueAlternative},
 			},
 			dynakube: *instance,
 		}
@@ -118,8 +118,8 @@ func TestBuildDynatraceClient(t *testing.T) {
 		dtf := builder{
 			apiReader: fakeClient,
 			tokens: map[string]token.Token{
-				dynatrace.DynatraceApiToken:  {Value: testValue},
-				dynatrace.DynatracePaasToken: {Value: testValueAlternative},
+				dtclient.DynatraceApiToken:  {Value: testValue},
+				dtclient.DynatracePaasToken: {Value: testValueAlternative},
 			},
 			dynakube: *instance,
 		}

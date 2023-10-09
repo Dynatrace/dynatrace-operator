@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
@@ -161,7 +161,7 @@ func (g *EndpointSecretGenerator) PrepareFields(ctx context.Context, dk *dynatra
 	}
 
 	if !dk.FeatureDisableMetadataEnrichment() {
-		if token, ok := tokens.Data[dynatrace.DynatraceDataIngestToken]; ok {
+		if token, ok := tokens.Data[dtclient.DynatraceDataIngestToken]; ok {
 			fields[MetricsTokenSecretField] = string(token)
 		}
 

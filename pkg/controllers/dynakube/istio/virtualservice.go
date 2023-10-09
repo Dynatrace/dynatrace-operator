@@ -3,7 +3,7 @@ package istio
 import (
 	"net"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	istio "istio.io/api/networking/v1alpha3"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -14,8 +14,8 @@ const (
 	protocolHttps = "https"
 )
 
-func buildVirtualService(meta metav1.ObjectMeta, commHosts []dynatrace.CommunicationHost) *istiov1alpha3.VirtualService {
-	var nonIPhosts []dynatrace.CommunicationHost
+func buildVirtualService(meta metav1.ObjectMeta, commHosts []dtclient.CommunicationHost) *istiov1alpha3.VirtualService {
+	var nonIPhosts []dtclient.CommunicationHost
 
 	for _, commHost := range commHosts {
 		if !isIp(commHost.Host) {
@@ -32,7 +32,7 @@ func buildVirtualService(meta metav1.ObjectMeta, commHosts []dynatrace.Communica
 	}
 }
 
-func buildVirtualServiceSpec(commHosts []dynatrace.CommunicationHost) istio.VirtualService {
+func buildVirtualServiceSpec(commHosts []dtclient.CommunicationHost) istio.VirtualService {
 	hosts := make([]string, len(commHosts))
 	var (
 		tlses  []*istio.TLSRoute

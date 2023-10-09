@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -24,7 +24,7 @@ func TestGetCommunicationHosts(t *testing.T) {
 		},
 	}
 
-	expectedCommunicationHosts := []dynatrace.CommunicationHost{
+	expectedCommunicationHosts := []dtclient.CommunicationHost{
 		{
 			Protocol: "protocol",
 			Host:     "host",

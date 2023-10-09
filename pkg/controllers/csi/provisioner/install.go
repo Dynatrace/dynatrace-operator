@@ -3,7 +3,7 @@ package csiprovisioner
 import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
@@ -53,7 +53,7 @@ func (provisioner *OneAgentProvisioner) installAgentImage(dynakube dynatracev1be
 	return imageDigest, err
 }
 
-func (provisioner *OneAgentProvisioner) installAgentZip(dynakube dynatracev1beta1.DynaKube, dtc dynatrace.Client, latestProcessModuleConfigCache *processModuleConfigCache) (string, error) {
+func (provisioner *OneAgentProvisioner) installAgentZip(dynakube dynatracev1beta1.DynaKube, dtc dtclient.Client, latestProcessModuleConfigCache *processModuleConfigCache) (string, error) {
 	tenantUUID, err := dynakube.TenantUUIDFromApiUrl()
 	if err != nil {
 		return "", err
@@ -93,8 +93,8 @@ func (provisioner *OneAgentProvisioner) installAgent(agentInstaller installer.In
 
 func getUrlProperties(targetVersion string, pathResolver metadata.PathResolver) *url.Properties {
 	return &url.Properties{
-		Os:            dynatrace.OsUnix,
-		Type:          dynatrace.InstallerTypePaaS,
+		Os:            dtclient.OsUnix,
+		Type:          dtclient.InstallerTypePaaS,
 		Arch:          arch.Arch,
 		Flavor:        arch.Flavor,
 		Technologies:  []string{"all"},

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	istio "istio.io/api/networking/v1alpha3"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
@@ -44,7 +44,7 @@ func TestServiceEntryGeneration(t *testing.T) {
 				Resolution: istio.ServiceEntry_DNS,
 			},
 		}
-		commHosts1 := []dynatrace.CommunicationHost{{
+		commHosts1 := []dtclient.CommunicationHost{{
 			Host:     testHost,
 			Port:     testPort,
 			Protocol: protocolHttps,
@@ -52,7 +52,7 @@ func TestServiceEntryGeneration(t *testing.T) {
 		result := buildServiceEntryFQDNs(buildObjectMeta(testName, testNamespace, buildTestLabels()), commHosts1)
 		assert.EqualValues(t, expected, result)
 
-		commHosts2 := []dynatrace.CommunicationHost{{
+		commHosts2 := []dtclient.CommunicationHost{{
 			Host:     testHost1,
 			Port:     testPort1,
 			Protocol: protocolHttps,
@@ -78,7 +78,7 @@ func TestServiceEntryGeneration(t *testing.T) {
 				Resolution: istio.ServiceEntry_DNS,
 			},
 		}
-		commHosts1 := []dynatrace.CommunicationHost{{
+		commHosts1 := []dtclient.CommunicationHost{{
 			Host:     testHost,
 			Port:     testPort,
 			Protocol: protocolHttps,
@@ -111,7 +111,7 @@ func TestServiceEntryGeneration(t *testing.T) {
 				Resolution: istio.ServiceEntry_NONE,
 			},
 		}
-		commHosts1 := []dynatrace.CommunicationHost{{
+		commHosts1 := []dtclient.CommunicationHost{{
 			Host:     testIp,
 			Port:     testPort,
 			Protocol: protocolHttps,
@@ -119,7 +119,7 @@ func TestServiceEntryGeneration(t *testing.T) {
 		result := buildServiceEntryIPs(buildObjectMeta(testName, testNamespace, buildTestLabels()), commHosts1)
 		assert.EqualValues(t, expected, result)
 
-		commHosts2 := []dynatrace.CommunicationHost{{
+		commHosts2 := []dtclient.CommunicationHost{{
 			Host:     testIp,
 			Port:     testPort1,
 			Protocol: protocolHttps,
@@ -150,7 +150,7 @@ func TestServiceEntryGeneration(t *testing.T) {
 				Resolution: istio.ServiceEntry_NONE,
 			},
 		}
-		commHosts1 := []dynatrace.CommunicationHost{{
+		commHosts1 := []dtclient.CommunicationHost{{
 			Host:     testIp,
 			Port:     testPort,
 			Protocol: protocolHttps,
@@ -167,7 +167,7 @@ func TestServiceEntryGeneration(t *testing.T) {
 
 func TestBuildServiceEntryForHostname(t *testing.T) {
 	expected := buildExpectedServiceEntryForHostname(t)
-	commHosts1 := []dynatrace.CommunicationHost{{
+	commHosts1 := []dtclient.CommunicationHost{{
 		Host:     testHost1,
 		Port:     testPort1,
 		Protocol: protocolHttp,
@@ -175,7 +175,7 @@ func TestBuildServiceEntryForHostname(t *testing.T) {
 	result := buildServiceEntryFQDNs(buildObjectMeta(testName, testNamespace, buildTestLabels()), commHosts1)
 	assert.EqualValues(t, expected, result)
 
-	commHosts2 := []dynatrace.CommunicationHost{{
+	commHosts2 := []dtclient.CommunicationHost{{
 		Host:     testHost2,
 		Port:     testPort2,
 		Protocol: protocolHttp,
@@ -186,14 +186,14 @@ func TestBuildServiceEntryForHostname(t *testing.T) {
 
 func TestBuildServiceEntryIp(t *testing.T) {
 	expected := buildExpectedServiceEntryForIp(t)
-	commHosts1 := []dynatrace.CommunicationHost{{
+	commHosts1 := []dtclient.CommunicationHost{{
 		Host: testIP1,
 		Port: testPort1,
 	}}
 	result := buildServiceEntryIPs(buildObjectMeta(testName, testNamespace, buildTestLabels()), commHosts1)
 	assert.EqualValues(t, expected, result)
 
-	commHosts2 := []dynatrace.CommunicationHost{{
+	commHosts2 := []dtclient.CommunicationHost{{
 		Host: testIP2,
 		Port: testPort2,
 	}}

@@ -7,7 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	"github.com/stretchr/testify/assert"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -50,10 +50,10 @@ func testReadTokens(t *testing.T) {
 			},
 		}
 		secret, err := kubeobjects.CreateSecret(scheme.Scheme, &dynakube, kubeobjects.NewSecretNameModifier("dynakube"), kubeobjects.NewSecretNamespaceModifier("dynatrace"), kubeobjects.NewSecretDataModifier(map[string][]byte{
-			dynatrace.DynatraceApiToken:        []byte(testApiToken),
-			dynatrace.DynatracePaasToken:       []byte(testPaasToken),
-			dynatrace.DynatraceDataIngestToken: []byte(testDataIngestToken),
-			testIrrelevantTokenKey:             []byte(testIrrelevantToken),
+			dtclient.DynatraceApiToken:        []byte(testApiToken),
+			dtclient.DynatracePaasToken:       []byte(testPaasToken),
+			dtclient.DynatraceDataIngestToken: []byte(testDataIngestToken),
+			testIrrelevantTokenKey:            []byte(testIrrelevantToken),
 		}))
 		assert.NoError(t, err)
 		clt := fake.NewClient(secret, &dynakube)
@@ -64,13 +64,13 @@ func testReadTokens(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Equal(t, 4, len(tokens))
-		assert.Contains(t, tokens, dynatrace.DynatraceApiToken)
-		assert.Contains(t, tokens, dynatrace.DynatracePaasToken)
-		assert.Contains(t, tokens, dynatrace.DynatraceDataIngestToken)
+		assert.Contains(t, tokens, dtclient.DynatraceApiToken)
+		assert.Contains(t, tokens, dtclient.DynatracePaasToken)
+		assert.Contains(t, tokens, dtclient.DynatraceDataIngestToken)
 		assert.Contains(t, tokens, testIrrelevantTokenKey)
-		assert.Equal(t, tokens[dynatrace.DynatraceApiToken].Value, testApiToken)
-		assert.Equal(t, tokens[dynatrace.DynatracePaasToken].Value, testPaasToken)
-		assert.Equal(t, tokens[dynatrace.DynatraceDataIngestToken].Value, testDataIngestToken)
+		assert.Equal(t, tokens[dtclient.DynatraceApiToken].Value, testApiToken)
+		assert.Equal(t, tokens[dtclient.DynatracePaasToken].Value, testPaasToken)
+		assert.Equal(t, tokens[dtclient.DynatraceDataIngestToken].Value, testDataIngestToken)
 		assert.Equal(t, tokens[testIrrelevantTokenKey].Value, testIrrelevantToken)
 	})
 }
@@ -97,7 +97,7 @@ func testVerifyTokens(t *testing.T) {
 			testIrrelevantTokenKey: {
 				Value: testIrrelevantToken,
 			},
-			dynatrace.DynatraceApiToken: {
+			dtclient.DynatraceApiToken: {
 				Value: testApiToken,
 			},
 		})

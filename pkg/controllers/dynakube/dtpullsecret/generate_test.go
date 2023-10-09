@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -42,7 +42,7 @@ func TestReconciler_GenerateData(t *testing.T) {
 	r := &Reconciler{
 		dynakube: dynakube,
 		tokens: token.Tokens{
-			dynatrace.DynatracePaasToken: token.Token{Value: testPaasToken},
+			dtclient.DynatracePaasToken: token.Token{Value: testPaasToken},
 		},
 	}
 
