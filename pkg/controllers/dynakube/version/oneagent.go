@@ -5,7 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	dtclient2 "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -13,14 +13,14 @@ import (
 type oneAgentUpdater struct {
 	dynakube       *dynatracev1beta1.DynaKube
 	apiReader      client.Reader
-	dtClient       dtclient2.Client
+	dtClient       dtclient.Client
 	registryClient registry.ImageGetter
 }
 
 func newOneAgentUpdater(
 	dynakube *dynatracev1beta1.DynaKube,
 	apiReader client.Reader,
-	dtClient dtclient2.Client,
+	dtClient dtclient.Client,
 	registryClient registry.ImageGetter,
 ) *oneAgentUpdater {
 	return &oneAgentUpdater{
@@ -59,7 +59,7 @@ func (updater oneAgentUpdater) IsPublicRegistryEnabled() bool {
 	return updater.dynakube.FeaturePublicRegistry() && !updater.dynakube.ClassicFullStackMode()
 }
 
-func (updater oneAgentUpdater) LatestImageInfo() (*dtclient2.LatestImageInfo, error) {
+func (updater oneAgentUpdater) LatestImageInfo() (*dtclient.LatestImageInfo, error) {
 	return updater.dtClient.GetLatestOneAgentImage()
 }
 
@@ -67,7 +67,7 @@ func (updater oneAgentUpdater) UseTenantRegistry(ctx context.Context) error {
 	var err error
 	latestVersion := updater.CustomVersion()
 	if latestVersion == "" {
-		latestVersion, err = updater.dtClient.GetLatestAgentVersion(dtclient2.OsUnix, dtclient2.InstallerTypeDefault)
+		latestVersion, err = updater.dtClient.GetLatestAgentVersion(dtclient.OsUnix, dtclient.InstallerTypeDefault)
 		if err != nil {
 			return err
 		}

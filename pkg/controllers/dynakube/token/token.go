@@ -2,7 +2,7 @@ package token
 
 import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	dtclient2 "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 )
 
 type Token struct {
@@ -14,40 +14,40 @@ func (token Token) setApiTokenScopes(dynakube dynatracev1beta1.DynaKube, hasPaas
 	token.RequiredScopes = make([]string, 0)
 
 	if !hasPaasToken {
-		token.RequiredScopes = append(token.RequiredScopes, dtclient2.TokenScopeInstallerDownload)
+		token.RequiredScopes = append(token.RequiredScopes, dtclient.TokenScopeInstallerDownload)
 	}
 
 	if !dynakube.FeatureDisableHostsRequests() {
-		token.RequiredScopes = append(token.RequiredScopes, dtclient2.TokenScopeDataExport)
+		token.RequiredScopes = append(token.RequiredScopes, dtclient.TokenScopeDataExport)
 	}
 
 	if dynakube.IsKubernetesMonitoringActiveGateEnabled() &&
 		dynakube.FeatureAutomaticKubernetesApiMonitoring() {
 		token.RequiredScopes = append(token.RequiredScopes,
-			dtclient2.TokenScopeEntitiesRead,
-			dtclient2.TokenScopeSettingsRead,
-			dtclient2.TokenScopeSettingsWrite)
+			dtclient.TokenScopeEntitiesRead,
+			dtclient.TokenScopeSettingsRead,
+			dtclient.TokenScopeSettingsWrite)
 	}
 
 	if dynakube.UseActiveGateAuthToken() {
 		token.RequiredScopes = append(token.RequiredScopes,
-			dtclient2.TokenScopeActiveGateTokenCreate)
+			dtclient.TokenScopeActiveGateTokenCreate)
 	}
 
 	return token
 }
 
 func (token Token) setPaasTokenScopes() Token {
-	token.RequiredScopes = []string{dtclient2.TokenScopeInstallerDownload}
+	token.RequiredScopes = []string{dtclient.TokenScopeInstallerDownload}
 	return token
 }
 
 func (token Token) setDataIngestScopes() Token {
-	token.RequiredScopes = []string{dtclient2.TokenScopeMetricsIngest}
+	token.RequiredScopes = []string{dtclient.TokenScopeMetricsIngest}
 	return token
 }
 
-func (token Token) getMissingScopes(scopes dtclient2.TokenScopes) []string {
+func (token Token) getMissingScopes(scopes dtclient.TokenScopes) []string {
 	missingScopes := make([]string, 0)
 
 	for _, requiredScope := range token.RequiredScopes {

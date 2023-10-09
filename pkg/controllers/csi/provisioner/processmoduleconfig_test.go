@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	dtclient2 "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -17,10 +17,10 @@ const (
 	testTenantUUID = "zib123"
 )
 
-func createTestProcessModuleConfig(revision uint) *dtclient2.ProcessModuleConfig {
-	return &dtclient2.ProcessModuleConfig{
+func createTestProcessModuleConfig(revision uint) *dtclient.ProcessModuleConfig {
+	return &dtclient.ProcessModuleConfig{
 		Revision: revision,
-		Properties: []dtclient2.ProcessModuleProperty{
+		Properties: []dtclient.ProcessModuleProperty{
 			{
 				Section: "test",
 				Key:     "test",
@@ -50,12 +50,12 @@ func isCacheExisting(fs afero.Fs) bool {
 }
 
 func TestGetProcessModuleConfig(t *testing.T) {
-	var emptyResponse *dtclient2.ProcessModuleConfig
+	var emptyResponse *dtclient.ProcessModuleConfig
 	t.Run(`no cache + no revision (dry run)`, func(t *testing.T) {
 		var defaultHash string
 		testProcessModuleConfig := createTestProcessModuleConfig(3)
 		memFs := afero.NewMemMapFs()
-		mockClient := &dtclient2.MockDynatraceClient{}
+		mockClient := &dtclient.MockDynatraceClient{}
 		mockClient.On("GetProcessModuleConfig", uint(0)).
 			Return(testProcessModuleConfig, nil)
 		provisioner := &OneAgentProvisioner{
@@ -74,7 +74,7 @@ func TestGetProcessModuleConfig(t *testing.T) {
 		memFs := afero.NewMemMapFs()
 		content, _ := json.Marshal(testProcessModuleConfigCache)
 		prepTestFsCache(memFs, content)
-		mockClient := &dtclient2.MockDynatraceClient{}
+		mockClient := &dtclient.MockDynatraceClient{}
 		mockClient.On("GetProcessModuleConfig", testProcessModuleConfigCache.Revision).
 			Return(emptyResponse, nil)
 		provisioner := &OneAgentProvisioner{
@@ -95,7 +95,7 @@ func TestGetProcessModuleConfig(t *testing.T) {
 		memFs := afero.NewMemMapFs()
 		content, _ := json.Marshal(testProcessModuleConfigCache)
 		prepTestFsCache(memFs, content)
-		mockClient := &dtclient2.MockDynatraceClient{}
+		mockClient := &dtclient.MockDynatraceClient{}
 		mockClient.On("GetProcessModuleConfig", testProcessModuleConfigCache.Revision).
 			Return(testProcessModuleConfig, nil)
 		provisioner := &OneAgentProvisioner{

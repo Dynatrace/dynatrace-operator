@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	dtclient2 "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/platform"
@@ -191,10 +191,10 @@ func istioClient(t *testing.T, restConfig *rest.Config) *istioclientset.Clientse
 	return client
 }
 
-func apiUrlCommunicationHost(t *testing.T) dtclient2.CommunicationHost {
+func apiUrlCommunicationHost(t *testing.T) dtclient.CommunicationHost {
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
-	apiHost, err := dtclient2.ParseEndpoint(secretConfig.ApiUrl)
+	apiHost, err := dtclient.ParseEndpoint(secretConfig.ApiUrl)
 	require.Nil(t, err)
 
 	return apiHost

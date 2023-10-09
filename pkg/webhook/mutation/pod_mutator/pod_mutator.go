@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	kubeobjects2 "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -21,7 +21,7 @@ const (
 
 // AddPodMutationWebhookToManager adds the Webhook server to the Manager
 func AddPodMutationWebhookToManager(mgr manager.Manager, ns string) error {
-	podName := os.Getenv(kubeobjects2.EnvPodName)
+	podName := os.Getenv(kubeobjects.EnvPodName)
 	if podName == "" {
 		log.Info("no Pod name set for webhook container")
 	}
@@ -83,7 +83,7 @@ func mutationRequired(mutationRequest *dtwebhook.MutationRequest) bool {
 	if mutationRequest == nil {
 		return false
 	}
-	return kubeobjects2.GetFieldBool(mutationRequest.Pod.Annotations, dtwebhook.AnnotationDynatraceInject, true)
+	return kubeobjects.GetFieldBool(mutationRequest.Pod.Annotations, dtwebhook.AnnotationDynatraceInject, true)
 }
 
 func (webhook *podMutatorWebhook) setupEventRecorder(mutationRequest *dtwebhook.MutationRequest) {
@@ -171,7 +171,7 @@ func createResponseForPod(pod *corev1.Pod, req admission.Request) admission.Resp
 
 func silentErrorResponse(pod *corev1.Pod, err error) admission.Response {
 	rsp := admission.Patched("")
-	podName := kubeobjects2.GetPodName(*pod)
+	podName := kubeobjects.GetPodName(*pod)
 	log.Error(err, "failed to inject into pod", "podName", podName)
 	rsp.Result.Message = fmt.Sprintf("Failed to inject into pod: %s because %s", podName, err.Error())
 	return rsp

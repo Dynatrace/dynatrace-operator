@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 
-	troubleshoot2 "github.com/Dynatrace/dynatrace-operator/cmd/troubleshoot"
+	troubleshoot "github.com/Dynatrace/dynatrace-operator/cmd/troubleshoot"
 	"github.com/go-logr/logr"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -43,9 +43,9 @@ func (t troubleshootCollector) Do() error {
 	logInfof(t.log, "Running troubleshoot command and storing output into %s", TroublshootOutputFileName)
 
 	troubleshootCmdOutput := bytes.Buffer{}
-	log := troubleshoot2.NewTroubleshootLoggerToWriter(&troubleshootCmdOutput)
+	log := troubleshoot.NewTroubleshootLoggerToWriter(&troubleshootCmdOutput)
 
-	troubleshoot2.RunTroubleshootCmd(context.Background(), log, t.namespace, &t.kubeConfig)
+	troubleshoot.RunTroubleshootCmd(context.Background(), log, t.namespace, &t.kubeConfig)
 
 	t.supportArchive.addFile(TroublshootOutputFileName, &troubleshootCmdOutput)
 	return nil

@@ -9,7 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	dtclient2 "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry/mocks"
@@ -90,7 +90,7 @@ func TestReconcile(t *testing.T) {
 		setupPullSecret(t, fakeClient, *dynakube)
 
 		dkStatus := &dynakube.Status
-		mockClient := &dtclient2.MockDynatraceClient{}
+		mockClient := &dtclient.MockDynatraceClient{}
 		mockLatestAgentVersion(mockClient, latestAgentVersion)
 		mockImageGetter := mocks.MockImageGetter{}
 
@@ -156,7 +156,7 @@ func TestReconcile(t *testing.T) {
 		mockImageGetter.On("GetImageVersion", mock.Anything, testCodeModulesImage.String()).Return(registry.ImageVersion{Version: testCodeModulesImage.Tag, Digest: testCodeModulesHash}, nil)
 		mockImageGetter.On("PullImageInfo", mock.Anything, mock.Anything).Return(&testImage, nil)
 
-		mockClient := &dtclient2.MockDynatraceClient{}
+		mockClient := &dtclient.MockDynatraceClient{}
 		mockActiveGateImageInfo(mockClient, testActiveGateImage)
 		mockCodeModulesImageInfo(mockClient, testCodeModulesImage)
 		mockOneAgentImageInfo(mockClient, testOneAgentImage)
@@ -343,22 +343,22 @@ func setOneAgentCustomImageStatus(dynakube *dynatracev1beta1.DynaKube, image str
 	dynakube.Status.OneAgent.ImageID = image
 }
 
-func getTestOneAgentImageInfo() dtclient2.LatestImageInfo {
-	return dtclient2.LatestImageInfo{
+func getTestOneAgentImageInfo() dtclient.LatestImageInfo {
+	return dtclient.LatestImageInfo{
 		Source: testDockerRegistry + "/linux/oneagent",
 		Tag:    "1.2.3.4-5",
 	}
 }
 
-func getTestActiveGateImageInfo() dtclient2.LatestImageInfo {
-	return dtclient2.LatestImageInfo{
+func getTestActiveGateImageInfo() dtclient.LatestImageInfo {
+	return dtclient.LatestImageInfo{
 		Source: testDockerRegistry + "/linux/activegate",
 		Tag:    "1.2.3.4-5",
 	}
 }
 
-func getTestCodeModulesImage() dtclient2.LatestImageInfo {
-	return dtclient2.LatestImageInfo{
+func getTestCodeModulesImage() dtclient.LatestImageInfo {
+	return dtclient.LatestImageInfo{
 		Source: testDockerRegistry + "/linux/codemodules",
 		Tag:    "1.2.3.4-5",
 	}
@@ -386,18 +386,18 @@ func createTestPullSecret(fakeClient client.Client, dynakube dynatracev1beta1.Dy
 	})
 }
 
-func mockActiveGateImageInfo(mockClient *dtclient2.MockDynatraceClient, imageInfo dtclient2.LatestImageInfo) {
+func mockActiveGateImageInfo(mockClient *dtclient.MockDynatraceClient, imageInfo dtclient.LatestImageInfo) {
 	mockClient.On("GetLatestActiveGateImage").Return(&imageInfo, nil)
 }
 
-func mockCodeModulesImageInfo(mockClient *dtclient2.MockDynatraceClient, imageInfo dtclient2.LatestImageInfo) {
+func mockCodeModulesImageInfo(mockClient *dtclient.MockDynatraceClient, imageInfo dtclient.LatestImageInfo) {
 	mockClient.On("GetLatestCodeModulesImage").Return(&imageInfo, nil)
 }
 
-func mockOneAgentImageInfo(mockClient *dtclient2.MockDynatraceClient, imageInfo dtclient2.LatestImageInfo) {
+func mockOneAgentImageInfo(mockClient *dtclient.MockDynatraceClient, imageInfo dtclient.LatestImageInfo) {
 	mockClient.On("GetLatestOneAgentImage").Return(&imageInfo, nil)
 }
 
-func mockLatestAgentVersion(mockClient *dtclient2.MockDynatraceClient, latestVersion string) {
+func mockLatestAgentVersion(mockClient *dtclient.MockDynatraceClient, latestVersion string) {
 	mockClient.On("GetLatestAgentVersion", mock.Anything, mock.Anything).Return(latestVersion, nil)
 }

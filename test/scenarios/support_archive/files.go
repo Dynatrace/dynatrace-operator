@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"testing"
 
-	support_archive2 "github.com/Dynatrace/dynatrace-operator/cmd/support_archive"
+	"github.com/Dynatrace/dynatrace-operator/cmd/support_archive"
 	edgeconnectv1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/functional"
@@ -48,9 +48,9 @@ func newRequiredFiles(t *testing.T, ctx context.Context, resources *resources.Re
 
 func (r requiredFiles) collectRequiredFiles() []string {
 	requiredFiles := make([]string, 0)
-	requiredFiles = append(requiredFiles, support_archive2.OperatorVersionFileName)
-	requiredFiles = append(requiredFiles, support_archive2.TroublshootOutputFileName)
-	requiredFiles = append(requiredFiles, support_archive2.SupportArchiveOutputFileName)
+	requiredFiles = append(requiredFiles, support_archive.OperatorVersionFileName)
+	requiredFiles = append(requiredFiles, support_archive.TroublshootOutputFileName)
+	requiredFiles = append(requiredFiles, support_archive.SupportArchiveOutputFileName)
 	requiredFiles = append(requiredFiles, r.getRequiredPodFiles(kubeobjects.AppNameLabel, true)...)
 	requiredFiles = append(requiredFiles, r.getRequiredPodFiles(kubeobjects.AppManagedByLabel, r.collectManaged)...)
 	requiredFiles = append(requiredFiles, r.getRequiredReplicaSetFiles()...)
@@ -76,13 +76,13 @@ func (r requiredFiles) getRequiredPodFiles(labelKey string, collectManaged bool)
 	for _, operatorPod := range podList {
 		requiredFiles = append(requiredFiles,
 			fmt.Sprintf("%s/%s/pod/%s%s",
-				support_archive2.ManifestsDirectoryName,
+				support_archive.ManifestsDirectoryName,
 				operatorPod.Namespace, operatorPod.Name,
-				support_archive2.ManifestsFileExtension))
+				support_archive.ManifestsFileExtension))
 		if collectManaged && (labelKey == "app.kubernetes.io/managed-by" || labelKey == "app.kubernetes.io/name") {
 			for _, container := range operatorPod.Spec.Containers {
 				requiredFiles = append(requiredFiles,
-					fmt.Sprintf("%s/%s/%s.log", support_archive2.LogsDirectoryName, operatorPod.Name, container.Name))
+					fmt.Sprintf("%s/%s/%s.log", support_archive.LogsDirectoryName, operatorPod.Name, container.Name))
 			}
 		}
 	}
@@ -95,9 +95,9 @@ func (r requiredFiles) getRequiredReplicaSetFiles() []string {
 	for _, replicaSet := range replicaSets.Items {
 		requiredFiles = append(requiredFiles,
 			fmt.Sprintf("%s/%s/replicaset/%s%s",
-				support_archive2.ManifestsDirectoryName,
+				support_archive.ManifestsDirectoryName,
 				replicaSet.Namespace, replicaSet.Name,
-				support_archive2.ManifestsFileExtension))
+				support_archive.ManifestsFileExtension))
 	}
 	return requiredFiles
 }
@@ -110,9 +110,9 @@ func (r requiredFiles) getRequiredStatefulSetFiles() []string {
 	requiredFiles := make([]string, 0)
 	requiredFiles = append(requiredFiles,
 		fmt.Sprintf("%s/%s/statefulset/%s%s",
-			support_archive2.ManifestsDirectoryName,
+			support_archive.ManifestsDirectoryName,
 			statefulSet.Namespace, statefulSet.Name,
-			support_archive2.ManifestsFileExtension))
+			support_archive.ManifestsFileExtension))
 
 	return requiredFiles
 }
@@ -123,10 +123,10 @@ func (r requiredFiles) getRequiredDaemonSetFiles() []string {
 	requiredFiles := make([]string, 0)
 	requiredFiles = append(requiredFiles,
 		fmt.Sprintf("%s/%s/daemonset/%s%s",
-			support_archive2.ManifestsDirectoryName,
+			support_archive.ManifestsDirectoryName,
 			oneagentDaemonSet.Namespace,
 			oneagentDaemonSet.Name,
-			support_archive2.ManifestsFileExtension))
+			support_archive.ManifestsFileExtension))
 
 	return requiredFiles
 }
@@ -137,10 +137,10 @@ func (r requiredFiles) getRequiredServiceFiles() []string {
 	for _, requiredService := range services.Items {
 		requiredFiles = append(requiredFiles,
 			fmt.Sprintf("%s/%s/service/%s%s",
-				support_archive2.ManifestsDirectoryName,
+				support_archive.ManifestsDirectoryName,
 				requiredService.Namespace,
 				requiredService.Name,
-				support_archive2.ManifestsFileExtension))
+				support_archive.ManifestsFileExtension))
 	}
 	return requiredFiles
 }
@@ -149,32 +149,32 @@ func (r requiredFiles) getRequiredWorkloadFiles() []string {
 	requiredFiles := make([]string, 0)
 	requiredFiles = append(requiredFiles,
 		fmt.Sprintf("%s/%s/%s/%s%s",
-			support_archive2.ManifestsDirectoryName,
+			support_archive.ManifestsDirectoryName,
 			r.dynakube.Namespace,
 			"deployment",
 			operator.DeploymentName,
-			support_archive2.ManifestsFileExtension))
+			support_archive.ManifestsFileExtension))
 	requiredFiles = append(requiredFiles,
 		fmt.Sprintf("%s/%s/%s/%s%s",
-			support_archive2.ManifestsDirectoryName,
+			support_archive.ManifestsDirectoryName,
 			r.dynakube.Namespace,
 			"deployment",
 			e2ewebhook.DeploymentName,
-			support_archive2.ManifestsFileExtension))
+			support_archive.ManifestsFileExtension))
 	requiredFiles = append(requiredFiles,
 		fmt.Sprintf("%s/%s/%s/%s%s",
-			support_archive2.ManifestsDirectoryName,
+			support_archive.ManifestsDirectoryName,
 			r.dynakube.Namespace,
 			"daemonset",
 			csi.DaemonSetName,
-			support_archive2.ManifestsFileExtension))
+			support_archive.ManifestsFileExtension))
 	requiredFiles = append(requiredFiles,
 		fmt.Sprintf("%s/%s/%s/%s%s",
-			support_archive2.ManifestsDirectoryName,
+			support_archive.ManifestsDirectoryName,
 			r.edgeconnect.Namespace,
 			"deployment",
 			r.edgeconnect.Name,
-			support_archive2.ManifestsFileExtension))
+			support_archive.ManifestsFileExtension))
 
 	return requiredFiles
 }
@@ -183,16 +183,16 @@ func (r requiredFiles) getRequiredNamespaceFiles() []string {
 	requiredFiles := make([]string, 0)
 	requiredFiles = append(requiredFiles,
 		fmt.Sprintf("%s/%s/namespace-%s%s",
-			support_archive2.ManifestsDirectoryName,
+			support_archive.ManifestsDirectoryName,
 			r.dynakube.Namespace,
 			r.dynakube.Namespace,
-			support_archive2.ManifestsFileExtension))
+			support_archive.ManifestsFileExtension))
 	requiredFiles = append(requiredFiles,
 		fmt.Sprintf("%s/%s/namespace-%s%s",
-			support_archive2.ManifestsDirectoryName,
-			support_archive2.InjectedNamespacesManifestsDirectoryName,
+			support_archive.ManifestsDirectoryName,
+			support_archive.InjectedNamespacesManifestsDirectoryName,
 			testAppNameInjected,
-			support_archive2.ManifestsFileExtension))
+			support_archive.ManifestsFileExtension))
 	return requiredFiles
 }
 
@@ -200,11 +200,11 @@ func (r requiredFiles) getRequiredDynaKubeFiles() []string {
 	requiredFiles := make([]string, 0)
 	requiredFiles = append(requiredFiles,
 		fmt.Sprintf("%s/%s/%s/%s%s",
-			support_archive2.ManifestsDirectoryName,
+			support_archive.ManifestsDirectoryName,
 			r.dynakube.Namespace,
 			"dynakube",
 			r.dynakube.Name,
-			support_archive2.ManifestsFileExtension))
+			support_archive.ManifestsFileExtension))
 
 	return requiredFiles
 }
@@ -213,11 +213,11 @@ func (r requiredFiles) getRequiredEdgeConnectFiles() []string {
 	requiredFiles := make([]string, 0)
 	requiredFiles = append(requiredFiles,
 		fmt.Sprintf("%s/%s/%s/%s%s",
-			support_archive2.ManifestsDirectoryName,
+			support_archive.ManifestsDirectoryName,
 			r.edgeconnect.Namespace,
 			"edgeconnect",
 			r.edgeconnect.Name,
-			support_archive2.ManifestsFileExtension))
+			support_archive.ManifestsFileExtension))
 
 	return requiredFiles
 }

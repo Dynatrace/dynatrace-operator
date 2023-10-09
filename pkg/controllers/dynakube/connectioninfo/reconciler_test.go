@@ -7,7 +7,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	dtclient2 "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -45,7 +45,7 @@ func TestReconcile_ConnectionInfo(t *testing.T) {
 			Name:      testName,
 		}}
 
-	dtc := &dtclient2.MockDynatraceClient{}
+	dtc := &dtclient.MockDynatraceClient{}
 	dtc.On("GetActiveGateConnectionInfo").Return(getTestActiveGateConnectionInfo(), nil)
 	dtc.On("GetOneAgentConnectionInfo").Return(getTestOneAgentConnectionInfo(), nil)
 
@@ -181,10 +181,10 @@ func TestReconcile_NoOneAgentCommunicationHosts(t *testing.T) {
 			Name:      testName,
 		}}
 
-	dtc := &dtclient2.MockDynatraceClient{}
+	dtc := &dtclient.MockDynatraceClient{}
 	dtc.On("GetActiveGateConnectionInfo").Return(getTestActiveGateConnectionInfo(), nil)
-	dtc.On("GetOneAgentConnectionInfo").Return(dtclient2.OneAgentConnectionInfo{
-		ConnectionInfo: dtclient2.ConnectionInfo{
+	dtc.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{
+		ConnectionInfo: dtclient.ConnectionInfo{
 			TenantUUID:  testTenantUUID,
 			TenantToken: testTenantToken,
 			Endpoints:   "",
@@ -202,14 +202,14 @@ func TestReconcile_NoOneAgentCommunicationHosts(t *testing.T) {
 	assert.Empty(t, dynakube.Status.OneAgent.ConnectionInfoStatus.CommunicationHosts)
 }
 
-func getTestOneAgentConnectionInfo() dtclient2.OneAgentConnectionInfo {
-	return dtclient2.OneAgentConnectionInfo{
-		ConnectionInfo: dtclient2.ConnectionInfo{
+func getTestOneAgentConnectionInfo() dtclient.OneAgentConnectionInfo {
+	return dtclient.OneAgentConnectionInfo{
+		ConnectionInfo: dtclient.ConnectionInfo{
 			TenantUUID:  testTenantUUID,
 			TenantToken: testTenantToken,
 			Endpoints:   testTenantEndpoints,
 		},
-		CommunicationHosts: []dtclient2.CommunicationHost{
+		CommunicationHosts: []dtclient.CommunicationHost{
 			{
 				Protocol: testCommunicationHosts[0].Protocol,
 				Host:     testCommunicationHosts[0].Host,
@@ -224,9 +224,9 @@ func getTestOneAgentConnectionInfo() dtclient2.OneAgentConnectionInfo {
 	}
 }
 
-func getTestActiveGateConnectionInfo() *dtclient2.ActiveGateConnectionInfo {
-	return &dtclient2.ActiveGateConnectionInfo{
-		ConnectionInfo: dtclient2.ConnectionInfo{
+func getTestActiveGateConnectionInfo() *dtclient.ActiveGateConnectionInfo {
+	return &dtclient.ActiveGateConnectionInfo{
+		ConnectionInfo: dtclient.ConnectionInfo{
 			TenantUUID:  testTenantUUID,
 			TenantToken: testTenantToken,
 			Endpoints:   testTenantEndpoints,
@@ -246,7 +246,7 @@ func TestReconcile_ActivegateSecret(t *testing.T) {
 			Namespace: testNamespace,
 			Name:      testName,
 		}}
-	dtc := &dtclient2.MockDynatraceClient{}
+	dtc := &dtclient.MockDynatraceClient{}
 	dtc.On("GetActiveGateConnectionInfo").Return(getTestActiveGateConnectionInfo(), nil)
 	dtc.On("GetOneAgentConnectionInfo").Return(getTestOneAgentConnectionInfo(), nil)
 
@@ -315,7 +315,7 @@ func TestReconcile_OneagentSecret(t *testing.T) {
 			},
 		}}
 
-	dtc := &dtclient2.MockDynatraceClient{}
+	dtc := &dtclient.MockDynatraceClient{}
 	dtc.On("GetOneAgentConnectionInfo").Return(getTestOneAgentConnectionInfo(), nil)
 
 	t.Run(`create oneagent secret`, func(t *testing.T) {

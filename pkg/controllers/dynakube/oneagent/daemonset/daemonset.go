@@ -3,7 +3,7 @@ package daemonset
 import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
-	kubeobjects2 "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	appsv1 "k8s.io/api/apps/v1"
@@ -136,9 +136,9 @@ func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 
 	versionLabelValue := dynakube.OneAgentVersion()
 
-	appLabels := kubeobjects2.NewAppLabels(kubeobjects2.OneAgentComponentLabel, dynakube.Name,
+	appLabels := kubeobjects.NewAppLabels(kubeobjects.OneAgentComponentLabel, dynakube.Name,
 		dsInfo.deploymentType, versionLabelValue)
-	labels := kubeobjects2.MergeMap(
+	labels := kubeobjects.MergeMap(
 		appLabels.BuildLabels(),
 		dsInfo.hostInjectSpec.Labels,
 	)
@@ -148,7 +148,7 @@ func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 		webhook.AnnotationDynatraceInject: "false",
 	}
 
-	annotations = kubeobjects2.MergeMap(annotations, dsInfo.hostInjectSpec.Annotations)
+	annotations = kubeobjects.MergeMap(annotations, dsInfo.hostInjectSpec.Annotations)
 
 	result := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{

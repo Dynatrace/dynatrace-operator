@@ -5,15 +5,15 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	dtclient2 "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 )
 
 type codeModulesUpdater struct {
 	dynakube *dynatracev1beta1.DynaKube
-	dtClient dtclient2.Client
+	dtClient dtclient.Client
 }
 
-func newCodeModulesUpdater(dynakube *dynatracev1beta1.DynaKube, dtClient dtclient2.Client) *codeModulesUpdater {
+func newCodeModulesUpdater(dynakube *dynatracev1beta1.DynaKube, dtClient dtclient.Client) *codeModulesUpdater {
 	return &codeModulesUpdater{
 		dynakube: dynakube,
 		dtClient: dtClient,
@@ -48,7 +48,7 @@ func (updater codeModulesUpdater) IsPublicRegistryEnabled() bool {
 	return updater.dynakube.FeaturePublicRegistry()
 }
 
-func (updater codeModulesUpdater) LatestImageInfo() (*dtclient2.LatestImageInfo, error) {
+func (updater codeModulesUpdater) LatestImageInfo() (*dtclient.LatestImageInfo, error) {
 	return updater.dtClient.GetLatestCodeModulesImage()
 }
 
@@ -68,7 +68,7 @@ func (updater *codeModulesUpdater) UseTenantRegistry(_ context.Context) error {
 	}
 
 	latestAgentVersionUnixPaas, err := updater.dtClient.GetLatestAgentVersion(
-		dtclient2.OsUnix, dtclient2.InstallerTypePaaS)
+		dtclient.OsUnix, dtclient.InstallerTypePaaS)
 	if err != nil {
 		log.Info("could not get agent paas unix version")
 		return err

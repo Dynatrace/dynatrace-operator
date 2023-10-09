@@ -7,11 +7,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	dtclient2 "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent/daemonset"
-	kubeobjects2 "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -82,10 +82,10 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 
 	fakeClient := fake.NewClient(
 		dynakube,
-		NewSecret(dkName, namespace, map[string]string{dtclient2.DynatracePaasToken: "42", dtclient2.DynatraceApiToken: "84"}),
+		NewSecret(dkName, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}),
 		sampleKubeSystemNS)
 
-	dtClient := &dtclient2.MockDynatraceClient{}
+	dtClient := &dtclient.MockDynatraceClient{}
 
 	reconciler := &Reconciler{
 		client:    fakeClient,
@@ -154,7 +154,7 @@ func TestReconcile_PostponeOnEmptyCommunicationHosts(t *testing.T) {
 	}
 
 	c := fake.NewClient(
-		NewSecret(name, namespace, map[string]string{dtclient2.DynatracePaasToken: "42", dtclient2.DynatraceApiToken: "84"}),
+		NewSecret(name, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}),
 		sampleKubeSystemNS)
 
 	reconciler := &Reconciler{
@@ -194,15 +194,15 @@ func TestReconcile_InstancesSet(t *testing.T) {
 	}
 
 	c := fake.NewClient(
-		NewSecret(name, namespace, map[string]string{dtclient2.DynatracePaasToken: "42", dtclient2.DynatraceApiToken: "84"}),
+		NewSecret(name, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}),
 		sampleKubeSystemNS)
-	dtcMock := &dtclient2.MockDynatraceClient{}
+	dtcMock := &dtclient.MockDynatraceClient{}
 	componentVersion := "1.187"
 	oldComponentVersion := "1.186"
 	hostIP := "1.2.3.4"
-	dtcMock.On("GetLatestAgentVersion", dtclient2.OsUnix, dtclient2.InstallerTypeDefault).Return(componentVersion, nil)
-	dtcMock.On("GetTokenScopes", "42").Return(dtclient2.TokenScopes{dtclient2.DynatracePaasToken}, nil)
-	dtcMock.On("GetTokenScopes", "84").Return(dtclient2.TokenScopes{dtclient2.DynatraceApiToken}, nil)
+	dtcMock.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(componentVersion, nil)
+	dtcMock.On("GetTokenScopes", "42").Return(dtclient.TokenScopes{dtclient.DynatracePaasToken}, nil)
+	dtcMock.On("GetTokenScopes", "84").Return(dtclient.TokenScopes{dtclient.DynatraceApiToken}, nil)
 
 	reconciler := &Reconciler{
 		client:    c,
@@ -211,11 +211,11 @@ func TestReconcile_InstancesSet(t *testing.T) {
 	}
 
 	expectedLabels := map[string]string{
-		kubeobjects2.AppNameLabel:      kubeobjects2.OneAgentComponentLabel,
-		kubeobjects2.AppComponentLabel: "classicfullstack",
-		kubeobjects2.AppCreatedByLabel: name,
-		kubeobjects2.AppVersionLabel:   oldComponentVersion,
-		kubeobjects2.AppManagedByLabel: version.AppName,
+		kubeobjects.AppNameLabel:      kubeobjects.OneAgentComponentLabel,
+		kubeobjects.AppComponentLabel: "classicfullstack",
+		kubeobjects.AppCreatedByLabel: name,
+		kubeobjects.AppVersionLabel:   oldComponentVersion,
+		kubeobjects.AppManagedByLabel: version.AppName,
 	}
 
 	t.Run("reconileImp Instances set, if autoUpdate is true", func(t *testing.T) {
@@ -302,9 +302,9 @@ func TestMigrationForDaemonSetWithoutAnnotation(t *testing.T) {
 
 	ds2, err := r.buildDesiredDaemonSet(dynakube)
 	assert.NoError(t, err)
-	assert.NotEmpty(t, ds2.Annotations[kubeobjects2.AnnotationHash])
+	assert.NotEmpty(t, ds2.Annotations[kubeobjects.AnnotationHash])
 
-	assert.True(t, kubeobjects2.IsHashAnnotationDifferent(ds1, ds2))
+	assert.True(t, kubeobjects.IsHashAnnotationDifferent(ds1, ds2))
 }
 
 func TestHasSpecChanged(t *testing.T) {
@@ -335,10 +335,10 @@ func TestHasSpecChanged(t *testing.T) {
 			ds2, err := r.buildDesiredDaemonSet(&newInstance)
 			assert.NoError(t, err)
 
-			assert.NotEmpty(t, ds1.Annotations[kubeobjects2.AnnotationHash])
-			assert.NotEmpty(t, ds2.Annotations[kubeobjects2.AnnotationHash])
+			assert.NotEmpty(t, ds1.Annotations[kubeobjects.AnnotationHash])
+			assert.NotEmpty(t, ds2.Annotations[kubeobjects.AnnotationHash])
 
-			assert.Equal(t, exp, kubeobjects2.IsHashAnnotationDifferent(ds1, ds2))
+			assert.Equal(t, exp, kubeobjects.IsHashAnnotationDifferent(ds1, ds2))
 		})
 	}
 
@@ -527,7 +527,7 @@ func TestInstanceStatus(t *testing.T) {
 	fakeClient := fake.NewClient(
 		dynakube,
 		pod,
-		NewSecret(dkName, namespace, map[string]string{dtclient2.DynatracePaasToken: "42", dtclient2.DynatraceApiToken: "84"}),
+		NewSecret(dkName, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}),
 		sampleKubeSystemNS)
 
 	reconciler := &Reconciler{
@@ -580,7 +580,7 @@ func TestEmptyInstancesWithWrongLabels(t *testing.T) {
 	fakeClient := fake.NewClient(
 		dynakube,
 		pod,
-		NewSecret(dkName, namespace, map[string]string{dtclient2.DynatracePaasToken: "42", dtclient2.DynatraceApiToken: "84"}),
+		NewSecret(dkName, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}),
 		sampleKubeSystemNS)
 
 	reconciler := &Reconciler{
@@ -624,7 +624,7 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 
 	fakeClient := fake.NewClient(
 		dynakube,
-		NewSecret(dynakube.Name, dynakube.Namespace, map[string]string{dtclient2.DynatracePaasToken: "42", dtclient2.DynatraceApiToken: "84"}),
+		NewSecret(dynakube.Name, dynakube.Namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}),
 		sampleKubeSystemNS)
 
 	t.Run(`create OneAgent connection info ConfigMap`, func(t *testing.T) {

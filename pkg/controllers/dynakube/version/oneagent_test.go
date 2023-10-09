@@ -7,7 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	dtclient2 "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry/mocks"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
@@ -17,7 +17,7 @@ import (
 )
 
 func TestOneAgentUpdater(t *testing.T) {
-	testImage := dtclient2.LatestImageInfo{
+	testImage := dtclient.LatestImageInfo{
 		Source: "some.registry.com",
 		Tag:    "1.2.3.4-5",
 	}
@@ -33,7 +33,7 @@ func TestOneAgentUpdater(t *testing.T) {
 				},
 			},
 		}
-		mockClient := &dtclient2.MockDynatraceClient{}
+		mockClient := &dtclient.MockDynatraceClient{}
 		mockOneAgentImageInfo(mockClient, testImage)
 		mockImageGetter := mocks.MockImageGetter{}
 
@@ -66,7 +66,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 		}
 		expectedImage := dynakube.DefaultOneAgentImage()
 
-		mockClient := &dtclient2.MockDynatraceClient{}
+		mockClient := &dtclient.MockDynatraceClient{}
 		mockImageGetter := mocks.MockImageGetter{}
 		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{Version: testVersion, Digest: testDigest}, nil)
 
@@ -88,7 +88,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 		}
 		expectedImage := dynakube.DefaultOneAgentImage()
 
-		mockClient := &dtclient2.MockDynatraceClient{}
+		mockClient := &dtclient.MockDynatraceClient{}
 		mockLatestAgentVersion(mockClient, testVersion)
 		mockImageGetter := mocks.MockImageGetter{}
 
@@ -121,7 +121,7 @@ func TestOneAgentUseDefault(t *testing.T) {
 			},
 		}
 
-		mockClient := &dtclient2.MockDynatraceClient{}
+		mockClient := &dtclient.MockDynatraceClient{}
 		mockLatestAgentVersion(mockClient, testVersion)
 		mockImageGetter := mocks.MockImageGetter{}
 

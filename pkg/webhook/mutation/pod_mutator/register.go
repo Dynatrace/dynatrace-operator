@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	kubeobjects2 "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod_mutator/dataingest_mutation"
@@ -28,12 +28,12 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 	kubeClient := mgr.GetClient()
 	apiReader := mgr.GetAPIReader()
 
-	webhookPod, err := kubeobjects2.GetPod(context.TODO(), apiReader, webhookPodName, webhookNamespace)
+	webhookPod, err := kubeobjects.GetPod(context.TODO(), apiReader, webhookPodName, webhookNamespace)
 	if err != nil {
 		return err
 	}
 
-	apmExists, err := kubeobjects2.CheckIfOneAgentAPMExists(kubeConfig)
+	apmExists, err := kubeobjects.CheckIfOneAgentAPMExists(kubeConfig)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -94,7 +94,7 @@ func registerLivezEndpoint(mgr manager.Manager) {
 }
 
 func getWebhookContainerImage(webhookPod corev1.Pod) (string, error) {
-	webhookContainer, err := kubeobjects2.FindContainerInPod(webhookPod, dtwebhook.WebhookContainerName)
+	webhookContainer, err := kubeobjects.FindContainerInPod(webhookPod, dtwebhook.WebhookContainerName)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}

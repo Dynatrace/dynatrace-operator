@@ -5,7 +5,7 @@ import (
 	"net"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	dtclient2 "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	"github.com/pkg/errors"
@@ -27,12 +27,12 @@ func (r *Reconciler) ReconcileAPIUrl(ctx context.Context, dynakube *dynatracev1b
 	if dynakube == nil {
 		return errors.New("can't reconcile api url of nil dynakube")
 	}
-	apiHost, err := dtclient2.ParseEndpoint(dynakube.Spec.APIURL)
+	apiHost, err := dtclient.ParseEndpoint(dynakube.Spec.APIURL)
 	if err != nil {
 		return err
 	}
 
-	err = r.reconcileCommunicationHosts(ctx, dynakube, []dtclient2.CommunicationHost{apiHost}, OperatorComponent)
+	err = r.reconcileCommunicationHosts(ctx, dynakube, []dtclient.CommunicationHost{apiHost}, OperatorComponent)
 	if err != nil {
 		return errors.WithMessage(err, "error reconciling config for Dynatrace API URL")
 	}
@@ -61,7 +61,7 @@ func (r *Reconciler) ReconcileCommunicationHosts(ctx context.Context, dynakube *
 	return nil
 }
 
-func (r *Reconciler) reconcileCommunicationHostsForComponent(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, comHosts []dtclient2.CommunicationHost, componentName string) error {
+func (r *Reconciler) reconcileCommunicationHostsForComponent(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, comHosts []dtclient.CommunicationHost, componentName string) error {
 	err := r.reconcileCommunicationHosts(ctx, dynakube, comHosts, componentName)
 	if err != nil {
 		return errors.WithMessage(err, "error reconciling config for Dynatrace communication hosts")
@@ -70,7 +70,7 @@ func (r *Reconciler) reconcileCommunicationHostsForComponent(ctx context.Context
 	return nil
 }
 
-func (r *Reconciler) reconcileCommunicationHosts(ctx context.Context, owner metav1.Object, comHosts []dtclient2.CommunicationHost, component string) error {
+func (r *Reconciler) reconcileCommunicationHosts(ctx context.Context, owner metav1.Object, comHosts []dtclient.CommunicationHost, component string) error {
 	ipHosts, fqdnHosts := splitCommunicationHost(comHosts)
 
 	err := r.reconcileIPServiceEntry(ctx, owner, ipHosts, component)
@@ -85,7 +85,7 @@ func (r *Reconciler) reconcileCommunicationHosts(ctx context.Context, owner meta
 	return nil
 }
 
-func splitCommunicationHost(comHosts []dtclient2.CommunicationHost) (ipHosts, fqdnHosts []dtclient2.CommunicationHost) {
+func splitCommunicationHost(comHosts []dtclient.CommunicationHost) (ipHosts, fqdnHosts []dtclient.CommunicationHost) {
 	for _, commHost := range comHosts {
 		if net.ParseIP(commHost.Host) != nil {
 			ipHosts = append(ipHosts, commHost)
@@ -96,7 +96,7 @@ func splitCommunicationHost(comHosts []dtclient2.CommunicationHost) (ipHosts, fq
 	return
 }
 
-func (r *Reconciler) reconcileIPServiceEntry(ctx context.Context, owner metav1.Object, ipHosts []dtclient2.CommunicationHost, component string) error {
+func (r *Reconciler) reconcileIPServiceEntry(ctx context.Context, owner metav1.Object, ipHosts []dtclient.CommunicationHost, component string) error {
 	if owner == nil {
 		return errors.New("unable to create service entry for IPs if owner is nil")
 	}
@@ -123,7 +123,7 @@ func (r *Reconciler) reconcileIPServiceEntry(ctx context.Context, owner metav1.O
 	return nil
 }
 
-func (r *Reconciler) reconcileFQDNServiceEntry(ctx context.Context, owner metav1.Object, fqdnHosts []dtclient2.CommunicationHost, component string) error {
+func (r *Reconciler) reconcileFQDNServiceEntry(ctx context.Context, owner metav1.Object, fqdnHosts []dtclient.CommunicationHost, component string) error {
 	if owner == nil {
 		return errors.New("unable to create service entry and virtual service for Hosts if owner is nil")
 	}

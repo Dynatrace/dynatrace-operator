@@ -5,7 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	dtclient2 "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -14,14 +14,14 @@ import (
 type syntheticUpdater struct {
 	dynakube       *dynatracev1beta1.DynaKube
 	apiReader      client.Reader
-	dtClient       dtclient2.Client
+	dtClient       dtclient.Client
 	registryClient registry.ImageGetter
 }
 
 func newSyntheticUpdater(
 	dynakube *dynatracev1beta1.DynaKube,
 	apiReader client.Reader,
-	dtClient dtclient2.Client,
+	dtClient dtclient.Client,
 	registryClient registry.ImageGetter,
 ) *syntheticUpdater {
 	return &syntheticUpdater{
@@ -60,7 +60,7 @@ func (updater syntheticUpdater) IsPublicRegistryEnabled() bool {
 	return false
 }
 
-func (updater syntheticUpdater) LatestImageInfo() (*dtclient2.LatestImageInfo, error) {
+func (updater syntheticUpdater) LatestImageInfo() (*dtclient.LatestImageInfo, error) {
 	return nil, errors.New("unsupported method")
 }
 

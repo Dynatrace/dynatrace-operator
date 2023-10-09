@@ -10,7 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/deployment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
-	kubeobjects2 "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -107,7 +107,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	}
 	err = controller.updateEdgeConnectStatus(ctx, edgeConnect)
 
-	if isDifferentStatus, err := kubeobjects2.IsDifferent(oldStatus, edgeConnect.Status); err != nil {
+	if isDifferentStatus, err := kubeobjects.IsDifferent(oldStatus, edgeConnect.Status); err != nil {
 		log.Error(errors.WithStack(err), "failed to generate hash for the status section")
 	} else if isDifferentStatus {
 		log.Info("status changed, updating DynaKube")
@@ -159,13 +159,13 @@ func (controller *Controller) reconcileEdgeConnect(edgeConnect *edgeconnectv1alp
 		return errors.WithStack(err)
 	}
 
-	ddHash, err := kubeobjects2.GenerateHash(desiredDeployment)
+	ddHash, err := kubeobjects.GenerateHash(desiredDeployment)
 	if err != nil {
 		return err
 	}
-	desiredDeployment.Annotations[kubeobjects2.AnnotationHash] = ddHash
+	desiredDeployment.Annotations[kubeobjects.AnnotationHash] = ddHash
 
-	_, err = kubeobjects2.CreateOrUpdateDeployment(controller.client, log, desiredDeployment)
+	_, err = kubeobjects.CreateOrUpdateDeployment(controller.client, log, desiredDeployment)
 
 	if err != nil {
 		log.Info("could not create or update deployment for EdgeConnect", "name", desiredDeployment.Name)

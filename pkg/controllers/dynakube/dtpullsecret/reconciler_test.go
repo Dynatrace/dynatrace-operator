@@ -7,7 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	dtclient2 "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -21,7 +21,7 @@ const (
 
 func TestReconciler_Reconcile(t *testing.T) {
 	t.Run(`Create works with minimal setup`, func(t *testing.T) {
-		mockDTC := &dtclient2.MockDynatraceClient{}
+		mockDTC := &dtclient.MockDynatraceClient{}
 		dynakube := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
@@ -33,12 +33,12 @@ func TestReconciler_Reconcile(t *testing.T) {
 		}
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube, token.Tokens{
-			dtclient2.DynatraceApiToken: token.Token{Value: testValue},
+			dtclient.DynatraceApiToken: token.Token{Value: testValue},
 		})
 
 		mockDTC.
 			On("GetOneAgentConnectionInfo").
-			Return(dtclient2.OneAgentConnectionInfo{}, nil)
+			Return(dtclient.OneAgentConnectionInfo{}, nil)
 
 		err := r.Reconcile(context.Background())
 
@@ -82,7 +82,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		}
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube, token.Tokens{
-			dtclient2.DynatraceApiToken: token.Token{Value: testValue},
+			dtclient.DynatraceApiToken: token.Token{Value: testValue},
 		})
 
 		err := r.Reconcile(context.Background())
@@ -114,7 +114,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		}
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube, token.Tokens{
-			dtclient2.DynatraceApiToken: token.Token{Value: testValue},
+			dtclient.DynatraceApiToken: token.Token{Value: testValue},
 		})
 
 		err := r.Reconcile(context.Background())

@@ -7,7 +7,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	dtclient2 "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -25,7 +25,7 @@ const (
 )
 
 var (
-	testAgAuthTokenResponse = &dtclient2.ActiveGateAuthTokenInfo{
+	testAgAuthTokenResponse = &dtclient.ActiveGateAuthTokenInfo{
 		TokenId: "test",
 		Token:   "dt.some.valuegoeshere",
 	}
@@ -41,7 +41,7 @@ func newTestReconcilerWithInstance(client client.Client) *Reconciler {
 			APIURL: "https://testing.dev.dynatracelabs.com/api",
 		},
 	}
-	dtc := &dtclient2.MockDynatraceClient{}
+	dtc := &dtclient.MockDynatraceClient{}
 	dtc.On("GetActiveGateAuthToken", mock.Anything).Return(testAgAuthTokenResponse, nil)
 
 	r := NewReconciler(client, client, scheme.Scheme, instance, dtc)

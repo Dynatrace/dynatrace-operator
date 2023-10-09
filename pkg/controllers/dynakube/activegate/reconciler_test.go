@@ -7,7 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	dtclient2 "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
@@ -47,8 +47,8 @@ var (
 )
 
 func TestReconciler_Reconcile(t *testing.T) {
-	dtc := &dtclient2.MockDynatraceClient{}
-	dtc.On("GetActiveGateAuthToken", testName).Return(&dtclient2.ActiveGateAuthTokenInfo{}, nil)
+	dtc := &dtclient.MockDynatraceClient{}
+	dtc.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
 
 	t.Run(`Create works with minimal setup`, func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
@@ -142,7 +142,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 }
 
 func TestServiceCreation(t *testing.T) {
-	dynatraceClient := &dtclient2.MockDynatraceClient{}
+	dynatraceClient := &dtclient.MockDynatraceClient{}
 	dynakube := &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
@@ -233,9 +233,9 @@ func getTestActiveGateService(t *testing.T, fakeClient client.Client) corev1.Ser
 }
 
 func TestExclusiveSynMonitoring(t *testing.T) {
-	mockDtClient := &dtclient2.MockDynatraceClient{}
+	mockDtClient := &dtclient.MockDynatraceClient{}
 	mockDtClient.On("GetActiveGateAuthToken", testName).
-		Return(&dtclient2.ActiveGateAuthTokenInfo{}, nil)
+		Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
 
 	dynakube := &dynatracev1beta1.DynaKube{
 		ObjectMeta: syntheticCapabilityObjectMeta,
@@ -300,7 +300,7 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 		},
 	}
 
-	mockDtClient := &dtclient2.MockDynatraceClient{}
+	mockDtClient := &dtclient.MockDynatraceClient{}
 
 	t.Run(`create activegate ConfigMap`, func(t *testing.T) {
 		fakeClient := fake.NewClient(testKubeSystemNamespace)

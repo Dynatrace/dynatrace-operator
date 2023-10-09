@@ -25,7 +25,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/initgeneration"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
-	kubeobjects2 "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
@@ -71,7 +71,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, sc
 		istioClientBuilder:     istio.NewClient,
 		registryClientBuilder:  registry.NewClient,
 		config:                 config,
-		operatorNamespace:      os.Getenv(kubeobjects2.EnvPodNamespace),
+		operatorNamespace:      os.Getenv(kubeobjects.EnvPodNamespace),
 		clusterID:              clusterID,
 	}
 }
@@ -153,7 +153,7 @@ func (controller *Controller) reconcile(ctx context.Context, dynaKube *dynatrace
 		dynaKube.Status.SetPhase(controller.determineDynaKubePhase(dynaKube))
 	}
 
-	if isStatusDifferent, err := kubeobjects2.IsDifferent(oldStatus, dynaKube.Status); err != nil {
+	if isStatusDifferent, err := kubeobjects.IsDifferent(oldStatus, dynaKube.Status); err != nil {
 		log.Error(err, "failed to generate hash for the status section")
 	} else if isStatusDifferent {
 		log.Info("status changed, updating DynaKube")
@@ -415,7 +415,7 @@ func (controller *Controller) reconcileOneAgent(ctx context.Context, dynakube *d
 
 func (controller *Controller) removeOneAgentDaemonSet(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
 	oneAgentDaemonSet := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dynakube.OneAgentDaemonsetName(), Namespace: dynakube.Namespace}}
-	return kubeobjects2.Delete(ctx, controller.client, &oneAgentDaemonSet)
+	return kubeobjects.Delete(ctx, controller.client, &oneAgentDaemonSet)
 }
 
 func (controller *Controller) reconcileActiveGate(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, dtc dynatrace.Client) error {

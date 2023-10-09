@@ -1,17 +1,17 @@
 package apimonitoring
 
 import (
-	dtclient2 "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
 )
 
 type Reconciler struct {
-	dtc            dtclient2.Client
+	dtc            dtclient.Client
 	clusterLabel   string
 	kubeSystemUUID string
 }
 
-func NewReconciler(dtc dtclient2.Client, clusterLabel, kubeSystemUUID string) *Reconciler {
+func NewReconciler(dtc dtclient.Client, clusterLabel, kubeSystemUUID string) *Reconciler {
 	return &Reconciler{
 		dtc,
 		clusterLabel,
@@ -67,12 +67,12 @@ func (r *Reconciler) createObjectIdIfNotExists() (string, error) {
 }
 
 // determineNewestMonitoredEntity returns the UUID of the newest entities; or empty string if the slice of entities is empty
-func determineNewestMonitoredEntity(entities []dtclient2.MonitoredEntity) string {
+func determineNewestMonitoredEntity(entities []dtclient.MonitoredEntity) string {
 	if len(entities) == 0 {
 		return ""
 	}
 
-	var newestMe dtclient2.MonitoredEntity
+	var newestMe dtclient.MonitoredEntity
 	for _, entity := range entities {
 		if entity.LastSeenTms > newestMe.LastSeenTms {
 			newestMe = entity

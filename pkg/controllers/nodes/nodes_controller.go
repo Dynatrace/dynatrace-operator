@@ -6,10 +6,10 @@ import (
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	dtclient2 "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
-	kubeobjects2 "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -71,7 +71,7 @@ func NewController(mgr manager.Manager) *Controller {
 		scheme:                 mgr.GetScheme(),
 		dynatraceClientBuilder: dynatraceclient.NewBuilder(mgr.GetAPIReader()),
 		runLocal:               kubesystem.IsRunLocally(),
-		podNamespace:           os.Getenv(kubeobjects2.EnvPodNamespace),
+		podNamespace:           os.Getenv(kubeobjects.EnvPodNamespace),
 	}
 }
 
@@ -195,7 +195,7 @@ func (controller *Controller) getCache(ctx context.Context) (*Cache, error) {
 		}
 		// If running locally, don't set the controller.
 		if !controller.runLocal {
-			deploy, err := kubeobjects2.GetDeployment(controller.client, os.Getenv(kubeobjects2.EnvPodName), controller.podNamespace)
+			deploy, err := kubeobjects.GetDeployment(controller.client, os.Getenv(kubeobjects.EnvPodName), controller.podNamespace)
 			if err != nil {
 				return nil, err
 			}
@@ -293,7 +293,7 @@ func (controller *Controller) sendMarkedForTermination(dynakubeInstance *dynatra
 
 	entityID, err := dynatraceClient.GetEntityIDForIP(cachedNode.IPAddress)
 	if err != nil {
-		if errors.As(err, &dtclient2.HostNotFoundErr{}) {
+		if errors.As(err, &dtclient.HostNotFoundErr{}) {
 			log.Info("skipping to send mark for termination event", "dynakube", dynakubeInstance.Name, "nodeIP", cachedNode.IPAddress, "reason", err.Error())
 			return nil
 		}
@@ -304,13 +304,13 @@ func (controller *Controller) sendMarkedForTermination(dynakubeInstance *dynatra
 	}
 
 	ts := uint64(cachedNode.LastSeen.Add(-10*time.Minute).UnixNano()) / uint64(time.Millisecond)
-	return dynatraceClient.SendEvent(&dtclient2.EventData{
-		EventType:     dtclient2.MarkedForTerminationEvent,
+	return dynatraceClient.SendEvent(&dtclient.EventData{
+		EventType:     dtclient.MarkedForTerminationEvent,
 		Source:        "Dynatrace Operator",
 		Description:   "Kubernetes node cordoned. Node might be drained or terminated.",
 		StartInMillis: ts,
 		EndInMillis:   ts,
-		AttachRules: dtclient2.EventDataAttachRules{
+		AttachRules: dtclient.EventDataAttachRules{
 			EntityIDs: []string{entityID},
 		},
 	})
