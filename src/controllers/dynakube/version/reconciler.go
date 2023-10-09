@@ -19,33 +19,33 @@ const (
 )
 
 type Reconciler struct {
-	dynakube     *dynatracev1beta1.DynaKube
-	dtClient     dtclient.Client
-	versionFunc  ImageVersionFunc
-	timeProvider *timeprovider.Provider
+	dynakube       *dynatracev1beta1.DynaKube
+	dtClient       dtclient.Client
+	registryClient registry.ImageGetter
+	timeProvider   *timeprovider.Provider
 
 	fs        afero.Afero
 	apiReader client.Reader
 }
 
-func NewReconciler(dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader, dtClient dtclient.Client, fs afero.Afero, digestProvider ImageVersionFunc, timeProvider *timeprovider.Provider) *Reconciler { //nolint:revive
+func NewReconciler(dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader, dtClient dtclient.Client, registryClient registry.ImageGetter, fs afero.Afero, timeProvider *timeprovider.Provider) *Reconciler { //nolint:revive
 	return &Reconciler{
-		dynakube:     dynakube,
-		apiReader:    apiReader,
-		fs:           fs,
-		versionFunc:  digestProvider,
-		timeProvider: timeProvider,
-		dtClient:     dtClient,
+		dynakube:       dynakube,
+		apiReader:      apiReader,
+		fs:             fs,
+		timeProvider:   timeProvider,
+		dtClient:       dtClient,
+		registryClient: registryClient,
 	}
 }
 
 // Reconcile updates the version status used by the dynakube
 func (reconciler *Reconciler) Reconcile(ctx context.Context) error {
 	updaters := []versionStatusUpdater{
-		newActiveGateUpdater(reconciler.dynakube, reconciler.apiReader, reconciler.dtClient, reconciler.versionFunc),
-		newOneAgentUpdater(reconciler.dynakube, reconciler.apiReader, reconciler.dtClient, reconciler.versionFunc),
+		newActiveGateUpdater(reconciler.dynakube, reconciler.apiReader, reconciler.dtClient, reconciler.registryClient),
+		newOneAgentUpdater(reconciler.dynakube, reconciler.apiReader, reconciler.dtClient, reconciler.registryClient),
 		newCodeModulesUpdater(reconciler.dynakube, reconciler.dtClient),
-		newSyntheticUpdater(reconciler.dynakube, reconciler.apiReader, reconciler.dtClient, reconciler.versionFunc),
+		newSyntheticUpdater(reconciler.dynakube, reconciler.apiReader, reconciler.dtClient, reconciler.registryClient),
 	}
 
 	neededUpdaters := reconciler.needsReconcile(updaters)
@@ -64,7 +64,7 @@ func (reconciler *Reconciler) updateVersionStatuses(ctx context.Context, updater
 		}
 	}
 
-	healthConfig, err := GetOneAgentHealthConfig(ctx, reconciler.apiReader, registry.NewClient(), reconciler.dynakube, reconciler.dynakube.OneAgentImage())
+	healthConfig, err := GetOneAgentHealthConfig(ctx, reconciler.apiReader, reconciler.registryClient, reconciler.dynakube, reconciler.dynakube.OneAgentImage())
 	if err != nil {
 		log.Error(err, "could not set OneAgent healthcheck")
 	} else {

@@ -11,11 +11,11 @@ var (
 )
 
 const (
-	OperatorComponent = "operator"
-	OneAgentComponent = "oneagent"
-
-	IstioGVRName    = "networking.istio.io"
-	IstioGVRVersion = "v1alpha3"
+	OperatorComponent   = "operator"
+	OneAgentComponent   = "oneagent"
+	ActiveGateComponent = "activegate"
+	IstioGVRName        = "networking.istio.io"
+	IstioGVRVersion     = "v1alpha3"
 )
 
 var (

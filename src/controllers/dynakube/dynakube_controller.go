@@ -2,6 +2,7 @@ package dynakube
 
 import (
 	"context"
+	"net/http"
 	"os"
 	"time"
 
@@ -25,6 +26,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/mapper"
+	"github.com/Dynatrace/dynatrace-operator/src/registry"
 	"github.com/Dynatrace/dynatrace-operator/src/timeprovider"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
@@ -67,10 +69,10 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, sc
 		fs:                     afero.Afero{Fs: afero.NewOsFs()},
 		dynatraceClientBuilder: dynatraceclient.NewBuilder(apiReader),
 		istioClientBuilder:     istio.NewClient,
+		registryClientBuilder:  registry.NewClient,
 		config:                 config,
 		operatorNamespace:      os.Getenv(kubeobjects.EnvPodNamespace),
 		clusterID:              clusterID,
-		versionProvider:        version.GetImageVersion,
 	}
 }
 
@@ -94,10 +96,11 @@ type Controller struct {
 	fs                     afero.Afero
 	dynatraceClientBuilder dynatraceclient.Builder
 	istioClientBuilder     istio.ClientBuilder
-	config                 *rest.Config
-	operatorNamespace      string
-	clusterID              string
-	versionProvider        version.ImageVersionFunc
+	registryClientBuilder  registry.ClientBuilder
+
+	config            *rest.Config
+	operatorNamespace string
+	clusterID         string
 
 	requeueAfter time.Duration
 }
@@ -211,6 +214,28 @@ func (controller *Controller) setupIstio(ctx context.Context, dynakube *dynatrac
 	return istioReconciler, nil
 }
 
+func (controller *Controller) createDynatraceRegistryClient(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) (registry.ImageGetter, error) {
+	pullSecret := dynakube.PullSecretWithoutData()
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+
+	transport, err := registry.PrepareTransportForDynaKube(ctx, controller.apiReader, transport, dynakube)
+	if err != nil {
+		return nil, err
+	}
+
+	registryClient, err := controller.registryClientBuilder(
+		registry.WithContext(ctx),
+		registry.WithApiReader(controller.apiReader),
+		registry.WithKeyChainSecret(&pullSecret),
+		registry.WithTransport(transport),
+	)
+
+	if err != nil {
+		return nil, err
+	}
+	return registryClient, nil
+}
+
 func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
 	istioReconciler, err := controller.setupIstio(ctx, dynakube)
 	if err != nil {
@@ -230,7 +255,6 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		SetDynakube(*dynakube).
 		SetTokens(tokens)
 	dynatraceClient, err := dynatraceClientBuilder.BuildWithTokenVerification(&dynakube.Status)
-
 	if err != nil {
 		controller.setConditionTokenError(dynakube, err)
 		return err
@@ -251,7 +275,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 	// TODO: Improve logic so we do this only in case of codemodules
 	// Kept it like this for now to keep compatibility
 	if istioReconciler != nil {
-		err := istioReconciler.ReconcileOneAgentCommunicationHosts(ctx, dynakube)
+		err := istioReconciler.ReconcileCommunicationHosts(ctx, dynakube)
 		if err != nil {
 			return err
 		}
@@ -270,12 +294,18 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		return err
 	}
 
+	// NB: we create registryClient after we finish reconciling of dt pull secret
+	registryClient, err := controller.createDynatraceRegistryClient(ctx, dynakube)
+	if err != nil {
+		return err
+	}
+
 	versionReconciler := version.NewReconciler(
 		dynakube,
 		controller.apiReader,
 		dynatraceClient,
+		registryClient,
 		controller.fs,
-		controller.versionProvider,
 		timeprovider.New().Freeze(),
 	)
 	err = versionReconciler.Reconcile(ctx)

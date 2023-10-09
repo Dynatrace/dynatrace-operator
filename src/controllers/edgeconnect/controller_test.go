@@ -131,12 +131,16 @@ func createFakeClientAndReconciler(instance *edgeconnectv1alpha1.EdgeConnect) *C
 	fakeImageVersion := registry.ImageVersion{Digest: fakeDigest}
 	mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fakeImageVersion, nil)
 
+	mockRegistryClientBuilder := func(options ...func(*registry.Client)) (registry.ImageGetter, error) {
+		return mockImageGetter, nil
+	}
+
 	controller := &Controller{
-		client:         fakeClient,
-		apiReader:      fakeClient,
-		scheme:         scheme.Scheme,
-		timeProvider:   timeprovider.New(),
-		registryClient: mockImageGetter,
+		client:                fakeClient,
+		apiReader:             fakeClient,
+		scheme:                scheme.Scheme,
+		timeProvider:          timeprovider.New(),
+		registryClientBuilder: mockRegistryClientBuilder,
 	}
 	return controller
 }

@@ -106,6 +106,13 @@ csidriver:
         level: s0
       seccompProfile:
         type: RuntimeDefault
+    resources:
+      requests:
+        cpu: 50m
+        memory: 100Mi
+      limits:
+        cpu: 50m
+        memory: 100Mi
   server:
     securityContext:
       runAsUser: 0

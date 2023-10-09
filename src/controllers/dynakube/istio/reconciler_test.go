@@ -2,6 +2,7 @@ package istio
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1/dynakube"
@@ -224,7 +225,7 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		istioClient := newTestingClient(nil, dynakube.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 
-		err := reconciler.ReconcileOneAgentCommunicationHosts(ctx, nil)
+		err := reconciler.ReconcileCommunicationHosts(ctx, nil)
 		require.Error(t, err)
 	})
 	t.Run("success", func(t *testing.T) {
@@ -232,18 +233,27 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		istioClient := newTestingClient(fakeClient, dynakube.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 
-		err := reconciler.ReconcileOneAgentCommunicationHosts(ctx, dynakube)
+		err := reconciler.ReconcileCommunicationHosts(ctx, dynakube)
 		require.NoError(t, err)
 		expectedFQDNName := BuildNameForFQDNServiceEntry(dynakube.GetName(), OneAgentComponent)
 		serviceEntry, err := fakeClient.NetworkingV1alpha3().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.NotNil(t, serviceEntry)
+		assert.Contains(t, fmt.Sprintf("%v", serviceEntry), "something.test.io")
+
+		expectedFQDNName = BuildNameForFQDNServiceEntry(dynakube.GetName(), ActiveGateComponent)
+		serviceEntry, err = fakeClient.NetworkingV1alpha3().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
+		require.NoError(t, err)
+		assert.NotNil(t, serviceEntry)
+		assert.Contains(t, fmt.Sprintf("%v", serviceEntry), "abcd123.some.activegate.endpointurl.com")
+
 		virtualService, err := fakeClient.NetworkingV1alpha3().VirtualServices(dynakube.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.NotNil(t, virtualService)
 
 		expectedIPName := BuildNameForIPServiceEntry(dynakube.GetName(), OneAgentComponent)
 		serviceEntry, err = fakeClient.NetworkingV1alpha3().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedIPName, metav1.GetOptions{})
+
 		require.NoError(t, err)
 		assert.NotNil(t, serviceEntry)
 	})
@@ -254,7 +264,7 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		istioClient := newTestingClient(fakeClient, dynakube.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 
-		err := reconciler.ReconcileOneAgentCommunicationHosts(ctx, dynakube)
+		err := reconciler.ReconcileCommunicationHosts(ctx, dynakube)
 		require.Error(t, err)
 	})
 }
@@ -278,6 +288,7 @@ func createTestFQDNCommunicationHost() dtclient.CommunicationHost {
 func createTestDynaKube() *dynatracev1beta1.DynaKube {
 	fqdnHost := createTestFQDNCommunicationHost()
 	ipHost := createTestIPCommunicationHost()
+	endpoints := "https://abcd123.some.activegate.endpointurl.com:443"
 	return &dynatracev1beta1.DynaKube{
 		TypeMeta: metav1.TypeMeta{
 			Kind: "DynaKube",
@@ -303,6 +314,15 @@ func createTestDynaKube() *dynatracev1beta1.DynaKube {
 							Host:     ipHost.Host,
 							Port:     ipHost.Port,
 						},
+					},
+				},
+			},
+			ActiveGate: dynatracev1beta1.ActiveGateStatus{
+				ConnectionInfoStatus: dynatracev1beta1.ActiveGateConnectionInfoStatus{
+					ConnectionInfoStatus: dynatracev1beta1.ConnectionInfoStatus{
+						TenantUUID:  "test-tenant",
+						Endpoints:   endpoints,
+						LastRequest: metav1.Time{},
 					},
 				},
 			},

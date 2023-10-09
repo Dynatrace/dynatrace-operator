@@ -41,19 +41,32 @@ func (r *Reconciler) ReconcileAPIUrl(ctx context.Context, dynakube *dynatracev1b
 	return nil
 }
 
-func (r *Reconciler) ReconcileOneAgentCommunicationHosts(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
+func (r *Reconciler) ReconcileCommunicationHosts(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
 	log.Info("reconciling istio components for oneagent communication hosts")
 	if dynakube == nil {
 		return errors.New("can't reconcile oneagent communication hosts of nil dynakube")
 	}
-	communicationHosts := connectioninfo.GetOneAgentCommunicationHosts(dynakube)
 
-	err := r.reconcileCommunicationHosts(ctx, dynakube, communicationHosts, OneAgentComponent)
+	oneAgentCommunicationHosts := connectioninfo.GetOneAgentCommunicationHosts(dynakube)
+	err := r.reconcileCommunicationHostsForComponent(ctx, dynakube, oneAgentCommunicationHosts, OneAgentComponent)
+	if err != nil {
+		return err
+	}
+
+	activeGateEndpoints := connectioninfo.GetActiveGateEndpointsAsCommunicationHosts(dynakube)
+	err = r.reconcileCommunicationHostsForComponent(ctx, dynakube, activeGateEndpoints, ActiveGateComponent)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *Reconciler) reconcileCommunicationHostsForComponent(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, comHosts []dtclient.CommunicationHost, componentName string) error {
+	err := r.reconcileCommunicationHosts(ctx, dynakube, comHosts, componentName)
 	if err != nil {
 		return errors.WithMessage(err, "error reconciling config for Dynatrace communication hosts")
 	}
-	log.Info("reconciled istio objects for oneagent communication hosts")
-
+	log.Info("reconciled istio objects for communication hosts", "component", componentName)
 	return nil
 }
 

@@ -18,13 +18,8 @@ func TestCheckProxySettings(t *testing.T) {
 		os.Setenv("HTTP_PROXY", "")
 		os.Setenv("HTTPS_PROXY", "")
 
-		troubleshootCtx := troubleshootContext{
-			context:       context.TODO(),
-			namespaceName: testNamespace,
-		}
-
 		logOutput := runWithTestLogger(func(logger logr.Logger) {
-			checkProxySettingsWithLog(&troubleshootCtx, logger)
+			checkProxySettings(context.Background(), logger, nil, &dynatracev1beta1.DynaKube{})
 		})
 
 		require.NotContains(t, logOutput, "Unexpected error")
@@ -37,13 +32,8 @@ func TestCheckProxySettings(t *testing.T) {
 		os.Setenv("HTTP_PROXY", "foobar:1234")
 		os.Setenv("HTTPS_PROXY", "")
 
-		troubleshootCtx := troubleshootContext{
-			context:       context.TODO(),
-			namespaceName: testNamespace,
-		}
-
 		logOutput := runWithTestLogger(func(logger logr.Logger) {
-			checkProxySettingsWithLog(&troubleshootCtx, logger)
+			checkProxySettings(context.Background(), logger, nil, &dynatracev1beta1.DynaKube{})
 		})
 
 		require.NotContains(t, logOutput, "Unexpected error")
@@ -56,13 +46,8 @@ func TestCheckProxySettings(t *testing.T) {
 		os.Setenv("HTTP_PROXY", "")
 		os.Setenv("HTTPS_PROXY", "foobar:1234")
 
-		troubleshootCtx := troubleshootContext{
-			context:       context.TODO(),
-			namespaceName: testNamespace,
-		}
-
 		logOutput := runWithTestLogger(func(logger logr.Logger) {
-			checkProxySettingsWithLog(&troubleshootCtx, logger)
+			checkProxySettings(context.Background(), logger, nil, &dynatracev1beta1.DynaKube{})
 		})
 
 		require.NotContains(t, logOutput, "Unexpected error")
@@ -75,17 +60,12 @@ func TestCheckProxySettings(t *testing.T) {
 		os.Setenv("HTTP_PROXY", "")
 		os.Setenv("HTTPS_PROXY", "")
 
-		troubleshootCtx := troubleshootContext{
-			context:       context.TODO(),
-			namespaceName: testNamespace,
-		}
-
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		dynakube := *testNewDynakubeBuilder(testNamespace, testDynakube).
 			withProxy("http://foobar:1234").
 			build()
 
 		logOutput := runWithTestLogger(func(logger logr.Logger) {
-			checkProxySettingsWithLog(&troubleshootCtx, logger)
+			checkProxySettings(context.Background(), logger, nil, &dynakube)
 		})
 
 		require.NotContains(t, logOutput, "Unexpected error")
@@ -110,18 +90,12 @@ func TestCheckProxySettings(t *testing.T) {
 			).
 			Build()
 
-		troubleshootCtx := troubleshootContext{
-			context:       context.TODO(),
-			apiReader:     clt,
-			namespaceName: testNamespace,
-		}
-
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		dynakube := *testNewDynakubeBuilder(testNamespace, testDynakube).
 			withProxySecret(testSecretName).
 			build()
 
 		logOutput := runWithTestLogger(func(logger logr.Logger) {
-			checkProxySettingsWithLog(&troubleshootCtx, logger)
+			checkProxySettings(context.Background(), logger, clt, &dynakube)
 		})
 
 		require.NotContains(t, logOutput, "Unexpected error")
@@ -134,17 +108,12 @@ func TestCheckProxySettings(t *testing.T) {
 		os.Setenv("HTTP_PROXY", "foobar:1234")
 		os.Setenv("HTTPS_PROXY", "foobar:1234")
 
-		troubleshootCtx := troubleshootContext{
-			context:       context.TODO(),
-			namespaceName: testNamespace,
-		}
-
-		troubleshootCtx.dynakube = *testNewDynakubeBuilder(testNamespace, testDynakube).
+		dynakube := *testNewDynakubeBuilder(testNamespace, testDynakube).
 			withProxy("http://foobar:1234").
 			build()
 
 		logOutput := runWithTestLogger(func(logger logr.Logger) {
-			checkProxySettingsWithLog(&troubleshootCtx, logger)
+			checkProxySettings(context.Background(), logger, nil, &dynakube)
 		})
 
 		require.NotContains(t, logOutput, "Unexpected error")
