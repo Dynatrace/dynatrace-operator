@@ -112,9 +112,6 @@ func (c *Client) GetImageVersion(ctx context.Context, imageName string) (ImageVe
 	}
 
 	// TODO: does not work for indexes which contain schema v1 manifests
-	index, err := descriptor.ImageIndex()
-	index.Digest()
-
 	img, err := descriptor.Image()
 	if err != nil {
 		return ImageVersion{}, fmt.Errorf("descriptor.Image(): %w", err)
