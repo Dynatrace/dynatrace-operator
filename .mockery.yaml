@@ -1,0 +1,15 @@
+quiet: False
+disable-version-string: True
+with-expecter: True
+mockname: "{{.InterfaceName}}"
+filename: "{{.MockName}}.go"
+outpkg: mocks
+dir: "{{.InterfaceDir}}/mocks"
+packages:
+  github.com/Dynatrace/dynatrace-operator/src/builder:
+    config:
+      recursive: true
+     # all: true or use all if mocks for all interfaces in a package/dir should be created
+    interfaces:
+      Builder:
+      Modifier:
