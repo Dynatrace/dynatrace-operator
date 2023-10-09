@@ -1,10 +1,10 @@
 package istio
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"reflect"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	istio "istio.io/api/networking/v1alpha3"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"

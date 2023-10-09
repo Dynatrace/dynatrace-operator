@@ -1,11 +1,11 @@
 package server
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/cmd/config"
-	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
 	"io/fs"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/cmd/config"
+	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"

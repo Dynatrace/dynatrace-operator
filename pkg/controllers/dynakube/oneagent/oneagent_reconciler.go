@@ -3,8 +3,6 @@ package oneagent
 import (
 	"context"
 	"fmt"
-	kubeobjects2 "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"os"
 	"reflect"
 	"strconv"
@@ -14,6 +12,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent/daemonset"
+	kubeobjects2 "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

@@ -2,8 +2,9 @@ package kubeobjects
 
 import (
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"testing"
+
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 )
 
 func TestKubeQuery(t *testing.T) {

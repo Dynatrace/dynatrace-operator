@@ -2,7 +2,6 @@ package statefulset
 
 import (
 	"fmt"
-	kubeobjects2 "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	"reflect"
 	"strconv"
 	"testing"
@@ -14,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder/modifiers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
+	kubeobjects2 "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"

@@ -2,9 +2,9 @@ package dynatraceclient
 
 import (
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"

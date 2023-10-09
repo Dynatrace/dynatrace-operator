@@ -1,11 +1,11 @@
 package token
 
 import (
-	dtclient2 "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"net/http"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dtclient2 "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"

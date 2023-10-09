@@ -2,9 +2,9 @@ package proxy
 
 import (
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/stretchr/testify/assert"

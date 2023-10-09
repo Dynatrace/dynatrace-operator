@@ -4,13 +4,13 @@ package istio
 
 import (
 	"context"
-	dtclient2 "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"os"
 	"path"
 	"strings"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dtclient2 "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/platform"

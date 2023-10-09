@@ -3,10 +3,10 @@ package image
 import (
 	"context"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/common"
 	"path"
 	"path/filepath"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/common"
 	"github.com/google/go-containerregistry/pkg/crane"
 	"github.com/google/go-containerregistry/pkg/name"
 	containerv1 "github.com/google/go-containerregistry/pkg/v1"

@@ -2,9 +2,9 @@ package test
 
 import (
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"

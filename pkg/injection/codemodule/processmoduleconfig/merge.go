@@ -3,12 +3,12 @@ package processmoduleconfig
 import (
 	"bufio"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"io/fs"
 	"os"
 	"regexp"
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/spf13/afero"
 )
 

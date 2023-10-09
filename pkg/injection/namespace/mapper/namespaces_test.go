@@ -2,9 +2,9 @@ package mapper
 
 import (
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/stretchr/testify/assert"

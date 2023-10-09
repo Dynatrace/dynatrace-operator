@@ -2,9 +2,6 @@ package edgeconnect
 
 import (
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
-	kubeobjects2 "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"net/http"
 	"time"
 
@@ -12,6 +9,9 @@ import (
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/deployment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/version"
+	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
+	kubeobjects2 "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"

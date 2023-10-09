@@ -1,9 +1,9 @@
 package builder
 
 import (
-	mocks2 "github.com/Dynatrace/dynatrace-operator/pkg/util/builder/mocks"
 	"testing"
 
+	mocks2 "github.com/Dynatrace/dynatrace-operator/pkg/util/builder/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )

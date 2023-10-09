@@ -1,12 +1,12 @@
 package processmoduleconfig
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

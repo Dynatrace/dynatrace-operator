@@ -2,6 +2,7 @@ package dynakube
 
 import (
 	"context"
+
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 )

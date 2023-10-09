@@ -15,6 +15,8 @@ limitations under the License.
 package main
 
 import (
+	"os"
+
 	cmdConfig "github.com/Dynatrace/dynatrace-operator/cmd/config"
 	csiInit "github.com/Dynatrace/dynatrace-operator/cmd/csi/init"
 	csiProvisioner "github.com/Dynatrace/dynatrace-operator/cmd/csi/provisioner"
@@ -27,8 +29,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/cmd/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
-	"os"
-
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	ctrl "sigs.k8s.io/controller-runtime"

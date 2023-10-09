@@ -3,9 +3,9 @@
 package upgrade
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/e2e-framework/pkg/env"

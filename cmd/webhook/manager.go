@@ -2,8 +2,8 @@ package webhook
 
 import (
 	"crypto/tls"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"

@@ -1,9 +1,9 @@
 package dynatraceapi
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"net/http"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
 )
 

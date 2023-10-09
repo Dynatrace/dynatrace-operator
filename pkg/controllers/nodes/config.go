@@ -1,8 +1,9 @@
 package nodes
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 	"time"
+
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 )
 
 const (

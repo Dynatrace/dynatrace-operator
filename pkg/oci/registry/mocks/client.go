@@ -4,8 +4,8 @@ package mocks
 
 import (
 	context "context"
-	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	mock "github.com/stretchr/testify/mock"
 )

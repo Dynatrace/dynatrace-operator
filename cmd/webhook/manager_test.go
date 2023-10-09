@@ -1,10 +1,10 @@
 package webhook
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/cmd/manager"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/cmd/manager"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/client-go/rest"

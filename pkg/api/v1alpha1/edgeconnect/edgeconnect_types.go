@@ -12,7 +12,7 @@ import (
 )
 
 // EdgeConnectSpec defines the desired state of EdgeConnect
-type EdgeConnectSpec struct {
+type EdgeConnectSpec struct { //nolint:revive
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
 
 	// Location of the Dynatrace API to connect to, including your specific environment UUID
@@ -85,7 +85,7 @@ type ImageRefSpec struct {
 }
 
 // EdgeConnectStatus defines the observed state of EdgeConnect
-type EdgeConnectStatus struct {
+type EdgeConnectStatus struct { //nolint:revive
 	// Defines the current state (Running, Updating, Error, ...)
 	DeploymentPhase status.DeploymentPhase `json:"phase,omitempty"`
 
@@ -130,7 +130,7 @@ type EdgeConnect struct {
 // EdgeConnectList contains a list of EdgeConnect
 // +k8s:openapi-gen=true
 // +kubebuilder:object:root=true
-type EdgeConnectList struct {
+type EdgeConnectList struct { //nolint:revive
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []EdgeConnect `json:"items"`

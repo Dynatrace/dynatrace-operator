@@ -5,8 +5,6 @@ package codemodules
 import (
 	"bytes"
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"io"
 	"os"
 	"path"
@@ -17,6 +15,8 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod_mutator/oneagent_mutation"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/csi"

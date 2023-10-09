@@ -2,10 +2,10 @@ package certificates
 
 import (
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/eventfilter"
 	"reflect"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/eventfilter"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/pkg/errors"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"

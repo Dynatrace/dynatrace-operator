@@ -2,6 +2,7 @@ package istio
 
 import (
 	"fmt"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 )
 

@@ -3,12 +3,12 @@ package support_archive
 import (
 	"bytes"
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/cmd/config"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
-	kubeobjects2 "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	"io"
 	"os"
 
+	"github.com/Dynatrace/dynatrace-operator/cmd/config"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
+	kubeobjects2 "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"

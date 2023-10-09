@@ -1,9 +1,9 @@
 package apimonitoring
 
 import (
-	dtclient2 "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"testing"
 
+	dtclient2 "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

@@ -1,9 +1,9 @@
 package istio
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"net"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	istio "istio.io/api/networking/v1alpha3"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

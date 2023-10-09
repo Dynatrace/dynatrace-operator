@@ -3,9 +3,9 @@
 package codemodules
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/istio"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/proxy"

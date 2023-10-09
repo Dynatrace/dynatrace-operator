@@ -197,7 +197,7 @@ issues:
       text: always receives
     - linters:
         - revive
-      path: pkg/dtclient # it's awaiting refactoring
+      path: pkg/clients/dynatrace # it's awaiting refactoring
 
 run:
   skip-dirs:

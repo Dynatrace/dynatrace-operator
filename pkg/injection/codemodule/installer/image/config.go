@@ -1,10 +1,10 @@
 package image
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 	"path/filepath"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 )
 
 var (

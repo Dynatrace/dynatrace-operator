@@ -2,15 +2,15 @@ package url
 
 import (
 	"fmt"
-	dtclient2 "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/zip"
 	"io"
 	"os"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
+	dtclient2 "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/zip"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

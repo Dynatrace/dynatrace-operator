@@ -2,10 +2,10 @@ package kubeobjects
 
 import (
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/builder"
 	"reflect"
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/builder"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"

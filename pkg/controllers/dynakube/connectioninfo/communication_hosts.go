@@ -1,12 +1,12 @@
 package connectioninfo
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"net/url"
 	"strconv"
 	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
 )
 

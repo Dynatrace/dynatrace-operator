@@ -2,10 +2,10 @@ package troubleshoot
 
 import (
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"os"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"

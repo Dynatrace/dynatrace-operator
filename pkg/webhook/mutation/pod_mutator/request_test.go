@@ -3,10 +3,10 @@ package pod_mutator
 import (
 	"context"
 	"encoding/json"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

@@ -3,12 +3,12 @@ package zip
 import (
 	"archive/tar"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/common"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/common"
 	"github.com/klauspost/compress/gzip"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"

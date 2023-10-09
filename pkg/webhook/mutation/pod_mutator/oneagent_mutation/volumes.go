@@ -2,7 +2,6 @@ package oneagent_mutation
 
 import (
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"path/filepath"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
@@ -10,6 +9,7 @@ import (
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes"
 	appvolumes "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver/volumes/app"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	corev1 "k8s.io/api/core/v1"
 )
 

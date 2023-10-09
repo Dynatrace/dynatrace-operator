@@ -1,9 +1,9 @@
 package csidriver
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 	"github.com/prometheus/client_golang/prometheus"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 )

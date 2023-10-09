@@ -1,10 +1,10 @@
 package provisioner
 
 import (
-	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"testing"
 
+	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

@@ -5,13 +5,13 @@ package manifests
 import (
 	"bytes"
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"io"
 	"net/http"
 	"os"
 	"strconv"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"

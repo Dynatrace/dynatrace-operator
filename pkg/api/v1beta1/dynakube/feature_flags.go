@@ -19,10 +19,11 @@ package dynakube
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 )
 
 const (

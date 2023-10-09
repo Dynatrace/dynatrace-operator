@@ -6,10 +6,10 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"io"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

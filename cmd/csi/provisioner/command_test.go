@@ -1,12 +1,12 @@
 package provisioner
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/cmd/config"
-	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/cmd/config"
+	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

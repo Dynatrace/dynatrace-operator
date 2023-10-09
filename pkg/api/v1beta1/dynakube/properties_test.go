@@ -18,11 +18,11 @@ package dynakube
 
 import (
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"testing"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"

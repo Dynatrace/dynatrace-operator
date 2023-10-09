@@ -1,12 +1,12 @@
 package operator
 
 import (
-	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
-	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"os"
 	"strconv"
 	"time"
 
+	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/certificates"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect"

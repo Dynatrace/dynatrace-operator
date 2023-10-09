@@ -2,13 +2,13 @@ package zip
 
 import (
 	"encoding/base64"
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/common"
 	"io"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/common"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

@@ -1,11 +1,11 @@
 package processmoduleconfig
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"io"
 	"os"
 	"path/filepath"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 )
