@@ -83,8 +83,12 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, err
 	}
 
-	node, err := controller.reconcileNode(ctx, nodeName)
-	if err != nil {
+	var node corev1.Node
+	if err := controller.apiReader.Get(ctx, client.ObjectKey{Name: nodeName}, &node); err != nil {
+		if k8serrors.IsNotFound(err) {
+			// if there is no node it means it get deleted or cordon or evicted
+			return reconcile.Result{}, controller.reconcileNodeDeletion(ctx, nodeName)
+		}
 		return reconcile.Result{}, err
 	}
 
@@ -128,22 +132,6 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	}
 
 	return reconcile.Result{}, controller.updateCache(ctx, nodeCache)
-}
-
-func (controller *Controller) reconcileNode(ctx context.Context, nodeName string) (corev1.Node, error) {
-	var node corev1.Node
-	if err := controller.apiReader.Get(ctx, client.ObjectKey{Name: nodeName}, &node); err != nil {
-		if k8serrors.IsNotFound(err) {
-			// if there is no node it means it get deleted or cordon or evicted
-			err := controller.reconcileNodeDeletion(ctx, nodeName)
-			if err != nil {
-				log.Error(err, "error while deleting node", "node", nodeName)
-			}
-			return node, nil
-		}
-		return node, err
-	}
-	return node, nil
 }
 
 func (controller *Controller) reconcileNodeDeletion(ctx context.Context, nodeName string) error {
