@@ -98,46 +98,46 @@ Where the `make` targets are defined. We don't have a single makefile with all t
 
 E2E testing code. Unit tests are NOT found here, they are in the same module that they are testing, as that is the Golang convention.
 
-### `src/api`
-
-Contains the `CustomResourceDefinitions`(CRDs) as Golang `structs` that the `Operator` reacts to. The `CustomResourceDefinition` yaml files are generated based on these `structs`.
-
-### `src/cmd`
+### `cmd`
 
 Where the entry points for every `Operator` subcommand is found. The `Operator` is not a single container, but we still use the same image for all our containers, to simplify the caching for Kubernetes and mirroring of the `Operator` image in private registries. So each component has its own subcommand.
 
-### `src/controllers`
+### `pkg/api`
+
+Contains the `CustomResourceDefinitions`(CRDs) as Golang `structs` that the `Operator` reacts to. The `CustomResourceDefinition` yaml files are generated based on these `structs`.
+
+### `pkg/controllers`
 
 A Controller is a component that listens/reacts to some Kubernetes Resource. The `Operator` has several of these.
 
-### `src/controllers/certificates`
+### `pkg/controllers/certificates`
 
 The `Operator` creates and maintains certificates that are meant to be used by the webhooks. Certificates are required for a webhook to work in kubernetes, and hard coding certificates into the release of the `Operator` is not an option, the same is true for requiring the user to setup `cert-manager` to create/manage certs for the webhooks.
 
-### `src/controllers/csi/driver`
+### `pkg/controllers/csi/driver`
 
 Main logic for the CSI-Driver's `server` container. Implements the CSI gRPC interface, and handles each mount request.
 
-### `src/controllers/csi/provisioner`
+### `pkg/controllers/csi/provisioner`
 
 Main logic for the CSI-Driver's `provisioner` container. Handles the setting up the environment(filesystem) on the node, so the `server` container can complete its task quickly without making any external requests.
 
-### `src/controllers/dynakube` and `src/controllers/edgeconnect`
+### `pkg/controllers/dynakube` and `src/controllers/edgeconnect`
 
 Main logic for the 2 `CustomResources`es the `Operator` currently has.
 
-### `src/controllers/node`
+### `pkg/controllers/node`
 
 The `Operator` keeps track of the nodes in the Kubernetes cluster, this is necessary to notice intentional node shutdowns so the `Operator` can notify the `Dynatrace Environment` about it. Otherwise the `Dynatrace Environment` would produce warnings when a node is shutdown even when it was intentional.
 
-### `src/webhook/mutation`
+### `pkg/webhook/mutation`
 
 Mutation webhooks meant for intercepting user Kubernetes Resources, so they can be updated in the instant the updates are required.
 
-### `src/webhook/validation`
+### `pkg/webhook/validation`
 
 Validation webhooks meant for intercepting our `CustomResources` managed by the users, is they can be checked for well-know misconfigurations and warn the user if any problems found.
 
-### `src/standalone`
+### `pkg/injection/startup`
 
 Main logic for the init-container injected by the `Operator`.
