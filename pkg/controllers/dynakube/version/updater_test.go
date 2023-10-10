@@ -64,6 +64,11 @@ func (m *mockUpdater) CheckForDowngrade(latestVersion string) (bool, error) {
 	return args.Bool(0), args.Error(1)
 }
 
+func (m *mockUpdater) ValidateStatus() error {
+	args := m.Called()
+	return args.Error(0)
+}
+
 func TestRun(t *testing.T) {
 	ctx := context.TODO()
 	testImage := dtclient.LatestImageInfo{
@@ -168,7 +173,7 @@ func TestRun(t *testing.T) {
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.PublicRegistryVersionSource, target.Source)
 		assertVersionStatusEquals(t, fakeRegistry, getTaggedReference(t, testImage.String()), *target)
-		assert.Empty(t, target.Version)
+		assert.NotEmpty(t, target.Version)
 	})
 
 	t.Run("public registry, no downgrade allowed", func(t *testing.T) {
@@ -510,6 +515,7 @@ func newBaseUpdater(target *status.VersionStatus, autoUpdate bool) *mockUpdater 
 	updater.On("Target").Return(target)
 	updater.On("IsEnabled").Return(true)
 	updater.On("IsAutoUpdateEnabled").Return(autoUpdate)
+	updater.On("ValidateStatus").Return(nil)
 	return &updater
 }
 

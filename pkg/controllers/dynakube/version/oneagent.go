@@ -7,6 +7,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
+	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -100,4 +101,20 @@ func (updater *oneAgentUpdater) CheckForDowngrade(latestVersion string) (bool, e
 		}
 	}
 	return isDowngrade(updater.Name(), previousVersion, latestVersion)
+}
+
+func (updater oneAgentUpdater) ValidateStatus() error {
+	imageVersion := updater.Target().Version
+	imageType := updater.Target().Type
+
+	if imageVersion == "" {
+		return errors.New("build version of OneAgent image not set")
+	}
+
+	if imageType == status.ImmutableImageType && (updater.dynakube.FeatureDisableReadOnlyOneAgent() || updater.dynakube.ClassicFullStackMode()) {
+		return errors.New("immutable OneAgent image in combination with classicFullStack mode or readOnly OneAgent filesystem is not possible")
+	}
+	log.Info("successfully validated OneAgent image")
+
+	return nil
 }

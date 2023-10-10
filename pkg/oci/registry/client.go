@@ -30,6 +30,7 @@ type ImageGetter interface {
 type ImageVersion struct {
 	Version string
 	Digest  digest.Digest
+	Type    string
 }
 
 type Client struct {
@@ -41,6 +42,8 @@ type Client struct {
 }
 
 const (
+	// TypeLabel is the name of the label that indicates if image is immutable or mutable.
+	TypeLabel = "com.dynatrace.type"
 	// VersionLabel is the name of the label used on ActiveGate-provided images.
 	VersionLabel    = "com.dynatrace.build-version"
 	DigestDelimiter = "@"
@@ -139,6 +142,7 @@ func (c *Client) GetImageVersion(ctx context.Context, imageName string) (ImageVe
 	return ImageVersion{
 		Digest:  digest.Digest(dig.String()),
 		Version: cf.Config.Labels[VersionLabel], // empty if unset
+		Type:    cf.Config.Labels[TypeLabel],    // empty if unset
 	}, nil
 }
 

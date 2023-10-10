@@ -586,6 +586,9 @@ spec:
                     description: Source of the image (tenant-registry, public-registry,
                       ...)
                     type: string
+                  type:
+                    description: Image type
+                    type: string
                   version:
                     description: Image version
                     type: string

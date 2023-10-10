@@ -7,6 +7,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
+	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -70,4 +71,12 @@ func (updater *activeGateUpdater) CheckForDowngrade(latestVersion string) (bool,
 func (updater *activeGateUpdater) UseTenantRegistry(ctx context.Context) error {
 	defaultImage := updater.dynakube.DefaultActiveGateImage()
 	return updateVersionStatusForTenantRegistry(ctx, updater.Target(), updater.registryClient, defaultImage)
+}
+
+func (updater activeGateUpdater) ValidateStatus() error {
+	imageVersion := updater.Target().Version
+	if imageVersion == "" {
+		return errors.New("build version of ActiveGate image is not set")
+	}
+	return nil
 }
