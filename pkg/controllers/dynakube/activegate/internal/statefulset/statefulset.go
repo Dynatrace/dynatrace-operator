@@ -126,7 +126,7 @@ func (statefulSetBuilder Builder) addTemplateSpec(sts *appsv1.StatefulSet) {
 func buildTolerations(capability capability.Capability) []corev1.Toleration {
 	tolerations := make([]corev1.Toleration, len(capability.Properties().Tolerations))
 	copy(tolerations, capability.Properties().Tolerations)
-	tolerations = append(tolerations, kubeobjects.TolerationForAmd()...)
+	tolerations = append(tolerations, kubeobjects.TolerationForSupportedArches()...)
 	return tolerations
 }
 
@@ -222,7 +222,7 @@ func nodeAffinity() *corev1.Affinity {
 			RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
 				NodeSelectorTerms: []corev1.NodeSelectorTerm{
 					{
-						MatchExpressions: kubeobjects.AffinityNodeRequirement(),
+						MatchExpressions: kubeobjects.AffinityNodeRequirementForSupportedArches(),
 					},
 				},
 			},
