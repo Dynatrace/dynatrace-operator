@@ -8,14 +8,14 @@ import (
 )
 
 func TestAffinityNodeRequirement(t *testing.T) {
-	assert.Equal(t, AffinityNodeRequirementForAllArches(), affinityNodeRequirementsForArches(amd64, arm64, ppc64le))
-	assert.Contains(t, AffinityNodeRequirementForAllArches(), linuxRequirement())
+	assert.Equal(t, AffinityNodeRequirementForSupportedArches(), affinityNodeRequirementsForArches(amd64, arm64, ppc64le))
+	assert.Contains(t, AffinityNodeRequirementForSupportedArches(), linuxRequirement())
 }
 
 func TestTolerationsForAllArches(t *testing.T) {
-	assert.Equal(t, TolerationForAllArches(), tolerationsForArches(amd64, arm64, ppc64le))
-	assert.Contains(t, TolerationForAllArches(), armToleration())
-	assert.Contains(t, TolerationForAllArches(), amdToleration())
+	assert.Equal(t, TolerationForSupportedArches(), tolerationsForArches(amd64, arm64, ppc64le))
+	assert.Contains(t, TolerationForSupportedArches(), armToleration())
+	assert.Contains(t, TolerationForSupportedArches(), amdToleration())
 }
 
 func armToleration() corev1.Toleration {

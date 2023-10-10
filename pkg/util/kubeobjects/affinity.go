@@ -14,11 +14,11 @@ const (
 	linux   = "linux"
 )
 
-func TolerationForAllArches() []corev1.Toleration {
+func TolerationForSupportedArches() []corev1.Toleration {
 	return tolerationsForArches(amd64, arm64, ppc64le)
 }
 
-func AffinityNodeRequirementForAllArches() []corev1.NodeSelectorRequirement {
+func AffinityNodeRequirementForSupportedArches() []corev1.NodeSelectorRequirement {
 	return affinityNodeRequirementsForArches(amd64, arm64, ppc64le)
 }
 
