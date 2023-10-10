@@ -121,9 +121,9 @@ func (c *Client) GetImageVersion(ctx context.Context, imageName string) (ImageVe
 	digestFn := img.Digest
 
 	// try to get image manifest to cover multi arch images
-	digestSrc, err := descriptor.ImageIndex()
+	imageIndex, err := descriptor.ImageIndex()
 	if err == nil {
-		digestFn = digestSrc.Digest
+		digestFn = imageIndex.Digest
 	}
 
 	dig, err := digestFn()
