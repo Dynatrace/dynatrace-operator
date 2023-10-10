@@ -80,9 +80,9 @@ with-expecter: True
 mockname: "{{.InterfaceName}}"
 filename: "{{.MockName}}.go"
 outpkg: mocks
-dir: "test/mocks{{.InterfaceDir}}"
+dir: "test/mocks{{.InterfaceDirRelative}}"
 packages:
-  github.com/Dynatrace/dynatrace-operator/src/builder:
+  github.com/Dynatrace/dynatrace-operator/pkg/util/builder:
     config:
       recursive: true
      # all: true // or use all if mocks for all interfaces in a package/dir should be created
@@ -99,7 +99,7 @@ mockery
 or
 
 ```shell
-make go/mock
+make go/gen_mock
 ```
 
 #### Migrating to Mockery
@@ -113,7 +113,7 @@ To move our existing codebase to mockery you have to look out for these pitfalls
    modifierMock := mocks.NewModifier[mocks.Data](t) // <- t required here
    //...
    ```
-2. Add call to `Maybe()` to return:
+2. Add call to `Maybe()` to return if it should be tested if the function is called at all:
     ```go
     modifierMock.On("Modify", mock.Anything).Return(nil).Maybe()
     modifierMock.On("Enabled").Return(false)
