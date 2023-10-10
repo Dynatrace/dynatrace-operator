@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
+	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/stretchr/testify/require"

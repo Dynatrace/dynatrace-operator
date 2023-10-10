@@ -5,7 +5,7 @@ package webhook
 import (
 	"context"
 
-	"github.com/Dynatrace/dynatrace-operator/src/webhook"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
 	appsv1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"

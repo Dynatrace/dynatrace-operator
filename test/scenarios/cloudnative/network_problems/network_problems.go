@@ -7,7 +7,7 @@ import (
 	"path"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/src/webhook"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/istio"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"

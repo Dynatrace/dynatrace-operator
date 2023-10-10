@@ -188,17 +188,17 @@ issues:
   exclude-rules:
     - linters:
         - gosec
-      path: src/webhook/validation/proxy_url_test.go
+      path: pkg/webhook/validation/proxy_url_test.go
     - linters:
         - gosec
-      path: src/ingestendpoint/secret_test.go
+      path: pkg/ingestendpoint/secret_test.go
     - linters:
         - unparam
       text: always receives
     - linters:
         - revive
-      path: src/dtclient # it's awaiting refactoring
+      path: pkg/clients/dynatrace # it's awaiting refactoring
 
 run:
   skip-dirs:
-    - src/api/v1alpha1 # legacy version, should not be changed
+    - pkg/api/v1alpha1/dynakube # legacy version, should not be changed

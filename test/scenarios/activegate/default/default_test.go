@@ -5,7 +5,7 @@ package _default
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/src/logger"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
 	"github.com/Dynatrace/dynatrace-operator/test/scenarios/activegate"
 	"sigs.k8s.io/controller-runtime/pkg/log"
