@@ -80,7 +80,7 @@ with-expecter: True
 mockname: "{{.InterfaceName}}"
 filename: "{{.MockName}}.go"
 outpkg: mocks
-dir: "{{.InterfaceDir}}/mocks"
+dir: "test/mocks{{.InterfaceDir}}"
 packages:
   github.com/Dynatrace/dynatrace-operator/src/builder:
     config:
