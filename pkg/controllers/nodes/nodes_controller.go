@@ -62,14 +62,6 @@ func NewController(mgr manager.Manager) *Controller {
 	}
 }
 
-// TODO:
-// kubectl drain to remove a node from service
-//
-// kubectl delete node
-//
-// kubectl cordon - is used to mark a node as unschedulable. This means that no new pods will be scheduled
-// on that node, but existing pods will continue to run until they are terminated or moved elsewhere
-
 func (controller *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	nodeName := request.NamespacedName.Name
 	dynakube, err := controller.determineDynakubeForNode(nodeName)
@@ -224,7 +216,7 @@ func (controller *Controller) updateCache(ctx context.Context, nodeCache *Cache)
 
 func (controller *Controller) handleOutdatedCache(ctx context.Context, nodeCache *Cache) error {
 	var nodeLst corev1.NodeList
-	if err := controller.client.List(context.TODO(), &nodeLst); err != nil {
+	if err := controller.client.List(ctx, &nodeLst); err != nil {
 		return err
 	}
 
@@ -232,11 +224,7 @@ func (controller *Controller) handleOutdatedCache(ctx context.Context, nodeCache
 		cachedNodeInCluster := false
 		for _, clusterNode := range nodeLst.Items {
 			if clusterNode.Name == cachedNodeName {
-				cachedNodeInfo, err := nodeCache.Get(cachedNodeName)
-				if err != nil {
-					log.Error(err, "failed to get node from cache", "node", cachedNodeName)
-					return err
-				}
+				cachedNodeInfo, _ := nodeCache.Get(cachedNodeName)
 				cachedNodeInCluster = true
 				// Check if node was seen less than an hour ago, otherwise do not remove from cache
 				controller.removeNodeFromCache(nodeCache, cachedNodeInfo, cachedNodeName)
