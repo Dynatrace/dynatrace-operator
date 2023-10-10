@@ -83,35 +83,28 @@ func TestGetBaseObjectMeta(t *testing.T) {
 		require.NotEmpty(t, sts.Spec.Template.Labels)
 		assert.Equal(t, expectedTemplateAnnotations, sts.Spec.Template.Annotations)
 	})
-	t.Run("default tolerations", func(t *testing.T) {
+	t.Run("has default node affinity", func(t *testing.T) {
 		multiCapability := capability.NewMultiCapability(&dynakube)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dynakube, multiCapability)
 		sts, _ := builder.CreateStatefulSet(nil)
-		expectedTolerations := []corev1.Toleration{
+		expectedNodeSelectorTerms := []corev1.NodeSelectorTerm{
 			{
-				Key:      "kubernetes.io/arch",
-				Operator: corev1.TolerationOpEqual,
-				Value:    "arm64",
-				Effect:   corev1.TaintEffectNoSchedule,
-			},
-			{
-				Key:      "kubernetes.io/arch",
-				Operator: corev1.TolerationOpEqual,
-				Value:    "amd64",
-				Effect:   corev1.TaintEffectNoSchedule,
-			},
-			{
-				Key:      "kubernetes.io/arch",
-				Operator: corev1.TolerationOpEqual,
-				Value:    "ppc64le",
-				Effect:   corev1.TaintEffectNoSchedule,
-			},
-		}
+				MatchExpressions: []corev1.NodeSelectorRequirement{
+					{
+						Key:      "kubernetes.io/arch",
+						Operator: corev1.NodeSelectorOpIn,
+						Values:   []string{"amd64", "arm64", "ppc64le"},
+					},
+					{
+						Key:      "kubernetes.io/os",
+						Operator: corev1.NodeSelectorOpIn,
+						Values:   []string{"linux"},
+					},
+				},
+			}}
 
-		require.NotEmpty(t, sts.Spec.Template.Spec.Tolerations)
-		assert.Contains(t, sts.Spec.Template.Spec.Tolerations, expectedTolerations[0])
-		assert.Contains(t, sts.Spec.Template.Spec.Tolerations, expectedTolerations[1])
-		assert.Contains(t, sts.Spec.Template.Spec.Tolerations, expectedTolerations[2])
+		require.NotEmpty(t, sts.Spec.Template.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms)
+		assert.Contains(t, sts.Spec.Template.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, expectedNodeSelectorTerms[0])
 	})
 	t.Run("add annotations", func(t *testing.T) {
 		dynakube.Spec.ActiveGate.Annotations = map[string]string{
