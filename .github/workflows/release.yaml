@@ -291,7 +291,7 @@ jobs:
           passphrase: ${{ secrets.HELM_PASSPHRASE }}
           output-dir: "./helm-pkg"
       - name: Upload helm package to OCI registry
-        id: pushHelmChart
+        id: push-helm-to-OCI
         shell: bash
         run: |
           helm registry login -u "${{ secrets.DOCKERHUB_USERNAME }}" -p "${{ secrets.DOCKERHUB_PASSWORD }}" registry.hub.docker.com
@@ -307,7 +307,7 @@ jobs:
       - name: Sign OCI package with cosign
         uses: ./.github/actions/sign-image
         with:
-          image: "docker.io/dynatrace/dynatrace-operator:${{ needs.prepare.outputs.version }}@${{ steps.pushHelmChart.outputs.digest }}"
+          image: "docker.io/dynatrace/dynatrace-operator:${{ needs.prepare.outputs.version }}@${{ steps.push-helm-to-OCI.outputs.digest }}"
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
       - name: Prepare cosign.pub artifact
@@ -383,8 +383,8 @@ jobs:
       id-token: write
 
     steps:
-      - name: Push tag to synk
-        id: pushToSnyk
+      - name: Push tag to snyk
+        id: push-to-snyk
         uses: fjogeleit/http-request-action@v1
         with:
           url: 'https://api.snyk.io/v1/org/${{ secrets.SNYK_ORGANIZATION_ID }}/integrations/${{ secrets.SNYK_INTEGRATION_ID }}/import'
@@ -393,5 +393,5 @@ jobs:
           data: '{ "target": { "name": "${{ secrets.DOCKERHUB_REPOSITORY }}:${{ needs.prepare.outputs.version }}" }}'
       - name: Show Response
         run: |
-          echo ${{ steps.pushToSnyk.outputs.response }}
-          echo ${{ steps.pushToSnyk.outputs.headers }}
+          echo ${{ steps.push-to-snyk.outputs.response }}
+          echo ${{ steps.push-to-snyk.outputs.headers }}
