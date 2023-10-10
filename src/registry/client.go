@@ -2,7 +2,6 @@ package registry
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/google/go-containerregistry/pkg/authn"
@@ -37,7 +36,7 @@ func NewClient() *Client {
 func (c *Client) GetImageVersion(ctx context.Context, keychain authn.Keychain, transport *http.Transport, imageName string) (ImageVersion, error) {
 	ref, err := name.ParseReference(imageName)
 	if err != nil {
-		return ImageVersion{}, fmt.Errorf("parsing reference %q: %w", imageName, err)
+		return ImageVersion{}, errors.WithMessagef(err, "parsing reference %q", imageName)
 	}
 
 	options := []remote.Option{
@@ -50,82 +49,32 @@ func (c *Client) GetImageVersion(ctx context.Context, keychain authn.Keychain, t
 
 	descriptor, err := remote.Get(ref, options...)
 	if err != nil {
-		return ImageVersion{}, errors.Wrapf(err, "getting reference %q", ref)
+		return ImageVersion{}, errors.WithMessagef(err, "getting reference %q", ref)
 	}
 
 	// TODO: does not work for indexes which contain schema v1 manifests
 	img, err := descriptor.Image()
 	if err != nil {
-		return ImageVersion{}, errors.Wrapf(err, "descriptor.Image()")
+		return ImageVersion{}, errors.WithMessagef(err, "descriptor.Image()")
 	}
 
 	// use image digest as a fallback
 	digestFn := img.Digest
 
 	// try to get image manifest to cover multi arch images
-	digestSrc, err := descriptor.ImageIndex()
+	imageIndex, err := descriptor.ImageIndex()
 	if err == nil {
-		digestFn = digestSrc.Digest
+		digestFn = imageIndex.Digest
 	}
 
 	dig, err := digestFn()
 	if err != nil {
-		return ImageVersion{}, errors.Wrapf(err, "unable to get image digest")
+		return ImageVersion{}, errors.WithMessagef(err, "could not get image digest")
 	}
 
 	cf, err := img.ConfigFile()
 	if err != nil {
-		return ImageVersion{}, errors.Wrap(err, "img.ConfigFile")
-	}
-
-	return ImageVersion{
-		Digest:  digest.Digest(dig.String()),
-		Version: cf.Config.Labels[VersionLabel], // empty if unset
-	}, nil
-}
-
-func (c *Client) GetImageVersionX(ctx context.Context, keychain authn.Keychain, transport *http.Transport, imageName string) (ImageVersion, error) {
-	ref, err := name.ParseReference(imageName)
-	if err != nil {
-		return ImageVersion{}, fmt.Errorf("parsing reference %q: %w", imageName, err)
-	}
-
-	options := []remote.Option{
-		remote.WithContext(ctx),
-		remote.WithTransport(transport),
-	}
-	if keychain != nil {
-		options = append(options, remote.WithAuthFromKeychain(keychain))
-	}
-
-	descriptor, err := remote.Get(ref, options...)
-	if err != nil {
-		return ImageVersion{}, fmt.Errorf("getting reference %q: %w", ref, err)
-	}
-
-	// TODO: does not work for indexes which contain schema v1 manifests
-	img, err := descriptor.Image()
-	if err != nil {
-		return ImageVersion{}, fmt.Errorf("descriptor.Image(): %w", err)
-	}
-
-	cf, err := img.ConfigFile()
-	if err != nil {
-		return ImageVersion{}, fmt.Errorf("img.ConfigFile: %w", err)
-	}
-
-	var dig containerv1.Hash
-	// try to get image manifest to cover multi arch images
-	if imgIdx, err := descriptor.ImageIndex(); err == nil {
-		dig, err = imgIdx.Digest()
-		if err != nil {
-			return ImageVersion{}, fmt.Errorf("img.Digest(): %w", err)
-		}
-	} else {
-		dig, err = img.Digest()
-		if err != nil {
-			return ImageVersion{}, fmt.Errorf("img.Digest(): %w", err)
-		}
+		return ImageVersion{}, errors.WithMessagef(err, "img.ConfigFile")
 	}
 
 	return ImageVersion{
