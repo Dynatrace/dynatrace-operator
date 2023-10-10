@@ -23,7 +23,7 @@ func AffinityNodeRequirementForSupportedArches() []corev1.NodeSelectorRequiremen
 }
 
 func tolerationsForArches(arches ...string) []corev1.Toleration {
-	tolerations := make([]corev1.Toleration, len(arches))
+	tolerations := make([]corev1.Toleration, 0)
 	for _, arch := range arches {
 		tolerations = append(tolerations, corev1.Toleration{
 			Key:      kubernetesArch,
