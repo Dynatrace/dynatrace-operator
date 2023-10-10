@@ -7,15 +7,33 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-const nodeSelectorRequirements = 2
-
 func TestAffinityNodeRequirement(t *testing.T) {
-	assert.Equal(t, AffinityNodeRequirement(), affinityNodeRequirementsForArches(amd64))
-	assert.Equal(t, AffinityNodeRequirementWithARM64(), affinityNodeRequirementsForArches(amd64, arm64, ppc64le))
-	assert.Equal(t, len(AffinityNodeRequirement()), nodeSelectorRequirements)
+	assert.Equal(t, AffinityNodeRequirementForSupportedArches(), affinityNodeRequirementsForArches(amd64, arm64, ppc64le))
+	assert.Contains(t, AffinityNodeRequirementForSupportedArches(), linuxRequirement())
+}
 
-	assert.Contains(t, AffinityNodeRequirement(), linuxRequirement())
-	assert.Contains(t, AffinityNodeRequirementWithARM64(), linuxRequirement())
+func TestTolerationsForAllArches(t *testing.T) {
+	assert.Equal(t, TolerationForSupportedArches(), tolerationsForArches(amd64, arm64, ppc64le))
+	assert.Contains(t, TolerationForSupportedArches(), armToleration())
+	assert.Contains(t, TolerationForSupportedArches(), amdToleration())
+}
+
+func armToleration() corev1.Toleration {
+	return corev1.Toleration{
+		Key:      kubernetesArch,
+		Operator: corev1.TolerationOpEqual,
+		Value:    arm64,
+		Effect:   corev1.TaintEffectNoSchedule,
+	}
+}
+
+func amdToleration() corev1.Toleration {
+	return corev1.Toleration{
+		Key:      kubernetesArch,
+		Operator: corev1.TolerationOpEqual,
+		Value:    amd64,
+		Effect:   corev1.TaintEffectNoSchedule,
+	}
 }
 
 func linuxRequirement() corev1.NodeSelectorRequirement {
