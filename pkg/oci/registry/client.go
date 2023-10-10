@@ -95,7 +95,7 @@ var _ ClientBuilder = NewClient
 func (c *Client) GetImageVersion(ctx context.Context, imageName string) (ImageVersion, error) {
 	ref, err := name.ParseReference(imageName)
 	if err != nil {
-		return ImageVersion{}, fmt.Errorf("parsing reference %q: %w", imageName, err)
+		return ImageVersion{}, errors.WithMessagef(err, "parsing reference %q", imageName)
 	}
 
 	options := []remote.Option{
@@ -108,13 +108,13 @@ func (c *Client) GetImageVersion(ctx context.Context, imageName string) (ImageVe
 
 	descriptor, err := remote.Get(ref, options...)
 	if err != nil {
-		return ImageVersion{}, fmt.Errorf("getting reference %q: %w", ref, err)
+		return ImageVersion{}, errors.WithMessagef(err, "getting reference %q", ref)
 	}
 
 	// TODO: does not work for indexes which contain schema v1 manifests
 	img, err := descriptor.Image()
 	if err != nil {
-		return ImageVersion{}, fmt.Errorf("descriptor.Image(): %w", err)
+		return ImageVersion{}, errors.WithMessagef(err, "descriptor.Image()")
 	}
 
 	// use image digest as a fallback
@@ -128,12 +128,12 @@ func (c *Client) GetImageVersion(ctx context.Context, imageName string) (ImageVe
 
 	dig, err := digestFn()
 	if err != nil {
-		return ImageVersion{}, fmt.Errorf("img.Digest(): %w", err)
+		return ImageVersion{}, errors.WithMessagef(err, "could not get image digest")
 	}
 
 	cf, err := img.ConfigFile()
 	if err != nil {
-		return ImageVersion{}, fmt.Errorf("img.ConfigFile: %w", err)
+		return ImageVersion{}, errors.WithMessagef(err, "img.ConfigFile")
 	}
 
 	return ImageVersion{
