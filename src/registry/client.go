@@ -2,7 +2,6 @@ package registry
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/google/go-containerregistry/pkg/authn"
@@ -37,7 +36,7 @@ func NewClient() *Client {
 func (c *Client) GetImageVersion(ctx context.Context, keychain authn.Keychain, transport *http.Transport, imageName string) (ImageVersion, error) {
 	ref, err := name.ParseReference(imageName)
 	if err != nil {
-		return ImageVersion{}, fmt.Errorf("parsing reference %q: %w", imageName, err)
+		return ImageVersion{}, errors.WithMessagef(err, "parsing reference %q", imageName)
 	}
 
 	options := []remote.Option{
@@ -50,21 +49,32 @@ func (c *Client) GetImageVersion(ctx context.Context, keychain authn.Keychain, t
 
 	descriptor, err := remote.Get(ref, options...)
 	if err != nil {
-		return ImageVersion{}, fmt.Errorf("getting reference %q: %w", ref, err)
+		return ImageVersion{}, errors.WithMessagef(err, "getting reference %q", ref)
 	}
 
 	// TODO: does not work for indexes which contain schema v1 manifests
 	img, err := descriptor.Image()
 	if err != nil {
-		return ImageVersion{}, fmt.Errorf("descriptor.Image(): %w", err)
+		return ImageVersion{}, errors.WithMessagef(err, "descriptor.Image()")
 	}
-	dig, err := img.Digest()
+
+	// use image digest as a fallback
+	digestFn := img.Digest
+
+	// try to get image manifest to cover multi arch images
+	imageIndex, err := descriptor.ImageIndex()
+	if err == nil {
+		digestFn = imageIndex.Digest
+	}
+
+	dig, err := digestFn()
 	if err != nil {
-		return ImageVersion{}, fmt.Errorf("img.Digest(): %w", err)
+		return ImageVersion{}, errors.WithMessagef(err, "could not get image digest")
 	}
+
 	cf, err := img.ConfigFile()
 	if err != nil {
-		return ImageVersion{}, fmt.Errorf("img.ConfigFile: %w", err)
+		return ImageVersion{}, errors.WithMessagef(err, "img.ConfigFile")
 	}
 
 	return ImageVersion{
