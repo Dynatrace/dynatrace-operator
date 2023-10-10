@@ -4,10 +4,10 @@
 - [Unit tests](#unit-tests)
 - [E2E tests](#e2e-tests)
 - [Useful commands](#useful-commands)
-  - [Remove all Dynatrace pods in force mode (useful debugging E2E tests)](#remove-all-dynatrace-pods-in-force-mode-useful-debugging-e2e-tests)
-  - [Copy CSI driver database to localhost for introspection via sqlite command](#copy-csi-driver-database-to-localhost-for-introspection-via-sqlite-command)
-  - [Add debug suffix on E2E tests to avoid removing pods](#add-debug-suffix-on-e2e-tests-to-avoid-removing-pods)
-  - [Debug cluster nodes by opening a shell prompt (details here)](#debug-cluster-nodes-by-opening-a-shell-prompt)
+    - [Remove all Dynatrace pods in force mode (useful debugging E2E tests)](#remove-all-dynatrace-pods-in-force-mode-useful-debugging-e2e-tests)
+    - [Copy CSI driver database to localhost for introspection via sqlite command](#copy-csi-driver-database-to-localhost-for-introspection-via-sqlite-command)
+    - [Add debug suffix on E2E tests to avoid removing pods](#add-debug-suffix-on-e2e-tests-to-avoid-removing-pods)
+    - [Debug cluster nodes by opening a shell prompt (details here)](#debug-cluster-nodes-by-opening-a-shell-prompt)
 
 ## Steps
 
@@ -53,6 +53,75 @@ Run the go unit tests via make:
 ```sh
 make go/test
 ```
+
+### Mocking
+For our mocking needs we trust in [testify](https://github.com/stretchr/testify) while using [mockery](https://github.com/vektra/mockery) to generate our mocks.
+We check in our mocks to improve code readability especially when reading via GitHub and to remove the dependency on make scripts to run our tests.
+Mockery only has to be run when adding new mocks or have to be updated to changed interfaces.
+
+#### Installing _mockery_
+Mockery is installed by either running (see [docs](https://vektra.github.io/mockery/latest/installation/#go-install) for further information)
+```shell
+go install github.com/vektra/mockery/v2@v2.33.2
+```
+or simply calling our make target:
+```shell
+make prerequisites
+```
+
+#### Adding a mock
+When adding a mock you have to add the mocked interface to .mockery.yaml.
+Take the following example of the builder package with the interfaces `Builder` and `Modifier`:
+
+```yaml
+quiet: False
+disable-version-string: True
+with-expecter: True
+mockname: "{{.InterfaceName}}"
+filename: "{{.MockName}}.go"
+outpkg: mocks
+dir: "{{.InterfaceDir}}/mocks"
+packages:
+  github.com/Dynatrace/dynatrace-operator/src/builder:
+    config:
+      recursive: true
+     # all: true // or use all if mocks for all interfaces in a package/dir should be created
+    interfaces:
+      Builder:
+      Modifier:
+```
+
+then run mockery by simple running
+
+```shell
+mockery
+```
+or
+
+```shell
+make go/mock
+```
+
+#### Migrating to Mockery
+To move our existing codebase to mockery you have to look out for these pitfalls:
+
+1. Mocks require a reference parameter to `testingT`:
+   ```go
+   //...
+   b := GenericBuilder[mocks.Data]{}
+
+   modifierMock := mocks.NewModifier[mocks.Data](t) // <- t required here
+   //...
+   ```
+2. Add call to `Maybe()` to return:
+    ```go
+    modifierMock.On("Modify", mock.Anything).Return(nil).Maybe()
+    modifierMock.On("Enabled").Return(false)
+
+    actual, _ := b.AddModifier(modifierMock).Build()
+    modifierMock.AssertNotCalled(t, "Modify")
+    //modifierMock.AssertNumberOfCalls(t, "Modify", 0)
+   ```
 
 ## E2E tests
 

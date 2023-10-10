@@ -1,0 +1,22 @@
+quiet: False
+disable-version-string: True
+with-expecter: True
+mockname: "{{.InterfaceName}}"
+filename: "{{.MockName}}.go"
+outpkg: mocks
+dir: "test/mocks/{{.InterfaceDir}}"
+packages:
+  #  github.com/Dynatrace/dynatrace-operator/src/builder:
+  #    config:
+  #      recursive: true
+  #    interfaces:
+  #      Builder:
+  #      Modifier:
+  github.com/Dynatrace/dynatrace-operator/pkg/oci/registry:
+    interfaces:
+      ImageGetter:
+        config:
+          mockname: "Mock{{.InterfaceName}}"
+          # TODO: refactor rename it to registry.go
+          filename: "client.go"
+          dir: "{{.InterfaceDir}}/mocks"
