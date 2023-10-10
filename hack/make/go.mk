@@ -33,5 +33,5 @@ go/test:
 	go test ./... -coverprofile=coverage.txt -covermode=atomic -tags "$(shell ./hack/build/create_go_build_tags.sh false)"
 
 ## creates mocks from .mockery.yaml
-go/mock:
+go/gen_mocks:
 	mockery
