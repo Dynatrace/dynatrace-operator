@@ -78,7 +78,7 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	var node corev1.Node
 	if err := controller.apiReader.Get(ctx, client.ObjectKey{Name: nodeName}, &node); err != nil {
 		if k8serrors.IsNotFound(err) {
-			// if there is no node it means it get deleted, cordoned or evicted
+			// if there is no node it means it get deleted
 			return reconcile.Result{}, controller.reconcileNodeDeletion(ctx, nodeName)
 		}
 		return reconcile.Result{}, err
