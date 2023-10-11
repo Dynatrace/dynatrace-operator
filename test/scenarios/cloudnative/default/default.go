@@ -44,9 +44,6 @@ func Default(t *testing.T, istioEnabled bool) features.Feature {
 		setup.DeployOperatorViaMake(testDynakube.NeedsCSIDriver()))
 	steps.CreateSetupSteps(builder)
 
-	// Register dynakube install
-	assess.InstallDynakube(builder, &secretConfig, testDynakube)
-
 	// Register sample app install
 	namespaceBuilder := namespace.NewBuilder("cloudnative-sample")
 	if istioEnabled {
@@ -57,6 +54,9 @@ func Default(t *testing.T, istioEnabled bool) features.Feature {
 	sampleApp.WithNamespace(sampleNamespace)
 
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
+
+	// Register dynakube install
+	assess.InstallDynakube(builder, &secretConfig, testDynakube)
 	builder.Assess("install sample app", sampleApp.Install())
 
 	// Register actual test
