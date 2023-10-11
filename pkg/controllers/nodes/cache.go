@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -21,9 +22,10 @@ type CacheEntry struct {
 
 // Cache manages information about Nodes.
 type Cache struct {
-	Obj    *corev1.ConfigMap
-	Create bool
-	upd    bool
+	Obj          *corev1.ConfigMap
+	Create       bool
+	upd          bool
+	timeProvider *timeprovider.Provider
 }
 
 // Get returns the information about node, or error if not found or failed to unmarshall the data.
@@ -85,19 +87,10 @@ func (cache *Cache) Changed() bool {
 	return cache.Create || cache.upd
 }
 
-func (cache *Cache) ContainsKey(key string) bool {
-	for _, e := range cache.Keys() {
-		if e == key {
-			return true
-		}
-	}
-	return false
-}
-
 func (cache *Cache) IsCacheOutdated() bool {
 	if lastUpdated, ok := cache.Obj.Annotations[lastUpdatedCacheAnnotation]; ok {
 		if lastUpdatedTime, err := time.Parse(time.RFC3339, lastUpdated); err == nil {
-			return lastUpdatedTime.Add(cacheLifetime).Before(time.Now())
+			return lastUpdatedTime.Add(cacheLifetime).Before(cache.timeProvider.Now().UTC())
 		} else {
 			return false
 		}
@@ -109,11 +102,11 @@ func (cache *Cache) UpdateTimestamp() {
 	if cache.Obj.Annotations == nil {
 		cache.Obj.Annotations = make(map[string]string)
 	}
-	cache.Obj.Annotations[lastUpdatedCacheAnnotation] = time.Now().Format(time.RFC3339)
+	cache.Obj.Annotations[lastUpdatedCacheAnnotation] = cache.timeProvider.Now().Format(time.RFC3339)
 	cache.upd = true
 }
 
 func (cache *Cache) updateLastMarkedForTerminationTimestamp(nodeInfo CacheEntry, nodeName string) error {
-	nodeInfo.LastMarkedForTermination = time.Now().UTC()
+	nodeInfo.LastMarkedForTermination = cache.timeProvider.Now().UTC()
 	return cache.Set(nodeName, nodeInfo)
 }
