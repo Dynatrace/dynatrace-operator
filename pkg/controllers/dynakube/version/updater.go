@@ -125,21 +125,19 @@ func setImageIDWithDigest(
 		"image", imageUri,
 		"oldImageID", target.ImageID)
 
+	imageVersion, err := registryClient.GetImageVersion(ctx, imageUri)
+	if err != nil {
+		log.Info("failed to determine image version")
+		return err
+	}
+	target.Version = imageVersion.Version
+
 	if digestRef, ok := ref.(name.Digest); ok {
 		target.ImageID = digestRef.String()
-		target.Version = digestRef.Identifier()
 	} else if taggedRef, ok := ref.(name.Tag); ok {
 		if taggedRef.TagStr() == "" {
 			return errors.Errorf("unsupported image reference: %s", imageUri)
 		}
-
-		imageVersion, err := registryClient.GetImageVersion(ctx, imageUri)
-		if err != nil {
-			log.Info("failed to determine image version")
-			return err
-		}
-
-		target.Version = imageVersion.Version
 		target.ImageID = registry.BuildImageIDWithTagAndDigest(taggedRef, imageVersion.Digest)
 	} else {
 		return errors.Errorf("unsupported image reference: %s", imageUri)
