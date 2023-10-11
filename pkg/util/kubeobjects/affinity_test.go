@@ -7,15 +7,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-const nodeSelectorRequirements = 2
-
 func TestAffinityNodeRequirement(t *testing.T) {
-	assert.Equal(t, AffinityNodeRequirement(), affinityNodeRequirementsForArches(amd64))
-	assert.Equal(t, AffinityNodeRequirementWithARM64(), affinityNodeRequirementsForArches(amd64, arm64, ppc64le))
-	assert.Equal(t, len(AffinityNodeRequirement()), nodeSelectorRequirements)
-
-	assert.Contains(t, AffinityNodeRequirement(), linuxRequirement())
-	assert.Contains(t, AffinityNodeRequirementWithARM64(), linuxRequirement())
+	assert.Equal(t, AffinityNodeRequirementForSupportedArches(), affinityNodeRequirementsForArches(amd64, arm64, ppc64le))
+	assert.Contains(t, AffinityNodeRequirementForSupportedArches(), linuxRequirement())
 }
 
 func linuxRequirement() corev1.NodeSelectorRequirement {

@@ -25,6 +25,6 @@ func (dsInfo *builderInfo) affinityNodeSelectorTerms() []corev1.NodeSelectorTerm
 
 func kubernetesArchOsSelectorTerm() corev1.NodeSelectorTerm {
 	return corev1.NodeSelectorTerm{
-		MatchExpressions: kubeobjects.AffinityNodeRequirementWithARM64(),
+		MatchExpressions: kubeobjects.AffinityNodeRequirementForSupportedArches(),
 	}
 }

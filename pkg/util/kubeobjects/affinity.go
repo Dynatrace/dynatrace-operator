@@ -14,22 +14,7 @@ const (
 	linux   = "linux"
 )
 
-func AffinityNodeRequirement() []corev1.NodeSelectorRequirement {
-	return affinityNodeRequirementsForArches(amd64)
-}
-
-func TolerationForAmd() []corev1.Toleration {
-	return []corev1.Toleration{
-		{
-			Key:      kubernetesArch,
-			Operator: corev1.TolerationOpEqual,
-			Value:    amd64,
-			Effect:   corev1.TaintEffectNoSchedule,
-		},
-	}
-}
-
-func AffinityNodeRequirementWithARM64() []corev1.NodeSelectorRequirement {
+func AffinityNodeRequirementForSupportedArches() []corev1.NodeSelectorRequirement {
 	return affinityNodeRequirementsForArches(amd64, arm64, ppc64le)
 }
 
