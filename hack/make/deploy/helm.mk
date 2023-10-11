@@ -15,4 +15,3 @@ deploy/helm: manifests/crd/helm
 undeploy/helm:
 	helm uninstall dynatrace-operator \
 			--namespace dynatrace
-	kubectl delete namespace dynatrace
