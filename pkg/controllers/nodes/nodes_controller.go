@@ -224,6 +224,8 @@ func (controller *Controller) handleOutdatedCache(ctx context.Context, nodeCache
 		cachedNodeInCluster := false
 		for _, clusterNode := range nodeLst.Items {
 			if clusterNode.Name == cachedNodeName {
+				// We ignore errors because we always ask ONLY existing key from the cache,
+				// because of the loop (range nodeCache.Keys()) in few lines early
 				cachedNodeInfo, _ := nodeCache.Get(cachedNodeName)
 				cachedNodeInCluster = true
 				// Check if node was seen less than an hour ago, otherwise do not remove from cache
