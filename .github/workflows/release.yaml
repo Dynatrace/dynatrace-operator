@@ -248,6 +248,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      id-token: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -282,7 +283,6 @@ jobs:
           mv config/deploy/kubernetes/kubernetes-all.yaml config/deploy/kubernetes/kubernetes.yaml
           mv config/deploy/openshift/openshift-all.yaml config/deploy/openshift/openshift.yaml
       - name: Build helm packages
-        if: ${{ !contains(github.ref, '-rc.') }}
         uses: ./.github/actions/build-helm
         with:
           version_without_prefix: ${{ needs.prepare.outputs.version_without_prefix }}
@@ -290,6 +290,15 @@ jobs:
           secring: ${{ secrets.HELM_SECRING }}
           passphrase: ${{ secrets.HELM_PASSPHRASE }}
           output-dir: "./helm-pkg"
+      - name: Upload and sign helm package to dockerhub
+        uses: ./.github/actions/upload-helm
+        with:
+          registry-username: ${{ secrets.DOCKERHUB_USERNAME }}
+          registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          version: ${{ needs.prepare.outputs.version }}
+          version-without-prefix: ${{ needs.prepare.outputs.version_without_prefix }}
+          cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          cosign-password: ${{ secrets.COSIGN_PASSWORD }}
       - name: Prepare cosign.pub artifact
         env:
           COSIGN_PUBLIC_KEY: ${{ secrets.COSIGN_PUBLIC_KEY }}
@@ -363,8 +372,8 @@ jobs:
       id-token: write
 
     steps:
-      - name: Push tag to synk
-        id: pushToSnyk
+      - name: Push tag to snyk
+        id: push-to-snyk
         uses: fjogeleit/http-request-action@v1
         with:
           url: 'https://api.snyk.io/v1/org/${{ secrets.SNYK_ORGANIZATION_ID }}/integrations/${{ secrets.SNYK_INTEGRATION_ID }}/import'
@@ -373,5 +382,5 @@ jobs:
           data: '{ "target": { "name": "${{ secrets.DOCKERHUB_REPOSITORY }}:${{ needs.prepare.outputs.version }}" }}'
       - name: Show Response
         run: |
-          echo ${{ steps.pushToSnyk.outputs.response }}
-          echo ${{ steps.pushToSnyk.outputs.headers }}
+          echo ${{ steps.push-to-snyk.outputs.response }}
+          echo ${{ steps.push-to-snyk.outputs.headers }}
