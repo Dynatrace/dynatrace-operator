@@ -21,7 +21,7 @@ require (
 	golang.org/x/exp v0.0.0-20230817173708-d852ddb80c63
 	golang.org/x/net v0.17.0
 	golang.org/x/sys v0.13.0
-	google.golang.org/grpc v1.58.2
+	google.golang.org/grpc v1.58.3
 	istio.io/api v1.19.1
 	istio.io/client-go v1.19.1
 	k8s.io/api v0.28.2
