@@ -65,7 +65,7 @@ func NewController(mgr manager.Manager) *Controller {
 func (controller *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	nodeName := request.NamespacedName.Name
 	dynakube, err := controller.determineDynakubeForNode(nodeName)
-	log.Info("reconciling node name", "node", nodeName, "dynakube", dynakube)
+	log.Info("reconciling node name", "node", nodeName)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
