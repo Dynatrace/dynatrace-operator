@@ -111,7 +111,7 @@ func (statefulSetBuilder Builder) addTemplateSpec(sts *appsv1.StatefulSet) {
 		NodeSelector:       statefulSetBuilder.capability.Properties().NodeSelector,
 		ServiceAccountName: statefulSetBuilder.dynakube.ActiveGateServiceAccountName(),
 		Affinity:           nodeAffinity(),
-		Tolerations:        buildTolerations(statefulSetBuilder.capability),
+		Tolerations:        statefulSetBuilder.capability.Properties().Tolerations,
 		ImagePullSecrets: []corev1.LocalObjectReference{
 			{Name: statefulSetBuilder.dynakube.PullSecretName()},
 		},
@@ -121,13 +121,6 @@ func (statefulSetBuilder Builder) addTemplateSpec(sts *appsv1.StatefulSet) {
 		TopologySpreadConstraints: statefulSetBuilder.buildTopologySpreadConstraints(statefulSetBuilder.capability),
 	}
 	sts.Spec.Template.Spec = podSpec
-}
-
-func buildTolerations(capability capability.Capability) []corev1.Toleration {
-	tolerations := make([]corev1.Toleration, len(capability.Properties().Tolerations))
-	copy(tolerations, capability.Properties().Tolerations)
-	tolerations = append(tolerations, kubeobjects.TolerationForSupportedArches()...)
-	return tolerations
 }
 
 func (statefulSetBuilder Builder) buildTopologySpreadConstraints(capability capability.Capability) []corev1.TopologySpreadConstraint {

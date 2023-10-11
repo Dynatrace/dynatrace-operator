@@ -14,25 +14,8 @@ const (
 	linux   = "linux"
 )
 
-func TolerationForSupportedArches() []corev1.Toleration {
-	return tolerationsForArches(amd64, arm64, ppc64le)
-}
-
 func AffinityNodeRequirementForSupportedArches() []corev1.NodeSelectorRequirement {
 	return affinityNodeRequirementsForArches(amd64, arm64, ppc64le)
-}
-
-func tolerationsForArches(arches ...string) []corev1.Toleration {
-	tolerations := make([]corev1.Toleration, 0)
-	for _, arch := range arches {
-		tolerations = append(tolerations, corev1.Toleration{
-			Key:      kubernetesArch,
-			Operator: corev1.TolerationOpEqual,
-			Value:    arch,
-			Effect:   corev1.TaintEffectNoSchedule,
-		})
-	}
-	return tolerations
 }
 
 func affinityNodeRequirementsForArches(arches ...string) []corev1.NodeSelectorRequirement {
