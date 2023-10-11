@@ -229,3 +229,4 @@ So here are some basic guidelines:
   - (🚦) After running it "locally" notify the creator by commenting `Ran it, practically LGTM` (or something similar) or `Found possible issue ...`
 - (📝) Enforce the coding-style-guide, by linking to it. (to the specific line)
   - (🙋) If you feel something is missing/wrong in the style-guide, discuss it with the team, and create PR for it if it was accepted.
+- (💥) The `Update branch` button should be pressed only by the creator of the PR, so the reviewer does not cause unexpected `Push rejected` for the creator.
