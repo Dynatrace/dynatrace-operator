@@ -100,7 +100,7 @@ func setImageIDWithDigest(
 	registryClient registry.ImageGetter,
 	imageUri string,
 ) error {
-	ref, err := name.ParseReference(imageUri)
+	ref, err := name.ParseReference(imageUri, name.WithDefaultTag(""))
 	if err != nil {
 		return errors.WithMessage(err, "failed to parse image uri")
 	}
@@ -112,7 +112,7 @@ func setImageIDWithDigest(
 	if digestRef, ok := ref.(name.Digest); ok {
 		target.ImageID = digestRef.String()
 	} else if taggedRef, ok := ref.(name.Tag); ok {
-		if taggedRef.TagStr() == name.DefaultTag {
+		if taggedRef.TagStr() == "" {
 			return errors.Errorf("unsupported image reference: %s", imageUri)
 		}
 

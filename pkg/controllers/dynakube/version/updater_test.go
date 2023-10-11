@@ -372,6 +372,11 @@ func TestNewImageLib(t *testing.T) {
 			wantErr:  require.Error,
 		},
 		{
+			input:    "some.registry.com/image:latest",
+			expected: "some.registry.com/image:latest@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f",
+			wantErr:  require.NoError,
+		},
+		{
 			input:    "some.registry.com/image@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f",
 			expected: "some.registry.com/image@sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f",
 			wantErr:  require.NoError,
