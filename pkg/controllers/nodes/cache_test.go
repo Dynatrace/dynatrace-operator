@@ -10,7 +10,7 @@ import (
 )
 
 func TestCache(t *testing.T) {
-	t.Run("get non-existed key", func(t *testing.T) {
+	t.Run("get non-existing key", func(t *testing.T) {
 		cm := corev1.ConfigMap{}
 		nodesCache := &Cache{Obj: &cm}
 		_, err := nodesCache.Get("node1")
