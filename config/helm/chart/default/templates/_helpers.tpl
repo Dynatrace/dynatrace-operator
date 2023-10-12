@@ -31,6 +31,8 @@ Check if default image or imageref is used
         {{- .Values.imageRef.tag | default (printf "v%s" .Chart.AppVersion) | printf "%s:%s" .Values.imageRef.repository -}}
     {{- else if eq (include "dynatrace-operator.platform" .) "google-marketplace" -}}
     	{{- printf "%s:%s" "gcr.io/dynatrace-marketplace-prod/dynatrace-operator" .Chart.AppVersion }}
+    {{- else if eq (include "dynatrace-operator.platform" .) "azure-marketplace" -}}
+    	{{- printf "%s/%s@%s" .Values.global.azure.images.operator.registry .Values.global.azure.images.operator.image .Values.global.azure.images.operator.digest }}    
 	{{- else -}}
 		{{- printf "%s:v%s" "docker.io/dynatrace/dynatrace-operator" .Chart.AppVersion }}
 	{{- end -}}
