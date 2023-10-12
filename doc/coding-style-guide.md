@@ -14,7 +14,7 @@
   - [Don'ts](#donts-1)
 - [Testing](#testing)
   - [Do's](#dos-2)
-     - [Don'ts](#donts-2)
+    - [Don'ts](#donts-2)
 asd asd as
 - [E2E testing guide](#e2e-testing-guide)
 - [Code Review](#code-review)
