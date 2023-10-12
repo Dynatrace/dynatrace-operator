@@ -45,6 +45,9 @@ operator:
         - ALL
     seccompProfile:
       type: RuntimeDefault
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
   requests:
     cpu: 50m
     memory: 64Mi
@@ -69,6 +72,9 @@ webhook:
     capabilities:
       drop:
         - ALL
+    seccompProfile:
+      type: RuntimeDefault
+  podSecurityContext:
     seccompProfile:
       type: RuntimeDefault
   requests:
@@ -180,3 +186,4 @@ csidriver:
       limits:
         cpu: 20m
         memory: 30Mi
+

@@ -139,6 +139,9 @@ tests:
             volumes:
               - emptyDir: { }
                 name: tmp-cert-dir
+            securityContext:
+              seccompProfile:
+                type: RuntimeDefault
             serviceAccountName: RELEASE-NAME
             tolerations:
               - effect: NoSchedule
@@ -302,6 +305,9 @@ tests:
             volumes:
               - emptyDir: { }
                 name: tmp-cert-dir
+            securityContext:
+              seccompProfile:
+                type: RuntimeDefault
             serviceAccountName: RELEASE-NAME
             tolerations:
               - effect: NoSchedule
