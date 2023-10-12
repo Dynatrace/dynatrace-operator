@@ -153,6 +153,9 @@ tests:
                   capabilities:
                     drop:
                       - ALL
+            securityContext:
+              seccompProfile:
+                type: RuntimeDefault
             serviceAccountName: dynatrace-webhook
 
   - it: should have tolerations if set
@@ -319,6 +322,9 @@ tests:
                   capabilities:
                     drop:
                       - ALL
+            securityContext:
+              seccompProfile:
+                type: RuntimeDefault
             serviceAccountName: dynatrace-webhook
 
   - it: should not have imagePullSecrets defined in spec (without highavailabilty mode)
@@ -452,6 +458,9 @@ tests:
                   capabilities:
                     drop:
                       - ALL
+            securityContext:
+              seccompProfile:
+                type: RuntimeDefault
             serviceAccountName: dynatrace-webhook
 
   - it: should have only OS node affinity on GKE Autopilot

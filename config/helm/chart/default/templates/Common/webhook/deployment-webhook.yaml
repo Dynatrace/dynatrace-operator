@@ -134,6 +134,8 @@ spec:
       {{- if (.Values.webhook).hostNetwork }}
       hostNetwork: true
       {{- end }}
+      securityContext:
+        {{- toYaml .Values.webhook.podSecurityContext | nindent 8 }}
       {{- if .Values.customPullSecret }}
       imagePullSecrets:
         - name: {{ .Values.customPullSecret }}
