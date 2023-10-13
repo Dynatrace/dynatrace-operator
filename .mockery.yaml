@@ -20,3 +20,9 @@ packages:
           # TODO: refactor rename it to registry.go
           filename: "client.go"
           dir: "{{.InterfaceDir}}/mocks"
+  sigs.k8s.io/controller-runtime/pkg/manager:
+    interfaces:
+      Manager:
+  github.com/Dynatrace/dynatrace-operator/cmd/manager:
+    interfaces:
+      Provider:
