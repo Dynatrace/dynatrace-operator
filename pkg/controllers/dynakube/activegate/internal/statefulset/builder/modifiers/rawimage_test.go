@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/parametermap"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -19,7 +20,7 @@ func TestRawImageEnabled(t *testing.T) {
 		enableKubeMonCapability(&dynakube)
 		setRawImageUsage(&dynakube, true)
 
-		mod := NewRawImageModifier(dynakube)
+		mod := NewRawImageModifier(dynakube, parametermap.NewMap())
 
 		assert.True(t, mod.Enabled())
 	})
@@ -29,7 +30,7 @@ func TestRawImageEnabled(t *testing.T) {
 		enableKubeMonCapability(&dynakube)
 		setRawImageUsage(&dynakube, false)
 
-		mod := NewRawImageModifier(dynakube)
+		mod := NewRawImageModifier(dynakube, parametermap.NewMap())
 
 		assert.False(t, mod.Enabled())
 	})
@@ -40,7 +41,7 @@ func TestRawImageModify(t *testing.T) {
 		dynakube := getBaseDynakube()
 		enableKubeMonCapability(&dynakube)
 		setRawImageUsage(&dynakube, true)
-		mod := NewRawImageModifier(dynakube)
+		mod := NewRawImageModifier(dynakube, parametermap.NewMap())
 		builder := createBuilderForTesting()
 
 		sts, _ := builder.AddModifier(mod).Build()

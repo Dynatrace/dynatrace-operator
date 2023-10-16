@@ -20,11 +20,15 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+const defaultEnvPriority = 1
+const customEnvPriority = 3
+
 type Builder struct {
 	kubeUID    types.UID
 	configHash string
 	dynakube   dynatracev1beta1.DynaKube
 	capability capability.Capability
+	envMap     *parametermap.Map
 }
 
 func NewStatefulSetBuilder(kubeUID types.UID, configHash string, dynakube dynatracev1beta1.DynaKube, capability capability.Capability) Builder {
@@ -33,13 +37,14 @@ func NewStatefulSetBuilder(kubeUID types.UID, configHash string, dynakube dynatr
 		configHash: configHash,
 		dynakube:   dynakube,
 		capability: capability,
+		envMap:     parametermap.NewMap(parametermap.WithPriority(defaultEnvPriority)),
 	}
 }
 
 func (statefulSetBuilder Builder) CreateStatefulSet(mods []builder.Modifier) (*appsv1.StatefulSet, error) {
 	activeGateBuilder := builder.NewBuilder(statefulSetBuilder.getBase())
 	if len(mods) == 0 {
-		mods = modifiers.GenerateAllModifiers(statefulSetBuilder.dynakube, statefulSetBuilder.capability)
+		mods = modifiers.GenerateAllModifiers(statefulSetBuilder.dynakube, statefulSetBuilder.capability, statefulSetBuilder.envMap)
 	}
 	sts, _ := activeGateBuilder.AddModifier(mods...).Build()
 
@@ -184,9 +189,7 @@ func (statefulSetBuilder Builder) buildResources() corev1.ResourceRequirements {
 }
 
 func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {
-	envMap := parametermap.NewMap()
-
-	parametermap.Append(envMap, []corev1.EnvVar{
+	parametermap.Append(statefulSetBuilder.envMap, []corev1.EnvVar{
 		{Name: consts.EnvDtCapabilities, Value: statefulSetBuilder.capability.ArgName()},
 		{Name: consts.EnvDtIdSeedNamespace, Value: statefulSetBuilder.dynakube.Namespace},
 		{Name: consts.EnvDtIdSeedClusterId, Value: string(statefulSetBuilder.kubeUID)},
@@ -202,19 +205,19 @@ func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {
 	})
 
 	if statefulSetBuilder.capability.Properties().Group != "" {
-		parametermap.Append(envMap, corev1.EnvVar{Name: consts.EnvDtGroup, Value: statefulSetBuilder.capability.Properties().Group})
+		parametermap.Append(statefulSetBuilder.envMap, corev1.EnvVar{Name: consts.EnvDtGroup, Value: statefulSetBuilder.capability.Properties().Group})
 	}
 	if statefulSetBuilder.dynakube.Spec.NetworkZone != "" {
-		parametermap.Append(envMap, corev1.EnvVar{Name: consts.EnvDtNetworkZone, Value: statefulSetBuilder.dynakube.Spec.NetworkZone})
+		parametermap.Append(statefulSetBuilder.envMap, corev1.EnvVar{Name: consts.EnvDtNetworkZone, Value: statefulSetBuilder.dynakube.Spec.NetworkZone})
 	}
 
 	if statefulSetBuilder.dynakube.IsMetricsIngestActiveGateEnabled() {
-		parametermap.Append(envMap, corev1.EnvVar{Name: consts.EnvDtHttpPort, Value: strconv.Itoa(consts.HttpContainerPort)})
+		parametermap.Append(statefulSetBuilder.envMap, corev1.EnvVar{Name: consts.EnvDtHttpPort, Value: strconv.Itoa(consts.HttpContainerPort)})
 	}
 
-	parametermap.Append(envMap, statefulSetBuilder.capability.Properties().Env, parametermap.WithPriority(2))
+	parametermap.Append(statefulSetBuilder.envMap, statefulSetBuilder.capability.Properties().Env, parametermap.WithPriority(customEnvPriority))
 
-	return envMap.AsEnvVars()
+	return statefulSetBuilder.envMap.AsEnvVars()
 }
 
 func nodeAffinity() *corev1.Affinity {

@@ -5,6 +5,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/parametermap"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
@@ -18,6 +19,7 @@ func TestSyntheticContainer(t *testing.T) {
 	modifier := newSyntheticModifier(
 		dynaKube,
 		capability.NewSyntheticCapability(&dynaKube),
+		parametermap.NewMap(),
 	)
 	container := modifier.buildContainer()
 

@@ -450,7 +450,7 @@ func TestBuildCommonEnvs(t *testing.T) {
 			capability.SyntheticActiveGateEnvCapabilities)
 
 		statefulSet, _ := builder.CreateStatefulSet(
-			modifiers.GenerateAllModifiers(dynaKube, synCapability))
+			modifiers.GenerateAllModifiers(dynaKube, synCapability, builder.envMap))
 
 		assert.Equal(t,
 			*statefulSet.Spec.Replicas,

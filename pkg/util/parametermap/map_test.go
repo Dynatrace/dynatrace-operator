@@ -23,6 +23,18 @@ func TestWithEnvVars(t *testing.T) {
 		Value: "abcdef-ghijkl",
 	})
 
+	// value
+	Append(argMap, corev1.EnvVar{
+		Name:      "DT_TENANT",
+		ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.tenant"}},
+	})
+
+	// value
+	Append(argMap, corev1.EnvVar{
+		Name:  "DT_TENANT",
+		Value: "abc12345",
+	}, WithPriority(2))
+
 	// strings
 	Append(argMap, []string{
 		"TESTVAR1=herbert",
@@ -37,6 +49,10 @@ func TestWithEnvVars(t *testing.T) {
 		{
 			Name:      "DT_NODE_NAME",
 			ValueFrom: valueSource,
+		},
+		{
+			Name:  "DT_TENANT",
+			Value: "abc12345",
 		},
 		{
 			Name:  "TESTVAR1",
