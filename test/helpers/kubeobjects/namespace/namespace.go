@@ -79,7 +79,7 @@ func Create(namespace corev1.Namespace) features.Func {
 		err := envConfig.Client().Resources().Create(ctx, &namespace)
 		if err != nil {
 			if k8serrors.IsAlreadyExists(err) {
-				err = nil
+				err = envConfig.Client().Resources().Update(ctx, &namespace)
 			}
 			require.NoError(t, err)
 		}
