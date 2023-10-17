@@ -3,6 +3,7 @@ package edgeconnect
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -15,6 +16,7 @@ import (
 const (
 	EdgeConnectOAuthClientID     = "test_client_id"
 	EdgeConnectOAuthClientSecret = "test_client_secret"
+	EdgeConnectID                = "348b4cd9-ba31-4670-9c45-9125a7d87439"
 )
 
 func TestNewClient(t *testing.T) {
@@ -34,6 +36,17 @@ func TestCreateEdgeConnect(t *testing.T) {
 		defer edgeConnectServer.Close()
 
 		resp, err := edgeConnectClient.CreateEdgeConnect("InternalServices", []string{"*.internal.org"}, "dt0s02.AIOUP56P")
+		assert.NoError(t, err)
+		assert.Equal(t, resp.Name, "InternalServices")
+	})
+}
+
+func TestGetEdgeConnect(t *testing.T) {
+	t.Run("get edge connect", func(t *testing.T) {
+		edgeConnectServer, edgeConnectClient := createTestEdgeConnectServer(t, edgeConnectServerHandler())
+		defer edgeConnectServer.Close()
+
+		resp, err := edgeConnectClient.GetEdgeConnect("348b4cd9-ba31-4670-9c45-9125a7d87439")
 		assert.NoError(t, err)
 		assert.Equal(t, resp.Name, "InternalServices")
 	})
@@ -79,6 +92,20 @@ func handleRequest(request *http.Request, writer http.ResponseWriter) {
 	case request.URL.Path == "/edge-connects" && request.Method == http.MethodPost:
 		writer.WriteHeader(http.StatusOK)
 		resp := CreateResponse{
+			ID:            "348b4cd9-ba31-4670-9c45-9125a7d87439",
+			Name:          "InternalServices",
+			HostPatterns:  []string{"*.internal.org"},
+			OauthClientId: "dt0s02.example",
+			ModificationInfo: ModificationInfo{
+				LastModifiedBy:   "72ece475-e4d5-4774-afed-65d04e8c9f24",
+				LastModifiedTime: nil,
+			},
+		}
+		out, _ := json.Marshal(resp)
+		_, _ = writer.Write(out)
+	case request.URL.Path == fmt.Sprintf("/edge-connects/%s", EdgeConnectID) && request.Method == http.MethodGet:
+		writer.WriteHeader(http.StatusOK)
+		resp := GetResponse{
 			ID:            "348b4cd9-ba31-4670-9c45-9125a7d87439",
 			Name:          "InternalServices",
 			HostPatterns:  []string{"*.internal.org"},

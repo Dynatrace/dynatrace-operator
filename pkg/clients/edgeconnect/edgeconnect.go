@@ -25,6 +25,7 @@ type GetResponse struct {
 	HostPatterns     []string         `json:"hostPatterns"`
 	OauthClientId    string           `json:"oauthClientId"`
 	ModificationInfo ModificationInfo `json:"modificationInfo"`
+	Metadata         Metadata         `json:"metadata"`
 }
 
 type CreateResponse struct {
