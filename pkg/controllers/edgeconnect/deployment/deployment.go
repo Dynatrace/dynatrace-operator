@@ -5,7 +5,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/parametermap"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -64,8 +64,8 @@ func New(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
 }
 
 func prepareContainerEnvVars(instance *edgeconnectv1alpha1.EdgeConnect) []corev1.EnvVar {
-	envMap := parametermap.NewMap(parametermap.WithPriority(defaultEnvPriority))
-	parametermap.Append(envMap, []corev1.EnvVar{
+	envMap := prioritymap.NewMap(prioritymap.WithPriority(defaultEnvPriority))
+	prioritymap.Append(envMap, []corev1.EnvVar{
 		{
 			Name:  consts.EnvEdgeConnectName,
 			Value: instance.ObjectMeta.Name,
@@ -88,13 +88,13 @@ func prepareContainerEnvVars(instance *edgeconnectv1alpha1.EdgeConnect) []corev1
 	// Since HostRestrictions is optional we should not pass empty env var
 	// otherwise edge-connect will fail
 	if instance.Spec.HostRestrictions != "" {
-		parametermap.Append(envMap, corev1.EnvVar{
+		prioritymap.Append(envMap, corev1.EnvVar{
 			Name:  consts.EnvEdgeConnectRestrictHostsTo,
 			Value: instance.Spec.HostRestrictions,
 		})
 	}
 
-	parametermap.Append(envMap, instance.Spec.Env, parametermap.WithPriority(customEnvPriority))
+	prioritymap.Append(envMap, instance.Spec.Env, prioritymap.WithPriority(customEnvPriority))
 
 	return envMap.AsEnvVars()
 }

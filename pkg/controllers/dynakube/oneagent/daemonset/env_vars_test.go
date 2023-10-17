@@ -7,7 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/parametermap"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -86,7 +86,7 @@ func assertEnvVarNameAndValue(t *testing.T, envVars []corev1.EnvVar, name, value
 
 func TestAddNodeNameEnv(t *testing.T) {
 	t.Run("adds nodeName value from via fieldPath", func(t *testing.T) {
-		envVars := parametermap.NewMap()
+		envVars := prioritymap.NewMap()
 		addNodeNameEnv(envVars)
 
 		assertNodeNameEnv(t, envVars.AsEnvVars())
@@ -106,7 +106,7 @@ func TestAddClusterIDEnv(t *testing.T) {
 			dynakube:  &dynatracev1beta1.DynaKube{},
 			clusterID: clusterID,
 		}
-		envVars := parametermap.NewMap()
+		envVars := prioritymap.NewMap()
 		dsInfo.addClusterIDEnv(envVars)
 
 		assertClusterIDEnv(t, envVars.AsEnvVars(), clusterID)
@@ -129,7 +129,7 @@ func TestAddDeploymentMetadataEnv(t *testing.T) {
 				},
 			},
 		}
-		envVars := parametermap.NewMap()
+		envVars := prioritymap.NewMap()
 		dsInfo.addDeploymentMetadataEnv(envVars)
 
 		assertDeploymentMetadataEnv(t, envVars.AsEnvVars(), dynakubeName)
@@ -159,7 +159,7 @@ func TestAddConnectionInfoEnvs(t *testing.T) {
 		dsInfo := builderInfo{
 			dynakube: dynakube,
 		}
-		envVars := parametermap.NewMap()
+		envVars := prioritymap.NewMap()
 		dsInfo.addConnectionInfoEnvs(envVars)
 
 		assertConnectionInfoEnv(t, envVars.AsEnvVars(), dynakube)
@@ -205,7 +205,7 @@ func TestAddProxyEnvs(t *testing.T) {
 		dsInfo := builderInfo{
 			dynakube: dynakube,
 		}
-		envVars := parametermap.NewMap()
+		envVars := prioritymap.NewMap()
 		dsInfo.addProxyEnv(envVars)
 
 		assertProxyEnv(t, envVars.AsEnvVars(), dynakube)
@@ -225,7 +225,7 @@ func TestAddProxyEnvs(t *testing.T) {
 		dsInfo := builderInfo{
 			dynakube: dynakube,
 		}
-		envVars := parametermap.NewMap()
+		envVars := prioritymap.NewMap()
 		dsInfo.addProxyEnv(envVars)
 
 		assertProxyEnv(t, envVars.AsEnvVars(), dynakube)
@@ -257,7 +257,7 @@ func TestAddReadOnlyEnv(t *testing.T) {
 		dsInfo := builderInfo{
 			dynakube: dynakube,
 		}
-		envVars := parametermap.NewMap()
+		envVars := prioritymap.NewMap()
 		dsInfo.addReadOnlyEnv(envVars)
 
 		assertReadOnlyEnv(t, envVars.AsEnvVars())
@@ -272,7 +272,7 @@ func TestAddReadOnlyEnv(t *testing.T) {
 		dsInfo := builderInfo{
 			dynakube: dynakube,
 		}
-		envVars := parametermap.NewMap()
+		envVars := prioritymap.NewMap()
 		dsInfo.addReadOnlyEnv(envVars)
 
 		require.Empty(t, envVars.AsEnvVars())

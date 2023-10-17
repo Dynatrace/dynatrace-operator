@@ -1,4 +1,4 @@
-package parametermap
+package prioritymap
 
 import (
 	"strings"

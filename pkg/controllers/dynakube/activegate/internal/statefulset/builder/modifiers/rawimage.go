@@ -7,7 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/parametermap"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -17,7 +17,7 @@ var _ volumeModifier = RawImageModifier{}
 var _ volumeMountModifier = RawImageModifier{}
 var _ builder.Modifier = RawImageModifier{}
 
-func NewRawImageModifier(dynakube dynatracev1beta1.DynaKube, envMap *parametermap.Map) RawImageModifier {
+func NewRawImageModifier(dynakube dynatracev1beta1.DynaKube, envMap *prioritymap.Map) RawImageModifier {
 	return RawImageModifier{
 		dynakube: dynakube,
 		envMap:   envMap,
@@ -26,7 +26,7 @@ func NewRawImageModifier(dynakube dynatracev1beta1.DynaKube, envMap *parameterma
 
 type RawImageModifier struct {
 	dynakube dynatracev1beta1.DynaKube
-	envMap   *parametermap.Map
+	envMap   *prioritymap.Map
 }
 
 func (mod RawImageModifier) Enabled() bool {
@@ -66,9 +66,9 @@ func (mod RawImageModifier) getVolumeMounts() []corev1.VolumeMount {
 }
 
 func (mod RawImageModifier) getEnvs() []corev1.EnvVar {
-	parametermap.Append(mod.envMap,
+	prioritymap.Append(mod.envMap,
 		[]corev1.EnvVar{mod.tenantUUIDEnvVar(), mod.communicationEndpointEnvVar()},
-		parametermap.WithPriority(modifierEnvPriority))
+		prioritymap.WithPriority(modifierEnvPriority))
 	return mod.envMap.AsEnvVars()
 }
 

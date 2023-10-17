@@ -7,7 +7,7 @@ import (
 	_ "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/parametermap"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -38,7 +38,7 @@ const (
 type SyntheticModifier struct {
 	dynakube   dynatracev1beta1.DynaKube
 	capability capability.Capability
-	envMap     *parametermap.Map
+	envMap     *prioritymap.Map
 }
 
 // make the compiler watch the implemented interfaces
@@ -102,7 +102,7 @@ var (
 func newSyntheticModifier(
 	dynakube dynatracev1beta1.DynaKube,
 	capability capability.Capability,
-	envMap *parametermap.Map,
+	envMap *prioritymap.Map,
 ) SyntheticModifier {
 	return SyntheticModifier{
 		dynakube:   dynakube,
@@ -136,11 +136,11 @@ func (modifier SyntheticModifier) Modify(sts *appsv1.StatefulSet) error {
 		baseContainer.VolumeMounts,
 		buildPublicVolumeMounts()...)
 
-	parametermap.Append(modifier.envMap,
+	prioritymap.Append(modifier.envMap,
 		corev1.EnvVar{
 			Name:  envLocationId,
 			Value: modifier.dynakube.FeatureSyntheticLocationEntityId(),
-		}, parametermap.WithPriority(modifierEnvPriority))
+		}, prioritymap.WithPriority(modifierEnvPriority))
 
 	baseContainer.Env = modifier.envMap.AsEnvVars()
 

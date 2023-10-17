@@ -6,7 +6,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/parametermap"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,7 +24,7 @@ func TestServicePortEnabled(t *testing.T) {
 		setServicePortUsage(&dynakube, true)
 		multiCapability := capability.NewMultiCapability(&dynakube)
 
-		mod := NewServicePortModifier(dynakube, multiCapability, parametermap.NewMap())
+		mod := NewServicePortModifier(dynakube, multiCapability, prioritymap.NewMap())
 
 		assert.True(t, mod.Enabled())
 	})
@@ -34,7 +34,7 @@ func TestServicePortEnabled(t *testing.T) {
 		setServicePortUsage(&dynakube, false)
 		multiCapability := capability.NewMultiCapability(&dynakube)
 
-		mod := NewServicePortModifier(dynakube, multiCapability, parametermap.NewMap())
+		mod := NewServicePortModifier(dynakube, multiCapability, prioritymap.NewMap())
 
 		assert.False(t, mod.Enabled())
 	})
@@ -45,7 +45,7 @@ func TestServicePortModify(t *testing.T) {
 		dynakube := getBaseDynakube()
 		setServicePortUsage(&dynakube, true)
 		multiCapability := capability.NewMultiCapability(&dynakube)
-		mod := NewServicePortModifier(dynakube, multiCapability, parametermap.NewMap())
+		mod := NewServicePortModifier(dynakube, multiCapability, prioritymap.NewMap())
 		builder := createBuilderForTesting()
 		expectedPorts := mod.getPorts()
 		expectedEnv := mod.getEnvs()
@@ -76,7 +76,7 @@ func TestBuildDNSEntryPoint(t *testing.T) {
 			},
 		}
 		cap := capability.NewMultiCapability(&dynakubeActiveGateCapability)
-		portModifier := NewServicePortModifier(dynakubeActiveGateCapability, cap, parametermap.NewMap())
+		portModifier := NewServicePortModifier(dynakubeActiveGateCapability, cap, prioritymap.NewMap())
 		dnsEntryPoint := portModifier.buildDNSEntryPoint()
 		assert.Equal(t, "https://$(DYNAKUBE_ACTIVEGATE_SERVICE_HOST):$(DYNAKUBE_ACTIVEGATE_SERVICE_PORT)/communication,https://dynakube-activegate.dynatrace:$(DYNAKUBE_ACTIVEGATE_SERVICE_PORT)/communication", dnsEntryPoint)
 	})
@@ -96,7 +96,7 @@ func TestBuildDNSEntryPoint(t *testing.T) {
 			},
 		}
 		cap := capability.NewMultiCapability(&dynakubeActiveGateCapability)
-		portModifier := NewServicePortModifier(dynakubeActiveGateCapability, cap, parametermap.NewMap())
+		portModifier := NewServicePortModifier(dynakubeActiveGateCapability, cap, prioritymap.NewMap())
 		dnsEntryPoint := portModifier.buildDNSEntryPoint()
 		assert.Equal(t, "https://$(DYNAKUBE_ACTIVEGATE_SERVICE_HOST):$(DYNAKUBE_ACTIVEGATE_SERVICE_PORT)/communication", dnsEntryPoint)
 	})
@@ -117,7 +117,7 @@ func TestBuildDNSEntryPoint(t *testing.T) {
 			},
 		}
 		cap := capability.NewMultiCapability(&dynakubeActiveGateCapability)
-		portModifier := NewServicePortModifier(dynakubeActiveGateCapability, cap, parametermap.NewMap())
+		portModifier := NewServicePortModifier(dynakubeActiveGateCapability, cap, prioritymap.NewMap())
 		dnsEntryPoint := portModifier.buildDNSEntryPoint()
 		assert.Equal(t, "https://$(DYNAKUBE_ACTIVEGATE_SERVICE_HOST):$(DYNAKUBE_ACTIVEGATE_SERVICE_PORT)/communication,https://dynakube-activegate.dynatrace:$(DYNAKUBE_ACTIVEGATE_SERVICE_PORT)/communication", dnsEntryPoint)
 	})
@@ -135,7 +135,7 @@ func TestBuildDNSEntryPoint(t *testing.T) {
 			},
 		}
 		cap := capability.NewRoutingCapability(&dynakubeRoutingActiveGate)
-		portModifier := NewServicePortModifier(dynakubeRoutingActiveGate, cap, parametermap.NewMap())
+		portModifier := NewServicePortModifier(dynakubeRoutingActiveGate, cap, prioritymap.NewMap())
 		dnsEntryPoint := portModifier.buildDNSEntryPoint()
 		assert.Equal(t, "https://$(DYNAKUBE_ROUTING_SERVICE_HOST):$(DYNAKUBE_ROUTING_SERVICE_PORT)/communication,https://dynakube-routing.dynatrace:$(DYNAKUBE_ROUTING_SERVICE_PORT)/communication", dnsEntryPoint)
 	})
@@ -153,7 +153,7 @@ func TestBuildDNSEntryPoint(t *testing.T) {
 			},
 		}
 		cap := capability.NewKubeMonCapability(&dynakubeKubeMonActiveGate)
-		portModifier := NewServicePortModifier(dynakubeKubeMonActiveGate, cap, parametermap.NewMap())
+		portModifier := NewServicePortModifier(dynakubeKubeMonActiveGate, cap, prioritymap.NewMap())
 		dnsEntryPoint := portModifier.buildDNSEntryPoint()
 		assert.Equal(t, "https://$(DYNAKUBE_KUBEMON_SERVICE_HOST):$(DYNAKUBE_KUBEMON_SERVICE_PORT)/communication", dnsEntryPoint)
 	})
@@ -169,7 +169,7 @@ func TestBuildDNSEntryPoint(t *testing.T) {
 			},
 		}
 		cap := capability.NewSyntheticCapability(&dynakubeSyntheticCapability)
-		portModifier := NewServicePortModifier(dynakubeSyntheticCapability, cap, parametermap.NewMap())
+		portModifier := NewServicePortModifier(dynakubeSyntheticCapability, cap, prioritymap.NewMap())
 		dnsEntryPoint := portModifier.buildDNSEntryPoint()
 		assert.Equal(t, "https://$(DYNAKUBE_SYNTHETIC_SERVICE_HOST):$(DYNAKUBE_SYNTHETIC_SERVICE_PORT)/communication", dnsEntryPoint)
 	})

@@ -5,7 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/parametermap"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
 )
 
 const argumentPrefix = "--"
@@ -13,7 +13,7 @@ const customArgumentPriority = 2
 const defaultArgumentPriority = 1
 
 func (dsInfo *builderInfo) arguments() []string {
-	argMap := parametermap.NewMap(parametermap.WithSeparator(parametermap.DefaultSeparator), parametermap.WithPriority(defaultArgumentPriority))
+	argMap := prioritymap.NewMap(prioritymap.WithSeparator(prioritymap.DefaultSeparator), prioritymap.WithPriority(defaultArgumentPriority))
 
 	dsInfo.appendProxyArg(argMap)
 	dsInfo.appendNetworkZoneArg(argMap)
@@ -25,28 +25,28 @@ func (dsInfo *builderInfo) arguments() []string {
 	return argMap.AsKeyValueStrings()
 }
 
-func appendImmutableImageArgs(argMap *parametermap.Map) {
+func appendImmutableImageArgs(argMap *prioritymap.Map) {
 	argMap.Append(argumentPrefix+"set-tenant", fmt.Sprintf("$(%s)", connectioninfo.EnvDtTenant))
 	argMap.Append(argumentPrefix+"set-server", fmt.Sprintf("{$(%s)}", connectioninfo.EnvDtServer))
 }
 
-func (dsInfo *builderInfo) appendHostInjectArgs(argMap *parametermap.Map) {
+func (dsInfo *builderInfo) appendHostInjectArgs(argMap *prioritymap.Map) {
 	if dsInfo.hostInjectSpec != nil {
-		parametermap.Append(argMap, dsInfo.hostInjectSpec.Args, parametermap.WithPriority(customArgumentPriority))
+		prioritymap.Append(argMap, dsInfo.hostInjectSpec.Args, prioritymap.WithPriority(customArgumentPriority))
 	}
 }
 
-func appendOperatorVersionArg(argMap *parametermap.Map) {
+func appendOperatorVersionArg(argMap *prioritymap.Map) {
 	argMap.Append(argumentPrefix+"set-host-property", fmt.Sprintf("OperatorVersion=$(%s)", deploymentmetadata.EnvDtOperatorVersion))
 }
 
-func (dsInfo *builderInfo) appendNetworkZoneArg(argMap *parametermap.Map) {
+func (dsInfo *builderInfo) appendNetworkZoneArg(argMap *prioritymap.Map) {
 	if dsInfo.dynakube != nil && dsInfo.dynakube.Spec.NetworkZone != "" {
 		argMap.Append(argumentPrefix+"set-network-zone", dsInfo.dynakube.Spec.NetworkZone)
 	}
 }
 
-func (dsInfo *builderInfo) appendProxyArg(argMap *parametermap.Map) {
+func (dsInfo *builderInfo) appendProxyArg(argMap *prioritymap.Map) {
 	if dsInfo.hasProxy() {
 		argMap.Append(argumentPrefix+"set-proxy", "$(https_proxy)")
 	}

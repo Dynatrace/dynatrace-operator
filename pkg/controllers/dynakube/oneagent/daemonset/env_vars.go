@@ -5,7 +5,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/parametermap"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -25,10 +25,10 @@ const customEnvPriority = 2
 const defaultEnvPriority = 1
 
 func (dsInfo *builderInfo) environmentVariables() []corev1.EnvVar {
-	envMap := parametermap.NewMap(parametermap.WithPriority(defaultEnvPriority))
+	envMap := prioritymap.NewMap(prioritymap.WithPriority(defaultEnvPriority))
 
 	if dsInfo.hostInjectSpec != nil {
-		parametermap.Append(envMap, dsInfo.hostInjectSpec.Env, parametermap.WithPriority(customEnvPriority))
+		prioritymap.Append(envMap, dsInfo.hostInjectSpec.Env, prioritymap.WithPriority(customEnvPriority))
 	}
 
 	addNodeNameEnv(envMap)
@@ -42,15 +42,15 @@ func (dsInfo *builderInfo) environmentVariables() []corev1.EnvVar {
 	return envMap.AsEnvVars()
 }
 
-func addNodeNameEnv(envVarMap *parametermap.Map) {
+func addNodeNameEnv(envVarMap *prioritymap.Map) {
 	addDefaultValueSource(envVarMap, dtNodeName, &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}})
 }
 
-func (dsInfo *builderInfo) addClusterIDEnv(envVarMap *parametermap.Map) {
+func (dsInfo *builderInfo) addClusterIDEnv(envVarMap *prioritymap.Map) {
 	addDefaultValue(envVarMap, dtClusterId, dsInfo.clusterID)
 }
 
-func (dsInfo *builderInfo) addDeploymentMetadataEnv(envVarMap *parametermap.Map) {
+func (dsInfo *builderInfo) addDeploymentMetadataEnv(envVarMap *prioritymap.Map) {
 	addDefaultValueSource(envVarMap, deploymentmetadata.EnvDtDeploymentMetadata, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 		LocalObjectReference: corev1.LocalObjectReference{
 			Name: deploymentmetadata.GetDeploymentMetadataConfigMapName(dsInfo.dynakube.Name),
@@ -60,7 +60,7 @@ func (dsInfo *builderInfo) addDeploymentMetadataEnv(envVarMap *parametermap.Map)
 	}})
 }
 
-func (dsInfo *builderInfo) addOperatorVersionInfoEnv(envVarMap *parametermap.Map) {
+func (dsInfo *builderInfo) addOperatorVersionInfoEnv(envVarMap *prioritymap.Map) {
 	addDefaultValueSource(envVarMap, deploymentmetadata.EnvDtOperatorVersion, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 		LocalObjectReference: corev1.LocalObjectReference{
 			Name: deploymentmetadata.GetDeploymentMetadataConfigMapName(dsInfo.dynakube.Name),
@@ -70,7 +70,7 @@ func (dsInfo *builderInfo) addOperatorVersionInfoEnv(envVarMap *parametermap.Map
 	}})
 }
 
-func (dsInfo *builderInfo) addConnectionInfoEnvs(envVarMap *parametermap.Map) {
+func (dsInfo *builderInfo) addConnectionInfoEnvs(envVarMap *prioritymap.Map) {
 	addDefaultValueSource(envVarMap, connectioninfo.EnvDtTenant, &corev1.EnvVarSource{ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 		LocalObjectReference: corev1.LocalObjectReference{
 			Name: dsInfo.dynakube.OneAgentConnectionInfoConfigMapName(),
@@ -87,7 +87,7 @@ func (dsInfo *builderInfo) addConnectionInfoEnvs(envVarMap *parametermap.Map) {
 	}})
 }
 
-func (dsInfo *builderInfo) addProxyEnv(envVarMap *parametermap.Map) {
+func (dsInfo *builderInfo) addProxyEnv(envVarMap *prioritymap.Map) {
 	if !dsInfo.hasProxy() {
 		return
 	}
@@ -103,28 +103,28 @@ func (dsInfo *builderInfo) addProxyEnv(envVarMap *parametermap.Map) {
 	}
 }
 
-func (dsInfo *builderInfo) addReadOnlyEnv(envVarMap *parametermap.Map) {
+func (dsInfo *builderInfo) addReadOnlyEnv(envVarMap *prioritymap.Map) {
 	if dsInfo.dynakube != nil && dsInfo.dynakube.NeedsReadOnlyOneAgents() {
 		addDefaultValue(envVarMap, oneagentReadOnlyMode, "true")
 	}
 }
 
 func (dsInfo *HostMonitoring) appendInfraMonEnvVars(daemonset *appsv1.DaemonSet) {
-	envVars := parametermap.NewMap()
-	parametermap.Append(envVars, daemonset.Spec.Template.Spec.Containers[0].Env)
+	envVars := prioritymap.NewMap()
+	prioritymap.Append(envVars, daemonset.Spec.Template.Spec.Containers[0].Env)
 	addDefaultValue(envVars, oneagentDisableContainerInjection, "true")
 	daemonset.Spec.Template.Spec.Containers[0].Env = envVars.AsEnvVars()
 }
 
-func addDefaultValue(envVarMap *parametermap.Map, name string, value string) {
-	parametermap.Append(envVarMap, corev1.EnvVar{
+func addDefaultValue(envVarMap *prioritymap.Map, name string, value string) {
+	prioritymap.Append(envVarMap, corev1.EnvVar{
 		Name:  name,
 		Value: value,
 	})
 }
 
-func addDefaultValueSource(envVarMap *parametermap.Map, name string, value *corev1.EnvVarSource) {
-	parametermap.Append(envVarMap, corev1.EnvVar{
+func addDefaultValueSource(envVarMap *prioritymap.Map, name string, value *corev1.EnvVarSource) {
+	prioritymap.Append(envVarMap, corev1.EnvVar{
 		Name:      name,
 		ValueFrom: value,
 	})

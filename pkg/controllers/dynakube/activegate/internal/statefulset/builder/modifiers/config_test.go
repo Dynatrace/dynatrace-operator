@@ -7,7 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/parametermap"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -88,7 +88,7 @@ func TestNoConflict(t *testing.T) {
 		enableKubeMonCapability(&dynakube)
 		multiCapability := capability.NewMultiCapability(&dynakube)
 		enableAllModifiers(&dynakube, multiCapability)
-		mods := GenerateAllModifiers(dynakube, multiCapability, parametermap.NewMap())
+		mods := GenerateAllModifiers(dynakube, multiCapability, prioritymap.NewMap())
 		builder := createBuilderForTesting()
 
 		sts, _ := builder.AddModifier(mods...).Build()
