@@ -5,12 +5,8 @@ package proxy
 import (
 	"context"
 	"fmt"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"path"
 	"path/filepath"
-	"sigs.k8s.io/e2e-framework/klient/wait"
-	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
@@ -28,7 +24,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/e2e-framework/klient/wait"
+	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -89,7 +89,6 @@ func CutOffDynatraceNamespace(builder *features.FeatureBuilder, proxySpec *dynat
 	if proxySpec != nil {
 		builder.Assess("cut off dynatrace namespace", manifests.InstallFromFile(dynatraceNetworkPolicy))
 		builder.WithTeardown("uninstalling outbound traffic pod", func(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
-```suggestion
 			return DeletePod(ctx, t, config, "dynatrace", curlPodNameDynatraceOutboundTraffic)
 		})
 	}
@@ -106,17 +105,10 @@ func DeletePod(ctx context.Context, t *testing.T, config *envconf.Config, namesp
 	resources := config.Client().Resources()
 	err := resources.Delete(ctx, podToDelete)
 
-	if k8serror.IsNotFound(err) {
-	  return ctx
-	}
-	require.NoError(t, err)  
-	  
-		if k8serrors.IsNotFound(err) {
-			err = nil
-		}
-		require.NoError(t, err)
+	if k8serrors.IsNotFound(err) {
 		return ctx
 	}
+	require.NoError(t, err)
 
 	err = wait.For(conditions.New(resources).ResourceDeleted(podToDelete))
 	require.NoError(t, err)
