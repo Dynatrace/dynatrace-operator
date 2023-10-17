@@ -32,23 +32,74 @@ func TestNewClient(t *testing.T) {
 
 func TestCreateEdgeConnect(t *testing.T) {
 	t.Run("create basic edge connect", func(t *testing.T) {
-		edgeConnectServer, edgeConnectClient := createTestEdgeConnectServer(t, edgeConnectServerHandler())
+		edgeConnectServer, edgeConnectClient := createTestEdgeConnectServer(t, edgeConnectCreateServerHandler(false))
 		defer edgeConnectServer.Close()
 
 		resp, err := edgeConnectClient.CreateEdgeConnect("InternalServices", []string{"*.internal.org"}, "dt0s02.AIOUP56P")
 		assert.NoError(t, err)
 		assert.Equal(t, resp.Name, "InternalServices")
 	})
+	t.Run("create basic edge connect without name returns error", func(t *testing.T) {
+		edgeConnectServer, edgeConnectClient := createTestEdgeConnectServer(t, edgeConnectCreateServerHandler(true))
+		defer edgeConnectServer.Close()
+
+		_, err := edgeConnectClient.CreateEdgeConnect("", []string{"*.internal.org"}, "dt0s02.AIOUP56P")
+		assert.Error(t, err, "edgeconnect server error 400: Constraints violated.")
+	})
 }
 
 func TestGetEdgeConnect(t *testing.T) {
 	t.Run("get edge connect", func(t *testing.T) {
-		edgeConnectServer, edgeConnectClient := createTestEdgeConnectServer(t, edgeConnectServerHandler())
+		edgeConnectServer, edgeConnectClient := createTestEdgeConnectServer(t, edgeConnectGetServerHandler())
 		defer edgeConnectServer.Close()
 
 		resp, err := edgeConnectClient.GetEdgeConnect("348b4cd9-ba31-4670-9c45-9125a7d87439")
 		assert.NoError(t, err)
 		assert.Equal(t, resp.Name, "InternalServices")
+	})
+
+	t.Run("get edge connect with wrong edge connect id", func(t *testing.T) {
+		edgeConnectServer, edgeConnectClient := createTestEdgeConnectServer(t, edgeConnectGetServerHandler())
+		defer edgeConnectServer.Close()
+
+		_, err := edgeConnectClient.GetEdgeConnect("not-found")
+		assert.Error(t, err, http.StatusBadRequest)
+	})
+}
+
+func TestDeleteEdgeConnect(t *testing.T) {
+	t.Run("delete edge connect", func(t *testing.T) {
+		edgeConnectServer, edgeConnectClient := createTestEdgeConnectServer(t, edgeConnectDeleteServerHandler())
+		defer edgeConnectServer.Close()
+
+		err := edgeConnectClient.DeleteEdgeConnect("348b4cd9-ba31-4670-9c45-9125a7d87439")
+		assert.NoError(t, err)
+	})
+
+	t.Run("delete edge connect with wrong edge connect id", func(t *testing.T) {
+		edgeConnectServer, edgeConnectClient := createTestEdgeConnectServer(t, edgeConnectDeleteServerHandler())
+		defer edgeConnectServer.Close()
+
+		err := edgeConnectClient.DeleteEdgeConnect("not-found")
+		assert.Error(t, err, http.StatusBadRequest)
+	})
+}
+
+func TestUpdateEdgeConnect(t *testing.T) {
+	t.Run("update edge connect", func(t *testing.T) {
+		edgeConnectServer, edgeConnectClient := createTestEdgeConnectServer(t, edgeConnectUpdateServerHandler())
+		defer edgeConnectServer.Close()
+
+		err := edgeConnectClient.UpdateEdgeConnect(EdgeConnectID, "test_name", []string{""}, "")
+		assert.NoError(t, err)
+	})
+
+	t.Run("update edge connect returns error", func(t *testing.T) {
+		edgeConnectServer, edgeConnectClient := createTestEdgeConnectServer(t, edgeConnectUpdateServerHandler())
+		defer edgeConnectServer.Close()
+
+		err := edgeConnectClient.UpdateEdgeConnect("", "test_name", []string{""}, "")
+		assert.Error(t, err, http.StatusBadRequest)
 	})
 }
 
@@ -71,54 +122,113 @@ func createTestEdgeConnectServer(t *testing.T, handler http.Handler) (*httptest.
 	return edgeConnectServer, edgeConnectClient
 }
 
-func edgeConnectServerHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		handleRequest(r, w)
+func writeOauthTokenResponse(writer http.ResponseWriter) {
+	writer.WriteHeader(http.StatusOK)
+	out, _ := json.Marshal(map[string]string{
+		"scope":        "app-engine:edge-connects:write app-engine:edge-connects:read oauth2:clients:manage app-engine:edge-connects:delete",
+		"token_type":   "Bearer",
+		"expires_in":   "300",
+		"access_token": "access_token",
+	})
+	_, _ = writer.Write(out)
+}
+
+func edgeConnectCreateServerHandler(error bool) http.HandlerFunc {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		writer.Header().Set("Content-Type", "application/json")
+		switch request.URL.Path {
+		case "/sso/oauth2/token":
+			writeOauthTokenResponse(writer)
+		case "/edge-connects":
+			if !error {
+				writer.WriteHeader(http.StatusOK)
+				resp := CreateResponse{
+					ID:            "348b4cd9-ba31-4670-9c45-9125a7d87439",
+					Name:          "InternalServices",
+					HostPatterns:  []string{"*.internal.org"},
+					OauthClientId: "dt0s02.example",
+					ModificationInfo: ModificationInfo{
+						LastModifiedBy:   "72ece475-e4d5-4774-afed-65d04e8c9f24",
+						LastModifiedTime: nil,
+					},
+				}
+				out, _ := json.Marshal(resp)
+				_, _ = writer.Write(out)
+			} else {
+				writer.WriteHeader(http.StatusBadRequest)
+				resp := serverErrorResponse{
+					ErrorMessage: ServerError{
+						Code:    400,
+						Message: "Constraints violated.",
+						Details: DetailsError{
+							ConstraintViolations: ConstraintViolations{
+								Message:           "must not be null",
+								Path:              "path",
+								ParameterLocation: "PAYLOAD_BODY",
+							},
+						},
+					},
+				}
+				out, _ := json.Marshal(resp)
+				_, _ = writer.Write(out)
+			}
+		default:
+			writeError(writer, http.StatusBadRequest)
+		}
 	}
 }
 
-func handleRequest(request *http.Request, writer http.ResponseWriter) {
-	switch {
-	case request.URL.Path == "/sso/oauth2/token":
-		writer.WriteHeader(http.StatusOK)
-		out, _ := json.Marshal(map[string]string{
-			"scope":        "app-engine:edge-connects:write app-engine:edge-connects:read oauth2:clients:manage app-engine:edge-connects:delete",
-			"token_type":   "Bearer",
-			"expires_in":   "300",
-			"access_token": "access_token",
-		})
-		_, _ = writer.Write(out)
-	case request.URL.Path == "/edge-connects" && request.Method == http.MethodPost:
-		writer.WriteHeader(http.StatusOK)
-		resp := CreateResponse{
-			ID:            "348b4cd9-ba31-4670-9c45-9125a7d87439",
-			Name:          "InternalServices",
-			HostPatterns:  []string{"*.internal.org"},
-			OauthClientId: "dt0s02.example",
-			ModificationInfo: ModificationInfo{
-				LastModifiedBy:   "72ece475-e4d5-4774-afed-65d04e8c9f24",
-				LastModifiedTime: nil,
-			},
+func edgeConnectGetServerHandler() http.HandlerFunc {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		writer.Header().Set("Content-Type", "application/json")
+		switch request.URL.Path {
+		case "/sso/oauth2/token":
+			writeOauthTokenResponse(writer)
+		case fmt.Sprintf("/edge-connects/%s", EdgeConnectID):
+			writer.WriteHeader(http.StatusOK)
+			resp := GetResponse{
+				ID:            "348b4cd9-ba31-4670-9c45-9125a7d87439",
+				Name:          "InternalServices",
+				HostPatterns:  []string{"*.internal.org"},
+				OauthClientId: "dt0s02.example",
+				ModificationInfo: ModificationInfo{
+					LastModifiedBy:   "72ece475-e4d5-4774-afed-65d04e8c9f24",
+					LastModifiedTime: nil,
+				},
+			}
+			out, _ := json.Marshal(resp)
+			_, _ = writer.Write(out)
+		default:
+			writeError(writer, http.StatusBadRequest)
 		}
-		out, _ := json.Marshal(resp)
-		_, _ = writer.Write(out)
-	case request.URL.Path == fmt.Sprintf("/edge-connects/%s", EdgeConnectID) && request.Method == http.MethodGet:
-		writer.WriteHeader(http.StatusOK)
-		resp := GetResponse{
-			ID:            "348b4cd9-ba31-4670-9c45-9125a7d87439",
-			Name:          "InternalServices",
-			HostPatterns:  []string{"*.internal.org"},
-			OauthClientId: "dt0s02.example",
-			ModificationInfo: ModificationInfo{
-				LastModifiedBy:   "72ece475-e4d5-4774-afed-65d04e8c9f24",
-				LastModifiedTime: nil,
-			},
+	}
+}
+
+func edgeConnectDeleteServerHandler() http.HandlerFunc {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		writer.Header().Set("Content-Type", "application/json")
+		switch request.URL.Path {
+		case "/sso/oauth2/token":
+			writeOauthTokenResponse(writer)
+		case fmt.Sprintf("/edge-connects/%s", EdgeConnectID):
+			writer.WriteHeader(http.StatusNoContent)
+		default:
+			writeError(writer, http.StatusBadRequest)
 		}
-		out, _ := json.Marshal(resp)
-		_, _ = writer.Write(out)
-	default:
-		writeError(writer, http.StatusBadRequest)
+	}
+}
+
+func edgeConnectUpdateServerHandler() http.HandlerFunc {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		writer.Header().Set("Content-Type", "application/json")
+		switch request.URL.Path {
+		case "/sso/oauth2/token":
+			writeOauthTokenResponse(writer)
+		case fmt.Sprintf("/edge-connects/%s", EdgeConnectID):
+			writer.WriteHeader(http.StatusOK)
+		default:
+			writeError(writer, http.StatusBadRequest)
+		}
 	}
 }
 
