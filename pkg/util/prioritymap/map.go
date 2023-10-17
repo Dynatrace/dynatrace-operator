@@ -6,7 +6,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-type argument struct {
+type entry struct {
 	delimiter string
 	value     any
 	priority  int
@@ -15,27 +15,27 @@ type argument struct {
 const defaultPriority = 1
 
 type Map struct {
-	arguments      map[string]argument
+	entries        map[string]entry
 	defaultOptions []Option
 }
 
-type Option func(a *argument)
+type Option func(a *entry)
 
 func WithPriority(priority int) Option {
-	return func(a *argument) {
+	return func(a *entry) {
 		a.priority = priority
 	}
 }
 
 func WithSeparator(separator string) Option {
-	return func(a *argument) {
+	return func(a *entry) {
 		a.delimiter = separator
 	}
 }
 
 func NewMap(defaultOptions ...Option) *Map {
 	m := &Map{
-		arguments:      make(map[string]argument),
+		entries:        make(map[string]entry),
 		defaultOptions: defaultOptions,
 	}
 	return m
@@ -46,7 +46,7 @@ func (m Map) Append(key string, value any, opts ...Option) {
 		return
 	}
 
-	newArg := argument{
+	newArg := entry{
 		value:    value,
 		priority: defaultPriority,
 	}
@@ -60,8 +60,8 @@ func (m Map) Append(key string, value any, opts ...Option) {
 
 	key, _ = strings.CutSuffix(key, newArg.delimiter)
 
-	if existingArg, exists := m.arguments[key]; !exists || newArg.priority > existingArg.priority {
-		m.arguments[key] = newArg
+	if existingArg, exists := m.entries[key]; !exists || newArg.priority > existingArg.priority {
+		m.entries[key] = newArg
 	}
 }
 

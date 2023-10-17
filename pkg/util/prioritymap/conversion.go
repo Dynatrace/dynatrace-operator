@@ -11,7 +11,7 @@ func (m Map) AsEnvVars() []corev1.EnvVar {
 	keys := m.getSortedKeys()
 	envVars := make([]corev1.EnvVar, 0, len(keys))
 	for _, key := range keys {
-		switch typedValue := m.arguments[key].value.(type) {
+		switch typedValue := m.entries[key].value.(type) {
 		case string:
 			envVars = append(envVars, corev1.EnvVar{
 				Name:  key,
@@ -40,7 +40,7 @@ func (m Map) AsKeyValueStrings() []string {
 	keys := m.getSortedKeys()
 	valStrings := make([]string, 0)
 	for _, key := range keys {
-		val := m.arguments[key]
+		val := m.entries[key]
 		valStrings = append(valStrings, fmt.Sprintf("%s%s%v", key, val.delimiter, val.value))
 	}
 	return valStrings
@@ -48,8 +48,8 @@ func (m Map) AsKeyValueStrings() []string {
 
 func (m Map) getSortedKeys() []string {
 	// some unit tests rely on having the resulting env vars always being in the same order
-	keys := make([]string, 0, len(m.arguments))
-	for key := range m.arguments {
+	keys := make([]string, 0, len(m.entries))
+	for key := range m.entries {
 		keys = append(keys, key)
 	}
 	slices.Sort(keys)
