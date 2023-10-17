@@ -15,7 +15,7 @@ tramp
 # Org-mode
 .org-id-locations
 *_archive
-!/src/cmd/support_archive
+!/cmd/support_archive
 !/test/scenarios/support_archive
 # flymake-mode
 *_flymake.*
@@ -61,8 +61,8 @@ anaconda-mode/
 *.dylib
 # Test binary, build with 'go test -c'
 *.test
-# Output of the go coverage tool, specifically when used with LiteIDE
-*.out
+# Output of the go coverage tool
+coverage.txt
 ### Vim ###
 # swap
 .sw[a-p]

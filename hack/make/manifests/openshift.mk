@@ -6,7 +6,7 @@ manifests/openshift/csi:
 		--set partial="csi" \
 		--set platform="openshift" \
 		--set manifests=true \
-		--set createSecurityContextConstraints="true" \
+		--set olm="${OLM}" \
 		--set image="$(IMAGE_URI)" > "$(OPENSHIFT_CSIDRIVER_YAML)"
 
 ## Generates an OpenShift manifest with a CRD
@@ -16,7 +16,7 @@ manifests/openshift/core: manifests/crd/helm
 		--set installCRD=true \
 		--set platform="openshift" \
 		--set manifests=true \
-		--set createSecurityContextConstraints="true" \
+		--set olm="${OLM}" \
 		--set image="$(IMAGE_URI)" > "$(OPENSHIFT_CORE_YAML)"
 
 ## Generates a manifest for OpenShift including a CRD and a CSI driver deployment

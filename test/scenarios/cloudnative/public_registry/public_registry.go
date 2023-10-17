@@ -7,12 +7,14 @@ import (
 	"strings"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1"
+	dynakubev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/activegate"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/setup"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -25,11 +27,11 @@ import (
 )
 
 const (
-	publicRegistrySource = dynatracev1beta1.VersionSource("public-registry")
+	publicRegistrySource = status.VersionSource("public-registry")
 	customPullSecretName = "devregistry"
 )
 
-var publicRegistryFeatureFlag = map[string]string{dynatracev1beta1.AnnotationFeaturePublicRegistry: "true"}
+var publicRegistryFeatureFlag = map[string]string{dynakubev1beta1.AnnotationFeaturePublicRegistry: "true"}
 
 func publicRegistry(t *testing.T) features.Feature {
 	builder := features.New("cloudnative with public registry feature enabled")
@@ -42,26 +44,25 @@ func publicRegistry(t *testing.T) features.Feature {
 		WithAnnotations(publicRegistryFeatureFlag).
 		WithActiveGate().
 		ApiUrl(secretConfig.ApiUrl).
-		CloudNative(&dynatracev1beta1.CloudNativeFullStackSpec{})
+		CloudNative(&dynakubev1beta1.CloudNativeFullStackSpec{})
 	testDynakube := dynakubeBuilder.Build()
 
-	// Register operator + dynakube install
-	assess.InstallDynatrace(builder, &secretConfig, testDynakube)
-
+	setup.CreateFeatureEnvironment(builder,
+		setup.CreateNamespaceWithoutTeardown(namespace.NewBuilder(testDynakube.Namespace).Build()),
+		setup.DeployOperatorViaMake(testDynakube.NeedsCSIDriver()),
+		setup.CreateDynakube(secretConfig, testDynakube),
+	)
 	builder.Assess("check dynakube status", checkDynakubeStatus(testDynakube))
 	builder.Assess("check whether public registry images are used", checkPublicRegistryUsage(testDynakube))
 	builder.Assess("check whether correct image has been downloaded", checkCSIProvisionerEvent(testDynakube))
 
-	// Register dynakube and operator uninstall
-	teardown.UninstallDynatrace(builder, testDynakube)
-
 	return builder.Feature()
 }
 
-func checkDynakubeStatus(dynakube dynatracev1beta1.DynaKube) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resources := environmentConfig.Client().Resources()
-		var dk dynatracev1beta1.DynaKube
+func checkDynakubeStatus(dynakube dynakubev1beta1.DynaKube) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
+		var dk dynakubev1beta1.DynaKube
 
 		err := dynatracev1beta1.AddToScheme(resources.GetScheme())
 		require.NoError(t, err)
@@ -88,10 +89,10 @@ func checkDynakubeStatus(dynakube dynatracev1beta1.DynaKube) features.Func {
 	}
 }
 
-func checkPublicRegistryUsage(dynakube dynatracev1beta1.DynaKube) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resources := environmentConfig.Client().Resources()
-		var dk dynatracev1beta1.DynaKube
+func checkPublicRegistryUsage(dynakube dynakubev1beta1.DynaKube) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
+		var dk dynakubev1beta1.DynaKube
 
 		err := dynatracev1beta1.AddToScheme(resources.GetScheme())
 		require.NoError(t, err)
@@ -113,13 +114,13 @@ func checkPublicRegistryUsage(dynakube dynatracev1beta1.DynaKube) features.Func 
 	}
 }
 
-func checkCSIProvisionerEvent(dynakube dynatracev1beta1.DynaKube) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resources := environmentConfig.Client().Resources()
+func checkCSIProvisionerEvent(dynakube dynakubev1beta1.DynaKube) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
 		clientset, err := kubernetes.NewForConfig(resources.GetConfig())
 		require.NoError(t, err)
 
-		err = wait.For(func() (done bool, err error) {
+		err = wait.For(func(ctx context.Context) (done bool, err error) {
 			events, err := clientset.CoreV1().Events("dynatrace").List(ctx, v1.ListOptions{
 				TypeMeta: v1.TypeMeta{
 					Kind: "Pod",

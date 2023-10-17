@@ -20,8 +20,8 @@ import (
 type ConditionFunction func(object k8s.Object) bool
 
 func WaitForCondition(name string, namespace string, conditionFunction ConditionFunction, timeout time.Duration) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resources := environmentConfig.Client().Resources()
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
 
 		err := wait.For(conditions.New(resources).ResourceMatch(&corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
@@ -44,8 +44,8 @@ func WaitFor(name string, namespace string) features.Func {
 }
 
 func WaitForPodsDeletionWithOwner(ownerName string, namespace string) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resources := environmentConfig.Client().Resources()
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
 		targetPods := GetPodsForOwner(ctx, t, resources, ownerName, namespace)
 
 		err := wait.For(conditions.New(resources).ResourcesDeleted(&targetPods))
@@ -55,8 +55,8 @@ func WaitForPodsDeletionWithOwner(ownerName string, namespace string) features.F
 }
 
 func WaitForPodsWithOwner(ownerName string, namespace string) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resources := environmentConfig.Client().Resources()
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
 		targetPods := GetPodsForOwner(ctx, t, resources, ownerName, namespace)
 		for _, pod := range targetPods.Items {
 			podCopy := pod

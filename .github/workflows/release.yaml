@@ -15,13 +15,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
       - name: Prepare build parameters
         id: prep
         run: |
           hack/build/ci/prepare-build-variables.sh
       - name: Docker metadata
-        uses: docker/metadata-action@818d4b7b91585d195f67373fd9cb0332e31a7175 # v4.6.0
+        uses: docker/metadata-action@96383f45573cb7f253c731d3b3ab81c87ef81934 # v5.0.0
         id: meta
         with:
           images: dynatrace/dynatrace-operator
@@ -32,6 +32,7 @@ jobs:
     outputs:
       labels: ${{ steps.meta.outputs.labels }}
       version: ${{ steps.prep.outputs.docker_image_tag }}
+      version_without_prefix: ${{ steps.prep.outputs.docker_image_tag_without_prefix }}
 
   build:
     name: Build images
@@ -42,7 +43,7 @@ jobs:
         platform: [amd64, arm64, ppc64le]
     steps:
       - name: Checkout
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
       - name: Build image
         uses: ./.github/actions/build-image
         with:
@@ -74,9 +75,9 @@ jobs:
           password: DOCKERHUB_PASSWORD
     steps:
       - name: Checkout
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
       - name: Login to Registry
-        uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc # v2.2.0
+        uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
         with:
           registry: ${{ matrix.url }}
           username: ${{ secrets[matrix.username] }}
@@ -112,9 +113,9 @@ jobs:
       SCAN_REGISTRY: "quay.io"
     steps:
       - name: Checkout
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
       - name: Login to Registry
-        uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc # v2.2.0
+        uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
         with:
           registry: ${{ env.SCAN_REGISTRY }}
           username: ${{ secrets.RHCC_USERNAME }}
@@ -139,7 +140,7 @@ jobs:
           pyxis-api-token: ${{ secrets.PYXIS_API_TOKEN }}
 
   manifest:
-    name: Create manifest
+    name: Create Docker manifests
     environment: Release
     needs: [prepare, push]
     runs-on: ubuntu-latest
@@ -161,9 +162,9 @@ jobs:
             password: DOCKERHUB_PASSWORD
     steps:
       - name: Checkout
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
       - name: Login to Registry
-        uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc # v2.2.0
+        uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
         with:
           registry: ${{ matrix.url }}
           username: ${{ secrets[matrix.username] }}
@@ -181,7 +182,7 @@ jobs:
           IMAGE: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}
         run: |
           hack/build/ci/get-image-digest.sh
-      - name: Sign manifests for ${{matrix.registry}}
+      - name: Sign images for ${{matrix.registry}}
         uses: ./.github/actions/sign-image
         with:
           image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{steps.digest.outputs.digest}}
@@ -211,9 +212,9 @@ jobs:
             password: DOCKERHUB_PASSWORD
     steps:
       - name: Checkout
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
       - name: Login to Registry
-        uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc # v2.2.0
+        uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
         with:
           registry: ${{ matrix.url }}
           username: ${{ secrets[matrix.username] }}
@@ -239,25 +240,21 @@ jobs:
           sbom: 'result.json'
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
-  pre-release:
-    if: ${{ contains(github.ref, '-rc.') }}
-    name: Create pre-release
-    needs: [prepare]
+
+  release:
+    name: Create release
+    needs: [prepare, build, attach-sbom]
+    environment: Release
     permissions:
       contents: write
+      pull-requests: write
+      id-token: write
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        registry: [ dockerhub ]
-        include:
-          - registry: dockerhub
-            url: docker.io
-            repository: DOCKERHUB_REPOSITORY
     steps:
       - name: Checkout code
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
       - name: Setup Golang
-        uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4.0.1
+        uses: actions/setup-go@93397bea11091df50f3d7e59dc26a7711a8bcfbe # v4.1.0
         with:
           go-version-file: "${{ github.workspace }}/go.mod"
       - name: Download dependencies
@@ -265,31 +262,109 @@ jobs:
         run: |
           hack/build/ci/install-cgo-dependencies.sh
       - name: Generate release notes
-        id: generate_notes
+        shell: bash
+        env:
+          PRE_RELEASE: ${{ contains(github.ref, '-rc.') }}
         run: |
           hack/build/ci/generate-release-notes.sh
-      - name: Generate manifests
+      - name: Generate K8s manifests
+        shell: bash
+        env:
+          VERSION_WITHOUT_PREFIX: ${{ needs.prepare.outputs.version_without_prefix }}
+          VERSION: ${{ needs.prepare.outputs.version }}
         run: |
-          export IMAGE= ${{ matrix.url }}/${{ secrets[matrix.repository] }}
-          export TAG=$(echo "${{ github.ref }}" | awk -F"/" '{print $3}')
-          make manifests
-      - name: Generate CRD
-        run: make manifests/crd/release
-      - name: Pre-release
+          make manifests/crd/release CHART_VERSION="${VERSION_WITHOUT_PREFIX}"
+
+          make manifests/kubernetes IMAGE="docker.io/dynatrace/dynatrace-operator" TAG="${VERSION}"
+          make manifests/openshift IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator" TAG="${VERSION}"
+      - name: Rename manifests if pre-release
+        if: ${{ contains(github.ref, '-rc.') }}
+        run: |
+          mv config/deploy/kubernetes/kubernetes-all.yaml config/deploy/kubernetes/kubernetes.yaml
+          mv config/deploy/openshift/openshift-all.yaml config/deploy/openshift/openshift.yaml
+      - name: Build helm packages
+        uses: ./.github/actions/build-helm
+        with:
+          version_without_prefix: ${{ needs.prepare.outputs.version_without_prefix }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          secring: ${{ secrets.HELM_SECRING }}
+          passphrase: ${{ secrets.HELM_PASSPHRASE }}
+          output-dir: "./helm-pkg"
+      - name: Upload and sign helm package to dockerhub
+        uses: ./.github/actions/upload-helm
+        with:
+          registry-username: ${{ secrets.DOCKERHUB_USERNAME }}
+          registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          version: ${{ needs.prepare.outputs.version }}
+          version-without-prefix: ${{ needs.prepare.outputs.version_without_prefix }}
+          cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          cosign-password: ${{ secrets.COSIGN_PASSWORD }}
+      - name: Prepare cosign.pub artifact
+        env:
+          COSIGN_PUBLIC_KEY: ${{ secrets.COSIGN_PUBLIC_KEY }}
+        run: |
+          mkdir -p tmp
+          echo ${COSIGN_PUBLIC_KEY} > tmp/cosign.pub
+      - name: Create pre-release
         uses: softprops/action-gh-release@v1
+        if: ${{ contains(github.ref, '-rc.') }}
         with:
           body_path: ./CHANGELOG.md
           files: |
-            config/deploy/kubernetes/gke-autopilot.yaml
-            config/deploy/kubernetes/kubernetes-csi.yaml
-            config/deploy/kubernetes/kubernetes.yaml
-            config/deploy/openshift/openshift-csi.yaml
-            config/deploy/openshift/openshift.yaml
+            tmp/cosign.pub
             config/deploy/dynatrace-operator-crd.yaml
+            config/deploy/kubernetes/kubernetes.yaml
+            config/deploy/openshift/openshift.yaml
           token: ${{ secrets.GITHUB_TOKEN }}
           prerelease: true
           draft: true
-
+          fail_on_unmatched_files: true
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        if: ${{ !contains(github.ref, '-rc.') }}
+        with:
+          body_path: ./CHANGELOG.md
+          files: |
+            tmp/cosign.pub
+            config/deploy/dynatrace-operator-crd.yaml
+            config/deploy/kubernetes/kubernetes.yaml
+            config/deploy/kubernetes/kubernetes-csi.yaml
+            config/deploy/kubernetes/gke-autopilot.yaml
+            config/deploy/openshift/openshift.yaml
+            config/deploy/openshift/openshift-csi.yaml
+            helm-pkg/dynatrace-operator-${{ needs.prepare.outputs.version_without_prefix }}.tgz
+            helm-pkg/dynatrace-operator-${{ needs.prepare.outputs.version_without_prefix }}.tgz.prov
+          token: ${{ secrets.GITHUB_TOKEN }}
+          prerelease: false
+          draft: true
+          fail_on_unmatched_files: true
+      - name: Update index helm file
+        if: ${{ !contains(github.ref, '-rc.') }}
+        env:
+          VERSION_WITHOUT_PREFIX: ${{ needs.prepare.outputs.version_without_prefix }}
+        run: |
+          echo "Updating Helm repo index"
+          hack/build/ci/generate-new-helm-index-yaml.sh "helm-pkg" ${{ needs.prepare.outputs.version_without_prefix }}
+      - name: Create pull request for adding helm index to main branch
+        if: ${{ !contains(github.ref, '-rc.') }}
+        uses: peter-evans/create-pull-request@v5
+        with:
+          base: main
+          delete-branch: true
+          add-paths: |
+            ./config/helm/repos/stable/index.yaml
+            ./config/helm/repos/stable/index.yaml.previous
+          title: '[Automatic] Update index for ${{ github.ref }} release'
+          commit-message: Update index.yaml
+          committer: GitHub <noreply@github.com>
+          author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
+          body: |
+            # Description
+            Upgrade `index.yaml` to include latest version of the helm chart.
+            ## How can this be tested?
+            Helm upgrade to and install of `${{ github.ref }}` works.
+            ## Checklist
+            - [x] PR is labeled accordingly
   snyk:
     name: Push tag to snyk
     environment: Release
@@ -299,8 +374,8 @@ jobs:
       id-token: write
 
     steps:
-      - name: Push tag to synk
-        id: pushToSnyk
+      - name: Push tag to snyk
+        id: push-to-snyk
         uses: fjogeleit/http-request-action@v1
         with:
           url: 'https://api.snyk.io/v1/org/${{ secrets.SNYK_ORGANIZATION_ID }}/integrations/${{ secrets.SNYK_INTEGRATION_ID }}/import'
@@ -309,5 +384,5 @@ jobs:
           data: '{ "target": { "name": "${{ secrets.DOCKERHUB_REPOSITORY }}:${{ needs.prepare.outputs.version }}" }}'
       - name: Show Response
         run: |
-          echo ${{ steps.pushToSnyk.outputs.response }}
-          echo ${{ steps.pushToSnyk.outputs.headers }}
+          echo ${{ steps.push-to-snyk.outputs.response }}
+          echo ${{ steps.push-to-snyk.outputs.headers }}

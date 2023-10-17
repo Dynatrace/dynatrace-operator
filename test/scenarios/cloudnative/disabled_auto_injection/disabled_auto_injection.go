@@ -5,11 +5,12 @@ package disabled_auto_injection
 import (
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
 	sample "github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/base"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/setup"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
@@ -35,10 +36,8 @@ func automaticInjectionDisabled(t *testing.T) features.Feature {
 
 	testDynakube := dynakubeBuilder.Build()
 
-	// Register operator install
-	operatorNamespaceBuilder := namespace.NewBuilder(testDynakube.Namespace)
-
-	assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), testDynakube)
+	steps := setup.CreateDefault()
+	steps.CreateSetupSteps(builder)
 
 	// Register sample app install
 	namespaceBuilder := namespace.NewBuilder("cloudnative-disabled-injection-sample")
@@ -58,8 +57,8 @@ func automaticInjectionDisabled(t *testing.T) features.Feature {
 
 	// Register sample, dynakube and operator uninstall
 	builder.Teardown(sampleApp.UninstallNamespace())
-	teardown.UninstallDynatrace(builder, testDynakube)
-
+	teardown.DeleteDynakube(builder, testDynakube)
+	steps.CreateTeardownSteps(builder)
 	return builder.Feature()
 }
 
@@ -68,8 +67,8 @@ func assessSampleInitContainersDisabled(builder *features.FeatureBuilder, sample
 }
 
 func checkInitContainersNotInjected(sampleApp sample.App) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resources := environmentConfig.Client().Resources()
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
 
 		pods := sampleApp.GetPods(ctx, t, resources)
 		require.NotEmpty(t, pods.Items)

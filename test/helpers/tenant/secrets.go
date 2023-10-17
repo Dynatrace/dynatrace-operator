@@ -4,10 +4,12 @@ package tenant
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
 	"path"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/test/project"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
@@ -21,8 +23,9 @@ import (
 )
 
 var (
-	defaultSingleTenant = path.Join(project.TestDataDir(), "secrets/single-tenant.yaml")
-	defaultMultiTenant  = path.Join(project.TestDataDir(), "secrets/multi-tenant.yaml")
+	defaultSingleTenant      = path.Join(project.TestDataDir(), "secrets/single-tenant.yaml")
+	defaultMultiTenant       = path.Join(project.TestDataDir(), "secrets/multi-tenant.yaml")
+	defaultEdgeConnectTenant = path.Join(project.TestDataDir(), "secrets/edgeconnect-tenant.yaml")
 )
 
 type Secrets struct {
@@ -35,6 +38,16 @@ type Secret struct {
 	ApiToken                        string `yaml:"apiToken"`
 	SyntheticLocEntityId            string `yaml:"syntheticLocEntityId"`
 	SyntheticBrowserMonitorEntityId string `yaml:"syntheticBrowserMonitorEntityId"`
+}
+
+type EdgeConnectSecret struct {
+	TenantUid         string `yaml:"tenantUid"`
+	Name              string `yaml:"name"`
+	ApiServer         string `yaml:"apiServer"`
+	OauthClientId     string `yaml:"oAuthClientId"`
+	OauthClientSecret string `yaml:"oAuthClientSecret"`
+	DockerUsername    string `yaml:"dockerUsername"`
+	DockerPassword    string `yaml:"dockerPassword"`
 }
 
 func manyFromConfig(fs afero.Fs, path string) ([]Secret, error) {
@@ -79,22 +92,118 @@ func GetMultiTenantSecret(t *testing.T) []Secret {
 	return secrets
 }
 
-func CreateTenantSecret(secretConfig Secret, dynakube dynatracev1beta1.DynaKube) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+func GetEdgeConnectTenantSecret(t *testing.T) EdgeConnectSecret {
+	secretConfigFile, err := afero.ReadFile(afero.NewOsFs(), defaultEdgeConnectTenant)
+
+	if err != nil {
+		t.Fatal("Couldn't read edgeconnect tenant secret from filesystem", err)
+	}
+
+	var result EdgeConnectSecret
+	err = yaml.Unmarshal(secretConfigFile, &result)
+
+	if err != nil {
+		t.Fatal("Couldn't unmarshal edgeconnect tenant secret from file", err)
+	}
+	return result
+}
+
+func CreateTenantSecret(secretConfig Secret, name, namespace string) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		defaultSecret := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      dynakube.Name,
-				Namespace: dynakube.Namespace,
+				Name:      name,
+				Namespace: namespace,
 			},
 			Data: map[string][]byte{
 				"apiToken": []byte(secretConfig.ApiToken),
 			},
 		}
 
-		err := environmentConfig.Client().Resources().Create(ctx, &defaultSecret)
+		err := envConfig.Client().Resources().Create(ctx, &defaultSecret)
 
 		if k8serrors.IsAlreadyExists(err) {
-			require.NoError(t, environmentConfig.Client().Resources().Update(ctx, &defaultSecret))
+			require.NoError(t, envConfig.Client().Resources().Update(ctx, &defaultSecret))
+			return ctx
+		}
+
+		require.NoError(t, err)
+
+		return ctx
+	}
+}
+
+type dockerAuthentication struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Auth     string `json:"auth"`
+}
+
+type dockerConfig struct {
+	Auths map[string]dockerAuthentication `json:"auths"`
+}
+
+func newDockerConfigWithAuth(username string, password string, registry string, auth string) *dockerConfig {
+	return &dockerConfig{
+		Auths: map[string]dockerAuthentication{
+			registry: {
+				Username: username,
+				Password: password,
+				Auth:     auth,
+			},
+		},
+	}
+}
+
+func CreateClientSecret(secretConfig EdgeConnectSecret, name, namespace string) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		defaultSecret := corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
+			},
+			Data: map[string][]byte{
+				"oauth-client-id":     []byte(secretConfig.OauthClientId),
+				"oauth-client-secret": []byte(secretConfig.OauthClientSecret),
+			},
+		}
+
+		err := envConfig.Client().Resources().Create(ctx, &defaultSecret)
+
+		if k8serrors.IsAlreadyExists(err) {
+			require.NoError(t, envConfig.Client().Resources().Update(ctx, &defaultSecret))
+			return ctx
+		}
+
+		require.NoError(t, err)
+
+		return ctx
+	}
+}
+
+func CreateDockerPullSecret(secretConfig EdgeConnectSecret, name, namespace string) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		registry := "https://index.docker.io/v1/"
+		auth := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", secretConfig.DockerUsername, secretConfig.DockerPassword)))
+		dockerConfig := newDockerConfigWithAuth(secretConfig.DockerUsername, secretConfig.DockerPassword, registry, auth)
+		dockerConfJson, err := json.Marshal(dockerConfig)
+		require.NoError(t, err)
+
+		defaultSecret := corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
+			},
+			Type: corev1.SecretTypeDockerConfigJson,
+			Data: map[string][]byte{
+				corev1.DockerConfigJsonKey: dockerConfJson,
+			},
+		}
+
+		err = envConfig.Client().Resources().Create(ctx, &defaultSecret)
+
+		if k8serrors.IsAlreadyExists(err) {
+			require.NoError(t, envConfig.Client().Resources().Update(ctx, &defaultSecret))
 			return ctx
 		}
 

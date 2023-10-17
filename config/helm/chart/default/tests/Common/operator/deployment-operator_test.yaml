@@ -101,6 +101,14 @@ tests:
                     scheme: HTTP
                   initialDelaySeconds: 15
                   periodSeconds: 10
+                startupProbe:
+                  exec:
+                    command:
+                      - /usr/local/bin/dynatrace-operator
+                      - startup-probe
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 1
                 securityContext:
                   seccompProfile:
                     type: RuntimeDefault
@@ -131,6 +139,9 @@ tests:
             volumes:
               - emptyDir: { }
                 name: tmp-cert-dir
+            securityContext:
+              seccompProfile:
+                type: RuntimeDefault
             serviceAccountName: RELEASE-NAME
             tolerations:
               - effect: NoSchedule
@@ -256,6 +267,14 @@ tests:
                     scheme: HTTP
                   initialDelaySeconds: 15
                   periodSeconds: 10
+                startupProbe:
+                  exec:
+                    command:
+                      - /usr/local/bin/dynatrace-operator
+                      - startup-probe
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 1
                 securityContext:
                   seccompProfile:
                     type: RuntimeDefault
@@ -286,6 +305,9 @@ tests:
             volumes:
               - emptyDir: { }
                 name: tmp-cert-dir
+            securityContext:
+              seccompProfile:
+                type: RuntimeDefault
             serviceAccountName: RELEASE-NAME
             tolerations:
               - effect: NoSchedule

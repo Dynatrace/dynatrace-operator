@@ -7,8 +7,9 @@ import (
 	"fmt"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/logs"
 	appsv1 "k8s.io/api/apps/v1"
@@ -30,8 +31,8 @@ func GetActiveGatePodName(testDynakube *dynatracev1beta1.DynaKube, component str
 	return fmt.Sprintf("%s-0", GetActiveGateStateFulSetName(testDynakube, component))
 }
 
-func ReadActiveGateLog(ctx context.Context, t *testing.T, environmentConfig *envconf.Config, testDynakube *dynatracev1beta1.DynaKube, component string) string {
-	return logs.ReadLog(ctx, t, environmentConfig, testDynakube.Namespace, GetActiveGatePodName(testDynakube, component), consts.ActiveGateContainerName)
+func ReadActiveGateLog(ctx context.Context, t *testing.T, envConfig *envconf.Config, testDynakube *dynatracev1beta1.DynaKube, component string) string {
+	return logs.ReadLog(ctx, t, envConfig, testDynakube.Namespace, GetActiveGatePodName(testDynakube, component), consts.ActiveGateContainerName)
 }
 
 func Get(ctx context.Context, resource *resources.Resources, dynakube dynatracev1beta1.DynaKube) (appsv1.StatefulSet, error) {
@@ -39,4 +40,8 @@ func Get(ctx context.Context, resource *resources.Resources, dynakube dynatracev
 		Name:      GetActiveGateStateFulSetName(&dynakube, "activegate"),
 		Namespace: dynakube.Namespace,
 	}).Get()
+}
+
+func WaitForStatefulSetPodsDeletion(testDynakube *dynatracev1beta1.DynaKube, component string) features.Func {
+	return pod.WaitForPodsDeletionWithOwner(GetActiveGateStateFulSetName(testDynakube, component), testDynakube.Namespace)
 }

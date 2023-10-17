@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/istio"
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/platform"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/base"
@@ -47,24 +47,24 @@ func enforceIstio() bool {
 	return os.Getenv(enforceIstioEnv) == "true"
 }
 
-func AddIstioNetworkAttachment(namespace corev1.Namespace) func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
-	return func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
+func AddIstioNetworkAttachment(namespace corev1.Namespace) func(ctx context.Context, envConfig *envconf.Config, t *testing.T) (context.Context, error) {
+	return func(ctx context.Context, envConfig *envconf.Config, t *testing.T) (context.Context, error) {
 		if !platform.NewResolver().IsOpenshift(t) {
 			return ctx, nil
 		}
 		for key, value := range InjectionLabel {
 			if namespace.Labels[key] == value {
-				ctx = manifests.InstallFromFile(networkAttachmentPath, decoder.MutateNamespace(namespace.Name))(ctx, t, environmentConfig)
+				ctx = manifests.InstallFromFile(networkAttachmentPath, decoder.MutateNamespace(namespace.Name))(ctx, t, envConfig)
 			}
 		}
 		return ctx, nil
 	}
 }
 
-func AssertIstioNamespace() func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
-	return func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
+func AssertIstioNamespace() func(ctx context.Context, envConfig *envconf.Config, t *testing.T) (context.Context, error) {
+	return func(ctx context.Context, envConfig *envconf.Config, t *testing.T) (context.Context, error) {
 		var namespace corev1.Namespace
-		err := environmentConfig.Client().Resources().Get(ctx, istioNamespace, "", &namespace)
+		err := envConfig.Client().Resources().Get(ctx, istioNamespace, "", &namespace)
 		if err != nil && !enforceIstio() {
 			t.Skip("skipping istio test, istio namespace is not present")
 			return ctx, nil
@@ -73,10 +73,10 @@ func AssertIstioNamespace() func(ctx context.Context, environmentConfig *envconf
 	}
 }
 
-func AssertIstiodDeployment() func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
-	return func(ctx context.Context, environmentConfig *envconf.Config, t *testing.T) (context.Context, error) {
+func AssertIstiodDeployment() func(ctx context.Context, envConfig *envconf.Config, t *testing.T) (context.Context, error) {
+	return func(ctx context.Context, envConfig *envconf.Config, t *testing.T) (context.Context, error) {
 		var deployment appsv1.Deployment
-		err := environmentConfig.Client().Resources().Get(ctx, "istiod", "istio-system", &deployment)
+		err := envConfig.Client().Resources().Get(ctx, "istiod", "istio-system", &deployment)
 		if err != nil && !enforceIstio() {
 			t.Skip("skipping istio test, istiod deployment is not present")
 			return ctx, nil
@@ -93,8 +93,8 @@ func AssessIstio(builder *features.FeatureBuilder, testDynakube dynatracev1beta1
 }
 
 func checkSampleAppIstioInitContainers(sampleApp base.App, testDynakube dynatracev1beta1.DynaKube) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resources := environmentConfig.Client().Resources()
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
 		pods := sampleApp.GetPods(ctx, t, resources)
 		assertIstioInitContainer(t, pods, testDynakube)
 		return ctx
@@ -102,8 +102,8 @@ func checkSampleAppIstioInitContainers(sampleApp base.App, testDynakube dynatrac
 }
 
 func checkOperatorIstioInitContainers(testDynakube dynatracev1beta1.DynaKube) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resources := environmentConfig.Client().Resources()
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
 		var pods corev1.PodList
 		require.NoError(t, resources.WithNamespace(testDynakube.Namespace).List(ctx, &pods))
 
@@ -150,12 +150,12 @@ func determineIstioInitContainerName(t *testing.T) string {
 }
 
 func checkVirtualServiceForApiUrl(dynakube dynatracev1beta1.DynaKube) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		apiHost := apiUrlCommunicationHost(t)
-		serviceName := istio.BuildNameForEndpoint(dynakube.Name, apiHost.Protocol, apiHost.Host, apiHost.Port)
+		serviceName := istio.BuildNameForFQDNServiceEntry(dynakube.Name, istio.OperatorComponent)
 
-		virtualService, err := istioClient(t, environmentConfig.Client().RESTConfig()).NetworkingV1alpha3().VirtualServices(dynakube.Namespace).Get(ctx, serviceName, metav1.GetOptions{})
-		require.Nil(t, err, "istio: faild to get '%s' virtual service object", serviceName)
+		virtualService, err := istioClient(t, envConfig.Client().RESTConfig()).NetworkingV1alpha3().VirtualServices(dynakube.Namespace).Get(ctx, serviceName, metav1.GetOptions{})
+		require.Nil(t, err, "istio: failed to get '%s' virtual service object", serviceName)
 
 		require.NotEmpty(t, virtualService.ObjectMeta.OwnerReferences)
 		assert.Equal(t, dynakube.Name, virtualService.ObjectMeta.OwnerReferences[0].Name)
@@ -168,11 +168,11 @@ func checkVirtualServiceForApiUrl(dynakube dynatracev1beta1.DynaKube) features.F
 }
 
 func checkServiceEntryForApiUrl(dynakube dynatracev1beta1.DynaKube) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		apiHost := apiUrlCommunicationHost(t)
-		serviceName := istio.BuildNameForEndpoint(dynakube.Name, apiHost.Protocol, apiHost.Host, apiHost.Port)
+		serviceName := istio.BuildNameForFQDNServiceEntry(dynakube.Name, istio.OperatorComponent)
 
-		serviceEntry, err := istioClient(t, environmentConfig.Client().RESTConfig()).NetworkingV1alpha3().ServiceEntries(dynakube.Namespace).Get(ctx, serviceName, metav1.GetOptions{})
+		serviceEntry, err := istioClient(t, envConfig.Client().RESTConfig()).NetworkingV1alpha3().ServiceEntries(dynakube.Namespace).Get(ctx, serviceName, metav1.GetOptions{})
 		require.Nil(t, err, "istio: failed to get '%s' service entry object", serviceName)
 
 		require.NotEmpty(t, serviceEntry.ObjectMeta.OwnerReferences)

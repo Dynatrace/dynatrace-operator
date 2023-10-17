@@ -6,13 +6,12 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"strconv"
 	"testing"
 	"time"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/consts"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/webhook"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/logs"
@@ -30,9 +29,9 @@ const (
 	activeGateEndpoint = "rest/state"
 	livezEndpoint      = "livez"
 
-	curlPodNameActivegate = "curl-activegate"
-	curlPodNameWebhook    = "curl-webhook"
-	curlContainerName     = "curl"
+	CurlPodNameActivegateHttps = "curl-activegate-https"
+	CurlPodNameActivegateHttp  = "curl-activegate-http"
+	curlContainerName          = "curl"
 
 	connectionTimeout = 5
 
@@ -40,25 +39,36 @@ const (
 )
 
 func InstallActiveGateCurlPod(dynakube dynatracev1beta1.DynaKube) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		serviceUrl := getActiveGateServiceUrl(dynakube)
 		curlTarget := fmt.Sprintf("%s/%s", serviceUrl, activeGateEndpoint)
 
-		curlPod := NewCurlPodBuilder(curlPodNameActivegate, curlNamespace(dynakube), curlTarget).WithProxy(dynakube).Build()
-		require.NoError(t, environmentConfig.Client().Resources().Create(ctx, curlPod))
+		curlPod := NewCurlPodBuilder(CurlPodNameActivegateHttps, curlNamespace(dynakube), curlTarget).WithProxy(dynakube).Build()
+		require.NoError(t, envConfig.Client().Resources().Create(ctx, curlPod))
 		return ctx
 	}
 }
 
-func WaitForActiveGateCurlPod(dynakube dynatracev1beta1.DynaKube) features.Func {
-	return pod.WaitFor(curlPodNameActivegate, curlNamespace(dynakube))
+func InstallActiveGateHttpCurlPod(dynakube dynatracev1beta1.DynaKube) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		serviceUrl := getActiveGateHttpServiceUrl(dynakube)
+		curlTarget := fmt.Sprintf("%s/%s", serviceUrl, activeGateEndpoint)
+
+		curlPod := NewCurlPodBuilder(CurlPodNameActivegateHttp, curlNamespace(dynakube), curlTarget).WithProxy(dynakube).Build()
+		require.NoError(t, envConfig.Client().Resources().Create(ctx, curlPod))
+		return ctx
+	}
 }
 
-func CheckActiveGateCurlResult(dynakube dynatracev1beta1.DynaKube) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resources := environmentConfig.Client().Resources()
+func WaitForActiveGateCurlPod(podName string, dynakube dynatracev1beta1.DynaKube) features.Func {
+	return pod.WaitFor(podName, curlNamespace(dynakube))
+}
 
-		logStream := getCurlPodLogStream(ctx, t, resources, curlPodNameActivegate, curlNamespace(dynakube))
+func CheckActiveGateCurlResult(podName string, dynakube dynatracev1beta1.DynaKube) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
+
+		logStream := getCurlPodLogStream(ctx, t, resources, podName, curlNamespace(dynakube))
 		logs.AssertContains(t, logStream, "RUNNING")
 
 		return ctx
@@ -75,6 +85,11 @@ func curlNamespace(dynakube dynatracev1beta1.DynaKube) string {
 func getActiveGateServiceUrl(dynakube dynatracev1beta1.DynaKube) string {
 	serviceName := capability.BuildServiceName(dynakube.Name, consts.MultiActiveGateName)
 	return fmt.Sprintf("https://%s.%s.svc.cluster.local", serviceName, dynakube.Namespace)
+}
+
+func getActiveGateHttpServiceUrl(dynakube dynatracev1beta1.DynaKube) string {
+	serviceName := capability.BuildServiceName(dynakube.Name, consts.MultiActiveGateName)
+	return fmt.Sprintf("http://%s.%s.svc.cluster.local", serviceName, dynakube.Namespace)
 }
 
 func GetWebhookServiceUrl(dynakube dynatracev1beta1.DynaKube) string {
@@ -95,10 +110,26 @@ func getCurlPodLogStream(ctx context.Context, t *testing.T, resources *resources
 }
 
 func InstallCutOffCurlPod(podName, namespaceName, curlTarget string) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		// if curl command can't connect to the host, returns 28 after 131[s] by default
-		curlPod := NewCurlPodBuilder(podName, namespaceName, curlTarget).WithRestartPolicy(corev1.RestartPolicyNever).WithParameters("--connect-timeout", strconv.Itoa(connectionTimeout)).Build()
-		require.NoError(t, environmentConfig.Client().Resources().Create(ctx, curlPod))
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		probe := corev1.Probe{
+			ProbeHandler: corev1.ProbeHandler{
+				Exec: &corev1.ExecAction{
+					Command: []string{"curl", curlTarget, "--insecure", "--verbose", "--head", "--fail"},
+				},
+			},
+			InitialDelaySeconds: 30,
+			PeriodSeconds:       30,
+			FailureThreshold:    2,
+			SuccessThreshold:    3,
+			TimeoutSeconds:      3,
+		}
+		curlPod := NewCurlPodBuilder(podName, namespaceName, curlTarget).
+			WithCommand([]string{"sleep"}).
+			WithArgs([]string{"120"}).
+			WithReadinessProbe(&probe).
+			WithRestartPolicy(corev1.RestartPolicyNever).
+			Build()
+		require.NoError(t, envConfig.Client().Resources().Create(ctx, curlPod))
 		return ctx
 	}
 }
@@ -106,9 +137,8 @@ func InstallCutOffCurlPod(podName, namespaceName, curlTarget string) features.Fu
 func WaitForCutOffCurlPod(podName, namespaceName string) features.Func {
 	return pod.WaitForCondition(podName, namespaceName, func(object k8s.Object) bool {
 		pod, isPod := object.(*corev1.Pod)
-		// kubernetes 28
-		// openshift 7
-		return isPod && pod.Status.ContainerStatuses[0].State.Terminated != nil && (pod.Status.ContainerStatuses[0].State.Terminated.ExitCode == 28 || pod.Status.ContainerStatuses[0].State.Terminated.ExitCode == 7)
+		// If probe fails we don't have internet, so we achieve waiting condition
+		return isPod && !pod.Status.ContainerStatuses[0].Ready
 	}, connectionTimeout*2*time.Second)
 }
 
@@ -142,6 +172,21 @@ func NewCurlPodBuilder(podName, namespaceName, targetUrl string) CurlPodBuilder 
 			},
 		},
 	}
+}
+
+func (curlPodBuilder CurlPodBuilder) WithCommand(command []string) CurlPodBuilder {
+	curlPodBuilder.curlPod.Spec.Containers[0].Command = command
+	return curlPodBuilder
+}
+
+func (curlPodBuilder CurlPodBuilder) WithArgs(args []string) CurlPodBuilder {
+	curlPodBuilder.curlPod.Spec.Containers[0].Args = args
+	return curlPodBuilder
+}
+
+func (curlPodBuilder CurlPodBuilder) WithReadinessProbe(probe *corev1.Probe) CurlPodBuilder {
+	curlPodBuilder.curlPod.Spec.Containers[0].ReadinessProbe = probe
+	return curlPodBuilder
 }
 
 func (curlPodBuilder CurlPodBuilder) WithProxy(dynakube dynatracev1beta1.DynaKube) CurlPodBuilder {

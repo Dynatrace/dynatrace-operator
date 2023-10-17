@@ -5,7 +5,8 @@ package assess
 import (
 	"fmt"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
@@ -15,18 +16,18 @@ import (
 
 func InstallDynakube(builder *features.FeatureBuilder, secretConfig *tenant.Secret, testDynakube dynatracev1beta1.DynaKube) {
 	CreateDynakube(builder, secretConfig, testDynakube)
-	verifyDynakubeStartup(builder, testDynakube)
+	VerifyDynakubeStartup(builder, testDynakube)
 }
 
 func InstallDynakubeWithTeardown(builder *features.FeatureBuilder, secretConfig *tenant.Secret, testDynakube dynatracev1beta1.DynaKube) {
 	CreateDynakube(builder, secretConfig, testDynakube)
-	verifyDynakubeStartup(builder, testDynakube)
+	VerifyDynakubeStartup(builder, testDynakube)
 	teardown.DeleteDynakube(builder, testDynakube)
 }
 
 func CreateDynakube(builder *features.FeatureBuilder, secretConfig *tenant.Secret, testDynakube dynatracev1beta1.DynaKube) {
 	if secretConfig != nil {
-		builder.Assess("created tenant secret", tenant.CreateTenantSecret(*secretConfig, testDynakube))
+		builder.Assess("created tenant secret", tenant.CreateTenantSecret(*secretConfig, testDynakube.Name, testDynakube.Namespace))
 	}
 	builder.Assess(
 		fmt.Sprintf("'%s' dynakube created", testDynakube.Name),
@@ -37,11 +38,18 @@ func UpdateDynakube(builder *features.FeatureBuilder, testDynakube dynatracev1be
 	builder.Assess("dynakube updated", dynakube.Update(testDynakube))
 }
 
-func verifyDynakubeStartup(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube) {
+func DeleteDynakube(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube) {
+	builder.Assess("dynakube deleted", dynakube.Delete(testDynakube))
+	if testDynakube.NeedsOneAgent() {
+		builder.Assess("oneagent pods stopped", oneagent.WaitForDaemonSetPodsDeletion(testDynakube))
+	}
+}
+
+func VerifyDynakubeStartup(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube) {
 	if testDynakube.NeedsOneAgent() {
 		builder.Assess("oneagent started", oneagent.WaitForDaemonset(testDynakube))
 	}
 	builder.Assess(
 		fmt.Sprintf("'%s' dynakube phase changes to 'Running'", testDynakube.Name),
-		dynakube.WaitForDynakubePhase(testDynakube, dynatracev1beta1.Running))
+		dynakube.WaitForDynakubePhase(testDynakube, status.Running))
 }

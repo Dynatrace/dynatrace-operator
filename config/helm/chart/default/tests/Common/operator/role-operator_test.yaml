@@ -20,6 +20,7 @@ tests:
                 - dynatrace.com
               resources:
                 - dynakubes
+                - edgeconnects
               verbs:
                 - get
                 - list
@@ -31,6 +32,8 @@ tests:
               resources:
                 - dynakubes/finalizers
                 - dynakubes/status
+                - edgeconnects/finalizers
+                - edgeconnects/status
               verbs:
                 - update
 
@@ -65,6 +68,9 @@ tests:
                 - get
                 - list
                 - watch
+                - create
+                - update
+                - delete
             - apiGroups:
                 - apps
               resources:

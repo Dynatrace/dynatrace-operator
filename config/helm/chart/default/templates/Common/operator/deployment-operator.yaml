@@ -82,18 +82,9 @@ spec:
               scheme: HTTP
             initialDelaySeconds: 15
             periodSeconds: 10
+          {{- include "dynatrace-operator.startupProbe" . | nindent 10 }}
           securityContext:
-            seccompProfile:
-              type: RuntimeDefault
-            privileged: false
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
-            runAsNonRoot: true
-            runAsUser: 1001
-            runAsGroup: 1001
-            capabilities:
-              drop:
-                - ALL
+          {{- toYaml .Values.operator.securityContext | nindent 12 }}
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -115,6 +106,8 @@ spec:
         - emptyDir: { }
           name: tmp-cert-dir
       serviceAccountName: {{ .Release.Name }}
+      securityContext:
+        {{- toYaml .Values.operator.podSecurityContext | nindent 8 }}
       {{- if .Values.customPullSecret }}
       imagePullSecrets:
         - name: {{ .Values.customPullSecret }}

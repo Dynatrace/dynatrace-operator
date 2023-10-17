@@ -8,7 +8,7 @@ import (
 	"path"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
@@ -46,11 +46,11 @@ func Get(ctx context.Context, resource *resources.Resources, dynakube dynatracev
 }
 
 func CreateUninstallDaemonSet(dynakube dynatracev1beta1.DynaKube) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		uninstallDaemonSet := manifests.ObjectFromFile[*appsv1.DaemonSet](t, uninstallOneAgentDaemonSetPath)
 		uninstallDaemonSet.Namespace = dynakube.Namespace
 		uninstallDaemonSet.Spec.Template.Spec.Tolerations = dynakube.Spec.OneAgent.ClassicFullStack.Tolerations
-		resource := environmentConfig.Client().Resources()
+		resource := envConfig.Client().Resources()
 		require.NoError(t, resource.Create(ctx, uninstallDaemonSet))
 		return ctx
 	}
@@ -61,8 +61,8 @@ func WaitForUninstallOneAgentDaemonset(namespace string) features.Func {
 }
 
 func CleanUpEachNode(namespace string) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resource := environmentConfig.Client().Resources()
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resource := envConfig.Client().Resources()
 		require.NoError(t, daemonset.NewQuery(ctx, resource, client.ObjectKey{
 			Name:      uninstallOneAgentDaemonSetName,
 			Namespace: namespace,

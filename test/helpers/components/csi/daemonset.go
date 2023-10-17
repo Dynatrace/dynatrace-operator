@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
+	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/stretchr/testify/require"
@@ -30,8 +30,8 @@ func Get(ctx context.Context, resource *resources.Resources, namespace string) (
 }
 
 func CleanUpEachPod(namespace string) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resource := environmentConfig.Client().Resources()
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resource := envConfig.Client().Resources()
 		require.NoError(t, daemonset.NewQuery(ctx, resource, client.ObjectKey{
 			Name:      DaemonSetName,
 			Namespace: namespace,

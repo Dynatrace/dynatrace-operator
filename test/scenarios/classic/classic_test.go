@@ -5,14 +5,18 @@ package classic
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 )
 
 var testEnvironment env.Environment
 
 func TestMain(m *testing.M) {
-	testEnvironment = environment.Get()
+	log.SetLogger(logger.Factory.GetLogger("e2e-classic-fullstack"))
+
+	testEnvironment = environment.GetStandardKubeClusterEnvironment()
 	testEnvironment.Run(m)
 }
 

@@ -33,8 +33,10 @@ spec:
       resources:
         requests:
           memory: 64Mi
+          ephemeral-storage: 2Gi
         limits:
           memory: 128Mi
+          ephemeral-storage: 2Gi
   restartPolicy: Always
   tolerations:
     - key: kubernetes.io/arch

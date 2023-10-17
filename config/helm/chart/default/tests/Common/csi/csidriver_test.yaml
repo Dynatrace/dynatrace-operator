@@ -36,9 +36,20 @@ tests:
     set:
       platform: openshift
       csidriver.enabled: true
+      partial: false
     asserts:
       - isSubset:
           path: metadata.labels
           content:
             security.openshift.io/csi-ephemeral-volume-profile: "restricted"
 
+  - it: should contain correct labels for openshift manifest
+    set:
+      platform: openshift
+      csidriver.enabled: false
+      partial: csi
+    asserts:
+      - isSubset:
+          path: metadata.labels
+          content:
+            security.openshift.io/csi-ephemeral-volume-profile: "restricted"

@@ -6,14 +6,13 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
 	sample "github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/base"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/setup"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -26,7 +25,7 @@ const (
 	sampleAppNamespace = "appmon-sample"
 )
 
-func withoutCSIDriver(t *testing.T) features.Feature {
+func applicationMonitoringWithoutCSI(t *testing.T) features.Feature {
 	builder := features.New("application monitoring without csi driver enabled")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	defaultDynakubeName := "dynakube"
@@ -53,9 +52,12 @@ func withoutCSIDriver(t *testing.T) features.Feature {
 
 	operatorNamespaceBuilder := namespace.NewBuilder(appOnlyDynakube.Namespace)
 
-	assess.InstallOperatorFromSourceWithCustomNamespace(builder, operatorNamespaceBuilder.Build(), appOnlyDynakube)
+	steps := setup.NewEnvironmentSetup(
+		setup.CreateNamespaceWithoutTeardown(operatorNamespaceBuilder.Build()),
+		setup.DeployOperatorViaMake(appOnlyDynakube.NeedsCSIDriver()),
+		setup.CreateDynakube(secretConfig, appOnlyDynakube))
+	steps.CreateSetupSteps(builder)
 
-	assess.InstallDynakubeWithTeardown(builder, &secretConfig, appOnlyDynakube)
 	builder.Assess("install sample app", sampleApp.Install())
 
 	podSample := sampleapps.NewSampleDeployment(t, appOnlyDynakube)
@@ -82,13 +84,14 @@ func withoutCSIDriver(t *testing.T) features.Feature {
 	builder.Assess("check injection of pods with random user", checkInjection(randomUserSample))
 
 	builder.Teardown(sampleApp.UninstallNamespace())
-	teardown.UninstallOperatorFromSource(builder, appOnlyDynakube)
+	steps.CreateTeardownSteps(builder)
+
 	return builder.Feature()
 }
 
 func checkInjection(deployment sample.App) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resource := environmentConfig.Client().Resources()
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resource := envConfig.Client().Resources()
 		samplePods := deployment.GetPods(ctx, t, resource)
 
 		require.NotNil(t, samplePods)
@@ -102,8 +105,8 @@ func checkInjection(deployment sample.App) features.Func {
 }
 
 func checkAlreadyInjected(deployment sample.App) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
-		resource := environmentConfig.Client().Resources()
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resource := envConfig.Client().Resources()
 		samplePods := deployment.GetPods(ctx, t, resource)
 
 		require.NotNil(t, samplePods)

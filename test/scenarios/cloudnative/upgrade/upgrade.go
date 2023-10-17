@@ -1,6 +1,6 @@
 //go:build e2e
 
-package cloudnative
+package upgrade
 
 import (
 	"testing"
@@ -9,8 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
 	sample "github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/base"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/assess"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/steps/teardown"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/setup"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/Dynatrace/dynatrace-operator/test/scenarios/cloudnative"
 	"sigs.k8s.io/e2e-framework/pkg/features"
@@ -30,10 +29,11 @@ func upgrade(t *testing.T) features.Feature {
 	sampleApp.WithNamespace(sampleNamespace)
 	builder.Assess("create sample namespace", sampleApp.InstallNamespace())
 
-	assess.InstallOperatorFromRelease(builder, testDynakube, "v0.10.4")
-
-	// Register dynakube install
-	assess.InstallDynakube(builder, &secretConfig, testDynakube)
+	steps := setup.NewEnvironmentSetup(
+		setup.CreateDefaultDynatraceNamespace(),
+		setup.DeployOperatorViaHelm("v0.10.4", true),
+		setup.CreateDynakube(secretConfig, testDynakube))
+	steps.CreateSetupSteps(builder)
 
 	// Register sample app install
 	builder.Assess("install sample app", sampleApp.Install())
@@ -41,12 +41,11 @@ func upgrade(t *testing.T) features.Feature {
 	// Register actual test
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 	// update to snapshot
-	assess.UpgradeOperatorFromSource(builder, testDynakube)
+	setup.DeployOperatorViaMake(testDynakube.NeedsCSIDriver()).AddSetupSetup(builder)
 	assessSampleAppsRestartHalf(builder, sampleApp)
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 	builder.Teardown(sampleApp.UninstallNamespace())
-	teardown.UninstallDynatrace(builder, testDynakube)
-
+	steps.CreateTeardownSteps(builder)
 	return builder.Feature()
 }
 

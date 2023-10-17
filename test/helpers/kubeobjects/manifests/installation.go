@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -21,12 +21,12 @@ import (
 )
 
 func InstallFromFile(path string, options ...decoder.DecodeOption) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		kubernetesManifest, err := os.Open(path)
 		defer func() { require.NoError(t, kubernetesManifest.Close()) }()
 		require.NoError(t, err)
 
-		resources := environmentConfig.Client().Resources()
+		resources := envConfig.Client().Resources()
 		require.NoError(t, decoder.DecodeEach(ctx, kubernetesManifest, decoder.IgnoreErrorHandler(decoder.CreateHandler(resources), k8serrors.IsAlreadyExists), options...))
 
 		return ctx
@@ -34,12 +34,12 @@ func InstallFromFile(path string, options ...decoder.DecodeOption) features.Func
 }
 
 func UninstallFromFile(path string, options ...decoder.DecodeOption) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		kubernetesManifest, err := os.Open(path)
 		defer func() { require.NoError(t, kubernetesManifest.Close()) }()
 		require.NoError(t, err)
 
-		resources := environmentConfig.Client().Resources()
+		resources := envConfig.Client().Resources()
 		require.NoError(t, decoder.DecodeEach(ctx, kubernetesManifest, decoder.IgnoreErrorHandler(decoder.DeleteHandler(resources), k8serrors.IsNotFound), options...))
 
 		return ctx
@@ -47,9 +47,9 @@ func UninstallFromFile(path string, options ...decoder.DecodeOption) features.Fu
 }
 
 func InstallFromUrls(yamlUrls []string) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		for _, yamlUrl := range yamlUrls {
-			installFromSingleUrl(t, ctx, environmentConfig, yamlUrl)
+			installFromSingleUrl(t, ctx, envConfig, yamlUrl)
 		}
 
 		return ctx
@@ -57,28 +57,28 @@ func InstallFromUrls(yamlUrls []string) features.Func {
 }
 
 func UninstallFromUrls(yamlUrls []string) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		for _, yamlUrl := range yamlUrls {
-			uninstallFromSingleUrl(t, ctx, environmentConfig, yamlUrl)
+			uninstallFromSingleUrl(t, ctx, envConfig, yamlUrl)
 		}
 
 		return ctx
 	}
 }
 
-func installFromSingleUrl(t *testing.T, ctx context.Context, environmentConfig *envconf.Config, yamlUrl string) {
+func installFromSingleUrl(t *testing.T, ctx context.Context, envConfig *envconf.Config, yamlUrl string) {
 	manifestReader, err := httpGetResponseReader(yamlUrl)
 	require.NoError(t, err, "could not fetch yaml")
 
-	resources := environmentConfig.Client().Resources()
+	resources := envConfig.Client().Resources()
 	require.NoError(t, decoder.DecodeEach(ctx, manifestReader, decoder.IgnoreErrorHandler(decoder.CreateHandler(resources), k8serrors.IsAlreadyExists)))
 }
 
-func uninstallFromSingleUrl(t *testing.T, ctx context.Context, environmentConfig *envconf.Config, yamlUrl string) {
+func uninstallFromSingleUrl(t *testing.T, ctx context.Context, envConfig *envconf.Config, yamlUrl string) {
 	manifestReader, err := httpGetResponseReader(yamlUrl)
 	require.NoError(t, err, "could not fetch yaml")
 
-	resources := environmentConfig.Client().Resources()
+	resources := envConfig.Client().Resources()
 	require.NoError(t, decoder.DecodeEach(ctx, manifestReader, decoder.IgnoreErrorHandler(decoder.DeleteHandler(resources), k8serrors.IsNotFound)))
 }
 

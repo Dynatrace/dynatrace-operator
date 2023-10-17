@@ -21,7 +21,7 @@ const (
 )
 
 func InstallViaMake(withCSI bool) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		rootDir := project.RootDir()
 		execMakeCommand(t, rootDir, "install", fmt.Sprintf("ENABLE_CSI=%t", withCSI))
 		return ctx
@@ -29,29 +29,35 @@ func InstallViaMake(withCSI bool) features.Func {
 }
 
 func InstallViaHelm(releaseTag string, withCsi bool, namespace string) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		installViaHelm(t, releaseTag, withCsi, namespace)
 		return ctx
 	}
 }
 
 func UninstallViaMake(withCSI bool) features.Func {
-	return func(ctx context.Context, t *testing.T, environmentConfig *envconf.Config) context.Context {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		rootDir := project.RootDir()
-		execMakeCommand(t, rootDir, "undeploy/helm", fmt.Sprintf("ENABLE_CSI=%t", withCSI))
+		err := execMakeCommand(t, rootDir, "undeploy/helm", fmt.Sprintf("ENABLE_CSI=%t", withCSI))
+		if err != nil {
+			t.Fatal("failed to execute make command to undeploy the operator", err)
+		}
 		return ctx
 	}
 }
 
-func execMakeCommand(t *testing.T, rootDir, makeTarget string, envVariables ...string) {
+func execMakeCommand(t *testing.T, rootDir, makeTarget string, envVariables ...string) error {
 	command := exec.Command("make", "-C", rootDir, makeTarget)
 	command.Env = os.Environ()
 	command.Env = append(command.Env, envVariables...)
 
-	err := command.Run()
+	output, err := command.CombinedOutput()
 	if err != nil {
+		t.Log(string(output))
 		t.Fatal("failed to install the operator via the make command", err)
 	}
+
+	return err
 }
 
 func installViaHelm(t *testing.T, releaseTag string, withCsi bool, namespace string) {
@@ -61,9 +67,9 @@ func installViaHelm(t *testing.T, releaseTag string, withCsi bool, namespace str
 		t.Log("failed to add dynatrace helm chart repo", err)
 	}
 
-	err = manager.RunRepo(helm.WithArgs("update"))
+	err = manager.RunRepo(helm.WithArgs("install"))
 	if err != nil {
-		t.Fatal("failed to upgrade helm repo")
+		t.Fatal("failed to install helm repo")
 	}
 
 	err = manager.RunUpgrade(helm.WithName("dynatrace-operator"), helm.WithNamespace(namespace),

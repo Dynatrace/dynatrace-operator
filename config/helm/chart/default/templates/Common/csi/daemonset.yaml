@@ -35,7 +35,9 @@ spec:
         kubectl.kubernetes.io/default-container: provisioner
         cluster-autoscaler.kubernetes.io/enable-ds-eviction: "false"
         {{- if and (eq (default false .Values.apparmor) true) (ne (include "dynatrace-operator.platform" .) "openshift") }}
-        container.apparmor.security.beta.kubernetes.io/driver: runtime/default
+        container.apparmor.security.beta.kubernetes.io/csi-init: runtime/default
+        container.apparmor.security.beta.kubernetes.io/server: runtime/default
+        container.apparmor.security.beta.kubernetes.io/provisioner: runtime/default
         container.apparmor.security.beta.kubernetes.io/registrar: runtime/default
         container.apparmor.security.beta.kubernetes.io/liveness-probe: runtime/default
         {{- end}}
@@ -49,6 +51,23 @@ spec:
         {{- toYaml .Values.csidriver.labels | nindent 8 }}
         {{- end }}
     spec:
+      initContainers:
+      - name: csi-init
+        image: {{ include "dynatrace-operator.image" . }}
+        imagePullPolicy: Always
+        args:
+        - csi-init
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        resources:
+          {{- if .Values.csidriver.csiInit.resources }}
+          {{- toYaml .Values.csidriver.csiInit.resources | nindent 10 }}
+          {{- end }}
+        securityContext:
+        {{- toYaml .Values.csidriver.csiInit.securityContext| nindent 10 }}
+        volumeMounts:
+        - mountPath: /data
+          name: data-dir
       containers:
         # Used to receive/execute gRPC requests (NodePublishVolume/NodeUnpublishVolume) from kubelet to mount/unmount volumes for a pod
         # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.
@@ -83,6 +102,7 @@ spec:
           periodSeconds: 5
           successThreshold: 1
           timeoutSeconds: 1
+        {{- include "dynatrace-operator.startupProbe" . | nindent 8 }}
         ports:
         - containerPort: 10080
           name: livez
@@ -92,15 +112,7 @@ spec:
           {{- toYaml .Values.csidriver.server.resources | nindent 10 }}
           {{- end }}
         securityContext:
-          runAsUser: 0
-          privileged: true # Needed for mountPropagation
-          allowPrivilegeEscalation: true # Needed for privileged
-          readOnlyRootFilesystem: true
-          runAsNonRoot: false
-          seccompProfile:
-            type: RuntimeDefault
-          seLinuxOptions:
-            level: s0
+        {{- toYaml .Values.csidriver.server.securityContext | nindent 10 }}
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:
@@ -149,15 +161,7 @@ spec:
           {{- toYaml .Values.csidriver.provisioner.resources | nindent 10 }}
           {{- end }}
         securityContext:
-          runAsUser: 0
-          privileged: true # Needed for mountPropagation
-          allowPrivilegeEscalation: true # Needed for privileged
-          readOnlyRootFilesystem: true
-          runAsNonRoot: false
-          seccompProfile:
-            type: RuntimeDefault
-          seLinuxOptions:
-            level: s0
+        {{- toYaml .Values.csidriver.provisioner.securityContext | nindent 10 }}
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:
@@ -187,12 +191,7 @@ spec:
           {{- toYaml .Values.csidriver.registrar.resources | nindent 10 }}
           {{- end }}
         securityContext:
-          runAsUser: 0
-          privileged: false
-          readOnlyRootFilesystem: true
-          runAsNonRoot: false
-          seccompProfile:
-            type: RuntimeDefault
+        {{- toYaml .Values.csidriver.registrar.securityContext | nindent 10 }}
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:
@@ -219,13 +218,7 @@ spec:
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         securityContext:
-          runAsUser: 0
-          privileged: false
-          allowPrivilegeEscalation: false
-          readOnlyRootFilesystem: true
-          runAsNonRoot: false
-          seccompProfile:
-            type: RuntimeDefault
+        {{- toYaml .Values.csidriver.livenessprobe.securityContext| nindent 10 }}
         volumeMounts:
         - mountPath: /csi
           name: plugin-dir

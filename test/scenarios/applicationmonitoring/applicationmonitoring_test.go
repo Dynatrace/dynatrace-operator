@@ -5,18 +5,21 @@ package applicationmonitoring
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 )
 
 var testEnvironment env.Environment
 
 func TestMain(m *testing.M) {
-	testEnvironment = environment.Get()
+	log.SetLogger(logger.Factory.GetLogger("e2e-application-monitoring"))
+	testEnvironment = environment.GetStandardKubeClusterEnvironment()
 	testEnvironment.Run(m)
 }
 
-func TestApplicationMonitoring(t *testing.T) {
+func TestDataIngest(t *testing.T) {
 	testEnvironment.Test(t, dataIngest(t))
 }
 
@@ -29,5 +32,5 @@ func TestReadOnlyCSIVolume(t *testing.T) {
 }
 
 func TestAppOnlyWithoutCSI(t *testing.T) {
-	testEnvironment.Test(t, withoutCSIDriver(t))
+	testEnvironment.Test(t, applicationMonitoringWithoutCSI(t))
 }

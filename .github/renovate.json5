@@ -13,6 +13,13 @@
         "depName=(?<depName>.*?)\\s.*?_version=(?<currentValue>.*)\\s"
       ],
       "datasourceTemplate": "go"
+    },
+    {
+      "fileMatch": [ "(^|/|\\.)ci.yaml$"],
+      "matchStrings": [
+        "depName=(?<depName>.*?)\\s.*?version\\:\\s(?<currentValue>.*)\\s",
+      ],
+      "datasourceTemplate": "go"
     }
   ],
   "packageRules": [
@@ -20,7 +27,7 @@
       "matchManagers": ["dockerfile"],
       "commitMessagePrefix": "Docker:",
       "enabled": true,
-      "allowedVersions": "/^[0-9]+\\.[0-9]+\\.[0-9]+(\\.[0-9]+)?$/"
+      "allowedVersions": "/^v?[0-9]+\\.[0-9]+(\\.[0-9]+)*$/"
     },
     {
       "matchManagers": ["gomod"],
