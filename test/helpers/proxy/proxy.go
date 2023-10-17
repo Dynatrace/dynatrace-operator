@@ -88,7 +88,8 @@ func DeleteProxy() features.Func {
 func CutOffDynatraceNamespace(builder *features.FeatureBuilder, proxySpec *dynatracev1beta1.DynaKubeProxy) {
 	if proxySpec != nil {
 		builder.Assess("cut off dynatrace namespace", manifests.InstallFromFile(dynatraceNetworkPolicy))
-		builder.WithTeardown("uninstalling outbound traffice pod", func(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
+		builder.WithTeardown("uninstalling outbound traffic pod", func(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
+```suggestion
 			return DeletePod(ctx, t, config, "dynatrace", curlPodNameDynatraceOutboundTraffic)
 		})
 	}
