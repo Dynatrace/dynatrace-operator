@@ -67,7 +67,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *Reconciler) manageStatefulSet(ctx context.Context) error {
-	desiredSts, err := r.buildDesiredStatefulSet()
+	desiredSts, err := r.buildDesiredStatefulSet(ctx)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -94,8 +94,8 @@ func (r *Reconciler) manageStatefulSet(ctx context.Context) error {
 	return nil
 }
 
-func (r *Reconciler) buildDesiredStatefulSet() (*appsv1.StatefulSet, error) {
-	kubeUID, err := kubesystem.GetUID(r.apiReader)
+func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context) (*appsv1.StatefulSet, error) {
+	kubeUID, err := kubesystem.GetUID(ctx, r.apiReader)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

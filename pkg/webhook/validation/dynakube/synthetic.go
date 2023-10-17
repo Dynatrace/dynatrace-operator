@@ -1,6 +1,7 @@
 package dynakube
 
 import (
+	"context"
 	"fmt"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
@@ -12,7 +13,7 @@ Make sure such a node is valid.
 `
 )
 
-func invalidSyntheticNodeType(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func invalidSyntheticNodeType(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	isTypeValid := func() bool {
 		switch dynakube.FeatureSyntheticNodeType() {
 		case dynatracev1beta1.SyntheticNodeXs,

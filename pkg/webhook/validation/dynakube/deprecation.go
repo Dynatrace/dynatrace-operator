@@ -1,6 +1,7 @@
 package dynakube
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -28,7 +29,7 @@ func getDeprecatedFeatureFlags() []string {
 	}
 }
 
-func deprecatedFeatureFlagFormat(_ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func deprecatedFeatureFlagFormat(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	if dynakube.Annotations == nil {
 		return ""
 	}
@@ -41,31 +42,31 @@ func deprecatedFeatureFlagFormat(_ *dynakubeValidator, dynakube *dynatracev1beta
 	return ""
 }
 
-func deprecatedFeatureFlagDisableActiveGateUpdates(_ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func deprecatedFeatureFlagDisableActiveGateUpdates(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	return warnIfDeprecatedIsUsed(dynakube, dynatracev1beta1.AnnotationFeatureActiveGateUpdates, dynatracev1beta1.AnnotationFeatureDisableActiveGateUpdates)
 }
 
-func deprecatedFeatureFlagDisableActiveGateRawImage(_ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func deprecatedFeatureFlagDisableActiveGateRawImage(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	return warnIfDeprecatedIsUsed(dynakube, dynatracev1beta1.AnnotationFeatureActiveGateRawImage, dynatracev1beta1.AnnotationFeatureDisableActiveGateRawImage)
 }
 
-func deprecatedFeatureFlagDisableHostsRequests(_ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func deprecatedFeatureFlagDisableHostsRequests(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	return warnIfDeprecatedIsUsed(dynakube, dynatracev1beta1.AnnotationFeatureHostsRequests, dynatracev1beta1.AnnotationFeatureDisableHostsRequests)
 }
 
-func deprecatedFeatureFlagDisableReadOnlyAgent(_ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func deprecatedFeatureFlagDisableReadOnlyAgent(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	return warnIfDeprecatedIsUsed(dynakube, dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent, dynatracev1beta1.AnnotationFeatureDisableReadOnlyOneAgent)
 }
 
-func deprecatedFeatureFlagDisableWebhookReinvocationPolicy(_ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func deprecatedFeatureFlagDisableWebhookReinvocationPolicy(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	return warnIfDeprecatedIsUsed(dynakube, dynatracev1beta1.AnnotationFeatureWebhookReinvocationPolicy, dynatracev1beta1.AnnotationFeatureDisableWebhookReinvocationPolicy)
 }
 
-func deprecatedFeatureFlagDisableMetadataEnrichment(_ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func deprecatedFeatureFlagDisableMetadataEnrichment(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	return warnIfDeprecatedIsUsed(dynakube, dynatracev1beta1.AnnotationFeatureMetadataEnrichment, dynatracev1beta1.AnnotationFeatureDisableMetadataEnrichment)
 }
 
-func deprecatedFeatureFlag(_ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func deprecatedFeatureFlag(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	var featureFlags []string
 	for _, ff := range getDeprecatedFeatureFlags() {
 		if isDeprecatedFeatureFlagUsed(dynakube, ff) {

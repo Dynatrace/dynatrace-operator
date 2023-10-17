@@ -1,6 +1,8 @@
 package dynakube
 
 import (
+	"context"
+
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"k8s.io/apimachinery/pkg/util/validation"
 )
@@ -11,7 +13,7 @@ const (
 	`
 )
 
-func nameViolatesDNS1035(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func nameViolatesDNS1035(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	dynakubeName := dynakube.Name
 	var errs []string
 	if dynakubeName != "" {
