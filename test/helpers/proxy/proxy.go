@@ -106,7 +106,11 @@ func DeletePod(ctx context.Context, t *testing.T, config *envconf.Config, namesp
 	resources := config.Client().Resources()
 	err := resources.Delete(ctx, podToDelete)
 
-	if err != nil {
+	if k8serror.IsNotFound(err) {
+	  return ctx
+	}
+	require.NoError(t, err)  
+	  
 		if k8serrors.IsNotFound(err) {
 			err = nil
 		}
