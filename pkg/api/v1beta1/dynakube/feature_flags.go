@@ -49,6 +49,7 @@ const (
 	AnnotationFeatureActiveGateReadOnlyFilesystem         = AnnotationFeaturePrefix + "activegate-readonly-fs"
 	AnnotationFeatureAutomaticK8sApiMonitoring            = AnnotationFeaturePrefix + "automatic-kubernetes-api-monitoring"
 	AnnotationFeatureAutomaticK8sApiMonitoringClusterName = AnnotationFeaturePrefix + "automatic-kubernetes-api-monitoring-cluster-name"
+	AnnotationFeatureK8sAppEnabled                        = AnnotationFeaturePrefix + "k8s-app-enabled"
 	AnnotationFeatureActiveGateIgnoreProxy                = AnnotationFeaturePrefix + "activegate-ignore-proxy"
 
 	AnnotationFeatureCustomSyntheticImage = AnnotationFeaturePrefix + "custom-synthetic-image"
@@ -234,6 +235,11 @@ func (dk *DynaKube) FeatureAutomaticKubernetesApiMonitoring() bool {
 // FeatureAutomaticKubernetesApiMonitoringClusterName is a feature flag to set custom cluster name for automatic-kubernetes-api-monitoring
 func (dk *DynaKube) FeatureAutomaticKubernetesApiMonitoringClusterName() string {
 	return dk.getFeatureFlagRaw(AnnotationFeatureAutomaticK8sApiMonitoringClusterName)
+}
+
+// FeatureEnableK8sAppEnabled is a feature flag to enable automatically enable current Kubernetes cluster for the Kubernetes app.
+func (dk *DynaKube) FeatureEnableK8sAppEnabled() bool {
+	return dk.getFeatureFlagRaw(AnnotationFeatureK8sAppEnabled) == truePhrase
 }
 
 // FeatureDisableMetadataEnrichment is a feature flag to disable metadata enrichment,
