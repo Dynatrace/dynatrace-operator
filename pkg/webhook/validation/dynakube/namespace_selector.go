@@ -16,11 +16,11 @@ Make sure you have a namespaceSelector doesn't conflict with other Dynakubes nam
 `
 )
 
-func conflictingNamespaceSelector(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func conflictingNamespaceSelector(ctx context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	if !dynakube.NeedAppInjection() {
 		return ""
 	}
-	dkMapper := mapper.NewDynakubeMapper(context.TODO(), dv.clt, dv.apiReader, dynakube.Namespace, dynakube)
+	dkMapper := mapper.NewDynakubeMapper(ctx, dv.clt, dv.apiReader, dynakube.Namespace, dynakube)
 	_, err := dkMapper.MatchingNamespaces()
 	if err != nil && err.Error() == mapper.ErrorConflictingNamespace {
 		if dynakube.NamespaceSelector().MatchExpressions == nil && dynakube.NamespaceSelector().MatchLabels == nil {

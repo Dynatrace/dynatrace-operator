@@ -1,6 +1,7 @@
 package kubesystem
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -24,7 +25,7 @@ func TestGetUID(t *testing.T) {
 				},
 			},
 		).Build()
-	uid, err := GetUID(fakeClient)
+	uid, err := GetUID(context.Background(), fakeClient)
 
 	assert.NoError(t, err)
 	assert.NotEmpty(t, uid)
