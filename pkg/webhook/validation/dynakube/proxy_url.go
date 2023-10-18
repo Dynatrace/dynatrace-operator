@@ -16,9 +16,9 @@ const (
 	errorMissingProxySecret = `Error occurred while reading PROXY secret indicated in the Dynakube specification`
 )
 
-func invalidActiveGateProxyUrl(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func invalidActiveGateProxyUrl(ctx context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	if dynakube.Spec.Proxy != nil {
-		proxyUrl, err := dynakube.Proxy(context.TODO(), dv.apiReader)
+		proxyUrl, err := dynakube.Proxy(ctx, dv.apiReader)
 		if err != nil {
 			return errors.Wrap(err, errorMissingProxySecret).Error()
 		}
