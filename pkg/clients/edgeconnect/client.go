@@ -15,8 +15,9 @@ import (
 )
 
 type client struct {
-	ctx     context.Context
-	baseURL string
+	ctx        context.Context
+	baseURL    string
+	httpClient *http.Client
 	clientcredentials.Config
 }
 
@@ -24,14 +25,12 @@ type client struct {
 type Option func(client *client)
 
 // NewClient creates a REST client for the given API base URL
-// opts can be used to customize the created client, entries must not be nil.
+// options can be used to customize the created client.
 func NewClient(clientID, clientSecret string, options ...Option) (Client, error) {
 	c := &client{
 		Config: clientcredentials.Config{
 			ClientID:     clientID,
 			ClientSecret: clientSecret,
-			Scopes:       DefaultOauthScopes,
-			TokenURL:     DefaultTokenURL,
 		},
 	}
 
@@ -39,9 +38,17 @@ func NewClient(clientID, clientSecret string, options ...Option) (Client, error)
 		opt(c)
 	}
 
+	httpClient := c.Client(c.ctx)
+	if httpClient == nil {
+		return nil, errors.New("can't create http client for edge connect")
+	}
+	c.httpClient = httpClient
+
 	return c, nil
 }
 
+// NewClientWithProxy creates a REST client for the given API base URL and proxy
+// NB: added here for demonstration purpose only for now
 func NewClientWithProxy(clientID, clientSecret, proxy string) (Client, error) {
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 	proxyUrl, err := url.Parse(proxy)
@@ -67,6 +74,12 @@ func WithBaseURL(url string) func(*client) {
 func WithTokenURL(url string) func(*client) {
 	return func(c *client) {
 		c.TokenURL = url
+	}
+}
+
+func WithOauthScopes(scopes []string) func(*client) {
+	return func(c *client) {
+		c.Scopes = scopes
 	}
 }
 
@@ -123,7 +136,7 @@ func CloseBodyAfterRequest(response *http.Response) {
 func (c *client) handleErrorResponseFromAPI(response []byte, statusCode int) error {
 	se := serverErrorResponse{}
 	if err := json.Unmarshal(response, &se); err != nil {
-		return errors.WithMessagef(err, "response error, can't unmarshal json response %d", statusCode)
+		return errors.WithStack(errors.WithMessagef(err, "response error, can't unmarshal json response %d", statusCode))
 	}
 
 	return se.ErrorMessage
@@ -147,13 +160,12 @@ func (c *client) getServerResponseData(response *http.Response) ([]byte, error) 
 func (c *client) GetEdgeConnect(edgeConnectId string) (GetResponse, error) {
 	url := c.getEdgeConnectUrl(edgeConnectId)
 
-	resp, err := c.Client(c.ctx).Get(url)
+	resp, err := c.httpClient.Get(url)
+	defer CloseBodyAfterRequest(resp)
 
 	if err != nil {
 		return GetResponse{}, err
 	}
-
-	defer CloseBodyAfterRequest(resp)
 
 	responseData, err := c.getServerResponseData(resp)
 	if err != nil {
@@ -161,7 +173,6 @@ func (c *client) GetEdgeConnect(edgeConnectId string) (GetResponse, error) {
 	}
 
 	response := GetResponse{}
-
 	err = json.Unmarshal(responseData, &response)
 	if err != nil {
 		return GetResponse{}, err
@@ -186,12 +197,11 @@ func (c *client) UpdateEdgeConnect(edgeConnectId, name string, hostPatterns []st
 	}
 
 	req, err := http.NewRequest(http.MethodPut, url, payloadBuf)
-
 	if err != nil {
 		return err
 	}
 
-	resp, err := c.Client(c.ctx).Do(req)
+	resp, err := c.httpClient.Do(req)
 	defer CloseBodyAfterRequest(resp)
 
 	if err != nil {
@@ -220,7 +230,7 @@ func (c *client) DeleteEdgeConnect(edgeConnectId string) error {
 		return err
 	}
 
-	resp, err := c.Client(c.ctx).Do(req)
+	resp, err := c.httpClient.Do(req)
 	defer CloseBodyAfterRequest(resp)
 
 	if err != nil {
@@ -254,13 +264,12 @@ func (c *client) CreateEdgeConnect(name string, hostPatterns []string, oauthClie
 		return CreateResponse{}, err
 	}
 
-	resp, err := c.Client(c.ctx).Post(url, http.MethodPost, payloadBuf)
+	resp, err := c.httpClient.Post(url, http.MethodPost, payloadBuf)
+	defer CloseBodyAfterRequest(resp)
 
 	if err != nil {
 		return CreateResponse{}, err
 	}
-
-	defer CloseBodyAfterRequest(resp)
 
 	responseData, err := c.getServerResponseData(resp)
 	if err != nil {
@@ -268,7 +277,6 @@ func (c *client) CreateEdgeConnect(name string, hostPatterns []string, oauthClie
 	}
 
 	response := CreateResponse{}
-
 	err = json.Unmarshal(responseData, &response)
 	if err != nil {
 		return CreateResponse{}, err

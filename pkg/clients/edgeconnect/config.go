@@ -7,7 +7,3 @@ import (
 var (
 	log = logger.Factory.GetLogger("edgeConnectClient")
 )
-
-var DefaultOauthScopes = []string{"test"}
-
-const DefaultTokenURL = "https://sso-dev.dynatracelabs.com/sso/oauth2/token"

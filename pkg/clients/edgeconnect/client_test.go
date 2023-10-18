@@ -23,6 +23,7 @@ func TestNewClient(t *testing.T) {
 	client, err := NewClient(
 		"dummy_client_id",
 		"dummy_client_secret",
+		WithOauthScopes([]string{"test"}),
 		WithBaseURL("http://test.com"),
 		WithTokenURL("http://test.com/token"),
 	)
@@ -111,6 +112,7 @@ func createTestEdgeConnectServer(t *testing.T, handler http.Handler) (*httptest.
 	edgeConnectClient, err := NewClient(
 		EdgeConnectOAuthClientID,
 		EdgeConnectOAuthClientSecret,
+		WithOauthScopes([]string{"test_scopes"}),
 		WithBaseURL(edgeConnectServer.URL),
 		WithTokenURL(edgeConnectServer.URL+"/sso/oauth2/token"),
 		WithContext(ctx),
