@@ -16,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	slices2 "golang.org/x/exp/slices"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -347,7 +348,7 @@ func TestBuildCommonEnvs(t *testing.T) {
 		require.Nil(t, dtHttpPortEnv)
 	})
 
-	t.Run("adds extra envs", func(t *testing.T) {
+	t.Run("adds extra envs with overrides", func(t *testing.T) {
 		testEnvs := []corev1.EnvVar{
 			{
 				Name:  "test-env-key-1",
@@ -356,6 +357,10 @@ func TestBuildCommonEnvs(t *testing.T) {
 			{
 				Name:  "test-env-key-2",
 				Value: "test-env-value-2",
+			},
+			{
+				Name:  "DT_ID_SEED_NAMESPACE",
+				Value: "ns-override",
 			},
 		}
 		dynakube := getTestDynakube()
@@ -367,8 +372,13 @@ func TestBuildCommonEnvs(t *testing.T) {
 
 		require.NotEmpty(t, envs)
 		for _, env := range testEnvs {
-			assert.Contains(t, envs, env)
+			require.Contains(t, envs, env)
 		}
+
+		idx := slices2.IndexFunc(envs, func(env corev1.EnvVar) bool {
+			return env.Name == "DT_ID_SEED_NAMESPACE"
+		})
+		assert.Equal(t, "ns-override", envs[idx].Value)
 	})
 
 	t.Run("adds group env", func(t *testing.T) {
@@ -440,7 +450,7 @@ func TestBuildCommonEnvs(t *testing.T) {
 			capability.SyntheticActiveGateEnvCapabilities)
 
 		statefulSet, _ := builder.CreateStatefulSet(
-			modifiers.GenerateAllModifiers(dynaKube, synCapability))
+			modifiers.GenerateAllModifiers(dynaKube, synCapability, builder.envMap))
 
 		assert.Equal(t,
 			*statefulSet.Spec.Replicas,
