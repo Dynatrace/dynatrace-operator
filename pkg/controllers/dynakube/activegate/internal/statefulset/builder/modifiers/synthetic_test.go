@@ -19,7 +19,7 @@ func TestSyntheticContainer(t *testing.T) {
 	modifier := newSyntheticModifier(
 		dynaKube,
 		capability.NewSyntheticCapability(&dynaKube),
-		prioritymap.NewMap(),
+		prioritymap.New(),
 	)
 	container := modifier.buildContainer()
 

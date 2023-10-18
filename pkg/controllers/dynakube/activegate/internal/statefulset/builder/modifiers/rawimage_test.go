@@ -20,7 +20,7 @@ func TestRawImageEnabled(t *testing.T) {
 		enableKubeMonCapability(&dynakube)
 		setRawImageUsage(&dynakube, true)
 
-		mod := NewRawImageModifier(dynakube, prioritymap.NewMap())
+		mod := NewRawImageModifier(dynakube, prioritymap.New())
 
 		assert.True(t, mod.Enabled())
 	})
@@ -30,7 +30,7 @@ func TestRawImageEnabled(t *testing.T) {
 		enableKubeMonCapability(&dynakube)
 		setRawImageUsage(&dynakube, false)
 
-		mod := NewRawImageModifier(dynakube, prioritymap.NewMap())
+		mod := NewRawImageModifier(dynakube, prioritymap.New())
 
 		assert.False(t, mod.Enabled())
 	})
@@ -41,7 +41,7 @@ func TestRawImageModify(t *testing.T) {
 		dynakube := getBaseDynakube()
 		enableKubeMonCapability(&dynakube)
 		setRawImageUsage(&dynakube, true)
-		mod := NewRawImageModifier(dynakube, prioritymap.NewMap())
+		mod := NewRawImageModifier(dynakube, prioritymap.New())
 		builder := createBuilderForTesting()
 
 		sts, _ := builder.AddModifier(mod).Build()

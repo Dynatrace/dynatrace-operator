@@ -12,7 +12,10 @@ type entry struct {
 	priority  int
 }
 
-const defaultPriority = 1
+const DefaultPriority = LowPriority
+const LowPriority = 1
+const MediumPriority = 5
+const HighPriority = 10
 
 type Map struct {
 	entries        map[string]entry
@@ -33,7 +36,7 @@ func WithSeparator(separator string) Option {
 	}
 }
 
-func NewMap(defaultOptions ...Option) *Map {
+func New(defaultOptions ...Option) *Map {
 	m := &Map{
 		entries:        make(map[string]entry),
 		defaultOptions: defaultOptions,
@@ -48,7 +51,7 @@ func (m Map) Append(key string, value any, opts ...Option) {
 
 	newArg := entry{
 		value:    value,
-		priority: defaultPriority,
+		priority: DefaultPriority,
 	}
 
 	for _, opt := range m.defaultOptions {

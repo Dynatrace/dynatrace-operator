@@ -21,11 +21,11 @@ const (
 	proxy = "https_proxy"
 )
 
-const customEnvPriority = 2
-const defaultEnvPriority = 1
+const customEnvPriority = prioritymap.HighPriority
+const defaultEnvPriority = prioritymap.DefaultPriority
 
 func (dsInfo *builderInfo) environmentVariables() []corev1.EnvVar {
-	envMap := prioritymap.NewMap(prioritymap.WithPriority(defaultEnvPriority))
+	envMap := prioritymap.New(prioritymap.WithPriority(defaultEnvPriority))
 
 	if dsInfo.hostInjectSpec != nil {
 		prioritymap.Append(envMap, dsInfo.hostInjectSpec.Env, prioritymap.WithPriority(customEnvPriority))
@@ -110,7 +110,7 @@ func (dsInfo *builderInfo) addReadOnlyEnv(envVarMap *prioritymap.Map) {
 }
 
 func (dsInfo *HostMonitoring) appendInfraMonEnvVars(daemonset *appsv1.DaemonSet) {
-	envVars := prioritymap.NewMap()
+	envVars := prioritymap.New()
 	prioritymap.Append(envVars, daemonset.Spec.Template.Spec.Containers[0].Env)
 	addDefaultValue(envVars, oneagentDisableContainerInjection, "true")
 	daemonset.Spec.Template.Spec.Containers[0].Env = envVars.AsEnvVars()

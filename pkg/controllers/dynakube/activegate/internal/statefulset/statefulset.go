@@ -20,8 +20,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-const defaultEnvPriority = 1
-const customEnvPriority = 3
+const defaultEnvPriority = prioritymap.DefaultPriority
+const customEnvPriority = prioritymap.HighPriority
 
 type Builder struct {
 	kubeUID    types.UID
@@ -37,7 +37,7 @@ func NewStatefulSetBuilder(kubeUID types.UID, configHash string, dynakube dynatr
 		configHash: configHash,
 		dynakube:   dynakube,
 		capability: capability,
-		envMap:     prioritymap.NewMap(prioritymap.WithPriority(defaultEnvPriority)),
+		envMap:     prioritymap.New(prioritymap.WithPriority(defaultEnvPriority)),
 	}
 }
 

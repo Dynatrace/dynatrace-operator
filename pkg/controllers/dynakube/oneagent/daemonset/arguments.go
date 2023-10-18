@@ -13,7 +13,7 @@ const customArgumentPriority = 2
 const defaultArgumentPriority = 1
 
 func (dsInfo *builderInfo) arguments() []string {
-	argMap := prioritymap.NewMap(prioritymap.WithSeparator(prioritymap.DefaultSeparator), prioritymap.WithPriority(defaultArgumentPriority))
+	argMap := prioritymap.New(prioritymap.WithSeparator(prioritymap.DefaultSeparator), prioritymap.WithPriority(defaultArgumentPriority))
 
 	dsInfo.appendProxyArg(argMap)
 	dsInfo.appendNetworkZoneArg(argMap)

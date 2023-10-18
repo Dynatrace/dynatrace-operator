@@ -8,7 +8,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-const modifierEnvPriority = 2
+const modifierEnvPriority = prioritymap.MediumPriority
 
 type volumeModifier interface {
 	getVolumes() []corev1.Volume

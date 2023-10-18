@@ -88,7 +88,7 @@ func TestNoConflict(t *testing.T) {
 		enableKubeMonCapability(&dynakube)
 		multiCapability := capability.NewMultiCapability(&dynakube)
 		enableAllModifiers(&dynakube, multiCapability)
-		mods := GenerateAllModifiers(dynakube, multiCapability, prioritymap.NewMap())
+		mods := GenerateAllModifiers(dynakube, multiCapability, prioritymap.New())
 		builder := createBuilderForTesting()
 
 		sts, _ := builder.AddModifier(mods...).Build()

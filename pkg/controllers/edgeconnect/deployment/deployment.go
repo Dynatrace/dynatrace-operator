@@ -12,8 +12,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const customEnvPriority = 2
-const defaultEnvPriority = 1
+const customEnvPriority = prioritymap.HighPriority
+const defaultEnvPriority = prioritymap.DefaultPriority
 
 func New(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
 	appLabels := buildAppLabels(instance)
@@ -64,7 +64,7 @@ func New(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
 }
 
 func prepareContainerEnvVars(instance *edgeconnectv1alpha1.EdgeConnect) []corev1.EnvVar {
-	envMap := prioritymap.NewMap(prioritymap.WithPriority(defaultEnvPriority))
+	envMap := prioritymap.New(prioritymap.WithPriority(defaultEnvPriority))
 	prioritymap.Append(envMap, []corev1.EnvVar{
 		{
 			Name:  consts.EnvEdgeConnectName,

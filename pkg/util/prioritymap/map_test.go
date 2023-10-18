@@ -8,7 +8,7 @@ import (
 )
 
 func TestWithEnvVars(t *testing.T) {
-	argMap := NewMap()
+	argMap := New()
 
 	// value source
 	valueSource := &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}}
@@ -33,7 +33,7 @@ func TestWithEnvVars(t *testing.T) {
 	Append(argMap, corev1.EnvVar{
 		Name:  "DT_TENANT",
 		Value: "abc12345",
-	}, WithPriority(2))
+	}, WithPriority(MediumPriority))
 
 	// strings
 	Append(argMap, []string{
@@ -67,7 +67,7 @@ func TestWithEnvVars(t *testing.T) {
 }
 
 func TestWithArguments(t *testing.T) {
-	argMap := NewMap()
+	argMap := New()
 	argMap.Append("--proxy=", "127.0.0.1", WithSeparator(DefaultSeparator))
 	argMap.Append("--tenant", "$(DT_TENANT)", WithSeparator(DefaultSeparator))
 	argMap.Append("--no-foobar", "")
@@ -104,9 +104,9 @@ func TestArgumentSlice(t *testing.T) {
 		"tenant=abcd1345",
 	}
 
-	argMap := NewMap(WithSeparator("="))
+	argMap := New(WithSeparator("="))
 	argMap.Append("--set-proxy", "192.168.1.1")
-	Append(argMap, args, WithPriority(2))
+	Append(argMap, args, WithPriority(HighPriority))
 
 	assert.Equal(t, expectedArgs, argMap.AsKeyValueStrings())
 }
