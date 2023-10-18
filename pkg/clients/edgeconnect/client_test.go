@@ -54,7 +54,7 @@ func TestGetEdgeConnect(t *testing.T) {
 		defer edgeConnectServer.Close()
 
 		resp, err := edgeConnectClient.GetEdgeConnect("348b4cd9-ba31-4670-9c45-9125a7d87439")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, resp.Name, "InternalServices")
 	})
 
