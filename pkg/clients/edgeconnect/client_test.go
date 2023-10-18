@@ -36,7 +36,7 @@ func TestCreateEdgeConnect(t *testing.T) {
 		defer edgeConnectServer.Close()
 
 		resp, err := edgeConnectClient.CreateEdgeConnect("InternalServices", []string{"*.internal.org"}, "dt0s02.AIOUP56P")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, resp.Name, "InternalServices")
 	})
 	t.Run("create basic edge connect without name returns error", func(t *testing.T) {
