@@ -1,131 +1,64 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:base"
-  ],
-  "labels": [
-    "dependencies"
-  ],
-  "digest": {
-    "enabled": false
-  },
-  "baseBranches": [
-    "$default",
-    "release-0.11",
-    "release-0.12",
-    "release-0.13",
-    "release-0.14"
-  ],
-  "enabledManagers": [
-    "regex",
-    "dockerfile",
-    "gomod",
-    "github-actions"
-  ],
+  "extends": [ "config:base" ],
+  "labels": [ "dependencies" ],
+  "digest": { "enabled": false },
+  "baseBranches": [ "$default", "release-0.11", "release-0.12", "release-0.13", "release-0.14" ],
+  "enabledManagers": [ "regex", "dockerfile", "gomod", "github-actions" ],
   "regexManagers": [
     {
-      "fileMatch": [
-        "(^|/|\\.)prerequisites.mk$",
-        "(^|/|\\.)third-party-licenses.sh$"
-      ],
+      "fileMatch": [ "(^|/|\\.)prerequisites.mk$", "(^|/|\\.)third-party-licenses.sh$" ],
       "matchStrings": [
         "depName=(?<depName>.*?)\\s.*?_version=(?<currentValue>.*)\\s"
       ],
       "datasourceTemplate": "go"
     },
     {
-      "fileMatch": [
-        "(^|/|\\.)ci.yaml$"
-      ],
+      "fileMatch": [ "(^|/|\\.)ci.yaml$"],
       "matchStrings": [
-        "depName=(?<depName>.*?)\\s.*?version\\:\\s(?<currentValue>.*)\\s",
+        "depName=(?<depName>.*?)\\s.*?version\\:\\s(?<currentValue>.*)\\s"
       ],
       "datasourceTemplate": "go"
     }
   ],
   "packageRules": [
     {
+      "matchManagers": [ "dockerfile", "regex", "gomod", "github-actions" ],
+      "matchBaseBranches": [ "/^release\\/.*/" ],
+      "matchUpdateTypes": [ "major", "minor" ],
+      "enabled": false
+    },
+    {
       "matchManagers": ["dockerfile"],
-      "matchBaseBranches": [
-        "/^release\\/.*/"
-      ],
-      "matchUpdateTypes": [
-        "major",
-        "minor"
-      ],
-      "enabled": false
-    },
-    {
-      "matchUpdateTypes": [
-        "digest",
-        "pin",
-        "pinDigest"
-      ],
-      "enabled": false
-    },
-    {
-      "matchManagers": [
-        "dockerfile"
-      ],
       "commitMessagePrefix": "Docker:",
       "enabled": true,
       "allowedVersions": "/^v?[0-9]+\\.[0-9]+(\\.[0-9]+)*$/"
     },
     {
-      "matchManagers": [
-        "gomod"
-      ],
+      "matchManagers": ["gomod"],
       "commitMessagePrefix": "Go:",
       "enabled": true,
       "allowedVersions": "/^v[0-9]+\\.[0-9]+\\.[0-9]+(\\.[0-9]+)?$/",
-      "postUpdateOptions": [
-        "gomodTidy"
-      ]
+      "postUpdateOptions": [ "gomodTidy" ]
     },
     {
-      "matchUpdateTypes": [
-        "digest",
-        "pin",
-        "pinDigest"
-      ],
+      "matchManagers": ["gomod"],
+      "matchDepTypes": ["indirect"],
       "enabled": false
     },
     {
-      "matchManagers": [
-        "gomod"
-      ],
-      "matchDepTypes": [
-        "indirect"
-      ],
-      "enabled": false
-    },
-    {
-      "matchManagers": [
-        "github-actions"
-      ],
+      "matchManagers": ["github-actions"],
       "commitMessagePrefix": "Actions:",
       "enabled": true,
       "allowedVersions": "/^v[0-9]+\\.[0-9]+\\.[0-9]+(\\.[0-9]+)?$/"
     },
     {
-      "matchManagers": [
-        "regex"
-      ],
+      "matchManagers": ["regex"],
       "commitMessagePrefix": "Dev:",
       "enabled": true
     },
     {
-      "matchUpdateTypes": [
-        "digest",
-        "pin",
-        "pinDigest"
-      ],
-      "enabled": false
-    },
-    {
-      "matchPackageNames": [
-        "k8s.io/client-go"
-      ],
+      "matchPackageNames": ["k8s.io/client-go"],
       "allowedVersions": "< 1.0"
     }
   ],
