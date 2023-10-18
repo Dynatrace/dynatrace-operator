@@ -1,6 +1,7 @@
 package dynakube
 
 import (
+	"context"
 	"net/url"
 	"strings"
 
@@ -18,7 +19,7 @@ const (
 	`
 )
 
-func NoApiUrl(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func NoApiUrl(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	apiUrl := dynakube.Spec.APIURL
 
 	if apiUrl == ExampleApiUrl {
@@ -34,7 +35,7 @@ func NoApiUrl(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string
 	return ""
 }
 
-func IsInvalidApiUrl(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func IsInvalidApiUrl(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	apiUrl := dynakube.Spec.APIURL
 
 	if !strings.HasSuffix(apiUrl, "/api") {

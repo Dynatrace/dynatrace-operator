@@ -1,6 +1,7 @@
 package dynakube
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
@@ -56,12 +57,12 @@ func testDeprecatedAnnotation(t *testing.T,
 
 	assert.Equal(t,
 		deprecatedAnnotationWarning(newAnnotation, oldAnnotation),
-		validatorFunc(nil, &dynakube))
+		validatorFunc(context.Background(), nil, &dynakube))
 
 	dynakube.Annotations = map[string]string{}
 
 	assert.Empty(t,
-		validatorFunc(nil, &dynakube))
+		validatorFunc(context.Background(), nil, &dynakube))
 }
 
 func TestDeprecatedAnnotationWarnings(t *testing.T) {

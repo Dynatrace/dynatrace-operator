@@ -14,7 +14,7 @@ import (
 )
 
 func TestFindRootOwnerOfPod(t *testing.T) {
-	ctx := context.TODO()
+	ctx := context.Background()
 	resourceName := "test"
 	namespaceName := "test"
 	t.Run("should find the root owner of the pod", func(t *testing.T) {

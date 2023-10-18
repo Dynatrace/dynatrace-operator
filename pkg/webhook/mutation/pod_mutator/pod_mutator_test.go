@@ -117,7 +117,7 @@ func TestMutator(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			ctx := context.TODO()
+			ctx := context.Background()
 			request := createTestAdmissionRequest(test.testPod)
 			// merge test objects with the test pod
 			objects := test.objects
