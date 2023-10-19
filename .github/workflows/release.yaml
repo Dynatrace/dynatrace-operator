@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - name: Prepare build parameters
         id: prep
         run: |
@@ -43,7 +43,7 @@ jobs:
         platform: [amd64, arm64, ppc64le]
     steps:
       - name: Checkout
-        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - name: Build image
         uses: ./.github/actions/build-image
         with:
@@ -75,7 +75,7 @@ jobs:
           password: DOCKERHUB_PASSWORD
     steps:
       - name: Checkout
-        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - name: Login to Registry
         uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
         with:
@@ -113,7 +113,7 @@ jobs:
       SCAN_REGISTRY: "quay.io"
     steps:
       - name: Checkout
-        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - name: Login to Registry
         uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
         with:
@@ -162,7 +162,7 @@ jobs:
             password: DOCKERHUB_PASSWORD
     steps:
       - name: Checkout
-        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - name: Login to Registry
         uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
         with:
@@ -212,7 +212,7 @@ jobs:
             password: DOCKERHUB_PASSWORD
     steps:
       - name: Checkout
-        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - name: Login to Registry
         uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
         with:
@@ -252,7 +252,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - name: Setup Golang
         uses: actions/setup-go@93397bea11091df50f3d7e59dc26a7711a8bcfbe # v4.1.0
         with:
@@ -312,6 +312,7 @@ jobs:
           body_path: ./CHANGELOG.md
           files: |
             tmp/cosign.pub
+            config/deploy/dynatrace-operator-crd.yaml
             config/deploy/kubernetes/kubernetes.yaml
             config/deploy/openshift/openshift.yaml
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -325,6 +326,7 @@ jobs:
           body_path: ./CHANGELOG.md
           files: |
             tmp/cosign.pub
+            config/deploy/dynatrace-operator-crd.yaml
             config/deploy/kubernetes/kubernetes.yaml
             config/deploy/kubernetes/kubernetes-csi.yaml
             config/deploy/kubernetes/gke-autopilot.yaml

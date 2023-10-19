@@ -5,11 +5,15 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+const customEnvPriority = prioritymap.HighPriority
+const defaultEnvPriority = prioritymap.DefaultPriority
 
 func New(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
 	appLabels := buildAppLabels(instance)
@@ -60,7 +64,8 @@ func New(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
 }
 
 func prepareContainerEnvVars(instance *edgeconnectv1alpha1.EdgeConnect) []corev1.EnvVar {
-	defaultEnvVars := []corev1.EnvVar{
+	envMap := prioritymap.New(prioritymap.WithPriority(defaultEnvPriority))
+	prioritymap.Append(envMap, []corev1.EnvVar{
 		{
 			Name:  consts.EnvEdgeConnectName,
 			Value: instance.ObjectMeta.Name,
@@ -78,21 +83,20 @@ func prepareContainerEnvVars(instance *edgeconnectv1alpha1.EdgeConnect) []corev1
 			Name:  consts.EnvEdgeConnectOauthResource,
 			Value: instance.Spec.OAuth.Resource,
 		},
-	}
+	})
+
 	// Since HostRestrictions is optional we should not pass empty env var
 	// otherwise edge-connect will fail
 	if instance.Spec.HostRestrictions != "" {
-		defaultEnvVars = append(defaultEnvVars, corev1.EnvVar{
+		prioritymap.Append(envMap, corev1.EnvVar{
 			Name:  consts.EnvEdgeConnectRestrictHostsTo,
 			Value: instance.Spec.HostRestrictions,
 		})
 	}
 
-	for _, envVar := range instance.Spec.Env {
-		defaultEnvVars = kubeobjects.AddOrUpdate(defaultEnvVars, envVar)
-	}
+	prioritymap.Append(envMap, instance.Spec.Env, prioritymap.WithPriority(customEnvPriority))
 
-	return defaultEnvVars
+	return envMap.AsEnvVars()
 }
 
 func buildAppLabels(instance *edgeconnectv1alpha1.EdgeConnect) *kubeobjects.AppLabels {

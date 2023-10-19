@@ -123,16 +123,14 @@ func withProxy(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features
 	secretConfigs := tenant.GetMultiTenantSecret(t)
 	require.Len(t, secretConfigs, 2)
 
-	dynakubeBuilder := dynakube.NewBuilder().
+	cloudNativeDynakube := dynakube.NewBuilder().
 		WithDefaultObjectMeta().
 		Name("cloudnative-codemodules-with-proxy").
 		WithDynakubeNamespaceSelector().
 		ApiUrl(secretConfigs[0].ApiUrl).
 		CloudNative(codeModulesCloudNativeSpec()).
 		WithIstio().
-		Proxy(proxySpec)
-
-	cloudNativeDynakube := dynakubeBuilder.Build()
+		Proxy(proxySpec).Build()
 
 	namespaceBuilder := namespace.NewBuilder("codemodules-sample-with-proxy")
 	labels := cloudNativeDynakube.NamespaceSelector().MatchLabels

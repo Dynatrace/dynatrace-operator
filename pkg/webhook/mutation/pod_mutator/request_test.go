@@ -37,7 +37,7 @@ func TestCreateMutationRequestBase(t *testing.T) {
 				getTestPod(),
 				dynakube,
 			})
-		mutationRequest, err := podWebhook.createMutationRequestBase(context.TODO(), *createTestAdmissionRequest(getTestPod()))
+		mutationRequest, err := podWebhook.createMutationRequestBase(context.Background(), *createTestAdmissionRequest(getTestPod()))
 		require.NoError(t, err)
 		require.NotNil(t, mutationRequest)
 
@@ -73,7 +73,7 @@ func TestGetNamespaceFromRequest(t *testing.T) {
 			[]client.Object{expected},
 		)
 
-		namespace, err := getNamespaceFromRequest(context.TODO(), podWebhook.apiReader, *createTestAdmissionRequest(getTestPod()))
+		namespace, err := getNamespaceFromRequest(context.Background(), podWebhook.apiReader, *createTestAdmissionRequest(getTestPod()))
 		require.NoError(t, err)
 		assert.Equal(t, expected.ObjectMeta, namespace.ObjectMeta)
 	})
@@ -96,7 +96,7 @@ func TestGetDynakube(t *testing.T) {
 			[]client.Object{expected},
 		)
 
-		dynakube, err := podWebhook.getDynakube(context.TODO(), testDynakubeName)
+		dynakube, err := podWebhook.getDynakube(context.Background(), testDynakubeName)
 		require.NoError(t, err)
 		assert.Equal(t, expected.ObjectMeta, dynakube.ObjectMeta)
 		assert.Equal(t, expected.Spec.OneAgent.CloudNativeFullStack, dynakube.Spec.OneAgent.CloudNativeFullStack)
@@ -104,7 +104,7 @@ func TestGetDynakube(t *testing.T) {
 }
 
 func createTestMutationRequest(dynakube *dynatracev1beta1.DynaKube) *dtwebhook.MutationRequest {
-	return dtwebhook.NewMutationRequest(context.TODO(), *getTestNamespace(), nil, getTestPod(), *dynakube)
+	return dtwebhook.NewMutationRequest(context.Background(), *getTestNamespace(), nil, getTestPod(), *dynakube)
 }
 
 func createTestAdmissionRequest(pod *corev1.Pod) *admission.Request {

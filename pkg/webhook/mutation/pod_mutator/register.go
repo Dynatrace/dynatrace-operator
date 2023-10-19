@@ -28,7 +28,7 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 	kubeClient := mgr.GetClient()
 	apiReader := mgr.GetAPIReader()
 
-	webhookPod, err := kubeobjects.GetPod(context.TODO(), apiReader, webhookPodName, webhookNamespace)
+	webhookPod, err := kubeobjects.GetPod(context.Background(), apiReader, webhookPodName, webhookNamespace)
 	if err != nil {
 		return err
 	}
@@ -53,7 +53,7 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 		return err
 	}
 
-	clusterID, err := getClusterID(apiReader)
+	clusterID, err := getClusterID(context.Background(), apiReader)
 	if err != nil {
 		return err
 	}
@@ -102,10 +102,10 @@ func getWebhookContainerImage(webhookPod corev1.Pod) (string, error) {
 	return webhookContainer.Image, nil
 }
 
-func getClusterID(apiReader client.Reader) (string, error) {
+func getClusterID(ctx context.Context, apiReader client.Reader) (string, error) {
 	var clusterUID types.UID
 	var err error
-	if clusterUID, err = kubesystem.GetUID(apiReader); err != nil {
+	if clusterUID, err = kubesystem.GetUID(ctx, apiReader); err != nil {
 		return "", errors.WithStack(err)
 	}
 	log.Info("got cluster UID", "clusterUID", clusterUID)

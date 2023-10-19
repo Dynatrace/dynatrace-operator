@@ -96,19 +96,19 @@ func NewClassicFullStack(instance *dynatracev1beta1.DynaKube, clusterId string) 
 }
 
 func (dsInfo *HostMonitoring) BuildDaemonSet() (*appsv1.DaemonSet, error) {
-	result, err := dsInfo.builderInfo.BuildDaemonSet()
+	daemonSet, err := dsInfo.builderInfo.BuildDaemonSet()
 	if err != nil {
 		return nil, err
 	}
 
-	result.Name = dsInfo.dynakube.OneAgentDaemonsetName()
+	daemonSet.Name = dsInfo.dynakube.OneAgentDaemonsetName()
 
-	if len(result.Spec.Template.Spec.Containers) > 0 {
-		appendHostIdArgument(result, inframonHostIdSource)
-		dsInfo.appendInfraMonEnvVars(result)
+	if len(daemonSet.Spec.Template.Spec.Containers) > 0 {
+		appendHostIdArgument(daemonSet, inframonHostIdSource)
+		dsInfo.appendInfraMonEnvVars(daemonSet)
 	}
 
-	return result, nil
+	return daemonSet, nil
 }
 
 func (dsInfo *ClassicFullStack) BuildDaemonSet() (*appsv1.DaemonSet, error) {
