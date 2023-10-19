@@ -81,3 +81,7 @@ func (updater *codeModulesUpdater) UseTenantRegistry(_ context.Context) error {
 	}
 	return nil
 }
+
+func (updater codeModulesUpdater) ValidateStatus() error {
+	return nil
+}
