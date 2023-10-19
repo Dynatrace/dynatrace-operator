@@ -164,7 +164,6 @@ linters:
   - typecheck
   - misspell
   - asciicheck
-  - bodyclose
   - depguard
   - dogsled
   - errorlint

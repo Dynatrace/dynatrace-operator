@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"testing"
 
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -87,7 +87,7 @@ func httpGetResponseReader(url string) (io.Reader, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer dtclient.CloseBodyAfterRequest(response)
+	defer utils.CloseBodyAfterRequest(response)
 
 	if response.StatusCode != http.StatusOK {
 		return nil, errors.New("Response status code was not 200(StatusOK): " + strconv.Itoa(response.StatusCode))

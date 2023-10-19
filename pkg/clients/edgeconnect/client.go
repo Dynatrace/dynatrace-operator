@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
@@ -124,15 +125,6 @@ type serverErrorResponse struct {
 	ErrorMessage ServerError `json:"error"`
 }
 
-func CloseBodyAfterRequest(response *http.Response) {
-	if response != nil && response.Body != nil {
-		err := response.Body.Close()
-		if err != nil {
-			return
-		}
-	}
-}
-
 func (c *client) handleErrorResponseFromAPI(response []byte, statusCode int) error {
 	se := serverErrorResponse{}
 	if err := json.Unmarshal(response, &se); err != nil {
@@ -161,7 +153,7 @@ func (c *client) GetEdgeConnect(edgeConnectId string) (GetResponse, error) {
 	url := c.getEdgeConnectUrl(edgeConnectId)
 
 	resp, err := c.httpClient.Get(url)
-	defer CloseBodyAfterRequest(resp)
+	defer utils.CloseBodyAfterRequest(resp)
 
 	if err != nil {
 		return GetResponse{}, err
@@ -202,7 +194,7 @@ func (c *client) UpdateEdgeConnect(edgeConnectId, name string, hostPatterns []st
 	}
 
 	resp, err := c.httpClient.Do(req)
-	defer CloseBodyAfterRequest(resp)
+	defer utils.CloseBodyAfterRequest(resp)
 
 	if err != nil {
 		return err
@@ -231,7 +223,7 @@ func (c *client) DeleteEdgeConnect(edgeConnectId string) error {
 	}
 
 	resp, err := c.httpClient.Do(req)
-	defer CloseBodyAfterRequest(resp)
+	defer utils.CloseBodyAfterRequest(resp)
 
 	if err != nil {
 		return err
@@ -265,7 +257,7 @@ func (c *client) CreateEdgeConnect(name string, hostPatterns []string, oauthClie
 	}
 
 	resp, err := c.httpClient.Post(url, http.MethodPost, payloadBuf)
-	defer CloseBodyAfterRequest(resp)
+	defer utils.CloseBodyAfterRequest(resp)
 
 	if err != nil {
 		return CreateResponse{}, err
