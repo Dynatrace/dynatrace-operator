@@ -3,6 +3,7 @@ package version
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
@@ -64,6 +65,11 @@ func (m *mockUpdater) CheckForDowngrade(latestVersion string) (bool, error) {
 	return args.Bool(0), args.Error(1)
 }
 
+func (m *mockUpdater) ValidateStatus() error {
+	args := m.Called()
+	return args.Error(0)
+}
+
 func TestRun(t *testing.T) {
 	ctx := context.TODO()
 	testImage := dtclient.LatestImageInfo{
@@ -98,10 +104,12 @@ func TestRun(t *testing.T) {
 
 	t.Run("DON'T set source and probe at the end, if error", func(t *testing.T) {
 		target := &status.VersionStatus{}
+		mockImageGetter := mocks.MockImageGetter{}
+		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{}, fmt.Errorf("BOOM"))
 		versionReconciler := Reconciler{
 			dynakube:       &dynatracev1beta1.DynaKube{},
 			timeProvider:   timeProvider,
-			registryClient: &mocks.MockImageGetter{},
+			registryClient: &mockImageGetter,
 		}
 		updater := newCustomImageUpdater(target, "incorrect-uri")
 		err := versionReconciler.run(ctx, updater)
@@ -168,7 +176,7 @@ func TestRun(t *testing.T) {
 		assert.Equal(t, timeProvider.Now(), target.LastProbeTimestamp)
 		assert.Equal(t, status.PublicRegistryVersionSource, target.Source)
 		assertVersionStatusEquals(t, fakeRegistry, getTaggedReference(t, testImage.String()), *target)
-		assert.Empty(t, target.Version)
+		assert.NotEmpty(t, target.Version)
 	})
 
 	t.Run("public registry, no downgrade allowed", func(t *testing.T) {
@@ -353,6 +361,16 @@ func TestUpdateVersionStatus(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, expectedID, target.ImageID)
 	})
+	t.Run("providing it with digest still requires registry access", func(t *testing.T) {
+		expectedRepo := "some.registry.com/image"
+		expectedDigest := "sha256:7ece13a07a20c77a31cc36906a10ebc90bd47970905ee61e8ed491b7f4c5d62f"
+		expectedID := expectedRepo + "@" + expectedDigest
+		target := status.VersionStatus{}
+		faultyRegistry := mocks.MockImageGetter{}
+		faultyRegistry.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{}, fmt.Errorf("WANT TO ACCESS REGISTRY"))
+		err := setImageIDWithDigest(ctx, &target, &faultyRegistry, expectedID)
+		require.Error(t, err)
+	})
 }
 
 func TestNewImageLib(t *testing.T) {
@@ -510,6 +528,7 @@ func newBaseUpdater(target *status.VersionStatus, autoUpdate bool) *mockUpdater 
 	updater.On("Target").Return(target)
 	updater.On("IsEnabled").Return(true)
 	updater.On("IsAutoUpdateEnabled").Return(autoUpdate)
+	updater.On("ValidateStatus").Return(nil)
 	return &updater
 }
 
