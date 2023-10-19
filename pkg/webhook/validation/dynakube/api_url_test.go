@@ -1,6 +1,7 @@
 package dynakube
 
 import (
+	"context"
 	"strings"
 	"testing"
 
@@ -10,10 +11,10 @@ import (
 
 func TestHasApiUrl(t *testing.T) {
 	instance := &dynatracev1beta1.DynaKube{}
-	assert.Equal(t, errorNoApiUrl, NoApiUrl(nil, instance))
+	assert.Equal(t, errorNoApiUrl, NoApiUrl(context.Background(), nil, instance))
 
 	instance.Spec.APIURL = testApiUrl
-	assert.Empty(t, NoApiUrl(nil, instance))
+	assert.Empty(t, NoApiUrl(context.Background(), nil, instance))
 
 	t.Run(`happy path`, func(t *testing.T) {
 		assertAllowedResponse(t, &dynatracev1beta1.DynaKube{

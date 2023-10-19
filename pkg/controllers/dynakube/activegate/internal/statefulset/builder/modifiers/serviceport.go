@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -17,16 +18,18 @@ import (
 var _ envModifier = ServicePortModifier{}
 var _ builder.Modifier = ServicePortModifier{}
 
-func NewServicePortModifier(dynakube dynatracev1beta1.DynaKube, capability capability.Capability) ServicePortModifier {
+func NewServicePortModifier(dynakube dynatracev1beta1.DynaKube, capability capability.Capability, envMap *prioritymap.Map) ServicePortModifier {
 	return ServicePortModifier{
 		dynakube:   dynakube,
 		capability: capability,
+		envMap:     envMap,
 	}
 }
 
 type ServicePortModifier struct {
 	dynakube   dynatracev1beta1.DynaKube
 	capability capability.Capability
+	envMap     *prioritymap.Map
 }
 
 func (mod ServicePortModifier) Enabled() bool {
@@ -37,7 +40,7 @@ func (mod ServicePortModifier) Modify(sts *appsv1.StatefulSet) error {
 	baseContainer := kubeobjects.FindContainerInPodSpec(&sts.Spec.Template.Spec, consts.ActiveGateContainerName)
 	baseContainer.ReadinessProbe.HTTPGet.Port = intstr.FromString(consts.HttpsServicePortName)
 	baseContainer.Ports = append(baseContainer.Ports, mod.getPorts()...)
-	baseContainer.Env = append(baseContainer.Env, mod.getEnvs()...)
+	baseContainer.Env = mod.getEnvs()
 	return nil
 }
 
@@ -58,12 +61,15 @@ func (mod ServicePortModifier) getPorts() []corev1.ContainerPort {
 }
 
 func (mod ServicePortModifier) getEnvs() []corev1.EnvVar {
-	return []corev1.EnvVar{
-		{
-			Name:  consts.EnvDtDnsEntryPoint,
-			Value: mod.buildDNSEntryPoint(),
+	prioritymap.Append(mod.envMap,
+		[]corev1.EnvVar{
+			{
+				Name:  consts.EnvDtDnsEntryPoint,
+				Value: mod.buildDNSEntryPoint(),
+			},
 		},
-	}
+		prioritymap.WithPriority(modifierEnvPriority))
+	return mod.envMap.AsEnvVars()
 }
 
 func (mod ServicePortModifier) buildDNSEntryPoint() string {

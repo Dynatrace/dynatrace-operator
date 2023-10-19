@@ -93,7 +93,7 @@ func handleRequest(t *testing.T, edgeConnect *edgeconnect.EdgeConnect, other ...
 	data, err := json.Marshal(*edgeConnect)
 	require.NoError(t, err)
 
-	return validator.Handle(context.TODO(), admission.Request{
+	return validator.Handle(context.Background(), admission.Request{
 		AdmissionRequest: v1.AdmissionRequest{
 			Name:      testName,
 			Namespace: testNamespace,

@@ -49,7 +49,7 @@ const (
 )
 
 func Add(mgr manager.Manager, _ string) error {
-	kubeSysUID, err := kubesystem.GetUID(mgr.GetAPIReader())
+	kubeSysUID, err := kubesystem.GetUID(context.Background(), mgr.GetAPIReader())
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -261,7 +261,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 	}
 
 	controller.setConditionTokenReady(dynakube)
-	err = status.SetDynakubeStatus(dynakube, controller.apiReader)
+	err = status.SetDynakubeStatus(ctx, dynakube, controller.apiReader)
 	if err != nil {
 		log.Info("could not update Dynakube status")
 		return err
