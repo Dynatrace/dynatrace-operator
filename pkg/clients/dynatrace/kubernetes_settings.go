@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
 	"github.com/pkg/errors"
 )
 
@@ -93,7 +94,7 @@ func (dtc *dynatraceClient) performCreateOrUpdateKubernetesSetting(body []postKu
 	if err != nil {
 		return "", fmt.Errorf("error making post request to dynatrace api: %w", err)
 	}
-	defer CloseBodyAfterRequest(res)
+	defer utils.CloseBodyAfterRequest(res)
 
 	resData, err := io.ReadAll(res.Body)
 	if err != nil {
@@ -194,7 +195,7 @@ func (dtc *dynatraceClient) GetMonitoredEntitiesForKubeSystemUUID(kubeSystemUUID
 		return nil, err
 	}
 
-	defer CloseBodyAfterRequest(res)
+	defer utils.CloseBodyAfterRequest(res)
 
 	var resDataJson monitoredEntitiesResponse
 	err = dtc.unmarshalToJson(res, &resDataJson)
@@ -232,7 +233,7 @@ func (dtc *dynatraceClient) GetSettingsForMonitoredEntities(monitoredEntities []
 		return GetSettingsResponse{}, err
 	}
 
-	defer CloseBodyAfterRequest(res)
+	defer utils.CloseBodyAfterRequest(res)
 
 	var resDataJson GetSettingsResponse
 	err = dtc.unmarshalToJson(res, &resDataJson)
