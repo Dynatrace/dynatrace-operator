@@ -62,8 +62,8 @@ func Test_prepareContainerEnvVars(t *testing.T) {
 		envVars := prepareContainerEnvVars(instance)
 
 		assert.Equal(t, envVars, []corev1.EnvVar{
-			{Name: consts.EnvEdgeConnectName, Value: testName},
 			{Name: consts.EnvEdgeConnectApiEndpointHost, Value: "abc12345.dynatrace.com"},
+			{Name: consts.EnvEdgeConnectName, Value: testName},
 			{Name: consts.EnvEdgeConnectOauthEndpoint, Value: "https://sso-dev.dynatracelabs.com/sso/oauth2/token"},
 			{Name: consts.EnvEdgeConnectOauthResource, Value: "urn:dtenvironment:test12345"},
 		})
@@ -91,11 +91,11 @@ func Test_prepareContainerEnvVars(t *testing.T) {
 		envVars := prepareContainerEnvVars(instance)
 
 		assert.Equal(t, envVars, []corev1.EnvVar{
-			{Name: consts.EnvEdgeConnectName, Value: testName},
+			{Name: "DEBUG", Value: "true"},
 			{Name: consts.EnvEdgeConnectApiEndpointHost, Value: "abc12345.dynatrace.com"},
+			{Name: consts.EnvEdgeConnectName, Value: testName},
 			{Name: consts.EnvEdgeConnectOauthEndpoint, Value: "https://sso-dev.dynatracelabs.com/sso/oauth2/token"},
 			{Name: consts.EnvEdgeConnectOauthResource, Value: "urn:dtenvironment:test12345"},
-			{Name: "DEBUG", Value: "true"},
 		})
 	})
 	t.Run("Create all env vars for simple edgeconnect deployment", func(t *testing.T) {
@@ -121,8 +121,8 @@ func Test_prepareContainerEnvVars(t *testing.T) {
 		envVars := prepareContainerEnvVars(instance)
 
 		assert.Equal(t, envVars, []corev1.EnvVar{
-			{Name: consts.EnvEdgeConnectName, Value: testName},
 			{Name: consts.EnvEdgeConnectApiEndpointHost, Value: "abc12345.dynatrace.com"},
+			{Name: consts.EnvEdgeConnectName, Value: testName},
 			{Name: consts.EnvEdgeConnectOauthEndpoint, Value: "https://sso-dev.dynatracelabs.com/sso/oauth2/token"},
 			{Name: consts.EnvEdgeConnectOauthResource, Value: "urn:dtenvironment:test12345"},
 			{Name: consts.EnvEdgeConnectRestrictHostsTo, Value: "*.test.com"},

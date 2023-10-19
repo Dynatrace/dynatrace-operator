@@ -217,7 +217,7 @@ func handleRequest(t *testing.T, dynakube *dynatracev1beta1.DynaKube, other ...c
 	data, err := json.Marshal(*dynakube)
 	require.NoError(t, err)
 
-	return validator.Handle(context.TODO(), admission.Request{
+	return validator.Handle(context.Background(), admission.Request{
 		AdmissionRequest: v1.AdmissionRequest{
 			Name:      testName,
 			Namespace: testNamespace,

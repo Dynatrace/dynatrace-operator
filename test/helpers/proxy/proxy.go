@@ -24,7 +24,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/e2e-framework/klient/wait"
+	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -84,7 +88,32 @@ func DeleteProxy() features.Func {
 func CutOffDynatraceNamespace(builder *features.FeatureBuilder, proxySpec *dynatracev1beta1.DynaKubeProxy) {
 	if proxySpec != nil {
 		builder.Assess("cut off dynatrace namespace", manifests.InstallFromFile(dynatraceNetworkPolicy))
+		builder.WithTeardown("uninstalling outbound traffic pod", func(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
+			return DeletePod(ctx, t, config, "dynatrace", curlPodNameDynatraceOutboundTraffic)
+		})
 	}
+}
+
+func DeletePod(ctx context.Context, t *testing.T, config *envconf.Config, namespaceName string, name string) context.Context {
+	podToDelete := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespaceName,
+		},
+	}
+
+	resources := config.Client().Resources()
+	err := resources.Delete(ctx, podToDelete)
+
+	if k8serrors.IsNotFound(err) {
+		return ctx
+	}
+	require.NoError(t, err)
+
+	err = wait.For(conditions.New(resources).ResourceDeleted(podToDelete))
+	require.NoError(t, err)
+
+	return ctx
 }
 
 func IsDynatraceNamespaceCutOff(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube) {

@@ -22,7 +22,7 @@ The conflicting Dynakube: %s
 	warningIneffectiveFeatureFlag = `Feature flag %s has no effect in classic full stack mode.`
 )
 
-func conflictingOneAgentConfiguration(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func conflictingOneAgentConfiguration(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	counter := 0
 	if dynakube.ApplicationMonitoringMode() {
 		counter += 1
@@ -43,19 +43,19 @@ func conflictingOneAgentConfiguration(dv *dynakubeValidator, dynakube *dynatrace
 	return ""
 }
 
-func conflictingReadOnlyFilesystemAndMultipleOsAgentsOnNode(_ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func conflictingReadOnlyFilesystemAndMultipleOsAgentsOnNode(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	if dynakube.FeatureDisableReadOnlyOneAgent() && dynakube.FeatureEnableMultipleOsAgentsOnNode() {
 		return "Multiple OsAgents require readonly host filesystem"
 	}
 	return ""
 }
 
-func conflictingNodeSelector(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func conflictingNodeSelector(ctx context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	if !dynakube.NeedsOneAgent() || dynakube.FeatureEnableMultipleOsAgentsOnNode() {
 		return ""
 	}
 	validDynakubes := &dynatracev1beta1.DynaKubeList{}
-	if err := dv.clt.List(context.TODO(), validDynakubes); err != nil {
+	if err := dv.clt.List(ctx, validDynakubes); err != nil {
 		log.Info("error occurred while listing dynakubes", "err", err.Error())
 		return ""
 	}
@@ -75,7 +75,7 @@ func conflictingNodeSelector(dv *dynakubeValidator, dynakube *dynatracev1beta1.D
 	return ""
 }
 
-func imageFieldSetWithoutCSIFlag(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func imageFieldSetWithoutCSIFlag(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	if dynakube.ApplicationMonitoringMode() {
 		if !dynakube.NeedsCSIDriver() && len(dynakube.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage) > 0 {
 			return errorImageFieldSetWithoutCSIFlag
@@ -102,7 +102,7 @@ func hasOneAgentVolumeStorageEnabled(dynakube *dynatracev1beta1.DynaKube) (isEna
 	return
 }
 
-func conflictingOneAgentVolumeStorageSettings(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func conflictingOneAgentVolumeStorageSettings(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	volumeStorageEnabled, volumeStorageSet := hasOneAgentVolumeStorageEnabled(dynakube)
 	if dynakube.NeedsReadOnlyOneAgents() && volumeStorageSet && !volumeStorageEnabled {
 		return errorVolumeStorageReadOnlyModeConflict
@@ -110,7 +110,7 @@ func conflictingOneAgentVolumeStorageSettings(dv *dynakubeValidator, dynakube *d
 	return ""
 }
 
-func ineffectiveReadOnlyHostFsFeatureFlag(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func ineffectiveReadOnlyHostFsFeatureFlag(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	if dynakube.ClassicFullStackMode() {
 		if _, hasOneAgentReadOnlyFeatureFlag := dynakube.Annotations[dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent]; hasOneAgentReadOnlyFeatureFlag {
 			return readonlyHostFsFlagWarning(dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent)

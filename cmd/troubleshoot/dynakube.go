@@ -31,7 +31,7 @@ func checkDynakube(ctx context.Context, baseLog logr.Logger, apiReader client.Re
 		return corev1.Secret{}, err
 	}
 
-	err = checkApiUrlSyntax(baseLog, dynakube)
+	err = checkApiUrlSyntax(ctx, baseLog, dynakube)
 	if err != nil {
 		return corev1.Secret{}, err
 	}
@@ -113,16 +113,16 @@ func checkIfDynatraceApiSecretHasApiToken(ctx context.Context, baseLog logr.Logg
 	return tokens, nil
 }
 
-func checkApiUrlSyntax(baseLog logr.Logger, dynakube *dynatracev1beta1.DynaKube) error {
+func checkApiUrlSyntax(ctx context.Context, baseLog logr.Logger, dynakube *dynatracev1beta1.DynaKube) error {
 	log := baseLog.WithName(dynakubeCheckLoggerName)
 
 	logInfof(log, "checking if syntax of API URL is valid")
 
 	dynakubevalidation.SetLogger(log)
-	if dynakubevalidation.NoApiUrl(nil, dynakube) != "" {
+	if dynakubevalidation.NoApiUrl(ctx, nil, dynakube) != "" {
 		return errors.New("API URL is invalid")
 	}
-	if dynakubevalidation.IsInvalidApiUrl(nil, dynakube) != "" {
+	if dynakubevalidation.IsInvalidApiUrl(ctx, nil, dynakube) != "" {
 		return errors.New("API URL is invalid")
 	}
 

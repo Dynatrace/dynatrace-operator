@@ -14,9 +14,9 @@ const (
 	olmSpecificAnnotation = "olm.operatorNamespace"
 )
 
-func GetUID(clt client.Reader) (types.UID, error) {
+func GetUID(ctx context.Context, clt client.Reader) (types.UID, error) {
 	kubeSystemNamespace := &corev1.Namespace{}
-	err := clt.Get(context.TODO(), client.ObjectKey{Name: Namespace}, kubeSystemNamespace)
+	err := clt.Get(ctx, client.ObjectKey{Name: Namespace}, kubeSystemNamespace)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}

@@ -106,6 +106,8 @@ spec:
         - emptyDir: { }
           name: tmp-cert-dir
       serviceAccountName: {{ .Release.Name }}
+      securityContext:
+        {{- toYaml .Values.operator.podSecurityContext | nindent 8 }}
       {{- if .Values.customPullSecret }}
       imagePullSecrets:
         - name: {{ .Values.customPullSecret }}

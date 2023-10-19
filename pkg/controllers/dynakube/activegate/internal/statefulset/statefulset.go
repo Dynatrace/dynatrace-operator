@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -19,11 +20,15 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+const defaultEnvPriority = prioritymap.DefaultPriority
+const customEnvPriority = prioritymap.HighPriority
+
 type Builder struct {
 	kubeUID    types.UID
 	configHash string
 	dynakube   dynatracev1beta1.DynaKube
 	capability capability.Capability
+	envMap     *prioritymap.Map
 }
 
 func NewStatefulSetBuilder(kubeUID types.UID, configHash string, dynakube dynatracev1beta1.DynaKube, capability capability.Capability) Builder {
@@ -32,13 +37,14 @@ func NewStatefulSetBuilder(kubeUID types.UID, configHash string, dynakube dynatr
 		configHash: configHash,
 		dynakube:   dynakube,
 		capability: capability,
+		envMap:     prioritymap.New(prioritymap.WithPriority(defaultEnvPriority)),
 	}
 }
 
 func (statefulSetBuilder Builder) CreateStatefulSet(mods []builder.Modifier) (*appsv1.StatefulSet, error) {
 	activeGateBuilder := builder.NewBuilder(statefulSetBuilder.getBase())
 	if len(mods) == 0 {
-		mods = modifiers.GenerateAllModifiers(statefulSetBuilder.dynakube, statefulSetBuilder.capability)
+		mods = modifiers.GenerateAllModifiers(statefulSetBuilder.dynakube, statefulSetBuilder.capability, statefulSetBuilder.envMap)
 	}
 	sts, _ := activeGateBuilder.AddModifier(mods...).Build()
 
@@ -112,6 +118,11 @@ func (statefulSetBuilder Builder) addTemplateSpec(sts *appsv1.StatefulSet) {
 		ServiceAccountName: statefulSetBuilder.dynakube.ActiveGateServiceAccountName(),
 		Affinity:           nodeAffinity(),
 		Tolerations:        statefulSetBuilder.capability.Properties().Tolerations,
+		SecurityContext: &corev1.PodSecurityContext{
+			SeccompProfile: &corev1.SeccompProfile{
+				Type: corev1.SeccompProfileTypeRuntimeDefault,
+			},
+		},
 		ImagePullSecrets: []corev1.LocalObjectReference{
 			{Name: statefulSetBuilder.dynakube.PullSecretName()},
 		},
@@ -178,7 +189,7 @@ func (statefulSetBuilder Builder) buildResources() corev1.ResourceRequirements {
 }
 
 func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {
-	envs := []corev1.EnvVar{
+	prioritymap.Append(statefulSetBuilder.envMap, []corev1.EnvVar{
 		{Name: consts.EnvDtCapabilities, Value: statefulSetBuilder.capability.ArgName()},
 		{Name: consts.EnvDtIdSeedNamespace, Value: statefulSetBuilder.dynakube.Namespace},
 		{Name: consts.EnvDtIdSeedClusterId, Value: string(statefulSetBuilder.kubeUID)},
@@ -191,22 +202,22 @@ func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {
 				Optional: address.Of(false),
 			},
 		}},
-	}
+	})
 
 	if statefulSetBuilder.capability.Properties().Group != "" {
-		envs = append(envs, corev1.EnvVar{Name: consts.EnvDtGroup, Value: statefulSetBuilder.capability.Properties().Group})
+		prioritymap.Append(statefulSetBuilder.envMap, corev1.EnvVar{Name: consts.EnvDtGroup, Value: statefulSetBuilder.capability.Properties().Group})
 	}
 	if statefulSetBuilder.dynakube.Spec.NetworkZone != "" {
-		envs = append(envs, corev1.EnvVar{Name: consts.EnvDtNetworkZone, Value: statefulSetBuilder.dynakube.Spec.NetworkZone})
+		prioritymap.Append(statefulSetBuilder.envMap, corev1.EnvVar{Name: consts.EnvDtNetworkZone, Value: statefulSetBuilder.dynakube.Spec.NetworkZone})
 	}
 
 	if statefulSetBuilder.dynakube.IsMetricsIngestActiveGateEnabled() {
-		envs = append(envs, corev1.EnvVar{Name: consts.EnvDtHttpPort, Value: strconv.Itoa(consts.HttpContainerPort)})
+		prioritymap.Append(statefulSetBuilder.envMap, corev1.EnvVar{Name: consts.EnvDtHttpPort, Value: strconv.Itoa(consts.HttpContainerPort)})
 	}
 
-	envs = append(envs, statefulSetBuilder.capability.Properties().Env...)
+	prioritymap.Append(statefulSetBuilder.envMap, statefulSetBuilder.capability.Properties().Env, prioritymap.WithPriority(customEnvPriority))
 
-	return envs
+	return statefulSetBuilder.envMap.AsEnvVars()
 }
 
 func nodeAffinity() *corev1.Affinity {

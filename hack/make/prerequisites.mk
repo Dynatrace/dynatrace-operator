@@ -9,7 +9,7 @@ gci_version=v0.11.2
 # renovate depName=golang.org/x/tools
 golang_tools_version=v0.14.0
 # renovate depName=github.com/vektra/mockery
-mockery_version=v2.35.3
+mockery_version=v2.36.0
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -19,7 +19,7 @@ GOBIN=$(shell go env GOBIN)
 endif
 
 ## Install all prerequisites
-prerequisites: prerequisites/kustomize prerequisites/controller-gen prerequisites/setup-pre-commit prerequisites/helm prerequisites/markdownlint
+prerequisites: prerequisites/kustomize prerequisites/controller-gen prerequisites/setup-pre-commit prerequisites/helm prerequisites/markdownlint prerequisites/mockery
 
 ## Installs 'kustomize' if it is missing
 prerequisites/kustomize:
