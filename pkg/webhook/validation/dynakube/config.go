@@ -1,6 +1,8 @@
 package dynakube
 
 import (
+	"context"
+
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 	"github.com/go-logr/logr"
@@ -10,7 +12,7 @@ const oneagentEnableVolumeStorageEnvVarName = "ONEAGENT_ENABLE_VOLUME_STORAGE"
 
 var log = logger.Factory.GetLogger("validation")
 
-type validator func(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string
+type validator func(ctx context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string
 
 var validators = []validator{
 	NoApiUrl,

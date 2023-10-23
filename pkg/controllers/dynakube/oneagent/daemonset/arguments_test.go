@@ -26,11 +26,13 @@ func TestArguments(t *testing.T) {
 			dynakube: &dynatracev1beta1.DynaKube{},
 		}
 		arguments := builder.arguments()
-		expectedDefaultArguments := make([]string, 0)
-		expectedDefaultArguments = builder.appendProxyArg(expectedDefaultArguments)
-		expectedDefaultArguments = appendOperatorVersionArg(expectedDefaultArguments)
-		expectedDefaultArguments = appendImmutableImageArgs(expectedDefaultArguments)
 
+		expectedDefaultArguments := []string{
+			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
+			"--set-proxy=",
+			"--set-server={$(DT_SERVER)}",
+			"--set-tenant=$(DT_TENANT)",
+		}
 		assert.Equal(t, expectedDefaultArguments, arguments)
 	})
 	t.Run("classic fullstack", func(t *testing.T) {
@@ -64,11 +66,14 @@ func TestArguments(t *testing.T) {
 		}
 
 		arguments := builder.arguments()
-		expectedDefaultArguments := make([]string, 0)
-		expectedDefaultArguments = builder.appendProxyArg(expectedDefaultArguments)
-		expectedDefaultArguments = appendOperatorVersionArg(expectedDefaultArguments)
-		expectedDefaultArguments = appendImmutableImageArgs(expectedDefaultArguments)
-		expectedDefaultArguments = append(expectedDefaultArguments, testValue)
+
+		expectedDefaultArguments := []string{
+			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
+			"--set-proxy=",
+			"--set-server={$(DT_SERVER)}",
+			"--set-tenant=$(DT_TENANT)",
+			"test-value",
+		}
 		assert.Equal(t, expectedDefaultArguments, arguments)
 	})
 }

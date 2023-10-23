@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
 	"github.com/pkg/errors"
 )
 
@@ -62,7 +63,7 @@ func (dtc *dynatraceClient) processLatestImageRequest(url string) (*LatestImageI
 		return nil, err
 	}
 
-	defer CloseBodyAfterRequest(response)
+	defer utils.CloseBodyAfterRequest(response)
 
 	latestImageInfo, err := dtc.handleLatestImageResponse(response)
 	if err != nil {

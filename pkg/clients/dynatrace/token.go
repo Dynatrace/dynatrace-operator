@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
 	"github.com/pkg/errors"
 )
 
@@ -44,7 +45,7 @@ func (dtc *dynatraceClient) GetTokenScopes(token string) (TokenScopes, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error making post request to dynatrace api: %w", err)
 	}
-	defer CloseBodyAfterRequest(resp)
+	defer utils.CloseBodyAfterRequest(resp)
 
 	data, err := dtc.getServerResponseData(resp)
 	if err != nil {

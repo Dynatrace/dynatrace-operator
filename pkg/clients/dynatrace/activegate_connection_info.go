@@ -3,6 +3,7 @@ package dynatrace
 import (
 	"encoding/json"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
 	"github.com/pkg/errors"
 )
 
@@ -27,12 +28,11 @@ func (dtc *dynatraceClient) GetActiveGateConnectionInfo() (ActiveGateConnectionI
 		dtc.getActiveGateConnectionInfoUrl(),
 		dynatracePaaSToken,
 	)
+	defer utils.CloseBodyAfterRequest(response)
 
 	if err != nil {
 		return ActiveGateConnectionInfo{}, errors.WithStack(err)
 	}
-
-	defer CloseBodyAfterRequest(response)
 
 	data, err := dtc.getServerResponseData(response)
 	if err != nil {

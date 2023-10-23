@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -32,7 +33,7 @@ func TestMakeRequest(t *testing.T) {
 		resp, err := dc.makeRequest(url, dynatraceApiToken)
 		assert.NoError(t, err)
 		assert.NotNil(t, resp)
-		defer CloseBodyAfterRequest(resp)
+		defer utils.CloseBodyAfterRequest(resp)
 	}
 	{
 		resp, err := dc.makeRequest("%s/v1/deployment/installer/agent/connectioninfo", dynatraceApiToken) //nolint:bodyclose

@@ -107,7 +107,7 @@ func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1
 
 // generate gets the necessary info the create the init secret data
 func (g *InitGenerator) generate(ctx context.Context, dk *dynatracev1beta1.DynaKube) (map[string][]byte, error) {
-	kubeSystemUID, err := kubesystem.GetUID(g.apiReader)
+	kubeSystemUID, err := kubesystem.GetUID(ctx, g.apiReader)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

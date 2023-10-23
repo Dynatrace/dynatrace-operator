@@ -290,7 +290,7 @@ func createTestMutationRequest(dynakube *dynatracev1beta1.DynaKube, podAnnotatio
 		dynakube = &dynatracev1beta1.DynaKube{}
 	}
 	return dtwebhook.NewMutationRequest(
-		context.TODO(),
+		context.Background(),
 		namespace,
 		&corev1.Container{
 			Name: dtwebhook.InstallContainerName,

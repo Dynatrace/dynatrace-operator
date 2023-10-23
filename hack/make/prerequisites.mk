@@ -1,15 +1,15 @@
 #renovate depName=sigs.k8s.io/kustomize/kustomize/v5
-kustomize_version=v5.1.1
+kustomize_version=v5.2.1
 #renovate depName=sigs.k8s.io/controller-tools/cmd
 controller_gen_version=v0.13.0
 # renovate depName=github.com/golangci/golangci-lint
-golang_ci_cmd_version=v1.54.2
+golang_ci_cmd_version=v1.55.0
 # renovate depName=github.com/daixiang0/gci
 gci_version=v0.11.2
 # renovate depName=golang.org/x/tools
 golang_tools_version=v0.14.0
 # renovate depName=github.com/vektra/mockery
-mockery_version=v2.35.4
+mockery_version=v2.36.0
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))

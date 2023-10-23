@@ -7,7 +7,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -40,7 +40,7 @@ func (reader Reader) ReadTokens(ctx context.Context) (Tokens, error) {
 }
 
 func (reader Reader) readTokens(ctx context.Context) (Tokens, error) {
-	var tokenSecret v1.Secret
+	var tokenSecret corev1.Secret
 	result := make(Tokens)
 
 	err := reader.apiReader.Get(ctx, client.ObjectKey{
