@@ -157,6 +157,9 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
+		shutdownOTel := webhook.SetupWebhookOtel(context.Background(), webhookManager.GetAPIReader(), builder.namespace)
+		defer shutdownOTel()
+
 		signalHandler := ctrl.SetupSignalHandler()
 		err = webhookManager.Start(signalHandler)
 

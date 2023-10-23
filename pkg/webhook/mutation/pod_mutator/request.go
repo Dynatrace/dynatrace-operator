@@ -13,6 +13,9 @@ import (
 )
 
 func (webhook *podMutatorWebhook) createMutationRequestBase(ctx context.Context, request admission.Request) (*dtwebhook.MutationRequest, error) {
+	ctx, span := webhook.spanTracer.Start(ctx, "createMutationRequestBase")
+	defer span.End()
+
 	pod, err := getPodFromRequest(request, webhook.decoder)
 	if err != nil {
 		return nil, err

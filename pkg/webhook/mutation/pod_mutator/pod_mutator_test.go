@@ -193,7 +193,7 @@ func TestHandlePodReinvocation(t *testing.T) {
 		podWebhook := createTestWebhook([]dtwebhook.PodMutator{mutator1, mutator2}, nil)
 		mutationRequest := createTestMutationRequest(dynakube)
 
-		updated := podWebhook.handlePodReinvocation(mutationRequest)
+		updated := podWebhook.handlePodReinvocation(context.Background(), mutationRequest)
 		require.False(t, updated)
 		mutator1.(*dtwebhook.PodMutatorMock).AssertNotCalled(t, "Enabled", mutationRequest.BaseRequest)
 		mutator1.(*dtwebhook.PodMutatorMock).AssertNotCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
@@ -207,7 +207,7 @@ func TestHandlePodReinvocation(t *testing.T) {
 		podWebhook := createTestWebhook([]dtwebhook.PodMutator{mutator1, mutator2}, nil)
 		mutationRequest := createTestMutationRequest(dynakube)
 
-		updated := podWebhook.handlePodReinvocation(mutationRequest)
+		updated := podWebhook.handlePodReinvocation(context.Background(), mutationRequest)
 		require.True(t, updated)
 		mutator1.(*dtwebhook.PodMutatorMock).AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
 		mutator1.(*dtwebhook.PodMutatorMock).AssertCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
@@ -221,7 +221,7 @@ func TestHandlePodReinvocation(t *testing.T) {
 		podWebhook := createTestWebhook([]dtwebhook.PodMutator{failingMutator, workingMutator}, nil)
 		mutationRequest := createTestMutationRequest(dynakube)
 
-		updated := podWebhook.handlePodReinvocation(mutationRequest)
+		updated := podWebhook.handlePodReinvocation(context.Background(), mutationRequest)
 		require.True(t, updated)
 		failingMutator.(*dtwebhook.PodMutatorMock).AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
 		failingMutator.(*dtwebhook.PodMutatorMock).AssertCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
@@ -234,7 +234,7 @@ func TestHandlePodReinvocation(t *testing.T) {
 		podWebhook := createTestWebhook([]dtwebhook.PodMutator{failingMutator}, nil)
 		mutationRequest := createTestMutationRequest(dynakube)
 
-		updated := podWebhook.handlePodReinvocation(mutationRequest)
+		updated := podWebhook.handlePodReinvocation(context.Background(), mutationRequest)
 		require.False(t, updated)
 		failingMutator.(*dtwebhook.PodMutatorMock).AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
 		failingMutator.(*dtwebhook.PodMutatorMock).AssertCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())

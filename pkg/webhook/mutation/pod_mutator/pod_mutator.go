@@ -8,6 +8,10 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -45,27 +49,41 @@ type podMutatorWebhook struct {
 	apmExists        bool
 	deployedViaOLM   bool
 
-	mutators []dtwebhook.PodMutator
+	mutators   []dtwebhook.PodMutator
+	spanTracer trace.Tracer
+	otelMeter  metric.Meter
+
+	requestCounter metric.Int64Counter
 }
 
 func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.Request) admission.Response {
+	envPodName := os.Getenv("POD_NAME")
+	webhook.requestCounter.Add(ctx, 1, metric.WithAttributes(attribute.KeyValue{
+		Key:   "podName",
+		Value: attribute.StringValue(envPodName),
+	}))
+
+	ctx, span := webhook.spanTracer.Start(ctx, "podMutatorHandle")
+	defer span.End()
+
 	emptyPatch := admission.Patched("")
 	mutationRequest, err := webhook.createMutationRequestBase(ctx, request)
 	if err != nil {
 		return silentErrorResponse(mutationRequest.Pod, err)
 	}
+
+	podName := mutationRequest.PodName()
 	if !mutationRequired(mutationRequest) || webhook.isOcDebugPod(mutationRequest.Pod) {
 		return emptyPatch
 	}
 
-	podName := mutationRequest.PodName()
 	webhook.setupEventRecorder(mutationRequest)
 
 	if webhook.isInjected(mutationRequest) {
-		if webhook.handlePodReinvocation(mutationRequest) {
+		if webhook.handlePodReinvocation(ctx, mutationRequest) {
 			log.Info("reinvocation policy applied", "podName", podName)
 			webhook.recorder.sendPodUpdateEvent()
-			return createResponseForPod(mutationRequest.Pod, request)
+			return createResponseForPod(ctx, mutationRequest.Pod, request)
 		}
 		log.Info("no change, all containers already injected", "podName", podName)
 		return emptyPatch
@@ -76,7 +94,7 @@ func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.
 	}
 	log.Info("injection finished for pod", "podName", podName, "namespace", request.Namespace)
 
-	return createResponseForPod(mutationRequest.Pod, request)
+	return createResponseForPod(ctx, mutationRequest.Pod, request)
 }
 
 func mutationRequired(mutationRequest *dtwebhook.MutationRequest) bool {
@@ -135,7 +153,10 @@ func (webhook *podMutatorWebhook) handlePodMutation(mutationRequest *dtwebhook.M
 	return nil
 }
 
-func (webhook *podMutatorWebhook) handlePodReinvocation(mutationRequest *dtwebhook.MutationRequest) bool {
+func (webhook *podMutatorWebhook) handlePodReinvocation(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) bool {
+	_, span := webhook.spanTracer.Start(ctx, "podMutatorHandle")
+	defer span.End()
+
 	var needsUpdate bool
 
 	if mutationRequest.DynaKube.FeatureDisableWebhookReinvocationPolicy() {
@@ -161,7 +182,10 @@ func setDynatraceInjectedAnnotation(mutationRequest *dtwebhook.MutationRequest) 
 }
 
 // createResponseForPod tries to format pod as json
-func createResponseForPod(pod *corev1.Pod, req admission.Request) admission.Response {
+func createResponseForPod(ctx context.Context, pod *corev1.Pod, req admission.Request) admission.Response {
+	_, span := otel.Tracer(otelName).Start(ctx, "podMutatorHandle")
+	defer span.End()
+
 	marshaledPod, err := json.MarshalIndent(pod, "", "  ")
 	if err != nil {
 		return silentErrorResponse(pod, err)
