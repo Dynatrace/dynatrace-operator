@@ -3,7 +3,7 @@
   "extends": [ "config:base" ],
   "labels": [ "dependencies" ],
   "digest": { "enabled": false },
-  "baseBranches": [ "$default", "release-0.11", "release-0.12", "release-0.13", "release-0.14" ],
+  "baseBranches": ["$default", "release-0.11", "release-0.12", "release-0.13", "release-0.14"],
   "enabledManagers": [ "regex", "dockerfile", "gomod", "github-actions" ],
   "regexManagers": [
     {
@@ -16,29 +16,42 @@
     {
       "fileMatch": [ "(^|/|\\.)ci.yaml$"],
       "matchStrings": [
-        "depName=(?<depName>.*?)\\s.*?version\\:\\s(?<currentValue>.*)\\s"
+        "depName=(?<depName>.*?)\\s.*?version\\:\\s(?<currentValue>.*)\\s",
       ],
       "datasourceTemplate": "go"
     }
   ],
   "packageRules": [
     {
-      "matchManagers": [ "dockerfile", "regex", "gomod", "github-actions" ],
-      "matchBaseBranches": [ "/^release\\/.*/" ],
-      "matchUpdateTypes": [ "major", "minor" ],
-      "enabled": false
+      "matchBaseBranches": [
+        "release-0.11",
+        "release-0.12",
+        "release-0.13",
+        "release-0.14",
+      ],
+      "matchUpdateTypes": [
+        "major",
+        "minor"
+      ],
+      "enabled": false,
     },
     {
       "matchManagers": ["dockerfile"],
+      "matchBaseBranches": [
+        "$default"
+      ],
       "commitMessagePrefix": "Docker:",
       "enabled": true,
-      "allowedVersions": "/^v?[0-9]+\\.[0-9]+(\\.[0-9]+)*$/"
+      "allowedVersions": "/^v?[0-9]+[\\.\\-][0-9]+([\\-\\.][0-9]+)*$/"
     },
     {
       "matchManagers": ["gomod"],
+      "matchBaseBranches": [
+        "$default"
+      ],
       "commitMessagePrefix": "Go:",
       "enabled": true,
-      "allowedVersions": "/^v[0-9]+\\.[0-9]+\\.[0-9]+(\\.[0-9]+)?$/",
+      "allowedVersions": "/^v?[0-9]+[\\.\\-][0-9]+([\\-\\.][0-9]+)*$/",
       "postUpdateOptions": [ "gomodTidy" ]
     },
     {
@@ -48,18 +61,26 @@
     },
     {
       "matchManagers": ["github-actions"],
+      "matchBaseBranches": [
+        "$default"
+      ],
       "commitMessagePrefix": "Actions:",
       "enabled": true,
-      "allowedVersions": "/^v[0-9]+\\.[0-9]+\\.[0-9]+(\\.[0-9]+)?$/"
+      "allowedVersions": "/^v?[0-9]+[\\.\\-][0-9]+([\\-\\.][0-9]+)*$/"
     },
     {
       "matchManagers": ["regex"],
+      "matchBaseBranches": [
+        "$default"
+      ],
       "commitMessagePrefix": "Dev:",
       "enabled": true
     },
     {
       "matchPackageNames": ["k8s.io/client-go"],
-      "allowedVersions": "< 1.0"
-    }
+      "matchBaseBranches": [
+        "$default"
+      ],
+    },
   ],
 }
