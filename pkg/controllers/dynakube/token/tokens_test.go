@@ -8,7 +8,7 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestTokens(t *testing.T) {
@@ -38,7 +38,7 @@ func testSetApiTokenScopes(t *testing.T) {
 			dtclient.DynatraceApiToken: {},
 		}
 		tokens = tokens.SetScopesForDynakube(dynatracev1beta1.DynaKube{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
 					dynatracev1beta1.AnnotationFeatureHostsRequests: "false",
 				},
@@ -54,7 +54,7 @@ func testSetApiTokenScopes(t *testing.T) {
 			dtclient.DynatraceApiToken: {},
 		}
 		tokens = tokens.SetScopesForDynakube(dynatracev1beta1.DynaKube{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
 					dynatracev1beta1.AnnotationFeatureAutomaticK8sApiMonitoring: "true",
 				},

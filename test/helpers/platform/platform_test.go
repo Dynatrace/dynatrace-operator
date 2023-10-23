@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/discovery/fake"
 	client_testing "k8s.io/client-go/testing"
@@ -17,7 +17,7 @@ func createDiscoveryClient(enableOpenshiftGVR bool) func() (discovery.DiscoveryI
 		}
 
 		if enableOpenshiftGVR {
-			client.Fake.Resources = []*v1.APIResourceList{
+			client.Fake.Resources = []*metav1.APIResourceList{
 				{
 					GroupVersion: openshiftSecurityGVR,
 				},

@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/context"
-	v1 "k8s.io/api/admission/v1"
+	admissionv1 "k8s.io/api/admission/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -94,7 +94,7 @@ func handleRequest(t *testing.T, edgeConnect *edgeconnect.EdgeConnect, other ...
 	require.NoError(t, err)
 
 	return validator.Handle(context.Background(), admission.Request{
-		AdmissionRequest: v1.AdmissionRequest{
+		AdmissionRequest: admissionv1.AdmissionRequest{
 			Name:      testName,
 			Namespace: testNamespace,
 			Object:    runtime.RawExtension{Raw: data},

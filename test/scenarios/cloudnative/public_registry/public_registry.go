@@ -19,7 +19,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
@@ -121,8 +121,8 @@ func checkCSIProvisionerEvent(dynakube dynakubev1beta1.DynaKube) features.Func {
 		require.NoError(t, err)
 
 		err = wait.For(func(ctx context.Context) (done bool, err error) {
-			events, err := clientset.CoreV1().Events("dynatrace").List(ctx, v1.ListOptions{
-				TypeMeta: v1.TypeMeta{
+			events, err := clientset.CoreV1().Events("dynatrace").List(ctx, metav1.ListOptions{
+				TypeMeta: metav1.TypeMeta{
 					Kind: "Pod",
 				},
 			})

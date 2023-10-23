@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 
-	troubleshoot "github.com/Dynatrace/dynatrace-operator/cmd/troubleshoot"
+	"github.com/Dynatrace/dynatrace-operator/cmd/troubleshoot"
 	"github.com/go-logr/logr"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
