@@ -4,11 +4,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 )
 
 func TestFindEnvVar(t *testing.T) {
-	envVars := []v1.EnvVar{
+	envVars := []corev1.EnvVar{
 		{Name: testKey1, Value: testAppVersion},
 		{Name: testKey2, Value: testAppName},
 	}
@@ -28,7 +28,7 @@ func TestFindEnvVar(t *testing.T) {
 }
 
 func TestEnvVarIsIn(t *testing.T) {
-	envVars := []v1.EnvVar{
+	envVars := []corev1.EnvVar{
 		{Name: testKey1, Value: testAppVersion},
 		{Name: testKey2, Value: testAppName},
 	}
@@ -39,10 +39,10 @@ func TestEnvVarIsIn(t *testing.T) {
 }
 
 func TestAddOrUpdate(t *testing.T) {
-	newEnvVar := v1.EnvVar{Name: "x", Value: "X"}
+	newEnvVar := corev1.EnvVar{Name: "x", Value: "X"}
 
 	t.Run("Add envvar", func(t *testing.T) {
-		envVars := []v1.EnvVar{
+		envVars := []corev1.EnvVar{
 			{Name: "a", Value: "A"},
 			{Name: "b", Value: "B"},
 		}
@@ -51,7 +51,7 @@ func TestAddOrUpdate(t *testing.T) {
 		assert.Contains(t, envVars, newEnvVar)
 	})
 	t.Run("Update envvar", func(t *testing.T) {
-		envVars := []v1.EnvVar{
+		envVars := []corev1.EnvVar{
 			{Name: "a", Value: "A"},
 			{Name: "b", Value: "B"},
 			{Name: newEnvVar.Name, Value: "this value should be updated"},

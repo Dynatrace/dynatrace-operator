@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/apps/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 )
@@ -18,7 +18,7 @@ const (
 )
 
 func TestForObjectNameAndNamespace(t *testing.T) {
-	deployment := &v1.Deployment{
+	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName1,
 			Namespace: testNamespace1,
@@ -30,7 +30,7 @@ func TestForObjectNameAndNamespace(t *testing.T) {
 		Object: deployment,
 	}))
 
-	deployment = &v1.Deployment{
+	deployment = &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName2,
 			Namespace: testNamespace1,
@@ -41,7 +41,7 @@ func TestForObjectNameAndNamespace(t *testing.T) {
 		Object: deployment,
 	}))
 
-	deployment = &v1.Deployment{
+	deployment = &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName1,
 			Namespace: testNamespace2,
@@ -52,7 +52,7 @@ func TestForObjectNameAndNamespace(t *testing.T) {
 		Object: deployment,
 	}))
 
-	deployment = &v1.Deployment{
+	deployment = &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName2,
 			Namespace: testNamespace2,
@@ -65,7 +65,7 @@ func TestForObjectNameAndNamespace(t *testing.T) {
 }
 
 func TestForNamespace(t *testing.T) {
-	deployment := &v1.Deployment{
+	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName1,
 			Namespace: testNamespace1,
@@ -75,7 +75,7 @@ func TestForNamespace(t *testing.T) {
 	assert.True(t, isInNamespace(deployment, testNamespace1))
 	assert.False(t, isInNamespace(deployment, testNamespace2))
 
-	deployment = &v1.Deployment{
+	deployment = &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName2,
 			Namespace: testNamespace1,
@@ -85,7 +85,7 @@ func TestForNamespace(t *testing.T) {
 	assert.True(t, isInNamespace(deployment, testNamespace1))
 	assert.False(t, isInNamespace(deployment, testNamespace2))
 
-	deployment = &v1.Deployment{
+	deployment = &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName1,
 			Namespace: testNamespace2,
@@ -95,7 +95,7 @@ func TestForNamespace(t *testing.T) {
 	assert.False(t, isInNamespace(deployment, testNamespace1))
 	assert.True(t, isInNamespace(deployment, testNamespace2))
 
-	deployment = &v1.Deployment{
+	deployment = &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName2,
 			Namespace: testNamespace2,
@@ -107,7 +107,7 @@ func TestForNamespace(t *testing.T) {
 }
 
 func TestForName(t *testing.T) {
-	deployment := &v1.Deployment{
+	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName1,
 			Namespace: testNamespace1,
@@ -117,7 +117,7 @@ func TestForName(t *testing.T) {
 	assert.True(t, hasName(deployment, testName1))
 	assert.False(t, hasName(deployment, testName2))
 
-	deployment = &v1.Deployment{
+	deployment = &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName2,
 			Namespace: testNamespace1,
@@ -127,7 +127,7 @@ func TestForName(t *testing.T) {
 	assert.False(t, hasName(deployment, testName1))
 	assert.True(t, hasName(deployment, testName2))
 
-	deployment = &v1.Deployment{
+	deployment = &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName1,
 			Namespace: testNamespace2,
@@ -137,7 +137,7 @@ func TestForName(t *testing.T) {
 	assert.True(t, hasName(deployment, testName1))
 	assert.False(t, hasName(deployment, testName2))
 
-	deployment = &v1.Deployment{
+	deployment = &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName2,
 			Namespace: testNamespace2,
