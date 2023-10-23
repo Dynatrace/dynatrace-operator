@@ -105,7 +105,6 @@ linters-settings:
         arguments: ["^[a-z][\\w]{0,}$"]
       - name: unchecked-type-assertion
         disabled: true
-#        arguments: [{acceptIgnoredAssertionResult=true}]
   depguard:
     rules:
       all:
