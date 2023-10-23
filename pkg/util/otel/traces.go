@@ -2,34 +2,34 @@ package otel
 
 import (
 	"context"
-
 	"github.com/pkg/errors"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/trace"
 )
 
-func setupTraces(ctx context.Context, resource *resource.Resource, endpoint string, apiToken string) (*sdktrace.TracerProvider, error) {
-	tracerExporter, err := newOtlpTraceExporter(ctx, endpoint, apiToken)
-	if err != nil {
-		return nil, err
+func setupTraces(ctx context.Context, resource *resource.Resource, endpoint string, apiToken string) (trace.TracerProvider, shutdownFn, error) {
+	if !shouldUseOtel() {
+		noopTracerProvider := trace.NewNoopTracerProvider()
+		otel.SetTracerProvider(noopTracerProvider)
+		return noopTracerProvider, noopShutdownFn, nil
 	}
 
-	return installTraceProvider(tracerExporter, resource), nil
-}
-
-func installTraceProvider(exporter sdktrace.SpanExporter, resource *resource.Resource) *sdktrace.TracerProvider {
-	tracerProvider := sdktrace.NewTracerProvider(
-		sdktrace.WithBatcher(exporter),
+	tracerExporter, err := newOtlpTraceExporter(ctx, endpoint, apiToken)
+	if err != nil {
+		return nil, noopShutdownFn, err
+	}
+	sdkTracerProvider := sdktrace.NewTracerProvider(
+		sdktrace.WithBatcher(tracerExporter),
 		sdktrace.WithResource(resource),
 	)
-
-	otel.SetTracerProvider(tracerProvider)
-
+	otel.SetTracerProvider(sdkTracerProvider)
 	log.Info("OTel tracer provider installed successfully.")
-	return tracerProvider
+
+	return sdkTracerProvider, sdkTracerProvider.Shutdown, nil
 }
 
 func newOtlpTraceExporter(ctx context.Context, endpoint string, apiToken string) (sdktrace.SpanExporter, error) {

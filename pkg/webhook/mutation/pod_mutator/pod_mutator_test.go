@@ -270,6 +270,7 @@ func getTestPodWithOcDebugPodAnnotations() *corev1.Pod {
 
 func createTestWebhook(mutators []dtwebhook.PodMutator, objects []client.Object) *podMutatorWebhook {
 	decoder := admission.NewDecoder(scheme.Scheme)
+
 	return &podMutatorWebhook{
 		apiReader:        fake.NewClient(objects...),
 		decoder:          *decoder,

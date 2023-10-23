@@ -10,6 +10,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/otel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/namespace_mutator"
@@ -122,6 +123,9 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
+		otelShutdownFn := otel.Start(context.Background(), "dynatrace-webhook", webhookManager.GetAPIReader(), builder.namespace)
+		defer otelShutdownFn()
+
 		err = startCertificateWatcher(webhookManager, builder.namespace, builder.podName)
 		if err != nil {
 			return err
@@ -156,9 +160,6 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		if err != nil {
 			return err
 		}
-
-		shutdownOTel := webhook.SetupWebhookOtel(context.Background(), webhookManager.GetAPIReader(), builder.namespace)
-		defer shutdownOTel()
 
 		signalHandler := ctrl.SetupSignalHandler()
 		err = webhookManager.Start(signalHandler)
