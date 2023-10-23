@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	dtotel "github.com/Dynatrace/dynatrace-operator/pkg/util/otel"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
 	corev1 "k8s.io/api/core/v1"
@@ -56,9 +57,13 @@ type podMutatorWebhook struct {
 }
 
 func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.Request) admission.Response {
-	webhook.countHandleMutationRequest(ctx)
+	envPodName := os.Getenv("POD_NAME")
+	webhook.requestCounter.Add(ctx, 1, metric.WithAttributes(attribute.KeyValue{
+		Key:   "podName",
+		Value: attribute.StringValue(envPodName),
+	}))
 
-	ctx, span := dtotel.StartSpan(ctx, webhook.spanTracer, "podMutatorHandle")
+	ctx, span := webhook.spanTracer.Start(ctx, "podMutatorHandle")
 	defer span.End()
 
 	emptyPatch := admission.Patched("")

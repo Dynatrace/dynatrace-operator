@@ -1,5 +1,7 @@
 package webhook
 
+import "github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
+
 const (
 	// InjectionInstanceLabel can be set in a Namespace and indicates the corresponding DynaKube object assigned to it.
 	InjectionInstanceLabel = "dynakube.internal.dynatrace.com/instance"
@@ -57,3 +59,5 @@ const (
 	// InstallContainerName is the name used for the install container
 	InstallContainerName = "install-oneagent"
 )
+
+var log = logger.Factory.GetLogger("webhook")

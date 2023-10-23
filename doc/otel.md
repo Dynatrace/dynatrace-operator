@@ -11,7 +11,8 @@ metrics and traces into your tenant follow this guide.
 
 ## Create OpenTelementry configuration secret
 
-```yaml
+```bash
+kubectl apply -f - <<EOF
 apiVersion: v1
 kind: Secret
 type: Opaque
@@ -21,6 +22,7 @@ metadata:
 data:
   endpoint: base64(<uuid>.dev.dyntracelabs.com)
   apiToken: base64(<apiToken>)
+EOF
 ```
 
 *Note:*
