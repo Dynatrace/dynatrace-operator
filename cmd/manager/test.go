@@ -23,7 +23,7 @@ func (mgr *TestManager) GetClient() client.Client {
 }
 
 func (mgr *TestManager) GetAPIReader() client.Reader {
-	return struct{ client.Reader }{}
+	return nil
 }
 
 func (mgr *TestManager) GetControllerOptions() config.Controller {
