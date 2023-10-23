@@ -101,6 +101,11 @@ linters-settings:
         disabled: true
       - name: range-val-address
         disabled: true
+      - name: import-alias-naming
+        arguments: ["^[a-z][\\w]{0,}$"]
+      - name: unchecked-type-assertion
+        disabled: true
+#        arguments: [{acceptIgnoredAssertionResult=true}]
   depguard:
     rules:
       all:

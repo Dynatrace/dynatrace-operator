@@ -54,7 +54,7 @@ func TestBootstrapManagerProvider(t *testing.T) {
 	})
 	t.Run("check if healthz/readyz checks are added", func(t *testing.T) {
 		testHealthzAndReadyz(t, func(mockMgr *manager.MockManager) error {
-			bootstrapProvider := NewBootstrapManagerProvider().(bootstrapManagerProvider)
+			bootstrapProvider, _ := NewBootstrapManagerProvider().(bootstrapManagerProvider)
 			bootstrapProvider.setManager(mockMgr)
 			_, err := bootstrapProvider.CreateManager("namespace", &rest.Config{})
 			return err

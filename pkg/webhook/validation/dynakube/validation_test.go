@@ -11,7 +11,7 @@ import (
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/admission/v1"
+	admissionv1 "k8s.io/api/admission/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -218,7 +218,7 @@ func handleRequest(t *testing.T, dynakube *dynatracev1beta1.DynaKube, other ...c
 	require.NoError(t, err)
 
 	return validator.Handle(context.Background(), admission.Request{
-		AdmissionRequest: v1.AdmissionRequest{
+		AdmissionRequest: admissionv1.AdmissionRequest{
 			Name:      testName,
 			Namespace: testNamespace,
 			Object:    runtime.RawExtension{Raw: data},

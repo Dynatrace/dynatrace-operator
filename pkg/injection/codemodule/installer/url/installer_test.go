@@ -76,7 +76,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.FlavorMultidistro,
 				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("[]string"), mock.AnythingOfType("*mem.File")).
 			Run(func(args mock.Arguments) {
-				writer := args.Get(6).(io.Writer)
+				writer, _ := args.Get(6).(io.Writer)
 
 				zipFile := zip.SetupInvalidTestZip(t, fs)
 				defer func() { _ = zipFile.Close() }()
@@ -106,7 +106,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.FlavorMultidistro,
 				mock.AnythingOfType("string"), testVersion, mock.AnythingOfType("[]string"), mock.AnythingOfType("*mem.File")).
 			Run(func(args mock.Arguments) {
-				writer := args.Get(6).(io.Writer)
+				writer, _ := args.Get(6).(io.Writer)
 
 				zipFile := zip.SetupTestArchive(t, fs, zip.TestRawZip)
 				defer func() { _ = zipFile.Close() }()
@@ -138,7 +138,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 			On("GetLatestAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.FlavorMultidistro,
 				mock.AnythingOfType("string"), mock.AnythingOfType("[]string"), mock.AnythingOfType("*mem.File")).
 			Run(func(args mock.Arguments) {
-				writer := args.Get(5).(io.Writer)
+				writer, _ := args.Get(5).(io.Writer)
 
 				zipFile := zip.SetupTestArchive(t, fs, zip.TestRawZip)
 				defer func() { _ = zipFile.Close() }()
@@ -169,7 +169,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 		dtc.
 			On("GetAgentViaInstallerUrl", testUrl, mock.AnythingOfType("*mem.File")).
 			Run(func(args mock.Arguments) {
-				writer := args.Get(1).(io.Writer)
+				writer, _ := args.Get(1).(io.Writer)
 
 				zipFile := zip.SetupTestArchive(t, fs, zip.TestRawZip)
 				defer func() { _ = zipFile.Close() }()
