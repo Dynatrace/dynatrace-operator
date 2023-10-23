@@ -54,7 +54,6 @@ func newOtlpMetricsExporter(ctx context.Context, endpoint string, apiToken strin
 			"Authorization": "Api-Token " + apiToken,
 		}),
 		otlpmetrichttp.WithAggregationSelector(aggregationSelector))
-
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
