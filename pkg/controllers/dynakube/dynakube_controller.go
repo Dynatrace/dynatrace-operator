@@ -244,7 +244,6 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 
 	tokenReader := token.NewReader(controller.apiReader, dynakube)
 	tokens, err := tokenReader.ReadTokens(ctx)
-
 	if err != nil {
 		controller.setConditionTokenError(dynakube, err)
 		return err

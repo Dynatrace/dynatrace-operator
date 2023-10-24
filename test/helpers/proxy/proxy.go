@@ -5,30 +5,29 @@ package proxy
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/curl"
 	"path"
 	"path/filepath"
 	"testing"
+	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/common"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod_mutator/oneagent_mutation"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/platform"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps"
-	sample "github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/base"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/shell"
 	"github.com/Dynatrace/dynatrace-operator/test/project"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/e2e-framework/klient/wait"
-	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -58,8 +57,9 @@ var (
 func SetupProxyWithTeardown(t *testing.T, builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube) {
 	if testDynakube.Spec.Proxy != nil {
 		installProxySCC(builder, t)
-		builder.Assess("install proxy", manifests.InstallFromFile(proxyDeploymentPath))
-		builder.Assess("proxy started", deployment.WaitFor(proxyDeploymentName, proxyNamespaceName))
+		builder.Assess("install proxy", helpers.ToFeatureFunc(manifests.InstallFromFile(proxyDeploymentPath), true))
+		builder.Assess("proxy started", helpers.ToFeatureFunc(deployment.WaitFor(proxyDeploymentName, proxyNamespaceName), true))
+		builder.Assess("proxy ready", checkProxyReady())
 		builder.WithTeardown("removing proxy", DeleteProxy())
 	}
 }
@@ -67,15 +67,18 @@ func SetupProxyWithTeardown(t *testing.T, builder *features.FeatureBuilder, test
 func SetupProxyWithCustomCAandTeardown(t *testing.T, builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube) {
 	if testDynakube.Spec.Proxy != nil {
 		installProxySCC(builder, t)
-		builder.Assess("install proxy", manifests.InstallFromFile(proxyWithCustomCADeploymentPath))
-		builder.Assess("proxy started", deployment.WaitFor(proxyDeploymentName, proxyNamespaceName))
+		builder.Assess("install proxy", helpers.ToFeatureFunc(manifests.InstallFromFile(proxyWithCustomCADeploymentPath), true))
+		builder.Assess("proxy started", helpers.ToFeatureFunc(deployment.WaitFor(proxyDeploymentName, proxyNamespaceName), true))
+		builder.Assess("proxy ready", checkProxyReady())
 		builder.WithTeardown("removing proxy", DeleteProxy())
 	}
 }
 
 func installProxySCC(builder *features.FeatureBuilder, t *testing.T) {
-	if platform.NewResolver().IsOpenshift(t) {
-		builder.Assess("install proxy scc", manifests.InstallFromFile(proxySCCPath))
+	isOpenshift, err := platform.NewResolver().IsOpenshift()
+	require.NoError(t, err)
+	if isOpenshift {
+		builder.Assess("install proxy scc", helpers.ToFeatureFunc(manifests.InstallFromFile(proxySCCPath), true))
 	}
 }
 
@@ -85,47 +88,33 @@ func DeleteProxy() features.Func {
 	}
 }
 
-func CutOffDynatraceNamespace(builder *features.FeatureBuilder, proxySpec *dynatracev1beta1.DynaKubeProxy) {
-	if proxySpec != nil {
-		builder.Assess("cut off dynatrace namespace", manifests.InstallFromFile(dynatraceNetworkPolicy))
-		builder.WithTeardown("uninstalling outbound traffic pod", func(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
-			return DeletePod(ctx, t, config, "dynatrace", curlPodNameDynatraceOutboundTraffic)
-		})
+// TODO: Do an actual fix, either in the operator to retry more often if we fail on network error OR actually verify when the proxy is actually ready.
+// Proxy deployment Ready != proxy is actually ready to receive requests
+func checkProxyReady() features.Func {
+	return func(ctx context.Context, _ *testing.T, _ *envconf.Config) context.Context {
+		time.Sleep(2 * time.Minute)
+		return ctx
 	}
 }
 
-func DeletePod(ctx context.Context, t *testing.T, config *envconf.Config, namespaceName string, name string) context.Context {
-	podToDelete := &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespaceName,
-		},
+func CutOffDynatraceNamespace(builder *features.FeatureBuilder, proxySpec *dynatracev1beta1.DynaKubeProxy) {
+	if proxySpec != nil {
+		builder.Assess("cut off dynatrace namespace", helpers.ToFeatureFunc(manifests.InstallFromFile(dynatraceNetworkPolicy), true))
+		builder.Teardown(helpers.ToFeatureFunc(manifests.UninstallFromFile(dynatraceNetworkPolicy), false))
 	}
-
-	resources := config.Client().Resources()
-	err := resources.Delete(ctx, podToDelete)
-
-	if k8serrors.IsNotFound(err) {
-		return ctx
-	}
-	require.NoError(t, err)
-
-	err = wait.For(conditions.New(resources).ResourceDeleted(podToDelete))
-	require.NoError(t, err)
-
-	return ctx
 }
 
 func IsDynatraceNamespaceCutOff(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube) {
 	if testDynakube.HasProxy() {
-		isNetworkTrafficCutOff(builder, "ingress", curlPodNameDynatraceInboundTraffic, proxyNamespaceName, sampleapps.GetWebhookServiceUrl(testDynakube))
+		isNetworkTrafficCutOff(builder, "ingress", curlPodNameDynatraceInboundTraffic, proxyNamespaceName, getWebhookServiceUrl(testDynakube))
 		isNetworkTrafficCutOff(builder, "egress", curlPodNameDynatraceOutboundTraffic, testDynakube.Namespace, internetUrl)
 	}
 }
 
 func isNetworkTrafficCutOff(builder *features.FeatureBuilder, directionName, podName, podNamespaceName, targetUrl string) {
-	builder.Assess(directionName+" - query namespace", sampleapps.InstallCutOffCurlPod(podName, podNamespaceName, targetUrl))
-	builder.Assess(directionName+" - namespace is cutoff", sampleapps.WaitForCutOffCurlPod(podName, podNamespaceName))
+	builder.Assess(directionName+" - query namespace", curl.InstallCutOffCurlPod(podName, podNamespaceName, targetUrl))
+	builder.Assess(directionName+" - namespace is cutoff", curl.WaitForCutOffCurlPod(podName, podNamespaceName))
+	builder.Teardown(curl.DeleteCutOffCurlPod(podName, podNamespaceName, targetUrl))
 }
 
 func CheckRuxitAgentProcFileHasProxySetting(sampleApp sample.App, proxySpec *dynatracev1beta1.DynaKubeProxy) features.Func {
@@ -134,11 +123,11 @@ func CheckRuxitAgentProcFileHasProxySetting(sampleApp sample.App, proxySpec *dyn
 
 		err := deployment.NewQuery(ctx, resources, client.ObjectKey{
 			Name:      sampleApp.Name(),
-			Namespace: sampleApp.Namespace().Name,
+			Namespace: sampleApp.Namespace(),
 		}).ForEachPod(func(podItem corev1.Pod) {
 			dir := filepath.Join(oneagent_mutation.OneAgentConfMountPath, common.RuxitConfFileName)
 			readFileCommand := shell.ReadFile(dir)
-			result, err := pod.Exec(ctx, resources, podItem, "sample-dynakube", readFileCommand...)
+			result, err := pod.Exec(ctx, resources, podItem, sampleApp.ContainerName(), readFileCommand...)
 			assert.Contains(t, result.StdOut.String(), fmt.Sprintf("proxy %s", proxySpec.Value))
 			require.NoError(t, err)
 		})
@@ -146,4 +135,8 @@ func CheckRuxitAgentProcFileHasProxySetting(sampleApp sample.App, proxySpec *dyn
 		require.NoError(t, err)
 		return ctx
 	}
+}
+
+func getWebhookServiceUrl(dynakube dynatracev1beta1.DynaKube) string {
+	return fmt.Sprintf("%s.%s.svc.cluster.local", webhook.DeploymentName, dynakube.Namespace)
 }

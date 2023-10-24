@@ -4,46 +4,55 @@ package namespace
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"testing"
+	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/istio"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
+	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-type Builder struct {
-	namespace corev1.Namespace
+type Option func(namespace *corev1.Namespace)
+
+func New(name string, opts ...Option) *corev1.Namespace {
+	namespace := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+	}
+	for _, opt := range opts {
+		opt(namespace)
+	}
+	return namespace
 }
 
-func NewBuilder(name string) Builder {
-	return Builder{
-		namespace: corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: name,
-			},
-		},
+func WithLabels(labels map[string]string) Option {
+	return func(namespace *corev1.Namespace) {
+		namespace.ObjectMeta.Labels = labels
 	}
 }
 
-func (namespaceBuilder Builder) WithLabels(labels map[string]string) Builder {
-	namespaceBuilder.namespace.ObjectMeta.Labels = labels
-	return namespaceBuilder
+func WithIstio() Option {
+	return func(namespace *corev1.Namespace) {
+		if namespace.ObjectMeta.Labels == nil {
+			namespace.ObjectMeta.Labels = map[string]string{}
+		}
+		namespace.ObjectMeta.Labels[InjectionKey] = InjectionEnabledValue
+	}
 }
 
-func (namespaceBuilder Builder) WithAnnotation(annotations map[string]string) Builder {
-	namespaceBuilder.namespace.ObjectMeta.Annotations = annotations
-	return namespaceBuilder
-}
-
-func (namespaceBuilder Builder) Build() corev1.Namespace {
-	return namespaceBuilder.namespace
+func WithAnnotation(annotations map[string]string) Option {
+	return func(namespace *corev1.Namespace) {
+		namespace.ObjectMeta.Annotations = annotations
+	}
 }
 
 func Delete(namespaceName string) features.Func {
@@ -67,7 +76,7 @@ func Delete(namespaceName string) features.Func {
 		}
 
 		resources := envConfig.Client().Resources()
-		err = wait.For(conditions.New(resources).ResourceDeleted(&namespace))
+		err = wait.For(conditions.New(resources).ResourceDeleted(&namespace), wait.WithTimeout(1*time.Minute))
 		require.NoError(t, err)
 
 		return ctx
@@ -75,16 +84,18 @@ func Delete(namespaceName string) features.Func {
 }
 
 func Create(namespace corev1.Namespace) features.Func {
-	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+	return helpers.ToFeatureFunc(CreateForEnv(namespace), true)
+}
+
+func CreateForEnv(namespace corev1.Namespace) env.Func {
+	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
 		err := envConfig.Client().Resources().Create(ctx, &namespace)
 		if err != nil {
 			if k8serrors.IsAlreadyExists(err) {
-				err = envConfig.Client().Resources().Update(ctx, &namespace)
+				return ctx, envConfig.Client().Resources().Update(ctx, &namespace)
 			}
-			require.NoError(t, err)
+			return ctx, err
 		}
-
-		ctx, _ = istio.AddIstioNetworkAttachment(namespace)(ctx, envConfig, t)
-		return ctx
+		return AddIstioNetworkAttachment(namespace)(ctx, envConfig)
 	}
 }

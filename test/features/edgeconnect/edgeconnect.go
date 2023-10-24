@@ -1,0 +1,34 @@
+//go:build e2e
+
+package edgeconnect
+
+import (
+	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers"
+	"testing"
+
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/edgeconnect"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
+	"sigs.k8s.io/e2e-framework/pkg/features"
+)
+
+func Feature(t *testing.T) features.Feature {
+	builder := features.New("install edgeconnect")
+
+	secretConfig := tenant.GetEdgeConnectTenantSecret(t)
+
+	testEdgeConnect := *edgeconnect.New(
+		// this name should match with tenant edge connect name
+		edgeconnect.WithName(secretConfig.Name),
+		edgeconnect.WithApiServer(secretConfig.ApiServer),
+		edgeconnect.WithOAuthClientSecret(fmt.Sprintf("%s-client-secret", secretConfig.Name)),
+		edgeconnect.WithOAuthEndpoint("https://sso-dev.dynatracelabs.com/sso/oauth2/token"),
+		edgeconnect.WithOAuthResource(fmt.Sprintf("urn:dtenvironment:%s", secretConfig.TenantUid)),
+		edgeconnect.WithCustomPullSecret(fmt.Sprintf("%s-docker-pull-secret", secretConfig.Name)),
+	)
+
+	// Register operator install
+	edgeconnect.Install(builder, helpers.LevelAssess, &secretConfig, testEdgeConnect)
+	builder.Teardown(edgeconnect.Delete(testEdgeConnect))
+	return builder.Feature()
+}

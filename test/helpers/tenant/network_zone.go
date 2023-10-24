@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -56,7 +57,7 @@ func CreateNetworkZone(secret Secret, networkZone string, alternativeZones []str
 
 func WaitForNetworkZoneDeletion(secret Secret, networkZone string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		err := wait.For(deleteNetworkZone(secret, networkZone))
+		err := wait.For(deleteNetworkZone(secret, networkZone), wait.WithTimeout(3*time.Minute))
 		require.NoError(t, err)
 		return ctx
 	}
