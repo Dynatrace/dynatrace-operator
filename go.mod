@@ -4,8 +4,8 @@ go 1.20
 
 require (
 	github.com/container-storage-interface/spec v1.9.0
-	github.com/docker/cli v24.0.0+incompatible
-	github.com/evanphx/json-patch v5.6.0+incompatible
+	github.com/docker/cli v24.0.6+incompatible
+	github.com/evanphx/json-patch v5.7.0+incompatible
 	github.com/go-logr/logr v1.2.4
 	github.com/google/go-containerregistry v0.16.1
 	github.com/klauspost/compress v1.17.2
