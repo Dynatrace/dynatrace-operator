@@ -114,7 +114,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		otelShutdownFn := otel.Start(context.Background(), "dynatrace-csi-provisionerr", csiManager.GetAPIReader(), builder.namespace)
+		otelShutdownFn := otel.Start(context.Background(), "dynatrace-csi-provisioner", csiManager.GetAPIReader(), builder.namespace)
 		defer otelShutdownFn()
 
 		err = createCsiDataPath(builder.getFilesystem())
