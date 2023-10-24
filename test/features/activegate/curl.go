@@ -5,17 +5,16 @@ package activegate
 import (
 	"context"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/curl"
-	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/curl"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/logs"
 	"github.com/stretchr/testify/require"
-
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )

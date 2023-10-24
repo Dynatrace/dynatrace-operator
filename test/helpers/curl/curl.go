@@ -4,14 +4,15 @@ package curl
 
 import (
 	"context"
+	"io"
+	"testing"
+
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/stretchr/testify/require"
-	"io"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
-	"testing"
 )
 
 const (
@@ -91,7 +92,6 @@ func WithProxy(dynakube dynatracev1beta1.DynaKube) Option {
 			}
 			curlPod.Spec.Containers[0].Env = append(curlPod.Spec.Containers[0].Env, proxyEnv)
 		}
-
 	}
 }
 

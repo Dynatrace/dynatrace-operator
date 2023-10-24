@@ -5,12 +5,13 @@ package operator
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/exec"
+
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/csi"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/webhook"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/platform"
 	"github.com/Dynatrace/dynatrace-operator/test/project"
-	"os"
-	"os/exec"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/third_party/helm"

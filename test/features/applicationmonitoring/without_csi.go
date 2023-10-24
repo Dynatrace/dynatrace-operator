@@ -4,11 +4,11 @@ package applicationmonitoring
 
 import (
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
@@ -16,10 +16,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
-)
-
-const (
-	sampleAppNamespace = "appmon-sample"
 )
 
 func WithoutCSI(t *testing.T) features.Feature {

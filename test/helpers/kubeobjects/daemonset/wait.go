@@ -4,6 +4,8 @@ package daemonset
 
 import (
 	"context"
+	"time"
+
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
@@ -11,7 +13,6 @@ import (
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
-	"time"
 )
 
 func WaitFor(name string, namespace string) env.Func {

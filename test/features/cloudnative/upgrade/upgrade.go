@@ -3,12 +3,12 @@
 package upgrade
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"

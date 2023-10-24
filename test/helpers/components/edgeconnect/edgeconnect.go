@@ -5,6 +5,9 @@ package edgeconnect
 import (
 	"context"
 	"fmt"
+	"testing"
+	"time"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1"
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
@@ -17,8 +20,6 @@ import (
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
-	"testing"
-	"time"
 )
 
 func Install(builder *features.FeatureBuilder, level features.Level, secretConfig *tenant.EdgeConnectSecret, testEdgeConnect edgeconnectv1alpha1.EdgeConnect) {

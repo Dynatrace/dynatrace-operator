@@ -5,12 +5,12 @@ package activegate
 import (
 	"context"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"strings"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/activegate"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
@@ -89,7 +89,6 @@ func assessActiveGate(builder *features.FeatureBuilder, testDynakube *dynatracev
 
 func assessActiveGateHttpsEndpoint(builder *features.FeatureBuilder, testDynakube *dynatracev1beta1.DynaKube) {
 	curlActiveGateHttps(builder, *testDynakube)
-
 }
 
 func assessActiveGateHttpEndpoint(builder *features.FeatureBuilder, testDynakube *dynatracev1beta1.DynaKube) {

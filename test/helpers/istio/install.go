@@ -4,7 +4,6 @@ package istio
 
 import (
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
 	"os"
 	"strings"
 	"testing"
@@ -13,6 +12,7 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/platform"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

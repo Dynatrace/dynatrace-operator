@@ -4,6 +4,9 @@ package curl
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -11,8 +14,6 @@ import (
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
-	"testing"
-	"time"
 )
 
 func InstallCutOffCurlPod(podName, namespaceName, curlTarget string) features.Func {

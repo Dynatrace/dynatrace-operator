@@ -3,9 +3,9 @@
 package release
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/upgrade"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/upgrade"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
 	"sigs.k8s.io/e2e-framework/pkg/env"

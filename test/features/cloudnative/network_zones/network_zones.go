@@ -5,13 +5,13 @@ package network_zones
 import (
 	"context"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"testing"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynakubev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/activegate"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
@@ -69,8 +69,8 @@ func Feature(t *testing.T) features.Feature {
 	builder.Assess("make sure that OneAgent pods do not yet start up", checkOneAgentPodsDoNotStart(testDynakube, 2*time.Minute))
 
 	// update DynaKube to start AG, which should than enable OA rollout
-	withAGOptions := append(options, dynakube.WithActiveGate())
-	testDynaKubeWithAG := *dynakube.New(withAGOptions...)
+	options = append(options, dynakube.WithActiveGate())
+	testDynaKubeWithAG := *dynakube.New(options...)
 	dynakube.Update(builder, helpers.LevelAssess, testDynaKubeWithAG)
 	dynakube.VerifyStartup(builder, helpers.LevelAssess, testDynaKubeWithAG)
 

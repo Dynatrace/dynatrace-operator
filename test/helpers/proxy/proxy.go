@@ -5,8 +5,6 @@ package proxy
 import (
 	"context"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/curl"
 	"path"
 	"path/filepath"
 	"testing"
@@ -14,8 +12,10 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/common"
+	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod_mutator/oneagent_mutation"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/curl"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"

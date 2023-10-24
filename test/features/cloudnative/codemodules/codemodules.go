@@ -5,8 +5,6 @@ package codemodules
 import (
 	"bytes"
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"io"
 	"os"
 	"path"
@@ -20,6 +18,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod_mutator/oneagent_mutation"
+	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/csi"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/istio"

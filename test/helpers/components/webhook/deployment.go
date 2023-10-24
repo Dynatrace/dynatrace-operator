@@ -3,10 +3,9 @@
 package webhook
 
 import (
-	"sigs.k8s.io/e2e-framework/pkg/env"
-
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/deployment"
+	"sigs.k8s.io/e2e-framework/pkg/env"
 )
 
 const (

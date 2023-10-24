@@ -5,14 +5,14 @@ package dynakube
 import (
 	"context"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"testing"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1"
 	dynakubev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/stretchr/testify/require"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"

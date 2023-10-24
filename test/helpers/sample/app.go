@@ -5,9 +5,7 @@ package sample
 import (
 	"context"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/replicaset"
 	"path"
-	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"testing"
 	"time"
 
@@ -16,12 +14,14 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/pod"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/replicaset"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/platform"
 	"github.com/Dynatrace/dynatrace-operator/test/project"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
@@ -223,7 +223,6 @@ func (app *App) GetPods(ctx context.Context, t *testing.T, resource *resources.R
 		replica := replicaset.GetReplicaSetsForOwner(ctx, t, resource, app.Name(), app.Namespace())
 		require.NotNil(t, replica)
 		pods = pod.GetPodsForOwner(ctx, t, resource, replica.Name, app.Namespace())
-
 	} else {
 		var p corev1.Pod
 		require.NoError(t, resource.Get(ctx, app.Name(), app.Namespace(), &p))

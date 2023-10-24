@@ -4,11 +4,11 @@ package namespace
 
 import (
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"testing"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"

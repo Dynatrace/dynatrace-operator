@@ -4,8 +4,9 @@ package manifests
 
 import (
 	"context"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"os"
+
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/e2e-framework/klient/decoder"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"

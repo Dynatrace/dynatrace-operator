@@ -4,9 +4,9 @@ package edgeconnect
 
 import (
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"sigs.k8s.io/e2e-framework/pkg/features"

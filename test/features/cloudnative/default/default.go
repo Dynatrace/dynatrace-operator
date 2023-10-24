@@ -4,16 +4,15 @@ package _default
 
 import (
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/codemodules"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/istio"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
-
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )

@@ -138,5 +138,4 @@ func WithNetworkZone(networkZone string) Option {
 	return func(dynakube *dynakubev1beta1.DynaKube) {
 		dynakube.Spec.NetworkZone = networkZone
 	}
-
 }

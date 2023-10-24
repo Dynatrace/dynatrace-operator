@@ -4,7 +4,6 @@ package deployment
 
 import (
 	"context"
-	"sigs.k8s.io/e2e-framework/pkg/env"
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -13,6 +12,7 @@ import (
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
+	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
 

@@ -3,6 +3,8 @@
 package standard
 
 import (
+	"testing"
+
 	"github.com/Dynatrace/dynatrace-operator/test/features/activegate"
 	"github.com/Dynatrace/dynatrace-operator/test/features/applicationmonitoring"
 	"github.com/Dynatrace/dynatrace-operator/test/features/classic"
@@ -15,8 +17,6 @@ import (
 	cloudToClassic "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/switch_modes"
 	"github.com/Dynatrace/dynatrace-operator/test/features/edgeconnect"
 	supportArchive "github.com/Dynatrace/dynatrace-operator/test/features/support_archive"
-	"testing"
-
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
 	"sigs.k8s.io/e2e-framework/pkg/env"
