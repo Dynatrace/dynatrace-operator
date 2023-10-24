@@ -130,7 +130,7 @@ func TestCreateTables(t *testing.T) {
 			if column == "MaxFailedMountAttempts" {
 				maxFailedMountAttempts, err := strconv.Atoi(*defaultValue)
 				assert.NoError(t, err)
-				assert.Equal(t, fmt.Sprint(dynatracev1beta1.DefaultMaxFailedCsiMountAttempts), *defaultValue)
+				assert.Equal(t, strconv.Itoa(dynatracev1beta1.DefaultMaxFailedCsiMountAttempts), *defaultValue)
 				assert.Equal(t, dynatracev1beta1.DefaultMaxFailedCsiMountAttempts, maxFailedMountAttempts)
 				assert.Equal(t, "1", notNull)
 			}
