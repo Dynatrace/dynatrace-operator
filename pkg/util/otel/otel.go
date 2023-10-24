@@ -82,7 +82,6 @@ func getOtelConfig(apiReader client.Reader, namespace string) (string, string, e
 	if err != nil {
 		return "", "", err
 	}
-	otelSecretFound = true
 
 	endpoint, err := kubeobjects.ExtractToken(&secret, otelApiEndpointKey)
 	if err != nil {
@@ -93,6 +92,8 @@ func getOtelConfig(apiReader client.Reader, namespace string) (string, string, e
 	if err != nil {
 		return "", "", err
 	}
+
+	otelSecretFound = true
 	return endpoint, token, nil
 }
 
