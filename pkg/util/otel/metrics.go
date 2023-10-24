@@ -39,9 +39,8 @@ func newOtlpMetricsExporter(ctx context.Context, endpoint string, apiToken strin
 	deltaTemporalitySelector := func(sdkmetric.InstrumentKind) metricdata.Temporality { return metricdata.DeltaTemporality }
 
 	aggregationSelector := func(ik sdkmetric.InstrumentKind) sdkmetric.Aggregation {
-		switch ik {
-		case sdkmetric.InstrumentKindHistogram:
-			// Dynatrace doesn't accept histograms yet, lets drop them
+		if ik == sdkmetric.InstrumentKindHistogram {
+			// Dynatrace doesn't ingest histograms yet, drop it
 			return sdkmetric.AggregationDrop{}
 		}
 		return sdkmetric.DefaultAggregationSelector(ik)
