@@ -10,35 +10,56 @@ pre_release_warning="> ⚠️ This is a pre-release, which has no official suppo
 > Release notes for ${tag_without_prerelease} will be published in our official documentation.
 "
 
-default_notes="### Installation
-
-For information on how to install the [latest dynatrace-operator](https://github.com/Dynatrace/dynatrace-operator/releases/latest) please visit our [official Documentation](https://www.dynatrace.com/support/help/shortlink/full-stack-dto-k8).
-
-<details>
-  <summary>Upgrade/Install instructions</summary>
-
-#### Kubernetes
-\`\`\`sh
-kubectl apply -f https://github.com/Dynatrace/dynatrace-operator/releases/download/${tag}/kubernetes.yaml
-\`\`\`
-
-#### Openshift
-\`\`\`sh
-oc apply -f https://github.com/Dynatrace/dynatrace-operator/releases/download/${tag}/openshift.yaml
-\`\`\`
-
-</details>
-
-### Features
+pre_release_footer="### Features
 
 <features-go-here>
 
 
 _Full changelog will be published with the final release, including bugfixes and further smaller improvements!_"
 
-rm -f $output_file
-if [ "$pre_release" = true ] ; then
-  echo "$pre_release_warning" >> $output_file
+release_footer="### What's Changed
+Release Notes can be found in our [official Documentation](https://docs.dynatrace.com/docs/whats-new/release-notes/dynatrace-operator)."
+
+footer=""
+
+kubernetes_manifests="kubectl apply -f https://github.com/Dynatrace/dynatrace-operator/releases/download/${tag}/kubernetes.yaml"
+openshift_manifests="oc apply -f https://github.com/Dynatrace/dynatrace-operator/releases/download/${tag}/openshift.yaml"
+
+if [ "${pre_release}" = false ] ; then
+  kubernetes_manifests="${kubernetes_manifests}
+kubectl apply -f https://github.com/Dynatrace/dynatrace-operator/releases/download/${tag}/kubernetes-csi.yaml"
+  openshift_manifests="${openshift_manifests}
+oc apply -f https://github.com/Dynatrace/dynatrace-operator/releases/download/${tag}/openshift-csi.yaml"
+
+  footer="${release_footer}"
+else
+  footer="${pre_release_footer}"
 fi
 
-echo "$default_notes" >> $output_file
+default_notes="### Installation
+
+For information on how to install the [latest dynatrace-operator](https://github.com/Dynatrace/dynatrace-operator/releases/latest) please visit our [official Documentation](https://docs.dynatrace.com/docs/setup-and-configuration/setup-on-k8s/installation).
+
+<details>
+  <summary>Upgrade/Install instructions</summary>
+
+#### Kubernetes
+\`\`\`sh
+${kubernetes_manifests}
+\`\`\`
+
+#### Openshift
+\`\`\`sh
+${openshift_manifests}
+\`\`\`
+
+</details>
+
+${footer}"
+
+rm -f "${output_file}"
+if [ "$pre_release" = true ] ; then
+  echo "$pre_release_warning" >> "${output_file}"
+fi
+
+echo "$default_notes" >> "${output_file}"
