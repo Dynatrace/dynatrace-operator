@@ -112,14 +112,14 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		return reconcile.Result{}, err
 	}
 
-	if !dk.NeedAppInjection() {
-		log.Info("app injection not necessary, skip agent codemodule download", "dynakube", dk.Name)
-		return reconcile.Result{RequeueAfter: longRequeueDuration}, nil
-	}
-
 	dynakubeMetadata, err := provisioner.setupDynakubeMetadata(ctx, dk) // needed for the CSI-resilience feature
 	if err != nil {
 		return reconcile.Result{}, err
+	}
+
+	if !dk.NeedAppInjection() {
+		log.Info("app injection not necessary, skip agent codemodule download", "dynakube", dk.Name)
+		return reconcile.Result{RequeueAfter: longRequeueDuration}, nil
 	}
 
 	if dk.CodeModulesImage() == "" && dk.CodeModulesVersion() == "" {

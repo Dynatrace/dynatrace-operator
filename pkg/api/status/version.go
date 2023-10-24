@@ -11,6 +11,8 @@ const (
 	CustomImageVersionSource    VersionSource = "custom-image"
 	CustomVersionVersionSource  VersionSource = "custom-version"
 	PublicRegistryVersionSource VersionSource = "public-registry"
+
+	ImmutableImageType = "immutable"
 )
 
 type VersionStatus struct {
@@ -20,6 +22,8 @@ type VersionStatus struct {
 	ImageID string `json:"imageID,omitempty"`
 	// Image version
 	Version string `json:"version,omitempty"`
+	// Image type
+	Type string `json:"type,omitempty"`
 	// Indicates when the last check for a new version was performed
 	LastProbeTimestamp *metav1.Time `json:"lastProbeTimestamp,omitempty"`
 }

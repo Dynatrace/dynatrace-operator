@@ -8,7 +8,7 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -22,7 +22,7 @@ const (
 func TestBuildDynatraceClient(t *testing.T) {
 	t.Run(`BuildDynatraceClient works with minimal setup`, func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{
@@ -49,7 +49,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 	})
 	t.Run(`BuildDynatraceClient handles invalid token secret`, func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{
@@ -82,7 +82,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 	})
 	t.Run(`BuildDynatraceClient handles missing proxy secret`, func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{
@@ -106,7 +106,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 	})
 	t.Run(`BuildDynatraceClient handles missing trusted certificate config map`, func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
 	"github.com/pkg/errors"
 )
 
@@ -33,13 +34,12 @@ func (dtc *dynatraceClient) GetActiveGateAuthToken(dynakubeName string) (*Active
 	}
 
 	response, err := dtc.httpClient.Do(request)
+	defer utils.CloseBodyAfterRequest(response)
 
 	if err != nil {
 		log.Info("failed to retrieve ag-auth-token")
 		return nil, err
 	}
-
-	defer CloseBodyAfterRequest(response)
 
 	authTokenInfo, err := dtc.handleAuthTokenResponse(response)
 	if err != nil {

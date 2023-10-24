@@ -68,7 +68,7 @@ func TestInjection(t *testing.T) {
 				Operation: admissionv1.Create,
 			},
 		}
-		resp := inj.Handle(context.TODO(), req)
+		resp := inj.Handle(context.Background(), req)
 		assert.NoError(t, resp.Complete(req))
 		assert.True(t, resp.Allowed)
 
@@ -93,7 +93,7 @@ func TestInjection(t *testing.T) {
 				Operation: admissionv1.Create,
 			},
 		}
-		resp := inj.Handle(context.TODO(), req)
+		resp := inj.Handle(context.Background(), req)
 		assert.NoError(t, resp.Complete(req))
 		assert.True(t, resp.Allowed)
 
@@ -113,7 +113,7 @@ func TestInjection(t *testing.T) {
 				Operation: admissionv1.Create,
 			},
 		}
-		resp := inj.Handle(context.TODO(), req)
+		resp := inj.Handle(context.Background(), req)
 		assert.NoError(t, resp.Complete(req))
 		assert.True(t, resp.Allowed)
 
@@ -151,7 +151,7 @@ func TestInjection(t *testing.T) {
 				Operation: admissionv1.Update,
 			},
 		}
-		resp := inj.Handle(context.TODO(), req)
+		resp := inj.Handle(context.Background(), req)
 		assert.NoError(t, resp.Complete(req))
 		assert.True(t, resp.Allowed)
 
@@ -191,7 +191,7 @@ func TestInjection(t *testing.T) {
 				Operation: admissionv1.Update,
 			},
 		}
-		resp := inj.Handle(context.TODO(), req)
+		resp := inj.Handle(context.Background(), req)
 		assert.NoError(t, resp.Complete(req))
 		assert.True(t, resp.Allowed)
 

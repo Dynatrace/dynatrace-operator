@@ -216,7 +216,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 
 		dynakubeMetadatas, err := db.GetAllDynakubes(ctx)
 		require.NoError(t, err)
-		require.Len(t, dynakubeMetadatas, 0)
+		require.Len(t, dynakubeMetadatas, 1)
 	})
 	t.Run("no tokens", func(t *testing.T) {
 		gc := &CSIGarbageCollectorMock{}
