@@ -16,6 +16,7 @@ func setupTraces(ctx context.Context, resource *resource.Resource, endpoint stri
 	if !shouldUseOtel() {
 		noopTracerProvider := trace.NewNoopTracerProvider()
 		otel.SetTracerProvider(noopTracerProvider)
+		log.Info("OTel noop tracer provider installed")
 		return noopTracerProvider, noopShutdownFn, nil
 	}
 
