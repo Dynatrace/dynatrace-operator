@@ -38,4 +38,5 @@ const (
 
 	oneagentLogVolumeName = "oneagent-log"
 	oneagentLogMountPath  = "/opt/dynatrace/oneagent-paas/log"
+	otelName              = "DynatraceMutationWebhook"
 )

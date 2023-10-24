@@ -2,6 +2,7 @@ package otel
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
 	"go.opentelemetry.io/otel"
@@ -56,6 +57,7 @@ func StartSpan[T any](ctx context.Context, tracer T, title string, opts ...trace
 	}
 
 	if realTracer == nil || title == "" {
+		log.Info("failed to start span, no valid tracer given", "title", title, "tracer", fmt.Sprintf("%v", tracer))
 		return ctx, noopSpan{}
 	}
 	return realTracer.Start(ctx, title, opts...)

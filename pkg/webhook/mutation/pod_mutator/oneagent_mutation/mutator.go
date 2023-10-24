@@ -1,11 +1,15 @@
 package oneagent_mutation
 
 import (
+	"context"
+
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/initgeneration"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/otel"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	webhookotel "github.com/Dynatrace/dynatrace-operator/pkg/webhook/otel"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -30,15 +34,24 @@ func NewOneAgentPodMutator(image, clusterID, webhookNamespace string, client cli
 	}
 }
 
-func (mutator *OneAgentPodMutator) Enabled(request *dtwebhook.BaseRequest) bool {
+func (mutator *OneAgentPodMutator) Enabled(ctx context.Context, request *dtwebhook.BaseRequest) bool {
+	_, span := otel.StartSpan(ctx, webhookotel.Tracer(), "OneAgentPodMutator.Enabled")
+	defer span.End()
+
 	return kubeobjects.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationOneAgentInject, request.DynaKube.FeatureAutomaticInjection())
 }
 
-func (mutator *OneAgentPodMutator) Injected(request *dtwebhook.BaseRequest) bool {
+func (mutator *OneAgentPodMutator) Injected(ctx context.Context, request *dtwebhook.BaseRequest) bool {
+	_, span := otel.StartSpan(ctx, webhookotel.Tracer(), "OneAgentPodMutator.Injected")
+	defer span.End()
+
 	return kubeobjects.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationOneAgentInjected, false)
 }
 
-func (mutator *OneAgentPodMutator) Mutate(request *dtwebhook.MutationRequest) error {
+func (mutator *OneAgentPodMutator) Mutate(ctx context.Context, request *dtwebhook.MutationRequest) error {
+	_, span := otel.StartSpan(ctx, webhookotel.Tracer(), "OneAgentPodMutator.Mutate")
+	defer span.End()
+
 	if !request.DynaKube.IsOneAgentCommunicationRouteClear() {
 		log.Info("OneAgent were not yet able to communicate with tenant, no direct route or ready ActiveGate available, code modules have not been injected.")
 		setNotInjectedAnnotations(request.Pod, dtwebhook.EmptyConnectionInfoReason)
@@ -47,6 +60,7 @@ func (mutator *OneAgentPodMutator) Mutate(request *dtwebhook.MutationRequest) er
 
 	log.Info("injecting OneAgent into pod", "podName", request.PodName())
 	if err := mutator.ensureInitSecret(request); err != nil {
+		span.RecordError(err)
 		return err
 	}
 
@@ -60,8 +74,11 @@ func (mutator *OneAgentPodMutator) Mutate(request *dtwebhook.MutationRequest) er
 	return nil
 }
 
-func (mutator *OneAgentPodMutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
-	if !mutator.Injected(request.BaseRequest) {
+func (mutator *OneAgentPodMutator) Reinvoke(ctx context.Context, request *dtwebhook.ReinvocationRequest) bool {
+	ctx, span := otel.StartSpan(ctx, webhookotel.Tracer(), "OneAgentPodMutator.Reinvoke")
+	defer span.End()
+
+	if !mutator.Injected(ctx, request.BaseRequest) {
 		return false
 	}
 	log.Info("reinvoking", "podName", request.PodName())

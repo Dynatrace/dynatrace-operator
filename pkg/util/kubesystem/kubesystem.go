@@ -2,6 +2,7 @@ package kubesystem
 
 import (
 	"context"
+	dtotel "github.com/Dynatrace/dynatrace-operator/pkg/util/otel"
 
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -15,9 +16,13 @@ const (
 )
 
 func GetUID(ctx context.Context, clt client.Reader) (types.UID, error) {
+	ctx, span := dtotel.StartSpan(ctx, Tracer(), spanNamePrefix+".GetUID")
+	defer span.End()
+
 	kubeSystemNamespace := &corev1.Namespace{}
 	err := clt.Get(ctx, client.ObjectKey{Name: Namespace}, kubeSystemNamespace)
 	if err != nil {
+		span.RecordError(err)
 		return "", errors.WithStack(err)
 	}
 	return kubeSystemNamespace.UID, nil

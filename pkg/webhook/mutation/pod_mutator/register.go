@@ -2,17 +2,20 @@ package pod_mutator
 
 import (
 	"context"
+	dtotel "github.com/Dynatrace/dynatrace-operator/pkg/util/otel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/otel/controller_runtime"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace"
 	"net/http"
+	"net/http/httptrace"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod_mutator/dataingest_mutation"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod_mutator/oneagent_mutation"
+	webhookotel "github.com/Dynatrace/dynatrace-operator/pkg/webhook/otel"
 	"github.com/pkg/errors"
-	"go.opentelemetry.io/otel"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -20,9 +23,13 @@ import (
 )
 
 func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhookPodName string) error {
+	ctx, span := dtotel.StartSpan(context.Background(), webhookotel.Tracer(), "registerInjectEndpoint")
+	defer span.End()
+
 	// Don't use mgr.GetClient() on this function, or other cache-dependent functions from the manager. The cache may
 	// not be ready at this point, and queries for Kubernetes objects may fail. mgr.GetAPIReader() doesn't depend on the
 	// cache and is safe to use.
+	ctx = httptrace.WithClientTrace(ctx, otelhttptrace.NewClientTrace(ctx))
 
 	eventRecorder := newPodMutatorEventRecorder(mgr.GetEventRecorderFor("dynatrace-webhook"))
 	kubeConfig := mgr.GetConfig()
@@ -54,19 +61,18 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 		return err
 	}
 
-	clusterID, err := getClusterID(context.Background(), apiReader)
+	clusterID, err := getClusterID(ctx, apiReader)
 	if err != nil {
 		return err
 	}
 
-	otelMeter := otel.Meter(otelName)
-	requestCounter, err := otelMeter.Int64Counter("handledPodMutationRequests")
+	requestCounter, err := webhookotel.Meter().Int64Counter("handledPodMutationRequests")
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
 	mgr.GetWebhookServer().Register("/inject", &webhook.Admission{Handler: &podMutatorWebhook{
-		apiReader:        apiReader,
+		apiReader:        controller_runtime.NewReader(apiReader),
 		webhookNamespace: webhookNamespace,
 		webhookImage:     webhookPodImage,
 		deployedViaOLM:   kubesystem.IsDeployedViaOlm(*webhookPod),
@@ -87,9 +93,7 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 				metaClient,
 			),
 		},
-		decoder:    *admission.NewDecoder(mgr.GetScheme()),
-		spanTracer: otel.Tracer(otelName),
-		otelMeter:  otel.Meter(otelName),
+		decoder: *admission.NewDecoder(mgr.GetScheme()),
 
 		requestCounter: requestCounter,
 	}})
@@ -114,11 +118,13 @@ func getWebhookContainerImage(webhookPod corev1.Pod) (string, error) {
 }
 
 func getClusterID(ctx context.Context, apiReader client.Reader) (string, error) {
-	var clusterUID types.UID
-	var err error
-	if clusterUID, err = kubesystem.GetUID(ctx, apiReader); err != nil {
+	ctx, span := dtotel.StartSpan(context.Background(), webhookotel.Tracer(), "getClusterID")
+	defer span.End()
+
+	if clusterUID, err := kubesystem.GetUID(ctx, apiReader); err != nil {
 		return "", errors.WithStack(err)
+	} else {
+		log.Info("got cluster UID", "clusterUID", clusterUID)
+		return string(clusterUID), nil
 	}
-	log.Info("got cluster UID", "clusterUID", clusterUID)
-	return string(clusterUID), nil
 }

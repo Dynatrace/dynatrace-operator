@@ -2,7 +2,6 @@ package webhook
 
 import (
 	"context"
-
 	"github.com/Dynatrace/dynatrace-operator/cmd/certificates"
 	"github.com/Dynatrace/dynatrace-operator/cmd/config"
 	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
@@ -19,6 +18,7 @@ import (
 	edgeconnectvalidationhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/validation/edgeconnect"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
@@ -117,6 +117,8 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		if err != nil {
 			return err
 		}
+
+		kubeConfig.Transport = otelhttp.NewTransport(kubeConfig.Transport)
 
 		webhookManager, err := builder.GetManagerProvider().CreateManager(builder.namespace, kubeConfig)
 		if err != nil {
