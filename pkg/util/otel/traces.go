@@ -2,6 +2,7 @@ package otel
 
 import (
 	"context"
+
 	"github.com/pkg/errors"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
@@ -46,3 +47,18 @@ func newOtlpTraceExporter(ctx context.Context, endpoint string, apiToken string)
 	}
 	return exporter, nil
 }
+
+func StartSpan(ctx context.Context, tracer trace.Tracer, title string, opts ...trace.SpanStartOption) (context.Context, trace.Span) {
+	if tracer == nil || title == "" {
+		return ctx, noopSpan{}
+	}
+	return tracer.Start(ctx, title, opts...)
+}
+
+type noopSpan struct {
+	trace.Span
+}
+
+var _ trace.Span = noopSpan{}
+
+func (noopSpan) End(...trace.SpanEndOption) {}

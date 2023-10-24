@@ -138,7 +138,7 @@ func TestHandlePodMutation(t *testing.T) {
 		podWebhook := createTestWebhook([]dtwebhook.PodMutator{mutator1, mutator2}, nil)
 		mutationRequest := createTestMutationRequest(dynakube)
 
-		err := podWebhook.handlePodMutation(mutationRequest)
+		err := podWebhook.handlePodMutation(context.Background(), mutationRequest)
 		require.NoError(t, err)
 		assert.NotNil(t, mutationRequest.InstallContainer)
 		assert.Len(t, mutationRequest.Pod.Spec.InitContainers, 2)
@@ -172,7 +172,7 @@ func TestHandlePodMutation(t *testing.T) {
 		podWebhook := createTestWebhook([]dtwebhook.PodMutator{sadMutator, happyMutator}, nil)
 		mutationRequest := createTestMutationRequest(dynakube)
 
-		err := podWebhook.handlePodMutation(mutationRequest)
+		err := podWebhook.handlePodMutation(context.Background(), mutationRequest)
 		require.Error(t, err)
 		assert.NotNil(t, mutationRequest.InstallContainer)
 		assert.Len(t, mutationRequest.Pod.Spec.InitContainers, 1)

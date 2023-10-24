@@ -2,7 +2,9 @@ package otel
 
 import (
 	"context"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	errors2 "github.com/pkg/errors"
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -65,6 +67,10 @@ func newResource(otelServiceName string) (*resource.Resource, error) {
 }
 
 func getOtelConfig(apiReader client.Reader, namespace string) (string, string, error) {
+	if apiReader == nil {
+		return "", "", errors2.Errorf("invalid API reader")
+	}
+
 	secretName := types.NamespacedName{
 		Namespace: namespace,
 		Name:      otelSecretName,
