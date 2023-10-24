@@ -1,7 +1,6 @@
 package statefulset
 
 import (
-	"fmt"
 	"reflect"
 	"strconv"
 	"testing"
@@ -431,7 +430,7 @@ func TestBuildCommonEnvs(t *testing.T) {
 	t.Run("synthetic capability", func(t *testing.T) {
 		dynaKube := getTestDynakube()
 		dynaKube.ObjectMeta.Annotations[dynatracev1beta1.AnnotationFeatureSyntheticLocationEntityId] = "doctored"
-		dynaKube.ObjectMeta.Annotations[dynatracev1beta1.AnnotationFeatureSyntheticReplicas] = fmt.Sprint(testReplicas)
+		dynaKube.ObjectMeta.Annotations[dynatracev1beta1.AnnotationFeatureSyntheticReplicas] = strconv.Itoa(int(testReplicas))
 		synCapability := capability.NewSyntheticCapability(&dynaKube)
 
 		builder := NewStatefulSetBuilder(

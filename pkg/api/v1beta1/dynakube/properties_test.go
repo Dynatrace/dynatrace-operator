@@ -17,7 +17,7 @@ limitations under the License.
 package dynakube
 
 import (
-	"fmt"
+	"strconv"
 	"testing"
 	"time"
 
@@ -498,7 +498,7 @@ func TestDynaKube_ShallUpdateActiveGateConnectionInfo(t *testing.T) {
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			dk.ObjectMeta.Annotations = map[string]string{
-				AnnotationFeatureApiRequestThreshold: fmt.Sprintf("%d", test.featureFlagValue),
+				AnnotationFeatureApiRequestThreshold: strconv.Itoa(test.featureFlagValue),
 			}
 
 			lastRequestTime := timeProvider.Now().Add(time.Duration(test.lastRequestTimeDeltaMinutes) * time.Minute)

@@ -3,6 +3,7 @@ package metadata
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
@@ -17,7 +18,7 @@ import (
 func createTestDynakube(index int) Dynakube {
 	return Dynakube{
 		TenantUUID:             fmt.Sprintf("asc%d", index),
-		LatestVersion:          fmt.Sprintf("%d", 123*index),
+		LatestVersion:          strconv.Itoa(123 * index),
 		Name:                   fmt.Sprintf("dk%d", index),
 		ImageDigest:            fmt.Sprintf("sha256:%d", 123*index),
 		MaxFailedMountAttempts: index,
