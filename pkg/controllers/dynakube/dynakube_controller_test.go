@@ -1090,10 +1090,10 @@ func TestSetupIstio(t *testing.T) {
 		assert.NotNil(t, istioReconciler)
 
 		expectedName := istio.BuildNameForFQDNServiceEntry(dynakube.GetName(), istio.OperatorComponent)
-		serviceEntry, err := fakeIstio.NetworkingV1alpha3().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
+		serviceEntry, err := fakeIstio.NetworkingV1beta1().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.NotNil(t, serviceEntry)
-		virtualService, err := fakeIstio.NetworkingV1alpha3().VirtualServices(dynakube.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
+		virtualService, err := fakeIstio.NetworkingV1beta1().VirtualServices(dynakube.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.NotNil(t, virtualService)
 	})

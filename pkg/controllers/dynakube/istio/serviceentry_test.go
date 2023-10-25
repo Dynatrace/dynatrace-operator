@@ -7,8 +7,8 @@ import (
 
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
-	istio "istio.io/api/networking/v1alpha3"
-	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
+	istio "istio.io/api/networking/v1beta1"
+	istiov1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -27,7 +27,7 @@ func TestServiceEntryGeneration(t *testing.T) {
 	)
 
 	t.Run(`generate with hostname`, func(t *testing.T) {
-		expected := &istiov1alpha3.ServiceEntry{
+		expected := &istiov1beta1.ServiceEntry{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
@@ -61,7 +61,7 @@ func TestServiceEntryGeneration(t *testing.T) {
 		assert.NotEqualValues(t, expected, result)
 	})
 	t.Run(`generate with two different hostnames and same port`, func(t *testing.T) {
-		expected := &istiov1alpha3.ServiceEntry{
+		expected := &istiov1beta1.ServiceEntry{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
@@ -93,7 +93,7 @@ func TestServiceEntryGeneration(t *testing.T) {
 	})
 	t.Run(`generate with Ip`, func(t *testing.T) {
 		const testIp = "42.42.42.42"
-		expected := &istiov1alpha3.ServiceEntry{
+		expected := &istiov1beta1.ServiceEntry{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
@@ -132,7 +132,7 @@ func TestServiceEntryGeneration(t *testing.T) {
 			testIp  = "42.42.42.42"
 			testIp1 = "42.42.42.43"
 		)
-		expected := &istiov1alpha3.ServiceEntry{
+		expected := &istiov1beta1.ServiceEntry{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
@@ -201,8 +201,8 @@ func TestBuildServiceEntryIp(t *testing.T) {
 	assert.NotEqualValues(t, expected, result)
 }
 
-func buildExpectedServiceEntryForHostname(_ *testing.T) *istiov1alpha3.ServiceEntry {
-	return &istiov1alpha3.ServiceEntry{
+func buildExpectedServiceEntryForHostname(_ *testing.T) *istiov1beta1.ServiceEntry {
+	return &istiov1beta1.ServiceEntry{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNamespace,
@@ -221,8 +221,8 @@ func buildExpectedServiceEntryForHostname(_ *testing.T) *istiov1alpha3.ServiceEn
 	}
 }
 
-func buildExpectedServiceEntryForIp(_ *testing.T) *istiov1alpha3.ServiceEntry {
-	return &istiov1alpha3.ServiceEntry{
+func buildExpectedServiceEntryForIp(_ *testing.T) *istiov1beta1.ServiceEntry {
+	return &istiov1beta1.ServiceEntry{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNamespace,

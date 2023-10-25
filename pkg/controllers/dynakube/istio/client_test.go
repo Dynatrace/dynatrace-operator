@@ -9,7 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
+	istiov1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	fakeistio "istio.io/client-go/pkg/clientset/versioned/fake"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -77,7 +77,7 @@ func TestCreateVirtualService(t *testing.T) {
 		err := client.createVirtualService(ctx, expectedVirtualService)
 
 		require.NoError(t, err)
-		serviceEntry, err := fakeClient.NetworkingV1alpha3().VirtualServices(expectedVirtualService.Namespace).Get(ctx, expectedVirtualService.Name, metav1.GetOptions{})
+		serviceEntry, err := fakeClient.NetworkingV1beta1().VirtualServices(expectedVirtualService.Namespace).Get(ctx, expectedVirtualService.Name, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.Equal(t, expectedVirtualService.Name, serviceEntry.Name)
 		assert.Equal(t, expectedVirtualService.Namespace, serviceEntry.Namespace)
@@ -131,7 +131,7 @@ func TestUpdateVirtualService(t *testing.T) {
 		err := client.updateVirtualService(ctx, oldVirtualService, newVirtualService)
 
 		require.NoError(t, err)
-		updatedServiceEntry, err := fakeClient.NetworkingV1alpha3().VirtualServices(oldVirtualService.Namespace).Get(ctx, oldVirtualService.Name, metav1.GetOptions{})
+		updatedServiceEntry, err := fakeClient.NetworkingV1beta1().VirtualServices(oldVirtualService.Namespace).Get(ctx, oldVirtualService.Name, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.Equal(t, newVirtualService.Name, updatedServiceEntry.Name)
 		assert.Equal(t, newVirtualService.Namespace, updatedServiceEntry.Namespace)
@@ -188,7 +188,7 @@ func TestCreateOrUpdateVirtualService(t *testing.T) {
 		require.NoError(t, err)
 		// Get, Create
 		assert.Len(t, fakeClient.Actions(), 2)
-		virtualService, err := fakeClient.NetworkingV1alpha3().VirtualServices(expectedVirtualService.Namespace).Get(ctx, expectedVirtualService.Name, metav1.GetOptions{})
+		virtualService, err := fakeClient.NetworkingV1beta1().VirtualServices(expectedVirtualService.Namespace).Get(ctx, expectedVirtualService.Name, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.Equal(t, expectedVirtualService.Name, virtualService.Name)
 		assert.Equal(t, expectedVirtualService.Namespace, virtualService.Namespace)
@@ -213,7 +213,7 @@ func TestCreateOrUpdateVirtualService(t *testing.T) {
 		require.NoError(t, err)
 		// Get, Update
 		assert.Len(t, fakeClient.Actions(), 2)
-		updatedVirtualService, err := fakeClient.NetworkingV1alpha3().VirtualServices(oldVirtualService.Namespace).Get(ctx, oldVirtualService.Name, metav1.GetOptions{})
+		updatedVirtualService, err := fakeClient.NetworkingV1beta1().VirtualServices(oldVirtualService.Namespace).Get(ctx, oldVirtualService.Name, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.Equal(t, newVirtualService.Name, updatedVirtualService.Name)
 		assert.Equal(t, newVirtualService.Namespace, updatedVirtualService.Namespace)
@@ -271,7 +271,7 @@ func TestDeleteVirtualService(t *testing.T) {
 		err := client.DeleteVirtualService(ctx, virtualService.Name)
 
 		require.NoError(t, err)
-		_, err = fakeClient.NetworkingV1alpha3().VirtualServices(virtualService.Namespace).Get(ctx, virtualService.Name, metav1.GetOptions{})
+		_, err = fakeClient.NetworkingV1beta1().VirtualServices(virtualService.Namespace).Get(ctx, virtualService.Name, metav1.GetOptions{})
 		require.True(t, k8serrors.IsNotFound(err))
 	})
 	t.Run("does not exist => no error", func(t *testing.T) {
@@ -339,7 +339,7 @@ func TestCreateServiceEntry(t *testing.T) {
 		err := client.createServiceEntry(ctx, expectedServiceEntry)
 
 		require.NoError(t, err)
-		serviceEntry, err := fakeClient.NetworkingV1alpha3().ServiceEntries(expectedServiceEntry.Namespace).Get(ctx, expectedServiceEntry.Name, metav1.GetOptions{})
+		serviceEntry, err := fakeClient.NetworkingV1beta1().ServiceEntries(expectedServiceEntry.Namespace).Get(ctx, expectedServiceEntry.Name, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.Equal(t, expectedServiceEntry.Name, serviceEntry.Name)
 		assert.Equal(t, expectedServiceEntry.Namespace, serviceEntry.Namespace)
@@ -393,7 +393,7 @@ func TestUpdateServiceEntry(t *testing.T) {
 		err := client.updateServiceEntry(ctx, oldServiceEntry, newServiceEntry)
 
 		require.NoError(t, err)
-		updatedServiceEntry, err := fakeClient.NetworkingV1alpha3().ServiceEntries(oldServiceEntry.Namespace).Get(ctx, oldServiceEntry.Name, metav1.GetOptions{})
+		updatedServiceEntry, err := fakeClient.NetworkingV1beta1().ServiceEntries(oldServiceEntry.Namespace).Get(ctx, oldServiceEntry.Name, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.Equal(t, newServiceEntry.Name, updatedServiceEntry.Name)
 		assert.Equal(t, newServiceEntry.Namespace, updatedServiceEntry.Namespace)
@@ -450,7 +450,7 @@ func TestCreateOrUpdateServiceEntry(t *testing.T) {
 		require.NoError(t, err)
 		// Get, Create
 		assert.Len(t, fakeClient.Actions(), 2)
-		serviceEntry, err := fakeClient.NetworkingV1alpha3().ServiceEntries(expectedServiceEntry.Namespace).Get(ctx, expectedServiceEntry.Name, metav1.GetOptions{})
+		serviceEntry, err := fakeClient.NetworkingV1beta1().ServiceEntries(expectedServiceEntry.Namespace).Get(ctx, expectedServiceEntry.Name, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.Equal(t, expectedServiceEntry.Name, serviceEntry.Name)
 		assert.Equal(t, expectedServiceEntry.Namespace, serviceEntry.Namespace)
@@ -475,7 +475,7 @@ func TestCreateOrUpdateServiceEntry(t *testing.T) {
 		require.NoError(t, err)
 		// Get, Update
 		assert.Len(t, fakeClient.Actions(), 2)
-		updatedServiceEntry, err := fakeClient.NetworkingV1alpha3().ServiceEntries(oldServiceEntry.Namespace).Get(ctx, oldServiceEntry.Name, metav1.GetOptions{})
+		updatedServiceEntry, err := fakeClient.NetworkingV1beta1().ServiceEntries(oldServiceEntry.Namespace).Get(ctx, oldServiceEntry.Name, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.Equal(t, newServiceEntry.Name, updatedServiceEntry.Name)
 		assert.Equal(t, newServiceEntry.Namespace, updatedServiceEntry.Namespace)
@@ -533,7 +533,7 @@ func TestDeleteServiceEntry(t *testing.T) {
 		err := client.DeleteServiceEntry(ctx, serviceEntry.Name)
 
 		require.NoError(t, err)
-		_, err = fakeClient.NetworkingV1alpha3().ServiceEntries(serviceEntry.Namespace).Get(ctx, serviceEntry.Name, metav1.GetOptions{})
+		_, err = fakeClient.NetworkingV1beta1().ServiceEntries(serviceEntry.Namespace).Get(ctx, serviceEntry.Name, metav1.GetOptions{})
 		require.True(t, k8serrors.IsNotFound(err))
 	})
 	t.Run("does not exist => no error", func(t *testing.T) {
@@ -556,8 +556,8 @@ func TestDeleteServiceEntry(t *testing.T) {
 	})
 }
 
-func createTestEmptyServiceEntry() *istiov1alpha3.ServiceEntry {
-	return &istiov1alpha3.ServiceEntry{
+func createTestEmptyServiceEntry() *istiov1beta1.ServiceEntry {
+	return &istiov1beta1.ServiceEntry{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
 			Namespace: "test",
@@ -565,8 +565,8 @@ func createTestEmptyServiceEntry() *istiov1alpha3.ServiceEntry {
 	}
 }
 
-func createTestEmptyVirtualService() *istiov1alpha3.VirtualService {
-	return &istiov1alpha3.VirtualService{
+func createTestEmptyVirtualService() *istiov1beta1.VirtualService {
+	return &istiov1beta1.VirtualService{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
 			Namespace: "test",
