@@ -81,8 +81,8 @@ type constraintViolations []struct {
 }
 
 const (
-	settingsSchemaId                            = "builtin:cloud.kubernetes"
-	appTransitionSchemaId                       = "builtin:app-transition.kubernetes"
+	SettingsSchemaId                            = "builtin:cloud.kubernetes"
+	AppTransitionSchemaId                       = "builtin:app-transition.kubernetes"
 	schemaVersionV1                             = "1.0.27"
 	hierarchicalMonitoringSettingsSchemaVersion = "3.0.0"
 	appTransitionSchemaVersion                  = "1.0.0"
@@ -160,7 +160,7 @@ func createV1KubernetesSettingsBody(clusterLabel, kubeSystemUUID, scope string) 
 	}
 	postK8sSettings.MonitoringSettings = &ms
 
-	settings := createBaseKubernetesSettings(postK8sSettings, settingsSchemaId, schemaVersionV1, scope)
+	settings := createBaseKubernetesSettings(postK8sSettings, SettingsSchemaId, schemaVersionV1, scope)
 
 	return []postKubernetesSettingsBody{settings}
 }
@@ -168,7 +168,7 @@ func createV1KubernetesSettingsBody(clusterLabel, kubeSystemUUID, scope string) 
 func createV3KubernetesSettingsBody(clusterLabel, kubeSystemUUID, scope string) []postKubernetesSettingsBody {
 	settings := createBaseKubernetesSettings(
 		createPostKubernetesSettings(clusterLabel, kubeSystemUUID),
-		settingsSchemaId,
+		SettingsSchemaId,
 		hierarchicalMonitoringSettingsSchemaVersion,
 		scope)
 	settings.SchemaVersion = hierarchicalMonitoringSettingsSchemaVersion
@@ -313,7 +313,7 @@ func (dtc *dynatraceClient) CreateOrUpdateKubernetesAppSetting(scope string) (st
 		kubernetesAppOptionsSettings{
 			EnableKubernetesApp: true,
 		},
-	}, appTransitionSchemaId, appTransitionSchemaVersion, scope)
+	}, AppTransitionSchemaId, appTransitionSchemaVersion, scope)
 	objectId, err := dtc.performCreateOrUpdateKubernetesSetting([]postKubernetesSettingsBody{settings})
 	if err != nil {
 		return "", err

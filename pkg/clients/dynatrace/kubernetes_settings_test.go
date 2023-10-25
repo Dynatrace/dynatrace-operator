@@ -15,11 +15,10 @@ import (
 )
 
 const (
-	testUID       = "test-uid"
-	testName      = "test-name"
-	testObjectID  = "test-objectid"
-	testScope     = "test-scope"
-	schemaVersion = "2.1.0"
+	testUID      = "test-uid"
+	testName     = "test-name"
+	testObjectID = "test-objectid"
+	testScope    = "test-scope"
 )
 
 func TestDynatraceClient_GetMonitoredEntitiesForKubeSystemUUID(t *testing.T) {
@@ -125,7 +124,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 		require.NotNil(t, dtc)
 
 		// act
-		actual, err := dtc.(*dynatraceClient).GetSettingsForMonitoredEntities(expected, settingsSchemaId)
+		actual, err := dtc.(*dynatraceClient).GetSettingsForMonitoredEntities(expected, SettingsSchemaId)
 
 		// assert
 		assert.NoError(t, err)
@@ -148,7 +147,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 		require.NotNil(t, dtc)
 
 		// act
-		actual, err := dtc.(*dynatraceClient).GetSettingsForMonitoredEntities(expected, settingsSchemaId)
+		actual, err := dtc.(*dynatraceClient).GetSettingsForMonitoredEntities(expected, SettingsSchemaId)
 
 		// assert
 		assert.NoError(t, err)
@@ -172,7 +171,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 		require.NotNil(t, dtc)
 
 		// act
-		actual, err := dtc.(*dynatraceClient).GetSettingsForMonitoredEntities(entities, settingsSchemaId)
+		actual, err := dtc.(*dynatraceClient).GetSettingsForMonitoredEntities(entities, SettingsSchemaId)
 
 		// assert
 		assert.NoError(t, err)
@@ -195,7 +194,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 		require.NotNil(t, dtc)
 
 		// act
-		actual, err := dtc.(*dynatraceClient).GetSettingsForMonitoredEntities(entities, settingsSchemaId)
+		actual, err := dtc.(*dynatraceClient).GetSettingsForMonitoredEntities(entities, SettingsSchemaId)
 
 		// assert
 		assert.Error(t, err)

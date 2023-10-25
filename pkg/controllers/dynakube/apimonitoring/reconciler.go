@@ -20,11 +20,6 @@ func NewReconciler(dtc dtclient.Client, clusterLabel, kubeSystemUUID string) *Re
 	}
 }
 
-const (
-	settingsSchemaId      = "builtin:cloud.kubernetes"
-	appTransitionSchemaId = "builtin:app-transition.kubernetes"
-)
-
 func (r *Reconciler) Reconcile(dynakube *dynatracev1beta1.DynaKube) error {
 	objectID, err := r.createObjectIdIfNotExists(dynakube)
 
@@ -53,7 +48,7 @@ func (r *Reconciler) createObjectIdIfNotExists(dynakube *dynatracev1beta1.DynaKu
 	}
 
 	// check if Setting for ME exists
-	settings, err := r.dtc.GetSettingsForMonitoredEntities(monitoredEntities, settingsSchemaId)
+	settings, err := r.dtc.GetSettingsForMonitoredEntities(monitoredEntities, dtclient.SettingsSchemaId)
 	if err != nil {
 		return "", errors.WithMessage(err, "error trying to check if setting exists")
 	}
@@ -77,7 +72,7 @@ func (r *Reconciler) createObjectIdIfNotExists(dynakube *dynatracev1beta1.DynaKu
 
 func (r *Reconciler) handleKubernetesAppEnabled(dynakube *dynatracev1beta1.DynaKube, monitoredEntities []dtclient.MonitoredEntity) (string, error) {
 	if dynakube.FeatureEnableK8sAppEnabled() {
-		appSettings, err := r.dtc.GetSettingsForMonitoredEntities(monitoredEntities, appTransitionSchemaId)
+		appSettings, err := r.dtc.GetSettingsForMonitoredEntities(monitoredEntities, dtclient.AppTransitionSchemaId)
 		if err != nil {
 			return "", errors.WithMessage(err, "error trying to check if app setting exists")
 		}
