@@ -11,6 +11,11 @@ type MockDynatraceClient struct {
 	mock.Mock
 }
 
+func (o *MockDynatraceClient) CreateOrUpdateKubernetesAppSetting(scope string) (string, error) {
+	args := o.Called(scope)
+	return args.String(0), args.Error(1)
+}
+
 func (o *MockDynatraceClient) GetLatestOneAgentImage() (*LatestImageInfo, error) {
 	args := o.Called()
 	return args.Get(0).(*LatestImageInfo), args.Error(1)
@@ -96,7 +101,7 @@ func (o *MockDynatraceClient) GetMonitoredEntitiesForKubeSystemUUID(kubeSystemUU
 	return args.Get(0).([]MonitoredEntity), args.Error(1)
 }
 
-func (o *MockDynatraceClient) GetSettingsForMonitoredEntities(monitoredEntities []MonitoredEntity) (GetSettingsResponse, error) {
+func (o *MockDynatraceClient) GetSettingsForMonitoredEntities(monitoredEntities []MonitoredEntity, schemaId string) (GetSettingsResponse, error) {
 	args := o.Called(monitoredEntities)
 	return args.Get(0).(GetSettingsResponse), args.Error(1)
 }
