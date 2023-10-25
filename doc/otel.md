@@ -1,7 +1,8 @@
 
 # How to setup OpenTelementry
 
-Currently only the webhook is instrumented using OpenTelementry. To connect the webhook to a tenant do the following steps:
+Dynatrace operator, CSI driver and webhook are instrumented using OpenTelemetry. To enable this instrumentation and ingest collected
+metrics and traces into your tenant follow this guide.
 
 ## Create an access token with the following scopes
 

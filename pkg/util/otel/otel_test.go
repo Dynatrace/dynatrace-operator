@@ -6,6 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/net/context"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -28,7 +29,7 @@ func TestGetConfig(t *testing.T) {
 			},
 		})
 
-		endpoint, apiToken, err := getOtelConfig(clt, namespace)
+		endpoint, apiToken, err := getOtelConfig(context.Background(), clt, namespace)
 		require.NoError(t, err)
 		assert.Equal(t, expectedEndpoint, endpoint)
 		assert.Equal(t, expectedApiToken, apiToken)
@@ -45,7 +46,7 @@ func TestGetConfig(t *testing.T) {
 			},
 		})
 
-		endpoint, apiToken, err := getOtelConfig(clt, namespace)
+		endpoint, apiToken, err := getOtelConfig(context.Background(), clt, namespace)
 		require.Error(t, err)
 		assert.Equal(t, "", endpoint)
 		assert.Equal(t, "", apiToken)
@@ -62,7 +63,7 @@ func TestGetConfig(t *testing.T) {
 			},
 		})
 
-		endpoint, apiToken, err := getOtelConfig(clt, namespace)
+		endpoint, apiToken, err := getOtelConfig(context.Background(), clt, namespace)
 		require.Error(t, err)
 		assert.Equal(t, "", endpoint)
 		assert.Equal(t, "", apiToken)
@@ -70,7 +71,7 @@ func TestGetConfig(t *testing.T) {
 	t.Run("no secret", func(t *testing.T) {
 		clt := fake.NewClient()
 
-		endpoint, apiToken, err := getOtelConfig(clt, namespace)
+		endpoint, apiToken, err := getOtelConfig(context.Background(), clt, namespace)
 		require.Error(t, err)
 		assert.Equal(t, "", endpoint)
 		assert.Equal(t, "", apiToken)

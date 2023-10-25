@@ -19,7 +19,7 @@ type shutdownFn func(ctx context.Context) error
 // Start sets up and starts all components needed for creating OpenTelemetry traces and metrics as well as some common auto-instrumentation
 // It logs and swallows all errors to not prevent the application from startup.
 func Start(ctx context.Context, otelServiceName string, apiReader client.Reader, webhookNamespace string) func() {
-	endpoint, apiToken, err := getOtelConfig(apiReader, webhookNamespace)
+	endpoint, apiToken, err := getOtelConfig(ctx, apiReader, webhookNamespace)
 
 	if err != nil {
 		log.Error(err, "failed to read OpenTelementry config secret")
@@ -79,7 +79,7 @@ func newResource(otelServiceName string) (*resource.Resource, error) {
 	return r, errors2.WithStack(err)
 }
 
-func getOtelConfig(apiReader client.Reader, namespace string) (string, string, error) {
+func getOtelConfig(ctx context.Context, apiReader client.Reader, namespace string) (string, string, error) {
 	if apiReader == nil {
 		return "", "", errors2.Errorf("invalid API reader")
 	}
@@ -89,7 +89,7 @@ func getOtelConfig(apiReader client.Reader, namespace string) (string, string, e
 		Name:      otelSecretName,
 	}
 
-	query := kubeobjects.NewSecretQuery(context.Background(), nil, apiReader, log)
+	query := kubeobjects.NewSecretQuery(ctx, nil, apiReader, log)
 	secret, err := query.Get(secretName)
 
 	if err != nil {
