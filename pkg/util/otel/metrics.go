@@ -25,7 +25,7 @@ func setupMetricsWithOtlp(ctx context.Context, resource *resource.Resource, endp
 	)
 
 	otel.SetMeterProvider(sdkMeterProvider)
-	log.Info("OTel meter provider installed successfully.")
+	log.Info("OpenTelementry meter provider installed successfully.")
 
 	return sdkMeterProvider, sdkMeterProvider.Shutdown, nil
 }
@@ -36,7 +36,7 @@ func newOtlpMetricsExporter(ctx context.Context, endpoint string, apiToken strin
 	}
 
 	// reset measurements after each cycle (i.e. after sending metrics to collector)
-	var deltaTemporalitySelector = func(sdkmetric.InstrumentKind) metricdata.Temporality { return metricdata.DeltaTemporality }
+	deltaTemporalitySelector := func(sdkmetric.InstrumentKind) metricdata.Temporality { return metricdata.DeltaTemporality }
 
 	aggregationSelector := func(ik sdkmetric.InstrumentKind) sdkmetric.Aggregation {
 		if ik == sdkmetric.InstrumentKindHistogram {
@@ -74,7 +74,7 @@ func Count[N Number](ctx context.Context, meter metric.Meter, name string, value
 
 	metricAttributes := make([]attribute.KeyValue, 0)
 	for i := 0; i < len(attributes)-1; i += 2 {
-		// if the number of attributes is uneven, the last entry is considered a key without value and will be dropped
+		// if the number of attributes is odd, the last entry is considered a key without value and will be dropped
 		metricAttributes = append(metricAttributes, attribute.KeyValue{
 			Key: attribute.Key(fmt.Sprintf("%s", attributes[i])),
 			// converting all values to strings here for simplicity, could be more sophisticated with a giant type switch

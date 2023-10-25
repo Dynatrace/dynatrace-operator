@@ -9,7 +9,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	dtotel "github.com/Dynatrace/dynatrace-operator/pkg/util/otel"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
 	corev1 "k8s.io/api/core/v1"
@@ -188,7 +187,7 @@ func setDynatraceInjectedAnnotation(mutationRequest *dtwebhook.MutationRequest) 
 
 // createResponseForPod tries to format pod as json
 func createResponseForPod(ctx context.Context, pod *corev1.Pod, req admission.Request) admission.Response {
-	_, span := dtotel.StartSpan(ctx, otel.Tracer(otelName), "createResponseForPod")
+	_, span := dtotel.StartSpan(ctx, otelName, "createResponseForPod")
 	defer span.End()
 
 	marshaledPod, err := json.MarshalIndent(pod, "", "  ")

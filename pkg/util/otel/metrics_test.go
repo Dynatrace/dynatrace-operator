@@ -19,7 +19,7 @@ func TestSetupMetrics(t *testing.T) {
 		assert.NotNil(t, shutdownFn)
 		assert.NotNil(t, meterProvider)
 	})
-	t.Run("do not use OTel", func(t *testing.T) {
+	t.Run("do not use OpenTelementry", func(t *testing.T) {
 		resource, err := newResource("testOtel")
 		require.NoError(t, err)
 

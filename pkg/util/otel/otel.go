@@ -22,13 +22,13 @@ func Start(ctx context.Context, otelServiceName string, apiReader client.Reader,
 	endpoint, apiToken, err := getOtelConfig(apiReader, webhookNamespace)
 
 	if err != nil {
-		log.Error(err, "failed to read OTel config secret")
+		log.Error(err, "failed to read OpenTelementry config secret")
 		return setupNoopOTel()
 	}
 
 	shutdown, err := setupOtlpOTel(ctx, otelServiceName, endpoint, apiToken)
 	if err != nil {
-		log.Error(err, "failed to setup OTLP OTel")
+		log.Error(err, "failed to setup OTLP OpenTelementry")
 		return setupNoopOTel()
 	}
 	return shutdown
@@ -58,7 +58,7 @@ func setupOtlpOTel(ctx context.Context, otelServiceName string, endpoint string,
 	}, nil
 }
 
-// setupNoopOTel makes sure, that OTel is properly configured so that no subsequent usage of OTel leads to panics while keeping
+// setupNoopOTel makes sure, that OpenTelementry is properly configured so that no subsequent usage of OpenTelementry leads to panics while keeping
 // a minimal impact on runtime. Basically all collected metrics and traces get discarded right away.
 func setupNoopOTel() func() {
 	otel.SetMeterProvider(noop.NewMeterProvider())

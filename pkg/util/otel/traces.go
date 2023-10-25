@@ -22,7 +22,7 @@ func setupTracesWithOtlp(ctx context.Context, resource *resource.Resource, endpo
 		sdktrace.WithResource(resource),
 	)
 	otel.SetTracerProvider(sdkTracerProvider)
-	log.Info("OTel tracer provider installed successfully.")
+	log.Info("OpenTelementry tracer provider installed successfully.")
 
 	return sdkTracerProvider, sdkTracerProvider.Shutdown, nil
 }
@@ -32,7 +32,7 @@ func newOtlpTraceExporter(ctx context.Context, endpoint string, apiToken string)
 		return nil, errors.Errorf("no endpoint or apiToken provided for OTLP traces exporter")
 	}
 
-	log.Info("setup OTel ingest", "endpoint", endpoint)
+	log.Info("setup OpenTelementry ingest", "endpoint", endpoint)
 	otlpHttpClient := otlptracehttp.NewClient(
 		otlptracehttp.WithEndpoint(endpoint),
 		otlptracehttp.WithURLPath(otelBaseApiUrl+otelTracesUrl),
@@ -46,11 +46,19 @@ func newOtlpTraceExporter(ctx context.Context, endpoint string, apiToken string)
 	return exporter, nil
 }
 
-func StartSpan(ctx context.Context, tracer trace.Tracer, title string, opts ...trace.SpanStartOption) (context.Context, trace.Span) {
-	if tracer == nil || title == "" {
+func StartSpan[T any](ctx context.Context, tracer T, title string, opts ...trace.SpanStartOption) (context.Context, trace.Span) {
+	var realTracer trace.Tracer
+	switch t := any(tracer).(type) {
+	case string:
+		realTracer = otel.Tracer(t)
+	case trace.Tracer:
+		realTracer = t
+	}
+
+	if realTracer == nil || title == "" {
 		return ctx, noopSpan{}
 	}
-	return tracer.Start(ctx, title, opts...)
+	return realTracer.Start(ctx, title, opts...)
 }
 
 type noopSpan struct {

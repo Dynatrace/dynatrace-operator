@@ -1,7 +1,7 @@
 
-# How to setup OTel
+# How to setup OpenTelementry
 
-Currently only the webhook is instrumented using OTel. To connect the webhook to a tenant do the following steps:
+Currently only the webhook is instrumented using OpenTelementry. To connect the webhook to a tenant do the following steps:
 
 ## Create an access token with the following scopes
 
@@ -9,7 +9,7 @@ Currently only the webhook is instrumented using OTel. To connect the webhook to
 - metrics.ingest
 - logs.ingest
 
-## Create OTel configuration secret
+## Create OpenTelementry configuration secret
 
 ```yaml
 apiVersion: v1

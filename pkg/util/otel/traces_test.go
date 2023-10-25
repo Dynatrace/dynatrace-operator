@@ -20,7 +20,7 @@ func TestSetupTraces(t *testing.T) {
 		assert.NotNil(t, shutdownFn)
 		assert.NotNil(t, tracerProvider)
 	})
-	t.Run("do not use OTel", func(t *testing.T) {
+	t.Run("do not use OpenTelementry", func(t *testing.T) {
 		resource, err := newResource("testOtel")
 		require.NoError(t, err)
 
@@ -34,7 +34,7 @@ func TestSetupTraces(t *testing.T) {
 
 func TestStartSpan(t *testing.T) {
 	t.Run("nil tracer", func(t *testing.T) {
-		ctx, span := StartSpan(context.Background(), nil, "testSpan")
+		ctx, span := StartSpan(context.Background(), trace.Tracer(nil), "testSpan")
 
 		assert.IsType(t, noopSpan{}, span)
 		assert.Equal(t, context.Background(), ctx)
