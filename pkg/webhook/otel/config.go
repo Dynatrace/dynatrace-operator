@@ -10,6 +10,7 @@ import (
 
 const (
 	OpenTelemetryServiceName = "DynatraceWebhook"
+	WebhookPodNameKey        = "k8s.pod.name"
 )
 
 var tracer trace.Tracer

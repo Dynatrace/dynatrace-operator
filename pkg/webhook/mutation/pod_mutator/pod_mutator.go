@@ -66,9 +66,11 @@ func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.
 	}
 
 	podName := mutationRequest.PodName()
-	webhook.countHandleMutationRequest(ctx, podName)
 
+	// add podname as attribute (aka. dimension) to metric and span
+	countHandleMutationRequest(ctx, podName)
 	span.SetAttributes(attribute.String(mutatedPodNameKey, podName))
+
 	if !mutationRequired(mutationRequest) || webhook.isOcDebugPod(mutationRequest.Pod) {
 		return emptyPatch
 	}

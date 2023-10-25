@@ -13,7 +13,6 @@ const readerSpanNamePrefix = "client.Reader"
 
 // Reader knows how to read and list Kubernetes objects.
 type wrappedReader struct {
-	client.Reader
 	wrapped client.Reader
 }
 

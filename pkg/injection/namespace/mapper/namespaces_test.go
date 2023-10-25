@@ -25,7 +25,7 @@ func TestMatchForNamespaceNothingEverything(t *testing.T) {
 		clt := fake.NewClient(dynakubes[0], dynakubes[1])
 		nm := NewNamespaceMapper(context.TODO(), clt, clt, "dynatrace", namespace)
 
-		updated, err := nm.updateNamespace()
+		updated, err := nm.updateNamespace(context.Background())
 		assert.NoError(t, err)
 		assert.True(t, updated)
 	})
@@ -40,7 +40,7 @@ func TestMapFromNamespace(t *testing.T) {
 		clt := fake.NewClient(dk)
 		nm := NewNamespaceMapper(context.TODO(), clt, clt, "dynatrace", namespace)
 
-		updated, err := nm.MapFromNamespace()
+		updated, err := nm.MapFromNamespace(context.Background())
 
 		assert.NoError(t, err)
 		assert.True(t, updated)
@@ -52,7 +52,7 @@ func TestMapFromNamespace(t *testing.T) {
 		clt := fake.NewClient(dk, dk2)
 		nm := NewNamespaceMapper(context.TODO(), clt, clt, "dynatrace", namespace)
 
-		updated, err := nm.MapFromNamespace()
+		updated, err := nm.MapFromNamespace(context.Background())
 
 		assert.Error(t, err)
 		assert.False(t, updated)
@@ -66,7 +66,7 @@ func TestMapFromNamespace(t *testing.T) {
 		clt := fake.NewClient(dk)
 		nm := NewNamespaceMapper(context.TODO(), clt, clt, "dynatrace", namespace)
 
-		updated, err := nm.MapFromNamespace()
+		updated, err := nm.MapFromNamespace(context.Background())
 
 		assert.NoError(t, err)
 		assert.True(t, updated)
@@ -79,7 +79,7 @@ func TestMapFromNamespace(t *testing.T) {
 		clt := fake.NewClient(dk)
 		nm := NewNamespaceMapper(context.TODO(), clt, clt, "dynatrace", namespace)
 
-		updated, err := nm.MapFromNamespace()
+		updated, err := nm.MapFromNamespace(context.Background())
 
 		assert.NoError(t, err)
 		assert.False(t, updated)
@@ -92,7 +92,7 @@ func TestMapFromNamespace(t *testing.T) {
 		clt := fake.NewClient(dk)
 		nm := NewNamespaceMapper(context.TODO(), clt, clt, "dynatrace", namespace)
 
-		updated, err := nm.MapFromNamespace()
+		updated, err := nm.MapFromNamespace(context.Background())
 
 		assert.NoError(t, err)
 		assert.False(t, updated)
@@ -108,7 +108,7 @@ func TestMapFromNamespace(t *testing.T) {
 		clt := fake.NewClient(dk)
 		nm := NewNamespaceMapper(context.TODO(), clt, clt, "dynatrace", namespace)
 
-		updated, err := nm.MapFromNamespace()
+		updated, err := nm.MapFromNamespace(context.Background())
 
 		assert.NoError(t, err)
 		assert.True(t, updated)

@@ -8,6 +8,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/pkg/errors"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -37,6 +39,11 @@ type namespaceMutator struct {
 //  2. if the namespace was updated by the operator => don't do the mapping: we detect this using an annotation, we do this because the operator also does the mapping
 //     but from the dynakube's side (during dynakube reconcile) and we don't want to repeat ourselves. So we just remove the annotation.
 func (nm *namespaceMutator) Handle(ctx context.Context, request admission.Request) admission.Response {
+	ctx, span := startSpan(ctx, "podMutatorWebhook.Handle",
+		trace.WithAttributes(attribute.String(mutatedNamespaceNameKey, request.Namespace)))
+	defer span.End()
+	countHandleMutationRequest(ctx, request.Namespace)
+
 	if nm.namespace == request.Namespace {
 		return admission.Patched("")
 	}
@@ -55,8 +62,9 @@ func (nm *namespaceMutator) Handle(ctx context.Context, request admission.Reques
 	}
 
 	log.Info("checking namespace labels", "namespace", request.Name)
-	updatedNamespace, err := nsMapper.MapFromNamespace()
+	updatedNamespace, err := nsMapper.MapFromNamespace(ctx)
 	if err != nil {
+		span.RecordError(err)
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 	if !updatedNamespace {

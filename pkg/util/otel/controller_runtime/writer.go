@@ -7,9 +7,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var _ client.Writer = wrappedWriter{}
-
 const writerSpanNamePrefix = "client.Writer"
+
+var _ client.Writer = wrappedWriter{}
 
 type wrappedWriter struct {
 	wrapped client.Writer
