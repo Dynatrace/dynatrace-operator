@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/cmd/config"
 	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
+	dtfake "github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 	"github.com/spf13/afero"
@@ -17,7 +18,9 @@ func TestCsiCommand(t *testing.T) {
 	configProvider := &config.MockProvider{}
 	configProvider.On("GetConfig").Return(&rest.Config{}, nil)
 
+	clt := dtfake.NewClient()
 	cmdMgr := &cmdManager.MockManager{}
+	cmdMgr.On("GetAPIReader", mock.Anything, mock.Anything).Return(clt, nil)
 
 	managerProvider := &cmdManager.MockProvider{}
 	managerProvider.On("CreateManager", mock.Anything, mock.Anything).Return(cmdMgr, nil)

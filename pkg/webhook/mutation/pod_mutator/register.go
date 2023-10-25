@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod_mutator/dataingest_mutation"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod_mutator/oneagent_mutation"
 	"github.com/pkg/errors"
+	"go.opentelemetry.io/otel"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -58,6 +59,12 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 		return err
 	}
 
+	otelMeter := otel.Meter(otelName)
+	requestCounter, err := otelMeter.Int64Counter("handledPodMutationRequests")
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
 	mgr.GetWebhookServer().Register("/inject", &webhook.Admission{Handler: &podMutatorWebhook{
 		apiReader:        apiReader,
 		webhookNamespace: webhookNamespace,
@@ -80,7 +87,11 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 				metaClient,
 			),
 		},
-		decoder: *admission.NewDecoder(mgr.GetScheme()),
+		decoder:    *admission.NewDecoder(mgr.GetScheme()),
+		spanTracer: otel.Tracer(otelName),
+		otelMeter:  otel.Meter(otelName),
+
+		requestCounter: requestCounter,
 	}})
 	log.Info("registered /inject endpoint")
 	return nil

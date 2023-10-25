@@ -4,6 +4,7 @@ import (
 	"context"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dtotel "github.com/Dynatrace/dynatrace-operator/pkg/util/otel"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -13,6 +14,9 @@ import (
 )
 
 func (webhook *podMutatorWebhook) createMutationRequestBase(ctx context.Context, request admission.Request) (*dtwebhook.MutationRequest, error) {
+	ctx, span := dtotel.StartSpan(ctx, webhook.spanTracer, "createMutationRequestBase")
+	defer span.End()
+
 	pod, err := getPodFromRequest(request, webhook.decoder)
 	if err != nil {
 		return nil, err

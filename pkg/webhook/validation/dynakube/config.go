@@ -10,7 +10,7 @@ import (
 
 const oneagentEnableVolumeStorageEnvVarName = "ONEAGENT_ENABLE_VOLUME_STORAGE"
 
-var log = logger.Factory.GetLogger("validation")
+var log = logger.Factory.GetLogger("dynakube-validation")
 
 type validator func(ctx context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string
 
