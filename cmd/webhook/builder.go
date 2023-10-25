@@ -2,6 +2,7 @@ package webhook
 
 import (
 	"context"
+
 	"github.com/Dynatrace/dynatrace-operator/cmd/certificates"
 	"github.com/Dynatrace/dynatrace-operator/cmd/config"
 	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
@@ -118,12 +119,13 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		kubeConfig.Transport = otelhttp.NewTransport(kubeConfig.Transport)
-
 		webhookManager, err := builder.GetManagerProvider().CreateManager(builder.namespace, kubeConfig)
 		if err != nil {
 			return err
 		}
+
+		// instrument webhook manager HTTP client with OpenTelemetry
+		webhookManager.GetHTTPClient().Transport = otelhttp.NewTransport(webhookManager.GetHTTPClient().Transport)
 
 		otelShutdownFn := otel.Start(context.Background(), "dynatrace-webhook", webhookManager.GetAPIReader(), builder.namespace)
 		defer otelShutdownFn()

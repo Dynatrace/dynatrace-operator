@@ -2,19 +2,19 @@ package pod_mutator
 
 import (
 	"context"
-	dtotel "github.com/Dynatrace/dynatrace-operator/pkg/util/otel"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/otel/controller_runtime"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace"
 	"net/http"
 	"net/http/httptrace"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
+	dtotel "github.com/Dynatrace/dynatrace-operator/pkg/util/otel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/otel/controller_runtime"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod_mutator/dataingest_mutation"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod_mutator/oneagent_mutation"
 	webhookotel "github.com/Dynatrace/dynatrace-operator/pkg/webhook/otel"
 	"github.com/pkg/errors"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -118,7 +118,7 @@ func getWebhookContainerImage(webhookPod corev1.Pod) (string, error) {
 }
 
 func getClusterID(ctx context.Context, apiReader client.Reader) (string, error) {
-	ctx, span := dtotel.StartSpan(context.Background(), webhookotel.Tracer(), "getClusterID")
+	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), "getClusterID")
 	defer span.End()
 
 	if clusterUID, err := kubesystem.GetUID(ctx, apiReader); err != nil {

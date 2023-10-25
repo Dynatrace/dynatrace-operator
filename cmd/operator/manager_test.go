@@ -2,6 +2,7 @@ package operator
 
 import (
 	"errors"
+	"net/http"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/cmd/manager"
@@ -39,6 +40,7 @@ func TestOperatorManagerProvider(t *testing.T) {
 	})
 	t.Run("check if healthz/readyz checks are added", func(t *testing.T) {
 		testHealthzAndReadyz(t, func(mockMgr *manager.MockManager) error {
+			mockMgr.On("GetHTTPClient").Return(http.DefaultClient)
 			var controlManagerProvider = NewOperatorManagerProvider(false).(operatorManagerProvider)
 			controlManagerProvider.setManager(mockMgr)
 			_, err := controlManagerProvider.CreateManager("namespace", &rest.Config{})
@@ -54,6 +56,7 @@ func TestBootstrapManagerProvider(t *testing.T) {
 	})
 	t.Run("check if healthz/readyz checks are added", func(t *testing.T) {
 		testHealthzAndReadyz(t, func(mockMgr *manager.MockManager) error {
+			mockMgr.On("GetHTTPClient").Return(http.DefaultClient)
 			bootstrapProvider, _ := NewBootstrapManagerProvider().(bootstrapManagerProvider)
 			bootstrapProvider.setManager(mockMgr)
 			_, err := bootstrapProvider.CreateManager("namespace", &rest.Config{})

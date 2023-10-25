@@ -4,13 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace"
-	"go.opentelemetry.io/otel/attribute"
 	"net/http/httptrace"
 	"os"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -54,7 +54,6 @@ type podMutatorWebhook struct {
 }
 
 func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.Request) admission.Response {
-
 	ctx, span := startSpan(ctx, "podMutatorWebhook.Handle")
 	defer span.End()
 

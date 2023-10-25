@@ -2,6 +2,7 @@ package manager
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/stretchr/testify/mock"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -55,6 +56,11 @@ func (mgr *MockManager) GetClient() client.Client {
 func (mgr *MockManager) GetAPIReader() client.Reader {
 	args := mgr.Called()
 	return args.Get(0).(client.Reader)
+}
+
+func (mgr *MockManager) GetHTTPClient() *http.Client {
+	args := mgr.Called()
+	return args.Get(0).(*http.Client)
 }
 
 type MockProvider struct {

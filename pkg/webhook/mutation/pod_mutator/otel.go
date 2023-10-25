@@ -2,14 +2,13 @@ package pod_mutator
 
 import (
 	"context"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
 	"os"
 	"sync"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/otel"
 	dtotel "github.com/Dynatrace/dynatrace-operator/pkg/util/otel"
 	webhookotel "github.com/Dynatrace/dynatrace-operator/pkg/webhook/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const (
@@ -29,7 +28,7 @@ func getWebhookPodName() string {
 }
 
 func (webhook *podMutatorWebhook) countHandleMutationRequest(ctx context.Context, mutatedPodName string) {
-	otel.Count(ctx, webhookotel.Meter(), "handledPodMutationRequests", int64(1),
+	dtotel.Count(ctx, webhookotel.Meter(), "handledPodMutationRequests", int64(1),
 		webhookPodNameKey, getWebhookPodName(), mutatedPodNameKey, mutatedPodName)
 }
 
