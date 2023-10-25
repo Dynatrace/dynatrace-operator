@@ -89,7 +89,7 @@ func getOtelConfig(ctx context.Context, apiReader client.Reader, namespace strin
 		Name:      otelSecretName,
 	}
 
-	query := kubeobjects.NewSecretQuery(context.Background(), nil, apiReader, log)
+	query := kubeobjects.NewSecretQuery(ctx, nil, apiReader, log)
 	secret, err := query.Get(secretName)
 	if err != nil {
 		return "", "", errors.WithStack(err)
