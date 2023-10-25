@@ -3,6 +3,7 @@ package dynakube
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -271,7 +272,7 @@ func TestSyntheticMonitoringFlags(t *testing.T) {
 		dynaKube := DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					AnnotationFeatureSyntheticReplicas: fmt.Sprint(replicas),
+					AnnotationFeatureSyntheticReplicas: strconv.Itoa(int(replicas)),
 				},
 			},
 		}
