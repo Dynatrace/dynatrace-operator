@@ -1,4 +1,3 @@
-
 # How to setup OpenTelementry
 
 Dynatrace operator, CSI driver and webhook are instrumented using OpenTelemetry. To enable this instrumentation and ingest collected
