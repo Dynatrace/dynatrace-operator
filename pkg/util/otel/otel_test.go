@@ -16,7 +16,6 @@ func TestGetConfig(t *testing.T) {
 	const expectedApiToken = "dt01234.abcdef.abcdefg"
 
 	t.Run("happy path", func(t *testing.T) {
-		otelSecretFound = false
 		clt := fake.NewClient(&corev1.Secret{
 			TypeMeta: metav1.TypeMeta{},
 			ObjectMeta: metav1.ObjectMeta{
@@ -33,10 +32,8 @@ func TestGetConfig(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, expectedEndpoint, endpoint)
 		assert.Equal(t, expectedApiToken, apiToken)
-		assert.True(t, shouldUseOtel())
 	})
 	t.Run("no endpoint", func(t *testing.T) {
-		otelSecretFound = false
 		clt := fake.NewClient(&corev1.Secret{
 			TypeMeta: metav1.TypeMeta{},
 			ObjectMeta: metav1.ObjectMeta{
@@ -52,10 +49,8 @@ func TestGetConfig(t *testing.T) {
 		require.Error(t, err)
 		assert.Equal(t, "", endpoint)
 		assert.Equal(t, "", apiToken)
-		assert.False(t, shouldUseOtel())
 	})
 	t.Run("no token", func(t *testing.T) {
-		otelSecretFound = false
 		clt := fake.NewClient(&corev1.Secret{
 			TypeMeta: metav1.TypeMeta{},
 			ObjectMeta: metav1.ObjectMeta{
@@ -71,16 +66,13 @@ func TestGetConfig(t *testing.T) {
 		require.Error(t, err)
 		assert.Equal(t, "", endpoint)
 		assert.Equal(t, "", apiToken)
-		assert.False(t, shouldUseOtel())
 	})
 	t.Run("no secret", func(t *testing.T) {
-		otelSecretFound = false
 		clt := fake.NewClient()
 
 		endpoint, apiToken, err := getOtelConfig(clt, namespace)
 		require.Error(t, err)
 		assert.Equal(t, "", endpoint)
 		assert.Equal(t, "", apiToken)
-		assert.False(t, shouldUseOtel())
 	})
 }

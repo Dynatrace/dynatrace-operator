@@ -8,25 +8,16 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/metric/noop"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"golang.org/x/net/context"
 )
 
-func setupMetrics(ctx context.Context, resource *resource.Resource, endpoint string, apiToken string) (metric.MeterProvider, shutdownFn, error) {
-	if !shouldUseOtel() {
-		// the Noop implementation is guaranteed to do nothing and keep the impact low
-		noopMeterProvider := noop.NewMeterProvider()
-		otel.SetMeterProvider(noopMeterProvider)
-		log.Info("OTel noop meter provider installed")
-		return noopMeterProvider, noopShutdownFn, nil
-	}
-
+func setupMetricsWithOtlp(ctx context.Context, resource *resource.Resource, endpoint string, apiToken string) (metric.MeterProvider, shutdownFn, error) {
 	meterExporter, err := newOtlpMetricsExporter(ctx, endpoint, apiToken)
 	if err != nil {
-		return nil, noopShutdownFn, err
+		return nil, nil, err
 	}
 	sdkMeterProvider := sdkmetric.NewMeterProvider(
 		sdkmetric.WithResource(resource),
@@ -40,6 +31,10 @@ func setupMetrics(ctx context.Context, resource *resource.Resource, endpoint str
 }
 
 func newOtlpMetricsExporter(ctx context.Context, endpoint string, apiToken string) (sdkmetric.Exporter, error) {
+	if endpoint == "" || apiToken == "" {
+		return nil, errors.Errorf("no endpoint or apiToken provided for OTLP metrics exporter")
+	}
+
 	// reset measurements after each cycle (i.e. after sending metrics to collector)
 	var deltaTemporalitySelector = func(sdkmetric.InstrumentKind) metricdata.Temporality { return metricdata.DeltaTemporality }
 
@@ -70,6 +65,8 @@ type Number interface {
 	int64 | float64
 }
 
+// Count is a utility that can be used to increase Int64 and Float64 counters, but with same safeguards to avoid panics, if meter is not
+// properly initialized
 func Count[N Number](ctx context.Context, meter metric.Meter, name string, value N, attributes ...any) {
 	if meter == nil || name == "" {
 		return
@@ -99,6 +96,8 @@ func Count[N Number](ctx context.Context, meter metric.Meter, name string, value
 		if err == nil {
 			counter.Add(ctx, v, metric.WithAttributes(metricAttributes...))
 		}
+	default:
+		err = errors.Errorf("unsupported counter type")
 	}
 	if err != nil {
 		log.Error(err, "failed counting", "metric", name)

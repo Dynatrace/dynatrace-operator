@@ -12,17 +12,10 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-func setupTraces(ctx context.Context, resource *resource.Resource, endpoint string, apiToken string) (trace.TracerProvider, shutdownFn, error) {
-	if !shouldUseOtel() {
-		noopTracerProvider := trace.NewNoopTracerProvider()
-		otel.SetTracerProvider(noopTracerProvider)
-		log.Info("OTel noop tracer provider installed")
-		return noopTracerProvider, noopShutdownFn, nil
-	}
-
+func setupTracesWithOtlp(ctx context.Context, resource *resource.Resource, endpoint string, apiToken string) (trace.TracerProvider, shutdownFn, error) {
 	tracerExporter, err := newOtlpTraceExporter(ctx, endpoint, apiToken)
 	if err != nil {
-		return nil, noopShutdownFn, err
+		return nil, nil, err
 	}
 	sdkTracerProvider := sdktrace.NewTracerProvider(
 		sdktrace.WithBatcher(tracerExporter),
@@ -35,6 +28,10 @@ func setupTraces(ctx context.Context, resource *resource.Resource, endpoint stri
 }
 
 func newOtlpTraceExporter(ctx context.Context, endpoint string, apiToken string) (sdktrace.SpanExporter, error) {
+	if endpoint == "" || apiToken == "" {
+		return nil, errors.Errorf("no endpoint or apiToken provided for OTLP traces exporter")
+	}
+
 	log.Info("setup OTel ingest", "endpoint", endpoint)
 	otlpHttpClient := otlptracehttp.NewClient(
 		otlptracehttp.WithEndpoint(endpoint),

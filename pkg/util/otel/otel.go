@@ -5,53 +5,66 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	errors2 "github.com/pkg/errors"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/metric/noop"
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
-	"k8s.io/apimachinery/pkg/api/errors"
+	"go.opentelemetry.io/otel/trace"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type shutdownFn func(ctx context.Context) error
 
-// TODO: ugly!!
-var otelSecretFound = false
-
 // Start sets up and starts all components needed for creating OpenTelemetry traces and metrics as well as some common auto-instrumentation
 // It logs and swallows all errors to not prevent the application from startup.
 func Start(ctx context.Context, otelServiceName string, apiReader client.Reader, webhookNamespace string) func() {
 	endpoint, apiToken, err := getOtelConfig(apiReader, webhookNamespace)
 
-	// TODO: test if OTeil is really startup in Noop Mode if secret doesn't exist, maybe separate Noop startup code from otel code
-	if err != nil && !errors.IsNotFound(err) {
-		log.Error(err, "couldn't find OTel config secret, no OTel instrumentation available")
-		return func() {}
+	if err != nil {
+		log.Error(err, "failed to read OTel config secret")
+		return setupNoopOTel()
 	}
 
+	shutdown, err := setupOtlpOTel(ctx, otelServiceName, endpoint, apiToken)
+	if err != nil {
+		log.Error(err, "failed to setup OTLP OTel")
+		return setupNoopOTel()
+	}
+	return shutdown
+}
+
+func setupOtlpOTel(ctx context.Context, otelServiceName string, endpoint string, apiToken string) (func(), error) {
 	otelResource, err := newResource(otelServiceName)
 	if err != nil {
-		log.Error(err, "failed to create OTel resource")
-		return func() {}
+		return nil, err
 	}
 
-	_, tracerProviderShutdownFn, err := setupTraces(ctx, otelResource, endpoint, apiToken)
+	_, tracesShutdownFn, err := setupTracesWithOtlp(ctx, otelResource, endpoint, apiToken)
 	if err != nil {
-		log.Error(err, "failed to setup tracing infrastructure")
-		return func() {}
+		return nil, err
 	}
 
-	meterProvider, meterShutdownFn, err := setupMetrics(ctx, otelResource, endpoint, apiToken)
+	meterProvider, metricsShutdownFn, err := setupMetricsWithOtlp(ctx, otelResource, endpoint, apiToken)
 	if err != nil {
-		log.Error(err, "failed to create OTLP tracer exporter")
-		return func() {}
+		_ = tracesShutdownFn(ctx)
+		return nil, err
 	}
-
 	startAutoInstrumentation(meterProvider)
 
 	return func() {
-		_ = tracerProviderShutdownFn(ctx)
-		_ = meterShutdownFn(ctx)
-	}
+		_ = tracesShutdownFn(ctx)
+		_ = metricsShutdownFn(ctx)
+	}, nil
+}
+
+// setupNoopOTel makes sure, that OTel is properly configured so that no subsequent usage of OTel leads to panics while keeping
+// a minimal impact on runtime. Basically all collected metrics and traces get discarded right away.
+func setupNoopOTel() func() {
+	otel.SetMeterProvider(noop.NewMeterProvider())
+	otel.SetTracerProvider(trace.NewNoopTracerProvider())
+	log.Info("use Noop providers for OpenTelemetry")
+	return func() {}
 }
 
 // newResource returns a resource describing this application.
@@ -63,7 +76,7 @@ func newResource(otelServiceName string) (*resource.Resource, error) {
 			semconv.ServiceNameKey.String(otelServiceName),
 		),
 	)
-	return r, err
+	return r, errors2.WithStack(err)
 }
 
 func getOtelConfig(apiReader client.Reader, namespace string) (string, string, error) {
@@ -93,14 +106,5 @@ func getOtelConfig(apiReader client.Reader, namespace string) (string, string, e
 		return "", "", err
 	}
 
-	otelSecretFound = true
 	return endpoint, token, nil
-}
-
-func shouldUseOtel() bool {
-	return otelSecretFound
-}
-
-func noopShutdownFn(_ context.Context) error {
-	return nil
 }

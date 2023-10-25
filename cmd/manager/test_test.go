@@ -12,7 +12,6 @@ func TestTestManager(t *testing.T) {
 	mgr := TestManager{}
 
 	assert.NotNil(t, mgr.GetClient())
-	//	assert.NotNil(t, mgr.GetAPIReader())
 	assert.NotNil(t, mgr.GetControllerOptions())
 	assert.Equal(t, scheme.Scheme, mgr.GetScheme())
 	assert.NotNil(t, mgr.GetLogger())

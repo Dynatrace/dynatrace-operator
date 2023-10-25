@@ -5,22 +5,30 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/net/context"
 )
 
 func TestSetupTraces(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		resource, err := newResource("testOtel")
+		require.NoError(t, err)
+
+		tracerProvider, shutdownFn, err := setupTracesWithOtlp(context.Background(), resource, "abc12345.dynatrace.com", "dtabc.abc.abc")
+		require.NoError(t, err)
+
+		assert.NotNil(t, shutdownFn)
+		assert.NotNil(t, tracerProvider)
+	})
 	t.Run("do not use OTel", func(t *testing.T) {
 		resource, err := newResource("testOtel")
 		require.NoError(t, err)
 
-		traceProvider, shutdownFn, err := setupTraces(context.Background(), resource, "", "")
-		require.NoError(t, err)
+		tracerProvider, shutdownFn, err := setupTracesWithOtlp(context.Background(), resource, "", "")
+		require.Error(t, err)
 
-		assert.Nil(t, shutdownFn(context.Background()))
-		assert.IsType(t, trace.NewNoopTracerProvider(), traceProvider)
-		assert.Equal(t, otel.GetTracerProvider(), traceProvider)
+		assert.Nil(t, shutdownFn)
+		assert.Nil(t, tracerProvider)
 	})
 }
 
