@@ -74,6 +74,7 @@ func (validator *dynakubeValidator) runValidators(ctx context.Context, validator
 }
 
 func decodeRequestToDynakube(request admission.Request, dynakube *dynatracev1beta1.DynaKube) error {
+	log.Info("decodeRequestToDynakube", "request", request)
 	decoder := admission.NewDecoder(scheme.Scheme)
 
 	err := decoder.Decode(request, dynakube)
