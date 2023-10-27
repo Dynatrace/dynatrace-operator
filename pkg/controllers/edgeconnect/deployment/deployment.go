@@ -21,7 +21,15 @@ const (
 	unprivilegedGroup  = int64(1000)
 )
 
-func New(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
+func NewRegular(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
+	return new(instance, instance.Spec.OAuth.ClientSecret, instance.Spec.OAuth.Resource)
+}
+
+func NewProvisioner(instance *edgeconnectv1alpha1.EdgeConnect, clientSecretName string, resource string) *appsv1.Deployment {
+	return new(instance, clientSecretName, resource)
+}
+
+func new(instance *edgeconnectv1alpha1.EdgeConnect, clientSecretName string, resource string) *appsv1.Deployment {
 	appLabels := buildAppLabels(instance)
 	labels := maputils.MergeMap(
 		instance.Labels,
@@ -45,13 +53,11 @@ func New(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
 					Labels: labels,
 				},
 				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{edgeConnectContainer(instance)},
-					ImagePullSecrets: []corev1.LocalObjectReference{
-						{Name: instance.Spec.CustomPullSecret},
-					},
+					Containers:                    []corev1.Container{edgeConnectContainer(instance, resource)},
+					ImagePullSecrets:              prepareImagePullSecrets(instance),
 					ServiceAccountName:            consts.EdgeConnectServiceAccountName,
 					TerminationGracePeriodSeconds: address.Of(int64(30)),
-					Volumes:                       []corev1.Volume{prepareVolume(instance)},
+					Volumes:                       []corev1.Volume{prepareVolume(clientSecretName)},
 					NodeSelector:                  instance.Spec.NodeSelector,
 					Tolerations:                   instance.Spec.Tolerations,
 					TopologySpreadConstraints:     instance.Spec.TopologySpreadConstraints,
@@ -69,7 +75,16 @@ func New(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
 	}
 }
 
-func prepareContainerEnvVars(instance *edgeconnectv1alpha1.EdgeConnect) []corev1.EnvVar {
+func prepareImagePullSecrets(instance *edgeconnectv1alpha1.EdgeConnect) []corev1.LocalObjectReference {
+	if instance.Spec.CustomPullSecret != "" {
+		return []corev1.LocalObjectReference{
+			{Name: instance.Spec.CustomPullSecret},
+		}
+	}
+	return nil
+}
+
+func prepareContainerEnvVars(instance *edgeconnectv1alpha1.EdgeConnect, resource string) []corev1.EnvVar {
 	envMap := prioritymap.New(prioritymap.WithPriority(defaultEnvPriority))
 	prioritymap.Append(envMap, []corev1.EnvVar{
 		{
@@ -87,7 +102,7 @@ func prepareContainerEnvVars(instance *edgeconnectv1alpha1.EdgeConnect) []corev1
 		},
 		{
 			Name:  consts.EnvEdgeConnectOauthResource,
-			Value: instance.Spec.OAuth.Resource,
+			Value: resource,
 		},
 	})
 
@@ -122,12 +137,12 @@ func buildAnnotations(instance *edgeconnectv1alpha1.EdgeConnect) map[string]stri
 	return annotations
 }
 
-func edgeConnectContainer(instance *edgeconnectv1alpha1.EdgeConnect) corev1.Container {
+func edgeConnectContainer(instance *edgeconnectv1alpha1.EdgeConnect, resource string) corev1.Container {
 	return corev1.Container{
 		Name:            consts.EdgeConnectContainerName,
 		Image:           instance.Status.Version.ImageID,
 		ImagePullPolicy: corev1.PullAlways,
-		Env:             prepareContainerEnvVars(instance),
+		Env:             prepareContainerEnvVars(instance, resource),
 		Resources:       prepareResourceRequirements(instance),
 		SecurityContext: &corev1.SecurityContext{
 			AllowPrivilegeEscalation: address.Of(false),
@@ -143,12 +158,12 @@ func edgeConnectContainer(instance *edgeconnectv1alpha1.EdgeConnect) corev1.Cont
 	}
 }
 
-func prepareVolume(instance *edgeconnectv1alpha1.EdgeConnect) corev1.Volume {
+func prepareVolume(clientSecretName string) corev1.Volume {
 	return corev1.Volume{
 		Name: consts.EdgeConnectVolumeMountName,
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
-				SecretName: instance.Spec.OAuth.ClientSecret,
+				SecretName: clientSecretName,
 				Items: []corev1.KeyToPath{
 					{Key: consts.KeyEdgeConnectOauthClientID, Path: consts.PathEdgeConnectOauthClientID},
 					{Key: consts.KeyEdgeConnectOauthClientSecret, Path: consts.PathEdgeConnectOauthClientSecret},

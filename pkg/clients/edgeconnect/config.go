@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	log = logger.Factory.GetLogger("edgeConnectClient")
+	log = logger.Factory.GetLogger("edgeConnectClient") //nolint: unused
 )

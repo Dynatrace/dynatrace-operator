@@ -188,7 +188,7 @@ func edgeConnectGetServerHandler() http.HandlerFunc {
 			writeOauthTokenResponse(writer)
 		case fmt.Sprintf("/edge-connects/%s", EdgeConnectID):
 			writer.WriteHeader(http.StatusOK)
-			resp := GetResponse{
+			resp := EdgeConnectResponse{
 				ID:            "348b4cd9-ba31-4670-9c45-9125a7d87439",
 				Name:          "InternalServices",
 				HostPatterns:  []string{"*.internal.org"},

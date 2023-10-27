@@ -19,7 +19,7 @@ type Instance struct {
 	InstanceId string `json:"instanceId,omitempty"`
 }
 
-type GetResponse struct {
+type EdgeConnectResponse struct { //nolint: revive
 	ID               string           `json:"id,omitempty"`
 	Name             string           `json:"name"`
 	HostPatterns     []string         `json:"hostPatterns"`
@@ -28,12 +28,20 @@ type GetResponse struct {
 	Metadata         Metadata         `json:"metadata"`
 }
 
+type GetEdgeConnectsResponse struct {
+	EdgeConnects []EdgeConnectResponse `json:"edgeConnects"`
+	TotalCount   int                   `json:"totalCount"`
+}
+
 type CreateResponse struct {
-	ID               string           `json:"id,omitempty"`
-	Name             string           `json:"name"`
-	HostPatterns     []string         `json:"hostPatterns"`
-	OauthClientId    string           `json:"oauthClientId"`
-	ModificationInfo ModificationInfo `json:"modificationInfo"`
+	ID                  string           `json:"id,omitempty"`
+	Name                string           `json:"name"`
+	HostPatterns        []string         `json:"hostPatterns"`
+	OauthClientId       string           `json:"oauthClientId"`
+	OauthClientSecret   string           `json:"oauthClientSecret"`
+	OauthClientResource string           `json:"oauthClientResource"`
+	ModificationInfo    ModificationInfo `json:"modificationInfo"`
+	Metadata            Metadata         `json:"metadata"`
 }
 
 type Request struct {
