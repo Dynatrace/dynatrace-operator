@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/certificates"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/otel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -172,10 +173,12 @@ func (builder CommandBuilder) runBootstrapper(kubeCfg *rest.Config) error {
 
 func (builder CommandBuilder) runOperatorManager(kubeCfg *rest.Config, isDeployedViaOlm bool) error {
 	operatorManager, err := builder.getOperatorManagerProvider(isDeployedViaOlm).CreateManager(builder.namespace, kubeCfg)
-
 	if err != nil {
 		return err
 	}
+
+	otelShutdownFn := otel.Start(context.Background(), "dynatrace-operator", operatorManager.GetAPIReader(), builder.namespace)
+	defer otelShutdownFn()
 
 	err = operatorManager.Start(builder.getSignalHandler())
 

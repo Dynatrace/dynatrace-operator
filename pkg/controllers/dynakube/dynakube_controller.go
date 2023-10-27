@@ -440,7 +440,7 @@ func (controller *Controller) setupAutomaticApiMonitoring(dynakube *dynatracev1b
 		}
 
 		err := apimonitoring.NewReconciler(dtc, clusterLabel, dynakube.Status.KubeSystemUUID).
-			Reconcile()
+			Reconcile(dynakube)
 		if err != nil {
 			log.Error(err, "could not create setting")
 		}

@@ -2,8 +2,8 @@ package csiprovisioner
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
+	"strconv"
 	"testing"
 
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -33,7 +33,7 @@ func createTestProcessModuleConfig(revision uint) *dtclient.ProcessModuleConfig 
 func createTestProcessModuleConfigCache(revision uint) processModuleConfigCache {
 	return processModuleConfigCache{
 		ProcessModuleConfig: createTestProcessModuleConfig(revision),
-		Hash:                fmt.Sprintf("%d", revision),
+		Hash:                strconv.FormatUint(uint64(revision), 10),
 	}
 }
 

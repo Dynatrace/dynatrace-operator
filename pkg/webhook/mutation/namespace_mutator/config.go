@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	log = logger.Factory.GetLogger("mutation-namespace")
+	log = logger.Factory.GetLogger("namespace-mutation")
 )
