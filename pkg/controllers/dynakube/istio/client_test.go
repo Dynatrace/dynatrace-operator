@@ -18,10 +18,13 @@ import (
 )
 
 func newTestingClient(fakeClient *fakeistio.Clientset, namespace string) *Client {
+	testDynakube := createTestDynaKube()
+	testDynakube.Namespace = namespace
+
 	return &Client{
 		IstioClientset: fakeClient,
-		Namespace:      namespace,
 		Scheme:         scheme.Scheme,
+		Dynakube:       testDynakube,
 	}
 }
 
@@ -67,40 +70,35 @@ func TestGetVirtualService(t *testing.T) {
 func TestCreateVirtualService(t *testing.T) {
 	ctx := context.Background()
 	t.Run("success", func(t *testing.T) {
-		owner := createTestOwner()
 		expectedVirtualService := createTestEmptyVirtualService()
 		fakeClient := fakeistio.NewSimpleClientset()
 		client := newTestingClient(fakeClient, expectedVirtualService.Namespace)
 
-		err := client.createVirtualService(ctx, owner, expectedVirtualService)
+		err := client.createVirtualService(ctx, expectedVirtualService)
 
 		require.NoError(t, err)
 		serviceEntry, err := fakeClient.NetworkingV1alpha3().VirtualServices(expectedVirtualService.Namespace).Get(ctx, expectedVirtualService.Name, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.Equal(t, expectedVirtualService.Name, serviceEntry.Name)
 		assert.Equal(t, expectedVirtualService.Namespace, serviceEntry.Namespace)
-		require.NotEmpty(t, expectedVirtualService.OwnerReferences)
-		assert.Equal(t, owner.GetName(), expectedVirtualService.OwnerReferences[0].Name)
 	})
 	t.Run("already exists => error", func(t *testing.T) {
-		owner := createTestOwner()
 		expectedVirtualService := createTestEmptyVirtualService()
 		fakeClient := fakeistio.NewSimpleClientset(expectedVirtualService)
 		client := newTestingClient(fakeClient, expectedVirtualService.Namespace)
 
-		err := client.createVirtualService(ctx, owner, expectedVirtualService)
+		err := client.createVirtualService(ctx, expectedVirtualService)
 
 		require.Error(t, err)
 		require.True(t, k8serrors.IsAlreadyExists(err))
 	})
 	t.Run("unknown error => return error", func(t *testing.T) {
-		owner := createTestOwner()
 		expectedVirtualService := createTestEmptyVirtualService()
 		fakeClient := fakeistio.NewSimpleClientset()
 		fakeClient.PrependReactor("*", "*", boomReaction)
 		client := newTestingClient(fakeClient, expectedVirtualService.Namespace)
 
-		err := client.createVirtualService(ctx, owner, expectedVirtualService)
+		err := client.createVirtualService(ctx, expectedVirtualService)
 
 		require.Error(t, err)
 		assert.Len(t, fakeClient.Actions(), 1)
@@ -110,7 +108,7 @@ func TestCreateVirtualService(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
 		client := newTestingClient(fakeClient, "something")
 
-		err := client.createVirtualService(ctx, nil, nil)
+		err := client.createVirtualService(ctx, nil)
 
 		require.Error(t, err)
 	})
@@ -181,12 +179,11 @@ func TestUpdateVirtualService(t *testing.T) {
 func TestCreateOrUpdateVirtualService(t *testing.T) {
 	ctx := context.Background()
 	t.Run("create", func(t *testing.T) {
-		owner := createTestOwner()
 		expectedVirtualService := createTestEmptyVirtualService()
 		fakeClient := fakeistio.NewSimpleClientset()
 		client := newTestingClient(fakeClient, expectedVirtualService.Namespace)
 
-		err := client.CreateOrUpdateVirtualService(ctx, owner, expectedVirtualService)
+		err := client.CreateOrUpdateVirtualService(ctx, expectedVirtualService)
 
 		require.NoError(t, err)
 		// Get, Create
@@ -197,10 +194,9 @@ func TestCreateOrUpdateVirtualService(t *testing.T) {
 		assert.Equal(t, expectedVirtualService.Namespace, virtualService.Namespace)
 		assert.NotEmpty(t, virtualService.Annotations[kubeobjects.AnnotationHash])
 		require.NotEmpty(t, virtualService.OwnerReferences)
-		assert.Equal(t, owner.GetName(), expectedVirtualService.OwnerReferences[0].Name)
+		assert.Equal(t, createTestDynaKube().Name, expectedVirtualService.OwnerReferences[0].Name)
 	})
 	t.Run("update", func(t *testing.T) {
-		owner := createTestOwner()
 		expectedResourceVersion := "1.2.3"
 		oldVirtualService := createTestEmptyVirtualService()
 		oldVirtualService.ResourceVersion = expectedResourceVersion
@@ -212,7 +208,7 @@ func TestCreateOrUpdateVirtualService(t *testing.T) {
 			"test": "test",
 		}
 		newVirtualService.Labels = addedLabels
-		err := client.CreateOrUpdateVirtualService(ctx, owner, newVirtualService)
+		err := client.CreateOrUpdateVirtualService(ctx, newVirtualService)
 
 		require.NoError(t, err)
 		// Get, Update
@@ -222,11 +218,12 @@ func TestCreateOrUpdateVirtualService(t *testing.T) {
 		assert.Equal(t, newVirtualService.Name, updatedVirtualService.Name)
 		assert.Equal(t, newVirtualService.Namespace, updatedVirtualService.Namespace)
 		assert.NotEmpty(t, updatedVirtualService.Annotations[kubeobjects.AnnotationHash])
+		assert.NotEmpty(t, updatedVirtualService.OwnerReferences)
+		assert.Equal(t, createTestDynaKube().Name, updatedVirtualService.OwnerReferences[0].Name)
 		assert.Equal(t, addedLabels, updatedVirtualService.Labels)
 		assert.Equal(t, expectedResourceVersion, updatedVirtualService.ResourceVersion)
 	})
 	t.Run("no-change => no update", func(t *testing.T) {
-		owner := createTestOwner()
 		oldVirtualService := createTestEmptyVirtualService()
 		newVirtualService := oldVirtualService.DeepCopy()
 		err := kubeobjects.AddHashAnnotation(oldVirtualService)
@@ -235,19 +232,21 @@ func TestCreateOrUpdateVirtualService(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset(oldVirtualService)
 		client := newTestingClient(fakeClient, oldVirtualService.Namespace)
 
-		err = client.CreateOrUpdateVirtualService(ctx, owner, newVirtualService)
-		require.NoError(t, err)
-		// Get
-		assert.Len(t, fakeClient.Actions(), 1)
+		for i := 0; i < 2; i++ {
+			err = client.CreateOrUpdateVirtualService(ctx, newVirtualService)
+			require.NoError(t, err)
+		}
+		// 1xGet, 1xUpdate as the owner reference changed
+		// 1xGet
+		assert.Len(t, fakeClient.Actions(), 3)
 	})
 	t.Run("unknown error => return error", func(t *testing.T) {
-		owner := createTestOwner()
 		fakeClient := fakeistio.NewSimpleClientset()
 		fakeClient.PrependReactor("*", "*", boomReaction)
-		client := newTestingClient(fakeClient, owner.GetNamespace())
+		client := newTestingClient(fakeClient, createTestDynaKube().GetNamespace())
 		newVirtualService := createTestEmptyVirtualService()
 
-		err := client.CreateOrUpdateVirtualService(ctx, owner, newVirtualService)
+		err := client.CreateOrUpdateVirtualService(ctx, newVirtualService)
 
 		require.Error(t, err)
 		assert.Len(t, fakeClient.Actions(), 1)
@@ -256,7 +255,7 @@ func TestCreateOrUpdateVirtualService(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
 		client := newTestingClient(fakeClient, "something")
 
-		err := client.CreateOrUpdateVirtualService(ctx, nil, nil)
+		err := client.CreateOrUpdateVirtualService(ctx, nil)
 
 		require.Error(t, err)
 	})
@@ -333,40 +332,35 @@ func TestGetServiceEntry(t *testing.T) {
 func TestCreateServiceEntry(t *testing.T) {
 	ctx := context.Background()
 	t.Run("success", func(t *testing.T) {
-		owner := createTestOwner()
 		expectedServiceEntry := createTestEmptyServiceEntry()
 		fakeClient := fakeistio.NewSimpleClientset()
 		client := newTestingClient(fakeClient, expectedServiceEntry.Namespace)
 
-		err := client.createServiceEntry(ctx, owner, expectedServiceEntry)
+		err := client.createServiceEntry(ctx, expectedServiceEntry)
 
 		require.NoError(t, err)
 		serviceEntry, err := fakeClient.NetworkingV1alpha3().ServiceEntries(expectedServiceEntry.Namespace).Get(ctx, expectedServiceEntry.Name, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.Equal(t, expectedServiceEntry.Name, serviceEntry.Name)
 		assert.Equal(t, expectedServiceEntry.Namespace, serviceEntry.Namespace)
-		require.NotEmpty(t, expectedServiceEntry.OwnerReferences)
-		assert.Equal(t, owner.GetName(), expectedServiceEntry.OwnerReferences[0].Name)
 	})
 	t.Run("already exists => error", func(t *testing.T) {
-		owner := createTestOwner()
 		serviceEntry := createTestEmptyServiceEntry()
 		fakeClient := fakeistio.NewSimpleClientset(serviceEntry)
 		client := newTestingClient(fakeClient, serviceEntry.Namespace)
 
-		err := client.createServiceEntry(ctx, owner, serviceEntry)
+		err := client.createServiceEntry(ctx, serviceEntry)
 
 		require.Error(t, err)
 		require.True(t, k8serrors.IsAlreadyExists(err))
 	})
 	t.Run("unknown error => return error", func(t *testing.T) {
-		owner := createTestOwner()
 		serviceEntry := createTestEmptyServiceEntry()
 		fakeClient := fakeistio.NewSimpleClientset()
 		fakeClient.PrependReactor("*", "*", boomReaction)
 		client := newTestingClient(fakeClient, serviceEntry.Namespace)
 
-		err := client.createServiceEntry(ctx, owner, serviceEntry)
+		err := client.createServiceEntry(ctx, serviceEntry)
 
 		require.Error(t, err)
 		assert.Len(t, fakeClient.Actions(), 1)
@@ -376,7 +370,7 @@ func TestCreateServiceEntry(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
 		client := newTestingClient(fakeClient, "something")
 
-		err := client.createServiceEntry(ctx, nil, nil)
+		err := client.createServiceEntry(ctx, nil)
 
 		require.Error(t, err)
 	})
@@ -447,12 +441,11 @@ func TestUpdateServiceEntry(t *testing.T) {
 func TestCreateOrUpdateServiceEntry(t *testing.T) {
 	ctx := context.Background()
 	t.Run("create", func(t *testing.T) {
-		owner := createTestOwner()
 		expectedServiceEntry := createTestEmptyServiceEntry()
 		fakeClient := fakeistio.NewSimpleClientset()
 		client := newTestingClient(fakeClient, expectedServiceEntry.Namespace)
 
-		err := client.CreateOrUpdateServiceEntry(ctx, owner, expectedServiceEntry)
+		err := client.CreateOrUpdateServiceEntry(ctx, expectedServiceEntry)
 
 		require.NoError(t, err)
 		// Get, Create
@@ -463,10 +456,9 @@ func TestCreateOrUpdateServiceEntry(t *testing.T) {
 		assert.Equal(t, expectedServiceEntry.Namespace, serviceEntry.Namespace)
 		assert.NotEmpty(t, serviceEntry.Annotations[kubeobjects.AnnotationHash])
 		require.NotEmpty(t, expectedServiceEntry.OwnerReferences)
-		assert.Equal(t, owner.GetName(), expectedServiceEntry.OwnerReferences[0].Name)
+		assert.Equal(t, createTestDynaKube().GetName(), expectedServiceEntry.OwnerReferences[0].Name)
 	})
 	t.Run("update", func(t *testing.T) {
-		owner := createTestOwner()
 		expectedResourceVersion := "1.2.3"
 		oldServiceEntry := createTestEmptyServiceEntry()
 		oldServiceEntry.ResourceVersion = expectedResourceVersion
@@ -478,7 +470,7 @@ func TestCreateOrUpdateServiceEntry(t *testing.T) {
 			"test": "test",
 		}
 		newServiceEntry.Labels = addedLabels
-		err := client.CreateOrUpdateServiceEntry(ctx, owner, newServiceEntry)
+		err := client.CreateOrUpdateServiceEntry(ctx, newServiceEntry)
 
 		require.NoError(t, err)
 		// Get, Update
@@ -488,11 +480,12 @@ func TestCreateOrUpdateServiceEntry(t *testing.T) {
 		assert.Equal(t, newServiceEntry.Name, updatedServiceEntry.Name)
 		assert.Equal(t, newServiceEntry.Namespace, updatedServiceEntry.Namespace)
 		assert.NotEmpty(t, updatedServiceEntry.Annotations[kubeobjects.AnnotationHash])
+		assert.NotEmpty(t, updatedServiceEntry.OwnerReferences)
+		assert.Equal(t, createTestDynaKube().Name, updatedServiceEntry.OwnerReferences[0].Name)
 		assert.Equal(t, addedLabels, updatedServiceEntry.Labels)
 		assert.Equal(t, expectedResourceVersion, updatedServiceEntry.ResourceVersion)
 	})
 	t.Run("no-change => no update", func(t *testing.T) {
-		owner := createTestOwner()
 		oldServiceEntry := createTestEmptyServiceEntry()
 		newServiceEntry := oldServiceEntry.DeepCopy()
 		err := kubeobjects.AddHashAnnotation(oldServiceEntry)
@@ -501,19 +494,21 @@ func TestCreateOrUpdateServiceEntry(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset(oldServiceEntry)
 		client := newTestingClient(fakeClient, oldServiceEntry.Namespace)
 
-		err = client.CreateOrUpdateServiceEntry(ctx, owner, newServiceEntry)
-		require.NoError(t, err)
-		// Get
-		assert.Len(t, fakeClient.Actions(), 1)
+		for i := 0; i < 2; i++ {
+			err = client.CreateOrUpdateServiceEntry(ctx, newServiceEntry)
+			require.NoError(t, err)
+		}
+		// 1xGet, 1xUpdate as the owner reference changed
+		// 1xGet
+		assert.Len(t, fakeClient.Actions(), 3)
 	})
 	t.Run("unknown error => return error", func(t *testing.T) {
-		owner := createTestOwner()
 		fakeClient := fakeistio.NewSimpleClientset()
 		fakeClient.PrependReactor("*", "*", boomReaction)
-		client := newTestingClient(fakeClient, owner.GetNamespace())
+		client := newTestingClient(fakeClient, createTestDynaKube().GetNamespace())
 		newServiceEntry := createTestEmptyServiceEntry()
 
-		err := client.CreateOrUpdateServiceEntry(ctx, owner, newServiceEntry)
+		err := client.CreateOrUpdateServiceEntry(ctx, newServiceEntry)
 
 		require.Error(t, err)
 		assert.Len(t, fakeClient.Actions(), 1)
@@ -522,7 +517,7 @@ func TestCreateOrUpdateServiceEntry(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
 		client := newTestingClient(fakeClient, "something")
 
-		err := client.CreateOrUpdateServiceEntry(ctx, nil, nil)
+		err := client.CreateOrUpdateServiceEntry(ctx, nil)
 
 		require.Error(t, err)
 	})
@@ -577,8 +572,4 @@ func createTestEmptyVirtualService() *istiov1alpha3.VirtualService {
 			Namespace: "test",
 		},
 	}
-}
-
-func createTestOwner() metav1.Object {
-	return createTestDynaKube()
 }

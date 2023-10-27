@@ -194,7 +194,7 @@ func (controller *Controller) setupIstio(ctx context.Context, dynakube *dynatrac
 	if !dynakube.Spec.EnableIstio {
 		return nil, nil
 	}
-	istioClient, err := controller.istioClientBuilder(controller.config, controller.scheme, dynakube.Namespace)
+	istioClient, err := controller.istioClientBuilder(controller.config, controller.scheme, dynakube)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize istio client")
 	}

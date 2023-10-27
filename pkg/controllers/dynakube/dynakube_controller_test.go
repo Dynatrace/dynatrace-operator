@@ -1100,7 +1100,7 @@ func TestSetupIstio(t *testing.T) {
 }
 
 func fakeIstioClientBuilder(t *testing.T, fakeIstio *fakeistio.Clientset, isIstioInstalled bool) istio.ClientBuilder {
-	return func(_ *rest.Config, scheme *runtime.Scheme, namespace string) (*istio.Client, error) {
+	return func(_ *rest.Config, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube) (*istio.Client, error) {
 		if isIstioInstalled == true {
 			fakeDiscovery, ok := fakeIstio.Discovery().(*fakediscovery.FakeDiscovery)
 			fakeDiscovery.Resources = []*metav1.APIResourceList{{GroupVersion: istio.IstioGVR}}
@@ -1111,7 +1111,7 @@ func fakeIstioClientBuilder(t *testing.T, fakeIstio *fakeistio.Clientset, isIsti
 		return &istio.Client{
 			IstioClientset: fakeIstio,
 			Scheme:         scheme,
-			Namespace:      namespace,
+			Dynakube:       dynakube,
 		}, nil
 	}
 }
