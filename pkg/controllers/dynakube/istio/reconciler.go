@@ -97,7 +97,7 @@ func splitCommunicationHost(comHosts []dtclient.CommunicationHost) (ipHosts, fqd
 }
 
 func (r *Reconciler) reconcileIPServiceEntry(ctx context.Context, ipHosts []dtclient.CommunicationHost, component string) error {
-	owner := r.client.Dynakube
+	owner := r.client.Owner
 	entryName := BuildNameForIPServiceEntry(owner.GetName(), component)
 	if len(ipHosts) != 0 {
 		meta := buildObjectMeta(
@@ -122,7 +122,7 @@ func (r *Reconciler) reconcileIPServiceEntry(ctx context.Context, ipHosts []dtcl
 }
 
 func (r *Reconciler) reconcileFQDNServiceEntry(ctx context.Context, fqdnHosts []dtclient.CommunicationHost, component string) error {
-	owner := r.client.Dynakube
+	owner := r.client.Owner
 	entryName := BuildNameForFQDNServiceEntry(owner.GetName(), component)
 	if len(fqdnHosts) != 0 {
 		meta := buildObjectMeta(

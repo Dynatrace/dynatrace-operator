@@ -24,7 +24,7 @@ func newTestingClient(fakeClient *fakeistio.Clientset, namespace string) *Client
 	return &Client{
 		IstioClientset: fakeClient,
 		Scheme:         scheme.Scheme,
-		Dynakube:       testDynakube,
+		Owner:          testDynakube,
 	}
 }
 

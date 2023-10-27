@@ -3,7 +3,6 @@ package istio
 import (
 	"context"
 
-	dynakubev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	"github.com/pkg/errors"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
@@ -15,30 +14,30 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-type ClientBuilder func(config *rest.Config, scheme *runtime.Scheme, dynaKube *dynakubev1beta1.DynaKube) (*Client, error)
+type ClientBuilder func(config *rest.Config, scheme *runtime.Scheme, owner metav1.Object) (*Client, error)
 
 // Client - an adapter for the external istioclientset library
 type Client struct {
 	IstioClientset istioclientset.Interface
 	Scheme         *runtime.Scheme
-	Dynakube       *dynakubev1beta1.DynaKube
+	Owner          metav1.Object
 }
 
-func NewClient(config *rest.Config, scheme *runtime.Scheme, dynakube *dynakubev1beta1.DynaKube) (*Client, error) {
+func NewClient(config *rest.Config, scheme *runtime.Scheme, owner metav1.Object) (*Client, error) {
 	istioClient, err := istioclientset.NewForConfig(config)
 
 	if err != nil {
 		log.Info("failed to initialize istio client", "error", err.Error())
 		return nil, errors.WithStack(err)
 	}
-	if dynakube == nil {
-		return nil, errors.New("can't create istio client for empty dynakube")
+	if owner == nil {
+		return nil, errors.New("can't create istio client for empty owner")
 	}
 
 	return &Client{
 		IstioClientset: istioClient,
 		Scheme:         scheme,
-		Dynakube:       dynakube,
+		Owner:          owner,
 	}, nil
 }
 
@@ -54,7 +53,7 @@ func (cl *Client) CheckIstioInstalled() (bool, error) {
 }
 
 func (cl *Client) GetVirtualService(ctx context.Context, name string) (*istiov1alpha3.VirtualService, error) {
-	virtualService, err := cl.IstioClientset.NetworkingV1alpha3().VirtualServices(cl.Dynakube.Namespace).Get(ctx, name, metav1.GetOptions{})
+	virtualService, err := cl.IstioClientset.NetworkingV1alpha3().VirtualServices(cl.Owner.GetNamespace()).Get(ctx, name, metav1.GetOptions{})
 	if k8serrors.IsNotFound(err) {
 		return nil, nil
 	} else if err != nil {
@@ -70,7 +69,7 @@ func (cl *Client) CreateOrUpdateVirtualService(ctx context.Context, newVirtualSe
 	}
 
 	// the owner reference is created before the hash annotation is added
-	if err := controllerutil.SetControllerReference(cl.Dynakube, newVirtualService, cl.Scheme); err != nil {
+	if err := controllerutil.SetControllerReference(cl.Owner, newVirtualService, cl.Scheme); err != nil {
 		return errors.WithStack(err)
 	}
 
@@ -99,7 +98,7 @@ func (cl *Client) createVirtualService(ctx context.Context, virtualService *isti
 	if virtualService == nil {
 		return errors.New("can't create virtual service based on nil object")
 	}
-	_, err := cl.IstioClientset.NetworkingV1alpha3().VirtualServices(cl.Dynakube.Namespace).Create(ctx, virtualService, metav1.CreateOptions{})
+	_, err := cl.IstioClientset.NetworkingV1alpha3().VirtualServices(cl.Owner.GetNamespace()).Create(ctx, virtualService, metav1.CreateOptions{})
 	if err != nil {
 		log.Info("failed to create virtual service", "name", virtualService.GetName(), "error", err.Error())
 		return errors.WithStack(err)
@@ -112,7 +111,7 @@ func (cl *Client) updateVirtualService(ctx context.Context, oldVirtualService, n
 		return errors.New("can't update service entry based on nil object")
 	}
 	newVirtualService.ObjectMeta.ResourceVersion = oldVirtualService.ObjectMeta.ResourceVersion
-	_, err := cl.IstioClientset.NetworkingV1alpha3().VirtualServices(cl.Dynakube.Namespace).Update(ctx, newVirtualService, metav1.UpdateOptions{})
+	_, err := cl.IstioClientset.NetworkingV1alpha3().VirtualServices(cl.Owner.GetNamespace()).Update(ctx, newVirtualService, metav1.UpdateOptions{})
 	if err != nil {
 		log.Info("failed to update virtual service", "name", newVirtualService.GetName(), "error", err.Error())
 		return errors.WithStack(err)
@@ -122,7 +121,7 @@ func (cl *Client) updateVirtualService(ctx context.Context, oldVirtualService, n
 
 func (cl *Client) DeleteVirtualService(ctx context.Context, name string) error {
 	err := cl.IstioClientset.NetworkingV1alpha3().
-		VirtualServices(cl.Dynakube.Namespace).
+		VirtualServices(cl.Owner.GetNamespace()).
 		Delete(ctx, name, metav1.DeleteOptions{})
 	if !k8serrors.IsNotFound(err) {
 		log.Info("failed to remove virtual service", "name", name)
@@ -132,7 +131,7 @@ func (cl *Client) DeleteVirtualService(ctx context.Context, name string) error {
 }
 
 func (cl *Client) GetServiceEntry(ctx context.Context, name string) (*istiov1alpha3.ServiceEntry, error) {
-	serviceEntry, err := cl.IstioClientset.NetworkingV1alpha3().ServiceEntries(cl.Dynakube.Namespace).Get(ctx, name, metav1.GetOptions{})
+	serviceEntry, err := cl.IstioClientset.NetworkingV1alpha3().ServiceEntries(cl.Owner.GetNamespace()).Get(ctx, name, metav1.GetOptions{})
 	if k8serrors.IsNotFound(err) {
 		return nil, nil
 	} else if err != nil {
@@ -148,7 +147,7 @@ func (cl *Client) CreateOrUpdateServiceEntry(ctx context.Context, newServiceEntr
 	}
 
 	// the owner reference is created before the hash annotation is added
-	if err := controllerutil.SetControllerReference(cl.Dynakube, newServiceEntry, cl.Scheme); err != nil {
+	if err := controllerutil.SetControllerReference(cl.Owner, newServiceEntry, cl.Scheme); err != nil {
 		return errors.WithStack(err)
 	}
 
@@ -177,7 +176,7 @@ func (cl *Client) createServiceEntry(ctx context.Context, serviceEntry *istiov1a
 		return errors.New("can't create service entry based on nil object")
 	}
 
-	_, err := cl.IstioClientset.NetworkingV1alpha3().ServiceEntries(cl.Dynakube.Namespace).Create(ctx, serviceEntry, metav1.CreateOptions{})
+	_, err := cl.IstioClientset.NetworkingV1alpha3().ServiceEntries(cl.Owner.GetNamespace()).Create(ctx, serviceEntry, metav1.CreateOptions{})
 	if err != nil {
 		log.Info("failed to create service entry", "name", serviceEntry.GetName(), "error", err.Error())
 		return errors.WithStack(err)
@@ -191,7 +190,7 @@ func (cl *Client) updateServiceEntry(ctx context.Context, oldServiceEntry, newSe
 	}
 
 	newServiceEntry.ObjectMeta.ResourceVersion = oldServiceEntry.ObjectMeta.ResourceVersion
-	_, err := cl.IstioClientset.NetworkingV1alpha3().ServiceEntries(cl.Dynakube.Namespace).Update(ctx, newServiceEntry, metav1.UpdateOptions{})
+	_, err := cl.IstioClientset.NetworkingV1alpha3().ServiceEntries(cl.Owner.GetNamespace()).Update(ctx, newServiceEntry, metav1.UpdateOptions{})
 	if err != nil {
 		log.Info("failed to update service entry", "name", newServiceEntry.GetName(), "error", err.Error())
 		return errors.WithStack(err)
@@ -201,7 +200,7 @@ func (cl *Client) updateServiceEntry(ctx context.Context, oldServiceEntry, newSe
 
 func (cl *Client) DeleteServiceEntry(ctx context.Context, name string) error {
 	err := cl.IstioClientset.NetworkingV1alpha3().
-		ServiceEntries(cl.Dynakube.Namespace).
+		ServiceEntries(cl.Owner.GetNamespace()).
 		Delete(ctx, name, metav1.DeleteOptions{})
 	if !k8serrors.IsNotFound(err) {
 		log.Info("failed to remove service entry", "name", name)
