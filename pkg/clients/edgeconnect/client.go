@@ -41,7 +41,7 @@ func NewClient(clientID, clientSecret string, options ...Option) (Client, error)
 
 	httpClient := c.Client(c.ctx)
 	if httpClient == nil {
-		return nil, errors.New("can't create http client for edge connect")
+		return nil, errors.New("can't create http client for edge CONNECT")
 	}
 	c.httpClient = httpClient
 
