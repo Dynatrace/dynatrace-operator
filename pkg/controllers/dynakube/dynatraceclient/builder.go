@@ -120,7 +120,6 @@ func (dynatraceClientBuilder builder) verifyTokenScopes(dynatraceClient dtclient
 	var err error
 
 	if dynatraceClientBuilder.dynakube.IsTokenScopeVerificationAllowed(timeprovider.New()) {
-		dynaKubeStatus.DynatraceApi.LastTokenScopeRequest = metav1.Now()
 		err = dynatraceClientBuilder.tokens.VerifyScopes(dynatraceClient)
 		log.Info("token verified")
 	} else {
@@ -132,6 +131,7 @@ func (dynatraceClientBuilder builder) verifyTokenScopes(dynatraceClient dtclient
 	}
 
 	if err != nil {
+		dynaKubeStatus.DynatraceApi.LastTokenScopeRequest = metav1.Now()
 		return err
 	}
 
