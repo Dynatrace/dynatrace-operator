@@ -34,6 +34,7 @@ const annotationReason = "oneagent.dynatrace.com/reason"
 
 func Feature(t *testing.T) features.Feature {
 	builder := features.New("dynakube in network zone")
+	builder.WithLabel("name", "cloudnative-network-zone")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
 	builder.Assess("create network zone before hand",
