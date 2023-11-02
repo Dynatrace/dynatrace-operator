@@ -15,11 +15,10 @@ import (
 )
 
 const (
-	testUID       = "test-uid"
-	testName      = "test-name"
-	testObjectID  = "test-objectid"
-	testScope     = "test-scope"
-	schemaVersion = "2.1.0"
+	testUID      = "test-uid"
+	testName     = "test-name"
+	testObjectID = "test-objectid"
+	testScope    = "test-scope"
 )
 
 func TestDynatraceClient_GetMonitoredEntitiesForKubeSystemUUID(t *testing.T) {
@@ -125,7 +124,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 		require.NotNil(t, dtc)
 
 		// act
-		actual, err := dtc.(*dynatraceClient).GetSettingsForMonitoredEntities(expected)
+		actual, err := dtc.(*dynatraceClient).GetSettingsForMonitoredEntities(expected, SettingsSchemaId)
 
 		// assert
 		assert.NoError(t, err)
@@ -148,7 +147,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 		require.NotNil(t, dtc)
 
 		// act
-		actual, err := dtc.(*dynatraceClient).GetSettingsForMonitoredEntities(expected)
+		actual, err := dtc.(*dynatraceClient).GetSettingsForMonitoredEntities(expected, SettingsSchemaId)
 
 		// assert
 		assert.NoError(t, err)
@@ -172,7 +171,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 		require.NotNil(t, dtc)
 
 		// act
-		actual, err := dtc.(*dynatraceClient).GetSettingsForMonitoredEntities(entities)
+		actual, err := dtc.(*dynatraceClient).GetSettingsForMonitoredEntities(entities, SettingsSchemaId)
 
 		// assert
 		assert.NoError(t, err)
@@ -195,7 +194,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 		require.NotNil(t, dtc)
 
 		// act
-		actual, err := dtc.(*dynatraceClient).GetSettingsForMonitoredEntities(entities)
+		actual, err := dtc.(*dynatraceClient).GetSettingsForMonitoredEntities(entities, SettingsSchemaId)
 
 		// assert
 		assert.Error(t, err)
@@ -300,6 +299,48 @@ func TestDynatraceClient_CreateOrUpdateKubernetesSetting(t *testing.T) {
 		assert.Len(t, actual, 0)
 	})
 }
+
+func TestDynatraceClient_CreateOrUpdateAppKubernetesSetting(t *testing.T) {
+	t.Run(`create app settings with monitoring for the given monitored entity id`, func(t *testing.T) {
+		// arrange
+		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(1, testObjectID, http.StatusOK))
+		defer dynatraceServer.Close()
+
+		skipCert := SkipCertificateValidation(true)
+		dtc, err := NewClient(dynatraceServer.URL, apiToken, paasToken, skipCert)
+		require.NoError(t, err)
+		require.NotNil(t, dtc)
+
+		// act
+		actual, err := dtc.(*dynatraceClient).CreateOrUpdateKubernetesAppSetting(testScope)
+
+		// assert
+		require.NotNil(t, actual)
+		assert.NoError(t, err)
+		assert.Len(t, actual, len(testObjectID))
+		assert.EqualValues(t, testObjectID, actual)
+	})
+
+	t.Run(`don't create app settings for the given monitored entity id because of api error`, func(t *testing.T) {
+		// arrange
+		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(1, testObjectID, http.StatusNotFound))
+		defer dynatraceServer.Close()
+
+		skipCert := SkipCertificateValidation(true)
+		dtc, err := NewClient(dynatraceServer.URL, apiToken, paasToken, skipCert)
+		require.NoError(t, err)
+		require.NotNil(t, dtc)
+
+		// act
+		actual, err := dtc.(*dynatraceClient).CreateOrUpdateKubernetesAppSetting(testScope)
+
+		// assert
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), strconv.Itoa(http.StatusNotFound))
+		assert.Len(t, actual, 0)
+	})
+}
+
 func TestDynatraceClient_getKubernetesSettingBody(t *testing.T) {
 	t.Run(`get k8s settings request body for Hierarchical Monitoring Settings`, func(t *testing.T) {
 		// arrange
@@ -318,7 +359,8 @@ func TestDynatraceClient_getKubernetesSettingBody(t *testing.T) {
 		require.NotNil(t, actual)
 		assert.Len(t, actual, 1)
 		assert.EqualValues(t, hierarchicalMonitoringSettingsSchemaVersion, actual[0].SchemaVersion)
-		assert.EqualValues(t, true, actual[0].Value.Enabled)
+		assert.IsType(t, postKubernetesSettings{}, actual[0].Value)
+		assert.EqualValues(t, true, actual[0].Value.(postKubernetesSettings).Enabled)
 		bodyJson, err := json.Marshal(actual[0])
 		assert.NoError(t, err)
 		fmt.Println(string(bodyJson))
@@ -347,7 +389,8 @@ func TestDynatraceClient_getKubernetesSettingBody(t *testing.T) {
 		require.NotNil(t, actual)
 		assert.Len(t, actual, 1)
 		assert.EqualValues(t, schemaVersionV1, actual[0].SchemaVersion)
-		assert.EqualValues(t, true, actual[0].Value.Enabled)
+		assert.IsType(t, postKubernetesSettings{}, actual[0].Value)
+		assert.EqualValues(t, true, actual[0].Value.(postKubernetesSettings).Enabled)
 		bodyJson, err := json.Marshal(actual[0])
 		assert.NoError(t, err)
 		fmt.Println(string(bodyJson))

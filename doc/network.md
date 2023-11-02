@@ -13,10 +13,10 @@
 
 All network policies in compliance with the operator can be found in `assets/calico`.
 
-- [activegate-policy.yaml](assets/calico/activegate-policy.yaml)
-- [activegate-policy-external-only.yaml](assets/calico/agent-policy-external-only.yaml)
-- [agent-policy.yaml](assets/calico/agent-policy.yaml)
-- [dynatrace-policies.yaml](assets/calico/dynatrace-policies.yaml)
+- [activegate-policy.yaml](../assets/calico/activegate-policy.yaml)
+- [activegate-policy-external-only.yaml](../assets/calico/agent-policy-external-only.yaml)
+- [agent-policy.yaml](../assets/calico/agent-policy.yaml)
+- [dynatrace-policies.yaml](../assets/calico/dynatrace-policies.yaml)
 
 ## Used ports
 

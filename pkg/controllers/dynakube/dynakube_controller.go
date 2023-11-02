@@ -194,7 +194,7 @@ func (controller *Controller) setupIstio(ctx context.Context, dynakube *dynatrac
 	if !dynakube.Spec.EnableIstio {
 		return nil, nil
 	}
-	istioClient, err := controller.istioClientBuilder(controller.config, controller.scheme, dynakube.Namespace)
+	istioClient, err := controller.istioClientBuilder(controller.config, controller.scheme, dynakube)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize istio client")
 	}
@@ -440,7 +440,7 @@ func (controller *Controller) setupAutomaticApiMonitoring(dynakube *dynatracev1b
 		}
 
 		err := apimonitoring.NewReconciler(dtc, clusterLabel, dynakube.Status.KubeSystemUUID).
-			Reconcile()
+			Reconcile(dynakube)
 		if err != nil {
 			log.Error(err, "could not create setting")
 		}

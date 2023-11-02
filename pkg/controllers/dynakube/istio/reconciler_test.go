@@ -48,43 +48,36 @@ func TestSplitCommunicationHost(t *testing.T) {
 func TestReconcileIPServiceEntry(t *testing.T) {
 	ctx := context.Background()
 	component := "best-component"
-	owner := createTestOwner()
-	t.Run("nil => error", func(t *testing.T) {
-		istioClient := newTestingClient(nil, owner.GetNamespace())
-		reconciler := NewReconciler(istioClient)
-
-		err := reconciler.reconcileIPServiceEntry(ctx, nil, nil, component)
-		require.Error(t, err)
-	})
+	dynakube := createTestDynaKube()
 
 	t.Run("empty communication host => delete if previously created", func(t *testing.T) {
 		serviceEntry := &istiov1alpha3.ServiceEntry{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      BuildNameForIPServiceEntry(owner.GetName(), component),
-				Namespace: owner.GetNamespace(),
+				Name:      BuildNameForIPServiceEntry(dynakube.Name, component),
+				Namespace: dynakube.Namespace,
 			},
 		}
 		fakeClient := fakeistio.NewSimpleClientset(serviceEntry)
-		istioClient := newTestingClient(fakeClient, owner.GetNamespace())
+		istioClient := newTestingClient(fakeClient, dynakube.Namespace)
 		reconciler := NewReconciler(istioClient)
 
-		err := reconciler.reconcileIPServiceEntry(ctx, owner, nil, component)
+		err := reconciler.reconcileIPServiceEntry(ctx, nil, component)
 		require.NoError(t, err)
 		_, err = fakeClient.NetworkingV1alpha3().ServiceEntries(serviceEntry.Namespace).Get(ctx, serviceEntry.Name, metav1.GetOptions{})
 		require.True(t, k8serrors.IsNotFound(err))
 	})
 	t.Run("success", func(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
-		istioClient := newTestingClient(fakeClient, owner.GetNamespace())
+		istioClient := newTestingClient(fakeClient, dynakube.Namespace)
 		reconciler := NewReconciler(istioClient)
 		commHosts := []dtclient.CommunicationHost{
 			createTestIPCommunicationHost(),
 		}
 
-		err := reconciler.reconcileIPServiceEntry(ctx, owner, commHosts, component)
+		err := reconciler.reconcileIPServiceEntry(ctx, commHosts, component)
 		require.NoError(t, err)
-		expectedName := BuildNameForIPServiceEntry(owner.GetName(), component)
-		serviceEntry, err := fakeClient.NetworkingV1alpha3().ServiceEntries(owner.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
+		expectedName := BuildNameForIPServiceEntry(dynakube.Name, component)
+		serviceEntry, err := fakeClient.NetworkingV1alpha3().ServiceEntries(dynakube.Namespace).Get(ctx, expectedName, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.NotNil(t, serviceEntry)
 	})
@@ -92,13 +85,13 @@ func TestReconcileIPServiceEntry(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
 		fakeClient.PrependReactor("*", "*", boomReaction)
 
-		istioClient := newTestingClient(fakeClient, owner.GetNamespace())
+		istioClient := newTestingClient(fakeClient, dynakube.Namespace)
 		reconciler := NewReconciler(istioClient)
 		commHosts := []dtclient.CommunicationHost{
 			createTestIPCommunicationHost(),
 		}
 
-		err := reconciler.reconcileIPServiceEntry(ctx, owner, commHosts, component)
+		err := reconciler.reconcileIPServiceEntry(ctx, commHosts, component)
 		require.Error(t, err)
 	})
 }
@@ -106,14 +99,7 @@ func TestReconcileIPServiceEntry(t *testing.T) {
 func TestReconcileFQDNServiceEntry(t *testing.T) {
 	ctx := context.Background()
 	component := "best-component"
-	owner := createTestOwner()
-	t.Run("nil => error", func(t *testing.T) {
-		istioClient := newTestingClient(nil, owner.GetNamespace())
-		reconciler := NewReconciler(istioClient)
-
-		err := reconciler.reconcileFQDNServiceEntry(ctx, nil, nil, component)
-		require.Error(t, err)
-	})
+	owner := createTestDynaKube()
 
 	t.Run("empty communication host => delete if previously created", func(t *testing.T) {
 		serviceEntry := &istiov1alpha3.ServiceEntry{
@@ -132,7 +118,7 @@ func TestReconcileFQDNServiceEntry(t *testing.T) {
 		istioClient := newTestingClient(fakeClient, owner.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 
-		err := reconciler.reconcileFQDNServiceEntry(ctx, owner, nil, component)
+		err := reconciler.reconcileFQDNServiceEntry(ctx, nil, component)
 		require.NoError(t, err)
 		_, err = fakeClient.NetworkingV1alpha3().ServiceEntries(serviceEntry.Namespace).Get(ctx, serviceEntry.Name, metav1.GetOptions{})
 		require.True(t, k8serrors.IsNotFound(err))
@@ -147,7 +133,7 @@ func TestReconcileFQDNServiceEntry(t *testing.T) {
 			createTestFQDNCommunicationHost(),
 		}
 
-		err := reconciler.reconcileFQDNServiceEntry(ctx, owner, commHosts, component)
+		err := reconciler.reconcileFQDNServiceEntry(ctx, commHosts, component)
 		require.NoError(t, err)
 		expectedName := BuildNameForFQDNServiceEntry(owner.GetName(), component)
 		serviceEntry, err := fakeClient.NetworkingV1alpha3().ServiceEntries(owner.GetNamespace()).Get(ctx, expectedName, metav1.GetOptions{})
@@ -167,7 +153,7 @@ func TestReconcileFQDNServiceEntry(t *testing.T) {
 			createTestFQDNCommunicationHost(),
 		}
 
-		err := reconciler.reconcileFQDNServiceEntry(ctx, owner, commHosts, component)
+		err := reconciler.reconcileFQDNServiceEntry(ctx, commHosts, component)
 		require.Error(t, err)
 	})
 }

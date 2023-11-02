@@ -32,7 +32,7 @@ func (r *Reconciler) ReconcileAPIUrl(ctx context.Context, dynakube *dynatracev1b
 		return err
 	}
 
-	err = r.reconcileCommunicationHosts(ctx, dynakube, []dtclient.CommunicationHost{apiHost}, OperatorComponent)
+	err = r.reconcileCommunicationHosts(ctx, []dtclient.CommunicationHost{apiHost}, OperatorComponent)
 	if err != nil {
 		return errors.WithMessage(err, "error reconciling config for Dynatrace API URL")
 	}
@@ -48,21 +48,21 @@ func (r *Reconciler) ReconcileCommunicationHosts(ctx context.Context, dynakube *
 	}
 
 	oneAgentCommunicationHosts := connectioninfo.GetOneAgentCommunicationHosts(dynakube)
-	err := r.reconcileCommunicationHostsForComponent(ctx, dynakube, oneAgentCommunicationHosts, OneAgentComponent)
+	err := r.reconcileCommunicationHostsForComponent(ctx, oneAgentCommunicationHosts, OneAgentComponent)
 	if err != nil {
 		return err
 	}
 
 	activeGateEndpoints := connectioninfo.GetActiveGateEndpointsAsCommunicationHosts(dynakube)
-	err = r.reconcileCommunicationHostsForComponent(ctx, dynakube, activeGateEndpoints, ActiveGateComponent)
+	err = r.reconcileCommunicationHostsForComponent(ctx, activeGateEndpoints, ActiveGateComponent)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *Reconciler) reconcileCommunicationHostsForComponent(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, comHosts []dtclient.CommunicationHost, componentName string) error {
-	err := r.reconcileCommunicationHosts(ctx, dynakube, comHosts, componentName)
+func (r *Reconciler) reconcileCommunicationHostsForComponent(ctx context.Context, comHosts []dtclient.CommunicationHost, componentName string) error {
+	err := r.reconcileCommunicationHosts(ctx, comHosts, componentName)
 	if err != nil {
 		return errors.WithMessage(err, "error reconciling config for Dynatrace communication hosts")
 	}
@@ -70,15 +70,15 @@ func (r *Reconciler) reconcileCommunicationHostsForComponent(ctx context.Context
 	return nil
 }
 
-func (r *Reconciler) reconcileCommunicationHosts(ctx context.Context, owner metav1.Object, comHosts []dtclient.CommunicationHost, component string) error {
+func (r *Reconciler) reconcileCommunicationHosts(ctx context.Context, comHosts []dtclient.CommunicationHost, component string) error {
 	ipHosts, fqdnHosts := splitCommunicationHost(comHosts)
 
-	err := r.reconcileIPServiceEntry(ctx, owner, ipHosts, component)
+	err := r.reconcileIPServiceEntry(ctx, ipHosts, component)
 	if err != nil {
 		return err
 	}
 
-	err = r.reconcileFQDNServiceEntry(ctx, owner, fqdnHosts, component)
+	err = r.reconcileFQDNServiceEntry(ctx, fqdnHosts, component)
 	if err != nil {
 		return err
 	}
@@ -96,10 +96,8 @@ func splitCommunicationHost(comHosts []dtclient.CommunicationHost) (ipHosts, fqd
 	return
 }
 
-func (r *Reconciler) reconcileIPServiceEntry(ctx context.Context, owner metav1.Object, ipHosts []dtclient.CommunicationHost, component string) error {
-	if owner == nil {
-		return errors.New("unable to create service entry for IPs if owner is nil")
-	}
+func (r *Reconciler) reconcileIPServiceEntry(ctx context.Context, ipHosts []dtclient.CommunicationHost, component string) error {
+	owner := r.client.Owner
 	entryName := BuildNameForIPServiceEntry(owner.GetName(), component)
 	if len(ipHosts) != 0 {
 		meta := buildObjectMeta(
@@ -109,7 +107,7 @@ func (r *Reconciler) reconcileIPServiceEntry(ctx context.Context, owner metav1.O
 		)
 
 		serviceEntry := buildServiceEntryIPs(meta, ipHosts)
-		err := r.client.CreateOrUpdateServiceEntry(ctx, owner, serviceEntry)
+		err := r.client.CreateOrUpdateServiceEntry(ctx, serviceEntry)
 		if err != nil {
 			return err
 		}
@@ -123,10 +121,8 @@ func (r *Reconciler) reconcileIPServiceEntry(ctx context.Context, owner metav1.O
 	return nil
 }
 
-func (r *Reconciler) reconcileFQDNServiceEntry(ctx context.Context, owner metav1.Object, fqdnHosts []dtclient.CommunicationHost, component string) error {
-	if owner == nil {
-		return errors.New("unable to create service entry and virtual service for Hosts if owner is nil")
-	}
+func (r *Reconciler) reconcileFQDNServiceEntry(ctx context.Context, fqdnHosts []dtclient.CommunicationHost, component string) error {
+	owner := r.client.Owner
 	entryName := BuildNameForFQDNServiceEntry(owner.GetName(), component)
 	if len(fqdnHosts) != 0 {
 		meta := buildObjectMeta(
@@ -136,13 +132,13 @@ func (r *Reconciler) reconcileFQDNServiceEntry(ctx context.Context, owner metav1
 		)
 
 		serviceEntry := buildServiceEntryFQDNs(meta, fqdnHosts)
-		err := r.client.CreateOrUpdateServiceEntry(ctx, owner, serviceEntry)
+		err := r.client.CreateOrUpdateServiceEntry(ctx, serviceEntry)
 		if err != nil {
 			return err
 		}
 
 		virtualService := buildVirtualService(meta, fqdnHosts)
-		err = r.client.CreateOrUpdateVirtualService(ctx, owner, virtualService)
+		err = r.client.CreateOrUpdateVirtualService(ctx, virtualService)
 		if err != nil {
 			return err
 		}
