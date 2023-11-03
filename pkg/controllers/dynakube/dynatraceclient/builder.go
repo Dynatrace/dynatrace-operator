@@ -131,10 +131,10 @@ func (dynatraceClientBuilder builder) verifyTokenScopes(dynatraceClient dtclient
 	}
 
 	if err != nil {
-		dynaKubeStatus.DynatraceApi.LastTokenScopeRequest = metav1.Now()
 		return err
 	}
 
+	dynaKubeStatus.DynatraceApi.LastTokenScopeRequest = metav1.Now()
 	return nil
 }
 
