@@ -22,7 +22,8 @@ import (
 var testEnv env.Environment
 
 func TestMain(m *testing.M) {
-	testEnv = environment.GetStandardKubeClusterEnvironment()
+	cfg := environment.GetStandardKubeClusterEnvConfig()
+	testEnv = env.NewWithConfig(cfg)
 
 	nsWithIstio := *namespace.New(operator.DefaultNamespace, namespace.WithIstio())
 	nsWithoutIstio := *namespace.New(operator.DefaultNamespace)
@@ -32,8 +33,10 @@ func TestMain(m *testing.M) {
 		namespace.CreateForEnv(nsWithIstio),
 		operator.InstallViaMake(true),
 	)
-	testEnv.Finish(operator.UninstallViaMake(true))
-	testEnv.Finish(namespace.CreateForEnv(nsWithoutIstio))
+	if !cfg.FailFast() {
+		testEnv.Finish(operator.UninstallViaMake(true))
+		testEnv.Finish(namespace.CreateForEnv(nsWithoutIstio))
+	}
 	testEnv.Run(m)
 }
 

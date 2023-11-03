@@ -15,9 +15,12 @@ import (
 var testEnv env.Environment
 
 func TestMain(m *testing.M) {
-	testEnv = environment.GetStandardKubeClusterEnvironment()
+	cfg := environment.GetStandardKubeClusterEnvConfig()
+	testEnv = env.NewWithConfig(cfg)
 	testEnv.Setup(operator.InstallViaHelm("0.11.1", true, "dynatrace"))
-	testEnv.Finish(operator.UninstallViaMake(true))
+	if !cfg.FailFast() {
+		testEnv.Finish(operator.UninstallViaMake(true))
+	}
 	testEnv.Run(m)
 }
 
