@@ -13,15 +13,14 @@ import (
 
 // NamespaceMapper manages the mapping creation from the namespace's side
 type NamespaceMapper struct {
-	ctx        context.Context
 	client     client.Client
 	apiReader  client.Reader
 	operatorNs string
 	targetNs   *corev1.Namespace
 }
 
-func NewNamespaceMapper(ctx context.Context, clt client.Client, apiReader client.Reader, operatorNs string, targetNs *corev1.Namespace) NamespaceMapper { //nolint:revive // argument-limit doesn't apply to constructors
-	return NamespaceMapper{ctx, controller_runtime.NewClient(clt), apiReader, operatorNs, targetNs}
+func NewNamespaceMapper(clt client.Client, apiReader client.Reader, operatorNs string, targetNs *corev1.Namespace) NamespaceMapper { //nolint:revive // argument-limit doesn't apply to constructors
+	return NamespaceMapper{controller_runtime.NewClient(clt), apiReader, operatorNs, targetNs}
 }
 
 // MapFromNamespace adds the labels to the targetNs if there is a matching Dynakube
