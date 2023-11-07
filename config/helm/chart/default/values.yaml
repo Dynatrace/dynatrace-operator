@@ -78,6 +78,10 @@ webhook:
     cpu: 300m
     memory: 128Mi
   highAvailability: true
+  validatingWebhook:
+    timeoutSeconds: 10
+  mutatingWebhook:
+    timeoutSeconds: 2
 
 csidriver:
   enabled: false
