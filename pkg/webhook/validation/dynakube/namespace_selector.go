@@ -38,7 +38,7 @@ func conflictingNamespaceSelector(ctx context.Context, dv *dynakubeValidator, dy
 	return ""
 }
 
-func namespaceSelectorMatchLabelsViolateLabelSpec(ctx context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func namespaceSelectorMatchLabelsViolateLabelSpec(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	matchLabels := dynakube.NamespaceSelector().MatchLabels
 
 	errs := validation.ValidateLabels(matchLabels, field.NewPath("spec", "namespaceSelector", "matchLabels"))
