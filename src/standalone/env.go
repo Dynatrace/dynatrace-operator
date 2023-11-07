@@ -87,7 +87,6 @@ func (env *environment) getCommonFieldSetters() []func() error {
 		env.addK8PodName,
 		env.addK8PodUID,
 		env.addK8Namespace,
-		env.addK8ClusterID,
 	}
 }
 
@@ -106,6 +105,7 @@ func (env *environment) getDataIngestFieldSetters() []func() error {
 	return append(env.getCommonFieldSetters(),
 		env.addWorkloadKind,
 		env.addWorkloadName,
+		env.addK8ClusterID,
 	)
 }
 
