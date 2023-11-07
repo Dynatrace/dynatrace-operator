@@ -7,9 +7,10 @@ import (
 	modifiermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/util/builder"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
-func TestStatefulsetBuilder(t *testing.T) {
+func TestBuilder(t *testing.T) {
 	t.Run("Simple, no modifiers", func(t *testing.T) {
 		b := GenericBuilder[mocks.DataMock]{}
 		actual, err := b.Build()
@@ -24,7 +25,8 @@ func TestStatefulsetBuilder(t *testing.T) {
 		modifierMock.On("Modify", mock.Anything).Return(nil)
 		modifierMock.On("Enabled").Return(true)
 
-		actual, _ := b.AddModifier(modifierMock).Build()
+		actual, err := b.AddModifier(modifierMock).Build()
+		require.NoError(t, err)
 
 		modifierMock.AssertNumberOfCalls(t, "Modify", 1)
 
@@ -38,7 +40,8 @@ func TestStatefulsetBuilder(t *testing.T) {
 		modifierMock.On("Modify", mock.Anything).Return(nil).Maybe()
 		modifierMock.On("Enabled").Return(false)
 
-		actual, _ := b.AddModifier(modifierMock).Build()
+		actual, err := b.AddModifier(modifierMock).Build()
+		require.NoError(t, err)
 
 		modifierMock.AssertNumberOfCalls(t, "Modify", 0)
 
@@ -55,7 +58,8 @@ func TestStatefulsetBuilder(t *testing.T) {
 		modifierMock1.On("Modify", mock.Anything).Return(nil)
 		modifierMock1.On("Enabled").Return(true)
 
-		actual, _ := b.AddModifier(modifierMock0, modifierMock0, modifierMock1).Build()
+		actual, err := b.AddModifier(modifierMock0, modifierMock0, modifierMock1).Build()
+		require.NoError(t, err)
 
 		modifierMock0.AssertNumberOfCalls(t, "Modify", 2)
 		modifierMock1.AssertNumberOfCalls(t, "Modify", 1)
@@ -73,7 +77,8 @@ func TestStatefulsetBuilder(t *testing.T) {
 		modifierMock1.On("Modify", mock.Anything).Return(nil)
 		modifierMock1.On("Enabled").Return(true)
 
-		actual, _ := b.AddModifier(modifierMock0, modifierMock0).AddModifier(modifierMock1).Build()
+		actual, err := b.AddModifier(modifierMock0, modifierMock0).AddModifier(modifierMock1).Build()
+		require.NoError(t, err)
 
 		modifierMock0.AssertNumberOfCalls(t, "Modify", 2)
 		modifierMock1.AssertNumberOfCalls(t, "Modify", 1)
