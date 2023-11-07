@@ -99,7 +99,7 @@ func TestConflictingNamespaceSelector(t *testing.T) {
 		testsInvalidLabels := []string{
 			"name%",
 			"name/",
-			"AMuchTooLongLabelThatGoesOverSixtThreeCharactersAndSoIsInvalidAccordingToSpec",
+			"AMuchTooLongLabelThatGoesOverSixtyThreeCharactersAndSoIsInvalidAccordingToSpec",
 		}
 		for _, label := range testsInvalidLabels {
 			assertDeniedResponse(t,
