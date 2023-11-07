@@ -17,7 +17,9 @@ var testEnv env.Environment
 func TestMain(m *testing.M) {
 	cfg := environment.GetStandardKubeClusterEnvConfig()
 	testEnv = env.NewWithConfig(cfg)
-	testEnv.Setup(operator.InstallViaHelm("0.11.1", true, "dynatrace"))
+	// TODO: Make the version not hard-coded, but always use the previous version. Using git is not an option because pipeline does not pull the whole git repo.
+	testEnv.Setup(operator.InstallViaHelm("0.14.1", true, "dynatrace"))
+	// If we cleaned up during a fail-fast (aka.: /debug) it wouldn't be possible to investigate the error.
 	if !cfg.FailFast() {
 		testEnv.Finish(operator.UninstallViaMake(true))
 	}
