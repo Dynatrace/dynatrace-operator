@@ -2,7 +2,7 @@ quiet: False
 disable-version-string: True
 with-expecter: True
 mockname: "{{.InterfaceName}}"
-filename: "{{.MockName}}.go"
+filename: "{{.InterfaceName | snakecase}}.go"
 outpkg: mocks
 dir: "test/mocks/{{.InterfaceDirRelative}}"
 packages:
@@ -10,7 +10,6 @@ packages:
     config:
       recursive: true
     interfaces:
-      Builder:
       Modifier:
   github.com/Dynatrace/dynatrace-operator/pkg/oci/registry:
     interfaces:
