@@ -53,6 +53,10 @@ operator:
     memory: 128Mi
 
 webhook:
+  validatingWebhook:
+    timeoutSeconds: 10
+  mutatingWebhook:
+    timeoutSeconds: 2
   hostNetwork: false
   nodeSelector: {}
   tolerations: []
