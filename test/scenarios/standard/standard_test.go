@@ -3,6 +3,7 @@
 package standard
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/network_zones"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/features/activegate"
@@ -12,7 +13,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/codemodules"
 	cloudnativeDefault "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/default"
 	disabledAutoInjection "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/disabled_auto_injection"
-	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/network_zones"
 	publicRegistry "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/public_registry"
 	cloudToClassic "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/switch_modes"
 	"github.com/Dynatrace/dynatrace-operator/test/features/edgeconnect"
@@ -29,6 +29,7 @@ func TestMain(m *testing.M) {
 	cfg := environment.GetStandardKubeClusterEnvConfig()
 	testEnv = env.NewWithConfig(cfg)
 	testEnv.Setup(operator.InstallViaMake(true))
+	// If we cleaned up during a fail-fast (aka.: /debug) it wouldn't be possible to investigate the error.
 	if !cfg.FailFast() {
 		testEnv.Finish(operator.UninstallViaMake(true))
 	}
@@ -37,6 +38,7 @@ func TestMain(m *testing.M) {
 
 func TestStandard(t *testing.T) {
 	feats := []features.Feature{
+		network_zones.Feature(t), // TODO: Fix so order do not matter, because currently this has to be first, as if other tests deploy an ActiveGate then the network zone CAN still be present, which will make the test fail
 		activegate.Feature(t, nil),
 		cloudnativeDefault.Feature(t, false),
 		applicationmonitoring.DataIngest(t),
@@ -51,7 +53,6 @@ func TestStandard(t *testing.T) {
 		classicToCloud.Feature(t),
 		publicRegistry.Feature(t),
 		cloudToClassic.Feature(t),
-		network_zones.Feature(t),
 	}
 	testEnv.Test(t, feats...)
 }
