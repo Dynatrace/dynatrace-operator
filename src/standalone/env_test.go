@@ -110,8 +110,8 @@ func TestNewEnv(t *testing.T) {
 		assert.NotEmpty(t, env.K8PodUID)
 		assert.NotEmpty(t, env.K8BasePodName)
 		assert.NotEmpty(t, env.K8Namespace)
+		assert.NotEmpty(t, env.K8ClusterID)
 
-		assert.Empty(t, env.K8ClusterID)
 		assert.Empty(t, env.WorkloadKind)
 		assert.Empty(t, env.WorkloadName)
 
@@ -141,6 +141,7 @@ func prepOneAgentTestEnv(t *testing.T) func() {
 		config.K8sBasePodNameEnv,
 		config.K8sNamespaceEnv,
 		config.AgentInstallPathEnv,
+		config.K8sClusterIDEnv,
 	}
 	for i := 1; i <= 5; i++ {
 		envs = append(envs, fmt.Sprintf(config.AgentContainerNameEnvTemplate, i))
