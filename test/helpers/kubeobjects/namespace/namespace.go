@@ -90,10 +90,10 @@ func Create(namespace corev1.Namespace) features.Func {
 func CreateForEnv(namespace corev1.Namespace) env.Func {
 	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
 		err := envConfig.Client().Resources().Create(ctx, &namespace)
+		if k8serrors.IsAlreadyExists(err) {
+			err = envConfig.Client().Resources().Update(ctx, &namespace)
+		}
 		if err != nil {
-			if k8serrors.IsAlreadyExists(err) {
-				return ctx, envConfig.Client().Resources().Update(ctx, &namespace)
-			}
 			return ctx, err
 		}
 		return AddIstioNetworkAttachment(namespace)(ctx, envConfig)
