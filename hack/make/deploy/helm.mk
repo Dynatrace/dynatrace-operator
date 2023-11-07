@@ -2,7 +2,7 @@
 ## Deploy the operator in a cluster configured in ~/.kube/config where platform and version are autodetected
 deploy/helm: manifests/crd/helm
 	helm upgrade dynatrace-operator config/helm/chart/default \
-            --install \
+			--install \
 			--namespace dynatrace \
 			--create-namespace \
 			--atomic \
