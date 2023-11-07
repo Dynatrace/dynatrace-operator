@@ -9,13 +9,13 @@ require (
 	github.com/go-logr/logr v1.3.0
 	github.com/google/go-containerregistry v0.16.1
 	github.com/klauspost/compress v1.17.2
-	github.com/mattn/go-sqlite3 v1.14.17
+	github.com/mattn/go-sqlite3 v1.14.18
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.17.0
 	github.com/prometheus/client_model v0.5.0
 	github.com/spf13/afero v1.10.0
-	github.com/spf13/cobra v1.7.0
+	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.8.4
 	go.opentelemetry.io/contrib/instrumentation/host v0.45.0
 	go.opentelemetry.io/contrib/instrumentation/runtime v0.45.0
@@ -31,7 +31,7 @@ require (
 	golang.org/x/exp v0.0.0-20230817173708-d852ddb80c63
 	golang.org/x/net v0.17.0
 	golang.org/x/oauth2 v0.13.0
-	golang.org/x/sys v0.13.0
+	golang.org/x/sys v0.14.0
 	google.golang.org/grpc v1.59.0
 	istio.io/api v1.19.3
 	istio.io/client-go v1.19.3
