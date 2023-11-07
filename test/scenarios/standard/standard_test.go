@@ -3,7 +3,6 @@
 package standard
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/network_zones"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/test/features/activegate"
@@ -13,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/codemodules"
 	cloudnativeDefault "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/default"
 	disabledAutoInjection "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/disabled_auto_injection"
+	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/network_zones"
 	publicRegistry "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/public_registry"
 	cloudToClassic "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/switch_modes"
 	"github.com/Dynatrace/dynatrace-operator/test/features/edgeconnect"
