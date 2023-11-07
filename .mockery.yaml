@@ -10,7 +10,6 @@ packages:
     config:
       recursive: true
     interfaces:
-      Builder:
       Modifier:
   github.com/Dynatrace/dynatrace-operator/pkg/oci/registry:
     interfaces:
