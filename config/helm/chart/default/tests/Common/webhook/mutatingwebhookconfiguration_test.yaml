@@ -54,3 +54,16 @@ tests:
                     path: /label-ns
                 admissionReviewVersions: [ "v1beta1", "v1" ]
                 sideEffects: None
+  - it: should change timeoutSeconds
+    set:
+      platform: kubernetes
+      webhook:
+        mutatingWebhook:
+          timeoutSeconds: 13
+    asserts:
+      - equal:
+          path: webhooks[0].timeoutSeconds
+          value: 13
+      - equal:
+          path: webhooks[1].timeoutSeconds
+          value: 13
