@@ -103,9 +103,7 @@ jobs:
       - name: Run Snyk to check for vulnerabilities
         uses: snyk/actions/golang@b98d498629f1c368650224d6d212bf7dfa89e4bf # v0.4.0
         env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: --severity-threshold=high
+          SNYK_TOKEN: ${{ secrets.SNYK_API_TOKEN }}
 
   markdown-lint:
     name: Lint markdown files
