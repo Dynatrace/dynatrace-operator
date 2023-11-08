@@ -2,7 +2,7 @@ quiet: False
 disable-version-string: True
 with-expecter: True
 mockname: "{{.InterfaceName}}"
-filename: "{{.MockName}}.go"
+filename: "{{.InterfaceName | snakecase}}.go"
 outpkg: mocks
 dir: "test/mocks/{{.InterfaceDirRelative}}"
 packages:
