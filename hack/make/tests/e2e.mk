@@ -90,7 +90,6 @@ test/e2e/supportarchive: manifests/crd/helm
 test/e2e/edgeconnect: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --labels "name=edgeconnect-install" $(SKIPCLEANUP)
 
-
 ## Runs e2e tests on gke-autopilot
 test/e2e/gke-autopilot: manifests/kubernetes/gke-autopilot
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --labels "name=app-data-ingest,name=app-read-only-csi-volume,name=app-read-only-csi-volume,name=app-without-csi,name=activegate-default" $(SKIPCLEANUP)

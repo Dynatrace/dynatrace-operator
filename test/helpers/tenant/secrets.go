@@ -4,9 +4,6 @@ package tenant
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/json"
-	"fmt"
 	"path"
 	"testing"
 
@@ -46,8 +43,6 @@ type EdgeConnectSecret struct {
 	ApiServer         string `yaml:"apiServer"`
 	OauthClientId     string `yaml:"oAuthClientId"`
 	OauthClientSecret string `yaml:"oAuthClientSecret"`
-	DockerUsername    string `yaml:"dockerUsername"`
-	DockerPassword    string `yaml:"dockerPassword"`
 }
 
 func manyFromConfig(fs afero.Fs, path string) ([]Secret, error) {
@@ -133,28 +128,6 @@ func CreateTenantSecret(secretConfig Secret, name, namespace string) features.Fu
 	}
 }
 
-type dockerAuthentication struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-	Auth     string `json:"auth"`
-}
-
-type dockerConfig struct {
-	Auths map[string]dockerAuthentication `json:"auths"`
-}
-
-func newDockerConfigWithAuth(username string, password string, registry string, auth string) *dockerConfig {
-	return &dockerConfig{
-		Auths: map[string]dockerAuthentication{
-			registry: {
-				Username: username,
-				Password: password,
-				Auth:     auth,
-			},
-		},
-	}
-}
-
 func CreateClientSecret(secretConfig EdgeConnectSecret, name, namespace string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		defaultSecret := corev1.Secret{
@@ -169,38 +142,6 @@ func CreateClientSecret(secretConfig EdgeConnectSecret, name, namespace string) 
 		}
 
 		err := envConfig.Client().Resources().Create(ctx, &defaultSecret)
-
-		if k8serrors.IsAlreadyExists(err) {
-			require.NoError(t, envConfig.Client().Resources().Update(ctx, &defaultSecret))
-			return ctx
-		}
-
-		require.NoError(t, err)
-
-		return ctx
-	}
-}
-
-func CreateDockerPullSecret(secretConfig EdgeConnectSecret, name, namespace string) features.Func {
-	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		registry := "https://index.docker.io/v1/"
-		auth := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", secretConfig.DockerUsername, secretConfig.DockerPassword)))
-		dockerConfig := newDockerConfigWithAuth(secretConfig.DockerUsername, secretConfig.DockerPassword, registry, auth)
-		dockerConfJson, err := json.Marshal(dockerConfig)
-		require.NoError(t, err)
-
-		defaultSecret := corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      name,
-				Namespace: namespace,
-			},
-			Type: corev1.SecretTypeDockerConfigJson,
-			Data: map[string][]byte{
-				corev1.DockerConfigJsonKey: dockerConfJson,
-			},
-		}
-
-		err = envConfig.Client().Resources().Create(ctx, &defaultSecret)
 
 		if k8serrors.IsAlreadyExists(err) {
 			require.NoError(t, envConfig.Client().Resources().Update(ctx, &defaultSecret))

@@ -25,7 +25,6 @@ func Feature(t *testing.T) features.Feature {
 		edgeconnect.WithOAuthClientSecret(fmt.Sprintf("%s-client-secret", secretConfig.Name)),
 		edgeconnect.WithOAuthEndpoint("https://sso-dev.dynatracelabs.com/sso/oauth2/token"),
 		edgeconnect.WithOAuthResource(fmt.Sprintf("urn:dtenvironment:%s", secretConfig.TenantUid)),
-		edgeconnect.WithCustomPullSecret(fmt.Sprintf("%s-docker-pull-secret", secretConfig.Name)),
 	)
 
 	// Register operator install

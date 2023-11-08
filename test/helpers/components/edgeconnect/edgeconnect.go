@@ -25,7 +25,6 @@ import (
 func Install(builder *features.FeatureBuilder, level features.Level, secretConfig *tenant.EdgeConnectSecret, testEdgeConnect edgeconnectv1alpha1.EdgeConnect) {
 	if secretConfig != nil {
 		builder.WithStep("create edgeconnect client secret", level, tenant.CreateClientSecret(*secretConfig, fmt.Sprintf("%s-client-secret", testEdgeConnect.Name), testEdgeConnect.Namespace))
-		builder.WithStep("create edgeconnect docker pull secret", level, tenant.CreateDockerPullSecret(*secretConfig, fmt.Sprintf("%s-docker-pull-secret", testEdgeConnect.Name), testEdgeConnect.Namespace))
 	}
 	builder.WithStep(
 		fmt.Sprintf("'%s' edgeconnect created", testEdgeConnect.Name),
