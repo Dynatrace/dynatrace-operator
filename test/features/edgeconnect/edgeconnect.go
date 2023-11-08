@@ -14,6 +14,7 @@ import (
 
 func Feature(t *testing.T) features.Feature {
 	builder := features.New("install edgeconnect")
+	builder.WithLabel("name", "edgeconnect-install")
 
 	secretConfig := tenant.GetEdgeConnectTenantSecret(t)
 
