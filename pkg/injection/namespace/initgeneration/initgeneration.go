@@ -9,8 +9,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/startup"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	k8sobjectsecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
+	labels2 "github.com/Dynatrace/dynatrace-operator/pkg/util/labels"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -50,7 +51,7 @@ func (g *InitGenerator) GenerateForNamespace(ctx context.Context, dk dynatracev1
 		return errors.WithStack(err)
 	}
 
-	coreLabels := kubeobjects.NewCoreLabels(dk.Name, kubeobjects.WebhookComponentLabel)
+	coreLabels := labels2.NewCoreLabels(dk.Name, labels2.WebhookComponentLabel)
 	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
@@ -61,7 +62,7 @@ func (g *InitGenerator) GenerateForNamespace(ctx context.Context, dk dynatracev1
 		Data: data,
 		Type: corev1.SecretTypeOpaque,
 	}
-	secretQuery := kubeobjects.NewSecretQuery(ctx, g.client, g.apiReader, log)
+	secretQuery := k8sobjectsecret.NewSecretQuery(ctx, g.client, g.apiReader, log)
 
 	err = secretQuery.CreateOrUpdate(*secret)
 	return errors.WithStack(err)
@@ -84,8 +85,8 @@ func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1
 		return errors.WithStack(err)
 	}
 
-	coreLabels := kubeobjects.NewCoreLabels(dk.Name, kubeobjects.WebhookComponentLabel)
-	secretQuery := kubeobjects.NewSecretQuery(ctx, g.client, g.apiReader, log)
+	coreLabels := labels2.NewCoreLabels(dk.Name, labels2.WebhookComponentLabel)
+	secretQuery := k8sobjectsecret.NewSecretQuery(ctx, g.client, g.apiReader, log)
 	secret := corev1.Secret{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{

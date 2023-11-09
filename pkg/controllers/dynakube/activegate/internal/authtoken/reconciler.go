@@ -7,7 +7,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -94,10 +94,10 @@ func (r *Reconciler) getActiveGateAuthToken() (map[string][]byte, error) {
 
 func (r *Reconciler) createSecret(ctx context.Context, secretData map[string][]byte) error {
 	secretName := r.dynakube.ActiveGateAuthTokenSecret()
-	secret, err := kubeobjects.CreateSecret(r.scheme, r.dynakube,
-		kubeobjects.NewSecretNameModifier(secretName),
-		kubeobjects.NewSecretNamespaceModifier(r.dynakube.Namespace),
-		kubeobjects.NewSecretDataModifier(secretData))
+	secret, err := secret.CreateSecret(r.scheme, r.dynakube,
+		secret.NewSecretNameModifier(secretName),
+		secret.NewSecretNamespaceModifier(r.dynakube.Namespace),
+		secret.NewSecretDataModifier(secretData))
 	if err != nil {
 		return errors.WithStack(err)
 	}

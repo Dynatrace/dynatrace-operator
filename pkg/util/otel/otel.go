@@ -3,7 +3,7 @@ package otel
 import (
 	"context"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	k8sobjectsecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	errors2 "github.com/pkg/errors"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric/noop"
@@ -89,19 +89,19 @@ func getOtelConfig(ctx context.Context, apiReader client.Reader, namespace strin
 		Name:      otelSecretName,
 	}
 
-	query := kubeobjects.NewSecretQuery(ctx, nil, apiReader, log)
+	query := k8sobjectsecret.NewSecretQuery(ctx, nil, apiReader, log)
 	secret, err := query.Get(secretName)
 
 	if err != nil {
 		return "", "", err
 	}
 
-	endpoint, err := kubeobjects.ExtractToken(&secret, otelApiEndpointKey)
+	endpoint, err := k8sobjectsecret.ExtractToken(&secret, otelApiEndpointKey)
 	if err != nil {
 		return "", "", err
 	}
 
-	token, err := kubeobjects.ExtractToken(&secret, otelAccessTokenKey)
+	token, err := k8sobjectsecret.ExtractToken(&secret, otelAccessTokenKey)
 	if err != nil {
 		return "", "", err
 	}

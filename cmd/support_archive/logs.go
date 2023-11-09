@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/labels"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -40,13 +40,13 @@ func newLogCollector(context context.Context, log logr.Logger, supportArchive ar
 func (collector logCollector) Do() error {
 	logInfof(collector.log, "Starting log collection")
 
-	podList, err := collector.getPodList(kubeobjects.AppNameLabel)
+	podList, err := collector.getPodList(labels.AppNameLabel)
 	if err != nil {
 		return err
 	}
 
 	if collector.collectManagedLogs {
-		managedByOperatorPodList, err := collector.getPodList(kubeobjects.AppManagedByLabel)
+		managedByOperatorPodList, err := collector.getPodList(labels.AppManagedByLabel)
 		if err != nil {
 			return err
 		}

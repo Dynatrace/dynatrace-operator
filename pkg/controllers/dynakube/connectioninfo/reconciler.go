@@ -3,7 +3,7 @@ package connectioninfo
 import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	k8sobjectsecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
@@ -53,7 +53,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *Reconciler) needsUpdate(ctx context.Context, secretName string, isAllowedFunc dynatracev1beta1.RequestAllowedChecker) (bool, error) {
-	query := kubeobjects.NewSecretQuery(ctx, r.client, r.apiReader, log)
+	query := k8sobjectsecret.NewSecretQuery(ctx, r.client, r.apiReader, log)
 	_, err := query.Get(types.NamespacedName{Name: secretName, Namespace: r.dynakube.Namespace})
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
@@ -163,15 +163,15 @@ func (r *Reconciler) updateDynakubeActiveGateStatus(connectionInfo dtclient.Acti
 
 func (r *Reconciler) createTenantTokenSecret(ctx context.Context, secretName string, connectionInfo dtclient.ConnectionInfo) error {
 	secretData := extractSensitiveData(connectionInfo)
-	secret, err := kubeobjects.CreateSecret(r.scheme, r.dynakube,
-		kubeobjects.NewSecretNameModifier(secretName),
-		kubeobjects.NewSecretNamespaceModifier(r.dynakube.Namespace),
-		kubeobjects.NewSecretDataModifier(secretData))
+	secret, err := k8sobjectsecret.CreateSecret(r.scheme, r.dynakube,
+		k8sobjectsecret.NewSecretNameModifier(secretName),
+		k8sobjectsecret.NewSecretNamespaceModifier(r.dynakube.Namespace),
+		k8sobjectsecret.NewSecretDataModifier(secretData))
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	query := kubeobjects.NewSecretQuery(ctx, r.client, r.apiReader, log)
+	query := k8sobjectsecret.NewSecretQuery(ctx, r.client, r.apiReader, log)
 	err = query.CreateOrUpdate(*secret)
 	if err != nil {
 		log.Info("could not create or update secret for connection info", "name", secret.Name)

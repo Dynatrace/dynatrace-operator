@@ -9,14 +9,14 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	corev1 "k8s.io/api/core/v1"
 )
 
 func addPreloadEnv(container *corev1.Container, installPath string) {
 	preloadPath := filepath.Join(installPath, consts.LibAgentProcPath)
 
-	env := kubeobjects.FindEnvVar(container.Env, preloadEnv)
+	env := env.FindEnvVar(container.Env, preloadEnv)
 	if env != nil {
 		if strings.Contains(env.Value, installPath) {
 			return
@@ -50,7 +50,7 @@ func addNetworkZoneEnv(container *corev1.Container, networkZone string) {
 
 func addVersionDetectionEnvs(container *corev1.Container, labelMapping VersionLabelMapping) {
 	for envName, fieldPath := range labelMapping {
-		if kubeobjects.EnvVarIsIn(container.Env, envName) {
+		if env.EnvVarIsIn(container.Env, envName) {
 			continue
 		}
 		container.Env = append(container.Env,
@@ -95,7 +95,7 @@ func getContainerImageEnv(containerIndex int) string {
 }
 
 func addDeploymentMetadataEnv(container *corev1.Container, dynakube dynatracev1beta1.DynaKube, clusterID string) {
-	if kubeobjects.EnvVarIsIn(container.Env, dynatraceMetadataEnv) {
+	if env.EnvVarIsIn(container.Env, dynatraceMetadataEnv) {
 		return
 	}
 

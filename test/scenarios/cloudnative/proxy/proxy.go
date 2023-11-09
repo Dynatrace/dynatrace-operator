@@ -7,7 +7,8 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/istio"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/daemonset"
@@ -41,7 +42,7 @@ func withProxy(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features
 		Proxy(proxySpec).
 		Build()
 
-	sampleLabels := kubeobjects.MergeMap(testDynakube.NamespaceSelector().MatchLabels, istio.InjectionLabel)
+	sampleLabels := _map.MergeMap(testDynakube.NamespaceSelector().MatchLabels, istio.InjectionLabel)
 	sampleNamespace := namespace.NewBuilder("proxy-sample").WithLabels(sampleLabels).Build()
 	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
 	sampleApp.WithLabels(sampleLabels)
@@ -106,7 +107,7 @@ func checkEnvVarsInContainer(t *testing.T, podItem corev1.Pod, containerName str
 	for _, container := range podItem.Spec.Containers {
 		if container.Name == containerName {
 			require.NotNil(t, container.Env)
-			require.True(t, kubeobjects.EnvVarIsIn(container.Env, envVar))
+			require.True(t, env.EnvVarIsIn(container.Env, envVar))
 			for _, env := range container.Env {
 				if env.Name == envVar {
 					require.NotNil(t, env.Value)

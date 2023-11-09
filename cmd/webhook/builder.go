@@ -8,7 +8,7 @@ import (
 	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dynakube"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/otel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
@@ -93,7 +93,7 @@ func addFlags(cmd *cobra.Command) {
 }
 
 func startCertificateWatcher(webhookManager manager.Manager, namespace string, podName string) error {
-	webhookPod, err := kubeobjects.GetPod(context.TODO(), webhookManager.GetAPIReader(), podName, namespace)
+	webhookPod, err := pod.GetPod(context.TODO(), webhookManager.GetAPIReader(), podName, namespace)
 	if err != nil {
 		return err
 	}

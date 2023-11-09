@@ -11,7 +11,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent/daemonset"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -211,11 +212,11 @@ func TestReconcile_InstancesSet(t *testing.T) {
 	}
 
 	expectedLabels := map[string]string{
-		kubeobjects.AppNameLabel:      kubeobjects.OneAgentComponentLabel,
-		kubeobjects.AppComponentLabel: "classicfullstack",
-		kubeobjects.AppCreatedByLabel: name,
-		kubeobjects.AppVersionLabel:   oldComponentVersion,
-		kubeobjects.AppManagedByLabel: version.AppName,
+		labels.AppNameLabel:      labels.OneAgentComponentLabel,
+		labels.AppComponentLabel: "classicfullstack",
+		labels.AppCreatedByLabel: name,
+		labels.AppVersionLabel:   oldComponentVersion,
+		labels.AppManagedByLabel: version.AppName,
 	}
 
 	t.Run("reconileImp Instances set, if autoUpdate is true", func(t *testing.T) {
@@ -302,9 +303,9 @@ func TestMigrationForDaemonSetWithoutAnnotation(t *testing.T) {
 
 	ds2, err := r.buildDesiredDaemonSet(dynakube)
 	assert.NoError(t, err)
-	assert.NotEmpty(t, ds2.Annotations[kubeobjects.AnnotationHash])
+	assert.NotEmpty(t, ds2.Annotations[hasher.AnnotationHash])
 
-	assert.True(t, kubeobjects.IsHashAnnotationDifferent(ds1, ds2))
+	assert.True(t, hasher.IsHashAnnotationDifferent(ds1, ds2))
 }
 
 func TestHasSpecChanged(t *testing.T) {
@@ -464,10 +465,10 @@ func TestHasSpecChanged(t *testing.T) {
 			ds2, err := r.buildDesiredDaemonSet(&newInstance)
 			assert.NoError(t, err)
 
-			assert.NotEmpty(t, ds1.Annotations[kubeobjects.AnnotationHash])
-			assert.NotEmpty(t, ds2.Annotations[kubeobjects.AnnotationHash])
+			assert.NotEmpty(t, ds1.Annotations[hasher.AnnotationHash])
+			assert.NotEmpty(t, ds2.Annotations[hasher.AnnotationHash])
 
-			assert.Equal(t, test.expected, kubeobjects.IsHashAnnotationDifferent(ds1, ds2))
+			assert.Equal(t, test.expected, hasher.IsHashAnnotationDifferent(ds1, ds2))
 		})
 	}
 }

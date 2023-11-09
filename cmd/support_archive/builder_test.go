@@ -5,7 +5,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/labels"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,7 +27,7 @@ func TestGetAppName(t *testing.T) {
 				Name:      alternativeOperatorName,
 				Namespace: alternativeNamespace,
 				Labels: map[string]string{
-					kubeobjects.AppNameLabel: alternativeOperatorName,
+					labels.AppNameLabel: alternativeOperatorName,
 				},
 			},
 			Spec: corev1.PodSpec{
@@ -37,6 +38,6 @@ func TestGetAppName(t *testing.T) {
 			},
 		})
 
-	os.Setenv(kubeobjects.EnvPodName, alternativeOperatorName)
+	os.Setenv(env.EnvPodName, alternativeOperatorName)
 	assert.Equal(t, alternativeOperatorName, getAppNameLabel(context.TODO(), fakeClientSet.CoreV1().Pods(alternativeNamespace)))
 }

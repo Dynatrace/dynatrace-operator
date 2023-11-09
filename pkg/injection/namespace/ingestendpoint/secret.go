@@ -12,7 +12,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	k8sobjectsecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/labels"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -55,7 +56,7 @@ func (g *EndpointSecretGenerator) GenerateForNamespace(ctx context.Context, dkNa
 		return errors.WithStack(err)
 	}
 
-	coreLabels := kubeobjects.NewCoreLabels(dkName, kubeobjects.ActiveGateComponentLabel)
+	coreLabels := labels.NewCoreLabels(dkName, labels.ActiveGateComponentLabel)
 	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
@@ -66,7 +67,7 @@ func (g *EndpointSecretGenerator) GenerateForNamespace(ctx context.Context, dkNa
 		Data: data,
 		Type: corev1.SecretTypeOpaque,
 	}
-	secretQuery := kubeobjects.NewSecretQuery(ctx, g.client, g.apiReader, log)
+	secretQuery := k8sobjectsecret.NewSecretQuery(ctx, g.client, g.apiReader, log)
 
 	err = secretQuery.CreateOrUpdate(*secret)
 	return errors.WithStack(err)
@@ -82,14 +83,14 @@ func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *d
 		return errors.WithStack(err)
 	}
 
-	coreLabels := kubeobjects.NewCoreLabels(dk.Name, kubeobjects.ActiveGateComponentLabel)
+	coreLabels := labels.NewCoreLabels(dk.Name, labels.ActiveGateComponentLabel)
 	nsList, err := mapper.GetNamespacesForDynakube(ctx, g.apiReader, dk.Name)
 
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	secretQuery := kubeobjects.NewSecretQuery(ctx, g.client, g.apiReader, log)
+	secretQuery := k8sobjectsecret.NewSecretQuery(ctx, g.client, g.apiReader, log)
 	secret := corev1.Secret{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{

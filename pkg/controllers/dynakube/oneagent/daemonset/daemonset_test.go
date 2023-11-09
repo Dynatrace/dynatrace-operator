@@ -8,8 +8,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	containerv1 "github.com/google/go-containerregistry/pkg/v1"
@@ -72,16 +72,16 @@ func TestLabels(t *testing.T) {
 			},
 		}
 		expectedLabels := map[string]string{
-			kubeobjects.AppNameLabel:      kubeobjects.OneAgentComponentLabel,
-			kubeobjects.AppCreatedByLabel: instance.Name,
-			kubeobjects.AppComponentLabel: feature,
-			kubeobjects.AppVersionLabel:   testImageTag,
-			kubeobjects.AppManagedByLabel: version.AppName,
+			labels.AppNameLabel:      labels.OneAgentComponentLabel,
+			labels.AppCreatedByLabel: instance.Name,
+			labels.AppComponentLabel: feature,
+			labels.AppVersionLabel:   testImageTag,
+			labels.AppManagedByLabel: version.AppName,
 		}
 		expectedMatchLabels := map[string]string{
-			kubeobjects.AppNameLabel:      kubeobjects.OneAgentComponentLabel,
-			kubeobjects.AppCreatedByLabel: instance.Name,
-			kubeobjects.AppManagedByLabel: version.AppName,
+			labels.AppNameLabel:      labels.OneAgentComponentLabel,
+			labels.AppCreatedByLabel: instance.Name,
+			labels.AppManagedByLabel: version.AppName,
 		}
 		dsInfo := NewClassicFullStack(&instance, testClusterID)
 		ds, err := dsInfo.BuildDaemonSet()
@@ -104,16 +104,16 @@ func TestLabels(t *testing.T) {
 		}
 
 		expectedLabels := map[string]string{
-			kubeobjects.AppNameLabel:      kubeobjects.OneAgentComponentLabel,
-			kubeobjects.AppCreatedByLabel: instance.Name,
-			kubeobjects.AppVersionLabel:   "",
-			kubeobjects.AppComponentLabel: feature,
-			kubeobjects.AppManagedByLabel: version.AppName,
+			labels.AppNameLabel:      labels.OneAgentComponentLabel,
+			labels.AppCreatedByLabel: instance.Name,
+			labels.AppVersionLabel:   "",
+			labels.AppComponentLabel: feature,
+			labels.AppManagedByLabel: version.AppName,
 		}
 		expectedMatchLabels := map[string]string{
-			kubeobjects.AppNameLabel:      kubeobjects.OneAgentComponentLabel,
-			kubeobjects.AppCreatedByLabel: instance.Name,
-			kubeobjects.AppManagedByLabel: version.AppName,
+			labels.AppNameLabel:      labels.OneAgentComponentLabel,
+			labels.AppCreatedByLabel: instance.Name,
+			labels.AppManagedByLabel: version.AppName,
 		}
 
 		dsInfo := NewClassicFullStack(&instance, testClusterID)

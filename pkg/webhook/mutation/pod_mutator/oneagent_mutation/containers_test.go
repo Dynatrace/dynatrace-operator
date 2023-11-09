@@ -5,7 +5,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -25,7 +25,7 @@ func TestConfigureInitContainer(t *testing.T) {
 
 		require.Len(t, request.InstallContainer.Env, expectedBaseInitContainerEnvCount)
 		assert.Len(t, request.InstallContainer.VolumeMounts, 2)
-		envvar := kubeobjects.FindEnvVar(request.InstallContainer.Env, consts.AgentInstallModeEnv)
+		envvar := env.FindEnvVar(request.InstallContainer.Env, consts.AgentInstallModeEnv)
 		require.NotNil(t, envvar)
 		assert.Equal(t, string(consts.AgentInstallerMode), envvar.Value)
 	})
@@ -39,7 +39,7 @@ func TestConfigureInitContainer(t *testing.T) {
 
 		require.Len(t, request.InstallContainer.Env, expectedBaseInitContainerEnvCount)
 		assert.Len(t, request.InstallContainer.VolumeMounts, 2)
-		envvar := kubeobjects.FindEnvVar(request.InstallContainer.Env, consts.AgentInstallModeEnv)
+		envvar := env.FindEnvVar(request.InstallContainer.Env, consts.AgentInstallModeEnv)
 		require.NotNil(t, envvar)
 		assert.Equal(t, string(consts.AgentCsiMode), envvar.Value)
 	})
@@ -53,11 +53,11 @@ func TestConfigureInitContainer(t *testing.T) {
 
 		require.Len(t, request.InstallContainer.Env, expectedBaseInitContainerEnvCount)
 		assert.Len(t, request.InstallContainer.VolumeMounts, 3)
-		envvar := kubeobjects.FindEnvVar(request.InstallContainer.Env, consts.AgentInstallModeEnv)
+		envvar := env.FindEnvVar(request.InstallContainer.Env, consts.AgentInstallModeEnv)
 		require.NotNil(t, envvar)
 		assert.Equal(t, string(consts.AgentCsiMode), envvar.Value)
 
-		readOnlyEnvvar := kubeobjects.FindEnvVar(request.InstallContainer.Env, consts.AgentReadonlyCSI)
+		readOnlyEnvvar := env.FindEnvVar(request.InstallContainer.Env, consts.AgentReadonlyCSI)
 		require.NotNil(t, readOnlyEnvvar)
 		assert.Equal(t, "true", readOnlyEnvvar.Value)
 	})
@@ -168,11 +168,11 @@ func assertContainersNamesAndImages(t *testing.T, request *dtwebhook.Reinvocatio
 		containerImageEnvVarName := getContainerImageEnv(internalContainerIndex)
 		container := request.Pod.Spec.Containers[containerIdx]
 
-		nameEnvVar := kubeobjects.FindEnvVar(installContainer.Env, containerNameEnvVarName)
+		nameEnvVar := env.FindEnvVar(installContainer.Env, containerNameEnvVarName)
 		assert.NotNil(t, nameEnvVar)
 		assert.Equal(t, container.Name, nameEnvVar.Value)
 
-		imageEnvVar := kubeobjects.FindEnvVar(installContainer.Env, containerImageEnvVarName)
+		imageEnvVar := env.FindEnvVar(installContainer.Env, containerImageEnvVarName)
 		assert.NotNil(t, imageEnvVar)
 		assert.Equal(t, container.Image, imageEnvVar.Value)
 	}

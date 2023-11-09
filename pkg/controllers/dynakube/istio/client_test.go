@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
@@ -192,7 +192,7 @@ func TestCreateOrUpdateVirtualService(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, expectedVirtualService.Name, virtualService.Name)
 		assert.Equal(t, expectedVirtualService.Namespace, virtualService.Namespace)
-		assert.NotEmpty(t, virtualService.Annotations[kubeobjects.AnnotationHash])
+		assert.NotEmpty(t, virtualService.Annotations[hasher.AnnotationHash])
 		require.NotEmpty(t, virtualService.OwnerReferences)
 		assert.Equal(t, createTestDynaKube().Name, expectedVirtualService.OwnerReferences[0].Name)
 	})
@@ -217,7 +217,7 @@ func TestCreateOrUpdateVirtualService(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, newVirtualService.Name, updatedVirtualService.Name)
 		assert.Equal(t, newVirtualService.Namespace, updatedVirtualService.Namespace)
-		assert.NotEmpty(t, updatedVirtualService.Annotations[kubeobjects.AnnotationHash])
+		assert.NotEmpty(t, updatedVirtualService.Annotations[hasher.AnnotationHash])
 		assert.NotEmpty(t, updatedVirtualService.OwnerReferences)
 		assert.Equal(t, createTestDynaKube().Name, updatedVirtualService.OwnerReferences[0].Name)
 		assert.Equal(t, addedLabels, updatedVirtualService.Labels)
@@ -226,7 +226,7 @@ func TestCreateOrUpdateVirtualService(t *testing.T) {
 	t.Run("no-change => no update", func(t *testing.T) {
 		oldVirtualService := createTestEmptyVirtualService()
 		newVirtualService := oldVirtualService.DeepCopy()
-		err := kubeobjects.AddHashAnnotation(oldVirtualService)
+		err := hasher.AddHashAnnotation(oldVirtualService)
 		require.NoError(t, err)
 
 		fakeClient := fakeistio.NewSimpleClientset(oldVirtualService)
@@ -454,7 +454,7 @@ func TestCreateOrUpdateServiceEntry(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, expectedServiceEntry.Name, serviceEntry.Name)
 		assert.Equal(t, expectedServiceEntry.Namespace, serviceEntry.Namespace)
-		assert.NotEmpty(t, serviceEntry.Annotations[kubeobjects.AnnotationHash])
+		assert.NotEmpty(t, serviceEntry.Annotations[hasher.AnnotationHash])
 		require.NotEmpty(t, expectedServiceEntry.OwnerReferences)
 		assert.Equal(t, createTestDynaKube().GetName(), expectedServiceEntry.OwnerReferences[0].Name)
 	})
@@ -479,7 +479,7 @@ func TestCreateOrUpdateServiceEntry(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, newServiceEntry.Name, updatedServiceEntry.Name)
 		assert.Equal(t, newServiceEntry.Namespace, updatedServiceEntry.Namespace)
-		assert.NotEmpty(t, updatedServiceEntry.Annotations[kubeobjects.AnnotationHash])
+		assert.NotEmpty(t, updatedServiceEntry.Annotations[hasher.AnnotationHash])
 		assert.NotEmpty(t, updatedServiceEntry.OwnerReferences)
 		assert.Equal(t, createTestDynaKube().Name, updatedServiceEntry.OwnerReferences[0].Name)
 		assert.Equal(t, addedLabels, updatedServiceEntry.Labels)
@@ -488,7 +488,7 @@ func TestCreateOrUpdateServiceEntry(t *testing.T) {
 	t.Run("no-change => no update", func(t *testing.T) {
 		oldServiceEntry := createTestEmptyServiceEntry()
 		newServiceEntry := oldServiceEntry.DeepCopy()
-		err := kubeobjects.AddHashAnnotation(oldServiceEntry)
+		err := hasher.AddHashAnnotation(oldServiceEntry)
 		require.NoError(t, err)
 
 		fakeClient := fakeistio.NewSimpleClientset(oldServiceEntry)

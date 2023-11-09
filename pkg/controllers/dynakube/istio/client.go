@@ -3,7 +3,7 @@ package istio
 import (
 	"context"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/pkg/errors"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	istioclientset "istio.io/client-go/pkg/clientset/versioned"
@@ -73,8 +73,8 @@ func (cl *Client) CreateOrUpdateVirtualService(ctx context.Context, newVirtualSe
 		return errors.WithStack(err)
 	}
 
-	delete(newVirtualService.Annotations, kubeobjects.AnnotationHash)
-	err := kubeobjects.AddHashAnnotation(newVirtualService)
+	delete(newVirtualService.Annotations, hasher.AnnotationHash)
+	err := hasher.AddHashAnnotation(newVirtualService)
 	if err != nil {
 		return errors.WithMessage(err, "failed to generate and hash annotation for virtual service")
 	}
@@ -88,7 +88,7 @@ func (cl *Client) CreateOrUpdateVirtualService(ctx context.Context, newVirtualSe
 		return cl.createVirtualService(ctx, newVirtualService)
 	}
 
-	if !kubeobjects.IsHashAnnotationDifferent(oldVirtualService, newVirtualService) {
+	if !hasher.IsHashAnnotationDifferent(oldVirtualService, newVirtualService) {
 		return nil
 	}
 	return cl.updateVirtualService(ctx, oldVirtualService, newVirtualService)
@@ -151,8 +151,8 @@ func (cl *Client) CreateOrUpdateServiceEntry(ctx context.Context, newServiceEntr
 		return errors.WithStack(err)
 	}
 
-	delete(newServiceEntry.Annotations, kubeobjects.AnnotationHash)
-	err := kubeobjects.AddHashAnnotation(newServiceEntry)
+	delete(newServiceEntry.Annotations, hasher.AnnotationHash)
+	err := hasher.AddHashAnnotation(newServiceEntry)
 	if err != nil {
 		return errors.WithMessage(err, "failed to generate and hash annotation for service entry")
 	}
@@ -165,7 +165,7 @@ func (cl *Client) CreateOrUpdateServiceEntry(ctx context.Context, newServiceEntr
 		return cl.createServiceEntry(ctx, newServiceEntry)
 	}
 
-	if !kubeobjects.IsHashAnnotationDifferent(oldServiceEntry, newServiceEntry) {
+	if !hasher.IsHashAnnotationDifferent(oldServiceEntry, newServiceEntry) {
 		return nil
 	}
 	return cl.updateServiceEntry(ctx, oldServiceEntry, newServiceEntry)

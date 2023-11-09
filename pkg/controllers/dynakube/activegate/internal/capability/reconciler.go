@@ -7,7 +7,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/object"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -56,7 +56,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 func (r *Reconciler) createOrUpdateService(ctx context.Context) error {
 	desired := CreateService(r.dynakube, r.capability.ShortName())
 	installed := &corev1.Service{}
-	err := r.client.Get(ctx, kubeobjects.Key(desired), installed)
+	err := r.client.Get(ctx, object.Key(desired), installed)
 
 	if k8serrors.IsNotFound(err) {
 		log.Info("creating AG service", "module", r.capability.ShortName())

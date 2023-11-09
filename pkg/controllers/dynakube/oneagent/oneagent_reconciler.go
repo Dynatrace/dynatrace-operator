@@ -12,7 +12,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent/daemonset"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/configmap"
+	daemonset2 "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/daemonset"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -107,15 +110,15 @@ func (r *Reconciler) Reconcile(ctx context.Context, dynakube *dynatracev1beta1.D
 
 func (r *Reconciler) createOneAgentTenantConnectionInfoConfigMap(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
 	configMapData := extractPublicData(dynakube)
-	configMap, err := kubeobjects.CreateConfigMap(r.scheme, dynakube,
-		kubeobjects.NewConfigMapNameModifier(dynakube.OneAgentConnectionInfoConfigMapName()),
-		kubeobjects.NewConfigMapNamespaceModifier(dynakube.Namespace),
-		kubeobjects.NewConfigMapDataModifier(configMapData))
+	configMap, err := configmap.CreateConfigMap(r.scheme, dynakube,
+		configmap.NewConfigMapNameModifier(dynakube.OneAgentConnectionInfoConfigMapName()),
+		configmap.NewConfigMapNamespaceModifier(dynakube.Namespace),
+		configmap.NewConfigMapDataModifier(configMapData))
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	query := kubeobjects.NewConfigMapQuery(ctx, r.client, r.apiReader, log)
+	query := configmap.NewConfigMapQuery(ctx, r.client, r.apiReader, log)
 	err = query.CreateOrUpdate(*configMap)
 	if err != nil {
 		log.Info("could not create or update configMap for connection info", "name", configMap.Name)
@@ -150,7 +153,7 @@ func (r *Reconciler) reconcileRollout(ctx context.Context, dynakube *dynatracev1
 		return err
 	}
 
-	updated, err := kubeobjects.CreateOrUpdateDaemonSet(r.client, log, dsDesired)
+	updated, err := daemonset2.CreateOrUpdateDaemonSet(r.client, log, dsDesired)
 	if err != nil {
 		log.Info("failed to roll out new OneAgent DaemonSet")
 		return err
@@ -177,7 +180,7 @@ func (r *Reconciler) reconcileRollout(ctx context.Context, dynakube *dynatracev1
 
 func (r *Reconciler) getOneagentPods(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, feature string) ([]corev1.Pod, []client.ListOption, error) {
 	agentVersion := dynakube.OneAgentVersion()
-	appLabels := kubeobjects.NewAppLabels(kubeobjects.OneAgentComponentLabel, dynakube.Name,
+	appLabels := labels.NewAppLabels(labels.OneAgentComponentLabel, dynakube.Name,
 		feature, agentVersion)
 	podList := &corev1.PodList{}
 	listOps := []client.ListOption{
@@ -204,11 +207,11 @@ func (r *Reconciler) buildDesiredDaemonSet(dynakube *dynatracev1beta1.DynaKube) 
 		return nil, err
 	}
 
-	dsHash, err := kubeobjects.GenerateHash(ds)
+	dsHash, err := hasher.GenerateHash(ds)
 	if err != nil {
 		return nil, err
 	}
-	ds.Annotations[kubeobjects.AnnotationHash] = dsHash
+	ds.Annotations[hasher.AnnotationHash] = dsHash
 
 	return ds, nil
 }

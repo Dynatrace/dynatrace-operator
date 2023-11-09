@@ -9,8 +9,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder/modifiers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -95,20 +98,20 @@ func (statefulSetBuilder Builder) addLabels(sts *appsv1.StatefulSet) {
 	appLabels := statefulSetBuilder.buildAppLabels()
 	sts.ObjectMeta.Labels = appLabels.BuildLabels()
 	sts.Spec.Selector = &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()}
-	sts.Spec.Template.ObjectMeta.Labels = kubeobjects.MergeMap(statefulSetBuilder.capability.Properties().Labels, appLabels.BuildLabels())
+	sts.Spec.Template.ObjectMeta.Labels = _map.MergeMap(statefulSetBuilder.capability.Properties().Labels, appLabels.BuildLabels())
 }
 
-func (statefulSetBuilder Builder) buildAppLabels() *kubeobjects.AppLabels {
+func (statefulSetBuilder Builder) buildAppLabels() *labels.AppLabels {
 	version := statefulSetBuilder.dynakube.Status.Synthetic.Version
 	if version == "" {
 		version = statefulSetBuilder.dynakube.Status.ActiveGate.Version
 	}
-	return kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, statefulSetBuilder.dynakube.Name, statefulSetBuilder.capability.ShortName(), version)
+	return labels.NewAppLabels(labels.ActiveGateComponentLabel, statefulSetBuilder.dynakube.Name, statefulSetBuilder.capability.ShortName(), version)
 }
 
 func (statefulSetBuilder Builder) addUserAnnotations(sts *appsv1.StatefulSet) {
-	sts.ObjectMeta.Annotations = kubeobjects.MergeMap(sts.ObjectMeta.Annotations, statefulSetBuilder.dynakube.Spec.ActiveGate.Annotations)
-	sts.Spec.Template.ObjectMeta.Annotations = kubeobjects.MergeMap(sts.Spec.Template.ObjectMeta.Annotations, statefulSetBuilder.dynakube.Spec.ActiveGate.Annotations)
+	sts.ObjectMeta.Annotations = _map.MergeMap(sts.ObjectMeta.Annotations, statefulSetBuilder.dynakube.Spec.ActiveGate.Annotations)
+	sts.Spec.Template.ObjectMeta.Annotations = _map.MergeMap(sts.Spec.Template.ObjectMeta.Annotations, statefulSetBuilder.dynakube.Spec.ActiveGate.Annotations)
 }
 
 func (statefulSetBuilder Builder) addTemplateSpec(sts *appsv1.StatefulSet) {
@@ -226,7 +229,7 @@ func nodeAffinity() *corev1.Affinity {
 			RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
 				NodeSelectorTerms: []corev1.NodeSelectorTerm{
 					{
-						MatchExpressions: kubeobjects.AffinityNodeRequirementForSupportedArches(),
+						MatchExpressions: node.AffinityNodeRequirementForSupportedArches(),
 					},
 				},
 			},
@@ -235,10 +238,10 @@ func nodeAffinity() *corev1.Affinity {
 }
 
 func setHash(sts *appsv1.StatefulSet) error {
-	hash, err := kubeobjects.GenerateHash(sts)
+	hash, err := hasher.GenerateHash(sts)
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	sts.ObjectMeta.Annotations[kubeobjects.AnnotationHash] = hash
+	sts.ObjectMeta.Annotations[hasher.AnnotationHash] = hash
 	return nil
 }

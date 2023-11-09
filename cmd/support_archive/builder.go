@@ -8,7 +8,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/cmd/config"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -80,7 +81,7 @@ func (builder CommandBuilder) Build() *cobra.Command {
 }
 
 func addFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&namespaceFlagValue, namespaceFlagName, kubeobjects.DefaultNamespace(), "Specify a different Namespace.")
+	cmd.PersistentFlags().StringVar(&namespaceFlagValue, namespaceFlagName, env.DefaultNamespace(), "Specify a different Namespace.")
 	cmd.PersistentFlags().BoolVar(&archiveToStdoutFlagValue, archiveToStdoutFlagName, false, "Write tarball to stdout.")
 	cmd.PersistentFlags().IntVar(&loadsimFileSizeFlagValue, loadsimFileSizeFlagName, 10, "Simulated log files, size in MiB (default 10)")
 	cmd.PersistentFlags().IntVar(&loadsimFilesFlagValue, loadsimFilesFlagName, 0, "Number of simulated log files (default 0)")
@@ -123,14 +124,14 @@ func getLogOutput(tarballToStdout bool, logBuffer *bytes.Buffer) io.Writer {
 }
 
 func getAppNameLabel(ctx context.Context, pods clientgocorev1.PodInterface) string {
-	podName := os.Getenv(kubeobjects.EnvPodName)
+	podName := os.Getenv(env.EnvPodName)
 	if podName != "" {
 		options := metav1.GetOptions{}
 		pod, err := pods.Get(ctx, podName, options)
 		if err != nil {
 			return defaultOperatorAppName
 		}
-		return pod.Labels[kubeobjects.AppNameLabel]
+		return pod.Labels[labels.AppNameLabel]
 	}
 	return defaultOperatorAppName
 }
@@ -151,7 +152,7 @@ func (builder CommandBuilder) runCollectors(log logr.Logger, supportArchive arch
 	pods := clientSet.CoreV1().Pods(namespaceFlagValue)
 	appName := getAppNameLabel(ctx, pods)
 
-	logInfof(log, "%s=%s", kubeobjects.AppNameLabel, appName)
+	logInfof(log, "%s=%s", labels.AppNameLabel, appName)
 
 	fileSize := loadsimFileSizeFlagValue * 1024 * 1024
 	collectors := []collector{
@@ -186,8 +187,8 @@ func getK8sClients(kubeConfig *rest.Config) (*kubernetes.Clientset, client.Reade
 }
 
 func printCopyCommand(log logr.Logger, tarballToStdout bool, tarFileName string) {
-	podNamespace := os.Getenv(kubeobjects.EnvPodNamespace)
-	podName := os.Getenv(kubeobjects.EnvPodName)
+	podNamespace := os.Getenv(env.EnvPodNamespace)
+	podName := os.Getenv(env.EnvPodName)
 
 	if tarballToStdout {
 		return

@@ -6,7 +6,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -100,10 +100,10 @@ func (r *Reconciler) updateCustomProperties(ctx context.Context, customPropertie
 }
 
 func (r *Reconciler) createCustomProperties() error {
-	customPropertiesSecret, err := kubeobjects.CreateSecret(r.scheme, r.instance,
-		kubeobjects.NewSecretNameModifier(r.buildCustomPropertiesName(r.instance.Name)),
-		kubeobjects.NewSecretNamespaceModifier(r.instance.Namespace),
-		kubeobjects.NewSecretDataModifier(map[string][]byte{
+	customPropertiesSecret, err := secret.CreateSecret(r.scheme, r.instance,
+		secret.NewSecretNameModifier(r.buildCustomPropertiesName(r.instance.Name)),
+		secret.NewSecretNamespaceModifier(r.instance.Namespace),
+		secret.NewSecretDataModifier(map[string][]byte{
 			DataKey: []byte(r.customPropertiesSource.Value),
 		}))
 	if err != nil {

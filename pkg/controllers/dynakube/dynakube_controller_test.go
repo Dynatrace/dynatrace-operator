@@ -17,9 +17,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry/mocks"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	containerv1 "github.com/google/go-containerregistry/pkg/v1"
@@ -730,16 +730,16 @@ func createFakeClientAndReconciler(mockClient dtclient.Client, instance *dynatra
 // generateStatefulSetForTesting prepares an ActiveGate StatefulSet after a Reconciliation of the Dynakube with a specific feature enabled
 func generateStatefulSetForTesting(name, namespace, feature, kubeSystemUUID string) *appsv1.StatefulSet {
 	expectedLabels := map[string]string{
-		kubeobjects.AppNameLabel:      kubeobjects.ActiveGateComponentLabel,
-		kubeobjects.AppVersionLabel:   testComponentVersion,
-		kubeobjects.AppComponentLabel: feature,
-		kubeobjects.AppCreatedByLabel: name,
-		kubeobjects.AppManagedByLabel: version.AppName,
+		labels.AppNameLabel:      labels.ActiveGateComponentLabel,
+		labels.AppVersionLabel:   testComponentVersion,
+		labels.AppComponentLabel: feature,
+		labels.AppCreatedByLabel: name,
+		labels.AppManagedByLabel: version.AppName,
 	}
 	expectedMatchLabels := map[string]string{
-		kubeobjects.AppNameLabel:      kubeobjects.ActiveGateComponentLabel,
-		kubeobjects.AppManagedByLabel: version.AppName,
-		kubeobjects.AppCreatedByLabel: name,
+		labels.AppNameLabel:      labels.ActiveGateComponentLabel,
+		labels.AppManagedByLabel: version.AppName,
+		labels.AppCreatedByLabel: name,
 	}
 	return &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
