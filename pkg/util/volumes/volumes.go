@@ -5,7 +5,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func GetVolumeByName(volumes []corev1.Volume, volumeName string) (*corev1.Volume, error) {
+func GetByName(volumes []corev1.Volume, volumeName string) (*corev1.Volume, error) {
 	for _, volume := range volumes {
 		if volume.Name == volumeName {
 			return &volume, nil

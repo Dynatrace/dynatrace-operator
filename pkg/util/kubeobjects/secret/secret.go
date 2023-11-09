@@ -24,7 +24,7 @@ type SecretQuery struct {
 
 func NewSecretQuery(ctx context.Context, kubeClient client.Client, kubeReader client.Reader, log logr.Logger) SecretQuery {
 	return SecretQuery{
-		query.NewKubeQuery(ctx, kubeClient, kubeReader, log),
+		query.New(ctx, kubeClient, kubeReader, log),
 	}
 }
 

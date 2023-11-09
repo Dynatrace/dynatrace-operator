@@ -73,7 +73,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, sc
 		istioClientBuilder:     istio.NewClient,
 		registryClientBuilder:  registry.NewClient,
 		config:                 config,
-		operatorNamespace:      os.Getenv(env.EnvPodNamespace),
+		operatorNamespace:      os.Getenv(env.PodNamespace),
 		clusterID:              clusterID,
 	}
 }

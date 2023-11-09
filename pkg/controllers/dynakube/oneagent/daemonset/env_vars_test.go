@@ -22,7 +22,7 @@ func TestEnvironmentVariables(t *testing.T) {
 		envVars := dsInfo.environmentVariables()
 
 		assert.Contains(t, envVars, corev1.EnvVar{Name: dtClusterId, ValueFrom: nil})
-		assert.True(t, kubeobjectsenv.EnvVarIsIn(envVars, dtNodeName))
+		assert.True(t, kubeobjectsenv.IsIn(envVars, dtNodeName))
 	})
 	t.Run("returns all when everything is turned on", func(t *testing.T) {
 		clusterID := "test"

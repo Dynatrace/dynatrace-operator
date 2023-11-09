@@ -62,8 +62,8 @@ type nodeRequirements struct {
 
 var nodeRequirementsBySize = map[string]nodeRequirements{
 	dynatracev1beta1.SyntheticNodeXs: {
-		requestResources:     resources.NewResources("1", "2Gi"),
-		limitResources:       resources.NewResources("2", "3Gi"),
+		requestResources:     resources.NewResourceList("1", "2Gi"),
+		limitResources:       resources.NewResourceList("2", "3Gi"),
 		jvmHeap:              resources.NewQuantity("700M"),
 		chromiumCacheVolume:  resources.NewQuantity("256Mi"),
 		tmpStorageVolume:     resources.NewQuantity("8Mi"),
@@ -71,8 +71,8 @@ var nodeRequirementsBySize = map[string]nodeRequirements{
 	},
 
 	dynatracev1beta1.SyntheticNodeS: {
-		requestResources:     resources.NewResources("2", "3Gi"),
-		limitResources:       resources.NewResources("4", "6Gi"),
+		requestResources:     resources.NewResourceList("2", "3Gi"),
+		limitResources:       resources.NewResourceList("4", "6Gi"),
 		jvmHeap:              resources.NewQuantity("1024M"),
 		chromiumCacheVolume:  resources.NewQuantity("512Mi"),
 		tmpStorageVolume:     resources.NewQuantity("10Mi"),
@@ -80,8 +80,8 @@ var nodeRequirementsBySize = map[string]nodeRequirements{
 	},
 
 	dynatracev1beta1.SyntheticNodeM: {
-		requestResources:     resources.NewResources("4", "5Gi"),
-		limitResources:       resources.NewResources("8", "10Gi"),
+		requestResources:     resources.NewResourceList("4", "5Gi"),
+		limitResources:       resources.NewResourceList("8", "10Gi"),
 		jvmHeap:              resources.NewQuantity("2048M"),
 		chromiumCacheVolume:  resources.NewQuantity("1Gi"),
 		tmpStorageVolume:     resources.NewQuantity("12Mi"),

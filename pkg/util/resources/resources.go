@@ -5,7 +5,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-func NewResources(cpu, memory string) corev1.ResourceList {
+func NewResourceList(cpu, memory string) corev1.ResourceList {
 	return corev1.ResourceList{
 		corev1.ResourceCPU:    *NewQuantity(cpu),
 		corev1.ResourceMemory: *NewQuantity(memory),

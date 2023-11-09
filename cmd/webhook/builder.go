@@ -93,7 +93,7 @@ func addFlags(cmd *cobra.Command) {
 }
 
 func startCertificateWatcher(webhookManager manager.Manager, namespace string, podName string) error {
-	webhookPod, err := pod.GetPod(context.TODO(), webhookManager.GetAPIReader(), podName, namespace)
+	webhookPod, err := pod.Get(context.TODO(), webhookManager.GetAPIReader(), podName, namespace)
 	if err != nil {
 		return err
 	}

@@ -38,6 +38,6 @@ func TestGetAppName(t *testing.T) {
 			},
 		})
 
-	os.Setenv(env.EnvPodName, alternativeOperatorName)
+	os.Setenv(env.PodName, alternativeOperatorName)
 	assert.Equal(t, alternativeOperatorName, getAppNameLabel(context.TODO(), fakeClientSet.CoreV1().Pods(alternativeNamespace)))
 }

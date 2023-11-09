@@ -23,7 +23,7 @@ type ConfigMapQuery struct {
 
 func NewConfigMapQuery(ctx context.Context, kubeClient client.Client, kubeReader client.Reader, log logr.Logger) ConfigMapQuery {
 	return ConfigMapQuery{
-		query.NewKubeQuery(ctx, kubeClient, kubeReader, log),
+		query.New(ctx, kubeClient, kubeReader, log),
 	}
 }
 

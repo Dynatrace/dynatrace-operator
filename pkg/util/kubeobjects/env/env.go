@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	EnvPodNamespace = "POD_NAMESPACE"
-	EnvPodName      = "POD_NAME"
+	PodNamespace = "POD_NAMESPACE"
+	PodName      = "POD_NAME"
 )
 
 func FindEnvVar(envVars []corev1.EnvVar, name string) *corev1.EnvVar {
@@ -21,7 +21,7 @@ func FindEnvVar(envVars []corev1.EnvVar, name string) *corev1.EnvVar {
 	return nil
 }
 
-func EnvVarIsIn(envVars []corev1.EnvVar, envVarToCheck string) bool {
+func IsIn(envVars []corev1.EnvVar, envVarToCheck string) bool {
 	for _, envVar := range envVars {
 		if envVar.Name == envVarToCheck {
 			return true
@@ -45,7 +45,7 @@ func NewEnvVarSourceForField(fieldPath string) *corev1.EnvVarSource {
 }
 
 func DefaultNamespace() string {
-	namespace := os.Getenv(EnvPodNamespace)
+	namespace := os.Getenv(PodNamespace)
 
 	if namespace == "" {
 		return "dynatrace"

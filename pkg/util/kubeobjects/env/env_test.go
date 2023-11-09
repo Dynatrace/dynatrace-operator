@@ -34,9 +34,9 @@ func TestEnvVarIsIn(t *testing.T) {
 		{Name: consts.TestKey2, Value: consts.TestAppName},
 	}
 
-	assert.True(t, EnvVarIsIn(envVars, consts.TestKey1))
-	assert.True(t, EnvVarIsIn(envVars, consts.TestKey2))
-	assert.False(t, EnvVarIsIn(envVars, "invalid-key"))
+	assert.True(t, IsIn(envVars, consts.TestKey1))
+	assert.True(t, IsIn(envVars, consts.TestKey2))
+	assert.False(t, IsIn(envVars, "invalid-key"))
 }
 
 func TestAddOrUpdate(t *testing.T) {

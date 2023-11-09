@@ -1,10 +1,7 @@
 package _map
 
 import (
-	"reflect"
 	"strconv"
-
-	corev1 "k8s.io/api/core/v1"
 )
 
 func GetField(values map[string]string, key string, defaultValue string) string {
@@ -28,15 +25,6 @@ func GetFieldBool(values map[string]string, key string, defaultValue bool) bool 
 		}
 	}
 	return defaultValue
-}
-
-func ConfigMapDataEqual(map1, map2 *corev1.ConfigMap) bool {
-	if map1 == nil || map2 == nil {
-		return map1 == nil && map2 == nil
-	}
-
-	return reflect.DeepEqual(map1.Data, map2.Data) &&
-		reflect.DeepEqual(map1.BinaryData, map2.BinaryData)
 }
 
 func MergeMap(maps ...map[string]string) map[string]string {

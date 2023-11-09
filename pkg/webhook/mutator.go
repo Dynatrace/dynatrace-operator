@@ -36,7 +36,7 @@ func (req BaseRequest) PodName() string {
 	if req.Pod == nil {
 		return ""
 	}
-	return pod.GetPodName(*req.Pod)
+	return pod.GetName(*req.Pod)
 }
 
 // MutationRequest contains all the information needed to mutate a pod

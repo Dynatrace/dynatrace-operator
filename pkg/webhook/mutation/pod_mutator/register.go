@@ -31,7 +31,7 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 	kubeClient := mgr.GetClient()
 	apiReader := mgr.GetAPIReader()
 
-	webhookPod, err := pod.GetPod(context.Background(), apiReader, webhookPodName, webhookNamespace)
+	webhookPod, err := pod.Get(context.Background(), apiReader, webhookPodName, webhookNamespace)
 	if err != nil {
 		return err
 	}

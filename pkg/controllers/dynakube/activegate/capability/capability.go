@@ -26,8 +26,8 @@ var (
 	}
 
 	SyntheticActiveGateResourceRequirements = corev1.ResourceRequirements{
-		Limits:   resources.NewResources("300m", "1Gi"),
-		Requests: resources.NewResources("150m", "250Mi"),
+		Limits:   resources.NewResourceList("300m", "1Gi"),
+		Requests: resources.NewResourceList("150m", "250Mi"),
 	}
 )
 

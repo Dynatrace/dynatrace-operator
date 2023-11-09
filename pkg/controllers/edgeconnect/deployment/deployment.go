@@ -156,8 +156,8 @@ func prepareVolume(instance *edgeconnectv1alpha1.EdgeConnect) corev1.Volume {
 }
 
 func prepareResourceRequirements(instance *edgeconnectv1alpha1.EdgeConnect) corev1.ResourceRequirements {
-	limits := resources.NewResources("100m", "128Mi")
-	requests := resources.NewResources("100m", "128Mi")
+	limits := resources.NewResourceList("100m", "128Mi")
+	requests := resources.NewResourceList("100m", "128Mi")
 
 	if instance.Spec.Resources.Limits != nil {
 		limits = instance.Spec.Resources.Limits

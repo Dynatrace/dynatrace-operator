@@ -107,7 +107,7 @@ func checkEnvVarsInContainer(t *testing.T, podItem corev1.Pod, containerName str
 	for _, container := range podItem.Spec.Containers {
 		if container.Name == containerName {
 			require.NotNil(t, container.Env)
-			require.True(t, env.EnvVarIsIn(container.Env, envVar))
+			require.True(t, env.IsIn(container.Env, envVar))
 			for _, env := range container.Env {
 				if env.Name == envVar {
 					require.NotNil(t, env.Value)

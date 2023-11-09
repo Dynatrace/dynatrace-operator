@@ -58,7 +58,7 @@ func NewController(mgr manager.Manager) *Controller {
 		scheme:                 mgr.GetScheme(),
 		dynatraceClientBuilder: dynatraceclient.NewBuilder(mgr.GetAPIReader()),
 		runLocal:               kubesystem.IsRunLocally(),
-		podNamespace:           os.Getenv(env.EnvPodNamespace),
+		podNamespace:           os.Getenv(env.PodNamespace),
 		timeProvider:           timeprovider.New(),
 	}
 }
@@ -184,7 +184,7 @@ func (controller *Controller) getCache(ctx context.Context) (*Cache, error) {
 		}
 		// If running locally, don't set the controller.
 		if !controller.runLocal {
-			deploy, err := deployment.GetDeployment(controller.client, os.Getenv(env.EnvPodName), controller.podNamespace)
+			deploy, err := deployment.GetDeployment(controller.client, os.Getenv(env.PodName), controller.podNamespace)
 			if err != nil {
 				return nil, err
 			}

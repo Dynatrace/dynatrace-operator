@@ -23,12 +23,12 @@ func TestGetPod(t *testing.T) {
 		},
 	)
 	t.Run("get existing pod", func(t *testing.T) {
-		pod, err := GetPod(context.TODO(), fakeClient, testPodName, testNamespace)
+		pod, err := Get(context.TODO(), fakeClient, testPodName, testNamespace)
 		require.NoError(t, err)
 		assert.NotNil(t, pod)
 	})
 	t.Run("return error if pod does not exist", func(t *testing.T) {
-		pod, err := GetPod(context.TODO(), fakeClient, "not a pod name", testNamespace)
+		pod, err := Get(context.TODO(), fakeClient, "not a pod name", testNamespace)
 		require.Error(t, err)
 		assert.Nil(t, pod)
 	})

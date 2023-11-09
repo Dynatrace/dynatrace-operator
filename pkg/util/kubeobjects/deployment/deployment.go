@@ -58,11 +58,11 @@ func CreateOrUpdateDeployment(c client.Client, logger logr.Logger, desiredDeploy
 		return false, err
 	}
 
-	if !hasher.IsHashAnnotationDifferent(currentDeployment, desiredDeployment) {
+	if !hasher.IsAnnotationDifferent(currentDeployment, desiredDeployment) {
 		return false, nil
 	}
 
-	if labels.LabelsNotEqual(currentDeployment.Spec.Selector.MatchLabels, desiredDeployment.Spec.Selector.MatchLabels) {
+	if labels.NotEqual(currentDeployment.Spec.Selector.MatchLabels, desiredDeployment.Spec.Selector.MatchLabels) {
 		logger.Info("immutable section changed on deployment, deleting and recreating", "name", desiredDeployment.Name)
 		return recreateDeployment(c, logger, currentDeployment, desiredDeployment)
 	}

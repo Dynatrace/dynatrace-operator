@@ -74,7 +74,7 @@ func (cl *Client) CreateOrUpdateVirtualService(ctx context.Context, newVirtualSe
 	}
 
 	delete(newVirtualService.Annotations, hasher.AnnotationHash)
-	err := hasher.AddHashAnnotation(newVirtualService)
+	err := hasher.AddAnnotation(newVirtualService)
 	if err != nil {
 		return errors.WithMessage(err, "failed to generate and hash annotation for virtual service")
 	}
@@ -88,7 +88,7 @@ func (cl *Client) CreateOrUpdateVirtualService(ctx context.Context, newVirtualSe
 		return cl.createVirtualService(ctx, newVirtualService)
 	}
 
-	if !hasher.IsHashAnnotationDifferent(oldVirtualService, newVirtualService) {
+	if !hasher.IsAnnotationDifferent(oldVirtualService, newVirtualService) {
 		return nil
 	}
 	return cl.updateVirtualService(ctx, oldVirtualService, newVirtualService)
@@ -152,7 +152,7 @@ func (cl *Client) CreateOrUpdateServiceEntry(ctx context.Context, newServiceEntr
 	}
 
 	delete(newServiceEntry.Annotations, hasher.AnnotationHash)
-	err := hasher.AddHashAnnotation(newServiceEntry)
+	err := hasher.AddAnnotation(newServiceEntry)
 	if err != nil {
 		return errors.WithMessage(err, "failed to generate and hash annotation for service entry")
 	}
@@ -165,7 +165,7 @@ func (cl *Client) CreateOrUpdateServiceEntry(ctx context.Context, newServiceEntr
 		return cl.createServiceEntry(ctx, newServiceEntry)
 	}
 
-	if !hasher.IsHashAnnotationDifferent(oldServiceEntry, newServiceEntry) {
+	if !hasher.IsAnnotationDifferent(oldServiceEntry, newServiceEntry) {
 		return nil
 	}
 	return cl.updateServiceEntry(ctx, oldServiceEntry, newServiceEntry)

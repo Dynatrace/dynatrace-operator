@@ -48,33 +48,33 @@ func newRootCommand() *cobra.Command {
 
 func createWebhookCommandBuilder() webhook.CommandBuilder {
 	return webhook.NewWebhookCommandBuilder().
-		SetNamespace(os.Getenv(env.EnvPodNamespace)).
-		SetPodName(os.Getenv(env.EnvPodName)).
+		SetNamespace(os.Getenv(env.PodNamespace)).
+		SetPodName(os.Getenv(env.PodName)).
 		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
 }
 
 func createOperatorCommandBuilder() operator.CommandBuilder {
 	return operator.NewOperatorCommandBuilder().
-		SetNamespace(os.Getenv(env.EnvPodNamespace)).
-		SetPodName(os.Getenv(env.EnvPodName)).
+		SetNamespace(os.Getenv(env.PodNamespace)).
+		SetPodName(os.Getenv(env.PodName)).
 		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
 }
 
 func createCsiServerCommandBuilder() csiServer.CommandBuilder {
 	return csiServer.NewCsiServerCommandBuilder().
-		SetNamespace(os.Getenv(env.EnvPodNamespace)).
+		SetNamespace(os.Getenv(env.PodNamespace)).
 		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
 }
 
 func createCsiInitCommandBuilder() csiInit.CommandBuilder {
 	return csiInit.NewCsiInitCommandBuilder().
-		SetNamespace(os.Getenv(env.EnvPodNamespace)).
+		SetNamespace(os.Getenv(env.PodNamespace)).
 		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
 }
 
 func createCsiProvisionerCommandBuilder() csiProvisioner.CommandBuilder {
 	return csiProvisioner.NewCsiProvisionerCommandBuilder().
-		SetNamespace(os.Getenv(env.EnvPodNamespace)).
+		SetNamespace(os.Getenv(env.PodNamespace)).
 		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
 }
 

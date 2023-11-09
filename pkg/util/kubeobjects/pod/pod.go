@@ -9,7 +9,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func GetPod(ctx context.Context, clt client.Reader, name, namespace string) (*corev1.Pod, error) {
+func Get(ctx context.Context, clt client.Reader, name, namespace string) (*corev1.Pod, error) {
 	pod := &corev1.Pod{}
 	err := clt.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, pod)
 	if err != nil {
@@ -18,9 +18,9 @@ func GetPod(ctx context.Context, clt client.Reader, name, namespace string) (*co
 	return pod, nil
 }
 
-// GetPodName returns the name of the pod.
+// GetName returns the name of the pod.
 // During the webhook injection the pod.Name is not always set yet, in which case it returns the pod.GeneraName
-func GetPodName(pod corev1.Pod) string {
+func GetName(pod corev1.Pod) string {
 	if pod.Name != "" {
 		return pod.Name
 	}

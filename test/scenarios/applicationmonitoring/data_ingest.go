@@ -154,10 +154,10 @@ func assessOnlyDataIngestIsInjected(t *testing.T) deployment.PodConsumer {
 		installOneAgentContainer := initContainers[0]
 		envVars := installOneAgentContainer.Env
 
-		assert.True(t, env.EnvVarIsIn(envVars, consts.EnrichmentWorkloadKindEnv))
-		assert.True(t, env.EnvVarIsIn(envVars, consts.EnrichmentWorkloadNameEnv))
-		assert.True(t, env.EnvVarIsIn(envVars, consts.EnrichmentInjectedEnv))
+		assert.True(t, env.IsIn(envVars, consts.EnrichmentWorkloadKindEnv))
+		assert.True(t, env.IsIn(envVars, consts.EnrichmentWorkloadNameEnv))
+		assert.True(t, env.IsIn(envVars, consts.EnrichmentInjectedEnv))
 
-		assert.False(t, env.EnvVarIsIn(envVars, consts.AgentInjectedEnv))
+		assert.False(t, env.IsIn(envVars, consts.AgentInjectedEnv))
 	}
 }

@@ -10,5 +10,5 @@ import (
 
 func TestKubeQuery(t *testing.T) {
 	fakeClient := fake.NewClient()
-	_ = NewKubeQuery(context.TODO(), fakeClient, fakeClient, consts.ConfigMapLog)
+	_ = New(context.TODO(), fakeClient, fakeClient, consts.ConfigMapLog)
 }

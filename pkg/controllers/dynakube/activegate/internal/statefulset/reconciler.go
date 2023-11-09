@@ -136,11 +136,11 @@ func (r *Reconciler) updateStatefulSetIfOutdated(ctx context.Context, desiredSts
 	if err != nil {
 		return false, err
 	}
-	if !hasher.IsHashAnnotationDifferent(currentSts, desiredSts) {
+	if !hasher.IsAnnotationDifferent(currentSts, desiredSts) {
 		return false, nil
 	}
 
-	if labels.LabelsNotEqual(currentSts.Spec.Selector.MatchLabels, desiredSts.Spec.Selector.MatchLabels) {
+	if labels.NotEqual(currentSts.Spec.Selector.MatchLabels, desiredSts.Spec.Selector.MatchLabels) {
 		return r.recreateStatefulSet(ctx, currentSts, desiredSts)
 	}
 

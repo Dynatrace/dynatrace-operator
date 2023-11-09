@@ -121,7 +121,7 @@ func TestAddReadOnlyCSIVolumes(t *testing.T) {
 		addVolumesForReadOnlyCSI(pod)
 		require.Len(t, pod.Spec.Volumes, 3)
 		for _, expectedVolumeName := range expectedVolumes {
-			mount, err := volumes.GetVolumeByName(pod.Spec.Volumes, expectedVolumeName)
+			mount, err := volumes.GetByName(pod.Spec.Volumes, expectedVolumeName)
 			require.NoError(t, err)
 			require.NotNil(t, mount)
 		}

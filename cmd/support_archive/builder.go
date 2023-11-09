@@ -124,7 +124,7 @@ func getLogOutput(tarballToStdout bool, logBuffer *bytes.Buffer) io.Writer {
 }
 
 func getAppNameLabel(ctx context.Context, pods clientgocorev1.PodInterface) string {
-	podName := os.Getenv(env.EnvPodName)
+	podName := os.Getenv(env.PodName)
 	if podName != "" {
 		options := metav1.GetOptions{}
 		pod, err := pods.Get(ctx, podName, options)
@@ -187,8 +187,8 @@ func getK8sClients(kubeConfig *rest.Config) (*kubernetes.Clientset, client.Reade
 }
 
 func printCopyCommand(log logr.Logger, tarballToStdout bool, tarFileName string) {
-	podNamespace := os.Getenv(env.EnvPodNamespace)
-	podName := os.Getenv(env.EnvPodName)
+	podNamespace := os.Getenv(env.PodNamespace)
+	podName := os.Getenv(env.PodName)
 
 	if tarballToStdout {
 		return

@@ -305,7 +305,7 @@ func TestMigrationForDaemonSetWithoutAnnotation(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, ds2.Annotations[hasher.AnnotationHash])
 
-	assert.True(t, hasher.IsHashAnnotationDifferent(ds1, ds2))
+	assert.True(t, hasher.IsAnnotationDifferent(ds1, ds2))
 }
 
 func TestHasSpecChanged(t *testing.T) {
@@ -468,7 +468,7 @@ func TestHasSpecChanged(t *testing.T) {
 			assert.NotEmpty(t, ds1.Annotations[hasher.AnnotationHash])
 			assert.NotEmpty(t, ds2.Annotations[hasher.AnnotationHash])
 
-			assert.Equal(t, test.expected, hasher.IsHashAnnotationDifferent(ds1, ds2))
+			assert.Equal(t, test.expected, hasher.IsAnnotationDifferent(ds1, ds2))
 		})
 	}
 }

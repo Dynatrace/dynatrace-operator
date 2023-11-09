@@ -110,7 +110,7 @@ func (labels *AppLabels) BuildMatchLabels() map[string]string {
 	}
 }
 
-func LabelsNotEqual(currentLabels, desiredLabels map[string]string) bool {
+func NotEqual(currentLabels, desiredLabels map[string]string) bool {
 	return !reflect.DeepEqual(
 		currentLabels,
 		desiredLabels,

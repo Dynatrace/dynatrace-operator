@@ -47,8 +47,8 @@ func initContainerResources(dynakube dynatracev1beta1.DynaKube) corev1.ResourceR
 
 func defaultInitContainerResources() corev1.ResourceRequirements {
 	return corev1.ResourceRequirements{
-		Requests: resources.NewResources("30m", "30Mi"),
-		Limits:   resources.NewResources("100m", "60Mi"),
+		Requests: resources.NewResourceList("30m", "30Mi"),
+		Limits:   resources.NewResourceList("100m", "60Mi"),
 	}
 }
 
@@ -120,7 +120,7 @@ func isNonRoot(ctx *corev1.SecurityContext) bool {
 }
 
 func getBasePodName(pod *corev1.Pod) string {
-	basePodName := k8sobjectpod.GetPodName(*pod)
+	basePodName := k8sobjectpod.GetName(*pod)
 
 	// Only include up to the last dash character, exclusive.
 	if lastDashIndex := strings.LastIndex(basePodName, "-"); lastDashIndex != -1 {

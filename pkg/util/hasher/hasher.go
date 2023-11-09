@@ -40,7 +40,7 @@ func IsDifferent(a, b any) (bool, error) {
 	return hashA != hashB, nil
 }
 
-func IsHashAnnotationDifferent(a, b metav1.Object) bool {
+func IsAnnotationDifferent(a, b metav1.Object) bool {
 	return getHash(a) != getHash(b)
 }
 
@@ -51,7 +51,7 @@ func getHash(a metav1.Object) string {
 	return ""
 }
 
-func AddHashAnnotation(object metav1.Object) error {
+func AddAnnotation(object metav1.Object) error {
 	if object == nil || reflect.ValueOf(object).IsNil() {
 		return errors.New("nil objects can't have a hash annotation")
 	}

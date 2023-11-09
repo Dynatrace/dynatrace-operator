@@ -226,7 +226,7 @@ func TestCreateOrUpdateVirtualService(t *testing.T) {
 	t.Run("no-change => no update", func(t *testing.T) {
 		oldVirtualService := createTestEmptyVirtualService()
 		newVirtualService := oldVirtualService.DeepCopy()
-		err := hasher.AddHashAnnotation(oldVirtualService)
+		err := hasher.AddAnnotation(oldVirtualService)
 		require.NoError(t, err)
 
 		fakeClient := fakeistio.NewSimpleClientset(oldVirtualService)
@@ -488,7 +488,7 @@ func TestCreateOrUpdateServiceEntry(t *testing.T) {
 	t.Run("no-change => no update", func(t *testing.T) {
 		oldServiceEntry := createTestEmptyServiceEntry()
 		newServiceEntry := oldServiceEntry.DeepCopy()
-		err := hasher.AddHashAnnotation(oldServiceEntry)
+		err := hasher.AddAnnotation(oldServiceEntry)
 		require.NoError(t, err)
 
 		fakeClient := fakeistio.NewSimpleClientset(oldServiceEntry)

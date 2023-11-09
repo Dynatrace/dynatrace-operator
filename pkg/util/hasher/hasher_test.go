@@ -47,18 +47,18 @@ func TestIsHashAnnotationDifferent(t *testing.T) {
 		AnnotationHash: "hash2",
 	}
 	t.Run("different", func(t *testing.T) {
-		isDifferent := IsHashAnnotationDifferent(&testDeployment.ObjectMeta, &testDaemonSet.ObjectMeta)
+		isDifferent := IsAnnotationDifferent(&testDeployment.ObjectMeta, &testDaemonSet.ObjectMeta)
 		assert.True(t, isDifferent)
 	})
 	t.Run("same", func(t *testing.T) {
-		isDifferent := IsHashAnnotationDifferent(&testDeployment.ObjectMeta, &testDeployment.ObjectMeta)
+		isDifferent := IsAnnotationDifferent(&testDeployment.ObjectMeta, &testDeployment.ObjectMeta)
 		assert.False(t, isDifferent)
 	})
 }
 
 func TestAddHashAnnotation(t *testing.T) {
 	t.Run("nil => error", func(t *testing.T) {
-		err := AddHashAnnotation(nil)
+		err := AddAnnotation(nil)
 		require.Error(t, err)
 	})
 	t.Run("append to annotations", func(t *testing.T) {
@@ -66,14 +66,14 @@ func TestAddHashAnnotation(t *testing.T) {
 		testDaemonSet.Annotations = map[string]string{
 			"something": "else",
 		}
-		err := AddHashAnnotation(&testDaemonSet)
+		err := AddAnnotation(&testDaemonSet)
 		require.NoError(t, err)
 		assert.Len(t, testDaemonSet.Annotations, 2)
 		assert.NotEmpty(t, testDaemonSet.Annotations[AnnotationHash])
 	})
 	t.Run("create annotation map, if not there", func(t *testing.T) {
 		testDaemonSet := appsv1.DaemonSet{}
-		err := AddHashAnnotation(&testDaemonSet)
+		err := AddAnnotation(&testDaemonSet)
 		require.NoError(t, err)
 		assert.Len(t, testDaemonSet.Annotations, 1)
 		assert.NotEmpty(t, testDaemonSet.Annotations[AnnotationHash])

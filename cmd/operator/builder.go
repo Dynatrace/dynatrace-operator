@@ -135,7 +135,7 @@ func (builder CommandBuilder) buildRun() func(cmd *cobra.Command, args []string)
 }
 
 func (builder CommandBuilder) runInPod(kubeCfg *rest.Config) error {
-	operatorPod, err := pod.GetPod(context.TODO(), builder.client, builder.podName, builder.namespace)
+	operatorPod, err := pod.Get(context.TODO(), builder.client, builder.podName, builder.namespace)
 	if err != nil {
 		return err
 	}

@@ -22,11 +22,11 @@ func CreateOrUpdateDaemonSet(kubernetesClient client.Client, logger logr.Logger,
 		return false, err
 	}
 
-	if !hasher.IsHashAnnotationDifferent(currentDaemonSet, desiredDaemonSet) {
+	if !hasher.IsAnnotationDifferent(currentDaemonSet, desiredDaemonSet) {
 		return false, nil
 	}
 
-	if labels.LabelsNotEqual(currentDaemonSet.Spec.Selector.MatchLabels, desiredDaemonSet.Spec.Selector.MatchLabels) {
+	if labels.NotEqual(currentDaemonSet.Spec.Selector.MatchLabels, desiredDaemonSet.Spec.Selector.MatchLabels) {
 		return recreateDaemonSet(kubernetesClient, logger, currentDaemonSet, desiredDaemonSet)
 	}
 

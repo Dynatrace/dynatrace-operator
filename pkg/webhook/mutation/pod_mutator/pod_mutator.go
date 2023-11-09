@@ -26,7 +26,7 @@ const (
 
 // AddPodMutationWebhookToManager adds the Webhook server to the Manager
 func AddPodMutationWebhookToManager(mgr manager.Manager, ns string) error {
-	podName := os.Getenv(env.EnvPodName)
+	podName := os.Getenv(env.PodName)
 	if podName == "" {
 		log.Info("no Pod name set for webhook container")
 	}
@@ -201,7 +201,7 @@ func createResponseForPod(ctx context.Context, pod *corev1.Pod, req admission.Re
 
 func silentErrorResponse(pod *corev1.Pod, err error) admission.Response {
 	rsp := admission.Patched("")
-	podName := k8sobjectpod.GetPodName(*pod)
+	podName := k8sobjectpod.GetName(*pod)
 	log.Error(err, "failed to inject into pod", "podName", podName)
 	rsp.Result.Message = fmt.Sprintf("Failed to inject into pod: %s because %s", podName, err.Error())
 	return rsp

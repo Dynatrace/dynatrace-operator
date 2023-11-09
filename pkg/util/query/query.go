@@ -14,7 +14,7 @@ type KubeQuery struct {
 	Log        logr.Logger
 }
 
-func NewKubeQuery(ctx context.Context, kubeClient client.Client, kubeReader client.Reader, log logr.Logger) KubeQuery {
+func New(ctx context.Context, kubeClient client.Client, kubeReader client.Reader, log logr.Logger) KubeQuery {
 	return KubeQuery{
 		KubeClient: kubeClient,
 		KubeReader: kubeReader,
