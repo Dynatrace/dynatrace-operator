@@ -8,7 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	k8sobjectpod "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/map"
+	_map "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtotel "github.com/Dynatrace/dynatrace-operator/pkg/util/otel"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"go.opentelemetry.io/otel/metric"

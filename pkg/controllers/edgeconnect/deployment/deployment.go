@@ -6,7 +6,7 @@ import (
 	utilconsts "github.com/Dynatrace/dynatrace-operator/pkg/util/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/labels"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/map"
+	_map "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/resources"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
