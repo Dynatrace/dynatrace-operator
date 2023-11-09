@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	utilcerts "github.com/Dynatrace/dynatrace-operator/pkg/util/certificates"
 	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/certificates"
-	certificates2 "github.com/Dynatrace/dynatrace-operator/pkg/util/certificates"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	corev1 "k8s.io/api/core/v1"
@@ -78,7 +78,7 @@ func (watcher *CertificateWatcher) updateCertificatesFromSecret() (bool, error) 
 			return false, err
 		}
 	}
-	isValid, err := certificates2.ValidateCertificateExpiration(secret.Data[certificates.ServerCert], certificateRenewalInterval, time.Now(), log)
+	isValid, err := utilcerts.ValidateCertificateExpiration(secret.Data[certificates.ServerCert], certificateRenewalInterval, time.Now(), log)
 	if err != nil {
 		return false, err
 	} else if !isValid {
