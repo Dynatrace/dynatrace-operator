@@ -6,7 +6,7 @@ import (
 	utilconsts "github.com/Dynatrace/dynatrace-operator/pkg/util/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/labels"
-	_map "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
+	utilmap "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/resources"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
@@ -20,7 +20,7 @@ const defaultEnvPriority = prioritymap.DefaultPriority
 
 func New(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
 	appLabels := buildAppLabels(instance)
-	labels := _map.MergeMap(
+	labels := utilmap.MergeMap(
 		instance.Labels,
 		appLabels.BuildLabels(),
 	)
@@ -115,7 +115,7 @@ func buildAnnotations(instance *edgeconnectv1alpha1.EdgeConnect) map[string]stri
 		edgeconnectconsts.AnnotationEdgeConnectContainerAppArmor: "runtime/default",
 		webhook.AnnotationDynatraceInject:                        "false",
 	}
-	annotations = _map.MergeMap(instance.Annotations, annotations)
+	annotations = utilmap.MergeMap(instance.Annotations, annotations)
 	return annotations
 }
 
