@@ -7,7 +7,7 @@ golang_ci_cmd_version=v1.55.2
 # renovate depName=github.com/daixiang0/gci
 gci_version=v0.11.2
 # renovate depName=golang.org/x/tools
-golang_tools_version=v0.14.0
+golang_tools_version=v0.15.0
 # renovate depName=github.com/vektra/mockery
 mockery_version=v2.36.1
 

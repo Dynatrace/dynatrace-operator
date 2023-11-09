@@ -40,7 +40,7 @@ webhooks:
         resources:
           - dynakubes
     name: webhook.dynatrace.com
-    timeoutSeconds: 10
+    timeoutSeconds: {{.Values.webhook.validatingWebhook.timeoutSeconds}}
     sideEffects: None
   - admissionReviewVersions:
       - v1
@@ -62,6 +62,6 @@ webhooks:
         resources:
           - edgeconnects
     name: edgeconnect.webhook.dynatrace.com
-    timeoutSeconds: 10
+    timeoutSeconds: {{.Values.webhook.validatingWebhook.timeoutSeconds}}
     sideEffects: None
 {{ end }}
