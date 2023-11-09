@@ -95,9 +95,9 @@ func (r *Reconciler) getActiveGateAuthToken() (map[string][]byte, error) {
 func (r *Reconciler) createSecret(ctx context.Context, secretData map[string][]byte) error {
 	secretName := r.dynakube.ActiveGateAuthTokenSecret()
 	secret, err := secret.CreateSecret(r.scheme, r.dynakube,
-		secret.NewSecretNameModifier(secretName),
-		secret.NewSecretNamespaceModifier(r.dynakube.Namespace),
-		secret.NewSecretDataModifier(secretData))
+		secret.NewNameModifier(secretName),
+		secret.NewNamespaceModifier(r.dynakube.Namespace),
+		secret.NewDataModifier(secretData))
 	if err != nil {
 		return errors.WithStack(err)
 	}

@@ -252,7 +252,7 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Cont
 }
 
 func (provisioner *OneAgentProvisioner) getAgentTenantToken(ctx context.Context, dk *dynatracev1beta1.DynaKube) (string, error) {
-	query := secret.NewSecretQuery(ctx, provisioner.client, provisioner.apiReader, log)
+	query := secret.NewQuery(ctx, provisioner.client, provisioner.apiReader, log)
 	secret, err := query.Get(types.NamespacedName{Namespace: dk.Namespace, Name: dk.OneagentTenantSecret()})
 	if err != nil {
 		return "", errors.Wrapf(err, "OneAgent tenant token secret %s/%s not found", dk.Namespace, dk.OneagentTenantSecret())

@@ -111,14 +111,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, dynakube *dynatracev1beta1.D
 func (r *Reconciler) createOneAgentTenantConnectionInfoConfigMap(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
 	configMapData := extractPublicData(dynakube)
 	configMap, err := configmap.CreateConfigMap(r.scheme, dynakube,
-		configmap.NewConfigMapNameModifier(dynakube.OneAgentConnectionInfoConfigMapName()),
-		configmap.NewConfigMapNamespaceModifier(dynakube.Namespace),
+		configmap.NewModifier(dynakube.OneAgentConnectionInfoConfigMapName()),
+		configmap.NewNamespaceModifier(dynakube.Namespace),
 		configmap.NewConfigMapDataModifier(configMapData))
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	query := configmap.NewConfigMapQuery(ctx, r.client, r.apiReader, log)
+	query := configmap.NewQuery(ctx, r.client, r.apiReader, log)
 	err = query.CreateOrUpdate(*configMap)
 	if err != nil {
 		log.Info("could not create or update configMap for connection info", "name", configMap.Name)

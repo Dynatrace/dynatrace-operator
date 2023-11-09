@@ -49,7 +49,7 @@ func testReadTokens(t *testing.T) {
 				Namespace: "dynatrace",
 			},
 		}
-		secret, err := secret.CreateSecret(scheme.Scheme, &dynakube, secret.NewSecretNameModifier("dynakube"), secret.NewSecretNamespaceModifier("dynatrace"), secret.NewSecretDataModifier(map[string][]byte{
+		secret, err := secret.CreateSecret(scheme.Scheme, &dynakube, secret.NewNameModifier("dynakube"), secret.NewNamespaceModifier("dynatrace"), secret.NewDataModifier(map[string][]byte{
 			dtclient.DynatraceApiToken:        []byte(testApiToken),
 			dtclient.DynatracePaasToken:       []byte(testPaasToken),
 			dtclient.DynatraceDataIngestToken: []byte(testDataIngestToken),

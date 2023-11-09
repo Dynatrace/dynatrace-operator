@@ -18,9 +18,8 @@ import (
 var secretLog = logger.Factory.GetLogger("test-secret")
 
 const (
-	deploymentName  = "deployment-as-owner-of-secret"
-	testSecretName  = "test-secret"
-	testSecretValue = "test-secret-value"
+	deploymentName = "deployment-as-owner-of-secret"
+	testSecretName = "test-secret"
 )
 
 func TestGetSecret(t *testing.T) {
@@ -32,7 +31,7 @@ func TestGetSecret(t *testing.T) {
 			},
 		},
 	)
-	secretQuery := NewSecretQuery(context.TODO(), fakeClient, fakeClient, secretLog)
+	secretQuery := NewQuery(context.TODO(), fakeClient, fakeClient, secretLog)
 
 	t.Run("get existing secret", func(t *testing.T) {
 		secret, err := secretQuery.Get(types.NamespacedName{Name: testSecretName, Namespace: consts.TestNamespace})
@@ -86,7 +85,7 @@ func TestMultipleSecrets(t *testing.T) {
 			},
 		},
 	)
-	secretQuery := NewSecretQuery(context.TODO(), fakeClient, fakeClient, secretLog)
+	secretQuery := NewQuery(context.TODO(), fakeClient, fakeClient, secretLog)
 
 	t.Run("get existing secret from all namespaces", func(t *testing.T) {
 		secrets, err := secretQuery.GetAllFromNamespaces(testSecretName)
@@ -144,7 +143,7 @@ func TestMultipleSecrets(t *testing.T) {
 func TestInitialMultipleSecrets(t *testing.T) {
 	testSecretName := "testSecret"
 	fakeClient := fake.NewClientWithIndex()
-	secretQuery := NewSecretQuery(context.TODO(), fakeClient, fakeClient, secretLog)
+	secretQuery := NewQuery(context.TODO(), fakeClient, fakeClient, secretLog)
 
 	t.Run("get existing secret from all namespaces", func(t *testing.T) {
 		secrets, err := secretQuery.GetAllFromNamespaces(testSecretName)
@@ -166,8 +165,8 @@ func TestSecretBuilder(t *testing.T) {
 
 	t.Run("create secret", func(t *testing.T) {
 		secret, err := CreateSecret(scheme.Scheme, consts.CreateDeployment(),
-			NewSecretNameModifier(testSecretName),
-			NewSecretNamespaceModifier(consts.TestNamespace))
+			NewNameModifier(testSecretName),
+			NewNamespaceModifier(consts.TestNamespace))
 		require.NoError(t, err)
 		require.Len(t, secret.OwnerReferences, 1)
 		assert.Equal(t, deploymentName, secret.OwnerReferences[0].Name)
@@ -178,10 +177,10 @@ func TestSecretBuilder(t *testing.T) {
 	})
 	t.Run("create secret with label", func(t *testing.T) {
 		secret, err := CreateSecret(scheme.Scheme, consts.CreateDeployment(),
-			NewSecretLabelsModifier(labels),
-			NewSecretNameModifier(testSecretName),
-			NewSecretNamespaceModifier(consts.TestNamespace),
-			NewSecretDataModifier(map[string][]byte{}))
+			NewLabelsModifier(labels),
+			NewNameModifier(testSecretName),
+			NewNamespaceModifier(consts.TestNamespace),
+			NewDataModifier(map[string][]byte{}))
 		require.NoError(t, err)
 		require.Len(t, secret.OwnerReferences, 1)
 		assert.Equal(t, deploymentName, secret.OwnerReferences[0].Name)
@@ -193,10 +192,10 @@ func TestSecretBuilder(t *testing.T) {
 	})
 	t.Run("create secret with type", func(t *testing.T) {
 		secret, err := CreateSecret(scheme.Scheme, consts.CreateDeployment(),
-			NewSecretTypeModifier(corev1.SecretTypeDockercfg),
-			NewSecretNameModifier(testSecretName),
-			NewSecretNamespaceModifier(consts.TestNamespace),
-			NewSecretDataModifier(dockerCfg))
+			NewTypeModifier(corev1.SecretTypeDockercfg),
+			NewNameModifier(testSecretName),
+			NewNamespaceModifier(consts.TestNamespace),
+			NewDataModifier(dockerCfg))
 		require.NoError(t, err)
 		require.Len(t, secret.OwnerReferences, 1)
 		assert.Equal(t, deploymentName, secret.OwnerReferences[0].Name)
@@ -208,11 +207,11 @@ func TestSecretBuilder(t *testing.T) {
 	})
 	t.Run("create secret with label and type", func(t *testing.T) {
 		secret, err := CreateSecret(scheme.Scheme, consts.CreateDeployment(),
-			NewSecretLabelsModifier(labels),
-			NewSecretTypeModifier(corev1.SecretTypeDockercfg),
-			NewSecretNameModifier(testSecretName),
-			NewSecretNamespaceModifier(consts.TestNamespace),
-			NewSecretDataModifier(dockerCfg))
+			NewLabelsModifier(labels),
+			NewTypeModifier(corev1.SecretTypeDockercfg),
+			NewNameModifier(testSecretName),
+			NewNamespaceModifier(consts.TestNamespace),
+			NewDataModifier(dockerCfg))
 		require.NoError(t, err)
 		require.Len(t, secret.OwnerReferences, 1)
 		assert.Equal(t, deploymentName, secret.OwnerReferences[0].Name)
@@ -224,12 +223,3 @@ func TestSecretBuilder(t *testing.T) {
 		assert.True(t, found)
 	})
 }
-
-/*func CreateDeployment() *appsv1.Deployment {
-	return &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: deploymentName,
-		},
-	}
-}
-*/

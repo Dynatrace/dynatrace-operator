@@ -53,7 +53,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *Reconciler) needsUpdate(ctx context.Context, secretName string, isAllowedFunc dynatracev1beta1.RequestAllowedChecker) (bool, error) {
-	query := k8sobjectsecret.NewSecretQuery(ctx, r.client, r.apiReader, log)
+	query := k8sobjectsecret.NewQuery(ctx, r.client, r.apiReader, log)
 	_, err := query.Get(types.NamespacedName{Name: secretName, Namespace: r.dynakube.Namespace})
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
@@ -164,14 +164,14 @@ func (r *Reconciler) updateDynakubeActiveGateStatus(connectionInfo dtclient.Acti
 func (r *Reconciler) createTenantTokenSecret(ctx context.Context, secretName string, connectionInfo dtclient.ConnectionInfo) error {
 	secretData := extractSensitiveData(connectionInfo)
 	secret, err := k8sobjectsecret.CreateSecret(r.scheme, r.dynakube,
-		k8sobjectsecret.NewSecretNameModifier(secretName),
-		k8sobjectsecret.NewSecretNamespaceModifier(r.dynakube.Namespace),
-		k8sobjectsecret.NewSecretDataModifier(secretData))
+		k8sobjectsecret.NewNameModifier(secretName),
+		k8sobjectsecret.NewNamespaceModifier(r.dynakube.Namespace),
+		k8sobjectsecret.NewDataModifier(secretData))
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	query := k8sobjectsecret.NewSecretQuery(ctx, r.client, r.apiReader, log)
+	query := k8sobjectsecret.NewQuery(ctx, r.client, r.apiReader, log)
 	err = query.CreateOrUpdate(*secret)
 	if err != nil {
 		log.Info("could not create or update secret for connection info", "name", secret.Name)

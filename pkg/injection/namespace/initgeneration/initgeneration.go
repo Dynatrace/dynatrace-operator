@@ -62,7 +62,7 @@ func (g *InitGenerator) GenerateForNamespace(ctx context.Context, dk dynatracev1
 		Data: data,
 		Type: corev1.SecretTypeOpaque,
 	}
-	secretQuery := k8sobjectsecret.NewSecretQuery(ctx, g.client, g.apiReader, log)
+	secretQuery := k8sobjectsecret.NewQuery(ctx, g.client, g.apiReader, log)
 
 	err = secretQuery.CreateOrUpdate(*secret)
 	return errors.WithStack(err)
@@ -86,7 +86,7 @@ func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1
 	}
 
 	coreLabels := labels2.NewCoreLabels(dk.Name, labels2.WebhookComponentLabel)
-	secretQuery := k8sobjectsecret.NewSecretQuery(ctx, g.client, g.apiReader, log)
+	secretQuery := k8sobjectsecret.NewQuery(ctx, g.client, g.apiReader, log)
 	secret := corev1.Secret{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{

@@ -81,10 +81,10 @@ func (r *Reconciler) updatePullSecretIfOutdated(ctx context.Context, pullSecret 
 
 func (r *Reconciler) createPullSecret(ctx context.Context, pullSecretData map[string][]byte) (*corev1.Secret, error) {
 	pullSecret, err := secret.CreateSecret(r.scheme, r.dynakube,
-		secret.NewSecretNameModifier(extendWithPullSecretSuffix(r.dynakube.Name)),
-		secret.NewSecretNamespaceModifier(r.dynakube.Namespace),
-		secret.NewSecretTypeModifier(corev1.SecretTypeDockerConfigJson),
-		secret.NewSecretDataModifier(pullSecretData))
+		secret.NewNameModifier(extendWithPullSecretSuffix(r.dynakube.Name)),
+		secret.NewNamespaceModifier(r.dynakube.Namespace),
+		secret.NewTypeModifier(corev1.SecretTypeDockerConfigJson),
+		secret.NewDataModifier(pullSecretData))
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

@@ -62,10 +62,10 @@ func (r *Reconciler) addOperatorVersionInfo(configMapData map[string]string) {
 }
 
 func (r *Reconciler) maintainMetadataConfigMap(ctx context.Context, configMapData map[string]string) error {
-	configMapQuery := configmap.NewConfigMapQuery(ctx, r.client, r.apiReader, log)
+	configMapQuery := configmap.NewQuery(ctx, r.client, r.apiReader, log)
 	configMap, err := configmap.CreateConfigMap(r.scheme, &r.dynakube,
-		configmap.NewConfigMapNameModifier(GetDeploymentMetadataConfigMapName(r.dynakube.Name)),
-		configmap.NewConfigMapNamespaceModifier(r.dynakube.Namespace),
+		configmap.NewModifier(GetDeploymentMetadataConfigMapName(r.dynakube.Name)),
+		configmap.NewNamespaceModifier(r.dynakube.Namespace),
 		configmap.NewConfigMapDataModifier(configMapData))
 	if err != nil {
 		return errors.WithStack(err)

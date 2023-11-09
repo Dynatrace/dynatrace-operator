@@ -89,7 +89,7 @@ func getOtelConfig(ctx context.Context, apiReader client.Reader, namespace strin
 		Name:      otelSecretName,
 	}
 
-	query := k8sobjectsecret.NewSecretQuery(ctx, nil, apiReader, log)
+	query := k8sobjectsecret.NewQuery(ctx, nil, apiReader, log)
 	secret, err := query.Get(secretName)
 
 	if err != nil {

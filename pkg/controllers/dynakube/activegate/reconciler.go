@@ -102,14 +102,14 @@ func (r *Reconciler) createActiveGateTenantConnectionInfoConfigMap(ctx context.C
 	configMapData := extractPublicData(r.dynakube)
 
 	configMap, err := configmap.CreateConfigMap(r.scheme, r.dynakube,
-		configmap.NewConfigMapNameModifier(r.dynakube.ActiveGateConnectionInfoConfigMapName()),
-		configmap.NewConfigMapNamespaceModifier(r.dynakube.Namespace),
+		configmap.NewModifier(r.dynakube.ActiveGateConnectionInfoConfigMapName()),
+		configmap.NewNamespaceModifier(r.dynakube.Namespace),
 		configmap.NewConfigMapDataModifier(configMapData))
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	query := configmap.NewConfigMapQuery(ctx, r.client, r.apiReader, log)
+	query := configmap.NewQuery(ctx, r.client, r.apiReader, log)
 	err = query.CreateOrUpdate(*configMap)
 	if err != nil {
 		log.Info("could not create or update configMap for connection info", "name", configMap.Name)

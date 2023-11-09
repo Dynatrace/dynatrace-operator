@@ -18,44 +18,44 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-type SecretQuery struct {
+type Query struct {
 	query.KubeQuery
 }
 
-func NewSecretQuery(ctx context.Context, kubeClient client.Client, kubeReader client.Reader, log logr.Logger) SecretQuery {
-	return SecretQuery{
+func NewQuery(ctx context.Context, kubeClient client.Client, kubeReader client.Reader, log logr.Logger) Query {
+	return Query{
 		query.New(ctx, kubeClient, kubeReader, log),
 	}
 }
 
-func (query SecretQuery) Get(objectKey client.ObjectKey) (corev1.Secret, error) {
+func (query Query) Get(objectKey client.ObjectKey) (corev1.Secret, error) {
 	var secret corev1.Secret
 	err := query.KubeReader.Get(query.Ctx, objectKey, &secret)
 
 	return secret, errors.WithStack(err)
 }
 
-func (query SecretQuery) Create(secret corev1.Secret) error {
+func (query Query) Create(secret corev1.Secret) error {
 	query.Log.Info("creating secret", "name", secret.Name, "namespace", secret.Namespace)
 
 	return query.create(secret)
 }
 
-func (query SecretQuery) Update(secret corev1.Secret) error {
+func (query Query) Update(secret corev1.Secret) error {
 	query.Log.Info("updating secret", "name", secret.Name, "namespace", secret.Namespace)
 
 	return query.update(secret)
 }
 
-func (query SecretQuery) create(secret corev1.Secret) error {
+func (query Query) create(secret corev1.Secret) error {
 	return errors.WithStack(query.KubeClient.Create(query.Ctx, &secret))
 }
 
-func (query SecretQuery) update(secret corev1.Secret) error {
+func (query Query) update(secret corev1.Secret) error {
 	return errors.WithStack(query.KubeClient.Update(query.Ctx, &secret))
 }
 
-func (query SecretQuery) GetAllFromNamespaces(secretName string) ([]corev1.Secret, error) {
+func (query Query) GetAllFromNamespaces(secretName string) ([]corev1.Secret, error) {
 	query.Log.Info("querying secret from all namespaces", "name", secretName)
 
 	secretList := &corev1.SecretList{}
@@ -72,7 +72,7 @@ func (query SecretQuery) GetAllFromNamespaces(secretName string) ([]corev1.Secre
 	return secretList.Items, err
 }
 
-func (query SecretQuery) CreateOrUpdate(secret corev1.Secret) error {
+func (query Query) CreateOrUpdate(secret corev1.Secret) error {
 	currentSecret, err := query.Get(types.NamespacedName{Name: secret.Name, Namespace: secret.Namespace})
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
@@ -96,7 +96,7 @@ func (query SecretQuery) CreateOrUpdate(secret corev1.Secret) error {
 	return nil
 }
 
-func (query SecretQuery) CreateOrUpdateForNamespacesList(newSecret corev1.Secret, namespaces []corev1.Namespace) error {
+func (query Query) CreateOrUpdateForNamespacesList(newSecret corev1.Secret, namespaces []corev1.Namespace) error {
 	secretList, err := query.GetAllFromNamespaces(newSecret.Name)
 	if err != nil {
 		return err
@@ -159,7 +159,7 @@ func ExtractToken(secret *corev1.Secret, key string) (string, error) {
 }
 
 func GetDataFromSecretName(apiReader client.Reader, namespacedName types.NamespacedName, dataKey string, log logr.Logger) (string, error) {
-	query := NewSecretQuery(context.TODO(), nil, apiReader, log)
+	query := NewQuery(context.TODO(), nil, apiReader, log)
 	secret, err := query.Get(namespacedName)
 	if err != nil {
 		return "", errors.WithStack(err)
@@ -204,97 +204,97 @@ func (mod secretOwnerModifier) Modify(secret *corev1.Secret) error {
 	return nil
 }
 
-func NewSecretNameModifier(name string) SecretNameModifier {
-	return SecretNameModifier{
+func NewNameModifier(name string) NameModifier {
+	return NameModifier{
 		name: name,
 	}
 }
 
-type SecretNameModifier struct {
+type NameModifier struct {
 	name string
 }
 
-func (mod SecretNameModifier) Enabled() bool {
+func (mod NameModifier) Enabled() bool {
 	return true
 }
 
-func (mod SecretNameModifier) Modify(secret *corev1.Secret) error {
+func (mod NameModifier) Modify(secret *corev1.Secret) error {
 	secret.Name = mod.name
 	return nil
 }
 
-func NewSecretNamespaceModifier(namespaceName string) SecretNamespaceModifier {
-	return SecretNamespaceModifier{
+func NewNamespaceModifier(namespaceName string) NamespaceModifier {
+	return NamespaceModifier{
 		namespaceName: namespaceName,
 	}
 }
 
-type SecretNamespaceModifier struct {
+type NamespaceModifier struct {
 	namespaceName string
 }
 
-func (mod SecretNamespaceModifier) Enabled() bool {
+func (mod NamespaceModifier) Enabled() bool {
 	return true
 }
 
-func (mod SecretNamespaceModifier) Modify(secret *corev1.Secret) error {
+func (mod NamespaceModifier) Modify(secret *corev1.Secret) error {
 	secret.Namespace = mod.namespaceName
 	return nil
 }
 
-func NewSecretDataModifier(data map[string][]byte) SecretDataModifier {
-	return SecretDataModifier{
+func NewDataModifier(data map[string][]byte) DataModifier {
+	return DataModifier{
 		data: data,
 	}
 }
 
-type SecretDataModifier struct {
+type DataModifier struct {
 	data map[string][]byte
 }
 
-func (mod SecretDataModifier) Enabled() bool {
+func (mod DataModifier) Enabled() bool {
 	return true
 }
 
-func (mod SecretDataModifier) Modify(secret *corev1.Secret) error {
+func (mod DataModifier) Modify(secret *corev1.Secret) error {
 	secret.Data = mod.data
 	return nil
 }
 
-func NewSecretTypeModifier(secretType corev1.SecretType) SecretTypeModifier {
-	return SecretTypeModifier{
+func NewTypeModifier(secretType corev1.SecretType) TypeModifier {
+	return TypeModifier{
 		secretType: secretType,
 	}
 }
 
-type SecretTypeModifier struct {
+type TypeModifier struct {
 	secretType corev1.SecretType
 }
 
-func (mod SecretTypeModifier) Enabled() bool {
+func (mod TypeModifier) Enabled() bool {
 	return true
 }
 
-func (mod SecretTypeModifier) Modify(secret *corev1.Secret) error {
+func (mod TypeModifier) Modify(secret *corev1.Secret) error {
 	secret.Type = mod.secretType
 	return nil
 }
 
-func NewSecretLabelsModifier(labels map[string]string) SecretLabelsModifier {
-	return SecretLabelsModifier{
+func NewLabelsModifier(labels map[string]string) LabelsModifier {
+	return LabelsModifier{
 		labels: labels,
 	}
 }
 
-type SecretLabelsModifier struct {
+type LabelsModifier struct {
 	labels map[string]string
 }
 
-func (mod SecretLabelsModifier) Enabled() bool {
+func (mod LabelsModifier) Enabled() bool {
 	return true
 }
 
-func (mod SecretLabelsModifier) Modify(secret *corev1.Secret) error {
+func (mod LabelsModifier) Modify(secret *corev1.Secret) error {
 	secret.Labels = mod.labels
 	return nil
 }

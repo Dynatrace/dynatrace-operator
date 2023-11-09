@@ -112,18 +112,3 @@ func TestCreateOrUpdateDeployment(t *testing.T) {
 		assert.Equal(t, newMatchLabels, actualDepl.Spec.Selector.MatchLabels)
 	})
 }
-
-/*func createTestDeploymentWithMatchLabels(name, namespace string, annotations, matchLabels map[string]string) appsv1.Deployment {
-	return appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        name,
-			Namespace:   namespace,
-			Annotations: annotations,
-		},
-		Spec: appsv1.DeploymentSpec{
-			Selector: &metav1.LabelSelector{
-				MatchLabels: matchLabels,
-			},
-		},
-	}
-}*/

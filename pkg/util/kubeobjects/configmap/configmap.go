@@ -17,36 +17,36 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-type ConfigMapQuery struct {
+type Query struct {
 	query.KubeQuery
 }
 
-func NewConfigMapQuery(ctx context.Context, kubeClient client.Client, kubeReader client.Reader, log logr.Logger) ConfigMapQuery {
-	return ConfigMapQuery{
+func NewQuery(ctx context.Context, kubeClient client.Client, kubeReader client.Reader, log logr.Logger) Query {
+	return Query{
 		query.New(ctx, kubeClient, kubeReader, log),
 	}
 }
 
-func (query ConfigMapQuery) Get(objectKey client.ObjectKey) (corev1.ConfigMap, error) {
+func (query Query) Get(objectKey client.ObjectKey) (corev1.ConfigMap, error) {
 	var configMap corev1.ConfigMap
 	err := query.KubeReader.Get(query.Ctx, objectKey, &configMap)
 
 	return configMap, errors.WithStack(err)
 }
 
-func (query ConfigMapQuery) Create(configMap corev1.ConfigMap) error {
+func (query Query) Create(configMap corev1.ConfigMap) error {
 	query.Log.Info("creating configMap", "name", configMap.Name, "namespace", configMap.Namespace)
 
 	return errors.WithStack(query.KubeClient.Create(query.Ctx, &configMap))
 }
 
-func (query ConfigMapQuery) Update(configMap corev1.ConfigMap) error {
+func (query Query) Update(configMap corev1.ConfigMap) error {
 	query.Log.Info("updating configMap", "name", configMap.Name, "namespace", configMap.Namespace)
 
 	return errors.WithStack(query.KubeClient.Update(query.Ctx, &configMap))
 }
 
-func (query ConfigMapQuery) Delete(configMap corev1.ConfigMap) error {
+func (query Query) Delete(configMap corev1.ConfigMap) error {
 	query.Log.Info("removing configMap", "name", configMap.Name, "namespace", configMap.Namespace)
 	err := query.KubeClient.Delete(query.Ctx, &configMap)
 	if k8serrors.IsNotFound(err) {
@@ -55,7 +55,7 @@ func (query ConfigMapQuery) Delete(configMap corev1.ConfigMap) error {
 	return errors.WithStack(err)
 }
 
-func (query ConfigMapQuery) CreateOrUpdate(configMap corev1.ConfigMap) error {
+func (query Query) CreateOrUpdate(configMap corev1.ConfigMap) error {
 	currentConfigMap, err := query.Get(types.NamespacedName{Name: configMap.Name, Namespace: configMap.Namespace})
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
@@ -116,59 +116,59 @@ func (mod configMapOwnerModifier) Modify(secret *corev1.ConfigMap) error {
 	return nil
 }
 
-func NewConfigMapNameModifier(name string) ConfigMapNameModifier {
-	return ConfigMapNameModifier{
+func NewModifier(name string) Modifier {
+	return Modifier{
 		name: name,
 	}
 }
 
-type ConfigMapNameModifier struct {
+type Modifier struct {
 	name string
 }
 
-func (mod ConfigMapNameModifier) Enabled() bool {
+func (mod Modifier) Enabled() bool {
 	return true
 }
 
-func (mod ConfigMapNameModifier) Modify(configMap *corev1.ConfigMap) error {
+func (mod Modifier) Modify(configMap *corev1.ConfigMap) error {
 	configMap.Name = mod.name
 	return nil
 }
 
-func NewConfigMapNamespaceModifier(namespaceName string) ConfigMapNamespaceModifier {
-	return ConfigMapNamespaceModifier{
+func NewNamespaceModifier(namespaceName string) NamespaceModifier {
+	return NamespaceModifier{
 		namespaceName: namespaceName,
 	}
 }
 
-type ConfigMapNamespaceModifier struct {
+type NamespaceModifier struct {
 	namespaceName string
 }
 
-func (mod ConfigMapNamespaceModifier) Enabled() bool {
+func (mod NamespaceModifier) Enabled() bool {
 	return true
 }
 
-func (mod ConfigMapNamespaceModifier) Modify(configMap *corev1.ConfigMap) error {
+func (mod NamespaceModifier) Modify(configMap *corev1.ConfigMap) error {
 	configMap.Namespace = mod.namespaceName
 	return nil
 }
 
-func NewConfigMapDataModifier(data map[string]string) ConfigMapDataModifier {
-	return ConfigMapDataModifier{
+func NewConfigMapDataModifier(data map[string]string) DataModifier {
+	return DataModifier{
 		data: data,
 	}
 }
 
-type ConfigMapDataModifier struct {
+type DataModifier struct {
 	data map[string]string
 }
 
-func (mod ConfigMapDataModifier) Enabled() bool {
+func (mod DataModifier) Enabled() bool {
 	return true
 }
 
-func (mod ConfigMapDataModifier) Modify(configMap *corev1.ConfigMap) error {
+func (mod DataModifier) Modify(configMap *corev1.ConfigMap) error {
 	configMap.Data = mod.data
 	return nil
 }

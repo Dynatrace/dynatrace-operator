@@ -36,15 +36,15 @@ func newCertificateSecret(scheme *runtime.Scheme, deployment *appsv1.Deployment)
 }
 
 func (certSecret *certificateSecret) setSecretFromReader(ctx context.Context, apiReader client.Reader, namespace string) error {
-	query := k8sobjectsecret.NewSecretQuery(ctx, nil, apiReader, log)
+	query := k8sobjectsecret.NewQuery(ctx, nil, apiReader, log)
 	secret, err := query.Get(types.NamespacedName{Name: buildSecretName(), Namespace: namespace})
 
 	switch {
 	case k8serrors.IsNotFound(err):
 		certSecret.secret, err = k8sobjectsecret.CreateSecret(certSecret.scheme, certSecret.owner,
-			k8sobjectsecret.NewSecretNameModifier(buildSecretName()),
-			k8sobjectsecret.NewSecretNamespaceModifier(namespace),
-			k8sobjectsecret.NewSecretDataModifier(map[string][]byte{}))
+			k8sobjectsecret.NewNameModifier(buildSecretName()),
+			k8sobjectsecret.NewNamespaceModifier(namespace),
+			k8sobjectsecret.NewDataModifier(map[string][]byte{}))
 		if err != nil {
 			return errors.WithStack(err)
 		}

@@ -59,16 +59,16 @@ func (r *Reconciler) generateForDynakube(ctx context.Context, dynakube *dynatrac
 
 	coreLabels := labels.NewCoreLabels(dynakube.Name, labels.ActiveGateComponentLabel)
 	secret, err := k8sobjectsecret.CreateSecret(r.scheme, r.dynakube,
-		k8sobjectsecret.NewSecretNameModifier(capability.BuildProxySecretName(dynakube.Name)),
-		k8sobjectsecret.NewSecretNamespaceModifier(r.dynakube.Namespace),
-		k8sobjectsecret.NewSecretLabelsModifier(coreLabels.BuildMatchLabels()),
-		k8sobjectsecret.NewSecretTypeModifier(corev1.SecretTypeOpaque),
-		k8sobjectsecret.NewSecretDataModifier(data))
+		k8sobjectsecret.NewNameModifier(capability.BuildProxySecretName(dynakube.Name)),
+		k8sobjectsecret.NewNamespaceModifier(r.dynakube.Namespace),
+		k8sobjectsecret.NewLabelsModifier(coreLabels.BuildMatchLabels()),
+		k8sobjectsecret.NewTypeModifier(corev1.SecretTypeOpaque),
+		k8sobjectsecret.NewDataModifier(data))
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	secretQuery := k8sobjectsecret.NewSecretQuery(ctx, r.client, r.apiReader, log)
+	secretQuery := k8sobjectsecret.NewQuery(ctx, r.client, r.apiReader, log)
 
 	err = secretQuery.CreateOrUpdate(*secret)
 	return errors.WithStack(err)
