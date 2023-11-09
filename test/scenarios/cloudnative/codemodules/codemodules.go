@@ -16,7 +16,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
-	_map "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
+	utilmap "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod_mutator/oneagent_mutation"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/csi"
@@ -134,7 +134,7 @@ func withProxy(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features
 
 	namespaceBuilder := namespace.NewBuilder("codemodules-sample-with-proxy")
 	labels := cloudNativeDynakube.NamespaceSelector().MatchLabels
-	labels = _map.MergeMap(labels, istio.InjectionLabel)
+	labels = utilmap.MergeMap(labels, istio.InjectionLabel)
 
 	sampleNamespace := namespaceBuilder.WithLabels(labels).Build()
 	sampleApp := sampleapps.NewSampleDeployment(t, cloudNativeDynakube)
@@ -195,7 +195,7 @@ func withProxyCA(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) featur
 
 	namespaceBuilder := namespace.NewBuilder("codemodules-sample-with-proxy-custom-ca")
 	labels := cloudNativeDynakube.NamespaceSelector().MatchLabels
-	labels = _map.MergeMap(labels, istio.InjectionLabel)
+	labels = utilmap.MergeMap(labels, istio.InjectionLabel)
 
 	sampleNamespace := namespaceBuilder.WithLabels(labels).Build()
 	sampleApp := sampleapps.NewSampleDeployment(t, cloudNativeDynakube)

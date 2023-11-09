@@ -4,7 +4,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/initgeneration"
-	_map "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
+	utilmap "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -31,11 +31,11 @@ func NewOneAgentPodMutator(image, clusterID, webhookNamespace string, client cli
 }
 
 func (mutator *OneAgentPodMutator) Enabled(request *dtwebhook.BaseRequest) bool {
-	return _map.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationOneAgentInject, request.DynaKube.FeatureAutomaticInjection())
+	return utilmap.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationOneAgentInject, request.DynaKube.FeatureAutomaticInjection())
 }
 
 func (mutator *OneAgentPodMutator) Injected(request *dtwebhook.BaseRequest) bool {
-	return _map.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationOneAgentInjected, false)
+	return utilmap.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationOneAgentInjected, false)
 }
 
 func (mutator *OneAgentPodMutator) Mutate(request *dtwebhook.MutationRequest) error {

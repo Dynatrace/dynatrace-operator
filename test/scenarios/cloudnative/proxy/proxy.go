@@ -8,7 +8,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
-	_map "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
+	utilmap "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/istio"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/daemonset"
@@ -42,7 +42,7 @@ func withProxy(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features
 		Proxy(proxySpec).
 		Build()
 
-	sampleLabels := _map.MergeMap(testDynakube.NamespaceSelector().MatchLabels, istio.InjectionLabel)
+	sampleLabels := utilmap.MergeMap(testDynakube.NamespaceSelector().MatchLabels, istio.InjectionLabel)
 	sampleNamespace := namespace.NewBuilder("proxy-sample").WithLabels(sampleLabels).Build()
 	sampleApp := sampleapps.NewSampleDeployment(t, testDynakube)
 	sampleApp.WithLabels(sampleLabels)

@@ -8,7 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	k8sobjectpod "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
-	_map "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
+	utilmap "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtotel "github.com/Dynatrace/dynatrace-operator/pkg/util/otel"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"go.opentelemetry.io/otel/metric"
@@ -98,7 +98,7 @@ func mutationRequired(mutationRequest *dtwebhook.MutationRequest) bool {
 	if mutationRequest == nil {
 		return false
 	}
-	return _map.GetFieldBool(mutationRequest.Pod.Annotations, dtwebhook.AnnotationDynatraceInject, true)
+	return utilmap.GetFieldBool(mutationRequest.Pod.Annotations, dtwebhook.AnnotationDynatraceInject, true)
 }
 
 func (webhook *podMutatorWebhook) setupEventRecorder(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) {
