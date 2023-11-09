@@ -2,7 +2,12 @@
 test/e2e/%/debug:
 	@make SKIPCLEANUP="--fail-fast" $(@D)
 
-test/e2e: manifests/crd/helm test/e2e/standard test/e2e/istio test/e2e/release
+test/e2e:
+	RC=0; \
+	make test/e2e/standard  || RC=1; \
+	make test/e2e/istio  || RC=1; \
+	make test/e2e/release || RC=1; \
+	exit $$RC
 
 test/e2e/standard: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 200m -count=1 ./test/scenarios/standard -args $(SKIPCLEANUP)
