@@ -2,10 +2,6 @@ package configmap
 
 import (
 	"context"
-	"fmt"
-	"reflect"
-	"strings"
-
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/query"
 	"github.com/go-logr/logr"
@@ -15,6 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -84,16 +81,6 @@ func (query ConfigMapQuery) CreateOrUpdate(configMap corev1.ConfigMap) error {
 
 func AreConfigMapsEqual(configMap corev1.ConfigMap, other corev1.ConfigMap) bool {
 	return reflect.DeepEqual(configMap.Data, other.Data) && reflect.DeepEqual(configMap.Labels, other.Labels) && reflect.DeepEqual(configMap.OwnerReferences, other.OwnerReferences)
-}
-
-func ExtractField(configMap *corev1.ConfigMap, key string) (string, error) {
-	value, hasKey := configMap.Data[key]
-	if !hasKey {
-		err := fmt.Errorf("missing field %s", key)
-		return "", err
-	}
-
-	return strings.TrimSpace(value), nil
 }
 
 type configMapData = corev1.ConfigMap
