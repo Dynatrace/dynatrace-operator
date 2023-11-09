@@ -29,20 +29,6 @@ const (
 	testClusterID = "test-cluster-id"
 )
 
-type fakeVersionProvider struct {
-	mock.Mock
-}
-
-func (f *fakeVersionProvider) Major() (string, error) {
-	args := f.Called()
-	return args.Get(0).(string), args.Error(1)
-}
-
-func (f *fakeVersionProvider) Minor() (string, error) {
-	args := f.Called()
-	return args.Get(0).(string), args.Error(1)
-}
-
 var sampleKubeSystemNS = &corev1.Namespace{
 	ObjectMeta: metav1.ObjectMeta{
 		Name: "kube-system",
@@ -474,11 +460,8 @@ func TestHasSpecChanged(t *testing.T) {
 
 func TestNewDaemonset_Affinity(t *testing.T) {
 	t.Run(`adds correct affinities`, func(t *testing.T) {
-		versionProvider := &fakeVersionProvider{}
 		r := Reconciler{}
 		dynakube := newDynaKube()
-		versionProvider.On("Major").Return("1", nil)
-		versionProvider.On("Minor").Return("20+", nil)
 		ds, err := r.buildDesiredDaemonSet(dynakube)
 
 		assert.NoError(t, err)
