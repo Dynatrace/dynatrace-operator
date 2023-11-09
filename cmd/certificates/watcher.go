@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	utilcerts "github.com/Dynatrace/dynatrace-operator/pkg/util/certificates"
 	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/certificates"
+	utilcerts "github.com/Dynatrace/dynatrace-operator/pkg/util/certificates"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	corev1 "k8s.io/api/core/v1"
