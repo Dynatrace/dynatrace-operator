@@ -63,7 +63,6 @@ func Feature(t *testing.T) features.Feature {
 		edgeconnect.WithOAuthClientSecret(fmt.Sprintf("%s-client-secret", edgeconnectSecretConfig.Name)),
 		edgeconnect.WithOAuthEndpoint("https://sso-dev.dynatracelabs.com/sso/oauth2/token"),
 		edgeconnect.WithOAuthResource(fmt.Sprintf("urn:dtenvironment:%s", edgeconnectSecretConfig.TenantUid)),
-		edgeconnect.WithCustomPullSecret(fmt.Sprintf("%s-docker-pull-secret", edgeconnectSecretConfig.Name)),
 	)
 
 	builder.Assess("deploy injected namespace", namespace.Create(*namespace.New(testAppNameInjected, namespace.WithLabels(injectLabels))))

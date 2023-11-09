@@ -58,9 +58,3 @@ func WithOAuthEndpoint(endpoint string) Option {
 		edgeconnect.Spec.OAuth.Endpoint = endpoint
 	}
 }
-
-func WithCustomPullSecret(secretName string) Option {
-	return func(edgeconnect *edgeconnectv1alpha1.EdgeConnect) {
-		edgeconnect.Spec.CustomPullSecret = secretName
-	}
-}
