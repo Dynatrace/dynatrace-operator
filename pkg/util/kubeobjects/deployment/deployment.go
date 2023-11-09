@@ -2,10 +2,10 @@ package deployment
 
 import (
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/object"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/object"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
