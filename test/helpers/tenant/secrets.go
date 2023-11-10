@@ -36,11 +36,9 @@ type Secrets struct {
 }
 
 type Secret struct {
-	TenantUid                       string `yaml:"tenantUid"`
-	ApiUrl                          string `yaml:"apiUrl"`
-	ApiToken                        string `yaml:"apiToken"`
-	SyntheticLocEntityId            string `yaml:"syntheticLocEntityId"`
-	SyntheticBrowserMonitorEntityId string `yaml:"syntheticBrowserMonitorEntityId"`
+	TenantUid string `yaml:"tenantUid"`
+	ApiUrl    string `yaml:"apiUrl"`
+	ApiToken  string `yaml:"apiToken"`
 }
 
 type EdgeConnectSecret struct {
