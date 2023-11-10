@@ -46,3 +46,21 @@ func TestStartSpan(t *testing.T) {
 		assert.Equal(t, context.Background(), ctx)
 	})
 }
+
+func TestGetCaller(t *testing.T) {
+
+	// Call getCaller with stack depth of 1
+	caller := getCaller(1)
+
+	t.Logf("calloer=%s", caller)
+
+	// Assert caller contains function name
+	assert.Contains(t, caller, "TestGetCaller")
+
+	// Assert caller contains file name
+	assert.Contains(t, caller, "traces_test.go")
+
+	// Assert caller contains line number
+	assert.Regexp(t, `\(\w+_test.go:\d+\)`, caller)
+
+}

@@ -3,7 +3,6 @@ package otel
 import (
 	"context"
 	"fmt"
-
 	"github.com/pkg/errors"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
@@ -11,6 +10,8 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/trace"
+	"path/filepath"
+	"runtime"
 )
 
 func setupTracesWithOtlp(ctx context.Context, resource *resource.Resource, endpoint string, apiToken string) (trace.TracerProvider, shutdownFn, error) {
@@ -47,7 +48,19 @@ func newOtlpTraceExporter(ctx context.Context, endpoint string, apiToken string)
 	return exporter, nil
 }
 
-func StartSpan[T any](ctx context.Context, tracer T, title string, opts ...trace.SpanStartOption) (context.Context, trace.Span) {
+func StartSpan[T any](ctx context.Context, tracer T, _ string, opts ...trace.SpanStartOption) (context.Context, trace.Span) {
+	caller := getCaller(1)
+
+	realTracer := resolveTracer(tracer)
+	if realTracer == nil {
+		log.Info("failed to start span, no valid tracer given", "caller", caller, "tracer", fmt.Sprintf("%v", tracer))
+		return ctx, noopSpan{}
+	}
+
+	return realTracer.Start(ctx, caller, opts...)
+}
+
+func resolveTracer[T any](tracer T) trace.Tracer {
 	var realTracer trace.Tracer
 	switch t := any(tracer).(type) {
 	case string:
@@ -55,12 +68,17 @@ func StartSpan[T any](ctx context.Context, tracer T, title string, opts ...trace
 	case trace.Tracer:
 		realTracer = t
 	}
+	return realTracer
+}
 
-	if realTracer == nil || title == "" {
-		log.Info("failed to start span, no valid tracer given", "title", title, "tracer", fmt.Sprintf("%v", tracer))
-		return ctx, noopSpan{}
+func getCaller(i int) string {
+	if pc, filePath, line, ok := runtime.Caller(i); ok {
+		details := runtime.FuncForPC(pc)
+		fileName := filepath.Base(filePath)
+		functionName := filepath.Base(details.Name())
+		return fmt.Sprintf("%s (%s:%d)", functionName, fileName, line)
 	}
-	return realTracer.Start(ctx, title, opts...)
+	return "<unknown function>"
 }
 
 type noopSpan struct {
