@@ -22,3 +22,6 @@ packages:
           # TODO: refactor rename it to registry.go
           filename: "client.go"
           dir: "{{.InterfaceDir}}/mocks"
+  github.com/Dynatrace/dynatrace-operator/pkg/webhook:
+    interfaces:
+      PodMutator:
