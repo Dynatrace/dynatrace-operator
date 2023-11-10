@@ -38,7 +38,7 @@ func TestMain(m *testing.M) {
 
 func TestStandard(t *testing.T) {
 	feats := []features.Feature{
-		network_zones.Feature(t), // TODO: Fix so order do not matter, because currently this has to be first, as if other tests deploy an ActiveGate then the network zone CAN still be present, which will make the test fail
+		network_zones.Feature(t), // TODO: Fix so it can be enabled during pipeline tests, because if other tests deploy an ActiveGate then the network zone CAN still be present, which will make the test fail
 		activegate.Feature(t, nil),
 		cloudnativeDefault.Feature(t, false),
 		applicationmonitoring.DataIngest(t),

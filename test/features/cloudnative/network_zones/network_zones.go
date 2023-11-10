@@ -32,6 +32,22 @@ const testNetworkZone = "testzone"
 const annotationInjected = "oneagent.dynatrace.com/injected"
 const annotationReason = "oneagent.dynatrace.com/reason"
 
+// Feature defines the overall e2e test for testing OneAgent
+// injection behavior when Dynatrace is configured with a network zone.
+//
+// It does the following to cover the scenario of ensuring OneAgent injection is properly
+// blocked when no ActiveGate is available, and enabled once one is added:
+//   - Creates test a network zone via the tenant helper (can be highly destructive)
+//   - Configures a DynaKube custom resource without an ActiveGate => no activegate == no networkzone communication
+//   - Installs a sample application
+//   - Verifies the sample app pods do NOT have OneAgent injected, validated via pod annotations
+//   - Updates the DynaKube to add an ActiveGate => so now networkzone communication is possible
+//   - Restarts the sample app pods
+//   - Verifies the sample app pods now DO have OneAgent injected
+//
+// Prerequisites:
+// Have a tenant that has no activegates bound to it.
+// ---
 func Feature(t *testing.T) features.Feature {
 	builder := features.New("dynakube in network zone")
 	builder.WithLabel("name", "cloudnative-network-zone")
