@@ -28,3 +28,7 @@ data:
 - as indicated the values have to be base64 encoded (as usually with K8S)
 - obey to the name
 - make sure it is created in the same namespace as the webhook
+
+## Use it in the e2e tests
+Create a file at `test/testdata/secrets/otel-tenant.yaml`, according to `test/testdata/secrets-samples/otel-tenant.yaml`.
+- It will ask for the same info that you would use in the secret.
