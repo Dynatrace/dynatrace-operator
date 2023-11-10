@@ -3,11 +3,11 @@ package server
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/cmd/config"
 	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
 	dtfake "github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
+	"github.com/Dynatrace/dynatrace-operator/test/mocks/cmd/config"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -15,7 +15,7 @@ import (
 )
 
 func TestCsiCommand(t *testing.T) {
-	configProvider := &config.MockProvider{}
+	configProvider := &mocks.MockProvider{}
 	configProvider.On("GetConfig").Return(&rest.Config{}, nil)
 
 	clt := dtfake.NewClient()

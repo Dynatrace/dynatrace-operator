@@ -6,6 +6,11 @@ filename: "{{.InterfaceName | snakecase}}.go"
 outpkg: mocks
 dir: "test/mocks/{{.InterfaceDirRelative}}"
 packages:
+  github.com/Dynatrace/dynatrace-operator/cmd/config:
+    interfaces:
+      Provider:
+        config:
+          mockname: "Mock{{.InterfaceName}}"
   github.com/Dynatrace/dynatrace-operator/pkg/util/builder:
     config:
       recursive: true
