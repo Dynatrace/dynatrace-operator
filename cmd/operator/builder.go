@@ -177,7 +177,7 @@ func (builder CommandBuilder) runOperatorManager(kubeCfg *rest.Config, isDeploye
 		return err
 	}
 
-	otelShutdownFn := otel.Start(context.Background(), "dynatrace-operator", operatorManager.GetAPIReader(), builder.namespace)
+	otelShutdownFn := otel.Start(builder.getSignalHandler(), "dynatrace-operator", operatorManager.GetAPIReader(), builder.namespace)
 	defer otelShutdownFn()
 
 	err = operatorManager.Start(builder.getSignalHandler())
