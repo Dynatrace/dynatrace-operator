@@ -22,7 +22,7 @@ func TestWebhookCommandBuilder(t *testing.T) {
 
 		assert.NotNil(t, builder)
 
-		expectedProvider := &mocks.MockProvider{}
+		expectedProvider := &mocks.Provider{}
 		builder = builder.SetConfigProvider(expectedProvider)
 
 		assert.Equal(t, expectedProvider, builder.configProvider)

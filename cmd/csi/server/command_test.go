@@ -15,7 +15,7 @@ import (
 )
 
 func TestCsiCommand(t *testing.T) {
-	configProvider := &mocks.MockProvider{}
+	configProvider := &mocks.Provider{}
 	configProvider.On("GetConfig").Return(&rest.Config{}, nil)
 
 	clt := dtfake.NewClient()
