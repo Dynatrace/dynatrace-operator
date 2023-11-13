@@ -48,7 +48,7 @@ func TestMutator(t *testing.T) {
 	tests := []mutatorTest{
 		{
 			name:     "happy path",
-			mutators: []dtwebhook.PodMutator{createSimplePodMutatorMock(), createSimplePodMutatorMock()},
+			mutators: []dtwebhook.PodMutator{createSimplePodMutatorMock(t), createSimplePodMutatorMock(t)},
 			testPod:  getTestPod(),
 			objects:  []client.Object{getTestDynakube(), getTestNamespace()},
 			expectedResult: func(t *testing.T, response *admission.Response, mutators []dtwebhook.PodMutator) {
@@ -64,7 +64,7 @@ func TestMutator(t *testing.T) {
 		},
 		{
 			name:     "disable all mutators with dynatrace.com/inject",
-			mutators: []dtwebhook.PodMutator{createSimplePodMutatorMock(), createSimplePodMutatorMock()},
+			mutators: []dtwebhook.PodMutator{createSimplePodMutatorMock(t), createSimplePodMutatorMock(t)},
 			testPod:  getTestPodWithInjectionDisabled(),
 			objects:  []client.Object{getTestDynakube(), getTestNamespace()},
 			expectedResult: func(t *testing.T, response *admission.Response, mutators []dtwebhook.PodMutator) {
@@ -80,7 +80,7 @@ func TestMutator(t *testing.T) {
 		},
 		{
 			name:     "sad path",
-			mutators: []dtwebhook.PodMutator{createFailPodMutatorMock()},
+			mutators: []dtwebhook.PodMutator{createFailPodMutatorMock(t)},
 			testPod:  getTestPod(),
 			objects:  []client.Object{getTestDynakube(), getTestNamespace()},
 			expectedResult: func(t *testing.T, response *admission.Response, mutators []dtwebhook.PodMutator) {
@@ -99,7 +99,7 @@ func TestMutator(t *testing.T) {
 		},
 		{
 			name:     "oc debug pod",
-			mutators: []dtwebhook.PodMutator{createSimplePodMutatorMock()},
+			mutators: []dtwebhook.PodMutator{createSimplePodMutatorMock(t)},
 			testPod:  getTestPodWithOcDebugPodAnnotations(),
 			objects:  []client.Object{getTestDynakube(), getTestNamespace()},
 			expectedResult: func(t *testing.T, response *admission.Response, mutators []dtwebhook.PodMutator) {
@@ -133,8 +133,8 @@ func TestMutator(t *testing.T) {
 
 func TestHandlePodMutation(t *testing.T) {
 	t.Run("should call both mutators, initContainer and annotation added, no error", func(t *testing.T) {
-		mutator1 := createSimplePodMutatorMock()
-		mutator2 := createSimplePodMutatorMock()
+		mutator1 := createSimplePodMutatorMock(t)
+		mutator2 := createSimplePodMutatorMock(t)
 		dynakube := getTestDynakube()
 		podWebhook := createTestWebhook([]dtwebhook.PodMutator{mutator1, mutator2}, nil)
 		mutationRequest := createTestMutationRequest(dynakube)
@@ -167,8 +167,8 @@ func TestHandlePodMutation(t *testing.T) {
 		mutator2.(*mocks.PodMutator).AssertCalled(t, "Mutate", mutationRequest)
 	})
 	t.Run("should call 1 mutator, 1 error, no initContainer and annotation", func(t *testing.T) {
-		sadMutator := createFailPodMutatorMock()
-		happyMutator := createSimplePodMutatorMock()
+		sadMutator := createFailPodMutatorMock(t)
+		happyMutator := createSimplePodMutatorMock(t)
 		dynakube := getTestDynakube()
 		podWebhook := createTestWebhook([]dtwebhook.PodMutator{sadMutator, happyMutator}, nil)
 		mutationRequest := createTestMutationRequest(dynakube)
@@ -187,8 +187,8 @@ func TestHandlePodMutation(t *testing.T) {
 
 func TestHandlePodReinvocation(t *testing.T) {
 	t.Run("no reinvocation feature-flag, no update", func(t *testing.T) {
-		mutator1 := createAlreadyInjectedPodMutatorMock()
-		mutator2 := createAlreadyInjectedPodMutatorMock()
+		mutator1 := createAlreadyInjectedPodMutatorMock(t)
+		mutator2 := createAlreadyInjectedPodMutatorMock(t)
 		dynakube := getTestDynakube()
 		dynakube.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureWebhookReinvocationPolicy: "false"}
 		podWebhook := createTestWebhook([]dtwebhook.PodMutator{mutator1, mutator2}, nil)
@@ -202,8 +202,8 @@ func TestHandlePodReinvocation(t *testing.T) {
 		mutator2.(*mocks.PodMutator).AssertNotCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
 	})
 	t.Run("should call both mutators, updated == true", func(t *testing.T) {
-		mutator1 := createAlreadyInjectedPodMutatorMock()
-		mutator2 := createAlreadyInjectedPodMutatorMock()
+		mutator1 := createAlreadyInjectedPodMutatorMock(t)
+		mutator2 := createAlreadyInjectedPodMutatorMock(t)
 		dynakube := getTestDynakube()
 		podWebhook := createTestWebhook([]dtwebhook.PodMutator{mutator1, mutator2}, nil)
 		mutationRequest := createTestMutationRequest(dynakube)
@@ -216,8 +216,8 @@ func TestHandlePodReinvocation(t *testing.T) {
 		mutator2.(*mocks.PodMutator).AssertCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
 	})
 	t.Run("should call both mutator, only 1 update, updated == true", func(t *testing.T) {
-		failingMutator := createFailPodMutatorMock()
-		workingMutator := createAlreadyInjectedPodMutatorMock()
+		failingMutator := createFailPodMutatorMock(t)
+		workingMutator := createAlreadyInjectedPodMutatorMock(t)
 		dynakube := getTestDynakube()
 		podWebhook := createTestWebhook([]dtwebhook.PodMutator{failingMutator, workingMutator}, nil)
 		mutationRequest := createTestMutationRequest(dynakube)
@@ -230,7 +230,7 @@ func TestHandlePodReinvocation(t *testing.T) {
 		workingMutator.(*mocks.PodMutator).AssertCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
 	})
 	t.Run("should call mutator, no update", func(t *testing.T) {
-		failingMutator := createFailPodMutatorMock()
+		failingMutator := createFailPodMutatorMock(t)
 		dynakube := getTestDynakube()
 		podWebhook := createTestWebhook([]dtwebhook.PodMutator{failingMutator}, nil)
 		mutationRequest := createTestMutationRequest(dynakube)
@@ -239,6 +239,8 @@ func TestHandlePodReinvocation(t *testing.T) {
 		require.False(t, updated)
 		failingMutator.(*mocks.PodMutator).AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
 		failingMutator.(*mocks.PodMutator).AssertCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
+		failingMutator.(*mocks.PodMutator).AssertNotCalled(t, "Injected", mock.Anything)
+		failingMutator.(*mocks.PodMutator).AssertNotCalled(t, "Mutated", mock.Anything)
 	})
 }
 
@@ -284,31 +286,31 @@ func createTestWebhook(mutators []dtwebhook.PodMutator, objects []client.Object)
 	}
 }
 
-func createSimplePodMutatorMock() dtwebhook.PodMutator {
-	mutator := mocks.PodMutator{}
-	mutator.On("Enabled", mock.Anything).Return(true)
-	mutator.On("Injected", mock.Anything).Return(false)
-	mutator.On("Mutate", mock.Anything).Return(nil)
-	mutator.On("Reinvoke", mock.Anything).Return(true)
-	return &mutator
+func createSimplePodMutatorMock(t *testing.T) dtwebhook.PodMutator {
+	mutator := mocks.NewPodMutator(t)
+	mutator.On("Enabled", mock.Anything).Return(true).Maybe()
+	mutator.On("Injected", mock.Anything).Return(false).Maybe()
+	mutator.On("Mutate", mock.Anything).Return(nil).Maybe()
+	mutator.On("Reinvoke", mock.Anything).Return(true).Maybe()
+	return mutator
 }
 
-func createAlreadyInjectedPodMutatorMock() dtwebhook.PodMutator {
-	mutator := mocks.PodMutator{}
-	mutator.On("Enabled", mock.Anything).Return(true)
-	mutator.On("Injected", mock.Anything).Return(true)
-	mutator.On("Mutate", mock.Anything).Return(nil)
-	mutator.On("Reinvoke", mock.Anything).Return(true)
-	return &mutator
+func createAlreadyInjectedPodMutatorMock(t *testing.T) dtwebhook.PodMutator {
+	mutator := mocks.NewPodMutator(t)
+	mutator.On("Enabled", mock.Anything).Return(true).Maybe()
+	mutator.On("Injected", mock.Anything).Return(true).Maybe()
+	mutator.On("Mutate", mock.Anything).Return(nil).Maybe()
+	mutator.On("Reinvoke", mock.Anything).Return(true).Maybe()
+	return mutator
 }
 
-func createFailPodMutatorMock() dtwebhook.PodMutator {
-	mutator := mocks.PodMutator{}
-	mutator.On("Enabled", mock.Anything).Return(true)
-	mutator.On("Injected", mock.Anything).Return(false)
-	mutator.On("Mutate", mock.Anything).Return(fmt.Errorf("BOOM"))
-	mutator.On("Reinvoke", mock.Anything).Return(false)
-	return &mutator
+func createFailPodMutatorMock(t *testing.T) dtwebhook.PodMutator {
+	mutator := mocks.NewPodMutator(t)
+	mutator.On("Enabled", mock.Anything).Return(true).Maybe()
+	mutator.On("Injected", mock.Anything).Return(false).Maybe()
+	mutator.On("Mutate", mock.Anything).Return(fmt.Errorf("BOOM")).Maybe()
+	mutator.On("Reinvoke", mock.Anything).Return(false).Maybe()
+	return mutator
 }
 
 func getTestDynakube() *dynatracev1beta1.DynaKube {
