@@ -11,7 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
-	deployment2 "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/deployment"
+	kodeployment "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/deployment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -166,7 +166,7 @@ func (controller *Controller) reconcileEdgeConnect(edgeConnect *edgeconnectv1alp
 	}
 	desiredDeployment.Annotations[hasher.AnnotationHash] = ddHash
 
-	_, err = deployment2.CreateOrUpdateDeployment(controller.client, log, desiredDeployment)
+	_, err = kodeployment.CreateOrUpdateDeployment(controller.client, log, desiredDeployment)
 
 	if err != nil {
 		log.Info("could not create or update deployment for EdgeConnect", "name", desiredDeployment.Name)

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	k8sobjectsecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
-	errors2 "github.com/pkg/errors"
+	"github.com/pkg/errors"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric/noop"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -76,12 +76,12 @@ func newResource(otelServiceName string) (*resource.Resource, error) {
 			semconv.ServiceNameKey.String(otelServiceName),
 		),
 	)
-	return r, errors2.WithStack(err)
+	return r, errors.WithStack(err)
 }
 
 func getOtelConfig(ctx context.Context, apiReader client.Reader, namespace string) (string, string, error) {
 	if apiReader == nil {
-		return "", "", errors2.Errorf("invalid API reader")
+		return "", "", errors.Errorf("invalid API reader")
 	}
 
 	secretName := types.NamespacedName{
