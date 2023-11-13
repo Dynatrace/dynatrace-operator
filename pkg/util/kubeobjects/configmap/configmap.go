@@ -5,7 +5,7 @@ import (
 	"reflect"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/builder"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/query"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/query"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"

@@ -6,7 +6,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/resources"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/resources"
 	corev1 "k8s.io/api/core/v1"
 )
 

@@ -8,8 +8,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	k8sobjectpod "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/resources"
 	utilmap "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/resources"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	corev1 "k8s.io/api/core/v1"
 )
