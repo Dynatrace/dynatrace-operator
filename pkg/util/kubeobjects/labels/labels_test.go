@@ -3,36 +3,44 @@ package labels
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	testAppName          = "dynatrace-operator"
+	testAppVersion       = "snapshot"
+	testName             = "test-name"
+	testComponent        = "test-component"
+	testComponentFeature = "test-component-feature"
+	testComponentVersion = "test-component-version"
+)
+
 func TestConstructors(t *testing.T) {
-	appLabels := NewAppLabels(consts.TestComponent, consts.TestName, consts.TestComponentFeature, consts.TestComponentVersion)
-	coreLabels := NewCoreLabels(consts.TestName, consts.TestComponent)
+	appLabels := NewAppLabels(testComponent, testName, testComponentFeature, testComponentVersion)
+	coreLabels := NewCoreLabels(testName, testComponent)
 
 	expectedCoreMatchLabels := map[string]string{
-		AppNameLabel:      consts.TestAppName,
-		AppCreatedByLabel: consts.TestName,
-		AppComponentLabel: consts.TestComponent,
+		AppNameLabel:      testAppName,
+		AppCreatedByLabel: testName,
+		AppComponentLabel: testComponent,
 	}
 	expectedAppMatchLabels := map[string]string{
-		AppNameLabel:      consts.TestComponent,
-		AppCreatedByLabel: consts.TestName,
-		AppManagedByLabel: consts.TestAppName,
+		AppNameLabel:      testComponent,
+		AppCreatedByLabel: testName,
+		AppManagedByLabel: testAppName,
 	}
 	expectedAppLabels := map[string]string{
-		AppNameLabel:      consts.TestComponent,
-		AppCreatedByLabel: consts.TestName,
-		AppComponentLabel: consts.TestComponentFeature,
-		AppVersionLabel:   consts.TestComponentVersion,
-		AppManagedByLabel: consts.TestAppName,
+		AppNameLabel:      testComponent,
+		AppCreatedByLabel: testName,
+		AppComponentLabel: testComponentFeature,
+		AppVersionLabel:   testComponentVersion,
+		AppManagedByLabel: testAppName,
 	}
 	expectedCoreLabels := map[string]string{
-		AppNameLabel:      consts.TestAppName,
-		AppCreatedByLabel: consts.TestName,
-		AppComponentLabel: consts.TestComponent,
-		AppVersionLabel:   consts.TestAppVersion,
+		AppNameLabel:      testAppName,
+		AppCreatedByLabel: testName,
+		AppComponentLabel: testComponent,
+		AppVersionLabel:   testAppVersion,
 	}
 
 	t.Run("verify matchLabels for statefulsetreconciler", func(t *testing.T) {

@@ -3,8 +3,14 @@ package utilmap
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/stretchr/testify/assert"
+)
+
+const (
+	testValue1 = "test-value"
+	testValue2 = "test-alternative-value"
+	testKey1   = "test-key"
+	testKey2   = "test-name"
 )
 
 var testMap = map[string]string{
@@ -61,14 +67,14 @@ func TestGetFieldBool(t *testing.T) {
 
 func TestMergeMap(t *testing.T) {
 	initialMap := map[string]string{
-		consts.TestKey1: consts.TestValue1,
+		testKey1: testValue1,
 	}
 	expectedMap := map[string]string{
-		consts.TestKey1: consts.TestValue1,
-		consts.TestKey2: consts.TestValue2,
+		testKey1: testValue1,
+		testKey2: testValue2,
 	}
 
 	assert.Equal(t, expectedMap, MergeMap(initialMap, map[string]string{
-		consts.TestKey2: consts.TestValue2,
+		testKey2: testValue2,
 	}))
 }

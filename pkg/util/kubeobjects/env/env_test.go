@@ -3,26 +3,32 @@ package env
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 )
 
+const (
+	testKey1       = "test-key"
+	testKey2       = "test-name"
+	testAppName    = "dynatrace-operator"
+	testAppVersion = "snapshot"
+)
+
 func TestFindEnvVar(t *testing.T) {
 	envVars := []corev1.EnvVar{
-		{Name: consts.TestKey1, Value: consts.TestAppVersion},
-		{Name: consts.TestKey2, Value: consts.TestAppName},
+		{Name: testKey1, Value: testAppVersion},
+		{Name: testKey2, Value: testAppName},
 	}
 
-	envVar := FindEnvVar(envVars, consts.TestKey1)
+	envVar := FindEnvVar(envVars, testKey1)
 	assert.NotNil(t, envVar)
-	assert.Equal(t, consts.TestKey1, envVar.Name)
-	assert.Equal(t, consts.TestAppVersion, envVar.Value)
+	assert.Equal(t, testKey1, envVar.Name)
+	assert.Equal(t, testAppVersion, envVar.Value)
 
-	envVar = FindEnvVar(envVars, consts.TestKey2)
+	envVar = FindEnvVar(envVars, testKey2)
 	assert.NotNil(t, envVar)
-	assert.Equal(t, consts.TestKey2, envVar.Name)
-	assert.Equal(t, consts.TestAppName, envVar.Value)
+	assert.Equal(t, testKey2, envVar.Name)
+	assert.Equal(t, testAppName, envVar.Value)
 
 	envVar = FindEnvVar(envVars, "invalid-key")
 	assert.Nil(t, envVar)
@@ -30,12 +36,12 @@ func TestFindEnvVar(t *testing.T) {
 
 func TestEnvVarIsIn(t *testing.T) {
 	envVars := []corev1.EnvVar{
-		{Name: consts.TestKey1, Value: consts.TestAppVersion},
-		{Name: consts.TestKey2, Value: consts.TestAppName},
+		{Name: testKey1, Value: testAppVersion},
+		{Name: testKey2, Value: testAppName},
 	}
 
-	assert.True(t, IsIn(envVars, consts.TestKey1))
-	assert.True(t, IsIn(envVars, consts.TestKey2))
+	assert.True(t, IsIn(envVars, testKey1))
+	assert.True(t, IsIn(envVars, testKey2))
 	assert.False(t, IsIn(envVars, "invalid-key"))
 }
 
