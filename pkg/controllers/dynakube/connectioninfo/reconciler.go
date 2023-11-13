@@ -163,7 +163,7 @@ func (r *Reconciler) updateDynakubeActiveGateStatus(connectionInfo dtclient.Acti
 
 func (r *Reconciler) createTenantTokenSecret(ctx context.Context, secretName string, connectionInfo dtclient.ConnectionInfo) error {
 	secretData := extractSensitiveData(connectionInfo)
-	secret, err := k8sobjectsecret.CreateSecret(r.scheme, r.dynakube,
+	secret, err := k8sobjectsecret.Create(r.scheme, r.dynakube,
 		k8sobjectsecret.NewNameModifier(secretName),
 		k8sobjectsecret.NewNamespaceModifier(r.dynakube.Namespace),
 		k8sobjectsecret.NewDataModifier(secretData))

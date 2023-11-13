@@ -7,7 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/container"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/legacy"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/oneagentapm"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod_mutator/dataingest_mutation"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod_mutator/oneagent_mutation"
@@ -36,7 +36,7 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 		return err
 	}
 
-	apmExists, err := legacy.CheckIfOneAgentAPMExists(kubeConfig)
+	apmExists, err := oneagentapm.Exists(kubeConfig)
 	if err != nil {
 		return errors.WithStack(err)
 	}

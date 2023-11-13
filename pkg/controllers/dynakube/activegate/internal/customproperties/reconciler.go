@@ -100,7 +100,7 @@ func (r *Reconciler) updateCustomProperties(ctx context.Context, customPropertie
 }
 
 func (r *Reconciler) createCustomProperties() error {
-	customPropertiesSecret, err := secret.CreateSecret(r.scheme, r.instance,
+	customPropertiesSecret, err := secret.Create(r.scheme, r.instance,
 		secret.NewNameModifier(r.buildCustomPropertiesName(r.instance.Name)),
 		secret.NewNamespaceModifier(r.instance.Namespace),
 		secret.NewDataModifier(map[string][]byte{

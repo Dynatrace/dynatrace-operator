@@ -58,7 +58,7 @@ func (r *Reconciler) generateForDynakube(ctx context.Context, dynakube *dynatrac
 	}
 
 	coreLabels := labels.NewCoreLabels(dynakube.Name, labels.ActiveGateComponentLabel)
-	secret, err := k8sobjectsecret.CreateSecret(r.scheme, r.dynakube,
+	secret, err := k8sobjectsecret.Create(r.scheme, r.dynakube,
 		k8sobjectsecret.NewNameModifier(capability.BuildProxySecretName(dynakube.Name)),
 		k8sobjectsecret.NewNamespaceModifier(r.dynakube.Namespace),
 		k8sobjectsecret.NewLabelsModifier(coreLabels.BuildMatchLabels()),

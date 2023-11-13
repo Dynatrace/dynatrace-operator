@@ -1,7 +1,7 @@
 package container
 
 import (
-	pod2 "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
+	kopod "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -11,7 +11,7 @@ func FindContainerInPod(pod corev1.Pod, name string) (*corev1.Container, error) 
 	if container != nil {
 		return container, nil
 	}
-	podName := pod2.GetName(pod)
+	podName := kopod.GetName(pod)
 	return nil, errors.Errorf("no container %s found for pod %s", name, podName)
 }
 

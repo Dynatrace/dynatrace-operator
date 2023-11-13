@@ -164,7 +164,7 @@ func TestSecretBuilder(t *testing.T) {
 	}
 
 	t.Run("create secret", func(t *testing.T) {
-		secret, err := CreateSecret(scheme.Scheme, consts.CreateDeployment(),
+		secret, err := Create(scheme.Scheme, consts.CreateDeployment(),
 			NewNameModifier(testSecretName),
 			NewNamespaceModifier(consts.TestNamespace))
 		require.NoError(t, err)
@@ -176,7 +176,7 @@ func TestSecretBuilder(t *testing.T) {
 		assert.Len(t, secret.Data, 0)
 	})
 	t.Run("create secret with label", func(t *testing.T) {
-		secret, err := CreateSecret(scheme.Scheme, consts.CreateDeployment(),
+		secret, err := Create(scheme.Scheme, consts.CreateDeployment(),
 			NewLabelsModifier(labels),
 			NewNameModifier(testSecretName),
 			NewNamespaceModifier(consts.TestNamespace),
@@ -191,7 +191,7 @@ func TestSecretBuilder(t *testing.T) {
 		assert.Len(t, secret.Data, 0)
 	})
 	t.Run("create secret with type", func(t *testing.T) {
-		secret, err := CreateSecret(scheme.Scheme, consts.CreateDeployment(),
+		secret, err := Create(scheme.Scheme, consts.CreateDeployment(),
 			NewTypeModifier(corev1.SecretTypeDockercfg),
 			NewNameModifier(testSecretName),
 			NewNamespaceModifier(consts.TestNamespace),
@@ -206,7 +206,7 @@ func TestSecretBuilder(t *testing.T) {
 		assert.True(t, found)
 	})
 	t.Run("create secret with label and type", func(t *testing.T) {
-		secret, err := CreateSecret(scheme.Scheme, consts.CreateDeployment(),
+		secret, err := Create(scheme.Scheme, consts.CreateDeployment(),
 			NewLabelsModifier(labels),
 			NewTypeModifier(corev1.SecretTypeDockercfg),
 			NewNameModifier(testSecretName),

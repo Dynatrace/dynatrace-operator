@@ -41,7 +41,7 @@ func (certSecret *certificateSecret) setSecretFromReader(ctx context.Context, ap
 
 	switch {
 	case k8serrors.IsNotFound(err):
-		certSecret.secret, err = k8sobjectsecret.CreateSecret(certSecret.scheme, certSecret.owner,
+		certSecret.secret, err = k8sobjectsecret.Create(certSecret.scheme, certSecret.owner,
 			k8sobjectsecret.NewNameModifier(buildSecretName()),
 			k8sobjectsecret.NewNamespaceModifier(namespace),
 			k8sobjectsecret.NewDataModifier(map[string][]byte{}))

@@ -175,7 +175,7 @@ func GetDataFromSecretName(apiReader client.Reader, namespacedName types.Namespa
 type secretBuilderData = corev1.Secret
 type secretBuilderModifier = builder.Modifier[secretBuilderData]
 
-func CreateSecret(scheme *runtime.Scheme, owner metav1.Object, mods ...secretBuilderModifier) (*corev1.Secret, error) {
+func Create(scheme *runtime.Scheme, owner metav1.Object, mods ...secretBuilderModifier) (*corev1.Secret, error) {
 	builderOfSecret := builder.NewBuilder(corev1.Secret{})
 	secret, err := builderOfSecret.AddModifier(mods...).AddModifier(newSecretOwnerModifier(scheme, owner)).Build()
 	return &secret, err
