@@ -1,8 +1,6 @@
 package platform
 
 import (
-	"testing"
-
 	"github.com/Dynatrace/dynatrace-operator/cmd/config"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/discovery"
@@ -32,23 +30,26 @@ func NewResolver() *Resolver {
 	}
 }
 
-func (p *Resolver) IsOpenshift(t *testing.T) bool {
+func (p *Resolver) IsOpenshift() (bool, error) {
 	client, err := p.discoveryProvider()
 	if err != nil {
-		t.Fatal("failed to detect platform from cluster", err)
-		return false
+		// t.Fatal("failed to detect platform from cluster", err)
+		return false, err
 	}
 
 	_, err = client.ServerResourcesForGroupVersion(openshiftSecurityGVR)
-	return !k8serrors.IsNotFound(err)
+	return !k8serrors.IsNotFound(err), nil
 }
 
-func (p *Resolver) GetPlatform(t *testing.T) string {
-	isOpenshift := p.IsOpenshift(t)
-	if isOpenshift {
-		return openshiftPlatformEnvValue
+func (p *Resolver) GetPlatform() (string, error) {
+	isOpenshift, err := p.IsOpenshift()
+	if err != nil {
+		return "", err
 	}
-	return kubernetesPlatformEnvValue
+	if isOpenshift {
+		return openshiftPlatformEnvValue, nil
+	}
+	return kubernetesPlatformEnvValue, nil
 }
 
 func getDiscoveryClient() (discovery.DiscoveryInterface, error) {
