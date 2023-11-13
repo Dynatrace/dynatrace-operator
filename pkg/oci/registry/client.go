@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/dockerkeychain"
@@ -210,7 +211,7 @@ func PrepareTransportForDynaKube(ctx context.Context, apiReader client.Reader, t
 		}
 	}
 
-	if proxy != "" {
+	if proxy != "" && !areCustomImagesAffectedByFeatureNoProxy(dynakube) {
 		transport, err = addProxy(transport, proxy)
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed to add proxy to default transport")
@@ -225,4 +226,20 @@ func PrepareTransportForDynaKube(ctx context.Context, apiReader client.Reader, t
 	}
 
 	return transport, nil
+}
+
+func areCustomImagesAffectedByFeatureNoProxy(dynakube *dynatracev1beta1.DynaKube) bool {
+	excludeUrl := dynakube.FeatureNoProxy()
+
+	if excludeUrl == "" {
+		return false
+	}
+
+	if strings.Contains(dynakube.CustomOneAgentImage(), excludeUrl) &&
+		strings.Contains(dynakube.CustomActiveGateImage(), excludeUrl) {
+		log.Info("Skipping proxy in registry client - Caused by no-proxy feature flag")
+		return true
+	}
+
+	return false
 }

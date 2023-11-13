@@ -169,7 +169,7 @@ func (dk *DynaKube) FeatureDisableHostsRequests() bool {
 	return dk.getDisableFlagWithDeprecatedAnnotation(AnnotationFeatureHostsRequests, AnnotationFeatureDisableHostsRequests)
 }
 
-// FeatureNoProxy is a feature flag to set the NO_PROXY value to be used by the dtClient.
+// FeatureNoProxy is a feature flag to set the NO_PROXY value to be used by the dtClient. It can also be used to skip proxy use in operator's registry client.
 func (dk *DynaKube) FeatureNoProxy() string {
 	return dk.getFeatureFlagRaw(AnnotationFeatureNoProxy)
 }
