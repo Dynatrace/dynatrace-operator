@@ -3,7 +3,7 @@ package utilmap
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/testing/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/stretchr/testify/assert"
 )
 

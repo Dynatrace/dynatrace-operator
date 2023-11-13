@@ -7,10 +7,11 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/testing/consts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -20,9 +21,18 @@ import (
 const (
 	testConfigMapName  = "test-config-map"
 	testConfigMapValue = "test-config-map-value"
+	testDeploymentName = "deployment-as-owner-of-secret"
 )
 
 var configMapLog = logger.Factory.GetLogger("test-configMap")
+
+func createDeployment() *appsv1.Deployment {
+	return &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: testDeploymentName,
+		},
+	}
+}
 
 func TestConfigMapQuery(t *testing.T) {
 	t.Run(`Get configMap`, testGetConfigMap)
@@ -290,23 +300,23 @@ func TestConfigMapBuilder(t *testing.T) {
 		dataKey: "",
 	}
 	t.Run("create config map", func(t *testing.T) {
-		configMap, err := CreateConfigMap(scheme.Scheme, consts.CreateDeployment(),
+		configMap, err := CreateConfigMap(scheme.Scheme, createDeployment(),
 			NewModifier(testConfigMapName),
 			NewNamespaceModifier(consts.TestNamespace))
 		require.NoError(t, err)
 		require.Len(t, configMap.OwnerReferences, 1)
-		assert.Equal(t, consts.DeploymentName, configMap.OwnerReferences[0].Name)
+		assert.Equal(t, testDeploymentName, configMap.OwnerReferences[0].Name)
 		assert.Equal(t, configMap.Name, testConfigMapName)
 		assert.Len(t, configMap.Data, 0)
 	})
 	t.Run("create config map with data", func(t *testing.T) {
-		configMap, err := CreateConfigMap(scheme.Scheme, consts.CreateDeployment(),
+		configMap, err := CreateConfigMap(scheme.Scheme, createDeployment(),
 			NewModifier(testConfigMapName),
 			NewNamespaceModifier(consts.TestNamespace),
 			NewConfigMapDataModifier(data))
 		require.NoError(t, err)
 		require.Len(t, configMap.OwnerReferences, 1)
-		assert.Equal(t, consts.DeploymentName, configMap.OwnerReferences[0].Name)
+		assert.Equal(t, testDeploymentName, configMap.OwnerReferences[0].Name)
 		assert.Equal(t, configMap.Name, testConfigMapName)
 		_, found := configMap.Data[dataKey]
 		assert.True(t, found)

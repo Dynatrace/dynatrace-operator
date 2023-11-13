@@ -6,10 +6,11 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/testing/consts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -21,6 +22,14 @@ const (
 	deploymentName = "deployment-as-owner-of-secret"
 	testSecretName = "test-secret"
 )
+
+func createDeployment() *appsv1.Deployment {
+	return &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: deploymentName,
+		},
+	}
+}
 
 func TestGetSecret(t *testing.T) {
 	fakeClient := fake.NewClient(
@@ -164,7 +173,7 @@ func TestSecretBuilder(t *testing.T) {
 	}
 
 	t.Run("create secret", func(t *testing.T) {
-		secret, err := Create(scheme.Scheme, consts.CreateDeployment(),
+		secret, err := Create(scheme.Scheme, createDeployment(),
 			NewNameModifier(testSecretName),
 			NewNamespaceModifier(consts.TestNamespace))
 		require.NoError(t, err)
@@ -176,7 +185,7 @@ func TestSecretBuilder(t *testing.T) {
 		assert.Len(t, secret.Data, 0)
 	})
 	t.Run("create secret with label", func(t *testing.T) {
-		secret, err := Create(scheme.Scheme, consts.CreateDeployment(),
+		secret, err := Create(scheme.Scheme, createDeployment(),
 			NewLabelsModifier(labels),
 			NewNameModifier(testSecretName),
 			NewNamespaceModifier(consts.TestNamespace),
@@ -191,7 +200,7 @@ func TestSecretBuilder(t *testing.T) {
 		assert.Len(t, secret.Data, 0)
 	})
 	t.Run("create secret with type", func(t *testing.T) {
-		secret, err := Create(scheme.Scheme, consts.CreateDeployment(),
+		secret, err := Create(scheme.Scheme, createDeployment(),
 			NewTypeModifier(corev1.SecretTypeDockercfg),
 			NewNameModifier(testSecretName),
 			NewNamespaceModifier(consts.TestNamespace),
@@ -206,7 +215,7 @@ func TestSecretBuilder(t *testing.T) {
 		assert.True(t, found)
 	})
 	t.Run("create secret with label and type", func(t *testing.T) {
-		secret, err := Create(scheme.Scheme, consts.CreateDeployment(),
+		secret, err := Create(scheme.Scheme, createDeployment(),
 			NewLabelsModifier(labels),
 			NewTypeModifier(corev1.SecretTypeDockercfg),
 			NewNameModifier(testSecretName),

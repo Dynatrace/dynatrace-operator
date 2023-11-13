@@ -8,15 +8,18 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/resources"
 	utilmap "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
-	utilconsts "github.com/Dynatrace/dynatrace-operator/pkg/util/testing/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const customEnvPriority = prioritymap.HighPriority
-const defaultEnvPriority = prioritymap.DefaultPriority
+const (
+	customEnvPriority  = prioritymap.HighPriority
+	defaultEnvPriority = prioritymap.DefaultPriority
+	unprivilegedUser   = int64(1000)
+	unprivilegedGroup  = int64(1000)
+)
 
 func New(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
 	appLabels := buildAppLabels(instance)
@@ -130,8 +133,8 @@ func edgeConnectContainer(instance *edgeconnectv1alpha1.EdgeConnect) corev1.Cont
 			AllowPrivilegeEscalation: address.Of(false),
 			Privileged:               address.Of(false),
 			ReadOnlyRootFilesystem:   address.Of(true),
-			RunAsGroup:               address.Of(utilconsts.UnprivilegedGroup),
-			RunAsUser:                address.Of(utilconsts.UnprivilegedUser),
+			RunAsGroup:               address.Of(unprivilegedGroup),
+			RunAsUser:                address.Of(unprivilegedUser),
 			RunAsNonRoot:             address.Of(true),
 		},
 		VolumeMounts: []corev1.VolumeMount{
