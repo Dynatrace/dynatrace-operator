@@ -8,7 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
-	k8sobjectsecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
+	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -58,17 +58,17 @@ func (r *Reconciler) generateForDynakube(ctx context.Context, dynakube *dynatrac
 	}
 
 	coreLabels := labels.NewCoreLabels(dynakube.Name, labels.ActiveGateComponentLabel)
-	secret, err := k8sobjectsecret.Create(r.scheme, r.dynakube,
-		k8sobjectsecret.NewNameModifier(capability.BuildProxySecretName(dynakube.Name)),
-		k8sobjectsecret.NewNamespaceModifier(r.dynakube.Namespace),
-		k8sobjectsecret.NewLabelsModifier(coreLabels.BuildMatchLabels()),
-		k8sobjectsecret.NewTypeModifier(corev1.SecretTypeOpaque),
-		k8sobjectsecret.NewDataModifier(data))
+	secret, err := k8ssecret.Create(r.scheme, r.dynakube,
+		k8ssecret.NewNameModifier(capability.BuildProxySecretName(dynakube.Name)),
+		k8ssecret.NewNamespaceModifier(r.dynakube.Namespace),
+		k8ssecret.NewLabelsModifier(coreLabels.BuildMatchLabels()),
+		k8ssecret.NewTypeModifier(corev1.SecretTypeOpaque),
+		k8ssecret.NewDataModifier(data))
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	secretQuery := k8sobjectsecret.NewQuery(ctx, r.client, r.apiReader, log)
+	secretQuery := k8ssecret.NewQuery(ctx, r.client, r.apiReader, log)
 
 	err = secretQuery.CreateOrUpdate(*secret)
 	return errors.WithStack(err)

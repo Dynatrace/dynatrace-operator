@@ -2,7 +2,7 @@ package deployment
 
 import (
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
-	edgeconnectconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/consts"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/resources"
@@ -49,7 +49,7 @@ func New(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
 					ImagePullSecrets: []corev1.LocalObjectReference{
 						{Name: instance.Spec.CustomPullSecret},
 					},
-					ServiceAccountName:            edgeconnectconsts.EdgeConnectServiceAccountName,
+					ServiceAccountName:            consts.EdgeConnectServiceAccountName,
 					TerminationGracePeriodSeconds: address.Of(int64(30)),
 					Volumes:                       []corev1.Volume{prepareVolume(instance)},
 					NodeSelector:                  instance.Spec.NodeSelector,
@@ -73,20 +73,20 @@ func prepareContainerEnvVars(instance *edgeconnectv1alpha1.EdgeConnect) []corev1
 	envMap := prioritymap.New(prioritymap.WithPriority(defaultEnvPriority))
 	prioritymap.Append(envMap, []corev1.EnvVar{
 		{
-			Name:  edgeconnectconsts.EnvEdgeConnectName,
+			Name:  consts.EnvEdgeConnectName,
 			Value: instance.ObjectMeta.Name,
 		},
 		{
-			Name:  edgeconnectconsts.EnvEdgeConnectApiEndpointHost,
+			Name:  consts.EnvEdgeConnectApiEndpointHost,
 			Value: instance.Spec.ApiServer,
 		},
 
 		{
-			Name:  edgeconnectconsts.EnvEdgeConnectOauthEndpoint,
+			Name:  consts.EnvEdgeConnectOauthEndpoint,
 			Value: instance.Spec.OAuth.Endpoint,
 		},
 		{
-			Name:  edgeconnectconsts.EnvEdgeConnectOauthResource,
+			Name:  consts.EnvEdgeConnectOauthResource,
 			Value: instance.Spec.OAuth.Resource,
 		},
 	})
@@ -95,7 +95,7 @@ func prepareContainerEnvVars(instance *edgeconnectv1alpha1.EdgeConnect) []corev1
 	// otherwise edge-connect will fail
 	if instance.Spec.HostRestrictions != "" {
 		prioritymap.Append(envMap, corev1.EnvVar{
-			Name:  edgeconnectconsts.EnvEdgeConnectRestrictHostsTo,
+			Name:  consts.EnvEdgeConnectRestrictHostsTo,
 			Value: instance.Spec.HostRestrictions,
 		})
 	}
@@ -109,14 +109,14 @@ func buildAppLabels(instance *edgeconnectv1alpha1.EdgeConnect) *labels.AppLabels
 	return labels.NewAppLabels(
 		labels.EdgeConnectComponentLabel,
 		instance.Name,
-		edgeconnectconsts.EdgeConnectUserProvisioned,
+		consts.EdgeConnectUserProvisioned,
 		instance.Status.Version.Version)
 }
 
 func buildAnnotations(instance *edgeconnectv1alpha1.EdgeConnect) map[string]string {
 	annotations := map[string]string{
-		edgeconnectconsts.AnnotationEdgeConnectContainerAppArmor: "runtime/default",
-		webhook.AnnotationDynatraceInject:                        "false",
+		consts.AnnotationEdgeConnectContainerAppArmor: "runtime/default",
+		webhook.AnnotationDynatraceInject:             "false",
 	}
 	annotations = utilmap.MergeMap(instance.Annotations, annotations)
 	return annotations
@@ -124,7 +124,7 @@ func buildAnnotations(instance *edgeconnectv1alpha1.EdgeConnect) map[string]stri
 
 func edgeConnectContainer(instance *edgeconnectv1alpha1.EdgeConnect) corev1.Container {
 	return corev1.Container{
-		Name:            edgeconnectconsts.EdgeConnectContainerName,
+		Name:            consts.EdgeConnectContainerName,
 		Image:           instance.Status.Version.ImageID,
 		ImagePullPolicy: corev1.PullAlways,
 		Env:             prepareContainerEnvVars(instance),
@@ -138,20 +138,20 @@ func edgeConnectContainer(instance *edgeconnectv1alpha1.EdgeConnect) corev1.Cont
 			RunAsNonRoot:             address.Of(true),
 		},
 		VolumeMounts: []corev1.VolumeMount{
-			{MountPath: edgeconnectconsts.EdgeConnectMountPath, Name: edgeconnectconsts.EdgeConnectVolumeMountName, ReadOnly: true},
+			{MountPath: consts.EdgeConnectMountPath, Name: consts.EdgeConnectVolumeMountName, ReadOnly: true},
 		},
 	}
 }
 
 func prepareVolume(instance *edgeconnectv1alpha1.EdgeConnect) corev1.Volume {
 	return corev1.Volume{
-		Name: edgeconnectconsts.EdgeConnectVolumeMountName,
+		Name: consts.EdgeConnectVolumeMountName,
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
 				SecretName: instance.Spec.OAuth.ClientSecret,
 				Items: []corev1.KeyToPath{
-					{Key: edgeconnectconsts.KeyEdgeConnectOauthClientID, Path: edgeconnectconsts.PathEdgeConnectOauthClientID},
-					{Key: edgeconnectconsts.KeyEdgeConnectOauthClientSecret, Path: edgeconnectconsts.PathEdgeConnectOauthClientSecret},
+					{Key: consts.KeyEdgeConnectOauthClientID, Path: consts.PathEdgeConnectOauthClientID},
+					{Key: consts.KeyEdgeConnectOauthClientSecret, Path: consts.PathEdgeConnectOauthClientSecret},
 				},
 			},
 		},

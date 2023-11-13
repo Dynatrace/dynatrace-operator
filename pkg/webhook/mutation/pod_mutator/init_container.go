@@ -7,9 +7,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
-	k8sobjectpod "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
+	k8spod "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/resources"
-	utilmap "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
+	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -21,7 +21,7 @@ func createInstallInitContainerBase(webhookImage, clusterID string, pod *corev1.
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		Args:            []string{"init"},
 		Env: []corev1.EnvVar{
-			{Name: consts.InjectionFailurePolicyEnv, Value: utilmap.GetField(pod.Annotations, dtwebhook.AnnotationFailurePolicy, dynakube.FeatureInjectionFailurePolicy())},
+			{Name: consts.InjectionFailurePolicyEnv, Value: maputils.GetField(pod.Annotations, dtwebhook.AnnotationFailurePolicy, dynakube.FeatureInjectionFailurePolicy())},
 			{Name: consts.K8sPodNameEnv, ValueFrom: env.NewEnvVarSourceForField("metadata.name")},
 			{Name: consts.K8sPodUIDEnv, ValueFrom: env.NewEnvVarSourceForField("metadata.uid")},
 			{Name: consts.K8sBasePodNameEnv, Value: getBasePodName(pod)},
@@ -120,7 +120,7 @@ func isNonRoot(ctx *corev1.SecurityContext) bool {
 }
 
 func getBasePodName(pod *corev1.Pod) string {
-	basePodName := k8sobjectpod.GetName(*pod)
+	basePodName := k8spod.GetName(*pod)
 
 	// Only include up to the last dash character, exclusive.
 	if lastDashIndex := strings.LastIndex(basePodName, "-"); lastDashIndex != -1 {

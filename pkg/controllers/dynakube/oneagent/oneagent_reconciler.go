@@ -14,7 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/configmap"
-	kodaemeonset "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/daemonset"
+	k8sdaemonset "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
@@ -153,7 +153,7 @@ func (r *Reconciler) reconcileRollout(ctx context.Context, dynakube *dynatracev1
 		return err
 	}
 
-	updated, err := kodaemeonset.CreateOrUpdateDaemonSet(r.client, log, dsDesired)
+	updated, err := k8sdaemonset.CreateOrUpdateDaemonSet(r.client, log, dsDesired)
 	if err != nil {
 		log.Info("failed to roll out new OneAgent DaemonSet")
 		return err

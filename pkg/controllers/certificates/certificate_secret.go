@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"time"
 
-	k8sobjectsecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
+	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/pkg/errors"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -36,15 +36,15 @@ func newCertificateSecret(scheme *runtime.Scheme, deployment *appsv1.Deployment)
 }
 
 func (certSecret *certificateSecret) setSecretFromReader(ctx context.Context, apiReader client.Reader, namespace string) error {
-	query := k8sobjectsecret.NewQuery(ctx, nil, apiReader, log)
+	query := k8ssecret.NewQuery(ctx, nil, apiReader, log)
 	secret, err := query.Get(types.NamespacedName{Name: buildSecretName(), Namespace: namespace})
 
 	switch {
 	case k8serrors.IsNotFound(err):
-		certSecret.secret, err = k8sobjectsecret.Create(certSecret.scheme, certSecret.owner,
-			k8sobjectsecret.NewNameModifier(buildSecretName()),
-			k8sobjectsecret.NewNamespaceModifier(namespace),
-			k8sobjectsecret.NewDataModifier(map[string][]byte{}))
+		certSecret.secret, err = k8ssecret.Create(certSecret.scheme, certSecret.owner,
+			k8ssecret.NewNameModifier(buildSecretName()),
+			k8ssecret.NewNamespaceModifier(namespace),
+			k8ssecret.NewDataModifier(map[string][]byte{}))
 		if err != nil {
 			return errors.WithStack(err)
 		}

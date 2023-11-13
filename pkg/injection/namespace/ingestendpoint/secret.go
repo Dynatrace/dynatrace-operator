@@ -13,7 +13,7 @@ import (
 	agconsts "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
-	k8sobjectsecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
+	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -67,7 +67,7 @@ func (g *EndpointSecretGenerator) GenerateForNamespace(ctx context.Context, dkNa
 		Data: data,
 		Type: corev1.SecretTypeOpaque,
 	}
-	secretQuery := k8sobjectsecret.NewQuery(ctx, g.client, g.apiReader, log)
+	secretQuery := k8ssecret.NewQuery(ctx, g.client, g.apiReader, log)
 
 	err = secretQuery.CreateOrUpdate(*secret)
 	return errors.WithStack(err)
@@ -90,7 +90,7 @@ func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *d
 		return errors.WithStack(err)
 	}
 
-	secretQuery := k8sobjectsecret.NewQuery(ctx, g.client, g.apiReader, log)
+	secretQuery := k8ssecret.NewQuery(ctx, g.client, g.apiReader, log)
 	secret := corev1.Secret{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
