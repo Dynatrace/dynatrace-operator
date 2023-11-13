@@ -161,10 +161,10 @@ func TestHandlePodMutation(t *testing.T) {
 
 		assert.Equal(t, mutationRequest.Pod.Spec.InitContainers[1].Resources, testResourceRequirements)
 		assert.Equal(t, "true", mutationRequest.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected])
-		mutator1.(*mocks.PodMutator).AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
-		mutator1.(*mocks.PodMutator).AssertCalled(t, "Mutate", mutationRequest)
-		mutator2.(*mocks.PodMutator).AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
-		mutator2.(*mocks.PodMutator).AssertCalled(t, "Mutate", mutationRequest)
+		mutator1.AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
+		mutator1.AssertCalled(t, "Mutate", mutationRequest)
+		mutator2.AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
+		mutator2.AssertCalled(t, "Mutate", mutationRequest)
 	})
 	t.Run("should call 1 mutator, 1 error, no initContainer and annotation", func(t *testing.T) {
 		sadMutator := createFailPodMutatorMock(t)
@@ -178,10 +178,10 @@ func TestHandlePodMutation(t *testing.T) {
 		assert.NotNil(t, mutationRequest.InstallContainer)
 		assert.Len(t, mutationRequest.Pod.Spec.InitContainers, 1)
 		assert.NotEqual(t, "true", mutationRequest.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected])
-		sadMutator.(*mocks.PodMutator).AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
-		sadMutator.(*mocks.PodMutator).AssertCalled(t, "Mutate", mutationRequest)
-		happyMutator.(*mocks.PodMutator).AssertNotCalled(t, "Enabled", mock.Anything)
-		happyMutator.(*mocks.PodMutator).AssertNotCalled(t, "Mutate", mock.Anything)
+		sadMutator.AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
+		sadMutator.AssertCalled(t, "Mutate", mutationRequest)
+		happyMutator.AssertNotCalled(t, "Enabled", mock.Anything)
+		happyMutator.AssertNotCalled(t, "Mutate", mock.Anything)
 	})
 }
 
@@ -196,10 +196,10 @@ func TestHandlePodReinvocation(t *testing.T) {
 
 		updated := podWebhook.handlePodReinvocation(context.Background(), mutationRequest)
 		require.False(t, updated)
-		mutator1.(*mocks.PodMutator).AssertNotCalled(t, "Enabled", mutationRequest.BaseRequest)
-		mutator1.(*mocks.PodMutator).AssertNotCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
-		mutator2.(*mocks.PodMutator).AssertNotCalled(t, "Enabled", mutationRequest.BaseRequest)
-		mutator2.(*mocks.PodMutator).AssertNotCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
+		mutator1.AssertNotCalled(t, "Enabled", mutationRequest.BaseRequest)
+		mutator1.AssertNotCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
+		mutator2.AssertNotCalled(t, "Enabled", mutationRequest.BaseRequest)
+		mutator2.AssertNotCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
 	})
 	t.Run("should call both mutators, updated == true", func(t *testing.T) {
 		mutator1 := createAlreadyInjectedPodMutatorMock(t)
@@ -210,10 +210,10 @@ func TestHandlePodReinvocation(t *testing.T) {
 
 		updated := podWebhook.handlePodReinvocation(context.Background(), mutationRequest)
 		require.True(t, updated)
-		mutator1.(*mocks.PodMutator).AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
-		mutator1.(*mocks.PodMutator).AssertCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
-		mutator2.(*mocks.PodMutator).AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
-		mutator2.(*mocks.PodMutator).AssertCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
+		mutator1.AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
+		mutator1.AssertCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
+		mutator2.AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
+		mutator2.AssertCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
 	})
 	t.Run("should call both mutator, only 1 update, updated == true", func(t *testing.T) {
 		failingMutator := createFailPodMutatorMock(t)
@@ -224,10 +224,10 @@ func TestHandlePodReinvocation(t *testing.T) {
 
 		updated := podWebhook.handlePodReinvocation(context.Background(), mutationRequest)
 		require.True(t, updated)
-		failingMutator.(*mocks.PodMutator).AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
-		failingMutator.(*mocks.PodMutator).AssertCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
-		workingMutator.(*mocks.PodMutator).AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
-		workingMutator.(*mocks.PodMutator).AssertCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
+		failingMutator.AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
+		failingMutator.AssertCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
+		workingMutator.AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
+		workingMutator.AssertCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
 	})
 	t.Run("should call mutator, no update", func(t *testing.T) {
 		failingMutator := createFailPodMutatorMock(t)
@@ -237,10 +237,10 @@ func TestHandlePodReinvocation(t *testing.T) {
 
 		updated := podWebhook.handlePodReinvocation(context.Background(), mutationRequest)
 		require.False(t, updated)
-		failingMutator.(*mocks.PodMutator).AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
-		failingMutator.(*mocks.PodMutator).AssertCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
-		failingMutator.(*mocks.PodMutator).AssertNotCalled(t, "Injected", mock.Anything)
-		failingMutator.(*mocks.PodMutator).AssertNotCalled(t, "Mutated", mock.Anything)
+		failingMutator.AssertCalled(t, "Enabled", mutationRequest.BaseRequest)
+		failingMutator.AssertCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
+		failingMutator.AssertNotCalled(t, "Injected", mock.Anything)
+		failingMutator.AssertNotCalled(t, "Mutated", mock.Anything)
 	})
 }
 
@@ -286,7 +286,7 @@ func createTestWebhook(mutators []dtwebhook.PodMutator, objects []client.Object)
 	}
 }
 
-func createSimplePodMutatorMock(t *testing.T) dtwebhook.PodMutator {
+func createSimplePodMutatorMock(t *testing.T) *mocks.PodMutator {
 	mutator := mocks.NewPodMutator(t)
 	mutator.On("Enabled", mock.Anything).Return(true).Maybe()
 	mutator.On("Injected", mock.Anything).Return(false).Maybe()
@@ -295,7 +295,7 @@ func createSimplePodMutatorMock(t *testing.T) dtwebhook.PodMutator {
 	return mutator
 }
 
-func createAlreadyInjectedPodMutatorMock(t *testing.T) dtwebhook.PodMutator {
+func createAlreadyInjectedPodMutatorMock(t *testing.T) *mocks.PodMutator {
 	mutator := mocks.NewPodMutator(t)
 	mutator.On("Enabled", mock.Anything).Return(true).Maybe()
 	mutator.On("Injected", mock.Anything).Return(true).Maybe()
@@ -304,7 +304,7 @@ func createAlreadyInjectedPodMutatorMock(t *testing.T) dtwebhook.PodMutator {
 	return mutator
 }
 
-func createFailPodMutatorMock(t *testing.T) dtwebhook.PodMutator {
+func createFailPodMutatorMock(t *testing.T) *mocks.PodMutator {
 	mutator := mocks.NewPodMutator(t)
 	mutator.On("Enabled", mock.Anything).Return(true).Maybe()
 	mutator.On("Injected", mock.Anything).Return(false).Maybe()
