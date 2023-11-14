@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"golang.org/x/net/http/httpproxy"
 	"net/http"
 	"net/url"
 
@@ -87,10 +88,13 @@ func PrepareTransport(ctx context.Context, apiReader client.Reader, transport *h
 			log.Info("invalid proxy spec", "proxy", proxy)
 			return nil, errors.WithStack(err)
 		}
-
-		transport.Proxy = func(req *http.Request) (*url.URL, error) {
-			return proxyUrl, nil
+		proxyConfig := httpproxy.Config{
+			HTTPProxy:  proxyUrl.String(),
+			HTTPSProxy: proxyUrl.String(),
+			NoProxy:    dynakube.FeatureNoProxy(),
 		}
+
+		transport.Proxy = proxyWrapper(proxyConfig)
 	}
 
 	if dynakube.Spec.TrustedCAs != "" {
@@ -100,6 +104,12 @@ func PrepareTransport(ctx context.Context, apiReader client.Reader, transport *h
 		}
 	}
 	return transport, nil
+}
+
+func proxyWrapper(proxyConfig httpproxy.Config) func(req *http.Request) (*url.URL, error) {
+	return func(req *http.Request) (*url.URL, error) {
+		return proxyConfig.ProxyFunc()(req.URL)
+	}
 }
 
 func AddCertificates(ctx context.Context, apiReader client.Reader, transport *http.Transport, dynakube *dynatracev1beta1.DynaKube) (*http.Transport, error) {
