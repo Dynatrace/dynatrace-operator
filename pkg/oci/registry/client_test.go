@@ -2,13 +2,14 @@ package registry
 
 import (
 	"context"
+	"net/http"
+	"net/url"
+	"testing"
+
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"net/http"
-	"net/url"
-	"testing"
 )
 
 func TestProxy(t *testing.T) {
