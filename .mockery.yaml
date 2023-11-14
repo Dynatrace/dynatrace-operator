@@ -12,9 +12,9 @@ packages:
   github.com/Dynatrace/dynatrace-operator/cmd/manager:
     interfaces:
       Provider:
-  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version:
+  github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace:
     interfaces:
-      StatusUpdater:
+      Client:
   github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer:
     interfaces:
       Installer:
