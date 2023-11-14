@@ -21,6 +21,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
+	controllererrors "github.com/Dynatrace/dynatrace-operator/pkg/controllers/errors"
 	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/ingestendpoint"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/initgeneration"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
@@ -43,9 +44,10 @@ import (
 )
 
 const (
-	fastUpdateInterval    = 1 * time.Minute
-	changesUpdateInterval = 5 * time.Minute
-	defaultUpdateInterval = 30 * time.Minute
+	immediateUpdateInterval = 5 * time.Second
+	fastUpdateInterval      = 1 * time.Minute
+	changesUpdateInterval   = 5 * time.Minute
+	defaultUpdateInterval   = 30 * time.Minute
 )
 
 func Add(mgr manager.Manager, _ string) error {
@@ -116,12 +118,20 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 
 	dynaKube, err := controller.getDynakubeOrUnmap(ctx, request.Name, request.Namespace)
 	if err != nil {
+		log.Info("reconciling DynaKube finished, could not get dynakube", "namespace", request.Namespace, "name", request.Name, "result", "empty", "err", err.Error())
 		return reconcile.Result{}, err
 	} else if dynaKube == nil {
+		log.Info("reconciling DynaKube finished, no dynakube available", "namespace", request.Namespace, "name", request.Name, "result", "empty", "err", "nil")
 		return reconcile.Result{}, nil
 	}
 
-	return controller.reconcile(ctx, dynaKube)
+	errMsg := ""
+	result, err := controller.reconcile(ctx, dynaKube)
+	if err != nil {
+		errMsg = err.Error()
+	}
+	log.Info("reconciling DynaKube finished", "namespace", request.Namespace, "name", request.Name, "result", result, "err", errMsg)
+	return result, err
 }
 
 func (controller *Controller) setRequeueAfterIfNewIsShorter(requeueAfter time.Duration) {
@@ -143,6 +153,14 @@ func (controller *Controller) reconcile(ctx context.Context, dynaKube *dynatrace
 			"errorCode", dynatraceapi.StatusCode(err), "errorMessage", dynatraceapi.Message(err))
 		// should we set the phase to error ?
 		return reconcile.Result{RequeueAfter: fastUpdateInterval}, nil
+
+	case errors.Is(err, &controllererrors.RestartReconciliationError{}):
+		controller.setRequeueAfterIfNewIsShorter(immediateUpdateInterval)
+
+		restartErr := &controllererrors.RestartReconciliationError{}
+		errors.As(err, &restartErr)
+		log.Info("need to restart reconciliation", "reason", restartErr.Error())
+		err = nil
 
 	case err != nil:
 		controller.setRequeueAfterIfNewIsShorter(fastUpdateInterval)
@@ -267,6 +285,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		return err
 	}
 
+	log.Info("start reconciling connection info")
 	err = controller.reconcileConnectionInfo(ctx, dynakube, dynatraceClient)
 	if err != nil {
 		return err
@@ -275,12 +294,14 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 	// TODO: Improve logic so we do this only in case of codemodules
 	// Kept it like this for now to keep compatibility
 	if istioReconciler != nil {
+		log.Info("start reconciling Istio")
 		err := istioReconciler.ReconcileCommunicationHosts(ctx, dynakube)
 		if err != nil {
 			return err
 		}
 	}
 
+	log.Info("start reconciling pull secret")
 	err = dtpullsecret.
 		NewReconciler(controller.client, controller.apiReader, controller.scheme, dynakube, tokens).
 		Reconcile(ctx)
@@ -289,6 +310,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		return err
 	}
 
+	log.Info("start reconciling deployment meta data")
 	err = deploymentmetadata.NewReconciler(controller.client, controller.apiReader, controller.scheme, *dynakube, controller.clusterID).Reconcile(ctx)
 	if err != nil {
 		return err
@@ -300,6 +322,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		return err
 	}
 
+	log.Info("start reconciling version")
 	versionReconciler := version.NewReconciler(
 		dynakube,
 		controller.apiReader,
@@ -330,23 +353,29 @@ func (controller *Controller) reconcileConnectionInfo(ctx context.Context, dynak
 }
 
 func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient dtclient.Client, dynakube *dynatracev1beta1.DynaKube) error {
-	err := controller.reconcileActiveGate(ctx, dynakube, dynatraceClient)
+	// it's important to setup app injection before AG so that it is already working when AG pods start, in case code modules shall get
+	// injected into AG for self-monitoring reasons
+	log.Info("start reconciling app injection")
+	err := controller.reconcileAppInjection(ctx, dynakube)
+	if err != nil {
+		log.Info("could not reconcile app injection")
+		return err
+	}
+
+	log.Info("start reconciling ActiveGate")
+	err = controller.reconcileActiveGate(ctx, dynakube, dynatraceClient)
 	if err != nil {
 		log.Info("could not reconcile ActiveGate")
 		return err
 	}
 
+	log.Info("start reconciling OneAgent")
 	err = controller.reconcileOneAgent(ctx, dynakube)
 	if err != nil {
 		log.Info("could not reconcile OneAgent")
 		return err
 	}
 
-	err = controller.reconcileAppInjection(ctx, dynakube)
-	if err != nil {
-		log.Info("could not reconcile app injection")
-		return err
-	}
 	return nil
 }
 

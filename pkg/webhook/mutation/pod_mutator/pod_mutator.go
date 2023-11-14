@@ -55,16 +55,32 @@ type podMutatorWebhook struct {
 	requestCounter metric.Int64Counter
 }
 
+func checkMutationRequestBase(mutationRequest *dtwebhook.MutationRequest, err error) (*dtwebhook.MutationRequest, admission.Response, bool) {
+	emptyPatch := admission.Patched("")
+	if err != nil {
+		emptyPatch.Result.Message = fmt.Sprintf("unable to inject into pod (err=%s)", err.Error())
+		log.Error(err, "building mutation request base encountered an error")
+		return nil, emptyPatch, false
+	}
+	if mutationRequest == nil {
+		emptyPatch.Result.Message = "unable to inject into pod (no error reported)"
+		log.Error(err, "building mutation request base delivered nil result")
+		return nil, emptyPatch, false
+	}
+	return mutationRequest, emptyPatch, true
+}
+
 func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.Request) admission.Response {
 	webhook.countHandleMutationRequest(ctx)
 
 	ctx, span := dtotel.StartSpan(ctx, webhook.spanTracer, "podMutatorHandle")
 	defer span.End()
 
-	emptyPatch := admission.Patched("")
 	mutationRequest, err := webhook.createMutationRequestBase(ctx, request)
-	if err != nil {
-		return silentErrorResponse(mutationRequest.Pod, err)
+	mutationRequest, emptyPatch, ok := checkMutationRequestBase(mutationRequest, err)
+	if !ok {
+		span.RecordError(err)
+		return emptyPatch
 	}
 
 	podName := mutationRequest.PodName()
