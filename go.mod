@@ -33,7 +33,7 @@ require (
 	golang.org/x/oauth2 v0.14.0
 	golang.org/x/sys v0.14.0
 	google.golang.org/grpc v1.59.0
-	istio.io/api v1.19.3
+	istio.io/api v1.19.4
 	istio.io/client-go v1.19.3
 	k8s.io/api v0.28.3
 	k8s.io/apiextensions-apiserver v0.28.3
