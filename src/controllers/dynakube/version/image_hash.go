@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"golang.org/x/net/http/httpproxy"
 	"net/http"
 	"net/url"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/registry"
 	containerv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/pkg/errors"
+	"golang.org/x/net/http/httpproxy"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
