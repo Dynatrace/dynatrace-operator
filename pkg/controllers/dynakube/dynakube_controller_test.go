@@ -16,7 +16,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry/mocks"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
@@ -24,6 +23,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	mockedclient "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	containerv1 "github.com/google/go-containerregistry/pkg/v1"
 	fakecontainer "github.com/google/go-containerregistry/pkg/v1/fake"
 	"github.com/pkg/errors"
@@ -84,7 +84,7 @@ func TestMonitoringModesDynakube_Reconcile(t *testing.T) {
 				dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeActiveGateTokenCreate},
 			)
 
-			mockClient.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
+			mockClient.On("GetActiveGateAuthToken", testName).Return(dtclient.ActiveGateAuthTokenInfo{}, nil)
 
 			instance := &dynatracev1beta1.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
@@ -649,14 +649,14 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 	assert.True(t, k8serrors.IsNotFound(err))
 }
 
-func createDTMockClient(paasTokenScopes, apiTokenScopes dtclient.TokenScopes) *dtclient.MockDynatraceClient {
-	mockClient := &dtclient.MockDynatraceClient{}
+func createDTMockClient(paasTokenScopes, apiTokenScopes dtclient.TokenScopes) *mockedclient.Client {
+	mockClient := &mockedclient.Client{}
 
 	mockClient.On("GetCommunicationHostForClient").Return(dtclient.CommunicationHost{
 		Protocol: testProtocol,
 		Host:     testHost,
 		Port:     testPort,
-	}, nil)
+	}, nil).Maybe()
 	mockClient.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{
 		CommunicationHosts: []dtclient.CommunicationHost{
 			{
@@ -673,23 +673,23 @@ func createDTMockClient(paasTokenScopes, apiTokenScopes dtclient.TokenScopes) *d
 		ConnectionInfo: dtclient.ConnectionInfo{
 			TenantUUID: testUUID,
 		},
-	}, nil)
-	mockClient.On("GetTokenScopes", testPaasToken).Return(paasTokenScopes, nil)
-	mockClient.On("GetTokenScopes", testAPIToken).Return(apiTokenScopes, nil)
+	}, nil).Maybe()
+	mockClient.On("GetTokenScopes", testPaasToken).Return(paasTokenScopes, nil).Maybe()
+	mockClient.On("GetTokenScopes", testAPIToken).Return(apiTokenScopes, nil).Maybe()
 	mockClient.On("GetOneAgentConnectionInfo").Return(
 		dtclient.OneAgentConnectionInfo{
 			ConnectionInfo: dtclient.ConnectionInfo{
 				TenantUUID: "abc123456",
 			},
-		}, nil)
-	mockClient.On("GetLatestAgentVersion", mock.Anything, mock.Anything).Return(testVersion, nil)
+		}, nil).Maybe()
+	mockClient.On("GetLatestAgentVersion", mock.Anything, mock.Anything).Return(testVersion, nil).Maybe()
 	mockClient.On("GetMonitoredEntitiesForKubeSystemUUID", mock.AnythingOfType("string")).
-		Return([]dtclient.MonitoredEntity{}, nil)
-	mockClient.On("GetSettingsForMonitoredEntities", []dtclient.MonitoredEntity{}).
-		Return(dtclient.GetSettingsResponse{}, nil)
+		Return([]dtclient.MonitoredEntity{}, nil).Maybe()
+	mockClient.On("GetSettingsForMonitoredEntities", []dtclient.MonitoredEntity{}, mock.AnythingOfType("string")).
+		Return(dtclient.GetSettingsResponse{}, nil).Maybe()
 	mockClient.On("CreateOrUpdateKubernetesSetting", testName, testUID, mock.AnythingOfType("string")).
-		Return(testObjectID, nil)
-	mockClient.On("GetActiveGateConnectionInfo").Return(&dtclient.ActiveGateConnectionInfo{}, nil)
+		Return(testObjectID, nil).Maybe()
+	mockClient.On("GetActiveGateConnectionInfo").Return(dtclient.ActiveGateConnectionInfo{}, nil).Maybe()
 
 	return mockClient
 }
@@ -1008,7 +1008,7 @@ func TestTokenConditions(t *testing.T) {
 				dtclient.DynatraceApiToken: []byte(testAPIToken),
 			},
 		})
-		mockClient := &dtclient.MockDynatraceClient{}
+		mockClient := mockedclient.NewClient(t)
 		mockDtcBuilder := &dynatraceclient.StubBuilder{
 			DynatraceClient: mockClient,
 		}
@@ -1019,14 +1019,20 @@ func TestTokenConditions(t *testing.T) {
 			dynatraceClientBuilder: mockDtcBuilder,
 			registryClientBuilder:  createFakeRegistryClientBuilder(),
 		}
-		requiredScopes := token.Tokens{
-			dtclient.DynatraceApiToken: {Value: testAPIToken},
-		}.SetScopesForDynakube(*dynakube).ApiToken().RequiredScopes
 
+<<<<<<< HEAD
 		mockClient.On("GetTokenScopes", testAPIToken).Return(dtclient.TokenScopes(requiredScopes), nil)
 
 		_ = controller.reconcileDynaKube(context.Background(), dynakube)
+||||||| parent of 6a46919b (Replace old client with new one)
+		mockClient.On("GetTokenScopes", testAPIToken).Return(dtclient.TokenScopes(requiredScopes), nil)
 
+		_ = controller.reconcileDynaKube(context.TODO(), dynakube)
+=======
+		err := controller.reconcileDynaKube(context.TODO(), dynakube)
+>>>>>>> 6a46919b (Replace old client with new one)
+
+		assert.Error(t, err, "status update will fail")
 		assertCondition(t, dynakube, dynatracev1beta1.TokenConditionType, metav1.ConditionTrue, dynatracev1beta1.ReasonTokenReady, "")
 	})
 }

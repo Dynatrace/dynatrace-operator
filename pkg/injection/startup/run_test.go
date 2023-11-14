@@ -7,7 +7,14 @@ import (
 
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
+<<<<<<< HEAD
 	mocks "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
+||||||| parent of 6a46919b (Replace old client with new one)
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
+=======
+	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
+	mockedclient "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+>>>>>>> 6a46919b (Replace old client with new one)
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -133,7 +140,7 @@ func TestInstallOneAgent(t *testing.T) {
 	t.Run("happy install", func(t *testing.T) {
 		runner := createMockedRunner(t)
 		runner.fs.Create(filepath.Join(consts.AgentBinDirMount, "agent/conf/ruxitagentproc.conf"))
-		runner.dtclient.(*dtclient.MockDynatraceClient).
+		runner.dtclient.(*mockedclient.Client).
 			On("GetProcessModuleConfig", uint(0)).
 			Return(getTestProcessModuleConfig(), nil)
 		runner.installer.(*mocks.Installer).
@@ -156,7 +163,7 @@ func TestInstallOneAgent(t *testing.T) {
 	})
 	t.Run("sad install -> ruxitagent update fail", func(t *testing.T) {
 		runner := createMockedRunner(t)
-		runner.dtclient.(*dtclient.MockDynatraceClient).
+		runner.dtclient.(*mockedclient.Client).
 			On("GetProcessModuleConfig", uint(0)).
 			Return(getTestProcessModuleConfig(), nil)
 		runner.installer.(*mocks.Installer).
@@ -169,7 +176,7 @@ func TestInstallOneAgent(t *testing.T) {
 	})
 	t.Run("sad install -> ruxitagent endpoint fail", func(t *testing.T) {
 		runner := createMockedRunner(t)
-		runner.dtclient.(*dtclient.MockDynatraceClient).
+		runner.dtclient.(*mockedclient.Client).
 			On("GetProcessModuleConfig", uint(0)).
 			Return(&dtclient.ProcessModuleConfig{}, fmt.Errorf("BOOM"))
 		runner.installer.(*mocks.Installer).
@@ -186,7 +193,7 @@ func TestRun(t *testing.T) {
 	runner.config.HasHost = false
 	runner.env.OneAgentInjected = true
 	runner.env.DataIngestInjected = true
-	runner.dtclient.(*dtclient.MockDynatraceClient).
+	runner.dtclient.(*mockedclient.Client).
 		On("GetProcessModuleConfig", uint(0)).
 		Return(getTestProcessModuleConfig(), nil)
 
@@ -278,7 +285,7 @@ func TestConfigureInstallation(t *testing.T) {
 func TestGetProcessModuleConfig(t *testing.T) {
 	t.Run("error if api call fails", func(t *testing.T) {
 		runner := createMockedRunner(t)
-		runner.dtclient.(*dtclient.MockDynatraceClient).
+		runner.dtclient.(*mockedclient.Client).
 			On("GetProcessModuleConfig", uint(0)).
 			Return(&dtclient.ProcessModuleConfig{}, fmt.Errorf("BOOM"))
 
@@ -291,7 +298,7 @@ func TestGetProcessModuleConfig(t *testing.T) {
 		const proxy = "dummy-proxy"
 		runner := createMockedRunner(t)
 		runner.config.Proxy = proxy
-		runner.dtclient.(*dtclient.MockDynatraceClient).
+		runner.dtclient.(*mockedclient.Client).
 			On("GetProcessModuleConfig", uint(0)).
 			Return(getTestProcessModuleConfig(), nil)
 
@@ -466,8 +473,16 @@ func createTestRunner(t *testing.T) *Runner {
 
 func createMockedRunner(t *testing.T) *Runner {
 	runner := createTestRunner(t)
+<<<<<<< HEAD
 	runner.installer = mocks.NewInstaller(t)
 	runner.dtclient = &dtclient.MockDynatraceClient{}
+||||||| parent of 6a46919b (Replace old client with new one)
+	runner.installer = &installer.Mock{}
+	runner.dtclient = &dtclient.MockDynatraceClient{}
+=======
+	runner.installer = &installer.Mock{}
+	runner.dtclient = mockedclient.NewClient(t)
+>>>>>>> 6a46919b (Replace old client with new one)
 	return runner
 }
 

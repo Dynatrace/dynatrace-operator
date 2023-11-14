@@ -6,6 +6,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	mockedclient "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -126,11 +127,11 @@ func testVerifyTokenScopes(t *testing.T) {
 			RequiredScopes: []string{"a", "c"},
 		},
 	}
-	fakeDynatraceClient := &dtclient.MockDynatraceClient{}
+	fakeDynatraceClient := mockedclient.NewClient(t)
 
 	fakeDynatraceClient.
 		On("GetTokenScopes", "empty-scopes").
-		Return(dtclient.TokenScopes{"a", "c"}, nil)
+		Return(dtclient.TokenScopes{"a", "c"}, nil).Maybe().Times(0)
 	fakeDynatraceClient.
 		On("GetTokenScopes", "valid-scopes").
 		Return(dtclient.TokenScopes{"a", "c"}, nil)
@@ -141,7 +142,6 @@ func testVerifyTokenScopes(t *testing.T) {
 		On("GetTokenScopes", "api-error").
 		Return(dtclient.TokenScopes{}, errors.New("test api-error"))
 
-	fakeDynatraceClient.AssertNotCalled(t, "GetTokenScopes", "empty-scopes")
 	assert.NoError(t, validTokens.VerifyScopes(fakeDynatraceClient))
 	assert.EqualError(t,
 		invalidTokens.VerifyScopes(fakeDynatraceClient),
