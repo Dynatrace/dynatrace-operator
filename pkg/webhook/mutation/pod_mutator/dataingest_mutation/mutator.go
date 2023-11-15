@@ -30,10 +30,7 @@ func NewDataIngestPodMutator(webhookNamespace string, client client.Client, apiR
 	}
 }
 
-func (mutator *DataIngestPodMutator) Enabled(ctx context.Context, request *dtwebhook.BaseRequest) bool {
-	_, span := dtotel.StartSpan(ctx, webhookotel.Tracer())
-	defer span.End()
-
+func (mutator *DataIngestPodMutator) Enabled(request *dtwebhook.BaseRequest) bool {
 	enabledOnPod := kubeobjects.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationDataIngestInject,
 		request.DynaKube.FeatureAutomaticInjection())
 	enabledOnDynakube := !request.DynaKube.FeatureDisableMetadataEnrichment()
@@ -41,10 +38,7 @@ func (mutator *DataIngestPodMutator) Enabled(ctx context.Context, request *dtweb
 	return enabledOnPod && enabledOnDynakube
 }
 
-func (mutator *DataIngestPodMutator) Injected(ctx context.Context, request *dtwebhook.BaseRequest) bool {
-	_, span := dtotel.StartSpan(ctx, webhookotel.Tracer())
-	defer span.End()
-
+func (mutator *DataIngestPodMutator) Injected(request *dtwebhook.BaseRequest) bool {
 	return kubeobjects.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationDataIngestInjected, false)
 }
 
@@ -70,11 +64,8 @@ func (mutator *DataIngestPodMutator) Mutate(ctx context.Context, request *dtwebh
 	return nil
 }
 
-func (mutator *DataIngestPodMutator) Reinvoke(ctx context.Context, request *dtwebhook.ReinvocationRequest) bool {
-	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer())
-	defer span.End()
-
-	if !mutator.Injected(ctx, request.BaseRequest) {
+func (mutator *DataIngestPodMutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
+	if !mutator.Injected(request.BaseRequest) {
 		return false
 	}
 	log.Info("reinvoking", "podName", request.PodName())

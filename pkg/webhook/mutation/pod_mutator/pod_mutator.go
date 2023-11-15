@@ -117,7 +117,7 @@ func (webhook *podMutatorWebhook) isInjected(ctx context.Context, mutationReques
 	defer span.End()
 
 	for _, mutator := range webhook.mutators {
-		if mutator.Injected(ctx, mutationRequest.BaseRequest) {
+		if mutator.Injected(mutationRequest.BaseRequest) {
 			return true
 		}
 	}
@@ -143,7 +143,7 @@ func (webhook *podMutatorWebhook) handlePodMutation(ctx context.Context, mutatio
 	mutationRequest.InstallContainer = createInstallInitContainerBase(webhook.webhookImage, webhook.clusterID, mutationRequest.Pod, mutationRequest.DynaKube)
 	isMutated := false
 	for _, mutator := range webhook.mutators {
-		if !mutator.Enabled(ctx, mutationRequest.BaseRequest) {
+		if !mutator.Enabled(mutationRequest.BaseRequest) {
 			continue
 		}
 		if err := mutator.Mutate(ctx, mutationRequest); err != nil {
@@ -163,7 +163,7 @@ func (webhook *podMutatorWebhook) handlePodMutation(ctx context.Context, mutatio
 }
 
 func (webhook *podMutatorWebhook) handlePodReinvocation(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) bool {
-	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), spanOptions()...)
+	_, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), spanOptions()...)
 	defer span.End()
 
 	var needsUpdate bool
@@ -174,8 +174,8 @@ func (webhook *podMutatorWebhook) handlePodReinvocation(ctx context.Context, mut
 
 	reinvocationRequest := mutationRequest.ToReinvocationRequest()
 	for _, mutator := range webhook.mutators {
-		if mutator.Enabled(ctx, mutationRequest.BaseRequest) {
-			if update := mutator.Reinvoke(ctx, reinvocationRequest); update {
+		if mutator.Enabled(mutationRequest.BaseRequest) {
+			if update := mutator.Reinvoke(reinvocationRequest); update {
 				needsUpdate = true
 			}
 		}

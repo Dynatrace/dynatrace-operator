@@ -28,7 +28,7 @@ func TestEnabled(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		request := createTestMutationRequest(nil, map[string]string{dtwebhook.AnnotationOneAgentInject: "false"}, getTestNamespace(nil))
 
-		enabled := mutator.Enabled(context.Background(), request.BaseRequest)
+		enabled := mutator.Enabled(request.BaseRequest)
 
 		require.False(t, enabled)
 	})
@@ -36,7 +36,7 @@ func TestEnabled(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		request := createTestMutationRequest(nil, nil, getTestNamespace(nil))
 
-		enabled := mutator.Enabled(context.Background(), request.BaseRequest)
+		enabled := mutator.Enabled(request.BaseRequest)
 
 		require.True(t, enabled)
 	})
@@ -45,7 +45,7 @@ func TestEnabled(t *testing.T) {
 		request := createTestMutationRequest(nil, nil, getTestNamespace(nil))
 		request.DynaKube.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureAutomaticInjection: "false"}
 
-		enabled := mutator.Enabled(context.Background(), request.BaseRequest)
+		enabled := mutator.Enabled(request.BaseRequest)
 
 		require.False(t, enabled)
 	})
@@ -54,7 +54,7 @@ func TestEnabled(t *testing.T) {
 		request := createTestMutationRequest(nil, nil, getTestNamespace(nil))
 		request.DynaKube.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureAutomaticInjection: "true"}
 
-		enabled := mutator.Enabled(context.Background(), request.BaseRequest)
+		enabled := mutator.Enabled(request.BaseRequest)
 
 		require.True(t, enabled)
 	})
@@ -65,7 +65,7 @@ func TestInjected(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		request := createTestMutationRequest(nil, map[string]string{dtwebhook.AnnotationOneAgentInjected: "true"}, getTestNamespace(nil))
 
-		enabled := mutator.Injected(context.Background(), request.BaseRequest)
+		enabled := mutator.Injected(request.BaseRequest)
 
 		require.True(t, enabled)
 	})
@@ -73,7 +73,7 @@ func TestInjected(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		request := createTestMutationRequest(nil, nil, getTestNamespace(nil))
 
-		enabled := mutator.Injected(context.Background(), request.BaseRequest)
+		enabled := mutator.Injected(request.BaseRequest)
 
 		require.False(t, enabled)
 	})
@@ -238,7 +238,7 @@ func TestReinvoke(t *testing.T) {
 			initialContainersLen := len(request.Pod.Spec.Containers)
 			initialAnnotationsLen := len(request.Pod.Annotations)
 
-			updated := mutator.Reinvoke(context.Background(), request)
+			updated := mutator.Reinvoke(request)
 			require.True(t, updated)
 
 			assert.Len(t, request.Pod.Spec.Volumes, initialNumberOfVolumesLen)
@@ -261,7 +261,7 @@ func TestReinvoke(t *testing.T) {
 				},
 			},
 		}
-		updated := mutator.Reinvoke(context.Background(), request)
+		updated := mutator.Reinvoke(request)
 		require.False(t, updated)
 	})
 }

@@ -24,6 +24,8 @@ type OneAgentPodMutator struct {
 	apiReader        client.Reader
 }
 
+var _ dtwebhook.PodMutator = &OneAgentPodMutator{}
+
 func NewOneAgentPodMutator(image, clusterID, webhookNamespace string, client client.Client, apiReader client.Reader) *OneAgentPodMutator { //nolint:revive // argument-limit doesn't apply to constructors
 	return &OneAgentPodMutator{
 		image:            image,
@@ -34,17 +36,11 @@ func NewOneAgentPodMutator(image, clusterID, webhookNamespace string, client cli
 	}
 }
 
-func (mutator *OneAgentPodMutator) Enabled(ctx context.Context, request *dtwebhook.BaseRequest) bool {
-	_, span := dtotel.StartSpan(ctx, webhookotel.Tracer())
-	defer span.End()
-
+func (mutator *OneAgentPodMutator) Enabled(request *dtwebhook.BaseRequest) bool {
 	return kubeobjects.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationOneAgentInject, request.DynaKube.FeatureAutomaticInjection())
 }
 
-func (mutator *OneAgentPodMutator) Injected(ctx context.Context, request *dtwebhook.BaseRequest) bool {
-	_, span := dtotel.StartSpan(ctx, webhookotel.Tracer())
-	defer span.End()
-
+func (mutator *OneAgentPodMutator) Injected(request *dtwebhook.BaseRequest) bool {
 	return kubeobjects.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationOneAgentInjected, false)
 }
 
@@ -74,11 +70,8 @@ func (mutator *OneAgentPodMutator) Mutate(ctx context.Context, request *dtwebhoo
 	return nil
 }
 
-func (mutator *OneAgentPodMutator) Reinvoke(ctx context.Context, request *dtwebhook.ReinvocationRequest) bool {
-	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer())
-	defer span.End()
-
-	if !mutator.Injected(ctx, request.BaseRequest) {
+func (mutator *OneAgentPodMutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
+	if !mutator.Injected(request.BaseRequest) {
 		return false
 	}
 	log.Info("reinvoking", "podName", request.PodName())

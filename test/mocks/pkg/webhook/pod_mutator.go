@@ -22,13 +22,13 @@ func (_m *PodMutator) EXPECT() *PodMutator_Expecter {
 	return &PodMutator_Expecter{mock: &_m.Mock}
 }
 
-// Enabled provides a mock function with given fields: ctx, request
-func (_m *PodMutator) Enabled(ctx context.Context, request *webhook.BaseRequest) bool {
-	ret := _m.Called(ctx, request)
+// Enabled provides a mock function with given fields: request
+func (_m *PodMutator) Enabled(request *webhook.BaseRequest) bool {
+	ret := _m.Called(request)
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, *webhook.BaseRequest) bool); ok {
-		r0 = rf(ctx, request)
+	if rf, ok := ret.Get(0).(func(*webhook.BaseRequest) bool); ok {
+		r0 = rf(request)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
@@ -42,15 +42,14 @@ type PodMutator_Enabled_Call struct {
 }
 
 // Enabled is a helper method to define mock.On call
-//   - ctx context.Context
 //   - request *webhook.BaseRequest
-func (_e *PodMutator_Expecter) Enabled(ctx interface{}, request interface{}) *PodMutator_Enabled_Call {
-	return &PodMutator_Enabled_Call{Call: _e.mock.On("Enabled", ctx, request)}
+func (_e *PodMutator_Expecter) Enabled(request interface{}) *PodMutator_Enabled_Call {
+	return &PodMutator_Enabled_Call{Call: _e.mock.On("Enabled", request)}
 }
 
-func (_c *PodMutator_Enabled_Call) Run(run func(ctx context.Context, request *webhook.BaseRequest)) *PodMutator_Enabled_Call {
+func (_c *PodMutator_Enabled_Call) Run(run func(request *webhook.BaseRequest)) *PodMutator_Enabled_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*webhook.BaseRequest))
+		run(args[0].(*webhook.BaseRequest))
 	})
 	return _c
 }
@@ -60,18 +59,18 @@ func (_c *PodMutator_Enabled_Call) Return(_a0 bool) *PodMutator_Enabled_Call {
 	return _c
 }
 
-func (_c *PodMutator_Enabled_Call) RunAndReturn(run func(context.Context, *webhook.BaseRequest) bool) *PodMutator_Enabled_Call {
+func (_c *PodMutator_Enabled_Call) RunAndReturn(run func(*webhook.BaseRequest) bool) *PodMutator_Enabled_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Injected provides a mock function with given fields: ctx, request
-func (_m *PodMutator) Injected(ctx context.Context, request *webhook.BaseRequest) bool {
-	ret := _m.Called(ctx, request)
+// Injected provides a mock function with given fields: request
+func (_m *PodMutator) Injected(request *webhook.BaseRequest) bool {
+	ret := _m.Called(request)
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, *webhook.BaseRequest) bool); ok {
-		r0 = rf(ctx, request)
+	if rf, ok := ret.Get(0).(func(*webhook.BaseRequest) bool); ok {
+		r0 = rf(request)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
@@ -85,15 +84,14 @@ type PodMutator_Injected_Call struct {
 }
 
 // Injected is a helper method to define mock.On call
-//   - ctx context.Context
 //   - request *webhook.BaseRequest
-func (_e *PodMutator_Expecter) Injected(ctx interface{}, request interface{}) *PodMutator_Injected_Call {
-	return &PodMutator_Injected_Call{Call: _e.mock.On("Injected", ctx, request)}
+func (_e *PodMutator_Expecter) Injected(request interface{}) *PodMutator_Injected_Call {
+	return &PodMutator_Injected_Call{Call: _e.mock.On("Injected", request)}
 }
 
-func (_c *PodMutator_Injected_Call) Run(run func(ctx context.Context, request *webhook.BaseRequest)) *PodMutator_Injected_Call {
+func (_c *PodMutator_Injected_Call) Run(run func(request *webhook.BaseRequest)) *PodMutator_Injected_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*webhook.BaseRequest))
+		run(args[0].(*webhook.BaseRequest))
 	})
 	return _c
 }
@@ -103,7 +101,7 @@ func (_c *PodMutator_Injected_Call) Return(_a0 bool) *PodMutator_Injected_Call {
 	return _c
 }
 
-func (_c *PodMutator_Injected_Call) RunAndReturn(run func(context.Context, *webhook.BaseRequest) bool) *PodMutator_Injected_Call {
+func (_c *PodMutator_Injected_Call) RunAndReturn(run func(*webhook.BaseRequest) bool) *PodMutator_Injected_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -151,13 +149,13 @@ func (_c *PodMutator_Mutate_Call) RunAndReturn(run func(context.Context, *webhoo
 	return _c
 }
 
-// Reinvoke provides a mock function with given fields: ctx, request
-func (_m *PodMutator) Reinvoke(ctx context.Context, request *webhook.ReinvocationRequest) bool {
-	ret := _m.Called(ctx, request)
+// Reinvoke provides a mock function with given fields: request
+func (_m *PodMutator) Reinvoke(request *webhook.ReinvocationRequest) bool {
+	ret := _m.Called(request)
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, *webhook.ReinvocationRequest) bool); ok {
-		r0 = rf(ctx, request)
+	if rf, ok := ret.Get(0).(func(*webhook.ReinvocationRequest) bool); ok {
+		r0 = rf(request)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
@@ -171,15 +169,14 @@ type PodMutator_Reinvoke_Call struct {
 }
 
 // Reinvoke is a helper method to define mock.On call
-//   - ctx context.Context
 //   - request *webhook.ReinvocationRequest
-func (_e *PodMutator_Expecter) Reinvoke(ctx interface{}, request interface{}) *PodMutator_Reinvoke_Call {
-	return &PodMutator_Reinvoke_Call{Call: _e.mock.On("Reinvoke", ctx, request)}
+func (_e *PodMutator_Expecter) Reinvoke(request interface{}) *PodMutator_Reinvoke_Call {
+	return &PodMutator_Reinvoke_Call{Call: _e.mock.On("Reinvoke", request)}
 }
 
-func (_c *PodMutator_Reinvoke_Call) Run(run func(ctx context.Context, request *webhook.ReinvocationRequest)) *PodMutator_Reinvoke_Call {
+func (_c *PodMutator_Reinvoke_Call) Run(run func(request *webhook.ReinvocationRequest)) *PodMutator_Reinvoke_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*webhook.ReinvocationRequest))
+		run(args[0].(*webhook.ReinvocationRequest))
 	})
 	return _c
 }
@@ -189,7 +186,7 @@ func (_c *PodMutator_Reinvoke_Call) Return(_a0 bool) *PodMutator_Reinvoke_Call {
 	return _c
 }
 
-func (_c *PodMutator_Reinvoke_Call) RunAndReturn(run func(context.Context, *webhook.ReinvocationRequest) bool) *PodMutator_Reinvoke_Call {
+func (_c *PodMutator_Reinvoke_Call) RunAndReturn(run func(*webhook.ReinvocationRequest) bool) *PodMutator_Reinvoke_Call {
 	_c.Call.Return(run)
 	return _c
 }
