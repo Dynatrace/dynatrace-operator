@@ -199,6 +199,15 @@ func addCertificates(transport *http.Transport, trustedCAs []byte) (*http.Transp
 	return transport, nil
 }
 
+func addSkipCertCheck(transport *http.Transport, skipCertCheck bool) *http.Transport {
+	if transport.TLSClientConfig == nil {
+		transport.TLSClientConfig = &tls.Config{} // nolint:gosec
+	}
+	transport.TLSClientConfig.InsecureSkipVerify = skipCertCheck
+
+	return transport
+}
+
 // PrepareTransportForDynaKube creates default http transport and add proxy or trustedCAs if any
 func PrepareTransportForDynaKube(ctx context.Context, apiReader client.Reader, transport *http.Transport, dynakube *dynatracev1beta1.DynaKube) (*http.Transport, error) {
 	var (
@@ -233,6 +242,8 @@ func PrepareTransportForDynaKube(ctx context.Context, apiReader client.Reader, t
 			return nil, err
 		}
 	}
+
+	transport = addSkipCertCheck(transport, dynakube.Spec.SkipCertCheck)
 
 	return transport, nil
 }
