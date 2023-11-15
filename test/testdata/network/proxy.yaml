@@ -79,7 +79,7 @@ spec:
           privileged: true
           capabilities:
             add:
-             - CAP_NET_RAW
+             - NET_RAW
 
       volumes:
         - name: config-volume

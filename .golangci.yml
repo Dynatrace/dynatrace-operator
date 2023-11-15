@@ -160,7 +160,6 @@ linters:
   disable-all: true
   enable:
   - gci
-  - goimports
   - gosimple
   - govet
   - ineffassign

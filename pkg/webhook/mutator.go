@@ -4,7 +4,7 @@ import (
 	"context"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -36,7 +36,7 @@ func (req BaseRequest) PodName() string {
 	if req.Pod == nil {
 		return ""
 	}
-	return kubeobjects.GetPodName(*req.Pod)
+	return pod.GetName(*req.Pod)
 }
 
 // MutationRequest contains all the information needed to mutate a pod

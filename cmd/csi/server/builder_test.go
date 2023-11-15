@@ -4,9 +4,9 @@ import (
 	"io/fs"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/cmd/config"
 	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
+	mocks "github.com/Dynatrace/dynatrace-operator/test/mocks/cmd/config"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 )
@@ -25,7 +25,7 @@ func TestCsiCommandBuilder(t *testing.T) {
 
 		assert.NotNil(t, builder)
 
-		expectedProvider := &config.MockProvider{}
+		expectedProvider := &mocks.Provider{}
 		builder = builder.SetConfigProvider(expectedProvider)
 
 		assert.Equal(t, expectedProvider, builder.configProvider)

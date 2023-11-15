@@ -16,6 +16,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
+	"golang.org/x/net/http/httpproxy"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -164,16 +165,25 @@ func BuildImageIDWithTagAndDigest(taggedRef name.Tag, digest digest.Digest) stri
 	return fmt.Sprintf("%s%s%s", taggedRef.String(), DigestDelimiter, digest.String())
 }
 
-func addProxy(transport *http.Transport, proxy string) (*http.Transport, error) {
+func addProxy(transport *http.Transport, proxy string, noProxy string) (*http.Transport, error) {
 	proxyUrl, err := url.Parse(proxy)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	transport.Proxy = func(req *http.Request) (*url.URL, error) {
-		return proxyUrl, nil
+	proxyConfig := httpproxy.Config{
+		HTTPProxy:  proxyUrl.String(),
+		HTTPSProxy: proxyUrl.String(),
+		NoProxy:    noProxy,
 	}
+	transport.Proxy = proxyWrapper(proxyConfig)
 	return transport, nil
+}
+
+func proxyWrapper(proxyConfig httpproxy.Config) func(req *http.Request) (*url.URL, error) {
+	return func(req *http.Request) (*url.URL, error) {
+		return proxyConfig.ProxyFunc()(req.URL)
+	}
 }
 
 func addCertificates(transport *http.Transport, trustedCAs []byte) (*http.Transport, error) {
@@ -187,6 +197,15 @@ func addCertificates(transport *http.Transport, trustedCAs []byte) (*http.Transp
 	transport.TLSClientConfig.RootCAs = rootCAs
 
 	return transport, nil
+}
+
+func addSkipCertCheck(transport *http.Transport, skipCertCheck bool) *http.Transport {
+	if transport.TLSClientConfig == nil {
+		transport.TLSClientConfig = &tls.Config{} // nolint:gosec
+	}
+	transport.TLSClientConfig.InsecureSkipVerify = skipCertCheck
+
+	return transport
 }
 
 // PrepareTransportForDynaKube creates default http transport and add proxy or trustedCAs if any
@@ -211,7 +230,7 @@ func PrepareTransportForDynaKube(ctx context.Context, apiReader client.Reader, t
 	}
 
 	if proxy != "" {
-		transport, err = addProxy(transport, proxy)
+		transport, err = addProxy(transport, proxy, dynakube.FeatureNoProxy())
 		if err != nil {
 			return nil, errors.WithMessage(err, "failed to add proxy to default transport")
 		}
@@ -223,6 +242,8 @@ func PrepareTransportForDynaKube(ctx context.Context, apiReader client.Reader, t
 			return nil, err
 		}
 	}
+
+	transport = addSkipCertCheck(transport, dynakube.Spec.SkipCertCheck)
 
 	return transport, nil
 }

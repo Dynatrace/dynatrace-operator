@@ -3,5 +3,3 @@ tenantUid: abc12345
 apiServer: abc12345.dev.apps.dynatracelabs.com
 oAuthClientId: test
 oAuthClientSecret: test
-dockerUsername: test
-dockerPassword: test

@@ -48,21 +48,8 @@ func WaitForPodsDeletionWithOwner(ownerName string, namespace string) features.F
 		resources := envConfig.Client().Resources()
 		targetPods := GetPodsForOwner(ctx, t, resources, ownerName, namespace)
 
-		err := wait.For(conditions.New(resources).ResourcesDeleted(&targetPods))
+		err := wait.For(conditions.New(resources).ResourcesDeleted(&targetPods), wait.WithTimeout(5*time.Minute))
 		require.NoError(t, err)
-		return ctx
-	}
-}
-
-func WaitForPodsWithOwner(ownerName string, namespace string) features.Func {
-	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		resources := envConfig.Client().Resources()
-		targetPods := GetPodsForOwner(ctx, t, resources, ownerName, namespace)
-		for _, pod := range targetPods.Items {
-			podCopy := pod
-			err := wait.For(conditions.New(resources).PodReady(&podCopy))
-			require.NoError(t, err)
-		}
 		return ctx
 	}
 }

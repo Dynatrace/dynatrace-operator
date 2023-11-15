@@ -3,8 +3,8 @@ package webhook
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/cmd/config"
 	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
+	"github.com/Dynatrace/dynatrace-operator/test/mocks/cmd/config"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -22,7 +22,7 @@ func TestWebhookCommandBuilder(t *testing.T) {
 
 		assert.NotNil(t, builder)
 
-		expectedProvider := &config.MockProvider{}
+		expectedProvider := &mocks.Provider{}
 		builder = builder.SetConfigProvider(expectedProvider)
 
 		assert.Equal(t, expectedProvider, builder.configProvider)

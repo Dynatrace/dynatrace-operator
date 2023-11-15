@@ -3,8 +3,8 @@ package otel
 import (
 	"context"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
-	errors2 "github.com/pkg/errors"
+	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
+	"github.com/pkg/errors"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric/noop"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -76,12 +76,12 @@ func newResource(otelServiceName string) (*resource.Resource, error) {
 			semconv.ServiceNameKey.String(otelServiceName),
 		),
 	)
-	return r, errors2.WithStack(err)
+	return r, errors.WithStack(err)
 }
 
 func getOtelConfig(ctx context.Context, apiReader client.Reader, namespace string) (string, string, error) {
 	if apiReader == nil {
-		return "", "", errors2.Errorf("invalid API reader")
+		return "", "", errors.Errorf("invalid API reader")
 	}
 
 	secretName := types.NamespacedName{
@@ -89,19 +89,19 @@ func getOtelConfig(ctx context.Context, apiReader client.Reader, namespace strin
 		Name:      otelSecretName,
 	}
 
-	query := kubeobjects.NewSecretQuery(ctx, nil, apiReader, log)
+	query := k8ssecret.NewQuery(ctx, nil, apiReader, log)
 	secret, err := query.Get(secretName)
 
 	if err != nil {
 		return "", "", err
 	}
 
-	endpoint, err := kubeobjects.ExtractToken(&secret, otelApiEndpointKey)
+	endpoint, err := k8ssecret.ExtractToken(&secret, otelApiEndpointKey)
 	if err != nil {
 		return "", "", err
 	}
 
-	token, err := kubeobjects.ExtractToken(&secret, otelAccessTokenKey)
+	token, err := k8ssecret.ExtractToken(&secret, otelAccessTokenKey)
 	if err != nil {
 		return "", "", err
 	}
