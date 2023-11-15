@@ -11,7 +11,7 @@ import (
 	edgeconnectv1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/functional"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/csi"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
@@ -51,8 +51,8 @@ func (r requiredFiles) collectRequiredFiles() []string {
 	requiredFiles = append(requiredFiles, support_archive.OperatorVersionFileName)
 	requiredFiles = append(requiredFiles, support_archive.TroublshootOutputFileName)
 	requiredFiles = append(requiredFiles, support_archive.SupportArchiveOutputFileName)
-	requiredFiles = append(requiredFiles, r.getRequiredPodFiles(kubeobjects.AppNameLabel, true)...)
-	requiredFiles = append(requiredFiles, r.getRequiredPodFiles(kubeobjects.AppManagedByLabel, r.collectManaged)...)
+	requiredFiles = append(requiredFiles, r.getRequiredPodFiles(labels.AppNameLabel, true)...)
+	requiredFiles = append(requiredFiles, r.getRequiredPodFiles(labels.AppManagedByLabel, r.collectManaged)...)
 	requiredFiles = append(requiredFiles, r.getRequiredReplicaSetFiles()...)
 	requiredFiles = append(requiredFiles, r.getRequiredServiceFiles()...)
 	requiredFiles = append(requiredFiles, r.getRequiredWorkloadFiles()...)

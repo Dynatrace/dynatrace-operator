@@ -8,7 +8,7 @@ require (
 	github.com/evanphx/json-patch v5.7.0+incompatible
 	github.com/go-logr/logr v1.3.0
 	github.com/google/go-containerregistry v0.16.1
-	github.com/klauspost/compress v1.17.2
+	github.com/klauspost/compress v1.17.3
 	github.com/mattn/go-sqlite3 v1.14.18
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/pkg/errors v0.9.1
@@ -33,7 +33,7 @@ require (
 	golang.org/x/oauth2 v0.14.0
 	golang.org/x/sys v0.14.0
 	google.golang.org/grpc v1.59.0
-	istio.io/api v1.20.0-beta.0.0.20231031143729-871b2914253f
+	istio.io/api v1.20.0
 	istio.io/client-go v1.20.0
 	k8s.io/api v0.28.3
 	k8s.io/apiextensions-apiserver v0.28.3

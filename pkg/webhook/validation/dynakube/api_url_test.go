@@ -70,4 +70,11 @@ func TestHasApiUrl(t *testing.T) {
 			},
 		})
 	})
+	t.Run(`third gen API URL`, func(t *testing.T) {
+		assertDeniedResponse(t, []string{errorThirdGenApiUrl}, &dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: "https://tenantid.doma.apps.in/api",
+			},
+		})
+	})
 }

@@ -15,6 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/proxy"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -31,6 +32,7 @@ func TestMain(m *testing.M) {
 	testEnv.BeforeEachTest(istio.AssertIstiodDeployment())
 	testEnv.Setup(
 		namespace.CreateForEnv(nsWithIstio),
+		tenant.CreateOtelSecret(nsWithIstio.Namespace),
 		operator.InstallViaMake(true),
 	)
 	// If we cleaned up during a fail-fast (aka.: /debug) it wouldn't be possible to investigate the error.

@@ -19,6 +19,7 @@ import (
 	supportArchive "github.com/Dynatrace/dynatrace-operator/test/features/support_archive"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -28,7 +29,10 @@ var testEnv env.Environment
 func TestMain(m *testing.M) {
 	cfg := environment.GetStandardKubeClusterEnvConfig()
 	testEnv = env.NewWithConfig(cfg)
-	testEnv.Setup(operator.InstallViaMake(true))
+	testEnv.Setup(
+		tenant.CreateOtelSecret(operator.DefaultNamespace),
+		operator.InstallViaMake(true),
+	)
 	// If we cleaned up during a fail-fast (aka.: /debug) it wouldn't be possible to investigate the error.
 	if !cfg.FailFast() {
 		testEnv.Finish(operator.UninstallViaMake(true))
