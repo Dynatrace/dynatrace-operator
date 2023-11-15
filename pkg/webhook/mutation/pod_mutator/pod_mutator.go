@@ -7,8 +7,10 @@ import (
 	"net/http/httptrace"
 	"os"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	webhookotel "github.com/Dynatrace/dynatrace-operator/pkg/webhook/otel"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
@@ -54,7 +56,7 @@ type podMutatorWebhook struct {
 }
 
 func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.Request) admission.Response {
-	ctx, span := startSpan(ctx, "podMutatorWebhook.Handle")
+	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), spanOptions()...)
 	defer span.End()
 
 	ctx = httptrace.WithClientTrace(ctx, otelhttptrace.NewClientTrace(ctx))
@@ -103,7 +105,7 @@ func mutationRequired(mutationRequest *dtwebhook.MutationRequest) bool {
 }
 
 func (webhook *podMutatorWebhook) setupEventRecorder(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) {
-	_, span := startSpan(ctx, "podMutatorWebhook.setupEventRecorder")
+	_, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), spanOptions()...)
 	defer span.End()
 
 	webhook.recorder.dynakube = &mutationRequest.DynaKube
@@ -111,7 +113,7 @@ func (webhook *podMutatorWebhook) setupEventRecorder(ctx context.Context, mutati
 }
 
 func (webhook *podMutatorWebhook) isInjected(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) bool {
-	ctx, span := startSpan(ctx, "podMutatorWebhook.isInjected")
+	_, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), spanOptions()...)
 	defer span.End()
 
 	for _, mutator := range webhook.mutators {
@@ -135,7 +137,7 @@ func (webhook *podMutatorWebhook) isOcDebugPod(pod *corev1.Pod) bool {
 }
 
 func (webhook *podMutatorWebhook) handlePodMutation(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) error {
-	ctx, span := startSpan(ctx, "podMutatorWebhook.handlePodMutation")
+	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), spanOptions()...)
 	defer span.End()
 
 	mutationRequest.InstallContainer = createInstallInitContainerBase(webhook.webhookImage, webhook.clusterID, mutationRequest.Pod, mutationRequest.DynaKube)
@@ -161,7 +163,7 @@ func (webhook *podMutatorWebhook) handlePodMutation(ctx context.Context, mutatio
 }
 
 func (webhook *podMutatorWebhook) handlePodReinvocation(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) bool {
-	ctx, span := startSpan(ctx, "podMutatorWebhook.handlePodReinvocation")
+	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), spanOptions()...)
 	defer span.End()
 
 	var needsUpdate bool
@@ -190,7 +192,7 @@ func setDynatraceInjectedAnnotation(mutationRequest *dtwebhook.MutationRequest) 
 
 // createResponseForPod tries to format pod as json
 func createResponseForPod(ctx context.Context, pod *corev1.Pod, req admission.Request) admission.Response {
-	ctx, span := startSpan(ctx, "podMutatorWebhook.createResponseForPod")
+	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), spanOptions()...)
 	defer span.End()
 
 	marshaledPod, err := json.MarshalIndent(pod, "", "  ")
@@ -201,7 +203,7 @@ func createResponseForPod(ctx context.Context, pod *corev1.Pod, req admission.Re
 }
 
 func silentErrorResponse(ctx context.Context, pod *corev1.Pod, err error) admission.Response {
-	_, span := startSpan(ctx, "podMutatorWebhook.silentErrorResponse")
+	_, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), spanOptions()...)
 	defer span.End()
 
 	rsp := admission.Patched("")

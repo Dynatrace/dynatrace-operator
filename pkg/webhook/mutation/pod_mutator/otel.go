@@ -5,7 +5,7 @@ import (
 	"os"
 	"sync"
 
-	dtotel "github.com/Dynatrace/dynatrace-operator/pkg/util/otel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 	webhookotel "github.com/Dynatrace/dynatrace-operator/pkg/webhook/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -33,7 +33,7 @@ func countHandleMutationRequest(ctx context.Context, mutatedPodName string) {
 		attribute.String(mutatedPodNameKey, mutatedPodName))
 }
 
-func startSpan(ctx context.Context, title string, opts ...trace.SpanStartOption) (context.Context, trace.Span) {
+func spanOptions(opts ...trace.SpanStartOption) []trace.SpanStartOption {
 	options := make([]trace.SpanStartOption, 0)
 	options = append(options, opts...)
 	options = append(options, trace.WithAttributes(
@@ -41,6 +41,5 @@ func startSpan(ctx context.Context, title string, opts ...trace.SpanStartOption)
 
 		// TODO: this is just for showcasing now, should be removed in the future
 		attribute.String("debug.info", "foobar")))
-
-	return dtotel.StartSpan(ctx, webhookotel.Tracer(), title, options...)
+	return options
 }

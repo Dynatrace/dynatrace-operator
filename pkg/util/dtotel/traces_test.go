@@ -1,4 +1,4 @@
-package otel
+package dtotel
 
 import (
 	"testing"
@@ -34,13 +34,7 @@ func TestSetupTraces(t *testing.T) {
 
 func TestStartSpan(t *testing.T) {
 	t.Run("nil tracer", func(t *testing.T) {
-		ctx, span := StartSpan(context.Background(), trace.Tracer(nil), "testSpan")
-
-		assert.IsType(t, noopSpan{}, span)
-		assert.Equal(t, context.Background(), ctx)
-	})
-	t.Run("empty title", func(t *testing.T) {
-		ctx, span := StartSpan(context.Background(), trace.NewNoopTracerProvider().Tracer("testTracer"), "")
+		ctx, span := StartSpan(context.Background(), trace.Tracer(nil))
 
 		assert.IsType(t, noopSpan{}, span)
 		assert.Equal(t, context.Background(), ctx)
@@ -48,7 +42,6 @@ func TestStartSpan(t *testing.T) {
 }
 
 func TestGetCaller(t *testing.T) {
-
 	// Call getCaller with stack depth of 1
 	caller := getCaller(1)
 
@@ -62,5 +55,4 @@ func TestGetCaller(t *testing.T) {
 
 	// Assert caller contains line number
 	assert.Regexp(t, `\(\w+_test.go:\d+\)`, caller)
-
 }

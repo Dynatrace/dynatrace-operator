@@ -1,4 +1,4 @@
-package otel
+package dtotel
 
 import (
 	"github.com/pkg/errors"

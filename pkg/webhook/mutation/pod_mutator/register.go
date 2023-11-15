@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"net/http/httptrace"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel/controller_runtime"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
-	dtotel "github.com/Dynatrace/dynatrace-operator/pkg/util/otel"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/otel/controller_runtime"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod_mutator/dataingest_mutation"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod_mutator/oneagent_mutation"
@@ -23,7 +23,7 @@ import (
 )
 
 func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhookPodName string) error {
-	ctx, span := dtotel.StartSpan(context.Background(), webhookotel.Tracer(), "registerInjectEndpoint")
+	ctx, span := dtotel.StartSpan(context.Background(), webhookotel.Tracer())
 	defer span.End()
 
 	// Don't use mgr.GetClient() on this function, or other cache-dependent functions from the manager. The cache may
@@ -118,7 +118,7 @@ func getWebhookContainerImage(webhookPod corev1.Pod) (string, error) {
 }
 
 func getClusterID(ctx context.Context, apiReader client.Reader) (string, error) {
-	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), "getClusterID")
+	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer())
 	defer span.End()
 
 	if clusterUID, err := kubesystem.GetUID(ctx, apiReader); err != nil {

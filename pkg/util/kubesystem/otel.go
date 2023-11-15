@@ -10,7 +10,6 @@ import (
 
 const (
 	OpenTelemetryServiceName = "UtilKubesystem"
-	spanNamePrefix           = "kubesystem"
 )
 
 var tracer trace.Tracer

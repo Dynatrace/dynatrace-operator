@@ -1,8 +1,11 @@
-package otel
+package dtotel
 
 import (
 	"context"
 	"fmt"
+	"path/filepath"
+	"runtime"
+
 	"github.com/pkg/errors"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
@@ -10,8 +13,6 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/trace"
-	"path/filepath"
-	"runtime"
 )
 
 func setupTracesWithOtlp(ctx context.Context, resource *resource.Resource, endpoint string, apiToken string) (trace.TracerProvider, shutdownFn, error) {
@@ -48,16 +49,16 @@ func newOtlpTraceExporter(ctx context.Context, endpoint string, apiToken string)
 	return exporter, nil
 }
 
-func StartSpan[T any](ctx context.Context, tracer T, _ string, opts ...trace.SpanStartOption) (context.Context, trace.Span) {
-	caller := getCaller(1)
+func StartSpan[T any](ctx context.Context, tracer T, opts ...trace.SpanStartOption) (context.Context, trace.Span) {
+	spanTitle := getCaller(1)
 
 	realTracer := resolveTracer(tracer)
 	if realTracer == nil {
-		log.Info("failed to start span, no valid tracer given", "caller", caller, "tracer", fmt.Sprintf("%v", tracer))
+		log.Info("failed to start span, no valid tracer given", "spanTitle", spanTitle, "tracer", fmt.Sprintf("%v", tracer))
 		return ctx, noopSpan{}
 	}
 
-	return realTracer.Start(ctx, caller, opts...)
+	return realTracer.Start(ctx, spanTitle, opts...)
 }
 
 func resolveTracer[T any](tracer T) trace.Tracer {

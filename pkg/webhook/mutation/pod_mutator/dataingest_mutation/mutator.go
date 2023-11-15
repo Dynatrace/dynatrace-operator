@@ -5,8 +5,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/ingestendpoint"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/otel"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	webhookotel "github.com/Dynatrace/dynatrace-operator/pkg/webhook/otel"
 	corev1 "k8s.io/api/core/v1"
@@ -31,7 +31,7 @@ func NewDataIngestPodMutator(webhookNamespace string, client client.Client, apiR
 }
 
 func (mutator *DataIngestPodMutator) Enabled(ctx context.Context, request *dtwebhook.BaseRequest) bool {
-	_, span := otel.StartSpan(ctx, webhookotel.Tracer(), "DataIngestPodMutator.Enabled")
+	_, span := dtotel.StartSpan(ctx, webhookotel.Tracer())
 	defer span.End()
 
 	enabledOnPod := kubeobjects.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationDataIngestInject,
@@ -42,14 +42,14 @@ func (mutator *DataIngestPodMutator) Enabled(ctx context.Context, request *dtweb
 }
 
 func (mutator *DataIngestPodMutator) Injected(ctx context.Context, request *dtwebhook.BaseRequest) bool {
-	_, span := otel.StartSpan(ctx, webhookotel.Tracer(), "DataIngestPodMutator.Injected")
+	_, span := dtotel.StartSpan(ctx, webhookotel.Tracer())
 	defer span.End()
 
 	return kubeobjects.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationDataIngestInjected, false)
 }
 
 func (mutator *DataIngestPodMutator) Mutate(ctx context.Context, request *dtwebhook.MutationRequest) error {
-	_, span := otel.StartSpan(ctx, webhookotel.Tracer(), "DataIngestPodMutator.Mutate")
+	_, span := dtotel.StartSpan(ctx, webhookotel.Tracer())
 	defer span.End()
 
 	log.Info("injecting data-ingest into pod", "podName", request.PodName())
@@ -71,7 +71,7 @@ func (mutator *DataIngestPodMutator) Mutate(ctx context.Context, request *dtwebh
 }
 
 func (mutator *DataIngestPodMutator) Reinvoke(ctx context.Context, request *dtwebhook.ReinvocationRequest) bool {
-	ctx, span := otel.StartSpan(ctx, webhookotel.Tracer(), "DataIngestPodMutator.Reinvoke")
+	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer())
 	defer span.End()
 
 	if !mutator.Injected(ctx, request.BaseRequest) {

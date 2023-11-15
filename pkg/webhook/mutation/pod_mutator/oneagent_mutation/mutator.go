@@ -6,8 +6,8 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/initgeneration"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/otel"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	webhookotel "github.com/Dynatrace/dynatrace-operator/pkg/webhook/otel"
 	"github.com/pkg/errors"
@@ -35,21 +35,21 @@ func NewOneAgentPodMutator(image, clusterID, webhookNamespace string, client cli
 }
 
 func (mutator *OneAgentPodMutator) Enabled(ctx context.Context, request *dtwebhook.BaseRequest) bool {
-	_, span := otel.StartSpan(ctx, webhookotel.Tracer(), "OneAgentPodMutator.Enabled")
+	_, span := dtotel.StartSpan(ctx, webhookotel.Tracer())
 	defer span.End()
 
 	return kubeobjects.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationOneAgentInject, request.DynaKube.FeatureAutomaticInjection())
 }
 
 func (mutator *OneAgentPodMutator) Injected(ctx context.Context, request *dtwebhook.BaseRequest) bool {
-	_, span := otel.StartSpan(ctx, webhookotel.Tracer(), "OneAgentPodMutator.Injected")
+	_, span := dtotel.StartSpan(ctx, webhookotel.Tracer())
 	defer span.End()
 
 	return kubeobjects.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationOneAgentInjected, false)
 }
 
 func (mutator *OneAgentPodMutator) Mutate(ctx context.Context, request *dtwebhook.MutationRequest) error {
-	_, span := otel.StartSpan(ctx, webhookotel.Tracer(), "OneAgentPodMutator.Mutate")
+	_, span := dtotel.StartSpan(ctx, webhookotel.Tracer())
 	defer span.End()
 
 	if !request.DynaKube.IsOneAgentCommunicationRouteClear() {
@@ -75,7 +75,7 @@ func (mutator *OneAgentPodMutator) Mutate(ctx context.Context, request *dtwebhoo
 }
 
 func (mutator *OneAgentPodMutator) Reinvoke(ctx context.Context, request *dtwebhook.ReinvocationRequest) bool {
-	ctx, span := otel.StartSpan(ctx, webhookotel.Tracer(), "OneAgentPodMutator.Reinvoke")
+	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer())
 	defer span.End()
 
 	if !mutator.Injected(ctx, request.BaseRequest) {

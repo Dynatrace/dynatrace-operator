@@ -1,7 +1,7 @@
 package controller_runtime
 
 import (
-	dtotel "github.com/Dynatrace/dynatrace-operator/pkg/util/otel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 	"go.opentelemetry.io/otel"
 	"golang.org/x/net/context"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -11,8 +11,6 @@ import (
 )
 
 var _ client.Client = wrappedClient{}
-
-const clientSpanNamePrefix = "client.Client"
 
 // Reader knows how to read and list Kubernetes objects.
 type wrappedClient struct {
@@ -29,7 +27,7 @@ func NewClient(wrapped client.Client) client.Client {
 // obj must be a struct pointer so that obj can be updated with the response
 // returned by the Server.
 func (c wrappedClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
-	ctx, span := dtotel.StartSpan(ctx, otel.Tracer(otelTracerName), clientSpanNamePrefix+".Get")
+	ctx, span := dtotel.StartSpan(ctx, otel.Tracer(otelTracerName))
 	defer span.End()
 
 	err := c.wrapped.Get(ctx, key, obj, opts...)
@@ -42,7 +40,7 @@ func (c wrappedClient) Get(ctx context.Context, key client.ObjectKey, obj client
 // successful call, Items field in the list will be populated with the
 // result returned from the server.
 func (c wrappedClient) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
-	ctx, span := dtotel.StartSpan(ctx, otel.Tracer(otelTracerName), clientSpanNamePrefix+".List")
+	ctx, span := dtotel.StartSpan(ctx, otel.Tracer(otelTracerName))
 	defer span.End()
 
 	err := c.wrapped.List(ctx, list, opts...)
@@ -52,7 +50,7 @@ func (c wrappedClient) List(ctx context.Context, list client.ObjectList, opts ..
 }
 
 func (c wrappedClient) Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
-	ctx, span := dtotel.StartSpan(ctx, otel.Tracer(otelTracerName), clientSpanNamePrefix+".Create")
+	ctx, span := dtotel.StartSpan(ctx, otel.Tracer(otelTracerName))
 	defer span.End()
 
 	err := c.wrapped.Create(ctx, obj, opts...)
@@ -63,7 +61,7 @@ func (c wrappedClient) Create(ctx context.Context, obj client.Object, opts ...cl
 
 // Delete deletes the given obj from Kubernetes cluster.
 func (c wrappedClient) Delete(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error {
-	ctx, span := dtotel.StartSpan(ctx, otel.Tracer(otelTracerName), clientSpanNamePrefix+".Delete")
+	ctx, span := dtotel.StartSpan(ctx, otel.Tracer(otelTracerName))
 	defer span.End()
 
 	err := c.wrapped.Delete(ctx, obj, opts...)
@@ -75,7 +73,7 @@ func (c wrappedClient) Delete(ctx context.Context, obj client.Object, opts ...cl
 // Update updates the given obj in the Kubernetes cluster. obj must be a
 // struct pointer so that obj can be updated with the content returned by the Server.
 func (c wrappedClient) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
-	ctx, span := dtotel.StartSpan(ctx, otel.Tracer(otelTracerName), clientSpanNamePrefix+".Update")
+	ctx, span := dtotel.StartSpan(ctx, otel.Tracer(otelTracerName))
 	defer span.End()
 
 	err := c.wrapped.Update(ctx, obj, opts...)
@@ -87,7 +85,7 @@ func (c wrappedClient) Update(ctx context.Context, obj client.Object, opts ...cl
 // Patch patches the given obj in the Kubernetes cluster. obj must be a
 // struct pointer so that obj can be updated with the content returned by the Server.
 func (c wrappedClient) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
-	ctx, span := dtotel.StartSpan(ctx, otel.Tracer(otelTracerName), clientSpanNamePrefix+".Patch")
+	ctx, span := dtotel.StartSpan(ctx, otel.Tracer(otelTracerName))
 	defer span.End()
 
 	err := c.wrapped.Patch(ctx, obj, patch, opts...)
@@ -98,7 +96,7 @@ func (c wrappedClient) Patch(ctx context.Context, obj client.Object, patch clien
 
 // DeleteAllOf deletes all objects of the given type matching the given options.
 func (c wrappedClient) DeleteAllOf(ctx context.Context, obj client.Object, opts ...client.DeleteAllOfOption) error {
-	ctx, span := dtotel.StartSpan(ctx, otel.Tracer(otelTracerName), clientSpanNamePrefix+".DeleteAllOf")
+	ctx, span := dtotel.StartSpan(ctx, otel.Tracer(otelTracerName))
 	defer span.End()
 
 	err := c.wrapped.DeleteAllOf(ctx, obj, opts...)
