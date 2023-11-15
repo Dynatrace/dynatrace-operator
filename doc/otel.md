@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Open Telemetry in the operator
 
 *Note:* This guide is still work-in-progress and will evolve as we learn more about OpenTelemetry instrumentation best practices.
@@ -34,6 +35,12 @@ EOF
 - as indicated the values have to be base64 encoded (as usually with K8S)
 - obey to the name
 - make sure it is created in the same namespace as the webhook
+
+### How to use it in E2E tests
+
+Create a file at `test/testdata/secrets/otel-tenant.yaml`, according to `test/testdata/secrets-samples/otel-tenant.yaml`.
+
+- It will ask for the same info that you would use in the secret.
 
 ## OpenTelemetry instrumentation guidelines
 

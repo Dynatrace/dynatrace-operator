@@ -6,7 +6,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -69,7 +69,7 @@ func createContainerWithPreloadEnv(existingPath string) *corev1.Container {
 
 func verifyContainerWithPreloadEnv(t *testing.T, container *corev1.Container, expectedPath string) {
 	require.NotEmpty(t, container.Env)
-	env := kubeobjects.FindEnvVar(container.Env, preloadEnv)
+	env := env.FindEnvVar(container.Env, preloadEnv)
 	require.NotNil(t, env)
 	assert.Contains(t, env.Value, expectedPath)
 }
@@ -108,7 +108,7 @@ func TestAddInstallerInitEnvs(t *testing.T) {
 		installerInfo := getTestInstallerInfo()
 		addInstallerInitEnvs(container, installerInfo, *getTestReadOnlyCSIDynakube())
 		require.Len(t, container.Env, expectedBaseInitContainerEnvCount)
-		env := kubeobjects.FindEnvVar(container.Env, consts.AgentReadonlyCSI)
+		env := env.FindEnvVar(container.Env, consts.AgentReadonlyCSI)
 		require.NotNil(t, env)
 		env.Value = "true"
 	})

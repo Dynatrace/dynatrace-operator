@@ -4,7 +4,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -32,7 +32,7 @@ func CreateService(dynakube *dynatracev1beta1.DynaKube, feature string) *corev1.
 		}
 	}
 
-	coreLabels := kubeobjects.NewCoreLabels(dynakube.Name, kubeobjects.ActiveGateComponentLabel)
+	coreLabels := labels.NewCoreLabels(dynakube.Name, labels.ActiveGateComponentLabel)
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      capability.BuildServiceName(dynakube.Name, feature),
@@ -48,6 +48,6 @@ func CreateService(dynakube *dynatracev1beta1.DynaKube, feature string) *corev1.
 }
 
 func buildSelectorLabels(dynakubeName string) map[string]string {
-	appLabels := kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, dynakubeName, "", "")
+	appLabels := labels.NewAppLabels(labels.ActiveGateComponentLabel, dynakubeName, "", "")
 	return appLabels.BuildMatchLabels()
 }

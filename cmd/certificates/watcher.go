@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/certificates"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	certsutils "github.com/Dynatrace/dynatrace-operator/pkg/util/certificates"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	corev1 "k8s.io/api/core/v1"
@@ -78,7 +78,7 @@ func (watcher *CertificateWatcher) updateCertificatesFromSecret() (bool, error) 
 			return false, err
 		}
 	}
-	isValid, err := kubeobjects.ValidateCertificateExpiration(secret.Data[certificates.ServerCert], certificateRenewalInterval, time.Now(), log)
+	isValid, err := certsutils.ValidateCertificateExpiration(secret.Data[certificates.ServerCert], certificateRenewalInterval, time.Now(), log)
 	if err != nil {
 		return false, err
 	} else if !isValid {

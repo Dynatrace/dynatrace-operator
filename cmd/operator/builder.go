@@ -7,7 +7,7 @@ import (
 	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/certificates"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
@@ -86,7 +86,8 @@ func (builder CommandBuilder) getBootstrapManagerProvider() cmdManager.Provider 
 	return builder.bootstrapManagerProvider
 }
 
-func (builder CommandBuilder) getSignalHandler() context.Context {
+// TODO: This can't be stateless (so pointer receiver needs to be used), because the ctrl.SetupSignalHandler() can only be called once in a process, otherwise we get a panic. This "builder" pattern has to be refactored.
+func (builder *CommandBuilder) getSignalHandler() context.Context {
 	if builder.signalHandler == nil {
 		builder.signalHandler = ctrl.SetupSignalHandler()
 	}
@@ -135,7 +136,7 @@ func (builder CommandBuilder) buildRun() func(cmd *cobra.Command, args []string)
 }
 
 func (builder CommandBuilder) runInPod(kubeCfg *rest.Config) error {
-	operatorPod, err := kubeobjects.GetPod(context.TODO(), builder.client, builder.podName, builder.namespace)
+	operatorPod, err := pod.Get(context.TODO(), builder.client, builder.podName, builder.namespace)
 	if err != nil {
 		return err
 	}
@@ -177,7 +178,7 @@ func (builder CommandBuilder) runOperatorManager(kubeCfg *rest.Config, isDeploye
 		return err
 	}
 
-	otelShutdownFn := dtotel.Start(context.Background(), "dynatrace-operator", operatorManager.GetAPIReader(), builder.namespace)
+	otelShutdownFn := dtotel.Start(builder.getSignalHandler(), "dynatrace-operator", operatorManager.GetAPIReader(), builder.namespace)
 	defer otelShutdownFn()
 
 	err = operatorManager.Start(builder.getSignalHandler())
@@ -186,7 +187,7 @@ func (builder CommandBuilder) runOperatorManager(kubeCfg *rest.Config, isDeploye
 }
 
 func startBootstrapperManager(bootstrapManager ctrl.Manager, namespace string) error {
-	ctx, cancelFn := context.WithCancel(context.TODO())
+	ctx, cancelFn := context.WithCancel(context.Background())
 	err := certificates.AddBootstrap(bootstrapManager, namespace, cancelFn)
 
 	if err != nil {

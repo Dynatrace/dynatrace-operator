@@ -118,6 +118,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
+		signalHandler := ctrl.SetupSignalHandler()
 		otelShutdownFn := dtotel.Start(context.Background(), "dynatrace-csi-server", csiManager.GetAPIReader(), builder.namespace)
 		defer otelShutdownFn()
 
@@ -126,7 +127,6 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		signalHandler := ctrl.SetupSignalHandler()
 		access, err := metadata.NewAccess(signalHandler, dtcsi.MetadataAccessPath)
 		if err != nil {
 			return err

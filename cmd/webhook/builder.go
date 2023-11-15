@@ -9,7 +9,7 @@ import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dynakube"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
@@ -94,7 +94,7 @@ func addFlags(cmd *cobra.Command) {
 }
 
 func startCertificateWatcher(webhookManager manager.Manager, namespace string, podName string) error {
-	webhookPod, err := kubeobjects.GetPod(context.TODO(), webhookManager.GetAPIReader(), podName, namespace)
+	webhookPod, err := pod.Get(context.TODO(), webhookManager.GetAPIReader(), podName, namespace)
 	if err != nil {
 		return err
 	}
@@ -127,7 +127,8 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		// instrument webhook manager HTTP client with OpenTelemetry
 		webhookManager.GetHTTPClient().Transport = otelhttp.NewTransport(webhookManager.GetHTTPClient().Transport)
 
-		otelShutdownFn := dtotel.Start(context.Background(), "dynatrace-webhook", webhookManager.GetAPIReader(), builder.namespace)
+		signalHandler := ctrl.SetupSignalHandler()
+		otelShutdownFn := dtotel.Start(signalHandler, "dynatrace-webhook", webhookManager.GetAPIReader(), builder.namespace)
 		defer otelShutdownFn()
 
 		err = startCertificateWatcher(webhookManager, builder.namespace, builder.podName)
@@ -165,7 +166,6 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		signalHandler := ctrl.SetupSignalHandler()
 		err = webhookManager.Start(signalHandler)
 
 		return errors.WithStack(err)

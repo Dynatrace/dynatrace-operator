@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"k8s.io/apimachinery/pkg/labels"
 )
 
@@ -96,7 +96,7 @@ func hasConflictingMatchLabels(labelMap, otherLabelMap map[string]string) bool {
 }
 
 func hasOneAgentVolumeStorageEnabled(dynakube *dynatracev1beta1.DynaKube) (isEnabled bool, isSet bool) {
-	envVar := kubeobjects.FindEnvVar(dynakube.GetOneAgentEnvironment(), oneagentEnableVolumeStorageEnvVarName)
+	envVar := env.FindEnvVar(dynakube.GetOneAgentEnvironment(), oneagentEnableVolumeStorageEnvVarName)
 	isSet = envVar != nil
 	isEnabled = isSet && envVar.Value == "true"
 	return

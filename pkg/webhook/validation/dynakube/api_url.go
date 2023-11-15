@@ -17,6 +17,9 @@ const (
 	errorInvalidApiUrl = `The DynaKube's specification has an invalid API URL value set.
 	Make sure you correctly specify the URL in your custom resource (including the /api postfix).
 	`
+
+	errorThirdGenApiUrl = `The DynaKube's specification has an 3rd gen API URL. Make sure to remove the 'apps' part
+	out of it. Example: ` + ExampleApiUrl
 )
 
 func NoApiUrl(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
@@ -59,5 +62,12 @@ func IsInvalidApiUrl(_ context.Context, dv *dynakubeValidator, dynakube *dynatra
 		return errorInvalidApiUrl
 	}
 
+	return ""
+}
+
+func IsThirdGenAPIUrl(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+	if strings.Contains(dynakube.ApiUrl(), ".apps.") {
+		return errorThirdGenApiUrl
+	}
 	return ""
 }

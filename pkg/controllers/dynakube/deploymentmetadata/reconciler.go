@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/configmap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -62,11 +62,11 @@ func (r *Reconciler) addOperatorVersionInfo(configMapData map[string]string) {
 }
 
 func (r *Reconciler) maintainMetadataConfigMap(ctx context.Context, configMapData map[string]string) error {
-	configMapQuery := kubeobjects.NewConfigMapQuery(ctx, r.client, r.apiReader, log)
-	configMap, err := kubeobjects.CreateConfigMap(r.scheme, &r.dynakube,
-		kubeobjects.NewConfigMapNameModifier(GetDeploymentMetadataConfigMapName(r.dynakube.Name)),
-		kubeobjects.NewConfigMapNamespaceModifier(r.dynakube.Namespace),
-		kubeobjects.NewConfigMapDataModifier(configMapData))
+	configMapQuery := configmap.NewQuery(ctx, r.client, r.apiReader, log)
+	configMap, err := configmap.CreateConfigMap(r.scheme, &r.dynakube,
+		configmap.NewModifier(GetDeploymentMetadataConfigMapName(r.dynakube.Name)),
+		configmap.NewNamespaceModifier(r.dynakube.Namespace),
+		configmap.NewConfigMapDataModifier(configMapData))
 	if err != nil {
 		return errors.WithStack(err)
 	}
