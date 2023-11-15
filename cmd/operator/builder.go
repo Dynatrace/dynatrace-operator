@@ -6,9 +6,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/cmd/config"
 	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/certificates"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/otel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -177,7 +177,7 @@ func (builder CommandBuilder) runOperatorManager(kubeCfg *rest.Config, isDeploye
 		return err
 	}
 
-	otelShutdownFn := otel.Start(context.Background(), "dynatrace-operator", operatorManager.GetAPIReader(), builder.namespace)
+	otelShutdownFn := dtotel.Start(context.Background(), "dynatrace-operator", operatorManager.GetAPIReader(), builder.namespace)
 	defer otelShutdownFn()
 
 	err = operatorManager.Start(builder.getSignalHandler())
