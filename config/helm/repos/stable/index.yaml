@@ -32,18 +32,18 @@ entries:
     icon: https://assets.dynatrace.com/global/resources/Signet_Logo_RGB_CP_512x512px.png
     kubeVersion: '>=1.19.0-0'
     maintainers:
-      - email: marcell.sevcsik@dynatrace.com
-        name: 0sewa0
-      - email: christoph.muellner@dynatrace.com
-        name: chrismuellner
-      - email: lukas.hinterreiter@dynatrace.com
-        name: luhi-DT
+    - email: marcell.sevcsik@dynatrace.com
+      name: 0sewa0
+    - email: christoph.muellner@dynatrace.com
+      name: chrismuellner
+    - email: lukas.hinterreiter@dynatrace.com
+      name: luhi-DT
     name: dynatrace-operator
     sources:
-      - https://github.com/Dynatrace/dynatrace-operator
+    - https://github.com/Dynatrace/dynatrace-operator
     type: application
     urls:
-      - https://github.com/Dynatrace/dynatrace-operator/releases/download/v0.14.1/dynatrace-operator-0.14.1.tgz
+    - https://github.com/Dynatrace/dynatrace-operator/releases/download/v0.14.1/dynatrace-operator-0.14.1.tgz
     version: 0.14.1
   - apiVersion: v2
     appVersion: 0.14.0
@@ -54,18 +54,18 @@ entries:
     icon: https://assets.dynatrace.com/global/resources/Signet_Logo_RGB_CP_512x512px.png
     kubeVersion: '>=1.19.0-0'
     maintainers:
-      - email: marcell.sevcsik@dynatrace.com
-        name: 0sewa0
-      - email: christoph.muellner@dynatrace.com
-        name: chrismuellner
-      - email: lukas.hinterreiter@dynatrace.com
-        name: luhi-DT
+    - email: marcell.sevcsik@dynatrace.com
+      name: 0sewa0
+    - email: christoph.muellner@dynatrace.com
+      name: chrismuellner
+    - email: lukas.hinterreiter@dynatrace.com
+      name: luhi-DT
     name: dynatrace-operator
     sources:
-      - https://github.com/Dynatrace/dynatrace-operator
+    - https://github.com/Dynatrace/dynatrace-operator
     type: application
     urls:
-      - https://github.com/Dynatrace/dynatrace-operator/releases/download/v0.14.0/dynatrace-operator-0.14.0.tgz
+    - https://github.com/Dynatrace/dynatrace-operator/releases/download/v0.14.0/dynatrace-operator-0.14.0.tgz
     version: 0.14.0
   - apiVersion: v2
     appVersion: 0.13.1
@@ -76,18 +76,18 @@ entries:
     icon: https://assets.dynatrace.com/global/resources/Signet_Logo_RGB_CP_512x512px.png
     kubeVersion: '>=1.19.0-0'
     maintainers:
-      - email: marcell.sevcsik@dynatrace.com
-        name: 0sewa0
-      - email: christoph.muellner@dynatrace.com
-        name: chrismuellner
-      - email: lukas.hinterreiter@dynatrace.com
-        name: luhi-DT
+    - email: marcell.sevcsik@dynatrace.com
+      name: 0sewa0
+    - email: christoph.muellner@dynatrace.com
+      name: chrismuellner
+    - email: lukas.hinterreiter@dynatrace.com
+      name: luhi-DT
     name: dynatrace-operator
     sources:
-      - https://github.com/Dynatrace/dynatrace-operator
+    - https://github.com/Dynatrace/dynatrace-operator
     type: application
     urls:
-      - https://github.com/Dynatrace/dynatrace-operator/releases/download/v0.13.1/dynatrace-operator-0.13.1.tgz
+    - https://github.com/Dynatrace/dynatrace-operator/releases/download/v0.13.1/dynatrace-operator-0.13.1.tgz
     version: 0.13.1
   - apiVersion: v2
     appVersion: 0.13.0
