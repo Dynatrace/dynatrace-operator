@@ -15,7 +15,7 @@ func TestKey(t *testing.T) {
 		args args
 		want client.ObjectKey
 	}{
-		{name: "tttttt", args: args{object: nil}, want: client.ObjectKey{}},
+		{name: "handle nil value", args: args{object: nil}, want: client.ObjectKey{}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
