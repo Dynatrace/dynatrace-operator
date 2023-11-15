@@ -123,7 +123,8 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		otelShutdownFn := otel.Start(context.Background(), "dynatrace-webhook", webhookManager.GetAPIReader(), builder.namespace)
+		signalHandler := ctrl.SetupSignalHandler()
+		otelShutdownFn := otel.Start(signalHandler, "dynatrace-webhook", webhookManager.GetAPIReader(), builder.namespace)
 		defer otelShutdownFn()
 
 		err = startCertificateWatcher(webhookManager, builder.namespace, builder.podName)
@@ -161,7 +162,6 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		signalHandler := ctrl.SetupSignalHandler()
 		err = webhookManager.Start(signalHandler)
 
 		return errors.WithStack(err)
