@@ -6,7 +6,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/cmd/config"
 	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/certificates"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/otel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
@@ -135,7 +135,7 @@ func (builder CommandBuilder) buildRun() func(cmd *cobra.Command, args []string)
 }
 
 func (builder CommandBuilder) runInPod(kubeCfg *rest.Config) error {
-	operatorPod, err := kubeobjects.GetPod(context.TODO(), builder.client, builder.podName, builder.namespace)
+	operatorPod, err := pod.Get(context.TODO(), builder.client, builder.podName, builder.namespace)
 	if err != nil {
 		return err
 	}

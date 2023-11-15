@@ -11,7 +11,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/certificates"
 )
 
 var serialNumberLimit = new(big.Int).Lsh(big.NewInt(1), 128)
@@ -103,7 +103,7 @@ func (cs *Certs) validateServerCerts(now time.Time) bool {
 		return true
 	}
 
-	isValid, err := kubeobjects.ValidateCertificateExpiration(cs.Data[ServerCert], renewalThreshold, now, log)
+	isValid, err := certificates.ValidateCertificateExpiration(cs.Data[ServerCert], renewalThreshold, now, log)
 	if err != nil || !isValid {
 		log.Info("server certificate failed to parse or is outdated")
 		return true

@@ -7,7 +7,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -103,7 +103,7 @@ func (r *Reconciler) reconcileIPServiceEntry(ctx context.Context, ipHosts []dtcl
 		meta := buildObjectMeta(
 			entryName,
 			owner.GetNamespace(),
-			kubeobjects.NewCoreLabels(owner.GetName(), component).BuildLabels(),
+			labels.NewCoreLabels(owner.GetName(), component).BuildLabels(),
 		)
 
 		serviceEntry := buildServiceEntryIPs(meta, ipHosts)
@@ -128,7 +128,7 @@ func (r *Reconciler) reconcileFQDNServiceEntry(ctx context.Context, fqdnHosts []
 		meta := buildObjectMeta(
 			entryName,
 			owner.GetNamespace(),
-			kubeobjects.NewCoreLabels(owner.GetName(), component).BuildLabels(),
+			labels.NewCoreLabels(owner.GetName(), component).BuildLabels(),
 		)
 
 		serviceEntry := buildServiceEntryFQDNs(meta, fqdnHosts)
