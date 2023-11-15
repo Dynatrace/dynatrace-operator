@@ -4,7 +4,8 @@ import (
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -16,7 +17,7 @@ func (mutator *OneAgentPodMutator) configureInitContainer(request *dtwebhook.Mut
 
 func (mutator *OneAgentPodMutator) setContainerCount(initContainer *corev1.Container, containerCount int) {
 	desiredContainerCountEnvVarValue := strconv.Itoa(containerCount)
-	initContainer.Env = kubeobjects.AddOrUpdate(initContainer.Env, corev1.EnvVar{Name: consts.AgentContainerCountEnv, Value: desiredContainerCountEnvVarValue})
+	initContainer.Env = env.AddOrUpdate(initContainer.Env, corev1.EnvVar{Name: consts.AgentContainerCountEnv, Value: desiredContainerCountEnvVarValue})
 }
 
 func (mutator *OneAgentPodMutator) mutateUserContainers(request *dtwebhook.MutationRequest) {
@@ -60,7 +61,7 @@ func (mutator *OneAgentPodMutator) reinvokeUserContainers(request *dtwebhook.Rei
 
 func (mutator *OneAgentPodMutator) addOneAgentToContainer(request *dtwebhook.ReinvocationRequest, container *corev1.Container) {
 	log.Info("adding OneAgent to container", "name", container.Name)
-	installPath := kubeobjects.GetField(request.Pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
+	installPath := maputils.GetField(request.Pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
 
 	dynakube := request.DynaKube
 	addOneAgentVolumeMounts(container, installPath)

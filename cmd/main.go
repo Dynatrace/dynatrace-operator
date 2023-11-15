@@ -27,7 +27,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/cmd/support_archive"
 	"github.com/Dynatrace/dynatrace-operator/cmd/troubleshoot"
 	"github.com/Dynatrace/dynatrace-operator/cmd/webhook"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -48,33 +48,33 @@ func newRootCommand() *cobra.Command {
 
 func createWebhookCommandBuilder() webhook.CommandBuilder {
 	return webhook.NewWebhookCommandBuilder().
-		SetNamespace(os.Getenv(kubeobjects.EnvPodNamespace)).
-		SetPodName(os.Getenv(kubeobjects.EnvPodName)).
+		SetNamespace(os.Getenv(env.PodNamespace)).
+		SetPodName(os.Getenv(env.PodName)).
 		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
 }
 
 func createOperatorCommandBuilder() operator.CommandBuilder {
 	return operator.NewOperatorCommandBuilder().
-		SetNamespace(os.Getenv(kubeobjects.EnvPodNamespace)).
-		SetPodName(os.Getenv(kubeobjects.EnvPodName)).
+		SetNamespace(os.Getenv(env.PodNamespace)).
+		SetPodName(os.Getenv(env.PodName)).
 		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
 }
 
 func createCsiServerCommandBuilder() csiServer.CommandBuilder {
 	return csiServer.NewCsiServerCommandBuilder().
-		SetNamespace(os.Getenv(kubeobjects.EnvPodNamespace)).
+		SetNamespace(os.Getenv(env.PodNamespace)).
 		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
 }
 
 func createCsiInitCommandBuilder() csiInit.CommandBuilder {
 	return csiInit.NewCsiInitCommandBuilder().
-		SetNamespace(os.Getenv(kubeobjects.EnvPodNamespace)).
+		SetNamespace(os.Getenv(env.PodNamespace)).
 		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
 }
 
 func createCsiProvisionerCommandBuilder() csiProvisioner.CommandBuilder {
 	return csiProvisioner.NewCsiProvisionerCommandBuilder().
-		SetNamespace(os.Getenv(kubeobjects.EnvPodNamespace)).
+		SetNamespace(os.Getenv(env.PodNamespace)).
 		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
 }
 

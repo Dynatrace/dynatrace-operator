@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	k8spod "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
+	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtotel "github.com/Dynatrace/dynatrace-operator/pkg/util/otel"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"go.opentelemetry.io/otel/metric"
@@ -24,7 +26,7 @@ const (
 
 // AddPodMutationWebhookToManager adds the Webhook server to the Manager
 func AddPodMutationWebhookToManager(mgr manager.Manager, ns string) error {
-	podName := os.Getenv(kubeobjects.EnvPodName)
+	podName := os.Getenv(env.PodName)
 	if podName == "" {
 		log.Info("no Pod name set for webhook container")
 	}
@@ -96,7 +98,7 @@ func mutationRequired(mutationRequest *dtwebhook.MutationRequest) bool {
 	if mutationRequest == nil {
 		return false
 	}
-	return kubeobjects.GetFieldBool(mutationRequest.Pod.Annotations, dtwebhook.AnnotationDynatraceInject, true)
+	return maputils.GetFieldBool(mutationRequest.Pod.Annotations, dtwebhook.AnnotationDynatraceInject, true)
 }
 
 func (webhook *podMutatorWebhook) setupEventRecorder(ctx context.Context, mutationRequest *dtwebhook.MutationRequest) {
@@ -199,7 +201,7 @@ func createResponseForPod(ctx context.Context, pod *corev1.Pod, req admission.Re
 
 func silentErrorResponse(pod *corev1.Pod, err error) admission.Response {
 	rsp := admission.Patched("")
-	podName := kubeobjects.GetPodName(*pod)
+	podName := k8spod.GetName(*pod)
 	log.Error(err, "failed to inject into pod", "podName", podName)
 	rsp.Result.Message = fmt.Sprintf("Failed to inject into pod: %s because %s", podName, err.Error())
 	return rsp

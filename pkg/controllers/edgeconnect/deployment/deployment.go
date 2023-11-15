@@ -3,8 +3,10 @@ package deployment
 import (
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/resources"
+	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	appsv1 "k8s.io/api/apps/v1"
@@ -12,12 +14,16 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const customEnvPriority = prioritymap.HighPriority
-const defaultEnvPriority = prioritymap.DefaultPriority
+const (
+	customEnvPriority  = prioritymap.HighPriority
+	defaultEnvPriority = prioritymap.DefaultPriority
+	unprivilegedUser   = int64(1000)
+	unprivilegedGroup  = int64(1000)
+)
 
 func New(instance *edgeconnectv1alpha1.EdgeConnect) *appsv1.Deployment {
 	appLabels := buildAppLabels(instance)
-	labels := kubeobjects.MergeMap(
+	labels := maputils.MergeMap(
 		instance.Labels,
 		appLabels.BuildLabels(),
 	)
@@ -99,9 +105,9 @@ func prepareContainerEnvVars(instance *edgeconnectv1alpha1.EdgeConnect) []corev1
 	return envMap.AsEnvVars()
 }
 
-func buildAppLabels(instance *edgeconnectv1alpha1.EdgeConnect) *kubeobjects.AppLabels {
-	return kubeobjects.NewAppLabels(
-		kubeobjects.EdgeConnectComponentLabel,
+func buildAppLabels(instance *edgeconnectv1alpha1.EdgeConnect) *labels.AppLabels {
+	return labels.NewAppLabels(
+		labels.EdgeConnectComponentLabel,
 		instance.Name,
 		consts.EdgeConnectUserProvisioned,
 		instance.Status.Version.Version)
@@ -112,7 +118,7 @@ func buildAnnotations(instance *edgeconnectv1alpha1.EdgeConnect) map[string]stri
 		consts.AnnotationEdgeConnectContainerAppArmor: "runtime/default",
 		webhook.AnnotationDynatraceInject:             "false",
 	}
-	annotations = kubeobjects.MergeMap(instance.Annotations, annotations)
+	annotations = maputils.MergeMap(instance.Annotations, annotations)
 	return annotations
 }
 
@@ -127,8 +133,8 @@ func edgeConnectContainer(instance *edgeconnectv1alpha1.EdgeConnect) corev1.Cont
 			AllowPrivilegeEscalation: address.Of(false),
 			Privileged:               address.Of(false),
 			ReadOnlyRootFilesystem:   address.Of(true),
-			RunAsGroup:               address.Of(kubeobjects.UnprivilegedGroup),
-			RunAsUser:                address.Of(kubeobjects.UnprivilegedUser),
+			RunAsGroup:               address.Of(unprivilegedGroup),
+			RunAsUser:                address.Of(unprivilegedUser),
 			RunAsNonRoot:             address.Of(true),
 		},
 		VolumeMounts: []corev1.VolumeMount{
@@ -153,8 +159,8 @@ func prepareVolume(instance *edgeconnectv1alpha1.EdgeConnect) corev1.Volume {
 }
 
 func prepareResourceRequirements(instance *edgeconnectv1alpha1.EdgeConnect) corev1.ResourceRequirements {
-	limits := kubeobjects.NewResources("100m", "128Mi")
-	requests := kubeobjects.NewResources("100m", "128Mi")
+	limits := resources.NewResourceList("100m", "128Mi")
+	requests := resources.NewResourceList("100m", "128Mi")
 
 	if instance.Spec.Resources.Limits != nil {
 		limits = instance.Spec.Resources.Limits
