@@ -15,12 +15,15 @@
 x-google-marketplace:
   schemaVersion: v2
   applicationApiVersion: v1beta1
-  publishedVersion: 0.14.1
+  publishedVersion: 0.14.2
   publishedVersionMetadata:
     releaseNote: "<!-- Release notes generated using configuration in .github/release.yml\
-      \ at v0.14.1 -->\n\n## What's Changed\n### Core changes \U0001F389\n* Add missing\
-      \ CRD to GitHub actions release pipeline  by @gkrenn in https://github.com/Dynatrace/dynatrace-operator/pull/2225\n\
-      \n\n**Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v0.14.0...v0.14.1"
+      \ at v0.14.2 -->\n\n## What's Changed\n### Bugfixes \U0001FAB2\n* Always Add\
+      \ ClusterId EnvVar To Pods by @wepudt in https://github.com/Dynatrace/dynatrace-operator/pull/2326\n\
+      * Add no-proxy to image library transport by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/2352\n\
+      ### Helm changes \u26D1\uFE0F\n* Make timeoutSeconds configurable for webhook\
+      \ configurations via values.yaml by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/2317\n\
+      \n\n**Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v0.14.1...v0.14.2"
     releaseTypes:
     - Feature
     recommended: true
