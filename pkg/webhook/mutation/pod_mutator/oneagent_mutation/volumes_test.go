@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	utilvolumes "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/volumes"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/volumes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -34,7 +34,7 @@ func TestAddReadOnlyCSIVolumeMounts(t *testing.T) {
 
 		require.Len(t, container.VolumeMounts, 3)
 		for expectedVolumeName, expectedMountPath := range expectedMounts {
-			mount, err := utilvolumes.GetVolumeMountByName(container.VolumeMounts, expectedVolumeName)
+			mount, err := volumes.GetVolumeMountByName(container.VolumeMounts, expectedVolumeName)
 			require.NoError(t, err)
 			require.NotNil(t, mount)
 			assert.Equal(t, expectedMountPath, mount.MountPath)
@@ -76,7 +76,7 @@ func TestAddInitVolumeMounts(t *testing.T) {
 		addInitVolumeMounts(container, *getTestReadOnlyCSIDynakube())
 		require.Len(t, container.VolumeMounts, 3)
 
-		mount, err := utilvolumes.GetVolumeMountByName(container.VolumeMounts, oneagentConfVolumeName)
+		mount, err := volumes.GetVolumeMountByName(container.VolumeMounts, oneagentConfVolumeName)
 		require.NoError(t, err)
 		assert.Equal(t, consts.AgentConfInitDirMount, mount.MountPath)
 	})
@@ -121,7 +121,7 @@ func TestAddReadOnlyCSIVolumes(t *testing.T) {
 		addVolumesForReadOnlyCSI(pod)
 		require.Len(t, pod.Spec.Volumes, 3)
 		for _, expectedVolumeName := range expectedVolumes {
-			mount, err := utilvolumes.GetByName(pod.Spec.Volumes, expectedVolumeName)
+			mount, err := volumes.GetByName(pod.Spec.Volumes, expectedVolumeName)
 			require.NoError(t, err)
 			require.NotNil(t, mount)
 		}
