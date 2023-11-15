@@ -6,7 +6,7 @@ import (
 	"os"
 
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/pkg/errors"
 )
 
@@ -19,7 +19,7 @@ func newProcessModuleConfigCache(pmc *dtclient.ProcessModuleConfig) *processModu
 	if pmc == nil {
 		pmc = &dtclient.ProcessModuleConfig{}
 	}
-	hash, err := kubeobjects.GenerateHash(pmc)
+	hash, err := hasher.GenerateHash(pmc)
 	if err != nil {
 		return nil
 	}

@@ -9,7 +9,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	corev1mocks "github.com/Dynatrace/dynatrace-operator/pkg/util/testing/mocks/k8s.io/client-go/kubernetes/typed/core/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -30,10 +30,10 @@ func TestManagedByLogsIgnored(t *testing.T) {
 
 func testLogCollection(t *testing.T, collectManagedLogs bool) {
 	fakeClientSet := fake.NewSimpleClientset(
-		createPod("pod1", kubeobjects.AppNameLabel),
-		createPod("pod2", kubeobjects.AppNameLabel),
-		createPod("pod3", kubeobjects.AppManagedByLabel),
-		createPod("pod4", kubeobjects.AppManagedByLabel),
+		createPod("pod1", labels.AppNameLabel),
+		createPod("pod2", labels.AppNameLabel),
+		createPod("pod3", labels.AppManagedByLabel),
+		createPod("pod4", labels.AppManagedByLabel),
 		&corev1.Pod{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Pod",
@@ -106,7 +106,7 @@ func TestLogCollectorPodListError(t *testing.T) {
 
 	mockedPods := corev1mocks.NewPodInterface(t)
 	mockedPods.EXPECT().
-		List(ctx, createPodListOptions(kubeobjects.AppNameLabel)).
+		List(ctx, createPodListOptions(labels.AppNameLabel)).
 		Return(nil, assert.AnError)
 	logCollector := newLogCollector(ctx,
 		newSupportArchiveLogger(&logBuffer),
@@ -125,9 +125,9 @@ func TestLogCollectorGetPodFail(t *testing.T) {
 	ctx := context.Background()
 
 	fakeClientSet := fake.NewSimpleClientset(
-		createPod("pod1", kubeobjects.AppNameLabel),
-		createPod("pod2", kubeobjects.AppNameLabel),
-		createPod("oneagent", kubeobjects.AppManagedByLabel))
+		createPod("pod1", labels.AppNameLabel),
+		createPod("pod2", labels.AppNameLabel),
+		createPod("oneagent", labels.AppManagedByLabel))
 
 	logBuffer := bytes.Buffer{}
 
@@ -136,8 +136,8 @@ func TestLogCollectorGetPodFail(t *testing.T) {
 	defer assertNoErrorOnClose(t, supportArchive)
 
 	mockedPods := corev1mocks.NewPodInterface(t)
-	listOptionsAppName := createPodListOptions(kubeobjects.AppNameLabel)
-	listOptionsManagedByOperator := createPodListOptions(kubeobjects.AppManagedByLabel)
+	listOptionsAppName := createPodListOptions(labels.AppNameLabel)
+	listOptionsManagedByOperator := createPodListOptions(labels.AppManagedByLabel)
 	mockedPods.EXPECT().
 		List(ctx, listOptionsAppName).
 		Return(fakeClientSet.CoreV1().Pods("dynatrace").List(ctx, listOptionsAppName))
@@ -162,8 +162,8 @@ func TestLogCollectorGetLogsFail(t *testing.T) {
 	ctx := context.Background()
 
 	fakeClientSet := fake.NewSimpleClientset(
-		createPod("pod1", kubeobjects.AppNameLabel),
-		createPod("pod2", kubeobjects.AppNameLabel))
+		createPod("pod1", labels.AppNameLabel),
+		createPod("pod2", labels.AppNameLabel))
 
 	logBuffer := bytes.Buffer{}
 
@@ -172,8 +172,8 @@ func TestLogCollectorGetLogsFail(t *testing.T) {
 	defer assertNoErrorOnClose(t, supportArchive)
 
 	mockedPods := corev1mocks.NewPodInterface(t)
-	listOptionsAppName := createPodListOptions(kubeobjects.AppNameLabel)
-	listOptionsManagedByOperator := createPodListOptions(kubeobjects.AppManagedByLabel)
+	listOptionsAppName := createPodListOptions(labels.AppNameLabel)
+	listOptionsManagedByOperator := createPodListOptions(labels.AppManagedByLabel)
 
 	getOptions := metav1.GetOptions{}
 
@@ -238,8 +238,8 @@ func TestLogCollectorNoAbortOnError(t *testing.T) {
 	ctx := context.Background()
 
 	fakeClientSet := fake.NewSimpleClientset(
-		createPod("pod1", kubeobjects.AppNameLabel),
-		createPod("pod2", kubeobjects.AppNameLabel))
+		createPod("pod1", labels.AppNameLabel),
+		createPod("pod2", labels.AppNameLabel))
 
 	logBuffer := bytes.Buffer{}
 
@@ -247,8 +247,8 @@ func TestLogCollectorNoAbortOnError(t *testing.T) {
 	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
 
 	mockedPods := corev1mocks.NewPodInterface(t)
-	listOptionsAppName := createPodListOptions(kubeobjects.AppNameLabel)
-	listOptionsManagedByOperator := createPodListOptions(kubeobjects.AppManagedByLabel)
+	listOptionsAppName := createPodListOptions(labels.AppNameLabel)
+	listOptionsManagedByOperator := createPodListOptions(labels.AppManagedByLabel)
 	getOptions := metav1.GetOptions{}
 
 	listCall := mockedPods.EXPECT().
