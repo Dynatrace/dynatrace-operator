@@ -730,4 +730,4 @@ entries:
     urls:
     - https://raw.githubusercontent.com/Dynatrace/helm-charts/master/repos/stable/dynatrace-operator-0.1.0.tgz
     version: 0.1.0
-generated: '2023-10-23T14:09:21.839184901Z'
+generated: '2023-08-17T11:40:37.678947187Z'
