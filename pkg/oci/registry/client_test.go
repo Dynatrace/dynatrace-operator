@@ -47,6 +47,35 @@ func TestProxy(t *testing.T) {
 	})
 }
 
+func TestSkipCertCheck(t *testing.T) {
+	instance := &dynatracev1beta1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "Dynakube",
+			Namespace: "dynatrace",
+		},
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			APIURL: "https://testApiUrl.dev.dynatracelabs.com/api",
+			OneAgent: dynatracev1beta1.OneAgentSpec{
+				CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
+			},
+		},
+	}
+	t.Run("has skipCertCheck enabled", func(t *testing.T) {
+		instance.Spec.SkipCertCheck = true
+		transport := http.DefaultTransport.(*http.Transport).Clone()
+		transport, err := PrepareTransportForDynaKube(context.TODO(), nil, transport, instance)
+		assert.NoError(t, err)
+		assert.Equal(t, transport.TLSClientConfig.InsecureSkipVerify, true)
+	})
+	t.Run("has skipCertCheck disabled", func(t *testing.T) {
+		instance.Spec.SkipCertCheck = false
+		transport := http.DefaultTransport.(*http.Transport).Clone()
+		transport, err := PrepareTransportForDynaKube(context.TODO(), nil, transport, instance)
+		assert.NoError(t, err)
+		assert.Equal(t, transport.TLSClientConfig.InsecureSkipVerify, false)
+	})
+}
+
 func checkProxyForUrl(t *testing.T, transport http.Transport, proxyRawURL, targetRawURL string, noProxy bool) {
 	targetURL, err := url.Parse(targetRawURL)
 	require.NoError(t, err)
