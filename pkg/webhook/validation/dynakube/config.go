@@ -17,6 +17,7 @@ type validator func(ctx context.Context, dv *dynakubeValidator, dynakube *dynatr
 var validators = []validator{
 	NoApiUrl,
 	IsInvalidApiUrl,
+	IsThirdGenAPIUrl,
 	missingCSIDaemonSet,
 	disabledCSIForReadonlyCSIVolume,
 	conflictingActiveGateConfiguration,
