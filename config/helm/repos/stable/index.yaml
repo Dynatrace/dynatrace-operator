@@ -5,7 +5,7 @@ entries:
     appVersion: 0.14.2
     created: '2023-11-14T16:15:11.883357137Z'
     description: The Dynatrace Operator Helm chart for Kubernetes and OpenShift
-    digest: 8518b59ff566776e6361f5edbee321eceb7c1dfa456cf16cda730071cebc25ba
+    digest: 276169633acd7d2c08bf015fdb48f40a492af2a256ad7fb054eb08bc035bccd0
     home: https://www.dynatrace.com/
     icon: https://assets.dynatrace.com/global/resources/Signet_Logo_RGB_CP_512x512px.png
     kubeVersion: '>=1.19.0-0'
@@ -774,4 +774,4 @@ entries:
     urls:
     - https://raw.githubusercontent.com/Dynatrace/helm-charts/master/repos/stable/dynatrace-operator-0.1.0.tgz
     version: 0.1.0
-generated: '2023-11-14T16:15:11.880778356Z'
+generated: '2023-11-15T13:11:02.847996515Z'
