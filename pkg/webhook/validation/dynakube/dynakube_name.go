@@ -14,10 +14,10 @@ const (
 	`
 
 	errorNameTooLong = `The length limit for the name of a DynaKube is %d, because it is the base for the name of resources related to the DynaKube. (example: dkName-activegate-<some-hash>)
-	The limit is necessary because kubernetes uses the name of some resources (example: StatefulSet) for the label value, which has a limit of 62 characters. (see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set)`
+	The limit is necessary because kubernetes uses the name of some resources (example: StatefulSet) for the label value, which has a limit of 63 characters. (see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set)`
 )
 
-func nameViolatesDNS1035(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func nameViolatesDNS1035(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	dynakubeName := dynakube.Name
 	var errs []string
 	if dynakubeName != "" {
@@ -30,7 +30,7 @@ func nameViolatesDNS1035(_ context.Context, dv *dynakubeValidator, dynakube *dyn
 	return errorNoDNS1053Label
 }
 
-func nameTooLong(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func nameTooLong(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	dynakubeName := dynakube.Name
 	if dynakubeName != "" && len(dynakubeName) > dynatracev1beta1.MaxNameLength {
 		return fmt.Sprintf(errorNameTooLong, dynatracev1beta1.MaxNameLength)
