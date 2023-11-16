@@ -117,18 +117,18 @@ func (_c *Client_DeleteEdgeConnect_Call) RunAndReturn(run func(string) error) *C
 }
 
 // GetEdgeConnect provides a mock function with given fields: edgeConnectId
-func (_m *Client) GetEdgeConnect(edgeConnectId string) (edgeconnect.EdgeConnectResponse, error) {
+func (_m *Client) GetEdgeConnect(edgeConnectId string) (edgeconnect.GetResponse, error) {
 	ret := _m.Called(edgeConnectId)
 
-	var r0 edgeconnect.EdgeConnectResponse
+	var r0 edgeconnect.GetResponse
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string) (edgeconnect.EdgeConnectResponse, error)); ok {
+	if rf, ok := ret.Get(0).(func(string) (edgeconnect.GetResponse, error)); ok {
 		return rf(edgeConnectId)
 	}
-	if rf, ok := ret.Get(0).(func(string) edgeconnect.EdgeConnectResponse); ok {
+	if rf, ok := ret.Get(0).(func(string) edgeconnect.GetResponse); ok {
 		r0 = rf(edgeConnectId)
 	} else {
-		r0 = ret.Get(0).(edgeconnect.EdgeConnectResponse)
+		r0 = ret.Get(0).(edgeconnect.GetResponse)
 	}
 
 	if rf, ok := ret.Get(1).(func(string) error); ok {
@@ -158,29 +158,29 @@ func (_c *Client_GetEdgeConnect_Call) Run(run func(edgeConnectId string)) *Clien
 	return _c
 }
 
-func (_c *Client_GetEdgeConnect_Call) Return(_a0 edgeconnect.EdgeConnectResponse, _a1 error) *Client_GetEdgeConnect_Call {
+func (_c *Client_GetEdgeConnect_Call) Return(_a0 edgeconnect.GetResponse, _a1 error) *Client_GetEdgeConnect_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Client_GetEdgeConnect_Call) RunAndReturn(run func(string) (edgeconnect.EdgeConnectResponse, error)) *Client_GetEdgeConnect_Call {
+func (_c *Client_GetEdgeConnect_Call) RunAndReturn(run func(string) (edgeconnect.GetResponse, error)) *Client_GetEdgeConnect_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetEdgeConnects provides a mock function with given fields: name
-func (_m *Client) GetEdgeConnects(name string) (edgeconnect.GetEdgeConnectsResponse, error) {
+func (_m *Client) GetEdgeConnects(name string) (edgeconnect.ListResponse, error) {
 	ret := _m.Called(name)
 
-	var r0 edgeconnect.GetEdgeConnectsResponse
+	var r0 edgeconnect.ListResponse
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string) (edgeconnect.GetEdgeConnectsResponse, error)); ok {
+	if rf, ok := ret.Get(0).(func(string) (edgeconnect.ListResponse, error)); ok {
 		return rf(name)
 	}
-	if rf, ok := ret.Get(0).(func(string) edgeconnect.GetEdgeConnectsResponse); ok {
+	if rf, ok := ret.Get(0).(func(string) edgeconnect.ListResponse); ok {
 		r0 = rf(name)
 	} else {
-		r0 = ret.Get(0).(edgeconnect.GetEdgeConnectsResponse)
+		r0 = ret.Get(0).(edgeconnect.ListResponse)
 	}
 
 	if rf, ok := ret.Get(1).(func(string) error); ok {
@@ -210,12 +210,12 @@ func (_c *Client_GetEdgeConnects_Call) Run(run func(name string)) *Client_GetEdg
 	return _c
 }
 
-func (_c *Client_GetEdgeConnects_Call) Return(_a0 edgeconnect.GetEdgeConnectsResponse, _a1 error) *Client_GetEdgeConnects_Call {
+func (_c *Client_GetEdgeConnects_Call) Return(_a0 edgeconnect.ListResponse, _a1 error) *Client_GetEdgeConnects_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Client_GetEdgeConnects_Call) RunAndReturn(run func(string) (edgeconnect.GetEdgeConnectsResponse, error)) *Client_GetEdgeConnects_Call {
+func (_c *Client_GetEdgeConnects_Call) RunAndReturn(run func(string) (edgeconnect.ListResponse, error)) *Client_GetEdgeConnects_Call {
 	_c.Call.Return(run)
 	return _c
 }

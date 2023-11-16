@@ -19,7 +19,7 @@ type Instance struct {
 	InstanceId string `json:"instanceId,omitempty"`
 }
 
-type EdgeConnectResponse struct { //nolint: revive
+type GetResponse struct {
 	ID               string           `json:"id,omitempty"`
 	Name             string           `json:"name"`
 	HostPatterns     []string         `json:"hostPatterns"`
@@ -28,9 +28,9 @@ type EdgeConnectResponse struct { //nolint: revive
 	Metadata         Metadata         `json:"metadata"`
 }
 
-type GetEdgeConnectsResponse struct {
-	EdgeConnects []EdgeConnectResponse `json:"edgeConnects"`
-	TotalCount   int                   `json:"totalCount"`
+type ListResponse struct {
+	EdgeConnects []GetResponse `json:"edgeConnects"`
+	TotalCount   int           `json:"totalCount"`
 }
 
 type CreateResponse struct {

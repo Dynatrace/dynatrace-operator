@@ -15,6 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	k8sdeployment "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/deployment"
+	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -32,10 +33,17 @@ import (
 
 const (
 	fastUpdateInterval    = 1 * time.Minute
-	defaultUpdateInterval = 3 * time.Minute // 30
+	defaultUpdateInterval = 30 * time.Minute
+
+	finalizerName = "server"
 )
 
-type edgeConnectClientBuilderType func(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect, oauthClientId string, oauthClientSecret string) (edgeconnect.Client, error)
+type oauthCredentialsType struct {
+	oauthClientId     string
+	oauthClientSecret string
+}
+
+type edgeConnectClientBuilderType func(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect, oauthCredentials oauthCredentialsType) (edgeconnect.Client, error)
 
 // Controller reconciles an EdgeConnect object
 type Controller struct {
@@ -185,7 +193,7 @@ func (controller *Controller) getEdgeConnect(ctx context.Context, name, namespac
 func (controller *Controller) updateFinalizers(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) error {
 	if edgeConnect.Spec.OAuth.Provisioner && len(edgeConnect.ObjectMeta.Finalizers) == 0 {
 		log.Info("updating finalizers", "name", edgeConnect.Name, "namespace", edgeConnect.Namespace)
-		edgeConnect.ObjectMeta.Finalizers = []string{"server"}
+		edgeConnect.ObjectMeta.Finalizers = []string{finalizerName}
 		if err := controller.client.Update(ctx, edgeConnect); err != nil {
 			return err
 		}
@@ -304,41 +312,41 @@ func (controller *Controller) reconcileEdgeConnectProvisioner(ctx context.Contex
 }
 
 func (controller *Controller) buildEdgeConnectClient(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) (edgeconnect.Client, error) {
-	oauthClientId, oauthClientSecret, err := controller.getOauthCredentials(ctx, edgeConnect)
+	oauthCredentials, err := controller.getOauthCredentials(ctx, edgeConnect)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	return controller.edgeConnectClientBuilder(ctx, edgeConnect, oauthClientId, oauthClientSecret)
+	return controller.edgeConnectClientBuilder(ctx, edgeConnect, oauthCredentials)
 }
 
-func (controller *Controller) getOauthCredentials(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) (string, string, error) {
-	query := kubeobjects.NewSecretQuery(ctx, controller.client, controller.apiReader, log)
+func (controller *Controller) getOauthCredentials(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) (oauthCredentialsType, error) {
+	query := k8ssecret.NewQuery(ctx, controller.client, controller.apiReader, log)
 	secret, err := query.Get(types.NamespacedName{
 		Name:      edgeConnect.Spec.OAuth.ClientSecret,
 		Namespace: edgeConnect.Namespace,
 	})
 	if err != nil {
-		return "", "", errors.WithStack(err)
+		return oauthCredentialsType{}, errors.WithStack(err)
 	}
 
-	oauthClientId, err := kubeobjects.ExtractToken(&secret, consts.KeyEdgeConnectOauthClientID)
+	oauthClientId, err := k8ssecret.ExtractToken(&secret, consts.KeyEdgeConnectOauthClientID)
 	if err != nil {
-		return "", "", errors.WithStack(err)
+		return oauthCredentialsType{}, errors.WithStack(err)
 	}
 
-	oauthClientSecret, err := kubeobjects.ExtractToken(&secret, consts.KeyEdgeConnectOauthClientSecret)
+	oauthClientSecret, err := k8ssecret.ExtractToken(&secret, consts.KeyEdgeConnectOauthClientSecret)
 	if err != nil {
-		return "", "", errors.WithStack(err)
+		return oauthCredentialsType{}, errors.WithStack(err)
 	}
-	return oauthClientId, oauthClientSecret, nil
+	return oauthCredentialsType{oauthClientId: oauthClientId, oauthClientSecret: oauthClientSecret}, nil
 }
 
-func newEdgeConnectClient() func(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect, oauthClientId string, oauthClientSecret string) (edgeconnect.Client, error) {
-	return func(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect, oauthClientId string, oauthClientSecret string) (edgeconnect.Client, error) {
+func newEdgeConnectClient() func(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect, oauthCredentials oauthCredentialsType) (edgeconnect.Client, error) {
+	return func(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect, oauthCredentials oauthCredentialsType) (edgeconnect.Client, error) {
 		edgeConnectClient, err := edgeconnect.NewClient(
-			oauthClientId,
-			oauthClientSecret,
+			oauthCredentials.oauthClientId,
+			oauthCredentials.oauthClientSecret,
 			edgeconnect.WithBaseURL("https://"+edgeConnect.Spec.ApiServer+"/platform/app-engine/edge-connect/v1"),
 			edgeconnect.WithTokenURL(edgeConnect.Spec.OAuth.Endpoint),
 			edgeconnect.WithOauthScopes([]string{
@@ -374,7 +382,7 @@ func getEdgeConnectIdByName(edgeConnectClient edgeconnect.Client, name string) (
 }
 
 func (controller *Controller) getEdgeConnectIdFromClientSecret(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) (string, error) {
-	query := kubeobjects.NewSecretQuery(ctx, controller.client, controller.apiReader, log)
+	query := k8ssecret.NewQuery(ctx, controller.client, controller.apiReader, log)
 	secret, err := query.Get(types.NamespacedName{Name: edgeConnectClientSecretName(edgeConnect.Name), Namespace: edgeConnect.Namespace})
 	if err != nil {
 		if k8serrors.IsNotFound(errors.Cause(err)) {
@@ -383,7 +391,7 @@ func (controller *Controller) getEdgeConnectIdFromClientSecret(ctx context.Conte
 			return "", errors.WithStack(err)
 		}
 	}
-	id, err := kubeobjects.ExtractToken(&secret, consts.KeyEdgeConnectId)
+	id, err := k8ssecret.ExtractToken(&secret, consts.KeyEdgeConnectId)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
@@ -399,10 +407,10 @@ func (controller *Controller) createEdgeConnect(ctx context.Context, edgeConnect
 
 	log.Info("createResponse", "id", createResponse.ID)
 
-	ecOAuthSecret, err := kubeobjects.CreateSecret(controller.scheme, edgeConnect,
-		kubeobjects.NewSecretNameModifier(edgeConnectClientSecretName(edgeConnect.Name)),
-		kubeobjects.NewSecretNamespaceModifier(edgeConnect.Namespace),
-		kubeobjects.NewSecretDataModifier(map[string][]byte{
+	ecOAuthSecret, err := k8ssecret.Create(controller.scheme, edgeConnect,
+		k8ssecret.NewNameModifier(edgeConnectClientSecretName(edgeConnect.Name)),
+		k8ssecret.NewNamespaceModifier(edgeConnect.Namespace),
+		k8ssecret.NewDataModifier(map[string][]byte{
 			consts.KeyEdgeConnectOauthClientID:     []byte(createResponse.OauthClientId),
 			consts.KeyEdgeConnectOauthClientSecret: []byte(createResponse.OauthClientSecret),
 			consts.KeyEdgeConnectOauthResource:     []byte(createResponse.OauthClientResource),
@@ -412,7 +420,7 @@ func (controller *Controller) createEdgeConnect(ctx context.Context, edgeConnect
 		return errors.WithStack(err)
 	}
 
-	query := kubeobjects.NewSecretQuery(ctx, controller.client, controller.apiReader, log)
+	query := k8ssecret.NewQuery(ctx, controller.client, controller.apiReader, log)
 	err = query.CreateOrUpdate(*ecOAuthSecret)
 	if err != nil {
 		log.Info("could not create or update secret for edge-connect client", "name", ecOAuthSecret.Name)
@@ -422,16 +430,16 @@ func (controller *Controller) createEdgeConnect(ctx context.Context, edgeConnect
 }
 
 func (controller *Controller) updateEdgeConnect(ctx context.Context, edgeConnectClient edgeconnect.Client, edgeConnect *edgeconnectv1alpha1.EdgeConnect) error {
-	secretQuery := kubeobjects.NewSecretQuery(ctx, controller.client, controller.apiReader, log)
+	secretQuery := k8ssecret.NewQuery(ctx, controller.client, controller.apiReader, log)
 	secret, err := secretQuery.Get(types.NamespacedName{Name: edgeConnectClientSecretName(edgeConnect.Name), Namespace: edgeConnect.Namespace})
 	if err != nil {
 		return err
 	}
-	id, err := kubeobjects.ExtractToken(&secret, consts.KeyEdgeConnectId)
+	id, err := k8ssecret.ExtractToken(&secret, consts.KeyEdgeConnectId)
 	if err != nil {
 		return err
 	}
-	oauthClientId, err := kubeobjects.ExtractToken(&secret, consts.KeyEdgeConnectOauthClientID)
+	oauthClientId, err := k8ssecret.ExtractToken(&secret, consts.KeyEdgeConnectOauthClientID)
 	if err != nil {
 		return err
 	}
@@ -457,12 +465,12 @@ func (controller *Controller) updateEdgeConnect(ctx context.Context, edgeConnect
 }
 
 func (controller *Controller) createOrUpdateEdgeConnectDeployment(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) error {
-	secretQuery := kubeobjects.NewSecretQuery(ctx, controller.client, controller.apiReader, log)
+	secretQuery := k8ssecret.NewQuery(ctx, controller.client, controller.apiReader, log)
 	secret, err := secretQuery.Get(types.NamespacedName{Name: edgeConnectClientSecretName(edgeConnect.Name), Namespace: edgeConnect.Namespace})
 	if err != nil {
 		return err
 	}
-	resource, err := kubeobjects.ExtractToken(&secret, consts.KeyEdgeConnectOauthResource)
+	resource, err := k8ssecret.ExtractToken(&secret, consts.KeyEdgeConnectOauthResource)
 	if err != nil {
 		return err
 	}
@@ -473,13 +481,13 @@ func (controller *Controller) createOrUpdateEdgeConnectDeployment(ctx context.Co
 		return errors.WithStack(err)
 	}
 
-	ddHash, err := kubeobjects.GenerateHash(desiredDeployment)
+	ddHash, err := hasher.GenerateHash(desiredDeployment)
 	if err != nil {
 		return err
 	}
-	desiredDeployment.Annotations[kubeobjects.AnnotationHash] = ddHash
+	desiredDeployment.Annotations[hasher.AnnotationHash] = ddHash
 
-	_, err = kubeobjects.CreateOrUpdateDeployment(controller.client, log, desiredDeployment)
+	_, err = k8sdeployment.CreateOrUpdateDeployment(controller.client, log, desiredDeployment)
 
 	if err != nil {
 		log.Info("could not create or update deployment for EdgeConnect", "name", desiredDeployment.Name)

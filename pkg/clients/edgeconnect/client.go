@@ -153,25 +153,25 @@ func (c *client) getServerResponseData(response *http.Response) ([]byte, error) 
 }
 
 // GetEdgeConnect returns edge connect if it exists
-func (c *client) GetEdgeConnect(edgeConnectId string) (EdgeConnectResponse, error) {
+func (c *client) GetEdgeConnect(edgeConnectId string) (GetResponse, error) {
 	url := c.getEdgeConnectUrl(edgeConnectId)
 
 	resp, err := c.httpClient.Get(url)
 	defer utils.CloseBodyAfterRequest(resp)
 
 	if err != nil {
-		return EdgeConnectResponse{}, err
+		return GetResponse{}, err
 	}
 
 	responseData, err := c.getServerResponseData(resp)
 	if err != nil {
-		return EdgeConnectResponse{}, err
+		return GetResponse{}, err
 	}
 
-	response := EdgeConnectResponse{}
+	response := GetResponse{}
 	err = json.Unmarshal(responseData, &response)
 	if err != nil {
-		return EdgeConnectResponse{}, err
+		return GetResponse{}, err
 	}
 
 	return response, nil
@@ -282,12 +282,12 @@ func (c *client) CreateEdgeConnect(name string, hostPatterns []string, oauthClie
 }
 
 // GetEdgeConnects returns list of edge connects
-func (c *client) GetEdgeConnects(name string) (GetEdgeConnectsResponse, error) {
+func (c *client) GetEdgeConnects(name string) (ListResponse, error) {
 	ecUrl := c.getEdgeConnectsUrl()
 
 	req, err := http.NewRequest("GET", ecUrl, nil)
 	if err != nil {
-		return GetEdgeConnectsResponse{}, err
+		return ListResponse{}, err
 	}
 	req.URL.RawQuery = url.Values{
 		"add-fields": {"name"},
@@ -298,18 +298,18 @@ func (c *client) GetEdgeConnects(name string) (GetEdgeConnectsResponse, error) {
 	defer utils.CloseBodyAfterRequest(resp)
 
 	if err != nil {
-		return GetEdgeConnectsResponse{}, err
+		return ListResponse{}, err
 	}
 
 	responseData, err := c.getServerResponseData(resp)
 	if err != nil {
-		return GetEdgeConnectsResponse{}, err
+		return ListResponse{}, err
 	}
 
-	response := GetEdgeConnectsResponse{}
+	response := ListResponse{}
 	err = json.Unmarshal(responseData, &response)
 	if err != nil {
-		return GetEdgeConnectsResponse{}, err
+		return ListResponse{}, err
 	}
 
 	return response, nil
