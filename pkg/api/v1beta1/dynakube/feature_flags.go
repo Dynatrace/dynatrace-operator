@@ -119,8 +119,9 @@ const (
 )
 
 const (
-	DefaultMaxFailedCsiMountAttempts  = 10
-	DefaultMinRequestThresholdMinutes = 15
+	DefaultMaxFailedCsiMountAttempts        = 10
+	DefaultMinRequestThresholdMinutes       = 15
+	IstioDefaultOneAgentInitialConnectRetry = 6000
 )
 
 var (
@@ -309,7 +310,15 @@ func (dk *DynaKube) FeatureLabelVersionDetection() bool {
 
 // FeatureAgentInitialConnectRetry is a feature flag to configure startup delay of standalone agents
 func (dk *DynaKube) FeatureAgentInitialConnectRetry() int {
-	return dk.getFeatureFlagInt(AnnotationFeatureOneAgentInitialConnectRetry, -1)
+	defaultValue := -1
+	ffValue := dk.getFeatureFlagInt(AnnotationFeatureOneAgentInitialConnectRetry, defaultValue)
+
+	// In case of istio, we want to have a longer initial delay for codemodules to ensure the DT service is created consistently
+	if ffValue == defaultValue && dk.Spec.EnableIstio {
+		ffValue = IstioDefaultOneAgentInitialConnectRetry
+	}
+
+	return ffValue
 }
 
 func (dk *DynaKube) FeatureOneAgentPrivileged() bool {
