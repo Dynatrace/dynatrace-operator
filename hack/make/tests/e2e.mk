@@ -48,7 +48,7 @@ test/e2e/cloudnative/default: manifests/crd/helm
 
 ## Runs CloudNative istio e2e test only
 test/e2e/cloudnative/istio: manifests/crd/helm
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/istio -args --labels "name=cloudnative-isito" $(SKIPCLEANUP)
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/istio -args --labels "name=cloudnative-istio" $(SKIPCLEANUP)
 
 ## Runs CloudNative network problem e2e test only
 test/e2e/cloudnative/resilience: manifests/crd/helm

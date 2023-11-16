@@ -4,8 +4,8 @@ import (
 	"net"
 
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	istio "istio.io/api/networking/v1alpha3"
-	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
+	istio "istio.io/api/networking/v1beta1"
+	istiov1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -14,7 +14,7 @@ const (
 	protocolHttps = "https"
 )
 
-func buildVirtualService(meta metav1.ObjectMeta, commHosts []dtclient.CommunicationHost) *istiov1alpha3.VirtualService {
+func buildVirtualService(meta metav1.ObjectMeta, commHosts []dtclient.CommunicationHost) *istiov1beta1.VirtualService {
 	var nonIPhosts []dtclient.CommunicationHost
 
 	for _, commHost := range commHosts {
@@ -26,7 +26,7 @@ func buildVirtualService(meta metav1.ObjectMeta, commHosts []dtclient.Communicat
 		return nil
 	}
 
-	return &istiov1alpha3.VirtualService{
+	return &istiov1beta1.VirtualService{
 		ObjectMeta: meta,
 		Spec:       buildVirtualServiceSpec(nonIPhosts),
 	}

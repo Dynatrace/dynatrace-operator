@@ -5,7 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/pkg/errors"
-	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
+	istiov1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	istioclientset "istio.io/client-go/pkg/clientset/versioned"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -52,8 +52,8 @@ func (cl *Client) CheckIstioInstalled() (bool, error) {
 	return err == nil, err
 }
 
-func (cl *Client) GetVirtualService(ctx context.Context, name string) (*istiov1alpha3.VirtualService, error) {
-	virtualService, err := cl.IstioClientset.NetworkingV1alpha3().VirtualServices(cl.Owner.GetNamespace()).Get(ctx, name, metav1.GetOptions{})
+func (cl *Client) GetVirtualService(ctx context.Context, name string) (*istiov1beta1.VirtualService, error) {
+	virtualService, err := cl.IstioClientset.NetworkingV1beta1().VirtualServices(cl.Owner.GetNamespace()).Get(ctx, name, metav1.GetOptions{})
 	if k8serrors.IsNotFound(err) {
 		return nil, nil
 	} else if err != nil {
@@ -63,7 +63,7 @@ func (cl *Client) GetVirtualService(ctx context.Context, name string) (*istiov1a
 	return virtualService, nil
 }
 
-func (cl *Client) CreateOrUpdateVirtualService(ctx context.Context, newVirtualService *istiov1alpha3.VirtualService) error {
+func (cl *Client) CreateOrUpdateVirtualService(ctx context.Context, newVirtualService *istiov1beta1.VirtualService) error {
 	if newVirtualService == nil {
 		return errors.New("can't create virtual service based on nil object")
 	}
@@ -94,11 +94,11 @@ func (cl *Client) CreateOrUpdateVirtualService(ctx context.Context, newVirtualSe
 	return cl.updateVirtualService(ctx, oldVirtualService, newVirtualService)
 }
 
-func (cl *Client) createVirtualService(ctx context.Context, virtualService *istiov1alpha3.VirtualService) error {
+func (cl *Client) createVirtualService(ctx context.Context, virtualService *istiov1beta1.VirtualService) error {
 	if virtualService == nil {
 		return errors.New("can't create virtual service based on nil object")
 	}
-	_, err := cl.IstioClientset.NetworkingV1alpha3().VirtualServices(cl.Owner.GetNamespace()).Create(ctx, virtualService, metav1.CreateOptions{})
+	_, err := cl.IstioClientset.NetworkingV1beta1().VirtualServices(cl.Owner.GetNamespace()).Create(ctx, virtualService, metav1.CreateOptions{})
 	if err != nil {
 		log.Info("failed to create virtual service", "name", virtualService.GetName(), "error", err.Error())
 		return errors.WithStack(err)
@@ -106,12 +106,12 @@ func (cl *Client) createVirtualService(ctx context.Context, virtualService *isti
 	return nil
 }
 
-func (cl *Client) updateVirtualService(ctx context.Context, oldVirtualService, newVirtualService *istiov1alpha3.VirtualService) error {
+func (cl *Client) updateVirtualService(ctx context.Context, oldVirtualService, newVirtualService *istiov1beta1.VirtualService) error {
 	if oldVirtualService == nil || newVirtualService == nil {
 		return errors.New("can't update service entry based on nil object")
 	}
 	newVirtualService.ObjectMeta.ResourceVersion = oldVirtualService.ObjectMeta.ResourceVersion
-	_, err := cl.IstioClientset.NetworkingV1alpha3().VirtualServices(cl.Owner.GetNamespace()).Update(ctx, newVirtualService, metav1.UpdateOptions{})
+	_, err := cl.IstioClientset.NetworkingV1beta1().VirtualServices(cl.Owner.GetNamespace()).Update(ctx, newVirtualService, metav1.UpdateOptions{})
 	if err != nil {
 		log.Info("failed to update virtual service", "name", newVirtualService.GetName(), "error", err.Error())
 		return errors.WithStack(err)
@@ -120,7 +120,7 @@ func (cl *Client) updateVirtualService(ctx context.Context, oldVirtualService, n
 }
 
 func (cl *Client) DeleteVirtualService(ctx context.Context, name string) error {
-	err := cl.IstioClientset.NetworkingV1alpha3().
+	err := cl.IstioClientset.NetworkingV1beta1().
 		VirtualServices(cl.Owner.GetNamespace()).
 		Delete(ctx, name, metav1.DeleteOptions{})
 	if !k8serrors.IsNotFound(err) {
@@ -130,8 +130,8 @@ func (cl *Client) DeleteVirtualService(ctx context.Context, name string) error {
 	return nil
 }
 
-func (cl *Client) GetServiceEntry(ctx context.Context, name string) (*istiov1alpha3.ServiceEntry, error) {
-	serviceEntry, err := cl.IstioClientset.NetworkingV1alpha3().ServiceEntries(cl.Owner.GetNamespace()).Get(ctx, name, metav1.GetOptions{})
+func (cl *Client) GetServiceEntry(ctx context.Context, name string) (*istiov1beta1.ServiceEntry, error) {
+	serviceEntry, err := cl.IstioClientset.NetworkingV1beta1().ServiceEntries(cl.Owner.GetNamespace()).Get(ctx, name, metav1.GetOptions{})
 	if k8serrors.IsNotFound(err) {
 		return nil, nil
 	} else if err != nil {
@@ -141,7 +141,7 @@ func (cl *Client) GetServiceEntry(ctx context.Context, name string) (*istiov1alp
 	return serviceEntry, nil
 }
 
-func (cl *Client) CreateOrUpdateServiceEntry(ctx context.Context, newServiceEntry *istiov1alpha3.ServiceEntry) error {
+func (cl *Client) CreateOrUpdateServiceEntry(ctx context.Context, newServiceEntry *istiov1beta1.ServiceEntry) error {
 	if newServiceEntry == nil {
 		return errors.New("can't create service entry based on nil object")
 	}
@@ -171,12 +171,12 @@ func (cl *Client) CreateOrUpdateServiceEntry(ctx context.Context, newServiceEntr
 	return cl.updateServiceEntry(ctx, oldServiceEntry, newServiceEntry)
 }
 
-func (cl *Client) createServiceEntry(ctx context.Context, serviceEntry *istiov1alpha3.ServiceEntry) error {
+func (cl *Client) createServiceEntry(ctx context.Context, serviceEntry *istiov1beta1.ServiceEntry) error {
 	if serviceEntry == nil {
 		return errors.New("can't create service entry based on nil object")
 	}
 
-	_, err := cl.IstioClientset.NetworkingV1alpha3().ServiceEntries(cl.Owner.GetNamespace()).Create(ctx, serviceEntry, metav1.CreateOptions{})
+	_, err := cl.IstioClientset.NetworkingV1beta1().ServiceEntries(cl.Owner.GetNamespace()).Create(ctx, serviceEntry, metav1.CreateOptions{})
 	if err != nil {
 		log.Info("failed to create service entry", "name", serviceEntry.GetName(), "error", err.Error())
 		return errors.WithStack(err)
@@ -184,13 +184,13 @@ func (cl *Client) createServiceEntry(ctx context.Context, serviceEntry *istiov1a
 	return nil
 }
 
-func (cl *Client) updateServiceEntry(ctx context.Context, oldServiceEntry, newServiceEntry *istiov1alpha3.ServiceEntry) error {
+func (cl *Client) updateServiceEntry(ctx context.Context, oldServiceEntry, newServiceEntry *istiov1beta1.ServiceEntry) error {
 	if oldServiceEntry == nil || newServiceEntry == nil {
 		return errors.New("can't update service entry based on nil object")
 	}
 
 	newServiceEntry.ObjectMeta.ResourceVersion = oldServiceEntry.ObjectMeta.ResourceVersion
-	_, err := cl.IstioClientset.NetworkingV1alpha3().ServiceEntries(cl.Owner.GetNamespace()).Update(ctx, newServiceEntry, metav1.UpdateOptions{})
+	_, err := cl.IstioClientset.NetworkingV1beta1().ServiceEntries(cl.Owner.GetNamespace()).Update(ctx, newServiceEntry, metav1.UpdateOptions{})
 	if err != nil {
 		log.Info("failed to update service entry", "name", newServiceEntry.GetName(), "error", err.Error())
 		return errors.WithStack(err)
@@ -199,7 +199,7 @@ func (cl *Client) updateServiceEntry(ctx context.Context, oldServiceEntry, newSe
 }
 
 func (cl *Client) DeleteServiceEntry(ctx context.Context, name string) error {
-	err := cl.IstioClientset.NetworkingV1alpha3().
+	err := cl.IstioClientset.NetworkingV1beta1().
 		ServiceEntries(cl.Owner.GetNamespace()).
 		Delete(ctx, name, metav1.DeleteOptions{})
 	if !k8serrors.IsNotFound(err) {
