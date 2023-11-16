@@ -39,8 +39,8 @@ const (
 )
 
 type oauthCredentialsType struct {
-	oauthClientId     string
-	oauthClientSecret string
+	clientId     string
+	clientSecret string
 }
 
 type edgeConnectClientBuilderType func(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect, oauthCredentials oauthCredentialsType) (edgeconnect.Client, error)
@@ -339,14 +339,14 @@ func (controller *Controller) getOauthCredentials(ctx context.Context, edgeConne
 	if err != nil {
 		return oauthCredentialsType{}, errors.WithStack(err)
 	}
-	return oauthCredentialsType{oauthClientId: oauthClientId, oauthClientSecret: oauthClientSecret}, nil
+	return oauthCredentialsType{clientId: oauthClientId, clientSecret: oauthClientSecret}, nil
 }
 
 func newEdgeConnectClient() func(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect, oauthCredentials oauthCredentialsType) (edgeconnect.Client, error) {
 	return func(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect, oauthCredentials oauthCredentialsType) (edgeconnect.Client, error) {
 		edgeConnectClient, err := edgeconnect.NewClient(
-			oauthCredentials.oauthClientId,
-			oauthCredentials.oauthClientSecret,
+			oauthCredentials.clientId,
+			oauthCredentials.clientSecret,
 			edgeconnect.WithBaseURL("https://"+edgeConnect.Spec.ApiServer+"/platform/app-engine/edge-connect/v1"),
 			edgeconnect.WithTokenURL(edgeConnect.Spec.OAuth.Endpoint),
 			edgeconnect.WithOauthScopes([]string{
