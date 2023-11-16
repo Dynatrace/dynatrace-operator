@@ -15,7 +15,7 @@ const (
 	OneAgentComponent   = "oneagent"
 	ActiveGateComponent = "activegate"
 	IstioGVRName        = "networking.istio.io"
-	IstioGVRVersion     = "v1alpha3"
+	IstioGVRVersion     = "v1beta1"
 )
 
 var (

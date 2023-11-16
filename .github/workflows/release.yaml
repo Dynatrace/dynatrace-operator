@@ -351,6 +351,8 @@ jobs:
         with:
           base: main
           delete-branch: true
+          branch: create-pull-request/update-helm-index
+          branch-suffix: short-commit-hash
           add-paths: |
             ./config/helm/repos/stable/index.yaml
             ./config/helm/repos/stable/index.yaml.previous
