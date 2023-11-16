@@ -21,7 +21,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
-	controllererrors "github.com/Dynatrace/dynatrace-operator/pkg/controllers/errors"
 	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/ingestendpoint"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/initgeneration"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
@@ -155,14 +154,6 @@ func (controller *Controller) reconcile(ctx context.Context, dynaKube *dynatrace
 			"errorCode", dynatraceapi.StatusCode(err), "errorMessage", dynatraceapi.Message(err))
 		// should we set the phase to error ?
 		return reconcile.Result{RequeueAfter: fastUpdateInterval}, nil
-
-	case errors.Is(err, &controllererrors.RestartReconciliationError{}):
-		controller.setRequeueAfterIfNewIsShorter(immediateUpdateInterval)
-
-		restartErr := &controllererrors.RestartReconciliationError{}
-		errors.As(err, &restartErr)
-		log.Info("need to restart reconciliation", "reason", restartErr.Error())
-		err = nil
 
 	case err != nil:
 		controller.setRequeueAfterIfNewIsShorter(fastUpdateInterval)

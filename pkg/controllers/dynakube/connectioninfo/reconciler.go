@@ -3,7 +3,6 @@ package connectioninfo
 import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	controllererrors "github.com/Dynatrace/dynatrace-operator/pkg/controllers/errors"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
@@ -16,7 +15,6 @@ import (
 )
 
 var NoOneAgentCommunicationHostsError = errors.New("no communication hosts for OneAgent are available")
-var ConnectionInfoUpdatedNotification = controllererrors.NewRestartReconciliationError("connection info updated, restart required")
 
 type Reconciler struct {
 	client       client.Client
@@ -38,6 +36,14 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 	}
 }
 
+func (r Reconciler) updateDynakubeStatus(ctx context.Context) {
+	r.dynakube.Status.UpdatedTimestamp = metav1.Now()
+	err := r.client.Status().Update(ctx, r.dynakube)
+	if err != nil {
+		log.Error(err, "could not update dynakube status", "name", r.dynakube.Name)
+	}
+}
+
 func (r *Reconciler) Reconcile(ctx context.Context) error {
 	var activeGateConnectionInfoUpdated bool
 	if !r.dynakube.FeatureDisableActivegateRawImage() {
@@ -54,7 +60,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	if oneAgentConnectionInfoUpdated || activeGateConnectionInfoUpdated {
-		return ConnectionInfoUpdatedNotification
+		r.updateDynakubeStatus(ctx)
 	}
 	return nil
 }

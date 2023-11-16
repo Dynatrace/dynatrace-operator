@@ -53,8 +53,7 @@ func TestReconcile_ConnectionInfo(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().Build()
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, &dynakube, dtc)
 		err := r.Reconcile(context.Background())
-		require.Error(t, err)
-		assert.ErrorIs(t, err, ConnectionInfoUpdatedNotification)
+		require.NoError(t, err)
 
 		assert.Equal(t, testTenantUUID, dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID)
 		assert.Equal(t, testTenantEndpoints, dynakube.Status.OneAgent.ConnectionInfoStatus.Endpoints)
@@ -73,8 +72,7 @@ func TestReconcile_ConnectionInfo(t *testing.T) {
 
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, &dynakube, dtc)
 		err := r.Reconcile(context.Background())
-		require.Error(t, err)
-		assert.ErrorIs(t, err, ConnectionInfoUpdatedNotification)
+		require.NoError(t, err)
 
 		assert.Equal(t, testTenantUUID, dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID)
 		assert.Equal(t, testTenantEndpoints, dynakube.Status.OneAgent.ConnectionInfoStatus.Endpoints)
@@ -119,8 +117,7 @@ func TestReconcile_ConnectionInfo(t *testing.T) {
 
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, &dynakube, dtc)
 		err := r.Reconcile(context.Background())
-		require.Error(t, err)
-		assert.ErrorIs(t, err, ConnectionInfoUpdatedNotification)
+		require.NoError(t, err)
 
 		assert.Equal(t, testTenantUUID, dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID)
 		assert.Equal(t, testTenantEndpoints, dynakube.Status.OneAgent.ConnectionInfoStatus.Endpoints)
@@ -130,8 +127,7 @@ func TestReconcile_ConnectionInfo(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().Build()
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, &dynakube, dtc)
 		err := r.Reconcile(context.Background())
-		require.Error(t, err)
-		assert.ErrorIs(t, err, ConnectionInfoUpdatedNotification)
+		require.NoError(t, err)
 
 		assert.Equal(t, testTenantUUID, dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID)
 		assert.Equal(t, testTenantEndpoints, dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints)
@@ -148,8 +144,7 @@ func TestReconcile_ConnectionInfo(t *testing.T) {
 		resetCachedTimestamps(&dynakube.Status)
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, &dynakube, dtc)
 		err := r.Reconcile(context.Background())
-		require.Error(t, err)
-		assert.ErrorIs(t, err, ConnectionInfoUpdatedNotification)
+		require.NoError(t, err)
 
 		assert.Equal(t, testTenantUUID, dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID)
 		assert.Equal(t, testTenantEndpoints, dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints)
@@ -166,8 +161,7 @@ func TestReconcile_ConnectionInfo(t *testing.T) {
 
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, &dynakube, dtc)
 		err := r.Reconcile(context.Background())
-		require.Error(t, err)
-		assert.ErrorIs(t, err, ConnectionInfoUpdatedNotification)
+		require.NoError(t, err)
 
 		assert.Equal(t, testTenantUUID, dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID)
 		assert.Equal(t, testTenantEndpoints, dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints)
@@ -254,8 +248,7 @@ func TestReconcile_ActivegateSecret(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().Build()
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
 		err := r.Reconcile(context.Background())
-		require.Error(t, err)
-		assert.ErrorIs(t, err, ConnectionInfoUpdatedNotification)
+		require.NoError(t, err)
 
 		var actualSecret corev1.Secret
 		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: dynakube.ActivegateTenantSecret(), Namespace: testNamespace}, &actualSecret)
@@ -267,8 +260,7 @@ func TestReconcile_ActivegateSecret(t *testing.T) {
 		resetCachedTimestamps(&dynakube.Status)
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
 		err := r.Reconcile(context.Background())
-		require.Error(t, err)
-		assert.ErrorIs(t, err, ConnectionInfoUpdatedNotification)
+		require.NoError(t, err)
 
 		var actualSecret corev1.Secret
 		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: dynakube.ActivegateTenantSecret(), Namespace: testNamespace}, &actualSecret)
@@ -279,8 +271,7 @@ func TestReconcile_ActivegateSecret(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithObjects(buildActiveGateSecret(*dynakube, testOutdated)).Build()
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
 		err := r.Reconcile(context.Background())
-		require.Error(t, err)
-		assert.ErrorIs(t, err, ConnectionInfoUpdatedNotification)
+		require.NoError(t, err)
 
 		var actualSecret corev1.Secret
 		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: dynakube.ActivegateTenantSecret(), Namespace: testNamespace}, &actualSecret)
@@ -292,8 +283,7 @@ func TestReconcile_ActivegateSecret(t *testing.T) {
 
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
 		err := r.Reconcile(context.Background())
-		require.Error(t, err)
-		assert.ErrorIs(t, err, ConnectionInfoUpdatedNotification)
+		require.NoError(t, err)
 	})
 }
 
@@ -327,8 +317,7 @@ func TestReconcile_OneagentSecret(t *testing.T) {
 
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
 		err := r.Reconcile(context.Background())
-		require.Error(t, err)
-		assert.ErrorIs(t, err, ConnectionInfoUpdatedNotification)
+		require.NoError(t, err)
 
 		var actualSecret corev1.Secret
 		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: dynakube.OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
@@ -344,8 +333,7 @@ func TestReconcile_OneagentSecret(t *testing.T) {
 
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
 		err := r.Reconcile(context.Background())
-		require.Error(t, err)
-		assert.ErrorIs(t, err, ConnectionInfoUpdatedNotification)
+		require.NoError(t, err)
 
 		var actualSecret corev1.Secret
 		err = fakeClient.Get(context.Background(), client.ObjectKey{Name: dynakube.OneagentTenantSecret(), Namespace: testNamespace}, &actualSecret)
