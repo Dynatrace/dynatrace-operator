@@ -32,7 +32,7 @@ func TestMain(m *testing.M) {
 	testEnv.BeforeEachTest(istio.AssertIstiodDeployment())
 	testEnv.Setup(
 		namespace.CreateForEnv(nsWithIstio),
-		tenant.CreateOtelSecret(nsWithIstio.Namespace),
+		tenant.CreateOtelSecret(nsWithIstio.Name),
 		operator.InstallViaMake(true),
 	)
 	// If we cleaned up during a fail-fast (aka.: /debug) it wouldn't be possible to investigate the error.
