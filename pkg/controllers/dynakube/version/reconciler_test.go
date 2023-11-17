@@ -64,7 +64,7 @@ func TestReconcile(t *testing.T) {
 			},
 		}, nil
 	}
-	fakeImage.ConfigFile()
+	_, _ = fakeImage.ConfigFile()
 	testImage := containerv1.Image(fakeImage)
 
 	t.Run("no update if hash provider returns error", func(t *testing.T) {
@@ -193,7 +193,7 @@ func TestNeedsReconcile(t *testing.T) {
 			dynakube:     &dynakube,
 			timeProvider: timeProvider,
 		}
-		updaters := []versionStatusUpdater{
+		updaters := []StatusUpdater{
 			newOneAgentUpdater(&dynakube, fake.NewClient(), nil, nil),
 			newActiveGateUpdater(&dynakube, fake.NewClient(), nil, nil),
 		}
