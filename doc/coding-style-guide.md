@@ -118,6 +118,7 @@ As such, you declare them at the package level and, in doing so, imply that your
 - If the error is not propagated to the controller or reconciler, it should be logged at the point where it is not returned to the caller.
 
 ### Don'ts
+
 - Errors that are propagated to the controller or reconciler must not be logged directly by us, as they get automatically logged by the Operator-SDK framework.
   - So we do not log errors twice.
 
