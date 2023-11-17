@@ -80,11 +80,7 @@ func TestMonitoringModesDynakube_Reconcile(t *testing.T) {
 
 	for mode := range deploymentModes {
 		t.Run(fmt.Sprintf(`Create dynakube with %s mode`, mode), func(t *testing.T) {
-			mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
-				dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeActiveGateTokenCreate},
-			)
-
-			mockClient.On("GetActiveGateAuthToken", testName).Return(dtclient.ActiveGateAuthTokenInfo{}, nil)
+			mockClient := createDTMockClient(t, dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeActiveGateTokenCreate})
 
 			instance := &dynatracev1beta1.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
@@ -125,10 +121,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		assert.NotNil(t, result)
 	})
 	t.Run(`Create works with minimal setup and interface`, func(t *testing.T) {
-		mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
-			dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeActiveGateTokenCreate})
-
-		mockClient.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
+		mockClient := createDTMockClient(t, dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeActiveGateTokenCreate})
 
 		instance := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
@@ -149,8 +142,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		assert.NotNil(t, result)
 	})
 	t.Run(`Create reconciles Kubernetes Monitoring if enabled`, func(t *testing.T) {
-		mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
-			dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeActiveGateTokenCreate})
+		mockClient := createDTMockClient(t, dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeActiveGateTokenCreate})
 
 		mockClient.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
 
@@ -185,9 +177,8 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		assert.NotNil(t, statefulSet)
 	})
 	t.Run(`Create reconciles automatic kubernetes api monitoring`, func(t *testing.T) {
-		mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
-			dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeEntitiesRead, dtclient.TokenScopeSettingsRead, dtclient.TokenScopeSettingsWrite,
-				dtclient.TokenScopeActiveGateTokenCreate})
+		mockClient := createDTMockClient(t, dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeEntitiesRead, dtclient.TokenScopeSettingsRead, dtclient.TokenScopeSettingsWrite,
+			dtclient.TokenScopeActiveGateTokenCreate})
 
 		mockClient.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
 
@@ -225,9 +216,8 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 	t.Run(`Create reconciles automatic kubernetes api monitoring with custom cluster name`, func(t *testing.T) {
 		const clusterLabel = "..blabla..;.🙃"
 
-		mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
-			dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeEntitiesRead, dtclient.TokenScopeSettingsRead, dtclient.TokenScopeSettingsWrite,
-				dtclient.TokenScopeActiveGateTokenCreate})
+		mockClient := createDTMockClient(t, dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeEntitiesRead, dtclient.TokenScopeSettingsRead, dtclient.TokenScopeSettingsWrite,
+			dtclient.TokenScopeActiveGateTokenCreate})
 		mockClient.On("CreateOrUpdateKubernetesSetting",
 			mock.AnythingOfType("string"),
 			mock.AnythingOfType("string"),
@@ -268,10 +258,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		assert.Equal(t, false, result.Requeue)
 	})
 	t.Run(`Create reconciles proxy secret`, func(t *testing.T) {
-		mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
-			dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeActiveGateTokenCreate})
-
-		mockClient.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
+		mockClient := createDTMockClient(t, dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeActiveGateTokenCreate})
 
 		instance := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
@@ -303,10 +290,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		assert.NotNil(t, proxySecret)
 	})
 	t.Run(`has proxy secret but feature flag disables proxy`, func(t *testing.T) {
-		mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
-			dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeActiveGateTokenCreate})
-
-		mockClient.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
+		mockClient := createDTMockClient(t, dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeActiveGateTokenCreate})
 
 		instance := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
@@ -337,8 +321,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		assert.True(t, k8serrors.IsNotFound(err))
 	})
 	t.Run(`reconciles phase change correctly`, func(t *testing.T) {
-		mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
-			dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeEntitiesRead, dtclient.TokenScopeSettingsRead, dtclient.TokenScopeSettingsWrite, dtclient.TokenScopeActiveGateTokenCreate})
+		mockClient := createDTMockClient(t, dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeEntitiesRead, dtclient.TokenScopeSettingsRead, dtclient.TokenScopeSettingsWrite, dtclient.TokenScopeActiveGateTokenCreate})
 
 		mockClient.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
 
@@ -386,10 +369,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 
 func TestReconcileOnlyOneTokenProvided_Reconcile(t *testing.T) {
 	t.Run(`Create validates apiToken correctly if apiToken with "InstallerDownload"-scope is provided`, func(t *testing.T) {
-		mockClient := createDTMockClient(dtclient.TokenScopes{},
-			dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeInstallerDownload, dtclient.TokenScopeActiveGateTokenCreate})
-
-		mockClient.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
+		mockClient := createDTMockClient(t, dtclient.TokenScopes{}, dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeInstallerDownload, dtclient.TokenScopeActiveGateTokenCreate})
 
 		instance := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
@@ -420,13 +400,10 @@ func TestReconcileOnlyOneTokenProvided_Reconcile(t *testing.T) {
 
 func TestRemoveOneAgentDaemonset(t *testing.T) {
 	t.Run(`Create validates apiToken correctly if apiToken with "InstallerDownload"-scope is provided`, func(t *testing.T) {
-		mockClient := createDTMockClient(dtclient.TokenScopes{},
-			dtclient.TokenScopes{
-				dtclient.TokenScopeDataExport,
-				dtclient.TokenScopeInstallerDownload,
-				dtclient.TokenScopeActiveGateTokenCreate})
-
-		mockClient.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
+		mockClient := createDTMockClient(t, dtclient.TokenScopes{}, dtclient.TokenScopes{
+			dtclient.TokenScopeDataExport,
+			dtclient.TokenScopeInstallerDownload,
+			dtclient.TokenScopeActiveGateTokenCreate})
 
 		instance := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
@@ -496,8 +473,7 @@ func TestRemoveOneAgentDaemonset(t *testing.T) {
 }
 
 func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
-	mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
-		dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeActiveGateTokenCreate})
+	mockClient := createDTMockClient(t, dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeActiveGateTokenCreate})
 
 	mockClient.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
 
@@ -568,12 +544,11 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 }
 
 func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
-	mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
-		dtclient.TokenScopes{
-			dtclient.TokenScopeDataExport,
-			dtclient.TokenScopeMetricsIngest,
-			dtclient.TokenScopeActiveGateTokenCreate,
-		})
+	mockClient := createDTMockClient(t, dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, dtclient.TokenScopes{
+		dtclient.TokenScopeDataExport,
+		dtclient.TokenScopeMetricsIngest,
+		dtclient.TokenScopeActiveGateTokenCreate,
+	})
 
 	mockClient.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
 
@@ -649,8 +624,8 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 	assert.True(t, k8serrors.IsNotFound(err))
 }
 
-func createDTMockClient(paasTokenScopes, apiTokenScopes dtclient.TokenScopes) *mockedclient.Client {
-	mockClient := &mockedclient.Client{}
+func createDTMockClient(t *testing.T, paasTokenScopes, apiTokenScopes dtclient.TokenScopes) *mockedclient.Client {
+	mockClient := mockedclient.NewClient(t)
 
 	mockClient.On("GetCommunicationHostForClient").Return(dtclient.CommunicationHost{
 		Protocol: testProtocol,
@@ -1038,9 +1013,7 @@ func TestTokenConditions(t *testing.T) {
 }
 
 func TestAPIError(t *testing.T) {
-	mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
-		dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeActiveGateTokenCreate},
-	)
+	mockClient := createDTMockClient(t, dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeActiveGateTokenCreate})
 	instance := &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,

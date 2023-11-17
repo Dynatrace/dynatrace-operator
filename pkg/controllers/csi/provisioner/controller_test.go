@@ -203,7 +203,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 				},
 			},
 		)
-		mockClient := &mocks.Client{}
+		mockClient := mocks.NewClient(t)
 		mockDtcBuilder := &dynatraceclient.StubBuilder{
 			DynatraceClient: mockClient,
 		}
@@ -314,12 +314,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 		errorfs := &mkDirAllErrorFs{
 			Fs: afero.NewMemMapFs(),
 		}
-		mockClient := &mocks.Client{}
-		mockClient.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{
-			ConnectionInfo: dtclient.ConnectionInfo{
-				TenantUUID: tenantUUID,
-			},
-		}, nil)
+		mockClient := mocks.NewClient(t)
 		mockDtcBuilder := &dynatraceclient.StubBuilder{
 			DynatraceClient: mockClient,
 		}
@@ -362,16 +357,8 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 	t.Run("error getting latest agent version", func(t *testing.T) {
 		gc := &CSIGarbageCollectorMock{}
 		gc.On("Reconcile").Return(reconcile.Result{}, nil)
-		var revision uint = 3
-		testProcessModuleConfig := createTestProcessModuleConfig(revision)
 		memFs := afero.NewMemMapFs()
-		mockClient := &mocks.Client{}
-		mockClient.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{
-			ConnectionInfo: dtclient.ConnectionInfo{
-				TenantUUID: tenantUUID,
-			},
-		}, nil)
-		mockClient.On("GetProcessModuleConfig", mock.AnythingOfType("uint")).Return(testProcessModuleConfig, nil)
+		mockClient := mocks.NewClient(t)
 		mockDtcBuilder := &dynatraceclient.StubBuilder{
 			DynatraceClient: mockClient,
 		}
@@ -433,15 +420,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 	t.Run("error getting dynakube from db", func(t *testing.T) {
 		gc := &CSIGarbageCollectorMock{}
 		memFs := afero.NewMemMapFs()
-		mockClient := &mocks.Client{}
-		mockClient.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{
-			ConnectionInfo: dtclient.ConnectionInfo{
-				TenantUUID: tenantUUID,
-			},
-		}, nil)
-		mockClient.On("GetLatestAgentVersion",
-			mock.AnythingOfType("string"),
-			mock.AnythingOfType("string")).Return(agentVersion, nil)
+		mockClient := mocks.NewClient(t)
 		mockDtcBuilder := &dynatraceclient.StubBuilder{
 			DynatraceClient: mockClient,
 		}

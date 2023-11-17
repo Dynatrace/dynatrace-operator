@@ -151,7 +151,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 				_, err := io.Copy(writer, zipFile)
 				require.NoError(t, err)
 			}).
-			Return(nil).Maybe()
+			Return(nil)
 		installer := &Installer{
 			fs:        fs,
 			dtc:       dtc,

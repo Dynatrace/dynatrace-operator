@@ -57,7 +57,7 @@ func TestReconcile(t *testing.T) {
 			},
 		)
 
-		dtClient := createDTMockClient("1.2.3.4", "HOST-42")
+		dtClient := createDTMockClient(t, "1.2.3.4", "HOST-42")
 		defer mock.AssertExpectationsForObjects(t, dtClient)
 
 		ctrl := createDefaultReconciler(fakeClient, dtClient)
@@ -87,7 +87,7 @@ func TestReconcile(t *testing.T) {
 		node1 := &corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node1"}}
 		fakeClient := createDefaultFakeClient()
 
-		dtClient := createDTMockClient("1.2.3.4", "HOST-42")
+		dtClient := createDTMockClient(t, "1.2.3.4", "HOST-42")
 		defer mock.AssertExpectationsForObjects(t, dtClient)
 
 		ctrl := createDefaultReconciler(fakeClient, dtClient)
@@ -114,7 +114,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("Node has taint", func(t *testing.T) {
 		fakeClient := createDefaultFakeClient()
-		dtClient := createDTMockClient("1.2.3.4", "HOST-42")
+		dtClient := createDTMockClient(t, "1.2.3.4", "HOST-42")
 		ctrl := createDefaultReconciler(fakeClient, dtClient)
 
 		// Get node 1
@@ -187,7 +187,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("Handle outdated cache", func(t *testing.T) {
 		fakeClient := createDefaultFakeClient()
 
-		dtClient := createDTMockClient("1.2.3.4", "HOST-42")
+		dtClient := createDTMockClient(t, "1.2.3.4", "HOST-42")
 		defer mock.AssertExpectationsForObjects(t, dtClient)
 
 		ctrl := createDefaultReconciler(fakeClient, dtClient)
@@ -257,8 +257,8 @@ func createDefaultReconciler(fakeClient client.Client, dtClient *mocks.Client) *
 	}
 }
 
-func createDTMockClient(ip, host string) *mocks.Client {
-	dtClient := &mocks.Client{}
+func createDTMockClient(t *testing.T, ip, host string) *mocks.Client {
+	dtClient := mocks.NewClient(t)
 	dtClient.On("GetEntityIDForIP", ip).Return(host, nil)
 	dtClient.On("SendEvent", mock.MatchedBy(func(e *dtclient.EventData) bool {
 		return e.EventType == "MARKED_FOR_TERMINATION"

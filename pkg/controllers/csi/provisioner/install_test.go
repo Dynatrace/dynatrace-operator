@@ -52,7 +52,7 @@ func TestUpdateAgent(t *testing.T) {
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testVersion))
 		provisioner.urlInstallerBuilder = mockUrlInstallerBuilder(installerMock)
 
-		currentVersion, err := provisioner.installAgentZip(dk, &mocks.Client{}, &processModuleCache)
+		currentVersion, err := provisioner.installAgentZip(dk, mocks.NewClient(t), &processModuleCache)
 		require.NoError(t, err)
 		assert.Equal(t, testVersion, currentVersion)
 		t_utils.AssertEvents(t,
@@ -85,7 +85,7 @@ func TestUpdateAgent(t *testing.T) {
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, newVersion))
 		provisioner.urlInstallerBuilder = mockUrlInstallerBuilder(installerMock)
 
-		currentVersion, err := provisioner.installAgentZip(dk, &mocks.Client{}, &processModuleCache)
+		currentVersion, err := provisioner.installAgentZip(dk, mocks.NewClient(t), &processModuleCache)
 		require.NoError(t, err)
 		assert.Equal(t, newVersion, currentVersion)
 	})
@@ -104,7 +104,7 @@ func TestUpdateAgent(t *testing.T) {
 			Return(false, nil)
 
 		provisioner.urlInstallerBuilder = mockUrlInstallerBuilder(installerMock)
-		currentVersion, err := provisioner.installAgentZip(dk, &mocks.Client{}, &processModuleCache)
+		currentVersion, err := provisioner.installAgentZip(dk, mocks.NewClient(t), &processModuleCache)
 
 		require.NoError(t, err)
 		assert.Equal(t, testVersion, currentVersion)
