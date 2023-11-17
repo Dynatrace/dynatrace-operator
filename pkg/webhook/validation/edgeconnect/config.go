@@ -12,5 +12,6 @@ var log = logger.Factory.GetLogger("edgeconnect-validation")
 type validator func(ctx context.Context, dv *edgeconnectValidator, edgeConnect *edgeconnect.EdgeConnect) string
 
 var validators = []validator{
-	IsInvalidApiServer,
+	isInvalidApiServer,
+	nameTooLong,
 }

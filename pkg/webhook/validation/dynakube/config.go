@@ -34,6 +34,7 @@ var validators = []validator{
 	conflictingOneAgentVolumeStorageSettings,
 	invalidSyntheticNodeType,
 	nameViolatesDNS1035,
+	nameTooLong,
 	namespaceSelectorMatchLabelsViolateLabelSpec,
 }
 
