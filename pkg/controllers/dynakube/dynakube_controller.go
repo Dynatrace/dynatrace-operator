@@ -119,19 +119,14 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 
 	dynaKube, err := controller.getDynakubeOrUnmap(ctx, request.Name, request.Namespace)
 	if err != nil {
-		log.Info("reconciling DynaKube finished, could not get dynakube", "namespace", request.Namespace, "name", request.Name, "result", "empty", "err", err.Error())
 		return reconcile.Result{}, err
 	} else if dynaKube == nil {
-		log.Info("reconciling DynaKube finished, no dynakube available", "namespace", request.Namespace, "name", request.Name, "result", "empty", "err", "nil")
+		log.Info("reconciling DynaKube finished, no dynakube available", "namespace", request.Namespace, "name", request.Name, "result", "empty")
 		return reconcile.Result{}, nil
 	}
 
-	errMsg := ""
 	result, err := controller.reconcile(ctx, dynaKube)
-	if err != nil {
-		errMsg = err.Error()
-	}
-	log.Info("reconciling DynaKube finished", "namespace", request.Namespace, "name", request.Name, "result", result, "err", errMsg)
+	log.Info("reconciling DynaKube finished", "namespace", request.Namespace, "name", request.Name, "result", result)
 	return result, err
 }
 

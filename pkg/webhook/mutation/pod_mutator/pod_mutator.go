@@ -72,7 +72,7 @@ func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.
 		return emptyPatch
 	}
 	if mutationRequest == nil {
-		emptyPatch.Result.Message = "unable to inject into pod (no error reported)"
+		emptyPatch.Result.Message = "injection into pod not required"
 		return emptyPatch
 	}
 

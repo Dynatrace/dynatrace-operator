@@ -62,22 +62,14 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return err
 	}
 
-	needStatusUpdate, err := hasher.IsDifferent(oldStatus.OneAgent.ConnectionInfoStatus, r.dynakube.Status.OneAgent.ConnectionInfoStatus)
+	needStatusUpdate, err := hasher.IsDifferent(oldStatus, r.dynakube.Status)
 	if err != nil {
-		log.Error(err, "failed to compare OneAgent connection info status hashes")
+		log.Error(err, "failed to compare connection info status hashes")
 		return err
 	} else if needStatusUpdate {
 		err = r.updateDynakubeStatus(ctx)
-		return err
 	}
 
-	needStatusUpdate, err = hasher.IsDifferent(oldStatus.ActiveGate.ConnectionInfoStatus, r.dynakube.Status.ActiveGate.ConnectionInfoStatus)
-	if err != nil {
-		log.Error(err, "failed to compare ActiveGate connection info status hashes")
-		return err
-	} else if needStatusUpdate {
-		err = r.updateDynakubeStatus(ctx)
-	}
 	return err
 }
 
