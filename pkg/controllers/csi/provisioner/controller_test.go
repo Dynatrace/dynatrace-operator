@@ -19,8 +19,14 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
 =======
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
+<<<<<<< HEAD
 	mockedclient "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 >>>>>>> 6a46919b (Replace old client with new one)
+||||||| parent of 66e1ec4a (Remove redundant import name)
+	mockedclient "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+=======
+	"github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+>>>>>>> 66e1ec4a (Remove redundant import name)
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -197,7 +203,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 				},
 			},
 		)
-		mockClient := &mockedclient.Client{}
+		mockClient := &mocks.Client{}
 		mockDtcBuilder := &dynatraceclient.StubBuilder{
 			DynatraceClient: mockClient,
 		}
@@ -308,7 +314,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 		errorfs := &mkDirAllErrorFs{
 			Fs: afero.NewMemMapFs(),
 		}
-		mockClient := &mockedclient.Client{}
+		mockClient := &mocks.Client{}
 		mockClient.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{
 			ConnectionInfo: dtclient.ConnectionInfo{
 				TenantUUID: tenantUUID,
@@ -359,7 +365,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 		var revision uint = 3
 		testProcessModuleConfig := createTestProcessModuleConfig(revision)
 		memFs := afero.NewMemMapFs()
-		mockClient := &mockedclient.Client{}
+		mockClient := &mocks.Client{}
 		mockClient.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{
 			ConnectionInfo: dtclient.ConnectionInfo{
 				TenantUUID: tenantUUID,
@@ -427,7 +433,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 	t.Run("error getting dynakube from db", func(t *testing.T) {
 		gc := &CSIGarbageCollectorMock{}
 		memFs := afero.NewMemMapFs()
-		mockClient := &mockedclient.Client{}
+		mockClient := &mocks.Client{}
 		mockClient.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{
 			ConnectionInfo: dtclient.ConnectionInfo{
 				TenantUUID: tenantUUID,

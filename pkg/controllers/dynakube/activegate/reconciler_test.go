@@ -11,7 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
-	mockedclient "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -48,7 +48,7 @@ var (
 )
 
 func TestReconciler_Reconcile(t *testing.T) {
-	dtc := mockedclient.NewClient(t)
+	dtc := mocks.NewClient(t)
 	dtc.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
 
 	t.Run(`Create works with minimal setup`, func(t *testing.T) {
@@ -143,7 +143,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 }
 
 func TestServiceCreation(t *testing.T) {
-	dynatraceClient := mockedclient.NewClient(t)
+	dynatraceClient := mocks.NewClient(t)
 	dynakube := &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
@@ -234,7 +234,7 @@ func getTestActiveGateService(t *testing.T, fakeClient client.Client) corev1.Ser
 }
 
 func TestExclusiveSynMonitoring(t *testing.T) {
-	mockDtClient := mockedclient.NewClient(t)
+	mockDtClient := mocks.NewClient(t)
 	mockDtClient.On("GetActiveGateAuthToken", testName).
 		Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
 
@@ -301,7 +301,7 @@ func TestReconcile_ActivegateConfigMap(t *testing.T) {
 		},
 	}
 
-	mockDtClient := mockedclient.NewClient(t)
+	mockDtClient := mocks.NewClient(t)
 
 	t.Run(`create activegate ConfigMap`, func(t *testing.T) {
 		fakeClient := fake.NewClient(testKubeSystemNamespace)

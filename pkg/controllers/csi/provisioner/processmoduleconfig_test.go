@@ -8,7 +8,7 @@ import (
 
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
-	mockedclient "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -56,7 +56,7 @@ func TestGetProcessModuleConfig(t *testing.T) {
 		var defaultHash string
 		testProcessModuleConfig := createTestProcessModuleConfig(3)
 		memFs := afero.NewMemMapFs()
-		mockClient := mockedclient.NewClient(t)
+		mockClient := mocks.NewClient(t)
 		mockClient.On("GetProcessModuleConfig", uint(0)).
 			Return(testProcessModuleConfig, nil)
 		provisioner := &OneAgentProvisioner{
@@ -75,7 +75,7 @@ func TestGetProcessModuleConfig(t *testing.T) {
 		memFs := afero.NewMemMapFs()
 		content, _ := json.Marshal(testProcessModuleConfigCache)
 		prepTestFsCache(memFs, content)
-		mockClient := mockedclient.NewClient(t)
+		mockClient := mocks.NewClient(t)
 		mockClient.On("GetProcessModuleConfig", testProcessModuleConfigCache.Revision).
 			Return(emptyResponse, nil)
 		provisioner := &OneAgentProvisioner{
@@ -96,7 +96,7 @@ func TestGetProcessModuleConfig(t *testing.T) {
 		memFs := afero.NewMemMapFs()
 		content, _ := json.Marshal(testProcessModuleConfigCache)
 		prepTestFsCache(memFs, content)
-		mockClient := mockedclient.NewClient(t)
+		mockClient := mocks.NewClient(t)
 		mockClient.On("GetProcessModuleConfig", testProcessModuleConfigCache.Revision).
 			Return(testProcessModuleConfig, nil)
 		provisioner := &OneAgentProvisioner{

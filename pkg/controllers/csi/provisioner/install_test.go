@@ -16,11 +16,17 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/processmoduleconfig"
 	t_utils "github.com/Dynatrace/dynatrace-operator/pkg/util/testing"
 <<<<<<< HEAD
+<<<<<<< HEAD
 	mocks "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
 ||||||| parent of 6a46919b (Replace old client with new one)
 =======
 	mockedclient "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 >>>>>>> 6a46919b (Replace old client with new one)
+||||||| parent of 66e1ec4a (Remove redundant import name)
+	mockedclient "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+=======
+	"github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+>>>>>>> 66e1ec4a (Remove redundant import name)
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -46,7 +52,7 @@ func TestUpdateAgent(t *testing.T) {
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, testVersion))
 		provisioner.urlInstallerBuilder = mockUrlInstallerBuilder(installerMock)
 
-		currentVersion, err := provisioner.installAgentZip(dk, &mockedclient.Client{}, &processModuleCache)
+		currentVersion, err := provisioner.installAgentZip(dk, &mocks.Client{}, &processModuleCache)
 		require.NoError(t, err)
 		assert.Equal(t, testVersion, currentVersion)
 		t_utils.AssertEvents(t,
@@ -79,7 +85,7 @@ func TestUpdateAgent(t *testing.T) {
 			Return(true, nil).Run(mockFsAfterInstall(provisioner, newVersion))
 		provisioner.urlInstallerBuilder = mockUrlInstallerBuilder(installerMock)
 
-		currentVersion, err := provisioner.installAgentZip(dk, &mockedclient.Client{}, &processModuleCache)
+		currentVersion, err := provisioner.installAgentZip(dk, &mocks.Client{}, &processModuleCache)
 		require.NoError(t, err)
 		assert.Equal(t, newVersion, currentVersion)
 	})
@@ -98,7 +104,7 @@ func TestUpdateAgent(t *testing.T) {
 			Return(false, nil)
 
 		provisioner.urlInstallerBuilder = mockUrlInstallerBuilder(installerMock)
-		currentVersion, err := provisioner.installAgentZip(dk, &mockedclient.Client{}, &processModuleCache)
+		currentVersion, err := provisioner.installAgentZip(dk, &mocks.Client{}, &processModuleCache)
 
 		require.NoError(t, err)
 		assert.Equal(t, testVersion, currentVersion)

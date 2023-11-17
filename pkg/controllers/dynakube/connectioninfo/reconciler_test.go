@@ -9,7 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	mockedclient "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -47,7 +47,7 @@ func TestReconcile_ConnectionInfo(t *testing.T) {
 			Name:      testName,
 		}}
 
-	dtc := mockedclient.NewClient(t)
+	dtc := mocks.NewClient(t)
 	dtc.On("GetActiveGateConnectionInfo").Return(getTestActiveGateConnectionInfo(), nil).Maybe()
 	dtc.On("GetOneAgentConnectionInfo").Return(getTestOneAgentConnectionInfo(), nil).Maybe()
 
@@ -177,7 +177,7 @@ func TestReconcile_NoOneAgentCommunicationHosts(t *testing.T) {
 			Name:      testName,
 		}}
 
-	dtc := mockedclient.NewClient(t)
+	dtc := mocks.NewClient(t)
 	dtc.On("GetActiveGateConnectionInfo").Return(getTestActiveGateConnectionInfo(), nil)
 	dtc.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{
 		ConnectionInfo: dtclient.ConnectionInfo{
@@ -243,7 +243,7 @@ func TestReconcile_ActivegateSecret(t *testing.T) {
 			Namespace: testNamespace,
 			Name:      testName,
 		}}
-	dtc := mockedclient.NewClient(t)
+	dtc := mocks.NewClient(t)
 	dtc.On("GetActiveGateConnectionInfo").Return(getTestActiveGateConnectionInfo(), nil)
 	dtc.On("GetOneAgentConnectionInfo").Return(getTestOneAgentConnectionInfo(), nil)
 
@@ -314,7 +314,7 @@ func TestReconcile_OneagentSecret(t *testing.T) {
 			},
 		}}
 
-	dtc := mockedclient.NewClient(t)
+	dtc := mocks.NewClient(t)
 	dtc.On("GetOneAgentConnectionInfo").Return(getTestOneAgentConnectionInfo(), nil)
 
 	t.Run(`create oneagent secret`, func(t *testing.T) {

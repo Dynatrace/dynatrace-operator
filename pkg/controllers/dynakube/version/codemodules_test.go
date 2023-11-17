@@ -8,7 +8,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
-	mockedclient "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -32,7 +32,7 @@ func TestCodeModulesUpdater(t *testing.T) {
 				},
 			},
 		}
-		mockClient := mockedclient.NewClient(t)
+		mockClient := mocks.NewClient(t)
 		mockCodeModulesImageInfo(mockClient, testImage)
 		updater := newCodeModulesUpdater(dynakube, mockClient)
 
@@ -63,7 +63,7 @@ func TestCodeModulesUseDefault(t *testing.T) {
 				CodeModules: oldCodeModulesStatus(),
 			},
 		}
-		mockClient := mockedclient.NewClient(t)
+		mockClient := mocks.NewClient(t)
 		updater := newCodeModulesUpdater(dynakube, mockClient)
 
 		err := updater.UseTenantRegistry(ctx)
@@ -81,7 +81,7 @@ func TestCodeModulesUseDefault(t *testing.T) {
 				CodeModules: oldCodeModulesStatus(),
 			},
 		}
-		mockClient := mockedclient.NewClient(t)
+		mockClient := mocks.NewClient(t)
 		mockLatestAgentVersion(mockClient, testVersion)
 		updater := newCodeModulesUpdater(dynakube, mockClient)
 

@@ -12,7 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
-	mockedclient "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -152,7 +152,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("Server error when removing node", func(t *testing.T) {
 		fakeClient := createDefaultFakeClient()
 
-		dtClient := mockedclient.NewClient(t)
+		dtClient := mocks.NewClient(t)
 		dtClient.On("GetEntityIDForIP", mock.Anything).Return("", ErrNotFound)
 
 		ctrl := createDefaultReconciler(fakeClient, dtClient)
@@ -165,7 +165,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("Remove host from cache even if server error: host not found", func(t *testing.T) {
 		fakeClient := createDefaultFakeClient()
 
-		dtClient := mockedclient.NewClient(t)
+		dtClient := mocks.NewClient(t)
 		dtClient.On("GetEntityIDForIP", mock.Anything).Return("", dtclient.HostNotFoundErr{IP: "1.2.3.4"})
 
 		ctrl := createDefaultReconciler(fakeClient, dtClient)
@@ -243,7 +243,7 @@ func (builder mockDynatraceClientBuilder) BuildWithTokenVerification(*dynatracev
 	return builder.dynatraceClient, nil
 }
 
-func createDefaultReconciler(fakeClient client.Client, dtClient *mockedclient.Client) *Controller {
+func createDefaultReconciler(fakeClient client.Client, dtClient *mocks.Client) *Controller {
 	return &Controller{
 		client:    fakeClient,
 		apiReader: fakeClient,
@@ -257,8 +257,8 @@ func createDefaultReconciler(fakeClient client.Client, dtClient *mockedclient.Cl
 	}
 }
 
-func createDTMockClient(ip, host string) *mockedclient.Client {
-	dtClient := &mockedclient.Client{}
+func createDTMockClient(ip, host string) *mocks.Client {
+	dtClient := &mocks.Client{}
 	dtClient.On("GetEntityIDForIP", ip).Return(host, nil)
 	dtClient.On("SendEvent", mock.MatchedBy(func(e *dtclient.EventData) bool {
 		return e.EventType == "MARKED_FOR_TERMINATION"
