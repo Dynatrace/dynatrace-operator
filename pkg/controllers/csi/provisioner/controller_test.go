@@ -13,7 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
+	mocks "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -373,7 +373,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 				},
 			},
 		}
-		installerMock := &installer.Mock{}
+		installerMock := &mocks.Installer{}
 		installerMock.
 			On("InstallAgent", mock.AnythingOfType("string")).
 			Return(false, fmt.Errorf(errorMsg))
@@ -491,7 +491,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 			},
 		}
 
-		installerMock := &installer.Mock{}
+		installerMock := &mocks.Installer{}
 		installerMock.
 			On("InstallAgent", mock.AnythingOfType("string")).
 			Return(true, nil)

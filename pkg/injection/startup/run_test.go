@@ -7,7 +7,7 @@ import (
 
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
+	mocks "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -136,7 +136,7 @@ func TestInstallOneAgent(t *testing.T) {
 		runner.dtclient.(*dtclient.MockDynatraceClient).
 			On("GetProcessModuleConfig", uint(0)).
 			Return(getTestProcessModuleConfig(), nil)
-		runner.installer.(*installer.Mock).
+		runner.installer.(*mocks.Installer).
 			On("InstallAgent", consts.AgentBinDirMount).
 			Return(true, nil)
 
@@ -146,7 +146,7 @@ func TestInstallOneAgent(t *testing.T) {
 	})
 	t.Run("sad install -> install fail", func(t *testing.T) {
 		runner := createMockedRunner(t)
-		runner.installer.(*installer.Mock).
+		runner.installer.(*mocks.Installer).
 			On("InstallAgent", consts.AgentBinDirMount).
 			Return(false, fmt.Errorf("BOOM"))
 
@@ -159,7 +159,7 @@ func TestInstallOneAgent(t *testing.T) {
 		runner.dtclient.(*dtclient.MockDynatraceClient).
 			On("GetProcessModuleConfig", uint(0)).
 			Return(getTestProcessModuleConfig(), nil)
-		runner.installer.(*installer.Mock).
+		runner.installer.(*mocks.Installer).
 			On("InstallAgent", consts.AgentBinDirMount).
 			Return(true, nil)
 
@@ -172,7 +172,7 @@ func TestInstallOneAgent(t *testing.T) {
 		runner.dtclient.(*dtclient.MockDynatraceClient).
 			On("GetProcessModuleConfig", uint(0)).
 			Return(&dtclient.ProcessModuleConfig{}, fmt.Errorf("BOOM"))
-		runner.installer.(*installer.Mock).
+		runner.installer.(*mocks.Installer).
 			On("InstallAgent", consts.AgentBinDirMount).
 			Return(true, nil)
 
@@ -202,7 +202,7 @@ func TestRun(t *testing.T) {
 		assertIfReadOnlyCSIFilesExists(t, *runner)
 	})
 	t.Run("install + config generation", func(t *testing.T) {
-		runner.installer.(*installer.Mock).
+		runner.installer.(*mocks.Installer).
 			On("InstallAgent", consts.AgentBinDirMount).
 			Return(true, nil)
 		runner.fs = prepReadOnlyCSIFilesystem(t, afero.NewMemMapFs())
@@ -466,7 +466,7 @@ func createTestRunner(t *testing.T) *Runner {
 
 func createMockedRunner(t *testing.T) *Runner {
 	runner := createTestRunner(t)
-	runner.installer = &installer.Mock{}
+	runner.installer = &mocks.Installer{}
 	runner.dtclient = &dtclient.MockDynatraceClient{}
 	return runner
 }
