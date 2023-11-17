@@ -3,6 +3,7 @@ package connectioninfo
 import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
@@ -36,33 +37,48 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 	}
 }
 
-func (r Reconciler) updateDynakubeStatus(ctx context.Context) {
+func (r Reconciler) updateDynakubeStatus(ctx context.Context) error {
 	r.dynakube.Status.UpdatedTimestamp = metav1.Now()
 	err := r.client.Status().Update(ctx, r.dynakube)
 	if err != nil {
 		log.Error(err, "could not update dynakube status", "name", r.dynakube.Name)
+		return err
 	}
+	return nil
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	var activeGateConnectionInfoUpdated bool
+	oldStatus := r.dynakube.Status.DeepCopy()
+
 	if !r.dynakube.FeatureDisableActivegateRawImage() {
-		var err error
-		activeGateConnectionInfoUpdated, err = r.reconcileActiveGateConnectionInfo(ctx)
+		err := r.reconcileActiveGateConnectionInfo(ctx)
 		if err != nil {
 			return err
 		}
 	}
 
-	oneAgentConnectionInfoUpdated, err := r.reconcileOneAgentConnectionInfo(ctx)
+	err := r.reconcileOneAgentConnectionInfo(ctx)
 	if err != nil {
 		return err
 	}
 
-	if oneAgentConnectionInfoUpdated || activeGateConnectionInfoUpdated {
-		r.updateDynakubeStatus(ctx)
+	needStatusUpdate, err := hasher.IsDifferent(oldStatus.OneAgent.ConnectionInfoStatus, r.dynakube.Status.OneAgent.ConnectionInfoStatus)
+	if err != nil {
+		log.Error(err, "failed to compare OneAgent connection info status hashes")
+		return err
+	} else if needStatusUpdate {
+		err = r.updateDynakubeStatus(ctx)
+		return err
 	}
-	return nil
+
+	needStatusUpdate, err = hasher.IsDifferent(oldStatus.ActiveGate.ConnectionInfoStatus, r.dynakube.Status.ActiveGate.ConnectionInfoStatus)
+	if err != nil {
+		log.Error(err, "failed to compare ActiveGate connection info status hashes")
+		return err
+	} else if needStatusUpdate {
+		err = r.updateDynakubeStatus(ctx)
+	}
+	return err
 }
 
 func (r *Reconciler) needsUpdate(ctx context.Context, secretName string, isAllowedFunc dynatracev1beta1.RequestAllowedChecker) (bool, error) {
@@ -78,30 +94,30 @@ func (r *Reconciler) needsUpdate(ctx context.Context, secretName string, isAllow
 	return isAllowedFunc(r.timeProvider), nil
 }
 
-func (r *Reconciler) reconcileOneAgentConnectionInfo(ctx context.Context) (bool, error) {
+func (r *Reconciler) reconcileOneAgentConnectionInfo(ctx context.Context) error {
 	needsUpdate, err := r.needsUpdate(ctx, r.dynakube.OneagentTenantSecret(), r.dynakube.IsOneAgentConnectionInfoUpdateAllowed)
 	if err != nil {
-		return false, err
+		return err
 	}
 	if !needsUpdate {
 		log.Info(dynatracev1beta1.GetCacheValidMessage(
 			"OneAgent connection info update",
 			r.dynakube.Status.OneAgent.ConnectionInfoStatus.LastRequest,
 			r.dynakube.FeatureApiRequestThreshold()))
-		return false, nil
+		return nil
 	}
 
 	connectionInfo, err := r.dtc.GetOneAgentConnectionInfo()
 	if err != nil {
 		log.Info("failed to get OneAgent connection info")
-		return false, err
+		return err
 	}
 
 	r.updateDynakubeOneAgentStatus(connectionInfo)
 
 	err = r.createTenantTokenSecret(ctx, r.dynakube.OneagentTenantSecret(), connectionInfo.ConnectionInfo)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	log.Info("OneAgent connection info updated")
@@ -112,13 +128,13 @@ func (r *Reconciler) reconcileOneAgentConnectionInfo(ctx context.Context) (bool,
 
 	if len(connectionInfo.CommunicationHosts) == 0 {
 		log.Info("no OneAgent communication hosts received, tenant API requests not yet throttled")
-		return false, NoOneAgentCommunicationHostsError
+		return NoOneAgentCommunicationHostsError
 	}
 
 	log.Info("received OneAgent communication hosts", "communication hosts", connectionInfo.CommunicationHosts, "tenant", connectionInfo.TenantUUID)
 
 	r.dynakube.Status.OneAgent.ConnectionInfoStatus.LastRequest = metav1.Now()
-	return true, nil
+	return nil
 }
 
 func (r *Reconciler) updateDynakubeOneAgentStatus(connectionInfo dtclient.OneAgentConnectionInfo) {
@@ -138,35 +154,35 @@ func copyCommunicationHosts(dest *dynatracev1beta1.OneAgentConnectionInfoStatus,
 	}
 }
 
-func (r *Reconciler) reconcileActiveGateConnectionInfo(ctx context.Context) (bool, error) {
+func (r *Reconciler) reconcileActiveGateConnectionInfo(ctx context.Context) error {
 	needsUpdate, err := r.needsUpdate(ctx, r.dynakube.ActivegateTenantSecret(), r.dynakube.IsActiveGateConnectionInfoUpdateAllowed)
 	if err != nil {
-		return false, err
+		return err
 	}
 	if !needsUpdate {
 		log.Info(dynatracev1beta1.GetCacheValidMessage(
 			"activegate connection info update",
 			r.dynakube.Status.ActiveGate.ConnectionInfoStatus.LastRequest,
 			r.dynakube.FeatureApiRequestThreshold()))
-		return false, nil
+		return nil
 	}
 
 	connectionInfo, err := r.dtc.GetActiveGateConnectionInfo()
 	if err != nil {
 		log.Info("failed to get activegate connection info")
-		return false, err
+		return err
 	}
 
 	r.updateDynakubeActiveGateStatus(connectionInfo)
 
 	err = r.createTenantTokenSecret(ctx, r.dynakube.ActivegateTenantSecret(), connectionInfo.ConnectionInfo)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	log.Info("activegate connection info updated")
 	r.dynakube.Status.ActiveGate.ConnectionInfoStatus.LastRequest = metav1.Now()
-	return true, nil
+	return nil
 }
 
 func (r *Reconciler) updateDynakubeActiveGateStatus(connectionInfo dtclient.ActiveGateConnectionInfo) {
