@@ -115,11 +115,11 @@ As such, you declare them at the package level and, in doing so, imply that your
 - If an error is instantiated by internal code, it must be instantiated with `errors.New()`
 - If an error is returned by an internal function and propagated, it must be propagated as is and must **not** be wrapped with `errors.WithStack()`.
   - The stacktrace is already complete when `errors.New` is called, wrapping it with `errors.WithStack()` convolutes it.
+- If the error is not propagated to the controller or reconciler, it should be logged at the point where it is not returned to the caller.
 
 ### Don'ts
-
-- Errors must not be logged with `log.Errorf`
-  - Errors are propagated to the controller or reconciler and then automatically logged by the Operator-SDK framework
+- Errors that are propagated to the controller or reconciler must not be logged directly by us, as they get automatically logged by the Operator-SDK framework.
+  - So we do not log errors twice.
 
 ## Logging
 
