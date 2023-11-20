@@ -15,6 +15,9 @@ packages:
   github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace:
     interfaces:
       Client:
+  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version:
+    interfaces:
+      StatusUpdater:
   github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer:
     interfaces:
       Installer:
