@@ -13,7 +13,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
-	mocks "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
+	mockedclient "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	mockedinstaller "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -190,7 +191,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 				},
 			},
 		)
-		mockClient := &dtclient.MockDynatraceClient{}
+		mockClient := mockedclient.NewClient(t)
 		mockDtcBuilder := &dynatraceclient.StubBuilder{
 			DynatraceClient: mockClient,
 		}
@@ -301,12 +302,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 		errorfs := &mkDirAllErrorFs{
 			Fs: afero.NewMemMapFs(),
 		}
-		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{
-			ConnectionInfo: dtclient.ConnectionInfo{
-				TenantUUID: tenantUUID,
-			},
-		}, nil)
+		mockClient := mockedclient.NewClient(t)
 		mockDtcBuilder := &dynatraceclient.StubBuilder{
 			DynatraceClient: mockClient,
 		}
@@ -349,16 +345,8 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 	t.Run("error getting latest agent version", func(t *testing.T) {
 		gc := &CSIGarbageCollectorMock{}
 		gc.On("Reconcile").Return(reconcile.Result{}, nil)
-		var revision uint = 3
-		testProcessModuleConfig := createTestProcessModuleConfig(revision)
 		memFs := afero.NewMemMapFs()
-		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{
-			ConnectionInfo: dtclient.ConnectionInfo{
-				TenantUUID: tenantUUID,
-			},
-		}, nil)
-		mockClient.On("GetProcessModuleConfig", mock.AnythingOfType("uint")).Return(testProcessModuleConfig, nil)
+		mockClient := mockedclient.NewClient(t)
 		mockDtcBuilder := &dynatraceclient.StubBuilder{
 			DynatraceClient: mockClient,
 		}
@@ -373,7 +361,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 				},
 			},
 		}
-		installerMock := mocks.NewInstaller(t)
+		installerMock := mockedinstaller.NewInstaller(t)
 
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
@@ -420,15 +408,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 	t.Run("error getting dynakube from db", func(t *testing.T) {
 		gc := &CSIGarbageCollectorMock{}
 		memFs := afero.NewMemMapFs()
-		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{
-			ConnectionInfo: dtclient.ConnectionInfo{
-				TenantUUID: tenantUUID,
-			},
-		}, nil)
-		mockClient.On("GetLatestAgentVersion",
-			mock.AnythingOfType("string"),
-			mock.AnythingOfType("string")).Return(agentVersion, nil)
+		mockClient := mockedclient.NewClient(t)
 		mockDtcBuilder := &dynatraceclient.StubBuilder{
 			DynatraceClient: mockClient,
 		}

@@ -5,6 +5,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -27,15 +28,19 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 }
 
 func createReconciler(t *testing.T, uid string, monitoredEntities []dtclient.MonitoredEntity, getSettingsResponse dtclient.GetSettingsResponse, objectID string, meID interface{}) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
-	mockClient := &dtclient.MockDynatraceClient{}
+	mockClient := mocks.NewClient(t)
 	mockClient.On("GetMonitoredEntitiesForKubeSystemUUID", mock.AnythingOfType("string")).
 		Return(monitoredEntities, nil)
-	mockClient.On("GetSettingsForMonitoredEntities", monitoredEntities).
+	mockClient.On("GetSettingsForMonitoredEntities", monitoredEntities, mock.AnythingOfType("string")).
 		Return(getSettingsResponse, nil)
 	mockClient.On("CreateOrUpdateKubernetesSetting", testName, testUID, mock.AnythingOfType("string")).
 		Return(objectID, nil)
 	mockClient.On("CreateOrUpdateKubernetesAppSetting", meID).
 		Return("transitionSchemaObjectID", nil)
+
+	for _, call := range mockClient.ExpectedCalls {
+		call.Maybe()
+	}
 
 	r := NewReconciler(mockClient, testName, uid)
 	require.NotNil(t, r)
@@ -45,15 +50,21 @@ func createReconciler(t *testing.T, uid string, monitoredEntities []dtclient.Mon
 }
 
 func createReconcilerWithError(t *testing.T, monitoredEntitiesError error, getSettingsResponseError error, createSettingsResponseError error, createAppSettingsResponseError error) *Reconciler {
-	mockClient := &dtclient.MockDynatraceClient{}
+	mockClient := mocks.NewClient(t)
 	mockClient.On("GetMonitoredEntitiesForKubeSystemUUID", mock.AnythingOfType("string")).
 		Return([]dtclient.MonitoredEntity{}, monitoredEntitiesError)
-	mockClient.On("GetSettingsForMonitoredEntities", mock.Anything).
+	mockClient.On("GetSettingsForMonitoredEntities",
+		mock.AnythingOfType("[]dynatrace.MonitoredEntity"),
+		mock.AnythingOfType("string")).
 		Return(dtclient.GetSettingsResponse{}, getSettingsResponseError)
 	mockClient.On("CreateOrUpdateKubernetesSetting", testName, testUID, mock.AnythingOfType("string")).
 		Return("", createSettingsResponseError)
 	mockClient.On("CreateOrUpdateKubernetesAppSetting", mock.AnythingOfType("string")).
 		Return("", createAppSettingsResponseError)
+
+	for _, call := range mockClient.ExpectedCalls {
+		call.Maybe()
+	}
 
 	r := NewReconciler(mockClient, testName, testUID)
 	require.NotNil(t, r)

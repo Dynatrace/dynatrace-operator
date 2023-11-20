@@ -10,6 +10,7 @@ import (
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry/mocks"
+	mockedclient "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -37,7 +38,7 @@ func TestActiveGateUpdater(t *testing.T) {
 				},
 			},
 		}
-		mockClient := &dtclient.MockDynatraceClient{}
+		mockClient := mockedclient.NewClient(t)
 		mockActiveGateImageInfo(mockClient, testImage)
 		mockImageGetter := mocks.MockImageGetter{}
 
@@ -73,7 +74,7 @@ func TestActiveGateUseDefault(t *testing.T) {
 		}
 		expectedImage := dynakube.DefaultActiveGateImage()
 		expectedVersion := "1.2.3.4-5"
-		mockClient := &dtclient.MockDynatraceClient{}
+		mockClient := mockedclient.NewClient(t)
 		mockImageGetter := mocks.MockImageGetter{}
 
 		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{Version: expectedVersion}, nil)

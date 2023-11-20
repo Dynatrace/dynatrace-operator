@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
+	"github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -56,7 +57,7 @@ func TestReconcile(t *testing.T) {
 			},
 		)
 
-		dtClient := createDTMockClient("1.2.3.4", "HOST-42")
+		dtClient := createDTMockClient(t, "1.2.3.4", "HOST-42")
 		defer mock.AssertExpectationsForObjects(t, dtClient)
 
 		ctrl := createDefaultReconciler(fakeClient, dtClient)
@@ -86,7 +87,7 @@ func TestReconcile(t *testing.T) {
 		node1 := &corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node1"}}
 		fakeClient := createDefaultFakeClient()
 
-		dtClient := createDTMockClient("1.2.3.4", "HOST-42")
+		dtClient := createDTMockClient(t, "1.2.3.4", "HOST-42")
 		defer mock.AssertExpectationsForObjects(t, dtClient)
 
 		ctrl := createDefaultReconciler(fakeClient, dtClient)
@@ -113,7 +114,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run("Node has taint", func(t *testing.T) {
 		fakeClient := createDefaultFakeClient()
-		dtClient := createDTMockClient("1.2.3.4", "HOST-42")
+		dtClient := createDTMockClient(t, "1.2.3.4", "HOST-42")
 		ctrl := createDefaultReconciler(fakeClient, dtClient)
 
 		// Get node 1
@@ -151,7 +152,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("Server error when removing node", func(t *testing.T) {
 		fakeClient := createDefaultFakeClient()
 
-		dtClient := &dtclient.MockDynatraceClient{}
+		dtClient := mocks.NewClient(t)
 		dtClient.On("GetEntityIDForIP", mock.Anything).Return("", ErrNotFound)
 
 		ctrl := createDefaultReconciler(fakeClient, dtClient)
@@ -164,7 +165,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("Remove host from cache even if server error: host not found", func(t *testing.T) {
 		fakeClient := createDefaultFakeClient()
 
-		dtClient := &dtclient.MockDynatraceClient{}
+		dtClient := mocks.NewClient(t)
 		dtClient.On("GetEntityIDForIP", mock.Anything).Return("", dtclient.HostNotFoundErr{IP: "1.2.3.4"})
 
 		ctrl := createDefaultReconciler(fakeClient, dtClient)
@@ -186,7 +187,7 @@ func TestReconcile(t *testing.T) {
 	t.Run("Handle outdated cache", func(t *testing.T) {
 		fakeClient := createDefaultFakeClient()
 
-		dtClient := createDTMockClient("1.2.3.4", "HOST-42")
+		dtClient := createDTMockClient(t, "1.2.3.4", "HOST-42")
 		defer mock.AssertExpectationsForObjects(t, dtClient)
 
 		ctrl := createDefaultReconciler(fakeClient, dtClient)
@@ -242,7 +243,7 @@ func (builder mockDynatraceClientBuilder) BuildWithTokenVerification(*dynatracev
 	return builder.dynatraceClient, nil
 }
 
-func createDefaultReconciler(fakeClient client.Client, dtClient *dtclient.MockDynatraceClient) *Controller {
+func createDefaultReconciler(fakeClient client.Client, dtClient *mocks.Client) *Controller {
 	return &Controller{
 		client:    fakeClient,
 		apiReader: fakeClient,
@@ -256,8 +257,8 @@ func createDefaultReconciler(fakeClient client.Client, dtClient *dtclient.MockDy
 	}
 }
 
-func createDTMockClient(ip, host string) *dtclient.MockDynatraceClient {
-	dtClient := &dtclient.MockDynatraceClient{}
+func createDTMockClient(t *testing.T, ip, host string) *mocks.Client {
+	dtClient := mocks.NewClient(t)
 	dtClient.On("GetEntityIDForIP", ip).Return(host, nil)
 	dtClient.On("SendEvent", mock.MatchedBy(func(e *dtclient.EventData) bool {
 		return e.EventType == "MARKED_FOR_TERMINATION"
