@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-type versionStatusUpdater interface {
+type StatusUpdater interface {
 	Name() string
 	IsEnabled() bool
 	Target() *status.VersionStatus
@@ -28,7 +28,7 @@ type versionStatusUpdater interface {
 	UseTenantRegistry(context.Context) error
 }
 
-func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpdater) error {
+func (reconciler *Reconciler) run(ctx context.Context, updater StatusUpdater) error {
 	currentSource := determineSource(updater)
 	var err error
 	defer func() {
@@ -76,7 +76,7 @@ func (reconciler *Reconciler) run(ctx context.Context, updater versionStatusUpda
 	return updater.ValidateStatus()
 }
 
-func (reconciler *Reconciler) processPublicRegistry(ctx context.Context, updater versionStatusUpdater) error {
+func (reconciler *Reconciler) processPublicRegistry(ctx context.Context, updater StatusUpdater) error {
 	log.Info("updating version status according to public registry", "updater", updater.Name())
 	var publicImage *dtclient.LatestImageInfo
 	publicImage, err := updater.LatestImageInfo()
@@ -97,7 +97,7 @@ func (reconciler *Reconciler) processPublicRegistry(ctx context.Context, updater
 	return nil
 }
 
-func determineSource(updater versionStatusUpdater) status.VersionSource {
+func determineSource(updater StatusUpdater) status.VersionSource {
 	if updater.CustomImage() != "" {
 		return status.CustomImageVersionSource
 	}

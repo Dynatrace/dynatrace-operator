@@ -13,11 +13,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const (
-	TmpCAPath = "/tmp/dynatrace-operator"
-	TmpCAName = "dynatraceCustomCA.crt"
-)
-
 type Reconciler struct {
 	dynakube       *dynatracev1beta1.DynaKube
 	dtClient       dtclient.Client
@@ -41,7 +36,7 @@ func NewReconciler(dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader,
 
 // Reconcile updates the version status used by the dynakube
 func (reconciler *Reconciler) Reconcile(ctx context.Context) error {
-	updaters := []versionStatusUpdater{
+	updaters := []StatusUpdater{
 		newActiveGateUpdater(reconciler.dynakube, reconciler.apiReader, reconciler.dtClient, reconciler.registryClient),
 		newOneAgentUpdater(reconciler.dynakube, reconciler.apiReader, reconciler.dtClient, reconciler.registryClient),
 		newCodeModulesUpdater(reconciler.dynakube, reconciler.dtClient),
@@ -55,7 +50,7 @@ func (reconciler *Reconciler) Reconcile(ctx context.Context) error {
 	return nil
 }
 
-func (reconciler *Reconciler) updateVersionStatuses(ctx context.Context, updaters []versionStatusUpdater) error {
+func (reconciler *Reconciler) updateVersionStatuses(ctx context.Context, updaters []StatusUpdater) error {
 	for _, updater := range updaters {
 		log.Info("updating version status", "updater", updater.Name())
 		err := reconciler.run(ctx, updater)
@@ -76,8 +71,8 @@ func (reconciler *Reconciler) updateVersionStatuses(ctx context.Context, updater
 	return nil
 }
 
-func (reconciler *Reconciler) needsReconcile(updaters []versionStatusUpdater) []versionStatusUpdater {
-	neededUpdaters := []versionStatusUpdater{}
+func (reconciler *Reconciler) needsReconcile(updaters []StatusUpdater) []StatusUpdater {
+	neededUpdaters := []StatusUpdater{}
 	for _, updater := range updaters {
 		if reconciler.needsUpdate(updater) {
 			neededUpdaters = append(neededUpdaters, updater)
@@ -86,7 +81,7 @@ func (reconciler *Reconciler) needsReconcile(updaters []versionStatusUpdater) []
 	return neededUpdaters
 }
 
-func (reconciler *Reconciler) needsUpdate(updater versionStatusUpdater) bool {
+func (reconciler *Reconciler) needsUpdate(updater StatusUpdater) bool {
 	if !updater.IsEnabled() {
 		log.Info("skipping version status update for disabled section", "updater", updater.Name())
 		return false
@@ -108,7 +103,7 @@ func (reconciler *Reconciler) needsUpdate(updater versionStatusUpdater) bool {
 	return true
 }
 
-func hasCustomFieldChanged(updater versionStatusUpdater) bool {
+func hasCustomFieldChanged(updater StatusUpdater) bool {
 	if updater.Target().Source == status.CustomImageVersionSource {
 		oldImage := updater.Target().ImageID
 		newImage := updater.CustomImage()
