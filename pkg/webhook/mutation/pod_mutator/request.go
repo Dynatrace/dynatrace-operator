@@ -26,15 +26,18 @@ func (webhook *podMutatorWebhook) createMutationRequestBase(ctx context.Context,
 		return nil, err
 	}
 	dynakubeName, err := getDynakubeName(*namespace)
-	if err != nil && !webhook.deployedViaOLM {
-		return nil, err
-	} else if err != nil {
-		// in case of olm deployment, all pods are sent to us
-		// but not all of them need to be mutated,
-		// therefore their namespace might not have a dynakube assigned
-		// in which case we don't need to do anything
-		return nil, nil // nolint:nilerr
+	if err != nil {
+		if webhook.deployedViaOLM {
+			// in case of olm deployment, all pods are sent to us
+			// but not all of them need to be mutated,
+			// therefore their namespace might not have a dynakube assigned
+			// in which case we don't need to do anything
+			return nil, nil // nolint:nilerr
+		} else {
+			return nil, err
+		}
 	}
+
 	dynakube, err := webhook.getDynakube(ctx, dynakubeName)
 	if err != nil {
 		return nil, err
