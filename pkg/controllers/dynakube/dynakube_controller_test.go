@@ -995,17 +995,7 @@ func TestTokenConditions(t *testing.T) {
 			registryClientBuilder:  createFakeRegistryClientBuilder(),
 		}
 
-<<<<<<< HEAD
-		mockClient.On("GetTokenScopes", testAPIToken).Return(dtclient.TokenScopes(requiredScopes), nil)
-
-		_ = controller.reconcileDynaKube(context.Background(), dynakube)
-||||||| parent of 6a46919b (Replace old client with new one)
-		mockClient.On("GetTokenScopes", testAPIToken).Return(dtclient.TokenScopes(requiredScopes), nil)
-
-		_ = controller.reconcileDynaKube(context.TODO(), dynakube)
-=======
 		err := controller.reconcileDynaKube(context.TODO(), dynakube)
->>>>>>> 6a46919b (Replace old client with new one)
 
 		assert.Error(t, err, "status update will fail")
 		assertCondition(t, dynakube, dynatracev1beta1.TokenConditionType, metav1.ConditionTrue, dynatracev1beta1.ReasonTokenReady, "")
