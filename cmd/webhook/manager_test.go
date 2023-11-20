@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/cmd/manager"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
+	managermock "github.com/Dynatrace/dynatrace-operator/test/mocks/sigs.k8s.io/controller-runtime/pkg/manager"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/client-go/rest"
@@ -38,7 +39,7 @@ func TestCreateOptions(t *testing.T) {
 		provider := NewProvider("certs-dir", "key-file", "cert-file")
 		expectedWebhookServer := &webhook.DefaultServer{}
 
-		mockedMgr := &manager.MockManager{}
+		mockedMgr := managermock.NewManager(t)
 		mockedMgr.On("GetWebhookServer").Return(expectedWebhookServer)
 
 		mgrWithWebhookServer, err := provider.setupWebhookServer(mockedMgr)
