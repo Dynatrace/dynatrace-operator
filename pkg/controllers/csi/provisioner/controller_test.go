@@ -373,13 +373,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 				},
 			},
 		}
-		installerMock := &mocks.Installer{}
-		installerMock.
-			On("InstallAgent", mock.AnythingOfType("string")).
-			Return(false, fmt.Errorf(errorMsg))
-		installerMock.
-			On("Cleanup").
-			Return(nil)
+		installerMock := mocks.NewInstaller(t)
 
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
@@ -490,14 +484,6 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 				},
 			},
 		}
-
-		installerMock := &mocks.Installer{}
-		installerMock.
-			On("InstallAgent", mock.AnythingOfType("string")).
-			Return(true, nil)
-		installerMock.
-			On("Cleanup").
-			Return(nil)
 
 		r := &OneAgentProvisioner{
 			apiReader: fake.NewClient(dynakube),

@@ -466,7 +466,7 @@ func createTestRunner(t *testing.T) *Runner {
 
 func createMockedRunner(t *testing.T) *Runner {
 	runner := createTestRunner(t)
-	runner.installer = &mocks.Installer{}
+	runner.installer = mocks.NewInstaller(t)
 	runner.dtclient = &dtclient.MockDynatraceClient{}
 	return runner
 }
