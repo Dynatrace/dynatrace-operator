@@ -7,7 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/cmd/manager"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
-	mockedmanager "github.com/Dynatrace/dynatrace-operator/test/mocks/sigs.k8s.io/controller-runtime/pkg/manager"
+	managermock "github.com/Dynatrace/dynatrace-operator/test/mocks/sigs.k8s.io/controller-runtime/pkg/manager"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -46,7 +46,7 @@ func TestOperatorManagerProvider(t *testing.T) {
 		assert.Equal(t, livenessEndpointName, options.LivenessEndpointName)
 	})
 	t.Run("check if healthz/readyz checks are added", func(t *testing.T) {
-		testHealthzAndReadyz(t, func(mockMgr *mockedmanager.Manager) error {
+		testHealthzAndReadyz(t, func(mockMgr *managermock.Manager) error {
 			var controlManagerProvider = NewOperatorManagerProvider(false).(operatorManagerProvider)
 			controlManagerProvider.setManager(mockMgr)
 			_, err := controlManagerProvider.CreateManager("namespace", &rest.Config{})
@@ -61,7 +61,7 @@ func TestBootstrapManagerProvider(t *testing.T) {
 		_, _ = bootstrapProvider.CreateManager("namespace", &rest.Config{})
 	})
 	t.Run("check if healthz/readyz checks are added", func(t *testing.T) {
-		testBootstrapHealthzAndReadyz(t, func(mockMgr *mockedmanager.Manager) error {
+		testBootstrapHealthzAndReadyz(t, func(mockMgr *managermock.Manager) error {
 			bootstrapProvider, _ := NewBootstrapManagerProvider().(bootstrapManagerProvider)
 			bootstrapProvider.setManager(mockMgr)
 			_, err := bootstrapProvider.CreateManager("namespace", &rest.Config{})
@@ -70,8 +70,8 @@ func TestBootstrapManagerProvider(t *testing.T) {
 	})
 }
 
-func testHealthzAndReadyz(t *testing.T, createProviderAndRunManager func(mockMgr *mockedmanager.Manager) error) {
-	mockMgr := mockedmanager.NewManager(t)
+func testHealthzAndReadyz(t *testing.T, createProviderAndRunManager func(mockMgr *managermock.Manager) error) {
+	mockMgr := managermock.NewManager(t)
 	mockMgr.On(addHealthzCheckMethodName, livezEndpointName, mock.AnythingOfType(checkerArgumentType)).Return(nil)
 
 	client := fake.NewClient(&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "kube-system"}})
@@ -91,7 +91,7 @@ func testHealthzAndReadyz(t *testing.T, createProviderAndRunManager func(mockMgr
 	mockMgr.AssertCalled(t, addHealthzCheckMethodName, livezEndpointName, mock.AnythingOfType(checkerArgumentType))
 
 	expectedHealthzError := errors.New("healthz error")
-	mockMgr = mockedmanager.NewManager(t)
+	mockMgr = managermock.NewManager(t)
 	mockMgr.On(addHealthzCheckMethodName, mock.Anything, mock.Anything).Return(expectedHealthzError)
 
 	err = createProviderAndRunManager(mockMgr)
@@ -100,8 +100,8 @@ func testHealthzAndReadyz(t *testing.T, createProviderAndRunManager func(mockMgr
 	mockMgr.AssertCalled(t, addHealthzCheckMethodName, mock.Anything, mock.Anything)
 }
 
-func testBootstrapHealthzAndReadyz(t *testing.T, createProviderAndRunManager func(mockMgr *mockedmanager.Manager) error) {
-	mockMgr := mockedmanager.NewManager(t)
+func testBootstrapHealthzAndReadyz(t *testing.T, createProviderAndRunManager func(mockMgr *managermock.Manager) error) {
+	mockMgr := managermock.NewManager(t)
 	mockMgr.On(addHealthzCheckMethodName, livezEndpointName, mock.AnythingOfType(checkerArgumentType)).Return(nil)
 
 	err := createProviderAndRunManager(mockMgr)
@@ -110,7 +110,7 @@ func testBootstrapHealthzAndReadyz(t *testing.T, createProviderAndRunManager fun
 	mockMgr.AssertCalled(t, addHealthzCheckMethodName, livezEndpointName, mock.AnythingOfType(checkerArgumentType))
 
 	expectedHealthzError := errors.New("healthz error")
-	mockMgr = mockedmanager.NewManager(t)
+	mockMgr = managermock.NewManager(t)
 	mockMgr.On(addHealthzCheckMethodName, mock.Anything, mock.Anything).Return(expectedHealthzError)
 
 	err = createProviderAndRunManager(mockMgr)

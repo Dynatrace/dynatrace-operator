@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
-	mockedmanager "github.com/Dynatrace/dynatrace-operator/test/mocks/sigs.k8s.io/controller-runtime/pkg/manager"
+	managermock "github.com/Dynatrace/dynatrace-operator/test/mocks/sigs.k8s.io/controller-runtime/pkg/manager"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -35,7 +35,7 @@ func TestCsiDriverManagerProvider(t *testing.T) {
 		const addHealthzCheck = "AddHealthzCheck"
 
 		operatorMgrProvider := csiDriverManagerProvider{}
-		mockMgr := mockedmanager.NewManager(t)
+		mockMgr := managermock.NewManager(t)
 		mockMgr.On(addHealthzCheck, livezEndpointName, mock.AnythingOfType("healthz.Checker")).Return(nil)
 
 		err := operatorMgrProvider.addHealthzCheck(mockMgr)
@@ -44,7 +44,7 @@ func TestCsiDriverManagerProvider(t *testing.T) {
 		mockMgr.AssertCalled(t, addHealthzCheck, livezEndpointName, mock.AnythingOfType("healthz.Checker"))
 
 		expectedError := errors.New("healthz error")
-		mockMgr = mockedmanager.NewManager(t)
+		mockMgr = managermock.NewManager(t)
 		mockMgr.On(addHealthzCheck, mock.Anything, mock.Anything).Return(expectedError)
 
 		err = operatorMgrProvider.addHealthzCheck(mockMgr)
