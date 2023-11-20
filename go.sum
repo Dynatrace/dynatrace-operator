@@ -316,6 +316,8 @@ go.opentelemetry.io/contrib/instrumentation/host v0.45.0 h1:1uzNKJDqZ6y6F5J6aKWg
 go.opentelemetry.io/contrib/instrumentation/host v0.45.0/go.mod h1:vlqPvzDsmB4+jlERxBRXsdLCD6Q0LoBzxHqNXp3qvG4=
 go.opentelemetry.io/contrib/instrumentation/host v0.46.0 h1:n2JE5k4ZtefmqXseW11OpvmYW0ouawMX2vjWemTGfCA=
 go.opentelemetry.io/contrib/instrumentation/host v0.46.0/go.mod h1:wJV0E+WkEumP6ph4Q3F+H6YOy2P/hwmKu4MbO+qj57I=
+go.opentelemetry.io/contrib/instrumentation/host v0.46.1 h1:jLPv7OPP2CROWQ8PaUx3zONn5S4HjCJnH1syT3fnEEc=
+go.opentelemetry.io/contrib/instrumentation/host v0.46.1/go.mod h1:7PhaLiZ6K9zbeZNxOdr+DB8tzxWsrjVa9BcCMGuMPeA=
 go.opentelemetry.io/contrib/instrumentation/runtime v0.45.0 h1:2JydY5UiDpqvj2p7sO9bgHuhTy4hgTZ0ymehdq/Ob0Q=
 go.opentelemetry.io/contrib/instrumentation/runtime v0.45.0/go.mod h1:ch3a5QxOqVWxas4CzjCFFOOQe+7HgAXC/N1oVxS9DK4=
 go.opentelemetry.io/contrib/instrumentation/runtime v0.46.0 h1:dRj4IGqk65IHPLsur40gajPeQXxWWjprjeNq6aMJorU=
