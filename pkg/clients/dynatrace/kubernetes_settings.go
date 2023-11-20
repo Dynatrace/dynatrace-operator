@@ -85,7 +85,7 @@ const (
 	AppTransitionSchemaId                       = "builtin:app-transition.kubernetes"
 	schemaVersionV1                             = "1.0.27"
 	hierarchicalMonitoringSettingsSchemaVersion = "3.0.0"
-	appTransitionSchemaVersion                  = "1.0.0"
+	appTransitionSchemaVersion                  = "1.0.1"
 )
 
 func (dtc *dynatraceClient) performCreateOrUpdateKubernetesSetting(body []postKubernetesSettingsBody) (string, error) {
