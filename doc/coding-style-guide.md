@@ -115,11 +115,38 @@ As such, you declare them at the package level and, in doing so, imply that your
 - If an error is instantiated by internal code, it must be instantiated with `errors.New()`
 - If an error is returned by an internal function and propagated, it must be propagated as is and must **not** be wrapped with `errors.WithStack()`.
   - The stacktrace is already complete when `errors.New` is called, wrapping it with `errors.WithStack()` convolutes it.
+- If the error is not propagated to the controller or reconciler, it should be logged at the point where it is not returned to the caller.
 
 ### Don'ts
 
-- Errors must not be logged with `log.Errorf`
-  - Errors are propagated to the controller or reconciler and then automatically logged by the Operator-SDK framework
+- Errors that are propagated to the controller or reconciler must not be logged directly by us, as they get automatically logged by the Operator-SDK framework.
+  - So we do not log errors twice.
+  - Example:
+
+```go
+// Doing something like this:
+err = errors.New("BOOM!")
+if err != nil {
+    log.Error(err, "it happened")
+    return reconcile.Result{}, err
+}
+// Will result in: (shortened it a bit so its not huge)
+{"level":"info","ts":"2023-11-20T09:25:16.261Z","logger":"automatic-api-monitoring","msg":"kubernetes cluster setting already exists","clusterLabel":"dynakube","cluster":"a9ef1d81-6950-4260-a3d4-8e969c590b8c"}
+{"level":"info","ts":"2023-11-20T09:25:16.273Z","logger":"dynakube","msg":"activegate statefulset is still deploying","dynakube":"dynakube"}
+{"error":"BOOM!","level":"error","logger":"dynakube","msg":"it happened","stacktrace":"BOOM!
+github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube.(*Controller).reconcile
+github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynakube_controller.go:168
+   <...>
+sigs.k8s.io/controller-runtime@v0.16.3/pkg/internal/controller/controller.go:227
+runtime.goexit
+runtime/asm_amd64.s:1650","ts":"2023-11-20T09:25:16.273Z"}
+{"DynaKube":{"name":"dynakube","namespace":"dynatrace"},"controller":"dynakube","controllerGroup":"dynatrace.com","controllerKind":"DynaKube","error":"BOOM!","level":"error","logger":"main","msg":"Reconciler error","name":"dynakube","namespace":"dynatrace","reconcileID":"5d67fe9e-b6f0-4ad4-8634-aa66838aa685","stacktrace":"BOOM!
+github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube.(*Controller).reconcile
+github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynakube_controller.go:168
+   <...>
+sigs.k8s.io/controller-runtime@v0.16.3/pkg/internal/controller/controller.go:227
+runtime.goexit
+```
 
 ## Logging
 
