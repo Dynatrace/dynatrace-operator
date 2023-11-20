@@ -41,7 +41,7 @@ func (r Reconciler) updateDynakubeStatus(ctx context.Context) error {
 	r.dynakube.Status.UpdatedTimestamp = metav1.Now()
 	err := r.client.Status().Update(ctx, r.dynakube)
 	if err != nil {
-		log.Error(err, "could not update dynakube status", "name", r.dynakube.Name)
+		log.Info("could not update dynakube status", "name", r.dynakube.Name)
 		return err
 	}
 	return nil
@@ -64,8 +64,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 
 	needStatusUpdate, err := hasher.IsDifferent(oldStatus, r.dynakube.Status)
 	if err != nil {
-		log.Error(err, "failed to compare connection info status hashes")
-		return err
+		return errors.WithMessage(err, "failed to compare connection info status hashes")
 	} else if needStatusUpdate {
 		err = r.updateDynakubeStatus(ctx)
 	}
@@ -101,8 +100,7 @@ func (r *Reconciler) reconcileOneAgentConnectionInfo(ctx context.Context) error 
 
 	connectionInfo, err := r.dtc.GetOneAgentConnectionInfo()
 	if err != nil {
-		log.Info("failed to get OneAgent connection info")
-		return err
+		return errors.WithMessage(err, "failed to get OneAgent connection info")
 	}
 
 	r.updateDynakubeOneAgentStatus(connectionInfo)
