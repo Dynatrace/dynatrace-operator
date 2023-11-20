@@ -6,17 +6,15 @@ filename: "{{.InterfaceName | snakecase}}.go"
 outpkg: mocks
 dir: "test/mocks/{{.InterfaceDirRelative}}"
 packages:
-  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version:
-    interfaces:
-      StatusUpdater:
   github.com/Dynatrace/dynatrace-operator/cmd/config:
     interfaces:
       Provider:
-  github.com/Dynatrace/dynatrace-operator/pkg/util/builder:
-    config:
-      recursive: true
+  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version:
     interfaces:
-      Modifier:
+      StatusUpdater:
+  github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer:
+    interfaces:
+      Installer:
   github.com/Dynatrace/dynatrace-operator/pkg/oci/registry:
     interfaces:
       ImageGetter:
@@ -25,6 +23,11 @@ packages:
           # TODO: refactor rename it to registry.go
           filename: "client.go"
           dir: "{{.InterfaceDir}}/mocks"
+  github.com/Dynatrace/dynatrace-operator/pkg/util/builder:
+    config:
+      recursive: true
+    interfaces:
+      Modifier:
   github.com/Dynatrace/dynatrace-operator/pkg/webhook:
     interfaces:
       PodMutator:
