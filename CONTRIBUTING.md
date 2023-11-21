@@ -134,6 +134,14 @@ To move our existing codebase to mockery you have to look out for these pitfalls
     //modifierMock.AssertNumberOfCalls(t, "Modify", 0)
    ```
 
+  > ❗ In the case of using multiple mock packages in the same test file, the standard package alias naming is `{struct}mock`, e.g. `clientmock`.
+  >
+  > ```go
+  > clientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+  > installermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
+  > reconcilermock "github.com/Dynatrace/dynatrace-operator/test/mocks/sigs.k8s.io/controller-runtime/pkg/reconcile"
+  > ```
+
 ## E2E tests
 
 > **Prerequisites:**
