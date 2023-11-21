@@ -181,11 +181,7 @@ func (c *client) GetEdgeConnect(edgeConnectId string) (GetResponse, error) {
 func (c *client) UpdateEdgeConnect(edgeConnectId, name string, hostPatterns []string, oauthClientId string) error {
 	url := c.getEdgeConnectUrl(edgeConnectId)
 
-	body := &Request{
-		Name:          name,
-		HostPatterns:  hostPatterns,
-		OauthClientId: oauthClientId,
-	}
+	body := NewRequest(name, hostPatterns, oauthClientId)
 	payloadBuf := new(bytes.Buffer)
 	err := json.NewEncoder(payloadBuf).Encode(body)
 	if err != nil {
@@ -247,20 +243,16 @@ func (c *client) DeleteEdgeConnect(edgeConnectId string) error {
 
 // CreateEdgeConnect creates new edge connect
 func (c *client) CreateEdgeConnect(name string, hostPatterns []string, oauthClientId string) (CreateResponse, error) {
-	url := c.getEdgeConnectsUrl()
+	edgeConnectsUrl := c.getEdgeConnectsUrl()
 
-	body := &Request{
-		Name:          name,
-		HostPatterns:  hostPatterns,
-		OauthClientId: oauthClientId,
-	}
+	body := NewRequest(name, hostPatterns, oauthClientId)
 	payloadBuf := new(bytes.Buffer)
 	err := json.NewEncoder(payloadBuf).Encode(body)
 	if err != nil {
 		return CreateResponse{}, err
 	}
 
-	resp, err := c.httpClient.Post(url, contentTypeJSON, payloadBuf)
+	resp, err := c.httpClient.Post(edgeConnectsUrl, contentTypeJSON, payloadBuf)
 	defer utils.CloseBodyAfterRequest(resp)
 
 	if err != nil {
