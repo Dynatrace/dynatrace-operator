@@ -61,6 +61,10 @@ type EdgeConnectSpec struct { //nolint:revive
 
 	// Sets topology spread constraints for the EdgeConnect pods
 	TopologySpreadConstraints []corev1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
+
+	// Host patterns to be set in the tenant, only considered when provisioning is enabled.
+	// +kubebuilder:validation:Optional
+	HostPatterns []string `json:"hostPatterns,omitempty"`
 }
 
 type OAuthSpec struct {
@@ -73,6 +77,9 @@ type OAuthSpec struct {
 	// URN identifying your account. You get the URN when creating the OAuth client
 	// +kubebuilder:validation:Required
 	Resource string `json:"resource"`
+	// Determines if the operator will create the EdgeConnect and light OAuth client on the cluster using the credentials provided. Requires more scopes than default behavior.
+	// +kubebuilder:validation:Optional
+	Provisioner bool `json:"provisioner"`
 }
 
 type ImageRefSpec struct {

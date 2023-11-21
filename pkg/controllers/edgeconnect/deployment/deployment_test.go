@@ -33,7 +33,7 @@ func TestNew(t *testing.T) {
 			},
 		}
 
-		deployment := New(instance)
+		deployment := NewRegular(instance)
 
 		assert.NotNil(t, deployment)
 	})
@@ -59,7 +59,7 @@ func Test_prepareContainerEnvVars(t *testing.T) {
 			},
 		}
 
-		envVars := prepareContainerEnvVars(instance)
+		envVars := prepareContainerEnvVars(instance, instance.Spec.OAuth.Resource)
 
 		assert.Equal(t, envVars, []corev1.EnvVar{
 			{Name: consts.EnvEdgeConnectApiEndpointHost, Value: "abc12345.dynatrace.com"},
@@ -88,7 +88,7 @@ func Test_prepareContainerEnvVars(t *testing.T) {
 			},
 		}
 
-		envVars := prepareContainerEnvVars(instance)
+		envVars := prepareContainerEnvVars(instance, instance.Spec.OAuth.Resource)
 
 		assert.Equal(t, envVars, []corev1.EnvVar{
 			{Name: "DEBUG", Value: "true"},
@@ -118,7 +118,7 @@ func Test_prepareContainerEnvVars(t *testing.T) {
 			},
 		}
 
-		envVars := prepareContainerEnvVars(instance)
+		envVars := prepareContainerEnvVars(instance, instance.Spec.OAuth.Resource)
 
 		assert.Equal(t, envVars, []corev1.EnvVar{
 			{Name: consts.EnvEdgeConnectApiEndpointHost, Value: "abc12345.dynatrace.com"},

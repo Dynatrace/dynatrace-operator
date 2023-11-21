@@ -15,6 +15,10 @@ import (
 	"golang.org/x/oauth2/clientcredentials"
 )
 
+const (
+	contentTypeJSON = "application/json"
+)
+
 type client struct {
 	ctx        context.Context
 	baseURL    string
@@ -193,6 +197,8 @@ func (c *client) UpdateEdgeConnect(edgeConnectId, name string, hostPatterns []st
 		return err
 	}
 
+	req.Header.Set("Content-Type", contentTypeJSON)
+
 	resp, err := c.httpClient.Do(req)
 	defer utils.CloseBodyAfterRequest(resp)
 
@@ -214,7 +220,6 @@ func (c *client) UpdateEdgeConnect(edgeConnectId, name string, hostPatterns []st
 
 // DeleteEdgeConnect deletes edge connect using DELETE method for give edgeConnectId
 func (c *client) DeleteEdgeConnect(edgeConnectId string) error {
-	log.Info("started removing edge connect %s", edgeConnectId)
 	url := c.getEdgeConnectUrl(edgeConnectId)
 
 	req, err := http.NewRequest(http.MethodDelete, url, nil)
@@ -237,7 +242,6 @@ func (c *client) DeleteEdgeConnect(edgeConnectId string) error {
 		}
 		return errors.Errorf("edgeconnect server error %d: %s", errorResponse.ErrorMessage.Code, errorResponse.ErrorMessage.Message)
 	}
-	log.Info("finished removing edge connect %s", edgeConnectId)
 	return nil
 }
 
@@ -256,7 +260,7 @@ func (c *client) CreateEdgeConnect(name string, hostPatterns []string, oauthClie
 		return CreateResponse{}, err
 	}
 
-	resp, err := c.httpClient.Post(url, http.MethodPost, payloadBuf)
+	resp, err := c.httpClient.Post(url, contentTypeJSON, payloadBuf)
 	defer utils.CloseBodyAfterRequest(resp)
 
 	if err != nil {
@@ -272,6 +276,40 @@ func (c *client) CreateEdgeConnect(name string, hostPatterns []string, oauthClie
 	err = json.Unmarshal(responseData, &response)
 	if err != nil {
 		return CreateResponse{}, err
+	}
+
+	return response, nil
+}
+
+// GetEdgeConnects returns list of edge connects
+func (c *client) GetEdgeConnects(name string) (ListResponse, error) {
+	ecUrl := c.getEdgeConnectsUrl()
+
+	req, err := http.NewRequest("GET", ecUrl, nil)
+	if err != nil {
+		return ListResponse{}, err
+	}
+	req.URL.RawQuery = url.Values{
+		"add-fields": {"name"},
+		"filter":     {fmt.Sprintf("name='%s'", name)},
+	}.Encode()
+
+	resp, err := c.httpClient.Do(req)
+	defer utils.CloseBodyAfterRequest(resp)
+
+	if err != nil {
+		return ListResponse{}, err
+	}
+
+	responseData, err := c.getServerResponseData(resp)
+	if err != nil {
+		return ListResponse{}, err
+	}
+
+	response := ListResponse{}
+	err = json.Unmarshal(responseData, &response)
+	if err != nil {
+		return ListResponse{}, err
 	}
 
 	return response, nil
