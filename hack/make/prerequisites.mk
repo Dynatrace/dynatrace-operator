@@ -11,8 +11,6 @@ golang_tools_version=v0.15.0
 # renovate depName=github.com/vektra/mockery
 mockery_version=v2.37.1
 
-OS_NAME := $(shell uname -s | tr A-Z a-z)
-
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
