@@ -154,9 +154,9 @@ func (c *client) getServerResponseData(response *http.Response) ([]byte, error) 
 
 // GetEdgeConnect returns edge connect if it exists
 func (c *client) GetEdgeConnect(edgeConnectId string) (GetResponse, error) {
-	url := c.getEdgeConnectUrl(edgeConnectId)
+	edgeConnectUrl := c.getEdgeConnectUrl(edgeConnectId)
 
-	resp, err := c.httpClient.Get(url)
+	resp, err := c.httpClient.Get(edgeConnectUrl)
 	defer utils.CloseBodyAfterRequest(resp)
 
 	if err != nil {
@@ -179,7 +179,7 @@ func (c *client) GetEdgeConnect(edgeConnectId string) (GetResponse, error) {
 
 // UpdateEdgeConnect updates existing edge connect hostPatterns and oauthClientId
 func (c *client) UpdateEdgeConnect(edgeConnectId, name string, hostPatterns []string, oauthClientId string) error {
-	url := c.getEdgeConnectUrl(edgeConnectId)
+	edgeConnectUrl := c.getEdgeConnectUrl(edgeConnectId)
 
 	body := NewRequest(name, hostPatterns, oauthClientId)
 	payloadBuf := new(bytes.Buffer)
@@ -188,7 +188,7 @@ func (c *client) UpdateEdgeConnect(edgeConnectId, name string, hostPatterns []st
 		return err
 	}
 
-	req, err := http.NewRequest(http.MethodPut, url, payloadBuf)
+	req, err := http.NewRequest(http.MethodPut, edgeConnectUrl, payloadBuf)
 	if err != nil {
 		return err
 	}
@@ -216,9 +216,9 @@ func (c *client) UpdateEdgeConnect(edgeConnectId, name string, hostPatterns []st
 
 // DeleteEdgeConnect deletes edge connect using DELETE method for give edgeConnectId
 func (c *client) DeleteEdgeConnect(edgeConnectId string) error {
-	url := c.getEdgeConnectUrl(edgeConnectId)
+	edgeConnectUrl := c.getEdgeConnectUrl(edgeConnectId)
 
-	req, err := http.NewRequest(http.MethodDelete, url, nil)
+	req, err := http.NewRequest(http.MethodDelete, edgeConnectUrl, nil)
 	if err != nil {
 		return err
 	}
@@ -275,9 +275,9 @@ func (c *client) CreateEdgeConnect(name string, hostPatterns []string, oauthClie
 
 // GetEdgeConnects returns list of edge connects
 func (c *client) GetEdgeConnects(name string) (ListResponse, error) {
-	ecUrl := c.getEdgeConnectsUrl()
+	edgeConnectsUrl := c.getEdgeConnectsUrl()
 
-	req, err := http.NewRequest("GET", ecUrl, nil)
+	req, err := http.NewRequest("GET", edgeConnectsUrl, nil)
 	if err != nil {
 		return ListResponse{}, err
 	}
