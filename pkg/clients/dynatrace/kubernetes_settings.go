@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
 	"github.com/pkg/errors"
 )
 
@@ -29,10 +30,17 @@ type MonitoringSettings struct {
 }
 
 type postKubernetesSettingsBody struct {
-	SchemaId      string                 `json:"schemaId"`
-	SchemaVersion string                 `json:"schemaVersion"`
-	Scope         string                 `json:"scope,omitempty"`
-	Value         postKubernetesSettings `json:"value"`
+	SchemaId      string      `json:"schemaId"`
+	SchemaVersion string      `json:"schemaVersion"`
+	Scope         string      `json:"scope,omitempty"`
+	Value         interface{} `json:"value"`
+}
+
+type postKubernetesAppSettings struct {
+	KubernetesAppOptions kubernetesAppOptionsSettings `json:"kubernetesAppOptions"`
+}
+type kubernetesAppOptionsSettings struct {
+	EnableKubernetesApp bool `json:"enableKubernetesApp"`
 }
 
 type monitoredEntitiesResponse struct {
@@ -73,9 +81,11 @@ type constraintViolations []struct {
 }
 
 const (
-	schemaId                                    = "builtin:cloud.kubernetes"
+	SettingsSchemaId                            = "builtin:cloud.kubernetes"
+	AppTransitionSchemaId                       = "builtin:app-transition.kubernetes"
 	schemaVersionV1                             = "1.0.27"
 	hierarchicalMonitoringSettingsSchemaVersion = "3.0.0"
+	appTransitionSchemaVersion                  = "1.0.1"
 )
 
 func (dtc *dynatraceClient) performCreateOrUpdateKubernetesSetting(body []postKubernetesSettingsBody) (string, error) {
@@ -93,7 +103,7 @@ func (dtc *dynatraceClient) performCreateOrUpdateKubernetesSetting(body []postKu
 	if err != nil {
 		return "", fmt.Errorf("error making post request to dynatrace api: %w", err)
 	}
-	defer CloseBodyAfterRequest(res)
+	defer utils.CloseBodyAfterRequest(res)
 
 	resData, err := io.ReadAll(res.Body)
 	if err != nil {
@@ -117,15 +127,21 @@ func (dtc *dynatraceClient) performCreateOrUpdateKubernetesSetting(body []postKu
 
 	return resDataJson[0].ObjectId, nil
 }
-func createBaseKubernetesSettings(clusterLabel, kubeSystemUUID, scope string) postKubernetesSettingsBody {
+func createPostKubernetesSettings(clusterLabel, kubeSystemUUID string) postKubernetesSettings {
+	settings := postKubernetesSettings{
+		Enabled:          true,
+		Label:            clusterLabel,
+		ClusterIdEnabled: true,
+		ClusterId:        kubeSystemUUID,
+	}
+	return settings
+}
+
+func createBaseKubernetesSettings(postK8sSettings any, schemaId string, schemaVersion string, scope string) postKubernetesSettingsBody {
 	base := postKubernetesSettingsBody{
-		SchemaId: schemaId,
-		Value: postKubernetesSettings{
-			Enabled:          true,
-			Label:            clusterLabel,
-			ClusterIdEnabled: true,
-			ClusterId:        kubeSystemUUID,
-		},
+		SchemaId:      schemaId,
+		SchemaVersion: schemaVersion,
+		Value:         postK8sSettings,
 	}
 	if scope != "" {
 		base.Scope = scope
@@ -134,8 +150,7 @@ func createBaseKubernetesSettings(clusterLabel, kubeSystemUUID, scope string) po
 }
 
 func createV1KubernetesSettingsBody(clusterLabel, kubeSystemUUID, scope string) []postKubernetesSettingsBody {
-	settings := createBaseKubernetesSettings(clusterLabel, kubeSystemUUID, scope)
-	settings.SchemaVersion = schemaVersionV1
+	postK8sSettings := createPostKubernetesSettings(clusterLabel, kubeSystemUUID)
 	ms := MonitoringSettings{
 		CloudApplicationPipelineEnabled: true,
 		OpenMetricsPipelineEnabled:      false,
@@ -143,12 +158,19 @@ func createV1KubernetesSettingsBody(clusterLabel, kubeSystemUUID, scope string) 
 		FilterEvents:                    false,
 		EventProcessingV2Active:         false,
 	}
-	settings.Value.MonitoringSettings = &ms
+	postK8sSettings.MonitoringSettings = &ms
+
+	settings := createBaseKubernetesSettings(postK8sSettings, SettingsSchemaId, schemaVersionV1, scope)
+
 	return []postKubernetesSettingsBody{settings}
 }
 
 func createV3KubernetesSettingsBody(clusterLabel, kubeSystemUUID, scope string) []postKubernetesSettingsBody {
-	settings := createBaseKubernetesSettings(clusterLabel, kubeSystemUUID, scope)
+	settings := createBaseKubernetesSettings(
+		createPostKubernetesSettings(clusterLabel, kubeSystemUUID),
+		SettingsSchemaId,
+		hierarchicalMonitoringSettingsSchemaVersion,
+		scope)
 	settings.SchemaVersion = hierarchicalMonitoringSettingsSchemaVersion
 	return []postKubernetesSettingsBody{settings}
 }
@@ -194,7 +216,7 @@ func (dtc *dynatraceClient) GetMonitoredEntitiesForKubeSystemUUID(kubeSystemUUID
 		return nil, err
 	}
 
-	defer CloseBodyAfterRequest(res)
+	defer utils.CloseBodyAfterRequest(res)
 
 	var resDataJson monitoredEntitiesResponse
 	err = dtc.unmarshalToJson(res, &resDataJson)
@@ -205,7 +227,7 @@ func (dtc *dynatraceClient) GetMonitoredEntitiesForKubeSystemUUID(kubeSystemUUID
 	return resDataJson.Entities, nil
 }
 
-func (dtc *dynatraceClient) GetSettingsForMonitoredEntities(monitoredEntities []MonitoredEntity) (GetSettingsResponse, error) {
+func (dtc *dynatraceClient) GetSettingsForMonitoredEntities(monitoredEntities []MonitoredEntity, schemaId string) (GetSettingsResponse, error) {
 	if len(monitoredEntities) < 1 {
 		return GetSettingsResponse{TotalCount: 0}, nil
 	}
@@ -221,7 +243,7 @@ func (dtc *dynatraceClient) GetSettingsForMonitoredEntities(monitoredEntities []
 	}
 
 	q := req.URL.Query()
-	q.Add("schemaIds", "builtin:cloud.kubernetes")
+	q.Add("schemaIds", schemaId)
 	q.Add("scopes", strings.Join(scopes, ","))
 	req.URL.RawQuery = q.Encode()
 
@@ -232,7 +254,7 @@ func (dtc *dynatraceClient) GetSettingsForMonitoredEntities(monitoredEntities []
 		return GetSettingsResponse{}, err
 	}
 
-	defer CloseBodyAfterRequest(res)
+	defer utils.CloseBodyAfterRequest(res)
 
 	var resDataJson GetSettingsResponse
 	err = dtc.unmarshalToJson(res, &resDataJson)
@@ -284,4 +306,18 @@ func handleErrorArrayResponseFromAPI(response []byte, statusCode int) error {
 
 		return fmt.Errorf(sb.String())
 	}
+}
+
+func (dtc *dynatraceClient) CreateOrUpdateKubernetesAppSetting(scope string) (string, error) {
+	settings := createBaseKubernetesSettings(postKubernetesAppSettings{
+		kubernetesAppOptionsSettings{
+			EnableKubernetesApp: true,
+		},
+	}, AppTransitionSchemaId, appTransitionSchemaVersion, scope)
+	objectId, err := dtc.performCreateOrUpdateKubernetesSetting([]postKubernetesSettingsBody{settings})
+	if err != nil {
+		return "", err
+	}
+
+	return objectId, nil
 }

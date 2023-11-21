@@ -32,7 +32,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -112,14 +112,14 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		return reconcile.Result{}, err
 	}
 
-	if !dk.NeedAppInjection() {
-		log.Info("app injection not necessary, skip agent codemodule download", "dynakube", dk.Name)
-		return reconcile.Result{RequeueAfter: longRequeueDuration}, nil
-	}
-
 	dynakubeMetadata, err := provisioner.setupDynakubeMetadata(ctx, dk) // needed for the CSI-resilience feature
 	if err != nil {
 		return reconcile.Result{}, err
+	}
+
+	if !dk.NeedAppInjection() {
+		log.Info("app injection not necessary, skip agent codemodule download", "dynakube", dk.Name)
+		return reconcile.Result{RequeueAfter: longRequeueDuration}, nil
 	}
 
 	if dk.CodeModulesImage() == "" && dk.CodeModulesVersion() == "" {
@@ -252,7 +252,7 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Cont
 }
 
 func (provisioner *OneAgentProvisioner) getAgentTenantToken(ctx context.Context, dk *dynatracev1beta1.DynaKube) (string, error) {
-	query := kubeobjects.NewSecretQuery(ctx, provisioner.client, provisioner.apiReader, log)
+	query := secret.NewQuery(ctx, provisioner.client, provisioner.apiReader, log)
 	secret, err := query.Get(types.NamespacedName{Namespace: dk.Namespace, Name: dk.OneagentTenantSecret()})
 	if err != nil {
 		return "", errors.Wrapf(err, "OneAgent tenant token secret %s/%s not found", dk.Namespace, dk.OneagentTenantSecret())

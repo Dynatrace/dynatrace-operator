@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/zip"
+	"github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -47,10 +48,11 @@ func TestInstallAgentFromUrl(t *testing.T) {
 	})
 	t.Run(`error when downloading latest agent`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
-		dtc := &dtclient.MockDynatraceClient{}
+		dtc := mocks.NewClient(t)
 		dtc.
 			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.FlavorMultidistro,
-				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("[]string"), mock.AnythingOfType("*mem.File")).
+				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("[]string"),
+				mock.AnythingOfType("bool"), mock.AnythingOfType("*mem.File")).
 			Return(fmt.Errorf(testErrorMessage))
 		dtc.
 			On("GetAgentVersions", dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.FlavorMultidistro, mock.AnythingOfType("string")).
@@ -71,12 +73,13 @@ func TestInstallAgentFromUrl(t *testing.T) {
 	t.Run(`error unzipping file`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 
-		dtc := &dtclient.MockDynatraceClient{}
+		dtc := mocks.NewClient(t)
 		dtc.
 			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.FlavorMultidistro,
-				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("[]string"), mock.AnythingOfType("*mem.File")).
+				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("[]string"),
+				mock.AnythingOfType("bool"), mock.AnythingOfType("*mem.File")).
 			Run(func(args mock.Arguments) {
-				writer := args.Get(6).(io.Writer)
+				writer, _ := args.Get(7).(io.Writer)
 
 				zipFile := zip.SetupInvalidTestZip(t, fs)
 				defer func() { _ = zipFile.Close() }()
@@ -101,12 +104,13 @@ func TestInstallAgentFromUrl(t *testing.T) {
 	})
 	t.Run(`downloading and unzipping agent via version`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
-		dtc := &dtclient.MockDynatraceClient{}
+		dtc := mocks.NewClient(t)
 		dtc.
 			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.FlavorMultidistro,
-				mock.AnythingOfType("string"), testVersion, mock.AnythingOfType("[]string"), mock.AnythingOfType("*mem.File")).
+				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("[]string"),
+				mock.AnythingOfType("bool"), mock.AnythingOfType("*mem.File")).
 			Run(func(args mock.Arguments) {
-				writer := args.Get(6).(io.Writer)
+				writer, _ := args.Get(7).(io.Writer)
 
 				zipFile := zip.SetupTestArchive(t, fs, zip.TestRawZip)
 				defer func() { _ = zipFile.Close() }()
@@ -133,12 +137,13 @@ func TestInstallAgentFromUrl(t *testing.T) {
 	})
 	t.Run(`downloading and unzipping latest agent`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
-		dtc := &dtclient.MockDynatraceClient{}
+		dtc := mocks.NewClient(t)
 		dtc.
 			On("GetLatestAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.FlavorMultidistro,
-				mock.AnythingOfType("string"), mock.AnythingOfType("[]string"), mock.AnythingOfType("*mem.File")).
+				mock.AnythingOfType("string"), mock.AnythingOfType("[]string"), mock.AnythingOfType("bool"),
+				mock.AnythingOfType("*mem.File")).
 			Run(func(args mock.Arguments) {
-				writer := args.Get(5).(io.Writer)
+				writer, _ := args.Get(6).(io.Writer)
 
 				zipFile := zip.SetupTestArchive(t, fs, zip.TestRawZip)
 				defer func() { _ = zipFile.Close() }()
@@ -165,11 +170,11 @@ func TestInstallAgentFromUrl(t *testing.T) {
 	})
 	t.Run(`downloading and unzipping agent via url`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
-		dtc := &dtclient.MockDynatraceClient{}
+		dtc := mocks.NewClient(t)
 		dtc.
 			On("GetAgentViaInstallerUrl", testUrl, mock.AnythingOfType("*mem.File")).
 			Run(func(args mock.Arguments) {
-				writer := args.Get(1).(io.Writer)
+				writer, _ := args.Get(1).(io.Writer)
 
 				zipFile := zip.SetupTestArchive(t, fs, zip.TestRawZip)
 				defer func() { _ = zipFile.Close() }()

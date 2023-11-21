@@ -23,7 +23,7 @@ webhooks:
   - name: webhook.pod.dynatrace.com
     reinvocationPolicy: IfNeeded
     failurePolicy: Ignore
-    timeoutSeconds: 2
+    timeoutSeconds: {{.Values.webhook.mutatingWebhook.timeoutSeconds}}
     rules:
       - apiGroups: [ "" ]
         apiVersions: [ "v1" ]
@@ -44,7 +44,7 @@ webhooks:
   - name: webhook.ns.dynatrace.com
     reinvocationPolicy: IfNeeded
     failurePolicy: Ignore
-    timeoutSeconds: 2
+    timeoutSeconds: {{.Values.webhook.mutatingWebhook.timeoutSeconds}}
     rules:
       - apiGroups: [ "" ]
         apiVersions: [ "v1" ]

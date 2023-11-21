@@ -5,18 +5,14 @@ package istio
 import (
 	"context"
 	"os"
-	"path"
 	"strings"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/manifests"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/platform"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/sampleapps/base"
-	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
-	"github.com/Dynatrace/dynatrace-operator/test/project"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -25,7 +21,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
-	"sigs.k8s.io/e2e-framework/klient/decoder"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -37,28 +32,8 @@ const (
 	enforceIstioEnv                 = "ENFORCE_ISTIO"
 )
 
-var InjectionLabel = map[string]string{
-	"istio-injection": "enabled",
-}
-
-var networkAttachmentPath = path.Join(project.TestDataDir(), "network/ocp-istio-cni.yaml")
-
 func enforceIstio() bool {
 	return os.Getenv(enforceIstioEnv) == "true"
-}
-
-func AddIstioNetworkAttachment(namespace corev1.Namespace) func(ctx context.Context, envConfig *envconf.Config, t *testing.T) (context.Context, error) {
-	return func(ctx context.Context, envConfig *envconf.Config, t *testing.T) (context.Context, error) {
-		if !platform.NewResolver().IsOpenshift(t) {
-			return ctx, nil
-		}
-		for key, value := range InjectionLabel {
-			if namespace.Labels[key] == value {
-				ctx = manifests.InstallFromFile(networkAttachmentPath, decoder.MutateNamespace(namespace.Name))(ctx, t, envConfig)
-			}
-		}
-		return ctx, nil
-	}
 }
 
 func AssertIstioNamespace() func(ctx context.Context, envConfig *envconf.Config, t *testing.T) (context.Context, error) {
@@ -85,14 +60,14 @@ func AssertIstiodDeployment() func(ctx context.Context, envConfig *envconf.Confi
 	}
 }
 
-func AssessIstio(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube, sampleApp base.App) {
+func AssessIstio(builder *features.FeatureBuilder, testDynakube dynatracev1beta1.DynaKube, sampleApp sample.App) {
 	builder.Assess("sample apps have working istio init container", checkSampleAppIstioInitContainers(sampleApp, testDynakube))
 	builder.Assess("operator pods have working istio init container", checkOperatorIstioInitContainers(testDynakube))
 	builder.Assess("istio virtual service for ApiUrl created", checkVirtualServiceForApiUrl(testDynakube))
 	builder.Assess("istio service entry for ApiUrl created", checkServiceEntryForApiUrl(testDynakube))
 }
 
-func checkSampleAppIstioInitContainers(sampleApp base.App, testDynakube dynatracev1beta1.DynaKube) features.Func {
+func checkSampleAppIstioInitContainers(sampleApp sample.App, testDynakube dynatracev1beta1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		resources := envConfig.Client().Resources()
 		pods := sampleApp.GetPods(ctx, t, resources)
@@ -143,7 +118,9 @@ func assertIstioInitContainer(t *testing.T, pods corev1.PodList, testDynakube dy
 
 func determineIstioInitContainerName(t *testing.T) string {
 	istioInitName := istioInitContainerName
-	if platform.NewResolver().IsOpenshift(t) {
+	isOpenshift, err := platform.NewResolver().IsOpenshift()
+	require.NoError(t, err)
+	if isOpenshift {
 		istioInitName = openshiftIstioInitContainerName
 	}
 	return istioInitName
@@ -151,10 +128,10 @@ func determineIstioInitContainerName(t *testing.T) string {
 
 func checkVirtualServiceForApiUrl(dynakube dynatracev1beta1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		apiHost := apiUrlCommunicationHost(t)
+		apiHost := apiUrlCommunicationHost(t, dynakube)
 		serviceName := istio.BuildNameForFQDNServiceEntry(dynakube.Name, istio.OperatorComponent)
 
-		virtualService, err := istioClient(t, envConfig.Client().RESTConfig()).NetworkingV1alpha3().VirtualServices(dynakube.Namespace).Get(ctx, serviceName, metav1.GetOptions{})
+		virtualService, err := istioClient(t, envConfig.Client().RESTConfig()).NetworkingV1beta1().VirtualServices(dynakube.Namespace).Get(ctx, serviceName, metav1.GetOptions{})
 		require.Nil(t, err, "istio: failed to get '%s' virtual service object", serviceName)
 
 		require.NotEmpty(t, virtualService.ObjectMeta.OwnerReferences)
@@ -169,10 +146,10 @@ func checkVirtualServiceForApiUrl(dynakube dynatracev1beta1.DynaKube) features.F
 
 func checkServiceEntryForApiUrl(dynakube dynatracev1beta1.DynaKube) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		apiHost := apiUrlCommunicationHost(t)
+		apiHost := apiUrlCommunicationHost(t, dynakube)
 		serviceName := istio.BuildNameForFQDNServiceEntry(dynakube.Name, istio.OperatorComponent)
 
-		serviceEntry, err := istioClient(t, envConfig.Client().RESTConfig()).NetworkingV1alpha3().ServiceEntries(dynakube.Namespace).Get(ctx, serviceName, metav1.GetOptions{})
+		serviceEntry, err := istioClient(t, envConfig.Client().RESTConfig()).NetworkingV1beta1().ServiceEntries(dynakube.Namespace).Get(ctx, serviceName, metav1.GetOptions{})
 		require.Nil(t, err, "istio: failed to get '%s' service entry object", serviceName)
 
 		require.NotEmpty(t, serviceEntry.ObjectMeta.OwnerReferences)
@@ -191,10 +168,8 @@ func istioClient(t *testing.T, restConfig *rest.Config) *istioclientset.Clientse
 	return client
 }
 
-func apiUrlCommunicationHost(t *testing.T) dtclient.CommunicationHost {
-	secretConfig := tenant.GetSingleTenantSecret(t)
-
-	apiHost, err := dtclient.ParseEndpoint(secretConfig.ApiUrl)
+func apiUrlCommunicationHost(t *testing.T, dynakube dynatracev1beta1.DynaKube) dtclient.CommunicationHost {
+	apiHost, err := dtclient.ParseEndpoint(dynakube.ApiUrl())
 	require.Nil(t, err)
 
 	return apiHost

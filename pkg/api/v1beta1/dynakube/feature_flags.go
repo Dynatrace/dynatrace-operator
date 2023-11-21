@@ -49,6 +49,7 @@ const (
 	AnnotationFeatureActiveGateReadOnlyFilesystem         = AnnotationFeaturePrefix + "activegate-readonly-fs"
 	AnnotationFeatureAutomaticK8sApiMonitoring            = AnnotationFeaturePrefix + "automatic-kubernetes-api-monitoring"
 	AnnotationFeatureAutomaticK8sApiMonitoringClusterName = AnnotationFeaturePrefix + "automatic-kubernetes-api-monitoring-cluster-name"
+	AnnotationFeatureK8sAppEnabled                        = AnnotationFeaturePrefix + "k8s-app-enabled"
 	AnnotationFeatureActiveGateIgnoreProxy                = AnnotationFeaturePrefix + "activegate-ignore-proxy"
 
 	AnnotationFeatureCustomSyntheticImage = AnnotationFeaturePrefix + "custom-synthetic-image"
@@ -118,8 +119,9 @@ const (
 )
 
 const (
-	DefaultMaxFailedCsiMountAttempts  = 10
-	DefaultMinRequestThresholdMinutes = 15
+	DefaultMaxFailedCsiMountAttempts        = 10
+	DefaultMinRequestThresholdMinutes       = 15
+	IstioDefaultOneAgentInitialConnectRetry = 6000
 )
 
 var (
@@ -236,6 +238,11 @@ func (dk *DynaKube) FeatureAutomaticKubernetesApiMonitoringClusterName() string 
 	return dk.getFeatureFlagRaw(AnnotationFeatureAutomaticK8sApiMonitoringClusterName)
 }
 
+// FeatureEnableK8sAppEnabled is a feature flag to enable automatically enable current Kubernetes cluster for the Kubernetes app.
+func (dk *DynaKube) FeatureEnableK8sAppEnabled() bool {
+	return dk.getFeatureFlagRaw(AnnotationFeatureK8sAppEnabled) == truePhrase
+}
+
 // FeatureDisableMetadataEnrichment is a feature flag to disable metadata enrichment,
 func (dk *DynaKube) FeatureDisableMetadataEnrichment() bool {
 	return dk.getDisableFlagWithDeprecatedAnnotation(AnnotationFeatureMetadataEnrichment, AnnotationFeatureDisableMetadataEnrichment)
@@ -303,7 +310,15 @@ func (dk *DynaKube) FeatureLabelVersionDetection() bool {
 
 // FeatureAgentInitialConnectRetry is a feature flag to configure startup delay of standalone agents
 func (dk *DynaKube) FeatureAgentInitialConnectRetry() int {
-	return dk.getFeatureFlagInt(AnnotationFeatureOneAgentInitialConnectRetry, -1)
+	defaultValue := -1
+	ffValue := dk.getFeatureFlagInt(AnnotationFeatureOneAgentInitialConnectRetry, defaultValue)
+
+	// In case of istio, we want to have a longer initial delay for codemodules to ensure the DT service is created consistently
+	if ffValue == defaultValue && dk.Spec.EnableIstio {
+		ffValue = IstioDefaultOneAgentInitialConnectRetry
+	}
+
+	return ffValue
 }
 
 func (dk *DynaKube) FeatureOneAgentPrivileged() bool {

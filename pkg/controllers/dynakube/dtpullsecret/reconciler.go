@@ -6,7 +6,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -80,11 +80,11 @@ func (r *Reconciler) updatePullSecretIfOutdated(ctx context.Context, pullSecret 
 }
 
 func (r *Reconciler) createPullSecret(ctx context.Context, pullSecretData map[string][]byte) (*corev1.Secret, error) {
-	pullSecret, err := kubeobjects.CreateSecret(r.scheme, r.dynakube,
-		kubeobjects.NewSecretNameModifier(extendWithPullSecretSuffix(r.dynakube.Name)),
-		kubeobjects.NewSecretNamespaceModifier(r.dynakube.Namespace),
-		kubeobjects.NewSecretTypeModifier(corev1.SecretTypeDockerConfigJson),
-		kubeobjects.NewSecretDataModifier(pullSecretData))
+	pullSecret, err := secret.Create(r.scheme, r.dynakube,
+		secret.NewNameModifier(extendWithPullSecretSuffix(r.dynakube.Name)),
+		secret.NewNamespaceModifier(r.dynakube.Namespace),
+		secret.NewTypeModifier(corev1.SecretTypeDockerConfigJson),
+		secret.NewDataModifier(pullSecretData))
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

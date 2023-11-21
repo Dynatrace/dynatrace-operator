@@ -7,7 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1"
 	dynakubev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -30,8 +30,8 @@ func getQueries(namespace string, appName string) []resourceQuery {
 	allQueries := make([]resourceQuery, 0)
 	allQueries = append(allQueries, getInjectedNamespaceQueryGroup().getQueries()...)
 	allQueries = append(allQueries, getOperatorNamespaceQueryGroup(namespace).getQueries()...)
-	allQueries = append(allQueries, getComponentsQueryGroup(namespace, appName, kubeobjects.AppNameLabel).getQueries()...)
-	allQueries = append(allQueries, getComponentsQueryGroup(namespace, appName, kubeobjects.AppManagedByLabel).getQueries()...)
+	allQueries = append(allQueries, getComponentsQueryGroup(namespace, appName, labels.AppNameLabel).getQueries()...)
+	allQueries = append(allQueries, getComponentsQueryGroup(namespace, appName, labels.AppManagedByLabel).getQueries()...)
 	allQueries = append(allQueries, getCustomResourcesQueryGroup(namespace).getQueries()...)
 	return allQueries
 }

@@ -3,10 +3,12 @@ package server
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/cmd/config"
-	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
+	dtfake "github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
+	configmock "github.com/Dynatrace/dynatrace-operator/test/mocks/cmd/config"
+	providermock "github.com/Dynatrace/dynatrace-operator/test/mocks/cmd/manager"
+	managermock "github.com/Dynatrace/dynatrace-operator/test/mocks/sigs.k8s.io/controller-runtime/pkg/manager"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -14,12 +16,14 @@ import (
 )
 
 func TestCsiCommand(t *testing.T) {
-	configProvider := &config.MockProvider{}
+	configProvider := &configmock.Provider{}
 	configProvider.On("GetConfig").Return(&rest.Config{}, nil)
 
-	cmdMgr := &cmdManager.MockManager{}
+	clt := dtfake.NewClient()
+	cmdMgr := managermock.NewManager(t)
+	cmdMgr.On("GetAPIReader", mock.Anything, mock.Anything).Return(clt, nil)
 
-	managerProvider := &cmdManager.MockProvider{}
+	managerProvider := providermock.NewProvider(t)
 	managerProvider.On("CreateManager", mock.Anything, mock.Anything).Return(cmdMgr, nil)
 
 	memFs := afero.NewMemMapFs()

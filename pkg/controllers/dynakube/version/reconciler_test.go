@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry/mocks"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
+	mockedclient "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	containerv1 "github.com/google/go-containerregistry/pkg/v1"
 	fakecontainer "github.com/google/go-containerregistry/pkg/v1/fake"
 	"github.com/opencontainers/go-digest"
@@ -64,7 +65,7 @@ func TestReconcile(t *testing.T) {
 			},
 		}, nil
 	}
-	fakeImage.ConfigFile()
+	_, _ = fakeImage.ConfigFile()
 	testImage := containerv1.Image(fakeImage)
 
 	t.Run("no update if hash provider returns error", func(t *testing.T) {
@@ -90,7 +91,7 @@ func TestReconcile(t *testing.T) {
 		setupPullSecret(t, fakeClient, *dynakube)
 
 		dkStatus := &dynakube.Status
-		mockClient := &dtclient.MockDynatraceClient{}
+		mockClient := mockedclient.NewClient(t)
 		mockLatestAgentVersion(mockClient, latestAgentVersion)
 		mockImageGetter := mocks.MockImageGetter{}
 
@@ -156,7 +157,7 @@ func TestReconcile(t *testing.T) {
 		mockImageGetter.On("GetImageVersion", mock.Anything, testCodeModulesImage.String()).Return(registry.ImageVersion{Version: testCodeModulesImage.Tag, Digest: testCodeModulesHash}, nil)
 		mockImageGetter.On("PullImageInfo", mock.Anything, mock.Anything).Return(&testImage, nil)
 
-		mockClient := &dtclient.MockDynatraceClient{}
+		mockClient := mockedclient.NewClient(t)
 		mockActiveGateImageInfo(mockClient, testActiveGateImage)
 		mockCodeModulesImageInfo(mockClient, testCodeModulesImage)
 		mockOneAgentImageInfo(mockClient, testOneAgentImage)
@@ -193,7 +194,7 @@ func TestNeedsReconcile(t *testing.T) {
 			dynakube:     &dynakube,
 			timeProvider: timeProvider,
 		}
-		updaters := []versionStatusUpdater{
+		updaters := []StatusUpdater{
 			newOneAgentUpdater(&dynakube, fake.NewClient(), nil, nil),
 			newActiveGateUpdater(&dynakube, fake.NewClient(), nil, nil),
 		}
@@ -386,18 +387,18 @@ func createTestPullSecret(fakeClient client.Client, dynakube dynatracev1beta1.Dy
 	})
 }
 
-func mockActiveGateImageInfo(mockClient *dtclient.MockDynatraceClient, imageInfo dtclient.LatestImageInfo) {
+func mockActiveGateImageInfo(mockClient *mockedclient.Client, imageInfo dtclient.LatestImageInfo) {
 	mockClient.On("GetLatestActiveGateImage").Return(&imageInfo, nil)
 }
 
-func mockCodeModulesImageInfo(mockClient *dtclient.MockDynatraceClient, imageInfo dtclient.LatestImageInfo) {
+func mockCodeModulesImageInfo(mockClient *mockedclient.Client, imageInfo dtclient.LatestImageInfo) {
 	mockClient.On("GetLatestCodeModulesImage").Return(&imageInfo, nil)
 }
 
-func mockOneAgentImageInfo(mockClient *dtclient.MockDynatraceClient, imageInfo dtclient.LatestImageInfo) {
+func mockOneAgentImageInfo(mockClient *mockedclient.Client, imageInfo dtclient.LatestImageInfo) {
 	mockClient.On("GetLatestOneAgentImage").Return(&imageInfo, nil)
 }
 
-func mockLatestAgentVersion(mockClient *dtclient.MockDynatraceClient, latestVersion string) {
+func mockLatestAgentVersion(mockClient *mockedclient.Client, latestVersion string) {
 	mockClient.On("GetLatestAgentVersion", mock.Anything, mock.Anything).Return(latestVersion, nil)
 }

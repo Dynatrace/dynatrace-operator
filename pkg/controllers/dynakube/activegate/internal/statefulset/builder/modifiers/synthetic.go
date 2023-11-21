@@ -5,8 +5,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
 	_ "github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/container"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/resources"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -37,6 +40,7 @@ const (
 type SyntheticModifier struct {
 	dynakube   dynatracev1beta1.DynaKube
 	capability capability.Capability
+	envMap     *prioritymap.Map
 }
 
 // make the compiler watch the implemented interfaces
@@ -58,30 +62,30 @@ type nodeRequirements struct {
 
 var nodeRequirementsBySize = map[string]nodeRequirements{
 	dynatracev1beta1.SyntheticNodeXs: {
-		requestResources:     kubeobjects.NewResources("1", "2Gi"),
-		limitResources:       kubeobjects.NewResources("2", "3Gi"),
-		jvmHeap:              kubeobjects.NewQuantity("700M"),
-		chromiumCacheVolume:  kubeobjects.NewQuantity("256Mi"),
-		tmpStorageVolume:     kubeobjects.NewQuantity("8Mi"),
-		supportArchiveVolume: kubeobjects.NewQuantity("3Gi"),
+		requestResources:     resources.NewResourceList("1", "2Gi"),
+		limitResources:       resources.NewResourceList("2", "3Gi"),
+		jvmHeap:              resources.NewQuantity("700M"),
+		chromiumCacheVolume:  resources.NewQuantity("256Mi"),
+		tmpStorageVolume:     resources.NewQuantity("8Mi"),
+		supportArchiveVolume: resources.NewQuantity("3Gi"),
 	},
 
 	dynatracev1beta1.SyntheticNodeS: {
-		requestResources:     kubeobjects.NewResources("2", "3Gi"),
-		limitResources:       kubeobjects.NewResources("4", "6Gi"),
-		jvmHeap:              kubeobjects.NewQuantity("1024M"),
-		chromiumCacheVolume:  kubeobjects.NewQuantity("512Mi"),
-		tmpStorageVolume:     kubeobjects.NewQuantity("10Mi"),
-		supportArchiveVolume: kubeobjects.NewQuantity("6Gi"),
+		requestResources:     resources.NewResourceList("2", "3Gi"),
+		limitResources:       resources.NewResourceList("4", "6Gi"),
+		jvmHeap:              resources.NewQuantity("1024M"),
+		chromiumCacheVolume:  resources.NewQuantity("512Mi"),
+		tmpStorageVolume:     resources.NewQuantity("10Mi"),
+		supportArchiveVolume: resources.NewQuantity("6Gi"),
 	},
 
 	dynatracev1beta1.SyntheticNodeM: {
-		requestResources:     kubeobjects.NewResources("4", "5Gi"),
-		limitResources:       kubeobjects.NewResources("8", "10Gi"),
-		jvmHeap:              kubeobjects.NewQuantity("2048M"),
-		chromiumCacheVolume:  kubeobjects.NewQuantity("1Gi"),
-		tmpStorageVolume:     kubeobjects.NewQuantity("12Mi"),
-		supportArchiveVolume: kubeobjects.NewQuantity("12Gi"),
+		requestResources:     resources.NewResourceList("4", "5Gi"),
+		limitResources:       resources.NewResourceList("8", "10Gi"),
+		jvmHeap:              resources.NewQuantity("2048M"),
+		chromiumCacheVolume:  resources.NewQuantity("1Gi"),
+		tmpStorageVolume:     resources.NewQuantity("12Mi"),
+		supportArchiveVolume: resources.NewQuantity("12Gi"),
 	},
 }
 
@@ -100,10 +104,12 @@ var (
 func newSyntheticModifier(
 	dynakube dynatracev1beta1.DynaKube,
 	capability capability.Capability,
+	envMap *prioritymap.Map,
 ) SyntheticModifier {
 	return SyntheticModifier{
 		dynakube:   dynakube,
 		capability: capability,
+		envMap:     envMap,
 	}
 }
 
@@ -113,8 +119,8 @@ func (modifier SyntheticModifier) Enabled() bool {
 
 func (modifier SyntheticModifier) Modify(sts *appsv1.StatefulSet) error {
 	version := modifier.dynakube.Status.Synthetic.Version
-	sts.Labels[kubeobjects.AppVersionLabel] = version
-	sts.Labels[kubeobjects.AppComponentLabel] = kubeobjects.SyntheticComponentLabel
+	sts.Labels[labels.AppVersionLabel] = version
+	sts.Labels[labels.AppComponentLabel] = labels.SyntheticComponentLabel
 
 	sts.Spec.Template.Spec.Containers = append(
 		sts.Spec.Template.Spec.Containers,
@@ -125,18 +131,20 @@ func (modifier SyntheticModifier) Modify(sts *appsv1.StatefulSet) error {
 	sts.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{}
 	sts.Spec.Template.Spec.SecurityContext.FSGroup = address.Of[int64](1001)
 
-	baseContainer := kubeobjects.FindContainerInPodSpec(
+	baseContainer := container.FindContainerInPodSpec(
 		&sts.Spec.Template.Spec,
 		consts.ActiveGateContainerName)
 	baseContainer.VolumeMounts = append(
 		baseContainer.VolumeMounts,
 		buildPublicVolumeMounts()...)
-	baseContainer.Env = append(
-		baseContainer.Env,
+
+	prioritymap.Append(modifier.envMap,
 		corev1.EnvVar{
 			Name:  envLocationId,
 			Value: modifier.dynakube.FeatureSyntheticLocationEntityId(),
-		})
+		}, prioritymap.WithPriority(modifierEnvPriority))
+
+	baseContainer.Env = modifier.envMap.AsEnvVars()
 
 	return nil
 }

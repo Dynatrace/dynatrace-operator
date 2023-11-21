@@ -3,7 +3,8 @@ package connectioninfo
 import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
+	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
@@ -36,7 +37,19 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 	}
 }
 
+func (r Reconciler) updateDynakubeStatus(ctx context.Context) error {
+	r.dynakube.Status.UpdatedTimestamp = metav1.Now()
+	err := r.client.Status().Update(ctx, r.dynakube)
+	if err != nil {
+		log.Info("could not update dynakube status", "name", r.dynakube.Name)
+		return err
+	}
+	return nil
+}
+
 func (r *Reconciler) Reconcile(ctx context.Context) error {
+	oldStatus := r.dynakube.Status.DeepCopy()
+
 	if !r.dynakube.FeatureDisableActivegateRawImage() {
 		err := r.reconcileActiveGateConnectionInfo(ctx)
 		if err != nil {
@@ -49,11 +62,18 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return err
 	}
 
-	return nil
+	needStatusUpdate, err := hasher.IsDifferent(oldStatus, r.dynakube.Status)
+	if err != nil {
+		return errors.WithMessage(err, "failed to compare connection info status hashes")
+	} else if needStatusUpdate {
+		err = r.updateDynakubeStatus(ctx)
+	}
+
+	return err
 }
 
 func (r *Reconciler) needsUpdate(ctx context.Context, secretName string, isAllowedFunc dynatracev1beta1.RequestAllowedChecker) (bool, error) {
-	query := kubeobjects.NewSecretQuery(ctx, r.client, r.apiReader, log)
+	query := k8ssecret.NewQuery(ctx, r.client, r.apiReader, log)
 	_, err := query.Get(types.NamespacedName{Name: secretName, Namespace: r.dynakube.Namespace})
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
@@ -80,8 +100,7 @@ func (r *Reconciler) reconcileOneAgentConnectionInfo(ctx context.Context) error 
 
 	connectionInfo, err := r.dtc.GetOneAgentConnectionInfo()
 	if err != nil {
-		log.Info("failed to get OneAgent connection info")
-		return err
+		return errors.WithMessage(err, "failed to get OneAgent connection info")
 	}
 
 	r.updateDynakubeOneAgentStatus(connectionInfo)
@@ -163,15 +182,15 @@ func (r *Reconciler) updateDynakubeActiveGateStatus(connectionInfo dtclient.Acti
 
 func (r *Reconciler) createTenantTokenSecret(ctx context.Context, secretName string, connectionInfo dtclient.ConnectionInfo) error {
 	secretData := extractSensitiveData(connectionInfo)
-	secret, err := kubeobjects.CreateSecret(r.scheme, r.dynakube,
-		kubeobjects.NewSecretNameModifier(secretName),
-		kubeobjects.NewSecretNamespaceModifier(r.dynakube.Namespace),
-		kubeobjects.NewSecretDataModifier(secretData))
+	secret, err := k8ssecret.Create(r.scheme, r.dynakube,
+		k8ssecret.NewNameModifier(secretName),
+		k8ssecret.NewNamespaceModifier(r.dynakube.Namespace),
+		k8ssecret.NewDataModifier(secretData))
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	query := kubeobjects.NewSecretQuery(ctx, r.client, r.apiReader, log)
+	query := k8ssecret.NewQuery(ctx, r.client, r.apiReader, log)
 	err = query.CreateOrUpdate(*secret)
 	if err != nil {
 		log.Info("could not create or update secret for connection info", "name", secret.Name)

@@ -11,7 +11,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
@@ -67,7 +69,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *Reconciler) manageStatefulSet(ctx context.Context) error {
-	desiredSts, err := r.buildDesiredStatefulSet()
+	desiredSts, err := r.buildDesiredStatefulSet(ctx)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -94,8 +96,8 @@ func (r *Reconciler) manageStatefulSet(ctx context.Context) error {
 	return nil
 }
 
-func (r *Reconciler) buildDesiredStatefulSet() (*appsv1.StatefulSet, error) {
-	kubeUID, err := kubesystem.GetUID(r.apiReader)
+func (r *Reconciler) buildDesiredStatefulSet(ctx context.Context) (*appsv1.StatefulSet, error) {
+	kubeUID, err := kubesystem.GetUID(ctx, r.apiReader)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -134,11 +136,11 @@ func (r *Reconciler) updateStatefulSetIfOutdated(ctx context.Context, desiredSts
 	if err != nil {
 		return false, err
 	}
-	if !kubeobjects.IsHashAnnotationDifferent(currentSts, desiredSts) {
+	if !hasher.IsAnnotationDifferent(currentSts, desiredSts) {
 		return false, nil
 	}
 
-	if kubeobjects.LabelsNotEqual(currentSts.Spec.Selector.MatchLabels, desiredSts.Spec.Selector.MatchLabels) {
+	if labels.NotEqual(currentSts.Spec.Selector.MatchLabels, desiredSts.Spec.Selector.MatchLabels) {
 		return r.recreateStatefulSet(ctx, currentSts, desiredSts)
 	}
 
@@ -237,13 +239,13 @@ func (r *Reconciler) getAuthTokenValue() (string, error) {
 
 func (r *Reconciler) getDataFromCustomProperty(customProperties *dynatracev1beta1.DynaKubeValueSource) (string, error) {
 	if customProperties.ValueFrom != "" {
-		return kubeobjects.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.dynakube.Namespace, Name: customProperties.ValueFrom}, customproperties.DataKey, log)
+		return secret.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.dynakube.Namespace, Name: customProperties.ValueFrom}, customproperties.DataKey, log)
 	}
 	return customProperties.Value, nil
 }
 
 func (r *Reconciler) getDataFromAuthTokenSecret() (string, error) {
-	return kubeobjects.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.dynakube.Namespace, Name: r.dynakube.ActiveGateAuthTokenSecret()}, authtoken.ActiveGateAuthTokenName, log)
+	return secret.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.dynakube.Namespace, Name: r.dynakube.ActiveGateAuthTokenSecret()}, authtoken.ActiveGateAuthTokenName, log)
 }
 
 func needsCustomPropertyHash(customProperties *dynatracev1beta1.DynaKubeValueSource) bool {

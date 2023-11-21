@@ -25,7 +25,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/initgeneration"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/object"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
@@ -43,13 +45,14 @@ import (
 )
 
 const (
-	fastUpdateInterval    = 1 * time.Minute
-	changesUpdateInterval = 5 * time.Minute
-	defaultUpdateInterval = 30 * time.Minute
+	immediateUpdateInterval = 5 * time.Second
+	fastUpdateInterval      = 1 * time.Minute
+	changesUpdateInterval   = 5 * time.Minute
+	defaultUpdateInterval   = 30 * time.Minute
 )
 
 func Add(mgr manager.Manager, _ string) error {
-	kubeSysUID, err := kubesystem.GetUID(mgr.GetAPIReader())
+	kubeSysUID, err := kubesystem.GetUID(context.Background(), mgr.GetAPIReader())
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -71,7 +74,7 @@ func NewDynaKubeController(kubeClient client.Client, apiReader client.Reader, sc
 		istioClientBuilder:     istio.NewClient,
 		registryClientBuilder:  registry.NewClient,
 		config:                 config,
-		operatorNamespace:      os.Getenv(kubeobjects.EnvPodNamespace),
+		operatorNamespace:      os.Getenv(env.PodNamespace),
 		clusterID:              clusterID,
 	}
 }
@@ -118,10 +121,13 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 	if err != nil {
 		return reconcile.Result{}, err
 	} else if dynaKube == nil {
+		log.Info("reconciling DynaKube finished, no dynakube available", "namespace", request.Namespace, "name", request.Name, "result", "empty")
 		return reconcile.Result{}, nil
 	}
 
-	return controller.reconcile(ctx, dynaKube)
+	result, err := controller.reconcile(ctx, dynaKube)
+	log.Info("reconciling DynaKube finished", "namespace", request.Namespace, "name", request.Name, "result", result)
+	return result, err
 }
 
 func (controller *Controller) setRequeueAfterIfNewIsShorter(requeueAfter time.Duration) {
@@ -153,7 +159,7 @@ func (controller *Controller) reconcile(ctx context.Context, dynaKube *dynatrace
 		dynaKube.Status.SetPhase(controller.determineDynaKubePhase(dynaKube))
 	}
 
-	if isStatusDifferent, err := kubeobjects.IsDifferent(oldStatus, dynaKube.Status); err != nil {
+	if isStatusDifferent, err := hasher.IsDifferent(oldStatus, dynaKube.Status); err != nil {
 		log.Error(err, "failed to generate hash for the status section")
 	} else if isStatusDifferent {
 		log.Info("status changed, updating DynaKube")
@@ -194,7 +200,7 @@ func (controller *Controller) setupIstio(ctx context.Context, dynakube *dynatrac
 	if !dynakube.Spec.EnableIstio {
 		return nil, nil
 	}
-	istioClient, err := controller.istioClientBuilder(controller.config, controller.scheme, dynakube.Namespace)
+	istioClient, err := controller.istioClientBuilder(controller.config, controller.scheme, dynakube)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to initialize istio client")
 	}
@@ -244,7 +250,6 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 
 	tokenReader := token.NewReader(controller.apiReader, dynakube)
 	tokens, err := tokenReader.ReadTokens(ctx)
-
 	if err != nil {
 		controller.setConditionTokenError(dynakube, err)
 		return err
@@ -261,12 +266,13 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 	}
 
 	controller.setConditionTokenReady(dynakube)
-	err = status.SetDynakubeStatus(dynakube, controller.apiReader)
+	err = status.SetDynakubeStatus(ctx, dynakube, controller.apiReader)
 	if err != nil {
 		log.Info("could not update Dynakube status")
 		return err
 	}
 
+	log.Info("start reconciling connection info")
 	err = controller.reconcileConnectionInfo(ctx, dynakube, dynatraceClient)
 	if err != nil {
 		return err
@@ -275,12 +281,14 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 	// TODO: Improve logic so we do this only in case of codemodules
 	// Kept it like this for now to keep compatibility
 	if istioReconciler != nil {
+		log.Info("start reconciling Istio")
 		err := istioReconciler.ReconcileCommunicationHosts(ctx, dynakube)
 		if err != nil {
 			return err
 		}
 	}
 
+	log.Info("start reconciling pull secret")
 	err = dtpullsecret.
 		NewReconciler(controller.client, controller.apiReader, controller.scheme, dynakube, tokens).
 		Reconcile(ctx)
@@ -289,6 +297,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		return err
 	}
 
+	log.Info("start reconciling deployment meta data")
 	err = deploymentmetadata.NewReconciler(controller.client, controller.apiReader, controller.scheme, *dynakube, controller.clusterID).Reconcile(ctx)
 	if err != nil {
 		return err
@@ -300,6 +309,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		return err
 	}
 
+	log.Info("start reconciling version")
 	versionReconciler := version.NewReconciler(
 		dynakube,
 		controller.apiReader,
@@ -330,23 +340,29 @@ func (controller *Controller) reconcileConnectionInfo(ctx context.Context, dynak
 }
 
 func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient dtclient.Client, dynakube *dynatracev1beta1.DynaKube) error {
-	err := controller.reconcileActiveGate(ctx, dynakube, dynatraceClient)
+	// it's important to setup app injection before AG so that it is already working when AG pods start, in case code modules shall get
+	// injected into AG for self-monitoring reasons
+	log.Info("start reconciling app injection")
+	err := controller.reconcileAppInjection(ctx, dynakube)
+	if err != nil {
+		log.Info("could not reconcile app injection")
+		return err
+	}
+
+	log.Info("start reconciling ActiveGate")
+	err = controller.reconcileActiveGate(ctx, dynakube, dynatraceClient)
 	if err != nil {
 		log.Info("could not reconcile ActiveGate")
 		return err
 	}
 
+	log.Info("start reconciling OneAgent")
 	err = controller.reconcileOneAgent(ctx, dynakube)
 	if err != nil {
 		log.Info("could not reconcile OneAgent")
 		return err
 	}
 
-	err = controller.reconcileAppInjection(ctx, dynakube)
-	if err != nil {
-		log.Info("could not reconcile app injection")
-		return err
-	}
 	return nil
 }
 
@@ -415,7 +431,7 @@ func (controller *Controller) reconcileOneAgent(ctx context.Context, dynakube *d
 
 func (controller *Controller) removeOneAgentDaemonSet(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
 	oneAgentDaemonSet := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dynakube.OneAgentDaemonsetName(), Namespace: dynakube.Namespace}}
-	return kubeobjects.Delete(ctx, controller.client, &oneAgentDaemonSet)
+	return object.Delete(ctx, controller.client, &oneAgentDaemonSet)
 }
 
 func (controller *Controller) reconcileActiveGate(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) error {
@@ -440,7 +456,7 @@ func (controller *Controller) setupAutomaticApiMonitoring(dynakube *dynatracev1b
 		}
 
 		err := apimonitoring.NewReconciler(dtc, clusterLabel, dynakube.Status.KubeSystemUUID).
-			Reconcile()
+			Reconcile(dynakube)
 		if err != nil {
 			log.Error(err, "could not create setting")
 		}

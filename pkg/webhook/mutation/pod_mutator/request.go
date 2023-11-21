@@ -4,6 +4,7 @@ import (
 	"context"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	dtotel "github.com/Dynatrace/dynatrace-operator/pkg/util/otel"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -13,6 +14,9 @@ import (
 )
 
 func (webhook *podMutatorWebhook) createMutationRequestBase(ctx context.Context, request admission.Request) (*dtwebhook.MutationRequest, error) {
+	ctx, span := dtotel.StartSpan(ctx, webhook.spanTracer, "createMutationRequestBase")
+	defer span.End()
+
 	pod, err := getPodFromRequest(request, webhook.decoder)
 	if err != nil {
 		return nil, err
@@ -22,15 +26,18 @@ func (webhook *podMutatorWebhook) createMutationRequestBase(ctx context.Context,
 		return nil, err
 	}
 	dynakubeName, err := getDynakubeName(*namespace)
-	if err != nil && !webhook.deployedViaOLM {
-		return nil, err
-	} else if err != nil {
-		// in case of olm deployment, all pods are sent to us
-		// but not all of them need to be mutated,
-		// therefore their namespace might not have a dynakube assigned
-		// in which case we don't need to do anything
-		return nil, nil // nolint:nilerr
+	if err != nil {
+		if webhook.deployedViaOLM {
+			// in case of olm deployment, all pods are sent to us
+			// but not all of them need to be mutated,
+			// therefore their namespace might not have a dynakube assigned
+			// in which case we don't need to do anything
+			return nil, nil // nolint:nilerr
+		} else {
+			return nil, err
+		}
 	}
+
 	dynakube, err := webhook.getDynakube(ctx, dynakubeName)
 	if err != nil {
 		return nil, err

@@ -7,7 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	edgeconnectv1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/edgeconnect/consts"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/resources"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,7 +33,7 @@ func TestNew(t *testing.T) {
 			},
 		}
 
-		deployment := New(instance)
+		deployment := NewRegular(instance)
 
 		assert.NotNil(t, deployment)
 	})
@@ -59,11 +59,11 @@ func Test_prepareContainerEnvVars(t *testing.T) {
 			},
 		}
 
-		envVars := prepareContainerEnvVars(instance)
+		envVars := prepareContainerEnvVars(instance, instance.Spec.OAuth.Resource)
 
 		assert.Equal(t, envVars, []corev1.EnvVar{
-			{Name: consts.EnvEdgeConnectName, Value: testName},
 			{Name: consts.EnvEdgeConnectApiEndpointHost, Value: "abc12345.dynatrace.com"},
+			{Name: consts.EnvEdgeConnectName, Value: testName},
 			{Name: consts.EnvEdgeConnectOauthEndpoint, Value: "https://sso-dev.dynatracelabs.com/sso/oauth2/token"},
 			{Name: consts.EnvEdgeConnectOauthResource, Value: "urn:dtenvironment:test12345"},
 		})
@@ -88,14 +88,14 @@ func Test_prepareContainerEnvVars(t *testing.T) {
 			},
 		}
 
-		envVars := prepareContainerEnvVars(instance)
+		envVars := prepareContainerEnvVars(instance, instance.Spec.OAuth.Resource)
 
 		assert.Equal(t, envVars, []corev1.EnvVar{
-			{Name: consts.EnvEdgeConnectName, Value: testName},
+			{Name: "DEBUG", Value: "true"},
 			{Name: consts.EnvEdgeConnectApiEndpointHost, Value: "abc12345.dynatrace.com"},
+			{Name: consts.EnvEdgeConnectName, Value: testName},
 			{Name: consts.EnvEdgeConnectOauthEndpoint, Value: "https://sso-dev.dynatracelabs.com/sso/oauth2/token"},
 			{Name: consts.EnvEdgeConnectOauthResource, Value: "urn:dtenvironment:test12345"},
-			{Name: "DEBUG", Value: "true"},
 		})
 	})
 	t.Run("Create all env vars for simple edgeconnect deployment", func(t *testing.T) {
@@ -118,11 +118,11 @@ func Test_prepareContainerEnvVars(t *testing.T) {
 			},
 		}
 
-		envVars := prepareContainerEnvVars(instance)
+		envVars := prepareContainerEnvVars(instance, instance.Spec.OAuth.Resource)
 
 		assert.Equal(t, envVars, []corev1.EnvVar{
-			{Name: consts.EnvEdgeConnectName, Value: testName},
 			{Name: consts.EnvEdgeConnectApiEndpointHost, Value: "abc12345.dynatrace.com"},
+			{Name: consts.EnvEdgeConnectName, Value: testName},
 			{Name: consts.EnvEdgeConnectOauthEndpoint, Value: "https://sso-dev.dynatracelabs.com/sso/oauth2/token"},
 			{Name: consts.EnvEdgeConnectOauthResource, Value: "urn:dtenvironment:test12345"},
 			{Name: consts.EnvEdgeConnectRestrictHostsTo, Value: "*.test.com"},
@@ -182,23 +182,23 @@ func Test_prepareResourceRequirements(t *testing.T) {
 
 	t.Run("Check limits requirements are set correctly", func(t *testing.T) {
 		customResources := corev1.ResourceRequirements{
-			Limits: kubeobjects.NewResources("500m", "256Mi"),
+			Limits: resources.NewResourceList("500m", "256Mi"),
 		}
 		testEdgeConnect.Spec.Resources = customResources
 		resourceRequirements := prepareResourceRequirements(testEdgeConnect)
 		assert.Equal(t, customResources.Limits, resourceRequirements.Limits)
 		// check that we use default requests when not provided
-		assert.Equal(t, kubeobjects.NewResources("100m", "128Mi"), resourceRequirements.Requests)
+		assert.Equal(t, resources.NewResourceList("100m", "128Mi"), resourceRequirements.Requests)
 	})
 
 	t.Run("Check requests in requirements are set correctly", func(t *testing.T) {
 		customResources := corev1.ResourceRequirements{
-			Requests: kubeobjects.NewResources("500m", "256Mi"),
+			Requests: resources.NewResourceList("500m", "256Mi"),
 		}
 		testEdgeConnect.Spec.Resources = customResources
 		resourceRequirements := prepareResourceRequirements(testEdgeConnect)
 		assert.Equal(t, customResources.Requests, resourceRequirements.Requests)
 		// check that we use default requests when not provided
-		assert.Equal(t, kubeobjects.NewResources("100m", "128Mi"), resourceRequirements.Limits)
+		assert.Equal(t, resources.NewResourceList("100m", "128Mi"), resourceRequirements.Limits)
 	})
 }

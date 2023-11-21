@@ -6,6 +6,7 @@ import (
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	csidriver "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/driver"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/otel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
@@ -115,12 +116,15 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
+		signalHandler := ctrl.SetupSignalHandler()
+		otelShutdownFn := otel.Start(signalHandler, "dynatrace-csi-server", csiManager.GetAPIReader(), builder.namespace)
+		defer otelShutdownFn()
+
 		err = createCsiDataPath(builder.getFilesystem())
 		if err != nil {
 			return err
 		}
 
-		signalHandler := ctrl.SetupSignalHandler()
 		access, err := metadata.NewAccess(signalHandler, dtcsi.MetadataAccessPath)
 		if err != nil {
 			return err

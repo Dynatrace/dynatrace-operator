@@ -4,12 +4,15 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/container"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/oneagentapm"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod_mutator/dataingest_mutation"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod_mutator/oneagent_mutation"
 	"github.com/pkg/errors"
+	"go.opentelemetry.io/otel"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -28,12 +31,12 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 	kubeClient := mgr.GetClient()
 	apiReader := mgr.GetAPIReader()
 
-	webhookPod, err := kubeobjects.GetPod(context.TODO(), apiReader, webhookPodName, webhookNamespace)
+	webhookPod, err := pod.Get(context.Background(), apiReader, webhookPodName, webhookNamespace)
 	if err != nil {
 		return err
 	}
 
-	apmExists, err := kubeobjects.CheckIfOneAgentAPMExists(kubeConfig)
+	apmExists, err := oneagentapm.Exists(kubeConfig)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -53,9 +56,15 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 		return err
 	}
 
-	clusterID, err := getClusterID(apiReader)
+	clusterID, err := getClusterID(context.Background(), apiReader)
 	if err != nil {
 		return err
+	}
+
+	otelMeter := otel.Meter(otelName)
+	requestCounter, err := otelMeter.Int64Counter("handledPodMutationRequests")
+	if err != nil {
+		return errors.WithStack(err)
 	}
 
 	mgr.GetWebhookServer().Register("/inject", &webhook.Admission{Handler: &podMutatorWebhook{
@@ -80,7 +89,11 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 				metaClient,
 			),
 		},
-		decoder: *admission.NewDecoder(mgr.GetScheme()),
+		decoder:    *admission.NewDecoder(mgr.GetScheme()),
+		spanTracer: otel.Tracer(otelName),
+		otelMeter:  otel.Meter(otelName),
+
+		requestCounter: requestCounter,
 	}})
 	log.Info("registered /inject endpoint")
 	return nil
@@ -94,7 +107,7 @@ func registerLivezEndpoint(mgr manager.Manager) {
 }
 
 func getWebhookContainerImage(webhookPod corev1.Pod) (string, error) {
-	webhookContainer, err := kubeobjects.FindContainerInPod(webhookPod, dtwebhook.WebhookContainerName)
+	webhookContainer, err := container.FindContainerInPod(webhookPod, dtwebhook.WebhookContainerName)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
@@ -102,10 +115,10 @@ func getWebhookContainerImage(webhookPod corev1.Pod) (string, error) {
 	return webhookContainer.Image, nil
 }
 
-func getClusterID(apiReader client.Reader) (string, error) {
+func getClusterID(ctx context.Context, apiReader client.Reader) (string, error) {
 	var clusterUID types.UID
 	var err error
-	if clusterUID, err = kubesystem.GetUID(apiReader); err != nil {
+	if clusterUID, err = kubesystem.GetUID(ctx, apiReader); err != nil {
 		return "", errors.WithStack(err)
 	}
 	log.Info("got cluster UID", "clusterUID", clusterUID)

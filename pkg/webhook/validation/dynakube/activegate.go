@@ -1,6 +1,7 @@
 package dynakube
 
 import (
+	"context"
 	"fmt"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
@@ -25,7 +26,7 @@ The synthetic capability can't be configured alongside other capabilities in the
 `
 )
 
-func conflictingActiveGateConfiguration(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func conflictingActiveGateConfiguration(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	if dynakube.DeprecatedActiveGateMode() && dynakube.ActiveGateMode() {
 		log.Info("requested dynakube has conflicting active gate configuration", "name", dynakube.Name, "namespace", dynakube.Namespace)
 		return errorConflictingActiveGateSections
@@ -33,7 +34,7 @@ func conflictingActiveGateConfiguration(dv *dynakubeValidator, dynakube *dynatra
 	return ""
 }
 
-func duplicateActiveGateCapabilities(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func duplicateActiveGateCapabilities(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	if dynakube.ActiveGateMode() {
 		capabilities := dynakube.Spec.ActiveGate.Capabilities
 		duplicateChecker := map[dynatracev1beta1.CapabilityDisplayName]bool{}
@@ -48,7 +49,7 @@ func duplicateActiveGateCapabilities(dv *dynakubeValidator, dynakube *dynatracev
 	return ""
 }
 
-func invalidActiveGateCapabilities(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func invalidActiveGateCapabilities(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	if dynakube.ActiveGateMode() {
 		capabilities := dynakube.Spec.ActiveGate.Capabilities
 		for _, capability := range capabilities {
@@ -61,7 +62,7 @@ func invalidActiveGateCapabilities(dv *dynakubeValidator, dynakube *dynatracev1b
 	return ""
 }
 
-func missingActiveGateMemoryLimit(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func missingActiveGateMemoryLimit(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	if dynakube.ActiveGateMode() &&
 		!dynakube.IsSyntheticMonitoringEnabled() &&
 		!memoryLimitSet(dynakube.Spec.ActiveGate.Resources) {
@@ -74,7 +75,7 @@ func memoryLimitSet(resources corev1.ResourceRequirements) bool {
 	return resources.Limits != nil && resources.Limits.Memory() != nil
 }
 
-func exclusiveSyntheticCapability(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func exclusiveSyntheticCapability(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	if dynakube.IsSyntheticMonitoringEnabled() && len(dynakube.Spec.ActiveGate.Capabilities) > 0 {
 		log.Info(
 			"requested dynakube has the synthetic active gate capability accompanied with others",

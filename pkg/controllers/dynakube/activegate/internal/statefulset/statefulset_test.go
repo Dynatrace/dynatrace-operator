@@ -1,7 +1,6 @@
 package statefulset
 
 import (
-	"fmt"
 	"reflect"
 	"strconv"
 	"testing"
@@ -13,9 +12,13 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder/modifiers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/resources"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/slices"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -144,7 +147,7 @@ func TestAddLabels(t *testing.T) {
 		multiCapability := capability.NewMultiCapability(&dynakube)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dynakube, multiCapability)
 		sts := appsv1.StatefulSet{}
-		appLabels := kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, builder.dynakube.Name, builder.capability.ShortName(), "")
+		appLabels := labels.NewAppLabels(labels.ActiveGateComponentLabel, builder.dynakube.Name, builder.capability.ShortName(), "")
 		expectedLabels := appLabels.BuildLabels()
 		expectedSelectorLabels := metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()}
 
@@ -164,7 +167,7 @@ func TestAddLabels(t *testing.T) {
 		multiCapability := capability.NewMultiCapability(&dynakube)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dynakube, multiCapability)
 		sts := appsv1.StatefulSet{}
-		appLabels := kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, builder.dynakube.Name, builder.capability.ShortName(), "")
+		appLabels := labels.NewAppLabels(labels.ActiveGateComponentLabel, builder.dynakube.Name, builder.capability.ShortName(), "")
 		expectedTemplateLabels := appLabels.BuildLabels()
 		expectedTemplateLabels["test"] = "test"
 
@@ -327,27 +330,27 @@ func TestBuildCommonEnvs(t *testing.T) {
 		envs := builder.buildCommonEnvs()
 
 		require.NotEmpty(t, envs)
-		capEnv := kubeobjects.FindEnvVar(envs, consts.EnvDtCapabilities)
+		capEnv := env.FindEnvVar(envs, consts.EnvDtCapabilities)
 		require.NotNil(t, capEnv)
 		assert.Equal(t, multiCapability.ArgName(), capEnv.Value)
-		namespaceEnv := kubeobjects.FindEnvVar(envs, consts.EnvDtIdSeedNamespace)
+		namespaceEnv := env.FindEnvVar(envs, consts.EnvDtIdSeedNamespace)
 		require.NotNil(t, namespaceEnv)
 		assert.Equal(t, dynakube.Namespace, namespaceEnv.Value)
-		idEnv := kubeobjects.FindEnvVar(envs, consts.EnvDtIdSeedClusterId)
+		idEnv := env.FindEnvVar(envs, consts.EnvDtIdSeedClusterId)
 		require.NotNil(t, idEnv)
 		assert.Equal(t, testKubeUID, idEnv.Value)
-		metadataEnv := kubeobjects.FindEnvVar(envs, deploymentmetadata.EnvDtDeploymentMetadata)
+		metadataEnv := env.FindEnvVar(envs, deploymentmetadata.EnvDtDeploymentMetadata)
 		require.NotNil(t, metadataEnv)
 		assert.NotEmpty(t, metadataEnv.ValueFrom.ConfigMapKeyRef)
 		assert.Equal(t, deploymentmetadata.ActiveGateMetadataKey, metadataEnv.ValueFrom.ConfigMapKeyRef.Key)
 		assert.Equal(t, deploymentmetadata.GetDeploymentMetadataConfigMapName(dynakube.Name), metadataEnv.ValueFrom.ConfigMapKeyRef.Name)
 
 		// metrics-ingest disabled -> HTTP port disabled
-		dtHttpPortEnv := kubeobjects.FindEnvVar(envs, consts.EnvDtHttpPort)
+		dtHttpPortEnv := env.FindEnvVar(envs, consts.EnvDtHttpPort)
 		require.Nil(t, dtHttpPortEnv)
 	})
 
-	t.Run("adds extra envs", func(t *testing.T) {
+	t.Run("adds extra envs with overrides", func(t *testing.T) {
 		testEnvs := []corev1.EnvVar{
 			{
 				Name:  "test-env-key-1",
@@ -356,6 +359,10 @@ func TestBuildCommonEnvs(t *testing.T) {
 			{
 				Name:  "test-env-key-2",
 				Value: "test-env-value-2",
+			},
+			{
+				Name:  "DT_ID_SEED_NAMESPACE",
+				Value: "ns-override",
 			},
 		}
 		dynakube := getTestDynakube()
@@ -367,8 +374,13 @@ func TestBuildCommonEnvs(t *testing.T) {
 
 		require.NotEmpty(t, envs)
 		for _, env := range testEnvs {
-			assert.Contains(t, envs, env)
+			require.Contains(t, envs, env)
 		}
+
+		idx := slices.IndexFunc(envs, func(env corev1.EnvVar) bool {
+			return env.Name == "DT_ID_SEED_NAMESPACE"
+		})
+		assert.Equal(t, "ns-override", envs[idx].Value)
 	})
 
 	t.Run("adds group env", func(t *testing.T) {
@@ -381,7 +393,7 @@ func TestBuildCommonEnvs(t *testing.T) {
 		envs := builder.buildCommonEnvs()
 
 		require.NotEmpty(t, envs)
-		groupEnv := kubeobjects.FindEnvVar(envs, consts.EnvDtGroup)
+		groupEnv := env.FindEnvVar(envs, consts.EnvDtGroup)
 		require.NotNil(t, groupEnv)
 		assert.Equal(t, multiCapability.Properties().Group, groupEnv.Value)
 	})
@@ -389,8 +401,8 @@ func TestBuildCommonEnvs(t *testing.T) {
 	t.Run("metrics-ingest env", func(t *testing.T) {
 		dynakube := getTestDynakube()
 
-		kubeobjects.SwitchCapability(&dynakube, dynatracev1beta1.RoutingCapability, false)
-		kubeobjects.SwitchCapability(&dynakube, dynatracev1beta1.MetricsIngestCapability, true)
+		activegate.SwitchCapability(&dynakube, dynatracev1beta1.RoutingCapability, false)
+		activegate.SwitchCapability(&dynakube, dynatracev1beta1.MetricsIngestCapability, true)
 
 		multiCapability := capability.NewMultiCapability(&dynakube)
 		builder := NewStatefulSetBuilder(testKubeUID, testConfigHash, dynakube, multiCapability)
@@ -398,7 +410,7 @@ func TestBuildCommonEnvs(t *testing.T) {
 		envs := builder.buildCommonEnvs()
 
 		require.NotEmpty(t, envs)
-		dtHttpPortEnv := kubeobjects.FindEnvVar(envs, consts.EnvDtHttpPort)
+		dtHttpPortEnv := env.FindEnvVar(envs, consts.EnvDtHttpPort)
 		require.NotNil(t, dtHttpPortEnv)
 		assert.Equal(t, strconv.Itoa(consts.HttpContainerPort), dtHttpPortEnv.Value)
 	})
@@ -413,7 +425,7 @@ func TestBuildCommonEnvs(t *testing.T) {
 		envs := builder.buildCommonEnvs()
 
 		require.NotEmpty(t, envs)
-		zoneEnv := kubeobjects.FindEnvVar(envs, consts.EnvDtNetworkZone)
+		zoneEnv := env.FindEnvVar(envs, consts.EnvDtNetworkZone)
 		require.NotNil(t, zoneEnv)
 		assert.Equal(t, dynakube.Spec.NetworkZone, zoneEnv.Value)
 	})
@@ -421,7 +433,7 @@ func TestBuildCommonEnvs(t *testing.T) {
 	t.Run("synthetic capability", func(t *testing.T) {
 		dynaKube := getTestDynakube()
 		dynaKube.ObjectMeta.Annotations[dynatracev1beta1.AnnotationFeatureSyntheticLocationEntityId] = "doctored"
-		dynaKube.ObjectMeta.Annotations[dynatracev1beta1.AnnotationFeatureSyntheticReplicas] = fmt.Sprint(testReplicas)
+		dynaKube.ObjectMeta.Annotations[dynatracev1beta1.AnnotationFeatureSyntheticReplicas] = strconv.Itoa(int(testReplicas))
 		synCapability := capability.NewSyntheticCapability(&dynaKube)
 
 		builder := NewStatefulSetBuilder(
@@ -440,7 +452,7 @@ func TestBuildCommonEnvs(t *testing.T) {
 			capability.SyntheticActiveGateEnvCapabilities)
 
 		statefulSet, _ := builder.CreateStatefulSet(
-			modifiers.GenerateAllModifiers(dynaKube, synCapability))
+			modifiers.GenerateAllModifiers(dynaKube, synCapability, builder.envMap))
 
 		assert.Equal(t,
 			*statefulSet.Spec.Replicas,
@@ -459,7 +471,7 @@ func TestBuildCommonEnvs(t *testing.T) {
 				VolumeSource: corev1.VolumeSource{
 					EmptyDir: &corev1.EmptyDirVolumeSource{
 						Medium:    "Memory",
-						SizeLimit: kubeobjects.NewQuantity("512Mi"),
+						SizeLimit: resources.NewQuantity("512Mi"),
 					},
 				},
 			},
@@ -467,7 +479,7 @@ func TestBuildCommonEnvs(t *testing.T) {
 				Name: modifiers.TmpStorageMountName,
 				VolumeSource: corev1.VolumeSource{
 					EmptyDir: &corev1.EmptyDirVolumeSource{
-						SizeLimit: kubeobjects.NewQuantity("10Mi"),
+						SizeLimit: resources.NewQuantity("10Mi"),
 					},
 				},
 			},
@@ -475,7 +487,7 @@ func TestBuildCommonEnvs(t *testing.T) {
 				Name: modifiers.ArchiveStorageMountName,
 				VolumeSource: corev1.VolumeSource{
 					EmptyDir: &corev1.EmptyDirVolumeSource{
-						SizeLimit: kubeobjects.NewQuantity("6Gi"),
+						SizeLimit: resources.NewQuantity("6Gi"),
 					},
 				},
 			},

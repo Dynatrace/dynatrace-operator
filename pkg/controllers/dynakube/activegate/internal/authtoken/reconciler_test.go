@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -31,7 +32,7 @@ var (
 	}
 )
 
-func newTestReconcilerWithInstance(client client.Client) *Reconciler {
+func newTestReconcilerWithInstance(t *testing.T, client client.Client) *Reconciler {
 	instance := &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
@@ -41,8 +42,8 @@ func newTestReconcilerWithInstance(client client.Client) *Reconciler {
 			APIURL: "https://testing.dev.dynatracelabs.com/api",
 		},
 	}
-	dtc := &dtclient.MockDynatraceClient{}
-	dtc.On("GetActiveGateAuthToken", mock.Anything).Return(testAgAuthTokenResponse, nil)
+	dtc := mocks.NewClient(t)
+	dtc.On("GetActiveGateAuthToken", mock.Anything).Return(testAgAuthTokenResponse, nil).Maybe()
 
 	r := NewReconciler(client, client, scheme.Scheme, instance, dtc)
 	return r
@@ -50,7 +51,7 @@ func newTestReconcilerWithInstance(client client.Client) *Reconciler {
 
 func TestReconcile(t *testing.T) {
 	t.Run(`reconcile auth token for first time`, func(t *testing.T) {
-		r := newTestReconcilerWithInstance(fake.NewClientBuilder().Build())
+		r := newTestReconcilerWithInstance(t, fake.NewClientBuilder().Build())
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
@@ -72,7 +73,7 @@ func TestReconcile(t *testing.T) {
 			}).
 			Build()
 
-		r := newTestReconcilerWithInstance(clt)
+		r := newTestReconcilerWithInstance(t, clt)
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)
 
@@ -93,7 +94,7 @@ func TestReconcile(t *testing.T) {
 				Data: map[string][]byte{ActiveGateAuthTokenName: []byte(testToken)},
 			}).
 			Build()
-		r := newTestReconcilerWithInstance(clt)
+		r := newTestReconcilerWithInstance(t, clt)
 
 		err := r.Reconcile(context.Background())
 		require.NoError(t, err)

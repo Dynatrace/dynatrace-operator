@@ -6,7 +6,8 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	k8senv "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -21,7 +22,7 @@ func TestEnvironmentVariables(t *testing.T) {
 		envVars := dsInfo.environmentVariables()
 
 		assert.Contains(t, envVars, corev1.EnvVar{Name: dtClusterId, ValueFrom: nil})
-		assert.True(t, kubeobjects.EnvVarIsIn(envVars, dtNodeName))
+		assert.True(t, k8senv.IsIn(envVars, dtNodeName))
 	})
 	t.Run("returns all when everything is turned on", func(t *testing.T) {
 		clusterID := "test"
@@ -78,21 +79,22 @@ func TestEnvironmentVariables(t *testing.T) {
 }
 
 func assertEnvVarNameAndValue(t *testing.T, envVars []corev1.EnvVar, name, value string) {
-	env := kubeobjects.FindEnvVar(envVars, name)
+	env := k8senv.FindEnvVar(envVars, name)
 	assert.Equal(t, name, env.Name)
 	assert.Equal(t, value, env.Value)
 }
 
 func TestAddNodeNameEnv(t *testing.T) {
 	t.Run("adds nodeName value from via fieldPath", func(t *testing.T) {
-		envVars := addNodeNameEnv(map[string]corev1.EnvVar{})
+		envVars := prioritymap.New()
+		addNodeNameEnv(envVars)
 
-		assertNodeNameEnv(t, mapToArray(envVars))
+		assertNodeNameEnv(t, envVars.AsEnvVars())
 	})
 }
 
 func assertNodeNameEnv(t *testing.T, envs []corev1.EnvVar) {
-	env := kubeobjects.FindEnvVar(envs, dtNodeName)
+	env := k8senv.FindEnvVar(envs, dtNodeName)
 	assert.Equal(t, dtNodeName, env.Name)
 	assert.Equal(t, "spec.nodeName", env.ValueFrom.FieldRef.FieldPath)
 }
@@ -104,14 +106,15 @@ func TestAddClusterIDEnv(t *testing.T) {
 			dynakube:  &dynatracev1beta1.DynaKube{},
 			clusterID: clusterID,
 		}
-		envVars := dsInfo.addClusterIDEnv(map[string]corev1.EnvVar{})
+		envVars := prioritymap.New()
+		dsInfo.addClusterIDEnv(envVars)
 
-		assertClusterIDEnv(t, mapToArray(envVars), clusterID)
+		assertClusterIDEnv(t, envVars.AsEnvVars(), clusterID)
 	})
 }
 
 func assertClusterIDEnv(t *testing.T, envs []corev1.EnvVar, clusterID string) {
-	env := kubeobjects.FindEnvVar(envs, dtClusterId)
+	env := k8senv.FindEnvVar(envs, dtClusterId)
 	assert.Equal(t, dtClusterId, env.Name)
 	assert.Equal(t, clusterID, env.Value)
 }
@@ -126,14 +129,15 @@ func TestAddDeploymentMetadataEnv(t *testing.T) {
 				},
 			},
 		}
-		envVars := dsInfo.addDeploymentMetadataEnv(map[string]corev1.EnvVar{})
+		envVars := prioritymap.New()
+		dsInfo.addDeploymentMetadataEnv(envVars)
 
-		assertDeploymentMetadataEnv(t, mapToArray(envVars), dynakubeName)
+		assertDeploymentMetadataEnv(t, envVars.AsEnvVars(), dynakubeName)
 	})
 }
 
 func assertDeploymentMetadataEnv(t *testing.T, envs []corev1.EnvVar, dynakubeName string) {
-	env := kubeobjects.FindEnvVar(envs, deploymentmetadata.EnvDtDeploymentMetadata)
+	env := k8senv.FindEnvVar(envs, deploymentmetadata.EnvDtDeploymentMetadata)
 	assert.Equal(t, env.Name, deploymentmetadata.EnvDtDeploymentMetadata)
 	assert.Equal(t,
 		deploymentmetadata.GetDeploymentMetadataConfigMapName(dynakubeName),
@@ -155,14 +159,15 @@ func TestAddConnectionInfoEnvs(t *testing.T) {
 		dsInfo := builderInfo{
 			dynakube: dynakube,
 		}
-		envVars := dsInfo.addConnectionInfoEnvs(map[string]corev1.EnvVar{})
+		envVars := prioritymap.New()
+		dsInfo.addConnectionInfoEnvs(envVars)
 
-		assertConnectionInfoEnv(t, mapToArray(envVars), dynakube)
+		assertConnectionInfoEnv(t, envVars.AsEnvVars(), dynakube)
 	})
 }
 
 func assertConnectionInfoEnv(t *testing.T, envs []corev1.EnvVar, dynakube *dynatracev1beta1.DynaKube) {
-	env := kubeobjects.FindEnvVar(envs, connectioninfo.EnvDtTenant)
+	env := k8senv.FindEnvVar(envs, connectioninfo.EnvDtTenant)
 	assert.Equal(t, env.Name, connectioninfo.EnvDtTenant)
 	assert.Equal(t,
 		dynakube.OneAgentConnectionInfoConfigMapName(),
@@ -173,7 +178,7 @@ func assertConnectionInfoEnv(t *testing.T, envs []corev1.EnvVar, dynakube *dynat
 		env.ValueFrom.ConfigMapKeyRef.Key,
 	)
 
-	env = kubeobjects.FindEnvVar(envs, connectioninfo.EnvDtServer)
+	env = k8senv.FindEnvVar(envs, connectioninfo.EnvDtServer)
 	assert.Equal(t, env.Name, connectioninfo.EnvDtServer)
 	assert.Equal(t,
 		dynakube.OneAgentConnectionInfoConfigMapName(),
@@ -200,9 +205,10 @@ func TestAddProxyEnvs(t *testing.T) {
 		dsInfo := builderInfo{
 			dynakube: dynakube,
 		}
-		envVars := dsInfo.addProxyEnv(map[string]corev1.EnvVar{})
+		envVars := prioritymap.New()
+		dsInfo.addProxyEnv(envVars)
 
-		assertProxyEnv(t, mapToArray(envVars), dynakube)
+		assertProxyEnv(t, envVars.AsEnvVars(), dynakube)
 	})
 
 	t.Run("adds proxy value via secret ref from dynakube", func(t *testing.T) {
@@ -219,14 +225,15 @@ func TestAddProxyEnvs(t *testing.T) {
 		dsInfo := builderInfo{
 			dynakube: dynakube,
 		}
-		envVars := dsInfo.addProxyEnv(map[string]corev1.EnvVar{})
+		envVars := prioritymap.New()
+		dsInfo.addProxyEnv(envVars)
 
-		assertProxyEnv(t, mapToArray(envVars), dynakube)
+		assertProxyEnv(t, envVars.AsEnvVars(), dynakube)
 	})
 }
 
 func assertProxyEnv(t *testing.T, envs []corev1.EnvVar, dynakube *dynatracev1beta1.DynaKube) {
-	env := kubeobjects.FindEnvVar(envs, proxy)
+	env := k8senv.FindEnvVar(envs, proxy)
 	assert.Equal(t, env.Name, proxy)
 	assert.Equal(t, dynakube.Spec.Proxy.Value, env.Value)
 	if dynakube.Spec.Proxy.ValueFrom != "" {
@@ -250,9 +257,10 @@ func TestAddReadOnlyEnv(t *testing.T) {
 		dsInfo := builderInfo{
 			dynakube: dynakube,
 		}
-		envVars := dsInfo.addReadOnlyEnv(map[string]corev1.EnvVar{})
+		envVars := prioritymap.New()
+		dsInfo.addReadOnlyEnv(envVars)
 
-		assertReadOnlyEnv(t, mapToArray(envVars))
+		assertReadOnlyEnv(t, envVars.AsEnvVars())
 	})
 
 	t.Run("not adds readonly value for supported oneagent mode", func(t *testing.T) {
@@ -264,14 +272,15 @@ func TestAddReadOnlyEnv(t *testing.T) {
 		dsInfo := builderInfo{
 			dynakube: dynakube,
 		}
-		envVars := dsInfo.addReadOnlyEnv(map[string]corev1.EnvVar{})
+		envVars := prioritymap.New()
+		dsInfo.addReadOnlyEnv(envVars)
 
-		require.Empty(t, envVars)
+		require.Empty(t, envVars.AsEnvVars())
 	})
 }
 
 func assertReadOnlyEnv(t *testing.T, envs []corev1.EnvVar) {
-	env := kubeobjects.FindEnvVar(envs, oneagentReadOnlyMode)
+	env := k8senv.FindEnvVar(envs, oneagentReadOnlyMode)
 	assert.Equal(t, env.Name, oneagentReadOnlyMode)
 	assert.Equal(t, "true", env.Value)
 }

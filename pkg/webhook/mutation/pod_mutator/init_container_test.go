@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -141,8 +141,8 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 
 		initContainer := createInstallInitContainerBase(webhookImage, clusterID, pod, *dynakube)
 
-		assert.True(t, kubeobjects.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "fail")
-		assert.False(t, kubeobjects.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "silent")
+		assert.True(t, env.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "fail")
+		assert.False(t, env.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "silent")
 	})
 	t.Run("should set default failure policy to silent", func(t *testing.T) {
 		dynakube := getTestDynakube()
@@ -153,8 +153,8 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 
 		initContainer := createInstallInitContainerBase(webhookImage, clusterID, pod, *dynakube)
 
-		assert.False(t, kubeobjects.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "fail")
-		assert.True(t, kubeobjects.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "silent")
+		assert.False(t, env.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "fail")
+		assert.True(t, env.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "silent")
 	})
 	t.Run("should take silent as failure policy if set explicitly", func(t *testing.T) {
 		dynakube := getTestDynakube()
@@ -165,8 +165,8 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 
 		initContainer := createInstallInitContainerBase(webhookImage, clusterID, pod, *dynakube)
 
-		assert.False(t, kubeobjects.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "fail")
-		assert.True(t, kubeobjects.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "silent")
+		assert.False(t, env.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "fail")
+		assert.True(t, env.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "silent")
 	})
 	t.Run("should take pod annotation when set", func(t *testing.T) {
 		dynakube := getTestDynakube()
@@ -179,8 +179,8 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 
 		initContainer := createInstallInitContainerBase(webhookImage, clusterID, pod, *dynakube)
 
-		assert.True(t, kubeobjects.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "fail")
-		assert.False(t, kubeobjects.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "silent")
+		assert.True(t, env.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "fail")
+		assert.False(t, env.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "silent")
 	})
 	t.Run("should fall back to feature flag if invalid value is set to pod annotation", func(t *testing.T) {
 		dynakube := getTestDynakube()
@@ -193,8 +193,8 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 
 		initContainer := createInstallInitContainerBase(webhookImage, clusterID, pod, *dynakube)
 
-		assert.False(t, kubeobjects.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "fail")
-		assert.True(t, kubeobjects.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "silent")
+		assert.False(t, env.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "fail")
+		assert.True(t, env.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "silent")
 	})
 	t.Run("should set seccomp profile if feature flag is enabled", func(t *testing.T) {
 		dynakube := getTestDynakube()

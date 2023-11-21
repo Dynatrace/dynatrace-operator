@@ -13,9 +13,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
+	clientmock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
+	installermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/injection/codemodule/installer"
+	reconcilermock "github.com/Dynatrace/dynatrace-operator/test/mocks/sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"github.com/spf13/afero"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,15 +35,6 @@ const (
 	testZip      = "UEsDBAoAAAAAAKh0p1JsLSFnGQAAABkAAAAIABwAdGVzdC50eHRVVAkAA3w0lWATB55gdXgLAAEE6AMAAAToAwAAeW91IGZvdW5kIHRoZSBlYXN0ZXIgZWdnClBLAwQKAAAAAADAOa5SAAAAAAAAAAAAAAAABQAcAHRlc3QvVVQJAAMXB55gHQeeYHV4CwABBOgDAAAE6AMAAFBLAwQKAAAAAACodKdSbC0hZxkAAAAZAAAADQAcAHRlc3QvdGVzdC50eHRVVAkAA3w0lWATB55gdXgLAAEE6AMAAAToAwAAeW91IGZvdW5kIHRoZSBlYXN0ZXIgZWdnClBLAwQKAAAAAADCOa5SAAAAAAAAAAAAAAAACgAcAHRlc3QvdGVzdC9VVAkAAxwHnmAgB55gdXgLAAEE6AMAAAToAwAAUEsDBAoAAAAAAKh0p1JsLSFnGQAAABkAAAASABwAdGVzdC90ZXN0L3Rlc3QudHh0VVQJAAN8NJVgHAeeYHV4CwABBOgDAAAE6AMAAHlvdSBmb3VuZCB0aGUgZWFzdGVyIGVnZwpQSwMECgAAAAAA2zquUgAAAAAAAAAAAAAAAAYAHABhZ2VudC9VVAkAAy4JnmAxCZ5gdXgLAAEE6AMAAAToAwAAUEsDBAoAAAAAAOI6rlIAAAAAAAAAAAAAAAALABwAYWdlbnQvY29uZi9VVAkAAzgJnmA+CZ5gdXgLAAEE6AMAAAToAwAAUEsDBAoAAAAAAKh0p1JsLSFnGQAAABkAAAATABwAYWdlbnQvY29uZi90ZXN0LnR4dFVUCQADfDSVYDgJnmB1eAsAAQToAwAABOgDAAB5b3UgZm91bmQgdGhlIGVhc3RlciBlZ2cKUEsBAh4DCgAAAAAAqHSnUmwtIWcZAAAAGQAAAAgAGAAAAAAAAQAAAKSBAAAAAHRlc3QudHh0VVQFAAN8NJVgdXgLAAEE6AMAAAToAwAAUEsBAh4DCgAAAAAAwDmuUgAAAAAAAAAAAAAAAAUAGAAAAAAAAAAQAO1BWwAAAHRlc3QvVVQFAAMXB55gdXgLAAEE6AMAAAToAwAAUEsBAh4DCgAAAAAAqHSnUmwtIWcZAAAAGQAAAA0AGAAAAAAAAQAAAKSBmgAAAHRlc3QvdGVzdC50eHRVVAUAA3w0lWB1eAsAAQToAwAABOgDAABQSwECHgMKAAAAAADCOa5SAAAAAAAAAAAAAAAACgAYAAAAAAAAABAA7UH6AAAAdGVzdC90ZXN0L1VUBQADHAeeYHV4CwABBOgDAAAE6AMAAFBLAQIeAwoAAAAAAKh0p1JsLSFnGQAAABkAAAASABgAAAAAAAEAAACkgT4BAAB0ZXN0L3Rlc3QvdGVzdC50eHRVVAUAA3w0lWB1eAsAAQToAwAABOgDAABQSwECHgMKAAAAAADbOq5SAAAAAAAAAAAAAAAABgAYAAAAAAAAABAA7UGjAQAAYWdlbnQvVVQFAAMuCZ5gdXgLAAEE6AMAAAToAwAAUEsBAh4DCgAAAAAA4jquUgAAAAAAAAAAAAAAAAsAGAAAAAAAAAAQAO1B4wEAAGFnZW50L2NvbmYvVVQFAAM4CZ5gdXgLAAEE6AMAAAToAwAAUEsBAh4DCgAAAAAAqHSnUmwtIWcZAAAAGQAAABMAGAAAAAAAAQAAAKSBKAIAAGFnZW50L2NvbmYvdGVzdC50eHRVVAUAA3w0lWB1eAsAAQToAwAABOgDAABQSwUGAAAAAAgACACKAgAAjgIAAAAA"
 )
 
-type CSIGarbageCollectorMock struct {
-	mock.Mock
-}
-
-func (m *CSIGarbageCollectorMock) Reconcile(context.Context, reconcile.Request) (reconcile.Result, error) {
-	args := m.Called()
-	return args.Get(0).(reconcile.Result), args.Error(1)
-}
-
 type mkDirAllErrorFs struct {
 	afero.Fs
 }
@@ -56,7 +48,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 	dynakubeName := "test-dk"
 
 	t.Run("no dynakube instance", func(t *testing.T) {
-		gc := &CSIGarbageCollectorMock{}
+		gc := reconcilermock.NewReconciler(t)
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(),
 			db:        metadata.FakeMemoryDB(),
@@ -69,7 +61,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 		require.Equal(t, reconcile.Result{}, result)
 	})
 	t.Run("dynakube deleted", func(t *testing.T) {
-		gc := &CSIGarbageCollectorMock{}
+		gc := reconcilermock.NewReconciler(t)
 		db := metadata.FakeMemoryDB()
 		dynakube := metadata.Dynakube{TenantUUID: tenantUUID, LatestVersion: agentVersion, Name: dkName}
 		_ = db.InsertDynakube(ctx, &dynakube)
@@ -89,7 +81,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 		require.Nil(t, ten)
 	})
 	t.Run("application monitoring disabled", func(t *testing.T) {
-		gc := &CSIGarbageCollectorMock{}
+		gc := reconcilermock.NewReconciler(t)
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
@@ -111,7 +103,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 		require.Equal(t, reconcile.Result{RequeueAfter: longRequeueDuration}, result)
 	})
 	t.Run("csi driver not enabled", func(t *testing.T) {
-		gc := &CSIGarbageCollectorMock{}
+		gc := reconcilermock.NewReconciler(t)
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
@@ -137,7 +129,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 		require.Equal(t, reconcile.Result{RequeueAfter: longRequeueDuration}, result)
 	})
 	t.Run("csi driver disabled", func(t *testing.T) {
-		gc := &CSIGarbageCollectorMock{}
+		gc := reconcilermock.NewReconciler(t)
 		db := metadata.FakeMemoryDB()
 		_ = db.InsertDynakube(ctx, &metadata.Dynakube{Name: dynakubeName})
 		provisioner := &OneAgentProvisioner{
@@ -190,13 +182,12 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 				},
 			},
 		)
-		mockClient := &dtclient.MockDynatraceClient{}
+		mockClient := clientmock.NewClient(t)
 		mockDtcBuilder := &dynatraceclient.StubBuilder{
 			DynatraceClient: mockClient,
 		}
 
-		gc := &CSIGarbageCollectorMock{}
-		gc.On("Reconcile").Return(reconcile.Result{}, nil)
+		gc := reconcilermock.NewReconciler(t)
 		db := metadata.FakeMemoryDB()
 
 		provisioner := &OneAgentProvisioner{
@@ -216,10 +207,10 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 
 		dynakubeMetadatas, err := db.GetAllDynakubes(ctx)
 		require.NoError(t, err)
-		require.Len(t, dynakubeMetadatas, 0)
+		require.Len(t, dynakubeMetadatas, 1)
 	})
 	t.Run("no tokens", func(t *testing.T) {
-		gc := &CSIGarbageCollectorMock{}
+		gc := reconcilermock.NewReconciler(t)
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
@@ -252,7 +243,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 		require.Equal(t, reconcile.Result{}, result)
 	})
 	t.Run("error when creating dynatrace client", func(t *testing.T) {
-		gc := &CSIGarbageCollectorMock{}
+		gc := reconcilermock.NewReconciler(t)
 		mockDtcBuilder := &dynatraceclient.StubBuilder{
 			Err: fmt.Errorf(errorMsg),
 		}
@@ -297,16 +288,11 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 		require.Equal(t, reconcile.Result{}, result)
 	})
 	t.Run("error creating directories", func(t *testing.T) {
-		gc := &CSIGarbageCollectorMock{}
+		gc := reconcilermock.NewReconciler(t)
 		errorfs := &mkDirAllErrorFs{
 			Fs: afero.NewMemMapFs(),
 		}
-		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{
-			ConnectionInfo: dtclient.ConnectionInfo{
-				TenantUUID: tenantUUID,
-			},
-		}, nil)
+		mockClient := clientmock.NewClient(t)
 		mockDtcBuilder := &dynatraceclient.StubBuilder{
 			DynatraceClient: mockClient,
 		}
@@ -347,18 +333,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 		log.Info("")
 	})
 	t.Run("error getting latest agent version", func(t *testing.T) {
-		gc := &CSIGarbageCollectorMock{}
-		gc.On("Reconcile").Return(reconcile.Result{}, nil)
-		var revision uint = 3
-		testProcessModuleConfig := createTestProcessModuleConfig(revision)
+		gc := reconcilermock.NewReconciler(t)
 		memFs := afero.NewMemMapFs()
-		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{
-			ConnectionInfo: dtclient.ConnectionInfo{
-				TenantUUID: tenantUUID,
-			},
-		}, nil)
-		mockClient.On("GetProcessModuleConfig", mock.AnythingOfType("uint")).Return(testProcessModuleConfig, nil)
+		mockClient := clientmock.NewClient(t)
 		mockDtcBuilder := &dynatraceclient.StubBuilder{
 			DynatraceClient: mockClient,
 		}
@@ -373,13 +350,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 				},
 			},
 		}
-		installerMock := &installer.Mock{}
-		installerMock.
-			On("InstallAgent", mock.AnythingOfType("string")).
-			Return(false, fmt.Errorf(errorMsg))
-		installerMock.
-			On("Cleanup").
-			Return(nil)
+		installerMock := installermock.NewInstaller(t)
 
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
@@ -424,17 +395,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 		require.True(t, exists)
 	})
 	t.Run("error getting dynakube from db", func(t *testing.T) {
-		gc := &CSIGarbageCollectorMock{}
+		gc := reconcilermock.NewReconciler(t)
 		memFs := afero.NewMemMapFs()
-		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{
-			ConnectionInfo: dtclient.ConnectionInfo{
-				TenantUUID: tenantUUID,
-			},
-		}, nil)
-		mockClient.On("GetLatestAgentVersion",
-			mock.AnythingOfType("string"),
-			mock.AnythingOfType("string")).Return(agentVersion, nil)
+		mockClient := clientmock.NewClient(t)
 		mockDtcBuilder := &dynatraceclient.StubBuilder{
 			DynatraceClient: mockClient,
 		}
@@ -476,7 +439,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 		require.Empty(t, result)
 	})
 	t.Run("correct directories are created", func(t *testing.T) {
-		gc := &CSIGarbageCollectorMock{}
+		gc := reconcilermock.NewReconciler(t)
 		memFs := afero.NewMemMapFs()
 		memDB := metadata.FakeMemoryDB()
 		dynakube := &dynatracev1beta1.DynaKube{
@@ -490,14 +453,6 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) { //nolint:revive
 				},
 			},
 		}
-
-		installerMock := &installer.Mock{}
-		installerMock.
-			On("InstallAgent", mock.AnythingOfType("string")).
-			Return(true, nil)
-		installerMock.
-			On("Cleanup").
-			Return(nil)
 
 		r := &OneAgentProvisioner{
 			apiReader: fake.NewClient(dynakube),

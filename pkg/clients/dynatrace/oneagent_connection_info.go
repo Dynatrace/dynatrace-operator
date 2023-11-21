@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"hash/fnv"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
 	"golang.org/x/exp/maps"
 )
 
@@ -32,7 +33,7 @@ func (dtc *dynatraceClient) GetOneAgentConnectionInfo() (OneAgentConnectionInfo,
 	if err != nil {
 		return OneAgentConnectionInfo{}, err
 	}
-	defer CloseBodyAfterRequest(resp)
+	defer utils.CloseBodyAfterRequest(resp)
 
 	if resp.StatusCode == 400 {
 		log.Info("server could not find the network zone or deliver default fallback config, is there an ActiveGate configured for the network zone?")

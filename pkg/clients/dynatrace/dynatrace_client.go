@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
 	"github.com/pkg/errors"
 )
 
@@ -118,7 +119,7 @@ func (dtc *dynatraceClient) makeRequestAndUnmarshal(url string, token tokenType,
 	if err != nil {
 		return err
 	}
-	defer CloseBodyAfterRequest(resp)
+	defer utils.CloseBodyAfterRequest(resp)
 
 	responseData, err := dtc.getServerResponseData(resp)
 	if err != nil {
@@ -133,7 +134,7 @@ func (dtc *dynatraceClient) makeRequestForBinary(url string, token tokenType, wr
 	if err != nil {
 		return "", err
 	}
-	defer CloseBodyAfterRequest(resp)
+	defer utils.CloseBodyAfterRequest(resp)
 
 	if resp.StatusCode != http.StatusOK {
 		var errorResponse serverErrorResponse
@@ -183,7 +184,7 @@ func (dtc *dynatraceClient) buildHostCache() error {
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	defer CloseBodyAfterRequest(resp)
+	defer utils.CloseBodyAfterRequest(resp)
 
 	responseData, err := dtc.getServerResponseData(resp)
 	if err != nil {

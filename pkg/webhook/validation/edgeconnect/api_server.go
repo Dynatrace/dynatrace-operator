@@ -1,6 +1,7 @@
 package edgeconnect
 
 import (
+	"context"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/edgeconnect"
@@ -20,7 +21,7 @@ var (
 	}
 )
 
-func IsInvalidApiServer(_ *edgeconnectValidator, edgeConnect *edgeconnect.EdgeConnect) string {
+func isInvalidApiServer(_ context.Context, _ *edgeconnectValidator, edgeConnect *edgeconnect.EdgeConnect) string {
 	for _, suffix := range allowedSuffix {
 		if strings.HasSuffix(edgeConnect.Spec.ApiServer, suffix) {
 			hostnameWithDomains := strings.FieldsFunc(suffix,

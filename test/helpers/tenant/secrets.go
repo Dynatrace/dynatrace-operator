@@ -4,9 +4,6 @@ package tenant
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/json"
-	"fmt"
 	"path"
 	"testing"
 
@@ -18,14 +15,20 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
+	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
+)
+
+const (
+	otelSecretName = "dynatrace-operator-otel-config"
 )
 
 var (
 	defaultSingleTenant      = path.Join(project.TestDataDir(), "secrets/single-tenant.yaml")
 	defaultMultiTenant       = path.Join(project.TestDataDir(), "secrets/multi-tenant.yaml")
 	defaultEdgeConnectTenant = path.Join(project.TestDataDir(), "secrets/edgeconnect-tenant.yaml")
+	defaultOtelTenant        = path.Join(project.TestDataDir(), "secrets/otel-tenant.yaml")
 )
 
 type Secrets struct {
@@ -33,11 +36,9 @@ type Secrets struct {
 }
 
 type Secret struct {
-	TenantUid                       string `yaml:"tenantUid"`
-	ApiUrl                          string `yaml:"apiUrl"`
-	ApiToken                        string `yaml:"apiToken"`
-	SyntheticLocEntityId            string `yaml:"syntheticLocEntityId"`
-	SyntheticBrowserMonitorEntityId string `yaml:"syntheticBrowserMonitorEntityId"`
+	TenantUid string `yaml:"tenantUid"`
+	ApiUrl    string `yaml:"apiUrl"`
+	ApiToken  string `yaml:"apiToken"`
 }
 
 type EdgeConnectSecret struct {
@@ -46,8 +47,11 @@ type EdgeConnectSecret struct {
 	ApiServer         string `yaml:"apiServer"`
 	OauthClientId     string `yaml:"oAuthClientId"`
 	OauthClientSecret string `yaml:"oAuthClientSecret"`
-	DockerUsername    string `yaml:"dockerUsername"`
-	DockerPassword    string `yaml:"dockerPassword"`
+}
+
+type OtelSecret struct {
+	Endpoint string `yaml:"endpoint"`
+	ApiToken string `yaml:"apiToken"`
 }
 
 func manyFromConfig(fs afero.Fs, path string) ([]Secret, error) {
@@ -133,28 +137,6 @@ func CreateTenantSecret(secretConfig Secret, name, namespace string) features.Fu
 	}
 }
 
-type dockerAuthentication struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-	Auth     string `json:"auth"`
-}
-
-type dockerConfig struct {
-	Auths map[string]dockerAuthentication `json:"auths"`
-}
-
-func newDockerConfigWithAuth(username string, password string, registry string, auth string) *dockerConfig {
-	return &dockerConfig{
-		Auths: map[string]dockerAuthentication{
-			registry: {
-				Username: username,
-				Password: password,
-				Auth:     auth,
-			},
-		},
-	}
-}
-
 func CreateClientSecret(secretConfig EdgeConnectSecret, name, namespace string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
 		defaultSecret := corev1.Secret{
@@ -181,34 +163,34 @@ func CreateClientSecret(secretConfig EdgeConnectSecret, name, namespace string) 
 	}
 }
 
-func CreateDockerPullSecret(secretConfig EdgeConnectSecret, name, namespace string) features.Func {
-	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		registry := "https://index.docker.io/v1/"
-		auth := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", secretConfig.DockerUsername, secretConfig.DockerPassword)))
-		dockerConfig := newDockerConfigWithAuth(secretConfig.DockerUsername, secretConfig.DockerPassword, registry, auth)
-		dockerConfJson, err := json.Marshal(dockerConfig)
-		require.NoError(t, err)
+func CreateOtelSecret(namespace string) env.Func {
+	return func(ctx context.Context, envConfig *envconf.Config) (context.Context, error) {
+		secretConfigFile, err := afero.ReadFile(afero.NewOsFs(), defaultOtelTenant)
+		if err != nil {
+			// swallow error, as it's not vital for e2e test itself
+			return ctx, nil //nolint:nilerr
+		}
+		var secret OtelSecret
+		err = yaml.Unmarshal(secretConfigFile, &secret)
+		if err != nil {
+			return ctx, errors.WithStack(err)
+		}
 
 		defaultSecret := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      name,
+				Name:      otelSecretName,
 				Namespace: namespace,
 			},
-			Type: corev1.SecretTypeDockerConfigJson,
 			Data: map[string][]byte{
-				corev1.DockerConfigJsonKey: dockerConfJson,
+				"apiToken": []byte(secret.ApiToken),
+				"endpoint": []byte(secret.Endpoint),
 			},
 		}
 
 		err = envConfig.Client().Resources().Create(ctx, &defaultSecret)
-
 		if k8serrors.IsAlreadyExists(err) {
-			require.NoError(t, envConfig.Client().Resources().Update(ctx, &defaultSecret))
-			return ctx
+			return ctx, envConfig.Client().Resources().Update(ctx, &defaultSecret)
 		}
-
-		require.NoError(t, err)
-
-		return ctx
+		return ctx, err
 	}
 }

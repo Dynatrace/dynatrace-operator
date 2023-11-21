@@ -80,10 +80,10 @@ func TestDynakube(t *testing.T) {
 
 func TestApiUrl(t *testing.T) {
 	t.Run("valid ApiUrl", func(t *testing.T) {
-		assert.NoErrorf(t, checkApiUrlSyntax(getNullLogger(t), testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).build()), "invalid ApiUrl")
+		assert.NoErrorf(t, checkApiUrlSyntax(context.Background(), getNullLogger(t), testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testApiUrl).build()), "invalid ApiUrl")
 	})
 	t.Run("invalid ApiUrl", func(t *testing.T) {
-		assert.Errorf(t, checkApiUrlSyntax(getNullLogger(t), testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testOtherApiUrl).build()), "valid ApiUrl")
+		assert.Errorf(t, checkApiUrlSyntax(context.Background(), getNullLogger(t), testNewDynakubeBuilder(testNamespace, testDynakube).withApiUrl(testOtherApiUrl).build()), "valid ApiUrl")
 	})
 }
 

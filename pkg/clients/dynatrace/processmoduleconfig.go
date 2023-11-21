@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/clients/utils"
 	"github.com/pkg/errors"
 )
 
@@ -148,7 +149,7 @@ func (dtc *dynatraceClient) GetProcessModuleConfig(prevRevision uint) (*ProcessM
 	if err != nil {
 		return nil, fmt.Errorf("error while requesting process module config: %w", err)
 	}
-	defer CloseBodyAfterRequest(resp)
+	defer utils.CloseBodyAfterRequest(resp)
 
 	responseData, err := dtc.getServerResponseData(resp)
 	if err != nil {

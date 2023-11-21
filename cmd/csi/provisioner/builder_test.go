@@ -4,9 +4,9 @@ import (
 	"io/fs"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/cmd/config"
-	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
+	configmock "github.com/Dynatrace/dynatrace-operator/test/mocks/cmd/config"
+	managermock "github.com/Dynatrace/dynatrace-operator/test/mocks/cmd/manager"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 )
@@ -25,13 +25,13 @@ func TestCsiCommandBuilder(t *testing.T) {
 
 		assert.NotNil(t, builder)
 
-		expectedProvider := &config.MockProvider{}
+		expectedProvider := &configmock.Provider{}
 		builder = builder.SetConfigProvider(expectedProvider)
 
 		assert.Equal(t, expectedProvider, builder.configProvider)
 	})
 	t.Run("set manager provider", func(t *testing.T) {
-		expectedProvider := &cmdManager.MockProvider{}
+		expectedProvider := managermock.NewProvider(t)
 		builder := NewCsiProvisionerCommandBuilder().setManagerProvider(expectedProvider)
 
 		assert.Equal(t, expectedProvider, builder.managerProvider)

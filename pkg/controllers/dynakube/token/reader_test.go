@@ -8,10 +8,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	"github.com/stretchr/testify/assert"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -44,12 +44,12 @@ func testReadTokens(t *testing.T) {
 	})
 	t.Run("tokens are found if secret exists", func(t *testing.T) {
 		dynakube := dynatracev1beta1.DynaKube{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Name:      "dynakube",
 				Namespace: "dynatrace",
 			},
 		}
-		secret, err := kubeobjects.CreateSecret(scheme.Scheme, &dynakube, kubeobjects.NewSecretNameModifier("dynakube"), kubeobjects.NewSecretNamespaceModifier("dynatrace"), kubeobjects.NewSecretDataModifier(map[string][]byte{
+		secret, err := secret.Create(scheme.Scheme, &dynakube, secret.NewNameModifier("dynakube"), secret.NewNamespaceModifier("dynatrace"), secret.NewDataModifier(map[string][]byte{
 			dtclient.DynatraceApiToken:        []byte(testApiToken),
 			dtclient.DynatracePaasToken:       []byte(testPaasToken),
 			dtclient.DynatraceDataIngestToken: []byte(testDataIngestToken),
@@ -77,7 +77,7 @@ func testReadTokens(t *testing.T) {
 
 func testVerifyTokens(t *testing.T) {
 	t.Run("error if api token is missing", func(t *testing.T) {
-		reader := NewReader(nil, &dynatracev1beta1.DynaKube{ObjectMeta: v1.ObjectMeta{
+		reader := NewReader(nil, &dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{
 			Name:      dynakubeName,
 			Namespace: dynatraceNamespace,
 		}})

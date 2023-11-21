@@ -9,8 +9,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/statefulset/builder/modifiers"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/labels"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/node"
+	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/prioritymap"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -19,11 +23,15 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+const defaultEnvPriority = prioritymap.DefaultPriority
+const customEnvPriority = prioritymap.HighPriority
+
 type Builder struct {
 	kubeUID    types.UID
 	configHash string
 	dynakube   dynatracev1beta1.DynaKube
 	capability capability.Capability
+	envMap     *prioritymap.Map
 }
 
 func NewStatefulSetBuilder(kubeUID types.UID, configHash string, dynakube dynatracev1beta1.DynaKube, capability capability.Capability) Builder {
@@ -32,13 +40,14 @@ func NewStatefulSetBuilder(kubeUID types.UID, configHash string, dynakube dynatr
 		configHash: configHash,
 		dynakube:   dynakube,
 		capability: capability,
+		envMap:     prioritymap.New(prioritymap.WithPriority(defaultEnvPriority)),
 	}
 }
 
 func (statefulSetBuilder Builder) CreateStatefulSet(mods []builder.Modifier) (*appsv1.StatefulSet, error) {
 	activeGateBuilder := builder.NewBuilder(statefulSetBuilder.getBase())
 	if len(mods) == 0 {
-		mods = modifiers.GenerateAllModifiers(statefulSetBuilder.dynakube, statefulSetBuilder.capability)
+		mods = modifiers.GenerateAllModifiers(statefulSetBuilder.dynakube, statefulSetBuilder.capability, statefulSetBuilder.envMap)
 	}
 	sts, _ := activeGateBuilder.AddModifier(mods...).Build()
 
@@ -89,20 +98,20 @@ func (statefulSetBuilder Builder) addLabels(sts *appsv1.StatefulSet) {
 	appLabels := statefulSetBuilder.buildAppLabels()
 	sts.ObjectMeta.Labels = appLabels.BuildLabels()
 	sts.Spec.Selector = &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()}
-	sts.Spec.Template.ObjectMeta.Labels = kubeobjects.MergeMap(statefulSetBuilder.capability.Properties().Labels, appLabels.BuildLabels())
+	sts.Spec.Template.ObjectMeta.Labels = maputils.MergeMap(statefulSetBuilder.capability.Properties().Labels, appLabels.BuildLabels())
 }
 
-func (statefulSetBuilder Builder) buildAppLabels() *kubeobjects.AppLabels {
+func (statefulSetBuilder Builder) buildAppLabels() *labels.AppLabels {
 	version := statefulSetBuilder.dynakube.Status.Synthetic.Version
 	if version == "" {
 		version = statefulSetBuilder.dynakube.Status.ActiveGate.Version
 	}
-	return kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, statefulSetBuilder.dynakube.Name, statefulSetBuilder.capability.ShortName(), version)
+	return labels.NewAppLabels(labels.ActiveGateComponentLabel, statefulSetBuilder.dynakube.Name, statefulSetBuilder.capability.ShortName(), version)
 }
 
 func (statefulSetBuilder Builder) addUserAnnotations(sts *appsv1.StatefulSet) {
-	sts.ObjectMeta.Annotations = kubeobjects.MergeMap(sts.ObjectMeta.Annotations, statefulSetBuilder.dynakube.Spec.ActiveGate.Annotations)
-	sts.Spec.Template.ObjectMeta.Annotations = kubeobjects.MergeMap(sts.Spec.Template.ObjectMeta.Annotations, statefulSetBuilder.dynakube.Spec.ActiveGate.Annotations)
+	sts.ObjectMeta.Annotations = maputils.MergeMap(sts.ObjectMeta.Annotations, statefulSetBuilder.dynakube.Spec.ActiveGate.Annotations)
+	sts.Spec.Template.ObjectMeta.Annotations = maputils.MergeMap(sts.Spec.Template.ObjectMeta.Annotations, statefulSetBuilder.dynakube.Spec.ActiveGate.Annotations)
 }
 
 func (statefulSetBuilder Builder) addTemplateSpec(sts *appsv1.StatefulSet) {
@@ -183,7 +192,7 @@ func (statefulSetBuilder Builder) buildResources() corev1.ResourceRequirements {
 }
 
 func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {
-	envs := []corev1.EnvVar{
+	prioritymap.Append(statefulSetBuilder.envMap, []corev1.EnvVar{
 		{Name: consts.EnvDtCapabilities, Value: statefulSetBuilder.capability.ArgName()},
 		{Name: consts.EnvDtIdSeedNamespace, Value: statefulSetBuilder.dynakube.Namespace},
 		{Name: consts.EnvDtIdSeedClusterId, Value: string(statefulSetBuilder.kubeUID)},
@@ -196,22 +205,22 @@ func (statefulSetBuilder Builder) buildCommonEnvs() []corev1.EnvVar {
 				Optional: address.Of(false),
 			},
 		}},
-	}
+	})
 
 	if statefulSetBuilder.capability.Properties().Group != "" {
-		envs = append(envs, corev1.EnvVar{Name: consts.EnvDtGroup, Value: statefulSetBuilder.capability.Properties().Group})
+		prioritymap.Append(statefulSetBuilder.envMap, corev1.EnvVar{Name: consts.EnvDtGroup, Value: statefulSetBuilder.capability.Properties().Group})
 	}
 	if statefulSetBuilder.dynakube.Spec.NetworkZone != "" {
-		envs = append(envs, corev1.EnvVar{Name: consts.EnvDtNetworkZone, Value: statefulSetBuilder.dynakube.Spec.NetworkZone})
+		prioritymap.Append(statefulSetBuilder.envMap, corev1.EnvVar{Name: consts.EnvDtNetworkZone, Value: statefulSetBuilder.dynakube.Spec.NetworkZone})
 	}
 
 	if statefulSetBuilder.dynakube.IsMetricsIngestActiveGateEnabled() {
-		envs = append(envs, corev1.EnvVar{Name: consts.EnvDtHttpPort, Value: strconv.Itoa(consts.HttpContainerPort)})
+		prioritymap.Append(statefulSetBuilder.envMap, corev1.EnvVar{Name: consts.EnvDtHttpPort, Value: strconv.Itoa(consts.HttpContainerPort)})
 	}
 
-	envs = append(envs, statefulSetBuilder.capability.Properties().Env...)
+	prioritymap.Append(statefulSetBuilder.envMap, statefulSetBuilder.capability.Properties().Env, prioritymap.WithPriority(customEnvPriority))
 
-	return envs
+	return statefulSetBuilder.envMap.AsEnvVars()
 }
 
 func nodeAffinity() *corev1.Affinity {
@@ -220,7 +229,7 @@ func nodeAffinity() *corev1.Affinity {
 			RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
 				NodeSelectorTerms: []corev1.NodeSelectorTerm{
 					{
-						MatchExpressions: kubeobjects.AffinityNodeRequirementForSupportedArches(),
+						MatchExpressions: node.AffinityNodeRequirementForSupportedArches(),
 					},
 				},
 			},
@@ -229,10 +238,10 @@ func nodeAffinity() *corev1.Affinity {
 }
 
 func setHash(sts *appsv1.StatefulSet) error {
-	hash, err := kubeobjects.GenerateHash(sts)
+	hash, err := hasher.GenerateHash(sts)
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	sts.ObjectMeta.Annotations[kubeobjects.AnnotationHash] = hash
+	sts.ObjectMeta.Annotations[hasher.AnnotationHash] = hash
 	return nil
 }

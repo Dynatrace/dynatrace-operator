@@ -9,7 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
 	dynakubevalidation "github.com/Dynatrace/dynatrace-operator/pkg/webhook/validation/dynakube"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -31,7 +31,7 @@ func checkDynakube(ctx context.Context, baseLog logr.Logger, apiReader client.Re
 		return corev1.Secret{}, err
 	}
 
-	err = checkApiUrlSyntax(baseLog, dynakube)
+	err = checkApiUrlSyntax(ctx, baseLog, dynakube)
 	if err != nil {
 		return corev1.Secret{}, err
 	}
@@ -113,16 +113,16 @@ func checkIfDynatraceApiSecretHasApiToken(ctx context.Context, baseLog logr.Logg
 	return tokens, nil
 }
 
-func checkApiUrlSyntax(baseLog logr.Logger, dynakube *dynatracev1beta1.DynaKube) error {
+func checkApiUrlSyntax(ctx context.Context, baseLog logr.Logger, dynakube *dynatracev1beta1.DynaKube) error {
 	log := baseLog.WithName(dynakubeCheckLoggerName)
 
 	logInfof(log, "checking if syntax of API URL is valid")
 
 	dynakubevalidation.SetLogger(log)
-	if dynakubevalidation.NoApiUrl(nil, dynakube) != "" {
+	if dynakubevalidation.NoApiUrl(ctx, nil, dynakube) != "" {
 		return errors.New("API URL is invalid")
 	}
-	if dynakubevalidation.IsInvalidApiUrl(nil, dynakube) != "" {
+	if dynakubevalidation.IsInvalidApiUrl(ctx, nil, dynakube) != "" {
 		return errors.New("API URL is invalid")
 	}
 
@@ -185,7 +185,7 @@ func checkApiUrlForLatestAgentVersion(ctx context.Context, baseLog logr.Logger, 
 func checkPullSecretExists(ctx context.Context, baseLog logr.Logger, apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube) (corev1.Secret, error) {
 	log := baseLog.WithName(dynakubeCheckLoggerName)
 
-	query := kubeobjects.NewSecretQuery(ctx, nil, apiReader, log)
+	query := secret.NewQuery(ctx, nil, apiReader, log)
 	secret, err := query.Get(types.NamespacedName{Namespace: dynakube.Namespace, Name: dynakube.PullSecretName()})
 
 	if err != nil {
@@ -198,7 +198,7 @@ func checkPullSecretExists(ctx context.Context, baseLog logr.Logger, apiReader c
 func checkPullSecretHasRequiredTokens(baseLog logr.Logger, dynakube *dynatracev1beta1.DynaKube, pullSecret corev1.Secret) error {
 	log := baseLog.WithName(dynakubeCheckLoggerName)
 
-	if _, err := kubeobjects.ExtractToken(&pullSecret, dtpullsecret.DockerConfigJson); err != nil {
+	if _, err := secret.ExtractToken(&pullSecret, dtpullsecret.DockerConfigJson); err != nil {
 		return errors.Wrapf(err, "invalid '%s:%s' secret", dynakube.Namespace, dynakube.PullSecretName())
 	}
 

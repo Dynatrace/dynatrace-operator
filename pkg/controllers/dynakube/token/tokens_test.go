@@ -6,9 +6,10 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestTokens(t *testing.T) {
@@ -38,7 +39,7 @@ func testSetApiTokenScopes(t *testing.T) {
 			dtclient.DynatraceApiToken: {},
 		}
 		tokens = tokens.SetScopesForDynakube(dynatracev1beta1.DynaKube{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
 					dynatracev1beta1.AnnotationFeatureHostsRequests: "false",
 				},
@@ -54,7 +55,7 @@ func testSetApiTokenScopes(t *testing.T) {
 			dtclient.DynatraceApiToken: {},
 		}
 		tokens = tokens.SetScopesForDynakube(dynatracev1beta1.DynaKube{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
 					dynatracev1beta1.AnnotationFeatureAutomaticK8sApiMonitoring: "true",
 				},
@@ -126,11 +127,11 @@ func testVerifyTokenScopes(t *testing.T) {
 			RequiredScopes: []string{"a", "c"},
 		},
 	}
-	fakeDynatraceClient := &dtclient.MockDynatraceClient{}
+	fakeDynatraceClient := mocks.NewClient(t)
 
 	fakeDynatraceClient.
 		On("GetTokenScopes", "empty-scopes").
-		Return(dtclient.TokenScopes{"a", "c"}, nil)
+		Return(dtclient.TokenScopes{"a", "c"}, nil).Maybe().Times(0)
 	fakeDynatraceClient.
 		On("GetTokenScopes", "valid-scopes").
 		Return(dtclient.TokenScopes{"a", "c"}, nil)
@@ -141,7 +142,6 @@ func testVerifyTokenScopes(t *testing.T) {
 		On("GetTokenScopes", "api-error").
 		Return(dtclient.TokenScopes{}, errors.New("test api-error"))
 
-	fakeDynatraceClient.AssertNotCalled(t, "GetTokenScopes", "empty-scopes")
 	assert.NoError(t, validTokens.VerifyScopes(fakeDynatraceClient))
 	assert.EqualError(t,
 		invalidTokens.VerifyScopes(fakeDynatraceClient),

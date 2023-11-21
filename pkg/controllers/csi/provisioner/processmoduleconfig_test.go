@@ -2,12 +2,13 @@ package csiprovisioner
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
+	"strconv"
 	"testing"
 
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
+	"github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/clients/dynatrace"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -33,7 +34,7 @@ func createTestProcessModuleConfig(revision uint) *dtclient.ProcessModuleConfig 
 func createTestProcessModuleConfigCache(revision uint) processModuleConfigCache {
 	return processModuleConfigCache{
 		ProcessModuleConfig: createTestProcessModuleConfig(revision),
-		Hash:                fmt.Sprintf("%d", revision),
+		Hash:                strconv.FormatUint(uint64(revision), 10),
 	}
 }
 
@@ -55,7 +56,7 @@ func TestGetProcessModuleConfig(t *testing.T) {
 		var defaultHash string
 		testProcessModuleConfig := createTestProcessModuleConfig(3)
 		memFs := afero.NewMemMapFs()
-		mockClient := &dtclient.MockDynatraceClient{}
+		mockClient := mocks.NewClient(t)
 		mockClient.On("GetProcessModuleConfig", uint(0)).
 			Return(testProcessModuleConfig, nil)
 		provisioner := &OneAgentProvisioner{
@@ -74,7 +75,7 @@ func TestGetProcessModuleConfig(t *testing.T) {
 		memFs := afero.NewMemMapFs()
 		content, _ := json.Marshal(testProcessModuleConfigCache)
 		prepTestFsCache(memFs, content)
-		mockClient := &dtclient.MockDynatraceClient{}
+		mockClient := mocks.NewClient(t)
 		mockClient.On("GetProcessModuleConfig", testProcessModuleConfigCache.Revision).
 			Return(emptyResponse, nil)
 		provisioner := &OneAgentProvisioner{
@@ -95,7 +96,7 @@ func TestGetProcessModuleConfig(t *testing.T) {
 		memFs := afero.NewMemMapFs()
 		content, _ := json.Marshal(testProcessModuleConfigCache)
 		prepTestFsCache(memFs, content)
-		mockClient := &dtclient.MockDynatraceClient{}
+		mockClient := mocks.NewClient(t)
 		mockClient.On("GetProcessModuleConfig", testProcessModuleConfigCache.Revision).
 			Return(testProcessModuleConfig, nil)
 		provisioner := &OneAgentProvisioner{

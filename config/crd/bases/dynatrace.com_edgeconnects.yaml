@@ -173,6 +173,12 @@ spec:
                   - name
                   type: object
                 type: array
+              hostPatterns:
+                description: Host patterns to be set in the tenant, only considered
+                  when provisioning is enabled.
+                items:
+                  type: string
+                type: array
               hostRestrictions:
                 description: Restrict outgoing HTTP requests to your internal resources
                   to specified hosts
@@ -210,6 +216,11 @@ spec:
                   endpoint:
                     description: Token endpoint URL of Dynatrace SSO
                     type: string
+                  provisioner:
+                    description: Determines if the operator will create the EdgeConnect
+                      and light OAuth client on the cluster using the credentials
+                      provided. Requires more scopes than default behavior.
+                    type: boolean
                   resource:
                     description: URN identifying your account. You get the URN when
                       creating the OAuth client
@@ -585,6 +596,9 @@ spec:
                   source:
                     description: Source of the image (tenant-registry, public-registry,
                       ...)
+                    type: string
+                  type:
+                    description: Image type
                     type: string
                   version:
                     description: Image version

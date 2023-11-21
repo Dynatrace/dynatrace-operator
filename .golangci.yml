@@ -101,6 +101,10 @@ linters-settings:
         disabled: true
       - name: range-val-address
         disabled: true
+      - name: import-alias-naming
+        arguments: ["^[a-z][\\w]{0,}$"]
+      - name: unchecked-type-assertion
+        disabled: true
   depguard:
     rules:
       all:
@@ -156,7 +160,6 @@ linters:
   disable-all: true
   enable:
   - gci
-  - goimports
   - gosimple
   - govet
   - ineffassign
@@ -164,7 +167,6 @@ linters:
   - typecheck
   - misspell
   - asciicheck
-  - bodyclose
   - depguard
   - dogsled
   - errorlint
@@ -180,9 +182,10 @@ linters:
   - whitespace
   - unused
   - ineffassign
+  - perfsprint
 
 service:
-  golangci-lint-version: 1.51.x # use the fixed version to not introduce new linters unexpectedly
+  golangci-lint-version: 1.55.x # use the fixed version to not introduce new linters unexpectedly
 
 issues:
   exclude-rules:

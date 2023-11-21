@@ -1,10 +1,9 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:base"
-  ],
-  "labels": ["dependencies"],
+  "extends": [ "config:base" ],
+  "labels": [ "dependencies" ],
   "digest": { "enabled": false },
+  "baseBranches": ["$default", "release-0.11", "release-0.12", "release-0.13", "release-0.14"],
   "enabledManagers": [ "regex", "dockerfile", "gomod", "github-actions" ],
   "regexManagers": [
     {
@@ -24,19 +23,37 @@
   ],
   "packageRules": [
     {
+      "matchBaseBranches": [
+        "release-0.11",
+        "release-0.12",
+        "release-0.13",
+        "release-0.14",
+      ],
+      "matchUpdateTypes": [
+        "major",
+        "minor"
+      ],
+      "enabled": false,
+    },
+    {
       "matchManagers": ["dockerfile"],
+      "matchBaseBranches": [
+        "$default"
+      ],
       "commitMessagePrefix": "Docker:",
       "enabled": true,
-      "allowedVersions": "/^v?[0-9]+\\.[0-9]+(\\.[0-9]+)*$/"
+      "allowedVersions": "/^v?[0-9]+[\\.\\-][0-9]+([\\-\\.][0-9]+)*$/"
     },
     {
       "matchManagers": ["gomod"],
+      "matchBaseBranches": [
+        "$default"
+      ],
       "commitMessagePrefix": "Go:",
       "enabled": true,
-      "allowedVersions": "/^v[0-9]+\\.[0-9]+\\.[0-9]+(\\.[0-9]+)?$/",
+      "allowedVersions": "/^v?[0-9]+[\\.\\-][0-9]+([\\-\\.][0-9]+)*$/",
       "postUpdateOptions": [ "gomodTidy" ]
     },
-
     {
       "matchManagers": ["gomod"],
       "matchDepTypes": ["indirect"],
@@ -44,22 +61,26 @@
     },
     {
       "matchManagers": ["github-actions"],
+      "matchBaseBranches": [
+        "$default"
+      ],
       "commitMessagePrefix": "Actions:",
       "enabled": true,
-      "allowedVersions": "/^v[0-9]+\\.[0-9]+\\.[0-9]+(\\.[0-9]+)?$/"
+      "allowedVersions": "/^v?[0-9]+[\\.\\-][0-9]+([\\-\\.][0-9]+)*$/"
     },
     {
       "matchManagers": ["regex"],
+      "matchBaseBranches": [
+        "$default"
+      ],
       "commitMessagePrefix": "Dev:",
       "enabled": true
     },
     {
-      "matchUpdateTypes": ["digest", "pin", "pinDigest"],
-      "enabled": false
-    },
-    {
       "matchPackageNames": ["k8s.io/client-go"],
-      "allowedVersions": "< 1.0"
-    }
+      "matchBaseBranches": [
+        "$default"
+      ],
+    },
   ],
 }

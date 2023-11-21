@@ -3,6 +3,7 @@ package dynakube
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -271,7 +272,7 @@ func TestSyntheticMonitoringFlags(t *testing.T) {
 		dynaKube := DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Annotations: map[string]string{
-					AnnotationFeatureSyntheticReplicas: fmt.Sprint(replicas),
+					AnnotationFeatureSyntheticReplicas: strconv.Itoa(int(replicas)),
 				},
 			},
 		}
@@ -317,4 +318,28 @@ func TestInjectionFailurePolicy(t *testing.T) {
 			assert.Equal(t, expectedMode, dynakube.FeatureInjectionFailurePolicy())
 		})
 	}
+}
+
+func TestAgentInitialConnectRetry(t *testing.T) {
+	t.Run("default => not set", func(t *testing.T) {
+		dynakube := createDynakubeEmptyDynakube()
+
+		initialRetry := dynakube.FeatureAgentInitialConnectRetry()
+		require.Equal(t, -1, initialRetry)
+	})
+	t.Run("istio default => set", func(t *testing.T) {
+		dynakube := createDynakubeEmptyDynakube()
+		dynakube.Spec.EnableIstio = true
+
+		initialRetry := dynakube.FeatureAgentInitialConnectRetry()
+		require.Equal(t, IstioDefaultOneAgentInitialConnectRetry, initialRetry)
+	})
+	t.Run("istio default can be overruled", func(t *testing.T) {
+		dynakube := createDynakubeEmptyDynakube()
+		dynakube.Spec.EnableIstio = true
+		dynakube.Annotations[AnnotationFeatureOneAgentInitialConnectRetry] = "5"
+
+		initialRetry := dynakube.FeatureAgentInitialConnectRetry()
+		require.Equal(t, 5, initialRetry)
+	})
 }
