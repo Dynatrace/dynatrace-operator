@@ -46,3 +46,6 @@ packages:
   sigs.k8s.io/controller-runtime/pkg/manager:
     interfaces:
       Manager:
+  sigs.k8s.io/controller-runtime/pkg/reconcile:
+    interfaces:
+      Reconciler:
