@@ -1,4 +1,2 @@
-# Disable load restrictions in order to build with kustomize
-# $ kustomize build --load-restrictor LoadRestrictionsNone
 resources:
-- ../default
+- ../../assets/samples/dynakube
