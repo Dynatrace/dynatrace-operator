@@ -3,9 +3,6 @@ kind: DynaKube
 metadata:
   name: dynakube
   namespace: dynatrace
-  # Automatically connect the kubernetes api to the dynatrace tenant endpoint to enable kubernetes monitoring.
-  annotations:
-    feature.dynatrace.com/automatic-kubernetes-api-monitoring: "true"
 spec:
   # Dynatrace apiUrl including the `/api` path at the end.
   # For SaaS, set `ENVIRONMENTID` to your environment ID.
@@ -17,11 +14,6 @@ spec:
   # If unset, the name of this custom resource is used
   #
   # tokens: ""
-
-  # Optional: Defines a custom pull secret in case you use a private registry when pulling images from the dynatrace environment
-  # The secret has to be of type 'kubernetes.io/dockerconfigjson' (see https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/)
-  #
-  # customPullSecret: "custom-pull-secret"
 
   # Optional: Disable certificate validation checks for installer download and API communication
   #
@@ -45,6 +37,11 @@ spec:
   #
   # networkZone: name-of-my-network-zone
 
+  # Optional: Defines a custom pull secret in case you use a private registry when pulling images from the Dynatrace environment
+  # The secret has to be of type 'kubernetes.io/dockerconfigjson' (see https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/)
+  #
+  # customPullSecret: "custom-pull-secret"
+
   # Optional: If enabled, and if Istio is installed on the Kubernetes environment, the
   # Operator will create the corresponding VirtualService and ServiceEntry objects to allow access
   # to the Dynatrace cluster from agents or activeGates. Disabled by default.
@@ -54,10 +51,10 @@ spec:
   # Configuration for OneAgent instances
   #
   oneAgent:
-    # Enables classic fullstack monitoring and changes its settings
-    # Cannot be used in conjunction with cloud-native fullstack monitoring, application-only monitoring or host monitoring
+    # Enables host monitoring and changes its settings
+    # Cannot be used in conjunction with cloud-native fullstack monitoring, classic fullstack monitoring or application-only monitoring
     #
-    classicFullStack:
+    hostMonitoring:
       # Optional: If specified, indicates the OneAgent version to use
       # Defaults to the configured version on your Dynatrace environment
       # The version is expected to be provided in the semver format
@@ -116,16 +113,16 @@ spec:
       #
       # dnsPolicy: "ClusterFirstWithHostNet"
 
-      # Optional: Adds custom annotations to OneAgent pods
-      #
-      # annotations:
-      #   custom: annotation
-
       # Optional: Adds custom labels to OneAgent pods
       # Can be used to structure workloads
       #
       # labels:
       #   custom: label
+
+      # Optional: Adds custom annotations to OneAgent pods
+      #
+      # annotations:
+      #   custom: annotations
 
       # Optional: Adds custom environment variables to OneAgent pods
       #
@@ -135,7 +132,8 @@ spec:
       # For a list of available options, see https://www.dynatrace.com/support/help/shortlink/linux-custom-installation
       # For a list of the limitations for OneAgents in Docker, see https://www.dynatrace.com/support/help/shortlink/oneagent-docker#limitations
       #
-      # args: []
+      args:
+        - --set-monitoring-mode=infra
 
   # Configuration for ActiveGate instances.
   #
@@ -236,7 +234,7 @@ spec:
     # annotations:
     #   custom: annotation
 
-    # Optional: Adds TopologySpreadConstraints to ActiveGate pods
+    # Optional: Adds TopologySpreadConstraints to the ActiveGate pods
     # For more information on TopologySpreadConstraints, see https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
     #
     # topologySpreadConstraints: []
