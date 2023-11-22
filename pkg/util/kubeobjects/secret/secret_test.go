@@ -150,16 +150,20 @@ func TestMultipleSecrets(t *testing.T) {
 
 		assert.NotEqual(t, secret.Data, secretsMap["ns3"].Data)
 	})
-	t.Run("no error because of kubernetes rejecting the request", func(t *testing.T) {
+	t.Run("only 1 error because of kubernetes rejecting the request", func(t *testing.T) {
+		requestCounter := 0
 		fakeReader := fakeClient
 		boomClient := fake.NewClientWithInterceptors(interceptor.Funcs{
 			Create: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
+				requestCounter++
 				return errors.New("BOOM")
 			},
 			Delete: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.DeleteOption) error {
+				requestCounter++
 				return errors.New("BOOM")
 			},
 			Update: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
+				requestCounter++
 				return errors.New("BOOM")
 			},
 		})
@@ -191,7 +195,8 @@ func TestMultipleSecrets(t *testing.T) {
 		secretQuery := NewQuery(context.TODO(), boomClient, fakeReader, secretLog)
 
 		err := secretQuery.CreateOrUpdateForNamespaces(secret, namespaces)
-		require.NoError(t, err)
+		require.Error(t, err)
+		assert.Greater(t, requestCounter, 1)
 	})
 }
 

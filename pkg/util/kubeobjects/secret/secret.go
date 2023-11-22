@@ -108,13 +108,12 @@ func (query Query) CreateOrUpdateForNamespaces(newSecret corev1.Secret, namespac
 	for _, secret := range secrets {
 		namespacesContainingSecret[secret.Namespace] = secret
 	}
-	query.createOrUpdateForNamespaces(newSecret, namespacesContainingSecret, namespaces)
-	return nil
+	return query.createOrUpdateForNamespaces(newSecret, namespacesContainingSecret, namespaces)
 }
 
 // createOrUpdateForNamespaces creates or updates a secret for all given namespaces, it returns no error, as we want to ensure that a problem (example: gatekeeper) with 1 namespace will not influence other namespaces.
 // As we can't ensure this logic to be atomic (every-or-no namespace) we have to make it work for every namespace we can.
-func (query Query) createOrUpdateForNamespaces(newSecret corev1.Secret, namespacesContainingSecret map[string]corev1.Secret, namespaces []corev1.Namespace) {
+func (query Query) createOrUpdateForNamespaces(newSecret corev1.Secret, namespacesContainingSecret map[string]corev1.Secret, namespaces []corev1.Namespace) error {
 	updateCount := 0
 	creationCount := 0
 	var errs []error
@@ -145,8 +144,9 @@ func (query Query) createOrUpdateForNamespaces(newSecret corev1.Secret, namespac
 		for _, err := range errs {
 			errMessage += err.Error() + "\n"
 		}
-		query.Log.Error(errors.New(errMessage), "failed to reconcile secret for multiple namespaces", "name", newSecret.Name)
+		return errors.New(errMessage)
 	}
+	return nil
 }
 
 func AreSecretsEqual(secret corev1.Secret, other corev1.Secret) bool {
