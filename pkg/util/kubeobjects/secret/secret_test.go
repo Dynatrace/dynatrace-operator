@@ -129,7 +129,7 @@ func TestMultipleSecrets(t *testing.T) {
 				"samplekey": []byte("samplevalue"),
 			},
 		}
-		err := secretQuery.CreateOrUpdateForNamespacesList(secret, namespaces)
+		err := secretQuery.CreateOrUpdateForNamespaces(secret, namespaces)
 		require.NoError(t, err)
 
 		secrets, err := secretQuery.GetAllFromNamespaces(testSecretName)

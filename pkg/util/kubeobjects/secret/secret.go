@@ -96,47 +96,57 @@ func (query Query) CreateOrUpdate(secret corev1.Secret) error {
 	return nil
 }
 
-func (query Query) CreateOrUpdateForNamespacesList(newSecret corev1.Secret, namespaces []corev1.Namespace) error {
-	secretList, err := query.GetAllFromNamespaces(newSecret.Name)
+func (query Query) CreateOrUpdateForNamespaces(newSecret corev1.Secret, namespaces []corev1.Namespace) error {
+	secrets, err := query.GetAllFromNamespaces(newSecret.Name)
 	if err != nil {
 		return err
 	}
 
 	query.Log.Info("reconciling secret for multiple namespaces",
 		"name", newSecret.Name, "len(namespaces)", len(namespaces))
-
-	namespacesContainingSecret := make(map[string]corev1.Secret, len(secretList))
-	for _, secret := range secretList {
+	namespacesContainingSecret := make(map[string]corev1.Secret, len(secrets))
+	for _, secret := range secrets {
 		namespacesContainingSecret[secret.Namespace] = secret
 	}
+	query.createOrUpdateForNamespaces(newSecret, namespacesContainingSecret, namespaces)
+	return nil
+}
 
+// createOrUpdateForNamespaces creates or updates a secret for all given namespaces, it returns no error, as we want to ensure that a problem (example: gatekeeper) with 1 namespace will not influence other namespaces.
+// As we can't ensure this logic to be atomic (every-or-no namespace) we have to make it work for every namespace we can.
+func (query Query) createOrUpdateForNamespaces(newSecret corev1.Secret, namespacesContainingSecret map[string]corev1.Secret, namespaces []corev1.Namespace) {
 	updateCount := 0
 	creationCount := 0
-
+	var errs []error
 	for _, namespace := range namespaces {
 		newSecret.Namespace = namespace.Name
-
 		if oldSecret, ok := namespacesContainingSecret[namespace.Name]; ok {
 			if !AreSecretsEqual(oldSecret, newSecret) {
-				err = query.update(newSecret)
+				err := query.update(newSecret)
 				if err != nil {
-					return err
+					errs = append(errs, errors.WithMessagef(err, "failed to update secret %s for namespace %s", newSecret.Name, namespace.Name))
+					continue
 				}
 				updateCount++
 			}
 		} else {
-			err = query.create(newSecret)
+			err := query.create(newSecret)
 			if err != nil {
-				return err
+				errs = append(errs, errors.WithMessagef(err, "failed to create secret %s for namespace %s", newSecret.Name, namespace.Name))
+				continue
 			}
 			creationCount++
 		}
 	}
-
 	query.Log.Info("reconciled secret for multiple namespaces",
 		"name", newSecret.Name, "creationCount", creationCount, "updateCount", updateCount)
-
-	return nil
+	if len(errs) > 0 {
+		errMessage := ""
+		for _, err := range errs {
+			errMessage += err.Error() + "\n"
+		}
+		query.Log.Error(errors.New(errMessage), "failed to reconcile secret for multiple namespaces", "name", newSecret.Name)
+	}
 }
 
 func AreSecretsEqual(secret corev1.Secret, other corev1.Secret) bool {
