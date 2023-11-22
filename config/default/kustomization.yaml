@@ -1,3 +1,3 @@
 resources:
-  - classicFullStack.yaml
+  - ../../assets/samples/dynakube/classicFullStack.yaml
 # +kubebuilder:scaffold:manifestskustomizesamples
