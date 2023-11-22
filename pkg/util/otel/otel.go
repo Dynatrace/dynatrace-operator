@@ -22,7 +22,7 @@ func Start(ctx context.Context, otelServiceName string, apiReader client.Reader,
 	endpoint, apiToken, err := getOtelConfig(ctx, apiReader, webhookNamespace)
 
 	if err != nil {
-		log.Error(err, "failed to read OpenTelementry config secret")
+		log.Info("failed to read OpenTelementry config secret", "err", err.Error())
 		return setupNoopOTel()
 	}
 
