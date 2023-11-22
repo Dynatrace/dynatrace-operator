@@ -2,6 +2,7 @@ package secret
 
 import (
 	"context"
+	goerrors "errors"
 	"reflect"
 	"strings"
 
@@ -139,14 +140,7 @@ func (query Query) createOrUpdateForNamespaces(newSecret corev1.Secret, namespac
 	}
 	query.Log.Info("reconciled secret for multiple namespaces",
 		"name", newSecret.Name, "creationCount", creationCount, "updateCount", updateCount)
-	if len(errs) > 0 {
-		errMessage := ""
-		for _, err := range errs {
-			errMessage += err.Error() + "\n"
-		}
-		return errors.New(errMessage)
-	}
-	return nil
+	return goerrors.Join(errs...)
 }
 
 func AreSecretsEqual(secret corev1.Secret, other corev1.Secret) bool {
