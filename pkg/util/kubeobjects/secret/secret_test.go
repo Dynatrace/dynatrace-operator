@@ -58,8 +58,8 @@ func TestGetSecret(t *testing.T) {
 	})
 }
 
-func TestMultipleSecrets(t *testing.T) {
-	fakeClient := fake.NewClientWithIndex(
+func newClientWithSecrets() client.Client {
+	return fake.NewClientWithIndex(
 		&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testSecretName,
@@ -97,14 +97,21 @@ func TestMultipleSecrets(t *testing.T) {
 			},
 		},
 	)
-	secretQuery := NewQuery(context.TODO(), fakeClient, fakeClient, secretLog)
+}
 
+func TestMultipleSecrets(t *testing.T) {
 	t.Run("get existing secret from all namespaces", func(t *testing.T) {
+		fakeClient := newClientWithSecrets()
+		secretQuery := NewQuery(context.TODO(), fakeClient, fakeClient, secretLog)
+
 		secrets, err := secretQuery.GetAllFromNamespaces(testSecretName)
 		require.NoError(t, err)
 		assert.Len(t, secrets, 3)
 	})
 	t.Run("update and create secret in specific namespaces", func(t *testing.T) {
+		fakeClient := newClientWithSecrets()
+		secretQuery := NewQuery(context.TODO(), fakeClient, fakeClient, secretLog)
+
 		namespaces := []corev1.Namespace{
 			{
 				ObjectMeta: metav1.ObjectMeta{
@@ -152,7 +159,7 @@ func TestMultipleSecrets(t *testing.T) {
 	})
 	t.Run("only 1 error because of kubernetes rejecting the request", func(t *testing.T) {
 		requestCounter := 0
-		fakeReader := fakeClient
+		fakeReader := newClientWithSecrets()
 		boomClient := fake.NewClientWithInterceptors(interceptor.Funcs{
 			Create: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
 				requestCounter++
