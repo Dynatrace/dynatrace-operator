@@ -143,6 +143,11 @@ func edgeConnectCreateServerHandler(error bool) http.HandlerFunc {
 			writeOauthTokenResponse(writer)
 		case "/edge-connects":
 			if !error {
+				if !isManagedByOperator(request) {
+					writeError(writer, http.StatusBadRequest)
+					return
+				}
+
 				writer.WriteHeader(http.StatusOK)
 				resp := CreateResponse{
 					ID:            "348b4cd9-ba31-4670-9c45-9125a7d87439",
@@ -197,6 +202,7 @@ func edgeConnectGetServerHandler() http.HandlerFunc {
 					LastModifiedBy:   "72ece475-e4d5-4774-afed-65d04e8c9f24",
 					LastModifiedTime: nil,
 				},
+				ManagedByDynatraceOperator: true,
 			}
 			out, _ := json.Marshal(resp)
 			_, _ = writer.Write(out)
@@ -227,11 +233,22 @@ func edgeConnectUpdateServerHandler() http.HandlerFunc {
 		case "/sso/oauth2/token":
 			writeOauthTokenResponse(writer)
 		case fmt.Sprintf("/edge-connects/%s", EdgeConnectID):
+			if !isManagedByOperator(request) {
+				writeError(writer, http.StatusBadRequest)
+				return
+			}
+
 			writer.WriteHeader(http.StatusOK)
 		default:
 			writeError(writer, http.StatusBadRequest)
 		}
 	}
+}
+
+func isManagedByOperator(request *http.Request) bool {
+	edgeConnect := Request{}
+	err := json.NewDecoder(request.Body).Decode(&edgeConnect)
+	return err == nil && edgeConnect.ManagedByDynatraceOperator
 }
 
 func writeError(w http.ResponseWriter, status int) {

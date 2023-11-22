@@ -13,4 +13,7 @@ type Client interface {
 
 	// DeleteEdgeConnect deletes edge connect
 	DeleteEdgeConnect(edgeConnectId string) error
+
+	// GetEdgeConnects returns list of edge connects
+	GetEdgeConnects(name string) (ListResponse, error)
 }

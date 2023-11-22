@@ -15,6 +15,12 @@ packages:
   github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace:
     interfaces:
       Client:
+  github.com/Dynatrace/dynatrace-operator/pkg/clients/edgeconnect:
+    interfaces:
+      Client:
+  github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate:
+    interfaces:
+      CapabilityReconciler:
   github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version:
     interfaces:
       StatusUpdater:
@@ -40,3 +46,6 @@ packages:
   sigs.k8s.io/controller-runtime/pkg/manager:
     interfaces:
       Manager:
+  sigs.k8s.io/controller-runtime/pkg/reconcile:
+    interfaces:
+      Reconciler:

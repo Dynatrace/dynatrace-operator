@@ -9,8 +9,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/internal/authtoken"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
+	reconcilermock "github.com/Dynatrace/dynatrace-operator/test/mocks/pkg/controllers/dynakube/activegate"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -69,10 +71,10 @@ func buildDynakube(capabilities []dynatracev1beta1.CapabilityDisplayName) *dynat
 	}
 }
 
-func getMockReconciler() *MockReconciler {
-	mockReconciler := MockReconciler{}
-	mockReconciler.On("Reconcile").Return(nil)
-	return &mockReconciler
+func getMockReconciler(t *testing.T, returnArguments ...any) *reconcilermock.CapabilityReconciler {
+	mockReconciler := reconcilermock.NewCapabilityReconciler(t)
+	mockReconciler.On("Reconcile", mock.Anything).Return(returnArguments...).Maybe()
+	return mockReconciler
 }
 
 func verifyReconciler(t *testing.T, r *Reconciler) {
@@ -87,50 +89,46 @@ func TestReconcile(t *testing.T) {
 
 	t.Run(`reconciler works with multiple capabilities`, func(t *testing.T) {
 		dynakube := buildDynakube(capabilitiesWithService)
-		mockStatefulSetReconciler := getMockReconciler()
-		mockCustompropertiesReconciler := getMockReconciler()
+		mockStatefulSetReconciler := getMockReconciler(t, nil)
+		mockCustompropertiesReconciler := getMockReconciler(t, nil)
 
 		r := NewReconciler(clt, capability.NewMultiCapability(dynakube), dynakube, mockStatefulSetReconciler, mockCustompropertiesReconciler)
 		verifyReconciler(t, r)
 
 		err := r.Reconcile(context.Background())
-		mockStatefulSetReconciler.AssertCalled(t, "Reconcile")
-		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile")
+		mockStatefulSetReconciler.AssertCalled(t, "Reconcile", mock.Anything)
+		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile", mock.Anything)
 		require.NoError(t, err)
 	})
 	t.Run(`statefulSetReconciler errors`, func(t *testing.T) {
 		dynakube := buildDynakube(capabilitiesWithoutService)
-		mockStatefulSetReconciler := &MockReconciler{}
-		mockStatefulSetReconciler.On("Reconcile").Return(errors.New(""))
-		mockCustompropertiesReconciler := getMockReconciler()
+		mockStatefulSetReconciler := getMockReconciler(t, errors.New(""))
+		mockCustompropertiesReconciler := getMockReconciler(t, nil)
 
 		r := NewReconciler(clt, capability.NewMultiCapability(dynakube), dynakube, mockStatefulSetReconciler, mockCustompropertiesReconciler)
 		verifyReconciler(t, r)
 
 		err := r.Reconcile(context.Background())
-		mockStatefulSetReconciler.AssertCalled(t, "Reconcile")
-		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile")
+		mockStatefulSetReconciler.AssertCalled(t, "Reconcile", mock.Anything)
+		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile", mock.Anything)
 		require.Error(t, err)
 	})
 	t.Run(`customPropertiesReconciler errors`, func(t *testing.T) {
 		dynakube := buildDynakube(capabilitiesWithoutService)
-		mockStatefulSetReconciler := getMockReconciler()
-		mockCustompropertiesReconciler := &MockReconciler{}
-		mockCustompropertiesReconciler.On("Reconcile").Return(errors.New(""))
+		mockStatefulSetReconciler := getMockReconciler(t)
+		mockCustompropertiesReconciler := getMockReconciler(t, errors.New(""))
 
 		r := NewReconciler(clt, capability.NewMultiCapability(dynakube), dynakube, mockStatefulSetReconciler, mockCustompropertiesReconciler)
 		verifyReconciler(t, r)
 
 		err := r.Reconcile(context.Background())
-		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile")
+		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile", mock.Anything)
 		require.Error(t, err)
 	})
 	t.Run(`statefulSetReconciler and customPropertiesReconciler error`, func(t *testing.T) {
 		dynakube := buildDynakube(capabilitiesWithoutService)
-		mockStatefulSetReconciler := &MockReconciler{}
-		mockStatefulSetReconciler.On("Reconcile").Return(errors.New(""))
-		mockCustompropertiesReconciler := &MockReconciler{}
-		mockCustompropertiesReconciler.On("Reconcile").Return(errors.New(""))
+		mockStatefulSetReconciler := getMockReconciler(t, errors.New(""))
+		mockCustompropertiesReconciler := getMockReconciler(t, errors.New(""))
 
 		r := NewReconciler(clt, capability.NewMultiCapability(dynakube), dynakube, mockStatefulSetReconciler, mockCustompropertiesReconciler)
 		verifyReconciler(t, r)
@@ -140,15 +138,15 @@ func TestReconcile(t *testing.T) {
 	})
 	t.Run(`service gets created`, func(t *testing.T) {
 		dynakube := buildDynakube(capabilitiesWithService)
-		mockStatefulSetReconciler := getMockReconciler()
-		mockCustompropertiesReconciler := getMockReconciler()
+		mockStatefulSetReconciler := getMockReconciler(t, nil)
+		mockCustompropertiesReconciler := getMockReconciler(t, nil)
 
 		r := NewReconciler(clt, capability.NewMultiCapability(dynakube), dynakube, mockStatefulSetReconciler, mockCustompropertiesReconciler)
 		verifyReconciler(t, r)
 
 		err := r.Reconcile(context.Background())
-		mockStatefulSetReconciler.AssertCalled(t, "Reconcile")
-		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile")
+		mockStatefulSetReconciler.AssertCalled(t, "Reconcile", mock.Anything)
+		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile", mock.Anything)
 		require.NoError(t, err)
 
 		service := corev1.Service{}
@@ -160,15 +158,15 @@ func TestReconcile(t *testing.T) {
 	t.Run(`service does not get created when missing capabilities`, func(t *testing.T) {
 		clt := createClient()
 		dynakube := buildDynakube(capabilitiesWithoutService)
-		mockStatefulSetReconciler := getMockReconciler()
-		mockCustompropertiesReconciler := getMockReconciler()
+		mockStatefulSetReconciler := getMockReconciler(t, nil)
+		mockCustompropertiesReconciler := getMockReconciler(t, nil)
 
 		r := NewReconciler(clt, capability.NewMultiCapability(dynakube), dynakube, mockStatefulSetReconciler, mockCustompropertiesReconciler)
 		verifyReconciler(t, r)
 
 		err := r.Reconcile(context.Background())
-		mockStatefulSetReconciler.AssertCalled(t, "Reconcile")
-		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile")
+		mockStatefulSetReconciler.AssertCalled(t, "Reconcile", mock.Anything)
+		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile", mock.Anything)
 		require.NoError(t, err)
 
 		service := corev1.Service{}
@@ -182,8 +180,8 @@ func TestReconcile(t *testing.T) {
 func TestCreateOrUpdateService(t *testing.T) {
 	clt := createClient()
 	dynakube := buildDynakube(capabilitiesWithService)
-	mockStatefulSetReconciler := getMockReconciler()
-	mockCustompropertiesReconciler := getMockReconciler()
+	mockStatefulSetReconciler := getMockReconciler(t, nil)
+	mockCustompropertiesReconciler := getMockReconciler(t, nil)
 
 	t.Run(`create service works`, func(t *testing.T) {
 		r := NewReconciler(clt, capability.NewMultiCapability(dynakube), dynakube, mockStatefulSetReconciler, mockCustompropertiesReconciler)
@@ -261,8 +259,8 @@ func TestCreateOrUpdateService(t *testing.T) {
 func TestPortsAreOutdated(t *testing.T) {
 	clt := createClient()
 	dynakube := buildDynakube(capabilitiesWithService)
-	mockStatefulSetReconciler := getMockReconciler()
-	mockCustompropertiesReconciler := getMockReconciler()
+	mockStatefulSetReconciler := getMockReconciler(t, nil)
+	mockCustompropertiesReconciler := getMockReconciler(t, nil)
 
 	r := NewReconciler(clt, capability.NewMultiCapability(dynakube), dynakube, mockStatefulSetReconciler, mockCustompropertiesReconciler)
 	verifyReconciler(t, r)
@@ -289,8 +287,8 @@ func TestPortsAreOutdated(t *testing.T) {
 func TestLabelsAreOutdated(t *testing.T) {
 	clt := createClient()
 	dynakube := buildDynakube(capabilitiesWithService)
-	mockStatefulSetReconciler := getMockReconciler()
-	mockCustompropertiesReconciler := getMockReconciler()
+	mockStatefulSetReconciler := getMockReconciler(t, nil)
+	mockCustompropertiesReconciler := getMockReconciler(t, nil)
 	r := NewReconciler(clt, capability.NewMultiCapability(dynakube), dynakube, mockStatefulSetReconciler, mockCustompropertiesReconciler)
 	verifyReconciler(t, r)
 

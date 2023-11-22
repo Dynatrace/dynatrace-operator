@@ -3,9 +3,6 @@ kind: DynaKube
 metadata:
   name: dynakube
   namespace: dynatrace
-  # Automatically connect the kubernetes api to the dynatrace tenant endpoint to enable kubernetes monitoring.
-  annotations:
-    feature.dynatrace.com/automatic-kubernetes-api-monitoring: "true"
 spec:
   # Dynatrace apiUrl including the `/api` path at the end.
   # For SaaS, set `ENVIRONMENTID` to your environment ID.
@@ -17,6 +14,11 @@ spec:
   # If unset, the name of this custom resource is used
   #
   # tokens: ""
+
+  # Optional: Defines a custom pull secret in case you use a private registry when pulling images from the Dynatrace environment
+  # The secret has to be of type 'kubernetes.io/dockerconfigjson' (see https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/)
+  #
+  # customPullSecret: "custom-pull-secret"
 
   # Optional: Disable certificate validation checks for installer download and API communication
   #
@@ -40,36 +42,32 @@ spec:
   #
   # networkZone: name-of-my-network-zone
 
-  # Optional: Defines a custom pull secret in case you use a private registry when pulling images from the Dynatrace environment
-  # The secret has to be of type 'kubernetes.io/dockerconfigjson' (see https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/)
-  #
-  # customPullSecret: "custom-pull-secret"
-
   # Optional: If enabled, and if Istio is installed on the Kubernetes environment, the
   # Operator will create the corresponding VirtualService and ServiceEntry objects to allow access
   # to the Dynatrace cluster from agents or activeGates. Disabled by default.
   #
   # enableIstio: false
 
+  # The namespaces which should be injected into
+  # If unset, all namespace will be injected into
+  # namespaceSelector has no effect on hostMonitoring or classicFullstack
+  # For examples regarding namespaceSelectors, see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#resources-that-support-set-based-requirements
+  #
+  # namespaceSelector:
+  #   matchLabels:
+  #     app: my-app
+  #   matchExpressions:
+  #    - key: app
+  #      operator: In
+  #      values: [my-frontend, my-backend, my-database]
+
   # Configuration for OneAgent instances
   #
   oneAgent:
-    # Enables host monitoring and changes its settings
-    # Cannot be used in conjunction with cloud-native fullstack monitoring, classic fullstack monitoring or application-only monitoring
+    # Enables cloud-native fullstack monitoring and changes its settings
+    # Cannot be used in conjunction with classic fullstack monitoring, application-only monitoring or host monitoring
     #
-    hostMonitoring:
-      # Optional: If specified, indicates the OneAgent version to use
-      # Defaults to the configured version on your Dynatrace environment
-      # The version is expected to be provided in the semver format
-      # Example: {major.minor.release}, e.g., "1.200.0"
-      #
-      # version: ""
-
-      # Optional: Sets the URI for the image containing the OneAgent installer used by the DaemonSet
-      # Defaults to the latest OneAgent image on the tenant's registry
-      #
-      image: ""
-
+    cloudNativeFullStack:
       # Optional: Sets a node selector to control on which nodes the OneAgent will be deployed.
       # For more information on node selectors, see https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes/
       #
@@ -103,6 +101,16 @@ spec:
       #     cpu: 300m
       #     memory: 1.5Gi
 
+      # Optional: Adds custom arguments to the OneAgent installer
+      # For a list of available options, see https://www.dynatrace.com/support/help/shortlink/linux-custom-installation
+      # For a list of the limitations for OneAgents in Docker, see https://www.dynatrace.com/support/help/shortlink/oneagent-docker#limitations
+      #
+      # args: []
+
+      # Optional: Adds custom environment variables to OneAgent pods
+      #
+      # env: []
+
       # Optional: Enables or disables automatic updates of OneAgent pods
       # By default, if a new version is available, the OneAgent pods are restarted to apply the update
       # If set to "false", this behavior is disabled
@@ -116,27 +124,44 @@ spec:
       #
       # dnsPolicy: "ClusterFirstWithHostNet"
 
+      # Optional: Adds custom annotations to OneAgent pods
+      #
+      # annotations:
+      #   custom: annotation
+
       # Optional: Adds custom labels to OneAgent pods
       # Can be used to structure workloads
       #
       # labels:
       #   custom: label
 
-      # Optional: Adds custom annotations to OneAgent pods
+      # Optional: Sets the URI for the image containing the OneAgent installer used by the DaemonSet
+      # Defaults to the latest OneAgent image on the tenant's registry
       #
-      # annotations:
-      #   custom: annotations
+      # image: ""
 
-      # Optional: Adds custom environment variables to OneAgent pods
+      # Optional: If specified, indicates the OneAgent version to use
+      # Defaults to the configured version on your Dynatrace environment
+      # The version is expected to be provided in the semver format
+      # Example: {major.minor.release}, e.g., "1.200.0"
       #
-      # env: []
+      # version: ""
 
-      # Optional: Adds custom arguments to the OneAgent installer
-      # For a list of available options, see https://www.dynatrace.com/support/help/shortlink/linux-custom-installation
-      # For a list of the limitations for OneAgents in Docker, see https://www.dynatrace.com/support/help/shortlink/oneagent-docker#limitations
+      # Optional: Defines resources requests and limits for the initContainer
+      # See more: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers
       #
-      args:
-        - --set-monitoring-mode=infra
+      # initResources:
+      #   requests:
+      #     cpu: 100m
+      #     memory: 512Mi
+      #   limits:
+      #     cpu: 300m
+      #     memory: 1.5Gi
+
+      # Optional: The URI of the image that contains the codemodules specific OneAgent that will be injected into pods and applications.
+      # For an example of a Dockerfile creating such an image, see https://dt-url.net/operator-docker-samples
+      #
+      # codeModulesImage: ""
 
   # Configuration for ActiveGate instances.
   #
@@ -153,51 +178,16 @@ spec:
       - kubernetes-monitoring
       - dynatrace-api
 
-    # Optional: Sets the image used to deploy ActiveGate instances
-    # Defaults to the latest ActiveGate image on the tenant's registry
-    # Example: "ENVIRONMENTID.live.dynatrace.com/linux/activegate:latest"
-    #
-    image: ""
-
     # Optional: Sets how many ActiveGate pods are spawned by the StatefulSet
     # Defaults to "1"
     #
     # replicas: 1
 
-    # Optional: Specifies tolerations to include with the ActiveGate StatefulSet.
-    # For more information on tolerations, see https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+    # Optional: Sets the image used to deploy ActiveGate instances
+    # Defaults to the latest ActiveGate image on the tenant's registry
+    # Example: "ENVIRONMENTID.live.dynatrace.com/linux/activegate:latest"
     #
-    # tolerations:
-    # - effect: NoSchedule
-    #   key: node-role.kubernetes.io/master
-    #   operator: Exists
-
-    # Optional: Sets a node selector to control on which nodes the ActiveGate will be deployed.
-    # For more information on node selectors, see https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes/
-    #
-    # nodeSelector: {}
-
-    # Optional: Specifies resource settings for ActiveGate instances
-    # Consumption of the ActiveGate heavily depends on the workload to monitor
-    # The values should be adjusted according to the workload
-    #
-    resources:
-      requests:
-        cpu: 500m
-        memory: 512Mi
-      limits:
-        cpu: 1000m
-        memory: 1.5Gi
-
-    # Optional: Adds custom labels to ActiveGate pods
-    # Can be used to structure workloads
-    #
-    # labels:
-    #   custom: label
-
-    # Optional: Adds custom environment variables to ActiveGate pods
-    #
-    # env: []
+    # image: ""
 
     # Recommended: Sets the activation group for ActiveGate instances
     #
@@ -211,6 +201,41 @@ spec:
     #     [connectivity]
     #     networkZone=
     #   valueFrom: myCustomPropertiesConfigMap
+
+    # Optional: Specifies resource settings for ActiveGate instances
+    # Consumption of the ActiveGate heavily depends on the workload to monitor
+    # The values should be adjusted according to the workload
+    #
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1.5Gi
+
+    # Optional: Sets a node selector to control on which nodes the ActiveGate will be deployed.
+    # For more information on node selectors, see https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes/
+    #
+    # nodeSelector: {}
+
+    # Optional: Specifies tolerations to include with the ActiveGate StatefulSet.
+    # For more information on tolerations, see https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+    #
+    # tolerations:
+    # - effect: NoSchedule
+    #   key: node-role.kubernetes.io/master
+    #   operator: Exists
+
+    # Optional: Adds custom labels to ActiveGate pods
+    # Can be used to structure workloads
+    #
+    # labels:
+    #   custom: label
+
+    # Optional: Adds custom environment variables to ActiveGate pods
+    #
+    # env: []
 
     # Optional: Specifies the name of a secret containing a TLS certificate, a TLS key and the TLS key's password to be used by ActiveGate instances
     # If unset, a self-signed certificate is used
