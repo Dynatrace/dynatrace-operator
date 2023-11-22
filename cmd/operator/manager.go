@@ -90,7 +90,8 @@ func (provider operatorManagerProvider) CreateManager(namespace string, cfg *res
 	}
 
 	// instrument webhook manager HTTP client with OpenTelemetry
-	mgr.GetHTTPClient().Transport = otelhttp.NewTransport(mgr.GetHTTPClient().Transport)
+	httpCLient := mgr.GetHTTPClient()
+	httpCLient.Transport = otelhttp.NewTransport(httpCLient.Transport)
 
 	err = mgr.AddHealthzCheck(livezEndpointName, healthz.Ping)
 	if err != nil {

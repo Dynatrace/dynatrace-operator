@@ -21,7 +21,6 @@ const (
 
 func TestReconciler_Reconcile(t *testing.T) {
 	t.Run(`Create works with minimal setup`, func(t *testing.T) {
-		mockDTC := &dtclient.MockDynatraceClient{}
 		dynakube := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
@@ -35,10 +34,6 @@ func TestReconciler_Reconcile(t *testing.T) {
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube, token.Tokens{
 			dtclient.DynatraceApiToken: token.Token{Value: testValue},
 		})
-
-		mockDTC.
-			On("GetOneAgentConnectionInfo").
-			Return(dtclient.OneAgentConnectionInfo{}, nil)
 
 		err := r.Reconcile(context.Background())
 

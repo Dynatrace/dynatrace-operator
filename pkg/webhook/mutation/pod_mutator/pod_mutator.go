@@ -66,7 +66,14 @@ func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.
 	emptyPatch := admission.Patched("")
 	mutationRequest, err := webhook.createMutationRequestBase(ctx, request)
 	if err != nil {
-		return silentErrorResponse(ctx, mutationRequest.Pod, err)
+		emptyPatch.Result.Message = fmt.Sprintf("unable to inject into pod (err=%s)", err.Error())
+		log.Error(err, "building mutation request base encountered an error")
+		span.RecordError(err)
+		return emptyPatch
+	}
+	if mutationRequest == nil {
+		emptyPatch.Result.Message = "injection into pod not required"
+		return emptyPatch
 	}
 
 	podName := mutationRequest.PodName()

@@ -12,7 +12,7 @@ go/fmt:
 
 ## Runs gci
 go/gci:
-	gci write $(GCI_TARGET)
+	gci write --skip-generated $(GCI_TARGET)
 
 ## Runs linters that format/change the code in place
 go/format: go/fmt go/gci

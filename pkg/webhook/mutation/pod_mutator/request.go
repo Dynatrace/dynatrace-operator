@@ -40,6 +40,7 @@ func (webhook *podMutatorWebhook) createMutationRequestBase(ctx context.Context,
 		span.RecordError(err)
 		return nil, nil // nolint:nilerr
 	}
+
 	dynakube, err := webhook.getDynakube(ctx, dynakubeName)
 	if err != nil {
 		span.RecordError(err)

@@ -111,11 +111,12 @@ func InstallFromImage(t *testing.T) features.Feature {
 
 func WithProxy(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features.Feature {
 	builder := features.New("codemodules injection with proxy")
+	builder.WithLabel("name", "codemodules-with-proxy")
 	secretConfigs := tenant.GetMultiTenantSecret(t)
 	require.Len(t, secretConfigs, 2)
 
 	cloudNativeDynakube := *dynakube.New(
-		dynakube.WithName("cloudnative-codemodules-with-proxy"),
+		dynakube.WithName("codemodules-with-proxy"),
 		dynakube.WithApiUrl(secretConfigs[0].ApiUrl),
 		dynakube.WithCloudNativeSpec(codeModulesCloudNativeSpec()),
 		dynakube.WithIstioIntegration(),
@@ -157,11 +158,12 @@ func WithProxy(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features
 func WithProxyCA(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features.Feature {
 	const configMapName = "proxy-ca"
 	builder := features.New("codemodules injection with proxy and custom CA")
+	builder.WithLabel("name", "codemodules-with-proxy-custom-ca")
 	secretConfigs := tenant.GetMultiTenantSecret(t)
 	require.Len(t, secretConfigs, 2)
 
 	cloudNativeDynakube := *dynakube.New(
-		dynakube.WithName("cloudnative-codemodules-with-proxy-custom-ca"),
+		dynakube.WithName("codemodules-with-proxy-custom-ca"),
 		dynakube.WithApiUrl(secretConfigs[0].ApiUrl),
 		dynakube.WithCloudNativeSpec(codeModulesCloudNativeSpec()),
 		dynakube.WithCustomCAs(configMapName),

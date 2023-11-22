@@ -38,6 +38,14 @@ test/e2e/classic/switchmodes: manifests/crd/helm
 test/e2e/cloudnative/codemodules: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --labels "name=cloudnative-codemodules-image" $(SKIPCLEANUP)
 
+## Runs CloudNative codemodules-with-proxy e2e test only
+test/e2e/cloudnative/codemodules-with-proxy: manifests/crd/helm
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/istio -args --labels "name=codemodules-with-proxy" $(SKIPCLEANUP)
+
+## Runs CloudNative codemodules-with-proxy-custom-ca e2e test only
+test/e2e/cloudnative/codemodules-with-custom-ca: manifests/crd/helm
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/istio -args --labels "name=codemodules-with-proxy-custom-ca" $(SKIPCLEANUP)
+
 ## Runs CloudNative automatic injection disabled e2e test only
 test/e2e/cloudnative/disabledautoinjection: manifests/crd/helm
 	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/standard -args --labels "name=cloudnative-disabled-auto-inject" $(SKIPCLEANUP)
@@ -48,7 +56,7 @@ test/e2e/cloudnative/default: manifests/crd/helm
 
 ## Runs CloudNative istio e2e test only
 test/e2e/cloudnative/istio: manifests/crd/helm
-	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/istio -args --labels "name=cloudnative-isito" $(SKIPCLEANUP)
+	go test -v -tags "$(shell ./hack/build/create_go_build_tags.sh true)" -timeout 20m -count=1  ./test/scenarios/istio -args --labels "name=cloudnative-istio" $(SKIPCLEANUP)
 
 ## Runs CloudNative network problem e2e test only
 test/e2e/cloudnative/resilience: manifests/crd/helm
