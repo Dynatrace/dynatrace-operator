@@ -123,7 +123,7 @@ func (reconciler *ActiveGateReconciler) run(ctx context.Context) error {
 
 	log.Info("updating version status according to the tenant registry", "updater", "activegate")
 	defaultImage := reconciler.dynakube.DefaultActiveGateImage()
-	err = updateVersionStatusForTenantRegistry(ctx, updaterTarget, reconciler.registryClient, defaultImage)
+	err = updateVersionStatusForTenantRegistry(ctx, &updaterTarget, reconciler.registryClient, defaultImage)
 	if err != nil {
 		return err
 	}
