@@ -7,12 +7,15 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 var secretLog = logger.Factory.GetLogger("test-secret")
@@ -146,6 +149,49 @@ func TestMultipleSecrets(t *testing.T) {
 		assert.Equal(t, secret.Data, secretsMap["nsNotYetExisting"].Data)
 
 		assert.NotEqual(t, secret.Data, secretsMap["ns3"].Data)
+	})
+	t.Run("no error because of kubernetes rejecting the request", func(t *testing.T) {
+		fakeReader := fakeClient
+		boomClient := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Create: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
+				return errors.New("BOOM")
+			},
+			Delete: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.DeleteOption) error {
+				return errors.New("BOOM")
+			},
+			Update: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
+				return errors.New("BOOM")
+			},
+		})
+		secret := corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: testSecretName,
+			},
+			Data: map[string][]byte{
+				"samplekey": []byte("samplevalue"),
+			},
+		}
+		namespaces := []corev1.Namespace{
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "ns1",
+				},
+			},
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "ns2",
+				},
+			},
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "nsNotYetExisting",
+				},
+			},
+		}
+		secretQuery := NewQuery(context.TODO(), boomClient, fakeReader, secretLog)
+
+		err := secretQuery.CreateOrUpdateForNamespaces(secret, namespaces)
+		require.NoError(t, err)
 	})
 }
 
