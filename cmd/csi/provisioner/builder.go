@@ -1,8 +1,6 @@
 package provisioner
 
 import (
-	"context"
-
 	"github.com/Dynatrace/dynatrace-operator/cmd/config"
 	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
@@ -115,7 +113,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 		}
 
 		signalHandler := ctrl.SetupSignalHandler()
-		otelShutdownFn := dtotel.Start(context.Background(), "dynatrace-csi-provisioner", csiManager.GetAPIReader(), builder.namespace)
+		otelShutdownFn := dtotel.Start(signalHandler, "dynatrace-csi-provisioner", csiManager.GetAPIReader(), builder.namespace)
 		defer otelShutdownFn()
 
 		err = createCsiDataPath(builder.getFilesystem())
