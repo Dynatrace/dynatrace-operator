@@ -22,6 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 // NewClient returns a new controller-runtime fake Client configured with the Operator's scheme, and initialized with objs.
@@ -46,5 +47,12 @@ func NewClientWithIndex(objs ...client.Object) client.Client {
 			return []string{o.GetName()}
 		})
 	}
+	return clientBuilder.Build()
+}
+
+func NewClientWithInterceptors(funcs interceptor.Funcs) client.Client {
+	clientBuilder := fake.NewClientBuilder().
+		WithScheme(scheme.Scheme).
+		WithInterceptorFuncs(funcs)
 	return clientBuilder.Build()
 }
