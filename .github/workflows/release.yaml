@@ -61,7 +61,7 @@ jobs:
     strategy:
       matrix:
         platform: [amd64, arm64, ppc64le]
-        registry: [gcr, dockerhub]
+        registry: [gcr, dockerhub, amazon-ecr]
         include:
         - registry: gcr
           url: gcr.io
@@ -73,15 +73,30 @@ jobs:
           repository: DOCKERHUB_REPOSITORY
           username: DOCKERHUB_USERNAME
           password: DOCKERHUB_PASSWORD
+        - registry: amazon-ecr
+          url: public.ecr.aws
+          repository: AWS_REPOSITORY
     steps:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - name: Login to Registry
+        if: ${{ matrix.registry != 'amazon-ecr' }}
         uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
         with:
           registry: ${{ matrix.url }}
           username: ${{ secrets[matrix.username] }}
           password: ${{ secrets[matrix.password] }}
+      - name: Configure aws credentials
+        if: ${{ matrix.registry == 'amazon-ecr' }}
+        uses: aws-actions/configure-aws-credentials@010d0da01d0b5a38af31e9c3470dbfdabdecca3a # v4.0.1
+        with:
+          role-to-assume: ${{ secrets.ECR_IMAGEPUSH_ROLE }}
+          aws-region: us-east-1
+      - name: Login to Amazon ECR
+        if: ${{ matrix.registry == 'amazon-ecr' }}
+        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2.0.1
+        with:
+          registry-type: public
       - name: Push ${{matrix.platform}} to ${{matrix.registry}}
         uses: ./.github/actions/upload-image
         with:
