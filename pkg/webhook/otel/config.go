@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	OpenTelemetryServiceName = "DynatraceWebhook"
+	OpenTelemetryServiceName = "dynatrace-webhook"
 	WebhookPodNameKey        = "k8s.pod.name"
 )
 
