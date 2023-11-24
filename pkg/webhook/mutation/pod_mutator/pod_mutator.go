@@ -12,10 +12,11 @@ import (
 	k8spod "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
-	webhookotel "github.com/Dynatrace/dynatrace-operator/pkg/webhook/otel"
+	webhookotel "github.com/Dynatrace/dynatrace-operator/pkg/webhook/internal/otel"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -212,8 +213,8 @@ func createResponseForPod(ctx context.Context, pod *corev1.Pod, req admission.Re
 }
 
 func silentErrorResponse(ctx context.Context, pod *corev1.Pod, err error) admission.Response {
-	_, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), spanOptions()...)
-	defer span.End()
+	span := trace.SpanFromContext(ctx)
+	span.RecordError(err)
 
 	rsp := admission.Patched("")
 	podName := k8spod.GetName(*pod)

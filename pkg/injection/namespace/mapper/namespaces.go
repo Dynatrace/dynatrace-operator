@@ -4,10 +4,9 @@ import (
 	"context"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	injectionotel "github.com/Dynatrace/dynatrace-operator/pkg/injection/otel"
+	injectionotel "github.com/Dynatrace/dynatrace-operator/pkg/injection/internal/otel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel/controller_runtime"
-	webhookotel "github.com/Dynatrace/dynatrace-operator/pkg/webhook/otel"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -27,18 +26,19 @@ func NewNamespaceMapper(clt client.Client, apiReader client.Reader, operatorNs s
 
 // MapFromNamespace adds the labels to the targetNs if there is a matching Dynakube
 func (nm NamespaceMapper) MapFromNamespace(ctx context.Context) (bool, error) {
-	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), injectionotel.SpanOptions()...)
+	ctx, span := dtotel.StartSpan(ctx, injectionotel.Tracer())
 	defer span.End()
 
 	updatedNamespace, err := nm.updateNamespace(ctx)
 	if err != nil {
+		span.RecordError(err)
 		return false, err
 	}
 	return updatedNamespace, nil
 }
 
 func (nm NamespaceMapper) updateNamespace(ctx context.Context) (bool, error) {
-	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), injectionotel.SpanOptions()...)
+	ctx, span := dtotel.StartSpan(ctx, injectionotel.Tracer())
 	defer span.End()
 
 	deployedDynakubes := &dynatracev1beta1.DynaKubeList{}

@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
-	webhookotel "github.com/Dynatrace/dynatrace-operator/pkg/webhook/otel"
+	webhookotel "github.com/Dynatrace/dynatrace-operator/pkg/webhook/internal/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -37,9 +37,6 @@ func spanOptions(opts ...trace.SpanStartOption) []trace.SpanStartOption {
 	options := make([]trace.SpanStartOption, 0)
 	options = append(options, opts...)
 	options = append(options, trace.WithAttributes(
-		attribute.String(webhookPodNameKey, getWebhookPodName()),
-
-		// TODO: this is just for showcasing now, should be removed in the future
-		attribute.String("debug.info", "foobar")))
+		attribute.String(webhookPodNameKey, getWebhookPodName())))
 	return options
 }

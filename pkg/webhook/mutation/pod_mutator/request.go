@@ -6,7 +6,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
-	webhookotel "github.com/Dynatrace/dynatrace-operator/pkg/webhook/otel"
+	webhookotel "github.com/Dynatrace/dynatrace-operator/pkg/webhook/internal/otel"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
+	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric/noop"
@@ -74,6 +75,7 @@ func newResource(otelServiceName string) (*resource.Resource, error) {
 		resource.NewWithAttributes(
 			semconv.SchemaURL,
 			semconv.ServiceNameKey.String(otelServiceName),
+			semconv.ServiceVersionKey.String(version.Version),
 		),
 	)
 	return r, errors.WithStack(err)

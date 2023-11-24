@@ -16,7 +16,7 @@ const (
 )
 
 func GetUID(ctx context.Context, clt client.Reader) (types.UID, error) {
-	ctx, span := dtotel.StartSpan(ctx, Tracer())
+	ctx, span := dtotel.StartSpan(ctx, tracer())
 	defer span.End()
 
 	kubeSystemNamespace := &corev1.Namespace{}
