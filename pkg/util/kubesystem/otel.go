@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	OpenTelemetryServiceName = "UtilKubesystem"
+	otelInstrumentationScope = "kubesystem"
 )
 
 var kubeSystemTracer trace.Tracer
@@ -16,7 +16,7 @@ var once = sync.Once{}
 
 func tracer() trace.Tracer {
 	once.Do(func() {
-		kubeSystemTracer = otel.Tracer(OpenTelemetryServiceName)
+		kubeSystemTracer = otel.Tracer(otelInstrumentationScope)
 	})
 	return kubeSystemTracer
 }

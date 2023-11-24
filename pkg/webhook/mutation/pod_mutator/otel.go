@@ -14,7 +14,6 @@ import (
 const (
 	// the attribute key needs to be added to the allow list on the receiving tenant
 	mutatedPodNameKey = "webhook.mutationrequest.pod.name"
-	webhookPodNameKey = "k8s.pod.name"
 )
 
 var envPodName string
@@ -29,7 +28,7 @@ func getWebhookPodName() string {
 
 func countHandleMutationRequest(ctx context.Context, mutatedPodName string) {
 	dtotel.Count(ctx, webhookotel.Meter(), "handledPodMutationRequests", int64(1),
-		attribute.String(webhookPodNameKey, getWebhookPodName()),
+		attribute.String(webhookotel.WebhookPodNameKey, getWebhookPodName()),
 		attribute.String(mutatedPodNameKey, mutatedPodName))
 }
 
@@ -37,6 +36,6 @@ func spanOptions(opts ...trace.SpanStartOption) []trace.SpanStartOption {
 	options := make([]trace.SpanStartOption, 0)
 	options = append(options, opts...)
 	options = append(options, trace.WithAttributes(
-		attribute.String(webhookPodNameKey, getWebhookPodName())))
+		attribute.String(webhookotel.WebhookPodNameKey, getWebhookPodName())))
 	return options
 }
