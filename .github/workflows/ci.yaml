@@ -88,7 +88,7 @@ jobs:
         with:
           # renovate depName=github.com/golangci/golangci-lint
           version: v1.55.2
-          args: --build-tags containers_image_storage_stub,e2e --timeout 300s --out-${NO_FUTURE}format colored-line-number
+          args: --build-tags e2e --timeout 300s --out-${NO_FUTURE}format colored-line-number
 
   security:
     name: Code security scanning alerts
