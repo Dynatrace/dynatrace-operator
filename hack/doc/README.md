@@ -32,8 +32,8 @@ python3 <operator-repo>/hack/doc/role-permissions2md.py https://github.com/Dynat
 python3 <operator-repo>/hack/doc/role-permissions2md.py https://github.com/Dynatrace/dynatrace-operator/releases/download/v0.12.0/openshift-csi.yaml
 ```
 
-
 ## Generate API docs for custom resources
+
 ```bash
-$ python3 <operator-repo>/hack/doc/custom_resource_params_to_md.py './config/crd/bases/dynatrace.com_dynakubes.yaml'
+python3 <operator-repo>/hack/doc/custom_resource_params_to_md.py './config/crd/bases/dynatrace.com_dynakubes.yaml'
 ```

@@ -1,6 +1,9 @@
 EdgeConnect is the Schema for the EdgeConnect API
+
 ## EdgeConnect is the Schema for the EdgeConnect API
+
 ### .spec
+
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
 |annotations|Adds additional annotations to the EdgeConnect pods|-|object|
@@ -17,6 +20,7 @@ EdgeConnect is the Schema for the EdgeConnect API
 |topologySpreadConstraints|Sets topology spread constraints for the EdgeConnect pods|-|array|
 
 ### .spec.oauth
+
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
 |clientSecret|Name of the secret that holds oauth clientId/secret|-|string|
@@ -24,8 +28,8 @@ EdgeConnect is the Schema for the EdgeConnect API
 |resource|URN identifying your account. You get the URN when creating the OAuth client|-|string|
 
 ### .spec.imageRef
+
 |Parameter|Description|Default value|Data type|
 |:-|:-|:-|:-|
 |repository|Custom EdgeConnect image repository|-|string|
 |tag|Indicates version of the EdgeConnect image to use|-|string|
-
