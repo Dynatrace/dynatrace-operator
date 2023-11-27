@@ -329,7 +329,11 @@ func assertReadOnlyVolumeMounts(t *testing.T, activeGatePod corev1.Pod) {
 		},
 	}
 
-	for _, r := range expectedVolumeMounts {
-		assert.Contains(t, activeGatePod.Spec.Containers[0].VolumeMounts, r)
+	for _, container := range activeGatePod.Spec.Containers {
+		if container.Name == consts.ActiveGateContainerName {
+			for _, r := range expectedVolumeMounts {
+				assert.Contains(t, container.VolumeMounts, r)
+			}
+		}
 	}
 }
