@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	hostname       = "kubernetes.default.svc.cluster.local"
+	hostname       = "kubernetes.default.svc"
 	use            = "startup-probe"
 	defaultTimeout = 5
 )
