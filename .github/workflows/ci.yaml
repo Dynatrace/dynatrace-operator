@@ -126,7 +126,7 @@ jobs:
         run: make doc/api-ref
       - name: Check for uncommitted changes
         id: check-changes
-        uses: mskri/check-uncommitted-changes-action@v1.0.1
+        uses: mskri/check-uncommitted-changes-action@2b152539dd033c3a26e0dd1d8b9a0c8e4d3a8a19 # v1.0.1
       - name: Evaluate if there are changes
         if: steps.check-changes.outputs.outcome == failure()
         run: echo "There are uncommitted changes"
