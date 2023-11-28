@@ -18,7 +18,7 @@ type PodMutator interface {
 	Injected(request *BaseRequest) bool
 
 	// Mutate mutates the elements of the given MutationRequest, specifically the pod and installContainer.
-	Mutate(request *MutationRequest) error
+	Mutate(ctx context.Context, request *MutationRequest) error
 
 	// Reinvocation mutates the pod of the given ReinvocationRequest.
 	// It only mutates the parts of the pod that haven't been mutated yet. (example: another webhook mutated the pod after our webhook was executed)

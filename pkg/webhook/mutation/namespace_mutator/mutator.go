@@ -7,6 +7,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
+	webhookotel "github.com/Dynatrace/dynatrace-operator/pkg/webhook/internal/otel"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,13 +39,17 @@ type namespaceMutator struct {
 //  2. if the namespace was updated by the operator => don't do the mapping: we detect this using an annotation, we do this because the operator also does the mapping
 //     but from the dynakube's side (during dynakube reconcile) and we don't want to repeat ourselves. So we just remove the annotation.
 func (nm *namespaceMutator) Handle(ctx context.Context, request admission.Request) admission.Response {
+	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer(), spanOptions()...)
+	defer span.End()
+	countHandleMutationRequest(ctx, request.Namespace)
+
 	if nm.namespace == request.Namespace {
 		return admission.Patched("")
 	}
 
 	log.Info("namespace request", "namespace", request.Name, "operation", request.Operation)
 	ns := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: request.Namespace}}
-	nsMapper := mapper.NewNamespaceMapper(ctx, nm.client, nm.apiReader, nm.namespace, &ns)
+	nsMapper := mapper.NewNamespaceMapper(nm.client, nm.apiReader, nm.namespace, &ns)
 	if err := decodeRequestToNamespace(request, &ns); err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}
@@ -55,8 +61,9 @@ func (nm *namespaceMutator) Handle(ctx context.Context, request admission.Reques
 	}
 
 	log.Info("checking namespace labels", "namespace", request.Name)
-	updatedNamespace, err := nsMapper.MapFromNamespace()
+	updatedNamespace, err := nsMapper.MapFromNamespace(ctx)
 	if err != nil {
+		span.RecordError(err)
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 	if !updatedNamespace {

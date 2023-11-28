@@ -1,4 +1,4 @@
-package otel
+package dtotel
 
 import (
 	"go.opentelemetry.io/contrib/instrumentation/host"

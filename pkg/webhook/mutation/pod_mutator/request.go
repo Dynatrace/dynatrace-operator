@@ -4,8 +4,9 @@ import (
 	"context"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	dtotel "github.com/Dynatrace/dynatrace-operator/pkg/util/otel"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	webhookotel "github.com/Dynatrace/dynatrace-operator/pkg/webhook/internal/otel"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -14,32 +15,35 @@ import (
 )
 
 func (webhook *podMutatorWebhook) createMutationRequestBase(ctx context.Context, request admission.Request) (*dtwebhook.MutationRequest, error) {
-	ctx, span := dtotel.StartSpan(ctx, webhook.spanTracer, "createMutationRequestBase")
+	ctx, span := dtotel.StartSpan(ctx, webhookotel.Tracer())
 	defer span.End()
 
 	pod, err := getPodFromRequest(request, webhook.decoder)
 	if err != nil {
+		span.RecordError(err)
 		return nil, err
 	}
 	namespace, err := getNamespaceFromRequest(ctx, webhook.apiReader, request)
 	if err != nil {
+		span.RecordError(err)
 		return nil, err
 	}
 	dynakubeName, err := getDynakubeName(*namespace)
-	if err != nil {
-		if webhook.deployedViaOLM {
-			// in case of olm deployment, all pods are sent to us
-			// but not all of them need to be mutated,
-			// therefore their namespace might not have a dynakube assigned
-			// in which case we don't need to do anything
-			return nil, nil // nolint:nilerr
-		} else {
-			return nil, err
-		}
+	if err != nil && !webhook.deployedViaOLM {
+		span.RecordError(err)
+		return nil, err
+	} else if err != nil {
+		// in case of olm deployment, all pods are sent to us
+		// but not all of them need to be mutated,
+		// therefore their namespace might not have a dynakube assigned
+		// in which case we don't need to do anything
+		span.RecordError(err)
+		return nil, nil // nolint:nilerr
 	}
 
 	dynakube, err := webhook.getDynakube(ctx, dynakubeName)
 	if err != nil {
+		span.RecordError(err)
 		return nil, err
 	}
 	mutationRequest := dtwebhook.NewMutationRequest(ctx, *namespace, nil, pod, *dynakube)

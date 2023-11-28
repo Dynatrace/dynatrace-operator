@@ -23,9 +23,9 @@ func TestMatchForNamespaceNothingEverything(t *testing.T) {
 	t.Run(`Match to unlabeled namespace`, func(t *testing.T) {
 		namespace := createNamespace("test-namespace", nil)
 		clt := fake.NewClient(dynakubes[0], dynakubes[1])
-		nm := NewNamespaceMapper(context.TODO(), clt, clt, "dynatrace", namespace)
+		nm := NewNamespaceMapper(clt, clt, "dynatrace", namespace)
 
-		updated, err := nm.updateNamespace()
+		updated, err := nm.updateNamespace(context.Background())
 		assert.NoError(t, err)
 		assert.True(t, updated)
 	})
@@ -38,9 +38,9 @@ func TestMapFromNamespace(t *testing.T) {
 
 	t.Run("Add to namespace", func(t *testing.T) {
 		clt := fake.NewClient(dk)
-		nm := NewNamespaceMapper(context.TODO(), clt, clt, "dynatrace", namespace)
+		nm := NewNamespaceMapper(clt, clt, "dynatrace", namespace)
 
-		updated, err := nm.MapFromNamespace()
+		updated, err := nm.MapFromNamespace(context.Background())
 
 		assert.NoError(t, err)
 		assert.True(t, updated)
@@ -50,9 +50,9 @@ func TestMapFromNamespace(t *testing.T) {
 	t.Run("Error, 2 dynakubes point to same namespace", func(t *testing.T) {
 		dk2 := createTestDynakubeWithAppInject("appMonitoring-2", labels, nil)
 		clt := fake.NewClient(dk, dk2)
-		nm := NewNamespaceMapper(context.TODO(), clt, clt, "dynatrace", namespace)
+		nm := NewNamespaceMapper(clt, clt, "dynatrace", namespace)
 
-		updated, err := nm.MapFromNamespace()
+		updated, err := nm.MapFromNamespace(context.Background())
 
 		assert.Error(t, err)
 		assert.False(t, updated)
@@ -64,9 +64,9 @@ func TestMapFromNamespace(t *testing.T) {
 		}
 		namespace := createNamespace("test-namespace", labels)
 		clt := fake.NewClient(dk)
-		nm := NewNamespaceMapper(context.TODO(), clt, clt, "dynatrace", namespace)
+		nm := NewNamespaceMapper(clt, clt, "dynatrace", namespace)
 
-		updated, err := nm.MapFromNamespace()
+		updated, err := nm.MapFromNamespace(context.Background())
 
 		assert.NoError(t, err)
 		assert.True(t, updated)
@@ -77,9 +77,9 @@ func TestMapFromNamespace(t *testing.T) {
 		dk := createTestDynakubeWithMultipleFeatures("appMonitoring", nil)
 		namespace := createNamespace("kube-something", nil)
 		clt := fake.NewClient(dk)
-		nm := NewNamespaceMapper(context.TODO(), clt, clt, "dynatrace", namespace)
+		nm := NewNamespaceMapper(clt, clt, "dynatrace", namespace)
 
-		updated, err := nm.MapFromNamespace()
+		updated, err := nm.MapFromNamespace(context.Background())
 
 		assert.NoError(t, err)
 		assert.False(t, updated)
@@ -90,9 +90,9 @@ func TestMapFromNamespace(t *testing.T) {
 		dk := createTestDynakubeWithMultipleFeatures("appMonitoring", nil)
 		namespace := createNamespace("openshift-something", nil)
 		clt := fake.NewClient(dk)
-		nm := NewNamespaceMapper(context.TODO(), clt, clt, "dynatrace", namespace)
+		nm := NewNamespaceMapper(clt, clt, "dynatrace", namespace)
 
-		updated, err := nm.MapFromNamespace()
+		updated, err := nm.MapFromNamespace(context.Background())
 
 		assert.NoError(t, err)
 		assert.False(t, updated)
@@ -106,9 +106,9 @@ func TestMapFromNamespace(t *testing.T) {
 		}
 		namespace := createNamespace("openshift-something", nil)
 		clt := fake.NewClient(dk)
-		nm := NewNamespaceMapper(context.TODO(), clt, clt, "dynatrace", namespace)
+		nm := NewNamespaceMapper(clt, clt, "dynatrace", namespace)
 
-		updated, err := nm.MapFromNamespace()
+		updated, err := nm.MapFromNamespace(context.Background())
 
 		assert.NoError(t, err)
 		assert.True(t, updated)

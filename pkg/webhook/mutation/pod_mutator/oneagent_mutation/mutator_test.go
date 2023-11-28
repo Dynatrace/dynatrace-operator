@@ -147,7 +147,7 @@ func TestMutate(t *testing.T) {
 			initialAnnotationsLen := len(request.Pod.Annotations)
 			initialInitContainers := request.Pod.Spec.InitContainers
 
-			err := mutator.Mutate(request)
+			err := mutator.Mutate(context.Background(), request)
 			require.NoError(t, err)
 
 			assert.Len(t, request.Pod.Spec.Containers[0].Env, initialNumberOfContainerEnvsLen+testCase.expectedAdditionalEnvCount)
@@ -177,7 +177,7 @@ func TestNoCommunicationHostsMutate(t *testing.T) {
 	initialAnnotationsLen := len(request.Pod.Annotations)
 	initialInitContainers := request.Pod.Spec.InitContainers
 
-	err := mutator.Mutate(request)
+	err := mutator.Mutate(context.Background(), request)
 	require.NoError(t, err)
 
 	assert.Len(t, request.Pod.Spec.Containers[0].Env, initialNumberOfContainerEnvsLen)
