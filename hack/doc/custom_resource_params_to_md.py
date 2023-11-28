@@ -27,10 +27,7 @@ def main():
     max_version_index = max(len(crd["spec"]["versions"]) - 1, 0)
     spec = crd["spec"]["versions"][max_version_index]["schema"]["openAPIV3Schema"]
 
-    print(spec["description"])
-    # To make markdown linter happy
-    print()
-    print("## {name}".format(name=spec["description"]))
+    print("## {name} schema".format(name=crd["spec"]["names"]["kind"]))
 
     props = spec["properties"]["spec"]["properties"]
     d = defaultdict(list)

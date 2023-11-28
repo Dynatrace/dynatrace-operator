@@ -1,6 +1,4 @@
-DynaKube is the Schema for the DynaKube API
-
-## DynaKube is the Schema for the DynaKube API
+## DynaKube schema
 
 ### .spec
 

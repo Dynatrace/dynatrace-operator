@@ -1,6 +1,4 @@
-EdgeConnect is the Schema for the EdgeConnect API
-
-## EdgeConnect is the Schema for the EdgeConnect API
+## EdgeConnect schema
 
 ### .spec
 
@@ -11,6 +9,7 @@ EdgeConnect is the Schema for the EdgeConnect API
 |autoUpdate|Enables automatic restarts of EdgeConnect pods in case a new version is available (the default value is: true)|True|boolean|
 |customPullSecret|Pull secret for your private registry|-|string|
 |env|Adds additional environment variables to the EdgeConnect pods|-|array|
+|hostPatterns|Host patterns to be set in the tenant, only considered when provisioning is enabled.|-|array|
 |hostRestrictions|Restrict outgoing HTTP requests to your internal resources to specified hosts|-|string|
 |labels|Adds additional labels to the EdgeConnect pods|-|object|
 |nodeSelector|Node selector to control the selection of nodes for the EdgeConnect pods|-|object|
@@ -25,6 +24,7 @@ EdgeConnect is the Schema for the EdgeConnect API
 |:-|:-|:-|:-|
 |clientSecret|Name of the secret that holds oauth clientId/secret|-|string|
 |endpoint|Token endpoint URL of Dynatrace SSO|-|string|
+|provisioner|Determines if the operator will create the EdgeConnect and light OAuth client on the cluster using the credentials provided. Requires more scopes than default behavior.|-|boolean|
 |resource|URN identifying your account. You get the URN when creating the OAuth client|-|string|
 
 ### .spec.imageRef
