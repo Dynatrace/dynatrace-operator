@@ -24,9 +24,6 @@ func spanOptions(opts ...trace.SpanStartOption) []trace.SpanStartOption {
 	options := make([]trace.SpanStartOption, 0)
 	options = append(options, opts...)
 	options = append(options, trace.WithAttributes(
-		attribute.String(webhookotel.WebhookPodNameKey, webhookotel.GetWebhookPodName()),
-
-		// TODO: this is just for showcasing now, should be removed in the future
-		attribute.String("debug.info", "foobar")))
+		attribute.String(webhookotel.WebhookPodNameKey, webhookotel.GetWebhookPodName())))
 	return options
 }
