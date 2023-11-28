@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 
+desired_version="$1"
+
 ### reintroduced curl due to github rate-limiting our downloads via api calls!   ####
 ### -> unit tests failed as plugin could not be installed correctly              ####
 
 HELM_PLUGINS="$(helm env HELM_PLUGINS)"
-desired_version="$1"
+
 architecture="$(uname -m)"
 os="$(uname -s)"
 
