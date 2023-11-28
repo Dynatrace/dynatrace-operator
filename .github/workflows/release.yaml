@@ -94,6 +94,7 @@ jobs:
         id: digest
         env:
           IMAGE: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}-${{ matrix.platform }}
+          DIGEST_KEY: digest
         run: |
           hack/build/ci/get-image-digest.sh
       - name: Sign image for ${{matrix.registry}}
@@ -152,11 +153,13 @@ jobs:
         include:
           - registry: gcr
             url: gcr.io
+            digest_key: gcr-digest
             repository: GCR_REPOSITORY
             username: GCR_USERNAME
             password: GCR_JSON_KEY
           - registry: dockerhub
             url: docker.io
+            digest_key: dockerhub-digest
             repository: DOCKERHUB_REPOSITORY
             username: DOCKERHUB_USERNAME
             password: DOCKERHUB_PASSWORD
@@ -176,16 +179,17 @@ jobs:
           registry: ${{ matrix.url }}
           repository: ${{ secrets[matrix.repository] }}
           combined: true
-      - name: Get image digest
+      - name: Store image digest
         id: digest
         env:
           IMAGE: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}
+          DIGEST_KEY: ${{ matrix.digest_key }}
         run: |
           hack/build/ci/get-image-digest.sh
       - name: Sign images for ${{matrix.registry}}
         uses: ./.github/actions/sign-image
         with:
-          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{steps.digest.outputs.digest}}
+          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{steps.digest.outputs[matrix.digest_key]}}
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
 
@@ -202,11 +206,13 @@ jobs:
         include:
           - registry: gcr
             url: gcr.io
+            digest_key: gcr-digest
             repository: GCR_REPOSITORY
             username: GCR_USERNAME
             password: GCR_JSON_KEY
           - registry: dockerhub
             url: docker.io
+            digest_key: dockerhub-digest
             repository: DOCKERHUB_REPOSITORY
             username: DOCKERHUB_USERNAME
             password: DOCKERHUB_PASSWORD
@@ -219,24 +225,18 @@ jobs:
           registry: ${{ matrix.url }}
           username: ${{ secrets[matrix.username] }}
           password: ${{ secrets[matrix.password] }}
-      - name: Get operator-image digest
-        id: operator-digest
-        env:
-          IMAGE: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}
-        run: |
-          hack/build/ci/get-image-digest.sh
       - name: Create sbom for ${{matrix.registry}}
         id: sbom
         uses: aquasecurity/trivy-action@22d2755f774d925b191a185b74e782a4b0638a41 # 0.15.0
         with:
-          image-ref: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{steps.operator-digest.outputs.digest}}
+          image-ref: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{needs.manifest.outputs[matrix.digest_key]}}
           format: 'cyclonedx'
           output: 'result.json'
           skip-dirs: '/usr/share/dynatrace-operator/third_party_licenses'
       - name: Upload sbom to ${{matrix.registry}}
         uses: ./.github/actions/upload-sbom
         with:
-          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{steps.operator-digest.outputs.digest}}
+          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{steps.operator-digest.outputs[matrix.digest_key]}}
           sbom: 'result.json'
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}

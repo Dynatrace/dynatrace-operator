@@ -1,5 +1,5 @@
 #!/bin/bash
 
-digest=$(skopeo inspect docker://"${IMAGE}" --format "{{.Digest}}")
-echo "digest=${digest}">> "$GITHUB_OUTPUT"
+digest=$(skopeo inspect docker-daemon:"${IMAGE}" --format "{{.Digest}}")
+echo "${DIGEST_KEY}=${digest}">> "$GITHUB_OUTPUT"
 
