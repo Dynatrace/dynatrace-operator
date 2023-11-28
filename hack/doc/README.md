@@ -6,10 +6,8 @@ This script can be used to create a table containing permissions needed by compo
 
 Pre-requisites:
 
-```sh
-python3
-pip install pyyaml
-```
+- python3
+- pyyaml
 
 ## Usage
 
