@@ -113,6 +113,21 @@ jobs:
           config: .markdownlint.json
           version: 0.36.0
 
+  check-uncommitted-doc-changes:
+    name: Check uncommitted changes in api docs action
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - name: Run make api docs to see uncommitted changes
+        run: make doc/api-ref
+      - name: Check for uncommitted changes
+        id: check-changes
+        uses: mskri/check-uncommitted-changes-action@v1.0.1
+      - name: Evaluate if there are changes
+        if: steps.check-changes.outputs.outcome == failure()
+        run: echo "There are uncommitted changes"
+
   prepare:
     name: Prepare properties
     runs-on: ubuntu-latest
