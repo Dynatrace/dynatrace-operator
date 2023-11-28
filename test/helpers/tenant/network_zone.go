@@ -122,7 +122,7 @@ func deleteNetworkZone(secret Secret, networkZone string) func(ctx context.Conte
 		if statusCode == http.StatusOK || statusCode == http.StatusNoContent {
 			return true, nil
 		} else if statusCode == http.StatusBadRequest {
-			// this error can indicate, that the networkzone is still used by an ActiveGate, just try again later
+			// this error can indicate, that the network zone is still used by an ActiveGate, just try again later
 			return false, nil
 		}
 
