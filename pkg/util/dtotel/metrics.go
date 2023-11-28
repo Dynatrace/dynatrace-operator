@@ -1,8 +1,6 @@
-package otel
+package dtotel
 
 import (
-	"fmt"
-
 	"github.com/pkg/errors"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -54,7 +52,6 @@ func newOtlpMetricsExporter(ctx context.Context, endpoint string, apiToken strin
 			"Authorization": "Api-Token " + apiToken,
 		}),
 		otlpmetrichttp.WithAggregationSelector(aggregationSelector))
-
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -67,19 +64,9 @@ type Number interface {
 
 // Count is a utility that can be used to increase Int64 and Float64 counters, but with same safeguards to avoid panics, if meter is not
 // properly initialized
-func Count[N Number](ctx context.Context, meter metric.Meter, name string, value N, attributes ...any) {
+func Count[N Number](ctx context.Context, meter metric.Meter, name string, value N, attributes ...attribute.KeyValue) {
 	if meter == nil || name == "" {
 		return
-	}
-
-	metricAttributes := make([]attribute.KeyValue, 0)
-	for i := 0; i < len(attributes)-1; i += 2 {
-		// if the number of attributes is odd, the last entry is considered a key without value and will be dropped
-		metricAttributes = append(metricAttributes, attribute.KeyValue{
-			Key: attribute.Key(fmt.Sprintf("%s", attributes[i])),
-			// converting all values to strings here for simplicity, could be more sophisticated with a giant type switch
-			Value: attribute.StringValue(fmt.Sprintf("%s", attributes[i+1])),
-		})
 	}
 
 	var err error
@@ -88,13 +75,13 @@ func Count[N Number](ctx context.Context, meter metric.Meter, name string, value
 		var counter metric.Int64Counter
 		counter, err = meter.Int64Counter(name)
 		if err == nil {
-			counter.Add(ctx, v, metric.WithAttributes(metricAttributes...))
+			counter.Add(ctx, v, metric.WithAttributes(attributes...))
 		}
 	case float64:
 		var counter metric.Float64Counter
 		counter, err = meter.Float64Counter(name)
 		if err == nil {
-			counter.Add(ctx, v, metric.WithAttributes(metricAttributes...))
+			counter.Add(ctx, v, metric.WithAttributes(attributes...))
 		}
 	default:
 		err = errors.Errorf("unsupported counter type")

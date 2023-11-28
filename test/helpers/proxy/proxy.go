@@ -8,7 +8,6 @@ import (
 	"path"
 	"path/filepath"
 	"testing"
-	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/common"
@@ -88,12 +87,9 @@ func DeleteProxy() features.Func {
 	}
 }
 
-// TODO: Do an actual fix, either in the operator to retry more often if we fail on network error OR actually verify when the proxy is actually ready.
-// Proxy deployment Ready != proxy is actually ready to receive requests
 func checkProxyReady() features.Func {
-	return func(ctx context.Context, _ *testing.T, _ *envconf.Config) context.Context {
-		time.Sleep(2 * time.Minute)
-		return ctx
+	return func(ctx context.Context, t *testing.T, envc *envconf.Config) context.Context {
+		return helpers.ToFeatureFunc(deployment.WaitFor(proxyDeploymentName, proxyNamespaceName), false)(ctx, t, envc)
 	}
 }
 
