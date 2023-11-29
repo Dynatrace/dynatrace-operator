@@ -82,5 +82,15 @@
         "$default"
       ],
     },
+    {
+      "matchPackageNames": ["markdownlint-cli"],
+      "pinVersions": true,
+      "enabled": true
+    },
+    {
+      "packageNames": ["helm-unittest"],
+      "enabled": true,
+      "pinVersions": true,
+    }
   ],
 }

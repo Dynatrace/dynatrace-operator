@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
-desired_version="0.3.2"
-
+desired_version="$1"
 
 ### reintroduced curl due to github rate-limiting our downloads via api calls!   ####
 ### -> unit tests failed as plugin could not be installed correctly              ####
