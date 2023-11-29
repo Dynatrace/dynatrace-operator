@@ -50,7 +50,7 @@ KUSTOMIZE=$(shell hack/build/command.sh kustomize)
 ## Install 'markdownlint' if it is missing
 ## `brew` is used, because otherwise we would need to install using `npm`.
 prerequisites/markdownlint:
-	brew install markdownlint-cli@$(markdownlint_cli_version) --quiet
+	brew install markdownlint-cli@$(markdownlint_cli_version:v=) --quiet
 
 ## Install verktra/mockery
 prerequisites/mockery:
