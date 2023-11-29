@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
-desired_version="0.3.2"
-
+desired_version="$1"
 
 ### reintroduced curl due to github rate-limiting our downloads via api calls!   ####
 ### -> unit tests failed as plugin could not be installed correctly              ####
@@ -34,7 +33,7 @@ fi
 
 helm plugin uninstall unittest || true
 curl \
-  -L "https://github.com/helm-unittest/helm-unittest/releases/download/v${desired_version}/helm-unittest-${PLATFORM}-${ARCH}-${desired_version}.tgz" \
+  -L "https://github.com/helm-unittest/helm-unittest/releases/download/${desired_version}/helm-unittest-${PLATFORM}-${ARCH}-${desired_version//v}.tgz" \
   -o helm-unittest.tgz
 mkdir -p "${HELM_PLUGINS}/unittest"
 tar xzvf helm-unittest.tgz -C "${HELM_PLUGINS}/unittest"

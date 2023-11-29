@@ -7,9 +7,13 @@ golang_ci_cmd_version=v1.55.2
 # renovate depName=github.com/daixiang0/gci
 gci_version=v0.11.2
 # renovate depName=golang.org/x/tools
-golang_tools_version=v0.15.0
+golang_tools_version=v0.16.0
 # renovate depName=github.com/vektra/mockery
 mockery_version=v2.38.0
+# renovate depName=github.com/igorshubovych/markdownlint-cli
+markdownlint_cli_version=v0.37.0
+# renovate depName=github.com/helm-unittest/helm-unittest
+helmunittest_version=v0.3.6
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -36,7 +40,7 @@ prerequisites/go-linting:
 ## Install 'helm' if it is missing
 ## TODO: Have version accessible by renovate?
 prerequisites/helm-unittest:
-	hack/helm/install-unittest-plugin.sh
+	hack/helm/install-unittest-plugin.sh $(helmunittest_version)
 
 ## Installs 'kustomize' if it is missing
 prerequisites/kustomize:
@@ -45,9 +49,8 @@ KUSTOMIZE=$(shell hack/build/command.sh kustomize)
 
 ## Install 'markdownlint' if it is missing
 ## `brew` is used, because otherwise we would need to install using `npm`.
-## TODO: Pin version
 prerequisites/markdownlint:
-	brew install markdownlint-cli --quiet
+	brew install markdownlint-cli@$(markdownlint_cli_version:v=) --quiet
 
 ## Install verktra/mockery
 prerequisites/mockery:

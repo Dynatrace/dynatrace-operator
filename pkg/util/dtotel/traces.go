@@ -1,7 +1,10 @@
-package otel
+package dtotel
 
 import (
 	"context"
+	"fmt"
+	"path/filepath"
+	"runtime"
 
 	"github.com/pkg/errors"
 	"go.opentelemetry.io/otel"
@@ -11,6 +14,18 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/trace"
 )
+
+func StartSpan[T any](ctx context.Context, tracer T, opts ...trace.SpanStartOption) (context.Context, trace.Span) {
+	spanTitle := getCaller(1)
+
+	realTracer := resolveTracer(tracer)
+	if realTracer == nil {
+		log.Info("failed to start span, no valid tracer given", "spanTitle", spanTitle, "tracer", fmt.Sprintf("%v", tracer))
+		return ctx, noopSpan{}
+	}
+
+	return realTracer.Start(ctx, spanTitle, opts...)
+}
 
 func setupTracesWithOtlp(ctx context.Context, resource *resource.Resource, endpoint string, apiToken string) (trace.TracerProvider, shutdownFn, error) {
 	tracerExporter, err := newOtlpTraceExporter(ctx, endpoint, apiToken)
@@ -46,7 +61,7 @@ func newOtlpTraceExporter(ctx context.Context, endpoint string, apiToken string)
 	return exporter, nil
 }
 
-func StartSpan[T any](ctx context.Context, tracer T, title string, opts ...trace.SpanStartOption) (context.Context, trace.Span) {
+func resolveTracer[T any](tracer T) trace.Tracer {
 	var realTracer trace.Tracer
 	switch t := any(tracer).(type) {
 	case string:
@@ -54,11 +69,17 @@ func StartSpan[T any](ctx context.Context, tracer T, title string, opts ...trace
 	case trace.Tracer:
 		realTracer = t
 	}
+	return realTracer
+}
 
-	if realTracer == nil || title == "" {
-		return ctx, noopSpan{}
+func getCaller(i int) string {
+	if pc, filePath, line, ok := runtime.Caller(i); ok {
+		details := runtime.FuncForPC(pc)
+		fileName := filepath.Base(filePath)
+		functionName := filepath.Base(details.Name())
+		return fmt.Sprintf("%s (%s:%d)", functionName, fileName, line)
 	}
-	return realTracer.Start(ctx, title, opts...)
+	return "<unknown function>"
 }
 
 type noopSpan struct {

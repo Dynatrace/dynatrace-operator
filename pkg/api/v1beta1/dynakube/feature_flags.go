@@ -354,13 +354,14 @@ func (dk *DynaKube) FeatureSyntheticLocationEntityId() string {
 }
 
 func (dk *DynaKube) FeatureInjectionFailurePolicy() string {
-	if dk.getFeatureFlagRaw(AnnotationInjectionFailurePolicy) == failPhrase {
+	switch phrase := dk.getFeatureFlagRaw(AnnotationInjectionFailurePolicy); phrase {
+	case failPhrase:
 		return failPhrase
-	}
-	if dk.getFeatureFlagRaw(AnnotationInjectionFailurePolicy) == forcePhrase {
+	case silentPhrase:
+		return silentPhrase
+	default:
 		return forcePhrase
 	}
-	return silentPhrase
 }
 
 func (dk *DynaKube) FeaturePublicRegistry() bool {
