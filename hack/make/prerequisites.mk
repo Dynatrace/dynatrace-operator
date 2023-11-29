@@ -13,7 +13,7 @@ mockery_version=v2.38.0
 # renovate depName=github.com/igorshubovych/markdownlint-cli
 markdownlint_cli_version=v0.35.0
 # renovate depName=github.com/helm-unittest/helm-unittest
-helmunittest_version=0.3.2
+helmunittest_version=v0.3.6
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
