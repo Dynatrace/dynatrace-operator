@@ -11,7 +11,7 @@ golang_tools_version=v0.16.0
 # renovate depName=github.com/vektra/mockery
 mockery_version=v2.38.0
 # renovate depName=github.com/igorshubovych/markdownlint-cli
-markdownlint_cli_version=v0.35.0
+markdownlint_cli_version=v0.37.0
 # renovate depName=github.com/helm-unittest/helm-unittest
 helmunittest_version=0.3.2
 
