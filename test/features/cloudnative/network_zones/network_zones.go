@@ -56,6 +56,9 @@ func Feature(t *testing.T) features.Feature {
 	builder.Assess("create network zone before hand",
 		tenant.CreateNetworkZone(secretConfig, networkZone, []string{}, tenant.FallbackNone))
 
+	builder.Assess("wait for network zone to be ready",
+		tenant.WaitForNetworkZone(secretConfig, networkZone, tenant.FallbackNone))
+
 	// intentionally no ActiveGate, to block OA rollout and codemodules injection
 	options := []dynakube.Option{
 		dynakube.WithApiUrl(secretConfig.ApiUrl),

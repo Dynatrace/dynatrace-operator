@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -57,7 +58,15 @@ func CreateNetworkZone(secret Secret, networkZone string, alternativeZones []str
 
 func WaitForNetworkZoneDeletion(secret Secret, networkZone string) features.Func {
 	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
-		err := wait.For(deleteNetworkZone(secret, networkZone), wait.WithTimeout(3*time.Minute))
+		err := wait.For(deleteNetworkZone(secret, networkZone), wait.WithTimeout(10*time.Minute), wait.WithInterval(30*time.Second))
+		require.NoError(t, err)
+		return ctx
+	}
+}
+
+func WaitForNetworkZone(secret Secret, networkZone string, fallbackMode FallbackMode) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		err := wait.For(checkNetworkZone(secret, networkZone, fallbackMode), wait.WithTimeout(2*time.Minute), wait.WithInterval(5*time.Second))
 		require.NoError(t, err)
 		return ctx
 	}
@@ -76,7 +85,7 @@ func createNetworkZoneRequest(secret Secret, networkZone string, method string, 
 	return req, nil
 }
 
-func executeNetworkZoneRequest(secret Secret, networkZone string, method string, body io.Reader) (statusCode int, nsg string, err error) {
+func executeNetworkZoneRequest(secret Secret, networkZone string, method string, body io.Reader) (statusCode int, msg string, err error) {
 	client := &http.Client{}
 
 	req, err := createNetworkZoneRequest(secret, networkZone, method, body)
@@ -123,6 +132,31 @@ func deleteNetworkZone(secret Secret, networkZone string) func(ctx context.Conte
 			return true, nil
 		} else if statusCode == http.StatusBadRequest {
 			// this error can indicate, that the network zone is still used by an ActiveGate, just try again later
+			return false, nil
+		}
+
+		return false, errors.Errorf("delete network zone request returned status = %d (%s)", statusCode, statusMsg)
+	}
+}
+
+func checkNetworkZone(secret Secret, networkZone string, fallbackMode FallbackMode) func(ctx context.Context) (done bool, err error) {
+	return func(ctx context.Context) (done bool, err error) {
+		// API documentation
+		// https://www.dynatrace.com/support/help/dynatrace-api/environment-api/network-zones/del-network-zone
+
+		statusCode, statusMsg, err := executeNetworkZoneRequest(secret, networkZone, http.MethodGet, nil)
+		if err != nil {
+			return false, err
+		}
+
+		if statusCode == http.StatusOK {
+			if strings.Contains(statusMsg, fmt.Sprintf("\"fallbackMode\":\"%s\"", fallbackMode)) {
+				return true, nil
+			} else {
+				return true, errors.Errorf("network zone fallback mode incorrect (expected: %s, actual: %s)", fallbackMode, statusMsg)
+			}
+		} else if statusCode == http.StatusNotFound {
+			// network zone does not exist
 			return false, nil
 		}
 
