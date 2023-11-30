@@ -111,6 +111,7 @@ jobs:
         uses: articulate/actions-markdownlint@87f495d21507d6844dc917a01e742eaaa45049c0 # v1.1.0
         with:
           config: .markdownlint.json
+          # renovate depName=github.com/igorshubovych/markdownlint-cli
           version: 0.36.0
 
   check-uncommitted-doc-changes:
