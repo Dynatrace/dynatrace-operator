@@ -91,6 +91,11 @@
       "packageNames": ["helm-unittest"],
       "enabled": true,
       "pinVersions": true,
+    },
+    {
+      "packageNames": ["gomarkdoc"],
+      "enabled": true,
+      "pinVersions": true,
     }
   ],
 }
