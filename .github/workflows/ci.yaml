@@ -111,6 +111,7 @@ jobs:
         uses: articulate/actions-markdownlint@87f495d21507d6844dc917a01e742eaaa45049c0 # v1.1.0
         with:
           config: .markdownlint.json
+          # renovate depName=github.com/igorshubovych/markdownlint-cli
           version: 0.36.0
 
   check-uncommitted-doc-changes:
@@ -122,9 +123,7 @@ jobs:
       - uses: actions/setup-go@93397bea11091df50f3d7e59dc26a7711a8bcfbe # v4.1.0
         with:
           go-version-file: "${{ github.workspace }}/go.mod"
-      - name: Set up Homebrew
-        id: set-up-homebrew
-        uses: Homebrew/actions/setup-homebrew@master
+      - uses: actions/setup-node@8f152de45cc393bb48ce5d89d36b731f54556e65 # v4.0.0
       - name: Run make doc to see uncommitted changes
         run: make doc
       - name: Check for uncommitted changes
