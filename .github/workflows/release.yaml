@@ -367,24 +367,3 @@ jobs:
             Helm upgrade to and install of `${{ github.ref }}` works.
             ## Checklist
             - [x] PR is labeled accordingly
-  snyk:
-    name: Push tag to snyk
-    environment: Release
-    needs: [prepare, push]
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-
-    steps:
-      - name: Push tag to snyk
-        id: push-to-snyk
-        uses: fjogeleit/http-request-action@v1
-        with:
-          url: 'https://api.snyk.io/v1/org/${{ secrets.SNYK_ORGANIZATION_ID }}/integrations/${{ secrets.SNYK_INTEGRATION_ID }}/import'
-          method: 'POST'
-          customHeaders: '{ "Content-Type": "application/json;charset=utf-8", "Authorization": "token ${{ secrets.SNYK_API_TOKEN }}" }'
-          data: '{ "target": { "name": "${{ secrets.DOCKERHUB_REPOSITORY }}:${{ needs.prepare.outputs.version }}" }}'
-      - name: Show Response
-        run: |
-          echo ${{ steps.push-to-snyk.outputs.response }}
-          echo ${{ steps.push-to-snyk.outputs.headers }}
