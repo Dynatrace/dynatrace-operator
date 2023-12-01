@@ -2,7 +2,10 @@
 // +k8s:openapi-gen=true
 package status
 
-import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"strings"
+)
 
 type VersionSource string
 
@@ -22,8 +25,37 @@ type VersionStatus struct {
 	ImageID string `json:"imageID,omitempty"`
 	// Image version
 	Version string `json:"version,omitempty"`
-	// Image type
+	// Image type OnAgent Image type (immutable, mutable)
 	Type string `json:"type,omitempty"`
 	// Indicates when the last check for a new version was performed
 	LastProbeTimestamp *metav1.Time `json:"lastProbeTimestamp,omitempty"`
+}
+
+func (s *VersionStatus) CustomImageNeedsReconciliation(logImageNeedsReconciliationMessage LogFn, customImage string) bool {
+	if s.Source == CustomImageVersionSource {
+		oldImage := s.ImageID
+		newImage := customImage
+		// The old image is can be the same as the new image (if only digest was given, or a tag was given but couldn't get the digest)
+		// or the old image is the same as the new image but with the digest added to the end of it (if a tag was provide, and we could append the digest to the end)
+		// or the 2 images are different
+		if !strings.HasPrefix(oldImage, newImage) {
+			logImageNeedsReconciliationMessage()
+			return true
+		}
+	}
+	return false
+}
+
+type LogFn func()
+
+func (s *VersionStatus) CustomVersionNeedsReconciliation(logVersionNeedsReconciliationMessage LogFn, customVersion string) bool {
+	if s.Source == CustomVersionVersionSource {
+		oldVersion := s.Version
+		newVersion := customVersion
+		if oldVersion != newVersion {
+			logVersionNeedsReconciliationMessage()
+			return true
+		}
+	}
+	return false
 }
