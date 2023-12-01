@@ -15,6 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/activegate"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/rand"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/stretchr/testify/assert"
@@ -28,7 +29,6 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-const testNetworkZone = "testzone"
 const annotationInjected = "oneagent.dynatrace.com/injected"
 const annotationReason = "oneagent.dynatrace.com/reason"
 
@@ -53,13 +53,19 @@ func Feature(t *testing.T) features.Feature {
 	builder.WithLabel("name", "cloudnative-network-zone")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
+	networkZone, err := rand.GetRandomName(rand.WithPrefix("op-e2e-"), rand.WithLength(8))
+	require.NoError(t, err)
+
 	builder.Assess("create network zone before hand",
-		tenant.CreateNetworkZone(secretConfig, testNetworkZone, []string{}, tenant.FallbackNone))
+		tenant.CreateNetworkZone(secretConfig, networkZone, []string{}, tenant.FallbackNone))
+
+	builder.Assess("wait for network zone to be ready",
+		tenant.WaitForNetworkZone(secretConfig, networkZone, tenant.FallbackNone))
 
 	// intentionally no ActiveGate, to block OA rollout and codemodules injection
 	options := []dynakube.Option{
 		dynakube.WithApiUrl(secretConfig.ApiUrl),
-		dynakube.WithNetworkZone(testNetworkZone),
+		dynakube.WithNetworkZone(networkZone),
 		dynakube.WithCloudNativeSpec(cloudnative.DefaultCloudNativeSpec()),
 	}
 
@@ -99,7 +105,7 @@ func Feature(t *testing.T) features.Feature {
 	dynakube.Delete(builder, helpers.LevelTeardown, testDynakube)
 
 	builder.Teardown(activegate.WaitForStatefulSetPodsDeletion(&testDynakube, "activegate"))
-	builder.Teardown(tenant.WaitForNetworkZoneDeletion(secretConfig, testNetworkZone))
+	builder.Teardown(tenant.WaitForNetworkZoneDeletion(secretConfig, networkZone))
 	return builder.Feature()
 }
 
@@ -116,7 +122,7 @@ func checkInjectionAnnotations(sampleApp *sample.App, injected string, reason st
 			require.Contains(t, pod.Annotations, annotationInjected)
 			assert.Equal(t, injected, pod.Annotations[annotationInjected])
 
-			if injected == "false" {
+			if injected == "false" && pod.Annotations[annotationInjected] == "false" {
 				require.Contains(t, pod.Annotations, annotationReason)
 				assert.Equal(t, reason, pod.Annotations[annotationReason])
 			}
