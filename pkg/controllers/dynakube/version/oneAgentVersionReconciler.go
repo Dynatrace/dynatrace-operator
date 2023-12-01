@@ -105,12 +105,14 @@ func (reconciler *OneAgentImageVersionReconciler) needsUpdate(current status.Ver
 	return isOutdated(logSkipUpdateTimestampValidMessage("OneAgent"), reconciler.timeProvider, dynakube, dynakube.Status.OneAgent.LastProbeTimestamp)
 }
 
+// log function to print messages
 func logCustomOneAgentImageChangedMessage(current status.VersionStatus, previous status.VersionStatus) func() {
 	return func() {
 		log.Info("custom image value changed, update for version status is needed", "updater", "OneAgent", "oldImage", previous.ImageID, "newImage", current.ImageID)
 	}
 }
 
+// another log funtion to print messages
 func logCustomVersionChangedMessage(current status.VersionStatus, previous status.VersionStatus) func() {
 	return func() {
 		log.Info("custom version value changed, update for version status is needed", "updater", "OneAgent", "oldVersion", previous.Version, "newVersion", current.Version)
