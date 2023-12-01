@@ -15,6 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/activegate"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/namespace"
+	"github.com/Dynatrace/dynatrace-operator/test/helpers/rand"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/sample"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/tenant"
 	"github.com/stretchr/testify/assert"
@@ -52,7 +53,9 @@ func Feature(t *testing.T) features.Feature {
 	builder.WithLabel("name", "cloudnative-network-zone")
 	secretConfig := tenant.GetSingleTenantSecret(t)
 
-	networkZone := getNetworkZoneName()
+	networkZone, err := rand.GetRandomName(rand.WithPrefix("op-e2e-"), rand.WithLength(8))
+	require.NoError(t, err)
+
 	builder.Assess("create network zone before hand",
 		tenant.CreateNetworkZone(secretConfig, networkZone, []string{}, tenant.FallbackNone))
 

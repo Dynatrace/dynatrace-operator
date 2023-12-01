@@ -1,4 +1,4 @@
-package network_zones
+package rand
 
 import (
 	"strings"
@@ -25,9 +25,12 @@ func TestEncode(t *testing.T) {
 }
 
 func TestGetNetworkZoneName(t *testing.T) {
-	name := getNetworkZoneName()
+	const prefix = "op-e2e-"
 
-	assert.Equal(t, len(prefix)+nameLength, len(name))
+	name, err := GetRandomName(WithLength(defaultLength), WithPrefix("op-e2e-"))
+	require.NoError(t, err)
+
+	assert.Equal(t, len(prefix)+defaultLength, len(name))
 	assert.True(t, strings.HasPrefix(name, "op-e2e-"))
 
 	name, found := strings.CutPrefix(name, prefix)
