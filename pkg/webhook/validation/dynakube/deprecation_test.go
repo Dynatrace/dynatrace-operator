@@ -120,6 +120,8 @@ func Test_deprecatedFeatureFlagMovedCRDField(t *testing.T) {
 	dynakube.Annotations = map[string]string{
 		dynatracev1beta1.AnnotationFeatureAutomaticInjection: "true",
 	}
-	assert.Contains(t, deprecatedFeatureFlagMovedCRDField(context.Background(), nil, &dynakube),
-		"This feature flags are deprecated and will be move to CRD fields in the future")
+	assert.Contains(t,
+		deprecatedFeatureFlagMovedCRDField(context.Background(), nil, &dynakube),
+		"These feature flags are deprecated and will be moved to the CRD in the future",
+	)
 }
