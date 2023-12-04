@@ -96,7 +96,7 @@ func deprecatedFeatureFlagMovedCRDField(_ context.Context, _ *dynakubeValidator,
 	if len(featureFlags) == 0 {
 		return ""
 	}
-	return "This feature flags are deprecated and will be move to CRD fields in the future: " + strings.Join(featureFlags, ", ")
+	return "This feature flags are deprecated and will be moved to the CRD in the future: " + strings.Join(featureFlags, ", ")
 }
 
 func isDeprecatedFeatureFlagUsed(dynakube *dynatracev1beta1.DynaKube, annotation string) bool {
