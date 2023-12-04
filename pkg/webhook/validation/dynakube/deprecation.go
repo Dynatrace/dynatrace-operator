@@ -12,20 +12,25 @@ const (
 	featureDeprecatedWarningMessage = `DEPRECATED: %s`
 )
 
-func getDeprecatedFeatureFlags() []string {
+func getDeprecatedFeatureFlagsWillBeRemoved() []string {
 	return []string{
 		dynatracev1beta1.AnnotationInjectionFailurePolicy,
-		dynatracev1beta1.AnnotationFeatureLabelVersionDetection,
-		dynatracev1beta1.AnnotationFeatureAutomaticInjection,
-		dynatracev1beta1.AnnotationFeatureMetadataEnrichment,
 		dynatracev1beta1.AnnotationFeatureWebhookReinvocationPolicy,
 		dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent,
 		dynatracev1beta1.AnnotationFeatureHostsRequests,
-		dynatracev1beta1.AnnotationFeatureAutomaticK8sApiMonitoring,
-		dynatracev1beta1.AnnotationFeatureActiveGateUpdates,
 		dynatracev1beta1.AnnotationFeatureActiveGateAuthToken,
 		dynatracev1beta1.AnnotationFeatureActiveGateRawImage,
 		dynatracev1beta1.AnnotationFeatureActiveGateReadOnlyFilesystem,
+	}
+}
+
+func getDeprecatedFeatureFlagsWillBeMovedCRD() []string {
+	return []string{
+		dynatracev1beta1.AnnotationFeatureAutomaticInjection,
+		dynatracev1beta1.AnnotationFeatureMetadataEnrichment,
+		dynatracev1beta1.AnnotationFeatureAutomaticK8sApiMonitoring,
+		dynatracev1beta1.AnnotationFeatureActiveGateUpdates,
+		dynatracev1beta1.AnnotationFeatureLabelVersionDetection,
 	}
 }
 
@@ -66,9 +71,9 @@ func deprecatedFeatureFlagDisableMetadataEnrichment(_ context.Context, _ *dynaku
 	return warnIfDeprecatedIsUsed(dynakube, dynatracev1beta1.AnnotationFeatureMetadataEnrichment, dynatracev1beta1.AnnotationFeatureDisableMetadataEnrichment)
 }
 
-func deprecatedFeatureFlag(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func deprecatedFeatureFlagWillBeDeleted(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	var featureFlags []string
-	for _, ff := range getDeprecatedFeatureFlags() {
+	for _, ff := range getDeprecatedFeatureFlagsWillBeRemoved() {
 		if isDeprecatedFeatureFlagUsed(dynakube, ff) {
 			featureFlags = append(featureFlags, fmt.Sprintf("'%s'", ff))
 		}
@@ -78,6 +83,20 @@ func deprecatedFeatureFlag(_ context.Context, _ *dynakubeValidator, dynakube *dy
 		return ""
 	}
 	return "Some feature flags are deprecated and will be removed in the future: " + strings.Join(featureFlags, ", ")
+}
+
+func deprecatedFeatureFlagMovedCRDField(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+	var featureFlags []string
+	for _, ff := range getDeprecatedFeatureFlagsWillBeMovedCRD() {
+		if isDeprecatedFeatureFlagUsed(dynakube, ff) {
+			featureFlags = append(featureFlags, fmt.Sprintf("'%s'", ff))
+		}
+	}
+
+	if len(featureFlags) == 0 {
+		return ""
+	}
+	return "These feature flags are deprecated and will be moved to the CRD in the future: " + strings.Join(featureFlags, ", ")
 }
 
 func isDeprecatedFeatureFlagUsed(dynakube *dynatracev1beta1.DynaKube, annotation string) bool {
