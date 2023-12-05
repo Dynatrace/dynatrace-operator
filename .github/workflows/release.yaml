@@ -94,9 +94,8 @@ jobs:
         id: digest
         env:
           IMAGE: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}-${{ matrix.platform }}
-          ONLINE: false
         run: |
-          hack/build/ci/get-image-digest.sh $ONLINE
+          hack/build/ci/get-image-digest.sh
       - name: Sign image for ${{matrix.registry}}
         uses: ./.github/actions/sign-image
         with:
