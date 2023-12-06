@@ -47,7 +47,6 @@ const annotationReason = "oneagent.dynatrace.com/reason"
 //
 // Prerequisites:
 // Have a tenant that has no activegates bound to it.
-// ---
 func Feature(t *testing.T) features.Feature {
 	builder := features.New("dynakube in network zone")
 	builder.WithLabel("name", "cloudnative-network-zone")

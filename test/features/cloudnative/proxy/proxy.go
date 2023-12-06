@@ -26,6 +26,16 @@ const (
 	httpsProxy = "https_proxy"
 )
 
+// Prerequisites: istio service mesh
+//
+// Setup: CloudNative deployment with CSI driver
+//
+// Verification that the operator and all deployed OneAgents are able to communicate
+// over a http proxy.
+//
+// Connectivity in the dynatrace namespace and sample application namespace is restricted to
+// the local cluster. Sample application is installed. The test checks if DT_PROXY environment
+// variable is defined in the *dynakube-oneagent* container and the *application container*.
 func Feature(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features.Feature {
 	builder := features.New("cloudnative with proxy")
 	builder.WithLabel("name", "cloudnative-proxy")

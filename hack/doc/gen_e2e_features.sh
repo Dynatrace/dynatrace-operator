@@ -7,10 +7,10 @@ output_file="features.md"
 output=""
 
 # get dirs containing doc packages
-package_dirs=$(ls -d $doc_dir/*/)
+doc_dir_subdirs=$(find $doc_dir -type d)
 
 # append all gomarkdoc outputs in a single variable
-for dir in $package_dirs; do
+for dir in $doc_dir_subdirs; do
   output="${output}$(GOARCH="e2e" gomarkdoc "${dir}" | sed 's/\\//g')"
   # remove gomarkdoc footer
   output=$(echo "${output}" | sed '$d')
