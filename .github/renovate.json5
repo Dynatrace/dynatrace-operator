@@ -3,7 +3,7 @@
   "extends": [ "config:base" ],
   "labels": [ "dependencies" ],
   "digest": { "enabled": false },
-  "baseBranches": ["$default", "release-0.11", "release-0.12", "release-0.13", "release-0.14"],
+  "baseBranches": ["$default", "release-0.12", "release-0.13", "release-0.14", "release-0.15"],
   "enabledManagers": [ "regex", "dockerfile", "gomod", "github-actions" ],
   "regexManagers": [
     {
