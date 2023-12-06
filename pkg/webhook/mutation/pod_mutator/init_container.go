@@ -14,7 +14,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func createInstallInitContainerBase(webhookImage, clusterID string, pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) *corev1.Container {
+func createInstallInitContainerBase(webhookImage string, pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) *corev1.Container {
 	return &corev1.Container{
 		Name:            dtwebhook.InstallContainerName,
 		Image:           webhookImage,
@@ -25,7 +25,6 @@ func createInstallInitContainerBase(webhookImage, clusterID string, pod *corev1.
 			{Name: consts.K8sPodNameEnv, ValueFrom: env.NewEnvVarSourceForField("metadata.name")},
 			{Name: consts.K8sPodUIDEnv, ValueFrom: env.NewEnvVarSourceForField("metadata.uid")},
 			{Name: consts.K8sBasePodNameEnv, Value: getBasePodName(pod)},
-			{Name: consts.K8sClusterIDEnv, Value: clusterID},
 			{Name: consts.K8sNamespaceEnv, ValueFrom: env.NewEnvVarSourceForField("metadata.namespace")},
 			{Name: consts.K8sNodeNameEnv, ValueFrom: env.NewEnvVarSourceForField("spec.nodeName")},
 		},

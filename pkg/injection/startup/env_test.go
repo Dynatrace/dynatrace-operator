@@ -20,12 +20,10 @@ func TestNewEnv(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, env)
 
-		assert.Equal(t, consts.AgentCsiMode, env.Mode)
 		assert.Equal(t, failPhrase, env.FailurePolicy)
 		assert.NotEmpty(t, env.InstallerFlavor)
 		assert.NotEmpty(t, env.InstallerTech)
 		assert.NotEmpty(t, env.InstallPath)
-		assert.NotEmpty(t, env.InstallVersion)
 		assert.Len(t, env.Containers, 5)
 
 		assert.NotEmpty(t, env.K8NodeName)
@@ -33,14 +31,12 @@ func TestNewEnv(t *testing.T) {
 		assert.NotEmpty(t, env.K8PodUID)
 		assert.NotEmpty(t, env.K8BasePodName)
 		assert.NotEmpty(t, env.K8Namespace)
-		assert.NotEmpty(t, env.K8ClusterID)
 
 		assert.NotEmpty(t, env.WorkloadKind)
 		assert.NotEmpty(t, env.WorkloadName)
 
 		assert.True(t, env.OneAgentInjected)
 		assert.True(t, env.DataIngestInjected)
-		assert.True(t, env.IsReadOnlyCSI)
 	})
 	t.Run(`create new env for only data-ingest injection`, func(t *testing.T) {
 		resetEnv := prepDataIngestTestEnv(t, false)
@@ -51,11 +47,9 @@ func TestNewEnv(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, env)
 
-		assert.Empty(t, env.Mode)
 		assert.Equal(t, failPhrase, env.FailurePolicy)
 		assert.NotEmpty(t, env.InstallerFlavor) // set to what is defined in arch.Flavor
 		assert.Empty(t, env.InstallerTech)
-		assert.Empty(t, env.InstallVersion)
 		assert.Empty(t, env.InstallPath)
 		assert.Empty(t, env.Containers)
 
@@ -65,7 +59,6 @@ func TestNewEnv(t *testing.T) {
 		assert.NotEmpty(t, env.K8PodUID)
 		assert.NotEmpty(t, env.K8Namespace)
 
-		assert.NotEmpty(t, env.K8ClusterID)
 		assert.NotEmpty(t, env.WorkloadKind)
 		assert.NotEmpty(t, env.WorkloadName)
 
@@ -81,7 +74,6 @@ func TestNewEnv(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, env)
 
-		assert.NotEmpty(t, env.K8ClusterID)
 		assert.Empty(t, env.WorkloadKind)
 		assert.Empty(t, env.WorkloadName)
 
@@ -97,11 +89,9 @@ func TestNewEnv(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, env)
 
-		assert.Equal(t, consts.AgentCsiMode, env.Mode)
 		assert.Equal(t, failPhrase, env.FailurePolicy)
 		assert.NotEmpty(t, env.InstallerFlavor)
 		assert.NotEmpty(t, env.InstallerTech)
-		assert.NotEmpty(t, env.InstallVersion)
 		assert.NotEmpty(t, env.InstallPath)
 		assert.Len(t, env.Containers, 5)
 
@@ -111,13 +101,11 @@ func TestNewEnv(t *testing.T) {
 		assert.NotEmpty(t, env.K8BasePodName)
 		assert.NotEmpty(t, env.K8Namespace)
 
-		assert.NotEmpty(t, env.K8ClusterID)
 		assert.Empty(t, env.WorkloadKind)
 		assert.Empty(t, env.WorkloadName)
 
 		assert.True(t, env.OneAgentInjected)
 		assert.False(t, env.DataIngestInjected)
-		assert.True(t, env.IsReadOnlyCSI)
 	})
 }
 
@@ -166,7 +154,6 @@ func prepOneAgentTestEnv(t *testing.T) func() {
 		consts.K8sBasePodNameEnv,
 		consts.K8sNamespaceEnv,
 		consts.AgentInstallPathEnv,
-		consts.K8sClusterIDEnv,
 	}
 	for i := 1; i <= 5; i++ {
 		envs = append(envs, fmt.Sprintf(consts.AgentContainerNameEnvTemplate, i))
@@ -186,17 +173,11 @@ func prepOneAgentTestEnv(t *testing.T) func() {
 	envs = append(envs, consts.InjectionFailurePolicyEnv)
 	err = os.Setenv(consts.InjectionFailurePolicyEnv, "fail")
 	require.NoError(t, err)
-	envs = append(envs, consts.AgentInstallModeEnv)
-	err = os.Setenv(consts.AgentInstallModeEnv, string(consts.AgentCsiMode))
-	require.NoError(t, err)
 
 	// Bool envs
 	err = os.Setenv(consts.AgentInjectedEnv, trueStatement)
 	require.NoError(t, err)
 	envs = append(envs, consts.AgentInjectedEnv)
-	err = os.Setenv(consts.AgentReadonlyCSI, trueStatement)
-	require.NoError(t, err)
-	envs = append(envs, consts.AgentReadonlyCSI)
 
 	return resetTestEnv(envs)
 }
@@ -205,7 +186,6 @@ func prepDataIngestTestEnv(t *testing.T, isUnknownWorkload bool) func() {
 	envs := []string{
 		consts.EnrichmentWorkloadKindEnv,
 		consts.EnrichmentWorkloadNameEnv,
-		consts.K8sClusterIDEnv,
 		consts.K8sPodNameEnv,
 		consts.K8sPodUIDEnv,
 		consts.K8sNamespaceEnv,

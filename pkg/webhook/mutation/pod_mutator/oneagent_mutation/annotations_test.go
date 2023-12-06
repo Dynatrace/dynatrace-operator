@@ -7,7 +7,6 @@ const (
 	testTechnologies = "testTech"
 	testInstallPath  = "testInstallPath"
 	testInstallerURL = "testInstallerUrl"
-	testVersion      = "testVersion"
 )
 
 func getTestInstallerInfo() installerInfo {
@@ -16,7 +15,6 @@ func getTestInstallerInfo() installerInfo {
 		technologies: testTechnologies,
 		installPath:  testInstallPath,
 		installerURL: testInstallerURL,
-		version:      testVersion,
 	}
 }
 

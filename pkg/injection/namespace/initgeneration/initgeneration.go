@@ -172,6 +172,9 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dynak
 		ClusterID:           string(kubeSystemUID),
 		InitialConnectRetry: dynakube.FeatureAgentInitialConnectRetry(),
 		EnforcementMode:     dynakube.FeatureEnforcementMode(),
+		ReadOnlyCSIDriver:   dynakube.FeatureReadOnlyCsiVolume(),
+		CSIMode:             dynakube.NeedsCSIDriver(),
+		OneAgentVersion:     dynakube.CodeModulesVersion(),
 	}, nil
 }
 

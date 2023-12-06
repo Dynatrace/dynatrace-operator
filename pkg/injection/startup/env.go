@@ -23,12 +23,10 @@ type containerInfo struct {
 }
 
 type environment struct {
-	Mode          consts.InstallMode `json:"mode"`
-	FailurePolicy string             `json:"failurePolicy"`
-	InstallerUrl  string             `json:"installerUrl"`
+	FailurePolicy string `json:"failurePolicy"`
+	InstallerUrl  string `json:"installerUrl"`
 
 	InstallerFlavor string          `json:"installerFlavor"`
-	InstallVersion  string          `json:"installVersion"`
 	InstallerTech   []string        `json:"installerTech"`
 	InstallPath     string          `json:"installPath"`
 	Containers      []containerInfo `json:"containers"`
@@ -36,7 +34,6 @@ type environment struct {
 	K8NodeName    string `json:"k8NodeName"`
 	K8PodName     string `json:"k8PodName"`
 	K8PodUID      string `json:"k8BasePodUID"`
-	K8ClusterID   string `json:"k8ClusterID"`
 	K8BasePodName string `json:"k8BasePodName"`
 	K8Namespace   string `json:"k8Namespace"`
 
@@ -45,7 +42,6 @@ type environment struct {
 
 	OneAgentInjected   bool `json:"oneAgentInjected"`
 	DataIngestInjected bool `json:"dataIngestInjected"`
-	IsReadOnlyCSI      bool `json:"isReadOnlyCSI"`
 }
 
 func newEnv() (*environment, error) {
@@ -91,13 +87,11 @@ func (env *environment) getCommonFieldSetters() []func() error {
 		env.addK8PodName,
 		env.addK8PodUID,
 		env.addK8Namespace,
-		env.addK8ClusterID,
 	}
 }
 
 func (env *environment) getOneAgentFieldSetters() []func() error {
 	return append(env.getCommonFieldSetters(),
-		env.addMode,
 		env.addInstallerTech,
 		env.addInstallPath,
 		env.addContainers,
@@ -116,22 +110,11 @@ func (env *environment) getDataIngestFieldSetters() []func() error {
 func (env *environment) setOptionalFields() {
 	env.addInstallerUrl()
 	env.addInstallerFlavor()
-	env.addInstallVersion()
 }
 
 func (env *environment) setMutationTypeFields() {
 	env.addOneAgentInjected()
 	env.addDataIngestInjected()
-	env.addIsReadOnlyCSI()
-}
-
-func (env *environment) addMode() error {
-	mode, err := checkEnvVar(consts.AgentInstallModeEnv)
-	if err != nil {
-		return err
-	}
-	env.Mode = consts.InstallMode(mode)
-	return nil
 }
 
 func (env *environment) addFailurePolicy() error {
@@ -233,15 +216,6 @@ func (env *environment) addK8PodUID() error {
 	return nil
 }
 
-func (env *environment) addK8ClusterID() error {
-	clusterID, err := checkEnvVar(consts.K8sClusterIDEnv)
-	if err != nil {
-		return err
-	}
-	env.K8ClusterID = clusterID
-	return nil
-}
-
 func (env *environment) addK8BasePodName() error {
 	basePodName, err := checkEnvVar(consts.K8sBasePodNameEnv)
 	if err != nil {
@@ -291,19 +265,9 @@ func (env *environment) addInstallerUrl() {
 	env.InstallerUrl = url
 }
 
-func (env *environment) addInstallVersion() {
-	version, _ := checkEnvVar(consts.AgentInstallerVersionEnv)
-	env.InstallVersion = version
-}
-
 func (env *environment) addOneAgentInjected() {
 	oneAgentInjected, _ := checkEnvVar(consts.AgentInjectedEnv)
 	env.OneAgentInjected = oneAgentInjected == trueStatement
-}
-
-func (env *environment) addIsReadOnlyCSI() {
-	isReadOnlyCSI, _ := checkEnvVar(consts.AgentReadonlyCSI)
-	env.IsReadOnlyCSI = isReadOnlyCSI == trueStatement
 }
 
 func (env *environment) addDataIngestInjected() {
