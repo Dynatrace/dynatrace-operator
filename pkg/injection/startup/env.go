@@ -15,7 +15,6 @@ const (
 	trueStatement = "true"
 	silentPhrase  = "silent"
 	failPhrase    = "fail"
-	forcePhrase   = "force"
 )
 
 type containerInfo struct {
@@ -143,8 +142,6 @@ func (env *environment) addFailurePolicy() error {
 	switch failurePolicy {
 	case failPhrase:
 		env.FailurePolicy = failPhrase
-	case forcePhrase:
-		env.FailurePolicy = forcePhrase
 	default:
 		env.FailurePolicy = silentPhrase
 	}

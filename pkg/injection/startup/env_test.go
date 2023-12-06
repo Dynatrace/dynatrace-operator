@@ -125,7 +125,6 @@ func TestFailurePolicyModes(t *testing.T) {
 	modes := map[string]string{
 		failPhrase:   failPhrase,
 		silentPhrase: silentPhrase,
-		forcePhrase:  forcePhrase,
 		"Fail":       silentPhrase,
 		"other":      silentPhrase,
 	}

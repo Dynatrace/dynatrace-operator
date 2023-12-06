@@ -144,7 +144,7 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 		assert.True(t, env.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "fail")
 		assert.False(t, env.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "silent")
 	})
-	t.Run("should set default failure policy to force", func(t *testing.T) {
+	t.Run("should set default failure policy to silent", func(t *testing.T) {
 		dynakube := getTestDynakube()
 		dynakube.Annotations = map[string]string{dynatracev1beta1.AnnotationInjectionFailurePolicy: "test"}
 		pod := getTestPod()
@@ -154,7 +154,7 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 		initContainer := createInstallInitContainerBase(webhookImage, clusterID, pod, *dynakube)
 
 		assert.False(t, env.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "fail")
-		assert.True(t, env.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "force")
+		assert.True(t, env.FindEnvVar(initContainer.Env, "FAILURE_POLICY").Value == "silent")
 	})
 	t.Run("should take silent as failure policy if set explicitly", func(t *testing.T) {
 		dynakube := getTestDynakube()
