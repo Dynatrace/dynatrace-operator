@@ -291,7 +291,7 @@ func TestDefaultEnabledFeatureFlags(t *testing.T) {
 	assert.True(t, dynakube.FeatureActiveGateReadOnlyFilesystem())
 	assert.True(t, dynakube.FeatureAutomaticKubernetesApiMonitoring())
 	assert.True(t, dynakube.FeatureAutomaticInjection())
-	assert.True(t, dynakube.FeatureInjectionFailurePolicy() == "force")
+	assert.True(t, dynakube.FeatureInjectionFailurePolicy() == "silent")
 
 	assert.False(t, dynakube.FeatureDisableActiveGateUpdates())
 	assert.False(t, dynakube.FeatureDisableHostsRequests())
@@ -307,9 +307,6 @@ func TestInjectionFailurePolicy(t *testing.T) {
 	modes := map[string]string{
 		failPhrase:   failPhrase,
 		silentPhrase: silentPhrase,
-		forcePhrase:  forcePhrase,
-		"Fail":       forcePhrase,
-		"other":      forcePhrase,
 	}
 	for configuredMode, expectedMode := range modes {
 		t.Run(`injection failure policy: `+configuredMode, func(t *testing.T) {

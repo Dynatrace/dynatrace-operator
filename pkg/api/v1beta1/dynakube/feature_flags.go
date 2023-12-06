@@ -92,6 +92,7 @@ const (
 	AnnotationFeatureLabelVersionDetection = AnnotationFeaturePrefix + "label-version-detection"
 	AnnotationInjectionFailurePolicy       = AnnotationFeaturePrefix + "injection-failure-policy"
 	AnnotationFeatureInitContainerSeccomp  = AnnotationFeaturePrefix + "init-container-seccomp-profile"
+	AnnotationFeatureEnforcementMode       = AnnotationFeaturePrefix + "enforcement-mode"
 
 	// CSI
 	AnnotationFeatureMaxFailedCsiMountAttempts = AnnotationFeaturePrefix + "max-csi-mount-attempts"
@@ -110,7 +111,6 @@ const (
 	truePhrase   = "true"
 	silentPhrase = "silent"
 	failPhrase   = "fail"
-	forcePhrase  = "force"
 
 	// synthetic node types
 	SyntheticNodeXs = "XS"
@@ -354,14 +354,10 @@ func (dk *DynaKube) FeatureSyntheticLocationEntityId() string {
 }
 
 func (dk *DynaKube) FeatureInjectionFailurePolicy() string {
-	switch phrase := dk.getFeatureFlagRaw(AnnotationInjectionFailurePolicy); phrase {
-	case failPhrase:
+	if dk.getFeatureFlagRaw(AnnotationInjectionFailurePolicy) == failPhrase {
 		return failPhrase
-	case silentPhrase:
-		return silentPhrase
-	default:
-		return forcePhrase
 	}
+	return silentPhrase
 }
 
 func (dk *DynaKube) FeaturePublicRegistry() bool {
@@ -384,4 +380,10 @@ func (dk *DynaKube) FeatureSyntheticReplicas() int32 {
 
 func (dk *DynaKube) FeatureInitContainerSeccomp() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureInitContainerSeccomp) == truePhrase
+}
+
+// FeatureEnforcementMode is a feature flag to control how the initContainer
+// sets the tenantUUID to the container.conf file (always vs if oneAgent is present)
+func (dk *DynaKube) FeatureEnforcementMode() bool {
+	return dk.getFeatureFlagRaw(AnnotationFeatureEnforcementMode) != falsePhrase
 }
