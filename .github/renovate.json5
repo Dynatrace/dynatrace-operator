@@ -24,10 +24,10 @@
   "packageRules": [
     {
       "matchBaseBranches": [
-        "release-0.11",
         "release-0.12",
         "release-0.13",
         "release-0.14",
+        "release-0.15",
       ],
       "matchUpdateTypes": [
         "major",
