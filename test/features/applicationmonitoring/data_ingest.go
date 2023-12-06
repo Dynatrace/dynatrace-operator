@@ -37,6 +37,9 @@ type metadata struct {
 	WorkloadName string `json:"dt.kubernetes.workload.name,omitempty"`
 }
 
+// Verification of the data ingest part of the operator. The test checks that
+// enrichment variables are added to the initContainer and dt_metadata.json
+// file contains required fields.
 func DataIngest(t *testing.T) features.Feature {
 	builder := features.New("data-ingest")
 	builder.WithLabel("name", "app-data-ingest")

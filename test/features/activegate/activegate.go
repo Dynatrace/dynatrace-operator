@@ -45,6 +45,16 @@ var (
 	}
 )
 
+// # With proxy
+//
+// Prerequisites: istio service mesh
+//
+// Setup: OneAgent disabled
+//
+// Verification if ActiveGate is rolled out successfully. All ActiveGate
+// capabilities are enabled in Dynakube. The test checks if ActiveGate is able to
+// communicate over a http proxy, related *Gateway* modules are active and that
+// the *Gateway* process is reachable via *Gateway service*.
 func Feature(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features.Feature {
 	secretConfig := tenant.GetSingleTenantSecret(t)
 	testDynakube := *dynakube.New(

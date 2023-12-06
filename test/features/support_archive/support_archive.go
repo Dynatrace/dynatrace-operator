@@ -37,6 +37,11 @@ type CustomResources struct {
 	edgeconnect edgeconnectv1beta1.EdgeConnect
 }
 
+// Setup: DTO with CSI driver
+//
+// Verification if support-archive package created by the support-archive command and printed
+// to the standard output is a valid tar.gz package and contains required *operator-version.txt*
+// file.
 func Feature(t *testing.T) features.Feature {
 	builder := features.New("support archive execution")
 	builder.WithLabel("name", "support-archive")
