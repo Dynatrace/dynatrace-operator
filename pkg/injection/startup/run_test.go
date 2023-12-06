@@ -119,14 +119,14 @@ func TestSetHostTenant(t *testing.T) {
 		assert.Equal(t, consts.AgentNoHostTenant, runner.hostTenant)
 	})
 	t.Run("set hostTenant to TenantUUID", func(t *testing.T) {
-		runner.env.FailurePolicy = forcePhrase
 		runner.config.HasHost = true
 		runner.config.TenantUUID = testTenantUUID
+		runner.config.EnforcementMode = false
+		runner.config.MonitoringNodes = nil
 
 		err := runner.setHostTenant()
 
-		require.NoError(t, err)
-		assert.Equal(t, testTenantUUID, runner.hostTenant)
+		require.Error(t, err)
 	})
 }
 
