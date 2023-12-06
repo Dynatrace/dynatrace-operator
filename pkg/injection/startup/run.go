@@ -110,7 +110,7 @@ func (runner *Runner) setHostTenant() error {
 	log.Info("setting host tenant")
 	runner.hostTenant = consts.AgentNoHostTenant
 	if runner.config.HasHost {
-		if runner.env.FailurePolicy == forcePhrase {
+		if runner.config.EnforcementMode {
 			runner.hostTenant = runner.config.TenantUUID
 			log.Info("host tenant set to TenantUUID")
 		} else {

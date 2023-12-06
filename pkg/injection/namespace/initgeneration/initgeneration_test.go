@@ -228,6 +228,7 @@ func TestCreateSecretConfigForDynaKube(t *testing.T) {
 		TlsCert:             "",
 		HostGroup:           "",
 		InitialConnectRetry: -1,
+		EnforcementMode:     true,
 	}
 
 	t.Run("Create SecretConfig with default content", func(t *testing.T) {
