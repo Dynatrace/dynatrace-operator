@@ -47,15 +47,25 @@ func (r Reconciler) updateDynakubeStatus(ctx context.Context) error {
 	return nil
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context) error {
+func (r *Reconciler) ReconcileAG(ctx context.Context) error {
 	oldStatus := r.dynakube.Status.DeepCopy()
 
 	err := r.reconcileActiveGateConnectionInfo(ctx)
 	if err != nil {
 		return err
 	}
+	needStatusUpdate, err := hasher.IsDifferent(oldStatus, r.dynakube.Status)
+	if err != nil {
+		return errors.WithMessage(err, "failed to compare connection info status hashes")
+	} else if needStatusUpdate {
+		err = r.updateDynakubeStatus(ctx)
+	}
+	return err
+}
 
-	err = r.reconcileOneAgentConnectionInfo(ctx)
+func (r *Reconciler) ReconcileOA(ctx context.Context) error {
+	oldStatus := r.dynakube.Status.DeepCopy()
+	err := r.reconcileOneAgentConnectionInfo(ctx)
 	if err != nil {
 		return err
 	}

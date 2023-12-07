@@ -495,7 +495,7 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 	_, err := controller.Reconcile(context.Background(), request)
 	assert.NoError(t, err)
 
-	// Reconcile twice since routing service is created before the stateful set
+	// ReconcileOA twice since routing service is created before the stateful set
 	_, err = controller.Reconcile(context.Background(), request)
 	assert.NoError(t, err)
 
@@ -576,7 +576,7 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 	_, err := r.Reconcile(context.Background(), request)
 	assert.NoError(t, err)
 
-	// Reconcile twice since routing service is created before the stateful set
+	// ReconcileOA twice since routing service is created before the stateful set
 	_, err = r.Reconcile(context.Background(), request)
 	assert.NoError(t, err)
 

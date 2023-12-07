@@ -46,7 +46,7 @@ func (_m *Reconciler) Reconcile(_a0 context.Context, _a1 reconcile.Request) (rec
 	return r0, r1
 }
 
-// Reconciler_Reconcile_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Reconcile'
+// Reconciler_Reconcile_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ReconcileOA'
 type Reconciler_Reconcile_Call struct {
 	*mock.Call
 }
@@ -55,7 +55,7 @@ type Reconciler_Reconcile_Call struct {
 //   - _a0 context.Context
 //   - _a1 reconcile.Request
 func (_e *Reconciler_Expecter) Reconcile(_a0 interface{}, _a1 interface{}) *Reconciler_Reconcile_Call {
-	return &Reconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", _a0, _a1)}
+	return &Reconciler_Reconcile_Call{Call: _e.mock.On("ReconcileOA", _a0, _a1)}
 }
 
 func (_c *Reconciler_Reconcile_Call) Run(run func(_a0 context.Context, _a1 reconcile.Request)) *Reconciler_Reconcile_Call {

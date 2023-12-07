@@ -34,12 +34,33 @@ func NewReconciler(dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader,
 	}
 }
 
-// Reconcile updates the version status used by the dynakube
-func (reconciler *Reconciler) Reconcile(ctx context.Context) error {
+func (reconciler *Reconciler) ReconcileCM(ctx context.Context) error {
+	updaters := []StatusUpdater{
+		newCodeModulesUpdater(reconciler.dynakube, reconciler.dtClient),
+	}
+
+	neededUpdaters := reconciler.needsReconcile(updaters)
+	if len(neededUpdaters) > 0 {
+		return reconciler.updateVersionStatuses(ctx, neededUpdaters)
+	}
+	return nil
+}
+
+func (reconciler *Reconciler) ReconcileOA(ctx context.Context) error {
+	updaters := []StatusUpdater{
+		newOneAgentUpdater(reconciler.dynakube, reconciler.apiReader, reconciler.dtClient, reconciler.registryClient),
+	}
+
+	neededUpdaters := reconciler.needsReconcile(updaters)
+	if len(neededUpdaters) > 0 {
+		return reconciler.updateVersionStatuses(ctx, neededUpdaters)
+	}
+	return nil
+}
+
+func (reconciler *Reconciler) ReconcileAG(ctx context.Context) error {
 	updaters := []StatusUpdater{
 		newActiveGateUpdater(reconciler.dynakube, reconciler.apiReader, reconciler.dtClient, reconciler.registryClient),
-		newOneAgentUpdater(reconciler.dynakube, reconciler.apiReader, reconciler.dtClient, reconciler.registryClient),
-		newCodeModulesUpdater(reconciler.dynakube, reconciler.dtClient),
 		newSyntheticUpdater(reconciler.dynakube, reconciler.apiReader, reconciler.dtClient, reconciler.registryClient),
 	}
 

@@ -2,6 +2,7 @@ package dynakube
 
 import (
 	"context"
+	goerrors "errors"
 	"net/http"
 	"os"
 	"time"
@@ -272,22 +273,6 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		return err
 	}
 
-	log.Info("start reconciling connection info")
-	err = controller.reconcileConnectionInfo(ctx, dynakube, dynatraceClient)
-	if err != nil {
-		return err
-	}
-
-	// TODO: Improve logic so we do this only in case of codemodules
-	// Kept it like this for now to keep compatibility
-	if istioReconciler != nil {
-		log.Info("start reconciling Istio")
-		err := istioReconciler.ReconcileCommunicationHosts(ctx, dynakube)
-		if err != nil {
-			return err
-		}
-	}
-
 	log.Info("start reconciling pull secret")
 	err = dtpullsecret.
 		NewReconciler(controller.client, controller.apiReader, controller.scheme, dynakube, tokens).
@@ -303,13 +288,18 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		return err
 	}
 
-	// NB: we create registryClient after we finish reconciling of dt pull secret
+	return controller.reconcileComponents(ctx, dynatraceClient, istioReconciler, dynakube)
+}
+
+func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient dtclient.Client, istioReconciler *istio.Reconciler, dynakube *dynatracev1beta1.DynaKube) error {
+	// it's important to setup app injection before AG so that it is already working when AG pods start, in case code modules shall get
+	// injected into AG for self-monitoring reasons
+
 	registryClient, err := controller.createDynatraceRegistryClient(ctx, dynakube)
 	if err != nil {
 		return err
 	}
 
-	log.Info("start reconciling version")
 	versionReconciler := version.NewReconciler(
 		dynakube,
 		controller.apiReader,
@@ -318,56 +308,58 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		controller.fs,
 		timeprovider.New().Freeze(),
 	)
-	err = versionReconciler.Reconcile(ctx)
-	if err != nil {
-		log.Info("could not reconcile component versions")
-		return err
-	}
 
-	return controller.reconcileComponents(ctx, dynatraceClient, dynakube)
-}
+	connectionInfoReconciler := connectioninfo.NewReconciler(controller.client, controller.apiReader, controller.scheme, dynakube, dynatraceClient)
 
-func (controller *Controller) reconcileConnectionInfo(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, dynatraceClient dtclient.Client) error {
-	err := connectioninfo.NewReconciler(controller.client, controller.apiReader, controller.scheme, dynakube, dynatraceClient).Reconcile(ctx)
-
-	if errors.Is(err, connectioninfo.NoOneAgentCommunicationHostsError) {
-		// missing communication hosts is not an error per se and shall not stop reconciliation, just make sure next reconciliation is happening ASAP
-		// this situation will clear itself after AG has been started
-		controller.setRequeueAfterIfNewIsShorter(fastUpdateInterval)
-		return nil
-	}
-	return err
-}
-
-func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient dtclient.Client, dynakube *dynatracev1beta1.DynaKube) error {
-	// it's important to setup app injection before AG so that it is already working when AG pods start, in case code modules shall get
-	// injected into AG for self-monitoring reasons
+	errs := []error{}
 	log.Info("start reconciling app injection")
-	err := controller.reconcileAppInjection(ctx, dynakube)
+	err = controller.reconcileAppInjection(ctx, dynakube, istioReconciler, connectionInfoReconciler, versionReconciler)
 	if err != nil {
 		log.Info("could not reconcile app injection")
-		return err
+		errs = append(errs, err)
 	}
 
 	log.Info("start reconciling ActiveGate")
-	err = controller.reconcileActiveGate(ctx, dynakube, dynatraceClient)
+	err = controller.reconcileActiveGate(ctx, dynakube, dynatraceClient, istioReconciler, connectionInfoReconciler, versionReconciler)
 	if err != nil {
 		log.Info("could not reconcile ActiveGate")
-		return err
+		errs = append(errs, err)
 	}
 
 	log.Info("start reconciling OneAgent")
-	err = controller.reconcileOneAgent(ctx, dynakube)
+	err = controller.reconcileOneAgent(ctx, dynakube, connectionInfoReconciler, versionReconciler)
 	if err != nil {
 		log.Info("could not reconcile OneAgent")
-		return err
+		errs = append(errs, err)
 	}
 
-	return nil
+	return goerrors.Join(errs...)
 }
 
-func (controller *Controller) reconcileAppInjection(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
+func (controller *Controller) reconcileAppInjection(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, istioReconciler *istio.Reconciler, connectionReconciler *connectioninfo.Reconciler, versionReconciler *version.Reconciler) error {
 	if dynakube.NeedAppInjection() {
+		err := connectionReconciler.ReconcileOA(ctx) //TODO: maybe combine with OA reconcile
+		if err != nil {
+			return err
+		}
+		if errors.Is(err, connectioninfo.NoOneAgentCommunicationHostsError) {
+			// missing communication hosts is not an error per se and shall not stop reconciliation, just make sure next reconciliation is happening ASAP
+			// this situation will clear itself after AG has been started
+			controller.setRequeueAfterIfNewIsShorter(fastUpdateInterval)
+			return nil
+		} else if err != nil {
+			return err
+		}
+		if istioReconciler != nil {
+			err := istioReconciler.ReconcileCMCommunicationHosts(ctx, dynakube)
+			if err != nil {
+				return err
+			}
+		}
+		err = versionReconciler.ReconcileCM(ctx)
+		if err != nil {
+			return err
+		}
 		return controller.setupAppInjection(ctx, dynakube)
 	}
 
@@ -419,9 +411,24 @@ func (controller *Controller) removeAppInjection(ctx context.Context, dynakube *
 	return nil
 }
 
-func (controller *Controller) reconcileOneAgent(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
+func (controller *Controller) reconcileOneAgent(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, connectionReconciler *connectioninfo.Reconciler, versionReconciler *version.Reconciler) error {
 	if !dynakube.NeedsOneAgent() {
 		return controller.removeOneAgentDaemonSet(ctx, dynakube)
+	}
+
+	err := connectionReconciler.ReconcileOA(ctx) //TODO: maybe combine with OA reconcile
+	if errors.Is(err, connectioninfo.NoOneAgentCommunicationHostsError) {
+		// missing communication hosts is not an error per se and shall not stop reconciliation, just make sure next reconciliation is happening ASAP
+		// this situation will clear itself after AG has been started
+		controller.setRequeueAfterIfNewIsShorter(fastUpdateInterval)
+		return nil
+	} else if err != nil {
+		return err
+	}
+
+	err = versionReconciler.ReconcileOA(ctx)
+	if err != nil {
+		return err
 	}
 
 	return oneagent.NewOneAgentReconciler(
@@ -434,7 +441,23 @@ func (controller *Controller) removeOneAgentDaemonSet(ctx context.Context, dynak
 	return object.Delete(ctx, controller.client, &oneAgentDaemonSet)
 }
 
-func (controller *Controller) reconcileActiveGate(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) error {
+func (controller *Controller) reconcileActiveGate(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client, istioReconciler *istio.Reconciler, connectionReconciler *connectioninfo.Reconciler, versionReconciler *version.Reconciler) error {
+	if dynakube.NeedsActiveGate() { // TODO: this is horrible because this check is in the activegate reconciler 🤦‍♂️
+		err := connectionReconciler.ReconcileAG(ctx)
+		if err != nil {
+			return err
+		}
+		err = versionReconciler.ReconcileAG(ctx)
+		if err != nil {
+			return err
+		}
+		if istioReconciler != nil {
+			err = istioReconciler.ReconcileAGCommunicationHosts(ctx, dynakube)
+			if err != nil {
+				return err
+			}
+		}
+	}
 	reconciler := activegate.NewReconciler(controller.client, controller.apiReader, controller.scheme, dynakube, dtc)
 	err := reconciler.Reconcile(ctx)
 

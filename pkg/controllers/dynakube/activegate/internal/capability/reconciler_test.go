@@ -73,7 +73,7 @@ func buildDynakube(capabilities []dynatracev1beta1.CapabilityDisplayName) *dynat
 
 func getMockReconciler(t *testing.T, returnArguments ...any) *reconcilermock.CapabilityReconciler {
 	mockReconciler := reconcilermock.NewCapabilityReconciler(t)
-	mockReconciler.On("Reconcile", mock.Anything).Return(returnArguments...).Maybe()
+	mockReconciler.On("ReconcileOA", mock.Anything).Return(returnArguments...).Maybe()
 	return mockReconciler
 }
 
@@ -96,8 +96,8 @@ func TestReconcile(t *testing.T) {
 		verifyReconciler(t, r)
 
 		err := r.Reconcile(context.Background())
-		mockStatefulSetReconciler.AssertCalled(t, "Reconcile", mock.Anything)
-		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile", mock.Anything)
+		mockStatefulSetReconciler.AssertCalled(t, "ReconcileOA", mock.Anything)
+		mockCustompropertiesReconciler.AssertCalled(t, "ReconcileOA", mock.Anything)
 		require.NoError(t, err)
 	})
 	t.Run(`statefulSetReconciler errors`, func(t *testing.T) {
@@ -109,8 +109,8 @@ func TestReconcile(t *testing.T) {
 		verifyReconciler(t, r)
 
 		err := r.Reconcile(context.Background())
-		mockStatefulSetReconciler.AssertCalled(t, "Reconcile", mock.Anything)
-		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile", mock.Anything)
+		mockStatefulSetReconciler.AssertCalled(t, "ReconcileOA", mock.Anything)
+		mockCustompropertiesReconciler.AssertCalled(t, "ReconcileOA", mock.Anything)
 		require.Error(t, err)
 	})
 	t.Run(`customPropertiesReconciler errors`, func(t *testing.T) {
@@ -122,7 +122,7 @@ func TestReconcile(t *testing.T) {
 		verifyReconciler(t, r)
 
 		err := r.Reconcile(context.Background())
-		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile", mock.Anything)
+		mockCustompropertiesReconciler.AssertCalled(t, "ReconcileOA", mock.Anything)
 		require.Error(t, err)
 	})
 	t.Run(`statefulSetReconciler and customPropertiesReconciler error`, func(t *testing.T) {
@@ -145,8 +145,8 @@ func TestReconcile(t *testing.T) {
 		verifyReconciler(t, r)
 
 		err := r.Reconcile(context.Background())
-		mockStatefulSetReconciler.AssertCalled(t, "Reconcile", mock.Anything)
-		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile", mock.Anything)
+		mockStatefulSetReconciler.AssertCalled(t, "ReconcileOA", mock.Anything)
+		mockCustompropertiesReconciler.AssertCalled(t, "ReconcileOA", mock.Anything)
 		require.NoError(t, err)
 
 		service := corev1.Service{}
@@ -165,8 +165,8 @@ func TestReconcile(t *testing.T) {
 		verifyReconciler(t, r)
 
 		err := r.Reconcile(context.Background())
-		mockStatefulSetReconciler.AssertCalled(t, "Reconcile", mock.Anything)
-		mockCustompropertiesReconciler.AssertCalled(t, "Reconcile", mock.Anything)
+		mockStatefulSetReconciler.AssertCalled(t, "ReconcileOA", mock.Anything)
+		mockCustompropertiesReconciler.AssertCalled(t, "ReconcileOA", mock.Anything)
 		require.NoError(t, err)
 
 		service := corev1.Service{}
