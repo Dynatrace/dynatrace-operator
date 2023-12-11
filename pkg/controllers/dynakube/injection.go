@@ -3,6 +3,7 @@ package dynakube
 import (
 	"context"
 	goerrors "errors"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"

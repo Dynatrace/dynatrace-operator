@@ -2,6 +2,7 @@ package dynakube
 
 import (
 	"context"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
@@ -12,8 +13,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (controller *Controller) reconcileActiveGate(ctx context.Context, dynakube *dynakube.DynaKube, dtc dynatrace.Client, istioReconciler *istio.Reconciler, connectionReconciler *connectioninfo.Reconciler, versionReconciler *version.Reconciler) error {
-	if dynakube.NeedsActiveGate() { // TODO: this is horrible because this check is in the activegate reconciler as well
+func (controller *Controller) reconcileActiveGate(ctx context.Context, dynakube *dynakube.DynaKube, dtc dynatrace.Client, istioReconciler *istio.Reconciler, connectionReconciler *connectioninfo.Reconciler, versionReconciler *version.Reconciler) error { // nolint: revive
+	if dynakube.NeedsActiveGate() { // TODO: this is not optimal, because this check is in the activegate reconciler as well (to do the cleanup)
 		err := connectionReconciler.ReconcileAG(ctx)
 		if err != nil {
 			return err

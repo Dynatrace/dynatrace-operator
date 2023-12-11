@@ -128,7 +128,7 @@ func TestReconcile_ConnectionInfo(t *testing.T) {
 	t.Run(`store ActiveGate connection info to DynaKube status`, func(t *testing.T) {
 		fakeClient := fake.NewClient(&dynakube)
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, &dynakube, dtc)
-		err := r.ReconcileOA(context.Background())
+		err := r.ReconcileAG(context.Background())
 		require.NoError(t, err)
 
 		assert.Equal(t, testTenantUUID, dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID)
@@ -145,7 +145,7 @@ func TestReconcile_ConnectionInfo(t *testing.T) {
 		}
 		resetCachedTimestamps(&dynakube.Status)
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, &dynakube, dtc)
-		err := r.ReconcileOA(context.Background())
+		err := r.ReconcileAG(context.Background())
 		require.NoError(t, err)
 
 		assert.Equal(t, testTenantUUID, dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID)
@@ -162,7 +162,7 @@ func TestReconcile_ConnectionInfo(t *testing.T) {
 		}
 
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, &dynakube, dtc)
-		err := r.ReconcileOA(context.Background())
+		err := r.ReconcileAG(context.Background())
 		require.NoError(t, err)
 
 		assert.Equal(t, testTenantUUID, dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID)
@@ -178,7 +178,6 @@ func TestReconcile_NoOneAgentCommunicationHosts(t *testing.T) {
 		}}
 
 	dtc := mocks.NewClient(t)
-	dtc.On("GetActiveGateConnectionInfo").Return(getTestActiveGateConnectionInfo(), nil)
 	dtc.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{
 		ConnectionInfo: dtclient.ConnectionInfo{
 			TenantUUID:  testTenantUUID,
@@ -251,7 +250,7 @@ func TestReconcile_ActivegateSecret(t *testing.T) {
 		fakeClient := fake.NewClient(dynakube)
 
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
-		err := r.ReconcileOA(context.Background())
+		err := r.ReconcileAG(context.Background())
 		require.NoError(t, err)
 
 		var actualSecret corev1.Secret
@@ -264,7 +263,7 @@ func TestReconcile_ActivegateSecret(t *testing.T) {
 			buildActiveGateSecret(*dynakube, testOutdated))
 		resetCachedTimestamps(&dynakube.Status)
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube, dtc)
-		err := r.ReconcileOA(context.Background())
+		err := r.ReconcileAG(context.Background())
 		require.NoError(t, err)
 
 		var actualSecret corev1.Secret

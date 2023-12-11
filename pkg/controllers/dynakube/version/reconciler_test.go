@@ -78,7 +78,7 @@ func TestReconcile(t *testing.T) {
 			registryClient: &mockImageGetter,
 			timeProvider:   timeprovider.New().Freeze(),
 		}
-		err := versionReconciler.ReconcileCM(ctx)
+		err := versionReconciler.ReconcileAG(ctx)
 		assert.Error(t, err)
 	})
 
@@ -108,6 +108,10 @@ func TestReconcile(t *testing.T) {
 			dtClient:       mockClient,
 		}
 		err := versionReconciler.ReconcileCM(ctx)
+		require.NoError(t, err)
+		err = versionReconciler.ReconcileAG(ctx)
+		require.NoError(t, err)
+		err = versionReconciler.ReconcileOA(ctx)
 		require.NoError(t, err)
 		assertStatusBasedOnTenantRegistry(t, dynakube.DefaultActiveGateImage(), testActiveGateImage.Tag, dkStatus.ActiveGate.VersionStatus)
 		assertStatusBasedOnTenantRegistry(t, dynakube.DefaultOneAgentImage(), testOneAgentImage.Tag, dkStatus.OneAgent.VersionStatus)
@@ -171,6 +175,11 @@ func TestReconcile(t *testing.T) {
 			dtClient:       mockClient,
 		}
 		err := versionReconciler.ReconcileCM(ctx)
+		require.NoError(t, err)
+		err = versionReconciler.ReconcileAG(ctx)
+		require.NoError(t, err)
+		err = versionReconciler.ReconcileOA(ctx)
+		require.NoError(t, err)
 		require.NoError(t, err)
 		assertPublicRegistryVersionStatusEquals(t, fakeRegistry, getTaggedReference(t, testActiveGateImage.String()), dkStatus.ActiveGate.VersionStatus)
 		assertPublicRegistryVersionStatusEquals(t, fakeRegistry, getTaggedReference(t, testOneAgentImage.String()), dkStatus.OneAgent.VersionStatus)

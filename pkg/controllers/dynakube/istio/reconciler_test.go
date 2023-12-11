@@ -227,12 +227,6 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		assert.NotNil(t, serviceEntry)
 		assert.Contains(t, fmt.Sprintf("%v", serviceEntry), "something.test.io")
 
-		expectedFQDNName = BuildNameForFQDNServiceEntry(dynakube.GetName(), ActiveGateComponent)
-		serviceEntry, err = fakeClient.NetworkingV1beta1().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
-		require.NoError(t, err)
-		assert.NotNil(t, serviceEntry)
-		assert.Contains(t, fmt.Sprintf("%v", serviceEntry), "abcd123.some.activegate.endpointurl.com")
-
 		virtualService, err := fakeClient.NetworkingV1beta1().VirtualServices(dynakube.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
 		require.NoError(t, err)
 		assert.NotNil(t, virtualService)
@@ -251,6 +245,49 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		reconciler := NewReconciler(istioClient)
 
 		err := reconciler.ReconcileCMCommunicationHosts(ctx, dynakube)
+		require.Error(t, err)
+	})
+}
+
+func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
+	ctx := context.Background()
+	dynakube := createTestDynaKube()
+	t.Run("nil => error", func(t *testing.T) {
+		istioClient := newTestingClient(nil, dynakube.GetNamespace())
+		reconciler := NewReconciler(istioClient)
+
+		err := reconciler.ReconcileAGCommunicationHosts(ctx, nil)
+		require.Error(t, err)
+	})
+	t.Run("success", func(t *testing.T) {
+		fakeClient := fakeistio.NewSimpleClientset()
+		istioClient := newTestingClient(fakeClient, dynakube.GetNamespace())
+		reconciler := NewReconciler(istioClient)
+
+		err := reconciler.ReconcileAGCommunicationHosts(ctx, dynakube)
+		require.NoError(t, err)
+
+		expectedFQDNName := BuildNameForFQDNServiceEntry(dynakube.GetName(), ActiveGateComponent)
+		serviceEntry, err := fakeClient.NetworkingV1beta1().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
+		require.NoError(t, err)
+		assert.NotNil(t, serviceEntry)
+		assert.Contains(t, fmt.Sprintf("%v", serviceEntry), "abcd123.some.activegate.endpointurl.com")
+
+		virtualService, err := fakeClient.NetworkingV1beta1().VirtualServices(dynakube.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
+		require.NoError(t, err)
+		assert.NotNil(t, virtualService)
+
+		require.NoError(t, err)
+		assert.NotNil(t, serviceEntry)
+	})
+	t.Run("unknown k8s client error => error", func(t *testing.T) {
+		fakeClient := fakeistio.NewSimpleClientset()
+		fakeClient.PrependReactor("*", "*", boomReaction)
+
+		istioClient := newTestingClient(fakeClient, dynakube.GetNamespace())
+		reconciler := NewReconciler(istioClient)
+
+		err := reconciler.ReconcileAGCommunicationHosts(ctx, dynakube)
 		require.Error(t, err)
 	})
 }
