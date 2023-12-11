@@ -3,6 +3,7 @@ package version
 import (
 	"context"
 	"errors"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -46,7 +47,7 @@ func (reconciler *OneAgentImageVersionReconciler) Reconcile(ctx context.Context,
 		if err != nil {
 			return err
 		}
-		reconciler.SetOneAgentHealthConfig(ctx, dynakube, err)
+		reconciler.SetOneAgentHealthConfig(ctx, dynakube)
 		if err := ValidateOneAgentStatus(updatedStatus, dynakube); err != nil {
 			return err
 		}
@@ -74,7 +75,7 @@ func ValidateOneAgentStatus(updatedStatus status.VersionStatus, dynakube *dynatr
 	return nil
 }
 
-func (reconciler *OneAgentImageVersionReconciler) SetOneAgentHealthConfig(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, err error) {
+func (reconciler *OneAgentImageVersionReconciler) SetOneAgentHealthConfig(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) {
 	healthConfig, err := GetOneAgentHealthConfig(ctx, reconciler.apiReader, reconciler.registryClient, dynakube, dynakube.OneAgentImage())
 	if err != nil {
 		log.Error(err, "could not set OneAgent healthcheck")
@@ -139,9 +140,7 @@ func (reconciler *OneAgentImageVersionReconciler) run(ctx context.Context, curre
 	if current.Source == status.PublicRegistryVersionSource {
 		return reconciler.handlePublicRegistry(ctx, current, dynakube, previous)
 	}
-
 	return reconciler.handleTenantRegistry(ctx, current, dynakube, previous)
-
 }
 
 func (reconciler *OneAgentImageVersionReconciler) handleTenantRegistry(ctx context.Context, current status.VersionStatus, dynakube *dynatracev1beta1.DynaKube, previous status.VersionStatus) (status.VersionStatus, error) {

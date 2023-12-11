@@ -2,17 +2,16 @@ package version
 
 import (
 	"context"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type ActiveGateImageVersionReconciler struct {
-	apiReader      client.Reader
 	dtClient       dtclient.Client
 	registryClient registry.ImageGetter
 	timeProvider   *timeprovider.Provider
