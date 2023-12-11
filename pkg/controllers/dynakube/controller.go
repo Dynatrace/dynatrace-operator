@@ -10,25 +10,18 @@ import (
 	dynatracestatus "github.com/Dynatrace/dynatrace-operator/pkg/api/status"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/apimonitoring"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/connectioninfo"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceapi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/dynatraceclient"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/istio"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/status"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/token"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/version"
-	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/ingestendpoint"
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/initgeneration"
-	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 	"github.com/Dynatrace/dynatrace-operator/pkg/oci/registry"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/hasher"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/object"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/timeprovider"
 	"github.com/pkg/errors"
@@ -46,10 +39,9 @@ import (
 )
 
 const (
-	immediateUpdateInterval = 5 * time.Second
-	fastUpdateInterval      = 1 * time.Minute
-	changesUpdateInterval   = 5 * time.Minute
-	defaultUpdateInterval   = 30 * time.Minute
+	fastUpdateInterval    = 1 * time.Minute
+	changesUpdateInterval = 5 * time.Minute
+	defaultUpdateInterval = 30 * time.Minute
 )
 
 func Add(mgr manager.Manager, _ string) error {
@@ -118,7 +110,7 @@ type Controller struct {
 func (controller *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log.Info("reconciling DynaKube", "namespace", request.Namespace, "name", request.Name)
 
-	dynaKube, err := controller.getDynakubeOrUnmap(ctx, request.Name, request.Namespace)
+	dynaKube, err := controller.getDynakubeOrCleanup(ctx, request.Name, request.Namespace)
 	if err != nil {
 		return reconcile.Result{}, err
 	} else if dynaKube == nil {
@@ -176,7 +168,7 @@ func (controller *Controller) reconcile(ctx context.Context, dynaKube *dynatrace
 	return reconcile.Result{RequeueAfter: controller.requeueAfter}, nil
 }
 
-func (controller *Controller) getDynakubeOrUnmap(ctx context.Context, dkName, dkNamespace string) (*dynatracev1beta1.DynaKube, error) {
+func (controller *Controller) getDynakubeOrCleanup(ctx context.Context, dkName, dkNamespace string) (*dynatracev1beta1.DynaKube, error) {
 	dynakube := &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      dkName,
@@ -190,11 +182,6 @@ func (controller *Controller) getDynakubeOrUnmap(ctx context.Context, dkName, dk
 		return nil, errors.WithStack(err)
 	}
 	return dynakube, nil
-}
-
-func (controller *Controller) createDynakubeMapper(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) *mapper.DynakubeMapper {
-	dkMapper := mapper.NewDynakubeMapper(ctx, controller.client, controller.apiReader, controller.operatorNamespace, dynakube)
-	return &dkMapper
 }
 
 func (controller *Controller) setupIstio(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) (*istio.Reconciler, error) {
@@ -300,190 +287,48 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		return err
 	}
 
-	versionReconciler := version.NewReconciler(
-		dynakube,
-		controller.apiReader,
-		dynatraceClient,
-		registryClient,
-		controller.fs,
-		timeprovider.New().Freeze(),
-	)
-
+	versionReconciler := version.NewReconciler(dynakube, controller.apiReader, dynatraceClient, registryClient, controller.fs, timeprovider.New().Freeze())
 	connectionInfoReconciler := connectioninfo.NewReconciler(controller.client, controller.apiReader, controller.scheme, dynakube, dynatraceClient)
 
-	errs := []error{}
-	log.Info("start reconciling app injection")
-	err = controller.reconcileAppInjection(ctx, dynakube, istioReconciler, connectionInfoReconciler, versionReconciler)
-	if err != nil {
-		log.Info("could not reconcile app injection")
-		errs = append(errs, err)
-	}
+	componentErrors := []error{}
 
 	log.Info("start reconciling ActiveGate")
 	err = controller.reconcileActiveGate(ctx, dynakube, dynatraceClient, istioReconciler, connectionInfoReconciler, versionReconciler)
 	if err != nil {
 		log.Info("could not reconcile ActiveGate")
-		errs = append(errs, err)
+		componentErrors = append(componentErrors, err)
 	}
 
-	log.Info("start reconciling OneAgent")
-	err = controller.reconcileOneAgent(ctx, dynakube, connectionInfoReconciler, versionReconciler)
-	if err != nil {
-		log.Info("could not reconcile OneAgent")
-		errs = append(errs, err)
-	}
-
-	return goerrors.Join(errs...)
-}
-
-func (controller *Controller) reconcileAppInjection(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, istioReconciler *istio.Reconciler, connectionReconciler *connectioninfo.Reconciler, versionReconciler *version.Reconciler) error {
-	if dynakube.NeedAppInjection() {
-		err := connectionReconciler.ReconcileOA(ctx) //TODO: maybe combine with OA reconcile
+	if dynakube.NeedsOneAgent() || dynakube.ApplicationMonitoringMode() { // TODO: improve check
+		err := connectionInfoReconciler.ReconcileOA(ctx)
 		if err != nil {
 			return err
 		}
 		if errors.Is(err, connectioninfo.NoOneAgentCommunicationHostsError) {
-			// missing communication hosts is not an error per se and shall not stop reconciliation, just make sure next reconciliation is happening ASAP
+			// missing communication hosts is not an error per se, just make sure next the reconciliation is happening ASAP
 			// this situation will clear itself after AG has been started
 			controller.setRequeueAfterIfNewIsShorter(fastUpdateInterval)
 			return nil
 		} else if err != nil {
 			return err
 		}
-		if istioReconciler != nil {
-			err := istioReconciler.ReconcileCMCommunicationHosts(ctx, dynakube)
-			if err != nil {
-				return err
-			}
-		}
-		err = versionReconciler.ReconcileCM(ctx)
-		if err != nil {
-			return err
-		}
-		return controller.setupAppInjection(ctx, dynakube)
-	}
+	} // TODO: there tends to be a clean up for each reconcileX function, so it might makes sense to have the same here
 
-	return controller.removeAppInjection(ctx, dynakube)
-}
-
-func (controller *Controller) setupAppInjection(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) (err error) {
-	endpointSecretGenerator := dtingestendpoint.NewEndpointSecretGenerator(controller.client, controller.apiReader, dynakube.Namespace)
-	dkMapper := controller.createDynakubeMapper(ctx, dynakube)
-
-	if err = dkMapper.MapFromDynakube(); err != nil {
-		log.Info("update of a map of namespaces failed")
-		return err
-	}
-
-	err = initgeneration.NewInitGenerator(controller.client, controller.apiReader, dynakube.Namespace).GenerateForDynakube(ctx, dynakube)
+	log.Info("start reconciling app injection")
+	err = controller.reconcileAppInjection(ctx, dynakube, istioReconciler, versionReconciler)
 	if err != nil {
-		log.Info("failed to generate init secret")
-		return err
+		log.Info("could not reconcile app injection")
+		componentErrors = append(componentErrors, err)
 	}
 
-	err = endpointSecretGenerator.GenerateForDynakube(ctx, dynakube)
+	log.Info("start reconciling OneAgent")
+	err = controller.reconcileOneAgent(ctx, dynakube, versionReconciler)
 	if err != nil {
-		log.Info("failed to generate data-ingest secret")
-		return err
+		log.Info("could not reconcile OneAgent")
+		componentErrors = append(componentErrors, err)
 	}
 
-	if dynakube.ApplicationMonitoringMode() {
-		dynakube.Status.SetPhase(dynatracestatus.Running)
-	}
-
-	log.Info("app injection reconciled")
-	return nil
-}
-
-func (controller *Controller) removeAppInjection(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) (err error) {
-	endpointSecretGenerator := dtingestendpoint.NewEndpointSecretGenerator(controller.client, controller.apiReader, dynakube.Namespace)
-	dkMapper := controller.createDynakubeMapper(ctx, dynakube)
-
-	if err := dkMapper.UnmapFromDynaKube(); err != nil {
-		log.Info("could not unmap DynaKube from namespace")
-		return err
-	}
-	err = endpointSecretGenerator.RemoveEndpointSecrets(ctx, dynakube)
-	if err != nil {
-		log.Info("could not remove data-ingest secret")
-		return err
-	}
-	return nil
-}
-
-func (controller *Controller) reconcileOneAgent(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, connectionReconciler *connectioninfo.Reconciler, versionReconciler *version.Reconciler) error {
-	if !dynakube.NeedsOneAgent() {
-		return controller.removeOneAgentDaemonSet(ctx, dynakube)
-	}
-
-	err := connectionReconciler.ReconcileOA(ctx) //TODO: maybe combine with OA reconcile
-	if errors.Is(err, connectioninfo.NoOneAgentCommunicationHostsError) {
-		// missing communication hosts is not an error per se and shall not stop reconciliation, just make sure next reconciliation is happening ASAP
-		// this situation will clear itself after AG has been started
-		controller.setRequeueAfterIfNewIsShorter(fastUpdateInterval)
-		return nil
-	} else if err != nil {
-		return err
-	}
-
-	err = versionReconciler.ReconcileOA(ctx)
-	if err != nil {
-		return err
-	}
-
-	return oneagent.NewOneAgentReconciler(
-		controller.client, controller.apiReader, controller.scheme, controller.clusterID,
-	).Reconcile(ctx, dynakube)
-}
-
-func (controller *Controller) removeOneAgentDaemonSet(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
-	oneAgentDaemonSet := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dynakube.OneAgentDaemonsetName(), Namespace: dynakube.Namespace}}
-	return object.Delete(ctx, controller.client, &oneAgentDaemonSet)
-}
-
-func (controller *Controller) reconcileActiveGate(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client, istioReconciler *istio.Reconciler, connectionReconciler *connectioninfo.Reconciler, versionReconciler *version.Reconciler) error {
-	if dynakube.NeedsActiveGate() { // TODO: this is horrible because this check is in the activegate reconciler 🤦‍♂️
-		err := connectionReconciler.ReconcileAG(ctx)
-		if err != nil {
-			return err
-		}
-		err = versionReconciler.ReconcileAG(ctx)
-		if err != nil {
-			return err
-		}
-		if istioReconciler != nil {
-			err = istioReconciler.ReconcileAGCommunicationHosts(ctx, dynakube)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	reconciler := activegate.NewReconciler(controller.client, controller.apiReader, controller.scheme, dynakube, dtc)
-	err := reconciler.Reconcile(ctx)
-
-	if err != nil {
-		return errors.WithMessage(err, "failed to reconcile ActiveGate")
-	}
-	controller.setupAutomaticApiMonitoring(dynakube, dtc)
-
-	return nil
-}
-
-func (controller *Controller) setupAutomaticApiMonitoring(dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) {
-	if dynakube.Status.KubeSystemUUID != "" &&
-		dynakube.FeatureAutomaticKubernetesApiMonitoring() &&
-		dynakube.IsKubernetesMonitoringActiveGateEnabled() {
-		clusterLabel := dynakube.FeatureAutomaticKubernetesApiMonitoringClusterName()
-		if clusterLabel == "" {
-			clusterLabel = dynakube.Name
-		}
-
-		err := apimonitoring.NewReconciler(dtc, clusterLabel, dynakube.Status.KubeSystemUUID).
-			Reconcile(dynakube)
-		if err != nil {
-			log.Error(err, "could not create setting")
-		}
-	}
+	return goerrors.Join(componentErrors...)
 }
 
 func (controller *Controller) updateDynakubeStatus(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {

@@ -907,7 +907,7 @@ func TestGetDynakube(t *testing.T) {
 			apiReader: fakeClient,
 		}
 		ctx := context.Background()
-		dynakube, err := controller.getDynakubeOrUnmap(ctx, testName, testNamespace)
+		dynakube, err := controller.getDynakubeOrCleanup(ctx, testName, testNamespace)
 
 		assert.NotNil(t, dynakube)
 		assert.NoError(t, err)
@@ -929,7 +929,7 @@ func TestGetDynakube(t *testing.T) {
 			apiReader: fakeClient,
 		}
 		ctx := context.Background()
-		dynakube, err := controller.getDynakubeOrUnmap(ctx, testName, testNamespace)
+		dynakube, err := controller.getDynakubeOrCleanup(ctx, testName, testNamespace)
 
 		assert.Nil(t, dynakube)
 		assert.NoError(t, err)
@@ -945,7 +945,7 @@ func TestGetDynakube(t *testing.T) {
 		}
 
 		ctx := context.Background()
-		dynakube, err := controller.getDynakubeOrUnmap(ctx, testName, testNamespace)
+		dynakube, err := controller.getDynakubeOrCleanup(ctx, testName, testNamespace)
 
 		assert.Nil(t, dynakube)
 		assert.EqualError(t, err, "fake error")
