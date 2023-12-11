@@ -35,7 +35,7 @@ func (_m *CapabilityReconciler) Reconcile(ctx context.Context) error {
 	return r0
 }
 
-// CapabilityReconciler_Reconcile_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ReconcileOA'
+// CapabilityReconciler_Reconcile_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Reconcile'
 type CapabilityReconciler_Reconcile_Call struct {
 	*mock.Call
 }
@@ -43,7 +43,7 @@ type CapabilityReconciler_Reconcile_Call struct {
 // Reconcile is a helper method to define mock.On call
 //   - ctx context.Context
 func (_e *CapabilityReconciler_Expecter) Reconcile(ctx interface{}) *CapabilityReconciler_Reconcile_Call {
-	return &CapabilityReconciler_Reconcile_Call{Call: _e.mock.On("ReconcileOA", ctx)}
+	return &CapabilityReconciler_Reconcile_Call{Call: _e.mock.On("Reconcile", ctx)}
 }
 
 func (_c *CapabilityReconciler_Reconcile_Call) Run(run func(ctx context.Context)) *CapabilityReconciler_Reconcile_Call {
