@@ -146,6 +146,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
+    outputs:
+      digest: ${{ steps.create-manifests.outputs.digest }}
     strategy:
       matrix:
         registry: [gcr, dockerhub]
@@ -171,21 +173,16 @@ jobs:
           password: ${{ secrets[matrix.password] }}
       - name: Create manifests for ${{matrix.registry}}
         uses: ./.github/actions/create-manifests
+        id: create-manifests
         with:
           version: ${{ needs.prepare.outputs.version }}
           registry: ${{ matrix.url }}
           repository: ${{ secrets[matrix.repository] }}
           combined: true
-      - name: Get image digest
-        id: digest
-        env:
-          IMAGE: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}
-        run: |
-          hack/build/ci/get-image-digest.sh
       - name: Sign images for ${{matrix.registry}}
         uses: ./.github/actions/sign-image
         with:
-          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{steps.digest.outputs.digest}}
+          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ steps.create-manifests.outputs.digest }}
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}
 
@@ -219,24 +216,18 @@ jobs:
           registry: ${{ matrix.url }}
           username: ${{ secrets[matrix.username] }}
           password: ${{ secrets[matrix.password] }}
-      - name: Get operator-image digest
-        id: operator-digest
-        env:
-          IMAGE: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}
-        run: |
-          hack/build/ci/get-image-digest.sh
       - name: Create sbom for ${{matrix.registry}}
         id: sbom
         uses: aquasecurity/trivy-action@91713af97dc80187565512baba96e4364e983601 # 0.16.0
         with:
-          image-ref: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{steps.operator-digest.outputs.digest}}
+          image-ref: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ needs.manifest.outputs.digest }}
           format: 'cyclonedx'
           output: 'result.json'
           skip-dirs: '/usr/share/dynatrace-operator/third_party_licenses'
       - name: Upload sbom to ${{matrix.registry}}
         uses: ./.github/actions/upload-sbom
         with:
-          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{steps.operator-digest.outputs.digest}}
+          image: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{ needs.manifest.outputs.digest }}
           sbom: 'result.json'
           signing-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
           signing-password: ${{ secrets.COSIGN_PASSWORD }}

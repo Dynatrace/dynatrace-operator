@@ -11,12 +11,17 @@ inputs:
     description: The repository in the registry where the manifests are pushed
     required: true
   combined:
-    description: Should it create a combined manifests for amd64 and arm64 builds
+    description: Should it create a combined manifests for amd64, arm64 and ppc64le builds
     required: true
+outputs:
+  digest:
+    description: The digest of the created manifest
+    value: ${{ steps.create-manifest.outputs.digest }}
 runs:
   using: "composite"
   steps:
     - name: Create manifest
+      id: create-manifest
       env:
         IMAGE: ${{ inputs.registry }}/${{ inputs.repository }}
       shell: bash
