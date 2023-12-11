@@ -122,7 +122,7 @@ func (g *EndpointSecretGenerator) RemoveEndpointSecrets(ctx context.Context, dk 
 				Namespace: targetNs.GetName(),
 			},
 		}
-		if err := g.client.Delete(context.TODO(), endpointSecret); err != nil && !k8serrors.IsNotFound(err) {
+		if err := g.client.Delete(ctx, endpointSecret); err != nil && !k8serrors.IsNotFound(err) {
 			return err
 		}
 	}
@@ -138,7 +138,7 @@ func (g *EndpointSecretGenerator) prepare(ctx context.Context, dk *dynatracev1be
 
 	endpointPropertiesBuilder := strings.Builder{}
 
-	if !dk.FeatureDisableMetadataEnrichment() {
+	if !dk.FeatureDisableMetadataEnrichment() { // TODO: why check here and not at the very beginning?
 		if _, err := endpointPropertiesBuilder.WriteString(fmt.Sprintf("%s=%s\n", MetricsUrlSecretField, fields[MetricsUrlSecretField])); err != nil {
 			return nil, errors.WithStack(err)
 		}
@@ -161,7 +161,7 @@ func (g *EndpointSecretGenerator) PrepareFields(ctx context.Context, dk *dynatra
 		return nil, errors.WithMessage(err, "failed to query tokens")
 	}
 
-	if !dk.FeatureDisableMetadataEnrichment() {
+	if !dk.FeatureDisableMetadataEnrichment() { // TODO: why check here and not at the very beginning?
 		if token, ok := tokens.Data[dtclient.DynatraceDataIngestToken]; ok {
 			fields[MetricsTokenSecretField] = string(token)
 		}
