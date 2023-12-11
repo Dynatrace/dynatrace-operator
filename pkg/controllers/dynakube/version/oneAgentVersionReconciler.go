@@ -112,7 +112,7 @@ func logCustomOneAgentImageChangedMessage(current status.VersionStatus, previous
 	}
 }
 
-// another log funtion to print messages
+// another log function to print messages
 func logCustomVersionChangedMessage(current status.VersionStatus, previous status.VersionStatus) func() {
 	return func() {
 		log.Info("custom version value changed, update for version status is needed", "updater", "OneAgent", "oldVersion", previous.Version, "newVersion", current.Version)
@@ -154,7 +154,7 @@ func (reconciler *OneAgentImageVersionReconciler) handleTenantRegistry(ctx conte
 		}
 	}
 
-	downgrade, err := CheckForDowngrade(previous, latestVersion)
+	downgrade, err := checkForDowngrade(previous, latestVersion)
 	if err != nil || downgrade {
 		return previous, err
 	}
@@ -184,7 +184,7 @@ func (reconciler *OneAgentImageVersionReconciler) getOneAgentImageAndValidateDow
 			log.Info("could not get public image", "updater", "OneAgent")
 			return nil, err
 		}
-		isDowngrade, err := CheckForDowngrade(previous, imageInfo.Tag)
+		isDowngrade, err := checkForDowngrade(previous, imageInfo.Tag)
 		if err != nil || isDowngrade {
 			return nil, err
 		}
@@ -192,7 +192,7 @@ func (reconciler *OneAgentImageVersionReconciler) getOneAgentImageAndValidateDow
 	}
 }
 
-func CheckForDowngrade(previous status.VersionStatus, latestVersion string) (bool, error) {
+func checkForDowngrade(previous status.VersionStatus, latestVersion string) (bool, error) {
 	imageID := previous.ImageID
 	if imageID == "" {
 		return false, nil
