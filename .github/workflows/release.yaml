@@ -227,7 +227,7 @@ jobs:
           hack/build/ci/get-image-digest.sh
       - name: Create sbom for ${{matrix.registry}}
         id: sbom
-        uses: aquasecurity/trivy-action@22d2755f774d925b191a185b74e782a4b0638a41 # 0.15.0
+        uses: aquasecurity/trivy-action@91713af97dc80187565512baba96e4364e983601 # 0.16.0
         with:
           image-ref: ${{ matrix.url }}/${{ secrets[matrix.repository] }}:${{ needs.prepare.outputs.version }}@${{steps.operator-digest.outputs.digest}}
           format: 'cyclonedx'
