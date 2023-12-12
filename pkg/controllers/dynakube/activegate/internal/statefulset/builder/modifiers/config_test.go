@@ -72,7 +72,6 @@ func isSubset[T any](t *testing.T, subset, superset []T) {
 }
 
 func enableAllModifiers(dynakube *dynatracev1beta1.DynaKube, capability capability.Capability) {
-	setAutTokenUsage(dynakube, true)
 	setCertUsage(dynakube, true)
 	setCustomPropertyUsage(capability, true)
 	setProxyUsage(dynakube, true)

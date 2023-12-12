@@ -42,7 +42,6 @@ var warnings = []validator{
 	missingActiveGateMemoryLimit,
 	deprecatedFeatureFlagDisableActiveGateUpdates,
 	deprecatedFeatureFlagDisableActiveGateRawImage,
-	deprecatedFeatureFlagDisableHostsRequests,
 	deprecatedFeatureFlagDisableMetadataEnrichment,
 	syntheticPreviewWarning,
 	deprecatedFeatureFlagWillBeDeleted,

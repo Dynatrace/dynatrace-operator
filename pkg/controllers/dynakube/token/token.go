@@ -27,7 +27,7 @@ func (token Token) setApiTokenScopes(dynakube dynatracev1beta1.DynaKube, hasPaas
 			dtclient.TokenScopeSettingsWrite)
 	}
 
-	if dynakube.UseActiveGateAuthToken() {
+	if dynakube.NeedsActiveGate() {
 		token.RequiredScopes = append(token.RequiredScopes,
 			dtclient.TokenScopeActiveGateTokenCreate)
 	}

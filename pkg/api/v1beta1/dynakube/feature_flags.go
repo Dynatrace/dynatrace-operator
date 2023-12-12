@@ -41,9 +41,8 @@ const (
 	// Deprecated: AnnotationFeatureDisableActiveGateRawImage use AnnotationFeatureActiveGateRawImage instead
 	AnnotationFeatureDisableActiveGateRawImage = AnnotationFeaturePrefix + "disable-activegate-raw-image"
 
-	AnnotationFeatureActiveGateUpdates   = AnnotationFeaturePrefix + "activegate-updates"
-	AnnotationFeatureActiveGateRawImage  = AnnotationFeaturePrefix + "activegate-raw-image"
-	AnnotationFeatureActiveGateAuthToken = AnnotationFeaturePrefix + "activegate-authtoken"
+	AnnotationFeatureActiveGateUpdates  = AnnotationFeaturePrefix + "activegate-updates"
+	AnnotationFeatureActiveGateRawImage = AnnotationFeaturePrefix + "activegate-raw-image"
 
 	AnnotationFeatureActiveGateAppArmor                   = AnnotationFeaturePrefix + "activegate-apparmor"
 	AnnotationFeatureActiveGateReadOnlyFilesystem         = AnnotationFeaturePrefix + "activegate-readonly-fs"
@@ -267,11 +266,6 @@ func (dk *DynaKube) FeatureOneAgentIgnoreProxy() bool {
 // FeatureActiveGateIgnoreProxy is a feature flag to ignore the proxy for ActiveGate when set in CR
 func (dk *DynaKube) FeatureActiveGateIgnoreProxy() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateIgnoreProxy) == truePhrase
-}
-
-// FeatureActiveGateAuthToken is a feature flag to enable authToken usage in the activeGate
-func (dk *DynaKube) FeatureActiveGateAuthToken() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateAuthToken) != falsePhrase
 }
 
 // FeatureLabelVersionDetection is a feature flag to enable injecting additional environment variables based on user labels

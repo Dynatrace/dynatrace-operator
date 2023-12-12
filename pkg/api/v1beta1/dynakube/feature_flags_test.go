@@ -255,7 +255,6 @@ func TestSyntheticMonitoringFlags(t *testing.T) {
 func TestDefaultEnabledFeatureFlags(t *testing.T) {
 	dynakube := createDynakubeEmptyDynakube()
 
-	assert.True(t, dynakube.FeatureActiveGateAuthToken())
 	assert.True(t, dynakube.FeatureActiveGateReadOnlyFilesystem())
 	assert.True(t, dynakube.FeatureAutomaticKubernetesApiMonitoring())
 	assert.True(t, dynakube.FeatureAutomaticInjection())

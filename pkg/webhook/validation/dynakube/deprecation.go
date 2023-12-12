@@ -15,7 +15,6 @@ const (
 func getDeprecatedFeatureFlagsWillBeRemoved() []string {
 	return []string{
 		dynatracev1beta1.AnnotationInjectionFailurePolicy,
-		dynatracev1beta1.AnnotationFeatureActiveGateAuthToken,
 		dynatracev1beta1.AnnotationFeatureActiveGateRawImage,
 		dynatracev1beta1.AnnotationFeatureActiveGateReadOnlyFilesystem,
 	}
