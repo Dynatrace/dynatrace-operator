@@ -50,14 +50,12 @@ func (r Reconciler) updateDynakubeStatus(ctx context.Context) error {
 func (r *Reconciler) Reconcile(ctx context.Context) error {
 	oldStatus := r.dynakube.Status.DeepCopy()
 
-	if !r.dynakube.FeatureDisableActivegateRawImage() {
-		err := r.reconcileActiveGateConnectionInfo(ctx)
-		if err != nil {
-			return err
-		}
+	err := r.reconcileActiveGateConnectionInfo(ctx)
+	if err != nil {
+		return err
 	}
 
-	err := r.reconcileOneAgentConnectionInfo(ctx)
+	err = r.reconcileOneAgentConnectionInfo(ctx)
 	if err != nil {
 		return err
 	}

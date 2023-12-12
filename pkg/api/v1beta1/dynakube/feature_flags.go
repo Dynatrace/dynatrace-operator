@@ -38,11 +38,8 @@ const (
 
 	// Deprecated: AnnotationFeatureDisableActiveGateUpdates use AnnotationFeatureActiveGateUpdates instead
 	AnnotationFeatureDisableActiveGateUpdates = AnnotationFeaturePrefix + "disable-activegate-updates"
-	// Deprecated: AnnotationFeatureDisableActiveGateRawImage use AnnotationFeatureActiveGateRawImage instead
-	AnnotationFeatureDisableActiveGateRawImage = AnnotationFeaturePrefix + "disable-activegate-raw-image"
 
-	AnnotationFeatureActiveGateUpdates  = AnnotationFeaturePrefix + "activegate-updates"
-	AnnotationFeatureActiveGateRawImage = AnnotationFeaturePrefix + "activegate-raw-image"
+	AnnotationFeatureActiveGateUpdates = AnnotationFeaturePrefix + "activegate-updates"
 
 	AnnotationFeatureActiveGateAppArmor                   = AnnotationFeaturePrefix + "activegate-apparmor"
 	AnnotationFeatureActiveGateReadOnlyFilesystem         = AnnotationFeaturePrefix + "activegate-readonly-fs"
@@ -233,14 +230,6 @@ func (dk *DynaKube) FeatureAutomaticInjection() bool {
 
 func (dk *DynaKube) FeatureCustomSyntheticImage() string {
 	return dk.getFeatureFlagRaw(AnnotationFeatureCustomSyntheticImage)
-}
-
-// FeatureDisableActivegateRawImage is a feature flag to specify if the operator should
-// fetch from cluster and set in ActiveGet container: tenant UUID, token and communication endpoints
-// instead of using embedded ones in the image
-// Defaults to false
-func (dk *DynaKube) FeatureDisableActivegateRawImage() bool {
-	return dk.getDisableFlagWithDeprecatedAnnotation(AnnotationFeatureActiveGateRawImage, AnnotationFeatureDisableActiveGateRawImage)
 }
 
 // FeatureEnableMultipleOsAgentsOnNode is a feature flag to enable multiple osagents running on the same host

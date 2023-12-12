@@ -309,13 +309,11 @@ func TestReconcile_OneagentSecret(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
 			Name:      testName,
-			Annotations: map[string]string{
-				dynatracev1beta1.AnnotationFeatureActiveGateRawImage: "false",
-			},
 		}}
 
 	dtc := mocks.NewClient(t)
 	dtc.On("GetOneAgentConnectionInfo").Return(getTestOneAgentConnectionInfo(), nil)
+	dtc.On("GetActiveGateConnectionInfo").Return(dtclient.ActiveGateConnectionInfo{}, nil)
 
 	t.Run(`create oneagent secret`, func(t *testing.T) {
 		fakeClient := fake.NewClient(dynakube)

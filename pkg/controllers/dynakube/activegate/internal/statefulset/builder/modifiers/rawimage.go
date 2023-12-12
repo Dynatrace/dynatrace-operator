@@ -30,7 +30,7 @@ type RawImageModifier struct {
 }
 
 func (mod RawImageModifier) Enabled() bool {
-	return !mod.dynakube.FeatureDisableActivegateRawImage()
+	return true
 }
 
 func (mod RawImageModifier) Modify(sts *appsv1.StatefulSet) error {
