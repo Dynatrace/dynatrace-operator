@@ -78,7 +78,7 @@ func TestReconcile(t *testing.T) {
 			registryClient: &mockImageGetter,
 			timeProvider:   timeprovider.New().Freeze(),
 		}
-		err := versionReconciler.ReconcileAG(ctx)
+		err := versionReconciler.ReconcileActiveGate(ctx)
 		assert.Error(t, err)
 	})
 
@@ -107,11 +107,11 @@ func TestReconcile(t *testing.T) {
 			timeProvider:   timeProvider,
 			dtClient:       mockClient,
 		}
-		err := versionReconciler.ReconcileCM(ctx)
+		err := versionReconciler.ReconcileCodeModules(ctx)
 		require.NoError(t, err)
-		err = versionReconciler.ReconcileAG(ctx)
+		err = versionReconciler.ReconcileActiveGate(ctx)
 		require.NoError(t, err)
-		err = versionReconciler.ReconcileOA(ctx)
+		err = versionReconciler.ReconcileOneAgent(ctx)
 		require.NoError(t, err)
 		assertStatusBasedOnTenantRegistry(t, dynakube.DefaultActiveGateImage(), testActiveGateImage.Tag, dkStatus.ActiveGate.VersionStatus)
 		assertStatusBasedOnTenantRegistry(t, dynakube.DefaultOneAgentImage(), testOneAgentImage.Tag, dkStatus.OneAgent.VersionStatus)
@@ -119,13 +119,13 @@ func TestReconcile(t *testing.T) {
 
 		// no change if probe not old enough
 		previousProbe := *dkStatus.CodeModules.VersionStatus.LastProbeTimestamp
-		err = versionReconciler.ReconcileCM(ctx)
+		err = versionReconciler.ReconcileCodeModules(ctx)
 		require.NoError(t, err)
 		assert.Equal(t, previousProbe, *dkStatus.CodeModules.VersionStatus.LastProbeTimestamp)
 
 		// change if probe old enough
 		changeTime(timeProvider, 15*time.Minute+1*time.Second)
-		err = versionReconciler.ReconcileCM(ctx)
+		err = versionReconciler.ReconcileCodeModules(ctx)
 		require.NoError(t, err)
 		assert.NotEqual(t, previousProbe, *dkStatus.CodeModules.VersionStatus.LastProbeTimestamp)
 	})
@@ -174,43 +174,16 @@ func TestReconcile(t *testing.T) {
 			timeProvider:   timeprovider.New().Freeze(),
 			dtClient:       mockClient,
 		}
-		err := versionReconciler.ReconcileCM(ctx)
+		err := versionReconciler.ReconcileCodeModules(ctx)
 		require.NoError(t, err)
-		err = versionReconciler.ReconcileAG(ctx)
+		err = versionReconciler.ReconcileActiveGate(ctx)
 		require.NoError(t, err)
-		err = versionReconciler.ReconcileOA(ctx)
+		err = versionReconciler.ReconcileOneAgent(ctx)
 		require.NoError(t, err)
 		require.NoError(t, err)
 		assertPublicRegistryVersionStatusEquals(t, fakeRegistry, getTaggedReference(t, testActiveGateImage.String()), dkStatus.ActiveGate.VersionStatus)
 		assertPublicRegistryVersionStatusEquals(t, fakeRegistry, getTaggedReference(t, testOneAgentImage.String()), dkStatus.OneAgent.VersionStatus)
 		assertPublicRegistryVersionStatusEquals(t, fakeRegistry, getTaggedReference(t, testCodeModulesImage.String()), dkStatus.CodeModules.VersionStatus)
-	})
-}
-
-func TestNeedsReconcile(t *testing.T) {
-	timeProvider := timeprovider.New().Freeze()
-
-	dynakube := dynatracev1beta1.DynaKube{
-		Spec: dynatracev1beta1.DynaKubeSpec{
-			OneAgent: dynatracev1beta1.OneAgentSpec{
-				ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
-			},
-		},
-	}
-
-	t.Run("return only updaters needed", func(t *testing.T) {
-		reconciler := Reconciler{
-			dynakube:     &dynakube,
-			timeProvider: timeProvider,
-		}
-		updaters := []StatusUpdater{
-			newOneAgentUpdater(&dynakube, fake.NewClient(), nil, nil),
-			newActiveGateUpdater(&dynakube, fake.NewClient(), nil, nil),
-		}
-
-		neededUpdater := reconciler.needsReconcile(updaters)
-
-		assert.Len(t, neededUpdater, 1)
 	})
 }
 

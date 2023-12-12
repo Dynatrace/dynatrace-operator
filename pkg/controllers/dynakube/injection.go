@@ -70,7 +70,7 @@ func (controller *Controller) setupOneAgentInjection(ctx context.Context, dynaku
 			return err
 		}
 	}
-	err := versionReconciler.ReconcileCM(ctx)
+	err := versionReconciler.ReconcileCodeModules(ctx)
 	if err != nil {
 		return err
 	}

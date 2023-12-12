@@ -34,72 +34,52 @@ func NewReconciler(dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader,
 	}
 }
 
-func (reconciler *Reconciler) ReconcileCM(ctx context.Context) error {
-	updaters := []StatusUpdater{
-		newCodeModulesUpdater(reconciler.dynakube, reconciler.dtClient),
-	}
-
-	neededUpdaters := reconciler.needsReconcile(updaters)
-	if len(neededUpdaters) > 0 {
-		return reconciler.updateVersionStatuses(ctx, neededUpdaters)
+func (reconciler *Reconciler) ReconcileCodeModules(ctx context.Context) error {
+	updater := newCodeModulesUpdater(reconciler.dynakube, reconciler.dtClient)
+	if reconciler.needsUpdate(updater) {
+		return reconciler.updateVersionStatuses(ctx, updater)
 	}
 	return nil
 }
 
-func (reconciler *Reconciler) ReconcileOA(ctx context.Context) error {
-	updaters := []StatusUpdater{
-		newOneAgentUpdater(reconciler.dynakube, reconciler.apiReader, reconciler.dtClient, reconciler.registryClient),
-	}
-
-	neededUpdaters := reconciler.needsReconcile(updaters)
-	if len(neededUpdaters) > 0 {
-		return reconciler.updateVersionStatuses(ctx, neededUpdaters)
+func (reconciler *Reconciler) ReconcileOneAgent(ctx context.Context) error {
+	updater := newOneAgentUpdater(reconciler.dynakube, reconciler.apiReader, reconciler.dtClient, reconciler.registryClient)
+	if reconciler.needsUpdate(updater) {
+		return reconciler.updateVersionStatuses(ctx, updater)
 	}
 	return nil
 }
 
-func (reconciler *Reconciler) ReconcileAG(ctx context.Context) error {
+func (reconciler *Reconciler) ReconcileActiveGate(ctx context.Context) error {
 	updaters := []StatusUpdater{
 		newActiveGateUpdater(reconciler.dynakube, reconciler.apiReader, reconciler.dtClient, reconciler.registryClient),
 		newSyntheticUpdater(reconciler.dynakube, reconciler.apiReader, reconciler.dtClient, reconciler.registryClient),
 	}
-
-	neededUpdaters := reconciler.needsReconcile(updaters)
-	if len(neededUpdaters) > 0 {
-		return reconciler.updateVersionStatuses(ctx, neededUpdaters)
-	}
-	return nil
-}
-
-func (reconciler *Reconciler) updateVersionStatuses(ctx context.Context, updaters []StatusUpdater) error {
-	for _, updater := range updaters {
-		log.Info("updating version status", "updater", updater.Name())
-		err := reconciler.run(ctx, updater)
-		if err != nil {
-			return err
-		}
-
-		_, ok := updater.(*oneAgentUpdater)
-		if ok {
-			healthConfig, err := GetOneAgentHealthConfig(ctx, reconciler.apiReader, reconciler.registryClient, reconciler.dynakube, reconciler.dynakube.OneAgentImage())
-			if err != nil {
-				log.Error(err, "could not set OneAgent healthcheck")
-			} else {
-				reconciler.dynakube.Status.OneAgent.Healthcheck = healthConfig
-			}
-		}
-	}
-	return nil
-}
-
-func (reconciler *Reconciler) needsReconcile(updaters []StatusUpdater) []StatusUpdater {
-	neededUpdaters := []StatusUpdater{}
 	for _, updater := range updaters {
 		if reconciler.needsUpdate(updater) {
-			neededUpdaters = append(neededUpdaters, updater)
+			return reconciler.updateVersionStatuses(ctx, updater)
 		}
 	}
-	return neededUpdaters
+	return nil
+}
+
+func (reconciler *Reconciler) updateVersionStatuses(ctx context.Context, updater StatusUpdater) error {
+	log.Info("updating version status", "updater", updater.Name())
+	err := reconciler.run(ctx, updater)
+	if err != nil {
+		return err
+	}
+
+	_, ok := updater.(*oneAgentUpdater)
+	if ok {
+		healthConfig, err := GetOneAgentHealthConfig(ctx, reconciler.apiReader, reconciler.registryClient, reconciler.dynakube, reconciler.dynakube.OneAgentImage())
+		if err != nil {
+			log.Error(err, "could not set OneAgent healthcheck")
+		} else {
+			reconciler.dynakube.Status.OneAgent.Healthcheck = healthConfig
+		}
+	}
+	return nil
 }
 
 func (reconciler *Reconciler) needsUpdate(updater StatusUpdater) bool {

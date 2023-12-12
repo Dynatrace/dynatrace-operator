@@ -19,7 +19,7 @@ func (controller *Controller) reconcileActiveGate(ctx context.Context, dynakube 
 		if err != nil {
 			return err
 		}
-		err = versionReconciler.ReconcileAG(ctx)
+		err = versionReconciler.ReconcileActiveGate(ctx)
 		if err != nil {
 			return err
 		}

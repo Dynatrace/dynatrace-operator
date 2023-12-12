@@ -15,7 +15,7 @@ func (controller *Controller) reconcileOneAgent(ctx context.Context, dynakube *d
 	if !dynakube.NeedsOneAgent() {
 		return controller.removeOneAgentDaemonSet(ctx, dynakube)
 	}
-	err := versionReconciler.ReconcileOA(ctx)
+	err := versionReconciler.ReconcileOneAgent(ctx)
 	if err != nil {
 		return err
 	}
