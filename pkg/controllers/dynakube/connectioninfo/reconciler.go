@@ -47,7 +47,7 @@ func (r Reconciler) updateDynakubeStatus(ctx context.Context) error {
 	return nil
 }
 
-func (r *Reconciler) ReconcileAG(ctx context.Context) error {
+func (r *Reconciler) ReconcileActiveGate(ctx context.Context) error {
 	oldStatus := r.dynakube.Status.DeepCopy()
 
 	err := r.reconcileActiveGateConnectionInfo(ctx)
@@ -63,7 +63,7 @@ func (r *Reconciler) ReconcileAG(ctx context.Context) error {
 	return err
 }
 
-func (r *Reconciler) ReconcileOA(ctx context.Context) error {
+func (r *Reconciler) ReconcileOneAgent(ctx context.Context) error {
 	oldStatus := r.dynakube.Status.DeepCopy()
 	err := r.reconcileOneAgentConnectionInfo(ctx)
 	if err != nil {

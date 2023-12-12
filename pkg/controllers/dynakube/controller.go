@@ -300,7 +300,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 	}
 
 	if dynakube.NeedsOneAgent() || dynakube.ApplicationMonitoringMode() { // TODO: improve check
-		err := connectionInfoReconciler.ReconcileOA(ctx)
+		err := connectionInfoReconciler.ReconcileOneAgent(ctx)
 		if err != nil {
 			return err
 		}

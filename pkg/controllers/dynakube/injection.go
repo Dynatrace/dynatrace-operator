@@ -65,7 +65,7 @@ func (controller *Controller) setupOneAgentInjection(ctx context.Context, dynaku
 	}
 
 	if istioReconciler != nil {
-		err := istioReconciler.ReconcileCMCommunicationHosts(ctx, dynakube)
+		err := istioReconciler.ReconcileCodeModuleCommunicationHosts(ctx, dynakube)
 		if err != nil {
 			return err
 		}

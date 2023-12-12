@@ -211,7 +211,7 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		istioClient := newTestingClient(nil, dynakube.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 
-		err := reconciler.ReconcileCMCommunicationHosts(ctx, nil)
+		err := reconciler.ReconcileCodeModuleCommunicationHosts(ctx, nil)
 		require.Error(t, err)
 	})
 	t.Run("success", func(t *testing.T) {
@@ -219,7 +219,7 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		istioClient := newTestingClient(fakeClient, dynakube.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 
-		err := reconciler.ReconcileCMCommunicationHosts(ctx, dynakube)
+		err := reconciler.ReconcileCodeModuleCommunicationHosts(ctx, dynakube)
 		require.NoError(t, err)
 		expectedFQDNName := BuildNameForFQDNServiceEntry(dynakube.GetName(), OneAgentComponent)
 		serviceEntry, err := fakeClient.NetworkingV1beta1().ServiceEntries(dynakube.GetNamespace()).Get(ctx, expectedFQDNName, metav1.GetOptions{})
@@ -244,7 +244,7 @@ func TestReconcileOneAgentCommunicationHosts(t *testing.T) {
 		istioClient := newTestingClient(fakeClient, dynakube.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 
-		err := reconciler.ReconcileCMCommunicationHosts(ctx, dynakube)
+		err := reconciler.ReconcileCodeModuleCommunicationHosts(ctx, dynakube)
 		require.Error(t, err)
 	})
 }
@@ -256,7 +256,7 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		istioClient := newTestingClient(nil, dynakube.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 
-		err := reconciler.ReconcileAGCommunicationHosts(ctx, nil)
+		err := reconciler.ReconcileActiveGateCommunicationHosts(ctx, nil)
 		require.Error(t, err)
 	})
 	t.Run("success", func(t *testing.T) {
@@ -264,7 +264,7 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		istioClient := newTestingClient(fakeClient, dynakube.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 
-		err := reconciler.ReconcileAGCommunicationHosts(ctx, dynakube)
+		err := reconciler.ReconcileActiveGateCommunicationHosts(ctx, dynakube)
 		require.NoError(t, err)
 
 		expectedFQDNName := BuildNameForFQDNServiceEntry(dynakube.GetName(), ActiveGateComponent)
@@ -287,7 +287,7 @@ func TestReconcileActiveGateCommunicationHosts(t *testing.T) {
 		istioClient := newTestingClient(fakeClient, dynakube.GetNamespace())
 		reconciler := NewReconciler(istioClient)
 
-		err := reconciler.ReconcileAGCommunicationHosts(ctx, dynakube)
+		err := reconciler.ReconcileActiveGateCommunicationHosts(ctx, dynakube)
 		require.Error(t, err)
 	})
 }

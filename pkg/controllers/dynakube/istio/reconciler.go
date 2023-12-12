@@ -41,8 +41,8 @@ func (r *Reconciler) ReconcileAPIUrl(ctx context.Context, dynakube *dynatracev1b
 	return nil
 }
 
-func (r *Reconciler) ReconcileCMCommunicationHosts(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
-	log.Info("reconciling istio components for oneagent communication hosts")
+func (r *Reconciler) ReconcileCodeModuleCommunicationHosts(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
+	log.Info("reconciling istio components for oneagent-code-modules communication hosts")
 	if dynakube == nil {
 		return errors.New("can't reconcile oneagent communication hosts of nil dynakube")
 	}
@@ -55,7 +55,7 @@ func (r *Reconciler) ReconcileCMCommunicationHosts(ctx context.Context, dynakube
 	return nil
 }
 
-func (r *Reconciler) ReconcileAGCommunicationHosts(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
+func (r *Reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
 	log.Info("reconciling istio components for activegate communication hosts")
 	if dynakube == nil {
 		return errors.New("can't reconcile oneagent communication hosts of nil dynakube")
