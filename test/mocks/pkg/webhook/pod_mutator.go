@@ -3,6 +3,8 @@
 package mocks
 
 import (
+	context "context"
+
 	webhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -104,13 +106,13 @@ func (_c *PodMutator_Injected_Call) RunAndReturn(run func(*webhook.BaseRequest) 
 	return _c
 }
 
-// Mutate provides a mock function with given fields: request
-func (_m *PodMutator) Mutate(request *webhook.MutationRequest) error {
-	ret := _m.Called(request)
+// Mutate provides a mock function with given fields: ctx, request
+func (_m *PodMutator) Mutate(ctx context.Context, request *webhook.MutationRequest) error {
+	ret := _m.Called(ctx, request)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*webhook.MutationRequest) error); ok {
-		r0 = rf(request)
+	if rf, ok := ret.Get(0).(func(context.Context, *webhook.MutationRequest) error); ok {
+		r0 = rf(ctx, request)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -124,14 +126,15 @@ type PodMutator_Mutate_Call struct {
 }
 
 // Mutate is a helper method to define mock.On call
+//   - ctx context.Context
 //   - request *webhook.MutationRequest
-func (_e *PodMutator_Expecter) Mutate(request interface{}) *PodMutator_Mutate_Call {
-	return &PodMutator_Mutate_Call{Call: _e.mock.On("Mutate", request)}
+func (_e *PodMutator_Expecter) Mutate(ctx interface{}, request interface{}) *PodMutator_Mutate_Call {
+	return &PodMutator_Mutate_Call{Call: _e.mock.On("Mutate", ctx, request)}
 }
 
-func (_c *PodMutator_Mutate_Call) Run(run func(request *webhook.MutationRequest)) *PodMutator_Mutate_Call {
+func (_c *PodMutator_Mutate_Call) Run(run func(ctx context.Context, request *webhook.MutationRequest)) *PodMutator_Mutate_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(*webhook.MutationRequest))
+		run(args[0].(context.Context), args[1].(*webhook.MutationRequest))
 	})
 	return _c
 }
@@ -141,7 +144,7 @@ func (_c *PodMutator_Mutate_Call) Return(_a0 error) *PodMutator_Mutate_Call {
 	return _c
 }
 
-func (_c *PodMutator_Mutate_Call) RunAndReturn(run func(*webhook.MutationRequest) error) *PodMutator_Mutate_Call {
+func (_c *PodMutator_Mutate_Call) RunAndReturn(run func(context.Context, *webhook.MutationRequest) error) *PodMutator_Mutate_Call {
 	_c.Call.Return(run)
 	return _c
 }

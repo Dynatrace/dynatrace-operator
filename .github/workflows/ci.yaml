@@ -54,7 +54,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - name: Setup Golang
-        uses: actions/setup-go@93397bea11091df50f3d7e59dc26a7711a8bcfbe # v4.1.0
+        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
         with:
           go-version-file: "${{ github.workspace }}/go.mod"
       - name: Download dependencies
@@ -76,7 +76,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - uses: actions/setup-go@93397bea11091df50f3d7e59dc26a7711a8bcfbe # v4.1.0
+      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
         with:
           go-version-file: "${{ github.workspace }}/go.mod"
       - name: Download dependencies
@@ -88,7 +88,7 @@ jobs:
         with:
           # renovate depName=github.com/golangci/golangci-lint
           version: v1.55.2
-          args: --build-tags containers_image_storage_stub,e2e --timeout 300s --out-${NO_FUTURE}format colored-line-number
+          args: --build-tags e2e --timeout 300s --out-${NO_FUTURE}format colored-line-number
 
   security:
     name: Code security scanning alerts
@@ -111,7 +111,27 @@ jobs:
         uses: articulate/actions-markdownlint@87f495d21507d6844dc917a01e742eaaa45049c0 # v1.1.0
         with:
           config: .markdownlint.json
-          version: 0.36.0
+          # renovate depName=github.com/igorshubovych/markdownlint-cli
+          version: v0.38.0
+
+  check-uncommitted-doc-changes:
+    name: Check uncommitted changes in api docs action
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+        with:
+          go-version-file: "${{ github.workspace }}/go.mod"
+      - uses: actions/setup-node@8f152de45cc393bb48ce5d89d36b731f54556e65 # v4.0.0
+      - name: Run make doc to see uncommitted changes
+        run: make doc
+      - name: Check for uncommitted changes
+        id: check-changes
+        uses: mskri/check-uncommitted-changes-action@2b152539dd033c3a26e0dd1d8b9a0c8e4d3a8a19 # v1.0.1
+      - name: Evaluate if there are changes
+        if: steps.check-changes.outputs.outcome == failure()
+        run: echo "There are uncommitted changes"
 
   prepare:
     name: Prepare properties
@@ -124,7 +144,7 @@ jobs:
         run: |
           hack/build/ci/prepare-build-variables.sh
       - name: Docker metadata
-        uses: docker/metadata-action@96383f45573cb7f253c731d3b3ab81c87ef81934 # v5.0.0
+        uses: docker/metadata-action@31cebacef4805868f9ce9a0cb03ee36c32df2ac4 # v5.3.0
         id: meta
         with:
           images: dynatrace/dynatrace-operator

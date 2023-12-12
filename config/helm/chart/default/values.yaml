@@ -25,7 +25,7 @@ imageRef:
   tag: "" #defaults to chart version
 
 customPullSecret: ""
-installCRD: false
+installCRD: true
 
 operator:
   nodeSelector: {}

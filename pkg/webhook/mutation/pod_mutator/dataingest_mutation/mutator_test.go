@@ -94,7 +94,7 @@ func TestMutate(t *testing.T) {
 		initialContainerVolumeMountsLen := len(request.Pod.Spec.Containers[0].VolumeMounts)
 		initialAnnotationsLen := len(request.Pod.Annotations)
 
-		err := mutator.Mutate(request)
+		err := mutator.Mutate(context.Background(), request)
 		require.NoError(t, err)
 
 		assert.Len(t, request.Pod.Spec.Volumes, initialNumberOfVolumesLen+2)

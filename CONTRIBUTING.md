@@ -113,7 +113,9 @@ make go/gen_mock
 
 To move our existing codebase to mockery you have to look out for these pitfalls:
 
-1. Mocks require a reference parameter to `testingT`:
+1. As a rule o thumb, use `mocks.NewXYZ(t)` function instead of `mocks.XYZ{}` struct when any expectation is defined (`On(..)`). It allows to easily detect cases when no expectations are need or new ones should be added.
+
+2. Mocks require a reference parameter to `testingT`:
 
    ```go
    //...
@@ -123,7 +125,7 @@ To move our existing codebase to mockery you have to look out for these pitfalls
    //...
    ```
 
-2. Add call to `Maybe()` to return if it should be tested if the function is called at all:
+3. Add call to `Maybe()` to return if it should be tested if the function is called at all:
 
     ```go
     modifierMock.On("Modify", mock.Anything).Return(nil).Maybe()

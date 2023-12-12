@@ -28,6 +28,7 @@ type SecretConfig struct {
 	TlsCert             string            `json:"tlsCert"`
 	HostGroup           string            `json:"hostGroup"`
 	InitialConnectRetry int               `json:"initialConnectRetry"`
+	EnforcementMode     bool              `json:"enforcementMode"`
 
 	// For the enrichment
 	ClusterID string `json:"clusterID"`

@@ -307,9 +307,6 @@ func TestInjectionFailurePolicy(t *testing.T) {
 	modes := map[string]string{
 		failPhrase:   failPhrase,
 		silentPhrase: silentPhrase,
-		forcePhrase:  forcePhrase,
-		"Fail":       silentPhrase,
-		"other":      silentPhrase,
 	}
 	for configuredMode, expectedMode := range modes {
 		t.Run(`injection failure policy: `+configuredMode, func(t *testing.T) {

@@ -53,6 +53,8 @@ const (
 	provisionerContainerName = "provisioner"
 )
 
+// Verification that the storage in the CSI driver directory does not increase when
+// there are multiple tenants and pods which are monitored.
 func InstallFromImage(t *testing.T) features.Feature {
 	builder := features.New("cloudnative codemodules injection from image")
 	builder.WithLabel("name", "cloudnative-codemodules-image")

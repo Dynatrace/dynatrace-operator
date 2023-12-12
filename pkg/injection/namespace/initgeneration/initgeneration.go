@@ -171,6 +171,7 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dynak
 		HostGroup:           dynakube.HostGroup(),
 		ClusterID:           string(kubeSystemUID),
 		InitialConnectRetry: dynakube.FeatureAgentInitialConnectRetry(),
+		EnforcementMode:     dynakube.FeatureEnforcementMode(),
 	}, nil
 }
 
