@@ -64,11 +64,6 @@ const (
 
 	// oneAgent
 
-	// Deprecated: AnnotationFeatureDisableReadOnlyOneAgent use AnnotationFeatureReadOnlyOneAgent instead
-	AnnotationFeatureDisableReadOnlyOneAgent = AnnotationFeaturePrefix + "disable-oneagent-readonly-host-fs"
-
-	AnnotationFeatureReadOnlyOneAgent = AnnotationFeaturePrefix + "oneagent-readonly-host-fs"
-
 	AnnotationFeatureMultipleOsAgentsOnNode         = AnnotationFeaturePrefix + "multiple-osagents-on-node"
 	AnnotationFeatureOneAgentMaxUnavailable         = AnnotationFeaturePrefix + "oneagent-max-unavailable"
 	AnnotationFeatureOneAgentIgnoreProxy            = AnnotationFeaturePrefix + "oneagent-ignore-proxy"
@@ -78,13 +73,10 @@ const (
 
 	// injection (webhook)
 
-	// Deprecated: AnnotationFeatureDisableWebhookReinvocationPolicy use AnnotationFeatureWebhookReinvocationPolicy instead
-	AnnotationFeatureDisableWebhookReinvocationPolicy = AnnotationFeaturePrefix + "disable-webhook-reinvocation-policy"
 	// Deprecated: AnnotationFeatureDisableMetadataEnrichment use AnnotationFeatureMetadataEnrichment instead
 	AnnotationFeatureDisableMetadataEnrichment = AnnotationFeaturePrefix + "disable-metadata-enrichment"
 
-	AnnotationFeatureWebhookReinvocationPolicy = AnnotationFeaturePrefix + "webhook-reinvocation-policy"
-	AnnotationFeatureMetadataEnrichment        = AnnotationFeaturePrefix + "metadata-enrichment"
+	AnnotationFeatureMetadataEnrichment = AnnotationFeaturePrefix + "metadata-enrichment"
 
 	AnnotationFeatureIgnoreUnknownState    = AnnotationFeaturePrefix + "ignore-unknown-state"
 	AnnotationFeatureIgnoredNamespaces     = AnnotationFeaturePrefix + "ignored-namespaces"
@@ -188,12 +180,6 @@ func (dk *DynaKube) FeatureOneAgentMaxUnavailable() int {
 	return dk.getFeatureFlagInt(AnnotationFeatureOneAgentMaxUnavailable, 1)
 }
 
-// FeatureDisableWebhookReinvocationPolicy disables the reinvocation for the Operator's webhooks.
-// This disables instrumenting containers injected by other webhooks following the admission to the Operator's webhook.
-func (dk *DynaKube) FeatureDisableWebhookReinvocationPolicy() bool {
-	return dk.getDisableFlagWithDeprecatedAnnotation(AnnotationFeatureWebhookReinvocationPolicy, AnnotationFeatureDisableWebhookReinvocationPolicy)
-}
-
 // FeatureIgnoreUnknownState is a feature flag that makes the operator inject into applications even when the dynakube is in an UNKNOWN state,
 // this may cause extra host to appear in the tenant for each process.
 func (dk *DynaKube) FeatureIgnoreUnknownState() bool {
@@ -256,13 +242,6 @@ func (dk *DynaKube) FeatureAutomaticInjection() bool {
 
 func (dk *DynaKube) FeatureCustomSyntheticImage() string {
 	return dk.getFeatureFlagRaw(AnnotationFeatureCustomSyntheticImage)
-}
-
-// FeatureDisableReadOnlyOneAgent is a feature flag to specify if the operator needs to deploy the oneagents in a readonly mode,
-// where the csi-driver would provide the volume for logs and such
-// Defaults to false
-func (dk *DynaKube) FeatureDisableReadOnlyOneAgent() bool {
-	return dk.getDisableFlagWithDeprecatedAnnotation(AnnotationFeatureReadOnlyOneAgent, AnnotationFeatureDisableReadOnlyOneAgent)
 }
 
 // FeatureDisableActivegateRawImage is a feature flag to specify if the operator should

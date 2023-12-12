@@ -273,37 +273,6 @@ func TestHostMonitoring_SecurityContext(t *testing.T) {
 		assert.Nil(t, securityContext.SeccompProfile)
 	})
 
-	t.Run(`No User and group id set when read only mode is disabled`, func(t *testing.T) {
-		instance := dynatracev1beta1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent: "false",
-				},
-			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				APIURL: testURL,
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
-				},
-			},
-		}
-		dsInfo := NewHostMonitoring(&instance, testClusterID)
-		ds, err := dsInfo.BuildDaemonSet()
-		require.NoError(t, err)
-
-		assert.GreaterOrEqual(t, 1, len(ds.Spec.Template.Spec.Containers))
-
-		securityContext := ds.Spec.Template.Spec.Containers[0].SecurityContext
-
-		assert.NotNil(t, securityContext)
-		assert.Nil(t, securityContext.RunAsUser)
-		assert.Nil(t, securityContext.RunAsGroup)
-		assert.Nil(t, securityContext.RunAsNonRoot)
-		assert.Nil(t, securityContext.Privileged)
-		assert.NotEmpty(t, securityContext.Capabilities)
-		assert.Nil(t, securityContext.SeccompProfile)
-	})
-
 	t.Run(`privileged security context when feature flag is enabled`, func(t *testing.T) {
 		instance := dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
@@ -437,33 +406,6 @@ func TestPodSpecServiceAccountName(t *testing.T) {
 	t.Run("service account name is unprivileged + readonly by default", func(t *testing.T) {
 		builder := builderInfo{
 			dynakube: &dynatracev1beta1.DynaKube{},
-		}
-		podSpec := builder.podSpec()
-
-		assert.Equal(t, serviceAccountName, podSpec.ServiceAccountName)
-	})
-	t.Run("unprivileged and not readonly is recognized", func(t *testing.T) {
-		builder := builderInfo{
-			dynakube: &dynatracev1beta1.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent: "false"},
-				},
-			},
-		}
-		podSpec := builder.podSpec()
-
-		assert.Equal(t, serviceAccountName, podSpec.ServiceAccountName)
-	})
-	t.Run("privileged and not readonly is recognized", func(t *testing.T) {
-		builder := builderInfo{
-			dynakube: &dynatracev1beta1.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent:               "false",
-						dynatracev1beta1.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
-					},
-				},
-			},
 		}
 		podSpec := builder.podSpec()
 

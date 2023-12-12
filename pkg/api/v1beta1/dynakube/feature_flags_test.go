@@ -113,36 +113,12 @@ func TestDeprecatedDisableAnnotations(t *testing.T) {
 				return dynakube.FeatureDisableHostsRequests()
 			})
 	})
-	t.Run(AnnotationFeatureWebhookReinvocationPolicy, func(t *testing.T) {
-		testDeprecateDisableAnnotation(t,
-			AnnotationFeatureWebhookReinvocationPolicy,
-			AnnotationFeatureDisableWebhookReinvocationPolicy,
-			func(dynakube DynaKube) bool {
-				return dynakube.FeatureDisableWebhookReinvocationPolicy()
-			})
-	})
 	t.Run(AnnotationFeatureMetadataEnrichment, func(t *testing.T) {
 		testDeprecateDisableAnnotation(t,
 			AnnotationFeatureMetadataEnrichment,
 			AnnotationFeatureDisableMetadataEnrichment,
 			func(dynakube DynaKube) bool {
 				return dynakube.FeatureDisableMetadataEnrichment()
-			})
-	})
-	t.Run(AnnotationFeatureReadOnlyOneAgent, func(t *testing.T) {
-		testDeprecateDisableAnnotation(t,
-			AnnotationFeatureReadOnlyOneAgent,
-			AnnotationFeatureDisableReadOnlyOneAgent,
-			func(dynakube DynaKube) bool {
-				return dynakube.FeatureDisableReadOnlyOneAgent()
-			})
-	})
-	t.Run(AnnotationFeatureReadOnlyOneAgent, func(t *testing.T) {
-		testDeprecateDisableAnnotation(t,
-			AnnotationFeatureActiveGateRawImage,
-			AnnotationFeatureDisableActiveGateRawImage,
-			func(dynakube DynaKube) bool {
-				return dynakube.FeatureDisableActivegateRawImage()
 			})
 	})
 }
@@ -295,8 +271,6 @@ func TestDefaultEnabledFeatureFlags(t *testing.T) {
 
 	assert.False(t, dynakube.FeatureDisableActiveGateUpdates())
 	assert.False(t, dynakube.FeatureDisableHostsRequests())
-	assert.False(t, dynakube.FeatureDisableReadOnlyOneAgent())
-	assert.False(t, dynakube.FeatureDisableWebhookReinvocationPolicy())
 	assert.False(t, dynakube.FeatureDisableMetadataEnrichment())
 	assert.False(t, dynakube.FeatureLabelVersionDetection())
 }

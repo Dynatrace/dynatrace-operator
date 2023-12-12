@@ -43,13 +43,6 @@ func conflictingOneAgentConfiguration(_ context.Context, dv *dynakubeValidator, 
 	return ""
 }
 
-func conflictingReadOnlyFilesystemAndMultipleOsAgentsOnNode(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
-	if dynakube.FeatureDisableReadOnlyOneAgent() && dynakube.FeatureEnableMultipleOsAgentsOnNode() {
-		return "Multiple OsAgents require readonly host filesystem"
-	}
-	return ""
-}
-
 func conflictingNodeSelector(ctx context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	if !dynakube.NeedsOneAgent() || dynakube.FeatureEnableMultipleOsAgentsOnNode() {
 		return ""
@@ -106,18 +99,6 @@ func conflictingOneAgentVolumeStorageSettings(_ context.Context, dv *dynakubeVal
 	volumeStorageEnabled, volumeStorageSet := hasOneAgentVolumeStorageEnabled(dynakube)
 	if dynakube.NeedsReadOnlyOneAgents() && volumeStorageSet && !volumeStorageEnabled {
 		return errorVolumeStorageReadOnlyModeConflict
-	}
-	return ""
-}
-
-func ineffectiveReadOnlyHostFsFeatureFlag(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
-	if dynakube.ClassicFullStackMode() {
-		if _, hasOneAgentReadOnlyFeatureFlag := dynakube.Annotations[dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent]; hasOneAgentReadOnlyFeatureFlag {
-			return readonlyHostFsFlagWarning(dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent)
-		}
-		if _, hasOneAgentReadOnlyFeatureFlag := dynakube.Annotations[dynatracev1beta1.AnnotationFeatureDisableReadOnlyOneAgent]; hasOneAgentReadOnlyFeatureFlag {
-			return readonlyHostFsFlagWarning(dynatracev1beta1.AnnotationFeatureDisableReadOnlyOneAgent)
-		}
 	}
 	return ""
 }

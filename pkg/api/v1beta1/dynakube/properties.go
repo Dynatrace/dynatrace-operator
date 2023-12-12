@@ -228,7 +228,7 @@ func (dk *DynaKube) PullSecretWithoutData() corev1.Secret {
 
 func (dk *DynaKube) NeedsReadOnlyOneAgents() bool {
 	inSupportedMode := dk.HostMonitoringMode() || dk.CloudNativeFullstackMode()
-	return inSupportedMode && !dk.FeatureDisableReadOnlyOneAgent()
+	return inSupportedMode
 }
 
 func (dk *DynaKube) NeedsCSIDriver() bool {
@@ -236,10 +236,7 @@ func (dk *DynaKube) NeedsCSIDriver() bool {
 		dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver != nil &&
 		*dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver
 
-	isReadOnlyHostMonitoring := dk.HostMonitoringMode() &&
-		!dk.FeatureDisableReadOnlyOneAgent()
-
-	return dk.CloudNativeFullstackMode() || isAppMonitoringWithCSI || isReadOnlyHostMonitoring
+	return dk.CloudNativeFullstackMode() || isAppMonitoringWithCSI || dk.HostMonitoringMode()
 }
 
 func (dk *DynaKube) NeedAppInjection() bool {
