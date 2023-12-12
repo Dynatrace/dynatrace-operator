@@ -105,14 +105,6 @@ func TestDeprecatedDisableAnnotations(t *testing.T) {
 				return dynakube.FeatureDisableActiveGateUpdates()
 			})
 	})
-	t.Run(AnnotationFeatureHostsRequests, func(t *testing.T) {
-		testDeprecateDisableAnnotation(t,
-			AnnotationFeatureHostsRequests,
-			AnnotationFeatureDisableHostsRequests,
-			func(dynakube DynaKube) bool {
-				return dynakube.FeatureDisableHostsRequests()
-			})
-	})
 	t.Run(AnnotationFeatureMetadataEnrichment, func(t *testing.T) {
 		testDeprecateDisableAnnotation(t,
 			AnnotationFeatureMetadataEnrichment,
@@ -270,7 +262,6 @@ func TestDefaultEnabledFeatureFlags(t *testing.T) {
 	assert.True(t, dynakube.FeatureInjectionFailurePolicy() == "silent")
 
 	assert.False(t, dynakube.FeatureDisableActiveGateUpdates())
-	assert.False(t, dynakube.FeatureDisableHostsRequests())
 	assert.False(t, dynakube.FeatureDisableMetadataEnrichment())
 	assert.False(t, dynakube.FeatureLabelVersionDetection())
 }

@@ -56,11 +56,8 @@ const (
 
 	// dtClient
 
-	// Deprecated: AnnotationFeatureDisableHostsRequests use AnnotationFeatureHostsRequests instead
-	AnnotationFeatureDisableHostsRequests = AnnotationFeaturePrefix + "disable-hosts-requests"
-	AnnotationFeatureHostsRequests        = AnnotationFeaturePrefix + "hosts-requests"
-	AnnotationFeatureNoProxy              = AnnotationFeaturePrefix + "no-proxy"
-	AnnotationFeatureApiRequestThreshold  = AnnotationFeaturePrefix + "dynatrace-api-request-threshold"
+	AnnotationFeatureNoProxy             = AnnotationFeaturePrefix + "no-proxy"
+	AnnotationFeatureApiRequestThreshold = AnnotationFeaturePrefix + "dynatrace-api-request-threshold"
 
 	// oneAgent
 
@@ -155,11 +152,6 @@ func (dk *DynaKube) getFeatureFlagInt(annotation string, defaultVal int) int {
 // FeatureDisableActiveGateUpdates is a feature flag to disable ActiveGate updates.
 func (dk *DynaKube) FeatureDisableActiveGateUpdates() bool {
 	return dk.getDisableFlagWithDeprecatedAnnotation(AnnotationFeatureActiveGateUpdates, AnnotationFeatureDisableActiveGateUpdates)
-}
-
-// FeatureDisableHostsRequests is a feature flag to disable queries to the Hosts API.
-func (dk *DynaKube) FeatureDisableHostsRequests() bool {
-	return dk.getDisableFlagWithDeprecatedAnnotation(AnnotationFeatureHostsRequests, AnnotationFeatureDisableHostsRequests)
 }
 
 // FeatureNoProxy is a feature flag to set the NO_PROXY value to be used by the dtClient.

@@ -15,7 +15,6 @@ const (
 func getDeprecatedFeatureFlagsWillBeRemoved() []string {
 	return []string{
 		dynatracev1beta1.AnnotationInjectionFailurePolicy,
-		dynatracev1beta1.AnnotationFeatureHostsRequests,
 		dynatracev1beta1.AnnotationFeatureActiveGateAuthToken,
 		dynatracev1beta1.AnnotationFeatureActiveGateRawImage,
 		dynatracev1beta1.AnnotationFeatureActiveGateReadOnlyFilesystem,
@@ -51,10 +50,6 @@ func deprecatedFeatureFlagDisableActiveGateUpdates(_ context.Context, _ *dynakub
 
 func deprecatedFeatureFlagDisableActiveGateRawImage(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	return warnIfDeprecatedIsUsed(dynakube, dynatracev1beta1.AnnotationFeatureActiveGateRawImage, dynatracev1beta1.AnnotationFeatureDisableActiveGateRawImage)
-}
-
-func deprecatedFeatureFlagDisableHostsRequests(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
-	return warnIfDeprecatedIsUsed(dynakube, dynatracev1beta1.AnnotationFeatureHostsRequests, dynatracev1beta1.AnnotationFeatureDisableHostsRequests)
 }
 
 func deprecatedFeatureFlagDisableMetadataEnrichment(_ context.Context, _ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
