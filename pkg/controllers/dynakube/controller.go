@@ -118,7 +118,11 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, nil
 	}
 
-	result, err := controller.reconcile(ctx, dynaKube)
+	oldStatus := *dynaKube.Status.DeepCopy()
+	controller.requeueAfter = defaultUpdateInterval
+	err = controller.reconcileDynaKube(ctx, dynaKube)
+	result, err := controller.handleError(ctx, dynaKube, err, oldStatus)
+
 	log.Info("reconciling DynaKube finished", "namespace", request.Namespace, "name", request.Name, "result", result)
 	return result, err
 }
@@ -137,15 +141,6 @@ func (controller *Controller) getDynakubeOrCleanup(ctx context.Context, dkName, 
 		return nil, errors.WithStack(err)
 	}
 	return dynakube, nil
-}
-
-func (controller *Controller) reconcile(ctx context.Context, dynaKube *dynatracev1beta1.DynaKube) (reconcile.Result, error) {
-	oldStatus := *dynaKube.Status.DeepCopy()
-	controller.requeueAfter = defaultUpdateInterval
-
-	err := controller.reconcileDynaKube(ctx, dynaKube)
-
-	return controller.handleError(ctx, dynaKube, err, oldStatus)
 }
 
 func (controller *Controller) handleError(ctx context.Context, dynaKube *dynatracev1beta1.DynaKube, err error, oldStatus dynatracev1beta1.DynaKubeStatus) (reconcile.Result, error) {
