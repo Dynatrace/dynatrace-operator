@@ -597,10 +597,11 @@ func mockNewEdgeConnectClientUpdate(edgeConnectClient *mocksedgeconnect.Client) 
 			edgeconnect.ListResponse{
 				EdgeConnects: []edgeconnect.GetResponse{
 					{
-						ID:            testCreatedId,
-						Name:          testName,
-						HostPatterns:  testHostPatterns,
-						OauthClientId: testOauthClientId,
+						ID:                         testCreatedId,
+						Name:                       testName,
+						HostPatterns:               testHostPatterns,
+						OauthClientId:              testOauthClientId,
+						ManagedByDynatraceOperator: true,
 					},
 				},
 				TotalCount: 1,

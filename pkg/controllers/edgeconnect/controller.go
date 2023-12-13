@@ -125,28 +125,18 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
 	switch {
 	case tenantEdgeConnect.ID == "":
 		log.Info("EdgeConnect not found on the tenant", "name", edgeConnect.Name)
+	case !tenantEdgeConnect.ManagedByDynatraceOperator:
+		log.Info("can't delete EdgeConnect configuration from the tenant because it has been created manually by a user", "name", tenantEdgeConnect.Name)
 	case edgeConnectIdFromSecret == "":
 		log.Info("EdgeConnect client secret is missing")
-		return deleteEdgeConnectFromTenant(tenantEdgeConnect, edgeConnectClient)
+		return edgeConnectClient.DeleteEdgeConnect(tenantEdgeConnect.ID)
 	default:
 		if tenantEdgeConnect.ID != edgeConnectIdFromSecret {
 			log.Info("EdgeConnect client secret contains invalid Id")
 		}
-		return deleteEdgeConnectFromTenant(tenantEdgeConnect, edgeConnectClient)
+		return edgeConnectClient.DeleteEdgeConnect(tenantEdgeConnect.ID)
 	}
 
-	return nil
-}
-
-func deleteEdgeConnectFromTenant(tenantEdgeConnect edgeconnect.GetResponse, edgeConnectClient edgeconnect.Client) error {
-	if tenantEdgeConnect.ManagedByDynatraceOperator {
-		log.Info("deleting EdgeConnect", "name", tenantEdgeConnect.Name)
-		if err := edgeConnectClient.DeleteEdgeConnect(tenantEdgeConnect.ID); err != nil {
-			return err
-		}
-	} else {
-		return errors.Errorf("can't delete EdgeConnect (%s) from the tenant because it isn't managed by the Operator", tenantEdgeConnect.Name)
-	}
 	return nil
 }
 
@@ -300,18 +290,25 @@ func (controller *Controller) reconcileEdgeConnectProvisioner(ctx context.Contex
 		return err
 	}
 
+	if tenantEdgeConnect.ID != "" && !tenantEdgeConnect.ManagedByDynatraceOperator {
+		log.Info("can't delete EdgeConnect configuration from the tenant because it has been created manually by a user", "name", tenantEdgeConnect.Name)
+		return nil
+	}
+
 	if tenantEdgeConnect.ID != "" {
 		if edgeConnectIdFromSecret == "" {
 			log.Info("EdgeConnect has to be recreated due to missing secret")
-			if err := deleteEdgeConnectFromTenant(tenantEdgeConnect, edgeConnectClient); err != nil {
+			if err := edgeConnectClient.DeleteEdgeConnect(tenantEdgeConnect.ID); err != nil {
 				return err
 			}
+
 			tenantEdgeConnect.ID = ""
 		} else if tenantEdgeConnect.ID != edgeConnectIdFromSecret {
 			log.Info("EdgeConnect has to be recreated due to invalid Id")
-			if err := deleteEdgeConnectFromTenant(tenantEdgeConnect, edgeConnectClient); err != nil {
+			if err := edgeConnectClient.DeleteEdgeConnect(tenantEdgeConnect.ID); err != nil {
 				return err
 			}
+
 			tenantEdgeConnect.ID = ""
 		}
 	}
