@@ -282,7 +282,7 @@ func (c *client) GetEdgeConnects(name string) (ListResponse, error) {
 		return ListResponse{}, err
 	}
 	req.URL.RawQuery = url.Values{
-		"add-fields": {"name"},
+		"add-fields": {"name,managedByDynatraceOperator"},
 		"filter":     {fmt.Sprintf("name='%s'", name)},
 	}.Encode()
 
