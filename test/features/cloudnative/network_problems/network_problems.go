@@ -32,6 +32,17 @@ var (
 	csiNetworkPolicy = path.Join(project.TestDataDir(), "network/csi-denial.yaml")
 )
 
+// Prerequisites: istio service mesh
+//
+// Setup: CloudNative deployment with CSI driver
+//
+// Verification that the CSI driver is able to recover from network issues, when
+// using cloudNative and code modules image.
+//
+// Connectivity for csi driver pods is restricted to the local k8s cluster (no
+// outside connections allowed) and sample application is installed. The test
+// checks if init container was attached, run successfully and that the sample
+// pods are up and running.
 func ResilienceFeature(t *testing.T) features.Feature {
 	builder := features.New("cloudnative resilience in case of network problems")
 	builder.WithLabel("name", "cloudnative-csi-resilience")

@@ -111,3 +111,17 @@ func TestCreateDeprecatedAnnotationWarning(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("annotation '%s' is deprecated, use '%s' instead", dynatracev1beta1.AnnotationFeatureDisableMetadataEnrichment, dynatracev1beta1.AnnotationFeatureMetadataEnrichment),
 		deprecatedAnnotationWarning(dynatracev1beta1.AnnotationFeatureMetadataEnrichment, dynatracev1beta1.AnnotationFeatureDisableMetadataEnrichment))
 }
+
+func Test_deprecatedFeatureFlagMovedCRDField(t *testing.T) {
+	dynakube := dynatracev1beta1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{},
+	}
+
+	dynakube.Annotations = map[string]string{
+		dynatracev1beta1.AnnotationFeatureAutomaticInjection: "true",
+	}
+	assert.Contains(t,
+		deprecatedFeatureFlagMovedCRDField(context.Background(), nil, &dynakube),
+		"These feature flags are deprecated and will be moved to the CRD in the future",
+	)
+}

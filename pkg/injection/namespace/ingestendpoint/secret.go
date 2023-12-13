@@ -101,7 +101,7 @@ func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *d
 		Type: corev1.SecretTypeOpaque,
 	}
 
-	err = secretQuery.CreateOrUpdateForNamespacesList(secret, nsList)
+	err = secretQuery.CreateOrUpdateForNamespaces(secret, nsList)
 	if err != nil {
 		return err
 	}

@@ -1,10 +1,14 @@
 package dataingest_mutation
 
 import (
+	"context"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/ingestendpoint"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 	maputils "github.com/Dynatrace/dynatrace-operator/pkg/util/map"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook"
+	webhookotel "github.com/Dynatrace/dynatrace-operator/pkg/webhook/internal/otel"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -38,14 +42,19 @@ func (mutator *DataIngestPodMutator) Injected(request *dtwebhook.BaseRequest) bo
 	return maputils.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationDataIngestInjected, false)
 }
 
-func (mutator *DataIngestPodMutator) Mutate(request *dtwebhook.MutationRequest) error {
+func (mutator *DataIngestPodMutator) Mutate(ctx context.Context, request *dtwebhook.MutationRequest) error {
+	_, span := dtotel.StartSpan(ctx, webhookotel.Tracer())
+	defer span.End()
+
 	log.Info("injecting data-ingest into pod", "podName", request.PodName())
 	workload, err := mutator.retrieveWorkload(request)
 	if err != nil {
+		span.RecordError(err)
 		return err
 	}
 	err = mutator.ensureDataIngestSecret(request)
 	if err != nil {
+		span.RecordError(err)
 		return err
 	}
 	setupVolumes(request.Pod)

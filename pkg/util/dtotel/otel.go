@@ -1,9 +1,10 @@
-package otel
+package dtotel
 
 import (
 	"context"
 
 	k8ssecret "github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/secret"
+	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/pkg/errors"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric/noop"
@@ -22,7 +23,7 @@ func Start(ctx context.Context, otelServiceName string, apiReader client.Reader,
 	endpoint, apiToken, err := getOtelConfig(ctx, apiReader, webhookNamespace)
 
 	if err != nil {
-		log.Error(err, "failed to read OpenTelementry config secret")
+		log.Info("failed to read OpenTelementry config secret", "err", err.Error())
 		return setupNoopOTel()
 	}
 
@@ -74,6 +75,7 @@ func newResource(otelServiceName string) (*resource.Resource, error) {
 		resource.NewWithAttributes(
 			semconv.SchemaURL,
 			semconv.ServiceNameKey.String(otelServiceName),
+			semconv.ServiceVersionKey.String(version.Version),
 		),
 	)
 	return r, errors.WithStack(err)
@@ -91,9 +93,8 @@ func getOtelConfig(ctx context.Context, apiReader client.Reader, namespace strin
 
 	query := k8ssecret.NewQuery(ctx, nil, apiReader, log)
 	secret, err := query.Get(secretName)
-
 	if err != nil {
-		return "", "", err
+		return "", "", errors.WithStack(err)
 	}
 
 	endpoint, err := k8ssecret.ExtractToken(&secret, otelApiEndpointKey)

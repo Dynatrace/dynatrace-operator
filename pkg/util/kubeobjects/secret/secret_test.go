@@ -7,12 +7,15 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme"
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/logger"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 var secretLog = logger.Factory.GetLogger("test-secret")
@@ -55,8 +58,8 @@ func TestGetSecret(t *testing.T) {
 	})
 }
 
-func TestMultipleSecrets(t *testing.T) {
-	fakeClient := fake.NewClientWithIndex(
+func newClientWithSecrets() client.Client {
+	return fake.NewClientWithIndex(
 		&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testSecretName,
@@ -94,14 +97,21 @@ func TestMultipleSecrets(t *testing.T) {
 			},
 		},
 	)
-	secretQuery := NewQuery(context.TODO(), fakeClient, fakeClient, secretLog)
+}
 
+func TestMultipleSecrets(t *testing.T) {
 	t.Run("get existing secret from all namespaces", func(t *testing.T) {
+		fakeClient := newClientWithSecrets()
+		secretQuery := NewQuery(context.TODO(), fakeClient, fakeClient, secretLog)
+
 		secrets, err := secretQuery.GetAllFromNamespaces(testSecretName)
 		require.NoError(t, err)
 		assert.Len(t, secrets, 3)
 	})
 	t.Run("update and create secret in specific namespaces", func(t *testing.T) {
+		fakeClient := newClientWithSecrets()
+		secretQuery := NewQuery(context.TODO(), fakeClient, fakeClient, secretLog)
+
 		namespaces := []corev1.Namespace{
 			{
 				ObjectMeta: metav1.ObjectMeta{
@@ -129,7 +139,7 @@ func TestMultipleSecrets(t *testing.T) {
 				"samplekey": []byte("samplevalue"),
 			},
 		}
-		err := secretQuery.CreateOrUpdateForNamespacesList(secret, namespaces)
+		err := secretQuery.CreateOrUpdateForNamespaces(secret, namespaces)
 		require.NoError(t, err)
 
 		secrets, err := secretQuery.GetAllFromNamespaces(testSecretName)
@@ -146,6 +156,54 @@ func TestMultipleSecrets(t *testing.T) {
 		assert.Equal(t, secret.Data, secretsMap["nsNotYetExisting"].Data)
 
 		assert.NotEqual(t, secret.Data, secretsMap["ns3"].Data)
+	})
+	t.Run("only 1 error because of kubernetes rejecting the request", func(t *testing.T) {
+		requestCounter := 0
+		fakeReader := newClientWithSecrets()
+		boomClient := fake.NewClientWithInterceptors(interceptor.Funcs{
+			Create: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
+				requestCounter++
+				return errors.New("BOOM")
+			},
+			Delete: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.DeleteOption) error {
+				requestCounter++
+				return errors.New("BOOM")
+			},
+			Update: func(ctx context.Context, client client.WithWatch, obj client.Object, opts ...client.UpdateOption) error {
+				requestCounter++
+				return errors.New("BOOM")
+			},
+		})
+		secret := corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: testSecretName,
+			},
+			Data: map[string][]byte{
+				"samplekey": []byte("samplevalue"),
+			},
+		}
+		namespaces := []corev1.Namespace{
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "ns1",
+				},
+			},
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "ns2",
+				},
+			},
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "nsNotYetExisting",
+				},
+			},
+		}
+		secretQuery := NewQuery(context.TODO(), boomClient, fakeReader, secretLog)
+
+		err := secretQuery.CreateOrUpdateForNamespaces(secret, namespaces)
+		require.Error(t, err)
+		assert.Greater(t, requestCounter, 1)
 	})
 }
 

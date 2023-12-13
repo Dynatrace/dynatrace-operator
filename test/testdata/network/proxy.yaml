@@ -6,6 +6,9 @@ metadata:
     dynatrace.com/inject: "false"
   labels:
     app: squid
+    pod-security.kubernetes.io/privileged: warn
+    pod-security.kubernetes.io/baseline: warn
+    pod-security.kubernetes.io/restricted: warn
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -80,7 +83,16 @@ spec:
           capabilities:
             add:
              - NET_RAW
-
+        readinessProbe:
+          tcpSocket:
+            port: 3128
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        livenessProbe:
+          tcpSocket:
+            port: 3128
+          initialDelaySeconds: 15
+          periodSeconds: 10
       volumes:
         - name: config-volume
           configMap:

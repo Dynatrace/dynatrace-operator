@@ -8,9 +8,9 @@ import (
 	cmdManager "github.com/Dynatrace/dynatrace-operator/cmd/manager"
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1alpha1/dynakube"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/dtotel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/pod"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubesystem"
-	"github.com/Dynatrace/dynatrace-operator/pkg/util/otel"
 	"github.com/Dynatrace/dynatrace-operator/pkg/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/namespace_mutator"
@@ -19,6 +19,7 @@ import (
 	edgeconnectvalidationhook "github.com/Dynatrace/dynatrace-operator/pkg/webhook/validation/edgeconnect"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
@@ -123,8 +124,11 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
+		// instrument webhook manager HTTP client with OpenTelemetry
+		webhookManager.GetHTTPClient().Transport = otelhttp.NewTransport(webhookManager.GetHTTPClient().Transport)
+
 		signalHandler := ctrl.SetupSignalHandler()
-		otelShutdownFn := otel.Start(signalHandler, "dynatrace-webhook", webhookManager.GetAPIReader(), builder.namespace)
+		otelShutdownFn := dtotel.Start(signalHandler, "dynatrace-webhook", webhookManager.GetAPIReader(), builder.namespace)
 		defer otelShutdownFn()
 
 		err = startCertificateWatcher(webhookManager, builder.namespace, builder.podName)

@@ -21,7 +21,7 @@ The Dynatrace Operator supports rollout and lifecycle management of various Dyna
   * `kubernetes-monitoring` allows monitoring of the Kubernetes API
   * `metrics-ingest` routes enriched metrics through ActiveGate
 
-For more information please have a look at [our DynaKube Custom Resource examples](assets/samples) and
+For more information please have a look at [our DynaKube Custom Resource examples](assets/samples/dynakube) and
 our [official help page](https://www.dynatrace.com/support/help/shortlink/kubernetes-hub).
 
 ## Support lifecycle
@@ -74,8 +74,8 @@ contain parameters for various Dynatrace capabilities (OneAgent deployment mode,
 >
 > If not specified Dynatrace Operator searches for a secret called like the DynaKube custom resource `.metadata.name`.
 
-The recommended approach is using classic Fullstack injection to roll out Dynatrace to your cluster, available as [classicFullStack sample](assets/samples/classicFullStack.yaml).
-In case you want to have adjustments please have a look at [our DynaKube Custom Resource examples](assets/samples).
+The recommended approach is using classic Fullstack injection to roll out Dynatrace to your cluster, available as [classicFullStack sample](assets/samples/dynakube/classicFullStack.yaml).
+In case you want to have adjustments please have a look at [our DynaKube Custom Resource examples](assets/samples/dynakube).
 
 Save one of the sample configurations, change the API url to your environment and apply it to your cluster.
 

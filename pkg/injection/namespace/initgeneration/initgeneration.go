@@ -97,7 +97,7 @@ func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1
 		Type: corev1.SecretTypeOpaque,
 	}
 
-	err = secretQuery.CreateOrUpdateForNamespacesList(secret, nsList)
+	err = secretQuery.CreateOrUpdateForNamespaces(secret, nsList)
 	if err != nil {
 		return err
 	}
@@ -171,6 +171,7 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dynak
 		HostGroup:           dynakube.HostGroup(),
 		ClusterID:           string(kubeSystemUID),
 		InitialConnectRetry: dynakube.FeatureAgentInitialConnectRetry(),
+		EnforcementMode:     dynakube.FeatureEnforcementMode(),
 	}, nil
 }
 

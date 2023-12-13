@@ -1,15 +1,21 @@
 #renovate depName=sigs.k8s.io/kustomize/kustomize/v5
-kustomize_version=v5.2.1
+kustomize_version=v5.3.0
 #renovate depName=sigs.k8s.io/controller-tools/cmd
 controller_gen_version=v0.13.0
 # renovate depName=github.com/golangci/golangci-lint
 golang_ci_cmd_version=v1.55.2
 # renovate depName=github.com/daixiang0/gci
-gci_version=v0.11.2
+gci_version=v0.12.0
 # renovate depName=golang.org/x/tools
-golang_tools_version=v0.15.0
+golang_tools_version=v0.16.1
 # renovate depName=github.com/vektra/mockery
-mockery_version=v2.37.1
+mockery_version=v2.38.0
+# renovate depName=github.com/igorshubovych/markdownlint-cli
+markdownlint_cli_version=v0.38.0
+# renovate depName=github.com/helm-unittest/helm-unittest
+helmunittest_version=v0.3.6
+# renovate depName=github.com/princjef/gomarkdoc
+gomarkdoc_version=v1.1.0
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -19,7 +25,7 @@ GOBIN=$(shell go env GOBIN)
 endif
 
 ## Install all prerequisites
-prerequisites: prerequisites/setup-go-dev-dependencies prerequisites/helm-unittest prerequisites/markdownlint
+prerequisites: prerequisites/setup-go-dev-dependencies prerequisites/helm-unittest prerequisites/markdownlint prerequisites/gomarkdoc
 
 prerequisites/setup-go-dev-dependencies: prerequisites/kustomize prerequisites/controller-gen prerequisites/go-linting prerequisites/mockery
 
@@ -36,7 +42,7 @@ prerequisites/go-linting:
 ## Install 'helm' if it is missing
 ## TODO: Have version accessible by renovate?
 prerequisites/helm-unittest:
-	hack/helm/install-unittest-plugin.sh
+	hack/helm/install-unittest-plugin.sh $(helmunittest_version)
 
 ## Installs 'kustomize' if it is missing
 prerequisites/kustomize:
@@ -44,10 +50,8 @@ prerequisites/kustomize:
 KUSTOMIZE=$(shell hack/build/command.sh kustomize)
 
 ## Install 'markdownlint' if it is missing
-## `brew` is used, because otherwise we would need to install using `npm`.
-## TODO: Pin version
 prerequisites/markdownlint:
-	brew install markdownlint-cli --quiet
+	npm install -g markdownlint-cli@$(markdownlint_cli_version)
 
 ## Install verktra/mockery
 prerequisites/mockery:
@@ -57,3 +61,7 @@ prerequisites/mockery:
 prerequisites/setup-pre-commit:
 	cp ./.github/pre-commit ./.git/hooks/pre-commit
 	chmod +x ./.git/hooks/pre-commit
+
+## Install 'gomarkdoc' if it is missing
+prerequisites/gomarkdoc:
+	go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@$(gomarkdoc_version)
