@@ -5,6 +5,7 @@ package support_archive
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/cmd/support_archive"
@@ -61,6 +62,8 @@ func (r requiredFiles) collectRequiredFiles() []string {
 	requiredFiles = append(requiredFiles, r.getRequiredEdgeConnectFiles()...)
 	requiredFiles = append(requiredFiles, r.getRequiredStatefulSetFiles()...)
 	requiredFiles = append(requiredFiles, r.getRequiredDaemonSetFiles()...)
+	requiredFiles = append(requiredFiles, r.getRequiredWebhookConfigurationFiles()...)
+	requiredFiles = append(requiredFiles, r.getRequiredCRDFiles()...)
 	return requiredFiles
 }
 
@@ -217,6 +220,44 @@ func (r requiredFiles) getRequiredEdgeConnectFiles() []string {
 			r.edgeconnect.Namespace,
 			"edgeconnect",
 			r.edgeconnect.Name,
+			support_archive.ManifestsFileExtension))
+
+	return requiredFiles
+}
+
+func (r requiredFiles) getRequiredWebhookConfigurationFiles() []string {
+	requiredFiles := make([]string, 0)
+	requiredFiles = append(requiredFiles,
+		fmt.Sprintf("%s/%s/%s%s",
+			support_archive.ManifestsDirectoryName,
+			support_archive.WebhookConfigurationsDirectoryName,
+			strings.ToLower(support_archive.MutatingWebhookConfigurationKind),
+			support_archive.ManifestsFileExtension))
+
+	requiredFiles = append(requiredFiles,
+		fmt.Sprintf("%s/%s/%s%s",
+			support_archive.ManifestsDirectoryName,
+			support_archive.WebhookConfigurationsDirectoryName,
+			strings.ToLower(support_archive.ValidatingWebhookConfigurationKind),
+			support_archive.ManifestsFileExtension))
+
+	return requiredFiles
+}
+
+func (r requiredFiles) getRequiredCRDFiles() []string {
+	requiredFiles := make([]string, 0)
+	requiredFiles = append(requiredFiles,
+		fmt.Sprintf("%s/%s/%s%s",
+			support_archive.ManifestsDirectoryName,
+			support_archive.CRDDirectoryName,
+			strings.Join([]string{strings.ToLower(support_archive.CRDKindName), "dynakube"}, "-"),
+			support_archive.ManifestsFileExtension))
+
+	requiredFiles = append(requiredFiles,
+		fmt.Sprintf("%s/%s/%s%s",
+			support_archive.ManifestsDirectoryName,
+			support_archive.CRDDirectoryName,
+			strings.Join([]string{strings.ToLower(support_archive.CRDKindName), "edgeconnect"}, "-"),
 			support_archive.ManifestsFileExtension))
 
 	return requiredFiles

@@ -7,13 +7,21 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
 
-const k8sResourceCollectorName = "k8sResourceCollector"
+const (
+	k8sResourceCollectorName = "k8sResourceCollector"
+	webhookValidatorName     = "dynatrace-webhook"
+	dynakubeCRDName          = "dynakubes.dynatrace.com"
+	edgeconnectCRDName       = "edgeconnects.dynatrace.com"
+)
 
 type k8sResourceCollector struct {
 	collectorCommon
@@ -39,6 +47,7 @@ func newK8sObjectCollector(context context.Context, log logr.Logger, supportArch
 func (collector k8sResourceCollector) Do() error {
 	logInfof(collector.log, "Starting K8S resource collection")
 
+	numberOfStorages := 0
 	for _, query := range getQueries(collector.namespace, collector.appName) {
 		resourceList, err := collector.readObjectsList(query.groupVersionKind, query.filters)
 		if err != nil {
@@ -46,9 +55,31 @@ func (collector k8sResourceCollector) Do() error {
 			continue
 		}
 		for _, resource := range resourceList.Items {
+			numberOfStorages++
 			collector.storeObject(resource)
 		}
 	}
+
+	if numberOfStorages > 0 {
+		webhookConfigurations, err := collector.readWebhookConfigurations()
+		if err != nil {
+			logErrorf(collector.log, err, "could not read webhook configurations")
+			return err
+		}
+		for _, resource := range webhookConfigurations.Items {
+			collector.storeObject(resource)
+		}
+
+		customResourceDefinitions, err := collector.readCustomResourceDefinitions()
+		if err != nil {
+			logErrorf(collector.log, err, "could not read custom resource definitions")
+			return err
+		}
+		for _, resource := range customResourceDefinitions.Items {
+			collector.storeObject(resource)
+		}
+	}
+
 	return nil
 }
 
@@ -65,6 +96,85 @@ func (collector k8sResourceCollector) readObjectsList(groupVersionKind schema.Gr
 		return nil, err
 	}
 	return resourceList, nil
+}
+
+func (collector k8sResourceCollector) readWebhookConfigurations() (*unstructured.UnstructuredList, error) {
+	resourceList := &unstructured.UnstructuredList{}
+	resourceList.SetGroupVersionKind(toGroupVersionKind(admissionregistrationv1.SchemeGroupVersion, admissionregistrationv1.MutatingWebhookConfiguration{}))
+	resourceList.SetGroupVersionKind(toGroupVersionKind(admissionregistrationv1.SchemeGroupVersion, admissionregistrationv1.ValidatingWebhookConfiguration{}))
+
+	var mutatingWebhookConfiguration admissionregistrationv1.MutatingWebhookConfiguration
+	err := collector.apiReader.Get(collector.context, client.ObjectKey{Name: webhookValidatorName}, &mutatingWebhookConfiguration)
+	if err != nil {
+		return nil, err
+	}
+
+	resourceList.Items = append(resourceList.Items, collector.getMutatingWebhookConfiguration(mutatingWebhookConfiguration))
+
+	var validatingWebhookConfiguration admissionregistrationv1.ValidatingWebhookConfiguration
+	err = collector.apiReader.Get(collector.context, client.ObjectKey{Name: webhookValidatorName}, &validatingWebhookConfiguration)
+	if err != nil {
+		return nil, err
+	}
+
+	resourceList.Items = append(resourceList.Items, collector.getValidatingWebhookConfiguration(validatingWebhookConfiguration))
+	return resourceList, nil
+}
+
+func (collector k8sResourceCollector) readCustomResourceDefinitions() (*unstructured.UnstructuredList, error) {
+	resourceList := &unstructured.UnstructuredList{}
+	resourceList.SetGroupVersionKind(toGroupVersionKind(v1.SchemeGroupVersion, v1.CustomResourceDefinition{}))
+
+	var dynakubeCRD v1.CustomResourceDefinition
+	err := collector.apiReader.Get(collector.context, client.ObjectKey{Name: dynakubeCRDName}, &dynakubeCRD)
+	if err != nil {
+		return nil, err
+	}
+
+	resourceList.Items = append(resourceList.Items, collector.getDynakubeCRD(dynakubeCRD))
+
+	var edgeconnectCRD v1.CustomResourceDefinition
+	err = collector.apiReader.Get(collector.context, client.ObjectKey{Name: edgeconnectCRDName}, &edgeconnectCRD)
+	if err != nil {
+		return nil, err
+	}
+
+	resourceList.Items = append(resourceList.Items, collector.getDynakubeCRD(edgeconnectCRD))
+	return resourceList, nil
+}
+
+func (collector k8sResourceCollector) getDynakubeCRD(customResourceDefinition v1.CustomResourceDefinition) unstructured.Unstructured {
+	return unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": v1.GroupName,
+			"kind":       CRDKindName,
+			"metadata":   customResourceDefinition.ObjectMeta,
+			"spec":       customResourceDefinition.Spec,
+			"status":     customResourceDefinition.Status,
+		},
+	}
+}
+
+func (collector k8sResourceCollector) getValidatingWebhookConfiguration(validatingWebhookConfig admissionregistrationv1.ValidatingWebhookConfiguration) unstructured.Unstructured {
+	return unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": admissionregistrationv1.GroupName,
+			"kind":       ValidatingWebhookConfigurationKind,
+			"metadata":   validatingWebhookConfig.ObjectMeta,
+			"webhooks":   validatingWebhookConfig.Webhooks,
+		},
+	}
+}
+
+func (collector k8sResourceCollector) getMutatingWebhookConfiguration(mutatingWebhookConfig admissionregistrationv1.MutatingWebhookConfiguration) unstructured.Unstructured {
+	return unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": admissionregistrationv1.GroupName,
+			"kind":       MutatingWebhookConfigurationKind,
+			"metadata":   mutatingWebhookConfig.ObjectMeta,
+			"webhooks":   mutatingWebhookConfig.Webhooks,
+		},
+	}
 }
 
 func (collector k8sResourceCollector) storeObject(resource unstructured.Unstructured) {
@@ -84,6 +194,29 @@ func (collector k8sResourceCollector) storeObject(resource unstructured.Unstruct
 	logInfof(collector.log, "Collected manifest for %s", fileName)
 }
 
+func isWebhookConfiguration(resourceMeta unstructured.Unstructured) bool {
+	return resourceMeta.GetKind() == ValidatingWebhookConfigurationKind || resourceMeta.GetKind() == MutatingWebhookConfigurationKind
+}
+
+func (collector k8sResourceCollector) getCRDName(resourceMeta unstructured.Unstructured) string {
+	field, found, err := unstructured.NestedFieldNoCopy(resourceMeta.Object, "metadata")
+	if !found || err != nil {
+		logErrorf(collector.log, err, "Could not determine CRD name, setting it to default")
+		return "default"
+	}
+
+	objectMeta, ok := field.(metav1.ObjectMeta)
+	if !ok {
+		logErrorf(collector.log, err, "Could not determine CRD name, setting it to default")
+		return "default"
+	}
+
+	if strings.Contains(objectMeta.Name, "dynakube") {
+		return "dynakube"
+	}
+	return "edgeconnect"
+}
+
 func (collector k8sResourceCollector) createFileName(kind string, resourceMeta unstructured.Unstructured) string {
 	kind = strings.ToLower(kind)
 	switch {
@@ -92,6 +225,12 @@ func (collector k8sResourceCollector) createFileName(kind string, resourceMeta u
 
 	case resourceMeta.GetName() == collector.namespace:
 		return fmt.Sprintf("%s/%s/%s-%s%s", ManifestsDirectoryName, collector.namespace, kind, resourceMeta.GetName(), ManifestsFileExtension)
+
+	case isWebhookConfiguration(resourceMeta):
+		return fmt.Sprintf("%s/%s/%s%s", ManifestsDirectoryName, WebhookConfigurationsDirectoryName, strings.ToLower(resourceMeta.GetKind()), ManifestsFileExtension)
+
+	case resourceMeta.GetKind() == CRDKindName:
+		return fmt.Sprintf("%s/%s/%s-%s%s", ManifestsDirectoryName, CRDDirectoryName, strings.ToLower(resourceMeta.GetKind()), collector.getCRDName(resourceMeta), ManifestsFileExtension)
 
 	default:
 		return fmt.Sprintf("%s/%s/%s-%s%s", ManifestsDirectoryName, InjectedNamespacesManifestsDirectoryName, kind, resourceMeta.GetName(), ManifestsFileExtension)
