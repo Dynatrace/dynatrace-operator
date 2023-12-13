@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-logr/logr"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
-	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -145,7 +145,7 @@ func (collector k8sResourceCollector) readCustomResourceDefinitions() (*unstruct
 
 func (collector k8sResourceCollector) getDynakubeCRD(customResourceDefinition v1.CustomResourceDefinition) unstructured.Unstructured {
 	return unstructured.Unstructured{
-		Object: map[string]interface{}{
+		Object: map[string]any{
 			"apiVersion": v1.GroupName,
 			"kind":       CRDKindName,
 			"metadata":   customResourceDefinition.ObjectMeta,
@@ -157,7 +157,7 @@ func (collector k8sResourceCollector) getDynakubeCRD(customResourceDefinition v1
 
 func (collector k8sResourceCollector) getValidatingWebhookConfiguration(validatingWebhookConfig admissionregistrationv1.ValidatingWebhookConfiguration) unstructured.Unstructured {
 	return unstructured.Unstructured{
-		Object: map[string]interface{}{
+		Object: map[string]any{
 			"apiVersion": admissionregistrationv1.GroupName,
 			"kind":       ValidatingWebhookConfigurationKind,
 			"metadata":   validatingWebhookConfig.ObjectMeta,
@@ -168,7 +168,7 @@ func (collector k8sResourceCollector) getValidatingWebhookConfiguration(validati
 
 func (collector k8sResourceCollector) getMutatingWebhookConfiguration(mutatingWebhookConfig admissionregistrationv1.MutatingWebhookConfiguration) unstructured.Unstructured {
 	return unstructured.Unstructured{
-		Object: map[string]interface{}{
+		Object: map[string]any{
 			"apiVersion": admissionregistrationv1.GroupName,
 			"kind":       MutatingWebhookConfigurationKind,
 			"metadata":   mutatingWebhookConfig.ObjectMeta,
