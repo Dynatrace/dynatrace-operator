@@ -27,7 +27,7 @@ type ReadOnlyModifier struct {
 }
 
 func (mod ReadOnlyModifier) Enabled() bool {
-	return mod.dynakube.FeatureActiveGateReadOnlyFilesystem()
+	return true
 }
 
 func (mod ReadOnlyModifier) Modify(sts *appsv1.StatefulSet) error {

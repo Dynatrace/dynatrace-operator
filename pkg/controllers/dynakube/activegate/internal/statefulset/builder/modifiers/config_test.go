@@ -75,7 +75,6 @@ func enableAllModifiers(dynakube *dynatracev1beta1.DynaKube, capability capabili
 	setCertUsage(dynakube, true)
 	setCustomPropertyUsage(capability, true)
 	setProxyUsage(dynakube, true)
-	setReadOnlyUsage(dynakube, true)
 	setKubernetesMonitoringUsage(dynakube, true)
 	setServicePortUsage(dynakube, true)
 }

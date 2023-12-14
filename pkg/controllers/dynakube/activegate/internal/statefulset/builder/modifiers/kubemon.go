@@ -53,7 +53,6 @@ func (mod KubernetesMonitoringModifier) Modify(sts *appsv1.StatefulSet) error {
 }
 
 func (mod KubernetesMonitoringModifier) getInitContainers() []corev1.Container {
-	readOnlyRootFs := mod.dynakube.FeatureActiveGateReadOnlyFilesystem()
 	volumeMounts := []corev1.VolumeMount{
 		{
 			ReadOnly:  false,
@@ -73,7 +72,7 @@ func (mod KubernetesMonitoringModifier) getInitContainers() []corev1.Container {
 			Args:            []string{"-c", k8scrt2jksPath},
 			VolumeMounts:    volumeMounts,
 			Resources:       mod.capability.Properties().Resources,
-			SecurityContext: GetSecurityContext(readOnlyRootFs),
+			SecurityContext: GetSecurityContext(true),
 		},
 	}
 }
@@ -91,16 +90,12 @@ func (mod KubernetesMonitoringModifier) getVolumes() []corev1.Volume {
 }
 
 func (mod KubernetesMonitoringModifier) getReadOnlyInitVolumes() []corev1.Volume {
-	readOnlyRootFs := mod.dynakube.FeatureActiveGateReadOnlyFilesystem()
-	if readOnlyRootFs {
-		return []corev1.Volume{
-			{
-				Name:         certLoaderWorkDirVolume,
-				VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
-			},
-		}
+	return []corev1.Volume{
+		{
+			Name:         certLoaderWorkDirVolume,
+			VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
+		},
 	}
-	return []corev1.Volume{}
 }
 
 func (mod KubernetesMonitoringModifier) getVolumeMounts() []corev1.VolumeMount {
@@ -115,17 +110,13 @@ func (mod KubernetesMonitoringModifier) getVolumeMounts() []corev1.VolumeMount {
 }
 
 func (mod KubernetesMonitoringModifier) getReadOnlyInitVolumeMounts() []corev1.VolumeMount {
-	readOnlyRootFs := mod.dynakube.FeatureActiveGateReadOnlyFilesystem()
-	if readOnlyRootFs {
-		return []corev1.VolumeMount{
-			{
-				ReadOnly:  false,
-				Name:      certLoaderWorkDirVolume,
-				MountPath: k8scrt2jksWorkingDir,
-			},
-		}
+	return []corev1.VolumeMount{
+		{
+			ReadOnly:  false,
+			Name:      certLoaderWorkDirVolume,
+			MountPath: k8scrt2jksWorkingDir,
+		},
 	}
-	return []corev1.VolumeMount{}
 }
 
 func GetSecurityContext(readOnlyRootFileSystem bool) *corev1.SecurityContext {

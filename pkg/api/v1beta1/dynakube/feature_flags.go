@@ -42,7 +42,6 @@ const (
 	AnnotationFeatureActiveGateUpdates = AnnotationFeaturePrefix + "activegate-updates"
 
 	AnnotationFeatureActiveGateAppArmor                   = AnnotationFeaturePrefix + "activegate-apparmor"
-	AnnotationFeatureActiveGateReadOnlyFilesystem         = AnnotationFeaturePrefix + "activegate-readonly-fs"
 	AnnotationFeatureAutomaticK8sApiMonitoring            = AnnotationFeaturePrefix + "automatic-kubernetes-api-monitoring"
 	AnnotationFeatureAutomaticK8sApiMonitoringClusterName = AnnotationFeaturePrefix + "automatic-kubernetes-api-monitoring-cluster-name"
 	AnnotationFeatureK8sAppEnabled                        = AnnotationFeaturePrefix + "k8s-app-enabled"
@@ -235,11 +234,6 @@ func (dk *DynaKube) FeatureCustomSyntheticImage() string {
 // FeatureEnableMultipleOsAgentsOnNode is a feature flag to enable multiple osagents running on the same host
 func (dk *DynaKube) FeatureEnableMultipleOsAgentsOnNode() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureMultipleOsAgentsOnNode) == truePhrase
-}
-
-// FeatureActiveGateReadOnlyFilesystem is a feature flag to enable RO mounted filesystem in ActiveGate container
-func (dk *DynaKube) FeatureActiveGateReadOnlyFilesystem() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateReadOnlyFilesystem) != falsePhrase
 }
 
 // FeatureActiveGateAppArmor is a feature flag to enable AppArmor in ActiveGate container
