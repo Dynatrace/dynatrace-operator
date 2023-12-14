@@ -16,6 +16,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/address"
+	"github.com/Dynatrace/dynatrace-operator/pkg/util/kubeobjects/env"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook"
 	"github.com/Dynatrace/dynatrace-operator/pkg/webhook/mutation/pod_mutator/oneagent_mutation"
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative"
@@ -111,6 +112,20 @@ func InstallFromImage(t *testing.T) features.Feature {
 	return builder.Feature()
 }
 
+const (
+	httpsProxy = "https_proxy"
+)
+
+// Prerequisites: istio service mesh
+//
+// Setup: CloudNative deployment with CSI driver
+//
+// Verification that the operator and all deployed OneAgents are able to communicate
+// over a http proxy.
+//
+// Connectivity in the dynatrace namespace and sample application namespace is restricted to
+// the local cluster. Sample application is installed. The test checks if DT_PROXY environment
+// variable is defined in the *dynakube-oneagent* container and the *application container*.
 func WithProxy(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features.Feature {
 	builder := features.New("codemodules injection with proxy")
 	builder.WithLabel("name", "codemodules-with-proxy")
@@ -147,8 +162,10 @@ func WithProxy(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features
 	// Register actual test
 	cloudnative.AssessSampleInitContainers(builder, sampleApp)
 	istio.AssessIstio(builder, cloudNativeDynakube, *sampleApp)
-
 	builder.Assess("codemodules have been downloaded", imageHasBeenDownloaded(cloudNativeDynakube.Namespace))
+
+	builder.Assess("check env variables of oneagent pods", checkOneAgentEnvVars(cloudNativeDynakube))
+	builder.Assess("check proxy settings in ruxitagentproc.conf", proxy.CheckRuxitAgentProcFileHasProxySetting(*sampleApp, proxySpec))
 
 	// Register sample, dynakube and operator uninstall
 	builder.Teardown(sampleApp.Uninstall())
@@ -363,4 +380,36 @@ func isVolumeAttached(t *testing.T, volumes []corev1.Volume, volumeName string) 
 		}
 	}
 	return result
+}
+
+func checkOneAgentEnvVars(dynakube dynatracev1beta1.DynaKube) features.Func {
+	return func(ctx context.Context, t *testing.T, envConfig *envconf.Config) context.Context {
+		resources := envConfig.Client().Resources()
+		err := daemonset.NewQuery(ctx, resources, client.ObjectKey{
+			Name:      dynakube.OneAgentDaemonsetName(),
+			Namespace: dynakube.Namespace,
+		}).ForEachPod(func(podItem corev1.Pod) {
+			require.NotNil(t, podItem)
+			require.NotNil(t, podItem.Spec)
+
+			checkEnvVarsInContainer(t, podItem, dynakube.OneAgentDaemonsetName(), httpsProxy)
+		})
+
+		require.NoError(t, err)
+		return ctx
+	}
+}
+
+func checkEnvVarsInContainer(t *testing.T, podItem corev1.Pod, containerName string, envVar string) {
+	for _, container := range podItem.Spec.Containers {
+		if container.Name == containerName {
+			require.NotNil(t, container.Env)
+			require.True(t, env.IsIn(container.Env, envVar))
+			for _, env := range container.Env {
+				if env.Name == envVar {
+					require.NotNil(t, env.Value)
+				}
+			}
+		}
+	}
 }

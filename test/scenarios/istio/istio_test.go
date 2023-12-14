@@ -9,7 +9,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/codemodules"
 	cloudnativeDefault "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/default"
 	networkProblems "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/network_problems"
-	cloudnativeProxy "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/proxy"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/components/operator"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/istio"
 	"github.com/Dynatrace/dynatrace-operator/test/helpers/kubeobjects/environment"
@@ -50,7 +49,6 @@ func TestIstio(t *testing.T) {
 		cloudnativeDefault.Feature(t, true),
 		codemodules.WithProxy(t, proxy.ProxySpec),
 		codemodules.WithProxyCA(t, proxy.ProxySpec),
-		cloudnativeProxy.Feature(t, proxy.ProxySpec),
 	}
 	testEnv.Test(t, feats...)
 }

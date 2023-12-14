@@ -73,6 +73,7 @@ const (
     AnnotationFeatureLabelVersionDetection = AnnotationFeaturePrefix + "label-version-detection"
     AnnotationInjectionFailurePolicy       = AnnotationFeaturePrefix + "injection-failure-policy"
     AnnotationFeatureInitContainerSeccomp  = AnnotationFeaturePrefix + "init-container-seccomp-profile"
+    AnnotationFeatureEnforcementMode       = AnnotationFeaturePrefix + "enforcement-mode"
 
     // CSI
     AnnotationFeatureMaxFailedCsiMountAttempts = AnnotationFeaturePrefix + "max-csi-mount-attempts"
