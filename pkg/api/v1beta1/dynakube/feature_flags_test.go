@@ -116,22 +116,8 @@ func TestDeprecatedDisableAnnotations(t *testing.T) {
 }
 
 func TestDeprecatedEnableAnnotations(t *testing.T) {
-	// New annotation works
-	dynakube := createDynakubeWithAnnotation(AnnotationFeatureActiveGateAuthToken, "false")
-
-	assert.False(t, dynakube.FeatureActiveGateAuthToken())
-
-	dynakube = createDynakubeWithAnnotation(AnnotationFeatureActiveGateAuthToken, "true")
-
-	assert.True(t, dynakube.FeatureActiveGateAuthToken())
-
-	dynakube = createDynakubeWithAnnotation(AnnotationFeatureActiveGateAuthToken, "false")
-
-	assert.False(t, dynakube.FeatureActiveGateAuthToken())
-
-	// Default is true
-	dynakube = createDynakubeWithAnnotation()
-	assert.True(t, dynakube.FeatureActiveGateAuthToken())
+	dynakube := createDynakubeWithAnnotation(AnnotationInjectionFailurePolicy, "fail")
+	assert.Equal(t, "fail", dynakube.FeatureInjectionFailurePolicy())
 }
 
 func TestMaxMountAttempts(t *testing.T) {

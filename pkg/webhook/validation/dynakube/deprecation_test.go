@@ -15,7 +15,7 @@ func TestDeprecationWarning(t *testing.T) {
 	t.Run(`no warning`, func(t *testing.T) {
 		dynakubeMeta := defaultDynakubeObjectMeta
 		dynakubeMeta.Annotations = map[string]string{
-			dynatracev1beta1.AnnotationFeatureActiveGateReadOnlyFilesystem: "false",
+			dynatracev1beta1.AnnotationFeatureAutomaticInjection: "true",
 		}
 		dynakube := &dynatracev1beta1.DynaKube{
 			ObjectMeta: dynakubeMeta,
@@ -24,12 +24,12 @@ func TestDeprecationWarning(t *testing.T) {
 			},
 		}
 		assertAllowedResponseWithWarnings(t, 1, dynakube)
-		assert.True(t, dynakube.FeatureActiveGateReadOnlyFilesystem())
+		assert.True(t, dynakube.FeatureAutomaticInjection())
 	})
 
 	t.Run(`warning present`, func(t *testing.T) {
 		dynakubeMeta := defaultDynakubeObjectMeta
-		split := strings.Split(dynatracev1beta1.AnnotationFeatureActiveGateReadOnlyFilesystem, "/")
+		split := strings.Split(dynatracev1beta1.AnnotationFeatureAutomaticInjection, "/")
 		postFix := split[1]
 		dynakubeMeta.Annotations = map[string]string{
 			dynatracev1beta1.DeprecatedFeatureFlagPrefix + postFix: "true",
@@ -41,7 +41,7 @@ func TestDeprecationWarning(t *testing.T) {
 			},
 		}
 		assertAllowedResponseWithWarnings(t, 1, dynakube)
-		assert.True(t, dynakube.FeatureActiveGateReadOnlyFilesystem())
+		assert.True(t, dynakube.FeatureAutomaticInjection())
 	})
 }
 
