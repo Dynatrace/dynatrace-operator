@@ -102,6 +102,11 @@ func (controller *Controller) Reconcile(ctx context.Context, request reconcile.R
 func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) error {
 	log.Info("reconciling EdgeConnect deletion", "name", edgeConnect.Name, "namespace", edgeConnect.Namespace)
 
+	edgeConnectIdFromSecret, err := controller.getEdgeConnectIdFromClientSecret(ctx, edgeConnect)
+	if err != nil {
+		return err
+	}
+
 	edgeConnect.ObjectMeta.Finalizers = nil
 	if err := controller.client.Update(ctx, edgeConnect); err != nil {
 		return errors.WithStack(err)
@@ -112,19 +117,26 @@ func (controller *Controller) reconcileEdgeConnectDeletion(ctx context.Context, 
 		return err
 	}
 
-	edgeConnectId, err := controller.getEdgeConnectIdFromClientSecret(ctx, edgeConnect)
+	tenantEdgeConnect, err := getEdgeConnectByName(edgeConnectClient, edgeConnect.Name)
 	if err != nil {
 		return err
 	}
 
-	if edgeConnectId == "" {
-		// TODO: managedByDynatraceOperator attribute needed
+	switch {
+	case tenantEdgeConnect.ID == "":
+		log.Info("EdgeConnect not found on the tenant", "name", edgeConnect.Name)
+	case !tenantEdgeConnect.ManagedByDynatraceOperator:
+		log.Info("can't delete EdgeConnect configuration from the tenant because it has been created manually by a user", "name", tenantEdgeConnect.Name)
+	case edgeConnectIdFromSecret == "":
 		log.Info("EdgeConnect client secret is missing")
-	} else {
-		if err := edgeConnectClient.DeleteEdgeConnect(edgeConnectId); err != nil {
-			return err
+		return edgeConnectClient.DeleteEdgeConnect(tenantEdgeConnect.ID)
+	default:
+		if tenantEdgeConnect.ID != edgeConnectIdFromSecret {
+			log.Info("EdgeConnect client secret contains invalid Id")
 		}
+		return edgeConnectClient.DeleteEdgeConnect(tenantEdgeConnect.ID)
 	}
+
 	return nil
 }
 
@@ -268,7 +280,7 @@ func (controller *Controller) reconcileEdgeConnectProvisioner(ctx context.Contex
 		return err
 	}
 
-	edgeConnectId, err := getEdgeConnectIdByName(edgeConnectClient, edgeConnect.Name)
+	tenantEdgeConnect, err := getEdgeConnectByName(edgeConnectClient, edgeConnect.Name)
 	if err != nil {
 		return err
 	}
@@ -278,25 +290,30 @@ func (controller *Controller) reconcileEdgeConnectProvisioner(ctx context.Contex
 		return err
 	}
 
-	if edgeConnectId != "" {
+	if tenantEdgeConnect.ID != "" && !tenantEdgeConnect.ManagedByDynatraceOperator {
+		log.Info("can't delete EdgeConnect configuration from the tenant because it has been created manually by a user", "name", tenantEdgeConnect.Name)
+		return nil
+	}
+
+	if tenantEdgeConnect.ID != "" {
 		if edgeConnectIdFromSecret == "" {
 			log.Info("EdgeConnect has to be recreated due to missing secret")
-			// TODO: managedByDynatraceOperator attribute needed
-			if err := edgeConnectClient.DeleteEdgeConnect(edgeConnectId); err != nil {
+			if err := edgeConnectClient.DeleteEdgeConnect(tenantEdgeConnect.ID); err != nil {
 				return err
 			}
-			edgeConnectId = ""
-		} else if edgeConnectId != edgeConnectIdFromSecret {
-			// TODO: managedByDynatraceOperator attribute needed
+
+			tenantEdgeConnect.ID = ""
+		} else if tenantEdgeConnect.ID != edgeConnectIdFromSecret {
 			log.Info("EdgeConnect has to be recreated due to invalid Id")
-			if err := edgeConnectClient.DeleteEdgeConnect(edgeConnectId); err != nil {
+			if err := edgeConnectClient.DeleteEdgeConnect(tenantEdgeConnect.ID); err != nil {
 				return err
 			}
-			edgeConnectId = ""
+
+			tenantEdgeConnect.ID = ""
 		}
 	}
 
-	if edgeConnectId == "" {
+	if tenantEdgeConnect.ID == "" {
 		err := controller.createEdgeConnect(ctx, edgeConnectClient, edgeConnect)
 		if err != nil {
 			return err
@@ -365,20 +382,20 @@ func newEdgeConnectClient() func(ctx context.Context, edgeConnect *edgeconnectv1
 	}
 }
 
-func getEdgeConnectIdByName(edgeConnectClient edgeconnect.Client, name string) (string, error) {
+func getEdgeConnectByName(edgeConnectClient edgeconnect.Client, name string) (edgeconnect.GetResponse, error) {
 	ecs, err := edgeConnectClient.GetEdgeConnects(name)
 	if err != nil {
-		return "", errors.WithStack(err)
+		return edgeconnect.GetResponse{}, errors.WithStack(err)
 	}
 
 	if len(ecs.EdgeConnects) > 1 {
-		return "", errors.New("many EdgeConnects have the same name")
+		return edgeconnect.GetResponse{}, errors.New("many EdgeConnects have the same name")
 	}
 
 	if len(ecs.EdgeConnects) > 0 {
-		return ecs.EdgeConnects[0].ID, nil
+		return ecs.EdgeConnects[0], nil
 	}
-	return "", nil
+	return edgeconnect.GetResponse{}, nil
 }
 
 func (controller *Controller) getEdgeConnectIdFromClientSecret(ctx context.Context, edgeConnect *edgeconnectv1alpha1.EdgeConnect) (string, error) {
