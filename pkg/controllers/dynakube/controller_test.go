@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -69,6 +70,318 @@ const (
 
 	testApiUrl = "https://" + testHost + "/e/" + testUUID + "/api"
 )
+
+func TestGetDynakubeOrCleanup(t *testing.T) {
+	ctx := context.Background()
+	request := reconcile.Request{
+		NamespacedName: types.NamespacedName{Name: "dynakube-test", Namespace: "dynatrace"},
+	}
+	t.Run("dynakube doesn't exist => unmap namespace", func(t *testing.T) {
+		markedNamespace := &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "app-namespace",
+				Labels: map[string]string{
+					dtwebhook.InjectionInstanceLabel: request.Name,
+				},
+			},
+		}
+		fakeClient := fake.NewClientWithIndex(markedNamespace)
+		controller := &Controller{
+			client:    fakeClient,
+			apiReader: fakeClient,
+		}
+
+		dk, err := controller.getDynakubeOrCleanup(ctx, request.Name, request.Namespace)
+		require.NoError(t, err)
+		assert.Nil(t, dk)
+		unmarkedNamespace := &corev1.Namespace{}
+		err = fakeClient.Get(context.Background(), types.NamespacedName{Name: markedNamespace.Name}, unmarkedNamespace)
+		require.NoError(t, err)
+		assert.Empty(t, unmarkedNamespace.Labels)
+	})
+
+	t.Run("dynakube exists => return dynakube", func(t *testing.T) {
+		expectedDynakube := &dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      request.Name,
+				Namespace: request.Namespace,
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{APIURL: "this-is-an-api-url"},
+		}
+		fakeClient := fake.NewClientWithIndex(expectedDynakube)
+		controller := &Controller{
+			client:    fakeClient,
+			apiReader: fakeClient,
+		}
+
+		dk, err := controller.getDynakubeOrCleanup(ctx, request.Name, request.Namespace)
+		require.NoError(t, err)
+		assert.Equal(t, expectedDynakube.Name, dk.Name)
+		assert.Equal(t, expectedDynakube.Namespace, dk.Namespace)
+		assert.Equal(t, expectedDynakube.ApiUrl(), dk.ApiUrl())
+	})
+}
+
+func TestHandleError(t *testing.T) {
+	ctx := context.Background()
+	dynakubeBase := &dynatracev1beta1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "this-is-a-name",
+			Namespace: "dynatrace",
+		},
+		Spec: dynatracev1beta1.DynaKubeSpec{APIURL: "this-is-an-api-url"},
+	}
+	t.Run("no error => update status", func(t *testing.T) {
+		oldDynakube := dynakubeBase.DeepCopy()
+		fakeClient := fake.NewClientWithIndex(oldDynakube)
+		controller := &Controller{
+			client:       fakeClient,
+			apiReader:    fakeClient,
+			requeueAfter: 12345 * time.Second,
+		}
+		expectedDynakube := dynakubeBase.DeepCopy()
+		expectedDynakube.Status = dynatracev1beta1.DynaKubeStatus{
+			Phase: status.Running,
+		}
+
+		result, err := controller.handleError(ctx, oldDynakube, nil, oldDynakube.Status)
+
+		require.NoError(t, err)
+		assert.Equal(t, controller.requeueAfter, result.RequeueAfter)
+		dynakube := &dynatracev1beta1.DynaKube{}
+		err = fakeClient.Get(ctx, types.NamespacedName{Name: expectedDynakube.Name, Namespace: expectedDynakube.Namespace}, dynakube)
+		require.NoError(t, err)
+		assert.Equal(t, expectedDynakube.Status.Phase, dynakube.Status.Phase)
+	})
+	t.Run("no error => fail update status => error", func(t *testing.T) {
+		oldDynakube := dynakubeBase.DeepCopy()
+		fakeClient := fake.NewClientWithIndex()
+		controller := &Controller{
+			client:    fakeClient,
+			apiReader: fakeClient,
+		}
+
+		result, err := controller.handleError(ctx, oldDynakube, nil, oldDynakube.Status)
+		require.Error(t, err)
+		assert.Empty(t, result)
+	})
+	t.Run("dynatrace server error => no error and fast update interval", func(t *testing.T) {
+		oldDynakube := dynakubeBase.DeepCopy()
+		fakeClient := fake.NewClientWithIndex()
+		controller := &Controller{
+			client:    fakeClient,
+			apiReader: fakeClient,
+		}
+		serverError := dtclient.ServerError{Code: http.StatusTooManyRequests}
+
+		result, err := controller.handleError(ctx, oldDynakube, serverError, oldDynakube.Status)
+		require.NoError(t, err)
+		assert.Equal(t, fastUpdateInterval, result.RequeueAfter)
+	})
+	t.Run("random error => error, set error-phase", func(t *testing.T) {
+		oldDynakube := dynakubeBase.DeepCopy()
+		fakeClient := fake.NewClientWithIndex(oldDynakube)
+		controller := &Controller{
+			client:    fakeClient,
+			apiReader: fakeClient,
+		}
+		randomError := errors.New("BOOM")
+
+		result, err := controller.handleError(ctx, oldDynakube, randomError, oldDynakube.Status)
+		assert.Empty(t, result)
+		require.Error(t, err)
+		dynakube := &dynatracev1beta1.DynaKube{}
+		err = fakeClient.Get(ctx, types.NamespacedName{Name: oldDynakube.Name, Namespace: oldDynakube.Namespace}, dynakube)
+		require.NoError(t, err)
+		assert.Equal(t, status.Error, dynakube.Status.Phase)
+	})
+}
+
+func TestSetupTokensAndClient(t *testing.T) {
+	ctx := context.Background()
+	dynakubeBase := &dynatracev1beta1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "this-is-a-name",
+			Namespace: "dynatrace",
+		},
+		Spec: dynatracev1beta1.DynaKubeSpec{APIURL: "this-is-an-api-url"},
+	}
+
+	t.Run("no tokens => error + condition", func(t *testing.T) {
+		dynakube := dynakubeBase.DeepCopy()
+		fakeClient := fake.NewClientWithIndex(dynakube)
+		controller := &Controller{
+			client:    fakeClient,
+			apiReader: fakeClient,
+		}
+
+		dtc, err := controller.setupTokensAndClient(ctx, dynakube)
+		require.Error(t, err)
+		assert.Nil(t, dtc)
+		assertTokenCondition(t, dynakube, true)
+	})
+
+	t.Run("client builder error => error + condition", func(t *testing.T) {
+		dynakube := dynakubeBase.DeepCopy()
+		tokens := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      dynakube.Tokens(),
+				Namespace: dynakube.Namespace,
+			},
+			Data: map[string][]byte{
+				dtclient.DynatraceApiToken: []byte("this is a token"),
+			},
+		}
+		fakeClient := fake.NewClientWithIndex(dynakube, tokens)
+
+		mockDtcBuilder := &dynatraceclient.StubBuilder{
+			Err: errors.New("BOOM"),
+		}
+
+		controller := &Controller{
+			client:                 fakeClient,
+			apiReader:              fakeClient,
+			dynatraceClientBuilder: mockDtcBuilder,
+		}
+
+		dtc, err := controller.setupTokensAndClient(ctx, dynakube)
+		require.Error(t, err)
+		assert.Nil(t, dtc)
+		assertTokenCondition(t, dynakube, true)
+	})
+	t.Run("tokens + dtclient ok => no error", func(t *testing.T) {
+		// There is also a pull-secret created here, however testing it here is a bit counterintuitive.
+		// TODO: Make the pull-secret reconciler mockable, so we can improve this test.
+		dynakube := dynakubeBase.DeepCopy()
+		tokens := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      dynakube.Tokens(),
+				Namespace: dynakube.Namespace,
+			},
+			Data: map[string][]byte{
+				dtclient.DynatraceApiToken: []byte("this is a token"),
+			},
+		}
+		fakeClient := fake.NewClientWithIndex(dynakube, tokens)
+
+		mockDtcBuilder := &dynatraceclient.StubBuilder{
+			DynatraceClient: mockedclient.NewClient(t),
+		}
+
+		controller := &Controller{
+			client:                 fakeClient,
+			apiReader:              fakeClient,
+			dynatraceClientBuilder: mockDtcBuilder,
+		}
+
+		dtc, err := controller.setupTokensAndClient(ctx, dynakube)
+		require.NoError(t, err)
+		assert.NotNil(t, dtc)
+		assertTokenCondition(t, dynakube, false)
+	})
+}
+
+func assertTokenCondition(t *testing.T, dynakube *dynatracev1beta1.DynaKube, hasError bool) {
+	condition := dynakube.Status.Conditions[0]
+	assert.Equal(t, dynatracev1beta1.TokenConditionType, condition.Type)
+	if hasError {
+		assert.Equal(t, dynatracev1beta1.ReasonTokenError, condition.Reason)
+		assert.Equal(t, metav1.ConditionFalse, condition.Status)
+	} else {
+		assert.Equal(t, dynatracev1beta1.ReasonTokenReady, condition.Reason)
+		assert.Equal(t, metav1.ConditionTrue, condition.Status)
+	}
+}
+
+func TestReconcileComponents(t *testing.T) {
+	ctx := context.Background()
+	dynakubeBase := &dynatracev1beta1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "this-is-a-name",
+			Namespace: "dynatrace",
+		},
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			APIURL:     "this-is-an-api-url",
+			OneAgent:   dynatracev1beta1.OneAgentSpec{CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{}},
+			ActiveGate: dynatracev1beta1.ActiveGateSpec{Capabilities: []dynatracev1beta1.CapabilityDisplayName{dynatracev1beta1.KubeMonCapability.DisplayName}},
+		},
+	}
+
+	t.Run("all components reconciled, even in case of errors", func(t *testing.T) {
+		dynakube := dynakubeBase.DeepCopy()
+		fakeClient := fake.NewClientWithIndex(dynakube)
+		controller := &Controller{
+			client:                fakeClient,
+			apiReader:             fakeClient,
+			scheme:                scheme.Scheme,
+			fs:                    afero.Afero{Fs: afero.NewMemMapFs()},
+			registryClientBuilder: createFakeRegistryClientBuilder(),
+		}
+		mockedDtc := mockedclient.NewClient(t)
+		mockedDtc.On("GetActiveGateConnectionInfo").Return(dtclient.ActiveGateConnectionInfo{}, errors.New("BOOM"))
+		mockedDtc.On("GetOneAgentConnectionInfo").Return(createTestOneAgentConnectionInfo(), nil)
+		mockedDtc.On("GetLatestAgentVersion", mock.Anything, mock.Anything).Return("", errors.New("BOOM"))
+		err := controller.reconcileComponents(ctx, mockedDtc, nil, dynakube)
+
+		require.Error(t, err)
+		// goerrors.Join concats errors with \n
+		assert.Len(t, strings.Split(err.Error(), "\n"), 4) // ActiveGate, OneAgentInjection, EnrichmentInjection, OneAgent
+	})
+
+	t.Run("exit early in case of no oneagent conncection info", func(t *testing.T) {
+		dynakube := dynakubeBase.DeepCopy()
+		fakeClient := fake.NewClientWithIndex(dynakube)
+		controller := &Controller{
+			client:                fakeClient,
+			apiReader:             fakeClient,
+			scheme:                scheme.Scheme,
+			fs:                    afero.Afero{Fs: afero.NewMemMapFs()},
+			registryClientBuilder: createFakeRegistryClientBuilder(),
+		}
+		mockedDtc := mockedclient.NewClient(t)
+		mockedDtc.On("GetActiveGateConnectionInfo").Return(dtclient.ActiveGateConnectionInfo{}, errors.New("BOOM"))
+		mockedDtc.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{}, nil)
+		err := controller.reconcileComponents(ctx, mockedDtc, nil, dynakube)
+
+		require.Error(t, err)
+		// goerrors.Join concats errors with \n
+		assert.Len(t, strings.Split(err.Error(), "\n"), 1) // ActiveGate, no OneAgent connection info is not an error
+	})
+	t.Run("exit early in case of error for oneagent conncection info", func(t *testing.T) {
+		dynakube := dynakubeBase.DeepCopy()
+		fakeClient := fake.NewClientWithIndex(dynakube)
+		controller := &Controller{
+			client:                fakeClient,
+			apiReader:             fakeClient,
+			scheme:                scheme.Scheme,
+			fs:                    afero.Afero{Fs: afero.NewMemMapFs()},
+			registryClientBuilder: createFakeRegistryClientBuilder(),
+		}
+		mockedDtc := mockedclient.NewClient(t)
+		mockedDtc.On("GetActiveGateConnectionInfo").Return(dtclient.ActiveGateConnectionInfo{}, errors.New("BOOM"))
+		mockedDtc.On("GetOneAgentConnectionInfo").Return(dtclient.OneAgentConnectionInfo{}, errors.New("BOOM"))
+		err := controller.reconcileComponents(ctx, mockedDtc, nil, dynakube)
+
+		require.Error(t, err)
+		// goerrors.Join concats errors with \n
+		assert.Len(t, strings.Split(err.Error(), "\n"), 2) // ActiveGate, OneAgent connection info error
+	})
+}
+
+func createTestOneAgentConnectionInfo() dtclient.OneAgentConnectionInfo {
+	return dtclient.OneAgentConnectionInfo{
+		CommunicationHosts: []dtclient.CommunicationHost{
+			{
+				Protocol: "beep-boop",
+				Host:     "a-host",
+				Port:     123,
+			},
+		},
+		ConnectionInfo: dtclient.ConnectionInfo{
+			TenantUUID: "a-tenant-uuid",
+		},
+	}
+}
 
 func TestMonitoringModesDynakube_Reconcile(t *testing.T) {
 	deploymentModes := map[string]dynatracev1beta1.OneAgentSpec{

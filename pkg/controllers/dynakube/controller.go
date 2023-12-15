@@ -295,16 +295,14 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 
 	if dynakube.NeedsOneAgent() || dynakube.ApplicationMonitoringMode() { // TODO: improve check
 		err := connectionInfoReconciler.ReconcileOneAgent(ctx)
-		if err != nil {
-			return err
-		}
 		if errors.Is(err, connectioninfo.NoOneAgentCommunicationHostsError) {
 			// missing communication hosts is not an error per se, just make sure next the reconciliation is happening ASAP
 			// this situation will clear itself after AG has been started
 			controller.setRequeueAfterIfNewIsShorter(fastUpdateInterval)
-			return nil
+			return goerrors.Join(componentErrors...)
 		} else if err != nil {
-			return err
+			componentErrors = append(componentErrors, err)
+			return goerrors.Join(componentErrors...)
 		}
 	} // TODO: there tends to be a clean up for each reconcileX function, so it might makes sense to have the same here
 
