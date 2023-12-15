@@ -15,7 +15,7 @@ import "github.com/Dynatrace/dynatrace-operator/test/features/applicationmonitor
 
 <a name="DataIngest"></a>
 
-## func [DataIngest](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/applicationmonitoring/data_ingest.go#L45>)
+## func [DataIngest](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/applicationmonitoring/data_ingest.go#L43>)
 
 ```go
 func DataIngest(t *testing.T) features.Feature
@@ -25,7 +25,7 @@ Verification of the data ingest part of the operator. The test checks that enric
 
 <a name="LabelVersionDetection"></a>
 
-## func [LabelVersionDetection](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/applicationmonitoring/label_version_detection.go#L101>)
+## func [LabelVersionDetection](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/applicationmonitoring/label_version_detection.go#L99>)
 
 ```go
 func LabelVersionDetection(t *testing.T) features.Feature
@@ -45,7 +45,7 @@ func ReadOnlyCSIVolume(t *testing.T) features.Feature
 
 <a name="WithoutCSI"></a>
 
-## func [WithoutCSI](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/applicationmonitoring/without_csi.go#L24>)
+## func [WithoutCSI](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/applicationmonitoring/without_csi.go#L22>)
 
 ```go
 func WithoutCSI(t *testing.T) features.Feature
@@ -92,7 +92,7 @@ import "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/defaul
 
 <a name="Feature"></a>
 
-## func [Feature](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/default/default.go#L52>)
+## func [Feature](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/default/default.go#L50>)
 
 ```go
 func Feature(t *testing.T, istioEnabled bool) features.Feature
@@ -134,7 +134,7 @@ import "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/networ
 
 <a name="Feature"></a>
 
-## func [Feature](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/network_zones/network_zones.go#L52>)
+## func [Feature](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/network_zones/network_zones.go#L50>)
 
 ```go
 func Feature(t *testing.T) features.Feature
@@ -153,32 +153,6 @@ It does the following to cover the scenario of ensuring OneAgent injection is pr
 - Verifies the sample app pods now DO have OneAgent injected
 
 Prerequisites: Have a tenant that has no activegates bound to it.
-
-# cloudnativeproxy
-
-```go
-import "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/proxy"
-```
-
-## Index
-
-- [func Feature(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features.Feature](<#Feature>)
-
-<a name="Feature"></a>
-
-## func [Feature](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/proxy/proxy.go#L41>)
-
-```go
-func Feature(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features.Feature
-```
-
-Prerequisites: istio service mesh
-
-Setup: CloudNative deployment with CSI driver
-
-Verification that the operator and all deployed OneAgents are able to communicate over a http proxy.
-
-Connectivity in the dynatrace namespace and sample application namespace is restricted to the local cluster. Sample application is installed. The test checks if DT_PROXY environment variable is defined in the *dynakube-oneagent* container and the *application container*.
 
 # switch_modes
 
@@ -212,7 +186,7 @@ import "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/codemo
 
 <a name="InstallFromImage"></a>
 
-## func [InstallFromImage](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L60>)
+## func [InstallFromImage](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L59>)
 
 ```go
 func InstallFromImage(t *testing.T) features.Feature
@@ -222,15 +196,23 @@ Verification that the storage in the CSI driver directory does not increase when
 
 <a name="WithProxy"></a>
 
-## func [WithProxy](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L116>)
+## func [WithProxy](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L129>)
 
 ```go
 func WithProxy(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features.Feature
 ```
 
+Prerequisites: istio service mesh
+
+Setup: CloudNative deployment with CSI driver
+
+Verification that the operator and all deployed OneAgents are able to communicate over a http proxy.
+
+Connectivity in the dynatrace namespace and sample application namespace is restricted to the local cluster. Sample application is installed. The test checks if DT_PROXY environment variable is defined in the *dynakube-oneagent* container and the *application container*.
+
 <a name="WithProxyCA"></a>
 
-## func [WithProxyCA](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L162>)
+## func [WithProxyCA](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/codemodules/codemodules.go#L177>)
 
 ```go
 func WithProxyCA(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features.Feature
@@ -248,7 +230,7 @@ import "github.com/Dynatrace/dynatrace-operator/test/features/cloudnative/networ
 
 <a name="ResilienceFeature"></a>
 
-## func [ResilienceFeature](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/network_problems/network_problems.go#L48>)
+## func [ResilienceFeature](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/cloudnative/network_problems/network_problems.go#L46>)
 
 ```go
 func ResilienceFeature(t *testing.T) features.Feature
@@ -328,7 +310,7 @@ import "github.com/Dynatrace/dynatrace-operator/test/features/activegate"
 
 <a name="Feature"></a>
 
-## func [Feature](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/activegate/activegate.go#L60>)
+## func [Feature](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/activegate/activegate.go#L58>)
 
 ```go
 func Feature(t *testing.T, proxySpec *dynatracev1beta1.DynaKubeProxy) features.Feature
@@ -354,7 +336,7 @@ import "github.com/Dynatrace/dynatrace-operator/test/features/classic"
 
 <a name="Feature"></a>
 
-## func [Feature](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/classic/classic.go#L22>)
+## func [Feature](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/classic/classic.go#L20>)
 
 ```go
 func Feature(t *testing.T) features.Feature
@@ -413,7 +395,7 @@ import "github.com/Dynatrace/dynatrace-operator/test/features/support_archive"
 
 <a name="Feature"></a>
 
-## func [Feature](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/support_archive/support_archive.go#L47>)
+## func [Feature](<https://github.com/Dynatrace/dynatrace-operator/blob/main/test/features/support_archive/support_archive.go#L45>)
 
 ```go
 func Feature(t *testing.T) features.Feature
