@@ -29,7 +29,7 @@ func (controller *Controller) reconcileActiveGate(ctx context.Context, dynakube 
 				return err
 			}
 		}
-	}
+	} // TODO: have a cleanup for things that we create above
 	reconciler := activegate.NewReconciler(controller.client, controller.apiReader, controller.scheme, dynakube, dtc)
 	err := reconciler.Reconcile(ctx)
 

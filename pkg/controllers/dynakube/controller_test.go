@@ -572,6 +572,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 	})
 	t.Run(`Create reconciles proxy secret`, func(t *testing.T) {
 		mockClient := createDTMockClient(t, dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeActiveGateTokenCreate})
+		mockClient.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
 
 		instance := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
@@ -583,7 +584,10 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 				Proxy: &dynatracev1beta1.DynaKubeProxy{
 					Value:     "https://proxy:1234",
 					ValueFrom: "",
-				}},
+				},
+				ActiveGate: dynatracev1beta1.ActiveGateSpec{Capabilities: []dynatracev1beta1.CapabilityDisplayName{dynatracev1beta1.KubeMonCapability.DisplayName}},
+			},
+
 			Status: *getTestDynkubeStatus(),
 		}
 		controller := createFakeClientAndReconciler(mockClient, instance, testPaasToken, testAPIToken)

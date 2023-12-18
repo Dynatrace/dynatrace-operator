@@ -99,6 +99,10 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *Reconciler) createActiveGateTenantConnectionInfoConfigMap(ctx context.Context) error {
+	if !r.dynakube.NeedsActiveGate() {
+		// TODO: Add clean up of the config map
+		return nil
+	}
 	configMapData := extractPublicData(r.dynakube)
 
 	configMap, err := configmap.CreateConfigMap(r.scheme, r.dynakube,
