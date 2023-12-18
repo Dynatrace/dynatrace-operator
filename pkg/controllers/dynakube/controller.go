@@ -203,6 +203,12 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 		return err
 	}
 
+	err = status.SetKubeSystemUUIDInStatus(ctx, dynakube, controller.apiReader) // TODO: We should only do this once, as it shouldn't change overtime
+	if err != nil {
+		log.Info("could not set kube-system UUID in Dynakube status")
+		return err
+	}
+
 	log.Info("start reconciling deployment meta data")
 	err = deploymentmetadata.NewReconciler(controller.client, controller.apiReader, controller.scheme, *dynakube, controller.clusterID).Reconcile(ctx)
 	if err != nil {
@@ -253,13 +259,7 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dynakube
 		controller.setConditionTokenError(dynakube, err)
 		return nil, err
 	}
-
 	controller.setConditionTokenReady(dynakube)
-	err = status.SetDynakubeStatus(ctx, dynakube, controller.apiReader)
-	if err != nil {
-		log.Info("could not update Dynakube status")
-		return nil, err
-	}
 
 	log.Info("start reconciling pull secret")
 	err = dtpullsecret.
