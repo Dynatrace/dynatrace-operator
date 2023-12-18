@@ -2,12 +2,12 @@ suite: test csi driver resource
 templates:
   - Common/csi/csidriver.yaml
 tests:
-  - it: should not exist by default
+  - it: should exist 1 by default (1 by node)
     set:
       platform: kubernetes
     asserts:
       - hasDocuments:
-          count: 0
+          count: 1
 
   - it: should be built correctly with CSI enabled
     set:
