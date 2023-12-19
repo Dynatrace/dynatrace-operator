@@ -105,8 +105,6 @@ func (dsInfo *HostMonitoring) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	daemonSet.Name = dsInfo.dynakube.OneAgentDaemonsetName()
 
 	if len(daemonSet.Spec.Template.Spec.Containers) > 0 {
-		daemonSet.Spec.Template.Spec.Containers[0].Args =
-			appendHostIdSource(daemonSet.Spec.Template.Spec.Containers[0].Args, inframonHostIdSource)
 		dsInfo.appendInfraMonEnvVars(daemonSet)
 	}
 
@@ -120,11 +118,6 @@ func (dsInfo *ClassicFullStack) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	}
 
 	result.Name = dsInfo.dynakube.OneAgentDaemonsetName()
-
-	if len(result.Spec.Template.Spec.Containers) > 0 {
-		result.Spec.Template.Spec.Containers[0].Args =
-			appendHostIdSource(result.Spec.Template.Spec.Containers[0].Args, classicHostIdSource)
-	}
 
 	return result, nil
 }

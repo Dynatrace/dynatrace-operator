@@ -20,6 +20,13 @@ func (dsInfo *builderInfo) arguments() []string {
 
 	appendOperatorVersionArg(argMap)
 	appendImmutableImageArgs(argMap)
+
+	if dsInfo.dynakube.ClassicFullStackMode() {
+		appendHostIdSource(argMap, classicHostIdSource)
+	} else if dsInfo.dynakube.HostMonitoringMode() {
+		appendHostIdSource(argMap, inframonHostIdSource)
+	}
+
 	dsInfo.appendHostInjectArgs(argMap)
 
 	return argMap.AsKeyValueStrings()
@@ -58,10 +65,6 @@ func (dsInfo *builderInfo) hasProxy() bool {
 	return dsInfo.dynakube != nil && dsInfo.dynakube.NeedsOneAgentProxy()
 }
 
-func appendHostIdSource(args []string, hostIdSource string) []string {
-	argMap := prioritymap.New(prioritymap.WithSeparator(prioritymap.DefaultSeparator), prioritymap.WithPriority(defaultArgumentPriority))
-	prioritymap.Append(argMap, args)
-
+func appendHostIdSource(argMap *prioritymap.Map, hostIdSource string) {
 	argMap.Append(argumentPrefix+"set-host-id-source", hostIdSource)
-	return argMap.AsKeyValueStrings()
 }
