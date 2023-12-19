@@ -225,6 +225,11 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Cont
 			return nil, false, err
 		}
 		latestProcessModuleConfig.AddProxy(proxy)
+
+		if dk.NeedsActiveGate() {
+
+			latestProcessModuleConfig.AddNoProxy("")
+		}
 	}
 
 	if dk.CodeModulesImage() != "" {
