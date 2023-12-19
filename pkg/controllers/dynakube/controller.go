@@ -218,7 +218,7 @@ func (controller *Controller) reconcileDynaKube(ctx context.Context, dynakube *d
 	return controller.reconcileComponents(ctx, dynatraceClient, istioReconciler, dynakube)
 }
 
-func (controller *Controller) setupIstio(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) (*istio.Reconciler, error) {
+func (controller *Controller) setupIstio(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) (istio.Reconciler, error) {
 	if !dynakube.Spec.EnableIstio {
 		return nil, nil
 	}
@@ -272,7 +272,7 @@ func (controller *Controller) setupTokensAndClient(ctx context.Context, dynakube
 	return dynatraceClient, nil
 }
 
-func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient dtclient.Client, istioReconciler *istio.Reconciler, dynakube *dynatracev1beta1.DynaKube) error {
+func (controller *Controller) reconcileComponents(ctx context.Context, dynatraceClient dtclient.Client, istioReconciler istio.Reconciler, dynakube *dynatracev1beta1.DynaKube) error {
 	// it's important to setup app injection before AG so that it is already working when AG pods start, in case code modules shall get
 	// injected into AG for self-monitoring reasons
 
@@ -281,8 +281,8 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 		return err
 	}
 
-	versionReconciler := version.NewReconciler(dynakube, controller.apiReader, dynatraceClient, registryClient, controller.fs, timeprovider.New().Freeze())
-	connectionInfoReconciler := connectioninfo.NewReconciler(controller.client, controller.apiReader, controller.scheme, dynakube, dynatraceClient)
+	versionReconciler := version.NewReconciler(controller.apiReader, dynatraceClient, registryClient, controller.fs, timeprovider.New().Freeze())
+	connectionInfoReconciler := connectioninfo.NewReconciler(controller.client, controller.apiReader, controller.scheme, dynatraceClient)
 
 	componentErrors := []error{}
 
@@ -294,7 +294,7 @@ func (controller *Controller) reconcileComponents(ctx context.Context, dynatrace
 	}
 
 	if dynakube.NeedsOneAgent() || dynakube.ApplicationMonitoringMode() { // TODO: improve check
-		err := connectionInfoReconciler.ReconcileOneAgent(ctx)
+		err := connectionInfoReconciler.ReconcileOneAgent(ctx, dynakube)
 		if errors.Is(err, connectioninfo.NoOneAgentCommunicationHostsError) {
 			// missing communication hosts is not an error per se, just make sure next the reconciliation is happening ASAP
 			// this situation will clear itself after AG has been started

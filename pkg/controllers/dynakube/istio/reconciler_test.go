@@ -59,7 +59,7 @@ func TestReconcileIPServiceEntry(t *testing.T) {
 		}
 		fakeClient := fakeistio.NewSimpleClientset(serviceEntry)
 		istioClient := newTestingClient(fakeClient, dynakube.Namespace)
-		reconciler := NewReconciler(istioClient)
+		reconciler := NewReconciler(istioClient).(*reconciler)
 
 		err := reconciler.reconcileIPServiceEntry(ctx, nil, component)
 		require.NoError(t, err)
@@ -69,7 +69,7 @@ func TestReconcileIPServiceEntry(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
 		istioClient := newTestingClient(fakeClient, dynakube.Namespace)
-		reconciler := NewReconciler(istioClient)
+		reconciler := NewReconciler(istioClient).(*reconciler)
 		commHosts := []dtclient.CommunicationHost{
 			createTestIPCommunicationHost(),
 		}
@@ -86,7 +86,7 @@ func TestReconcileIPServiceEntry(t *testing.T) {
 		fakeClient.PrependReactor("*", "*", boomReaction)
 
 		istioClient := newTestingClient(fakeClient, dynakube.Namespace)
-		reconciler := NewReconciler(istioClient)
+		reconciler := NewReconciler(istioClient).(*reconciler)
 		commHosts := []dtclient.CommunicationHost{
 			createTestIPCommunicationHost(),
 		}
@@ -116,7 +116,7 @@ func TestReconcileFQDNServiceEntry(t *testing.T) {
 		}
 		fakeClient := fakeistio.NewSimpleClientset(serviceEntry, virtualService)
 		istioClient := newTestingClient(fakeClient, owner.GetNamespace())
-		reconciler := NewReconciler(istioClient)
+		reconciler := NewReconciler(istioClient).(*reconciler)
 
 		err := reconciler.reconcileFQDNServiceEntry(ctx, nil, component)
 		require.NoError(t, err)
@@ -128,7 +128,7 @@ func TestReconcileFQDNServiceEntry(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		fakeClient := fakeistio.NewSimpleClientset()
 		istioClient := newTestingClient(fakeClient, owner.GetNamespace())
-		reconciler := NewReconciler(istioClient)
+		reconciler := NewReconciler(istioClient).(*reconciler)
 		commHosts := []dtclient.CommunicationHost{
 			createTestFQDNCommunicationHost(),
 		}
@@ -148,7 +148,7 @@ func TestReconcileFQDNServiceEntry(t *testing.T) {
 		fakeClient.PrependReactor("*", "*", boomReaction)
 
 		istioClient := newTestingClient(fakeClient, owner.GetNamespace())
-		reconciler := NewReconciler(istioClient)
+		reconciler := NewReconciler(istioClient).(*reconciler)
 		commHosts := []dtclient.CommunicationHost{
 			createTestFQDNCommunicationHost(),
 		}

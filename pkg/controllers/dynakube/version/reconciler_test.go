@@ -71,14 +71,13 @@ func TestReconcile(t *testing.T) {
 	t.Run("no update if hash provider returns error", func(t *testing.T) {
 		mockImageGetter := mocks.MockImageGetter{}
 		mockImageGetter.On("GetImageVersion", mock.Anything, mock.Anything).Return(registry.ImageVersion{}, errors.New("Something wrong happened"))
-		versionReconciler := Reconciler{
-			dynakube:       dynakubeTemplate.DeepCopy(),
+		versionReconciler := reconciler{
 			apiReader:      fake.NewClient(),
 			fs:             afero.Afero{Fs: afero.NewMemMapFs()},
 			registryClient: &mockImageGetter,
 			timeProvider:   timeprovider.New().Freeze(),
 		}
-		err := versionReconciler.ReconcileActiveGate(ctx)
+		err := versionReconciler.ReconcileActiveGate(ctx, dynakubeTemplate.DeepCopy())
 		assert.Error(t, err)
 	})
 
@@ -99,19 +98,18 @@ func TestReconcile(t *testing.T) {
 		mockImageGetter.On("GetImageVersion", mock.Anything, dynakube.DefaultOneAgentImage()).Return(registry.ImageVersion{Version: testOneAgentImage.Tag, Digest: testOneAgentHash}, nil)
 		mockImageGetter.On("PullImageInfo", mock.Anything, mock.Anything).Return(&testImage, nil)
 
-		versionReconciler := Reconciler{
-			dynakube:       dynakube,
+		versionReconciler := reconciler{
 			apiReader:      fakeClient,
 			fs:             afero.Afero{Fs: afero.NewMemMapFs()},
 			registryClient: &mockImageGetter,
 			timeProvider:   timeProvider,
 			dtClient:       mockClient,
 		}
-		err := versionReconciler.ReconcileCodeModules(ctx)
+		err := versionReconciler.ReconcileCodeModules(ctx, dynakube)
 		require.NoError(t, err)
-		err = versionReconciler.ReconcileActiveGate(ctx)
+		err = versionReconciler.ReconcileActiveGate(ctx, dynakube)
 		require.NoError(t, err)
-		err = versionReconciler.ReconcileOneAgent(ctx)
+		err = versionReconciler.ReconcileOneAgent(ctx, dynakube)
 		require.NoError(t, err)
 		assertStatusBasedOnTenantRegistry(t, dynakube.DefaultActiveGateImage(), testActiveGateImage.Tag, dkStatus.ActiveGate.VersionStatus)
 		assertStatusBasedOnTenantRegistry(t, dynakube.DefaultOneAgentImage(), testOneAgentImage.Tag, dkStatus.OneAgent.VersionStatus)
@@ -119,13 +117,13 @@ func TestReconcile(t *testing.T) {
 
 		// no change if probe not old enough
 		previousProbe := *dkStatus.CodeModules.VersionStatus.LastProbeTimestamp
-		err = versionReconciler.ReconcileCodeModules(ctx)
+		err = versionReconciler.ReconcileCodeModules(ctx, dynakube)
 		require.NoError(t, err)
 		assert.Equal(t, previousProbe, *dkStatus.CodeModules.VersionStatus.LastProbeTimestamp)
 
 		// change if probe old enough
 		changeTime(timeProvider, 15*time.Minute+1*time.Second)
-		err = versionReconciler.ReconcileCodeModules(ctx)
+		err = versionReconciler.ReconcileCodeModules(ctx, dynakube)
 		require.NoError(t, err)
 		assert.NotEqual(t, previousProbe, *dkStatus.CodeModules.VersionStatus.LastProbeTimestamp)
 	})
@@ -166,19 +164,18 @@ func TestReconcile(t *testing.T) {
 		mockCodeModulesImageInfo(mockClient, testCodeModulesImage)
 		mockOneAgentImageInfo(mockClient, testOneAgentImage)
 
-		versionReconciler := Reconciler{
-			dynakube:       dynakube,
+		versionReconciler := reconciler{
 			apiReader:      fakeClient,
 			fs:             afero.Afero{Fs: afero.NewMemMapFs()},
 			registryClient: &mockImageGetter,
 			timeProvider:   timeprovider.New().Freeze(),
 			dtClient:       mockClient,
 		}
-		err := versionReconciler.ReconcileCodeModules(ctx)
+		err := versionReconciler.ReconcileCodeModules(ctx, dynakube)
 		require.NoError(t, err)
-		err = versionReconciler.ReconcileActiveGate(ctx)
+		err = versionReconciler.ReconcileActiveGate(ctx, dynakube)
 		require.NoError(t, err)
-		err = versionReconciler.ReconcileOneAgent(ctx)
+		err = versionReconciler.ReconcileOneAgent(ctx, dynakube)
 		require.NoError(t, err)
 		require.NoError(t, err)
 		assertPublicRegistryVersionStatusEquals(t, fakeRegistry, getTaggedReference(t, testActiveGateImage.String()), dkStatus.ActiveGate.VersionStatus)
@@ -207,18 +204,16 @@ func TestNeedsUpdate(t *testing.T) {
 
 	t.Run("needs", func(t *testing.T) {
 		updatedDynakube := dynakube.DeepCopy()
-		reconciler := Reconciler{
-			dynakube:     updatedDynakube,
+		reconciler := reconciler{
 			timeProvider: timeProvider,
 		}
-		assert.True(t, reconciler.needsUpdate(newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil, nil)))
+		assert.True(t, reconciler.needsUpdate(newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil, nil), updatedDynakube))
 	})
 	t.Run("does not need", func(t *testing.T) {
-		reconciler := Reconciler{
-			dynakube:     &dynatracev1beta1.DynaKube{},
+		reconciler := reconciler{
 			timeProvider: timeProvider,
 		}
-		assert.False(t, reconciler.needsUpdate(newOneAgentUpdater(&dynatracev1beta1.DynaKube{}, fake.NewClient(), nil, nil)))
+		assert.False(t, reconciler.needsUpdate(newOneAgentUpdater(&dynatracev1beta1.DynaKube{}, fake.NewClient(), nil, nil), &dynatracev1beta1.DynaKube{}))
 	})
 	t.Run("does not need, because not old enough", func(t *testing.T) {
 		oldImage := "repo.com:tag@sha256:123"
@@ -227,21 +222,19 @@ func TestNeedsUpdate(t *testing.T) {
 		setOneAgentCustomImageStatus(updatedDynakube, oldImage)
 		updatedDynakube.Spec.OneAgent.ClassicFullStack.Image = newImage
 		updatedDynakube.Status.OneAgent.LastProbeTimestamp = timeProvider.Now()
-		reconciler := Reconciler{
-			dynakube:     updatedDynakube,
+		reconciler := reconciler{
 			timeProvider: timeProvider,
 		}
-		assert.False(t, reconciler.needsUpdate(newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil, nil)))
+		assert.False(t, reconciler.needsUpdate(newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil, nil), updatedDynakube))
 	})
 
 	t.Run("needs, because source changed", func(t *testing.T) {
 		updatedDynakube := dynakube.DeepCopy()
 		setOneAgentCustomImageStatus(updatedDynakube, "")
-		reconciler := Reconciler{
-			dynakube:     updatedDynakube,
+		reconciler := reconciler{
 			timeProvider: timeProvider,
 		}
-		assert.True(t, reconciler.needsUpdate(newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil, nil)))
+		assert.True(t, reconciler.needsUpdate(newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil, nil), updatedDynakube))
 	})
 
 	t.Run("needs, because custom image changed", func(t *testing.T) {
@@ -250,11 +243,10 @@ func TestNeedsUpdate(t *testing.T) {
 		updatedDynakube := dynakube.DeepCopy()
 		updatedDynakube.Spec.OneAgent.ClassicFullStack.Image = newImage
 		setOneAgentCustomImageStatus(updatedDynakube, oldImage)
-		reconciler := Reconciler{
-			dynakube:     updatedDynakube,
+		reconciler := reconciler{
 			timeProvider: timeProvider,
 		}
-		assert.True(t, reconciler.needsUpdate(newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil, nil)))
+		assert.True(t, reconciler.needsUpdate(newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil, nil), updatedDynakube))
 	})
 
 	t.Run("needs, because custom version changed", func(t *testing.T) {
@@ -263,11 +255,10 @@ func TestNeedsUpdate(t *testing.T) {
 		updatedDynakube := dynakube.DeepCopy()
 		updatedDynakube.Spec.OneAgent.ClassicFullStack.Version = newVersion
 		setOneAgentCustomVersionStatus(updatedDynakube, oldVersion)
-		reconciler := Reconciler{
-			dynakube:     updatedDynakube,
+		reconciler := reconciler{
 			timeProvider: timeProvider,
 		}
-		assert.True(t, reconciler.needsUpdate(newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil, nil)))
+		assert.True(t, reconciler.needsUpdate(newOneAgentUpdater(updatedDynakube, fake.NewClient(), nil, nil), updatedDynakube))
 	})
 }
 

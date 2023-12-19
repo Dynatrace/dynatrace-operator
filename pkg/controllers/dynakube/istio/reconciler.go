@@ -12,17 +12,23 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type Reconciler struct {
+type Reconciler interface {
+	ReconcileAPIUrl(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error
+	ReconcileCodeModuleCommunicationHosts(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error
+	ReconcileActiveGateCommunicationHosts(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error
+}
+
+type reconciler struct {
 	client *Client
 }
 
-func NewReconciler(istio *Client) *Reconciler {
-	return &Reconciler{
+func NewReconciler(istio *Client) Reconciler {
+	return &reconciler{
 		client: istio,
 	}
 }
 
-func (r *Reconciler) ReconcileAPIUrl(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
+func (r *reconciler) ReconcileAPIUrl(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
 	log.Info("reconciling istio components for the Dynatrace API url")
 	if dynakube == nil {
 		return errors.New("can't reconcile api url of nil dynakube")
@@ -41,7 +47,7 @@ func (r *Reconciler) ReconcileAPIUrl(ctx context.Context, dynakube *dynatracev1b
 	return nil
 }
 
-func (r *Reconciler) ReconcileCodeModuleCommunicationHosts(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
+func (r *reconciler) ReconcileCodeModuleCommunicationHosts(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
 	log.Info("reconciling istio components for oneagent-code-modules communication hosts")
 	if dynakube == nil {
 		return errors.New("can't reconcile oneagent communication hosts of nil dynakube")
@@ -55,7 +61,7 @@ func (r *Reconciler) ReconcileCodeModuleCommunicationHosts(ctx context.Context, 
 	return nil
 }
 
-func (r *Reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
+func (r *reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
 	log.Info("reconciling istio components for activegate communication hosts")
 	if dynakube == nil {
 		return errors.New("can't reconcile oneagent communication hosts of nil dynakube")
@@ -69,7 +75,7 @@ func (r *Reconciler) ReconcileActiveGateCommunicationHosts(ctx context.Context, 
 	return nil
 }
 
-func (r *Reconciler) reconcileCommunicationHostsForComponent(ctx context.Context, comHosts []dtclient.CommunicationHost, componentName string) error {
+func (r *reconciler) reconcileCommunicationHostsForComponent(ctx context.Context, comHosts []dtclient.CommunicationHost, componentName string) error {
 	err := r.reconcileCommunicationHosts(ctx, comHosts, componentName)
 	if err != nil {
 		return errors.WithMessage(err, "error reconciling config for Dynatrace communication hosts")
@@ -78,7 +84,7 @@ func (r *Reconciler) reconcileCommunicationHostsForComponent(ctx context.Context
 	return nil
 }
 
-func (r *Reconciler) reconcileCommunicationHosts(ctx context.Context, comHosts []dtclient.CommunicationHost, component string) error {
+func (r *reconciler) reconcileCommunicationHosts(ctx context.Context, comHosts []dtclient.CommunicationHost, component string) error {
 	ipHosts, fqdnHosts := splitCommunicationHost(comHosts)
 
 	err := r.reconcileIPServiceEntry(ctx, ipHosts, component)
@@ -104,7 +110,7 @@ func splitCommunicationHost(comHosts []dtclient.CommunicationHost) (ipHosts, fqd
 	return
 }
 
-func (r *Reconciler) reconcileIPServiceEntry(ctx context.Context, ipHosts []dtclient.CommunicationHost, component string) error {
+func (r *reconciler) reconcileIPServiceEntry(ctx context.Context, ipHosts []dtclient.CommunicationHost, component string) error {
 	owner := r.client.Owner
 	entryName := BuildNameForIPServiceEntry(owner.GetName(), component)
 	if len(ipHosts) != 0 {
@@ -129,7 +135,7 @@ func (r *Reconciler) reconcileIPServiceEntry(ctx context.Context, ipHosts []dtcl
 	return nil
 }
 
-func (r *Reconciler) reconcileFQDNServiceEntry(ctx context.Context, fqdnHosts []dtclient.CommunicationHost, component string) error {
+func (r *reconciler) reconcileFQDNServiceEntry(ctx context.Context, fqdnHosts []dtclient.CommunicationHost, component string) error {
 	owner := r.client.Owner
 	entryName := BuildNameForFQDNServiceEntry(owner.GetName(), component)
 	if len(fqdnHosts) != 0 {

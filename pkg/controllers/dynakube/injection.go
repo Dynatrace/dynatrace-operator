@@ -13,7 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/namespace/mapper"
 )
 
-func (controller *Controller) reconcileAppInjection(ctx context.Context, dynakube *dynakube.DynaKube, istioReconciler *istio.Reconciler, versionReconciler *version.Reconciler) error {
+func (controller *Controller) reconcileAppInjection(ctx context.Context, dynakube *dynakube.DynaKube, istioReconciler istio.Reconciler, versionReconciler version.Reconciler) error {
 	if !dynakube.NeedAppInjection() {
 		return controller.removeAppInjection(ctx, dynakube)
 	}
@@ -59,7 +59,7 @@ func (controller *Controller) removeAppInjection(ctx context.Context, dynakube *
 	return nil
 }
 
-func (controller *Controller) setupOneAgentInjection(ctx context.Context, dynakube *dynakube.DynaKube, istioReconciler *istio.Reconciler, versionReconciler *version.Reconciler) error {
+func (controller *Controller) setupOneAgentInjection(ctx context.Context, dynakube *dynakube.DynaKube, istioReconciler istio.Reconciler, versionReconciler version.Reconciler) error {
 	if !dynakube.ApplicationMonitoringMode() && !dynakube.CloudNativeFullstackMode() {
 		return nil
 	}
@@ -70,7 +70,7 @@ func (controller *Controller) setupOneAgentInjection(ctx context.Context, dynaku
 			return err
 		}
 	}
-	err := versionReconciler.ReconcileCodeModules(ctx)
+	err := versionReconciler.ReconcileCodeModules(ctx, dynakube)
 	if err != nil {
 		return err
 	}

@@ -11,11 +11,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (controller *Controller) reconcileOneAgent(ctx context.Context, dynakube *dynakube.DynaKube, versionReconciler *version.Reconciler) error {
+func (controller *Controller) reconcileOneAgent(ctx context.Context, dynakube *dynakube.DynaKube, versionReconciler version.Reconciler) error {
 	if !dynakube.NeedsOneAgent() {
 		return controller.removeOneAgentDaemonSet(ctx, dynakube)
 	}
-	err := versionReconciler.ReconcileOneAgent(ctx)
+	err := versionReconciler.ReconcileOneAgent(ctx, dynakube)
 	if err != nil {
 		return err
 	}

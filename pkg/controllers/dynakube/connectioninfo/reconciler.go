@@ -15,77 +15,69 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var NoOneAgentCommunicationHostsError = errors.New("no communication hosts for OneAgent are available")
+type Reconciler interface {
+	ReconcileActiveGate(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error
+	ReconcileOneAgent(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error
+}
 
-type Reconciler struct {
+type reconciler struct {
 	client       client.Client
 	apiReader    client.Reader
 	dtc          dtclient.Client
-	dynakube     *dynatracev1beta1.DynaKube
 	scheme       *runtime.Scheme
 	timeProvider *timeprovider.Provider
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, dtc dtclient.Client) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
-	return &Reconciler{
+func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtc dtclient.Client) Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
+	return &reconciler{
 		client:       clt,
 		apiReader:    apiReader,
-		dynakube:     dynakube,
 		scheme:       scheme,
 		dtc:          dtc,
 		timeProvider: timeprovider.New(),
 	}
 }
 
-func (r Reconciler) updateDynakubeStatus(ctx context.Context) error {
-	r.dynakube.Status.UpdatedTimestamp = metav1.Now()
-	err := r.client.Status().Update(ctx, r.dynakube)
-	if err != nil {
-		log.Info("could not update dynakube status", "name", r.dynakube.Name)
-		return err
-	}
-	return nil
-}
+var NoOneAgentCommunicationHostsError = errors.New("no communication hosts for OneAgent are available")
 
-func (r *Reconciler) ReconcileActiveGate(ctx context.Context) error {
-	oldStatus := r.dynakube.Status.DeepCopy()
+func (r *reconciler) ReconcileActiveGate(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
+	oldStatus := dynakube.Status.DeepCopy()
+		err := r.reconcileActiveGateConnectionInfo(ctx, dynakube)
+		if err != nil {
+			return err
+		}
 
-	err := r.reconcileActiveGateConnectionInfo(ctx)
-	if err != nil {
-		return err
-	}
-	needStatusUpdate, err := hasher.IsDifferent(oldStatus, r.dynakube.Status)
+	needStatusUpdate, err := hasher.IsDifferent(oldStatus, dynakube.Status)
 	if err != nil {
 		return errors.WithMessage(err, "failed to compare connection info status hashes")
 	} else if needStatusUpdate {
-		err = r.updateDynakubeStatus(ctx)
+		err = r.updateDynakubeStatus(ctx, dynakube)
 	}
 	return err
 }
 
-func (r *Reconciler) ReconcileOneAgent(ctx context.Context) error {
-	oldStatus := r.dynakube.Status.DeepCopy()
-	err := r.reconcileOneAgentConnectionInfo(ctx)
+func (r *reconciler) ReconcileOneAgent(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
+	oldStatus := dynakube.Status.DeepCopy()
+	err := r.reconcileOneAgentConnectionInfo(ctx, dynakube)
 	if err != nil {
 		return err
 	}
 
-	needStatusUpdate, err := hasher.IsDifferent(oldStatus, r.dynakube.Status)
+	needStatusUpdate, err := hasher.IsDifferent(oldStatus, dynakube.Status)
 	if err != nil {
 		return errors.WithMessage(err, "failed to compare connection info status hashes")
 	} else if needStatusUpdate {
-		err = r.updateDynakubeStatus(ctx)
+		err = r.updateDynakubeStatus(ctx, dynakube)
 	}
-
 	return err
 }
 
-func (r *Reconciler) needsUpdate(ctx context.Context, secretName string, isAllowedFunc dynatracev1beta1.RequestAllowedChecker) (bool, error) {
+func (r *reconciler) needsUpdate(ctx context.Context, secretNamespacedName types.NamespacedName, isAllowedFunc dynatracev1beta1.RequestAllowedChecker) (bool, error) {
 	query := k8ssecret.NewQuery(ctx, r.client, r.apiReader, log)
-	_, err := query.Get(types.NamespacedName{Name: secretName, Namespace: r.dynakube.Namespace})
+	_, err := query.Get(secretNamespacedName)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			log.Info("creating secret, because missing", "secretName", secretName)
+			log.Info("creating secret, because missing", "secretName", secretNamespacedName.Name)
 			return true, nil
 		}
 		return false, err
@@ -93,16 +85,26 @@ func (r *Reconciler) needsUpdate(ctx context.Context, secretName string, isAllow
 	return isAllowedFunc(r.timeProvider), nil
 }
 
-func (r *Reconciler) reconcileOneAgentConnectionInfo(ctx context.Context) error {
-	needsUpdate, err := r.needsUpdate(ctx, r.dynakube.OneagentTenantSecret(), r.dynakube.IsOneAgentConnectionInfoUpdateAllowed)
+func (r reconciler) updateDynakubeStatus(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
+	dynakube.Status.UpdatedTimestamp = metav1.Now()
+	err := r.client.Status().Update(ctx, dynakube)
+	if err != nil {
+		log.Info("could not update dynakube status", "name", dynakube.Name)
+		return err
+	}
+	return nil
+}
+
+func (r *reconciler) reconcileOneAgentConnectionInfo(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
+	needsUpdate, err := r.needsUpdate(ctx, types.NamespacedName{Name: dynakube.OneagentTenantSecret(), Namespace: dynakube.Namespace}, dynakube.IsOneAgentConnectionInfoUpdateAllowed)
 	if err != nil {
 		return err
 	}
 	if !needsUpdate {
 		log.Info(dynatracev1beta1.GetCacheValidMessage(
 			"OneAgent connection info update",
-			r.dynakube.Status.OneAgent.ConnectionInfoStatus.LastRequest,
-			r.dynakube.FeatureApiRequestThreshold()))
+			dynakube.Status.OneAgent.ConnectionInfoStatus.LastRequest,
+			dynakube.FeatureApiRequestThreshold()))
 		return nil
 	}
 
@@ -111,9 +113,9 @@ func (r *Reconciler) reconcileOneAgentConnectionInfo(ctx context.Context) error 
 		return errors.WithMessage(err, "failed to get OneAgent connection info")
 	}
 
-	r.updateDynakubeOneAgentStatus(connectionInfo)
+	r.updateDynakubeOneAgentStatus(dynakube, connectionInfo)
 
-	err = r.createTenantTokenSecret(ctx, r.dynakube.OneagentTenantSecret(), connectionInfo.ConnectionInfo)
+	err = r.createTenantTokenSecret(ctx, dynakube.OneagentTenantSecret(), dynakube, connectionInfo.ConnectionInfo)
 	if err != nil {
 		return err
 	}
@@ -131,14 +133,14 @@ func (r *Reconciler) reconcileOneAgentConnectionInfo(ctx context.Context) error 
 
 	log.Info("received OneAgent communication hosts", "communication hosts", connectionInfo.CommunicationHosts, "tenant", connectionInfo.TenantUUID)
 
-	r.dynakube.Status.OneAgent.ConnectionInfoStatus.LastRequest = metav1.Now()
+	dynakube.Status.OneAgent.ConnectionInfoStatus.LastRequest = metav1.Now()
 	return nil
 }
 
-func (r *Reconciler) updateDynakubeOneAgentStatus(connectionInfo dtclient.OneAgentConnectionInfo) {
-	r.dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID = connectionInfo.TenantUUID
-	r.dynakube.Status.OneAgent.ConnectionInfoStatus.Endpoints = connectionInfo.Endpoints
-	copyCommunicationHosts(&r.dynakube.Status.OneAgent.ConnectionInfoStatus, connectionInfo.CommunicationHosts)
+func (r *reconciler) updateDynakubeOneAgentStatus(dynakube *dynatracev1beta1.DynaKube, connectionInfo dtclient.OneAgentConnectionInfo) {
+	dynakube.Status.OneAgent.ConnectionInfoStatus.TenantUUID = connectionInfo.TenantUUID
+	dynakube.Status.OneAgent.ConnectionInfoStatus.Endpoints = connectionInfo.Endpoints
+	copyCommunicationHosts(&dynakube.Status.OneAgent.ConnectionInfoStatus, connectionInfo.CommunicationHosts)
 }
 
 func copyCommunicationHosts(dest *dynatracev1beta1.OneAgentConnectionInfoStatus, src []dtclient.CommunicationHost) {
@@ -152,16 +154,16 @@ func copyCommunicationHosts(dest *dynatracev1beta1.OneAgentConnectionInfoStatus,
 	}
 }
 
-func (r *Reconciler) reconcileActiveGateConnectionInfo(ctx context.Context) error {
-	needsUpdate, err := r.needsUpdate(ctx, r.dynakube.ActivegateTenantSecret(), r.dynakube.IsActiveGateConnectionInfoUpdateAllowed)
+func (r *reconciler) reconcileActiveGateConnectionInfo(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
+	needsUpdate, err := r.needsUpdate(ctx, types.NamespacedName{Name: dynakube.ActivegateTenantSecret(), Namespace: dynakube.Namespace}, dynakube.IsActiveGateConnectionInfoUpdateAllowed)
 	if err != nil {
 		return err
 	}
 	if !needsUpdate {
 		log.Info(dynatracev1beta1.GetCacheValidMessage(
 			"activegate connection info update",
-			r.dynakube.Status.ActiveGate.ConnectionInfoStatus.LastRequest,
-			r.dynakube.FeatureApiRequestThreshold()))
+			dynakube.Status.ActiveGate.ConnectionInfoStatus.LastRequest,
+			dynakube.FeatureApiRequestThreshold()))
 		return nil
 	}
 
@@ -171,28 +173,28 @@ func (r *Reconciler) reconcileActiveGateConnectionInfo(ctx context.Context) erro
 		return err
 	}
 
-	r.updateDynakubeActiveGateStatus(connectionInfo)
+	r.updateDynakubeActiveGateStatus(dynakube, connectionInfo)
 
-	err = r.createTenantTokenSecret(ctx, r.dynakube.ActivegateTenantSecret(), connectionInfo.ConnectionInfo)
+	err = r.createTenantTokenSecret(ctx, dynakube.ActivegateTenantSecret(), dynakube, connectionInfo.ConnectionInfo)
 	if err != nil {
 		return err
 	}
 
 	log.Info("activegate connection info updated")
-	r.dynakube.Status.ActiveGate.ConnectionInfoStatus.LastRequest = metav1.Now()
+	dynakube.Status.ActiveGate.ConnectionInfoStatus.LastRequest = metav1.Now()
 	return nil
 }
 
-func (r *Reconciler) updateDynakubeActiveGateStatus(connectionInfo dtclient.ActiveGateConnectionInfo) {
-	r.dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID = connectionInfo.TenantUUID
-	r.dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints = connectionInfo.Endpoints
+func (r *reconciler) updateDynakubeActiveGateStatus(dynakube *dynatracev1beta1.DynaKube, connectionInfo dtclient.ActiveGateConnectionInfo) {
+	dynakube.Status.ActiveGate.ConnectionInfoStatus.TenantUUID = connectionInfo.TenantUUID
+	dynakube.Status.ActiveGate.ConnectionInfoStatus.Endpoints = connectionInfo.Endpoints
 }
 
-func (r *Reconciler) createTenantTokenSecret(ctx context.Context, secretName string, connectionInfo dtclient.ConnectionInfo) error {
+func (r *reconciler) createTenantTokenSecret(ctx context.Context, secretName string, owner metav1.Object, connectionInfo dtclient.ConnectionInfo) error {
 	secretData := extractSensitiveData(connectionInfo)
-	secret, err := k8ssecret.Create(r.scheme, r.dynakube,
+	secret, err := k8ssecret.Create(r.scheme, owner,
 		k8ssecret.NewNameModifier(secretName),
-		k8ssecret.NewNamespaceModifier(r.dynakube.Namespace),
+		k8ssecret.NewNamespaceModifier(owner.GetNamespace()),
 		k8ssecret.NewDataModifier(secretData))
 	if err != nil {
 		return errors.WithStack(err)

@@ -28,12 +28,12 @@ type StatusUpdater interface {
 	UseTenantRegistry(context.Context) error
 }
 
-func (reconciler *Reconciler) run(ctx context.Context, updater StatusUpdater) error {
+func (r *reconciler) run(ctx context.Context, updater StatusUpdater) error {
 	currentSource := determineSource(updater)
 	var err error
 	defer func() {
 		if err == nil {
-			updater.Target().LastProbeTimestamp = reconciler.timeProvider.Now()
+			updater.Target().LastProbeTimestamp = r.timeProvider.Now()
 			updater.Target().Source = currentSource
 		}
 	}()
@@ -41,7 +41,7 @@ func (reconciler *Reconciler) run(ctx context.Context, updater StatusUpdater) er
 	customImage := updater.CustomImage()
 	if customImage != "" {
 		log.Info("updating version status according to custom image", "updater", updater.Name())
-		err = setImageIDWithDigest(ctx, updater.Target(), reconciler.registryClient, customImage)
+		err = setImageIDWithDigest(ctx, updater.Target(), r.registryClient, customImage)
 		if err != nil {
 			return err
 		}
@@ -60,7 +60,7 @@ func (reconciler *Reconciler) run(ctx context.Context, updater StatusUpdater) er
 	}
 
 	if updater.IsPublicRegistryEnabled() {
-		err = reconciler.processPublicRegistry(ctx, updater)
+		err = r.processPublicRegistry(ctx, updater)
 		if err != nil {
 			return err
 		}
@@ -76,7 +76,7 @@ func (reconciler *Reconciler) run(ctx context.Context, updater StatusUpdater) er
 	return updater.ValidateStatus()
 }
 
-func (reconciler *Reconciler) processPublicRegistry(ctx context.Context, updater StatusUpdater) error {
+func (r *reconciler) processPublicRegistry(ctx context.Context, updater StatusUpdater) error {
 	log.Info("updating version status according to public registry", "updater", updater.Name())
 	var publicImage *dtclient.LatestImageInfo
 	publicImage, err := updater.LatestImageInfo()
@@ -89,7 +89,7 @@ func (reconciler *Reconciler) processPublicRegistry(ctx context.Context, updater
 		return err
 	}
 
-	err = setImageIDWithDigest(ctx, updater.Target(), reconciler.registryClient, publicImage.String())
+	err = setImageIDWithDigest(ctx, updater.Target(), r.registryClient, publicImage.String())
 	if err != nil {
 		log.Info("could not update version status according to the public registry", "updater", updater.Name())
 		return err
