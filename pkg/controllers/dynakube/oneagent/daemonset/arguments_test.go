@@ -58,6 +58,29 @@ func TestArguments(t *testing.T) {
 		assert.NotEmpty(t, podSpecs.Containers)
 		assert.Contains(t, podSpecs.Containers[0].Args, testValue)
 	})
+	t.Run("classic fullstack", func(t *testing.T) {
+		instance := dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: testURL,
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{
+						Args: []string{testValue},
+					},
+				},
+			},
+		}
+		dsInfo := ClassicFullStack{
+			builderInfo{
+				dynakube:       &instance,
+				hostInjectSpec: instance.Spec.OneAgent.ClassicFullStack,
+				clusterID:      testClusterID,
+			},
+		}
+		podSpecs := dsInfo.podSpec()
+		assert.NotNil(t, podSpecs)
+		assert.NotEmpty(t, podSpecs.Containers)
+		assert.Contains(t, podSpecs.Containers[0].Args, testValue)
+	})
 	t.Run("when injected arguments are provided then they are appended at the end of the arguments", func(t *testing.T) {
 		args := []string{testValue}
 		builder := builderInfo{
@@ -73,6 +96,31 @@ func TestArguments(t *testing.T) {
 			"--set-server={$(DT_SERVER)}",
 			"--set-tenant=$(DT_TENANT)",
 			"test-value",
+		}
+		assert.Equal(t, expectedDefaultArguments, arguments)
+	})
+	t.Run("when injected arguments are provided then they take precedence", func(t *testing.T) {
+		args := []string{
+			"--set-app-log-content-access=true",
+			"--set-host-id-source=lustiglustig",
+			"--set-host-group=APP_LUSTIG_PETER",
+			"--set-server=https://hyper.super.com:9999",
+		}
+		builder := builderInfo{
+			dynakube:       &dynatracev1beta1.DynaKube{},
+			hostInjectSpec: &dynatracev1beta1.HostInjectSpec{Args: args},
+		}
+
+		arguments := builder.arguments()
+
+		expectedDefaultArguments := []string{
+			"--set-app-log-content-access=true",
+			"--set-host-group=APP_LUSTIG_PETER",
+			"--set-host-id-source=lustiglustig",
+			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
+			"--set-proxy=",
+			"--set-server=https://hyper.super.com:9999",
+			"--set-tenant=$(DT_TENANT)",
 		}
 		assert.Equal(t, expectedDefaultArguments, arguments)
 	})
