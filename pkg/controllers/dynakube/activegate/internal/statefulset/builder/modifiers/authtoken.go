@@ -25,7 +25,7 @@ type AuthTokenModifier struct {
 }
 
 func (mod AuthTokenModifier) Enabled() bool {
-	return mod.dynakube.NeedsActiveGate()
+	return true // TODO: Investigate moving this package to the default statefulset
 }
 
 func (mod AuthTokenModifier) Modify(sts *appsv1.StatefulSet) error {

@@ -30,7 +30,7 @@ type RawImageModifier struct {
 }
 
 func (mod RawImageModifier) Enabled() bool {
-	return true
+	return true // TODO: Investigate moving this package to the default statefulset
 }
 
 func (mod RawImageModifier) Modify(sts *appsv1.StatefulSet) error {
