@@ -34,7 +34,7 @@ require (
 	golang.org/x/net v0.19.0
 	golang.org/x/oauth2 v0.15.0
 	golang.org/x/sys v0.15.0
-	google.golang.org/grpc v1.60.0
+	google.golang.org/grpc v1.60.1
 	istio.io/api v1.20.1
 	istio.io/client-go v1.20.1
 	k8s.io/api v0.29.0
