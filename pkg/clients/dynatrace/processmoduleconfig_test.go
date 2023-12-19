@@ -333,3 +333,52 @@ func TestProcessModuleConfig_AddProxy(t *testing.T) {
 		})
 	}
 }
+
+func TestProcessModuleConfig_AddNoProxy(t *testing.T) {
+	const NoProxy = "dummy-proxy"
+	type fields struct {
+		Revision   uint
+		Properties []ProcessModuleProperty
+	}
+	type args struct {
+		noProxy string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   *ProcessModuleConfig
+	}{
+		{
+			name: "add no proxy to process module config",
+			fields: fields{
+				Revision:   0,
+				Properties: []ProcessModuleProperty{},
+			},
+			args: args{
+				noProxy: NoProxy,
+			},
+			want: &ProcessModuleConfig{
+				Revision: 0,
+				Properties: []ProcessModuleProperty{
+					{
+						Section: generalSectionName,
+						Key:     "noProxy",
+						Value:   NoProxy,
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pmc := &ProcessModuleConfig{
+				Revision:   tt.fields.Revision,
+				Properties: tt.fields.Properties,
+			}
+			if got := pmc.AddNoProxy(tt.args.noProxy); !assert.Equal(t, got, tt.want) {
+				t.Errorf("ProcessModuleConfig.AddNoProxy() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
