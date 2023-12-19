@@ -1,9 +1,6 @@
 package modifiers
 
 import (
-	"fmt"
-	"strings"
-
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/dynakube/activegate/consts"
@@ -73,28 +70,5 @@ func (mod ServicePortModifier) getEnvs() []corev1.EnvVar {
 }
 
 func (mod ServicePortModifier) buildDNSEntryPoint() string {
-	if mod.capability.ShortName() == consts.MultiActiveGateName && strings.Contains(mod.capability.ArgName(), dynatracev1beta1.RoutingCapability.ArgumentName) ||
-		mod.capability.ShortName() == dynatracev1beta1.RoutingCapability.ShortName {
-		return fmt.Sprintf("https://%s/communication,https://%s/communication", buildServiceHostName(mod.dynakube.Name, mod.capability.ShortName()), buildServiceDomainName(mod.dynakube.Name, mod.dynakube.Namespace, mod.capability.ShortName()))
-	}
-	return fmt.Sprintf("https://%s/communication", buildServiceHostName(mod.dynakube.Name, mod.capability.ShortName()))
-}
-
-// buildServiceHostName converts the name returned by BuildServiceName
-// into the variable name which Kubernetes uses to reference the associated service.
-// For more information see: https://kubernetes.io/docs/concepts/services-networking/service/
-func buildServiceHostName(dynakubeName string, module string) string {
-	serviceName := buildServiceName(dynakubeName, module)
-	return fmt.Sprintf("$(%s_SERVICE_HOST):$(%s_SERVICE_PORT)", serviceName, serviceName)
-}
-
-func buildServiceDomainName(dynakubeName string, namespaceName string, module string) string {
-	return fmt.Sprintf("%s.%s:$(%s_SERVICE_PORT)", capability.BuildServiceName(dynakubeName, module), namespaceName, buildServiceName(dynakubeName, module))
-}
-
-func buildServiceName(dynakubeName string, module string) string {
-	return strings.ReplaceAll(
-		strings.ToUpper(
-			capability.BuildServiceName(dynakubeName, module)),
-		"-", "_")
+	return capability.BuildDNSEntryPoint(mod.dynakube.Name, mod.dynakube.Namespace, mod.capability)
 }
