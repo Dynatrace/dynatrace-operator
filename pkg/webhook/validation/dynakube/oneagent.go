@@ -18,8 +18,6 @@ const (
 The conflicting Dynakube: %s
 `
 	errorVolumeStorageReadOnlyModeConflict = `The DynaKube's specification specifies a read-only host file system and OneAgent has volume storage enabled.`
-
-	warningIneffectiveFeatureFlag = `Feature flag %s has no effect in classic full stack mode.`
 )
 
 func conflictingOneAgentConfiguration(_ context.Context, dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
@@ -101,8 +99,4 @@ func conflictingOneAgentVolumeStorageSettings(_ context.Context, dv *dynakubeVal
 		return errorVolumeStorageReadOnlyModeConflict
 	}
 	return ""
-}
-
-func readonlyHostFsFlagWarning(featureFlag string) string {
-	return fmt.Sprintf(warningIneffectiveFeatureFlag, featureFlag)
 }

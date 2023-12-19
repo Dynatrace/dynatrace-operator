@@ -2,11 +2,9 @@ package dynakube
 
 import (
 	"fmt"
-	"strconv"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -280,70 +278,4 @@ func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
 			},
 		}, &defaultCSIDaemonSet)
 	})
-}
-
-func createHostInjectSpecWithOneAgentVolumeStorage(variable string, flag bool) *dynatracev1beta1.HostInjectSpec {
-	his := &dynatracev1beta1.HostInjectSpec{}
-
-	if len(variable) > 0 {
-		his.Env = []corev1.EnvVar{
-			{
-				Name:  variable,
-				Value: strconv.FormatBool(flag),
-			},
-		}
-	}
-
-	return his
-}
-
-func createFeatureFlaggedMetadata(featureFlag string, featureFlagValue bool) metav1.ObjectMeta {
-	meta := metav1.ObjectMeta{
-		Name:      "dynakube1",
-		Namespace: testNamespace,
-	}
-	if len(featureFlag) > 0 {
-		meta.Annotations = map[string]string{
-			featureFlag: strconv.FormatBool(featureFlagValue),
-		}
-	}
-	return meta
-}
-
-func createCloudNativeFullstackDynaKube(featureFlag string, featureFlagValue bool, oneAgentVolumeStorageVar string, oaEnvValue bool) *dynatracev1beta1.DynaKube {
-	return &dynatracev1beta1.DynaKube{
-		ObjectMeta: createFeatureFlaggedMetadata(featureFlag, featureFlagValue),
-		Spec: dynatracev1beta1.DynaKubeSpec{
-			APIURL: testApiUrl,
-			OneAgent: dynatracev1beta1.OneAgentSpec{
-				CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
-					HostInjectSpec: *createHostInjectSpecWithOneAgentVolumeStorage(oneAgentVolumeStorageVar, oaEnvValue),
-				},
-			},
-		},
-	}
-}
-
-func createHostMonitoringDynaKube(featureFlag string, featureFlagValue bool, oneAgentVolumeStorageVar string, oaEnvValue bool) *dynatracev1beta1.DynaKube {
-	return &dynatracev1beta1.DynaKube{
-		ObjectMeta: createFeatureFlaggedMetadata(featureFlag, featureFlagValue),
-		Spec: dynatracev1beta1.DynaKubeSpec{
-			APIURL: testApiUrl,
-			OneAgent: dynatracev1beta1.OneAgentSpec{
-				HostMonitoring: createHostInjectSpecWithOneAgentVolumeStorage(oneAgentVolumeStorageVar, oaEnvValue),
-			},
-		},
-	}
-}
-
-func createClassicFullstackDynaKube(featureFlag string, featureFlagValue bool, oneAgentVolumeStorageVar string, oaEnvValue bool) *dynatracev1beta1.DynaKube {
-	return &dynatracev1beta1.DynaKube{
-		ObjectMeta: createFeatureFlaggedMetadata(featureFlag, featureFlagValue),
-		Spec: dynatracev1beta1.DynaKubeSpec{
-			APIURL: testApiUrl,
-			OneAgent: dynatracev1beta1.OneAgentSpec{
-				ClassicFullStack: createHostInjectSpecWithOneAgentVolumeStorage(oneAgentVolumeStorageVar, oaEnvValue),
-			},
-		},
-	}
 }

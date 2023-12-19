@@ -32,10 +32,6 @@ func (opts *options) appendCertCheck(skipCertCheck bool) {
 	opts.Opts = append(opts.Opts, dtclient.SkipCertificateValidation(skipCertCheck))
 }
 
-func (opts *options) appendDisableHostsRequests(disableHostsRequests bool) {
-	opts.Opts = append(opts.Opts, dtclient.DisableHostsRequests(disableHostsRequests))
-}
-
 func (opts *options) appendProxySettings(apiReader client.Reader, dynakube *dynatracev1beta1.DynaKube) error {
 	if dynakube == nil || !dynakube.HasProxy() {
 		return nil
