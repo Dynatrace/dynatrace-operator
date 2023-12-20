@@ -20,6 +20,13 @@ func (dsInfo *builderInfo) arguments() []string {
 
 	appendOperatorVersionArg(argMap)
 	appendImmutableImageArgs(argMap)
+
+	if dsInfo.dynakube.ClassicFullStackMode() {
+		argMap.Append(argumentPrefix+"set-host-id-source", classicHostIdSource)
+	} else if dsInfo.dynakube.HostMonitoringMode() {
+		argMap.Append(argumentPrefix+"set-host-id-source", inframonHostIdSource)
+	}
+
 	dsInfo.appendHostInjectArgs(argMap)
 
 	return argMap.AsKeyValueStrings()
