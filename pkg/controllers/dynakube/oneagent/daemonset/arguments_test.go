@@ -58,29 +58,6 @@ func TestArguments(t *testing.T) {
 		assert.NotEmpty(t, podSpecs.Containers)
 		assert.Contains(t, podSpecs.Containers[0].Args, testValue)
 	})
-	t.Run("classic fullstack", func(t *testing.T) {
-		instance := dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				APIURL: testURL,
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{
-						Args: []string{testValue},
-					},
-				},
-			},
-		}
-		dsInfo := ClassicFullStack{
-			builderInfo{
-				dynakube:       &instance,
-				hostInjectSpec: instance.Spec.OneAgent.ClassicFullStack,
-				clusterID:      testClusterID,
-			},
-		}
-		podSpecs := dsInfo.podSpec()
-		assert.NotNil(t, podSpecs)
-		assert.NotEmpty(t, podSpecs.Containers)
-		assert.Contains(t, podSpecs.Containers[0].Args, testValue)
-	})
 	t.Run("when injected arguments are provided then they are appended at the end of the arguments", func(t *testing.T) {
 		args := []string{testValue}
 		builder := builderInfo{

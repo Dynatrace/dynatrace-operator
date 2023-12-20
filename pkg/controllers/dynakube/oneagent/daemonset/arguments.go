@@ -22,9 +22,9 @@ func (dsInfo *builderInfo) arguments() []string {
 	appendImmutableImageArgs(argMap)
 
 	if dsInfo.dynakube.ClassicFullStackMode() {
-		appendHostIdSource(argMap, classicHostIdSource)
+		argMap.Append(argumentPrefix+"set-host-id-source", classicHostIdSource)
 	} else if dsInfo.dynakube.HostMonitoringMode() {
-		appendHostIdSource(argMap, inframonHostIdSource)
+		argMap.Append(argumentPrefix+"set-host-id-source", inframonHostIdSource)
 	}
 
 	dsInfo.appendHostInjectArgs(argMap)
@@ -63,8 +63,4 @@ func (dsInfo *builderInfo) appendProxyArg(argMap *prioritymap.Map) {
 
 func (dsInfo *builderInfo) hasProxy() bool {
 	return dsInfo.dynakube != nil && dsInfo.dynakube.NeedsOneAgentProxy()
-}
-
-func appendHostIdSource(argMap *prioritymap.Map, hostIdSource string) {
-	argMap.Append(argumentPrefix+"set-host-id-source", hostIdSource)
 }
