@@ -62,7 +62,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return err
 	}
 
-	if r.dynakube.UseActiveGateAuthToken() {
+	if r.dynakube.NeedsActiveGate() {
 		err := r.authTokenReconciler.Reconcile(ctx)
 		if err != nil {
 			return errors.WithMessage(err, "could not reconcile Dynatrace ActiveGateAuthToken secrets")

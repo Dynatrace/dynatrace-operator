@@ -500,13 +500,8 @@ func TestBuildCommonEnvs(t *testing.T) {
 }
 
 func TestSecurityContexts(t *testing.T) {
-	checkSecurityContexts := func(t *testing.T, isReadOnlyFileSystem bool) {
+	t.Run("containers have the same security context if read-only filesystem", func(t *testing.T) {
 		dynakube := getTestDynakube()
-		if isReadOnlyFileSystem {
-			dynakube.Annotations = map[string]string{
-				dynatracev1beta1.AnnotationFeatureActiveGateReadOnlyFilesystem: "true",
-			}
-		}
 		dynakube.Spec.ActiveGate.Capabilities = append(dynakube.Spec.ActiveGate.Capabilities, dynatracev1beta1.KubeMonCapability.DisplayName)
 
 		multiCapability := capability.NewMultiCapability(&dynakube)
@@ -519,12 +514,5 @@ func TestSecurityContexts(t *testing.T) {
 
 		require.NotEmpty(t, sts)
 		require.Truef(t, reflect.DeepEqual(sts.Spec.Template.Spec.InitContainers[0].SecurityContext, sts.Spec.Template.Spec.Containers[0].SecurityContext), "InitContainer and Container have different SecurityContexts")
-	}
-
-	t.Run("containers have the same security context if writable file system", func(t *testing.T) {
-		checkSecurityContexts(t, false)
-	})
-	t.Run("containers have the same security context if read-only filesystem", func(t *testing.T) {
-		checkSecurityContexts(t, true)
 	})
 }

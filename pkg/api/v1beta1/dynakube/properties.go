@@ -227,8 +227,7 @@ func (dk *DynaKube) PullSecretWithoutData() corev1.Secret {
 }
 
 func (dk *DynaKube) NeedsReadOnlyOneAgents() bool {
-	inSupportedMode := dk.HostMonitoringMode() || dk.CloudNativeFullstackMode()
-	return inSupportedMode && !dk.FeatureDisableReadOnlyOneAgent()
+	return dk.HostMonitoringMode() || dk.CloudNativeFullstackMode()
 }
 
 func (dk *DynaKube) NeedsCSIDriver() bool {
@@ -236,10 +235,7 @@ func (dk *DynaKube) NeedsCSIDriver() bool {
 		dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver != nil &&
 		*dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver
 
-	isReadOnlyHostMonitoring := dk.HostMonitoringMode() &&
-		!dk.FeatureDisableReadOnlyOneAgent()
-
-	return dk.CloudNativeFullstackMode() || isAppMonitoringWithCSI || isReadOnlyHostMonitoring
+	return dk.CloudNativeFullstackMode() || isAppMonitoringWithCSI || dk.HostMonitoringMode()
 }
 
 func (dk *DynaKube) NeedAppInjection() bool {
@@ -486,11 +482,6 @@ func (dk *DynaKube) HostGroup() string {
 		}
 	}
 	return hostGroup
-}
-
-// UseActiveGateAuthToken returns if the activeGate should get an authToken mounted
-func (dk *DynaKube) UseActiveGateAuthToken() bool {
-	return dk.FeatureActiveGateAuthToken() && dk.NeedsActiveGate()
 }
 
 func splitArg(arg string) (key, value string) {
