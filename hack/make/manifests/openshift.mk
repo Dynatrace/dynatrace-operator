@@ -21,5 +21,14 @@ manifests/openshift/core: manifests/crd/helm
 
 ## Generates a manifest for OpenShift including a CRD and a CSI driver deployment
 manifests/openshift: manifests/openshift/core manifests/openshift/csi
-	cp "$(OPENSHIFT_CORE_YAML)" "$(OPENSHIFT_OLM_YAML)"
 	cat "$(OPENSHIFT_CORE_YAML)" "$(OPENSHIFT_CSIDRIVER_YAML)" > "$(OPENSHIFT_ALL_YAML)"
+
+## Generates an OpenShift manifest with a CRD
+manifests/openshift/olm: manifests/crd/helm
+	helm template dynatrace-operator config/helm/chart/default \
+		--namespace dynatrace \
+		--set installCRD=true \
+		--set platform="openshift" \
+		--set manifests=true \
+		--set olm="${OLM}" \
+		--set image="$(IMAGE_URI)" > "$(OPENSHIFT_OLM_YAML)"
