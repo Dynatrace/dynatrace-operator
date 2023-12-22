@@ -34,22 +34,6 @@ func testSetApiTokenScopes(t *testing.T) {
 			},
 			tokens.ApiToken().RequiredScopes)
 	})
-	t.Run("disabled host requests", func(t *testing.T) {
-		tokens := Tokens{
-			dtclient.DynatraceApiToken: {},
-		}
-		tokens = tokens.SetScopesForDynakube(dynatracev1beta1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					dynatracev1beta1.AnnotationFeatureHostsRequests: "false",
-				},
-			},
-		})
-
-		assert.Equal(t,
-			[]string{dtclient.TokenScopeInstallerDownload},
-			tokens.ApiToken().RequiredScopes)
-	})
 	t.Run("kubernetes monitoring with auth token", func(t *testing.T) {
 		tokens := Tokens{
 			dtclient.DynatraceApiToken: {},

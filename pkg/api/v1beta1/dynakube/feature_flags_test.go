@@ -105,22 +105,6 @@ func TestDeprecatedDisableAnnotations(t *testing.T) {
 				return dynakube.FeatureDisableActiveGateUpdates()
 			})
 	})
-	t.Run(AnnotationFeatureHostsRequests, func(t *testing.T) {
-		testDeprecateDisableAnnotation(t,
-			AnnotationFeatureHostsRequests,
-			AnnotationFeatureDisableHostsRequests,
-			func(dynakube DynaKube) bool {
-				return dynakube.FeatureDisableHostsRequests()
-			})
-	})
-	t.Run(AnnotationFeatureWebhookReinvocationPolicy, func(t *testing.T) {
-		testDeprecateDisableAnnotation(t,
-			AnnotationFeatureWebhookReinvocationPolicy,
-			AnnotationFeatureDisableWebhookReinvocationPolicy,
-			func(dynakube DynaKube) bool {
-				return dynakube.FeatureDisableWebhookReinvocationPolicy()
-			})
-	})
 	t.Run(AnnotationFeatureMetadataEnrichment, func(t *testing.T) {
 		testDeprecateDisableAnnotation(t,
 			AnnotationFeatureMetadataEnrichment,
@@ -129,41 +113,11 @@ func TestDeprecatedDisableAnnotations(t *testing.T) {
 				return dynakube.FeatureDisableMetadataEnrichment()
 			})
 	})
-	t.Run(AnnotationFeatureReadOnlyOneAgent, func(t *testing.T) {
-		testDeprecateDisableAnnotation(t,
-			AnnotationFeatureReadOnlyOneAgent,
-			AnnotationFeatureDisableReadOnlyOneAgent,
-			func(dynakube DynaKube) bool {
-				return dynakube.FeatureDisableReadOnlyOneAgent()
-			})
-	})
-	t.Run(AnnotationFeatureReadOnlyOneAgent, func(t *testing.T) {
-		testDeprecateDisableAnnotation(t,
-			AnnotationFeatureActiveGateRawImage,
-			AnnotationFeatureDisableActiveGateRawImage,
-			func(dynakube DynaKube) bool {
-				return dynakube.FeatureDisableActivegateRawImage()
-			})
-	})
 }
 
 func TestDeprecatedEnableAnnotations(t *testing.T) {
-	// New annotation works
-	dynakube := createDynakubeWithAnnotation(AnnotationFeatureActiveGateAuthToken, "false")
-
-	assert.False(t, dynakube.FeatureActiveGateAuthToken())
-
-	dynakube = createDynakubeWithAnnotation(AnnotationFeatureActiveGateAuthToken, "true")
-
-	assert.True(t, dynakube.FeatureActiveGateAuthToken())
-
-	dynakube = createDynakubeWithAnnotation(AnnotationFeatureActiveGateAuthToken, "false")
-
-	assert.False(t, dynakube.FeatureActiveGateAuthToken())
-
-	// Default is true
-	dynakube = createDynakubeWithAnnotation()
-	assert.True(t, dynakube.FeatureActiveGateAuthToken())
+	dynakube := createDynakubeWithAnnotation(AnnotationInjectionFailurePolicy, "fail")
+	assert.Equal(t, "fail", dynakube.FeatureInjectionFailurePolicy())
 }
 
 func TestMaxMountAttempts(t *testing.T) {
@@ -287,16 +241,11 @@ func TestSyntheticMonitoringFlags(t *testing.T) {
 func TestDefaultEnabledFeatureFlags(t *testing.T) {
 	dynakube := createDynakubeEmptyDynakube()
 
-	assert.True(t, dynakube.FeatureActiveGateAuthToken())
-	assert.True(t, dynakube.FeatureActiveGateReadOnlyFilesystem())
 	assert.True(t, dynakube.FeatureAutomaticKubernetesApiMonitoring())
 	assert.True(t, dynakube.FeatureAutomaticInjection())
 	assert.True(t, dynakube.FeatureInjectionFailurePolicy() == "silent")
 
 	assert.False(t, dynakube.FeatureDisableActiveGateUpdates())
-	assert.False(t, dynakube.FeatureDisableHostsRequests())
-	assert.False(t, dynakube.FeatureDisableReadOnlyOneAgent())
-	assert.False(t, dynakube.FeatureDisableWebhookReinvocationPolicy())
 	assert.False(t, dynakube.FeatureDisableMetadataEnrichment())
 	assert.False(t, dynakube.FeatureLabelVersionDetection())
 }

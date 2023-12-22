@@ -144,13 +144,12 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 func TestServiceCreation(t *testing.T) {
 	dynatraceClient := mocks.NewClient(t)
+	dynatraceClient.On("GetActiveGateAuthToken", testName).Return(&dtclient.ActiveGateAuthTokenInfo{}, nil)
+
 	dynakube := &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
 			Name:      testName,
-			Annotations: map[string]string{
-				dynatracev1beta1.AnnotationFeatureActiveGateAuthToken: "false",
-			},
 		},
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			ActiveGate: dynatracev1beta1.ActiveGateSpec{},

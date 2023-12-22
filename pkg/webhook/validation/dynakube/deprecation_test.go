@@ -15,7 +15,7 @@ func TestDeprecationWarning(t *testing.T) {
 	t.Run(`no warning`, func(t *testing.T) {
 		dynakubeMeta := defaultDynakubeObjectMeta
 		dynakubeMeta.Annotations = map[string]string{
-			dynatracev1beta1.AnnotationFeatureWebhookReinvocationPolicy: "false",
+			dynatracev1beta1.AnnotationFeatureAutomaticInjection: "true",
 		}
 		dynakube := &dynatracev1beta1.DynaKube{
 			ObjectMeta: dynakubeMeta,
@@ -24,12 +24,12 @@ func TestDeprecationWarning(t *testing.T) {
 			},
 		}
 		assertAllowedResponseWithWarnings(t, 1, dynakube)
-		assert.True(t, dynakube.FeatureDisableWebhookReinvocationPolicy())
+		assert.True(t, dynakube.FeatureAutomaticInjection())
 	})
 
 	t.Run(`warning present`, func(t *testing.T) {
 		dynakubeMeta := defaultDynakubeObjectMeta
-		split := strings.Split(dynatracev1beta1.AnnotationFeatureDisableWebhookReinvocationPolicy, "/")
+		split := strings.Split(dynatracev1beta1.AnnotationFeatureAutomaticInjection, "/")
 		postFix := split[1]
 		dynakubeMeta.Annotations = map[string]string{
 			dynatracev1beta1.DeprecatedFeatureFlagPrefix + postFix: "true",
@@ -41,7 +41,7 @@ func TestDeprecationWarning(t *testing.T) {
 			},
 		}
 		assertAllowedResponseWithWarnings(t, 1, dynakube)
-		assert.True(t, dynakube.FeatureDisableWebhookReinvocationPolicy())
+		assert.True(t, dynakube.FeatureAutomaticInjection())
 	})
 }
 
@@ -71,30 +71,6 @@ func TestDeprecatedAnnotationWarnings(t *testing.T) {
 			dynatracev1beta1.AnnotationFeatureActiveGateUpdates,
 			dynatracev1beta1.AnnotationFeatureDisableActiveGateUpdates,
 			deprecatedFeatureFlagDisableActiveGateUpdates)
-	})
-	t.Run(dynatracev1beta1.AnnotationFeatureActiveGateRawImage, func(t *testing.T) {
-		testDeprecatedAnnotation(t,
-			dynatracev1beta1.AnnotationFeatureActiveGateRawImage,
-			dynatracev1beta1.AnnotationFeatureDisableActiveGateRawImage,
-			deprecatedFeatureFlagDisableActiveGateRawImage)
-	})
-	t.Run(dynatracev1beta1.AnnotationFeatureHostsRequests, func(t *testing.T) {
-		testDeprecatedAnnotation(t,
-			dynatracev1beta1.AnnotationFeatureHostsRequests,
-			dynatracev1beta1.AnnotationFeatureDisableHostsRequests,
-			deprecatedFeatureFlagDisableHostsRequests)
-	})
-	t.Run(dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent, func(t *testing.T) {
-		testDeprecatedAnnotation(t,
-			dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent,
-			dynatracev1beta1.AnnotationFeatureDisableReadOnlyOneAgent,
-			deprecatedFeatureFlagDisableReadOnlyAgent)
-	})
-	t.Run(dynatracev1beta1.AnnotationFeatureWebhookReinvocationPolicy, func(t *testing.T) {
-		testDeprecatedAnnotation(t,
-			dynatracev1beta1.AnnotationFeatureWebhookReinvocationPolicy,
-			dynatracev1beta1.AnnotationFeatureDisableWebhookReinvocationPolicy,
-			deprecatedFeatureFlagDisableWebhookReinvocationPolicy)
 	})
 	t.Run(dynatracev1beta1.AnnotationFeatureMetadataEnrichment, func(t *testing.T) {
 		testDeprecatedAnnotation(t,

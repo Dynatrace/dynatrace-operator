@@ -178,10 +178,6 @@ func (webhook *podMutatorWebhook) handlePodReinvocation(ctx context.Context, mut
 
 	var needsUpdate bool
 
-	if mutationRequest.DynaKube.FeatureDisableWebhookReinvocationPolicy() {
-		return false
-	}
-
 	reinvocationRequest := mutationRequest.ToReinvocationRequest()
 	for _, mutator := range webhook.mutators {
 		if mutator.Enabled(mutationRequest.BaseRequest) {

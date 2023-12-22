@@ -114,8 +114,6 @@ func (updater oneAgentUpdater) ValidateStatus() error {
 	if imageType == status.ImmutableImageType {
 		if updater.dynakube.ClassicFullStackMode() {
 			return errors.New("immutable OneAgent image in combination with classicFullStack mode is not possible")
-		} else if updater.dynakube.FeatureDisableReadOnlyOneAgent() {
-			return errors.New("immutable OneAgent image in combination with readOnly OneAgent filesystem is not possible")
 		}
 	}
 

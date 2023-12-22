@@ -226,7 +226,7 @@ func (r *Reconciler) getCustomPropertyValue() (string, error) {
 }
 
 func (r *Reconciler) getAuthTokenValue() (string, error) {
-	if !r.dynakube.UseActiveGateAuthToken() {
+	if !r.dynakube.NeedsActiveGate() {
 		return "", nil
 	}
 

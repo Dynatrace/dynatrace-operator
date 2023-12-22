@@ -46,22 +46,6 @@ func TestMissingCSIDaemonSet(t *testing.T) {
 		}, &defaultCSIDaemonSet)
 	})
 
-	t.Run(`valid none-readonly host-monitoring dynakube specs`, func(t *testing.T) {
-		objectMeta := defaultDynakubeObjectMeta.DeepCopy()
-		objectMeta.Annotations = map[string]string{
-			dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent: "false",
-		}
-		assertAllowedResponseWithWarnings(t, 1, &dynatracev1beta1.DynaKube{
-			ObjectMeta: *objectMeta,
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				APIURL: testApiUrl,
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
-				},
-			},
-		})
-	})
-
 	t.Run(`valid default host-monitoring dynakube specs`, func(t *testing.T) {
 		assertAllowedResponseWithoutWarnings(t, &dynatracev1beta1.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
