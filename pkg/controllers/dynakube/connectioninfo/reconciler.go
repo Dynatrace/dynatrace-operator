@@ -42,10 +42,10 @@ var NoOneAgentCommunicationHostsError = errors.New("no communication hosts for O
 
 func (r *reconciler) ReconcileActiveGate(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
 	oldStatus := dynakube.Status.DeepCopy()
-		err := r.reconcileActiveGateConnectionInfo(ctx, dynakube)
-		if err != nil {
-			return err
-		}
+	err := r.reconcileActiveGateConnectionInfo(ctx, dynakube)
+	if err != nil {
+		return err
+	}
 
 	needStatusUpdate, err := hasher.IsDifferent(oldStatus, dynakube.Status)
 	if err != nil {
