@@ -34,7 +34,7 @@ var validators = []validator{
 	invalidSyntheticNodeType,
 	nameViolatesDNS1035,
 	nameTooLong,
-	namespaceSelectorMatchLabelsViolateLabelSpec,
+	namespaceSelectorViolateLabelSpec,
 }
 
 var warnings = []validator{
