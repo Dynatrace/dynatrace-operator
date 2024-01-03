@@ -25,7 +25,7 @@ type Reconciler struct {
 	dynakube                   *dynatracev1beta1.DynaKube
 }
 
-func NewReconciler(clt client.Client, capability capability.Capability, dynakube *dynatracev1beta1.DynaKube, statefulsetReconciler controllers.Reconciler, customPropertiesReconciler controllers.Reconciler) *Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
+func NewReconciler(clt client.Client, capability capability.Capability, dynakube *dynatracev1beta1.DynaKube, statefulsetReconciler controllers.Reconciler, customPropertiesReconciler controllers.Reconciler) controllers.Reconciler { //nolint:revive // argument-limit doesn't apply to constructors
 	return &Reconciler{
 		statefulsetReconciler:      statefulsetReconciler,
 		customPropertiesReconciler: customPropertiesReconciler,
@@ -35,7 +35,7 @@ func NewReconciler(clt client.Client, capability capability.Capability, dynakube
 	}
 }
 
-type NewReconcilerFunc = func(clt client.Client, capability capability.Capability, dynakube *dynatracev1beta1.DynaKube, statefulsetReconciler controllers.Reconciler, customPropertiesReconciler controllers.Reconciler) *Reconciler
+type NewReconcilerFunc = func(clt client.Client, capability capability.Capability, dynakube *dynatracev1beta1.DynaKube, statefulsetReconciler controllers.Reconciler, customPropertiesReconciler controllers.Reconciler) controllers.Reconciler
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
 	err := r.customPropertiesReconciler.Reconcile(ctx)

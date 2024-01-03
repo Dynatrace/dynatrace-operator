@@ -73,7 +73,6 @@ func (dynatraceClientBuilder builder) Build() (dtclient.Client, error) {
 	opts := newOptions(dynatraceClientBuilder.context())
 	opts.appendCertCheck(dynatraceClientBuilder.dynakube.Spec.SkipCertCheck)
 	opts.appendNetworkZone(dynatraceClientBuilder.dynakube.Spec.NetworkZone)
-	opts.appendDisableHostsRequests(dynatraceClientBuilder.dynakube.FeatureDisableHostsRequests())
 
 	err := opts.appendProxySettings(apiReader, &dynatraceClientBuilder.dynakube)
 	if err != nil {

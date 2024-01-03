@@ -186,21 +186,6 @@ func TestHandlePodMutation(t *testing.T) {
 }
 
 func TestHandlePodReinvocation(t *testing.T) {
-	t.Run("no reinvocation feature-flag, no update", func(t *testing.T) {
-		mutator1 := createAlreadyInjectedPodMutatorMock(t)
-		mutator2 := createAlreadyInjectedPodMutatorMock(t)
-		dynakube := getTestDynakube()
-		dynakube.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureWebhookReinvocationPolicy: "false"}
-		podWebhook := createTestWebhook([]dtwebhook.PodMutator{mutator1, mutator2}, nil)
-		mutationRequest := createTestMutationRequest(dynakube)
-
-		updated := podWebhook.handlePodReinvocation(context.Background(), mutationRequest)
-		require.False(t, updated)
-		mutator1.AssertNotCalled(t, "Enabled", mutationRequest.BaseRequest)
-		mutator1.AssertNotCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
-		mutator2.AssertNotCalled(t, "Enabled", mutationRequest.BaseRequest)
-		mutator2.AssertNotCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
-	})
 	t.Run("should call both mutators, updated == true", func(t *testing.T) {
 		mutator1 := createAlreadyInjectedPodMutatorMock(t)
 		mutator2 := createAlreadyInjectedPodMutatorMock(t)

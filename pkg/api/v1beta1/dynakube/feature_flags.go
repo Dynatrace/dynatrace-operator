@@ -38,15 +38,10 @@ const (
 
 	// Deprecated: AnnotationFeatureDisableActiveGateUpdates use AnnotationFeatureActiveGateUpdates instead
 	AnnotationFeatureDisableActiveGateUpdates = AnnotationFeaturePrefix + "disable-activegate-updates"
-	// Deprecated: AnnotationFeatureDisableActiveGateRawImage use AnnotationFeatureActiveGateRawImage instead
-	AnnotationFeatureDisableActiveGateRawImage = AnnotationFeaturePrefix + "disable-activegate-raw-image"
 
-	AnnotationFeatureActiveGateUpdates   = AnnotationFeaturePrefix + "activegate-updates"
-	AnnotationFeatureActiveGateRawImage  = AnnotationFeaturePrefix + "activegate-raw-image"
-	AnnotationFeatureActiveGateAuthToken = AnnotationFeaturePrefix + "activegate-authtoken"
+	AnnotationFeatureActiveGateUpdates = AnnotationFeaturePrefix + "activegate-updates"
 
 	AnnotationFeatureActiveGateAppArmor                   = AnnotationFeaturePrefix + "activegate-apparmor"
-	AnnotationFeatureActiveGateReadOnlyFilesystem         = AnnotationFeaturePrefix + "activegate-readonly-fs"
 	AnnotationFeatureAutomaticK8sApiMonitoring            = AnnotationFeaturePrefix + "automatic-kubernetes-api-monitoring"
 	AnnotationFeatureAutomaticK8sApiMonitoringClusterName = AnnotationFeaturePrefix + "automatic-kubernetes-api-monitoring-cluster-name"
 	AnnotationFeatureK8sAppEnabled                        = AnnotationFeaturePrefix + "k8s-app-enabled"
@@ -56,18 +51,10 @@ const (
 
 	// dtClient
 
-	// Deprecated: AnnotationFeatureDisableHostsRequests use AnnotationFeatureHostsRequests instead
-	AnnotationFeatureDisableHostsRequests = AnnotationFeaturePrefix + "disable-hosts-requests"
-	AnnotationFeatureHostsRequests        = AnnotationFeaturePrefix + "hosts-requests"
-	AnnotationFeatureNoProxy              = AnnotationFeaturePrefix + "no-proxy"
-	AnnotationFeatureApiRequestThreshold  = AnnotationFeaturePrefix + "dynatrace-api-request-threshold"
+	AnnotationFeatureNoProxy             = AnnotationFeaturePrefix + "no-proxy"
+	AnnotationFeatureApiRequestThreshold = AnnotationFeaturePrefix + "dynatrace-api-request-threshold"
 
 	// oneAgent
-
-	// Deprecated: AnnotationFeatureDisableReadOnlyOneAgent use AnnotationFeatureReadOnlyOneAgent instead
-	AnnotationFeatureDisableReadOnlyOneAgent = AnnotationFeaturePrefix + "disable-oneagent-readonly-host-fs"
-
-	AnnotationFeatureReadOnlyOneAgent = AnnotationFeaturePrefix + "oneagent-readonly-host-fs"
 
 	AnnotationFeatureMultipleOsAgentsOnNode         = AnnotationFeaturePrefix + "multiple-osagents-on-node"
 	AnnotationFeatureOneAgentMaxUnavailable         = AnnotationFeaturePrefix + "oneagent-max-unavailable"
@@ -78,13 +65,10 @@ const (
 
 	// injection (webhook)
 
-	// Deprecated: AnnotationFeatureDisableWebhookReinvocationPolicy use AnnotationFeatureWebhookReinvocationPolicy instead
-	AnnotationFeatureDisableWebhookReinvocationPolicy = AnnotationFeaturePrefix + "disable-webhook-reinvocation-policy"
 	// Deprecated: AnnotationFeatureDisableMetadataEnrichment use AnnotationFeatureMetadataEnrichment instead
 	AnnotationFeatureDisableMetadataEnrichment = AnnotationFeaturePrefix + "disable-metadata-enrichment"
 
-	AnnotationFeatureWebhookReinvocationPolicy = AnnotationFeaturePrefix + "webhook-reinvocation-policy"
-	AnnotationFeatureMetadataEnrichment        = AnnotationFeaturePrefix + "metadata-enrichment"
+	AnnotationFeatureMetadataEnrichment = AnnotationFeaturePrefix + "metadata-enrichment"
 
 	AnnotationFeatureIgnoreUnknownState    = AnnotationFeaturePrefix + "ignore-unknown-state"
 	AnnotationFeatureIgnoredNamespaces     = AnnotationFeaturePrefix + "ignored-namespaces"
@@ -165,11 +149,6 @@ func (dk *DynaKube) FeatureDisableActiveGateUpdates() bool {
 	return dk.getDisableFlagWithDeprecatedAnnotation(AnnotationFeatureActiveGateUpdates, AnnotationFeatureDisableActiveGateUpdates)
 }
 
-// FeatureDisableHostsRequests is a feature flag to disable queries to the Hosts API.
-func (dk *DynaKube) FeatureDisableHostsRequests() bool {
-	return dk.getDisableFlagWithDeprecatedAnnotation(AnnotationFeatureHostsRequests, AnnotationFeatureDisableHostsRequests)
-}
-
 // FeatureNoProxy is a feature flag to set the NO_PROXY value to be used by the dtClient.
 func (dk *DynaKube) FeatureNoProxy() string {
 	return dk.getFeatureFlagRaw(AnnotationFeatureNoProxy)
@@ -186,12 +165,6 @@ func (dk *DynaKube) FeatureApiRequestThreshold() time.Duration {
 // FeatureOneAgentMaxUnavailable is a feature flag to configure maxUnavailable on the OneAgent DaemonSets rolling upgrades.
 func (dk *DynaKube) FeatureOneAgentMaxUnavailable() int {
 	return dk.getFeatureFlagInt(AnnotationFeatureOneAgentMaxUnavailable, 1)
-}
-
-// FeatureDisableWebhookReinvocationPolicy disables the reinvocation for the Operator's webhooks.
-// This disables instrumenting containers injected by other webhooks following the admission to the Operator's webhook.
-func (dk *DynaKube) FeatureDisableWebhookReinvocationPolicy() bool {
-	return dk.getDisableFlagWithDeprecatedAnnotation(AnnotationFeatureWebhookReinvocationPolicy, AnnotationFeatureDisableWebhookReinvocationPolicy)
 }
 
 // FeatureIgnoreUnknownState is a feature flag that makes the operator inject into applications even when the dynakube is in an UNKNOWN state,
@@ -258,29 +231,9 @@ func (dk *DynaKube) FeatureCustomSyntheticImage() string {
 	return dk.getFeatureFlagRaw(AnnotationFeatureCustomSyntheticImage)
 }
 
-// FeatureDisableReadOnlyOneAgent is a feature flag to specify if the operator needs to deploy the oneagents in a readonly mode,
-// where the csi-driver would provide the volume for logs and such
-// Defaults to false
-func (dk *DynaKube) FeatureDisableReadOnlyOneAgent() bool {
-	return dk.getDisableFlagWithDeprecatedAnnotation(AnnotationFeatureReadOnlyOneAgent, AnnotationFeatureDisableReadOnlyOneAgent)
-}
-
-// FeatureDisableActivegateRawImage is a feature flag to specify if the operator should
-// fetch from cluster and set in ActiveGet container: tenant UUID, token and communication endpoints
-// instead of using embedded ones in the image
-// Defaults to false
-func (dk *DynaKube) FeatureDisableActivegateRawImage() bool {
-	return dk.getDisableFlagWithDeprecatedAnnotation(AnnotationFeatureActiveGateRawImage, AnnotationFeatureDisableActiveGateRawImage)
-}
-
 // FeatureEnableMultipleOsAgentsOnNode is a feature flag to enable multiple osagents running on the same host
 func (dk *DynaKube) FeatureEnableMultipleOsAgentsOnNode() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureMultipleOsAgentsOnNode) == truePhrase
-}
-
-// FeatureActiveGateReadOnlyFilesystem is a feature flag to enable RO mounted filesystem in ActiveGate container
-func (dk *DynaKube) FeatureActiveGateReadOnlyFilesystem() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateReadOnlyFilesystem) != falsePhrase
 }
 
 // FeatureActiveGateAppArmor is a feature flag to enable AppArmor in ActiveGate container
@@ -296,11 +249,6 @@ func (dk *DynaKube) FeatureOneAgentIgnoreProxy() bool {
 // FeatureActiveGateIgnoreProxy is a feature flag to ignore the proxy for ActiveGate when set in CR
 func (dk *DynaKube) FeatureActiveGateIgnoreProxy() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateIgnoreProxy) == truePhrase
-}
-
-// FeatureActiveGateAuthToken is a feature flag to enable authToken usage in the activeGate
-func (dk *DynaKube) FeatureActiveGateAuthToken() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateAuthToken) != falsePhrase
 }
 
 // FeatureLabelVersionDetection is a feature flag to enable injecting additional environment variables based on user labels

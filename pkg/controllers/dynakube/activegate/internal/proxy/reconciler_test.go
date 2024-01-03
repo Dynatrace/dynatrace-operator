@@ -34,7 +34,8 @@ func newTestReconcilerWithInstance(client client.Client) *Reconciler {
 			Name:      testDynakubeName,
 		},
 		Spec: dynatracev1beta1.DynaKubeSpec{
-			APIURL: "https://testing.dev.dynatracelabs.com/api",
+			APIURL:     "https://testing.dev.dynatracelabs.com/api",
+			ActiveGate: dynatracev1beta1.ActiveGateSpec{Capabilities: []dynatracev1beta1.CapabilityDisplayName{dynatracev1beta1.KubeMonCapability.DisplayName}},
 		},
 	}
 

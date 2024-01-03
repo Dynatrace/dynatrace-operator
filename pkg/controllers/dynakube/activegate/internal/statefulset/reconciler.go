@@ -45,7 +45,7 @@ func NewReconciler(
 	scheme *runtime.Scheme,
 	dynakube *dynatracev1beta1.DynaKube,
 	capability capability.Capability,
-) *Reconciler {
+) controllers.Reconciler {
 	return &Reconciler{
 		client:     clt,
 		apiReader:  apiReader,
@@ -56,7 +56,7 @@ func NewReconciler(
 	}
 }
 
-type NewReconcilerFunc = func(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, capability capability.Capability) *Reconciler
+type NewReconcilerFunc = func(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dynakube *dynatracev1beta1.DynaKube, capability capability.Capability) controllers.Reconciler
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
 	err := r.manageStatefulSet(ctx)
@@ -226,7 +226,7 @@ func (r *Reconciler) getCustomPropertyValue() (string, error) {
 }
 
 func (r *Reconciler) getAuthTokenValue() (string, error) {
-	if !r.dynakube.UseActiveGateAuthToken() {
+	if !r.dynakube.NeedsActiveGate() {
 		return "", nil
 	}
 
