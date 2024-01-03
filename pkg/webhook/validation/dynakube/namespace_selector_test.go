@@ -65,7 +65,7 @@ func TestConflictingNamespaceSelector(t *testing.T) {
 				},
 			}, &defaultCSIDaemonSet, &dummyNamespace)
 	})
-	t.Run("validate matchLabels to be a valid label according to spec", func(t *testing.T) {
+	t.Run("validate namespaceSelector to be a valid label according to spec", func(t *testing.T) {
 		testsValidLabels := []string{
 			"",
 			"a",
@@ -77,6 +77,7 @@ func TestConflictingNamespaceSelector(t *testing.T) {
 			"label.with.dotttses",
 			"label.with.dotttses-567567",
 		}
+		// MatchLabels
 		for _, label := range testsValidLabels {
 			assertAllowedResponse(t, &dynatracev1beta1.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
@@ -96,12 +97,35 @@ func TestConflictingNamespaceSelector(t *testing.T) {
 				},
 			}, &dummyNamespace, &dummyNamespace2)
 		}
+		// MatchExpressions
+		assertAllowedResponse(t, &dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "invalid-namespace-selector",
+				Namespace: testNamespace,
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: testApiUrl,
+				NamespaceSelector: metav1.LabelSelector{
+					MatchExpressions: []metav1.LabelSelectorRequirement{
+						{
+							Key:      "dummy",
+							Operator: metav1.LabelSelectorOpIn,
+							Values:   testsValidLabels,
+						},
+					},
+				},
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{},
+				},
+			},
+		}, &dummyNamespace, &dummyNamespace2)
 		testsInvalidLabels := []string{
 			"name%",
 			"name/",
 			"AMuchTooLongLabelThatGoesOverSixtyThreeCharactersAndSoIsInvalidAccordingToSpec",
 		}
 		for _, label := range testsInvalidLabels {
+			// MatchLabels
 			assertDeniedResponse(t,
 				[]string{errorNamespaceSelectorMatchLabelsViolateLabelSpec},
 				&dynatracev1beta1.DynaKube{
@@ -122,5 +146,29 @@ func TestConflictingNamespaceSelector(t *testing.T) {
 					},
 				}, &dummyNamespace, &dummyNamespace2)
 		}
+		// MatchExpressions
+		assertDeniedResponse(t,
+			[]string{errorNamespaceSelectorMatchLabelsViolateLabelSpec},
+			&dynatracev1beta1.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "invalid-namespace-selector",
+					Namespace: testNamespace,
+				},
+				Spec: dynatracev1beta1.DynaKubeSpec{
+					APIURL: testApiUrl,
+					NamespaceSelector: metav1.LabelSelector{
+						MatchExpressions: []metav1.LabelSelectorRequirement{
+							{
+								Key:      "dummy",
+								Operator: metav1.LabelSelectorOpIn,
+								Values:   testsInvalidLabels,
+							},
+						},
+					},
+					OneAgent: dynatracev1beta1.OneAgentSpec{
+						ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{},
+					},
+				},
+			}, &dummyNamespace, &dummyNamespace2)
 	})
 }
