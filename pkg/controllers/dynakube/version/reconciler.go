@@ -13,8 +13,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type Reconciler struct {
-	dynakube       *dynatracev1beta1.DynaKube
+type Reconciler interface {
+	ReconcileCodeModules(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error
+	ReconcileOneAgent(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error
+	ReconcileActiveGate(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error
+}
+
+type reconciler struct {
 	dtClient       dtclient.Client
 	registryClient registry.ImageGetter
 	timeProvider   *timeprovider.Provider
@@ -23,9 +28,8 @@ type Reconciler struct {
 	apiReader client.Reader
 }
 
-func NewReconciler(dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader, dtClient dtclient.Client, registryClient registry.ImageGetter, fs afero.Afero, timeProvider *timeprovider.Provider) *Reconciler { //nolint:revive
-	return &Reconciler{
-		dynakube:       dynakube,
+func NewReconciler(apiReader client.Reader, dtClient dtclient.Client, registryClient registry.ImageGetter, fs afero.Afero, timeProvider *timeprovider.Provider) Reconciler { //nolint:revive
+	return &reconciler{
 		apiReader:      apiReader,
 		fs:             fs,
 		timeProvider:   timeProvider,
@@ -34,54 +38,55 @@ func NewReconciler(dynakube *dynatracev1beta1.DynaKube, apiReader client.Reader,
 	}
 }
 
-// Reconcile updates the version status used by the dynakube
-func (reconciler *Reconciler) Reconcile(ctx context.Context) error {
+func (r *reconciler) ReconcileCodeModules(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
+	updater := newCodeModulesUpdater(dynakube, r.dtClient)
+	if r.needsUpdate(updater, dynakube) {
+		return r.updateVersionStatuses(ctx, updater, dynakube)
+	}
+	return nil
+}
+
+func (r *reconciler) ReconcileOneAgent(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
+	updater := newOneAgentUpdater(dynakube, r.apiReader, r.dtClient, r.registryClient)
+	if r.needsUpdate(updater, dynakube) {
+		return r.updateVersionStatuses(ctx, updater, dynakube)
+	}
+	return nil
+}
+
+func (r *reconciler) ReconcileActiveGate(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
 	updaters := []StatusUpdater{
-		newActiveGateUpdater(reconciler.dynakube, reconciler.apiReader, reconciler.dtClient, reconciler.registryClient),
-		newOneAgentUpdater(reconciler.dynakube, reconciler.apiReader, reconciler.dtClient, reconciler.registryClient),
-		newCodeModulesUpdater(reconciler.dynakube, reconciler.dtClient),
-		newSyntheticUpdater(reconciler.dynakube, reconciler.apiReader, reconciler.dtClient, reconciler.registryClient),
+		newActiveGateUpdater(dynakube, r.apiReader, r.dtClient, r.registryClient),
+		newSyntheticUpdater(dynakube, r.apiReader, r.dtClient, r.registryClient),
 	}
-
-	neededUpdaters := reconciler.needsReconcile(updaters)
-	if len(neededUpdaters) > 0 {
-		return reconciler.updateVersionStatuses(ctx, neededUpdaters)
+	for _, updater := range updaters {
+		if r.needsUpdate(updater, dynakube) {
+			return r.updateVersionStatuses(ctx, updater, dynakube)
+		}
 	}
 	return nil
 }
 
-func (reconciler *Reconciler) updateVersionStatuses(ctx context.Context, updaters []StatusUpdater) error {
-	for _, updater := range updaters {
-		log.Info("updating version status", "updater", updater.Name())
-		err := reconciler.run(ctx, updater)
+func (r *reconciler) updateVersionStatuses(ctx context.Context, updater StatusUpdater, dynakube *dynatracev1beta1.DynaKube) error {
+	log.Info("updating version status", "updater", updater.Name())
+	err := r.run(ctx, updater)
+	if err != nil {
+		return err
+	}
+
+	_, ok := updater.(*oneAgentUpdater)
+	if ok {
+		healthConfig, err := GetOneAgentHealthConfig(ctx, r.apiReader, r.registryClient, dynakube, dynakube.OneAgentImage())
 		if err != nil {
-			return err
-		}
-
-		_, ok := updater.(*oneAgentUpdater)
-		if ok {
-			healthConfig, err := GetOneAgentHealthConfig(ctx, reconciler.apiReader, reconciler.registryClient, reconciler.dynakube, reconciler.dynakube.OneAgentImage())
-			if err != nil {
-				log.Error(err, "could not set OneAgent healthcheck")
-			} else {
-				reconciler.dynakube.Status.OneAgent.Healthcheck = healthConfig
-			}
+			log.Error(err, "could not set OneAgent healthcheck")
+		} else {
+			dynakube.Status.OneAgent.Healthcheck = healthConfig
 		}
 	}
 	return nil
 }
 
-func (reconciler *Reconciler) needsReconcile(updaters []StatusUpdater) []StatusUpdater {
-	neededUpdaters := []StatusUpdater{}
-	for _, updater := range updaters {
-		if reconciler.needsUpdate(updater) {
-			neededUpdaters = append(neededUpdaters, updater)
-		}
-	}
-	return neededUpdaters
-}
-
-func (reconciler *Reconciler) needsUpdate(updater StatusUpdater) bool {
+func (r *reconciler) needsUpdate(updater StatusUpdater, dynakube *dynatracev1beta1.DynaKube) bool {
 	if !updater.IsEnabled() {
 		log.Info("skipping version status update for disabled section", "updater", updater.Name())
 		return false
@@ -96,7 +101,7 @@ func (reconciler *Reconciler) needsUpdate(updater StatusUpdater) bool {
 		return true
 	}
 
-	if !reconciler.timeProvider.IsOutdated(updater.Target().LastProbeTimestamp, reconciler.dynakube.FeatureApiRequestThreshold()) {
+	if !r.timeProvider.IsOutdated(updater.Target().LastProbeTimestamp, dynakube.FeatureApiRequestThreshold()) {
 		log.Info("status timestamp still valid, skipping version status updater", "updater", updater.Name())
 		return false
 	}
