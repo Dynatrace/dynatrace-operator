@@ -18,10 +18,11 @@ const (
 	testApiToken  = "testy"
 	testPaasToken = "testz"
 
-	testProxy       = "proxy"
-	testNoProxy     = "no-proxy"
-	testNetworkZone = "zone"
-	testTrustedCA   = "secret"
+	testProxy           = "proxy"
+	testNoProxy         = "no-proxy"
+	testOneAgentNoProxy = "oa-no-proxy"
+	testNetworkZone     = "zone"
+	testTrustedCA       = "secret"
 
 	testNodeName  = "node1"
 	testTlsCert   = "tls"
@@ -35,16 +36,17 @@ const (
 
 func getTestSecretConfig() *SecretConfig {
 	return &SecretConfig{
-		ApiUrl:        testApiUrl,
-		ApiToken:      testApiToken,
-		PaasToken:     testPaasToken,
-		Proxy:         testProxy,
-		NoProxy:       testNoProxy,
-		TenantUUID:    testTenantUUID,
-		NetworkZone:   testNetworkZone,
-		TrustedCAs:    testTrustedCA,
-		SkipCertCheck: true,
-		HasHost:       true,
+		ApiUrl:          testApiUrl,
+		ApiToken:        testApiToken,
+		PaasToken:       testPaasToken,
+		Proxy:           testProxy,
+		NoProxy:         testNoProxy,
+		OneAgentNoProxy: testOneAgentNoProxy,
+		TenantUUID:      testTenantUUID,
+		NetworkZone:     testNetworkZone,
+		TrustedCAs:      testTrustedCA,
+		SkipCertCheck:   true,
+		HasHost:         true,
 		MonitoringNodes: map[string]string{
 			testNodeName: testTenantUUID,
 		},
@@ -68,6 +70,7 @@ func TestNewSecretConfigViaFs(t *testing.T) {
 	assert.Equal(t, testPaasToken, config.PaasToken)
 	assert.Equal(t, testTenantUUID, config.TenantUUID)
 	assert.Equal(t, testProxy, config.Proxy)
+	assert.Equal(t, testOneAgentNoProxy, config.OneAgentNoProxy)
 	assert.Equal(t, testNetworkZone, config.NetworkZone)
 	assert.Equal(t, testTrustedCA, config.TrustedCAs)
 	assert.True(t, config.SkipCertCheck)
