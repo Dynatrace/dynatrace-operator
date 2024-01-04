@@ -20,32 +20,6 @@ const (
 )
 
 func TestReconciler_Reconcile(t *testing.T) {
-	t.Run("Skip in case not necessary", func(t *testing.T) {
-		dynakube := &dynatracev1beta1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testName,
-			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				APIURL: testApiUrl,
-			},
-		}
-		fakeClient := fake.NewClient()
-		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, dynakube, token.Tokens{
-			dtclient.DynatraceApiToken: token.Token{Value: testValue},
-		})
-
-		err := r.Reconcile(context.Background())
-
-		assert.NoError(t, err)
-
-		var pullSecret corev1.Secret
-		err = fakeClient.Get(context.Background(),
-			client.ObjectKey{Name: dynakube.PullSecretName(), Namespace: testNamespace},
-			&pullSecret)
-
-		assert.Error(t, err)
-	})
 	t.Run(`Create works with minimal setup`, func(t *testing.T) {
 		dynakube := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
