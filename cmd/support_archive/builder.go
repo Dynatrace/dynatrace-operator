@@ -158,7 +158,7 @@ func (builder CommandBuilder) runCollectors(log logr.Logger, supportArchive arch
 	collectors := []collector{
 		newOperatorVersionCollector(log, supportArchive),
 		newLogCollector(ctx, log, supportArchive, pods, appName, collectManagedLogsFlagValue),
-		newK8sObjectCollector(ctx, log, supportArchive, namespaceFlagValue, appName, apiReader),
+		newK8sObjectCollector(ctx, log, supportArchive, namespaceFlagValue, appName, apiReader, *kubeConfig),
 		newTroubleshootCollector(ctx, log, supportArchive, namespaceFlagValue, apiReader, *kubeConfig),
 		newLoadSimCollector(ctx, log, supportArchive, fileSize, loadsimFilesFlagValue, clientSet.CoreV1().Pods(namespaceFlagValue)),
 	}

@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/rest"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -19,28 +21,29 @@ import (
 const (
 	k8sResourceCollectorName = "k8sResourceCollector"
 	webhookValidatorName     = "dynatrace-webhook"
-	dynakubeCRDName          = "dynakubes.dynatrace.com"
-	edgeconnectCRDName       = "edgeconnects.dynatrace.com"
+	crdNameSuffix            = "dynatrace.com"
 )
 
 type k8sResourceCollector struct {
 	collectorCommon
-	context   context.Context
-	namespace string
-	appName   string
-	apiReader client.Reader
+	context    context.Context
+	namespace  string
+	appName    string
+	apiReader  client.Reader
+	kubeConfig rest.Config
 }
 
-func newK8sObjectCollector(context context.Context, log logr.Logger, supportArchive archiver, namespace string, appName string, apiReader client.Reader) collector { //nolint:revive // argument-limit doesn't apply to constructors
+func newK8sObjectCollector(context context.Context, log logr.Logger, supportArchive archiver, namespace string, appName string, apiReader client.Reader, kubeConfig rest.Config) collector { //nolint:revive // argument-limit doesn't apply to constructors
 	return k8sResourceCollector{
 		collectorCommon: collectorCommon{
 			log:            log,
 			supportArchive: supportArchive,
 		},
-		context:   context,
-		namespace: namespace,
-		appName:   appName,
-		apiReader: apiReader,
+		context:    context,
+		namespace:  namespace,
+		appName:    appName,
+		apiReader:  apiReader,
+		kubeConfig: kubeConfig,
 	}
 }
 
@@ -125,25 +128,41 @@ func (collector k8sResourceCollector) readCustomResourceDefinitions() (*unstruct
 	resourceList := &unstructured.UnstructuredList{}
 	resourceList.SetGroupVersionKind(toGroupVersionKind(v1.SchemeGroupVersion, v1.CustomResourceDefinition{}))
 
-	var dynakubeCRD v1.CustomResourceDefinition
-	err := collector.apiReader.Get(collector.context, client.ObjectKey{Name: dynakubeCRDName}, &dynakubeCRD)
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(&collector.kubeConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	resourceList.Items = append(resourceList.Items, collector.getDynakubeCRD(dynakubeCRD))
-
-	var edgeconnectCRD v1.CustomResourceDefinition
-	err = collector.apiReader.Get(collector.context, client.ObjectKey{Name: edgeconnectCRDName}, &edgeconnectCRD)
+	_, resources, err := discoveryClient.ServerGroupsAndResources()
 	if err != nil {
 		return nil, err
 	}
 
-	resourceList.Items = append(resourceList.Items, collector.getDynakubeCRD(edgeconnectCRD))
+	crds := map[string]unstructured.Unstructured{}
+
+	for _, resource := range resources {
+		if strings.Contains(resource.GroupVersion, crdNameSuffix) {
+			for _, apiResource := range resource.APIResources {
+				// Not only the CRDs but also their statuses are listed. As we are only interested in the CRDs I have to exclude those statuses
+				if !strings.Contains(apiResource.Name, "/status") {
+					var crd v1.CustomResourceDefinition
+					err = collector.apiReader.Get(collector.context, client.ObjectKey{Name: fmt.Sprintf("%s.%s", apiResource.Name, crdNameSuffix)}, &crd)
+					if err != nil {
+						return nil, err
+					}
+					crds[apiResource.Name] = collector.getCRD(crd)
+				}
+			}
+		}
+	}
+
+	for _, crd := range crds {
+		resourceList.Items = append(resourceList.Items, crd)
+	}
 	return resourceList, nil
 }
 
-func (collector k8sResourceCollector) getDynakubeCRD(customResourceDefinition v1.CustomResourceDefinition) unstructured.Unstructured {
+func (collector k8sResourceCollector) getCRD(customResourceDefinition v1.CustomResourceDefinition) unstructured.Unstructured {
 	return unstructured.Unstructured{
 		Object: map[string]any{
 			"apiVersion": v1.GroupName,
