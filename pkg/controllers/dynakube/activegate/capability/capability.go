@@ -238,3 +238,8 @@ func BuildDNSEntryPoint(dynakubeName, dynakubeNamespace string, capability Capab
 	}
 	return fmt.Sprintf("https://%s/communication", BuildServiceHostName(dynakubeName, capability.ShortName()))
 }
+
+// BuildDNSEntryPointWithoutEnvVars for give capability
+func BuildDNSEntryPointWithoutEnvVars(dynakubeName, dynakubeNamespace string, capability Capability) string {
+	return fmt.Sprintf("https://%s/communication,https://%s.%s:%d/communication", BuildServiceHostName(dynakubeName, capability.ShortName()), BuildServiceName(dynakubeName, capability.ShortName()), dynakubeNamespace, consts.HttpsServicePort)
+}

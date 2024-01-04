@@ -160,7 +160,7 @@ func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dynak
 
 	if dynakube.NeedsActiveGate() {
 		multiCap := capability.NewMultiCapability(dynakube)
-		oneAgentNoProxy = capability.BuildDNSEntryPoint(dynakube.Name, dynakube.Namespace, multiCap)
+		oneAgentNoProxy = capability.BuildDNSEntryPointWithoutEnvVars(dynakube.Name, dynakube.Namespace, multiCap)
 	}
 
 	return &startup.SecretConfig{

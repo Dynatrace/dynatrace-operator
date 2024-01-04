@@ -229,7 +229,7 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Cont
 
 		if dk.NeedsActiveGate() {
 			multiCap := capability.NewMultiCapability(dk)
-			latestProcessModuleConfig.AddNoProxy(capability.BuildDNSEntryPoint(dk.Name, dk.Namespace, multiCap))
+			latestProcessModuleConfig.AddNoProxy(capability.BuildDNSEntryPointWithoutEnvVars(dk.Name, dk.Namespace, multiCap))
 		}
 	}
 
