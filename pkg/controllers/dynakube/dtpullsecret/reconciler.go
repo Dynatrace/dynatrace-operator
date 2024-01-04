@@ -37,9 +37,9 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	/* TODO: Introduce cleanup, and also this is would not be needed every case,
-	if we don't want to do anything with images, then its not necessary,
-	but other parts of the code would also need to be updated to handle this scenario.
+	/* TODO: Introduce cleanup, and also, this would not be needed in every case,
+	if we don't want to do anything with images, then it's not necessary,
+	but other parts of the code must also be updated to handle this scenario.
 	*/
 	if r.dynakube.Spec.CustomPullSecret == "" {
 		err := r.reconcilePullSecret(ctx)
