@@ -5,7 +5,12 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"sort"
+	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/api/scheme/fake"
@@ -128,8 +133,15 @@ func TestManifestCollector_Success(t *testing.T) {
 	buffer := bytes.Buffer{}
 	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
 
+	apiResourceLists := getResourceLists()
+
+	server := createFakeServer(t, apiResourceLists[0], apiResourceLists[1])
+
+	defer server.Close()
+	rc := &rest.Config{Host: server.URL}
+
 	ctx := context.TODO()
-	require.NoError(t, newK8sObjectCollector(ctx, log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt, rest.Config{}).Do())
+	require.NoError(t, newK8sObjectCollector(ctx, log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt, *rc).Do())
 	assertNoErrorOnClose(t, supportArchive)
 
 	expectedFiles := []string{
@@ -143,11 +155,14 @@ func TestManifestCollector_Success(t *testing.T) {
 		fmt.Sprintf("%s/edgeconnect/edgeconnect1%s", testOperatorNamespace, manifestExtension),
 		fmt.Sprintf("%s/mutatingwebhookconfiguration%s", "webhook_configurations", manifestExtension),
 		fmt.Sprintf("%s/validatingwebhookconfiguration%s", "webhook_configurations", manifestExtension),
-		fmt.Sprintf("%s/customresourcedefinition-dynakube%s", "crds", manifestExtension),
-		fmt.Sprintf("%s/customresourcedefinition-edgeconnect%s", "crds", manifestExtension),
 	}
 
 	zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(buffer.Len()))
+
+	crds := []string{zipReader.File[9].Name, zipReader.File[10].Name}
+	sort.Strings(crds)
+	expectedFiles = append(expectedFiles, strings.Split(crds[0], "manifests/")[1])
+	expectedFiles = append(expectedFiles, strings.Split(crds[1], "manifests/")[1])
 
 	for i, expectedFile := range expectedFiles {
 		t.Run("expected "+expectedFile, func(t *testing.T) {
@@ -242,7 +257,14 @@ func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
 	buffer := bytes.Buffer{}
 	supportArchive := newZipArchive(bufio.NewWriter(&buffer))
 
-	collector := newK8sObjectCollector(ctx, log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt, rest.Config{})
+	apiResourceLists := getResourceLists()
+
+	server := createFakeServer(t, apiResourceLists[0], apiResourceLists[1])
+
+	defer server.Close()
+	rc := &rest.Config{Host: server.URL}
+
+	collector := newK8sObjectCollector(ctx, log, supportArchive, testOperatorNamespace, defaultOperatorAppName, clt, *rc)
 	require.NoError(t, collector.Do())
 	assertNoErrorOnClose(t, supportArchive)
 	zipReader, err := zip.NewReader(bytes.NewReader(buffer.Bytes()), int64(buffer.Len()))
@@ -260,9 +282,11 @@ func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
 
 	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/validatingwebhookconfiguration%s", "webhook_configurations", manifestExtension)), zipReader.File[5].Name)
 
-	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/customresourcedefinition-dynakube%s", "crds", manifestExtension)), zipReader.File[6].Name)
+	crds := []string{zipReader.File[6].Name, zipReader.File[7].Name}
+	sort.Strings(crds)
+	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/customresourcedefinition-dynakube%s", "crds", manifestExtension)), crds[0])
 
-	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/customresourcedefinition-edgeconnect%s", "crds", manifestExtension)), zipReader.File[7].Name)
+	assert.Equal(t, expectedFilename(fmt.Sprintf("%s/customresourcedefinition-edgeconnect%s", "crds", manifestExtension)), crds[1])
 }
 
 func typeMeta(kind string) metav1.TypeMeta {
@@ -284,4 +308,59 @@ func objectMeta(name string) metav1.ObjectMeta {
 
 func expectedFilename(objname string) string {
 	return fmt.Sprintf("%s/%s", ManifestsDirectoryName, objname)
+}
+
+func getResourceLists() []metav1.APIResourceList {
+	dk := metav1.APIResourceList{
+		GroupVersion: crdNameSuffix + "/" + "v1beta1",
+		APIResources: []metav1.APIResource{
+			{Version: "v1beta1", Group: crdNameSuffix, Name: "dynakubes", Namespaced: true, Kind: "DynaKube"},
+		},
+	}
+	ec := metav1.APIResourceList{
+		GroupVersion: crdNameSuffix + "/" + "v1alpha1",
+		APIResources: []metav1.APIResource{
+			{Version: "v1alpha1", Group: crdNameSuffix, Name: "edgeconnects", Namespaced: true, Kind: "EdgeConnect"},
+		},
+	}
+	return []metav1.APIResourceList{
+		dk,
+		ec,
+	}
+}
+
+func createFakeServer(t *testing.T, dk metav1.APIResourceList, ec metav1.APIResourceList) *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		var list interface{}
+		switch req.URL.Path {
+		case "/apis":
+			list = &metav1.APIGroupList{
+				Groups: []metav1.APIGroup{
+					{
+						Name: "dynatrace.com",
+						Versions: []metav1.GroupVersionForDiscovery{
+							{GroupVersion: "dynatrace.com/v1beta1", Version: "v1beta1"},
+							{GroupVersion: "dynatrace.com/v1alpha1", Version: "v1alpha1"},
+						},
+					},
+				},
+			}
+		case "/apis/dynatrace.com/v1beta1":
+			list = &dk
+		case "/apis/dynatrace.com/v1alpha1":
+			list = &ec
+		default:
+			t.Logf("unexpected request: %s", req.URL.Path)
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		output, err := json.Marshal(list)
+		if err != nil {
+			t.Errorf("unexpected encoding error: %v", err)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(output)
+	}))
 }
