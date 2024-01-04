@@ -1,6 +1,8 @@
 package csiprovisioner
 
 import (
+	"context"
+	envclient "github.com/0sewa0/dynatrace-configuration-as-code-core/gen/environment"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
@@ -9,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer/url"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/processmoduleconfig"
+	"net/http"
 )
 
 func (provisioner *OneAgentProvisioner) installAgentImage(dynakube dynatracev1beta1.DynaKube, latestProcessModuleConfigCache *processModuleConfigCache) (string, error) {
@@ -59,7 +62,7 @@ func (provisioner *OneAgentProvisioner) installAgentZip(dynakube dynatracev1beta
 		return "", err
 	}
 	targetVersion := dynakube.CodeModulesVersion()
-	urlInstaller := provisioner.urlInstallerBuilder(provisioner.fs, dtc, getUrlProperties(targetVersion, provisioner.path))
+	urlInstaller := provisioner.urlInstallerBuilder(provisioner.fs, createDtClient(context.TODO(), dynakube.ApiUrl(), "this will not work, the POC is only meant to be used in applicationMonitoring without CSI mode "), getUrlProperties(targetVersion, provisioner.path))
 
 	targetDir := provisioner.path.AgentSharedBinaryDirForAgent(targetVersion)
 	targetConfigDir := provisioner.path.AgentConfigDir(tenantUUID)
@@ -73,6 +76,21 @@ func (provisioner *OneAgentProvisioner) installAgentZip(dynakube dynatracev1beta
 		return "", err
 	}
 	return targetVersion, nil
+}
+
+func createDtClient(ctx context.Context, apiUrl, apiToken string) *envclient.APIClient {
+	tokenKey := "Api-Token"
+	configuration := envclient.NewConfiguration()
+	configuration.Servers = envclient.ServerConfigurations{{URL: apiUrl}}
+	configuration.HTTPClient = http.DefaultClient
+	apiClient := envclient.NewAPIClient(configuration)
+	ctx = context.WithValue(ctx, envclient.ContextAPIKeys, map[string]envclient.APIKey{
+		tokenKey: {
+			Prefix: tokenKey,
+			Key:    apiToken,
+		},
+	})
+	return apiClient
 }
 
 func (provisioner *OneAgentProvisioner) installAgent(agentInstaller installer.Installer, dynakube dynatracev1beta1.DynaKube, targetDir, targetVersion, tenantUUID string) error {

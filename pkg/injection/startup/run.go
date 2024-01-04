@@ -1,10 +1,14 @@
 package startup
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"path"
 	"path/filepath"
 
+	envclient "github.com/0sewa0/dynatrace-configuration-as-code-core/gen/environment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/arch"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
@@ -20,7 +24,7 @@ type Runner struct {
 	fs         afero.Fs
 	env        *environment
 	config     *SecretConfig
-	dtclient   dtclient.Client
+	dtclient   *envclient.APIClient
 	installer  installer.Installer
 	hostTenant string
 }
@@ -33,7 +37,7 @@ func NewRunner(fs afero.Fs) (*Runner, error) {
 	}
 
 	var secretConfig *SecretConfig
-	var client dtclient.Client
+	var client *envclient.APIClient
 	var oneAgentInstaller installer.Installer
 	if env.OneAgentInjected {
 		secretConfig, err = newSecretConfigViaFs(fs)
@@ -41,7 +45,7 @@ func NewRunner(fs afero.Fs) (*Runner, error) {
 			return nil, err
 		}
 
-		client, err = newDTClientBuilder(secretConfig).createClient()
+		client = createDtClient(context.TODO(), secretConfig.ApiUrl, secretConfig.ApiToken)
 		if err != nil {
 			return nil, err
 		}
@@ -143,15 +147,21 @@ func (runner *Runner) installOneAgent() error {
 }
 
 func (runner *Runner) getProcessModuleConfig() (*dtclient.ProcessModuleConfig, error) {
-	processModuleConfig, err := runner.dtclient.GetProcessModuleConfig(0)
+	req := runner.dtclient.DeploymentAPI.GetAgentProcessModuleConfig(context.TODO())
+	_, res, err := req.Execute()
 	if err != nil {
 		return nil, err
 	}
-
-	if runner.config.Proxy != "" {
-		processModuleConfig = processModuleConfig.AddProxy(runner.config.Proxy)
+	resp, err := io.ReadAll(res.Body)
+	processModuleConfig := dtclient.ProcessModuleConfig{}
+	err = json.Unmarshal(resp, &processModuleConfig)
+	if err != nil {
+		return nil, err
 	}
-	return processModuleConfig, nil
+	//if runner.config.Proxy != "" {
+	//	processModuleConfig = processModuleConfig.AddProxy(runner.config.Proxy)
+	//}
+	return &processModuleConfig, nil
 }
 
 func (runner *Runner) configureInstallation() error {

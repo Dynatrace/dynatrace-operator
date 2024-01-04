@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
-	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	envclient "github.com/0sewa0/dynatrace-configuration-as-code-core/gen/environment"
 	"github.com/Dynatrace/dynatrace-operator/pkg/consts"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/pkg/injection/codemodule/installer"
@@ -36,12 +36,12 @@ func (props *Properties) fillEmptyWithDefaults() {
 
 type Installer struct {
 	fs        afero.Fs
-	dtc       dtclient.Client
+	dtc       *envclient.APIClient
 	extractor zip.Extractor
 	props     *Properties
 }
 
-func NewUrlInstaller(fs afero.Fs, dtc dtclient.Client, props *Properties) installer.Installer {
+func NewUrlInstaller(fs afero.Fs, dtc *envclient.APIClient, props *Properties) installer.Installer {
 	return &Installer{
 		fs:        fs,
 		dtc:       dtc,

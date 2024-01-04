@@ -136,7 +136,6 @@ func NewClient(url, apiToken, paasToken string, opts ...Option) (Client, error) 
 	}
 
 	url = strings.TrimSuffix(url, "/")
-
 	dc := &dynatraceClient{
 		url:       url,
 		apiToken:  apiToken,

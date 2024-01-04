@@ -1,7 +1,10 @@
 package startup
 
 import (
+	"context"
+	envclient "github.com/0sewa0/dynatrace-configuration-as-code-core/gen/environment"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
+	"net/http"
 )
 
 type dtclientBuilder struct {
@@ -14,6 +17,21 @@ func newDTClientBuilder(config *SecretConfig) *dtclientBuilder {
 		config:  config,
 		options: []dtclient.Option{},
 	}
+}
+
+func createDtClient(ctx context.Context, apiUrl, apiToken string) *envclient.APIClient {
+	tokenKey := "Api-Token"
+	configuration := envclient.NewConfiguration()
+	configuration.Servers = envclient.ServerConfigurations{{URL: apiUrl}}
+	configuration.HTTPClient = http.DefaultClient
+	apiClient := envclient.NewAPIClient(configuration)
+	ctx = context.WithValue(ctx, envclient.ContextAPIKeys, map[string]envclient.APIKey{
+		tokenKey: {
+			Prefix: tokenKey,
+			Key:    apiToken,
+		},
+	})
+	return apiClient
 }
 
 func (builder *dtclientBuilder) createClient() (dtclient.Client, error) {

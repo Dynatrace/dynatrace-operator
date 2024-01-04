@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"time"
 
+	envclient "github.com/0sewa0/dynatrace-configuration-as-code-core/gen/environment"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/pkg/api/v1beta1/dynakube"
 	dtclient "github.com/Dynatrace/dynatrace-operator/pkg/clients/dynatrace"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/pkg/controllers/csi"
@@ -50,7 +51,7 @@ const (
 	longRequeueDuration    = 30 * time.Minute
 )
 
-type urlInstallerBuilder func(afero.Fs, dtclient.Client, *url.Properties) installer.Installer
+type urlInstallerBuilder func(afero.Fs, *envclient.APIClient, *url.Properties) installer.Installer
 type imageInstallerBuilder func(afero.Fs, *image.Properties) (installer.Installer, error)
 
 // OneAgentProvisioner reconciles a DynaKube object
