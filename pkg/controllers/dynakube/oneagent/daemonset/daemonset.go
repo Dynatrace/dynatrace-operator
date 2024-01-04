@@ -37,8 +37,8 @@ const (
 
 	podName = "dynatrace-oneagent"
 
-	inframonHostIdSource = "--set-host-id-source=k8s-node-name"
-	classicHostIdSource  = "--set-host-id-source=auto"
+	inframonHostIdSource = "k8s-node-name"
+	classicHostIdSource  = "auto"
 
 	probeMaxInitialDelay         = int32(90)
 	probeDefaultSuccessThreshold = int32(1)
@@ -105,7 +105,6 @@ func (dsInfo *HostMonitoring) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	daemonSet.Name = dsInfo.dynakube.OneAgentDaemonsetName()
 
 	if len(daemonSet.Spec.Template.Spec.Containers) > 0 {
-		appendHostIdArgument(daemonSet, inframonHostIdSource)
 		dsInfo.appendInfraMonEnvVars(daemonSet)
 	}
 
@@ -120,15 +119,7 @@ func (dsInfo *ClassicFullStack) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 
 	result.Name = dsInfo.dynakube.OneAgentDaemonsetName()
 
-	if len(result.Spec.Template.Spec.Containers) > 0 {
-		appendHostIdArgument(result, classicHostIdSource)
-	}
-
 	return result, nil
-}
-
-func appendHostIdArgument(result *appsv1.DaemonSet, source string) {
-	result.Spec.Template.Spec.Containers[0].Args = append(result.Spec.Template.Spec.Containers[0].Args, source)
 }
 
 func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {

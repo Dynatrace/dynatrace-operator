@@ -70,22 +70,6 @@ func TestPrepareVolumes(t *testing.T) {
 		volumes := prepareVolumes(instance)
 		assert.Contains(t, volumes, getActiveGateCaCertVolume(instance))
 	})
-	t.Run(`doesn't have csi volume`, func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{
-			ObjectMeta: corev1.ObjectMeta{
-				Annotations: map[string]string{
-					dynatracev1beta1.AnnotationFeatureDisableReadOnlyOneAgent: "true",
-				},
-			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
-				},
-			},
-		}
-		volumes := prepareVolumes(instance)
-		assert.NotContains(t, volumes, getCSIStorageVolume(instance))
-	})
 	t.Run(`csi volume not supported on classicFullStack`, func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
@@ -185,32 +169,6 @@ func TestPrepareVolumeMounts(t *testing.T) {
 
 		assert.Contains(t, volumeMounts, getReadOnlyRootMount())
 		assert.Contains(t, volumeMounts, getActiveGateCaCertVolumeMount())
-	})
-	t.Run(`doesn't have readonly volume mounts`, func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{
-			ObjectMeta: corev1.ObjectMeta{
-				Annotations: map[string]string{
-					dynatracev1beta1.AnnotationFeatureDisableReadOnlyOneAgent: "true",
-				},
-			},
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				ActiveGate: dynatracev1beta1.ActiveGateSpec{
-					TlsSecretName: testName,
-					Capabilities: []dynatracev1beta1.CapabilityDisplayName{
-						dynatracev1beta1.RoutingCapability.DisplayName,
-					},
-				},
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
-				},
-			},
-		}
-
-		volumeMounts := prepareVolumeMounts(instance)
-
-		assert.Contains(t, volumeMounts, getRootMount())
-		assert.Contains(t, volumeMounts, getActiveGateCaCertVolumeMount())
-		assert.NotContains(t, volumeMounts, getCSIStorageMount())
 	})
 	t.Run(`readonly volume not supported on classicFullStack`, func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{

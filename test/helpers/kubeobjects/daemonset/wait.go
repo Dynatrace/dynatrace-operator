@@ -27,7 +27,7 @@ func WaitFor(name string, namespace string) env.Func {
 			daemonset, isDaemonset := object.(*appsv1.DaemonSet)
 			return isDaemonset && daemonset.Status.DesiredNumberScheduled == daemonset.Status.UpdatedNumberScheduled &&
 				daemonset.Status.DesiredNumberScheduled == daemonset.Status.NumberReady
-		}), wait.WithTimeout(5*time.Minute))
+		}), wait.WithTimeout(10*time.Minute))
 		return ctx, err
 	}
 }

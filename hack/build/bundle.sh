@@ -40,7 +40,7 @@ if [ -n "${BUNDLE_DEFAULT_CHANNEL}" ]; then
     SDK_PARAMS+=("${BUNDLE_DEFAULT_CHANNEL}")
 fi
 
-"${OPERATOR_SDK}" generate kustomize manifests -q --apis-dir ./src/api/
+"${OPERATOR_SDK}" generate kustomize manifests -q --apis-dir ./pkg/api/
 (cd "config/deploy/${PLATFORM}" && ${KUSTOMIZE} edit set image quay.io/dynatrace/dynatrace-operator:snapshot="${OLM_IMAGE}")
 "${KUSTOMIZE}" build "config/olm/${PLATFORM}" | "${OPERATOR_SDK}" generate bundle --overwrite --version "${VERSION}" "${SDK_PARAMS[@]}"
 "${OPERATOR_SDK}" bundle validate ./bundle

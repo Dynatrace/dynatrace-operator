@@ -37,6 +37,10 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
+	if !r.dynakube.NeedsOneAgent() && !r.dynakube.NeedsActiveGate() {
+		return nil // TODO: Introduce cleanup
+	}
+
 	if r.dynakube.Spec.CustomPullSecret == "" {
 		err := r.reconcilePullSecret(ctx)
 		if err != nil {

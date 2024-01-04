@@ -20,8 +20,8 @@ RUN CGO_ENABLED=1 CGO_CFLAGS="-O2 -Wno-return-local-addr" \
     go build -tags "${GO_BUILD_TAGS}" -trimpath -ldflags="${GO_LINKER_ARGS}" \
     -o ./build/_output/bin/dynatrace-operator ./cmd/
 
-FROM registry.access.redhat.com/ubi9-micro:9.3-6@sha256:b7d8fd2840e92e8adc68414e13d859763ef33c3d4c4e27f910e939c00d642c29 AS base
-FROM registry.access.redhat.com/ubi9:9.3-1361.1699548029@sha256:6b95efc134c2af3d45472c0a2f88e6085433df058cc210abb2bb061ac4d74359 AS dependency
+FROM registry.access.redhat.com/ubi9-micro:9.3-9@sha256:14a2cd49b11eb39586f5abdefc63739f47cd5b8099e0d6946d7ee24812e7e746 AS base
+FROM registry.access.redhat.com/ubi9:9.3-1476@sha256:fc300be6adbdf2ca812ad01efd0dee2a3e3f5d33958ad6cd99159e25e9ee1398 AS dependency
 RUN mkdir -p /tmp/rootfs-dependency
 COPY --from=base / /tmp/rootfs-dependency
 RUN dnf install --installroot /tmp/rootfs-dependency \
@@ -43,7 +43,7 @@ COPY --from=dependency /tmp/rootfs-dependency /
 COPY --from=operator-build /app/build/_output/bin /usr/local/bin
 
 # csi binaries
-COPY --from=registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.9.2@sha256:a18e989a93722e43885120e90bc1d0da0740fcbf44bc10403572b368b9800606 /csi-node-driver-registrar /usr/local/bin
+COPY --from=registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.9.3@sha256:0f64602ea791246712b51df334bbd701a0f31df9950a4cb9c28c059f367baa9e /csi-node-driver-registrar /usr/local/bin
 COPY --from=registry.k8s.io/sig-storage/livenessprobe:v2.11.0@sha256:82adbebdf5d5a1f40f246aef8ddbee7f89dea190652aefe83336008e69f9a89f /livenessprobe /usr/local/bin
 
 COPY ./third_party_licenses /usr/share/dynatrace-operator/third_party_licenses

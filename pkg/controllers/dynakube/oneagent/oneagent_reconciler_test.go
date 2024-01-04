@@ -229,6 +229,55 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		assert.NotEmpty(t, dk.Status.OneAgent.Instances)
 	})
 
+	t.Run("test customized OneAgent arguments", func(t *testing.T) {
+		dk := base.DeepCopy()
+		args := []string{
+			"--set-app-log-content-access=true",
+			"--set-host-id-source=fqdn",
+			"--set-host-group=APP_LUSTIG_PETER",
+			"--set-server=https://hyper.super.com:9999",
+		}
+		dk.Spec.OneAgent.ClassicFullStack.Args = args
+		dsInfo := daemonset.NewClassicFullStack(dk, testClusterID)
+		ds, err := dsInfo.BuildDaemonSet()
+		require.NoError(t, err)
+
+		expectedDefaultArguments := []string{
+			"--set-app-log-content-access=true",
+			"--set-host-group=APP_LUSTIG_PETER",
+			"--set-host-id-source=fqdn",
+			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
+			"--set-proxy=",
+			"--set-server=https://hyper.super.com:9999",
+			"--set-tenant=$(DT_TENANT)",
+		}
+		assert.Equal(t, expectedDefaultArguments, ds.Spec.Template.Spec.Containers[0].Args)
+	})
+
+	t.Run("test default OneAgent arguments", func(t *testing.T) {
+		dk := base.DeepCopy()
+		args := []string{
+			"--set-app-log-content-access=true",
+			"--set-host-group=APP_LUSTIG_PETER",
+			"--set-server=https://hyper.super.com:9999",
+		}
+		dk.Spec.OneAgent.ClassicFullStack.Args = args
+		dsInfo := daemonset.NewClassicFullStack(dk, testClusterID)
+		ds, err := dsInfo.BuildDaemonSet()
+		require.NoError(t, err)
+
+		expectedDefaultArguments := []string{
+			"--set-app-log-content-access=true",
+			"--set-host-group=APP_LUSTIG_PETER",
+			"--set-host-id-source=auto",
+			"--set-host-property=OperatorVersion=$(DT_OPERATOR_VERSION)",
+			"--set-proxy=",
+			"--set-server=https://hyper.super.com:9999",
+			"--set-tenant=$(DT_TENANT)",
+		}
+		assert.Equal(t, expectedDefaultArguments, ds.Spec.Template.Spec.Containers[0].Args)
+	})
+
 	t.Run("reconcileImpl Instances set, if agentUpdateDisabled is true", func(t *testing.T) {
 		dk := base.DeepCopy()
 		autoUpdate := false
