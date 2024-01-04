@@ -331,7 +331,7 @@ func getResourceLists() []metav1.APIResourceList {
 
 func createFakeServer(t *testing.T, dk metav1.APIResourceList, ec metav1.APIResourceList) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		var list interface{}
+		var list any
 		switch req.URL.Path {
 		case "/apis":
 			list = &metav1.APIGroupList{
