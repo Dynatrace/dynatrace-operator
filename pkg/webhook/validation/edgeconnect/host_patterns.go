@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	errorHostPattersIsRequired = `hostPatters is required when using provisioner mode`
+	errorHostPattersIsRequired = `hostPatterns is required when using provisioner mode`
 )
 
 func checkHostPatternsValue(_ context.Context, _ *edgeconnectValidator, edgeConnect *edgeconnect.EdgeConnect) string {
