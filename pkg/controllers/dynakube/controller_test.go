@@ -204,7 +204,7 @@ func TestSetupTokensAndClient(t *testing.T) {
 			Name:      "this-is-a-name",
 			Namespace: "dynatrace",
 		},
-		Spec: dynatracev1beta1.DynaKubeSpec{APIURL: "this-is-an-api-url"},
+		Spec: dynatracev1beta1.DynaKubeSpec{APIURL: "https://test123.dev.dynatracelabs.com/api"},
 	}
 
 	t.Run("no tokens => error + condition", func(t *testing.T) {
@@ -253,6 +253,7 @@ func TestSetupTokensAndClient(t *testing.T) {
 		// There is also a pull-secret created here, however testing it here is a bit counterintuitive.
 		// TODO: Make the pull-secret reconciler mockable, so we can improve this test.
 		dynakube := dynakubeBase.DeepCopy()
+		dynakube.Spec.CustomPullSecret = "custom"
 		tokens := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      dynakube.Tokens(),

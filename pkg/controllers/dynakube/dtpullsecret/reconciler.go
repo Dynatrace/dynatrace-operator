@@ -37,10 +37,10 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {
-	if !r.dynakube.NeedsOneAgent() && !r.dynakube.NeedsActiveGate() {
-		return nil // TODO: Introduce cleanup
-	}
-
+	/* TODO: Introduce cleanup, and also, this would not be needed in every case,
+	if we don't want to do anything with images, then it's not necessary,
+	but other parts of the code must also be updated to handle this scenario.
+	*/
 	if r.dynakube.Spec.CustomPullSecret == "" {
 		err := r.reconcilePullSecret(ctx)
 		if err != nil {
