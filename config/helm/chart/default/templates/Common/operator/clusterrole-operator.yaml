@@ -87,6 +87,7 @@ rules:
       - customresourcedefinitions
     resourceNames:
       - dynakubes.dynatrace.com
+      - edgeconnects.dynatrace.com
     verbs:
       - get
       - update
