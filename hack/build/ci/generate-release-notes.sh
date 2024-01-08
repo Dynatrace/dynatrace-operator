@@ -44,7 +44,7 @@ For information on how to install the [latest dynatrace-operator](https://github
 
 #### Helm (recommended)
 \`\`\`sh
-helm upgrade dynatrace-operator oci://docker.io/dynatrace/dynatrace-operator \
+helm upgrade dynatrace-operator oci://public.ecr.aws/dynatrace/dynatrace-operator \
   --version ${tag_without_leading_v} \
   --create-namespace --namespace dynatrace \
   --install \
