@@ -135,7 +135,7 @@ func TestManifestCollector_Success(t *testing.T) {
 
 	apiResourceLists := getResourceLists()
 
-	server := createFakeServer(t, apiResourceLists[0], apiResourceLists[1])
+	server := createFakeServer(t, apiResourceLists[0], apiResourceLists[1], apiResourceLists[2])
 
 	defer server.Close()
 	rc := &rest.Config{Host: server.URL}
@@ -259,7 +259,7 @@ func TestManifestCollector_PartialCollectionOnMissingResources(t *testing.T) {
 
 	apiResourceLists := getResourceLists()
 
-	server := createFakeServer(t, apiResourceLists[0], apiResourceLists[1])
+	server := createFakeServer(t, apiResourceLists[0], apiResourceLists[1], apiResourceLists[2])
 
 	defer server.Close()
 	rc := &rest.Config{Host: server.URL}
@@ -311,6 +311,14 @@ func expectedFilename(objname string) string {
 }
 
 func getResourceLists() []metav1.APIResourceList {
+	stable := metav1.APIResourceList{
+		GroupVersion: "v1",
+		APIResources: []metav1.APIResource{
+			{Name: "pods", Namespaced: true, Kind: "Pod"},
+			{Name: "services", Namespaced: true, Kind: "Service"},
+			{Name: "namespaces", Namespaced: false, Kind: "Namespace"},
+		},
+	}
 	dk := metav1.APIResourceList{
 		GroupVersion: crdNameSuffix + "/" + "v1beta1",
 		APIResources: []metav1.APIResource{
@@ -324,15 +332,18 @@ func getResourceLists() []metav1.APIResourceList {
 		},
 	}
 	return []metav1.APIResourceList{
+		stable,
 		dk,
 		ec,
 	}
 }
 
-func createFakeServer(t *testing.T, dk metav1.APIResourceList, ec metav1.APIResourceList) *httptest.Server {
+func createFakeServer(t *testing.T, stable metav1.APIResourceList, dk metav1.APIResourceList, ec metav1.APIResourceList) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		var list any
 		switch req.URL.Path {
+		case "/api/v1":
+			list = &stable
 		case "/api":
 			list = &metav1.APIVersions{
 				Versions: []string{
