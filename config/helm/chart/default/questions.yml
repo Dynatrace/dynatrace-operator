@@ -13,7 +13,7 @@ questions:
 
   - variable: image
     label: "Set a custom image for operator components"
-    description: "Set a custom image for operator. Defaults to docker.io/dynatrace/dynatrace-operator"
+    description: "Set a custom image for operator. Defaults to public.ecr.aws/dynatrace/dynatrace-operator"
     default: ""
     type: string
     group: "Global Configuration"
